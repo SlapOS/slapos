@@ -8,7 +8,7 @@
       <dictionary>
         <item>
             <key> <string>active_sense_method_id</string> </key>
-            <value> <string>Alarm_updatePayzenSuspendedSupportRequest</string> </value>
+            <value> <string>Alarm_invalidateSuspendedRegularisationRequest</string> </value>
         </item>
         <item>
             <key> <string>description</string> </key>
@@ -22,7 +22,7 @@
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>slapos_payzen_update_suspended_support_request</string> </value>
+            <value> <string>slapos_crm_invalidate_suspended_regularisation_request</string> </value>
         </item>
         <item>
             <key> <string>periodicity_hour</string> </key>
@@ -95,7 +95,7 @@
         </item>
         <item>
             <key> <string>title</string> </key>
-            <value> <string>Handles suspended Support Request</string> </value>
+            <value> <string>Invalidate suspended regularisation request</string> </value>
         </item>
       </dictionary>
     </pickle>

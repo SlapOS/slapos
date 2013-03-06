@@ -50,27 +50,23 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string># from DateTime import DateTime\n
-portal = context.getPortalObject()\n
-\n
-state = context.getSimulationState()\n
-payment = context.getSourceProjectValue(portal_type="Payment Transaction")\n
-if (state != \'suspended\') or \\\n
-   (payment is None) or \\\n
-   (payment.getPaymentMode() != \'payzen\') or \\\n
-   (payment.getSimulationState() not in ("cancelled", "stopped", "delivered")):\n
-  return\n
-else:\n
-  context.invalidate(comment="Payzen payment state is %s" % payment.getSimulationState())\n
+            <value> <string>portal = context.getPortalObject()\n
+portal.portal_catalog.searchAndActivate(\n
+      portal_type="Regularisation Request", \n
+      simulation_state=["suspended"],\n
+      method_id=\'RegularisationRequest_invalidateIfPersonBalanceIsOk\',\n
+      activate_kw={\'tag\': tag}\n
+      )\n
+context.activate(after_tag=tag).getId()\n
 </string> </value>
         </item>
         <item>
             <key> <string>_params</string> </key>
-            <value> <string></string> </value>
+            <value> <string>tag, fixit, params</string> </value>
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>SupportRequest_updateStatus</string> </value>
+            <value> <string>Alarm_invalidateSuspendedRegularisationRequest</string> </value>
         </item>
       </dictionary>
     </pickle>

@@ -151,3 +151,69 @@ The slapos team
       person.Person_checkToCreateRegularisationRequest,
       REQUEST={})
 
+
+class TestSlapOSRegularisationRequest_invalidateIfPersonBalanceIsOk(
+                                                         testSlapOSMixin):
+
+  def beforeTearDown(self):
+    transaction.abort()
+
+  def createPerson(self):
+    new_id = self.generateNewId()
+    return self.portal.person_module.newContent(
+      portal_type='Person',
+      title="Person %s" % new_id,
+      reference="TESTPERS-%s" % new_id,
+      )
+
+  def createRegularisationRequest(self):
+    new_id = self.generateNewId()
+    return self.portal.regularisation_request_module.newContent(
+      portal_type='Regularisation Request',
+      title="Test Reg. Req.%s" % new_id,
+      reference="TESTREGREQ-%s" % new_id,
+      )
+
+  def test_invalidateIfPersonBalanceIsOk_REQUEST_disallowed(self):
+    ticket = self.createRegularisationRequest()
+    self.assertRaises(
+      Unauthorized,
+      ticket.RegularisationRequest_invalidateIfPersonBalanceIsOk,
+      REQUEST={})
+
+  @simulate('Entity_statBalance', '*args, **kwargs', 'return "0"')
+  def test_invalidateIfPersonBalanceIsOk_matching_case(self):
+    person = self.createPerson()
+    ticket = self.createRegularisationRequest()
+    ticket.edit(source_project_value=person)
+    ticket.validate()
+    ticket.suspend()
+    ticket.RegularisationRequest_invalidateIfPersonBalanceIsOk()
+    self.assertEquals(ticket.getSimulationState(), 'invalidated')
+
+  @simulate('Entity_statBalance', '*args, **kwargs', 'return "0"')
+  def test_invalidateIfPersonBalanceIsOk_not_suspended(self):
+    person = self.createPerson()
+    ticket = self.createRegularisationRequest()
+    ticket.edit(source_project_value=person)
+    ticket.validate()
+    ticket.RegularisationRequest_invalidateIfPersonBalanceIsOk()
+    self.assertEquals(ticket.getSimulationState(), 'validated')
+
+  @simulate('Entity_statBalance', '*args, **kwargs', 'return "0"')
+  def test_invalidateIfPersonBalanceIsOk_no_person(self):
+    ticket = self.createRegularisationRequest()
+    ticket.validate()
+    ticket.suspend()
+    ticket.RegularisationRequest_invalidateIfPersonBalanceIsOk()
+    self.assertEquals(ticket.getSimulationState(), 'suspended')
+
+  @simulate('Entity_statBalance', '*args, **kwargs', 'return "1"')
+  def test_invalidateIfPersonBalanceIsOk_wrong_balance(self):
+    person = self.createPerson()
+    ticket = self.createRegularisationRequest()
+    ticket.edit(source_project_value=person)
+    ticket.validate()
+    ticket.suspend()
+    ticket.RegularisationRequest_invalidateIfPersonBalanceIsOk()
+    self.assertEquals(ticket.getSimulationState(), 'suspended')

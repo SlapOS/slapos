@@ -50,24 +50,31 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string>portal = context.getPortalObject()\n
-portal.portal_catalog.searchAndActivate(\n
-      portal_type="Support Request", \n
-      simulation_state=["suspended"],\n
-      method_id=\'SupportRequest_updateStatus\',\n
-      default_source_project_portal_type="Payment Transaction",\n
-      activate_kw={\'tag\': tag}\n
-      )\n
-context.activate(after_tag=tag).getId()\n
-</string> </value>
+            <value> <string encoding="cdata"><![CDATA[
+
+from zExceptions import Unauthorized\n
+if REQUEST is not None:\n
+  raise Unauthorized\n
+\n
+state = context.getSimulationState()\n
+person = context.getSourceProjectValue(portal_type="Person")\n
+if (state != \'suspended\') or \\\n
+   (person is None) or \\\n
+   (int(person.Entity_statBalance()) > 0):\n
+  return\n
+else:\n
+  context.invalidate(comment="Automatically disabled as balance is %s" % person.Entity_statBalance())\n
+
+
+]]></string> </value>
         </item>
         <item>
             <key> <string>_params</string> </key>
-            <value> <string>tag, fixit, params</string> </value>
+            <value> <string>REQUEST=None</string> </value>
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>Alarm_updatePayzenSuspendedSupportRequest</string> </value>
+            <value> <string>RegularisationRequest_invalidateIfPersonBalanceIsOk</string> </value>
         </item>
       </dictionary>
     </pickle>
