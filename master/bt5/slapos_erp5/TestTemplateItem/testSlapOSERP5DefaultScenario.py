@@ -743,6 +743,10 @@ class TestSlapOSDefaultScenario(TestSlapOSSecurityMixin):
     self.stepCallSlaposManageBuildingCalculatingDeliveryAlarm()
     self.tic()
 
+    # trigger the CRM interaction
+    self.stepCallSlaposCrmCreateRegularisationRequestAlarm()
+    self.tic()
+
     # check final document state
     for person_reference in (owner_reference, friend_reference,
         public_reference):
