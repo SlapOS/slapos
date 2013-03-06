@@ -59,7 +59,6 @@ if (state != \'confirmed\') or (context.getPaymentMode() != \'payzen\') or (tran
   return\n
 else:\n
   # Request manual payment\n
-  context.PaymentTransaction_sendManualPayzenPaymentUrl()\n
   context.start(comment=\'Requested manual payment\')\n
 \n
 #   raise NotImplementedError\n

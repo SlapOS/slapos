@@ -59,15 +59,9 @@ if (state != \'started\') or (context.getPaymentMode() != \'payzen\'):\n
 else:\n
   transaction_date, transaction_id = context.PaymentTransaction_getPayzenId()\n
 \n
-  if transaction_id is None:\n
-    # inform administrators\n
-    context.PaymentTransaction_addPayzenTicket()\n
-  else:\n
+  if transaction_id is not None:\n
     # so the payment is registered in payzen\n
     context.PaymentTransaction_createPayzenEvent().updateStatus()\n
-    if context.getSimulationState() != \'stopped\':\n
-      # not paid yet and shall be, lets open ticket\n
-      context.PaymentTransaction_addPayzenTicket()\n
 </string> </value>
         </item>
         <item>

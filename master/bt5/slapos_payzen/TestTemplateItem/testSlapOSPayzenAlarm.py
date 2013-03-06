@@ -201,24 +201,6 @@ portal_workflow.doActionFor(context, action='edit_action', comment='Visited by P
     self.assertEquals(transaction.getSimulationState(), simulation_state)
     self.assertEquals(transaction.getModificationDate(), modification_date)
 
-  def _simulatePaymentTransaction_sendManualPayzenPaymentUrl(self):
-    script_name = 'PaymentTransaction_sendManualPayzenPaymentUrl'
-    if script_name in self.portal.portal_skins.custom.objectIds():
-      raise ValueError('Precondition failed: %s exists in custom' % script_name)
-    createZODBPythonScript(self.portal.portal_skins.custom,
-                        script_name,
-                        '*args, **kwargs',
-                        '# Script body\n'
-"""portal_workflow = context.portal_workflow
-portal_workflow.doActionFor(context, action='edit_action', comment='Visited by PaymentTransaction_sendManualPayzenPaymentUrl') """ )
-    transaction.commit()
-
-  def _dropPaymentTransaction_sendManualPayzenPaymentUrl(self):
-    script_name = 'PaymentTransaction_sendManualPayzenPaymentUrl'
-    if script_name in self.portal.portal_skins.custom.objectIds():
-      self.portal.portal_skins.custom.manage_delObjects(script_name)
-    transaction.commit()
-
   def test_expected_payment(self):
     new_id = self.generateNewId()
     transaction = self.portal.accounting_module.newContent(
@@ -229,17 +211,12 @@ portal_workflow.doActionFor(context, action='edit_action', comment='Visited by P
       )
     self.portal.portal_workflow._jumpToStateFor(transaction, 'confirmed')
 
-    self._simulatePaymentTransaction_sendManualPayzenPaymentUrl()
     self._simulatePaymentTransaction_getTotalPayablePrice()
     try:
       transaction.PaymentTransaction_startPayzenPayment()
     finally:
-      self._dropPaymentTransaction_sendManualPayzenPaymentUrl()
       self._dropPaymentTransaction_getTotalPayablePrice()
     self.assertEquals(transaction.getSimulationState(), 'started')
-    self.assertEqual(
-        'Visited by PaymentTransaction_sendManualPayzenPaymentUrl',
-        transaction.workflow_history['edit_workflow'][-1]['comment'])
 
 
 class TestSlapOSPayzenUpdateStartedPayment(testSlapOSMixin):
@@ -275,24 +252,6 @@ class TestSlapOSPayzenUpdateStartedPayment(testSlapOSMixin):
     self.assertEquals(transaction.getSimulationState(), simulation_state)
     self.assertEquals(transaction.getModificationDate(), modification_date)
 
-  def _simulatePaymentTransaction_addPayzenTicket(self):
-    script_name = 'PaymentTransaction_addPayzenTicket'
-    if script_name in self.portal.portal_skins.custom.objectIds():
-      raise ValueError('Precondition failed: %s exists in custom' % script_name)
-    createZODBPythonScript(self.portal.portal_skins.custom,
-                        script_name,
-                        '*args, **kwargs',
-                        '# Script body\n'
-"""portal_workflow = context.portal_workflow
-portal_workflow.doActionFor(context, action='edit_action', comment='Visited by PaymentTransaction_addPayzenTicket') """ )
-    transaction.commit()
-
-  def _dropPaymentTransaction_addPayzenTicket(self):
-    script_name = 'PaymentTransaction_addPayzenTicket'
-    if script_name in self.portal.portal_skins.custom.objectIds():
-      self.portal.portal_skins.custom.manage_delObjects(script_name)
-    transaction.commit()
-
   def test_not_registered_payment(self):
     new_id = self.generateNewId()
     transaction = self.portal.accounting_module.newContent(
@@ -303,15 +262,8 @@ portal_workflow.doActionFor(context, action='edit_action', comment='Visited by P
       )
     self.portal.portal_workflow._jumpToStateFor(transaction, 'started')
 
-    self._simulatePaymentTransaction_addPayzenTicket()
-    try:
-      transaction.PaymentTransaction_updateStatus()
-    finally:
-      self._dropPaymentTransaction_addPayzenTicket()
+    transaction.PaymentTransaction_updateStatus()
     self.assertEquals(transaction.getSimulationState(), 'started')
-    self.assertEqual(
-        'Visited by PaymentTransaction_addPayzenTicket',
-        transaction.workflow_history['edit_workflow'][-1]['comment'])
 
   def _simulatePaymentTransaction_createPaidPayzenEvent(self):
     script_name = 'PaymentTransaction_createPayzenEvent'
@@ -369,12 +321,10 @@ return Foo()
     # Manually generate mapping
     transaction.PaymentTransaction_generatePayzenId()
 
-    self._simulatePaymentTransaction_addPayzenTicket()
     self._simulatePaymentTransaction_createPaidPayzenEvent()
     try:
       transaction.PaymentTransaction_updateStatus()
     finally:
-      self._dropPaymentTransaction_addPayzenTicket()
       self._dropPaymentTransaction_createPayzenEvent()
     self.assertEqual(
         'Visited by PaymentTransaction_createPayzenEvent',
@@ -398,18 +348,13 @@ return Foo()
     # Manually generate mapping
     transaction.PaymentTransaction_generatePayzenId()
 
-    self._simulatePaymentTransaction_addPayzenTicket()
     self._simulatePaymentTransaction_createNotPaidPayzenEvent()
     try:
       transaction.PaymentTransaction_updateStatus()
     finally:
-      self._dropPaymentTransaction_addPayzenTicket()
       self._dropPaymentTransaction_createPayzenEvent()
     self.assertEqual(
         'Visited by PaymentTransaction_createPayzenEvent',
-        transaction.workflow_history['edit_workflow'][-2]['comment'])
-    self.assertEqual(
-        'Visited by PaymentTransaction_addPayzenTicket',
         transaction.workflow_history['edit_workflow'][-1]['comment'])
     self.assertEquals(transaction.getSimulationState(), 'started')
 
