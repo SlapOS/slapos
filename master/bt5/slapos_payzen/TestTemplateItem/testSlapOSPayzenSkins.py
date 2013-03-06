@@ -5,7 +5,6 @@ from Products.SlapOS.tests.testSlapOSMixin import \
 from DateTime import DateTime
 from zExceptions import Unauthorized
 from Products.ERP5Type.tests.utils import createZODBPythonScript
-import difflib
 
 class TestSlapOSCurrency_getIntegrationMapping(testSlapOSMixin):
 
