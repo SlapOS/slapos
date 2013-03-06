@@ -1,0 +1,145 @@
+<?xml version="1.0"?>
+<ZopeData>
+  <record id="1" aka="AAAAAAAAAAE=">
+    <pickle>
+      <global name="PythonScript" module="Products.PythonScripts.PythonScript"/>
+    </pickle>
+    <pickle>
+      <dictionary>
+        <item>
+            <key> <string>Script_magic</string> </key>
+            <value> <int>3</int> </value>
+        </item>
+        <item>
+            <key> <string>_bind_names</string> </key>
+            <value>
+              <object>
+                <klass>
+                  <global name="NameAssignments" module="Shared.DC.Scripts.Bindings"/>
+                </klass>
+                <tuple/>
+                <state>
+                  <dictionary>
+                    <item>
+                        <key> <string>_asgns</string> </key>
+                        <value>
+                          <dictionary>
+                            <item>
+                                <key> <string>name_container</string> </key>
+                                <value> <string>container</string> </value>
+                            </item>
+                            <item>
+                                <key> <string>name_context</string> </key>
+                                <value> <string>context</string> </value>
+                            </item>
+                            <item>
+                                <key> <string>name_m_self</string> </key>
+                                <value> <string>script</string> </value>
+                            </item>
+                            <item>
+                                <key> <string>name_subpath</string> </key>
+                                <value> <string>traverse_subpath</string> </value>
+                            </item>
+                          </dictionary>
+                        </value>
+                    </item>
+                  </dictionary>
+                </state>
+              </object>
+            </value>
+        </item>
+        <item>
+            <key> <string>_body</string> </key>
+            <value> <string encoding="cdata"><![CDATA[
+
+from zExceptions import Unauthorized\n
+if REQUEST is not None:\n
+  raise Unauthorized\n
+\n
+portal = context.getPortalObject()\n
+person = context\n
+ticket_portal_type = "Regularisation Request"\n
+\n
+# XXX TODO\n
+# # Prevent to create 2 tickets during the same transaction\n
+# transactional_variable = getTransactionalVariable()\n
+# if tag in transactional_variable:\n
+#   raise RuntimeError, \'ticket %s already exist\' % tag\n
+# else:\n
+#   transactional_variable[tag] = None\n
+\n
+ticket = portal.portal_catalog.getResultValue(\n
+  portal_type=ticket_portal_type,\n
+  default_source_project_uid=person.getUid(),\n
+  simulation_state=[\'suspended\', \'validated\'],\n
+)\n
+if (ticket is None) and int(person.Entity_statBalance()) > 0:\n
+\n
+  tag = "%s_addRegularisationRequest_inProgress" % person.getUid()\n
+  if (portal.portal_activities.countMessageWithTag(tag) > 0):\n
+    # The regularisation request is already under creation but can not be fetched from catalog\n
+    # As it is not possible to fetch informations, it is better to raise an error\n
+    return None, None\n
+\n
+  # Prevent concurrent transaction to create 2 tickets for the same person\n
+  person.serialize()\n
+\n
+  # Time to create the ticket\n
+  regularisation_request_template = portal.restrictedTraverse(\n
+    portal.portal_preferences.getPreferredRegularisationRequestTemplate())\n
+  ticket = regularisation_request_template.Base_createCloneDocument(batch_mode=1)\n
+  ticket.edit(\n
+    source_project_value=context,\n
+    title=\'Account regularisation expected for "%s"\' % context.getTitle(),\n
+    destination_decision_value=context,\n
+    start_date=DateTime(),\n
+    resource=portal.portal_preferences.getPreferredRegularisationRequestResource(),\n
+  )\n
+  ticket.validate(comment=\'New automatic ticket for %s\' % context.getTitle())\n
+  ticket.suspend(comment=\'New automatic ticket for %s\' % context.getTitle())\n
+\n
+  ticket.reindexObject(activate_kw={\'tag\': tag})\n
+\n
+  # Inform user that the ticket has been created.\n
+  mail_message = portal.event_module.newContent(\n
+    portal_type=\'Mail Message\',\n
+    start_date=DateTime(),\n
+    destination_value=person,\n
+    follow_up=ticket.getRelativeUrl(),\n
+    source_value=ticket.getSourceValue(),\n
+    title=\'Invoice payment requested\',\n
+    resource=ticket.getResource(),\n
+    text_content="""\n
+Dear user,\n
+\n
+A new invoice has been generated. \n
+You can access it in your invoice section at %s.\n
+\n
+Do not hesitate to visit the web forum (http://community.slapos.org/forum) in case of question.\n
+\n
+Regards,\n
+The slapos team\n
+""" % portal.portal_preferences.getPreferredSlaposWebSiteUrl())\n
+  portal.portal_workflow.doActionFor(mail_message, \'start_action\', send_mail=True, comment=\'Requested manual payment.\')\n
+  mail_message.stop(comment=\'Requested manual payment.\')\n
+  mail_message.deliver(comment=\'Requested manual payment.\')\n
+\n
+  return ticket, mail_message\n
+\n
+return ticket, None\n
+
+
+]]></string> </value>
+        </item>
+        <item>
+            <key> <string>_params</string> </key>
+            <value> <string>REQUEST=None</string> </value>
+        </item>
+        <item>
+            <key> <string>id</string> </key>
+            <value> <string>Person_checkToCreateRegularisationRequest</string> </value>
+        </item>
+      </dictionary>
+    </pickle>
+  </record>
+</ZopeData>
