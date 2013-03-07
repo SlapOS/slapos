@@ -47,6 +47,7 @@ setup(name=name,
           'zope.interface', # slap library implementes interfaces
           'zc.buildout',
         ] + additional_install_requires,
+      extra_requires={'docs': ('Sphinx', 'repoze.sphinx.autointerface'),},
       zip_safe=False, # proxy depends on Flask, which has issues with
                       # accessing templates
       entry_points={
