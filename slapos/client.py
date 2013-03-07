@@ -35,6 +35,7 @@ import os
 from slapos.slap import ResourceNotReady
 import slapos.slap.slap
 import sys
+import atexit
 
 class Parser(OptionParser):
   """
@@ -292,6 +293,27 @@ examples :
   >>> # Fetch instance informations on already launched instance
   >>> request(kvm, "myuniquekvm").getConnectionParameter("url")""" % sys.argv[0]
   config = Config(*Parser(usage=usage).check_args())
-
   local = init(config)
+
+  # try to enable readline with completion and history
+  try:
+    import readline
+  except ImportError:
+    pass
+  else:
+    try:
+      import rlcompleter
+      readline.set_completer(rlcompleter.Completer(local).complete)
+    except ImportError:
+      pass
+    readline.parse_and_bind("tab: complete")
+
+    historyPath = os.path.expanduser("~/.slapconsolehistory")
+    def save_history(historyPath=historyPath):
+      readline.write_history_file(historyPath)
+    if os.path.exists(historyPath):
+      readline.read_history_file(historyPath)
+    atexit.register(save_history)
+
   __import__("code").interact(banner="", local=local)
+
