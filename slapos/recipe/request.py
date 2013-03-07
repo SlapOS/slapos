@@ -119,6 +119,7 @@ class Recipe(object):
     self._raise_request_exception = None
     self._raise_request_exception_formatted = None
     self.instance = None
+    # Try to do the request and fetch parameter dict...
     try:
       self.instance = request(software_url, software_type,
           name, partition_parameter_kw=partition_parameter_kw,
@@ -126,24 +127,22 @@ class Recipe(object):
       return_parameter_dict = self._getReturnParameterDict(self.instance,
           return_parameters)
       if not slave:
-        # XXX: convention: should be instance-guid
-        options['instance_guid'] = self.instance.getId()
+        options['instance-guid'] = self.instance.getInstanceGuid()
+        # XXX: deprecated, to be removed
+        options['instance_guid'] = self.instance.getInstanceGuid()
     except (slapmodule.NotFoundError, slapmodule.ServerError, slapmodule.ResourceNotReady) as exc:
       self._raise_request_exception = exc
       self._raise_request_exception_formatted = traceback.format_exc()
+      return_parameter_dict = {}
 
+    # Then try to get all the parameters. In case of problem, put empty string.
     for param in return_parameters:
       options['connection-%s' % param] = ''
-      if not self.instance:
-        continue
       try:
-        value = return_parameter_dict[param]
+        options['connection-%s' % param] = return_parameter_dict[param]
       except KeyError:
-        value = ''
-      except (slapmodule.NotFoundError, slapmodule.ServerError, slapmodule.ResourceNotReady):
         if self.failed is None:
           self.failed = param
-      options['connection-%s' % param] = value
 
   def _filterForStorage(self, partition_parameter_kw):
     return partition_parameter_kw
