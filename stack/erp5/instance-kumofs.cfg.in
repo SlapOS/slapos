@@ -118,22 +118,25 @@ command = ${logrotate:wrapper}
 # Deploy zope promises scripts
 [promise-template]
 recipe = slapos.cookbook:check_port_listening
-path = ${basedirectory:promise}/kumofs
 hostname = ${kumofs-instance:ip}
 port = ${kumofs-instance:server-listen-port}
 
 [promise-kumofs-server]
 <= promise-template
+path = ${basedirectory:promise}/kumofs-server
 port = ${kumofs-instance:server-port}
 
 [promise-kumofs-server-listen]
 <= promise-template
+path = ${basedirectory:promise}/kumofs-server-listen
 port = ${kumofs-instance:server-listen-port}
 
 [promise-kumofs-gateway]
 <= promise-template
+path = ${basedirectory:promise}/kumofs-gateway
 port = ${kumofs-instance:gateway-port}
 
 [promise-kumofs-manager]
 <= promise-template
+path = ${basedirectory:promise}/kumofs-manager
 port = ${kumofs-instance:manager-port}
