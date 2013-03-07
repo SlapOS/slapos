@@ -35,6 +35,10 @@ class Recipe(GenericBaseRecipe):
     kumo_server_listen_port = int(self.options['server-listen-port'])
     kumo_gateway_port = int(self.options['gateway-port'])
     path_list = []
+    if 'data-path' in self.options:
+      kumo_server_storage = self.options.get('data-path')
+    else:
+      kumo_server_storage = os.path.join(self.options['data-directory'], "kumodb.tch")
     # XXX: kumo is not storing pid in file, unless it is not running as daemon
     #      but running daemons is incompatible with SlapOS, so there is currently
     #      no way to have Kumo's pid files to rotate logs and send signals to them
@@ -48,7 +52,7 @@ class Recipe(GenericBaseRecipe):
       kumo_server_binary=self.options['kumo-server-binary'],
       kumo_server_ip=ip,
       kumo_server_log=self.options['kumo-server-log'],
-      kumo_server_storage=os.path.join(self.options['data-directory'], "kumodb.tch"),
+      kumo_server_storage=kumo_server_storage,
       kumo_manager_port=kumo_manager_port,
       kumo_server_port=kumo_server_port,
       kumo_server_listen_port=kumo_server_listen_port,
