@@ -67,12 +67,12 @@ class Parser(OptionParser):
              default='eth0',
              type=str),
       Option("--master-url",
-             help="URL of vifib master",
+             help="URL of SlapOS master",
              default='https://slap.vifib.com',
              type=str),
       Option("--master-url-web",
-             help="URL of vifib master webservice to register certificates",
-             default='https://www.vifib.net',
+             help="URL of SlapOS Master webservice to register certificates",
+             default='https://www.slapos.org',
              type=str),
       Option("--partition-number",
              help="Number of partition on computer",
@@ -87,11 +87,11 @@ class Parser(OptionParser):
              default='',
              type=str),
       Option("--login",
-             help="User login on Vifib master webservice",
+             help="User login on SlapOS Master webservice",
              default=None,
              type=str),
       Option("--password",
-             help="User password on Vifib master webservice",
+             help="User password on SlapOs Master webservice",
              default=None,
              type=str),
       Option("-t", "--create-tap",
@@ -124,14 +124,14 @@ Partition and attach it to primary interface. Requires primary interface to be \
 
 def get_login():
   """Get user id and encode it for basic identification"""
-  login = raw_input("Vifib Login: ")
+  login = raw_input("SlapOS Master Login: ")
   password = getpass()
   identification = base64.encodestring('%s:%s' % (login, password))[:-1]
   return identification
 
 
 def check_login(identification, master_url_web):
-  """Check if logged correctly on vifib"""
+  """Check if logged correctly on SlapOS Master"""
   request = urllib2.Request(master_url_web)
   # Prepare header for basic authentification
   authheader =  "Basic %s" % identification
@@ -143,7 +143,7 @@ def check_login(identification, master_url_web):
   
 
 def get_certificates(identification, node_name, master_url_web):
-  """Download certificates on vifib master"""
+  """Download certificates from SlapOS Master"""
   register_server_url = '/'.join([master_url_web, ("add-a-server/WebSection_registerNewComputer?dialog_id=WebSection_viewServerInformationDialog&dialog_method=WebSection_registerNewComputer&title={}&object_path=/erp5/web_site_module/hosting/add-a-server&update_method=&cancel_url=https%3A//www.vifib.net/add-a-server/WebSection_viewServerInformationDialog&Base_callDialogMethod=&field_your_title=Essai1&dialog_category=None&form_id=view".format(node_name))])
   request = urllib2.Request(register_server_url)
   # Prepare header for basic authentification
@@ -155,7 +155,7 @@ def get_certificates(identification, node_name, master_url_web):
 
 
 def parse_certificates(source):
-  """Parse html gotten from vifib to make certificate and key files"""
+  """Parse html gotten from SlapOS Master to make certificate and key files"""
   c_start = source.find("Certificate:")
   c_end = source.find("</textarea>", c_start)
   k_start = source.find("-----BEGIN PRIVATE KEY-----")
@@ -320,11 +320,11 @@ class Config:
     self.logger.debug("Ipv6 Interface: %s" %self.ipv6_interface)
 
 def register(config):
-  """Register new computer on VIFIB and generate slapos.cfg"""
+  """Register new computer on SlapOS Master and generate slapos.cfg"""
   # Get User identification and check them
   if config.login == None :
     while True :
-      print ("Please enter your Vifib login")
+      print ("Please enter your SlapOS Master login")
       user_id = get_login()
       if check_login(user_id, config.master_url_web):
         break
