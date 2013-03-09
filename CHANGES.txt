@@ -1,7 +1,14 @@
 Changes
 =======
 
-0.35.1 (2012-02-18)
+1.0.0 (2013-03-09)
+------------------
+
+Fixes:
+
+ * Register: Replace all reference to vifib by SlapOS Master. [Cedric de Saint Martin]
+
+0.35.1 (2013-02-18)
 -------------------
 
 New features:
@@ -15,7 +22,7 @@ Fixes:
  * Improve message shown to user when requesting. [Cedric de Saint Martin]
  * Raise NotReady when _requested_state doesn't exist when trying to fetch it from getter. [Cedric de Saint Martin]
 
-0.35 (2012-02-08)
+0.35 (2013-02-08)
 -----------------
 
  * slapos: display version number with help. [Marco Mariani]
