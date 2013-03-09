@@ -1,5 +1,0 @@
-0.21
-
- - have only one file with current version
- - move more documentation to sphinx (for tools)
- - cleanup pypi page formatting
