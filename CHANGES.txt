@@ -4,6 +4,10 @@ Changes
 1.0.0 (2013-03-09)
 ------------------
 
+New features:
+
+ * slapconsole: Use readline for completion and history. [Jerome Perrin]
+
 Fixes:
 
  * Register: Replace all reference to vifib by SlapOS Master. [Cedric de Saint Martin]
