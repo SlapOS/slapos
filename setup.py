@@ -188,6 +188,7 @@ setup(name=name,
           'xvfb = slapos.recipe.xvfb:Recipe',
           'xwiki = slapos.recipe.xwiki:Recipe',
           'zabbixagent = slapos.recipe.zabbixagent:Recipe',
+          'zimbra.kvm = slapos.recipe.zimbra_kvm:Recipe',
           'zeo = slapos.recipe.zeo:Recipe',
 
         ],
