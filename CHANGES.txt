@@ -75,8 +75,8 @@ Fixes:
      - slapos node start/stop/restart/tail
      - slapos node supervisord/supervisorctl
      - slapos node supply
-   and add basic usage.
-   [Cedric de Saint Martin]
+
+   and add basic usage. [Cedric de Saint Martin]
  * Add support for "SLAPOS_CONFIGURATION" and SLAPOS_CLIENT_CONFIGURATION
    environment variables. (commit c72a53b1) [Cédric de Saint Martin]
  * --only_sr also accepts plain text URIs. [Marco Mariani]
