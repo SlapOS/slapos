@@ -2,3 +2,4 @@ service_module/slapos_crm_acknowledgement
 service_module/slapos_crm_complaint
 service_module/slapos_crm_information
 service_module/slapos_crm_spam
+service_module/slapos_crm_invoice_cancellation

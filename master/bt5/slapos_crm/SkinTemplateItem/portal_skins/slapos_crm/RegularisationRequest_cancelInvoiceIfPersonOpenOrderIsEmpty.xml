@@ -1,0 +1,128 @@
+<?xml version="1.0"?>
+<ZopeData>
+  <record id="1" aka="AAAAAAAAAAE=">
+    <pickle>
+      <global name="PythonScript" module="Products.PythonScripts.PythonScript"/>
+    </pickle>
+    <pickle>
+      <dictionary>
+        <item>
+            <key> <string>Script_magic</string> </key>
+            <value> <int>3</int> </value>
+        </item>
+        <item>
+            <key> <string>_bind_names</string> </key>
+            <value>
+              <object>
+                <klass>
+                  <global name="NameAssignments" module="Shared.DC.Scripts.Bindings"/>
+                </klass>
+                <tuple/>
+                <state>
+                  <dictionary>
+                    <item>
+                        <key> <string>_asgns</string> </key>
+                        <value>
+                          <dictionary>
+                            <item>
+                                <key> <string>name_container</string> </key>
+                                <value> <string>container</string> </value>
+                            </item>
+                            <item>
+                                <key> <string>name_context</string> </key>
+                                <value> <string>context</string> </value>
+                            </item>
+                            <item>
+                                <key> <string>name_m_self</string> </key>
+                                <value> <string>script</string> </value>
+                            </item>
+                            <item>
+                                <key> <string>name_subpath</string> </key>
+                                <value> <string>traverse_subpath</string> </value>
+                            </item>
+                          </dictionary>
+                        </value>
+                    </item>
+                  </dictionary>
+                </state>
+              </object>
+            </value>
+        </item>
+        <item>
+            <key> <string>_body</string> </key>
+            <value> <string>from zExceptions import Unauthorized\n
+if REQUEST is not None:\n
+  raise Unauthorized\n
+\n
+mail_message = None\n
+invoice_list = []\n
+\n
+state = context.getSimulationState()\n
+person = context.getSourceProjectValue(portal_type="Person")\n
+if (state != \'suspended\') or \\\n
+   (person is None):\n
+  return mail_message, invoice_list\n
+else:\n
+  portal = context.getPortalObject()\n
+\n
+  open_order = portal.portal_catalog.getResultValue(\n
+    portal_type="Open Sale Order",\n
+    validation_state="validated",\n
+    default_destination_decision_uid=person.getUid())\n
+\n
+  if (open_order is None) or \\\n
+   (open_order.getValidationState() != "validated") or \\\n
+   (len(open_order.contentValues(portal_type="Open Sale Order Line")) != 0):\n
+    return mail_message, invoice_list\n
+  else:\n
+    assert open_order.getDestinationDecisionUid() == person.getUid()\n
+    ticket = context\n
+\n
+    for payment in portal.portal_catalog(\n
+          portal_type="Payment Transaction", \n
+          payment_mode_uid=portal.portal_categories.payment_mode.payzen.getUid(),\n
+          default_destination_section_uid=person.getUid(),\n
+          simulation_state=["started"],\n
+          ):\n
+      \n
+      if payment.PaymentTransaction_getPayzenId()[1] is None:\n
+        invoice = payment.getCausalityValue(portal_type="Sale Invoice Transaction")\n
+        assert payment.getDestinationSectionUid() == person.getUid()\n
+        invoice.SaleInvoiceTransaction_createReversalPayzenTransaction()\n
+        invoice_list.append(invoice.getRelativeUrl())\n
+\n
+    # XXX Hardcoded\n
+    cancel_service = portal.service_module.slapos_crm_invoice_cancellation\n
+    mail_message = ticket.RegularisationRequest_checkToSendUniqEvent(\n
+      cancel_service.getRelativeUrl(),\n
+      \'Cancellation of your bill\',\n
+      """Hello,\n
+\n
+Thank you to have used our decentralized Cloud Computing service slapos.org.\n
+\n
+We noticed that all your instances have been removed upon receiving your bill, so we conclude that the instances that you requested were not being used but probably ordered then forgotten.\n
+\n
+To not to charge our first users a "non use" of our service, we have choosen to cancel your bill. That\'s mean: *You have nothing to pay us.*\n
+\n
+We hope to see you using our services in the future.\n
+\n
+Regards,\n
+The slapos team\n
+""",\n
+      \'Cancelled payment.\')\n
+\n
+return mail_message, invoice_list\n
+</string> </value>
+        </item>
+        <item>
+            <key> <string>_params</string> </key>
+            <value> <string>REQUEST=None</string> </value>
+        </item>
+        <item>
+            <key> <string>id</string> </key>
+            <value> <string>RegularisationRequest_cancelInvoiceIfPersonOpenOrderIsEmpty</string> </value>
+        </item>
+      </dictionary>
+    </pickle>
+  </record>
+</ZopeData>

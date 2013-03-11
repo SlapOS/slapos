@@ -57,8 +57,10 @@ if REQUEST is not None:\n
   raise Unauthorized\n
 \n
 portal = context.getPortalObject()\n
-person = context\n
-ticket_portal_type = "Regularisation Request"\n
+ticket = context\n
+service = portal.restrictedTraverse(service_relative_url)\n
+assert service.getPortalType() == "Service"\n
+event_portal_type = "Mail Message"\n
 \n
 # XXX TODO\n
 # # Prevent to create 2 tickets during the same transaction\n
@@ -68,68 +70,49 @@ ticket_portal_type = "Regularisation Request"\n
 # else:\n
 #   transactional_variable[tag] = None\n
 \n
-ticket = portal.portal_catalog.getResultValue(\n
-  portal_type=ticket_portal_type,\n
-  default_source_project_uid=person.getUid(),\n
-  simulation_state=[\'suspended\', \'validated\'],\n
+event = portal.portal_catalog.getResultValue(\n
+  portal_type=event_portal_type,\n
+  default_resource_uid=service.getUid(),\n
+  default_follow_up_uid=ticket.getUid(),\n
 )\n
-if (ticket is None) and int(person.Entity_statBalance()) > 0:\n
 \n
-  tag = "%s_addRegularisationRequest_inProgress" % person.getUid()\n
+if (event is None) and (ticket.getSimulationState() == \'suspended\'):\n
+  tag = "%s_addUniqEvent_%s" % (ticket.getUid(), service.getUid())\n
   if (portal.portal_activities.countMessageWithTag(tag) > 0):\n
-    # The regularisation request is already under creation but can not be fetched from catalog\n
-    # As it is not possible to fetch informations, it is better to raise an error\n
-    return None, None\n
+    # The event is already under creation but can not be fetched from catalog\n
+    return None\n
 \n
-  # Prevent concurrent transaction to create 2 tickets for the same person\n
-  person.serialize()\n
+  # Prevent concurrent transaction to create 2 events for the same ticket\n
+  ticket.edit(resource=service_relative_url)\n
 \n
-  # Time to create the ticket\n
-  regularisation_request_template = portal.restrictedTraverse(\n
-    portal.portal_preferences.getPreferredRegularisationRequestTemplate())\n
-  ticket = regularisation_request_template.Base_createCloneDocument(batch_mode=1)\n
-  ticket.edit(\n
-    source_project_value=context,\n
-    title=\'Account regularisation expected for "%s"\' % context.getTitle(),\n
-    destination_decision_value=context,\n
-    destination_value=context,\n
+  event = portal.event_module.newContent(\n
+    portal_type=event_portal_type,\n
     start_date=DateTime(),\n
-    resource=portal.portal_preferences.getPreferredRegularisationRequestResource(),\n
+    destination=ticket.getDestination(),\n
+    follow_up=ticket.getRelativeUrl(),\n
+    source=context.getSource(),\n
+    title=title,\n
+    resource=service_relative_url,\n
+    text_content=text_content,\n
   )\n
-  ticket.validate(comment=\'New automatic ticket for %s\' % context.getTitle())\n
-  ticket.suspend(comment=\'New automatic ticket for %s\' % context.getTitle())\n
 \n
-  ticket.reindexObject(activate_kw={\'tag\': tag})\n
+  portal.portal_workflow.doActionFor(event, \'start_action\', send_mail=True, comment=comment)\n
+  event.stop(comment=comment)\n
+  event.deliver(comment=comment)\n
+  event.reindexObject(activate_kw={\'tag\': tag})\n
 \n
-  mail_message = ticket.RegularisationRequest_checkToSendUniqEvent(\n
-    portal.portal_preferences.getPreferredRegularisationRequestResource(),\n
-    \'Invoice payment requested\',\n
-"""Dear user,\n
-\n
-A new invoice has been generated. \n
-You can access it in your invoice section at %s.\n
-\n
-Do not hesitate to visit the web forum (http://community.slapos.org/forum) in case of question.\n
-\n
-Regards,\n
-The slapos team\n
-""" % portal.portal_preferences.getPreferredSlaposWebSiteUrl(),\n
-  \'Requested manual payment.\')\n
-\n
-  return ticket, mail_message\n
-\n
-return ticket, None\n
+return event\n
 
 
 ]]></string> </value>
         </item>
         <item>
             <key> <string>_params</string> </key>
-            <value> <string>REQUEST=None</string> </value>
+            <value> <string>service_relative_url, title, text_content, comment, REQUEST=None</string> </value>
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>Person_checkToCreateRegularisationRequest</string> </value>
+            <value> <string>RegularisationRequest_checkToSendUniqEvent</string> </value>
         </item>
       </dictionary>
     </pickle>
