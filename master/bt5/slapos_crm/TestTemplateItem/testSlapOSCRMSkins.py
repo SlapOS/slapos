@@ -55,6 +55,8 @@ class TestSlapOSPerson_checkToCreateRegularisationRequest(testSlapOSMixin):
     self.assertEquals(ticket.getPortalType(), 'Regularisation Request')
     self.assertEquals(ticket.getSimulationState(), 'suspended')
     self.assertEquals(ticket.getSourceProject(), person.getRelativeUrl())
+    self.assertEquals(ticket.getResource(),
+                      'service_module/slapos_crm_acknowledgement')
     self.assertEquals(ticket.getTitle(),
            'Account regularisation expected for "%s"' % person.getTitle())
     self.assertEquals(ticket.getDestination(),
@@ -62,6 +64,8 @@ class TestSlapOSPerson_checkToCreateRegularisationRequest(testSlapOSMixin):
     self.assertEquals(ticket.getDestinationDecision(),
                       person.getRelativeUrl())
     self.assertEquals(event.getPortalType(), 'Mail Message')
+    self.assertEquals(event.getResource(),
+                      'service_module/slapos_crm_acknowledgement')
     self.assertTrue(event.getStartDate() >= before_date)
     self.assertTrue(event.getStopDate() <= after_date)
     self.assertEquals(event.getTitle(), "Invoice payment requested")
