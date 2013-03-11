@@ -605,3 +605,405 @@ The slapos team
 
     self.assertEqual(event, "fooevent")
     self.assertEqual(invoice_list, [])
+
+class TestSlapOSRegularisationRequest_checkToTriggerNextEscalationStep(
+                                                          testSlapOSMixin):
+
+  def beforeTearDown(self):
+    transaction.abort()
+
+  def createRegularisationRequest(self):
+    new_id = self.generateNewId()
+    return self.portal.regularisation_request_module.newContent(
+      portal_type='Regularisation Request',
+      title="Test Reg. Req.%s" % new_id,
+      reference="TESTREGREQ-%s" % new_id,
+      resource='foo/bar',
+      )
+
+  def test_checkToTriggerNextEscalationStep_service_required(self):
+    ticket = self.createRegularisationRequest()
+    self.assertRaises(
+      AssertionError,
+      ticket.RegularisationRequest_checkToTriggerNextEscalationStep,
+      0, ticket.getRelativeUrl(), '', '', '', ''
+      )
+
+  @simulate('RegularisationRequest_checkToSendUniqEvent', 
+            'service_relative_url, title, text_content, comment, REQUEST=None',
+  'context.portal_workflow.doActionFor(' \
+  'context, action="edit_action", ' \
+  'comment="Visited by RegularisationRequest_checkToSendUniqEvent ' \
+  '%s %s %s %s" % (service_relative_url, title, text_content, comment))\n' \
+  'return "fooevent"')
+  def test_checkToTriggerNextEscalationStep_matching_event(self):
+    ticket = self.createRegularisationRequest()
+    ticket.edit(resource='service_module/slapos_crm_acknowledgement')
+    ticket.validate()
+    ticket.suspend()
+    event = self.portal.event_module.newContent(
+      portal_type="Mail Message",
+      follow_up=ticket.getRelativeUrl(),
+      resource='service_module/slapos_crm_acknowledgement',
+      start_date=DateTime() - 8,
+      )
+    self.portal.portal_workflow._jumpToStateFor(event, 'delivered')
+    self.tic()
+
+    event2 = ticket.RegularisationRequest_checkToTriggerNextEscalationStep(
+        7, 'service_module/slapos_crm_acknowledgement',
+        'service_module/slapos_crm_spam', 
+        'foo2 title', 'foo2 content', 'foo2 comment')
+
+    self.assertEquals(event2, event.getRelativeUrl())
+    self.assertEqual(
+      'Visited by RegularisationRequest_checkToSendUniqEvent %s %s %s %s' % \
+      ('service_module/slapos_crm_spam', 'foo2 title', 'foo2 content',
+       'foo2 comment'),
+      ticket.workflow_history['edit_workflow'][-1]['comment'])
+
+  @simulate('RegularisationRequest_checkToSendUniqEvent', 
+            '*args, **kwargs',
+            'raise NotImplementedError, "Should not have been called"')
+  def test_checkToTriggerNextEscalationStep_recent_event(self):
+    ticket = self.createRegularisationRequest()
+    ticket.edit(resource='service_module/slapos_crm_acknowledgement')
+    ticket.validate()
+    ticket.suspend()
+    event = self.portal.event_module.newContent(
+      portal_type="Mail Message",
+      follow_up=ticket.getRelativeUrl(),
+      resource='service_module/slapos_crm_acknowledgement',
+      start_date=DateTime() - 6,
+      )
+    self.portal.portal_workflow._jumpToStateFor(event, 'delivered')
+    self.tic()
+
+    event2 = ticket.RegularisationRequest_checkToTriggerNextEscalationStep(
+        7, 'service_module/slapos_crm_acknowledgement',
+        'service_module/slapos_crm_spam', 
+        'foo2 title', 'foo2 content', 'foo2 comment')
+
+    self.assertEquals(event2, None)
+
+  @simulate('RegularisationRequest_checkToSendUniqEvent', 
+            '*args, **kwargs',
+            'raise NotImplementedError, "Should not have been called"')
+  def test_checkToTriggerNextEscalationStep_other_ticket_event(self):
+    ticket = self.createRegularisationRequest()
+    ticket.edit(resource='service_module/slapos_crm_acknowledgement')
+    ticket.validate()
+    ticket.suspend()
+    event = self.portal.event_module.newContent(
+      portal_type="Mail Message",
+      resource='service_module/slapos_crm_acknowledgement',
+      start_date=DateTime() - 2,
+      )
+    self.portal.portal_workflow._jumpToStateFor(event, 'delivered')
+    self.tic()
+
+    event2 = ticket.RegularisationRequest_checkToTriggerNextEscalationStep(
+        1, 'service_module/slapos_crm_acknowledgement',
+        'service_module/slapos_crm_spam', 
+        'foo2 title', 'foo2 content', 'foo2 comment')
+
+    self.assertEquals(event2, None)
+
+  @simulate('RegularisationRequest_checkToSendUniqEvent', 
+            '*args, **kwargs',
+            'raise NotImplementedError, "Should not have been called"')
+  def test_checkToTriggerNextEscalationStep_other_resource_event(self):
+    ticket = self.createRegularisationRequest()
+    ticket.edit(resource='service_module/slapos_crm_acknowledgement')
+    ticket.validate()
+    ticket.suspend()
+    event = self.portal.event_module.newContent(
+      portal_type="Mail Message",
+      follow_up=ticket.getRelativeUrl(),
+      resource='service_module/slapos_crm_spam',
+      start_date=DateTime() - 2,
+      )
+    self.portal.portal_workflow._jumpToStateFor(event, 'delivered')
+    self.tic()
+
+    event2 = ticket.RegularisationRequest_checkToTriggerNextEscalationStep(
+        1, 'service_module/slapos_crm_acknowledgement',
+        'service_module/slapos_crm_spam', 
+        'foo2 title', 'foo2 content', 'foo2 comment')
+
+    self.assertEquals(event2, None)
+
+  @simulate('RegularisationRequest_checkToSendUniqEvent', 
+            '*args, **kwargs',
+            'raise NotImplementedError, "Should not have been called"')
+  def test_checkToTriggerNextEscalationStep_no_current_event(self):
+    ticket = self.createRegularisationRequest()
+    ticket.edit(resource='service_module/slapos_crm_acknowledgement')
+    ticket.validate()
+    ticket.suspend()
+    self.tic()
+
+    event2 = ticket.RegularisationRequest_checkToTriggerNextEscalationStep(
+        1, 'service_module/slapos_crm_acknowledgement',
+        'service_module/slapos_crm_spam', 
+        'foo2 title', 'foo2 content', 'foo2 comment')
+
+    self.assertEquals(event2, None)
+
+  @simulate('RegularisationRequest_checkToSendUniqEvent', 
+            '*args, **kwargs',
+            'raise NotImplementedError, "Should not have been called"')
+  def test_checkToTriggerNextEscalationStep_no_ticket_resource(self):
+    ticket = self.createRegularisationRequest()
+    ticket.validate()
+    ticket.suspend()
+    event = self.portal.event_module.newContent(
+      portal_type="Mail Message",
+      follow_up=ticket.getRelativeUrl(),
+      resource='service_module/slapos_crm_acknowledgement',
+      start_date=DateTime() - 2,
+      )
+    self.portal.portal_workflow._jumpToStateFor(event, 'delivered')
+    self.tic()
+
+    event2 = ticket.RegularisationRequest_checkToTriggerNextEscalationStep(
+        1, 'service_module/slapos_crm_acknowledgement',
+        'service_module/slapos_crm_spam', 
+        'foo2 title', 'foo2 content', 'foo2 comment')
+
+    self.assertEquals(event2, None)
+
+  @simulate('RegularisationRequest_checkToSendUniqEvent', 
+            '*args, **kwargs',
+            'raise NotImplementedError, "Should not have been called"')
+  def test_checkToTriggerNextEscalationStep_not_suspended(self):
+    ticket = self.createRegularisationRequest()
+    ticket.edit(resource='service_module/slapos_crm_acknowledgement')
+    ticket.validate()
+    event = self.portal.event_module.newContent(
+      portal_type="Mail Message",
+      follow_up=ticket.getRelativeUrl(),
+      resource='service_module/slapos_crm_acknowledgement',
+      start_date=DateTime() - 2,
+      )
+    self.portal.portal_workflow._jumpToStateFor(event, 'delivered')
+    self.tic()
+
+    event2 = ticket.RegularisationRequest_checkToTriggerNextEscalationStep(
+        1, 'service_module/slapos_crm_acknowledgement',
+        'service_module/slapos_crm_spam', 
+        'foo2 title', 'foo2 content', 'foo2 comment')
+
+    self.assertEquals(event2, None)
+
+  def test_checkToTriggerNextEscalationStep_REQUEST_disallowed(self):
+    ticket = self.createRegularisationRequest()
+    self.assertRaises(
+      Unauthorized,
+      ticket.RegularisationRequest_checkToTriggerNextEscalationStep,
+      '', '', '', '', '', '',
+      REQUEST={})
+
+class TestSlapOSRegularisationRequest_triggerAcknowledgmentEscalation(
+                                                          testSlapOSMixin):
+
+  def beforeTearDown(self):
+    transaction.abort()
+
+  def createRegularisationRequest(self):
+    new_id = self.generateNewId()
+    return self.portal.regularisation_request_module.newContent(
+      portal_type='Regularisation Request',
+      title="Test Reg. Req.%s" % new_id,
+      reference="TESTREGREQ-%s" % new_id,
+      resource='foo/bar',
+      )
+
+  def test_triggerAcknowledgmentEscalation_REQUEST_disallowed(self):
+    ticket = self.createRegularisationRequest()
+    self.assertRaises(
+      Unauthorized,
+      ticket.RegularisationRequest_triggerAcknowledgmentEscalation,
+      REQUEST={})
+
+  @simulate('RegularisationRequest_checkToTriggerNextEscalationStep', 
+            'day, current, next, title, text_content, comment, REQUEST=None',
+  'context.portal_workflow.doActionFor(' \
+  'context, action="edit_action", ' \
+  'comment="Visited by RegularisationRequest_checkToTriggerNextEscalationStep ' \
+  '%s %s %s %s %s %s" % (day, current, next, title, text_content, comment))')
+  def test_checkToTriggerNextEscalationStep_matching_event(self):
+    ticket = self.createRegularisationRequest()
+    ticket.RegularisationRequest_triggerAcknowledgmentEscalation()
+    self.assertEqual(
+      'Visited by RegularisationRequest_checkToTriggerNextEscalationStep ' \
+      '%s %s %s %s %s %s' % \
+      (38,
+       'service_module/slapos_crm_acknowledgement',
+       'service_module/slapos_crm_stop_reminder',
+       'Reminder: invoice payment requested',
+"""Dear user,
+
+We would like to remind you an unpaid invoice you have on %s.
+If no payment is done during the coming days, we will stop all your current instances to free some hardware resources.
+
+Do not hesitate to visit the web forum (http://community.slapos.org/forum) in case of question.
+
+Regards,
+The slapos team
+""" % self.portal.portal_preferences.getPreferredSlaposWebSiteUrl(),
+       'Stopping reminder.'),
+      ticket.workflow_history['edit_workflow'][-1]['comment'])
+
+class TestSlapOSRegularisationRequest_triggerStopReminderEscalation(
+                                                          testSlapOSMixin):
+
+  def beforeTearDown(self):
+    transaction.abort()
+
+  def createRegularisationRequest(self):
+    new_id = self.generateNewId()
+    return self.portal.regularisation_request_module.newContent(
+      portal_type='Regularisation Request',
+      title="Test Reg. Req.%s" % new_id,
+      reference="TESTREGREQ-%s" % new_id,
+      resource='foo/bar',
+      )
+
+  def test_triggerStopReminderEscalation_REQUEST_disallowed(self):
+    ticket = self.createRegularisationRequest()
+    self.assertRaises(
+      Unauthorized,
+      ticket.RegularisationRequest_triggerStopReminderEscalation,
+      REQUEST={})
+
+  @simulate('RegularisationRequest_checkToTriggerNextEscalationStep', 
+            'day, current, next, title, text_content, comment, REQUEST=None',
+  'context.portal_workflow.doActionFor(' \
+  'context, action="edit_action", ' \
+  'comment="Visited by RegularisationRequest_checkToTriggerNextEscalationStep ' \
+  '%s %s %s %s %s %s" % (day, current, next, title, text_content, comment))')
+  def test_checkToTriggerNextEscalationStep_matching_event(self):
+    ticket = self.createRegularisationRequest()
+    ticket.RegularisationRequest_triggerStopReminderEscalation()
+    self.assertEqual(
+      'Visited by RegularisationRequest_checkToTriggerNextEscalationStep ' \
+      '%s %s %s %s %s %s' % \
+      (7,
+       'service_module/slapos_crm_stop_reminder',
+       'service_module/slapos_crm_stop_acknowledgement',
+       'Acknowledgment: instances stopped',
+"""Dear user,
+
+Despite our last reminder, you still have an unpaid invoice on %s.
+We will now stop all your current instances to free some hardware resources.
+
+Do not hesitate to visit the web forum (http://community.slapos.org/forum) in case of question.
+
+Regards,
+The slapos team
+""" % self.portal.portal_preferences.getPreferredSlaposWebSiteUrl(),
+       'Stopping acknowledgment.'),
+      ticket.workflow_history['edit_workflow'][-1]['comment'])
+
+class TestSlapOSRegularisationRequest_triggerStopAcknowledgmentEscalation(
+                                                          testSlapOSMixin):
+
+  def beforeTearDown(self):
+    transaction.abort()
+
+  def createRegularisationRequest(self):
+    new_id = self.generateNewId()
+    return self.portal.regularisation_request_module.newContent(
+      portal_type='Regularisation Request',
+      title="Test Reg. Req.%s" % new_id,
+      reference="TESTREGREQ-%s" % new_id,
+      resource='foo/bar',
+      )
+
+  def test_triggerStopAcknowledgmentEscalation_REQUEST_disallowed(self):
+    ticket = self.createRegularisationRequest()
+    self.assertRaises(
+      Unauthorized,
+      ticket.RegularisationRequest_triggerStopAcknowledgmentEscalation,
+      REQUEST={})
+
+  @simulate('RegularisationRequest_checkToTriggerNextEscalationStep', 
+            'day, current, next, title, text_content, comment, REQUEST=None',
+  'context.portal_workflow.doActionFor(' \
+  'context, action="edit_action", ' \
+  'comment="Visited by RegularisationRequest_checkToTriggerNextEscalationStep ' \
+  '%s %s %s %s %s %s" % (day, current, next, title, text_content, comment))')
+  def test_checkToTriggerNextEscalationStep_matching_event(self):
+    ticket = self.createRegularisationRequest()
+    ticket.RegularisationRequest_triggerStopAcknowledgmentEscalation()
+    self.assertEqual(
+      'Visited by RegularisationRequest_checkToTriggerNextEscalationStep ' \
+      '%s %s %s %s %s %s' % \
+      (13,
+       'service_module/slapos_crm_stop_acknowledgement',
+       'service_module/slapos_crm_delete_reminder',
+       'Last reminder: invoice payment requested',
+"""Dear user,
+
+We would like to remind you the unpaid invoice you have on %s.
+If no payment is done during the coming days, we will delete all your instances.
+
+Do not hesitate to visit the web forum (http://community.slapos.org/forum) in case of question.
+
+Regards,
+The slapos team
+""" % self.portal.portal_preferences.getPreferredSlaposWebSiteUrl(),
+       'Deleting reminder.'),
+      ticket.workflow_history['edit_workflow'][-1]['comment'])
+
+class TestSlapOSRegularisationRequest_triggerDeleteReminderEscalation(
+                                                          testSlapOSMixin):
+
+  def beforeTearDown(self):
+    transaction.abort()
+
+  def createRegularisationRequest(self):
+    new_id = self.generateNewId()
+    return self.portal.regularisation_request_module.newContent(
+      portal_type='Regularisation Request',
+      title="Test Reg. Req.%s" % new_id,
+      reference="TESTREGREQ-%s" % new_id,
+      resource='foo/bar',
+      )
+
+  def test_triggerDeleteReminderEscalation_REQUEST_disallowed(self):
+    ticket = self.createRegularisationRequest()
+    self.assertRaises(
+      Unauthorized,
+      ticket.RegularisationRequest_triggerDeleteReminderEscalation,
+      REQUEST={})
+
+  @simulate('RegularisationRequest_checkToTriggerNextEscalationStep', 
+            'day, current, next, title, text_content, comment, REQUEST=None',
+  'context.portal_workflow.doActionFor(' \
+  'context, action="edit_action", ' \
+  'comment="Visited by RegularisationRequest_checkToTriggerNextEscalationStep ' \
+  '%s %s %s %s %s %s" % (day, current, next, title, text_content, comment))')
+  def test_checkToTriggerNextEscalationStep_matching_event(self):
+    ticket = self.createRegularisationRequest()
+    ticket.RegularisationRequest_triggerDeleteReminderEscalation()
+    self.assertEqual(
+      'Visited by RegularisationRequest_checkToTriggerNextEscalationStep ' \
+      '%s %s %s %s %s %s' % \
+      (2,
+       'service_module/slapos_crm_delete_reminder',
+       'service_module/slapos_crm_delete_acknowledgement',
+       'Acknowledgment: instances deleted',
+"""Dear user,
+
+Despite our last reminder, you still have an unpaid invoice on %s.
+We will now delete all your instances.
+
+Do not hesitate to visit the web forum (http://community.slapos.org/forum) in case of question.
+
+Regards,
+The slapos team
+""" % self.portal.portal_preferences.getPreferredSlaposWebSiteUrl(),
+       'Deleting acknowledgment.'),
+      ticket.workflow_history['edit_workflow'][-1]['comment'])
