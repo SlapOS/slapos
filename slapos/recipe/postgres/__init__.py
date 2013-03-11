@@ -154,7 +154,7 @@ class Recipe(GenericBaseRecipe):
                 '# TYPE  DATABASE        USER            ADDRESS                 METHOD',
                 '',
                 '# "local" is for Unix domain socket connections only (check unix_socket_permissions!)',
-                'local   all             all                                     ident',
+                'local   all             all                                     trust',
                 'host    all             all             127.0.0.1/32            md5',
                 'host    all             all             ::1/128                 md5',
             ]
