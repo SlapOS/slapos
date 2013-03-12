@@ -844,7 +844,7 @@ class TestSlapOSRegularisationRequest_triggerAcknowledgmentEscalation(
        'Reminder: invoice payment requested',
 """Dear user,
 
-We would like to remind you an unpaid invoice you have on %s.
+We would like to remind you the unpaid invoice you have on %s.
 If no payment is done during the coming days, we will stop all your current instances to free some hardware resources.
 
 Do not hesitate to visit the web forum (http://community.slapos.org/forum) in case of question.
