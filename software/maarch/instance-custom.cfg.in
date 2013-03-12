@@ -3,21 +3,21 @@
 [maarch-configuration]
 recipe = slapos.recipe.maarch:default
 htdocs = $${apache-php:htdocs}
-db_host = $${postgres-urlparse:host}
-db_port = $${postgres-urlparse:port}
-db_dbname = $${postgres-urlparse:path}
-db_username = $${postgres-urlparse:username}
-db_password = $${postgres-urlparse:password}
+db-host = $${postgres-urlparse:host}
+db-port = $${postgres-urlparse:port}
+db-dbname = $${postgres-urlparse:path}
+db-username = $${postgres-urlparse:username}
+db-password = $${postgres-urlparse:password}
 language = en
-php_ini = $${directory:php-ini-dir}/php.ini
-root_docservers = $${buildout:directory}/srv/docservers
+php-ini = $${directory:php-ini-dir}/php.ini
+root-docservers = $${buildout:directory}/srv/docservers
 dependency = $${apache-php:recipe}
 sql-data-file = $${slap-parameter:sql-data-file}
 
 [publish-connection-informations]
 # XXX login should not be hardcoded
 login = superadmin
-password = $${maarch-configuration:db_password}
+password = $${maarch-configuration:db-password}
 
 [slap-parameter]
 sql-data-file =
