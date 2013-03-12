@@ -12,6 +12,7 @@ from AccessControl.SecurityManagement import getSecurityManager, \
              setSecurityManager
 from DateTime import DateTime
 import json
+import re
 
 def changeSkin(skin_name):
   def decorator(func):
@@ -759,3 +760,452 @@ class TestSlapOSDefaultScenario(TestSlapOSSecurityMixin):
 
     self.login(friend_reference)
     self.usePayzenManually(self.web_site, friend_reference)
+
+class TestSlapOSDefaultCRMEscalation(TestSlapOSSecurityMixin):
+  def joinSlapOS(self, web_site, reference):
+    def findMessage(email, body):
+      for candidate in reversed(self.portal.MailHost.getMessageList()):
+        if [q for q in candidate[1] if email in q] and body in candidate[2]:
+          return candidate[2]
+
+    credential_request_form = self.web_site.ERP5Site_viewCredentialRequestForm()
+
+    self.assertTrue('Vifib Cloud is a distributed cloud around the'
+        in credential_request_form)
+
+    email = '%s@example.com' % reference
+
+    request = web_site.ERP5Site_newCredentialRequest(
+      reference=reference,
+      first_name='Joe',
+      last_name=reference,
+      default_email_text=email
+    )
+
+    self.assertTrue('Thanks%20for%20your%20registration.%20You%20will%20be%2'
+        '0receive%20an%20email%20to%20activate%20your%20account.' in request)
+
+    self.tic()
+
+    to_click_message = findMessage(email, 'You have requested one user')
+
+    self.assertNotEqual(None, to_click_message)
+
+    to_click_url = re.search('href="(.+?)"', to_click_message).group(1)
+
+    self.assertTrue('ERP5Site_activeLogin' in to_click_url)
+
+    join_key = to_click_url.split('=')[-1]
+
+    web_site.ERP5Site_activeLogin(key=join_key)
+
+    self.tic()
+
+    welcome_message = findMessage(email, "the creation of you new ERP5 account")
+    self.assertNotEqual(None, welcome_message)
+
+  @changeSkin('Hosting')
+  def WebSection_getCurrentHostingSubscriptionList(self):
+    return self.web_site.hosting.myspace.my_services\
+        .WebSection_getCurrentHostingSubscriptionList()
+
+  def personRequestInstanceNotReady(self, **kw):
+    response = self.portal.portal_slap.requestComputerPartition(**kw)
+    status = getattr(response, 'status', None)
+    self.assertEqual(408, status)
+    self.tic()
+
+  def personRequestInstance(self, **kw):
+    response = self.portal.portal_slap.requestComputerPartition(**kw)
+    self.assertTrue(isinstance(response, str))
+    software_instance = xml_marshaller.xml_marshaller.loads(response)
+    self.assertEqual('SoftwareInstance', software_instance.__class__.__name__)
+    self.tic()
+    return software_instance
+
+  def assertHostingSubscriptionSimulationCoverage(self, subscription):
+    self.login()
+    # this is document level assertion, as simulation and its specific delivery
+    # is covered by unit tests
+    packing_list_line_list = subscription.getAggregateRelatedValueList(
+        portal_type='Sale Packing List Line')
+    self.assertTrue(len(packing_list_line_list) >= 2)
+    for packing_list_line in packing_list_line_list:
+      packing_list = packing_list_line.getParentValue()
+      self.assertEqual('Sale Packing List',
+          packing_list.getPortalType())
+      self.assertEqual('delivered',
+          packing_list.getSimulationState())
+      causality_state = packing_list.getCausalityState()
+      self.assertEqual('solved', causality_state)
+
+  def assertAggregatedSalePackingList(self, delivery):
+    self.assertEqual('delivered', delivery.getSimulationState())
+    self.assertEqual('solved', delivery.getCausalityState())
+
+    invoice_list= delivery.getCausalityRelatedValueList(
+        portal_type='Sale Invoice Transaction')
+    self.assertEqual(1, len(invoice_list))
+    invoice = invoice_list[0].getObject()
+
+    causality_list = invoice.getCausalityValueList()
+
+    self.assertSameSet([delivery], causality_list)
+
+    self.assertEqual('stopped', invoice.getSimulationState())
+    self.assertEqual('solved', invoice.getCausalityState())
+
+    payment_list = invoice.getCausalityRelatedValueList(
+        portal_type='Payment Transaction')
+    self.assertEqual(1, len(payment_list))
+
+    payment = payment_list[0].getObject()
+
+    causality_list = payment.getCausalityValueList()
+    self.assertSameSet([invoice], causality_list)
+
+    self.assertEqual('cancelled', payment.getSimulationState())
+    self.assertEqual('draft', payment.getCausalityState())
+
+    self.assertEqual(-1 * payment.PaymentTransaction_getTotalPayablePrice(),
+        invoice.getTotalPrice())
+
+    # Check reverse invoice
+    reverse_invoice_list = invoice.getCausalityRelatedValueList(
+        portal_type='Sale Invoice Transaction')
+    self.assertEqual(1, len(reverse_invoice_list))
+
+    reverse_invoice = reverse_invoice_list[0].getObject()
+
+    causality_list = reverse_invoice.getCausalityValueList()
+    self.assertSameSet([invoice], causality_list)
+
+    self.assertEqual('stopped', reverse_invoice.getSimulationState())
+    self.assertEqual('draft', reverse_invoice.getCausalityState())
+
+    payment_list = reverse_invoice.getCausalityRelatedValueList(
+        portal_type='Payment Transaction')
+    self.assertEqual(0, len(payment_list))
+
+  def assertPersonDocumentCoverage(self, person):
+    self.login()
+    subscription_list = self.portal.portal_catalog(
+        portal_type='Hosting Subscription',
+        default_destination_section_uid=person.getUid())
+    for subscription in subscription_list:
+      self.assertHostingSubscriptionSimulationCoverage(
+          subscription.getObject())
+
+    aggregated_delivery_list = self.portal.portal_catalog(
+        portal_type='Sale Packing List',
+        default_destination_section_uid=person.getUid(),
+        specialise_uid=self.portal.restrictedTraverse(self.portal\
+          .portal_preferences.getPreferredAggregatedSaleTradeCondition()\
+          ).getUid()
+    )
+
+    if len(subscription_list) == 0:
+      self.assertEqual(0, len(aggregated_delivery_list))
+      return
+
+    self.assertNotEqual(0, len(aggregated_delivery_list))
+    for aggregated_delivery in aggregated_delivery_list:
+      self.assertAggregatedSalePackingList(aggregated_delivery.getObject())
+
+    self.assertEqual(0, person.Entity_statBalance())
+
+  def assertOpenSaleOrderCoverage(self, person_reference):
+    self.login()
+    person = self.portal.portal_catalog.getResultValue(portal_type='Person',
+        reference=person_reference)
+    hosting_subscription_list = self.portal.portal_catalog(
+        portal_type='Hosting Subscription',
+        default_destination_section_uid=person.getUid()
+    )
+
+    open_sale_order_list = self.portal.portal_catalog(
+        portal_type='Open Sale Order',
+        default_destination_uid=person.getUid(),
+    )
+
+    if len(hosting_subscription_list) == 0:
+      self.assertEqual(0, len(open_sale_order_list))
+      return
+
+    self.assertEqual(1, len(open_sale_order_list))
+
+    open_sale_order = open_sale_order_list[0]
+    line_list = open_sale_order.contentValues(
+        portal_type='Open Sale Order Line')
+    self.assertEqual(len(hosting_subscription_list), len(line_list))
+    self.assertSameSet(
+        [q.getRelativeUrl() for q in hosting_subscription_list],
+        [q.getAggregate() for q in line_list]
+    )
+
+  def assertSubscriptionStopped(self, person):
+    self.login()
+    subscription_list = self.portal.portal_catalog(
+        portal_type='Hosting Subscription',
+        default_destination_section_uid=person.getUid())
+    self.assertEqual(len(subscription_list), 1)
+    for subscription in subscription_list:
+      self.assertEqual(subscription.getSlapState(), "stop_requested")
+
+  def assertSubscriptionDestroyed(self, person):
+    self.login()
+    subscription_list = self.portal.portal_catalog(
+        portal_type='Hosting Subscription',
+        default_destination_section_uid=person.getUid())
+    self.assertEqual(len(subscription_list), 1)
+    for subscription in subscription_list:
+      self.assertEqual(subscription.getSlapState(), "destroy_requested")
+
+  def trickCrmEvent(self, service_id, day, person_reference):
+    self.login()
+    person = self.portal.portal_catalog.getResultValue(portal_type='Person',
+        reference=person_reference)
+    ticket = self.portal.portal_catalog.getResultValue(
+        portal_type='Regularisation Request',
+        simulation_state='suspended',
+        default_source_project_uid=person.getUid()
+    )
+
+    event = self.portal.portal_catalog.getResultValue(
+      portal_type='Mail Message',
+      default_resource_uid=self.portal.service_module[service_id].getUid(),
+      default_follow_up_uid=ticket.getUid(),
+    )
+    event.edit(start_date=event.getStartDate()-day)
+    data = event.getData()
+    data = re.sub(
+      "\nDate: .*\n",
+      "\nDate: %s\n" % (event.getStartDate()-day).rfc822(), 
+      data)
+    event.edit(data=data)
+
+  def requestInstance(self, person_reference, instance_title,
+      software_release, software_type):
+
+    self.login(person_reference)
+    self.personRequestInstanceNotReady(
+      software_release=software_release,
+      software_type=software_type,
+      partition_reference=instance_title,
+    )
+
+  def test_crm_escalation(self):
+    # some preparation
+    self.logout()
+    self.web_site = self.portal.web_site_module.hosting
+
+    # join as the another visitor and request software instance on public
+    # computer
+    self.logout()
+    public_reference = 'public-%s' % self.generateNewId()
+    self.joinSlapOS(self.web_site, public_reference)
+
+    public_instance_title = 'Public title %s' % self.generateNewId()
+    public_instance_type = 'public type'
+    public_server_software = self.generateNewSoftwareReleaseUrl()
+    self.requestInstance(public_reference, public_instance_title,
+        public_server_software, public_instance_type)
+
+    # check the Open Sale Order coverage
+    self.stepCallSlaposRequestUpdateHostingSubscriptionOpenSaleOrderAlarm()
+    self.tic()
+
+    self.login()
+
+    self.assertOpenSaleOrderCoverage(public_reference)
+
+    # generate simulation for open order
+
+    self.stepCallUpdateOpenOrderSimulationAlarm()
+    self.tic()
+
+    # build subscription packing list
+    self.stepCallSlaposTriggerBuildAlarm()
+    self.tic()
+
+    # build other deliveries
+    self.stepCallSlaposInstanceInvoicingAlarm()
+    self.tic()
+
+    # stabilise build deliveries and expand them
+    self.stepCallSlaposManageBuildingCalculatingDeliveryAlarm()
+    self.tic()
+
+    # build aggregated packing list
+    self.stepCallSlaposTriggerAggregatedDeliveryOrderBuilderAlarm()
+    self.tic()
+
+    # stabilise aggregated deliveries and expand them
+    self.stepCallSlaposManageBuildingCalculatingDeliveryAlarm()
+    self.tic()
+
+    # deliver aggregated deliveries
+    self.stepCallSlaposDeliverConfirmedAggregatedSalePackingListAlarm(
+        accounting_date=DateTime('2222/01/01'))
+    self.tic()
+
+    # stabilise aggregated deliveries and expand them
+    self.stepCallSlaposManageBuildingCalculatingDeliveryAlarm()
+    self.tic()
+
+    # build aggregated invoices
+    self.stepCallSlaposTriggerBuildAlarm()
+    self.tic()
+
+    # stabilise aggregated invoices and expand them
+    self.stepCallSlaposManageBuildingCalculatingDeliveryAlarm()
+    self.tic()
+
+    # update invoices with their tax & discount
+    self.stepCallSlaposTriggerBuildAlarm()
+    self.tic()
+    self.stepCallSlaposManageBuildingCalculatingDeliveryAlarm()
+    self.tic()
+
+    # update invoices with their tax & discount transaction lines
+    self.stepCallSlaposTriggerBuildAlarm()
+    self.tic()
+    self.stepCallSlaposManageBuildingCalculatingDeliveryAlarm()
+    self.tic()
+
+    # stop the invoices and solve them again
+    self.stepCallSlaposStopConfirmedAggregatedSaleInvoiceTransactionAlarm()
+    self.tic()
+    self.stepCallSlaposManageBuildingCalculatingDeliveryAlarm()
+    self.tic()
+
+    # build the aggregated payment
+    self.stepCallSlaposTriggerPaymentTransactionOrderBuilderAlarm()
+    self.tic()
+
+    # start the payzen payment
+    self.stepCallSlaposPayzenUpdateConfirmedPaymentAlarm()
+    self.tic()
+
+    # stabilise the payment deliveries and expand them
+    self.stepCallSlaposManageBuildingCalculatingDeliveryAlarm()
+    self.tic()
+
+    # create the regularisation request
+    self.stepCallSlaposCrmCreateRegularisationRequestAlarm()
+    self.tic()
+
+    person = self.portal.portal_catalog.getResultValue(portal_type='Person',
+        reference=public_reference)
+
+    # escalate 1
+    self.trickCrmEvent('slapos_crm_acknowledgement', 38, public_reference)
+    self.stepCallSlaposCrmTriggerAcknowledgmentEscalationAlarm()
+    self.tic()
+
+    # escalate 2
+    self.trickCrmEvent('slapos_crm_stop_reminder', 7, public_reference)
+    self.stepCallSlaposCrmTriggerStopReminderEscalationAlarm()
+    self.tic()
+
+    # stop the subscription
+    self.stepCallSlaposCrmStopHostingSubscriptionAlarm()
+    self.tic()
+    self.assertSubscriptionStopped(person)
+
+    # escalate 3
+    self.trickCrmEvent('slapos_crm_stop_acknowledgement', 13, public_reference)
+    self.stepCallSlaposCrmTriggerStopAcknowledgmentEscalationAlarm()
+    self.tic()
+
+    # escalate 4
+    self.trickCrmEvent('slapos_crm_delete_reminder', 2, public_reference)
+    self.stepCallSlaposCrmTriggerDeleteReminderEscalationAlarm()
+    self.tic()
+
+    # delete the subscription
+    self.stepCallSlaposCrmDeleteHostingSubscriptionAlarm()
+    self.tic()
+    self.assertSubscriptionDestroyed(person)
+
+    # check the Open Sale Order coverage
+    self.stepCallSlaposRequestUpdateHostingSubscriptionOpenSaleOrderAlarm()
+    self.tic()
+
+    # cancel the invoice
+    self.stepCallSlaposCrmCancelInvoiceAlarm()
+    self.tic()
+
+    # close the ticket
+    self.stepCallSlaposCrmInvalidateSuspendedRegularisationRequestAlarm()
+    self.tic()
+
+    # update open order simulation
+    self.stepCallUpdateOpenOrderSimulationAlarm()
+    self.tic()
+
+    # build subscription packing list
+    self.stepCallSlaposTriggerBuildAlarm()
+    self.tic()
+
+    # stabilise build deliveries and expand them
+    self.stepCallSlaposManageBuildingCalculatingDeliveryAlarm()
+    self.tic()
+
+    # build aggregated packing list
+    self.stepCallSlaposTriggerAggregatedDeliveryOrderBuilderAlarm()
+    self.tic()
+
+    # stabilise aggregated deliveries and expand them
+    self.stepCallSlaposManageBuildingCalculatingDeliveryAlarm()
+    self.tic()
+
+    # deliver aggregated deliveries
+    self.stepCallSlaposDeliverConfirmedAggregatedSalePackingListAlarm(
+        accounting_date=DateTime('2222/01/01'))
+    self.tic()
+
+    # stabilise aggregated deliveries and expand them
+    self.stepCallSlaposManageBuildingCalculatingDeliveryAlarm()
+    self.tic()
+
+    # build aggregated invoices
+    self.stepCallSlaposTriggerBuildAlarm()
+    self.tic()
+
+    # stabilise aggregated invoices and expand them
+    self.stepCallSlaposManageBuildingCalculatingDeliveryAlarm()
+    self.tic()
+
+    # update invoices with their tax & discount
+    self.stepCallSlaposTriggerBuildAlarm()
+    self.tic()
+    self.stepCallSlaposManageBuildingCalculatingDeliveryAlarm()
+    self.tic()
+
+    # update invoices with their tax & discount transaction lines
+    self.stepCallSlaposTriggerBuildAlarm()
+    self.tic()
+    self.stepCallSlaposManageBuildingCalculatingDeliveryAlarm()
+    self.tic()
+
+    # stop the invoices and solve them again
+    self.stepCallSlaposStopConfirmedAggregatedSaleInvoiceTransactionAlarm()
+    self.tic()
+    self.stepCallSlaposManageBuildingCalculatingDeliveryAlarm()
+    self.tic()
+
+    # build the aggregated payment
+    self.stepCallSlaposTriggerPaymentTransactionOrderBuilderAlarm()
+    self.tic()
+
+    # start the payzen payment
+    self.stepCallSlaposPayzenUpdateConfirmedPaymentAlarm()
+    self.tic()
+
+    # stabilise the payment deliveries and expand them
+    self.stepCallSlaposManageBuildingCalculatingDeliveryAlarm()
+    self.tic()
+
+    # check final document state
+    self.assertPersonDocumentCoverage(person)
