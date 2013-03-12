@@ -1,0 +1,87 @@
+<?xml version="1.0"?>
+<ZopeData>
+  <record id="1" aka="AAAAAAAAAAE=">
+    <pickle>
+      <global name="PythonScript" module="Products.PythonScripts.PythonScript"/>
+    </pickle>
+    <pickle>
+      <dictionary>
+        <item>
+            <key> <string>Script_magic</string> </key>
+            <value> <int>3</int> </value>
+        </item>
+        <item>
+            <key> <string>_bind_names</string> </key>
+            <value>
+              <object>
+                <klass>
+                  <global name="NameAssignments" module="Shared.DC.Scripts.Bindings"/>
+                </klass>
+                <tuple/>
+                <state>
+                  <dictionary>
+                    <item>
+                        <key> <string>_asgns</string> </key>
+                        <value>
+                          <dictionary>
+                            <item>
+                                <key> <string>name_container</string> </key>
+                                <value> <string>container</string> </value>
+                            </item>
+                            <item>
+                                <key> <string>name_context</string> </key>
+                                <value> <string>context</string> </value>
+                            </item>
+                            <item>
+                                <key> <string>name_m_self</string> </key>
+                                <value> <string>script</string> </value>
+                            </item>
+                            <item>
+                                <key> <string>name_subpath</string> </key>
+                                <value> <string>traverse_subpath</string> </value>
+                            </item>
+                          </dictionary>
+                        </value>
+                    </item>
+                  </dictionary>
+                </state>
+              </object>
+            </value>
+        </item>
+        <item>
+            <key> <string>_body</string> </key>
+            <value> <string>from zExceptions import Unauthorized\n
+if REQUEST is not None:\n
+  raise Unauthorized\n
+\n
+hosting_subscription = context\n
+assert hosting_subscription.getDefaultDestinationSection() == person_relative_url\n
+person = hosting_subscription.getDefaultDestinationSectionValue()\n
+\n
+slap_state = hosting_subscription.getSlapState()\n
+if (slap_state in [\'start_requested\', \'stop_requested\']):\n
+  person.requestSoftwareInstance(\n
+    state=\'destroyed\',\n
+    software_release=hosting_subscription.getUrlString(),\n
+    software_title=hosting_subscription.getTitle(),\n
+    software_type=hosting_subscription.getSourceReference(),\n
+    instance_xml=hosting_subscription.getTextContent(),\n
+    sla_xml=hosting_subscription.getSlaXml(),\n
+    shared=hosting_subscription.isRootSlave()\n
+  )\n
+  return True\n
+return False\n
+</string> </value>
+        </item>
+        <item>
+            <key> <string>_params</string> </key>
+            <value> <string>person_relative_url, REQUEST=None</string> </value>
+        </item>
+        <item>
+            <key> <string>id</string> </key>
+            <value> <string>HostingSubscription_deleteFromRegularisationRequest</string> </value>
+        </item>
+      </dictionary>
+    </pickle>
+  </record>
+</ZopeData>

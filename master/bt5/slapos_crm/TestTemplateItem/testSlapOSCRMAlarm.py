@@ -672,3 +672,87 @@ portal_workflow.doActionFor(context, action='edit_action', comment='Visited by R
     self.assertNotEqual(
         'Visited by RegularisationRequest_stopHostingSubscriptionList',
         ticket.workflow_history['edit_workflow'][-1]['comment'])
+
+class TestSlapOSCrmDeleteHostingSubscription(testSlapOSMixin):
+
+  def beforeTearDown(self):
+    transaction.abort()
+
+  def createRegularisationRequest(self):
+    new_id = self.generateNewId()
+    return self.portal.regularisation_request_module.newContent(
+      portal_type='Regularisation Request',
+      title="Test Reg. Req.%s" % new_id,
+      reference="TESTREGREQ-%s" % new_id,
+      )
+
+  def _simulateRegularisationRequest_deleteHostingSubscriptionList(self):
+    script_name = 'RegularisationRequest_deleteHostingSubscriptionList'
+    if script_name in self.portal.portal_skins.custom.objectIds():
+      raise ValueError('Precondition failed: %s exists in custom' % script_name)
+    createZODBPythonScript(self.portal.portal_skins.custom,
+                        script_name,
+                        '*args, **kwargs',
+                        '# Script body\n'
+"""portal_workflow = context.portal_workflow
+portal_workflow.doActionFor(context, action='edit_action', comment='Visited by RegularisationRequest_deleteHostingSubscriptionList') """ )
+    transaction.commit()
+
+  def _dropRegularisationRequest_deleteHostingSubscriptionList(self):
+    script_name = 'RegularisationRequest_deleteHostingSubscriptionList'
+    if script_name in self.portal.portal_skins.custom.objectIds():
+      self.portal.portal_skins.custom.manage_delObjects(script_name)
+    transaction.commit()
+
+  def test_alarm_matching_regularisation_request(self):
+    ticket = self.createRegularisationRequest()
+    ticket.edit(resource='service_module/slapos_crm_delete_acknowledgement')
+    ticket.validate()
+    ticket.suspend()
+
+    self.tic()
+    self._simulateRegularisationRequest_deleteHostingSubscriptionList()
+    try:
+      self.portal.portal_alarms.\
+          slapos_crm_delete_hosting_subscription.activeSense()
+      self.tic()
+    finally:
+      self._dropRegularisationRequest_deleteHostingSubscriptionList()
+    self.assertEqual(
+        'Visited by RegularisationRequest_deleteHostingSubscriptionList',
+        ticket.workflow_history['edit_workflow'][-1]['comment'])
+
+  def test_alarm_not_suspended(self):
+    ticket = self.createRegularisationRequest()
+    ticket.edit(resource='service_module/slapos_crm_delete_acknowledgement')
+    ticket.validate()
+
+    self.tic()
+    self._simulateRegularisationRequest_deleteHostingSubscriptionList()
+    try:
+      self.portal.portal_alarms.\
+          slapos_crm_delete_hosting_subscription.activeSense()
+      self.tic()
+    finally:
+      self._dropRegularisationRequest_deleteHostingSubscriptionList()
+    self.assertNotEqual(
+        'Visited by RegularisationRequest_deleteHostingSubscriptionList',
+        ticket.workflow_history['edit_workflow'][-1]['comment'])
+
+  def test_alarm_other_resource(self):
+    ticket = self.createRegularisationRequest()
+    ticket.edit(resource='service_module/slapos_crm_delete_reminder')
+    ticket.validate()
+    ticket.suspend()
+
+    self.tic()
+    self._simulateRegularisationRequest_deleteHostingSubscriptionList()
+    try:
+      self.portal.portal_alarms.\
+          slapos_crm_delete_hosting_subscription.activeSense()
+      self.tic()
+    finally:
+      self._dropRegularisationRequest_deleteHostingSubscriptionList()
+    self.assertNotEqual(
+        'Visited by RegularisationRequest_deleteHostingSubscriptionList',
+        ticket.workflow_history['edit_workflow'][-1]['comment'])

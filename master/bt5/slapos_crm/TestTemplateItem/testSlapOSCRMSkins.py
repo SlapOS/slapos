@@ -1297,3 +1297,291 @@ class TestSlapOSHostingSubscription_stopFromRegularisationRequest(
       AssertionError,
       hosting_subscription.HostingSubscription_stopFromRegularisationRequest,
       'foobar')
+
+class TestSlapOSHostingSubscription_deleteFromRegularisationRequest(
+                                                          testSlapOSMixin):
+
+  def beforeTearDown(self):
+    transaction.abort()
+
+  def createPerson(self):
+    new_id = self.generateNewId()
+    person = self.portal.person_module.template_member.\
+                                 Base_createCloneDocument(batch_mode=1)
+    person.edit(
+      title="Person %s" % new_id,
+      reference="TESTPERS-%s" % new_id,
+      default_email_text="live_test_%s@example.org" % new_id,
+      )
+    person.manage_delObjects(
+      [x.getId() for x in person.contentValues(portal_type="Assignment")]
+    )
+    return person
+
+  def createHostingSubscription(self):
+    new_id = self.generateNewId()
+    hosting_subscription = self.portal.hosting_subscription_module\
+        .template_hosting_subscription.Base_createCloneDocument(batch_mode=1)
+    hosting_subscription.edit(
+      reference="TESTHS-%s" % new_id,
+    )
+    hosting_subscription.validate()
+    self.portal.portal_workflow._jumpToStateFor(
+        hosting_subscription, 'start_requested')
+    return hosting_subscription
+
+  def test_deleteFromRegularisationRequest_REQUEST_disallowed(self):
+    self.assertRaises(
+      Unauthorized,
+      self.portal.HostingSubscription_deleteFromRegularisationRequest,
+      '',
+      REQUEST={})
+
+  def test_deleteFromRegularisationRequest_started_subscription(self):
+    person = self.createPerson()
+    hosting_subscription = self.createHostingSubscription()
+    hosting_subscription.edit(
+      destination_section=person.getRelativeUrl(),
+    )
+    self.tic()
+
+    software_release = hosting_subscription.getUrlString()
+    software_title = hosting_subscription.getTitle()
+    software_type = hosting_subscription.getSourceReference()
+    instance_xml = hosting_subscription.getTextContent()
+    sla_xml = hosting_subscription.getSlaXml()
+    shared = hosting_subscription.isRootSlave()
+    self.assertEquals(hosting_subscription.getSlapState(), "start_requested")
+
+    result = hosting_subscription.\
+        HostingSubscription_deleteFromRegularisationRequest(person.getRelativeUrl())
+
+    self.assertEquals(result, True)
+    self.assertEquals(hosting_subscription.getUrlString(), software_release)
+    self.assertEquals(hosting_subscription.getTitle(), software_title)
+    self.assertEquals(hosting_subscription.getSourceReference(), software_type)
+    self.assertEquals(hosting_subscription.getTextContent(), instance_xml)
+    self.assertEquals(hosting_subscription.getSlaXml(), sla_xml)
+    self.assertEquals(hosting_subscription.isRootSlave(), shared)
+    self.assertEquals(hosting_subscription.getSlapState(), "destroy_requested")
+
+  def test_deleteFromRegularisationRequest_stopped_subscription(self):
+    person = self.createPerson()
+    hosting_subscription = self.createHostingSubscription()
+    hosting_subscription.edit(
+      destination_section=person.getRelativeUrl(),
+    )
+    self.portal.portal_workflow._jumpToStateFor(
+        hosting_subscription, 'stop_requested')
+    self.tic()
+
+    software_release = hosting_subscription.getUrlString()
+    software_title = hosting_subscription.getTitle()
+    software_type = hosting_subscription.getSourceReference()
+    instance_xml = hosting_subscription.getTextContent()
+    sla_xml = hosting_subscription.getSlaXml()
+    shared = hosting_subscription.isRootSlave()
+    self.assertEquals(hosting_subscription.getSlapState(), "stop_requested")
+
+    result = hosting_subscription.\
+        HostingSubscription_deleteFromRegularisationRequest(person.getRelativeUrl())
+
+    self.assertEquals(result, True)
+    self.assertEquals(hosting_subscription.getUrlString(), software_release)
+    self.assertEquals(hosting_subscription.getTitle(), software_title)
+    self.assertEquals(hosting_subscription.getSourceReference(), software_type)
+    self.assertEquals(hosting_subscription.getTextContent(), instance_xml)
+    self.assertEquals(hosting_subscription.getSlaXml(), sla_xml)
+    self.assertEquals(hosting_subscription.isRootSlave(), shared)
+    self.assertEquals(hosting_subscription.getSlapState(), "destroy_requested")
+    
+  def test_deleteFromRegularisationRequest_destroyed_subscription(self):
+    person = self.createPerson()
+    hosting_subscription = self.createHostingSubscription()
+    hosting_subscription.edit(
+      destination_section=person.getRelativeUrl(),
+    )
+    self.portal.portal_workflow._jumpToStateFor(
+        hosting_subscription, 'destroy_requested')
+
+    result = hosting_subscription.\
+        HostingSubscription_deleteFromRegularisationRequest(person.getRelativeUrl())
+
+    self.assertEquals(result, False)
+
+  def test_deleteFromRegularisationRequest_non_matching_person(self):
+    hosting_subscription = self.createHostingSubscription()
+    self.assertRaises(
+      AssertionError,
+      hosting_subscription.HostingSubscription_deleteFromRegularisationRequest,
+      'foobar')
+
+class TestSlapOSRegularisationRequest_deleteHostingSubscriptionList(
+                                                          testSlapOSMixin):
+
+  def beforeTearDown(self):
+    transaction.abort()
+
+  def createRegularisationRequest(self):
+    new_id = self.generateNewId()
+    return self.portal.regularisation_request_module.newContent(
+      portal_type='Regularisation Request',
+      title="Test Reg. Req.%s" % new_id,
+      reference="TESTREGREQ-%s" % new_id,
+      resource='foo/bar',
+      )
+
+  def createPerson(self):
+    new_id = self.generateNewId()
+    person = self.portal.person_module.template_member.\
+                                 Base_createCloneDocument(batch_mode=1)
+    person.edit(
+      title="Person %s" % new_id,
+      reference="TESTPERS-%s" % new_id,
+      default_email_text="live_test_%s@example.org" % new_id,
+      )
+    person.manage_delObjects(
+      [x.getId() for x in person.contentValues(portal_type="Assignment")]
+    )
+    return person
+
+  def createHostingSubscription(self):
+    new_id = self.generateNewId()
+    hosting_subscription = self.portal.hosting_subscription_module\
+        .template_hosting_subscription.Base_createCloneDocument(batch_mode=1)
+    hosting_subscription.edit(
+      reference="TESTHS-%s" % new_id,
+    )
+    hosting_subscription.validate()
+    self.portal.portal_workflow._jumpToStateFor(
+        hosting_subscription, 'start_requested')
+    return hosting_subscription
+
+  def test_deleteHostingSubscriptionList_REQUEST_disallowed(self):
+    ticket = self.createRegularisationRequest()
+    self.assertRaises(
+      Unauthorized,
+      ticket.RegularisationRequest_deleteHostingSubscriptionList,
+      'footag',
+      REQUEST={})
+
+  @simulate('HostingSubscription_deleteFromRegularisationRequest', 
+            'person, REQUEST=None',
+  'context.portal_workflow.doActionFor(' \
+  'context, action="edit_action", ' \
+  'comment="Visited by HostingSubscription_deleteFromRegularisationRequest ' \
+  '%s" % (person))')
+  def test_deleteHostingSubscriptionList_matching_subscription(self):
+    person = self.createPerson()
+    ticket = self.createRegularisationRequest()
+    hosting_subscription = self.createHostingSubscription()
+
+    ticket.edit(
+      source_project_value=person,
+      resource='service_module/slapos_crm_delete_acknowledgement',
+    )
+    ticket.validate()
+    ticket.suspend()
+    hosting_subscription.edit(
+      destination_section=person.getRelativeUrl(),
+    )
+    self.tic()
+
+    result = ticket.\
+        RegularisationRequest_deleteHostingSubscriptionList('footag')
+    self.assertTrue(result)
+
+    self.tic()
+    self.assertEqual(
+      'Visited by HostingSubscription_deleteFromRegularisationRequest ' \
+      '%s' % person.getRelativeUrl(),
+      hosting_subscription.workflow_history['edit_workflow'][-1]['comment'])
+
+  @simulate('HostingSubscription_deleteFromRegularisationRequest', 
+            '*args, **kwargs',
+            'raise NotImplementedError, "Should not have been called"')
+  def test_deleteHostingSubscriptionList_other_subscription(self):
+    person = self.createPerson()
+    ticket = self.createRegularisationRequest()
+    hosting_subscription = self.createHostingSubscription()
+
+    ticket.edit(
+      source_project_value=person,
+      resource='service_module/slapos_crm_delete_acknowledgement',
+    )
+    ticket.validate()
+    ticket.suspend()
+
+    self.tic()
+
+    result = ticket.\
+        RegularisationRequest_deleteHostingSubscriptionList('footag')
+    self.assertTrue(result)
+
+    self.tic()
+
+  @simulate('HostingSubscription_deleteFromRegularisationRequest', 
+            '*args, **kwargs',
+            'raise NotImplementedError, "Should not have been called"')
+  def test_deleteHostingSubscriptionList_no_person(self):
+    person = self.createPerson()
+    ticket = self.createRegularisationRequest()
+
+    ticket.edit(
+      resource='service_module/slapos_crm_delete_acknowledgement',
+    )
+    ticket.validate()
+    ticket.suspend()
+
+    self.tic()
+
+    result = ticket.\
+        RegularisationRequest_deleteHostingSubscriptionList('footag')
+    self.assertFalse(result)
+
+    self.tic()
+
+  @simulate('HostingSubscription_deleteFromRegularisationRequest', 
+            '*args, **kwargs',
+            'raise NotImplementedError, "Should not have been called"')
+  def test_deleteHostingSubscriptionList_not_suspended(self):
+    person = self.createPerson()
+    ticket = self.createRegularisationRequest()
+    hosting_subscription = self.createHostingSubscription()
+
+    ticket.edit(
+      source_project_value=person,
+      resource='service_module/slapos_crm_delete_acknowledgement',
+    )
+    ticket.validate()
+
+    self.tic()
+
+    result = ticket.\
+        RegularisationRequest_deleteHostingSubscriptionList('footag')
+    self.assertFalse(result)
+
+    self.tic()
+
+  @simulate('HostingSubscription_deleteFromRegularisationRequest', 
+            '*args, **kwargs',
+            'raise NotImplementedError, "Should not have been called"')
+  def test_deleteHostingSubscriptionList_other_resource(self):
+    person = self.createPerson()
+    ticket = self.createRegularisationRequest()
+    hosting_subscription = self.createHostingSubscription()
+
+    ticket.edit(
+      source_project_value=person,
+      resource='service_module/slapos_crm_delete_reminder',
+    )
+    ticket.validate()
+    ticket.suspend()
+
+    self.tic()
+
+    result = ticket.\
+        RegularisationRequest_deleteHostingSubscriptionList('footag')
+    self.assertFalse(result)
+
+    self.tic()
