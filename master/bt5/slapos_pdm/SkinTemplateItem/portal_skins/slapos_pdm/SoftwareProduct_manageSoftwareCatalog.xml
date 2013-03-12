@@ -61,14 +61,15 @@ for software_release in portal.portal_catalog(\n
     validation_state=\'published\',\n
     default_aggregate_uid=context.getUid(),\n
     sort_on=((\'indexation_timestamp\', \'DESC\'),)):\n
-  installed_count = portal.portal_catalog.countResults(\n
+  installed_count = portal.portal_catalog(\n
     software_release_url=software_release.getUrlString(),\n
     allocation_scope_uid=portal.portal_categories.allocation_scope.open.public.getUid(),\n
     capacity_scope_uid=portal.portal_categories.capacity_scope.open.getUid(),\n
     portal_type=\'Computer Partition\',\n
-    free_for_request=1\n
-  )[0][0]\n
-  if installed_count > 0:\n
+    free_for_request=1,\n
+    limit=1,\n
+  )\n
+  if len(installed_count) > 0:\n
     software_release_url = software_release.getRelativeUrl()\n
     break\n
 \n
