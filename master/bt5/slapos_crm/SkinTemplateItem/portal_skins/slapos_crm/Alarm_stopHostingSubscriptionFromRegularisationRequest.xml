@@ -1,0 +1,83 @@
+<?xml version="1.0"?>
+<ZopeData>
+  <record id="1" aka="AAAAAAAAAAE=">
+    <pickle>
+      <global name="PythonScript" module="Products.PythonScripts.PythonScript"/>
+    </pickle>
+    <pickle>
+      <dictionary>
+        <item>
+            <key> <string>Script_magic</string> </key>
+            <value> <int>3</int> </value>
+        </item>
+        <item>
+            <key> <string>_bind_names</string> </key>
+            <value>
+              <object>
+                <klass>
+                  <global name="NameAssignments" module="Shared.DC.Scripts.Bindings"/>
+                </klass>
+                <tuple/>
+                <state>
+                  <dictionary>
+                    <item>
+                        <key> <string>_asgns</string> </key>
+                        <value>
+                          <dictionary>
+                            <item>
+                                <key> <string>name_container</string> </key>
+                                <value> <string>container</string> </value>
+                            </item>
+                            <item>
+                                <key> <string>name_context</string> </key>
+                                <value> <string>context</string> </value>
+                            </item>
+                            <item>
+                                <key> <string>name_m_self</string> </key>
+                                <value> <string>script</string> </value>
+                            </item>
+                            <item>
+                                <key> <string>name_subpath</string> </key>
+                                <value> <string>traverse_subpath</string> </value>
+                            </item>
+                          </dictionary>
+                        </value>
+                    </item>
+                  </dictionary>
+                </state>
+              </object>
+            </value>
+        </item>
+        <item>
+            <key> <string>_body</string> </key>
+            <value> <string>portal = context.getPortalObject()\n
+sub_tag = "RegularisationRequest_stopHostingSubscriptionList"\n
+portal.portal_catalog.searchAndActivate(\n
+      portal_type="Regularisation Request", \n
+      simulation_state=["suspended"],\n
+      default_resource_uid=[\n
+        portal.service_module.slapos_crm_stop_acknowledgement.getUid(),\n
+        portal.service_module.slapos_crm_delete_reminder.getUid(),\n
+      ],\n
+      method_id=\'RegularisationRequest_stopHostingSubscriptionList\',\n
+      method_args=(sub_tag,),\n
+      # Limit activity number, as method_id also calls searchAndActivate\n
+      activity_count=1,\n
+      packet_size=1,\n
+      activate_kw={\'tag\': tag, \'after_tag\': sub_tag}\n
+      )\n
+context.activate(after_tag=tag).getId()\n
+</string> </value>
+        </item>
+        <item>
+            <key> <string>_params</string> </key>
+            <value> <string>tag, fixit, params</string> </value>
+        </item>
+        <item>
+            <key> <string>id</string> </key>
+            <value> <string>Alarm_stopHostingSubscriptionFromRegularisationRequest</string> </value>
+        </item>
+      </dictionary>
+    </pickle>
+  </record>
+</ZopeData>

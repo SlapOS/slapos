@@ -570,3 +570,105 @@ portal_workflow.doActionFor(context, action='edit_action', comment='Visited by R
     self.assertNotEqual(
         'Visited by RegularisationRequest_triggerDeleteReminderEscalation',
         ticket.workflow_history['edit_workflow'][-1]['comment'])
+
+class TestSlapOSCrmStopHostingSubscription(testSlapOSMixin):
+
+  def beforeTearDown(self):
+    transaction.abort()
+
+  def createRegularisationRequest(self):
+    new_id = self.generateNewId()
+    return self.portal.regularisation_request_module.newContent(
+      portal_type='Regularisation Request',
+      title="Test Reg. Req.%s" % new_id,
+      reference="TESTREGREQ-%s" % new_id,
+      )
+
+  def _simulateRegularisationRequest_stopHostingSubscriptionList(self):
+    script_name = 'RegularisationRequest_stopHostingSubscriptionList'
+    if script_name in self.portal.portal_skins.custom.objectIds():
+      raise ValueError('Precondition failed: %s exists in custom' % script_name)
+    createZODBPythonScript(self.portal.portal_skins.custom,
+                        script_name,
+                        '*args, **kwargs',
+                        '# Script body\n'
+"""portal_workflow = context.portal_workflow
+portal_workflow.doActionFor(context, action='edit_action', comment='Visited by RegularisationRequest_stopHostingSubscriptionList') """ )
+    transaction.commit()
+
+  def _dropRegularisationRequest_stopHostingSubscriptionList(self):
+    script_name = 'RegularisationRequest_stopHostingSubscriptionList'
+    if script_name in self.portal.portal_skins.custom.objectIds():
+      self.portal.portal_skins.custom.manage_delObjects(script_name)
+    transaction.commit()
+
+  def test_alarm_matching_regularisation_request(self):
+    ticket = self.createRegularisationRequest()
+    ticket.edit(resource='service_module/slapos_crm_delete_reminder')
+    ticket.validate()
+    ticket.suspend()
+
+    self.tic()
+    self._simulateRegularisationRequest_stopHostingSubscriptionList()
+    try:
+      self.portal.portal_alarms.\
+          slapos_crm_stop_hosting_subscription.activeSense()
+      self.tic()
+    finally:
+      self._dropRegularisationRequest_stopHostingSubscriptionList()
+    self.assertEqual(
+        'Visited by RegularisationRequest_stopHostingSubscriptionList',
+        ticket.workflow_history['edit_workflow'][-1]['comment'])
+
+  def test_alarm_matching_regularisation_request_2(self):
+    ticket = self.createRegularisationRequest()
+    ticket.edit(resource='service_module/slapos_crm_stop_acknowledgement')
+    ticket.validate()
+    ticket.suspend()
+
+    self.tic()
+    self._simulateRegularisationRequest_stopHostingSubscriptionList()
+    try:
+      self.portal.portal_alarms.\
+          slapos_crm_stop_hosting_subscription.activeSense()
+      self.tic()
+    finally:
+      self._dropRegularisationRequest_stopHostingSubscriptionList()
+    self.assertEqual(
+        'Visited by RegularisationRequest_stopHostingSubscriptionList',
+        ticket.workflow_history['edit_workflow'][-1]['comment'])
+
+  def test_alarm_not_suspended(self):
+    ticket = self.createRegularisationRequest()
+    ticket.edit(resource='service_module/slapos_crm_stop_acknowledgement')
+    ticket.validate()
+
+    self.tic()
+    self._simulateRegularisationRequest_stopHostingSubscriptionList()
+    try:
+      self.portal.portal_alarms.\
+          slapos_crm_stop_hosting_subscription.activeSense()
+      self.tic()
+    finally:
+      self._dropRegularisationRequest_stopHostingSubscriptionList()
+    self.assertNotEqual(
+        'Visited by RegularisationRequest_stopHostingSubscriptionList',
+        ticket.workflow_history['edit_workflow'][-1]['comment'])
+
+  def test_alarm_other_resource(self):
+    ticket = self.createRegularisationRequest()
+    ticket.edit(resource='service_module/slapos_acknowledgement')
+    ticket.validate()
+    ticket.suspend()
+
+    self.tic()
+    self._simulateRegularisationRequest_stopHostingSubscriptionList()
+    try:
+      self.portal.portal_alarms.\
+          slapos_crm_stop_hosting_subscription.activeSense()
+      self.tic()
+    finally:
+      self._dropRegularisationRequest_stopHostingSubscriptionList()
+    self.assertNotEqual(
+        'Visited by RegularisationRequest_stopHostingSubscriptionList',
+        ticket.workflow_history['edit_workflow'][-1]['comment'])
