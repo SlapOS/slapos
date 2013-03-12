@@ -29,9 +29,13 @@ parts +=
 
 {{ replicated.replicate("postgres", "3", "postgres-export", "postgres-import") }}
 
-# Nothing to do for the exporter. Just dummy part that does nothing.
-# For httpd instance, PBS will directly pull data from srv/www.
-# XXX-Cedric: write a real backup system.
+# Nothing to do for the exporter. This wrapper is intended
+# to produce the "dump" files that have to be backed up.
+# So, in case of binary DB data, we would back up the ASCII dump
+# files, or a similar data format that can be restored on any machine
+# (i.e. postgres 'custom')
+# In the case of an httpd instance, the src/www directory can be directly
+# pulled from the PBS, we don't need to prepare anything.
 [exporter]
 wrapper = /bin/true
 
