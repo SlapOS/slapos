@@ -12,6 +12,7 @@ slapos_bt_list = [
     'slapos_slap_tool',
     'slapos_hypermedia',
     'slapos_web',
+    'slapos_crm',
     'slapos_payzen',
   ]
 
