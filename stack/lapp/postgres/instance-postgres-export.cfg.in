@@ -19,3 +19,8 @@ bin = $${postgres-instance:bin}
 pgdata-directory = $${postgres-instance:pgdata-directory}
 backup-directory = $${postgres-instance:backup-directory}
 dbname = $${postgres-instance:dbname}
+
+
+# Extends publish section with resilient parameters
+[urls]
+<= resilient-publish-connection-parameter
