@@ -19,7 +19,7 @@ parts +=
 [request-apache]
 return = url ssh-public-key ssh-url notification-id ip url backend_url
 # XXX: hardcoded values
-config = domain number authorized-key notify ip-list namebase postgres1-computer-guid pbs-postgres1-computer-guid postgres2-computer-guid pbs-postgres2-computer-guid postgres3-computer-guid pbs-postgres3-computer-guid sql-data-file
+config = domain number authorized-key notify ip-list namebase postgres1-computer-guid pbs-postgres1-computer-guid postgres2-computer-guid pbs-postgres2-computer-guid postgres3-computer-guid pbs-postgres3-computer-guid maarch-sql-data-file
 config-postgres1-computer-guid = ${slap-parameter:postgres1-computer-guid}
 config-pbs-postgres1-computer-guid = ${slap-parameter:pbs-postgres1-computer-guid}
 config-postgres2-computer-guid = ${slap-parameter:postgres2-computer-guid}
@@ -27,7 +27,7 @@ config-pbs-postgres2-computer-guid = ${slap-parameter:pbs-postgres2-computer-gui
 config-postgres3-computer-guid = ${slap-parameter:postgres3-computer-guid}
 config-pbs-postgres3-computer-guid = ${slap-parameter:pbs-postgres3-computer-guid}
 config-domain = ${slap-parameter:domain}
-config-sql-data-file = ${slap-parameter:sql-data-file}
+config-maarch-sql-data-file = ${slap-parameter:maarch-sql-data-file}
 
 [publish-connection-informations]
 recipe = slapos.cookbook:publish
@@ -47,4 +47,4 @@ pbs-postgres3-computer-guid =
 # XXX-Cedric: Hardcoded parameters. Should be dynamically generated.
 domain =
 # the sql-data-file parameter is specific to maarch
-sql-data-file = 
+maarch-sql-data-file = 
