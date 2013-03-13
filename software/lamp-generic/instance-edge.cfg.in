@@ -22,7 +22,7 @@ software-url = $${slap-connection:software-release-url}
 software-type = default
 config = application-location
 config-application-location = $${slap-parameter:application-location}
-return = url backend-url
+return = backend-url
 
 [publish-connection-parameter]
 recipe = slapos.cookbook:publishsection
