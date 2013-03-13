@@ -94,6 +94,7 @@ for sla_category_id, sla_category in [\n
   (\'local_area_network_type\', local_area_network_type),\n
   (\'memory_size\', memory_size),\n
   (\'memory_type\', memory_type),\n
+  (\'region\', region),\n
   (\'storage_capacity\', storage_capacity),\n
   (\'storage_interface\', storage_interface),\n
   (\'storage_redundancy\', storage_redundancy),\n
@@ -119,7 +120,7 @@ return context.REQUEST.get(\'request_hosting_subscription\').Base_redirect(keep_
         </item>
         <item>
             <key> <string>_params</string> </key>
-            <value> <string>dialog_id, service_title, instance_xml, computer_guid=\'\', cpu_core=\'\', cpu_frequency=\'\', cpu_type=\'\', local_area_network_type=\'\', memory_size=\'\', memory_type=\'\', storage_capacity=\'\', storage_interface=\'\', storage_redundancy=\'\', group=\'\', **kw</string> </value>
+            <value> <string>dialog_id, service_title, instance_xml, computer_guid=\'\', cpu_core=\'\', cpu_frequency=\'\', cpu_type=\'\', local_area_network_type=\'\', memory_size=\'\', memory_type=\'\', storage_capacity=\'\', storage_interface=\'\', storage_redundancy=\'\', group=\'\', region=\'\', **kw</string> </value>
         </item>
         <item>
             <key> <string>id</string> </key>
