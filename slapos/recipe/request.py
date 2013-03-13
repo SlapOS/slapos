@@ -244,6 +244,9 @@ class RequestEdge(Recipe):
       # Request will have its own copy of options dict
       local_options = original_options.copy()
       local_options['name'] = '%s-%s' % (country, name)
+      local_options['sla'] = "region"
+      local_options['sla-region'] = country
+      
       self.request_dict[country] = Recipe(buildout, name, local_options)
       # "Bubble" all connection parameters
       for option, value in local_options.iteritems():
