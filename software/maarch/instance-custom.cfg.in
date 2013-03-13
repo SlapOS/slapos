@@ -13,6 +13,7 @@ php-ini = $${directory:php-ini-dir}/php.ini
 root-docservers = $${buildout:directory}/srv/docservers
 dependency = $${apache-php:recipe}
 maarch-sql-data-file = $${slap-parameter:maarch-sql-data-file}
+maarch-docservers-path = $${slap-parameter:maarch-docservers-path}
 
 [publish-connection-informations]
 # XXX login should not be hardcoded
@@ -21,4 +22,5 @@ password = $${maarch-configuration:db-password}
 
 [slap-parameter]
 maarch-sql-data-file =
+maarch-docservers-path =
 
