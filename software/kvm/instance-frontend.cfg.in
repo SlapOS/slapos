@@ -133,6 +133,7 @@ state-file = $${rootdirectory:srv}/logrotate.status
 # Default value if no port is specified
 port = 4443
 http-redirection = 0
+slave_instance_list =
 
 # [logrotate-entry-frontend]
 # <= logrotate
