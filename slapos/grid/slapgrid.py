@@ -134,11 +134,11 @@ def parseArgumentTupleAndReturnSlapgridObject(*argument_tuple):
   parser.add_argument("--now", action="store_true", default=False,
       help="Launch slapgrid without delay. Default behavior.")
   parser.add_argument("--all", action="store_true", default=False,
-      help="Launch slapgrid to process all Softare Releases"
+      help="Launch slapgrid to process all Softare Releases "
            "and/or Computer Partitions.")
   parser.add_argument("--only-sr",
-      help="Force the update of a single software release (use url hash),"
-           "event if is already installed. This option will make all others "
+      help="Force the update of a single software release (use url hash), "
+           "even if is already installed. This option will make all others "
            "sofware releases be ignored.")
   parser.add_argument("--only-cp",
       help="Update a single or a list of computer partitions "
