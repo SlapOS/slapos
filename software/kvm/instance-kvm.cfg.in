@@ -162,7 +162,6 @@ curl_path = ${curl:location}/bin/curl
 
 [slap-parameter]
 # Default values if not specified
-frontend-instance-guid = SOFTINST-11031
 frontend-software-type = frontend
 frontend-software-url = http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.92:/software/kvm/software.cfg
 
