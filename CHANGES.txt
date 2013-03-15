@@ -1,8 +1,6 @@
 Changes
 =======
 
-
-
 0.74.0 (2013-03-05)
 -------------------
 
@@ -134,13 +132,13 @@ Changes
     [Antoine Catton]
 
 0.64 (2012-08-27)
-----------------
+-----------------
 
   * Fix: remove "template" recipe which was collinding with slapos.recipe.template.
     [Antoine Catton]
 
 0.63 (2012-08-22)
-----------------
+-----------------
 
   * Add the ability to run command line in shellinabox. [Antoine Catton]
   * Add the ability to run shellinabox as root. (for LXC purpose) [Antoine Catton]
@@ -198,7 +196,7 @@ Changes
   * Add slapmonitor and slapreport recipes. [Mohamadou Mbengue]
 
 0.54.1 (2012-06-18)
------------------
+-------------------
 
   * Fix 0.54 release containing wrong code in request.py.
 
@@ -315,7 +313,7 @@ Changes
    [Cedric de Saint Martin]
 
 0.40.1 (2012-03-01)
------------------
+-------------------
 
  * Fix manifest to include files needed for apache. [Cedric de Saint Martin]
 
@@ -377,7 +375,7 @@ Changes
 -----------------
 
   * LAMP : Recipe can now call lampconfigure from slapos.toolbox which will
-   configure PHP application instance when needed. [Alain Takoudjou Kamdem]
+    configure PHP application instance when needed. [Alain Takoudjou Kamdem]
 
 0.31 (2011-10-16)
 -----------------
@@ -513,7 +511,7 @@ Changes
 -----------------
 
  * Add PHPMyAdmin software release used in SlapOS tutorials
- [Cedric de Saint Martin]
+   [Cedric de Saint Martin]
  * Add slaprunner software release [Cedric de Saint Martin]
 
 
