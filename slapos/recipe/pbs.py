@@ -86,7 +86,7 @@ class Recipe(GenericSlapRecipe, Notify, Callback):
 
     url = entry.get('url')
     if url is None:
-      url = ''
+      raise ValueError('Missing URL parameter for PBS recipe')
 
     # We assume that thanks to sha512 there's no collisions
     url_hash = hashlib.sha512(url).hexdigest()
