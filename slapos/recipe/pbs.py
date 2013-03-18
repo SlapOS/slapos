@@ -74,7 +74,6 @@ def promise(args):
   if ssh.poll() is None:
     return 1
   if ssh.returncode != 0:
-    ssh.terminate()
     failed_ssh()
   return ssh.returncode
 
