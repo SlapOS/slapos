@@ -1241,7 +1241,8 @@ class Config(object):
     if root_needed and os.getuid() != 0:
       message = "Root rights are needed"
       self.logger.error(message)
-      raise UsageError(message)
+      sys.stderr.write(message+'\n')
+      sys.exit()
 
     if self.log_file:
       if not os.path.isdir(os.path.dirname(self.log_file)):

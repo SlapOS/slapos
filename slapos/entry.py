@@ -55,8 +55,6 @@ USER_SLAPOS_CONFIGURATION = os.environ.get(
     'SLAPOS_CLIENT_CONFIGURATION',
     os.environ.get('SLAPOS_CONFIGURATION', '~/.slapos/slapos.cfg'))
 
-class UsageError(Exception):
-  pass
 
 class EntryPointNotImplementedError(NotImplementedError):
   def __init__(self, *args, **kw_args):
@@ -119,9 +117,9 @@ def dispatch(command, is_node_command):
   """
   if is_node_command:
 
-    # check root
     if os.getuid() != 0:
-      raise UsageError('Root rights are needed')
+      sys.stderr.write('This command must be run as root.\n')
+      sys.exit()
 
     if command == 'register':
       call(register)
