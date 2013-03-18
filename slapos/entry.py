@@ -55,6 +55,9 @@ USER_SLAPOS_CONFIGURATION = os.environ.get(
     'SLAPOS_CLIENT_CONFIGURATION',
     os.environ.get('SLAPOS_CONFIGURATION', '~/.slapos/slapos.cfg'))
 
+class UsageError(Exception):
+  pass
+
 class EntryPointNotImplementedError(NotImplementedError):
   def __init__(self, *args, **kw_args):
     NotImplementedError.__init__(self, *args, **kw_args)
@@ -115,7 +118,11 @@ def dispatch(command, is_node_command):
   If configuration file is not given: define it arbitrarily, and so on.
   """
   if is_node_command:
-    # XXX-Cedric: should we check if we are root?
+
+    # check root
+    if os.getuid() != 0:
+      raise UsageError('Root rights are needed')
+
     if command == 'register':
       call(register)
     elif command == 'software':
@@ -221,3 +228,4 @@ Node subcommands usage:
         'forum. Please also make sure that SlapOS Node is up to '
         'date.' % exception)
     sys.exit(1)
+
