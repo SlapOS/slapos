@@ -1,0 +1,49 @@
+daemon off;
+worker_processes 1;
+
+#XXX-Cedric: TODO separate the different logs
+error_log %(error_log)s debug;
+
+events {
+        worker_connections 1024;
+        use epoll;
+}
+
+http {
+        log_format main
+                '$remote_addr - $remote_user [$time_local] '
+                '"$request" $status $bytes_sent '
+                '"$http_referer" "$http_user_agent" '
+                '"$gzip_ratio"';
+
+        server {
+                listen %(listen_local_ipv4)s:8008;
+                server_name localhost;
+                access_log %(access_log)s main;
+                error_log %(error_log)s info;
+
+                root %(htdocs)s;
+
+                location ~ $ {
+                        add_header Auth-Server 2a01:e34:ec03:8650:e2cb:4eff:fed9:6f58;
+                        add_header Auth-Port 25;
+                        return 200;
+                }
+        }
+}
+
+mail {
+        server_name %(domain_name)s;
+
+        auth_http %(listen_local_ipv4)s:8008;
+
+        server {
+                listen %(listen_local_ipv4)s:%(smtp_port_number)s;
+                listen %(listen_global_ipv6)s:%(smtp_port_number)s;
+                protocol smtp;
+                timeout 60s; # XXX-Cedric: turn back to 5s
+                proxy on;
+                xclient off;
+                smtp_auth none;
+        }
+}
