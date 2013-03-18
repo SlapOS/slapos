@@ -25,8 +25,7 @@
 #
 ##############################################################################
 
-from hashlib import sha512
-import inspect
+import hashlib
 import json
 import os
 import signal
@@ -43,33 +42,14 @@ from slapos import slap as slapmodule
 
 def promise(args):
 
-  def failed_ssh(partition, ssh):
+  def failed_ssh():
     sys.stderr.write("SSH Connection failed\n")
-    try:
-      ssh.terminate()
-    except:
-      pass
+    partition = slap.registerComputerPartition(args['computer_id'],
+                                               args['partition_id'])
     partition.bang("SSH Connection failed. rdiff-backup is unusable.")
 
   def sigterm_handler(signum, frame):
-    # Walk up in the stack to get promise local
-    # variables
-    ssh = None
-    for upper_frame in inspect.getouterframes(frame):
-      # Use promise.func_name insteand of 'promise' in order to be
-      # detected by editor if promise func name change.
-      # Else, it's hard to debug this kind of error.
-      if upper_frame[3] == promise.func_name:
-        try:
-          partition = upper_frame[0].f_locals['partition']
-          ssh = upper_frame[0].f_locals['ssh']
-        except KeyError:
-          raise SystemExit("SIGTERM Send too soon.")
-        break
-    # If ever promise function wasn't found in the stack.
-    if ssh is None:
-      raise SystemExit
-    failed_ssh(partition, ssh)
+    failed_ssh()
 
   signal.signal(signal.SIGTERM, sigterm_handler)
 
@@ -77,9 +57,6 @@ def promise(args):
   slap.initializeConnection(args['server_url'],
                             key_file=args.get('key_file'),
                             cert_file=args.get('cert_file'))
-
-  partition = slap.registerComputerPartition(args['computer_id'],
-                                             args['partition_id'])
 
   ssh = subprocess.Popen([args['ssh_client'], '%(user)s@%(host)s/%(port)s' % args],
                          stdin=subprocess.PIPE,
@@ -97,7 +74,8 @@ def promise(args):
   if ssh.poll() is None:
     return 1
   if ssh.returncode != 0:
-    failed_ssh(partition, ssh)
+    ssh.terminate()
+    failed_ssh()
   return ssh.returncode
 
 
@@ -112,8 +90,8 @@ class Recipe(GenericSlapRecipe, Notify, Callback):
       url = ''
 
     # We assume that thanks to sha512 there's no collisions
-    url_hash = sha512(url).hexdigest()
-    name_hash = sha512(entry['name']).hexdigest()
+    url_hash = hashlib.sha512(url).hexdigest()
+    name_hash = hashlib.sha512(entry['name']).hexdigest()
 
     promise_path = os.path.join(self.options['promises-directory'],
                                 url_hash)
