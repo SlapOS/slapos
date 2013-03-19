@@ -42,10 +42,10 @@ class Recipe(GenericBaseRecipe):
 
         environment = self.options.get('environment')
         if environment is not None:
-            environment = {k.strip(): v.strip() for k, v in [
+            environment = dict((k.strip(), v.strip()) for k, v in [
                              line.split('=')
                              for line in environment.split('\n')
-                           ]}
+                           ])
 
         return [self.createPythonScript(
             self.options['output'],

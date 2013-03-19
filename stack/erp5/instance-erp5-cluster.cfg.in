@@ -1,3 +1,4 @@
+{% if slap_software_type == software_type -%}
 #############################
 #
 # Request erp5 production environnment
@@ -104,3 +105,4 @@ smtp-url = smtp://localhost:25/
 [basedirectory]
 recipe = slapos.cookbook:mkdirectory
 etc = ${buildout:directory}/etc/run
+{% endif %}

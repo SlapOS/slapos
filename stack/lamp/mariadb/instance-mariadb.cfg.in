@@ -14,8 +14,6 @@ parts =
   slapmonitor
   slapmonitor-xml
 
-gzip-binary = ${gzip:location}/bin/gzip
-
 # Define egg directories to be the one from Software Release
 # (/opt/slapgrid/...)
 eggs-directory = ${buildout:eggs-directory}
@@ -91,7 +89,7 @@ command = $${logrotate:wrapper}
 recipe = slapos.cookbook:logrotate
 # Binaries
 logrotate-binary = ${logrotate:location}/usr/sbin/logrotate
-gzip-binary = $${buildout:gzip-binary}
+gzip-binary = ${gzip:location}/bin/gzip
 gunzip-binary = ${gzip:location}/bin/gunzip
 # Directories
 wrapper = $${rootdirectory:bin}/logrotate
@@ -196,7 +194,8 @@ recipe = slapos.cookbook:mysql
 # Options
 recovering = false
 user = user
-port = 3306
+password = $${mysql-password:passwd}
+port = 33060
 ip = $${slap-network-information:local-ipv4}
 database = db
 
@@ -217,6 +216,11 @@ mysql-binary = ${mariadb:location}/bin/mysql
 mysql-install-binary = ${mariadb:location}/scripts/mysql_install_db
 mysql-upgrade-binary = ${mariadb:location}/bin/mysql_upgrade
 mysqld-binary = ${mariadb:location}/bin/mysqld
+
+[mysql-password]
+recipe = slapos.cookbook:generate.password
+storage-path = $${rootdirectory:etc}/.passwd
+bytes = 4
 
 
 #----------------

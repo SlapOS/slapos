@@ -34,9 +34,6 @@ from slapos.recipe.librecipe import filehash
 
 class Recipe(GenericBaseRecipe):
 
-  def _options(self, options):
-    options['password'] = self.generatePassword()
-
   def install(self):
     path_list = []
 

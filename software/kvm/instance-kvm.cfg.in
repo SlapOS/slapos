@@ -6,8 +6,7 @@
 [buildout]
 parts =
   certificate-authority
-  publish-kvm-backend-connection-information
-  publish-kvm-frontend-connection-information
+  publish-kvm-connection-information
   kvm-promise
   websockify-sighandler
   novnc-promise
@@ -146,19 +145,18 @@ return = url resource port domainname
 sla = instance_guid
 sla-instance_guid = $${slap-parameter:frontend-instance-guid}
 
-[publish-kvm-backend-connection-information]
+
+[publish-kvm-connection-information]
 recipe = slapos.cookbook:publish
 backend-url = https://[$${novnc-instance:ip}]:$${novnc-instance:port}/vnc_auto.html?host=[$${novnc-instance:ip}]&port=$${novnc-instance:port}&encrypt=1
 password = $${kvm-instance:passwd}
-
-[publish-kvm-frontend-connection-information]
-<= publish-kvm-backend-connection-information
 url = $${request-slave-frontend:connection-url}/vnc_auto.html?host=$${request-slave-frontend:connection-domainname}&port=$${request-slave-frontend:connection-port}&encrypt=1&path=$${request-slave-frontend:connection-resource}
+
 
 [frontend-promise]
 recipe = slapos.cookbook:check_url_available
 path = $${directory:promises}/frontend_promise
-url = $${publish-kvm-frontend-connection-information:url}
+url = $${publish-kvm-connection-information:url}
 dash_path = ${dash:location}/bin/dash
 curl_path = ${curl:location}/bin/curl
 

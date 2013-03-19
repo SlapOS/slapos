@@ -12,43 +12,25 @@ For extensive parameters definition, please look at parameter-input-schema.json.
 Examples
 --------
 
-The following examples listhow to request different possible instances of KVM
+The following examples list how to request different possible instances of KVM
 Software Release from slap console or command line.
 
 KVM instance (1GB of RAM, 10GB of SSD, one core)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Note that the KVM instance will request a frontend slave instance in order
+Note that the KVM instance will try to request a frontend slave instance in order
 to be accessible from IPv4.
-
-KVM instance needs a NBD to fetch disk image at first boot. Working NBD IP/port
-has to be specified.
 
 ::
   myawesomekvm = request(
       software_release=kvm,
-      partition_reference="myawesomekvm",
+      partition_reference="My awesome KVM",
       partition_parameter_kw={
-          "ndb_ip":"2a01:e35:2e27:460:e2cb:4eff:fed9:48dc",
-          "ndb_port": 1024
+          "nbd-host":"ubuntu-1204.nbd.vifib.net",
       }
   )
 
-
-KVM+ instance (2GB of RAM, 20GB of SSD, two cores)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-::
-  myevenmoreawesomekvm = request(
-      software_release=kvm,
-      partition_reference="myevenmoreawesomekvm",
-      partition_parameter_kw={
-          "ndb_ip":"2a01:e35:2e27:460:e2cb:4eff:fed9:48dc",
-          "ndb_port": 1024
-      },
-      software_type="kvm+",
-  )
-
+See the instance-kvm-input-schema.json file for more instance parameters (cpu-count, ram-size, disk-size, etc).
 
 NBD instance
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

@@ -43,6 +43,7 @@ class Recipe:
     """
     path_list = []
     target_directory = self.options['target-directory']
+    # XXX: breaks if any path contains spaces.
     for linkline in self.options['link-binary'].split():
       path, linkname = os.path.split(linkline)
 
@@ -50,7 +51,7 @@ class Recipe:
       if os.path.lexists(link):
         if not os.path.islink(link):
           raise zc.buildout.UserError(
-              'Target link already %r exists but it is not link' % link)
+              'Target %r already exists but is not a link' % link)
         os.unlink(link)
       os.symlink(linkline, link)
       self.logger.debug('Created link %r -> %r' % (link, linkline))

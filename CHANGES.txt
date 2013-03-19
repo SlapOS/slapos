@@ -1,8 +1,39 @@
 Changes
 =======
 
+0.74.0 (2013-03-05)
+-------------------
+
+ * Generate mysql password randomly in LAMP stack. [Alain Takoudjou]
+ * Add support for apache and haproxy to have more than one listening port. [Vincent Pelletier]
+ * Use a more consistent parameter naming in 6tunnel recipe. [Vincent Pelletier]
+ * Provide an SR-transparent way to (de)serialise master data. [Vincent Pelletier]
+ * Initial version of neoppod recipe. [Vincent Pelletier]
+ * Initial version of clusterized erp5 recipes. [Vincent Pelletier]
+ * General cleanup of the request recipe (simpler parsing, less calls to master). [Vincent Pelletier, Cedric de Saint Martin]
+
+0.73.1 (2013-02-19)
+-------------------
+
+ * softwaretype recipe: all falsy parameter values are now ignored. [Cedric de Saint Martin]
+
+0.73.0 (2013-02-18)
+-------------------
+
+ * Add mioga and apacheperl recipes. [Viktor Horvath]
+ * request.py: Properly fetch instance_guid of instance. [Cedric de Saint Martin]
+ * request.py: Only append SLA parameter to the list if the key actually exists and is not empty string. [Cedric de Saint Martin]
+
+0.72.0 (2013-02-11)
+-------------------
+
+ * librecipe: correctly handle newline and missing file in addLineToFile(). [Marco Mariani]
+ * LAMP: Copy php application even if directory exists but is empty. This handle new resilient LAMP stack. [Cedric de Saint Martin]
+ * LAMP: Don't even try to restart/reload/graceful Apache. This fix "Apache hangs" problem. [Cedric de Saint Martin]
+
 0.71.4 (2013-02-01)
 -------------------
+
  * Enable IPv6 support in KumoFS. [Vincent Pelletier]
  * Use new connection and get result when try to create new erp5 site. [Rafael Monnerat]
  * Set up timezone database in mariab's mysql table so that we can use timezone conversion function. [Kazuhiko Shiozaki]
@@ -101,13 +132,13 @@ Changes
     [Antoine Catton]
 
 0.64 (2012-08-27)
-----------------
+-----------------
 
   * Fix: remove "template" recipe which was collinding with slapos.recipe.template.
     [Antoine Catton]
 
 0.63 (2012-08-22)
-----------------
+-----------------
 
   * Add the ability to run command line in shellinabox. [Antoine Catton]
   * Add the ability to run shellinabox as root. (for LXC purpose) [Antoine Catton]
@@ -165,7 +196,7 @@ Changes
   * Add slapmonitor and slapreport recipes. [Mohamadou Mbengue]
 
 0.54.1 (2012-06-18)
------------------
+-------------------
 
   * Fix 0.54 release containing wrong code in request.py.
 
@@ -282,7 +313,7 @@ Changes
    [Cedric de Saint Martin]
 
 0.40.1 (2012-03-01)
------------------
+-------------------
 
  * Fix manifest to include files needed for apache. [Cedric de Saint Martin]
 
@@ -344,7 +375,7 @@ Changes
 -----------------
 
   * LAMP : Recipe can now call lampconfigure from slapos.toolbox which will
-   configure PHP application instance when needed. [Alain Takoudjou Kamdem]
+    configure PHP application instance when needed. [Alain Takoudjou Kamdem]
 
 0.31 (2011-10-16)
 -----------------
@@ -480,7 +511,7 @@ Changes
 -----------------
 
  * Add PHPMyAdmin software release used in SlapOS tutorials
- [Cedric de Saint Martin]
+   [Cedric de Saint Martin]
  * Add slaprunner software release [Cedric de Saint Martin]
 
 

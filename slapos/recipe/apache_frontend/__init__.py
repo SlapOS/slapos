@@ -85,8 +85,20 @@ class Recipe(BaseSlapRecipe):
     domain_dict = {}
 
     for slave_instance in slave_instance_list:
+      # Sanitize inputs
       backend_url = slave_instance.get("url", None)
       reference = slave_instance.get("slave_reference")
+
+      if slave_instance.haskey("enable_cache"):
+        enable_cache = slave_instance.get("enable_cache", "").upper() in ('1', 'TRUE')
+      else:
+        enable_cache = False
+
+      if slave_instance.haskey("type"):
+        slave_type = slave_instance.get("type", "").lower()
+      else:
+        slave_type = None
+
       # Set scheme (http? https?)
       # Future work may allow to choose between http and https (or both?)
       scheme = 'http://'
@@ -120,13 +132,15 @@ class Recipe(BaseSlapRecipe):
       slave_dict[reference] = "%s%s/" % (scheme, domain)
 
       # Check if we want varnish+stunnel cache.
-      if slave_instance.get("enable_cache", "").upper() in ('1', 'TRUE'):
-        # XXX-Cedric : need to refactor to clean code? (to many variables)
-        rewrite_rule = self.configureVarnishSlave(
-            base_varnish_port, backend_url, reference, service_dict, domain)
-        base_varnish_port += 2
-      else:
-        rewrite_rule = "%s %s" % (domain, backend_url)
+      #if enable_cache:
+      #  # XXX-Cedric : need to refactor to clean code? (to many variables)
+      #  rewrite_rule = self.configureVarnishSlave(
+      #      base_varnish_port, backend_url, reference, service_dict, domain)
+      #  base_varnish_port += 2
+      #else:
+      #  rewrite_rule = "%s %s" % (domain, backend_url)
+      # Temporary forbid activation of cache until it is properly tested
+      rewrite_rule = "%s %s" % (domain, backend_url)
 
       # Finally, if successful, we add the rewrite rule to our list of rules
       if rewrite_rule:
@@ -134,7 +148,7 @@ class Recipe(BaseSlapRecipe):
         # rule structure.
         # So we will have one RewriteMap for normal websites, and one
         # RewriteMap for Zope Virtual Host Monster websites.
-        if slave_instance.get("type", "").lower() in ['zope']:
+        if slave_type in ['zope']:
           rewrite_rule_zope_list.append(rewrite_rule)
           # For Zope, we have another dict containing the path e.g '/erp5/...
           rewrite_rule_path = "%s %s" % (domain, slave_instance.get('path', ''))
@@ -529,7 +543,7 @@ class Recipe(BaseSlapRecipe):
     self._createDirectory(mod_ssl_cache_location)
 
     # Create "custom" apache configuration files if it does not exist.
-    # Note : Those files won't be erased or changed when slapgrid is ran.
+    # Note : Those files won't be erased or changed by slapgrid.
     # It can be freely customized by node admin.
     custom_apache_configuration_directory = os.path.join(
         self.data_root_directory, 'apache-conf.d')
@@ -537,12 +551,14 @@ class Recipe(BaseSlapRecipe):
     # First one is included in the end of the apache configuration file
     custom_apache_configuration_file_location = os.path.join(
         custom_apache_configuration_directory, 'apache_frontend.custom.conf')
-    open(custom_apache_configuration_file_location, 'a')
+    if not os.path.exists(custom_apache_configuration_file_location):
+      open(custom_apache_configuration_file_location, 'w')
     # Second one is included in the virtualhost of apache configuration file
     custom_apache_virtual_configuration_file_location = os.path.join(
         custom_apache_configuration_directory,
         'apache_frontend.virtualhost.custom.conf')
-    open(custom_apache_virtual_configuration_file_location, 'a')
+    if not os.path.exists(custom_apache_virtual_configuration_file_location):
+      open(custom_apache_virtual_configuration_file_location, 'w')
 
     # Create backup of custom apache configuration
     backup_path = self.createBackupDirectory('custom_apache_conf_backup')
