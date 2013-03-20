@@ -196,7 +196,6 @@ setup(name=name,
           'zabbixagent = slapos.recipe.zabbixagent:Recipe',
           'zimbra.kvm = slapos.recipe.zimbra_kvm:Recipe',
           'zeo = slapos.recipe.zeo:Recipe',
-
         ],
         'slapos.recipe.nosqltestbed.plugin': [
           'kumo = slapos.recipe.nosqltestbed.kumo:KumoTestBed',
