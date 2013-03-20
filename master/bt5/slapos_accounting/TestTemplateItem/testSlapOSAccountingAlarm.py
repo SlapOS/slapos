@@ -1835,3 +1835,60 @@ portal_workflow.doActionFor(context, action='edit_action', comment='Visited by O
     self.assertNotEqual(
         'Visited by OpenSaleOrder_updatePeriod',
         open_order.workflow_history['edit_workflow'][-1]['comment'])
+
+class TestSlapOSReindexOpenSaleOrder(testSlapOSMixin):
+
+  def createOpenOrder(self):
+    open_order = self.portal.open_sale_order_module\
+        .slapos_accounting_open_sale_order_template.\
+          Base_createCloneDocument(batch_mode=1)
+    open_order.edit(
+        title=self.generateNewSoftwareTitle(),
+        reference="TESTHS-%s" % self.generateNewId(),
+    )
+    return open_order
+
+  def _simulateOpenSaleOrder_reindexIfIndexedBeforeLine(self):
+    script_name = 'OpenSaleOrder_reindexIfIndexedBeforeLine'
+    if script_name in self.portal.portal_skins.custom.objectIds():
+      raise ValueError('Precondition failed: %s exists in custom' % script_name)
+    createZODBPythonScript(self.portal.portal_skins.custom,
+                        script_name,
+                        '*args, **kwargs',
+                        '# Script body\n'
+"""portal_workflow = context.portal_workflow
+portal_workflow.doActionFor(context, action='edit_action', comment='Visited by OpenSaleOrder_reindexIfIndexedBeforeLine') """ )
+    transaction.commit()
+
+  def _dropOpenSaleOrder_reindexIfIndexedBeforeLine(self):
+    script_name = 'OpenSaleOrder_reindexIfIndexedBeforeLine'
+    if script_name in self.portal.portal_skins.custom.objectIds():
+      self.portal.portal_skins.custom.manage_delObjects(script_name)
+    transaction.commit()
+
+  def test_alarm(self):
+    open_order = self.createOpenOrder()
+    open_order.newContent(portal_type="Open Sale Order Line")
+    self.tic()
+    self._simulateOpenSaleOrder_reindexIfIndexedBeforeLine()
+    try:
+      self.portal.portal_alarms.slapos_reindex_open_sale_order.activeSense()
+      self.tic()
+    finally:
+      self._dropOpenSaleOrder_reindexIfIndexedBeforeLine()
+    self.assertEqual(
+        'Visited by OpenSaleOrder_reindexIfIndexedBeforeLine',
+        open_order.workflow_history['edit_workflow'][-1]['comment'])
+
+  def test_alarm_no_line(self):
+    open_order = self.createOpenOrder()
+    self.tic()
+    self._simulateOpenSaleOrder_reindexIfIndexedBeforeLine()
+    try:
+      self.portal.portal_alarms.slapos_reindex_open_sale_order.activeSense()
+      self.tic()
+    finally:
+      self._dropOpenSaleOrder_reindexIfIndexedBeforeLine()
+    self.assertNotEqual(
+        'Visited by OpenSaleOrder_reindexIfIndexedBeforeLine',
+        open_order.workflow_history['edit_workflow'][-1]['comment'])

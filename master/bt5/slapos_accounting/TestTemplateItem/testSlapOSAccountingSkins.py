@@ -9,6 +9,7 @@ from Products.SlapOS.tests.testSlapOSMixin import \
   testSlapOSMixin, withAbort
 from zExceptions import Unauthorized
 from DateTime import DateTime
+import time
 
 class TestSlapOSAccounting(testSlapOSMixin):
 
@@ -18,6 +19,14 @@ class TestSlapOSAccounting(testSlapOSMixin):
       portal_type='Hosting Subscription',
       title="Subscription %s" % new_id,
       reference="TESTHS-%s" % new_id,
+      )
+
+  def createOpenSaleOrder(self):
+    new_id = self.generateNewId()
+    return self.portal.open_sale_order_module.newContent(
+      portal_type='Open Sale Order',
+      title="OpenSaleOrder %s" % new_id,
+      reference="TESTOSO-%s" % new_id,
       )
 
   @withAbort
@@ -123,3 +132,64 @@ class TestSlapOSAccounting(testSlapOSMixin):
     item.workflow_history['instance_slap_interface_workflow'] = []
     date = item.HostingSubscription_calculateSubscriptionStopDate()
     self.assertEqual(date, None)
+
+  def test_OpenSaleOrder_reindexIfIndexedBeforeLine_no_line(self):
+    portal = self.portal
+    order = self.createOpenSaleOrder()
+    self.tic()
+    indexation_timestamp = portal.portal_catalog(
+      uid=order.getUid(),
+      select_dict={'indexation_timestamp': None})[0].indexation_timestamp
+    order.OpenSaleOrder_reindexIfIndexedBeforeLine()
+    self.tic()
+    new_indexation_timestamp = portal.portal_catalog(
+      uid=order.getUid(),
+      select_dict={'indexation_timestamp': None})[0].indexation_timestamp
+    self.assertEquals(new_indexation_timestamp,
+                      indexation_timestamp)
+
+  def test_OpenSaleOrder_reindexIfIndexedBeforeLine_line_indexed_after(self):
+    portal = self.portal
+    order = self.createOpenSaleOrder()
+    line = order.newContent(portal_type="Open Sale Order Line")
+    self.tic()
+    line.activate().immediateReindexObject()
+    # XXX One more kitten killed
+    time.sleep(1)
+    self.tic()
+    indexation_timestamp = portal.portal_catalog(
+      uid=order.getUid(),
+      select_dict={'indexation_timestamp': None})[0].indexation_timestamp
+    order.OpenSaleOrder_reindexIfIndexedBeforeLine()
+    self.tic()
+    new_indexation_timestamp = portal.portal_catalog(
+      uid=order.getUid(),
+      select_dict={'indexation_timestamp': None})[0].indexation_timestamp
+    self.assertNotEquals(new_indexation_timestamp,
+                         indexation_timestamp)
+
+  def test_OpenSaleOrder_reindexIfIndexedBeforeLine_line_indexed_before(self):
+    portal = self.portal
+    order = self.createOpenSaleOrder()
+    line = order.newContent(portal_type="Open Sale Order Line")
+    self.tic()
+    order.activate().immediateReindexObject()
+    # XXX One more kitten killed
+    time.sleep(1)
+    self.tic()
+    indexation_timestamp = portal.portal_catalog(
+      uid=order.getUid(),
+      select_dict={'indexation_timestamp': None})[0].indexation_timestamp
+    order.OpenSaleOrder_reindexIfIndexedBeforeLine()
+    self.tic()
+    new_indexation_timestamp = portal.portal_catalog(
+      uid=order.getUid(),
+      select_dict={'indexation_timestamp': None})[0].indexation_timestamp
+    self.assertEquals(new_indexation_timestamp,
+                      indexation_timestamp)
+
+  def test_OpenSaleOrder_reindexIfIndexedBeforeLine_REQUEST_disallowed(self):
+    self.assertRaises(
+      Unauthorized,
+      self.portal.OpenSaleOrder_reindexIfIndexedBeforeLine,
+      REQUEST={})
