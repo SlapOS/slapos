@@ -203,7 +203,7 @@ class RequestOptional(Recipe):
           status = self.instance.getState()
         else:
           status = 'not ready yet'
-      except (slapmodule.NotFoundError, slapmodule.ServerError):
+      except (slapmodule.NotFoundError, slapmodule.ServerError, slapmodule.ResourceNotReady):
         status = 'not ready yet'
       except AttributeError:
         status = 'unknown'
