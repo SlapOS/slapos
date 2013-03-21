@@ -63,6 +63,7 @@ class ExportRecipe(GenericBaseRecipe):
                 umask 077
                 %(bin)s/pg_dump \\
                         --host=%(pgdata-directory)s \\
+                        --username postgres \\
                         --format=custom \\
                         --file=%(backup-directory)s/database.dump \\
                         %(dbname)s
@@ -102,6 +103,7 @@ class ImportRecipe(GenericBaseRecipe):
                 #!/bin/sh
                 %(bin)s/pg_restore \\
                         --host=%(pgdata-directory)s \\
+                        --username postgres \\
                         --dbname=%(dbname)s \\
                         --clean \\
                         --no-owner \\
