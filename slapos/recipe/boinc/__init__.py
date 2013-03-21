@@ -28,6 +28,7 @@ from slapos.recipe.librecipe import GenericBaseRecipe
 import os
 import subprocess
 import pwd
+import json
 import signal
 import zc.buildout
 
@@ -223,10 +224,10 @@ class App(GenericBaseRecipe):
   """This recipe allow to deploy an scientific applications using boinc
   Note that recipe use depend on boinc-server parameter"""
 
-  def downloadFiles(self):
+  def downloadFiles(self, app):
     """This is used to download app files if necessary and update options values"""
     for key in ('input-file', 'template-result', 'template-wu', 'binary'):
-      param = self.options[key].strip()
+      param = app[key]
       if param and (param.startswith('http') or param.startswith('ftp')):
         #download the specified file
         cache = os.path.join(self.options['home'].strip(), 'tmp')
@@ -237,39 +238,61 @@ class App(GenericBaseRecipe):
         if key == 'binary':
           mode = 0700
         os.chmod(path, mode)
-        self.options[key] = path
+        app[key] = path
 
-  def checkOptions(self):
-    """Check if parameter send is valid to install or update application"""
-    if not self.options['app-name'].strip() or \
-              not self.options['version'].strip():
-      return False
-    self.appname = self.options['app-name'].strip()
-    self.version = self.options['version'].strip()
-    #for non exist application, check if parameter is complete
-    appdir = os.path.join(self.options['installroot'].strip(), 'apps',
-                    self.options['app-name'].strip(),
-                    self.options['version'].strip())
-    if not os.path.exists(appdir):
-      if not self.options['template-result'].strip() or not self.options['binary'].strip() \
-          or not self.options['input-file'].strip() or not self.options['template-wu'].strip() \
-          or not self.options['wu-number'].strip() or not self.options['platform'].strip():
-        print "Invalid argement values...operation cancelled"
-        return False
-    #write application to install
-    request_file = os.path.join(self.options['home'].strip(),
-                        '.install_' + self.appname + self.version)
-    toInstall = open(request_file, 'w')
-    toInstall.write('install or update')
-    toInstall.close()
-    return True
+  def getAppList(self):
+    """Load parameters,
+      check if parameter send is valid to install or update application"""
+    app_list = json.loads(self.options['boinc-app-list'])
+    if not app_list:
+      return None
+    default_template_result = self.options.get('default-template-result', '').strip()
+    default_template_wu = self.options.get('default-template-wu', '').strip()
+    default_extension = self.options.get('default-extension', '').strip()
+    default_platform = self.options.get('default-platform', '').strip()
+    for app in app_list:
+      for version in app_list[app]:
+        current_app = app_list[app][version]
+        #Use default value if empty and Use_default is True
+        #Initialize all values to empty if not define by the user
+        if current_app['use_default']:
+          current_app['template-result'] = current_app.get('template-result',
+                        default_template_result).strip()
+          current_app['template-wu'] = current_app.get('template-wu',
+                        default_template_wu).strip()
+          current_app['extension'] = current_app.get('extension',
+                        default_extension).strip()
+          current_app['platform'] = current_app.get('platform',
+                        default_platform).strip()
+        else:
+          current_app['template-result'] = current_app.get('template-result', '').strip()
+          current_app['template-wu'] = current_app.get('template-wu', '').strip()
+          current_app['extension'] = current_app.get('extension', '').strip()
+          current_app['platform'] = current_app.get('platform', '').strip()
+        current_app['input-file'] = current_app.get('input-file', '').strip()
+        current_app['wu-number'] = current_app.get('wu-number', 1)
+        #for new application, check if parameter is complete
+        appdir = os.path.join(self.options['installroot'].strip(), 'apps',
+                        app, version)
+        if not os.path.exists(appdir):
+          if not current_app['template-result'] or not current_app['binary'] \
+              or not current_app['input-file'] or not current_app['template-wu'] \
+              or not current_app['platform']:
+            print "BOINC-APP: ERROR - Invalid argements values for % ...operation cancelled" % app
+            app_list[app][version] = None
+            continue
+        #write application to install
+        request_file = os.path.join(self.options['home'].strip(),
+                            '.install_' + app + version)
+        toInstall = open(request_file, 'w')
+        toInstall.write('install or update')
+        toInstall.close()
+    return app_list
 
   def install(self):
-    self.appname = ''
-    self.version = ''
-    if not self.checkOptions():
-      #don't deploy empty or invalid application...skipped
-      return []
+
+    app_list = self.getAppList()
+
     path_list = []
     package = self.options['boinc'].strip()
     #Define environment variable here
@@ -299,39 +322,45 @@ class App(GenericBaseRecipe):
     os.chmod(bash , 0700)
 
     #If useful, download necessary files and update options path
-    self.downloadFiles()
     start_boinc = os.path.join(home, '.start_boinc')
     installroot = self.options['installroot'].strip()
-    platform = self.options['platform'].strip()
     apps_dir = os.path.join(installroot, 'apps')
-    bin_name = self.appname +"_"+ self.version +"_"+ \
-        platform +  self.options['extension'].strip()
-    application = os.path.join(apps_dir, self.appname, self.version, platform)
     wrapperdir = self.options['wrapper-dir'].strip()
     project = self.options['project'].strip()
     lockfile = os.path.join(self.options['home'].strip(), 'app_install.lock')
-
     fd = os.open(lockfile, os.O_RDWR|os.O_CREAT)
     os.close( fd )
 
-    parameter = dict(installroot=installroot, project=project,
-            appname=self.appname, binary_name=bin_name,
-            version=self.version, platform=platform,
-            application=application, environment=environment,
-            start_boinc=start_boinc,
-            wu_number=int(self.options['wu-number'].strip()),
-            t_result=self.options['template-result'].strip(),
-            t_wu=self.options['template-wu'].strip(),
-            t_input=self.options['input-file'].strip(),
-            binary=self.options['binary'].strip(),
-            bash=bash, home_dir=home,
-            lockfile=lockfile,
-    )
-    deploy_app = self.createPythonScript(
-      os.path.join(wrapperdir, 'boinc_%s' % self.appname),
-      '%s.configure.deployApp' % __name__, parameter
-    )
-    path_list.append(deploy_app)
+    for appname in app_list:
+      for version in app_list[appname]:
+        if not app_list[appname][version]:
+          continue
+        self.downloadFiles(app_list[appname][version])
+        platform = app_list[appname][version]['platform']
+        application = os.path.join(apps_dir, appname, version, platform)
+        if app_list[appname][version]['binary'] and not platform:
+          print "BOINC-APP: WARNING - Cannot specify binary without giving platform value"
+          app_list[appname][version]['binary'] = '' #Binary will not be updated
+
+        parameter = dict(installroot=installroot,
+                appname=appname, project=project,
+                version=version, platform=platform,
+                application=application, environment=environment,
+                start_boinc=start_boinc,
+                wu_number=app_list[appname][version]['wu-number'],
+                t_result=app_list[appname][version]['template-result'],
+                t_wu=app_list[appname][version]['template-wu'],
+                t_input=app_list[appname][version]['input-file'],
+                binary=app_list[appname][version]['binary'],
+                extension=app_list[appname][version]['extension'],
+                bash=bash, home_dir=home,
+                lockfile=lockfile,
+        )
+        deploy_app = self.createPythonScript(
+          os.path.join(wrapperdir, 'boinc_%s' % appname),
+          '%s.configure.deployApp' % __name__, parameter
+        )
+        path_list.append(deploy_app)
 
     return path_list
 

@@ -173,7 +173,7 @@ def services(args):
   writeFile(args['service_status'], "started")
 
 def deployApp(args):
-  """Deploy Boinc App with lock"""  
+  """Deploy Boinc App with lock"""
   print "Asking to enter in execution with lock mode..."
   with LockFile(args['lockfile'], wait=True):
     print "acquire the lock file..."
@@ -211,7 +211,9 @@ def deployManagement(args):
                           args['appname'] + numversion + '_result')
   t_wu = os.path.join(args['templates'],
                           args['appname'] + numversion + '_wu')
-  binary = os.path.join(args['application'], args['binary_name'])
+  binary_name = args['appname'] +"_"+ args['version'] +"_"+ \
+          args['platform'] +  args['extension']
+  binary = os.path.join(args['application'], binary_name)
   signBin = False
   if not os.path.exists(base_app):
     os.mkdir(base_app)
