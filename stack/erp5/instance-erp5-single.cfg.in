@@ -104,7 +104,7 @@ name = MariaDB DataBase
 config = test-database-amount mariadb-binlogs database-list innodb-buffer-size innodb-log-file-size innodb-log-buffer-size mariadb-relaxed-writes
 software-type = mariadb
 {% set config_list = ('mariadb-binlogs', 'database-list', 'innodb-buffer-size', 'innodb-log-file-size', 'innodb-log-buffer-size', 'mariadb-relaxed-writes') -%}
-config = database-amount {{ config_list | join(' ') }}
+config = test-database-amount {{ config_list | join(' ') }}
 # BBB: 100 is too much, but kept for backward compatibility.
 config-test-database-amount = {{ dumps(slapparameter_dict.get('test-database-amount', 100)) }}
 {% for option in config_list -%}
