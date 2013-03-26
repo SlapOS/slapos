@@ -1,0 +1,32 @@
+#!%(python_path)s
+# BEWARE: This file is operated by slapgrid
+# BEWARE: It will be overwritten automatically
+
+# Echo client program
+import socket
+import time
+
+# Connect to KVM qmp socket
+so = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+connected = False
+while not connected:
+  try:
+    so.connect('%(socket_path)s')
+  except socket.error:
+    time.sleep(1)
+  else:
+    connected = True
+data = so.recv(1024)
+
+# Enable qmp
+so.send('{ "execute": "qmp_capabilities" }')
+data = so.recv(1024)
+
+# Set VNC password
+so.send('{ "execute": "change", ' \
+        '"arguments": { "device": "vnc", "target": "password", ' \
+        '               "arg": "%(vnc_passwd)s" } }')
+data = so.recv(1024)
+
+# Finish
+so.close()
