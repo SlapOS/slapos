@@ -56,10 +56,6 @@ class GenericBaseRecipe(object):
     self.buildout = buildout
     self.logger = logging.getLogger(name)
 
-    if not options.get('location'):
-      options['location'] = os.path.join(
-          buildout['buildout']['parts-directory'], self.name)
-
     self.options = options.copy() # If _options use self.optionIsTrue
     self._options(options) # Options Hook
     self.options = options.copy() # Updated options dict
