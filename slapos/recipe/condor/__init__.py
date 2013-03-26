@@ -32,6 +32,7 @@ import filecmp
 import urlparse
 import shutil
 import re
+import json
 
 class Recipe(GenericBaseRecipe):
   """Deploy a fully operational condor architecture."""
@@ -219,67 +220,69 @@ class AppSubmit(GenericBaseRecipe):
 
   def getFiles(self):
     """This is used to download app files if necessary and update options values"""
-    self.options['file-number'] = 0
-    if self.options['files']:
-      files_list = self.options['files'].splitlines()
-      files_list = [f for f in files_list if f] #remove empty elements
-      self.options['file-number'] = len(files_list)
-      for i in range(self.options['file-number']):
-        value = files_list[i].strip()
-        pos = str(i)
-        if value and (value.startswith('http') or value.startswith('ftp')):
-          self.options['name_'+pos] = os.path.basename(urlparse.urlparse(value)[2])
-          self.options['file_'+pos] = self.download(value)
-          os.chmod(self.options['file_'+pos], 0600)
-        else:
-          self.options['file_'+pos] = value
-    executable = self.options['executable']
-    if executable and (executable.startswith('http') or executable.startswith('ftp')):
-      self.options['executable'] = self.download(executable,
-                                    self.options['executable-name'].strip())
-      os.chmod(self.options['executable'], 0700)
-    submit_file = self.options['description-file']
-    if submit_file and (submit_file.startswith('http') or submit_file.startswith('ftp')):
-      self.options['description-file'] = self.download(submit_file, 'submit')
-      os.chmod(self.options['description-file'], 0600)
+    app_list = json.loads(self.options['condor-app-list'])
+    if not app_list:
+      return None
+    for app in app_list:
+      if app_list[app].get('files', None):
+        file_list = app_list[app]['files']
+        for file in file_list:
+          if file and (file.startswith('http') or file.startswith('ftp')):
+            file_list[file] = self.download(file_list[file])
+          os.chmod(file_list[file], 0600)
+      else:
+        app_list[app]['files'] = {}
+
+      executable = app_list[app].get('executable', '')
+      if executable and (executable.startswith('http') or executable.startswith('ftp')):
+        app_list[app]['executable'] = self.download(executable,
+                                      app_list[app]['executable-name'])
+        os.chmod(app_list[app]['executable-name'], 0700)
+      submit_file = app_list[app].get('description-file', '')
+      if submit_file and (submit_file.startswith('http') or submit_file.startswith('ftp')):
+        app_list[app]['description-file'] = self.download(submit_file, 'submit')
+        os.chmod(app_list[app]['description-file'], 0600)
+
+    return app_list
 
   def install(self):
     path_list = []
     #check if curent condor instance is an condor master
     if self.options['machine-role'].strip() != "manager":
-      print "ERROR: cannot submit a job to Condor worker instance"
-      return []
+      raise Exception("Cannot submit a job to Condor worker instance")
+
     #Setup directory
     jobdir = self.options['job-dir'].strip()
-    appdir = os.path.join(jobdir, self.options['app-name'].strip())
-    submitfile = os.path.join(appdir, 'submit')
-    appname = self.options['app-name'].strip()
     if not os.path.exists(jobdir):
       os.mkdir(jobdir)
-    if not os.path.exists(appdir):
-      os.mkdir(appdir)
-    self.getFiles()
-    self.copy_file(self.options['executable'],
-                  os.path.join(appdir, self.options['executable-name'].strip())
-    )
-    install = self.copy_file(self.options['description-file'], submitfile)
-    sig_install = os.path.join(appdir, '.install')
-    if install:
-      with open(sig_install, 'w') as f:
-        f.write('to_install')
-    for i in range(self.options['file-number']):
-      destination = os.path.join(appdir, self.options['name_'+str(i)])
-      if os.path.exists(destination):
-        os.unlink(destination)
-      os.symlink(self.options['file_'+str(i)], destination)
-    #generate wrapper for submitting job
-    condor_submit = os.path.join(self.options['bin'].strip(), 'condor_submit')
-    parameter = dict(submit=condor_submit, sig_install=sig_install,
-                    submit_file='submit',
-                    appname=appname, appdir=appdir)
-    submit_job = self.createPythonScript(
-      os.path.join(self.options['wrapper-dir'].strip(), appname),
-      '%s.configure.submitJob' % __name__, parameter
-    )
-    path_list.append(submit_job)
+    app_list = self.getFiles()
+    for appname in app_list:
+      appdir = os.path.join(jobdir, appname)
+      if not os.path.exists(appdir):
+        os.mkdir(appdir)
+      submitfile = os.path.join(appdir, 'submit')
+
+      self.copy_file(app_list[appname]['executable'],
+                    os.path.join(appdir, app_list[appname]['executable-name'])
+      )
+      install = self.copy_file(app_list[appname]['description-file'], submitfile)
+      sig_install = os.path.join(appdir, '.install')
+      if install:
+        with open(sig_install, 'w') as f:
+          f.write('to_install')
+      for file in app_list[appname]['files']:
+        destination = os.path.join(appdir, file)
+        if os.path.exists(destination):
+          os.unlink(destination)
+        os.symlink(app_list[appname]['files'][file], destination)
+      #generate wrapper for submitting job
+      condor_submit = os.path.join(self.options['bin'].strip(), 'condor_submit')
+      parameter = dict(submit=condor_submit, sig_install=sig_install,
+                      submit_file='submit',
+                      appname=appname, appdir=appdir)
+      submit_job = self.createPythonScript(
+        os.path.join(self.options['wrapper-dir'].strip(), appname),
+        '%s.configure.submitJob' % __name__, parameter
+      )
+      path_list.append(submit_job)
     return path_list
