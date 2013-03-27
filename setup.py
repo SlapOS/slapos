@@ -38,16 +38,18 @@ setup(name=name,
           'lxml', # needed to play with XML trees
           'netaddr>=0.7.5', # to play safely with IPv6 prefixes
           'netifaces', # to fetch information about network devices
-          'pyflakes', # For testing purposes
           'setuptools', # namespaces
           'supervisor', # slapgrid uses supervisor to manage processes
-          'unittest2',
           'xml_marshaller>=0.9.3', # to unmarshall/marshall python objects to/from
                                    # XML
           'zope.interface', # slap library implementes interfaces
           'zc.buildout',
         ] + additional_install_requires,
       extra_requires={'docs': ('Sphinx', 'repoze.sphinx.autointerface'),},
+      tests_require=[
+          'unittest2',
+          'pyflakes',
+      ],
       zip_safe=False, # proxy depends on Flask, which has issues with
                       # accessing templates
       entry_points={
