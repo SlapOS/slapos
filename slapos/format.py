@@ -523,10 +523,11 @@ class User(object):
     # XXX: This method shall be no-op in case if all is correctly setup
     #      This method shall check if all is correctly done
     #      This method shall not reset groups, just add them
+    grpname = 'grp_' + self.name if sys.platform == 'cygwin' else self.name
     try:
-      grp.getgrnam(self.name)
+      grp.getgrnam(grpname)
     except KeyError:
-      callAndRead(['groupadd', self.name])
+      callAndRead(['groupadd', grpname])
 
     user_parameter_list = ['-d', self.path, '-g', self.name, '-s',
       '/bin/false']
@@ -697,6 +698,9 @@ class Interface(object):
     except KeyError:
       raise ValueError("%s must have at least one IPv6 address assigned" % \
                          interface_name)
+    if sys.platform == 'cygwin':
+      for q in address_list:
+        q.setdefault('netmask', 'FFFF:FFFF:FFFF:FFFF::')
     # XXX: Missing implementation of Unique Local IPv6 Unicast Addresses as
     # defined in http://www.rfc-editor.org/rfc/rfc4193.txt
     # XXX: XXX: XXX: IT IS DISALLOWED TO IMPLEMENT link-local addresses as
@@ -811,7 +815,8 @@ class Interface(object):
 
   def addIPv4LocalAddress(self, addr=None):
     """Adds local IPv4 address in ipv4_local_network"""
-    netmask = '255.255.255.255'
+    netmask = '255.255.255.254' if sys.platform == 'cygwin' \
+             else '255.255.255.255'
     local_address_list = self.getIPv4LocalAddressList()
     if addr is None:
       return self._generateRandomIPv4Address(netmask)
@@ -1140,7 +1145,7 @@ class Config(object):
       except ValueError:
         pass
       except OSError:
-        missing_binary_list.append(b)
+        missing_binary_list.append(b[0])
     if missing_binary_list:
       raise UsageError('Some required binaries are missing or not '
           'functional: %s' % (','.join(missing_binary_list), ))
@@ -1325,6 +1330,14 @@ def tracing_monkeypatch(config):
 
 def main(*args):
   "Run default configuration."
+
+  if sys.platform in ('cygwin',):
+    callAndRead = lambda args, flag=True : args.insert(0, '/bin/sh') \
+                  or real_callAndRead(args, flag)
+    f = netifaces.ifaddresses
+    netifaces.ifaddresses = lambda s,f=f:reduce( \
+      lambda x,y:[x.__setitem__(k,v + x.get(k,[])) for k,v in y.iteritems()] and x, \
+      filter(None, [f(i) for i in netifaces.interfaces() if i.startswith(s)]),{})
 
   # Parse arguments
   usage = "usage: %s [options] CONFIGURATION_FILE" % sys.argv[0]

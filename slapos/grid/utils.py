@@ -95,6 +95,8 @@ class SlapPopen(subprocess.Popen):
   """
   def __init__(self, *args, **kwargs):
     kwargs.update(stdin=subprocess.PIPE)
+    if sys.platform == 'cygwin' and kwargs.get('env') == {}:
+      kwargs['env'] = None
     subprocess.Popen.__init__(self, *args, **kwargs)
     self.stdin.flush()
     self.stdin.close()
