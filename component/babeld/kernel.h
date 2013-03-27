@@ -23,11 +23,7 @@ THE SOFTWARE.
 #include <netinet/in.h>
 #include "babeld.h"
 
-#if defined (_WIN32_WINNT)
-#define KERNEL_INFINITY 9999
-#else
 #define KERNEL_INFINITY 0xFFFF
-#endif
 
 struct kernel_route {
     unsigned char prefix[16];

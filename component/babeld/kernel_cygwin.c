@@ -494,10 +494,7 @@ print_kernel_route(int add, struct kernel_route *route)
 {
     char *ifname = NULL;
     char guidname[IFNAMSIZ];
-    if ((route->plen >= 96) && v4mapped(route->prefix)) {
-        ifname = cyginet_ipv4_index2ifname(route->prefix);
-    }
-    else if(if_indextoname(route->ifindex, guidname))
+    if(if_indextoname(route->ifindex, guidname))
         ifname = cyginet_ifname(guidname);
 
     fprintf(stderr,
@@ -510,7 +507,7 @@ print_kernel_route(int add, struct kernel_route *route)
             ifname ? ifname : "unk",
             route->ifindex
             );
-}
+} 
 
 static int
 parse_kernel_route(struct cyginet_route *src, struct kernel_route *route)
@@ -643,13 +640,6 @@ kernel_addresses(char *ifname, int ifindex, int ll,
 
     ifap = ifa;
     i = 0;
-
-    /* In the Linux, metric is set to 0, but it's invalid in the
-       Windows, so we set metric to 1 here.
-       
-       And gateway to be set as 0 in the Linux, as the same reason, we
-       set it as prefix in the Windows.
-     */
     while(ifap && i < maxroutes) {
         if((ifname != NULL && compare_ifname(ifap->ifa_name, ifname) != 0))
             goto next;
@@ -664,7 +654,7 @@ kernel_addresses(char *ifname, int ifindex, int ll,
                    reset those bytes to 0 before passing them to babeld. */
                 memset(routes[i].prefix + 2, 0, 2);
             routes[i].plen = 128;
-            routes[i].metric = 1;
+            routes[i].metric = 0;
             routes[i].ifindex = ifindex;
             routes[i].proto = RTPROT_BABEL_LOCAL;
             memcpy(routes[i].gw, routes[i].prefix, 16);
@@ -680,7 +670,7 @@ kernel_addresses(char *ifname, int ifindex, int ll,
             memcpy(routes[i].prefix, v4prefix, 12);
             memcpy(routes[i].prefix + 12, &sin->sin_addr, 4);
             routes[i].plen = 128;
-            routes[i].metric = 1; 
+            routes[i].metric = 0; 
             routes[i].ifindex = ifindex;
             routes[i].proto = RTPROT_BABEL_LOCAL;
             memcpy(routes[i].gw, routes[i].prefix, 16);
