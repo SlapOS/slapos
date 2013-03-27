@@ -697,9 +697,17 @@ class TestSlapOSDefaultScenario(TestSlapOSSecurityMixin):
     self.stepCallSlaposManageBuildingCalculatingDeliveryAlarm()
     self.tic()
 
-    # deliver aggregated deliveries
-    self.stepCallSlaposDeliverConfirmedAggregatedSalePackingListAlarm(
+    # start aggregated deliveries
+    self.stepCallSlaposStartConfirmedAggregatedSalePackingListAlarm(
         accounting_date=DateTime('2222/01/01'))
+    self.tic()
+
+    # stabilise aggregated deliveries and expand them
+    self.stepCallSlaposManageBuildingCalculatingDeliveryAlarm()
+    self.tic()
+
+    # deliver aggregated deliveries
+    self.stepCallSlaposDeliverStartedAggregatedSalePackingListAlarm()
     self.tic()
 
     # stabilise aggregated deliveries and expand them
@@ -1044,9 +1052,17 @@ class TestSlapOSDefaultCRMEscalation(TestSlapOSSecurityMixin):
     self.stepCallSlaposManageBuildingCalculatingDeliveryAlarm()
     self.tic()
 
-    # deliver aggregated deliveries
-    self.stepCallSlaposDeliverConfirmedAggregatedSalePackingListAlarm(
+    # start aggregated deliveries
+    self.stepCallSlaposStartConfirmedAggregatedSalePackingListAlarm(
         accounting_date=DateTime('2222/01/01'))
+    self.tic()
+
+    # stabilise aggregated deliveries and expand them
+    self.stepCallSlaposManageBuildingCalculatingDeliveryAlarm()
+    self.tic()
+
+    # deliver aggregated deliveries
+    self.stepCallSlaposDeliverStartedAggregatedSalePackingListAlarm()
     self.tic()
 
     # stabilise aggregated deliveries and expand them
@@ -1160,9 +1176,17 @@ class TestSlapOSDefaultCRMEscalation(TestSlapOSSecurityMixin):
     self.stepCallSlaposManageBuildingCalculatingDeliveryAlarm()
     self.tic()
 
-    # deliver aggregated deliveries
-    self.stepCallSlaposDeliverConfirmedAggregatedSalePackingListAlarm(
+    # start aggregated deliveries
+    self.stepCallSlaposStartConfirmedAggregatedSalePackingListAlarm(
         accounting_date=DateTime('2222/01/01'))
+    self.tic()
+
+    # stabilise aggregated deliveries and expand them
+    self.stepCallSlaposManageBuildingCalculatingDeliveryAlarm()
+    self.tic()
+
+    # deliver aggregated deliveries
+    self.stepCallSlaposDeliverStartedAggregatedSalePackingListAlarm()
     self.tic()
 
     # stabilise aggregated deliveries and expand them

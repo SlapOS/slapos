@@ -8,7 +8,7 @@
       <dictionary>
         <item>
             <key> <string>active_sense_method_id</string> </key>
-            <value> <string>Alarm_deliverConfirmedAggregatedSalePackingList</string> </value>
+            <value> <string>Alarm_startConfirmedAggregatedSalePackingList</string> </value>
         </item>
         <item>
             <key> <string>description</string> </key>
@@ -22,7 +22,7 @@
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>slapos_deliver_confirmed_aggregated_sale_packing_list</string> </value>
+            <value> <string>slapos_start_confirmed_aggregated_sale_packing_list</string> </value>
         </item>
         <item>
             <key> <string>periodicity_day_frequency</string> </key>
@@ -89,7 +89,7 @@
         </item>
         <item>
             <key> <string>title</string> </key>
-            <value> <string>Deliver confirmed aggregated Sale Packing List</string> </value>
+            <value> <string>Start confirmed aggregated Sale Packing List</string> </value>
         </item>
       </dictionary>
     </pickle>

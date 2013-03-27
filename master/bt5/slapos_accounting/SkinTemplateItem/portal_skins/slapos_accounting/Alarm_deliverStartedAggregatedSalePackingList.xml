@@ -50,40 +50,17 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string encoding="cdata"><![CDATA[
-
-if params is None:\n
-  params = {}\n
-\n
-from DateTime import DateTime\n
-from Products.ERP5Type.DateUtils import addToDate\n
-from Products.ZSQLCatalog.SQLCatalog import Query\n
-\n
-def getAccountingDate(accounting_date):\n
-  accounting_day = 25\n
-  if accounting_date.day() <= accounting_day:\n
-    accounting_date = addToDate(accounting_date, dict(month=-1))\n
-  diff = accounting_day - accounting_date.day()\n
-  accounting_date = addToDate(accounting_date, dict(day=diff))\n
-  return accounting_date\n
-\n
-accounting_date = params.get(\'accounting_date\', DateTime().earliestTime())\n
-\n
-portal = context.getPortalObject()\n
+            <value> <string>portal = context.getPortalObject()\n
 portal.portal_catalog.searchAndActivate(\n
   portal_type=\'Sale Packing List\',\n
-  simulation_state=\'confirmed\',\n
+  simulation_state=\'started\',\n
   causality_state=\'solved\',\n
   specialise_uid=portal.restrictedTraverse(portal.portal_preferences.getPreferredAggregatedSaleTradeCondition()).getUid(),\n
-  method_id=\'Delivery_deliverConfirmedAggregatedSalePackingList\',\n
+  method_id=\'Delivery_deliverStartedAggregatedSalePackingList\',\n
   activate_kw={\'tag\': tag},\n
-  **{\'delivery.start_date\': Query(range="max",\n
-    **{\'delivery.start_date\': getAccountingDate(accounting_date)})}\n
 )\n
 context.activate(after_tag=tag).getId()\n
-
-
-]]></string> </value>
+</string> </value>
         </item>
         <item>
             <key> <string>_params</string> </key>
@@ -91,7 +68,7 @@ context.activate(after_tag=tag).getId()\n
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>Alarm_deliverConfirmedAggregatedSalePackingList</string> </value>
+            <value> <string>Alarm_deliverStartedAggregatedSalePackingList</string> </value>
         </item>
       </dictionary>
     </pickle>

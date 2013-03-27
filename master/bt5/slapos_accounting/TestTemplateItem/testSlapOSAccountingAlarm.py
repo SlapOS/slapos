@@ -1642,12 +1642,12 @@ class TestSlapOSConfirmedDeliveryMixin:
         'sale_trade_condition_module/slapos_aggregated_trade_condition',
         'confirmed', True)
 
-class TestSlapOSDeliverConfirmedAggregatedSalePackingListAlarm(
+class TestSlapOSStartConfirmedAggregatedSalePackingListAlarm(
       testSlapOSMixin, TestSlapOSConfirmedDeliveryMixin):
-  destination_state = 'delivered'
-  script = 'Delivery_deliverConfirmedAggregatedSalePackingList'
+  destination_state = 'started'
+  script = 'Delivery_startConfirmedAggregatedSalePackingList'
   portal_type = 'Sale Packing List'
-  alarm = 'slapos_deliver_confirmed_aggregated_sale_packing_list'
+  alarm = 'slapos_start_confirmed_aggregated_sale_packing_list'
 
   def test_previous_month(self):
     self._test('confirmed', 'solved',
@@ -1687,11 +1687,109 @@ class TestSlapOSDeliverConfirmedAggregatedSalePackingListAlarm(
       )
     self.portal.portal_workflow._jumpToStateFor(delivery, 'solved')
     self.portal.portal_workflow._jumpToStateFor(delivery, 'confirmed')
-    delivery.Delivery_deliverConfirmedAggregatedSalePackingList()
+    delivery.Delivery_startConfirmedAggregatedSalePackingList()
     self.assertEquals(delivery.getStartDate(),
                       DateTime().earliestTime())
-    self.assertEquals(delivery.getSimulationState(), 'delivered')
+    self.assertEquals(delivery.getStopDate(),
+                      DateTime().earliestTime())
+    self.assertEquals(delivery.getSimulationState(), 'started')
 
+class TestSlapOSDeliverStartedAggregatedSalePackingListAlarm(
+      testSlapOSMixin):
+  destination_state = 'delivered'
+  script = 'Delivery_deliverStartedAggregatedSalePackingList'
+  portal_type = 'Sale Packing List'
+  alarm = 'slapos_deliver_started_aggregated_sale_packing_list'
+
+  def _test(self, simulation_state, causality_state, specialise, positive,
+      delivery_date=DateTime('2012/04/22'),
+      accounting_date=DateTime('2012/04/28')):
+    @simulateByTitlewMark(self.script)
+    def _real(self, simulation_state, causality_state, specialise, positive,
+          delivery_date,
+          accounting_date):
+      not_visited = 'Not visited by %s' % self.script
+      visited = 'Visited by %s' % self.script
+      module = self.portal.getDefaultModule(portal_type=self.portal_type)
+      delivery = module.newContent(title=not_visited, start_date=delivery_date,
+          portal_type=self.portal_type, specialise=specialise)
+      _jumpToStateFor = self.portal.portal_workflow._jumpToStateFor
+      _jumpToStateFor(delivery, simulation_state)
+      _jumpToStateFor(delivery, causality_state)
+      self.tic()
+
+      alarm = getattr(self.portal.portal_alarms, self.alarm)
+      alarm.activeSense(params=dict(accounting_date=accounting_date))
+      self.tic()
+
+      if positive:
+        self.assertEqual(visited, delivery.getTitle())
+      else:
+        self.assertEqual(not_visited, delivery.getTitle())
+    _real(self, simulation_state, causality_state, specialise, positive,
+        delivery_date, accounting_date)
+
+  def test_typical(self):
+    self._test('started', 'solved',
+        'sale_trade_condition_module/slapos_aggregated_trade_condition', True)
+
+  def test_bad_specialise(self):
+    self._test('started', 'solved', None, False)
+
+  def test_bad_simulation_state(self):
+    self._test('confirmed', 'solved',
+        'sale_trade_condition_module/slapos_aggregated_trade_condition', False)
+
+  def test_bad_causality_state(self):
+    self._test('started', 'calculating',
+        'sale_trade_condition_module/slapos_aggregated_trade_condition', False)
+
+  @withAbort
+  def _test_script(self, simulation_state, causality_state, specialise,
+        destination_state, consistency_failure=False):
+    module = self.portal.getDefaultModule(portal_type=self.portal_type)
+    delivery = module.newContent(portal_type=self.portal_type,
+        specialise=specialise, start_date=DateTime())
+    _jumpToStateFor = self.portal.portal_workflow._jumpToStateFor
+    _jumpToStateFor(delivery, simulation_state)
+    _jumpToStateFor(delivery, causality_state)
+    def checkConsistency(*args, **kwargs):
+      if consistency_failure:
+        return ['bad']
+      else:
+        return []
+    try:
+      from Products.ERP5Type.Core.Folder import Folder
+      Folder.original_checkConsistency = Folder.checkConsistency
+      Folder.checkConsistency = checkConsistency
+      getattr(delivery, self.script)()
+    finally:
+      Folder.checkConsistency = Folder.original_checkConsistency
+      delattr(Folder, 'original_checkConsistency')
+    self.assertEqual(destination_state, delivery.getSimulationState())
+
+  def test_script_typical(self):
+    self._test_script('started', 'solved',
+        'sale_trade_condition_module/slapos_aggregated_trade_condition',
+        self.destination_state)
+
+  def test_script_bad_specialise(self):
+    self._test_script('started', 'solved', None, 'started')
+
+  def test_script_bad_simulation_state(self):
+    self._test_script('confirmed', 'solved',
+        'sale_trade_condition_module/slapos_aggregated_trade_condition',
+        'confirmed')
+
+  def test_script_bad_causality_state(self):
+    self._test_script('started', 'building',
+        'sale_trade_condition_module/slapos_aggregated_trade_condition',
+        'started')
+
+  def test_script_bad_consistency(self):
+    self._test_script('started', 'solved',
+        'sale_trade_condition_module/slapos_aggregated_trade_condition',
+        'started', True)
 
 class TestSlapOSStopConfirmedAggregatedSaleInvoiceTransactionAlarm(
       testSlapOSMixin, TestSlapOSConfirmedDeliveryMixin):
