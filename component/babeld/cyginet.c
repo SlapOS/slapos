@@ -7,10 +7,10 @@
  *    route table. But the output misses the value of route protocol.
  *
  * 2. libwinet_edit_route_entry
- * 
+ *
  *    What should be the value of protocol? MIB_IPPROTO_NETMGMT or
  *    RTPROT_BABEL_LOCAL
- *    
+ *
  */
 
 /* The Win32 select only worked on socket handles. The Cygwin
@@ -37,12 +37,24 @@
 #include <unistd.h>
 #include <wchar.h>
 
-#define INSIDE_CYGINET
+#define INSIDE_BABELD_CYGINET
 #include "cyginet.h"
-#undef INSIDE_CYGINET
+#undef INSIDE_BABELD_CYGINET
+
+#if defined (TEST_CYGINET)
+#define kdebugf printf
+#else
+void do_debugf(int level, const char *format, ...);
+#define kdebugf(_args...) \
+    do { \
+        do_debugf(3, _args);   \
+    } while(0)
+#endif
 
 static HRESULT (WINAPI *ws_guidfromstring)(LPCTSTR psz, LPGUID pguid) = NULL;
 static HANDLE event_notify_monitor_thread = WSA_INVALID_EVENT;
+
+static PLIBWINET_INTERFACE_MAP_TABLE interface_map_table = NULL;
 
 static void
 plen2mask(int n, struct in_addr *dest)
@@ -93,10 +105,131 @@ mask2len(const unsigned char *p, const int size)
     return i;
 }
 
+static void
+libwinet_free_interface_map_table()
+{
+  PLIBWINET_INTERFACE_MAP_TABLE p = interface_map_table;
+  PLIBWINET_INTERFACE_MAP_TABLE s;
+  while (p) {
+    if ( p -> AdapterName )
+      FREE(p -> AdapterName);
+    if (p -> FriendlyName)
+      FREE(p -> FriendlyName);
+    s = p;
+    p = p -> next;
+    FREE(s);
+  }
+  interface_map_table = NULL;
+}
+
+static int
+libwinet_refresh_interface_map_table()
+{
+  IP_ADAPTER_ADDRESSES *pAdaptAddr = NULL;
+  IP_ADAPTER_ADDRESSES *pTmpAdaptAddr = NULL;
+  DWORD dwRet = 0;
+  DWORD dwSize = 0x10000;
+
+  dwRet = GetAdaptersAddresses(AF_UNSPEC,
+                               GAA_FLAG_SKIP_UNICAST            \
+                               | GAA_FLAG_SKIP_ANYCAST          \
+                               | GAA_FLAG_SKIP_MULTICAST        \
+                               | GAA_FLAG_SKIP_DNS_SERVER,
+                               NULL,
+                               pAdaptAddr,
+                               &dwSize
+                               );
+  if (ERROR_BUFFER_OVERFLOW == dwRet) {
+    FREE(pAdaptAddr);
+    if (NULL == (pAdaptAddr = (IP_ADAPTER_ADDRESSES*)MALLOC(dwSize)))
+      return 0;
+    dwRet = GetAdaptersAddresses(AF_UNSPEC,
+                                 GAA_FLAG_SKIP_UNICAST            \
+                                 | GAA_FLAG_SKIP_ANYCAST          \
+                                 | GAA_FLAG_SKIP_MULTICAST        \
+                                 | GAA_FLAG_SKIP_DNS_SERVER,
+                                 NULL,
+                                 pAdaptAddr,
+                                 &dwSize
+                                 );
+  }
+
+  if (NO_ERROR == dwRet) {
+
+    if (interface_map_table)
+      libwinet_free_interface_map_table();
+
+    PLIBWINET_INTERFACE_MAP_TABLE p;
+    size_t len;
+
+    interface_map_table = NULL;
+    pTmpAdaptAddr = pAdaptAddr;
+    while (pTmpAdaptAddr) {
+
+      p = MALLOC(sizeof(LIBWINET_INTERFACE_MAP_TABLE));
+      if (!p) {
+        dwRet = ERROR_BUFFER_OVERFLOW;
+        break;
+      }
+      p -> next = interface_map_table;
+
+      len = WideCharToMultiByte(CP_ACP,
+                                0,
+                                pTmpAdaptAddr -> FriendlyName,
+                                -1,
+                                NULL,
+                                0,
+                                NULL,
+                                NULL
+                                );
+      p -> FriendlyName = MALLOC(len + 1);
+      if (!p -> FriendlyName) {
+        dwRet = ERROR_BUFFER_OVERFLOW;
+        break;
+      }
+      if (WideCharToMultiByte(CP_ACP,
+                              0,
+                              pTmpAdaptAddr -> FriendlyName,
+                              -1,
+                              p -> FriendlyName,
+                              len,
+                              NULL,
+                              NULL
+                              ) == 0) {
+        dwRet = ERROR_BUFFER_OVERFLOW;
+        break;
+      }
+
+      len = strlen(pTmpAdaptAddr -> AdapterName);
+      p -> AdapterName = MALLOC(len + 1);
+      if (!p -> AdapterName) {
+        dwRet = ERROR_BUFFER_OVERFLOW;
+        break;
+      }
+      memcpy(p -> AdapterName, pTmpAdaptAddr -> AdapterName, len);
+      *(p -> AdapterName + len)  = 0;
+
+      p -> IfType = pTmpAdaptAddr -> IfType;
+      p -> PhysicalAddressLength = pTmpAdaptAddr -> PhysicalAddressLength;
+      memcpy(p -> PhysicalAddress,
+             pTmpAdaptAddr -> PhysicalAddress,
+             p -> PhysicalAddressLength
+             );
+
+      pTmpAdaptAddr = pTmpAdaptAddr->Next;
+      interface_map_table = p;
+    }
+
+    if (ERROR_BUFFER_OVERFLOW == dwRet)
+      libwinet_free_interface_map_table();
+  }
+
+  FREE(pAdaptAddr);
+  return (NO_ERROR == dwRet);
+}
+
 static int
 libwinet_get_interface_info(const char *ifname,
-                            int family,
-                            int ifindex,
                             PLIBWINET_INTERFACE pinfo)
 {
   IP_ADAPTER_ADDRESSES *pAdaptAddr = NULL;
@@ -104,12 +237,37 @@ libwinet_get_interface_info(const char *ifname,
   DWORD dwRet = 0;
   DWORD dwSize = 0x10000;
   DWORD dwReturn = 0;
+  ULONG family = AF_UNSPEC;
+
+  WCHAR *friendlyname;
+  size_t size;
+
+  size = MultiByteToWideChar(CP_ACP,
+                             0,
+                             ifname,
+                             -1,
+                             NULL,
+                             0
+                             );
+  friendlyname = MALLOC(size * sizeof(WCHAR));
+  if (!friendlyname)
+    return -1;
+  if (MultiByteToWideChar(CP_ACP,
+                          0,
+                          ifname,
+                          -1,
+                          friendlyname,
+                          size
+                          ) == 0) {
+    FREE(friendlyname);
+    return -1;
+  }
 
   dwRet = GetAdaptersAddresses(family,
-                               GAA_FLAG_SKIP_ANYCAST            \
+                               GAA_FLAG_SKIP_UNICAST            \
+                               | GAA_FLAG_SKIP_ANYCAST          \
                                | GAA_FLAG_SKIP_MULTICAST        \
-                               | GAA_FLAG_SKIP_DNS_SERVER       \
-                               | GAA_FLAG_SKIP_FRIENDLY_NAME,
+                               | GAA_FLAG_SKIP_DNS_SERVER,
                                NULL,
                                pAdaptAddr,
                                &dwSize
@@ -119,10 +277,10 @@ libwinet_get_interface_info(const char *ifname,
     if (NULL == (pAdaptAddr = (IP_ADAPTER_ADDRESSES*)MALLOC(dwSize)))
       return -1;
     dwRet = GetAdaptersAddresses(family,
-                                 GAA_FLAG_SKIP_ANYCAST            \
+                                 GAA_FLAG_SKIP_UNICAST            \
+                                 | GAA_FLAG_SKIP_ANYCAST          \
                                  | GAA_FLAG_SKIP_MULTICAST        \
-                                 | GAA_FLAG_SKIP_DNS_SERVER       \
-                                 | GAA_FLAG_SKIP_FRIENDLY_NAME,
+                                 | GAA_FLAG_SKIP_DNS_SERVER,
                                  NULL,
                                  pAdaptAddr,
                                  &dwSize
@@ -133,14 +291,7 @@ libwinet_get_interface_info(const char *ifname,
     pTmpAdaptAddr = pAdaptAddr;
 
     while (pTmpAdaptAddr) {
-      /* For ipv4, two contidions:
-         AdapterName equals ifname and IfIndex is nonzero.
-         For ipv6, only judge Ipv6IfIndex
-         */
-      if (family == AF_INET6 ? pTmpAdaptAddr -> Ipv6IfIndex == ifindex  \
-          : (pTmpAdaptAddr -> IfIndex != 0)                             \
-          && (strcmp(ifname, pTmpAdaptAddr -> AdapterName) == 0)
-          ) {
+      if (wcscmp(friendlyname, pTmpAdaptAddr -> FriendlyName) == 0) {
         memset(pinfo, 0, sizeof(pinfo));
         pinfo -> IfType = pTmpAdaptAddr -> IfType;
         pinfo -> Mtu = pTmpAdaptAddr -> Mtu;
@@ -158,9 +309,9 @@ libwinet_get_interface_info(const char *ifname,
       pTmpAdaptAddr = pTmpAdaptAddr->Next;
     }
 
+    FREE(pAdaptAddr);
   }
 
-  FREE(pAdaptAddr);
   return dwReturn;
 }
 
@@ -168,7 +319,7 @@ static int
 libwinet_run_command(const char *command)
 {
   FILE *output;
-
+  kdebugf("libwinet_run_command: %s\n", command);
   output = popen (command, "r");
   if (!output)
     return -1;
@@ -245,7 +396,7 @@ libwinet_dump_ipv6_route_table(struct cyginet_route *routes,
 
     /* The first field of route entry */
     if (strncmp(buffer, "Prefix", 6) == 0) {
-      
+
       memset(&route, 0, sizeof(struct cyginet_route));
       if (NULL == (p = strchr(s, '/')))
         break;
@@ -281,7 +432,7 @@ libwinet_dump_ipv6_route_table(struct cyginet_route *routes,
           proute ++;
         }
         count ++;
-        
+
       }
     }
 
@@ -325,7 +476,7 @@ libwinet_is_wireless_interface(const char *ifname)
   if (NULL == ws_guidfromstring)
     return -1;
 
-  if (!(*ws_guidfromstring)(ifname, &ifguid))
+  if (!(*ws_guidfromstring)(cyginet_guidname(ifname), &ifguid))
     return -1;
 
   /* variables used for WlanEnumInterfaces  */
@@ -419,7 +570,7 @@ libwinet_monitor_route_thread_proc(LPVOID lpParam)
   while (bResult) {
 
     memset(hOverLappeds, 0, sizeof(WSAOVERLAPPED) * EVENT_COUNT);
-    for (i = 0; i < EVENT_COUNT; i++) 
+    for (i = 0; i < EVENT_COUNT; i++)
       hOverLappeds[i].hEvent = hEvents[i];
     for (i = 0; i < 2; i++) {
 
@@ -498,7 +649,7 @@ libwinet_monitor_route_thread_proc(LPVOID lpParam)
       default:
         SOCKETERR("WSAWaitForMultipleEvents");
         bResult = FALSE;
-      }    
+      }
     }
   }
   for (i = 0; i < EVENT_COUNT; i ++)
@@ -581,7 +732,6 @@ libwinet_edit_route_entry(const struct sockaddr *dest,
                           unsigned int metric,
                           int cmdflag)
 {
-
 #if _WIN32_WINNT < _WIN32_WINNT_VISTA
 
   /* Add ipv6 route before Windows Vista */
@@ -679,7 +829,7 @@ libwinet_edit_route_entry(const struct sockaddr *dest,
     char sdest[INET_ADDRSTRLEN];
     char sgate[INET_ADDRSTRLEN];
     char smask[INET_ADDRSTRLEN];
-    
+
     struct in_addr mask;
     plen2mask(plen, &mask);
 
@@ -841,14 +991,17 @@ libwinet_get_loopback_index(int family)
         dwReturn = family == AF_INET ?
                    pTmpAdaptAddr -> IfIndex :
                    pTmpAdaptAddr -> Ipv6IfIndex;
-        break;
+        /* Loopback interface doesn't support both of Ipv4 or Ipv6 */
+        if (dwReturn)
+          break;
       }
 
       pTmpAdaptAddr = pTmpAdaptAddr->Next;
     }
+
+    FREE(pAdaptAddr);
   }
 
-  FREE(pAdaptAddr);
   return dwReturn;
 }
 
@@ -876,7 +1029,7 @@ cyginet_set_icmp6_redirect_accept(int value)
                                    );
 }
 
-/* 
+/*
  * On Windows Vista and later, wireless network cards are reported as
  * IF_TYPE_IEEE80211 by the GetAdaptersAddresses function.
  *
@@ -890,7 +1043,7 @@ int cyginet_interface_wireless(const char *ifname, int ifindex)
 {
   LIBWINET_INTERFACE winf;
 
-  if (1 == libwinet_get_interface_info(ifname, AF_INET6, ifindex, &winf)) {
+  if (1 == libwinet_get_interface_info(ifname, &winf)) {
 
     if (IF_TYPE_IEEE80211 == winf.IfType)
       return 1;
@@ -911,7 +1064,7 @@ cyginet_interface_mtu(const char *ifname, int ifindex)
 {
   LIBWINET_INTERFACE winf;
 
-  if (1 == libwinet_get_interface_info(ifname, AF_INET6, ifindex, &winf))
+  if (1 == libwinet_get_interface_info(ifname, &winf))
     return winf.Mtu;
 
   return -1;
@@ -921,11 +1074,20 @@ int
 cyginet_interface_operational(const char *ifname, int ifindex)
 {
   LIBWINET_INTERFACE winf;
-
-  if (1 == libwinet_get_interface_info(ifname, AF_INET6, ifindex, &winf))
-    return winf.OperStatus;
-
-  return -1;
+  int rc = -1;
+  if (1 == libwinet_get_interface_info(ifname, &winf)) {
+    switch (winf.OperStatus) {
+    case IfOperStatusUp:
+      rc = IFF_UP;
+      break;
+    case IfOperStatusDormant:
+      rc = IFF_RUNNING;
+      break;
+    default:
+      rc = 0;
+    }
+  }
+  return rc;
 }
 
 int
@@ -933,14 +1095,83 @@ cyginet_interface_ipv4(const char *ifname,
                        int ifindex,
                        unsigned char *addr_r)
 {
-  LIBWINET_INTERFACE winf;
+  IP_ADAPTER_ADDRESSES *pAdaptAddr = NULL;
+  IP_ADAPTER_ADDRESSES *pTmpAdaptAddr = NULL;
+  DWORD dwRet = 0;
+  DWORD dwSize = 0x10000;
+  DWORD dwReturn = 0;
+  ULONG family = AF_INET;
 
-  if (1 == libwinet_get_interface_info(ifname, AF_INET, ifindex, &winf)) {
+  WCHAR *friendlyname;
+  size_t size;
 
-    memcpy(addr_r, &((struct sockaddr_in*)&winf.Address)->sin_addr, 4);
-    return 1;
+  size = MultiByteToWideChar(CP_ACP,
+                             0,
+                             ifname,
+                             -1,
+                             NULL,
+                             0
+                             );
+  friendlyname = MALLOC(size * sizeof(WCHAR));
+  if (!friendlyname)
+    return -1;
+  if (MultiByteToWideChar(CP_ACP,
+                          0,
+                          ifname,
+                          -1,
+                          friendlyname,
+                          size
+                          ) == 0) {
+    FREE(friendlyname);
+    return -1;
   }
-  return -1;
+
+  dwRet = GetAdaptersAddresses(family,
+                               GAA_FLAG_SKIP_ANYCAST          \
+                               | GAA_FLAG_SKIP_MULTICAST      \
+                               | GAA_FLAG_SKIP_DNS_SERVER,
+                               NULL,
+                               pAdaptAddr,
+                               &dwSize
+                               );
+  if (ERROR_BUFFER_OVERFLOW == dwRet) {
+    FREE(pAdaptAddr);
+    if (NULL == (pAdaptAddr = (IP_ADAPTER_ADDRESSES*)MALLOC(dwSize)))
+      return -1;
+    dwRet = GetAdaptersAddresses(family,
+                                 GAA_FLAG_SKIP_ANYCAST          \
+                                 | GAA_FLAG_SKIP_MULTICAST      \
+                                 | GAA_FLAG_SKIP_DNS_SERVER,
+                                 NULL,
+                                 pAdaptAddr,
+                                 &dwSize
+                                 );
+  }
+
+  if (NO_ERROR == dwRet) {
+    pTmpAdaptAddr = pAdaptAddr;
+    while (pTmpAdaptAddr) {
+      if (wcscmp(friendlyname, pTmpAdaptAddr -> FriendlyName) == 0) {
+        /* Copy first unicast address */
+        if (pTmpAdaptAddr -> FirstUnicastAddress) {
+          SOCKADDR *s;
+          s = (pTmpAdaptAddr -> FirstUnicastAddress -> Address).lpSockaddr;
+          memcpy(addr_r, &(((struct sockaddr_in *)s) -> sin_addr), 4);
+          dwReturn = 1;
+          if (pTmpAdaptAddr->FirstUnicastAddress->Next)
+            fprintf(stderr,
+                    "Warning: more than one ipv4 address configured"
+                    "in the interface '%s', but only the first one returned\n",
+                    ifname
+                    );
+          break;
+        }
+      }
+      pTmpAdaptAddr = pTmpAdaptAddr->Next;
+    }
+    FREE(pAdaptAddr);
+  }
+  return dwReturn;
 }
 
 int
@@ -951,32 +1182,49 @@ cyginet_interface_sdl(struct sockaddr_dl *sdl, char *ifname)
   DWORD dwRet = 0;
   DWORD dwSize = 0x10000;
   DWORD dwReturn = -1;
-  DWORD dwFamily = AF_UNSPEC;
+  DWORD dwFamily = AF_INET6;
   size_t size;
+  WCHAR *friendlyname;
 
-  int ifindex;
-
-  if (0 == (ifindex = if_nametoindex(ifname)))
+  size = MultiByteToWideChar(CP_ACP,
+                             0,
+                             ifname,
+                             -1,
+                             NULL,
+                             0
+                             );
+  friendlyname = MALLOC(size * sizeof(WCHAR));
+  if (!friendlyname)
     return -1;
+  if (MultiByteToWideChar(CP_ACP,
+                          0,
+                          ifname,
+                          -1,
+                          friendlyname,
+                          size
+                          ) == 0) {
+    FREE(friendlyname);
+    return -1;
+  }
 
   dwRet = GetAdaptersAddresses(dwFamily,
                                GAA_FLAG_SKIP_ANYCAST            \
                                | GAA_FLAG_SKIP_MULTICAST        \
-                               | GAA_FLAG_SKIP_DNS_SERVER       \
-                               | GAA_FLAG_SKIP_FRIENDLY_NAME,
+                               | GAA_FLAG_SKIP_DNS_SERVER,
                                NULL,
                                pAdaptAddr,
                                &dwSize
                                );
   if (ERROR_BUFFER_OVERFLOW == dwRet) {
     FREE(pAdaptAddr);
-    if (NULL == (pAdaptAddr = (IP_ADAPTER_ADDRESSES*)MALLOC(dwSize)))
+    if (NULL == (pAdaptAddr = (IP_ADAPTER_ADDRESSES*)MALLOC(dwSize))){
+      FREE(friendlyname);
       return -1;
+    }
     dwRet = GetAdaptersAddresses(dwFamily,
                                  GAA_FLAG_SKIP_ANYCAST            \
                                  | GAA_FLAG_SKIP_MULTICAST        \
-                                 | GAA_FLAG_SKIP_DNS_SERVER       \
-                                 | GAA_FLAG_SKIP_FRIENDLY_NAME,
+                                 | GAA_FLAG_SKIP_DNS_SERVER,
                                  NULL,
                                  pAdaptAddr,
                                  &dwSize
@@ -988,7 +1236,7 @@ cyginet_interface_sdl(struct sockaddr_dl *sdl, char *ifname)
 
     while (pTmpAdaptAddr) {
 
-      if (pTmpAdaptAddr -> Ipv6IfIndex == ifindex) {
+      if (wcscmp(pTmpAdaptAddr -> FriendlyName, friendlyname) == 0) {
         size = strlen(ifname);
         sdl -> sdl_family = 0;
         sdl -> sdl_index = pTmpAdaptAddr -> Ipv6IfIndex;
@@ -1010,16 +1258,18 @@ cyginet_interface_sdl(struct sockaddr_dl *sdl, char *ifname)
       pTmpAdaptAddr = pTmpAdaptAddr->Next;
     }
 
+    FREE(pAdaptAddr);
   }
 
-  FREE(pAdaptAddr);
+  FREE(friendlyname);
   return dwReturn;
 }
 
+/* In the windows, loopback interface index is alawys 1 */
 int
 cyginet_loopback_index(int family)
 {
-  return libwinet_get_loopback_index(family);
+  return 1;
 }
 
 /*
@@ -1041,7 +1291,7 @@ cyginet_loopback_index(int family)
 int
 cyginet_dump_route_table(struct cyginet_route *routes, int maxroutes)
 {
-  
+
   ULONG NumEntries = -1;
   struct cyginet_route *proute;
   int i;
@@ -1050,7 +1300,7 @@ cyginet_dump_route_table(struct cyginet_route *routes, int maxroutes)
 
   /* First dump ipv6 route */
   NumEntries = libwinet_dump_ipv6_route_table(routes, maxroutes);
-  
+
   if (NumEntries < 0)
     return -1;
 
@@ -1086,11 +1336,11 @@ cyginet_dump_route_table(struct cyginet_route *routes, int maxroutes)
     return NumEntries;
   }
 
-  pRow = pIpForwardTable->table;    
+  pRow = pIpForwardTable->table;
   for (i = 0;
        i < (int) pIpForwardTable->dwNumEntries;
        i++, proute ++, pRow ++) {
-    /* libwinet_map_ifindex_to_ipv6ifindex */
+    /* Here the ifindex is the index of ipv4 interface */
     proute -> ifindex = pRow -> dwForwardIfIndex;
     proute -> metric = pRow -> dwForwardMetric1;
     proute -> proto = pRow -> dwForwardProto;
@@ -1191,7 +1441,8 @@ cyginet_read_route_socket(void *buffer, size_t size)
   return 0;
 }
 
-int cyginet_startup()
+int
+cyginet_startup()
 {
   WORD wVersionRequested;
   WSADATA wsaData;
@@ -1201,9 +1452,42 @@ int cyginet_startup()
   return WSAStartup(wVersionRequested, &wsaData);
 }
 
-void cyginet_cleanup()
+void
+cyginet_cleanup()
 {
   WSACleanup();
+}
+
+char *
+cyginet_guidname(const char * ifname)
+{
+  PLIBWINET_INTERFACE_MAP_TABLE p;
+  if (!interface_map_table)
+    libwinet_refresh_interface_map_table();
+
+  p = interface_map_table;
+  while (p) {
+    if (strcmp(ifname, p -> FriendlyName) == 0)
+      return p -> AdapterName;
+    p = p -> next;
+  }
+  return NULL;
+}
+
+char *
+cyginet_ifname(const char * guidname)
+{
+  PLIBWINET_INTERFACE_MAP_TABLE p;
+  if (!interface_map_table)
+    libwinet_refresh_interface_map_table();
+
+  p = interface_map_table;
+  while (p) {
+    if (strcmp(guidname, p -> AdapterName) == 0)
+      return p -> FriendlyName;
+    p = p -> next;
+  }
+  return NULL;
 }
 
 /* The following functions are reserved. */
@@ -1231,7 +1515,7 @@ libwinet_get_ipforward_table(int forder)
                                     &dwSize,
                                     forder))
     return pIpForwardTable;
-  return NULL;  
+  return NULL;
 }
 
 static int
@@ -1524,9 +1808,10 @@ libwinet_map_ifindex_to_ipv6ifindex(int ifindex)
 
       pTmpAdaptAddr = pTmpAdaptAddr->Next;
     }
+
+    FREE(pAdaptAddr);
   }
 
-  FREE(pAdaptAddr);
   return dwReturn;
 }
 
@@ -1647,7 +1932,7 @@ libwinet_ipv6_interfaces_forwards(int forward)
   const int MAX_BUFFER_SIZE = 80;
   char cmdbuf[MAX_BUFFER_SIZE];
   int result;
-  
+
   struct if_nameindex * p;
   struct if_nameindex * ptr;
   if (NULL == (ptr = (struct if_nameindex *)if_nameindex()))
@@ -1830,68 +2115,10 @@ DWORD GetInterfaceIndexForAddress(SOCKADDR *pAddr)
 
     }
 
-  }
-
-  FREE(pAdaptAddr);
-  return dwReturn;
-}
-
-VOID PrintAllInterfaces()
-{
-  IP_ADAPTER_ADDRESSES *pAdaptAddr = NULL;
-  IP_ADAPTER_ADDRESSES *pTmpAdaptAddr = NULL;
-  DWORD dwRet = 0;
-  DWORD dwSize = 0x10000;
-  DWORD Family = AF_UNSPEC;
-
-  if (NULL == (pAdaptAddr = (IP_ADAPTER_ADDRESSES*)MALLOC(dwSize))) {
-    printf("Memory error.\n");
-    return ;
-  }
-  dwRet = GetAdaptersAddresses(Family,
-                               GAA_FLAG_SKIP_ANYCAST \
-                               | GAA_FLAG_SKIP_MULTICAST \
-                               |GAA_FLAG_SKIP_DNS_SERVER,
-                               NULL,
-                               pAdaptAddr,
-                               &dwSize
-                               );
-  if (ERROR_BUFFER_OVERFLOW == dwRet) {
     FREE(pAdaptAddr);
-    if (NULL == (pAdaptAddr = (IP_ADAPTER_ADDRESSES*)MALLOC(dwSize))) {
-      printf("Memory error.\n");
-      return ;
-    }
-    dwRet = GetAdaptersAddresses(Family,
-                                 GAA_FLAG_SKIP_ANYCAST \
-                                 | GAA_FLAG_SKIP_MULTICAST \
-                                 |GAA_FLAG_SKIP_DNS_SERVER,
-                                 NULL,
-                                 pAdaptAddr,
-                                 &dwSize
-                                 );
   }
-  if (NO_ERROR == dwRet) {
-
-    pTmpAdaptAddr = pAdaptAddr;
-
-    while (pTmpAdaptAddr) {
-      printf("If6Index:\t %ld\n", pTmpAdaptAddr -> Ipv6IfIndex);
-      printf("If4Index:\t %ld\n", pTmpAdaptAddr -> IfIndex);
-      printf("Friendly Name:\t %S\n", pTmpAdaptAddr -> FriendlyName);
-      printf("Adapter Name:\t %s\n", pTmpAdaptAddr -> AdapterName);
-      printf("IfType:\t %ld\n", pTmpAdaptAddr -> IfType);
-      printf("Oper Status:\t %d\n", pTmpAdaptAddr -> OperStatus);
-      printf("\n\n");
-
-      pTmpAdaptAddr = pTmpAdaptAddr->Next;
-    }
-  }
-
-  else
-    printf("GetAdaptersAddresses failed.\n");
-
-  FREE(pAdaptAddr);
+  
+  return dwReturn;
 }
 
 void WaitForNetworkChnages()
@@ -1956,6 +2183,64 @@ DWORD GetConnectedNetworks()
 /* ------------------------------------------------------------- */
 #ifdef TEST_CYGINET
 
+VOID PrintAllInterfaces()
+{
+  IP_ADAPTER_ADDRESSES *pAdaptAddr = NULL;
+  IP_ADAPTER_ADDRESSES *pTmpAdaptAddr = NULL;
+  DWORD dwRet = 0;
+  DWORD dwSize = 0x10000;
+  DWORD Family = AF_UNSPEC;
+
+  if (NULL == (pAdaptAddr = (IP_ADAPTER_ADDRESSES*)MALLOC(dwSize))) {
+    printf("Memory error.\n");
+    return ;
+  }
+  dwRet = GetAdaptersAddresses(Family,
+                               GAA_FLAG_SKIP_ANYCAST \
+                               | GAA_FLAG_SKIP_MULTICAST \
+                               |GAA_FLAG_SKIP_DNS_SERVER,
+                               NULL,
+                               pAdaptAddr,
+                               &dwSize
+                               );
+  if (ERROR_BUFFER_OVERFLOW == dwRet) {
+    FREE(pAdaptAddr);
+    if (NULL == (pAdaptAddr = (IP_ADAPTER_ADDRESSES*)MALLOC(dwSize))) {
+      printf("Memory error.\n");
+      return ;
+    }
+    dwRet = GetAdaptersAddresses(Family,
+                                 GAA_FLAG_SKIP_ANYCAST \
+                                 | GAA_FLAG_SKIP_MULTICAST \
+                                 |GAA_FLAG_SKIP_DNS_SERVER,
+                                 NULL,
+                                 pAdaptAddr,
+                                 &dwSize
+                                 );
+  }
+  if (NO_ERROR == dwRet) {
+
+    pTmpAdaptAddr = pAdaptAddr;
+
+    while (pTmpAdaptAddr) {
+      printf("If6Index:\t %ld\n", pTmpAdaptAddr -> Ipv6IfIndex);
+      printf("If4Index:\t %ld\n", pTmpAdaptAddr -> IfIndex);
+      printf("Friendly Name:\t %S\n", pTmpAdaptAddr -> FriendlyName);
+      printf("Adapter Name:\t %s\n", pTmpAdaptAddr -> AdapterName);
+      printf("IfType:\t %ld\n", pTmpAdaptAddr -> IfType);
+      printf("Oper Status:\t %d\n", pTmpAdaptAddr -> OperStatus);
+      printf("\n\n");
+
+      pTmpAdaptAddr = pTmpAdaptAddr->Next;
+    }
+  }
+
+  else
+    printf("GetAdaptersAddresses failed.\n");
+
+  FREE(pAdaptAddr);
+}
+
 static void
 runTestCases()
 {
@@ -1990,6 +2275,31 @@ runTestCases()
       printf("if_indextoname failed\n");
   }
 
+  printf("\n\nTest cyginet_ifname works in the Cygwin:\n\n");
+  {
+    struct if_nameindex * ptr = (struct if_nameindex *)if_nameindex();
+    if (ptr) {
+      struct if_nameindex * p = ptr;
+      while (p -> if_index) {
+        printf("%s:\t\t%s\n", p -> if_name, cyginet_ifname(p -> if_name));
+        p ++;
+      }
+      if_freenameindex(ptr);
+    }
+  }
+
+  printf("\n\nTest cyginet_guidname works in the Cygwin:\n\n");
+  {
+    PLIBWINET_INTERFACE_MAP_TABLE p = interface_map_table;
+    while (p) {
+      printf("%s:\t\t%s\n",
+             p -> FriendlyName,
+             cyginet_guidname(p -> FriendlyName)
+             );
+      p = p -> next;
+    }
+  }
+
 #if _WIN32_WINNT < _WIN32_WINNT_VISTA
 
   printf("\n\nTest libwinet_dump_ipv6_route_table:\n\n");
@@ -2007,17 +2317,13 @@ runTestCases()
 
   printf("\n\nTest libwinet_is_wireless_interface:\n\n");
   {
-    struct if_nameindex * ptr = (struct if_nameindex *)if_nameindex();
-    if (ptr) {
-      struct if_nameindex * p = ptr;
-      while (p -> if_index) {
-        printf("%s is wireless netcard: %d\n",
-               p -> if_name,
-               libwinet_is_wireless_interface(p -> if_name)
-               );
-        p ++;
-      }
-      if_freenameindex(ptr);
+    PLIBWINET_INTERFACE_MAP_TABLE p = interface_map_table;
+    while (p) {
+      printf("%s is wireless netcard: %d\n",
+             p -> FriendlyName,
+             libwinet_is_wireless_interface(p -> FriendlyName)
+             );
+      p = p -> next;
     }
   }
 
@@ -2055,88 +2361,65 @@ runTestCases()
 
   printf("\n\nTest cyginet_interface_wireless:\n\n");
   {
-    struct if_nameindex * ptr = (struct if_nameindex *)if_nameindex();
-    if (ptr) {
-      struct if_nameindex * p = ptr;
-      int n;
-      while (p -> if_index) {
-        n = cyginet_interface_wireless(p -> if_name, p -> if_index);
-        printf("%s is wireless netcard: %d\n", p -> if_name, n);
-        p ++;
-      }
-      if_freenameindex(ptr);
+    int n;
+    PLIBWINET_INTERFACE_MAP_TABLE p = interface_map_table;
+    while (p) {
+      n = cyginet_interface_wireless(p -> FriendlyName, 1);
+      printf("%s is wireless netcard: %d\n", p -> FriendlyName, n);
+      p = p -> next;
     }
   }
 
   printf("\n\nTest cyginet_interface_mtu:\n\n");
   {
-    struct if_nameindex * ptr = (struct if_nameindex *)if_nameindex();
-    if (ptr) {
-      struct if_nameindex * p = ptr;
-      int n;
-      while (p -> if_index) {
-        n = cyginet_interface_mtu(p -> if_name, p -> if_index);
-        printf("mtu of %s is : %d\n", p -> if_name, n);
-        p ++;
-      }
-      if_freenameindex(ptr);
+    int n;
+    PLIBWINET_INTERFACE_MAP_TABLE p = interface_map_table;
+    while (p) {
+      n = cyginet_interface_mtu(p -> FriendlyName, 1);
+      printf("mtu of %s is : %d\n", p -> FriendlyName, n);
+      p = p -> next;
     }
   }
 
   printf("\n\nTest cyginet_interface_operational:\n\n");
   {
-    struct if_nameindex * ptr = (struct if_nameindex *)if_nameindex();
-    if (ptr) {
-      struct if_nameindex * p = ptr;
-      int n;
-      while (p -> if_index) {
-        n = cyginet_interface_operational(p -> if_name, p -> if_index);
-        printf("%s is up: %d\n", p -> if_name, n);
-        p ++;
-      }
-      if_freenameindex(ptr);
+    int n;
+    PLIBWINET_INTERFACE_MAP_TABLE p = interface_map_table;
+    while (p) {
+      n = cyginet_interface_operational(p -> FriendlyName, 1);
+      printf("%s is up: %d\n", p -> FriendlyName, n);
+      p = p -> next;
     }
   }
 
   printf("\n\nTest cyginet_interface_ipv4:\n\n");
   {
     struct sockaddr_in sa;
-    struct if_nameindex * ptr = (struct if_nameindex *)if_nameindex();
-    if (ptr) {
-      struct if_nameindex * p = ptr;
-      int n;
-      while (p -> if_index) {
-        memset(&sa, 0, sizeof(sa));
-        n = cyginet_interface_ipv4(p -> if_name,
-                                   p -> if_index,
-                                   (unsigned char*)&sa
-                                   );
-        printf("get ipv4 from %s: %d\n", p -> if_name, n);
-        p ++;
-      }
-      if_freenameindex(ptr);
+    int n;
+    PLIBWINET_INTERFACE_MAP_TABLE p = interface_map_table;
+    while (p) {
+      memset(&sa, 0, sizeof(sa));
+      n = cyginet_interface_ipv4(p -> FriendlyName, 1, (unsigned char*)&sa);
+      printf("get ipv4 from %s: %d\n", p -> FriendlyName, n);
+      p = p -> next;
     }
   }
 
   printf("\n\nTest cyginet_interface_sdl:\n\n");
   {
+    int n;
     struct sockaddr_dl sdl;
-    struct if_nameindex * ptr = (struct if_nameindex *)if_nameindex();
-    if (ptr) {
-      struct if_nameindex * p = ptr;
-      int n;
-      while (p -> if_index) {
+    PLIBWINET_INTERFACE_MAP_TABLE p = interface_map_table;
+    while (p) {
         memset(&sdl, 0, sizeof(struct sockaddr_dl));
-        n = cyginet_interface_sdl(&sdl, p -> if_name);
-        printf("get sdl from %s: %d\n", p -> if_name, n);
+        n = cyginet_interface_sdl(&sdl, p -> FriendlyName);
+        printf("get sdl from %s: %d\n", p -> FriendlyName, n);
         if (0 == n) {
           printf("sdl_len is %d\n", sdl.sdl_len);
           printf("sdl_nlen is %d\n", sdl.sdl_nlen);
           printf("sdl_alen is %d\n", sdl.sdl_alen);
         }
-        p ++;
-      }
-      if_freenameindex(ptr);
+        p = p -> next;
     }
   }
 
@@ -2152,18 +2435,18 @@ runTestCases()
     n = cyginet_start_monitor_route_changes(mypipes[1]);
     if (n == 0) {
       char ch = ' ';
-      printf("Run command: %s\n", cmd1);      
+      printf("Run command: %s\n", cmd1);
       libwinet_run_command(cmd1);
       Sleep(100);
       if (read(mypipes[0], &ch, 1) == 1)
         printf("Event number is %c\n", ch);
 
-      printf("Run command: %s\n", cmd2);      
+      printf("Run command: %s\n", cmd2);
       libwinet_run_command(cmd2);
       Sleep(100);
       if (read(mypipes[0], &ch, 1) == 1)
         printf("Event number is %c\n", ch);
-      
+
       cyginet_stop_monitor_route_changes();
     }
     close(mypipes[0]);
@@ -2197,7 +2480,7 @@ runTestCases()
       memset(buf, 0, 16);
       printf("read pipe, return %d\n",
              read(mypipes[0], buf, 16));
-      printf("Event number is %s\n",buf);             
+      printf("Event number is %s\n",buf);
       cyginet_stop_monitor_route_changes();
     }
     close(mypipes[0]);
@@ -2215,7 +2498,7 @@ runTestCases()
 
   printf("\n\nTest libwinet_edit_route_entry:\n\n");
   do {
-    SOCKADDR *dest; 
+    SOCKADDR *dest;
     SOCKADDR *gate;
     SOCKADDR_IN dest4 = { AF_INET, 0, {{{ INADDR_ANY }}}, {0} };
     SOCKADDR_IN gate4 = { AF_INET, 0, {{{ INADDR_ANY }}}, {0} };
@@ -2243,7 +2526,7 @@ runTestCases()
     ifindex = 2;
     metric = 3;
     prefix = 32;
-    
+
     dest = (SOCKADDR*)&dest4;
     gate = (SOCKADDR*)&gate4;
     n = libwinet_edit_route_entry(dest,
@@ -2343,11 +2626,30 @@ int main(int argc, char* argv[])
   else
     printf("The Winsock 2.2 dll was found okay\n");
 
+  /* PrintAllInterfaces(); */
+
+  printf("\n\nTest libwinet_refresh_interface_map_table:\n\n");
+  {
+    if (libwinet_refresh_interface_map_table()) {
+      PLIBWINET_INTERFACE_MAP_TABLE p = interface_map_table;
+      while (p) {
+        printf("Friendly Name:\t %s\n", p -> FriendlyName);
+        printf("Adapter Name:\t %s\n", p -> AdapterName);
+        printf("IfType:\t %ld\n", p -> IfType);
+        p = p -> next;
+      }
+    }
+    else
+      printf("libwinet_refresh_interface_map_table failed\n");
+  }
+
   runTestCases();
+
+  printf("\n\nTest libwinet_free_interface_map_table:\n\n");
+  libwinet_free_interface_map_table();
 
   WSACleanup();
   return 0;
 }
 
 #endif  /* TEST_CYGINET */
-

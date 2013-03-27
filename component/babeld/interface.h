@@ -111,3 +111,8 @@ void set_timeout(struct timeval *timeout, int msecs);
 int interface_up(struct interface *ifp, int up);
 int interface_ll_address(struct interface *ifp, const unsigned char *address);
 void check_interfaces(void);
+
+#if defined (_WIN32_WINNT)
+char * cyginet_ifname(const char *);
+char * cyginet_guidname(const char *);
+#endif

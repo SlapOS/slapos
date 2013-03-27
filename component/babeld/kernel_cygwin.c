@@ -28,6 +28,7 @@ THE SOFTWARE.
 #include <unistd.h>
 #include <fcntl.h>
 #include <time.h>
+#include <assert.h>
 
 #include <strings.h>
 #include <netinet/in.h>
@@ -58,11 +59,12 @@ THE SOFTWARE.
  *
  * 3. kernel_interface_ipv4
  *
- *    ? interface name, ipv4, ifindex, Oh, they're mass.
+ *    How to deal with many ipv4 address assigned in one interface,
+ *    now only the first one returned.
  *
  */
 
-static int get_sdl(struct sockaddr_dl *sdl, char *ifname);
+static int get_sdl(struct sockaddr_dl *sdl, char *guidname);
 
 static const unsigned char v4prefix[16] =
     {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xFF, 0xFF, 0, 0, 0, 0 };
@@ -74,6 +76,7 @@ if_eui64(char *ifname, int ifindex, unsigned char *eui)
 {
     struct sockaddr_dl sdl;
     char *tmp = NULL;
+    memset(&sdl, 0, sizeof(struct sockaddr_dl));
     if (get_sdl(&sdl, ifname) < 0) {
         return -1;
     }
@@ -92,7 +95,7 @@ if_eui64(char *ifname, int ifindex, unsigned char *eui)
     return 0;
 }
 
-/* fill sdl with the structure corresponding to ifname.
+/* Fill sdl with the structure corresponding to ifname.
  Warning: make a syscall (and get all interfaces).
  return -1 if an error occurs, 0 otherwise. */
 static int
@@ -112,9 +115,7 @@ get_sdl(struct sockaddr_dl *sdl, char *ifname)
 static int old_forwarding = -1;
 static int old_accept_redirects = -1;
 
-static int ifindex_lo = -1;
-static int if6index_lo = -1;
-
+static int ifindex_lo = 1;
 static int kernel_pipe_handles[2];
 
 int
@@ -340,7 +341,7 @@ kernel_interface_channel(const char *ifname, int ifindex)
  *
  * RTF_CLONING: generate new routes on use
  *
- *   No corresponding function in the Windows.
+ *   Not implemented in the Windows.
  *
  */
 int
@@ -412,21 +413,10 @@ kernel_route(int operation, const unsigned char *dest, unsigned short plen,
     if(metric == KERNEL_INFINITY) {
         /* RTF_BLACKHOLE; */
         /* ==> Set gateway to an unused ip address in the Windows */
-        if(ipv4) {
-            if (ifindex_lo < 0) {
-                ifindex_lo = cyginet_loopback_index(AF_INET);
-                if(ifindex_lo <= 0)
-                    return -1;
-            }
-            route_ifindex = ifindex_lo;
-        }
-        else {
-            if (if6index_lo < 0) {
-                if6index_lo = cyginet_loopback_index(AF_INET6);
-                if(if6index_lo <= 0)
-                    return -1;
-            }
-            route_ifindex = if6index_lo;
+        if (ifindex_lo < 0) {
+            ifindex_lo = cyginet_loopback_index(AF_UNSPEC);
+            if(ifindex_lo <= 0)
+                return -1;
         }
     }
 
@@ -502,10 +492,11 @@ kernel_route(int operation, const unsigned char *dest, unsigned short plen,
 static void
 print_kernel_route(int add, struct kernel_route *route)
 {
-    char ifname[IFNAMSIZ];
+    char *ifname = NULL;
+    char guidname[IFNAMSIZ];
 
-    if(!if_indextoname(route->ifindex, ifname))
-      memcpy(ifname,"unk",4);
+    if(if_indextoname(route->ifindex, guidname))
+        ifname = cyginet_ifname(guidname);
 
     fprintf(stderr,
             "%s kernel route: dest: %s gw: %s metric: %d if: %s(%d) \n",
@@ -514,7 +505,8 @@ print_kernel_route(int add, struct kernel_route *route)
             format_prefix(route->prefix, route->plen),
             format_address(route->gw),
             route->metric,
-            ifname, route->ifindex
+            ifname ? ifname : "unk",
+            route->ifindex
             );
 }
 
@@ -524,14 +516,8 @@ parse_kernel_route(struct cyginet_route *src, struct kernel_route *route)
     struct sockaddr *sa;
 
     if(ifindex_lo < 0) {
-        ifindex_lo = cyginet_loopback_index(AF_INET);
+        ifindex_lo = cyginet_loopback_index(AF_UNSPEC);
         if(ifindex_lo <= 0)
-            return -1;
-    }
-
-    if(if6index_lo < 0) {
-        if6index_lo = cyginet_loopback_index(AF_INET6);
-        if(if6index_lo <= 0)
             return -1;
     }
 
@@ -575,9 +561,7 @@ parse_kernel_route(struct cyginet_route *src, struct kernel_route *route)
         v4tov6(route->gw, (unsigned char *)&sin->sin_addr);
     }
 
-    if((sa->sa_family == AF_INET6) && (route->ifindex == if6index_lo))
-        return -1;
-    if((sa->sa_family == AF_INET) && (route->ifindex == ifindex_lo))
+    if(route->ifindex == ifindex_lo)
         return -1;
 
     /* Netmask */
@@ -627,16 +611,30 @@ kernel_routes(struct kernel_route *routes, int maxroutes)
     return count;
 }
 
+/* Note: ifname returned by getifaddrs maybe includes a suffix number,
+   it looks like:
+
+   {C05BAB6E-B82D-4C4D-AF07-EFF7C45C5DB0}_1
+   {C05BAB6E-B82D-4C4D-AF07-EFF7C45C5DB0}_2
+   ...
+
+   */
+static int
+compare_ifname(const char * ifapname, const char * ifname)
+{
+    assert(ifname);
+    char * guidname = cyginet_guidname(ifname);
+    if (guidname)
+        return strncmp(guidname, ifapname, strlen(guidname));
+    return -1;
+}
+
 int
 kernel_addresses(char *ifname, int ifindex, int ll,
                  struct kernel_route *routes, int maxroutes)
 {
     struct ifaddrs *ifa, *ifap;
     int rc, i;
-    /* Two issues:
-     * 1. ifname maybe includes a suffix number in the cygwin
-     * 2. Ipv4 IfIndex maybe need to be changed as Ipv6IfIndex
-     */
     rc = getifaddrs(&ifa);
     if(rc < 0)
         return -1;
@@ -644,8 +642,14 @@ kernel_addresses(char *ifname, int ifindex, int ll,
     ifap = ifa;
     i = 0;
 
+    /* In the Linux, metric is set to 0, but it's invalid in the
+       Windows, so we set metric to 1 here.
+       
+       And gateway to be set as 0 in the Linux, as the same reason, we
+       set it as prefix in the Windows.
+     */
     while(ifap && i < maxroutes) {
-        if((ifname != NULL && strcmp(ifap->ifa_name, ifname) != 0))
+        if((ifname != NULL && compare_ifname(ifap->ifa_name, ifname) != 0))
             goto next;
         if(ifap->ifa_addr->sa_family == AF_INET6) {
             struct sockaddr_in6 *sin6 = (struct sockaddr_in6*)ifap->ifa_addr;
@@ -658,10 +662,10 @@ kernel_addresses(char *ifname, int ifindex, int ll,
                    reset those bytes to 0 before passing them to babeld. */
                 memset(routes[i].prefix + 2, 0, 2);
             routes[i].plen = 128;
-            routes[i].metric = 0;
+            routes[i].metric = 1;
             routes[i].ifindex = ifindex;
             routes[i].proto = RTPROT_BABEL_LOCAL;
-            memset(routes[i].gw, 0, 16);
+            memcpy(routes[i].gw, routes[i].prefix, 16);
             i++;
         } else if(ifap->ifa_addr->sa_family == AF_INET) {
             struct sockaddr_in *sin = (struct sockaddr_in*)ifap->ifa_addr;
@@ -674,10 +678,10 @@ kernel_addresses(char *ifname, int ifindex, int ll,
             memcpy(routes[i].prefix, v4prefix, 12);
             memcpy(routes[i].prefix + 12, &sin->sin_addr, 4);
             routes[i].plen = 128;
-            routes[i].metric = 0;
+            routes[i].metric = 1; 
             routes[i].ifindex = ifindex;
             routes[i].proto = RTPROT_BABEL_LOCAL;
-            memset(routes[i].gw, 0, 16);
+            memcpy(routes[i].gw, routes[i].prefix, 16);
             i++;
         }
  next:

@@ -25,28 +25,40 @@ Required packages:
 
 In the Windows XP, 
 
-$ PLATFORM_DEFINES="-D_WIN32_WINNT=0x0503" make
+$ WINVER=XP make
 
 Later Windows Vista,
 
-$ PLATFORM_DEFINES="-D_WIN32_WINNT=0x0600" make
+$ WINVER=VISTA make
 
 Interface Names
 ===============
 
-In the Windows, GUID is used as unique interface names. You can list
-all the interfaces by the following command:
+Use network connection name as interface name. 
 
-$ ipv6 if | grep "^Interface" -A 1
+Notes
+=====
 
---
-Interface 2: Automatic Tunneling Pseudo-Interface
-  Guid {48FCE3FC-EC30-E50E-F1A7-71172AEEE3AE}
---
-Interface 1: Loopback Pseudo-Interface
-  Guid {6BD113CC-5EC2-7638-B953-0B889DA72014}
-...
+1. If network connection is disabeld, its interface name will NOT be
+   recognize by Babeld in the Cygwin.
 
-When call babled, use GUID as interface name:
+2. For the option "-z", kind value could be "0", "1", others is not
+   supported. Because no any API channels in the Windows XP, even for
+   wireless interface.
 
-$ ./babeld.exe {6BD113CC-5EC2-7638-B953-0B889DA72014}
+3. Only -t 0, -T 0 is valid, no multi-route tables in the Windows.
+
+4. IPV6_TCLASS doesn't work, so babeld will complain:
+   "Couldn't set traffic class"
+
+5. Ipv6 option "IPV6_V6ONLY" only works in the Windows Vista later.
+
+6. If one connection is assigned more than one ipv4 address, babeld
+   returns the first one only, is it right? I'm not sure.
+
+7. Regarding IPV6CTL_FORWARDING and IPV6CTL_SENDREDIRECTS, MSDN says
+   that you can set both of options for Ipv4 in the registry:
+   "HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\Tcpip\Parameters",
+   but says nothing for Ipv6. Does it work for ipv6 in the registry:
+   "HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\Tcpip6\Parameters"
+   ?

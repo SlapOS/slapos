@@ -60,6 +60,7 @@
 #define RTM_CHANGE	0x3	/* Change Metrics or flags */
 #define RTM_GET		0x4	/* Report Metrics */
 
+#define IFF_RUNNING      0x40
 /*
  * Structure of a Link-Level sockaddr:
  */
@@ -84,7 +85,7 @@ struct cyginet_route {
     struct sockaddr gateway;
 };
 
-#if defined(INSIDE_CYGINET)
+#if defined(INSIDE_BABELD_CYGINET)
 
 struct ifaddrs {
         struct ifaddrs  *ifa_next;
@@ -100,6 +101,15 @@ struct if_nameindex {
   unsigned  if_index;
   char     *if_name;
 };
+
+typedef struct _LIBWINET_INTERFACE_MAP_TABLE {  
+  PCHAR     FriendlyName;    
+  PCHAR     AdapterName;
+  BYTE      PhysicalAddress[MAX_ADAPTER_ADDRESS_LENGTH];
+  DWORD     PhysicalAddressLength;
+  DWORD     IfType;
+  VOID      *next;
+} LIBWINET_INTERFACE_MAP_TABLE, *PLIBWINET_INTERFACE_MAP_TABLE;
 
 typedef struct _LIBWINET_INTERFACE {
   DWORD                              IfType;
@@ -135,11 +145,14 @@ extern void                 freeifaddrs(struct ifaddrs *);
            );                                                           \
   }
 
-#endif  /* INSIDE_CYGINET */
+#endif  /* INSIDE_BABELD_CYGINET */
 
 /* Export functions from cyginet */
 int cyginet_startup();
 void cyginet_cleanup();
+
+char * cyginet_ifname(const char *);
+char * cyginet_guidname(const char *);
 
 int cyginet_start_monitor_route_changes(int);
 int cyginet_stop_monitor_route_changes();

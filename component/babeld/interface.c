@@ -409,7 +409,11 @@ check_interfaces(void)
     unsigned int ifindex;
 
     FOR_ALL_INTERFACES(ifp) {
+#if defined (_WIN32_WINNT)
+        ifindex = if_nametoindex(cyginet_guidname(ifp->name));
+#else
         ifindex = if_nametoindex(ifp->name);
+#endif
         if(ifindex != ifp->ifindex) {
             debugf("Noticed ifindex change for %s.\n", ifp->name);
             ifp->ifindex = 0;

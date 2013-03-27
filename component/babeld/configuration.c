@@ -348,7 +348,11 @@ parse_filter(gnc_t gnc, void *closure)
             if(c < -1)
                 goto error;
             filter->ifname = interface;
+#if defined (_WIN32_WINNT)
+            filter->ifindex = if_nametoindex(cyginet_guidname(interface));
+#else
             filter->ifindex = if_nametoindex(interface);
+#endif
         } else if(strcmp(token, "allow") == 0) {
             filter->result = 0;
         } else if(strcmp(token, "deny") == 0) {
@@ -644,7 +648,11 @@ renumber_filter(struct filter *filter)
 {
     while(filter) {
         if(filter->ifname)
+#if defined (_WIN32_WINNT)
+            filter->ifindex = if_nametoindex(cyginet_guidname(filter->ifname));
+#else
             filter->ifindex = if_nametoindex(filter->ifname);
+#endif
         filter = filter->next;
     }
 }
