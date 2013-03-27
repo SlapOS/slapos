@@ -47,7 +47,7 @@ import zope.interface
 
 log = logging.getLogger(__name__)
 
-DEFAULT_SOFTWARE_TYPE = 'default'
+DEFAULT_SOFTWARE_TYPE = 'RootSoftwareInstance'
 
 # httplib.HTTPSConnection with key verification
 class HTTPSConnectionCA(httplib.HTTPSConnection):
