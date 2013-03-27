@@ -16,7 +16,7 @@
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>my_preferred_slapos_web_site_url_property</string> </value>
+            <value> <string>my_preferred_slapos_web_site_url</string> </value>
         </item>
         <item>
             <key> <string>message_values</string> </key>

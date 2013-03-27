@@ -96,7 +96,7 @@
                         <string>my_preferred_regularisation_request_template</string>
                         <string>my_preferred_support_request_template</string>
                         <string>my_preferred_web_message_template</string>
-                        <string>my_preferred_slapos_web_site_url_property</string>
+                        <string>my_preferred_slapos_web_site_url</string>
                       </list>
                     </value>
                 </item>
