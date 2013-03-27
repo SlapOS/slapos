@@ -28,7 +28,7 @@ from setuptools import setup, find_packages
 import glob
 import os
 
-version = '0.74.1-dev'
+version = '0.75.1.dev'
 name = 'slapos.cookbook'
 long_description = open("README.txt").read() + "\n" + \
     open("CHANGES.txt").read() + "\n"
@@ -52,6 +52,7 @@ setup(name=name,
       packages=find_packages(),
       include_package_data=True,
       install_requires=[
+        'hexagonit.recipe.download',
         'lxml', # for full blown python interpreter
         'netaddr', # to manipulate on IP addresses
         'setuptools', # namespaces
@@ -80,6 +81,7 @@ setup(name=name,
           'check_url_available = slapos.recipe.check_url_available:Recipe',
           'cloud9 = slapos.recipe.cloud9:Recipe',
           'cloudooo.test = slapos.recipe.erp5_test:CloudoooRecipe',
+          'configurationfile = slapos.recipe.configurationfile:Recipe',
           'cron = slapos.recipe.dcron:Recipe',
           'cron.d = slapos.recipe.dcron:Part',
           'davstorage = slapos.recipe.davstorage:Recipe',
@@ -121,6 +123,7 @@ setup(name=name,
           'kvm = slapos.recipe.kvm:Recipe',
           'kvm.frontend = slapos.recipe.kvm_frontend:Recipe',
           'lamp = slapos.recipe.lamp:Request',
+          'lamp.generic = slapos.recipe.lampgeneric:Recipe',
           'lamp.request = slapos.recipe.lamp:Request',
           'lamp.simple = slapos.recipe.lamp:Simple',
           'lamp.static = slapos.recipe.lamp:Static',
@@ -151,11 +154,13 @@ setup(name=name,
           'proactive = slapos.recipe.proactive:Recipe',
           'publish = slapos.recipe.publish:Recipe',
           'publish.serialised = slapos.recipe.publish:Serialised',
+          'publishsection = slapos.recipe.publish:PublishSection',
           'publishurl = slapos.recipe.publishurl:Recipe',
           'pwgen = slapos.recipe.pwgen:Recipe',
           'pwgen.stable = slapos.recipe.pwgen:StablePasswordGeneratorRecipe',
           'request = slapos.recipe.request:Recipe',
           'request.serialised = slapos.recipe.request:Serialised',
+          'request.edge = slapos.recipe.request:RequestEdge',
           'requestoptional = slapos.recipe.request:RequestOptional',
           'seleniumrunner = slapos.recipe.seleniumrunner:Recipe',
           'sheepdogtestbed = slapos.recipe.sheepdogtestbed:SheepDogTestBed',
@@ -188,6 +193,7 @@ setup(name=name,
           'xvfb = slapos.recipe.xvfb:Recipe',
           'xwiki = slapos.recipe.xwiki:Recipe',
           'zabbixagent = slapos.recipe.zabbixagent:Recipe',
+          'zimbra.kvm = slapos.recipe.zimbra_kvm:Recipe',
           'zeo = slapos.recipe.zeo:Recipe',
 
         ],

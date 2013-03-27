@@ -1,6 +1,23 @@
 Changes
 =======
 
+0.75.0 (2013-03-26)
+-------------------
+
+ * Add backward compatibility about Partition.getInstanceGuid() in request.py. [Cedric de Saint Martin]
+ * request.py: Don't crash if resource is not ready. [Cedric de Saint Martin]
+ * Use memory-based kumofs instead of memcached to have no limitation for key length and data size. [Kazuhiko Shiozaki]
+ * Postgres: allow slapuser# to connect as postgres user. [Marco Mariani]
+ * apache_frontend: Sanitize inputs, disable Varnish cache, don't touch to custom file if already present. [Cedric de Saint Martin]
+ * Resiliency: simpler, more robust PBS recipe and promise. [Marco Mariani]
+ * Add helper method to set "location" parameter in librecipe. [Cedric de Saint Martin]
+ * Add download helper function in librecipe. [Cedric de Saint Martin]
+ * Update wrapper recipe to make it simpler and more dev-friendly. [Cedric de Saint Martin]
+ * Add configurationfile recipe. [Cedric de Saint Martin]
+ * Add request-edge recipe. [Cedric de Saint Martin]
+ * Add publishsection recipe. [Cedric de Saint Martin]
+ * Add match support for promise check_page_content. [Cedric de Saint Martin]
+
 0.74.0 (2013-03-05)
 -------------------
 

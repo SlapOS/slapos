@@ -83,6 +83,7 @@ port
 Port used by Apache. Optional parameter, defaults to 4443.
 
 plain_http_port
+~~~~~~~~~~~~~~~
 Port used by apache to serve plain http (only used to redirect to https).
 Optional parameter, defaults to 8080.
 
@@ -192,7 +193,12 @@ Notes
 =====
 
 It is not possible with slapos to listen to port <= 1024, because process are
-not run as root. It is a good idea then to go on the node where the instance is
+not run as root.
+
+Solution 1
+----------
+
+It is a good idea then to go on the node where the instance is
 and set some iptables rules like (if using default ports)::
 
   iptables -t nat -A PREROUTING -p tcp -d {public_ipv4} --dport 443 -j DNAT --to-destination {listening_ipv4}:4443
@@ -200,3 +206,12 @@ and set some iptables rules like (if using default ports)::
 
 Where {public ip} is the public IP of your server, or at least the LAN IP to where your NAT will forward to.
 {listening ip} is the private ipv4 (like 10.0.34.123) that the instance is using and sending as connection parameter.
+
+Solution 2
+----------
+
+It is also possible to directly allow the service to listen on 80 and 443 ports using the following command:
+
+  setcap 'cap_net_bind_service=+ep' /opt/slapgrid/$APACHE_FRONTEND_SOFTWARE_RELEASE_MD5/parts/apache-2.2/bin/httpd
+
+Then specify in the instance parameters "port" and "plain_http_port" to be 443 and 80, respectively.
