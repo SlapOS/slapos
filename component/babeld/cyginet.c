@@ -44,10 +44,11 @@
 #if defined (TEST_CYGINET)
 #define kdebugf printf
 #else
+extern int debug;
 void do_debugf(int level, const char *format, ...);
 #define kdebugf(_args...) \
     do { \
-        do_debugf(3, _args);   \
+        if(!!(debug >= 3)) do_debugf(3, _args);   \
     } while(0)
 #endif
 
@@ -319,6 +320,7 @@ static int
 libwinet_run_command(const char *command)
 {
   FILE *output;
+  printf("libwinet_run_command: %s\n", command);
   kdebugf("libwinet_run_command: %s\n", command);
   output = popen (command, "r");
   if (!output)
@@ -739,7 +741,7 @@ libwinet_edit_route_entry(const struct sockaddr *dest,
     const int MAX_BUFFER_SIZE = 1024;
     const char * cmdformat = "netsh interface ipv6 %s route "
                              "prefix=%s/%d interface=%d "
-                             "nexthop=%s %s%d";
+                             "%s%s %s%d";
     char cmdbuf[MAX_BUFFER_SIZE];
     char sdest[INET6_ADDRSTRLEN];
     char sgate[INET6_ADDRSTRLEN];
@@ -765,7 +767,8 @@ libwinet_edit_route_entry(const struct sockaddr *dest,
                  sdest,
                  plen,
                  ifindex,
-                 sgate,
+                 strcmp(sgate, "::") == 0 ? "" : "nexthop=",
+                 strcmp(sgate, "::") == 0 ? "" : sgate,
                  cmdflag == RTM_DELETE ? "#" : "metric=",
                  metric
                  ) >= MAX_BUFFER_SIZE)
@@ -947,62 +950,6 @@ libwinet_set_registry_key(char *key, char * name, int value, int defvalue)
 
   RegCloseKey(hKey);
   return old;
-}
-
-static int
-libwinet_get_loopback_index(int family)
-{
-  IP_ADAPTER_ADDRESSES *pAdaptAddr = NULL;
-  IP_ADAPTER_ADDRESSES *pTmpAdaptAddr = NULL;
-  DWORD dwRet = 0;
-  DWORD dwSize = 0x10000;
-  DWORD dwReturn = 0;
-
-  dwRet = GetAdaptersAddresses(family,
-                               GAA_FLAG_SKIP_ANYCAST            \
-                               | GAA_FLAG_SKIP_MULTICAST        \
-                               | GAA_FLAG_SKIP_DNS_SERVER       \
-                               | GAA_FLAG_SKIP_FRIENDLY_NAME,
-                               NULL,
-                               pAdaptAddr,
-                               &dwSize
-                               );
-  if (ERROR_BUFFER_OVERFLOW == dwRet) {
-    FREE(pAdaptAddr);
-    if (NULL == (pAdaptAddr = (IP_ADAPTER_ADDRESSES*)MALLOC(dwSize)))
-      return 0;
-    dwRet = GetAdaptersAddresses(family,
-                                 GAA_FLAG_SKIP_ANYCAST            \
-                                 | GAA_FLAG_SKIP_MULTICAST        \
-                                 | GAA_FLAG_SKIP_DNS_SERVER       \
-                                 | GAA_FLAG_SKIP_FRIENDLY_NAME,
-                                 NULL,
-                                 pAdaptAddr,
-                                 &dwSize
-                                 );
-  }
-  if (NO_ERROR == dwRet) {
-
-    pTmpAdaptAddr = pAdaptAddr;
-
-    while (pTmpAdaptAddr) {
-
-      if (IF_TYPE_SOFTWARE_LOOPBACK == pTmpAdaptAddr -> IfType) {
-        dwReturn = family == AF_INET ?
-                   pTmpAdaptAddr -> IfIndex :
-                   pTmpAdaptAddr -> Ipv6IfIndex;
-        /* Loopback interface doesn't support both of Ipv4 or Ipv6 */
-        if (dwReturn)
-          break;
-      }
-
-      pTmpAdaptAddr = pTmpAdaptAddr->Next;
-    }
-
-    FREE(pAdaptAddr);
-  }
-
-  return dwReturn;
 }
 
 int
@@ -1272,6 +1219,58 @@ cyginet_loopback_index(int family)
   return 1;
 }
 
+char *
+cyginet_ipv4_index2ifname(int ifindex)
+{
+  IP_ADAPTER_ADDRESSES *pAdaptAddr = NULL;
+  IP_ADAPTER_ADDRESSES *pTmpAdaptAddr = NULL;
+  DWORD dwRet = 0;
+  DWORD dwSize = 0x10000;
+  DWORD dwFamily = AF_INET;
+  char * ifname = NULL;
+
+  dwRet = GetAdaptersAddresses(dwFamily,
+                               GAA_FLAG_SKIP_UNICAST            \
+                               | GAA_FLAG_SKIP_ANYCAST          \
+                               | GAA_FLAG_SKIP_MULTICAST        \
+                               | GAA_FLAG_SKIP_DNS_SERVER,
+                               NULL,
+                               pAdaptAddr,
+                               &dwSize
+                               );
+  if (ERROR_BUFFER_OVERFLOW == dwRet) {
+    FREE(pAdaptAddr);
+    if (NULL == (pAdaptAddr = (IP_ADAPTER_ADDRESSES*)MALLOC(dwSize)))
+      return NULL;
+    dwRet = GetAdaptersAddresses(dwFamily,
+                                 GAA_FLAG_SKIP_UNICAST            \
+                                 | GAA_FLAG_SKIP_ANYCAST          \
+                                 | GAA_FLAG_SKIP_MULTICAST        \
+                                 | GAA_FLAG_SKIP_DNS_SERVER,
+                                 NULL,
+                                 pAdaptAddr,
+                                 &dwSize
+                                 );
+  }
+
+  if (NO_ERROR == dwRet) {
+    pTmpAdaptAddr = pAdaptAddr;
+    while (pTmpAdaptAddr) {
+
+      if (pTmpAdaptAddr -> IfIndex == ifindex) {
+        ifname = cyginet_ifname(pTmpAdaptAddr -> AdapterName);
+        break;
+      }
+
+      pTmpAdaptAddr = pTmpAdaptAddr->Next;
+    }
+
+    FREE(pAdaptAddr);
+  }
+
+  return ifname;
+}
+
 /*
  * There are 3 ways to dump route table in the Windows:
  *
@@ -1492,6 +1491,62 @@ cyginet_ifname(const char * guidname)
 
 /* The following functions are reserved. */
 #if 0
+
+static int
+libwinet_get_loopback_index(int family)
+{
+  IP_ADAPTER_ADDRESSES *pAdaptAddr = NULL;
+  IP_ADAPTER_ADDRESSES *pTmpAdaptAddr = NULL;
+  DWORD dwRet = 0;
+  DWORD dwSize = 0x10000;
+  DWORD dwReturn = 0;
+
+  dwRet = GetAdaptersAddresses(family,
+                               GAA_FLAG_SKIP_ANYCAST            \
+                               | GAA_FLAG_SKIP_MULTICAST        \
+                               | GAA_FLAG_SKIP_DNS_SERVER       \
+                               | GAA_FLAG_SKIP_FRIENDLY_NAME,
+                               NULL,
+                               pAdaptAddr,
+                               &dwSize
+                               );
+  if (ERROR_BUFFER_OVERFLOW == dwRet) {
+    FREE(pAdaptAddr);
+    if (NULL == (pAdaptAddr = (IP_ADAPTER_ADDRESSES*)MALLOC(dwSize)))
+      return 0;
+    dwRet = GetAdaptersAddresses(family,
+                                 GAA_FLAG_SKIP_ANYCAST            \
+                                 | GAA_FLAG_SKIP_MULTICAST        \
+                                 | GAA_FLAG_SKIP_DNS_SERVER       \
+                                 | GAA_FLAG_SKIP_FRIENDLY_NAME,
+                                 NULL,
+                                 pAdaptAddr,
+                                 &dwSize
+                                 );
+  }
+  if (NO_ERROR == dwRet) {
+
+    pTmpAdaptAddr = pAdaptAddr;
+
+    while (pTmpAdaptAddr) {
+
+      if (IF_TYPE_SOFTWARE_LOOPBACK == pTmpAdaptAddr -> IfType) {
+        dwReturn = family == AF_INET ?
+                   pTmpAdaptAddr -> IfIndex :
+                   pTmpAdaptAddr -> Ipv6IfIndex;
+        /* Loopback interface doesn't support both of Ipv4 or Ipv6 */
+        if (dwReturn)
+          break;
+      }
+
+      pTmpAdaptAddr = pTmpAdaptAddr->Next;
+    }
+
+    FREE(pAdaptAddr);
+  }
+
+  return dwReturn;
+}
 
 static PMIB_IPFORWARDTABLE
 libwinet_get_ipforward_table(int forder)
@@ -2288,6 +2343,15 @@ runTestCases()
     }
   }
 
+  printf("\n\nTest cyginet_ipv4_index2ifname:\n\n");
+  {
+    int ifindex = 1;
+    printf("The name of ipv4 ifindex %d: %s\n",
+           ifindex,
+           cyginet_ipv4_index2ifname(ifindex)
+           );
+  }
+
   printf("\n\nTest cyginet_guidname works in the Cygwin:\n\n");
   {
     PLIBWINET_INTERFACE_MAP_TABLE p = interface_map_table;
@@ -2329,6 +2393,7 @@ runTestCases()
 
 #endif  /* _WIN32_WINNT < _WIN32_WINNT_VISTA */
 
+  /*
   printf("\n\nTest libwinet_get_loopback_index:\n\n");
   {
     printf("Ipv4 loopback ifindex is %d\n",
@@ -2338,6 +2403,7 @@ runTestCases()
            libwinet_get_loopback_index(AF_INET6)
            );
   }
+  */
 
   printf("\n\nTest cyginet_set_ipv6_forwards:\n\n");
   {

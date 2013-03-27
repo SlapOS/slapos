@@ -6,7 +6,7 @@ DEFINES = $(PLATFORM_DEFINES)
 
 CFLAGS = $(CDEBUGFLAGS) $(DEFINES) $(EXTRA_DEFINES)
 
-LDLIBS = -lrt -liphlpapi -lws2_32 -lwlanapi -lole32 -lsetupapi
+LDLIBS = -lrt
 
 SRCS = babeld.c net.c kernel.c util.c interface.c source.c neighbour.c \
        route.c xroute.c message.c resend.c configuration.c local.c
@@ -20,14 +20,15 @@ ifneq "$(WINVER)" ""
 
 SRCS += cyginet.c
 OBJS += cyginet.o
+LDLIBS +=  -liphlpapi -lws2_32 -lwlanapi -lole32 -lsetupapi
 KERNEL_SOUCES += kernel_cygwin.c
 
 ifeq "$(WINVER)" "XP"
-DEFINES += -D_WIN32_WINNT=0x0503
+CFLAGS += -D_WIN32_WINNT=0x0503
 endif
 
 ifeq "$(WINVER)" "VISTA"
-DEFINES += -D_WIN32_WINNT=0x0600
+CLFAGS += -D_WIN32_WINNT=0x0600
 endif
 
 endif
@@ -67,3 +68,8 @@ clean:
 	-rm -f babeld babeld.html *.o *~ core TAGS gmon.out
 
 kernel.o: $(KERNEL_SOURCES)
+
+# Usage: ./testc.exe
+# Verify most of the functions in the cyginet.c
+testc.exe: cyginet.c
+	$(CC) $(CFLAGS) $(LDFLAGS) -DTEST_CYGINET -o $@ $< $(LDLIBS)

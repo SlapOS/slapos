@@ -494,8 +494,10 @@ print_kernel_route(int add, struct kernel_route *route)
 {
     char *ifname = NULL;
     char guidname[IFNAMSIZ];
-
-    if(if_indextoname(route->ifindex, guidname))
+    if ((route->plen >= 96) && v4mapped(route->prefix)) {
+        ifname = cyginet_ipv4_index2ifname(route->prefix);
+    }
+    else if(if_indextoname(route->ifindex, guidname))
         ifname = cyginet_ifname(guidname);
 
     fprintf(stderr,

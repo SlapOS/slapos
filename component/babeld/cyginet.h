@@ -151,9 +151,6 @@ extern void                 freeifaddrs(struct ifaddrs *);
 int cyginet_startup();
 void cyginet_cleanup();
 
-char * cyginet_ifname(const char *);
-char * cyginet_guidname(const char *);
-
 int cyginet_start_monitor_route_changes(int);
 int cyginet_stop_monitor_route_changes();
 int cyginet_set_ipv6_forwards(int);
@@ -174,5 +171,9 @@ int cyginet_delete_route_entry(const struct sockaddr *, unsigned short,
                                const struct sockaddr *, int , unsigned int);
 int cyginet_update_route_entry(const struct sockaddr *, unsigned short,
                                const struct sockaddr *, int , unsigned int);
+
+char * cyginet_ifname(const char *);
+char * cyginet_guidname(const char *);
+char * cyginet_ipv4_index2ifname(int);
 
 #endif  /* __CYGIFNET_H__ */
