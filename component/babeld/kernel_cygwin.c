@@ -69,6 +69,12 @@ static int get_sdl(struct sockaddr_dl *sdl, char *guidname);
 static const unsigned char v4prefix[16] =
     {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xFF, 0xFF, 0, 0, 0, 0 };
 
+static int ifindex_blackhole = -1;
+static struct in6_addr blackhole_addr6 = {{IN6ADDR_LOOPBACK_INIT}};
+static char blackhole_addr[1][1][16] = 
+        {{{ 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x7f, 0x00, 0x00, 0x01 }}};
+
 int export_table = -1, import_table = -1;
 
 int
@@ -355,11 +361,6 @@ kernel_route(int operation, const unsigned char *dest, unsigned short plen,
     int route_ifindex;
     int prefix_len;
 
-    struct in6_addr local6 = {{IN6ADDR_LOOPBACK_INIT}};
-    char local4[1][1][16] =
-        {{{ 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-            0x00, 0x00, 0x00, 0x00, 0x7f, 0x00, 0x00, 0x01 }}};
-
     /* Check that the protocol family is consistent. */
     if(plen >= 96 && v4mapped(dest)) {
         if(!v4mapped(gate)) {
@@ -413,11 +414,14 @@ kernel_route(int operation, const unsigned char *dest, unsigned short plen,
     if(metric == KERNEL_INFINITY) {
         /* RTF_BLACKHOLE; */
         /* ==> Set gateway to an unused ip address in the Windows */
-        if (ifindex_lo < 0) {
-            ifindex_lo = cyginet_loopback_index(AF_UNSPEC);
-            if(ifindex_lo <= 0)
+        if (ifindex_blackhole < 0) {
+            ifindex_blackhole = cyginet_blackhole_index(&blackhole_addr6,
+                                                        blackhole_addr[0][0]+12
+                                                        );
+            if(ifindex_blackhole <= 0)
                 return -1;
         }
+        route_ifindex = ifindex_blackhole;
     }
 
 #define PUSHADDR(dst, src)                                              \
@@ -438,20 +442,20 @@ kernel_route(int operation, const unsigned char *dest, unsigned short plen,
 
         PUSHADDR(destination, dest);
         if (metric == KERNEL_INFINITY)
-            PUSHADDR(gateway, **local4);
+            PUSHADDR(gateway, **blackhole_addr);
         else
             PUSHADDR(gateway, gate);
 
     } else {
         PUSHADDR6(destination, dest);
         if (metric == KERNEL_INFINITY)
-            PUSHADDR6(gateway, &local6);
+            PUSHADDR6(gateway, &blackhole_addr6);
         else
             PUSHADDR6(gateway, gate);
     }
 #undef PUSHADDR
 #undef PUSHADDR6
-
+    /* What if route_ifindex == 0 */
     switch(operation) {
     case ROUTE_FLUSH:
         rc = cyginet_delete_route_entry(&destination,
@@ -484,8 +488,8 @@ kernel_route(int operation, const unsigned char *dest, unsigned short plen,
     /* Monitor thread will write data to kernel pipe when any change
        in the route table is happened. Here it's babeld itself to
        change the route table, so kernel pipe need to be clean. */
-    int ch;
-    while (read(kernel_pipe_handles[0], &ch, 1) > 0);
+    /* int ch; */
+    /* while (read(kernel_pipe_handles[0], &ch, 1) > 0); */
     return rc;
 }
 

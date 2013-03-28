@@ -176,4 +176,6 @@ char * cyginet_ifname(const char *);
 char * cyginet_guidname(const char *);
 char * cyginet_ipv4_index2ifname(int);
 
+int cyginet_blackhole_index(struct in6_addr*, char *);
+
 #endif  /* __CYGIFNET_H__ */

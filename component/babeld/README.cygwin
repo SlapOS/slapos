@@ -69,3 +69,22 @@ Notes
    but says nothing for Ipv6. Does it work for ipv6 in the registry:
    "HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\Tcpip6\Parameters"
    ?
+
+8. There is no RTM_BLACKHOLE, RTM_REJECT, NULLROUTE in the windows, in
+   the kernel_cygwin.c!kernel_route, we only use local address as
+   gateway in the BLACKHOLE route entry. Is it OK?
+
+   A: It's not OK actually. In the Windows, you can't use 127.0.0.1 as
+      gateway when add route entry. So the solution is find one
+      interface other than loopback interface, then use its
+      uni-address as gateway, it will be a blackhole route entry. For
+      example, if you have an interface which ip addr is
+      192.168.128.100, and ifindex is 5, then
+
+      $ route add 100.28.0.0 mask 255.255.0.0 192.168.128.100 if 5
+
+      Destination network 100.28.0.0/16 will be unreachable.
+      
+
+9. IN6_LINKLOCAL_IFINDEX && SET_IN6_LINKLOCAL_IFINDEX, do both of them
+   work in the Windows?

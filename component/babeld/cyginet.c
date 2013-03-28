@@ -229,6 +229,15 @@ libwinet_refresh_interface_map_table()
   return (NO_ERROR == dwRet);
 }
 
+/* Map ifindex belong to family to index of another family,
+   Ipv4 -> Ipv6 or
+   Ipv6 -> Ipv4
+
+   Return 0, if the interface only binds one ip version.
+
+   Special case:
+       If the interface is loopback, it will always return 1. 
+   */
 static int
 libwinet_map_ifindex(int family, int ifindex)
 {
@@ -239,7 +248,8 @@ libwinet_map_ifindex(int family, int ifindex)
   DWORD dwReturn = 0;
 
   dwRet = GetAdaptersAddresses(AF_UNSPEC,
-                               GAA_FLAG_SKIP_ANYCAST            \
+                               GAA_FLAG_SKIP_UNICAST            \
+                               | GAA_FLAG_SKIP_ANYCAST          \
                                | GAA_FLAG_SKIP_MULTICAST        \
                                | GAA_FLAG_SKIP_DNS_SERVER       \
                                | GAA_FLAG_SKIP_FRIENDLY_NAME,
@@ -252,7 +262,8 @@ libwinet_map_ifindex(int family, int ifindex)
     if (NULL == (pAdaptAddr = (IP_ADAPTER_ADDRESSES*)MALLOC(dwSize)))
       return 0;
     dwRet = GetAdaptersAddresses(AF_UNSPEC,
-                                 GAA_FLAG_SKIP_ANYCAST            \
+                                 GAA_FLAG_SKIP_UNICAST            \
+                                 | GAA_FLAG_SKIP_ANYCAST          \
                                  | GAA_FLAG_SKIP_MULTICAST        \
                                  | GAA_FLAG_SKIP_DNS_SERVER       \
                                  | GAA_FLAG_SKIP_FRIENDLY_NAME,
@@ -268,7 +279,8 @@ libwinet_map_ifindex(int family, int ifindex)
     while (pTmpAdaptAddr) {
       if (family == AF_INET ? pTmpAdaptAddr -> IfIndex == ifindex
           : pTmpAdaptAddr -> Ipv6IfIndex == ifindex) {
-        dwReturn = family == AF_INET ?
+        dwReturn = (pTmpAdaptAddr -> IfType == IF_TYPE_SOFTWARE_LOOPBACK) ?
+          1 : (family == AF_INET) ?
           pTmpAdaptAddr -> Ipv6IfIndex : pTmpAdaptAddr -> IfIndex;
         break;
       }
@@ -750,6 +762,76 @@ int cyginet_stop_monitor_route_changes()
   return rc;
 }
 
+/* Find an interface which binds both of ipv4 and ipv6, and configured
+   with at least one unicast address.
+
+   Return ipv6 ifindex of this interface, set addr6 and addr as the
+   ipv4 and ipv6 address respectively.
+
+   Return 0 if there is no matched interface found.
+   */
+int
+cyginet_blackhole_index(struct in6_addr* addr6, char * addr)
+{
+  IP_ADAPTER_ADDRESSES *pAdaptAddr = NULL;
+  IP_ADAPTER_ADDRESSES *pTmpAdaptAddr = NULL;
+  DWORD dwRet = 0;
+  DWORD dwSize = 0x10000;
+  DWORD dwReturn = 0;
+
+  dwRet = GetAdaptersAddresses(AF_UNSPEC,
+                               GAA_FLAG_SKIP_ANYCAST            \
+                               | GAA_FLAG_SKIP_MULTICAST        \
+                               | GAA_FLAG_SKIP_DNS_SERVER       \
+                               | GAA_FLAG_SKIP_FRIENDLY_NAME,
+                               NULL,
+                               pAdaptAddr,
+                               &dwSize
+                               );
+  if (ERROR_BUFFER_OVERFLOW == dwRet) {
+    FREE(pAdaptAddr);
+    if (NULL == (pAdaptAddr = (IP_ADAPTER_ADDRESSES*)MALLOC(dwSize)))
+      return 0;
+    dwRet = GetAdaptersAddresses(AF_UNSPEC,
+                                 GAA_FLAG_SKIP_ANYCAST            \
+                                 | GAA_FLAG_SKIP_MULTICAST        \
+                                 | GAA_FLAG_SKIP_DNS_SERVER       \
+                                 | GAA_FLAG_SKIP_FRIENDLY_NAME,
+                                 NULL,
+                                 pAdaptAddr,
+                                 &dwSize
+                                 );
+  }
+
+  if (NO_ERROR == dwRet) {
+    pTmpAdaptAddr = pAdaptAddr;
+    while (pTmpAdaptAddr) {
+      if (pTmpAdaptAddr -> IfIndex
+          && pTmpAdaptAddr -> Ipv6IfIndex
+          && (pTmpAdaptAddr -> OperStatus == IfOperStatusUp)
+          && (pTmpAdaptAddr -> IfType != IF_TYPE_SOFTWARE_LOOPBACK)) {
+        
+        PIP_ADAPTER_UNICAST_ADDRESS p = pTmpAdaptAddr -> FirstUnicastAddress;
+        while (p) {
+          SOCKADDR *s;
+          s =  (p -> Address).lpSockaddr;
+          if (s -> sa_family == AF_INET)
+            memcpy(addr, &(((struct sockaddr_in *)s) -> sin_addr), 4);
+          else if (s -> sa_family == AF_INET6)
+            memcpy(addr6, &(((struct sockaddr_in6 *)s) -> sin6_addr), 16);
+          p = p -> Next;
+        }
+        dwReturn = pTmpAdaptAddr -> Ipv6IfIndex;
+        break;
+      }
+      pTmpAdaptAddr = pTmpAdaptAddr->Next;
+    }
+    FREE(pAdaptAddr);
+  }
+
+  return dwReturn;
+}
+
 /*
  * There are 3 ways to change a route:
  *
@@ -759,6 +841,16 @@ int cyginet_stop_monitor_route_changes()
  *                DeleteIpForwardEntry
  *                SetIpForwardEntry
  *
+ *    Or route command
+ *    
+ *    Or netsh routing add persistentroute
+ *    
+ *    Or netsh routing add rtmroute
+ *
+ *    it need "Routing and Remote Access Service" running on the local
+ *    machine. Use 'net start remoteaccess' on the local machine to
+ *    start the service.
+ *    
  * 2. IPv6 route: command "netsh"
  *
  *    C:/> netsh interface ipv6 add route
@@ -2364,6 +2456,15 @@ runTestCases()
              );
       p = p -> next;
     }
+  }
+
+  printf("\n\nTest cyginet_blackhole_index:\n\n");
+  {
+    struct in6_addr addr6;
+    char addr[4];
+    printf("The blackhole ifindex is %d\n",
+           cyginet_blackhole_index(&addr6, addr)
+           );
   }
 
 #if _WIN32_WINNT < _WIN32_WINNT_VISTA
