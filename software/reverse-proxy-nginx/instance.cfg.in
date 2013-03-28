@@ -27,7 +27,7 @@ key = $${slap-connection:key-file}
 cert = $${slap-connection:cert-file}
 
 # Set default parameters
-configuration.slave-instance-list =
+slave-instance-list =
 configuration.domain = un-hardcode-me
 #configuration.http-port = 80
 #configuration.https-port = 443
