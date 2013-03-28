@@ -36,11 +36,6 @@ def getWatchdogID():
   return "-on-watch"
 
 def parseArgumentTuple():
-  """Parses arguments either from command line, from method parameters or from
-     config file. Then returns a new instance of slapgrid.Slapgrid with those
-     parameters. Also returns the options dict and unused variable list, and
-     configures logger.
-  """
   parser = argparse.ArgumentParser()
   parser.add_argument("--master-url",
                       help="The master server URL. Mandatory.",
@@ -62,7 +57,7 @@ def parseArgumentTuple():
   return option_dict
 
 
-class Watchdog():
+class Watchdog(object):
 
   process_state_events = ['PROCESS_STATE_EXITED', 'PROCESS_STATE_FATAL']
 
@@ -77,7 +72,7 @@ class Watchdog():
   def initialize_connection(self, partition_id):
     cert_file = None
     key_file = None
-    if self.certificate_repository_path is not None:
+    if self.certificate_repository_path:
       cert_file = os.path.join(self.certificate_repository_path,
                               "%s.crt" % partition_id)
       key_file = os.path.join(self.certificate_repository_path,
@@ -94,7 +89,7 @@ class Watchdog():
     self.stderr.flush()
 
   def run(self):
-    while 1:
+    while True:
       self.write_stdout('READY\n')
       line = self.stdin.readline()  # read header line from stdin
       headers = dict([x.split(':') for x in line.split()])
