@@ -195,8 +195,8 @@ Notes
 It is not possible with slapos to listen to port <= 1024, because process are
 not run as root.
 
-Solution 1
-----------
+Solution 1 (IPv4 only)
+----------------------
 
 It is a good idea then to go on the node where the instance is
 and set some iptables rules like (if using default ports)::
@@ -207,8 +207,8 @@ and set some iptables rules like (if using default ports)::
 Where {public ip} is the public IP of your server, or at least the LAN IP to where your NAT will forward to.
 {listening ip} is the private ipv4 (like 10.0.34.123) that the instance is using and sending as connection parameter.
 
-Solution 2
-----------
+Solution 2 (IPv6 only)
+----------------------
 
 It is also possible to directly allow the service to listen on 80 and 443 ports using the following command:
 
