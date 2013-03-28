@@ -17,7 +17,7 @@ def runMysql(args):
       # XXX: Protect with proper root password
       # XXX: Follow http://dev.mysql.com/doc/refman/5.0/en/default-privileges.html
       popen = subprocess.Popen([conf['mysql_install_binary'],
-        '--skip-name-resolve', '--no-defaults',
+        '--skip-name-resolve',
         '--datadir=%s' % conf['data_directory'],
         '--basedir=%s' % conf['mysql_base_directory']],
         stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
@@ -52,7 +52,7 @@ def updateMysql(args):
   while True:
     mysql_upgrade_list = [conf['mysql_upgrade_binary'], '--user=root']
     if 'socket' in conf:
-      mysql_upgrade_list.insert(1, '--no-defaults')
+      mysql_upgrade_list.insert(1)
       mysql_upgrade_list.append('--socket=' + conf['socket'])
     mysql_upgrade = subprocess.Popen(mysql_upgrade_list, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     result = mysql_upgrade.communicate()[0]
@@ -67,7 +67,7 @@ def updateMysql(args):
         print "No need to upgrade MySQL database"
       mysql_list = [conf['mysql_binary'].strip(), '-B', '--user=root']
       if 'socket' in conf:
-        mysql_list.insert(1, '--no-defaults')
+        mysql_list.insert(1)
         mysql_list.append('--socket=' + conf['socket'])
       mysql = subprocess.Popen(mysql_list, stdin=subprocess.PIPE,
           stdout=subprocess.PIPE, stderr=subprocess.STDOUT)

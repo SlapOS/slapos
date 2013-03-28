@@ -89,9 +89,10 @@ context = section parameter_dict init-script-parameters
 [update-mysql]
 recipe = slapos.cookbook:generic.mysql.wrap_update_mysql
 output = ${directory:services}/mariadb_update
-binary = ${binary-wap-mysql_upgrade:output}
+binary = ${binary-wrap-mysql_upgrade:output}
 mysql = ${binary-wrap-mysql:output}
 init-script = ${init-script:rendered}
+mysql_tzinfo_to_sql = ${binary-wrap-mysql_tzinfo_to_sql:output}
 
 [mysqld]
 recipe = slapos.cookbook:generic.mysql.wrap_mysqld
@@ -130,7 +131,7 @@ state-file = ${directory:srv}/logrotate.status
 recipe = slapos.cookbook:logrotate.d
 name = mariadb
 log = ${my-cnf-parameters:error-log} ${my-cnf-parameters:slow-query-log}
-post = "${binary-wrap-mysql:output}" --no-defaults -B -u root -e "FLUSH LOGS"
+post = "${binary-wrap-mysql:output}" -B -u root -e "FLUSH LOGS"
 
 [cron]
 recipe = slapos.cookbook:cron
@@ -182,9 +183,13 @@ command = mysql
 < = binary-wrap-base
 command = mysqldump
 
-[binary-wap-mysql_upgrade]
+[binary-wrap-mysql_upgrade]
 < = binary-wrap-base
-command-line = mysql_upgrade
+command = mysql_upgrade
+
+[binary-wrap-mysql_tzinfo_to_sql]
+< = binary-wrap-base
+command = mysql_tzinfo_to_sql
 
 [directory]
 recipe = slapos.cookbook:mkdirectory
