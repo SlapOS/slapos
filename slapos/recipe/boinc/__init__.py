@@ -151,17 +151,20 @@ class Recipe(GenericBaseRecipe):
               self.mysqlhost, "--user_name", slapuser, "--srcdir",
               self.sourcedir, "--no_query"]
     drop_install = self.haschanges()
+    request_make_boinc = os.path.join(self.home, '.make_project')
     if drop_install:
       #Allow to restart Boinc installation from the begining
       launch_args += ["--delete_prev_inst", "--drop_db_first"]
+      open(request_make_boinc, 'w').write('Make Requested')
       if os.path.exists(readme_file):
         os.unlink(readme_file)
     launch_args += [self.project, niceprojectname]
 
-    install_wrapper = self.createPythonScript(os.path.join(self.wrapperdir,
-        'make_project'),
-        'slapos.recipe.librecipe.execute.executee_wait',
-        (launch_args, [file_status], environment)
+    install_wrapper = self.createPythonScript(
+      os.path.join(self.wrapperdir, 'make_project'),
+      '%s.configure.makeProject' % __name__,
+      dict(launch_args=launch_args, request_file=request_make_boinc,
+      make_sig=file_status, env=environment)
     )
     path_list.append(install_wrapper)
 

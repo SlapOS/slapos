@@ -122,6 +122,21 @@ def startProcess(launch_args, env=None, cwd=None, stdout=subprocess.PIPE):
     return False
   return True
 
+def makeProject(args):
+  """Run BOINC make_project script but once only"""
+  #Wait for DateBase initialization...
+  checkFile(args['make_sig'], 3)
+  print "Cheking if needed to run BOINC make_project..."
+  if os.path.exists(args['request_file']):
+    env = os.environ
+    env['PATH'] = args['env']['PATH']
+    env['PYTHONPATH'] = args['env']['PYTHONPATH']
+    if startProcess(args['launch_args'], env=env):
+      os.unlink(args['request_file'])
+    print "Finished running BOINC make_projet...Ending"
+  else:
+    print "No new request for make_project. Exiting..."
+
 
 def services(args):
   """This function configure a new installed boinc project instance"""
