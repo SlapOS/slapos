@@ -1,4 +1,3 @@
-#!/opt/slapos/bin/py
 # -*- coding: utf-8 -*-
 # vim: set et sts=4:
 
