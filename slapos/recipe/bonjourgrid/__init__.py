@@ -50,12 +50,9 @@ class Recipe(GenericBaseRecipe):
     type = self.options['type'].strip()
     if type == "condor":
       startCondor = True
-      hostname = self.options['condor_host'].strip()
-      url = "http://%s" % hostname
+      project = self.options['condor_host'].strip()
     if type == "boinc":
-      import socket
-      hostname = socket.gethostname()
-      url = self.options['url-boinc'].strip()
+      project = self.options['url-boinc'].strip()
       startBoinc = True
 
     #Generate BOINC/Condor launcher script
@@ -82,7 +79,6 @@ class Recipe(GenericBaseRecipe):
           '--pid_file', pid_file,
           '--master_wrapper', grid_wrapper,
           '--directory', self.options['work_dir'].strip(),
-          '--install_directory', self.options['install_dir'].strip(),
           '--server', self.options['redis-url'].strip(),
           '--port', self.options['redis-port'].strip(),
           '--num_workers', self.options['nworkers'].strip(),
@@ -97,11 +93,11 @@ class Recipe(GenericBaseRecipe):
     config_info = self.createFile(config_info_file,
       self.substituteTemplate(self.getTemplateFilename('machineinfo.sh.in'),
       dict(ip_address=self.options['ipv6'].strip(),
-            hostname=hostname, url=url,
+            project=project,
             middleware=type)))
     os.chmod(config_info_file, 0744)
     path_list.append(config_info)
-    
+
   update = install
 
 class Client(GenericBaseRecipe):
