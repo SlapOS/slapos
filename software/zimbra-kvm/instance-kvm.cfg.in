@@ -215,6 +215,18 @@ config-url = https://[$${tunnel-ipv6-kvm-https:ipv6}]:$${tunnel-ipv6-kvm-https:i
 return = site_url
 config-custom_domain = $${slap-parameter:domain}
 
+[request-smtp-frontend]
+<= slap-connection
+recipe = slapos.cookbook:requestoptional
+name = SMTP Frontend
+# XXX We have hardcoded SR URL here.
+#software-url = http://git.erp5.org/gitweb/slapos.git/blob_plain/zimbra-kvm:/software/reverse-proxy-nginx/development.cfg
+software-url = /opt/slapdev/software/reverse-proxy-nginx/development.cfg
+slave = true
+config = smtp-upstream-host smtp-upstream-port
+config-smtp-upstream-host = $${tunnel-ipv6-kvm-smtp:ipv6}
+config-smtp-upstream-port = $${tunnel-ipv6-kvm-smtp:port}
+return = listening-ipv4
 
 [publish-kvm-connection-information]
 recipe = slapos.cookbook:publish
@@ -224,6 +236,7 @@ vnc-backend-url = https://[$${novnc-instance:ip}]:$${novnc-instance:port}/vnc_au
 vnc-password = $${kvm-instance:passwd}
 vnc-url = $${request-slave-frontend:connection-url}/vnc_auto.html?host=$${request-slave-frontend:connection-domainname}&port=$${request-slave-frontend:connection-port}&encrypt=1&path=$${request-slave-frontend:connection-resource}
 ssh = ssh root@$${tunnel-ipv6-kvm-ssh:ipv6} -p $${tunnel-ipv6-kvm-ssh:ipv6-port}
+smtp-listening-ipv4 = $${request-smtp-frontend:connection-listening-ipv4}
 
 [slap-parameter]
 # Default values if not specified
