@@ -1100,7 +1100,7 @@ def run(config):
                      alter_network=config.alter_network,
                      create_tap=config.create_tap)
 
-  if getattr(config, 'certificate_repository_path'):
+  if getattr(config, 'certificate_repository_path', None):
     mkdir_p(config.certificate_repository_path, mode=0o700)
 
   # Dumping and sending to the erp5 the current configuration
