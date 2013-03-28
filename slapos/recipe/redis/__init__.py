@@ -58,5 +58,14 @@ class Recipe(GenericBaseRecipe):
     )
     path_list.append(redis)
 
+    promise_script = self.options.get('promise_wrapper', '').strip()
+    if promise_script:
+      promise = self.createPythonScript(
+        promise_script,
+        '%s.promise.main' % __name__,
+        dict(host=self.options['ipv6'], port=self.options['port'])
+      )
+      path_list.append(promise)
+
     return path_list
 
