@@ -1,6 +1,6 @@
 ##############################################################################
 #
-# Copyright (c) 2010 Vifib SARL and Contributors. All Rights Reserved.
+# Copyright (c) 2011 Vifib SARL and Contributors. All Rights Reserved.
 #
 # WARNING: This program as such is intended to be used by professional
 # programmers who take the whole responsibility of assessing all potential
@@ -24,38 +24,42 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #
 ##############################################################################
-
-import shlex
-
 from slapos.recipe.librecipe import GenericBaseRecipe
+import sys
 
 class Recipe(GenericBaseRecipe):
-    def install(self):
-        command_line = shlex.split(self.options['command-line'])
-        wrapper_path = self.options['wrapper-path']
-        wait_files = self.options.get('wait-for-files')
-        environment = self.options.get('environment')
+  """
+  kvm instance configuration.
+  """
+  def install(self):
+    config = dict(
+      vnc_ip=self.options['vnc-ip'],
+      vnc_port=self.options['vnc-port'],
+      boot_disk_path=self.options['boot-disk-path'],
+      disk_path=self.options['data-disk-path'],
+      disk_size=self.options['data-disk-size'],
+      disk_type=self.options['data-disk-type'],
+      mac_address=self.options['mac-address'],
+      smp_count=self.options['smp-count'],
+      ram_size=self.options['ram-size'],
+      socket_path=self.options['socket-path'],
+      pid_file_path=self.options['pid-path'],
+      python_path=sys.executable,
+      shell_path=self.options['shell-path'],
+      qemu_path=self.options['qemu-path'],
+      qemu_img_path=self.options['qemu-img-path'],
+      vnc_passwd=self.options['passwd']
+    )
 
-        if not wait_files and not environment:
-          # Create a simple wrapper as shell script
-          return [self.createWrapper(
-             name=wrapper_path,
-             command=command_line[0],
-             parameters=command_line[1:],
-          )]
+    # Runners
+    runner_path = self.createExecutable(
+      self.options['runner-path'],
+      self.substituteTemplate(self.getTemplateFilename('kvm_run.in'), config))
 
-        # More complex needs: create a Python script as wrapper
+    controller_path = self.createExecutable(
+      self.options['controller-path'],
+      self.substituteTemplate(self.getTemplateFilename('kvm_controller_run.in'),
+                              config))
 
-        if wait_files is not None:
-            wait_files = [filename.strip() for filename in wait_files.split()
-                          if filename.strip()]
-        if environment is not None:
-            environment = dict((k.strip(), v.strip()) for k, v in [
-                             line.split('=')
-                             for line in environment.split('\n')
-                           ])
-        return [self.createPythonScript(
-            wrapper_path,
-            'slapos.recipe.librecipe.execute.generic_exec',
-            (command_line, wait_files, environment,),
-        )]
+
+    return [runner_path, controller_path]
