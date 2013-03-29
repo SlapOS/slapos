@@ -50,33 +50,16 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string>"""Dirty script to return Software Instance state"""\n
-import json\n
-state = context.getSlapState()\n
-has_partition = context.getAggregate(portal_type="Computer Partition")\n
-result = \'Unable to calculate the status...\'\n
-if has_partition:\n
-  try:\n
-    memcached_dict = context.getPortalObject().portal_memcached.getMemcachedDict(\n
-      key_prefix=\'slap_tool\',\n
-      plugin_path=\'portal_memcached/default_memcached_plugin\')\n
-    try:\n
-      d = memcached_dict[context.getReference()]\n
-    except KeyError:\n
-      result = "#error no data found for %s" % context.getReference()\n
-    else:\n
-      d = json.loads(d)\n
-      result = d[\'text\']\n
+            <value> <string>title = context.getTitle()\n
+result = context.getSlapStateTitle()\n
+found = False\n
+for instance in context.getPredecessorValueList():\n
+  if (instance.getTitle() == title) and (instance.getSlapState() != \'destroy_requested\'):\n
+    found = True\n
+    break\n
 \n
-  except Exception:\n
-    raise\n
-    result = \'There is system issue, please try again later.\'\n
-\n
-else:\n
-  if state in ["start_requested", "stop_requested"]:\n
-    result = \'Looking for a free partition\'\n
-  elif state in ["destroy_requested"]:\n
-    result = \'Destroyed\'\n
+if found:\n
+  result = instance.SoftwareInstance_getStatus()\n
 \n
 return result\n
 </string> </value>
@@ -87,7 +70,7 @@ return result\n
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>SoftwareInstance_getStatus</string> </value>
+            <value> <string>HostingSubscription_getStatus</string> </value>
         </item>
       </dictionary>
     </pickle>

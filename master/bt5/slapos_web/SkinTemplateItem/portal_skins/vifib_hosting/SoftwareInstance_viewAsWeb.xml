@@ -112,7 +112,6 @@
                     <key> <string>right width100 alignr</string> </key>
                     <value>
                       <list>
-                        <string>your_system_message</string>
                         <string>your_monitoring_status</string>
                       </list>
                     </value>
