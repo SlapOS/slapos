@@ -426,9 +426,7 @@ class SlapTool(BaseTool):
     """
     Add an error for a software Release workflow
     """
-    user = self.getPortalObject().portal_membership.getAuthenticatedMember()\
-                                                   .getUserName()
-    self._logAccess(user, computer_id, '#error while installing %s' % url)
+    return self._softwareReleaseError(url, computer_id, error_log)
 
   security.declareProtected(Permissions.AccessContentsInformation,
     'buildingComputerPartition')
@@ -836,16 +834,21 @@ class SlapTool(BaseTool):
   @convertToREST
   def _buildingSoftwareRelease(self, url, computer_id):
     """
-    Kept for compatibility
+    Log the computer status
     """
-    pass
+    user = self.getPortalObject().portal_membership.\
+        getAuthenticatedMember().getUserName()
+    self._logAccess(user, user, 'building software release %s' % url)
 
   @convertToREST
   def _availableSoftwareRelease(self, url, computer_id):
     """
-    Kept for compatibility
+    Log the computer status
     """
-    pass
+    user = self.getPortalObject().portal_membership.\
+        getAuthenticatedMember().getUserName()
+    self._logAccess(user, user, '#access software release %s available' % \
+        url)
 
   @convertToREST
   def _destroyedSoftwareRelease(self, url, computer_id):
@@ -865,16 +868,28 @@ class SlapTool(BaseTool):
   @convertToREST
   def _buildingComputerPartition(self, computer_id, computer_partition_id):
     """
-    Kept for compatibility
+    Log the computer status
     """
-    pass
+    instance = self._getSoftwareInstanceForComputerPartition(
+        computer_id,
+        computer_partition_id)
+    user = self.getPortalObject().portal_membership.getAuthenticatedMember()\
+                                                   .getUserName()
+    self._logAccess(user, instance.getReference(), 
+                    'building the instance')
 
   @convertToREST
   def _availableComputerPartition(self, computer_id, computer_partition_id):
     """
-    Kept for compatibility
+    Log the computer status
     """
-    pass
+    instance = self._getSoftwareInstanceForComputerPartition(
+        computer_id,
+        computer_partition_id)
+    user = self.getPortalObject().portal_membership.getAuthenticatedMember()\
+                                                   .getUserName()
+    self._logAccess(user, instance.getReference(), 
+                    '#access instance available')
 
   @convertToREST
   def _softwareInstanceError(self, computer_id,
@@ -957,16 +972,28 @@ class SlapTool(BaseTool):
   @convertToREST
   def _startedComputerPartition(self, computer_id, computer_partition_id):
     """
-    Kept for compatibility
+    Log the computer status
     """
-    pass
+    instance = self._getSoftwareInstanceForComputerPartition(
+        computer_id,
+        computer_partition_id)
+    user = self.getPortalObject().portal_membership.getAuthenticatedMember()\
+                                                   .getUserName()
+    self._logAccess(user, instance.getReference(), 
+                    '#access instance correctly started')
 
   @convertToREST
   def _stoppedComputerPartition(self, computer_id, computer_partition_id):
     """
-    Kept for compatibility
+    Log the computer status
     """
-    pass
+    instance = self._getSoftwareInstanceForComputerPartition(
+        computer_id,
+        computer_partition_id)
+    user = self.getPortalObject().portal_membership.getAuthenticatedMember()\
+                                                   .getUserName()
+    self._logAccess(user, instance.getReference(), 
+                    '#access instance correctly stopped')
 
   @convertToREST
   def _destroyedComputerPartition(self, computer_id, computer_partition_id):
@@ -1423,5 +1450,15 @@ class SlapTool(BaseTool):
       causality_value=computer_partition
     )
     usage_report.validate()
+
+  @convertToREST
+  def _softwareReleaseError(self, url, computer_id, error_log):
+    """
+    Log the computer status
+    """
+    user = self.getPortalObject().portal_membership.getAuthenticatedMember()\
+                                                   .getUserName()
+    self._logAccess(
+        user, computer_id, '#error while installing %s' % url)
 
 InitializeClass(SlapTool)
