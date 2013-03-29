@@ -420,7 +420,8 @@ class TestSlapOSSlapToolComputerAccess(TestSlapOSSlapToolMixin):
 
   def test_accessed_getComputerStatus(self):
     self.login(self.computer_id)
-    self.portal_slap.getComputerInformation(self.computer_id)
+    self.portal_slap.softwareReleaseError(
+        'http://example.org', self.computer_id, 'error log')
     created_at = rfc1123_date(DateTime())
     response = self.portal_slap.getComputerStatus(self.computer_id)
     self.assertEqual(200, response.status)
@@ -447,7 +448,7 @@ class TestSlapOSSlapToolComputerAccess(TestSlapOSSlapToolMixin):
     <unicode>created_at</unicode>
     <unicode>%(created_at)s</unicode>
     <unicode>text</unicode>
-    <unicode>#access %(computer_id)s</unicode>
+    <unicode>#error while installing http://example.org</unicode>
     <unicode>user</unicode>
     <unicode>%(computer_id)s</unicode>
   </dictionary>
@@ -1624,7 +1625,8 @@ class TestSlapOSSlapToolPersonAccess(TestSlapOSSlapToolMixin):
 
   def test_accessed_getComputerStatus(self):
     self.login(self.computer_id)
-    self.portal_slap.getComputerInformation(self.computer_id)
+    self.portal_slap.softwareReleaseError(
+        'http://example.org', self.computer_id, 'error log')
     self.login(self.person_reference)
     created_at = rfc1123_date(DateTime())
     response = self.portal_slap.getComputerStatus(self.computer_id)
@@ -1652,7 +1654,7 @@ class TestSlapOSSlapToolPersonAccess(TestSlapOSSlapToolMixin):
     <unicode>created_at</unicode>
     <unicode>%(created_at)s</unicode>
     <unicode>text</unicode>
-    <unicode>#access %(computer_id)s</unicode>
+    <unicode>#error while installing http://example.org</unicode>
     <unicode>user</unicode>
     <unicode>%(computer_id)s</unicode>
   </dictionary>

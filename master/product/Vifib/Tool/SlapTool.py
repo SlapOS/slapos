@@ -282,7 +282,6 @@ class SlapTool(BaseTool):
     Reuses slap library for easy marshalling.
     """
     user = self.getPortalObject().portal_membership.getAuthenticatedMember().getUserName()
-    self._logAccess(user, user, '#access %s' % computer_id)
     result = self._getComputerInformation(computer_id, user)
 
     if self.REQUEST.response.getStatus() == 200:
@@ -685,11 +684,6 @@ class SlapTool(BaseTool):
             slave_instance_dict.pop("xml")))
       slap_partition._parameter_dict.update(parameter_dict)
     result = xml_marshaller.xml_marshaller.dumps(slap_partition)
-
-    user = self.getPortalObject().portal_membership.\
-        getAuthenticatedMember().getUserName()
-    self._logAccess(user, user, '#access %s %s' % (computer_reference,
-                                             computer_partition_reference))
 
     # Keep in cache server for 7 days
     self.REQUEST.response.setStatus(200)
