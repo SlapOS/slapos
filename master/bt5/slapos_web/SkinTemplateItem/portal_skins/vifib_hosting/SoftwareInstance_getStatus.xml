@@ -67,6 +67,8 @@ if has_partition:\n
     else:\n
       d = json.loads(d)\n
       result = d[\'text\']\n
+      if result.startswith(\'#access \'):\n
+        result = result[len(\'#access \'):]\n
 \n
   except Exception:\n
     raise\n
