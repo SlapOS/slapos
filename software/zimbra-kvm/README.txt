@@ -44,9 +44,8 @@ resolv.conf: http://askubuntu.com/questions/30942/why-does-my-resolv-conf-file-g
 Todo
 ----
 
+ * Doesn't need setcap
  * SMTP master/slave design implemented
  * Reverse proxy for web works
  * Automatically download the proper boot disk image.
- * Have two virtual disks: one for system/zimbra, one for data.
  * Unify smtp frontend and web frontend
-
