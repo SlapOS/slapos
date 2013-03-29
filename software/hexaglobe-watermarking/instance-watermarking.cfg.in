@@ -1,0 +1,195 @@
+[buildout]
+parts =
+  directory
+  nginx
+  watermarkadmin
+  logrotate
+  logrotate-entry-nginx
+  cron
+  cron-entry-logrotate
+  watermarkadmin-promise
+  publish-connection-parameter
+
+# Define egg directories to be the one from Software Release
+# (/opt/slapgrid/...)
+eggs-directory = ${buildout:eggs-directory}
+develop-eggs-directory = ${buildout:develop-eggs-directory}
+offline = true
+
+# Fetch parameters defined in SlapOS Master for this instance
+[instance-parameter]
+recipe = slapos.cookbook:slapconfiguration
+computer = $${slap-connection:computer-id}
+partition = $${slap-connection:partition-id}
+url = $${slap-connection:server-url}
+key = $${slap-connection:key-file}
+cert = $${slap-connection:cert-file}
+
+# Set default parameters
+http-port = 8080
+administration-port = 5000
+
+
+# Create needed directories
+[directory]
+recipe = slapos.cookbook:mkdirectory
+home = $${buildout:directory}
+bin = $${:home}/bin
+etc = $${:home}/etc
+srv = $${:home}/srv
+service = $${:etc}/service
+promise = $${:etc}/promise
+var = $${:home}/var
+
+backup = $${:srv}/backup
+log = $${:var}/log
+run = $${:var}/run
+
+nginx-configuration = $${:etc}/nginx
+nginx-vhost-configuration = $${:nginx-configuration}/vhost
+nginx-log = $${:home}/logs
+nginx-cache = $${:var}/cache
+nginx-temp-path = $${:srv}/nginx-proxy
+
+cron-entries = $${:etc}/cron.d
+crontabs = $${:etc}/crontabs
+cronstamps = $${:etc}/cronstamps
+
+logrotate-entries = $${:etc}/logrotate.d
+logrotate-backup = $${:backup}/logrotate
+
+
+# Deploy nginx
+[nginx-configuration]
+recipe = slapos.cookbook:configurationfile
+configuration-template-path = ${nginx.conf.in:location}/nginx.conf.in
+configuration-file-path = $${directory:nginx-configuration}/nginx.conf
+
+vhost-configuration-directory-location = $${directory:nginx-vhost-configuration}
+nginx-prefix = ${nginx-enable-sub:location}
+nginx-temp-path = $${directory:nginx-temp-path}
+pid-file = $${directory:run}/nginx.pid
+home-directory = $${directory:home}
+
+
+[nginx]
+recipe = slapos.cookbook:wrapper
+nginx-executable = $${:nginx-prefix}/sbin/nginx
+nginx-prefix = ${nginx-enable-sub:location}
+command-line = $${:nginx-executable} -c $${nginx-configuration:configuration-file-path} -p $${directory:home}
+wrapper-path = $${directory:service}/nginx
+
+
+# Deploy administration API server
+[watermarkadmin-configuration]
+recipe = slapos.cookbook:configurationfile
+configuration-template-path = ${watermarkadmin.ini.in:location}/watermarkadmin.ini.in
+configuration-file-path = $${directory:etc}/watermarkadmin.ini
+
+flask-database-location = $${directory:srv}/flask.db
+
+nginx-prefix = $${directory:home}
+nginx-port = $${instance-parameter:http-port}
+nginx-configuration-file-location = $${nginx-configuration:configuration-file-path}
+nginx-executable-location = $${nginx:nginx-executable}
+nginx-pidfile-location = $${nginx-configuration:pid-file}
+nginx-vhost-configuration-directory-location = $${directory:nginx-vhost-configuration}
+nginx-log-directory-location = $${directory:nginx-log}
+nginx-cache-directory-location = $${directory:nginx-cache}
+global-ip = $${instance-parameter:ipv6-random}
+
+[watermarkadmin]
+recipe = slapos.cookbook:wrapper
+command-line =
+  ${buildout:directory}/bin/api $${watermarkadmin-configuration:configuration-file-path}
+wrapper-path = $${directory:service}/watermarkingadmin
+
+
+# Deploy logrotate
+[logrotate]
+recipe = slapos.cookbook:logrotate
+# Binaries
+logrotate-binary = ${logrotate:location}/usr/sbin/logrotate
+gzip-binary = ${gzip:location}/bin/gzip
+gunzip-binary = ${gzip:location}/bin/gunzip
+# Directories
+wrapper = $${directory:bin}/logrotate
+conf = $${directory:etc}/logrotate.conf
+logrotate-entries = $${directory:logrotate-entries}
+backup = $${directory:logrotate-backup}
+state-file = $${directory:srv}/logrotate.status
+
+[logrotate-entry-nginx]
+<= logrotate
+recipe = slapos.cookbook:logrotate.d
+name = nginx
+log = $${watermarkadmin-configuration:nginx-log-directory-location}/*.log
+frequency = daily
+rotate-num = 30
+post = ${buildout:bin-directory}/killpidfromfile $${nginx-configuration:pid-file} SIGUSR1
+sharedscripts = true
+notifempty = true
+create = true
+
+
+# Deploy cron and configure it
+[cron-simplelogger]
+recipe = slapos.cookbook:simplelogger
+wrapper = $${directory:bin}/cron_simplelogger
+log = $${directory:log}/crond.log
+
+[cron]
+recipe = slapos.cookbook:cron
+dcrond-binary = ${dcron:location}/sbin/crond
+cron-entries = $${directory:cron-entries}
+crontabs = $${directory:crontabs}
+cronstamps = $${directory:cronstamps}
+catcher = $${cron-simplelogger:wrapper}
+binary = $${directory:service}/crond
+
+[cron-entry-logrotate]
+<= cron
+recipe = slapos.cookbook:cron.d
+name = logrotate
+frequency = 0 0 * * *
+command = $${logrotate:wrapper}
+
+
+
+
+# Request frontend
+[request-frontend]
+<= slap-connection
+recipe = slapos.cookbook:requestoptional
+name = Frontend for $${slap-connection:computer-id} $${slap-connection:partition-id}
+# XXX We have hardcoded SR URL here.
+software-url = http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg
+slave = true
+config = url
+config-url = http://[$${instance-parameter:ipv6-random}]:5000
+return = site_url
+
+
+# Check promises
+[watermarkadmin-promise]
+recipe = slapos.cookbook:check_port_listening
+path = $${directory:promise}/watermarkadmin-promise
+hostname = $${instance-parameter:ipv6-random}
+port = $${instance-parameter:administration-port}
+
+[watermarkadmin-promise-frontend]
+recipe = slapos.cookbook:check_page_content
+path = $${directory:promises}/watermarkadmin-frontend-promise
+url = $${request-frontend:connection-site_url}
+dash_path = ${dash:location}/bin/dash
+curl_path = ${curl:location}/bin/curl
+match = If you entered the URL manually please check your spelling and try again.
+
+# Publish instance connection parameters
+[publish-connection-parameter]
+recipe = slapos.cookbook:publish
+url = http://[$${instance-parameter:ipv6-random}]:$${instance-parameter:http-port}
+# XXX-Cedric: hardcoded
+admin-url-ipv6 = http://[$${instance-parameter:ipv6-random}]:5000
+admin-url = $${request-frontend:connection-site_url}
+

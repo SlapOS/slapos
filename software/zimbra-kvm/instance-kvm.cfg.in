@@ -1,0 +1,254 @@
+#############################
+#
+# Instanciate kvm
+#
+#############################
+[buildout]
+parts =
+  certificate-authority
+  request-web-frontend
+  kvm-promise
+  tunnel-ipv6-kvm-https
+  tunnel-ipv6-kvm-ssh
+  tunnel-ipv6-kvm-zimbra-admin
+  tunnel-ipv6-kvm-smtp
+  tunnel-ipv6-kvm-smtp-submission
+  websockify-sighandler
+  novnc-promise
+  publish-kvm-connection-information
+
+eggs-directory = ${buildout:eggs-directory}
+develop-eggs-directory = ${buildout:develop-eggs-directory}
+offline = true
+
+[directory]
+recipe = slapos.cookbook:mkdirectory
+etc = $${buildout:directory}/etc
+bin = $${buildout:directory}/bin
+srv = $${buildout:directory}/srv
+var = $${buildout:directory}/var
+scripts = $${:etc}/run
+services = $${:etc}/service
+promises = $${:etc}/promise
+novnc-conf = $${:etc}/novnc
+run = $${:var}/run
+ca-dir = $${:srv}/ssl
+
+[create-mac]
+recipe = slapos.cookbook:generate.mac
+storage-path = $${directory:srv}/mac
+
+[gen-passwd]
+recipe = slapos.cookbook:generate.password
+storage-path = $${directory:srv}/passwd
+bytes = 4
+
+[kvm-instance]
+# XXX-Cedric: change "KVM" recipe to simple "create wrappers". No need for this
+# Specific code
+recipe = slapos.cookbook:zimbra.kvm
+vnc-ip = $${slap-network-information:local-ipv4}
+vnc-port = 5901
+boot-disk-path = $${directory:srv}/boot.qcow2
+data-disk-path = $${directory:srv}/virtual.qcow2
+data-disk-size = $${slap-parameter:disk-size}
+data-disk-type = $${slap-parameter:disk-type}
+socket-path = $${directory:var}/qmp_socket
+pid-path = $${directory:run}/pid_file
+smp-count = $${slap-parameter:cpu-count}
+ram-size = $${slap-parameter:ram-size}
+disk-type = virtio
+mac-address = $${create-mac:mac-address}
+runner-path = $${directory:services}/kvm
+controller-path = $${directory:scripts}/kvm_controller
+shell-path = ${dash:location}/bin/dash
+qemu-path = ${kvm:location}/bin/qemu-system-x86_64
+qemu-img-path = ${kvm:location}/bin/qemu-img
+passwd = $${gen-passwd:passwd}
+
+[kvm-promise]
+recipe = slapos.cookbook:check_port_listening
+path = $${directory:promises}/vnc_promise
+hostname = $${kvm-instance:vnc-ip}
+port = $${kvm-instance:vnc-port}
+
+
+# 6tunnel
+# Refers to http://wiki.zimbra.com/wiki/Ports#External_Access
+[tunnel-ipv6-kvm-https]
+recipe = slapos.cookbook:ipv6toipv4
+ipv6 = $${slap-network-information:global-ipv6}
+ipv6-port = 443
+ipv4 = $${slap-network-information:local-ipv4}
+ipv4-port = 443
+shell-path = ${dash:location}/bin/dash
+6tunnel-path = ${6tunnel:location}/bin/6tunnel
+runner-path = $${directory:services}/6tunnel-https
+
+[tunnel-ipv6-kvm-zimbra-admin]
+recipe = slapos.cookbook:ipv6toipv4
+ipv6 = $${slap-network-information:global-ipv6}
+ipv6-port = 7071
+ipv4 = $${slap-network-information:local-ipv4}
+ipv4-port = 7071
+shell-path = ${dash:location}/bin/dash
+6tunnel-path = ${6tunnel:location}/bin/6tunnel
+runner-path = $${directory:services}/6tunnel-zimbra_admin
+
+[tunnel-ipv6-kvm-ssh]
+recipe = slapos.cookbook:ipv6toipv4
+ipv6 = $${slap-network-information:global-ipv6}
+ipv6-port = 2222
+ipv4 = $${slap-network-information:local-ipv4}
+ipv4-port = 2222
+shell-path = ${dash:location}/bin/dash
+6tunnel-path = ${6tunnel:location}/bin/6tunnel
+runner-path = $${directory:services}/6tunnel-ssh
+
+[tunnel-ipv6-kvm-smtp]
+recipe = slapos.cookbook:ipv6toipv4
+ipv6 = $${slap-network-information:global-ipv6}
+ipv6-port = 25
+ipv4 = $${slap-network-information:local-ipv4}
+ipv4-port = 25
+shell-path = ${dash:location}/bin/dash
+6tunnel-path = ${6tunnel:location}/bin/6tunnel
+runner-path = $${directory:services}/6tunnel-smtp
+
+[tunnel-ipv6-kvm-smtp-submission]
+recipe = slapos.cookbook:ipv6toipv4
+ipv6 = $${slap-network-information:global-ipv6}
+ipv6-port = 587
+ipv4 = $${slap-network-information:local-ipv4}
+ipv4-port = 587
+shell-path = ${dash:location}/bin/dash
+6tunnel-path = ${6tunnel:location}/bin/6tunnel
+runner-path = $${directory:services}/6tunnel-smtp-submission
+
+
+
+
+
+[novnc-instance]
+recipe = slapos.cookbook:novnc
+path = $${ca-novnc:executable}
+ip = $${slap-network-information:global-ipv6}
+port = 6080
+vnc-ip = $${kvm-instance:vnc-ip}
+vnc-port = $${kvm-instance:vnc-port}
+novnc-location = ${noVNC:location}
+websockify-path = ${buildout:directory}/bin/websockify
+ssl-key-path = $${ca-novnc:key-file}
+ssl-cert-path = $${ca-novnc:cert-file}
+
+[websockify-sighandler]
+recipe = slapos.cookbook:signalwrapper
+wrapper-path = $${directory:services}/websockify
+wrapped-path = $${novnc-instance:path}
+
+[certificate-authority]
+recipe = slapos.cookbook:certificate_authority
+openssl-binary = ${openssl:location}/bin/openssl
+ca-dir = $${directory:ca-dir}
+requests-directory = $${cadirectory:requests}
+wrapper = $${directory:services}/certificate_authority
+ca-private = $${cadirectory:private}
+ca-certs = $${cadirectory:certs}
+ca-newcerts = $${cadirectory:newcerts}
+ca-crl = $${cadirectory:crl}
+
+[cadirectory]
+recipe = slapos.cookbook:mkdirectory
+requests = $${directory:ca-dir}/requests/
+private = $${directory:ca-dir}/private/
+certs = $${directory:ca-dir}/certs/
+newcerts = $${directory:ca-dir}/newcerts/
+crl = $${directory:ca-dir}/crl/
+
+[ca-novnc]
+<= certificate-authority
+recipe = slapos.cookbook:certificate_authority.request
+key-file = $${directory:novnc-conf}/novnc.key
+cert-file = $${directory:novnc-conf}/novnc.crt
+executable = $${directory:bin}/novnc
+wrapper = $${directory:bin}/websockify
+
+[novnc-promise]
+recipe = slapos.cookbook:check_port_listening
+path = $${directory:promises}/novnc_promise
+hostname = $${novnc-instance:ip}
+port = $${novnc-instance:port}
+
+
+[kvm-monitor]
+recipe = slapos.cookbook:generic.slapmonitor
+db-path = $${directory:srv}/slapmonitor_database
+
+
+[request-slave-frontend]
+recipe = slapos.cookbook:requestoptional
+software-url = $${slap-parameter:frontend-software-url}
+server-url = $${slap-connection:server-url}
+key-file = $${slap-connection:key-file}
+cert-file = $${slap-connection:cert-file}
+computer-id = $${slap-connection:computer-id}
+partition-id = $${slap-connection:partition-id}
+name = VNC Frontend
+software-type = $${slap-parameter:frontend-software-type}
+slave = true
+config = host port
+config-host = $${novnc-instance:ip}
+config-port = $${novnc-instance:port}
+return = url resource port domainname
+sla = instance_guid
+sla-instance_guid = $${slap-parameter:frontend-instance-guid}
+
+[request-web-frontend]
+<= slap-connection
+recipe = slapos.cookbook:requestoptional
+name = Web Frontend
+# XXX We have hardcoded SR URL here.
+software-url = http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg
+slave = true
+config = url custom_domain
+config-url = https://[$${tunnel-ipv6-kvm-https:ipv6}]:$${tunnel-ipv6-kvm-https:ipv6-port}/
+return = site_url
+config-custom_domain = $${slap-parameter:domain}
+
+[request-smtp-frontend]
+<= slap-connection
+recipe = slapos.cookbook:requestoptional
+name = SMTP Frontend
+# XXX We have hardcoded SR URL here.
+#software-url = http://git.erp5.org/gitweb/slapos.git/blob_plain/zimbra-kvm:/software/reverse-proxy-nginx/development.cfg
+software-url = /opt/slapdev/software/reverse-proxy-nginx/development.cfg
+slave = true
+config = smtp-upstream-host smtp-upstream-port
+config-smtp-upstream-host = $${tunnel-ipv6-kvm-smtp:ipv6}
+config-smtp-upstream-port = $${tunnel-ipv6-kvm-smtp:port}
+return = listening-ipv4
+
+[publish-kvm-connection-information]
+recipe = slapos.cookbook:publish
+web-backend-url = https://[$${tunnel-ipv6-kvm-https:ipv6}]:$${tunnel-ipv6-kvm-https:ipv6-port}/
+web-url = $${request-web-frontend:connection-site_url}
+vnc-backend-url = https://[$${novnc-instance:ip}]:$${novnc-instance:port}/vnc_auto.html?host=[$${novnc-instance:ip}]&port=$${novnc-instance:port}&encrypt=1
+vnc-password = $${kvm-instance:passwd}
+vnc-url = $${request-slave-frontend:connection-url}/vnc_auto.html?host=$${request-slave-frontend:connection-domainname}&port=$${request-slave-frontend:connection-port}&encrypt=1&path=$${request-slave-frontend:connection-resource}
+ssh = ssh root@$${tunnel-ipv6-kvm-ssh:ipv6} -p $${tunnel-ipv6-kvm-ssh:ipv6-port}
+smtp-listening-ipv4 = $${request-smtp-frontend:connection-listening-ipv4}
+
+[slap-parameter]
+# Default values if not specified
+frontend-instance-guid =
+frontend-software-type = frontend
+frontend-software-url = http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.92:/software/kvm/software.cfg
+
+ram-size = 4096
+disk-size = 50
+disk-type = virtio
+
+cpu-count = 4
+
+domain =
+

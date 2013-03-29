@@ -24,38 +24,17 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #
 ##############################################################################
-
-import shlex
-
 from slapos.recipe.librecipe import GenericBaseRecipe
 
 class Recipe(GenericBaseRecipe):
-    def install(self):
-        command_line = shlex.split(self.options['command-line'])
-        wrapper_path = self.options['wrapper-path']
-        wait_files = self.options.get('wait-for-files')
-        environment = self.options.get('environment')
+  def install(self):
+    configuration_file = self.createFile(
+        self.options['configuration-file-path'],
+        self.substituteTemplate(
+            self.options['configuration-template-path'],
+            self.options
+        )
+    )
 
-        if not wait_files and not environment:
-          # Create a simple wrapper as shell script
-          return [self.createWrapper(
-             name=wrapper_path,
-             command=command_line[0],
-             parameters=command_line[1:],
-          )]
+    return configuration_file
 
-        # More complex needs: create a Python script as wrapper
-
-        if wait_files is not None:
-            wait_files = [filename.strip() for filename in wait_files.split()
-                          if filename.strip()]
-        if environment is not None:
-            environment = dict((k.strip(), v.strip()) for k, v in [
-                             line.split('=')
-                             for line in environment.split('\n')
-                           ])
-        return [self.createPythonScript(
-            wrapper_path,
-            'slapos.recipe.librecipe.execute.generic_exec',
-            (command_line, wait_files, environment,),
-        )]
