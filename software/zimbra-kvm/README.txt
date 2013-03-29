@@ -12,8 +12,9 @@ Internals
 
 The following ports are reachable from the outside world:
 22 -> 2222
-443 -> 4443
-Others?
+443 -> 443
+80 -> 80
+25 -> 25
 
 For each port, KVM does a NAT redirection from the VM to the local ipv4. Then, 6tunnel is called to redirect it to the outside world using ipv6.
 
@@ -21,8 +22,14 @@ For each port, KVM does a NAT redirection from the VM to the local ipv4. Then, 6
 Deployment
 ----------
 
-To deploy a new Zimbra service, you just need to request a new instance of it,
-then connect the the machine using ssh with root:zimbra credentials, reconfigure
+To deploy a new Zimbra service:
+
+ * Install the SR, and run the commands to allow non-root users to run kvm with ports listening <1024::
+
+   setcap 'cap_net_bind_service=+ep' /opt/slapgrid/$SRMD5/parts/kvm/bin/qemu-system-x86_64
+   setcap 'cap_net_bind_service=+ep' /opt/slapgrid/$SRMD5/parts/6tunnel/bin/6tunnel
+
+ * Request new instance, then connect the the machine using ssh with root:zimbra credentials, reconfigure
 Zimbra to use another domain name, and change root password.
 
 Disk Image content
