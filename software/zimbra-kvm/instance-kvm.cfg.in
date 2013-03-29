@@ -225,7 +225,7 @@ software-url = /opt/slapdev/software/reverse-proxy-nginx/development.cfg
 slave = true
 config = smtp-upstream-host smtp-upstream-port
 config-smtp-upstream-host = $${tunnel-ipv6-kvm-smtp:ipv6}
-config-smtp-upstream-port = $${tunnel-ipv6-kvm-smtp:port}
+config-smtp-upstream-port = $${tunnel-ipv6-kvm-smtp:ipv6-port}
 return = listening-ipv4
 
 [publish-kvm-connection-information]
