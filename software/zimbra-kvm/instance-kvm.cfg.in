@@ -220,8 +220,7 @@ config-custom_domain = $${slap-parameter:domain}
 recipe = slapos.cookbook:requestoptional
 name = SMTP Frontend
 # XXX We have hardcoded SR URL here.
-#software-url = http://git.erp5.org/gitweb/slapos.git/blob_plain/zimbra-kvm:/software/reverse-proxy-nginx/development.cfg
-software-url = /opt/slapdev/software/reverse-proxy-nginx/development.cfg
+software-url = http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/heads/zimbra-kvm:/software/reverse-proxy-nginx/development.cfg
 slave = true
 config = smtp-upstream-host smtp-upstream-port
 config-smtp-upstream-host = $${tunnel-ipv6-kvm-smtp:ipv6}
