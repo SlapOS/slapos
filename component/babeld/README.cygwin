@@ -41,7 +41,12 @@ $ ./testc.exe
 Interface Names
 ===============
 
-Use network connection name as interface name. 
+Use network connection name as interface name. On XP Go to Start ->
+Control Panel -> Network Connections.
+
+You should see all the connections like "Local Area Connection
+3". Right click and rename this to something shorter and without
+embedded spaces such as "my-tap".
 
 Notes
 =====
@@ -84,7 +89,6 @@ Notes
       $ route add 100.28.0.0 mask 255.255.0.0 192.168.128.100 if 5
 
       Destination network 100.28.0.0/16 will be unreachable.
-      
 
 9. IN6_LINKLOCAL_IFINDEX && SET_IN6_LINKLOCAL_IFINDEX, do both of them
    work in the Windows?

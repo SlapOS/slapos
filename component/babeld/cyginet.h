@@ -45,6 +45,16 @@
 
   IPv6 RFCs and Standards Working Groups
   http://www.ipv6now.com.au/RFC.php
+
+  Routing Table Manager Version 2  
+  http://msdn.microsoft.com/en-us/library/windows/desktop/bb404201(v=vs.85).aspx
+
+  Using Routing Table Manager Version 2
+  http://msdn.microsoft.com/en-us/library/windows/desktop/aa382335(v=vs.85).aspx
+
+  This section contains sample code that can be used when developing
+  clients such as routing protocols.
+
  */
 
 #ifndef __CYGIFNET_H__

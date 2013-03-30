@@ -32,6 +32,9 @@
 #include <iphlpapi.h>
 #include <wlanapi.h>
 
+#include <rtmv2.h>
+#include <nldef.h>
+
 #include <errno.h>
 #include <stdio.h>
 #include <unistd.h>
@@ -56,6 +59,7 @@ static HRESULT (WINAPI *ws_guidfromstring)(LPCTSTR psz, LPGUID pguid) = NULL;
 static HANDLE event_notify_monitor_thread = WSA_INVALID_EVENT;
 
 static PLIBWINET_INTERFACE_MAP_TABLE interface_map_table = NULL;
+static int libwinet_run_command(const char *);
 
 static void
 plen2mask(int n, struct in_addr *dest)
@@ -104,6 +108,36 @@ mask2len(const unsigned char *p, const int size)
         }
     }
     return i;
+}
+
+static int
+libwinet_ipv6_interfaces_forwards(int forward)
+{
+  const int MAX_BUFFER_SIZE = 255;
+  char cmdbuf[MAX_BUFFER_SIZE];
+  int result;
+
+  struct if_nameindex * p;
+  struct if_nameindex * ptr;
+  if (NULL == (ptr = (struct if_nameindex *)if_nameindex()))
+    return -1;
+
+  p = ptr;
+  while (p -> if_index) {
+    if (snprintf(cmdbuf,
+                 MAX_BUFFER_SIZE,
+                 "netsh interface ipv6 set interface %d forwarding=%s",
+                 p -> if_index,
+                 forward ? "enabled" : "disabled"
+                 ) >= MAX_BUFFER_SIZE)
+      break;
+    if (libwinet_run_command(cmdbuf) != 0)
+      break;
+    p ++;
+  }
+  result = ! (p -> if_index);
+  if_freenameindex(ptr);
+  return result;
 }
 
 static void
@@ -879,7 +913,6 @@ libwinet_edit_route_entry(const struct sockaddr *dest,
                           int cmdflag)
 {
 #if _WIN32_WINNT < _WIN32_WINNT_VISTA
-
   /* Add ipv6 route before Windows Vista */
   if(dest->sa_family == AF_INET6) {
     const int MAX_BUFFER_SIZE = 1024;
@@ -1102,7 +1135,20 @@ int
 cyginet_set_ipv6_forwards(int value)
 {
   char * key = "SYSTEM\\CurrentControlSet\\Services\\Tcpip6\\Parameters";
-
+  /*
+  int rc;
+  rc = libwinet_ipv6_interfaces_forwards(value);
+  if (rc == -1)
+    return -1;
+  if (value) {
+    if (ERROR_IO_PENDING != EnableRouter(NULL, NULL))
+      return -1;
+  }
+  else {
+    if (NO_ERROR != UnenableRouter(NULL, NULL))
+      return -1;
+  }
+  */
   return libwinet_set_registry_key(key,
                                    "IPEnableRouter",
                                    value,
@@ -2075,36 +2121,6 @@ libwinet_is_wireless_device(const wchar_t *pszwAdapterName)
   return 1;
 }
 
-static int
-libwinet_ipv6_interfaces_forwards(int forward)
-{
-  const int MAX_BUFFER_SIZE = 80;
-  char cmdbuf[MAX_BUFFER_SIZE];
-  int result;
-
-  struct if_nameindex * p;
-  struct if_nameindex * ptr;
-  if (NULL == (ptr = (struct if_nameindex *)if_nameindex()))
-    return -1;
-
-  p = ptr;
-  while (p -> if_index) {
-    if (snprintf(cmdbuf,
-                 MAX_BUFFER_SIZE,
-                 "ipv6 ifc %d %cforward",
-                 p -> if_index,
-                 forward ? ' ' : '-'
-                 ) >= MAX_BUFFER_SIZE)
-      break;
-    if (libwinet_run_command(cmdbuf) != 0)
-      break;
-    p ++;
-  }
-  result = ! (p -> if_index);
-  if_freenameindex(ptr);
-  return result;
-}
-
 BOOL RouteLookup(SOCKADDR   *destAddr,
                  int         destLen,
                  SOCKADDR   *localAddr,
@@ -2331,6 +2347,52 @@ DWORD GetConnectedNetworks()
 /*                                                               */
 /* ------------------------------------------------------------- */
 #ifdef TEST_CYGINET
+
+// The following #defines are from routprot.h in the Platform Software Develoment Kit (SDK)
+#define PROTO_TYPE_UCAST     0
+#define PROTOCOL_ID(Type, VendorId, ProtocolId) \
+        (((Type & 0x03)<<30)|((VendorId & 0x3FFF)<<16)|(ProtocolId & 0xFFFF))
+#define PROTO_VENDOR_ID      0x3FAA
+
+DWORD (WINAPI * fRtmRegisterEntity)(PRTM_ENTITY_INFO,PRTM_ENTITY_EXPORT_METHODS,
+  RTM_EVENT_CALLBACK,WINBOOL,PRTM_REGN_PROFILE,PRTM_ENTITY_HANDLE);
+DWORD (WINAPI * fRtmDeregisterEntity)(RTM_ENTITY_HANDLE);
+
+int test_rtm2()
+{
+  HMODULE lib;
+  if ((lib = LoadLibraryW(L"rtm.dll"))) {
+    fRtmRegisterEntity = GetProcAddress(lib, (LPCSTR)"RtmRegisterEntity");
+    fRtmDeregisterEntity = GetProcAddress(lib, (LPCSTR)"RtmDeregisterEntity");
+    FreeLibrary(lib);
+  }
+  else
+    return -1;
+
+  RTM_ENTITY_HANDLE RtmRegHandle;
+  RTM_ENTITY_INFO EntityInfo;
+  RTM_REGN_PROFILE RegnProfile;
+  DWORD dwRet = ERROR_SUCCESS;
+
+  EntityInfo.RtmInstanceId = 0;
+  EntityInfo.AddressFamily = AF_INET;
+  EntityInfo.EntityId.EntityProtocolId = PROTO_IP_OTHER;
+  EntityInfo.EntityId.EntityInstanceId = PROTOCOL_ID(PROTO_TYPE_UCAST, PROTO_VENDOR_ID, PROTO_IP_OTHER);
+
+  // Register the new entity
+  dwRet = fRtmRegisterEntity(&EntityInfo, NULL, NULL, FALSE, &RegnProfile, &RtmRegHandle);
+  if (dwRet != ERROR_SUCCESS){
+    // Registration failed - Log an Error and Quit
+    return -1;
+  }
+  // Clean-up: Deregister the new entity
+  dwRet = fRtmDeregisterEntity(RtmRegHandle);
+  if (dwRet != ERROR_SUCCESS){
+    // Registration failed - Log an Error and Quit
+    return -1;
+  }
+  return 0;
+}
 
 VOID PrintAllInterfaces()
 {

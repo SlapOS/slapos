@@ -319,6 +319,13 @@ kernel_interface_channel(const char *ifname, int ifindex)
     return -1;
 }
 
+static void
+clear_kernel_socket_event()
+{
+    int ch;
+    while (read(kernel_pipe_handles[0], &ch, 1) > 0);
+}
+
 /*
  * RTF_REJECT
  *
@@ -357,7 +364,9 @@ kernel_route(int operation, const unsigned char *dest, unsigned short plen,
              unsigned int newmetric)
 {
     int rc, ipv4;
-    struct sockaddr destination, gateway;
+    struct sockaddr_in ipv4_destnation={0}, ipv4_gateway={0};
+    struct sockaddr_in6 ipv6_destnation={0}, ipv6_gateway={0};
+    struct sockaddr *destination, *gateway;
     int route_ifindex;
     int prefix_len;
 
@@ -368,12 +377,16 @@ kernel_route(int operation, const unsigned char *dest, unsigned short plen,
             return -1;
         }
         ipv4 = 1;
+        destination = (struct sockaddr*)&ipv4_destnation;
+        gateway = (struct sockaddr*)&ipv4_gateway;
     } else {
         if(v4mapped(gate)) {
             errno = EINVAL;
             return -1;
         }
         ipv4 = 0;
+        destination = (struct sockaddr*)&ipv6_destnation;
+        gateway = (struct sockaddr*)&ipv6_gateway;
     }
 
     if(operation == ROUTE_MODIFY && newmetric == metric &&
@@ -405,19 +418,16 @@ kernel_route(int operation, const unsigned char *dest, unsigned short plen,
 
     if(kernel_socket < 0) kernel_setup_socket(1);
 
-    memset(&destination, 0, sizeof(destination));
-    memset(&gateway, 0, sizeof(gateway));
-
     route_ifindex = ifindex;
     prefix_len = ipv4 ? plen - 96 : plen;
 
     if(metric == KERNEL_INFINITY) {
-        /* RTF_BLACKHOLE; */
-        /* ==> Set gateway to an unused ip address in the Windows */
+        /* It means this route has property: RTF_BLACKHOLE */
         if (ifindex_blackhole < 0) {
-            ifindex_blackhole = cyginet_blackhole_index(&blackhole_addr6,
-                                                        blackhole_addr[0][0]+12
-                                                        );
+            /* ifindex_blackhole = cyginet_blackhole_index(&blackhole_addr6, */
+            /*                                             blackhole_addr[0][0]+12 */
+            /*                                             ); */
+            ifindex_blackhole = 1;
             if(ifindex_blackhole <= 0)
                 return -1;
         }
@@ -425,13 +435,13 @@ kernel_route(int operation, const unsigned char *dest, unsigned short plen,
     }
 
 #define PUSHADDR(dst, src)                                              \
-    do { struct sockaddr_in *sin = (struct sockaddr_in*)(&(dst));       \
+    do { struct sockaddr_in *sin = (struct sockaddr_in*)(dst);          \
         sin->sin_family = AF_INET;                                      \
         memcpy(&sin->sin_addr, (src) + 12, 4);                          \
     } while (0)
 
 #define PUSHADDR6(dst, src)                                             \
-    do { struct sockaddr_in6 *sin6 = (struct sockaddr_in6*)(&(dst));    \
+    do { struct sockaddr_in6 *sin6 = (struct sockaddr_in6*)(dst);       \
         sin6->sin6_family = AF_INET6;                                   \
         memcpy(&sin6->sin6_addr, (src), 16);                            \
         if(IN6_IS_ADDR_LINKLOCAL (&sin6->sin6_addr))                    \
@@ -455,28 +465,28 @@ kernel_route(int operation, const unsigned char *dest, unsigned short plen,
     }
 #undef PUSHADDR
 #undef PUSHADDR6
-    /* What if route_ifindex == 0 */
+    /* What if route_ifindex == 0 */    
     switch(operation) {
     case ROUTE_FLUSH:
-        rc = cyginet_delete_route_entry(&destination,
+        rc = cyginet_delete_route_entry(destination,
                                         prefix_len,
-                                        &gateway,
+                                        gateway,
                                         route_ifindex,
                                         metric
                                         );
         break;
     case ROUTE_ADD:
-        rc = cyginet_add_route_entry(&destination,
+        rc = cyginet_add_route_entry(destination,
                                      prefix_len,
-                                     &gateway,
+                                     gateway,
                                      route_ifindex,
                                      metric
                                      );
         break;
     case ROUTE_MODIFY:
-        rc = cyginet_update_route_entry(&destination,
+        rc = cyginet_update_route_entry(destination,
                                         prefix_len,
-                                        &gateway,
+                                        gateway,
                                         route_ifindex,
                                         metric
                                         );
@@ -488,8 +498,7 @@ kernel_route(int operation, const unsigned char *dest, unsigned short plen,
     /* Monitor thread will write data to kernel pipe when any change
        in the route table is happened. Here it's babeld itself to
        change the route table, so kernel pipe need to be clean. */
-    /* int ch; */
-    /* while (read(kernel_pipe_handles[0], &ch, 1) > 0); */
+    clear_kernel_socket_event();
     return rc;
 }
 
@@ -614,8 +623,8 @@ kernel_routes(struct kernel_route *routes, int maxroutes)
     return count;
 }
 
-/* Note: ifname returned by getifaddrs maybe includes a suffix number,
-   it looks like:
+/* Note: ifname returned by getifaddrs maybe includes a suffix number
+   in the Cygwin, it looks like:
 
    {C05BAB6E-B82D-4C4D-AF07-EFF7C45C5DB0}_1
    {C05BAB6E-B82D-4C4D-AF07-EFF7C45C5DB0}_2
@@ -661,7 +670,7 @@ kernel_addresses(char *ifname, int ifindex, int ll,
             routes[i].metric = 0;
             routes[i].ifindex = ifindex;
             routes[i].proto = RTPROT_BABEL_LOCAL;
-            memcpy(routes[i].gw, routes[i].prefix, 16);
+            memset(routes[i].gw, 0, 16);
             i++;
         } else if(ifap->ifa_addr->sa_family == AF_INET) {
             struct sockaddr_in *sin = (struct sockaddr_in*)ifap->ifa_addr;
@@ -677,7 +686,7 @@ kernel_addresses(char *ifname, int ifindex, int ll,
             routes[i].metric = 0; 
             routes[i].ifindex = ifindex;
             routes[i].proto = RTPROT_BABEL_LOCAL;
-            memcpy(routes[i].gw, routes[i].prefix, 16);
+            memset(routes[i].gw, 0, 16);
             i++;
         }
  next:
@@ -695,7 +704,9 @@ kernel_callback(int (*fn)(int, void*), void *closure)
 
     /* In the Windows, we can't get the exact changed route, but the
        route table is really changed. */
-    kdebugf("Kernel table changed.");
+    kdebugf("Kernel table changed.\n");
+    clear_kernel_socket_event();
+
     return fn(~0, closure);
 }
 
