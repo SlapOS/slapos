@@ -34,6 +34,7 @@ import logging
 from optparse import OptionParser, Option
 import os
 import shutil
+import stat
 import sys
 import tempfile
 import urllib2
@@ -209,6 +210,16 @@ def slapconfig(config):
   dry_run = config.dry_run
   # Create slapos configuration directory if needed
   slap_configuration_directory = os.path.normpath(config.slapos_configuration)
+
+  # Make sure everybody can read slapos configuration directory:
+  # Add +x to directories in path
+  directory = os.path.dirname(slap_configuration_directory)
+  while True:
+    if os.path.dirname(directory) == directory:
+      break
+    # Do "chmod g+xro+xr"
+    os.chmod(directory, os.stat(directory).st_mode | stat.S_IXGRP | stat.S_IRGRP | stat.S_IXOTH | stat.S_IROTH)
+    directory = os.path.dirname(directory)
 
   if not os.path.exists(slap_configuration_directory):
     config.logger.info ("Creating directory: %s" % slap_configuration_directory)
