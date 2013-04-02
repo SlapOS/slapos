@@ -63,7 +63,7 @@ if has_partition:\n
     try:\n
       d = memcached_dict[context.getReference()]\n
     except KeyError:\n
-      result = "#error no data found for %s" % context.getReference()\n
+      result = context.getSlapStateTitle()\n
     else:\n
       d = json.loads(d)\n
       result = d[\'text\']\n
