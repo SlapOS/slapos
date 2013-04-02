@@ -73,6 +73,7 @@ class Recipe(BaseSlapRecipe):
     self.path_list.append(self.killpidfromfile)
 
     rewrite_rule_list = []
+    rewrite_rule_https_only_list = []
     rewrite_rule_zope_list = []
     rewrite_rule_zope_path_list = []
     slave_dict = {}
@@ -92,9 +93,13 @@ class Recipe(BaseSlapRecipe):
       enable_cache = slave_instance.get('enable_cache', '').lower() in TRUE_VALUES
       slave_type = slave_instance.get('type', '').lower() or None
 
+      https_only = slave_instance.get('https-only', '').lower() in TRUE_VALUES
+
       # Set scheme (http? https?)
-      # Future work may allow to choose between http and https (or both?)
-      scheme = 'http://'
+      if https_only:
+        scheme = 'https://'
+      else:
+        scheme = 'http://'
 
       self.logger.info('Processing slave instance: %s' % reference)
 
@@ -136,6 +141,10 @@ class Recipe(BaseSlapRecipe):
       rewrite_rule = "%s %s" % (domain, backend_url)
 
       # Finally, if successful, we add the rewrite rule to our list of rules
+      # We have 4 RewriteMaps:
+      #  - One for generic (non-zope) websites, accepting both HTTP and HTTPS
+      #  - One for generic websites that only accept HTTPS
+      #  - Two for Zope-based websites
       if rewrite_rule:
         # We check if we have a zope slave. It requires different rewrite
         # rule structure.
@@ -147,7 +156,10 @@ class Recipe(BaseSlapRecipe):
           rewrite_rule_path = "%s %s" % (domain, slave_instance.get('path', ''))
           rewrite_rule_zope_path_list.append(rewrite_rule_path)
         else:
-          rewrite_rule_list.append(rewrite_rule)
+          if https_only:
+            rewrite_rule_https_only_list.append(rewrite_rule)
+          else:
+            rewrite_rule_list.append(rewrite_rule)
 
     # Certificate stuff
     valid_certificate_str = self.parameter_dict.get("domain_ssl_ca_cert")
@@ -179,6 +191,7 @@ class Recipe(BaseSlapRecipe):
         plain_http_port=frontend_plain_http_port_number,
         name=frontend_domain_name,
         rewrite_rule_list=rewrite_rule_list,
+        rewrite_rule_https_only_list=rewrite_rule_https_only_list,
         rewrite_rule_zope_list=rewrite_rule_zope_list,
         rewrite_rule_zope_path_list=rewrite_rule_zope_path_list,
         key=key, certificate=certificate)
@@ -510,10 +523,13 @@ class Recipe(BaseSlapRecipe):
                             port=4443, plain_http_port=8080,
                             rewrite_rule_list=None,
                             rewrite_rule_zope_list=None,
+                            rewrite_rule_https_only_list=None,
                             rewrite_rule_zope_path_list=None,
                             access_control_string=None):
     if rewrite_rule_list is None:
       rewrite_rule_list = []
+    if rewrite_rule_https_only_list is None:
+      rewrite_rule_zope_path_list = []
     if rewrite_rule_zope_list is None:
       rewrite_rule_zope_list = []
     if rewrite_rule_zope_path_list is None:
@@ -564,15 +580,22 @@ class Recipe(BaseSlapRecipe):
     self.path_list.append(backup_cron)
 
     # Create configuration file and rewritemaps
-    apachemap_name = "apachemap.txt"
-    apachemapzope_name = "apachemapzope.txt"
-    apachemapzopepath_name = "apachemapzopepath.txt"
-
-    self.createConfigurationFile(apachemap_name, "\n".join(rewrite_rule_list))
-    self.createConfigurationFile(apachemapzope_name,
-        "\n".join(rewrite_rule_zope_list))
-    self.createConfigurationFile(apachemapzopepath_name,
-        "\n".join(rewrite_rule_zope_path_list))
+    apachemap_path = self.createConfigurationFile(
+        "apache_rewritemap_generic.txt",
+        "\n".join(rewrite_rule_list)
+    )
+    apachemap_httpsonly_path = self.createConfigurationFile(
+        "apache_rewritemap_httpsonly.txt",
+        "\n".join(rewrite_rule_https_only_list)
+    )
+    apachemap_zope_path = self.createConfigurationFile(
+        "apache_rewritemap_zope.txt",
+        "\n".join(rewrite_rule_zope_list)
+    )
+    apachemap_zopepath_path = self.createConfigurationFile(
+        "apache_rewritemap_zopepath.txt",
+        "\n".join(rewrite_rule_zope_path_list)
+    )
 
     apache_conf = self._getApacheConfigurationDict(name, ip_list, port)
     apache_conf['ssl_snippet'] = self.substituteTemplate(
@@ -599,9 +622,10 @@ class Recipe(BaseSlapRecipe):
 
     apache_conf.update(**dict(
       path_enable=path,
-      apachemap_path=os.path.join(self.etc_directory, apachemap_name),
-      apachemapzope_path=os.path.join(self.etc_directory, apachemapzope_name),
-      apachemapzopepath_path=os.path.join(self.etc_directory, apachemapzopepath_name),
+      apachemap_path=apachemap_path,
+      apachemap_httpsonly_path=apachemap_httpsonly_path,
+      apachemapzope_path=apachemap_zope_path,
+      apachemapzopepath_path=apachemap_zopepath_path,
       apache_domain=name,
       https_port=port,
       plain_http_port=plain_http_port,

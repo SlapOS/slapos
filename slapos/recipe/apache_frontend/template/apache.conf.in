@@ -104,10 +104,12 @@ Header append Vary User-Agent
   # or changed when slapgrid is ran. It can be freely customized by node admin.
   Include %(custom_apache_virtualhost_conf)s
 
-  # Define the two RewriteMaps (key -> value store): one for Zope, one generic
+  # Define the 3 RewriteMaps (key -> value store): one for Zope, one generic,
+  # one generic https only,
   # containing: rewritten URL -> original URL (a.k.a VirtualHostBase in Zope)
   RewriteMap apachemapzope txt:%(apachemapzope_path)s
   RewriteMap apachemapgeneric txt:%(apachemap_path)s
+  RewriteMap apachemapgenerichttpsonly txt:%(apachemap_httpsonly_path)s
 
   # Define another RewriteMap for Zope, containing:
   # rewritten URL -> VirtualHostRoot
@@ -123,6 +125,10 @@ Header append Vary User-Agent
   RewriteCond ${apachemapgeneric:%%{SERVER_NAME}} >""
   # We suppose that Apache listens to 443 (even indirectly thanks to things like iptables)
   RewriteRule ^/(.*)$ ${apachemapgeneric:%%{SERVER_NAME}}/$1 [L,P]
+  # Same for https only server
+  RewriteCond ${apachemapgenerichttpsonly:%%{SERVER_NAME}} >""
+  # We suppose that Apache listens to 443 (even indirectly thanks to things like iptables)
+  RewriteRule ^/(.*)$ ${apachemapgenerichttpsonly:%%{SERVER_NAME}}/$1 [L,P]
 
   # If nothing exist : put a nice error
   ErrorDocument 404 /notfound.html
@@ -137,6 +143,9 @@ Header append Vary User-Agent
   ProxyPreserveHost On
   ProxyTimeout 600
   RewriteEngine On
+
+  # Remove "Secure" from cookies, as backend may be https
+  Header edit Set-Cookie "(?i)^(.+);secure$" "$1"
 
   # Include configuration file not operated by slapos. This file won't be erased
   # or changed when slapgrid is ran. It can be freely customized by node admin.
