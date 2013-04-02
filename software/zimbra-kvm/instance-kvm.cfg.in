@@ -210,7 +210,8 @@ name = Web Frontend
 # XXX We have hardcoded SR URL here.
 software-url = http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg
 slave = true
-config = url custom_domain
+config = url custom_domain https-only
+config-https-only = true
 config-url = https://[$${tunnel-ipv6-kvm-https:ipv6}]:$${tunnel-ipv6-kvm-https:ipv6-port}/
 return = site_url
 config-custom_domain = $${slap-parameter:domain}
