@@ -282,6 +282,8 @@ class SlapTool(BaseTool):
     Reuses slap library for easy marshalling.
     """
     user = self.getPortalObject().portal_membership.getAuthenticatedMember().getUserName()
+    if str(user) == computer_id:
+      self._logAccess(user, user, '#access %s' % computer_id)
     result = self._getComputerInformation(computer_id, user)
 
     if self.REQUEST.response.getStatus() == 200:
