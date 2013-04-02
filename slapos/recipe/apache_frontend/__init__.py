@@ -36,6 +36,7 @@ import ConfigParser
 import re
 import traceback
 
+TRUE_VALUES = ['y', 'yes', '1', 'true']
 
 class Recipe(BaseSlapRecipe):
 
@@ -88,16 +89,8 @@ class Recipe(BaseSlapRecipe):
       # Sanitize inputs
       backend_url = slave_instance.get("url", None)
       reference = slave_instance.get("slave_reference")
-
-      if slave_instance.haskey("enable_cache"):
-        enable_cache = slave_instance.get("enable_cache", "").upper() in ('1', 'TRUE')
-      else:
-        enable_cache = False
-
-      if slave_instance.haskey("type"):
-        slave_type = slave_instance.get("type", "").lower()
-      else:
-        slave_type = None
+      enable_cache = slave_instance.get('enable_cache', '').lower() in TRUE_VALUES
+      slave_type = slave_instance.get('type', '').lower() or None
 
       # Set scheme (http? https?)
       # Future work may allow to choose between http and https (or both?)
