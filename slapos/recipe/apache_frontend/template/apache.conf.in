@@ -137,7 +137,7 @@ Header append Vary User-Agent
   # or changed when slapgrid is ran. It can be freely customized by node admin.
   Include %(custom_apache_virtualhost_conf)s
 
-  # We accept generic (i.e not lamp) backends on http
+  # We accept generic (i.e not Zope) backends on http
   RewriteMap apachemapgeneric txt:%(apachemap_path)s
   RewriteCond ${apachemapgeneric:%%{SERVER_NAME}} >""
   RewriteRule ^/(.*)$ ${apachemapgeneric:%%{SERVER_NAME}}/$1 [L,P]
