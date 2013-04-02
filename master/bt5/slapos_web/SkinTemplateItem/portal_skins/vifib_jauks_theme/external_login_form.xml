@@ -68,6 +68,10 @@
                <a class="zocial google" href="./login_with_google">Signup with Google</a><br/><br/>\n
                You are not connected with social network? So then use BrowserID  <a href="#" id="browserid" title="Sign-in with BrowserID"> <img src="./vifib_image/browser_id_logo.png" alt="Sign-in with BrowserID" title="Sign-in with BrowserID"></a>\n
             </div>\n
+            <div class="field nolabel widthAuto center" style="background: white; color: #FF0066;; margin-top: 2em;">\n
+By clicking on one of the signup button, you agree that you are subscribing to a payed service.<br/>\n
+Each software service will be invoiced to you at the end of the month.\n
+            </div>\n
 <browserid id="browser_id_login" tal:attributes=\'value python: here.getWebSiteValue().login_with_browser_id.absolute_url()\'/>\n
 <script type="text/javascript">\n
 $(\'#browserid\').click(function() {\n
