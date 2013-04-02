@@ -906,12 +906,12 @@ class TestSlapOSSlapToolInstanceAccess(TestSlapOSSlapToolMixin):
 <?xml version='1.0' encoding='UTF-8'?>
 <marshal>
   <dictionary id='i2'>
-    <unicode>created_at</unicode>
-    <unicode>%(created_at)s</unicode>
-    <unicode>text</unicode>
-    <unicode>#access %(computer_id)s %(partition_id)s</unicode>
-    <unicode>user</unicode>
-    <unicode>%(instance_guid)s</unicode>
+    <string>created_at</string>
+    <string>%(created_at)s</string>
+    <string>text</string>
+    <string>#error no data found for %(instance_guid)s</string>
+    <string>user</string>
+    <string>SlapOS Master</string>
   </dictionary>
 </marshal>
 """ % dict(
@@ -1789,12 +1789,12 @@ class TestSlapOSSlapToolPersonAccess(TestSlapOSSlapToolMixin):
 <?xml version='1.0' encoding='UTF-8'?>
 <marshal>
   <dictionary id='i2'>
-    <unicode>created_at</unicode>
-    <unicode>%(created_at)s</unicode>
-    <unicode>text</unicode>
-    <unicode>#access %(computer_id)s %(partition_id)s</unicode>
-    <unicode>user</unicode>
-    <unicode>%(instance_guid)s</unicode>
+    <string>created_at</string>
+    <string>%(created_at)s</string>
+    <string>text</string>
+    <string>#error no data found for %(instance_guid)s</string>
+    <string>user</string>
+    <string>SlapOS Master</string>
   </dictionary>
 </marshal>
 """ % dict(
