@@ -1,0 +1,20 @@
+[buildout]
+
+[publish-drupal-admin-password]
+recipe = slapos.cookbook:publish
+drupal-admin-password = $${drupal-init:admin-password}
+
+
+[drupal-init-base]
+recipe = slapos.cookbook:drupal_init
+drush-binary = ${apache-php:location}/bin/drush
+php-binary = ${apache-php:location}/bin/php
+settings-php = ${application-configuration:location}
+htdocs = $${rootdirectory:srv}/www
+#admin-password = 
+dependency = $${apache-php:recipe}
+
+[drupal-init]
+recipe = iw.recipe.cmd
+cmds =
+   $${drupal-init-base:drush-binary} install drush make build-datapublic.make DrupalDataPublic
