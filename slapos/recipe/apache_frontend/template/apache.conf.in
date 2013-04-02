@@ -60,8 +60,8 @@ BrowserMatch "RealPlayer 4\.0" force-response-1.0
 BrowserMatch "Java/1\.0" force-response-1.0
 BrowserMatch "JDK/1\.0" force-response-1.0
 # The following directive disables redirects on non-GET requests for
-# a directory that does not include the trailing slash.  This fixes a 
-# problem with Microsoft WebFolders which does not appropriately handle 
+# a directory that does not include the trailing slash.  This fixes a
+# problem with Microsoft WebFolders which does not appropriately handle
 # redirects for folders with DAV methods.
 # Same deal with Apple's DAV filesystem and Gnome VFS support for DAV.
 BrowserMatch "Microsoft Data Access Internet Publishing Provider" redirect-carefully
@@ -84,7 +84,7 @@ MCacheRemovalAlgorithm LRU
 AddOutputFilterByType DEFLATE text/html text/plain text/xml text/css text/javascript application/x-javascript application/javascript
 BrowserMatch ^Mozilla/4 gzip-only-text/html
 BrowserMatch ^Mozilla/4\.0[678] no-gzip
-BrowserMatch \bMSIE !no-gzip !gzip-only-text/html 
+BrowserMatch \bMSIE !no-gzip !gzip-only-text/html
 # Make sure proxies don't deliver the wrong content
 Header append Vary User-Agent
 
@@ -128,16 +128,20 @@ Header append Vary User-Agent
   ErrorDocument 404 /notfound.html
 </VirtualHost>
 
+
+# Only accept generic (i.e not Zope) backends on http
 <VirtualHost *:%(plain_http_port)s>
-  RewriteEngine On
   SSLProxyEngine on
+  # Rewrite part
+  ProxyVia On
   ProxyPreserveHost On
+  ProxyTimeout 600
+  RewriteEngine On
 
   # Include configuration file not operated by slapos. This file won't be erased
   # or changed when slapgrid is ran. It can be freely customized by node admin.
   Include %(custom_apache_virtualhost_conf)s
 
-  # We accept generic (i.e not Zope) backends on http
   RewriteMap apachemapgeneric txt:%(apachemap_path)s
   RewriteCond ${apachemapgeneric:%%{SERVER_NAME}} >""
   RewriteRule ^/(.*)$ ${apachemapgeneric:%%{SERVER_NAME}}/$1 [L,P]
@@ -147,6 +151,7 @@ Header append Vary User-Agent
   # on standard port (443).
   RewriteRule ^/(.*)$ https://%%{SERVER_NAME}%%{REQUEST_URI}
 </VirtualHost>
+
 
 # Include configuration file not operated by slapos. This file won't be erased
 # or changed when slapgrid is ran. It can be freely customized by node admin.
