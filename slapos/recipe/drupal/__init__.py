@@ -39,7 +39,6 @@ from slapos.recipe.librecipe import GenericBaseRecipe
 # - drush connects to mysql with the password on command line
 #    see http://stackoverflow.com/questions/6607675/shell-script-password-security-of-command-line-parameters
 #    it could use a socket, but we are on a different instance than mysql
-# - the admin_password is not published yet.
 # - using slapproxy, sometimes this recipe is not able to connect to mysql (tunnel down).
 #   restarting from supervisor usually solves it.
 #
@@ -77,11 +76,10 @@ class InitRecipe(GenericBaseRecipe):
 
             drush_output = subprocess.check_output([drush_binary,
                                                    '-y', 'site-install',
-                                                   '--account-name=admin'
+                                                   '--account-name=admin',
+                                                   '--account-pass=%s' % self.options['admin-password'],
                                                    ],
                                                    stderr=subprocess.STDOUT)
-
-            self.options['admin-password'] = self.extract_password(drush_output)
 
             # drush removes the 'w' bit from both the settings file and its
             # directory.
@@ -93,10 +91,6 @@ class InitRecipe(GenericBaseRecipe):
 
         # XXX return what?
         return []
-
-
-    def extract_password(self, drush_output):
-        return re.search('User password: (\S+)', drush_output).groups()[0]
 
 
     def is_db_empty(self, php_binary, settings_php):

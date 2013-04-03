@@ -11,10 +11,22 @@ drush-binary = ${apache-php:location}/bin/drush
 php-binary = ${apache-php:location}/bin/php
 settings-php = ${application-configuration:location}
 htdocs = $${rootdirectory:srv}/www
-#admin-password = 
+admin-password = $${gen-passwd:passwd}
 dependency = $${apache-php:recipe}
+
+
+#----------------
+#--
+#-- Generates a random password and stores it in the filesystem
+
+[gen-passwd]
+recipe = slapos.cookbook:generate.password
+storage-path = $${directories:srv}/drupal_passwd
+bytes = 16
+
 
 [drupal-init]
 recipe = iw.recipe.cmd
 cmds =
    $${drupal-init-base:drush-binary} install drush make build-datapublic.make DrupalDataPublic
+
