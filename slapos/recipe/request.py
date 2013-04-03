@@ -195,7 +195,7 @@ class RequestOptional(Recipe):
       self.logger.warning('Optional request failed.')
       if not isinstance(self._raise_request_exception, slapmodule.NotFoundError):
         # full traceback for optional 'not found' is too verbose and confusing
-        self.logger.warning(self._raise_request_exception_formatted)
+        self.logger.debug(self._raise_request_exception_formatted)
     elif self.failed is not None:
       # Check instance status to know if instance has been deployed
       try:
