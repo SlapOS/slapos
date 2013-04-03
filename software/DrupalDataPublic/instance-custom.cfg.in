@@ -2,7 +2,7 @@
 
 [publish-drupal-admin-password]
 recipe = slapos.cookbook:publish
-drupal-admin-password = $${drupal-init:admin-password}
+drupal-admin-password = $${drupal-init-base:admin-password}
 
 
 [drupal-init-base]
