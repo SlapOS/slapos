@@ -76,7 +76,6 @@ link-binary =
   {{ parameter_dict['poppler'] }}/bin/pdfinfo
   {{ parameter_dict['poppler'] }}/bin/pdftotext
   {{ parameter_dict['poppler'] }}/bin/pdftohtml
-  {{ parameter_dict['pdftk'] }}/bin/pdftk
 
 # rest of parts are candidates for some generic stuff
 [basedirectory]

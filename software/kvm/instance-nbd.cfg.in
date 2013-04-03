@@ -22,6 +22,7 @@ log = $${buildout:directory}/log
 [basedirectory]
 recipe = slapos.cookbook:mkdirectory
 services = $${rootdirectory:etc}/run
+watched-services = $${rootdirectory:etc}/service
 promises = $${rootdirectory:etc}/promise
 
 [nbd-instance]
@@ -53,7 +54,7 @@ image-path = $${rootdirectory:srv}/cdrom.iso
 log-path = $${rootdirectory:log}/onetimeupload.log
 shell-path = ${dash:location}/bin/dash
 onetimeupload-path = ${buildout:bin-directory}/onetimeupload
-path = $${basedirectory:services}/onetimeupload
+path = $${basedirectory:watched-services}/onetimeupload
 key = $${gen-passwd:passwd}
 
 [onetimeupload-promise]

@@ -1,0 +1,18 @@
+[buildout]
+
+extends = ${pbsready:output}
+
+parts +=
+  import-on-notification
+  resilient-publish-connection-parameter
+
+[resilient-publish-connection-parameter]
+notification-url = http://[$${notifier:host}]:$${notifier:port}/notify
+
+[import-on-notification]
+# notifier.callback runs a script when a notification (sent by a parent PBS)
+# is received
+<= notifier
+recipe = slapos.cookbook:notifier.callback
+on-notification-id = $${slap-parameter:on-notification}
+callback = $${importer:wrapper}

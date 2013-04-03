@@ -1,5 +1,9 @@
-# Path protected
-<Location %(path)s>
+<Directory %(path)s>
   Order Deny,Allow
   Allow from %(access_control_string)s
-</Location>
+</Directory>
+
+<Directory %(document_root)s>
+  Order Allow,Deny
+  Allow from All
+</Directory>

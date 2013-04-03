@@ -35,11 +35,27 @@ import netaddr
 import time
 import re
 import urlparse
+import json
 
 # Use to do from slapos.recipe.librecipe import GenericBaseRecipe
 from generic import GenericBaseRecipe
 from genericslap import GenericSlapRecipe
 from filehash import filehash
+
+# Utility functions to (de)serialise live python objects in order to send them
+# to master.
+JSON_SERIALISED_MAGIC_KEY = '_'
+def wrap(value):
+  return {JSON_SERIALISED_MAGIC_KEY: json.dumps(value)}
+
+def unwrap(value):
+  try:
+    value = value[JSON_SERIALISED_MAGIC_KEY]
+  except (KeyError, TypeError):
+    pass
+  else:
+    value = json.loads(value)
+  return value
 
 class BaseSlapRecipe:
   """Base class for all slap.recipe.*"""
@@ -153,13 +169,6 @@ class BaseSlapRecipe:
     wrapper_path = os.path.join(self.wrapper_directory, wrapper_name)
     self._writeExecutable(wrapper_path, file_content)
     return wrapper_path
-
-  def createReportRunningWrapper(self, file_content):
-    """Creates report runnig wrapper and returns its path"""
-    report_wrapper_path = os.path.join(self.wrapper_report_directory,
-        'slapreport')
-    self._writeExecutable(report_wrapper_path, file_content)
-    return report_wrapper_path
 
   def substituteTemplate(self, template_location, mapping_dict):
     """Returns template content after substitution"""

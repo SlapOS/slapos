@@ -5,12 +5,13 @@
 PidFile "%(pid_file)s"
 ServerName %(server_name)s
 DocumentRoot %(document_root)s
+ServerRoot %(instance_home)s
 
 %(listen)s
 
 ServerAdmin %(server_admin)s
 DefaultType text/plain
-TypesConfig conf/mime.types
+TypesConfig %(httpd_home)s/conf/mime.types
 AddType application/x-compress .Z
 AddType application/x-gzip .gz .tgz
 
@@ -21,9 +22,9 @@ ServerTokens Prod
 
 # Log configuration
 ErrorLog "%(error_log)s"
-LogLevel warn
-LogFormat "%%h %%{REMOTE_USER}i %%l %%u %%t \"%%r\" %%>s %%b \"%%{Referer}i\" \"%%{User-Agent}i\"" combined
-LogFormat "%%h %%{REMOTE_USER}i %%l %%u %%t \"%%r\" %%>s %%b" common
+LogLevel info
+LogFormat "%%h %%{REMOTE_USER}i %%{Host}i %%l %%u %%t \"%%r\" %%>s %%b \"%%{Referer}i\" \"%%{User-Agent}i\"" combined
+LogFormat "%%h %%{REMOTE_USER}i %%{Host}i %%l %%u %%t \"%%r\" %%>s %%b" common
 CustomLog "%(access_log)s" common
 
 %(path_enable)s
@@ -32,23 +33,23 @@ CustomLog "%(access_log)s" common
 #LoadModule unixd_module modules/mod_unixd.so
 #LoadModule access_compat_module modules/mod_access_compat.so
 #LoadModule authz_core_module modules/mod_authz_core.so
-LoadModule authz_host_module modules/mod_authz_host.so
-LoadModule log_config_module modules/mod_log_config.so
-LoadModule deflate_module modules/mod_deflate.so
-LoadModule setenvif_module modules/mod_setenvif.so
-LoadModule version_module modules/mod_version.so
-LoadModule proxy_module modules/mod_proxy.so
-LoadModule proxy_http_module modules/mod_proxy_http.so
-LoadModule ssl_module modules/mod_ssl.so
-LoadModule mime_module modules/mod_mime.so
-LoadModule dav_module modules/mod_dav.so
-LoadModule dav_fs_module modules/mod_dav_fs.so
-LoadModule negotiation_module modules/mod_negotiation.so
-LoadModule rewrite_module modules/mod_rewrite.so
-LoadModule headers_module modules/mod_headers.so
-LoadModule cache_module modules/mod_cache.so
-LoadModule mem_cache_module modules/mod_mem_cache.so
-LoadModule antiloris_module modules/mod_antiloris.so
+LoadModule authz_host_module  %(httpd_home)s/modules/mod_authz_host.so
+LoadModule log_config_module  %(httpd_home)s/modules/mod_log_config.so
+LoadModule deflate_module     %(httpd_home)s/modules/mod_deflate.so
+LoadModule setenvif_module    %(httpd_home)s/modules/mod_setenvif.so
+LoadModule version_module     %(httpd_home)s/modules/mod_version.so
+LoadModule proxy_module       %(httpd_home)s/modules/mod_proxy.so
+LoadModule proxy_http_module  %(httpd_home)s/modules/mod_proxy_http.so
+LoadModule ssl_module         %(httpd_home)s/modules/mod_ssl.so
+LoadModule mime_module        %(httpd_home)s/modules/mod_mime.so
+LoadModule dav_module         %(httpd_home)s/modules/mod_dav.so
+LoadModule dav_fs_module      %(httpd_home)s/modules/mod_dav_fs.so
+LoadModule negotiation_module %(httpd_home)s/modules/mod_negotiation.so
+LoadModule rewrite_module     %(httpd_home)s/modules/mod_rewrite.so
+LoadModule headers_module     %(httpd_home)s/modules/mod_headers.so
+LoadModule cache_module       %(httpd_home)s/modules/mod_cache.so
+LoadModule mem_cache_module   %(httpd_home)s/modules/mod_mem_cache.so
+LoadModule antiloris_module   %(httpd_home)s/modules/mod_antiloris.so
 
 # The following directives modify normal HTTP response behavior to
 # handle known problems with browser implementations.
@@ -99,17 +100,28 @@ Header append Vary User-Agent
   ProxyTimeout 600
   RewriteEngine On
 
-  # Define the two rewritemaps : one for zope, one generic
+  # Include configuration file not operated by slapos. This file won't be erased
+  # or changed when slapgrid is ran. It can be freely customized by node admin.
+  Include %(custom_apache_virtualhost_conf)s
+
+  # Define the two RewriteMaps (key -> value store): one for Zope, one generic
+  # containing: rewritten URL -> original URL (a.k.a VirtualHostBase in Zope)
   RewriteMap apachemapzope txt:%(apachemapzope_path)s
   RewriteMap apachemapgeneric txt:%(apachemap_path)s
+
+  # Define another RewriteMap for Zope, containing:
+  # rewritten URL -> VirtualHostRoot
+  RewriteMap apachemapzopepath txt:%(apachemapzopepath_path)s
 
   # First, we check if we have a zope backend server
   # If so, let's use Virtual Host Daemon rewrite
   RewriteCond ${apachemapzope:%%{SERVER_NAME}} >""
-  RewriteRule ^/(.*)$ ${apachemapzope:%%{SERVER_NAME}}/VirtualHostBase/https/%%{SERVER_NAME}:%%{SERVER_PORT}/VirtualHostRoot/$1 [L,P]
+  # We suppose that Apache listens to 443 (even indirectly thanks to things like iptables)
+  RewriteRule ^/(.*)$ ${apachemapzope:%%{SERVER_NAME}}/VirtualHostBase/https/%%{SERVER_NAME}:443/${apachemapzopepath:%%{SERVER_NAME}}/VirtualHostRoot/$1 [L,P]
 
   # If we have generic backend server, let's rewrite without virtual host daemon
   RewriteCond ${apachemapgeneric:%%{SERVER_NAME}} >""
+  # We suppose that Apache listens to 443 (even indirectly thanks to things like iptables)
   RewriteRule ^/(.*)$ ${apachemapgeneric:%%{SERVER_NAME}}/$1 [L,P]
 
   # If nothing exist : put a nice error
@@ -118,7 +130,12 @@ Header append Vary User-Agent
 
 <VirtualHost *:%(plain_http_port)s>
   RewriteEngine On
+  SSLProxyEngine on
   ProxyPreserveHost On
+
+  # Include configuration file not operated by slapos. This file won't be erased
+  # or changed when slapgrid is ran. It can be freely customized by node admin.
+  Include %(custom_apache_virtualhost_conf)s
 
   # We accept generic (i.e not lamp) backends on http
   RewriteMap apachemapgeneric txt:%(apachemap_path)s

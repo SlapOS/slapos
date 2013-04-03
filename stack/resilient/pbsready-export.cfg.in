@@ -1,0 +1,29 @@
+[buildout]
+
+extends = ${pbsready:output}
+
+parts +=
+  cron-entry-backup
+
+[resilient-publish-connection-parameter]
+notification-id = http://[$${notifier:host}]:$${notifier:port}/get/$${notifier-exporter:name}
+
+[notifier-exporter]
+# notifier.notify launches an (exporter) executable, and when finished,
+# notifies the the pull-backup-servers.
+<= notifier
+recipe = slapos.cookbook:notifier.notify
+name = exporter
+title = Dumping $${slap-parameter:namebase}
+executable = $${exporter:wrapper}
+wrapper = $${rootdirectory:bin}/exporter
+notify = $${slap-parameter:notify}
+
+[cron-entry-backup]
+# Schedule the periodic database dump.
+# Through notifications, this triggers (one or more) incremental backups on PBS instances.
+<= cron
+recipe = slapos.cookbook:cron.d
+name = backup
+frequency = 0 * * * *
+command = $${notifier-exporter:wrapper}

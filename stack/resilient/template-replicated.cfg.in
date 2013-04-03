@@ -1,0 +1,137 @@
+{% macro replicate(namebase, nbbackup, typeexport, typeimport, heriteLeader='', heriteBackup='') %}
+
+## Tells the Backupable recipe that we want a backup
+[resilient]
+recipe = slapos.cookbook:request
+config-namebase = {{namebase}}
+software-url = ${slap-connection:software-release-url}
+
+## Every request is double to provide the 3 IPs.
+## First, we request with ip-list parameter hardcoded.
+## Then, we request the same thing without this.
+## XXX-Cedric: is it useful?
+[request-{{namebase}}]
+<= resilient
+   slap-connection
+   {{heriteLeader}}
+software-type = {{typeexport}}
+name = {{namebase}}0
+return = ssh-public-key ssh-url notification-id ip
+
+config = number authorized-key notify ip-list namebase
+config-number = 0
+config-authorized-key = {% for id in range(1,nbbackup|int) %} ${request-pbs-{{namebase}}-{{id}}:connection-ssh-key}{% endfor %}
+config-notify = {% for id in range(1,nbbackup|int) %} ${request-pbs-{{namebase}}-{{id}}:connection-notification-url}{% endfor %}
+config-ip-list =
+
+
+{% for id in range(1,nbbackup|int) %}
+
+[request-{{namebase}}-pseudo-replicating-{{id}}]
+<= slap-connection
+   resilient
+   {{heriteBackup}}
+recipe = slapos.cookbook:request
+name = {{namebase}}{{id}}
+
+software-url = ${slap-connection:software-release-url}
+software-type = {{typeimport}}
+return = ssh-public-key ssh-url notification-url ip
+
+pbs-notification-id = ${slap-connection:computer-id}-${slap-connection:partition-id}-{{namebase}}-push
+
+config = number authorized-key on-notification ip-list namebase
+config-number = {{id}}
+config-authorized-key = ${request-pbs-{{namebase}}-{{id}}:connection-ssh-key}
+config-on-notification = ${request-pbs-{{namebase}}-{{id}}:connection-feeds-url}${:pbs-notification-id}
+config-ip-list =
+
+sla = computer_guid
+sla-computer_guid = ${slap-parameter:{{namebase}}{{id}}-computer-guid}
+
+
+{% endfor %}
+
+[iplist]
+config-ip-list = ${request-{{namebase}}:connection-ip}{% for j in range(1,nbbackup|int) %} ${request-{{namebase}}-pseudo-replicating-{{j}}:connection-ip}{% endfor %}
+
+[request-{{namebase}}-2]
+<= request-{{namebase}}
+   iplist
+
+{% for id in range(1,nbbackup|int) %}
+[request-{{namebase}}-pseudo-replicating-{{id}}-2]
+<= request-{{namebase}}-pseudo-replicating-{{id}}
+   iplist
+
+{% endfor %}
+
+
+
+## The PBS and their push / pull slaves
+## Adding a PBS provides resiliency
+## Adding a backup server provides availability
+
+## Having 3 backups pulling from the same PBS provides
+##only availability, not resiliency
+
+## WARNING : SLAVES ARE ALLOCATED AT RANDOM, THIS NEEDS TO BE FIXED.
+
+[request-pbs-common]
+<= slap-connection
+recipe = slapos.cookbook:request
+software-url = ${slap-connection:software-release-url}
+software-type = pull-backup
+
+{% for id in range(1,nbbackup|int) %}
+
+[request-pbs-{{namebase}}-{{id}}]
+<= request-pbs-common
+name = PBS ({{namebase}} / {{id}})
+return = ssh-key notification-url feeds-url
+slave = false
+sla = computer_guid
+sla-computer_guid = ${slap-parameter:pbs-{{namebase}}{{id}}-computer-guid}
+
+[request-pull-backup-server-{{namebase}}-{{id}}]
+<= request-pbs-common
+name = PBS {{id}} pulling from ${request-{{namebase}}:name}
+config = url name type server-key on-notification notify notification-id title
+config-url = ${request-{{namebase}}:connection-ssh-url}
+config-name = ${slap-connection:computer-id}-${slap-connection:partition-id}-{{namebase}}-{{id}}
+config-type = pull
+config-server-key = ${request-{{namebase}}:connection-ssh-public-key}
+config-on-notification = ${request-{{namebase}}:connection-notification-id}
+config-notify = ${request-pbs-{{namebase}}-{{id}}:connection-notification-url}
+config-notification-id = ${slap-connection:computer-id}-${slap-connection:partition-id}-{{namebase}}-{{id}}-pull
+config-title = Pulling from {{namebase}}
+slave = true
+sla = instance_guid
+sla-instance_guid = ${request-pbs-{{namebase}}-{{id}}:instance_guid}
+
+[request-pull-backup-server-{{namebase}}-backup-{{id}}]
+<= request-pbs-common
+name = PBS pushing on ${request-{{namebase}}-pseudo-replicating-{{id}}:name}
+config = url name type server-key on-notification notify notification-id title
+config-url = ${request-{{namebase}}-pseudo-replicating-{{id}}:connection-ssh-url}
+config-name = ${request-pull-backup-server-{{namebase}}-{{id}}:config-name}
+config-type = push
+config-server-key = ${request-{{namebase}}-pseudo-replicating-{{id}}:connection-ssh-public-key}
+config-on-notification = ${request-pbs-{{namebase}}-{{id}}:connection-feeds-url}${request-pull-backup-server-{{namebase}}-{{id}}:config-notification-id}
+config-notify = ${request-{{namebase}}-pseudo-replicating-{{id}}:connection-notification-url}
+config-notification-id = ${request-{{namebase}}-pseudo-replicating-{{id}}:pbs-notification-id}
+config-title = Pushing to {{namebase}} backup {{id}}
+slave = true
+sla = instance_guid
+sla-instance_guid = ${request-pbs-{{namebase}}-{{id}}:instance_guid}
+{% endfor %}
+
+[slap-parameter]
+# Default parameters for distributed deployment
+# I.e state "backup1 of maria should go there, ..."
+{% for id in range(1,nbbackup|int) %}
+{{namebase}}{{id}}-computer-guid =
+pbs-{{namebase}}{{id}}-computer-guid =
+{% endfor %}
+
+{% endmacro %}

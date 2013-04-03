@@ -1,0 +1,188 @@
+[buildout]
+parts =
+  directory
+  reverse-proxy
+  certificate-authority
+  ca-nginx
+  logrotate
+  logrotate-entry-nginx
+  cron
+  cron-entry-logrotate
+  smtp-port-promise
+  publish-connection-parameter
+
+# Define egg directories to be the one from Software Release
+# (/opt/slapgrid/...)
+eggs-directory = ${buildout:eggs-directory}
+develop-eggs-directory = ${buildout:develop-eggs-directory}
+offline = true
+
+# Fetch parameters defined in SlapOS Master for this instance
+[instance-parameter]
+recipe = slapos.cookbook:slapconfiguration
+computer = $${slap-connection:computer-id}
+partition = $${slap-connection:partition-id}
+url = $${slap-connection:server-url}
+key = $${slap-connection:key-file}
+cert = $${slap-connection:cert-file}
+
+# Set default parameters
+configuration.slave-instance-list =
+configuration.domain = un-hardcode-me
+#configuration.http-port = 80
+#configuration.https-port = 443
+configuration.smtp-port = 25
+configuration.public-ipv4 =
+
+# Create needed directories
+[directory]
+recipe = slapos.cookbook:mkdirectory
+home = $${buildout:directory}
+bin = $${:home}/bin
+etc = $${:home}/etc
+srv = $${:home}/srv
+var = $${:home}/var
+
+service = $${:etc}/service
+promise = $${:etc}/promise
+backup = $${:srv}/backup
+log = $${:var}/log
+run = $${:var}/run
+
+ca-dir = $${:srv}/ssl
+ca-requests = $${:ca-dir}/requests
+ca-private = $${:ca-dir}/private
+ca-certs = $${:ca-dir}/certs
+ca-newcerts = $${:ca-dir}/newcerts
+ca-crl = $${:ca-dir}/crl
+
+nginx-configuration = $${:etc}/nginx
+nginx-ssl = $${:ca-dir}/nginx
+nginx-log = $${:home}/logs
+nginx-htdocs = $${:srv}/www
+
+cron-entries = $${:etc}/cron.d
+crontabs = $${:etc}/crontabs
+cronstamps = $${:etc}/cronstamps
+
+logrotate-entries = $${:etc}/logrotate.d
+logrotate-backup = $${:backup}/logrotate
+
+
+# Deploy nginx and publish connection parameters inside of the recipe
+[reverse-proxy]
+recipe = slapos.cookbook:reverseproxy.nginx
+nginx-executable = ${nginx-unstable:location}/sbin/nginx
+wrapper = $${directory:bin}/nginx
+
+configuration-file = $${directory:nginx-configuration}/nginx.conf
+
+ipv6 = $${instance-parameter:ipv6-random}
+ipv4 = $${instance-parameter:ipv4-random}
+slave-instance-list = $${instance-parameter:slave-instance-list}
+#http-port = $${instance-parameter:http-port}
+#https-port = $${instance-parameter:https-port}
+smtp-port = $${instance-parameter:configuration.smtp-port}
+domain = $${instance-parameter:configuration.domain}
+
+access-log = $${directory:nginx-log}/access.log
+error-log = $${directory:nginx-log}/error.log
+
+key-file = $${directory:nginx-configuration}/nginx.key
+cert-file = $${directory:nginx-configuration}/nginx.crt
+
+pid-file = $${directory:run}/nginx
+
+htdocs = $${directory:nginx-htdocs}
+home-directory = $${directory:home}
+
+# Set the public IPs (if possible) as slave connection parameter so that user knows what IP
+# to bind to its domain name
+public-ipv4 = $${instance-parameter:configuration.public-ipv4}
+
+# Create and handle certificate related stuffs, including encapsulating run of nginx executable
+[certificate-authority]
+recipe = slapos.cookbook:certificate_authority
+openssl-binary = ${openssl:location}/bin/openssl
+ca-dir = $${directory:ca-dir}
+requests-directory = $${directory:ca-requests}
+wrapper = $${directory:service}/ca
+ca-private = $${directory:ca-private}
+ca-certs = $${directory:ca-certs}
+ca-newcerts = $${directory:ca-newcerts}
+ca-crl = $${directory:ca-crl}
+
+[ca-nginx]
+<= certificate-authority
+recipe = slapos.cookbook:certificate_authority.request
+executable = $${reverse-proxy:wrapper}
+wrapper = $${directory:service}/nginx
+key-file = $${reverse-proxy:key-file}
+cert-file = $${reverse-proxy:cert-file}
+
+
+# Deploy logrotate
+[logrotate]
+recipe = slapos.cookbook:logrotate
+# Binaries
+logrotate-binary = ${logrotate:location}/usr/sbin/logrotate
+gzip-binary = ${gzip:location}/bin/gzip
+gunzip-binary = ${gzip:location}/bin/gunzip
+# Directories
+wrapper = $${directory:bin}/logrotate
+conf = $${directory:etc}/logrotate.conf
+logrotate-entries = $${directory:logrotate-entries}
+backup = $${directory:logrotate-backup}
+state-file = $${directory:srv}/logrotate.status
+
+[logrotate-entry-nginx]
+<= logrotate
+recipe = slapos.cookbook:logrotate.d
+name = nginx
+log = $${reverse-proxy:access-log} $${reverse-proxy:error-log}
+frequency = daily
+rotate-num = 30
+post = ${buildout:bin-directory}/killpidfromfile $${reverse-proxy:pid-file} SIGUSR1
+sharedscripts = true
+notifempty = true
+create = true
+
+
+# Deploy cron and configure it
+[cron-simplelogger]
+recipe = slapos.cookbook:simplelogger
+wrapper = $${directory:bin}/cron_simplelogger
+log = $${directory:log}/crond.log
+
+[cron]
+recipe = slapos.cookbook:cron
+dcrond-binary = ${dcron:location}/sbin/crond
+cron-entries = $${directory:cron-entries}
+crontabs = $${directory:crontabs}
+cronstamps = $${directory:cronstamps}
+catcher = $${cron-simplelogger:wrapper}
+binary = $${directory:service}/crond
+
+[cron-entry-logrotate]
+<= cron
+recipe = slapos.cookbook:cron.d
+name = logrotate
+frequency = 0 0 * * *
+command = $${logrotate:wrapper}
+
+
+# Check promises
+[smtp-port-promise]
+recipe = slapos.cookbook:check_port_listening
+path = $${directory:promise}/smtp-port-promise
+hostname = $${instance-parameter:ipv6-random}
+port = $${instance-parameter:configuration.smtp-port}
+
+
+# Publish instance connection parameters
+# Note: Parameters of slaves are published in the reverse-proxy recipe
+[publish-connection-parameter]
+recipe = slapos.cookbook:publish
+ipv4 = $${instance-parameter:ipv4-random}
+ipv6 = $${instance-parameter:ipv6-random}
+

@@ -18,9 +18,24 @@
       "minimum": 1,
       "maximum": 80
     },
-  
-  
-    "nbd-ip": {
+    "disk-type": {
+      "title": "Disk type",
+      "description": "Type of QEMU disk drive.",
+      "type": "string",
+      "default": "virtio",
+      "enum": ["ide", "scsi", "sd", "mtd", "floppy", "pflash", "virtio"]
+    },
+
+    "cpu-count": {
+      "title": "CPU count",
+      "description": "Number of CPU cores.",
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 8
+    },
+
+
+    "nbd-host": {
       "title": "NBD hostname",
       "description": "hostname (or IP) of the NBD server containing the boot image.",
       "type": "string",
@@ -35,8 +50,22 @@
       "minimum": 1,
       "maximum": 65535
     },
-  
-  
+
+    "nbd2-host": {
+      "title": "Second NBD hostname",
+      "description": "hostname (or IP) of the second NBD server (containing drivers for example).",
+      "type": "string",
+      "format": ["host-name", "ip-address", "ipv6"]
+    },
+    "nbd2-port": {
+      "title": "Second NBD port",
+      "description": "Port of the second NBD server containing the boot image.",
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 65535
+    },
+
+
     "frontend-instance-guid": {
       "title": "Frontend Instance ID",
       "description": "Unique identifier of the frontend instance, like \"SOFTINST-11031\".",

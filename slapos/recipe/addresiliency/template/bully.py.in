@@ -8,6 +8,7 @@ import sys
 
 sys.path[:] = %(syspath)s
 
+import slapos
 from slapos import slap as slapmodule
 
 port = 50000
@@ -37,9 +38,11 @@ def rename_broken_and_stop():
     slap.initializeConnection('%(server_url)s',
                               '%(key_file)s',
                               '%(cert_file)s')
-    computer_partition = slap.registerComputerPartition('%(computer_id)s',
-                                                        '%(partition_id)s')
-    broken = computer_partition.request('%(software)s', 'frozen', '%(namebase)s0')
+    computer_partition = slap.registerComputerPartition(computer_guid='%(computer_id)s',
+                                                        partition_id='%(partition_id)s')
+    broken = computer_partition.request(software_release='%(software)s',
+                                        software_type='frozen',
+                                        partition_reference='%(namebase)s0')
 
     broken.rename('broken-%%s' %% (time.strftime("%%d-%%b_%%H:%%M:%%S", time.gmtime())))
     broken.stopped()

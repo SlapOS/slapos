@@ -39,7 +39,6 @@ grep = {{ grep_location }}
 imagemagick = {{ imagemagick_location }}
 librsvg = {{ librsvg_location }}
 mariadb = {{ mariadb_location }}
-pdftk = {{ pdftk_location }}
 sed = {{ sed_location }}
 tesseract = {{ tesseract_location }}
 w3m = {{ w3m_location }}
@@ -129,7 +128,6 @@ librsvg = {{ librsvg_location }}
 logrotate = {{ logrotate_location }}
 mariadb = {{ mariadb_location }}
 openssl = {{ openssl_location }}
-pdftk = {{ pdftk_location }}
 poppler = {{ poppler_location }}
 sed = {{ sed_location }}
 tesseract = {{ tesseract_location }}
@@ -159,7 +157,6 @@ extra-context =
     key logrotate_location dynamic-template-zope-parameters:logrotate
     key mariadb_location dynamic-template-zope-parameters:mariadb
     key openssl_location dynamic-template-zope-parameters:openssl
-    key pdftk_location dynamic-template-zope-parameters:pdftk
     key poppler_location dynamic-template-zope-parameters:poppler
     key sed_location dynamic-template-zope-parameters:sed
     key tesseract_location dynamic-template-zope-parameters:tesseract
@@ -187,11 +184,30 @@ extra-context =
     key template_zope dynamic-template-zope:rendered
     key local_bt5_repository template-erp5-single-parameters:local_bt5_repository
 
+[dynamic-template-cluster-parameters]
+local-bt5-repository = {{ local_bt5_repository }}
+
+[dynamic-template-cluster]
+< = jinja2-template-base
+template = {{ template_erp5_cluster }}
+filename = instance-erp5-cluster.cfg
+extra-context =
+    key local_bt5_repository dynamic-template-cluster-parameters:local-bt5-repository
+# Must match the key id in [switch-softwaretype] which uses this section.
+# XXX: it is dangerous to use buildout-style expansion in jinja context declaration
+    raw software_type ${:software-type}
+software-type = cluster
+
+# BBB: use "cluster" software type instead
+[dynamic-template-production]
+< = dynamic-template-cluster
+software-type = production
+
 [switch-softwaretype]
 recipe = slapos.cookbook:softwaretype
 default = ${template-erp5-single:rendered}
-production = {{ template_erp5_cluster }}
-cluster = {{ template_erp5_cluster }}
+production = ${dynamic-template-production:rendered}
+cluster = ${dynamic-template-cluster:rendered}
 kumofs = {{ template_kumofs }}
 memcached = {{ template_memcached }}
 cloudooo = ${dynamic-template-cloudooo:rendered}

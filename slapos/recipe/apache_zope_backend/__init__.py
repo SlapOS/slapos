@@ -29,61 +29,71 @@ import pkg_resources
 
 class Recipe(GenericBaseRecipe):
   def install(self):
-    path_list = []
-    ip = self.options['ip']
-    port = self.options['port']
-    backend = self.options['backend']
-
-    apache_conf = dict()
+    try:
+      backend_list = self.options['backend-list']
+    except KeyError:
+      backend_list = [(self.options['port'], self.options['backend'])]
 
     scheme = self.options['scheme']
     if scheme == 'http':
       required_path_list = []
-      apache_conf['ssl_snippet'] = ''
+      ssl_enable = ssl_snippet = ''
     elif scheme == 'https':
       key = self.options['key-file']
       certificate = self.options['cert-file']
       required_path_list = [key, certificate]
-      apache_conf['key'] = key
-      apache_conf['certificate'] = certificate
-      apache_conf['ssl_session_cache'] = self.options['ssl-session-cache']
-      apache_conf['ssl_snippet'] = pkg_resources.resource_string(__name__,
-          'template/snippet.ssl.in') % apache_conf
+      ssl_snippet = self.substituteTemplate(self.getTemplateFilename('snippet.ssl.in'), {
+        'key': key,
+        'certificate': certificate,
+        'ssl_session_cache': self.options['ssl-session-cache'],
+      })
       if 'ssl-authentication' in self.options and self.optionIsTrue(
           'ssl-authentication'):
-        apache_conf['ssl_snippet'] += pkg_resources.resource_string(__name__,
-          'template/snippet.ssl.ca.in') % dict(
-            ca_certificate=self.options['ssl-authentication-certificate'],
-            ca_crl=self.options['ssl-authentication-crl']
-          )
+        ssl_snippet += self.substituteTemplate(self.getTemplateFilename('snippet.ssl.ca.in'), {
+          'ca_certificate': self.options['ssl-authentication-certificate'],
+          'ca_crl': self.options['ssl-authentication-crl'],
+        })
+      ssl_enable = 'SSLEngine on'
     else:
-      raise ValueError, "Unsupported scheme %s" % scheme
+      raise ValueError('Unsupported scheme %s' % scheme)
 
-    access_control_string = self.options['access-control-string']
-    apache_conf['pid_file'] = self.options['pid-file']
-    apache_conf['lock_file'] = self.options['lock-file']
-    apache_conf['ip'] = ip
-    apache_conf['port'] = port
-    apache_conf['server_admin'] = 'admin@'
-    apache_conf['error_log'] = self.options['error-log']
-    apache_conf['access_log'] = self.options['access-log']
-    apache_conf['server_name'] = '%s' % apache_conf['ip']
-    apache_conf['path'] = '/'
-    apache_conf['access_control_string'] = access_control_string
-    apache_conf['rewrite_rule'] = "RewriteRule (.*) %s%s$1 [L,P]" % (backend,
-      self.options.get('backend-path', '/'))
-    apache_conf_string = pkg_resources.resource_string(__name__,
-          'template/apache.zope.conf.in') % apache_conf
-    apache_config_file = self.createFile(self.options['configuration-file'],
-      apache_conf_string)
-    path_list.append(apache_config_file)
-    wrapper = self.createPythonScript(self.options['wrapper'], __name__ +
-      '.apache.runApache', [
-            dict(
-              required_path_list=required_path_list,
-              binary=self.options['apache-binary'],
-              config=apache_config_file
-            )
-          ])
-    path_list.append(wrapper)
-    return path_list
+    ip = self.options['ip']
+    backend_path = self.options.get('backend-path', '/')
+    vhost_template_name = self.getTemplateFilename('vhost.in')
+    apache_config_file = self.createFile(
+      self.options['configuration-file'],
+      self.substituteTemplate(
+        self.getTemplateFilename('apache.zope.conf.in'),
+        {
+          'path': '/',
+          'server_admin': 'admin@',
+          'pid_file': self.options['pid-file'],
+          'lock_file': self.options['lock-file'],
+          'error_log': self.options['error-log'],
+          'access_log': self.options['access-log'],
+          'access_control_string': self.options['access-control-string'],
+          'ssl_snippet': ssl_snippet,
+          'vhosts': ''.join(self.substituteTemplate(vhost_template_name, {
+            'ip': ip,
+            'port': port,
+            'backend': backend,
+            'backend-path': backend_path,
+            'ssl_enable': ssl_enable,
+          }) for (port, backend) in backend_list),
+        },
+      )
+    )
+    return [
+      apache_config_file,
+      self.createPythonScript(
+        self.options['wrapper'],
+        __name__ + '.apache.runApache',
+        [
+          {
+            'required_path_list': required_path_list,
+            'binary': self.options['apache-binary'],
+            'config': apache_config_file,
+          },
+        ],
+      ),
+    ]

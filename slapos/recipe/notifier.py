@@ -31,62 +31,76 @@ from slapos.recipe.librecipe import GenericBaseRecipe
 class Recipe(GenericBaseRecipe):
 
   def install(self):
-    commandline = [self.options['server-binary']]
-    commandline.extend(['--callbacks', self.options['callbacks']])
-    commandline.extend(['--feeds', self.options['feeds']])
-    commandline.extend(['--equeue-socket', self.options['equeue-socket']])
-    commandline.append(self.options['host'])
-    commandline.append(self.options['port'])
+    options = self.options
+    script = self.createWrapper(name=options['wrapper'],
+                                command=options['server-binary'],
+                                parameters=[
+                                   '--callbacks', options['callbacks'],
+                                   '--feeds', options['feeds'],
+                                   '--equeue-socket', options['equeue-socket'],
+                                   options['host'], options['port']
+                                   ],
+                                comments=[
+                                    '',
+                                    'Upon receiving a notification, execute the callback(s).',
+                                    ''])
+    return [script]
 
-    return [self.createPythonScript(self.options['wrapper'],
-                                    'slapos.recipe.librecipe.execute.execute',
-                                    commandline)]
 
 class Callback(GenericBaseRecipe):
 
   def createCallback(self, notification_id, callback):
     callback_id = sha512(notification_id).hexdigest()
-    callback = self.createFile(os.path.join(self.options['callbacks'],
-                                            callback_id),
-                               callback)
-    return callback
+
+    filepath = os.path.join(self.options['callbacks'], callback_id)
+    self.addLineToFile(filepath, callback)
+    return filepath
 
   def install(self):
+    # XXX this path is returned multiple times, one for each callback that has been added.
     return [self.createCallback(self.options['on-notification-id'],
                                 self.options['callback'])]
 
 class Notify(GenericBaseRecipe):
 
-  def createNotifier(self, notifier_binary, executable, wrapper, **kwargs):
-    if not os.path.exists(kwargs['log']):
+  def createNotifier(self, notifier_binary, wrapper, executable,
+                     log, title, notification_url, feed_url):
+
+    if not os.path.exists(log):
       # Just a touch
-      open(kwargs['log'], 'w').close()
+      open(log, 'w').close()
 
-    commandline = [notifier_binary,
-                   '-l', kwargs['log'],
-                   '--title', kwargs['title'],
-                   '--feed', kwargs['feed_url'],
-                   '--notification-url']
+    parameters = [
+            '-l', log,
+            '--title', title,
+            '--feed', feed_url,
+            '--notification-url',
+            ]
+    parameters.extend(notification_url.split(' '))
+    parameters.extend(['--executable', executable])
 
-    commandline.extend(kwargs['notification_url'].split(' '))
-    commandline.extend(['--executable', executable])
+    return self.createWrapper(name=wrapper,
+                              command=notifier_binary,
+                              parameters=parameters,
+                              comments=[
+                                  '',
+                                  'Call an executable and send notification(s).',
+                                  ''])
 
-    return self.createPythonScript(wrapper,
-                                   'slapos.recipe.librecipe.execute.execute',
-                                   [str(i) for i in commandline])
 
   def install(self):
-    feedurl = self.unparseUrl(scheme='http', host=self.options['host'],
-                              port=self.options['port'],
-                              path='/get/%s' % self.options['name'])
+    feed_url = self.unparseUrl(scheme='http', host=self.options['host'],
+                               port=self.options['port'],
+                               path='/get/%s' % self.options['name'])
 
-    script = self.createNotifier(
-      self.options['notifier-binary'],
-      wrapper=self.options['wrapper'],
-      executable=self.options['executable'],
-      log=os.path.join(self.options['feeds'], self.options['name']),
-      title=self.options['title'],
-      notification_url=self.options['notify'],
-      feed_url=feedurl,
-    )
+    log = os.path.join(self.options['feeds'], self.options['name'])
+
+    options = self.options
+    script = self.createNotifier(notifier_binary=options['notifier-binary'],
+                                 wrapper=options['wrapper'],
+                                 executable=options['executable'],
+                                 log=log,
+                                 title=options['title'],
+                                 notification_url=options['notify'],
+                                 feed_url=feed_url)
     return [script]

@@ -28,6 +28,7 @@ from slapos.recipe.librecipe import BaseSlapRecipe
 import os
 import pkg_resources
 import hashlib
+import operator
 import sys
 import zc.buildout
 import zc.recipe.egg
@@ -43,6 +44,9 @@ class Recipe(BaseSlapRecipe):
         'template/%s' % template_name)
 
   def _install(self):
+    # Define directory not defined in deprecated lib
+    self.service_directory = os.path.join(self.etc_directory, 'service')
+
     # Check for mandatory arguments
     frontend_domain_name = self.parameter_dict.get("domain")
     if frontend_domain_name is None:
@@ -69,12 +73,32 @@ class Recipe(BaseSlapRecipe):
 
     rewrite_rule_list = []
     rewrite_rule_zope_list = []
+    rewrite_rule_zope_path_list = []
     slave_dict = {}
     service_dict = {}
 
+    # Sort slave instance by reference to avoid most security issues
+    slave_instance_list = sorted(slave_instance_list,
+                                 key=operator.itemgetter('slave_reference'))
+
+    # dict of used domains, only used to track duplicates
+    domain_dict = {}
+
     for slave_instance in slave_instance_list:
+      # Sanitize inputs
       backend_url = slave_instance.get("url", None)
       reference = slave_instance.get("slave_reference")
+
+      if slave_instance.haskey("enable_cache"):
+        enable_cache = slave_instance.get("enable_cache", "").upper() in ('1', 'TRUE')
+      else:
+        enable_cache = False
+
+      if slave_instance.haskey("type"):
+        slave_type = slave_instance.get("type", "").lower()
+      else:
+        slave_type = None
+
       # Set scheme (http? https?)
       # Future work may allow to choose between http and https (or both?)
       scheme = 'http://'
@@ -97,18 +121,26 @@ class Recipe(BaseSlapRecipe):
         domain = "%s.%s" % (reference.replace("-", "").lower(),
             frontend_domain_name)
 
+      if domain_dict.get(domain):
+        # This domain already has been processed, skip this new one
+        continue
+      else:
+        domain_dict[domain] = True
+
       # Define the URL where the instance will be available
       # WARNING: we use default ports (443, 80) here.
       slave_dict[reference] = "%s%s/" % (scheme, domain)
 
       # Check if we want varnish+stunnel cache.
-      if slave_instance.get("enable_cache", "").upper() in ('1', 'TRUE'):
-        # XXX-Cedric : need to refactor to clean code? (to many variables)
-        rewrite_rule = self.configureVarnishSlave(
-            base_varnish_port, backend_url, reference, service_dict, domain)
-        base_varnish_port += 2
-      else:
-        rewrite_rule = "%s %s" % (domain, backend_url)
+      #if enable_cache:
+      #  # XXX-Cedric : need to refactor to clean code? (to many variables)
+      #  rewrite_rule = self.configureVarnishSlave(
+      #      base_varnish_port, backend_url, reference, service_dict, domain)
+      #  base_varnish_port += 2
+      #else:
+      #  rewrite_rule = "%s %s" % (domain, backend_url)
+      # Temporary forbid activation of cache until it is properly tested
+      rewrite_rule = "%s %s" % (domain, backend_url)
 
       # Finally, if successful, we add the rewrite rule to our list of rules
       if rewrite_rule:
@@ -116,8 +148,11 @@ class Recipe(BaseSlapRecipe):
         # rule structure.
         # So we will have one RewriteMap for normal websites, and one
         # RewriteMap for Zope Virtual Host Monster websites.
-        if slave_instance.get("type", "").lower() in ['zope']:
+        if slave_type in ['zope']:
           rewrite_rule_zope_list.append(rewrite_rule)
+          # For Zope, we have another dict containing the path e.g '/erp5/...
+          rewrite_rule_path = "%s %s" % (domain, slave_instance.get('path', ''))
+          rewrite_rule_zope_path_list.append(rewrite_rule_path)
         else:
           rewrite_rule_list.append(rewrite_rule)
 
@@ -152,6 +187,7 @@ class Recipe(BaseSlapRecipe):
         name=frontend_domain_name,
         rewrite_rule_list=rewrite_rule_list,
         rewrite_rule_zope_list=rewrite_rule_zope_list,
+        rewrite_rule_zope_path_list=rewrite_rule_zope_path_list,
         key=key, certificate=certificate)
 
     # Send connection informations about each slave
@@ -160,9 +196,12 @@ class Recipe(BaseSlapRecipe):
           "instance: %s" % reference)
       try:
         connection_dict = {
-           'frontend_ipv6_address': self.getGlobalIPv6Address(),
-           'frontend_ipv4_address': self.getLocalIPv4Address(),
-           'site_url': url
+            # Send the public IPs (if possible) so that user knows what IP
+            # to bind to its domain name
+            'frontend_ipv6_address': self.getGlobalIPv6Address(),
+            'frontend_ipv4_address': self.parameter_dict.get("public-ipv4",
+                self.getLocalIPv4Address()),
+            'site_url': url,
         }
         self.setConnectionDict(connection_dict, reference)
       except:
@@ -289,7 +328,7 @@ class Recipe(BaseSlapRecipe):
    self._createDirectory(crontabs)
    wrapper = zc.buildout.easy_install.scripts([('crond',
      'slapos.recipe.librecipe.execute', 'execute')], self.ws, sys.executable,
-     self.wrapper_directory, arguments=[
+     self.service_directory, arguments=[
        self.options['dcrond_binary'].strip(), '-s', cron_d, '-c', crontabs,
        '-t', timestamps, '-f', '-l', '5', '-M', catcher]
      )[0]
@@ -346,10 +385,13 @@ class Recipe(BaseSlapRecipe):
     )
     self._writeFile(openssl_configuration, pkg_resources.resource_string(
       __name__, 'template/openssl.cnf.ca.in') % config)
+
+    # XXX-Cedric: Don't use this, but use slapos.recipe.certificate_authority
+    #             from the instance profile.
     self.path_list.extend(zc.buildout.easy_install.scripts([
       ('certificate_authority', __name__ + '.certificate_authority',
          'runCertificateAuthority')],
-        self.ws, sys.executable, self.wrapper_directory, arguments=[dict(
+        self.ws, sys.executable, self.service_directory, arguments=[dict(
           openssl_configuration=openssl_configuration,
           openssl_binary=self.options['openssl_binary'],
           certificate=os.path.join(self.ca_dir, 'cacert.pem'),
@@ -382,6 +424,8 @@ class Recipe(BaseSlapRecipe):
         name + '.lock')
     apache_conf['document_root'] = os.path.join(self.data_root_directory,
         'htdocs')
+    apache_conf['instance_home'] = os.path.join(self.work_directory)
+    apache_conf['httpd_home'] = self.options['httpd_home']
     apache_conf['ip_list'] = ip_list
     apache_conf['port'] = port
     apache_conf['server_admin'] = 'admin@'
@@ -419,10 +463,11 @@ class Recipe(BaseSlapRecipe):
         "-f", config_file,
         "-a", varnish_config["port"], "-T", varnish_config["control_port"],
         "-s", varnish_config["storage"]]
-    environment = dict(PATH=self.options["binutils_directory"])
+    environment = dict(PATH="%s:%s" % (self.options["binutils_directory"],
+                                       os.environ.get('PATH')))
     wrapper = zc.buildout.easy_install.scripts([(name,
       'slapos.recipe.librecipe.execute', 'executee')], self.ws,
-      sys.executable, self.wrapper_directory, arguments=[varnish_argument_list,
+      sys.executable, self.service_directory, arguments=[varnish_argument_list,
       environment])[0]
     self.path_list.append(wrapper)
 
@@ -461,7 +506,7 @@ class Recipe(BaseSlapRecipe):
           stunnel_conf))
     wrapper = zc.buildout.easy_install.scripts([('stunnel',
       'slapos.recipe.librecipe.execute', 'execute_wait')], self.ws,
-      sys.executable, self.wrapper_directory, arguments=[
+      sys.executable, self.service_directory, arguments=[
         [self.options['stunnel_binary'].strip(), stunnel_conf_path],
         [certificate, key]]
       )[0]
@@ -470,8 +515,17 @@ class Recipe(BaseSlapRecipe):
 
   def installFrontendApache(self, ip_list, key, certificate, name,
                             port=4443, plain_http_port=8080,
-                            rewrite_rule_list=[], rewrite_rule_zope_list=[],
+                            rewrite_rule_list=None,
+                            rewrite_rule_zope_list=None,
+                            rewrite_rule_zope_path_list=None,
                             access_control_string=None):
+    if rewrite_rule_list is None:
+      rewrite_rule_list = []
+    if rewrite_rule_zope_list is None:
+      rewrite_rule_zope_list = []
+    if rewrite_rule_zope_path_list is None:
+      rewrite_rule_zope_path_list = []
+
     # Create htdocs, populate it with default 404 document
     htdocs_location = os.path.join(self.data_root_directory, 'htdocs')
     self._createDirectory(htdocs_location)
@@ -488,16 +542,23 @@ class Recipe(BaseSlapRecipe):
     self._createDirectory(cache_directory_location)
     self._createDirectory(mod_ssl_cache_location)
 
-    # Create "custom" apache configuration file if it does not exist.
-    # Note : This file won't be erased or changed when slapgrid is ran.
+    # Create "custom" apache configuration files if it does not exist.
+    # Note : Those files won't be erased or changed by slapgrid.
     # It can be freely customized by node admin.
     custom_apache_configuration_directory = os.path.join(
         self.data_root_directory, 'apache-conf.d')
     self._createDirectory(custom_apache_configuration_directory)
+    # First one is included in the end of the apache configuration file
     custom_apache_configuration_file_location = os.path.join(
         custom_apache_configuration_directory, 'apache_frontend.custom.conf')
-    f = open(custom_apache_configuration_file_location, 'a')
-    f.close()
+    if not os.path.exists(custom_apache_configuration_file_location):
+      open(custom_apache_configuration_file_location, 'w')
+    # Second one is included in the virtualhost of apache configuration file
+    custom_apache_virtual_configuration_file_location = os.path.join(
+        custom_apache_configuration_directory,
+        'apache_frontend.virtualhost.custom.conf')
+    if not os.path.exists(custom_apache_virtual_configuration_file_location):
+      open(custom_apache_virtual_configuration_file_location, 'w')
 
     # Create backup of custom apache configuration
     backup_path = self.createBackupDirectory('custom_apache_conf_backup')
@@ -512,9 +573,14 @@ class Recipe(BaseSlapRecipe):
     # Create configuration file and rewritemaps
     apachemap_name = "apachemap.txt"
     apachemapzope_name = "apachemapzope.txt"
+    apachemapzopepath_name = "apachemapzopepath.txt"
+
     self.createConfigurationFile(apachemap_name, "\n".join(rewrite_rule_list))
     self.createConfigurationFile(apachemapzope_name,
         "\n".join(rewrite_rule_zope_list))
+    self.createConfigurationFile(apachemapzopepath_name,
+        "\n".join(rewrite_rule_zope_path_list))
+
     apache_conf = self._getApacheConfigurationDict(name, ip_list, port)
     apache_conf['ssl_snippet'] = self.substituteTemplate(
         self.getTemplateFilename('apache.ssl-snippet.conf.in'),
@@ -532,16 +598,22 @@ class Recipe(BaseSlapRecipe):
 
     path = self.substituteTemplate(
         self.getTemplateFilename('apache.conf.path-protected.in'),
-        dict(path='/', access_control_string='none'))
+        dict(path='/',
+             access_control_string='none',
+             document_root=apache_conf['document_root'],
+        )
+    )
 
     apache_conf.update(**dict(
       path_enable=path,
       apachemap_path=os.path.join(self.etc_directory, apachemap_name),
       apachemapzope_path=os.path.join(self.etc_directory, apachemapzope_name),
+      apachemapzopepath_path=os.path.join(self.etc_directory, apachemapzopepath_name),
       apache_domain=name,
       https_port=port,
       plain_http_port=plain_http_port,
       custom_apache_conf=custom_apache_configuration_file_location,
+      custom_apache_virtualhost_conf=custom_apache_virtual_configuration_file_location,
     ))
 
     apache_conf_string = self.substituteTemplate(
@@ -553,7 +625,7 @@ class Recipe(BaseSlapRecipe):
 
     self.path_list.extend(zc.buildout.easy_install.scripts([(
       'frontend_apache', 'slapos.recipe.erp5.apache', 'runApache')], self.ws,
-          sys.executable, self.wrapper_directory, arguments=[
+          sys.executable, self.service_directory, arguments=[
             dict(
               required_path_list=[key, certificate],
               binary=self.options['httpd_binary'],

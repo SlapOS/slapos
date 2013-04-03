@@ -1,0 +1,51 @@
+[buildout]
+extends = {{ master_cfg }}
+parts += neo-storage-run-wrapper
+
+[mariadb-instance]
+recipe = slapos.cookbook:generic.mysql
+user = user
+database = neo
+
+conf-file = ${directory:etc}/mariadb.cnf
+# No networking (ip & port options)
+data-directory = ${directory:srv_mariadb}
+pid-file = ${directory:var_run}/mariadb.pid
+socket = ${directory:var_run}/mariadb.sock
+error-log = ${directory:log}/mariadb_error.log
+slow-query-log = ${directory:log}/mariadb_slowquery.log
+
+wrapper = ${directory:etc_run}/mariadb
+update-wrapper = ${directory:etc_run}/mariadb_update
+mysql-base-directory = {{ mariadb_location }}
+mysql-binary = {{ mariadb_location }}/bin/mysql
+mysql-install-binary = {{ mariadb_location }}/scripts/mysql_install_db
+mysql-upgrade-binary = {{ mariadb_location }}/bin/mysql_upgrade
+mysqld-binary = {{ mariadb_location }}/bin/mysqld
+
+mroonga =
+
+[neo-storage]
+recipe = slapos.cookbook:neoppod.storage
+binary = {{ bin_directory }}/neostorage
+wrapper = ${directory:bin}/neostorage
+logfile = ${directory:log}/neostorage.log
+ip = [${slap-network-information:global-ipv6}]
+cluster = ${slap-parameter:cluster}
+masters = ${slap-parameter:masters}
+verbose = ${slap-parameter:verbose}
+database-adapter = MySQL
+database-parameters = ${mariadb-instance:user}:${mariadb-instance:password}@${mariadb-instance:database}${mariadb-instance:socket}
+wait-database = 60
+
+[neo-storage-run-wrapper]
+recipe = slapos.cookbook:symbolic.link
+target-directory = ${directory:etc_run}
+link-binary = ${neo-storage:wrapper}
+
+[directory]
+etc = ${buildout:directory}/etc
+var = ${buildout:directory}/var
+etc_run =  ${:etc}/run
+var_run =  ${:var}/run
+srv_mariadb = ${buildout:directory}/srv/mariadb

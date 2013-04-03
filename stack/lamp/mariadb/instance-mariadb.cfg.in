@@ -1,0 +1,259 @@
+[buildout]
+parts =
+  urls
+  mariadb
+  stunnel
+  certificate-authority
+  ca-stunnel
+  logrotate
+  logrotate-entry-mariadb
+  logrotate-entry-stunnel
+  logrotate-entry-cron
+  cron
+  cron-entry-logrotate
+  slapmonitor
+  slapmonitor-xml
+
+# Define egg directories to be the one from Software Release
+# (/opt/slapgrid/...)
+eggs-directory = ${buildout:eggs-directory}
+develop-eggs-directory = ${buildout:develop-eggs-directory}
+offline = true
+
+
+#----------------
+#--
+#-- Creation of all needed directories.
+
+[rootdirectory]
+recipe = slapos.cookbook:mkdirectory
+etc = $${buildout:directory}/etc
+var = $${buildout:directory}/var
+srv = $${buildout:directory}/srv
+bin = $${buildout:directory}/bin
+
+[basedirectory]
+recipe = slapos.cookbook:mkdirectory
+log = $${rootdirectory:var}/log
+services = $${rootdirectory:etc}/service
+run = $${rootdirectory:var}/run
+script = $${rootdirectory:etc}/script
+backup = $${rootdirectory:srv}/backup
+promises = $${rootdirectory:etc}/promise
+
+[directory]
+recipe = slapos.cookbook:mkdirectory
+cron-entries = $${rootdirectory:etc}/cron.d
+crontabs = $${rootdirectory:etc}/crontabs
+cronstamps = $${rootdirectory:etc}/cronstamps
+ca-dir = $${rootdirectory:srv}/ssl
+mariadb-data = $${rootdirectory:srv}/mariadb
+logrotate-entries = $${rootdirectory:etc}/logrotate.d
+logrotate-backup = $${basedirectory:backup}/logrotate
+report = $${rootdirectory:etc}/report
+stunnel-conf = $${rootdirectory:etc}/stunnel
+xml-report = $${rootdirectory:var}/xml_report
+
+
+#----------------
+#--
+#-- Deploy cron.
+
+[cron]
+recipe = slapos.cookbook:cron
+dcrond-binary = ${dcron:location}/sbin/crond
+cron-entries = $${directory:cron-entries}
+crontabs = $${directory:crontabs}
+cronstamps = $${directory:cronstamps}
+catcher = $${cron-simplelogger:wrapper}
+binary = $${basedirectory:services}/crond
+
+[cron-simplelogger]
+recipe = slapos.cookbook:simplelogger
+wrapper = $${rootdirectory:bin}/cron_simplelogger
+log = $${basedirectory:log}/crond.log
+
+
+#----------------
+#--
+#-- Deploy logrotate.
+
+[cron-entry-logrotate]
+<= cron
+recipe = slapos.cookbook:cron.d
+name = logrotate
+frequency = 0 0 * * *
+command = $${logrotate:wrapper}
+
+[logrotate]
+recipe = slapos.cookbook:logrotate
+# Binaries
+logrotate-binary = ${logrotate:location}/usr/sbin/logrotate
+gzip-binary = ${gzip:location}/bin/gzip
+gunzip-binary = ${gzip:location}/bin/gunzip
+# Directories
+wrapper = $${rootdirectory:bin}/logrotate
+conf = $${rootdirectory:etc}/logrotate.conf
+logrotate-entries = $${directory:logrotate-entries}
+backup = $${directory:logrotate-backup}
+state-file = $${rootdirectory:srv}/logrotate.status
+
+[logrotate-entry-mariadb]
+<= logrotate
+recipe = slapos.cookbook:logrotate.d
+name = mariadb
+log = $${mariadb:error-log}
+frequency = daily
+rotate-num = 30
+post = $${mariadb:logrotate-post}
+sharedscripts = true
+notifempty = true
+create = true
+
+[logrotate-entry-stunnel]
+<= logrotate
+recipe = slapos.cookbook:logrotate.d
+name = stunnel
+log = $${stunnel:log-file}
+frequency = daily
+rotate-num = 30
+notifempty = true
+create = true
+post = $${stunnel:post-rotate-script}
+
+[logrotate-entry-cron]
+<= logrotate
+recipe =slapos.cookbook:logrotate.d
+name = crond
+log = $${cron-simplelogger:log}
+frequency = daily
+rotate-num = 30
+notifempty = true
+create = true
+
+#----------------
+#--
+#-- Deploy stunnel.
+
+[stunnel]
+recipe = slapos.cookbook:stunnel
+stunnel-binary = ${stunnel:location}/bin/stunnel
+wrapper = $${rootdirectory:bin}/stunnel
+log-file = $${basedirectory:log}/stunnel.log
+config-file = $${directory:stunnel-conf}/stunnel.conf
+key-file = $${directory:stunnel-conf}/stunnel.key
+cert-file = $${directory:stunnel-conf}/stunnel.crt
+pid-file = $${basedirectory:run}/stunnel.pid
+local-host = $${mariadb:ip}
+local-port = $${mariadb:port}
+remote-host = $${slap-network-information:global-ipv6}
+remote-port = 6446
+client = false
+post-rotate-script = $${rootdirectory:bin}/stunnel_post_rotate
+
+
+#----------------
+#--
+#-- Certificate stuff.
+
+[certificate-authority]
+recipe = slapos.cookbook:certificate_authority
+openssl-binary = ${openssl:location}/bin/openssl
+ca-dir = $${directory:ca-dir}
+requests-directory = $${cadirectory:requests}
+wrapper = $${basedirectory:services}/ca
+ca-private = $${cadirectory:private}
+ca-certs = $${cadirectory:certs}
+ca-newcerts = $${cadirectory:newcerts}
+ca-crl = $${cadirectory:crl}
+
+[cadirectory]
+recipe = slapos.cookbook:mkdirectory
+requests = $${directory:ca-dir}/requests/
+private = $${directory:ca-dir}/private/
+certs = $${directory:ca-dir}/certs/
+newcerts = $${directory:ca-dir}/newcerts/
+crl = $${directory:ca-dir}/crl/
+
+[ca-stunnel]
+<= certificate-authority
+recipe = slapos.cookbook:certificate_authority.request
+executable = $${stunnel:wrapper}
+wrapper = $${basedirectory:services}/stunnel
+key-file = $${stunnel:key-file}
+cert-file = $${stunnel:cert-file}
+
+
+#----------------
+#--
+#-- Creates a MariaDB configuration file, and a database.
+
+[mariadb]
+recipe = slapos.cookbook:mysql
+
+# Options
+recovering = false
+user = user
+password = $${mysql-password:passwd}
+port = 33060
+ip = $${slap-network-information:local-ipv4}
+database = db
+
+# Paths
+wrapper = $${basedirectory:services}/mariadb
+update-wrapper = $${basedirectory:services}/mariadb_update
+logrotate-post = $${rootdirectory:bin}/mariadb_post_logrotate
+data-directory = $${directory:mariadb-data}
+pid-file = $${basedirectory:run}/mariadb.pid
+socket = $${basedirectory:run}/mariadb.sock
+error-log = $${basedirectory:log}/mariadb_error.log
+conf-file = $${rootdirectory:etc}/mariadb.cnf
+promise = $${basedirectory:promises}/mysql
+
+# Binary information
+mysql-base-directory = ${mariadb:location}
+mysql-binary = ${mariadb:location}/bin/mysql
+mysql-install-binary = ${mariadb:location}/scripts/mysql_install_db
+mysql-upgrade-binary = ${mariadb:location}/bin/mysql_upgrade
+mysqld-binary = ${mariadb:location}/bin/mysqld
+
+[mysql-password]
+recipe = slapos.cookbook:generate.password
+storage-path = $${rootdirectory:etc}/.passwd
+bytes = 4
+
+
+#----------------
+#--
+#-- Deploy slapmonitor.
+
+[slapmonitor]
+recipe = slapos.cookbook:slapmonitor
+pid-file = $${basedirectory:run}/mariadb.pid
+database-path = $${basedirectory:log}/slapmonitor.db
+slapmonitor-path = ${buildout:bin-directory}/slapmonitor
+path = $${basedirectory:services}/slapmonitor
+
+[slapmonitor-xml]
+recipe = slapos.cookbook:slapmonitor-xml
+database-path = $${basedirectory:log}/slapmonitor.db
+slapmonitor-xml-path = ${buildout:bin-directory}/slapmonitor-xml
+path = $${directory:report}/slapmonitor-xml
+
+
+#----------------
+#--
+#-- Publish instance parameters.
+
+[urls]
+recipe = slapos.cookbook:publish
+url = mysqls://$${mariadb:user}:$${mariadb:password}@[$${stunnel:remote-host}]:$${stunnel:remote-port}/$${mariadb:database}
+ip = $${slap-network-information:global-ipv6}
+
+
+[slap-parameter]
+#Default  value if no ssh parameters specified
+logbox-ip =
+logbox-port =
+logbox-user =
+logbox-passwd =

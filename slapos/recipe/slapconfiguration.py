@@ -25,6 +25,7 @@
 #
 ##############################################################################
 import slapos.slap
+from slapos.recipe.librecipe import unwrap
 from ConfigParser import RawConfigParser
 from netaddr import valid_ipv4, valid_ipv6
 
@@ -64,6 +65,10 @@ class Recipe(object):
       Set of IPv4 addresses.
     ipv6
       Set of IPv6 addresses.
+    ipv4-random
+      One of the IPv4 addresses.
+    ipv6-random
+      One of the IPv6 addresses.
     tap
       Set of TAP interfaces.
     configuration
@@ -91,9 +96,21 @@ class Recipe(object):
           options['partition'],
       ).getInstanceParameterDict()
       # XXX: those are not partition parameters, strictly speaking.
-      # Discard them, and make them available as separate section keys.
-      options['slap-software-type'] = parameter_dict.pop(
-          'slap_software_type')
+      # Make them available as individual section keys.
+      for his_key in (
+                  'slap_software_type',
+                  'slap_computer_partition_id',
+                  'slap_computer_id',
+                  'slap_software_release_url',
+                  'slave_instance_list',
+                  'timestamp',
+              ):
+          try:
+              value = parameter_dict.pop(his_key)
+          except KeyError:
+              pass
+          else:
+              options[his_key.replace('_', '-')] = value
       ipv4_set = set()
       v4_add = ipv4_set.add
       ipv6_set = set()
@@ -109,12 +126,31 @@ class Recipe(object):
           # XXX: emit warning on unknown address type ?
       options['ipv4'] = ipv4_set
       options['ipv6'] = ipv6_set
+
+      # also export single ip values for those recipes that don't support sets.
+      if ipv4_set:
+          options['ipv4-random'] = list(ipv4_set)[0]
+      if ipv6_set:
+          options['ipv6-random'] = list(ipv6_set)[0]
+
       options['tap'] = tap_set
-      options['configuration'] = parameter_dict
+      parameter_dict = self._expandParameterDict(options, parameter_dict)
       match = self.OPTCRE_match
       for key, value in parameter_dict.iteritems():
           if match(key) is not None:
               continue
           options['configuration.' + key] = value
 
+  def _expandParameterDict(self, options, parameter_dict):
+      options['configuration'] = parameter_dict
+      return parameter_dict
+
   install = update = lambda self: []
+
+class Serialised(Recipe):
+  def _expandParameterDict(self, options, parameter_dict):
+      options['configuration'] = parameter_dict = unwrap(parameter_dict)
+      if isinstance(parameter_dict, dict):
+          return parameter_dict
+      else:
+          return {}

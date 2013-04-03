@@ -5,13 +5,11 @@ $i = 1;
 /* Server parameters */
 $cfg['Servers'][$i]['host'] = 'Put here mysql host template key';
 $cfg['Servers'][$i]['port'] = 'Put here mysql port template key';
+$cfg['Servers'][$i]['only_db'] = 'Put here mysql database template key';
+
 /* Authentication type */
 $cfg['Servers'][$i]['auth_type'] = 'cookie';
-$cfg['Servers'][$i]['user'] = '';
-$cfg['Servers'][$i]['connect_type'] = 'tcp';
-$cfg['Servers'][$i]['compress'] = false;
-/* Select mysqli if your server has it */
-$cfg['Servers'][$i]['extension'] = 'mysql';
+$cfg['Servers'][$i]['extension'] = 'mysqli';
 $cfg['Servers'][$i]['AllowNoPassword'] = false;
 
 /* rajk - for blobstreaming */
