@@ -21,7 +21,7 @@ dependency = $${apache-php:recipe}
 
 [gen-passwd]
 recipe = slapos.cookbook:generate.password
-storage-path = $${directories:srv}/drupal_passwd
+storage-path = $${rootdirectory:srv}/drupal_passwd
 bytes = 16
 
 
