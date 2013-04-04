@@ -28,5 +28,5 @@ bytes = 16
 [drupal-init]
 recipe = iw.recipe.cmd
 cmds =
-   $${drupal-init-base:drush-binary} install drush make --prepare-install build-openpublic.make DrupalOpenPublic
+   $${drupal-init-base:drush-binary} make --prepare-install build-openpublic.make DrupalOpenPublic
 
