@@ -247,7 +247,7 @@ path = $${directory:report}/slapmonitor-xml
 
 [urls]
 recipe = slapos.cookbook:publish
-url = mysqls://$${mariadb:user}:$${mariadb:password}@[$${stunnel:remote-host}]:$${stunnel:remote-port}/$${mariadb:database}
+url = mysqls://$${mariadb:user}:$${mariadb:password}@[$${mariadb:ip}]:$${maridb:port}/$${mariadb:database}
 ip = $${slap-network-information:global-ipv6}
 
 
