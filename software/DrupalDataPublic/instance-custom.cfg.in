@@ -27,6 +27,6 @@ bytes = 16
 
 [drupal-init]
 recipe = iw.recipe.cmd
-install_cmd =
+cmds =
    $${drupal-init-base:drush-binary} make build-datapublic.make DrupalDataPublic
 
