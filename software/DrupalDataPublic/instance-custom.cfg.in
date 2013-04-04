@@ -2,26 +2,27 @@
 
 [publish-drupal-admin-password]
 recipe = slapos.cookbook:publish
-drupal-admin-password = $${drupal-init:admin-password}
-
-
-#[drupal-init-datapublic]
-#recipe = cp.recipe.cmd
-#install_cmd =
-#   mkdir -m 700 ~/.ssh
-#   cp ${ssh-config:location}/ssh-config ~/.ssh/config
-#   ${apache-php:location}/bin/drush make ${datapublic:location}/datapublic.make $${rootdirectory:srv}/www
+drupal-admin-password = $${gen-passwd:passwd}
 
 
 [drupal-init]
-recipe = slapos.cookbook:drupal_init
-#dependencry = $${drupal-init-datapublic:recipe}
-drush-binary = ${apache-php:location}/bin/drush
-php-binary = ${apache-php:location}/bin/php
-settings-php = ${application-configuration:location}
-htdocs = $${rootdirectory:srv}/www
-admin-password = $${gen-passwd:passwd}
-dependency = $${apache-php:recipe}
+recipe = cp.recipe.cmd
+install_cmd =
+   mkdir -m 700 ~/.ssh
+   cp ${ssh-config:location}/ssh-config ~/.ssh/config
+   cp -ax ${datapublic:location} $${rootdirectory:srv}/www/profiles/datapublic
+
+#   ${apache-php:location}/bin/drush make ${datapublic:location}/datapublic.make $${rootdirectory:srv}/www
+
+
+#[drupal-init]
+#recipe = slapos.cookbook:drupal_init
+#drush-binary = ${apache-php:location}/bin/drush
+#php-binary = ${apache-php:location}/bin/php
+#settings-php = ${application-configuration:location}
+#htdocs = $${rootdirectory:srv}/www
+#admin-password = $${gen-passwd:passwd}
+#dependency = $${apache-php:recipe}
 
 
 #----------------
