@@ -1,6 +1,16 @@
 Changes
 =======
 
+0.76.0 (2013-04-03)
+-------------------
+
+ * Add 'generic' phpconfigure recipe, allowing to configure any PHP-based app. [Cedric de Saint Martin]
+ * apache_frontend: Have more useful access_log in apache frontend. [Cedric de Saint Martin]
+ * apache_frontend: Add "SSLProxyEngine On" to http apache frontend vhost to be able to proxy https -> http. [Cedric de Saint Martin]
+ * Add first preliminary version of nginx-based reverse proxy. [Cedric de Saint Martin]
+ * Request-optional is not verbose anymore (again) if it failed. [Cedric de Saint Martin]
+ * Add possibility to fetch web ip and port from apache recipe. [Cedric de Saint Martin]
+
 0.75.0 (2013-03-26)
 -------------------
 
