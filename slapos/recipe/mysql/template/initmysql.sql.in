@@ -1,3 +1,4 @@
 CREATE DATABASE IF NOT EXISTS %(mysql_database)s;
 GRANT ALL PRIVILEGES ON %(mysql_database)s.* TO %(mysql_user)s@'%%' IDENTIFIED BY '%(mysql_password)s';
 #GRANT ALL PRIVILEGES ON %(mysql_database)s.* TO %(mysql_user)s@* IDENTIFIED BY '%(mysql_password)s';
+FLUSH PRIVILEGES;
