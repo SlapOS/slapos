@@ -202,6 +202,45 @@ background:url(<tal:block tal:replace="images_path"/>user.png) no-repeat scroll 
 \tcolor:#e1fbff;font-size:15px;background:url(<tal:block tal:replace="images_path"/>foot.png) repeat-x center center}\n
 #footer a{text-decoration:none;color:#e1fbff}\n
 \n
+/**********************/\n
+/*  Web Page view     */\n
+/**********************/\n
+div#WebPage_viewAsWeb {\n
+  text-align:left;\n
+}\n
+\n
+div#WebPage_viewAsWeb .center, div#WebPage_viewAsWeb .bottom {\n
+  text-align:left;\n
+  color: #5D5E5E;\n
+  font-weight: normal;\n
+}\n
+\n
+div#WebPage_viewAsWeb p {\n
+  text-align: justify;\n
+}\n
+\n
+div#WebPage_viewAsWeb h1, div#WebPage_viewAsWeb h2,  div#WebPage_viewAsWeb h3, div#WebPage_viewAsWeb h4 {\n
+  text-align:left;\n
+  color: #3E95A5;\n
+  margin: 30px 10px 10px 0;\n
+  font-size: 1.1em;\n
+}\n
+div#WebPage_viewAsWeb h1 {\n
+  font-size: 2em;\n
+}\n
+div#WebPage_viewAsWeb h2 {\n
+  font-size: 1.5em;\n
+}\n
+div#WebPage_viewAsWeb h3 {\n
+  font-size: 1.3em;\n
+}\n
+div#WebPage_viewAsWeb ul {\n
+  list-style: square outside none;\n
+  padding-left: 35px;\n
+}\n
+div#WebPage_viewAsWeb .section {\n
+  border: 0;\n
+}\n
 </tal:block>
 
 ]]></unicode> </value>
