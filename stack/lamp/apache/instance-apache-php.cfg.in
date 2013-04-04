@@ -213,8 +213,8 @@ httpd-binary = ${apache:location}/bin/httpd
 mysql-username = $${mariadb-urlparse:username}
 mysql-password = $${mariadb-urlparse:password}
 mysql-database = $${mariadb-urlparse:path}
-mysql-host = $${stunnel:local-host}
-mysql-port = $${stunnel:local-port}
+mysql-host = $${mariadb-urlparse:host}
+mysql-port = $${mariadb-urlparse:port}
 
 [logrotate-entry-apache]
 <= logrotate
