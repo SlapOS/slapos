@@ -5,17 +5,17 @@ recipe = slapos.cookbook:publish
 drupal-admin-password = $${drupal-init:admin-password}
 
 
-[drupal-init-datapublic]
-recipe = cp.recipe.cmd
-install_cmd =
-   mkdir -m 700 ~/.ssh
-   cp ${ssh-config:location}/ssh-config ~/.ssh/config
-   ${apache-php:location}/bin/drush make ${datapublic:location}/datapublic.make $${rootdirectory:srv}/www
+#[drupal-init-datapublic]
+#recipe = cp.recipe.cmd
+#install_cmd =
+#   mkdir -m 700 ~/.ssh
+#   cp ${ssh-config:location}/ssh-config ~/.ssh/config
+#   ${apache-php:location}/bin/drush make ${datapublic:location}/datapublic.make $${rootdirectory:srv}/www
 
 
 [drupal-init]
 recipe = slapos.cookbook:drupal_init
-dependencry = $${drupal-init-datapublic:recipe}
+#dependencry = $${drupal-init-datapublic:recipe}
 drush-binary = ${apache-php:location}/bin/drush
 php-binary = ${apache-php:location}/bin/php
 settings-php = ${application-configuration:location}
