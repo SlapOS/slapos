@@ -54,12 +54,10 @@
 if REQUEST is not None:\n
   raise Unauthorized\n
 \n
-return context.RegularisationRequest_checkToTriggerNextEscalationStep(\n
-  38,\n
-  \'service_module/slapos_crm_acknowledgement\',\n
-  \'service_module/slapos_crm_stop_reminder\',\n
-  \'Reminder: invoice payment requested\',\n
-"""Dear user,\n
+notification_message = context.getPortalObject().portal_notifications.getDocumentValue(reference="slapos-crm.acknowledgment.escalation")\n
+if notification_message is None:\n
+  subject = \'Reminder: invoice payment requested\'\n
+  body = """Dear user,\n
 \n
 We would like to remind you the unpaid invoice you have on %s.\n
 If no payment is done during the coming days, we will stop all your current instances to free some hardware resources.\n
@@ -68,7 +66,18 @@ Do not hesitate to visit the web forum (http://community.slapos.org/forum) in ca
 \n
 Regards,\n
 The slapos team\n
-""" % context.getPortalObject().portal_preferences.getPreferredSlaposWebSiteUrl(),\n
+""" % context.getPortalObject().portal_preferences.getPreferredSlaposWebSiteUrl()\n
+\n
+else:\n
+  subject = notification_message.getTitle()\n
+  body = notification_message.convert(format=\'text\')[1]\n
+\n
+return context.RegularisationRequest_checkToTriggerNextEscalationStep(\n
+  38,\n
+  \'service_module/slapos_crm_acknowledgement\',\n
+  \'service_module/slapos_crm_stop_reminder\',\n
+  subject,\n
+  body,\n
   \'Stopping reminder.\',\n
 )\n
 </string> </value>

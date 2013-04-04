@@ -89,6 +89,63 @@ The slapos team
                                            expected_text_content.splitlines())]))
     self.assertEquals(event.getSimulationState(), 'delivered')
 
+  @simulate('NotificationTool_getDocumentValue', 
+            'reference=None',
+  'assert reference == "slapos-crm.create.regularisation.request"\n' \
+  'return context.restrictedTraverse(' \
+  'context.REQUEST["test_addRegularisationRequest_notification_message"])')
+  @simulate('Entity_statBalance', '*args, **kwargs', 'return "1"')
+  def test_addRegularisationRequest_notification_message(self):
+    for preference in \
+      self.portal.portal_catalog(portal_type="System Preference"):
+      preference = preference.getObject()
+      if preference.getPreferenceState() == 'global':
+        preference.setPreferredSlaposWebSiteUrl('http://foobar.org/')
+
+    person = self.createPerson()
+    new_id = self.generateNewId()
+    notification_message = self.portal.notification_message_module.newContent(
+      portal_type="Notification Message",
+      title='Test NM title %s' % new_id,
+      text_content='Test NM content<br/>%s<br/>' % new_id,
+      content_type='text/html',
+      )
+    self.portal.REQUEST\
+        ['test_addRegularisationRequest_notification_message'] = \
+        notification_message.getRelativeUrl()
+
+    before_date = DateTime()
+    ticket, event = person.Person_checkToCreateRegularisationRequest()
+    after_date = DateTime()
+    self.assertEquals(ticket.getPortalType(), 'Regularisation Request')
+    self.assertEquals(ticket.getSimulationState(), 'suspended')
+    self.assertEquals(ticket.getSourceProject(), person.getRelativeUrl())
+    self.assertEquals(ticket.getResource(),
+                      'service_module/slapos_crm_acknowledgement')
+    self.assertEquals(ticket.getTitle(),
+           'Account regularisation expected for "%s"' % person.getTitle())
+    self.assertEquals(ticket.getDestination(),
+                      person.getRelativeUrl())
+    self.assertEquals(ticket.getDestinationDecision(),
+                      person.getRelativeUrl())
+    self.assertEquals(event.getPortalType(), 'Mail Message')
+    self.assertEquals(event.getResource(),
+                      'service_module/slapos_crm_acknowledgement')
+    self.assertTrue(event.getStartDate() >= before_date)
+    self.assertTrue(event.getStopDate() <= after_date)
+    self.assertEquals(event.getTitle(),
+           'Test NM title %s' % new_id)
+    self.assertEquals(event.getDestination(),
+                      person.getRelativeUrl())
+    self.assertEquals(event.getSource(),
+                      ticket.getSource())
+    expected_text_content = 'Test NM content\n%s\n' % new_id
+    self.assertEquals(event.getTextContent(), expected_text_content,
+                      '\n'.join([x for x in difflib.unified_diff(
+                                           event.getTextContent().splitlines(),
+                                           expected_text_content.splitlines())]))
+    self.assertEquals(event.getSimulationState(), 'delivered')
+
 
 #   def test_addRegularisationRequest_do_not_duplicate_ticket(self):
 #     person = self.createPerson()
@@ -855,6 +912,41 @@ The slapos team
        'Stopping reminder.'),
       ticket.workflow_history['edit_workflow'][-1]['comment'])
 
+  @simulate('NotificationTool_getDocumentValue', 
+            'reference=None',
+  'assert reference == "slapos-crm.acknowledgment.escalation"\n' \
+  'return context.restrictedTraverse(' \
+  'context.REQUEST["test_checkToTriggerNextEscalationStep_notification_message"])')
+  @simulate('RegularisationRequest_checkToTriggerNextEscalationStep', 
+            'day, current, next, title, text_content, comment, REQUEST=None',
+  'context.portal_workflow.doActionFor(' \
+  'context, action="edit_action", ' \
+  'comment="Visited by RegularisationRequest_checkToTriggerNextEscalationStep ' \
+  '%s %s %s %s %s %s" % (day, current, next, title, text_content, comment))')
+  def test_checkToTriggerNextEscalationStep_notification_message(self):
+    ticket = self.createRegularisationRequest()
+    new_id = self.generateNewId()
+    notification_message = self.portal.notification_message_module.newContent(
+      portal_type="Notification Message",
+      title='Test NM title %s' % new_id,
+      text_content='Test NM content<br/>%s<br/>' % new_id,
+      content_type='text/html',
+      )
+    self.portal.REQUEST\
+        ['test_checkToTriggerNextEscalationStep_notification_message'] = \
+        notification_message.getRelativeUrl()
+    ticket.RegularisationRequest_triggerAcknowledgmentEscalation()
+    self.assertEqual(
+      'Visited by RegularisationRequest_checkToTriggerNextEscalationStep ' \
+      '%s %s %s %s %s %s' % \
+      (38,
+       'service_module/slapos_crm_acknowledgement',
+       'service_module/slapos_crm_stop_reminder',
+       'Test NM title %s' % new_id,
+       'Test NM content\n%s\n' % new_id,
+       'Stopping reminder.'),
+      ticket.workflow_history['edit_workflow'][-1]['comment'])
+
 class TestSlapOSRegularisationRequest_triggerStopReminderEscalation(
                                                           testSlapOSMixin):
 
@@ -903,6 +995,41 @@ Do not hesitate to visit the web forum (http://community.slapos.org/forum) in ca
 Regards,
 The slapos team
 """ % self.portal.portal_preferences.getPreferredSlaposWebSiteUrl(),
+       'Stopping acknowledgment.'),
+      ticket.workflow_history['edit_workflow'][-1]['comment'])
+
+  @simulate('NotificationTool_getDocumentValue', 
+            'reference=None',
+  'assert reference == "slapos-crm.stop.reminder.escalation"\n' \
+  'return context.restrictedTraverse(' \
+  'context.REQUEST["test_checkToTriggerNextEscalationStep_notification_message"])')
+  @simulate('RegularisationRequest_checkToTriggerNextEscalationStep', 
+            'day, current, next, title, text_content, comment, REQUEST=None',
+  'context.portal_workflow.doActionFor(' \
+  'context, action="edit_action", ' \
+  'comment="Visited by RegularisationRequest_checkToTriggerNextEscalationStep ' \
+  '%s %s %s %s %s %s" % (day, current, next, title, text_content, comment))')
+  def test_checkToTriggerNextEscalationStep_notification_message(self):
+    ticket = self.createRegularisationRequest()
+    new_id = self.generateNewId()
+    notification_message = self.portal.notification_message_module.newContent(
+      portal_type="Notification Message",
+      title='Test NM title %s' % new_id,
+      text_content='Test NM content<br/>%s<br/>' % new_id,
+      content_type='text/html',
+      )
+    self.portal.REQUEST\
+        ['test_checkToTriggerNextEscalationStep_notification_message'] = \
+        notification_message.getRelativeUrl()
+    ticket.RegularisationRequest_triggerStopReminderEscalation()
+    self.assertEqual(
+      'Visited by RegularisationRequest_checkToTriggerNextEscalationStep ' \
+      '%s %s %s %s %s %s' % \
+      (7,
+       'service_module/slapos_crm_stop_reminder',
+       'service_module/slapos_crm_stop_acknowledgement',
+       'Test NM title %s' % new_id,
+       'Test NM content\n%s\n' % new_id,
        'Stopping acknowledgment.'),
       ticket.workflow_history['edit_workflow'][-1]['comment'])
 
@@ -957,6 +1084,41 @@ The slapos team
        'Deleting reminder.'),
       ticket.workflow_history['edit_workflow'][-1]['comment'])
 
+  @simulate('NotificationTool_getDocumentValue', 
+            'reference=None',
+  'assert reference == "slapos-crm.stop.acknowledgment.escalation"\n' \
+  'return context.restrictedTraverse(' \
+  'context.REQUEST["test_checkToTriggerNextEscalationStep_notification_message"])')
+  @simulate('RegularisationRequest_checkToTriggerNextEscalationStep', 
+            'day, current, next, title, text_content, comment, REQUEST=None',
+  'context.portal_workflow.doActionFor(' \
+  'context, action="edit_action", ' \
+  'comment="Visited by RegularisationRequest_checkToTriggerNextEscalationStep ' \
+  '%s %s %s %s %s %s" % (day, current, next, title, text_content, comment))')
+  def test_checkToTriggerNextEscalationStep_notification_message(self):
+    ticket = self.createRegularisationRequest()
+    new_id = self.generateNewId()
+    notification_message = self.portal.notification_message_module.newContent(
+      portal_type="Notification Message",
+      title='Test NM title %s' % new_id,
+      text_content='Test NM content<br/>%s<br/>' % new_id,
+      content_type='text/html',
+      )
+    self.portal.REQUEST\
+        ['test_checkToTriggerNextEscalationStep_notification_message'] = \
+        notification_message.getRelativeUrl()
+    ticket.RegularisationRequest_triggerStopAcknowledgmentEscalation()
+    self.assertEqual(
+      'Visited by RegularisationRequest_checkToTriggerNextEscalationStep ' \
+      '%s %s %s %s %s %s' % \
+      (13,
+       'service_module/slapos_crm_stop_acknowledgement',
+       'service_module/slapos_crm_delete_reminder',
+       'Test NM title %s' % new_id,
+       'Test NM content\n%s\n' % new_id,
+       'Deleting reminder.'),
+      ticket.workflow_history['edit_workflow'][-1]['comment'])
+
 class TestSlapOSRegularisationRequest_triggerDeleteReminderEscalation(
                                                           testSlapOSMixin):
 
@@ -1005,6 +1167,41 @@ Do not hesitate to visit the web forum (http://community.slapos.org/forum) in ca
 Regards,
 The slapos team
 """ % self.portal.portal_preferences.getPreferredSlaposWebSiteUrl(),
+       'Deleting acknowledgment.'),
+      ticket.workflow_history['edit_workflow'][-1]['comment'])
+
+  @simulate('NotificationTool_getDocumentValue', 
+            'reference=None',
+  'assert reference == "slapos-crm.delete.reminder.escalation"\n' \
+  'return context.restrictedTraverse(' \
+  'context.REQUEST["test_checkToTriggerNextEscalationStep_notification_message"])')
+  @simulate('RegularisationRequest_checkToTriggerNextEscalationStep', 
+            'day, current, next, title, text_content, comment, REQUEST=None',
+  'context.portal_workflow.doActionFor(' \
+  'context, action="edit_action", ' \
+  'comment="Visited by RegularisationRequest_checkToTriggerNextEscalationStep ' \
+  '%s %s %s %s %s %s" % (day, current, next, title, text_content, comment))')
+  def test_checkToTriggerNextEscalationStep_notification_message(self):
+    ticket = self.createRegularisationRequest()
+    new_id = self.generateNewId()
+    notification_message = self.portal.notification_message_module.newContent(
+      portal_type="Notification Message",
+      title='Test NM title %s' % new_id,
+      text_content='Test NM content<br/>%s<br/>' % new_id,
+      content_type='text/html',
+      )
+    self.portal.REQUEST\
+        ['test_checkToTriggerNextEscalationStep_notification_message'] = \
+        notification_message.getRelativeUrl()
+    ticket.RegularisationRequest_triggerDeleteReminderEscalation()
+    self.assertEqual(
+      'Visited by RegularisationRequest_checkToTriggerNextEscalationStep ' \
+      '%s %s %s %s %s %s' % \
+      (2,
+       'service_module/slapos_crm_delete_reminder',
+       'service_module/slapos_crm_delete_acknowledgement',
+       'Test NM title %s' % new_id,
+       'Test NM content\n%s\n' % new_id,
        'Deleting acknowledgment.'),
       ticket.workflow_history['edit_workflow'][-1]['comment'])
 
