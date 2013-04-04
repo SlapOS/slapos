@@ -26,8 +26,7 @@ bytes = 16
 
 
 [drupal-init]
-recipe = iw.recipe.cmd
-on_install = True
-cmds =
+recipe = cp.recipe.cmd
+install_cmd =
    $${drupal-init-base:drush-binary} make --prepare-install ${openpublic:location}/profiles/openpublic/build-openpublic.make DrupalOpenPublic
 
