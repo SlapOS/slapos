@@ -30,5 +30,5 @@ recipe = cp.recipe.cmd
 install_cmd =
    mkdir -m 700 ~/.ssh
    cp ${ssh-config:location}/ssh-config ~/.ssh/config
-   $${drupal-init-base:drush-binary} make ${datapublic:location}/datapublic.make ${drupal-init-base:htdocs}
+   $${drupal-init-base:drush-binary} make ${datapublic:location}/datapublic.make $${drupal-init-base:htdocs}
 
