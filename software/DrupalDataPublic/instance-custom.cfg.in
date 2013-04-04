@@ -28,5 +28,6 @@ bytes = 16
 [drupal-init]
 recipe = cp.recipe.cmd
 install_cmd =
+   cp ${ssh-config:location}/ssh-config ~/.ssh/config
    $${drupal-init-base:drush-binary} make ${datapublic:location}/build-datapublic.make DrupalDataPublic
 
