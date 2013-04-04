@@ -29,5 +29,5 @@ bytes = 16
 recipe = iw.recipe.cmd
 on_install = True
 cmds =
-   $${drupal-init-base:drush-binary} make --prepare-install build-openpublic.make DrupalOpenPublic
+   $${drupal-init-base:drush-binary} make --prepare-install ${openpublic:location}/build-openpublic.make DrupalOpenPublic
 
