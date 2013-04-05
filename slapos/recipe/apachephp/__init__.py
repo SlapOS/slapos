@@ -101,6 +101,9 @@ class Recipe(GenericBaseRecipe):
                               mysql_ip=self.options['mysql-host'],
                               mysql_port=self.options['mysql-port'],
                               secret_key=secret_key,
+                              ip='[%s]' % self.options['ip'],
+                              port=self.options['port'],
+                              # XXX-Cedric: add frontend url.
                              )
 
       directory, file_ = os.path.split(self.options['configuration'])
