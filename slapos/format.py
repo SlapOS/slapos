@@ -386,6 +386,22 @@ class Computer(object):
       os.chown(self.software_root, slapsoft_pw.pw_uid, slapsoft_pw.pw_gid)
     os.chmod(self.software_root, 0755)
 
+    # Speed hack:
+    # Blindly add all IPs from existing configuration, just to speed up actual
+    # computer configuration later on.
+    for partition in self.partition_list:
+      try:
+        for address in partition.address_list:
+          try:
+            netmask = netmaskToPrefixIPv6(address['netmask'])
+          except:
+            continue
+          callAndRead(['ip', 'addr', 'add',
+                       '%s/%s' % (address['addr'], netmask),
+                       'dev', self.interface.name])
+      except ValueError:
+        pass
+
     try:
       for partition_index, partition in enumerate(self.partition_list):
         # Reconstructing User's
@@ -1095,6 +1111,15 @@ def run(config):
 
   if config.output_definition_file:
     write_computer_definition(config, computer)
+
+  # Add all IPs from existing configuration, just to speed up actual
+  # computer configuration later on.
+  for partition in computer.partition_list:
+    partition.interface.addIPv4LocalAddress()
+    for address_dict in partition.interface.getGlobalScopeAddressList():
+      callAndRead(['ip', 'addr', 'add',
+                   '%s/%s' % (address_dict['addr'], address_dict['netmask']),
+                   'dev', partition.interface.name])
 
   computer.construct(alter_user=config.alter_user,
                      alter_network=config.alter_network,
