@@ -80,9 +80,10 @@ SLAPGRID_SUCCESS = 0
 SLAPGRID_FAIL = 1
 SLAPGRID_PROMISE_FAIL = 2
 
-
 # XXX hardcoded watchdog_path
 WATCHDOG_PATH = '/opt/slapos/bin/slapos-watchdog'
+
+COMPUTER_PARTITION_TIMESTAMP_FILENAME = '.timestamp'
 
 
 class _formatXMLError(Exception):
@@ -724,7 +725,10 @@ class Slapgrid(object):
     instance_path = os.path.join(self.instance_root, computer_partition_id)
 
     # Try to get partition timestamp (last modification date)
-    timestamp_path = os.path.join(instance_path, '.timestamp')
+    timestamp_path = os.path.join(
+        instance_path,
+        COMPUTER_PARTITION_TIMESTAMP_FILENAME
+    )
     parameter_dict = computer_partition.getInstanceParameterDict()
     if 'timestamp' in parameter_dict:
       timestamp = parameter_dict['timestamp']
@@ -835,7 +839,10 @@ class Slapgrid(object):
 
     # If partition has been successfully processed, write timestamp
     if timestamp:
-      timestamp_path = os.path.join(instance_path, '.timestamp')
+      timestamp_path = os.path.join(
+          instance_path,
+          COMPUTER_PARTITION_TIMESTAMP_FILENAME
+      )
       open(timestamp_path, 'w').write(timestamp)
 
   def FilterComputerPartitionList(self, computer_partition_list):
