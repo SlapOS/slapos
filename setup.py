@@ -28,7 +28,7 @@ from setuptools import setup, find_packages
 import glob
 import os
 
-version = '0.75.1.dev'
+version = '0.76.1.dev'
 name = 'slapos.cookbook'
 long_description = open("README.txt").read() + "\n" + \
     open("CHANGES.txt").read() + "\n"
@@ -73,6 +73,7 @@ setup(name=name,
           'apache.zope.backend = slapos.recipe.apache_zope_backend:Recipe',
           'apacheperl = slapos.recipe.apacheperl:Recipe', 
           'apachephp = slapos.recipe.apachephp:Recipe',
+          'apachephpconfigure = slapos.recipe.apachephpconfigure:Recipe',
           'apacheproxy = slapos.recipe.apacheproxy:Recipe',
           'certificate_authority = slapos.recipe.certificate_authority:Recipe',
           'certificate_authority.request = slapos.recipe.certificate_authority:Request',

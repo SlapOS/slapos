@@ -22,7 +22,7 @@ ServerTokens Prod
 
 # Log configuration
 ErrorLog "%(error_log)s"
-LogLevel warn
+LogLevel info
 LogFormat "%%h %%{REMOTE_USER}i %%{Host}i %%l %%u %%t \"%%r\" %%>s %%b \"%%{Referer}i\" \"%%{User-Agent}i\"" combined
 LogFormat "%%h %%{REMOTE_USER}i %%{Host}i %%l %%u %%t \"%%r\" %%>s %%b" common
 CustomLog "%(access_log)s" common
@@ -130,6 +130,7 @@ Header append Vary User-Agent
 
 <VirtualHost *:%(plain_http_port)s>
   RewriteEngine On
+  SSLProxyEngine on
   ProxyPreserveHost On
 
   # Include configuration file not operated by slapos. This file won't be erased
