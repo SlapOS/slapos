@@ -43,37 +43,14 @@ THE SOFTWARE.
 #include "neighbour.h"
 #include "kernel.h"
 #include "util.h"
+#include "interface.h"
 
 #include "cyginet.h"
-
-/*
- * Some issues:
- *
- * 1. kernel_route
- *
- *    RTM_BLACKHOLE, gateway will be set as loopback, is it right?
- *
- * 2. IN6_LINKLOCAL_IFINDEX && SET_IN6_LINKLOCAL_IFINDEX
- *
- *    Do both of them work in the Windows?
- *
- * 3. kernel_interface_ipv4
- *
- *    How to deal with many ipv4 address assigned in one interface,
- *    now only the first one returned.
- *
- */
 
 static int get_sdl(struct sockaddr_dl *sdl, char *guidname);
 
 static const unsigned char v4prefix[16] =
     {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xFF, 0xFF, 0, 0, 0, 0 };
-
-static int ifindex_blackhole = -1;
-static struct in6_addr blackhole_addr6 = {{IN6ADDR_LOOPBACK_INIT}};
-static char blackhole_addr[1][1][16] = 
-        {{{ 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-            0x00, 0x00, 0x00, 0x00, 0x7f, 0x00, 0x00, 0x01 }}};
 
 int export_table = -1, import_table = -1;
 
@@ -110,113 +87,98 @@ get_sdl(struct sockaddr_dl *sdl, char *ifname)
     return cyginet_interface_sdl(sdl, ifname);
 }
 
-/* KAME said : "Following two macros are highly depending on KAME Release" */
-#define	IN6_LINKLOCAL_IFINDEX(a)  ((a).s6_addr[2] << 8 | (a).s6_addr[3])
-#define SET_IN6_LINKLOCAL_IFINDEX(a, i)         \
-    do {                                        \
-        (a).s6_addr[2] = ((i) >> 8) & 0xff;     \
-        (a).s6_addr[3] = (i) & 0xff;            \
-    } while (0)
-
 static int old_forwarding = -1;
 static int old_accept_redirects = -1;
 
 static int ifindex_lo = 1;
 static int kernel_pipe_handles[2];
 
+/* It enables ip6.forwarding and disable ip6.redirect.
+ *
+ * Option 1:
+ *
+ * IPV6CTL_FORWARDING (ip6.forwarding) Boolean: enable/disable
+ * forward- ing of IPv6 packets.  Also, identify if the node is
+ * acting as a router.  Defaults to off.
+ *
+ * ==> In the Windows, MSDN says in the registry
+ *
+ * HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\Tcpip\Parameters
+ *
+ * Value Name: IPEnableRouter
+ * Value type: REG_DWORD
+ * Value Data: 1
+ *
+ * A value of 1 enables TCP/IP forwarding for all network
+ * connections that are installed and used by this computer.
+ *
+ * Refer to: http://support.microsoft.com/kb/315236/en-us
+ *
+ * For ipv6, no global options to enable forwarding, but for each
+ * interface respectively.
+ * 
+ * Option 2:
+ *
+ * ICMPV6CTL_REDIRACCEPT
+ *
+ * IPV6CTL_SENDREDIRECTS (ip6.redirect) Boolean: enable/disable
+ * sending of ICMPv6 redirects in response to unforwardable IPv6
+ * packets.  This option is ignored unless the node is routing
+ * IPv6 packets, and should normally be enabled on all systems.
+ * Defaults to on.
+ *
+ * ==> MSDN says in the registry
+ *
+ * HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\Tcpip\Parameters
+ *
+ * EnableICMPRedirect = 0
+ *
+ * Regarding ipv6, it's in the registry
+ *
+ * HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\Tcpip6\Parameters
+ *
+ * Refer to:
+ *     http://technet.microsoft.com/en-us/library/cc766102(v=ws.10).aspx
+ *     http://msdn.microsoft.com/en-us/library/aa915651.aspx
+ *     
+ * Notice the msdn page of Windows CE, value is "EnableICMPRedirects",
+ * it's plural. But I'd rather use singluar form "EnableICMPRedirect".
+ *
+ */
+
 int
 kernel_setup(int setup)
 {
-    int rc = 0;
-    int forwarding = 1;
-    int accept_redirects = 0;
-    int reboot = 0;
-
-    /* It enables ip6.forwarding and disable ip6.redirect.
-     *
-     * Option 1:
-     *
-     * IPV6CTL_FORWARDING (ip6.forwarding) Boolean: enable/disable
-     * forward- ing of IPv6 packets.  Also, identify if the node is
-     * acting as a router.  Defaults to off.
-     *
-     * ==> command line:
-     *
-     *     C:/> ipv6 ifc $If6Index forwards
-     *
-     *     repeat this operation for all ipv6 interfaces
-     *
-     *     List all ipv6 interface by the command:
-     *
-     *         C:/> netsh interface ipv6 show interface
-     *
-     * ==> API: EnableRouter/DisableRouter (only for ipv4)
-     *
-     * ==> MSDN says in the registry
-     *
-     * HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\Tcpip\Parameters
-     *
-     * Value Name: IPEnableRouter
-     * Value type: REG_DWORD
-     * Value Data: 1
-     *
-     * A value of 1 enables TCP/IP forwarding for all network
-     * connections that are installed and used by this computer.
-     *
-     * Refer to: http://support.microsoft.com/kb/315236/en-us
-     *
-     * Option 2:
-     *
-     * ICMPV6CTL_REDIRACCEPT
-     *
-     * IPV6CTL_SENDREDIRECTS (ip6.redirect) Boolean: enable/disable
-     * sending of ICMPv6 redirects in response to unforwardable IPv6
-     * packets.  This option is ignored unless the node is routing
-     * IPv6 packets, and should normally be enabled on all systems.
-     * Defaults to on.
-     *
-     * ==> MSDN says in the registry
-     *
-     * HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\Tcpip\Parameters
-     *
-     * EnableICMPRedirect = 0
-     *
-     * Refer to:
-     *
-     *     http://technet.microsoft.com/en-us/library/cc766102(v=ws.10).aspx
-     *
-     * After change them, need to reboot machine.
-     *
-     * Notice:
-     *
-     * MSDN says nothing about ipv6, it should use the following key
-     *
-     * HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\Tcpip6\Parameters
-     *
-     * Maybe later Window VISTA its corresponding APIs are
-     * WSAEnumProtocols, WSCUpdateProvider.
-     *
-     */
+    int flags=0;
+    struct interface *ifp;
 
     if (setup) {
-        int flags;
+
         if (0 != cyginet_startup())
             return -1;
-        if ((rc = cyginet_set_ipv6_forwards(forwarding)) == -1) {
-            fprintf(stderr, "Cannot enable IPv6 forwarding.\n");
-            return -1;
-        }
-        old_forwarding = rc;
-        reboot = (rc == forwarding) ? reboot : 1;
 
-        if ((rc = cyginet_set_icmp6_redirect_accept(accept_redirects)) == -1) {
+        /* We don't disable ICMPv6 redirect in the Windows */
+        /* 
+        if ((rc = cyginet_set_icmp6_redirect_accept(0)) == -1) {
             fprintf(stderr, "Cannot disable ICMPv6 redirect.\n");
-            if (reboot)
-                cyginet_set_ipv6_forwards(old_forwarding);
             return -1;
         }
-        old_accept_redirects = rc;
-        reboot = (rc == accept_redirects) ? reboot : 1;
+
+        if (rc) {
+            fprintf(stderr,
+                    "Disable ICMPv6 redirect successfully. Reboot computer "
+                    "to take it effect now.\n\n"
+                    );
+            return -1;
+        }
+        */        
+        FOR_ALL_INTERFACES(ifp) {
+            if (cyginet_set_interface_forwards(ifp->name, 1) == -1) {
+                fprintf(stderr, "Cannot enable IPv6 forwarding.\n");
+                return -1;
+            }
+        }
+
         if (pipe(kernel_pipe_handles) == -1)
             return -1;
         if ((flags = fcntl(kernel_pipe_handles[0], F_GETFL, 0)) < 0)
@@ -225,34 +187,14 @@ kernel_setup(int setup)
             goto error;
     }
     else {
-        if (-1 == (rc = cyginet_set_ipv6_forwards(old_forwarding)))
-            return -1;
-        reboot = (rc == forwarding) ? reboot : 1;
-        if (-1 ==
-            (rc = cyginet_set_icmp6_redirect_accept(old_accept_redirects)))
-            return -1;
-        reboot = (rc == accept_redirects) ? reboot : 1;
         close(kernel_pipe_handles[0]);
         close(kernel_pipe_handles[1]);
         cyginet_cleanup();
     }
-
-    if (reboot)
-        fprintf(stderr,
-                "%s IPv6 forwarding and %s ICMPv6 redirect successfully.\n"
-                "REBOOT NOW, so that these changes take effect.\n\n",
-                forwarding ? "Enable" : "Disable",
-                accept_redirects ? "enable" : "disable"
-                );
     return 1;
 
- error: {
-        if (reboot) {
-            cyginet_set_ipv6_forwards(old_forwarding);
-            cyginet_set_icmp6_redirect_accept(old_accept_redirects);
-        }
-        return -1;
-    }
+ error:
+    return -1;
 }
 
 int
@@ -363,12 +305,13 @@ kernel_route(int operation, const unsigned char *dest, unsigned short plen,
              const unsigned char *newgate, int newifindex,
              unsigned int newmetric)
 {
+    char blackhole_addr6[1][1][16] = {{{0}}};
+    char blackhole_addr[1][1][16] = {{{0}}};
     int rc, ipv4;
-    struct sockaddr_in ipv4_destnation={0}, ipv4_gateway={0};
-    struct sockaddr_in6 ipv6_destnation={0}, ipv6_gateway={0};
-    struct sockaddr *destination, *gateway;
     int route_ifindex;
     int prefix_len;
+    struct sockaddr_storage destination = {0};
+    struct sockaddr_storage gateway = {0};
 
     /* Check that the protocol family is consistent. */
     if(plen >= 96 && v4mapped(dest)) {
@@ -377,16 +320,12 @@ kernel_route(int operation, const unsigned char *dest, unsigned short plen,
             return -1;
         }
         ipv4 = 1;
-        destination = (struct sockaddr*)&ipv4_destnation;
-        gateway = (struct sockaddr*)&ipv4_gateway;
     } else {
         if(v4mapped(gate)) {
             errno = EINVAL;
             return -1;
         }
         ipv4 = 0;
-        destination = (struct sockaddr*)&ipv6_destnation;
-        gateway = (struct sockaddr*)&ipv6_gateway;
     }
 
     if(operation == ROUTE_MODIFY && newmetric == metric &&
@@ -394,9 +333,8 @@ kernel_route(int operation, const unsigned char *dest, unsigned short plen,
       return 0;
 
     if(operation == ROUTE_MODIFY) {
-        /* Do not use ROUTE_MODIFY when changing to a neighbour.
-           It is the only way to remove the "gateway" flag. */
-        if(ipv4 && plen == 128 && memcmp(dest, newgate, 16) == 0) {
+        if((metric == KERNEL_INFINITY) ||
+           (ipv4 && plen == 128 && memcmp(dest, newgate, 16) == 0)) {
             kernel_route(ROUTE_FLUSH, dest, plen,
                          gate, ifindex, metric,
                          NULL, 0, 0);
@@ -409,6 +347,13 @@ kernel_route(int operation, const unsigned char *dest, unsigned short plen,
             ifindex = newifindex;
         }
     }
+    /* We don't add/delete a blackhole for default route */
+    else if (newmetric == KERNEL_INFINITY &&
+       IN6_IS_ADDR_UNSPECIFIED(dest) &&
+       IN6_IS_ADDR_UNSPECIFIED(newgate))
+      return 0;
+
+
 
     kdebugf("kernel_route: %s %s/%d metric %d dev %d nexthop %s\n",
             operation == ROUTE_ADD ? "add" :
@@ -423,70 +368,70 @@ kernel_route(int operation, const unsigned char *dest, unsigned short plen,
 
     if(metric == KERNEL_INFINITY) {
         /* It means this route has property: RTF_BLACKHOLE */
-        if (ifindex_blackhole < 0) {
-            /* ifindex_blackhole = cyginet_blackhole_index(&blackhole_addr6, */
-            /*                                             blackhole_addr[0][0]+12 */
-            /*                                             ); */
-            ifindex_blackhole = 1;
-            if(ifindex_blackhole <= 0)
+        if(ifindex_lo < 0) {
+            ifindex_lo = cyginet_loopback_index(AF_UNSPEC);
+            if(ifindex_lo <= 0)
                 return -1;
         }
-        route_ifindex = ifindex_blackhole;
+        route_ifindex = ifindex_lo;
     }
 
 #define PUSHADDR(dst, src)                                              \
-    do { struct sockaddr_in *sin = (struct sockaddr_in*)(dst);          \
+    do { struct sockaddr_in *sin = (struct sockaddr_in*)&(dst);          \
         sin->sin_family = AF_INET;                                      \
         memcpy(&sin->sin_addr, (src) + 12, 4);                          \
     } while (0)
 
 #define PUSHADDR6(dst, src)                                             \
-    do { struct sockaddr_in6 *sin6 = (struct sockaddr_in6*)(dst);       \
+    do { struct sockaddr_in6 *sin6 = (struct sockaddr_in6*)&(dst);       \
         sin6->sin6_family = AF_INET6;                                   \
         memcpy(&sin6->sin6_addr, (src), 16);                            \
-        if(IN6_IS_ADDR_LINKLOCAL (&sin6->sin6_addr))                    \
-            SET_IN6_LINKLOCAL_IFINDEX (sin6->sin6_addr, ifindex);       \
     } while (0)
 
     if(ipv4) {
-
         PUSHADDR(destination, dest);
         if (metric == KERNEL_INFINITY)
             PUSHADDR(gateway, **blackhole_addr);
+        else if(plen == 128 && memcmp(dest+12, gate+12, 4) == 0) {
+            /*  It means add arp record, add dest ip to this interface */
+            if (cyginet_add_ipentry(ifindex,
+                                    (struct sockaddr*)&destination) != 0)
+                return -1;
+        }
         else
             PUSHADDR(gateway, gate);
 
     } else {
         PUSHADDR6(destination, dest);
         if (metric == KERNEL_INFINITY)
-            PUSHADDR6(gateway, &blackhole_addr6);
-        else
+            PUSHADDR6(gateway, **blackhole_addr6);
+        else 
             PUSHADDR6(gateway, gate);
     }
 #undef PUSHADDR
 #undef PUSHADDR6
-    /* What if route_ifindex == 0 */    
+    /* what if route_ifindex == 0 */    
     switch(operation) {
     case ROUTE_FLUSH:
-        rc = cyginet_delete_route_entry(destination,
+        rc = cyginet_delete_route_entry((struct sockaddr*)&destination,
                                         prefix_len,
-                                        gateway,
+                                        (struct sockaddr*)&gateway,
                                         route_ifindex,
                                         metric
                                         );
         break;
     case ROUTE_ADD:
-        rc = cyginet_add_route_entry(destination,
+        rc = cyginet_add_route_entry((struct sockaddr*)&destination,
                                      prefix_len,
-                                     gateway,
+                                     (struct sockaddr*)&gateway,
                                      route_ifindex,
                                      metric
                                      );
         break;
     case ROUTE_MODIFY:
-        rc = cyginet_update_route_entry(destination,
+        rc = cyginet_update_route_entry((struct sockaddr*)&destination,
                                         prefix_len,
-                                        gateway,
+                                        (struct sockaddr*)&gateway,
                                         route_ifindex,
                                         metric
                                         );
@@ -564,10 +509,6 @@ parse_kernel_route(struct cyginet_route *src, struct kernel_route *route)
     if(sa->sa_family == AF_INET6) {
         struct sockaddr_in6 *sin6 = (struct sockaddr_in6 *)sa;
         memcpy(route->gw, &sin6->sin6_addr, 16);
-        if(IN6_IS_ADDR_LINKLOCAL (&sin6->sin6_addr)) {
-            route->ifindex = IN6_LINKLOCAL_IFINDEX(sin6->sin6_addr);
-            SET_IN6_LINKLOCAL_IFINDEX(sin6->sin6_addr, 0);
-        }
     } else if(sa->sa_family == AF_INET) {
         struct sockaddr_in *sin = (struct sockaddr_in *)sa;
         v4tov6(route->gw, (unsigned char *)&sin->sin_addr);
@@ -661,11 +602,6 @@ kernel_addresses(char *ifname, int ifindex, int ll,
             if(!!ll != !!IN6_IS_ADDR_LINKLOCAL(&sin6->sin6_addr))
                 goto next;
             memcpy(routes[i].prefix, &sin6->sin6_addr, 16);
-            if(ll)
-                /* This a perfect example of counter-productive optimisation :
-                   KAME encodes interface index onto bytes 2 and 3, so we have to
-                   reset those bytes to 0 before passing them to babeld. */
-                memset(routes[i].prefix + 2, 0, 2);
             routes[i].plen = 128;
             routes[i].metric = 0;
             routes[i].ifindex = ifindex;
@@ -705,8 +641,9 @@ kernel_callback(int (*fn)(int, void*), void *closure)
     /* In the Windows, we can't get the exact changed route, but the
        route table is really changed. */
     kdebugf("Kernel table changed.\n");
+    cyginet_refresh_interface_table();
     clear_kernel_socket_event();
-
+    
     return fn(~0, closure);
 }
 

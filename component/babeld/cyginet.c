@@ -1,18 +1,3 @@
-/*
- * Some issues:
- *
- * 1. libwinet_dump_ipv6_route_table
- *
- *    Before Windows Vista, we have to use command "netsh" to get ipv6
- *    route table. But the output misses the value of route protocol.
- *
- * 2. libwinet_edit_route_entry
- *
- *    What should be the value of protocol? MIB_IPPROTO_NETMGMT or
- *    RTPROT_BABEL_LOCAL
- *
- */
-
 /* The Win32 select only worked on socket handles. The Cygwin
  * implementation allows select to function normally when given
  * different types of file descriptors (sockets, pipes, handles,
@@ -58,7 +43,7 @@ void do_debugf(int level, const char *format, ...);
 static HRESULT (WINAPI *ws_guidfromstring)(LPCTSTR psz, LPGUID pguid) = NULL;
 static HANDLE event_notify_monitor_thread = WSA_INVALID_EVENT;
 
-static PLIBWINET_INTERFACE_MAP_TABLE interface_map_table = NULL;
+static PLIBWINET_INTERFACE_MAP_TABLE g_interface_map_table = NULL;
 static int libwinet_run_command(const char *);
 
 static void
@@ -111,39 +96,64 @@ mask2len(const unsigned char *p, const int size)
 }
 
 static int
-libwinet_ipv6_interfaces_forwards(int forward)
+libwinet_set_registry_key(char *key, char * name, int value, int defvalue)
 {
-  const int MAX_BUFFER_SIZE = 255;
-  char cmdbuf[MAX_BUFFER_SIZE];
-  int result;
+  HKEY hKey;
+  unsigned long type;
+  unsigned long size;
+  unsigned long old;
 
-  struct if_nameindex * p;
-  struct if_nameindex * ptr;
-  if (NULL == (ptr = (struct if_nameindex *)if_nameindex()))
+  if (RegOpenKeyEx(HKEY_LOCAL_MACHINE, key, 0, KEY_READ | KEY_WRITE, &hKey) !=
+      ERROR_SUCCESS)
     return -1;
 
-  p = ptr;
-  while (p -> if_index) {
-    if (snprintf(cmdbuf,
-                 MAX_BUFFER_SIZE,
-                 "netsh interface ipv6 set interface %d forwarding=%s",
-                 p -> if_index,
-                 forward ? "enabled" : "disabled"
-                 ) >= MAX_BUFFER_SIZE)
-      break;
-    if (libwinet_run_command(cmdbuf) != 0)
-      break;
-    p ++;
+  size = sizeof(old);
+
+  if (RegQueryValueEx(hKey, name, NULL, &type, (unsigned char *)&old, &size) !=
+      ERROR_SUCCESS || type != REG_DWORD)
+    old = defvalue;
+
+  if (RegSetValueEx(hKey,
+                    name,
+                    0,
+                    REG_DWORD,
+                    (unsigned char *)&value,
+                    sizeof(value)
+                    )) {
+    RegCloseKey(hKey);
+    return -1;
   }
-  result = ! (p -> if_index);
-  if_freenameindex(ptr);
-  return result;
+
+  RegCloseKey(hKey);
+  return old;
+}
+
+/* return True if success */
+static int
+libwinet_get_registry_key(char *key, char * name, long * value)
+{
+  HKEY hKey;
+  int rc;
+  unsigned long type;
+  unsigned long size;
+
+  if (RegOpenKeyEx(HKEY_LOCAL_MACHINE, key, 0, KEY_READ, &hKey) !=
+      ERROR_SUCCESS)
+    return -1;
+
+  size = sizeof(*value);
+
+  rc = (RegQueryValueEx(hKey, name, NULL, &type, (unsigned char *)value, &size) ==
+        ERROR_SUCCESS && type == REG_DWORD);
+
+  RegCloseKey(hKey);
+  return rc;
 }
 
 static void
 libwinet_free_interface_map_table()
 {
-  PLIBWINET_INTERFACE_MAP_TABLE p = interface_map_table;
+  PLIBWINET_INTERFACE_MAP_TABLE p = g_interface_map_table;
   PLIBWINET_INTERFACE_MAP_TABLE s;
   while (p) {
     if ( p -> AdapterName )
@@ -154,7 +164,22 @@ libwinet_free_interface_map_table()
     p = p -> next;
     FREE(s);
   }
-  interface_map_table = NULL;
+  g_interface_map_table = NULL;
+}
+
+static int
+get_interface_forwards(char * guid)
+{
+  long value = 0;
+  /* Location in the Windows XP, not sure in Vista or Windows 7 */
+  char * key = "SYSTEM\\CurrentControlSet\\Services\\Tcpip6\\Parameters"
+               "\\Interfaces\\%s";
+  char * name = "Forwards";
+  char buf[256] = {0};
+  if (snprintf(buf, 255, key, guid) > 0)
+    if (libwinet_get_registry_key(buf, name, &value))
+      return value;
+  return -1;
 }
 
 static int
@@ -191,13 +216,13 @@ libwinet_refresh_interface_map_table()
 
   if (NO_ERROR == dwRet) {
 
-    if (interface_map_table)
+    if (g_interface_map_table)
       libwinet_free_interface_map_table();
 
     PLIBWINET_INTERFACE_MAP_TABLE p;
     size_t len;
 
-    interface_map_table = NULL;
+    g_interface_map_table = NULL;
     pTmpAdaptAddr = pAdaptAddr;
     while (pTmpAdaptAddr) {
 
@@ -206,8 +231,10 @@ libwinet_refresh_interface_map_table()
         dwRet = ERROR_BUFFER_OVERFLOW;
         break;
       }
-      p -> next = interface_map_table;
-
+      p -> next = g_interface_map_table;
+      p -> IfIndex = pTmpAdaptAddr -> IfIndex;
+      p -> Ipv6IfIndex = pTmpAdaptAddr -> Ipv6IfIndex;
+      p -> RouteFlags = get_interface_forwards(pTmpAdaptAddr -> AdapterName);
       len = WideCharToMultiByte(CP_ACP,
                                 0,
                                 pTmpAdaptAddr -> FriendlyName,
@@ -250,9 +277,8 @@ libwinet_refresh_interface_map_table()
              pTmpAdaptAddr -> PhysicalAddress,
              p -> PhysicalAddressLength
              );
-
       pTmpAdaptAddr = pTmpAdaptAddr->Next;
-      interface_map_table = p;
+      g_interface_map_table = p;
     }
 
     if (ERROR_BUFFER_OVERFLOW == dwRet)
@@ -270,62 +296,32 @@ libwinet_refresh_interface_map_table()
    Return 0, if the interface only binds one ip version.
 
    Special case:
-       If the interface is loopback, it will always return 1. 
+       If the interface is loopback, it will always return 1.
+
+   Notice the parameter family specify the familay of input ifindex,
+   not output family. Actually,
+
+   family == AF_INET, it will map ipv4 to ipv6,
+   family == AF_INET6, it will map ipv6 to ipv4,
    */
 static int
 libwinet_map_ifindex(int family, int ifindex)
 {
-  IP_ADAPTER_ADDRESSES *pAdaptAddr = NULL;
-  IP_ADAPTER_ADDRESSES *pTmpAdaptAddr = NULL;
-  DWORD dwRet = 0;
-  DWORD dwSize = 0x10000;
-  DWORD dwReturn = 0;
-
-  dwRet = GetAdaptersAddresses(AF_UNSPEC,
-                               GAA_FLAG_SKIP_UNICAST            \
-                               | GAA_FLAG_SKIP_ANYCAST          \
-                               | GAA_FLAG_SKIP_MULTICAST        \
-                               | GAA_FLAG_SKIP_DNS_SERVER       \
-                               | GAA_FLAG_SKIP_FRIENDLY_NAME,
-                               NULL,
-                               pAdaptAddr,
-                               &dwSize
-                               );
-  if (ERROR_BUFFER_OVERFLOW == dwRet) {
-    FREE(pAdaptAddr);
-    if (NULL == (pAdaptAddr = (IP_ADAPTER_ADDRESSES*)MALLOC(dwSize)))
-      return 0;
-    dwRet = GetAdaptersAddresses(AF_UNSPEC,
-                                 GAA_FLAG_SKIP_UNICAST            \
-                                 | GAA_FLAG_SKIP_ANYCAST          \
-                                 | GAA_FLAG_SKIP_MULTICAST        \
-                                 | GAA_FLAG_SKIP_DNS_SERVER       \
-                                 | GAA_FLAG_SKIP_FRIENDLY_NAME,
-                                 NULL,
-                                 pAdaptAddr,
-                                 &dwSize
-                                 );
+  /* Loopback Interface */
+  if (ifindex == 1)
+    return 1;
+  if (g_interface_map_table == NULL)
+    if (!libwinet_refresh_interface_map_table())
+      return -1;
+  PLIBWINET_INTERFACE_MAP_TABLE p = g_interface_map_table;
+  while (p) {
+    if (family == AF_INET && ifindex == p -> IfIndex && p -> Ipv6IfIndex)
+      return p -> Ipv6IfIndex;
+    else if (family == AF_INET6 && ifindex == p -> Ipv6IfIndex && p -> IfIndex)
+      return p -> IfIndex;
+    p = p -> next;
   }
-  if (NO_ERROR == dwRet) {
-
-    pTmpAdaptAddr = pAdaptAddr;
-
-    while (pTmpAdaptAddr) {
-      if (family == AF_INET ? pTmpAdaptAddr -> IfIndex == ifindex
-          : pTmpAdaptAddr -> Ipv6IfIndex == ifindex) {
-        dwReturn = (pTmpAdaptAddr -> IfType == IF_TYPE_SOFTWARE_LOOPBACK) ?
-          1 : (family == AF_INET) ?
-          pTmpAdaptAddr -> Ipv6IfIndex : pTmpAdaptAddr -> IfIndex;
-        break;
-      }
-
-      pTmpAdaptAddr = pTmpAdaptAddr->Next;
-    }
-
-    FREE(pAdaptAddr);
-  }
-
-  return dwReturn;
+  return 0;
 }
 
 static int
@@ -526,7 +522,7 @@ libwinet_dump_ipv6_route_table(struct cyginet_route *routes,
       if (ignored)
         ignored = 0;
       else if (!ignored) {
-        route.proto = MIB_IPPROTO_OTHER; /* ?? */
+        route.proto = MIB_IPPROTO_NETMGMT; /* ?? */
         if ((maxroutes > count) && (proute != NULL)) {
           memcpy(proute, &route, sizeof(struct cyginet_route));
           proute ++;
@@ -816,8 +812,7 @@ cyginet_blackhole_index(struct in6_addr* addr6, char * addr)
   dwRet = GetAdaptersAddresses(AF_UNSPEC,
                                GAA_FLAG_SKIP_ANYCAST            \
                                | GAA_FLAG_SKIP_MULTICAST        \
-                               | GAA_FLAG_SKIP_DNS_SERVER       \
-                               | GAA_FLAG_SKIP_FRIENDLY_NAME,
+                               | GAA_FLAG_SKIP_DNS_SERVER,
                                NULL,
                                pAdaptAddr,
                                &dwSize
@@ -829,8 +824,7 @@ cyginet_blackhole_index(struct in6_addr* addr6, char * addr)
     dwRet = GetAdaptersAddresses(AF_UNSPEC,
                                  GAA_FLAG_SKIP_ANYCAST            \
                                  | GAA_FLAG_SKIP_MULTICAST        \
-                                 | GAA_FLAG_SKIP_DNS_SERVER       \
-                                 | GAA_FLAG_SKIP_FRIENDLY_NAME,
+                                 | GAA_FLAG_SKIP_DNS_SERVER,
                                  NULL,
                                  pAdaptAddr,
                                  &dwSize
@@ -843,16 +837,21 @@ cyginet_blackhole_index(struct in6_addr* addr6, char * addr)
       if (pTmpAdaptAddr -> IfIndex
           && pTmpAdaptAddr -> Ipv6IfIndex
           && (pTmpAdaptAddr -> OperStatus == IfOperStatusUp)
-          && (pTmpAdaptAddr -> IfType != IF_TYPE_SOFTWARE_LOOPBACK)) {
-        
+          && (pTmpAdaptAddr -> IfType != IF_TYPE_SOFTWARE_LOOPBACK)
+          && !wcscmp(pTmpAdaptAddr -> FriendlyName, L"blackhole")) {
+
         PIP_ADAPTER_UNICAST_ADDRESS p = pTmpAdaptAddr -> FirstUnicastAddress;
         while (p) {
           SOCKADDR *s;
           s =  (p -> Address).lpSockaddr;
-          if (s -> sa_family == AF_INET)
-            memcpy(addr, &(((struct sockaddr_in *)s) -> sin_addr), 4);
-          else if (s -> sa_family == AF_INET6)
-            memcpy(addr6, &(((struct sockaddr_in6 *)s) -> sin6_addr), 16);
+          if (s -> sa_family == AF_INET) {
+            if (addr)
+              memcpy(addr, &(((struct sockaddr_in *)s) -> sin_addr), 4);
+          }
+          else if (s -> sa_family == AF_INET6) {
+            if (addr6)
+              memcpy(addr6, &(((struct sockaddr_in6 *)s) -> sin6_addr), 16);
+          }
           p = p -> Next;
         }
         dwReturn = pTmpAdaptAddr -> Ipv6IfIndex;
@@ -876,15 +875,15 @@ cyginet_blackhole_index(struct in6_addr* addr6, char * addr)
  *                SetIpForwardEntry
  *
  *    Or route command
- *    
+ *
  *    Or netsh routing add persistentroute
- *    
+ *
  *    Or netsh routing add rtmroute
  *
  *    it need "Routing and Remote Access Service" running on the local
  *    machine. Use 'net start remoteaccess' on the local machine to
  *    start the service.
- *    
+ *
  * 2. IPv6 route: command "netsh"
  *
  *    C:/> netsh interface ipv6 add route
@@ -918,7 +917,7 @@ libwinet_edit_route_entry(const struct sockaddr *dest,
     const int MAX_BUFFER_SIZE = 1024;
     const char * cmdformat = "netsh interface ipv6 %s route "
                              "prefix=%s/%d interface=%d "
-                             "%s%s %s%d";
+                             "nexthop=%s %cmetric=%d";
     char cmdbuf[MAX_BUFFER_SIZE];
     char sdest[INET6_ADDRSTRLEN];
     char sgate[INET6_ADDRSTRLEN];
@@ -935,7 +934,8 @@ libwinet_edit_route_entry(const struct sockaddr *dest,
                           INET6_ADDRSTRLEN
                           ))
       return -1;
-
+    /* metric clause results delete route command failed, so we add
+       '#' to commet this clause when delete route.  */
     if (snprintf(cmdbuf,
                  MAX_BUFFER_SIZE,
                  cmdformat,
@@ -944,9 +944,8 @@ libwinet_edit_route_entry(const struct sockaddr *dest,
                  sdest,
                  plen,
                  ifindex,
-                 strcmp(sgate, "::") == 0 ? "" : "nexthop=",
-                 strcmp(sgate, "::") == 0 ? "" : sgate,
-                 cmdflag == RTM_DELETE ? "#" : "metric=",
+                 sgate,
+                 cmdflag == RTM_DELETE ? '#' : ' ',
                  metric
                  ) >= MAX_BUFFER_SIZE)
       return -1;
@@ -956,23 +955,29 @@ libwinet_edit_route_entry(const struct sockaddr *dest,
 
   }
 
-  /* Add ipv4 route before Windows Vista */
-  else if (0) {
+  /* Add ipv4 route before Windows Vista, use IP Helper API */
+  else {
     MIB_IPFORWARDROW Row;
     unsigned long Res;
+
+    struct in_addr mask;
+    plen2mask(plen, &mask);
+
     memset(&Row, 0, sizeof(MIB_IPFORWARDROW));
 
     Row.dwForwardDest = (((SOCKADDR_IN*)dest) -> sin_addr).S_un.S_addr;
     Row.dwForwardPolicy = 0;
     Row.dwForwardNextHop = (((SOCKADDR_IN*)gate) -> sin_addr).S_un.S_addr;
     Row.dwForwardIfIndex = libwinet_map_ifindex(AF_INET6, ifindex);
+    Row.dwForwardMask = mask.S_un.S_addr;
     /*
      * MIB_IPROUTE_TYPE_DIRECT <==> dwForwardNextHop == dwForwardDest
-     * MIB_IPROUTE_TYPE_LOCAL  <==> dwForwardNextHop == Ip of the interface
+     * MIB_IPROUTE_TYPE_LOCAL  <==> dwForwardNextHop in local interfaces
      * MIB_IPROUTE_TYPE_INDIRECT all the others
      */
     Row.dwForwardType = Row.dwForwardNextHop == Row.dwForwardDest ? \
       MIB_IPROUTE_TYPE_DIRECT : MIB_IPROUTE_TYPE_INDIRECT;
+    Row.dwForwardType = MIB_IPROUTE_TYPE_INDIRECT;
     Row.dwForwardProto = MIB_IPPROTO_NETMGMT;
     Row.dwForwardAge = 0;
     Row.dwForwardNextHopAS = 0;
@@ -999,7 +1004,7 @@ libwinet_edit_route_entry(const struct sockaddr *dest,
       return -1;
   }
 
-  /* Use route command */
+#if 0 /* Use route command */  
   else {
     /* route ADD dest MASK mask gate METRIC n IF index */
     /* route CHANGE dest MASK mask gate METRIC n IF index */
@@ -1036,7 +1041,7 @@ libwinet_edit_route_entry(const struct sockaddr *dest,
                  MAX_BUFFER_SIZE,
                  "route %s %s MASK %s %s METRIC %d IF %d",
                  cmdflag == RTM_ADD ? "add" :
-                 cmdflag == RTM_DELETE ? "delete" : "change",
+                   cmdflag == RTM_DELETE ? "delete" : "change",
                  sdest,
                  smask,
                  sgate,
@@ -1048,6 +1053,7 @@ libwinet_edit_route_entry(const struct sockaddr *dest,
     if (libwinet_run_command(cmdbuf) != 0)
       return -1;
   }
+#endif  /* if 0 */
 
 #else
   /* Add route entry after Windows Vista */
@@ -1098,75 +1104,118 @@ libwinet_edit_route_entry(const struct sockaddr *dest,
   return 1;
 }
 
-static int
-libwinet_set_registry_key(char *key, char * name, int value, int defvalue)
-{
-  HKEY hKey;
-  unsigned long type;
-  unsigned long size;
-  unsigned long old;
-
-  if (RegOpenKeyEx(HKEY_LOCAL_MACHINE, key, 0, KEY_READ | KEY_WRITE, &hKey) !=
-      ERROR_SUCCESS)
-    return -1;
-
-  size = sizeof(old);
-
-  if (RegQueryValueEx(hKey, name, NULL, &type, (unsigned char *)&old, &size) !=
-      ERROR_SUCCESS || type != REG_DWORD)
-    old = defvalue;
-
-  if (RegSetValueEx(hKey,
-                    name,
-                    0,
-                    REG_DWORD,
-                    (unsigned char *)&value,
-                    sizeof(value)
-                    )) {
-    RegCloseKey(hKey);
-    return -1;
-  }
-
-  RegCloseKey(hKey);
-  return old;
-}
-
 int
-cyginet_set_ipv6_forwards(int value)
+cyginet_set_interface_forwards(const char * ifname, int value)
 {
-  char * key = "SYSTEM\\CurrentControlSet\\Services\\Tcpip6\\Parameters";
-  /*
-  int rc;
-  rc = libwinet_ipv6_interfaces_forwards(value);
-  if (rc == -1)
-    return -1;
-  if (value) {
-    if (ERROR_IO_PENDING != EnableRouter(NULL, NULL))
-      return -1;
-  }
-  else {
-    if (NO_ERROR != UnenableRouter(NULL, NULL))
-      return -1;
-  }
-  */
-  return libwinet_set_registry_key(key,
-                                   "IPEnableRouter",
-                                   value,
-                                   0
-                                   );
+  /* For ipv4 */
+  /* netsh routing add interface ifname enabled/disabled */
+  char cmdbuf[255];
+  if (snprintf(cmdbuf,
+               255,
+               "netsh interface ipv6 set interface \"%s\" "
+               "forwarding=%s > /dev/null",
+               ifname,
+               value ? "enabled" : "disabled"
+               ) > 0)
+    return system(cmdbuf);
+  return -1;
 }
 
 int
 cyginet_set_icmp6_redirect_accept(int value)
 {
   char * key = "SYSTEM\\CurrentControlSet\\Services\\Tcpip6\\Parameters";
-
+  char * name = "EnableICMPRedirect";
   return libwinet_set_registry_key(key,
-                                   "EnableICMPRedirect",
+                                   name,
                                    value,
                                    1
                                    );
 }
+
+static void
+libwinet_restore_ipv6_interface()
+{
+  char cmdbuf[255];
+  int rc=0;
+  PLIBWINET_INTERFACE_MAP_TABLE p = g_interface_map_table;
+  while (p) {
+    if (p -> RouteFlags != -1)
+      if (snprintf(cmdbuf,
+                   255,
+                   "netsh interface ipv6 set interface \"%s\" "
+                   "forwarding=%s > /dev/null",
+                   p -> FriendlyName,
+                   p -> RouteFlags ? "enabled" : "disabled"
+                   ) > 0)
+        rc = system(cmdbuf);
+    p = p -> next;
+  }
+}
+
+#if 0
+int
+cyginet_set_ipv6_forwards(int value)
+{
+  char * key = "SYSTEM\\CurrentControlSet\\Services\\Tcpip6\\Parameters";
+  char * name = "IPEnableRouter";
+  return libwinet_set_registry_key(key,
+                                   name,
+                                   value,
+                                   0
+                                   );
+}
+
+static int
+libwinet_ipv6_interfaces_forwards(int forward)
+{
+  const int MAX_BUFFER_SIZE = 255;
+  char cmdbuf[MAX_BUFFER_SIZE];
+  int result;
+
+  struct if_nameindex * p;
+  struct if_nameindex * ptr;
+  if (NULL == (ptr = (struct if_nameindex *)if_nameindex()))
+    return -1;
+
+  p = ptr;
+  while (p -> if_index) {
+    if (snprintf(cmdbuf,
+                 MAX_BUFFER_SIZE,
+                 "netsh interface ipv6 set interface %d forwarding=%s",
+                 p -> if_index,
+                 forward ? "enabled" : "disabled"
+                 ) >= MAX_BUFFER_SIZE)
+      break;
+    if (libwinet_run_command(cmdbuf) != 0)
+      break;
+    p ++;
+  }
+  result = ! (p -> if_index);
+  if_freenameindex(ptr);
+  return result;
+}
+
+static void
+libwinet_init_ipv6_interface()
+{
+  char cmdbuf[255];
+  int rc=0;
+  PLIBWINET_INTERFACE_MAP_TABLE p = g_interface_map_table;
+
+  while (p) {
+    if (snprintf(cmdbuf,
+                 255,
+                 "netsh interface ipv6 set interface \"%s\" " \
+                 "forwarding=enabled advertise=enabled > /dev/null",
+                 p -> FriendlyName
+                 ) > 0) {
+      rc = system(cmdbuf);
+    }
+    p = p -> next;
+  }
+}
+#endif  /* if 0 */
 
 /*
  * On Windows Vista and later, wireless network cards are reported as
@@ -1411,58 +1460,6 @@ cyginet_loopback_index(int family)
   return 1;
 }
 
-char *
-cyginet_ipv4_index2ifname(int ifindex)
-{
-  IP_ADAPTER_ADDRESSES *pAdaptAddr = NULL;
-  IP_ADAPTER_ADDRESSES *pTmpAdaptAddr = NULL;
-  DWORD dwRet = 0;
-  DWORD dwSize = 0x10000;
-  DWORD dwFamily = AF_INET;
-  char * ifname = NULL;
-
-  dwRet = GetAdaptersAddresses(dwFamily,
-                               GAA_FLAG_SKIP_UNICAST            \
-                               | GAA_FLAG_SKIP_ANYCAST          \
-                               | GAA_FLAG_SKIP_MULTICAST        \
-                               | GAA_FLAG_SKIP_DNS_SERVER,
-                               NULL,
-                               pAdaptAddr,
-                               &dwSize
-                               );
-  if (ERROR_BUFFER_OVERFLOW == dwRet) {
-    FREE(pAdaptAddr);
-    if (NULL == (pAdaptAddr = (IP_ADAPTER_ADDRESSES*)MALLOC(dwSize)))
-      return NULL;
-    dwRet = GetAdaptersAddresses(dwFamily,
-                                 GAA_FLAG_SKIP_UNICAST            \
-                                 | GAA_FLAG_SKIP_ANYCAST          \
-                                 | GAA_FLAG_SKIP_MULTICAST        \
-                                 | GAA_FLAG_SKIP_DNS_SERVER,
-                                 NULL,
-                                 pAdaptAddr,
-                                 &dwSize
-                                 );
-  }
-
-  if (NO_ERROR == dwRet) {
-    pTmpAdaptAddr = pAdaptAddr;
-    while (pTmpAdaptAddr) {
-
-      if (pTmpAdaptAddr -> IfIndex == ifindex) {
-        ifname = cyginet_ifname(pTmpAdaptAddr -> AdapterName);
-        break;
-      }
-
-      pTmpAdaptAddr = pTmpAdaptAddr->Next;
-    }
-
-    FREE(pAdaptAddr);
-  }
-
-  return ifname;
-}
-
 /*
  * There are 3 ways to dump route table in the Windows:
  *
@@ -1632,12 +1629,17 @@ cyginet_read_route_socket(void *buffer, size_t size)
   return 0;
 }
 
+int 
+cyginet_refresh_interface_table()
+{
+  return libwinet_refresh_interface_map_table();
+}
+
 int
 cyginet_startup()
 {
   WORD wVersionRequested;
   WSADATA wsaData;
-
   /* Use the MAKEWORD(lowbyte, highbyte) macro declared in Windef.h */
   wVersionRequested = MAKEWORD(2, 2);
   return WSAStartup(wVersionRequested, &wsaData);
@@ -1646,6 +1648,8 @@ cyginet_startup()
 void
 cyginet_cleanup()
 {
+  libwinet_restore_ipv6_interface();
+  libwinet_free_interface_map_table();
   WSACleanup();
 }
 
@@ -1653,10 +1657,10 @@ char *
 cyginet_guidname(const char * ifname)
 {
   PLIBWINET_INTERFACE_MAP_TABLE p;
-  if (!interface_map_table)
+  if (!g_interface_map_table)
     libwinet_refresh_interface_map_table();
 
-  p = interface_map_table;
+  p = g_interface_map_table;
   while (p) {
     if (strcmp(ifname, p -> FriendlyName) == 0)
       return p -> AdapterName;
@@ -1669,10 +1673,10 @@ char *
 cyginet_ifname(const char * guidname)
 {
   PLIBWINET_INTERFACE_MAP_TABLE p;
-  if (!interface_map_table)
+  if (!g_interface_map_table)
     libwinet_refresh_interface_map_table();
 
-  p = interface_map_table;
+  p = g_interface_map_table;
   while (p) {
     if (strcmp(guidname, p -> AdapterName) == 0)
       return p -> FriendlyName;
@@ -1681,8 +1685,88 @@ cyginet_ifname(const char * guidname)
   return NULL;
 }
 
+int
+cyginet_add_ipentry(int ifindex, struct sockaddr *addr)
+{
+  MIB_IPNETROW row;
+  PLIBWINET_INTERFACE_MAP_TABLE p;
+  if (!g_interface_map_table)
+    libwinet_refresh_interface_map_table();
+
+  p = g_interface_map_table;
+  while (p) {
+    if (p -> IfIndex == ifindex) {
+      row.dwPhysAddrLen = p -> PhysicalAddressLength;
+      if (row.dwPhysAddrLen > MAXLEN_PHYSADDR)
+        return -1;
+      memcpy(row.bPhysAddr, p -> PhysicalAddress, row.dwPhysAddrLen);
+      break;
+    }
+    p = p -> next;
+  }
+  if (row.dwPhysAddrLen) {
+    row.dwIndex = ifindex;  
+    row.dwAddr = (((SOCKADDR_IN*)addr) -> sin_addr).S_un.S_addr;
+    row.dwType = MIB_IPNET_TYPE_DYNAMIC; 
+    return CreateIpNetEntry ( &row );
+  }
+  return -1;
+}
+
 /* The following functions are reserved. */
 #if 0
+
+char *
+cyginet_ipv4_index2ifname(int ifindex)
+{
+  IP_ADAPTER_ADDRESSES *pAdaptAddr = NULL;
+  IP_ADAPTER_ADDRESSES *pTmpAdaptAddr = NULL;
+  DWORD dwRet = 0;
+  DWORD dwSize = 0x10000;
+  DWORD dwFamily = AF_INET;
+  char * ifname = NULL;
+
+  dwRet = GetAdaptersAddresses(dwFamily,
+                               GAA_FLAG_SKIP_UNICAST            \
+                               | GAA_FLAG_SKIP_ANYCAST          \
+                               | GAA_FLAG_SKIP_MULTICAST        \
+                               | GAA_FLAG_SKIP_DNS_SERVER,
+                               NULL,
+                               pAdaptAddr,
+                               &dwSize
+                               );
+  if (ERROR_BUFFER_OVERFLOW == dwRet) {
+    FREE(pAdaptAddr);
+    if (NULL == (pAdaptAddr = (IP_ADAPTER_ADDRESSES*)MALLOC(dwSize)))
+      return NULL;
+    dwRet = GetAdaptersAddresses(dwFamily,
+                                 GAA_FLAG_SKIP_UNICAST            \
+                                 | GAA_FLAG_SKIP_ANYCAST          \
+                                 | GAA_FLAG_SKIP_MULTICAST        \
+                                 | GAA_FLAG_SKIP_DNS_SERVER,
+                                 NULL,
+                                 pAdaptAddr,
+                                 &dwSize
+                                 );
+  }
+
+  if (NO_ERROR == dwRet) {
+    pTmpAdaptAddr = pAdaptAddr;
+    while (pTmpAdaptAddr) {
+
+      if (pTmpAdaptAddr -> IfIndex == ifindex) {
+        ifname = cyginet_ifname(pTmpAdaptAddr -> AdapterName);
+        break;
+      }
+
+      pTmpAdaptAddr = pTmpAdaptAddr->Next;
+    }
+
+    FREE(pAdaptAddr);
+  }
+
+  return ifname;
+}
 
 static int
 libwinet_get_loopback_index(int family)
@@ -2282,7 +2366,7 @@ DWORD GetInterfaceIndexForAddress(SOCKADDR *pAddr)
 
     FREE(pAdaptAddr);
   }
-  
+
   return dwReturn;
 }
 
@@ -2498,7 +2582,7 @@ runTestCases()
       if_freenameindex(ptr);
     }
   }
-
+  /*
   printf("\n\nTest cyginet_ipv4_index2ifname:\n\n");
   {
     int ifindex = 1;
@@ -2507,10 +2591,10 @@ runTestCases()
            cyginet_ipv4_index2ifname(ifindex)
            );
   }
-
+  */
   printf("\n\nTest cyginet_guidname works in the Cygwin:\n\n");
   {
-    PLIBWINET_INTERFACE_MAP_TABLE p = interface_map_table;
+    PLIBWINET_INTERFACE_MAP_TABLE p = g_interface_map_table;
     while (p) {
       printf("%s:\t\t%s\n",
              p -> FriendlyName,
@@ -2546,7 +2630,7 @@ runTestCases()
 
   printf("\n\nTest libwinet_is_wireless_interface:\n\n");
   {
-    PLIBWINET_INTERFACE_MAP_TABLE p = interface_map_table;
+    PLIBWINET_INTERFACE_MAP_TABLE p = g_interface_map_table;
     while (p) {
       printf("%s is wireless netcard: %d\n",
              p -> FriendlyName,
@@ -2585,6 +2669,7 @@ runTestCases()
     }
   }
 
+  /*
   printf("\n\nTest cyginet_set_ipv6_forwards:\n\n");
   {
     printf("cyginet_set_ipv6_forwards(1) return %d\n",
@@ -2604,11 +2689,12 @@ runTestCases()
            cyginet_set_icmp6_redirect_accept(1)
            );
   }
+  */
 
   printf("\n\nTest cyginet_interface_wireless:\n\n");
   {
     int n;
-    PLIBWINET_INTERFACE_MAP_TABLE p = interface_map_table;
+    PLIBWINET_INTERFACE_MAP_TABLE p = g_interface_map_table;
     while (p) {
       n = cyginet_interface_wireless(p -> FriendlyName, 1);
       printf("%s is wireless netcard: %d\n", p -> FriendlyName, n);
@@ -2619,7 +2705,7 @@ runTestCases()
   printf("\n\nTest cyginet_interface_mtu:\n\n");
   {
     int n;
-    PLIBWINET_INTERFACE_MAP_TABLE p = interface_map_table;
+    PLIBWINET_INTERFACE_MAP_TABLE p = g_interface_map_table;
     while (p) {
       n = cyginet_interface_mtu(p -> FriendlyName, 1);
       printf("mtu of %s is : %d\n", p -> FriendlyName, n);
@@ -2630,7 +2716,7 @@ runTestCases()
   printf("\n\nTest cyginet_interface_operational:\n\n");
   {
     int n;
-    PLIBWINET_INTERFACE_MAP_TABLE p = interface_map_table;
+    PLIBWINET_INTERFACE_MAP_TABLE p = g_interface_map_table;
     while (p) {
       n = cyginet_interface_operational(p -> FriendlyName, 1);
       printf("%s is up: %d\n", p -> FriendlyName, n);
@@ -2642,7 +2728,7 @@ runTestCases()
   {
     struct sockaddr_in sa;
     int n;
-    PLIBWINET_INTERFACE_MAP_TABLE p = interface_map_table;
+    PLIBWINET_INTERFACE_MAP_TABLE p = g_interface_map_table;
     while (p) {
       memset(&sa, 0, sizeof(sa));
       n = cyginet_interface_ipv4(p -> FriendlyName, 1, (unsigned char*)&sa);
@@ -2655,7 +2741,7 @@ runTestCases()
   {
     int n;
     struct sockaddr_dl sdl;
-    PLIBWINET_INTERFACE_MAP_TABLE p = interface_map_table;
+    PLIBWINET_INTERFACE_MAP_TABLE p = g_interface_map_table;
     while (p) {
         memset(&sdl, 0, sizeof(struct sockaddr_dl));
         n = cyginet_interface_sdl(&sdl, p -> FriendlyName);
@@ -2767,9 +2853,9 @@ runTestCases()
 
     if (inet_pton(AF_INET, "192.168.128.119", &dest4.sin_addr) != 1)
       break;
-    if (inet_pton(AF_INET, "192.168.128.200", &gate4.sin_addr) != 1)
+    if (inet_pton(AF_INET, "192.168.121.200", &gate4.sin_addr) != 1)
       break;
-    ifindex = 2;
+    ifindex = 5;
     metric = 3;
     prefix = 32;
 
@@ -2877,10 +2963,11 @@ int main(int argc, char* argv[])
   printf("\n\nTest libwinet_refresh_interface_map_table:\n\n");
   {
     if (libwinet_refresh_interface_map_table()) {
-      PLIBWINET_INTERFACE_MAP_TABLE p = interface_map_table;
+      PLIBWINET_INTERFACE_MAP_TABLE p = g_interface_map_table;
       while (p) {
         printf("Friendly Name:\t %s\n", p -> FriendlyName);
         printf("Adapter Name:\t %s\n", p -> AdapterName);
+        printf("Forward flag:\t %d\n", p -> RouteFlags);
         printf("IfType:\t %ld\n", p -> IfType);
         p = p -> next;
       }
@@ -2891,8 +2978,15 @@ int main(int argc, char* argv[])
 
   runTestCases();
 
+  /* printf("\n\nTest libwinet_init_ipv6_interface:\n\n"); */
+  /* libwinet_init_ipv6_interface(); */
+
+  /* printf("\n\nTest libwinet_restore_ipv6_interface:\n\n"); */
+  /* libwinet_restore_ipv6_interface(); */
+
   printf("\n\nTest libwinet_free_interface_map_table:\n\n");
   libwinet_free_interface_map_table();
+  printf("\n\nTest Finished.\n\n");
 
   WSACleanup();
   return 0;

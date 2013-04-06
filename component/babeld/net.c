@@ -49,6 +49,11 @@ babel_socket(int port)
     if(s < 0)
         return -1;
 
+    /* When this value is nonzero (the default on Windows), a socket
+       created for the AF_INET6 address family can be used to send and
+       receive IPv6 packets only.  So it's not require to set in the
+       Windows XP. Actualy, this socket option is only supported on
+       Windows Vista or later. */
 #if !defined(_WIN32_WINNT) || _WIN32_WINNT >= 0x0600
     rc = setsockopt(s, IPPROTO_IPV6, IPV6_V6ONLY, &one, sizeof(one));
     if(rc < 0)

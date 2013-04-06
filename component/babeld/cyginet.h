@@ -46,15 +46,50 @@
   IPv6 RFCs and Standards Working Groups
   http://www.ipv6now.com.au/RFC.php
 
-  Routing Table Manager Version 2  
+  Routing Table Manager Version 2
   http://msdn.microsoft.com/en-us/library/windows/desktop/bb404201(v=vs.85).aspx
 
-  Using Routing Table Manager Version 2
+  Using Routing Table Manager Version 2, this section contains sample
+  code that can be used when developing clients such as routing
+  protocols.
   http://msdn.microsoft.com/en-us/library/windows/desktop/aa382335(v=vs.85).aspx
 
-  This section contains sample code that can be used when developing
-  clients such as routing protocols.
+  An introduction to the IPv6 protocol along with overviews on
+  deployment and IPv6 transitioning technologies is available on
+  Technet at Microsoft Internet Protocol Version 6 (IPv6).
+  http://go.microsoft.com/fwlink/p/?linkid=194338
+  http://technet.microsoft.com/en-us/network/bb530961.aspx
 
+  Internet Protocol Version 6 (IPv6)
+  http://msdn.microsoft.com/en-us//library/windows/desktop/ms738570(v=vs.85).aspx
+
+  IPv6 Link-local and Site-local Addresses
+  http://msdn.microsoft.com/zh-cn/library/windows/desktop/ms739166(v=vs.85).aspx
+
+  Recommended Configurations for IPv6
+  http://msdn.microsoft.com/en-us/library/windows/desktop/ms740117(v=vs.85).aspx
+
+  IPv6 Support in Home Routers, It looks like a windows re6stnet.
+  http://msdn.microsoft.com/en-us/windows/hardware/gg463251.aspx
+
+  Neighbor Discovery in IPv6
+  http://tools.ietf.org/html/rfc4861
+
+  Default Address Selection for Internet Protocol version 6 (IPv6)
+  http://tools.ietf.org/html/rfc3484
+
+  Path MTU Discovery
+  http://tools.ietf.org/html/rfc1191
+
+  IPv6 Traffic Between Nodes on Different Subnets of an IPv4 Internetwork (6to4)
+  http://msdn.microsoft.com/zh-cn/library/windows/desktop/ms737598(v=vs.85).aspx
+
+  Multicast Listener Discovery (MLD)
+  http://msdn.microsoft.com/en-us/library/aa916334.aspx
+
+  IPv6 Addresses, it explains the relation between link-local address
+  and interface id
+  http://msdn.microsoft.com/en-us/library/aa921042.aspx
  */
 
 #ifndef __CYGIFNET_H__
@@ -112,12 +147,15 @@ struct if_nameindex {
   char     *if_name;
 };
 
-typedef struct _LIBWINET_INTERFACE_MAP_TABLE {  
-  PCHAR     FriendlyName;    
+typedef struct _LIBWINET_INTERFACE_MAP_TABLE {
+  PCHAR     FriendlyName;
   PCHAR     AdapterName;
   BYTE      PhysicalAddress[MAX_ADAPTER_ADDRESS_LENGTH];
   DWORD     PhysicalAddressLength;
   DWORD     IfType;
+  int       RouteFlags;
+  DWORD     IfIndex;
+  DWORD     Ipv6IfIndex;
   VOID      *next;
 } LIBWINET_INTERFACE_MAP_TABLE, *PLIBWINET_INTERFACE_MAP_TABLE;
 
@@ -163,8 +201,8 @@ void cyginet_cleanup();
 
 int cyginet_start_monitor_route_changes(int);
 int cyginet_stop_monitor_route_changes();
-int cyginet_set_ipv6_forwards(int);
 int cyginet_set_icmp6_redirect_accept(int);
+int cyginet_set_interface_forwards(const char * ifname, int value);
 
 int cyginet_interface_sdl(struct sockaddr_dl *, char *);
 int cyginet_interface_wireless(const char *, int);
@@ -182,10 +220,9 @@ int cyginet_delete_route_entry(const struct sockaddr *, unsigned short,
 int cyginet_update_route_entry(const struct sockaddr *, unsigned short,
                                const struct sockaddr *, int , unsigned int);
 
+int cyginet_add_ipentry(int, struct sockaddr*);
+
 char * cyginet_ifname(const char *);
 char * cyginet_guidname(const char *);
-char * cyginet_ipv4_index2ifname(int);
-
-int cyginet_blackhole_index(struct in6_addr*, char *);
-
+int cyginet_refresh_interface_table();
 #endif  /* __CYGIFNET_H__ */

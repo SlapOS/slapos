@@ -64,7 +64,7 @@ clean:
 
 kernel.o: kernel_netlink.c kernel_socket.c kernel_cygwin.c
 
-# Usage: ./testc.exe
+# Usage: ./test.exe
 # Verify most of the functions in the cyginet.c
-testc.exe: cyginet.c
+test.exe: cyginet.c
 	$(CC) $(CFLAGS) $(LDFLAGS) -DTEST_CYGINET -o $@ $< $(LDLIBS)

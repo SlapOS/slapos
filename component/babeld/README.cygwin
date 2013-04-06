@@ -46,7 +46,97 @@ Control Panel -> Network Connections.
 
 You should see all the connections like "Local Area Connection
 3". Right click and rename this to something shorter and without
-embedded spaces such as "my-tap".
+embedded spaces such as "tap1".
+
+Or
+
+$ netsh interface set interface name = "Local Area Connection 3" newname="tap1"
+
+Test babeld in the Cygwin
+=========================
+
+We need 2 laptops, a wireless router, one laptop connects the router
+by wireless netcard, another is wired.
+
+Both of laptops install Openvpn for cygwin, enable ipv6 forwarding on
+each tap interface
+
+Laptop A:
+
+  lan            Disconnect
+
+  wlan           192.168.121.100/24
+                 2001::A1 (manual)
+
+  tap            ifindex = 11, ipv6 forwarding=enabled
+                 10.100.0.1/24          
+                 fe80::2ff:38ff:fed8:7d97  (auto link addr)
+                 
+Laptop B:
+
+  lan            192.168.121.21/24
+                 2001::B1 (manual)
+
+  tap            ifindex = 7, ipv6 forwarding=enabled
+                 10.200.0.1/24           
+                 fe80::2ff:17ff:fee4:8ed0 (auto link addr)
+
+Router R:
+       192.168.121.1/24
+
+
+In the laptop A, run the following command:
+
+# Start openvpn server
+$ cd C:/Program Files/OpenVPN/server 
+$ ../bin/openvpn.exe --config server.ovpn
+
+# Startup babeld
+$ babeld.exe -d 3 -h 15 -H 15 -s wlan tap
+
+# Assign ipv6 unicast address to interfaces
+# netsh interface ipv6 add address wlan 2001:A1
+# netsh interface ipv6 set interface tap forwarding=enabled
+
+In the laptop B, run the following command:
+
+# Start openvpn client
+$ cd C:/Program Files/OpenVPN/client 
+$ ../bin/openvpn.exe --config client.ovpn
+
+# Startup babeld
+$ babeld.exe -d 3 -h 15 -H 15 -s lan tap1
+
+# Assign ipv6 unicast address to interfaces
+# netsh interface ipv6 add address lan 2001:B1
+# netsh interface ipv6 set interface tap forwarding=enabled
+
+Then ping6 to each other , 
+
+In laptop A, 
+$ ping6 2001::B1
+
+In laptop B,
+$ ping6 2001::A1
+
+It should work.
+
+Check kernel route:
+$ netsh interface ipv6 show route
+
+Example output of A
+
+Publish  Type       Met  Prefix                    Idx  Gateway/Interface Name
+-------  --------  ----  ------------------------  ---  ---------------------
+no       Manual       0  ::/0                       11  fe80::2ff:17ff:fee4:8ed0
+
+
+Example output of B
+
+Publish  Type       Met  Prefix                    Idx  Gateway/Interface Name
+-------  --------  ----  ------------------------  ---  ---------------------
+no       Manual       0  ::/0                       7   fe80::2ff:38ff:fed8:7d97
+
 
 Notes
 =====
@@ -66,22 +156,31 @@ Notes
 5. Ipv6 option "IPV6_V6ONLY" only works in the Windows Vista later.
 
 6. If one connection is assigned more than one ipv4 address, babeld
-   returns the first one only, is it right? I'm not sure.
+   returns the first one only to check whether ipv4 address changed,
+   is it right? I'm not sure.
 
 7. Regarding IPV6CTL_FORWARDING and IPV6CTL_SENDREDIRECTS, MSDN says
-   that you can set both of options for Ipv4 in the registry:
-   "HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\Tcpip\Parameters",
-   but says nothing for Ipv6. Does it work for ipv6 in the registry:
-   "HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\Tcpip6\Parameters"
-   ?
+   that you can set both of options in the registry:
+   HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\Tcpip\Parameters
+   HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\Tcpip6\Parameters
+
+   IPEnableRouter, DWORD
+   EnableICMPRedirect, DWORD
+
+   Refers to:
+          http://support.microsoft.com/kb/315236/en-us
+          http://technet.microsoft.com/en-us/library/cc766102(v=ws.10).aspx
+          http://msdn.microsoft.com/en-us/library/aa915651.aspx
+
+   For Ipv6, FORWARDING is set per interface, not global setting.
 
 8. There is no RTM_BLACKHOLE, RTM_REJECT, NULLROUTE in the windows, in
    the kernel_cygwin.c!kernel_route, we only use local address as
    gateway in the BLACKHOLE route entry. Is it OK?
 
-   A: It's not OK actually. In the Windows, you can't use 127.0.0.1 as
-      gateway when add route entry. So the solution is find one
-      interface other than loopback interface, then use its
+   A: It's not OK actually for ipv4. In the Windows, you can't use
+      127.0.0.1 as gateway when add route entry. So the solution is
+      find one interface other than loopback interface, then use its
       uni-address as gateway, it will be a blackhole route entry. For
       example, if you have an interface which ip addr is
       192.168.128.100, and ifindex is 5, then
@@ -92,3 +191,8 @@ Notes
 
 9. IN6_LINKLOCAL_IFINDEX && SET_IN6_LINKLOCAL_IFINDEX, do both of them
    work in the Windows?
+
+   A: We can ignore both of them. In the windows, it use the following
+      format to specify interface index in the link local address:
+
+      fe80::2ff:38ff:fed8:7d97%11
