@@ -74,12 +74,13 @@ class InitRecipe(GenericBaseRecipe):
         if self.is_db_empty(php_binary=self.options['php-binary'],
                             settings_php=settings_php):
 
-            drush_output = subprocess.check_output([drush_binary,
-                                                   '-y', 'site-install',
-                                                   '--account-name=admin',
-                                                   '--account-pass=%s' % self.options['admin-password'],
-                                                   ],
-                                                   stderr=subprocess.STDOUT)
+            subprocess.check_output([drush_binary,
+                                     '-y', 'site-install',
+                                     self.options['profile'],
+                                     '--account-name=admin',
+                                     '--account-pass=%s' % self.options['admin-password'],
+                                     ],
+                                     stderr=subprocess.STDOUT)
 
             # drush removes the 'w' bit from both the settings file and its
             # directory.

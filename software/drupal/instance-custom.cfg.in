@@ -9,6 +9,7 @@ drupal-admin-password = $${drupal-init:admin-password}
 recipe = slapos.cookbook:drupal_init
 drush-binary = ${apache-php:location}/bin/drush
 php-binary = ${apache-php:location}/bin/php
+profile = standard
 settings-php = ${application-configuration:location}
 htdocs = $${rootdirectory:srv}/www
 admin-password = $${gen-passwd:passwd}
