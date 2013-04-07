@@ -116,7 +116,7 @@ static int kernel_pipe_handles[2];
  *
  * For ipv6, no global options to enable forwarding, but for each
  * interface respectively.
- * 
+ *
  * Option 2:
  *
  * ICMPV6CTL_REDIRACCEPT
@@ -140,7 +140,7 @@ static int kernel_pipe_handles[2];
  * Refer to:
  *     http://technet.microsoft.com/en-us/library/cc766102(v=ws.10).aspx
  *     http://msdn.microsoft.com/en-us/library/aa915651.aspx
- *     
+ *
  * Notice the msdn page of Windows CE, value is "EnableICMPRedirects",
  * it's plural. But I'd rather use singluar form "EnableICMPRedirect".
  *
@@ -158,7 +158,7 @@ kernel_setup(int setup)
             return -1;
 
         /* We don't disable ICMPv6 redirect in the Windows */
-        /* 
+        /*
         if ((rc = cyginet_set_icmp6_redirect_accept(0)) == -1) {
             fprintf(stderr, "Cannot disable ICMPv6 redirect.\n");
             return -1;
@@ -171,7 +171,7 @@ kernel_setup(int setup)
                     );
             return -1;
         }
-        */        
+        */
         FOR_ALL_INTERFACES(ifp) {
             if (cyginet_set_interface_forwards(ifp->name, 1) == -1) {
                 fprintf(stderr, "Cannot enable IPv6 forwarding.\n");
@@ -305,8 +305,10 @@ kernel_route(int operation, const unsigned char *dest, unsigned short plen,
              const unsigned char *newgate, int newifindex,
              unsigned int newmetric)
 {
-    char blackhole_addr6[1][1][16] = {{{0}}};
-    char blackhole_addr[1][1][16] = {{{0}}};
+    char local6[1][1][16] = {{IN6ADDR_ANY_INIT}};
+    char local4[1][1][16] =
+        {{{ 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x7f, 0x00, 0x00, 0x01 }}};
     int rc, ipv4;
     int route_ifindex;
     int prefix_len;
@@ -353,8 +355,6 @@ kernel_route(int operation, const unsigned char *dest, unsigned short plen,
        IN6_IS_ADDR_UNSPECIFIED(newgate))
       return 0;
 
-
-
     kdebugf("kernel_route: %s %s/%d metric %d dev %d nexthop %s\n",
             operation == ROUTE_ADD ? "add" :
             operation == ROUTE_FLUSH ? "flush" : "change",
@@ -390,27 +390,30 @@ kernel_route(int operation, const unsigned char *dest, unsigned short plen,
 
     if(ipv4) {
         PUSHADDR(destination, dest);
-        if (metric == KERNEL_INFINITY)
-            PUSHADDR(gateway, **blackhole_addr);
+        if (metric == KERNEL_INFINITY) {
+            /* blackhole route, now it doesn't work */
+            kdebugf("Error: ipv4 blackhole route doesn't work.\n");
+            return -1;
+            assert (operation != ROUTE_MODIFY);
+            PUSHADDR(gateway, **local4);
+        }
         else if(plen == 128 && memcmp(dest+12, gate+12, 4) == 0) {
-            /*  It means add arp record, add dest ip to this interface */
-            if (cyginet_add_ipentry(ifindex,
-                                    (struct sockaddr*)&destination) != 0)
-                return -1;
+            assert (operation != ROUTE_MODIFY);
+            PUSHADDR(gateway, gate); /* MIB_IPROUTE_TYPE_DIRECT */
         }
         else
-            PUSHADDR(gateway, gate);
+            PUSHADDR(gateway, gate); /* MIB_IPROUTE_TYPE_INDIRECT */
 
     } else {
         PUSHADDR6(destination, dest);
         if (metric == KERNEL_INFINITY)
-            PUSHADDR6(gateway, **blackhole_addr6);
-        else 
+            PUSHADDR6(gateway, **local6);
+        else
             PUSHADDR6(gateway, gate);
     }
 #undef PUSHADDR
 #undef PUSHADDR6
-    /* what if route_ifindex == 0 */    
+    /* what if route_ifindex == 0 */
     switch(operation) {
     case ROUTE_FLUSH:
         rc = cyginet_delete_route_entry((struct sockaddr*)&destination,
@@ -465,7 +468,7 @@ print_kernel_route(int add, struct kernel_route *route)
             ifname ? ifname : "unk",
             route->ifindex
             );
-} 
+}
 
 static int
 parse_kernel_route(struct cyginet_route *src, struct kernel_route *route)
@@ -619,7 +622,7 @@ kernel_addresses(char *ifname, int ifindex, int ll,
             memcpy(routes[i].prefix, v4prefix, 12);
             memcpy(routes[i].prefix + 12, &sin->sin_addr, 4);
             routes[i].plen = 128;
-            routes[i].metric = 0; 
+            routes[i].metric = 0;
             routes[i].ifindex = ifindex;
             routes[i].proto = RTPROT_BABEL_LOCAL;
             memset(routes[i].gw, 0, 16);
@@ -643,7 +646,7 @@ kernel_callback(int (*fn)(int, void*), void *closure)
     kdebugf("Kernel table changed.\n");
     cyginet_refresh_interface_table();
     clear_kernel_socket_event();
-    
+
     return fn(~0, closure);
 }
 

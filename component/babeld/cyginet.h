@@ -90,6 +90,10 @@
   IPv6 Addresses, it explains the relation between link-local address
   and interface id
   http://msdn.microsoft.com/en-us/library/aa921042.aspx
+
+  TCP/IP (v4 and v6) Technical Reference, it shows ipv4 and ipv6 how
+  to work in the windows. (Recommended)
+  http://technet.microsoft.com/en-us/library/dd379473(v=ws.10).aspx
  */
 
 #ifndef __CYGIFNET_H__
@@ -219,8 +223,6 @@ int cyginet_delete_route_entry(const struct sockaddr *, unsigned short,
                                const struct sockaddr *, int , unsigned int);
 int cyginet_update_route_entry(const struct sockaddr *, unsigned short,
                                const struct sockaddr *, int , unsigned int);
-
-int cyginet_add_ipentry(int, struct sockaddr*);
 
 char * cyginet_ifname(const char *);
 char * cyginet_guidname(const char *);

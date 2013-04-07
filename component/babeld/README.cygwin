@@ -196,3 +196,6 @@ Notes
       format to specify interface index in the link local address:
 
       fe80::2ff:38ff:fed8:7d97%11
+
+10. For ipv4, blackhole route doesn't work now. I can't find a simple
+    way to do it in the Windows.

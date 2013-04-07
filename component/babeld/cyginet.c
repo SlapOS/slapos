@@ -24,6 +24,7 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <wchar.h>
+#include <assert.h>
 
 #define INSIDE_BABELD_CYGINET
 #include "cyginet.h"
@@ -861,7 +862,6 @@ cyginet_blackhole_index(struct in6_addr* addr6, char * addr)
     }
     FREE(pAdaptAddr);
   }
-
   return dwReturn;
 }
 
@@ -958,8 +958,7 @@ libwinet_edit_route_entry(const struct sockaddr *dest,
   /* Add ipv4 route before Windows Vista, use IP Helper API */
   else {
     MIB_IPFORWARDROW Row;
-    unsigned long Res;
-
+    unsigned long Res;    
     struct in_addr mask;
     plen2mask(plen, &mask);
 
@@ -972,12 +971,12 @@ libwinet_edit_route_entry(const struct sockaddr *dest,
     Row.dwForwardMask = mask.S_un.S_addr;
     /*
      * MIB_IPROUTE_TYPE_DIRECT <==> dwForwardNextHop == dwForwardDest
-     * MIB_IPROUTE_TYPE_LOCAL  <==> dwForwardNextHop in local interfaces
      * MIB_IPROUTE_TYPE_INDIRECT all the others
+     * Refer to:
+     * http://technet.microsoft.com/en-us/library/dd379495(v=ws.10).aspx
      */
-    Row.dwForwardType = Row.dwForwardNextHop == Row.dwForwardDest ? \
-      MIB_IPROUTE_TYPE_DIRECT : MIB_IPROUTE_TYPE_INDIRECT;
-    Row.dwForwardType = MIB_IPROUTE_TYPE_INDIRECT;
+    Row.dwForwardType = (Row.dwForwardNextHop == Row.dwForwardDest) ?
+      MIB_IPROUTE_TYPE_DIRECT :  MIB_IPROUTE_TYPE_INDIRECT;
     Row.dwForwardProto = MIB_IPPROTO_NETMGMT;
     Row.dwForwardAge = 0;
     Row.dwForwardNextHopAS = 0;
@@ -1004,7 +1003,7 @@ libwinet_edit_route_entry(const struct sockaddr *dest,
       return -1;
   }
 
-#if 0 /* Use route command */  
+#if 0 /* Use route command */
   else {
     /* route ADD dest MASK mask gate METRIC n IF index */
     /* route CHANGE dest MASK mask gate METRIC n IF index */
@@ -1533,7 +1532,6 @@ cyginet_dump_route_table(struct cyginet_route *routes, int maxroutes)
     proute -> metric = pRow -> dwForwardMetric1;
     proute -> proto = pRow -> dwForwardProto;
     proute -> plen = mask2len((unsigned char*)&(pRow -> dwForwardMask), 4);
-
     /* Note that the IPv4 addresses returned in GetIpForwardTable
      * entries are in network byte order
      */
@@ -1629,7 +1627,7 @@ cyginet_read_route_socket(void *buffer, size_t size)
   return 0;
 }
 
-int 
+int
 cyginet_refresh_interface_table()
 {
   return libwinet_refresh_interface_map_table();
@@ -1685,36 +1683,101 @@ cyginet_ifname(const char * guidname)
   return NULL;
 }
 
-int
-cyginet_add_ipentry(int ifindex, struct sockaddr *addr)
+static int
+libwinet_edit_netentry(int operation,
+                       int ifindex,
+                       struct sockaddr *addr,
+                       int type)
 {
-  MIB_IPNETROW row;
-  PLIBWINET_INTERFACE_MAP_TABLE p;
-  if (!g_interface_map_table)
-    libwinet_refresh_interface_map_table();
+  MIB_IPNETROW row = {0};
+  DWORD dwRetVal = NO_ERROR;
+  DWORD dest = (((SOCKADDR_IN*)addr) -> sin_addr).S_un.S_addr;
 
-  p = g_interface_map_table;
-  while (p) {
-    if (p -> IfIndex == ifindex) {
-      row.dwPhysAddrLen = p -> PhysicalAddressLength;
-      if (row.dwPhysAddrLen > MAXLEN_PHYSADDR)
+  if (operation == 1) {
+    /* We need send an arp request to get mac address */
+    /* TO DO: src should be address assigned to ifindex */
+    DWORD src = 0;
+    if (type != MIB_IPNET_TYPE_INVALID) {
+      dwRetVal = SendARP(dest, src, (PULONG)row.bPhysAddr, &row.dwPhysAddrLen);
+      if (dwRetVal != NO_ERROR)
         return -1;
-      memcpy(row.bPhysAddr, p -> PhysicalAddress, row.dwPhysAddrLen);
-      break;
     }
-    p = p -> next;
+    row.dwIndex = ifindex;
+    row.dwAddr = dest;
+    row.dwType = MIB_IPNET_TYPE_DYNAMIC;
+    dwRetVal = CreateIpNetEntry ( &row );
   }
-  if (row.dwPhysAddrLen) {
-    row.dwIndex = ifindex;  
-    row.dwAddr = (((SOCKADDR_IN*)addr) -> sin_addr).S_un.S_addr;
-    row.dwType = MIB_IPNET_TYPE_DYNAMIC; 
-    return CreateIpNetEntry ( &row );
+  else if (operation == 0) {
+    row.dwIndex = ifindex;
+    row.dwAddr = dest;
+    dwRetVal = DeleteIpNetEntry(&row);
   }
-  return -1;
+  else assert(0);
+
+  return 0 ? dwRetVal == NO_ERROR : dwRetVal;
 }
 
 /* The following functions are reserved. */
 #if 0
+
+int
+cyginet_search_netentry(int add, int ifindex, struct sockaddr *addr)
+{
+  MIB_IPNETROW row = {0};
+  MIB_IPNETTABLE * ptable;
+  MIB_IPNETROW * prow = NULL;
+  DWORD dwSize;
+  DWORD dwRetVal = NO_ERROR;
+  DWORD dest = (((SOCKADDR_IN*)addr) -> sin_addr).S_un.S_addr;
+  DWORD n;
+
+  ptable = (MIB_IPNETTABLE *) MALLOC(sizeof (MIB_IPNETTABLE));
+  if (ptable == NULL)
+    return -1;
+  /* Make an initial call to get the necessary size into dwSize */
+  dwSize = sizeof (MIB_IPNETTABLE);
+  if (GetIpNetTable(ptable, &dwSize, FALSE) == ERROR_INSUFFICIENT_BUFFER) {
+    FREE(ptable);
+    ptable = (MIB_IPNETTABLE *) MALLOC(dwSize);
+    if (ptable == NULL)
+      return -1;
+  }
+  /* Make a second call to get the actual data we want. */
+  if ((dwRetVal = GetIpNetTable(ptable, &dwSize, FALSE)) != NO_ERROR) {
+    FREE(ptable);
+    return -1;
+  }
+
+  /* Search entry in the table */
+  prow = ptable -> table;
+  for (n = 0; n < ptable -> dwNumEntries; n++, prow++)
+    if ( prow -> dwAddr == dest)
+      break;
+
+  if (add) {
+    if (!prow) {
+      /* We need send an arp request to get mac address */
+      /* TO DO: src should be address assigned to ifindex */
+      DWORD src = 0;
+      dwRetVal = SendARP(dest, src, (PULONG)row.bPhysAddr, &row.dwPhysAddrLen);
+      if (dwRetVal != NO_ERROR) {
+        FREE(ptable);
+        return -1;
+      }
+      row.dwIndex = ifindex;
+      row.dwAddr = dest;
+      row.dwType = MIB_IPNET_TYPE_DYNAMIC;
+      dwRetVal = CreateIpNetEntry ( &row );
+    }
+  }
+  else {
+    if (prow)
+      dwRetVal = DeleteIpNetEntry(prow);
+  }
+
+  FREE(ptable);
+  return 0 ? dwRetVal == NO_ERROR : dwRetVal;
+}
 
 char *
 cyginet_ipv4_index2ifname(int ifindex)
@@ -2432,52 +2495,6 @@ DWORD GetConnectedNetworks()
 /* ------------------------------------------------------------- */
 #ifdef TEST_CYGINET
 
-// The following #defines are from routprot.h in the Platform Software Develoment Kit (SDK)
-#define PROTO_TYPE_UCAST     0
-#define PROTOCOL_ID(Type, VendorId, ProtocolId) \
-        (((Type & 0x03)<<30)|((VendorId & 0x3FFF)<<16)|(ProtocolId & 0xFFFF))
-#define PROTO_VENDOR_ID      0x3FAA
-
-DWORD (WINAPI * fRtmRegisterEntity)(PRTM_ENTITY_INFO,PRTM_ENTITY_EXPORT_METHODS,
-  RTM_EVENT_CALLBACK,WINBOOL,PRTM_REGN_PROFILE,PRTM_ENTITY_HANDLE);
-DWORD (WINAPI * fRtmDeregisterEntity)(RTM_ENTITY_HANDLE);
-
-int test_rtm2()
-{
-  HMODULE lib;
-  if ((lib = LoadLibraryW(L"rtm.dll"))) {
-    fRtmRegisterEntity = GetProcAddress(lib, (LPCSTR)"RtmRegisterEntity");
-    fRtmDeregisterEntity = GetProcAddress(lib, (LPCSTR)"RtmDeregisterEntity");
-    FreeLibrary(lib);
-  }
-  else
-    return -1;
-
-  RTM_ENTITY_HANDLE RtmRegHandle;
-  RTM_ENTITY_INFO EntityInfo;
-  RTM_REGN_PROFILE RegnProfile;
-  DWORD dwRet = ERROR_SUCCESS;
-
-  EntityInfo.RtmInstanceId = 0;
-  EntityInfo.AddressFamily = AF_INET;
-  EntityInfo.EntityId.EntityProtocolId = PROTO_IP_OTHER;
-  EntityInfo.EntityId.EntityInstanceId = PROTOCOL_ID(PROTO_TYPE_UCAST, PROTO_VENDOR_ID, PROTO_IP_OTHER);
-
-  // Register the new entity
-  dwRet = fRtmRegisterEntity(&EntityInfo, NULL, NULL, FALSE, &RegnProfile, &RtmRegHandle);
-  if (dwRet != ERROR_SUCCESS){
-    // Registration failed - Log an Error and Quit
-    return -1;
-  }
-  // Clean-up: Deregister the new entity
-  dwRet = fRtmDeregisterEntity(RtmRegHandle);
-  if (dwRet != ERROR_SUCCESS){
-    // Registration failed - Log an Error and Quit
-    return -1;
-  }
-  return 0;
-}
-
 VOID PrintAllInterfaces()
 {
   IP_ADAPTER_ADDRESSES *pAdaptAddr = NULL;
@@ -2755,6 +2772,15 @@ runTestCases()
     }
   }
 
+  printf("\n\nTest cyginet_dump_route_table:\n\n");
+  do {
+    #define MAX_ROUTES 120
+    struct cyginet_route routes[MAX_ROUTES];
+    memset(routes, 0, sizeof(struct cyginet_route) * MAX_ROUTES);
+    int n = cyginet_dump_route_table(routes, MAX_ROUTES);
+    printf("Get route numbers: %d\n", n);
+  } while (0);
+
   printf("\n\nTest libwinet_monitor_route_thread_proc:\n\n");
   do {
     int mypipes[2];
@@ -2923,6 +2949,7 @@ runTestCases()
     printf("Delete Ipv6 route return %d\n", n);
 
   } while(0);
+
 }
 
 int main(int argc, char* argv[])
@@ -2975,6 +3002,27 @@ int main(int argc, char* argv[])
     else
       printf("libwinet_refresh_interface_map_table failed\n");
   }
+
+  printf("\n\nTest ipv4 blackhole route:\n\n");
+  do {
+    SOCKADDR_IN dest = { AF_INET, 0, {{{ INADDR_ANY }}}, {0} };
+    SOCKADDR_IN gate = { AF_INET, 0, {{{ INADDR_ANY }}}, {0} };
+    int ifindex = 1;
+    int n;
+
+    if (inet_pton(AF_INET, "123.58.180.0", &dest.sin_addr) != 1)
+      break;
+    if (inet_pton(AF_INET, "127.0.0.1", &gate.sin_addr) != 1)
+      break;
+    n = libwinet_edit_route_entry((struct sockaddr*)&dest,
+                                  24,
+                                  (struct sockaddr*)&gate,
+                                  ifindex,
+                                  1,
+                                  RTM_ADD
+                                  );
+    printf("Add blackhole route return: %d", n);
+  } while(0);
 
   runTestCases();
 
