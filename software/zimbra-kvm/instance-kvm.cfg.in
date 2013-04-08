@@ -232,6 +232,7 @@ return = listening-ipv4
 recipe = slapos.cookbook:publish
 web-backend-url = https://[$${tunnel-ipv6-kvm-https:ipv6}]:$${tunnel-ipv6-kvm-https:ipv6-port}/
 web-url = $${request-web-frontend:connection-site_url}
+admin-backend-url = https://[$${tunnel-ipv6-kvm-zimbra-admin:ipv6}]:$${tunnel-ipv6-kvm-zimbra-admin:ipv6-port}/
 vnc-backend-url = https://[$${novnc-instance:ip}]:$${novnc-instance:port}/vnc_auto.html?host=[$${novnc-instance:ip}]&port=$${novnc-instance:port}&encrypt=1
 vnc-password = $${kvm-instance:passwd}
 vnc-url = $${request-slave-frontend:connection-url}/vnc_auto.html?host=$${request-slave-frontend:connection-domainname}&port=$${request-slave-frontend:connection-port}&encrypt=1&path=$${request-slave-frontend:connection-resource}
