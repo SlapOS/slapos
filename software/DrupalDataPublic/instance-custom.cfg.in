@@ -5,26 +5,6 @@ recipe = slapos.cookbook:publish
 drupal-admin-password = $${gen-passwd:passwd}
 
 
-[drupal-init]
-recipe = cp.recipe.cmd
-install_cmd =
-   mkdir -m 700 ~/.ssh
-   cp ${ssh-config:location}/ssh-config ~/.ssh/config
-   cp -ax ${datapublic:location} $${rootdirectory:srv}/www/profiles/datapublic
-
-#   ${apache-php:location}/bin/drush make ${datapublic:location}/datapublic.make $${rootdirectory:srv}/www
-
-
-#[drupal-init]
-#recipe = slapos.cookbook:drupal_init
-#drush-binary = ${apache-php:location}/bin/drush
-#php-binary = ${apache-php:location}/bin/php
-#settings-php = ${application-configuration:location}
-#htdocs = $${rootdirectory:srv}/www
-#admin-password = $${gen-passwd:passwd}
-#dependency = $${apache-php:recipe}
-
-
 #----------------
 #--
 #-- Generates a random password and stores it in the filesystem
@@ -33,5 +13,4 @@ install_cmd =
 recipe = slapos.cookbook:generate.password
 storage-path = $${rootdirectory:srv}/drupal_passwd
 bytes = 16
-
 
