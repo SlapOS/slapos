@@ -1,16 +1,31 @@
 Changes
 =======
 
-1.0.0 (2013-03-09)
+1.0.0 (2013-04-09)
 ------------------
 
 New features:
 
  * slapconsole: Use readline for completion and history. [Jerome Perrin]
 
-Fixes:
+Major Improvements:
+
+ * Refuse to run 'slapos node' commands as non root. [Marco Mariani]
+ * Dramatically speed up slapformat. [Cedric de Saint Martin]
+ * Remove CONFIG_SITE env var from Buildout environment, fixing support of OpenSuse 12.x. [Cedric de Saint Martin]
+ * RootSoftwareInstance is now the default software type. [Cedric de Saint Martin]
+
+Other fixes:
 
  * Register: Replace all reference to vifib by SlapOS Master. [Cedric de Saint Martin]
+ * Slapgrid: Properly include any partition containing any SR informations in the list of partitions to proceed. [Cedric de Saint Martin]
+ * Slapgrid: Remove the timestamp file after defined periodicity. Fixes odd use cases when an instance failing to process after some time is still considered as valid by the node. [Cedric de Saint Martin]
+ * Slapgrid: Fix scary but harmless warnings, fix english, remove references to ViFiB. [Cedric de Saint Martin, Jérome Perrin]
+ * Slapgrid: Fixes support of Python >= 2.6. [Arnaud Fontaine]
+ * Slapgrid: Check if SR is upload-blacklisted only if we have upload informations. [Cedric de Saint Martin]
+ * Slapformat: Make sure everybody can read slapos configuration directory. [Cedric de Saint Martin]
+ * Slapformat: Fix support of slapproxy. [Marco Mariani]
+
 
 0.35.1 (2013-02-18)
 -------------------
