@@ -1112,15 +1112,6 @@ def run(config):
   if config.output_definition_file:
     write_computer_definition(config, computer)
 
-  # Add all IPs from existing configuration, just to speed up actual
-  # computer configuration later on.
-  for partition in computer.partition_list:
-    partition.interface.addIPv4LocalAddress()
-    for address_dict in partition.interface.getGlobalScopeAddressList():
-      callAndRead(['ip', 'addr', 'add',
-                   '%s/%s' % (address_dict['addr'], address_dict['netmask']),
-                   'dev', partition.interface.name])
-
   computer.construct(alter_user=config.alter_user,
                      alter_network=config.alter_network,
                      create_tap=config.create_tap)
