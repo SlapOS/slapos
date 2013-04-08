@@ -2,17 +2,7 @@
 
 [publish-drupal-admin-password]
 recipe = slapos.cookbook:publish
-drupal-admin-password = $${drupal-init-base:admin-password}
-
-
-[drupal-init-base]
-recipe = slapos.cookbook:drupal_init
-drush-binary = ${apache-php:location}/bin/drush
-php-binary = ${apache-php:location}/bin/php
-settings-php = ${application-configuration:location}
-htdocs = $${rootdirectory:srv}/www
-admin-password = $${gen-passwd:passwd}
-dependency = $${apache-php:recipe}
+drupal-admin-password = $${gen-passwd:passwd}
 
 
 #----------------
@@ -23,10 +13,4 @@ dependency = $${apache-php:recipe}
 recipe = slapos.cookbook:generate.password
 storage-path = $${rootdirectory:srv}/drupal_passwd
 bytes = 16
-
-
-[drupal-init]
-recipe = cp.recipe.cmd
-install_cmd =
-   $${drupal-init-base:drush-binary} make --prepare-install ${openpublic:location}/profiles/openpublic/build-openpublic.make DrupalOpenPublic
 
