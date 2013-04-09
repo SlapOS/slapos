@@ -3,7 +3,7 @@
 # BEWARE: It will be overwritten automatically
 
 URL="%(url)s"
-MATCH='%(match)s"
+MATCH="%(match)s"
 
 if [ -z $URL ]; then
   echo "No URL specified." >&2
