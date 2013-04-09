@@ -27,9 +27,9 @@ recipe = slapos.cookbook:generic.kumofs
 
 # Network options
 ip = ${slap-network-information:local-ipv4}
-manager-port = 13101
-server-port = 13201
-server-listen-port = 13202
+manager-port = 13401
+server-port = 13501
+server-listen-port = 13502
 # previous memcached configuration
 gateway-port = 11000
 # previous memcached configuration

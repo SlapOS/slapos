@@ -116,7 +116,7 @@ class Recipe:
     for parameter, value in self.parameter_dict.items():
       # All parameters evaluating to False are... False, and shouldn't
       # convey any information.
-      # Here, all those parameters are set to empty string.
+      # Here, all those parameters are simply ignored.
       if value:
         if isinstance(value, str):
           buildout.set('slap-parameter', parameter, value)

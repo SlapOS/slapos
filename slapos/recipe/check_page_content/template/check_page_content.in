@@ -3,13 +3,14 @@
 # BEWARE: It will be overwritten automatically
 
 URL="%(url)s"
+MATCH='%(match)s"
 
 if [ -z $URL ]; then
   echo "No URL specified." >&2
   exit 3
 fi
 
-%(curl_path)s -k -sL $URL | grep "$URL" > /dev/null
+%(curl_path)s -k -sL $URL | grep "$MATCH" > /dev/null
 
 if [ $? != 0 ]; then
   echo "Content at $URL seems to be corrupted" >&2
