@@ -36,7 +36,7 @@ storage-path = $${directory:srv}/mac
 [gen-passwd]
 recipe = slapos.cookbook:generate.password
 storage-path = $${directory:srv}/passwd
-bytes = 4
+bytes = 8
 
 [kvm-instance]
 # XXX-Cedric: change "KVM" recipe to simple "create wrappers". No need for this
