@@ -1,0 +1,10 @@
+import sys
+sys.stdout = sys.stderr
+
+import os
+os.environ['TRAC_ENV'] = '${:htdocs}'
+os.environ['PYTHON_EGG_CACHE'] = '${:htdocs}/eggs'
+
+import trac.web.main
+
+application = trac.web.main.dispatch_request

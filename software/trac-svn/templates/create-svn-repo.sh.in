@@ -1,0 +1,25 @@
+#!/bin/sh
+
+export PATH=${:trac_admin}:${:svn_bin}:$PATH
+export PYTHONPATH=${:svn_python}:$PYTHONPATH
+
+ENV="$1"
+REPO="$2"
+REALM="$3"
+
+if [ -z "$ENV" -o -z "$REPO" ]; then
+    echo "Usage: $0 ENV REPO"
+    exit 2
+fi
+RPATH="$ENV/svn/$REPO"
+PASSWD="$ENV/svnpasswd"
+svnadmin create $RPATH
+
+trac-admin $ENV repository add $REPO $RPATH svn
+trac-admin $ENV repository resync $REPO
+
+echo "[general]
+anon-access = read
+auth-access = write
+password-db = $PASSWD 
+realm = $REALM" > $RPATH/conf/svnserve.conf

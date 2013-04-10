@@ -1,0 +1,77 @@
+# Apache static configuration
+# Automatically generated
+
+# Basic server configuration
+PidFile "${:pid_file}"
+Listen ${:ip}:${:port}
+ServerAdmin someone@email
+TypesConfig conf/mime.types
+AddType application/x-compress .Z
+AddType application/x-gzip .gz .tgz
+
+# Log configuration
+ErrorLog "${:error_log}"
+LogLevel warn
+LogFormat "%h %{REMOTE_USER}i %l %u %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\"" combined
+LogFormat "%h %{REMOTE_USER}i %l %u %t \"%r\" %>s %b" common
+CustomLog "${:access_log}" common
+
+# Directory protection
+<Directory />
+    Options FollowSymLinks
+    AllowOverride None
+    Require all denied
+</Directory>
+
+WSGIScriptAlias / ${:wsgi_location}/trac.wsgi
+<Directory ${:wsgi_location}>
+  WSGIApplicationGroup %{GLOBAL}
+  AllowOverride All
+  Require all granted
+</Directory>
+
+<Location /login>
+  AuthType Basic
+  AuthName "Trac Administrator Access"
+  AuthUserFile ${:document_root}/.htpasswd
+  Require valid-user
+</Location>
+
+<Location /svn>
+    ErrorDocument 404 default
+    DAV svn
+    SVNParentPath ${:document_root}/svn/
+    AuthType Basic
+    AuthName "SVN Repository Admin"
+    AuthUserFile ${:document_root}/.htpasswd
+    SVNAdvertiseV2Protocol Off
+    <LimitExcept GET PROPFIND OPTIONS REPORT> 
+        Require valid-user
+    </LimitExcept>
+</Location>
+
+# List of modules
+LoadModule unixd_module modules/mod_unixd.so
+LoadModule access_compat_module modules/mod_access_compat.so
+LoadModule authz_core_module modules/mod_authz_core.so
+LoadModule authz_host_module modules/mod_authz_host.so
+LoadModule log_config_module modules/mod_log_config.so
+LoadModule setenvif_module modules/mod_setenvif.so
+LoadModule version_module modules/mod_version.so
+LoadModule proxy_module modules/mod_proxy.so
+LoadModule proxy_http_module modules/mod_proxy_http.so
+LoadModule mime_module modules/mod_mime.so
+LoadModule dav_module modules/mod_dav.so
+LoadModule dav_fs_module modules/mod_dav_fs.so
+LoadModule negotiation_module modules/mod_negotiation.so
+LoadModule rewrite_module modules/mod_rewrite.so
+LoadModule headers_module modules/mod_headers.so
+LoadModule dir_module modules/mod_dir.so
+LoadModule alias_module modules/mod_alias.so
+LoadModule wsgi_module modules/mod_wsgi.so
+LoadModule dav_svn_module modules/mod_dav_svn.so
+LoadModule authz_svn_module modules/mod_authz_svn.so
+LoadModule auth_basic_module modules/mod_auth_basic.so
+LoadModule authz_user_module modules/mod_authz_user.so
+LoadModule authn_file_module modules/mod_authn_file.so
+LoadModule authn_core_module modules/mod_authn_core.so
