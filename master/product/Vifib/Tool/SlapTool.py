@@ -975,8 +975,8 @@ class SlapTool(BaseTool):
         computer_partition_id)
     user = self.getPortalObject().portal_membership.getAuthenticatedMember()\
                                                    .getUserName()
-    self._logAccess(user, instance.getReference(), 
-                    '#access instance correctly started')
+    self._logAccess(user, instance.getReference(),
+                    '#access Instance correctly started')
 
   @convertToREST
   def _stoppedComputerPartition(self, computer_id, computer_partition_id):
@@ -988,8 +988,8 @@ class SlapTool(BaseTool):
         computer_partition_id)
     user = self.getPortalObject().portal_membership.getAuthenticatedMember()\
                                                    .getUserName()
-    self._logAccess(user, instance.getReference(), 
-                    '#access instance correctly stopped')
+    self._logAccess(user, instance.getReference(),
+                    '#access Instance correctly stopped')
 
   @convertToREST
   def _destroyedComputerPartition(self, computer_id, computer_partition_id):
