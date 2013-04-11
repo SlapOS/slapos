@@ -8,9 +8,7 @@ parts =
   cloudooo-instance
   promise
   promise-openoffice
-{% if use_ipv6 -%}
-  promise-tunnel
-{% endif -%}
+  {% if use_ipv6 %}promise-tunnel{% endif %}
 eggs-directory = {{ eggs_directory }}
 develop-eggs-directory = {{ develop_eggs_directory }}
 offline = true
