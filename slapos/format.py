@@ -539,10 +539,11 @@ class User(object):
     # XXX: This method shall be no-op in case if all is correctly setup
     #      This method shall check if all is correctly done
     #      This method shall not reset groups, just add them
+    grpname = 'grp_' + self.name if sys.platform == 'cygwin' else self.name
     try:
-      grp.getgrnam(self.name)
+      grp.getgrnam(grpname)
     except KeyError:
-      callAndRead(['groupadd', self.name])
+      callAndRead(['groupadd', grpname])
 
     user_parameter_list = ['-d', self.path, '-g', self.name, '-s',
       '/bin/false']
@@ -713,6 +714,9 @@ class Interface(object):
     except KeyError:
       raise ValueError("%s must have at least one IPv6 address assigned" % \
                          interface_name)
+    if sys.platform == 'cygwin':
+      for q in address_list:
+        q.setdefault('netmask', 'FFFF:FFFF:FFFF:FFFF::')
     # XXX: Missing implementation of Unique Local IPv6 Unicast Addresses as
     # defined in http://www.rfc-editor.org/rfc/rfc4193.txt
     # XXX: XXX: XXX: IT IS DISALLOWED TO IMPLEMENT link-local addresses as
@@ -797,7 +801,7 @@ class Interface(object):
       return True
 
     # check existence on interface for ipv6
-    _, result = callAndRead(['ip', 'addr', 'list', interface_name])
+    _, result = callAndRead(['ip', '-6', 'addr', 'list', interface_name])
     for l in result.split('\n'):
       if address in l:
         if 'tentative' in l:
@@ -827,7 +831,8 @@ class Interface(object):
 
   def addIPv4LocalAddress(self, addr=None):
     """Adds local IPv4 address in ipv4_local_network"""
-    netmask = '255.255.255.255'
+    netmask = '255.255.255.254' if sys.platform == 'cygwin' \
+             else '255.255.255.255'
     local_address_list = self.getIPv4LocalAddressList()
     if addr is None:
       return self._generateRandomIPv4Address(netmask)
@@ -1156,7 +1161,7 @@ class Config(object):
       except ValueError:
         pass
       except OSError:
-        missing_binary_list.append(b)
+        missing_binary_list.append(b[0])
     if missing_binary_list:
       raise UsageError('Some required binaries are missing or not '
           'functional: %s' % (','.join(missing_binary_list), ))

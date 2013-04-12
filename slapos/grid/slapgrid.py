@@ -680,7 +680,7 @@ class Slapgrid(object):
         process_handler = subprocess.Popen(command,
           preexec_fn=lambda: dropPrivileges(uid, gid),
           cwd=cwd,
-          env={}, **kw)
+          env=None if sys.platform == 'cygwin' else {}, **kw)
         process_handler.stdin.flush()
         process_handler.stdin.close()
         process_handler.stdin = None
