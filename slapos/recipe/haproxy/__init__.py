@@ -25,6 +25,7 @@
 #
 ##############################################################################
 from slapos.recipe.librecipe import GenericBaseRecipe
+from zc.buildout import UserError
 
 class Recipe(GenericBaseRecipe):
   """
@@ -79,7 +80,7 @@ class Recipe(GenericBaseRecipe):
     if not backend_dict:
       # Fail installation if backend_dict is empty, otherwise partition may be
       # advertised as available although it provides no service.
-      raise Exception('backend-dict is empty')
+      raise UserError('backend-dict is empty')
 
     server_snippet_filename = self.getTemplateFilename(
       'haproxy-server-snippet.cfg.in')
