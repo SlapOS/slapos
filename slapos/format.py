@@ -785,7 +785,7 @@ class Interface(object):
       return True
 
     # check existence on interface for ipv6
-    _, result = callAndRead(['ip', 'addr', 'list', interface_name])
+    _, result = callAndRead(['ip', '-6', 'addr', 'list', interface_name])
     for l in result.split('\n'):
       if address in l:
         if 'tentative' in l:
@@ -1330,14 +1330,6 @@ def tracing_monkeypatch(config):
 
 def main(*args):
   "Run default configuration."
-
-  if sys.platform in ('cygwin',):
-    callAndRead = lambda args, flag=True : args.insert(0, '/bin/sh') \
-                  or real_callAndRead(args, flag)
-    f = netifaces.ifaddresses
-    netifaces.ifaddresses = lambda s,f=f:reduce( \
-      lambda x,y:[x.__setitem__(k,v + x.get(k,[])) for k,v in y.iteritems()] and x, \
-      filter(None, [f(i) for i in netifaces.interfaces() if i.startswith(s)]),{})
 
   # Parse arguments
   usage = "usage: %s [options] CONFIGURATION_FILE" % sys.argv[0]
