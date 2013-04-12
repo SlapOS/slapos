@@ -106,7 +106,7 @@ mysql-base-directory = {{ parameter_dict['mariadb-location'] }}
 [mariadb-instance]
 # Options
 user = user
-parallel-test-database-amount = {{ slapparameter_dict.get('test-database-amount', 100) }}
+parallel-test-database-amount = {{ slapparameter_dict.get('test-database-amount', 30) }}
 database = erp5
 test-user = erp5_test
 test-database = erp5_test
