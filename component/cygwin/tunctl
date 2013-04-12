@@ -1,0 +1,69 @@
+#! /bin/bash
+# ------------------------------------------------------------------------------
+# Copyright (c) 2010, 2011, 2012 Vifib SARL and Contributors.
+# All Rights Reserved.
+#
+# WARNING: This program as such is intended to be used by professional
+# programmers who take the whole responsibility of assessing all potential
+# consequences resulting from its eventual inadequacies and bugs
+# End users who are looking for a ready-to-use solution with commercial
+# guarantees and support are strongly advised to contract a Free Software
+# Service Company
+#
+# This program is Free Software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License
+# as published by the Free Software Foundation; either version 3
+# of the License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+#
+# ------------------------------------------------------------------------------
+#
+# Simulate the command tunctl on the Cygwin
+#
+#   tunctl -t INTERFACE_NAME -u OWNER_USER
+# 
+#   tunctl -d INTERFACE_NAME
+#
+#     Delete the specified interfacename (set it to non-persistent)
+#
+
+dev=$(cygpath "/etc/openvpn/driver/OemWin2k.inf")
+cmd=/usr/bin/devcon.exe
+hwid=tap0901
+vbscript=/etc/openvpn/check_and_close_driver_sign_dialog.vbs
+
+if ! [[ -f $vbscript ]] ; then
+    cat <<EOF > $vbscript
+Set oShell = CreateObject("WScript.Shell") 
+Do
+If oShell.AppActivate("Hardware Installation") Then
+    oShell.SendKeys "%C"
+    WScript.Sleep 3000
+End If
+WScript.Sleep 500
+Loop While True
+
+EOF
+fi
+
+if [[ "$1" == "-t" ]]; then
+
+  INTERFACE_NAME = "$2"
+  cscript.exe $vbscript > /dev/null &
+  $cmd install $dev $hwid
+  kill %"cscript.exe $vbscript"
+
+elif [[ "$1" == "-d" ]]; then
+
+  INTERFACE_NAME = "$2"
+  $cmd remove $hwid
+
+fi
