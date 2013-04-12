@@ -1,0 +1,624 @@
+#! /bin/bash
+# ------------------------------------------------------------------------------
+# Copyright (c) 2010, 2011, 2012 Vifib SARL and Contributors.
+# All Rights Reserved.
+#
+# WARNING: This program as such is intended to be used by professional
+# programmers who take the whole responsibility of assessing all potential
+# consequences resulting from its eventual inadequacies and bugs
+# End users who are looking for a ready-to-use solution with commercial
+# guarantees and support are strongly advised to contract a Free Software
+# Service Company
+#
+# This program is Free Software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License
+# as published by the Free Software Foundation; either version 3
+# of the License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+#
+# ------------------------------------------------------------------------------
+# Simulate the linux command "ip" in the Windows. Most of functions
+# are mapped to windows command "netsh". Refer to ip man in the linux
+# to know how to use this command.
+# 
+# Synopsis (not all of options are implemented here), 
+# 
+# ip [ OPTIONS ] OBJECT { COMMAND | help } 
+# 
+# OBJECT := { link | addr | addrlabel | route | rule | neigh | tunnel
+# | maddr | mroute | monitor }
+# 
+# OPTIONS := { -V[ersion] | -s[tatistics] | -r[esolve] | -f[amily] {
+# inet | inet6 | ipx | dnet | link } | -o[neline] }
+# 
+# ip link set DEVICE { up | down | arp { on | off } |
+#  promisc { on | off } |
+#  allmulticast { on | off } |
+#  dynamic { on | off } |
+#  multicast { on | off } |
+#  txqueuelen PACKETS |
+#  name NEWNAME |
+#  address LLADDR | broadcast LLADDR |
+#  mtu MTU |
+#  netns PID |
+#  alias NAME |
+#  vf NUM [ mac LLADDR ] [ vlan VLANID [ qos VLAN-QOS ] ] [ rate TXRATE ] } 
+# 
+# ip link show [ DEVICE ] 
+# 
+# ip addr { add | del } IFADDR dev STRING 
+# 
+# ip addr { show | flush } [ dev STRING ] [ scope SCOPE-ID ] [ to
+# PREFIX ] [ FLAG-LIST ] [ label PATTERN ]
+# 
+# IFADDR := PREFIX | ADDR peer PREFIX [ broadcast ADDR ] [ anycast
+# ADDR ] [ label STRING ] [ scope SCOPE-ID ]
+# 
+# SCOPE-ID := [ host | link | global | NUMBER ] 
+# 
+# FLAG-LIST := [ FLAG-LIST ] FLAG 
+# 
+# FLAG := [ permanent | dynamic | secondary | primary | tentative | deprecated ] 
+# 
+# ip addrlabel { add | del } prefix PREFIX [ dev DEV ] [ label NUMBER ] 
+# 
+# ip addrlabel { list | flush } 
+# 
+# ip route { list | flush } SELECTOR 
+# 
+# ip route get ADDRESS [ from ADDRESS iif STRING ] [ oif STRING ] [ tos TOS ] 
+# 
+# ip route { add | del | change | append | replace | monitor } ROUTE 
+# 
+# SELECTOR := [ root PREFIX ] [ match PREFIX ] [ exact PREFIX ] [
+# table TABLE_ID ] [ proto RTPROTO ] [ type TYPE ] [ scope SCOPE ]
+# 
+# ROUTE := NODE_SPEC [ INFO_SPEC ] 
+# 
+# NODE_SPEC := [ TYPE ] PREFIX [ tos TOS ] [ table TABLE_ID ] [ proto
+# RTPROTO ] [ scope SCOPE ] [ metric METRIC ]
+# 
+# INFO_SPEC := NH OPTIONS FLAGS [ nexthop NH ] ... 
+# 
+# NH := [ via ADDRESS ] [ dev STRING ] [ weight NUMBER ] NHFLAGS
+# 
+# OPTIONS := FLAGS [ mtu NUMBER ] [ advmss NUMBER ] [ rtt TIME ] [
+# rttvar TIME ] [ window NUMBER ] [ cwnd NUMBER ] [ initcwnd NUMBER ]
+# [ ssthresh REALM ] [ realms REALM ] [ rto_min TIME ]
+# 
+# TYPE := [ unicast | local | broadcast | multicast | throw |
+# unreachable | prohibit | blackhole | nat ]
+# 
+# TABLE_ID := [ local| main | default | all | NUMBER ] 
+# 
+# SCOPE := [ host | link | global | NUMBER ] 
+# 
+# FLAGS := [ equalize ] 
+# 
+# NHFLAGS := [ onlink | pervasive ]
+# 
+# RTPROTO := [ kernel | boot | static | NUMBER ] 
+# 
+# ip rule [ list | add | del | flush ] SELECTOR ACTION 
+# 
+# SELECTOR := [ from PREFIX ] [ to PREFIX ] [ tos TOS ] [ fwmark
+# FWMARK[/MASK] ] [ dev STRING ] [ pref NUMBER ]
+# 
+# ACTION := [ table TABLE_ID ] [ nat ADDRESS ] [ prohibit | reject |
+# unreachable ] [ realms [SRCREALM/]DSTREALM ]
+# 
+# TABLE_ID := [ local | main | default | NUMBER ] 
+# 
+# ip neigh { add | del | change | replace } { ADDR [ lladdr LLADDR ] [
+# nud { permanent | noarp | stale | reachable } ] | proxy ADDR } [ dev
+# DEV ]
+# 
+# ip neigh { show | flush } [ to PREFIX ] [ dev DEV ] [ nud STATE ] 
+# 
+# ip tunnel { add | change | del | show | prl } [ NAME ]
+#  [ mode MODE ] [ remote ADDR ] [ local ADDR ]
+#  [ [i|o]seq ] [ [i|o]key KEY ] [ [i|o]csum ] ]
+#  [ encaplimit ELIM ] [ ttl TTL ]
+#  [ tos TOS ] [ flowlabel FLOWLABEL ]
+#  [ prl-default ADDR ] [ prl-nodefault ADDR ] [ prl-delete ADDR ]
+#  [ [no]pmtudisc ] [ dev PHYS_DEV ] [ dscp inherit ] 
+# 
+# MODE := { ipip | gre | sit | isatap | ip6ip6 | ipip6 | any } 
+# 
+# ADDR := { IP_ADDRESS | any } 
+# 
+# TOS := { NUMBER | inherit } 
+# 
+# ELIM := { none | 0..255 } 
+# 
+# TTL := { 1..255 | inherit } 
+# 
+# KEY := { DOTTED_QUAD | NUMBER } 
+# 
+# TIME := NUMBER[s|ms|us|ns|j] 
+# 
+# ip maddr [ add | del ] MULTIADDR dev STRING 
+# 
+# ip maddr show [ dev STRING ] 
+# 
+# ip mroute show [ PREFIX ] [ from PREFIX ] [ iif DEVICE ] 
+# 
+# ip monitor [ all | LISTofOBJECTS ] 
+# 
+# ip xfrm XFRM_OBJECT { COMMAND } 
+# 
+# XFRM_OBJECT := { state | policy | monitor } 
+# 
+# ip xfrm state { add | update } ID [ XFRM_OPT ] [ mode MODE ]
+#  [ reqid REQID ] [ seq SEQ ] [ replay-window SIZE ]
+#  [ flag FLAG-LIST ] [ encap ENCAP ] [ sel SELECTOR ]
+#  [ LIMIT-LIST ] 
+# 
+# ip xfrm state allocspi ID [ mode MODE ] [ reqid REQID ] [ seq SEQ ]
+# [ min SPI max SPI ]
+# 
+# ip xfrm state { delete | get } ID 
+# 
+# ip xfrm state { deleteall | list } [ ID ] [ mode MODE ]
+#  [ reqid REQID ] [ flag FLAG_LIST ] 
+# 
+# ip xfrm state flush [ proto XFRM_PROTO ] 
+# 
+# ip xfrm state count 
+# 
+# ID := [ src ADDR ] [ dst ADDR ] [ proto XFRM_PROTO ] [ spi SPI ] 
+# 
+# XFRM_PROTO := [ esp | ah | comp | route2 | hao ] 
+# 
+# MODE := [ transport | tunnel | ro | beet ] (default=transport) 
+# 
+# FLAG-LIST := [ FLAG-LIST ] FLAG 
+# 
+# FLAG := [ noecn | decap-dscp | wildrecv ] 
+# 
+# ENCAP := ENCAP-TYPE SPORT DPORT OADDR 
+# 
+# ENCAP-TYPE := espinudp | espinudp-nonike 
+# 
+# ALGO-LIST := [ ALGO-LIST ] | [ ALGO ] 
+# 
+# ALGO := ALGO_TYPE ALGO_NAME ALGO_KEY 
+# 
+# ALGO_TYPE := [ enc | auth | comp ] 
+# 
+# SELECTOR := src ADDR[/PLEN] dst ADDR[/PLEN] [ UPSPEC ] [ dev DEV ] 
+# 
+# UPSPEC := proto PROTO [[ sport PORT ] [ dport PORT ] |
+#  [ type NUMBER ] [ code NUMBER ]] 
+# 
+# LIMIT-LIST := [ LIMIT-LIST ] | [ limit LIMIT ] 
+# 
+# LIMIT := [ [time-soft|time-hard|time-use-soft|time-use-hard] SECONDS
+#  ] | [ [byte-soft|byte-hard] SIZE ] | [ [packet-soft|packet-hard]
+#  COUNT ]
+# 
+# ip xfrm policy { add | update } dir DIR SELECTOR [ index INDEX ]
+#  [ ptype PTYPE ] [ action ACTION ] [ priority PRIORITY ]
+#  [ LIMIT-LIST ] [ TMPL-LIST ] 
+# 
+# ip xfrm policy { delete | get } dir DIR [ SELECTOR | index INDEX ]
+#  [ ptype PTYPE ] 
+# 
+# ip xfrm policy { deleteall | list } [ dir DIR ] [ SELECTOR ]
+#  [ index INDEX ] [ action ACTION ] [ priority PRIORITY ] 
+# 
+# ip xfrm policy flush [ ptype PTYPE ] 
+# 
+# ip xfrm count 
+# 
+# PTYPE := [ main | sub ] (default=main) 
+# 
+# DIR := [ in | out | fwd ] 
+# 
+# SELECTOR := src ADDR[/PLEN] dst ADDR[/PLEN] [ UPSPEC ] [ dev DEV ] 
+# 
+# UPSPEC := proto PROTO [ [ sport PORT ] [ dport PORT ] |
+#  [ type NUMBER ] [ code NUMBER ] ] 
+# 
+# ACTION := [ allow | block ] (default=allow) 
+# 
+# LIMIT-LIST := [ LIMIT-LIST ] | [ limit LIMIT ] 
+# 
+# LIMIT := [ [time-soft|time-hard|time-use-soft|time-use-hard] SECONDS
+#  ] | [ [byte-soft|byte-hard] SIZE ] | [packet-soft|packet-hard]
+#  NUMBER ]
+# 
+# TMPL-LIST := [ TMPL-LIST ] | [ tmpl TMPL ] 
+# 
+# TMPL := ID [ mode MODE ] [ reqid REQID ] [ level LEVEL ] 
+# 
+# ID := [ src ADDR ] [ dst ADDR ] [ proto XFRM_PROTO ] [ spi SPI ] 
+# 
+# XFRM_PROTO := [ esp | ah | comp | route2 | hao ] 
+# 
+# MODE := [ transport | tunnel | beet ] (default=transport) 
+# 
+# LEVEL := [ required | use ] (default=required) 
+# 
+# ip xfrm monitor [ all | LISTofOBJECTS ]
+
+# Usage: bash ip ...
+#
+#   ip addr list INTERFACE_NAME
+#
+#   => netsh interface ip show address [[name=]InterfaceName]
+#  
+
+#   ip link set INTERFACE_NAME up
+#
+#   => netsh interface set interface [name = ] INTERFACE_NAME
+#            [ [admin = ] ENABLED|DISABLED
+#              [connect = ] CONNECTED|DISCONNECTED
+#              [newname = ] NewName ]
+#
+
+#
+#   ip addr add ADDRESS_STRING dev INTERFACE_NAME
+#
+#   => netsh interface ip add address [name=]InterfaceName [addr=]IPAddress
+#         [mask=]SubnetMask [[gateway=] DefaultGateway [gwmetric=]GatewayMetric]
+#
+
+#   ip addr del ADDRESS_STRING dev INTERFACE_NAME
+#
+#   => netsh interface ip delete address [name=]InterfaceName [addr=] IPAddress
+#                     [[gateway=]{DefaultGateway | all}]
+#
+
+# transfer ipv4 prefix to netmask string
+function prefix_to_netmask() 
+{
+    local -i prefix=$1
+    local -i n=4
+    local result=
+    local dot=
+    if (( prefix < 0 || prefix > 32 )) ; then
+        return 1
+    fi
+    while (( prefix > 0 || n > 0)) ; do
+        if (( prefix == 0 )) ; then
+            result=${result}${dot}0
+        elif (( prefix == 1 )) ; then
+            result=${result}${dot}128
+        elif (( prefix == 2 )) ; then
+            result=${result}${dot}192
+        elif (( prefix == 3 )) ; then
+            result=${result}${dot}224
+        elif (( prefix == 4 )) ; then
+            result=${result}${dot}240
+        elif (( prefix == 5 )) ; then
+            result=${result}${dot}248
+        elif (( prefix == 6 )) ; then
+            result=${result}${dot}252
+        elif (( prefix == 7 )) ; then
+            result=${result}${dot}254
+        else
+            result=${result}${dot}255
+        fi
+        if (( prefix < 8 )) ; then
+            prefix=0
+        else
+            prefix=$((prefix - 8))
+        fi
+        n=$((n - 1))
+        dot='.'        
+    done
+    echo $result
+}
+
+function format_interface_name()
+{
+    if [[ "$1" == "" ]]; then
+        return 1
+    fi
+
+    local guid=$1
+    if ! [[ "${guid:0:1}" == "{" ]] ; then
+        echo $1
+    else
+        ipv6 if | grep -B1 "${guid}" | \
+          sed -e "2d" -e "s/^Interface[0-9: ]\+\(Ethernet: \)\?//g"
+    fi
+}
+
+orig_cmd="$0 $*"
+opt_family=
+opt_statistics=0
+opt_version=
+opt_resolve=
+object=
+
+# set options and object
+while [[ "$1" != "" ]] && [[ "$object" == "" ]] ; do
+    case $1 in
+        -V | -Version)
+            opt_version=1
+            ;;
+        -4)
+            opt_family=ipv4
+            ;;
+        -6)
+            opt_family=ipv6
+            ;;
+        -0)
+            opt_family=link
+            ;;
+        -f | -family)
+            shift
+            opt_family=$1
+            ;;
+        -r | -resolve)
+            opt_resolve=1
+            ;;
+        -s | -stats | -statistics)
+            let opt_statistics+=1
+            ;;
+        tuntap)
+            echo $orig_cmd
+            exit 0
+            ;;
+        link | addr | addrlabel | route | rule | neigh | tunnel | \
+        maddr | mroute | monitor)
+            object=$1
+            ;;
+        *) echo Warning: unsupport options "$1"
+    esac
+
+    shift
+done
+
+if [[ "$opt_version" == "1" ]] ; then
+    echo "Cygwin ip command, simulate linux ip(8)"
+    exit 0
+fi
+
+if [[ "$object" == "" ]] ; then
+    echo $orig_cmd
+    echo "Error: missing object in the ip command."
+    exit 1
+fi
+
+command=$1; shift
+if [[ "$command" == "" ]] ; then
+    echo $orig_cmd
+    echo "Error: missing command paramter."
+    exit 1
+fi
+
+if [[ $object == "link" ]] ; then
+    echo $orig_cmd
+    exit 0
+
+elif [[ $object == "addr" ]] ; then
+
+    if [[ $command == "add" ]] || [[ $command == "del" ]] ; then
+        address=$(dirname $1)
+        shift
+    elif [[ $command == "list" ]] ; then
+        command="show"
+        if [[ "$opt_family" == "ipv6" ]] ; then
+            address="normal"
+        fi
+    else
+        echo "Error: unsupported command \"$command\""
+        exit 1
+    fi
+
+    if [[ "$opt_family" == "ipv4" || "$opt_family" == "" ]] ; then
+        ipcmd="netsh interface ip $command address"
+    elif [[ "$opt_family" == "ipv6" ]] ; then
+        ipcmd="netsh interface ipv6 $command address"
+    else
+        echo $orig_cmd
+        echo "Error: unsupported family \"$opt_family\""
+        exit 1
+    fi
+
+    while [[ "$1" != "" ]] ; do
+        case $1 in
+            dev)
+                dev=\"$(format_interface_name $2)\"
+                shift
+                ;;            
+            *) echo Warning: unsupport parameter "$1"
+        esac
+
+        shift
+    done
+
+    ipcmd="$ipcmd $dev $address"
+
+elif [[ $object == "addrlabel" ]] ; then
+
+  ipcmd="netsh interface ipv6"
+
+  if [[ $command == "add" ]] || [[ $command == "del" ]] ; then
+      if [[ "$1" != "prefix" ]] ; then
+          echo $orig_cmd
+          echo "Error: no preifx"
+          exit 1
+      fi
+      prefix="prefix=$2"; shift; shift
+      
+      if [[ "$1" == "dev" ]] ; then
+          shift; shift
+      fi
+      
+      precedence="precedence=100"
+
+      if [[ "$1" == 'label' ]] ; then
+          label="label=$2"; shift; shift
+      else
+          label="label=0"
+      fi
+
+      if [[ $command == "add" ]] ; then
+          ipcmd="$ipcmd $command prefixpolicy $prefix $precedence $label"
+      else
+          ipcmd="$ipcmd $command prefixpolicy $prefix"
+      fi
+
+  elif [[ $command == "list" ]] ; then
+
+      if [[ "$1" == "" ]] ; then
+          $ipcmd="$ipcmd show prefixpolicy"
+      else
+          echo $orig_cmd
+          echo "Error: extra parameters \"$1\'"
+          exit 1
+      fi
+
+  else
+      echo $orig_cmd
+      echo "Error: unsupported command \"$command\""
+      exit 1
+  fi
+
+elif [[ $object == "route" ]] ; then
+
+    if [[ $command == "list" ]] ; then
+        command="show"
+    elif [[ $command == "change" ]] ; then
+        command="set"
+    fi
+
+    if [[ "$opt_family" == "ipv4" || "$opt_family" == "" ]] ; then
+        # rtmroute need that the Routing and Remote Access Service is running
+        ipcmd="netsh routing ip $command rtmroute"
+        # ipcmd="netsh routing ip $command persistentroute"
+    elif [[ "$opt_family" == "ipv6" ]] ; then
+        ipcmd="netsh interface ipv6 $command route"
+    else
+        echo $orig_cmd
+        echo "Error: unsupported family \"$opt_family\""
+        exit 1
+    fi
+
+    # Route type 
+    case "$1" in
+        unicast)
+            shift
+            ;;
+        local)
+            shift
+            ;;
+        broadcast)
+            shift
+            ;;
+        multicast)
+            shift
+            ;;
+        throw)
+            shift
+            ;;
+        prohibit)
+            shift
+            ;;
+ 
+        # Windows XP/Vista/7 does not support reject or blackhole
+        # arguments via route, thus an unused IP address must be used
+        # as the target gateway.
+        unreachable | blackhole)
+            unreachable=1
+            shift
+            ;;
+        nat)
+            shift
+            ;;
+    esac
+
+    if [[ $command != "show" ]] ; then
+        prefix=$1
+        shift
+    fi
+
+    while [[ "$1" != "" ]] ; do
+        case $1 in
+            dev)
+                interface=dev=\"$(format_interface_name \"$2\")\"
+                shift
+                ;;
+            proto)
+                proto="$2"
+                shift
+                ;;
+            via)
+                nexthop="$2"
+                shift
+                ;;
+            table)
+                table="$2"
+                shift
+                ;;
+            *) echo "Warning: unsupport parameter \"$1\" in the Cygwin"
+        esac
+
+        shift;
+    done
+
+    if [[ "$unreachable" == "1" ]] ; then
+        if [[ "$opt_family" == "ipv4" || "$opt_family" == "" ]] ; then
+            echo $orig_cmd
+            echo "Error: unreachable ipv4 route entry is unimplemented"
+            exit 1                
+        else
+            if [[ "$command" == "del" ]] ; then
+                interface=1
+                nexthop=""
+            elif [[ "$command" == "add" ]] ; then
+                interface=1
+                # nexthop=`netsh interface ipv6 show address blackhole \
+                #          | grep "Unicast Address" \
+                #          | sed -e "s/Unicast Address\\s*:\\s*//g")`
+                nexthop=""
+            else
+                echo $orig_cmd
+                echo "Error: unsupported command \"$command\" "\
+                     "for unreachable route entry"
+                exit 1                
+            fi
+        fi
+    fi
+
+    ipcmd="$ipcmd $prefix $interface $nexthop"
+
+# elif [[ $object == "rule" ]] ; then
+#     echo "Error: unsupported ip object \"$object\" in the Cygwin"
+#     exit 1
+# elif [[ $object == "neigh" ]] ; then
+#     echo "Error: unsupported ip object \"$object\" in the Cygwin"
+#     exit 1
+# elif [[ $object == "tunnel" ]] ; then
+#     echo "Error: unsupported ip object \"$object\" in the Cygwin"
+#     exit 1
+# elif [[ $object == "maddr" ]] ; then
+#     echo "Error: unsupported ip object \"$object\" in the Cygwin"
+#     exit 1
+# elif [[ $object == "mroute" ]] ; then
+#     echo "Error: unsupported ip object \"$object\" in the Cygwin"
+#     exit 1
+# elif [[ $object == "monitor" ]] ; then
+#     echo "Error: unsupported ip object \"$object\" in the Cygwin"
+#     exit 1
+else
+    echo $orig_cmd
+    echo "Error: unsupported ip object \"$object\" in the Cygwin"
+    exit 1
+fi
+
+echo "Mapped to: $ipcmd"
+$ipcmd
+
