@@ -18,10 +18,11 @@ alias =
   fengoffice http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.158:/software/fengoffice/software.cfg
   kumofs http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.141:/software/kumofs/software.cfg
   kvm http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.156:/software/kvm/software.cfg
-  opengoo http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.158:/software/opengoo/software.cfg
+  maarch http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.159:/software/maarch/software.cfg
   mariadb http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.152:/software/mariadb/software.cfg
   memcached http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.82:/software/memcached/software.cfg
   mysql http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.65:/software/mysql-5.1/software.cfg
+  opengoo http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.158:/software/opengoo/software.cfg
   postgresql http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.157:/software/postgres/software.cfg
   slaposwebrunner http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.143:/software/slaprunner/software.cfg
   wordpress http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.153:/software/wordpress/software.cfg
