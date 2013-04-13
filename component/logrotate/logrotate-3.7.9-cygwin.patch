@@ -1,0 +1,22 @@
+diff --git a/config.c b/config.c
+index e6d5d1d..a526d64 100644
+--- a/config.c
++++ b/config.c
+@@ -547,7 +547,7 @@ static int readConfigFile(const char *configFile, struct logInfo *defConfig)
+ 
+ 	length = sb.st_size;
+ 	buf = mmap(NULL, (size_t)(length + 2), PROT_READ | PROT_WRITE,
+-			MAP_PRIVATE | MAP_POPULATE, fd, (off_t) 0);
++			MAP_PRIVATE, fd, (off_t) 0);
+ 	if (buf == MAP_FAILED) {
+ 		message(MESS_ERROR, "Error mapping config file %s: %s\n",
+ 				configFile, strerror(errno));
+@@ -559,7 +559,7 @@ static int readConfigFile(const char *configFile, struct logInfo *defConfig)
+ 	buf[length + 1] = '\0';
+ 	buf[length] = '\n';
+ 	madvise(buf, (size_t)(length + 2),
+-			MADV_SEQUENTIAL | MADV_WILLNEED | MADV_DONTFORK);
++			MADV_SEQUENTIAL | MADV_WILLNEED);
+ 
+     message(MESS_DEBUG, "reading config file %s\n", configFile);
+ 
