@@ -26,9 +26,17 @@
 ##############################################################################
 import operator
 from slapos.recipe.librecipe import GenericSlapRecipe
+import traceback
 import zc.buildout
 
 class Recipe(GenericSlapRecipe):
+  def __init__(self, buildout, name, options):
+    # If public ipv4 is defined: use it as bind address
+    if options['public-ipv4']:
+      options['ipv4'] = options['public-ipv4']
+
+    GenericSlapRecipe.__init__(self, buildout, name, options)
+
   def _install(self):
     path_list = []
 
