@@ -41,7 +41,7 @@ mail {
                 listen %(listen-local-ipv4)s:%(smtp-port-number)s;
                 listen %(listen-global-ipv6)s:%(smtp-port-number)s;
                 protocol smtp;
-                timeout 5s;
+                timeout 30s;
                 proxy on;
                 xclient off;
                 smtp_auth none;
