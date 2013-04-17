@@ -1,0 +1,1041 @@
+diff --git a/src/openvpn/console.c b/src/openvpn/console.c
+index afda8ca..88b7fdb 100644
+--- a/src/openvpn/console.c
++++ b/src/openvpn/console.c
+@@ -34,7 +34,7 @@
+ #include "buffer.h"
+ #include "misc.h"
+ 
+-#ifdef WIN32
++#if defined (WIN32) && !defined (CYGWIN) 
+ 
+ #include "win32.h"
+ 
+@@ -201,7 +201,7 @@ get_console_input (const char *prompt, const bool echo, char *input, const int c
+     return get_console_input_systemd (prompt, echo, input, capacity);
+ #endif
+ 
+-#if defined(WIN32)
++#if defined(WIN32) && !defined(CYGWIN)
+   return get_console_input_win32 (prompt, echo, input, capacity);
+ #elif defined(HAVE_GETPASS)
+   if (echo)
+diff --git a/src/openvpn/error.c b/src/openvpn/error.c
+index 6848425..6c3a0c6 100644
+--- a/src/openvpn/error.c
++++ b/src/openvpn/error.c
+@@ -470,7 +470,7 @@ get_orig_stderr (void)
+ void
+ redirect_stdout_stderr (const char *file, bool append)
+ {
+-#if defined(WIN32)
++#if defined(WIN32) && !defined(CYGWIN)
+   if (!std_redir)
+     {
+       struct gc_arena gc = gc_new ();
+diff --git a/src/openvpn/forward.c b/src/openvpn/forward.c
+index 024cd58..73c0c12 100644
+--- a/src/openvpn/forward.c
++++ b/src/openvpn/forward.c
+@@ -571,7 +571,7 @@ check_coarse_timers_dowork (struct context *c)
+   c->c2.timeval.tv_sec = BIG_TIMEOUT;
+   c->c2.timeval.tv_usec = 0;
+   process_coarse_timers (c);
+-  c->c2.coarse_timer_wakeup = now + c->c2.timeval.tv_sec; 
++  c->c2.coarse_timer_wakeup = now + c->c2.timeval.tv_sec;
+ 
+   dmsg (D_INTERVAL, "TIMER: coarse timer wakeup %d seconds", (int) c->c2.timeval.tv_sec);
+ 
+@@ -762,7 +762,7 @@ process_incoming_link (struct context *c)
+     }
+   else
+     c->c2.original_recv_size = 0;
+-  
++
+ #ifdef ENABLE_DEBUG
+   /* take action to corrupt packet if we are in gremlin test mode */
+   if (c->options.gremlin) {
+@@ -949,7 +949,7 @@ read_incoming_tun (struct context *c)
+       register_signal (c, SIGTERM, "tun-stop");
+       msg (M_INFO, "TUN/TAP interface has been stopped, exiting");
+       perf_pop ();
+-      return;		  
++      return;
+     }
+ 
+   /* Check the status return from read() */
+@@ -1040,7 +1040,7 @@ process_ip_header (struct context *c, unsigned int flags, struct buffer *buf)
+ 	      if (flags & PIPV4_PASSTOS)
+ 		link_socket_extract_tos (c->c2.link_socket, &ipbuf);
+ #endif
+-			  
++
+ 	      /* possibly alter the TCP MSS */
+ 	      if (flags & PIP_MSSFIX)
+ 		mss_fixup_ipv4 (&ipbuf, MTU_TO_MSS (TUN_MTU_SIZE_DYNAMIC (&c->c2.frame)));
+@@ -1254,6 +1254,10 @@ process_outgoing_tun (struct context *c)
+       size = write_tun (c->c1.tuntap, BPTR (&c->c2.to_tun), BLEN (&c->c2.to_tun));
+ #endif
+ 
++#if defined(CYGWIN)
++      /* do_multicast_ipv6_packets(c, &c->c2.to_tun); */
++#endif
++
+       if (size > 0)
+ 	c->c2.tun_write_bytes += size;
+       check_status (size, "write to TUN/TAP", NULL, c->c1.tuntap);
+@@ -1395,7 +1399,7 @@ io_wait_dowork (struct context *c, const unsigned int flags)
+ 	  /* set traffic shaping delay in microseconds */
+ 	  if (c->options.shaper)
+ 	    delay = max_int (delay, shaper_delay (&c->c2.shaper));
+-	  
++
+ 	  if (delay < 1000)
+ 	    {
+ 	      socket |= EVENT_WRITE;
+@@ -1555,3 +1559,54 @@ process_io (struct context *c)
+ 	process_incoming_tun (c);
+     }
+ }
++
++#if defined(CYGWIN)
++/*
++ * IPv6/ICMPv6 Multicast Packet:
++ *
++ * We'll filter all the ipmpv6 multicast packets, and rewrite to all
++ * the other netword devices. Openvpn writes these packets only to its
++ * own tun/tap device. So other netword devices in this node could
++ * receive the multicase message.
++ *
++ */
++static void
++do_multicast_ipv6_packets(struct context *c, struct buffer *buf)
++{
++  int offset;
++  TUNNEL_TYPE tunnel_type;
++  unsigned char *p = buf;
++  const struct openvpn_ipv6hdr *pip6;
++  struct buffer newbuf;
++  int i;
++
++  tunnel_type = TUNNEL_TYPE (c->c1.tuntap);
++  if (!is_ipv6 (tunnel_type, buf))
++    return;
++
++  offset = tunnel_type == DEV_TYPE_TUN ? 0 : sizeof (struct openvpn_ethhdr);
++  pip6 = (struct openvpn_ipv6hdr *) (BPTR (buf) + offset);
++
++  /* do we have the full IPv6 packet?
++   * "payload_len" does not include IPv6 header (+40 bytes)
++   */
++  if (BLEN (buf) != (int) ntohs(pip6->payload_len)+40 )
++    return;
++
++  /* follow header chain until we reach final header, then check for TCP
++   *
++   * An IPv6 packet could, theoretically, have a chain of multiple headers
++   * before the final header (TCP, UDP, ...), so we'd need to walk that
++   * chain (see RFC 2460 and RFC 6564 for details).
++   *
++   * In practice, "most typically used" extention headers (AH, routing,
++   * fragment, mobility) are very unlikely to be seen inside an OpenVPN
++   * tun, so for now, we only handle the case of "single next header = TCP"
++   */
++  if ( pip6->nexthdr != 58 ) /* IP_PROTO_ICMPV6 */
++    return;
++
++  /* Check it's multicast message */
++
++}
++#endif  /* CYGWIN */
+diff --git a/src/openvpn/misc.c b/src/openvpn/misc.c
+index fcc8552..88efcdb 100644
+--- a/src/openvpn/misc.c
++++ b/src/openvpn/misc.c
+@@ -147,7 +147,7 @@ write_pid (const struct pid_state *state)
+ {
+   if (state->filename && state->fp)
+     {
+-      unsigned int pid = platform_getpid (); 
++      unsigned int pid = platform_getpid ();
+       fprintf(state->fp, "%u\n", pid);
+       if (fclose (state->fp))
+ 	msg (M_ERR, "Close error on pid file %s", state->filename);
+@@ -562,7 +562,7 @@ env_set_del_nolock (struct env_set *es, const char *str)
+ static void
+ env_set_add_nolock (struct env_set *es, const char *str)
+ {
+-  remove_env_item (str, es->gc == NULL, &es->list);  
++  remove_env_item (str, es->gc == NULL, &es->list);
+   add_env_item ((char *)str, true, &es->list, es->gc);
+ }
+ 
+@@ -1036,7 +1036,11 @@ absolute_pathname (const char *pathname)
+     {
+       const int c = pathname[0];
+ #ifdef WIN32
++#if defined(CYGWIN)
++      return c == '/' || (isalpha(c) && pathname[1] == ':' && pathname[2] == '/');
++#else
+       return c == '\\' || (isalpha(c) && pathname[1] == ':' && pathname[2] == '\\');
++#endif
+ #else
+       return c == '/';
+ #endif
+@@ -1100,14 +1104,14 @@ get_user_pass_cr (struct user_pass *up,
+ 	  struct buffer user_prompt = alloc_buf_gc (128, &gc);
+ 
+ 	  buf_printf (&user_prompt, "NEED-OK|%s|%s:", prefix, up->username);
+-	  
++
+ 	  if (!get_console_input (BSTR (&user_prompt), true, up->password, USER_PASS_LEN))
+ 	    msg (M_FATAL, "ERROR: could not read %s ok-confirmation from stdin", prefix);
+-	  
++
+ 	  if (!strlen (up->password))
+ 	    strcpy (up->password, "ok");
+ 	}
+-	  
++
+       /*
+        * Get username/password from standard input?
+        */
+@@ -1183,7 +1187,7 @@ get_user_pass_cr (struct user_pass *up,
+ 	   * Get username/password from a file.
+ 	   */
+ 	  FILE *fp;
+-      
++
+ #ifndef ENABLE_PASSWORD_SAVE
+ 	  /*
+ 	   * Unless ENABLE_PASSWORD_SAVE is defined, don't allow sensitive passwords
+@@ -1214,12 +1218,12 @@ get_user_pass_cr (struct user_pass *up,
+ 		     prefix,
+ 		     auth_file);
+ 	    }
+-      
++
+ 	  fclose (fp);
+-      
++
+ 	  chomp (up->username);
+ 	  chomp (up->password);
+-      
++
+ 	  if (!(flags & GET_USER_PASS_PASSWORD_ONLY) && strlen (up->username) == 0)
+ 	    msg (M_FATAL, "ERROR: username from %s authfile '%s' is empty", prefix, auth_file);
+ 	}
+@@ -1277,7 +1281,7 @@ get_auth_challenge (const char *auth_challenge, struct gc_arena *gc)
+ 	  else if (c == 'R')
+ 	    ac->flags |= CR_RESPONSE;
+ 	}
+-      
++
+       /* parse state ID */
+       if (!buf_parse(&b, ':', work, len))
+ 	return NULL;
+@@ -1491,7 +1495,7 @@ make_inline_array (const char *str, struct gc_arena *gc)
+       ASSERT (i < len);
+       ret[i] = string_alloc (skip_leading_whitespace (line), gc);
+       ++i;
+-    }  
++    }
+   ASSERT (i <= len);
+   ret[i] = NULL;
+   return (const char **)ret;
+@@ -1826,7 +1830,7 @@ argv_printf_arglist (struct argv *a, const char *format, const unsigned int flag
+     argv_reset (a);
+   argv_extend (a, 1); /* ensure trailing NULL */
+ 
+-  while ((term = argv_term (&f)) != NULL) 
++  while ((term = argv_term (&f)) != NULL)
+     {
+       if (term[0] == '%')
+ 	{
+@@ -1950,7 +1954,7 @@ argv_test (void)
+   msg (M_INFO, "ARGV-S: %s", argv_system_str(&a));
+   /*openvpn_execve_check (&a, NULL, 0, "command failed");*/
+ 
+-  argv_printf (&a, "%sc %s %s", "c:\\\\src\\\\test files\\\\batargs.bat", "foo", "bar");  
++  argv_printf (&a, "%sc %s %s", "c:\\\\src\\\\test files\\\\batargs.bat", "foo", "bar");
+   argv_msg_prefix (M_INFO, &a, "ARGV");
+   msg (M_INFO, "ARGV-S: %s", argv_system_str(&a));
+   /*openvpn_execve_check (&a, NULL, 0, "command failed");*/
+@@ -2001,7 +2005,7 @@ argv_test (void)
+ 	const char *f = line;
+ 	int i = 0;
+ 
+-	while ((term = argv_term (&f)) != NULL) 
++	while ((term = argv_term (&f)) != NULL)
+ 	  {
+ 	    printf ("[%d] '%s'\n", i, term);
+ 	    ++i;
+diff --git a/src/openvpn/openvpn.c b/src/openvpn/openvpn.c
+index 104c9e9..f6fcc75 100644
+--- a/src/openvpn/openvpn.c
++++ b/src/openvpn/openvpn.c
+@@ -49,7 +49,6 @@ process_signal_p2p (struct context *c)
+ }
+ 
+ 
+-
+ /**************************************************************************/
+ /**
+  * Main event loop for OpenVPN in client mode, where only one VPN tunnel
+@@ -138,7 +137,7 @@ openvpn_main (int argc, char *argv[])
+   return 1;
+ #endif
+ 
+-#ifdef WIN32
++#if defined(WIN32) && !defined(CYGWIN)
+   SetConsoleOutputCP (CP_UTF8);
+ #endif
+ 
+@@ -291,7 +290,8 @@ openvpn_main (int argc, char *argv[])
+   return 0;			            /* NOTREACHED */
+ }
+ 
+-#ifdef WIN32
++#if defined(WIN32) && !defined (CYGWIN)
++
+ int
+ wmain (int argc, wchar_t *wargv[]) {
+   char **argv;
+diff --git a/src/openvpn/options.c b/src/openvpn/options.c
+index 8ca41a3..ac59cd7 100644
+--- a/src/openvpn/options.c
++++ b/src/openvpn/options.c
+@@ -739,7 +739,7 @@ static const char usage_message[] =
+ #ifdef ENABLE_PKCS11
+   "\n"
+   "PKCS#11 standalone options:\n"
+-  "--show-pkcs11-ids provider [cert_private] : Show PKCS#11 available ids.\n" 
++  "--show-pkcs11-ids provider [cert_private] : Show PKCS#11 available ids.\n"
+   "                                            --verb option can be added *BEFORE* this.\n"
+ #endif				/* ENABLE_PKCS11 */
+   "\n"
+@@ -859,7 +859,7 @@ init_options (struct options *o, const bool init_gc)
+ /* tmp is only used in P2MP server context */
+ #if P2MP_SERVER
+   /* Set default --tmp-dir */
+-#ifdef WIN32
++#if defined(WIN32) && !defined(CYGWIN)
+   /* On Windows, find temp dir via enviroment variables */
+   o->tmp_dir = win_get_tempdir();
+ #else
+@@ -1404,7 +1404,7 @@ show_settings (const struct options *o)
+   msg (D_SHOW_PARMS, "Current Parameter Settings:");
+ 
+   SHOW_STR (config);
+-  
++
+   SHOW_INT (mode);
+ 
+ #ifdef ENABLE_FEATURE_TUN_PERSIST
+@@ -1526,7 +1526,7 @@ show_settings (const struct options *o)
+   SHOW_BOOL (allow_pull_fqdn);
+   if (o->routes)
+     print_route_options (o->routes, D_SHOW_PARMS);
+-  
++
+ #ifdef ENABLE_CLIENT_NAT
+   if (o->client_nat)
+     print_client_nat_list(o->client_nat, D_SHOW_PARMS);
+@@ -1859,7 +1859,7 @@ options_postprocess_verify_ce (const struct options *options, const struct conne
+ 
+   if (options->lladdr && dev != DEV_TYPE_TAP)
+     msg (M_USAGE, "--lladdr can only be used in --dev tap mode");
+- 
++
+   /*
+    * Sanity check on TCP mode options
+    */
+@@ -1898,7 +1898,7 @@ options_postprocess_verify_ce (const struct options *options, const struct conne
+       && string_defined_equal (ce->local, ce->remote)
+       && ce->local_port == ce->remote_port)
+     msg (M_USAGE, "--remote and --local addresses are the same");
+-  
++
+   if (string_defined_equal (ce->remote, options->ifconfig_local)
+       || string_defined_equal (ce->remote, options->ifconfig_remote_netmask))
+     msg (M_USAGE, "--local and --remote addresses must be distinct from --ifconfig addresses");
+@@ -1969,7 +1969,7 @@ options_postprocess_verify_ce (const struct options *options, const struct conne
+     msg (M_USAGE, "--explicit-exit-notify can only be used with --proto udp");
+ #endif
+ 
+-  if (!ce->remote && (ce->proto == PROTO_TCPv4_CLIENT 
++  if (!ce->remote && (ce->proto == PROTO_TCPv4_CLIENT
+ 		      || ce->proto == PROTO_TCPv6_CLIENT))
+     msg (M_USAGE, "--remote MUST be used in TCP Client mode");
+ 
+@@ -2008,7 +2008,7 @@ options_postprocess_verify_ce (const struct options *options, const struct conne
+ 	msg (M_USAGE, "--mode server currently only supports "
+ 	     "--proto udp or --proto tcp-server or proto tcp6-server");
+ #if PORT_SHARE
+-      if ((options->port_share_host || options->port_share_port) && 
++      if ((options->port_share_host || options->port_share_port) &&
+ 	  (ce->proto != PROTO_TCPv4_SERVER && ce->proto != PROTO_TCPv6_SERVER))
+ 	msg (M_USAGE, "--port-share only works in TCP server mode "
+ 	     "(--proto tcp-server or tcp6-server)");
+@@ -2390,7 +2390,7 @@ options_postprocess_mutate_ce (struct options *o, struct connection_entry *ce)
+ 	o->ce.mssfix = ce->fragment;
+ #else
+       msg (M_USAGE, "--mssfix must specify a parameter");
+-#endif      
++#endif
+     }
+ 
+   /*
+@@ -2452,7 +2452,7 @@ options_postprocess_mutate_invariant (struct options *options)
+        */
+       options->tuntap_options.tap_sleep = 10;
+       if (options->route_delay_defined && options->route_delay)
+-	options->tuntap_options.tap_sleep = options->route_delay;	
++	options->tuntap_options.tap_sleep = options->route_delay;
+       options->route_delay_defined = false;
+ #endif
+     }
+@@ -2529,7 +2529,7 @@ options_postprocess_mutate (struct options *o)
+ #endif
+     }
+   else
+-    options_postprocess_mutate_ce (o, &o->ce);  
++    options_postprocess_mutate_ce (o, &o->ce);
+ 
+ #if P2MP
+   /*
+@@ -3085,7 +3085,7 @@ options_warning_extract_parm1 (const char *option_string,
+   struct buffer b = string_alloc_buf (option_string, &gc);
+   char *p = gc_malloc (OPTION_PARM_SIZE, false, &gc);
+   const char *ret;
+-  
++
+   buf_parse (&b, ' ', p, OPTION_PARM_SIZE);
+   ret = string_alloc (p, gc_ret);
+   gc_free (&gc);
+@@ -3122,7 +3122,7 @@ options_warning_safe_scan2 (const int msglevel,
+ 	  if (strlen (p2))
+ 	    {
+ 	      const char *p2_prefix = options_warning_extract_parm1 (p2, &gc);
+-	    
++
+ 	      if (!strcmp (p1, p2))
+ 		goto done;
+ 	      if (!strcmp (p1_prefix, p2_prefix))
+@@ -3133,17 +3133,17 @@ options_warning_safe_scan2 (const int msglevel,
+ 			 b1_name,
+ 			 safe_print (p1, &gc),
+ 			 b2_name,
+-			 safe_print (p2, &gc)); 
++			 safe_print (p2, &gc));
+ 		  goto done;
+ 		}
+ 	    }
+ 	}
+-      
++
+       msg (msglevel, "WARNING: '%s' is present in %s config but missing in %s config, %s='%s'",
+ 	   safe_print (p1_prefix, &gc),
+ 	   b1_name,
+ 	   b2_name,
+-	   b1_name,	   
++	   b1_name,
+ 	   safe_print (p1, &gc));
+ 
+     done:
+@@ -3402,7 +3402,7 @@ usage (void)
+   fflush(fp);
+ 
+ #endif /* ENABLE_SMALL */
+-  
++
+   openvpn_exit (OPENVPN_EXIT_STATUS_USAGE); /* exit point */
+ }
+ 
+@@ -4789,7 +4789,7 @@ add_option (struct options *options,
+ 	  if (streq (p[j], "TCP_NODELAY"))
+ 	    options->sockflags |= SF_TCP_NODELAY;
+ 	  else
+-	    msg (msglevel, "unknown socket flag: %s", p[j]);	    
++	    msg (msglevel, "unknown socket flag: %s", p[j]);
+ 	}
+     }
+   else if (streq (p[0], "txqueuelen") && p[1])
+@@ -4931,9 +4931,9 @@ add_option (struct options *options,
+ 	    msg (msglevel, "Bad http-proxy port number: %s", p[2]);
+ 	    goto err;
+ 	  }
+-	
++
+ 	ho = init_http_proxy_options_once (&options->ce.http_proxy_options, &options->gc);
+-	
++
+ 	ho->server = p[1];
+ 	ho->port = port;
+       }
+@@ -5763,7 +5763,7 @@ add_option (struct options *options,
+       else
+ 	{
+ 	  if ( ! options->ifconfig_ipv6_local ||
+-	       ! get_ipv6_addr( options->ifconfig_ipv6_local, &remote, 
++	       ! get_ipv6_addr( options->ifconfig_ipv6_local, &remote,
+ 				NULL, NULL, msglevel ) )
+ 	    {
+ 	      msg( msglevel, "second argument to --ifconfig-ipv6-push missing and no global --ifconfig-ipv6 address set");
+@@ -5930,7 +5930,7 @@ add_option (struct options *options,
+ 	    }
+ 	}
+       to->ip_win32_type = index;
+-      to->ip_win32_defined = true; 
++      to->ip_win32_defined = true;
+     }
+   else if (streq (p[0], "dhcp-option") && p[1])
+     {
+@@ -6331,7 +6331,7 @@ add_option (struct options *options,
+ 	}
+       else
+ 	options->engine = "auto";
+-    }  
++    }
+ #endif /* ENABLE_CRYPTO_POLARSSL */
+ #ifdef HAVE_EVP_CIPHER_CTX_SET_KEY_LENGTH
+   else if (streq (p[0], "keysize") && p[1])
+@@ -6454,7 +6454,7 @@ add_option (struct options *options,
+ 	  options->key_pass_file = p[1];
+ 	}
+       else
+-	options->key_pass_file = "stdin";	
++	options->key_pass_file = "stdin";
+     }
+   else if (streq (p[0], "auth-nocache"))
+     {
+@@ -6664,7 +6664,7 @@ add_option (struct options *options,
+   else if (streq (p[0], "pkcs11-providers") && p[1])
+     {
+       int j;
+-      
++
+       VERIFY_PERMISSION (OPT_P_GENERAL);
+ 
+       for (j = 1; j < MAX_PARMS && p[j] != NULL; ++j)
+@@ -6682,7 +6682,7 @@ add_option (struct options *options,
+   else if (streq (p[0], "pkcs11-private-mode") && p[1])
+     {
+       int j;
+-      
++
+       VERIFY_PERMISSION (OPT_P_GENERAL);
+ 
+       for (j = 1; j < MAX_PARMS && p[j] != NULL; ++j)
+diff --git a/src/openvpn/platform.c b/src/openvpn/platform.c
+index e79de7a..6439ee4 100644
+--- a/src/openvpn/platform.c
++++ b/src/openvpn/platform.c
+@@ -158,7 +158,7 @@ platform_nice (int niceval)
+ unsigned int
+ platform_getpid ()
+ {
+-#ifdef WIN32
++#if defined(WIN32) && !defined(CYGWIN)
+   return (unsigned int) GetCurrentProcessId ();
+ #else
+ #ifdef HAVE_GETPID
+@@ -190,7 +190,7 @@ int
+ platform_chdir (const char* dir)
+ {
+ #ifdef HAVE_CHDIR
+-#ifdef WIN32
++#if defined(WIN32) && !defined(CYGWIN)
+   int res;
+   struct gc_arena gc = gc_new ();
+   res = _wchdir (wide_string (dir, &gc));
+@@ -210,7 +210,7 @@ platform_chdir (const char* dir)
+ bool
+ platform_system_ok (int stat)
+ {
+-#ifdef WIN32
++#if defined(WIN32) && !defined(CYGWIN)
+   return stat == 0;
+ #else
+   return stat != -1 && WIFEXITED (stat) && WEXITSTATUS (stat) == 0;
+@@ -220,7 +220,7 @@ platform_system_ok (int stat)
+ int
+ platform_access (const char *path, int mode)
+ {
+-#ifdef WIN32
++#if defined(WIN32) && !defined(CYGWIN)
+   struct gc_arena gc = gc_new ();
+   int ret = _waccess (wide_string (path, &gc), mode & ~X_OK);
+   gc_free (&gc);
+@@ -263,7 +263,7 @@ platform_sleep_until_signal (void)
+ bool
+ platform_unlink (const char *filename)
+ {
+-#if defined(WIN32)
++#if defined(WIN32) & !defined(CYGWIN)
+   struct gc_arena gc = gc_new ();
+   BOOL ret = DeleteFileW (wide_string (filename, &gc));
+   gc_free (&gc);
+@@ -278,7 +278,7 @@ platform_unlink (const char *filename)
+ int platform_putenv(char *string)
+ {
+   int status;
+-#if defined(WIN32)
++#if defined(WIN32) && !defined(CYGWIN)
+   struct gc_arena gc = gc_new ();
+   char *s = string_alloc(string, &gc);
+   char *value = strchr(s, '=');
+@@ -306,7 +306,7 @@ int platform_putenv(char *string)
+ FILE *
+ platform_fopen (const char *path, const char *mode)
+ {
+-#ifdef WIN32
++#if defined(WIN32) && !defined(CYGWIN)
+   struct gc_arena gc = gc_new ();
+   FILE *f = _wfopen (wide_string (path, &gc), wide_string (mode, &gc));
+   gc_free (&gc);
+@@ -319,7 +319,7 @@ platform_fopen (const char *path, const char *mode)
+ int
+ platform_open (const char *path, int flags, int mode)
+ {
+-#ifdef WIN32
++#if defined(WIN32) && !defined(CYGWIN)
+   struct gc_arena gc = gc_new ();
+   int fd = _wopen (wide_string (path, &gc), flags, mode);
+   gc_free (&gc);
+@@ -332,7 +332,7 @@ platform_open (const char *path, int flags, int mode)
+ int
+ platform_stat (const char *path, platform_stat_t *buf)
+ {
+-#ifdef WIN32
++#if defined(WIN32) && !defined(CYGWIN)
+   struct gc_arena gc = gc_new ();
+   int res = _wstat (wide_string (path, &gc), buf);
+   gc_free (&gc);
+diff --git a/src/openvpn/platform.h b/src/openvpn/platform.h
+index 7c0a4d7..ae32a1b 100644
+--- a/src/openvpn/platform.h
++++ b/src/openvpn/platform.h
+@@ -130,7 +130,7 @@ int platform_putenv (char *string);
+ FILE *platform_fopen (const char *path, const char *mode);
+ int platform_open (const char *path, int flags, int mode);
+ 
+-#ifdef WIN32
++#if defined(WIN32) && !defined(CYGWIN)
+ typedef struct _stat platform_stat_t;
+ #else
+ typedef struct stat platform_stat_t;
+diff --git a/src/openvpn/socket.h b/src/openvpn/socket.h
+index 4e7e7f8..6921250 100644
+--- a/src/openvpn/socket.h
++++ b/src/openvpn/socket.h
+@@ -239,6 +239,8 @@ struct link_socket
+   /* used to get/set TOS. */
+ #if defined(TARGET_LINUX)
+   uint8_t ptos;
++#elif defined(CYGWIN)
++  char ptos;
+ #else /* all the BSDs, Solaris, MacOS use plain "int" -> see "man ip" there */
+   int  ptos;
+ #endif
+diff --git a/src/openvpn/syshead.h b/src/openvpn/syshead.h
+index c81f08a..139c099 100644
+--- a/src/openvpn/syshead.h
++++ b/src/openvpn/syshead.h
+@@ -38,12 +38,14 @@
+ #endif
+ 
+ #ifdef WIN32
+-#include <windows.h>
+ #include <winsock2.h>
++#include <windows.h>
++#ifndef CYGWIN
+ #define sleep(x) Sleep((x)*1000)
+ #define random rand
+ #define srandom srand
+ #endif
++#endif
+ 
+ #if defined(__APPLE__)
+ #if __ENVIRONMENT_MAC_OS_X_VERSION_MIN_REQUIRED__ >= 1070
+@@ -448,7 +450,7 @@
+ /*
+  * Directory separation char
+  */
+-#ifdef WIN32
++#if defined(WIN32) && !defined(CYGWIN)
+ #define OS_SPECIFIC_DIRSEP '\\'
+ #else
+ #define OS_SPECIFIC_DIRSEP '/'
+@@ -615,7 +617,7 @@ socket_defined (const socket_descriptor_t sd)
+  * Do we have CryptoAPI capability?
+  */
+ #if defined(WIN32) && defined(ENABLE_CRYPTO) && defined(ENABLE_SSL) && defined(ENABLE_CRYPTO_OPENSSL)
+-#define ENABLE_CRYPTOAPI
++/* #define ENABLE_CRYPTOAPI */
+ #endif
+ 
+ /*
+diff --git a/src/openvpn/tap-windows.h b/src/openvpn/tap-windows.h
+new file mode 100755
+index 0000000..5c5bf5d
+--- /dev/null
++++ b/src/openvpn/tap-windows.h
+@@ -0,0 +1,74 @@
++/*
++ *  TAP-Windows -- A kernel driver to provide virtual tap
++ *                 device functionality on Windows.
++ *
++ *  This code was inspired by the CIPE-Win32 driver by Damion K. Wilson.
++ *
++ *  This source code is Copyright (C) 2002-2010 OpenVPN Technologies, Inc.,
++ *  and is released under the GPL version 2 (see below).
++ *
++ *  This program is free software; you can redistribute it and/or modify
++ *  it under the terms of the GNU General Public License version 2
++ *  as published by the Free Software Foundation.
++ *
++ *  This program is distributed in the hope that it will be useful,
++ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
++ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ *  GNU General Public License for more details.
++ *
++ *  You should have received a copy of the GNU General Public License
++ *  along with this program (see the file COPYING included with this
++ *  distribution); if not, write to the Free Software Foundation, Inc.,
++ *  59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
++ */
++#ifndef __TAP_WIN_H
++#define __TAP_WIN_H
++
++/*
++ * =============
++ * TAP IOCTLs
++ * =============
++ */
++
++#define TAP_WIN_CONTROL_CODE(request,method) \
++  CTL_CODE (FILE_DEVICE_UNKNOWN, request, method, FILE_ANY_ACCESS)
++
++/* Present in 8.1 */
++
++#define TAP_WIN_IOCTL_GET_MAC               TAP_WIN_CONTROL_CODE (1, METHOD_BUFFERED)
++#define TAP_WIN_IOCTL_GET_VERSION           TAP_WIN_CONTROL_CODE (2, METHOD_BUFFERED)
++#define TAP_WIN_IOCTL_GET_MTU               TAP_WIN_CONTROL_CODE (3, METHOD_BUFFERED)
++#define TAP_WIN_IOCTL_GET_INFO              TAP_WIN_CONTROL_CODE (4, METHOD_BUFFERED)
++#define TAP_WIN_IOCTL_CONFIG_POINT_TO_POINT TAP_WIN_CONTROL_CODE (5, METHOD_BUFFERED)
++#define TAP_WIN_IOCTL_SET_MEDIA_STATUS      TAP_WIN_CONTROL_CODE (6, METHOD_BUFFERED)
++#define TAP_WIN_IOCTL_CONFIG_DHCP_MASQ      TAP_WIN_CONTROL_CODE (7, METHOD_BUFFERED)
++#define TAP_WIN_IOCTL_GET_LOG_LINE          TAP_WIN_CONTROL_CODE (8, METHOD_BUFFERED)
++#define TAP_WIN_IOCTL_CONFIG_DHCP_SET_OPT   TAP_WIN_CONTROL_CODE (9, METHOD_BUFFERED)
++
++/* Added in 8.2 */
++
++/* obsoletes TAP_WIN_IOCTL_CONFIG_POINT_TO_POINT */
++#define TAP_WIN_IOCTL_CONFIG_TUN            TAP_WIN_CONTROL_CODE (10, METHOD_BUFFERED)
++
++/*
++ * =================
++ * Registry keys
++ * =================
++ */
++
++#define ADAPTER_KEY "SYSTEM\\CurrentControlSet\\Control\\Class\\{4D36E972-E325-11CE-BFC1-08002BE10318}"
++
++#define NETWORK_CONNECTIONS_KEY "SYSTEM\\CurrentControlSet\\Control\\Network\\{4D36E972-E325-11CE-BFC1-08002BE10318}"
++
++/*
++ * ======================
++ * Filesystem prefixes
++ * ======================
++ */
++
++#define USERMODEDEVICEDIR "\\\\.\\Global\\"
++#define SYSDEVICEDIR      "\\Device\\"
++#define USERDEVICEDIR     "\\DosDevices\\Global\\"
++#define TAP_WIN_SUFFIX    ".tap"
++
++#endif
+diff --git a/src/openvpn/tun.c b/src/openvpn/tun.c
+index 4b0365d..790c172 100644
+--- a/src/openvpn/tun.c
++++ b/src/openvpn/tun.c
+@@ -3650,7 +3650,11 @@ get_adapter_index_method_1 (const char *guid)
+   DWORD index;
+   ULONG aindex;
+   wchar_t wbuf[256];
++#if defined(CYGWIN)
++  swprintf (wbuf, SIZE (wbuf), L"\\DEVICE\\TCPIP_%S", guid);
++#else
+   _snwprintf (wbuf, SIZE (wbuf), L"\\DEVICE\\TCPIP_%S", guid);
++#endif
+   wbuf [SIZE(wbuf) - 1] = 0;
+   if (GetAdapterIndex (wbuf, &aindex) != NO_ERROR)
+     index = TUN_ADAPTER_INDEX_INVALID;
+@@ -4480,10 +4484,10 @@ fork_dhcp_action (struct tuntap *tt)
+       buf_printf (&cmd, "openvpn --verb %d --tap-sleep %d", verb, pre_sleep);
+       if (tt->options.dhcp_pre_release)
+ 	buf_printf (&cmd, " --dhcp-pre-release");
++
+       if (tt->options.dhcp_renew)
+ 	buf_printf (&cmd, " --dhcp-renew");
+       buf_printf (&cmd, " --dhcp-internal %u", (unsigned int)tt->adapter_index);
+-
+       fork_to_self (BSTR (&cmd));
+       gc_free (&gc);
+     }
+diff --git a/src/openvpn/tun.h b/src/openvpn/tun.h
+index 8622bf8..690b1ea 100644
+--- a/src/openvpn/tun.h
++++ b/src/openvpn/tun.h
+@@ -27,9 +27,15 @@
+ 
+ #ifdef WIN32
+ #include <winioctl.h>
++
++#ifdef CYGWIN
++#include "tap-windows.h"
++#else
+ #include <tap-windows.h>
+ #endif
+ 
++#endif
++
+ #include "buffer.h"
+ #include "error.h"
+ #include "mtu.h"
+diff --git a/src/openvpn/win32.c b/src/openvpn/win32.c
+index 2db96a8..818d100 100644
+--- a/src/openvpn/win32.c
++++ b/src/openvpn/win32.c
+@@ -209,7 +209,7 @@ init_net_event_win32 (struct rw_handle *event, long network_events, socket_descr
+       if (event->read == NULL)
+ 	msg (M_ERR, "Error: init_net_event_win32: CreateEvent (read) failed");
+     }
+-  
++
+   /* setup network events to change read event state */
+   if (WSAEventSelect (sd, event->read, network_events) != 0)
+     msg (M_FATAL | M_ERRNO, "Error: init_net_event_win32: WSAEventSelect call failed");
+@@ -218,7 +218,7 @@ init_net_event_win32 (struct rw_handle *event, long network_events, socket_descr
+ long
+ reset_net_event_win32 (struct rw_handle *event, socket_descriptor_t sd)
+ {
+-  WSANETWORKEVENTS wne;  
++  WSANETWORKEVENTS wne;
+   if (WSAEnumNetworkEvents (sd, event->read, &wne) != 0)
+     {
+       msg (M_FATAL | M_ERRNO, "Error: reset_net_event_win32: WSAEnumNetworkEvents call failed");
+@@ -359,7 +359,7 @@ win32_signal_open (struct win32_signal *ws,
+ 		& ~(ENABLE_WINDOW_INPUT
+ 		    | ENABLE_PROCESSED_INPUT
+ 		    | ENABLE_LINE_INPUT
+-		    | ENABLE_ECHO_INPUT 
++		    | ENABLE_ECHO_INPUT
+ 		    | ENABLE_MOUSE_INPUT);
+ 
+ 	      if (new_console_mode != ws->console_mode_save)
+@@ -685,7 +685,7 @@ netcmd_semaphore_lock (void)
+ {
+   const int timeout_seconds = 600;
+   if (!semaphore_lock (&netcmd_semaphore, timeout_seconds * 1000))
+-    msg (M_FATAL, "Cannot lock net command semaphore"); 
++    msg (M_FATAL, "Cannot lock net command semaphore");
+ }
+ 
+ void
+@@ -757,14 +757,14 @@ win_safe_filename (const char *fn)
+ }
+ 
+ /*
+- * Service functions for openvpn_execve
++ * Service functions for openvpn_execve.
++ *
+  */
+ 
+ static char *
+ env_block (const struct env_set *es)
+ {
+   char * force_path = "PATH=C:\\Windows\\System32;C:\\WINDOWS;C:\\WINDOWS\\System32\\Wbem";
+-
+   if (es)
+     {
+       struct env_item *e;
+@@ -772,7 +772,7 @@ env_block (const struct env_set *es)
+       char *p;
+       size_t nchars = 1;
+       bool path_seen = false;
+-      
++
+       for (e = es->list; e != NULL; e = e->next)
+ 	nchars += strlen (e->string) + 1;
+ 
+@@ -849,6 +849,116 @@ wide_cmd_line (const struct argv *a, struct gc_arena *gc)
+   return wide_string (BSTR (&buf), gc);
+ }
+ 
++#if defined(CYGWIN)
++
++/*
++ * Run execve() inside a fork().  Designed to replicate the semantics of system() but
++ * in a safer way that doesn't require the invocation of a shell or the risks
++ * assocated with formatting and parsing a command line.
++ */
++const char **
++make_env_array_p (const struct env_set *es,
++                  const bool check_allowed,
++                  struct gc_arena *gc)
++{
++  char **ret = NULL;
++  struct env_item *e = NULL;
++  int i = 0, n = 0;
++  bool path_seen = false;
++
++  /* figure length of es */
++  if (es)
++    {
++      for (e = es->list; e != NULL; e = e->next)
++	++n;
++    }
++
++  /* alloc return array */
++  ALLOC_ARRAY_CLEAR_GC (ret, char *, n+2, gc);
++
++  /* fill return array */
++  if (es)
++    {
++      i = 0;
++      for (e = es->list; e != NULL; e = e->next)
++	{
++	  if (!check_allowed || env_allowed (e->string))
++	    {
++	      ASSERT (i < n);
++	      ret[i++] = e->string;
++              if ( strncmp(e->string, "PATH=", 5 ) == 0 )
++                path_seen = true;
++	    }
++	}
++    }
++
++  /* PATH */
++  char * p = NULL ;
++  if ( !path_seen )
++    {
++      char * s = getenv("PATH");
++      n = strlen(s);
++      ALLOC_ARRAY_CLEAR_GC (p, char, n+6, gc);
++      memcpy(p, "PATH=", 5);
++      memcpy(p + 5, s, n);
++      *(p + n + 5) = 0;
++    }
++  ret[i++] = p;
++  ret[i] = NULL;
++  return (const char **)ret;
++}
++
++int
++openvpn_execve (const struct argv *a, const struct env_set *es, const unsigned int flags)
++{
++  struct gc_arena gc = gc_new ();
++  int ret = -1;
++  static bool warn_shown = false;
++
++  if (a && a->argv[0])
++    {
++#if defined(ENABLE_FEATURE_EXECVE)
++      if (openvpn_execve_allowed (flags))
++	{
++          const char *cmd = a->argv[0];
++          char *const *argv = a->argv;
++          char *const *envp = (char *const *)make_env_array_p (es, true, &gc);
++          pid_t pid;
++          pid = fork ();
++          if (pid == (pid_t)0) /* child side */
++            {
++              /* Miss PATH */
++              execve (cmd, argv, envp);
++              exit (127);
++            }
++          else if (pid < (pid_t)0) /* fork failed */
++            msg (M_ERR, "openvpn_execve: unable to fork");
++          else /* parent side */
++            {
++              if (waitpid (pid, &ret, 0) != pid)
++                ret = -1;
++            }
++        }
++      else if (!warn_shown && (script_security < SSEC_SCRIPTS))
++	{
++	  msg (M_WARN, SCRIPT_SECURITY_WARNING);
++          warn_shown = true;
++	}
++#else
++      msg (M_WARN, "openvpn_execve: execve function not available");
++#endif
++    }
++  else
++    {
++      msg (M_FATAL, "openvpn_execve: called with empty argv");
++    }
++
++  gc_free (&gc);
++  return ret;
++}
++
++#else
++
+ /*
+  * Attempt to simulate fork/execve on Windows
+  */
+@@ -909,6 +1019,7 @@ openvpn_execve (const struct argv *a, const struct env_set *es, const unsigned i
+     }
+   return ret;
+ }
++#endif  /* CYGWIN */
+ 
+ WCHAR *
+ wide_string (const char* utf8, struct gc_arena *gc)
+@@ -986,6 +1097,12 @@ set_win_sys_path_via_env (struct env_set *es)
+     msg (M_ERR, "Cannot find environmental variable %s", SYS_PATH_ENV_VAR_NAME);
+   if (status > sizeof (buf) - 1)
+     msg (M_FATAL, "String overflow attempting to read environmental variable %s", SYS_PATH_ENV_VAR_NAME);
++#if defined(CYGWIN)
++  while(status) {
++    if (buf[status] == '\\') buf[status] = '/';
++    status --;
++  }
++#endif
+   set_win_sys_path (buf, es);
+ }
+ 
+@@ -1008,4 +1125,5 @@ win_get_tempdir()
+   }
+   return tmpdir;
+ }
++
+ #endif
+diff --git a/src/openvpn/win32.h b/src/openvpn/win32.h
+index cc18f02..a989053 100644
+--- a/src/openvpn/win32.h
++++ b/src/openvpn/win32.h
+@@ -28,12 +28,20 @@
+ 
+ #include "mtu.h"
+ 
++#if !defined(CYGWIN)
+ /* location of executables */
+ #define SYS_PATH_ENV_VAR_NAME "SystemRoot"  /* environmental variable name that normally contains the system path */
+ #define NETSH_PATH_SUFFIX     "\\system32\\netsh.exe"
+ #define WIN_ROUTE_PATH_SUFFIX "\\system32\\route.exe"
+ #define WIN_IPCONFIG_PATH_SUFFIX "\\system32\\ipconfig.exe"
+ #define WIN_NET_PATH_SUFFIX "\\system32\\net.exe"
++#else
++#define SYS_PATH_ENV_VAR_NAME "SYSTEMROOT"
++#define NETSH_PATH_SUFFIX     "/System32/netsh.exe"
++#define WIN_ROUTE_PATH_SUFFIX "/System32/route.exe"
++#define WIN_IPCONFIG_PATH_SUFFIX "/System32/ipconfig.exe"
++#define WIN_NET_PATH_SUFFIX "net.exe"
++#endif
+ 
+ /*
+  * Win32-specific OpenVPN code, targetted at the mingw
