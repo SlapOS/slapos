@@ -28,9 +28,10 @@
 #
 ##############################################################################
 
-import slapos.slap.slap
 import argparse
 import ConfigParser
+
+import slapos.slap.slap
 
 
 def do_bang(config, message):

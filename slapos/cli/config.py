@@ -12,8 +12,6 @@ class ConfigError(Exception):
 
 class ConfigCommand(Command):
     "Base class for commands that require a configuration file"
-    # TODO: what commands need slapos.cfg / slapos_client.cfg?
-    # XXX: always use SafeConfigParser, or sometimes RawConfigParser?
 
     log = None
 
