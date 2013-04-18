@@ -43,8 +43,7 @@ class Recipe(GenericBaseRecipe):
       if eggs:
         for item in os.listdir(eggs):
           path = os.path.join(eggs, item)
-          if os.path.isdir(path):
-            pythonPath = path + ":" + pythonPath
+          pythonPath = path + ":" + pythonPath
 
     options['python_path'] = pythonPath
     options['wsgi-dir'] = os.path.join(options['site-dir'].strip(), 'apache')
@@ -60,7 +59,10 @@ class Recipe(GenericBaseRecipe):
     admin = self.options['admin-user'].strip()
     passwd = self.options['admin-password'].strip()
     config = os.path.join(project_dir, 'conf/trac.ini')
+    filestat = self.options['file-status'].strip()
     self.logger.info("Checking if trac project is not installed...")
+    if os.path.exists(filestat):
+      os.unlink(filestat)
     if not os.path.exists(project_dir):
       self.logger.info("Starting trac project installation at %s" % project_dir)
       trac_args = [trac_admin, project_dir, 'initenv']
@@ -71,15 +73,17 @@ class Recipe(GenericBaseRecipe):
                   self.options['mysql-port'].strip(),
                   self.options['mysql-database'].strip()
       )
-      process = subprocess.Popen(trac_args, stdout=subprocess.PIPE,
+      process_install = subprocess.Popen(trac_args, stdout=subprocess.PIPE,
               stdin=subprocess.PIPE, stderr=subprocess.STDOUT)
-      process.stdin.write('%s\n%s\n' % (self.options['project'].strip(),
+      process_install.stdin.write('%s\n%s\n' % (self.options['project'].strip(),
                                             db_string))
-      result = process.communicate()[0]
-      process.stdin.close()
-      if process.returncode is None or process.returncode != 0:
-        shutil.rmtree(project_dir)
-        raise Exception("Failed to execute Trac-admin.\nThe error was: %s" % result)
+      result = process_install.communicate()[0]
+      process_install.stdin.close()
+      if process_install.returncode is None or process_install.returncode != 0:
+        if os.path.exists(project_dir):
+          shutil.rmtree(project_dir)
+        self.logger.error("Failed to initialize Trac.\nThe error was: %s" % result)
+        return []
       os.mkdir(self.options['wsgi-dir'])
       os.mkdir(self.options['git-dir'])
       os.mkdir(self.options['svn-dir'])
@@ -90,6 +94,13 @@ class Recipe(GenericBaseRecipe):
     else:
       self.logger.info("The directory %s already exist, skip project installation"
                       % project_dir)
+      trac_args = [trac_admin, project_dir, 'upgrade']
+      process_upgrade = subprocess.Popen(trac_args, stdout=subprocess.PIPE,
+              stderr=subprocess.STDOUT)
+      result = process_upgrade.communicate()[0]
+      if process_upgrade.returncode is None or process_upgrade.returncode != 0:
+        self.logger.error("Failed to upgrade Trac.\nThe error was: %s" % result)
+        return []
 
     #Add All grant to admin user
     self.logger.info("Granting admin rights to the admin user.")
@@ -146,6 +157,7 @@ class Recipe(GenericBaseRecipe):
                           (user, result))
       fd.write("\n%s = %s" % (user, user_list[user]))
     fd.close()
+    open(filestat, "w").write("done.")
 
     return install_path
 
