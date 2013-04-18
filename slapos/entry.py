@@ -133,7 +133,7 @@ def dispatch(command, is_node_command):
       call(report, config=GLOBAL_SLAPOS_CONFIGURATION,
            option=['--pidfile /opt/slapos/slapgrid-ur.pid'])
     elif command == 'bang':
-      call(bang, config=True)
+      call(bang, config=GLOBAL_SLAPOS_CONFIGURATION)
     elif command == 'format':
       call(format, config=GLOBAL_SLAPOS_CONFIGURATION, option=['-c', '-v'])
     elif command == 'supervisord':
