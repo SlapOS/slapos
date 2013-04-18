@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+# vim: set et sts=2:
 ##############################################################################
 #
 # Copyright (c) 2011, 2012 Vifib SARL and Contributors.
@@ -31,28 +32,16 @@ import slapos.slap.slap
 import argparse
 import ConfigParser
 
-def main(*args):
-  parser = argparse.ArgumentParser()
-  parser.add_argument("-m", "--message", default='', help="Message for bang.")
-  parser.add_argument("configuration_file", nargs=1, type=argparse.FileType(),
-      help="SlapOS configuration file.")
-  if len(args) == 0:
-    argument = parser.parse_args()
-  else:
-    argument = parser.parse_args(list(args))
-  configuration_file = argument.configuration_file[0]
-  message = argument.message
-  # Loads config (if config specified)
-  configuration = ConfigParser.SafeConfigParser()
-  configuration.readfp(configuration_file)
-  computer_id = configuration.get('slapos', 'computer_id')
-  master_url = configuration.get('slapos', 'master_url')
-  if configuration.has_option('slapos', 'key_file'):
-    key_file = configuration.get('slapos', 'key_file')
+
+def do_bang(config, message):
+  computer_id = config.get('slapos', 'computer_id')
+  master_url = config.get('slapos', 'master_url')
+  if config.has_option('slapos', 'key_file'):
+    key_file = config.get('slapos', 'key_file')
   else:
     key_file = None
-  if configuration.has_option('slapos', 'cert_file'):
-    cert_file = configuration.get('slapos', 'cert_file')
+  if config.has_option('slapos', 'cert_file'):
+    cert_file = config.get('slapos', 'cert_file')
   else:
     cert_file = None
   slap = slapos.slap.slap()
@@ -61,3 +50,20 @@ def main(*args):
   print 'Banging to %r' % master_url
   computer.bang(message)
   print 'Bang with message %r' % message
+
+
+def main(*args):
+  parser = argparse.ArgumentParser()
+  parser.add_argument("-m", "--message", default='', help="Message for bang.")
+  parser.add_argument("configuration_file", nargs=1, type=argparse.FileType(),
+                      help="SlapOS configuration file.")
+  if len(args) == 0:
+    argument = parser.parse_args()
+  else:
+    argument = parser.parse_args(list(args))
+  configuration_file = argument.configuration_file[0]
+  message = argument.message
+  # Loads config (if config specified)
+  config = ConfigParser.SafeConfigParser()
+  config.readfp(configuration_file)
+  do_bang(config, message)

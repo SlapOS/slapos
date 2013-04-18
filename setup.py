@@ -73,7 +73,8 @@ setup(name=name,
           'slap2 = slapos.cli.entry:main',
         ],
         'slapos.cli': [
-          'cache lookup = slapos.cli.cache:CacheLookup',
+          'cache lookup = slapos.cli.cache:CacheLookupCommand',
+          'node bang = slapos.cli.bang:BangCommand',
         ]
       },
       test_suite="slapos.tests",
