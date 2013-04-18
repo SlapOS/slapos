@@ -35,6 +35,7 @@ class Recipe(GenericBaseRecipe):
         wrapper_path = self.options['wrapper-path']
         wait_files = self.options.get('wait-for-files')
         environment = self.options.get('environment')
+        parameters_extra = self.options.get('parameters_extra')
 
         if not wait_files and not environment:
           # Create a simple wrapper as shell script
@@ -42,6 +43,7 @@ class Recipe(GenericBaseRecipe):
              name=wrapper_path,
              command=command_line[0],
              parameters=command_line[1:],
+             parameters_extra=parameters_extra,
           )]
 
         # More complex needs: create a Python script as wrapper
