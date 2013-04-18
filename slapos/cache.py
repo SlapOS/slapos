@@ -16,29 +16,20 @@ from slapos.grid.distribution import patched_linux_distribution
 def maybe_md5(s):
     return re.match('[0-9a-f]{32}', s)
 
-def cache_lookup():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("configuration_file", help="SlapOS configuration file")
-    parser.add_argument("software_url", help="Your software url or MD5 hash")
-    args = parser.parse_args()
 
-    configuration_parser = ConfigParser.SafeConfigParser()
-    configuration_parser.read(args.configuration_file)
+def do_lookup(config, software_url):
+    cache_dir = config.get('networkcache', 'download-binary-dir-url')
 
-    configuration_parser.items('networkcache')
-
-    cache_dir = configuration_parser.get('networkcache', 'download-binary-dir-url')
-
-    if maybe_md5(args.software_url):
-        md5 = args.software_url
+    if maybe_md5(software_url):
+        md5 = software_url
     else:
-        md5 = hashlib.md5(args.software_url).hexdigest()
+        md5 = hashlib.md5(software_url).hexdigest()
 
     try:
         response = urllib2.urlopen('%s/%s' % (cache_dir, md5))
     except urllib2.HTTPError as e:
         if e.code == 404:
-            print 'Object not in cache: %s' % args.software_url
+            print 'Object not in cache: %s' % software_url
         else:
             print 'Error during cache lookup: %s (%s)' % (e.code, e.reason)
         sys.exit(10)
@@ -68,3 +59,14 @@ def cache_lookup():
         compatible = 'yes' if networkcache.os_matches(os, linux_distribution) else 'no'
         print '%-16s | %12s | %s | %s' % (os[0], os[1], os[2].center(14), compatible)
 
+
+def cache_lookup():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("configuration_file", help="SlapOS configuration file")
+    parser.add_argument("software_url", help="Your software url or MD5 hash")
+    args = parser.parse_args()
+
+    config = ConfigParser.SafeConfigParser()
+    config.read(args.configuration_file)
+
+    do_lookup(config, args.software_url)

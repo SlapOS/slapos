@@ -44,6 +44,7 @@ setup(name=name,
                                    # XML
           'zope.interface', # slap library implementes interfaces
           'zc.buildout',
+          'cliff',
         ] + additional_install_requires,
       extra_requires={'docs': ('Sphinx', 'repoze.sphinx.autointerface'),},
       tests_require=[
@@ -69,6 +70,10 @@ setup(name=name,
           'slapgrid-supervisorctl = slapos.grid.svcbackend:supervisorctl',
           'slapgrid-supervisord = slapos.grid.svcbackend:supervisord',
           'bang = slapos.bang:main',
+          'slap2 = slapos.cli.entry:main',
+        ],
+        'slapos.cli': [
+          'cache lookup = slapos.cli.cache:CacheLookup',
         ]
       },
       test_suite="slapos.tests",
