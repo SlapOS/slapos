@@ -66,7 +66,6 @@ class Recipe(BaseSlapRecipe):
 
     # self.cron_d is a directory, where cron jobs can be registered
     self.cron_d = self.installCrond()
-    self.logrotate_d, self.logrotate_backup = self.installLogrotate()
     self.killpidfromfile = zc.buildout.easy_install.scripts(
         [('killpidfromfile', 'slapos.toolbox.killpidfromfile',
           'killpidfromfile')], self.ws, sys.executable, self.bin_directory)[0]
@@ -285,29 +284,6 @@ class Recipe(BaseSlapRecipe):
     return "%s http://%s:%s" % \
         (domain, varnish_ip, base_varnish_port)
 
-  def installLogrotate(self):
-    """Installs logortate main configuration file and registers its to cron"""
-    logrotate_d = os.path.abspath(os.path.join(self.etc_directory,
-      'logrotate.d'))
-    self._createDirectory(logrotate_d)
-    logrotate_backup = self.createBackupDirectory('logrotate')
-    logrotate_conf = self.createConfigurationFile("logrotate.conf",
-        "include %s" % logrotate_d)
-    logrotate_cron = os.path.join(self.cron_d, 'logrotate')
-    state_file = os.path.join(self.data_root_directory, 'logrotate.status')
-    open(logrotate_cron, 'w').write('0 0 * * * %s -s %s %s' %
-        (self.options['logrotate_binary'], state_file, logrotate_conf))
-    self.path_list.extend([logrotate_d, logrotate_conf, logrotate_cron])
-    return logrotate_d, logrotate_backup
-
-  def registerLogRotation(self, name, log_file_list, postrotate_script):
-    """Register new log rotation requirement"""
-    open(os.path.join(self.logrotate_d, name), 'w').write(
-        self.substituteTemplate(self.getTemplateFilename(
-          'logrotate_entry.in'),
-          dict(file_list=' '.join(['"'+q+'"' for q in log_file_list]),
-            postrotate=postrotate_script, olddir=self.logrotate_backup)))
-
   def requestCertificate(self, name):
     hash = hashlib.sha512(name).hexdigest()
     key = os.path.join(self.ca_private, hash + self.ca_key_ext)
@@ -424,8 +400,7 @@ class Recipe(BaseSlapRecipe):
   def _getApacheConfigurationDict(self, name, ip_list, port):
     apache_conf = dict()
     apache_conf['server_name'] = name
-    apache_conf['pid_file'] = os.path.join(self.run_directory,
-        name + '.pid')
+    apache_conf['pid_file'] = self.options['pid-file']
     apache_conf['lock_file'] = os.path.join(self.run_directory,
         name + '.lock')
     apache_conf['document_root'] = os.path.join(self.data_root_directory,
@@ -435,13 +410,8 @@ class Recipe(BaseSlapRecipe):
     apache_conf['ip_list'] = ip_list
     apache_conf['port'] = port
     apache_conf['server_admin'] = 'admin@'
-    apache_conf['error_log'] = os.path.join(self.log_directory,
-        'frontend-apache-error.log')
-    apache_conf['access_log'] = os.path.join(self.log_directory,
-        'frontend-apache-access.log')
-    self.registerLogRotation(name, [apache_conf['error_log'],
-      apache_conf['access_log']], self.killpidfromfile + ' ' +
-      apache_conf['pid_file'] + ' SIGUSR1')
+    apache_conf['error_log'] = self.options['error-log']
+    apache_conf['access_log'] = self.options['access-log']
     return apache_conf
 
   def installVarnishCache(self, name, ip, port, control_port, backend_host,
