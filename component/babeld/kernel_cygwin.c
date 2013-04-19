@@ -336,6 +336,7 @@ kernel_route(int operation, const unsigned char *dest, unsigned short plen,
 
     if(operation == ROUTE_MODIFY) {
         if((metric == KERNEL_INFINITY) ||
+           (newmetric == KERNEL_INFINITY) ||
            (ipv4 && plen == 128 && memcmp(dest, newgate, 16) == 0)) {
             kernel_route(ROUTE_FLUSH, dest, plen,
                          gate, ifindex, metric,
@@ -349,11 +350,6 @@ kernel_route(int operation, const unsigned char *dest, unsigned short plen,
             ifindex = newifindex;
         }
     }
-    /* We don't add/delete a blackhole for default route */
-    else if (newmetric == KERNEL_INFINITY &&
-       IN6_IS_ADDR_UNSPECIFIED(dest) &&
-       IN6_IS_ADDR_UNSPECIFIED(newgate))
-      return 0;
 
     kdebugf("kernel_route: %s %s/%d metric %d dev %d nexthop %s\n",
             operation == ROUTE_ADD ? "add" :
