@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+# vim: set et sts=2:
 ##############################################################################
 #
 # Copyright (c) 2012 Vifib SARL and Contributors. All Rights Reserved.
@@ -27,11 +28,11 @@
 ##############################################################################
 
 
+import argparse
 import base64
 import ConfigParser
-from getpass import getpass
+import getpass
 import logging
-from optparse import OptionParser, Option
 import os
 import shutil
 import stat
@@ -53,80 +54,12 @@ class UsageError(SlapError):
 class ExecError(SlapError):
   pass
 
-class Parser(OptionParser):
-  """
-  Parse all arguments.
-  """
-  def __init__(self, usage=None, version=None):
-    """
-    Initialize all options possibles.
-    """
-    OptionParser.__init__(self, usage=usage, version=version,
-                          option_list=[
-      Option("--interface-name",
-             help="Interface name to access internet",
-             default='eth0',
-             type=str),
-      Option("--master-url",
-             help="URL of SlapOS master",
-             default='https://slap.vifib.com',
-             type=str),
-      Option("--master-url-web",
-             help="URL of SlapOS Master webservice to register certificates",
-             default='https://www.slapos.org',
-             type=str),
-      Option("--partition-number",
-             help="Number of partition on computer",
-             default='10',
-             type=int),
-      Option("--ipv4-local-network",
-             help="Base of ipv4 local network",
-             default='10.0.0.0/16',
-             type=str),
-      Option("--ipv6-interface",
-             help="Interface name to get ipv6",
-             default='',
-             type=str),
-      Option("--login",
-             help="User login on SlapOS Master webservice",
-             default=None,
-             type=str),
-      Option("--password",
-             help="User password on SlapOs Master webservice",
-             default=None,
-             type=str),
-      Option("-t", "--create-tap",
-             help="""Will trigger creation of one virtual "tap" interface per \
-Partition and attach it to primary interface. Requires primary interface to be \
- a bridge. defaults to false. Needed to host virtual machines.""",
-             default=False,
-             action="store_true"),
-      Option("-n", "--dry-run",
-             help="Simulate the execution steps",
-             default=False,
-             action="store_true"),
-   ])
-
-  def check_args(self):
-    """
-    Check arguments
-    """
-    (options, args) = self.parse_args()
-    if len(args) != 1:
-      self.error("Incorrect number of arguments")
-    node_name = args[0]
-
-    if options.password != None and options.login == None :
-      self.error("Please enter your login with your password")
-
-
-    return options, node_name
 
 
 def get_login():
   """Get user id and encode it for basic identification"""
   login = raw_input("SlapOS Master Login: ")
-  password = getpass()
+  password = getpass.getpass()
   identification = base64.encodestring('%s:%s' % (login, password))[:-1]
   return identification
 
@@ -140,8 +73,9 @@ def check_login(identification, master_url_web):
   home_page_url = urllib2.urlopen(request).read()
   if 'Logout' in home_page_url:
     return 1
-  else : return 0
-  
+  else:
+    return 0
+
 
 def get_certificates(identification, node_name, master_url_web):
   """Download certificates from SlapOS Master"""
@@ -175,7 +109,8 @@ def save_former_config(config):
   # Check for config file in /etc/opt/slapos/
   if os.path.exists('/etc/opt/slapos/slapos.cfg'):
     former_slapos_configuration = '/etc/opt/slapos'
-  else : former_slapos_configuration = 0
+  else:
+    former_slapos_configuration = 0
   if former_slapos_configuration:
     saved_slapos_configuration = former_slapos_configuration + '.old'
     while True:
@@ -184,7 +119,7 @@ def save_former_config(config):
         if saved_slapos_configuration[len(saved_slapos_configuration) - 1] != 'd' :
           saved_slapos_configuration = saved_slapos_configuration[:len(saved_slapos_configuration) - 1] \
               + str(int(saved_slapos_configuration[len(saved_slapos_configuration) - 1]) + 1 )
-        else :
+        else:
           saved_slapos_configuration += ".1"
       else: break
     config.logger.info("Former slapos configuration detected in %s moving to %s" % (former_slapos_configuration, saved_slapos_configuration))
@@ -342,7 +277,7 @@ def register(config):
       config.logger.warning ("Wrong login/password")
   else:
     if config.password == None :
-      config.password = getpass()
+      config.password = getpass.getpass()
     user_id = base64.encodestring('%s:%s' % (config.login, config.password))[:-1]
     if not check_login(user_id, config.master_url_web):
       config.logger.error ("Wrong login/password")
@@ -371,13 +306,71 @@ def register(config):
   print "Node has successfully been configured as %s." % COMP
   return 0
 
+
 def main():
   "Run default configuration."
-  usage = "usage: slapos node %s NODE_NAME [options] " % sys.argv[0]
+
+  ap = argparse.ArgumentParser(usage='usage: slapos node %s NODE_NAME [options]' % sys.argv[0])
+
+  ap.add_argument('node_name',
+                  help='Name of the node')
+
+  ap.add_argument('--interface-name',
+                  help="Interface name to access internet",
+                  default='eth0')
+
+  ap.add_argument('--master-url',
+                  help="URL of SlapOS master",
+                  default='https://slap.vifib.com')
+
+  ap.add_argument('--master-url-web',
+                  help="URL of SlapOS Master webservice to register certificates",
+                  default='https://www.slapos.org')
+
+  ap.add_argument('--partition-number',
+                  help="Number of partition on computer",
+                  default='10',
+                  type=int)
+
+  ap.add_argument('--ipv4-local-network',
+                  help="Base of ipv4 local network",
+                  default='10.0.0.0/16')
+
+  ap.add_argument('--ipv6-interface',
+                  help="Interface name to get ipv6",
+                  default='')
+
+  ap.add_argument('--login',
+                  help="User login on SlapOS Master webservice",
+                  default=None)
+
+  ap.add_argument('--password',
+                  help="User password on SlapOs Master webservice",
+                  default=None)
+
+  ap.add_argument('-t', '--create-tap',
+                  help='Will trigger creation of one virtual "tap" interface per '
+                       'Partition and attach it to primary interface. Requires '
+                       'primary interface to be a bridge. defaults to false. '
+                       'Needed to host virtual machines.',
+                  default=False,
+                  action="store_true")
+
+  ap.add_argument('-n', '--dry-run',
+                  help="Simulate the execution steps",
+                  default=False,
+                  action="store_true")
+
+  options = ap.parse_args()
+
+
+  if options.password != None and options.login == None :
+    self.error("Please enter your login with your password")
+
+
   try:
-    # Parse arguments
     config = Config()
-    config.setConfig(*Parser(usage=usage).check_args())
+    config.setConfig(options, options.node_name)
     return_code = register(config)
   except UsageError, err:
     print >> sys.stderr, err.msg
