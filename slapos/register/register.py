@@ -27,9 +27,11 @@
 #
 ##############################################################################
 
+# XXX dry_run will happily register a new node on the slapos master. Isn't it supposed to be no-op?
+# XXX does not create 'log' directory (required by slap2 entry point)
+
 
 import argparse
-import base64
 import ConfigParser
 import getpass
 import logging
@@ -41,52 +43,25 @@ import tempfile
 import urllib2
 
 
-class SlapError(Exception):
-  """
-  Slap error
-  """
-  def __init__(self, message):
-    self.msg = message
-
-class UsageError(SlapError):
-  pass
-
-class ExecError(SlapError):
-  pass
+def authenticate(request, login, password):
+  auth = '%s:%s' % (login, password)
+  authheader =  'Basic %s' % auth.encode('base64').rstrip()
+  request.add_header('Authorization', authheader)
 
 
-
-def get_login():
-  """Get user id and encode it for basic identification"""
-  login = raw_input("SlapOS Master Login: ")
-  password = getpass.getpass()
-  identification = base64.encodestring('%s:%s' % (login, password))[:-1]
-  return identification
-
-
-def check_login(identification, master_url_web):
+def check_credentials(url, login, password):
   """Check if logged correctly on SlapOS Master"""
-  request = urllib2.Request(master_url_web)
-  # Prepare header for basic authentification
-  authheader =  "Basic %s" % identification
-  request.add_header("Authorization", authheader)
-  home_page_url = urllib2.urlopen(request).read()
-  if 'Logout' in home_page_url:
-    return 1
-  else:
-    return 0
+  request = urllib2.Request(url)
+  authenticate(request, login, password)
+  return 'Logout' in urllib2.urlopen(request).read()
 
 
-def get_certificates(identification, node_name, master_url_web):
+def get_certificates(master_url_web, node_name, login, password):
   """Download certificates from SlapOS Master"""
   register_server_url = '/'.join([master_url_web, ("add-a-server/WebSection_registerNewComputer?dialog_id=WebSection_viewServerInformationDialog&dialog_method=WebSection_registerNewComputer&title={}&object_path=/erp5/web_site_module/hosting/add-a-server&update_method=&cancel_url=https%3A//www.vifib.net/add-a-server/WebSection_viewServerInformationDialog&Base_callDialogMethod=&field_your_title=Essai1&dialog_category=None&form_id=view".format(node_name))])
   request = urllib2.Request(register_server_url)
-  # Prepare header for basic authentification
-  authheader =  "Basic %s" % identification
-  request.add_header("Authorization", authheader)  
-  url = urllib2.urlopen(request)  
-  page = url.read()
-  return page
+  authenticate(request, login, password)
+  return urllib2.urlopen(request).read()
 
 
 def parse_certificates(source):
@@ -95,7 +70,7 @@ def parse_certificates(source):
   c_end = source.find("</textarea>", c_start)
   k_start = source.find("-----BEGIN PRIVATE KEY-----")
   k_end = source.find("</textarea>", k_start)
-  return [source[c_start:c_end], source[k_start:k_end]]
+  return source[c_start:c_end], source[k_start:k_end]
 
 
 def get_computer_name(certificate):
@@ -104,39 +79,37 @@ def get_computer_name(certificate):
   i = certificate.find("/email", k)
   return certificate[k:i]
 
+
 def save_former_config(config):
   """Save former configuration if found"""
   # Check for config file in /etc/opt/slapos/
   if os.path.exists('/etc/opt/slapos/slapos.cfg'):
-    former_slapos_configuration = '/etc/opt/slapos'
+    former = '/etc/opt/slapos'
   else:
-    former_slapos_configuration = 0
-  if former_slapos_configuration:
-    saved_slapos_configuration = former_slapos_configuration + '.old'
-    while True:
-      if os.path.exists(saved_slapos_configuration):
-        print "Slapos configuration detected in %s" % saved_slapos_configuration
-        if saved_slapos_configuration[len(saved_slapos_configuration) - 1] != 'd' :
-          saved_slapos_configuration = saved_slapos_configuration[:len(saved_slapos_configuration) - 1] \
-              + str(int(saved_slapos_configuration[len(saved_slapos_configuration) - 1]) + 1 )
-        else:
-          saved_slapos_configuration += ".1"
-      else: break
-    config.logger.info("Former slapos configuration detected in %s moving to %s" % (former_slapos_configuration, saved_slapos_configuration))
-    shutil.move(former_slapos_configuration, saved_slapos_configuration)
+    return
+
+  saved = former + '.old'
+  while True:
+    if os.path.exists(saved):
+      print "Slapos configuration detected in %s" % saved
+      if saved[-1] != 'd':
+        saved = saved[:-1] + str(int(saved[-1]) + 1)
+      else:
+        saved += '.1'
+    else: break
+  config.logger.info("Former slapos configuration detected in %s moving to %s" % (former, saved))
+  shutil.move(former, saved)
+
 
 def get_slapos_conf_example():
   """
   Get slapos.cfg.example and return its path
   """
-  register_server_url = "http://git.erp5.org/gitweb/slapos.core.git/blob_plain/HEAD:/slapos.cfg.example"
-  request = urllib2.Request(register_server_url)
-  url = urllib2.urlopen(request)  
-  page = url.read()
+  request = urllib2.Request('http://git.erp5.org/gitweb/slapos.core.git/blob_plain/HEAD:/slapos.cfg.example')
+  req = urllib2.urlopen(request)
   _, path = tempfile.mkstemp()
-  slapos_cfg_example = open(path,'w')
-  slapos_cfg_example.write(page)
-  slapos_cfg_example.close()
+  with open(path, 'w') as fout:
+    fout.write(req.read())
   return path
 
 
@@ -144,11 +117,11 @@ def slapconfig(config):
   """Base Function to configure slapos in /etc/opt/slapos"""
   dry_run = config.dry_run
   # Create slapos configuration directory if needed
-  slap_configuration_directory = os.path.normpath(config.slapos_configuration)
+  slap_conf_dir = os.path.normpath(config.slapos_configuration)
 
   # Make sure everybody can read slapos configuration directory:
   # Add +x to directories in path
-  directory = os.path.dirname(slap_configuration_directory)
+  directory = os.path.dirname(slap_conf_dir)
   while True:
     if os.path.dirname(directory) == directory:
       break
@@ -156,100 +129,84 @@ def slapconfig(config):
     os.chmod(directory, os.stat(directory).st_mode | stat.S_IXGRP | stat.S_IRGRP | stat.S_IXOTH | stat.S_IROTH)
     directory = os.path.dirname(directory)
 
-  if not os.path.exists(slap_configuration_directory):
-    config.logger.info ("Creating directory: %s" % slap_configuration_directory)
+  if not os.path.exists(slap_conf_dir):
+    config.logger.info("Creating directory: %s" % slap_conf_dir)
     if not dry_run:
-      os.mkdir(slap_configuration_directory, 0711)
+      os.mkdir(slap_conf_dir, 0o711)
 
-  user_certificate_repository_path = os.path.join(slap_configuration_directory,'ssl')
+  user_certificate_repository_path = os.path.join(slap_conf_dir,'ssl')
   if not os.path.exists(user_certificate_repository_path):
-    config.logger.info ("Creating directory: %s" % user_certificate_repository_path)
+    config.logger.info("Creating directory: %s" % user_certificate_repository_path)
     if not dry_run:
-      os.mkdir(user_certificate_repository_path, 0711)
+      os.mkdir(user_certificate_repository_path, 0o711)
 
-  key_file = os.path.join(user_certificate_repository_path, 'key') 
+  key_file = os.path.join(user_certificate_repository_path, 'key')
   cert_file = os.path.join(user_certificate_repository_path, 'certificate')
-  for (src, dst) in [(config.key, key_file), (config.certificate,
-      cert_file)]:
-    config.logger.info ("Copying to %r, and setting minimum privileges" % dst)
+  for src, dst in [
+          (config.key, key_file),
+          (config.certificate, cert_file)
+          ]:
+    config.logger.info("Copying to %r, and setting minimum privileges" % dst)
     if not dry_run:
-      destination = open(dst,'w')
-      destination.write(''.join(src))
-      destination.close()
-      os.chmod(dst, 0600)
+      with open(dst, 'w') as destination:
+        destination.write(''.join(src))
+      os.chmod(dst, 0o600)
       os.chown(dst, 0, 0)
 
-  certificate_repository_path = os.path.join(slap_configuration_directory, 'ssl', 'partition_pki')
+  certificate_repository_path = os.path.join(slap_conf_dir, 'ssl', 'partition_pki')
   if not os.path.exists(certificate_repository_path):
-    config.logger.info ("Creating directory: %s" % certificate_repository_path)
+    config.logger.info("Creating directory: %s" % certificate_repository_path)
     if not dry_run:
-      os.mkdir(certificate_repository_path, 0711)
-  
+      os.mkdir(certificate_repository_path, 0o711)
+
   # Put slapos configuration file
-  slap_configuration_file_location = os.path.join(slap_configuration_directory,
-                                                  'slapos.cfg')
-  config.logger.info ("Creating slap configuration: %s"
-                      % slap_configuration_file_location)
+  slap_conf_file = os.path.join(slap_conf_dir, 'slapos.cfg')
+  config.logger.info("Creating slap configuration: %s" % slap_conf_file)
 
   # Get example configuration file
   slapos_cfg_example = get_slapos_conf_example()
-  configuration_example_parser = ConfigParser.RawConfigParser()
-  configuration_example_parser.read(slapos_cfg_example)  
+  conf_parser = ConfigParser.RawConfigParser()
+  conf_parser.read(slapos_cfg_example)
   os.remove(slapos_cfg_example)
 
-  # prepare slapos section
-  slaposconfig = dict(
-    computer_id=config.computer_id, master_url=config.master_url,
-    key_file=key_file, cert_file=cert_file,
-    certificate_repository_path=certificate_repository_path)
-  for key in slaposconfig:
-    configuration_example_parser.set('slapos', key, slaposconfig[key])
+  for section, key, value in [
+          ('slapos', 'computer_id', config.computer_id),
+          ('slapos', 'master_url', config.master_url),
+          ('slapos', 'key_file', key_file),
+          ('slapos', 'cert_file', cert_file),
+          ('slapos', 'certificate_repository_path', certificate_repository_path),
+          ('slapformat', 'interface_name', config.interface_name),
+          ('slapformat', 'ipv4_local_network', config.ipv4_local_network),
+          ('slapformat', 'partition_amount', config.partition_number),
+          ('slapformat', 'create_tap', config.create_tap)
+          ]:
+    conf_parser.set(section, key, value)
 
-  # prepare slapformat
-  slapformatconfig = dict(
-    interface_name=config.interface_name,
-    ipv4_local_network=config.ipv4_local_network,
-    partition_amount=config.partition_number,
-    create_tap=config.create_tap
-    )
-  for key in slapformatconfig :
-    configuration_example_parser.set('slapformat', key, slapformatconfig[key])
-
-  if not config.ipv6_interface == '':
-    configuration_example_parser.set('slapformat',
-                                     'ipv6_interface',
-                                     config.ipv6_interface)
+  if config.ipv6_interface:
+    conf_parser.set('slapformat', 'ipv6_interface', config.ipv6_interface)
 
   if not dry_run:
-    slap_configuration_file = open(slap_configuration_file_location, "w")
-    configuration_example_parser.write(slap_configuration_file)
+    with open(slap_conf_file, 'w') as fout:
+      conf_parser.write(fout)
 
-  config.logger.info ("SlapOS configuration: DONE")
+  config.logger.info("SlapOS configuration: DONE")
 
 
-# Class containing all parameters needed for configuration
-class Config:
-  def setConfig(self, option_dict, node_name):
+class RegisterConfig(object):
+  """
+  Class containing all parameters needed for configuration
+  """
+
+  def __init__(self, logger):
+    self.logger = logger
+
+  def setConfig(self, options):
     """
     Set options given by parameters.
     """
     # Set options parameters
-    for option, value in option_dict.__dict__.items():
+    for option, value in options.__dict__.items():
       setattr(self, option, value)
-    self.node_name = node_name
-
-    # Define logger for register
-    self.logger = logging.getLogger('Register')
-    self.logger.setLevel(logging.DEBUG)
-    # create console handler and set level to debug
-    self.ch = logging.StreamHandler()
-    self.ch.setLevel(logging.INFO)
-    # create formatter
-    self.formatter = logging.Formatter('%(levelname)s - %(message)s')
-    # add formatter to ch
-    self.ch.setFormatter(self.formatter)
-    # add ch to logger
-    self.logger.addHandler(self.ch)
 
   def COMPConfig(self, slapos_configuration, computer_id, certificate, key):
     self.slapos_configuration = slapos_configuration
@@ -265,38 +222,39 @@ class Config:
     self.logger.debug("Ipv4 sub network: %s" % self.ipv4_local_network)
     self.logger.debug("Ipv6 Interface: %s" %self.ipv6_interface)
 
-def register(config):
+
+def gen_auth(config):
+  ask = True
+  if config.login:
+    if config.password:
+      yield config.login, config.password
+      ask = False
+    else:
+      yield config.login, getpass.getpass()
+  while ask:
+    yield raw_input('SlapOS Master Login: '), getpass.getpass()
+
+
+def do_register(config):
   """Register new computer on SlapOS Master and generate slapos.cfg"""
-  # Get User identification and check them
-  if config.login == None :
-    while True :
-      print ("Please enter your SlapOS Master login")
-      user_id = get_login()
-      if check_login(user_id, config.master_url_web):
-        break
-      config.logger.warning ("Wrong login/password")
+
+  for login, password in gen_auth(config):
+    if check_credentials(config.master_url_web, login, password):
+      break
+    config.logger.warning('Wrong login/password')
   else:
-    if config.password == None :
-      config.password = getpass.getpass()
-    user_id = base64.encodestring('%s:%s' % (config.login, config.password))[:-1]
-    if not check_login(user_id, config.master_url_web):
-      config.logger.error ("Wrong login/password")
-      return 1
+    return 1
 
   # Get source code of page having certificate and key
-  certificate_key = get_certificates(user_id, config.node_name, config.master_url_web)
+  certificate_key = get_certificates(config.master_url_web, config.node_name, login, password)
   # Parse certificate and key and get computer id
-  certificate_key = parse_certificates(certificate_key)
-  certificate = certificate_key[0]
-  key = certificate_key[1]
+  certificate, key = parse_certificates(certificate_key)
   COMP = get_computer_name(certificate)
   # Getting configuration parameters
-  slapos_configuration = '/etc/opt/slapos/'
-  config.COMPConfig(slapos_configuration=slapos_configuration,
-                   computer_id=COMP,
-                   certificate = certificate,
-                   key = key
-                   )
+  config.COMPConfig(slapos_configuration='/etc/opt/slapos/',
+                    computer_id=COMP,
+                    certificate=certificate,
+                    key=key)
   # Save former configuration
   if not config.dry_run:
     save_former_config(config)
@@ -316,37 +274,35 @@ def main():
                   help='Name of the node')
 
   ap.add_argument('--interface-name',
-                  help="Interface name to access internet",
+                  help='Interface name to access internet',
                   default='eth0')
 
   ap.add_argument('--master-url',
-                  help="URL of SlapOS master",
+                  help='URL of SlapOS master',
                   default='https://slap.vifib.com')
 
   ap.add_argument('--master-url-web',
-                  help="URL of SlapOS Master webservice to register certificates",
+                  help='URL of SlapOS Master webservice to register certificates',
                   default='https://www.slapos.org')
 
   ap.add_argument('--partition-number',
-                  help="Number of partition on computer",
+                  help='Number of partition on computer',
                   default='10',
                   type=int)
 
   ap.add_argument('--ipv4-local-network',
-                  help="Base of ipv4 local network",
+                  help='Base of ipv4 local network',
                   default='10.0.0.0/16')
 
   ap.add_argument('--ipv6-interface',
-                  help="Interface name to get ipv6",
+                  help='Interface name to get ipv6',
                   default='')
 
   ap.add_argument('--login',
-                  help="User login on SlapOS Master webservice",
-                  default=None)
+                  help='User login on SlapOS Master webservice')
 
   ap.add_argument('--password',
-                  help="User password on SlapOs Master webservice",
-                  default=None)
+                  help='User password on SlapOs Master webservice')
 
   ap.add_argument('-t', '--create-tap',
                   help='Will trigger creation of one virtual "tap" interface per '
@@ -354,33 +310,31 @@ def main():
                        'primary interface to be a bridge. defaults to false. '
                        'Needed to host virtual machines.',
                   default=False,
-                  action="store_true")
+                  action='store_true')
 
   ap.add_argument('-n', '--dry-run',
-                  help="Simulate the execution steps",
+                  help='Simulate the execution steps',
                   default=False,
-                  action="store_true")
+                  action='store_true')
 
   options = ap.parse_args()
 
+  if options.password and not options.login:
+    ap.error('Please enter your login with your password')
 
-  if options.password != None and options.login == None :
-    self.error("Please enter your login with your password")
-
+  logger = logging.getLogger('Register')
+  handler = logging.StreamHandler()
+  logger.setLevel(logging.DEBUG)
+  handler.setLevel(logging.INFO)
+  handler.setFormatter(logging.Formatter('%(levelname)s - %(message)s'))
+  logger.addHandler(handler)
 
   try:
-    config = Config()
-    config.setConfig(options, options.node_name)
-    return_code = register(config)
-  except UsageError, err:
-    print >> sys.stderr, err.msg
-    print >> sys.stderr, "For help use --help"
-    return_code = 16
-  except ExecError, err:
-    print >> sys.stderr, err.msg
-    return_code = 16
+    config = RegisterConfig(logger=logger)
+    config.setConfig(options)
+    return_code = do_register(config)
   except SystemExit, err:
-    # Catch exception raise by optparse
+    # Catch exception raised by optparse
     return_code = err
 
   sys.exit(return_code)

@@ -76,6 +76,7 @@ setup(name=name,
           'cache lookup = slapos.cli.cache:CacheLookupCommand',
           'node bang = slapos.cli.bang:BangCommand',
           'node format = slapos.cli.format:FormatCommand',
+          'node register = slapos.cli.register:RegisterCommand',
         ]
       },
       test_suite="slapos.tests",
