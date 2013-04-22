@@ -1,4 +1,7 @@
 daemon off;
+
+pid %(pidfile)s;
+
 worker_processes 1;
 
 #XXX-Cedric: TODO separate the different logs

@@ -63,6 +63,7 @@ class Recipe(GenericSlapRecipe):
       'listen-local-ipv4': self.options['ipv4'],
       'listen-global-ipv6': '[%s]' % self.options['ipv6'],
       'domain-name': domain_name,
+      'pidfile': self.options['pid-file'],
       'smtp-port-number': self.options['smtp-port'],
       'error-log': self.options['error-log'],
       'access-log': self.options['access-log'],
