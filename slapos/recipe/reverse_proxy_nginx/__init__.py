@@ -87,6 +87,7 @@ class Recipe(GenericSlapRecipe):
             '-p', self.options['home-directory']
         ]
     )
+    path_list.append(wrapper)
 
     # TODO: reload configuration or have feature like apache_map
 
