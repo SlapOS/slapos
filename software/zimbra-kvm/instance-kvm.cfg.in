@@ -8,6 +8,7 @@ parts =
   certificate-authority
   request-web-frontend
   kvm-promise
+  tunnel-ipv6-reverse-proxy
   tunnel-ipv6-kvm-https
   tunnel-ipv6-kvm-ssh
   tunnel-ipv6-kvm-zimbra-admin
@@ -226,7 +227,21 @@ slave = true
 config = smtp-upstream-host smtp-upstream-port
 config-smtp-upstream-host = $${tunnel-ipv6-kvm-smtp:ipv6}
 config-smtp-upstream-port = $${tunnel-ipv6-kvm-smtp:ipv6-port}
-return = listening-ipv4
+return = listening-ipv4 listening-ipv6
+
+# Qemu doesn't support IPv6 in user-mode network.
+# Solution: tunnel ipv6 of smtp reverse proxy to local ipv4 so that guest
+# inside of KVM can connect to it.
+[tunnel-ipv6-reverse-proxy]
+recipe = slapos.cookbook:ipv4toipv6
+ipv6 = $${request-smtp-frontend:connection-listening-ipv6}
+ipv6-port = 25
+ipv4 = $${slap-network-information:local-ipv4}
+ipv4-port = 25
+shell-path = ${dash:location}/bin/dash
+6tunnel-path = ${6tunnel:location}/bin/6tunnel
+runner-path = $${directory:services}/6tunnel-https
+
 
 [publish-kvm-connection-information]
 recipe = slapos.cookbook:publish
