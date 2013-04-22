@@ -11,7 +11,8 @@ parts =
   cron-entry-logrotate
   ca-frontend
   certificate-authority
-  frontend-promise
+  frontend-promise-ipv6
+  frontend-promise-ipv4
 
 eggs-directory = ${buildout:eggs-directory}
 develop-eggs-directory = ${buildout:develop-eggs-directory}
@@ -47,7 +48,8 @@ logrotate-entries = $${rootdirectory:etc}/logrotate.d
 recipe = slapos.cookbook:kvm.frontend
 domain = $${ca-frontend:name}
 # port = $${slap-parameter:port}
-ip = $${slap-network-information:local-ipv4}
+ipv6 = $${slap-network-information:global-ipv6}
+ipv4 = $${slap-network-information:local-ipv4}
 port = $${slap-parameter:port}
 http-redirection = $${slap-parameter:http-redirection}
 ssl-key-path = $${ca-frontend:key-file}
@@ -60,10 +62,16 @@ node-binary = ${nodejs:location}/bin/node
 node-env = ${buildout:parts-directory}:${npm-modules:location}/node_modules
 shell-path = ${dash:location}/bin/dash
 
-[frontend-promise]
+[frontend-promise-ipv6]
 recipe = slapos.cookbook:check_port_listening
 path = $${basedirectory:promises}/frontend_promise
-hostname = $${frontend-instance:ip}
+hostname = $${frontend-instance:ipv6}
+port = $${frontend-instance:port}
+
+[frontend-promise-ipv4]
+recipe = slapos.cookbook:check_port_listening
+path = $${basedirectory:promises}/frontend_promise
+hostname = $${frontend-instance:ipv4}
 port = $${frontend-instance:port}
 
 [certificate-authority]
@@ -133,6 +141,7 @@ state-file = $${rootdirectory:srv}/logrotate.status
 # Default value if no port is specified
 port = 4443
 http-redirection = 0
+slave_instance_list =
 
 # [logrotate-entry-frontend]
 # <= logrotate
