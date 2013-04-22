@@ -8,6 +8,7 @@ parts =
   certificate-authority
   request-web-frontend
   kvm-promise
+  tunnel-ipv6-external-mta
   tunnel-ipv6-kvm-https
   tunnel-ipv6-kvm-ssh
   tunnel-ipv6-kvm-zimbra-admin
@@ -110,7 +111,7 @@ recipe = slapos.cookbook:ipv6toipv4
 ipv6 = $${slap-network-information:global-ipv6}
 ipv6-port = 25
 ipv4 = $${slap-network-information:local-ipv4}
-ipv4-port = 25
+ipv4-port = 2525
 shell-path = ${dash:location}/bin/dash
 6tunnel-path = ${6tunnel:location}/bin/6tunnel
 runner-path = $${directory:services}/6tunnel-smtp
@@ -226,7 +227,24 @@ slave = true
 config = smtp-upstream-host smtp-upstream-port
 config-smtp-upstream-host = $${tunnel-ipv6-kvm-smtp:ipv6}
 config-smtp-upstream-port = $${tunnel-ipv6-kvm-smtp:ipv6-port}
-return = listening-ipv4
+return = listening-ipv4 listening-ipv6
+
+# Qemu doesn't support IPv6 in user-mode network.
+# It means: everything inside of the KVM can't connect to internet
+# (ipv4 nor ipv6). all it can do is connect to local ipv4 of the host.
+# Solution: tunnel ipv6 of an external MTA to local ipv4 so that guest
+# inside of KVM can connect to it and use this address as external MTA relay.
+[tunnel-ipv6-external-mta]
+recipe = slapos.cookbook:ipv4toipv6
+# XXX-TODO: do an automated request using slapos, don't enter it manually.
+ipv6 = $${slap-parameter:relay-mta-ipv6}
+ipv6-port = 25
+ipv4 = $${slap-network-information:local-ipv4}
+ipv4-port = 25
+shell-path = ${dash:location}/bin/dash
+6tunnel-path = ${6tunnel:location}/bin/6tunnel
+runner-path = $${directory:services}/6tunnel-ipv6-external-mta
+
 
 [publish-kvm-connection-information]
 recipe = slapos.cookbook:publish

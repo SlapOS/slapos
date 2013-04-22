@@ -33,11 +33,11 @@ if not os.path.exists(disk_path):
       disk_path, '%(disk_size)sG'])
 
 # Generate NAT rules
-nat_rules = ",".join("hostfwd=tcp:%(vnc_ip)s:%%s-:%%s" %% (port, port) for port in [25, 80, 110, 143, 443, 465, 587, 993, 995, 7071])
+nat_rules = 'hostfwd=tcp:%(vnc_ip)s:2222-:22,hostfwd=tcp:%(vnc_ip)s:2525-:25,' + ','.join("hostfwd=tcp:%(vnc_ip)s:%%s-:%%s" %% (port, port) for port in [80, 110, 143, 443, 465, 587, 993, 995, 7071])
 
 kvm_argument_list = ['%(qemu_path)s',
   '-enable-kvm', '-net', 'nic,macaddr=%(mac_address)s',
-  '-net', 'user,hostfwd=tcp:%(vnc_ip)s:2222-:22,%%s' %% nat_rules,
+  '-net', 'user,%%s' %% nat_rules,
   '-smp', '%(smp_count)s',
   '-m', '%(ram_size)s',
   '-drive', 'file=%(disk_path)s,if=%(disk_type)s',
