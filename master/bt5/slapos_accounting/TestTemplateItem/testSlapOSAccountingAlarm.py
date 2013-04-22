@@ -1259,6 +1259,7 @@ class TestHostingSubscription_requestUpdateOpenSaleOrder(testSlapOSMixin):
         portal_type='Open Sale Order Line')
 
     self.assertEqual(1, len(open_sale_order_line_list))
+    effective_date = open_sale_order.getEffectiveDate()
     line = open_sale_order_line_list[0].getObject()
 
     self.assertEqual(subscription.getRelativeUrl(), line.getAggregate())
@@ -1279,9 +1280,12 @@ class TestHostingSubscription_requestUpdateOpenSaleOrder(testSlapOSMixin):
     new_open_sale_order = [x for x in open_sale_order_list \
                            if x.getValidationState() == 'validated'][0].getObject()
     self.assertEqual('validated', new_open_sale_order.getValidationState())
+    new_effective_date = new_open_sale_order.getEffectiveDate()
     open_sale_order_line_list = new_open_sale_order.contentValues(
         portal_type='Open Sale Order Line')
     self.assertEqual(0, len(open_sale_order_line_list))
+    self.assertTrue(new_effective_date > effective_date,
+                    "%s <= %s" % (new_effective_date, effective_date))
 
 class TestSlapOSTriggerBuildAlarm(testSlapOSMixin):
   @simulateByTitlewMark('SimulationMovement_buildSlapOS')
