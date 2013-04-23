@@ -80,6 +80,7 @@ setup(name=name,
           'console = slapos.cli.console:ConsoleCommand',
           'supply = slapos.cli.supply:SupplyCommand',
           'remove = slapos.cli.remove:RemoveCommand',
+          'request = slapos.cli.request:RequestCommand',
         ]
       },
       test_suite="slapos.tests",

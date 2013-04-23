@@ -27,7 +27,6 @@
 #
 ##############################################################################
 
-import argparse
 import atexit
 import ConfigParser
 import os
@@ -35,58 +34,6 @@ import pprint
 
 import slapos.slap.slap
 from slapos.slap import ResourceNotReady
-
-
-def argToDict(element):
-  """
-  convert a table of string 'key=value' to dict
-  """
-  if element is not None:
-    element_dict = dict([arg.split('=') for arg in element])
-  return element_dict
-
-def check_request_args():
-  """
-  Parser for request
-  """
-  parser = argparse.ArgumentParser()
-  parser.add_argument("configuration_file",
-                      help="SlapOS configuration file.")
-  parser.add_argument("reference",
-                      help="Your instance reference")
-  parser.add_argument("software_url",
-                      help="Your software url")
-  parser.add_argument("--node",
-                      nargs = '*',
-                      help = "Node request option "
-                      "'option1=value1 option2=value2'")
-  parser.add_argument("--type",
-                      type = str,
-                      help = "Define software type to be requested")
-  parser.add_argument("--slave",
-                      action = "store_true", default=False,
-                      help = "Ask for a slave instance")
-  parser.add_argument("--configuration",
-                      nargs = '*',
-                      help = "Give your configuration "
-                      "'option1=value1 option2=value2'")
-  args = parser.parse_args()
-  # Convert to dict
-  if args.configuration is not None:
-    args.configuration = argToDict(args.configuration)
-  if args.node is not None:
-    args.node = argToDict(args.node)
-  return args
-
-
-def get_config_parser(path):
-  configuration_parser = ConfigParser.SafeConfigParser()
-  path = os.path.expanduser(path)
-  if not os.path.isfile(path):
-    raise OSError('Specified configuration file %s does not exist. Exiting.' % path)
-  configuration_parser.read(path)
-  return configuration_parser
-
 
 
 class ClientConfig(object):
@@ -124,6 +71,7 @@ class ClientConfig(object):
     else:
       setattr(self, 'master_url', master_url)
 
+
 def init(config):
   """Initialize Slap instance, connect to server and create
   aliases to common software releases"""
@@ -146,22 +94,20 @@ def init(config):
   # Create global variable too see available aliases
   local['software_list'] = software_list
   # Create global shortcut functions to request instance and software
+
   def shorthandRequest(*args, **kwargs):
     return slap.registerOpenOrder().request(*args, **kwargs)
+
   def shorthandSupply(*args, **kwargs):
     return slap.registerSupply().supply(*args, **kwargs)
+
   local['request'] = shorthandRequest
   local['supply'] = shorthandSupply
 
   return local
 
-def request():
-  """Run when invoking slapos request. Request an instance."""
-  # Parse arguments and inititate needed parameters
-  # XXX-Cedric: move argument parsing to main entry point
-  options = check_request_args()
-  config = ClientConfig(options, get_config_parser(options.configuration_file))
-  local = init(config)
+
+def do_request(config, local):
   # Request instance
   print("Requesting %s..." % config.reference)
   if config.software_url in local:
@@ -180,7 +126,7 @@ def request():
     pprint.pprint(partition.getConnectionParameterDict())
     print "You can rerun command to get up-to-date informations."
   except ResourceNotReady:
-    print("Instance requested. Master is provisionning it. Please rerun in a "
+    print("Instance requested. Master is provisioning it. Please rerun in a "
         "couple of minutes to get connection informations.")
     exit(2)
 

@@ -2,7 +2,8 @@
 
 import argparse
 
-from slapos.client import ClientConfig, init, do_remove, get_config_parser
+from slapos.client import ClientConfig, init, do_remove
+from slapos.cli_legacy.util import get_config_parser
 
 
 def remove():

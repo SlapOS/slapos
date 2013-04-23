@@ -1,0 +1,21 @@
+
+ * enable --debug by default
+ * multiline help from docstring
+
+instance
+software
+report
+supervisord
+supervisorctl
+node start == node supervisorctl start
+node stop == node supervisorctl stop
+node restart == node supervisorctl restart
+node status == node supervisorctl status
+node tail == node supervisorctl tail
+slapos start (NotImplementedError)
+slapos stop (NotImplementedError)
+slapos destroy (NotImplementedError)
+
+issues:
+    slapformat --log_file vs cliff --log-file
+

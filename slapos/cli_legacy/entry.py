@@ -33,7 +33,7 @@ import sys
 
 from slapos.cli_legacy.bang import main as bang
 from slapos.cli_legacy.console import console
-from slapos.client import request
+from slapos.cli_legacy.request import request
 from slapos.cli_legacy.remove import remove
 from slapos.cli_legacy.supply import supply
 from slapos.cli_legacy.format import main as format
