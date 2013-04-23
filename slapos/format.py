@@ -179,7 +179,9 @@ def _getDict(instance):
       return instance
     result = {}
     for key, value in dikt.iteritems():
-      result[key] = _getDict(value)
+      # do not attempt to serialize logger: it is both useless and recursive.
+      if not isinstance(instance, logging.Logger):
+        result[key] = _getDict(value)
     return result
 
 
@@ -663,7 +665,7 @@ class Tap(object):
 class Interface(object):
   """Represent a network interface on the system"""
 
-  def __init__(self, name, ipv4_local_network, ipv6_interface=None, logger=None):
+  def __init__(self, logger, name, ipv4_local_network, ipv6_interface=None):
     """
     Attributes:
         name: String, the name of the interface
@@ -924,8 +926,8 @@ def parse_computer_definition(config, definition_path):
     address, netmask = computer_definition.get('computer', 'address').split('/')
   if config.alter_network and config.interface_name is not None \
       and config.ipv4_local_network is not None:
-    interface = Interface(config.interface_name, config.ipv4_local_network,
-      config.ipv6_interface, logger=config.logger)
+    interface = Interface(config.logger, config.interface_name, config.ipv4_local_network,
+      config.ipv6_interface)
   computer = Computer(
       reference=config.computer_id,
       interface=interface,
@@ -961,14 +963,14 @@ def parse_computer_xml(config, xml_path):
                              reference=config.computer_id,
                              ipv6_interface=config.ipv6_interface)
     # Connect to the interface defined by the configuration
-    computer.interface = Interface(config.interface_name, config.ipv4_local_network,
+    computer.interface = Interface(config.logger, config.interface_name, config.ipv4_local_network,
         config.ipv6_interface)
   else:
     # If no pre-existent configuration found, create a new computer object
     config.logger.warning('Creating new data computer with id %r' % config.computer_id)
     computer = Computer(
       reference=config.computer_id,
-      interface=Interface(config.interface_name, config.ipv4_local_network,
+      interface=Interface(config.logger, config.interface_name, config.ipv4_local_network,
         config.ipv6_interface),
       addr=None,
       netmask=None,
