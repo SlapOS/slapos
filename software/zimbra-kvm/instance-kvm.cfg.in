@@ -253,6 +253,8 @@ vnc-password = $${kvm-instance:passwd}
 vnc-url = $${request-slave-frontend:connection-url}/vnc_auto.html?host=$${request-slave-frontend:connection-domainname}&port=$${request-slave-frontend:connection-port}&encrypt=1&path=$${request-slave-frontend:connection-resource}
 ssh = ssh root@$${tunnel-ipv6-kvm-ssh:ipv6} -p $${tunnel-ipv6-kvm-ssh:ipv6-port}
 smtp-listening-ipv4 = $${request-smtp-frontend:connection-listening-ipv4}
+instance-ipv6 = $${slap-network-information:global-ipv6}
+instance-ipv4 = $${slap-network-information:local-ipv4}
 
 [slap-parameter]
 # Default values if not specified
