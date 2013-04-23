@@ -1,0 +1,29 @@
+# This instance will request other instances of lamp-generic depending on a
+# list of countries.
+
+[buildout]
+
+parts =
+  request-edge
+  publish-connection-parameter
+
+eggs-directory = ${buildout:eggs-directory}
+develop-eggs-directory = ${buildout:develop-eggs-directory}
+offline = true
+
+[request-edge]
+<= slap-connection
+recipe = slapos.cookbook:request.edge
+# This magic parameter triggers several requests, one request per country.
+name = lamp
+return = url backend-url
+country-list = $${slap-parameter:country-list}
+software-url = $${slap-connection:software-release-url}
+software-type = default
+config = application-location
+config-application-location = $${slap-parameter:application-location}
+return = backend-url
+
+[publish-connection-parameter]
+recipe = slapos.cookbook:publishsection
+section-list = request-edge
