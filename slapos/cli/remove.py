@@ -16,7 +16,7 @@ class RemoveCommand(ClientConfigCommand):
         ap.add_argument('software_url',
                         help='Your software url')
 
-        ap.add_argument('none',
+        ap.add_argument('node',
                         help="Target node")
 
         return ap
