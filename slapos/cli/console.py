@@ -23,9 +23,22 @@ class ConsoleCommand(ClientConfigCommand):
 
     log = logging.getLogger(__name__)
 
+    def get_parser(self, prog_name):
+        ap = super(ConsoleCommand, self).get_parser(prog_name)
+
+        ap.add_argument('-u', '--master_url',
+                        help='Url of SlapOS Master to use')
+
+        ap.add_argument('-k', '--key_file',
+                        help='SSL Authorisation key file')
+
+        ap.add_argument('-c', '--cert_file',
+                        help='SSL Authorisation certificate file')
+
+        return ap
+
     def take_action(self, args):
         configuration_parser = self.fetch_config(args)
         config = ClientConfig(args, configuration_parser)
         local = init(config)
         do_console(local)
-
