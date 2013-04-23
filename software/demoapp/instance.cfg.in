@@ -1,0 +1,34 @@
+[buildout]
+parts =
+  rootdirectory
+  basedirectory
+  main
+
+eggs-directory = ${buildout:eggs-directory}
+develop-eggs-directory = ${buildout:develop-eggs-directory}
+offline = true
+
+[rootdirectory]
+recipe = slapos.cookbook:mkdirectory
+etc = $${buildout:directory}/etc
+var = $${buildout:directory}/var
+srv = $${buildout:directory}/srv
+bin = $${buildout:directory}/bin
+tmp = $${buildout:directory}/tmp
+
+[basedirectory]
+recipe = slapos.cookbook:mkdirectory
+log = $${rootdirectory:var}/log
+services = $${rootdirectory:etc}/service
+scripts = $${rootdirectory:etc}/run
+run = $${rootdirectory:var}/run
+backup = $${rootdirectory:srv}/backup
+promises = $${rootdirectory:etc}/promise
+
+[main]
+recipe = hexagonit.recipe.download
+url = ${buildout:directory}/demoapp.py
+destination = $${basedirectory:scripts}
+filename = demoapp
+download-only = true
+mode = 0750
