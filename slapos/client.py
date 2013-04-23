@@ -52,11 +52,11 @@ class Parser(OptionParser):
                action="store",
                help="Url of SlapOS Master to use."),
         Option("-k", "--key_file",
-              action="store",
-              help="SSL Authorisation key file."),
+               action="store",
+               help="SSL Authorisation key file."),
         Option("-c", "--cert_file",
-            action="store",
-            help="SSL Authorisation certificate file.")
+               action="store",
+               help="SSL Authorisation certificate file.")
     ])
 
   def check_args(self):
@@ -220,7 +220,7 @@ def request():
         "couple of minutes to get connection informations.")
     exit(2)
 
-def _supply(software_url, computer_id, local, remove=False):
+def do_supply(software_url, computer_id, local, remove=False):
   """
   Request installation of Software Release
   'software_url' on computer 'computer_id'.
@@ -245,6 +245,9 @@ def _supply(software_url, computer_id, local, remove=False):
   )
   print 'Done.'
 
+def do_remove(software_url, node, local):
+  do_supply(software_url, node, local, remove=True)
+
 def supply():
   """
   Run when invoking slapos supply. Mostly argument parsing.
@@ -260,7 +263,8 @@ def supply():
   args = parser.parse_args()
 
   config = ClientConfig(args, get_config_parser(args.configuration_file))
-  _supply(args.software_url, args.node, init(config))
+  local = init(config)
+  do_supply(args.software_url, args.node, local)
 
 def remove():
   """
@@ -277,7 +281,8 @@ def remove():
   args = parser.parse_args()
 
   config = ClientConfig(args, get_config_parser(args.configuration_file))
-  _supply(args.software_url, args.node, init(config), remove=True)
+  local = init(config)
+  do_remove(args.software_url, args.node, local)
 
 
 def do_console(local):

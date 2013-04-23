@@ -78,6 +78,8 @@ setup(name=name,
           'node format = slapos.cli.format:FormatCommand',
           'node register = slapos.cli.register:RegisterCommand',
           'console = slapos.cli.console:ConsoleCommand',
+          'supply = slapos.cli.supply:SupplyCommand',
+          'remove = slapos.cli.remove:RemoveCommand',
         ]
       },
       test_suite="slapos.tests",
