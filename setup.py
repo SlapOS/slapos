@@ -61,7 +61,7 @@ setup(name=name,
           'slapproxy = slapos.proxy:main',
           'slapproxy-query = slapos.proxy.query:main',
           # Deprecated entry points
-          'slapconsole = slapos.client:slapconsole',
+          'slapconsole = slapos.cli_legacy.console:console',
           'slapformat = slapos.cli_legacy.format:main',
           'slapgrid = slapos.grid.slapgrid:run',
           'slapgrid-sr = slapos.grid.slapgrid:runSoftwareRelease',

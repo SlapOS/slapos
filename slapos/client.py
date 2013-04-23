@@ -28,13 +28,13 @@
 ##############################################################################
 
 import argparse
-import ConfigParser
-import pprint
-import os
-from slapos.slap import ResourceNotReady
-import slapos.slap.slap
-import sys
 import atexit
+import ConfigParser
+import os
+import pprint
+
+import slapos.slap.slap
+from slapos.slap import ResourceNotReady
 
 
 def argToDict(element):
@@ -184,6 +184,7 @@ def request():
         "couple of minutes to get connection informations.")
     exit(2)
 
+
 def do_supply(software_url, computer_id, local, remove=False):
   """
   Request installation of Software Release
@@ -209,44 +210,9 @@ def do_supply(software_url, computer_id, local, remove=False):
   )
   print 'Done.'
 
+
 def do_remove(software_url, node, local):
   do_supply(software_url, node, local, remove=True)
-
-def supply():
-  """
-  Run when invoking slapos supply. Mostly argument parsing.
-  """
-  # XXX-Cedric: move argument parsing to main entry point
-  parser = argparse.ArgumentParser()
-  parser.add_argument("configuration_file",
-                      help="SlapOS configuration file")
-  parser.add_argument("software_url",
-                      help="Your software url")
-  parser.add_argument("node",
-                      help="Target node")
-  args = parser.parse_args()
-
-  config = ClientConfig(args, get_config_parser(args.configuration_file))
-  local = init(config)
-  do_supply(args.software_url, args.node, local)
-
-def remove():
-  """
-  Run when invoking slapos remove. Mostly argument parsing.
-  """
-  # XXX-Cedric: move argument parsing to main entry point
-  parser = argparse.ArgumentParser()
-  parser.add_argument("configuration_file",
-                      help="SlapOS configuration file.")
-  parser.add_argument("software_url",
-                      help="Your software url")
-  parser.add_argument("node",
-                      help="Target node")
-  args = parser.parse_args()
-
-  config = ClientConfig(args, get_config_parser(args.configuration_file))
-  local = init(config)
-  do_remove(args.software_url, args.node, local)
 
 
 def do_console(local):
@@ -271,48 +237,3 @@ def do_console(local):
     atexit.register(save_history)
 
   __import__("code").interact(banner="", local=local)
-
-
-def slapconsole():
-  """Ran when invoking slapconsole"""
-  # Parse arguments
-  usage = """usage: %s [options] CONFIGURATION_FILE
-slapconsole allows you interact with slap API. You can play with the global
-"slap" object and with the global "request" method.
-
-examples :
-  >>> # Request instance
-  >>> request(kvm, "myuniquekvm")
-  >>> # Request software installation on owned computer
-  >>> supply(kvm, "mycomputer")
-  >>> # Fetch instance informations on already launched instance
-  >>> request(kvm, "myuniquekvm").getConnectionParameter("url")""" % sys.argv[0]
-
-
-  ap = argparse.ArgumentParser(usage=usage)
-
-  ap.add_argument('-u', '--master_url',
-                  default=None,
-                  action="store",
-                  help='Url of SlapOS Master to use.')
-
-  ap.add_argument('-k', '--key_file',
-                  action="store",
-                  help="SSL Authorisation key file.")
-
-  ap.add_argument('-c', '--cert_file',
-                  action="store",
-                  help="SSL Authorisation certificate file.")
-
-  ap.add_argument('configuration_file',
-                  help='path to slapos.cfg')
-
-  options = ap.parse_args()
-
-  if not os.path.isfile(options.configuration_file):
-    ap.error("%s: Not found or not a regular file." % options.configuration_file)
-
-  config = ClientConfig(options, get_config_parser(options.configuration_file))
-  local = init(config)
-  do_console(local)
-

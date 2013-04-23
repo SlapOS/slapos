@@ -30,11 +30,12 @@ import argparse
 import ConfigParser
 import os
 import sys
+
 from slapos.cli_legacy.bang import main as bang
-from slapos.client import slapconsole as console
-from slapos.client import request as request
-from slapos.client import remove as remove
-from slapos.client import supply as supply
+from slapos.cli_legacy.console import console
+from slapos.client import request
+from slapos.cli_legacy.remove import remove
+from slapos.cli_legacy.supply import supply
 from slapos.cli_legacy.format import main as format
 from slapos.cli_legacy.cache import cache_lookup
 from slapos.grid.slapgrid import runComputerPartition as instance
@@ -88,7 +89,7 @@ def checkOption(option):
     if key in element:
       return True
   sys.argv.append(key)
-  if len(option) > 1 :
+  if len(option) > 1:
     sys.argv = sys.argv + option[1:]
   return True
 
@@ -226,4 +227,3 @@ Node subcommands usage:
         'forum. Please also make sure that SlapOS Node is up to '
         'date.' % exception)
     sys.exit(1)
-
