@@ -30,13 +30,13 @@ import argparse
 import ConfigParser
 import os
 import sys
-from slapos.bang import main as bang
+from slapos.cli_legacy.bang import main as bang
 from slapos.client import slapconsole as console
 from slapos.client import request as request
 from slapos.client import remove as remove
 from slapos.client import supply as supply
-from slapos.format import main as format
-from slapos.cache import cache_lookup
+from slapos.cli_legacy.format import main as format
+from slapos.cli_legacy.cache import cache_lookup
 from slapos.grid.slapgrid import runComputerPartition as instance
 from slapos.grid.slapgrid import runSoftwareRelease as software
 from slapos.grid.slapgrid import runUsageReport as report

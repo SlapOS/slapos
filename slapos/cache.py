@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 
 import ast
-import argparse
-import ConfigParser
 import hashlib
 import json
 import re
@@ -58,15 +56,3 @@ def do_lookup(config, software_url):
     for os in ostable:
         compatible = 'yes' if networkcache.os_matches(os, linux_distribution) else 'no'
         print '%-16s | %12s | %s | %s' % (os[0], os[1], os[2].center(14), compatible)
-
-
-def cache_lookup():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("configuration_file", help="SlapOS configuration file")
-    parser.add_argument("software_url", help="Your software url or MD5 hash")
-    args = parser.parse_args()
-
-    config = ConfigParser.SafeConfigParser()
-    config.read(args.configuration_file)
-
-    do_lookup(config, args.software_url)

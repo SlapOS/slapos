@@ -10,8 +10,6 @@ class ConfigError(Exception):
     pass
 
 
-
-
 class ConfigCommand(Command):
     "Base class for commands that require a configuration file"
 
@@ -69,4 +67,3 @@ class ClientConfigCommand(ConfigCommand):
     # XXX does not fallback to SLAPOS_CONFIGURATION
     default_config_var = 'SLAPOS_CLIENT_CONFIGURATION'
     default_config_path = '~/.slapos/slapos.cfg'
-
