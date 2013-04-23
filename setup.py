@@ -77,6 +77,7 @@ setup(name=name,
           'node bang = slapos.cli.bang:BangCommand',
           'node format = slapos.cli.format:FormatCommand',
           'node register = slapos.cli.register:RegisterCommand',
+          'console = slapos.cli.console:ConsoleCommand',
         ]
       },
       test_suite="slapos.tests",

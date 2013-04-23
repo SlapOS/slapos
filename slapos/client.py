@@ -115,8 +115,18 @@ def check_request_args():
   return args
 
 
-class Config:
-  def __init__(self, option_dict, configuration_file_path=None):
+def get_config_parser(path):
+  configuration_parser = ConfigParser.SafeConfigParser()
+  path = os.path.expanduser(path)
+  if not os.path.isfile(path):
+    raise OSError('Specified configuration file %s does not exist. Exiting.' % path)
+  configuration_parser.read(path)
+  return configuration_parser
+
+
+
+class ClientConfig(object):
+  def __init__(self, option_dict, configuration_parser=None):
     """
     Set options given by parameters.
     """
@@ -124,14 +134,6 @@ class Config:
     for option, value in option_dict.__dict__.items():
       setattr(self, option, value)
 
-    # Load configuration file
-    configuration_parser = ConfigParser.SafeConfigParser()
-    if configuration_file_path:
-      configuration_file_path = os.path.expanduser(configuration_file_path)
-      if not os.path.isfile(configuration_file_path):
-        raise OSError('Specified configuration file %s does not exist.'
-            ' Exiting.' % configuration_file_path)
-      configuration_parser.read(configuration_file_path)
     # Merges the arguments and configuration
     try:
       configuration_dict = dict(configuration_parser.items('slapconsole'))
@@ -194,7 +196,7 @@ def request():
   # Parse arguments and inititate needed parameters
   # XXX-Cedric: move argument parsing to main entry point
   options = check_request_args()
-  config = Config(options, options.configuration_file)
+  config = ClientConfig(options, get_config_parser(options.configuration_file))
   local = init(config)
   # Request instance
   print("Requesting %s..." % config.reference)
@@ -257,7 +259,7 @@ def supply():
                       help="Target node")
   args = parser.parse_args()
 
-  config = Config(args, args.configuration_file)
+  config = ClientConfig(args, get_config_parser(args.configuration_file))
   _supply(args.software_url, args.node, init(config))
 
 def remove():
@@ -274,27 +276,11 @@ def remove():
                       help="Target node")
   args = parser.parse_args()
 
-  config = Config(args, args.configuration_file)
+  config = ClientConfig(args, get_config_parser(args.configuration_file))
   _supply(args.software_url, args.node, init(config), remove=True)
 
 
-def slapconsole():
-  """Ran when invoking slapconsole"""
-  # Parse arguments
-  usage = """usage: %s [options] CONFIGURATION_FILE
-slapconsole allows you interact with slap API. You can play with the global
-"slap" object and with the global "request" method.
-
-examples :
-  >>> # Request instance
-  >>> request(kvm, "myuniquekvm")
-  >>> # Request software installation on owned computer
-  >>> supply(kvm, "mycomputer")
-  >>> # Fetch instance informations on already launched instance
-  >>> request(kvm, "myuniquekvm").getConnectionParameter("url")""" % sys.argv[0]
-  config = Config(*Parser(usage=usage).check_args())
-  local = init(config)
-
+def do_console(local):
   # try to enable readline with completion and history
   try:
     import readline
@@ -316,4 +302,24 @@ examples :
     atexit.register(save_history)
 
   __import__("code").interact(banner="", local=local)
+
+
+def slapconsole():
+  """Ran when invoking slapconsole"""
+  # Parse arguments
+  usage = """usage: %s [options] CONFIGURATION_FILE
+slapconsole allows you interact with slap API. You can play with the global
+"slap" object and with the global "request" method.
+
+examples :
+  >>> # Request instance
+  >>> request(kvm, "myuniquekvm")
+  >>> # Request software installation on owned computer
+  >>> supply(kvm, "mycomputer")
+  >>> # Fetch instance informations on already launched instance
+  >>> request(kvm, "myuniquekvm").getConnectionParameter("url")""" % sys.argv[0]
+  options, configuration_file_path = Parser(usage=usage).check_args()
+  config = ClientConfig(options, get_config_parser(configuration_file_path))
+  local = init(config)
+  do_console(local)
 
