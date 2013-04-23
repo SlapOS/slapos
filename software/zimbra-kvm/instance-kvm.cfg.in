@@ -240,7 +240,7 @@ ipv4 = $${slap-network-information:local-ipv4}
 ipv4-port = 25
 shell-path = ${dash:location}/bin/dash
 6tunnel-path = ${6tunnel:location}/bin/6tunnel
-runner-path = $${directory:services}/6tunnel-https
+runner-path = $${directory:services}/6tunnel-ipv6-reverse-proxy
 
 
 [publish-kvm-connection-information]
