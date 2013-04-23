@@ -65,6 +65,7 @@ def prettify_xml(xml):
 
 
 from slapos.util import mkdir_p
+from slapos.util import chownDirectory
 
 class OS(object):
   """Wrap parts of the 'os' module to provide logging of performed actions."""
@@ -383,7 +384,7 @@ class Computer(object):
     if alter_user:
       slapsoft.create()
       slapsoft_pw = pwd.getpwnam(slapsoft.name)
-      os.chown(self.software_root, slapsoft_pw.pw_uid, slapsoft_pw.pw_gid)
+      chownDirectory(path, uid, gid)
     os.chmod(self.software_root, 0755)
 
     # Speed hack:
@@ -505,7 +506,7 @@ class Partition(object):
       os.mkdir(self.path, 0750)
     if alter_user:
       owner_pw = pwd.getpwnam(owner.name)
-      os.chown(self.path, owner_pw.pw_uid, owner_pw.pw_gid)
+      chownDirectory(path, uid, gid)
     os.chmod(self.path, 0750)
 
 

@@ -17,3 +17,9 @@ def mkdir_p(path, mode=0o777):
         else:
             raise
 
+def chownDirectory(path, uid, gid):
+  for root, dirs, files in os.walk(path):
+    for items in dirs, files:
+      for item in items:
+        os.chown(os.path.join(root, item), uid, gid)
+
