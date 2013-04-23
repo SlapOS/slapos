@@ -118,6 +118,13 @@ Domain name to use as frontend. The frontend will be accessible from this domain
 [instancereference].[masterdomain].
 Example: www.mycustomdomain.com
 
+https-only
+~~~~~~~~~~
+Specify if website should be accessed using https only. If so, the frontend
+will redirect the user to https if accessed from http.
+Possible values: "true", "false".
+This is an optional parameter. Defaults to false.
+
 path
 ~~~~
 Only used if type is "zope".

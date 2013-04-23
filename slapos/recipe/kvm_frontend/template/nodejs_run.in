@@ -2,4 +2,4 @@
 # BEWARE: This file is operated by slapgrid
 # BEWARE: It will be overwritten automatically
 export NODE_PATH=%(node_env)s
-exec %(node_path)s %(conf_path)s %(ip)s %(port)s %(key)s %(certificate)s %(map_path)s %(plain_http)s
+exec %(node_path)s %(conf_path)s %(ipv6)s %(ipv4)s %(port)s %(key)s %(certificate)s %(map_path)s %(plain_http)s

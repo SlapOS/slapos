@@ -119,10 +119,13 @@ class Recipe(BaseSlapRecipe):
     # self.cron_d is a directory, where cron jobs can be registered
     self.cron_d = self.installCrond()
     self.logrotate_d, self.logrotate_backup = self.installLogrotate()
-    zabbix_agentd_conf = self.installZabbixAgentd(self.getGlobalIPv6Address(),
-                                                  10050,
-                                                  self.parameter_dict['hostname'],
-                                                  self.parameter_dict['server'])
+    zabbix_agentd_conf = self.installZabbixAgentd(
+        self.getGlobalIPv6Address(),
+        10050,
+        self.parameter_dict['hostname'],
+        self.parameter_dict['server'],
+        self.parameter_dict.get('custom-user-parameter', '')
+    )
     self.setConnectionDict(dict(ip=zabbix_agentd_conf['ip'],
       name=zabbix_agentd_conf['hostname'],
       port=str(zabbix_agentd_conf['port'])))
