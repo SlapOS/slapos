@@ -55,3 +55,8 @@ class SupervisorctlStopCommand(SupervisorctlAliasCommand):
 class SupervisorctlRestartCommand(SupervisorctlAliasCommand):
     """alias for 'node supervisorctl restart'"""
     alias = 'restart'
+
+
+class SupervisorctlTailCommand(SupervisorctlAliasCommand):
+    """alias for 'node supervisorctl tail'"""
+    alias = 'tail'
