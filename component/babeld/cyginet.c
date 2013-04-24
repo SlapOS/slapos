@@ -490,6 +490,10 @@ libwinet_dump_ipv6_route_table(struct cyginet_route *routes,
 
     *s ++ = 0;                  /* Split the string */
     s ++;                       /* Skip space */
+    /* Remove the newline character at the end of line */
+    p = s + strlen(s) - 1;
+    while ( (p > s) && (*p == '\n' || *p == '\r'))
+      *p -- = 0;
 
     /* The first field of route entry */
     if (strncmp(buffer, "Prefix", 6) == 0) {
@@ -517,6 +521,10 @@ libwinet_dump_ipv6_route_table(struct cyginet_route *routes,
 
     else if (strncmp(buffer, "Metric", 6) == 0)
       route.metric = strtol(s, NULL, 10);
+
+    else if ((strncmp(buffer, "Valid Lifetime", 14) == 0) &&
+             (strncmp(s, "0s", 2) == 0))
+      ignored = 1;
 
     /* Last field of the route entry */
     else if (strncmp(buffer, "Site Prefix Length", 18) == 0) {
@@ -917,7 +925,7 @@ libwinet_edit_route_entry(const struct sockaddr *dest,
     const int MAX_BUFFER_SIZE = 1024;
     const char * cmdformat = "netsh interface ipv6 %s route "
                              "prefix=%s/%d interface=%d "
-                             "nexthop=%s %cmetric=%d";
+                             "nexthop=%s %s %cmetric=%d";
     char cmdbuf[MAX_BUFFER_SIZE];
     char sdest[INET6_ADDRSTRLEN];
     char sgate[INET6_ADDRSTRLEN];
@@ -945,6 +953,7 @@ libwinet_edit_route_entry(const struct sockaddr *dest,
                  plen,
                  ifindex,
                  sgate,
+                 cmdflag == RTM_ADD ? "publish=yes" : "",
                  cmdflag == RTM_DELETE ? '#' : ' ',
                  metric
                  ) >= MAX_BUFFER_SIZE)
@@ -958,7 +967,7 @@ libwinet_edit_route_entry(const struct sockaddr *dest,
   /* Add ipv4 route before Windows Vista, use IP Helper API */
   else {
     MIB_IPFORWARDROW Row;
-    unsigned long Res;    
+    unsigned long Res;
     struct in_addr mask;
     plen2mask(plen, &mask);
 
@@ -1449,6 +1458,96 @@ cyginet_interface_sdl(struct sockaddr_dl *sdl, char *ifname)
   }
 
   FREE(friendlyname);
+  return dwReturn;
+}
+
+int
+cyginet_getifaddresses(char *ifname,
+                       struct cyginet_route *routes,
+                       int maxroutes
+                       )
+{
+  IP_ADAPTER_ADDRESSES *pAdaptAddr = NULL;
+  IP_ADAPTER_ADDRESSES *pTmpAdaptAddr = NULL;
+  DWORD dwRet = 0;
+  DWORD dwSize = 0x10000;
+  DWORD dwReturn = 0;
+  size_t size;
+  WCHAR *friendlyname = 0;
+
+  if (ifname) { 
+    size = MultiByteToWideChar(CP_ACP,
+                               0,
+                               ifname,
+                               -1,
+                               NULL,
+                               0
+                               );
+    friendlyname = MALLOC(size * sizeof(WCHAR));
+    if (!friendlyname)
+      return -1;
+    if (MultiByteToWideChar(CP_ACP,
+                            0,
+                            ifname,
+                            -1,
+                            friendlyname,
+                            size
+                            ) == 0) {
+      FREE(friendlyname);
+      return -1;
+    }
+  }
+
+  dwRet = GetAdaptersAddresses(AF_UNSPEC,
+                               GAA_FLAG_SKIP_ANYCAST            \
+                               | GAA_FLAG_SKIP_MULTICAST        \
+                               | GAA_FLAG_SKIP_DNS_SERVER,
+                               NULL,
+                               pAdaptAddr,
+                               &dwSize
+                               );
+  if (ERROR_BUFFER_OVERFLOW == dwRet) {
+    FREE(pAdaptAddr);
+    if (NULL == (pAdaptAddr = (IP_ADAPTER_ADDRESSES*)MALLOC(dwSize)))
+      return -1;
+    dwRet = GetAdaptersAddresses(AF_UNSPEC,
+                                 GAA_FLAG_SKIP_ANYCAST            \
+                                 | GAA_FLAG_SKIP_MULTICAST        \
+                                 | GAA_FLAG_SKIP_DNS_SERVER,
+                                 NULL,
+                                 pAdaptAddr,
+                                 &dwSize
+                                 );
+  }
+
+  if (NO_ERROR == dwRet) {
+    pTmpAdaptAddr = pAdaptAddr;
+    while (pTmpAdaptAddr) {
+      if ((pTmpAdaptAddr -> OperStatus == IfOperStatusUp) && 
+          ((ifname == NULL) ||
+           (wcscmp(pTmpAdaptAddr -> FriendlyName, friendlyname) == 0))) {
+
+        PIP_ADAPTER_UNICAST_ADDRESS p = pTmpAdaptAddr -> FirstUnicastAddress;
+        while (p) {
+          if (p -> ValidLifetime) {
+            SOCKET_ADDRESS *s = &(p -> Address);
+            memcpy(&routes[dwReturn].prefix,
+                   s -> lpSockaddr,
+                   s -> iSockaddrLength
+                   );
+            dwReturn += 1;
+            if (dwReturn == maxroutes)
+              break;
+          }
+          p = p -> Next;
+        }
+        if (ifname)
+          break;
+      }
+      pTmpAdaptAddr = pTmpAdaptAddr->Next;
+    }
+    FREE(pAdaptAddr);
+  }
   return dwReturn;
 }
 
@@ -3002,7 +3101,7 @@ int main(int argc, char* argv[])
     else
       printf("libwinet_refresh_interface_map_table failed\n");
   }
-
+  /*
   printf("\n\nTest ipv4 blackhole route:\n\n");
   do {
     SOCKADDR_IN dest = { AF_INET, 0, {{{ INADDR_ANY }}}, {0} };
@@ -3023,8 +3122,20 @@ int main(int argc, char* argv[])
                                   );
     printf("Add blackhole route return: %d", n);
   } while(0);
+  */
 
-  runTestCases();
+  printf("\n\nTest myown cyg_getifaddress:\n\n");
+  do {
+    struct cyginet_route ptable[255];
+    int rc;
+    rc = cyginet_getifaddresses(NULL, ptable, 255);
+    printf("return %d\n", rc);
+    while (rc--) {
+      
+    }
+  } while(0);
+
+  // runTestCases();
 
   /* printf("\n\nTest libwinet_init_ipv6_interface:\n\n"); */
   /* libwinet_init_ipv6_interface(); */

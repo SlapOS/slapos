@@ -126,12 +126,12 @@ struct sockaddr_dl {
 };
 
 struct cyginet_route {
-    struct sockaddr prefix;
+    struct sockaddr_storage prefix;
     int plen;
     int metric;
     unsigned int ifindex;
     int proto;
-    struct sockaddr gateway;
+    struct sockaddr_storage gateway;
 };
 
 #if defined(INSIDE_BABELD_CYGINET)
@@ -141,8 +141,10 @@ struct ifaddrs {
         char            *ifa_name;
         unsigned int     ifa_flags;
         struct sockaddr *ifa_addr;
-        struct sockaddr *ifa_netmask;
-        struct sockaddr *ifa_dstaddr;
+        union {
+          struct sockaddr *ifa_netmask;
+          struct sockaddr *ifa_dstaddr;
+        };
         void            *ifa_data;
 };
 
@@ -227,4 +229,6 @@ int cyginet_update_route_entry(const struct sockaddr *, unsigned short,
 char * cyginet_ifname(const char *);
 char * cyginet_guidname(const char *);
 int cyginet_refresh_interface_table();
+int cyginet_getifaddresses(char *, struct cyginet_route *, int);
+
 #endif  /* __CYGIFNET_H__ */

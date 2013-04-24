@@ -329,7 +329,7 @@ kernel_route(int operation, const unsigned char *dest, unsigned short plen,
         }
         ipv4 = 0;
     }
-
+    
     if(operation == ROUTE_MODIFY && newmetric == metric &&
        memcmp(newgate, gate, 16) == 0 && newifindex == ifindex)
       return 0;
@@ -362,7 +362,7 @@ kernel_route(int operation, const unsigned char *dest, unsigned short plen,
     route_ifindex = ifindex;
     prefix_len = ipv4 ? plen - 96 : plen;
 
-    if(metric == KERNEL_INFINITY) {
+    if(0 && metric == KERNEL_INFINITY) {
         /* It means this route has property: RTF_BLACKHOLE */
         if(ifindex_lo < 0) {
             ifindex_lo = cyginet_loopback_index(AF_UNSPEC);
@@ -386,7 +386,7 @@ kernel_route(int operation, const unsigned char *dest, unsigned short plen,
 
     if(ipv4) {
         PUSHADDR(destination, dest);
-        if (metric == KERNEL_INFINITY) {
+        if (0 && metric == KERNEL_INFINITY) {
             /* blackhole route, now it doesn't work */
             kdebugf("Error: ipv4 blackhole route doesn't work.\n");
             return -1;
@@ -402,7 +402,7 @@ kernel_route(int operation, const unsigned char *dest, unsigned short plen,
 
     } else {
         PUSHADDR6(destination, dest);
-        if (metric == KERNEL_INFINITY)
+        if (0 && metric == KERNEL_INFINITY)
             PUSHADDR6(gateway, **local6);
         else
             PUSHADDR6(gateway, gate);
@@ -483,7 +483,7 @@ parse_kernel_route(struct cyginet_route *src, struct kernel_route *route)
     route -> proto = src -> proto;
     route -> ifindex = src -> ifindex;
 
-    sa = &(src -> prefix);
+    sa = (struct sockaddr*)&(src -> prefix);
     if(sa->sa_family == AF_INET6) {
         struct sockaddr_in6 *sin6 = (struct sockaddr_in6 *)sa;
         memcpy(route->prefix, &sin6->sin6_addr, 16);
@@ -504,7 +504,7 @@ parse_kernel_route(struct cyginet_route *src, struct kernel_route *route)
     }
 
     /* Gateway */
-    sa = &(src -> gateway);
+    sa = (struct sockaddr*)&(src -> gateway);
     if(sa->sa_family == AF_INET6) {
         struct sockaddr_in6 *sin6 = (struct sockaddr_in6 *)sa;
         memcpy(route->gw, &sin6->sin6_addr, 16);
@@ -545,8 +545,9 @@ kernel_routes(struct kernel_route *routes, int maxroutes)
     if (rc < 0) {
         free(ptable);
         return -1;
-    }
-
+    } else if (maxroutes < rc)
+        return maxroutes;
+    
     for (i = 0, count = 0; i < rc; i++) {
 
         if (parse_kernel_route(ptable + i, proute) != 0)
@@ -559,6 +560,7 @@ kernel_routes(struct kernel_route *routes, int maxroutes)
             proute++;
         count ++;
     }
+
     free(ptable);
     return count;
 }
@@ -579,6 +581,66 @@ compare_ifname(const char * ifapname, const char * ifname)
     if (guidname)
         return strncmp(guidname, ifapname, strlen(guidname));
     return -1;
+}
+
+int
+cyginet_kernel_addresses(char *ifname, int ifindex, int ll,
+                         struct kernel_route *routes, int maxroutes)
+{
+    int rc, i, n;
+    struct cyginet_route *ptable, *p;
+    n = maxroutes * 2;
+
+    while (1) {
+        if (NULL == (ptable = calloc(n, sizeof(struct cyginet_route))))
+            return -1;
+
+        rc = cyginet_getifaddresses(ifname, ptable, n);
+        if(rc < 0)
+            return -1;
+            
+        if (rc < n)
+            break;
+
+        free(ptable);
+        n += n;
+    }
+        
+    i = 0;
+    p = ptable; p --;
+    while (p ++, n --) {
+        struct sockaddr *s = (struct sockaddr*)&(p -> prefix);
+        if (s -> sa_family == AF_INET6) {
+            struct sockaddr_in6 *sin6 = (struct sockaddr_in6*)&(p->prefix);
+            if(!!ll != !!IN6_IS_ADDR_LINKLOCAL(&sin6->sin6_addr))
+                continue;
+            memcpy(routes[i].prefix, &sin6->sin6_addr, 16);
+            routes[i].plen = 128;
+            routes[i].metric = 0;
+            routes[i].ifindex = ifindex;
+            routes[i].proto = RTPROT_BABEL_LOCAL;
+            memset(routes[i].gw, 0, 16);
+            i++;
+        } else if (s -> sa_family == AF_INET) {
+            struct sockaddr_in *sin = (struct sockaddr_in*)&(p->prefix);
+            if(ll)
+                continue;
+#if defined(IN_LINKLOCAL)
+            if(IN_LINKLOCAL(htonl(sin->sin_addr.s_addr)))
+                continue;
+#endif
+            memcpy(routes[i].prefix, v4prefix, 12);
+            memcpy(routes[i].prefix + 12, &sin->sin_addr, 4);
+            routes[i].plen = 128;
+            routes[i].metric = 0;
+            routes[i].ifindex = ifindex;
+            routes[i].proto = RTPROT_BABEL_LOCAL;
+            memset(routes[i].gw, 0, 16);
+            i++;
+        }
+    }
+    free(ptable);
+    return i;
 }
 
 int
