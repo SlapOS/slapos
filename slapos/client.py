@@ -87,7 +87,7 @@ def init(config):
     alias = []
   software_list = []
   for software in alias:
-    if software is not '':
+    if software:
       name, url = software.split(' ')
       software_list.append(name)
       local[name] = url
