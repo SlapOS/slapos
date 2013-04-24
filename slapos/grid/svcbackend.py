@@ -28,17 +28,16 @@
 #
 ##############################################################################
 
-from supervisor import xmlrpc
 import time
-from utils import SlapPopen
 import logging
 import os
 import sys
 import xmlrpclib
-from optparse import OptionParser
-import ConfigParser
 import socket as socketlib
 import subprocess
+
+from supervisor import xmlrpc
+from slapos.grid.utils import SlapPopen
 
 
 def getSupervisorRPC(socket):
@@ -48,21 +47,25 @@ def getSupervisorRPC(socket):
       supervisor_transport)
   return getattr(server_proxy, 'supervisor')
 
+class dummylogger(object):
+    def info(self, *args):
+        print args
+    debug = info
 
-def launchSupervisord(socket, configuration_file):
-  logger = logging.getLogger('SVCBackend')
-  supervisor = getSupervisorRPC(socket)
+def launchSupervisord(socket, configuration_file, logger):
+  #logger = dummylogger()
   if os.path.exists(socket):
     trynum = 1
     while trynum < 6:
       try:
+        supervisor = getSupervisorRPC(socket)
         status = supervisor.getState()
       except xmlrpclib.Fault as e:
         if e.faultCode == 6 and e.faultString == 'SHUTDOWN_STATE':
           logger.info('Supervisor in shutdown procedure, will check again later.')
           trynum += 1
           time.sleep(2 * trynum)
-      except Exception:
+      except Exception as e:
         # In case if there is problem with connection, assume that supervisord
         # is not running and try to run it
         break
@@ -91,84 +94,32 @@ def launchSupervisord(socket, configuration_file):
                                 executable=sys.executable,
                                 stdout=subprocess.PIPE,
                                 stderr=subprocess.STDOUT)
+
   result = supervisord_popen.communicate()[0]
-  if supervisord_popen.returncode == 0:
-    logger.info('Supervisord command invoked with: %s' % result)
-    try:
-      default_timeout = socketlib.getdefaulttimeout()
-      current_timeout = 1
-      trynum = 1
-      while trynum < 6:
-        try:
-          socketlib.setdefaulttimeout(current_timeout)
-          status = supervisor.getState()
-          if status['statename'] == 'RUNNING' and status['statecode'] == 1:
-            return
-          logger.warning('Wrong status name %(statename)r and code '
-            '%(statecode)r, trying again' % status)
-          trynum += 1
-        except Exception:
-          current_timeout = 5 * trynum
-          trynum += 1
-        else:
-          logger.info('Supervisord started correctly in try %s.' % trynum)
+  if supervisord_popen.returncode:
+    logger.warning('Supervisord unknown problem: %s' % result)
+    return
+
+  try:
+    default_timeout = socketlib.getdefaulttimeout()
+    current_timeout = 1
+    trynum = 1
+    while trynum < 6:
+      try:
+        socketlib.setdefaulttimeout(current_timeout)
+        supervisor = getSupervisorRPC(socket)
+        status = supervisor.getState()
+        if status['statename'] == 'RUNNING' and status['statecode'] == 1:
           return
-      logger.warning('Issue while checking supervisord.')
-    finally:
-      socketlib.setdefaulttimeout(default_timeout)
-
-  else:
-    log_message = 'Supervisord unknown problem: %s' % result
-    logger.warning(log_message)
-
-
-def getOptionDict(*argument_tuple):
-  usage = """
-Typical usage:
- * %prog CONFIGURATION_FILE [arguments passed to supervisor]
-
-""".strip()
-
-  parser = OptionParser(usage=usage)
-
-  # Parses arguments
-  if argument_tuple:
-    (argument_option_instance, argument_list) = parser.parse_args(list(argument_tuple))
-  else:
-    # No arguments given to entry point : we parse sys.argv.
-    (argument_option_instance, argument_list) = parser.parse_args()
-
-  if not argument_list:
-    parser.error("Configuration file is obligatory. Consult documentation by "
-        "calling with -h.")
-  configuration_file = argument_list[0]
-  if not os.path.exists(configuration_file):
-    parser.error("Could not read configuration file : %s" % configuration_file)
-
-  slapgrid_configuration = ConfigParser.SafeConfigParser()
-  slapgrid_configuration.read(configuration_file)
-
-  # Merges the two dictionnaries
-  option_dict = dict(slapgrid_configuration.items("slapos"))
-  # Supervisord configuration location
-  option_dict.setdefault('supervisord_configuration_path',
-                         os.path.join(option_dict['instance_root'], 'etc', 'supervisord.conf'))
-  # Supervisord socket
-  option_dict.setdefault('supervisord_socket',
-                         os.path.join(option_dict['instance_root'], 'supervisord.socket'))
-  return option_dict, argument_list[1:]
-
-
-def supervisorctl(*argument_tuple):
-  option_dict, args = getOptionDict(*argument_tuple)
-  import supervisor.supervisorctl
-  launchSupervisord(option_dict['supervisord_socket'],
-      option_dict['supervisord_configuration_path'])
-  supervisor.supervisorctl.main(args=['-c',
-    option_dict['supervisord_configuration_path']] + args)
-
-def supervisord(*argument_tuple):
-  option_dict, _ = getOptionDict(*argument_tuple)
-  launchSupervisord(option_dict['supervisord_socket'],
-      option_dict['supervisord_configuration_path'])
-
+        logger.warning('Wrong status name %(statename)r and code '
+          '%(statecode)r, trying again' % status)
+        trynum += 1
+      except Exception as e:
+        current_timeout = 5 * trynum
+        trynum += 1
+      else:
+        logger.info('Supervisord started correctly in try %s.' % trynum)
+        return
+    logger.warning('Issue while checking supervisord.')
+  finally:
+    socketlib.setdefaulttimeout(default_timeout)
