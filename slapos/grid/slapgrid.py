@@ -161,7 +161,7 @@ def parseArgumentTupleAndReturnSlapgridObject(*argument_tuple):
 
 
   # Parses arguments
-  if argument_tuple == ():
+  if not argument_tuple:
     # No arguments given to entry point : we parse sys.argv.
     argument_option_instance = parser.parse_args()
   else:
@@ -644,7 +644,8 @@ class Slapgrid(object):
 
   def _launchSupervisord(self):
     launchSupervisord(self.supervisord_socket,
-        self.supervisord_configuration_path)
+        self.supervisord_configuration_path,
+        logger=self.logger)
 
   def _checkPromises(self, computer_partition):
     self.logger.info("Checking promises...")

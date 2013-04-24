@@ -29,7 +29,6 @@
 ##############################################################################
 
 import time
-import logging
 import os
 import sys
 import xmlrpclib
