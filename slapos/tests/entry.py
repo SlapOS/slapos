@@ -28,7 +28,7 @@
 
 import os
 import shutil
-import slapos.entry as entry
+from slapos.cli_legacy import entry
 import sys
 import tempfile
 import unittest

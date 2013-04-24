@@ -44,6 +44,8 @@ import unittest
 import urlparse
 import xml_marshaller
 
+dummylogger = logging.getLogger()
+
 
 WATCHDOG_TEMPLATE = """#!%(python_path)s -S
 
