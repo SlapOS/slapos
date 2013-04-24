@@ -42,7 +42,7 @@ WSGIScriptAlias / ${:wsgi_location}/trac.wsgi
     DAV svn
     SVNParentPath ${:document_root}/svn/
     AuthType Basic
-    AuthName "SVN Repository Admin"
+    AuthName "SVN Repository Access"
     AuthUserFile ${:document_root}/.htpasswd
     SVNAdvertiseV2Protocol Off
     <LimitExcept GET PROPFIND OPTIONS REPORT> 
@@ -50,10 +50,62 @@ WSGIScriptAlias / ${:wsgi_location}/trac.wsgi
     </LimitExcept>
 </Location>
 
+ScriptSock "${:cgid-sock}"
+SetEnv REMOTE_USER=$REDIRECT_REMOTE_USER
+
+Alias "/static/" "${:gitweb-static-dir}"
+<Directory "${:gitweb-static-dir}">
+    Options FollowSymLinks
+    Require all granted
+</Directory>
+
+# This is Static Accelerated git pull
+
+AliasMatch "^/git/(.*/objects/[0-9a-f]{2}/[0-9a-f]{38})$"          "${:document_root}/git/$1"
+AliasMatch "^/git/(.*/objects/pack/pack-[0-9a-f]{40}.(pack|idx))$" "${:document_root}/git/$1"
+
+# When it can't be statically delivered, we rely on git-http-backend
+ScriptAliasMatch \
+        "(?x)^/git/(.*/(HEAD | \
+                        info/refs | \
+                        objects/(info/[^/]+ | \
+                                 [0-9a-f]{2}/[0-9a-f]{38} | \
+                                 pack/pack-[0-9a-f]{40}\.(pack|idx)) | \
+                        git-(upload|receive)-pack))$" \
+        "/srv/slapgrid/slappart19/srv/runner/instance/slappart0/bin/git-http-backend.cgi/$1"
+
+# Everything else is gitweb interface
+ScriptAlias "/git"                                                "${:gitweb-script}"
+
+RewriteEngine On
+
+RewriteCond %{QUERY_STRING} service=git-receive-pack
+RewriteRule ^/git/.*/info/refs$ - [E=git_receive_pack:1]
+
+<Location /git>
+    Order deny,allow
+    Deny from env=git_receive_pack
+    
+    AuthType Basic
+    AuthName "Git Push Access"
+    AuthBasicProvider file
+    AuthUserFile ${:document_root}/.htpasswd
+    Require valid-user
+    Satisfy any
+</Location>
+
+<LocationMatch "^/git/.*/git-receive-pack$">
+    AuthType Basic
+    AuthName "Git Push Access"
+    AuthBasicProvider file
+    AuthUserFile ${:document_root}/.htpasswd
+    Require valid-user
+    SetEnv REMOTE_USER $REDIRECT_REMOTE_USER
+</LocationMatch>
+
 # List of modules
 LoadModule unixd_module modules/mod_unixd.so
 LoadModule access_compat_module modules/mod_access_compat.so
-LoadModule authz_core_module modules/mod_authz_core.so
 LoadModule authz_host_module modules/mod_authz_host.so
 LoadModule log_config_module modules/mod_log_config.so
 LoadModule setenvif_module modules/mod_setenvif.so
@@ -61,6 +113,8 @@ LoadModule version_module modules/mod_version.so
 LoadModule proxy_module modules/mod_proxy.so
 LoadModule proxy_http_module modules/mod_proxy_http.so
 LoadModule mime_module modules/mod_mime.so
+LoadModule cgid_module modules/mod_cgid.so
+LoadModule env_module modules/mod_env.so
 LoadModule dav_module modules/mod_dav.so
 LoadModule dav_fs_module modules/mod_dav_fs.so
 LoadModule negotiation_module modules/mod_negotiation.so
@@ -72,6 +126,8 @@ LoadModule wsgi_module modules/mod_wsgi.so
 LoadModule dav_svn_module modules/mod_dav_svn.so
 LoadModule authz_svn_module modules/mod_authz_svn.so
 LoadModule auth_basic_module modules/mod_auth_basic.so
-LoadModule authz_user_module modules/mod_authz_user.so
-LoadModule authn_file_module modules/mod_authn_file.so
 LoadModule authn_core_module modules/mod_authn_core.so
+LoadModule authn_file_module modules/mod_authn_file.so
+LoadModule authz_core_module modules/mod_authz_core.so
+LoadModule authz_user_module modules/mod_authz_user.so
+LoadModule autoindex_module modules/mod_autoindex.so

@@ -138,6 +138,24 @@ class Recipe(GenericBaseRecipe):
                       os.path.join(svn_repo_path, 'hooks/post-revprop-change'))
         self.logger.info("Finished initializing %s reposiroty" % svn_repo)
 
+    repolist = json.loads(self.options.get('git-project-list', '{}'))
+    for repo, desc in repolist.iteritems():
+      absolute_path = os.path.join(self.options['git-dir'], '%s.git' % repo)
+      if not os.path.exists(absolute_path):
+        self.logger.info("Initializing %s GIT repository..." % repo)
+        subprocess.check_call([self.options['git-binary'], 'init',
+                    '--bare', absolute_path])
+        subprocess.check_call([trac_admin, project_dir, 'repository',
+                    'add', repo, absolute_path, 'git'])
+        subprocess.check_call([trac_admin, project_dir, 'repository',
+                    'resync', repo])
+        # XXX: Hardcoded path
+        shutil.copy(self.options['trac-git-hook'].strip(),
+                      os.path.join(absolute_path, 'hooks/post-commit'))
+        description_filename = os.path.join(absolute_path, 'description')
+        with open(description_filename, 'w') as description_file:
+          description_file.write(desc)
+
     user_list = json.loads(self.options.get('user-list', '{}'))
     fd = open(os.path.join(project_dir, 'svnpasswd'), 'w')
     fd.write("[users]\n%s = %s" % (admin, passwd))
