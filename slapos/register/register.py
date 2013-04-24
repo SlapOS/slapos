@@ -31,21 +31,18 @@
 # XXX does not create 'log' directory (required by slap2 entry point)
 
 
-import argparse
 import ConfigParser
 import getpass
-import logging
 import os
 import shutil
 import stat
-import sys
 import tempfile
 import urllib2
 
 
 def authenticate(request, login, password):
   auth = '%s:%s' % (login, password)
-  authheader =  'Basic %s' % auth.encode('base64').rstrip()
+  authheader = 'Basic %s' % auth.encode('base64').rstrip()
   request.add_header('Authorization', authheader)
 
 
@@ -96,7 +93,8 @@ def save_former_config(config):
         saved = saved[:-1] + str(int(saved[-1]) + 1)
       else:
         saved += '.1'
-    else: break
+    else:
+        break
   config.logger.info("Former slapos configuration detected in %s moving to %s" % (former, saved))
   shutil.move(former, saved)
 
@@ -134,7 +132,7 @@ def slapconfig(config):
     if not dry_run:
       os.mkdir(slap_conf_dir, 0o711)
 
-  user_certificate_repository_path = os.path.join(slap_conf_dir,'ssl')
+  user_certificate_repository_path = os.path.join(slap_conf_dir, 'ssl')
   if not os.path.exists(user_certificate_repository_path):
     config.logger.info("Creating directory: %s" % user_certificate_repository_path)
     if not dry_run:
@@ -220,7 +218,7 @@ class RegisterConfig(object):
     self.logger.debug("Number of partition: %s" % self.partition_number)
     self.logger.info("Using Interface %s" % self.interface_name)
     self.logger.debug("Ipv4 sub network: %s" % self.ipv4_local_network)
-    self.logger.debug("Ipv6 Interface: %s" %self.ipv6_interface)
+    self.logger.debug("Ipv6 Interface: %s" % self.ipv6_interface)
 
 
 def gen_auth(config):
@@ -263,78 +261,3 @@ def do_register(config):
 
   print "Node has successfully been configured as %s." % COMP
   return 0
-
-
-def main():
-  "Run default configuration."
-
-  ap = argparse.ArgumentParser(usage='usage: slapos node %s NODE_NAME [options]' % sys.argv[0])
-
-  ap.add_argument('node_name',
-                  help='Name of the node')
-
-  ap.add_argument('--interface-name',
-                  help='Interface name to access internet',
-                  default='eth0')
-
-  ap.add_argument('--master-url',
-                  help='URL of SlapOS master',
-                  default='https://slap.vifib.com')
-
-  ap.add_argument('--master-url-web',
-                  help='URL of SlapOS Master webservice to register certificates',
-                  default='https://www.slapos.org')
-
-  ap.add_argument('--partition-number',
-                  help='Number of partition on computer',
-                  default='10',
-                  type=int)
-
-  ap.add_argument('--ipv4-local-network',
-                  help='Base of ipv4 local network',
-                  default='10.0.0.0/16')
-
-  ap.add_argument('--ipv6-interface',
-                  help='Interface name to get ipv6',
-                  default='')
-
-  ap.add_argument('--login',
-                  help='User login on SlapOS Master webservice')
-
-  ap.add_argument('--password',
-                  help='User password on SlapOs Master webservice')
-
-  ap.add_argument('-t', '--create-tap',
-                  help='Will trigger creation of one virtual "tap" interface per '
-                       'Partition and attach it to primary interface. Requires '
-                       'primary interface to be a bridge. defaults to false. '
-                       'Needed to host virtual machines.',
-                  default=False,
-                  action='store_true')
-
-  ap.add_argument('-n', '--dry-run',
-                  help='Simulate the execution steps',
-                  default=False,
-                  action='store_true')
-
-  options = ap.parse_args()
-
-  if options.password and not options.login:
-    ap.error('Please enter your login with your password')
-
-  logger = logging.getLogger('Register')
-  handler = logging.StreamHandler()
-  logger.setLevel(logging.DEBUG)
-  handler.setLevel(logging.INFO)
-  handler.setFormatter(logging.Formatter('%(levelname)s - %(message)s'))
-  logger.addHandler(handler)
-
-  try:
-    config = RegisterConfig(logger=logger)
-    config.setConfig(options)
-    return_code = do_register(config)
-  except SystemExit, err:
-    # Catch exception raised by optparse
-    return_code = err
-
-  sys.exit(return_code)

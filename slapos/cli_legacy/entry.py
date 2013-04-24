@@ -43,7 +43,7 @@ from slapos.grid.slapgrid import runSoftwareRelease as software
 from slapos.grid.slapgrid import runUsageReport as report
 from slapos.grid.svcbackend import supervisord
 from slapos.grid.svcbackend import supervisorctl
-from slapos.register.register import main as register
+from slapos.cli_legacy.register import main as register
 from slapos.version import version
 
 # Note: this whole file is a hack. We should better try dedicated library
