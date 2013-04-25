@@ -100,6 +100,31 @@ def check_missing_parameters(options):
     raise RuntimeError('Missing mandatory parameters: %s' % ', '.join(sorted(missing)))
 
 
+def check_missing_files(options):
+  req_files = [
+          options.get('key_file'),
+          options.get('cert_file'),
+          options.get('master_ca_file'),
+          options.get('shacache-cert-file'),
+          options.get('shacache-key-file'),
+          options.get('shadir-cert-file'),
+          options.get('shadir-key-file'),
+          options.get('signature_private_key_file')
+          ]
+
+  req_dirs = [
+          options.get('certificate_repository_path')
+          ]
+
+  for f in req_files:
+    if f and not os.path.exists(f):
+        raise RuntimeError('File %r does not exist.' % f)
+
+  for d in req_dirs:
+    if d and not os.path.isdir(d):
+      raise RuntimeError('Directory %r does not exist' % d)
+
+
 def parse_arguments_merge_config(*argument_tuple):
   """Parse arguments and return options dictionary
      merged with the config file."""
@@ -168,18 +193,15 @@ def parse_arguments_merge_config(*argument_tuple):
   ap.add_argument('--maximal_delay',
                   help='Deprecated. Will only work from configuration file in the future.')
 
-  # Parses arguments
   if not argument_tuple:
-    # No arguments given to entry point : we parse sys.argv.
     args = ap.parse_args()
   else:
     args = ap.parse_args(list(argument_tuple))
-  # Parses arguments from config file, if needed, then merge previous arguments
+
   options = {}
-  # Loads config (if config specified)
   config = ConfigParser.SafeConfigParser()
   config.readfp(args.configuration_file)
-  # Merges the two dictionnaries
+
   options = dict(config.items('slapos'))
   if config.has_section('networkcache'):
     options.update(dict(config.items('networkcache')))
@@ -209,6 +231,25 @@ def setup_logger(options):
   # XXX return and use logger object
 
 
+
+def random_delay(options):
+  """
+  Sleep for a random time to avoid SlapOS Master being DDOSed by an army of
+  SlapOS Nodes configured with cron.
+  """
+  if options["now"]:
+    # XXX-Cedric: deprecate "--now"
+    return
+
+  maximal_delay = int(options.get("maximal_delay", "0"))
+  if maximal_delay:
+    duration = random.randint(1, maximal_delay)
+    logging.info("Sleeping for %s seconds. To disable this feature, " \
+                    "check --now parameter in slapgrid help." % duration)
+    time.sleep(duration)
+
+
+
 def parseArgumentTupleAndReturnSlapgridObject(*argument_tuple):
   """Returns a new instance of slapgrid.Slapgrid created with argument+config parameters.
      Also returns the options dict and unused variable list, and configures logger.
@@ -218,37 +259,13 @@ def parseArgumentTupleAndReturnSlapgridObject(*argument_tuple):
   setup_logger(options)
 
   check_missing_parameters(options)
+  check_missing_files(options)
 
   if options.get('all'):
     options['develop'] = True
 
   if options.get('maximum_periodicity') is not None:
     options['force_periodicity'] = True
-
-  key_file = options.get('key_file')
-  cert_file = options.get('cert_file')
-  master_ca_file = options.get('master_ca_file')
-  signature_private_key_file = options.get('signature_private_key_file')
-
-  mandatory_file_list = [key_file, cert_file, master_ca_file]
-  # signature_private_key_file is not mandatory, we must be able to run
-  # slapgrid scripts without this parameter.
-  if signature_private_key_file:
-    mandatory_file_list.append(signature_private_key_file)
-
-  for k in ['shacache-cert-file', 'shacache-key-file', 'shadir-cert-file',
-      'shadir-key-file']:
-    mandatory_file_list.append(options.get(k, None))
-
-  for f in mandatory_file_list:
-    if f is not None:
-      if not os.path.exists(f):
-        raise RuntimeError('File %r does not exist.' % f)
-
-  certificate_repository_path = options.get('certificate_repository_path')
-  if certificate_repository_path:
-    if not os.path.isdir(certificate_repository_path):
-      raise RuntimeError('Directory %r does not exist' % certificate_repository_path)
 
   # Supervisord configuration location
   if not options.get('supervisord_configuration_path'):
@@ -284,18 +301,7 @@ def parseArgumentTupleAndReturnSlapgridObject(*argument_tuple):
       url.strip() for url in options.get(
           "upload-to-binary-cache-url-blacklist", "").split('\n') if url]
 
-  # Sleep for a random time to avoid SlapOS Master being DDOSed by an army of
-  # SlapOS Nodes configured with cron.
-  if options["now"]:
-    # XXX-Cedric: deprecate "--now"
-    maximal_delay = 0
-  else:
-    maximal_delay = int(options.get("maximal_delay", "0"))
-  if maximal_delay > 0:
-    duration = random.randint(1, maximal_delay)
-    logging.info("Sleeping for %s seconds. To disable this feature, " \
-                    "check --now parameter in slapgrid help." % duration)
-    time.sleep(duration)
+  random_delay(options)
 
   # Return new Slapgrid instance and options
   return ([Slapgrid(software_root=options['software_root'],
@@ -305,11 +311,11 @@ def parseArgumentTupleAndReturnSlapgridObject(*argument_tuple):
             supervisord_socket=options['supervisord_socket'],
             supervisord_configuration_path=options[
               'supervisord_configuration_path'],
-            key_file=key_file,
-            cert_file=cert_file,
-            master_ca_file=master_ca_file,
-            certificate_repository_path=certificate_repository_path,
-            signature_private_key_file=signature_private_key_file,
+            key_file=options.get('key_file'),
+            cert_file=options.get('cert_file'),
+            master_ca_file=options.get('master_ca_file'),
+            certificate_repository_path=options.get('certificate_repository_path'),
+            signature_private_key_file=options.get('signature_private_key_file'),
             signature_certificate_list=signature_certificate_list,
             download_binary_cache_url=\
               options.get('download-binary-cache-url', None),
@@ -482,7 +488,7 @@ class Slapgrid(object):
   def getWatchdogLine(self):
     invocation_list = [WATCHDOG_PATH]
     invocation_list.append("--master-url '%s' " % self.master_url)
-    if self.certificate_repository_path is not None:
+    if self.certificate_repository_path:
       invocation_list.append("--certificate-repository-path '%s'" \
                                % self.certificate_repository_path)
     invocation_list.append("--computer-id '%s'" % self.computer_id)
