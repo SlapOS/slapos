@@ -161,29 +161,29 @@ def parseArgumentTupleAndReturnSlapgridObject(*argument_tuple):
   else:
     argument_option_instance = parser.parse_args(list(argument_tuple))
   # Parses arguments from config file, if needed, then merge previous arguments
-  option_dict = {}
+  options = {}
   configuration_file = argument_option_instance.configuration_file[0]
   # Loads config (if config specified)
   slapgrid_configuration = ConfigParser.SafeConfigParser()
   slapgrid_configuration.readfp(configuration_file)
   # Merges the two dictionnaries
-  option_dict = dict(slapgrid_configuration.items("slapos"))
+  options = dict(slapgrid_configuration.items("slapos"))
   if slapgrid_configuration.has_section("networkcache"):
-    option_dict.update(dict(slapgrid_configuration.items("networkcache")))
+    options.update(dict(slapgrid_configuration.items("networkcache")))
   for argument_key, argument_value in vars(argument_option_instance
       ).iteritems():
     if argument_value is not None:
-      option_dict.update({argument_key: argument_value})
+      options.update({argument_key: argument_value})
   # Configures logger.
-  if option_dict['verbose']:
+  if options['verbose']:
     level = logging.DEBUG
   else:
     level = logging.INFO
   logging.basicConfig(format='%(asctime)s %(levelname)-8s %(message)s',
                       level=level,
                       datefmt='%Y-%m-%dT%H:%M:%S')
-  if option_dict.get('logfile'):
-    console = logging.FileHandler(option_dict['logfile'])
+  if options.get('logfile'):
+    console = logging.FileHandler(options['logfile'])
     console.setLevel(level)
     console.setFormatter(logging.Formatter(
         '%(asctime)s %(name)-18s: %(levelname)-8s %(message)s'))
@@ -191,36 +191,36 @@ def parseArgumentTupleAndReturnSlapgridObject(*argument_tuple):
 
   missing_mandatory_parameter_list = []
   for mandatory_parameter in MANDATORY_PARAMETER_LIST:
-    if not mandatory_parameter in option_dict:
+    if not mandatory_parameter in options:
       missing_mandatory_parameter_list.append(mandatory_parameter)
 
-  if option_dict.get('all') is True:
-    option_dict['develop'] = True
+  if options.get('all') is True:
+    options['develop'] = True
 
-  if option_dict.get('maximum_periodicity') is not None:
-    option_dict['force_periodicity'] = True
+  if options.get('maximum_periodicity') is not None:
+    options['force_periodicity'] = True
 
   repository_required = False
-  if 'key_file' in option_dict:
+  if 'key_file' in options:
     repository_required = True
-    if not 'cert_file' in option_dict:
+    if not 'cert_file' in options:
       missing_mandatory_parameter_list.append('cert_file')
-  if 'cert_file' in option_dict:
+  if 'cert_file' in options:
     repository_required = True
-    if not 'key_file' in option_dict:
+    if not 'key_file' in options:
       missing_mandatory_parameter_list.append('key_file')
   if repository_required:
-    if 'certificate_repository_path' not in option_dict:
+    if 'certificate_repository_path' not in options:
       missing_mandatory_parameter_list.append('certificate_repository_path')
 
   if len(missing_mandatory_parameter_list) > 0:
     parser.error('Missing mandatory parameters:\n%s' % '\n'.join(
       missing_mandatory_parameter_list))
 
-  key_file = option_dict.get('key_file')
-  cert_file = option_dict.get('cert_file')
-  master_ca_file = option_dict.get('master_ca_file')
-  signature_private_key_file = option_dict.get('signature_private_key_file')
+  key_file = options.get('key_file')
+  cert_file = options.get('cert_file')
+  master_ca_file = options.get('master_ca_file')
+  signature_private_key_file = options.get('signature_private_key_file')
 
   mandatory_file_list = [key_file, cert_file, master_ca_file]
   # signature_private_key_file is not mandatory, we must be able to run
@@ -230,29 +230,29 @@ def parseArgumentTupleAndReturnSlapgridObject(*argument_tuple):
 
   for k in ['shacache-cert-file', 'shacache-key-file', 'shadir-cert-file',
       'shadir-key-file']:
-    mandatory_file_list.append(option_dict.get(k, None))
+    mandatory_file_list.append(options.get(k, None))
 
   for f in mandatory_file_list:
     if f is not None:
       if not os.path.exists(f):
         parser.error('File %r does not exist.' % f)
 
-  certificate_repository_path = option_dict.get('certificate_repository_path')
+  certificate_repository_path = options.get('certificate_repository_path')
   if certificate_repository_path is not None:
     if not os.path.isdir(certificate_repository_path):
       parser.error('Directory %r does not exist' % certificate_repository_path)
 
   # Supervisord configuration location
-  if not option_dict.get('supervisord_configuration_path'):
-    option_dict['supervisord_configuration_path'] = \
-      os.path.join(option_dict['instance_root'], 'etc', 'supervisord.conf')
+  if not options.get('supervisord_configuration_path'):
+    options['supervisord_configuration_path'] = \
+      os.path.join(options['instance_root'], 'etc', 'supervisord.conf')
   # Supervisord socket
-  if not option_dict.get('supervisord_socket'):
-    option_dict['supervisord_socket'] = \
-      os.path.join(option_dict['instance_root'], 'supervisord.socket')
+  if not options.get('supervisord_socket'):
+    options['supervisord_socket'] = \
+      os.path.join(options['instance_root'], 'supervisord.socket')
 
   signature_certificate_list_string = \
-    option_dict.get('signature-certificate-list', None)
+    options.get('signature-certificate-list', None)
   if signature_certificate_list_string is not None:
     cert_marker = "-----BEGIN CERTIFICATE-----"
     signature_certificate_list = [
@@ -265,24 +265,24 @@ def parseArgumentTupleAndReturnSlapgridObject(*argument_tuple):
 
   # Parse cache / binary cache options
   # Backward compatibility about "binary-cache-url-blacklist" deprecated option
-  if option_dict.get("binary-cache-url-blacklist") and not \
-      option_dict.get("download-from-binary-cache-url-blacklist"):
-    option_dict["download-from-binary-cache-url-blacklist"] = \
-        option_dict["binary-cache-url-blacklist"]
-  option_dict["download-from-binary-cache-url-blacklist"] = [
-      url.strip() for url in option_dict.get(
+  if options.get("binary-cache-url-blacklist") and not \
+      options.get("download-from-binary-cache-url-blacklist"):
+    options["download-from-binary-cache-url-blacklist"] = \
+        options["binary-cache-url-blacklist"]
+  options["download-from-binary-cache-url-blacklist"] = [
+      url.strip() for url in options.get(
           "download-from-binary-cache-url-blacklist", "").split('\n') if url]
-  option_dict["upload-to-binary-cache-url-blacklist"] = [
-      url.strip() for url in option_dict.get(
+  options["upload-to-binary-cache-url-blacklist"] = [
+      url.strip() for url in options.get(
           "upload-to-binary-cache-url-blacklist", "").split('\n') if url]
 
   # Sleep for a random time to avoid SlapOS Master being DDOSed by an army of
   # SlapOS Nodes configured with cron.
-  if option_dict["now"]:
+  if options["now"]:
     # XXX-Cedric: deprecate "--now"
     maximal_delay = 0
   else:
-    maximal_delay = int(option_dict.get("maximal_delay", "0"))
+    maximal_delay = int(options.get("maximal_delay", "0"))
   if maximal_delay > 0:
     duration = random.randint(1, maximal_delay)
     logging.info("Sleeping for %s seconds. To disable this feature, " \
@@ -290,12 +290,12 @@ def parseArgumentTupleAndReturnSlapgridObject(*argument_tuple):
     time.sleep(duration)
 
   # Return new Slapgrid instance and options
-  return ([Slapgrid(software_root=option_dict['software_root'],
-            instance_root=option_dict['instance_root'],
-            master_url=option_dict['master_url'],
-            computer_id=option_dict['computer_id'],
-            supervisord_socket=option_dict['supervisord_socket'],
-            supervisord_configuration_path=option_dict[
+  return ([Slapgrid(software_root=options['software_root'],
+            instance_root=options['instance_root'],
+            master_url=options['master_url'],
+            computer_id=options['computer_id'],
+            supervisord_socket=options['supervisord_socket'],
+            supervisord_configuration_path=options[
               'supervisord_configuration_path'],
             key_file=key_file,
             cert_file=cert_file,
@@ -304,42 +304,42 @@ def parseArgumentTupleAndReturnSlapgridObject(*argument_tuple):
             signature_private_key_file=signature_private_key_file,
             signature_certificate_list=signature_certificate_list,
             download_binary_cache_url=\
-              option_dict.get('download-binary-cache-url', None),
+              options.get('download-binary-cache-url', None),
             upload_binary_cache_url=\
-              option_dict.get('upload-binary-cache-url', None),
+              options.get('upload-binary-cache-url', None),
             download_from_binary_cache_url_blacklist=\
-                option_dict.get('download-from-binary-cache-url-blacklist', []),
+                options.get('download-from-binary-cache-url-blacklist', []),
             upload_to_binary_cache_url_blacklist=\
-                option_dict.get('upload-to-binary-cache-url-blacklist', []),
-            upload_cache_url=option_dict.get('upload-cache-url', None),
+                options.get('upload-to-binary-cache-url-blacklist', []),
+            upload_cache_url=options.get('upload-cache-url', None),
             download_binary_dir_url=\
-              option_dict.get('download-binary-dir-url', None),
+              options.get('download-binary-dir-url', None),
             upload_binary_dir_url=\
-              option_dict.get('upload-binary-dir-url', None),
-            upload_dir_url=option_dict.get('upload-dir-url', None),
-            buildout=option_dict.get('buildout'),
-            promise_timeout=option_dict['promise_timeout'],
-            shacache_cert_file=option_dict.get('shacache-cert-file', None),
-            shacache_key_file=option_dict.get('shacache-key-file', None),
-            shadir_cert_file=option_dict.get('shadir-cert-file', None),
-            shadir_key_file=option_dict.get('shadir-key-file', None),
-            develop=option_dict.get('develop', False),
-            software_release_filter_list=option_dict.get('only-sr',
+              options.get('upload-binary-dir-url', None),
+            upload_dir_url=options.get('upload-dir-url', None),
+            buildout=options.get('buildout'),
+            promise_timeout=options['promise_timeout'],
+            shacache_cert_file=options.get('shacache-cert-file', None),
+            shacache_key_file=options.get('shacache-key-file', None),
+            shadir_cert_file=options.get('shadir-cert-file', None),
+            shadir_key_file=options.get('shadir-key-file', None),
+            develop=options.get('develop', False),
+            software_release_filter_list=options.get('only-sr',
                 # Try to fetch from deprecated argument
-                option_dict.get('only_sr', None)),
-            computer_partition_filter_list=option_dict.get('only-cp',
+                options.get('only_sr', None)),
+            computer_partition_filter_list=options.get('only-cp',
                 # Try to fetch from deprecated argument
-                option_dict.get('only_cp', None)),
-            force_periodicity = option_dict.get('force_periodicity', False),
-            maximum_periodicity = option_dict.get('maximum_periodicity', 86400),
+                options.get('only_cp', None)),
+            force_periodicity = options.get('force_periodicity', False),
+            maximum_periodicity = options.get('maximum_periodicity', 86400),
             ),
-          option_dict])
+          options])
 
 
 def realRun(argument_tuple, method_list):
-  slapgrid_object, option_dict = \
+  slapgrid_object, options = \
       parseArgumentTupleAndReturnSlapgridObject(*argument_tuple)
-  pidfile = option_dict.get('pidfile')
+  pidfile = options.get('pidfile')
   if pidfile:
     setRunning(pidfile)
   try:
