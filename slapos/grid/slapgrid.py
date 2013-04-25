@@ -334,7 +334,7 @@ def parseArgumentTupleAndReturnSlapgridObject(*argument_tuple):
           options])
 
 
-def realRun(argument_tuple, method_list):
+def realRun(argument_tuple, method):
   slapgrid_object, options = \
       parseArgumentTupleAndReturnSlapgridObject(*argument_tuple)
   pidfile = options.get('pidfile')
@@ -343,13 +343,12 @@ def realRun(argument_tuple, method_list):
   try:
     failed = False
     failed_promise = False
-    for method in method_list:
-      # Quite complicated way to figure out if everything went fine
-      return_value = getattr(slapgrid_object, method)()
-      if return_value == SLAPGRID_FAIL:
-        failed = True
-      if return_value == SLAPGRID_PROMISE_FAIL:
-        failed_promise = True
+    # Quite complicated way to figure out if everything went fine
+    return_value = getattr(slapgrid_object, method)()
+    if return_value == SLAPGRID_FAIL:
+      failed = True
+    if return_value == SLAPGRID_PROMISE_FAIL:
+      failed_promise = True
   finally:
     if pidfile:
       setFinished(pidfile)
@@ -363,19 +362,19 @@ def realRun(argument_tuple, method_list):
 def runSoftwareRelease(*argument_tuple):
   """Hook for entry point to process Software Releases only
   """
-  realRun(argument_tuple, ['processSoftwareReleaseList'])
+  realRun(argument_tuple, 'processSoftwareReleaseList')
 
 
 def runComputerPartition(*argument_tuple):
   """Hook for entry point to process Computer Partitions only
   """
-  realRun(argument_tuple, ['processComputerPartitionList'])
+  realRun(argument_tuple, 'processComputerPartitionList')
 
 
 def runUsageReport(*argument_tuple):
   """Hook for entry point to process Usage Reports only
   """
-  realRun(argument_tuple, ['agregateAndSendUsage'])
+  realRun(argument_tuple, 'agregateAndSendUsage')
 
 
 class Slapgrid(object):
