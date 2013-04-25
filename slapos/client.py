@@ -77,6 +77,7 @@ class ClientConfig(object):
 def init(config):
   """Initialize Slap instance, connect to server and create
   aliases to common software releases"""
+  # XXX check certificate and key existence
   slap = slapos.slap.slap()
   slap.initializeConnection(config.master_url,
       key_file=config.key_file, cert_file=config.cert_file)
