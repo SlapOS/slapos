@@ -108,7 +108,7 @@ class SlapPopen(subprocess.Popen):
     output_lines = []
     while True:
       line = self.stdout.readline()
-      if line == '' and self.poll() != None:
+      if line == '' and self.poll() is not None:
         break
       output_lines.append(line)
       logger.info(line.rstrip('\n'))
@@ -189,7 +189,7 @@ def dropPrivileges(uid, gid):
   if uid == 0 or gid == 0:
     raise OSError('Dropping privileges to uid = %r or ' \
                                       'gid = %r is too dangerous' % (uid, gid))
-  if not(current_uid == 0 and current_gid == 0):
+  if current_uid or current_gid:
     logger.debug('Running as uid = %r, gid = %r, dropping not needed and not '
         'possible' % (current_uid, current_gid))
     return

@@ -119,9 +119,8 @@ class Software(object):
       else:
         self._install_from_buildout()
         # Upload to binary cache if possible and allowed
-        if (self.software_root and self.url and self.software_url_hash \
-                               and self.upload_binary_cache_url \
-                               and self.upload_binary_dir_url):
+        if all([self.software_root, self.url, self.software_url_hash,
+                self.upload_binary_cache_url, self.upload_binary_dir_url]):
           blacklisted = False
           for url in self.upload_to_binary_cache_url_blacklist:
             if self.url.startswith(url):
@@ -159,7 +158,7 @@ class Software(object):
 
       if (self.signature_private_key_file or
           self.upload_cache_url or
-          self.upload_dir_url is not None):
+          self.upload_dir_url):
         buildout_parameter_list.append('buildout:networkcache-section=networkcache')
       for buildout_option, value in [
           ('%ssignature-private-key-file=%s', self.signature_private_key_file),

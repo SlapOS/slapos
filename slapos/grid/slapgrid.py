@@ -194,7 +194,7 @@ def parseArgumentTupleAndReturnSlapgridObject(*argument_tuple):
     if not mandatory_parameter in options:
       missing_mandatory_parameter_list.append(mandatory_parameter)
 
-  if options.get('all') is True:
+  if options.get('all'):
     options['develop'] = True
 
   if options.get('maximum_periodicity') is not None:
@@ -238,7 +238,7 @@ def parseArgumentTupleAndReturnSlapgridObject(*argument_tuple):
         parser.error('File %r does not exist.' % f)
 
   certificate_repository_path = options.get('certificate_repository_path')
-  if certificate_repository_path is not None:
+  if certificate_repository_path:
     if not os.path.isdir(certificate_repository_path):
       parser.error('Directory %r does not exist' % certificate_repository_path)
 
@@ -324,12 +324,10 @@ def parseArgumentTupleAndReturnSlapgridObject(*argument_tuple):
             shadir_cert_file=options.get('shadir-cert-file', None),
             shadir_key_file=options.get('shadir-key-file', None),
             develop=options.get('develop', False),
-            software_release_filter_list=options.get('only-sr',
-                # Try to fetch from deprecated argument
-                options.get('only_sr', None)),
-            computer_partition_filter_list=options.get('only-cp',
-                # Try to fetch from deprecated argument
-                options.get('only_cp', None)),
+            # Try to fetch from deprecated argument
+            software_release_filter_list=options.get('only-sr', options.get('only_sr', None)),
+            # Try to fetch from deprecated argument
+            computer_partition_filter_list=options.get('only-cp', options.get('only_cp', None)),
             force_periodicity = options.get('force_periodicity', False),
             maximum_periodicity = options.get('maximum_periodicity', 86400),
             ),
