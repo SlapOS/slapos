@@ -403,7 +403,7 @@ class SoftwareForTest:
     self.name = 'http://sr%s/' % name
     self.sequence = []
     self.software_hash = \
-        slapos.grid.utils.getSoftwareUrlHash(self.name)
+        slapos.grid.utils.md5digest(self.name)
     self.srdir = os.path.join(self.software_root, self.software_hash)
     self.requested_state = 'available'
     os.mkdir(self.srdir)
