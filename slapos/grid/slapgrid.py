@@ -58,12 +58,6 @@ from slapos.grid.utils import (md5digest, createPrivateDirectory, dropPrivileges
                                setRunning, setFinished, SlapPopen, updateFile)
 import slapos.slap
 
-MANDATORY_PARAMETER_LIST = [
-    'computer_id',
-    'instance_root',
-    'master_url',
-    'software_root',
-]
 
 # XXX: should be moved to SLAP library
 COMPUTER_PARTITION_DESTROYED_STATE = 'destroyed'
@@ -83,6 +77,27 @@ COMPUTER_PARTITION_TIMESTAMP_FILENAME = '.timestamp'
 
 class _formatXMLError(Exception):
   pass
+
+
+def check_missing_parameters(options):
+  required = set([
+      'computer_id',
+      'instance_root',
+      'master_url',
+      'software_root',
+  ])
+
+  if 'key_file' in options:
+    required.add('certificate_repository_path')
+    required.add('cert_file')
+  if 'cert_file' in options:
+    required.add('certificate_repository_path')
+    required.add('key_file')
+
+  missing = required.difference(options)
+
+  if missing:
+    raise RuntimeError('Missing mandatory parameters: %s' % ', '.join(sorted(missing)))
 
 
 def parse_arguments_merge_config(*argument_tuple):
@@ -202,33 +217,13 @@ def parseArgumentTupleAndReturnSlapgridObject(*argument_tuple):
 
   setup_logger(options)
 
-  missing = []
-  for mandatory_parameter in MANDATORY_PARAMETER_LIST:
-    if not mandatory_parameter in options:
-      missing.append(mandatory_parameter)
+  check_missing_parameters(options)
 
   if options.get('all'):
     options['develop'] = True
 
   if options.get('maximum_periodicity') is not None:
     options['force_periodicity'] = True
-
-  repository_required = False
-  if 'key_file' in options:
-    repository_required = True
-    if not 'cert_file' in options:
-      missing.append('cert_file')
-  if 'cert_file' in options:
-    repository_required = True
-    if not 'key_file' in options:
-      missing.append('key_file')
-  if repository_required:
-    if 'certificate_repository_path' not in options:
-      missing.append('certificate_repository_path')
-
-  if missing:
-    raise RuntimeError('Missing mandatory parameters:\n%s' % '\n'.join(
-      missing))
 
   key_file = options.get('key_file')
   cert_file = options.get('cert_file')
