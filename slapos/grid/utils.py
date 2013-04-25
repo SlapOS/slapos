@@ -41,7 +41,7 @@ from hashlib import md5
 
 # Such umask by default will create paths with full permission
 # for user, non writable by group and not accessible by others
-SAFE_UMASK = 027
+SAFE_UMASK = 0o27
 
 PYTHON_ENVIRONMENT_REMOVE_LIST = [
   'PYTHONHOME',
@@ -331,7 +331,7 @@ def launchBuildout(path, buildout_binary,
     logger.debug('Restore umask from %03o to %03o' % (old_umask, umask))
 
 
-def updateFile(file_path, content, mode='0600'):
+def updateFile(file_path, content, mode=0o600):
   """Creates an executable with "content" as content."""
   altered = False
   if not (os.path.isfile(file_path)) or \
@@ -343,15 +343,15 @@ def updateFile(file_path, content, mode='0600'):
     file_file.flush()
     file_file.close()
   os.chmod(file_path, stat.S_IREAD | stat.S_IWRITE | stat.S_IEXEC)
-  if oct(stat.S_IMODE(os.stat(file_path).st_mode)) != mode:
-    os.chmod(file_path, int(mode, 8))
+  if stat.S_IMODE(os.stat(file_path).st_mode) != mode:
+    os.chmod(file_path, mode)
     altered = True
   return altered
 
 
 def updateExecutable(executable_path, content):
   """Creates an executable with "content" as content."""
-  return updateFile(executable_path, content, '0700')
+  return updateFile(executable_path, content, 0o700)
 
 
 def createPrivateDirectory(path):
@@ -359,8 +359,8 @@ def createPrivateDirectory(path):
   if not os.path.isdir(path):
     os.mkdir(path)
   os.chmod(path, stat.S_IREAD | stat.S_IWRITE | stat.S_IEXEC)
-  permission = oct(stat.S_IMODE(os.stat(path).st_mode))
-  if permission not in ('0700'):
-    raise WrongPermissionError('Wrong permissions in %s ' \
-                                        ': is %s, should be 0700'
-                                        % (path, permission))
+  permission = stat.S_IMODE(os.stat(path).st_mode)
+  if permission != 0o700:
+    raise WrongPermissionError('Wrong permissions in %s: ' \
+                               'is 0%o, should be 0700'
+                               % (path, permission))

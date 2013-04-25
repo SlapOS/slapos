@@ -50,7 +50,7 @@ from slapos.grid.exception import (BuildoutFailedError, WrongPermissionError,
 from slapos.grid.networkcache import download_network_cached, upload_network_cached
 from slapos.grid.watchdog import getWatchdogID
 
-REQUIRED_COMPUTER_PARTITION_PERMISSION = '0750'
+REQUIRED_COMPUTER_PARTITION_PERMISSION = 0o750
 
 
 class Software(object):
@@ -227,7 +227,7 @@ class Software(object):
       if func == os.path.islink:
         os.unlink(path)
       else:
-        os.chmod(path, 0600)
+        os.chmod(path, 0o600)
         func(path)
     try:
       if os.path.exists(self.software_path):
@@ -297,7 +297,7 @@ class Partition(object):
       open(self.key_file, 'w').write(partition_certificate['key'])
       open(self.cert_file, 'w').write(partition_certificate['certificate'])
     for f in [self.key_file, self.cert_file]:
-      os.chmod(f, 0400)
+      os.chmod(f, 0o400)
       os.chown(f, *self.getUserGroupId())
 
   def getUserGroupId(self):
@@ -352,13 +352,12 @@ class Partition(object):
     self.updateSymlink(sr_symlink, self.software_path)
 
     instance_stat_info = os.stat(self.instance_path)
-    permission = oct(stat.S_IMODE(instance_stat_info.st_mode))
+    permission = stat.S_IMODE(instance_stat_info.st_mode)
     if permission != REQUIRED_COMPUTER_PARTITION_PERMISSION:
-      raise WrongPermissionError('Wrong permissions in %s : actual ' \
-                                          'permissions are : %s, wanted ' \
-                                          'are %s' %
-                                          (self.instance_path, permission,
-                                            REQUIRED_COMPUTER_PARTITION_PERMISSION))
+      raise WrongPermissionError('Wrong permissions in %s: actual '
+                                 'permissions are: 0%o, wanted are 0%o' %
+                                 (self.instance_path, permission,
+                                  REQUIRED_COMPUTER_PARTITION_PERMISSION))
     os.environ = getCleanEnvironment(pwd.getpwuid(
       instance_stat_info.st_uid).pw_dir)
     # Generates buildout part from template
@@ -386,7 +385,7 @@ class Partition(object):
       cert_file=self.cert_file
     )
     open(config_location, 'w').write(buildout_text)
-    os.chmod(config_location, 0640)
+    os.chmod(config_location, 0o640)
     # Try to find the best possible buildout:
     #  *) if software_root/bin/bootstrap exists use this one to bootstrap
     #     locally
@@ -444,7 +443,7 @@ class Partition(object):
     # check if CP/etc/run exists and it is a directory
     # iterate over each file in CP/etc/run
     # iterate over each file in CP/etc/service adding WatchdogID to their name
-    # if at least one is not 0750 raise -- partition has something funny
+    # if at least one is not 0o750 raise -- partition has something funny
     runner_list = []
     service_list = []
     if os.path.exists(self.run_path):
