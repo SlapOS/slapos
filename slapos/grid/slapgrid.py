@@ -51,8 +51,7 @@ from lxml import etree
 from slapos.slap.slap import NotFoundError
 from slapos.slap.slap import ServerError
 from slapos.grid.exception import BuildoutFailedError
-from slapos.grid.SlapObject import Software, Partition, WrongPermissionError, \
-    PathDoesNotExistError
+from slapos.grid.SlapObject import Software, Partition
 from slapos.grid.svcbackend import launchSupervisord
 from slapos.grid.utils import (md5digest, createPrivateDirectory, dropPrivileges,
                                setRunning, setFinished, SlapPopen, updateFile)
@@ -504,29 +503,26 @@ class Slapgrid(object):
       error = "%s does not exist." % self.instance_root
       raise OSError(error)
     # Creates everything needed
-    try:
-      # Creates instance_root structure
-      createPrivateDirectory(self.instance_etc_directory)
-      createPrivateDirectory(os.path.join(self.instance_root, 'var'))
-      createPrivateDirectory(os.path.join(self.instance_root, 'var', 'log'))
-      createPrivateDirectory(os.path.join(self.instance_root, 'var', 'run'))
-      createPrivateDirectory(self.supervisord_configuration_directory)
-      # Creates supervisord configuration
-      updateFile(self.supervisord_configuration_path,
-        pkg_resources.resource_stream(__name__,
-          'templates/supervisord.conf.in').read() % {
-              'supervisord_configuration_directory': self.supervisord_configuration_directory,
-              'supervisord_socket': os.path.abspath(self.supervisord_socket),
-              'supervisord_loglevel': 'info',
-              'supervisord_logfile': os.path.abspath(os.path.join(self.instance_root, 'var', 'log', 'supervisord.log')),
-              'supervisord_logfile_maxbytes': '50MB',
-              'supervisord_nodaemon': 'false',
-              'supervisord_pidfile': os.path.abspath(os.path.join(self.instance_root, 'var', 'run', 'supervisord.pid')),
-              'supervisord_logfile_backups': '10',
-              'watchdog_command': self.getWatchdogLine(),
-              })
-    except (WrongPermissionError, PathDoesNotExistError) as error:
-      raise error
+    # Creates instance_root structure
+    createPrivateDirectory(self.instance_etc_directory)
+    createPrivateDirectory(os.path.join(self.instance_root, 'var'))
+    createPrivateDirectory(os.path.join(self.instance_root, 'var', 'log'))
+    createPrivateDirectory(os.path.join(self.instance_root, 'var', 'run'))
+    createPrivateDirectory(self.supervisord_configuration_directory)
+    # Creates supervisord configuration
+    updateFile(self.supervisord_configuration_path,
+      pkg_resources.resource_stream(__name__,
+        'templates/supervisord.conf.in').read() % {
+            'supervisord_configuration_directory': self.supervisord_configuration_directory,
+            'supervisord_socket': os.path.abspath(self.supervisord_socket),
+            'supervisord_loglevel': 'info',
+            'supervisord_logfile': os.path.abspath(os.path.join(self.instance_root, 'var', 'log', 'supervisord.log')),
+            'supervisord_logfile_maxbytes': '50MB',
+            'supervisord_nodaemon': 'false',
+            'supervisord_pidfile': os.path.abspath(os.path.join(self.instance_root, 'var', 'run', 'supervisord.pid')),
+            'supervisord_logfile_backups': '10',
+            'watchdog_command': self.getWatchdogLine(),
+            })
 
   def getComputerPartitionList(self):
     try:
@@ -872,7 +868,7 @@ class Slapgrid(object):
         raise
 
       # Buildout failed: send log but don't print it to output (already done)
-      except BuildoutFailedError, exception:
+      except BuildoutFailedError as exception:
         try:
           computer_partition.error(exception)
         except (SystemExit, KeyboardInterrupt):
@@ -942,7 +938,7 @@ class Slapgrid(object):
             exception)
 
       # Buildout failed: send log but don't print it to output (already done)
-      except BuildoutFailedError, exception:
+      except BuildoutFailedError as exception:
         clean_run = False
         try:
           computer_partition.error(exception)
@@ -1020,7 +1016,7 @@ class Slapgrid(object):
     for computer_partition_usage in computer_partition_usage_list:
       try:
         root = etree.fromstring(computer_partition_usage.usage)
-      except UnicodeError, e:
+      except UnicodeError as e:
         self.logger.info("Failed to read %s." % (
             computer_partition_usage.usage))
         self.logger.error(UnicodeError)
@@ -1029,7 +1025,7 @@ class Slapgrid(object):
         self.logger.info("Failed to parse %s." % (computer_partition_usage.usage))
         self.logger.error(e)
         raise _formatXMLError(e)
-      except Exception, e:
+      except Exception as e:
         raise Exception("Failed to generate XML report: %s" % e)
 
       for movement in root.findall('movement'):

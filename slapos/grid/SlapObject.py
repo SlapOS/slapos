@@ -368,7 +368,7 @@ class Partition(object):
     self.logger.debug("Copying %r to %r" % (template_location, config_location))
     try:
       shutil.copy(template_location, config_location)
-    except IOError, e:
+    except IOError as e:
       # Template not found on SR, we notify user.
       raise IOError('Software Release %s is not correctly installed.\n'
           '%s' % (self.software_release_url, e))
@@ -480,7 +480,7 @@ class Partition(object):
     partition_id = self.computer_partition.getId()
     try:
       supervisor.startProcessGroup(partition_id, False)
-    except xmlrpclib.Fault, e:
+    except xmlrpclib.Fault as e:
       if e.faultString.startswith('BAD_NAME:'):
         self.logger.info("Nothing to start on %s..." %
                          self.computer_partition.getId())
@@ -493,7 +493,7 @@ class Partition(object):
     try:
       supervisor = self.getSupervisorRPC()
       supervisor.stopProcessGroup(partition_id, False)
-    except xmlrpclib.Fault, e:
+    except xmlrpclib.Fault as e:
       if e.faultString.startswith('BAD_NAME:'):
         self.logger.info('Partition %s not known in supervisord, ignoring' % partition_id)
     else:
