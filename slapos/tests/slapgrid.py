@@ -36,7 +36,7 @@ import sys
 import tempfile
 import textwrap
 import time
-import unittest
+import unittest2
 import urlparse
 
 import xml_marshaller
@@ -147,7 +147,7 @@ class BasicMixin:
     shutil.rmtree(self._tempdir, True)
 
 
-class TestBasicSlapgridCP(BasicMixin, unittest.TestCase):
+class TestBasicSlapgridCP(BasicMixin, unittest2.TestCase):
   def test_no_software_root(self):
     self.assertRaises(OSError, self.grid.processComputerPartitionList)
 
@@ -446,7 +446,7 @@ touch worked"""):
 
 
 
-class TestSlapgridCPWithMaster(MasterMixin, unittest.TestCase):
+class TestSlapgridCPWithMaster(MasterMixin, unittest2.TestCase):
 
   def test_nothing_to_do(self):
 
@@ -740,7 +740,7 @@ exit 1
     self.assertEqual('stopped', instance.state)
 
 
-class TestSlapgridCPWithMasterWatchdog(MasterMixin, unittest.TestCase):
+class TestSlapgridCPWithMasterWatchdog(MasterMixin, unittest2.TestCase):
 
   def setUp(self):
     MasterMixin.setUp(self)
@@ -915,7 +915,7 @@ class TestSlapgridCPWithMasterWatchdog(MasterMixin, unittest.TestCase):
       self.assertEqual(computer.sequence,[])
 
 
-class TestSlapgridCPPartitionProcessing (MasterMixin, unittest.TestCase):
+class TestSlapgridCPPartitionProcessing (MasterMixin, unittest2.TestCase):
 
   def test_partition_timestamp(self):
     computer = ComputerForTest(self.software_root,self.instance_root)
@@ -1302,7 +1302,7 @@ echo %s; echo %s; exit 42""" % (line1, line2))
     self.assertTrue("Failed to run buildout" in instance.error_log)
 
 
-class TestSlapgridUsageReport(MasterMixin, unittest.TestCase):
+class TestSlapgridUsageReport(MasterMixin, unittest2.TestCase):
   """
   Test suite about slapgrid-ur
   """
@@ -1504,7 +1504,7 @@ class TestSlapgridUsageReport(MasterMixin, unittest.TestCase):
 
 
 
-class TestSlapgridSoftwareRelease(MasterMixin, unittest.TestCase):
+class TestSlapgridSoftwareRelease(MasterMixin, unittest2.TestCase):
   def test_one_software_buildout_fail_is_correctly_logged(self):
     """
     1. We set up a software using a corrupted buildout
@@ -1525,7 +1525,7 @@ echo %s; echo %s; exit 42""" % (line1, line2))
     self.assertTrue(line2 in software.error_log)
     self.assertTrue("Failed to run buildout" in software.error_log)
 
-class SlapgridInitialization(unittest.TestCase):
+class SlapgridInitialization(unittest2.TestCase):
   """
   "Abstract" class setting setup and teardown for TestSlapgridArgumentTuple
   and TestSlapgridConfigurationFile.
@@ -1596,9 +1596,9 @@ class TestSlapgridArgumentTuple(SlapgridInitialization):
     parser = slapgrid.parseArgumentTupleAndReturnSlapgridObject
     argument_tuple = ("--signature_private_key_file", "/non/exists/path") + \
                       self.default_arg_tuple
-    # XXX: SystemExit is too generic exception, it is only known that
-    #      something is wrong
-    self.assertRaises(SystemExit, parser, *argument_tuple)
+    self.assertRaisesRegexp(RuntimeError,
+                            "File '/non/exists/path' does not exist.",
+                            parser, *argument_tuple)
 
   def test_signature_private_key_file(self):
     """
@@ -1771,7 +1771,7 @@ binary-cache-url-blacklist =
     )
 
 
-class TestSlapgridCPWithMasterPromise(MasterMixin, unittest.TestCase):
+class TestSlapgridCPWithMasterPromise(MasterMixin, unittest2.TestCase):
   def test_one_failing_promise(self):
     computer = ComputerForTest(self.software_root,self.instance_root)
     instance = computer.instance_list[0]
