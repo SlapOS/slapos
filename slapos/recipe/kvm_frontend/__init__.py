@@ -107,7 +107,8 @@ class Recipe(GenericSlapRecipe):
       http_redirect_server = ''
 
     config = dict(
-      ip=self.options['ip'],
+      ipv6=self.options['ipv6'],
+      ipv4=self.options['ipv4'],
       port=self.options['port'],
       key=self.options['ssl-key-path'],
       certificate=self.options['ssl-cert-path'],

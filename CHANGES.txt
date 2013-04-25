@@ -1,6 +1,19 @@
 Changes
 =======
 
+0.77.1 (2013-04-18)
+-------------------
+
+ * Re-release of 0.77.0.
+
+0.77.0 (2013-04-18)
+-------------------
+
+ * Allow to pass extra parameters when creating simple wrapper. [Sebastien Robin]
+ * Apache frontend: Append all rewrite module options to http as well. [Cedric de Saint Martin]
+ * Apache frontend: Add https-only support. [Cedric de Saint Martin]
+ * Apache frontend: make logrotate work by using "generic" component. [Cedric de Saint Martin]
+
 0.76.0 (2013-04-03)
 -------------------
 
