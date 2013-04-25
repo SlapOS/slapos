@@ -236,10 +236,8 @@ class Software(object):
       else:
         self.logger.info('Path %r does not exists, no need to remove.' %
             self.software_path)
-    except IOError as error:
-      error_string = "I/O error while removing software (%s): %s" % (self.url,
-                                                                     error)
-      raise IOError(error_string)
+    except IOError as exc:
+      raise IOError("I/O error while removing software (%s): %s" % (self.url, exc))
 
 
 class Partition(object):
@@ -368,10 +366,10 @@ class Partition(object):
     self.logger.debug("Copying %r to %r" % (template_location, config_location))
     try:
       shutil.copy(template_location, config_location)
-    except IOError as e:
+    except IOError as exc:
       # Template not found on SR, we notify user.
-      raise IOError('Software Release %s is not correctly installed.\n'
-          '%s' % (self.software_release_url, e))
+      raise IOError('Software Release %s is not correctly installed.\n%s' % (
+                      self.software_release_url, exc))
     # fill generated buildout with additional information
     buildout_text = open(config_location).read()
     buildout_text += '\n\n' + pkg_resources.resource_string(__name__,
@@ -480,8 +478,8 @@ class Partition(object):
     partition_id = self.computer_partition.getId()
     try:
       supervisor.startProcessGroup(partition_id, False)
-    except xmlrpclib.Fault as e:
-      if e.faultString.startswith('BAD_NAME:'):
+    except xmlrpclib.Fault as exc:
+      if exc.faultString.startswith('BAD_NAME:'):
         self.logger.info("Nothing to start on %s..." %
                          self.computer_partition.getId())
     else:
@@ -493,8 +491,8 @@ class Partition(object):
     try:
       supervisor = self.getSupervisorRPC()
       supervisor.stopProcessGroup(partition_id, False)
-    except xmlrpclib.Fault as e:
-      if e.faultString.startswith('BAD_NAME:'):
+    except xmlrpclib.Fault as exc:
+      if exc.faultString.startswith('BAD_NAME:'):
         self.logger.info('Partition %s not known in supervisord, ignoring' % partition_id)
     else:
       self.logger.info("Requested stop of %s..." % self.computer_partition.getId())
@@ -541,10 +539,8 @@ class Partition(object):
         if os.path.exists(self.supervisord_partition_configuration_path):
           os.remove(self.supervisord_partition_configuration_path)
         self.updateSupervisor()
-    except IOError as error:
-      error_string = "I/O error while freeing partition (%s): %s" \
-                     % (self.instance_path, error)
-      raise IOError(error_string)
+    except IOError as exc:
+      raise IOError("I/O error while freeing partition (%s): %s" % (self.instance_path, exc))
 
   def fetchInformations(self):
     """Fetch usage informations with buildout, returns it.
