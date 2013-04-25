@@ -25,16 +25,12 @@
 #
 ##############################################################################
 
-from slapos.grid import slapgrid
 import httplib
 import logging
 import os
-from random import random
+import random
 import shutil
 import signal
-import slapos.slap.slap
-import slapos.grid.utils
-from slapos.grid.watchdog import Watchdog, getWatchdogID
 import socket
 import sys
 import tempfile
@@ -42,7 +38,14 @@ import textwrap
 import time
 import unittest
 import urlparse
+
 import xml_marshaller
+
+import slapos.slap.slap
+import slapos.grid.utils
+from slapos.grid import slapgrid
+from slapos.grid.utils import md5digest
+from slapos.grid.watchdog import Watchdog, getWatchdogID
 
 dummylogger = logging.getLogger()
 
@@ -383,11 +386,11 @@ class InstanceForTest:
       os.mkdir(certificate_repository_path)
     self.cert_file = os.path.join(certificate_repository_path,
                                   "%s.crt" % self.name)
-    self.certificate = str(random())
+    self.certificate = str(random.random())
     open(self.cert_file, 'w').write(self.certificate)
     self.key_file = os.path.join(certificate_repository_path,
                                   "%s.key" % self.name)
-    self.key = str(random())
+    self.key = str(random.random())
     open(self.key_file, 'w').write(self.key)
 
 class SoftwareForTest:
@@ -402,8 +405,7 @@ class SoftwareForTest:
     self.software_root = software_root
     self.name = 'http://sr%s/' % name
     self.sequence = []
-    self.software_hash = \
-        slapos.grid.utils.md5digest(self.name)
+    self.software_hash = md5digest(self.name)
     self.srdir = os.path.join(self.software_root, self.software_hash)
     self.requested_state = 'available'
     os.mkdir(self.srdir)

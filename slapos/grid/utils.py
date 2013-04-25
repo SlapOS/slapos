@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+# vim: set et sts=2:
 ##############################################################################
 #
 # Copyright (c) 2010, 2011, 2012 Vifib SARL and Contributors.
@@ -27,17 +28,17 @@
 #
 ##############################################################################
 
-import logging
+import grp
 import hashlib
+import logging
 import os
 import pkg_resources
+import pwd
 import stat
 import subprocess
 import sys
-import pwd
-import grp
-from exception import BuildoutFailedError, WrongPermissionError
-from hashlib import md5
+
+from slapos.grid.exception import BuildoutFailedError, WrongPermissionError
 
 # Such umask by default will create paths with full permission
 # for user, non writable by group and not accessible by others
@@ -116,7 +117,7 @@ class SlapPopen(subprocess.Popen):
     self.output = ''.join(output_lines)
 
 def md5digest(url):
-  return md5(url).hexdigest()
+  return hashlib.md5(url).hexdigest()
 
 
 def getCleanEnvironment(home_path='/tmp'):
