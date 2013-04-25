@@ -314,18 +314,18 @@ class Partition(object):
             'templates/program_partition_supervisord.conf.in').read()
     for runner in runner_list:
       self.partition_supervisor_configuration += '\n' + \
-          program_partition_template % dict(
-        program_id='_'.join([partition_id, runner]),
-        program_directory=self.instance_path,
-        program_command=os.path.join(path, runner),
-        program_name=runner+extension,
-        instance_path=self.instance_path,
-        user_id=uid,
-        group_id=gid,
-        # As supervisord has no environment to inherit, setup a minimalistic one
-        HOME=pwd.getpwuid(uid).pw_dir,
-        USER=pwd.getpwuid(uid).pw_name,
-      )
+          program_partition_template % {
+                  'program_id': '_'.join([partition_id, runner]),
+                  'program_directory': self.instance_path,
+                  'program_command': os.path.join(path, runner),
+                  'program_name': runner + extension,
+                  'instance_path': self.instance_path,
+                  'user_id': uid,
+                  'group_id': gid,
+                  # As supervisord has no environment to inherit, setup a minimalistic one
+                  'HOME': pwd.getpwuid(uid).pw_dir,
+                  'USER': pwd.getpwuid(uid).pw_name,
+                  }
 
   def updateSymlink(self, sr_symlink, software_path):
     if os.path.lexists(sr_symlink):
@@ -376,14 +376,14 @@ class Partition(object):
     # fill generated buildout with additional information
     buildout_text = open(config_location).read()
     buildout_text += '\n\n' + pkg_resources.resource_string(__name__,
-        'templates/buildout-tail.cfg.in') % dict(
-      computer_id=self.computer_id,
-      partition_id=self.partition_id,
-      server_url=self.server_url,
-      software_release_url=self.software_release_url,
-      key_file=self.key_file,
-      cert_file=self.cert_file
-    )
+        'templates/buildout-tail.cfg.in') % {
+                'computer_id': self.computer_id,
+                'partition_id': self.partition_id,
+                'server_url': self.server_url,
+                'software_release_url': self.software_release_url,
+                'key_file': self.key_file,
+                'cert_file': self.cert_file,
+                }
     open(config_location, 'w').write(buildout_text)
     os.chmod(config_location, 0o640)
     # Try to find the best possible buildout:
@@ -460,10 +460,11 @@ class Partition(object):
       partition_id = self.computer_partition.getId()
       group_partition_template = pkg_resources.resource_stream(__name__,
           'templates/group_partition_supervisord.conf.in').read()
-      self.partition_supervisor_configuration = group_partition_template % dict(
-          instance_id=partition_id,
-          program_list=','.join(['_'.join([partition_id, runner])
-            for runner in runner_list+service_list]))
+      self.partition_supervisor_configuration = group_partition_template % {
+              'instance_id': partition_id,
+              'program_list': ','.join(['_'.join([partition_id, runner])
+                                        for runner in runner_list + service_list])
+              }
       # Same method to add to service and run
       self.addServiceToGroup(partition_id, runner_list,self.run_path)
       self.addServiceToGroup(partition_id, service_list,self.service_path,

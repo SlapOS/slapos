@@ -516,20 +516,17 @@ class Slapgrid(object):
       # Creates supervisord configuration
       updateFile(self.supervisord_configuration_path,
         pkg_resources.resource_stream(__name__,
-          'templates/supervisord.conf.in').read() % dict(
-            supervisord_configuration_directory=\
-                self.supervisord_configuration_directory,
-            supervisord_socket=os.path.abspath(self.supervisord_socket),
-            supervisord_loglevel='info',
-            supervisord_logfile=os.path.abspath(os.path.join(
-              self.instance_root, 'var', 'log', 'supervisord.log')),
-            supervisord_logfile_maxbytes='50MB',
-            supervisord_nodaemon='false',
-            supervisord_pidfile=os.path.abspath(os.path.join(
-              self.instance_root, 'var', 'run', 'supervisord.pid')),
-            supervisord_logfile_backups='10',
-            watchdog_command = self.getWatchdogLine(),
-          ))
+          'templates/supervisord.conf.in').read() % {
+              'supervisord_configuration_directory': self.supervisord_configuration_directory,
+              'supervisord_socket': os.path.abspath(self.supervisord_socket),
+              'supervisord_loglevel': 'info',
+              'supervisord_logfile': os.path.abspath(os.path.join(self.instance_root, 'var', 'log', 'supervisord.log')),
+              'supervisord_logfile_maxbytes': '50MB',
+              'supervisord_nodaemon': 'false',
+              'supervisord_pidfile': os.path.abspath(os.path.join(self.instance_root, 'var', 'run', 'supervisord.pid')),
+              'supervisord_logfile_backups': '10',
+              'watchdog_command': self.getWatchdogLine(),
+              })
     except (WrongPermissionError, PathDoesNotExistError) as error:
       raise error
 
@@ -668,14 +665,14 @@ class Slapgrid(object):
         promise = os.path.basename(command[0])
         self.logger.info("Checking promise %r.", promise)
 
-        kw = dict(stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-            stdin=subprocess.PIPE)
 
         process_handler = subprocess.Popen(command,
                                            preexec_fn=lambda: dropPrivileges(uid, gid),
                                            cwd=cwd,
                                            env=None if sys.platform == 'cygwin' else {},
-                                           **kw)
+                                           stdout=subprocess.PIPE,
+                                           stderr=subprocess.PIPE,
+                                           stdin=subprocess.PIPE)
         process_handler.stdin.flush()
         process_handler.stdin.close()
         process_handler.stdin = None
@@ -1129,12 +1126,12 @@ class Slapgrid(object):
           #stat sys call to get statistics informations
           uid = stat_info.st_uid
           gid = stat_info.st_gid
-          kw = dict(stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
           process_handler = SlapPopen(invocation_list,
                                       preexec_fn=lambda: dropPrivileges(uid, gid),
                                       cwd=os.path.join(instance_path, 'etc', 'report'),
                                       env=None,
-                                      **kw)
+                                      stdout=subprocess.PIPE,
+                                      stderr=subprocess.STDOUT)
           if process_handler.returncode is None:
             process_handler.kill()
           if process_handler.returncode != 0:

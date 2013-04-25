@@ -278,9 +278,8 @@ def bootstrapBuildout(path, buildout=None,
       path))
     kw.update(stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     process_handler = SlapPopen(invocation_list,
-                                preexec_fn=lambda: dropPrivileges(uid, gid),
-                                cwd=path,
-                                **kw)
+            preexec_fn=lambda: dropPrivileges(uid, gid),
+            cwd=path, **kw)
     if process_handler.returncode is None or process_handler.returncode != 0:
       message = 'Failed to run buildout profile in directory %r' % (path)
       logger.error(message)
@@ -321,8 +320,10 @@ def launchBuildout(path, buildout_binary,
       path))
     kw = dict(stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     process_handler = SlapPopen(invocation_list,
-            preexec_fn=lambda: dropPrivileges(uid, gid), cwd=path,
-            env=getCleanEnvironment(pwd.getpwuid(uid).pw_dir), **kw)
+                                preexec_fn=lambda: dropPrivileges(uid, gid),
+                                cwd=path,
+                                env=getCleanEnvironment(pwd.getpwuid(uid).pw_dir),
+                                **kw)
     if process_handler.returncode is None or process_handler.returncode != 0:
       message = 'Failed to run buildout profile in directory %r' % (path)
       logger.error(message)
