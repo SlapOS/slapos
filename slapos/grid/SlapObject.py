@@ -30,24 +30,25 @@
 
 import logging
 import os
-import shutil
-import subprocess
 import pkg_resources
 import pwd
+import shutil
 import stat
+import subprocess
 import tarfile
 import tempfile
 import textwrap
-import utils
 import xmlrpclib
 
 from supervisor import xmlrpc
+from slapos.grid.utils import (getSoftwareUrlHash, getCleanEnvironment, bootstrapBuildout,
+                               launchBuildout, SlapPopen, dropPrivileges, updateFile)
 from slapos.slap.slap import NotFoundError
-from svcbackend import getSupervisorRPC
-from exception import BuildoutFailedError, WrongPermissionError, \
-    PathDoesNotExistError
-from networkcache import download_network_cached, upload_network_cached
-from watchdog import getWatchdogID
+from slapos.grid.svcbackend import getSupervisorRPC
+from slapos.grid.exception import (BuildoutFailedError, WrongPermissionError,
+                                   PathDoesNotExistError)
+from slapos.grid.networkcache import download_network_cached, upload_network_cached
+from slapos.grid.watchdog import getWatchdogID
 
 REQUIRED_COMPUTER_PARTITION_PERMISSION = '0750'
 
@@ -67,7 +68,7 @@ class Software(object):
     """
     self.url = url
     self.software_root = software_root
-    self.software_url_hash = utils.getSoftwareUrlHash(self.url)
+    self.software_url_hash = getSoftwareUrlHash(self.url)
     self.software_path = os.path.join(self.software_root,
                                       self.software_url_hash)
     self.buildout = buildout
@@ -136,7 +137,7 @@ class Software(object):
     it. If it fails, we notify the server.
     """
     root_stat_info = os.stat(self.software_root)
-    os.environ = utils.getCleanEnvironment(pwd.getpwuid(root_stat_info.st_uid
+    os.environ = getCleanEnvironment(pwd.getpwuid(root_stat_info.st_uid
       ).pw_dir)
     if not os.path.isdir(self.software_path):
       os.mkdir(self.software_path)
@@ -175,9 +176,9 @@ class Software(object):
       self.createProfileIfMissing(buildout_cfg, self.url)
 
       buildout_parameter_list.extend(['-c', buildout_cfg])
-      utils.bootstrapBuildout(self.software_path, self.buildout,
+      bootstrapBuildout(self.software_path, self.buildout,
           additional_buildout_parametr_list=buildout_parameter_list)
-      utils.launchBuildout(self.software_path,
+      launchBuildout(self.software_path,
                      os.path.join(self.software_path, 'bin', 'buildout'),
                      additional_buildout_parametr_list=buildout_parameter_list)
     finally:
@@ -358,7 +359,7 @@ class Partition(object):
                                           'are %s' %
                                           (self.instance_path, permission,
                                             REQUIRED_COMPUTER_PARTITION_PERMISSION))
-    os.environ = utils.getCleanEnvironment(pwd.getpwuid(
+    os.environ = getCleanEnvironment(pwd.getpwuid(
       instance_stat_info.st_uid).pw_dir)
     # Generates buildout part from template
     template_location = os.path.join(self.software_path, 'instance.cfg')
@@ -418,12 +419,12 @@ class Partition(object):
 
       self.logger.debug('Invoking %r in %r' % (' '.join(invocation_list),
         self.instance_path))
-      process_handler = utils.SlapPopen(invocation_list,
-                                        preexec_fn=lambda: utils.dropPrivileges(uid, gid),
-                                        cwd=self.instance_path,
-                                        env=utils.getCleanEnvironment(pwd.getpwuid(uid).pw_dir),
-                                        stdout=subprocess.PIPE,
-                                        stderr=subprocess.STDOUT)
+      process_handler = SlapPopen(invocation_list,
+                                  preexec_fn=lambda: dropPrivileges(uid, gid),
+                                  cwd=self.instance_path,
+                                  env=getCleanEnvironment(pwd.getpwuid(uid).pw_dir),
+                                  stdout=subprocess.PIPE,
+                                  stderr=subprocess.STDOUT)
       if process_handler.returncode is None or process_handler.returncode != 0:
         message = 'Failed to bootstrap buildout in %r.' % (self.instance_path)
         self.logger.error(message)
@@ -432,12 +433,12 @@ class Partition(object):
 
     if not os.path.exists(buildout_binary):
       # use own buildout generation
-      utils.bootstrapBuildout(self.instance_path, self.buildout,
+      bootstrapBuildout(self.instance_path, self.buildout,
         ['buildout:bin-directory=%s'% os.path.join(self.instance_path,
         'sbin')])
       buildout_binary = os.path.join(self.instance_path, 'sbin', 'buildout')
     # Launches buildout
-    utils.launchBuildout(self.instance_path, buildout_binary)
+    launchBuildout(self.instance_path, buildout_binary)
     # Generates supervisord configuration file from template
     self.logger.info("Generating supervisord config file from template...")
     # check if CP/etc/run exists and it is a directory
@@ -469,7 +470,7 @@ class Partition(object):
       self.addServiceToGroup(partition_id, runner_list,self.run_path)
       self.addServiceToGroup(partition_id, service_list,self.service_path,
                              extension=getWatchdogID())
-      utils.updateFile(self.supervisord_partition_configuration_path,
+      updateFile(self.supervisord_partition_configuration_path,
           self.partition_supervisor_configuration)
     self.updateSupervisor()
 
@@ -511,12 +512,12 @@ class Partition(object):
     if os.path.exists(destroy_executable_location):
       uid, gid = self.getUserGroupId()
       self.logger.debug('Invoking %r' % destroy_executable_location)
-      process_handler = utils.SlapPopen([destroy_executable_location],
-                                        preexec_fn=lambda: utils.dropPrivileges(uid, gid),
-                                        cwd=self.instance_path,
-                                        env=utils.getCleanEnvironment(pwd.getpwuid(uid).pw_dir),
-                                        stdout=subprocess.PIPE,
-                                        stderr=subprocess.STDOUT)
+      process_handler = SlapPopen([destroy_executable_location],
+                                   preexec_fn=lambda: dropPrivileges(uid, gid),
+                                   cwd=self.instance_path,
+                                   env=getCleanEnvironment(pwd.getpwuid(uid).pw_dir),
+                                   stdout=subprocess.PIPE,
+                                   stderr=subprocess.STDOUT)
       if process_handler.returncode is None or process_handler.returncode != 0:
         message = 'Failed to destroy Computer Partition in %r.' % \
             self.instance_path

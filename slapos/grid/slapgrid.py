@@ -30,9 +30,7 @@
 
 import argparse
 import ConfigParser
-from exception import BuildoutFailedError
 from hashlib import md5
-from lxml import etree
 import logging
 import os
 import pkg_resources
@@ -49,19 +47,17 @@ if sys.version_info < (2, 6):
   warnings.warn('Used python version (%s) is old and have problems with'
       ' IPv6 connections' % sys.version.split('\n')[0])
 
+from lxml import etree
+
 from slapos.slap.slap import NotFoundError
 from slapos.slap.slap import ServerError
-from SlapObject import Software, Partition, WrongPermissionError, \
+from slapos.grid.exception import BuildoutFailedError
+from slapos.grid.SlapObject import Software, Partition, WrongPermissionError, \
     PathDoesNotExistError
-from svcbackend import launchSupervisord
-from utils import createPrivateDirectory
-from utils import dropPrivileges
-from utils import getSoftwareUrlHash
-from utils import setRunning
-from utils import setFinished
-from utils import SlapPopen
-from utils import updateFile
-from slapos import slap
+from slapos.grid.svcbackend import launchSupervisord
+from slapos.grid.utils import (getSoftwareUrlHash, createPrivateDirectory, dropPrivileges,
+                               setRunning, setFinished, SlapPopen, updateFile)
+import slapos.slap
 
 MANDATORY_PARAMETER_LIST = [
     'computer_id',
@@ -468,7 +464,7 @@ class Slapgrid(object):
     # Configures logger
     self.logger = logging.getLogger('Slapgrid')
     # Creates objects from slap module
-    self.slap = slap.slap()
+    self.slap = slapos.slap.slap()
     self.slap.initializeConnection(self.master_url, key_file=self.key_file,
         cert_file=self.cert_file, master_ca_file=self.master_ca_file)
     self.computer = self.slap.registerComputer(self.computer_id)
@@ -1290,7 +1286,7 @@ class Slapgrid(object):
           logger.error(exception)
         try:
           computer_partition.destroyed()
-        except slap.NotFoundError:
+        except NotFoundError:
           logger.debug('Ignored slap error while trying to inform about '
               'destroying not fully configured Computer Partition %r' %
                   computer_partition.getId())
