@@ -489,9 +489,9 @@ class Partition(object):
 
   def stop(self):
     """Asks supervisord to stop the instance."""
-    supervisor = self.getSupervisorRPC()
     partition_id = self.computer_partition.getId()
     try:
+      supervisor = self.getSupervisorRPC()
       supervisor.stopProcessGroup(partition_id, False)
     except xmlrpclib.Fault, e:
       if e.faultString.startswith('BAD_NAME:'):
