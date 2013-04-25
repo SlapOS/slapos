@@ -30,7 +30,6 @@
 
 import argparse
 import ConfigParser
-from hashlib import md5
 import logging
 import os
 import pkg_resources
@@ -554,7 +553,7 @@ class Slapgrid(object):
       state = software_release.getState()
       try:
         software_release_uri = software_release.getURI()
-        url_hash = md5(software_release_uri).hexdigest()
+        url_hash = md5digest(software_release_uri)
         software_path = os.path.join(self.software_root, url_hash)
         software = Software(url=software_release_uri,
             software_root=self.software_root,
@@ -580,7 +579,7 @@ class Slapgrid(object):
           if self.develop or (not os.path.exists(completed_tag) and \
                  len(self.software_release_filter_list) == 0) or \
                  url_hash in self.software_release_filter_list or \
-                 url_hash in (md5(uri).hexdigest() for uri in self.software_release_filter_list):
+                 url_hash in (md5digest(uri) for uri in self.software_release_filter_list):
             try:
               software_release.building()
             except NotFoundError:
