@@ -528,8 +528,8 @@ class Slapgrid(object):
   def getComputerPartitionList(self):
     try:
       return self.computer.getComputerPartitionList()
-    except socket.error as error:
-      self.logger.fatal(error)
+    except socket.error as exc:
+      self.logger.fatal(exc)
       raise
 
   def processSoftwareReleaseList(self):
@@ -589,10 +589,10 @@ class Slapgrid(object):
         raise
 
       # Buildout failed: send log but don't print it to output (already done)
-      except BuildoutFailedError as exception:
+      except BuildoutFailedError as exc:
         clean_run = False
         try:
-          software_release.error(exception)
+          software_release.error(exc)
         except (SystemExit, KeyboardInterrupt):
           raise
         except Exception:
@@ -601,9 +601,9 @@ class Slapgrid(object):
 
       # For everything else: log it, send it, continue.
       except Exception:
-        exception = traceback.format_exc()
-        logger.error(exception)
-        software_release.error(exception)
+        exc = traceback.format_exc()
+        logger.error(exc)
+        software_release.error(exc)
         clean_run = False
       else:
         if state == 'available':
@@ -862,9 +862,9 @@ class Slapgrid(object):
         raise
 
       # Buildout failed: send log but don't print it to output (already done)
-      except BuildoutFailedError as exception:
+      except BuildoutFailedError as exc:
         try:
-          computer_partition.error(exception)
+          computer_partition.error(exc)
         except (SystemExit, KeyboardInterrupt):
           raise
         except Exception:
@@ -872,10 +872,10 @@ class Slapgrid(object):
                        traceback.format_exc())
 
       # For everything else: log it, send it, continue.
-      except Exception as exception:
+      except Exception as exc:
         logger.error(traceback.format_exc())
         try:
-          computer_partition.error(exception)
+          computer_partition.error(exc)
         except (SystemExit, KeyboardInterrupt):
           raise
         except Exception:
@@ -916,11 +916,11 @@ class Slapgrid(object):
         computer_partition.error(traceback.format_exc())
         raise
 
-      except Slapgrid.PromiseError as exception:
+      except Slapgrid.PromiseError as exc:
         clean_run_promise = False
         try:
-          logger.error(exception)
-          computer_partition.error(exception)
+          logger.error(exc)
+          computer_partition.error(exc)
         except (SystemExit, KeyboardInterrupt):
           raise
         except Exception:
@@ -928,10 +928,10 @@ class Slapgrid(object):
                        traceback.format_exc())
 
       # Buildout failed: send log but don't print it to output (already done)
-      except BuildoutFailedError as exception:
+      except BuildoutFailedError as exc:
         clean_run = False
         try:
-          computer_partition.error(exception)
+          computer_partition.error(exc)
         except (SystemExit, KeyboardInterrupt):
           raise
         except Exception:
@@ -939,11 +939,11 @@ class Slapgrid(object):
                        traceback.format_exc())
 
       # For everything else: log it, send it, continue.
-      except Exception as exception:
+      except Exception as exc:
         clean_run = False
         logger.error(traceback.format_exc())
         try:
-          computer_partition.error(exception)
+          computer_partition.error(exc)
         except (SystemExit, KeyboardInterrupt):
           raise
         except Exception:
@@ -972,10 +972,10 @@ class Slapgrid(object):
 
     try:
       document = etree.fromstring(to_be_validated)
-    except (etree.XMLSyntaxError, etree.DocumentInvalid) as e:
+    except (etree.XMLSyntaxError, etree.DocumentInvalid) as exc:
       logger.info('Failed to parse this XML report :  %s\n%s' % \
-        (to_be_validated, _formatXMLError(e)))
-      logger.error(_formatXMLError(e))
+        (to_be_validated, _formatXMLError(exc)))
+      logger.error(_formatXMLError(exc))
       return False
 
     if xmlschema.validate(document):
@@ -1004,16 +1004,16 @@ class Slapgrid(object):
     for computer_partition_usage in computer_partition_usage_list:
       try:
         root = etree.fromstring(computer_partition_usage.usage)
-      except UnicodeError as e:
+      except UnicodeError as exc:
         self.logger.info("Failed to read %s." % computer_partition_usage.usage)
         self.logger.error(UnicodeError)
-        raise UnicodeError("Failed to read %s: %s" % (computer_partition_usage.usage, e))
-      except (etree.XMLSyntaxError, etree.DocumentInvalid) as e:
+        raise UnicodeError("Failed to read %s: %s" % (computer_partition_usage.usage, exc))
+      except (etree.XMLSyntaxError, etree.DocumentInvalid) as exc:
         self.logger.info("Failed to parse %s." % (computer_partition_usage.usage))
-        self.logger.error(e)
-        raise _formatXMLError(e)
-      except Exception as e:
-        raise Exception("Failed to generate XML report: %s" % e)
+        self.logger.error(exc)
+        raise _formatXMLError(exc)
+      except Exception as exc:
+        raise Exception("Failed to generate XML report: %s" % exc)
 
       for movement in root.findall('movement'):
         xml.append('<movement>')
@@ -1246,9 +1246,9 @@ class Slapgrid(object):
           raise
         except Exception:
           clean_run = False
-          exception = traceback.format_exc()
-          computer_partition.error(exception)
-          logger.error(exception)
+          exc = traceback.format_exc()
+          computer_partition.error(exc)
+          logger.error(exc)
         try:
           computer_partition.destroyed()
         except NotFoundError:
