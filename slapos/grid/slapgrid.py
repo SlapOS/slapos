@@ -360,16 +360,6 @@ def realRun(argument_tuple, method_list):
   sys.exit(SLAPGRID_SUCCESS)
 
 
-def run(*argument_tuple):
-  """Hooks for generic entry point to proces Software Releases (sr),
-     Computer Partitions (cp) and Usage Reports (ur)
-     Will run one by one each task (sr, cp, ur). If specified,
-     will run in the user wanted order.
-  """
-  realRun(argument_tuple, ['processSoftwareReleaseList',
-    'processComputerPartitionList', 'agregateAndSendUsage'])
-
-
 def runSoftwareRelease(*argument_tuple):
   """Hook for entry point to process Software Releases only
   """
