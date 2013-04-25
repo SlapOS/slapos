@@ -111,9 +111,7 @@ class SlapPopen(subprocess.Popen):
       if line == '' and self.poll() != None:
         break
       output_lines.append(line)
-      if line[-1:] == '\n':
-        line = line[:-1]
-      logger.info(line)
+      logger.info(line.rstrip('\n'))
     self.output = ''.join(output_lines)
 
 
@@ -168,11 +166,9 @@ def setFinished(pid_file):
 
 def write_pid(pid_file):
   logger = logging.getLogger('Slapgrid')
-  pid = os.getpid()
   try:
-    f = open(pid_file, 'w')
-    f.write('%s' % pid)
-    f.close()
+    with open(pid_file, 'w') as fout:
+      fout.write('%s' % os.getpid())
   except (IOError, OSError):
     logger.critical('slapgrid could not write pidfile %s' % pid_file)
     raise
@@ -302,9 +298,7 @@ def launchBuildout(path, buildout_binary,
   uid = stat_info.st_uid
   gid = stat_info.st_gid
   # Extract python binary to prevent shebang size limit
-  file = open(buildout_binary, 'r')
-  line = file.readline()
-  file.close()
+  line = open(buildout_binary, 'r').readline()
   invocation_list = []
   if line.startswith('#!'):
     line = line[2:]
@@ -341,11 +335,9 @@ def updateFile(file_path, content, mode=0o600):
   if not (os.path.isfile(file_path)) or \
      not(hashlib.md5(open(file_path).read()).digest() ==\
          hashlib.md5(content).digest()):
+    with open(file_path, 'w') as fout:
+      fout.write(content)
     altered = True
-    file_file = open(file_path, 'w')
-    file_file.write(content)
-    file_file.flush()
-    file_file.close()
   os.chmod(file_path, stat.S_IREAD | stat.S_IWRITE | stat.S_IEXEC)
   if stat.S_IMODE(os.stat(file_path).st_mode) != mode:
     os.chmod(file_path, mode)

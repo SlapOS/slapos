@@ -582,9 +582,8 @@ class Slapgrid(object):
             except NotFoundError:
               pass
             software.install()
-            file_descriptor = open(completed_tag, 'w')
-            file_descriptor.write(time.asctime())
-            file_descriptor.close()
+            with open(completed_tag, 'w') as fout:
+              fout.write(time.asctime())
         elif state == 'destroyed':
           if os.path.exists(software_path):
             logger.info('Destroying %r...' % software_release_uri)
@@ -664,7 +663,6 @@ class Slapgrid(object):
 
         promise = os.path.basename(command[0])
         self.logger.info("Checking promise %r.", promise)
-
 
         process_handler = subprocess.Popen(command,
                                            preexec_fn=lambda: dropPrivileges(uid, gid),
@@ -1169,9 +1167,7 @@ class Slapgrid(object):
 
           file_path = os.path.join(dir_reports, filename)
           if os.path.exists(file_path):
-            usage_file = open(file_path, 'r')
-            usage = usage_file.read()
-            usage_file.close()
+            usage = open(file_path, 'r').read()
 
             #We check the validity of xml content of each reports
             if not self.validateXML(usage, partition_consumption_model):
