@@ -126,8 +126,7 @@ def check_missing_files(options):
 
 
 def parse_arguments_merge_config(*argument_tuple):
-  """Parse arguments and return options dictionary
-     merged with the config file."""
+  """Parse arguments and return options dictionary merged with the config file."""
 
   ap = argparse.ArgumentParser()
   ap.add_argument('--instance-root',
@@ -173,7 +172,7 @@ def parse_arguments_merge_config(*argument_tuple):
                   help='Force the update of a single software release (use url hash), '
                        'even if is already installed. This option will make all others '
                        'sofware releases be ignored.')
-  ap.add_argument("--only-cp",
+  ap.add_argument('--only-cp',
                   help='Update a single or a list of computer partitions '
                        '(ie.:slappartX, slappartY), '
                        'this option will make all others computer partitions be ignored.')
@@ -213,7 +212,6 @@ def parse_arguments_merge_config(*argument_tuple):
 
 
 def setup_logger(options):
-  # Configures logger.
   if options['verbose']:
     level = logging.DEBUG
   else:
@@ -237,22 +235,22 @@ def random_delay(options):
   Sleep for a random time to avoid SlapOS Master being DDOSed by an army of
   SlapOS Nodes configured with cron.
   """
-  if options["now"]:
-    # XXX-Cedric: deprecate "--now"
+  if options['now']:
+    # XXX-Cedric: deprecate '--now'
     return
 
-  maximal_delay = int(options.get("maximal_delay", "0"))
+  maximal_delay = int(options.get('maximal_delay', '0'))
   if maximal_delay:
     duration = random.randint(1, maximal_delay)
-    logging.info("Sleeping for %s seconds. To disable this feature, " \
-                    "check --now parameter in slapgrid help." % duration)
+    logging.info('Sleeping for %s seconds. To disable this feature, ' \
+                    'check --now parameter in slapgrid help.' % duration)
     time.sleep(duration)
 
 
 
 def parseArgumentTupleAndReturnSlapgridObject(*argument_tuple):
   """Returns a new instance of slapgrid.Slapgrid created with argument+config parameters.
-     Also returns the options dict and unused variable list, and configures logger.
+     Also returns the pidfile path, and configures logger.
   """
   options = parse_arguments_merge_config(*argument_tuple)
 
@@ -276,18 +274,6 @@ def parseArgumentTupleAndReturnSlapgridObject(*argument_tuple):
     options['supervisord_socket'] = \
       os.path.join(options['instance_root'], 'supervisord.socket')
 
-  signature_certificate_list_string = \
-    options.get('signature-certificate-list', None)
-  if signature_certificate_list_string is not None:
-    cert_marker = "-----BEGIN CERTIFICATE-----"
-    signature_certificate_list = [
-            cert_marker + '\n' + q.strip()
-            for q in signature_certificate_list_string.split(cert_marker)
-            if q.strip()
-            ]
-  else:
-    signature_certificate_list = None
-
   # Parse cache / binary cache options
   # Backward compatibility about "binary-cache-url-blacklist" deprecated option
   if options.get("binary-cache-url-blacklist") and not \
@@ -303,55 +289,62 @@ def parseArgumentTupleAndReturnSlapgridObject(*argument_tuple):
 
   random_delay(options)
 
-  # Return new Slapgrid instance and options
-  return ([Slapgrid(software_root=options['software_root'],
-            instance_root=options['instance_root'],
-            master_url=options['master_url'],
-            computer_id=options['computer_id'],
-            supervisord_socket=options['supervisord_socket'],
-            supervisord_configuration_path=options[
-              'supervisord_configuration_path'],
-            key_file=options.get('key_file'),
-            cert_file=options.get('cert_file'),
-            master_ca_file=options.get('master_ca_file'),
-            certificate_repository_path=options.get('certificate_repository_path'),
-            signature_private_key_file=options.get('signature_private_key_file'),
-            signature_certificate_list=signature_certificate_list,
-            download_binary_cache_url=\
-              options.get('download-binary-cache-url', None),
-            upload_binary_cache_url=\
-              options.get('upload-binary-cache-url', None),
-            download_from_binary_cache_url_blacklist=\
-                options.get('download-from-binary-cache-url-blacklist', []),
-            upload_to_binary_cache_url_blacklist=\
-                options.get('upload-to-binary-cache-url-blacklist', []),
-            upload_cache_url=options.get('upload-cache-url', None),
-            download_binary_dir_url=\
-              options.get('download-binary-dir-url', None),
-            upload_binary_dir_url=\
-              options.get('upload-binary-dir-url', None),
-            upload_dir_url=options.get('upload-dir-url', None),
-            buildout=options.get('buildout'),
-            promise_timeout=options['promise_timeout'],
-            shacache_cert_file=options.get('shacache-cert-file', None),
-            shacache_key_file=options.get('shacache-key-file', None),
-            shadir_cert_file=options.get('shadir-cert-file', None),
-            shadir_key_file=options.get('shadir-key-file', None),
-            develop=options.get('develop', False),
-            # Try to fetch from deprecated argument
-            software_release_filter_list=options.get('only-sr', options.get('only_sr', None)),
-            # Try to fetch from deprecated argument
-            computer_partition_filter_list=options.get('only-cp', options.get('only_cp', None)),
-            force_periodicity = options.get('force_periodicity', False),
-            maximum_periodicity = options.get('maximum_periodicity', 86400),
-            ),
-          options])
+  slapgrid_object = create_slapgrid_object(options)
+
+  return slapgrid_object, options.get('pidfile')
+
+
+
+def create_slapgrid_object(options):
+  signature_certificate_list = None
+  if 'signature-certificate-list' in options:
+    cert_marker = '-----BEGIN CERTIFICATE-----'
+    signature_certificate_list = [
+            cert_marker + '\n' + q.strip()
+            for q in options['signature-certificate-list'].split(cert_marker)
+            if q.strip()
+            ]
+
+  op = options
+  return Slapgrid(software_root=op['software_root'],
+                  instance_root=op['instance_root'],
+                  master_url=op['master_url'],
+                  computer_id=op['computer_id'],
+                  supervisord_socket=op['supervisord_socket'],
+                  supervisord_configuration_path=op['supervisord_configuration_path'],
+                  key_file=op.get('key_file'),
+                  cert_file=op.get('cert_file'),
+                  master_ca_file=op.get('master_ca_file'),
+                  certificate_repository_path=op.get('certificate_repository_path'),
+                  signature_private_key_file=op.get('signature_private_key_file'),
+                  signature_certificate_list=signature_certificate_list,
+                  download_binary_cache_url=op.get('download-binary-cache-url'),
+                  upload_binary_cache_url=op.get('upload-binary-cache-url'),
+                  download_from_binary_cache_url_blacklist=\
+                      op.get('download-from-binary-cache-url-blacklist', []),
+                  upload_to_binary_cache_url_blacklist=\
+                      op.get('upload-to-binary-cache-url-blacklist', []),
+                  upload_cache_url=op.get('upload-cache-url'),
+                  download_binary_dir_url=op.get('download-binary-dir-url'),
+                  upload_binary_dir_url=op.get('upload-binary-dir-url'),
+                  upload_dir_url=op.get('upload-dir-url'),
+                  buildout=op.get('buildout'),
+                  promise_timeout=op['promise_timeout'],
+                  shacache_cert_file=op.get('shacache-cert-file'),
+                  shacache_key_file=op.get('shacache-key-file'),
+                  shadir_cert_file=op.get('shadir-cert-file'),
+                  shadir_key_file=op.get('shadir-key-file'),
+                  develop=op.get('develop', False),
+                  # Try to fetch from deprecated argument
+                  software_release_filter_list=op.get('only-sr', op.get('only_sr')),
+                  # Try to fetch from deprecated argument
+                  computer_partition_filter_list=op.get('only-cp', op.get('only_cp')),
+                  force_periodicity = op.get('force_periodicity', False),
+                  maximum_periodicity = op.get('maximum_periodicity', 86400))
 
 
 def realRun(argument_tuple, method):
-  slapgrid_object, options = \
-      parseArgumentTupleAndReturnSlapgridObject(*argument_tuple)
-  pidfile = options.get('pidfile')
+  slapgrid_object, pidfile = parseArgumentTupleAndReturnSlapgridObject(*argument_tuple)
   if pidfile:
     setRunning(pidfile)
   try:
@@ -374,20 +367,17 @@ def realRun(argument_tuple, method):
 
 
 def runSoftwareRelease(*argument_tuple):
-  """Hook for entry point to process Software Releases only
-  """
+  """Hook for entry point to process Software Releases"""
   realRun(argument_tuple, 'processSoftwareReleaseList')
 
 
 def runComputerPartition(*argument_tuple):
-  """Hook for entry point to process Computer Partitions only
-  """
+  """Hook for entry point to process Computer Partitions"""
   realRun(argument_tuple, 'processComputerPartitionList')
 
 
 def runUsageReport(*argument_tuple):
-  """Hook for entry point to process Usage Reports only
-  """
+  """Hook for entry point to process Usage Reports"""
   realRun(argument_tuple, 'agregateAndSendUsage')
 
 
