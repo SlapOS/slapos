@@ -141,18 +141,16 @@ def setRunning(pid_file):
   """Creates a pidfile. If a pidfile already exists, we exit"""
   logger = logging.getLogger('Slapgrid')
   if os.path.exists(pid_file):
-    # Pid file is present
     try:
       pid = int(open(pid_file, 'r').readline())
     except ValueError:
       pid = None
     # XXX This could use psutil library.
-    if pid is not None and os.path.exists("/proc/%s" % pid):
-      # In case process is present, ignore.
+    if pid and os.path.exists("/proc/%s" % pid):
       logger.info('New slapos process started, but another slapos '
                   'process is aleady running with pid %s, exiting.' % pid)
       sys.exit(10)
-    logger.info('Existing pid file %r was stale one, overwritten' % pid_file)
+    logger.info('Existing pid file %r was stale, overwritten' % pid_file)
   # Start new process
   write_pid(pid_file)
 

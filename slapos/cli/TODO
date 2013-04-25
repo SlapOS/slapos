@@ -2,10 +2,6 @@
 for slapgrid:
     refactor loggers -- maybe reduce their number?
     pay attention to mandatory parameters and related dependencies
-    drop run(*argument_tuple) ?
-    except Exeption -> StandardError
-
-
 
 
  * enable --debug by default
@@ -14,9 +10,6 @@ for slapgrid:
 instance
 software
 report
-slapos start (NotImplementedError)
-slapos stop (NotImplementedError)
-slapos destroy (NotImplementedError)
 
 issues:
     slapformat --log_file vs cliff --log-file
