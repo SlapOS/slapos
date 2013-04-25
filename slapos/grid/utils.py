@@ -209,12 +209,12 @@ def dropPrivileges(uid, gid):
                             uid, gid, group_list)
   new_uid, new_gid, new_group_list = os.getuid(), os.getgid(), os.getgroups()
   if not (new_uid == uid and new_gid == gid and set(new_group_list) == group_list):
-    raise OSError('%s new_uid = %r and new_gid = %r and ' \
-                                      'new_group_list = %r which is fatal.'
-                                      % (message_pre,
-                                         new_uid,
-                                         new_gid,
-                                         new_group_list))
+    raise OSError('%s new_uid = %r and new_gid = %r and '
+                  'new_group_list = %r which is fatal.'
+                    % (message_pre,
+                       new_uid,
+                       new_gid,
+                       new_group_list))
 
   # assert that it is not possible to go back to running one
   try:
@@ -276,8 +276,9 @@ def bootstrapBuildout(path, buildout=None,
       path))
     kw.update(stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     process_handler = SlapPopen(invocation_list,
-            preexec_fn=lambda: dropPrivileges(uid, gid),
-            cwd=path, **kw)
+                                preexec_fn=lambda: dropPrivileges(uid, gid),
+                                cwd=path,
+                                **kw)
     if process_handler.returncode is None or process_handler.returncode != 0:
       message = 'Failed to run buildout profile in directory %r' % (path)
       logger.error(message)

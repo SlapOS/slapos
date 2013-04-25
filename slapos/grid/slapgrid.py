@@ -155,14 +155,12 @@ def parseArgumentTupleAndReturnSlapgridObject(*argument_tuple):
   parser.add_argument("--maximal_delay",
       help="Deprecated. Will only work from configuration file in the future.")
 
-
   # Parses arguments
   if not argument_tuple:
     # No arguments given to entry point : we parse sys.argv.
     argument_option_instance = parser.parse_args()
   else:
-    argument_option_instance = \
-      parser.parse_args(list(argument_tuple))
+    argument_option_instance = parser.parse_args(list(argument_tuple))
   # Parses arguments from config file, if needed, then merge previous arguments
   option_dict = {}
   configuration_file = argument_option_instance.configuration_file[0]
@@ -243,8 +241,7 @@ def parseArgumentTupleAndReturnSlapgridObject(*argument_tuple):
   certificate_repository_path = option_dict.get('certificate_repository_path')
   if certificate_repository_path is not None:
     if not os.path.isdir(certificate_repository_path):
-      parser.error('Directory %r does not exist' %
-          certificate_repository_path)
+      parser.error('Directory %r does not exist' % certificate_repository_path)
 
   # Supervisord configuration location
   if not option_dict.get('supervisord_configuration_path'):
@@ -259,9 +256,11 @@ def parseArgumentTupleAndReturnSlapgridObject(*argument_tuple):
     option_dict.get('signature-certificate-list', None)
   if signature_certificate_list_string is not None:
     cert_marker = "-----BEGIN CERTIFICATE-----"
-    signature_certificate_list = [cert_marker + '\n' + q.strip() \
-      for q in signature_certificate_list_string.split(cert_marker) \
-        if q.strip()]
+    signature_certificate_list = [
+            cert_marker + '\n' + q.strip()
+            for q in signature_certificate_list_string.split(cert_marker)
+            if q.strip()
+            ]
   else:
     signature_certificate_list = None
 
@@ -640,13 +639,12 @@ class Slapgrid(object):
 
   def _launchSupervisord(self):
     launchSupervisord(self.supervisord_socket,
-        self.supervisord_configuration_path,
-        logger=self.logger)
+                      self.supervisord_configuration_path,
+                      logger=self.logger)
 
   def _checkPromises(self, computer_partition):
     self.logger.info("Checking promises...")
-    instance_path = os.path.join(self.instance_root,
-        computer_partition.getId())
+    instance_path = os.path.join(self.instance_root, computer_partition.getId())
 
     uid, gid = None, None
     stat_info = os.stat(instance_path)
@@ -675,9 +673,10 @@ class Slapgrid(object):
             stdin=subprocess.PIPE)
 
         process_handler = subprocess.Popen(command,
-          preexec_fn=lambda: dropPrivileges(uid, gid),
-          cwd=cwd,
-          env=None if sys.platform == 'cygwin' else {}, **kw)
+                                           preexec_fn=lambda: dropPrivileges(uid, gid),
+                                           cwd=cwd,
+                                           env=None if sys.platform == 'cygwin' else {},
+                                           **kw)
         process_handler.stdin.flush()
         process_handler.stdin.close()
         process_handler.stdin = None
@@ -739,8 +738,7 @@ class Slapgrid(object):
       # Try to process it anyway, it may need to be deleted.
       software_url = None
     try:
-      software_path = os.path.join(self.software_root,
-          md5digest(software_url))
+      software_path = os.path.join(self.software_root, md5digest(software_url))
     except TypeError:
       # Problem with instance: SR URI not set.
       # Try to process it anyway, it may need to be deleted.
@@ -1107,14 +1105,14 @@ class Slapgrid(object):
           script_list_to_run = os.listdir(report_path)
         else:
           script_list_to_run = []
-        
+
         #We now generate the pseudorandom name for the xml file
         # and we add it in the invocation_list
         f = tempfile.NamedTemporaryFile()
         name_xml = '%s.%s' % ('slapreport', os.path.basename(f.name))
         path_to_slapreport = os.path.join(instance_path, 'var', 'xml_report',
             name_xml)
-        
+
         failed_script_list = []
         for script in script_list_to_run:
           invocation_list = []
@@ -1124,7 +1122,7 @@ class Slapgrid(object):
           #f = tempfile.NamedTemporaryFile()
           #name_xml = '%s.%s' % ('slapreport', os.path.basename(f.name))
           #path_to_slapreport = os.path.join(instance_path, 'var', name_xml)
-        
+
           invocation_list.append(path_to_slapreport)
           #Dropping privileges
           uid, gid = None, None
@@ -1134,9 +1132,10 @@ class Slapgrid(object):
           gid = stat_info.st_gid
           kw = dict(stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
           process_handler = SlapPopen(invocation_list,
-            preexec_fn=lambda: dropPrivileges(uid, gid),
-            cwd=os.path.join(instance_path, 'etc', 'report'),
-            env=None, **kw)
+                                      preexec_fn=lambda: dropPrivileges(uid, gid),
+                                      cwd=os.path.join(instance_path, 'etc', 'report'),
+                                      env=None,
+                                      **kw)
           if process_handler.returncode is None:
             process_handler.kill()
           if process_handler.returncode != 0:
@@ -1169,15 +1168,15 @@ class Slapgrid(object):
           filename_list = []
         #logger.debug('name List %s' % filename_list)
         usage = ''
-        
+
         for filename in filename_list:
-        
+
           file_path = os.path.join(dir_reports, filename)
           if os.path.exists(file_path):
             usage_file = open(file_path, 'r')
             usage = usage_file.read()
             usage_file.close()
-        
+
             #We check the validity of xml content of each reports
             if not self.validateXML(usage, partition_consumption_model):
               logger.info('WARNING: The XML file %s generated by slapreport is '
@@ -1207,7 +1206,7 @@ class Slapgrid(object):
         logger.info(issue)
 
     for computer_partition_usage in computer_partition_usage_list:
-      logger.info('computer_partition_usage_list : %s - %s' % \
+      logger.info('computer_partition_usage_list: %s - %s' % \
         (computer_partition_usage.usage, computer_partition_usage.getId()))
 
     #If there is, at least, one report
@@ -1216,7 +1215,7 @@ class Slapgrid(object):
         #We generate the final XML report with asXML method
         computer_consumption = self.asXML(computer_partition_usage_list)
 
-        logger.info('Final xml report : %s' % computer_consumption)
+        logger.info('Final xml report: %s' % computer_consumption)
 
         #We test the XML report before sending it
         if self.validateXML(computer_consumption, computer_consumption_model):
@@ -1240,8 +1239,7 @@ class Slapgrid(object):
           computer_partition_id = computer_partition.getId()
           try:
              software_url = computer_partition.getSoftwareRelease().getURI()
-             software_path = os.path.join(self.software_root,
-                 md5digest(software_url))
+             software_path = os.path.join(self.software_root, md5digest(software_url))
           except (NotFoundError, TypeError):
             software_url = None
             software_path = None
@@ -1292,7 +1290,7 @@ class Slapgrid(object):
                   computer_partition.getId())
         except ServerError as server_error:
           logger.debug('Ignored server error while trying to inform about '
-              'destroying Computer Partition %r. Error is :\n%r' %
+              'destroying Computer Partition %r. Error is:\n%r' %
                   (computer_partition.getId(), server_error.args[0]))
 
     logger.info("Finished usage reports.")
