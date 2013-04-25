@@ -119,17 +119,15 @@ def parseArgumentTupleAndReturnSlapgridObject(*argument_tuple):
       help="Root certificate of SlapOS master key.")
   parser.add_argument("--certificate_repository_path",
       help="Path to directory where downloaded certificates would be stored.")
-  parser.add_argument("-c", "--console", action="store_true", default=False,
-      help="Deprecated, doesn't do anything.")
-  parser.add_argument("-v", "--verbose", action="store_true", default=False,
+  parser.add_argument("-v", "--verbose", action="store_true",
       help="Be verbose.")
   parser.add_argument("--maximum-periodicity", type=int, default=None,
       help="Periodicity at which buildout should be run in instance.")
   parser.add_argument("--promise-timeout", type=int, default=3,
       help="Promise timeout in seconds.")
-  parser.add_argument("--now", action="store_true", default=False,
+  parser.add_argument("--now", action="store_true",
       help="Launch slapgrid without delay. Default behavior.")
-  parser.add_argument("--all", action="store_true", default=False,
+  parser.add_argument("--all", action="store_true",
       help="Launch slapgrid to process all Softare Releases "
            "and/or Computer Partitions.")
   parser.add_argument("--only-sr",
@@ -145,7 +143,9 @@ def parseArgumentTupleAndReturnSlapgridObject(*argument_tuple):
       help="SlapOS configuration file.")
 
   # Deprecated options
-  parser.add_argument("--develop", action="store_true", default=False,
+  parser.add_argument("-c", "--console", action="store_true",
+      help="Deprecated, doesn't do anything.")
+  parser.add_argument("--develop", action="store_true",
       help="Deprecated, same as --all.")
   parser.add_argument("--only_sr",
       help="Deprecated, same as --only-sr.")
