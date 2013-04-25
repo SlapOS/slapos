@@ -465,9 +465,8 @@ class Slapgrid(object):
         cert_file=self.cert_file, master_ca_file=self.master_ca_file)
     self.computer = self.slap.registerComputer(self.computer_id)
     # Defines all needed paths
-    self.instance_etc_directory = os.path.join(self.instance_root, 'etc')
     self.supervisord_configuration_directory = \
-        os.path.join(self.instance_etc_directory, 'supervisord.conf.d')
+        os.path.join(self.instance_root, 'etc', 'supervisord.conf.d')
     self.buildout = buildout
     self.promise_timeout = promise_timeout
     self.develop = develop
@@ -502,11 +501,13 @@ class Slapgrid(object):
     if not os.path.isdir(self.instance_root):
       raise OSError('%s does not exist.' % self.instance_root)
     # Creates everything needed
+
     # Creates instance_root structure
-    createPrivateDirectory(self.instance_etc_directory)
     createPrivateDirectory(os.path.join(self.instance_root, 'var'))
     createPrivateDirectory(os.path.join(self.instance_root, 'var', 'log'))
     createPrivateDirectory(os.path.join(self.instance_root, 'var', 'run'))
+
+    createPrivateDirectory(os.path.join(self.instance_root, 'etc'))
     createPrivateDirectory(self.supervisord_configuration_directory)
 
     # Creates supervisord configuration
