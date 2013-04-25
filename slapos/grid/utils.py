@@ -245,7 +245,6 @@ def bootstrapBuildout(path, buildout=None,
   gid = stat_info.st_gid
 
   invocation_list = [sys.executable, '-S']
-  kw = dict()
   if buildout is not None:
     invocation_list.append(buildout)
     invocation_list.extend(additional_buildout_parametr_list)
@@ -272,10 +271,11 @@ def bootstrapBuildout(path, buildout=None,
     logger.debug('Set umask from %03o to %03o' % (umask, SAFE_UMASK))
     logger.debug('Invoking: %r in directory %r' % (' '.join(invocation_list),
       path))
-    kw.update(stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     process_handler = SlapPopen(invocation_list,
-            preexec_fn=lambda: dropPrivileges(uid, gid),
-            cwd=path, **kw)
+                                preexec_fn=lambda: dropPrivileges(uid, gid),
+                                cwd=path,
+                                stdout=subprocess.PIPE,
+                                stderr=subprocess.STDOUT)
     if process_handler.returncode is None or process_handler.returncode != 0:
       message = 'Failed to run buildout profile in directory %r' % (path)
       logger.error(message)
@@ -312,12 +312,12 @@ def launchBuildout(path, buildout_binary,
     logger.debug('Set umask from %03o to %03o' % (umask, SAFE_UMASK))
     logger.debug('Invoking: %r in directory %r' % (' '.join(invocation_list),
       path))
-    kw = dict(stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     process_handler = SlapPopen(invocation_list,
                                 preexec_fn=lambda: dropPrivileges(uid, gid),
                                 cwd=path,
                                 env=getCleanEnvironment(pwd.getpwuid(uid).pw_dir),
-                                **kw)
+                                stdout=subprocess.PIPE,
+                                stderr=subprocess.STDOUT)
     if process_handler.returncode is None or process_handler.returncode != 0:
       message = 'Failed to run buildout profile in directory %r' % (path)
       logger.error(message)
