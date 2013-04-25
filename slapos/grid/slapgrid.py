@@ -43,7 +43,7 @@ import time
 import traceback
 import warnings
 if sys.version_info < (2, 6):
-  warnings.warn('Used python version (%s) is old and have problems with'
+  warnings.warn('Used python version (%s) is old and has problems with'
       ' IPv6 connections' % sys.version.split('\n')[0])
 
 from lxml import etree

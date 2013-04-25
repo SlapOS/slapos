@@ -433,7 +433,7 @@ class Partition(object):
     if not os.path.exists(buildout_binary):
       # use own buildout generation
       bootstrapBuildout(self.instance_path, self.buildout,
-        ['buildout:bin-directory=%s'% os.path.join(self.instance_path, 'sbin')])
+        ['buildout:bin-directory=%s' % os.path.join(self.instance_path, 'sbin')])
       buildout_binary = os.path.join(self.instance_path, 'sbin', 'buildout')
     # Launches buildout
     launchBuildout(self.instance_path, buildout_binary)
@@ -466,8 +466,8 @@ class Partition(object):
                                         for runner in runner_list + service_list])
               }
       # Same method to add to service and run
-      self.addServiceToGroup(partition_id, runner_list,self.run_path)
-      self.addServiceToGroup(partition_id, service_list,self.service_path,
+      self.addServiceToGroup(partition_id, runner_list, self.run_path)
+      self.addServiceToGroup(partition_id, service_list, self.service_path,
                              extension=getWatchdogID())
       updateFile(self.supervisord_partition_configuration_path,
                  self.partition_supervisor_configuration)
