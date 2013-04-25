@@ -42,6 +42,7 @@ import tempfile
 import time
 import traceback
 import warnings
+
 if sys.version_info < (2, 6):
   warnings.warn('Used python version (%s) is old and has problems with'
       ' IPv6 connections' % sys.version.split('\n')[0])
@@ -497,11 +498,9 @@ class Slapgrid(object):
     """
     # Checks for software_root and instance_root existence
     if not os.path.isdir(self.software_root):
-      error = "%s does not exist." % self.software_root
-      raise OSError(error)
+      raise OSError('%s does not exist.' % self.software_root)
     if not os.path.isdir(self.instance_root):
-      error = "%s does not exist." % self.instance_root
-      raise OSError(error)
+      raise OSError('%s does not exist.' % self.instance_root)
     # Creates everything needed
     # Creates instance_root structure
     createPrivateDirectory(self.instance_etc_directory)
@@ -509,6 +508,7 @@ class Slapgrid(object):
     createPrivateDirectory(os.path.join(self.instance_root, 'var', 'log'))
     createPrivateDirectory(os.path.join(self.instance_root, 'var', 'run'))
     createPrivateDirectory(self.supervisord_configuration_directory)
+
     # Creates supervisord configuration
     updateFile(self.supervisord_configuration_path,
       pkg_resources.resource_stream(__name__,
@@ -526,11 +526,10 @@ class Slapgrid(object):
 
   def getComputerPartitionList(self):
     try:
-      computer_partition_list = self.computer.getComputerPartitionList()
+      return self.computer.getComputerPartitionList()
     except socket.error as error:
       self.logger.fatal(error)
       raise
-    return computer_partition_list
 
   def processSoftwareReleaseList(self):
     """Will process each Software Release.
@@ -585,8 +584,7 @@ class Slapgrid(object):
             logger.info('Destroyed %r.' % software_release_uri)
       # Send log before exiting
       except (SystemExit, KeyboardInterrupt):
-        exception = traceback.format_exc()
-        software_release.error(exception)
+        software_release.error(traceback.format_exc())
         raise
 
       # Buildout failed: send log but don't print it to output (already done)
@@ -597,9 +595,8 @@ class Slapgrid(object):
         except (SystemExit, KeyboardInterrupt):
           raise
         except Exception:
-          exception = traceback.format_exc()
-          logger.error('Problem during reporting error, continuing:\n' +
-            exception)
+          logger.error('Problem while reporting error, continuing:\n%s' %
+                       traceback.format_exc())
 
       # For everything else: log it, send it, continue.
       except Exception:
@@ -742,8 +739,7 @@ class Slapgrid(object):
             periodicity = int(open(periodicity_path).read())
           except ValueError:
             os.remove(periodicity_path)
-            exception = traceback.format_exc()
-            logger.error(exception)
+            logger.error(traceback.format_exc())
 
     # Check if timestamp from server is more recent than local one.
     # If not: it's not worth processing this partition (nothing has
@@ -769,8 +765,7 @@ class Slapgrid(object):
               os.remove(timestamp_path)
         except ValueError:
           os.remove(timestamp_path)
-          exception = traceback.format_exc()
-          logger.error(exception)
+          logger.error(traceback.format_exc())
 
     local_partition = Partition(
       software_path=software_path,
@@ -809,8 +804,7 @@ class Slapgrid(object):
       try:
         computer_partition.stopped()
       except (SystemExit, KeyboardInterrupt):
-        exception = traceback.format_exc()
-        computer_partition.error(exception)
+        computer_partition.error(traceback.format_exc())
         raise
       except Exception:
         pass
@@ -863,8 +857,7 @@ class Slapgrid(object):
 
       # Send log before exiting
       except (SystemExit, KeyboardInterrupt):
-        exception = traceback.format_exc()
-        computer_partition.error(exception)
+        computer_partition.error(traceback.format_exc())
         raise
 
       # Buildout failed: send log but don't print it to output (already done)
@@ -874,9 +867,8 @@ class Slapgrid(object):
         except (SystemExit, KeyboardInterrupt):
           raise
         except Exception:
-          exception = traceback.format_exc()
-          logger.error('Problem during reporting error, continuing:\n' +
-            exception)
+          logger.error('Problem during reporting error, continuing:\n%s' %
+                       traceback.format_exc())
 
       # For everything else: log it, send it, continue.
       except Exception as exception:
@@ -886,9 +878,8 @@ class Slapgrid(object):
         except (SystemExit, KeyboardInterrupt):
           raise
         except Exception:
-          exception = traceback.format_exc()
-          logger.error('Problem during reporting error, continuing:\n' +
-            exception)
+          logger.error('Problem during reporting error, continuing:\n%s' %
+                       traceback.format_exc())
 
     return filtered_computer_partition_list
 
@@ -921,8 +912,7 @@ class Slapgrid(object):
 
       # Send log before exiting
       except (SystemExit, KeyboardInterrupt):
-        exception = traceback.format_exc()
-        computer_partition.error(exception)
+        computer_partition.error(traceback.format_exc())
         raise
 
       except Slapgrid.PromiseError as exception:
@@ -933,9 +923,8 @@ class Slapgrid(object):
         except (SystemExit, KeyboardInterrupt):
           raise
         except Exception:
-          exception = traceback.format_exc()
-          logger.error('Problem during reporting error, continuing:\n' +
-            exception)
+          logger.error('Problem during reporting error, continuing:\n%s' %
+                       traceback.format_exc())
 
       # Buildout failed: send log but don't print it to output (already done)
       except BuildoutFailedError as exception:
@@ -945,9 +934,8 @@ class Slapgrid(object):
         except (SystemExit, KeyboardInterrupt):
           raise
         except Exception:
-          exception = traceback.format_exc()
-          logger.error('Problem during reporting error, continuing:\n' +
-            exception)
+          logger.error('Problem during reporting error, continuing:\n%s' %
+                       traceback.format_exc())
 
       # For everything else: log it, send it, continue.
       except Exception as exception:
@@ -958,9 +946,8 @@ class Slapgrid(object):
         except (SystemExit, KeyboardInterrupt):
           raise
         except Exception:
-          exception = traceback.format_exc()
-          logger.error('Problem during reporting error, continuing:\n' +
-            exception)
+          logger.error('Problem during reporting error, continuing:\n%s' %
+                       traceback.format_exc())
 
     logger.info("Finished computer partitions.")
 
@@ -1017,8 +1004,7 @@ class Slapgrid(object):
       try:
         root = etree.fromstring(computer_partition_usage.usage)
       except UnicodeError as e:
-        self.logger.info("Failed to read %s." % (
-            computer_partition_usage.usage))
+        self.logger.info("Failed to read %s." % computer_partition_usage.usage)
         self.logger.error(UnicodeError)
         raise UnicodeError("Failed to read %s: %s" % (computer_partition_usage.usage, e))
       except (etree.XMLSyntaxError, etree.DocumentInvalid) as e:
@@ -1134,11 +1120,9 @@ class Slapgrid(object):
             computer_partition.error('\n'.join(failed_script_list))
       # Whatever happens, don't stop processing other instances
       except Exception:
-        computer_partition_id = computer_partition.getId()
-        exception = traceback.format_exc()
-        issue = "Cannot run usage script(s) for %r: %s" % (
-            computer_partition_id, exception)
-        logger.info(issue)
+        logger.info('Cannot run usage script(s) for %r: %s' % (
+                      computer_partition.getId(),
+                      traceback.format_exc()))
 
     #Now we loop through the different computer partitions to report
     report_usage_issue_cp_list = []
@@ -1155,7 +1139,6 @@ class Slapgrid(object):
         else:
           filename_list = []
         #logger.debug('name List %s' % filename_list)
-        usage = ''
 
         for filename in filename_list:
 
@@ -1185,15 +1168,14 @@ class Slapgrid(object):
 
       # Whatever happens, don't stop processing other instances
       except Exception:
-        computer_partition_id = computer_partition.getId()
-        exception = traceback.format_exc()
-        issue = "Cannot run usage script(s) for %r: %s" % (
-            computer_partition_id, exception)
-        logger.info(issue)
+        logger.info('Cannot run usage script(s) for %r: %s' % (
+                      computer_partition.getId(),
+                      traceback.format_exc()))
 
     for computer_partition_usage in computer_partition_usage_list:
-      logger.info('computer_partition_usage_list: %s - %s' % \
-        (computer_partition_usage.usage, computer_partition_usage.getId()))
+      logger.info('computer_partition_usage_list: %s - %s' % (
+                    computer_partition_usage.usage,
+                    computer_partition_usage.getId()))
 
     #If there is, at least, one report
     if computer_partition_usage_list != []:
@@ -1211,10 +1193,9 @@ class Slapgrid(object):
           logger.info('XML file generated by asXML is not valid !')
           raise ValueError('XML file generated by asXML is not valid !')
       except Exception:
-        computer_partition_id = computer_partition.getId()
-        exception = traceback.format_exc()
-        issue = "Cannot report usage for %r: %s" % (computer_partition_id,
-          exception)
+        issue = "Cannot report usage for %r: %s" % (
+                    computer_partition.getId(),
+                    traceback.format_exc())
         logger.info(issue)
         computer_partition.error(issue)
         report_usage_issue_cp_list.append(computer_partition_id)
@@ -1229,6 +1210,7 @@ class Slapgrid(object):
           except (NotFoundError, TypeError):
             software_url = None
             software_path = None
+
           local_partition = Partition(
             software_path=software_path,
             instance_path=os.path.join(self.instance_root,
@@ -1249,19 +1231,17 @@ class Slapgrid(object):
           try:
             computer_partition.stopped()
           except (SystemExit, KeyboardInterrupt):
-            exception = traceback.format_exc()
-            computer_partition.error(exception)
+            computer_partition.error(traceback.format_exc())
             raise
           except Exception:
             pass
           if computer_partition.getId() in report_usage_issue_cp_list:
-            logger.info('Ignoring destruction of %r, as not report usage was '
-              'sent' % computer_partition.getId())
+            logger.info('Ignoring destruction of %r, as no report usage was sent' %
+                        computer_partition.getId())
             continue
           local_partition.destroy()
         except (SystemExit, KeyboardInterrupt):
-          exception = traceback.format_exc()
-          computer_partition.error(exception)
+          computer_partition.error(traceback.format_exc())
           raise
         except Exception:
           clean_run = False
