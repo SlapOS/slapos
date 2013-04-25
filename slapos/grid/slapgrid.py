@@ -55,7 +55,7 @@ from slapos.grid.exception import BuildoutFailedError
 from slapos.grid.SlapObject import Software, Partition, WrongPermissionError, \
     PathDoesNotExistError
 from slapos.grid.svcbackend import launchSupervisord
-from slapos.grid.utils import (getSoftwareUrlHash, createPrivateDirectory, dropPrivileges,
+from slapos.grid.utils import (md5digest, createPrivateDirectory, dropPrivileges,
                                setRunning, setFinished, SlapPopen, updateFile)
 import slapos.slap
 
@@ -740,7 +740,7 @@ class Slapgrid(object):
       software_url = None
     try:
       software_path = os.path.join(self.software_root,
-          getSoftwareUrlHash(software_url))
+          md5digest(software_url))
     except TypeError:
       # Problem with instance: SR URI not set.
       # Try to process it anyway, it may need to be deleted.
@@ -1241,7 +1241,7 @@ class Slapgrid(object):
           try:
              software_url = computer_partition.getSoftwareRelease().getURI()
              software_path = os.path.join(self.software_root,
-                 getSoftwareUrlHash(software_url))
+                 md5digest(software_url))
           except (NotFoundError, TypeError):
             software_url = None
             software_path = None

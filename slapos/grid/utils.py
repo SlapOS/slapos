@@ -115,7 +115,7 @@ class SlapPopen(subprocess.Popen):
       logger.info(line)
     self.output = ''.join(output_lines)
 
-def getSoftwareUrlHash(url):
+def md5digest(url):
   return md5(url).hexdigest()
 
 

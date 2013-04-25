@@ -41,7 +41,7 @@ import textwrap
 import xmlrpclib
 
 from supervisor import xmlrpc
-from slapos.grid.utils import (getSoftwareUrlHash, getCleanEnvironment, bootstrapBuildout,
+from slapos.grid.utils import (md5digest, getCleanEnvironment, bootstrapBuildout,
                                launchBuildout, SlapPopen, dropPrivileges, updateFile)
 from slapos.slap.slap import NotFoundError
 from slapos.grid.svcbackend import getSupervisorRPC
@@ -68,7 +68,7 @@ class Software(object):
     """
     self.url = url
     self.software_root = software_root
-    self.software_url_hash = getSoftwareUrlHash(self.url)
+    self.software_url_hash = md5digest(self.url)
     self.software_path = os.path.join(self.software_root,
                                       self.software_url_hash)
     self.buildout = buildout
