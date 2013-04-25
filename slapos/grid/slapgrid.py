@@ -85,95 +85,97 @@ class _formatXMLError(Exception):
   pass
 
 
-def parseArgumentTupleAndReturnSlapgridObject(*argument_tuple):
-  """Parses arguments either from command line, from method parameters or from
-     config file. Then returns a new instance of slapgrid.Slapgrid with those
-     parameters. Also returns the options dict and unused variable list, and
-     configures logger.
-  """
-  parser = argparse.ArgumentParser()
-  parser.add_argument("--instance-root",
-      help="The instance root directory location.")
-  parser.add_argument("--software-root",
-      help="The software_root directory location.")
-  parser.add_argument("--master-url",
-      help="The master server URL. Mandatory.")
-  parser.add_argument("--computer-id",
-      help="The computer id defined in the server.")
-  parser.add_argument("--supervisord-socket",
-      help="The socket supervisor will use.")
-  parser.add_argument("--supervisord-configuration-path",
-      help="The location where supervisord configuration will be stored.")
-  parser.add_argument("--buildout", default=None,
-      help="Location of buildout binary.")
-  parser.add_argument("--pidfile",
-      help="The location where pidfile will be created.")
-  parser.add_argument("--logfile",
-      help="The location where slapgrid logfile will be created.")
-  parser.add_argument("--key_file", help="SSL Authorisation key file.")
-  parser.add_argument("--cert_file",
-      help="SSL Authorisation certificate file.")
-  parser.add_argument("--signature_private_key_file",
-      help="Signature private key file.")
-  parser.add_argument("--master_ca_file",
-      help="Root certificate of SlapOS master key.")
-  parser.add_argument("--certificate_repository_path",
-      help="Path to directory where downloaded certificates would be stored.")
-  parser.add_argument("-v", "--verbose", action="store_true",
-      help="Be verbose.")
-  parser.add_argument("--maximum-periodicity", type=int, default=None,
-      help="Periodicity at which buildout should be run in instance.")
-  parser.add_argument("--promise-timeout", type=int, default=3,
-      help="Promise timeout in seconds.")
-  parser.add_argument("--now", action="store_true",
-      help="Launch slapgrid without delay. Default behavior.")
-  parser.add_argument("--all", action="store_true",
-      help="Launch slapgrid to process all Softare Releases "
-           "and/or Computer Partitions.")
-  parser.add_argument("--only-sr",
-      help="Force the update of a single software release (use url hash), "
-           "even if is already installed. This option will make all others "
-           "sofware releases be ignored.")
-  parser.add_argument("--only-cp",
-      help="Update a single or a list of computer partitions "
-           "(ie.:slappartX, slappartY),"
-           "this option will make all others computer partitions be ignored.")
+def parse_arguments_merge_config(*argument_tuple):
+  """Parse arguments and return options dictionary
+     merged with the config file."""
 
-  parser.add_argument("configuration_file", nargs=1, type=argparse.FileType(),
-      help="SlapOS configuration file.")
+  ap = argparse.ArgumentParser()
+  ap.add_argument('--instance-root',
+                  help='The instance root directory location.')
+  ap.add_argument('--software-root',
+                  help='The software_root directory location.')
+  ap.add_argument('--master-url',
+                  help='The master server URL. Mandatory.')
+  ap.add_argument('--computer-id',
+                  help='The computer id defined in the server.')
+  ap.add_argument('--supervisord-socket',
+                  help='The socket supervisor will use.')
+  ap.add_argument('--supervisord-configuration-path',
+                  help='The location where supervisord configuration will be stored.')
+  ap.add_argument('--buildout', default=None,
+                  help='Location of buildout binary.')
+  ap.add_argument('--pidfile',
+                  help='The location where pidfile will be created.')
+  ap.add_argument('--logfile',
+                  help='The location where slapgrid logfile will be created.')
+  ap.add_argument('--key_file',
+                  help='SSL Authorisation key file.')
+  ap.add_argument('--cert_file',
+                  help='SSL Authorisation certificate file.')
+  ap.add_argument('--signature_private_key_file',
+                  help='Signature private key file.')
+  ap.add_argument('--master_ca_file',
+                  help='Root certificate of SlapOS master key.')
+  ap.add_argument('--certificate_repository_path',
+                  help='Path to directory where downloaded certificates would be stored.')
+  ap.add_argument('-v', '--verbose', action='store_true',
+                  help='Be verbose.')
+  ap.add_argument('--maximum-periodicity', type=int, default=None,
+                  help='Periodicity at which buildout should be run in instance.')
+  ap.add_argument('--promise-timeout', type=int, default=3,
+                  help='Promise timeout in seconds.')
+  ap.add_argument('--now', action='store_true',
+                  help='Launch slapgrid without delay. Default behavior.')
+  ap.add_argument('--all', action='store_true',
+                  help='Launch slapgrid to process all Softare Releases '
+                       'and/or Computer Partitions.')
+  ap.add_argument('--only-sr',
+                  help='Force the update of a single software release (use url hash), '
+                       'even if is already installed. This option will make all others '
+                       'sofware releases be ignored.')
+  ap.add_argument("--only-cp",
+                  help='Update a single or a list of computer partitions '
+                       '(ie.:slappartX, slappartY), '
+                       'this option will make all others computer partitions be ignored.')
+
+  ap.add_argument('configuration_file', type=argparse.FileType(),
+                  help='SlapOS configuration file.')
 
   # Deprecated options
-  parser.add_argument("-c", "--console", action="store_true",
-      help="Deprecated, doesn't do anything.")
-  parser.add_argument("--develop", action="store_true",
-      help="Deprecated, same as --all.")
-  parser.add_argument("--only_sr",
-      help="Deprecated, same as --only-sr.")
-  parser.add_argument("--only_cp",
-      help="Deprecated, same as --only-cp.")
-  parser.add_argument("--maximal_delay",
-      help="Deprecated. Will only work from configuration file in the future.")
+  ap.add_argument('-c', '--console', action='store_true',
+                  help="Deprecated, doesn't do anything.")
+  ap.add_argument('--develop', action='store_true',
+                  help='Deprecated, same as --all.')
+  ap.add_argument('--only_sr',
+                  help='Deprecated, same as --only-sr.')
+  ap.add_argument('--only_cp',
+                  help='Deprecated, same as --only-cp.')
+  ap.add_argument('--maximal_delay',
+                  help='Deprecated. Will only work from configuration file in the future.')
 
   # Parses arguments
   if not argument_tuple:
     # No arguments given to entry point : we parse sys.argv.
-    argument_option_instance = parser.parse_args()
+    args = ap.parse_args()
   else:
-    argument_option_instance = parser.parse_args(list(argument_tuple))
+    args = ap.parse_args(list(argument_tuple))
   # Parses arguments from config file, if needed, then merge previous arguments
   options = {}
-  configuration_file = argument_option_instance.configuration_file[0]
   # Loads config (if config specified)
-  slapgrid_configuration = ConfigParser.SafeConfigParser()
-  slapgrid_configuration.readfp(configuration_file)
+  config = ConfigParser.SafeConfigParser()
+  config.readfp(args.configuration_file)
   # Merges the two dictionnaries
-  options = dict(slapgrid_configuration.items("slapos"))
-  if slapgrid_configuration.has_section("networkcache"):
-    options.update(dict(slapgrid_configuration.items("networkcache")))
-  for argument_key, argument_value in vars(argument_option_instance
-      ).iteritems():
-    if argument_value is not None:
-      options.update({argument_key: argument_value})
+  options = dict(config.items('slapos'))
+  if config.has_section('networkcache'):
+    options.update(dict(config.items('networkcache')))
+  for key, value in vars(args).iteritems():
+    if value is not None:
+      options[key] = value
+
+  return options
+
+
+def setup_logger(options):
   # Configures logger.
   if options['verbose']:
     level = logging.DEBUG
@@ -189,10 +191,21 @@ def parseArgumentTupleAndReturnSlapgridObject(*argument_tuple):
         '%(asctime)s %(name)-18s: %(levelname)-8s %(message)s'))
     logging.getLogger('').addHandler(console)
 
-  missing_mandatory_parameter_list = []
+  # XXX return and use logger object
+
+
+def parseArgumentTupleAndReturnSlapgridObject(*argument_tuple):
+  """Returns a new instance of slapgrid.Slapgrid created with argument+config parameters.
+     Also returns the options dict and unused variable list, and configures logger.
+  """
+  options = parse_arguments_merge_config(*argument_tuple)
+
+  setup_logger(options)
+
+  missing = []
   for mandatory_parameter in MANDATORY_PARAMETER_LIST:
     if not mandatory_parameter in options:
-      missing_mandatory_parameter_list.append(mandatory_parameter)
+      missing.append(mandatory_parameter)
 
   if options.get('all'):
     options['develop'] = True
@@ -204,18 +217,18 @@ def parseArgumentTupleAndReturnSlapgridObject(*argument_tuple):
   if 'key_file' in options:
     repository_required = True
     if not 'cert_file' in options:
-      missing_mandatory_parameter_list.append('cert_file')
+      missing.append('cert_file')
   if 'cert_file' in options:
     repository_required = True
     if not 'key_file' in options:
-      missing_mandatory_parameter_list.append('key_file')
+      missing.append('key_file')
   if repository_required:
     if 'certificate_repository_path' not in options:
-      missing_mandatory_parameter_list.append('certificate_repository_path')
+      missing.append('certificate_repository_path')
 
-  if len(missing_mandatory_parameter_list) > 0:
-    parser.error('Missing mandatory parameters:\n%s' % '\n'.join(
-      missing_mandatory_parameter_list))
+  if missing:
+    raise RuntimeError('Missing mandatory parameters:\n%s' % '\n'.join(
+      missing))
 
   key_file = options.get('key_file')
   cert_file = options.get('cert_file')
@@ -235,12 +248,12 @@ def parseArgumentTupleAndReturnSlapgridObject(*argument_tuple):
   for f in mandatory_file_list:
     if f is not None:
       if not os.path.exists(f):
-        parser.error('File %r does not exist.' % f)
+        raise RuntimeError('File %r does not exist.' % f)
 
   certificate_repository_path = options.get('certificate_repository_path')
   if certificate_repository_path:
     if not os.path.isdir(certificate_repository_path):
-      parser.error('Directory %r does not exist' % certificate_repository_path)
+      raise RuntimeError('Directory %r does not exist' % certificate_repository_path)
 
   # Supervisord configuration location
   if not options.get('supervisord_configuration_path'):
