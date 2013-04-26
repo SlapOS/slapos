@@ -31,4 +31,4 @@ url = ${buildout:directory}/demoapp.py
 destination = $${basedirectory:scripts}
 filename = demoapp
 download-only = true
-mode = 0750
+mode = 0755
