@@ -129,15 +129,17 @@ class Recipe(BaseSlapRecipe):
       slave_dict[reference] = "%s%s/" % (scheme, domain)
 
       # Check if we want varnish+stunnel cache.
-      #if enable_cache:
-      #  # XXX-Cedric : need to refactor to clean code? (to many variables)
-      #  rewrite_rule = self.configureVarnishSlave(
-      #      base_varnish_port, backend_url, reference, service_dict, domain)
-      #  base_varnish_port += 2
-      #else:
-      #  rewrite_rule = "%s %s" % (domain, backend_url)
-      # Temporary forbid activation of cache until it is properly tested
-      rewrite_rule = "%s %s" % (domain, backend_url)
+      if enable_cache:
+        # XXX-Cedric : need to refactor to clean code? (to many variables)
+#         rewrite_rule = self.configureVarnishSlave(
+#             base_varnish_port, backend_url, reference, service_dict, domain)
+        rewrite_rule = self.configureSquidSlave(
+            base_varnish_port, backend_url, reference, service_dict, domain)
+        base_varnish_port += 2
+      else:
+        rewrite_rule = "%s %s" % (domain, backend_url)
+#       # Temporary forbid activation of cache until it is properly tested
+#       rewrite_rule = "%s %s" % (domain, backend_url)
 
       # Finally, if successful, we add the rewrite rule to our list of rules
       # We have 4 RewriteMaps:
@@ -249,6 +251,133 @@ class Recipe(BaseSlapRecipe):
     self.path_list.append(promise_v4)
 
     return self.path_list
+
+  def configureSquidSlave(self, base_squid_port, url, reference,
+      service_dict, domain):
+    # Squid should use stunnel to connect to the backend
+    base_squid_control_port = base_squid_port
+    base_squid_port += 1
+    # Use regex
+    host_regex = "((\[\w*|[0-9]+\.)(\:|)).*(\]|\.[0-9]+)"
+    slave_host = re.search(host_regex, url).group(0)
+    port_regex = "\w+(\/|)$"
+    matcher = re.search(port_regex, url)
+    if matcher is not None:
+      slave_port = matcher.group(0)
+      slave_port = slave_port.replace("/", "")
+    elif url.startswith("https://"):
+      slave_port = 443
+    else:
+      slave_port = 80
+    service_name = "squid_%s" % reference
+    squid_ip = self.getLocalIPv4Address()
+    stunnel_port = base_squid_port + 1
+    self.installSquidCache(service_name,
+      ip=squid_ip,
+      port=base_squid_port,
+      backend_host=squid_ip,
+      backend_port=stunnel_port,
+      domain=domain,
+      size="1G")
+    service_dict[service_name] = dict(public_ip=squid_ip,
+        public_port=stunnel_port,
+        private_ip=slave_host.replace("[", "").replace("]", ""),
+        private_port=slave_port)
+    return "%s http://%s:%s" % \
+        (domain, squid_ip, base_squid_port)
+
+  def installSquidCache(self, name, ip, port, backend_host,
+                                backend_port, domain, size="1G"):
+    """
+      Install a squid daemon for a certain address
+    """
+#     directory = self.createDataDirectory(name)
+#     squid_config = dict(
+#       directory=directory,
+#       pid = "%s/squid.pid" % directory,
+#       port="%s:%s" % (ip, port),
+#       squidd_binary=self.options["squidd_binary"],
+#       control_port="%s:%s" % (ip, control_port),
+#       storage="file,%s/storage.bin,%s" % (directory, size))
+
+# 
+#     squid_argument_list = [squid_config['squidd_binary'].strip(),
+#         "-F", "-n", directory, "-P", squid_config["pid"], "-p",
+#         "cc_command=exec %s " % self.options["gcc_binary"] +\
+#             "-fpic -shared -o %o %s",
+#         "-f", config_file,
+#         "-a", squid_config["port"], "-T", squid_config["control_port"],
+#         "-s", squid_config["storage"]]
+#     environment = dict(PATH="%s:%s" % (self.options["binutils_directory"],
+#                                        os.environ.get('PATH')))
+#     wrapper = zc.buildout.easy_install.scripts([(name,
+#       'slapos.recipe.librecipe.execute', 'executee')], self.ws,
+#       sys.executable, self.service_directory, arguments=[squid_argument_list,
+#       environment])[0]
+#     self.path_list.append(wrapper)
+
+
+#     directory = self.createDataDirectory(name)
+    config = dict(
+      ip=ip,
+      port=port,
+      backend_ip=backend_host,
+      backend_port=backend_port,
+      domain=domain,
+      # XXX Hardcoded
+      access_log_path = os.path.join(self.log_directory, 'squid.access.log'),
+      # XXX Hardcoded
+      cache_log_path = os.path.join(self.log_directory, 'squid.cache.log'),
+#       cache_path=self.options['cache-path'],
+      # XXX Hardcoded
+      pid_filename_path=os.path.join(self.run_directory, 'squid.pid'),
+      squid_binary=self.options["squid_binary"],
+      )
+    
+    template_filename = self.getTemplateFilename('squid.conf.in')
+    config_file = self.createConfigurationFile("%s.conf" % name,
+      self.substituteTemplate(self.getTemplateFilename('squid.conf.in'),
+                              config))
+
+#     # Prepare directories
+#     prepare_path = self.createPythonScript(
+#       self.options['prepare-path'],
+#       'slapos.recipe.librecipe.execute.execute',
+#       arguments=[self.options['binary-path'].strip(),
+#                  '-z',
+#                  '-f', configuration_path,
+#                  ],)
+# 
+#     # Create running wrapper
+#     wrapper_path = self.createPythonScript(
+#       self.options['wrapper-path'],
+#       'slapos.recipe.librecipe.execute.execute',
+#       arguments=[self.options['binary-path'].strip(),
+#                  '-N',
+#                  '-f', configuration_path,
+#                  ],)
+# 
+#     return [configuration_path, wrapper_path, prepare_path]
+
+    squid_argument_list = [config['squid_binary'].strip(),
+        "-N", "-f", config_file]
+#         "cc_command=exec %s " % self.options["gcc_binary"] +\
+#             "-fpic -shared -o %o %s",
+#         "-f", config_file,
+#         "-a", config["port"], "-T", config["control_port"],
+#         "-s", config["storage"]]
+    environment = dict(PATH="%s:%s" % (self.options["binutils_directory"],
+                                       os.environ.get('PATH')))
+    wrapper = zc.buildout.easy_install.scripts([(name,
+      'slapos.recipe.librecipe.execute', 'executee')], self.ws,
+      sys.executable, self.service_directory, arguments=[squid_argument_list,
+      environment])[0]
+    self.path_list.append(wrapper)
+
+    return config
+
+
+
 
   def configureVarnishSlave(self, base_varnish_port, url, reference,
       service_dict, domain):
