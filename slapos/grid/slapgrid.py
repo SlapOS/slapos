@@ -638,11 +638,8 @@ class Slapgrid(object):
     # Get the list of promises
     promise_dir = os.path.join(instance_path, 'etc', 'promise')
     if os.path.exists(promise_dir) and os.path.isdir(promise_dir):
-      cwd = instance_path
-      promises_list = os.listdir(promise_dir)
-
       # Check whether every promise is kept
-      for promise in promises_list:
+      for promise in os.listdir(promise_dir):
         promise_present = True
 
         command = [os.path.join(promise_dir, promise)]
@@ -652,7 +649,7 @@ class Slapgrid(object):
 
         process_handler = subprocess.Popen(command,
                                            preexec_fn=lambda: dropPrivileges(uid, gid, logger=self.logger),
-                                           cwd=cwd,
+                                           cwd=instance_path,
                                            env=None if sys.platform == 'cygwin' else {},
                                            stdout=subprocess.PIPE,
                                            stderr=subprocess.PIPE,
