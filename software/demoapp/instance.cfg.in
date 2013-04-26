@@ -2,7 +2,7 @@
 parts =
   rootdirectory
   basedirectory
-  main
+  demoapp
 
 eggs-directory = ${buildout:eggs-directory}
 develop-eggs-directory = ${buildout:develop-eggs-directory}
@@ -25,10 +25,10 @@ run = $${rootdirectory:var}/run
 backup = $${rootdirectory:srv}/backup
 promises = $${rootdirectory:etc}/promise
 
-[main]
+[demoapp]
 recipe = hexagonit.recipe.download
 url = ${buildout:directory}/demoapp.py
-destination = $${basedirectory:scripts}
+destination = $${basedirectory:services}
 filename = demoapp
 download-only = true
 mode = 0755
