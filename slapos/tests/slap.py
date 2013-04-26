@@ -24,12 +24,15 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #
 ##############################################################################
-import xml_marshaller
+
+import httplib
+import os
 import unittest
 import urlparse
-import httplib
+
 import slapos.slap
-import os
+import xml_marshaller
+
 
 class UndefinedYetException(Exception):
   """To catch exceptions which are not yet defined"""

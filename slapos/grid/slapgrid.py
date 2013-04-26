@@ -579,14 +579,14 @@ class Slapgrid(object):
             self.logger.info('Destroyed %r.' % software_release_uri)
       # Send log before exiting
       except (SystemExit, KeyboardInterrupt):
-        software_release.error(traceback.format_exc())
+        software_release.error(traceback.format_exc(), logger=self.logger)
         raise
 
       # Buildout failed: send log but don't print it to output (already done)
       except BuildoutFailedError as exc:
         clean_run = False
         try:
-          software_release.error(exc)
+          software_release.error(exc, logger=self.logger)
         except (SystemExit, KeyboardInterrupt):
           raise
         except Exception:
@@ -597,7 +597,7 @@ class Slapgrid(object):
       except Exception:
         exc = traceback.format_exc()
         self.logger.error(exc)
-        software_release.error(exc)
+        software_release.error(exc, logger=self.logger)
         clean_run = False
       else:
         if state == 'available':
@@ -798,14 +798,14 @@ class Slapgrid(object):
       try:
         computer_partition.stopped()
       except (SystemExit, KeyboardInterrupt):
-        computer_partition.error(traceback.format_exc())
+        computer_partition.error(traceback.format_exc(), logger=self.logger)
         raise
       except Exception:
         pass
     else:
       error_string = "Computer Partition %r has unsupported state: %s" % \
         (computer_partition_id, computer_partition_state)
-      computer_partition.error(error_string)
+      computer_partition.error(error_string, logger=self.logger)
       raise NotImplementedError(error_string)
 
     # If partition has been successfully processed, write timestamp
@@ -850,13 +850,13 @@ class Slapgrid(object):
 
       # Send log before exiting
       except (SystemExit, KeyboardInterrupt):
-        computer_partition.error(traceback.format_exc())
+        computer_partition.error(traceback.format_exc(), logger=self.logger)
         raise
 
       # Buildout failed: send log but don't print it to output (already done)
       except BuildoutFailedError as exc:
         try:
-          computer_partition.error(exc)
+          computer_partition.error(exc, logger=self.logger)
         except (SystemExit, KeyboardInterrupt):
           raise
         except Exception:
@@ -867,7 +867,7 @@ class Slapgrid(object):
       except Exception as exc:
         self.logger.error(traceback.format_exc())
         try:
-          computer_partition.error(exc)
+          computer_partition.error(exc, logger=self.logger)
         except (SystemExit, KeyboardInterrupt):
           raise
         except Exception:
@@ -904,14 +904,14 @@ class Slapgrid(object):
 
       # Send log before exiting
       except (SystemExit, KeyboardInterrupt):
-        computer_partition.error(traceback.format_exc())
+        computer_partition.error(traceback.format_exc(), logger=self.logger)
         raise
 
       except Slapgrid.PromiseError as exc:
         clean_run_promise = False
         try:
           self.logger.error(exc)
-          computer_partition.error(exc)
+          computer_partition.error(exc, logger=self.logger)
         except (SystemExit, KeyboardInterrupt):
           raise
         except Exception:
@@ -922,7 +922,7 @@ class Slapgrid(object):
       except BuildoutFailedError as exc:
         clean_run = False
         try:
-          computer_partition.error(exc)
+          computer_partition.error(exc, logger=self.logger)
         except (SystemExit, KeyboardInterrupt):
           raise
         except Exception:
@@ -934,7 +934,7 @@ class Slapgrid(object):
         clean_run = False
         self.logger.error(traceback.format_exc())
         try:
-          computer_partition.error(exc)
+          computer_partition.error(exc, logger=self.logger)
         except (SystemExit, KeyboardInterrupt):
           raise
         except Exception:
@@ -1106,7 +1106,7 @@ class Slapgrid(object):
             failed_script_list.append("Script %r failed." % script)
             self.logger.warning('Failed to run %r' % invocation_list)
           if len(failed_script_list):
-            computer_partition.error('\n'.join(failed_script_list))
+            computer_partition.error('\n'.join(failed_script_list), logger=self.logger)
       # Whatever happens, don't stop processing other instances
       except Exception:
         self.logger.info('Cannot run usage script(s) for %r: %s' % (
@@ -1186,7 +1186,7 @@ class Slapgrid(object):
                     computer_partition.getId(),
                     traceback.format_exc())
         self.logger.info(issue)
-        computer_partition.error(issue)
+        computer_partition.error(issue, logger=self.logger)
         report_usage_issue_cp_list.append(computer_partition_id)
 
     for computer_partition in computer_partition_list:
@@ -1220,7 +1220,7 @@ class Slapgrid(object):
           try:
             computer_partition.stopped()
           except (SystemExit, KeyboardInterrupt):
-            computer_partition.error(traceback.format_exc())
+            computer_partition.error(traceback.format_exc(), logger=self.logger)
             raise
           except Exception:
             pass
@@ -1230,12 +1230,12 @@ class Slapgrid(object):
             continue
           local_partition.destroy()
         except (SystemExit, KeyboardInterrupt):
-          computer_partition.error(traceback.format_exc())
+          computer_partition.error(traceback.format_exc(), logger=self.logger)
           raise
         except Exception:
           clean_run = False
           exc = traceback.format_exc()
-          computer_partition.error(exc)
+          computer_partition.error(exc, logger=self.logger)
           self.logger.error(exc)
         try:
           computer_partition.destroyed()

@@ -1831,7 +1831,7 @@ exit 127""" % {'worked_file': worked_file})
                      slapos.grid.slapgrid.SLAPGRID_PROMISE_FAIL)
     self.assertTrue(os.path.isfile(worked_file))
 
-    self.assertEqual(instance.error_log.split('\n')[-1], 'Error')
+    self.assertEqual(instance.error_log[-5:], 'Error')
     self.assertTrue(instance.error)
     self.assertIsNone(instance.state)
 

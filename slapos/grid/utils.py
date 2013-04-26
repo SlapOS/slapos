@@ -273,8 +273,8 @@ def bootstrapBuildout(path, logger, buildout=None,
       message = 'Failed to run buildout profile in directory %r' % (path)
       logger.error(message)
       raise BuildoutFailedError('%s:\n%s\n' % (message, process_handler.output))
-  except OSError as error:
-    raise BuildoutFailedError(error)
+  except OSError as exc:
+    raise BuildoutFailedError(exc)
   finally:
     old_umask = os.umask(umask)
     logger.debug('Restore umask from %03o to %03o' % (old_umask, umask))
@@ -316,8 +316,8 @@ def launchBuildout(path, buildout_binary, logger,
       message = 'Failed to run buildout profile in directory %r' % (path)
       logger.error(message)
       raise BuildoutFailedError('%s:\n%s\n' % (message, process_handler.output))
-  except OSError as error:
-    raise BuildoutFailedError(error)
+  except OSError as exc:
+    raise BuildoutFailedError(exc)
   finally:
     old_umask = os.umask(umask)
     logger.debug('Restore umask from %03o to %03o' % (old_umask, umask))
