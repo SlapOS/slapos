@@ -22,10 +22,12 @@ ServerTokens Prod
 
 # Log configuration
 ErrorLog "%(error_log)s"
-LogLevel info
-LogFormat "%%h %%{REMOTE_USER}i %%{Host}i %%l %%u %%t \"%%r\" %%>s %%b \"%%{Referer}i\" \"%%{User-Agent}i\"" combined
-LogFormat "%%h %%{REMOTE_USER}i %%{Host}i %%l %%u %%t \"%%r\" %%>s %%b" common
-CustomLog "%(access_log)s" common
+LogLevel warn
+# LogFormat "%%h %%{REMOTE_USER}i %%{Host}i %%l %%u %%t \"%%r\" %%>s %%b \"%%{Referer}i\" \"%%{User-Agent}i\"" combined
+# LogFormat "%%h %%{REMOTE_USER}i %%{Host}i %%l %%u %%t \"%%r\" %%>s %%b" common
+# CustomLog "%(access_log)s" common
+LogFormat "%%h %%l %%{REMOTE_USER}i %%t \"%%r\" %%>s %%b \"%%{Referer}i\" \"%%{User-Agent}i\" %%D" combined
+CustomLog "%(access_log)s" combined
 
 %(path_enable)s
 
@@ -149,7 +151,7 @@ Header append Vary User-Agent
 
   # Include configuration file not operated by slapos. This file won't be erased
   # or changed when slapgrid is ran. It can be freely customized by node admin.
-  Include %(custom_apache_virtualhost_conf)s
+  # Include %(custom_apache_virtualhost_conf)s
 
   RewriteMap apachemapgeneric txt:%(apachemap_path)s
   RewriteCond ${apachemapgeneric:%%{SERVER_NAME}} >""
