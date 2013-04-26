@@ -42,8 +42,9 @@ import xmlrpclib
 
 from supervisor import xmlrpc
 
-from slapos.grid.utils import (md5digest, getCleanEnvironment, bootstrapBuildout,
-                               launchBuildout, SlapPopen, dropPrivileges, updateFile)
+from slapos.grid.utils import (md5digest, getCleanEnvironment,
+                               SlapPopen, dropPrivileges, updateFile)
+from slapos.grid import utils # for mocked methods
 from slapos.slap.slap import NotFoundError
 from slapos.grid.svcbackend import getSupervisorRPC
 from slapos.grid.exception import (BuildoutFailedError, WrongPermissionError,
@@ -176,11 +177,11 @@ class Software(object):
       self.createProfileIfMissing(buildout_cfg, self.url)
 
       buildout_parameter_list.extend(['-c', buildout_cfg])
-      bootstrapBuildout(self.software_path, self.buildout,
+      utils.bootstrapBuildout(self.software_path, self.buildout,
           additional_buildout_parametr_list=buildout_parameter_list)
-      launchBuildout(self.software_path,
-                     os.path.join(self.software_path, 'bin', 'buildout'),
-                     additional_buildout_parametr_list=buildout_parameter_list)
+      utils.launchBuildout(self.software_path,
+                           os.path.join(self.software_path, 'bin', 'buildout'),
+                           additional_buildout_parametr_list=buildout_parameter_list)
     finally:
       shutil.rmtree(extends_cache)
 
@@ -429,11 +430,11 @@ class Partition(object):
 
     if not os.path.exists(buildout_binary):
       # use own buildout generation
-      bootstrapBuildout(self.instance_path, self.buildout,
+      utils.bootstrapBuildout(self.instance_path, self.buildout,
         ['buildout:bin-directory=%s' % os.path.join(self.instance_path, 'sbin')])
       buildout_binary = os.path.join(self.instance_path, 'sbin', 'buildout')
     # Launches buildout
-    launchBuildout(self.instance_path, buildout_binary)
+    utils.launchBuildout(self.instance_path, buildout_binary)
     # Generates supervisord configuration file from template
     self.logger.info("Generating supervisord config file from template...")
     # check if CP/etc/run exists and it is a directory
