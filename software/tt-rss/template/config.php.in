@@ -17,8 +17,7 @@
 	// *** Basic settings (important!) ***
 	// ***********************************
 
-  //FIXME set frontend URL
-	define('SELF_URL_PATH', 'http://%(ip)s:%(port)s');
+	define('SELF_URL_PATH', '%(url)s');
 	// Full URL of your tt-rss installation. This should be set to the
 	// location of tt-rss directory, e.g. http://yourserver/tt-rss/
 	// You need to set this option correctly otherwise several features
