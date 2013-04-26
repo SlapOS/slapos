@@ -71,8 +71,11 @@ class ClientConfig(object):
     else:
       setattr(self, 'master_url', master_url)
 
-    self.key_file = os.path.expanduser(self.key_file)
-    self.cert_file = os.path.expanduser(self.cert_file)
+    if self.key_file:
+        self.key_file = os.path.expanduser(self.key_file)
+
+    if self.cert_file:
+        self.cert_file = os.path.expanduser(self.cert_file)
 
 def init(config):
   """Initialize Slap instance, connect to server and create
