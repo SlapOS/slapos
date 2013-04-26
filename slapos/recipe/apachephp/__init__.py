@@ -105,6 +105,11 @@ class Recipe(GenericBaseRecipe):
                               port=self.options['port'],
                               # XXX-Cedric: add frontend url.
                              )
+      # Allow to give custom parameters to template
+      application_parameter_prefix = 'application-'
+      for key in self.options.keys():
+        if key.startswith(application_parameter_prefix):
+          application_conf[key.lstrip(application_parameter_prefix)] = self.options[key]
 
       directory, file_ = os.path.split(self.options['configuration'])
 
