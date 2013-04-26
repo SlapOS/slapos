@@ -226,11 +226,11 @@ def setup_logger(options):
         '%(asctime)s %(name)-18s: %(levelname)-8s %(message)s'))
     logging.getLogger('').addHandler(console)
 
-  # XXX return and use logger object
+  logger = logging.getLogger(__name__)
+  return logger
 
 
-
-def random_delay(options):
+def random_delay(options, logger):
   """
   Sleep for a random time to avoid SlapOS Master being DDOSed by an army of
   SlapOS Nodes configured with cron.
@@ -242,8 +242,8 @@ def random_delay(options):
   maximal_delay = int(options.get('maximal_delay', '0'))
   if maximal_delay:
     duration = random.randint(1, maximal_delay)
-    logging.info('Sleeping for %s seconds. To disable this feature, ' \
-                    'check --now parameter in slapgrid help.' % duration)
+    logger.info('Sleeping for %s seconds. To disable this feature, ' \
+                'check --now parameter in slapgrid help.' % duration)
     time.sleep(duration)
 
 
@@ -254,7 +254,7 @@ def parseArgumentTupleAndReturnSlapgridObject(*argument_tuple):
   """
   options = parse_arguments_merge_config(*argument_tuple)
 
-  setup_logger(options)
+  logger = setup_logger(options)
 
   check_missing_parameters(options)
   check_missing_files(options)
@@ -287,15 +287,15 @@ def parseArgumentTupleAndReturnSlapgridObject(*argument_tuple):
       url.strip() for url in options.get(
           "upload-to-binary-cache-url-blacklist", "").split('\n') if url]
 
-  random_delay(options)
+  random_delay(options, logger=logger)
 
-  slapgrid_object = create_slapgrid_object(options)
+  slapgrid_object = create_slapgrid_object(options, logger=logger)
 
   return slapgrid_object, options.get('pidfile')
 
 
 
-def create_slapgrid_object(options):
+def create_slapgrid_object(options, logger):
   signature_certificate_list = None
   if 'signature-certificate-list' in options:
     cert_marker = '-----BEGIN CERTIFICATE-----'
@@ -312,10 +312,12 @@ def create_slapgrid_object(options):
                   computer_id=op['computer_id'],
                   supervisord_socket=op['supervisord_socket'],
                   supervisord_configuration_path=op['supervisord_configuration_path'],
+                  buildout=op.get('buildout'),
+                  logger=logger,
+                  force_periodicity = op.get('force_periodicity', False),
+                  maximum_periodicity = op.get('maximum_periodicity', 86400),
                   key_file=op.get('key_file'),
                   cert_file=op.get('cert_file'),
-                  master_ca_file=op.get('master_ca_file'),
-                  certificate_repository_path=op.get('certificate_repository_path'),
                   signature_private_key_file=op.get('signature_private_key_file'),
                   signature_certificate_list=signature_certificate_list,
                   download_binary_cache_url=op.get('download-binary-cache-url'),
@@ -328,7 +330,8 @@ def create_slapgrid_object(options):
                   download_binary_dir_url=op.get('download-binary-dir-url'),
                   upload_binary_dir_url=op.get('upload-binary-dir-url'),
                   upload_dir_url=op.get('upload-dir-url'),
-                  buildout=op.get('buildout'),
+                  master_ca_file=op.get('master_ca_file'),
+                  certificate_repository_path=op.get('certificate_repository_path'),
                   promise_timeout=op['promise_timeout'],
                   shacache_cert_file=op.get('shacache-cert-file'),
                   shacache_key_file=op.get('shacache-key-file'),
@@ -338,15 +341,13 @@ def create_slapgrid_object(options):
                   # Try to fetch from deprecated argument
                   software_release_filter_list=op.get('only-sr', op.get('only_sr')),
                   # Try to fetch from deprecated argument
-                  computer_partition_filter_list=op.get('only-cp', op.get('only_cp')),
-                  force_periodicity = op.get('force_periodicity', False),
-                  maximum_periodicity = op.get('maximum_periodicity', 86400))
+                  computer_partition_filter_list=op.get('only-cp', op.get('only_cp')))
 
 
 def realRun(argument_tuple, method):
   slapgrid_object, pidfile = parseArgumentTupleAndReturnSlapgridObject(*argument_tuple)
   if pidfile:
-    setRunning(pidfile)
+    setRunning(logger=slapgrid_object.logger, pid_file=pidfile)
   try:
     failed = False
     failed_promise = False
@@ -397,6 +398,7 @@ class Slapgrid(object):
                supervisord_socket,
                supervisord_configuration_path,
                buildout,
+               logger,
                force_periodicity=False,
                maximum_periodicity=86400,
                key_file=None,
@@ -450,8 +452,7 @@ class Slapgrid(object):
     self.shacache_key_file = shacache_key_file
     self.shadir_cert_file = shadir_cert_file
     self.shadir_key_file = shadir_key_file
-    # Configures logger
-    self.logger = logging.getLogger('Slapgrid')
+    self.logger = logger
     # Creates objects from slap module
     self.slap = slapos.slap.slap()
     self.slap.initializeConnection(self.master_url, key_file=self.key_file,
@@ -529,8 +530,7 @@ class Slapgrid(object):
     """Will process each Software Release.
     """
     self.checkEnvironmentAndCreateStructure()
-    logger = logging.getLogger('SoftwareReleases')
-    logger.info("Processing software releases...")
+    self.logger.info('Processing software releases...')
     # Boolean to know if every instance has correctly been deployed
     clean_run = True
     for software_release in self.computer.getSoftwareReleaseList():
@@ -542,6 +542,7 @@ class Slapgrid(object):
         software = Software(url=software_release_uri,
             software_root=self.software_root,
             buildout=self.buildout,
+            logger=self.logger,
             signature_private_key_file=self.signature_private_key_file,
             signature_certificate_list=self.signature_certificate_list,
             download_binary_cache_url=self.download_binary_cache_url,
@@ -573,9 +574,9 @@ class Slapgrid(object):
               fout.write(time.asctime())
         elif state == 'destroyed':
           if os.path.exists(software_path):
-            logger.info('Destroying %r...' % software_release_uri)
+            self.logger.info('Destroying %r...' % software_release_uri)
             software.destroy()
-            logger.info('Destroyed %r.' % software_release_uri)
+            self.logger.info('Destroyed %r.' % software_release_uri)
       # Send log before exiting
       except (SystemExit, KeyboardInterrupt):
         software_release.error(traceback.format_exc())
@@ -589,13 +590,13 @@ class Slapgrid(object):
         except (SystemExit, KeyboardInterrupt):
           raise
         except Exception:
-          logger.error('Problem while reporting error, continuing:\n%s' %
-                       traceback.format_exc())
+          self.logger.error('Problem while reporting error, continuing:\n%s' %
+                            traceback.format_exc())
 
       # For everything else: log it, send it, continue.
       except Exception:
         exc = traceback.format_exc()
-        logger.error(exc)
+        self.logger.error(exc)
         software_release.error(exc)
         clean_run = False
       else:
@@ -609,7 +610,7 @@ class Slapgrid(object):
             software_release.destroyed()
           except (NotFoundError, ServerError):
             print traceback.format_exc()
-    logger.info("Finished software releases.")
+    self.logger.info('Finished software releases.')
 
     # Return success value
     if not clean_run:
@@ -650,7 +651,7 @@ class Slapgrid(object):
         self.logger.info("Checking promise %r.", promise)
 
         process_handler = subprocess.Popen(command,
-                                           preexec_fn=lambda: dropPrivileges(uid, gid),
+                                           preexec_fn=lambda: dropPrivileges(uid, gid, logger=self.logger),
                                            cwd=cwd,
                                            env=None if sys.platform == 'cygwin' else {},
                                            stdout=subprocess.PIPE,
@@ -680,8 +681,6 @@ class Slapgrid(object):
     """
     Process a Computer Partition, depending on its state
     """
-    logger = logging.getLogger('ComputerPartitionProcessing')
-
     computer_partition_id = computer_partition.getId()
 
     # Sanity checks before processing
@@ -695,7 +694,7 @@ class Slapgrid(object):
          (computer_partition_id not in self.computer_partition_filter_list):
       return
 
-    logger.info('Processing Computer Partition %s...' % computer_partition_id)
+    self.logger.info('Processing Computer Partition %s...' % computer_partition_id)
 
     instance_path = os.path.join(self.instance_root, computer_partition_id)
 
@@ -733,7 +732,7 @@ class Slapgrid(object):
             periodicity = int(open(periodicity_path).read())
           except ValueError:
             os.remove(periodicity_path)
-            logger.error(traceback.format_exc())
+            self.logger.error(traceback.format_exc())
 
     # Check if timestamp from server is more recent than local one.
     # If not: it's not worth processing this partition (nothing has
@@ -759,7 +758,7 @@ class Slapgrid(object):
               os.remove(timestamp_path)
         except ValueError:
           os.remove(timestamp_path)
-          logger.error(traceback.format_exc())
+          self.logger.error(traceback.format_exc())
 
     local_partition = Partition(
       software_path=software_path,
@@ -774,7 +773,8 @@ class Slapgrid(object):
       server_url=self.master_url,
       software_release_url=software_url,
       certificate_repository_path=self.certificate_repository_path,
-      buildout=self.buildout)
+      buildout=self.buildout,
+      logger=self.logger)
 
     computer_partition_state = computer_partition.getState()
     if computer_partition_state == COMPUTER_PARTITION_STARTED_STATE:
@@ -820,7 +820,6 @@ class Slapgrid(object):
     """
     Try to filter valid partitions to be processed from free partitions.
     """
-    logger = logging.getLogger('ComputerPartitionProcessing')
     filtered_computer_partition_list = []
     for computer_partition in computer_partition_list:
       try:
@@ -861,19 +860,19 @@ class Slapgrid(object):
         except (SystemExit, KeyboardInterrupt):
           raise
         except Exception:
-          logger.error('Problem during reporting error, continuing:\n%s' %
-                       traceback.format_exc())
+          self.logger.error('Problem during reporting error, continuing:\n%s' %
+                            traceback.format_exc())
 
       # For everything else: log it, send it, continue.
       except Exception as exc:
-        logger.error(traceback.format_exc())
+        self.logger.error(traceback.format_exc())
         try:
           computer_partition.error(exc)
         except (SystemExit, KeyboardInterrupt):
           raise
         except Exception:
-          logger.error('Problem during reporting error, continuing:\n%s' %
-                       traceback.format_exc())
+          self.logger.error('Problem during reporting error, continuing:\n%s' %
+                            traceback.format_exc())
 
     return filtered_computer_partition_list
 
@@ -881,8 +880,7 @@ class Slapgrid(object):
     """
     Will start supervisord and process each Computer Partition.
     """
-    logger = logging.getLogger('ComputerPartitionProcessing')
-    logger.info('Processing computer partitions...')
+    self.logger.info('Processing computer partitions...')
     # Prepares environment
     self.checkEnvironmentAndCreateStructure()
     self._launchSupervisord()
@@ -912,13 +910,13 @@ class Slapgrid(object):
       except Slapgrid.PromiseError as exc:
         clean_run_promise = False
         try:
-          logger.error(exc)
+          self.logger.error(exc)
           computer_partition.error(exc)
         except (SystemExit, KeyboardInterrupt):
           raise
         except Exception:
-          logger.error('Problem during reporting error, continuing:\n%s' %
-                       traceback.format_exc())
+          self.logger.error('Problem during reporting error, continuing:\n%s' %
+                            traceback.format_exc())
 
       # Buildout failed: send log but don't print it to output (already done)
       except BuildoutFailedError as exc:
@@ -928,22 +926,22 @@ class Slapgrid(object):
         except (SystemExit, KeyboardInterrupt):
           raise
         except Exception:
-          logger.error('Problem during reporting error, continuing:\n%s' %
-                       traceback.format_exc())
+          self.logger.error('Problem during reporting error, continuing:\n%s' %
+                            traceback.format_exc())
 
       # For everything else: log it, send it, continue.
       except Exception as exc:
         clean_run = False
-        logger.error(traceback.format_exc())
+        self.logger.error(traceback.format_exc())
         try:
           computer_partition.error(exc)
         except (SystemExit, KeyboardInterrupt):
           raise
         except Exception:
-          logger.error('Problem during reporting error, continuing:\n%s' %
-                       traceback.format_exc())
+          self.logger.error('Problem during reporting error, continuing:\n%s' %
+                            traceback.format_exc())
 
-    logger.info("Finished computer partitions.")
+    self.logger.info('Finished computer partitions.')
 
     # Return success value
     if not clean_run:
@@ -955,9 +953,6 @@ class Slapgrid(object):
 
   def validateXML(self, to_be_validated, xsd_model):
     """Validates a given xml file"""
-
-    logger = logging.getLogger('XMLValidating')
-
     #We retrieve the xsd model
     xsd_model = StringIO.StringIO(xsd_model)
     xmlschema_doc = etree.parse(xsd_model)
@@ -966,9 +961,9 @@ class Slapgrid(object):
     try:
       document = etree.fromstring(to_be_validated)
     except (etree.XMLSyntaxError, etree.DocumentInvalid) as exc:
-      logger.info('Failed to parse this XML report :  %s\n%s' % \
+      self.logger.info('Failed to parse this XML report :  %s\n%s' % \
         (to_be_validated, _formatXMLError(exc)))
-      logger.error(_formatXMLError(exc))
+      self.logger.error(_formatXMLError(exc))
       return False
 
     if xmlschema.validate(document):
@@ -1030,8 +1025,7 @@ class Slapgrid(object):
 
     slap_computer_usage = self.slap.registerComputer(self.computer_id)
     computer_partition_usage_list = []
-    logger = logging.getLogger('UsageReporting')
-    logger.info("Aggregating and sending usage reports...")
+    self.logger.info('Aggregating and sending usage reports...')
 
     #We retrieve XSD models
     try:
@@ -1099,24 +1093,25 @@ class Slapgrid(object):
           uid = stat_info.st_uid
           gid = stat_info.st_gid
           process_handler = SlapPopen(invocation_list,
-                                      preexec_fn=lambda: dropPrivileges(uid, gid),
+                                      preexec_fn=lambda: dropPrivileges(uid, gid, logger=self.logger),
                                       cwd=os.path.join(instance_path, 'etc', 'report'),
                                       env=None,
                                       stdout=subprocess.PIPE,
-                                      stderr=subprocess.STDOUT)
+                                      stderr=subprocess.STDOUT,
+                                      logger=self.logger)
           if process_handler.returncode is None:
             process_handler.kill()
           if process_handler.returncode != 0:
             clean_run = False
             failed_script_list.append("Script %r failed." % script)
-            logger.warning("Failed to run %r" % invocation_list)
+            self.logger.warning('Failed to run %r' % invocation_list)
           if len(failed_script_list):
             computer_partition.error('\n'.join(failed_script_list))
       # Whatever happens, don't stop processing other instances
       except Exception:
-        logger.info('Cannot run usage script(s) for %r: %s' % (
-                      computer_partition.getId(),
-                      traceback.format_exc()))
+        self.logger.info('Cannot run usage script(s) for %r: %s' % (
+                            computer_partition.getId(),
+                            traceback.format_exc()))
 
     #Now we loop through the different computer partitions to report
     report_usage_issue_cp_list = []
@@ -1132,7 +1127,7 @@ class Slapgrid(object):
           filename_list = os.listdir(dir_reports)
         else:
           filename_list = []
-        #logger.debug('name List %s' % filename_list)
+        #self.logger.debug('name List %s' % filename_list)
 
         for filename in filename_list:
 
@@ -1142,9 +1137,9 @@ class Slapgrid(object):
 
             #We check the validity of xml content of each reports
             if not self.validateXML(usage, partition_consumption_model):
-              logger.info('WARNING: The XML file %s generated by slapreport is '
-                  'not valid - This report is left as is at %s where you can '
-                  'inspect what went wrong ' % (filename, dir_reports))
+              self.logger.info('WARNING: The XML file %s generated by slapreport is '
+                               'not valid - This report is left as is at %s where you can '
+                               'inspect what went wrong ' % (filename, dir_reports))
               # Warn the SlapOS Master that a partition generates corrupted xml
               # report
             else:
@@ -1154,7 +1149,7 @@ class Slapgrid(object):
               computer_partition_usage_list.append(computer_partition_usage)
               filename_delete_list.append(filename)
           else:
-            logger.debug("Usage report %r not found, ignored" % file_path)
+            self.logger.debug('Usage report %r not found, ignored' % file_path)
 
         #After sending the aggregated file we remove all the valid xml reports
         for filename in filename_delete_list:
@@ -1162,14 +1157,14 @@ class Slapgrid(object):
 
       # Whatever happens, don't stop processing other instances
       except Exception:
-        logger.info('Cannot run usage script(s) for %r: %s' % (
-                      computer_partition.getId(),
-                      traceback.format_exc()))
+        self.logger.info('Cannot run usage script(s) for %r: %s' % (
+                            computer_partition.getId(),
+                            traceback.format_exc()))
 
     for computer_partition_usage in computer_partition_usage_list:
-      logger.info('computer_partition_usage_list: %s - %s' % (
-                    computer_partition_usage.usage,
-                    computer_partition_usage.getId()))
+      self.logger.info('computer_partition_usage_list: %s - %s' % (
+                          computer_partition_usage.usage,
+                          computer_partition_usage.getId()))
 
     #If there is, at least, one report
     if computer_partition_usage_list != []:
@@ -1177,20 +1172,20 @@ class Slapgrid(object):
         #We generate the final XML report with asXML method
         computer_consumption = self.asXML(computer_partition_usage_list)
 
-        logger.info('Final xml report: %s' % computer_consumption)
+        self.logger.info('Final xml report: %s' % computer_consumption)
 
         #We test the XML report before sending it
         if self.validateXML(computer_consumption, computer_consumption_model):
-          logger.info('XML file generated by asXML is valid')
+          self.logger.info('XML file generated by asXML is valid')
           slap_computer_usage.reportUsage(computer_consumption)
         else:
-          logger.info('XML file generated by asXML is not valid !')
+          self.logger.info('XML file generated by asXML is not valid !')
           raise ValueError('XML file generated by asXML is not valid !')
       except Exception:
         issue = "Cannot report usage for %r: %s" % (
                     computer_partition.getId(),
                     traceback.format_exc())
-        logger.info(issue)
+        self.logger.info(issue)
         computer_partition.error(issue)
         report_usage_issue_cp_list.append(computer_partition_id)
 
@@ -1220,7 +1215,7 @@ class Slapgrid(object):
             software_release_url=software_url,
             certificate_repository_path=self.certificate_repository_path,
             buildout=self.buildout,
-            )
+            logger=self.logger)
           local_partition.stop()
           try:
             computer_partition.stopped()
@@ -1230,8 +1225,8 @@ class Slapgrid(object):
           except Exception:
             pass
           if computer_partition.getId() in report_usage_issue_cp_list:
-            logger.info('Ignoring destruction of %r, as no report usage was sent' %
-                        computer_partition.getId())
+            self.logger.info('Ignoring destruction of %r, as no report usage was sent' %
+                                computer_partition.getId())
             continue
           local_partition.destroy()
         except (SystemExit, KeyboardInterrupt):
@@ -1241,19 +1236,19 @@ class Slapgrid(object):
           clean_run = False
           exc = traceback.format_exc()
           computer_partition.error(exc)
-          logger.error(exc)
+          self.logger.error(exc)
         try:
           computer_partition.destroyed()
         except NotFoundError:
-          logger.debug('Ignored slap error while trying to inform about '
-              'destroying not fully configured Computer Partition %r' %
-                  computer_partition.getId())
+          self.logger.debug('Ignored slap error while trying to inform about '
+                            'destroying not fully configured Computer Partition %r' %
+                                computer_partition.getId())
         except ServerError as server_error:
-          logger.debug('Ignored server error while trying to inform about '
-              'destroying Computer Partition %r. Error is:\n%r' %
-                  (computer_partition.getId(), server_error.args[0]))
+          self.logger.debug('Ignored server error while trying to inform about '
+                            'destroying Computer Partition %r. Error is:\n%r' %
+                                (computer_partition.getId(), server_error.args[0]))
 
-    logger.info("Finished usage reports.")
+    self.logger.info('Finished usage reports.')
 
     # Return success value
     if not clean_run:

@@ -30,7 +30,6 @@
 
 import grp
 import hashlib
-import logging
 import os
 import pkg_resources
 import pwd
@@ -95,6 +94,7 @@ class SlapPopen(subprocess.Popen):
   log.
   """
   def __init__(self, *args, **kwargs):
+    logger = kwargs.pop('logger')
     kwargs.update(stdin=subprocess.PIPE)
     if sys.platform == 'cygwin' and kwargs.get('env') == {}:
       kwargs['env'] = None
@@ -103,7 +103,6 @@ class SlapPopen(subprocess.Popen):
     self.stdin.close()
     self.stdin = None
 
-    logger = logging.getLogger('SlapProcessManager')
     # XXX-Cedric: this algorithm looks overkill for simple logging.
     output_lines = []
     while True:
@@ -119,8 +118,7 @@ def md5digest(url):
   return hashlib.md5(url).hexdigest()
 
 
-def getCleanEnvironment(home_path='/tmp'):
-  logger = logging.getLogger('CleanEnvironment')
+def getCleanEnvironment(logger, home_path='/tmp'):
   changed_env = {}
   removed_env = []
   env = os.environ.copy()
@@ -137,12 +135,11 @@ def getCleanEnvironment(home_path='/tmp'):
   return env
 
 
-def setRunning(pid_file):
+def setRunning(logger, pidfile):
   """Creates a pidfile. If a pidfile already exists, we exit"""
-  logger = logging.getLogger('Slapgrid')
-  if os.path.exists(pid_file):
+  if os.path.exists(pidfile):
     try:
-      pid = int(open(pid_file, 'r').readline())
+      pid = int(open(pidfile, 'r').readline())
     except ValueError:
       pid = None
     # XXX This could use psutil library.
@@ -150,29 +147,28 @@ def setRunning(pid_file):
       logger.info('New slapos process started, but another slapos '
                   'process is aleady running with pid %s, exiting.' % pid)
       sys.exit(10)
-    logger.info('Existing pid file %r was stale, overwritten' % pid_file)
+    logger.info('Existing pid file %r was stale, overwritten' % pidfile)
   # Start new process
-  write_pid(pid_file)
+  write_pid(logger, pidfile)
 
 
-def setFinished(pid_file):
+def setFinished(pidfile):
   try:
-    os.remove(pid_file)
+    os.remove(pidfile)
   except OSError:
     pass
 
 
-def write_pid(pid_file):
-  logger = logging.getLogger('Slapgrid')
+def write_pid(logger, pidfile):
   try:
-    with open(pid_file, 'w') as fout:
+    with open(pidfile, 'w') as fout:
       fout.write('%s' % os.getpid())
   except (IOError, OSError):
-    logger.critical('slapgrid could not write pidfile %s' % pid_file)
+    logger.critical('slapgrid could not write pidfile %s' % pidfile)
     raise
 
 
-def dropPrivileges(uid, gid):
+def dropPrivileges(uid, gid, logger):
   """Drop privileges to uid, gid if current uid is 0
 
   Do tests to check if dropping was successful and that no system call is able
@@ -180,7 +176,6 @@ def dropPrivileges(uid, gid):
 
   Does nothing in case if uid and gid are not 0
   """
-  logger = logging.getLogger('dropPrivileges')
   # XXX-Cedric: remove format / just do a print, otherwise formatting is done
   # twice
   current_uid, current_gid = os.getuid(), os.getgid()
@@ -232,11 +227,10 @@ def dropPrivileges(uid, gid):
   logger.debug('Succesfully dropped privileges to uid=%r gid=%r' % (uid, gid))
 
 
-def bootstrapBuildout(path, buildout=None,
-    additional_buildout_parametr_list=None):
+def bootstrapBuildout(path, logger, buildout=None,
+                      additional_buildout_parametr_list=None):
   if additional_buildout_parametr_list is None:
     additional_buildout_parametr_list = []
-  logger = logging.getLogger('BuildoutManager')
   # Reads uid/gid of path, launches buildout with thoses privileges
   stat_info = os.stat(path)
   uid = stat_info.st_uid
@@ -270,10 +264,11 @@ def bootstrapBuildout(path, buildout=None,
     logger.debug('Invoking: %r in directory %r' % (' '.join(invocation_list),
       path))
     process_handler = SlapPopen(invocation_list,
-                                preexec_fn=lambda: dropPrivileges(uid, gid),
+                                preexec_fn=lambda: dropPrivileges(uid, gid, logger=logger),
                                 cwd=path,
                                 stdout=subprocess.PIPE,
-                                stderr=subprocess.STDOUT)
+                                stderr=subprocess.STDOUT,
+                                logger=logger)
     if process_handler.returncode is None or process_handler.returncode != 0:
       message = 'Failed to run buildout profile in directory %r' % (path)
       logger.error(message)
@@ -285,10 +280,9 @@ def bootstrapBuildout(path, buildout=None,
     logger.debug('Restore umask from %03o to %03o' % (old_umask, umask))
 
 
-def launchBuildout(path, buildout_binary,
+def launchBuildout(path, buildout_binary, logger,
                    additional_buildout_parametr_list=None):
   """ Launches buildout."""
-  logger = logging.getLogger('BuildoutManager')
   if additional_buildout_parametr_list is None:
     additional_buildout_parametr_list = []
   # Reads uid/gid of path, launches buildout with thoses privileges
@@ -311,11 +305,13 @@ def launchBuildout(path, buildout_binary,
     logger.debug('Invoking: %r in directory %r' % (' '.join(invocation_list),
       path))
     process_handler = SlapPopen(invocation_list,
-                                preexec_fn=lambda: dropPrivileges(uid, gid),
+                                preexec_fn=lambda: dropPrivileges(uid, gid, logger=logger),
                                 cwd=path,
-                                env=getCleanEnvironment(pwd.getpwuid(uid).pw_dir),
+                                env=getCleanEnvironment(logger=logger,
+                                                        home_path=pwd.getpwuid(uid).pw_dir),
                                 stdout=subprocess.PIPE,
-                                stderr=subprocess.STDOUT)
+                                stderr=subprocess.STDOUT,
+                                logger=logger)
     if process_handler.returncode is None or process_handler.returncode != 0:
       message = 'Failed to run buildout profile in directory %r' % (path)
       logger.error(message)

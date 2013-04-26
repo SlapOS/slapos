@@ -25,12 +25,14 @@
 #
 ##############################################################################
 
+import logging
+import os
+import unittest
+
 from slapos.grid import SlapObject
 from slapos.grid import utils
 from slapos.grid import networkcache
 from slapos.tests.slapgrid import BasicMixin
-import os
-import unittest
 
 
 class FakeCallAndRead:
@@ -93,6 +95,7 @@ class TestSoftwareSlapObject(BasicMixin, unittest.TestCase):
             url='http://example.com/software.cfg',
             software_root=self.software_root,
             buildout=self.buildout,
+            logger=logging.getLogger(),
             signature_private_key_file='/signature/private/key_file',
             upload_cache_url='http://example.com/uploadcache',
             upload_dir_url='http://example.com/uploaddir',
@@ -129,7 +132,8 @@ class TestSoftwareSlapObject(BasicMixin, unittest.TestCase):
     software = SlapObject.Software(
             url='http://example.com/software.cfg',
             software_root=self.software_root,
-            buildout=self.buildout)
+            buildout=self.buildout,
+            logger=logging.getLogger())
 
     software.install()
 
@@ -161,6 +165,7 @@ class TestSoftwareSlapObject(BasicMixin, unittest.TestCase):
             url='http://example.com/software.cfg',
             software_root=self.software_root,
             buildout=self.buildout,
+            logger=logging.getLogger(),
             signature_private_key_file='/signature/private/key_file',
             upload_cache_url='http://example.com/uploadcache',
             upload_dir_url='http://example.com/uploaddir',
@@ -192,6 +197,7 @@ class TestSoftwareSlapObject(BasicMixin, unittest.TestCase):
             url='http://example.com/software.cfg',
             software_root=self.software_root,
             buildout=self.buildout,
+            logger=logging.getLogger(),
             signature_private_key_file='/signature/private/key_file',
             upload_cache_url='http://example.com/uploadcache',
             upload_dir_url='http://example.com/uploaddir',

@@ -28,7 +28,6 @@
 #
 ##############################################################################
 
-import logging
 import os
 import pkg_resources
 import pwd
@@ -58,7 +57,7 @@ REQUIRED_COMPUTER_PARTITION_PERMISSION = 0o750
 class Software(object):
   """This class is responsible for installing a software release"""
 
-  def __init__(self, url, software_root, buildout,
+  def __init__(self, url, software_root, buildout, logger,
                signature_private_key_file=None, signature_certificate_list=None,
                upload_cache_url=None, upload_dir_url=None, shacache_cert_file=None,
                shacache_key_file=None, shadir_cert_file=None, shadir_key_file=None,
@@ -75,7 +74,7 @@ class Software(object):
     self.software_path = os.path.join(self.software_root,
                                       self.software_url_hash)
     self.buildout = buildout
-    self.logger = logging.getLogger('BuildoutManager')
+    self.logger = logger
     self.signature_private_key_file = signature_private_key_file
     self.signature_certificate_list = signature_certificate_list
     self.upload_cache_url = upload_cache_url
@@ -139,7 +138,8 @@ class Software(object):
     it. If it fails, we notify the server.
     """
     root_stat_info = os.stat(self.software_root)
-    os.environ = getCleanEnvironment(pwd.getpwuid(root_stat_info.st_uid).pw_dir)
+    os.environ = getCleanEnvironment(logger=self.logger,
+                                     home_path=pwd.getpwuid(root_stat_info.st_uid).pw_dir)
     if not os.path.isdir(self.software_path):
       os.mkdir(self.software_path)
     extends_cache = tempfile.mkdtemp()
@@ -177,10 +177,13 @@ class Software(object):
       self.createProfileIfMissing(buildout_cfg, self.url)
 
       buildout_parameter_list.extend(['-c', buildout_cfg])
-      utils.bootstrapBuildout(self.software_path, self.buildout,
-          additional_buildout_parametr_list=buildout_parameter_list)
-      utils.launchBuildout(self.software_path,
-                           os.path.join(self.software_path, 'bin', 'buildout'),
+      utils.bootstrapBuildout(path=self.software_path,
+                              buildout=self.buildout,
+                              logger=self.logger,
+                              additional_buildout_parametr_list=buildout_parameter_list)
+      utils.launchBuildout(path=self.software_path,
+                           buildout_binary=os.path.join(self.software_path, 'bin', 'buildout'),
+                           logger=self.logger,
                            additional_buildout_parametr_list=buildout_parameter_list)
     finally:
       shutil.rmtree(extends_cache)
@@ -256,10 +259,12 @@ class Partition(object):
                server_url,
                software_release_url,
                buildout,
+               logger,
                certificate_repository_path=None,
                ):
     """Initialisation of class parameters"""
     self.buildout = buildout
+    self.logger = logger
     self.software_path = software_path
     self.instance_path = instance_path
     self.run_path = os.path.join(self.instance_path, 'etc', 'run')
@@ -268,7 +273,6 @@ class Partition(object):
         supervisord_partition_configuration_path
     self.supervisord_socket = supervisord_socket
     self.computer_partition = computer_partition
-    self.logger = logging.getLogger('Partition')
     self.computer_id = computer_id
     self.partition_id = partition_id
     self.server_url = server_url
@@ -356,8 +360,8 @@ class Partition(object):
                                  'permissions are: 0%o, wanted are 0%o' %
                                  (self.instance_path, permission,
                                   REQUIRED_COMPUTER_PARTITION_PERMISSION))
-    os.environ = getCleanEnvironment(pwd.getpwuid(
-        instance_stat_info.st_uid).pw_dir)
+    os.environ = getCleanEnvironment(logger=self.logger,
+                                     home_path=pwd.getpwuid(instance_stat_info.st_uid).pw_dir)
     # Generates buildout part from template
     template_location = os.path.join(self.software_path, 'instance.cfg')
     # Backward compatibility: "instance.cfg" file was named "template.cfg".
@@ -417,11 +421,13 @@ class Partition(object):
       self.logger.debug('Invoking %r in %r' % (' '.join(invocation_list),
         self.instance_path))
       process_handler = SlapPopen(invocation_list,
-                                  preexec_fn=lambda: dropPrivileges(uid, gid),
+                                  preexec_fn=lambda: dropPrivileges(uid, gid, logger=self.logger),
                                   cwd=self.instance_path,
-                                  env=getCleanEnvironment(pwd.getpwuid(uid).pw_dir),
+                                  env=getCleanEnvironment(logger=self.logger,
+                                                          home_path=pwd.getpwuid(uid).pw_dir),
                                   stdout=subprocess.PIPE,
-                                  stderr=subprocess.STDOUT)
+                                  stderr=subprocess.STDOUT,
+                                  logger=self.logger)
       if process_handler.returncode is None or process_handler.returncode != 0:
         message = 'Failed to bootstrap buildout in %r.' % (self.instance_path)
         self.logger.error(message)
@@ -430,11 +436,17 @@ class Partition(object):
 
     if not os.path.exists(buildout_binary):
       # use own buildout generation
-      utils.bootstrapBuildout(self.instance_path, self.buildout,
-        ['buildout:bin-directory=%s' % os.path.join(self.instance_path, 'sbin')])
+      utils.bootstrapBuildout(path=self.instance_path,
+                              buildout=self.buildout,
+                              logger=self.logger,
+                              additional_buildout_parameter_list=
+                                ['buildout:bin-directory=%s' %
+                                    os.path.join(self.instance_path, 'sbin')])
       buildout_binary = os.path.join(self.instance_path, 'sbin', 'buildout')
     # Launches buildout
-    utils.launchBuildout(self.instance_path, buildout_binary)
+    utils.launchBuildout(path=self.instance_path,
+                         buildout_binary=buildout_binary,
+                         logger=self.logger)
     # Generates supervisord configuration file from template
     self.logger.info("Generating supervisord config file from template...")
     # check if CP/etc/run exists and it is a directory
@@ -510,11 +522,13 @@ class Partition(object):
       uid, gid = self.getUserGroupId()
       self.logger.debug('Invoking %r' % destroy_executable_location)
       process_handler = SlapPopen([destroy_executable_location],
-                                  preexec_fn=lambda: dropPrivileges(uid, gid),
+                                  preexec_fn=lambda: dropPrivileges(uid, gid, logger=self.logger),
                                   cwd=self.instance_path,
-                                  env=getCleanEnvironment(pwd.getpwuid(uid).pw_dir),
+                                  env=getCleanEnvironment(logger=self.logger,
+                                                          home_path=pwd.getpwuid(uid).pw_dir),
                                   stdout=subprocess.PIPE,
-                                  stderr=subprocess.STDOUT)
+                                  stderr=subprocess.STDOUT,
+                                  logger=self.logger)
       if process_handler.returncode is None or process_handler.returncode != 0:
         message = 'Failed to destroy Computer Partition in %r.' % \
             self.instance_path

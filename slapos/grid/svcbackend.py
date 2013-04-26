@@ -46,13 +46,8 @@ def getSupervisorRPC(socket):
       supervisor_transport)
   return getattr(server_proxy, 'supervisor')
 
-class dummylogger(object):
-    def info(self, *args):
-        print args
-    debug = info
 
 def launchSupervisord(socket, configuration_file, logger):
-  #logger = dummylogger()
   if os.path.exists(socket):
     trynum = 1
     while trynum < 6:
@@ -92,7 +87,8 @@ def launchSupervisord(socket, configuration_file, logger):
                                 env={},
                                 executable=sys.executable,
                                 stdout=subprocess.PIPE,
-                                stderr=subprocess.STDOUT)
+                                stderr=subprocess.STDOUT,
+                                logger=logger)
 
   result = supervisord_popen.communicate()[0]
   if supervisord_popen.returncode:

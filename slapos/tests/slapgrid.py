@@ -117,10 +117,15 @@ class BasicMixin:
       'supervisord')
     self.usage_report_periodicity = 1
     self.buildout = None
-    self.grid = slapgrid.Slapgrid(self.software_root, self.instance_root,
-      self.master_url, self.computer_id, self.supervisord_socket,
-      self.supervisord_configuration_path,
-      self.buildout, develop=develop)
+    self.grid = slapgrid.Slapgrid(self.software_root,
+                                  self.instance_root,
+                                  self.master_url,
+                                  self.computer_id,
+                                  self.supervisord_socket,
+                                  self.supervisord_configuration_path,
+                                  self.buildout,
+                                  develop=develop,
+                                  logger=logging.getLogger())
     # monkey patch buildout bootstrap
     def dummy(*args, **kw):
       pass
@@ -1826,7 +1831,7 @@ exit 127""" % {'worked_file': worked_file})
                      slapos.grid.slapgrid.SLAPGRID_PROMISE_FAIL)
     self.assertTrue(os.path.isfile(worked_file))
 
-    self.assertEqual(instance.error_log, 'Error')
+    self.assertEqual(instance.error_log.split('\n')[-1], 'Error')
     self.assertTrue(instance.error)
     self.assertIsNone(instance.state)
 
