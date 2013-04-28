@@ -15,11 +15,11 @@ class SupervisorctlCommand(ConfigCommand):
     log = logging.getLogger(__name__)
 
     def get_parser(self, prog_name):
-        parser = super(SupervisorctlCommand, self).get_parser(prog_name)
-        parser.add_argument('supervisor_args',
-                            nargs=argparse.REMAINDER,
-                            help='parameters passed to supervisorctl')
-        return parser
+        ap = super(SupervisorctlCommand, self).get_parser(prog_name)
+        ap.add_argument('supervisor_args',
+                        nargs=argparse.REMAINDER,
+                        help='parameters passed to supervisorctl')
+        return ap
 
     def take_action(self, args):
         config = self.fetch_config(args)

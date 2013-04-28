@@ -34,17 +34,14 @@ from slapos.bang import do_bang
 
 
 def main(*args):
-    parser = argparse.ArgumentParser()
-    parser.add_argument('-m', '--message', default='', help='Message for bang.')
-    parser.add_argument('configuration_file', nargs=1, type=argparse.FileType(),
-                        help='SlapOS configuration file.')
-    if len(args) == 0:
-        argument = parser.parse_args()
+    ap = argparse.ArgumentParser()
+    ap.add_argument('-m', '--message', default='', help='Message for bang.')
+    ap.add_argument('configuration_file', type=argparse.FileType(),
+                    help='SlapOS configuration file.')
+    if args:
+        args = ap.parse_args(list(args))
     else:
-        argument = parser.parse_args(list(args))
-    configuration_file = argument.configuration_file[0]
-    message = argument.message
-    # Loads config (if config specified)
+        args = ap.parse_args()
     config = ConfigParser.SafeConfigParser()
-    config.readfp(configuration_file)
-    do_bang(config, message)
+    config.readfp(args.configuration_file)
+    do_bang(config, args.message)

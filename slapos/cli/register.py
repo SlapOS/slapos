@@ -74,6 +74,7 @@ class RegisterCommand(Command):
             return_code = do_register(config)
         except SystemExit, err:
             # Catch exception raised by optparse
+            # XXX returning exception with sys.exit?
             return_code = err
 
         sys.exit(return_code)

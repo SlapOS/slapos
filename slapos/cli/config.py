@@ -21,9 +21,9 @@ class ConfigCommand(Command):
     default_config_path = '/etc/opt/slapos/slapos.cfg'
 
     def get_parser(self, prog_name):
-        parser = super(ConfigCommand, self).get_parser(prog_name)
-        parser.add_argument('--cfg', help='SlapOS configuration file')
-        return parser
+        ap = super(ConfigCommand, self).get_parser(prog_name)
+        ap.add_argument('--cfg', help='SlapOS configuration file')
+        return ap
 
     def _get_config(self, cfg_path, required=False):
         """

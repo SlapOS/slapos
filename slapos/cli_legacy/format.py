@@ -38,8 +38,6 @@ from slapos.format import FormatConfig, UsageError, tracing_monkeypatch, do_form
 def main(*args):
   "Run default configuration."
 
-  # Parse arguments
-
   ap = argparse.ArgumentParser(usage='usage: %s [options] CONFIGURATION_FILE' % sys.argv[0])
 
   ap.add_argument('-x', '--computer_xml',
@@ -96,14 +94,14 @@ def main(*args):
                   help='path to slapos.cfg')
 
   if args:
-    options = ap.parse_args(list(args))
+    args = ap.parse_args(list(args))
   else:
-    options = ap.parse_args()
+    args = ap.parse_args()
 
   logger = logging.getLogger("slapformat")
   logger.addHandler(logging.StreamHandler())
 
-  if options.verbose:
+  if args.verbose:
     logger.setLevel(logging.DEBUG)
     logger.debug("Verbose mode enabled.")
   else:
@@ -112,13 +110,13 @@ def main(*args):
   config = FormatConfig(logger=logger)
 
   configuration_parser = ConfigParser.SafeConfigParser()
-  if configuration_parser.read(options.configuration_file) != [options.configuration_file]:
-    raise UsageError('Cannot find or parse configuration file: %s' % options.configuration_file)
+  if configuration_parser.read(args.configuration_file) != [args.configuration_file]:
+    raise UsageError('Cannot find or parse configuration file: %s' % args.configuration_file)
 
   try:
-    config.setConfig(options, configuration_parser)
-  except UsageError as err:
-    sys.stderr.write(err.message + '\n')
+    config.setConfig(args, configuration_parser)
+  except UsageError as exc:
+    sys.stderr.write(exc.message + '\n')
     sys.stderr.write("For help use --help\n")
     sys.exit(1)
 

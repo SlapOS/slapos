@@ -35,8 +35,6 @@ from slapos.register.register import do_register, RegisterConfig
 
 
 def main():
-  "Run default configuration."
-
   ap = argparse.ArgumentParser(usage='usage: slapos node %s NODE_NAME [options]' % sys.argv[0])
 
   ap.add_argument('node_name',
@@ -86,9 +84,9 @@ def main():
                   default=False,
                   action='store_true')
 
-  options = ap.parse_args()
+  args = ap.parse_args()
 
-  if options.password and not options.login:
+  if args.password and not args.login:
     ap.error('Please enter your login with your password')
 
   logger = logging.getLogger('Register')
@@ -100,10 +98,11 @@ def main():
 
   try:
     config = RegisterConfig(logger=logger)
-    config.setConfig(options)
+    config.setConfig(args)
     return_code = do_register(config)
-  except SystemExit, err:
+  except SystemExit as exc:
     # Catch exception raised by optparse
-    return_code = err
+    # XXX returning exception with sys.exit?
+    return_code = exc
 
   sys.exit(return_code)

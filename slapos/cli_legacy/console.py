@@ -40,12 +40,12 @@ examples :
   ap.add_argument('configuration_file',
                   help='path to slapos.cfg')
 
-  options = ap.parse_args()
+  args = ap.parse_args()
 
-  if not os.path.isfile(options.configuration_file):
-    ap.error("%s: Not found or not a regular file." % options.configuration_file)
+  if not os.path.isfile(args.configuration_file):
+    ap.error("%s: Not found or not a regular file." % args.configuration_file)
 
-  config = ClientConfig(options, get_config_parser(options.configuration_file))
+  config = ClientConfig(args, get_config_parser(args.configuration_file))
   local = init(config)
   do_console(local)
 

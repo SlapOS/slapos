@@ -72,9 +72,9 @@ def checkSlaposCfg():
   for element in sys.argv:
     if '.cfg' in element:
       if os.path.exists(element):
-        configuration = ConfigParser.SafeConfigParser()
-        configuration.read(element)
-        if configuration.has_section('slapos'):
+        config = ConfigParser.SafeConfigParser()
+        config.read(element)
+        if config.has_section('slapos'):
           return True
   return False
 
@@ -207,23 +207,23 @@ Node subcommands usage:
 
   # Parse arguments
   # XXX remove the "positional arguments" from help message
-  parser = argparse.ArgumentParser(usage=usage)
-  parser.add_argument('command')
-  parser.add_argument('argument_list', nargs=argparse.REMAINDER)
+  ap = argparse.ArgumentParser(usage=usage)
+  ap.add_argument('command')
+  ap.add_argument('argument_list', nargs=argparse.REMAINDER)
 
-  namespace = parser.parse_args()
+  args = ap.parse_args()
   # Set sys.argv for the sub-entry point that we will call
-  command_line = [namespace.command]
-  command_line.extend(namespace.argument_list)
+  command_line = [args.command]
+  command_line.extend(args.argument_list)
   sys.argv = command_line
 
   try:
-    if not dispatch(namespace.command, is_node):
-      parser.print_help()
+    if not dispatch(args.command, is_node):
+      ap.print_help()
       sys.exit(1)
   except EntryPointNotImplementedError, exception:
     print ('The command %s does not exist or is not yet implemented. Please '
-        'have a look at http://community.slapos.org to read documentation or '
-        'forum. Please also make sure that SlapOS Node is up to '
-        'date.' % exception)
+           'have a look at http://community.slapos.org to read documentation or '
+           'forum. Please also make sure that SlapOS Node is up to '
+           'date.' % exception)
     sys.exit(1)

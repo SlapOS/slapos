@@ -11,5 +11,3 @@ def get_config_parser(path):
         raise OSError('Specified configuration file %s does not exist. Exiting.' % path)
     configuration_parser.read(path)
     return configuration_parser
-
-
