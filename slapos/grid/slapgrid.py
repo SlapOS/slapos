@@ -125,7 +125,7 @@ def check_missing_files(options):
       raise RuntimeError('Directory %r does not exist' % d)
 
 
-def parse_arguments_merge_config(*argument_tuple):
+def parse_arguments(*argument_tuple):
   """Parse arguments and return options dictionary merged with the config file."""
 
   ap = argparse.ArgumentParser()
@@ -197,9 +197,11 @@ def parse_arguments_merge_config(*argument_tuple):
   else:
     args = ap.parse_args(list(argument_tuple))
 
+  return args
+
+
+def merged_options(args, config):
   options = {}
-  config = ConfigParser.SafeConfigParser()
-  config.readfp(args.configuration_file)
 
   options = dict(config.items('slapos'))
   if config.has_section('networkcache'):
@@ -207,6 +209,34 @@ def parse_arguments_merge_config(*argument_tuple):
   for key, value in vars(args).iteritems():
     if value is not None:
       options[key] = value
+
+  if options.get('all'):
+    options['develop'] = True
+
+  if options.get('maximum_periodicity') is not None:
+    options['force_periodicity'] = True
+
+  # Supervisord configuration location
+  if not options.get('supervisord_configuration_path'):
+    options['supervisord_configuration_path'] = \
+      os.path.join(options['instance_root'], 'etc', 'supervisord.conf')
+  # Supervisord socket
+  if not options.get('supervisord_socket'):
+    options['supervisord_socket'] = \
+      os.path.join(options['instance_root'], 'supervisord.socket')
+
+  # Parse cache / binary cache options
+  # Backward compatibility about "binary-cache-url-blacklist" deprecated option
+  if options.get("binary-cache-url-blacklist") and not \
+      options.get("download-from-binary-cache-url-blacklist"):
+    options["download-from-binary-cache-url-blacklist"] = \
+        options["binary-cache-url-blacklist"]
+  options["download-from-binary-cache-url-blacklist"] = [
+      url.strip() for url in options.get(
+          "download-from-binary-cache-url-blacklist", "").split('\n') if url]
+  options["upload-to-binary-cache-url-blacklist"] = [
+      url.strip() for url in options.get(
+          "upload-to-binary-cache-url-blacklist", "").split('\n') if url]
 
   return options
 
@@ -247,52 +277,27 @@ def random_delay(options, logger):
     time.sleep(duration)
 
 
-
 def parseArgumentTupleAndReturnSlapgridObject(*argument_tuple):
   """Returns a new instance of slapgrid.Slapgrid created with argument+config parameters.
      Also returns the pidfile path, and configures logger.
   """
-  options = parse_arguments_merge_config(*argument_tuple)
+  args = parse_arguments(*argument_tuple)
+
+  config = ConfigParser.SafeConfigParser()
+  config.readfp(args.configuration_file)
+
+  options = merged_options(args, config)
 
   logger = setup_logger(options)
 
   check_missing_parameters(options)
   check_missing_files(options)
 
-  if options.get('all'):
-    options['develop'] = True
-
-  if options.get('maximum_periodicity') is not None:
-    options['force_periodicity'] = True
-
-  # Supervisord configuration location
-  if not options.get('supervisord_configuration_path'):
-    options['supervisord_configuration_path'] = \
-      os.path.join(options['instance_root'], 'etc', 'supervisord.conf')
-  # Supervisord socket
-  if not options.get('supervisord_socket'):
-    options['supervisord_socket'] = \
-      os.path.join(options['instance_root'], 'supervisord.socket')
-
-  # Parse cache / binary cache options
-  # Backward compatibility about "binary-cache-url-blacklist" deprecated option
-  if options.get("binary-cache-url-blacklist") and not \
-      options.get("download-from-binary-cache-url-blacklist"):
-    options["download-from-binary-cache-url-blacklist"] = \
-        options["binary-cache-url-blacklist"]
-  options["download-from-binary-cache-url-blacklist"] = [
-      url.strip() for url in options.get(
-          "download-from-binary-cache-url-blacklist", "").split('\n') if url]
-  options["upload-to-binary-cache-url-blacklist"] = [
-      url.strip() for url in options.get(
-          "upload-to-binary-cache-url-blacklist", "").split('\n') if url]
-
   random_delay(options, logger=logger)
 
   slapgrid_object = create_slapgrid_object(options, logger=logger)
 
   return slapgrid_object, options.get('pidfile')
-
 
 
 def create_slapgrid_object(options, logger):
