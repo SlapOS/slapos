@@ -242,21 +242,25 @@ def merged_options(args, config):
 
 
 def setup_logger(options):
-  if options['verbose']:
-    level = logging.DEBUG
-  else:
-    level = logging.INFO
-  logging.basicConfig(format='%(asctime)s %(levelname)-8s %(message)s',
-                      level=level,
-                      datefmt='%Y-%m-%dT%H:%M:%S')
-  if options.get('logfile'):
-    console = logging.FileHandler(options['logfile'])
-    console.setLevel(level)
-    console.setFormatter(logging.Formatter(
-        '%(asctime)s %(name)-18s: %(levelname)-8s %(message)s'))
-    logging.getLogger('').addHandler(console)
-
   logger = logging.getLogger(__name__)
+
+  if options.get('logfile'):
+    handler = logging.FileHandler(options['logfile'])
+  else:
+    handler = logging.StreamHandler()
+
+  if options['verbose']:
+    handler.setLevel(logging.DEBUG)
+  else:
+    handler.setLevel(logging.INFO)
+
+  formatter = logging.Formatter(fmt='%(asctime)s %(name)-18s: '
+                                '%(levelname)-8s %(message)s',
+                                datefmt='%Y-%m-%dT%H:%M:%S')
+
+  handler.setFormatter(formatter)
+  logger.addHandler(handler)
+
   return logger
 
 
