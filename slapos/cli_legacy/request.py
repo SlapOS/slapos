@@ -45,7 +45,7 @@ def request():
   args = ap.parse_args()
 
   if args.configuration:
-    args.configuration = argToDict(args.configuration)
+    args.parameters = argToDict(args.configuration)
 
   if args.node:
     args.node = argToDict(args.node)

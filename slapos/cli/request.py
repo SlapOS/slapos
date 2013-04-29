@@ -44,8 +44,7 @@ class RequestCommand(ClientConfigCommand):
                         action='store_true',
                         help='Ask for a slave instance')
 
-        # XXX maybe find a better name? we already have a global --cfg option
-        ap.add_argument('--configuration',
+        ap.add_argument('--parameters',
                         nargs='+',
                         help="Give your configuration 'option1=value1 option2=value2'")
 
@@ -53,7 +52,7 @@ class RequestCommand(ClientConfigCommand):
 
     def take_action(self, args):
         args.node = parse_option_dict(args.node)
-        args.configuration = parse_option_dict(args.configuration)
+        args.parameters = parse_option_dict(args.parameters)
 
         configp = self.fetch_config(args)
         conf = ClientConfig(args, configp)

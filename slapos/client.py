@@ -123,7 +123,7 @@ def do_request(conf, local):
     partition = local['slap'].registerOpenOrder().request(
       software_release = conf.software_url,
       partition_reference = conf.reference,
-      partition_parameter_kw = conf.configuration,
+      partition_parameter_kw = conf.parameters,
       software_type = conf.type,
       filter_kw = conf.node,
       shared = conf.slave
