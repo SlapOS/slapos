@@ -3,7 +3,7 @@
 import ConfigParser
 import os
 
-from cliff.command import Command
+from slapos.cli.command import Command
 
 
 class ConfigError(Exception):

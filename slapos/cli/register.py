@@ -3,7 +3,7 @@
 import logging
 import sys
 
-from cliff.command import Command
+from slapos.cli.command import Command
 from slapos.register.register import do_register, RegisterConfig
 
 
