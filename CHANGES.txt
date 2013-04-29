@@ -1,6 +1,13 @@
 Changes
 =======
 
+0.78.0 (2013-04-28)
+-------------------
+
+ * LAMP stack: Allow to give application-dependent parameters to application configuration file. [Cedric de Saint Martin]
+ * zabbix-agent: Allow user to pass zabbix parameter. [Cedric de Saint Martin]
+ * kvm frontend: listen to ipv6 and ipv4. [Jean-Baptiste Petre]
+
 0.77.1 (2013-04-18)
 -------------------
 
