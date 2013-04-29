@@ -10,7 +10,7 @@ class Command(cliff.command.Command):
         parser = argparse.ArgumentParser(
             description=self.get_description(),
             prog=prog_name,
-            formatter_class=argparse.RawTextHelpFormatter
+            formatter_class=argparse.RawDescriptionHelpFormatter
         )
 
         return parser

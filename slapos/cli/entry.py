@@ -24,9 +24,10 @@ class SlapOSApp(cliff.app.App):
 
     #
     # self.options.verbose_level:
-    #    -q  -> 0
-    #    -v  -> 2
-    #    -vv -> 3
+    #    -q  -> 0 (WARNING)
+    #        -> 1 (INFO)
+    #    -v  -> 2 (DEBUG)
+    #    -vv -> 3 (...)
     #    etc.
     #
 
@@ -38,6 +39,12 @@ class SlapOSApp(cliff.app.App):
             version=slapos.version.version,
             command_manager=SlapOSCommandManager('slapos.cli'),
         )
+
+    def build_option_parser(self, *args, **kw):
+        parser = super(SlapOSApp, self).build_option_parser(*args, **kw)
+        # always show tracebacks on errors
+        parser.set_defaults(debug=True)
+        return parser
 
     def initialize_app(self, argv):
         if self.options.verbose_level > 2:
