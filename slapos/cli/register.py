@@ -64,17 +64,11 @@ class RegisterCommand(Command):
         return ap
 
     def take_action(self, args):
-        #if args.password and not args.login:
-        #  # XXX we don't have the parser now, maybe could be handled with an argument group?
-        #  ap.error('Please enter your login with your password')
-
         try:
             conf = RegisterConfig(logger=self.log)
             conf.setConfig(args)
             return_code = do_register(conf)
-        except SystemExit, err:
-            # Catch exception raised by optparse
-            # XXX returning exception with sys.exit?
+        except SystemExit as err:
             return_code = err
 
         sys.exit(return_code)

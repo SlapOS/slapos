@@ -101,8 +101,6 @@ def main():
     conf.setConfig(args)
     return_code = do_register(conf)
   except SystemExit as exc:
-    # Catch exception raised by optparse
-    # XXX returning exception with sys.exit?
     return_code = exc
 
   sys.exit(return_code)
