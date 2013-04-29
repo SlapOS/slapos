@@ -1519,7 +1519,7 @@ class TestSlapOSSlapToolInstanceAccess(TestSlapOSSlapToolMixin):
     <unicode>created_at</unicode>
     <unicode>%(created_at)s</unicode>
     <unicode>text</unicode>
-    <unicode>#access instance correctly stopped</unicode>
+    <unicode>#access Instance correctly stopped</unicode>
     <unicode>user</unicode>
     <unicode>%(instance_guid)s</unicode>
   </dictionary>
@@ -1556,7 +1556,7 @@ class TestSlapOSSlapToolInstanceAccess(TestSlapOSSlapToolMixin):
     <unicode>created_at</unicode>
     <unicode>%(created_at)s</unicode>
     <unicode>text</unicode>
-    <unicode>#access instance correctly started</unicode>
+    <unicode>#access Instance correctly started</unicode>
     <unicode>user</unicode>
     <unicode>%(instance_guid)s</unicode>
   </dictionary>
