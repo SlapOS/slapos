@@ -39,12 +39,14 @@ import netifaces
 import os
 import pwd
 import random
+import shutil
 import socket
 import struct
 import subprocess
 import sys
 import threading
 import time
+import traceback
 import zipfile
 
 import lxml.etree
@@ -262,7 +264,7 @@ class Computer(object):
           "SlapOS Master. Please make sure computer_id of slapos.cfg looks "
           "like 'COMP-123' and is correct.\nError is : 404 Not Found." % error)
 
-  def dump(self, path_to_xml, path_to_json):
+  def dump(self, path_to_xml, path_to_json, logger):
     """
     Dump the computer object to an xml file via xml_marshaller.
 
@@ -290,7 +292,18 @@ class Computer(object):
           return
 
     if os.path.exists(path_to_xml):
-      self.backup_xml(path_to_archive, path_to_xml)
+      try:
+        self.backup_xml(path_to_archive, path_to_xml)
+      except:
+        # might be a corrupted zip file. let's move it out of the way and retry.
+        shutil.move(path_to_archive,
+                    path_to_archive+time.strftime('_broken_%Y%m%d-%H:%M'))
+        try:
+          self.backup_xml(path_to_archive, path_to_xml)
+        except:
+          # give up trying
+          logger.warning("Can't backup %s: %s" %
+                           (path_to_xml, traceback.format_exc()))
 
     with open(path_to_xml, 'wb') as fout:
       fout.write(new_pretty_xml)
@@ -1066,7 +1079,8 @@ def do_format(config):
   # Dumping and sending to the erp5 the current configuration
   if not config.dry_run:
     computer.dump(path_to_xml=config.computer_xml,
-                  path_to_json=config.computer_json)
+                  path_to_json=config.computer_json,
+                  logger=config.logger)
   config.logger.info('Posting information to %r' % config.master_url)
   computer.send(config)
   config.logger.info('slapformat successfully prepared computer.')
