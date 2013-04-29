@@ -54,9 +54,11 @@ class ConfigCommand(Command):
 
     def fetch_config(self, args):
         if args.cfg:
-            cfg_path = os.path.expanduser(args.cfg)
+            cfg_path = args_cfg
         else:
             cfg_path = os.environ.get(self.default_config_var, self.default_config_path)
+
+        cfg_path = os.path.expanduser(cfg_path)
 
         self.log.debug('Loading config: %s' % cfg_path)
 
@@ -64,6 +66,5 @@ class ConfigCommand(Command):
 
 
 class ClientConfigCommand(ConfigCommand):
-    # XXX does not fallback to SLAPOS_CONFIGURATION
     default_config_var = 'SLAPOS_CLIENT_CONFIGURATION'
     default_config_path = '~/.slapos/slapos.cfg'
