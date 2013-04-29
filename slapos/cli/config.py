@@ -54,7 +54,7 @@ class ConfigCommand(Command):
 
     def fetch_config(self, args):
         if args.cfg:
-            cfg_path = args_cfg
+            cfg_path = args.cfg
         else:
             cfg_path = os.environ.get(self.default_config_var, self.default_config_path)
 
