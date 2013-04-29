@@ -22,6 +22,8 @@ class SlapgridCommand(ConfigCommand):
     def get_parser(self, prog_name):
         ap = super(SlapgridCommand, self).get_parser(prog_name)
 
+        # XXX TODO separate parsers for instance, software and report
+
         ap.add_argument('--instance-root',
                         help='The instance root directory location.')
         ap.add_argument('--software-root',

@@ -17,7 +17,7 @@ class ConfigCommand(Command):
 
     default_config_var = 'SLAPOS_CONFIGURATION'
 
-    # use this is default_config_var does not exist
+    # use this if default_config_var does not exist
     default_config_path = '/etc/opt/slapos/slapos.cfg'
 
     def get_parser(self, prog_name):
