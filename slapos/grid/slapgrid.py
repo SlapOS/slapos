@@ -122,12 +122,11 @@ def check_missing_files(options):
       raise RuntimeError('Directory %r does not exist' % d)
 
 
-def merged_options(args, config):
-  options = {}
+def merged_options(args, configp):
+  options = dict(configp.items('slapos'))
 
-  options = dict(config.items('slapos'))
-  if config.has_section('networkcache'):
-    options.update(dict(config.items('networkcache')))
+  if configp.has_section('networkcache'):
+    options.update(dict(configp.items('networkcache')))
   for key, value in vars(args).iteritems():
     if value is not None:
       options[key] = value

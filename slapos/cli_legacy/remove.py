@@ -16,6 +16,7 @@ def remove():
                   help='Target node')
   args = ap.parse_args()
 
-  config = ClientConfig(args, get_config_parser(args.configuration_file))
-  local = init(config)
+  configp = get_config_parser(args.configuration_file)
+  conf = ClientConfig(args, configp)
+  local = init(conf)
   do_remove(args.software_url, args.node, local)

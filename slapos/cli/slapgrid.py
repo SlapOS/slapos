@@ -70,8 +70,8 @@ class SlapgridCommand(ConfigCommand):
         return ap
 
     def take_action(self, args):
-        config = self.fetch_config(args)
-        options = merged_options(args, config)
+        configp = self.fetch_config(args)
+        options = merged_options(args, configp)
 
         check_missing_parameters(options)
         check_missing_files(options)

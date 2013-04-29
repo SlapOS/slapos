@@ -44,6 +44,7 @@ examples :
   if not os.path.isfile(args.configuration_file):
     ap.error("%s: Not found or not a regular file." % args.configuration_file)
 
-  config = ClientConfig(args, get_config_parser(args.configuration_file))
-  local = init(config)
+  configp = get_config_parser(args.configuration_file)
+  conf = ClientConfig(args, configp)
+  local = init(conf)
   do_console(local)

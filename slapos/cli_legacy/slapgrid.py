@@ -115,10 +115,10 @@ def parseArgumentTupleAndReturnSlapgridObject(*argument_tuple):
   """
   args = parse_arguments(*argument_tuple)
 
-  config = ConfigParser.SafeConfigParser()
-  config.readfp(args.configuration_file)
+  configp = ConfigParser.SafeConfigParser()
+  configp.readfp(args.configuration_file)
 
-  options = merged_options(args, config)
+  options = merged_options(args, configp)
 
   logger = setup_logger(options)
 

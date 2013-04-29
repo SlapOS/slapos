@@ -42,6 +42,6 @@ def main(*args):
         args = ap.parse_args(list(args))
     else:
         args = ap.parse_args()
-    config = ConfigParser.SafeConfigParser()
-    config.readfp(args.configuration_file)
-    do_bang(config, args.message)
+    configp = ConfigParser.SafeConfigParser()
+    configp.readfp(args.configuration_file)
+    do_bang(configp, args.message)

@@ -107,23 +107,23 @@ def main(*args):
   else:
     logger.setLevel(logging.INFO)
 
-  config = FormatConfig(logger=logger)
+  conf = FormatConfig(logger=logger)
 
-  configuration_parser = ConfigParser.SafeConfigParser()
-  if configuration_parser.read(args.configuration_file) != [args.configuration_file]:
+  configp = ConfigParser.SafeConfigParser()
+  if configp.read(args.configuration_file) != [args.configuration_file]:
     raise UsageError('Cannot find or parse configuration file: %s' % args.configuration_file)
 
   try:
-    config.setConfig(args, configuration_parser)
+    conf.setConfig(args, configp)
   except UsageError as exc:
     sys.stderr.write(exc.message + '\n')
     sys.stderr.write("For help use --help\n")
     sys.exit(1)
 
-  tracing_monkeypatch(config)
+  tracing_monkeypatch(conf)
 
   try:
-    do_format(config=config)
+    do_format(conf=conf)
   except:
-    config.logger.exception('Uncaught exception:')
+    conf.logger.exception('Uncaught exception:')
     raise

@@ -42,15 +42,15 @@ class ConfigCommand(Command):
             else:
                 return None
 
-        config = ConfigParser.SafeConfigParser()
-        if config.read(cfg_path) != [cfg_path]:
+        configp = ConfigParser.SafeConfigParser()
+        if configp.read(cfg_path) != [cfg_path]:
             # bad permission, etc.
             if required:
                 raise ConfigError('Cannot parse configuration file: %s' % cfg_path)
             else:
                 return None
 
-        return config
+        return configp
 
     def fetch_config(self, args):
         if args.cfg:

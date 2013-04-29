@@ -12,7 +12,7 @@ def cache_lookup():
     ap.add_argument("software_url", help="Your software url or MD5 hash")
     args = ap.parse_args()
 
-    config = ConfigParser.SafeConfigParser()
-    config.read(args.configuration_file)
+    configp = ConfigParser.SafeConfigParser()
+    configp.read(args.configuration_file)
 
-    do_lookup(config, args.software_url)
+    do_lookup(configp, args.software_url)

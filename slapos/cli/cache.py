@@ -18,5 +18,5 @@ class CacheLookupCommand(ConfigCommand):
         return ap
 
     def take_action(self, args):
-        config = self.fetch_config(args)
-        do_lookup(config, args.software_url)
+        configp = self.fetch_config(args)
+        do_lookup(configp, args.software_url)

@@ -97,9 +97,9 @@ def main():
   logger.addHandler(handler)
 
   try:
-    config = RegisterConfig(logger=logger)
-    config.setConfig(args)
-    return_code = do_register(config)
+    conf = RegisterConfig(logger=logger)
+    conf.setConfig(args)
+    return_code = do_register(conf)
   except SystemExit as exc:
     # Catch exception raised by optparse
     # XXX returning exception with sys.exit?

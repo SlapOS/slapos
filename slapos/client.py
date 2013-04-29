@@ -37,24 +37,25 @@ from slapos.slap import ResourceNotReady
 
 
 class ClientConfig(object):
-  def __init__(self, option_dict, configuration_parser=None):
+  def __init__(self, args, configp=None):
+    # XXX configp cannot possibly be optional
     """
     Set options given by parameters.
     """
     # Set options parameters
-    for option, value in option_dict.__dict__.items():
-      setattr(self, option, value)
+    for key, value in args.__dict__.items():
+      setattr(self, key, value)
 
     # Merges the arguments and configuration
     try:
-      configuration_dict = dict(configuration_parser.items('slapconsole'))
+      configuration_dict = dict(configp.items('slapconsole'))
     except ConfigParser.NoSectionError:
       pass
     else:
       for key in configuration_dict:
         if not getattr(self, key, None):
           setattr(self, key, configuration_dict[key])
-    configuration_dict = dict(configuration_parser.items('slapos'))
+    configuration_dict = dict(configp.items('slapos'))
     master_url = configuration_dict.get('master_url', None)
     # Backward compatibility, if no key and certificate given in option
     # take one from slapos configuration
@@ -77,18 +78,18 @@ class ClientConfig(object):
     if self.cert_file:
         self.cert_file = os.path.expanduser(self.cert_file)
 
-def init(config):
+def init(conf):
   """Initialize Slap instance, connect to server and create
   aliases to common software releases"""
   # XXX check certificate and key existence
   slap = slapos.slap.slap()
-  slap.initializeConnection(config.master_url,
-      key_file=config.key_file, cert_file=config.cert_file)
+  slap.initializeConnection(conf.master_url,
+      key_file=conf.key_file, cert_file=conf.cert_file)
   local = globals().copy()
   local['slap'] = slap
   # Create aliases as global variables
   try:
-    alias = config.alias.split('\n')
+    alias = conf.alias.split('\n')
   except AttributeError:
     alias = []
   software_list = []
@@ -113,19 +114,19 @@ def init(config):
   return local
 
 
-def do_request(config, local):
+def do_request(conf, local):
   # Request instance
-  print("Requesting %s..." % config.reference)
-  if config.software_url in local:
-    config.software_url = local[config.software_url]
+  print("Requesting %s..." % conf.reference)
+  if conf.software_url in local:
+    conf.software_url = local[conf.software_url]
   try:
     partition = local['slap'].registerOpenOrder().request(
-      software_release = config.software_url,
-      partition_reference = config.reference,
-      partition_parameter_kw = config.configuration,
-      software_type = config.type,
-      filter_kw = config.node,
-      shared = config.slave
+      software_release = conf.software_url,
+      partition_reference = conf.reference,
+      partition_parameter_kw = conf.configuration,
+      software_type = conf.type,
+      filter_kw = conf.node,
+      shared = conf.slave
     )
     print "Instance requested.\nState is : %s." % partition.getState()
     print "Connection parameters of instance are:"

@@ -69,9 +69,9 @@ class RegisterCommand(Command):
         #  ap.error('Please enter your login with your password')
 
         try:
-            config = RegisterConfig(logger=self.log)
-            config.setConfig(args)
-            return_code = do_register(config)
+            conf = RegisterConfig(logger=self.log)
+            conf.setConfig(args)
+            return_code = do_register(conf)
         except SystemExit, err:
             # Catch exception raised by optparse
             # XXX returning exception with sys.exit?

@@ -77,7 +77,7 @@ def get_computer_name(certificate):
   return certificate[k:i]
 
 
-def save_former_config(config):
+def save_former_config(conf):
   """Save former configuration if found"""
   # Check for config file in /etc/opt/slapos/
   if os.path.exists('/etc/opt/slapos/slapos.cfg'):
@@ -95,7 +95,7 @@ def save_former_config(config):
         saved += '.1'
     else:
         break
-  config.logger.info("Former slapos configuration detected in %s moving to %s" % (former, saved))
+  conf.logger.info("Former slapos configuration detected in %s moving to %s" % (former, saved))
   shutil.move(former, saved)
 
 
@@ -111,11 +111,11 @@ def get_slapos_conf_example():
   return path
 
 
-def slapconfig(config):
+def slapconfig(conf):
   """Base Function to configure slapos in /etc/opt/slapos"""
-  dry_run = config.dry_run
+  dry_run = conf.dry_run
   # Create slapos configuration directory if needed
-  slap_conf_dir = os.path.normpath(config.slapos_configuration)
+  slap_conf_dir = os.path.normpath(conf.slapos_configuration)
 
   # Make sure everybody can read slapos configuration directory:
   # Add +x to directories in path
@@ -128,23 +128,23 @@ def slapconfig(config):
     directory = os.path.dirname(directory)
 
   if not os.path.exists(slap_conf_dir):
-    config.logger.info("Creating directory: %s" % slap_conf_dir)
+    conf.logger.info("Creating directory: %s" % slap_conf_dir)
     if not dry_run:
       os.mkdir(slap_conf_dir, 0o711)
 
   user_certificate_repository_path = os.path.join(slap_conf_dir, 'ssl')
   if not os.path.exists(user_certificate_repository_path):
-    config.logger.info("Creating directory: %s" % user_certificate_repository_path)
+    conf.logger.info("Creating directory: %s" % user_certificate_repository_path)
     if not dry_run:
       os.mkdir(user_certificate_repository_path, 0o711)
 
   key_file = os.path.join(user_certificate_repository_path, 'key')
   cert_file = os.path.join(user_certificate_repository_path, 'certificate')
   for src, dst in [
-          (config.key, key_file),
-          (config.certificate, cert_file)
+          (conf.key, key_file),
+          (conf.certificate, cert_file)
           ]:
-    config.logger.info("Copying to %r, and setting minimum privileges" % dst)
+    conf.logger.info("Copying to %r, and setting minimum privileges" % dst)
     if not dry_run:
       with open(dst, 'w') as destination:
         destination.write(''.join(src))
@@ -153,41 +153,41 @@ def slapconfig(config):
 
   certificate_repository_path = os.path.join(slap_conf_dir, 'ssl', 'partition_pki')
   if not os.path.exists(certificate_repository_path):
-    config.logger.info("Creating directory: %s" % certificate_repository_path)
+    conf.logger.info("Creating directory: %s" % certificate_repository_path)
     if not dry_run:
       os.mkdir(certificate_repository_path, 0o711)
 
   # Put slapos configuration file
   slap_conf_file = os.path.join(slap_conf_dir, 'slapos.cfg')
-  config.logger.info("Creating slap configuration: %s" % slap_conf_file)
+  conf.logger.info("Creating slap configuration: %s" % slap_conf_file)
 
   # Get example configuration file
   slapos_cfg_example = get_slapos_conf_example()
-  conf_parser = ConfigParser.RawConfigParser()
-  conf_parser.read(slapos_cfg_example)
+  new_configp = ConfigParser.RawConfigParser()
+  new_configp.read(slapos_cfg_example)
   os.remove(slapos_cfg_example)
 
   for section, key, value in [
-          ('slapos', 'computer_id', config.computer_id),
-          ('slapos', 'master_url', config.master_url),
+          ('slapos', 'computer_id', conf.computer_id),
+          ('slapos', 'master_url', conf.master_url),
           ('slapos', 'key_file', key_file),
           ('slapos', 'cert_file', cert_file),
           ('slapos', 'certificate_repository_path', certificate_repository_path),
-          ('slapformat', 'interface_name', config.interface_name),
-          ('slapformat', 'ipv4_local_network', config.ipv4_local_network),
-          ('slapformat', 'partition_amount', config.partition_number),
-          ('slapformat', 'create_tap', config.create_tap)
+          ('slapformat', 'interface_name', conf.interface_name),
+          ('slapformat', 'ipv4_local_network', conf.ipv4_local_network),
+          ('slapformat', 'partition_amount', conf.partition_number),
+          ('slapformat', 'create_tap', conf.create_tap)
           ]:
-    conf_parser.set(section, key, value)
+    new_configp.set(section, key, value)
 
-  if config.ipv6_interface:
-    conf_parser.set('slapformat', 'ipv6_interface', config.ipv6_interface)
+  if conf.ipv6_interface:
+    new_configp.set('slapformat', 'ipv6_interface', conf.ipv6_interface)
 
   if not dry_run:
     with open(slap_conf_file, 'w') as fout:
-      conf_parser.write(fout)
+      new_configp.write(fout)
 
-  config.logger.info("SlapOS configuration: DONE")
+  conf.logger.info("SlapOS configuration: DONE")
 
 
 class RegisterConfig(object):
@@ -221,43 +221,43 @@ class RegisterConfig(object):
     self.logger.debug("Ipv6 Interface: %s" % self.ipv6_interface)
 
 
-def gen_auth(config):
+def gen_auth(conf):
   ask = True
-  if config.login:
-    if config.password:
-      yield config.login, config.password
+  if conf.login:
+    if conf.password:
+      yield conf.login, conf.password
       ask = False
     else:
-      yield config.login, getpass.getpass()
+      yield conf.login, getpass.getpass()
   while ask:
     yield raw_input('SlapOS Master Login: '), getpass.getpass()
 
 
-def do_register(config):
+def do_register(conf):
   """Register new computer on SlapOS Master and generate slapos.cfg"""
 
-  for login, password in gen_auth(config):
-    if check_credentials(config.master_url_web, login, password):
+  for login, password in gen_auth(conf):
+    if check_credentials(conf.master_url_web, login, password):
       break
-    config.logger.warning('Wrong login/password')
+    conf.logger.warning('Wrong login/password')
   else:
     return 1
 
   # Get source code of page having certificate and key
-  certificate_key = get_certificates(config.master_url_web, config.node_name, login, password)
+  certificate_key = get_certificates(conf.master_url_web, conf.node_name, login, password)
   # Parse certificate and key and get computer id
   certificate, key = parse_certificates(certificate_key)
   COMP = get_computer_name(certificate)
   # Getting configuration parameters
-  config.COMPConfig(slapos_configuration='/etc/opt/slapos/',
-                    computer_id=COMP,
-                    certificate=certificate,
-                    key=key)
+  conf.COMPConfig(slapos_configuration='/etc/opt/slapos/',
+                  computer_id=COMP,
+                  certificate=certificate,
+                  key=key)
   # Save former configuration
-  if not config.dry_run:
-    save_former_config(config)
+  if not conf.dry_run:
+    save_former_config(conf)
   # Prepare Slapos Configuration
-  slapconfig(config)
+  slapconfig(conf)
 
   print "Node has successfully been configured as %s." % COMP
   return 0

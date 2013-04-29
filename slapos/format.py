@@ -66,9 +66,9 @@ class OS(object):
 
   _os = os
 
-  def __init__(self, config):
-    self._dry_run = config.dry_run
-    self._logger = config.logger
+  def __init__(self, conf):
+    self._dry_run = conf.dry_run
+    self._logger = conf.logger
     add = self._addWrapper
     add('chown')
     add('chmod')
@@ -241,21 +241,21 @@ class Computer(object):
     # Can't find address
     raise NoAddressOnInterface('No valid IPv6 found on %s.' % self.interface.name)
 
-  def send(self, config):
+  def send(self, conf):
     """
     Send a marshalled dictionary of the computer object serialized via_getDict.
     """
 
     slap_instance = slap.slap()
     connection_dict = {}
-    if config.key_file and config.cert_file:
-      connection_dict['key_file'] = config.key_file
-      connection_dict['cert_file'] = config.cert_file
-    slap_instance.initializeConnection(config.master_url,
+    if conf.key_file and conf.cert_file:
+      connection_dict['key_file'] = conf.key_file
+      connection_dict['cert_file'] = conf.cert_file
+    slap_instance.initializeConnection(conf.master_url,
                                        **connection_dict)
     slap_computer = slap_instance.registerComputer(self.reference)
 
-    if config.dry_run:
+    if conf.dry_run:
       return
     try:
       slap_computer.updateConfiguration(xml_marshaller.xml_marshaller.dumps(_getDict(self)))
@@ -925,8 +925,8 @@ class Interface(object):
     raise AddressGenerationError(addr)
 
 
-def parse_computer_definition(config, definition_path):
-  config.logger.info('Using definition file %r' % definition_path)
+def parse_computer_definition(conf, definition_path):
+  conf.logger.info('Using definition file %r' % definition_path)
   computer_definition = ConfigParser.RawConfigParser({
     'software_user': 'slapsoft',
   })
@@ -936,20 +936,20 @@ def parse_computer_definition(config, definition_path):
   netmask = None
   if computer_definition.has_option('computer', 'address'):
     address, netmask = computer_definition.get('computer', 'address').split('/')
-  if config.alter_network and config.interface_name is not None \
-      and config.ipv4_local_network is not None:
-    interface = Interface(config.logger, config.interface_name, config.ipv4_local_network,
-      config.ipv6_interface)
+  if conf.alter_network and conf.interface_name is not None \
+      and conf.ipv4_local_network is not None:
+    interface = Interface(conf.logger, conf.interface_name, conf.ipv4_local_network,
+      conf.ipv6_interface)
   computer = Computer(
-      reference=config.computer_id,
+      reference=conf.computer_id,
       interface=interface,
       addr=address,
       netmask=netmask,
-      ipv6_interface=config.ipv6_interface,
+      ipv6_interface=conf.ipv6_interface,
       software_user=computer_definition.get('computer', 'software_user'),
     )
   partition_list = []
-  for partition_number in range(int(config.partition_amount)):
+  for partition_number in range(int(conf.partition_amount)):
     section = 'partition_%s' % partition_number
     user = User(computer_definition.get(section, 'user'))
     address_list = []
@@ -958,7 +958,7 @@ def parse_computer_definition(config, definition_path):
       address_list.append(dict(addr=address, netmask=netmask))
     tap = Tap(computer_definition.get(section, 'network_interface'))
     partition = Partition(reference=computer_definition.get(section, 'pathname'),
-                          path=os.path.join(config.instance_root,
+                          path=os.path.join(conf.instance_root,
                                             computer_definition.get(section, 'pathname')),
                           user=user,
                           address_list=address_list,
@@ -968,48 +968,48 @@ def parse_computer_definition(config, definition_path):
   return computer
 
 
-def parse_computer_xml(config, xml_path):
+def parse_computer_xml(conf, xml_path):
   if os.path.exists(xml_path):
-    config.logger.info('Loading previous computer data from %r' % xml_path)
+    conf.logger.info('Loading previous computer data from %r' % xml_path)
     computer = Computer.load(xml_path,
-                             reference=config.computer_id,
-                             ipv6_interface=config.ipv6_interface)
+                             reference=conf.computer_id,
+                             ipv6_interface=conf.ipv6_interface)
     # Connect to the interface defined by the configuration
-    computer.interface = Interface(config.logger, config.interface_name, config.ipv4_local_network,
-        config.ipv6_interface)
+    computer.interface = Interface(conf.logger, conf.interface_name, conf.ipv4_local_network,
+        conf.ipv6_interface)
   else:
     # If no pre-existent configuration found, create a new computer object
-    config.logger.warning('Creating new data computer with id %r' % config.computer_id)
+    conf.logger.warning('Creating new data computer with id %r' % conf.computer_id)
     computer = Computer(
-      reference=config.computer_id,
-      interface=Interface(config.logger, config.interface_name, config.ipv4_local_network,
-        config.ipv6_interface),
+      reference=conf.computer_id,
+      interface=Interface(conf.logger, conf.interface_name, conf.ipv4_local_network,
+        conf.ipv6_interface),
       addr=None,
       netmask=None,
-      ipv6_interface=config.ipv6_interface,
-      software_user=config.software_user,
+      ipv6_interface=conf.ipv6_interface,
+      software_user=conf.software_user,
     )
 
-  partition_amount = int(config.partition_amount)
+  partition_amount = int(conf.partition_amount)
   existing_partition_amount = len(computer.partition_list)
   if existing_partition_amount > partition_amount:
     raise ValueError('Requested amount of computer partitions (%s) is lower '
         'then already configured (%s), cannot continue' % (partition_amount,
           len(computer.partition_list)))
 
-  config.logger.info('Adding %s new partitions' %
+  conf.logger.info('Adding %s new partitions' %
       (partition_amount - existing_partition_amount))
   for nb_iter in range(existing_partition_amount, partition_amount):
     # add new ones
-    user = User("%s%s" % (config.user_base_name, nb_iter))
+    user = User("%s%s" % (conf.user_base_name, nb_iter))
 
-    tap = Tap("%s%s" % (config.tap_base_name, nb_iter))
+    tap = Tap("%s%s" % (conf.tap_base_name, nb_iter))
 
-    path = os.path.join(config.instance_root, "%s%s" % (
-                         config.partition_base_name, nb_iter))
+    path = os.path.join(conf.instance_root, "%s%s" % (
+                         conf.partition_base_name, nb_iter))
     computer.partition_list.append(
       Partition(
-        reference="%s%s" % (config.partition_base_name, nb_iter),
+        reference="%s%s" % (conf.partition_base_name, nb_iter),
         path=path,
         user=user,
         address_list=None,
@@ -1019,7 +1019,7 @@ def parse_computer_xml(config, xml_path):
   return computer
 
 
-def write_computer_definition(config, computer):
+def write_computer_definition(conf, computer):
   computer_definition = ConfigParser.RawConfigParser()
   computer_definition.add_section('computer')
   if computer.address is not None and computer.netmask is not None:
@@ -1035,55 +1035,55 @@ def write_computer_definition(config, computer):
     computer_definition.set(section, 'user', partition.user.name)
     computer_definition.set(section, 'network_interface', partition.tap.name)
     computer_definition.set(section, 'pathname', partition.reference)
-  computer_definition.write(open(config.output_definition_file, 'w'))
-  config.logger.info('Stored computer definition in %r' % config.output_definition_file)
+  computer_definition.write(open(conf.output_definition_file, 'w'))
+  conf.logger.info('Stored computer definition in %r' % conf.output_definition_file)
 
 
-def random_delay(config):
+def random_delay(conf):
   # Add delay between 0 and 1 hour
   # XXX should be the contrary: now by default, and cron should have
   # --maximal-delay=3600
-  if not config.now:
+  if not conf.now:
     duration = float(60 * 60) * random.random()
     print("Sleeping for %s seconds. To disable this feature, " \
                     "use with --now parameter in manual." % duration)
     time.sleep(duration)
 
 
-def do_format(config):
-  random_delay(config)
+def do_format(conf):
+  random_delay(conf)
 
-  if config.input_definition_file:
-    computer = parse_computer_definition(config, config.input_definition_file)
+  if conf.input_definition_file:
+    computer = parse_computer_definition(conf, conf.input_definition_file)
   else:
     # no definition file, figure out computer
-    computer = parse_computer_xml(config, config.computer_xml)
+    computer = parse_computer_xml(conf, conf.computer_xml)
 
-  computer.instance_root = config.instance_root
-  computer.software_root = config.software_root
-  config.logger.info('Updating computer')
-  address = computer.getAddress(config.create_tap)
+  computer.instance_root = conf.instance_root
+  computer.software_root = conf.software_root
+  conf.logger.info('Updating computer')
+  address = computer.getAddress(conf.create_tap)
   computer.address = address['addr']
   computer.netmask = address['netmask']
 
-  if config.output_definition_file:
-    write_computer_definition(config, computer)
+  if conf.output_definition_file:
+    write_computer_definition(conf, computer)
 
-  computer.construct(alter_user=config.alter_user,
-                     alter_network=config.alter_network,
-                     create_tap=config.create_tap)
+  computer.construct(alter_user=conf.alter_user,
+                     alter_network=conf.alter_network,
+                     create_tap=conf.create_tap)
 
-  if getattr(config, 'certificate_repository_path', None):
-    mkdir_p(config.certificate_repository_path, mode=0o700)
+  if getattr(conf, 'certificate_repository_path', None):
+    mkdir_p(conf.certificate_repository_path, mode=0o700)
 
   # Dumping and sending to the erp5 the current configuration
-  if not config.dry_run:
-    computer.dump(path_to_xml=config.computer_xml,
-                  path_to_json=config.computer_json,
-                  logger=config.logger)
-  config.logger.info('Posting information to %r' % config.master_url)
-  computer.send(config)
-  config.logger.info('slapformat successfully prepared computer.')
+  if not conf.dry_run:
+    computer.dump(path_to_xml=conf.computer_xml,
+                  path_to_json=conf.computer_json,
+                  logger=conf.logger)
+  conf.logger.info('Posting information to %r' % conf.master_url)
+  computer.send(conf)
+  conf.logger.info('slapformat successfully prepared computer.')
 
 
 class FormatConfig(object):
@@ -1119,20 +1119,20 @@ class FormatConfig(object):
       raise UsageError('Some required binaries are missing or not '
           'functional: %s' % (','.join(missing_binary_list), ))
 
-  def setConfig(self, options, configuration_parser):
+  def setConfig(self, args, configp):
     """
     Set options given by parameters.
     """
     self.key_file = None
     self.cert_file = None
 
-    # Set options parameters
-    for option, value in options.__dict__.items():
-      setattr(self, option, value)
+    # Set argument parameters
+    for key, value in args.__dict__.items():
+      setattr(self, key, value)
 
     # Merges the arguments and configuration
     for section in ("slapformat", "slapos"):
-      configuration_dict = dict(configuration_parser.items(section))
+      configuration_dict = dict(configp.items(section))
       for key in configuration_dict:
         if not getattr(self, key, None):
           setattr(self, key, configuration_dict[key])
@@ -1249,15 +1249,15 @@ class FormatConfig(object):
       self.output_definition_file = os.path.abspath(self.output_definition_file)
 
 
-def tracing_monkeypatch(config):
+def tracing_monkeypatch(conf):
   """Substitute os module and callAndRead function with tracing wrappers."""
   global os
   global callAndRead
 
   real_callAndRead = callAndRead
 
-  os = OS(config)
-  if config.dry_run:
+  os = OS(conf)
+  if conf.dry_run:
     def dry_callAndRead(argument_list, raise_on_error=True):
       if argument_list == ['brctl', 'show']:
         return real_callAndRead(argument_list, raise_on_error)
@@ -1275,6 +1275,6 @@ def tracing_monkeypatch(config):
     dry_callAndRead = real_callAndRead
 
   def logging_callAndRead(argument_list, raise_on_error=True):
-    config.logger.debug(' '.join(argument_list))
+    conf.logger.debug(' '.join(argument_list))
     return dry_callAndRead(argument_list, raise_on_error)
   callAndRead = logging_callAndRead

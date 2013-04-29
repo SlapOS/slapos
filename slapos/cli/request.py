@@ -55,8 +55,8 @@ class RequestCommand(ClientConfigCommand):
         args.node = parse_option_dict(args.node)
         args.configuration = parse_option_dict(args.configuration)
 
-        configuration_parser = self.fetch_config(args)
-        config = ClientConfig(args, configuration_parser)
+        configp = self.fetch_config(args)
+        conf = ClientConfig(args, configp)
 
-        local = init(config)
-        do_request(config, local)
+        local = init(conf)
+        do_request(conf, local)

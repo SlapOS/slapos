@@ -22,8 +22,8 @@ class SupervisorctlCommand(ConfigCommand):
         return ap
 
     def take_action(self, args):
-        config = self.fetch_config(args)
-        instance_root = config.get('slapos', 'instance_root')
+        configp = self.fetch_config(args)
+        instance_root = configp.get('slapos', 'instance_root')
         configuration_file = os.path.join(instance_root, 'etc', 'supervisord.conf')
         launchSupervisord(socket=os.path.join(instance_root, 'supervisord.socket'),
                           configuration_file=configuration_file,

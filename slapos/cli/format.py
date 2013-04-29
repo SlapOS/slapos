@@ -56,21 +56,21 @@ class FormatCommand(ConfigCommand):
         return ap
 
     def take_action(self, args):
-        configuration_parser = self.fetch_config(args)
+        configp = self.fetch_config(args)
 
-        config = FormatConfig(logger=self.log)
+        conf = FormatConfig(logger=self.log)
 
         try:
-            config.setConfig(args, configuration_parser)
+            conf.setConfig(args, configp)
         except UsageError as err:
             sys.stderr.write(err.message + '\n')
             sys.stderr.write("For help use --help\n")
             sys.exit(1)
 
-        tracing_monkeypatch(config)
+        tracing_monkeypatch(conf)
 
         try:
-            do_format(config=config)
+            do_format(conf=conf)
         except:
             self.log.exception('Uncaught exception:')
             raise

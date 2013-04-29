@@ -15,8 +15,8 @@ def maybe_md5(s):
     return re.match('[0-9a-f]{32}', s)
 
 
-def do_lookup(config, software_url):
-    cache_dir = config.get('networkcache', 'download-binary-dir-url')
+def do_lookup(configp, software_url):
+    cache_dir = configp.get('networkcache', 'download-binary-dir-url')
 
     if maybe_md5(software_url):
         md5 = software_url

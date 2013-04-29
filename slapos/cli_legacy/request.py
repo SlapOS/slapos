@@ -50,6 +50,7 @@ def request():
   if args.node:
     args.node = argToDict(args.node)
 
-  config = ClientConfig(args, get_config_parser(args.configuration_file))
-  local = init(config)
-  do_request(config, local)
+  configp = get_config_parser(args.configuration_file)
+  conf = ClientConfig(args, configp)
+  local = init(conf)
+  do_request(conf, local)

@@ -17,5 +17,5 @@ class BangCommand(ConfigCommand):
         return ap
 
     def take_action(self, args):
-        config = self.fetch_config(args)
-        do_bang(config, args.message)
+        configp = self.fetch_config(args)
+        do_bang(configp, args.message)

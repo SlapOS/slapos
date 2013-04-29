@@ -22,7 +22,7 @@ class SupplyCommand(ClientConfigCommand):
         return ap
 
     def take_action(self, args):
-        configuration_parser = self.fetch_config(args)
-        config = ClientConfig(args, configuration_parser)
-        local = init(config)
+        configp = self.fetch_config(args)
+        conf = ClientConfig(args, configp)
+        local = init(conf)
         do_supply(args.software_url, args.node, local)
