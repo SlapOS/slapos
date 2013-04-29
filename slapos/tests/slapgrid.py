@@ -44,6 +44,7 @@ import xml_marshaller
 import slapos.slap.slap
 import slapos.grid.utils
 from slapos.grid import slapgrid
+from slapos.cli_legacy.slapgrid import parseArgumentTupleAndReturnSlapgridObject
 from slapos.grid.utils import md5digest
 from slapos.grid.watchdog import Watchdog, getWatchdogID
 
@@ -1580,7 +1581,7 @@ class TestSlapgridArgumentTuple(SlapgridInitialization):
     """
       Raises if the argument list if empty and without configuration file.
     """
-    parser = slapgrid.parseArgumentTupleAndReturnSlapgridObject
+    parser = parseArgumentTupleAndReturnSlapgridObject
     # XXX: SystemExit is too generic exception, it is only known that
     #      something is wrong
     self.assertRaises(SystemExit, parser, *())
@@ -1590,7 +1591,7 @@ class TestSlapgridArgumentTuple(SlapgridInitialization):
       Check if we can have the slapgrid object returned with the minimum
       arguments.
     """
-    parser = slapgrid.parseArgumentTupleAndReturnSlapgridObject
+    parser = parseArgumentTupleAndReturnSlapgridObject
     return_list = parser(*self.default_arg_tuple)
     self.assertEquals(2, len(return_list))
 
@@ -1598,7 +1599,7 @@ class TestSlapgridArgumentTuple(SlapgridInitialization):
     """
       Raises if the  signature_private_key_file does not exists.
     """
-    parser = slapgrid.parseArgumentTupleAndReturnSlapgridObject
+    parser = parseArgumentTupleAndReturnSlapgridObject
     argument_tuple = ("--signature_private_key_file", "/non/exists/path") + \
                       self.default_arg_tuple
     self.assertRaisesRegexp(RuntimeError,
@@ -1610,7 +1611,7 @@ class TestSlapgridArgumentTuple(SlapgridInitialization):
       Check if the signature private key argument value is available on
       slapgrid object.
     """
-    parser = slapgrid.parseArgumentTupleAndReturnSlapgridObject
+    parser = parseArgumentTupleAndReturnSlapgridObject
     argument_tuple = ("--signature_private_key_file",
                       self.signature_key_file_descriptor.name) + \
                       self.default_arg_tuple
@@ -1622,7 +1623,7 @@ class TestSlapgridArgumentTuple(SlapgridInitialization):
     """
       Check if giving --all triggers "develop" option.
     """
-    parser = slapgrid.parseArgumentTupleAndReturnSlapgridObject
+    parser = parseArgumentTupleAndReturnSlapgridObject
     argument_tuple = ("--all",) + self.default_arg_tuple
     slapgrid_object = parser(*argument_tuple)[0]
     self.assertTrue(slapgrid_object.develop)
@@ -1632,7 +1633,7 @@ class TestSlapgridArgumentTuple(SlapgridInitialization):
       Check if not giving --all neither --develop triggers "develop"
       option to be False.
     """
-    parser = slapgrid.parseArgumentTupleAndReturnSlapgridObject
+    parser = parseArgumentTupleAndReturnSlapgridObject
     argument_tuple = self.default_arg_tuple
     slapgrid_object = parser(*argument_tuple)[0]
     self.assertFalse(slapgrid_object.develop)
@@ -1642,7 +1643,7 @@ class TestSlapgridArgumentTuple(SlapgridInitialization):
       Check if not giving --maximum-periodicity triggers "force_periodicity"
       option to be false.
     """
-    parser = slapgrid.parseArgumentTupleAndReturnSlapgridObject
+    parser = parseArgumentTupleAndReturnSlapgridObject
     argument_tuple = self.default_arg_tuple
     slapgrid_object = parser(*argument_tuple)[0]
     self.assertFalse(slapgrid_object.force_periodicity)
@@ -1651,7 +1652,7 @@ class TestSlapgridArgumentTuple(SlapgridInitialization):
     """
       Check if giving --maximum-periodicity triggers "force_periodicity" option.
     """
-    parser = slapgrid.parseArgumentTupleAndReturnSlapgridObject
+    parser = parseArgumentTupleAndReturnSlapgridObject
     argument_tuple = ("--maximum-periodicity","40") + self.default_arg_tuple
     slapgrid_object = parser(*argument_tuple)[0]
     self.assertTrue(slapgrid_object.force_periodicity)
@@ -1675,7 +1676,7 @@ upload-to-binary-cache-url-blacklist =
   http://2/bla
 """ % dict(fake_file=self.fake_file_descriptor.name))
     self.slapos_config_descriptor.seek(0)
-    slapgrid_object = slapgrid.parseArgumentTupleAndReturnSlapgridObject(
+    slapgrid_object = parseArgumentTupleAndReturnSlapgridObject(
         *self.default_arg_tuple)[0]
     self.assertEqual(
         slapgrid_object.upload_to_binary_cache_url_blacklist,
@@ -1703,7 +1704,7 @@ download-from-binary-cache-url-blacklist =
   http://2/bla
 """ % dict(fake_file=self.fake_file_descriptor.name))
     self.slapos_config_descriptor.seek(0)
-    slapgrid_object = slapgrid.parseArgumentTupleAndReturnSlapgridObject(
+    slapgrid_object = parseArgumentTupleAndReturnSlapgridObject(
         *self.default_arg_tuple)[0]
     self.assertEqual(
         slapgrid_object.upload_to_binary_cache_url_blacklist,
@@ -1735,7 +1736,7 @@ download-from-binary-cache-url-blacklist =
   http://4/bla
 """ % dict(fake_file=self.fake_file_descriptor.name))
     self.slapos_config_descriptor.seek(0)
-    slapgrid_object = slapgrid.parseArgumentTupleAndReturnSlapgridObject(
+    slapgrid_object = parseArgumentTupleAndReturnSlapgridObject(
         *self.default_arg_tuple)[0]
     self.assertEqual(
         slapgrid_object.upload_to_binary_cache_url_blacklist,
@@ -1764,7 +1765,7 @@ binary-cache-url-blacklist =
   http://2/bla
 """ % dict(fake_file=self.fake_file_descriptor.name))
     self.slapos_config_descriptor.seek(0)
-    slapgrid_object = slapgrid.parseArgumentTupleAndReturnSlapgridObject(
+    slapgrid_object = parseArgumentTupleAndReturnSlapgridObject(
         *self.default_arg_tuple)[0]
     self.assertEqual(
         slapgrid_object.upload_to_binary_cache_url_blacklist,
