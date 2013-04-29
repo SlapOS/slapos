@@ -137,6 +137,7 @@ def getCleanEnvironment(logger, home_path='/tmp'):
 
 def setRunning(logger, pidfile):
   """Creates a pidfile. If a pidfile already exists, we exit"""
+  # XXX might use http://code.activestate.com/recipes/577911-context-manager-for-a-daemon-pid-file/
   if os.path.exists(pidfile):
     try:
       pid = int(open(pidfile, 'r').readline())
