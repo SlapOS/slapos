@@ -6,6 +6,8 @@ import sys
 from slapos.cli.config import ConfigCommand
 from slapos.format import do_format, FormatConfig, tracing_monkeypatch, UsageError
 
+# XXX TODO: handle log_file (old) vs log-file (new)
+
 
 class FormatCommand(ConfigCommand):
 
