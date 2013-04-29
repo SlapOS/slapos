@@ -63,11 +63,17 @@ class Software(object):
                shacache_key_file=None, shadir_cert_file=None, shadir_key_file=None,
                download_binary_cache_url=None, upload_binary_cache_url=None,
                download_binary_dir_url=None, upload_binary_dir_url=None,
-               download_from_binary_cache_url_blacklist=[],
-               upload_to_binary_cache_url_blacklist=[]):
-               # XXX mutable defaults
+               download_from_binary_cache_url_blacklist=None,
+               upload_to_binary_cache_url_blacklist=None):
     """Initialisation of class parameters
     """
+
+    if download_from_binary_cache_url_blacklist is None:
+      download_from_binary_cache_url_blacklist = []
+
+    if upload_to_binary_cache_url_blacklist is None:
+      upload_to_binary_cache_url_blacklist = []
+
     self.url = url
     self.software_root = software_root
     self.software_url_hash = md5digest(self.url)
