@@ -61,6 +61,7 @@ class EntryPointNotImplementedError(NotImplementedError):
   def __init__(self, *args, **kw_args):
     NotImplementedError.__init__(self, *args, **kw_args)
 
+
 def checkSlaposCfg():
   """
   Check if a slapos configuration file was given as a argument.
@@ -78,6 +79,7 @@ def checkSlaposCfg():
           return True
   return False
 
+
 def checkOption(option):
   """
   Check if a given option is already in call line
@@ -92,6 +94,7 @@ def checkOption(option):
   if len(option) > 1:
     sys.argv = sys.argv + option[1:]
   return True
+
 
 def call(fun, config=False, option=None):
   """
@@ -108,6 +111,7 @@ def call(fun, config=False, option=None):
       sys.argv = [sys.argv[0]] + [os.path.expanduser(config)] + sys.argv[1:]
   fun()
   sys.exit(0)
+
 
 def dispatch(command, is_node_command):
   """ Dispatch to correct SlapOS module.
@@ -165,6 +169,7 @@ def dispatch(command, is_node_command):
     call(cache_lookup, config=GLOBAL_SLAPOS_CONFIGURATION)
   else:
     return False
+
 
 def main():
   """

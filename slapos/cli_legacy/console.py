@@ -21,7 +21,6 @@ examples :
   >>> # Fetch instance informations on already launched instance
   >>> request(kvm, "myuniquekvm").getConnectionParameter("url")""" % sys.argv[0]
 
-
   ap = argparse.ArgumentParser(usage=usage)
 
   ap.add_argument('-u', '--master_url',
@@ -48,4 +47,3 @@ examples :
   config = ClientConfig(args, get_config_parser(args.configuration_file))
   local = init(config)
   do_console(local)
-

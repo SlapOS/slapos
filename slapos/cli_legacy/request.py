@@ -28,18 +28,18 @@ def request():
   ap.add_argument('software_url',
                   help='Your software url')
   ap.add_argument('--node',
-                  nargs = '*',
-                  help = 'Node request option '
+                  nargs='*',
+                  help='Node request option '
                   "'option1=value1 option2=value2'")
   ap.add_argument('--type',
-                  type = str,
-                  help = 'Define software type to be requested')
+                  type=str,
+                  help='Define software type to be requested')
   ap.add_argument('--slave',
-                  action = 'store_true', default=False,
-                  help = 'Ask for a slave instance')
+                  action='store_true', default=False,
+                  help='Ask for a slave instance')
   ap.add_argument('--configuration',
-                  nargs = '*',
-                  help = 'Give your configuration '
+                  nargs='*',
+                  help='Give your configuration '
                   "'option1=value1 option2=value2'")
 
   args = ap.parse_args()

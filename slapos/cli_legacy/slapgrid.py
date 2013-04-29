@@ -6,7 +6,7 @@ import ConfigParser
 import logging
 import sys
 
-from slapos.grid.utils import (setRunning, setFinished)
+from slapos.grid.utils import setRunning, setFinished
 from slapos.grid.slapgrid import (merged_options, check_missing_parameters,
                                   check_missing_files, random_delay, create_slapgrid_object)
 
