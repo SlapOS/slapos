@@ -35,11 +35,6 @@ import ConfigParser
 
 from slapos.grid.svcbackend import launchSupervisord
 
-logger = logging.getLogger('SVCBackend')
-logger.setLevel(logging.INFO)
-handler = logging.StreamHandler()
-logger.addHandler(handler)
-
 
 def getOptionDict(*argument_tuple):
   usage = """
@@ -78,6 +73,11 @@ Typical usage:
 
 
 def supervisorctl(*argument_tuple):
+  logger = logging.getLogger('SVCBackend')
+  logger.setLevel(logging.INFO)
+  handler = logging.StreamHandler()
+  logger.addHandler(handler)
+
   option_dict, args = getOptionDict(*argument_tuple)
   import supervisor.supervisorctl
   launchSupervisord(socket=option_dict['supervisord_socket'],
@@ -87,6 +87,11 @@ def supervisorctl(*argument_tuple):
 
 
 def supervisord(*argument_tuple):
+  logger = logging.getLogger('SVCBackend')
+  logger.setLevel(logging.INFO)
+  handler = logging.StreamHandler()
+  logger.addHandler(handler)
+
   option_dict, _ = getOptionDict(*argument_tuple)
   launchSupervisord(socket=option_dict['supervisord_socket'],
                     configuration_file=option_dict['supervisord_configuration_path'],

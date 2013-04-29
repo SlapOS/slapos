@@ -46,7 +46,7 @@ import zope.interface
 from interface import slap as interface
 from xml_marshaller import xml_marshaller
 
-fallback_logger = logging.getLogger()
+fallback_logger = logging.getLogger(__name__)
 fallback_handler = logging.StreamHandler()
 fallback_logger.setLevel(logging.INFO)
 fallback_logger.addHandler(fallback_handler)

@@ -16,6 +16,9 @@ class SlapgridCommand(ConfigCommand):
     method_name = NotImplemented
     default_pidfile = NotImplemented
 
+    CONSOLE_MESSAGE_FORMAT = '%(message)s'
+    LOG_FILE_MESSAGE_FORMAT = '[%(asctime)s] %(levelname)-8s %(name)s %(message)s'
+
     def get_parser(self, prog_name):
         ap = super(SlapgridCommand, self).get_parser(prog_name)
 
@@ -64,22 +67,12 @@ class SlapgridCommand(ConfigCommand):
                              'this option will make all others computer partitions be ignored.')
         return ap
 
-
     def take_action(self, args):
         config = self.fetch_config(args)
         options = merged_options(args, config)
 
-        # XXX add formatter
-        #  formatter = logging.Formatter(fmt='%(asctime)s %(name)-18s: '
-        #                                '%(levelname)-8s %(message)s',
-        #                                datefmt='%Y-%m-%dT%H:%M:%S')
-        #
-        #  handler.setFormatter(formatter)
-
         check_missing_parameters(options)
         check_missing_files(options)
-
-        # XXX this action is logging twice
 
         random_delay(options, logger=self.log)
 

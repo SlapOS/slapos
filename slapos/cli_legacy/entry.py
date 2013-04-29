@@ -38,9 +38,9 @@ from slapos.cli_legacy.remove import remove
 from slapos.cli_legacy.supply import supply
 from slapos.cli_legacy.format import main as format
 from slapos.cli_legacy.cache import cache_lookup
-from slapos.grid.slapgrid import runComputerPartition as instance
-from slapos.grid.slapgrid import runSoftwareRelease as software
-from slapos.grid.slapgrid import runUsageReport as report
+from slapos.cli_legacy.slapgrid import runComputerPartition as instance
+from slapos.cli_legacy.slapgrid import runSoftwareRelease as software
+from slapos.cli_legacy.slapgrid import runUsageReport as report
 from slapos.cli_legacy.svcbackend import supervisord
 from slapos.cli_legacy.svcbackend import supervisorctl
 from slapos.cli_legacy.register import main as register
