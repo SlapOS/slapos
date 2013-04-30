@@ -1,0 +1,63 @@
+ makedefs | 24 ++++++++++++------------
+ 1 file changed, 12 insertions(+), 12 deletions(-)
+
+diff --git a/makedefs b/makedefs
+index 93b5949..c1377d5 100644
+--- a/makedefs
++++ b/makedefs
+@@ -284,13 +284,13 @@ case "$SYSTEM.$RELEASE" in
+ 		    elif [ -f /usr/include/db/db.h ]
+ 		    then
+ 			CCARGS="$CCARGS -I/usr/include/db"
+-		    else
++		  #  else
+ 			# No, we're not going to try db1 db2 db3 etc.
+ 			# On a properly installed system, Postfix builds
+ 			# by including <db.h> and by linking with -ldb
+-			echo "No <db.h> include file found." 1>&2
+-			echo "Install the appropriate db*-devel package first." 1>&2
+-			exit 1
++			#echo "No <db.h> include file found." 1>&2
++			#echo "Install the appropriate db*-devel package first." 1>&2
++			#exit 1
+ 		    fi
+ 		    SYSLIBS="-ldb"
+ 		    ;;
+@@ -356,12 +356,12 @@ EOF
+ 		    elif [ -f /usr/include/db/db.h ]
+ 		    then
+ 			CCARGS="$CCARGS -I/usr/include/db"
+-		    else
++		  #  else
+ 			# On a properly installed system, Postfix builds
+ 			# by including <db.h> and by linking with -ldb
+-			echo "No <db.h> include file found." 1>&2
+-			echo "Install the appropriate db*-devel package first." 1>&2
+-			exit 1
++			#echo "No <db.h> include file found." 1>&2
++			#echo "Install the appropriate db*-devel package first." 1>&2
++			#exit 1
+ 		    fi
+ 		    SYSLIBS="-ldb"
+ 		    ;;
+@@ -387,12 +387,12 @@ EOF
+ 		    elif [ -f /usr/include/db/db.h ]
+ 		    then
+ 			CCARGS="$CCARGS -I/usr/include/db"
+-		    else
++		  #  else
+ 			# On a properly installed system, Postfix builds
+ 			# by including <db.h> and by linking with -ldb
+-			echo "No <db.h> include file found." 1>&2
+-			echo "Install the appropriate db*-devel package first." 1>&2
+-			exit 1
++			#echo "No <db.h> include file found." 1>&2
++			#echo "Install the appropriate db*-devel package first." 1>&2
++			#exit 1
+ 		    fi
+ 		    SYSLIBS="-ldb"
+ 		    ;;
+-- 
+1.7.11.3
+
+
