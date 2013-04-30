@@ -35,7 +35,7 @@ from slapos.register.register import do_register, RegisterConfig
 
 
 def main():
-  ap = argparse.ArgumentParser(usage='usage: slapos node %s NODE_NAME [options]' % sys.argv[0])
+  ap = argparse.ArgumentParser()
 
   ap.add_argument('node_name',
                   help='Name of the node')

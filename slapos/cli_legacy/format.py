@@ -38,7 +38,7 @@ from slapos.format import FormatConfig, UsageError, tracing_monkeypatch, do_form
 def main(*args):
   "Run default configuration."
 
-  ap = argparse.ArgumentParser(usage='usage: %s [options] CONFIGURATION_FILE' % sys.argv[0])
+  ap = argparse.ArgumentParser()
 
   ap.add_argument('-x', '--computer_xml',
                   help="Path to file with computer's XML. If does not exists, will be created",
