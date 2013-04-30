@@ -169,6 +169,7 @@ link-binary =
   {{ parameter_dict['sed-location'] }}/bin/sed
 
 [binary-wrap-base]
+wrapper-path = ${directory:bin}/${:command}
 recipe = slapos.cookbook:wrapper
 # Note: --defaults-file must be the first argument, otherwise wrapped binary
 # will reject it.
