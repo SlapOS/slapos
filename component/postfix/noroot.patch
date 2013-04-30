@@ -1,0 +1,76 @@
+--- a/src/util/set_ugid.c
++++ b/src/util/set_ugid.c
+@@ -44,7 +44,7 @@
+
+ void    set_ugid(uid_t uid, gid_t gid)
+ {
+-    int     saved_errno = errno;
++/*    int     saved_errno = errno;
+
+     if (geteuid() != 0)
+        if (seteuid(0) < 0)
+@@ -58,4 +58,4 @@ void    set_ugid(uid_t uid, gid_t gid)
+     if (msg_verbose > 1)
+        msg_info("setugid: uid %ld gid %ld", (long) uid, (long) gid);
+     errno = saved_errno;
+-}
++*/}
+--- a/src/postfix/postfix.c
++++ b/src/postfix/postfix.c
+@@ -448,12 +448,12 @@ int     main(int argc, char **argv)
+      * privileges for selected operations. That's right - it takes privileges
+      * to toss privileges.
+      */
+-    if (getuid() != 0) {
++    /*if (getuid() != 0) {
+ 	msg_error("to submit mail, use the Postfix sendmail command");
+ 	msg_fatal("the postfix command is reserved for the superuser");
+     }
+     if (unsafe() != 0)
+-	msg_fatal("the postfix command must not run as a set-uid process");
++	msg_fatal("the postfix command must not run as a set-uid process");*/
+ 
+     /*
+      * Parse switches.
+--- a/src/global/mail_params.c
++++ b/src/global/mail_params.c
+@@ -709,7 +709,9 @@ void    mail_params_init()
+     check_default_privs();
+     check_mail_owner();
+     check_sgid_group();
++    /*
+     check_overlap();
++    */
+ #ifdef HAS_DB
+     dict_db_cache_size = var_db_read_buf;
+ #endif
+--- a/src/master/master.c
++++ b/src/master/master.c
+@@ -315,10 +315,10 @@ int     main(int argc, char **argv)
+      * privileges for selected operations. That's right - it takes privileges
+      * to toss privileges.
+      */
+-    if (getuid() != 0)
++    /*if (getuid() != 0)
+        msg_fatal("the master command is reserved for the superuser");
+     if (unsafe() != 0)
+-       msg_fatal("the master command must not run as a set-uid process");
++       msg_fatal("the master command must not run as a set-uid process");*/
+ 
+     /*
+      * Process JCL.
+--- a/src/postsuper/postsuper.c
++++ b/src/postsuper/postsuper.c
+@@ -1150,10 +1150,10 @@ int     main(int argc, char **argv)
+      * the secondary groups, the process environment, and so on. Otherwise,
+      * accidents can happen. If not with Postfix, then with other software.
+      */
+-    if (unsafe() != 0)
++    /*if (unsafe() != 0)
+        msg_fatal("this postfix command must not run as a set-uid process");
+     if (getuid())
+-       msg_fatal("use of this command is reserved for the superuser");
++       msg_fatal("use of this command is reserved for the superuser");*/
+ 
+     /*
+      * Parse JCL.
