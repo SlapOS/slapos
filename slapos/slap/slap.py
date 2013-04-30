@@ -89,22 +89,21 @@ class SlapRequester(SlapDocument):
         request_dict=request_dict,
         connection_helper=self._connection_helper,
       )
-    else:
-      xml = self._connection_helper.response.read()
-      software_instance = xml_marshaller.loads(xml)
-      computer_partition = ComputerPartition(
-        software_instance.slap_computer_id.encode('UTF-8'),
-        software_instance.slap_computer_partition_id.encode('UTF-8'),
-        connection_helper=self._connection_helper,
-      )
-      # Hack to give all object attributes to the ComputerPartition instance
-      computer_partition.__dict__ = software_instance.__dict__.copy()
-      # XXX not generic enough.
-      if xml_marshaller.loads(request_dict['shared_xml']):
-        computer_partition._synced = True
-        computer_partition._connection_dict = software_instance._connection_dict
-        computer_partition._parameter_dict = software_instance._parameter_dict
-      return computer_partition
+    xml = self._connection_helper.response.read()
+    software_instance = xml_marshaller.loads(xml)
+    computer_partition = ComputerPartition(
+      software_instance.slap_computer_id.encode('UTF-8'),
+      software_instance.slap_computer_partition_id.encode('UTF-8'),
+      connection_helper=self._connection_helper,
+    )
+    # Hack to give all object attributes to the ComputerPartition instance
+    computer_partition.__dict__ = software_instance.__dict__.copy()
+    # XXX not generic enough.
+    if xml_marshaller.loads(request_dict['shared_xml']):
+      computer_partition._synced = True
+      computer_partition._connection_dict = software_instance._connection_dict
+      computer_partition._parameter_dict = software_instance._parameter_dict
+    return computer_partition
 
 
 class SoftwareRelease(SlapDocument):
