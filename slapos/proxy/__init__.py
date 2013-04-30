@@ -29,49 +29,13 @@
 
 import os
 import sys
-from optparse import OptionParser, Option
+import argparse
 import logging
 import logging.handlers
 import ConfigParser
 
 
-class Parser(OptionParser):
-  """
-  Parse all arguments.
-  """
-  def __init__(self, usage=None, version=None):
-    """
-    Initialize all options possibles.
-    """
-    OptionParser.__init__(self, usage=usage, version=version,
-                          option_list=[
-      Option("-l", "--log_file",
-             help="The path to the log file used by the script.",
-             type=str),
-      Option("-v", "--verbose",
-             default=False,
-             action="store_true",
-             help="Verbose output."),
-      Option("-c", "--console",
-             default=False,
-             action="store_true",
-             help="Console output."),
-      Option("-u", "--database-uri",
-             type=str,
-             help="URI for sqlite database"),
-    ])
-
-  def check_args(self):
-    """
-    Check arguments
-    """
-    (options, args) = self.parse_args()
-    if len(args) != 1:
-      self.error("Incorrect number of arguments")
-
-    return options, args[0]
-
-class Config:
+class ProxyConfig(object):
   def setConfig(self, option_dict, configuration_file_path):
     """
     Set options given by parameters.
@@ -94,6 +58,7 @@ class Config:
     self.logger = logging.getLogger("slapproxy")
     self.logger.setLevel(logging.INFO)
     if self.console:
+      # XXX shouldn't this be default?
       self.logger.addHandler(logging.StreamHandler())
 
     if not self.database_uri:
@@ -115,25 +80,43 @@ class Config:
       self.logger.setLevel(logging.DEBUG)
       self.logger.debug("Verbose mode enabled.")
 
+
 def run(config):
   from views import app
   app.config['computer_id'] = config.computer_id
   app.config['DATABASE_URI'] = config.database_uri
   app.run(host=config.host, port=int(config.port))
 
+
 def main():
-  "Run default configuration."
-  usage = "usage: %s [options] CONFIGURATION_FILE" % sys.argv[0]
+  ap = argparse.ArgumentParser()
+
+  ap.add_argument('-l', '--log_file',
+                  help='The path to the log file used by the script.')
+
+  ap.add_argument('-v', '--verbose',
+                  action='store_true',
+                  help='Verbose output.')
+
+  # XXX shouldn't this be deprecated?
+  ap.add_argument('-c', '--console',
+                  action='store_true',
+                  help='Console output.')
+
+  ap.add_argument('-u', '--database-uri',
+                  help='URI for sqlite database')
+
+  ap.add_argument('configuration_file',
+                  help='path to slapos.cfg')
+
+  args = ap.parse_args()
 
   try:
-    # Parse arguments
-    config = Config()
-    config.setConfig(*Parser(usage=usage).check_args())
-
-    run(config)
+    conf = ProxyConfig()
+    conf.setConfig(args, args.configuration_file)
+    run(conf)
     return_code = 0
-  except SystemExit, err:
-    # Catch exception raise by optparse
+  except SystemExit as err:
     return_code = err
 
   sys.exit(return_code)
