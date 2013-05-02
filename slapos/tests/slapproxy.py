@@ -86,7 +86,7 @@ database_uri = %(tempdir)s/lib/proxy.db
     """
     Set config for slapproxy and start it
     """
-    config = slapos.proxy.Config()
+    config = slapos.proxy.ProxyConfig()
     config.setConfig(*(ProxyOption(self.proxy_db),
                        self.slapos_cfg))
     views.app.config['TESTING'] = True
