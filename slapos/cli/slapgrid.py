@@ -22,7 +22,7 @@ class SlapgridCommand(ConfigCommand):
     def get_parser(self, prog_name):
         ap = super(SlapgridCommand, self).get_parser(prog_name)
 
-        # XXX TODO separate parsers for instance, software and report?
+        # TODO move more options to the instance, software and report subclasses
 
         ap.add_argument('--instance-root',
                         help='The instance root directory location.')
@@ -86,7 +86,7 @@ class SlapgridCommand(ConfigCommand):
 
 
 class SoftwareCommand(SlapgridCommand):
-    """Hook for entry point to process Software Releases"""
+    """hook for entry point to process Software Releases"""
 
     method_name = 'processSoftwareReleaseList'
     default_pidfile = '/opt/slapos/slapgrid-sr.pid'
@@ -101,7 +101,7 @@ class SoftwareCommand(SlapgridCommand):
 
 
 class InstanceCommand(SlapgridCommand):
-    """Hook for entry point to process Computer Partitions"""
+    """hook for entry point to process Computer Partitions"""
 
     method_name = 'processComputerPartitionList'
     default_pidfile = '/opt/slapos/slapgrid-cp.pid'
@@ -116,7 +116,7 @@ class InstanceCommand(SlapgridCommand):
 
 
 class ReportCommand(SlapgridCommand):
-    """Hook for entry point to process Usage Reports"""
+    """hook for entry point to process Usage Reports"""
 
     method_name = 'agregateAndSendUsage'
     default_pidfile = '/opt/slapos/slapgrid-ur.pid'

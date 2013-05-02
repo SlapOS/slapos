@@ -10,6 +10,9 @@ from slapos.format import do_format, FormatConfig, tracing_monkeypatch, UsageErr
 
 
 class FormatCommand(ConfigCommand):
+    """
+    create users, partitions and network configuration
+    """
 
     log = logging.getLogger('slapformat')
 

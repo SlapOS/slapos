@@ -11,6 +11,9 @@ import supervisor.supervisorctl
 
 
 class SupervisorctlCommand(ConfigCommand):
+    """
+    manage supervisor processes
+    """
 
     log = logging.getLogger(__name__)
 

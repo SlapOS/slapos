@@ -7,6 +7,9 @@ from slapos.client import init, do_remove, ClientConfig
 
 
 class RemoveCommand(ClientConfigCommand):
+    """
+    remove a Software from a node
+    """
 
     log = logging.getLogger(__name__)
 

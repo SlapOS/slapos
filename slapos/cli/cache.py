@@ -8,7 +8,7 @@ from slapos.cache import do_lookup
 
 class CacheLookupCommand(ConfigCommand):
     """
-    Perform a query to the networkcache.
+    perform a query to the networkcache
     You can provide either a complete URL to the software release,
     or a corresponding MD5 hash value.
 

@@ -8,6 +8,9 @@ from slapos.register.register import do_register, RegisterConfig
 
 
 class RegisterCommand(Command):
+    """
+    register a node in the SlapOS cloud
+    """
 
     log = logging.getLogger('Register')
 

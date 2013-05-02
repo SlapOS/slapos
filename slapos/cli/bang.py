@@ -7,6 +7,9 @@ from slapos.bang import do_bang
 
 
 class BangCommand(ConfigCommand):
+    """
+    request update on all partitions
+    """
 
     log = logging.getLogger(__name__)
 

@@ -21,6 +21,9 @@ def parse_option_dict(options):
 
 
 class RequestCommand(ClientConfigCommand):
+    """
+    request an Instance
+    """
 
     log = logging.getLogger(__name__)
 

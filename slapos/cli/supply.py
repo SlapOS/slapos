@@ -7,6 +7,9 @@ from slapos.client import init, do_supply, ClientConfig
 
 
 class SupplyCommand(ClientConfigCommand):
+    """
+    supply a Software to a node
+    """
 
     log = logging.getLogger(__name__)
 
