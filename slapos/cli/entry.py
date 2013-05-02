@@ -11,13 +11,32 @@ import slapos.version
 
 
 class SlapOSCommandManager(cliff.commandmanager.CommandManager):
+
     def find_command(self, argv):
+        """Given an argument list, find a command and
+        return the processor and any remaining arguments.
+        """
         # XXX a little cheating, 'slapos node' is not documented
         #     by the help command
         if argv == ['node']:
             argv = ['node', 'status']
 
-        return super(SlapOSCommandManager, self).find_command(argv)
+        search_args = argv[:]
+        name = ''
+        while search_args:
+            if search_args[0].startswith('-'):
+                raise ValueError('Invalid command %r' % search_args[0])
+            next_val = search_args.pop(0)
+            name = '%s %s' % (name, next_val) if name else next_val
+            if name in self.commands:
+                cmd_ep = self.commands[name]
+                cmd_factory = cmd_ep.load()
+                return (cmd_factory, name, search_args)
+        else:
+            print >>sys.stderr, ('The command %r does not exist or is not yet implemented.\n'
+                                 'Please have a look at http://community.slapos.org to read documentation or forum.\n'
+                                 'Please also make sure that SlapOS Node is up to date.' % (argv,))
+            sys.exit(5)
 
 
 class SlapOSApp(cliff.app.App):
