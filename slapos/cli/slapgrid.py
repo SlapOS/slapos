@@ -22,7 +22,7 @@ class SlapgridCommand(ConfigCommand):
     def get_parser(self, prog_name):
         ap = super(SlapgridCommand, self).get_parser(prog_name)
 
-        # XXX TODO separate parsers for instance, software and report
+        # XXX TODO separate parsers for instance, software and report?
 
         ap.add_argument('--instance-root',
                         help='The instance root directory location.')
@@ -39,7 +39,9 @@ class SlapgridCommand(ConfigCommand):
         ap.add_argument('--buildout', default=None,
                         help='Location of buildout binary.')
         ap.add_argument('--pidfile',
-                        help='The location where pidfile will be created.')
+                        help='The location where pidfile will be created. '
+                             'Can be provided by configuration file, or defaults '
+                             'to %s' % self.default_pidfile)
         ap.add_argument('--key_file',
                         help='SSL Authorisation key file.')
         ap.add_argument('--cert_file',
@@ -59,14 +61,6 @@ class SlapgridCommand(ConfigCommand):
         ap.add_argument('--all', action='store_true',
                         help='Launch slapgrid to process all Softare Releases '
                              'and/or Computer Partitions.')
-        ap.add_argument('--only-sr',
-                        help='Force the update of a single software release (use url hash), '
-                             'even if is already installed. This option will make all others '
-                             'sofware releases be ignored.')
-        ap.add_argument('--only-cp',
-                        help='Update a single or a list of computer partitions '
-                             '(ie.:slappartX, slappartY), '
-                             'this option will make all others computer partitions be ignored.')
         return ap
 
     def take_action(self, args):
@@ -97,12 +91,28 @@ class SoftwareCommand(SlapgridCommand):
     method_name = 'processSoftwareReleaseList'
     default_pidfile = '/opt/slapos/slapgrid-sr.pid'
 
+    def get_parser(self, prog_name):
+        ap = super(SoftwareCommand, self).get_parser(prog_name)
+        ap.add_argument('--only-sr', '--only',
+                        help='Force the update of a single software release (can be full URL or MD5 hash), '
+                             'even if is already installed. This option will make all others '
+                             'sofware releases be ignored.')
+        return ap
+
 
 class InstanceCommand(SlapgridCommand):
     """Hook for entry point to process Computer Partitions"""
 
     method_name = 'processComputerPartitionList'
     default_pidfile = '/opt/slapos/slapgrid-cp.pid'
+
+    def get_parser(self, prog_name):
+        ap = super(InstanceCommand, self).get_parser(prog_name)
+        ap.add_argument('--only-cp', '--only',
+                        help='Update a single or a list of computer partitions '
+                             '(ie.:slappartX, slappartY), '
+                             'this option will make all others computer partitions be ignored.')
+        return ap
 
 
 class ReportCommand(SlapgridCommand):

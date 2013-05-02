@@ -28,7 +28,6 @@
 ##############################################################################
 
 # XXX dry_run will happily register a new node on the slapos master. Isn't it supposed to be no-op?
-# XXX does not create 'log' directory (required by slap2 entry point)
 
 
 import ConfigParser

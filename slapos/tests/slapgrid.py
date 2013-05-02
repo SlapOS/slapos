@@ -319,7 +319,7 @@ class ComputerForTest:
           return (200, {}, '')
 
       elif method == 'POST' and 'url' in parsed_qs:
-        # XXX hardcoded to first sofwtare release!
+        # XXX hardcoded to first software release!
         software = self.software_list[0]
         software.sequence.append(parsed_url.path)
         if parsed_url.path == 'buildingSoftwareRelease':

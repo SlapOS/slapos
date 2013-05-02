@@ -8,8 +8,10 @@ from slapos.client import init, do_console, ClientConfig
 
 class ConsoleCommand(ClientConfigCommand):
     """
-    slapconsole allows you interact with slap API. You can play with the global
-    "slap" object and with the global "request" method.
+    Python prompt to interact with slap API.
+
+    You can play with the global "slap" object and
+    with the global "request" method.
 
     examples :
     >>> # Request instance
@@ -19,7 +21,6 @@ class ConsoleCommand(ClientConfigCommand):
     >>> # Fetch instance informations on already launched instance
     >>> request(kvm, "myuniquekvm").getConnectionParameter("url")
     """
-    # XXX TODO: docstring is printed without newlines
 
     log = logging.getLogger(__name__)
 

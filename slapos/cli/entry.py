@@ -16,8 +16,7 @@ class SlapOSCommandManager(cliff.commandmanager.CommandManager):
         """Given an argument list, find a command and
         return the processor and any remaining arguments.
         """
-        # XXX a little cheating, 'slapos node' is not documented
-        #     by the help command
+        # a little cheating, 'slapos node' is not documented by the help command
         if argv == ['node']:
             argv = ['node', 'status']
 
