@@ -1119,9 +1119,10 @@ class FormatConfig(object):
       raise UsageError('Some required binaries are missing or not '
           'functional: %s' % (','.join(missing_binary_list), ))
 
-  def setConfig(self, args, configp):
+  def mergeConfig(self, args, configp):
     """
     Set options given by parameters.
+    Must be executed before setting up the logger.
     """
     self.key_file = None
     self.cert_file = None
@@ -1137,6 +1138,7 @@ class FormatConfig(object):
         if not getattr(self, key, None):
           setattr(self, key, configuration_dict[key])
 
+  def setConfig(self):
     # setup some nones
     for parameter in ['interface_name', 'partition_base_name', 'user_base_name',
         'tap_base_name', 'ipv4_local_network', 'ipv6_interface']:
@@ -1204,19 +1206,6 @@ class FormatConfig(object):
       self.logger.error(message)
       sys.stderr.write(message + '\n')
       sys.exit()
-
-    if self.log_file:
-      if not os.path.isdir(os.path.dirname(self.log_file)):
-        # fallback to console only if directory for logs does not exists and
-        # continue to run
-        raise ValueError('Please create directory %r to store %r log file' % (
-          os.path.dirname(self.log_file), self.log_file))
-      else:
-        file_handler = logging.FileHandler(self.log_file)
-        file_handler.setFormatter(logging.Formatter("%(asctime)s - "
-          "%(name)s - %(levelname)s - %(message)s"))
-        self.logger.addHandler(file_handler)
-        self.logger.info('Configured logging to file %r' % self.log_file)
 
     # Check mandatory options
     for parameter in ('computer_id', 'instance_root', 'master_url',

@@ -31,6 +31,7 @@ import argparse
 import ConfigParser
 import logging
 import sys
+import os
 
 from slapos.format import FormatConfig, UsageError, tracing_monkeypatch, do_format
 
@@ -113,8 +114,23 @@ def main(*args):
   if configp.read(args.configuration_file) != [args.configuration_file]:
     raise UsageError('Cannot find or parse configuration file: %s' % args.configuration_file)
 
+  conf.mergeConfig(args, configp)
+
+  if conf.log_file:
+    if not os.path.isdir(os.path.dirname(conf.log_file)):
+      # fallback to console only if directory for logs does not exists and
+      # continue to run
+      raise ValueError('Please create directory %r to store %r log file' % (
+        os.path.dirname(conf.log_file), conf.log_file))
+    else:
+      file_handler = logging.FileHandler(conf.log_file)
+      file_handler.setFormatter(logging.Formatter("%(asctime)s - "
+        "%(name)s - %(levelname)s - %(message)s"))
+      conf.logger.addHandler(file_handler)
+      conf.logger.info('Configured logging to file %r' % conf.log_file)
+
   try:
-    conf.setConfig(args, configp)
+    conf.setConfig()
   except UsageError as exc:
     sys.stderr.write(exc.message + '\n')
     sys.stderr.write("For help use --help\n")
