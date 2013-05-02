@@ -35,7 +35,7 @@ class SlapOSApp(cliff.app.App):
 
     def __init__(self):
         super(SlapOSApp, self).__init__(
-            description='SlapOS client',
+            description='SlapOS client %s' % slapos.version.version,
             version=slapos.version.version,
             command_manager=SlapOSCommandManager('slapos.cli'),
         )
