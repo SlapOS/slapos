@@ -22,7 +22,9 @@ class ConfigCommand(Command):
 
     def get_parser(self, prog_name):
         ap = super(ConfigCommand, self).get_parser(prog_name)
-        ap.add_argument('--cfg', help='SlapOS configuration file')
+        ap.add_argument('--cfg', help='SlapOS configuration file - ' +
+                                      'defaults to $%s ' % self.default_config_var +
+                                      'or %s' % self.default_config_path)
         return ap
 
     def _get_config(self, cfg_path, required=False):
