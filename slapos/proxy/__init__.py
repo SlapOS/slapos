@@ -57,16 +57,12 @@ class ProxyConfig(object):
     # set up logging
     self.logger = logging.getLogger("slapproxy")
     self.logger.setLevel(logging.INFO)
-    if self.console:
-      # XXX shouldn't this be default?
-      self.logger.addHandler(logging.StreamHandler())
+    self.logger.addHandler(logging.StreamHandler())
 
     if not self.database_uri:
       raise ValueError('database-uri is required.')
     if self.log_file:
       if not os.path.isdir(os.path.dirname(self.log_file)):
-        # fallback to console only if directory for logs does not exists and
-        # continue to run
         raise ValueError('Please create directory %r to store %r log file' % (
           os.path.dirname(self.log_file), self.log_file))
       else:
@@ -98,7 +94,7 @@ def main():
                   action='store_true',
                   help='Verbose output.')
 
-  # XXX shouldn't this be deprecated?
+  # XXX not used anymore, deprecated
   ap.add_argument('-c', '--console',
                   action='store_true',
                   help='Console output.')
