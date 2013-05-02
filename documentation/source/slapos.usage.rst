@@ -3,49 +3,60 @@ SlapOS command line usage
 =========================
 
 
-Note:
------
- * Default configuration file of "Node" commands (slapos node, slapos supervisor) if not explicitly defined as first argument is:
-    /etc/opt/slapos/slapos.cfg or value of SLAPOS_CONFIGURATION environment variable if exists.
+Notes:
+------
+ * Default SlapOS Master is http://www.vifib.net. It can be changed by altering configuration files or with the `--master-url`
+   argument for commands that support it.
 
- * Default configuration file of "Client" commands (slapos request, slapos supply, ...) if not explicitly defined as first argument is:
-    ~/.slapos/slapos.cfg or value of SLAPOS_CLIENT_CONFIGURATION environment variable if exists.
+ * Most commands (except node register) take a configuration file parameter, provided as ``--cfg /path/to/file.cfg``.
 
- * Default log file for Node commands is /var/log/[slapos-node-software.log | slapos-node-instance.log | slapos-node-report.log]. This one requires working log in slapgrid, currently log/console is a total mess.
+   If no such argument is provided:
+   
+   * "node" commands read configuration from :file:`/etc/opt/slapos/slapos.cfg`, or the path referenced by the
+     ``SLAPOS_CONFIGURATION`` environment variable.
 
- * Default pid file for Node commands is: /var/run/[slapos-node-software.pid | slapos-node-instance.pid | slapos-node-report.pid].
-
- * Default SlapOS Master is http://www.vifib.net. It can be changed by altering configuration files.
+   * likewise, "client" commands (request, supply...) use :file:`~/.slapos/slapos.cfg`, or the ``SLAPOS_CLIENT_CONFIGURATION`` variable.
 
 
 
-General commands
-----------------
 
-slapos
-~~~~~~
-Display help/usage.
+XXX the SLAPOS_CONFIGURATION thing is repeated below for each command
+    we can remove it with :ellipsis:
+XXX TODO document 'alias' for software_url, software_group?, computer_group?
+
+
+
+Common options
+--------------
+
+By itself, the ``slapos`` command lists all the available sub-commands and common options.
+
+.. program-output:: python slapos
+
 
 
 
 SlapOS Client commands
 ----------------------
 
-Those commands are used by clients (as human beings or programs) to manage their own instances.
+These commands are used by clients (as human beings or programs) to manage their own instances.
 
 slapos request
 ~~~~~~~~~~~~~~
-Usage:
-  slapos request [slapos_configuration] <reference> <software_alias | software-url> [--node id=<computer guid> region=<region> network-type=<network> | location/to/node.json] [--configuration foo=value1 bar=value2 | location/to/configuration.json ] [--type type] [--slave]
+
+.. program-output:: python slapos help request
+
 
 Request an instance and get status and parameters of instance.
 
 Examples:
- * Request a wordpress instance named "mybeautifulinstance" on Node named "COMP-12345":
-     slapos request mybeautifulinstance wordpress --node id=COMP-12345
+ * Request a wordpress instance named "mybeautifulinstance" on Node named "COMP-12345"::
 
- * Request a kvm instance named "mykvm" on Node named "COMP-12345", specifying nbd-host and nbd-ip parameters:
-     slapos request mykvm kvm --node id=COMP-12345 --configuration nbd-host=debian.nbd.vifib.org nbd-port=1024
+     $ slapos request mybeautifulinstance wordpress --node id=COMP-12345
+
+ * Request a kvm instance named "mykvm" on Node named "COMP-12345", specifying nbd-host and nbd-ip parameters::
+
+     $ slapos request mykvm kvm --node id=COMP-12345 --configuration nbd-host=debian.nbd.vifib.org nbd-port=1024
 
 XXX Change in slaplib: allow to fetch instance params without changing anything. i.e we should do "slapos request myalreadyrequestedinstance" to fetch connection parameters without erasing previously defined instance parameters.
 
@@ -61,26 +72,32 @@ Returns visible instances matching search parameters.
 
 slapos supply
 ~~~~~~~~~~~~~
-Usage:
-   slapos supply <software | software_group> <computer_guid | commputer_group>
+
+.. program-output:: python slapos help supply
 
 Ask installation of a software on a specific node or group of nodes. Nodes will then be ready to accept instances of specified software.
 
 Examples:
- * Ask installation of wordpress Software Release on COMP-12345:
-    slapos supply wordpress COMP-12345
+
+ * Ask installation of wordpress Software Release on COMP-12345::
+
+    $ slapos supply wordpress COMP-12345
+
 
 slapos remove
 ~~~~~~~~~~~~~
-Usage:
-   slapos remove <software | software_group> <computer_guid | commputer_group>
+
+.. program-output:: python slapos help remove
 
 Ask Removal of a software on a specific node or group of nodes. Existing instances won't work anymore.
 XXX "slapos autounsupply a.k.a slapos cleanup"
 
 Examples:
- * Ask installation of wordpress Software Release on COMP-12345:
-    slapos supply wordpress COMP-12345
+
+ * Ask installation of wordpress Software Release on COMP-12345::
+
+    $ slapos supply wordpress COMP-12345
+
 
 slapos autosupply
 ~~~~~~~~~~~~~~~~~
@@ -93,7 +110,11 @@ Like "slapos suppply", but on-demand. Software will be (re)installed only when a
 
 slapos console
 ~~~~~~~~~~~~~~
-Enter in a python console with slap library imported. See "Slapconsole" section to have detailed documentation.
+
+Enter in a python console with slap library imported.
+
+.. program-output:: python slapos help console
+
 
 
 slapos <stop|start|destroy>
@@ -105,31 +126,36 @@ Usage:
 Ask start/stop/destruction of selected instance.
 
 Example:
-  * Ask to stop "mywordpressinstance":
-      slapos stop mywordpressinstance
+
+  * Ask to stop "mywordpressinstance"::
+
+      $ slapos stop mywordpressinstance
 
 
 
 SlapOS Node commands
 --------------------
 
-This kind of commands are used to control the current SlapOS Node. Those commands are only useful for administrators of Nodes.
-# XXX: add an environment variable for configuration file.
+This kind of commands is used to control the current SlapOS Node. These commands are only useful for administrators of Nodes.
 
 slapos node
 ~~~~~~~~~~~
-Display status of Node and if not started, launch supervisor daemon.
 
-Temporary note: equivalent of old slapgrid-supervisord + slapgrid-supervisorctl.
+This is an alias for ``node supervisorctl status``.
+It displays the status of the node, also running the supervisor daemon if needed.
+
+XXX Temporary note: equivalent of old slapgrid-supervisord + slapgrid-supervisorctl.
+
+.. program-output:: python slapos help node
 
 
 slapos node register
 ~~~~~~~~~~~~~~~~~~~~
 Usage:
 ******
-::
 
-  slapos node register <DESIRED NODE NAME> [--login LOGIN [--password PASSWORD]] [--interface-name INTERFACE] [--master-url URL <--master-url-web URL>] [--partition-number NUMBER] [--ipv4-local-network NETWORK] [--ipv6-interface INTERFACE] [--create-tap] [--dry-run]
+.. program-output:: python slapos help node register
+
 
 If login is not provided, asks for user's vifib account then password.
 
@@ -141,6 +167,7 @@ XXX-Cedric: --master-url-web url will disappear in REST API. Currently, "registe
 If Node is already registered (slapos.cfg and certificate already present), issues a warning, backups original configuration and creates new one.
 
 XXX-Cedric should check for IPv6 in selected interface
+
 
 Parameters:
 ***********
@@ -154,37 +181,41 @@ Parameters:
 -t, --create-tap                   Will trigger creation of one virtual "tap" interface per Partition and attach it to primary interface. Requires primary interface to be a bridge. defaults to false. Needed to host virtual machines.
 -n, --dry-run                      Don't touch to anything in the filesystem. Used to debug.
 
+
 Notes:
 ******
   * "IPv6 interface" and "create tap" won't be put at all in the SlapOS Node configuration file if not explicitly written.
 
 Examples:
 *********
+
   * Register computer named "mycomputer" to vifib::
 
-      slapos node register mycomputer
+      $ slapos node register mycomputer
 
   * Register computer named "mycomputer" to vifib using br0 as primary interface, tap0 as IPv6 interface and different local ipv4 subnet::
 
-      slapos node register mycomputer --interface-name br0 --ipv6-interface tap0 --ipv4-local-network 11.0.0.0/16
+      $ slapos node register mycomputer --interface-name br0 --ipv6-interface tap0 \
+            --ipv4-local-network 11.0.0.0/16
 
   * Register computer named "mycomputer" to another SlapOS master accessible via https://www.myownslaposmaster.com, and SLAP webservice accessible via https://slap.myownslaposmaster.com (Note that this address should be the "slap" webservice URL, not web URL)::
 
-      slapos node register mycomputer --master-url https://slap.myownslaposmaster.com --master-url-web https://www.myownslaposmaster.com
+      $ slapos node register mycomputer --master-url https://slap.myownslaposmaster.com \
+            --master-url-web https://www.myownslaposmaster.com
 
 XXX-Cedric : To be implemented
   * Register computer named "mycomputer" to vifib, and ask to create tap interface to be able to host KVMs::
 
-      slapos node register mycomputer --create-tap
+      $ slapos node register mycomputer --create-tap
 
 
 slapos node software
 ~~~~~~~~~~~~~~~~~~~~
 Usage:
 ******
-::
 
-  slapos node software [--logfile LOGFILE] [--verbose | -v] [--only_sr URL]  [--all] [CONFIGURATION_FILE]
+.. program-output:: python slapos help node software
+
 
 Run software installation/deletion.
 
@@ -210,9 +241,8 @@ slapos node instance
 ~~~~~~~~~~~~~~~~~~~~
 Usage:
 ******
-::
 
-  slapos node instance [--logfile LOGFILE] [--verbose | -v] [--only_cp PARTITION]  [--all] [CONFIGURATION_FILE]
+.. program-output:: python slapos help node instance
 
 Temporary note: equivalent of old slapgrid-cp.
 
@@ -239,7 +269,7 @@ Usage:
 ******
 ::
 
-  slapos node report [--logfile LOGFILE] [--verbose | -v] [CONFIGURATION_FILE]
+.. program-output:: python slapos help node report
 
 Run instance reports and garbage collection.
 
@@ -277,15 +307,15 @@ Examples:
 
 slapos node supervisorctl
 ~~~~~~~~~~~~~~~~~~~~~~~~~
-Usage:
-  slapos node supervisorctl
+
+.. program-output:: python slapos help node supervisorctl
 
 Enter into supervisor console.
 
 slapos node supervisord
 ~~~~~~~~~~~~~~~~~~~~~~~
-Usage:
-  slapos node supervisord
+
+.. program-output:: python slapos help node supervisord
 
 Launch, if not already launched, supervisor daemon.
 
