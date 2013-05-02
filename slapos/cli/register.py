@@ -12,7 +12,7 @@ class RegisterCommand(Command):
     register a node in the SlapOS cloud
     """
 
-    log = logging.getLogger('Register')
+    log = logging.getLogger('register')
 
     def get_parser(self, prog_name):
         ap = super(RegisterCommand, self).get_parser(prog_name)

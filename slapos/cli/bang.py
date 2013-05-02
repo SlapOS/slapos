@@ -11,7 +11,7 @@ class BangCommand(ConfigCommand):
     request update on all partitions
     """
 
-    log = logging.getLogger(__name__)
+    log = logging.getLogger('bang')
 
     def get_parser(self, prog_name):
         ap = super(BangCommand, self).get_parser(prog_name)

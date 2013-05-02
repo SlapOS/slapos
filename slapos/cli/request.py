@@ -25,7 +25,7 @@ class RequestCommand(ClientConfigCommand):
     request an Instance
     """
 
-    log = logging.getLogger(__name__)
+    log = logging.getLogger('request')
 
     def get_parser(self, prog_name):
         ap = super(RequestCommand, self).get_parser(prog_name)

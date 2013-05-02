@@ -11,7 +11,7 @@ class RemoveCommand(ClientConfigCommand):
     remove a Software from a node
     """
 
-    log = logging.getLogger(__name__)
+    log = logging.getLogger('remove')
 
     def get_parser(self, prog_name):
         ap = super(RemoveCommand, self).get_parser(prog_name)

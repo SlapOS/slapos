@@ -17,7 +17,7 @@ class CacheLookupCommand(ConfigCommand):
     with the OS you are currently running.
     """
 
-    log = logging.getLogger(__name__)
+    log = logging.getLogger('cache-lookup')
 
     def get_parser(self, prog_name):
         ap = super(CacheLookupCommand, self).get_parser(prog_name)

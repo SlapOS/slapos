@@ -11,7 +11,7 @@ class SupplyCommand(ClientConfigCommand):
     supply a Software to a node
     """
 
-    log = logging.getLogger(__name__)
+    log = logging.getLogger('supply')
 
     def get_parser(self, prog_name):
         ap = super(SupplyCommand, self).get_parser(prog_name)

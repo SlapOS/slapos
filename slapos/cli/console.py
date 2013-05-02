@@ -22,7 +22,7 @@ class ConsoleCommand(ClientConfigCommand):
     >>> request(kvm, "myuniquekvm").getConnectionParameter("url")
     """
 
-    log = logging.getLogger(__name__)
+    log = logging.getLogger('console')
 
     def get_parser(self, prog_name):
         ap = super(ConsoleCommand, self).get_parser(prog_name)

@@ -10,7 +10,7 @@ from slapos.grid.svcbackend import launchSupervisord
 class SupervisordCommand(ConfigCommand):
     """run the supervisor daemon"""
 
-    log = logging.getLogger(__name__)
+    log = logging.getLogger('supervisord')
 
     def take_action(self, args):
         configp = self.fetch_config(args)

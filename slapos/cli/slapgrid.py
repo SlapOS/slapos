@@ -11,13 +11,10 @@ from slapos.grid.slapgrid import (merged_options, check_missing_parameters, chec
 
 class SlapgridCommand(ConfigCommand):
 
-    log = logging.getLogger(__name__)
+    log = None
 
     method_name = NotImplemented
     default_pidfile = NotImplemented
-
-    CONSOLE_MESSAGE_FORMAT = '%(message)s'
-    LOG_FILE_MESSAGE_FORMAT = '[%(asctime)s] %(levelname)-8s %(name)s %(message)s'
 
     def get_parser(self, prog_name):
         ap = super(SlapgridCommand, self).get_parser(prog_name)
@@ -88,6 +85,8 @@ class SlapgridCommand(ConfigCommand):
 class SoftwareCommand(SlapgridCommand):
     """hook for entry point to process Software Releases"""
 
+    log = logging.getLogger('software')
+
     method_name = 'processSoftwareReleaseList'
     default_pidfile = '/opt/slapos/slapgrid-sr.pid'
 
@@ -103,6 +102,8 @@ class SoftwareCommand(SlapgridCommand):
 class InstanceCommand(SlapgridCommand):
     """hook for entry point to process Computer Partitions"""
 
+    log = logging.getLogger('instance')
+
     method_name = 'processComputerPartitionList'
     default_pidfile = '/opt/slapos/slapgrid-cp.pid'
 
@@ -117,6 +118,8 @@ class InstanceCommand(SlapgridCommand):
 
 class ReportCommand(SlapgridCommand):
     """hook for entry point to process Usage Reports"""
+
+    log = logging.getLogger('report')
 
     method_name = 'agregateAndSendUsage'
     default_pidfile = '/opt/slapos/slapgrid-ur.pid'

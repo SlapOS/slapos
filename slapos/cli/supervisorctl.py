@@ -15,7 +15,7 @@ class SupervisorctlCommand(ConfigCommand):
     manage supervisor processes
     """
 
-    log = logging.getLogger(__name__)
+    log = logging.getLogger('supervisorctl')
 
     def get_parser(self, prog_name):
         ap = super(SupervisorctlCommand, self).get_parser(prog_name)
