@@ -654,7 +654,6 @@ class SlapTool(BaseTool):
            computer_partition_document.getRelativeUrl())
 
     if software_instance is not None:
-      slap_partition._instance_guid = software_instance.getReference()
       # trick client side, that data has been synchronised already for given
       # document
       slap_partition._synced = True
@@ -677,6 +676,7 @@ class SlapTool(BaseTool):
         parameter_dict.pop('xml'))
       slap_partition._connection_dict = self._instanceXmlToDict(
         parameter_dict.pop('connection_xml'))
+      slap_partition._instance_guid = parameter_dict.pop('instance_guid')
       for slave_instance_dict in parameter_dict.get("slave_instance_list", []):
         if slave_instance_dict.has_key("connection_xml"):
           slave_instance_dict.update(self._instanceXmlToDict(
@@ -788,7 +788,6 @@ class SlapTool(BaseTool):
            computer_partition_document.getRelativeUrl())
 
     if software_instance is not None:
-      slap_partition._instance_guid = software_instance.getReference()
       state = software_instance.getSlapState()
       if state == "stop_requested":
         slap_partition._requested_state = 'stopped'
@@ -808,6 +807,7 @@ class SlapTool(BaseTool):
         parameter_dict.pop('xml'))
       slap_partition._connection_dict = self._instanceXmlToDict(
         parameter_dict.pop('connection_xml'))
+      slap_partition._instance_guid = parameter_dict.pop('instance_guid')
       for slave_instance_dict in parameter_dict.get("slave_instance_list", []):
         if slave_instance_dict.has_key("connection_xml"):
           slave_instance_dict.update(self._instanceXmlToDict(
@@ -1176,10 +1176,13 @@ class SlapTool(BaseTool):
           parameter_dict.pop('xml'))
         connection_xml = self._instanceXmlToDict(
           parameter_dict.pop('connection_xml'))
+        instance_guid = parameter_dict.pop('instance_guid')
 
         software_instance = SoftwareInstance(**parameter_dict)
         software_instance._parameter_dict = xml
         software_instance._connection_dict = connection_xml
+        software_instance._requested_state = state
+        software_instance._instance_guid = instance_guid
         return xml_marshaller.xml_marshaller.dumps(software_instance)
 
   ####################################################
@@ -1320,6 +1323,7 @@ class SlapTool(BaseTool):
           if (newtimestamp > timestamp):                                            
             timestamp = newtimestamp
     return {
+      'instance_guid': software_instance.getReference(),
       'xml': software_instance.getTextContent(),
       'connection_xml': software_instance.getConnectionXml(),
       'slap_computer_id': computer_partition.getParentValue().getReference(),
