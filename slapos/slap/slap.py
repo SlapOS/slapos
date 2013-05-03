@@ -446,13 +446,13 @@ class ComputerPartition(SlapDocument):
     return self._partition_id
 
   def getInstanceGuid(self):
-    """Sync if not synced, then returns instance_guid"""
+    """Return instance_guid. Raise ResourceNotReady if it doesn't exist."""
     if not getattr(self, '_instance_guid', None):
       raise ResourceNotReady()
     return self._instance_guid
 
   def getState(self):
-    """Sync if not synced, then returns _requested_state."""
+    """return _requested_state. Raise ResourceNotReady if it doesn't exist."""
     if not getattr(self, '_requested_state', None):
       raise ResourceNotReady()
     return self._requested_state
