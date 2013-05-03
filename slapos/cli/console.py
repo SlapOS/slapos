@@ -8,7 +8,7 @@ from slapos.client import init, do_console, ClientConfig
 
 class ConsoleCommand(ClientConfigCommand):
     """
-    python prompt to interact with slap API
+    python console with slap library imported
 
     You can play with the global "slap" object and
     with the global "request" method.

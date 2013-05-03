@@ -55,9 +55,6 @@ class SlapgridCommand(ConfigCommand):
                         help='Promise timeout in seconds.')
         ap.add_argument('--now', action='store_true',
                         help='Launch slapgrid without delay. Default behavior.')
-        ap.add_argument('--all', action='store_true',
-                        help='Launch slapgrid to process all Softare Releases '
-                             'and/or Computer Partitions.')
         return ap
 
     def take_action(self, args):
@@ -83,7 +80,7 @@ class SlapgridCommand(ConfigCommand):
 
 
 class SoftwareCommand(SlapgridCommand):
-    """hook for entry point to process Software Releases"""
+    """run software installation/deletion"""
 
     log = logging.getLogger('software')
 
@@ -92,6 +89,8 @@ class SoftwareCommand(SlapgridCommand):
 
     def get_parser(self, prog_name):
         ap = super(SoftwareCommand, self).get_parser(prog_name)
+        ap.add_argument('--all', action='store_true',
+                        help='Launch slapgrid to process all Softare Releases.')
         ap.add_argument('--only-sr', '--only',
                         help='Force the update of a single software release (can be full URL or MD5 hash), '
                              'even if is already installed. This option will make all other '
@@ -100,7 +99,7 @@ class SoftwareCommand(SlapgridCommand):
 
 
 class InstanceCommand(SlapgridCommand):
-    """hook for entry point to process Computer Partitions"""
+    """run instance deployment"""
 
     log = logging.getLogger('instance')
 
@@ -109,6 +108,8 @@ class InstanceCommand(SlapgridCommand):
 
     def get_parser(self, prog_name):
         ap = super(InstanceCommand, self).get_parser(prog_name)
+        ap.add_argument('--all', action='store_true',
+                        help='Launch slapgrid to process all Computer Partitions.')
         ap.add_argument('--only-cp', '--only',
                         help='Update a single or a list of computer partitions '
                              '(ie.:slappartX, slappartY), '
@@ -117,7 +118,7 @@ class InstanceCommand(SlapgridCommand):
 
 
 class ReportCommand(SlapgridCommand):
-    """hook for entry point to process Usage Reports"""
+    """run instance reports and garbage collection"""
 
     log = logging.getLogger('report')
 

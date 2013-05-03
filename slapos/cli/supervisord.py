@@ -8,7 +8,7 @@ from slapos.grid.svcbackend import launchSupervisord
 
 
 class SupervisordCommand(ConfigCommand):
-    """run the supervisor daemon"""
+    """launch, if not already running, supervisor daemon"""
 
     log = logging.getLogger('supervisord')
 
