@@ -259,7 +259,7 @@
                 </item>
                 <item>
                     <key> <string>title</string> </key>
-                    <value> <string>certificate.crt</string> </value>
+                    <value> <string>computer.crt</string> </value>
                 </item>
                 <item>
                     <key> <string>unicode</string> </key>

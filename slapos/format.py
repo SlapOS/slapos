@@ -42,12 +42,14 @@ import os
 import pwd
 import random
 import slapos.slap as slap
+import shutil
 import socket
 import struct
 import subprocess
 import sys
 import threading
 import time
+import traceback
 import zipfile
 
 import lxml.etree
@@ -298,7 +300,18 @@ class Computer(object):
           return
 
     if os.path.exists(path_to_xml):
-      self.backup_xml(path_to_archive, path_to_xml)
+      try:
+        self.backup_xml(path_to_archive, path_to_xml)
+      except:
+        # might be a corrupted zip file. let's move it out of the way and retry.
+        shutil.move(path_to_archive,
+                    path_to_archive+time.strftime('_broken_%Y%m%d-%H:%M'))
+        try:
+          self.backup_xml(path_to_archive, path_to_xml)
+        except:
+          # give up trying
+          logger.warning("Can't backup %s: %s" %
+                           (path_to_xml, traceback.format_exc()))
 
     with open(path_to_xml, 'wb') as fout:
       fout.write(new_pretty_xml)

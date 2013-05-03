@@ -2,13 +2,13 @@
 master_url = https://slap.vifib.com/
 
 [slapconsole]
-# Put here retrieved certificate from vifib.
+# Put here retrieved certificate from SlapOS Master.
 # Beware: put certificate from YOUR account, not the one from your node.
-# You (as identified person from vifib) will request an instance, node your node.
+# You (as identified person from SlapOS Master) will request an instance, node your node.
 # Conclusion: node certificate != person certificate.
 cert_file = certificate file location coming from your slapos master account
 key_file = key file location coming from your slapos master account
-# Below are softwares supported by Vifib
+# Below are softwares maintained by slapos.org and contributors
 alias =
   apache_frontend http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg
   dokuwiki http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.158:/software/dokuwiki/software.cfg
@@ -27,4 +27,4 @@ alias =
   slaposwebrunner http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.160:/software/slaprunner/software.cfg
   wordpress http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.153:/software/wordpress/software.cfg
   xwiki http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.46:/software/xwiki/software.cfg
-  zabbixagent http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.95:/software/zabbix-agent/software.cfg
+  zabbixagent http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.162:/software/zabbix-agent/software.cfg
