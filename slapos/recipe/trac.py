@@ -84,13 +84,13 @@ class Recipe(GenericBaseRecipe):
           shutil.rmtree(project_dir)
         self.logger.error("Failed to initialize Trac.\nThe error was: %s" % result)
         return []
-      os.mkdir(self.options['wsgi-dir'])
       os.mkdir(self.options['git-dir'])
       os.mkdir(self.options['svn-dir'])
+      os.mkdir(self.options['wsgi-dir'])
       os.unlink(config)
       shutil.copy(self.options['trac-ini'].strip(), config)
       shutil.copy(self.options['trac-wsgi'].strip(),
-                            os.path.join(self.options['wsgi-dir'], 'trac.wsgi'))
+                      os.path.join(self.options['wsgi-dir'], 'trac.wsgi'))
     else:
       self.logger.info("The directory %s already exist, skip project installation"
                       % project_dir)

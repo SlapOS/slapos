@@ -15,6 +15,8 @@ LogLevel warn
 LogFormat "%h %{REMOTE_USER}i %l %u %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\"" combined
 LogFormat "%h %{REMOTE_USER}i %l %u %t \"%r\" %>s %b" common
 CustomLog "${:access_log}" common
+ScriptSock "${:cgid-sock}"
+SetEnv REMOTE_USER=$REDIRECT_REMOTE_USER
 
 # Directory protection
 <Directory />
@@ -49,9 +51,6 @@ WSGIScriptAlias / ${:wsgi_location}/trac.wsgi
         Require valid-user
     </LimitExcept>
 </Location>
-
-ScriptSock "${:cgid-sock}"
-SetEnv REMOTE_USER=$REDIRECT_REMOTE_USER
 
 Alias "/static/" "${:gitweb-static-dir}"
 <Directory "${:gitweb-static-dir}">

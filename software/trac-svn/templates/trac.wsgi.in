@@ -1,10 +1,17 @@
-import sys
-sys.stdout = sys.stderr
-
+#!${:python_bin}
+# -*- coding: utf-8 -*-
 import os
-os.environ['TRAC_ENV'] = '${:htdocs}'
-os.environ['PYTHON_EGG_CACHE'] = '${:htdocs}/eggs'
 
-import trac.web.main
-
-application = trac.web.main.dispatch_request
+def application(environ, start_request):
+    if not 'trac.env_parent_dir' in environ:
+        environ.setdefault('trac.env_path', '${:trac_env}')
+    if 'PYTHON_EGG_CACHE' in environ:
+        os.environ['PYTHON_EGG_CACHE'] = environ['PYTHON_EGG_CACHE']
+    elif 'trac.env_path' in environ:
+        os.environ['PYTHON_EGG_CACHE'] = \
+            os.path.join(environ['trac.env_path'], '.egg-cache')
+    elif 'trac.env_parent_dir' in environ:
+        os.environ['PYTHON_EGG_CACHE'] = \
+            os.path.join(environ['trac.env_parent_dir'], '.egg-cache')
+    from trac.web.main import dispatch_request
+    return dispatch_request(environ, start_request)
