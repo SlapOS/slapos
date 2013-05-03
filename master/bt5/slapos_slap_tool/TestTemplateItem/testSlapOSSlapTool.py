@@ -1519,7 +1519,7 @@ class TestSlapOSSlapToolInstanceAccess(TestSlapOSSlapToolMixin):
     <unicode>created_at</unicode>
     <unicode>%(created_at)s</unicode>
     <unicode>text</unicode>
-    <unicode>#access instance correctly stopped</unicode>
+    <unicode>#access Instance correctly stopped</unicode>
     <unicode>user</unicode>
     <unicode>%(instance_guid)s</unicode>
   </dictionary>
@@ -1556,7 +1556,7 @@ class TestSlapOSSlapToolInstanceAccess(TestSlapOSSlapToolMixin):
     <unicode>created_at</unicode>
     <unicode>%(created_at)s</unicode>
     <unicode>text</unicode>
-    <unicode>#access instance correctly started</unicode>
+    <unicode>#access Instance correctly started</unicode>
     <unicode>user</unicode>
     <unicode>%(instance_guid)s</unicode>
   </dictionary>
@@ -2166,6 +2166,84 @@ class TestSlapOSSlapToolPersonAccess(TestSlapOSSlapToolMixin):
     finally:
       if os.path.exists(self.instance_request_simulator):
         os.unlink(self.instance_request_simulator)
+
+  def test_request_allocated_instance(self):
+    self.tic()
+    self.person.edit(
+      default_email_coordinate_text="%s@example.org" % self.person.getReference(),
+      career_role='member',
+    )
+    self._makeComplexComputer(person=self.person)
+    self.start_requested_software_instance.updateLocalRolesOnSecurityGroups()
+    self.tic()
+    self.login(self.person_reference)
+    response = self.portal_slap.requestComputerPartition(
+      software_release=self.start_requested_software_instance.getUrlString(),
+      software_type=self.start_requested_software_instance.getSourceReference(),
+      partition_reference=self.start_requested_software_instance.getTitle(),
+      partition_parameter_xml='<marshal><dictionary id="i2"/></marshal>',
+      filter_xml='<marshal><dictionary id="i2"/></marshal>',
+      state='<marshal><string>started</string></marshal>',
+      shared_xml='<marshal><bool>0</bool></marshal>',
+      )
+    self.assertEqual(type(response), str)
+    # check returned XML
+    xml_fp = StringIO.StringIO()
+
+    xml.dom.ext.PrettyPrint(xml.dom.ext.reader.Sax.FromXml(response),
+        stream=xml_fp)
+    xml_fp.seek(0)
+    got_xml = xml_fp.read()
+    expected_xml = """\
+<?xml version='1.0' encoding='UTF-8'?>
+<marshal>
+  <object id='i2' module='slapos.slap.slap' class='SoftwareInstance'>
+    <tuple/>
+    <dictionary id='i3'>
+      <string>_connection_dict</string>
+      <dictionary id='i4'/>
+      <string>_instance_guid</string>
+      <string>%(instance_guid)s</string>
+      <string>_parameter_dict</string>
+      <dictionary id='i5'/>
+      <string>_requested_state</string>
+      <string>%(state)s</string>
+      <string>ip_list</string>
+      <list id='i6'>
+        <tuple>
+          <string/>
+          <string>%(ip)s</string>
+        </tuple>
+      </list>
+      <string>slap_computer_id</string>
+      <string>%(computer_id)s</string>
+      <string>slap_computer_partition_id</string>
+      <string>%(partition_id)s</string>
+      <string>slap_software_release_url</string>
+      <string>%(url_string)s</string>
+      <string>slap_software_type</string>
+      <string>%(type)s</string>
+      <string>slave_instance_list</string>
+      <list id='i7'/>
+      <string>timestamp</string>
+      <string>%(timestamp)s</string>
+    </dictionary>
+  </object>
+</marshal>
+""" % dict(
+    instance_guid=self.start_requested_software_instance.getReference(),
+    state="started",
+    url_string=self.start_requested_software_instance.getUrlString(),
+    type=self.start_requested_software_instance.getSourceReference(),
+    timestamp=int(self.start_requested_software_instance.getModificationDate()),
+    computer_id=self.computer_id,
+    partition_id=self.start_requested_software_instance.getAggregateId(),
+    ip=self.start_requested_software_instance.getAggregateValue()\
+               .getDefaultNetworkAddressIpAddress(),
+  )
+    self.assertEqual(expected_xml, got_xml,
+      '\n'.join([q for q in difflib.unified_diff(expected_xml.split('\n'),
+                                                 got_xml.split('\n'))]))
 
   def assertSupplySimulator(self, args, kwargs):
     stored = eval(open(self.computer_supply_simulator).read())

@@ -14,6 +14,7 @@ Major Improvements:
  * Dramatically speed up slapformat. [Cedric de Saint Martin]
  * Remove CONFIG_SITE env var from Buildout environment, fixing support of OpenSuse 12.x. [Cedric de Saint Martin]
  * RootSoftwareInstance is now the default software type. [Cedric de Saint Martin]
+ * Allow to use SlapOS Client for instances deployed in shared SlapOS Nodes. [Cedric de Saint Martin]
 
 Other fixes:
 
@@ -25,6 +26,7 @@ Other fixes:
  * Slapgrid: Check if SR is upload-blacklisted only if we have upload informations. [Cedric de Saint Martin]
  * Slapformat: Make sure everybody can read slapos configuration directory. [Cedric de Saint Martin]
  * Slapformat: Fix support of slapproxy. [Marco Mariani]
+ * Slapformat: slapos.xml backup: handle corrupted zip files. [Marco Mariani]
 
 
 0.35.1 (2013-02-18)

@@ -82,6 +82,35 @@ class SlapDocument:
       # cause failures when accessing _connection_helper property.
       self._connection_helper = connection_helper
 
+class SlapRequester(SlapDocument):
+  """
+  Abstract class that allow to factor method for subclasses that use "request()"
+  """
+  def _requestComputerPartition(self, request_dict):
+    try:
+      self._connection_helper.POST('/requestComputerPartition', request_dict)
+    except ResourceNotReady:
+      return ComputerPartition(
+        request_dict=request_dict,
+        connection_helper=self._connection_helper,
+      )
+    xml = self._connection_helper.response.read()
+    software_instance = xml_marshaller.loads(xml)
+    computer_partition = ComputerPartition(
+      software_instance.slap_computer_id.encode('UTF-8'),
+      software_instance.slap_computer_partition_id.encode('UTF-8'),
+      connection_helper=self._connection_helper,
+    )
+    # Hack to give all object attributes to the ComputerPartition instance
+    computer_partition.__dict__ = software_instance.__dict__.copy()
+    # XXX not generic enough.
+    if xml_marshaller.loads(request_dict['shared_xml']):
+      computer_partition._synced = True
+      computer_partition._connection_dict = software_instance._connection_dict
+      computer_partition._parameter_dict = software_instance._parameter_dict
+    return computer_partition
+
+
 class SoftwareRelease(SlapDocument):
   """
   Contains Software Release information
@@ -186,7 +215,7 @@ class Supply(SlapDocument):
       raise NotFoundError("Computer %s has not been found by SlapOS Master."
           % computer_guid)
 
-class OpenOrder(SlapDocument):
+class OpenOrder(SlapRequester):
 
   zope.interface.implements(interface.IOpenOrder)
 
@@ -212,26 +241,7 @@ class OpenOrder(SlapDocument):
     else:
       # Let's enforce a default software type
       request_dict['software_type'] = DEFAULT_SOFTWARE_TYPE
-    try:
-      self._connection_helper.POST('/requestComputerPartition', request_dict)
-    except ResourceNotReady:
-      return ComputerPartition(
-        request_dict=request_dict,
-        connection_helper=self._connection_helper,
-      )
-    else:
-      xml = self._connection_helper.response.read()
-      software_instance = xml_marshaller.loads(xml)
-      computer_partition = ComputerPartition(
-        software_instance.slap_computer_id.encode('UTF-8'),
-        software_instance.slap_computer_partition_id.encode('UTF-8'),
-        connection_helper=self._connection_helper,
-      )
-      if shared:
-        computer_partition._synced = True
-        computer_partition._connection_dict = software_instance._connection_dict
-        computer_partition._parameter_dict = software_instance._parameter_dict
-      return computer_partition
+    return self._requestComputerPartition(request_dict)
 
   def requestComputer(self, computer_reference):
     """
@@ -325,57 +335,6 @@ class Computer(SlapDocument):
     xml = self._connection_helper.response.read()
     return xml_marshaller.loads(xml)
 
-def _syncComputerPartitionInformation(func):
-  """
-  Synchronize computer partition object with server information
-  """
-  def decorated(self, *args, **kw):
-    if getattr(self, '_synced', 0):
-      return func(self, *args, **kw)
-    if not self._computer_id:
-      # XXX Is it only in case of requesting instance?
-      raise ResourceNotReady("Instance is not ready yet.")
-    # XXX: This is a ugly way to keep backward compatibility,
-    # We should stablise slap library soon.
-    computer = self._connection_helper.getFullComputerInformation(self._computer_id)
-    found_computer_partition = None
-    for computer_partition in computer._computer_partition_list:
-      if computer_partition.getId() == self.getId():
-        found_computer_partition = computer_partition
-        break
-    if found_computer_partition is None:
-      raise NotFoundError("No information for partition %s" %
-          self.getId())
-    else:
-      for key, value in found_computer_partition.__dict__.items():
-        if isinstance(value, unicode):
-          # convert unicode to utf-8
-          setattr(self, key, value.encode('utf-8'))
-        if isinstance(value, dict):
-          new_dict = {}
-          for ink, inv in value.iteritems():
-            if isinstance(inv, (list, tuple)):
-              new_inv = []
-              for elt in inv:
-                if isinstance(elt, (list, tuple)):
-                  new_inv.append([x.encode('utf-8') for x in elt])
-                elif isinstance(elt, dict):
-                  new_inv.append(dict([(x.encode('utf-8'),
-                    y and y.encode("utf-8")) for x,y in elt.iteritems()]))
-                else:
-                  new_inv.append(elt.encode('utf-8'))
-              new_dict[ink.encode('utf-8')] = new_inv
-            elif inv is None:
-              new_dict[ink.encode('utf-8')] = None
-            else:
-              new_dict[ink.encode('utf-8')] = inv.encode('utf-8')
-          setattr(self, key, new_dict)
-        else:
-          setattr(self, key, value)
-    setattr(self, '_synced', True)
-    return func(self, *args, **kw)
-  return decorated
-
 
 class ComputerPartition(SlapDocument):
 
@@ -398,7 +357,6 @@ class ComputerPartition(SlapDocument):
   def __getinitargs__(self):
     return (self._computer_id, self._partition_id, )
 
-  @_syncComputerPartitionInformation
   def request(self, software_release, software_type, partition_reference,
               shared=False, partition_parameter_kw=None, filter_kw=None,
               state=None):
@@ -418,7 +376,8 @@ class ComputerPartition(SlapDocument):
     if software_type is None:
       software_type = DEFAULT_SOFTWARE_TYPE
 
-    request_dict = { 'computer_id': self._computer_id,
+    request_dict = {
+        'computer_id': self._computer_id,
         'computer_partition_id': self._partition_id,
         'software_release': software_release,
         'software_type': software_type,
@@ -428,29 +387,8 @@ class ComputerPartition(SlapDocument):
                                         partition_parameter_kw),
         'filter_xml': xml_marshaller.dumps(filter_kw),
         'state': xml_marshaller.dumps(state),
-      }
-    try:
-      self._connection_helper.POST('/requestComputerPartition', request_dict)
-    except ResourceNotReady:
-      return ComputerPartition(
-        request_dict=request_dict,
-        connection_helper=self._connection_helper,
-      )
-    else:
-      xml = self._connection_helper.response.read()
-      software_instance = xml_marshaller.loads(xml)
-      computer_partition = ComputerPartition(
-        software_instance.slap_computer_id.encode('UTF-8'),
-        software_instance.slap_computer_partition_id.encode('UTF-8'),
-        connection_helper=self._connection_helper,
-      )
-      if shared:
-        computer_partition._synced = True
-        computer_partition._connection_dict = getattr(software_instance,
-          '_connection_dict', None)
-        computer_partition._parameter_dict = getattr(software_instance,
-          '_parameter_dict', None)
-      return computer_partition
+    }
+    return self._requestComputerPartition(request_dict)
 
   def building(self):
     self._connection_helper.POST('/buildingComputerPartition', {
@@ -510,29 +448,24 @@ class ComputerPartition(SlapDocument):
       raise ResourceNotReady()
     return self._partition_id
 
-  @_syncComputerPartitionInformation
   def getInstanceGuid(self):
-    """Sync if not synced, then returns instance_guid"""
+    """Return instance_guid. Raise ResourceNotReady if it doesn't exist."""
     if not getattr(self, '_instance_guid', None):
       raise ResourceNotReady()
     return self._instance_guid
 
-  @_syncComputerPartitionInformation
   def getState(self):
-    """Sync if not synced, then returns _requested_state."""
+    """return _requested_state. Raise ResourceNotReady if it doesn't exist."""
     if not getattr(self, '_requested_state', None):
       raise ResourceNotReady()
     return self._requested_state
 
-  @_syncComputerPartitionInformation
   def getInstanceParameterDict(self):
     return getattr(self, '_parameter_dict', None) or {}
 
-  @_syncComputerPartitionInformation
   def getConnectionParameterDict(self):
     return getattr(self, '_connection_dict', None) or {}
 
-  @_syncComputerPartitionInformation
   def getSoftwareRelease(self):
     """
     Returns the software release associate to the computer partition.
@@ -551,7 +484,6 @@ class ComputerPartition(SlapDocument):
           'connection_xml': xml_marshaller.dumps(connection_dict),
           'slave_reference': slave_reference})
 
-  @_syncComputerPartitionInformation
   def getInstanceParameter(self, key):
     parameter_dict = getattr(self, '_parameter_dict', None) or {}
     if key in parameter_dict:
@@ -559,7 +491,6 @@ class ComputerPartition(SlapDocument):
     else:
       raise NotFoundError("%s not found" % key)
 
-  @_syncComputerPartitionInformation
   def getConnectionParameter(self, key):
     connection_dict = getattr(self, '_connection_dict', None) or {}
     if key in connection_dict:
