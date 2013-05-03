@@ -272,13 +272,13 @@ class Recipe(BaseSlapRecipe):
     service_name = "squid_%s" % reference
     squid_ip = self.getLocalIPv4Address()
     stunnel_port = base_squid_port + 1
-    self.installSquidCache(service_name,
-      ip=squid_ip,
-      port=base_squid_port,
-      backend_host=squid_ip,
-      backend_port=stunnel_port,
-      domain=domain,
-      size="1G")
+    #self.installSquidCache(service_name,
+    #  ip=squid_ip,
+    #  port=base_squid_port,
+    #  backend_host=squid_ip,
+    #  backend_port=stunnel_port,
+    #  domain=domain,
+    #  size="1G")
     service_dict[service_name] = dict(public_ip=squid_ip,
         public_port=stunnel_port,
         private_ip=slave_host.replace("[", "").replace("]", ""),
