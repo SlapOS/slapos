@@ -64,8 +64,6 @@ class Recipe(BaseSlapRecipe):
     self.path_list = []
     self.requirements, self.ws = self.egg.working_set()
 
-    # self.cron_d is a directory, where cron jobs can be registered
-    self.cron_d = self.installCrond()
     self.killpidfromfile = zc.buildout.easy_install.scripts(
         [('killpidfromfile', 'slapos.toolbox.killpidfromfile',
           'killpidfromfile')], self.ws, sys.executable, self.bin_directory)[0]
@@ -163,27 +161,30 @@ class Recipe(BaseSlapRecipe):
             rewrite_rule_list.append(rewrite_rule)
 
     # Certificate stuff
-    valid_certificate_str = self.parameter_dict.get("domain_ssl_ca_cert")
-    valid_key_str = self.parameter_dict.get("domain_ssl_ca_key")
-    if valid_certificate_str is None and valid_key_str is None:
-      ca_conf = self.installCertificateAuthority()
-      key, certificate = self.requestCertificate(frontend_domain_name)
-    else:
-      ca_conf = self.installValidCertificateAuthority(
-          frontend_domain_name, valid_certificate_str, valid_key_str)
-      key = ca_conf.pop("key")
-      certificate = ca_conf.pop("certificate")
-    if service_dict != {}:
-      if valid_certificate_str is not None and valid_key_str is not None:
-        self.installCertificateAuthority()
-        stunnel_key, stunnel_certificate = \
-            self.requestCertificate(frontend_domain_name)
-      else:
-        stunnel_key, stunnel_certificate = key, certificate
-      self.installStunnel(service_dict,
-        stunnel_certificate, stunnel_key,
-        ca_conf["ca_crl"],
-        ca_conf["certificate_authority_path"])
+    #valid_certificate_str = self.parameter_dict.get("domain_ssl_ca_cert")
+    #valid_key_str = self.parameter_dict.get("domain_ssl_ca_key")
+    #if valid_certificate_str is None and valid_key_str is None:
+    #  ca_conf = self.installCertificateAuthority()
+    #  key, certificate = self.requestCertificate(frontend_domain_name)
+    #else:
+    #  ca_conf = self.installValidCertificateAuthority(
+    #      frontend_domain_name, valid_certificate_str, valid_key_str)
+    #  key = ca_conf.pop("key")
+    #  certificate = ca_conf.pop("certificate")
+    #if service_dict != {}:
+    #  if valid_certificate_str is not None and valid_key_str is not None:
+    #    self.installCertificateAuthority()
+    #    stunnel_key, stunnel_certificate = \
+    #        self.requestCertificate(frontend_domain_name)
+    #  else:
+    #    stunnel_key, stunnel_certificate = key, certificate
+      stunnel_key, stunnel_certificate = self.options['key_path'], self.options['cert_path']
+
+    key, certificate = self.options['key_path'], self.options['cert_path']
+    #self.installStunnel(service_dict,
+    #    stunnel_certificate, stunnel_key,
+    #    self.options["ca_crl"],
+    #    self.options["ca_dir"])
 
     apache_parameter_dict = self.installFrontendApache(
         ip_list=["[%s]" % self.getGlobalIPv6Address(),
@@ -272,13 +273,13 @@ class Recipe(BaseSlapRecipe):
     service_name = "squid_%s" % reference
     squid_ip = self.getLocalIPv4Address()
     stunnel_port = base_squid_port + 1
-    #self.installSquidCache(service_name,
-    #  ip=squid_ip,
-    #  port=base_squid_port,
-    #  backend_host=squid_ip,
-    #  backend_port=stunnel_port,
-    #  domain=domain,
-    #  size="1G")
+#    self.installSquidCache(service_name,
+#      ip=squid_ip,
+#      port=base_squid_port,
+#      backend_host=squid_ip,
+#      backend_port=stunnel_port,
+#      domain=domain,
+#      size="1G")
     service_dict[service_name] = dict(public_ip=squid_ip,
         public_port=stunnel_port,
         private_ip=slave_host.replace("[", "").replace("]", ""),
@@ -286,245 +287,208 @@ class Recipe(BaseSlapRecipe):
     return "%s http://%s:%s" % \
         (domain, squid_ip, base_squid_port)
 
-  def installSquidCache(self, name, ip, port, backend_host,
-                                backend_port, domain, size="1G"):
-    """
-      Install a squid daemon for a certain address
-    """
-#     directory = self.createDataDirectory(name)
-#     squid_config = dict(
-#       directory=directory,
-#       pid = "%s/squid.pid" % directory,
-#       port="%s:%s" % (ip, port),
-#       squidd_binary=self.options["squidd_binary"],
-#       control_port="%s:%s" % (ip, control_port),
-#       storage="file,%s/storage.bin,%s" % (directory, size))
+#  def installSquidCache(self, name, ip, port, backend_host,
+#                                backend_port, domain, size="1G"):
+#    """
+#      Install a squid daemon for a certain address
+#    """
+##     directory = self.createDataDirectory(name)
+##     squid_config = dict(
+##       directory=directory,
+##       pid = "%s/squid.pid" % directory,
+##       port="%s:%s" % (ip, port),
+##       squidd_binary=self.options["squidd_binary"],
+##       control_port="%s:%s" % (ip, control_port),
+##       storage="file,%s/storage.bin,%s" % (directory, size))
+#
+## 
+##     squid_argument_list = [squid_config['squidd_binary'].strip(),
+##         "-F", "-n", directory, "-P", squid_config["pid"], "-p",
+##         "cc_command=exec %s " % self.options["gcc_binary"] +\
+##             "-fpic -shared -o %o %s",
+##         "-f", config_file,
+##         "-a", squid_config["port"], "-T", squid_config["control_port"],
+##         "-s", squid_config["storage"]]
+##     environment = dict(PATH="%s:%s" % (self.options["binutils_directory"],
+##                                        os.environ.get('PATH')))
+##     wrapper = zc.buildout.easy_install.scripts([(name,
+##       'slapos.recipe.librecipe.execute', 'executee')], self.ws,
+##       sys.executable, self.service_directory, arguments=[squid_argument_list,
+##       environment])[0]
+##     self.path_list.append(wrapper)
+#
+#
+##     directory = self.createDataDirectory(name)
+#    config = dict(
+#      ip=ip,
+#      port=port,
+#      backend_ip=backend_host,
+#      backend_port=backend_port,
+#      domain=domain,
+#      # XXX Hardcoded
+#      access_log_path = os.path.join(self.log_directory, 'squid.access.log'),
+#      # XXX Hardcoded
+#      cache_log_path = os.path.join(self.log_directory, 'squid.cache.log'),
+##       cache_path=self.options['cache-path'],
+#      # XXX Hardcoded
+#      pid_filename_path=os.path.join(self.run_directory, 'squid.pid'),
+#      squid_binary=self.options["squid_binary"],
+#      )
+#    
+#    template_filename = self.getTemplateFilename('squid.conf.in')
+#    config_file = self.createConfigurationFile("%s.conf" % name,
+#      self.substituteTemplate(self.getTemplateFilename('squid.conf.in'),
+#                              config))
+#
+##     # Prepare directories
+##     prepare_path = self.createPythonScript(
+##       self.options['prepare-path'],
+##       'slapos.recipe.librecipe.execute.execute',
+##       arguments=[self.options['binary-path'].strip(),
+##                  '-z',
+##                  '-f', configuration_path,
+##                  ],)
+## 
+##     # Create running wrapper
+##     wrapper_path = self.createPythonScript(
+##       self.options['wrapper-path'],
+##       'slapos.recipe.librecipe.execute.execute',
+##       arguments=[self.options['binary-path'].strip(),
+##                  '-N',
+##                  '-f', configuration_path,
+##                  ],)
+## 
+##     return [configuration_path, wrapper_path, prepare_path]
+#
+#    squid_argument_list = [config['squid_binary'].strip(),
+#        "-N", "-f", config_file]
+##         "cc_command=exec %s " % self.options["gcc_binary"] +\
+##             "-fpic -shared -o %o %s",
+##         "-f", config_file,
+##         "-a", config["port"], "-T", config["control_port"],
+##         "-s", config["storage"]]
+#    environment = dict(PATH="%s:%s" % (self.options["binutils_directory"],
+#                                       os.environ.get('PATH')))
+#    wrapper = zc.buildout.easy_install.scripts([(name,
+#      'slapos.recipe.librecipe.execute', 'executee')], self.ws,
+#      sys.executable, self.service_directory, arguments=[squid_argument_list,
+#      environment])[0]
+#    self.path_list.append(wrapper)
+#
+#    return config
 
-# 
-#     squid_argument_list = [squid_config['squidd_binary'].strip(),
-#         "-F", "-n", directory, "-P", squid_config["pid"], "-p",
-#         "cc_command=exec %s " % self.options["gcc_binary"] +\
-#             "-fpic -shared -o %o %s",
-#         "-f", config_file,
-#         "-a", squid_config["port"], "-T", squid_config["control_port"],
-#         "-s", squid_config["storage"]]
-#     environment = dict(PATH="%s:%s" % (self.options["binutils_directory"],
-#                                        os.environ.get('PATH')))
-#     wrapper = zc.buildout.easy_install.scripts([(name,
-#       'slapos.recipe.librecipe.execute', 'executee')], self.ws,
-#       sys.executable, self.service_directory, arguments=[squid_argument_list,
-#       environment])[0]
-#     self.path_list.append(wrapper)
+#  def requestCertificate(self, name):
+#    hash = hashlib.sha512(name).hexdigest()
+#    key = os.path.join(self.ca_private, hash + self.ca_key_ext)
+#    certificate = os.path.join(self.ca_certs, hash + self.ca_crt_ext)
+#    parser = ConfigParser.RawConfigParser()
+#    parser.add_section('certificate')
+#    parser.set('certificate', 'name', name)
+#    parser.set('certificate', 'key_file', key)
+#    parser.set('certificate', 'certificate_file', certificate)
+#    parser.write(open(os.path.join(self.ca_request_dir, hash), 'w'))
+#    return key, certificate
 
+#  def installCrond(self):
+#   timestamps = self.createDataDirectory('cronstamps')
+#   cron_output = os.path.join(self.log_directory, 'cron-output')
+#   self._createDirectory(cron_output)
+#   catcher = zc.buildout.easy_install.scripts([('catchcron',
+#     __name__ + '.catdatefile', 'catdatefile')], self.ws, sys.executable,
+#     self.bin_directory, arguments=[cron_output])[0]
+#   self.path_list.append(catcher)
+#   cron_d = os.path.join(self.etc_directory, 'cron.d')
+#   crontabs = os.path.join(self.etc_directory, 'crontabs')
+#   self._createDirectory(cron_d)
+#   self._createDirectory(crontabs)
+#   wrapper = zc.buildout.easy_install.scripts([('crond',
+#     'slapos.recipe.librecipe.execute', 'execute')], self.ws, sys.executable,
+#     self.service_directory, arguments=[
+#       self.options['dcrond_binary'].strip(), '-s', cron_d, '-c', crontabs,
+#       '-t', timestamps, '-f', '-l', '5', '-M', catcher]
+#     )[0]
+#   self.path_list.append(wrapper)
+#   return cron_d
 
-#     directory = self.createDataDirectory(name)
-    config = dict(
-      ip=ip,
-      port=port,
-      backend_ip=backend_host,
-      backend_port=backend_port,
-      domain=domain,
-      # XXX Hardcoded
-      access_log_path = os.path.join(self.log_directory, 'squid.access.log'),
-      # XXX Hardcoded
-      cache_log_path = os.path.join(self.log_directory, 'squid.cache.log'),
-#       cache_path=self.options['cache-path'],
-      # XXX Hardcoded
-      pid_filename_path=os.path.join(self.run_directory, 'squid.pid'),
-      squid_binary=self.options["squid_binary"],
-      )
-    
-    template_filename = self.getTemplateFilename('squid.conf.in')
-    config_file = self.createConfigurationFile("%s.conf" % name,
-      self.substituteTemplate(self.getTemplateFilename('squid.conf.in'),
-                              config))
-
-#     # Prepare directories
-#     prepare_path = self.createPythonScript(
-#       self.options['prepare-path'],
-#       'slapos.recipe.librecipe.execute.execute',
-#       arguments=[self.options['binary-path'].strip(),
-#                  '-z',
-#                  '-f', configuration_path,
-#                  ],)
-# 
-#     # Create running wrapper
-#     wrapper_path = self.createPythonScript(
-#       self.options['wrapper-path'],
-#       'slapos.recipe.librecipe.execute.execute',
-#       arguments=[self.options['binary-path'].strip(),
-#                  '-N',
-#                  '-f', configuration_path,
-#                  ],)
-# 
-#     return [configuration_path, wrapper_path, prepare_path]
-
-    squid_argument_list = [config['squid_binary'].strip(),
-        "-N", "-f", config_file]
-#         "cc_command=exec %s " % self.options["gcc_binary"] +\
-#             "-fpic -shared -o %o %s",
-#         "-f", config_file,
-#         "-a", config["port"], "-T", config["control_port"],
-#         "-s", config["storage"]]
-    environment = dict(PATH="%s:%s" % (self.options["binutils_directory"],
-                                       os.environ.get('PATH')))
-    wrapper = zc.buildout.easy_install.scripts([(name,
-      'slapos.recipe.librecipe.execute', 'executee')], self.ws,
-      sys.executable, self.service_directory, arguments=[squid_argument_list,
-      environment])[0]
-    self.path_list.append(wrapper)
-
-    return config
-
-
-
-
-  def configureVarnishSlave(self, base_varnish_port, url, reference,
-      service_dict, domain):
-    # Varnish should use stunnel to connect to the backend
-    base_varnish_control_port = base_varnish_port
-    base_varnish_port += 1
-    # Use regex
-    host_regex = "((\[\w*|[0-9]+\.)(\:|)).*(\]|\.[0-9]+)"
-    slave_host = re.search(host_regex, url).group(0)
-    port_regex = "\w+(\/|)$"
-    matcher = re.search(port_regex, url)
-    if matcher is not None:
-      slave_port = matcher.group(0)
-      slave_port = slave_port.replace("/", "")
-    elif url.startswith("https://"):
-      slave_port = 443
-    else:
-      slave_port = 80
-    service_name = "varnish_%s" % reference
-    varnish_ip = self.getLocalIPv4Address()
-    stunnel_port = base_varnish_port + 1
-    self.installVarnishCache(service_name,
-      ip=varnish_ip,
-      port=base_varnish_port,
-      control_port=base_varnish_control_port,
-      backend_host=varnish_ip,
-      backend_port=stunnel_port,
-      size="1G")
-    service_dict[service_name] = dict(public_ip=varnish_ip,
-        public_port=stunnel_port,
-        private_ip=slave_host.replace("[", "").replace("]", ""),
-        private_port=slave_port)
-    return "%s http://%s:%s" % \
-        (domain, varnish_ip, base_varnish_port)
-
-  def requestCertificate(self, name):
-    hash = hashlib.sha512(name).hexdigest()
-    key = os.path.join(self.ca_private, hash + self.ca_key_ext)
-    certificate = os.path.join(self.ca_certs, hash + self.ca_crt_ext)
-    parser = ConfigParser.RawConfigParser()
-    parser.add_section('certificate')
-    parser.set('certificate', 'name', name)
-    parser.set('certificate', 'key_file', key)
-    parser.set('certificate', 'certificate_file', certificate)
-    parser.write(open(os.path.join(self.ca_request_dir, hash), 'w'))
-    return key, certificate
-
-  def installCrond(self):
-   timestamps = self.createDataDirectory('cronstamps')
-   cron_output = os.path.join(self.log_directory, 'cron-output')
-   self._createDirectory(cron_output)
-   catcher = zc.buildout.easy_install.scripts([('catchcron',
-     __name__ + '.catdatefile', 'catdatefile')], self.ws, sys.executable,
-     self.bin_directory, arguments=[cron_output])[0]
-   self.path_list.append(catcher)
-   cron_d = os.path.join(self.etc_directory, 'cron.d')
-   crontabs = os.path.join(self.etc_directory, 'crontabs')
-   self._createDirectory(cron_d)
-   self._createDirectory(crontabs)
-   wrapper = zc.buildout.easy_install.scripts([('crond',
-     'slapos.recipe.librecipe.execute', 'execute')], self.ws, sys.executable,
-     self.service_directory, arguments=[
-       self.options['dcrond_binary'].strip(), '-s', cron_d, '-c', crontabs,
-       '-t', timestamps, '-f', '-l', '5', '-M', catcher]
-     )[0]
-   self.path_list.append(wrapper)
-   return cron_d
-
-  def installValidCertificateAuthority(self, domain_name, certificate, key):
-    ca_dir = os.path.join(self.data_root_directory, 'ca')
-    ca_private = os.path.join(ca_dir, 'private')
-    ca_certs = os.path.join(ca_dir, 'certs')
-    ca_crl = os.path.join(ca_dir, 'crl')
-    self._createDirectory(ca_dir)
-    for path in (ca_private, ca_certs, ca_crl):
-      self._createDirectory(path)
-    key_path = os.path.join(ca_private, domain_name + ".key")
-    certificate_path = os.path.join(ca_certs, domain_name + ".crt")
-    self._writeFile(key_path, key)
-    self._writeFile(certificate_path, certificate)
-    return dict(certificate_authority_path=ca_dir,
-        ca_crl=ca_crl,
-        certificate=certificate_path,
-        key=key_path)
-
-  def installCertificateAuthority(self, ca_country_code='XX',
-      ca_email='xx@example.com', ca_state='State', ca_city='City',
-      ca_company='Company'):
-    backup_path = self.createBackupDirectory('ca')
-    self.ca_dir = os.path.join(self.data_root_directory, 'ca')
-    self._createDirectory(self.ca_dir)
-    self.ca_request_dir = os.path.join(self.ca_dir, 'requests')
-    self._createDirectory(self.ca_request_dir)
-    config = dict(ca_dir=self.ca_dir, request_dir=self.ca_request_dir)
-    self.ca_private = os.path.join(self.ca_dir, 'private')
-    self.ca_certs = os.path.join(self.ca_dir, 'certs')
-    self.ca_crl = os.path.join(self.ca_dir, 'crl')
-    self.ca_newcerts = os.path.join(self.ca_dir, 'newcerts')
-    self.ca_key_ext = '.key'
-    self.ca_crt_ext = '.crt'
-    for d in [self.ca_private, self.ca_crl, self.ca_newcerts, self.ca_certs]:
-      self._createDirectory(d)
-    for f in ['crlnumber', 'serial']:
-      if not os.path.exists(os.path.join(self.ca_dir, f)):
-        open(os.path.join(self.ca_dir, f), 'w').write('01')
-    if not os.path.exists(os.path.join(self.ca_dir, 'index.txt')):
-      open(os.path.join(self.ca_dir, 'index.txt'), 'w').write('')
-    openssl_configuration = os.path.join(self.ca_dir, 'openssl.cnf')
-    config.update(
-        working_directory=self.ca_dir,
-        country_code=ca_country_code,
-        state=ca_state,
-        city=ca_city,
-        company=ca_company,
-        email_address=ca_email,
-    )
-    self._writeFile(openssl_configuration, pkg_resources.resource_string(
-      __name__, 'template/openssl.cnf.ca.in') % config)
-
-    # XXX-Cedric: Don't use this, but use slapos.recipe.certificate_authority
-    #             from the instance profile.
-    self.path_list.extend(zc.buildout.easy_install.scripts([
-      ('certificate_authority', __name__ + '.certificate_authority',
-         'runCertificateAuthority')],
-        self.ws, sys.executable, self.service_directory, arguments=[dict(
-          openssl_configuration=openssl_configuration,
-          openssl_binary=self.options['openssl_binary'],
-          certificate=os.path.join(self.ca_dir, 'cacert.pem'),
-          key=os.path.join(self.ca_private, 'cakey.pem'),
-          crl=os.path.join(self.ca_crl),
-          request_dir=self.ca_request_dir
-          )]))
+#  def installValidCertificateAuthority(self, domain_name, certificate, key):
+#    ca_dir = os.path.join(self.data_root_directory, 'ca')
+#    ca_private = os.path.join(ca_dir, 'private')
+#    ca_certs = os.path.join(ca_dir, 'certs')
+#    ca_crl = os.path.join(ca_dir, 'crl')
+#    self._createDirectory(ca_dir)
+#    for path in (ca_private, ca_certs, ca_crl):
+#      self._createDirectory(path)
+#    key_path = os.path.join(ca_private, domain_name + ".key")
+#    certificate_path = os.path.join(ca_certs, domain_name + ".crt")
+#    self._writeFile(key_path, key)
+#    self._writeFile(certificate_path, certificate)
+#    return dict(certificate_authority_path=ca_dir,
+#        ca_crl=ca_crl,
+#        certificate=certificate_path,
+#        key=key_path)
+#
+#  def installCertificateAuthority(self, ca_country_code='XX',
+#      ca_email='xx@example.com', ca_state='State', ca_city='City',
+#      ca_company='Company'):
+#    backup_path = self.createBackupDirectory('ca')
+#    self.ca_dir = os.path.join(self.data_root_directory, 'ca')
+#    self._createDirectory(self.ca_dir)
+#    self.ca_request_dir = os.path.join(self.ca_dir, 'requests')
+#    self._createDirectory(self.ca_request_dir)
+#    config = dict(ca_dir=self.ca_dir, request_dir=self.ca_request_dir)
+#    self.ca_private = os.path.join(self.ca_dir, 'private')
+#    self.ca_certs = os.path.join(self.ca_dir, 'certs')
+#    self.ca_crl = os.path.join(self.ca_dir, 'crl')
+#    self.ca_newcerts = os.path.join(self.ca_dir, 'newcerts')
+#    self.ca_key_ext = '.key'
+#    self.ca_crt_ext = '.crt'
+#    for d in [self.ca_private, self.ca_crl, self.ca_newcerts, self.ca_certs]:
+#      self._createDirectory(d)
+#    for f in ['crlnumber', 'serial']:
+#      if not os.path.exists(os.path.join(self.ca_dir, f)):
+#        open(os.path.join(self.ca_dir, f), 'w').write('01')
+#    if not os.path.exists(os.path.join(self.ca_dir, 'index.txt')):
+#      open(os.path.join(self.ca_dir, 'index.txt'), 'w').write('')
+#    openssl_configuration = os.path.join(self.ca_dir, 'openssl.cnf')
+#    config.update(
+#        working_directory=self.ca_dir,
+#        country_code=ca_country_code,
+#        state=ca_state,
+#        city=ca_city,
+#        company=ca_company,
+#        email_address=ca_email,
+#    )
+#    self._writeFile(openssl_configuration, pkg_resources.resource_string(
+#      __name__, 'template/openssl.cnf.ca.in') % config)
+#
+#    # XXX-Cedric: Don't use this, but use slapos.recipe.certificate_authority
+#    #             from the instance profile.
+#    self.path_list.extend(zc.buildout.easy_install.scripts([
+#      ('certificate_authority', __name__ + '.certificate_authority',
+#         'runCertificateAuthority')],
+#        self.ws, sys.executable, self.service_directory, arguments=[dict(
+#          openssl_configuration=openssl_configuration,
+#          openssl_binary=self.options['openssl_binary'],
+#          certificate=os.path.join(self.ca_dir, 'cacert.pem'),
+#          key=os.path.join(self.ca_private, 'cakey.pem'),
+#          crl=os.path.join(self.ca_crl),
+#          request_dir=self.ca_request_dir
+#          )]))
 
     # configure backup
-    backup_cron = os.path.join(self.cron_d, 'ca_rdiff_backup')
-    open(backup_cron, 'w').write(
-        '''0 0 * * * %(rdiff_backup)s %(source)s %(destination)s'''%dict(
-          rdiff_backup=self.options['rdiff_backup_binary'],
-          source=self.ca_dir,
-          destination=backup_path))
-    self.path_list.append(backup_cron)
+    #backup_cron = os.path.join(self.cron_d, 'ca_rdiff_backup')
+    #open(backup_cron, 'w').write(
+    #    '''0 0 * * * %(rdiff_backup)s %(source)s %(destination)s'''%dict(
+    #      rdiff_backup=self.options['rdiff_backup_binary'],
+    #      source=self.ca_dir,
+    #      destination=backup_path))
+    #self.path_list.append(backup_cron)
 
-    return dict(
-      ca_certificate=os.path.join(config['ca_dir'], 'cacert.pem'),
-      ca_crl=os.path.join(config['ca_dir'], 'crl'),
-      certificate_authority_path=config['ca_dir']
-    )
+#    return dict(
+#      ca_certificate=os.path.join(config['ca_dir'], 'cacert.pem'),
+#      ca_crl=os.path.join(config['ca_dir'], 'crl'),
+#      certificate_authority_path=config['ca_dir']
+#    )
 
   def _getApacheConfigurationDict(self, name, ip_list, port):
     apache_conf = dict()
@@ -542,41 +506,6 @@ class Recipe(BaseSlapRecipe):
     apache_conf['error_log'] = self.options['error-log']
     apache_conf['access_log'] = self.options['access-log']
     return apache_conf
-
-  def installVarnishCache(self, name, ip, port, control_port, backend_host,
-                                backend_port, size="1G"):
-    """
-      Install a varnish daemon for a certain address
-    """
-    directory = self.createDataDirectory(name)
-    varnish_config = dict(
-      directory=directory,
-      pid = "%s/varnish.pid" % directory,
-      port="%s:%s" % (ip, port),
-      varnishd_binary=self.options["varnishd_binary"],
-      control_port="%s:%s" % (ip, control_port),
-      storage="file,%s/storage.bin,%s" % (directory, size))
-
-    config_file = self.createConfigurationFile("%s.conf" % name,
-      self.substituteTemplate(self.getTemplateFilename('varnish.vcl.in'),
-        dict(backend_host=backend_host, backend_port=backend_port)))
-
-    varnish_argument_list = [varnish_config['varnishd_binary'].strip(),
-        "-F", "-n", directory, "-P", varnish_config["pid"], "-p",
-        "cc_command=exec %s " % self.options["gcc_binary"] +\
-            "-fpic -shared -o %o %s",
-        "-f", config_file,
-        "-a", varnish_config["port"], "-T", varnish_config["control_port"],
-        "-s", varnish_config["storage"]]
-    environment = dict(PATH="%s:%s" % (self.options["binutils_directory"],
-                                       os.environ.get('PATH')))
-    wrapper = zc.buildout.easy_install.scripts([(name,
-      'slapos.recipe.librecipe.execute', 'executee')], self.ws,
-      sys.executable, self.service_directory, arguments=[varnish_argument_list,
-      environment])[0]
-    self.path_list.append(wrapper)
-
-    return varnish_config
 
   def installStunnel(self, service_dict, certificate,
       key, ca_crl, ca_path):
@@ -669,14 +598,14 @@ class Recipe(BaseSlapRecipe):
       open(custom_apache_virtual_configuration_file_location, 'w')
 
     # Create backup of custom apache configuration
-    backup_path = self.createBackupDirectory('custom_apache_conf_backup')
-    backup_cron = os.path.join(self.cron_d, 'custom_apache_conf_backup')
-    open(backup_cron, 'w').write(
-        '''0 0 * * * %(rdiff_backup)s %(source)s %(destination)s'''%dict(
-          rdiff_backup=self.options['rdiff_backup_binary'],
-          source=custom_apache_configuration_directory,
-          destination=backup_path))
-    self.path_list.append(backup_cron)
+    #backup_path = self.createBackupDirectory('custom_apache_conf_backup')
+    #backup_cron = os.path.join(self.cron_d, 'custom_apache_conf_backup')
+    #open(backup_cron, 'w').write(
+    #    '''0 0 * * * %(rdiff_backup)s %(source)s %(destination)s'''%dict(
+    #      rdiff_backup=self.options['rdiff_backup_binary'],
+    #      source=custom_apache_configuration_directory,
+    #      destination=backup_path))
+    #self.path_list.append(backup_cron)
 
     # Create configuration file and rewritemaps
     apachemap_path = self.createConfigurationFile(
