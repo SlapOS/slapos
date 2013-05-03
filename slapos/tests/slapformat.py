@@ -83,7 +83,8 @@ class FakeCallAndRead:
         INTERFACE_DICT[interface][socket.AF_INET6].append({'addr': ip, 'netmask': netmask})
       # stabilise by mangling ip to just ip string
       argument_list[3] = 'ip/%s' % netmask
-    elif argument_list[:3] == ['ip', 'addr', 'list']:
+    elif argument_list[:3] == ['ip', 'addr', 'list'] or \
+         argument_list[:4] == ['ip', '-6', 'addr', 'list']:
       retval = 0, str(INTERFACE_DICT)
     self.external_command_list.append(' '.join(argument_list))
     return retval
@@ -404,7 +405,7 @@ class TestComputer(SlapformatMixin):
       'ip addr add ip/255.255.255.255 dev bridge',
       # 'ip addr list bridge',
       'ip addr add ip/ffff:ffff:ffff:ffff:: dev bridge',
-      'ip addr list bridge',
+      'ip -6 addr list bridge',
     ],
       self.fakeCallAndRead.external_command_list)
 
@@ -483,7 +484,7 @@ class TestComputer(SlapformatMixin):
       'ip addr add ip/255.255.255.255 dev bridge',
       # 'ip addr list bridge',
       'ip addr add ip/ffff:ffff:ffff:ffff:: dev bridge',
-      'ip addr list bridge',
+      'ip -6 addr list bridge',
     ],
       self.fakeCallAndRead.external_command_list)
 
