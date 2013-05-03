@@ -102,7 +102,10 @@ class SlapRequester(SlapDocument):
       connection_helper=self._connection_helper,
     )
     # Hack to give all object attributes to the ComputerPartition instance
-    computer_partition.__dict__ = software_instance.__dict__.copy()
+    # XXX Should be removed by correctly specifying difference between
+    # ComputerPartition and SoftwareInstance
+    computer_partition.__dict__ = dict(computer_partition.__dict__.items() +
+                                       software_instance.__dict__.items())
     # XXX not generic enough.
     if xml_marshaller.loads(request_dict['shared_xml']):
       computer_partition._synced = True
@@ -336,7 +339,7 @@ class Computer(SlapDocument):
     return xml_marshaller.loads(xml)
 
 
-class ComputerPartition(SlapDocument):
+class ComputerPartition(SlapRequester):
 
   zope.interface.implements(interface.IComputerPartition)
 
@@ -444,7 +447,7 @@ class ComputerPartition(SlapDocument):
     self._connection_helper.POST('/softwareInstanceRename', post_dict)
 
   def getId(self):
-    if not self._partition_id:
+    if not getattr(self, '_partition_id', None):
       raise ResourceNotReady()
     return self._partition_id
 
