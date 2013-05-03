@@ -71,10 +71,9 @@ class ProxyConfig(object):
         self.logger.addHandler(file_handler)
         self.logger.info('Configured logging to file %r' % self.log_file)
 
-    self.logger.info("Started.")
     if self.verbose:
       self.logger.setLevel(logging.DEBUG)
-      self.logger.debug("Verbose mode enabled.")
+
 
 
 def run(config):
