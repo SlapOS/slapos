@@ -2,6 +2,7 @@
 
 export PATH=${:trac_admin}:${:svn_bin}:$PATH
 export PYTHONPATH=${:svn_python}:$PYTHONPATH
+export LD_LIBRARY_PATH=${:python_lib}:$LD_LIBRARY_PATH
 
 ENV="$1"
 REPO="$2"

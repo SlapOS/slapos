@@ -54,6 +54,8 @@ class Recipe(GenericBaseRecipe):
   def install(self):
     install_path = []
 
+    env = os.environ
+    env['LD_LIBRARY_PATH'] = self.options['python-lib']
     project_dir = self.options['site-dir'].strip()
     trac_admin = self.options['trac-admin'].strip()
     admin = self.options['admin-user'].strip()
@@ -74,7 +76,7 @@ class Recipe(GenericBaseRecipe):
                   self.options['mysql-database'].strip()
       )
       process_install = subprocess.Popen(trac_args, stdout=subprocess.PIPE,
-              stdin=subprocess.PIPE, stderr=subprocess.STDOUT)
+              stdin=subprocess.PIPE, stderr=subprocess.STDOUT, env=env)
       process_install.stdin.write('%s\n%s\n' % (self.options['project'].strip(),
                                             db_string))
       result = process_install.communicate()[0]
@@ -96,7 +98,7 @@ class Recipe(GenericBaseRecipe):
                       % project_dir)
       trac_args = [trac_admin, project_dir, 'upgrade']
       process_upgrade = subprocess.Popen(trac_args, stdout=subprocess.PIPE,
-              stderr=subprocess.STDOUT)
+              stderr=subprocess.STDOUT, env=env)
       result = process_upgrade.communicate()[0]
       if process_upgrade.returncode is None or process_upgrade.returncode != 0:
         self.logger.error("Failed to upgrade Trac.\nThe error was: %s" % result)
@@ -106,7 +108,7 @@ class Recipe(GenericBaseRecipe):
     self.logger.info("Granting admin rights to the admin user.")
     trac_grant = [trac_admin, project_dir, "permission add %s TRAC_ADMIN" % admin]
     process = subprocess.Popen(trac_grant, stdout=subprocess.PIPE,
-              stderr=subprocess.STDOUT)
+              stderr=subprocess.STDOUT, env=env)
     result = process.communicate()[0]
     if process.returncode is None or process.returncode != 0:
       raise Exception("Failed to execute Trac-admin.\nThe error was: %s" % result)
@@ -146,9 +148,9 @@ class Recipe(GenericBaseRecipe):
         subprocess.check_call([self.options['git-binary'], 'init',
                     '--bare', absolute_path])
         subprocess.check_call([trac_admin, project_dir, 'repository',
-                    'add', repo, absolute_path, 'git'])
+                    'add', repo, absolute_path, 'git'], env=env)
         subprocess.check_call([trac_admin, project_dir, 'repository',
-                    'resync', repo])
+                    'resync', repo], env=env)
         # XXX: Hardcoded path
         shutil.copy(self.options['trac-git-hook'].strip(),
                       os.path.join(absolute_path, 'hooks/post-commit'))
