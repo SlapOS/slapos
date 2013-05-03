@@ -52,16 +52,16 @@ def parse_arguments(*argument_tuple):
   ap.add_argument('--now', action='store_true',
                   help='Launch slapgrid without delay. Default behavior.')
   ap.add_argument('--all', action='store_true',
-                  help='Launch slapgrid to process all Softare Releases '
+                  help='Launch slapgrid to process all Software Releases '
                        'and/or Computer Partitions.')
   ap.add_argument('--only-sr',
                   help='Force the update of a single software release (use url hash), '
-                       'even if is already installed. This option will make all others '
+                       'even if is already installed. This option will make all other '
                        'sofware releases be ignored.')
   ap.add_argument('--only-cp',
                   help='Update a single or a list of computer partitions '
                        '(ie.:slappartX, slappartY), '
-                       'this option will make all others computer partitions be ignored.')
+                       'this option will make all other computer partitions be ignored.')
 
   ap.add_argument('configuration_file', type=argparse.FileType(),
                   help='SlapOS configuration file.')

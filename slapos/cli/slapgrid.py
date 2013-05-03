@@ -94,7 +94,7 @@ class SoftwareCommand(SlapgridCommand):
         ap = super(SoftwareCommand, self).get_parser(prog_name)
         ap.add_argument('--only-sr', '--only',
                         help='Force the update of a single software release (can be full URL or MD5 hash), '
-                             'even if is already installed. This option will make all others '
+                             'even if is already installed. This option will make all other '
                              'sofware releases be ignored.')
         return ap
 
@@ -112,7 +112,7 @@ class InstanceCommand(SlapgridCommand):
         ap.add_argument('--only-cp', '--only',
                         help='Update a single or a list of computer partitions '
                              '(ie.:slappartX, slappartY), '
-                             'this option will make all others computer partitions be ignored.')
+                             'this option will make all other computer partitions be ignored.')
         return ap
 
 
