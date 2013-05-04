@@ -152,38 +152,35 @@ def netmaskToPrefixIPv6(netmask):
           netaddr.strategy.ipv6.str_to_int(netmask)]
 
 
-def _getDict(instance):
+def _getDict(obj):
   """
-  Serialize an object instance into dictionaries. List and dict will remains
+  Serialize an object into dictionaries. List and dict will remains
   the same, basic type too. But encapsulated object will be returned as dict.
   Set, collections and other aren't handle for now.
 
   Args:
-    instance: an object of any type.
+    obj: an object of any type.
 
   Returns:
     A dictionary if the given object wasn't a list, a list otherwise.
   """
-  if isinstance(instance, list):
-    return [_getDict(item) for item in instance]
+  if isinstance(obj, list):
+    return [_getDict(item) for item in obj]
 
-  elif isinstance(instance, dict):
-    result = {}
-    for key in instance:
-      result[key] = _getDict(instance[key])
-    return result
-
+  if isinstance(obj, dict):
+    dikt = obj
   else:
     try:
-      dikt = instance.__dict__
+      dikt = obj.__dict__
     except AttributeError:
-      return instance
-    result = {}
-    for key, value in dikt.iteritems():
-      # do not attempt to serialize logger: it is both useless and recursive.
-      if not isinstance(instance, logging.Logger):
-        result[key] = _getDict(value)
-    return result
+      return obj
+
+  return {
+          key: _getDict(value)
+          for key, value in dikt.iteritems()
+          # do not attempt to serialize logger: it is both useless and recursive.
+          if not isinstance(value, logging.Logger)
+          }
 
 
 class Computer(object):
