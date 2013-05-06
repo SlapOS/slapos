@@ -99,7 +99,11 @@ def main(argv=sys.argv[1:]):
     app = SlapOSApp()
     if not argv:
         argv = ['-h']
-    return app.run(argv)
+    try:
+        return app.run(argv)
+    except Exception as exc:
+        # exception has already been printed to the console by the logger.
+        return 1
 
 
 if __name__ == '__main__':
