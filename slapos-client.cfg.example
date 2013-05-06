@@ -25,6 +25,6 @@ alias =
   opengoo http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.158:/software/opengoo/software.cfg
   postgresql http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.157:/software/postgres/software.cfg
   slaposwebrunner http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.160:/software/slaprunner/software.cfg
-  wordpress http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.153:/software/wordpress/software.cfg
+  wordpress http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.163:/software/wordpress/software.cfg
   xwiki http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.46:/software/xwiki/software.cfg
   zabbixagent http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.162:/software/zabbix-agent/software.cfg
