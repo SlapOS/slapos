@@ -50,31 +50,64 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string>portal = context.getPortalObject()\n
-person = portal.ERP5Site_getAuthenticatedMemberPersonValue()\n
+            <value> <string encoding="cdata"><![CDATA[
+
+return """\n
+<script>\n
+"use strict";\n
+(function ($) {\n
 \n
-request = context.REQUEST\n
-response = request.RESPONSE\n
+  var methods;\n
 \n
-if person is None:\n
-  response.setStatus(403)\n
-else:\n
-  request_kw = dict(computer_title=title)\n
-  person.requestComputer(**request_kw)\n
-  computer = context.restrictedTraverse(context.REQUEST.get(\'computer\'))\n
-  computer.generateCertificate()\n
-  message = "Registering Computer"\n
-  context.REQUEST.set("portal_status_message", message)\n
-  return computer.Computer_viewConnectionInformationAsWeb()\n
-</string> </value>
+  methods = {\n
+    click: function () {\n
+      $(this).click(function() {\n
+        $(this).parent().parent()\n
+          .slapostoken("generateToken");\n
+        return false;\n
+      });\n
+    },\n
+    generateToken: function () {\n
+      $.ajax("./Base_generateAccessTokenFromJS", {\n
+        context: $(this),\n
+        success: function(data) {\n
+          $(this).attr("class", "alignr")\n
+                 .text("New token: " + data.access_token);\n
+        }\n
+      })\n
+    },\n
+  };\n
+\n
+  $.fn.slapostoken = function (method) {\n
+    var result;\n
+    if (methods.hasOwnProperty(method)) {\n
+      result = methods[method].apply(\n
+        this,\n
+        Array.prototype.slice.call(arguments, 1)\n
+      );\n
+    } else {\n
+      $.error(\'Method \' + method +\n
+              \' does not exist on jQuery.slapostoken\');\n
+    }\n
+    return result;\n
+  };\n
+}(jQuery));\n
+\n
+$("#tokengenerationlink")\n
+  .slapostoken("click");\n
+</script>\n
+"""\n
+
+
+]]></string> </value>
         </item>
         <item>
             <key> <string>_params</string> </key>
-            <value> <string>title</string> </value>
+            <value> <string></string> </value>
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>WebSection_registerNewComputer</string> </value>
+            <value> <string>Base_getTokenGeneratorJS</string> </value>
         </item>
       </dictionary>
     </pickle>

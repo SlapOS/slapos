@@ -231,6 +231,7 @@ class testSlapOSMixin(ERP5TypeTestCase):
       'erp5_credential_oauth2',
       'erp5_accounting_l10n_fr',
       'erp5_bearer_token',
+      'erp5_access_token',
       'erp5_project',
       'slapos_cache',
       'slapos_cloud',
