@@ -71,7 +71,7 @@ ScriptAliasMatch \
                                  [0-9a-f]{2}/[0-9a-f]{38} | \
                                  pack/pack-[0-9a-f]{40}\.(pack|idx)) | \
                         git-(upload|receive)-pack))$" \
-        "/srv/slapgrid/slappart19/srv/runner/instance/slappart0/bin/git-http-backend.cgi/$1"
+        "${:git-http-backend}/$1"
 
 # Everything else is gitweb interface
 ScriptAlias "/git"                                                "${:gitweb-script}"
