@@ -35,6 +35,7 @@ import getpass
 import os
 import shutil
 import stat
+import sys
 import tempfile
 import urllib2
 
@@ -52,12 +53,27 @@ def check_credentials(url, login, password):
   return 'Logout' in urllib2.urlopen(request).read()
 
 
-def get_certificates(master_url_web, node_name, login, password):
+def get_certificates(master_url_web, node_name, login, password, logger):
   """Download certificates from SlapOS Master"""
   register_server_url = '/'.join([master_url_web, ("add-a-server/WebSection_registerNewComputer?dialog_id=WebSection_viewServerInformationDialog&dialog_method=WebSection_registerNewComputer&title={}&object_path=/erp5/web_site_module/hosting/add-a-server&update_method=&cancel_url=https%3A//www.vifib.net/add-a-server/WebSection_viewServerInformationDialog&Base_callDialogMethod=&field_your_title=Essai1&dialog_category=None&form_id=view".format(node_name))])
   request = urllib2.Request(register_server_url)
   authenticate(request, login, password)
-  return urllib2.urlopen(request).read()
+
+  try:
+    req = urllib2.urlopen(request)
+  except urllib2.HTTPError as exc:
+    # raise a readable exception if the computer name is already used,
+    # instead of an opaque 500 Internal Error.
+    # this will not work with the new API.
+    if exc.getcode() == 500:
+      error_body = exc.read()
+      if 'Certificate still active.' in error_body:
+        logger.error('The node name "%s" is already in use. Please change the name, or revoke the active certificate if you want to replace the node.' % node_name)
+        sys.exit(1)
+    raise
+
+  return req.read()
+
 
 
 def parse_certificates(source):
@@ -243,7 +259,7 @@ def do_register(conf):
     return 1
 
   # Get source code of page having certificate and key
-  certificate_key = get_certificates(conf.master_url_web, conf.node_name, login, password)
+  certificate_key = get_certificates(conf.master_url_web, conf.node_name, login, password, conf.logger)
   # Parse certificate and key and get computer id
   certificate, key = parse_certificates(certificate_key)
   COMP = get_computer_name(certificate)
