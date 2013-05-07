@@ -92,7 +92,7 @@ BrowserMatch \bMSIE !no-gzip !gzip-only-text/html
 %(ssl_snippet)s
 
 # Only accept generic (i.e not Zope) backends on http
-<VirtualHost *:%(plain_cached_port)s>
+<VirtualHost *:%(cached_port)s>
   SSLProxyEngine on
   # Rewrite part
   ProxyVia On
