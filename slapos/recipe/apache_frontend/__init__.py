@@ -294,7 +294,7 @@ class Recipe(BaseSlapRecipe):
     apache_conf = dict()
     apache_conf['server_name'] = name
     apache_conf['pid_file'] = self.options['pid-file']
-    apache_conf['cache_pid_file'] = self.options['cache-pid-file']
+    apache_conf['pid_cache_file'] = self.options['cache-pid-file']
     apache_conf['lock_file'] = os.path.join(self.run_directory,
         name + '.lock')
     apache_conf['document_root'] = os.path.join(self.data_root_directory,
