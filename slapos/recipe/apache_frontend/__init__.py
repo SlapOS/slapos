@@ -58,7 +58,7 @@ class Recipe(BaseSlapRecipe):
     frontend_port_number = self.parameter_dict.get("port", 4443)
     frontend_plain_http_port_number = self.parameter_dict.get(
         "plain_http_port", 8080)
-    base_varnish_port = 26009
+    base_varnish_port = 26010
     slave_instance_list = self.parameter_dict.get("slave_instance_list", [])
 
     self.path_list = []
@@ -260,7 +260,6 @@ class Recipe(BaseSlapRecipe):
       service_dict, domain):
     # Squid should use stunnel to connect to the backend
     base_squid_control_port = base_squid_port
-    base_squid_port += 1
     # Use regex
     host_regex = "((\[\w*|[0-9]+\.)(\:|)).*(\]|\.[0-9]+)"
     slave_host = re.search(host_regex, url).group(0)
@@ -310,49 +309,9 @@ class Recipe(BaseSlapRecipe):
     apache_conf['access_cache_log'] = self.options['cache-access-log']
     return apache_conf
 
-  def installStunnel(self, service_dict, certificate,
-      key, ca_crl, ca_path):
-    """Installs stunnel
-      service_dict =
-        { name: (public_ip, private_ip, public_port, private_port),}
-    """
-    template_filename = self.getTemplateFilename('stunnel.conf.in')
-    template_entry_filename = self.getTemplateFilename('stunnel.conf.entry.in')
-
-    log = os.path.join(self.log_directory, 'stunnel.log')
-    pid_file = os.path.join(self.run_directory, 'stunnel.pid')
-    stunnel_conf = dict(
-        pid_file=pid_file,
-        log=log,
-        cert = certificate,
-        key = key,
-        ca_crl = ca_crl,
-        ca_path = ca_path,
-        entry_str=''
-    )
-    entry_list = []
-    for name, parameter_dict in service_dict.iteritems():
-      parameter_dict["name"] = name
-      entry_str = self.substituteTemplate(template_entry_filename,
-          parameter_dict)
-      entry_list.append(entry_str)
-
-    stunnel_conf["entry_str"] = "\n".join(entry_list)
-    stunnel_conf_path = self.createConfigurationFile("stunnel.conf",
-        self.substituteTemplate(template_filename,
-          stunnel_conf))
-    wrapper = zc.buildout.easy_install.scripts([('stunnel',
-      'slapos.recipe.librecipe.execute', 'execute_wait')], self.ws,
-      sys.executable, self.service_directory, arguments=[
-        [self.options['stunnel_binary'].strip(), stunnel_conf_path],
-        [certificate, key]]
-      )[0]
-    self.path_list.append(wrapper)
-    return stunnel_conf
-
   def installFrontendApache(self, ip_list, key, certificate, name,
                             port=4443, plain_http_port=8080,
-                            cached_port=26080,
+                            cached_port=26081,
                             rewrite_rule_list=None,
                             rewrite_rule_cached_list=None,
                             rewrite_rule_zope_list=None,
