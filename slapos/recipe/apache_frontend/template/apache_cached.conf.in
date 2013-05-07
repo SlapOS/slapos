@@ -2,12 +2,12 @@
 # Automatically generated
 
 # Basic server configuration
-PidFile "%(pid_file)s"
+PidFile "%(pid_cache_file)s"
 ServerName %(server_name)s
 DocumentRoot %(document_root)s
 ServerRoot %(instance_home)s
 
-%(listen)s
+%(listen_cached)s
 
 ServerAdmin %(server_admin)s
 DefaultType text/plain
@@ -21,13 +21,13 @@ RequestHeader unset REMOTE_USER
 ServerTokens Prod
 
 # Log configuration
-ErrorLog "%(error_log)s"
+ErrorLog "%(error_cache_log)s"
 LogLevel warn
 # LogFormat "%%h %%{REMOTE_USER}i %%{Host}i %%l %%u %%t \"%%r\" %%>s %%b \"%%{Referer}i\" \"%%{User-Agent}i\"" combined
 # LogFormat "%%h %%{REMOTE_USER}i %%{Host}i %%l %%u %%t \"%%r\" %%>s %%b" common
 # CustomLog "%(access_log)s" common
 LogFormat "%%h %%l %%{REMOTE_USER}i %%t \"%%r\" %%>s %%b \"%%{Referer}i\" \"%%{User-Agent}i\" %%D" combined
-CustomLog "%(access_log)s" combined
+CustomLog "%(access_cache_log)s" combined
 
 %(path_enable)s
 
@@ -91,8 +91,8 @@ BrowserMatch \bMSIE !no-gzip !gzip-only-text/html
 # SSL Configuration
 %(ssl_snippet)s
 
-<VirtualHost *:%(https_port)s>
-  SSLEngine on
+# Only accept generic (i.e not Zope) backends on http
+<VirtualHost *:%(plain_cached_port)s>
   SSLProxyEngine on
   # Rewrite part
   ProxyVia On
@@ -100,65 +100,20 @@ BrowserMatch \bMSIE !no-gzip !gzip-only-text/html
   ProxyTimeout 600
   RewriteEngine On
 
+
   # Include configuration file not operated by slapos. This file won't be erased
   # or changed when slapgrid is ran. It can be freely customized by node admin.
-  Include %(custom_apache_virtualhost_conf)s
+  # Include %(custom_apache_virtualhost_conf)s
 
-  # Define the 3 RewriteMaps (key -> value store): one for Zope, one generic,
-  # one generic https only,
-  # containing: rewritten URL -> original URL (a.k.a VirtualHostBase in Zope)
-  RewriteMap apachemapzope txt:%(apachemapzope_path)s
-  RewriteMap apachemapgeneric txt:%(apachemap_path)s
-  RewriteMap apachemapgenerichttpsonly txt:%(apachemap_httpsonly_path)s
-
-  # Define another RewriteMap for Zope, containing:
-  # rewritten URL -> VirtualHostRoot
-  RewriteMap apachemapzopepath txt:%(apachemapzopepath_path)s
-
-  # First, we check if we have a zope backend server
-  # If so, let's use Virtual Host Daemon rewrite
-  RewriteCond ${apachemapzope:%%{SERVER_NAME}} >""
-  # We suppose that Apache listens to 443 (even indirectly thanks to things like iptables)
-  RewriteRule ^/(.*)$ ${apachemapzope:%%{SERVER_NAME}}/VirtualHostBase/https/%%{SERVER_NAME}:443/${apachemapzopepath:%%{SERVER_NAME}}/VirtualHostRoot/$1 [L,P]
-
-  # If we have generic backend server, let's rewrite without virtual host daemon
-  RewriteCond ${apachemapgeneric:%%{SERVER_NAME}} >""
-  # We suppose that Apache listens to 443 (even indirectly thanks to things like iptables)
-  RewriteRule ^/(.*)$ ${apachemapgeneric:%%{SERVER_NAME}}/$1 [L,P]
-  # Same for https only server
-  RewriteCond ${apachemapgenerichttpsonly:%%{SERVER_NAME}} >""
-  # We suppose that Apache listens to 443 (even indirectly thanks to things like iptables)
-  RewriteRule ^/(.*)$ ${apachemapgenerichttpsonly:%%{SERVER_NAME}}/$1 [L,P]
+  RewriteMap apachemapcached txt:%(apachecachedmap_path)s
+  RewriteCond ${apachemapcached:%%{SERVER_NAME}} >""
+  RewriteRule ^/(.*)$ ${apachemapcached:%%{SERVER_NAME}}/$1 [L,P]
 
   # If nothing exist : put a nice error
   ErrorDocument 404 /notfound.html
 </VirtualHost>
 
 
-# Only accept generic (i.e not Zope) backends on http
-<VirtualHost *:%(plain_http_port)s>
-  SSLProxyEngine on
-  # Rewrite part
-  ProxyVia On
-  ProxyPreserveHost On
-  ProxyTimeout 600
-  RewriteEngine On
-
-  # Include configuration file not operated by slapos. This file won't be erased
-  # or changed when slapgrid is ran. It can be freely customized by node admin.
-  # Include %(custom_apache_virtualhost_conf)s
-
-  RewriteMap apachemapgeneric txt:%(apachemap_path)s
-  RewriteCond ${apachemapgeneric:%%{SERVER_NAME}} >""
-  RewriteRule ^/(.*)$ ${apachemapgeneric:%%{SERVER_NAME}}/$1 [L,P]
-
-  # Not using HTTPS? Ask that guy over there.
-  # Dummy redirection to https. Note: will work only if https listens
-  # on standard port (443).
-  RewriteRule ^/(.*)$ https://%%{SERVER_NAME}%%{REQUEST_URI}
-</VirtualHost>
-
-
-# Include configuration file not operated by slapos. This file won't be erased
-# or changed when slapgrid is ran. It can be freely customized by node admin.
-Include %(custom_apache_conf)s
+## Include configuration file not operated by slapos. This file won't be erased
+## or changed when slapgrid is ran. It can be freely customized by node admin.
+#Include %(custom_apache_cached_conf)s
