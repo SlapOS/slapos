@@ -39,7 +39,10 @@ class RequestCommand(ClientConfigCommand):
                         help="Node request option 'option1=value1 option2=value2'")
 
         ap.add_argument('--type',
-                        help='Define software type to be requested')
+                        help='Software type to be requested')
+
+        ap.add_argument('--state',
+                        help='State of the requested instance')
 
         ap.add_argument('--slave',
                         action='store_true',

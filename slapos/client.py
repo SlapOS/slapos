@@ -37,6 +37,8 @@ from slapos.slap import ResourceNotReady
 
 
 class ClientConfig(object):
+  state = None
+
   def __init__(self, args, configp=None):
     # XXX configp cannot possibly be optional
     """
@@ -115,7 +117,6 @@ def init(conf):
 
 
 def do_request(conf, local):
-  # Request instance
   print("Requesting %s..." % conf.reference)
   if conf.software_url in local:
     conf.software_url = local[conf.software_url]
@@ -126,6 +127,7 @@ def do_request(conf, local):
       partition_parameter_kw = conf.parameters,
       software_type = conf.type,
       filter_kw = conf.node,
+      state = conf.state,
       shared = conf.slave
     )
     print "Instance requested.\nState is : %s." % partition.getState()
