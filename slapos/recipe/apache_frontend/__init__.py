@@ -395,14 +395,14 @@ class Recipe(BaseSlapRecipe):
     )
 
     apache_conf["listen"] = "\n".join([
-        "Listen %s:%s" % (ip, port)
-        for port in (plain_http_port, port)
+        "Listen %s:%s" % (ip, tmp_port)
+        for tmp_port in (plain_http_port, port)
         for ip in ip_list
     ])
 
     apache_conf["listen_cache"] = "\n".join([
-        "Listen %s:%s" % (ip, port)
-        for port in (cached_port,)
+        "Listen %s:%s" % (ip, tmp_port)
+        for tmp_port in (cached_port,)
         for ip in ip_list
     ])
 
