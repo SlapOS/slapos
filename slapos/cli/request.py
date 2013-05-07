@@ -33,6 +33,9 @@ class RequestCommand(ClientConfigCommand):
 
         ap.add_argument('software_url',
                         help='Your software url')
+        # XXX TODO can this be an MD5 hash?
+        # XXX TODO can we do a minimal check for correctness of this argument?
+        #          the alternative is a silent failure for mistyped/obsolete/invalid URL
 
         ap.add_argument('--node',
                         nargs='+',
