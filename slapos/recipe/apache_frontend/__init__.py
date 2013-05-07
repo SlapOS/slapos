@@ -493,7 +493,7 @@ class Recipe(BaseSlapRecipe):
         apache_cached_conf_string)
 
     self.path_list.extend(zc.buildout.easy_install.scripts([(
-      'frontend_apache', 'slapos.recipe.erp5.apache', 'runApache')], self.ws,
+      'frontend_cached_apache', 'slapos.recipe.erp5.apache', 'runApache')], self.ws,
           sys.executable, self.service_directory, arguments=[
             dict(
               required_path_list=[key, certificate],
