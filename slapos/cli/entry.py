@@ -94,16 +94,40 @@ class SlapOSApp(cliff.app.App):
         if err:
             self.log.debug('got an error: %s', err)
 
+    def run(self, argv):
+        # same as cliff.App.run except that it won't re-raise
+        # a logged exception
+        try:
+            self.options, remainder = self.parser.parse_known_args(argv)
+            self.configure_logging()
+            self.interactive_mode = not remainder
+            self.initialize_app(remainder)
+        except Exception as err:
+            if hasattr(self, 'options'):
+                debug = self.options.debug
+            else:
+                debug = True
+            if debug:
+                LOG.exception(err)
+                # XXX change from cliff behaviour: avoid
+                #     displaying the exception twice
+                # raise
+            else:
+                LOG.error(err)
+            return 1
+        result = 1
+        if self.interactive_mode:
+            result = self.interact()
+        else:
+            result = self.run_subcommand(remainder)
+        return result
+
 
 def main(argv=sys.argv[1:]):
     app = SlapOSApp()
     if not argv:
         argv = ['-h']
-    try:
-        return app.run(argv)
-    except Exception as exc:
-        # exception has already been printed to the console by the logger.
-        return 1
+    return app.run(argv)
 
 
 if __name__ == '__main__':
