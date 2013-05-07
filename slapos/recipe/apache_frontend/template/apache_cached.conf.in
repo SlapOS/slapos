@@ -7,7 +7,7 @@ ServerName %(server_name)s
 DocumentRoot %(document_root)s
 ServerRoot %(instance_home)s
 
-%(listen_cached)s
+%(listen_cache)s
 
 ServerAdmin %(server_admin)s
 DefaultType text/plain
