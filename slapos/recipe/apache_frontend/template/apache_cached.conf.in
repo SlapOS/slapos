@@ -112,8 +112,3 @@ BrowserMatch \bMSIE !no-gzip !gzip-only-text/html
   # If nothing exist : put a nice error
   ErrorDocument 404 /notfound.html
 </VirtualHost>
-
-
-## Include configuration file not operated by slapos. This file won't be erased
-## or changed when slapgrid is ran. It can be freely customized by node admin.
-#Include %(custom_apache_cached_conf)s
