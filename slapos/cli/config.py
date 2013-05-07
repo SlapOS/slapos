@@ -69,4 +69,4 @@ class ConfigCommand(Command):
 
 class ClientConfigCommand(ConfigCommand):
     default_config_var = 'SLAPOS_CLIENT_CONFIGURATION'
-    default_config_path = '~/.slapos/slapos.cfg'
+    default_config_path = '~/.slapos/slapos-client.cfg'
