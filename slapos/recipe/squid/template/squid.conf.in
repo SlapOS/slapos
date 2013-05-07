@@ -8,7 +8,7 @@ http_port %(ip)s:%(port)s accel defaultsite=%(ip)s
 
 cache_peer %(backend_ip)s parent %(backend_port)s 0 no-query originserver name=backend
 
-acl our_sites dstdomain %(domain)s
+acl our_sites dst %(public_ipv4)s
 http_access allow our_sites
 cache_peer_access backend allow our_sites
 cache_peer_access backend deny all
