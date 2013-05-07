@@ -443,7 +443,7 @@ class Recipe(BaseSlapRecipe):
 
     apache_conf["listen_cache"] = "\n".join([
         "Listen %s:%s" % (ip, port)
-        for port in (cached_port)
+        for port in (cached_port,)
         for ip in ip_list
     ])
 
