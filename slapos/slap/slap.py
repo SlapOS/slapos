@@ -90,13 +90,12 @@ class SlapRequester(SlapDocument):
   """
   def _requestComputerPartition(self, request_dict):
     try:
-      self._connection_helper.POST('/requestComputerPartition', request_dict)
+      xml = self._connection_helper.POST('/requestComputerPartition', request_dict)
     except ResourceNotReady:
       return ComputerPartition(
         request_dict=request_dict,
         connection_helper=self._connection_helper,
       )
-    xml = self._connection_helper.response.read()
     software_instance = xml_marshaller.loads(xml)
     computer_partition = ComputerPartition(
       software_instance.slap_computer_id.encode('UTF-8'),
@@ -252,9 +251,8 @@ class OpenOrder(SlapRequester):
     """
     Requests a computer.
     """
-    self._connection_helper.POST('/requestComputer',
+    xml = self._connection_helper.POST('/requestComputer',
       {'computer_title': computer_reference})
-    xml = self._connection_helper.response.read()
     computer = xml_marshaller.loads(xml)
     computer._connection_helper = self._connection_helper
     return computer
@@ -316,9 +314,8 @@ class Computer(SlapDocument):
       'use_string': computer_usage})
 
   def updateConfiguration(self, xml):
-    self._connection_helper.POST(
+    return self._connection_helper.POST(
         '/loadComputerConfigurationFromXML', { 'xml' : xml })
-    return self._connection_helper.response.read()
 
   def bang(self, message):
     self._connection_helper.POST('/computerBang', {
@@ -326,18 +323,17 @@ class Computer(SlapDocument):
       'message': message})
 
   def getStatus(self):
-    self._connection_helper.GET(
+    xml = self._connection_helper.GET(
         '/getComputerStatus?computer_id=%s' % self._computer_id)
-    return xml_marshaller.loads(self._connection_helper.response.read())
+    return xml_marshaller.loads(xml)
 
   def revokeCertificate(self):
     self._connection_helper.POST('/revokeComputerCertificate', {
       'computer_id': self._computer_id})
 
   def generateCertificate(self):
-    self._connection_helper.POST('/generateComputerCertificate', {
+    xml = self._connection_helper.POST('/generateComputerCertificate', {
       'computer_id': self._computer_id})
-    xml = self._connection_helper.response.read()
     return xml_marshaller.loads(xml)
 
 
@@ -521,16 +517,16 @@ class ComputerPartition(SlapRequester):
     self.usage = usage_log
 
   def getCertificate(self):
-    self._connection_helper.GET(
+    xml = self._connection_helper.GET(
         '/getComputerPartitionCertificate?computer_id=%s&'
         'computer_partition_id=%s' % (self._computer_id, self._partition_id))
-    return xml_marshaller.loads(self._connection_helper.response.read())
+    return xml_marshaller.loads(xml)
 
   def getStatus(self):
-    self._connection_helper.GET(
+    xml = self._connection_helper.GET(
         '/getComputerPartitionStatus?computer_id=%s&'
         'computer_partition_id=%s' % (self._computer_id, self._partition_id))
-    return xml_marshaller.loads(self._connection_helper.response.read())
+    return xml_marshaller.loads(xml)
 
 class ConnectionHelper:
   error_message_timeout = "\nThe connection timed out. Please try again later."
@@ -551,8 +547,8 @@ class ConnectionHelper:
     self.timeout = timeout
 
   def getComputerInformation(self, computer_id):
-    self.GET('/getComputerInformation?computer_id=%s' % computer_id)
-    return xml_marshaller.loads(self.response.read())
+    xml = self.GET('/getComputerInformation?computer_id=%s' % computer_id)
+    return xml_marshaller.loads(xml)
 
   def getFullComputerInformation(self, computer_id):
     """
@@ -564,13 +560,13 @@ class ConnectionHelper:
       # XXX-Cedric: should raise something smarter than "NotFound".
       raise NotFoundError(method)
     try:
-      self.GET(method)
+      xml = self.GET(method)
     except NotFoundError:
       # XXX: This is a ugly way to keep backward compatibility,
       # We should stablise slap library soon.
-      self.GET('/getComputerInformation?computer_id=%s' % computer_id)
+      xml = self.GET('/getComputerInformation?computer_id=%s' % computer_id)
 
-    return xml_marshaller.loads(self.response.read())
+    return xml_marshaller.loads(xml)
 
   def connect(self):
     connection_dict = dict(
@@ -590,7 +586,7 @@ class ConnectionHelper:
       try:
         self.connect()
         self.connection.request('GET', self.path + path)
-        self.response = self.connection.getresponse()
+        response = self.connection.getresponse()
       # If ssl error : may come from bad configuration
       except ssl.SSLError, e:
         if e.message == "The read operation timed out":
@@ -600,21 +596,24 @@ class ConnectionHelper:
         if e.message == "timed out":
           raise socket.error(str(e) + self.error_message_timeout)
         raise socket.error(self.error_message_connect_fail + str(e))
+
       # check self.response.status and raise exception early
-      if self.response.status == httplib.REQUEST_TIMEOUT:
+      if response.status == httplib.REQUEST_TIMEOUT:
         # resource is not ready
         raise ResourceNotReady(path)
-      elif self.response.status == httplib.NOT_FOUND:
+      elif response.status == httplib.NOT_FOUND:
         raise NotFoundError(path)
-      elif self.response.status == httplib.FORBIDDEN:
+      elif response.status == httplib.FORBIDDEN:
         raise Unauthorized(path)
-      elif self.response.status != httplib.OK:
-        message = parsed_error_message(self.response.status,
-                                       self.response.read(),
+      elif response.status != httplib.OK:
+        message = parsed_error_message(response.status,
+                                       response.read(),
                                        path)
         raise ServerError(message)
     finally:
       socket.setdefaulttimeout(default_timeout)
+
+    return response.read()
 
   def POST(self, path, parameter_dict,
       content_type="application/x-www-form-urlencoded"):
@@ -631,22 +630,26 @@ class ConnectionHelper:
         raise ssl.SSLError(self.ssl_error_message_connect_fail + str(e))
       except socket.error, e:
         raise socket.error(self.error_message_connect_fail + str(e))
-      self.response = self.connection.getresponse()
+
+      response = self.connection.getresponse()
       # check self.response.status and raise exception early
-      if self.response.status == httplib.REQUEST_TIMEOUT:
+      if response.status == httplib.REQUEST_TIMEOUT:
         # resource is not ready
         raise ResourceNotReady("%s - %s" % (path, parameter_dict))
-      elif self.response.status == httplib.NOT_FOUND:
+      elif response.status == httplib.NOT_FOUND:
         raise NotFoundError("%s - %s" % (path, parameter_dict))
-      elif self.response.status == httplib.FORBIDDEN:
+      elif response.status == httplib.FORBIDDEN:
         raise Unauthorized("%s - %s" % (path, parameter_dict))
-      elif self.response.status != httplib.OK:
-        message = parsed_error_message(self.response.status,
-                                       self.response.read(),
+      elif response.status != httplib.OK:
+        message = parsed_error_message(response.status,
+                                       response.read(),
                                        path)
         raise ServerError(message)
     finally:
       socket.setdefaulttimeout(default_timeout)
+
+    return response.read()
+
 
 class slap:
 
@@ -699,10 +702,10 @@ class slap:
       # XXX-Cedric: should raise something smarter than NotFound
       raise NotFoundError
 
-    self._connection_helper.GET('/registerComputerPartition?' \
+    xml = self._connection_helper.GET('/registerComputerPartition?' \
         'computer_reference=%s&computer_partition_reference=%s' % (
           computer_guid, partition_id))
-    result = xml_marshaller.loads(self._connection_helper.response.read())
+    result = xml_marshaller.loads(xml)
     # XXX: dirty hack to make computer partition usable. xml_marshaller is too
     # low-level for our needs here.
     result._connection_helper = self._connection_helper
