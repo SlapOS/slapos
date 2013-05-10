@@ -165,7 +165,7 @@ class SlapTool(BaseTool):
 
   def _getCacheComputerInformation(self, computer_id, user):
     self.REQUEST.response.setHeader('Content-Type', 'text/xml; charset=utf-8')
-    slap_computer = Computer(computer_id)
+    slap_computer = Computer(computer_id.decode("UTF-8"))
     parent_uid = self._getComputerUidByReference(computer_id)
 
     slap_computer._computer_partition_list = []
@@ -230,7 +230,7 @@ class SlapTool(BaseTool):
       reference=user, portal_type=['Person', 'Computer', 'Software Instance']))
     user_type = user_document.getPortalType()
     self.REQUEST.response.setHeader('Content-Type', 'text/xml; charset=utf-8')
-    slap_computer = Computer(computer_id)
+    slap_computer = Computer(computer_id.decode("UTF-8"))
     parent_uid = self._getComputerUidByReference(computer_id)
 
     slap_computer._computer_partition_list = []
@@ -386,7 +386,7 @@ class SlapTool(BaseTool):
     portal = self.getPortalObject()
     person = portal.ERP5Site_getAuthenticatedMemberPersonValue()
     person.requestComputer(computer_title=computer_title)
-    computer = Computer(self.REQUEST.get('computer_reference'))
+    computer = Computer(self.REQUEST.get('computer_reference').decode("UTF-8"))
     return xml_marshaller.xml_marshaller.dumps(computer)
 
   security.declareProtected(Permissions.AccessContentsInformation,
@@ -596,8 +596,8 @@ class SlapTool(BaseTool):
   def _generateComputerCertificate(self, computer_id):
     self._getComputerDocument(computer_id).generateCertificate()
     result = {
-     'certificate': self.REQUEST.get('computer_certificate'),
-     'key': self.REQUEST.get('computer_key')
+     'certificate': self.REQUEST.get('computer_certificate').decode("UTF-8"),
+     'key': self.REQUEST.get('computer_key').decode("UTF-8")
      }
     return xml_marshaller.xml_marshaller.dumps(result)
 
@@ -630,8 +630,8 @@ class SlapTool(BaseTool):
     portal = self.getPortalObject()
     computer_partition_document = self._getComputerPartitionDocument(
           computer_reference, computer_partition_reference)
-    slap_partition = SlapComputerPartition(computer_reference,
-        computer_partition_reference)
+    slap_partition = SlapComputerPartition(computer_reference.decode("UTF-8"),
+        computer_partition_reference.decode("UTF-8"))
     slap_partition._software_release_document = None
     slap_partition._requested_state = 'destroyed'
     slap_partition._need_modification = 0
@@ -664,8 +664,10 @@ class SlapTool(BaseTool):
         slap_partition._requested_state = 'started'
 
       slap_partition._software_release_document = SoftwareRelease(
-            software_release=software_instance.getUrlString(),
-            computer_guid=computer_reference)
+            software_release=software_instance.getUrlString().decode("UTF-8"),
+            computer_guid=computer_reference.decode("UTF-8"))
+      slap_partition._software_release_document._software_release = \
+        slap_partition._software_release_document._software_release.decode("UTF-8")
 
       slap_partition._need_modification = 1
 
@@ -742,7 +744,7 @@ class SlapTool(BaseTool):
     result_dict = {}
     try:
       if xml is not None and xml != '':
-        tree = etree.fromstring(xml.encode('utf-8'))
+        tree = etree.fromstring(xml)
         for element in tree.findall('parameter'):
           key = element.get('id')
           value = result_dict.get(key, None)
@@ -761,9 +763,9 @@ class SlapTool(BaseTool):
     portal = self.getPortalObject()
     while computer.getPortalType() != 'Computer':
       computer = computer.getParentValue()
-    computer_id = computer.getReference()
+    computer_id = computer.getReference().decode("UTF-8")
     slap_partition = SlapComputerPartition(computer_id,
-                                computer_partition_document.getReference())
+      computer_partition_document.getReference().decode("UTF-8"))
 
     slap_partition._software_release_document = None
     slap_partition._requested_state = 'destroyed'
@@ -795,8 +797,10 @@ class SlapTool(BaseTool):
         slap_partition._requested_state = 'started'
 
       slap_partition._software_release_document = SoftwareRelease(
-            software_release=software_instance.getUrlString(),
+            software_release=software_instance.getUrlString().decode("UTF-8"),
             computer_guid=computer_id)
+      slap_partition._software_release_document._software_release = \
+        slap_partition._software_release_document._software_release.decode("UTF-8")
 
       slap_partition._need_modification = 1
 
@@ -952,8 +956,12 @@ class SlapTool(BaseTool):
           'created_at': '%s' % rfc1123_date(DateTime()),
           "text": "#error no data found for %s" % context_reference
         }
+      # Prepare for xml marshalling
+      d["user"] = d["user"].decode("UTF-8")
+      d["text"] = d["text"].decode("UTF-8")
     else:
       d = json.loads(d)
+
     # Keep in cache server for 7 days
     self.REQUEST.response.setStatus(200)
     self.REQUEST.response.setHeader('Cache-Control',
@@ -1298,7 +1306,9 @@ class SlapTool(BaseTool):
 
     ip_list = []
     for internet_protocol_address in computer_partition.contentValues(portal_type='Internet Protocol Address'):
-      ip_list.append((internet_protocol_address.getNetworkInterface(''), internet_protocol_address.getIpAddress()))
+      ip_list.append((
+        internet_protocol_address.getNetworkInterface('').decode("UTF-8"),
+        internet_protocol_address.getIpAddress().decode("UTF-8")))
 
     slave_instance_list = []
     if (software_instance.getPortalType() == "Software Instance"):
@@ -1313,8 +1323,9 @@ class SlapTool(BaseTool):
         # XXX Use catalog to filter more efficiently
         if slave_instance.getSlapState() == "start_requested":
           append({
-            'slave_title': slave_instance.getTitle(),
-            'slap_software_type': slave_instance.getSourceReference(),
+            'slave_title': slave_instance.getTitle().decode("UTF-8"),
+            'slap_software_type': \
+                slave_instance.getSourceReference().decode("UTF-8"),
             'slave_reference': slave_instance.getReference(),
             'xml': slave_instance.getTextContent(),
             'connection_xml': slave_instance.getConnectionXml(),
@@ -1326,10 +1337,14 @@ class SlapTool(BaseTool):
       'instance_guid': software_instance.getReference(),
       'xml': software_instance.getTextContent(),
       'connection_xml': software_instance.getConnectionXml(),
-      'slap_computer_id': computer_partition.getParentValue().getReference(),
-      'slap_computer_partition_id': computer_partition.getReference(),
-      'slap_software_type': software_instance.getSourceReference(),
-      'slap_software_release_url': software_instance.getUrlString(),
+      'slap_computer_id': \
+        computer_partition.getParentValue().getReference().decode("UTF-8"),
+      'slap_computer_partition_id': \
+        computer_partition.getReference().decode("UTF-8"),
+      'slap_software_type': \
+        software_instance.getSourceReference().decode("UTF-8"),
+      'slap_software_release_url': \
+        software_instance.getUrlString().decode("UTF-8"),
       'slave_instance_list': slave_instance_list,
       'ip_list': ip_list,
       'timestamp': "%i" % timestamp,
@@ -1348,8 +1363,10 @@ class SlapTool(BaseTool):
       ):
       software_installation = _assertACI(software_installation.getObject())
       software_release_response = SoftwareRelease(
-          software_release=software_installation.getUrlString(),
-          computer_guid=computer_reference)
+          software_release=software_installation.getUrlString().decode('UTF-8'),
+          computer_guid=computer_reference.decode('UTF-8'))
+      software_release_response._software_release = \
+        software_release_response._software_release.decode("UTF-8")
       if software_installation.getSlapState() == 'destroy_requested':
         software_release_response._requested_state = 'destroyed'
       else:

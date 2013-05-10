@@ -55,7 +55,7 @@ class SoftwareInstance(Item):
     if xml is None or xml == '':
       return result_dict
 
-    tree = etree.fromstring(xml.encode('utf-8'))
+    tree = etree.fromstring(xml)
 
     for element in tree.findall('parameter'):
       key = element.get('id')

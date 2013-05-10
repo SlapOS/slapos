@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # Copyright (c) 2002-2012 Nexedi SA and Contributors. All Rights Reserved.
 from Products.SlapOS.tests.testSlapOSMixin import \
     testSlapOSMixin
@@ -88,25 +89,25 @@ class TestSlapOSSlapToolComputerAccess(TestSlapOSSlapToolMixin):
 <marshal>
   <object id='i2' module='slapos.slap.slap' class='Computer'>
     <tuple>
-      <string>%(computer_id)s</string>
+      <unicode>%(computer_id)s</unicode>
     </tuple>
     <dictionary id='i3'>
       <string>_computer_id</string>
-      <string>%(computer_id)s</string>
+      <unicode>%(computer_id)s</unicode>
       <string>_computer_partition_list</string>
       <list id='i4'>
         <object id='i5' module='slapos.slap.slap' class='ComputerPartition'>
           <tuple>
-            <string>%(computer_id)s</string>
-            <string>partition4</string>
+            <unicode>%(computer_id)s</unicode>
+            <unicode>partition4</unicode>
           </tuple>
           <dictionary id='i6'>
             <string>_computer_id</string>
-            <string>%(computer_id)s</string>
+            <unicode>%(computer_id)s</unicode>
             <string>_need_modification</string>
             <int>0</int>
             <string>_partition_id</string>
-            <string>partition4</string>
+            <unicode>partition4</unicode>
             <string>_request_dict</string>
             <none/>
             <string>_requested_state</string>
@@ -117,12 +118,12 @@ class TestSlapOSSlapToolComputerAccess(TestSlapOSSlapToolMixin):
         </object>
         <object id='i7' module='slapos.slap.slap' class='ComputerPartition'>
           <tuple>
-            <string>%(computer_id)s</string>
-            <string>partition3</string>
+            <unicode>%(computer_id)s</unicode>
+            <unicode>partition3</unicode>
           </tuple>
           <dictionary id='i8'>
             <string>_computer_id</string>
-            <string>%(computer_id)s</string>
+            <unicode>%(computer_id)s</unicode>
             <string>_connection_dict</string>
             <dictionary id='i9'/>
             <string>_instance_guid</string>
@@ -134,27 +135,27 @@ class TestSlapOSSlapToolComputerAccess(TestSlapOSSlapToolMixin):
               <string>ip_list</string>
               <list id='i11'>
                 <tuple>
-                  <string/>
-                  <string>ip_address_3</string>
+                  <unicode/>
+                  <unicode>ip_address_3</unicode>
                 </tuple>
               </list>
-              <string>param</string>
-              <string>%(partition_3_param)s</string>
+              <unicode>paramé</unicode>
+              <unicode>%(partition_3_param)s</unicode>
               <string>slap_computer_id</string>
-              <string>%(computer_id)s</string>
+              <unicode>%(computer_id)s</unicode>
               <string>slap_computer_partition_id</string>
-              <string>partition3</string>
+              <unicode>partition3</unicode>
               <string>slap_software_release_url</string>
-              <string>%(partition_3_software_release_url)s</string>
+              <unicode>%(partition_3_software_release_url)s</unicode>
               <string>slap_software_type</string>
-              <string>%(partition_3_instance_software_type)s</string>
+              <unicode>%(partition_3_instance_software_type)s</unicode>
               <string>slave_instance_list</string>
               <list id='i12'/>
               <string>timestamp</string>
               <string>%(partition_3_timestamp)s</string>
             </dictionary>
             <string>_partition_id</string>
-            <string>partition3</string>
+            <unicode>partition3</unicode>
             <string>_request_dict</string>
             <none/>
             <string>_requested_state</string>
@@ -162,28 +163,28 @@ class TestSlapOSSlapToolComputerAccess(TestSlapOSSlapToolMixin):
             <string>_software_release_document</string>
             <object id='i13' module='slapos.slap.slap' class='SoftwareRelease'>
               <tuple>
-                <string>%(partition_3_software_release_url)s</string>
-                <string>%(computer_id)s</string>
+                <unicode>%(partition_3_software_release_url)s</unicode>
+                <unicode>%(computer_id)s</unicode>
               </tuple>
               <dictionary id='i14'>
                 <string>_computer_guid</string>
-                <string>%(computer_id)s</string>
+                <unicode>%(computer_id)s</unicode>
                 <string>_software_instance_list</string>
                 <list id='i15'/>
                 <string>_software_release</string>
-                <string>%(partition_3_software_release_url)s</string>
+                <unicode>%(partition_3_software_release_url)s</unicode>
               </dictionary>
             </object>
           </dictionary>
         </object>
         <object id='i16' module='slapos.slap.slap' class='ComputerPartition'>
           <tuple>
-            <string>%(computer_id)s</string>
-            <string>partition2</string>
+            <unicode>%(computer_id)s</unicode>
+            <unicode>partition2</unicode>
           </tuple>
           <dictionary id='i17'>
             <string>_computer_id</string>
-            <string>%(computer_id)s</string>
+            <unicode>%(computer_id)s</unicode>
             <string>_connection_dict</string>
             <dictionary id='i18'/>
             <string>_instance_guid</string>
@@ -195,27 +196,27 @@ class TestSlapOSSlapToolComputerAccess(TestSlapOSSlapToolMixin):
               <string>ip_list</string>
               <list id='i20'>
                 <tuple>
-                  <string/>
-                  <string>ip_address_2</string>
+                  <unicode/>
+                  <unicode>ip_address_2</unicode>
                 </tuple>
               </list>
-              <string>param</string>
-              <string>%(partition_2_param)s</string>
+              <unicode>paramé</unicode>
+              <unicode>%(partition_2_param)s</unicode>
               <string>slap_computer_id</string>
-              <string>%(computer_id)s</string>
+              <unicode>%(computer_id)s</unicode>
               <string>slap_computer_partition_id</string>
-              <string>partition2</string>
+              <unicode>partition2</unicode>
               <string>slap_software_release_url</string>
-              <string>%(partition_2_software_release_url)s</string>
+              <unicode>%(partition_2_software_release_url)s</unicode>
               <string>slap_software_type</string>
-              <string>%(partition_2_instance_software_type)s</string>
+              <unicode>%(partition_2_instance_software_type)s</unicode>
               <string>slave_instance_list</string>
               <list id='i21'/>
               <string>timestamp</string>
               <string>%(partition_2_timestamp)s</string>
             </dictionary>
             <string>_partition_id</string>
-            <string>partition2</string>
+            <unicode>partition2</unicode>
             <string>_request_dict</string>
             <none/>
             <string>_requested_state</string>
@@ -223,28 +224,28 @@ class TestSlapOSSlapToolComputerAccess(TestSlapOSSlapToolMixin):
             <string>_software_release_document</string>
             <object id='i22' module='slapos.slap.slap' class='SoftwareRelease'>
               <tuple>
-                <string>%(partition_2_software_release_url)s</string>
-                <string>%(computer_id)s</string>
+                <unicode>%(partition_2_software_release_url)s</unicode>
+                <unicode>%(computer_id)s</unicode>
               </tuple>
               <dictionary id='i23'>
                 <string>_computer_guid</string>
-                <string>%(computer_id)s</string>
+                <unicode>%(computer_id)s</unicode>
                 <string>_software_instance_list</string>
                 <list id='i24'/>
                 <string>_software_release</string>
-                <string>%(partition_2_software_release_url)s</string>
+                <unicode>%(partition_2_software_release_url)s</unicode>
               </dictionary>
             </object>
           </dictionary>
         </object>
         <object id='i25' module='slapos.slap.slap' class='ComputerPartition'>
           <tuple>
-            <string>%(computer_id)s</string>
-            <string>partition1</string>
+            <unicode>%(computer_id)s</unicode>
+            <unicode>partition1</unicode>
           </tuple>
           <dictionary id='i26'>
             <string>_computer_id</string>
-            <string>%(computer_id)s</string>
+            <unicode>%(computer_id)s</unicode>
             <string>_connection_dict</string>
             <dictionary id='i27'/>
             <string>_instance_guid</string>
@@ -256,38 +257,38 @@ class TestSlapOSSlapToolComputerAccess(TestSlapOSSlapToolMixin):
               <string>ip_list</string>
               <list id='i29'>
                 <tuple>
-                  <string/>
-                  <string>ip_address_1</string>
+                  <unicode/>
+                  <unicode>ip_address_1</unicode>
                 </tuple>
               </list>
-              <string>param</string>
-              <string>%(partition_1_param)s</string>
+              <unicode>paramé</unicode>
+              <unicode>%(partition_1_param)s</unicode>
               <string>slap_computer_id</string>
-              <string>%(computer_id)s</string>
+              <unicode>%(computer_id)s</unicode>
               <string>slap_computer_partition_id</string>
-              <string>partition1</string>
+              <unicode>partition1</unicode>
               <string>slap_software_release_url</string>
-              <string>%(partition_1_software_release_url)s</string>
+              <unicode>%(partition_1_software_release_url)s</unicode>
               <string>slap_software_type</string>
-              <string>%(partition_1_instance_software_type)s</string>
+              <unicode>%(partition_1_instance_software_type)s</unicode>
               <string>slave_instance_list</string>
               <list id='i30'>
                 <dictionary id='i31'>
-                  <string>param</string>
-                  <string>%(slave_1_param)s</string>
+                  <unicode>paramé</unicode>
+                  <unicode>%(slave_1_param)s</unicode>
                   <string>slap_software_type</string>
-                  <string>%(slave_1_software_type)s</string>
+                  <unicode>%(slave_1_software_type)s</unicode>
                   <string>slave_reference</string>
                   <string>%(slave_1_instance_guid)s</string>
                   <string>slave_title</string>
-                  <string>%(slave_1_title)s</string>
+                  <unicode>%(slave_1_title)s</unicode>
                 </dictionary>
               </list>
               <string>timestamp</string>
               <string>%(partition_1_timestamp)s</string>
             </dictionary>
             <string>_partition_id</string>
-            <string>partition1</string>
+            <unicode>partition1</unicode>
             <string>_request_dict</string>
             <none/>
             <string>_requested_state</string>
@@ -295,16 +296,16 @@ class TestSlapOSSlapToolComputerAccess(TestSlapOSSlapToolMixin):
             <string>_software_release_document</string>
             <object id='i32' module='slapos.slap.slap' class='SoftwareRelease'>
               <tuple>
-                <string>%(partition_1_software_release_url)s</string>
-                <string>%(computer_id)s</string>
+                <unicode>%(partition_1_software_release_url)s</unicode>
+                <unicode>%(computer_id)s</unicode>
               </tuple>
               <dictionary id='i33'>
                 <string>_computer_guid</string>
-                <string>%(computer_id)s</string>
+                <unicode>%(computer_id)s</unicode>
                 <string>_software_instance_list</string>
                 <list id='i34'/>
                 <string>_software_release</string>
-                <string>%(partition_1_software_release_url)s</string>
+                <unicode>%(partition_1_software_release_url)s</unicode>
               </dictionary>
             </object>
           </dictionary>
@@ -314,34 +315,34 @@ class TestSlapOSSlapToolComputerAccess(TestSlapOSSlapToolMixin):
       <list id='i35'>
         <object id='i36' module='slapos.slap.slap' class='SoftwareRelease'>
           <tuple>
-            <string>%(destroy_requested_url)s</string>
-            <string>%(computer_id)s</string>
+            <unicode>%(destroy_requested_url)s</unicode>
+            <unicode>%(computer_id)s</unicode>
           </tuple>
           <dictionary id='i37'>
             <string>_computer_guid</string>
-            <string>%(computer_id)s</string>
+            <unicode>%(computer_id)s</unicode>
             <string>_requested_state</string>
             <string>destroyed</string>
             <string>_software_instance_list</string>
             <list id='i38'/>
             <string>_software_release</string>
-            <string>%(destroy_requested_url)s</string>
+            <unicode>%(destroy_requested_url)s</unicode>
           </dictionary>
         </object>
         <object id='i39' module='slapos.slap.slap' class='SoftwareRelease'>
           <tuple>
-            <string>%(start_requested_url)s</string>
-            <string>%(computer_id)s</string>
+            <unicode>%(start_requested_url)s</unicode>
+            <unicode>%(computer_id)s</unicode>
           </tuple>
           <dictionary id='i40'>
             <string>_computer_guid</string>
-            <string>%(computer_id)s</string>
+            <unicode>%(computer_id)s</unicode>
             <string>_requested_state</string>
             <string>available</string>
             <string>_software_instance_list</string>
             <list id='i41'/>
             <string>_software_release</string>
-            <string>%(start_requested_url)s</string>
+            <unicode>%(start_requested_url)s</unicode>
           </dictionary>
         </object>
       </list>
@@ -353,20 +354,20 @@ class TestSlapOSSlapToolComputerAccess(TestSlapOSSlapToolMixin):
   destroy_requested_url=self.destroy_requested_software_installation.getUrlString(),
   partition_1_instance_guid=self.computer.partition1.getAggregateRelatedValue(portal_type='Software Instance').getReference(),
   partition_1_instance_software_type=self.computer.partition1.getAggregateRelatedValue(portal_type='Software Instance').getSourceReference(),
-  partition_1_param=self.computer.partition1.getAggregateRelatedValue(portal_type='Software Instance').getInstanceXmlAsDict()['param'],
+  partition_1_param=self.computer.partition1.getAggregateRelatedValue(portal_type='Software Instance').getInstanceXmlAsDict()['paramé'.decode("UTF-8")].encode("UTF-8"),
   partition_1_software_release_url=self.computer.partition1.getAggregateRelatedValue(portal_type='Software Instance').getUrlString(),
   partition_1_timestamp=int(self.computer.partition1.getAggregateRelatedValue(portal_type='Software Instance').getModificationDate()),
   partition_2_instance_guid=self.computer.partition2.getAggregateRelatedValue(portal_type='Software Instance').getReference(),
   partition_2_instance_software_type=self.computer.partition2.getAggregateRelatedValue(portal_type='Software Instance').getSourceReference(),
-  partition_2_param=self.computer.partition2.getAggregateRelatedValue(portal_type='Software Instance').getInstanceXmlAsDict()['param'],
+  partition_2_param=self.computer.partition2.getAggregateRelatedValue(portal_type='Software Instance').getInstanceXmlAsDict()['paramé'.decode("UTF-8")].encode("UTF-8"),
   partition_2_software_release_url=self.computer.partition2.getAggregateRelatedValue(portal_type='Software Instance').getUrlString(),
   partition_2_timestamp=int(self.computer.partition2.getAggregateRelatedValue(portal_type='Software Instance').getModificationDate()),
   partition_3_instance_guid=self.computer.partition3.getAggregateRelatedValue(portal_type='Software Instance').getReference(),
   partition_3_instance_software_type=self.computer.partition3.getAggregateRelatedValue(portal_type='Software Instance').getSourceReference(),
-  partition_3_param=self.computer.partition3.getAggregateRelatedValue(portal_type='Software Instance').getInstanceXmlAsDict()['param'],
+  partition_3_param=self.computer.partition3.getAggregateRelatedValue(portal_type='Software Instance').getInstanceXmlAsDict()['paramé'.decode("UTF-8")].encode("UTF-8"),
   partition_3_software_release_url=self.computer.partition3.getAggregateRelatedValue(portal_type='Software Instance').getUrlString(),
   partition_3_timestamp=int(self.computer.partition3.getAggregateRelatedValue(portal_type='Software Instance').getModificationDate()),
-  slave_1_param=self.start_requested_slave_instance.getInstanceXmlAsDict()['param'],
+  slave_1_param=self.start_requested_slave_instance.getInstanceXmlAsDict()['paramé'.decode("UTF-8")].encode("UTF-8"),
   slave_1_software_type=self.start_requested_slave_instance.getSourceReference(),
   slave_1_instance_guid=self.start_requested_slave_instance.getReference(),
   slave_1_title=self.start_requested_slave_instance.getTitle(),
@@ -406,9 +407,9 @@ class TestSlapOSSlapToolComputerAccess(TestSlapOSSlapToolMixin):
     <string>created_at</string>
     <string>%(created_at)s</string>
     <string>text</string>
-    <string>#error no data found for %(computer_id)s</string>
+    <unicode>#error no data found for %(computer_id)s</unicode>
     <string>user</string>
-    <string>SlapOS Master</string>
+    <unicode>SlapOS Master</unicode>
   </dictionary>
 </marshal>
 """ % dict(
@@ -736,21 +737,21 @@ class TestSlapOSSlapToolInstanceAccess(TestSlapOSSlapToolMixin):
 <marshal>
   <object id='i2' module='slapos.slap.slap' class='Computer'>
     <tuple>
-      <string>%(computer_id)s</string>
+      <unicode>%(computer_id)s</unicode>
     </tuple>
     <dictionary id='i3'>
       <string>_computer_id</string>
-      <string>%(computer_id)s</string>
+      <unicode>%(computer_id)s</unicode>
       <string>_computer_partition_list</string>
       <list id='i4'>
         <object id='i5' module='slapos.slap.slap' class='ComputerPartition'>
           <tuple>
-            <string>%(computer_id)s</string>
-            <string>partition1</string>
+            <unicode>%(computer_id)s</unicode>
+            <unicode>partition1</unicode>
           </tuple>
           <dictionary id='i6'>
             <string>_computer_id</string>
-            <string>%(computer_id)s</string>
+            <unicode>%(computer_id)s</unicode>
             <string>_connection_dict</string>
             <dictionary id='i7'/>
             <string>_instance_guid</string>
@@ -762,38 +763,38 @@ class TestSlapOSSlapToolInstanceAccess(TestSlapOSSlapToolMixin):
               <string>ip_list</string>
               <list id='i9'>
                 <tuple>
-                  <string/>
-                  <string>ip_address_1</string>
+                  <unicode/>
+                  <unicode>ip_address_1</unicode>
                 </tuple>
               </list>
-              <string>param</string>
-              <string>%(param)s</string>
+              <unicode>paramé</unicode>
+              <unicode>%(param)s</unicode>
               <string>slap_computer_id</string>
-              <string>%(computer_id)s</string>
+              <unicode>%(computer_id)s</unicode>
               <string>slap_computer_partition_id</string>
-              <string>partition1</string>
+              <unicode>partition1</unicode>
               <string>slap_software_release_url</string>
-              <string>%(software_release_url)s</string>
+              <unicode>%(software_release_url)s</unicode>
               <string>slap_software_type</string>
-              <string>%(software_type)s</string>
+              <unicode>%(software_type)s</unicode>
               <string>slave_instance_list</string>
               <list id='i10'>
                 <dictionary id='i11'>
-                  <string>param</string>
-                  <string>%(slave_1_param)s</string>
+                  <unicode>paramé</unicode>
+                  <unicode>%(slave_1_param)s</unicode>
                   <string>slap_software_type</string>
-                  <string>%(slave_1_software_type)s</string>
+                  <unicode>%(slave_1_software_type)s</unicode>
                   <string>slave_reference</string>
                   <string>%(slave_1_instance_guid)s</string>
                   <string>slave_title</string>
-                  <string>%(slave_1_title)s</string>
+                  <unicode>%(slave_1_title)s</unicode>
                 </dictionary>
               </list>
               <string>timestamp</string>
               <string>%(timestamp)s</string>
             </dictionary>
             <string>_partition_id</string>
-            <string>partition1</string>
+            <unicode>partition1</unicode>
             <string>_request_dict</string>
             <none/>
             <string>_requested_state</string>
@@ -801,16 +802,16 @@ class TestSlapOSSlapToolInstanceAccess(TestSlapOSSlapToolMixin):
             <string>_software_release_document</string>
             <object id='i12' module='slapos.slap.slap' class='SoftwareRelease'>
               <tuple>
-                <string>%(software_release_url)s</string>
-                <string>%(computer_id)s</string>
+                <unicode>%(software_release_url)s</unicode>
+                <unicode>%(computer_id)s</unicode>
               </tuple>
               <dictionary id='i13'>
                 <string>_computer_guid</string>
-                <string>%(computer_id)s</string>
+                <unicode>%(computer_id)s</unicode>
                 <string>_software_instance_list</string>
                 <list id='i14'/>
                 <string>_software_release</string>
-                <string>%(software_release_url)s</string>
+                <unicode>%(software_release_url)s</unicode>
               </dictionary>
             </object>
           </dictionary>
@@ -826,9 +827,9 @@ class TestSlapOSSlapToolInstanceAccess(TestSlapOSSlapToolMixin):
     instance_guid=self.start_requested_software_instance.getReference(),
     software_release_url=self.start_requested_software_instance.getUrlString(),
     software_type=self.start_requested_software_instance.getSourceReference(),
-    param=self.start_requested_software_instance.getInstanceXmlAsDict()['param'],
+    param=self.start_requested_software_instance.getInstanceXmlAsDict()['paramé'.decode("UTF-8")].encode("UTF-8"),
     timestamp=int(self.start_requested_software_instance.getModificationDate()),
-    slave_1_param=self.start_requested_slave_instance.getInstanceXmlAsDict()['param'],
+    slave_1_param=self.start_requested_slave_instance.getInstanceXmlAsDict()['paramé'.decode("UTF-8")].encode("UTF-8"),
     slave_1_software_type=self.start_requested_slave_instance.getSourceReference(),
     slave_1_instance_guid=self.start_requested_slave_instance.getReference(),
     slave_1_title=self.start_requested_slave_instance.getTitle(),
@@ -866,9 +867,9 @@ class TestSlapOSSlapToolInstanceAccess(TestSlapOSSlapToolMixin):
     <string>created_at</string>
     <string>%(created_at)s</string>
     <string>text</string>
-    <string>#error no data found for %(instance_guid)s</string>
+    <unicode>#error no data found for %(instance_guid)s</unicode>
     <string>user</string>
-    <string>SlapOS Master</string>
+    <unicode>SlapOS Master</unicode>
   </dictionary>
 </marshal>
 """ % dict(
@@ -909,9 +910,9 @@ class TestSlapOSSlapToolInstanceAccess(TestSlapOSSlapToolMixin):
     <string>created_at</string>
     <string>%(created_at)s</string>
     <string>text</string>
-    <string>#error no data found for %(instance_guid)s</string>
+    <unicode>#error no data found for %(instance_guid)s</unicode>
     <string>user</string>
-    <string>SlapOS Master</string>
+    <unicode>SlapOS Master</unicode>
   </dictionary>
 </marshal>
 """ % dict(
@@ -949,12 +950,12 @@ class TestSlapOSSlapToolInstanceAccess(TestSlapOSSlapToolMixin):
 <marshal>
   <object id='i2' module='slapos.slap.slap' class='ComputerPartition'>
     <tuple>
-      <string>%(computer_id)s</string>
-      <string>partition1</string>
+      <unicode>%(computer_id)s</unicode>
+      <unicode>partition1</unicode>
     </tuple>
     <dictionary id='i3'>
       <string>_computer_id</string>
-      <string>%(computer_id)s</string>
+      <unicode>%(computer_id)s</unicode>
       <string>_connection_dict</string>
       <dictionary id='i4'/>
       <string>_instance_guid</string>
@@ -966,38 +967,38 @@ class TestSlapOSSlapToolInstanceAccess(TestSlapOSSlapToolMixin):
         <string>ip_list</string>
         <list id='i6'>
           <tuple>
-            <string/>
-            <string>ip_address_1</string>
+            <unicode/>
+            <unicode>ip_address_1</unicode>
           </tuple>
         </list>
-        <string>param</string>
-        <string>%(param)s</string>
+        <unicode>paramé</unicode>
+        <unicode>%(param)s</unicode>
         <string>slap_computer_id</string>
-        <string>%(computer_id)s</string>
+        <unicode>%(computer_id)s</unicode>
         <string>slap_computer_partition_id</string>
-        <string>partition1</string>
+        <unicode>partition1</unicode>
         <string>slap_software_release_url</string>
-        <string>%(software_release_url)s</string>
+        <unicode>%(software_release_url)s</unicode>
         <string>slap_software_type</string>
-        <string>%(software_type)s</string>
+        <unicode>%(software_type)s</unicode>
         <string>slave_instance_list</string>
         <list id='i7'>
           <dictionary id='i8'>
-            <string>param</string>
-            <string>%(slave_1_param)s</string>
+            <unicode>paramé</unicode>
+            <unicode>%(slave_1_param)s</unicode>
             <string>slap_software_type</string>
-            <string>%(slave_1_software_type)s</string>
+            <unicode>%(slave_1_software_type)s</unicode>
             <string>slave_reference</string>
             <string>%(slave_1_instance_guid)s</string>
             <string>slave_title</string>
-            <string>%(slave_1_title)s</string>
+            <unicode>%(slave_1_title)s</unicode>
           </dictionary>
         </list>
         <string>timestamp</string>
         <string>%(timestamp)s</string>
       </dictionary>
       <string>_partition_id</string>
-      <string>partition1</string>
+      <unicode>partition1</unicode>
       <string>_request_dict</string>
       <none/>
       <string>_requested_state</string>
@@ -1005,16 +1006,16 @@ class TestSlapOSSlapToolInstanceAccess(TestSlapOSSlapToolMixin):
       <string>_software_release_document</string>
       <object id='i9' module='slapos.slap.slap' class='SoftwareRelease'>
         <tuple>
-          <string>%(software_release_url)s</string>
-          <string>%(computer_id)s</string>
+          <unicode>%(software_release_url)s</unicode>
+          <unicode>%(computer_id)s</unicode>
         </tuple>
         <dictionary id='i10'>
           <string>_computer_guid</string>
-          <string>%(computer_id)s</string>
+          <unicode>%(computer_id)s</unicode>
           <string>_software_instance_list</string>
           <list id='i11'/>
           <string>_software_release</string>
-          <string>%(software_release_url)s</string>
+          <unicode>%(software_release_url)s</unicode>
         </dictionary>
       </object>
       <string>_synced</string>
@@ -1024,12 +1025,12 @@ class TestSlapOSSlapToolInstanceAccess(TestSlapOSSlapToolMixin):
 </marshal>
 """ % dict(
   computer_id=self.computer_id,
-  param=self.start_requested_software_instance.getInstanceXmlAsDict()['param'],
+  param=self.start_requested_software_instance.getInstanceXmlAsDict()['paramé'.decode("UTF-8")].encode("UTF-8"),
   software_release_url=self.start_requested_software_instance.getUrlString(),
   timestamp=int(self.start_requested_software_instance.getModificationDate()),
   instance_guid=self.start_requested_software_instance.getReference(),
   software_type=self.start_requested_software_instance.getSourceReference(),
-  slave_1_param=self.start_requested_slave_instance.getInstanceXmlAsDict()['param'],
+  slave_1_param=self.start_requested_slave_instance.getInstanceXmlAsDict()['paramé'.decode("UTF-8")].encode("UTF-8"),
   slave_1_software_type=self.start_requested_slave_instance.getSourceReference(),
   slave_1_instance_guid=self.start_requested_slave_instance.getReference(),
   slave_1_title=self.start_requested_slave_instance.getTitle(),
@@ -1063,12 +1064,12 @@ class TestSlapOSSlapToolInstanceAccess(TestSlapOSSlapToolMixin):
 <marshal>
   <object id='i2' module='slapos.slap.slap' class='ComputerPartition'>
     <tuple>
-      <string>%(computer_id)s</string>
-      <string>partition1</string>
+      <unicode>%(computer_id)s</unicode>
+      <unicode>partition1</unicode>
     </tuple>
     <dictionary id='i3'>
       <string>_computer_id</string>
-      <string>%(computer_id)s</string>
+      <unicode>%(computer_id)s</unicode>
       <string>_connection_dict</string>
       <dictionary id='i4'/>
       <string>_instance_guid</string>
@@ -1080,27 +1081,27 @@ class TestSlapOSSlapToolInstanceAccess(TestSlapOSSlapToolMixin):
         <string>ip_list</string>
         <list id='i6'>
           <tuple>
-            <string/>
-            <string>ip_address_1</string>
+            <unicode/>
+            <unicode>ip_address_1</unicode>
           </tuple>
         </list>
-        <string>param</string>
-        <string>%(param)s</string>
+        <unicode>paramé</unicode>
+        <unicode>%(param)s</unicode>
         <string>slap_computer_id</string>
-        <string>%(computer_id)s</string>
+        <unicode>%(computer_id)s</unicode>
         <string>slap_computer_partition_id</string>
-        <string>partition1</string>
+        <unicode>partition1</unicode>
         <string>slap_software_release_url</string>
-        <string>%(software_release_url)s</string>
+        <unicode>%(software_release_url)s</unicode>
         <string>slap_software_type</string>
-        <string>%(software_type)s</string>
+        <unicode>%(software_type)s</unicode>
         <string>slave_instance_list</string>
         <list id='i7'/>
         <string>timestamp</string>
         <string>%(timestamp)s</string>
       </dictionary>
       <string>_partition_id</string>
-      <string>partition1</string>
+      <unicode>partition1</unicode>
       <string>_request_dict</string>
       <none/>
       <string>_requested_state</string>
@@ -1108,16 +1109,16 @@ class TestSlapOSSlapToolInstanceAccess(TestSlapOSSlapToolMixin):
       <string>_software_release_document</string>
       <object id='i8' module='slapos.slap.slap' class='SoftwareRelease'>
         <tuple>
-          <string>%(software_release_url)s</string>
-          <string>%(computer_id)s</string>
+          <unicode>%(software_release_url)s</unicode>
+          <unicode>%(computer_id)s</unicode>
         </tuple>
         <dictionary id='i9'>
           <string>_computer_guid</string>
-          <string>%(computer_id)s</string>
+          <unicode>%(computer_id)s</unicode>
           <string>_software_instance_list</string>
           <list id='i10'/>
           <string>_software_release</string>
-          <string>%(software_release_url)s</string>
+          <unicode>%(software_release_url)s</unicode>
         </dictionary>
       </object>
       <string>_synced</string>
@@ -1127,7 +1128,7 @@ class TestSlapOSSlapToolInstanceAccess(TestSlapOSSlapToolMixin):
 </marshal>
 """ % dict(
   computer_id=self.computer_id,
-  param=self.start_requested_software_instance.getInstanceXmlAsDict()['param'],
+  param=self.start_requested_software_instance.getInstanceXmlAsDict()['paramé'.decode("UTF-8")].encode("UTF-8"),
   software_release_url=self.start_requested_software_instance.getUrlString(),
   timestamp=int(self.start_requested_software_instance.getModificationDate()),
   instance_guid=self.start_requested_software_instance.getReference(),
@@ -1611,9 +1612,9 @@ class TestSlapOSSlapToolPersonAccess(TestSlapOSSlapToolMixin):
     <string>created_at</string>
     <string>%(created_at)s</string>
     <string>text</string>
-    <string>#error no data found for %(computer_id)s</string>
+    <unicode>#error no data found for %(computer_id)s</unicode>
     <string>user</string>
-    <string>SlapOS Master</string>
+    <unicode>SlapOS Master</unicode>
   </dictionary>
 </marshal>
 """ % dict(
@@ -1747,9 +1748,9 @@ class TestSlapOSSlapToolPersonAccess(TestSlapOSSlapToolMixin):
     <string>created_at</string>
     <string>%(created_at)s</string>
     <string>text</string>
-    <string>#error no data found for %(instance_guid)s</string>
+    <unicode>#error no data found for %(instance_guid)s</unicode>
     <string>user</string>
-    <string>SlapOS Master</string>
+    <unicode>SlapOS Master</unicode>
   </dictionary>
 </marshal>
 """ % dict(
@@ -1792,9 +1793,9 @@ class TestSlapOSSlapToolPersonAccess(TestSlapOSSlapToolMixin):
     <string>created_at</string>
     <string>%(created_at)s</string>
     <string>text</string>
-    <string>#error no data found for %(instance_guid)s</string>
+    <unicode>#error no data found for %(instance_guid)s</unicode>
     <string>user</string>
-    <string>SlapOS Master</string>
+    <unicode>SlapOS Master</unicode>
   </dictionary>
 </marshal>
 """ % dict(
@@ -1832,12 +1833,12 @@ class TestSlapOSSlapToolPersonAccess(TestSlapOSSlapToolMixin):
 <marshal>
   <object id='i2' module='slapos.slap.slap' class='ComputerPartition'>
     <tuple>
-      <string>%(computer_id)s</string>
-      <string>partition1</string>
+      <unicode>%(computer_id)s</unicode>
+      <unicode>partition1</unicode>
     </tuple>
     <dictionary id='i3'>
       <string>_computer_id</string>
-      <string>%(computer_id)s</string>
+      <unicode>%(computer_id)s</unicode>
       <string>_connection_dict</string>
       <dictionary id='i4'/>
       <string>_instance_guid</string>
@@ -1849,38 +1850,38 @@ class TestSlapOSSlapToolPersonAccess(TestSlapOSSlapToolMixin):
         <string>ip_list</string>
         <list id='i6'>
           <tuple>
-            <string/>
-            <string>ip_address_1</string>
+            <unicode/>
+            <unicode>ip_address_1</unicode>
           </tuple>
         </list>
-        <string>param</string>
-        <string>%(param)s</string>
+        <unicode>paramé</unicode>
+        <unicode>%(param)s</unicode>
         <string>slap_computer_id</string>
-        <string>%(computer_id)s</string>
+        <unicode>%(computer_id)s</unicode>
         <string>slap_computer_partition_id</string>
-        <string>partition1</string>
+        <unicode>partition1</unicode>
         <string>slap_software_release_url</string>
-        <string>%(software_release_url)s</string>
+        <unicode>%(software_release_url)s</unicode>
         <string>slap_software_type</string>
-        <string>%(software_type)s</string>
+        <unicode>%(software_type)s</unicode>
         <string>slave_instance_list</string>
         <list id='i7'>
           <dictionary id='i8'>
-            <string>param</string>
-            <string>%(slave_1_param)s</string>
+            <unicode>paramé</unicode>
+            <unicode>%(slave_1_param)s</unicode>
             <string>slap_software_type</string>
-            <string>%(slave_1_software_type)s</string>
+            <unicode>%(slave_1_software_type)s</unicode>
             <string>slave_reference</string>
             <string>%(slave_1_instance_guid)s</string>
             <string>slave_title</string>
-            <string>%(slave_1_title)s</string>
+            <unicode>%(slave_1_title)s</unicode>
           </dictionary>
         </list>
         <string>timestamp</string>
         <string>%(timestamp)s</string>
       </dictionary>
       <string>_partition_id</string>
-      <string>partition1</string>
+      <unicode>partition1</unicode>
       <string>_request_dict</string>
       <none/>
       <string>_requested_state</string>
@@ -1888,16 +1889,16 @@ class TestSlapOSSlapToolPersonAccess(TestSlapOSSlapToolMixin):
       <string>_software_release_document</string>
       <object id='i9' module='slapos.slap.slap' class='SoftwareRelease'>
         <tuple>
-          <string>%(software_release_url)s</string>
-          <string>%(computer_id)s</string>
+          <unicode>%(software_release_url)s</unicode>
+          <unicode>%(computer_id)s</unicode>
         </tuple>
         <dictionary id='i10'>
           <string>_computer_guid</string>
-          <string>%(computer_id)s</string>
+          <unicode>%(computer_id)s</unicode>
           <string>_software_instance_list</string>
           <list id='i11'/>
           <string>_software_release</string>
-          <string>%(software_release_url)s</string>
+          <unicode>%(software_release_url)s</unicode>
         </dictionary>
       </object>
       <string>_synced</string>
@@ -1907,12 +1908,12 @@ class TestSlapOSSlapToolPersonAccess(TestSlapOSSlapToolMixin):
 </marshal>
 """ % dict(
   computer_id=self.computer_id,
-  param=self.start_requested_software_instance.getInstanceXmlAsDict()['param'],
+  param=self.start_requested_software_instance.getInstanceXmlAsDict()['paramé'.decode("UTF-8")].encode("UTF-8"),
   software_release_url=self.start_requested_software_instance.getUrlString(),
   timestamp=int(self.start_requested_software_instance.getModificationDate()),
   instance_guid=self.start_requested_software_instance.getReference(),
   software_type=self.start_requested_software_instance.getSourceReference(),
-  slave_1_param=self.start_requested_slave_instance.getInstanceXmlAsDict()['param'],
+  slave_1_param=self.start_requested_slave_instance.getInstanceXmlAsDict()['paramé'.decode("UTF-8")].encode("UTF-8"),
   slave_1_software_type=self.start_requested_slave_instance.getSourceReference(),
   slave_1_instance_guid=self.start_requested_slave_instance.getReference(),
   slave_1_title=self.start_requested_slave_instance.getTitle(),
@@ -1946,12 +1947,12 @@ class TestSlapOSSlapToolPersonAccess(TestSlapOSSlapToolMixin):
 <marshal>
   <object id='i2' module='slapos.slap.slap' class='ComputerPartition'>
     <tuple>
-      <string>%(computer_id)s</string>
-      <string>partition1</string>
+      <unicode>%(computer_id)s</unicode>
+      <unicode>partition1</unicode>
     </tuple>
     <dictionary id='i3'>
       <string>_computer_id</string>
-      <string>%(computer_id)s</string>
+      <unicode>%(computer_id)s</unicode>
       <string>_connection_dict</string>
       <dictionary id='i4'/>
       <string>_instance_guid</string>
@@ -1963,27 +1964,27 @@ class TestSlapOSSlapToolPersonAccess(TestSlapOSSlapToolMixin):
         <string>ip_list</string>
         <list id='i6'>
           <tuple>
-            <string/>
-            <string>ip_address_1</string>
+            <unicode/>
+            <unicode>ip_address_1</unicode>
           </tuple>
         </list>
-        <string>param</string>
-        <string>%(param)s</string>
+        <unicode>paramé</unicode>
+        <unicode>%(param)s</unicode>
         <string>slap_computer_id</string>
-        <string>%(computer_id)s</string>
+        <unicode>%(computer_id)s</unicode>
         <string>slap_computer_partition_id</string>
-        <string>partition1</string>
+        <unicode>partition1</unicode>
         <string>slap_software_release_url</string>
-        <string>%(software_release_url)s</string>
+        <unicode>%(software_release_url)s</unicode>
         <string>slap_software_type</string>
-        <string>%(software_type)s</string>
+        <unicode>%(software_type)s</unicode>
         <string>slave_instance_list</string>
         <list id='i7'/>
         <string>timestamp</string>
         <string>%(timestamp)s</string>
       </dictionary>
       <string>_partition_id</string>
-      <string>partition1</string>
+      <unicode>partition1</unicode>
       <string>_request_dict</string>
       <none/>
       <string>_requested_state</string>
@@ -1991,16 +1992,16 @@ class TestSlapOSSlapToolPersonAccess(TestSlapOSSlapToolMixin):
       <string>_software_release_document</string>
       <object id='i8' module='slapos.slap.slap' class='SoftwareRelease'>
         <tuple>
-          <string>%(software_release_url)s</string>
-          <string>%(computer_id)s</string>
+          <unicode>%(software_release_url)s</unicode>
+          <unicode>%(computer_id)s</unicode>
         </tuple>
         <dictionary id='i9'>
           <string>_computer_guid</string>
-          <string>%(computer_id)s</string>
+          <unicode>%(computer_id)s</unicode>
           <string>_software_instance_list</string>
           <list id='i10'/>
           <string>_software_release</string>
-          <string>%(software_release_url)s</string>
+          <unicode>%(software_release_url)s</unicode>
         </dictionary>
       </object>
       <string>_synced</string>
@@ -2010,7 +2011,7 @@ class TestSlapOSSlapToolPersonAccess(TestSlapOSSlapToolMixin):
 </marshal>
 """ % dict(
   computer_id=self.computer_id,
-  param=self.start_requested_software_instance.getInstanceXmlAsDict()['param'],
+  param=self.start_requested_software_instance.getInstanceXmlAsDict()['paramé'.decode("UTF-8")].encode("UTF-8"),
   software_release_url=self.start_requested_software_instance.getUrlString(),
   timestamp=int(self.start_requested_software_instance.getModificationDate()),
   instance_guid=self.start_requested_software_instance.getReference(),
@@ -2211,18 +2212,18 @@ class TestSlapOSSlapToolPersonAccess(TestSlapOSSlapToolMixin):
       <string>ip_list</string>
       <list id='i6'>
         <tuple>
-          <string/>
-          <string>%(ip)s</string>
+          <unicode/>
+          <unicode>%(ip)s</unicode>
         </tuple>
       </list>
       <string>slap_computer_id</string>
-      <string>%(computer_id)s</string>
+      <unicode>%(computer_id)s</unicode>
       <string>slap_computer_partition_id</string>
-      <string>%(partition_id)s</string>
+      <unicode>%(partition_id)s</unicode>
       <string>slap_software_release_url</string>
-      <string>%(url_string)s</string>
+      <unicode>%(url_string)s</unicode>
       <string>slap_software_type</string>
-      <string>%(type)s</string>
+      <unicode>%(type)s</unicode>
       <string>slave_instance_list</string>
       <list id='i7'/>
       <string>timestamp</string>
@@ -2260,7 +2261,7 @@ class TestSlapOSSlapToolPersonAccess(TestSlapOSSlapToolMixin):
       self.login(self.person_reference)
       self.computer.requestSoftwareRelease = Simulator(
         self.computer_supply_simulator, 'requestSoftwareRelease')
-      software_url = 'live_test_url_%i' % self.generateNewId()
+      software_url = 'live_test_url_%s' % self.generateNewId()
       response = self.portal_slap.supplySupply(
           software_url,
           self.computer_id,
@@ -2289,7 +2290,7 @@ class TestSlapOSSlapToolPersonAccess(TestSlapOSSlapToolMixin):
         self.computer_request_computer_simulator, 'requestComputer')
 
       computer_id = 'Foo Computer'
-      computer_reference = 'live_comp_%i' % self.generateNewId()
+      computer_reference = 'live_comp_%s' % self.generateNewId()
       self.portal.REQUEST.set('computer_reference', computer_reference)
       response = self.portal_slap.requestComputer(computer_id)
 
@@ -2305,11 +2306,11 @@ class TestSlapOSSlapToolPersonAccess(TestSlapOSSlapToolMixin):
 <marshal>
   <object id='i2' module='slapos.slap.slap' class='Computer'>
     <tuple>
-      <string>%(computer_id)s</string>
+      <unicode>%(computer_id)s</unicode>
     </tuple>
     <dictionary id='i3'>
       <string>_computer_id</string>
-      <string>%(computer_id)s</string>
+      <unicode>%(computer_id)s</unicode>
     </dictionary>
   </object>
 </marshal>
@@ -2337,8 +2338,8 @@ class TestSlapOSSlapToolPersonAccess(TestSlapOSSlapToolMixin):
         self.generate_computer_certificate_simulator, 
         'generateComputerCertificate')
 
-      computer_certificate = 'live_\ncertificate_%i' % self.generateNewId()
-      computer_key = 'live_\nkey_%i' % self.generateNewId()
+      computer_certificate = 'live_\ncertificate_%s' % self.generateNewId()
+      computer_key = 'live_\nkey_%s' % self.generateNewId()
       self.portal.REQUEST.set('computer_certificate', computer_certificate)
       self.portal.REQUEST.set('computer_key', computer_key)
       response = self.portal_slap.generateComputerCertificate(self.computer_id)
@@ -2355,9 +2356,9 @@ class TestSlapOSSlapToolPersonAccess(TestSlapOSSlapToolMixin):
 <marshal>
   <dictionary id='i2'>
     <string>certificate</string>
-    <string>%(computer_certificate)s</string>
+    <unicode>%(computer_certificate)s</unicode>
     <string>key</string>
-    <string>%(computer_key)s</string>
+    <unicode>%(computer_key)s</unicode>
   </dictionary>
 </marshal>
 """ % {'computer_key': computer_key, 'computer_certificate': computer_certificate}
