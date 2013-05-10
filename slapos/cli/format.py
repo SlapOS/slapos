@@ -6,8 +6,6 @@ import sys
 from slapos.cli.config import ConfigCommand
 from slapos.format import do_format, FormatConfig, tracing_monkeypatch, UsageError
 
-# XXX TODO: handle log_file (old) vs log-file (new)
-
 
 class FormatCommand(ConfigCommand):
     """
@@ -26,9 +24,6 @@ class FormatCommand(ConfigCommand):
         ap.add_argument('--computer_json',
                         help="Path to a JSON version of the computer's XML (for development only).",
                         default=None)
-
-        ap.add_argument('-l', '--log_file',
-                        help="The path to the log file used by the script.")
 
         ap.add_argument('-i', '--input_definition_file',
                         help="Path to file to read definition of computer instead of "
@@ -67,7 +62,7 @@ class FormatCommand(ConfigCommand):
 
         conf.mergeConfig(args, configp)
 
-        if not args.log_file and conf.log_file:
+        if not self.app.options.log_file and conf.log_file:
             # no log file is provided by argparser,
             # we set up the one from config
             file_handler = logging.FileHandler(conf.log_file)

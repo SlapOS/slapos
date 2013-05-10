@@ -66,12 +66,12 @@ class SlapOSApp(cliff.app.App):
         kw['argparse_kwargs']['conflict_handler'] = 'resolve'
         parser = super(SlapOSApp, self).build_option_parser(*args, **kw)
 
-        # add an alias for --log-file
+        # add two aliases for --log-file (for compatibility with old commands)
         parser.add_argument(
-            '--log-file', '--logfile',
+            '--log-file', '--logfile', '--log_file',
             action='store',
             default=None,
-            help='Specify a file to log output. Disabled by default.',
+            help='Specify a file to log output. Only console by default.',
         )
 
         # always show tracebacks on errors
