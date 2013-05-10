@@ -2,7 +2,6 @@
 
 import argparse
 import os
-import sys
 import textwrap
 
 from slapos.client import ClientConfig, init, do_console
