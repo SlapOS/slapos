@@ -57,7 +57,7 @@ setup(name=name,
         'console_scripts': [
           # One entry point to control them all
           'slapos-watchdog = slapos.grid.watchdog:main',
-          'slapproxy = slapos.proxy:main',
+          'slapproxy = slapos.cli_legacy.proxy:main',
           'slapproxy-query = slapos.proxy.query:main',
           'slapos = slapos.cli.entry:main',
           # Deprecated entry points
