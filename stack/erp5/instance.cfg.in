@@ -47,6 +47,7 @@ poppler = {{ poppler_location }}
 dmtx-utils = {{ dmtx_utils_location }}
 buildout-bin-directory = {{ buildout_bin_directory }}
 zope-conf-template = {{ template_zope_conf }}
+jsl = {{ jsl_location }}
 
 [dynamic-template-tidstorage]
 < = jinja2-template-base
@@ -132,6 +133,7 @@ poppler = {{ poppler_location }}
 sed = {{ sed_location }}
 tesseract = {{ tesseract_location }}
 w3m = {{ w3m_location }}
+jsl = {{ jsl_location }}
 
 [dynamic-template-zope]
 < = jinja2-template-base
@@ -161,6 +163,7 @@ extra-context =
     key sed_location dynamic-template-zope-parameters:sed
     key tesseract_location dynamic-template-zope-parameters:tesseract
     key w3m_location dynamic-template-zope-parameters:w3m
+    key jsl_location dynamic-template-zope-parameters:jsl
 
 [template-erp5-single-parameters]
 bin-directory = {{ bin_directory }}
