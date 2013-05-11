@@ -5,6 +5,7 @@ import sys
 
 import cliff
 import cliff.app
+from cliff.app import LOG
 import cliff.commandmanager
 
 import slapos.version
