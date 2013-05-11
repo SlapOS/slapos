@@ -28,6 +28,8 @@
 #
 ##############################################################################
 
+import logging
+
 
 class ProxyConfig(object):
   def __init__(self, logger):
@@ -53,6 +55,9 @@ class ProxyConfig(object):
 
 def do_proxy(conf):
   from slapos.proxy.views import app
+  for handler in conf.logger.handlers:
+    app.logger.addHandler(handler)
+  app.logger.setLevel(logging.INFO)
   app.config['computer_id'] = conf.computer_id
   app.config['DATABASE_URI'] = conf.database_uri
   app.run(host=conf.host, port=int(conf.port))
