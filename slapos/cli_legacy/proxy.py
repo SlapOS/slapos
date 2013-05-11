@@ -41,10 +41,10 @@ def main():
 
   if args.verbose:
     logger.setLevel(logging.DEBUG)
-  else: 
+  else:
     logger.setLevel(logging.INFO)
 
-  conf = ProxyConfig(logger)
+  conf = ProxyConfig(logger=logger)
 
   configp = ConfigParser.SafeConfigParser()
   if configp.read(args.configuration_file) != [args.configuration_file]:
