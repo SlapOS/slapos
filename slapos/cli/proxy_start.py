@@ -6,7 +6,7 @@ from slapos.cli.config import ConfigCommand
 from slapos.proxy import do_proxy, ProxyConfig
 
 
-class ProxyCommand(ConfigCommand):
+class ProxyStartCommand(ConfigCommand):
     """
     minimalist, stand-alone SlapOS Master
     """
@@ -14,7 +14,7 @@ class ProxyCommand(ConfigCommand):
     log = logging.getLogger('proxy')
 
     def get_parser(self, prog_name):
-        ap = super(ProxyCommand, self).get_parser(prog_name)
+        ap = super(ProxyStartCommand, self).get_parser(prog_name)
 
         ap.add_argument('-u', '--database-uri',
                         help='URI for sqlite database')

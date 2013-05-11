@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
-# vim: set et sts=4:
 
 import collections
-import ConfigParser
-from optparse import OptionParser, Option
-import sys
+import logging
+
+from slapos.cli.config import ConfigCommand
+from slapos.proxy import ProxyConfig
 
 import lxml.etree
 import sqlite3
@@ -12,70 +12,39 @@ import sqlite3
 from slapos.proxy.db_version import DB_VERSION
 
 
-
-class Parser(OptionParser):
+class ProxyShowCommand(ConfigCommand):
     """
-    Parse all arguments.
+    display proxy instances and parameters
     """
-    def __init__(self, usage=None, version=None):
-      """
-      Initialize all options possibles.
-      """
-      OptionParser.__init__(self, usage=usage, version=version,
-                            option_list=[
-          Option("-u", "--database-uri",
-                 type=str,
-                 help="URI for sqlite database"),
-          Option('--show-instances',
-                 help="View instance information",
-                 default=False,
-                 action="store_true"),
-          Option('--show-params',
-                 help="View published parameters",
-                 default=False,
-                 action="store_true"),
-          Option('--show-network',
-                 help="View network information",
-                 default=False,
-                 action="store_true"),
-          Option('--show-all',
-                 help="View all information",
-                 default=False,
-                 action="store_true"),
-      ])
 
-    def check_args(self):
-        """
-        Check arguments
-        """
-        (options, args) = self.parse_args()
-        if len(args) < 1:
-            self.error("Incorrect number of arguments")
+    log = logging.getLogger('proxy')
 
-        return options, args[0]
+    def get_parser(self, prog_name):
+        ap = super(ProxyShowCommand, self).get_parser(prog_name)
 
-class Config:
-    def setConfig(self, option_dict, configuration_file_path):
-        """
-        Set options given by parameters.
-        """
-        # Set options parameters
-        for option, value in option_dict.__dict__.items():
-          setattr(self, option, value)
+        ap.add_argument('-u', '--database-uri',
+                        help='URI for sqlite database')
 
-        # Load configuration file
-        configuration_parser = ConfigParser.SafeConfigParser()
-        configuration_parser.read(configuration_file_path)
-        # Merges the arguments and configuration
-        for section in ("slapproxy", "slapos"):
-            configuration_dict = dict(configuration_parser.items(section))
-            for key in configuration_dict:
-                if not getattr(self, key, None):
-                    setattr(self, key, configuration_dict[key])
+        ap.add_argument('--instances',
+                        help='view instance information',
+                        action='store_true')
 
-        if not self.database_uri:
-            raise ValueError('database-uri is required.')
+        ap.add_argument('--params',
+                        help='view published parameters',
+                        action='store_true')
 
+        ap.add_argument('--network',
+                        help='view network information',
+                        action='store_true')
+
+        return ap
+
+    def take_action(self, args):
+        configp = self.fetch_config(args)
+        conf = ProxyConfig(logger=self.log)
+        conf.mergeConfig(args, configp)
+        conf.setConfig()
+        do_show(conf=conf)
 
 
 tbl_computer = 'computer' + DB_VERSION
@@ -124,7 +93,7 @@ def print_table(qry, tablename, skip=None):
         print
 
     print ' | '.join(hdr)
-    print '-+-'.join('-'*len(h) for h in hdr)
+    print '-+-'.join('-' * len(h) for h in hdr)
 
     for row in rows:
         cells = [row[col].ljust(max_width[col]) for col in columns]
@@ -170,6 +139,7 @@ def print_partition_table(conn):
     qry = cur.execute("SELECT * FROM %s WHERE slap_state<>'free'" % tbl_partition)
     print_table(qry, tbl_partition, skip=['xml', 'connection_xml', 'slave_instance_list'])
 
+
 def print_slave_table(conn):
     cur = conn.cursor()
     qry = cur.execute("SELECT * FROM %s" % tbl_slave)
@@ -202,45 +172,15 @@ def print_network(conn):
         print '%s: %s' % (partition_reference, ', '.join(addresses))
 
 
-
-
-def run(config):
-    conn = sqlite3.connect(config.database_uri)
+def do_show(conf):
+    conn = sqlite3.connect(conf.database_uri)
     conn.row_factory = sqlite3.Row
 
-    fn = []
+    print_all = (not conf.instances and not conf.params and not conf.network)
 
-    if config.show_all or config.show_instances:
-        fn.append(print_tables)
-    if config.show_all or config.show_params:
-        fn.append(print_params)
-    if config.show_all or config.show_network:
-        fn.append(print_network)
-
-    if fn:
-        for f in fn:
-            f(conn)
-    else:
-        print 'usage: %s [ --show-params | --show-network | --show-instances | --show-all ]' % sys.argv[0]
-
-
-
-def main():
-  "Run default configuration."
-  usage = "usage: %s [options] CONFIGURATION_FILE" % sys.argv[0]
-
-  try:
-    # Parse arguments
-    config = Config()
-    config.setConfig(*Parser(usage=usage).check_args())
-
-    run(config)
-    return_code = 0
-  except SystemExit, err:
-    # Catch exception raise by optparse
-    return_code = err
-
-  sys.exit(return_code)
-
-
-
+    if print_all or conf.instances:
+        print_tables(conn)
+    if print_all or conf.params:
+        print_params(conn)
+    if print_all or conf.network:
+        print_network(conn)
