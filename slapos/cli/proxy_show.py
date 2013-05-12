@@ -3,12 +3,12 @@
 import collections
 import logging
 
-from slapos.cli.config import ConfigCommand
-from slapos.proxy import ProxyConfig
-
 import lxml.etree
+import prettytable
 import sqlite3
 
+from slapos.cli.config import ConfigCommand
+from slapos.proxy import ProxyConfig
 from slapos.proxy.db_version import DB_VERSION
 
 
@@ -53,33 +53,31 @@ tbl_partition = 'partition' + DB_VERSION
 tbl_partition_network = 'partition_network' + DB_VERSION
 tbl_slave = 'slave' + DB_VERSION
 
-null_str = u"-"
+
+def coalesce(*seq):
+    el = None
+    for el in seq:
+        if el is not None:
+            return el
+    return el
 
 
 def print_table(qry, tablename, skip=None):
+
     if skip is None:
         skip = set()
 
     columns = [c[0] for c in qry.description if c[0] not in skip]
+
     rows = []
     for row in qry.fetchall():
-        line = {}
-        for col in columns:
-            val = row[col]
-            if val is None:
-                val = null_str
-            line[col] = val.strip()
-        rows.append(line)
+        rows.append([coalesce(row[col], '-') for col in columns])
 
-    max_width = {col: len(col) for col in columns}
+    pt = prettytable.PrettyTable(columns)
+    # https://code.google.com/p/prettytable/wiki/Tutorial
+
     for row in rows:
-        for col in columns:
-            val = row[col]
-            max_width[col] = max(max_width[col], len(val) if val else 0)
-
-    hdr = [col.center(max_width[col]) for col in columns]
-
-    print
+        pt.add_row(row)
 
     if rows:
         print 'table %s:' % tablename,
@@ -92,12 +90,8 @@ def print_table(qry, tablename, skip=None):
     else:
         print
 
-    print ' | '.join(hdr)
-    print '-+-'.join('-' * len(h) for h in hdr)
-
-    for row in rows:
-        cells = [row[col].ljust(max_width[col]) for col in columns]
-        print ' | '.join(cells)
+    print pt.get_string(border=True, padding_width=0, vrules=prettytable.NONE)
+    print
 
 
 def print_params(conn):
