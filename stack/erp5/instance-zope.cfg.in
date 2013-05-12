@@ -207,6 +207,7 @@ link-binary =
   {{ poppler_location }}/bin/pdfunite
   {{ dmtx_utils_location }}/bin/dmtxwrite
   {{ aspell_location }}/bin/aspell
+  {{ jsl_location }}/bin/jsl
 [certificate-authority]
 recipe = slapos.cookbook:certificate_authority
 openssl-binary = {{ openssl_location }}/bin/openssl
