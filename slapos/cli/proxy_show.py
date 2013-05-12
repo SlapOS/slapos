@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import collections
+import hashlib
 import logging
 
 import lxml.etree
@@ -25,8 +26,20 @@ class ProxyShowCommand(ConfigCommand):
         ap.add_argument('-u', '--database-uri',
                         help='URI for sqlite database')
 
-        ap.add_argument('--instances',
-                        help='view instance information',
+        ap.add_argument('--computers',
+                        help='view computer information',
+                        action='store_true')
+
+        ap.add_argument('--software',
+                        help='view software releases',
+                        action='store_true')
+
+        ap.add_argument('--partitions',
+                        help='view partitions',
+                        action='store_true')
+
+        ap.add_argument('--slaves',
+                        help='view slave instances',
                         action='store_true')
 
         ap.add_argument('--params',
@@ -34,7 +47,7 @@ class ProxyShowCommand(ConfigCommand):
                         action='store_true')
 
         ap.add_argument('--network',
-                        help='view network information',
+                        help='view network settings',
                         action='store_true')
 
         return ap
@@ -47,11 +60,7 @@ class ProxyShowCommand(ConfigCommand):
         do_show(conf=conf)
 
 
-tbl_computer = 'computer' + DB_VERSION
-tbl_software = 'software' + DB_VERSION
 tbl_partition = 'partition' + DB_VERSION
-tbl_partition_network = 'partition_network' + DB_VERSION
-tbl_slave = 'slave' + DB_VERSION
 
 
 def coalesce(*seq):
@@ -63,7 +72,6 @@ def coalesce(*seq):
 
 
 def print_table(qry, tablename, skip=None):
-
     if skip is None:
         skip = set()
 
@@ -81,23 +89,19 @@ def print_table(qry, tablename, skip=None):
 
     if rows:
         print 'table %s:' % tablename,
+        if skip:
+            print 'skipping %s' % ', '.join(skip)
+        else:
+            print
     else:
         print 'table %s: empty' % tablename
         return
 
-    if skip:
-        print 'skipping %s' % ', '.join(skip)
-    else:
-        print
-
     print pt.get_string(border=True, padding_width=0, vrules=prettytable.NONE)
-    print
 
 
 def print_params(conn):
     cur = conn.cursor()
-
-    print
 
     qry = cur.execute("SELECT reference, partition_reference, software_type, connection_xml FROM %s" % tbl_partition)
     for row in qry.fetchall():
@@ -113,18 +117,19 @@ def print_params(conn):
             if text and name in ('ssh-key', 'ssh-public-key'):
                 text = text[:20] + '...' + text[-20:]
             print '    %s = %s' % (name, text)
-        print
 
 
 def print_computer_table(conn):
+    tbl_computer = 'computer' + DB_VERSION
     cur = conn.cursor()
     qry = cur.execute("SELECT * FROM %s" % tbl_computer)
     print_table(qry, tbl_computer)
 
 
 def print_software_table(conn):
+    tbl_software = 'software' + DB_VERSION
     cur = conn.cursor()
-    qry = cur.execute("SELECT * FROM %s" % tbl_software)
+    qry = cur.execute("SELECT *, md5(url) as md5 FROM %s" % tbl_software)
     print_table(qry, tbl_software)
 
 
@@ -135,20 +140,14 @@ def print_partition_table(conn):
 
 
 def print_slave_table(conn):
+    tbl_slave = 'slave' + DB_VERSION
     cur = conn.cursor()
     qry = cur.execute("SELECT * FROM %s" % tbl_slave)
     print_table(qry, tbl_slave, skip=['connection_xml'])
 
 
-def print_tables(conn):
-    print_computer_table(conn)
-    print_software_table(conn)
-    print_partition_table(conn)
-    print_slave_table(conn)
-
-
 def print_network(conn):
-    print
+    tbl_partition_network = 'partition_network' + DB_VERSION
     cur = conn.cursor()
     addr = collections.defaultdict(list)
     qry = cur.execute("""
@@ -170,11 +169,36 @@ def do_show(conf):
     conn = sqlite3.connect(conf.database_uri)
     conn.row_factory = sqlite3.Row
 
-    print_all = (not conf.instances and not conf.params and not conf.network)
+    conn.create_function('md5', 1, lambda s: hashlib.md5(s).hexdigest())
 
-    if print_all or conf.instances:
-        print_tables(conn)
+    print_all = not any(
+            [
+                conf.computers,
+                conf.software,
+                conf.partitions,
+                conf.slaves,
+                conf.params,
+                conf.network,
+                ]
+            )
+
+    if print_all or conf.computers:
+        print_computer_table(conn)
+        print
+    if print_all or conf.software:
+        print_software_table(conn)
+        print
+    if print_all or conf.partitions:
+        print_partition_table(conn)
+        print
+    if print_all or conf.slaves:
+        print_slave_table(conn)
+        print
     if print_all or conf.params:
         print_params(conn)
+        print
     if print_all or conf.network:
         print_network(conn)
+        print
+
+
