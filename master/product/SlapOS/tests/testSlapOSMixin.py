@@ -231,6 +231,7 @@ class testSlapOSMixin(ERP5TypeTestCase):
       'erp5_credential_oauth2',
       'erp5_accounting_l10n_fr',
       'erp5_bearer_token',
+      'erp5_access_token',
       'erp5_project',
       'slapos_cache',
       'slapos_cloud',
@@ -540,21 +541,23 @@ class testSlapOSMixin(ERP5TypeTestCase):
     self.portal.REQUEST.headers = {}
 
   def generateNewId(self):
-    return self.portal.portal_ids.generateNewId(
+    return "%sö" % self.portal.portal_ids.generateNewId(
         id_group=('slapos_core_test'))
 
   def generateNewSoftwareReleaseUrl(self):
-    return 'http://example.org/test%s.cfg' % self.generateNewId()
+    return 'http://example.org/têst%s.cfg' % self.generateNewId()
 
   def generateNewSoftwareType(self):
-    return 'Type%s' % self.generateNewId()
+    return 'Type ë@î %s' % self.generateNewId()
 
   def generateNewSoftwareTitle(self):
-    return 'Title%s' % self.generateNewId()
+    return 'Title é#ï %s' % self.generateNewId()
 
   def generateSafeXml(self):
     return '<?xml version="1.0" encoding="utf-8"?><instance><parameter '\
-      'id="param">%s</parameter></instance>' % self.generateNewId()
+      'id="%s">%s</parameter></instance>' % \
+      ("paramé".decode("UTF-8").encode("UTF-8"),
+      self.generateNewId().decode("UTF-8").encode("UTF-8"))
 
   def generateEmptyXml(self):
     return '<?xml version="1.0" encoding="utf-8"?><instance></instance>'

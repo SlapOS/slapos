@@ -50,31 +50,36 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string>portal = context.getPortalObject()\n
+            <value> <string>import json\n
+\n
+portal = context.getPortalObject()\n
 person = portal.ERP5Site_getAuthenticatedMemberPersonValue()\n
+\n
+web_site = context.getWebSiteValue()\n
+request_method = "POST"\n
+request_url = "%s/%s" % (web_site.absolute_url(), "add-a-server/WebSection_registerNewComputer")\n
+\n
+access_token = portal.access_token_module.newContent(\n
+  portal_type="One Time Restricted Access Token",\n
+  agent_value=person,\n
+  url_string=request_url,\n
+  url_method="POST",\n
+)\n
+access_token.validate()\n
 \n
 request = context.REQUEST\n
 response = request.RESPONSE\n
-\n
-if person is None:\n
-  response.setStatus(403)\n
-else:\n
-  request_kw = dict(computer_title=title)\n
-  person.requestComputer(**request_kw)\n
-  computer = context.restrictedTraverse(context.REQUEST.get(\'computer\'))\n
-  computer.generateCertificate()\n
-  message = "Registering Computer"\n
-  context.REQUEST.set("portal_status_message", message)\n
-  return computer.Computer_viewConnectionInformationAsWeb()\n
+response.setHeader(\'Content-Type\', "application/json")\n
+return json.dumps({\'access_token\': access_token.getId()})\n
 </string> </value>
         </item>
         <item>
             <key> <string>_params</string> </key>
-            <value> <string>title</string> </value>
+            <value> <string></string> </value>
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>WebSection_registerNewComputer</string> </value>
+            <value> <string>Base_generateAccessTokenFromJS</string> </value>
         </item>
       </dictionary>
     </pickle>

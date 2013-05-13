@@ -1982,3 +1982,22 @@ class TestRegularisationRequest(TestSlapOSGroupRoleSecurityMixin):
     self.assertRoles(product, 'R-MEMBER', ['Auditor'])
     self.assertPermissionsOfRole(product, 'Auditor',
         ['Access contents information', 'View'])
+
+class TestAccessTokenModule(TestSlapOSGroupRoleSecurityMixin):
+  def test(self):
+    module = self.portal.access_token_module
+    self.assertSecurityGroup(module,
+        ['G-COMPANY', 'R-MEMBER', 'zope'], False)
+    self.assertRoles(module, 'G-COMPANY', ['Auditor', 'Author'])
+    self.assertRoles(module, 'R-MEMBER', ['Author'])
+    self.assertRoles(module, 'zope', ['Owner'])
+
+class TestOneTimeRestrictedAccessToken(TestSlapOSGroupRoleSecurityMixin):
+  def test_GroupCompany(self):
+    product = self.portal.access_token_module.newContent(
+        portal_type='One Time Restricted Access Token')
+    product.updateLocalRolesOnSecurityGroups()
+    self.assertSecurityGroup(product,
+        ['G-COMPANY', self.user_id], False)
+    self.assertRoles(product, 'G-COMPANY', ['Assignor'])
+    self.assertRoles(product, self.user_id, ['Owner'])

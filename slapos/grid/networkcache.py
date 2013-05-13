@@ -163,7 +163,7 @@ def upload_network_cached(software_root, software_url, cached_key,
     try:
         return nc.upload_generic(f, cached_key, **kw)
     except (IOError, UploadError), e:
-        logger.info('Fail to upload file. %s' % (str(e)))
+        logger.info('Failed to upload file. %s' % (str(e)))
         return False
     finally:
       f.close()
