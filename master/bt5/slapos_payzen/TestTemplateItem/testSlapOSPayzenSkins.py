@@ -585,6 +585,27 @@ return addToDate(DateTime(), to_add={'day': -1, 'second': -1}).toZone('UTC'), 'f
         'Aborting unknown payzen payment.',
         payment.workflow_history['accounting_workflow'][-1]['comment'])
 
+  def test_processUpdate_refusedPayzenPayment(self):
+    event = self.createPayzenEvent()
+    payment = self.createPaymentTransaction()
+    event.edit(destination_value=payment)
+
+    data_kw = {
+      'errorCode': '0',
+      'transactionStatus': '8',
+    }
+
+    event.PayzenEvent_processUpdate(data_kw, True)
+
+    self.assertEquals(event.getValidationState(), "acknowledged")
+    self.assertEqual(
+        'Refused payzen payment.',
+        event.workflow_history['system_event_workflow'][-1]['comment'])
+    self.assertEquals(payment.getSimulationState(), "cancelled")
+    self.assertEqual(
+        'Aborting refused payzen payment.',
+        payment.workflow_history['accounting_workflow'][-1]['comment'])
+
 class TestSlapOSPayzenBase_getPayzenServiceRelativeUrl(testSlapOSMixin):
 
   def beforeTearDown(self):

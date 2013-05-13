@@ -106,6 +106,7 @@ elif error_code == \'0\':\n
   }\n
   mark_transaction_id_list = [\'0\', \'1\', \'3\', \'4\', \'5\', \'10\', \'11\', \'12\']\n
   continue_transaction_id_list = [\'6\']\n
+  cancel_transaction_id_list = [\'8\']\n
 \n
   transaction_status = data_kw[\'transactionStatus\']\n
 \n
@@ -153,6 +154,12 @@ elif error_code == \'0\':\n
     else:\n
       payzen_event.confirm(comment=\'Expected to put transaction in stopped state, but achieved only %s state\' % transaction.getSimulationState())\n
 \n
+  elif transaction_status in cancel_transaction_id_list:\n
+    payzen_event.confirm()\n
+    payzen_event.acknowledge(comment=\'Refused payzen payment.\')\n
+    if isTransitionPossible(transaction, \'cancel\'):\n
+      transaction.cancel(comment=\'Aborting refused payzen payment.\')\n
+    return\n
   else:\n
     payzen_event.confirm(comment=\'Transaction status %r (%r) is not supported\' \\\n
                            % (transaction_status, transaction_status_description))\n
