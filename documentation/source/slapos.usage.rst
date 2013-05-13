@@ -214,18 +214,13 @@ node software
 .. program-output:: python slapos help node software
 
 
-Parameters:
-***********
---only_sr URL                  Only process one specific Software Release that has been supplied on this Computer. If not supplied: do nothing.
---all                          Process all Software Releases, even already installed.
-
 Return values:
 **************
 
 (Among other standard Python return values)
 
 * 0     Everything went fine
-* 1     At least one software hasn't correctly been installed.
+* 1     At least one software was not correctly installed.
 
 
 node instance
@@ -234,18 +229,13 @@ node instance
 .. program-output:: python slapos help node instance
 
 
-Parameters:
-***********
---only_cp PARTITION            Only process one specific Computer Partition, if possible.
---all                          Force processing all Computer Partitions.
-
 Return values:
 **************
 
 (Among other standard Python return values)
 
 * 0    Everything went fine
-* 1    At least one instance hasn't correctly been processed.
+* 1    At least one instance was not correctly processed.
 * 2    At least one promise has failed.
 
 
