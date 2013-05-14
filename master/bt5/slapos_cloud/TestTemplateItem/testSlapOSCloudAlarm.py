@@ -86,6 +86,7 @@ active_process.postResult(active_result)
         if q.summary == 'Module_assertIdGenerator simulation'])
 
     expected_list = sorted([
+      'access_token_module',
       'account_module',
       'accounting_module',
       'bug_module',
