@@ -1334,7 +1334,7 @@ class SlapTool(BaseTool):
           if (newtimestamp > timestamp):                                            
             timestamp = newtimestamp
     return {
-      'instance_guid': software_instance.getReference(),
+      'instance_guid': software_instance.getReference().decode("UTF-8"),
       'xml': software_instance.getTextContent(),
       'connection_xml': software_instance.getConnectionXml(),
       'slap_computer_id': \
