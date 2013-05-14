@@ -11,6 +11,11 @@ from Products.ERP5Type.DateUtils import addToDate
 from App.Common import rfc1123_date
 
 class TestSlapOSCorePromiseSlapOSModuleIdGeneratorAlarm(testSlapOSMixin):
+
+  def generateNewId(self):
+    return self.portal.portal_ids.generateNewId(
+        id_group=('slapos_core_test'))
+
   def test_Module_assertIdGenerator(self):
     module = self.portal.newContent(portal_type='Person Module',
         id=str(self.generateNewId()),
