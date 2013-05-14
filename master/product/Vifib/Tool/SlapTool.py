@@ -1047,8 +1047,6 @@ class SlapTool(BaseTool):
                                               connection_xml)
     instance = etree.Element('instance')
     for parameter_id, parameter_value in partition_parameter_kw.iteritems():
-      # cast everything to string
-      parameter_value = str(parameter_value)
       etree.SubElement(instance, "parameter",
                        attrib={'id':parameter_id}).text = parameter_value
     connection_xml = etree.tostring(instance, pretty_print=True,

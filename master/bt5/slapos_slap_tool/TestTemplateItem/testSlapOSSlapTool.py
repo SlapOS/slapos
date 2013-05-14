@@ -1152,16 +1152,16 @@ class TestSlapOSSlapToolInstanceAccess(TestSlapOSSlapToolMixin):
     slave_reference = self.start_requested_slave_instance.getReference()
     connection_xml = """<marshal>
   <dictionary id="i2">
-    <string>p1</string>
-    <string>v1</string>
-    <string>p2</string>
-    <string>v2</string>
+    <unicode>p1é</unicode>
+    <unicode>v1é</unicode>
+    <unicode>p2é</unicode>
+    <unicode>v2é</unicode>
   </dictionary>
 </marshal>"""
     stored_xml = """<?xml version='1.0' encoding='utf-8'?>
 <instance>
-  <parameter id="p2">v2</parameter>
-  <parameter id="p1">v1</parameter>
+  <parameter id="p1é">v1é</parameter>
+  <parameter id="p2é">v2é</parameter>
 </instance>
 """
     self.login(self.start_requested_software_instance.getReference())
@@ -1185,16 +1185,16 @@ class TestSlapOSSlapToolInstanceAccess(TestSlapOSSlapToolMixin):
         portal_type='Computer Partition').getReference()
     connection_xml = """<marshal>
   <dictionary id="i2">
-    <string>p1</string>
-    <string>v1</string>
-    <string>p2</string>
-    <string>v2</string>
+    <unicode>p1é</unicode>
+    <unicode>v1é</unicode>
+    <unicode>p2é</unicode>
+    <unicode>v2é</unicode>
   </dictionary>
 </marshal>"""
     stored_xml = """<?xml version='1.0' encoding='utf-8'?>
 <instance>
-  <parameter id="p2">v2</parameter>
-  <parameter id="p1">v1</parameter>
+  <parameter id="p1é">v1é</parameter>
+  <parameter id="p2é">v2é</parameter>
 </instance>
 """
     self.login(self.start_requested_software_instance.getReference())
