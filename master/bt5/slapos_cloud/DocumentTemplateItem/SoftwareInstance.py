@@ -58,13 +58,13 @@ class SoftwareInstance(Item):
     tree = etree.fromstring(xml)
 
     for element in tree.findall('parameter'):
-      key = element.get('id')
+      key = element.get('id').encode("UTF-8")
       value = result_dict.get(key, None)
       if value is not None:
         value = value + ' ' + element.text
       else:
         value = element.text
-      result_dict[key] = value
+      result_dict[key] = value.encode("UTF-8")
     return result_dict
 
   security.declareProtected(Permissions.AccessContentsInformation,
