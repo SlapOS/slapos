@@ -309,7 +309,7 @@ def launchBuildout(path, buildout_binary, logger,
                                 preexec_fn=lambda: dropPrivileges(uid, gid, logger=logger),
                                 cwd=path,
                                 env=getCleanEnvironment(logger=logger,
-                                                        home_path=pwd.getpwuid(uid).pw_dir),
+                                                        home_path=path),
                                 stdout=subprocess.PIPE,
                                 stderr=subprocess.STDOUT,
                                 logger=logger)
