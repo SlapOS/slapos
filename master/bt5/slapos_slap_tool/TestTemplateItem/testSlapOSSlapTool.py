@@ -127,7 +127,7 @@ class TestSlapOSSlapToolComputerAccess(TestSlapOSSlapToolMixin):
             <string>_connection_dict</string>
             <dictionary id='i9'/>
             <string>_instance_guid</string>
-            <string>%(partition_3_instance_guid)s</string>
+            <unicode>%(partition_3_instance_guid)s</unicode>
             <string>_need_modification</string>
             <int>1</int>
             <string>_parameter_dict</string>
@@ -188,7 +188,7 @@ class TestSlapOSSlapToolComputerAccess(TestSlapOSSlapToolMixin):
             <string>_connection_dict</string>
             <dictionary id='i18'/>
             <string>_instance_guid</string>
-            <string>%(partition_2_instance_guid)s</string>
+            <unicode>%(partition_2_instance_guid)s</unicode>
             <string>_need_modification</string>
             <int>1</int>
             <string>_parameter_dict</string>
@@ -249,7 +249,7 @@ class TestSlapOSSlapToolComputerAccess(TestSlapOSSlapToolMixin):
             <string>_connection_dict</string>
             <dictionary id='i27'/>
             <string>_instance_guid</string>
-            <string>%(partition_1_instance_guid)s</string>
+            <unicode>%(partition_1_instance_guid)s</unicode>
             <string>_need_modification</string>
             <int>1</int>
             <string>_parameter_dict</string>
@@ -354,20 +354,20 @@ class TestSlapOSSlapToolComputerAccess(TestSlapOSSlapToolMixin):
   destroy_requested_url=self.destroy_requested_software_installation.getUrlString(),
   partition_1_instance_guid=self.computer.partition1.getAggregateRelatedValue(portal_type='Software Instance').getReference(),
   partition_1_instance_software_type=self.computer.partition1.getAggregateRelatedValue(portal_type='Software Instance').getSourceReference(),
-  partition_1_param=self.computer.partition1.getAggregateRelatedValue(portal_type='Software Instance').getInstanceXmlAsDict()['paramé'.decode("UTF-8")].encode("UTF-8"),
+  partition_1_param=self.computer.partition1.getAggregateRelatedValue(portal_type='Software Instance').getInstanceXmlAsDict()['paramé'],
   partition_1_software_release_url=self.computer.partition1.getAggregateRelatedValue(portal_type='Software Instance').getUrlString(),
   partition_1_timestamp=int(self.computer.partition1.getAggregateRelatedValue(portal_type='Software Instance').getModificationDate()),
   partition_2_instance_guid=self.computer.partition2.getAggregateRelatedValue(portal_type='Software Instance').getReference(),
   partition_2_instance_software_type=self.computer.partition2.getAggregateRelatedValue(portal_type='Software Instance').getSourceReference(),
-  partition_2_param=self.computer.partition2.getAggregateRelatedValue(portal_type='Software Instance').getInstanceXmlAsDict()['paramé'.decode("UTF-8")].encode("UTF-8"),
+  partition_2_param=self.computer.partition2.getAggregateRelatedValue(portal_type='Software Instance').getInstanceXmlAsDict()['paramé'],
   partition_2_software_release_url=self.computer.partition2.getAggregateRelatedValue(portal_type='Software Instance').getUrlString(),
   partition_2_timestamp=int(self.computer.partition2.getAggregateRelatedValue(portal_type='Software Instance').getModificationDate()),
   partition_3_instance_guid=self.computer.partition3.getAggregateRelatedValue(portal_type='Software Instance').getReference(),
   partition_3_instance_software_type=self.computer.partition3.getAggregateRelatedValue(portal_type='Software Instance').getSourceReference(),
-  partition_3_param=self.computer.partition3.getAggregateRelatedValue(portal_type='Software Instance').getInstanceXmlAsDict()['paramé'.decode("UTF-8")].encode("UTF-8"),
+  partition_3_param=self.computer.partition3.getAggregateRelatedValue(portal_type='Software Instance').getInstanceXmlAsDict()['paramé'],
   partition_3_software_release_url=self.computer.partition3.getAggregateRelatedValue(portal_type='Software Instance').getUrlString(),
   partition_3_timestamp=int(self.computer.partition3.getAggregateRelatedValue(portal_type='Software Instance').getModificationDate()),
-  slave_1_param=self.start_requested_slave_instance.getInstanceXmlAsDict()['paramé'.decode("UTF-8")].encode("UTF-8"),
+  slave_1_param=self.start_requested_slave_instance.getInstanceXmlAsDict()['paramé'],
   slave_1_software_type=self.start_requested_slave_instance.getSourceReference(),
   slave_1_instance_guid=self.start_requested_slave_instance.getReference(),
   slave_1_title=self.start_requested_slave_instance.getTitle(),
@@ -755,7 +755,7 @@ class TestSlapOSSlapToolInstanceAccess(TestSlapOSSlapToolMixin):
             <string>_connection_dict</string>
             <dictionary id='i7'/>
             <string>_instance_guid</string>
-            <string>%(instance_guid)s</string>
+            <unicode>%(instance_guid)s</unicode>
             <string>_need_modification</string>
             <int>1</int>
             <string>_parameter_dict</string>
@@ -827,9 +827,9 @@ class TestSlapOSSlapToolInstanceAccess(TestSlapOSSlapToolMixin):
     instance_guid=self.start_requested_software_instance.getReference(),
     software_release_url=self.start_requested_software_instance.getUrlString(),
     software_type=self.start_requested_software_instance.getSourceReference(),
-    param=self.start_requested_software_instance.getInstanceXmlAsDict()['paramé'.decode("UTF-8")].encode("UTF-8"),
+    param=self.start_requested_software_instance.getInstanceXmlAsDict()['paramé'],
     timestamp=int(self.start_requested_software_instance.getModificationDate()),
-    slave_1_param=self.start_requested_slave_instance.getInstanceXmlAsDict()['paramé'.decode("UTF-8")].encode("UTF-8"),
+    slave_1_param=self.start_requested_slave_instance.getInstanceXmlAsDict()['paramé'],
     slave_1_software_type=self.start_requested_slave_instance.getSourceReference(),
     slave_1_instance_guid=self.start_requested_slave_instance.getReference(),
     slave_1_title=self.start_requested_slave_instance.getTitle(),
@@ -959,7 +959,7 @@ class TestSlapOSSlapToolInstanceAccess(TestSlapOSSlapToolMixin):
       <string>_connection_dict</string>
       <dictionary id='i4'/>
       <string>_instance_guid</string>
-      <string>%(instance_guid)s</string>
+      <unicode>%(instance_guid)s</unicode>
       <string>_need_modification</string>
       <int>1</int>
       <string>_parameter_dict</string>
@@ -1025,12 +1025,12 @@ class TestSlapOSSlapToolInstanceAccess(TestSlapOSSlapToolMixin):
 </marshal>
 """ % dict(
   computer_id=self.computer_id,
-  param=self.start_requested_software_instance.getInstanceXmlAsDict()['paramé'.decode("UTF-8")].encode("UTF-8"),
+  param=self.start_requested_software_instance.getInstanceXmlAsDict()['paramé'],
   software_release_url=self.start_requested_software_instance.getUrlString(),
   timestamp=int(self.start_requested_software_instance.getModificationDate()),
   instance_guid=self.start_requested_software_instance.getReference(),
   software_type=self.start_requested_software_instance.getSourceReference(),
-  slave_1_param=self.start_requested_slave_instance.getInstanceXmlAsDict()['paramé'.decode("UTF-8")].encode("UTF-8"),
+  slave_1_param=self.start_requested_slave_instance.getInstanceXmlAsDict()['paramé'],
   slave_1_software_type=self.start_requested_slave_instance.getSourceReference(),
   slave_1_instance_guid=self.start_requested_slave_instance.getReference(),
   slave_1_title=self.start_requested_slave_instance.getTitle(),
@@ -1073,7 +1073,7 @@ class TestSlapOSSlapToolInstanceAccess(TestSlapOSSlapToolMixin):
       <string>_connection_dict</string>
       <dictionary id='i4'/>
       <string>_instance_guid</string>
-      <string>%(instance_guid)s</string>
+      <unicode>%(instance_guid)s</unicode>
       <string>_need_modification</string>
       <int>1</int>
       <string>_parameter_dict</string>
@@ -1128,7 +1128,7 @@ class TestSlapOSSlapToolInstanceAccess(TestSlapOSSlapToolMixin):
 </marshal>
 """ % dict(
   computer_id=self.computer_id,
-  param=self.start_requested_software_instance.getInstanceXmlAsDict()['paramé'.decode("UTF-8")].encode("UTF-8"),
+  param=self.start_requested_software_instance.getInstanceXmlAsDict()['paramé'],
   software_release_url=self.start_requested_software_instance.getUrlString(),
   timestamp=int(self.start_requested_software_instance.getModificationDate()),
   instance_guid=self.start_requested_software_instance.getReference(),
@@ -1842,7 +1842,7 @@ class TestSlapOSSlapToolPersonAccess(TestSlapOSSlapToolMixin):
       <string>_connection_dict</string>
       <dictionary id='i4'/>
       <string>_instance_guid</string>
-      <string>%(instance_guid)s</string>
+      <unicode>%(instance_guid)s</unicode>
       <string>_need_modification</string>
       <int>1</int>
       <string>_parameter_dict</string>
@@ -1908,12 +1908,12 @@ class TestSlapOSSlapToolPersonAccess(TestSlapOSSlapToolMixin):
 </marshal>
 """ % dict(
   computer_id=self.computer_id,
-  param=self.start_requested_software_instance.getInstanceXmlAsDict()['paramé'.decode("UTF-8")].encode("UTF-8"),
+  param=self.start_requested_software_instance.getInstanceXmlAsDict()['paramé'],
   software_release_url=self.start_requested_software_instance.getUrlString(),
   timestamp=int(self.start_requested_software_instance.getModificationDate()),
   instance_guid=self.start_requested_software_instance.getReference(),
   software_type=self.start_requested_software_instance.getSourceReference(),
-  slave_1_param=self.start_requested_slave_instance.getInstanceXmlAsDict()['paramé'.decode("UTF-8")].encode("UTF-8"),
+  slave_1_param=self.start_requested_slave_instance.getInstanceXmlAsDict()['paramé'],
   slave_1_software_type=self.start_requested_slave_instance.getSourceReference(),
   slave_1_instance_guid=self.start_requested_slave_instance.getReference(),
   slave_1_title=self.start_requested_slave_instance.getTitle(),
@@ -1956,7 +1956,7 @@ class TestSlapOSSlapToolPersonAccess(TestSlapOSSlapToolMixin):
       <string>_connection_dict</string>
       <dictionary id='i4'/>
       <string>_instance_guid</string>
-      <string>%(instance_guid)s</string>
+      <unicode>%(instance_guid)s</unicode>
       <string>_need_modification</string>
       <int>1</int>
       <string>_parameter_dict</string>
@@ -2011,7 +2011,7 @@ class TestSlapOSSlapToolPersonAccess(TestSlapOSSlapToolMixin):
 </marshal>
 """ % dict(
   computer_id=self.computer_id,
-  param=self.start_requested_software_instance.getInstanceXmlAsDict()['paramé'.decode("UTF-8")].encode("UTF-8"),
+  param=self.start_requested_software_instance.getInstanceXmlAsDict()['paramé'],
   software_release_url=self.start_requested_software_instance.getUrlString(),
   timestamp=int(self.start_requested_software_instance.getModificationDate()),
   instance_guid=self.start_requested_software_instance.getReference(),
@@ -2204,7 +2204,7 @@ class TestSlapOSSlapToolPersonAccess(TestSlapOSSlapToolMixin):
       <string>_connection_dict</string>
       <dictionary id='i4'/>
       <string>_instance_guid</string>
-      <string>%(instance_guid)s</string>
+      <unicode>%(instance_guid)s</unicode>
       <string>_parameter_dict</string>
       <dictionary id='i5'/>
       <string>_requested_state</string>
