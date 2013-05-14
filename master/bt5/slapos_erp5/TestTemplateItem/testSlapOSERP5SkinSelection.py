@@ -140,6 +140,7 @@ erp5_dms_web
 erp5_accounting_l10n_fr
 erp5_upgrader
 erp5_access_tab
+erp5_access_token
 erp5_accounting
 erp5_accounting_bbb
 erp5_administration
@@ -238,6 +239,7 @@ erp5_dms_web
 erp5_accounting_l10n_fr
 erp5_upgrader
 erp5_access_tab
+erp5_access_token
 erp5_accounting
 erp5_accounting_bbb
 erp5_administration
@@ -338,6 +340,7 @@ erp5_dms_web
 erp5_accounting_l10n_fr
 erp5_upgrader
 erp5_access_tab
+erp5_access_token
 erp5_accounting
 erp5_accounting_bbb
 erp5_administration
@@ -438,6 +441,7 @@ erp5_dms_web
 erp5_accounting_l10n_fr
 erp5_upgrader
 erp5_access_tab
+erp5_access_token
 erp5_accounting
 erp5_accounting_bbb
 erp5_administration
@@ -535,6 +539,7 @@ erp5_dms_web
 erp5_accounting_l10n_fr
 erp5_upgrader
 erp5_access_tab
+erp5_access_token
 erp5_accounting
 erp5_accounting_bbb
 erp5_administration
@@ -633,6 +638,7 @@ erp5_ods_style
 erp5_accounting_l10n_fr
 erp5_upgrader
 erp5_access_tab
+erp5_access_token
 erp5_accounting
 erp5_accounting_bbb
 erp5_administration
@@ -730,6 +736,7 @@ erp5_odt_style
 erp5_accounting_l10n_fr
 erp5_upgrader
 erp5_access_tab
+erp5_access_token
 erp5_accounting
 erp5_accounting_bbb
 erp5_administration
@@ -827,6 +834,7 @@ erp5_dms_web
 erp5_accounting_l10n_fr
 erp5_upgrader
 erp5_access_tab
+erp5_access_token
 erp5_accounting
 erp5_accounting_bbb
 erp5_administration
@@ -925,6 +933,7 @@ erp5_dms_web
 erp5_accounting_l10n_fr
 erp5_upgrader
 erp5_access_tab
+erp5_access_token
 erp5_accounting
 erp5_accounting_bbb
 erp5_administration
@@ -1024,6 +1033,7 @@ erp5_dms_web
 erp5_accounting_l10n_fr
 erp5_upgrader
 erp5_access_tab
+erp5_access_token
 erp5_accounting
 erp5_accounting_bbb
 erp5_administration
