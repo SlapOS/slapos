@@ -153,6 +153,29 @@ class BasicMixin:
     shutil.rmtree(self._tempdir, True)
 
 
+class TestRequiredOnlyPartitions(unittest2.TestCase):
+  def test_no_errors(self):
+    required = ['one', 'three']
+    existing = ['one', 'two', 'three']
+    slapgrid.check_required_only_partitions(existing, required)
+
+  def test_one_missing(self):
+    required = ['foobar', 'two', 'one']
+    existing = ['one', 'two', 'three']
+    self.assertRaisesRegexp(ValueError,
+                            'Unknown partition: foobar',
+                            slapgrid.check_required_only_partitions,
+                            existing, required)
+
+  def test_several_missing(self):
+    required = ['foobar', 'barbaz']
+    existing = ['one', 'two', 'three']
+    self.assertRaisesRegexp(ValueError,
+                            'Unknown partitions: barbaz, foobar',
+                            slapgrid.check_required_only_partitions,
+                            existing, required)
+
+
 class TestBasicSlapgridCP(BasicMixin, unittest2.TestCase):
   def test_no_software_root(self):
     self.assertRaises(OSError, self.grid.processComputerPartitionList)
