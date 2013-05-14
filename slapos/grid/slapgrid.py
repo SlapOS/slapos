@@ -537,7 +537,7 @@ class Slapgrid(object):
          (computer_partition_id not in self.computer_partition_filter_list):
       return
 
-    self.logger.info('Processing Computer Partition %s...' % computer_partition_id)
+    self.logger.info('Processing Computer Partition %s.' % computer_partition_id)
 
     instance_path = os.path.join(self.instance_root, computer_partition_id)
 
@@ -564,6 +564,10 @@ class Slapgrid(object):
       # Problem with instance: SR URI not set.
       # Try to process it anyway, it may need to be deleted.
       software_path = None
+
+    self.logger.info('  Software URL: %s' % software_url)
+    self.logger.info('  Software path: %s' % software_path)
+    self.logger.info('  Instance path: %s' % instance_path)
 
     periodicity = self.maximum_periodicity
     if software_path:
