@@ -79,7 +79,7 @@ class TestSlapOSDefaultScenario(TestSlapOSSecurityMixin):
     computer = xml_marshaller.xml_marshaller.loads(requestXml)
     computer_id = getattr(computer, '_computer_id', None)
     self.assertNotEqual(None, computer_id)
-    return computer_id
+    return computer_id.encode('UTF-8')
 
   def supplySoftware(self, server, url, state='available'):
     self.portal.portal_slap.supplySupply(url, server.getReference(), state)
@@ -172,10 +172,12 @@ class TestSlapOSDefaultScenario(TestSlapOSSecurityMixin):
       for software_release in slap_computer._software_release_list:
         if software_release._requested_state == 'destroyed':
           self.portal.portal_slap.destroyedSoftwareRelease(
-            software_release._software_release, computer.getReference())
+            software_release._software_release.encode("UTF-8"),
+						computer.getReference())
         else:
           self.portal.portal_slap.availableSoftwareRelease(
-            software_release._software_release, computer.getReference())
+            software_release._software_release.encode("UTF-8"),
+						computer.getReference())
     finally:
       setSecurityManager(sm)
     self.tic()
@@ -194,9 +196,9 @@ class TestSlapOSDefaultScenario(TestSlapOSSecurityMixin):
         if partition._requested_state == 'destroyed' \
               and partition._need_modification == 1:
           self.portal.portal_slap.destroyedComputerPartition(computer.getReference(),
-              partition._partition_id
+              partition._partition_id.encode("UTF-8")
               )
-          destroyed_partition_id_list.append(partition._partition_id)
+          destroyed_partition_id_list.append(partition._partition_id.encode("UTF-8"))
     finally:
       setSecurityManager(sm)
     self.tic()
