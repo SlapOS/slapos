@@ -6,7 +6,7 @@ SlapOS command line usage
 Notes:
 ------
 
-* Default SlapOS Master is http://www.vifib.net. It can be changed by altering configuration files or with the ``--master-url``
+* Default SlapOS Master is http://www.slapos.org. It can be changed by altering configuration files or with the ``--master-url``
   argument for commands that support it.
 
 * Most commands take a configuration file parameter, provided as ``--cfg /path/to/file.cfg``.
@@ -57,7 +57,7 @@ Examples
 * Request a kvm instance named "mykvm" on Node named "COMP-12345", specifying nbd-host and nbd-ip parameters::
 
     $ slapos request mykvm kvm --node id=COMP-12345 --configuration \
-        nbd-host=debian.nbd.vifib.org nbd-port=1024
+        nbd-host=debian.nbd.vifib.net nbd-port=1024
 
 XXX Change in slaplib: allow to fetch instance params without changing anything. i.e we should do "slapos request myalreadyrequestedinstance" to fetch connection parameters without erasing previously defined instance parameters.
 
@@ -156,12 +156,12 @@ node register
 .. program-output:: python slapos help node register
 
 
-If login is not provided, asks for user's vifib account then password.
+If login is not provided, asks for user's SlapOS Master account then password.
 
 Node will register itself, if not already done, to the SlapOS Master defined in configuration file, and will generate SlapOS configuration file.
 
 XXX-Cedric should be like this: If desired node name is already taken, will raise an error.
-XXX-Cedric: --master-url-web url will disappear in REST API. Currently, "register" uses SlapOS master web URL to register computer, so it needs the web URL (like http://www.vifib.net)
+XXX-Cedric: --master-url-web url will disappear in REST API. Currently, "register" uses SlapOS master web URL to register computer, so it needs the web URL (like http://www.slapos.org)
 
 If Node is already registered (slapos.cfg and certificate already present), issues a warning, backups original configuration and creates new one.
 
@@ -187,11 +187,11 @@ Notes:
 
 Examples
 
-* Register computer named "mycomputer" to vifib::
+* Register computer named "mycomputer" to SlapOS Master::
 
     $ slapos node register mycomputer
 
-* Register computer named "mycomputer" to vifib using br0 as primary interface, tap0 as IPv6 interface and different local ipv4 subnet::
+* Register computer named "mycomputer" to SlapOS Master using br0 as primary interface, tap0 as IPv6 interface and different local ipv4 subnet::
 
     $ slapos node register mycomputer --interface-name br0 --ipv6-interface tap0 \
         --ipv4-local-network 11.0.0.0/16
@@ -203,7 +203,7 @@ Examples
 
 XXX-Cedric : To be implemented
 
-* Register computer named "mycomputer" to vifib, and ask to create tap interface to be able to host KVMs::
+* Register computer named "mycomputer" to SlapOS Master, and ask to create tap interface to be able to host KVMs::
 
     $ slapos node register mycomputer --create-tap
 
