@@ -55,7 +55,6 @@ setup(name=name,
                       # accessing templates
       entry_points={
         'console_scripts': [
-          # One entry point to control them all
           'slapos-watchdog = slapos.grid.watchdog:main',
           'slapproxy = slapos.cli_legacy.proxy_start:main',
           'slapos = slapos.cli.entry:main',
@@ -70,7 +69,9 @@ setup(name=name,
           'bang = slapos.cli_legacy.bang:main',
         ],
         'slapos.cli': [
+          # Utilities
           'cache lookup = slapos.cli.cache:CacheLookupCommand',
+          # SlapOS Node commands
           'node bang = slapos.cli.bang:BangCommand',
           'node format = slapos.cli.format:FormatCommand',
           'node register = slapos.cli.register:RegisterCommand',
@@ -84,6 +85,7 @@ setup(name=name,
           'node report = slapos.cli.slapgrid:ReportCommand',
           'node software = slapos.cli.slapgrid:SoftwareCommand',
           'node instance = slapos.cli.slapgrid:InstanceCommand',
+          # SlapOS client commands
           'console = slapos.cli.console:ConsoleCommand',
           'proxy start = slapos.cli.proxy_start:ProxyStartCommand',
           'proxy show = slapos.cli.proxy_show:ProxyShowCommand',
