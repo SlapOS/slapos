@@ -20,3 +20,8 @@ class SlapOSCloud(SavedTestSuite, ProjectTestSuite):
   _product_list = ['SlapOS']
   _saved_test_id = 'Products.SlapOS.tests.testSlapOSMixin.testSlapOSMixin'
   _bt_list = slapos_bt_list
+
+  def __init__(self, node_quantity, *args, **kw):
+    # hardcode number of node, to prevent concurrency issue on certificate
+    # authority file system storage
+    return SavedTestSuite.__init__(self, 1, *args, **kw)
