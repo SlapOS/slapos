@@ -223,7 +223,7 @@ class TestSlapOSDefaultScenario(TestSlapOSSecurityMixin):
       for partition in slap_computer._computer_partition_list:
         if partition._requested_state in ('started', 'stopped') \
               and partition._need_modification == 1:
-          instance_reference = partition._instance_guid
+          instance_reference = partition._instance_guid.encode('UTF-8')
           ip_list = partition._parameter_dict['ip_list']
           connection_xml = xml_marshaller.xml_marshaller.dumps(dict(
             url_1 = 'http://%s/' % ip_list[0][1],
