@@ -82,19 +82,19 @@ else:\n
       assert same_type(dict_data, {})\n
       result = "<?xml version=\'1.0\' encoding=\'utf-8\'?><instance>\\n"\n
       for key, value in dict_data.items():\n
-        result += """  <parameter id="%s">%s</parameter>\\n""" % (key, value)\n
+        result += """  <parameter id="%s">%s</parameter>\\n""" % (key.encode("UTF-8"), value.encode("UTF-8"))\n
       result += "</instance>"\n
       return result\n
 \n
     try:\n
       parameter_kw = {\n
-        \'software_release\': data_dict[\'software_release\'],\n
-        \'software_title\': data_dict[\'title\'],\n
-        \'software_type\': data_dict[\'software_type\'],\n
+        \'software_release\': data_dict[\'software_release\'].encode("UTF-8"),\n
+        \'software_title\': data_dict[\'title\'].encode("UTF-8"),\n
+        \'software_type\': data_dict[\'software_type\'].encode("UTF-8"),\n
         \'instance_xml\': dictToXml(data_dict[\'parameter\']),\n
         \'sla_xml\': dictToXml(data_dict[\'sla\']),\n
         \'shared\': data_dict[\'slave\'],\n
-        \'state\': data_dict[\'status\'],\n
+        \'state\': data_dict[\'status\'].encode("UTF-8"),\n
       }\n
     except KeyError:\n
       response.setStatus(400)\n

@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # Copyright (c) 2002-2013 Nexedi SA and Contributors. All Rights Reserved.
 import transaction
 from Products.SlapOS.tests.testSlapOSMixin import \
@@ -95,11 +96,11 @@ class TestSlapOSHypermediaPersonScenario(testSlapOSMixin):
        'Content-Type': request_link_dict['type'],
       },
       body=json.dumps({
-        'software_release': 'http://example.org',
-        'title': 'a great title',
-        'software_type': 'foo',
-        'parameter': {'param1': 'value1', 'param2': 'value2'},
-        'sla': {'param3': 'value3', 'param4': 'value4'},
+        'software_release': 'http://example.orgé',
+        'title': 'a great titleé',
+        'software_type': 'fooé',
+        'parameter': {'param1é': 'value1é', 'param2é': 'value2é'},
+        'sla': {'param3é': 'value3é', 'param4é': 'value4é'},
         'slave': False,
         'status': 'started',
       }),
