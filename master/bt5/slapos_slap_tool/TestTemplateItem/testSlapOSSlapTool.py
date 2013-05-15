@@ -279,7 +279,7 @@ class TestSlapOSSlapToolComputerAccess(TestSlapOSSlapToolMixin):
                   <string>slap_software_type</string>
                   <unicode>%(slave_1_software_type)s</unicode>
                   <string>slave_reference</string>
-                  <string>%(slave_1_instance_guid)s</string>
+                  <unicode>%(slave_1_instance_guid)s</unicode>
                   <string>slave_title</string>
                   <unicode>%(slave_1_title)s</unicode>
                 </dictionary>
@@ -785,7 +785,7 @@ class TestSlapOSSlapToolInstanceAccess(TestSlapOSSlapToolMixin):
                   <string>slap_software_type</string>
                   <unicode>%(slave_1_software_type)s</unicode>
                   <string>slave_reference</string>
-                  <string>%(slave_1_instance_guid)s</string>
+                  <unicode>%(slave_1_instance_guid)s</unicode>
                   <string>slave_title</string>
                   <unicode>%(slave_1_title)s</unicode>
                 </dictionary>
@@ -989,7 +989,7 @@ class TestSlapOSSlapToolInstanceAccess(TestSlapOSSlapToolMixin):
             <string>slap_software_type</string>
             <unicode>%(slave_1_software_type)s</unicode>
             <string>slave_reference</string>
-            <string>%(slave_1_instance_guid)s</string>
+            <unicode>%(slave_1_instance_guid)s</unicode>
             <string>slave_title</string>
             <unicode>%(slave_1_title)s</unicode>
           </dictionary>
@@ -1872,7 +1872,7 @@ class TestSlapOSSlapToolPersonAccess(TestSlapOSSlapToolMixin):
             <string>slap_software_type</string>
             <unicode>%(slave_1_software_type)s</unicode>
             <string>slave_reference</string>
-            <string>%(slave_1_instance_guid)s</string>
+            <unicode>%(slave_1_instance_guid)s</unicode>
             <string>slave_title</string>
             <unicode>%(slave_1_title)s</unicode>
           </dictionary>

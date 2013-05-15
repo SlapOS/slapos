@@ -1324,7 +1324,7 @@ class SlapTool(BaseTool):
             'slave_title': slave_instance.getTitle().decode("UTF-8"),
             'slap_software_type': \
                 slave_instance.getSourceReference().decode("UTF-8"),
-            'slave_reference': slave_instance.getReference(),
+            'slave_reference': slave_instance.getReference().decode("UTF-8"),
             'xml': slave_instance.getTextContent(),
             'connection_xml': slave_instance.getConnectionXml(),
           })
