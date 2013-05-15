@@ -143,7 +143,7 @@ class TestSlapOSCoreComputerSlapInterfaceWorkflow(testSlapOSMixin):
     self.assertNotEqual(None, self.computer.getDestinationReference())
     serial = '0x%x' % int(self.computer.getDestinationReference(), 16)
     self.assertTrue(serial in computer_certificate)
-    self.assertTrue(self.computer.getReference() in computer_certificate)
+    self.assertTrue(self.computer.getReference() in computer_certificate.decode('string_escape'))
 
   def test_generateCertificate_twice(self):
     self.login(self.computer.getReference())
@@ -155,7 +155,7 @@ class TestSlapOSCoreComputerSlapInterfaceWorkflow(testSlapOSMixin):
     self.assertNotEqual(None, self.computer.getDestinationReference())
     serial = '0x%x' % int(self.computer.getDestinationReference(), 16)
     self.assertTrue(serial in computer_certificate)
-    self.assertTrue(self.computer.getReference() in computer_certificate)
+    self.assertTrue(self.computer.getReference() in computer_certificate.decode('string_escape'))
 
     self.assertRaises(ValueError, self.computer.generateCertificate)
     self.assertEqual(None, self.portal.REQUEST.get('computer_key'))
@@ -344,7 +344,7 @@ class TestSlapOSCoreComputerSlapInterfaceWorkflow(testSlapOSMixin):
     self.assertNotEqual(None, self.computer.getDestinationReference())
     serial = '0x%x' % int(self.computer.getDestinationReference(), 16)
     self.assertTrue(serial in computer_certificate)
-    self.assertTrue(self.computer.getReference() in computer_certificate)
+    self.assertTrue(self.computer.getReference() in computer_certificate.decode('string_escape'))
 
     self.computer.revokeCertificate()
     self.assertEqual(None, self.portal.REQUEST.get('computer_key'))
@@ -369,7 +369,7 @@ class TestSlapOSCoreComputerSlapInterfaceWorkflow(testSlapOSMixin):
     self.assertNotEqual(None, self.computer.getDestinationReference())
     serial = '0x%x' % int(self.computer.getDestinationReference(), 16)
     self.assertTrue(serial in computer_certificate)
-    self.assertTrue(self.computer.getReference() in computer_certificate)
+    self.assertTrue(self.computer.getReference() in computer_certificate.decode('string_escape'))
 
     self.computer.revokeCertificate()
     self.assertEqual(None, self.portal.REQUEST.get('computer_key'))
