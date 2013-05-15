@@ -14,7 +14,7 @@ class TestSlapOSPersonDocument(testSlapOSMixin):
         portal_type="Person")
 
     # Default title is empty
-    self.assertEquals(person.getTitle(), None)
+    self.assertEquals(person.getTitle(), "")
 
     # If not title, the email is used
     person.edit(default_email_coordinate_text="foo@example.org")

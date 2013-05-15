@@ -48,6 +48,6 @@ class Person(ERP5Person):
     title = ERP5Person.getTitle(self, **kw)
     test_title = title.replace(' ', '')
     if test_title == '':
-      return self.getDefaultEmailCoordinateText()
+      return self.getDefaultEmailCoordinateText(test_title)
     else:
       return title
