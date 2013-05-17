@@ -1,0 +1,51 @@
+#!%(python_path)s
+# BEWARE: This file is operated by slapgrid
+# BEWARE: It will be overwritten automatically
+
+# Echo client program
+import os
+import socket
+import subprocess
+
+def getSocketStatus(host, port):
+  s = None
+  for res in socket.getaddrinfo(host, port,
+      socket.AF_UNSPEC, socket.SOCK_STREAM):
+    af, socktype, proto, canonname, sa = res
+    try:
+      s = socket.socket(af, socktype, proto)
+    except socket.error, msg:
+      s = None
+      continue
+    try:
+      s.connect(sa)
+    except socket.error, msg:
+      s.close()
+      s = None
+      continue
+    break
+  return s
+
+# create disk if doesn't exist
+disk_path = '%(disk_path)s'
+if not os.path.exists(disk_path):
+  subprocess.Popen(['%(qemu_img_path)s', 'create' ,'-f', 'qcow2',
+      disk_path, '%(disk_size)sG'])
+
+# Generate NAT rules
+nat_rules = ",".join("hostfwd=tcp:%(vnc_ip)s:%%s-:%%s" %% (port, port) for port in [25, 80, 110, 143, 443, 465, 587, 993, 995, 7071])
+
+kvm_argument_list = ['%(qemu_path)s',
+  '-enable-kvm', '-net', 'nic,macaddr=%(mac_address)s',
+  '-net', 'user,hostfwd=tcp:%(vnc_ip)s:2222-:22,%%s' %% nat_rules,
+  '-smp', '%(smp_count)s',
+  '-m', '%(ram_size)s',
+  '-drive', 'file=%(disk_path)s,if=%(disk_type)s',
+  #'-drive', 'file=%(boot_disk_path)s,if=%(disk_type)s',
+  '-vnc', '%(vnc_ip)s:1,ipv4,password',
+  '-boot', 'menu=on',
+  '-qmp', 'unix:%(socket_path)s,server',
+  '-pidfile', '%(pid_file_path)s',
+]
+
+os.execv('%(qemu_path)s', kvm_argument_list)

@@ -1,0 +1,76 @@
+#############################
+#
+# Deploy hello-world instance
+#
+#############################
+[buildout]
+parts =
+  directory
+  hello-world
+  publish-connection-parameter
+
+# Define egg directories to be the one from Software Release
+# (/opt/slapgrid/...)
+# Always the same.
+eggs-directory = ${buildout:eggs-directory}
+develop-eggs-directory = ${buildout:develop-eggs-directory}
+offline = true
+
+
+[instance-parameter]
+# Fetch arbitrary parameters defined by the user in SlapOS Master for his instance.
+# We use the slapconfiguration recipe with a few parameters (partition id,
+# computer id, certificate, etc).
+# It will then authenticate to SlapOS Master and fetch the instance parameters.
+# The parameters are accessible from $${instance-parameter:configuration.name-of-parameter}
+# Always the same. Just copy/paste.
+# See docstring of slapos.cookbook:slapconfiguration for more informations.
+recipe = slapos.cookbook:slapconfiguration
+computer = $${slap_connection:computer_id}
+partition = $${slap_connection:partition_id}
+url = $${slap_connection:server_url}
+key = $${slap_connection:key_file}
+cert = $${slap_connection:cert_file}
+
+# Define default parameter(s) that will be used later, in case user didn't
+# specify it.
+# All possible parameters should have a default.
+# In our use case, we are expecting from the user to specify one (optional) parameter: "name". We put the default value here if he doesn't specify it, so that it doesn't crash.
+configuration.name = John Doe
+# If our use case requires that the user can specify a mail address so that his instance can mail to him (for example), we can do:
+# configuration.mail-address =
+# If the user doesn't specify it, it won't break and the recipe can handle it (i.e don't send any mail for example).
+
+
+# Create all needed directories, depending on your needs
+[directory]
+recipe = slapos.cookbook:mkdirectory
+etc = $${buildout:directory}/etc
+# Executables put here will be started but not monitored (for startup scripts)
+script = $${:etc}/run/
+# Executables put here will be started and monitored (for daemons)
+service = $${:etc}/service
+# Executables put here will be launched after buildout has completed to see
+# if instance is running
+promise = $${:etc}/promise/
+
+
+# Create a simple shell script that will only output your name if you
+# specified it as instance parameter.
+# Usually, of course, we use more useful commands, like web servers.
+[hello-world]
+# This recipe will try to "exec" the command-line after separating parameters.
+recipe = slapos.cookbook:wrapper
+# Notice that there is only one $ at ${dash:location}, it is because it comes from the Software Release buildout profile.
+command-line = ${dash:location}/bin/dash -c 'echo "Hello $${instance-parameter:configuration.name}!"; sleep 100000;' 
+# Put this shell script in the "etc/service" directory. Every executable of this
+# repository will be started and monitored by supervisord
+wrapper-path = $${directory:service}/hello-world
+
+
+# Publish all the parameters needed for the user to connect to the instance.
+# It can be anything: URL(s), password(s), or arbitrary parameters.
+# Here we'll just echo back the entered name as instance parameter
+[publish-connection-parameter]
+recipe = slapos.cookbook:publish
+name = Hello $${instance-parameter:configuration.name}!

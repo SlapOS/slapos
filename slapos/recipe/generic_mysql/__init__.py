@@ -69,9 +69,16 @@ class Recipe(GenericBaseRecipe):
     mysql_script_list = []
 
     # user defined functions
+    mroonga = self.options.get('mroonga', 'ha_mroonga.so')
+    if mroonga:
+      last_insert_grn_id = "CREATE FUNCTION last_insert_grn_id RETURNS " \
+        "INTEGER SONAME '" + mroonga + "';"
+    else:
+      last_insert_grn_id = ""
     mysql_script_list.append(self.substituteTemplate(
       self.getTemplateFilename('mysql-init-function.sql.in'),
       {
+        'last_insert_grn_id': last_insert_grn_id,
       }
     ))
     # real database
@@ -119,14 +126,13 @@ class Recipe(GenericBaseRecipe):
     )
     path_list.append(mysql_update)
 
-    mysqld_binary = self.options['mysqld-binary']
     mysqld = self.createPythonScript(
       self.options['wrapper'],
       '%s.mysql.runMysql' % __name__,
       [dict(
         mysql_base_directory=self.options['mysql-base-directory'],
         mysql_install_binary=self.options['mysql-install-binary'],
-        mysqld_binary=mysqld_binary,
+        mysqld_binary=self.options['mysqld-binary'],
         data_directory=self.options['data-directory'],
         mysql_binary=mysql_binary,
         socket=socket,
@@ -134,6 +140,7 @@ class Recipe(GenericBaseRecipe):
        )]
     )
     path_list.append(mysqld)
+    environment = dict(PATH='%s' % self.options['bin-directory'])
     # TODO: move to a separate recipe (ack'ed by Cedric)
     if 'backup-script' in self.options:
       # backup configuration
@@ -144,7 +151,6 @@ class Recipe(GenericBaseRecipe):
           '--defaults-file=%s' % mysql_conf_file,
           '--socket=%s' % socket.strip(), '--user=root',
           '--ibbackup=%s'% self.options['xtrabackup-binary']]
-      environment = dict(PATH='%s' % self.options['bin-directory'])
       innobackupex_incremental = self.createPythonScript(self.options['innobackupex-incremental'], 'slapos.recipe.librecipe.execute.executee', [innobackupex_argument_list + ['--incremental'], environment])
       path_list.append(innobackupex_incremental)
       innobackupex_full = self.createPythonScript(self.options['innobackupex-full'], 'slapos.recipe.librecipe.execute.executee', [innobackupex_argument_list, environment])
@@ -204,3 +210,33 @@ class Recipe(GenericBaseRecipe):
       path_list.append(pt_exe)
 
     return path_list
+
+class WrapUpdateMySQL(GenericBaseRecipe):
+  def install(self):
+    return [
+      self.createPythonScript(
+        self.options['output'],
+        __name__ + '.mysql.updateMysql',
+        [{
+          'mysql_upgrade_binary': self.options['binary'],
+          'mysql_binary': self.options['mysql'],
+          'mysql_script_file': self.options['init-script'],
+        }]
+      ),
+    ]
+
+class WrapMySQLd(GenericBaseRecipe):
+  def install(self):
+    return [
+      self.createPythonScript(
+        self.options['output'],
+        __name__ + '.mysql.runMysql',
+        [{
+          'mysqld_binary': self.options['binary'],
+          'configuration_file': self.options['configuration-file'],
+          'data_directory': self.options['data-directory'],
+          'mysql_install_binary': self.options['mysql-install-binary'],
+          'mysql_base_directory': self.options['mysql-base-directory'],
+        }]
+      ),
+    ]

@@ -10,7 +10,6 @@ offline = true
 recipe = slapos.cookbook:softwaretype
 default = ${template-kvm:output}
 kvm = ${template-kvm:output}
-kvm+ = ${template-kvmplus:output}
 nbd = ${template-nbd:output}
 frontend = ${template-frontend:output}
 

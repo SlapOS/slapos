@@ -22,7 +22,7 @@ ServerTokens Prod
 
 # Log configuration
 ErrorLog "%(error_log)s"
-LogLevel warn
+LogLevel info
 LogFormat "%%h %%{REMOTE_USER}i %%{Host}i %%l %%u %%t \"%%r\" %%>s %%b \"%%{Referer}i\" \"%%{User-Agent}i\"" combined
 LogFormat "%%h %%{REMOTE_USER}i %%{Host}i %%l %%u %%t \"%%r\" %%>s %%b" common
 CustomLog "%(access_log)s" common
@@ -60,8 +60,8 @@ BrowserMatch "RealPlayer 4\.0" force-response-1.0
 BrowserMatch "Java/1\.0" force-response-1.0
 BrowserMatch "JDK/1\.0" force-response-1.0
 # The following directive disables redirects on non-GET requests for
-# a directory that does not include the trailing slash.  This fixes a 
-# problem with Microsoft WebFolders which does not appropriately handle 
+# a directory that does not include the trailing slash.  This fixes a
+# problem with Microsoft WebFolders which does not appropriately handle
 # redirects for folders with DAV methods.
 # Same deal with Apple's DAV filesystem and Gnome VFS support for DAV.
 BrowserMatch "Microsoft Data Access Internet Publishing Provider" redirect-carefully
@@ -84,7 +84,7 @@ MCacheRemovalAlgorithm LRU
 AddOutputFilterByType DEFLATE text/html text/plain text/xml text/css text/javascript application/x-javascript application/javascript
 BrowserMatch ^Mozilla/4 gzip-only-text/html
 BrowserMatch ^Mozilla/4\.0[678] no-gzip
-BrowserMatch \bMSIE !no-gzip !gzip-only-text/html 
+BrowserMatch \bMSIE !no-gzip !gzip-only-text/html
 # Make sure proxies don't deliver the wrong content
 Header append Vary User-Agent
 
@@ -104,10 +104,12 @@ Header append Vary User-Agent
   # or changed when slapgrid is ran. It can be freely customized by node admin.
   Include %(custom_apache_virtualhost_conf)s
 
-  # Define the two RewriteMaps (key -> value store): one for Zope, one generic
+  # Define the 3 RewriteMaps (key -> value store): one for Zope, one generic,
+  # one generic https only,
   # containing: rewritten URL -> original URL (a.k.a VirtualHostBase in Zope)
   RewriteMap apachemapzope txt:%(apachemapzope_path)s
   RewriteMap apachemapgeneric txt:%(apachemap_path)s
+  RewriteMap apachemapgenerichttpsonly txt:%(apachemap_httpsonly_path)s
 
   # Define another RewriteMap for Zope, containing:
   # rewritten URL -> VirtualHostRoot
@@ -123,20 +125,32 @@ Header append Vary User-Agent
   RewriteCond ${apachemapgeneric:%%{SERVER_NAME}} >""
   # We suppose that Apache listens to 443 (even indirectly thanks to things like iptables)
   RewriteRule ^/(.*)$ ${apachemapgeneric:%%{SERVER_NAME}}/$1 [L,P]
+  # Same for https only server
+  RewriteCond ${apachemapgenerichttpsonly:%%{SERVER_NAME}} >""
+  # We suppose that Apache listens to 443 (even indirectly thanks to things like iptables)
+  RewriteRule ^/(.*)$ ${apachemapgenerichttpsonly:%%{SERVER_NAME}}/$1 [L,P]
 
   # If nothing exist : put a nice error
   ErrorDocument 404 /notfound.html
 </VirtualHost>
 
+
+# Only accept generic (i.e not Zope) backends on http
 <VirtualHost *:%(plain_http_port)s>
-  RewriteEngine On
+  SSLProxyEngine on
+  # Rewrite part
+  ProxyVia On
   ProxyPreserveHost On
+  ProxyTimeout 600
+  RewriteEngine On
+
+  # Remove "Secure" from cookies, as backend may be https
+  Header edit Set-Cookie "(?i)^(.+);secure$" "$1"
 
   # Include configuration file not operated by slapos. This file won't be erased
   # or changed when slapgrid is ran. It can be freely customized by node admin.
   Include %(custom_apache_virtualhost_conf)s
 
-  # We accept generic (i.e not lamp) backends on http
   RewriteMap apachemapgeneric txt:%(apachemap_path)s
   RewriteCond ${apachemapgeneric:%%{SERVER_NAME}} >""
   RewriteRule ^/(.*)$ ${apachemapgeneric:%%{SERVER_NAME}}/$1 [L,P]
@@ -146,6 +160,7 @@ Header append Vary User-Agent
   # on standard port (443).
   RewriteRule ^/(.*)$ https://%%{SERVER_NAME}%%{REQUEST_URI}
 </VirtualHost>
+
 
 # Include configuration file not operated by slapos. This file won't be erased
 # or changed when slapgrid is ran. It can be freely customized by node admin.

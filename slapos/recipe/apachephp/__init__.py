@@ -124,7 +124,15 @@ class Recipe(GenericBaseRecipe):
                               mysql_ip=self.options['mysql-host'],
                               mysql_port=self.options['mysql-port'],
                               secret_key=secret_key,
+                              ip='[%s]' % self.options['ip'],
+                              port=self.options['port'],
+                              # XXX-Cedric: add frontend url.
                              )
+      # Allow to give custom parameters to template
+      application_parameter_prefix = 'application-'
+      for key in self.options.keys():
+        if key.startswith(application_parameter_prefix):
+          application_conf[key.lstrip(application_parameter_prefix)] = self.options[key]
 
       directory, file_ = os.path.split(self.options['configuration'])
 

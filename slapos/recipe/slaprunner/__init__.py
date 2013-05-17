@@ -38,7 +38,7 @@ class Recipe(GenericBaseRecipe):
     self.software_directory = options['software-directory'].strip()
     self.instance_directory = options['instance-directory'].strip()
     self.partition_amount = options['partition-amount'].strip()
-    self.cloud9_url = options['cloud9-url'].strip()
+    self.cloud9_url = options.get('cloud9-url', '').strip()
     self.log_file = os.path.join(options['log_dir'].strip(), 'slaprunner.log')
     # Set slaprunner access URL
     options['access-url'] = 'http://[%s]:%s' % (self.ipv6, self.runner_port)
@@ -109,7 +109,7 @@ class Test(GenericBaseRecipe):
     self.software_directory = options['software-directory'].strip()
     self.instance_directory = options['instance-directory'].strip()
     self.partition_amount = options['partition-amount'].strip()
-    self.cloud9_url = options['cloud9-url'].strip()
+    self.cloud9_url = options.get('cloud9-url', '').strip()
     # Set slaprunner access URL
     options['access-url'] = 'http://[%s]:%s' % (self.ipv6, self.runner_port)
 

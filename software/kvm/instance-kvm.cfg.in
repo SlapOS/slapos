@@ -6,8 +6,7 @@
 [buildout]
 parts =
   certificate-authority
-  publish-kvm-backend-connection-information
-  publish-kvm-frontend-connection-information
+  publish-kvm-connection-information
   kvm-promise
   websockify-sighandler
   novnc-promise
@@ -37,7 +36,7 @@ storage-path = $${directory:srv}/mac
 [gen-passwd]
 recipe = slapos.cookbook:generate.password
 storage-path = $${directory:srv}/passwd
-bytes = 4
+bytes = 8
 
 [kvm-instance]
 # XXX-Cedric: change "KVM" recipe to simple "create wrappers". No need for this
@@ -136,7 +135,7 @@ key-file = $${slap-connection:key-file}
 cert-file = $${slap-connection:cert-file}
 computer-id = $${slap-connection:computer-id}
 partition-id = $${slap-connection:partition-id}
-name = SlaveFrontend
+name = VNC Frontend
 software-type = $${slap-parameter:frontend-software-type}
 slave = true
 config = host port
@@ -146,25 +145,23 @@ return = url resource port domainname
 sla = instance_guid
 sla-instance_guid = $${slap-parameter:frontend-instance-guid}
 
-[publish-kvm-backend-connection-information]
+
+[publish-kvm-connection-information]
 recipe = slapos.cookbook:publish
 backend-url = https://[$${novnc-instance:ip}]:$${novnc-instance:port}/vnc_auto.html?host=[$${novnc-instance:ip}]&port=$${novnc-instance:port}&encrypt=1
 password = $${kvm-instance:passwd}
-
-[publish-kvm-frontend-connection-information]
-<= publish-kvm-backend-connection-information
 url = $${request-slave-frontend:connection-url}/vnc_auto.html?host=$${request-slave-frontend:connection-domainname}&port=$${request-slave-frontend:connection-port}&encrypt=1&path=$${request-slave-frontend:connection-resource}
+
 
 [frontend-promise]
 recipe = slapos.cookbook:check_url_available
 path = $${directory:promises}/frontend_promise
-url = $${publish-kvm-frontend-connection-information:url}
+url = $${publish-kvm-connection-information:url}
 dash_path = ${dash:location}/bin/dash
 curl_path = ${curl:location}/bin/curl
 
 [slap-parameter]
 # Default values if not specified
-frontend-instance-guid = SOFTINST-11031
 frontend-software-type = frontend
 frontend-software-url = http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.92:/software/kvm/software.cfg
 

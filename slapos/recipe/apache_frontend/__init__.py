@@ -36,6 +36,7 @@ import ConfigParser
 import re
 import traceback
 
+TRUE_VALUES = ['y', 'yes', '1', 'true']
 
 class Recipe(BaseSlapRecipe):
 
@@ -65,13 +66,13 @@ class Recipe(BaseSlapRecipe):
 
     # self.cron_d is a directory, where cron jobs can be registered
     self.cron_d = self.installCrond()
-    self.logrotate_d, self.logrotate_backup = self.installLogrotate()
     self.killpidfromfile = zc.buildout.easy_install.scripts(
-        [('killpidfromfile', 'slapos.recipe.erp5.killpidfromfile',
+        [('killpidfromfile', 'slapos.toolbox.killpidfromfile',
           'killpidfromfile')], self.ws, sys.executable, self.bin_directory)[0]
     self.path_list.append(self.killpidfromfile)
 
     rewrite_rule_list = []
+    rewrite_rule_https_only_list = []
     rewrite_rule_zope_list = []
     rewrite_rule_zope_path_list = []
     slave_dict = {}
@@ -85,11 +86,19 @@ class Recipe(BaseSlapRecipe):
     domain_dict = {}
 
     for slave_instance in slave_instance_list:
+      # Sanitize inputs
       backend_url = slave_instance.get("url", None)
       reference = slave_instance.get("slave_reference")
+      enable_cache = slave_instance.get('enable_cache', '').lower() in TRUE_VALUES
+      slave_type = slave_instance.get('type', '').lower() or None
+
+      https_only = slave_instance.get('https-only', '').lower() in TRUE_VALUES
+
       # Set scheme (http? https?)
-      # Future work may allow to choose between http and https (or both?)
-      scheme = 'http://'
+      if https_only:
+        scheme = 'https://'
+      else:
+        scheme = 'http://'
 
       self.logger.info('Processing slave instance: %s' % reference)
 
@@ -120,27 +129,36 @@ class Recipe(BaseSlapRecipe):
       slave_dict[reference] = "%s%s/" % (scheme, domain)
 
       # Check if we want varnish+stunnel cache.
-      if slave_instance.get("enable_cache", "").upper() in ('1', 'TRUE'):
-        # XXX-Cedric : need to refactor to clean code? (to many variables)
-        rewrite_rule = self.configureVarnishSlave(
-            base_varnish_port, backend_url, reference, service_dict, domain)
-        base_varnish_port += 2
-      else:
-        rewrite_rule = "%s %s" % (domain, backend_url)
+      #if enable_cache:
+      #  # XXX-Cedric : need to refactor to clean code? (to many variables)
+      #  rewrite_rule = self.configureVarnishSlave(
+      #      base_varnish_port, backend_url, reference, service_dict, domain)
+      #  base_varnish_port += 2
+      #else:
+      #  rewrite_rule = "%s %s" % (domain, backend_url)
+      # Temporary forbid activation of cache until it is properly tested
+      rewrite_rule = "%s %s" % (domain, backend_url)
 
       # Finally, if successful, we add the rewrite rule to our list of rules
+      # We have 4 RewriteMaps:
+      #  - One for generic (non-zope) websites, accepting both HTTP and HTTPS
+      #  - One for generic websites that only accept HTTPS
+      #  - Two for Zope-based websites
       if rewrite_rule:
         # We check if we have a zope slave. It requires different rewrite
         # rule structure.
         # So we will have one RewriteMap for normal websites, and one
         # RewriteMap for Zope Virtual Host Monster websites.
-        if slave_instance.get("type", "").lower() in ['zope']:
+        if slave_type in ['zope']:
           rewrite_rule_zope_list.append(rewrite_rule)
           # For Zope, we have another dict containing the path e.g '/erp5/...
           rewrite_rule_path = "%s %s" % (domain, slave_instance.get('path', ''))
           rewrite_rule_zope_path_list.append(rewrite_rule_path)
         else:
-          rewrite_rule_list.append(rewrite_rule)
+          if https_only:
+            rewrite_rule_https_only_list.append(rewrite_rule)
+          else:
+            rewrite_rule_list.append(rewrite_rule)
 
     # Certificate stuff
     valid_certificate_str = self.parameter_dict.get("domain_ssl_ca_cert")
@@ -172,6 +190,7 @@ class Recipe(BaseSlapRecipe):
         plain_http_port=frontend_plain_http_port_number,
         name=frontend_domain_name,
         rewrite_rule_list=rewrite_rule_list,
+        rewrite_rule_https_only_list=rewrite_rule_https_only_list,
         rewrite_rule_zope_list=rewrite_rule_zope_list,
         rewrite_rule_zope_path_list=rewrite_rule_zope_path_list,
         key=key, certificate=certificate)
@@ -264,29 +283,6 @@ class Recipe(BaseSlapRecipe):
         private_port=slave_port)
     return "%s http://%s:%s" % \
         (domain, varnish_ip, base_varnish_port)
-
-  def installLogrotate(self):
-    """Installs logortate main configuration file and registers its to cron"""
-    logrotate_d = os.path.abspath(os.path.join(self.etc_directory,
-      'logrotate.d'))
-    self._createDirectory(logrotate_d)
-    logrotate_backup = self.createBackupDirectory('logrotate')
-    logrotate_conf = self.createConfigurationFile("logrotate.conf",
-        "include %s" % logrotate_d)
-    logrotate_cron = os.path.join(self.cron_d, 'logrotate')
-    state_file = os.path.join(self.data_root_directory, 'logrotate.status')
-    open(logrotate_cron, 'w').write('0 0 * * * %s -s %s %s' %
-        (self.options['logrotate_binary'], state_file, logrotate_conf))
-    self.path_list.extend([logrotate_d, logrotate_conf, logrotate_cron])
-    return logrotate_d, logrotate_backup
-
-  def registerLogRotation(self, name, log_file_list, postrotate_script):
-    """Register new log rotation requirement"""
-    open(os.path.join(self.logrotate_d, name), 'w').write(
-        self.substituteTemplate(self.getTemplateFilename(
-          'logrotate_entry.in'),
-          dict(file_list=' '.join(['"'+q+'"' for q in log_file_list]),
-            postrotate=postrotate_script, olddir=self.logrotate_backup)))
 
   def requestCertificate(self, name):
     hash = hashlib.sha512(name).hexdigest()
@@ -404,8 +400,7 @@ class Recipe(BaseSlapRecipe):
   def _getApacheConfigurationDict(self, name, ip_list, port):
     apache_conf = dict()
     apache_conf['server_name'] = name
-    apache_conf['pid_file'] = os.path.join(self.run_directory,
-        name + '.pid')
+    apache_conf['pid_file'] = self.options['pid-file']
     apache_conf['lock_file'] = os.path.join(self.run_directory,
         name + '.lock')
     apache_conf['document_root'] = os.path.join(self.data_root_directory,
@@ -415,13 +410,8 @@ class Recipe(BaseSlapRecipe):
     apache_conf['ip_list'] = ip_list
     apache_conf['port'] = port
     apache_conf['server_admin'] = 'admin@'
-    apache_conf['error_log'] = os.path.join(self.log_directory,
-        'frontend-apache-error.log')
-    apache_conf['access_log'] = os.path.join(self.log_directory,
-        'frontend-apache-access.log')
-    self.registerLogRotation(name, [apache_conf['error_log'],
-      apache_conf['access_log']], self.killpidfromfile + ' ' +
-      apache_conf['pid_file'] + ' SIGUSR1')
+    apache_conf['error_log'] = self.options['error-log']
+    apache_conf['access_log'] = self.options['access-log']
     return apache_conf
 
   def installVarnishCache(self, name, ip, port, control_port, backend_host,
@@ -503,10 +493,13 @@ class Recipe(BaseSlapRecipe):
                             port=4443, plain_http_port=8080,
                             rewrite_rule_list=None,
                             rewrite_rule_zope_list=None,
+                            rewrite_rule_https_only_list=None,
                             rewrite_rule_zope_path_list=None,
                             access_control_string=None):
     if rewrite_rule_list is None:
       rewrite_rule_list = []
+    if rewrite_rule_https_only_list is None:
+      rewrite_rule_zope_path_list = []
     if rewrite_rule_zope_list is None:
       rewrite_rule_zope_list = []
     if rewrite_rule_zope_path_list is None:
@@ -529,7 +522,7 @@ class Recipe(BaseSlapRecipe):
     self._createDirectory(mod_ssl_cache_location)
 
     # Create "custom" apache configuration files if it does not exist.
-    # Note : Those files won't be erased or changed when slapgrid is ran.
+    # Note : Those files won't be erased or changed by slapgrid.
     # It can be freely customized by node admin.
     custom_apache_configuration_directory = os.path.join(
         self.data_root_directory, 'apache-conf.d')
@@ -537,12 +530,14 @@ class Recipe(BaseSlapRecipe):
     # First one is included in the end of the apache configuration file
     custom_apache_configuration_file_location = os.path.join(
         custom_apache_configuration_directory, 'apache_frontend.custom.conf')
-    open(custom_apache_configuration_file_location, 'a')
+    if not os.path.exists(custom_apache_configuration_file_location):
+      open(custom_apache_configuration_file_location, 'w')
     # Second one is included in the virtualhost of apache configuration file
     custom_apache_virtual_configuration_file_location = os.path.join(
         custom_apache_configuration_directory,
         'apache_frontend.virtualhost.custom.conf')
-    open(custom_apache_virtual_configuration_file_location, 'a')
+    if not os.path.exists(custom_apache_virtual_configuration_file_location):
+      open(custom_apache_virtual_configuration_file_location, 'w')
 
     # Create backup of custom apache configuration
     backup_path = self.createBackupDirectory('custom_apache_conf_backup')
@@ -555,15 +550,22 @@ class Recipe(BaseSlapRecipe):
     self.path_list.append(backup_cron)
 
     # Create configuration file and rewritemaps
-    apachemap_name = "apachemap.txt"
-    apachemapzope_name = "apachemapzope.txt"
-    apachemapzopepath_name = "apachemapzopepath.txt"
-
-    self.createConfigurationFile(apachemap_name, "\n".join(rewrite_rule_list))
-    self.createConfigurationFile(apachemapzope_name,
-        "\n".join(rewrite_rule_zope_list))
-    self.createConfigurationFile(apachemapzopepath_name,
-        "\n".join(rewrite_rule_zope_path_list))
+    apachemap_path = self.createConfigurationFile(
+        "apache_rewritemap_generic.txt",
+        "\n".join(rewrite_rule_list)
+    )
+    apachemap_httpsonly_path = self.createConfigurationFile(
+        "apache_rewritemap_httpsonly.txt",
+        "\n".join(rewrite_rule_https_only_list)
+    )
+    apachemap_zope_path = self.createConfigurationFile(
+        "apache_rewritemap_zope.txt",
+        "\n".join(rewrite_rule_zope_list)
+    )
+    apachemap_zopepath_path = self.createConfigurationFile(
+        "apache_rewritemap_zopepath.txt",
+        "\n".join(rewrite_rule_zope_path_list)
+    )
 
     apache_conf = self._getApacheConfigurationDict(name, ip_list, port)
     apache_conf['ssl_snippet'] = self.substituteTemplate(
@@ -590,9 +592,10 @@ class Recipe(BaseSlapRecipe):
 
     apache_conf.update(**dict(
       path_enable=path,
-      apachemap_path=os.path.join(self.etc_directory, apachemap_name),
-      apachemapzope_path=os.path.join(self.etc_directory, apachemapzope_name),
-      apachemapzopepath_path=os.path.join(self.etc_directory, apachemapzopepath_name),
+      apachemap_path=apachemap_path,
+      apachemap_httpsonly_path=apachemap_httpsonly_path,
+      apachemapzope_path=apachemap_zope_path,
+      apachemapzopepath_path=apachemap_zopepath_path,
       apache_domain=name,
       https_port=port,
       plain_http_port=plain_http_port,

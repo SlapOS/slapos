@@ -1,6 +1,76 @@
 Changes
 =======
 
+0.78.0 (2013-04-28)
+-------------------
+
+ * LAMP stack: Allow to give application-dependent parameters to application configuration file. [Cedric de Saint Martin]
+ * zabbix-agent: Allow user to pass zabbix parameter. [Cedric de Saint Martin]
+ * kvm frontend: listen to ipv6 and ipv4. [Jean-Baptiste Petre]
+
+0.77.1 (2013-04-18)
+-------------------
+
+ * Re-release of 0.77.0.
+
+0.77.0 (2013-04-18)
+-------------------
+
+ * Allow to pass extra parameters when creating simple wrapper. [Sebastien Robin]
+ * Apache frontend: Append all rewrite module options to http as well. [Cedric de Saint Martin]
+ * Apache frontend: Add https-only support. [Cedric de Saint Martin]
+ * Apache frontend: make logrotate work by using "generic" component. [Cedric de Saint Martin]
+
+0.76.0 (2013-04-03)
+-------------------
+
+ * Add 'generic' phpconfigure recipe, allowing to configure any PHP-based app. [Cedric de Saint Martin]
+ * apache_frontend: Have more useful access_log in apache frontend. [Cedric de Saint Martin]
+ * apache_frontend: Add "SSLProxyEngine On" to http apache frontend vhost to be able to proxy https -> http. [Cedric de Saint Martin]
+ * Add first preliminary version of nginx-based reverse proxy. [Cedric de Saint Martin]
+ * Request-optional is not verbose anymore (again) if it failed. [Cedric de Saint Martin]
+ * Add possibility to fetch web ip and port from apache recipe. [Cedric de Saint Martin]
+
+0.75.0 (2013-03-26)
+-------------------
+
+ * Add backward compatibility about Partition.getInstanceGuid() in request.py. [Cedric de Saint Martin]
+ * request.py: Don't crash if resource is not ready. [Cedric de Saint Martin]
+ * Use memory-based kumofs instead of memcached to have no limitation for key length and data size. [Kazuhiko Shiozaki]
+ * Postgres: allow slapuser# to connect as postgres user. [Marco Mariani]
+ * apache_frontend: Sanitize inputs, disable Varnish cache, don't touch to custom file if already present. [Cedric de Saint Martin]
+ * Resiliency: simpler, more robust PBS recipe and promise. [Marco Mariani]
+ * Add helper method to set "location" parameter in librecipe. [Cedric de Saint Martin]
+ * Add download helper function in librecipe. [Cedric de Saint Martin]
+ * Update wrapper recipe to make it simpler and more dev-friendly. [Cedric de Saint Martin]
+ * Add configurationfile recipe. [Cedric de Saint Martin]
+ * Add request-edge recipe. [Cedric de Saint Martin]
+ * Add publishsection recipe. [Cedric de Saint Martin]
+ * Add match support for promise check_page_content. [Cedric de Saint Martin]
+
+0.74.0 (2013-03-05)
+-------------------
+
+ * Generate mysql password randomly in LAMP stack. [Alain Takoudjou]
+ * Add support for apache and haproxy to have more than one listening port. [Vincent Pelletier]
+ * Use a more consistent parameter naming in 6tunnel recipe. [Vincent Pelletier]
+ * Provide an SR-transparent way to (de)serialise master data. [Vincent Pelletier]
+ * Initial version of neoppod recipe. [Vincent Pelletier]
+ * Initial version of clusterized erp5 recipes. [Vincent Pelletier]
+ * General cleanup of the request recipe (simpler parsing, less calls to master). [Vincent Pelletier, Cedric de Saint Martin]
+
+0.73.1 (2013-02-19)
+-------------------
+
+ * softwaretype recipe: all falsy parameter values are now ignored. [Cedric de Saint Martin]
+
+0.73.0 (2013-02-18)
+-------------------
+
+ * Add mioga and apacheperl recipes. [Viktor Horvath]
+ * request.py: Properly fetch instance_guid of instance. [Cedric de Saint Martin]
+ * request.py: Only append SLA parameter to the list if the key actually exists and is not empty string. [Cedric de Saint Martin]
+
 0.72.0 (2013-02-11)
 -------------------
 
@@ -109,13 +179,13 @@ Changes
     [Antoine Catton]
 
 0.64 (2012-08-27)
-----------------
+-----------------
 
   * Fix: remove "template" recipe which was collinding with slapos.recipe.template.
     [Antoine Catton]
 
 0.63 (2012-08-22)
-----------------
+-----------------
 
   * Add the ability to run command line in shellinabox. [Antoine Catton]
   * Add the ability to run shellinabox as root. (for LXC purpose) [Antoine Catton]
@@ -173,7 +243,7 @@ Changes
   * Add slapmonitor and slapreport recipes. [Mohamadou Mbengue]
 
 0.54.1 (2012-06-18)
------------------
+-------------------
 
   * Fix 0.54 release containing wrong code in request.py.
 
@@ -290,7 +360,7 @@ Changes
    [Cedric de Saint Martin]
 
 0.40.1 (2012-03-01)
------------------
+-------------------
 
  * Fix manifest to include files needed for apache. [Cedric de Saint Martin]
 
@@ -352,7 +422,7 @@ Changes
 -----------------
 
   * LAMP : Recipe can now call lampconfigure from slapos.toolbox which will
-   configure PHP application instance when needed. [Alain Takoudjou Kamdem]
+    configure PHP application instance when needed. [Alain Takoudjou Kamdem]
 
 0.31 (2011-10-16)
 -----------------
@@ -488,7 +558,7 @@ Changes
 -----------------
 
  * Add PHPMyAdmin software release used in SlapOS tutorials
- [Cedric de Saint Martin]
+   [Cedric de Saint Martin]
  * Add slaprunner software release [Cedric de Saint Martin]
 
 

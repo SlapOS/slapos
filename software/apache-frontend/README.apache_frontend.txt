@@ -43,6 +43,25 @@ all slave instances.
 Finally, the slave instance will be accessible from:
 https://someidentifier.moulefrite.org.
 
+
+How to have custom configuration in frontend server
+===================================================
+
+In your instance directory, you, as sysadmin, can directly edit two
+configuration files that won't be overwritten by SlapOS to customize your
+instance:
+
+ * $PARTITION_PATH/srv/srv/apache-conf.d/apache_frontend.custom.conf
+ * $PARTITION_PATH/srv/srv/apache-conf.d/apache_frontend.virtualhost.custom.conf
+
+The first one is included in the end of the main apache configuration file.
+The second one is included in the virtualhost of the main apache configuration file.
+
+SlapOS will jsut create those two files for you, then completely forget them.
+
+Note: make sure that the UNIX user of the instance has read access to those
+files if you edit them.
+
 Instance Parameters
 ===================
 
@@ -64,6 +83,7 @@ port
 Port used by Apache. Optional parameter, defaults to 4443.
 
 plain_http_port
+~~~~~~~~~~~~~~~
 Port used by apache to serve plain http (only used to redirect to https).
 Optional parameter, defaults to 8080.
 
@@ -97,6 +117,13 @@ Domain name to use as frontend. The frontend will be accessible from this domain
 "custom_domain" is an optional parameter. Defaults to
 [instancereference].[masterdomain].
 Example: www.mycustomdomain.com
+
+https-only
+~~~~~~~~~~
+Specify if website should be accessed using https only. If so, the frontend
+will redirect the user to https if accessed from http.
+Possible values: "true", "false".
+This is an optional parameter. Defaults to false.
 
 path
 ~~~~
@@ -173,7 +200,12 @@ Notes
 =====
 
 It is not possible with slapos to listen to port <= 1024, because process are
-not run as root. It is a good idea then to go on the node where the instance is
+not run as root.
+
+Solution 1 (IPv4 only)
+----------------------
+
+It is a good idea then to go on the node where the instance is
 and set some iptables rules like (if using default ports)::
 
   iptables -t nat -A PREROUTING -p tcp -d {public_ipv4} --dport 443 -j DNAT --to-destination {listening_ipv4}:4443
@@ -181,3 +213,12 @@ and set some iptables rules like (if using default ports)::
 
 Where {public ip} is the public IP of your server, or at least the LAN IP to where your NAT will forward to.
 {listening ip} is the private ipv4 (like 10.0.34.123) that the instance is using and sending as connection parameter.
+
+Solution 2 (IPv6 only)
+----------------------
+
+It is also possible to directly allow the service to listen on 80 and 443 ports using the following command:
+
+  setcap 'cap_net_bind_service=+ep' /opt/slapgrid/$APACHE_FRONTEND_SOFTWARE_RELEASE_MD5/parts/apache-2.2/bin/httpd
+
+Then specify in the instance parameters "port" and "plain_http_port" to be 443 and 80, respectively.

@@ -1,6 +1,7 @@
-# This file is responsible of two things:
+# This file is responsible of three things:
 # 1/ Act as "Apache exporter"
 # 2/ Act as "Mariadb backup infrastructure requester"
+# 3/ Act as "Apache" instance
 
 {% import 'parts' as parts %}
 {% import 'replicated' as replicated %}
@@ -9,27 +10,49 @@
 extends = {{templateapache}}
           {{templatepbsreadyexport}}
 
-
 parts +=
     {{ parts.replicate("mariadb", "3") }}
-# have to repeat the next one, as it's not inherited from pbsready-export
-    cron-entry-backup
+
+# Repeating parts from instance-apache-php.
+# XXX-Cedric: how to simplify this?
+    certificate-authority
+    ca-stunnel
+    logrotate
+    logrotate-entry-apache
+    logrotate-entry-stunnel
+    cron
+    cron-entry-logrotate
+    promise
+    frontend-promise
+    content-promise
+    publish-connection-informations
 
 {{ replicated.replicate("mariadb", "3", "mariadb-export", "mariadb-import") }}
 
-# Nothing to do for the exporter. Just dummy part that does nothing.
-# For httpd instance, PBS will directly pull data from srv/www.
+# Nothing to do for the exporter. This wrapper is intended
+# to produce the "dump" files that have to be backed up.
+# So, in case of binary DB data, we would back up the ASCII dump
+# files, or a similar data format that can be restored on any machine
+# (i.e. postgres 'custom')
+# In the case of an httpd instance, the src/www directory can be directly
+# pulled from the PBS, we don't need to prepare anything.
 [exporter]
-wrapper = /usr/bin/true
+wrapper = /bin/true
 
 # State that we want to backup srv/www directory, not srv/backup.
+# XXX-Cedric: works well, but doesn't work with big data.
 [rdiff-backup-server]
 path = ${directory:www}
 
-# XXX-Cedric: resilient uses "urls" part to publish, but apache doesn't.
-[urls]
-<= publish-connection-informations
+# Add "exporter" parameters to list of published connection parameters
+[publish-connection-informations]
+# XXX-Cedric: Long term goal: could be a recipe that requests an instance and
+# bubbles ALL
+# parameters of the requested instance. Requirement: aggregated publish.
+<= resilient-publish-connection-parameter
 
 # XXX-Cedric: resilient overwrites what's returned from request-mariadb
+# XXX-Cedric: change the request method to return everything from
+#             getConnectionParameterDict()
 [request-mariadb]
 return = ssh-public-key ssh-url notification-id ip url

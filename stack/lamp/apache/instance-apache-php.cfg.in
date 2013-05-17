@@ -1,4 +1,5 @@
 [buildout]
+extends = ${custom-application-deployment:path}
 
 parts =
   certificate-authority
@@ -9,12 +10,12 @@ parts =
   cron
   cron-entry-logrotate
   promise
-  slapmonitor
-  slapmonitor-xml
 
   frontend-promise
   content-promise
   publish-connection-informations
+  ${custom-application-deployment:part-list}
+
 
 eggs-directory = ${buildout:eggs-directory}
 develop-eggs-directory = ${buildout:develop-eggs-directory}
@@ -37,6 +38,7 @@ tmp = $${buildout:directory}/tmp
 recipe = slapos.cookbook:mkdirectory
 log = $${rootdirectory:var}/log
 services = $${rootdirectory:etc}/service
+scripts = $${rootdirectory:etc}/run
 run = $${rootdirectory:var}/run
 backup = $${rootdirectory:srv}/backup
 promises = $${rootdirectory:etc}/promise
@@ -121,7 +123,7 @@ stunnel-binary = ${stunnel:location}/bin/stunnel
 remote-host = $${mariadb-urlparse:host}
 remote-port = $${mariadb-urlparse:port}
 local-host = $${slap-network-information:local-ipv4}
-local-port = 33060
+local-port = 3306
 log-file = $${basedirectory:log}/stunnel.log
 config-file = $${directory:stunnel-conf}/stunnel.conf
 key-file = $${directory:stunnel-conf}/stunnel.key
@@ -185,6 +187,15 @@ recipe = slapos.cookbook:urlparse
 url = $${request-mariadb:connection-url}
 
 
+
+#----------------
+#--
+#-- Common network parameters
+[apache-network-configuration]
+listening-ip = $${slap-network-information:global-ipv6}
+listening-port = 8080
+
+
 #----------------
 #--
 #-- Deploy Apache + PHP application.
@@ -198,8 +209,8 @@ configuration = ${application-configuration:location}
 htdocs = $${directory:www}
 pid-file = $${basedirectory:run}/apache.pid
 lock-file = $${basedirectory:run}/apache.lock
-ip = $${slap-network-information:global-ipv6}
-port = 8080
+ip = $${apache-network-configuration:listening-ip}
+port = $${apache-network-configuration:listening-port}
 url = http://[$${:ip}]:$${:port}/
 error-log = $${directory:httpd-log}/error.log
 access-log = $${directory:httpd-log}/access.log
@@ -240,7 +251,7 @@ name = Frontend
 software-url = http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg
 slave = true
 config = url custom_domain
-config-url = http://[$${apache-php:ip}]:$${apache-php:port}/
+config-url = http://[$${apache-network-configuration:listening-ip}]:$${apache-network-configuration:listening-port}/
 return = site_url
 config-custom_domain = $${slap-parameter:domain}
 
@@ -249,18 +260,18 @@ config-custom_domain = $${slap-parameter:domain}
 #--
 #-- Deploy slapmonitor.
 
-[slapmonitor]
-recipe = slapos.cookbook:slapmonitor
-pid-file = $${basedirectory:run}/apache.pid
-database-path = $${basedirectory:log}/slapmonitor.db
-slapmonitor-path = ${buildout:bin-directory}/slapmonitor
-path = $${basedirectory:services}/slapmonitor
-
-[slapmonitor-xml]
-recipe = slapos.cookbook:slapmonitor-xml
-database-path = $${basedirectory:log}/slapmonitor.db
-slapmonitor-xml-path = ${buildout:bin-directory}/slapmonitor-xml
-path = $${directory:report}/slapmonitor-xml
+#[slapmonitor]
+#recipe = slapos.cookbook:slapmonitor
+#pid-file = $${basedirectory:run}/apache.pid
+#database-path = $${basedirectory:log}/slapmonitor.db
+#slapmonitor-path = ${buildout:bin-directory}/slapmonitor
+#path = $${basedirectory:services}/slapmonitor
+#
+#[slapmonitor-xml]
+#recipe = slapos.cookbook:slapmonitor-xml
+#database-path = $${basedirectory:log}/slapmonitor.db
+#slapmonitor-xml-path = ${buildout:bin-directory}/slapmonitor-xml
+#path = $${directory:report}/slapmonitor-xml
 
 
 #----------------
