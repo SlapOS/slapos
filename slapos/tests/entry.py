@@ -107,7 +107,7 @@ class TestcheckOption (BasicMixin, unittest.TestCase):
     option = "--logfile /opt/slapgrid/slapformat.log"
     entry.checkOption(option)
     self.assertNotEqual(original_sysargv, sys.argv)
-    self.assertTrue(option in " ".join(sys.argv))
+    self.assertIn(option, ' '.join(sys.argv))
 
 
 class TestCall (BasicMixin, unittest.TestCase):
@@ -133,7 +133,7 @@ class TestCall (BasicMixin, unittest.TestCase):
       self.assertEqual(e[0], 0)
     self.assertNotEqual(original_sysargv, sys.argv)
     for x in options:
-      self.assertTrue(x in " ".join(sys.argv))
+      self.assertIn(x, ' '.join(sys.argv))
     self.assertEqual(config_path, sys.argv[1])
 
   def test_config_and_missing_option_are_added(self):
@@ -158,7 +158,7 @@ class TestCall (BasicMixin, unittest.TestCase):
       self.assertEqual(e[0], 0)
     self.assertNotEqual(original_sysargv, sys.argv)
     for x in (missing_option, present_option):
-      self.assertTrue(x in " ".join(sys.argv))
+      self.assertIn(x, ' '.join(sys.argv))
     self.assertFalse(default_present_option in " ".join(sys.argv))
     self.assertEqual(config_path, sys.argv[1])
 

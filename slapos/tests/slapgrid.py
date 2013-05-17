@@ -541,7 +541,7 @@ class TestSlapgridCPWithMaster(MasterMixin, unittest2.TestCase):
       if os.path.getsize(wrapper_log) > 0:
         break
       time.sleep(0.1)
-    self.assertTrue('Working' in open(wrapper_log).read())
+    self.assertIn('Working', open(wrapper_log).read())
     self.assertItemsEqual(os.listdir(self.software_root), [partition.software.software_hash])
     self.assertEqual(computer.sequence,
                      ['getFullComputerInformation', 'availableComputerPartition',
@@ -584,7 +584,7 @@ chmod 755 etc/run/wrapper
         break
       time.sleep(0.1)
     os.path.getsize(wrapper_log)
-    self.assertTrue('Working' in open(wrapper_log).read())
+    self.assertIn('Working', open(wrapper_log).read())
     self.assertItemsEqual(os.listdir(self.software_root), [instance.software.software_hash])
     self.assertEqual(computer.sequence,
                      ['getFullComputerInformation', 'availableComputerPartition',
@@ -651,7 +651,7 @@ chmod 755 etc/run/wrapper
         break
       time.sleep(0.1)
     os.path.getsize(wrapper_log)
-    self.assertTrue('Working' in open(wrapper_log).read())
+    self.assertIn('Working', open(wrapper_log).read())
     self.assertItemsEqual(os.listdir(self.software_root),
       [instance.software.software_hash])
     self.assertEqual(computer.sequence,
@@ -718,7 +718,7 @@ exit 1
       if os.path.getsize(wrapper_log) > 0:
         break
       time.sleep(0.1)
-    self.assertTrue('Working' in open(wrapper_log).read())
+    self.assertIn('Working', open(wrapper_log).read())
     self.assertEqual(computer.sequence,
                      ['getFullComputerInformation', 'availableComputerPartition',
                       'startedComputerPartition'])
@@ -794,7 +794,7 @@ class TestSlapgridCPWithMasterWatchdog(MasterMixin, unittest2.TestCase):
         break
       time.sleep(0.1)
     time.sleep(0.1)
-    self.assertTrue('Failing' in open(daemon_log).read())
+    self.assertIn('Failing', open(daemon_log).read())
     tries = 200
     while tries > 0:
       tries -= 1
@@ -802,7 +802,7 @@ class TestSlapgridCPWithMasterWatchdog(MasterMixin, unittest2.TestCase):
         break
       time.sleep(0.1)
     self.assertTrue(os.path.exists(self.watchdog_banged))
-    self.assertTrue('daemon' in open(self.watchdog_banged).read())
+    self.assertIn('daemon', open(self.watchdog_banged).read())
 
   def test_one_failing_daemon_in_run_will_not_bang_with_watchdog(self):
     """
@@ -846,7 +846,7 @@ class TestSlapgridCPWithMasterWatchdog(MasterMixin, unittest2.TestCase):
         break
       time.sleep(0.1)
     time.sleep(0.1)
-    self.assertTrue('Failing' in open(daemon_log).read())
+    self.assertIn('Failing', open(daemon_log).read())
     tries = 200
     while tries > 0:
       tries -= 1
@@ -947,7 +947,7 @@ class TestSlapgridCPPartitionProcessing(MasterMixin, unittest2.TestCase):
     timestamp_path = os.path.join(instance.partition_path, '.timestamp')
     self.setSlapgrid()
     self.assertEqual(self.grid.processComputerPartitionList(), slapgrid.SLAPGRID_SUCCESS)
-    self.assertTrue(timestamp in open(timestamp_path).read())
+    self.assertIn(timestamp, open(timestamp_path).read())
     self.assertEqual(instance.sequence,
                      ['availableComputerPartition', 'stoppedComputerPartition'])
 
@@ -1301,9 +1301,9 @@ echo %s; echo %s; exit 42""" % (line1, line2))
     self.launchSlapgrid()
     self.assertEqual(instance.sequence, ['softwareInstanceError'])
     # We don't care of actual formatting, we just want to have full log
-    self.assertTrue(line1 in instance.error_log)
-    self.assertTrue(line2 in instance.error_log)
-    self.assertTrue("Failed to run buildout" in instance.error_log)
+    self.assertIn(line1, instance.error_log)
+    self.assertIn(line2, instance.error_log)
+    self.assertIn('Failed to run buildout', instance.error_log)
 
 
 class TestSlapgridUsageReport(MasterMixin, unittest2.TestCase):
@@ -1330,7 +1330,7 @@ class TestSlapgridUsageReport(MasterMixin, unittest2.TestCase):
       if os.path.getsize(wrapper_log) > 0:
         break
       time.sleep(0.1)
-    self.assertTrue('Working' in open(wrapper_log).read())
+    self.assertIn('Working', open(wrapper_log).read())
     self.assertItemsEqual(os.listdir(self.software_root), [instance.software.software_hash])
     self.assertEqual(computer.sequence,
                      ['getFullComputerInformation',
@@ -1421,7 +1421,7 @@ class TestSlapgridUsageReport(MasterMixin, unittest2.TestCase):
       if os.path.getsize(wrapper_log) > 0:
         break
       time.sleep(0.1)
-    self.assertTrue('Working' in open(wrapper_log).read())
+    self.assertIn('Working', open(wrapper_log).read())
     self.assertItemsEqual(os.listdir(self.software_root), [instance.software.software_hash])
     self.assertEqual(computer.sequence,
                      ['getFullComputerInformation',
@@ -1442,7 +1442,7 @@ class TestSlapgridUsageReport(MasterMixin, unittest2.TestCase):
       if os.path.getsize(wrapper_log) > 0:
         break
       time.sleep(0.1)
-    self.assertTrue('Working' in open(wrapper_log).read())
+    self.assertIn('Working', open(wrapper_log).read())
     self.assertItemsEqual(os.listdir(self.instance_root), ['0', 'etc', 'var'])
     self.assertItemsEqual(os.listdir(instance.partition_path),
                           ['.0_wrapper.log', 'buildout.cfg', 'etc', 'software_release', 'worked'])
@@ -1513,9 +1513,9 @@ echo %s; echo %s; exit 42""" % (line1, line2))
     self.assertEqual(software.sequence,
                      ['buildingSoftwareRelease', 'softwareReleaseError'])
     # We don't care of actual formatting, we just want to have full log
-    self.assertTrue(line1 in software.error_log)
-    self.assertTrue(line2 in software.error_log)
-    self.assertTrue("Failed to run buildout" in software.error_log)
+    self.assertIn(line1, software.error_log)
+    self.assertIn(line2, software.error_log)
+    self.assertIn('Failed to run buildout', software.error_log)
 
 class SlapgridInitialization(unittest2.TestCase):
   """
