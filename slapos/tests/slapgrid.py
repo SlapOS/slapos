@@ -99,9 +99,6 @@ touch worked
 """
 
 class BasicMixin:
-  def assertSortedListEqual(self, list1, list2, msg=None):
-    self.assertListEqual(sorted(list1), sorted(list2), msg)
-
   def setUp(self):
     self._tempdir = tempfile.mkdtemp()
     self.software_root = os.path.join(self._tempdir, 'software')
@@ -482,20 +479,17 @@ class TestSlapgridCPWithMaster(MasterMixin, unittest2.TestCase):
     ComputerForTest(self.software_root,self.instance_root, 0, 0)
 
     self.assertEqual(self.grid.processComputerPartitionList(), slapgrid.SLAPGRID_SUCCESS)
-    self.assertSortedListEqual(os.listdir(self.instance_root), ['etc', 'var'])
-    self.assertSortedListEqual(os.listdir(self.software_root), [])
+    self.assertItemsEqual(os.listdir(self.instance_root), ['etc', 'var'])
+    self.assertItemsEqual(os.listdir(self.software_root), [])
 
   def test_one_partition(self):
     computer = ComputerForTest(self.software_root,self.instance_root)
     instance = computer.instance_list[0]
     self.assertEqual(self.grid.processComputerPartitionList(), slapgrid.SLAPGRID_SUCCESS)
-    self.assertSortedListEqual(os.listdir(self.instance_root), ['0', 'etc',
-      'var'])
+    self.assertItemsEqual(os.listdir(self.instance_root), ['0', 'etc', 'var'])
     partition = os.path.join(self.instance_root, '0')
-    self.assertSortedListEqual(os.listdir(partition),
-                               ['buildout.cfg', 'software_release', 'worked'])
-    self.assertSortedListEqual(os.listdir(self.software_root),
-      [instance.software.software_hash])
+    self.assertItemsEqual(os.listdir(partition), ['buildout.cfg', 'software_release', 'worked'])
+    self.assertItemsEqual(os.listdir(self.software_root), [instance.software.software_hash])
     self.assertEqual(computer.sequence,
                      ['getFullComputerInformation', 'availableComputerPartition',
                       'stoppedComputerPartition'])
@@ -508,13 +502,10 @@ class TestSlapgridCPWithMaster(MasterMixin, unittest2.TestCase):
     computer = ComputerForTest(self.software_root,self.instance_root)
     instance = computer.instance_list[0]
     self.assertEqual(self.grid.processComputerPartitionList(), slapgrid.SLAPGRID_SUCCESS)
-    self.assertSortedListEqual(os.listdir(self.instance_root), ['0', 'etc',
-      'var'])
+    self.assertItemsEqual(os.listdir(self.instance_root), ['0', 'etc', 'var'])
     partition = os.path.join(self.instance_root, '0')
-    self.assertSortedListEqual(os.listdir(partition),
-                               ['buildout.cfg', 'software_release', 'worked'])
-    self.assertSortedListEqual(os.listdir(self.software_root),
-      [instance.software.software_hash])
+    self.assertItemsEqual(os.listdir(partition), ['buildout.cfg', 'software_release', 'worked'])
+    self.assertItemsEqual(os.listdir(self.software_root), [instance.software.software_hash])
     self.assertEqual(computer.sequence,
                      ['getFullComputerInformation', 'availableComputerPartition',
                       'stoppedComputerPartition'])
@@ -528,9 +519,9 @@ class TestSlapgridCPWithMaster(MasterMixin, unittest2.TestCase):
     partition = computer.instance_list[0]
     partition.requested_state = 'destroyed'
     self.assertEqual(self.grid.processComputerPartitionList(), slapgrid.SLAPGRID_SUCCESS)
-    self.assertSortedListEqual(os.listdir(self.instance_root), ['0','etc', 'var'])
-    self.assertSortedListEqual(os.listdir(partition.partition_path), [])
-    self.assertSortedListEqual(os.listdir(self.software_root), [])
+    self.assertItemsEqual(os.listdir(self.instance_root), ['0','etc', 'var'])
+    self.assertItemsEqual(os.listdir(partition.partition_path), [])
+    self.assertItemsEqual(os.listdir(self.software_root), [])
     self.assertEqual(partition.sequence, [])
 
   def test_one_partition_started(self):
@@ -539,10 +530,9 @@ class TestSlapgridCPWithMaster(MasterMixin, unittest2.TestCase):
     partition.requested_state = 'started'
     partition.software.setBuildout(WRAPPER_CONTENT)
     self.assertEqual(self.grid.processComputerPartitionList(), slapgrid.SLAPGRID_SUCCESS)
-    self.assertSortedListEqual(os.listdir(self.instance_root), ['0', 'etc',
-      'var'])
-    self.assertSortedListEqual(os.listdir(partition.partition_path),
-                               ['.0_wrapper.log', 'buildout.cfg', 'etc', 'software_release', 'worked'])
+    self.assertItemsEqual(os.listdir(self.instance_root), ['0', 'etc', 'var'])
+    self.assertItemsEqual(os.listdir(partition.partition_path),
+                          ['.0_wrapper.log', 'buildout.cfg', 'etc', 'software_release', 'worked'])
     tries = 50
     wrapper_log = os.path.join(partition.partition_path, '.0_wrapper.log')
     while tries > 0:
@@ -551,8 +541,7 @@ class TestSlapgridCPWithMaster(MasterMixin, unittest2.TestCase):
         break
       time.sleep(0.1)
     self.assertTrue('Working' in open(wrapper_log, 'r').read())
-    self.assertSortedListEqual(os.listdir(self.software_root),
-      [partition.software.software_hash])
+    self.assertItemsEqual(os.listdir(self.software_root), [partition.software.software_hash])
     self.assertEqual(computer.sequence,
                      ['getFullComputerInformation', 'availableComputerPartition',
                       'startedComputerPartition'])
@@ -583,10 +572,9 @@ HEREDOC
 chmod 755 etc/run/wrapper
 """ % dict(python = sys.executable))
     self.assertEqual(self.grid.processComputerPartitionList(), slapgrid.SLAPGRID_SUCCESS)
-    self.assertSortedListEqual(os.listdir(self.instance_root), ['0', 'etc',
-      'var'])
-    self.assertSortedListEqual(os.listdir(instance.partition_path),
-                               ['.0_wrapper.log', 'buildout.cfg', 'etc', 'software_release', 'worked'])
+    self.assertItemsEqual(os.listdir(self.instance_root), ['0', 'etc', 'var'])
+    self.assertItemsEqual(os.listdir(instance.partition_path),
+                          ['.0_wrapper.log', 'buildout.cfg', 'etc', 'software_release', 'worked'])
     wrapper_log = os.path.join(instance.partition_path, '.0_wrapper.log')
     tries = 50
     while tries > 0:
@@ -596,8 +584,7 @@ chmod 755 etc/run/wrapper
       time.sleep(0.1)
     os.path.getsize(wrapper_log)
     self.assertTrue('Working' in open(wrapper_log, 'r').read())
-    self.assertSortedListEqual(os.listdir(self.software_root),
-      [instance.software.software_hash])
+    self.assertItemsEqual(os.listdir(self.software_root), [instance.software.software_hash])
     self.assertEqual(computer.sequence,
                      ['getFullComputerInformation', 'availableComputerPartition',
                       'startedComputerPartition'])
@@ -606,10 +593,9 @@ chmod 755 etc/run/wrapper
     computer.sequence = []
     instance.requested_state = 'stopped'
     self.assertEqual(self.launchSlapgrid(), slapgrid.SLAPGRID_SUCCESS)
-    self.assertSortedListEqual(os.listdir(self.instance_root),
-                               ['0', 'etc', 'var'])
-    self.assertSortedListEqual(os.listdir(instance.partition_path),
-                               ['.0_wrapper.log', '.0_wrapper.log.1', 'buildout.cfg', 'etc', 'software_release', 'worked'])
+    self.assertItemsEqual(os.listdir(self.instance_root), ['0', 'etc', 'var'])
+    self.assertItemsEqual(os.listdir(instance.partition_path),
+                          ['.0_wrapper.log', '.0_wrapper.log.1', 'buildout.cfg', 'etc', 'software_release', 'worked'])
     tries = 50
     expected_text = 'Signal handler called with signal 15'
     while tries > 0:
@@ -653,10 +639,9 @@ HEREDOC
 chmod 755 etc/run/wrapper
 """ % dict(python = sys.executable))
     self.assertEqual(self.grid.processComputerPartitionList(), slapgrid.SLAPGRID_SUCCESS)
-    self.assertSortedListEqual(os.listdir(self.instance_root), ['0', 'etc',
-      'var'])
-    self.assertSortedListEqual(os.listdir(instance.partition_path),
-                               ['.0_wrapper.log', 'buildout.cfg', 'etc', 'software_release', 'worked'])
+    self.assertItemsEqual(os.listdir(self.instance_root), ['0', 'etc', 'var'])
+    self.assertItemsEqual(os.listdir(instance.partition_path),
+                          ['.0_wrapper.log', 'buildout.cfg', 'etc', 'software_release', 'worked'])
     wrapper_log = os.path.join(instance.partition_path, '.0_wrapper.log')
     tries = 50
     while tries > 0:
@@ -666,7 +651,7 @@ chmod 755 etc/run/wrapper
       time.sleep(0.1)
     os.path.getsize(wrapper_log)
     self.assertTrue('Working' in open(wrapper_log, 'r').read())
-    self.assertSortedListEqual(os.listdir(self.software_root),
+    self.assertItemsEqual(os.listdir(self.software_root),
       [instance.software.software_hash])
     self.assertEqual(computer.sequence,
                      ['getFullComputerInformation', 'availableComputerPartition',
@@ -679,10 +664,10 @@ chmod 755 etc/run/wrapper
 exit 1
 """)
     self.assertEqual(self.launchSlapgrid(), slapgrid.SLAPGRID_FAIL)
-    self.assertSortedListEqual(os.listdir(self.instance_root),
-                               ['0', 'etc', 'var'])
-    self.assertSortedListEqual(os.listdir(instance.partition_path),
-                               ['.0_wrapper.log', '.0_wrapper.log.1', 'buildout.cfg', 'etc', 'software_release', 'worked'])
+    self.assertItemsEqual(os.listdir(self.instance_root),
+                          ['0', 'etc', 'var'])
+    self.assertItemsEqual(os.listdir(instance.partition_path),
+                          ['.0_wrapper.log', '.0_wrapper.log.1', 'buildout.cfg', 'etc', 'software_release', 'worked'])
     tries = 50
     expected_text = 'Signal handler called with signal 15'
     while tries > 0:
@@ -705,12 +690,11 @@ exit 1
     instance.software.setBuildout(WRAPPER_CONTENT)
     self.assertEqual(self.grid.processComputerPartitionList(), slapgrid.SLAPGRID_SUCCESS)
 
-    self.assertSortedListEqual(os.listdir(self.instance_root), ['0', 'etc',
-      'var'])
+    self.assertItemsEqual(os.listdir(self.instance_root), ['0', 'etc', 'var'])
     partition = os.path.join(self.instance_root, '0')
-    self.assertSortedListEqual(os.listdir(partition),
-                              ['buildout.cfg', 'etc', 'software_release', 'worked'])
-    self.assertSortedListEqual(os.listdir(self.software_root),
+    self.assertItemsEqual(os.listdir(partition),
+                          ['buildout.cfg', 'etc', 'software_release', 'worked'])
+    self.assertItemsEqual(os.listdir(self.software_root),
       [instance.software.software_hash])
     self.assertEqual(computer.sequence,
                      ['getFullComputerInformation', 'availableComputerPartition',
@@ -720,12 +704,11 @@ exit 1
     instance.requested_state = 'started'
     computer.sequence = []
     self.assertEqual(self.launchSlapgrid(), slapgrid.SLAPGRID_SUCCESS)
-    self.assertSortedListEqual(os.listdir(self.instance_root), ['0', 'etc',
-      'var'])
+    self.assertItemsEqual(os.listdir(self.instance_root), ['0', 'etc', 'var'])
     partition = os.path.join(self.instance_root, '0')
-    self.assertSortedListEqual(os.listdir(partition),
-                              ['.0_wrapper.log', 'etc', 'buildout.cfg', 'software_release', 'worked'])
-    self.assertSortedListEqual(os.listdir(self.software_root),
+    self.assertItemsEqual(os.listdir(partition),
+                          ['.0_wrapper.log', 'etc', 'buildout.cfg', 'software_release', 'worked'])
+    self.assertItemsEqual(os.listdir(self.software_root),
       [instance.software.software_hash])
     tries = 50
     wrapper_log = os.path.join(instance.partition_path, '.0_wrapper.log')
@@ -757,12 +740,10 @@ exit 1
 
     self.assertEqual(self.grid.processComputerPartitionList(), slapgrid.SLAPGRID_SUCCESS)
 
-    self.assertSortedListEqual(os.listdir(self.instance_root), ['0', 'etc',
-      'var'])
+    self.assertItemsEqual(os.listdir(self.instance_root), ['0', 'etc', 'var'])
     partition = os.path.join(self.instance_root, '0')
-    self.assertSortedListEqual(os.listdir(partition), [dummy_file_name])
-    self.assertSortedListEqual(os.listdir(self.software_root),
-      [instance.software.software_hash])
+    self.assertItemsEqual(os.listdir(partition), [dummy_file_name])
+    self.assertItemsEqual(os.listdir(self.software_root), [instance.software.software_hash])
     self.assertEqual(computer.sequence,
                      ['getFullComputerInformation',
                       'stoppedComputerPartition'])
@@ -802,10 +783,9 @@ class TestSlapgridCPWithMasterWatchdog(MasterMixin, unittest2.TestCase):
     partition.software.setBuildout(DAEMON_CONTENT)
 
     self.assertEqual(self.grid.processComputerPartitionList(), slapgrid.SLAPGRID_SUCCESS)
-    self.assertSortedListEqual(os.listdir(self.instance_root),
-                               ['0', 'etc', 'var'])
-    self.assertSortedListEqual(os.listdir(partition.partition_path),
-                               ['.0_daemon.log', 'buildout.cfg', 'etc', 'software_release', 'worked'])
+    self.assertItemsEqual(os.listdir(self.instance_root), ['0', 'etc', 'var'])
+    self.assertItemsEqual(os.listdir(partition.partition_path),
+                          ['.0_daemon.log', 'buildout.cfg', 'etc', 'software_release', 'worked'])
     tries = 200
     daemon_log = os.path.join(partition.partition_path, '.0_daemon.log')
     while tries > 0:
@@ -854,10 +834,10 @@ class TestSlapgridCPWithMasterWatchdog(MasterMixin, unittest2.TestCase):
     partition.software.setBuildout(RUN_CONTENT)
 
     self.assertEqual(self.grid.processComputerPartitionList(), slapgrid.SLAPGRID_SUCCESS)
-    self.assertSortedListEqual(os.listdir(self.instance_root),
-                              ['0', 'etc', 'var'])
-    self.assertSortedListEqual(os.listdir(partition.partition_path),
-                               ['.0_daemon.log', 'buildout.cfg', 'etc', 'software_release', 'worked'])
+    self.assertItemsEqual(os.listdir(self.instance_root),
+                          ['0', 'etc', 'var'])
+    self.assertItemsEqual(os.listdir(partition.partition_path),
+                          ['.0_daemon.log', 'buildout.cfg', 'etc', 'software_release', 'worked'])
     tries = 200
     daemon_log = os.path.join(partition.partition_path, '.0_daemon.log')
     while tries > 0:
@@ -944,7 +924,7 @@ class TestSlapgridCPWithMasterWatchdog(MasterMixin, unittest2.TestCase):
       self.assertEqual(computer.sequence,[])
 
 
-class TestSlapgridCPPartitionProcessing (MasterMixin, unittest2.TestCase):
+class TestSlapgridCPPartitionProcessing(MasterMixin, unittest2.TestCase):
 
   def test_partition_timestamp(self):
     computer = ComputerForTest(self.software_root,self.instance_root)
@@ -953,13 +933,11 @@ class TestSlapgridCPPartitionProcessing (MasterMixin, unittest2.TestCase):
     instance.timestamp = timestamp
 
     self.assertEqual(self.grid.processComputerPartitionList(), slapgrid.SLAPGRID_SUCCESS)
-    self.assertSortedListEqual(os.listdir(self.instance_root), ['0', 'etc',
-      'var'])
+    self.assertItemsEqual(os.listdir(self.instance_root), ['0', 'etc', 'var'])
     partition = os.path.join(self.instance_root, '0')
-    self.assertSortedListEqual(os.listdir(partition),
-                               ['.timestamp', 'buildout.cfg', 'software_release', 'worked'])
-    self.assertSortedListEqual(
-        os.listdir(self.software_root), [instance.software.software_hash])
+    self.assertItemsEqual(os.listdir(partition),
+                          ['.timestamp', 'buildout.cfg', 'software_release', 'worked'])
+    self.assertItemsEqual(os.listdir(self.software_root), [instance.software.software_hash])
     timestamp_path = os.path.join(instance.partition_path, '.timestamp')
     self.setSlapgrid()
     self.assertEqual(self.grid.processComputerPartitionList(), slapgrid.SLAPGRID_SUCCESS)
@@ -975,13 +953,11 @@ class TestSlapgridCPPartitionProcessing (MasterMixin, unittest2.TestCase):
     instance.timestamp = timestamp
 
     self.assertEqual(self.grid.processComputerPartitionList(), slapgrid.SLAPGRID_SUCCESS)
-    self.assertSortedListEqual(os.listdir(self.instance_root), ['0', 'etc',
-      'var'])
+    self.assertItemsEqual(os.listdir(self.instance_root), ['0', 'etc', 'var'])
     partition = os.path.join(self.instance_root, '0')
-    self.assertSortedListEqual(os.listdir(partition),
-                               ['.timestamp', 'buildout.cfg', 'software_release', 'worked'])
-    self.assertSortedListEqual(
-        os.listdir(self.software_root), [instance.software.software_hash])
+    self.assertItemsEqual(os.listdir(partition),
+                          ['.timestamp', 'buildout.cfg', 'software_release', 'worked'])
+    self.assertItemsEqual(os.listdir(self.software_root), [instance.software.software_hash])
 
     self.assertEqual(self.launchSlapgrid(develop=True),
                      slapgrid.SLAPGRID_SUCCESS)
@@ -998,13 +974,11 @@ class TestSlapgridCPPartitionProcessing (MasterMixin, unittest2.TestCase):
     instance.timestamp = timestamp
 
     self.assertEqual(self.grid.processComputerPartitionList(), slapgrid.SLAPGRID_SUCCESS)
-    self.assertSortedListEqual(os.listdir(self.instance_root), ['0', 'etc',
-      'var'])
+    self.assertItemsEqual(os.listdir(self.instance_root), ['0', 'etc', 'var'])
     partition = os.path.join(self.instance_root, '0')
-    self.assertSortedListEqual(os.listdir(partition),
-                               ['.timestamp', 'buildout.cfg', 'software_release', 'worked'])
-    self.assertSortedListEqual(os.listdir(self.software_root),
-      [instance.software.software_hash])
+    self.assertItemsEqual(os.listdir(partition),
+                          ['.timestamp', 'buildout.cfg', 'software_release', 'worked'])
+    self.assertItemsEqual(os.listdir(self.software_root), [instance.software.software_hash])
     instance.timestamp = str(int(timestamp) - 1)
     self.assertEqual(self.launchSlapgrid(), slapgrid.SLAPGRID_SUCCESS)
     self.assertEqual(instance.sequence,
@@ -1018,13 +992,11 @@ class TestSlapgridCPPartitionProcessing (MasterMixin, unittest2.TestCase):
     instance.timestamp = timestamp
 
     self.assertEqual(self.launchSlapgrid(), slapgrid.SLAPGRID_SUCCESS)
-    self.assertSortedListEqual(os.listdir(self.instance_root), ['0', 'etc',
-      'var'])
+    self.assertItemsEqual(os.listdir(self.instance_root), ['0', 'etc', 'var'])
     partition = os.path.join(self.instance_root, '0')
-    self.assertSortedListEqual(os.listdir(partition),
-                               ['.timestamp', 'buildout.cfg', 'software_release', 'worked'])
-    self.assertSortedListEqual(os.listdir(self.software_root),
-      [instance.software.software_hash])
+    self.assertItemsEqual(os.listdir(partition),
+                          ['.timestamp', 'buildout.cfg', 'software_release', 'worked'])
+    self.assertItemsEqual(os.listdir(self.software_root), [instance.software.software_hash])
     instance.timestamp = str(int(timestamp)+1)
     self.assertEqual(self.launchSlapgrid(), slapgrid.SLAPGRID_SUCCESS)
     self.assertEqual(self.launchSlapgrid(), slapgrid.SLAPGRID_SUCCESS)
@@ -1041,12 +1013,11 @@ class TestSlapgridCPPartitionProcessing (MasterMixin, unittest2.TestCase):
     instance.timestamp = timestamp
 
     self.launchSlapgrid()
-    self.assertSortedListEqual(os.listdir(self.instance_root), ['0', 'etc',
-      'var'])
+    self.assertItemsEqual(os.listdir(self.instance_root), ['0', 'etc', 'var'])
     partition = os.path.join(self.instance_root, '0')
-    self.assertSortedListEqual(os.listdir(partition),
-                               ['.timestamp', 'buildout.cfg', 'software_release', 'worked'])
-    self.assertSortedListEqual(os.listdir(self.software_root),
+    self.assertItemsEqual(os.listdir(partition),
+                          ['.timestamp', 'buildout.cfg', 'software_release', 'worked'])
+    self.assertItemsEqual(os.listdir(self.software_root),
       [instance.software.software_hash])
     instance.timestamp = None
     self.launchSlapgrid()
@@ -1072,9 +1043,8 @@ class TestSlapgridCPPartitionProcessing (MasterMixin, unittest2.TestCase):
 
     self.launchSlapgrid()
     partition = os.path.join(self.instance_root, '0')
-    self.assertSortedListEqual(
-        os.listdir(partition),
-        ['.timestamp', 'buildout.cfg', 'software_release', 'worked'])
+    self.assertItemsEqual(os.listdir(partition),
+                          ['.timestamp', 'buildout.cfg', 'software_release', 'worked'])
 
     time.sleep(2)
     # dummify install() so that it doesn't actually do anything so that it
@@ -1082,9 +1052,8 @@ class TestSlapgridCPPartitionProcessing (MasterMixin, unittest2.TestCase):
     instance.install = lambda: None
 
     self.launchSlapgrid()
-    self.assertSortedListEqual(
-        os.listdir(partition),
-        ['.timestamp', 'buildout.cfg', 'software_release', 'worked'])
+    self.assertItemsEqual(os.listdir(partition),
+                          ['.timestamp', 'buildout.cfg', 'software_release', 'worked'])
 
 
   def test_partition_periodicity_is_not_overloaded_if_forced(self):
@@ -1345,10 +1314,9 @@ class TestSlapgridUsageReport(MasterMixin, unittest2.TestCase):
     instance.requested_state = 'started'
     instance.software.setBuildout(WRAPPER_CONTENT)
     self.assertEqual(self.grid.processComputerPartitionList(), slapgrid.SLAPGRID_SUCCESS)
-    self.assertSortedListEqual(os.listdir(self.instance_root),
-                               ['0', 'etc', 'var'])
-    self.assertSortedListEqual(os.listdir(instance.partition_path),
-                               ['.0_wrapper.log', 'buildout.cfg', 'etc', 'software_release', 'worked'])
+    self.assertItemsEqual(os.listdir(self.instance_root), ['0', 'etc', 'var'])
+    self.assertItemsEqual(os.listdir(instance.partition_path),
+                          ['.0_wrapper.log', 'buildout.cfg', 'etc', 'software_release', 'worked'])
     tries = 50
     wrapper_log = os.path.join(instance.partition_path, '.0_wrapper.log')
     while tries > 0:
@@ -1357,8 +1325,7 @@ class TestSlapgridUsageReport(MasterMixin, unittest2.TestCase):
         break
       time.sleep(0.1)
     self.assertTrue('Working' in open(wrapper_log, 'r').read())
-    self.assertSortedListEqual(os.listdir(self.software_root),
-      [instance.software.software_hash])
+    self.assertItemsEqual(os.listdir(self.software_root), [instance.software.software_hash])
     self.assertEqual(computer.sequence,
                      ['getFullComputerInformation',
                       'availableComputerPartition',
@@ -1370,11 +1337,10 @@ class TestSlapgridUsageReport(MasterMixin, unittest2.TestCase):
     instance.requested_state = 'destroyed'
     self.assertEqual(self.grid.agregateAndSendUsage(), slapgrid.SLAPGRID_SUCCESS)
     # Assert partition directory is empty
-    self.assertSortedListEqual(os.listdir(self.instance_root),
-                               ['0', 'etc', 'var'])
-    self.assertSortedListEqual(os.listdir(instance.partition_path), [])
-    self.assertSortedListEqual(os.listdir(self.software_root),
-                               [instance.software.software_hash])
+    self.assertItemsEqual(os.listdir(self.instance_root), ['0', 'etc', 'var'])
+    self.assertItemsEqual(os.listdir(instance.partition_path), [])
+    self.assertItemsEqual(os.listdir(self.software_root),
+                          [instance.software.software_hash])
     # Assert supervisor stopped process
     tries = 50
     wrapper_log = os.path.join(instance.partition_path, '.0_wrapper.log')
@@ -1410,11 +1376,10 @@ class TestSlapgridUsageReport(MasterMixin, unittest2.TestCase):
     instance.requested_state = 'destroyed'
     self.assertEqual(self.grid.agregateAndSendUsage(), slapgrid.SLAPGRID_SUCCESS)
     # Assert partition directory is empty
-    self.assertSortedListEqual(os.listdir(self.instance_root),
-                               ['0', 'etc', 'var'])
-    self.assertSortedListEqual(os.listdir(instance.partition_path), [])
-    self.assertSortedListEqual(os.listdir(self.software_root),
-                               [instance.software.software_hash])
+    self.assertItemsEqual(os.listdir(self.instance_root), ['0', 'etc', 'var'])
+    self.assertItemsEqual(os.listdir(instance.partition_path), [])
+    self.assertItemsEqual(os.listdir(self.software_root),
+                          [instance.software.software_hash])
     # Assert supervisor stopped process
     tries = 50
     wrapper_log = os.path.join(instance.partition_path, '.0_wrapper.log')
@@ -1440,10 +1405,9 @@ class TestSlapgridUsageReport(MasterMixin, unittest2.TestCase):
     instance.requested_state = 'started'
     instance.software.setBuildout(WRAPPER_CONTENT)
     self.assertEqual(self.grid.processComputerPartitionList(), slapgrid.SLAPGRID_SUCCESS)
-    self.assertSortedListEqual(os.listdir(self.instance_root),
-                               ['0', 'etc', 'var'])
-    self.assertSortedListEqual(os.listdir(instance.partition_path),
-                               ['.0_wrapper.log', 'buildout.cfg', 'etc', 'software_release', 'worked'])
+    self.assertItemsEqual(os.listdir(self.instance_root), ['0', 'etc', 'var'])
+    self.assertItemsEqual(os.listdir(instance.partition_path),
+                          ['.0_wrapper.log', 'buildout.cfg', 'etc', 'software_release', 'worked'])
     tries = 50
     wrapper_log = os.path.join(instance.partition_path, '.0_wrapper.log')
     while tries > 0:
@@ -1452,8 +1416,7 @@ class TestSlapgridUsageReport(MasterMixin, unittest2.TestCase):
         break
       time.sleep(0.1)
     self.assertTrue('Working' in open(wrapper_log, 'r').read())
-    self.assertSortedListEqual(os.listdir(self.software_root),
-      [instance.software.software_hash])
+    self.assertItemsEqual(os.listdir(self.software_root), [instance.software.software_hash])
     self.assertEqual(computer.sequence,
                      ['getFullComputerInformation',
                       'availableComputerPartition',
@@ -1463,10 +1426,9 @@ class TestSlapgridUsageReport(MasterMixin, unittest2.TestCase):
     # Then run usage report and see if it is still working
     computer.sequence = []
     self.assertEqual(self.grid.agregateAndSendUsage(), slapgrid.SLAPGRID_SUCCESS)
-    self.assertSortedListEqual(os.listdir(self.instance_root), ['0', 'etc',
-      'var'])
-    self.assertSortedListEqual(os.listdir(instance.partition_path),
-                               ['.0_wrapper.log', 'buildout.cfg', 'etc', 'software_release', 'worked'])
+    self.assertItemsEqual(os.listdir(self.instance_root), ['0', 'etc', 'var'])
+    self.assertItemsEqual(os.listdir(instance.partition_path),
+                          ['.0_wrapper.log', 'buildout.cfg', 'etc', 'software_release', 'worked'])
     tries = 50
     wrapper_log = os.path.join(instance.partition_path, '.0_wrapper.log')
     while tries > 0:
@@ -1475,10 +1437,9 @@ class TestSlapgridUsageReport(MasterMixin, unittest2.TestCase):
         break
       time.sleep(0.1)
     self.assertTrue('Working' in open(wrapper_log, 'r').read())
-    self.assertSortedListEqual(os.listdir(self.instance_root), ['0', 'etc',
-      'var'])
-    self.assertSortedListEqual(os.listdir(instance.partition_path),
-                               ['.0_wrapper.log', 'buildout.cfg', 'etc', 'software_release', 'worked'])
+    self.assertItemsEqual(os.listdir(self.instance_root), ['0', 'etc', 'var'])
+    self.assertItemsEqual(os.listdir(instance.partition_path),
+                          ['.0_wrapper.log', 'buildout.cfg', 'etc', 'software_release', 'worked'])
     tries = 50
     wrapper_log = os.path.join(instance.partition_path, '.0_wrapper.log')
     while tries > 0:
@@ -1504,11 +1465,9 @@ class TestSlapgridUsageReport(MasterMixin, unittest2.TestCase):
     instance.requested_state = 'destroyed'
     self.assertEqual(self.grid.processComputerPartitionList(), slapgrid.SLAPGRID_SUCCESS)
     # Assert partition directory is empty
-    self.assertSortedListEqual(os.listdir(self.instance_root),
-                               ['0', 'etc', 'var'])
-    self.assertSortedListEqual(os.listdir(instance.partition_path), [])
-    self.assertSortedListEqual(os.listdir(self.software_root),
-                               [instance.software.software_hash])
+    self.assertItemsEqual(os.listdir(self.instance_root), ['0', 'etc', 'var'])
+    self.assertItemsEqual(os.listdir(instance.partition_path), [])
+    self.assertItemsEqual(os.listdir(self.software_root), [instance.software.software_hash])
     self.assertEqual(computer.sequence, ['getFullComputerInformation'])
 
   def test_slapgrid_report_ignore_free_instance(self):
@@ -1524,11 +1483,9 @@ class TestSlapgridUsageReport(MasterMixin, unittest2.TestCase):
     instance.requested_state = 'destroyed'
     self.assertEqual(self.grid.agregateAndSendUsage(), slapgrid.SLAPGRID_SUCCESS)
     # Assert partition directory is empty
-    self.assertSortedListEqual(os.listdir(self.instance_root),
-                               ['0', 'etc', 'var'])
-    self.assertSortedListEqual(os.listdir(instance.partition_path), [])
-    self.assertSortedListEqual(os.listdir(self.software_root),
-                               [instance.software.software_hash])
+    self.assertItemsEqual(os.listdir(self.instance_root), ['0', 'etc', 'var'])
+    self.assertItemsEqual(os.listdir(instance.partition_path), [])
+    self.assertItemsEqual(os.listdir(self.software_root), [instance.software.software_hash])
     self.assertEqual(computer.sequence, ['getFullComputerInformation'])
 
 
