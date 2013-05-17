@@ -1,0 +1,64 @@
+{% set cached_server_dict = {} -%}
+{% set part_list = [] -%}
+{% set instance_parameter_dict = {'cache_access': cache_access} -%}
+[jinja2-template-base]
+recipe = slapos.recipe.template:jinja2
+rendered = {{ apache_configuration_directory }}/${:filename}
+extra-context =
+context =
+    key eggs_directory buildout:eggs-directory
+    key develop_eggs_directory buildout:develop-eggs-directory
+    ${:extra-context}
+
+{% for slave_instance in slave_instance_list -%}
+
+{%   set slave_reference = slave_instance.get('slave_reference') -%}
+{%   set slave_section_title = 'dynamic-template-slave-instance-%s' % slave_reference -%}
+{%   do part_list.append(slave_section_title) -%}
+[{{ slave_section_title }}]
+< = jinja2-template-base
+template = {{ template_slave_configuration }}
+filename = {{ '%s.conf' % slave_reference }}
+extra-context =
+    key apache_custom_https {{ 'slave-instance-%s-configuration:custom-https' % slave_reference }}
+    key apache_custom_http {{ 'slave-instance-%s-configuration:custom-http' % slave_reference }}
+    raw https_port {{ https_port }}
+    raw http_port {{ http_port }}
+{{ '\n' }}
+
+[{{ ('slave-instance-%s-configuration' % slave_reference) }}]
+{% set apache_custom_http = ((slave_instance.get('apache_custom_http', '')) % instance_parameter_dict) -%}
+{% set apache_custom_https = ((slave_instance.get('apache_custom_https', '')) % instance_parameter_dict) -%}
+custom-http = {{ dumps(apache_custom_http) }}
+custom-https = {{ dumps(apache_custom_https) }}
+{{ '\n' }}
+
+{%   if 'enable_cache' in slave_instance and 'url' in slave_instance and 'server_name' in slave_instance -%}
+{%     do cached_server_dict.update([(slave_instance.get('server_name'), slave_instance.get('url'))]) -%}
+{%   endif -%}
+
+{% endfor -%}
+
+
+{% do part_list.append('cached-rewrite-rules') -%}
+[cached-rewrite-rules]
+< = jinja2-template-base
+template = {{ template_rewrite_cached }}
+rendered = {{ rewrite_cached_configuration }}
+extra-context =
+    import json_module json
+    key server_dict rewrite-rules:rules
+
+[rewrite-rules]
+rules = {{ dumps(cached_server_dict) }}
+
+[buildout]
+parts +=
+{% for part in part_list -%}
+{{ '    %s' % part }}
+{% endfor -%}
+
+eggs-directory = {{ eggs_directory }}
+develop-eggs-directory = {{ develop_eggs_directory }}
+offline = true
+cache-access = {{ cache_access }}
