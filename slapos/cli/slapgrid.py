@@ -2,6 +2,7 @@
 
 import logging
 
+from slapos.cli.command import must_be_root
 from slapos.cli.config import ConfigCommand
 
 from slapos.grid.utils import setRunning, setFinished
@@ -57,6 +58,7 @@ class SlapgridCommand(ConfigCommand):
                         help='Launch slapgrid without delay. Default behavior.')
         return ap
 
+    @must_be_root
     def take_action(self, args):
         configp = self.fetch_config(args)
         options = merged_options(args, configp)

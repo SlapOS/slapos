@@ -3,6 +3,7 @@
 import logging
 import sys
 
+from slapos.cli.command import must_be_root
 from slapos.cli.config import ConfigCommand
 from slapos.format import do_format, FormatConfig, tracing_monkeypatch, UsageError
 
@@ -55,6 +56,7 @@ class FormatCommand(ConfigCommand):
 
         return ap
 
+    @must_be_root
     def take_action(self, args):
         configp = self.fetch_config(args)
 

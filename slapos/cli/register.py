@@ -3,7 +3,7 @@
 import logging
 import sys
 
-from slapos.cli.command import Command
+from slapos.cli.command import Command, must_be_root
 from slapos.register.register import do_register, RegisterConfig
 
 
@@ -66,6 +66,7 @@ class RegisterCommand(Command):
 
         return ap
 
+    @must_be_root
     def take_action(self, args):
         try:
             conf = RegisterConfig(logger=self.log)
