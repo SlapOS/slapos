@@ -783,7 +783,7 @@ class TestOpenOrder(SlapMixin):
     computer_partition = open_order.request(software_release_uri, 'myrefe')
     self.assertTrue(isinstance(computer_partition,
         slapos.slap.ComputerPartition))
-    self.assertTrue(requested_partition_id, computer_partition.getId())
+    self.assertEqual(requested_partition_id, computer_partition.getId())
 
 if __name__ == '__main__':
   print 'You can point to any SLAP server by setting TEST_SLAP_SERVER_URL '\
