@@ -22,8 +22,9 @@ class Command(cliff.command.Command):
 
 def must_be_root(func):
     @functools.wraps(func)
-    def func(self, *args, **kw):
+    def inner(self, *args, **kw):
         if os.getuid() != 0:
             self.app.log.error('This slapos command must be run as root.')
             sys.exit(5)
-    return func
+        return func(self, *args, **kw)
+    return inner
