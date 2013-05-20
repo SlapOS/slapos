@@ -1,6 +1,6 @@
 {% set cached_server_dict = {} -%}
 {% set part_list = [] -%}
-{% set instance_parameter_dict = {'cache_access': cache_access} -%}
+{% set generic_instance_parameter_dict = {'cache_access': cache_access,} -%}
 [jinja2-template-base]
 recipe = slapos.recipe.template:jinja2
 rendered = {{ apache_configuration_directory }}/${:filename}
@@ -11,9 +11,9 @@ context =
     ${:extra-context}
 
 {% for slave_instance in slave_instance_list -%}
-
 {%   set slave_reference = slave_instance.get('slave_reference') -%}
 {%   set slave_section_title = 'dynamic-template-slave-instance-%s' % slave_reference -%}
+{%   set slave_parameter_dict = generic_instance_parameter_dict.copy() -%}
 {%   do part_list.append(slave_section_title) -%}
 [{{ slave_section_title }}]
 < = jinja2-template-base
@@ -26,13 +26,34 @@ extra-context =
     raw http_port {{ http_port }}
 {{ '\n' }}
 
+# Set ssl certificates for each slave
+{%   for cert_name in ('ssl_key', 'ssl_crt', 'ssl_ca_crt', 'ssl_csr')-%}
+{%     if cert_name in slave_instance -%}
+{%       set cert_title = '%s-%s' % (slave_reference, cert_name.replace('ssl_', '')) -%}
+{%       set cert_file = '/'.join([custom_ssl_directory, cert_title.replace('-','.')]) -%}
+{%       do part_list.append(cert_title) -%}
+{%       do slave_parameter_dict.update([(cert_name, cert_file)]) -%}
+[{{ cert_title }}]
+< = jinja2-template-base
+template = {{ empty_template }}
+rendered = {{ cert_file }}
+extra-context =
+    key content {{ cert_title + '-config:value' }}
+
+[{{ cert_title + '-config' }}]
+value = {{ dumps(slave_instance.get(cert_name)) }}
+{%     endif -%}
+{%   endfor -%}
+
+# Set apache configuration for slave
 [{{ ('slave-instance-%s-configuration' % slave_reference) }}]
-{% set apache_custom_http = ((slave_instance.get('apache_custom_http', '')) % instance_parameter_dict) -%}
-{% set apache_custom_https = ((slave_instance.get('apache_custom_https', '')) % instance_parameter_dict) -%}
+{% set apache_custom_http = ((slave_instance.get('apache_custom_http', '')) % slave_parameter_dict) -%}
+{% set apache_custom_https = ((slave_instance.get('apache_custom_https', '')) % slave_parameter_dict) -%}
 custom-http = {{ dumps(apache_custom_http) }}
 custom-https = {{ dumps(apache_custom_https) }}
 {{ '\n' }}
 
+# The slave use cache
 {%   if 'enable_cache' in slave_instance and 'url' in slave_instance and 'server_name' in slave_instance -%}
 {%     do cached_server_dict.update([(slave_instance.get('server_name'), slave_instance.get('url'))]) -%}
 {%   endif -%}
