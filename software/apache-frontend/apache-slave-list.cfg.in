@@ -20,8 +20,7 @@ context =
 template = {{ template_slave_configuration }}
 filename = {{ '%s.conf' % slave_reference }}
 extra-context =
-    key apache_custom_https {{ 'slave-instance-%s-configuration:custom-https' % slave_reference }}
-    key apache_custom_http {{ 'slave-instance-%s-configuration:custom-http' % slave_reference }}
+    section slave_parameter {{ 'slave-instance-%s-configuration' % slave_reference }}
     raw https_port {{ https_port }}
     raw http_port {{ http_port }}
 {{ '\n' }}
@@ -32,7 +31,7 @@ extra-context =
 {%       set cert_title = '%s-%s' % (slave_reference, cert_name.replace('ssl_', '')) -%}
 {%       set cert_file = '/'.join([custom_ssl_directory, cert_title.replace('-','.')]) -%}
 {%       do part_list.append(cert_title) -%}
-{%       do slave_parameter_dict.update([(cert_name, cert_file)]) -%}
+{%       do slave_parameter_dict.__setitem__(cert_name, cert_file) -%}
 [{{ cert_title }}]
 < = jinja2-template-base
 template = {{ empty_template }}
@@ -49,13 +48,13 @@ value = {{ dumps(slave_instance.get(cert_name)) }}
 [{{ ('slave-instance-%s-configuration' % slave_reference) }}]
 {% set apache_custom_http = ((slave_instance.get('apache_custom_http', '')) % slave_parameter_dict) -%}
 {% set apache_custom_https = ((slave_instance.get('apache_custom_https', '')) % slave_parameter_dict) -%}
-custom-http = {{ dumps(apache_custom_http) }}
-custom-https = {{ dumps(apache_custom_https) }}
+apache_custom_http = {{ dumps(apache_custom_http) }}
+apache_custom_https = {{ dumps(apache_custom_https) }}
 {{ '\n' }}
 
 # The slave use cache
 {%   if 'enable_cache' in slave_instance and 'url' in slave_instance and 'server_name' in slave_instance -%}
-{%     do cached_server_dict.update([(slave_instance.get('server_name'), slave_instance.get('url'))]) -%}
+{%     do cached_server_dict.__setitem__(slave_instance.get('server_name'), slave_instance.get('url')) -%}
 {%   endif -%}
 
 {% endfor -%}
