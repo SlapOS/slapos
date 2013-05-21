@@ -21,48 +21,60 @@ class RegisterCommand(Command):
                         help='Name of the node')
 
         ap.add_argument('--interface-name',
-                        help='Interface name to access internet',
-                        default='eth0')
+                        default='eth0',
+                        help='Primary network interface. IP of Partitions '
+                             'will be added to it'
+                             ' (default: %(default)s)')
 
         ap.add_argument('--master-url',
-                        help='URL of SlapOS master',
-                        default='https://slap.vifib.com')
+                        default='https://slap.vifib.com',
+                        help='URL of SlapOS Master REST API'
+                             ' (default: %(default)s)')
 
         ap.add_argument('--master-url-web',
-                        help='URL of SlapOS Master webservice to register certificates',
-                        default='https://www.slapos.org')
+                        default='https://www.slapos.org',
+                        help='URL of SlapOS Master webservice to register certificates'
+                             ' (default: %(default)s)')
 
         ap.add_argument('--partition-number',
-                        help='Number of partition on computer',
-                        default='10',
-                        type=int)
+                        default=10,
+                        type=int,
+                        help='Number of partitions to create in the SlapOS Node'
+                             ' (default: %(default)s)')
 
         ap.add_argument('--ipv4-local-network',
-                        help='Base of ipv4 local network',
-                        default='10.0.0.0/16')
+                        default='10.0.0.0/16',
+                        help='Subnetwork used to assign local IPv4 addresses. '
+                             'It should be a not used network in order to avoid conflicts'
+                             ' (default: %(default)s)')
 
         ap.add_argument('--ipv6-interface',
-                        help='Interface name to get ipv6',
-                        default='')
+                        default='',
+                        help='Interface name to get ipv6')
 
         ap.add_argument('--login',
-                        help='User login on SlapOS Master webservice')
+                        help="Your SlapOS Master login. If not provided, "
+                             "asks it interactively, then password.")
 
         ap.add_argument('--password',
-                        help='User password on SlapOs Master webservice')
+                        help='Your SlapOS Master password. If not provided, '
+                             'asks it interactively. NOTE: giving password as parameter '
+                             'should be avoided for security reasons.')
 
         ap.add_argument('-t', '--create-tap',
+                        default=False,
+                        action='store_true',
                         help='Will trigger creation of one virtual "tap" interface per '
                              'Partition and attach it to primary interface. Requires '
-                             'primary interface to be a bridge. defaults to false. '
-                             'Needed to host virtual machines.',
-                        default=False,
-                        action='store_true')
+                             'primary interface to be a bridge. '
+                             'Needed to host virtual machines'
+                             ' (default: %(default)s)')
 
         ap.add_argument('-n', '--dry-run',
-                        help='Simulate the execution steps',
                         default=False,
-                        action='store_true')
+                        action='store_true',
+                        help='Simulate the execution steps'
+                             ' (default: %(default)s)')
 
         return ap
 

@@ -6,7 +6,7 @@ SlapOS command line usage
 Notes:
 ------
 
-* Default SlapOS Master is http://www.slapos.org. It can be changed by altering configuration files or with the ``--master-url``
+* Default SlapOS Master is https://slap.vifib.com. It can be changed by altering configuration files or with the ``--master-url``
   argument for commands that support it.
 
 * Most commands take a configuration file parameter, provided as ``--cfg /path/to/file.cfg``.
@@ -20,7 +20,8 @@ Notes:
 
 
 
-XXX TODO document 'alias' for software_url, software_group?, computer_group?
+..
+  XXX TODO document 'alias' for software_url, software_group?, computer_group?
 
 
 
@@ -59,7 +60,8 @@ Examples
     $ slapos request mykvm kvm --node id=COMP-12345 --configuration \
         nbd-host=debian.nbd.vifib.net nbd-port=1024
 
-XXX Change in slaplib: allow to fetch instance params without changing anything. i.e we should do "slapos request myalreadyrequestedinstance" to fetch connection parameters without erasing previously defined instance parameters.
+..
+  XXX Change in slaplib: allow to fetch instance params without changing anything. i.e we should do "slapos request myalreadyrequestedinstance" to fetch connection parameters without erasing previously defined instance parameters.
 
 
 ..
@@ -93,7 +95,8 @@ remove
 
 Ask Removal of a software from a specific node or group of nodes. Existing instances won't work anymore.
 
-XXX "slapos autounsupply a.k.a slapos cleanup"
+..
+  XXX "slapos autounsupply a.k.a slapos cleanup"
 
 Examples
 
@@ -160,24 +163,14 @@ If login is not provided, asks for user's SlapOS Master account then password.
 
 Node will register itself, if not already done, to the SlapOS Master defined in configuration file, and will generate SlapOS configuration file.
 
-XXX-Cedric should be like this: If desired node name is already taken, will raise an error.
-XXX-Cedric: --master-url-web url will disappear in REST API. Currently, "register" uses SlapOS master web URL to register computer, so it needs the web URL (like http://www.slapos.org)
+..
+  XXX-Cedric should be like this: If desired node name is already taken, will raise an error.
+  XXX-Cedric: --master-url-web url will disappear in REST API. Currently, "register" uses SlapOS master web URL to register computer, so it needs the web URL (like http://www.slapos.org)
 
 If Node is already registered (slapos.cfg and certificate already present), issues a warning, backups original configuration and creates new one.
 
-XXX-Cedric should check for IPv6 in selected interface
-
-
-Parameters:
-***********
---login LOGIN                  Your SlapOS Master login. If not provided, asks it interactively.
---password PASSWORD            Your SlapOS Master password. If not provided, asks it interactively. NOTE: giving password as parameter should be avoided for security reasons.
---interface-name INTERFACE     Use interface as primary interface. IP of Partitions will be added to it. Defaults to "eth0".
---master-url URL               URL of SlapOS Master REST API. defaults to "https://slap.vifib.com".
---master-url-web URL           URL of SlapOS Master web access. defaults to "https://www.vifib.com".
---partition-number NUMBER      Number of partitions that will have your SlapOS Node. defaults to "10".
---ipv4-local-network NETWORK   Subnetwork used to assign local IPv4 addresses. It should be a not used network in order to avoid conflicts. defaults to 10.0.0.0/16.
--t, --create-tap                   Will trigger creation of one virtual "tap" interface per Partition and attach it to primary interface. Requires primary interface to be a bridge. defaults to false. Needed to host virtual machines.
+..
+  XXX-Cedric should check for IPv6 in selected interface
 
 
 Notes:
@@ -217,7 +210,7 @@ node software
 Return values:
 **************
 
-(Among other standard Python return values)
+(among other standard Python return values)
 
 * 0     Everything went fine
 * 1     At least one software was not correctly installed.
@@ -232,7 +225,7 @@ node instance
 Return values:
 **************
 
-(Among other standard Python return values)
+(among other standard Python return values)
 
 * 0    Everything went fine
 * 1    At least one instance was not correctly processed.
@@ -250,7 +243,7 @@ Run instance reports and garbage collection.
 Return values:
 **************
 
-(Among other standard Python return values)
+(among other standard Python return values)
 
 * 0     Everything went fine
 * 1     At least one instance hasn't correctly been processed.
@@ -266,9 +259,10 @@ node start|stop|restart|tail|status
  Start/Stop/Restart/Show stdout/stderr of instance and/or process.
 
  optional arguments:
-   -h, --help            show this help message and exit
-   --cfg CFG             SlapOS configuration file - defaults to
-                             $SLAPOS_CONFIGURATION or /etc/opt/slapos/slapos.cfg
+  -h, --help       show this help message and exit
+  --cfg CFG        SlapOS configuration file (default: $SLAPOS_CONFIGURATION
+                   or /etc/opt/slapos/slapos.cfg)
+
 
 Examples
 
