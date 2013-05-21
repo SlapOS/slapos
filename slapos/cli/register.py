@@ -49,7 +49,6 @@ class RegisterCommand(Command):
                              ' (default: %(default)s)')
 
         ap.add_argument('--ipv6-interface',
-                        default='',
                         help='Interface name to get ipv6')
 
         ap.add_argument('--login',
