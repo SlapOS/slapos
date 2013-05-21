@@ -1042,8 +1042,8 @@ def random_delay(conf):
   # --maximal-delay=3600
   if not conf.now:
     duration = float(60 * 60) * random.random()
-    print("Sleeping for %s seconds. To disable this feature, " \
-                    "use with --now parameter in manual." % duration)
+    conf.logger.info('Sleeping for %s seconds. To disable this feature, '
+                     'use with --now parameter in manual.' % duration)
     time.sleep(duration)
 
 
