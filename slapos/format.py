@@ -294,7 +294,7 @@ class Computer(object):
       except:
         # might be a corrupted zip file. let's move it out of the way and retry.
         shutil.move(path_to_archive,
-                    path_to_archive+time.strftime('_broken_%Y%m%d-%H:%M'))
+                    path_to_archive + time.strftime('_broken_%Y%m%d-%H:%M'))
         try:
           self.backup_xml(path_to_archive, path_to_xml)
         except:
@@ -376,9 +376,9 @@ class Computer(object):
 
     for path in self.instance_root, self.software_root:
       if not os.path.exists(path):
-        os.makedirs(path, 0755)
+        os.makedirs(path, 0o755)
       else:
-        os.chmod(path, 0755)
+        os.chmod(path, 0o755)
 
     # own self.software_root by software user
     slapsoft = User(self.software_user)
@@ -387,7 +387,7 @@ class Computer(object):
       slapsoft.create()
       slapsoft_pw = pwd.getpwnam(slapsoft.name)
       os.chown(self.software_root, slapsoft_pw.pw_uid, slapsoft_pw.pw_gid)
-    os.chmod(self.software_root, 0755)
+    os.chmod(self.software_root, 0o755)
 
     # Speed hack:
     # Blindly add all IPs from existing configuration, just to speed up actual
@@ -437,7 +437,7 @@ class Computer(object):
         # There should be two addresses on each Computer Partition:
         #  * global IPv6
         #  * local IPv4, took from slapformat:ipv4_local_network
-        if len(partition.address_list) == 0:
+        if not partition.address_list:
           # regenerate
           partition.address_list.append(self.interface.addIPv4LocalAddress())
           partition.address_list.append(self.interface.addAddr())
@@ -449,11 +449,11 @@ class Computer(object):
             raise ValueError(
               'There should be exactly 2 stored addresses. Got: %r' %
               (old_partition_address_list,))
-          if not any([netaddr.valid_ipv6(q['addr'])
-              for q in old_partition_address_list]):
+          if not any(netaddr.valid_ipv6(q['addr'])
+                     for q in old_partition_address_list):
             raise ValueError('Not valid ipv6 addresses loaded')
-          if not any([netaddr.valid_ipv4(q['addr'])
-              for q in old_partition_address_list]):
+          if not any(netaddr.valid_ipv4(q['addr'])
+                     for q in old_partition_address_list):
             raise ValueError('Not valid ipv6 addresses loaded')
 
           for address in old_partition_address_list:
@@ -505,11 +505,11 @@ class Partition(object):
     self.path = os.path.abspath(self.path)
     owner = self.user if self.user else User('root')
     if not os.path.exists(self.path):
-      os.mkdir(self.path, 0750)
+      os.mkdir(self.path, 0o750)
     if alter_user:
       owner_pw = pwd.getpwnam(owner.name)
       os.chown(self.path, owner_pw.pw_uid, owner_pw.pw_gid)
-    os.chmod(self.path, 0750)
+    os.chmod(self.path, 0o750)
 
 
 class User(object):
@@ -700,10 +700,15 @@ class Interface(object):
     """
     if not socket.AF_INET in netifaces.ifaddresses(self.name):
       return []
-    return [dict(addr=q['addr'], netmask=q['netmask']) for q in
-      netifaces.ifaddresses(self.name)[socket.AF_INET] if netaddr.IPAddress(
-        q['addr'], 4) in netaddr.glob_to_iprange(
-          netaddr.cidr_to_glob(self.ipv4_local_network))]
+    return [
+            {
+                'addr': q['addr'],
+                'netmask': q['netmask']
+                }
+            for q in netifaces.ifaddresses(self.name)[socket.AF_INET]
+            if netaddr.IPAddress(q['addr'], 4) in netaddr.glob_to_iprange(
+                netaddr.cidr_to_glob(self.ipv4_local_network))
+            ]
 
   def getGlobalScopeAddressList(self):
     """Returns currently configured global scope IPv6 addresses"""
@@ -712,9 +717,11 @@ class Interface(object):
     else:
       interface_name = self.name
     try:
-      address_list = [q
-        for q in netifaces.ifaddresses(interface_name)[socket.AF_INET6]
-        if isGlobalScopeAddress(q['addr'].split('%')[0])]
+      address_list = [
+              q
+              for q in netifaces.ifaddresses(interface_name)[socket.AF_INET6]
+              if isGlobalScopeAddress(q['addr'].split('%')[0])
+              ]
     except KeyError:
       raise ValueError("%s must have at least one IPv6 address assigned" % \
                          interface_name)
@@ -851,7 +858,7 @@ class Interface(object):
       # confirmed to be configured
       return dict(addr=addr, netmask=netmask)
 
-  def addAddr(self, addr = None, netmask = None):
+  def addAddr(self, addr=None, netmask=None):
     """
     Adds IP address to interface.
 
@@ -935,8 +942,10 @@ def parse_computer_definition(conf, definition_path):
     address, netmask = computer_definition.get('computer', 'address').split('/')
   if conf.alter_network and conf.interface_name is not None \
       and conf.ipv4_local_network is not None:
-    interface = Interface(conf.logger, conf.interface_name, conf.ipv4_local_network,
-      conf.ipv6_interface)
+    interface = Interface(logger=conf.logger,
+                          name=conf.interface_name,
+                          ipv4_local_network=conf.ipv4_local_network,
+                          ipv6_interface=conf.ipv6_interface)
   computer = Computer(
       reference=conf.computer_id,
       interface=interface,
@@ -966,21 +975,24 @@ def parse_computer_definition(conf, definition_path):
 
 
 def parse_computer_xml(conf, xml_path):
+  interface = Interface(logger=conf.logger,
+                        name=conf.interface_name,
+                        ipv4_local_network=conf.ipv4_local_network,
+                        ipv6_interface=conf.ipv6_interface)
+
   if os.path.exists(xml_path):
     conf.logger.info('Loading previous computer data from %r' % xml_path)
     computer = Computer.load(xml_path,
                              reference=conf.computer_id,
                              ipv6_interface=conf.ipv6_interface)
     # Connect to the interface defined by the configuration
-    computer.interface = Interface(conf.logger, conf.interface_name, conf.ipv4_local_network,
-        conf.ipv6_interface)
+    computer.interface = interface
   else:
     # If no pre-existent configuration found, create a new computer object
     conf.logger.warning('Creating new data computer with id %r' % conf.computer_id)
     computer = Computer(
       reference=conf.computer_id,
-      interface=Interface(conf.logger, conf.interface_name, conf.ipv4_local_network,
-        conf.ipv6_interface),
+      interface=interface,
       addr=None,
       netmask=None,
       ipv6_interface=conf.ipv6_interface,
@@ -989,29 +1001,25 @@ def parse_computer_xml(conf, xml_path):
 
   partition_amount = int(conf.partition_amount)
   existing_partition_amount = len(computer.partition_list)
-  if existing_partition_amount > partition_amount:
+  if partition_amount < existing_partition_amount:
     raise ValueError('Requested amount of computer partitions (%s) is lower '
         'then already configured (%s), cannot continue' % (partition_amount,
-          len(computer.partition_list)))
+          existing_partition_amount))
 
   conf.logger.info('Adding %s new partitions' %
       (partition_amount - existing_partition_amount))
-  for nb_iter in range(existing_partition_amount, partition_amount):
-    # add new ones
-    user = User("%s%s" % (conf.user_base_name, nb_iter))
 
-    tap = Tap("%s%s" % (conf.tap_base_name, nb_iter))
-
-    path = os.path.join(conf.instance_root, "%s%s" % (
-                         conf.partition_base_name, nb_iter))
-    computer.partition_list.append(
-      Partition(
-        reference="%s%s" % (conf.partition_base_name, nb_iter),
-        path=path,
-        user=user,
-        address_list=None,
-        tap=tap,
-        ))
+  for i in range(existing_partition_amount, partition_amount):
+    # add new partitions
+    partition = Partition(
+            reference='%s%s' % (conf.partition_base_name, i),
+            path=os.path.join(conf.instance_root, '%s%s' % (
+                conf.partition_base_name, i)),
+            user=User('%s%s' % (conf.user_base_name, i)),
+            address_list=None,
+            tap=Tap('%s%s' % (conf.tap_base_name, i))
+            )
+    computer.partition_list.append(partition)
 
   return computer
 
@@ -1165,17 +1173,17 @@ class FormatConfig(object):
       self.create_tap = True
 
     # Convert strings to booleans
-    for o in ['alter_network', 'alter_user', 'create_tap']:
-      attr = getattr(self, o)
+    for option in ['alter_network', 'alter_user', 'create_tap']:
+      attr = getattr(self, option)
       if isinstance(attr, str):
         if attr.lower() == 'true':
           root_needed = True
-          setattr(self, o, True)
+          setattr(self, option, True)
         elif attr.lower() == 'false':
-          setattr(self, o, False)
+          setattr(self, option, False)
         else:
           message = 'Option %r needs to be "True" or "False", wrong value: ' \
-              '%r' % (o, getattr(self, o))
+              '%r' % (option, getattr(self, option))
           self.logger.error(message)
           raise UsageError(message)
 
@@ -1198,6 +1206,7 @@ class FormatConfig(object):
       root_needed = False
 
     # check root
+    # XXX in the new CLI, this is checked by the @must_be_root decorator.
     if root_needed and os.getuid() != 0:
       message = "Root rights are needed"
       self.logger.error(message)
