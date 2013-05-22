@@ -14,12 +14,12 @@ context =
 {%   set slave_reference = slave_instance.get('slave_reference') -%}
 {%   set slave_section_title = 'dynamic-template-slave-instance-%s' % slave_reference -%}
 {%   set slave_parameter_dict = generic_instance_parameter_dict.copy() -%}
-{%   if slave_instance.get('server_name', None) == None -%}
-{%     do slave_instance.__setitem__('server_name', "%s.%s" % (slave_instance.get('slave_reference').replace("-", "").lower(), domain)) -%}
+{%   if slave_instance.get('domain', None) == None -%}
+{%     do slave_instance.__setitem__('domain', "%s.%s" % (slave_instance.get('slave_reference').replace("-", "").lower(), domain)) -%}
 {%   endif -%}
 {%   if 'enable_cache' in slave_instance -%}
 # The slave use cache
-{%     do cached_server_dict.__setitem__(slave_instance.get('server_name'), slave_instance.get('url')) -%}
+{%     do cached_server_dict.__setitem__(slave_instance.get('domain'), slave_instance.get('url')) -%}
 {%   endif -%}
 {%     do slave_instance.__setitem__('url', cache_access) -%}
 {%   do part_list.append(slave_section_title) -%}
