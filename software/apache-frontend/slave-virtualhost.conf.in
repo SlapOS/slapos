@@ -1,7 +1,7 @@
 <VirtualHost *:{{ https_port }}>
-{{ slave_parameter.get('apache_custom_https','') }}
+{{ apache_custom_https }}
 </VirtualHost>
 
 <VirtualHost *:{{ http_port }}>
-{{ slave_parameter.get('apache_custom_http','') }}
+{{ apache_custom_http }}
 </VirtualHost>
