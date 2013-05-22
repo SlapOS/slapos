@@ -3,7 +3,7 @@
 
 # Basic server configuration
 PidFile "{{ pid_file }}"
-ServerName {{ server_name }}
+ServerName {{ domain }}
 DocumentRoot {{ document_root }}
 ServerRoot {{ instance_home }}
 

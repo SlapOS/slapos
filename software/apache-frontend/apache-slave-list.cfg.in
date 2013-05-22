@@ -56,8 +56,8 @@ apache_custom_https = {{ dumps(apache_custom_https) }}
 {{ '\n' }}
 
 # The slave use cache
-{%   if 'enable_cache' in slave_instance and 'url' in slave_instance and 'server_name' in slave_instance -%}
-{%     do cached_server_dict.__setitem__(slave_instance.get('server_name'), slave_instance.get('url')) -%}
+{%   if 'enable_cache' in slave_instance and 'url' in slave_instance and 'domain' in slave_instance -%}
+{%     do cached_server_dict.__setitem__(slave_instance.get('domain'), slave_instance.get('url')) -%}
 {%   endif -%}
 
 {% endfor -%}
