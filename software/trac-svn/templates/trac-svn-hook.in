@@ -1,0 +1,64 @@
+#!/bin/sh
+
+export TRAC_ENV=${:trac_env}
+export PATH=${:trac_admin}:${:python_bin}:$PATH
+export LD_LIBRARY_PATH=${:python_lib}:$LD_LIBRARY_PATH
+export PYTHONPATH=${:svn_python}:$PYTHONPATH
+
+
+REPOS="$1"
+REV="$2"
+USER="$3"
+PROPNAME="$4"
+
+# -- Foolproofing
+
+if [ -z "$REPOS" -o -z "$REV" ]; then
+    echo "Usage: $0 REPOS REV"
+    exit 2
+fi
+
+if ! python -V 2>/dev/null; then
+    echo "python is not in the PATH ($PATH), check PATH and LD_LIBRARY_PATH."
+    exit 2
+fi
+
+if [ -z "$TRAC_ENV" ]; then
+    echo "TRAC_ENV is not set."
+    exit 2
+fi
+
+# -- Feedback
+
+echo "----"
+
+if [ -z "$USER" -a -z "$PROPNAME" ]; then
+    EVENT="added"
+    echo "Changeset $REV was added in $REPOS"
+else
+    EVENT="modified"
+    echo "Changeset $REV was modified by $USER in $REPOS"
+fi
+
+# -- Call "trac-admin ... changeset ... $$REPOS $$REV" for each Trac environment
+
+ifs=$IFS
+IFS=:
+if [ -n "$BASH_VERSION" ]; then # we can use Bash syntax
+    if [[ $${BASH_VERSINFO[5]} = *cygwin ]]; then
+        IFS=";"
+    fi
+fi
+for env in $TRAC_ENV; do
+    if [ -r "$env/VERSION" ]; then
+        log=$env/log/svn-hooks-`basename $REPOS`.log
+        nohup sh <<EOF >> $log 2>&1 &
+            echo "Changeset $REV $EVENT"
+            trac-admin $env changeset $EVENT $REPOS $REV && \
+                echo "OK" || echo "FAILED: see the Trac log"
+EOF
+    else
+        echo "$env doesn't seem to be a Trac environment, skipping..."
+    fi
+done
+IFS=$ifs
