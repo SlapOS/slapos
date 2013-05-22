@@ -15,6 +15,8 @@ context =
 {%   set slave_section_title = 'dynamic-template-slave-instance-%s' % slave_reference -%}
 {%   set slave_parameter_dict = generic_instance_parameter_dict.copy() -%}
 {%   do part_list.append(slave_section_title) -%}
+{%   do slave_parameter_dict.__setitem__('access_log', '/'.join([apache_log_directory, '%s_access_log' % slave_reference])) -%}
+{%   do slave_parameter_dict.__setitem__('error_log', '/'.join([apache_log_directory, '%s_error_log' % slave_reference])) -%}
 [{{ slave_section_title }}]
 < = jinja2-template-base
 template = {{ template_slave_configuration }}
