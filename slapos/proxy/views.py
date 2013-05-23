@@ -258,7 +258,10 @@ def supplySupply():
   url = request.form['url']
   computer_id = request.form['computer_id']
   if app.config['computer_id'] == computer_id:
-    execute_db('software', 'INSERT OR REPLACE INTO %s VALUES(?)', [url])
+    if request.form['state'] == 'destroyed':
+      execute_db('software', 'DELETE FROM %s WHERE url = ?', [url])
+    else:
+      execute_db('software', 'INSERT OR REPLACE INTO %s VALUES(?)', [url])
   else:
     raise UnauthorizedError, "Only accept request for: %s" % \
                              app.config['computer_id']
