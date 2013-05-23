@@ -1,8 +1,7 @@
 # -*- coding: utf-8 -*-
-# vim: set et sts=2:
 ##############################################################################
 #
-# Copyright (c) 2010, 2011, 2012 Vifib SARL and Contributors.
+# Copyright (c) 2011, 2012 Vifib SARL and Contributors.
 # All Rights Reserved.
 #
 # WARNING: This program as such is intended to be used by professional
@@ -28,38 +27,21 @@
 #
 ##############################################################################
 
-import logging
+import argparse
+import ConfigParser
+
+from slapos.bang import do_bang
 
 
-class ProxyConfig(object):
-  def __init__(self, logger):
-    self.logger = logger
-
-  def mergeConfig(self, args, configp):
-    # Set options parameters
-    for option, value in args.__dict__.items():
-      setattr(self, option, value)
-
-    # Merges the arguments and configuration
-    for section in ("slapproxy", "slapos"):
-      configuration_dict = dict(configp.items(section))
-      for key in configuration_dict:
-        if not getattr(self, key, None):
-          setattr(self, key, configuration_dict[key])
-
-
-  def setConfig(self):
-    if not self.database_uri:
-      raise ValueError('database-uri is required.')
-
-
-def do_proxy(conf):
-  from slapos.proxy.views import app
-  for handler in conf.logger.handlers:
-    app.logger.addHandler(handler)
-  app.logger.setLevel(logging.INFO)
-  app.config['computer_id'] = conf.computer_id
-  app.config['DATABASE_URI'] = conf.database_uri
-  app.run(host=conf.host, port=int(conf.port))
-
-
+def main(*args):
+    ap = argparse.ArgumentParser()
+    ap.add_argument('-m', '--message', default='', help='Message for bang.')
+    ap.add_argument('configuration_file', type=argparse.FileType(),
+                    help='SlapOS configuration file.')
+    if args:
+        args = ap.parse_args(list(args))
+    else:
+        args = ap.parse_args()
+    configp = ConfigParser.SafeConfigParser()
+    configp.readfp(args.configuration_file)
+    do_bang(configp, args.message)

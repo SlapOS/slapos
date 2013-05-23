@@ -28,8 +28,6 @@
 #
 ##############################################################################
 
-from optparse import OptionParser, Option
-from xml_marshaller import xml_marshaller
 import ConfigParser
 import errno
 import fcntl
@@ -41,7 +39,6 @@ import netifaces
 import os
 import pwd
 import random
-import slapos.slap as slap
 import shutil
 import socket
 import struct
@@ -53,12 +50,10 @@ import traceback
 import zipfile
 
 import lxml.etree
-from slapos.version import version
+import xml_marshaller.xml_marshaller
 
-
-# set up logging
-logger = logging.getLogger("slapformat")
-logger.setLevel(logging.INFO)
+from slapos.util import mkdir_p
+import slapos.slap as slap
 
 
 def prettify_xml(xml):
@@ -66,17 +61,14 @@ def prettify_xml(xml):
   return lxml.etree.tostring(root, pretty_print=True)
 
 
-from slapos.util import mkdir_p
-
 class OS(object):
   """Wrap parts of the 'os' module to provide logging of performed actions."""
 
   _os = os
 
-  def __init__(self, config):
-    self._dry_run = config.dry_run
-    self._verbose = config.verbose
-    self._logger = config.logger
+  def __init__(self, conf):
+    self._dry_run = conf.dry_run
+    self._logger = conf.logger
     add = self._addWrapper
     add('chown')
     add('chmod')
@@ -85,11 +77,10 @@ class OS(object):
 
   def _addWrapper(self, name):
     def wrapper(*args, **kw):
-      if self._verbose:
-        arg_list = [repr(x) for x in args] + [
-                '%s=%r' % (x, y) for x, y in kw.iteritems()
-                ]
-        self._logger.debug('%s(%s)' % (name, ', '.join(arg_list)))
+      arg_list = [repr(x) for x in args] + [
+              '%s=%r' % (x, y) for x, y in kw.iteritems()
+              ]
+      self._logger.debug('%s(%s)' % (name, ', '.join(arg_list)))
       if not self._dry_run:
         getattr(self._os, name)(*args, **kw)
     setattr(self, name, wrapper)
@@ -161,36 +152,35 @@ def netmaskToPrefixIPv6(netmask):
           netaddr.strategy.ipv6.str_to_int(netmask)]
 
 
-def _getDict(instance):
+def _getDict(obj):
   """
-  Serialize an object instance into dictionaries. List and dict will remains
+  Serialize an object into dictionaries. List and dict will remains
   the same, basic type too. But encapsulated object will be returned as dict.
   Set, collections and other aren't handle for now.
 
   Args:
-    instance: an object of any type.
+    obj: an object of any type.
 
   Returns:
     A dictionary if the given object wasn't a list, a list otherwise.
   """
-  if isinstance(instance, list):
-    return [_getDict(item) for item in instance]
+  if isinstance(obj, list):
+    return [_getDict(item) for item in obj]
 
-  elif isinstance(instance, dict):
-    result = {}
-    for key in instance:
-      result[key] = _getDict(instance[key])
-    return result
-
+  if isinstance(obj, dict):
+    dikt = obj
   else:
     try:
-      dikt = instance.__dict__
+      dikt = obj.__dict__
     except AttributeError:
-      return instance
-    result = {}
-    for key, value in dikt.iteritems():
-      result[key] = _getDict(value)
-    return result
+      return obj
+
+  return {
+          key: _getDict(value)
+          for key, value in dikt.iteritems()
+          # do not attempt to serialize logger: it is both useless and recursive.
+          if not isinstance(value, logging.Logger)
+          }
 
 
 class Computer(object):
@@ -248,30 +238,30 @@ class Computer(object):
     # Can't find address
     raise NoAddressOnInterface('No valid IPv6 found on %s.' % self.interface.name)
 
-  def send(self, config):
+  def send(self, conf):
     """
     Send a marshalled dictionary of the computer object serialized via_getDict.
     """
 
     slap_instance = slap.slap()
     connection_dict = {}
-    if config.key_file and config.cert_file:
-      connection_dict['key_file'] = config.key_file
-      connection_dict['cert_file'] = config.cert_file
-    slap_instance.initializeConnection(config.master_url,
+    if conf.key_file and conf.cert_file:
+      connection_dict['key_file'] = conf.key_file
+      connection_dict['cert_file'] = conf.cert_file
+    slap_instance.initializeConnection(conf.master_url,
                                        **connection_dict)
     slap_computer = slap_instance.registerComputer(self.reference)
 
-    if config.dry_run:
+    if conf.dry_run:
       return
     try:
-      slap_computer.updateConfiguration(xml_marshaller.dumps(_getDict(self)))
+      slap_computer.updateConfiguration(xml_marshaller.xml_marshaller.dumps(_getDict(self)))
     except slap.NotFoundError as error:
       raise slap.NotFoundError("%s\nERROR : This SlapOS node is not recognised by "
           "SlapOS Master. Please make sure computer_id of slapos.cfg looks "
           "like 'COMP-123' and is correct.\nError is : 404 Not Found." % error)
 
-  def dump(self, path_to_xml, path_to_json):
+  def dump(self, path_to_xml, path_to_json, logger):
     """
     Dump the computer object to an xml file via xml_marshaller.
 
@@ -286,7 +276,7 @@ class Computer(object):
       with open(path_to_json, 'wb') as fout:
         fout.write(json.dumps(computer_dict, sort_keys=True, indent=2))
 
-    new_xml = xml_marshaller.dumps(computer_dict)
+    new_xml = xml_marshaller.xml_marshaller.dumps(computer_dict)
     new_pretty_xml = prettify_xml(new_xml)
 
     path_to_archive = path_to_xml + '.zip'
@@ -340,7 +330,7 @@ class Computer(object):
       A Computer object.
     """
 
-    dumped_dict = xml_marshaller.loads(open(path_to_xml).read())
+    dumped_dict = xml_marshaller.xml_marshaller.loads(open(path_to_xml).read())
 
     # Reconstructing the computer object from the xml
     computer = Computer(
@@ -684,12 +674,13 @@ class Tap(object):
 class Interface(object):
   """Represent a network interface on the system"""
 
-  def __init__(self, name, ipv4_local_network, ipv6_interface=None):
+  def __init__(self, logger, name, ipv4_local_network, ipv6_interface=None):
     """
     Attributes:
         name: String, the name of the interface
     """
 
+    self.logger = logger
     self.name = str(name)
     self.ipv4_local_network = ipv4_local_network
     self.ipv6_interface = ipv6_interface
@@ -853,7 +844,7 @@ class Interface(object):
       if self._addSystemAddress(addr, netmask, False):
         return dict(addr=addr, netmask=netmask)
       else:
-        logger.warning('Impossible to add old local IPv4 %s. Generating '
+        self.logger.warning('Impossible to add old local IPv4 %s. Generating '
             'new IPv4 address.' % addr)
         return self._generateRandomIPv4Address(netmask)
     else:
@@ -911,7 +902,7 @@ class Interface(object):
             # succeed, return it
             return dict(addr=addr, netmask=netmask)
           else:
-            logger.warning('Impossible to add old public IPv6 %s. '
+            self.logger.warning('Impossible to add old public IPv6 %s. '
                 'Generating new IPv6 address.' % addr)
 
     # Try 10 times to add address, raise in case if not possible
@@ -931,76 +922,8 @@ class Interface(object):
     raise AddressGenerationError(addr)
 
 
-class Parser(OptionParser):
-  """
-  Parse all arguments.
-  """
-  def __init__(self, usage=None, version=version):
-    """
-    Initialize all options possibles.
-    """
-    OptionParser.__init__(self, usage=usage, version=version,
-                          option_list=[
-      Option("-x", "--computer_xml",
-             help="Path to file with computer's XML. If does not exists, "
-                  "will be created",
-             default=None,
-             type=str),
-      Option("--computer_json",
-             help="Path to a JSON version of the computer's XML (for development only).",
-             default=None,
-             type=str),
-      Option("-l", "--log_file",
-             help="The path to the log file used by the script.",
-             type=str),
-      Option("-i", "--input_definition_file",
-             help="Path to file to read definition of computer instead of "
-             "declaration. Using definition file allows to disable "
-             "'discovery' of machine services and allows to define computer "
-             "configuration in fully controlled manner.",
-             type=str),
-      Option("-o", "--output_definition_file",
-             help="Path to file to write definition of computer from "
-             "declaration.",
-             type=str),
-      Option("-n", "--dry_run",
-             help="Don't actually do anything.",
-             default=False,
-             action="store_true"),
-      Option("-v", "--verbose",
-             default=False,
-             action="store_true",
-             help="Verbose output."),
-      Option("-c", "--console",
-             default=False,
-             action="store_true",
-             help="Console output."),
-      Option('--alter_user', choices=['True', 'False'],
-        help="Shall slapformat alter user database [default: True]"),
-      Option('--alter_network', choices=['True', 'False'],
-        help="Shall slapformat alter network configuration [default: True]"),
-      Option('--now',
-             help="Launch slapformat without delay",
-             default=False,
-             action="store_true"),
-      ])
-
-  def check_args(self, args):
-    """
-    Check arguments
-    """
-    if args:
-      (options, args) = self.parse_args(list(args))
-    else:
-      (options, args) = self.parse_args()
-    if len(args) != 1:
-      self.error("Incorrect number of arguments")
-    return options, args[0]
-
-
-
-def parse_computer_definition(config, definition_path):
-  config.logger.info('Using definition file %r' % definition_path)
+def parse_computer_definition(conf, definition_path):
+  conf.logger.info('Using definition file %r' % definition_path)
   computer_definition = ConfigParser.RawConfigParser({
     'software_user': 'slapsoft',
   })
@@ -1010,20 +933,20 @@ def parse_computer_definition(config, definition_path):
   netmask = None
   if computer_definition.has_option('computer', 'address'):
     address, netmask = computer_definition.get('computer', 'address').split('/')
-  if config.alter_network and config.interface_name is not None \
-      and config.ipv4_local_network is not None:
-    interface = Interface(config.interface_name, config.ipv4_local_network,
-      config.ipv6_interface)
+  if conf.alter_network and conf.interface_name is not None \
+      and conf.ipv4_local_network is not None:
+    interface = Interface(conf.logger, conf.interface_name, conf.ipv4_local_network,
+      conf.ipv6_interface)
   computer = Computer(
-      reference=config.computer_id,
+      reference=conf.computer_id,
       interface=interface,
       addr=address,
       netmask=netmask,
-      ipv6_interface=config.ipv6_interface,
+      ipv6_interface=conf.ipv6_interface,
       software_user=computer_definition.get('computer', 'software_user'),
     )
   partition_list = []
-  for partition_number in range(int(config.partition_amount)):
+  for partition_number in range(int(conf.partition_amount)):
     section = 'partition_%s' % partition_number
     user = User(computer_definition.get(section, 'user'))
     address_list = []
@@ -1032,7 +955,7 @@ def parse_computer_definition(config, definition_path):
       address_list.append(dict(addr=address, netmask=netmask))
     tap = Tap(computer_definition.get(section, 'network_interface'))
     partition = Partition(reference=computer_definition.get(section, 'pathname'),
-                          path=os.path.join(config.instance_root,
+                          path=os.path.join(conf.instance_root,
                                             computer_definition.get(section, 'pathname')),
                           user=user,
                           address_list=address_list,
@@ -1042,48 +965,48 @@ def parse_computer_definition(config, definition_path):
   return computer
 
 
-def parse_computer_xml(config, xml_path):
+def parse_computer_xml(conf, xml_path):
   if os.path.exists(xml_path):
-    config.logger.info('Loading previous computer data from %r' % xml_path)
+    conf.logger.info('Loading previous computer data from %r' % xml_path)
     computer = Computer.load(xml_path,
-                             reference=config.computer_id,
-                             ipv6_interface=config.ipv6_interface)
+                             reference=conf.computer_id,
+                             ipv6_interface=conf.ipv6_interface)
     # Connect to the interface defined by the configuration
-    computer.interface = Interface(config.interface_name, config.ipv4_local_network,
-        config.ipv6_interface)
+    computer.interface = Interface(conf.logger, conf.interface_name, conf.ipv4_local_network,
+        conf.ipv6_interface)
   else:
     # If no pre-existent configuration found, create a new computer object
-    config.logger.warning('Creating new data computer with id %r' % config.computer_id)
+    conf.logger.warning('Creating new data computer with id %r' % conf.computer_id)
     computer = Computer(
-      reference=config.computer_id,
-      interface=Interface(config.interface_name, config.ipv4_local_network,
-        config.ipv6_interface),
+      reference=conf.computer_id,
+      interface=Interface(conf.logger, conf.interface_name, conf.ipv4_local_network,
+        conf.ipv6_interface),
       addr=None,
       netmask=None,
-      ipv6_interface=config.ipv6_interface,
-      software_user=config.software_user,
+      ipv6_interface=conf.ipv6_interface,
+      software_user=conf.software_user,
     )
 
-  partition_amount = int(config.partition_amount)
+  partition_amount = int(conf.partition_amount)
   existing_partition_amount = len(computer.partition_list)
   if existing_partition_amount > partition_amount:
     raise ValueError('Requested amount of computer partitions (%s) is lower '
         'then already configured (%s), cannot continue' % (partition_amount,
           len(computer.partition_list)))
 
-  config.logger.info('Adding %s new partitions' %
-      (partition_amount-existing_partition_amount))
+  conf.logger.info('Adding %s new partitions' %
+      (partition_amount - existing_partition_amount))
   for nb_iter in range(existing_partition_amount, partition_amount):
     # add new ones
-    user = User("%s%s" % (config.user_base_name, nb_iter))
+    user = User("%s%s" % (conf.user_base_name, nb_iter))
 
-    tap = Tap("%s%s" % (config.tap_base_name, nb_iter))
+    tap = Tap("%s%s" % (conf.tap_base_name, nb_iter))
 
-    path = os.path.join(config.instance_root, "%s%s" % (
-                         config.partition_base_name, nb_iter))
+    path = os.path.join(conf.instance_root, "%s%s" % (
+                         conf.partition_base_name, nb_iter))
     computer.partition_list.append(
       Partition(
-        reference="%s%s" % (config.partition_base_name, nb_iter),
+        reference="%s%s" % (conf.partition_base_name, nb_iter),
         path=path,
         user=user,
         address_list=None,
@@ -1093,7 +1016,7 @@ def parse_computer_xml(config, xml_path):
   return computer
 
 
-def write_computer_definition(config, computer):
+def write_computer_definition(conf, computer):
   computer_definition = ConfigParser.RawConfigParser()
   computer_definition.add_section('computer')
   if computer.address is not None and computer.netmask is not None:
@@ -1109,44 +1032,58 @@ def write_computer_definition(config, computer):
     computer_definition.set(section, 'user', partition.user.name)
     computer_definition.set(section, 'network_interface', partition.tap.name)
     computer_definition.set(section, 'pathname', partition.reference)
-  computer_definition.write(open(config.output_definition_file, 'w'))
-  config.logger.info('Stored computer definition in %r' % config.output_definition_file)
+  computer_definition.write(open(conf.output_definition_file, 'w'))
+  conf.logger.info('Stored computer definition in %r' % conf.output_definition_file)
 
 
-def run(config):
-  if config.input_definition_file:
-    computer = parse_computer_definition(config, config.input_definition_file)
+def random_delay(conf):
+  # Add delay between 0 and 1 hour
+  # XXX should be the contrary: now by default, and cron should have
+  # --maximal-delay=3600
+  if not conf.now:
+    duration = float(60 * 60) * random.random()
+    print("Sleeping for %s seconds. To disable this feature, " \
+                    "use with --now parameter in manual." % duration)
+    time.sleep(duration)
+
+
+def do_format(conf):
+  random_delay(conf)
+
+  if conf.input_definition_file:
+    computer = parse_computer_definition(conf, conf.input_definition_file)
   else:
     # no definition file, figure out computer
-    computer = parse_computer_xml(config, config.computer_xml)
+    computer = parse_computer_xml(conf, conf.computer_xml)
 
-  computer.instance_root = config.instance_root
-  computer.software_root = config.software_root
-  config.logger.info('Updating computer')
-  address = computer.getAddress(config.create_tap)
+  computer.instance_root = conf.instance_root
+  computer.software_root = conf.software_root
+  conf.logger.info('Updating computer')
+  address = computer.getAddress(conf.create_tap)
   computer.address = address['addr']
   computer.netmask = address['netmask']
 
-  if config.output_definition_file:
-    write_computer_definition(config, computer)
+  if conf.output_definition_file:
+    write_computer_definition(conf, computer)
 
-  computer.construct(alter_user=config.alter_user,
-                     alter_network=config.alter_network,
-                     create_tap=config.create_tap)
+  computer.construct(alter_user=conf.alter_user,
+                     alter_network=conf.alter_network,
+                     create_tap=conf.create_tap)
 
-  if getattr(config, 'certificate_repository_path', None):
-    mkdir_p(config.certificate_repository_path, mode=0o700)
+  if getattr(conf, 'certificate_repository_path', None):
+    mkdir_p(conf.certificate_repository_path, mode=0o700)
 
   # Dumping and sending to the erp5 the current configuration
-  if not config.dry_run:
-    computer.dump(path_to_xml=config.computer_xml,
-                  path_to_json=config.computer_json)
-  config.logger.info('Posting information to %r' % config.master_url)
-  computer.send(config)
-  config.logger.info('slapformat successfully prepared computer.')
+  if not conf.dry_run:
+    computer.dump(path_to_xml=conf.computer_xml,
+                  path_to_json=conf.computer_json,
+                  logger=conf.logger)
+  conf.logger.info('Posting information to %r' % conf.master_url)
+  computer.send(conf)
+  conf.logger.info('slapformat successfully prepared computer.')
 
 
-class Config(object):
+class FormatConfig(object):
   key_file = None
   cert_file = None
   alter_network = None
@@ -1155,13 +1092,13 @@ class Config(object):
   computer_xml = None
   computer_json = None
   input_definition_file = None
-  logger = None
   log_file = None
   output_definition_file = None
-  verbose = None
   dry_run = None
-  console = None
   software_user = None
+
+  def __init__(self, logger):
+    self.logger = logger
 
   @staticmethod
   def checkRequiredBinary(binary_list):
@@ -1179,33 +1116,26 @@ class Config(object):
       raise UsageError('Some required binaries are missing or not '
           'functional: %s' % (','.join(missing_binary_list), ))
 
-  def setConfig(self, option_dict, configuration_file_path):
+  def mergeConfig(self, args, configp):
     """
     Set options given by parameters.
+    Must be executed before setting up the logger.
     """
     self.key_file = None
     self.cert_file = None
 
-    # set up logging
-    # XXX-Cedric: change code to use global logger
-    self.logger = logger
-
-    # Set options parameters
-    for option, value in option_dict.__dict__.items():
-      setattr(self, option, value)
-
-    # Load configuration file
-    configuration_parser = ConfigParser.SafeConfigParser()
-    if configuration_parser.read(configuration_file_path) != [configuration_file_path]:
-      raise UsageError('Cannot find or parse configuration file: %s' % configuration_file_path)
+    # Set argument parameters
+    for key, value in args.__dict__.items():
+      setattr(self, key, value)
 
     # Merges the arguments and configuration
     for section in ("slapformat", "slapos"):
-      configuration_dict = dict(configuration_parser.items(section))
+      configuration_dict = dict(configp.items(section))
       for key in configuration_dict:
         if not getattr(self, key, None):
           setattr(self, key, configuration_dict[key])
 
+  def setConfig(self):
     # setup some nones
     for parameter in ['interface_name', 'partition_base_name', 'user_base_name',
         'tap_base_name', 'ipv4_local_network', 'ipv6_interface']:
@@ -1233,10 +1163,6 @@ class Config(object):
       self.software_user = 'slapsoft'
     if self.create_tap is None:
       self.create_tap = True
-
-    # Configure logging
-    if self.console:
-      self.logger.addHandler(logging.StreamHandler())
 
     # Convert strings to booleans
     for o in ['alter_network', 'alter_user', 'create_tap']:
@@ -1275,21 +1201,8 @@ class Config(object):
     if root_needed and os.getuid() != 0:
       message = "Root rights are needed"
       self.logger.error(message)
-      sys.stderr.write(message+'\n')
+      sys.stderr.write(message + '\n')
       sys.exit()
-
-    if self.log_file:
-      if not os.path.isdir(os.path.dirname(self.log_file)):
-        # fallback to console only if directory for logs does not exists and
-        # continue to run
-        raise ValueError('Please create directory %r to store %r log file' % (
-          os.path.dirname(self.log_file), self.log_file))
-      else:
-        file_handler = logging.FileHandler(self.log_file)
-        file_handler.setFormatter(logging.Formatter("%(asctime)s - "
-          "%(name)s - %(levelname)s - %(message)s"))
-        self.logger.addHandler(file_handler)
-        self.logger.info('Configured logging to file %r' % self.log_file)
 
     # Check mandatory options
     for parameter in ('computer_id', 'instance_root', 'master_url',
@@ -1307,9 +1220,6 @@ class Config(object):
           sys.exit(1)
 
     self.logger.info("Started.")
-    if self.verbose:
-      self.logger.setLevel(logging.DEBUG)
-      self.logger.debug("Verbose mode enabled.")
     if self.dry_run:
       self.logger.info("Dry-run mode enabled.")
     if self.create_tap:
@@ -1325,22 +1235,22 @@ class Config(object):
       self.output_definition_file = os.path.abspath(self.output_definition_file)
 
 
-
-def tracing_monkeypatch(config):
+def tracing_monkeypatch(conf):
   """Substitute os module and callAndRead function with tracing wrappers."""
   global os
   global callAndRead
 
   real_callAndRead = callAndRead
 
-  os = OS(config)
-  if config.dry_run:
+  os = OS(conf)
+  if conf.dry_run:
     def dry_callAndRead(argument_list, raise_on_error=True):
       if argument_list == ['brctl', 'show']:
         return real_callAndRead(argument_list, raise_on_error)
       else:
         return 0, ''
     callAndRead = dry_callAndRead
+
     def fake_getpwnam(user):
       class result(object):
         pw_uid = 12345
@@ -1350,40 +1260,7 @@ def tracing_monkeypatch(config):
   else:
     dry_callAndRead = real_callAndRead
 
-  if config.verbose:
-    def logging_callAndRead(argument_list, raise_on_error=True):
-      config.logger.debug(' '.join(argument_list))
-      return dry_callAndRead(argument_list, raise_on_error)
-    callAndRead = logging_callAndRead
-
-
-def main(*args):
-  "Run default configuration."
-
-  # Parse arguments
-  usage = "usage: %s [options] CONFIGURATION_FILE" % sys.argv[0]
-  options, configuration_file_path = Parser(usage=usage).check_args(args)
-  config = Config()
-  try:
-    config.setConfig(options, configuration_file_path)
-  except UsageError as err:
-    sys.stderr.write(err.message + '\n')
-    sys.stderr.write("For help use --help\n")
-    sys.exit(1)
-
-  tracing_monkeypatch(config)
-
-  # Add delay between 0 and 1 hour
-  # XXX should be the contrary: now by default, and cron should have
-  # --maximal-delay=3600
-  if not config.now:
-    duration = float(60*60) * random.random()
-    print("Sleeping for %s seconds. To disable this feature, " \
-                    "use with --now parameter in manual." % duration)
-    time.sleep(duration)
-  try:
-    run(config)
-  except:
-    config.logger.exception('Uncaught exception:')
-    raise
-
+  def logging_callAndRead(argument_list, raise_on_error=True):
+    conf.logger.debug(' '.join(argument_list))
+    return dry_callAndRead(argument_list, raise_on_error)
+  callAndRead = logging_callAndRead

@@ -25,24 +25,30 @@
 #
 ##############################################################################
 
-from slapos.grid import slapgrid
 import httplib
 import logging
 import os
-from random import random
+import random
 import shutil
 import signal
-import slapos.slap.slap
-import slapos.grid.utils
-from slapos.grid.watchdog import Watchdog, getWatchdogID
 import socket
 import sys
 import tempfile
 import textwrap
 import time
-import unittest
+import unittest2
 import urlparse
+
 import xml_marshaller
+
+import slapos.slap.slap
+import slapos.grid.utils
+from slapos.grid import slapgrid
+from slapos.cli_legacy.slapgrid import parseArgumentTupleAndReturnSlapgridObject
+from slapos.grid.utils import md5digest
+from slapos.grid.watchdog import Watchdog, getWatchdogID
+
+dummylogger = logging.getLogger()
 
 
 WATCHDOG_TEMPLATE = """#!%(python_path)s -S
@@ -112,10 +118,15 @@ class BasicMixin:
       'supervisord')
     self.usage_report_periodicity = 1
     self.buildout = None
-    self.grid = slapgrid.Slapgrid(self.software_root, self.instance_root,
-      self.master_url, self.computer_id, self.supervisord_socket,
-      self.supervisord_configuration_path,
-      self.buildout, develop=develop)
+    self.grid = slapgrid.Slapgrid(self.software_root,
+                                  self.instance_root,
+                                  self.master_url,
+                                  self.computer_id,
+                                  self.supervisord_socket,
+                                  self.supervisord_configuration_path,
+                                  self.buildout,
+                                  develop=develop,
+                                  logger=logging.getLogger())
     # monkey patch buildout bootstrap
     def dummy(*args, **kw):
       pass
@@ -142,7 +153,7 @@ class BasicMixin:
     shutil.rmtree(self._tempdir, True)
 
 
-class TestBasicSlapgridCP(BasicMixin, unittest.TestCase):
+class TestBasicSlapgridCP(BasicMixin, unittest2.TestCase):
   def test_no_software_root(self):
     self.assertRaises(OSError, self.grid.processComputerPartitionList)
 
@@ -308,7 +319,7 @@ class ComputerForTest:
           return (200, {}, '')
 
       elif method == 'POST' and 'url' in parsed_qs:
-        # XXX hardcoded to first sofwtare release!
+        # XXX hardcoded to first software release!
         software = self.software_list[0]
         software.sequence.append(parsed_url.path)
         if parsed_url.path == 'buildingSoftwareRelease':
@@ -381,11 +392,11 @@ class InstanceForTest:
       os.mkdir(certificate_repository_path)
     self.cert_file = os.path.join(certificate_repository_path,
                                   "%s.crt" % self.name)
-    self.certificate = str(random())
+    self.certificate = str(random.random())
     open(self.cert_file, 'w').write(self.certificate)
     self.key_file = os.path.join(certificate_repository_path,
                                   "%s.key" % self.name)
-    self.key = str(random())
+    self.key = str(random.random())
     open(self.key_file, 'w').write(self.key)
 
 class SoftwareForTest:
@@ -400,8 +411,7 @@ class SoftwareForTest:
     self.software_root = software_root
     self.name = 'http://sr%s/' % name
     self.sequence = []
-    self.software_hash = \
-        slapos.grid.utils.getSoftwareUrlHash(self.name)
+    self.software_hash = md5digest(self.name)
     self.srdir = os.path.join(self.software_root, self.software_hash)
     self.requested_state = 'available'
     os.mkdir(self.srdir)
@@ -442,7 +452,7 @@ touch worked"""):
 
 
 
-class TestSlapgridCPWithMaster(MasterMixin, unittest.TestCase):
+class TestSlapgridCPWithMaster(MasterMixin, unittest2.TestCase):
 
   def test_nothing_to_do(self):
 
@@ -736,7 +746,7 @@ exit 1
     self.assertEqual('stopped', instance.state)
 
 
-class TestSlapgridCPWithMasterWatchdog(MasterMixin, unittest.TestCase):
+class TestSlapgridCPWithMasterWatchdog(MasterMixin, unittest2.TestCase):
 
   def setUp(self):
     MasterMixin.setUp(self)
@@ -911,7 +921,7 @@ class TestSlapgridCPWithMasterWatchdog(MasterMixin, unittest.TestCase):
       self.assertEqual(computer.sequence,[])
 
 
-class TestSlapgridCPPartitionProcessing (MasterMixin, unittest.TestCase):
+class TestSlapgridCPPartitionProcessing (MasterMixin, unittest2.TestCase):
 
   def test_partition_timestamp(self):
     computer = ComputerForTest(self.software_root,self.instance_root)
@@ -1298,7 +1308,7 @@ echo %s; echo %s; exit 42""" % (line1, line2))
     self.assertTrue("Failed to run buildout" in instance.error_log)
 
 
-class TestSlapgridUsageReport(MasterMixin, unittest.TestCase):
+class TestSlapgridUsageReport(MasterMixin, unittest2.TestCase):
   """
   Test suite about slapgrid-ur
   """
@@ -1500,7 +1510,7 @@ class TestSlapgridUsageReport(MasterMixin, unittest.TestCase):
 
 
 
-class TestSlapgridSoftwareRelease(MasterMixin, unittest.TestCase):
+class TestSlapgridSoftwareRelease(MasterMixin, unittest2.TestCase):
   def test_one_software_buildout_fail_is_correctly_logged(self):
     """
     1. We set up a software using a corrupted buildout
@@ -1521,7 +1531,7 @@ echo %s; echo %s; exit 42""" % (line1, line2))
     self.assertTrue(line2 in software.error_log)
     self.assertTrue("Failed to run buildout" in software.error_log)
 
-class SlapgridInitialization(unittest.TestCase):
+class SlapgridInitialization(unittest2.TestCase):
   """
   "Abstract" class setting setup and teardown for TestSlapgridArgumentTuple
   and TestSlapgridConfigurationFile.
@@ -1571,7 +1581,7 @@ class TestSlapgridArgumentTuple(SlapgridInitialization):
     """
       Raises if the argument list if empty and without configuration file.
     """
-    parser = slapgrid.parseArgumentTupleAndReturnSlapgridObject
+    parser = parseArgumentTupleAndReturnSlapgridObject
     # XXX: SystemExit is too generic exception, it is only known that
     #      something is wrong
     self.assertRaises(SystemExit, parser, *())
@@ -1581,7 +1591,7 @@ class TestSlapgridArgumentTuple(SlapgridInitialization):
       Check if we can have the slapgrid object returned with the minimum
       arguments.
     """
-    parser = slapgrid.parseArgumentTupleAndReturnSlapgridObject
+    parser = parseArgumentTupleAndReturnSlapgridObject
     return_list = parser(*self.default_arg_tuple)
     self.assertEquals(2, len(return_list))
 
@@ -1589,19 +1599,19 @@ class TestSlapgridArgumentTuple(SlapgridInitialization):
     """
       Raises if the  signature_private_key_file does not exists.
     """
-    parser = slapgrid.parseArgumentTupleAndReturnSlapgridObject
+    parser = parseArgumentTupleAndReturnSlapgridObject
     argument_tuple = ("--signature_private_key_file", "/non/exists/path") + \
                       self.default_arg_tuple
-    # XXX: SystemExit is too generic exception, it is only known that
-    #      something is wrong
-    self.assertRaises(SystemExit, parser, *argument_tuple)
+    self.assertRaisesRegexp(RuntimeError,
+                            "File '/non/exists/path' does not exist.",
+                            parser, *argument_tuple)
 
   def test_signature_private_key_file(self):
     """
       Check if the signature private key argument value is available on
       slapgrid object.
     """
-    parser = slapgrid.parseArgumentTupleAndReturnSlapgridObject
+    parser = parseArgumentTupleAndReturnSlapgridObject
     argument_tuple = ("--signature_private_key_file",
                       self.signature_key_file_descriptor.name) + \
                       self.default_arg_tuple
@@ -1613,7 +1623,7 @@ class TestSlapgridArgumentTuple(SlapgridInitialization):
     """
       Check if giving --all triggers "develop" option.
     """
-    parser = slapgrid.parseArgumentTupleAndReturnSlapgridObject
+    parser = parseArgumentTupleAndReturnSlapgridObject
     argument_tuple = ("--all",) + self.default_arg_tuple
     slapgrid_object = parser(*argument_tuple)[0]
     self.assertTrue(slapgrid_object.develop)
@@ -1623,7 +1633,7 @@ class TestSlapgridArgumentTuple(SlapgridInitialization):
       Check if not giving --all neither --develop triggers "develop"
       option to be False.
     """
-    parser = slapgrid.parseArgumentTupleAndReturnSlapgridObject
+    parser = parseArgumentTupleAndReturnSlapgridObject
     argument_tuple = self.default_arg_tuple
     slapgrid_object = parser(*argument_tuple)[0]
     self.assertFalse(slapgrid_object.develop)
@@ -1633,7 +1643,7 @@ class TestSlapgridArgumentTuple(SlapgridInitialization):
       Check if not giving --maximum-periodicity triggers "force_periodicity"
       option to be false.
     """
-    parser = slapgrid.parseArgumentTupleAndReturnSlapgridObject
+    parser = parseArgumentTupleAndReturnSlapgridObject
     argument_tuple = self.default_arg_tuple
     slapgrid_object = parser(*argument_tuple)[0]
     self.assertFalse(slapgrid_object.force_periodicity)
@@ -1642,7 +1652,7 @@ class TestSlapgridArgumentTuple(SlapgridInitialization):
     """
       Check if giving --maximum-periodicity triggers "force_periodicity" option.
     """
-    parser = slapgrid.parseArgumentTupleAndReturnSlapgridObject
+    parser = parseArgumentTupleAndReturnSlapgridObject
     argument_tuple = ("--maximum-periodicity","40") + self.default_arg_tuple
     slapgrid_object = parser(*argument_tuple)[0]
     self.assertTrue(slapgrid_object.force_periodicity)
@@ -1666,7 +1676,7 @@ upload-to-binary-cache-url-blacklist =
   http://2/bla
 """ % dict(fake_file=self.fake_file_descriptor.name))
     self.slapos_config_descriptor.seek(0)
-    slapgrid_object = slapgrid.parseArgumentTupleAndReturnSlapgridObject(
+    slapgrid_object = parseArgumentTupleAndReturnSlapgridObject(
         *self.default_arg_tuple)[0]
     self.assertEqual(
         slapgrid_object.upload_to_binary_cache_url_blacklist,
@@ -1694,7 +1704,7 @@ download-from-binary-cache-url-blacklist =
   http://2/bla
 """ % dict(fake_file=self.fake_file_descriptor.name))
     self.slapos_config_descriptor.seek(0)
-    slapgrid_object = slapgrid.parseArgumentTupleAndReturnSlapgridObject(
+    slapgrid_object = parseArgumentTupleAndReturnSlapgridObject(
         *self.default_arg_tuple)[0]
     self.assertEqual(
         slapgrid_object.upload_to_binary_cache_url_blacklist,
@@ -1726,7 +1736,7 @@ download-from-binary-cache-url-blacklist =
   http://4/bla
 """ % dict(fake_file=self.fake_file_descriptor.name))
     self.slapos_config_descriptor.seek(0)
-    slapgrid_object = slapgrid.parseArgumentTupleAndReturnSlapgridObject(
+    slapgrid_object = parseArgumentTupleAndReturnSlapgridObject(
         *self.default_arg_tuple)[0]
     self.assertEqual(
         slapgrid_object.upload_to_binary_cache_url_blacklist,
@@ -1755,7 +1765,7 @@ binary-cache-url-blacklist =
   http://2/bla
 """ % dict(fake_file=self.fake_file_descriptor.name))
     self.slapos_config_descriptor.seek(0)
-    slapgrid_object = slapgrid.parseArgumentTupleAndReturnSlapgridObject(
+    slapgrid_object = parseArgumentTupleAndReturnSlapgridObject(
         *self.default_arg_tuple)[0]
     self.assertEqual(
         slapgrid_object.upload_to_binary_cache_url_blacklist,
@@ -1767,7 +1777,7 @@ binary-cache-url-blacklist =
     )
 
 
-class TestSlapgridCPWithMasterPromise(MasterMixin, unittest.TestCase):
+class TestSlapgridCPWithMasterPromise(MasterMixin, unittest2.TestCase):
   def test_one_failing_promise(self):
     computer = ComputerForTest(self.software_root,self.instance_root)
     instance = computer.instance_list[0]
@@ -1822,7 +1832,7 @@ exit 127""" % {'worked_file': worked_file})
                      slapos.grid.slapgrid.SLAPGRID_PROMISE_FAIL)
     self.assertTrue(os.path.isfile(worked_file))
 
-    self.assertEqual(instance.error_log, 'Error')
+    self.assertEqual(instance.error_log[-5:], 'Error')
     self.assertTrue(instance.error)
     self.assertIsNone(instance.state)
 

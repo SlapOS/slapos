@@ -28,50 +28,59 @@
 #
 ##############################################################################
 
-import logging
 import os
-import shutil
-import subprocess
 import pkg_resources
 import pwd
+import shutil
 import stat
+import subprocess
 import tarfile
 import tempfile
 import textwrap
-import utils
 import xmlrpclib
 
 from supervisor import xmlrpc
-from slapos.slap.slap import NotFoundError
-from svcbackend import getSupervisorRPC
-from exception import BuildoutFailedError, WrongPermissionError, \
-    PathDoesNotExistError
-from networkcache import download_network_cached, upload_network_cached
-from watchdog import getWatchdogID
 
-REQUIRED_COMPUTER_PARTITION_PERMISSION = '0750'
+from slapos.grid.utils import (md5digest, getCleanEnvironment,
+                               SlapPopen, dropPrivileges, updateFile)
+from slapos.grid import utils # for mocked methods
+from slapos.slap.slap import NotFoundError
+from slapos.grid.svcbackend import getSupervisorRPC
+from slapos.grid.exception import (BuildoutFailedError, WrongPermissionError,
+                                   PathDoesNotExistError)
+from slapos.grid.networkcache import download_network_cached, upload_network_cached
+from slapos.grid.watchdog import getWatchdogID
+
+REQUIRED_COMPUTER_PARTITION_PERMISSION = 0o750
 
 
 class Software(object):
   """This class is responsible for installing a software release"""
 
-  def __init__(self, url, software_root, buildout,
-      signature_private_key_file=None, signature_certificate_list=None,
-      upload_cache_url=None, upload_dir_url=None, shacache_cert_file=None,
-      shacache_key_file=None, shadir_cert_file=None, shadir_key_file=None,
-      download_binary_cache_url=None, upload_binary_cache_url=None,
-      download_binary_dir_url=None, upload_binary_dir_url=None,
-      download_from_binary_cache_url_blacklist = [],
-      upload_to_binary_cache_url_blacklist = []):
+  def __init__(self, url, software_root, buildout, logger,
+               signature_private_key_file=None, signature_certificate_list=None,
+               upload_cache_url=None, upload_dir_url=None, shacache_cert_file=None,
+               shacache_key_file=None, shadir_cert_file=None, shadir_key_file=None,
+               download_binary_cache_url=None, upload_binary_cache_url=None,
+               download_binary_dir_url=None, upload_binary_dir_url=None,
+               download_from_binary_cache_url_blacklist=None,
+               upload_to_binary_cache_url_blacklist=None):
     """Initialisation of class parameters
     """
+
+    if download_from_binary_cache_url_blacklist is None:
+      download_from_binary_cache_url_blacklist = []
+
+    if upload_to_binary_cache_url_blacklist is None:
+      upload_to_binary_cache_url_blacklist = []
+
     self.url = url
     self.software_root = software_root
-    self.software_url_hash = utils.getSoftwareUrlHash(self.url)
+    self.software_url_hash = md5digest(self.url)
     self.software_path = os.path.join(self.software_root,
                                       self.software_url_hash)
     self.buildout = buildout
-    self.logger = logging.getLogger('BuildoutManager')
+    self.logger = logger
     self.signature_private_key_file = signature_private_key_file
     self.signature_certificate_list = signature_certificate_list
     self.upload_cache_url = upload_cache_url
@@ -116,15 +125,14 @@ class Software(object):
       else:
         self._install_from_buildout()
         # Upload to binary cache if possible and allowed
-        if (self.software_root and self.url and self.software_url_hash \
-                               and self.upload_binary_cache_url \
-                               and self.upload_binary_dir_url):
+        if all([self.software_root, self.url, self.software_url_hash,
+                self.upload_binary_cache_url, self.upload_binary_dir_url]):
           blacklisted = False
           for url in self.upload_to_binary_cache_url_blacklist:
             if self.url.startswith(url):
               blacklisted = True
               self.logger.info("Can't upload to binary cache: "
-                  "Software Release URL is blacklisted.")
+                               "Software Release URL is blacklisted.")
               break
           if not blacklisted:
             self.uploadSoftwareRelease(tarpath)
@@ -136,8 +144,8 @@ class Software(object):
     it. If it fails, we notify the server.
     """
     root_stat_info = os.stat(self.software_root)
-    os.environ = utils.getCleanEnvironment(pwd.getpwuid(root_stat_info.st_uid
-      ).pw_dir)
+    os.environ = getCleanEnvironment(logger=self.logger,
+                                     home_path=pwd.getpwuid(root_stat_info.st_uid).pw_dir)
     if not os.path.isdir(self.software_path):
       os.mkdir(self.software_path)
     extends_cache = tempfile.mkdtemp()
@@ -145,41 +153,44 @@ class Software(object):
       # In case when running as root copy ownership, to simplify logic
       for path in [self.software_path, extends_cache]:
         path_stat_info = os.stat(path)
-        if root_stat_info.st_uid != path_stat_info.st_uid or\
-             root_stat_info.st_gid != path_stat_info.st_gid:
-            os.chown(path, root_stat_info.st_uid,
-                root_stat_info.st_gid)
+        if (root_stat_info.st_uid != path_stat_info.st_uid or
+              root_stat_info.st_gid != path_stat_info.st_gid):
+          os.chown(path, root_stat_info.st_uid,
+                   root_stat_info.st_gid)
     try:
       buildout_parameter_list = [
-        'buildout:extends-cache=%s' % extends_cache,
-        'buildout:directory=%s' % self.software_path,]
+          'buildout:extends-cache=%s' % extends_cache,
+          'buildout:directory=%s' % self.software_path
+      ]
 
-      if self.signature_private_key_file or \
-          self.upload_cache_url or \
-            self.upload_dir_url is not None:
+      if (self.signature_private_key_file or
+          self.upload_cache_url or
+          self.upload_dir_url):
         buildout_parameter_list.append('buildout:networkcache-section=networkcache')
-      for  buildout_option, value in (
-         ('%ssignature-private-key-file=%s', self.signature_private_key_file),
-         ('%supload-cache-url=%s', self.upload_cache_url),
-         ('%supload-dir-url=%s', self.upload_dir_url),
-         ('%sshacache-cert-file=%s', self.shacache_cert_file),
-         ('%sshacache-key-file=%s', self.shacache_key_file),
-         ('%sshadir-cert-file=%s', self.shadir_cert_file),
-         ('%sshadir-key-file=%s', self.shadir_key_file),
-         ):
+      for buildout_option, value in [
+          ('%ssignature-private-key-file=%s', self.signature_private_key_file),
+          ('%supload-cache-url=%s', self.upload_cache_url),
+          ('%supload-dir-url=%s', self.upload_dir_url),
+          ('%sshacache-cert-file=%s', self.shacache_cert_file),
+          ('%sshacache-key-file=%s', self.shacache_key_file),
+          ('%sshadir-cert-file=%s', self.shadir_cert_file),
+          ('%sshadir-key-file=%s', self.shadir_key_file)
+      ]:
         if value:
-          buildout_parameter_list.append( \
-              buildout_option % ('networkcache:', value))
+          buildout_parameter_list.append(buildout_option % ('networkcache:', value))
 
       buildout_cfg = os.path.join(self.software_path, 'buildout.cfg')
       self.createProfileIfMissing(buildout_cfg, self.url)
 
       buildout_parameter_list.extend(['-c', buildout_cfg])
-      utils.bootstrapBuildout(self.software_path, self.buildout,
-          additional_buildout_parametr_list=buildout_parameter_list)
-      utils.launchBuildout(self.software_path,
-                     os.path.join(self.software_path, 'bin', 'buildout'),
-                     additional_buildout_parametr_list=buildout_parameter_list)
+      utils.bootstrapBuildout(path=self.software_path,
+                              buildout=self.buildout,
+                              logger=self.logger,
+                              additional_buildout_parametr_list=buildout_parameter_list)
+      utils.launchBuildout(path=self.software_path,
+                           buildout_binary=os.path.join(self.software_path, 'bin', 'buildout'),
+                           logger=self.logger,
+                           additional_buildout_parametr_list=buildout_parameter_list)
     finally:
       shutil.rmtree(extends_cache)
 
@@ -226,7 +237,7 @@ class Software(object):
       if func == os.path.islink:
         os.unlink(path)
       else:
-        os.chmod(path, 0600)
+        os.chmod(path, 0o600)
         func(path)
     try:
       if os.path.exists(self.software_path):
@@ -235,10 +246,8 @@ class Software(object):
       else:
         self.logger.info('Path %r does not exists, no need to remove.' %
             self.software_path)
-    except IOError as error:
-      error_string = "I/O error while removing software (%s): %s" % (self.url,
-                                                                     error)
-      raise IOError(error_string)
+    except IOError as exc:
+      raise IOError("I/O error while removing software (%s): %s" % (self.url, exc))
 
 
 class Partition(object):
@@ -256,10 +265,12 @@ class Partition(object):
                server_url,
                software_release_url,
                buildout,
+               logger,
                certificate_repository_path=None,
                ):
     """Initialisation of class parameters"""
     self.buildout = buildout
+    self.logger = logger
     self.software_path = software_path
     self.instance_path = instance_path
     self.run_path = os.path.join(self.instance_path, 'etc', 'run')
@@ -268,7 +279,6 @@ class Partition(object):
         supervisord_partition_configuration_path
     self.supervisord_socket = supervisord_socket
     self.computer_partition = computer_partition
-    self.logger = logging.getLogger('Partition')
     self.computer_id = computer_id
     self.partition_id = partition_id
     self.server_url = server_url
@@ -284,19 +294,18 @@ class Partition(object):
       self._updateCertificate()
 
   def _updateCertificate(self):
-    if not os.path.exists(self.key_file) or \
-        not os.path.exists(self.cert_file):
+    if not os.path.exists(self.key_file) or not os.path.exists(self.cert_file):
       self.logger.info('Certificate and key not found, downloading to %r and '
           '%r' % (self.cert_file, self.key_file))
       try:
         partition_certificate = self.computer_partition.getCertificate()
       except NotFoundError:
-        raise NotFoundError('Partition %s is not known from SlapOS Master.' % \
+        raise NotFoundError('Partition %s is not known from SlapOS Master.' %
             self.partition_id)
       open(self.key_file, 'w').write(partition_certificate['key'])
       open(self.cert_file, 'w').write(partition_certificate['certificate'])
     for f in [self.key_file, self.cert_file]:
-      os.chmod(f, 0400)
+      os.chmod(f, 0o400)
       os.chown(f, *self.getUserGroupId())
 
   def getUserGroupId(self):
@@ -307,24 +316,24 @@ class Partition(object):
     return (uid, gid)
 
   def addServiceToGroup(self, partition_id,
-                        runner_list, path, extension = ''):
+                        runner_list, path, extension=''):
     uid, gid = self.getUserGroupId()
     program_partition_template = pkg_resources.resource_stream(__name__,
             'templates/program_partition_supervisord.conf.in').read()
     for runner in runner_list:
       self.partition_supervisor_configuration += '\n' + \
-          program_partition_template % dict(
-        program_id='_'.join([partition_id, runner]),
-        program_directory=self.instance_path,
-        program_command=os.path.join(path, runner),
-        program_name=runner+extension,
-        instance_path=self.instance_path,
-        user_id=uid,
-        group_id=gid,
-        # As supervisord has no environment to inherit, setup a minimalistic one
-        HOME=pwd.getpwuid(uid).pw_dir,
-        USER=pwd.getpwuid(uid).pw_name,
-      )
+          program_partition_template % {
+                  'program_id': '_'.join([partition_id, runner]),
+                  'program_directory': self.instance_path,
+                  'program_command': os.path.join(path, runner),
+                  'program_name': runner + extension,
+                  'instance_path': self.instance_path,
+                  'user_id': uid,
+                  'group_id': gid,
+                  # As supervisord has no environment to inherit, setup a minimalistic one
+                  'HOME': pwd.getpwuid(uid).pw_dir,
+                  'USER': pwd.getpwuid(uid).pw_name,
+                  }
 
   def updateSymlink(self, sr_symlink, software_path):
     if os.path.lexists(sr_symlink):
@@ -339,7 +348,7 @@ class Partition(object):
     """ Creates configuration file from template in software_path, then
     installs the software partition with the help of buildout
     """
-    self.logger.info("Installing Computer Partition %s..." \
+    self.logger.info("Installing Computer Partition %s..."
         % self.computer_partition.getId())
     # Checks existence and permissions of Partition directory
     # Note : Partitions have to be created and configured before running slapgrid
@@ -351,15 +360,14 @@ class Partition(object):
     self.updateSymlink(sr_symlink, self.software_path)
 
     instance_stat_info = os.stat(self.instance_path)
-    permission = oct(stat.S_IMODE(instance_stat_info.st_mode))
+    permission = stat.S_IMODE(instance_stat_info.st_mode)
     if permission != REQUIRED_COMPUTER_PARTITION_PERMISSION:
-      raise WrongPermissionError('Wrong permissions in %s : actual ' \
-                                          'permissions are : %s, wanted ' \
-                                          'are %s' %
-                                          (self.instance_path, permission,
-                                            REQUIRED_COMPUTER_PARTITION_PERMISSION))
-    os.environ = utils.getCleanEnvironment(pwd.getpwuid(
-      instance_stat_info.st_uid).pw_dir)
+      raise WrongPermissionError('Wrong permissions in %s: actual '
+                                 'permissions are: 0%o, wanted are 0%o' %
+                                 (self.instance_path, permission,
+                                  REQUIRED_COMPUTER_PARTITION_PERMISSION))
+    os.environ = getCleanEnvironment(logger=self.logger,
+                                     home_path=pwd.getpwuid(instance_stat_info.st_uid).pw_dir)
     # Generates buildout part from template
     template_location = os.path.join(self.software_path, 'instance.cfg')
     # Backward compatibility: "instance.cfg" file was named "template.cfg".
@@ -369,23 +377,23 @@ class Partition(object):
     self.logger.debug("Copying %r to %r" % (template_location, config_location))
     try:
       shutil.copy(template_location, config_location)
-    except IOError, e:
+    except IOError as exc:
       # Template not found on SR, we notify user.
-      raise IOError('Software Release %s is not correctly installed.\n'
-          '%s' % (self.software_release_url, e))
+      raise IOError('Software Release %s is not correctly installed.\n%s' % (
+                      self.software_release_url, exc))
     # fill generated buildout with additional information
     buildout_text = open(config_location).read()
     buildout_text += '\n\n' + pkg_resources.resource_string(__name__,
-        'templates/buildout-tail.cfg.in') % dict(
-      computer_id=self.computer_id,
-      partition_id=self.partition_id,
-      server_url=self.server_url,
-      software_release_url=self.software_release_url,
-      key_file=self.key_file,
-      cert_file=self.cert_file
-    )
+        'templates/buildout-tail.cfg.in') % {
+                'computer_id': self.computer_id,
+                'partition_id': self.partition_id,
+                'server_url': self.server_url,
+                'software_release_url': self.software_release_url,
+                'key_file': self.key_file,
+                'cert_file': self.cert_file,
+                }
     open(config_location, 'w').write(buildout_text)
-    os.chmod(config_location, 0640)
+    os.chmod(config_location, 0o640)
     # Try to find the best possible buildout:
     #  *) if software_root/bin/bootstrap exists use this one to bootstrap
     #     locally
@@ -418,12 +426,14 @@ class Partition(object):
 
       self.logger.debug('Invoking %r in %r' % (' '.join(invocation_list),
         self.instance_path))
-      process_handler = utils.SlapPopen(invocation_list,
-                                        preexec_fn=lambda: utils.dropPrivileges(uid, gid),
-                                        cwd=self.instance_path,
-                                        env=utils.getCleanEnvironment(pwd.getpwuid(uid).pw_dir),
-                                        stdout=subprocess.PIPE,
-                                        stderr=subprocess.STDOUT)
+      process_handler = SlapPopen(invocation_list,
+                                  preexec_fn=lambda: dropPrivileges(uid, gid, logger=self.logger),
+                                  cwd=self.instance_path,
+                                  env=getCleanEnvironment(logger=self.logger,
+                                                          home_path=pwd.getpwuid(uid).pw_dir),
+                                  stdout=subprocess.PIPE,
+                                  stderr=subprocess.STDOUT,
+                                  logger=self.logger)
       if process_handler.returncode is None or process_handler.returncode != 0:
         message = 'Failed to bootstrap buildout in %r.' % (self.instance_path)
         self.logger.error(message)
@@ -432,18 +442,23 @@ class Partition(object):
 
     if not os.path.exists(buildout_binary):
       # use own buildout generation
-      utils.bootstrapBuildout(self.instance_path, self.buildout,
-        ['buildout:bin-directory=%s'% os.path.join(self.instance_path,
-        'sbin')])
+      utils.bootstrapBuildout(path=self.instance_path,
+                              buildout=self.buildout,
+                              logger=self.logger,
+                              additional_buildout_parameter_list=
+                                ['buildout:bin-directory=%s' %
+                                    os.path.join(self.instance_path, 'sbin')])
       buildout_binary = os.path.join(self.instance_path, 'sbin', 'buildout')
     # Launches buildout
-    utils.launchBuildout(self.instance_path, buildout_binary)
+    utils.launchBuildout(path=self.instance_path,
+                         buildout_binary=buildout_binary,
+                         logger=self.logger)
     # Generates supervisord configuration file from template
     self.logger.info("Generating supervisord config file from template...")
     # check if CP/etc/run exists and it is a directory
     # iterate over each file in CP/etc/run
     # iterate over each file in CP/etc/service adding WatchdogID to their name
-    # if at least one is not 0750 raise -- partition has something funny
+    # if at least one is not 0o750 raise -- partition has something funny
     runner_list = []
     service_list = []
     if os.path.exists(self.run_path):
@@ -461,16 +476,17 @@ class Partition(object):
       partition_id = self.computer_partition.getId()
       group_partition_template = pkg_resources.resource_stream(__name__,
           'templates/group_partition_supervisord.conf.in').read()
-      self.partition_supervisor_configuration = group_partition_template % dict(
-          instance_id=partition_id,
-          program_list=','.join(['_'.join([partition_id, runner])
-            for runner in runner_list+service_list]))
-      # Same method to add to service and run 
-      self.addServiceToGroup(partition_id, runner_list,self.run_path)
-      self.addServiceToGroup(partition_id, service_list,self.service_path,
+      self.partition_supervisor_configuration = group_partition_template % {
+              'instance_id': partition_id,
+              'program_list': ','.join(['_'.join([partition_id, runner])
+                                        for runner in runner_list + service_list])
+              }
+      # Same method to add to service and run
+      self.addServiceToGroup(partition_id, runner_list, self.run_path)
+      self.addServiceToGroup(partition_id, service_list, self.service_path,
                              extension=getWatchdogID())
-      utils.updateFile(self.supervisord_partition_configuration_path,
-          self.partition_supervisor_configuration)
+      updateFile(self.supervisord_partition_configuration_path,
+                 self.partition_supervisor_configuration)
     self.updateSupervisor()
 
   def start(self):
@@ -481,21 +497,21 @@ class Partition(object):
     partition_id = self.computer_partition.getId()
     try:
       supervisor.startProcessGroup(partition_id, False)
-    except xmlrpclib.Fault, e:
-      if e.faultString.startswith('BAD_NAME:'):
-        self.logger.info("Nothing to start on %s..." % \
+    except xmlrpclib.Fault as exc:
+      if exc.faultString.startswith('BAD_NAME:'):
+        self.logger.info("Nothing to start on %s..." %
                          self.computer_partition.getId())
     else:
       self.logger.info("Requested start of %s..." % self.computer_partition.getId())
 
   def stop(self):
     """Asks supervisord to stop the instance."""
-    supervisor = self.getSupervisorRPC()
     partition_id = self.computer_partition.getId()
     try:
+      supervisor = self.getSupervisorRPC()
       supervisor.stopProcessGroup(partition_id, False)
-    except xmlrpclib.Fault, e:
-      if e.faultString.startswith('BAD_NAME:'):
+    except xmlrpclib.Fault as exc:
+      if exc.faultString.startswith('BAD_NAME:'):
         self.logger.info('Partition %s not known in supervisord, ignoring' % partition_id)
     else:
       self.logger.info("Requested stop of %s..." % self.computer_partition.getId())
@@ -503,7 +519,7 @@ class Partition(object):
   def destroy(self):
     """Destroys the partition and makes it available for subsequent use."
     """
-    self.logger.info("Destroying Computer Partition %s..." \
+    self.logger.info("Destroying Computer Partition %s..."
         % self.computer_partition.getId())
     # Launches "destroy" binary if exists
     destroy_executable_location = os.path.join(self.instance_path, 'sbin',
@@ -511,12 +527,14 @@ class Partition(object):
     if os.path.exists(destroy_executable_location):
       uid, gid = self.getUserGroupId()
       self.logger.debug('Invoking %r' % destroy_executable_location)
-      process_handler = utils.SlapPopen([destroy_executable_location],
-                                        preexec_fn=lambda: utils.dropPrivileges(uid, gid),
-                                        cwd=self.instance_path,
-                                        env=utils.getCleanEnvironment(pwd.getpwuid(uid).pw_dir),
-                                        stdout=subprocess.PIPE,
-                                        stderr=subprocess.STDOUT)
+      process_handler = SlapPopen([destroy_executable_location],
+                                  preexec_fn=lambda: dropPrivileges(uid, gid, logger=self.logger),
+                                  cwd=self.instance_path,
+                                  env=getCleanEnvironment(logger=self.logger,
+                                                          home_path=pwd.getpwuid(uid).pw_dir),
+                                  stdout=subprocess.PIPE,
+                                  stderr=subprocess.STDOUT,
+                                  logger=self.logger)
       if process_handler.returncode is None or process_handler.returncode != 0:
         message = 'Failed to destroy Computer Partition in %r.' % \
             self.instance_path
@@ -542,10 +560,8 @@ class Partition(object):
         if os.path.exists(self.supervisord_partition_configuration_path):
           os.remove(self.supervisord_partition_configuration_path)
         self.updateSupervisor()
-    except IOError as error:
-      error_string = "I/O error while freeing partition (%s): %s" \
-                     % (self.instance_path, error)
-      raise IOError(error_string)
+    except IOError as exc:
+      raise IOError("I/O error while freeing partition (%s): %s" % (self.instance_path, exc))
 
   def fetchInformations(self):
     """Fetch usage informations with buildout, returns it.
@@ -589,4 +605,3 @@ class Partition(object):
       supervisor.addProcessGroup(gname)
       self.logger.info('Updated %r' % gname)
     self.logger.debug('Supervisord updated')
-

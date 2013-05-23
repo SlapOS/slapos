@@ -34,8 +34,6 @@ __all__ = ["slap", "ComputerPartition", "Computer", "SoftwareRelease",
            "Supply", "OpenOrder", "NotFoundError", "Unauthorized",
            "ResourceNotReady", "ServerError"]
 
-from interface import slap as interface
-from xml_marshaller import xml_marshaller
 import httplib
 import logging
 import socket
@@ -43,9 +41,16 @@ import ssl
 import traceback
 import urllib
 import urlparse
-import zope.interface
 
-log = logging.getLogger(__name__)
+import zope.interface
+from interface import slap as interface
+from xml_marshaller import xml_marshaller
+
+fallback_logger = logging.getLogger(__name__)
+fallback_handler = logging.StreamHandler()
+fallback_logger.setLevel(logging.INFO)
+fallback_logger.addHandler(fallback_handler)
+
 
 DEFAULT_SOFTWARE_TYPE = 'RootSoftwareInstance'
 
@@ -144,7 +149,7 @@ class SoftwareRelease(SlapDocument):
     else:
       return self._software_release
 
-  def error(self, error_log):
+  def error(self, error_log, logger=None):
     try:
       # Does not follow interface
       self._connection_helper.POST('/softwareReleaseError', {
@@ -152,8 +157,7 @@ class SoftwareRelease(SlapDocument):
         'computer_id' : self.getComputerId(),
         'error_log': error_log})
     except Exception:
-      exception = traceback.format_exc()
-      log.error(exception)
+      (logger or fallback_logger).error(traceback.format_exc())
 
   def available(self):
     self._connection_helper.POST('/availableSoftwareRelease', {
@@ -417,15 +421,14 @@ class ComputerPartition(SlapRequester):
       'computer_partition_id': self.getId(),
       })
 
-  def error(self, error_log):
+  def error(self, error_log, logger=None):
     try:
       self._connection_helper.POST('/softwareInstanceError', {
         'computer_id': self._computer_id,
         'computer_partition_id': self.getId(),
         'error_log': error_log})
     except Exception:
-      exception = traceback.format_exc()
-      log.error(exception)
+      (logger or fallback_logger).error(traceback.format_exc())
 
   def bang(self, message):
     self._connection_helper.POST('/softwareInstanceBang', {
@@ -660,7 +663,7 @@ class slap:
     returns SoftwareRelease class object
     """
     return SoftwareRelease(software_release=software_release,
-      connection_helper=self._connection_helper,
+      connection_helper=self._connection_helper
     )
 
   def registerComputer(self, computer_guid):

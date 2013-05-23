@@ -27,6 +27,7 @@
 #
 ##############################################################################
 
+import ConfigParser
 import os
 import logging
 import shutil
@@ -86,14 +87,16 @@ database_uri = %(tempdir)s/lib/proxy.db
     """
     Set config for slapproxy and start it
     """
-    config = slapos.proxy.Config()
-    config.setConfig(*(ProxyOption(self.proxy_db),
-                       self.slapos_cfg))
+    conf = slapos.proxy.ProxyConfig(logger=logging.getLogger())
+    configp = ConfigParser.SafeConfigParser()
+    configp.read(self.slapos_cfg)
+    conf.mergeConfig(ProxyOption(self.proxy_db), configp)
+    conf.setConfig()
     views.app.config['TESTING'] = True
     views.app.config['computer_id'] = self.computer_id
     views.app.config['DATABASE_URI'] = self.proxy_db
-    views.app.config['HOST'] = config.host
-    views.app.config['port'] = config.port
+    views.app.config['HOST'] = conf.host
+    views.app.config['port'] = conf.port
     self.app = views.app.test_client()
 
   def add_free_partition (self, partition_amount):

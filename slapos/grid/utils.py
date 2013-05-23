@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+# vim: set et sts=2:
 ##############################################################################
 #
 # Copyright (c) 2010, 2011, 2012 Vifib SARL and Contributors.
@@ -27,21 +28,20 @@
 #
 ##############################################################################
 
-import logging
+import grp
 import hashlib
 import os
 import pkg_resources
+import pwd
 import stat
 import subprocess
 import sys
-import pwd
-import grp
-from exception import BuildoutFailedError, WrongPermissionError
-from hashlib import md5
+
+from slapos.grid.exception import BuildoutFailedError, WrongPermissionError
 
 # Such umask by default will create paths with full permission
 # for user, non writable by group and not accessible by others
-SAFE_UMASK = 027
+SAFE_UMASK = 0o27
 
 PYTHON_ENVIRONMENT_REMOVE_LIST = [
   'PYTHONHOME',
@@ -94,6 +94,7 @@ class SlapPopen(subprocess.Popen):
   log.
   """
   def __init__(self, *args, **kwargs):
+    logger = kwargs.pop('logger')
     kwargs.update(stdin=subprocess.PIPE)
     if sys.platform == 'cygwin' and kwargs.get('env') == {}:
       kwargs['env'] = None
@@ -102,25 +103,22 @@ class SlapPopen(subprocess.Popen):
     self.stdin.close()
     self.stdin = None
 
-    logger = logging.getLogger('SlapProcessManager')
     # XXX-Cedric: this algorithm looks overkill for simple logging.
     output_lines = []
     while True:
       line = self.stdout.readline()
-      if line == '' and self.poll() != None:
+      if line == '' and self.poll() is not None:
         break
       output_lines.append(line)
-      if line[-1:] == '\n':
-        line = line[:-1]
-      logger.info(line)
+      logger.info(line.rstrip('\n'))
     self.output = ''.join(output_lines)
 
-def getSoftwareUrlHash(url):
-  return md5(url).hexdigest()
+
+def md5digest(url):
+  return hashlib.md5(url).hexdigest()
 
 
-def getCleanEnvironment(home_path='/tmp'):
-  logger = logging.getLogger('CleanEnvironment')
+def getCleanEnvironment(logger, home_path='/tmp'):
   changed_env = {}
   removed_env = []
   env = os.environ.copy()
@@ -137,46 +135,41 @@ def getCleanEnvironment(home_path='/tmp'):
   return env
 
 
-def setRunning(pid_file):
+def setRunning(logger, pidfile):
   """Creates a pidfile. If a pidfile already exists, we exit"""
-  logger = logging.getLogger('Slapgrid')
-  if os.path.exists(pid_file):
-    # Pid file is present
+  # XXX might use http://code.activestate.com/recipes/577911-context-manager-for-a-daemon-pid-file/
+  if os.path.exists(pidfile):
     try:
-      pid = int(open(pid_file, 'r').readline())
+      pid = int(open(pidfile, 'r').readline())
     except ValueError:
       pid = None
     # XXX This could use psutil library.
-    if pid is not None and os.path.exists("/proc/%s" % pid):
-      # In case process is present, ignore.
+    if pid and os.path.exists("/proc/%s" % pid):
       logger.info('New slapos process started, but another slapos '
                   'process is aleady running with pid %s, exiting.' % pid)
       sys.exit(10)
-    logger.info('Existing pid file %r was stale one, overwritten' % pid_file)
+    logger.info('Existing pid file %r was stale, overwritten' % pidfile)
   # Start new process
-  write_pid(pid_file)
+  write_pid(logger, pidfile)
 
 
-def setFinished(pid_file):
+def setFinished(pidfile):
   try:
-    os.remove(pid_file)
+    os.remove(pidfile)
   except OSError:
     pass
 
 
-def write_pid(pid_file):
-  logger = logging.getLogger('Slapgrid')
-  pid = os.getpid()
+def write_pid(logger, pidfile):
   try:
-    f = open(pid_file, 'w')
-    f.write('%s' % pid)
-    f.close()
+    with open(pidfile, 'w') as fout:
+      fout.write('%s' % os.getpid())
   except (IOError, OSError):
-    logger.critical('slapgrid could not write pidfile %s' % pid_file)
+    logger.critical('slapgrid could not write pidfile %s' % pidfile)
     raise
 
 
-def dropPrivileges(uid, gid):
+def dropPrivileges(uid, gid, logger):
   """Drop privileges to uid, gid if current uid is 0
 
   Do tests to check if dropping was successful and that no system call is able
@@ -184,14 +177,13 @@ def dropPrivileges(uid, gid):
 
   Does nothing in case if uid and gid are not 0
   """
-  logger = logging.getLogger('dropPrivileges')
   # XXX-Cedric: remove format / just do a print, otherwise formatting is done
   # twice
   current_uid, current_gid = os.getuid(), os.getgid()
   if uid == 0 or gid == 0:
     raise OSError('Dropping privileges to uid = %r or ' \
                                       'gid = %r is too dangerous' % (uid, gid))
-  if not(current_uid == 0 and current_gid == 0):
+  if current_uid or current_gid:
     logger.debug('Running as uid = %r, gid = %r, dropping not needed and not '
         'possible' % (current_uid, current_gid))
     return
@@ -209,12 +201,12 @@ def dropPrivileges(uid, gid):
                             uid, gid, group_list)
   new_uid, new_gid, new_group_list = os.getuid(), os.getgid(), os.getgroups()
   if not (new_uid == uid and new_gid == gid and set(new_group_list) == group_list):
-    raise OSError('%s new_uid = %r and new_gid = %r and ' \
-                                      'new_group_list = %r which is fatal.'
-                                      % (message_pre,
-                                         new_uid,
-                                         new_gid,
-                                         new_group_list))
+    raise OSError('%s new_uid = %r and new_gid = %r and '
+                  'new_group_list = %r which is fatal.'
+                    % (message_pre,
+                       new_uid,
+                       new_gid,
+                       new_group_list))
 
   # assert that it is not possible to go back to running one
   try:
@@ -236,18 +228,16 @@ def dropPrivileges(uid, gid):
   logger.debug('Succesfully dropped privileges to uid=%r gid=%r' % (uid, gid))
 
 
-def bootstrapBuildout(path, buildout=None,
-    additional_buildout_parametr_list=None):
+def bootstrapBuildout(path, logger, buildout=None,
+                      additional_buildout_parametr_list=None):
   if additional_buildout_parametr_list is None:
     additional_buildout_parametr_list = []
-  logger = logging.getLogger('BuildoutManager')
   # Reads uid/gid of path, launches buildout with thoses privileges
   stat_info = os.stat(path)
   uid = stat_info.st_uid
   gid = stat_info.st_gid
 
   invocation_list = [sys.executable, '-S']
-  kw = dict()
   if buildout is not None:
     invocation_list.append(buildout)
     invocation_list.extend(additional_buildout_parametr_list)
@@ -274,25 +264,26 @@ def bootstrapBuildout(path, buildout=None,
     logger.debug('Set umask from %03o to %03o' % (umask, SAFE_UMASK))
     logger.debug('Invoking: %r in directory %r' % (' '.join(invocation_list),
       path))
-    kw.update(stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     process_handler = SlapPopen(invocation_list,
-            preexec_fn=lambda: dropPrivileges(uid, gid),
-            cwd=path, **kw)
+                                preexec_fn=lambda: dropPrivileges(uid, gid, logger=logger),
+                                cwd=path,
+                                stdout=subprocess.PIPE,
+                                stderr=subprocess.STDOUT,
+                                logger=logger)
     if process_handler.returncode is None or process_handler.returncode != 0:
       message = 'Failed to run buildout profile in directory %r' % (path)
       logger.error(message)
       raise BuildoutFailedError('%s:\n%s\n' % (message, process_handler.output))
-  except OSError as error:
-    raise BuildoutFailedError(error)
+  except OSError as exc:
+    raise BuildoutFailedError(exc)
   finally:
     old_umask = os.umask(umask)
     logger.debug('Restore umask from %03o to %03o' % (old_umask, umask))
 
 
-def launchBuildout(path, buildout_binary,
+def launchBuildout(path, buildout_binary, logger,
                    additional_buildout_parametr_list=None):
   """ Launches buildout."""
-  logger = logging.getLogger('BuildoutManager')
   if additional_buildout_parametr_list is None:
     additional_buildout_parametr_list = []
   # Reads uid/gid of path, launches buildout with thoses privileges
@@ -300,9 +291,7 @@ def launchBuildout(path, buildout_binary,
   uid = stat_info.st_uid
   gid = stat_info.st_gid
   # Extract python binary to prevent shebang size limit
-  file = open(buildout_binary, 'r')
-  line = file.readline()
-  file.close()
+  line = open(buildout_binary, 'r').readline()
   invocation_list = []
   if line.startswith('#!'):
     line = line[2:]
@@ -316,42 +305,44 @@ def launchBuildout(path, buildout_binary,
     logger.debug('Set umask from %03o to %03o' % (umask, SAFE_UMASK))
     logger.debug('Invoking: %r in directory %r' % (' '.join(invocation_list),
       path))
-    kw = dict(stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     process_handler = SlapPopen(invocation_list,
-            preexec_fn=lambda: dropPrivileges(uid, gid), cwd=path,
-            env=getCleanEnvironment(pwd.getpwuid(uid).pw_dir), **kw)
+                                preexec_fn=lambda: dropPrivileges(uid, gid, logger=logger),
+                                cwd=path,
+                                env=getCleanEnvironment(logger=logger,
+                                                        home_path=path),
+                                stdout=subprocess.PIPE,
+                                stderr=subprocess.STDOUT,
+                                logger=logger)
     if process_handler.returncode is None or process_handler.returncode != 0:
       message = 'Failed to run buildout profile in directory %r' % (path)
       logger.error(message)
       raise BuildoutFailedError('%s:\n%s\n' % (message, process_handler.output))
-  except OSError as error:
-    raise BuildoutFailedError(error)
+  except OSError as exc:
+    raise BuildoutFailedError(exc)
   finally:
     old_umask = os.umask(umask)
     logger.debug('Restore umask from %03o to %03o' % (old_umask, umask))
 
 
-def updateFile(file_path, content, mode='0600'):
+def updateFile(file_path, content, mode=0o600):
   """Creates an executable with "content" as content."""
   altered = False
   if not (os.path.isfile(file_path)) or \
      not(hashlib.md5(open(file_path).read()).digest() ==\
          hashlib.md5(content).digest()):
+    with open(file_path, 'w') as fout:
+      fout.write(content)
     altered = True
-    file_file = open(file_path, 'w')
-    file_file.write(content)
-    file_file.flush()
-    file_file.close()
   os.chmod(file_path, stat.S_IREAD | stat.S_IWRITE | stat.S_IEXEC)
-  if oct(stat.S_IMODE(os.stat(file_path).st_mode)) != mode:
-    os.chmod(file_path, int(mode, 8))
+  if stat.S_IMODE(os.stat(file_path).st_mode) != mode:
+    os.chmod(file_path, mode)
     altered = True
   return altered
 
 
 def updateExecutable(executable_path, content):
   """Creates an executable with "content" as content."""
-  return updateFile(executable_path, content, '0700')
+  return updateFile(executable_path, content, 0o700)
 
 
 def createPrivateDirectory(path):
@@ -359,8 +350,8 @@ def createPrivateDirectory(path):
   if not os.path.isdir(path):
     os.mkdir(path)
   os.chmod(path, stat.S_IREAD | stat.S_IWRITE | stat.S_IEXEC)
-  permission = oct(stat.S_IMODE(os.stat(path).st_mode))
-  if permission not in ('0700'):
-    raise WrongPermissionError('Wrong permissions in %s ' \
-                                        ': is %s, should be 0700'
-                                        % (path, permission))
+  permission = stat.S_IMODE(os.stat(path).st_mode)
+  if permission != 0o700:
+    raise WrongPermissionError('Wrong permissions in %s: ' \
+                               'is 0%o, should be 0700'
+                               % (path, permission))

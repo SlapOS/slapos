@@ -30,19 +30,20 @@ import argparse
 import ConfigParser
 import os
 import sys
-from slapos.bang import main as bang
-from slapos.client import slapconsole as console
-from slapos.client import request as request
-from slapos.client import remove as remove
-from slapos.client import supply as supply
-from slapos.format import main as format
-from slapos.cache import cache_lookup
-from slapos.grid.slapgrid import runComputerPartition as instance
-from slapos.grid.slapgrid import runSoftwareRelease as software
-from slapos.grid.slapgrid import runUsageReport as report
-from slapos.grid.svcbackend import supervisord
-from slapos.grid.svcbackend import supervisorctl
-from slapos.register.register import main as register
+
+from slapos.cli_legacy.bang import main as bang
+from slapos.cli_legacy.console import console
+from slapos.cli_legacy.request import request
+from slapos.cli_legacy.remove import remove
+from slapos.cli_legacy.supply import supply
+from slapos.cli_legacy.format import main as format
+from slapos.cli_legacy.cache import cache_lookup
+from slapos.cli_legacy.slapgrid import runComputerPartition as instance
+from slapos.cli_legacy.slapgrid import runSoftwareRelease as software
+from slapos.cli_legacy.slapgrid import runUsageReport as report
+from slapos.cli_legacy.svcbackend import supervisord
+from slapos.cli_legacy.svcbackend import supervisorctl
+from slapos.cli_legacy.register import main as register
 from slapos.version import version
 
 # Note: this whole file is a hack. We should better try dedicated library
@@ -60,6 +61,7 @@ class EntryPointNotImplementedError(NotImplementedError):
   def __init__(self, *args, **kw_args):
     NotImplementedError.__init__(self, *args, **kw_args)
 
+
 def checkSlaposCfg():
   """
   Check if a slapos configuration file was given as a argument.
@@ -71,11 +73,12 @@ def checkSlaposCfg():
   for element in sys.argv:
     if '.cfg' in element:
       if os.path.exists(element):
-        configuration = ConfigParser.SafeConfigParser()
-        configuration.read(element)
-        if configuration.has_section('slapos'):
+        configp = ConfigParser.SafeConfigParser()
+        configp.read(element)
+        if configp.has_section('slapos'):
           return True
   return False
+
 
 def checkOption(option):
   """
@@ -88,11 +91,12 @@ def checkOption(option):
     if key in element:
       return True
   sys.argv.append(key)
-  if len(option) > 1 :
+  if len(option) > 1:
     sys.argv = sys.argv + option[1:]
   return True
 
-def call(fun, config=False, option=None):
+
+def call(fun, config_path=False, option=None):
   """
   Add missing options to sys.argv
   Add config if asked and it is missing
@@ -102,11 +106,12 @@ def call(fun, config=False, option=None):
     option = []
   for element in option:
     checkOption(element)
-  if config:
+  if config_path:
     if not checkSlaposCfg():
-      sys.argv = [sys.argv[0]] + [os.path.expanduser(config)] + sys.argv[1:]
+      sys.argv = [sys.argv[0]] + [os.path.expanduser(config_path)] + sys.argv[1:]
   fun()
   sys.exit(0)
+
 
 def dispatch(command, is_node_command):
   """ Dispatch to correct SlapOS module.
@@ -124,34 +129,34 @@ def dispatch(command, is_node_command):
     if command == 'register':
       call(register)
     elif command == 'software':
-      call(software, config=GLOBAL_SLAPOS_CONFIGURATION,
+      call(software, config_path=GLOBAL_SLAPOS_CONFIGURATION,
            option=['--pidfile /opt/slapos/slapgrid-sr.pid'])
     elif command == 'instance':
-      call(instance, config=GLOBAL_SLAPOS_CONFIGURATION,
+      call(instance, config_path=GLOBAL_SLAPOS_CONFIGURATION,
            option=['--pidfile /opt/slapos/slapgrid-cp.pid'])
     elif command == 'report':
-      call(report, config=GLOBAL_SLAPOS_CONFIGURATION,
+      call(report, config_path=GLOBAL_SLAPOS_CONFIGURATION,
            option=['--pidfile /opt/slapos/slapgrid-ur.pid'])
     elif command == 'bang':
-      call(bang, config=GLOBAL_SLAPOS_CONFIGURATION)
+      call(bang, config_path=GLOBAL_SLAPOS_CONFIGURATION)
     elif command == 'format':
-      call(format, config=GLOBAL_SLAPOS_CONFIGURATION, option=['-c', '-v'])
+      call(format, config_path=GLOBAL_SLAPOS_CONFIGURATION, option=['-c', '-v'])
     elif command == 'supervisord':
-      call(supervisord, config=GLOBAL_SLAPOS_CONFIGURATION)
+      call(supervisord, config_path=GLOBAL_SLAPOS_CONFIGURATION)
     elif command == 'supervisorctl':
-      call(supervisorctl, config=GLOBAL_SLAPOS_CONFIGURATION)
+      call(supervisorctl, config_path=GLOBAL_SLAPOS_CONFIGURATION)
     elif command in ['start', 'stop', 'restart', 'status', 'tail']:
       # Again, too hackish
       sys.argv[-2:-2] = [command]
-      call(supervisorctl, config=GLOBAL_SLAPOS_CONFIGURATION)
+      call(supervisorctl, config_path=GLOBAL_SLAPOS_CONFIGURATION)
     else:
       return False
   elif command == 'request':
-    call(request, config=USER_SLAPOS_CONFIGURATION)
+    call(request, config_path=USER_SLAPOS_CONFIGURATION)
   elif command == 'supply':
-    call(supply, config=USER_SLAPOS_CONFIGURATION)
+    call(supply, config_path=USER_SLAPOS_CONFIGURATION)
   elif command == 'remove':
-    call(remove, config=USER_SLAPOS_CONFIGURATION)
+    call(remove, config_path=USER_SLAPOS_CONFIGURATION)
   elif command == 'start':
     raise EntryPointNotImplementedError(command)
   elif command == 'stop':
@@ -159,11 +164,12 @@ def dispatch(command, is_node_command):
   elif command == 'destroy':
     raise EntryPointNotImplementedError(command)
   elif command == 'console':
-    call(console, config=USER_SLAPOS_CONFIGURATION)
+    call(console, config_path=USER_SLAPOS_CONFIGURATION)
   elif command == 'cache-lookup':
-    call(cache_lookup, config=GLOBAL_SLAPOS_CONFIGURATION)
+    call(cache_lookup, config_path=GLOBAL_SLAPOS_CONFIGURATION)
   else:
     return False
+
 
 def main():
   """
@@ -206,24 +212,23 @@ Node subcommands usage:
 
   # Parse arguments
   # XXX remove the "positional arguments" from help message
-  parser = argparse.ArgumentParser(usage=usage)
-  parser.add_argument('command')
-  parser.add_argument('argument_list', nargs=argparse.REMAINDER)
+  ap = argparse.ArgumentParser(usage=usage)
+  ap.add_argument('command')
+  ap.add_argument('argument_list', nargs=argparse.REMAINDER)
 
-  namespace = parser.parse_args()
+  args = ap.parse_args()
   # Set sys.argv for the sub-entry point that we will call
-  command_line = [namespace.command]
-  command_line.extend(namespace.argument_list)
+  command_line = [args.command]
+  command_line.extend(args.argument_list)
   sys.argv = command_line
 
   try:
-    if not dispatch(namespace.command, is_node):
-      parser.print_help()
+    if not dispatch(args.command, is_node):
+      ap.print_help()
       sys.exit(1)
   except EntryPointNotImplementedError, exception:
     print ('The command %s does not exist or is not yet implemented. Please '
-        'have a look at http://community.slapos.org to read documentation or '
-        'forum. Please also make sure that SlapOS Node is up to '
-        'date.' % exception)
+           'have a look at http://community.slapos.org to read documentation or '
+           'forum. Please also make sure that SlapOS Node is up to '
+           'date.' % exception)
     sys.exit(1)
-

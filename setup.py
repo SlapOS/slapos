@@ -44,6 +44,7 @@ setup(name=name,
                                    # XML
           'zope.interface', # slap library implementes interfaces
           'zc.buildout',
+          'cliff',
         ] + additional_install_requires,
       extra_requires={'docs': ('Sphinx', 'repoze.sphinx.autointerface'),},
       tests_require=[
@@ -54,21 +55,43 @@ setup(name=name,
                       # accessing templates
       entry_points={
         'console_scripts': [
-          # One entry point to control them all
-          'slapos = slapos.entry:main',
           'slapos-watchdog = slapos.grid.watchdog:main',
-          'slapproxy = slapos.proxy:main',
-          'slapproxy-query = slapos.proxy.query:main',
+          'slapproxy = slapos.cli_legacy.proxy_start:main',
+          'slapos = slapos.cli.entry:main',
           # Deprecated entry points
-          'slapconsole = slapos.client:slapconsole',
-          'slapformat = slapos.format:main',
-          'slapgrid = slapos.grid.slapgrid:run',
-          'slapgrid-sr = slapos.grid.slapgrid:runSoftwareRelease',
-          'slapgrid-cp = slapos.grid.slapgrid:runComputerPartition',
-          'slapgrid-ur = slapos.grid.slapgrid:runUsageReport',
-          'slapgrid-supervisorctl = slapos.grid.svcbackend:supervisorctl',
-          'slapgrid-supervisord = slapos.grid.svcbackend:supervisord',
-          'bang = slapos.bang:main',
+          'slapconsole = slapos.cli_legacy.console:console',
+          'slapformat = slapos.cli_legacy.format:main',
+          'slapgrid-sr = slapos.cli_legacy.slapgrid:runSoftwareRelease',
+          'slapgrid-cp = slapos.cli_legacy.slapgrid:runComputerPartition',
+          'slapgrid-ur = slapos.cli_legacy.slapgrid:runUsageReport',
+          'slapgrid-supervisorctl = slapos.cli_legacy.svcbackend:supervisorctl',
+          'slapgrid-supervisord = slapos.cli_legacy.svcbackend:supervisord',
+          'bang = slapos.cli_legacy.bang:main',
+        ],
+        'slapos.cli': [
+          # Utilities
+          'cache lookup = slapos.cli.cache:CacheLookupCommand',
+          # SlapOS Node commands
+          'node bang = slapos.cli.bang:BangCommand',
+          'node format = slapos.cli.format:FormatCommand',
+          'node register = slapos.cli.register:RegisterCommand',
+          'node supervisord = slapos.cli.supervisord:SupervisordCommand',
+          'node supervisorctl = slapos.cli.supervisorctl:SupervisorctlCommand',
+          'node status = slapos.cli.supervisorctl:SupervisorctlStatusCommand',
+          'node start = slapos.cli.supervisorctl:SupervisorctlStartCommand',
+          'node stop = slapos.cli.supervisorctl:SupervisorctlStopCommand',
+          'node restart = slapos.cli.supervisorctl:SupervisorctlRestartCommand',
+          'node tail = slapos.cli.supervisorctl:SupervisorctlTailCommand',
+          'node report = slapos.cli.slapgrid:ReportCommand',
+          'node software = slapos.cli.slapgrid:SoftwareCommand',
+          'node instance = slapos.cli.slapgrid:InstanceCommand',
+          # SlapOS client commands
+          'console = slapos.cli.console:ConsoleCommand',
+          'proxy start = slapos.cli.proxy_start:ProxyStartCommand',
+          'proxy show = slapos.cli.proxy_show:ProxyShowCommand',
+          'supply = slapos.cli.supply:SupplyCommand',
+          'remove = slapos.cli.remove:RemoveCommand',
+          'request = slapos.cli.request:RequestCommand',
         ]
       },
       test_suite="slapos.tests",
