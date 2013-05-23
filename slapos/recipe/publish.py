@@ -37,7 +37,7 @@ class Recipe(GenericSlapRecipe):
     options = self.options.copy()
     del options['recipe']
     if 'slave-reference' in options:
-      slave_reference = options['slave-reference']
+      slave_reference = options.pop('slave-reference')
     for k, v in options.iteritems():
       publish_dict[k] = v
     self._setConnectionDict(publish_dict, slave_reference)
