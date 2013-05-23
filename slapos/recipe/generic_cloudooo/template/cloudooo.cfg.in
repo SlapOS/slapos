@@ -33,9 +33,9 @@ application_hostname = %(ip)s
 # OpenOffice Port
 openoffice_port = %(openoffice_port)s
 
-# LD_LIBRARY_PATH passed to OpenOffice
-env-LD_LIBRARY_PATH = %(LD_LIBRARY_PATH)s
-env-FONTCONFIG_FILE = %(FONTCONFIG_FILE)s
+# LD_LIBRARY_PATH and other environment variables
+# passed to OpenOffice
+%(ENVIRONMENT_VARIABLE_LIST)s
 
 #
 # Mimetype Registry
