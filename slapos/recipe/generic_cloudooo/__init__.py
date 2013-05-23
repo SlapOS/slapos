@@ -38,16 +38,20 @@ class Recipe(GenericBaseRecipe):
       port=int(self.options['port']),
       openoffice_port=int(self.options['openoffice-port']),
     )
+    environment_variable_list = []
     for env_line in self.options['environment'].splitlines():
       env_line = env_line.strip()
       if not env_line:
         continue
       if '=' in env_line:
         env_key, env_value = env_line.split('=')
-        conversion_server_dict[env_key.strip()] = env_value.strip()
+        environment_variable_list.append((env_key.strip(), env_value.strip()))
       else:
         raise zc.buildout.UserError('Line %r in environment parameter is '
             'incorrect' % env_line)
+    conversion_server_dict['ENVIRONMENT_VARIABLE_LIST'] = '\n'.join(
+      ['env-%s = %s' % (key, value) for key, value in environment_variable_list]
+      )
     config_file = self.createFile(self.options['configuration-file'],
         self.substituteTemplate(self.getTemplateFilename('cloudooo.cfg.in'),
           conversion_server_dict))
