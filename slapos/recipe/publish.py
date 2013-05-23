@@ -32,17 +32,22 @@ CONNECTION_PARAMETER_STRING = 'connection-'
 
 class Recipe(GenericSlapRecipe):
   def _install(self):
+    slave_reference = None
     publish_dict = dict()
     options = self.options.copy()
     del options['recipe']
-
+    if 'slave-reference' in options:
+      slave_reference = options['slave-reference']
     for k, v in options.iteritems():
       publish_dict[k] = v
-    self._setConnectionDict(publish_dict)
+    self._setConnectionDict(publish_dict, slave_reference)
     return []
 
-  def _setConnectionDict(self, publish_dict):
-    return self.setConnectionDict(publish_dict)
+  def _setConnectionDict(self, publish_dict, slave_reference=None):
+    if slave_reference is None:
+      return self.setConnectionDict(publish_dict)
+    else:
+      return self.setConnectionDict(publish_dict, slave_reference)
 
 SERIALISED_MAGIC_KEY = '_'
 
