@@ -1,0 +1,6 @@
+#!/bin/sh
+
+
+if [ "$PROPNAME" = "svn:log" -o "$PROPNAME" = "svn:author" ]; then
+  ${:trac_svn_hook} $REPOS $REV $USER $PROPNAME
+fi
