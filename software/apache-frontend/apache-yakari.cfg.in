@@ -17,10 +17,18 @@ context =
 {%   set slave_parameter_dict = generic_instance_parameter_dict.copy() -%}
 # Set slave domain if none was defined
 {%   if slave_instance.get('domain', None) == None -%}
-{%     do slave_instance.__setitem__('domain', "%s.%s" % (slave_instance.get('slave_reference').replace("-", "").lower(), domain)) -%}
+# Backward compatibility
+{%     if slave_instance.get('custom_domain', None) != None -%}
+{%       do slave_instance.__setitem__('domain', slave_instance.get('custom_domain') )-%}
+{%     else -%}
+{%       do slave_instance.__setitem__('domain', "%s.%s" % (slave_instance.get('slave_reference').replace("-", "").lower(), domain)) -%}
+{%     endif -%}
 {%   endif -%}
-{%   if 'enable_cache' in slave_instance -%}
+# Set personal log, two per slave
+{%   set access_log = '/'.join([apache_log_directory, '%s_access_log' % slave_reference]) -%}
+{%   set error_log = '/'.join([apache_log_directory, '%s_error_log' % slave_reference]) -%}
 # The slave use cache
+{%   if 'enable_cache' in slave_instance -%}
 {%     do cached_server_dict.__setitem__(slave_instance.get('domain'), slave_instance.get('url')) -%}
 {%   endif -%}
 {%     do slave_instance.__setitem__('url', cache_access) -%}
@@ -36,6 +44,8 @@ extra-context =
     raw domain {{ domain }}
     raw https_port {{ https_port }}
     raw http_port {{ http_port }}
+    raw access_log {{ access_log }}
+    raw error_log {{ error_log }}
 {{ '\n' }}
 
 # Set apache configuration for slave
@@ -43,6 +53,16 @@ extra-context =
 {%   for key, value in slave_instance.iteritems() -%}
 {{ key }} = {{ dumps(value) }}
 {%   endfor %}
+
+# Publish slave information
+{%   set publish_section_title = 'publish-%s-connection-information' % slave_instance.get('slave_reference') -%}
+{%   do part_list.append(publish_section_title) -%}
+[{{ publish_section_title }}]
+recipe = slapos.cookbook:publish
+slave-reference = {{ slave_instance.get('slave_reference') }}
+reference = {{ slave_instance.get('slave_reference') }}
+public-ipv4 = {{ public_ipv4 }}
+domain = {{ slave_instance.get('domain') }}
 {% endfor -%}
 
 

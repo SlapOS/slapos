@@ -1,0 +1,63 @@
+<VirtualHost *:{{ http_port }}>
+  ServerName {{ slave_parameter.get('domain', '') }}
+  ServerAlias {{ slave_parameter.get('domain', '') }}
+  SSLEngine on
+  SSLProxyEngine on
+  # Rewrite part
+  ProxyVia On
+  ProxyPreserveHost On
+  ProxyTimeout 600
+  RewriteEngine On
+
+  # One Slave two logs
+  ErrorLog "{{ error_log }}"
+  LogLevel warn
+  LogFormat "%h %l %{REMOTE_USER}i %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\" %D" combined
+  CustomLog "{{ access_log }}" combined
+
+{% if slave_parameter.get('type', '') ==  'zope' -%}
+  # First, we check if we have a zope backend server
+  # If so, let's use Virtual Host Daemon rewrite
+  # We suppose that Apache listens to 80 (even indirectly thanks to things like iptables)
+  RewriteRule ^/(.*)$ {{ slave_parameter.get('url', '') }}/VirtualHostBase/http/{{ slave_parameter.get('domain', '') }}:80/{{ slave_parameter.get('path', '') }}/VirtualHostRoot/$1 [L,P]
+{% else -%}
+  RewriteRule ^/(.*)$ {{ slave_parameter.get('url', '') }}/$1 [L,P]
+{% endif -%}
+  # If nothing exist : put a nice error
+#  ErrorDocument 404 /notfound.html
+
+</VirtualHost>
+
+<VirtualHost *:{{ https_port }}>
+  ServerName {{ slave_parameter.get('domain', '') }}
+  ServerAlias {{ slave_parameter.get('domain', '') }}
+  SSLProxyEngine on
+  # Rewrite part
+  ProxyVia On
+  ProxyPreserveHost On
+  ProxyTimeout 600
+  RewriteEngine On
+
+  # One Slave two logs
+  ErrorLog "{{ error_log }}"
+  LogLevel warn
+  LogFormat "%h %l %{REMOTE_USER}i %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\" %D" combined
+  CustomLog "{{ access_log }}" combined
+
+  # Remove "Secure" from cookies, as backend may be https
+  Header edit Set-Cookie "(?i)^(.+);secure$" "$1"
+
+{% if 'https-only' in slave_parameter -%}
+  # Not using HTTPS? Ask that guy over there.
+  # Dummy redirection to https. Note: will work only if https listens
+  # on standard port (443).
+  RewriteRule ^/(.*)$ https://%{DOMAIN}%{REQUEST_URI}
+{% elif slave_parameter.get('type', '') ==  'zope' -%}
+  # First, we check if we have a zope backend server
+  # If so, let's use Virtual Host Daemon rewrite
+  # We suppose that Apache listens to 443 (even indirectly thanks to things like iptables)
+  RewriteRule ^/(.*)$ {{ slave_parameter.get('url', '') }}/VirtualHostBase/https/{{ slave_parameter.get('domain', '') }}:443/{{ slave_parameter.get('path', '') }}/VirtualHostRoot/$1 [L,P]
+{% else -%}
+  RewriteRule ^/(.*)$ {{ slave_parameter.get('url', '') }}/$1 [L,P]
+{% endif -%}
+</VirtualHost>
