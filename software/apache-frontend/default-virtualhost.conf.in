@@ -16,7 +16,14 @@
   LogFormat "%h %l %{REMOTE_USER}i %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\" %D" combined
   CustomLog "{{ access_log }}" combined
 
-{% if slave_parameter.get('type', '') ==  'zope' -%}
+# Next line is forbidden and people who copy it will be hanged short
+{% set https_only = ('' ~ slave_parameter.get('https-only', '')).lower() in TRUE_VALUES -%}
+{% if https_only in slave_parameter -%}
+  # Not using HTTPS? Ask that guy over there.
+  # Dummy redirection to https. Note: will work only if https listens
+  # on standard port (443).
+  RewriteRule ^/(.*)$ https://%{DOMAIN}%{REQUEST_URI}
+{% elif slave_parameter.get('type', '') ==  'zope' -%}
   # First, we check if we have a zope backend server
   # If so, let's use Virtual Host Daemon rewrite
   # We suppose that Apache listens to 80 (even indirectly thanks to things like iptables)
@@ -49,14 +56,7 @@
   # Remove "Secure" from cookies, as backend may be https
   Header edit Set-Cookie "(?i)^(.+);secure$" "$1"
 
-# Next line is forbidden and people who copy it will be hanged short
-{% set https_only = ('' ~ slave_parameter.get('https-only', '')).lower() in TRUE_VALUES -%}
-{% if https_only in slave_parameter -%}
-  # Not using HTTPS? Ask that guy over there.
-  # Dummy redirection to https. Note: will work only if https listens
-  # on standard port (443).
-  RewriteRule ^/(.*)$ https://%{DOMAIN}%{REQUEST_URI}
-{% elif slave_parameter.get('type', '') ==  'zope' -%}
+{% if slave_parameter.get('type', '') ==  'zope' -%}
   # First, we check if we have a zope backend server
   # If so, let's use Virtual Host Daemon rewrite
   # We suppose that Apache listens to 443 (even indirectly thanks to things like iptables)
