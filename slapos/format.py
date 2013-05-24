@@ -392,6 +392,11 @@ class Computer(object):
     # Speed hack:
     # Blindly add all IPs from existing configuration, just to speed up actual
     # computer configuration later on.
+    # XXX-TODO: only add an address if it doesn't already exist.
+    if self.ipv6_interface:
+      interface_name = self.ipv6_interface
+    else:
+      interface_name = self.name
     for partition in self.partition_list:
       try:
         for address in partition.address_list:
@@ -401,7 +406,7 @@ class Computer(object):
             continue
           callAndRead(['ip', 'addr', 'add',
                        '%s/%s' % (address['addr'], netmask),
-                       'dev', self.interface.name])
+                       'dev', interface_name])
       except ValueError:
         pass
 
