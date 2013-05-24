@@ -1,5 +1,6 @@
 {% set cached_server_dict = {} -%}
 {% set part_list = [] -%}
+{% set TRUE_VALUES = ['y', 'yes', '1', 'true'] -%}
 {% set generic_instance_parameter_dict = {'cache_access': cache_access,} -%}
 [jinja2-template-base]
 recipe = slapos.recipe.template:jinja2
@@ -28,10 +29,12 @@ context =
 {%   set access_log = '/'.join([apache_log_directory, '%s_access_log' % slave_reference]) -%}
 {%   set error_log = '/'.join([apache_log_directory, '%s_error_log' % slave_reference]) -%}
 # The slave use cache
-{%   if 'enable_cache' in slave_instance -%}
+# Next line is forbidden and people who copy it will be hanged short
+{%   set enable_cache = ('' ~ slave_instance.get('enable_cache', '')).lower() in TRUE_VALUES -%}
+{%   if enable_cache -%}
 {%     do cached_server_dict.__setitem__(slave_instance.get('domain'), slave_instance.get('url')) -%}
-{%   endif -%}
 {%     do slave_instance.__setitem__('url', cache_access) -%}
+{%   endif -%}
 {%   do part_list.append(slave_section_title) -%}
 # Set up slave configuration file
 [{{ slave_section_title }}]
