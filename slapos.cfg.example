@@ -1,13 +1,13 @@
 [slapos]
-software_root = /opt/slapgrid
-instance_root = /srv/slapgrid
-master_url = https://slap.vifib.com/
 # Replace computer_id by the unique identifier of your computer on vifib.net,
 # starting by COMP-
 computer_id = COMP-12345
+master_url = https://slap.vifib.com/
 key_file = /etc/opt/slapos/ssl/computer.key
 cert_file =  /etc/opt/slapos/ssl/computer.crt
 certificate_repository_path = /etc/opt/slapos/ssl/partition_pki
+software_root = /opt/slapgrid
+instance_root = /srv/slapgrid
 
 [slapformat]
 # Replace by your network interface like eth0, eth1, slapbr0...
