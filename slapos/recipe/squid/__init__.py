@@ -41,7 +41,7 @@ class Recipe(GenericBaseRecipe):
   cache-path -- location of the cache directory
 
   XXXX No good, specific...
-  public_ipv4 -- public ipv4 of the server
+  open_port -- entrance port to the host and allowed to use cache
 
   ip -- ip of the squid server
 
@@ -69,7 +69,7 @@ class Recipe(GenericBaseRecipe):
       access_log_path=self.options['access-log-path'],
       cache_log_path=self.options['cache-log-path'],
       pid_filename_path=self.options['pid-filename-path'],
-      public_ipv4=self.options['public-ipv4'],
+      open_port=self.options['open-port'],
       )
 
     template_filename = self.getTemplateFilename('squid.conf.in')
