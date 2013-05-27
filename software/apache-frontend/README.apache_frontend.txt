@@ -50,6 +50,10 @@ all slave instances.
 Finally, the slave instance will be accessible from:
 https://someidentifier.moulefrite.org.
 
+About SSL
+=========
+Default and custom-personal software type can handle specific ssl for one slave instance.
+IMPORTANT: One apache can not serve more than One specific SSL VirtualHost and be compatible with obsolete browser (i.e.: IE8). See http://wiki.apache.org/httpd/NameBasedSSLVHostsWithSNI
 
 #How to have custom configuration in frontend server
 #===================================================
@@ -119,8 +123,9 @@ Example: http://mybackend.com/myresource
 enable_cache
 ~~~~~
 Specify if slave instance should use a squid to connect to backend.
-Its presence in slave parameter enable the cache for the slave
-"enable_cache" is an optional parameter.
+Possible values: "true", "false".
+"enable_cache" is an optional parameter. Defaults to "false".
+Example: true
 
 type
 ~~~~
@@ -141,8 +146,9 @@ https-only
 ~~~~~~~~~~
 Specify if website should be accessed using https only. If so, the frontend
 will redirect the user to https if accessed from http.
-Its presence in parameters enable its functionality.
-This is an optional parameter.
+Possible values: "true", "false".
+"https-only" is an optional parameter. Defaults to "false".
+Example: true
 
 path
 ~~~~
@@ -160,10 +166,12 @@ Slave Instance Parameters (custom-personal)
 apache_custom_https
 ~~~~~~~~~~~~~~~~~~~
 Raw apache configuration in python template format (i.e. write "%%" for one "%") for the slave listening to the https port. Its content will be templatified in order to access functionalities such as cache access, ssl certificates... The list is available above.
+NOTE: If you want to use the cache, use the apache option "ProxyPreserveHost On"
 
 apache_custom_http
 ~~~~~~~~~~~~~~~~~~
 Raw apache configuration in python template format (i.e. write "%%" for one "%") for the slave listening to the http port. Its content will be templatified in order to access functionalities such as cache access, ssl certificates... The list is available above
+NOTE: If you want to use the cache, use the apache option "ProxyPreserveHost On"
 
 url
 ~~~
@@ -286,12 +294,11 @@ Request slave frontend instance so that https://[1:2:3:4:5:6:7:8]:1234 will be
     software_type="custom-personal",
     partition_parameter_kw={
         "url":"https://[1:2:3:4:5:6:7:8]:1234",
+
         "apache_custom_https":'
   ServerName www.example.org
-  ServerAlias www.example.org
   ServerAlias example.org
   ServerAdmin geronimo@example.org
-
   SSLEngine on
   SSLProxyEngine on
   # Rewrite part
@@ -300,6 +307,7 @@ Request slave frontend instance so that https://[1:2:3:4:5:6:7:8]:1234 will be
   ProxyTimeout 600
   RewriteEngine On
   RewriteRule ^/(.*) https://[1:2:3:4:5:6:7:8]:1234/$1 [L,P]',
+
         "apache_custom_http":'
   ServerName www.example.org
   ServerAlias www.example.org
@@ -311,10 +319,8 @@ Request slave frontend instance so that https://[1:2:3:4:5:6:7:8]:1234 will be
   ProxyPreserveHost On
   ProxyTimeout 600
   RewriteEngine On
-
   # Remove "Secure" from cookies, as backend may be https
   Header edit Set-Cookie "(?i)^(.+);secure$" "$1"
-
   # Not using HTTPS? Ask that guy over there.
   # Dummy redirection to https. Note: will work only if https listens
   # on standard port (443).
@@ -336,12 +342,12 @@ Request slave frontend instance so that https://[1:2:3:4:5:6:7:8]:1234 will be
         "url":"https://[1:2:3:4:5:6:7:8]:1234",
 	"domain": "www.example.org",
 	"enable_cache": "True",
+
         "apache_custom_https":'
   ServerName www.example.org
   ServerAlias www.example.org
   ServerAlias example.org
   ServerAdmin geronimo@example.org
-
   SSLEngine on
   SSLProxyEngine on
   # Rewrite part
@@ -350,6 +356,7 @@ Request slave frontend instance so that https://[1:2:3:4:5:6:7:8]:1234 will be
   ProxyTimeout 600
   RewriteEngine On
   RewriteRule ^/(.*) %(cache_access)s/$1 [L,P]',
+
         "apache_custom_http":'
   ServerName www.example.org
   ServerAlias www.example.org
@@ -392,6 +399,7 @@ the proxy::
         "type":"zope",
         "path":"/erp5",
         "domain":"example.org",
+
   	"apache_custom_https":'
   ServerName www.example.org
   ServerAlias www.example.org
@@ -401,19 +409,16 @@ the proxy::
   SSLProtocol -ALL +SSLv3 +TLSv1
   SSLHonorCipherOrder On
   SSLCipherSuite RC4-SHA:HIGH:!ADH
-
   # Use personal ssl certificates
   SSLCertificateFile %(ssl_crt)s
   SSLCertificateKeyFile %(ssl_key)s
   SSLCACertificateFile %(ssl_ca_crt)s
   SSLCertificateChainFile %(ssl_ca_crt)s
-
   # Configure personal logs
   ErrorLog "%(error_log)s"
   LogLevel warn
   LogFormat "%%h %%l %%{REMOTE_USER}i %%t \"%%r\" %%>s %%b \"%%{Referer}i\" \"%%{User-Agent}i\" %%D" combined
   CustomLog "%(access_log)s" combined
-
   # Rewrite part
   ProxyVia On
   ProxyPreserveHost On
@@ -435,20 +440,18 @@ the proxy::
   ProxyPreserveHost On
   ProxyTimeout 600
   RewriteEngine On
-
   # Configure personal logs
   ErrorLog "%(error_log)s"
   LogLevel warn
   LogFormat "%%h %%l %%{REMOTE_USER}i %%t \"%%r\" %%>s %%b \"%%{Referer}i\" \"%%{User-Agent}i\" %%D" combined
   CustomLog "%(access_log)s" combined
-
   # Remove "Secure" from cookies, as backend may be https
   Header edit Set-Cookie "(?i)^(.+);secure$" "$1"
-
   # Not using HTTPS? Ask that guy over there.
   # Dummy redirection to https. Note: will work only if https listens
   # on standard port (443).
   RewriteRule ^/(.*)$ https://%%{SERVER_NAME}%%{REQUEST_URI}',
+
     "ssl_key":"-----BEGIN RSA PRIVATE KEY-----
 XXXXXXX..........XXXXXXXXXXXXXXX
 -----END RSA PRIVATE KEY-----",
