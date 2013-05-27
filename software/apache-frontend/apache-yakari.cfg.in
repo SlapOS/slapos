@@ -51,6 +51,26 @@ extra-context =
     raw error_log {{ error_log }}
 {{ '\n' }}
 
+# Set ssl certificates for each slave
+{%   for cert_name in ('ssl_key', 'ssl_crt', 'ssl_ca_crt', 'ssl_csr')-%}
+{%     if cert_name in slave_instance -%}
+{%       set cert_title = '%s-%s' % (slave_reference, cert_name.replace('ssl_', '')) -%}
+{%       set cert_file = '/'.join([custom_ssl_directory, cert_title.replace('-','.')]) -%}
+{%       do part_list.append(cert_title) -%}
+{%       do slave_instance.__setitem__('path_to_' ~ cert_name, cert_file) -%}
+# Store certificates on fs
+[{{ cert_title }}]
+< = jinja2-template-base
+template = {{ empty_template }}
+rendered = {{ cert_file }}
+extra-context =
+    key content {{ cert_title + '-config:value' }}
+# Store certificate in config
+[{{ cert_title + '-config' }}]
+value = {{ dumps(slave_instance.get(cert_name)) }}
+{%     endif -%}
+{%   endfor -%}
+
 # Set apache configuration for slave
 [{{ ('slave-instance-%s-configuration' % slave_reference) }}]
 {%   for key, value in slave_instance.iteritems() -%}
