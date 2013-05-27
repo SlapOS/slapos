@@ -123,8 +123,13 @@ port = $${novnc-instance:port}
 
 
 [kvm-monitor]
-recipe = slapos.cookbook:generic.slapmonitor
-db-path = $${directory:srv}/slapmonitor_database
+recipe = slapos.cookbook:kvm-monitor
+path = $${basedirectory:services}/kvm-monitor
+kvm-monitor-path = ${buildout:bin-directory}/kvm-monitor
+filepath = $${buildout:directory}/buildout-switch-softwaretype.cfg
+sections = -s slap-parameter
+options = -opts disk-size ram-size cpu-count
+xml-path = $${buildout:directory}/report.xml
 
 
 [request-slave-frontend]
