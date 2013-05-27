@@ -60,8 +60,18 @@ Examples
     $ slapos request mykvm kvm --node id=COMP-12345 --configuration \
         nbd-host=debian.nbd.vifib.net nbd-port=1024
 
+* Request a kvm instance specifying the full URL, with default settings::
+
+    $ slapos request mykvm \
+        http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.156:/software/kvm/software.cfg
+
+In these examples, ``wordpress`` and ``kvm`` are aliases for the full URL, and are defined in :file:`slapos-client.cfg`.
+
+
 ..
-  XXX Change in slaplib: allow to fetch instance params without changing anything. i.e we should do "slapos request myalreadyrequestedinstance" to fetch connection parameters without erasing previously defined instance parameters.
+  XXX Change in slaplib: allow to fetch instance params without changing anything.
+      i.e we should do "slapos request myalreadyrequestedinstance" to fetch connection parameters
+      without erasing previously defined instance parameters.
 
 
 ..
@@ -79,7 +89,8 @@ supply
 
 .. program-output:: python slapos help supply
 
-Ask installation of a software on a specific node or group of nodes. Nodes will then be ready to accept instances of specified software.
+Ask installation of a software on a specific node or group of nodes.
+Nodes will then be ready to accept instances of specified software.
 
 Examples
 
@@ -87,6 +98,7 @@ Examples
 
     $ slapos supply wordpress COMP-12345
 
+In this example, ``wordpress`` is an alias for the full URL, and is defined in :file:`slapos-client.cfg`.
 
 remove
 ~~~~~~
@@ -104,6 +116,7 @@ Examples
 
     $ slapos supply wordpress COMP-12345
 
+In this example, ``wordpress`` is an alias for the full URL, and is defined in :file:`slapos-client.cfg`.
 
 ..
   autosupply
@@ -112,7 +125,8 @@ Examples
   Usage:
     slapos autosupply <software | software_group> <computer_guid | computer_group>
   
-  Like "slapos suppply", but on-demand. Software will be (re)installed only when at least one instance of this software is requested. When no instance of this software is deployed on the node, it will be uninstalled.
+  Like "slapos suppply", but on-demand. Software will be (re)installed only when at least one instance
+  of this software is requested. When no instance of this software is deployed on the node, it will be uninstalled.
 
 
 console
@@ -161,13 +175,16 @@ node register
 
 If login is not provided, asks for user's SlapOS Master account then password.
 
-Node will register itself, if not already done, to the SlapOS Master defined in configuration file, and will generate SlapOS configuration file.
+Node will register itself, if not already done, to the SlapOS Master defined in
+configuration file, and will generate SlapOS configuration file.
 
 ..
   XXX-Cedric should be like this: If desired node name is already taken, will raise an error.
-  XXX-Cedric: --master-url-web url will disappear in REST API. Currently, "register" uses SlapOS master web URL to register computer, so it needs the web URL (like http://www.slapos.org)
+  XXX-Cedric: --master-url-web url will disappear in REST API. Currently, "register" uses
+              SlapOS master web URL to register computer, so it needs the web URL (like http://www.slapos.org)
 
-If Node is already registered (slapos.cfg and certificate already present), issues a warning, backups original configuration and creates new one.
+If Node is already registered (:file:`slapos.cfg` and certificate already present), issues a warning,
+backups the original configuration and creates a new one.
 
 ..
   XXX-Cedric should check for IPv6 in selected interface
@@ -184,17 +201,18 @@ Examples
 
     $ slapos node register mycomputer
 
-* Register computer named "mycomputer" to SlapOS Master using br0 as primary interface, tap0 as IPv6 interface and different local ipv4 subnet::
+* Register computer named "mycomputer" to SlapOS Master using br0 as primary interface,
+  tap0 as IPv6 interface and different local ipv4 subnet::
 
     $ slapos node register mycomputer --interface-name br0 --ipv6-interface tap0 \
         --ipv4-local-network 11.0.0.0/16
 
-* Register computer named "mycomputer" to another SlapOS master accessible via https://www.myownslaposmaster.com, and SLAP webservice accessible via https://slap.myownslaposmaster.com (Note that this address should be the "slap" webservice URL, not web URL)::
+* Register computer named "mycomputer" to another SlapOS master accessible via https://www.myownslaposmaster.com,
+  and SLAP webservice accessible via https://slap.myownslaposmaster.com (note that this address should be the
+  "slap" webservice URL, not web URL)::
 
     $ slapos node register mycomputer --master-url https://slap.myownslaposmaster.com \
         --master-url-web https://www.myownslaposmaster.com
-
-XXX-Cedric : To be implemented
 
 * Register computer named "mycomputer" to SlapOS Master, and ask to create tap interface to be able to host KVMs::
 
@@ -212,8 +230,8 @@ Return values:
 
 (among other standard Python return values)
 
-* 0     Everything went fine
-* 1     At least one software was not correctly installed.
+* 0    Everything went fine.
+* 1    At least one software was not correctly installed.
 
 
 node instance
@@ -227,7 +245,7 @@ Return values:
 
 (among other standard Python return values)
 
-* 0    Everything went fine
+* 0    Everything went fine.
 * 1    At least one instance was not correctly processed.
 * 2    At least one promise has failed.
 
@@ -237,7 +255,6 @@ node report
 
 .. program-output:: python slapos help node report
 
-Run instance reports and garbage collection.
 
 
 Return values:
@@ -245,8 +262,8 @@ Return values:
 
 (among other standard Python return values)
 
-* 0     Everything went fine
-* 1     At least one instance hasn't correctly been processed.
+* 0    Everything went fine.
+* 1    At least one instance hasn't correctly been processed.
 
 
 node start|stop|restart|tail|status
@@ -332,6 +349,7 @@ Examples
     debian           |        6.0.6 |                | no
     debian           |          7.0 |                | no
 
+You can also use the corresponding hash value in place of the URL.
 
 
 
