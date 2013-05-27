@@ -396,7 +396,7 @@ class Computer(object):
     if self.ipv6_interface:
       interface_name = self.ipv6_interface
     else:
-      interface_name = self.name
+      interface_name = self.interface.name
     for partition in self.partition_list:
       try:
         for address in partition.address_list:
