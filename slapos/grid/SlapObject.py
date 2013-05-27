@@ -294,19 +294,33 @@ class Partition(object):
       self._updateCertificate()
 
   def _updateCertificate(self):
-    if not os.path.exists(self.key_file) or not os.path.exists(self.cert_file):
-      self.logger.info('Certificate and key not found, downloading to %r and '
-          '%r' % (self.cert_file, self.key_file))
-      try:
-        partition_certificate = self.computer_partition.getCertificate()
-      except NotFoundError:
-        raise NotFoundError('Partition %s is not known from SlapOS Master.' %
-            self.partition_id)
-      open(self.key_file, 'w').write(partition_certificate['key'])
-      open(self.cert_file, 'w').write(partition_certificate['certificate'])
-    for f in [self.key_file, self.cert_file]:
-      os.chmod(f, 0o400)
-      os.chown(f, *self.getUserGroupId())
+    try:
+      partition_certificate = self.computer_partition.getCertificate()
+    except NotFoundError:
+      raise NotFoundError('Partition %s is not known by SlapOS Master.' %
+          self.partition_id)
+
+    uid, gid = self.getUserGroupId()
+
+    for name, path in [
+            ('certificate', self.cert_file),
+            ('key', self.key_file),
+            ]:
+      new_content = partition_certificate[name]
+      old_content = None
+      if os.path.exists(path):
+        old_content = open(path).read()
+
+      if old_content != new_content:
+        if old_content is None:
+          self.logger.info('Missing %s file. Creating %r' % (name, path))
+        else:
+          self.logger.info('Changed %s content. Updating %r' % (name, path))
+
+        with os.fdopen(os.open(path, os.O_CREAT | os.O_WRONLY | os.O_TRUNC, 0o400), 'wb') as fout:
+          fout.write(new_content)
+        os.chown(path, uid, gid)
+
 
   def getUserGroupId(self):
     """Returns tuple of (uid, gid) of partition"""
@@ -338,7 +352,7 @@ class Partition(object):
   def updateSymlink(self, sr_symlink, software_path):
     if os.path.lexists(sr_symlink):
       if not os.path.islink(sr_symlink):
-        self.logger.debug('Not a symlink: %s, has been ignored' % (sr_symlink))
+        self.logger.debug('Not a symlink: %s, has been ignored' % sr_symlink)
         return
       os.unlink(sr_symlink)
     os.symlink(software_path, sr_symlink)

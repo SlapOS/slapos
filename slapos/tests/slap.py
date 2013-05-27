@@ -91,10 +91,8 @@ class TestSlap(SlapMixin):
     """
     slap_instance = slapos.slap.slap()
     slap_instance.initializeConnection(self.server_url)
-    self.assertTrue(
-        slap_instance._connection_helper.host in self.server_url)
-    self.assertTrue(
-        slap_instance._connection_helper.path in self.server_url)
+    self.assertIn(slap_instance._connection_helper.host, self.server_url)
+    self.assertIn(slap_instance._connection_helper.path, self.server_url)
 
   def test_slap_initialisation_wrong_url(self):
     """
@@ -785,7 +783,7 @@ class TestOpenOrder(SlapMixin):
     computer_partition = open_order.request(software_release_uri, 'myrefe')
     self.assertTrue(isinstance(computer_partition,
         slapos.slap.ComputerPartition))
-    self.assertTrue(requested_partition_id, computer_partition.getId())
+    self.assertEqual(requested_partition_id, computer_partition.getId())
 
 if __name__ == '__main__':
   print 'You can point to any SLAP server by setting TEST_SLAP_SERVER_URL '\

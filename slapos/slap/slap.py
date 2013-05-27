@@ -36,12 +36,14 @@ __all__ = ["slap", "ComputerPartition", "Computer", "SoftwareRelease",
 
 import httplib
 import logging
+import re
 import socket
 import ssl
 import traceback
 import urllib
 import urlparse
 
+from xml.sax import saxutils
 import zope.interface
 from interface import slap as interface
 from xml_marshaller import xml_marshaller
@@ -339,6 +341,19 @@ class Computer(SlapDocument):
     return xml_marshaller.loads(xml)
 
 
+def parsed_error_message(status, body, path):
+  m = re.search('(Error Value:\n.*)', body, re.MULTILINE)
+  if m:
+    match = ' '.join(line.strip() for line in m.group(0).split('\n'))
+    return '%s (status %s while calling %s)' % (
+                saxutils.unescape(match),
+                status,
+                path
+            )
+  else:
+    return 'Server responded with wrong code %s with %s' % (status, path)
+
+
 class ComputerPartition(SlapRequester):
 
   zope.interface.implements(interface.IComputerPartition)
@@ -594,8 +609,9 @@ class ConnectionHelper:
       elif self.response.status == httplib.FORBIDDEN:
         raise Unauthorized(path)
       elif self.response.status != httplib.OK:
-        message = 'Server responded with wrong code %s with %s' % \
-                                           (self.response.status, path)
+        message = parsed_error_message(self.response.status,
+                                       self.response.read(),
+                                       path)
         raise ServerError(message)
     finally:
       socket.setdefaulttimeout(default_timeout)
@@ -625,8 +641,9 @@ class ConnectionHelper:
       elif self.response.status == httplib.FORBIDDEN:
         raise Unauthorized("%s - %s" % (path, parameter_dict))
       elif self.response.status != httplib.OK:
-        message = 'Server responded with wrong code %s with %s' % \
-                                           (self.response.status, path)
+        message = parsed_error_message(self.response.status,
+                                       self.response.read(),
+                                       path)
         raise ServerError(message)
     finally:
       socket.setdefaulttimeout(default_timeout)

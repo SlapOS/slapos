@@ -2,6 +2,7 @@
 
 import logging
 
+from slapos.cli.command import must_be_root
 from slapos.cli.config import ConfigCommand
 
 from slapos.grid.utils import setRunning, setFinished
@@ -33,7 +34,7 @@ class SlapgridCommand(ConfigCommand):
                         help='The socket supervisor will use.')
         ap.add_argument('--supervisord-configuration-path',
                         help='The location where supervisord configuration will be stored.')
-        ap.add_argument('--buildout', default=None,
+        ap.add_argument('--buildout',
                         help='Location of buildout binary.')
         ap.add_argument('--pidfile',
                         help='The location where pidfile will be created. '
@@ -49,14 +50,20 @@ class SlapgridCommand(ConfigCommand):
                         help='Root certificate of SlapOS master key.')
         ap.add_argument('--certificate_repository_path',
                         help='Path to directory where downloaded certificates would be stored.')
-        ap.add_argument('--maximum-periodicity', type=int, default=None,
+        ap.add_argument('--maximum-periodicity',
+                        type=int,
                         help='Periodicity at which buildout should be run in instance.')
-        ap.add_argument('--promise-timeout', type=int, default=3,
-                        help='Promise timeout in seconds.')
-        ap.add_argument('--now', action='store_true',
+        ap.add_argument('--promise-timeout',
+                        default=3,
+                        type=int,
+                        help='Promise timeout in seconds'
+                             ' (default: %(default)s)')
+        ap.add_argument('--now',
+                        action='store_true',
                         help='Launch slapgrid without delay. Default behavior.')
         return ap
 
+    @must_be_root
     def take_action(self, args):
         configp = self.fetch_config(args)
         options = merged_options(args, configp)

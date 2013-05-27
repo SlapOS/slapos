@@ -228,6 +228,13 @@ def create_slapgrid_object(options, logger):
                   computer_partition_filter_list=op.get('only-cp', op.get('only_cp')))
 
 
+def check_required_only_partitions(existing, required):
+  missing = set(required) - set(existing)
+  if missing:
+      plural = ['s', ''][len(missing)==1]
+      raise ValueError('Unknown partition%s: %s' % (plural, ', '.join(sorted(missing))))
+
+
 class Slapgrid(object):
   """ Main class for SlapGrid. Fetches and processes informations from master
   server and pushes usage information to master server.
@@ -736,6 +743,9 @@ class Slapgrid(object):
     clean_run = True
     # Boolean to know if every promises correctly passed
     clean_run_promise = True
+
+    check_required_only_partitions([cp.getId() for cp in self.getComputerPartitionList()],
+                                   self.computer_partition_filter_list)
 
     # Filter all dummy / empty partitions
     computer_partition_list = self.FilterComputerPartitionList(

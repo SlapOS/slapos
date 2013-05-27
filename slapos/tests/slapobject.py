@@ -27,7 +27,7 @@
 
 import logging
 import os
-import unittest
+import unittest2
 
 from slapos.grid import SlapObject
 from slapos.grid import utils
@@ -53,7 +53,7 @@ originalBootstrapBuildout = utils.bootstrapBuildout
 originalLaunchBuildout = utils.launchBuildout
 originalUploadSoftwareRelease = SlapObject.Software.uploadSoftwareRelease
 
-class TestSoftwareSlapObject(BasicMixin, unittest.TestCase):
+class TestSoftwareSlapObject(BasicMixin, unittest2.TestCase):
   """
     Test for Software class.
   """
@@ -107,22 +107,14 @@ class TestSoftwareSlapObject(BasicMixin, unittest.TestCase):
     software.install()
 
     command_list = FakeCallAndRead.external_command_list
-    self.assertTrue('buildout:networkcache-section=networkcache'
-                    in command_list)
-    self.assertTrue('networkcache:signature-private-key-file=%s' %
-                    self.signature_private_key_file in command_list)
-    self.assertTrue('networkcache:upload-cache-url=%s' % self.upload_cache_url
-                    in command_list)
-    self.assertTrue('networkcache:upload-dir-url=%s' % self.upload_dir_url
-                    in command_list)
-    self.assertTrue('networkcache:shacache-cert-file=%s' % self.shacache_cert_file
-                    in command_list)
-    self.assertTrue('networkcache:shacache-key-file=%s' % self.shacache_key_file
-                    in command_list)
-    self.assertTrue('networkcache:shadir-cert-file=%s' % self.shadir_cert_file
-                    in command_list)
-    self.assertTrue('networkcache:shadir-key-file=%s' % self.shadir_key_file
-                    in command_list)
+    self.assertIn('buildout:networkcache-section=networkcache', command_list)
+    self.assertIn('networkcache:signature-private-key-file=%s' % self.signature_private_key_file, command_list)
+    self.assertIn('networkcache:upload-cache-url=%s' % self.upload_cache_url, command_list)
+    self.assertIn('networkcache:upload-dir-url=%s' % self.upload_dir_url, command_list)
+    self.assertIn('networkcache:shacache-cert-file=%s' % self.shacache_cert_file, command_list)
+    self.assertIn('networkcache:shacache-key-file=%s' % self.shacache_key_file, command_list)
+    self.assertIn('networkcache:shadir-cert-file=%s' % self.shadir_cert_file, command_list)
+    self.assertIn('networkcache:shadir-key-file=%s' % self.shadir_key_file, command_list)
 
   def test_software_install_without_networkcache(self):
     """

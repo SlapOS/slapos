@@ -20,7 +20,7 @@ class SupplyCommand(ClientConfigCommand):
                         help='Your software url')
 
         ap.add_argument('node',
-                        help="Target node")
+                        help='Target node')
 
         return ap
 

@@ -72,7 +72,7 @@ class SlapOSApp(cliff.app.App):
             '--log-file', '--logfile', '--log_file',
             action='store',
             default=None,
-            help='Specify a file to log output. Only console by default.',
+            help='Specify a file to log output (default: console only)',
         )
 
         # always show tracebacks on errors

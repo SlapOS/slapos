@@ -3,6 +3,7 @@
 import logging
 import sys
 
+from slapos.cli.command import must_be_root
 from slapos.cli.config import ConfigCommand
 from slapos.format import do_format, FormatConfig, tracing_monkeypatch, UsageError
 
@@ -18,12 +19,10 @@ class FormatCommand(ConfigCommand):
         ap = super(FormatCommand, self).get_parser(prog_name)
 
         ap.add_argument('-x', '--computer_xml',
-                        help="Path to file with computer's XML. If does not exists, will be created",
-                        default=None)
+                        help="Path to file with computer's XML. If does not exists, will be created")
 
         ap.add_argument('--computer_json',
-                        help="Path to a JSON version of the computer's XML (for development only).",
-                        default=None)
+                        help="Path to a JSON version of the computer's XML (for development only)")
 
         ap.add_argument('-i', '--input_definition_file',
                         help="Path to file to read definition of computer instead of "
@@ -35,26 +34,33 @@ class FormatCommand(ConfigCommand):
                         help="Path to file to write definition of computer from "
                         "declaration.")
 
-        ap.add_argument('-n', '--dry_run',
-                        help="Don't actually do anything.",
-                        default=False,
-                        action="store_true")
-
         ap.add_argument('--alter_user',
                         choices=['True', 'False'],
-                        help="Shall slapformat alter user database [default: True]")
+                        default='True',
+                        help='Shall slapformat alter user database'
+                             ' (default: %(default)s)')
 
         ap.add_argument('--alter_network',
                         choices=['True', 'False'],
-                        help="Shall slapformat alter network configuration [default: True]")
+                        default='True',
+                        help='Shall slapformat alter network configuration'
+                             ' (default: %(default)s)')
 
         ap.add_argument('--now',
-                        help="Launch slapformat without delay",
                         default=False,
-                        action="store_true")
+                        action="store_true",
+                        help='Launch slapformat without delay'
+                             ' (default: %(default)s)')
+
+        ap.add_argument('-n', '--dry_run',
+                        default=False,
+                        action="store_true",
+                        help="Don't actually do anything"
+                             " (default: %(default)s)")
 
         return ap
 
+    @must_be_root
     def take_action(self, args):
         configp = self.fetch_config(args)
 

@@ -22,39 +22,20 @@ class ConfigCommand(Command):
 
     def get_parser(self, prog_name):
         ap = super(ConfigCommand, self).get_parser(prog_name)
-        ap.add_argument('--cfg', help='SlapOS configuration file - ' +
-                                      'defaults to $%s ' % self.default_config_var +
-                                      'or %s' % self.default_config_path)
+        ap.add_argument('--cfg',
+                        help='SlapOS configuration file'
+                             ' (default: $%s or %s)' %
+                                (self.default_config_var, self.default_config_path))
         return ap
 
-    def _get_config(self, cfg_path, required=False):
+    def fetch_config(self, args):
         """
         Returns a configuration object if file exists/readable/valid,
-        None otherwise.
-        Will raise an error instead of returning None if required is True.
-        Even if required is False, may still raise an exception from the
-        configparser if the configuration content is very broken.
-        We don't catch that exception as it will clearly show what is
-        wrong with the file.
+        will raise an error otherwise. The exception may come from the
+        configparser itself if the configuration content is very broken,
+        and will clearly show what is wrong with the file.
         """
 
-        if not os.path.exists(cfg_path):
-            if required:
-                raise ConfigError('Configuration file does not exist: %s' % cfg_path)
-            else:
-                return None
-
-        configp = ConfigParser.SafeConfigParser()
-        if configp.read(cfg_path) != [cfg_path]:
-            # bad permission, etc.
-            if required:
-                raise ConfigError('Cannot parse configuration file: %s' % cfg_path)
-            else:
-                return None
-
-        return configp
-
-    def fetch_config(self, args):
         if args.cfg:
             cfg_path = args.cfg
         else:
@@ -64,7 +45,15 @@ class ConfigCommand(Command):
 
         self.log.debug('Loading config: %s' % cfg_path)
 
-        return self._get_config(cfg_path, required=True)
+        if not os.path.exists(cfg_path):
+            raise ConfigError('Configuration file does not exist: %s' % cfg_path)
+
+        configp = ConfigParser.SafeConfigParser()
+        if configp.read(cfg_path) != [cfg_path]:
+            # bad permission, etc.
+            raise ConfigError('Cannot parse configuration file: %s' % cfg_path)
+
+        return configp
 
 
 class ClientConfigCommand(ConfigCommand):
