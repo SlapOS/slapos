@@ -448,13 +448,13 @@ class ComputerPartition(SlapRequester):
       'message': message})
 
   def rename(self, new_name, slave_reference=None):
-    post_dict = dict(
-      computer_id=self._computer_id,
-      computer_partition_id=self.getId(),
-      new_name=new_name,
-    )
-    if slave_reference is not None:
-      post_dict.update(slave_reference=slave_reference)
+    post_dict = {
+            'computer_id': self._computer_id,
+            'computer_partition_id': self.getId(),
+            'new_name': new_name,
+            }
+    if slave_reference:
+      post_dict['slave_reference'] = slave_reference
     self._connection_helper.POST('/softwareInstanceRename', post_dict)
 
   def getId(self):
@@ -569,14 +569,14 @@ class ConnectionHelper:
     return xml_marshaller.loads(xml)
 
   def connect(self):
-    connection_dict = dict(
-        host=self.host)
+    connection_dict = {
+            'host': self.host
+            }
     if self.key_file and self.cert_file:
-      connection_dict.update(
-        key_file=self.key_file,
-        cert_file=self.cert_file)
-    if self.master_ca_file is not None:
-      connection_dict.update(ca_file=self.master_ca_file)
+      connection_dict['key_file'] = self.key_file
+      connection_dict['cert_file'] = self.cert_file
+    if self.master_ca_file:
+      connection_dict['ca_file'] = self.master_ca_file
     self.connection = self.connection_wrapper(**connection_dict)
 
   def GET(self, path):
@@ -588,14 +588,14 @@ class ConnectionHelper:
         self.connection.request('GET', self.path + path)
         response = self.connection.getresponse()
       # If ssl error : may come from bad configuration
-      except ssl.SSLError, e:
-        if e.message == "The read operation timed out":
-          raise socket.error(str(e) + self.error_message_timeout)
-        raise ssl.SSLError(str(e) + self.ssl_error_message_connect_fail)
-      except socket.error, e:
-        if e.message == "timed out":
-          raise socket.error(str(e) + self.error_message_timeout)
-        raise socket.error(self.error_message_connect_fail + str(e))
+      except ssl.SSLError as exc:
+        if exc.message == 'The read operation timed out':
+          raise socket.error(str(exc) + self.error_message_timeout)
+        raise ssl.SSLError(str(exc) + self.ssl_error_message_connect_fail)
+      except socket.error as exc:
+        if exc.message == 'timed out':
+          raise socket.error(str(exc) + self.error_message_timeout)
+        raise socket.error(self.error_message_connect_fail + str(exc))
 
       # check self.response.status and raise exception early
       if response.status == httplib.REQUEST_TIMEOUT:
@@ -626,10 +626,10 @@ class ConnectionHelper:
         self.connection.request("POST", self.path + path,
             urllib.urlencode(parameter_dict), header_dict)
       # If ssl error : must come from bad configuration
-      except ssl.SSLError, e:
-        raise ssl.SSLError(self.ssl_error_message_connect_fail + str(e))
-      except socket.error, e:
-        raise socket.error(self.error_message_connect_fail + str(e))
+      except ssl.SSLError as exc:
+        raise ssl.SSLError(self.ssl_error_message_connect_fail + str(exc))
+      except socket.error as exc:
+        raise socket.error(self.error_message_connect_fail + str(exc))
 
       response = self.connection.getresponse()
       # check self.response.status and raise exception early
