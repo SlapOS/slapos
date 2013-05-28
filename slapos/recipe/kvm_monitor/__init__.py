@@ -1,3 +1,4 @@
+
 ##############################################################################
 #
 # Copyright (c) 2011 Vifib SARL and Contributors. All Rights Reserved.
@@ -31,13 +32,19 @@ class MonitorRecipe(GenericBaseRecipe):
 
   def install(self):
     options = self.options
-    script = self.createWrapper(name=options['path'],
-                                command=options['kvm-monitor-path'],
-                                parameters=[
-                                    options['filepath'],
-                                    options['xml-path'],
-                                    options['sections'],
-                                    options['options']
-                                    ])
+    config = dict(
+      kvm_monitor_path=options['kvm-monitor-path'],
+      filepath = options['filepath'],
+      xml_path = options['xml-path'],
+      sections = options['sections'],
+      options = options['options']
+    )
+    script = self.createExecutable(
+      options['path'],
+      self.substituteTemplate(
+        self.getTemplateFilename('kvm_monitor_run.in'),config
+      )
+    )
+
     return [script]
 
