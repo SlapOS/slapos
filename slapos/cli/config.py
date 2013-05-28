@@ -25,7 +25,7 @@ class ConfigCommand(Command):
         ap.add_argument('--cfg',
                         help='SlapOS configuration file'
                              ' (default: $%s or %s)' %
-                                (self.default_config_var, self.default_config_path))
+                             (self.default_config_var, self.default_config_path))
         return ap
 
     def fetch_config(self, args):

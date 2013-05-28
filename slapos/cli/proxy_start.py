@@ -41,4 +41,3 @@ class ProxyStartCommand(ConfigCommand):
         conf.setConfig()
 
         do_proxy(conf=conf)
-

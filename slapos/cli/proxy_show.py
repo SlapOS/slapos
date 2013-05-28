@@ -171,16 +171,14 @@ def do_show(conf):
 
     conn.create_function('md5', 1, lambda s: hashlib.md5(s).hexdigest())
 
-    print_all = not any(
-            [
-                conf.computers,
-                conf.software,
-                conf.partitions,
-                conf.slaves,
-                conf.params,
-                conf.network,
-                ]
-            )
+    print_all = not any([
+        conf.computers,
+        conf.software,
+        conf.partitions,
+        conf.slaves,
+        conf.params,
+        conf.network,
+    ])
 
     if print_all or conf.computers:
         print_computer_table(conn)
@@ -200,5 +198,3 @@ def do_show(conf):
     if print_all or conf.network:
         print_network(conn)
         print
-
-
