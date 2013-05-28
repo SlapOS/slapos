@@ -1,2 +1,2 @@
 #!/bin/sh
-exec %(kvm_monitor_path)s %(filepath)s %(xml_path)s -s %(sections)s --opts %(options)s
+exec %(kvm_monitor_path)s %(filepath)s %(xml_path)s -s %(sections)s -opts %(options)s
