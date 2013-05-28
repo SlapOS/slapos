@@ -4,35 +4,43 @@ import ast
 import hashlib
 import json
 import re
+import requests
 import sys
-import urllib2
 
 from slapos.grid import networkcache
 from slapos.grid.distribution import patched_linux_distribution
 
 
-def maybe_md5(s):
+def looks_like_md5(s):
+    """
+    Return True if the parameter looks like an hashed value.
+    Not 100% precise, but we're actually more interested in filtering out URLs and pathnames.
+    """
     return re.match('[0-9a-f]{32}', s)
 
 
 def do_lookup(configp, software_url):
     cache_dir = configp.get('networkcache', 'download-binary-dir-url')
 
-    if maybe_md5(software_url):
+    if looks_like_md5(software_url):
         md5 = software_url
     else:
         md5 = hashlib.md5(software_url).hexdigest()
 
     try:
-        response = urllib2.urlopen('%s/%s' % (cache_dir, md5))
-    except urllib2.HTTPError as e:
-        if e.code == 404:
-            print 'Object not in cache: %s' % software_url
-        else:
-            print 'Error during cache lookup: %s (%s)' % (e.code, e.reason)
+        req = requests.get('%s/%s' % (cache_dir, md5))
+    except requests.ConnectionError:
+        print 'Cannot connect to cache at %s' % cache_dir
         sys.exit(10)
 
-    entries = json.loads(response.read())
+    if not req.ok:
+        if req.status_code == 404:
+            print 'Object not in cache: %s' % software_url
+        else:
+            print 'Error while looking object %s: %s' % (software_url, req.reason)
+        sys.exit(10)
+
+    entries = req.json()
 
     linux_distribution = patched_linux_distribution()
 

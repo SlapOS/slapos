@@ -10,6 +10,10 @@ import cliff.commandmanager
 
 import slapos.version
 
+# silence messages like 'Starting connection' that are logged with INFO
+urllib3_logger = logging.getLogger('requests.packages.urllib3')
+urllib3_logger.setLevel(logging.WARNING)
+
 
 class SlapOSCommandManager(cliff.commandmanager.CommandManager):
 
