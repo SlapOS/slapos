@@ -56,6 +56,7 @@ fallback_logger.addHandler(fallback_handler)
 
 DEFAULT_SOFTWARE_TYPE = 'RootSoftwareInstance'
 
+
 # httplib.HTTPSConnection with key verification
 class HTTPSConnectionCA(httplib.HTTPSConnection):
   """Patched version of HTTPSConnection which verifies server certificate"""
@@ -83,6 +84,7 @@ class SlapDocument:
       # Do not require connection_helper to be provided, but when it's not,
       # cause failures when accessing _connection_helper property.
       self._connection_helper = connection_helper
+
 
 class SlapRequester(SlapDocument):
   """
@@ -119,7 +121,6 @@ class SoftwareRelease(SlapDocument):
   """
   Contains Software Release information
   """
-
   zope.interface.implements(interface.ISoftwareRelease)
 
   def __init__(self, software_release=None, computer_guid=None, **kw):
@@ -155,7 +156,7 @@ class SoftwareRelease(SlapDocument):
       # Does not follow interface
       self._connection_helper.POST('/softwareReleaseError', {
         'url': self.getURI(),
-        'computer_id' : self.getComputerId(),
+        'computer_id': self.getComputerId(),
         'error_log': error_log})
     except Exception:
       (logger or fallback_logger).error(traceback.format_exc())
@@ -178,6 +179,7 @@ class SoftwareRelease(SlapDocument):
   def getState(self):
     return getattr(self, '_requested_state', 'available')
 
+
 # XXX What is this SoftwareInstance class?
 class SoftwareInstance(SlapDocument):
   """
@@ -191,22 +193,28 @@ class SoftwareInstance(SlapDocument):
     for k, v in kwargs.iteritems():
       setattr(self, k, v)
 
+
 """Exposed exceptions"""
+
+
 # XXX Why do we need to expose exceptions?
 class ResourceNotReady(Exception):
   zope.interface.implements(interface.IResourceNotReady)
 
+
 class ServerError(Exception):
   zope.interface.implements(interface.IServerError)
+
 
 class NotFoundError(Exception):
   zope.interface.implements(interface.INotFoundError)
 
+
 class Unauthorized(Exception):
   zope.interface.implements(interface.IUnauthorized)
 
-class Supply(SlapDocument):
 
+class Supply(SlapDocument):
   zope.interface.implements(interface.ISupply)
 
   def supply(self, software_release, computer_guid=None, state='available'):
@@ -219,13 +227,13 @@ class Supply(SlapDocument):
       raise NotFoundError("Computer %s has not been found by SlapOS Master."
           % computer_guid)
 
-class OpenOrder(SlapRequester):
 
+class OpenOrder(SlapRequester):
   zope.interface.implements(interface.IOpenOrder)
 
   def request(self, software_release, partition_reference,
-      partition_parameter_kw=None, software_type=None, filter_kw=None,
-      state=None, shared=False):
+              partition_parameter_kw=None, software_type=None,
+              filter_kw=None, state=None, shared=False):
     if partition_parameter_kw is None:
       partition_parameter_kw = {}
     if filter_kw is None:
@@ -239,7 +247,7 @@ class OpenOrder(SlapRequester):
         #             And second is a boolean.
         'state': xml_marshaller.dumps(state),
         'shared_xml': xml_marshaller.dumps(shared),
-      }
+    }
     if software_type is not None:
       request_dict['software_type'] = software_type
     else:
@@ -256,6 +264,7 @@ class OpenOrder(SlapRequester):
     computer = xml_marshaller.loads(xml)
     computer._connection_helper = self._connection_helper
     return computer
+
 
 def _syncComputerInformation(func):
   """
@@ -277,8 +286,8 @@ def _syncComputerInformation(func):
     return func(self, *args, **kw)
   return decorated
 
-class Computer(SlapDocument):
 
+class Computer(SlapDocument):
   zope.interface.implements(interface.IComputer)
 
   def __init__(self, computer_id, connection_helper=None):
@@ -304,7 +313,7 @@ class Computer(SlapDocument):
   def getComputerPartitionList(self):
     for computer_partition in self._computer_partition_list:
       computer_partition._connection_helper = self._connection_helper
-    return [x for x in self._computer_partition_list ]
+    return [x for x in self._computer_partition_list]
 
   def reportUsage(self, computer_usage):
     if computer_usage == "":
@@ -315,7 +324,7 @@ class Computer(SlapDocument):
 
   def updateConfiguration(self, xml):
     return self._connection_helper.POST(
-        '/loadComputerConfigurationFromXML', { 'xml' : xml })
+        '/loadComputerConfigurationFromXML', {'xml': xml})
 
   def bang(self, message):
     self._connection_helper.POST('/computerBang', {
@@ -351,11 +360,10 @@ def parsed_error_message(status, body, path):
 
 
 class ComputerPartition(SlapRequester):
-
   zope.interface.implements(interface.IComputerPartition)
 
-  def __init__(self, computer_id=None, partition_id=None, request_dict=None,
-      connection_helper=None):
+  def __init__(self, computer_id=None, partition_id=None,
+               request_dict=None, connection_helper=None):
     SlapDocument.__init__(self, connection_helper)
     if request_dict is not None and (computer_id is not None or
         partition_id is not None):
@@ -377,13 +385,13 @@ class ComputerPartition(SlapRequester):
     if partition_parameter_kw is None:
       partition_parameter_kw = {}
     elif not isinstance(partition_parameter_kw, dict):
-      raise ValueError("Unexpected type of partition_parameter_kw '%s'" % \
+      raise ValueError("Unexpected type of partition_parameter_kw '%s'" %
                        partition_parameter_kw)
 
     if filter_kw is None:
       filter_kw = {}
     elif not isinstance(filter_kw, dict):
-      raise ValueError("Unexpected type of filter_kw '%s'" % \
+      raise ValueError("Unexpected type of filter_kw '%s'" %
                        filter_kw)
 
     # Let enforce a default software type
@@ -528,6 +536,7 @@ class ComputerPartition(SlapRequester):
         'computer_partition_id=%s' % (self._computer_id, self._partition_id))
     return xml_marshaller.loads(xml)
 
+
 class ConnectionHelper:
   error_message_timeout = "\nThe connection timed out. Please try again later."
   error_message_connect_fail = "Couldn't connect to the server. Please " \
@@ -536,8 +545,9 @@ class ConnectionHelper:
       "original error was: "
   ssl_error_message_connect_fail = "\nCouldn't authenticate computer. Please "\
       "check that certificate and key exist and are valid. "
+
   def __init__(self, connection_wrapper, host, path, key_file=None,
-      cert_file=None, master_ca_file=None, timeout=None):
+               cert_file=None, master_ca_file=None, timeout=None):
     self.connection_wrapper = connection_wrapper
     self.host = host
     self.path = path
@@ -616,7 +626,7 @@ class ConnectionHelper:
     return response.read()
 
   def POST(self, path, parameter_dict,
-      content_type="application/x-www-form-urlencoded"):
+           content_type='application/x-www-form-urlencoded'):
     try:
       default_timeout = socket.getdefaulttimeout()
       socket.setdefaulttimeout(self.timeout)
@@ -652,16 +662,13 @@ class ConnectionHelper:
 
 
 class slap:
-
   zope.interface.implements(interface.slap)
 
   def initializeConnection(self, slapgrid_uri, key_file=None, cert_file=None,
-      master_ca_file=None, timeout=60):
-    scheme, netloc, path, query, fragment = urlparse.urlsplit(
-        slapgrid_uri)
-    if not(query == '' and fragment == ''):
-      raise AttributeError('Passed URL %r issue: not parseable'%
-          slapgrid_uri)
+                           master_ca_file=None, timeout=60):
+    scheme, netloc, path, query, fragment = urlparse.urlsplit(slapgrid_uri)
+    if not (query == '' and fragment == ''):
+      raise AttributeError('Passed URL %r issue: not parseable' % slapgrid_uri)
 
     if scheme == 'http':
       connection_wrapper = httplib.HTTPConnection
@@ -671,8 +678,8 @@ class slap:
       else:
         connection_wrapper = httplib.HTTPSConnection
     else:
-      raise AttributeError('Passed URL %r issue: there is no support for %r p'
-          'rotocol' % (slapgrid_uri, scheme))
+      raise AttributeError('Passed URL %r issue: there is no support '
+                           'for %r protocol' % (slapgrid_uri, scheme))
     self._connection_helper = ConnectionHelper(connection_wrapper,
           netloc, path, key_file, cert_file, master_ca_file, timeout)
 
