@@ -10,6 +10,9 @@ parts =
   kvm-promise
   websockify-sighandler
   novnc-promise
+  kvm-monitor
+  cron
+  cron-entry-monitor
   frontend-promise
 
 eggs-directory = ${buildout:eggs-directory}
@@ -22,12 +25,16 @@ etc = $${buildout:directory}/etc
 bin = $${buildout:directory}/bin
 srv = $${buildout:directory}/srv
 var = $${buildout:directory}/var
+log = $${:var}/log
 scripts = $${:etc}/run
 services = $${:etc}/service
 promises = $${:etc}/promise
 novnc-conf = $${:etc}/novnc
 run = $${:var}/run
 ca-dir = $${:srv}/ssl
+cron-entries = $${:etc}/cron.d
+crontabs = $${:etc}/crontabs
+cronstamps = $${:etc}/cronstamps
 
 [create-mac]
 recipe = slapos.cookbook:generate.mac
@@ -123,14 +130,40 @@ port = $${novnc-instance:port}
 
 
 [kvm-monitor]
-recipe = slapos.cookbook:kvm-monitor
-path = $${basedirectory:services}/kvm-monitor
-kvm-monitor-path = ${buildout:bin-directory}/kvm-monitor
+recipe = slapos.cookbook:kvm.monitor
+path = $${directory:services}/kvm_monitor
+kvm-monitor-path = ${buildout:bin-directory}/kvm.monitor.test
 filepath = $${buildout:directory}/buildout-switch-softwaretype.cfg
-sections = -s slap-parameter
-options = -opts disk-size ram-size cpu-count
+sections = slap-parameter
+options = disk-size ram-size cpu-count
 xml-path = $${buildout:directory}/report.xml
 
+
+#----------------
+#--
+#-- Deploy cron.
+
+[cron]
+recipe = slapos.cookbook:cron
+dcrond-binary = ${dcron:location}/sbin/crond
+cron-entries = $${directory:cron-entries}
+crontabs = $${directory:crontabs}
+cronstamps = $${directory:cronstamps}
+catcher = $${cron-simplelogger:wrapper}
+binary = $${directory:services}/crond
+
+[cron-simplelogger]
+recipe = slapos.cookbook:simplelogger
+wrapper = $${directory:bin}/cron_simplelogger
+log = $${directory:log}/crond.log
+
+
+[cron-entry-monitor]
+<= cron
+recipe = slapos.cookbook:cron.d
+name = kvm_monitor
+frequency = 0 0 * * *
+command = $${kvm-monitor:path}
 
 [request-slave-frontend]
 recipe = slapos.cookbook:requestoptional
@@ -169,7 +202,7 @@ curl_path = ${curl:location}/bin/curl
 # Default values if not specified
 frontend-software-type = frontend
 frontend-software-url = http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.92:/software/kvm/software.cfg
-
+frontend-instance-guid = 
 nbd-port = 1024
 nbd-host = debian.nbd.vifib.net
 nbd2-port = 1024
