@@ -172,6 +172,7 @@ def services(args):
               languages, compiled, user_profile)
   os.system("chmod g+w -R " + args['installroot'])
   os.system(cmd)
+  os.system("chmod 700 %s" % os.path.join(args['installroot'], 'keys'))
   os.system("chmod o+x " + inc)
   os.system("chmod -R o+r " + inc)
   os.system("chmod o+x " + languages)
