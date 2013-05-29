@@ -53,6 +53,7 @@ originalBootstrapBuildout = utils.bootstrapBuildout
 originalLaunchBuildout = utils.launchBuildout
 originalUploadSoftwareRelease = SlapObject.Software.uploadSoftwareRelease
 
+
 class TestSoftwareSlapObject(BasicMixin, unittest.TestCase):
   """
     Test for Software class.
@@ -92,17 +93,17 @@ class TestSoftwareSlapObject(BasicMixin, unittest.TestCase):
       Check if the networkcache parameters are propagated.
     """
     software = SlapObject.Software(
-            url='http://example.com/software.cfg',
-            software_root=self.software_root,
-            buildout=self.buildout,
-            logger=logging.getLogger(),
-            signature_private_key_file='/signature/private/key_file',
-            upload_cache_url='http://example.com/uploadcache',
-            upload_dir_url='http://example.com/uploaddir',
-            shacache_cert_file=self.shacache_cert_file,
-            shacache_key_file=self.shacache_key_file,
-            shadir_cert_file=self.shadir_cert_file,
-            shadir_key_file=self.shadir_key_file)
+        url='http://example.com/software.cfg',
+        software_root=self.software_root,
+        buildout=self.buildout,
+        logger=logging.getLogger(),
+        signature_private_key_file='/signature/private/key_file',
+        upload_cache_url='http://example.com/uploadcache',
+        upload_dir_url='http://example.com/uploaddir',
+        shacache_cert_file=self.shacache_cert_file,
+        shacache_key_file=self.shacache_key_file,
+        shadir_cert_file=self.shadir_cert_file,
+        shadir_key_file=self.shadir_key_file)
 
     software.install()
 
@@ -121,23 +122,21 @@ class TestSoftwareSlapObject(BasicMixin, unittest.TestCase):
       Check if the networkcache parameters are not propagated if they are not
       available.
     """
-    software = SlapObject.Software(
-            url='http://example.com/software.cfg',
-            software_root=self.software_root,
-            buildout=self.buildout,
-            logger=logging.getLogger())
-
+    software = SlapObject.Software(url='http://example.com/software.cfg',
+                                   software_root=self.software_root,
+                                   buildout=self.buildout,
+                                   logger=logging.getLogger())
     software.install()
 
     command_list = FakeCallAndRead.external_command_list
-    self.assertFalse('buildout:networkcache-section=networkcache'
-                    in command_list)
-    self.assertFalse('networkcache:signature-private-key-file=%s' %
-                    self.signature_private_key_file in command_list)
-    self.assertFalse('networkcache:upload-cache-url=%s' % self.upload_cache_url
-                    in command_list)
-    self.assertFalse('networkcache:upload-dir-url=%s' % self.upload_dir_url
-                    in command_list)
+    self.assertNotIn('buildout:networkcache-section=networkcache', command_list)
+    self.assertNotIn('networkcache:signature-private-key-file=%s' %
+                     self.signature_private_key_file,
+                     command_list)
+    self.assertNotIn('networkcache:upload-cache-url=%s' % self.upload_cache_url,
+                     command_list)
+    self.assertNotIn('networkcache:upload-dir-url=%s' % self.upload_dir_url,
+                     command_list)
 
   # XXX-Cedric: do the same with upload
   def test_software_install_networkcache_upload_blacklist(self):
@@ -146,27 +145,30 @@ class TestSoftwareSlapObject(BasicMixin, unittest.TestCase):
     """
     def fakeBuildout(*args, **kw):
       pass
+
     SlapObject.Software._install_from_buildout = fakeBuildout
+
     def fake_upload_network_cached(*args, **kw):
       self.assertFalse(True)
+
     networkcache.upload_network_cached = fake_upload_network_cached
 
     upload_to_binary_cache_url_blacklist = ["http://example.com"]
 
     software = SlapObject.Software(
-            url='http://example.com/software.cfg',
-            software_root=self.software_root,
-            buildout=self.buildout,
-            logger=logging.getLogger(),
-            signature_private_key_file='/signature/private/key_file',
-            upload_cache_url='http://example.com/uploadcache',
-            upload_dir_url='http://example.com/uploaddir',
-            shacache_cert_file=self.shacache_cert_file,
-            shacache_key_file=self.shacache_key_file,
-            shadir_cert_file=self.shadir_cert_file,
-            shadir_key_file=self.shadir_key_file,
-            upload_to_binary_cache_url_blacklist=\
-                upload_to_binary_cache_url_blacklist,
+        url='http://example.com/software.cfg',
+        software_root=self.software_root,
+        buildout=self.buildout,
+        logger=logging.getLogger(),
+        signature_private_key_file='/signature/private/key_file',
+        upload_cache_url='http://example.com/uploadcache',
+        upload_dir_url='http://example.com/uploaddir',
+        shacache_cert_file=self.shacache_cert_file,
+        shacache_key_file=self.shacache_key_file,
+        shadir_cert_file=self.shadir_cert_file,
+        shadir_key_file=self.shadir_key_file,
+        upload_to_binary_cache_url_blacklist=
+            upload_to_binary_cache_url_blacklist,
     )
     software.install()
 
@@ -178,29 +180,30 @@ class TestSoftwareSlapObject(BasicMixin, unittest.TestCase):
     def fakeBuildout(*args, **kw):
       pass
     SlapObject.Software._install_from_buildout = fakeBuildout
+
     def fakeUploadSoftwareRelease(*args, **kw):
       self.uploaded = True
-    SlapObject.Software.uploadSoftwareRelease = fakeUploadSoftwareRelease
 
+    SlapObject.Software.uploadSoftwareRelease = fakeUploadSoftwareRelease
 
     upload_to_binary_cache_url_blacklist = ["http://anotherexample.com"]
 
     software = SlapObject.Software(
-            url='http://example.com/software.cfg',
-            software_root=self.software_root,
-            buildout=self.buildout,
-            logger=logging.getLogger(),
-            signature_private_key_file='/signature/private/key_file',
-            upload_cache_url='http://example.com/uploadcache',
-            upload_dir_url='http://example.com/uploaddir',
-            upload_binary_cache_url='http://example.com/uploadcache',
-            upload_binary_dir_url='http://example.com/uploaddir',
-            shacache_cert_file=self.shacache_cert_file,
-            shacache_key_file=self.shacache_key_file,
-            shadir_cert_file=self.shadir_cert_file,
-            shadir_key_file=self.shadir_key_file,
-            upload_to_binary_cache_url_blacklist=\
-                upload_to_binary_cache_url_blacklist,
+        url='http://example.com/software.cfg',
+        software_root=self.software_root,
+        buildout=self.buildout,
+        logger=logging.getLogger(),
+        signature_private_key_file='/signature/private/key_file',
+        upload_cache_url='http://example.com/uploadcache',
+        upload_dir_url='http://example.com/uploaddir',
+        upload_binary_cache_url='http://example.com/uploadcache',
+        upload_binary_dir_url='http://example.com/uploaddir',
+        shacache_cert_file=self.shacache_cert_file,
+        shacache_key_file=self.shacache_key_file,
+        shadir_cert_file=self.shadir_cert_file,
+        shadir_key_file=self.shadir_key_file,
+        upload_to_binary_cache_url_blacklist=
+            upload_to_binary_cache_url_blacklist,
     )
     software.install()
     self.assertTrue(getattr(self, 'uploaded', False))

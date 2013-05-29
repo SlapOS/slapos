@@ -98,6 +98,7 @@ chmod 755 etc/service/daemon &&
 touch worked
 """
 
+
 class BasicMixin:
   def setUp(self):
     self._tempdir = tempfile.mkdtemp()
@@ -112,7 +113,7 @@ class BasicMixin:
     self.computer_id = 'computer'
     self.supervisord_socket = os.path.join(self._tempdir, 'supervisord.sock')
     self.supervisord_configuration_path = os.path.join(self._tempdir,
-      'supervisord')
+                                                       'supervisord')
     self.usage_report_periodicity = 1
     self.buildout = None
     self.grid = slapgrid.Slapgrid(self.software_root,
@@ -125,8 +126,10 @@ class BasicMixin:
                                   develop=develop,
                                   logger=logging.getLogger())
     # monkey patch buildout bootstrap
+
     def dummy(*args, **kw):
       pass
+
     slapos.grid.utils.bootstrapBuildout = dummy
 
   def launchSlapgrid(self, develop=False):
@@ -186,6 +189,7 @@ class TestBasicSlapgridCP(BasicMixin, unittest.TestCase):
     os.mkdir(self.instance_root)
     self.assertRaises(socket.error, self.grid.processComputerPartitionList)
 
+
 class MasterMixin(BasicMixin):
 
   def _patchHttplib(self):
@@ -218,6 +222,7 @@ class MasterMixin(BasicMixin):
 
   def _unmock_sleep(self):
     time.sleep = self.real_sleep
+
   def setUp(self):
     self._patchHttplib()
     self._mock_sleep()
@@ -260,9 +265,9 @@ class ComputerForTest:
     Will set requested amount of software
     """
     self.software_list = [
-            SoftwareForTest(self.software_root, name=str(i))
-            for i in range(self.software_amount)
-            ]
+        SoftwareForTest(self.software_root, name=str(i))
+        for i in range(self.software_amount)
+    ]
 
   def setInstances(self):
     """
@@ -274,9 +279,9 @@ class ComputerForTest:
       software = None
 
     self.instance_list = [
-            InstanceForTest(self.instance_root, name=str(i), software=software)
-            for i in range(self.instance_amount)
-            ]
+        InstanceForTest(self.instance_root, name=str(i), software=software)
+        for i in range(self.instance_amount)
+    ]
 
   def getComputer(self, computer_id):
     """
@@ -284,13 +289,13 @@ class ComputerForTest:
     """
     slap_computer = slapos.slap.Computer(computer_id)
     slap_computer._software_release_list = [
-                        software.getSoftware(computer_id)
-                        for software in self.software_list
-                        ]
+        software.getSoftware(computer_id)
+        for software in self.software_list
+    ]
     slap_computer._computer_partition_list = [
-                        instance.getInstance(computer_id)
-                        for instance in self.instance_list
-                        ]
+        instance.getInstance(computer_id)
+        for instance in self.instance_list
+    ]
     return slap_computer
 
   def setServerResponse(self):
@@ -310,8 +315,8 @@ class ComputerForTest:
         parsed_qs = urlparse.parse_qs(parsed_url.query)
       else:
         parsed_qs = urlparse.parse_qs(body)
-      if parsed_url.path == 'getFullComputerInformation' and \
-            'computer_id' in parsed_qs:
+      if (parsed_url.path == 'getFullComputerInformation'
+              and 'computer_id' in parsed_qs):
         slap_computer = self.getComputer(parsed_qs['computer_id'][0])
         return (200, {}, xml_marshaller.xml_marshaller.dumps(slap_computer))
       if method == 'POST' and 'computer_partition_id' in parsed_qs:
@@ -332,9 +337,13 @@ class ComputerForTest:
         if parsed_url.path == 'softwareInstanceBang':
           return (200, {}, '')
         if parsed_url.path == 'softwareInstanceError':
-          instance.error_log = '\n'.join([line for line \
-                                   in parsed_qs['error_log'][0].splitlines()
-                                 if 'dropPrivileges' not in line])
+          instance.error_log = '\n'.join(
+              [
+                  line
+                  for line in parsed_qs['error_log'][0].splitlines()
+                  if 'dropPrivileges' not in line
+              ]
+          )
           instance.error = True
           return (200, {}, '')
 
@@ -345,9 +354,13 @@ class ComputerForTest:
         if parsed_url.path == 'buildingSoftwareRelease':
           return (200, {}, '')
         if parsed_url.path == 'softwareReleaseError':
-          software.error_log = '\n'.join([line for line \
-                                   in parsed_qs['error_log'][0].splitlines()
-                                 if 'dropPrivileges' not in line])
+          software.error_log = '\n'.join(
+              [
+                  line
+                  for line in parsed_qs['error_log'][0].splitlines()
+                  if 'dropPrivileges' not in line
+              ]
+          )
           software.error = True
           return (200, {}, '')
 
@@ -382,7 +395,7 @@ class InstanceForTest:
     partition._software_release_document = self.getSoftwareRelease()
     partition._requested_state = self.requested_state
     if self.software is not None:
-      if self.timestamp is not None :
+      if self.timestamp is not None:
         partition._parameter_dict = {'timestamp': self.timestamp}
     return partition
 
@@ -394,7 +407,8 @@ class InstanceForTest:
       sr = slapos.slap.SoftwareRelease()
       sr._software_release = self.software.name
       return sr
-    else: return None
+    else:
+      return None
 
   def setPromise(self, promise_name, promise_content):
     """
@@ -415,9 +429,10 @@ class InstanceForTest:
     self.certificate = str(random.random())
     open(self.cert_file, 'w').write(self.certificate)
     self.key_file = os.path.join(certificate_repository_path,
-                                  "%s.key" % self.name)
+                                 '%s.key' % self.name)
     self.key = str(random.random())
     open(self.key_file, 'w').write(self.key)
+
 
 class SoftwareForTest:
   """
@@ -448,7 +463,6 @@ class SoftwareForTest:
     software._requested_state = self.requested_state
     return software
 
-
   def setTemplateCfg(self, template="""[buildout]"""):
     """
     Set template.cfg
@@ -467,9 +481,8 @@ touch worked"""):
     """
     Set a periodicity file
     """
-    open(os.path.join(self.srdir, 'periodicity'), 'w').write(
-      """%s""" % (periodicity))
-
+    with open(os.path.join(self.srdir, 'periodicity'), 'w') as fout:
+      fout.write(str(periodicity))
 
 
 class TestSlapgridCPWithMaster(MasterMixin, unittest.TestCase):
@@ -547,7 +560,6 @@ class TestSlapgridCPWithMaster(MasterMixin, unittest.TestCase):
                      ['getFullComputerInformation', 'availableComputerPartition',
                       'startedComputerPartition'])
     self.assertEqual(partition.state, 'started')
-
 
   def test_one_partition_started_stopped(self):
     computer = ComputerForTest(self.software_root, self.instance_root)
@@ -653,7 +665,7 @@ chmod 755 etc/run/wrapper
     os.path.getsize(wrapper_log)
     self.assertIn('Working', open(wrapper_log).read())
     self.assertItemsEqual(os.listdir(self.software_root),
-      [instance.software.software_hash])
+                          [instance.software.software_hash])
     self.assertEqual(computer.sequence,
                      ['getFullComputerInformation', 'availableComputerPartition',
                       'startedComputerPartition'])
@@ -683,7 +695,6 @@ exit 1
                       'softwareInstanceError'])
     self.assertEqual(instance.state, 'started')
 
-
   def test_one_partition_stopped_started(self):
     computer = ComputerForTest(self.software_root, self.instance_root)
     instance = computer.instance_list[0]
@@ -696,7 +707,7 @@ exit 1
     self.assertItemsEqual(os.listdir(partition),
                           ['buildout.cfg', 'etc', 'software_release', 'worked'])
     self.assertItemsEqual(os.listdir(self.software_root),
-      [instance.software.software_hash])
+                          [instance.software.software_hash])
     self.assertEqual(computer.sequence,
                      ['getFullComputerInformation', 'availableComputerPartition',
                       'stoppedComputerPartition'])
@@ -710,7 +721,7 @@ exit 1
     self.assertItemsEqual(os.listdir(partition),
                           ['.0_wrapper.log', 'etc', 'buildout.cfg', 'software_release', 'worked'])
     self.assertItemsEqual(os.listdir(self.software_root),
-      [instance.software.software_hash])
+                          [instance.software.software_hash])
     tries = 50
     wrapper_log = os.path.join(instance.partition_path, '.0_wrapper.log')
     while tries > 0:
@@ -756,11 +767,11 @@ class TestSlapgridCPWithMasterWatchdog(MasterMixin, unittest.TestCase):
     # Prepare watchdog
     self.watchdog_banged = os.path.join(self._tempdir, 'watchdog_banged')
     watchdog_path = os.path.join(self._tempdir, 'watchdog')
-    open(watchdog_path, 'w').write(
-      WATCHDOG_TEMPLATE % {
-            'python_path': sys.executable,
-            'sys_path': sys.path,
-            'watchdog_banged': self.watchdog_banged})
+    open(watchdog_path, 'w').write(WATCHDOG_TEMPLATE % {
+        'python_path': sys.executable,
+        'sys_path': sys.path,
+        'watchdog_banged': self.watchdog_banged
+    })
     os.chmod(watchdog_path, 0o755)
     self.grid.watchdog_path = watchdog_path
     slapos.grid.slapgrid.WATCHDOG_PATH = watchdog_path
@@ -855,7 +866,6 @@ class TestSlapgridCPWithMasterWatchdog(MasterMixin, unittest.TestCase):
       time.sleep(0.1)
     self.assertFalse(os.path.exists(self.watchdog_banged))
 
-
   def test_watched_by_watchdog_bang(self):
     """
     Test that a process going to fatal or exited mode in supervisord
@@ -869,16 +879,16 @@ class TestSlapgridCPWithMasterWatchdog(MasterMixin, unittest.TestCase):
     instance.setCertificate(certificate_repository_path)
 
     watchdog = Watchdog({
-                    'master_url': 'https://127.0.0.1/',
-                    'computer_id': self.computer_id,
-                    'certificate_repository_path': certificate_repository_path
-                    })
+        'master_url': 'https://127.0.0.1/',
+        'computer_id': self.computer_id,
+        'certificate_repository_path': certificate_repository_path
+    })
     for event in watchdog.process_state_events:
       instance.sequence = []
       instance.header_list = []
       headers = {'eventname': event}
-      payload = "processname:%s groupname:%s from_state:RUNNING"\
-          % ('daemon'+getWatchdogID(), instance.name)
+      payload = 'processname:%s groupname:%s from_state:RUNNING' % (
+          'daemon' + getWatchdogID(), instance.name)
       watchdog.handle_event(headers, payload)
       self.assertEqual(instance.sequence, ['softwareInstanceBang'])
       self.assertEqual(instance.header_list[0]['key'], instance.key)
@@ -893,19 +903,18 @@ class TestSlapgridCPWithMasterWatchdog(MasterMixin, unittest.TestCase):
     instance = computer.instance_list[0]
 
     watchdog = Watchdog({
-                    'master_url': self.master_url,
-                    'computer_id': self.computer_id,
-                    'certificate_repository_path': None
-                    })
+        'master_url': self.master_url,
+        'computer_id': self.computer_id,
+        'certificate_repository_path': None
+    })
     for event in ['EVENT', 'PROCESS_STATE', 'PROCESS_STATE_RUNNING',
                   'PROCESS_STATE_BACKOFF', 'PROCESS_STATE_STOPPED']:
       computer.sequence = []
       headers = {'eventname': event}
-      payload = "processname:%s groupname:%s from_state:RUNNING"\
-          % ('daemon'+getWatchdogID(), instance.name)
+      payload = 'processname:%s groupname:%s from_state:RUNNING' % (
+          'daemon' + getWatchdogID(), instance.name)
       watchdog.handle_event(headers, payload)
       self.assertEqual(instance.sequence, [])
-
 
   def test_not_watched_by_watchdog_do_not_bang(self):
     """
@@ -917,10 +926,10 @@ class TestSlapgridCPWithMasterWatchdog(MasterMixin, unittest.TestCase):
     instance = computer.instance_list[0]
 
     watchdog = Watchdog({
-                    'master_url': self.master_url,
-                    'computer_id': self.computer_id,
-                    'certificate_repository_path': None
-                    })
+        'master_url': self.master_url,
+        'computer_id': self.computer_id,
+        'certificate_repository_path': None
+    })
     for event in watchdog.process_state_events:
       computer.sequence = []
       headers = {'eventname': event}
@@ -950,7 +959,6 @@ class TestSlapgridCPPartitionProcessing(MasterMixin, unittest.TestCase):
     self.assertIn(timestamp, open(timestamp_path).read())
     self.assertEqual(instance.sequence,
                      ['availableComputerPartition', 'stoppedComputerPartition'])
-
 
   def test_partition_timestamp_develop(self):
     computer = ComputerForTest(self.software_root, self.instance_root)
@@ -990,7 +998,6 @@ class TestSlapgridCPPartitionProcessing(MasterMixin, unittest.TestCase):
     self.assertEqual(instance.sequence,
                      ['availableComputerPartition', 'stoppedComputerPartition'])
 
-
   def test_partition_timestamp_new_timestamp(self):
     computer = ComputerForTest(self.software_root, self.instance_root)
     instance = computer.instance_list[0]
@@ -1003,7 +1010,7 @@ class TestSlapgridCPPartitionProcessing(MasterMixin, unittest.TestCase):
     self.assertItemsEqual(os.listdir(partition),
                           ['.timestamp', 'buildout.cfg', 'software_release', 'worked'])
     self.assertItemsEqual(os.listdir(self.software_root), [instance.software.software_hash])
-    instance.timestamp = str(int(timestamp)+1)
+    instance.timestamp = str(int(timestamp) + 1)
     self.assertEqual(self.launchSlapgrid(), slapgrid.SLAPGRID_SUCCESS)
     self.assertEqual(self.launchSlapgrid(), slapgrid.SLAPGRID_SUCCESS)
     self.assertEqual(computer.sequence,
@@ -1024,14 +1031,13 @@ class TestSlapgridCPPartitionProcessing(MasterMixin, unittest.TestCase):
     self.assertItemsEqual(os.listdir(partition),
                           ['.timestamp', 'buildout.cfg', 'software_release', 'worked'])
     self.assertItemsEqual(os.listdir(self.software_root),
-      [instance.software.software_hash])
+                          [instance.software.software_hash])
     instance.timestamp = None
     self.launchSlapgrid()
     self.assertEqual(computer.sequence,
                      ['getFullComputerInformation', 'availableComputerPartition',
                       'stoppedComputerPartition', 'getFullComputerInformation',
                       'availableComputerPartition', 'stoppedComputerPartition'])
-
 
   def test_partition_periodicity_remove_timestamp(self):
     """
@@ -1060,7 +1066,6 @@ class TestSlapgridCPPartitionProcessing(MasterMixin, unittest.TestCase):
     self.launchSlapgrid()
     self.assertItemsEqual(os.listdir(partition),
                           ['.timestamp', 'buildout.cfg', 'software_release', 'worked'])
-
 
   def test_partition_periodicity_is_not_overloaded_if_forced(self):
     """
@@ -1093,7 +1098,6 @@ class TestSlapgridCPPartitionProcessing(MasterMixin, unittest.TestCase):
                      ['getFullComputerInformation', 'availableComputerPartition',
                       'startedComputerPartition', 'getFullComputerInformation'])
 
-
   def test_one_partition_periodicity_from_file_does_not_disturb_others(self):
     """
     If time between last processing of instance and now is superior
@@ -1109,7 +1113,7 @@ class TestSlapgridCPPartitionProcessing(MasterMixin, unittest.TestCase):
     """
     computer = ComputerForTest(self.software_root, self.instance_root, 20, 20)
     instance0 = computer.instance_list[0]
-    timestamp = str(int(time.time()-5))
+    timestamp = str(int(time.time() - 5))
     instance0.timestamp = timestamp
     instance0.requested_state = 'started'
     for instance in computer.instance_list[1:]:
@@ -1123,7 +1127,7 @@ class TestSlapgridCPPartitionProcessing(MasterMixin, unittest.TestCase):
     self.launchSlapgrid()
     self.assertNotEqual(wanted_periodicity, self.grid.maximum_periodicity)
     last_runtime = os.path.getmtime(
-      os.path.join(instance0.partition_path, '.timestamp'))
+        os.path.join(instance0.partition_path, '.timestamp'))
     time.sleep(wanted_periodicity + 1)
     for instance in computer.instance_list[1:]:
       self.assertEqual(instance.sequence,
@@ -1138,10 +1142,9 @@ class TestSlapgridCPPartitionProcessing(MasterMixin, unittest.TestCase):
       self.assertEqual(instance.sequence,
                        ['availableComputerPartition', 'stoppedComputerPartition'])
     self.assertGreater(
-      os.path.getmtime(os.path.join(instance0.partition_path, '.timestamp')),
-      last_runtime)
+        os.path.getmtime(os.path.join(instance0.partition_path, '.timestamp')),
+        last_runtime)
     self.assertNotEqual(wanted_periodicity, self.grid.maximum_periodicity)
-
 
   def test_one_partition_stopped_is_not_processed_after_periodicity(self):
     """
@@ -1150,7 +1153,7 @@ class TestSlapgridCPPartitionProcessing(MasterMixin, unittest.TestCase):
     """
     computer = ComputerForTest(self.software_root, self.instance_root, 20, 20)
     instance0 = computer.instance_list[0]
-    timestamp = str(int(time.time()-5))
+    timestamp = str(int(time.time() - 5))
     instance0.timestamp = timestamp
     for instance in computer.instance_list[1:]:
       instance.software = \
@@ -1163,7 +1166,7 @@ class TestSlapgridCPPartitionProcessing(MasterMixin, unittest.TestCase):
     self.launchSlapgrid()
     self.assertNotEqual(wanted_periodicity, self.grid.maximum_periodicity)
     last_runtime = os.path.getmtime(
-      os.path.join(instance0.partition_path, '.timestamp'))
+        os.path.join(instance0.partition_path, '.timestamp'))
     time.sleep(wanted_periodicity + 1)
     for instance in computer.instance_list[1:]:
       self.assertEqual(instance.sequence,
@@ -1171,14 +1174,13 @@ class TestSlapgridCPPartitionProcessing(MasterMixin, unittest.TestCase):
     time.sleep(1)
     self.launchSlapgrid()
     self.assertEqual(instance0.sequence,
-                     ['availableComputerPartition', 'stoppedComputerPartition',
-                      ])
+                     ['availableComputerPartition', 'stoppedComputerPartition'])
     for instance in computer.instance_list[1:]:
       self.assertEqual(instance.sequence,
                        ['availableComputerPartition', 'stoppedComputerPartition'])
-    self.assertEqual(
-      os.path.getmtime(os.path.join(instance0.partition_path, '.timestamp')),
-      last_runtime)
+    self.assertEqual(os.path.getmtime(os.path.join(instance0.partition_path,
+                                                   '.timestamp')),
+                     last_runtime)
     self.assertNotEqual(wanted_periodicity, self.grid.maximum_periodicity)
 
   def test_one_partition_destroyed_is_not_processed_after_periodicity(self):
@@ -1188,7 +1190,7 @@ class TestSlapgridCPPartitionProcessing(MasterMixin, unittest.TestCase):
     """
     computer = ComputerForTest(self.software_root, self.instance_root, 20, 20)
     instance0 = computer.instance_list[0]
-    timestamp = str(int(time.time()-5))
+    timestamp = str(int(time.time() - 5))
     instance0.timestamp = timestamp
     instance0.requested_state = 'stopped'
     for instance in computer.instance_list[1:]:
@@ -1202,7 +1204,7 @@ class TestSlapgridCPPartitionProcessing(MasterMixin, unittest.TestCase):
     self.launchSlapgrid()
     self.assertNotEqual(wanted_periodicity, self.grid.maximum_periodicity)
     last_runtime = os.path.getmtime(
-      os.path.join(instance0.partition_path, '.timestamp'))
+        os.path.join(instance0.partition_path, '.timestamp'))
     time.sleep(wanted_periodicity + 1)
     for instance in computer.instance_list[1:]:
       self.assertEqual(instance.sequence,
@@ -1211,14 +1213,13 @@ class TestSlapgridCPPartitionProcessing(MasterMixin, unittest.TestCase):
     instance0.requested_state = 'destroyed'
     self.launchSlapgrid()
     self.assertEqual(instance0.sequence,
-                     ['availableComputerPartition', 'stoppedComputerPartition',
-                     ])
+                     ['availableComputerPartition', 'stoppedComputerPartition'])
     for instance in computer.instance_list[1:]:
       self.assertEqual(instance.sequence,
                        ['availableComputerPartition', 'stoppedComputerPartition'])
-    self.assertEqual(
-      os.path.getmtime(os.path.join(instance0.partition_path, '.timestamp')),
-      last_runtime)
+    self.assertEqual(os.path.getmtime(os.path.join(instance0.partition_path,
+                                                   '.timestamp')),
+                     last_runtime)
     self.assertNotEqual(wanted_periodicity, self.grid.maximum_periodicity)
 
   def test_one_partition_buildout_fail_does_not_disturb_others(self):
@@ -1365,7 +1366,6 @@ class TestSlapgridUsageReport(MasterMixin, unittest.TestCase):
                       'destroyedComputerPartition'])
     self.assertEqual(instance.state, 'destroyed')
 
-
   def test_partition_list_is_complete_if_empty_destroyed_partition(self):
     """
     Test that an empty partition with destroyed state but with SR informations
@@ -1457,7 +1457,6 @@ class TestSlapgridUsageReport(MasterMixin, unittest.TestCase):
                      ['getFullComputerInformation'])
     self.assertEqual('started', instance.state)
 
-
   def test_slapgrid_instance_ignore_free_instance(self):
     """
     Test than a free instance (so in "destroyed" state, but empty, without
@@ -1495,7 +1494,6 @@ class TestSlapgridUsageReport(MasterMixin, unittest.TestCase):
     self.assertEqual(computer.sequence, ['getFullComputerInformation'])
 
 
-
 class TestSlapgridSoftwareRelease(MasterMixin, unittest.TestCase):
   def test_one_software_buildout_fail_is_correctly_logged(self):
     """
@@ -1516,6 +1514,7 @@ echo %s; echo %s; exit 42""" % (line1, line2))
     self.assertIn(line1, software.error_log)
     self.assertIn(line2, software.error_log)
     self.assertIn('Failed to run buildout', software.error_log)
+
 
 class SlapgridInitialization(unittest.TestCase):
   """
@@ -1558,6 +1557,7 @@ buildout = /path/to/buildout/binary
     self.signature_key_file_descriptor.close()
     shutil.rmtree(self.certificate_repository_path, True)
 
+
 class TestSlapgridArgumentTuple(SlapgridInitialization):
   """
   Test suite about arguments given to slapgrid command.
@@ -1586,8 +1586,8 @@ class TestSlapgridArgumentTuple(SlapgridInitialization):
       Raises if the  signature_private_key_file does not exists.
     """
     parser = parseArgumentTupleAndReturnSlapgridObject
-    argument_tuple = ("--signature_private_key_file", "/non/exists/path") + \
-                      self.default_arg_tuple
+    argument_tuple = ("--signature_private_key_file",
+                      "/non/exists/path") + self.default_arg_tuple
     self.assertRaisesRegexp(RuntimeError,
                             "File '/non/exists/path' does not exist.",
                             parser, *argument_tuple)
@@ -1599,11 +1599,10 @@ class TestSlapgridArgumentTuple(SlapgridInitialization):
     """
     parser = parseArgumentTupleAndReturnSlapgridObject
     argument_tuple = ("--signature_private_key_file",
-                      self.signature_key_file_descriptor.name) + \
-                      self.default_arg_tuple
+                      self.signature_key_file_descriptor.name) + self.default_arg_tuple
     slapgrid_object = parser(*argument_tuple)[0]
     self.assertEquals(self.signature_key_file_descriptor.name,
-                          slapgrid_object.signature_private_key_file)
+                      slapgrid_object.signature_private_key_file)
 
   def test_backward_compatibility_all(self):
     """
@@ -1638,6 +1637,7 @@ class TestSlapgridArgumentTuple(SlapgridInitialization):
     parser = parseArgumentTupleAndReturnSlapgridObject
     slapgrid_object = parser('--maximum-periodicity', '40', *self.default_arg_tuple)[0]
     self.assertTrue(slapgrid_object.force_periodicity)
+
 
 class TestSlapgridConfigurationFile(SlapgridInitialization):
 
@@ -1777,7 +1777,7 @@ class TestSlapgridCPWithMasterPromise(MasterMixin, unittest.TestCase):
     self.assertNotEqual('started', instance.state)
 
   def test_one_succeeding_promise(self):
-    computer = ComputerForTest(self.software_root,self.instance_root)
+    computer = ComputerForTest(self.software_root, self.instance_root)
     instance = computer.instance_list[0]
     instance.requested_state = 'started'
     self.fake_waiting_time = 0.1
@@ -1819,7 +1819,6 @@ class TestSlapgridCPWithMasterPromise(MasterMixin, unittest.TestCase):
     self.assertEqual(instance.error_log[-5:], 'Error')
     self.assertTrue(instance.error)
     self.assertIsNone(instance.state)
-
 
   def test_timeout_works(self):
     computer = ComputerForTest(self.software_root, self.instance_root)
@@ -1887,9 +1886,9 @@ class TestSlapgridCPWithMasterPromise(MasterMixin, unittest.TestCase):
                 else
                   exit 127
                 fi""" % {
-                    'worked_file': worked_file,
-                    'lockfile': lockfile
-                    })
+          'worked_file': worked_file,
+          'lockfile': lockfile
+      })
       instance.setPromise('promise_%s' % i, promise)
     self.assertEqual(self.grid.processComputerPartitionList(),
                      slapos.grid.slapgrid.SLAPGRID_PROMISE_FAIL)
@@ -1913,10 +1912,10 @@ class TestSlapgridCPWithMasterPromise(MasterMixin, unittest.TestCase):
                 else
                   sleep 5
                 fi
-                exit 0"""  % {
-                    'worked_file': worked_file,
-                    'lockfile': lockfile
-                    })
+                exit 0""" % {
+          'worked_file': worked_file,
+          'lockfile': lockfile}
+      )
       instance.setPromise('promise_%d' % i, promise)
 
     self.assertEqual(self.grid.processComputerPartitionList(),

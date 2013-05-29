@@ -37,6 +37,7 @@ import xml_marshaller
 class UndefinedYetException(Exception):
   """To catch exceptions which are not yet defined"""
 
+
 class SlapMixin(unittest.TestCase):
   """
   Usefull methods for slap tests
@@ -59,7 +60,7 @@ class SlapMixin(unittest.TestCase):
     """Overrides httplib"""
     import mock.httplib
 
-    self.saved_httplib = dict()
+    self.saved_httplib = {}
 
     for fake in vars(mock.httplib):
       self.saved_httplib[fake] = getattr(httplib, fake, None)
@@ -78,6 +79,7 @@ class SlapMixin(unittest.TestCase):
     """
     return self.id()
     return os.environ.get('TEST_SLAP_COMPUTER_ID', self.id())
+
 
 class TestSlap(SlapMixin):
   """
@@ -102,7 +104,8 @@ class TestSlap(SlapMixin):
     server_url = 'https://user:pass@server/path/path?parameter=notAcceptable'
     slap_instance = slapos.slap.slap()
     self.assertRaises(AttributeError,
-                      slap_instance.initializeConnection, server_url)
+                      slap_instance.initializeConnection,
+                      server_url)
 
   def test_registerComputer_with_new_guid(self):
     """
@@ -169,9 +172,9 @@ class TestSlap(SlapMixin):
     def server_response(self, path, method, body, header):
       parsed_url = urlparse.urlparse(path.lstrip('/'))
       parsed_qs = urlparse.parse_qs(parsed_url.query)
-      if parsed_url.path == 'registerComputerPartition' and \
-         parsed_qs['computer_reference'][0] == computer_guid and \
-         parsed_qs['computer_partition_reference'][0] == partition_id:
+      if (parsed_url.path == 'registerComputerPartition'
+              and parsed_qs['computer_reference'][0] == computer_guid
+              and parsed_qs['computer_partition_reference'][0] == partition_id):
         partition = slapos.slap.ComputerPartition(
             computer_guid, partition_id)
         return (200, {}, xml_marshaller.xml_marshaller.dumps(partition))
@@ -189,7 +192,7 @@ class TestSlap(SlapMixin):
     """
     self.test_registerComputerPartition_new_partition_id_known_computer_guid()
     partition = self.slap.registerComputerPartition(self._getTestComputerId(),
-        self.partition_id)
+                                                    self.partition_id)
     self.assertIsInstance(partition, slapos.slap.ComputerPartition)
 
   def test_registerComputerPartition_unknown_computer_guid(self):
@@ -204,9 +207,9 @@ class TestSlap(SlapMixin):
     def server_response(self, path, method, body, header):
       parsed_url = urlparse.urlparse(path.lstrip('/'))
       parsed_qs = urlparse.parse_qs(parsed_url.query)
-      if parsed_url.path == 'registerComputerPartition' and \
-         parsed_qs['computer_reference'][0] == computer_guid and \
-         parsed_qs['computer_partition_reference'][0] == partition_id:
+      if (parsed_url.path == 'registerComputerPartition'
+              and parsed_qs['computer_reference'][0] == computer_guid
+              and parsed_qs['computer_partition_reference'][0] == partition_id):
         slapos.slap.ComputerPartition(computer_guid, partition_id)
         return (404, {}, '')
       else:
@@ -214,7 +217,8 @@ class TestSlap(SlapMixin):
     httplib.HTTPConnection._callback = server_response
 
     self.assertRaises(slapos.slap.NotFoundError,
-        self.slap.registerComputerPartition, computer_guid, partition_id)
+                      self.slap.registerComputerPartition,
+                      computer_guid, partition_id)
 
   def test_getFullComputerInformation_empty_computer_guid(self):
     """
@@ -226,11 +230,12 @@ class TestSlap(SlapMixin):
     def server_response(self_httpconnection, path, method, body, header):
       # Shouldn't even be called
       self.assertFalse(True)
+
     httplib.HTTPConnection._callback = server_response
 
-    self.assertRaises(
-        slapos.slap.NotFoundError,
-        self.slap._connection_helper.getFullComputerInformation, None)
+    self.assertRaises(slapos.slap.NotFoundError,
+                      self.slap._connection_helper.getFullComputerInformation,
+                      None)
 
   def test_registerComputerPartition_empty_computer_guid(self):
     """
@@ -242,11 +247,12 @@ class TestSlap(SlapMixin):
     def server_response(self_httpconnection, path, method, body, header):
       # Shouldn't even be called
       self.assertFalse(True)
+
     httplib.HTTPConnection._callback = server_response
 
-    self.assertRaises(
-        slapos.slap.NotFoundError,
-        self.slap.registerComputerPartition, None, 'PARTITION_01')
+    self.assertRaises(slapos.slap.NotFoundError,
+                      self.slap.registerComputerPartition,
+                      None, 'PARTITION_01')
 
   def test_registerComputerPartition_empty_computer_partition_id(self):
     """
@@ -258,12 +264,12 @@ class TestSlap(SlapMixin):
     def server_response(self_httpconnection, path, method, body, header):
       # Shouldn't even be called
       self.assertFalse(True)
+
     httplib.HTTPConnection._callback = server_response
 
-    self.assertRaises(
-        slapos.slap.NotFoundError,
-        self.slap.registerComputerPartition,
-        self._getTestComputerId(), None)
+    self.assertRaises(slapos.slap.NotFoundError,
+                      self.slap.registerComputerPartition,
+                      self._getTestComputerId(), None)
 
   def test_registerComputerPartition_empty_computer_guid_empty_computer_partition_id(self):
     """
@@ -275,12 +281,13 @@ class TestSlap(SlapMixin):
     def server_response(self_httpconnection, path, method, body, header):
       # Shouldn't even be called
       self.assertFalse(True)
+
     httplib.HTTPConnection._callback = server_response
 
-    self.assertRaises(
-        slapos.slap.NotFoundError,
-        self.slap.registerComputerPartition,
-        None, None)
+    self.assertRaises(slapos.slap.NotFoundError,
+                      self.slap.registerComputerPartition,
+                      None, None)
+
 
 class TestComputer(SlapMixin):
   """
@@ -299,15 +306,15 @@ class TestComputer(SlapMixin):
     def server_response(self, path, method, body, header):
       parsed_url = urlparse.urlparse(path.lstrip('/'))
       parsed_qs = urlparse.parse_qs(parsed_url.query)
-      if parsed_url.path == 'registerComputerPartition' and \
-         'computer_reference' in parsed_qs and \
-         'computer_partition_reference' in parsed_qs:
+      if (parsed_url.path == 'registerComputerPartition'
+              and 'computer_reference' in parsed_qs
+              and 'computer_partition_reference' in parsed_qs):
         slap_partition = slapos.slap.ComputerPartition(
-          parsed_qs['computer_reference'][0],
-          parsed_qs['computer_partition_reference'][0])
+            parsed_qs['computer_reference'][0],
+            parsed_qs['computer_partition_reference'][0])
         return (200, {}, xml_marshaller.xml_marshaller.dumps(slap_partition))
-      elif parsed_url.path == 'getFullComputerInformation' and \
-         'computer_id' in parsed_qs:
+      elif (parsed_url.path == 'getFullComputerInformation'
+              and 'computer_id' in parsed_qs):
         slap_computer = slapos.slap.Computer(parsed_qs['computer_id'][0])
         slap_computer._software_release_list = []
         slap_computer._computer_partition_list = []
@@ -331,12 +338,12 @@ class TestComputer(SlapMixin):
     def server_response(self_httpconnection, path, method, body, header):
       # Shouldn't even be called
       self.assertFalse(True)
+
     httplib.HTTPConnection._callback = server_response
 
     computer = self.slap.registerComputer(None)
-    self.assertRaises(
-        slapos.slap.NotFoundError,
-        getattr(computer, computer_method))
+    self.assertRaises(slapos.slap.NotFoundError,
+                      getattr(computer, computer_method))
 
   def test_computer_getComputerPartitionList_empty_computer_guid(self):
     """
@@ -363,7 +370,7 @@ class TestComputer(SlapMixin):
     self.slap.initializeConnection(self.server_url)
     self.computer = self.slap.registerComputer(self.computer_guid)
     self.partition = self.slap.registerComputerPartition(self.computer_guid,
-        partition_id)
+                                                         partition_id)
     self.assertEqual(self.computer.getComputerPartitionList(), [])
 
   @unittest.skip("Not implemented")
@@ -373,7 +380,6 @@ class TestComputer(SlapMixin):
     (not defined yet) XML raises (not defined yet) exception
     """
 
-
     self.computer_guid = self._getTestComputerId()
     self.slap = slapos.slap.slap()
     self.slap.initializeConnection(self.server_url)
@@ -381,8 +387,9 @@ class TestComputer(SlapMixin):
     non_dtd_xml = """<xml>
 <non-dtd-parameter name="xerxes">value<non-dtd-parameter name="xerxes">
 </xml>"""
-    self.assertRaises(UndefinedYetException, self.computer.reportUsage,
-        non_dtd_xml)
+    self.assertRaises(UndefinedYetException,
+                      self.computer.reportUsage,
+                      non_dtd_xml)
 
   @unittest.skip("Not implemented")
   def test_computer_reportUsage_valid_xml_invalid_partition_raises(self):
@@ -397,16 +404,19 @@ class TestComputer(SlapMixin):
     self.slap.initializeConnection(self.server_url)
     self.computer = self.slap.registerComputer(self.computer_guid)
     self.partition = self.slap.registerComputerPartition(self.computer_guid,
-        partition_id)
+                                                         partition_id)
     # XXX: As DTD is not defined currently proper XML is not known
     bad_partition_dtd_xml = """<xml>
 <computer-partition id='ANOTHER_PARTITION>96.5% CPU</computer-partition>
 </xml>"""
-    self.assertRaises(UndefinedYetException, self.computer.reportUsage,
-        bad_partition_dtd_xml)
+    self.assertRaises(UndefinedYetException,
+                      self.computer.reportUsage,
+                      bad_partition_dtd_xml)
+
 
 class RequestWasCalled(Exception):
   pass
+
 
 class TestComputerPartition(SlapMixin):
   """
@@ -415,65 +425,69 @@ class TestComputerPartition(SlapMixin):
 
   def test_request_sends_request(self):
     partition_id = 'PARTITION_01'
+
     def server_response(self, path, method, body, header):
       parsed_url = urlparse.urlparse(path.lstrip('/'))
       parsed_qs = urlparse.parse_qs(parsed_url.query)
-      if parsed_url.path == 'registerComputerPartition' and \
-         'computer_reference' in parsed_qs and \
-         'computer_partition_reference' in parsed_qs:
+      if (parsed_url.path == 'registerComputerPartition'
+              and 'computer_reference' in parsed_qs
+              and 'computer_partition_reference' in parsed_qs):
         slap_partition = slapos.slap.ComputerPartition(
-          parsed_qs['computer_reference'][0],
-          parsed_qs['computer_partition_reference'][0])
+            parsed_qs['computer_reference'][0],
+            parsed_qs['computer_partition_reference'][0])
         return (200, {}, xml_marshaller.xml_marshaller.dumps(slap_partition))
-      elif parsed_url.path == 'getComputerInformation' and \
-         'computer_id' in parsed_qs:
+      elif (parsed_url.path == 'getComputerInformation'
+              and 'computer_id' in parsed_qs):
         slap_computer = slapos.slap.Computer(parsed_qs['computer_id'][0])
         slap_computer._software_release_list = []
         slap_partition = slapos.slap.ComputerPartition(
-          parsed_qs['computer_id'][0],
-          partition_id)
+            parsed_qs['computer_id'][0],
+            partition_id)
         slap_computer._computer_partition_list = [slap_partition]
         return (200, {}, xml_marshaller.xml_marshaller.dumps(slap_computer))
       elif parsed_url.path == 'requestComputerPartition':
         raise RequestWasCalled
       else:
         return (404, {}, '')
+
     httplib.HTTPConnection._callback = server_response
     self.computer_guid = self._getTestComputerId()
     self.slap = slapos.slap.slap()
     self.slap.initializeConnection(self.server_url)
     computer_partition = self.slap.registerComputerPartition(
         self.computer_guid, partition_id)
-    self.assertRaises(RequestWasCalled, computer_partition.request,
-        'http://server/new/' + self._getTestComputerId(),
-        'software_type',
-        'myref')
+    self.assertRaises(RequestWasCalled,
+                      computer_partition.request,
+                      'http://server/new/' + self._getTestComputerId(),
+                      'software_type', 'myref')
 
   def test_request_not_raises(self):
     partition_id = 'PARTITION_01'
+
     def server_response(self, path, method, body, header):
       parsed_url = urlparse.urlparse(path.lstrip('/'))
       parsed_qs = urlparse.parse_qs(parsed_url.query)
-      if parsed_url.path == 'registerComputerPartition' and \
-         'computer_reference' in parsed_qs and \
-         'computer_partition_reference' in parsed_qs:
+      if (parsed_url.path == 'registerComputerPartition'
+              and 'computer_reference' in parsed_qs
+              and 'computer_partition_reference' in parsed_qs):
         slap_partition = slapos.slap.ComputerPartition(
-          parsed_qs['computer_reference'][0],
-          parsed_qs['computer_partition_reference'][0])
+            parsed_qs['computer_reference'][0],
+            parsed_qs['computer_partition_reference'][0])
         return (200, {}, xml_marshaller.xml_marshaller.dumps(slap_partition))
-      elif parsed_url.path == 'getComputerInformation' and \
-         'computer_id' in parsed_qs:
+      elif (parsed_url.path == 'getComputerInformation'
+              and 'computer_id' in parsed_qs):
         slap_computer = slapos.slap.Computer(parsed_qs['computer_id'][0])
         slap_computer._software_release_list = []
         slap_partition = slapos.slap.ComputerPartition(
-          parsed_qs['computer_id'][0],
-          partition_id)
+            parsed_qs['computer_id'][0],
+            partition_id)
         slap_computer._computer_partition_list = [slap_partition]
         return (200, {}, xml_marshaller.xml_marshaller.dumps(slap_computer))
       elif parsed_url.path == 'requestComputerPartition':
         return (408, {}, '')
       else:
         return (404, {}, '')
+
     httplib.HTTPConnection._callback = server_response
     self.computer_guid = self._getTestComputerId()
     self.slap = slapos.slap.slap()
@@ -488,29 +502,31 @@ class TestComputerPartition(SlapMixin):
 
   def test_request_raises_later(self):
     partition_id = 'PARTITION_01'
+
     def server_response(self, path, method, body, header):
       parsed_url = urlparse.urlparse(path.lstrip('/'))
       parsed_qs = urlparse.parse_qs(parsed_url.query)
-      if parsed_url.path == 'registerComputerPartition' and \
-         'computer_reference' in parsed_qs and \
-         'computer_partition_reference' in parsed_qs:
+      if (parsed_url.path == 'registerComputerPartition' and
+              'computer_reference' in parsed_qs and
+              'computer_partition_reference' in parsed_qs):
         slap_partition = slapos.slap.ComputerPartition(
-          parsed_qs['computer_reference'][0],
-          parsed_qs['computer_partition_reference'][0])
+            parsed_qs['computer_reference'][0],
+            parsed_qs['computer_partition_reference'][0])
         return (200, {}, xml_marshaller.xml_marshaller.dumps(slap_partition))
-      elif parsed_url.path == 'getComputerInformation' and \
-         'computer_id' in parsed_qs:
+      elif (parsed_url.path == 'getComputerInformation'
+              and 'computer_id' in parsed_qs):
         slap_computer = slapos.slap.Computer(parsed_qs['computer_id'][0])
         slap_computer._software_release_list = []
         slap_partition = slapos.slap.ComputerPartition(
-          parsed_qs['computer_id'][0],
-          partition_id)
+            parsed_qs['computer_id'][0],
+            partition_id)
         slap_computer._computer_partition_list = [slap_partition]
         return (200, {}, xml_marshaller.xml_marshaller.dumps(slap_computer))
       elif parsed_url.path == 'requestComputerPartition':
         return (408, {}, '')
       else:
         return (404, {}, '')
+
     httplib.HTTPConnection._callback = server_response
     self.computer_guid = self._getTestComputerId()
     self.slap = slapos.slap.slap()
@@ -530,33 +546,34 @@ class TestComputerPartition(SlapMixin):
     partition_id = 'PARTITION_01'
     requested_partition_id = 'PARTITION_02'
     computer_guid = self._getTestComputerId()
+
     def server_response(self, path, method, body, header):
       parsed_url = urlparse.urlparse(path.lstrip('/'))
       parsed_qs = urlparse.parse_qs(parsed_url.query)
-      if parsed_url.path == 'registerComputerPartition' and \
-         'computer_reference' in parsed_qs and \
-         'computer_partition_reference' in parsed_qs:
+      if (parsed_url.path == 'registerComputerPartition' and
+              'computer_reference' in parsed_qs and
+              'computer_partition_reference' in parsed_qs):
         slap_partition = slapos.slap.ComputerPartition(
-          parsed_qs['computer_reference'][0],
-          parsed_qs['computer_partition_reference'][0])
+            parsed_qs['computer_reference'][0],
+            parsed_qs['computer_partition_reference'][0])
         return (200, {}, xml_marshaller.xml_marshaller.dumps(slap_partition))
-      elif parsed_url.path == 'getComputerInformation' and \
-         'computer_id' in parsed_qs:
+      elif (parsed_url.path == 'getComputerInformation' and 'computer_id' in parsed_qs):
         slap_computer = slapos.slap.Computer(parsed_qs['computer_id'][0])
         slap_computer._software_release_list = []
         slap_partition = slapos.slap.ComputerPartition(
-          parsed_qs['computer_id'][0],
-          partition_id)
+            parsed_qs['computer_id'][0],
+            partition_id)
         slap_computer._computer_partition_list = [slap_partition]
         return (200, {}, xml_marshaller.xml_marshaller.dumps(slap_computer))
       elif parsed_url.path == 'requestComputerPartition':
         from slapos.slap.slap import SoftwareInstance
         slap_partition = SoftwareInstance(
-          slap_computer_id=computer_guid,
-          slap_computer_partition_id=requested_partition_id)
+            slap_computer_id=computer_guid,
+            slap_computer_partition_id=requested_partition_id)
         return (200, {}, xml_marshaller.xml_marshaller.dumps(slap_partition))
       else:
         return (404, {}, '')
+
     httplib.HTTPConnection._callback = server_response
     self.slap = slapos.slap.slap()
     self.slap.initializeConnection(self.server_url)
@@ -584,9 +601,9 @@ class TestComputerPartition(SlapMixin):
     def server_response(self, path, method, body, header):
       parsed_url = urlparse.urlparse(path.lstrip('/'))
       parsed_qs = urlparse.parse_qs(parsed_url.query)
-      if parsed_url.path == 'registerComputerPartition' and \
-         parsed_qs['computer_reference'][0] == computer_guid and \
-         parsed_qs['computer_partition_reference'][0] == partition_id:
+      if (parsed_url.path == 'registerComputerPartition' and
+              parsed_qs['computer_reference'][0] == computer_guid and
+              parsed_qs['computer_partition_reference'][0] == partition_id):
         partition = slapos.slap.ComputerPartition(
             computer_guid, partition_id)
         return (200, {}, xml_marshaller.xml_marshaller.dumps(partition))
@@ -596,8 +613,8 @@ class TestComputerPartition(SlapMixin):
 
     computer_partition = self.slap.registerComputerPartition(
         computer_guid, partition_id)
-    method = getattr(computer_partition, state)
-    self.assertRaises(slapos.slap.NotFoundError, method)
+    self.assertRaises(slapos.slap.NotFoundError,
+                      getattr(computer_partition, state))
 
   def test_available_new_ComputerPartition_raises(self):
     """
@@ -639,9 +656,9 @@ class TestComputerPartition(SlapMixin):
     def server_response(self, path, method, body, header):
       parsed_url = urlparse.urlparse(path.lstrip('/'))
       parsed_qs = urlparse.parse_qs(parsed_url.query)
-      if parsed_url.path == 'registerComputerPartition' and \
-         parsed_qs['computer_reference'][0] == computer_guid and \
-         parsed_qs['computer_partition_reference'][0] == partition_id:
+      if (parsed_url.path == 'registerComputerPartition' and
+              parsed_qs['computer_reference'][0] == computer_guid and
+              parsed_qs['computer_partition_reference'][0] == partition_id):
         partition = slapos.slap.ComputerPartition(
             computer_guid, partition_id)
         return (200, {}, xml_marshaller.xml_marshaller.dumps(partition))
@@ -650,9 +667,9 @@ class TestComputerPartition(SlapMixin):
         # XXX: why do we have computer_id and not computer_reference?
         # XXX: why do we have computer_partition_id and not
         # computer_partition_reference?
-        if parsed_qs_body['computer_id'][0] == computer_guid and \
-           parsed_qs_body['computer_partition_id'][0] == partition_id and \
-           parsed_qs_body['error_log'][0] == 'some error':
+        if (parsed_qs_body['computer_id'][0] == computer_guid and
+                parsed_qs_body['computer_partition_id'][0] == partition_id and
+                parsed_qs_body['error_log'][0] == 'some error'):
           return (200, {}, '')
 
       return (404, {}, '')
@@ -662,6 +679,7 @@ class TestComputerPartition(SlapMixin):
         computer_guid, partition_id)
     # XXX: Interface does not define return value
     computer_partition.error('some error')
+
 
 class TestSoftwareRelease(SlapMixin):
   """
@@ -707,17 +725,19 @@ class TestSoftwareRelease(SlapMixin):
     def server_response(self, path, method, body, header):
       parsed_url = urlparse.urlparse(path.lstrip('/'))
       parsed_qs = urlparse.parse_qs(body)
-      if parsed_url.path == 'softwareReleaseError' and \
-         parsed_qs['computer_id'][0] == computer_guid and \
-         parsed_qs['url'][0] == software_release_uri and \
-         parsed_qs['error_log'][0] == 'some error':
+      if (parsed_url.path == 'softwareReleaseError' and
+              parsed_qs['computer_id'][0] == computer_guid and
+              parsed_qs['url'][0] == software_release_uri and
+              parsed_qs['error_log'][0] == 'some error'):
         return (200, {}, '')
       return (404, {}, '')
+
     httplib.HTTPConnection._callback = server_response
 
     software_release = self.slap.registerSoftwareRelease(software_release_uri)
     software_release._computer_guid = computer_guid
     software_release.error('some error')
+
 
 class TestOpenOrder(SlapMixin):
   def test_request_sends_request(self):
@@ -726,12 +746,16 @@ class TestOpenOrder(SlapMixin):
     self.slap.initializeConnection(self.server_url)
     # XXX: Interface lack registerOpenOrder method declaration
     open_order = self.slap.registerOpenOrder()
+
     def server_response(self, path, method, body, header):
       parsed_url = urlparse.urlparse(path.lstrip('/'))
       if parsed_url.path == 'requestComputerPartition':
         raise RequestWasCalled
+
     httplib.HTTPConnection._callback = server_response
-    self.assertRaises(RequestWasCalled, open_order.request, software_release_uri, 'myrefe')
+    self.assertRaises(RequestWasCalled,
+                      open_order.request,
+                      software_release_uri, 'myrefe')
 
   def test_request_not_raises(self):
     software_release_uri = 'http://server/new/' + self._getTestComputerId()
@@ -748,13 +772,16 @@ class TestOpenOrder(SlapMixin):
     self.slap.initializeConnection(self.server_url)
     # XXX: Interface lack registerOpenOrder method declaration
     open_order = self.slap.registerOpenOrder()
+
     def server_response(self, path, method, body, header):
       return (408, {}, '')
+
     httplib.HTTPConnection._callback = server_response
     computer_partition = open_order.request(software_release_uri, 'myrefe')
     self.assertIsInstance(computer_partition, slapos.slap.ComputerPartition)
 
-    self.assertRaises(slapos.slap.ResourceNotReady, computer_partition.getId)
+    self.assertRaises(slapos.slap.ResourceNotReady,
+                      computer_partition.getId)
 
   def test_request_fullfilled_work(self):
     software_release_uri = 'http://server/new/' + self._getTestComputerId()
@@ -764,12 +791,14 @@ class TestOpenOrder(SlapMixin):
     open_order = self.slap.registerOpenOrder()
     computer_guid = self._getTestComputerId()
     requested_partition_id = 'PARTITION_01'
+
     def server_response(self, path, method, body, header):
       from slapos.slap.slap import SoftwareInstance
       slap_partition = SoftwareInstance(
-        slap_computer_id=computer_guid,
-        slap_computer_partition_id=requested_partition_id)
+          slap_computer_id=computer_guid,
+          slap_computer_partition_id=requested_partition_id)
       return (200, {}, xml_marshaller.xml_marshaller.dumps(slap_partition))
+
     httplib.HTTPConnection._callback = server_response
 
     computer_partition = open_order.request(software_release_uri, 'myrefe')

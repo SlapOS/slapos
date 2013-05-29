@@ -45,8 +45,10 @@ USER_LIST = []
 GROUP_LIST = []
 INTERFACE_DICT = {}
 
+
 class FakeConfig:
   pass
+
 
 class TestLoggerHandler(logging.Handler):
   def __init__(self, *args, **kwargs):
@@ -55,6 +57,7 @@ class TestLoggerHandler(logging.Handler):
 
   def emit(self, record):
     self.bucket.append(record.msg)
+
 
 class FakeCallAndRead:
   def __init__(self):
@@ -89,6 +92,7 @@ class FakeCallAndRead:
     self.external_command_list.append(' '.join(argument_list))
     return retval
 
+
 class LoggableWrapper:
   def __init__(self, logger, name):
     self.__logger = logger
@@ -99,10 +103,12 @@ class LoggableWrapper:
       '%s=%r' % (x, y) for x, y in kwargs.iteritems()]
     self.__logger.debug('%s(%s)' % (self.__name, ', '.join(arg_list)))
 
+
 class TimeMock:
   @classmethod
   def sleep(self, seconds):
     return
+
 
 class GrpMock:
   @classmethod
@@ -111,6 +117,7 @@ class GrpMock:
     if name in GROUP_LIST:
       return True
     raise KeyError
+
 
 class PwdMock:
   @classmethod
@@ -122,6 +129,7 @@ class PwdMock:
         pw_gid = 0
       return result
     raise KeyError
+
 
 class NetifacesMock:
   @classmethod
@@ -136,12 +144,14 @@ class NetifacesMock:
     global INTERFACE_DICT
     return INTERFACE_DICT.keys()
 
+
 class SlapformatMixin(unittest.TestCase):
   # keep big diffs
   maxDiff = None
+
   def patchNetifaces(self):
     self.netifaces = NetifacesMock()
-    self.saved_netifaces = dict()
+    self.saved_netifaces = {}
     for fake in vars(NetifacesMock):
       self.saved_netifaces[fake] = getattr(netifaces, fake, None)
       setattr(netifaces, fake, getattr(self.netifaces, fake))
@@ -152,7 +162,7 @@ class SlapformatMixin(unittest.TestCase):
     del self.saved_netifaces
 
   def patchPwd(self):
-    self.saved_pwd = dict()
+    self.saved_pwd = {}
     for fake in vars(PwdMock):
       self.saved_pwd[fake] = getattr(pwd, fake, None)
       setattr(pwd, fake, getattr(PwdMock, fake))
@@ -163,7 +173,7 @@ class SlapformatMixin(unittest.TestCase):
     del self.saved_pwd
 
   def patchTime(self):
-    self.saved_time = dict()
+    self.saved_time = {}
     for fake in vars(TimeMock):
       self.saved_time[fake] = getattr(time, fake, None)
       setattr(time, fake, getattr(TimeMock, fake))
@@ -174,7 +184,7 @@ class SlapformatMixin(unittest.TestCase):
     del self.saved_time
 
   def patchGrp(self):
-    self.saved_grp = dict()
+    self.saved_grp = {}
     for fake in vars(GrpMock):
       self.saved_grp[fake] = getattr(grp, fake, None)
       setattr(grp, fake, getattr(GrpMock, fake))
@@ -185,7 +195,7 @@ class SlapformatMixin(unittest.TestCase):
     del self.saved_grp
 
   def patchOs(self, logger):
-    self.saved_os = dict()
+    self.saved_os = {}
     for fake in ['mkdir', 'chown', 'chmod', 'makedirs']:
       self.saved_os[fake] = getattr(os, fake, None)
       f = LoggableWrapper(logger, fake)
@@ -230,6 +240,7 @@ class SlapformatMixin(unittest.TestCase):
     self.restorePwd()
     self.restoreNetifaces()
     slapos.format.callAndRead = self.real_callAndRead
+
 
 class TestComputer(SlapformatMixin):
   def test_getAddress_empty_computer(self):
@@ -276,9 +287,8 @@ class TestComputer(SlapformatMixin):
       "makedirs('/software_root', 493)",
       "chmod('/software_root', 493)"],
       self.test_result.bucket)
-    self.assertEqual([
-      'ip addr list bridge',],
-      self.fakeCallAndRead.external_command_list)
+    self.assertEqual(['ip addr list bridge'],
+                     self.fakeCallAndRead.external_command_list)
 
   @unittest.skip("Not implemented")
   def test_construct_empty_prepared_no_alter_network(self):
@@ -377,7 +387,7 @@ class TestComputer(SlapformatMixin):
     partition = slapos.format.Partition('partition', '/part_path',
       slapos.format.User('testuser'), [], None)
     global USER_LIST
-    USER_LIST=['testuser']
+    USER_LIST = ['testuser']
     partition.tap = slapos.format.Tap('tap')
     computer.partition_list = [partition]
     global INTERFACE_DICT
@@ -488,6 +498,7 @@ class TestComputer(SlapformatMixin):
     ],
       self.fakeCallAndRead.external_command_list)
 
+
 class TestPartition(SlapformatMixin):
 
   def test_createPath(self):
@@ -512,6 +523,7 @@ class TestPartition(SlapformatMixin):
       ],
       self.test_result.bucket
     )
+
 
 class TestUser(SlapformatMixin):
   def test_create(self):

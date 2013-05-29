@@ -29,6 +29,7 @@ import slapos.util
 import tempfile
 import unittest
 
+
 class TestMkdirP(unittest.TestCase):
   """
   Tests methods available in the slapos.util module.
