@@ -1,0 +1,89 @@
+{
+  "name": "Input Parameters",
+  "properties": {
+    "ram-size": {
+      "title": "RAM size",
+      "description": "RAM size, in MB.",
+      "type": "integer",
+      "default": 1024,
+      "minimum": 128,
+      "divisibleBy": 128,
+      "maximum": 16384
+    },
+    "disk-size": {
+      "title": "Disk size",
+      "description": "Disk size, in GB.",
+      "type": "integer",
+      "default": 10,
+      "minimum": 1,
+      "maximum": 80
+    },
+    "disk-type": {
+      "title": "Disk type",
+      "description": "Type of QEMU disk drive.",
+      "type": "string",
+      "default": "virtio",
+      "enum": ["ide", "scsi", "sd", "mtd", "floppy", "pflash", "virtio"]
+    },
+
+    "cpu-count": {
+      "title": "CPU count",
+      "description": "Number of CPU cores.",
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 8
+    },
+
+
+    "nbd-host": {
+      "title": "NBD hostname",
+      "description": "hostname (or IP) of the NBD server containing the boot image.",
+      "type": "string",
+      "format": ["host-name", "ip-address", "ipv6"],
+      "default": "debian.nbd.vifib.net"
+    },
+    "nbd-port": {
+      "title": "NBD port",
+      "description": "Port of the NBD server containing the boot image.",
+      "type": "integer",
+      "default": 1024,
+      "minimum": 1,
+      "maximum": 65535
+    },
+
+    "nbd2-host": {
+      "title": "Second NBD hostname",
+      "description": "hostname (or IP) of the second NBD server (containing drivers for example).",
+      "type": "string",
+      "format": ["host-name", "ip-address", "ipv6"]
+    },
+    "nbd2-port": {
+      "title": "Second NBD port",
+      "description": "Port of the second NBD server containing the boot image.",
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 65535
+    },
+
+
+    "frontend-instance-guid": {
+      "title": "Frontend Instance ID",
+      "description": "Unique identifier of the frontend instance, like \"SOFTINST-11031\".",
+      "type": "string",
+      "default": "SOFTINST-11031"
+    },
+    "frontend-software-type": {
+      "title": "Frontend Software Type",
+      "description": "Type of the frontend instance, like \"frontend\".",
+      "type": "string",
+      "default": "frontend"
+    },
+    "frontend-software-url": {
+      "title": "Frontend Software URL",
+      "description": "Software Release URL of the frontend instance, like \"http://example.com/path/to/software.cfg\".",
+      "type": "string",
+      "format": "uri",
+      "default": "http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.92:/software/kvm/software.cfg"
+    }
+  }
+}

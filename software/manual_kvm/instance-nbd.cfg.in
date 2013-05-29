@@ -1,0 +1,70 @@
+#############################
+#
+# Instanciate nbdserver
+#
+#############################
+[buildout]
+parts =
+  nbd-promise
+  onetimeupload-promise
+  publish-connection-information
+
+eggs-directory = ${buildout:eggs-directory}
+develop-eggs-directory = ${buildout:develop-eggs-directory}
+offline = true
+
+[rootdirectory]
+recipe = slapos.cookbook:mkdirectory
+etc = $${buildout:directory}/etc
+srv = $${buildout:directory}/srv
+log = $${buildout:directory}/log
+
+[basedirectory]
+recipe = slapos.cookbook:mkdirectory
+services = $${rootdirectory:etc}/run
+watched-services = $${rootdirectory:etc}/service
+promises = $${rootdirectory:etc}/promise
+
+[nbd-instance]
+recipe = slapos.cookbook:nbdserver
+ip = $${slap-network-information:global-ipv6}
+port = 1024
+image-path = $${onetimeupload-instance:image-path}
+qemu-path = ${kvm:location}/bin/qemu-nbd
+shell-path = ${dash:location}/bin/dash
+# XXX TODO: Wait for the iso to be uploaded (execute_wait)
+path = $${basedirectory:services}/nbdserver
+
+[nbd-promise]
+recipe = slapos.cookbook:check_port_listening
+path = $${basedirectory:promises}/nbd_promise
+hostname = $${nbd-instance:ip}
+port = $${nbd-instance:port}
+
+[gen-passwd]
+recipe = slapos.cookbook:generate.password
+storage-path = $${rootdirectory:srv}/passwd
+bytes = 24
+
+[onetimeupload-instance]
+recipe = slapos.cookbook:onetimeupload
+ip = $${slap-network-information:global-ipv6}
+port = 8080
+image-path = $${rootdirectory:srv}/cdrom.iso
+log-path = $${rootdirectory:log}/onetimeupload.log
+shell-path = ${dash:location}/bin/dash
+onetimeupload-path = ${buildout:bin-directory}/onetimeupload
+path = $${basedirectory:watched-services}/onetimeupload
+key = $${gen-passwd:passwd}
+
+[onetimeupload-promise]
+recipe = slapos.cookbook:check_port_listening
+path = $${basedirectory:promises}/onetimeupload_promise
+hostname = $${onetimeupload-instance:ip}
+port = $${onetimeupload-instance:port}
+
+[publish-connection-information]
+recipe = slapos.cookbook:publish
+nbd_url = nbd://[$${nbd-instance:ip}]:$${nbd-instance:port}
+upload_url = http://[$${onetimeupload-instance:ip}]:$${onetimeupload-instance:port}/
+upload_key = $${onetimeupload-instance:key}
