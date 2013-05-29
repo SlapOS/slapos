@@ -181,15 +181,15 @@ def dropPrivileges(uid, gid, logger):
   # twice
   current_uid, current_gid = os.getuid(), os.getgid()
   if uid == 0 or gid == 0:
-    raise OSError('Dropping privileges to uid = %r or ' \
-                                      'gid = %r is too dangerous' % (uid, gid))
+    raise OSError('Dropping privileges to uid = %r or '
+                  'gid = %r is too dangerous' % (uid, gid))
   if current_uid or current_gid:
-    logger.debug('Running as uid = %r, gid = %r, dropping not needed and not '
-        'possible' % (current_uid, current_gid))
+    logger.debug('Running as uid = %r, gid = %r, dropping '
+                 'not needed and not possible' % (current_uid, current_gid))
     return
   # drop privileges
   user_name = pwd.getpwuid(uid)[0]
-  group_list = set([x.gr_gid for x in grp.getgrall() if user_name in x.gr_mem])
+  group_list = set(x.gr_gid for x in grp.getgrall() if user_name in x.gr_mem)
   group_list.add(gid)
   os.initgroups(pwd.getpwuid(uid)[0], gid)
   os.setgid(gid)
@@ -224,7 +224,7 @@ def dropPrivileges(uid, gid, logger):
     pass
   else:
     raise ValueError('%s it was possible to go back to uid = %r and gid = '
-        '%r which is fatal.' % (message_pre, current_uid, current_gid))
+                     '%r which is fatal.' % (message_pre, current_uid, current_gid))
   logger.debug('Succesfully dropped privileges to uid=%r gid=%r' % (uid, gid))
 
 
@@ -253,7 +253,7 @@ def bootstrapBuildout(path, logger, buildout=None,
     else:
       # buildout is importable, so use this one
       invocation_list.extend(["-c", "import sys ; sys.path=" + str(sys.path) +
-        " ; import zc.buildout.buildout ; sys.argv[1:1]=" + \
+        " ; import zc.buildout.buildout ; sys.argv[1:1]=" +
         repr(additional_buildout_parametr_list + ['bootstrap']) + " ; "
         "zc.buildout.buildout.main()"])
 
@@ -271,7 +271,7 @@ def bootstrapBuildout(path, logger, buildout=None,
                                 stderr=subprocess.STDOUT,
                                 logger=logger)
     if process_handler.returncode is None or process_handler.returncode != 0:
-      message = 'Failed to run buildout profile in directory %r' % (path)
+      message = 'Failed to run buildout profile in directory %r' % path
       logger.error(message)
       raise BuildoutFailedError('%s:\n%s\n' % (message, process_handler.output))
   except OSError as exc:
@@ -314,7 +314,7 @@ def launchBuildout(path, buildout_binary, logger,
                                 stderr=subprocess.STDOUT,
                                 logger=logger)
     if process_handler.returncode is None or process_handler.returncode != 0:
-      message = 'Failed to run buildout profile in directory %r' % (path)
+      message = 'Failed to run buildout profile in directory %r' % path
       logger.error(message)
       raise BuildoutFailedError('%s:\n%s\n' % (message, process_handler.output))
   except OSError as exc:
@@ -328,8 +328,8 @@ def updateFile(file_path, content, mode=0o600):
   """Creates an executable with "content" as content."""
   altered = False
   if not (os.path.isfile(file_path)) or \
-     not(hashlib.md5(open(file_path).read()).digest() ==\
-         hashlib.md5(content).digest()):
+     not (hashlib.md5(open(file_path).read()).digest() ==
+          hashlib.md5(content).digest()):
     with open(file_path, 'w') as fout:
       fout.write(content)
     altered = True
@@ -352,6 +352,6 @@ def createPrivateDirectory(path):
   os.chmod(path, stat.S_IREAD | stat.S_IWRITE | stat.S_IEXEC)
   permission = stat.S_IMODE(os.stat(path).st_mode)
   if permission != 0o700:
-    raise WrongPermissionError('Wrong permissions in %s: ' \
+    raise WrongPermissionError('Wrong permissions in %s: '
                                'is 0%o, should be 0700'
                                % (path, permission))
