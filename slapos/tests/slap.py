@@ -113,7 +113,7 @@ class TestSlap(SlapMixin):
     self.slap = slapos.slap.slap()
     self.slap.initializeConnection(self.server_url)
     computer = self.slap.registerComputer(computer_guid)
-    self.assertTrue(isinstance(computer, slapos.slap.Computer))
+    self.assertIsInstance(computer, slapos.slap.Computer)
 
   def test_registerComputer_with_existing_guid(self):
     """
@@ -124,10 +124,10 @@ class TestSlap(SlapMixin):
     self.slap = slapos.slap.slap()
     self.slap.initializeConnection(self.server_url)
     computer = self.slap.registerComputer(computer_guid)
-    self.assertTrue(isinstance(computer, slapos.slap.Computer))
+    self.assertIsInstance(computer, slapos.slap.Computer)
 
     computer2 = self.slap.registerComputer(computer_guid)
-    self.assertTrue(isinstance(computer2, slapos.slap.Computer))
+    self.assertIsInstance(computer2, slapos.slap.Computer)
 
   # XXX: There is naming conflict in slap library.
   # SoftwareRelease is currently used as suboject of Slap transmission object
@@ -140,8 +140,7 @@ class TestSlap(SlapMixin):
     self.slap = slapos.slap.slap()
     self.slap.initializeConnection(self.server_url)
     software_release = self.slap.registerSoftwareRelease(software_release_uri)
-    self.assertTrue(isinstance(software_release,
-        slapos.slap.SoftwareRelease))
+    self.assertIsInstance(software_release, slapos.slap.SoftwareRelease)
 
   def test_registerSoftwareRelease_with_existing_uri(self):
     """
@@ -152,12 +151,10 @@ class TestSlap(SlapMixin):
     self.slap = slapos.slap.slap()
     self.slap.initializeConnection(self.server_url)
     software_release = self.slap.registerSoftwareRelease(software_release_uri)
-    self.assertTrue(isinstance(software_release,
-        slapos.slap.SoftwareRelease))
+    self.assertIsInstance(software_release, slapos.slap.SoftwareRelease)
 
     software_release2 = self.slap.registerSoftwareRelease(software_release_uri)
-    self.assertTrue(isinstance(software_release2,
-        slapos.slap.SoftwareRelease))
+    self.assertIsInstance(software_release2, slapos.slap.SoftwareRelease)
 
   def test_registerComputerPartition_new_partition_id_known_computer_guid(self):
     """
@@ -183,7 +180,7 @@ class TestSlap(SlapMixin):
     httplib.HTTPConnection._callback = server_response
 
     partition = self.slap.registerComputerPartition(computer_guid, partition_id)
-    self.assertTrue(isinstance(partition, slapos.slap.ComputerPartition))
+    self.assertIsInstance(partition, slapos.slap.ComputerPartition)
 
   def test_registerComputerPartition_existing_partition_id_known_computer_guid(self):
     """
@@ -193,7 +190,7 @@ class TestSlap(SlapMixin):
     self.test_registerComputerPartition_new_partition_id_known_computer_guid()
     partition = self.slap.registerComputerPartition(self._getTestComputerId(),
         self.partition_id)
-    self.assertTrue(isinstance(partition, slapos.slap.ComputerPartition))
+    self.assertIsInstance(partition, slapos.slap.ComputerPartition)
 
   def test_registerComputerPartition_unknown_computer_guid(self):
     """
@@ -487,8 +484,7 @@ class TestComputerPartition(SlapMixin):
         'http://server/new/' + self._getTestComputerId(),
         'software_type',
         'myref')
-    self.assertTrue(isinstance(requested_partition,
-        slapos.slap.ComputerPartition))
+    self.assertIsInstance(requested_partition, slapos.slap.ComputerPartition)
 
   def test_request_raises_later(self):
     partition_id = 'PARTITION_01'
@@ -525,8 +521,7 @@ class TestComputerPartition(SlapMixin):
         'http://server/new/' + self._getTestComputerId(),
         'software_type',
         'myref')
-    self.assertTrue(isinstance(requested_partition,
-        slapos.slap.ComputerPartition))
+    self.assertIsInstance(requested_partition, slapos.slap.ComputerPartition)
     # as request method does not raise, accessing data raises
     self.assertRaises(slapos.slap.ResourceNotReady,
                       requested_partition.getId)
@@ -571,8 +566,7 @@ class TestComputerPartition(SlapMixin):
         'http://server/new/' + self._getTestComputerId(),
         'software_type',
         'myref')
-    self.assertTrue(isinstance(requested_partition,
-        slapos.slap.ComputerPartition))
+    self.assertIsInstance(requested_partition, slapos.slap.ComputerPartition)
     # as request method does not raise, accessing data in case when
     # request was done works correctly
     self.assertEqual(requested_partition_id, requested_partition.getId())
@@ -746,8 +740,7 @@ class TestOpenOrder(SlapMixin):
     # XXX: Interface lack registerOpenOrder method declaration
     open_order = self.slap.registerOpenOrder()
     computer_partition = open_order.request(software_release_uri, 'myrefe')
-    self.assertTrue(isinstance(computer_partition,
-        slapos.slap.ComputerPartition))
+    self.assertIsInstance(computer_partition, slapos.slap.ComputerPartition)
 
   def test_request_raises_later(self):
     software_release_uri = 'http://server/new/' + self._getTestComputerId()
@@ -759,8 +752,7 @@ class TestOpenOrder(SlapMixin):
       return (408, {}, '')
     httplib.HTTPConnection._callback = server_response
     computer_partition = open_order.request(software_release_uri, 'myrefe')
-    self.assertTrue(isinstance(computer_partition,
-        slapos.slap.ComputerPartition))
+    self.assertIsInstance(computer_partition, slapos.slap.ComputerPartition)
 
     self.assertRaises(slapos.slap.ResourceNotReady, computer_partition.getId)
 
@@ -781,8 +773,7 @@ class TestOpenOrder(SlapMixin):
     httplib.HTTPConnection._callback = server_response
 
     computer_partition = open_order.request(software_release_uri, 'myrefe')
-    self.assertTrue(isinstance(computer_partition,
-        slapos.slap.ComputerPartition))
+    self.assertIsInstance(computer_partition, slapos.slap.ComputerPartition)
     self.assertEqual(requested_partition_id, computer_partition.getId())
 
 if __name__ == '__main__':
