@@ -1,0 +1,8 @@
+Apache:
+=======
+- set a redirection of / in option
+- set more than one virtualhost with its ssl certificates
+
+Bug:
+===
+Do not run other software type templates if not concerned (ie: type different of their own)
