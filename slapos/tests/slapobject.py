@@ -27,7 +27,7 @@
 
 import logging
 import os
-import unittest2
+import unittest
 
 from slapos.grid import SlapObject
 from slapos.grid import utils
@@ -53,7 +53,7 @@ originalBootstrapBuildout = utils.bootstrapBuildout
 originalLaunchBuildout = utils.launchBuildout
 originalUploadSoftwareRelease = SlapObject.Software.uploadSoftwareRelease
 
-class TestSoftwareSlapObject(BasicMixin, unittest2.TestCase):
+class TestSoftwareSlapObject(BasicMixin, unittest.TestCase):
   """
     Test for Software class.
   """

@@ -29,9 +29,9 @@ import os
 import pkg_resources
 import pyflakes.scripts.pyflakes
 import sys
-import unittest2
+import unittest
 
-class CheckCodeConsistency(unittest2.TestCase):
+class CheckCodeConsistency(unittest.TestCase):
   """Lints all SlapOS Node and SLAP library code base."""
   def setUp(self):
     self._original_argv = sys.argv
@@ -45,7 +45,7 @@ class CheckCodeConsistency(unittest2.TestCase):
   def tearDown(self):
     sys.argv = self._original_argv
 
-  @unittest2.skip('pyflakes test is disabled')
+  @unittest.skip('pyflakes test is disabled')
   def testCodeConsistency(self):
     if pyflakes.scripts.pyflakes.main.func_code.co_argcount:
       pyflakes.scripts.pyflakes.main([

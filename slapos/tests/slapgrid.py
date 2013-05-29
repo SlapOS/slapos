@@ -36,7 +36,7 @@ import sys
 import tempfile
 import textwrap
 import time
-import unittest2
+import unittest
 import urlparse
 
 import xml_marshaller
@@ -150,7 +150,7 @@ class BasicMixin:
     shutil.rmtree(self._tempdir, True)
 
 
-class TestRequiredOnlyPartitions(unittest2.TestCase):
+class TestRequiredOnlyPartitions(unittest.TestCase):
   def test_no_errors(self):
     required = ['one', 'three']
     existing = ['one', 'two', 'three']
@@ -173,7 +173,7 @@ class TestRequiredOnlyPartitions(unittest2.TestCase):
                             existing, required)
 
 
-class TestBasicSlapgridCP(BasicMixin, unittest2.TestCase):
+class TestBasicSlapgridCP(BasicMixin, unittest.TestCase):
   def test_no_software_root(self):
     self.assertRaises(OSError, self.grid.processComputerPartitionList)
 
@@ -472,7 +472,7 @@ touch worked"""):
 
 
 
-class TestSlapgridCPWithMaster(MasterMixin, unittest2.TestCase):
+class TestSlapgridCPWithMaster(MasterMixin, unittest.TestCase):
 
   def test_nothing_to_do(self):
 
@@ -749,7 +749,7 @@ exit 1
     self.assertEqual('stopped', instance.state)
 
 
-class TestSlapgridCPWithMasterWatchdog(MasterMixin, unittest2.TestCase):
+class TestSlapgridCPWithMasterWatchdog(MasterMixin, unittest.TestCase):
 
   def setUp(self):
     MasterMixin.setUp(self)
@@ -930,7 +930,7 @@ class TestSlapgridCPWithMasterWatchdog(MasterMixin, unittest2.TestCase):
       self.assertEqual(computer.sequence, [])
 
 
-class TestSlapgridCPPartitionProcessing(MasterMixin, unittest2.TestCase):
+class TestSlapgridCPPartitionProcessing(MasterMixin, unittest.TestCase):
 
   def test_partition_timestamp(self):
     computer = ComputerForTest(self.software_root, self.instance_root)
@@ -1306,7 +1306,7 @@ echo %s; echo %s; exit 42""" % (line1, line2))
     self.assertIn('Failed to run buildout', instance.error_log)
 
 
-class TestSlapgridUsageReport(MasterMixin, unittest2.TestCase):
+class TestSlapgridUsageReport(MasterMixin, unittest.TestCase):
   """
   Test suite about slapgrid-ur
   """
@@ -1496,7 +1496,7 @@ class TestSlapgridUsageReport(MasterMixin, unittest2.TestCase):
 
 
 
-class TestSlapgridSoftwareRelease(MasterMixin, unittest2.TestCase):
+class TestSlapgridSoftwareRelease(MasterMixin, unittest.TestCase):
   def test_one_software_buildout_fail_is_correctly_logged(self):
     """
     1. We set up a software using a corrupted buildout
@@ -1517,7 +1517,7 @@ echo %s; echo %s; exit 42""" % (line1, line2))
     self.assertIn(line2, software.error_log)
     self.assertIn('Failed to run buildout', software.error_log)
 
-class SlapgridInitialization(unittest2.TestCase):
+class SlapgridInitialization(unittest.TestCase):
   """
   "Abstract" class setting setup and teardown for TestSlapgridArgumentTuple
   and TestSlapgridConfigurationFile.
@@ -1759,7 +1759,7 @@ binary-cache-url-blacklist =
     )
 
 
-class TestSlapgridCPWithMasterPromise(MasterMixin, unittest2.TestCase):
+class TestSlapgridCPWithMasterPromise(MasterMixin, unittest.TestCase):
   def test_one_failing_promise(self):
     computer = ComputerForTest(self.software_root, self.instance_root)
     instance = computer.instance_list[0]

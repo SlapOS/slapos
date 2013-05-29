@@ -49,7 +49,6 @@ setup(name=name,
         ] + additional_install_requires,
       extra_requires={'docs': ('Sphinx', 'repoze.sphinx.autointerface'),},
       tests_require=[
-          'unittest2',
           'pyflakes',
       ],
       zip_safe=False, # proxy depends on Flask, which has issues with
