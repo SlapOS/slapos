@@ -275,6 +275,7 @@ def bootstrapBuildout(path, logger, buildout=None,
       logger.error(message)
       raise BuildoutFailedError('%s:\n%s\n' % (message, process_handler.output))
   except OSError as exc:
+    logger.exception(exc)
     raise BuildoutFailedError(exc)
   finally:
     old_umask = os.umask(umask)
@@ -318,6 +319,7 @@ def launchBuildout(path, buildout_binary, logger,
       logger.error(message)
       raise BuildoutFailedError('%s:\n%s\n' % (message, process_handler.output))
   except OSError as exc:
+    logger.exception(exc)
     raise BuildoutFailedError(exc)
   finally:
     old_umask = os.umask(umask)
