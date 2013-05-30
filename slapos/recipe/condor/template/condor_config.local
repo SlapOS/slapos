@@ -1,0 +1,55 @@
+
+##  Pathnames:
+##  Where have you installed the bin, sbin and lib condor directories?
+
+RELEASE_DIR = %(releasedir)s
+
+
+##  Where is the local condor directory for each host?
+##  This is where the local config file(s), logs and
+##  spool/execute directories are located
+
+LOCAL_DIR = %(localdir)s
+
+
+##  Mail parameters:
+##  When something goes wrong with condor at your site, who should get
+##  the email?
+
+CONDOR_ADMIN =
+
+
+##  The user/group ID <uid>.<gid> of the "Condor" user.
+##  (this can also be specified in the environment)
+##  Note: the CONDOR_IDS setting is ignored on Win32 platforms
+
+CONDOR_IDS = %(slapuser)s
+
+
+##  Condor needs to create a few lock files to synchronize access to
+##  various log files.  Because of problems we've had with network
+##  filesystems and file locking over the years, we HIGHLY recommend
+##  that you put these lock files on a local partition on each
+##  machine.  If you don't have your LOCAL_DIR on a local partition,
+##  be sure to change this entry.  Whatever user (or group) condor is
+##  running as needs to have write access to this directory.  If
+##  you're not running as root, this is whatever user you started up
+##  the condor_master as.  If you are running as root, and there's a
+##  condor account, it's probably condor.  Otherwise, it's whatever
+##  you've set in the CONDOR_IDS environment variable.  See the Admin
+##  manual for details on this.
+
+LOCK = /tmp/condor-lock.$(HOSTNAME)0.829500835462571
+
+DAEMON_LIST = MASTER, SCHEDD, STARTD
+
+
+##  Java parameters:
+##  If you would like this machine to be able to run Java jobs,
+##  then set JAVA to the path of your JVM binary.  If you are not
+##  interested in Java, there is no harm in leaving this entry
+##  empty or incorrect.
+
+JAVA = %(java-bin)s
+
+JAVA_MAXHEAP_ARGUMENT = -Xmx1024m
