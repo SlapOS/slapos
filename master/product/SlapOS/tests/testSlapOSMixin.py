@@ -244,13 +244,8 @@ class testSlapOSMixin(ERP5TypeTestCase):
   def launchConfigurator(self):
     self.login()
     # Create new Configuration 
-    business_configuration  = self.portal.business_configuration_module.\
-                     newContent(portal_type="Business Configuration", 
-                                id="test_slapos_master_configuration_workflow")
-    business_configuration.setResource(
-                   "workflow_module/slapos_master_configuration_workflow")
+    business_configuration  = self.portal.business_configuration_module["slapos_master_configuration_workflow"]
 
-    transaction.commit()
     response_dict = {}
     while response_dict.get("command", "next") != "install":
       response_dict = self.portal.portal_configurator._next(
