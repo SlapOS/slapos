@@ -84,6 +84,14 @@
       "type": "string",
       "format": "uri",
       "default": "http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.92:/software/kvm/software.cfg"
+    },
+
+    "authorized-key": {
+      "title": "Authorized key for ssh connection",
+      "description": "Authorized key for ssh connection",
+      "type": "string",
+      "default": ""
     }
+
   }
 }

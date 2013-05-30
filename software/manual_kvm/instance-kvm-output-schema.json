@@ -20,6 +20,13 @@
       "description": "Password used to authenticate in the service webpage.",
       "type": "uri",
       "required": true
-    }
+    },
+
+   "ssh_connection": {
+       "title": "SSH connection",
+       "description": "SSH connection string",
+       "type": "string",
+       "required": true
+   }
   }
 }
