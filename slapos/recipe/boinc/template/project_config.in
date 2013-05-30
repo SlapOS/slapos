@@ -1,0 +1,7 @@
+#!%(dash)s
+
+sed -i "/remove the die/d" %(installroot)s/html/ops/create_forums.php
+sed -i "s#REPLACE WITH PROJECT NAME#%(fullname)s#" %(installroot)s/html/project/project.inc
+sed -i "s#REPLACE WITH COPYRIGHT HOLDER#%(copyright)s#" %(installroot)s/html/project/project.inc
+sed -i.old -e "/<\/config>/i\<uldl_pid>%(uldl_pid)s</uldl_pid>" %(installroot)s/config.xml
+sed -i.old -e "/<\/config>/i\<httpd_user>%(user)s</httpd_user>" %(installroot)s/config.xml

@@ -1,5 +1,6 @@
 global
   maxconn 4096
+  stats socket %(socket_path)s level admin
 
 defaults
   log global

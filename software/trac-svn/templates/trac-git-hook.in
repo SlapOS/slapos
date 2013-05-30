@@ -1,0 +1,4 @@
+#!/bin/sh
+
+REV=$(${:git_bin} rev-parse HEAD)
+${:trac_admin} ${:trac_env} added "$1" $REV
