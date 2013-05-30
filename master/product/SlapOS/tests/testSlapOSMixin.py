@@ -74,14 +74,8 @@ class testSlapOSMixin(ERP5TypeTestCase):
         setattr(self, 'stepCall' + convertToUpperCase(alarm.getId()) \
           + 'Alarm', makeCallAlarm(alarm))
 
-  def setupPortalCertificateAuthority(self):
+  def createCertificateAuthorityFile(self):
     """Sets up portal_certificate_authority"""
-    if not self.portal.hasObject('portal_certificate_authority'):
-      self.portal.manage_addProduct['ERP5'].manage_addTool(
-        'ERP5 Certificate Authority Tool', None)
-    self.portal.portal_certificate_authority.certificate_authority_path = \
-        os.environ['TEST_CA_PATH']
-    transaction.commit()
     # reset test CA to have it always count from 0
     open(os.path.join(os.environ['TEST_CA_PATH'], 'serial'), 'w').write('01')
     open(os.path.join(os.environ['TEST_CA_PATH'], 'crlnumber'), 'w').write(
@@ -173,8 +167,7 @@ class testSlapOSMixin(ERP5TypeTestCase):
 
   def bootstrapSite(self):
     self.setupPortalAlarms()
-    self.setupPortalCertificateAuthority()
-    self.setUpMemcached()
+    self.createCertificateAuthorityFile()
 
     self.clearCache()
     transaction.commit()
