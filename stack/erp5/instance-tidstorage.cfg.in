@@ -473,7 +473,7 @@ maxconn = {{ backend_configuration['maxconn'] }}
 server-check-path = /{{ site_id }}/getId
 wrapper-path = ${directory:services}/haproxy-{{ backend_name }}
 binary-path = {{ parameter_dict['haproxy'] }}/sbin/haproxy
-ctl-path = ${directory:services}/haproxy-{{ backend_name }}-ctl
+ctl-path = ${directory:bin}/haproxy-{{ backend_name }}-ctl
 backend-list = {{ haproxy_backend_list | join(' ')}}
 {%-  endif %}
 {% endfor -%}
