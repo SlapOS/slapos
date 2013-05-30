@@ -36,10 +36,9 @@ def runMysql(args):
   sys.stderr.flush()
   # try to increase the maximum number of open file descriptors.
   # it seems that mysqld requires (max_connections + 810) file descriptors.
-  # to make it possible, you need to set soft/hard limit of nofile in
+  # to make it possible, you need to set the hard limit of nofile in
   # /etc/security/limits.conf like the following :
-  #   @slapsoft soft nofile 2048
-  #   @slapsoft hard nofile 4096
+  #   @slapsoft hard nofile 2048
   try:
     import resource
     required_nofile = 2048 # XXX hardcoded value more than 1000 + 810
