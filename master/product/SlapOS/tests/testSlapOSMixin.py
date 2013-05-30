@@ -150,10 +150,14 @@ class testSlapOSMixin(ERP5TypeTestCase):
     self.portal.email_from_address = 'romain@nexedi.com'
     self.portal.email_to_address = 'romain@nexedi.com'
 
+  def getBusinessConfiguration(self):
+    return self.portal.business_configuration_module[\
+                          "slapos_master_configuration_workflow"]
+
   def launchConfigurator(self):
     self.login()
     # Create new Configuration 
-    business_configuration  = self.portal.business_configuration_module["slapos_master_configuration_workflow"]
+    business_configuration  = self.getBusinessConfiguration()
 
     response_dict = {}
     while response_dict.get("command", "next") != "install":
