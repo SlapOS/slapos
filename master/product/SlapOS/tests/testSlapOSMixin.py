@@ -129,19 +129,6 @@ class testSlapOSMixin(ERP5TypeTestCase):
   #  """
   #  return "slapos_default_system_preference"
 
-  def setUpMemcached(self):
-    from Products.ERP5Type.tests.ERP5TypeTestCase import\
-           _getVolatileMemcachedServerDict, _getPersistentMemcachedServerDict
-    memcached_tool = self.getPortal().portal_memcached
-    # setup default volatile distributed memcached
-    connection_dict = _getVolatileMemcachedServerDict()
-    url_string = '%(hostname)s:%(port)s' % connection_dict
-    memcached_tool.default_memcached_plugin.setUrlString(url_string)
-    # setup default persistent distributed memcached
-    connection_dict = _getPersistentMemcachedServerDict()
-    url_string = '%(hostname)s:%(port)s' % connection_dict
-    memcached_tool.persistent_memcached_plugin.setUrlString(url_string)
-
   def createAlarmStep(self):
     def makeCallAlarm(alarm):
       def callAlarm(*args, **kwargs):
