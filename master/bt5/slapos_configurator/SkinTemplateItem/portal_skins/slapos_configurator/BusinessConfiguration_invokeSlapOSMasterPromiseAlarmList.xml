@@ -58,15 +58,16 @@
       alarms to be invoked always.\n
 """\n
 alarm_to_solve_list = [\'promise_certificate_autority_tool\',\n
-                       \'promise_conversion_server\'\n
-                       \'promise_kumofs_server\'\n
-                       \'promise_mailhost_configuration\'\n
+                       \'promise_conversion_server\',\n
+                       \'promise_kumofs_server\',\n
+                       \'promise_mailhost_configuration\',\n
                        \'promise_memcached_server\']\n
 \n
 for alarm in context.portal_alarms.contentValues():\n
   alarm_id = alarm.getId()\n
   if alarm_id.startswith("promise_slapos") or \\\n
                    alarm_id in alarm_to_solve_list:\n
+    context.log("Solve %s" % alarm_id)\n
     alarm.solve()\n
 </string> </value>
         </item>
