@@ -121,7 +121,6 @@ class testSlapOSMixin(ERP5TypeTestCase):
     # Reload promise and include yet another bt5 path.
     self.loadPromise(searchable_business_template_list=["erp5_core", "erp5_base", "slapos_configurator"])
     self.portal.portal_alarms.promise_template_tool_configuration.solve()
-    import pdb;pdb.set_trace()
     transaction.commit()
     self.launchConfigurator()
 
