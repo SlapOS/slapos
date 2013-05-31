@@ -34,6 +34,22 @@ def runMysql(args):
   print "Starting %r" % mysqld_wrapper_list[0]
   sys.stdout.flush()
   sys.stderr.flush()
+  # try to increase the maximum number of open file descriptors.
+  # it seems that mysqld requires (max_connections + 810) file descriptors.
+  # to make it possible, you need to set the hard limit of nofile in
+  # /etc/security/limits.conf like the following :
+  #   @slapsoft hard nofile 2048
+  try:
+    import resource
+    required_nofile = 2048 # XXX hardcoded value more than 1000 + 810
+    nofile_limit_list = [max(x, required_nofile) for x in resource.getrlimit(resource.RLIMIT_NOFILE)]
+    resource.setrlimit(resource.RLIMIT_NOFILE, nofile_limit_list)
+  except ImportError:
+    # resource library is only available on Unix platform.
+    pass
+  except ValueError:
+    # 'ValueError: not allowed to raise maximum limit'
+    pass
   os.execl(mysqld_wrapper_list[0], *mysqld_wrapper_list)
 
 

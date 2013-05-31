@@ -33,6 +33,27 @@ from slapos.recipe.librecipe import GenericBaseRecipe
 
 class Recipe(GenericBaseRecipe):
 
+  def __init__(self, buildout, name, options):
+    self.environ = {}
+
+    environment_section = options.get('environment-section', '').strip()
+    if environment_section and environment_section in buildout:
+      # Use environment variables from the designated config section.
+      self.environ.update(buildout[environment_section])
+    for variable in options.get('environment', '').splitlines():
+      if variable.strip():
+        try:
+          key, value = variable.split('=', 1)
+          self.environ[key.strip()] = value
+        except ValueError:
+          raise zc.buildout.UserError('Invalid environment variable definition: %s', variable)
+    # Extrapolate the environment variables using values from the current
+    # environment.
+    for key in self.environ:
+      self.environ[key] = self.environ[key] % os.environ
+
+    return GenericBaseRecipe.__init__(self, buildout, name, options)
+
   def install(self):
     path_list = []
 
@@ -54,21 +75,22 @@ class Recipe(GenericBaseRecipe):
     path_list.append(php_ini)
 
     # Install apache
-    apache_config = dict(
-      pid_file=self.options['pid-file'],
-      lock_file=self.options['lock-file'],
-      ip=self.options['ip'],
-      port=self.options['port'],
-      error_log=self.options['error-log'],
-      access_log=self.options['access-log'],
-      document_root=self.options['htdocs'],
-      php_ini_dir=self.options['php-ini-dir'],
-    )
-    httpd_conf = self.createFile(self.options['httpd-conf'],
-      self.substituteTemplate(self.getTemplateFilename('apache.in'),
-                              apache_config)
-    )
-    path_list.append(httpd_conf)
+    if self.optionIsTrue('default-conf', True):
+      apache_config = dict(
+        pid_file=self.options['pid-file'],
+        lock_file=self.options['lock-file'],
+        ip=self.options['ip'],
+        port=self.options['port'],
+        error_log=self.options['error-log'],
+        access_log=self.options['access-log'],
+        document_root=self.options['htdocs'],
+        php_ini_dir=self.options['php-ini-dir'],
+      )
+      httpd_conf = self.createFile(self.options['httpd-conf'],
+        self.substituteTemplate(self.getTemplateFilename('apache.in'),
+                                apache_config)
+      )
+      path_list.append(httpd_conf)
 
     wrapper = self.createWrapper(name=self.options['wrapper'],
                                  command=self.options['httpd-binary'],
@@ -76,7 +98,8 @@ class Recipe(GenericBaseRecipe):
                                      '-f',
                                      self.options['httpd-conf'],
                                      '-DFOREGROUND'
-                                     ])
+                                     ],
+                                 environment=self.environ)
     path_list.append(wrapper)
 
     secret_key_filename = os.path.join(self.buildout['buildout']['directory'],
@@ -105,6 +128,11 @@ class Recipe(GenericBaseRecipe):
                               port=self.options['port'],
                               # XXX-Cedric: add frontend url.
                              )
+      # Allow to give custom parameters to template
+      application_parameter_prefix = 'application-'
+      for key in self.options.keys():
+        if key.startswith(application_parameter_prefix):
+          application_conf[key.lstrip(application_parameter_prefix)] = self.options[key]
 
       directory, file_ = os.path.split(self.options['configuration'])
 

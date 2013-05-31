@@ -36,7 +36,11 @@ class Recipe(GenericBaseRecipe):
 
   binary-path -- location of the haproxy command
 
+  ctl-path -- location of the haproxy control script
+
   conf-path -- location of the configuration file
+
+  socket-path -- location of the socket file for administration
 
   ip -- ip of the haproxy server
 
@@ -108,6 +112,7 @@ class Recipe(GenericBaseRecipe):
       self.options['conf-path'],
       self.substituteTemplate(
         self.getTemplateFilename('haproxy.cfg.in'),
+        {'socket_path': self.options['socket-path']},
         {'server_text': server_snippet},
       )
     )
@@ -115,4 +120,8 @@ class Recipe(GenericBaseRecipe):
       self.options['wrapper-path'],
       'slapos.recipe.librecipe.execute.execute',
       arguments=[self.options['binary-path'].strip(), '-f', configuration_path],)
-    return [configuration_path, wrapper_path]
+    ctl_path = self.createPythonScript(
+      self.options['ctl-path'],
+      '%s.haproxy.haproxyctl' % __name__,
+      {'socket_path':self.options['socket-path']})
+    return [configuration_path, wrapper_path, ctl_path]

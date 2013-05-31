@@ -131,8 +131,8 @@ class Recipe(object):
           options['instance-guid'] = self.instance.getInstanceGuid()
           # XXX: deprecated, to be removed
           options['instance_guid'] = self.instance.getInstanceGuid()
-        except slapmodule.ResourceNotReady:
-          # Backward compatibility. Old SlapOS masters don't know this.
+        except (slapmodule.ResourceNotReady, AttributeError):
+          # Backward compatibility. Old SlapOS master and core don't know this.
           self.logger.warning("Impossible to fetch instance GUID.")
     except (slapmodule.NotFoundError, slapmodule.ServerError, slapmodule.ResourceNotReady) as exc:
       self._raise_request_exception = exc

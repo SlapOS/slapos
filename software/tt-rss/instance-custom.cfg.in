@@ -14,3 +14,8 @@ mysql-host = $${apache-php:mysql-host}
 mysql-port = $${apache-php:mysql-port}
 configureinstall-location = $${basedirectory:scripts}/configureInstall
 sql-script = ${sql-script:location}/${sql-script:filename}
+
+# Give the correct information to apache recipe to put the hostname in the
+# tt-rss config file
+[apache-php]
+application-url = $${request-frontend:connection-site_url}
