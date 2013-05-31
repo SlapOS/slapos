@@ -85,8 +85,4 @@ class FormatCommand(ConfigCommand):
 
         tracing_monkeypatch(conf)
 
-        try:
-            do_format(conf=conf)
-        except:
-            self.log.exception('Uncaught exception:')
-            raise
+        do_format(conf=conf)
