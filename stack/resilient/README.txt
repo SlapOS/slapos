@@ -125,6 +125,23 @@ In the [exporter] / [importer] part, you are free to do whatever you want, but
 you need to dump / import your data from $${directory:backup} and specify a
 wrapper. I suggest you only add options and specify your export/import recipe.
 
+Checking it works
+-----------------
+
+To check that your software instance is resilient you can proceed that way:
+Once all instances are deployed successfully, go to your export instance, connect as the instance user and run:
+$ ~/bin/exporter
+It is the script responsible for triggering the resiliency stack on your instance. After having done a backup of your data it will notify the pull-backup instances of a new backup triggering then the sending of this data to your import instances.
+
+Once this script is run successfully, go to your import instance, connect as it's instance user and check ~/srv/backup/"your sofwtare"/ you where the data you wanted to received from the export instance is. The last part of the resiliency is up to your import script.
+
+DEBUGGING:
+Here is small and not complete things you can check to get hints about what is causing the problem:
+- Check that your import script do not fail and place successfully your data in ~/srv/backup/"your software" (as the import instance user) by runnig:
+$ ~/bin/"your software"-exporter
+- Check the export instance script is run successfully as this instance user by running:
+$ ~/bin/exporter
+- Check the pull-instance system did its job by going to one of your pull-backup instance, connect as its user and check the log : ~/var/log/equeue.log
 
 
 -----------------------------------------------------------------------------------------
