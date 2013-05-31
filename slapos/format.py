@@ -281,7 +281,7 @@ class Computer(object):
 
     path_to_archive = path_to_xml + '.zip'
 
-    if os.path.exists(path_to_archive):
+    if os.path.exists(path_to_archive) and os.path.exists(path_to_xml):
       # the archive file exists, we only backup if something has changed
       with open(path_to_xml, 'rb') as fin:
         if fin.read() == new_pretty_xml:
