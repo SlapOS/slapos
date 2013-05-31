@@ -96,12 +96,12 @@ class Recipe(GenericBaseRecipe):
     else:
       self.logger.info("The directory %s already exist, skip project installation"
                       % project_dir)
-      trac_args = [trac_admin, project_dir, 'upgrade']
+      trac_args = [trac_admin, project_dir, 'repository', 'list']
       process_upgrade = subprocess.Popen(trac_args, stdout=subprocess.PIPE,
-              stderr=subprocess.STDOUT, env=env)
+              stderr=subprocess.STDOUT)
       result = process_upgrade.communicate()[0]
       if process_upgrade.returncode is None or process_upgrade.returncode != 0:
-        self.logger.error("Failed to upgrade Trac.\nThe error was: %s" % result)
+        self.logger.error("Failed to run Trac.\nThe error was: %s" % result)
         return []
 
     #Add All grant to admin user
