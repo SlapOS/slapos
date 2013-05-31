@@ -79,9 +79,6 @@ class SlapOSApp(cliff.app.App):
             help='Specify a file to log output (default: console only)',
         )
 
-        # always show tracebacks on errors
-        parser.set_defaults(debug=True)
-
         return parser
 
     def initialize_app(self, argv):
@@ -96,35 +93,51 @@ class SlapOSApp(cliff.app.App):
         if self.options.verbose_level > 2:
             self.log.debug('clean_up %s', cmd.__class__.__name__)
 
-        if err:
-            self.log.debug('got an error: %s', err)
-
     def run(self, argv):
         # same as cliff.App.run except that it won't re-raise
-        # a logged exception
+        # a logged exception, and doesn't use --debug
         try:
             self.options, remainder = self.parser.parse_known_args(argv)
             self.configure_logging()
             self.interactive_mode = not remainder
             self.initialize_app(remainder)
         except Exception as err:
-            if hasattr(self, 'options'):
-                debug = self.options.debug
-            else:
-                debug = True
-            if debug:
-                LOG.exception(err)
-                # XXX change from cliff behaviour: avoid
-                #     displaying the exception twice
-                # raise
-            else:
-                LOG.error(err)
+            LOG.exception(err)
             return 1
-        result = 1
         if self.interactive_mode:
             result = self.interact()
         else:
             result = self.run_subcommand(remainder)
+        return result
+
+    def run_subcommand(self, argv):
+        # same as cliff.App.run_subcommand except that it won't re-raise
+        # a logged exception, and doesn't use --debug
+        subcommand = self.command_manager.find_command(argv)
+        cmd_factory, cmd_name, sub_argv = subcommand
+        cmd = cmd_factory(self, self.options)
+        err = None
+        result = 1
+        try:
+            self.prepare_to_run_command(cmd)
+            full_name = (cmd_name
+                         if self.interactive_mode
+                         else ' '.join([self.NAME, cmd_name])
+                         )
+            cmd_parser = cmd.get_parser(full_name)
+            parsed_args = cmd_parser.parse_args(sub_argv)
+            result = cmd.run(parsed_args)
+        except Exception as err:
+            LOG.exception(err)
+            try:
+                self.clean_up(cmd, result, err)
+            except Exception as err2:
+                LOG.exception(err2)
+        else:
+            try:
+                self.clean_up(cmd, result, None)
+            except Exception as err3:
+                LOG.exception(err3)
         return result
 
 
