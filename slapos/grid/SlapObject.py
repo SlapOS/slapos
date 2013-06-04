@@ -571,9 +571,10 @@ class Partition(object):
           shutil.rmtree(os.path.join(self.instance_path, directory))
         for file in file_list:
           os.remove(os.path.join(self.instance_path, file))
-        if os.path.exists(self.supervisord_partition_configuration_path):
-          os.remove(self.supervisord_partition_configuration_path)
-        self.updateSupervisor()
+
+      if os.path.exists(self.supervisord_partition_configuration_path):
+        os.remove(self.supervisord_partition_configuration_path)
+      self.updateSupervisor()
     except IOError as exc:
       raise IOError("I/O error while freeing partition (%s): %s" % (self.instance_path, exc))
 
