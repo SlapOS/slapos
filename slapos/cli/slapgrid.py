@@ -61,6 +61,8 @@ class SlapgridCommand(ConfigCommand):
         ap.add_argument('--now',
                         action='store_true',
                         help='Launch slapgrid without delay. Default behavior.')
+        ap.add_argument('--maximal_delay',
+                        help='Deprecated. Will only work from configuration file in the future.')
         return ap
 
     @must_be_root
