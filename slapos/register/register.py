@@ -38,6 +38,7 @@ import stat
 import sys
 import tempfile
 import urllib2
+import subprocess
 
 
 def authenticate(request, login, password):
@@ -275,4 +276,14 @@ def do_register(conf):
   slapconfig(conf)
 
   print "Node has successfully been configured as %s." % COMP
+  # XXX hardcoded value, relying on package installation
+  # We shall fix that later
+  print "Running starting script"
+  if os.path.isfile("/usr/sbin/slapos-start"):
+    try:
+      subprocess.check_call("/usr/sbin/slapos-start")
+    except CalledProcessError:
+      print "Error while trying to run /usr/sbin/slapos-start"
+  else
+    print "Missing file /usr/sbin/slapos-start"
   return 0
