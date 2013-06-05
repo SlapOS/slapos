@@ -71,7 +71,7 @@ def coalesce(*seq):
     return el
 
 
-def print_table(qry, tablename, skip=None):
+def log_table(logger, qry, tablename, skip=None):
     if skip is None:
         skip = set()
 
@@ -88,19 +88,19 @@ def print_table(qry, tablename, skip=None):
         pt.add_row(row)
 
     if rows:
-        print 'table %s:' % tablename,
         if skip:
-            print 'skipping %s' % ', '.join(skip)
+            logger.info('table %s: skipping %s', tablename, ', '.join(skip))
         else:
-            print
+            logger.info('table %s', tablename)
     else:
-        print 'table %s: empty' % tablename
+        logger.info('table %s: empty', tablename)
         return
 
-    print pt.get_string(border=True, padding_width=0, vrules=prettytable.NONE)
+    for line in pt.get_string(border=True, padding_width=0, vrules=prettytable.NONE).split('\n'):
+        logger.info(line)
 
 
-def print_params(conn):
+def log_params(logger, conn):
     cur = conn.cursor()
 
     qry = cur.execute("SELECT reference, partition_reference, software_type, connection_xml FROM %s" % tbl_partition)
@@ -109,44 +109,44 @@ def print_params(conn):
             continue
 
         xml = str(row['connection_xml'])
-        print '%s: %s (type %s)' % (row['reference'], row['partition_reference'], row['software_type'])
+        logger.info('%s: %s (type %s)', row['reference'], row['partition_reference'], row['software_type'])
         instance = lxml.etree.fromstring(xml)
         for parameter in list(instance):
             name = parameter.get('id')
             text = parameter.text
             if text and name in ('ssh-key', 'ssh-public-key'):
                 text = text[:20] + '...' + text[-20:]
-            print '    %s = %s' % (name, text)
+            logger.info('    %s = %s', name, text)
 
 
-def print_computer_table(conn):
+def log_computer_table(logger, conn):
     tbl_computer = 'computer' + DB_VERSION
     cur = conn.cursor()
     qry = cur.execute("SELECT * FROM %s" % tbl_computer)
-    print_table(qry, tbl_computer)
+    log_table(logger, qry, tbl_computer)
 
 
-def print_software_table(conn):
+def log_software_table(logger, conn):
     tbl_software = 'software' + DB_VERSION
     cur = conn.cursor()
     qry = cur.execute("SELECT *, md5(url) as md5 FROM %s" % tbl_software)
-    print_table(qry, tbl_software)
+    log_table(logger, qry, tbl_software)
 
 
-def print_partition_table(conn):
+def log_partition_table(logger, conn):
     cur = conn.cursor()
     qry = cur.execute("SELECT * FROM %s WHERE slap_state<>'free'" % tbl_partition)
-    print_table(qry, tbl_partition, skip=['xml', 'connection_xml', 'slave_instance_list'])
+    log_table(logger, qry, tbl_partition, skip=['xml', 'connection_xml', 'slave_instance_list'])
 
 
-def print_slave_table(conn):
+def log_slave_table(logger, conn):
     tbl_slave = 'slave' + DB_VERSION
     cur = conn.cursor()
     qry = cur.execute("SELECT * FROM %s" % tbl_slave)
-    print_table(qry, tbl_slave, skip=['connection_xml'])
+    log_table(logger, qry, tbl_slave, skip=['connection_xml'])
 
 
-def print_network(conn):
+def log_network(logger, conn):
     tbl_partition_network = 'partition_network' + DB_VERSION
     cur = conn.cursor()
     addr = collections.defaultdict(list)
@@ -162,39 +162,31 @@ def print_network(conn):
 
     for partition_reference in sorted(addr.keys()):
         addresses = addr[partition_reference]
-        print '%s: %s' % (partition_reference, ', '.join(addresses))
+        logger.info('%s: %s', partition_reference, ', '.join(addresses))
 
 
 def do_show(conf):
+    conf.logger.debug('Using database: %s', conf.database_uri)
     conn = sqlite3.connect(conf.database_uri)
     conn.row_factory = sqlite3.Row
 
     conn.create_function('md5', 1, lambda s: hashlib.md5(s).hexdigest())
 
-    print_all = not any([
-        conf.computers,
-        conf.software,
-        conf.partitions,
-        conf.slaves,
-        conf.params,
-        conf.network,
-    ])
+    call_table = [
+        (conf.computers, log_computer_table),
+        (conf.software, log_software_table),
+        (conf.partitions, log_partition_table),
+        (conf.slaves, log_slave_table),
+        (conf.params, log_params),
+        (conf.network, log_network)
+    ]
 
-    if print_all or conf.computers:
-        print_computer_table(conn)
-        print
-    if print_all or conf.software:
-        print_software_table(conn)
-        print
-    if print_all or conf.partitions:
-        print_partition_table(conn)
-        print
-    if print_all or conf.slaves:
-        print_slave_table(conn)
-        print
-    if print_all or conf.params:
-        print_params(conn)
-        print
-    if print_all or conf.network:
-        print_network(conn)
-        print
+    if not any(flag for flag, func in call_table):
+        to_call = [func for flag, func in call_table]
+    else:
+        to_call = [func for flag, func in call_table if flag]
+
+    for idx, func in enumerate(to_call):
+        func(conf.logger, conn)
+        if idx < len(to_call) - 1:
+            conf.logger.info(' ')
