@@ -11,6 +11,7 @@ Contents:
 .. toctree::
    :maxdepth: 2
 
+   slapos.usage.rst
    rest.rst
    slap.rst
    tioformat.rst

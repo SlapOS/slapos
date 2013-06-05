@@ -3,8 +3,8 @@ SlapOS command line usage
 =========================
 
 
-Notes:
-------
+Notes
+-----
 
 * Default SlapOS Master is https://slap.vifib.com. It can be changed by altering configuration files or with the ``--master-url``
   argument for commands that support it.
@@ -161,7 +161,7 @@ This group of commands is used to control the current SlapOS Node. They are only
 node, node status
 ~~~~~~~~~~~~~~~~~
 
-These are aliases for ``node supervisorctl status``.
+These are both aliases for ``node supervisorctl status``.
 It displays the status of the node, also running the supervisor daemon if needed.
 
 .. program-output:: python slapos help node supervisorctl status

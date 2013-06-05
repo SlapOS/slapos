@@ -12,7 +12,7 @@ import supervisor.supervisorctl
 
 
 class SupervisorctlCommand(ConfigCommand):
-    """enter into supervisor console, for process management"""
+    """open supervisor console, for process management"""
 
     log = logging.getLogger('supervisorctl')
 
