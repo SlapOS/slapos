@@ -37,7 +37,6 @@ from slapos.cli_legacy.request import request
 from slapos.cli_legacy.remove import remove
 from slapos.cli_legacy.supply import supply
 from slapos.cli_legacy.format import main as format
-from slapos.cli_legacy.cache import cache_lookup
 from slapos.cli_legacy.slapgrid import runComputerPartition as instance
 from slapos.cli_legacy.slapgrid import runSoftwareRelease as software
 from slapos.cli_legacy.slapgrid import runUsageReport as report
@@ -165,8 +164,6 @@ def dispatch(command, is_node_command):
     raise EntryPointNotImplementedError(command)
   elif command == 'console':
     call(console, config_path=USER_SLAPOS_CONFIGURATION)
-  elif command == 'cache-lookup':
-    call(cache_lookup, config_path=GLOBAL_SLAPOS_CONFIGURATION)
   else:
     return False
 
@@ -193,7 +190,6 @@ Client subcommands usage:
   slapos request <instance-name> <software-url> [--configuration arg1=value1 arg2=value2 ... argN=valueN]
   slapos supply <software-url> <node-id>
   slapos console
-  slapos cache-lookup <software-url-or-md5>
 Node subcommands usage:
   slapos node
   slapos node register <node-id>

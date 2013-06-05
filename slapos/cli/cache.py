@@ -27,4 +27,4 @@ class CacheLookupCommand(ConfigCommand):
 
     def take_action(self, args):
         configp = self.fetch_config(args)
-        do_lookup(configp, args.software_url)
+        do_lookup(configp, args.software_url, logger=self.app.log)
