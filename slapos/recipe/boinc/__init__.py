@@ -44,6 +44,7 @@ class Recipe(GenericBaseRecipe):
     root = options['installroot'].strip()
     options['home_page'] = url_base + "/" + project
     options['admin_page'] = url_base + "/" + project + "_ops/"
+    options['result_page'] = url_base + "/" + project + "_result/"
     options['cronjob'] = os.path.join(root, project+'.cronjob')
 
     return GenericBaseRecipe.__init__(self, buildout, name, options)
