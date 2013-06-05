@@ -47,7 +47,11 @@ setup(name=name,
           'cliff',
           'requests',
         ] + additional_install_requires,
-      extra_requires={'docs': ('Sphinx', 'repoze.sphinx.autointerface'),},
+      extra_requires={'docs': (
+        'Sphinx',
+        'repoze.sphinx.autointerface',
+        'sphinxcontrib.programoutput'
+      ),},
       tests_require=[
           'pyflakes',
       ],
