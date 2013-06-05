@@ -1,0 +1,15 @@
+slapos.core
+Flask
+lxml
+netaddr>=0.7.5
+netifaces
+setuptools
+supervisor
+xml_marshaller>=0.9.3
+zope.interface
+zc.buildout
+cliff
+requests
+repoze.sphinx.autointerface
+Sphinx
+sphinxcontrib-programoutput
