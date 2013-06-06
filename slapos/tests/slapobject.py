@@ -314,3 +314,71 @@ class TestSoftwareNetworkCacheSlapObject(MasterMixin, unittest.TestCase):
     )
     software.install()
     self.assertTrue(getattr(self, 'uploaded', False))
+
+class TestPartitionSlapObject(MasterMixin, unittest.TestCase):
+  def setUp(self):
+    MasterMixin.setUp(self)
+
+    Partition.generateSupervisorConfigurationFile = FakeCallAndNoop()
+    utils.bootstrapBuildout = FakeCallAndNoop()
+
+    utils.launchBuildout = FakeCallAndStore()
+
+  def tearDown(self):
+    MasterMixin.tearDown(self)
+    Partition.generateSupervisorConfigurationFile = originalPartitionGenerateSupervisorConfigurationFile
+
+  def test_instance_is_deploying_if_software_release_exists(self):
+    """
+    Test that slapgrid deploys an instance if its Software Release exists and
+    instance.cfg in the Software Release exists.
+    """
+    software = self.createSoftware()
+
+    partition = self.createPartition(software.url)
+    partition.install()
+
+    self.assertTrue(utils.launchBuildout.called)
+
+  def test_backward_compatibility_instance_is_deploying_if_template_cfg_is_used(self):
+    """
+    Backward compatibility test, for old software releases.
+    Test that slapgrid deploys an instance if its Software Release exists and
+    template.cfg in the Software Release exists.
+    """
+
+    software = self.createSoftware(empty=True)
+    open(os.path.join(software.software_path, 'template.cfg'), 'w').close()
+
+    partition = self.createPartition(software.url)
+    partition.install()
+
+    self.assertTrue(utils.launchBuildout.called)
+
+  def test_instance_slapgrid_raise_if_software_release_instance_profile_does_not_exist(self):
+    """
+    Test that slapgrid raises XXX when deploying an instance if the Software Release
+    related to the instance is not correctly installed (i.e there is no
+    instance.cfg in it).
+    """
+    software = self.createSoftware(empty=True)
+
+    partition = self.createPartition(software.url)
+
+    # XXX: What should it raise?
+    self.assertRaises(IOError, partition.install)
+
+  def test_instance_slapgrid_raise_if_software_release_does_not_exist(self):
+    """
+    Test that slapgrid raises XXX when deploying an instance if the Software Release
+    related to the instance is not present at all (i.e its directory does not
+    exist at all).
+    """
+    software = self.createSoftware(empty=True)
+    os.rmdir(software.software_path)
+
+    partition = self.createPartition(software.url)
+
+    # XXX: What should it raise?
+    self.assertRaises(IOError, partition.install)
+
