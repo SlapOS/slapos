@@ -471,12 +471,18 @@ class Partition(object):
     utils.launchBuildout(path=self.instance_path,
                          buildout_binary=buildout_binary,
                          logger=self.logger)
-    # Generates supervisord configuration file from template
-    self.logger.info("Generating supervisord config file from template...")
-    # check if CP/etc/run exists and it is a directory
-    # iterate over each file in CP/etc/run
-    # iterate over each file in CP/etc/service adding WatchdogID to their name
-    # if at least one is not 0o750 raise -- partition has something funny
+    self.generateSupervisorConfigurationFile()
+
+
+  def generateSupervisorConfigurationFile(self):
+    """
+    Generates supervisord configuration file from template.
+
+    check if CP/etc/run exists and it is a directory
+    iterate over each file in CP/etc/run
+    iterate over each file in CP/etc/service adding WatchdogID to their name
+    if at least one is not 0o750 raise -- partition has something funny
+    """
     runner_list = []
     service_list = []
     if os.path.exists(self.run_path):
