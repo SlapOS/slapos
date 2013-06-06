@@ -55,14 +55,35 @@ originalLaunchBuildout = utils.launchBuildout
 originalUploadSoftwareRelease = SlapObject.Software.uploadSoftwareRelease
 
 
-class TestSoftwareSlapObject(BasicMixin, unittest.TestCase):
+class MasterMixin(BasicMixin, unittest.TestCase):
   """
-    Test for Software class.
+  Master Mixin of slapobject test classes.
   """
-
   def setUp(self):
     BasicMixin.setUp(self)
     os.mkdir(self.software_root)
+    # Monkey patch utils module
+    utils.bootstrapBuildout = FakeCallAndRead
+    utils.launchBuildout = FakeCallAndRead
+    # Reset external command list in case it is dirty from previous test
+    FakeCallAndRead.external_command_list = []
+
+  def tearDown(self):
+    BasicMixin.tearDown(self)
+
+    # Un-monkey patch utils module
+    global originalBootstrapBuildout
+    global originalLaunchBuildout
+    utils.bootstrapBuildout = originalBootstrapBuildout
+    utils.launchBuildout = originalLaunchBuildout
+
+
+class TestSoftwareNetworkCacheSlapObject(MasterMixin, unittest.TestCase):
+  """
+  Test for Network Cache related features in Software class.
+  """
+  def setUp(self):
+    MasterMixin.setUp(self)
     self.signature_private_key_file = '/signature/private/key_file'
     self.upload_cache_url = 'http://example.com/uploadcache'
     self.upload_dir_url = 'http://example.com/uploaddir'
@@ -71,19 +92,9 @@ class TestSoftwareSlapObject(BasicMixin, unittest.TestCase):
     self.shadir_cert_file = '/path/to/shadir/cert/file'
     self.shadir_key_file = '/path/to/shadir/key/file'
 
-    # Monkey patch utils module
-    utils.bootstrapBuildout = FakeCallAndRead
-    utils.launchBuildout = FakeCallAndRead
-
   def tearDown(self):
-    global originalBootstrapBuildout
-    global originalLaunchBuildout
-    BasicMixin.tearDown(self)
-    FakeCallAndRead.external_command_list = []
+    MasterMixin.tearDown(self)
 
-    # Un-monkey patch utils module
-    utils.bootstrapBuildout = originalBootstrapBuildout
-    utils.launchBuildout = originalLaunchBuildout
     SlapObject.Software._install_from_buildout = original_install_from_buildout
     networkcache.upload_network_cached = original_upload_network_cached
     SlapObject.Software.uploadSoftwareRelease = originalUploadSoftwareRelease
