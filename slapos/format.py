@@ -397,7 +397,7 @@ class Computer(object):
     if alter_user:
       slapsoft.create()
       slapsoft_pw = pwd.getpwnam(slapsoft.name)
-      chownDirectory(path, uid, gid)
+      chownDirectory(slapsoft.path, slapsoft_pw.pw_uid, slapsoft_pw.pw_gid)
     os.chmod(self.software_root, 0755)
 
     # Speed hack:
@@ -519,7 +519,7 @@ class Partition(object):
       os.mkdir(self.path, 0750)
     if alter_user:
       owner_pw = pwd.getpwnam(owner.name)
-      chownDirectory(path, uid, gid)
+      chownDirectory(self.path, owner_pw.pw_uid, owner_pw.pw_gid)
     os.chmod(self.path, 0750)
 
 
