@@ -37,6 +37,25 @@ from slapos.grid import networkcache
 # XXX: BasicMixin should be in a separated module, not in slapgrid test module.
 from slapos.tests.slapgrid import BasicMixin
 
+# Mockup
+# XXX: Ambiguous name
+# XXX: Factor with common SlapOS tests
+class FakeCallAndStore(object):
+  """
+  Used to check if the mocked method has been called.
+  """
+  def __init__(self):
+    self.called = False
+
+  def __call__(self, *args, **kwargs):
+    self.called = True
+
+class FakeCallAndNoop(object):
+  """
+  Used to no-op a method.
+  """
+  def __call__(self, *args, **kwargs):
+    pass
 
 # XXX: change name and behavior to be more generic and factor with other tests
 class FakeNetworkCacheCallAndRead(object):
