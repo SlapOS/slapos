@@ -39,6 +39,7 @@ import sys
 import tempfile
 import urllib2
 import subprocess
+from subprocess import CalledProcessError
 
 
 def authenticate(request, login, password):
@@ -284,6 +285,6 @@ def do_register(conf):
       subprocess.check_call("/usr/sbin/slapos-start")
     except CalledProcessError:
       print "Error while trying to run /usr/sbin/slapos-start"
-  else
+  else:
     print "Missing file /usr/sbin/slapos-start"
   return 0
