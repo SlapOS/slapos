@@ -29,14 +29,21 @@ import logging
 import os
 import unittest
 
-from slapos.grid import SlapObject
+from slapos.slap import ComputerPartition as SlapComputerPartition
+
+from slapos.grid.SlapObject import Partition, Software
 from slapos.grid import utils
 from slapos.grid import networkcache
 # XXX: BasicMixin should be in a separated module, not in slapgrid test module.
 from slapos.tests.slapgrid import BasicMixin
 
 
-class FakeCallAndRead:
+# XXX: change name and behavior to be more generic and factor with other tests
+class FakeNetworkCacheCallAndRead(object):
+  """
+  Short-circuit normal calls to slapos buildout helpers, get and store
+  'additional_buildout_parameter_list' for future analysis.
+  """
   def __init__(self):
     self.external_command_list = []
 
@@ -45,15 +52,13 @@ class FakeCallAndRead:
         kwargs.get('additional_buildout_parameter_list')
     self.external_command_list.extend(additional_buildout_parameter_list)
 
-FakeCallAndRead = FakeCallAndRead()
-
 # Backup modules
-original_install_from_buildout = SlapObject.Software._install_from_buildout
+original_install_from_buildout = Software._install_from_buildout
 original_upload_network_cached = networkcache.upload_network_cached
 originalBootstrapBuildout = utils.bootstrapBuildout
 originalLaunchBuildout = utils.launchBuildout
-originalUploadSoftwareRelease = SlapObject.Software.uploadSoftwareRelease
-
+originalUploadSoftwareRelease = Software.uploadSoftwareRelease
+originalPartitionGenerateSupervisorConfigurationFile = Partition.generateSupervisorConfigurationFile
 
 class MasterMixin(BasicMixin, unittest.TestCase):
   """
@@ -62,16 +67,12 @@ class MasterMixin(BasicMixin, unittest.TestCase):
   def setUp(self):
     BasicMixin.setUp(self)
     os.mkdir(self.software_root)
-    # Monkey patch utils module
-    utils.bootstrapBuildout = FakeCallAndRead
-    utils.launchBuildout = FakeCallAndRead
-    # Reset external command list in case it is dirty from previous test
-    FakeCallAndRead.external_command_list = []
+    os.mkdir(self.instance_root)
 
   def tearDown(self):
     BasicMixin.tearDown(self)
 
-    # Un-monkey patch utils module
+    # Un-monkey patch possible modules
     global originalBootstrapBuildout
     global originalLaunchBuildout
     utils.bootstrapBuildout = originalBootstrapBuildout
@@ -84,6 +85,10 @@ class TestSoftwareNetworkCacheSlapObject(MasterMixin, unittest.TestCase):
   """
   def setUp(self):
     MasterMixin.setUp(self)
+    self.fakeCallAndRead = FakeNetworkCacheCallAndRead()
+    utils.bootstrapBuildout = self.fakeCallAndRead
+    utils.launchBuildout = self.fakeCallAndRead
+
     self.signature_private_key_file = '/signature/private/key_file'
     self.upload_cache_url = 'http://example.com/uploadcache'
     self.upload_dir_url = 'http://example.com/uploaddir'
@@ -95,16 +100,16 @@ class TestSoftwareNetworkCacheSlapObject(MasterMixin, unittest.TestCase):
   def tearDown(self):
     MasterMixin.tearDown(self)
 
-    SlapObject.Software._install_from_buildout = original_install_from_buildout
+    Software._install_from_buildout = original_install_from_buildout
     networkcache.upload_network_cached = original_upload_network_cached
-    SlapObject.Software.uploadSoftwareRelease = originalUploadSoftwareRelease
+    Software.uploadSoftwareRelease = originalUploadSoftwareRelease
 
   # Test methods
   def test_software_install_with_networkcache(self):
     """
       Check if the networkcache parameters are propagated.
     """
-    software = SlapObject.Software(
+    software = Software(
         url='http://example.com/software.cfg',
         software_root=self.software_root,
         buildout=self.buildout,
@@ -119,7 +124,7 @@ class TestSoftwareNetworkCacheSlapObject(MasterMixin, unittest.TestCase):
 
     software.install()
 
-    command_list = FakeCallAndRead.external_command_list
+    command_list = self.fakeCallAndRead.external_command_list
     self.assertIn('buildout:networkcache-section=networkcache', command_list)
     self.assertIn('networkcache:signature-private-key-file=%s' % self.signature_private_key_file, command_list)
     self.assertIn('networkcache:upload-cache-url=%s' % self.upload_cache_url, command_list)
@@ -134,13 +139,13 @@ class TestSoftwareNetworkCacheSlapObject(MasterMixin, unittest.TestCase):
       Check if the networkcache parameters are not propagated if they are not
       available.
     """
-    software = SlapObject.Software(url='http://example.com/software.cfg',
+    software = Software(url='http://example.com/software.cfg',
                                    software_root=self.software_root,
                                    buildout=self.buildout,
                                    logger=logging.getLogger())
     software.install()
 
-    command_list = FakeCallAndRead.external_command_list
+    command_list = self.fakeCallAndRead.external_command_list
     self.assertNotIn('buildout:networkcache-section=networkcache', command_list)
     self.assertNotIn('networkcache:signature-private-key-file=%s' %
                      self.signature_private_key_file,
@@ -158,7 +163,7 @@ class TestSoftwareNetworkCacheSlapObject(MasterMixin, unittest.TestCase):
     def fakeBuildout(*args, **kw):
       pass
 
-    SlapObject.Software._install_from_buildout = fakeBuildout
+    Software._install_from_buildout = fakeBuildout
 
     def fake_upload_network_cached(*args, **kw):
       self.assertFalse(True)
@@ -167,7 +172,7 @@ class TestSoftwareNetworkCacheSlapObject(MasterMixin, unittest.TestCase):
 
     upload_to_binary_cache_url_blacklist = ["http://example.com"]
 
-    software = SlapObject.Software(
+    software = Software(
         url='http://example.com/software.cfg',
         software_root=self.software_root,
         buildout=self.buildout,
@@ -191,16 +196,16 @@ class TestSoftwareNetworkCacheSlapObject(MasterMixin, unittest.TestCase):
     """
     def fakeBuildout(*args, **kw):
       pass
-    SlapObject.Software._install_from_buildout = fakeBuildout
+    Software._install_from_buildout = fakeBuildout
 
     def fakeUploadSoftwareRelease(*args, **kw):
       self.uploaded = True
 
-    SlapObject.Software.uploadSoftwareRelease = fakeUploadSoftwareRelease
+    Software.uploadSoftwareRelease = fakeUploadSoftwareRelease
 
     upload_to_binary_cache_url_blacklist = ["http://anotherexample.com"]
 
-    software = SlapObject.Software(
+    software = Software(
         url='http://example.com/software.cfg',
         software_root=self.software_root,
         buildout=self.buildout,
