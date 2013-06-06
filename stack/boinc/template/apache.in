@@ -59,11 +59,13 @@ LoadModule authz_user_module modules/mod_authz_user.so
 LoadModule authn_file_module modules/mod_authn_file.so
 LoadModule authn_core_module modules/mod_authn_core.so
 LoadModule cgid_module modules/mod_cgid.so
+LoadModule autoindex_module modules/mod_autoindex.so
 
 ## Settings for BOINC project ${:niceprojectname}
 
 Alias /${:project} ${:installroot}/html/user
 Alias /${:project}_ops ${:installroot}/html/ops
+Alias /${:project}_result/ ${:installroot}/sample_results/
 ScriptAlias /${:project}_cgi ${:installroot}/cgi-bin
 
 # Note: projects/*/keys/ should NOT be readable!
@@ -78,4 +80,13 @@ ScriptAlias /${:project}_cgi ${:installroot}/cgi-bin
     Options ExecCGI
     AllowOverride AuthConfig
     Require all granted
+</Directory>
+
+Alias /${:project}_result/ ${:result_dir}
+<Directory "${:result_dir}">
+    Options +Indexes
+    AuthName "${:project}"
+    AuthType Basic
+    AuthUserFile ${:installroot}/html/ops/.htpasswd
+    require valid-user
 </Directory>
