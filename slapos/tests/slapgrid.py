@@ -1027,7 +1027,6 @@ class TestSlapgridCPPartitionProcessing(MasterMixin, unittest.TestCase):
     instance.timestamp = timestamp
     instance.requested_state = 'started'
     instance.software.setPeriodicity(1)
-    self.grid.force_periodicity = True
 
     self.launchSlapgrid()
     partition = os.path.join(self.instance_root, '0')
@@ -1043,36 +1042,7 @@ class TestSlapgridCPPartitionProcessing(MasterMixin, unittest.TestCase):
     self.assertItemsEqual(os.listdir(partition),
                           ['.timestamp', 'buildout.cfg', 'software_release', 'worked'])
 
-  def test_partition_periodicity_is_not_overloaded_if_forced(self):
-    """
-    If periodicity file in software directory but periodicity is forced
-    periodicity will be the one given by parameter
-    1. We set force_periodicity parameter to True
-    2. We put a periodicity file in the software release directory
-        with an unwanted periodicity
-    3. We process partition list and wait more than unwanted periodicity
-    4. We relaunch, partition should not be processed
-    """
-    computer = ComputerForTest(self.software_root, self.instance_root)
-    instance = computer.instance_list[0]
-    timestamp = str(int(time.time()))
 
-    instance.timestamp = timestamp
-    instance.requested_state = 'started'
-    unwanted_periodicity = 2
-    instance.software.setPeriodicity(unwanted_periodicity)
-    self.grid.force_periodicity = True
-
-    self.launchSlapgrid()
-    time.sleep(unwanted_periodicity + 1)
-
-    self.setSlapgrid()
-    self.grid.force_periodicity = True
-    self.assertEqual(self.grid.processComputerPartitionList(), slapgrid.SLAPGRID_SUCCESS)
-    self.assertNotEqual(unwanted_periodicity, self.grid.maximum_periodicity)
-    self.assertEqual(computer.sequence,
-                     ['getFullComputerInformation', 'availableComputerPartition',
-                      'startedComputerPartition', 'getFullComputerInformation'])
 
   def test_one_partition_periodicity_from_file_does_not_disturb_others(self):
     """
@@ -1557,26 +1527,6 @@ class TestSlapgridArgumentTuple(SlapgridInitialization):
     parser = parseArgumentTupleAndReturnSlapgridObject
     slapgrid_object = parser(*self.default_arg_tuple)[0]
     self.assertFalse(slapgrid_object.develop)
-
-  def test_force_periodicity_if_periodicity_not_given(self):
-    """
-      Check if not giving --maximum-periodicity triggers "force_periodicity"
-      option to be false.
-    """
-    parser = parseArgumentTupleAndReturnSlapgridObject
-    slapgrid_object = parser(*self.default_arg_tuple)[0]
-    self.assertFalse(slapgrid_object.force_periodicity)
-
-  def test_force_periodicity_if_periodicity_given(self):
-    """
-      Check if giving --maximum-periodicity triggers "force_periodicity" option.
-    """
-    parser = parseArgumentTupleAndReturnSlapgridObject
-    slapgrid_object = parser('--maximum-periodicity', '40', *self.default_arg_tuple)[0]
-    self.assertTrue(slapgrid_object.force_periodicity)
-
-
-class TestSlapgridConfigurationFile(SlapgridInitialization):
 
   def test_upload_binary_cache_blacklist(self):
     """
