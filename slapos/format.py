@@ -52,6 +52,7 @@ import zipfile
 import lxml.etree
 import xml_marshaller.xml_marshaller
 
+from slapos.util import chownDirectory
 from slapos.util import mkdir_p
 import slapos.slap as slap
 
@@ -386,7 +387,7 @@ class Computer(object):
     if alter_user:
       slapsoft.create()
       slapsoft_pw = pwd.getpwnam(slapsoft.name)
-      os.chown(self.software_root, slapsoft_pw.pw_uid, slapsoft_pw.pw_gid)
+      chownDirectory(slapsoft.path, slapsoft_pw.pw_uid, slapsoft_pw.pw_gid)
     os.chmod(self.software_root, 0o755)
 
     # Speed hack:
@@ -513,8 +514,8 @@ class Partition(object):
       os.mkdir(self.path, 0o750)
     if alter_user:
       owner_pw = pwd.getpwnam(owner.name)
-      os.chown(self.path, owner_pw.pw_uid, owner_pw.pw_gid)
-    os.chmod(self.path, 0o750)
+      chownDirectory(self.path, owner_pw.pw_uid, owner_pw.pw_gid)
+    os.chmod(self.path, 0o755)
 
 
 class User(object):

@@ -28,6 +28,8 @@ import os
 import slapos.util
 import tempfile
 import unittest
+import shutil
+from pwd import getpwnam
 
 
 class TestMkdirP(unittest.TestCase):
@@ -43,6 +45,7 @@ class TestMkdirP(unittest.TestCase):
     wanted_directory = os.path.join(root_directory, 'foo', 'bar')
     slapos.util.mkdir_p(wanted_directory)
     self.assertTrue(os.path.isdir(wanted_directory))
+    shutil.rmtree(root_directory)
 
   def test_mkdir_already_existing(self):
     """
@@ -51,7 +54,58 @@ class TestMkdirP(unittest.TestCase):
     root_directory = tempfile.mkdtemp()
     slapos.util.mkdir_p(root_directory)
     self.assertTrue(os.path.isdir(root_directory))
+    shutil.rmtree(root_directory)
 
+  def test_chown_directory(self):
+    """
+    Test that slapos.util.chownDirectory correctly changes owner.
+    Note: requires root privileges.
+    """
+    root_slaptest = tempfile.mkdtemp()
+    wanted_directory0 = os.path.join(root_slaptest, 'slap-write0')
+    wanted_directory1 = os.path.join(root_slaptest, 'slap-write0', 'write-slap1')
+    wanted_directory2 = os.path.join(root_slaptest, 'slap-write0', 'write-slap1', 'write-teste2')
+    wanted_directory_mkdir0 = os.makedirs(wanted_directory0, mode=0777)
+    wanted_directory_mkdir1 = os.makedirs(wanted_directory1, mode=0777)
+    wanted_directory_mkdir2 = os.makedirs(wanted_directory2, mode=0777)
+    create_file_txt = tempfile.mkstemp(suffix='.txt', prefix='tmp', dir=wanted_directory2, text=True)
+    user = 'nobody'
+    try:
+      uid = getpwnam(user)[2]
+      gid = getpwnam(user)[3]
+    except KeyError:
+      raise unittest.SkipTest("user %s doesn't exist." % user)
+    try:
+      slapos.util.chownDirectory(root_slaptest, uid, gid)
+    except OSError:
+      raise unittest.SkipTest("No root privileges, impossible to chown.")
+
+    uid_check_root_slaptest = os.stat(root_slaptest)[4]
+    gid_check_root_slaptest = os.stat(root_slaptest)[5]
+    self.assertTrue(uid == uid_check_root_slaptest)
+    self.assertTrue(gid == gid_check_root_slaptest)
+
+    uid_check_wanted_directory0 = os.stat(wanted_directory0)[4]
+    gid_check_wanted_directory0 = os.stat(wanted_directory0)[5]
+    self.assertTrue(uid == uid_check_wanted_directory0)
+    self.assertTrue(gid == gid_check_wanted_directory0)
+
+    uid_check_wanted_directory1 = os.stat(wanted_directory1)[4]
+    gid_check_wanted_directory1 = os.stat(wanted_directory1)[5]
+    self.assertTrue(uid == uid_check_wanted_directory1)
+    self.assertTrue(gid == gid_check_wanted_directory1)
+
+    uid_check_wanted_directory2 = os.stat(wanted_directory2)[4]
+    gid_check_wanted_directory2 = os.stat(wanted_directory2)[5]
+    self.assertTrue(uid == uid_check_wanted_directory2)
+    self.assertTrue(gid == gid_check_wanted_directory2)
+
+    uid_check_file_txt = os.stat(create_file_txt[1])[4]
+    gid_check_file_txt = os.stat(create_file_txt[1])[5]
+    self.assertTrue(uid == uid_check_file_txt)
+    self.assertTrue(gid == gid_check_file_txt)
+
+    shutil.rmtree(root_slaptest)
 
 if __name__ == '__main__':
   unittest.main()
