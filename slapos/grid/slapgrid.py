@@ -79,6 +79,7 @@ class _formatXMLError(Exception):
 def check_missing_parameters(options):
   required = set([
       'computer_id',
+      # XXX: instance_root is better named "partition_root"
       'instance_root',
       'master_url',
       'software_root',

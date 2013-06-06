@@ -57,6 +57,8 @@ REQUIRED_COMPUTER_PARTITION_PERMISSION = 0o750
 class Software(object):
   """This class is responsible for installing a software release"""
 
+  # XXX: "url" parameter should be named "key", "target" or alike to be more generic.
+  #      The key is an url in the case of Buildout.
   def __init__(self, url, software_root, buildout, logger,
                signature_private_key_file=None, signature_certificate_list=None,
                upload_cache_url=None, upload_dir_url=None, shacache_cert_file=None,
@@ -254,6 +256,8 @@ class Partition(object):
   """This class is responsible of the installation of an instance
   """
 
+  # XXX: we should give the url (or the "key") instead of the software_path
+  #      then compute the path from it, like in Software.
   def __init__(self,
                software_path,
                instance_path,
