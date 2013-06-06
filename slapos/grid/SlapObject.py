@@ -386,19 +386,22 @@ class Partition(object):
                                   REQUIRED_COMPUTER_PARTITION_PERMISSION))
     os.environ = getCleanEnvironment(logger=self.logger,
                                      home_path=pwd.getpwuid(instance_stat_info.st_uid).pw_dir)
-    # Generates buildout part from template
+
+    # Generate buildout instance profile from template in Software Release
     template_location = os.path.join(self.software_path, 'instance.cfg')
-    # Backward compatibility: "instance.cfg" file was named "template.cfg".
     if not os.path.exists(template_location):
-      template_location = os.path.join(self.software_path, 'template.cfg')
+      # Backward compatibility: "instance.cfg" file was named "template.cfg".
+      if os.path.exists(os.path.join(self.software_path, 'template.cfg')):
+        template_location = os.path.join(self.software_path, 'template.cfg')
+      else:
+        # No template: Software Release is either inconsistent or not correctly installed.
+        # XXX What should it raise?
+        raise IOError('Software Release %s is not correctly installed.\nMissing file: %s' % (
+            self.software_release_url, template_location))
     config_location = os.path.join(self.instance_path, 'buildout.cfg')
     self.logger.debug("Copying %r to %r" % (template_location, config_location))
-    try:
-      shutil.copy(template_location, config_location)
-    except IOError as exc:
-      # Template not found on SR, we notify user.
-      raise IOError('Software Release %s is not correctly installed.\n%s' % (
-                      self.software_release_url, exc))
+    shutil.copy(template_location, config_location)
+
     # fill generated buildout with additional information
     buildout_text = open(config_location).read()
     buildout_text += '\n\n' + pkg_resources.resource_string(__name__,
