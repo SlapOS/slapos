@@ -1168,6 +1168,48 @@ class TestSlapgridCPPartitionProcessing(MasterMixin, unittest.TestCase):
                      last_runtime)
     self.assertNotEqual(wanted_periodicity, self.grid.maximum_periodicity)
 
+  def test_one_partition_is_never_processed_when_periodicity_is_negative(self):
+    """
+    Checks that a partition is not processed when
+    its periodicity is negative
+    """
+    def get_runtime(instance):
+      self.assertTrue(os.path.exists(os.path.join(instance.partition_path, '.timestamp')))
+      return os.path.getmtime(os.path.join(instance.partition_path, '.timestamp'))
+
+    periodicity = -1
+    timestamp = str(int(time.time()))
+    computer = ComputerForTest(self.software_root, self.instance_root, 1, 1)
+    instance = computer.instance_list[0]
+    instance.software.setPeriodicity(periodicity)
+    instance.timestamp = timestamp
+    self.launchSlapgrid()
+    first_runtime = get_runtime(instance)
+    self.launchSlapgrid()
+    second_runtime = get_runtime(instance)
+    self.assertEqual(first_runtime, second_runtime)
+
+  def test_one_partition_is_always_processed_when_periodicity_is_zero(self):
+    """
+    Checks that a partition is always processed when
+    its periodicity is 0
+    """
+    def get_runtime(instance):
+      self.assertTrue(os.path.exists(os.path.join(instance.partition_path, '.timestamp')))
+      return os.path.getmtime(os.path.join(instance.partition_path, '.timestamp'))
+
+    periodicity = 0
+    timestamp = str(int(time.time()))
+    computer = ComputerForTest(self.software_root, self.instance_root, 1, 1)
+    instance = computer.instance_list[0]
+    instance.software.setPeriodicity(periodicity)
+    instance.timestamp = timestamp
+    self.launchSlapgrid()
+    first_runtime = get_runtime(instance)
+    self.launchSlapgrid()
+    second_runtime = get_runtime(instance)
+    self.assertNotEqual(first_runtime, second_runtime)
+
   def test_one_partition_buildout_fail_does_not_disturb_others(self):
     """
     1. We set up two instance one using a corrupted buildout
