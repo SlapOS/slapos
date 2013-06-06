@@ -97,6 +97,77 @@ class MasterMixin(BasicMixin, unittest.TestCase):
     utils.bootstrapBuildout = originalBootstrapBuildout
     utils.launchBuildout = originalLaunchBuildout
 
+  # Helper functions
+  def createSoftware(self, url=None, empty=False):
+    """
+    Create an empty software, and return a Software object from
+    dummy parameters.
+    """
+    if url is None:
+      url = 'mysoftware'
+
+    software_path = os.path.join(self.software_root, utils.md5digest(url))
+    os.mkdir(software_path)
+
+    if not empty:
+      # Populate the Software Release directory so that it is "complete" and
+      # "working" from a slapos point of view.
+      open(os.path.join(software_path, 'instance.cfg'), 'w').close()
+
+    return Software(
+      url=url,
+      software_root=self.software_root,
+      buildout=self.buildout,
+      logger=logging.getLogger(),
+    )
+
+  def createPartition(
+      self,
+      software_release_url,
+      partition_id=None,
+      slap_computer_partition=None
+  ):
+    """
+    Create a partition, and return a Partition object created
+    from dummy parameters.
+    """
+    # XXX dirty, should disappear when Partition is cleaned up
+    software_path = os.path.join(
+        self.software_root,
+        utils.md5digest(software_release_url)
+    )
+
+    if partition_id is None:
+      partition_id = 'mypartition'
+
+    if slap_computer_partition is None:
+      slap_computer_partition = SlapComputerPartition(
+        computer_id='bidon',
+        partition_id=partition_id)
+
+    instance_path = os.path.join(self.instance_root, partition_id)
+    os.mkdir(instance_path)
+    os.chmod(instance_path, 0o750)
+
+    supervisor_configuration_path = os.path.join(
+          self.instance_root, 'supervisor')
+    os.mkdir(supervisor_configuration_path)
+
+    return Partition(
+      software_path=software_path,
+      instance_path=instance_path,
+      supervisord_partition_configuration_path=supervisor_configuration_path,
+      supervisord_socket=os.path.join(
+          supervisor_configuration_path, 'supervisor.sock'),
+      computer_partition=slap_computer_partition,
+      computer_id='bidon',
+      partition_id=partition_id,
+      server_url='bidon',
+      software_release_url=software_release_url,
+      buildout=self.buildout,
+      logger=logging.getLogger(),
+    )
+
 
 class TestSoftwareNetworkCacheSlapObject(MasterMixin, unittest.TestCase):
   """
