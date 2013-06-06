@@ -186,11 +186,11 @@ class Software(object):
       utils.bootstrapBuildout(path=self.software_path,
                               buildout=self.buildout,
                               logger=self.logger,
-                              additional_buildout_parametr_list=buildout_parameter_list)
+                              additional_buildout_parameter_list=buildout_parameter_list)
       utils.launchBuildout(path=self.software_path,
                            buildout_binary=os.path.join(self.software_path, 'bin', 'buildout'),
                            logger=self.logger,
-                           additional_buildout_parametr_list=buildout_parameter_list)
+                           additional_buildout_parameter_list=buildout_parameter_list)
     finally:
       shutil.rmtree(extends_cache)
 

@@ -229,9 +229,9 @@ def dropPrivileges(uid, gid, logger):
 
 
 def bootstrapBuildout(path, logger, buildout=None,
-                      additional_buildout_parametr_list=None):
-  if additional_buildout_parametr_list is None:
-    additional_buildout_parametr_list = []
+                      additional_buildout_parameter_list=None):
+  if additional_buildout_parameter_list is None:
+    additional_buildout_parameter_list = []
   # Reads uid/gid of path, launches buildout with thoses privileges
   stat_info = os.stat(path)
   uid = stat_info.st_uid
@@ -240,7 +240,7 @@ def bootstrapBuildout(path, logger, buildout=None,
   invocation_list = [sys.executable, '-S']
   if buildout is not None:
     invocation_list.append(buildout)
-    invocation_list.extend(additional_buildout_parametr_list)
+    invocation_list.extend(additional_buildout_parameter_list)
   else:
     try:
       __import__('zc.buildout')
@@ -249,12 +249,12 @@ def bootstrapBuildout(path, logger, buildout=None,
         'Consider having zc.buildout available in search path.')
       invocation_list.append(pkg_resources.resource_filename(__name__,
         'zc.buildout-bootstap.py'))
-      invocation_list.extend(additional_buildout_parametr_list)
+      invocation_list.extend(additional_buildout_parameter_list)
     else:
       # buildout is importable, so use this one
       invocation_list.extend(["-c", "import sys ; sys.path=" + str(sys.path) +
         " ; import zc.buildout.buildout ; sys.argv[1:1]=" +
-        repr(additional_buildout_parametr_list + ['bootstrap']) + " ; "
+        repr(additional_buildout_parameter_list + ['bootstrap']) + " ; "
         "zc.buildout.buildout.main()"])
 
   if buildout is not None:
@@ -283,10 +283,10 @@ def bootstrapBuildout(path, logger, buildout=None,
 
 
 def launchBuildout(path, buildout_binary, logger,
-                   additional_buildout_parametr_list=None):
+                   additional_buildout_parameter_list=None):
   """ Launches buildout."""
-  if additional_buildout_parametr_list is None:
-    additional_buildout_parametr_list = []
+  if additional_buildout_parameter_list is None:
+    additional_buildout_parameter_list = []
   # Reads uid/gid of path, launches buildout with thoses privileges
   stat_info = os.stat(path)
   uid = stat_info.st_uid
@@ -300,7 +300,7 @@ def launchBuildout(path, buildout_binary, logger,
     invocation_list = line.split() + [buildout_binary]
   # Run buildout without reading user defaults
   invocation_list.append('-U')
-  invocation_list.extend(additional_buildout_parametr_list)
+  invocation_list.extend(additional_buildout_parameter_list)
   try:
     umask = os.umask(SAFE_UMASK)
     logger.debug('Set umask from %03o to %03o' % (umask, SAFE_UMASK))

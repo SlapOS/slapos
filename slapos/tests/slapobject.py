@@ -40,9 +40,9 @@ class FakeCallAndRead:
     self.external_command_list = []
 
   def __call__(self, *args, **kwargs):
-    additional_buildout_parametr_list = \
-        kwargs.get('additional_buildout_parametr_list')
-    self.external_command_list.extend(additional_buildout_parametr_list)
+    additional_buildout_parameter_list = \
+        kwargs.get('additional_buildout_parameter_list')
+    self.external_command_list.extend(additional_buildout_parameter_list)
 
 FakeCallAndRead = FakeCallAndRead()
 
