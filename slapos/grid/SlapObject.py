@@ -387,6 +387,12 @@ class Partition(object):
     os.environ = getCleanEnvironment(logger=self.logger,
                                      home_path=pwd.getpwuid(instance_stat_info.st_uid).pw_dir)
 
+    # Check that Software Release directory is present
+    if not os.path.exists(self.software_path):
+      # XXX What should it raise?
+      raise IOError('Software Release %s is not present on system.\n'
+          'Cannot deploy instance.'  % self.software_release_url)
+
     # Generate buildout instance profile from template in Software Release
     template_location = os.path.join(self.software_path, 'instance.cfg')
     if not os.path.exists(template_location):
