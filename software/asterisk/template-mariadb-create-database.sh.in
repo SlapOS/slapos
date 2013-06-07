@@ -1,0 +1,16 @@
+#!${dash:location}/bin/dash
+# BEWARE: This file is operated by slapgrid
+# BEWARE: It will be overwritten automatically
+
+${mariadb:location}/bin/mysql_upgrade \
+  --no-defaults \
+  --user=root \
+  --socket=$${mariadb-configuration:socket}
+
+${mariadb:location}/bin/mysql \
+  --no-defaults \
+  --user=root \
+  --socket=$${mariadb-configuration:socket} \
+  -B \
+  < $${mariadb-create-database-sql:output}
+

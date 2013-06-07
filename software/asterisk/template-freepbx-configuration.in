@@ -1,0 +1,15 @@
+<?php
+$amp_conf['AMPDBUSER']  = '$${mariadb-freepbx-login:passwd}';
+$amp_conf['AMPDBPASS']  = '$${mariadb-freepbx-password:passwd}';
+$amp_conf['AMPDBHOST']  = 'unix($${mariadb-configuration:socket})';
+$amp_conf['AMPDBNAME']  = '$${mariadb-freepbx-database:passwd}';
+$amp_conf['AMPDBENGINE'] = 'mysql';
+$amp_conf['FPBXDBUGFILE'] = '$${:debug-log}';
+$amp_conf['FPBX_LOG_FILE'] = '$${:error-log}';
+$amp_conf['AMPORTAL_CONF_FILE'] = '$${freepbx-configuration:output}';
+$amp_conf['ASTMANAGERHOST'] = '$${asterisk-manager-configuration:ip}';
+$amp_conf['ASTMANAGERPORT'] = '$${asterisk-manager-configuration:port}';
+$amp_conf['ASTETCDIR'] = '$${directory:astetc}';
+$amp_conf['AMPMGRUSER'] = '$${asterisk-manager-login:passwd}';
+$amp_conf['AMPMGRPASS'] = '$${asterisk-manager-password:passwd}';
+require_once('$${directory:wwwhtml}/htdocs/admin/bootstrap.php');

@@ -1,0 +1,163 @@
+# This file contains settings for components of the Asterisk Management Portal
+# Spaces are not allowed!
+# Run ${freepbx:location}/apply_conf.sh $${:output} after making changes to this file
+
+# AMPDBHOST: the host to connect to the database named 'asterisk'
+AMPDBHOST="unix($${mariadb-configuration:socket})"
+# AMPDBHOST=localhost
+# AMPDBUSER: the user to connect to the database named 'asterisk'
+AMPDBUSER=$${mariadb-freepbx-login:passwd}
+# AMPDBENGINE: the type of database to use
+AMPDBENGINE=mysql
+# AMPDBPASS: the password for AMPDBUSER
+AMPDBPASS=$${mariadb-freepbx-password:passwd}
+AMPDBNAME=$${mariadb-freepbx-database:passwd}
+
+# AMPENGINE: the telephony backend engine to use
+AMPENGINE=asterisk
+# AMPMGRUSER: the user to access the Asterisk manager interface
+AMPMGRUSER=$${asterisk-manager-login:passwd}
+# AMPMGRPASS: the password for AMPMGRUSER
+AMPMGRPASS=$${asterisk-manager-password:passwd}
+
+# AMPBIN: where command line scripts live
+AMPBIN=$${directory:astvarlibbin}
+#AMPSBIN: where (root) command line scripts live
+AMPSBIN=${asterisk:location}/sbin
+# AMPWEBROOT: the path to Apache's webroot (leave off trailing slash)
+AMPWEBROOT=$${directory:wwwhtml}
+# AMPCGIBIN: the path to Apache's cgi-bin dir (leave off trailing slash)
+AMPCGIBIN=$${directory:wwwcgi}
+# AMPWEBADDRESS: the IP address or host name used to access the AMP web admin
+AMPWEBADDRESS=$${apache-configuration:ip}
+
+# FOPWEBROOT:web root for the Flash Operator Panel
+FOPWEBROOT=$${directory:wwwhtmlpanel}
+# FOPPASSWORD: the secret code for performing transfers and hangups in the Flash Operator Panel
+FOPPASSWORD=$${freepbx-panel-password:passwd}
+# FOPSORT: FOP should sort extensions by Last Name [lastname] or by Extension [extension]
+FOPSORT=extension
+# FOPRUN: set to true if you want FOP started by freepbx_engine (amportal_start), false otherwise
+FOPRUN=false
+
+# AUTHTYPE: authentication type to use for web admin
+# If type set to 'database', the primary AMP admin credentials will be the AMPDBUSER/AMPDBPASS above
+# valid: none, database
+AUTHTYPE=database
+
+# AMPADMINLOGO: Defines the logo that is to be displayed at the TOP RIGHT of the admin screen.
+#               This enables you to customize the look of the administration screen.
+# NOTE: images need to be saved in the ..../admin/images directory of your AMP install
+# This image should be 55px in height
+AMPADMINLOGO=logo.png
+
+# USECATEGORIES: Controls if the menu items in the admin interface are sorted by category (true),
+#                or sorted alphebetically with no categories shown (false). Defaults to true.
+#USECATEGORIES=false
+
+# AMPEXTENSIONS: the type of view for extensions admin
+# If set to 'deviceanduser' Devices and Users will be administered seperately, and Users will be able to "login" to devices.
+# If set to 'extensions' Devices and Users will me administered in a single screen.
+AMPEXTENSIONS=extensions
+
+# POST_RELOAD: automatically execute a script after applying changes in the AMP admin
+# Set POST_RELOAD to the script you wish to execute after applying changes
+# If POST_RELOAD_DEBUG=true, you will see the output of the script in the web page
+# POST_RELOAD=
+POST_RELOAD_DEBUG=true
+
+# ENABLECW: Enable call waiting by default when an extension is created (DEFAULT is yes)
+# Set to 'no' to if you don't want phones to be commissioned with call waiting already
+# enabled. The user would then be required to dial the CW feature code (*70 default) to
+# enable their phone. Most installations should leave this alone. It allows multi-line
+# phones to receive multiple calls on their line appearances.
+ENABLECW=yes
+
+#CWINUSEBUSY: Set to yes for extensions that have CW enabled to report as busy if
+# they don't answer (resulting in busy voicemail greeting). Otherwise they simply
+# report as no-answer (e.g. busy greeting servers no purpose
+CWINUSEBUSY=yes
+
+# AMPBADNUMBER: Set to false if you do not want the bad-number context generated which
+# traps any bogus number or freature code and plays a message to the effect. If you use
+# the Early Dial feature on some Grandstream phones, you will want to set this to false
+AMPBADNUMBER=true
+
+# The following are used to optionally have the freepbx backup program optionally
+# send the generated backup to an ftp server
+#
+# FTPBACKUP=YES to enable
+# FTPUSER, FTPPASSWORD, FTPSERVER must be set
+# FTPSUBDIR is an optional subdirectory at the ftp server, it will cause ftp to do a cd
+#
+# There is no error checking so you should check to make sure these are set correctly. The
+# ftp is saved after the backup, so it will not cause the local backup file to be effected
+#
+# FTPBACKUP=yes
+#FTPUSER=asterisk
+#FTPPASSWORD=password
+#FTPSUBDIR=mybackupfolder
+#FTPSERVER=myftpserver
+
+# SSH BACKUP INFO: must have a valid SSHRSAKEY file and server, only supported through
+# ssh. SUBDIR is optional and will be created if it does not exist.
+#
+# If SSHUSER is not set, it will default to the current user which is asterisk in any
+# standard configuration.
+#
+#SSHBACKUP=yes
+#SSHUSER=backups
+#SSHRSAKEY=/etc/asterisk/backup_rsa
+#SSHSUBDIR=mysubdir
+#SSHSERVER=mybackupserver.com
+
+# AMPPROVROOT=/var/ftp /tftpboot
+# One or more directories where there are provisioning files that should be included in the backup. Currently
+# these get backed up only, the FreePBX utility does not automatically restore them.
+#
+#AMPPROVROOT=/var/ftp /tftpboot
+# AMPPROVEXCLUDE=/var/ftp/exclude-from-file-list
+# a list of files to exclude, to be used in tar's --exclude-from argument
+#
+#AMPPROVEXCLUDE=/var/ftp/exclude-from-file-list
+
+# If CUSTOMASERROR is set to false, then the Destination Registry will not report unknow destinations as errors
+# this should be left to the default true and custom destinations should be moved into the new custom apps registry
+# CUSTOMASERROR=false
+
+# if DYNAMICHINTS is set to true, Core will not statically generate hints. Instead it will make a call to the
+# AMPBIN php script, generate_hints.php, through an Asteirsk's #exec call. This requires Asterisk.conf to be
+# configured with "execincludes=yes" set in the [options] section.
+# DYNAMICHINTS=true
+
+# XTNCONFLICTABORT, BADDESTABORT
+# setting either of these to true will result in retrieve_conf aborting during a reload if an extension
+# conflict is detected or a destination is detected. It is usually better to allow the reload to go
+# through and then correct the problem but these can be set if a more strict behavior is desired
+# both default to false if not set
+XTNCONFLICTABORT=false
+BADDESTABORT=false
+
+# SERVERINTITLE if set to true, the browser title will be preceded with the server name. default false
+SERVERINTITLE=false
+ASTETCDIR=$${directory:astetc}
+ASTMODDIR=${asterisk:location}/lib/asterisk/modules
+ASTVARLIBDIR=$${directory:astvarlib}
+ASTAGIDIR=$${directory:astvarlib}/agi-bin
+ASTSPOOLDIR=$${directory:astspool}
+ASTRUNDIR=$${directory:astrun}
+ASTLOGDIR=$${directory:astlog}
+
+# This is the default admin name used to allow an administrator to login to ARI bypassing all security.
+# Change this to whatever you want, don't forget to change the ARI_ADMIN_PASSWORD as well
+ARI_ADMIN_USERNAME=$${freepbx-ari-login:passwd}
+
+# This is the default admin password to allow an administrator to login to ARI bypassing all security.
+# Change this to a secure password.
+ARI_ADMIN_PASSWORD=$${freepbx-ari-password:passwd}
+
+ASTMANAGERHOST=$${asterisk-manager-configuration:ip}
+ASTMANAGERPORT=$${asterisk-manager-configuration:port}
+
+FPBXDBUGFILE=$${freepbx-php-configuration:debug-log}
+FPBX_LOG_FILE=$${freepbx-php-configuration:error-log}

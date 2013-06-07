@@ -1,0 +1,13 @@
+#!${dash:location}/bin/dash
+# BEWARE: This file is operated by slapgrid
+# BEWARE: It will be overwritten automatically
+
+# XXX if no directory
+${mariadb:location}/scripts/mysql_install_db \
+  --skip-name-resolve \
+  --no-defaults \
+  --datadir=$${directory:mariadb-data} \
+  --basedir=${mariadb:location}
+
+exec ${mariadb:location}/bin/mysqld \
+  --defaults-file=$${mariadb-configuration:output}

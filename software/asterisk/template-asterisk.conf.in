@@ -1,0 +1,14 @@
+[directories]
+astetcdir => $${directory:astetc}
+astmoddir => ${asterisk:location}/lib/asterisk/modules
+astvarlibdir => $${directory:astvarlib}
+astagidir => $${directory:astvarlib}/agi-bin
+astspooldir => $${directory:astspool}
+astrundir => $${directory:astrun}
+astlogdir => $${directory:astlog}
+
+[options]
+transmit_silence_during_record = yes
+languageprefix=yes
+execincludes=yes
+
