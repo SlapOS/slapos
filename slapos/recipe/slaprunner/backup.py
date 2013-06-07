@@ -1,3 +1,4 @@
+
 ##############################################################################
 #
 # Copyright (c) 2013 Vifib SARL and Contributors. All Rights Reserved.
@@ -57,8 +58,24 @@ class ExportRecipe(GenericBaseRecipe):
         content = textwrap.dedent("""\
                 #!%(shell-binary)s
                 umask 077
-                cd ~/%(srv-directory)s/ ; \\
-                tar --exclude=runner/software/* -czf %(backup-directory)s/runner.tgz runner/
+                sync_element () {
+                  path=$1
+                  backup_path=$2
+                  shift 2
+                  element_list=$*
+                  for element in $element_list
+                  do
+                    cd $path;
+                    if [ -f $element ] || [ -d $element ]; then
+                       %(rsync-binary)s -avz --safe-links $element  $backup_path;
+                    fi
+                  done
+                }
+                sync_element %(srv-directory)s/runner  %(backup-directory)s/runner/ instance project  proxy.db softwareLink
+                sync_element %(etc-directory)s  %(backup-directory)s/etc/ .rcode .project .users
+                if [ -d %(backup-directory)s/runner/software ]; then
+                  rm %(backup-directory)s/runner/software/*
+                fi
                 """ % self.options)
         self.createExecutable(wrapper, content=content)
 
@@ -88,10 +105,17 @@ class ImportRecipe(GenericBaseRecipe):
         Create a script to restore the database from 'custom' format.
         """
         content = textwrap.dedent("""\
-                #!%(shell-binary)s \\
-                umask 077  \\
-                cd ~/%(srv-directory)s/ ; \\
-                tar -xzf %(backup-directory)s/runner.tgz runner/ ; \\
+                #!%(shell-binary)s
+                umask 077
+                cd %(backup-directory)s;
+                %(rsync-binary)s -avz --delete  runner/  %(srv-directory)s/runner;
+                %(rsync-binary)s -avz etc/ %(etc-directory)s;
+                ifs=$IFS IFS=';'
+                read user pass remaining < %(etc-directory)s/.users
+                IFS=$ifs
+                trap 'rm -f login_cookie' EXIT
+                %(curl-binary)s -vg6L -F clogin="$user" -F cpwd="$pass" --dump-header login_cookie  %(backend-url)s/doLogin;
+                %(curl-binary)s -vg6LX POST --cookie login_cookie --max-time 5  %(backend-url)s/runSoftwareProfile;
                 """ % self.options)
         self.createExecutable(wrapper, content=content)
 

@@ -11,8 +11,11 @@ parts +=
 recipe = slapos.cookbook:slaprunner.export
 wrapper = $${directory:bin}/$${slap-parameter:namebase}-exporter
 srv-directory = $${directory:srv}
+etc-directory = $${directory:etc}
 backup-directory = $${directory:backup}
 shell-binary = ${dash:location}/bin/dash
+rsync-binary = ${rsync:location}/bin/rsync
+
 
 # Extends publish section with resilient parameters
 [urls]

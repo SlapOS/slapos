@@ -10,7 +10,11 @@ parts +=
 
 [importer]
 recipe = slapos.cookbook:slaprunner.import
-wrapper = $${directory:bin}/$${slap-parameter:namebase}-exporter
+wrapper = $${directory:bin}/$${slap-parameter:namebase}-importer
 srv-directory = $${directory:srv}
+etc-directory = $${directory:etc}
 backup-directory = $${directory:backup}
 shell-binary = ${dash:location}/bin/dash
+rsync-binary = ${rsync:location}/bin/rsync
+curl-binary = ${curl:location}/bin/curl
+backend-url = $${slaprunner:access-url}
