@@ -1,0 +1,62 @@
+[mysqld]
+#
+# * Basic Settings
+#
+pid-file        = $${mariadb-configuration:pid-file}
+socket          = $${mariadb-configuration:socket}
+basedir         = ${mariadb:location}
+datadir         = $${directory:mariadb-data}
+tmpdir          = $${directory:tmp}
+skip-external-locking
+skip-networking
+# 
+# * Fine Tuning         
+#
+key_buffer              = 16M
+max_allowed_packet      = 16M
+thread_stack            = 128K
+thread_cache_size       = 8
+#
+# * Query Cache Configuration
+#
+query_cache_limit       = 1M
+query_cache_size        = 16M
+#
+# * Logging and Replication
+#
+# Both location gets rotated by the cronjob.
+# Be aware that this log type is a performance killer.
+#log            = /var/log/mysql/mysql.log
+#
+log-error = $${mariadb-configuration:error-log}
+#
+# Here you can see queries with especially long duration
+slow_query_log
+slow_query_log_file   = $${mariadb-configuration:slow-log}
+long_query_time = 1
+log-queries-not-using-indexes
+#
+# The following can be used as easy to replay backup logs or for replication.
+#server-id              = 1
+log_bin                 = $${mariadb-configuration:bin-log}
+# WARNING: Using expire_logs_days without bin_log crashes the server! See README.Debian!
+expire_logs_days        = 10
+max_binlog_size         = 100M
+#binlog_do_db           = include_database_name
+#binlog_ignore_db       = include_database_name
+#
+# * InnoDB
+#
+# InnoDB is enabled by default with a 10MB datafile in /var/lib/mysql/.
+# Read the manual for more InnoDB related options. There are many!
+# You might want to disable InnoDB to shrink the mysqld process by circa 100MB.
+#skip-innodb
+#
+
+[mysqldump]
+quick
+quote-names
+max_allowed_packet      = 16M
+
+[isamchk]
+key_buffer              = 16M

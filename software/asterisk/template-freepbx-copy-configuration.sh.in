@@ -1,0 +1,24 @@
+#!${dash:location}/bin/dash
+# BEWARE: This file is operated by slapgrid
+# BEWARE: It will be overwritten automatically
+
+${apache-php:location}/bin/php ${freepbx:location}/install_amp \
+  --dbhost "unix($${mariadb-configuration:socket})" \
+  --dbname $${mariadb-freepbx-database:passwd} \
+  --username $${mariadb-freepbx-login:passwd} \
+  --password $${mariadb-freepbx-password:passwd} \
+  --webroot $${directory:wwwhtml} \
+  --uid `echo "$USER"` \
+  --gid "" \
+  --debug \
+  --engine asterisk
+
+# cp -v -a ${freepbx:location}/amp_conf/moh $${directory:astvarlib}
+# # XXX mohmp3
+# cp -v -a ${freepbx:location}/amp_conf/agi-bin $${directory:astvarlib}
+# cp -v -a ${freepbx:location}/amp_conf/astetc/* $${directory:astetc}
+# cp -v -a ${freepbx:location}/amp_conf/bin/* $${directory:astvarlibbin}
+# cp -v -a ${freepbx:location}/amp_conf/htdocs $${directory:wwwhtml}
+# # cp -v -a ${freepbx:location}/amp_conf/sbin ${asterisk:location}/sbin
+# cp -v -a ${freepbx:location}/amp_conf/sounds $${directory:astvarlib}
+
