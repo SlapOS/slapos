@@ -1,4 +1,3 @@
-
 ##############################################################################
 #
 # Copyright (c) 2013 Vifib SARL and Contributors. All Rights Reserved.
@@ -108,14 +107,14 @@ class ImportRecipe(GenericBaseRecipe):
                 #!%(shell-binary)s
                 umask 077
                 cd %(backup-directory)s;
-                %(rsync-binary)s -avz --delete  runner/  %(srv-directory)s/runner;
+                %(rsync-binary)s -avz runner/  %(srv-directory)s/runner;
                 %(rsync-binary)s -avz etc/ %(etc-directory)s;
                 ifs=$IFS IFS=';'
                 read user pass remaining < %(etc-directory)s/.users
                 IFS=$ifs
-                trap 'rm -f login_cookie' EXIT
                 %(curl-binary)s -vg6L -F clogin="$user" -F cpwd="$pass" --dump-header login_cookie  %(backend-url)s/doLogin;
                 %(curl-binary)s -vg6LX POST --cookie login_cookie --max-time 5  %(backend-url)s/runSoftwareProfile;
+                rm -f login_cookie
                 """ % self.options)
         self.createExecutable(wrapper, content=content)
 
