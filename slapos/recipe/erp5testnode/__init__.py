@@ -54,8 +54,9 @@ class Recipe(GenericBaseRecipe):
     if software_path_list:
       CONFIG["software_path_list"] = "[software_list]"
       CONFIG["software_path_list"] += \
-          "\npath_list = %s" % ",".join(software_path_list)
-
+          "\npath_list = %s" % ",".join(software_path_list) 
+    CONFIG['computer_id'] = self.buildout['slap-connection']['computer-id']
+    CONFIG['server_url'] = self.buildout['slap-connection']['server-url']
     configuration_file = self.createFile(
       self.options['configuration-file'],
       self.substituteTemplate(
@@ -87,6 +88,8 @@ class Recipe(GenericBaseRecipe):
         lock_file=self.options['httpd-lock-file'],
         ip=self.options['httpd-ip'],
         port=self.options['httpd-port'],
+        software_access_port=self.options['httpd-software-access-port'],
+        testnode_srv_directory=self.options['srv-directory'],
         error_log=os.path.join(self.options['httpd-log-directory'],
                                'httpd-error.log'),
         access_log=os.path.join(self.options['httpd-log-directory'],
@@ -94,6 +97,7 @@ class Recipe(GenericBaseRecipe):
         certificate=self.options['httpd-cert-file'],
         key=self.options['httpd-key-file'],
         testnode_log_directory=self.options['log-directory'],
+        testnode_software_directory=self.options['software-directory'],
     )
     config_file = self.createFile(self.options['httpd-conf-file'],
        self.substituteTemplate(self.getTemplateFilename('httpd.conf.in'),
