@@ -2,8 +2,10 @@
 slapos_directory = %(slapos_directory)s
 working_directory = %(working_directory)s
 test_suite_directory = %(test_suite_directory)s
+software_directory = %(software_directory)s
 log_directory = %(log_directory)s
 run_directory = %(run_directory)s
+srv_directory = %(srv_directory)s
 proxy_host = %(proxy_host)s
 proxy_port = %(proxy_port)s
 node_quantity = %(node_quantity)s
@@ -13,6 +15,9 @@ ipv6_address = %(ipv6_address)s
 test_suite_master_url = %(test_suite_master_url)s
 httpd_ip = %(httpd_ip)s
 httpd_port = %(httpd_port)s
+httpd_software_access_port = %(httpd_software_access_port)s
+computer_id = %(computer_id)s
+server_url = %(server_url)s
 
 # Binaries
 git_binary = %(git_binary)s
