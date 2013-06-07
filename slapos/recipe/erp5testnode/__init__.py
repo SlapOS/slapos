@@ -54,8 +54,9 @@ class Recipe(GenericBaseRecipe):
     if software_path_list:
       CONFIG["software_path_list"] = "[software_list]"
       CONFIG["software_path_list"] += \
-          "\npath_list = %s" % ",".join(software_path_list)
-
+          "\npath_list = %s" % ",".join(software_path_list) 
+    CONFIG['computer_id'] = self.buildout['slap-connection']['computer-id']
+    CONFIG['server_url'] = self.buildout['slap-connection']['server-url']
     configuration_file = self.createFile(
       self.options['configuration-file'],
       self.substituteTemplate(
