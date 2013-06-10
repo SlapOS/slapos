@@ -16,9 +16,6 @@ offline = true
 [directory]
 recipe = slapos.cookbook:mkdirectory
 etc = $${buildout:directory}/etc
-script = $${:etc}/run/
-service = $${:etc}/service
-promise = $${:etc}/promise/
 bin = $${buildout:directory}/bin/
 
 [download-source]
