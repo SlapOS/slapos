@@ -12,6 +12,7 @@ instance_root = /srv/slapgrid
 [slapformat]
 # Replace by your network interface like eth0, eth1, slapbr0...
 interface_name = interfacename
+# Change "create_tap" into "true" if you need to host KVM services
 create_tap = false
 partition_amount = 10
 computer_xml = /opt/slapos/slapos.xml
