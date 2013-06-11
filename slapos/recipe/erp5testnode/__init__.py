@@ -89,6 +89,7 @@ class Recipe(GenericBaseRecipe):
         ip=self.options['httpd-ip'],
         port=self.options['httpd-port'],
         error_log=os.path.join(self.options['httpd-log-directory'],
+        testnode_srv_directory=self.options['srv-directory'],
                                'httpd-error.log'),
         access_log=os.path.join(self.options['httpd-log-directory'],
                                 'httpd-access.log'),
