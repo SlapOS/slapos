@@ -1,8 +1,11 @@
+erp5_administration
 erp5_credential
 erp5_project
 erp5_ooo_import
 erp5_odt_style
 erp5_ods_style
+erp5_forge
+erp5_dhtml_style
 slapos_accounting
 slapos_cache
 slapos_category
@@ -14,3 +17,4 @@ slapos_pdm
 slapos_web
 slapos_payzen
 slapos_hypermedia
+slapos_upgrader

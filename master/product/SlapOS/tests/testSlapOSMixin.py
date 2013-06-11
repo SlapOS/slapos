@@ -53,23 +53,10 @@ class testSlapOSMixin(ERP5TypeTestCase):
     self.portal.portal_caches.clearAllCache()
     self.portal.portal_workflow.refreshWorklistCache()
 
-  def getDefaultSitePreferenceId(self):
-    """Default id, usefull method to override
-    """
-    return "slapos_default_system_preference"
-
-  def setUpMemcached(self):
-    from Products.ERP5Type.tests.ERP5TypeTestCase import\
-           _getVolatileMemcachedServerDict, _getPersistentMemcachedServerDict
-    memcached_tool = self.getPortal().portal_memcached
-    # setup default volatile distributed memcached
-    connection_dict = _getVolatileMemcachedServerDict()
-    url_string = '%(hostname)s:%(port)s' % connection_dict
-    memcached_tool.default_memcached_plugin.setUrlString(url_string)
-    # setup default persistent distributed memcached
-    connection_dict = _getPersistentMemcachedServerDict()
-    url_string = '%(hostname)s:%(port)s' % connection_dict
-    memcached_tool.persistent_memcached_plugin.setUrlString(url_string)
+  #def getDefaultSitePreferenceId(self):
+  #  """Default id, usefull method to override
+  #  """
+  #  return "slapos_default_system_preference"
 
   def createAlarmStep(self):
     def makeCallAlarm(alarm):
@@ -87,14 +74,8 @@ class testSlapOSMixin(ERP5TypeTestCase):
         setattr(self, 'stepCall' + convertToUpperCase(alarm.getId()) \
           + 'Alarm', makeCallAlarm(alarm))
 
-  def setupPortalCertificateAuthority(self):
+  def createCertificateAuthorityFile(self):
     """Sets up portal_certificate_authority"""
-    if not self.portal.hasObject('portal_certificate_authority'):
-      self.portal.manage_addProduct['ERP5'].manage_addTool(
-        'ERP5 Certificate Authority Tool', None)
-    self.portal.portal_certificate_authority.certificate_authority_path = \
-        os.environ['TEST_CA_PATH']
-    transaction.commit()
     # reset test CA to have it always count from 0
     open(os.path.join(os.environ['TEST_CA_PATH'], 'serial'), 'w').write('01')
     open(os.path.join(os.environ['TEST_CA_PATH'], 'crlnumber'), 'w').write(
@@ -130,6 +111,13 @@ class testSlapOSMixin(ERP5TypeTestCase):
     """
     return getattr(self.getPortal(), 'acl_users', None)
 
+  def setUpOnce(self):
+    # Reload promise and include yet another bt5 path.
+    self.loadPromise(searchable_business_template_list=["erp5_core", "erp5_base", "slapos_configurator"])
+    self.portal.portal_alarms.promise_template_tool_configuration.solve()
+    transaction.commit()
+    self.launchConfigurator()
+
   def afterSetUp(self):
     self.login()
     self.createAlarmStep()
@@ -162,16 +150,30 @@ class testSlapOSMixin(ERP5TypeTestCase):
     self.portal.email_from_address = 'romain@nexedi.com'
     self.portal.email_to_address = 'romain@nexedi.com'
 
+  def getBusinessConfiguration(self):
+    return self.portal.business_configuration_module[\
+                          "slapos_master_configuration_workflow"]
+
+  def launchConfigurator(self):
+    self.login()
+    # Create new Configuration 
+    business_configuration  = self.getBusinessConfiguration()
+
+    response_dict = {}
+    while response_dict.get("command", "next") != "install":
+      response_dict = self.portal.portal_configurator._next(
+                            business_configuration, {})
+
+    transaction.commit()
+    self.tic() 
+    self.portal.portal_configurator.startInstallation(
+                 business_configuration,REQUEST=self.portal.REQUEST)
+
   def bootstrapSite(self):
     self.setupPortalAlarms()
-    self.setupPortalCertificateAuthority()
-    self.setUpMemcached()
+    self.createCertificateAuthorityFile()
 
     self.clearCache()
-
-    # Invoke Post-configurator script, this invokes all 
-    # alarms related to configuration.
-    self.portal.BusinessConfiguration_invokeSlapOSMasterPromiseAlarmList()
     transaction.commit()
     self.tic()
 
@@ -181,71 +183,12 @@ class testSlapOSMixin(ERP5TypeTestCase):
     """
     result = [
       'erp5_promise',
-      'erp5_upgrader',
-      'slapos_upgrader',
       'erp5_full_text_myisam_catalog',
       'erp5_core_proxy_field_legacy',
       'erp5_base',
-      'erp5_administration',
       'erp5_workflow',
       'erp5_configurator',
       'slapos_configurator',
-      'erp5_simulation',
-      'erp5_pdm',
-      'erp5_trade',
-      'erp5_tiosafe_core',
-      'erp5_item',
-      'erp5_forge',
-      'erp5_ingestion_mysql_innodb_catalog',
-      'erp5_ingestion',
-      'erp5_crm',
-      'erp5_system_event',
-      'erp5_secure_payment',
-      'erp5_payzen_secure_payment',
-      'erp5_ooo_import',
-      'erp5_odt_style',
-      'erp5_ods_style',
-      'erp5_jquery',
-      'erp5_jquery_ui',
-      'erp5_dhtml_style',
-      'erp5_knowledge_pad',
-      'erp5_web',
-      'erp5_rss_style',
-      'erp5_dms',
-      'erp5_content_translation',
-      'erp5_software_pdm',
-      'erp5_computer_immobilisation',
-      'erp5_open_trade',
-      'erp5_accounting',
-      'erp5_commerce',
-      'erp5_xhtml_jquery_style',
-      'erp5_credential',
-      'erp5_km',
-      'erp5_web_download_theme',
-      'erp5_web_shacache',
-      'erp5_data_set',
-      'erp5_web_shadir',
-      'erp5_accounting',
-      'erp5_invoicing',
-      'erp5_simplified_invoicing',
-      'erp5_credential_oauth2',
-      'erp5_accounting_l10n_fr',
-      'erp5_bearer_token',
-      'erp5_access_token',
-      'erp5_project',
-      'slapos_cache',
-      'slapos_cloud',
-      'slapos_slap_tool',
-      'slapos_category',
-      'slapos_rest_api_tool_portal_type',
-      'slapos_rest_api',
-      'slapos_hypermedia',
-      'slapos_pdm',
-      'slapos_crm',
-      'slapos_accounting',
-      'slapos_payzen',
-      'slapos_web',
-      'slapos_erp5',
     ]
     return result
 
