@@ -23,5 +23,5 @@ rsync-binary = ${rsync:location}/bin/rsync
 backend_url = $${slaprunner:access-url}
 url =  $${request-frontend:connection-site_url}
 cloud9_url = $${cloud9:access-url}
-ssh_command = ssh $${dropbear-server:host} -p $${dropbear-server:port}
+ssh_command = ssh $${dropbear-runner-server:host} -p $${dropbear-runner-server:port}
 password_recovery_code = $${recovery-code:passwd}

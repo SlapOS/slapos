@@ -66,12 +66,12 @@ class ExportRecipe(GenericBaseRecipe):
                   do
                     cd $path;
                     if [ -f $element ] || [ -d $element ]; then
-                       %(rsync-binary)s -avz --safe-links $element  $backup_path;
+                       %(rsync-binary)s -avz --safe-links --delete $element  $backup_path;
                     fi
                   done
                 }
                 sync_element %(srv-directory)s/runner  %(backup-directory)s/runner/ instance project  proxy.db softwareLink
-                sync_element %(etc-directory)s  %(backup-directory)s/etc/ .rcode .project .users
+                sync_element %(etc-directory)s  %(backup-directory)s/etc/ .rcode .project .users ssh
                 if [ -d %(backup-directory)s/runner/software ]; then
                   rm %(backup-directory)s/runner/software/*
                 fi
@@ -106,9 +106,21 @@ class ImportRecipe(GenericBaseRecipe):
         content = textwrap.dedent("""\
                 #!%(shell-binary)s
                 umask 077
-                cd %(backup-directory)s;
-                %(rsync-binary)s -avz runner/  %(srv-directory)s/runner;
-                %(rsync-binary)s -avz etc/ %(etc-directory)s;
+                restore_element () {
+                  backup_path=$1
+                  restore_path=$2
+                  shift 2
+                  element_list=$*
+                  for element in $element_list
+                  do
+                    cd $backup_path;
+                    if [ -f $element ] || [ -d $element ]; then
+                       %(rsync-binary)s -avz --delete $backup_path/$element $restore_path;
+                    fi
+                  done
+                }
+                restore_element %(backup-directory)s/runner/ %(srv-directory)s/runner  instance project  proxy.db softwareLink
+                restore_element  %(backup-directory)s/etc/ %(etc-directory)s .rcode .project .users ssh
                 ifs=$IFS IFS=';'
                 read user pass remaining < %(etc-directory)s/.users
                 IFS=$ifs
