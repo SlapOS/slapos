@@ -258,8 +258,9 @@ class Computer(object):
     try:
       slap_computer.updateConfiguration(xml_marshaller.xml_marshaller.dumps(_getDict(self)))
     except slap.NotFoundError as error:
-      raise slap.NotFoundError("%s\nERROR : This SlapOS node is not recognised by "
-          "SlapOS Master. Please make sure computer_id of slapos.cfg looks "
+      raise slap.NotFoundError("%s\nERROR: This SlapOS node is not recognised by "
+          "SlapOS Master and/or computer_id and certificates don't match. "
+          "Please make sure computer_id of slapos.cfg looks "
           "like 'COMP-123' and is correct.\nError is : 404 Not Found." % error)
 
   def dump(self, path_to_xml, path_to_json, logger):
