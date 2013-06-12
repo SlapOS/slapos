@@ -14,6 +14,7 @@ parts =
   tunnel-ipv6-kvm-zimbra-admin
   tunnel-ipv6-kvm-smtp
   tunnel-ipv6-kvm-smtp-submission
+  tunnel-ipv6-http-jabber
   websockify-sighandler
   novnc-promise
   publish-kvm-connection-information
@@ -126,6 +127,15 @@ shell-path = ${dash:location}/bin/dash
 6tunnel-path = ${6tunnel:location}/bin/6tunnel
 runner-path = $${directory:services}/6tunnel-smtp-submission
 
+[tunnel-ipv6-http-jabber]
+recipe = slapos.cookbook:ipv6toipv4
+ipv6 = $${slap-network-information:global-ipv6}
+ipv6-port = 8080
+ipv4 = $${slap-network-information:local-ipv4}
+ipv4-port = 8080
+shell-path = ${dash:location}/bin/dash
+6tunnel-path = ${6tunnel:location}/bin/6tunnel
+runner-path = $${directory:services}/6tunnel-http-jabber
 
 
 
