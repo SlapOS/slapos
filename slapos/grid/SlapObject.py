@@ -608,7 +608,7 @@ class Partition(object):
   def updateSupervisor(self):
     """Forces supervisord to reload its configuration"""
     # Note: This method shall wait for results from supervisord
-    #       In future it will be not needed, as update command
+    #       In future it will not be needed, as update command
     #       is going to be implemented on server side.
     self.logger.debug('Updating supervisord')
     supervisor = self.getSupervisorRPC()
