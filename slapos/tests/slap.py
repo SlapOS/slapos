@@ -78,7 +78,6 @@ class SlapMixin(unittest.TestCase):
     Returns the computer id used by the test
     """
     return self.id()
-    return os.environ.get('TEST_SLAP_COMPUTER_ID', self.id())
 
 
 class TestSlap(SlapMixin):
