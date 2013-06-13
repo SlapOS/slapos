@@ -130,7 +130,7 @@ def getCleanEnvironment(logger, home_path='/tmp'):
       removed_env.append(k)
   changed_env['HOME'] = env['HOME'] = home_path
   for k in sorted(changed_env.iterkeys()):
-    logger.debug('Overriden %s = %r' % (k, changed_env[k]))
+    logger.debug('Overridden %s = %r' % (k, changed_env[k]))
   logger.debug('Removed from environment: %s' % ', '.join(sorted(removed_env)))
   return env
 
@@ -175,7 +175,7 @@ def dropPrivileges(uid, gid, logger):
   Do tests to check if dropping was successful and that no system call is able
   to re-raise dropped privileges
 
-  Does nothing in case if uid and gid are not 0
+  Does nothing if uid and gid are not 0
   """
   # XXX-Cedric: remove format / just do a print, otherwise formatting is done
   # twice
@@ -327,7 +327,7 @@ def launchBuildout(path, buildout_binary, logger,
 
 
 def updateFile(file_path, content, mode=0o600):
-  """Creates an executable with "content" as content."""
+  """Creates or updates a file with "content" as content."""
   altered = False
   if not (os.path.isfile(file_path)) or \
      not (hashlib.md5(open(file_path).read()).digest() ==
@@ -343,12 +343,12 @@ def updateFile(file_path, content, mode=0o600):
 
 
 def updateExecutable(executable_path, content):
-  """Creates an executable with "content" as content."""
+  """Creates or updates an executable file with "content" as content."""
   return updateFile(executable_path, content, 0o700)
 
 
 def createPrivateDirectory(path):
-  """Creates directory belonging to root with umask 077"""
+  """Creates a directory belonging to root with umask 077"""
   if not os.path.isdir(path):
     os.mkdir(path)
   os.chmod(path, stat.S_IREAD | stat.S_IWRITE | stat.S_IEXEC)

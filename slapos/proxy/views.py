@@ -59,15 +59,17 @@ def xml2dict(xml):
   return result_dict
 
 
-def dict2xml(dictionnary):
+def dict2xml(dictionary):
   instance = etree.Element('instance')
-  for parameter_id, parameter_value in dictionnary.iteritems():
+  for parameter_id, parameter_value in dictionary.iteritems():
     # cast everything to string
     parameter_value = str(parameter_value)
     etree.SubElement(instance, "parameter",
                      attrib={'id': parameter_id}).text = parameter_value
-  return etree.tostring(instance, pretty_print=True,
-                                xml_declaration=True, encoding='utf-8')
+  return etree.tostring(instance,
+                        pretty_print=True,
+                        xml_declaration=True,
+                        encoding='utf-8')
 
 
 def partitiondict2partition(partition):
@@ -90,7 +92,7 @@ def partitiondict2partition(partition):
     slap_partition._parameter_dict['ip_list'] = address_list
     slap_partition._parameter_dict['slap_software_type'] = \
         partition['software_type']
-    if not partition['slave_instance_list'] == None:
+    if partition['slave_instance_list'] is not None:
       slap_partition._parameter_dict['slave_instance_list'] = \
           xml_marshaller.xml_marshaller.loads(partition['slave_instance_list'])
     slap_partition._connection_dict = xml2dict(partition['connection_xml'])
@@ -124,6 +126,7 @@ def before_request():
   g.db.cursor().executescript(schema)
   g.db.commit()
 
+
 @app.after_request
 def after_request(response):
   g.db.commit()
@@ -150,8 +153,7 @@ def getFullComputerInformation():
         partition))
     return xml_marshaller.xml_marshaller.dumps(slap_computer)
   else:
-    raise NotFoundError, "Only accept request for: %s" % \
-                             app.config['computer_id']
+    raise NotFoundError('Only accept request for: %s' % app.config['computer_id'])
 
 @app.route('/setComputerPartitionConnectionXml', methods=['POST'])
 def setComputerPartitionConnectionXml():
@@ -235,8 +237,7 @@ def loadComputerConfigurationFromXML():
 
     return 'done'
   else:
-    raise UnauthorizedError, "Only accept request for: %s" % \
-                             app.config['computer_id']
+    raise UnauthorizedError('Only accept request for: %s' % app.config['computer_id'])
 
 @app.route('/registerComputerPartition', methods=['GET'])
 def registerComputerPartition():
@@ -250,8 +251,7 @@ def registerComputerPartition():
     return xml_marshaller.xml_marshaller.dumps(
         partitiondict2partition(partition))
   else:
-    raise UnauthorizedError, "Only accept request for: %s" % \
-                             app.config['computer_id']
+    raise UnauthorizedError('Only accept request for: %s' % app.config['computer_id'])
 
 @app.route('/supplySupply', methods=['POST'])
 def supplySupply():
@@ -263,8 +263,7 @@ def supplySupply():
     else:
       execute_db('software', 'INSERT OR REPLACE INTO %s VALUES(?)', [url])
   else:
-    raise UnauthorizedError, "Only accept request for: %s" % \
-                             app.config['computer_id']
+    raise UnauthorizedError('Only accept request for: %s' % app.config['computer_id'])
   return '%r added' % url
 
 
@@ -358,18 +357,18 @@ def request_not_shared():
     address_list.append((address['reference'], address['address']))
 
   # XXX it should be ComputerPartition, not a SoftwareInstance
-  return xml_marshaller.xml_marshaller.dumps(SoftwareInstance(
-                            xml=partition['xml'],
-                            connection_xml=partition['connection_xml'],
-                            slap_computer_id=app.config['computer_id'],
-                            slap_computer_partition_id=partition['reference'],
-                            slap_software_release_url=partition['software_release'],
-                            slap_server_url='slap_server_url',
-                            slap_software_type=partition['software_type'],
-                            slave_instance_list=partition['slave_instance_list'],
-                            instance_guid=partition['reference'],
-                            ip_list=address_list
-                            ))
+  software_instance = SoftwareInstance(xml=partition['xml'],
+                                       connection_xml=partition['connection_xml'],
+                                       slap_computer_id=app.config['computer_id'],
+                                       slap_computer_partition_id=partition['reference'],
+                                       slap_software_release_url=partition['software_release'],
+                                       slap_server_url='slap_server_url',
+                                       slap_software_type=partition['software_type'],
+                                       slave_instance_list=partition['slave_instance_list'],
+                                       instance_guid=partition['reference'],
+                                       ip_list=address_list)
+
+  return xml_marshaller.xml_marshaller.dumps(software_instance)
 
 
 def request_slave():
@@ -379,7 +378,7 @@ def request_slave():
   1. slave table having information such as slave reference,
       connection information to slave (given by slave master),
       hosted_by and asked_by reference.
-  2. A dictionnary in slave_instance_list of selected slave master
+  2. A dictionary in slave_instance_list of selected slave master
       in which are stored slave_reference, software_type, slave_title and
       partition_parameter_kw stored as individual keys.
   """
@@ -413,8 +412,7 @@ def request_slave():
 
   partition = execute_db('partition', q, args, one=True)
   if partition is None:
-    app.logger.warning('No partition corresponding to slave request: %s' % \
-        args)
+    app.logger.warning('No partition corresponding to slave request: %s' % args)
     abort(404)
 
   # We set slave dictionary as described in docstring
@@ -424,13 +422,13 @@ def request_slave():
   new_slave['slap_software_type'] = software_type
   new_slave['slave_reference'] = slave_reference
 
-  for key in partition_parameter_kw :
-    if partition_parameter_kw[key] is not None :
+  for key in partition_parameter_kw:
+    if partition_parameter_kw[key] is not None:
       new_slave[key] = partition_parameter_kw[key]
 
   # Add slave to partition slave_list if not present else replace information
   slave_instance_list = partition['slave_instance_list']
-  if slave_instance_list == None:
+  if slave_instance_list is None:
     slave_instance_list = []
   else:
     slave_instance_list = xml_marshaller.xml_marshaller.loads(slave_instance_list)
@@ -455,12 +453,12 @@ def request_slave():
   # Add slave to slave table if not there
   slave = execute_db('slave', 'SELECT * FROM %s WHERE reference=?',
                      [slave_reference], one=True)
-  if slave is None :
+  if slave is None:
     execute_db('slave',
                'INSERT OR IGNORE INTO %s (reference,asked_by,hosted_by) values(:reference,:asked_by,:hosted_by)',
-               [slave_reference,partition_id,partition['reference']])
-    slave = execute_db('slave','SELECT * FROM %s WHERE reference=?',
-                     [slave_reference], one = True)
+               [slave_reference, partition_id, partition['reference']])
+    slave = execute_db('slave', 'SELECT * FROM %s WHERE reference=?',
+                       [slave_reference], one=True)
 
   address_list = []
   for address in execute_db('partition_network',
@@ -469,14 +467,13 @@ def request_slave():
     address_list.append((address['reference'], address['address']))
 
   # XXX it should be ComputerPartition, not a SoftwareInstance
-  return xml_marshaller.xml_marshaller.dumps(SoftwareInstance(
-                                _connection_dict=xml2dict(slave['connection_xml']),
-                                xml = instance_xml,
-                                slap_computer_id=app.config['computer_id'],
-                                slap_computer_partition_id=slave['hosted_by'],
-                                slap_software_release_url=partition['software_release'],
-                                slap_server_url='slap_server_url',
-                                slap_software_type=partition['software_type'],
-                                ip_list=address_list
-                                ))
+  software_instance = SoftwareInstance(_connection_dict=xml2dict(slave['connection_xml']),
+                                       xml=instance_xml,
+                                       slap_computer_id=app.config['computer_id'],
+                                       slap_computer_partition_id=slave['hosted_by'],
+                                       slap_software_release_url=partition['software_release'],
+                                       slap_server_url='slap_server_url',
+                                       slap_software_type=partition['software_type'],
+                                       ip_list=address_list)
 
+  return xml_marshaller.xml_marshaller.dumps(software_instance)
