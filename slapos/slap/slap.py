@@ -48,6 +48,7 @@ import zope.interface
 from interface import slap as interface
 from xml_marshaller import xml_marshaller
 
+# XXX fallback_logger to be deprecated together with the old CLI entry points.
 fallback_logger = logging.getLogger(__name__)
 fallback_handler = logging.StreamHandler()
 fallback_logger.setLevel(logging.INFO)
