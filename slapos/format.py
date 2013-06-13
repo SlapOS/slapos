@@ -516,7 +516,7 @@ class Partition(object):
     if alter_user:
       owner_pw = pwd.getpwnam(owner.name)
       chownDirectory(self.path, owner_pw.pw_uid, owner_pw.pw_gid)
-    os.chmod(self.path, 0o755)
+    os.chmod(self.path, 0o750)
 
 
 class User(object):
