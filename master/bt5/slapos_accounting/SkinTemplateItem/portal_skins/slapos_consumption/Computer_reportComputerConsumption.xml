@@ -1,0 +1,90 @@
+<?xml version="1.0"?>
+<ZopeData>
+  <record id="1" aka="AAAAAAAAAAE=">
+    <pickle>
+      <global name="PythonScript" module="Products.PythonScripts.PythonScript"/>
+    </pickle>
+    <pickle>
+      <dictionary>
+        <item>
+            <key> <string>Script_magic</string> </key>
+            <value> <int>3</int> </value>
+        </item>
+        <item>
+            <key> <string>_bind_names</string> </key>
+            <value>
+              <object>
+                <klass>
+                  <global name="NameAssignments" module="Shared.DC.Scripts.Bindings"/>
+                </klass>
+                <tuple/>
+                <state>
+                  <dictionary>
+                    <item>
+                        <key> <string>_asgns</string> </key>
+                        <value>
+                          <dictionary>
+                            <item>
+                                <key> <string>name_container</string> </key>
+                                <value> <string>container</string> </value>
+                            </item>
+                            <item>
+                                <key> <string>name_context</string> </key>
+                                <value> <string>context</string> </value>
+                            </item>
+                            <item>
+                                <key> <string>name_m_self</string> </key>
+                                <value> <string>script</string> </value>
+                            </item>
+                            <item>
+                                <key> <string>name_subpath</string> </key>
+                                <value> <string>traverse_subpath</string> </value>
+                            </item>
+                          </dictionary>
+                        </value>
+                    </item>
+                  </dictionary>
+                </state>
+              </object>
+            </value>
+        </item>
+        <item>
+            <key> <string>_body</string> </key>
+            <value> <string>from zExceptions import Unauthorized\n
+if REQUEST is not None:\n
+  raise Unauthorized\n
+\n
+portal = context.getPortalObject()\n
+computer = context\n
+\n
+reference = "TIOCONS-%s-%s" % (computer.getReference(), source_reference)\n
+version = "%s" % context.getPortalObject().portal_ids.generateNewId(\n
+  id_group=(\'slap_tioxml_consumption_reference\', reference), default=1)\n
+\n
+document = portal.consumption_document_module.newContent(\n
+  portal_type="Computer Consumption TioXML File",\n
+  source_reference=source_reference,\n
+  title="%s consumption (%s)" % (computer.getReference(), source_reference),\n
+  reference=reference,\n
+  version=version,\n
+  data=consumption_xml,\n
+  classification="personal",\n
+  publication_section="other",\n
+  contributor_value=computer,\n
+)\n
+document.submit()\n
+return document.getRelativeUrl()\n
+</string> </value>
+        </item>
+        <item>
+            <key> <string>_params</string> </key>
+            <value> <string>source_reference, consumption_xml, REQUEST=None</string> </value>
+        </item>
+        <item>
+            <key> <string>id</string> </key>
+            <value> <string>Computer_reportComputerConsumption</string> </value>
+        </item>
+      </dictionary>
+    </pickle>
+  </record>
+</ZopeData>

@@ -1,0 +1,141 @@
+<?xml version="1.0"?>
+<ZopeData>
+  <record id="1" aka="AAAAAAAAAAE=">
+    <pickle>
+      <global name="PythonScript" module="Products.PythonScripts.PythonScript"/>
+    </pickle>
+    <pickle>
+      <dictionary>
+        <item>
+            <key> <string>Script_magic</string> </key>
+            <value> <int>3</int> </value>
+        </item>
+        <item>
+            <key> <string>_bind_names</string> </key>
+            <value>
+              <object>
+                <klass>
+                  <global name="NameAssignments" module="Shared.DC.Scripts.Bindings"/>
+                </klass>
+                <tuple/>
+                <state>
+                  <dictionary>
+                    <item>
+                        <key> <string>_asgns</string> </key>
+                        <value>
+                          <dictionary>
+                            <item>
+                                <key> <string>name_container</string> </key>
+                                <value> <string>container</string> </value>
+                            </item>
+                            <item>
+                                <key> <string>name_context</string> </key>
+                                <value> <string>context</string> </value>
+                            </item>
+                            <item>
+                                <key> <string>name_m_self</string> </key>
+                                <value> <string>script</string> </value>
+                            </item>
+                            <item>
+                                <key> <string>name_subpath</string> </key>
+                                <value> <string>traverse_subpath</string> </value>
+                            </item>
+                          </dictionary>
+                        </value>
+                    </item>
+                  </dictionary>
+                </state>
+              </object>
+            </value>
+        </item>
+        <item>
+            <key> <string>_body</string> </key>
+            <value> <string>from zExceptions import Unauthorized\n
+if REQUEST is not None:\n
+  raise Unauthorized\n
+\n
+document = context\n
+portal = document.getPortalObject()\n
+result = []\n
+\n
+tioxml_dict = document.ComputerConsumptionTioXMLFile_parseXml()\n
+if tioxml_dict is None:\n
+  document.reject(comment="Not usable TioXML data")\n
+else:\n
+  packing_list_dict = {}\n
+  for movement_dict in tioxml_dict["movement"]:\n
+    reference = movement_dict[\'reference\']\n
+    if reference in packing_list_dict:\n
+      packing_list_dict[reference].append(movement_dict)\n
+    else:\n
+      packing_list_dict[reference] = [movement_dict]\n
+\n
+  computer = context.getContributorValue(portal_type="Computer")\n
+  for reference, movement_list in packing_list_dict.items():\n
+\n
+    # Time to create the PL\n
+    delivery_template = portal.restrictedTraverse(\n
+        portal.portal_preferences.getPreferredInstanceDeliveryTemplate())\n
+    delivery = delivery_template.Base_createCloneDocument(batch_mode=1)\n
+\n
+    # Find the partition / software instance / user\n
+    partition = portal.portal_catalog.getResultValue(\n
+      parent_uid=computer.getUid(),\n
+      reference=reference,\n
+      portal_type="Computer Partition",\n
+      validation_state="validated")\n
+    assert partition.getSlapState() == \'busy\'\n
+\n
+    instance = portal.portal_catalog.getResultValue(\n
+      default_aggregate_uid=partition.getUid(),\n
+      portal_type="Software Instance",\n
+      validation_state="validated")\n
+\n
+    subscription = instance.getSpecialiseValue(\n
+      portal_type="Hosting Subscription")\n
+\n
+    person = subscription.getDestinationSectionValue(\n
+      portal_type="Person")\n
+\n
+    delivery.edit(\n
+      title="%s Consumption Usage" % instance.getReference(),\n
+      destination=person.getRelativeUrl(),\n
+      destination_decision=person.getRelativeUrl(),\n
+      start_date=context.getCreationDate(),\n
+    )\n
+\n
+    result.append(delivery.getRelativeUrl())\n
+\n
+    for movement in movement_list:\n
+      service = portal.restrictedTraverse(movement[\'resource\'])\n
+      delivery.newContent(\n
+        portal_type="Sale Packing List Line",\n
+        title=movement[\'title\'],\n
+        quantity=movement[\'quantity\'],\n
+        aggregate_value_list=[partition, instance, subscription],\n
+        resource_value=service,\n
+        quantity_unit=service.getQuantityUnit(),\n
+      )\n
+    delivery.confirm(comment="Created from %s" % context.getRelativeUrl())\n
+    delivery.start()\n
+    delivery.stop()\n
+    delivery.deliver()\n
+    delivery.startBuilding()\n
+\n
+  document.share(comment="Created packing list: %s" % result)\n
+\n
+return result\n
+</string> </value>
+        </item>
+        <item>
+            <key> <string>_params</string> </key>
+            <value> <string>REQUEST=None</string> </value>
+        </item>
+        <item>
+            <key> <string>id</string> </key>
+            <value> <string>ComputerConsumptionTioXMLFile_solveInvoicingGeneration</string> </value>
+        </item>
+      </dictionary>
+    </pickle>
+  </record>
+</ZopeData>

@@ -524,31 +524,28 @@ class SlapTool(BaseTool):
   security.declareProtected(Permissions.AccessContentsInformation,
     'useComputer')
   def useComputer(self, computer_id, use_string):
-    """Entry point to reporting usage of a computer."""
-    #We retrieve XSD model
-    try:
-      computer_consumption_model = \
-        pkg_resources.resource_string(
-          'slapos.slap',
-          'doc/computer_consumption.xsd')
-    except IOError:
-      computer_consumption_model = \
-        pkg_resources.resource_string(
-          __name__,
-          '../../../../slapos/slap/doc/computer_consumption.xsd')
+    """
+    Entry point to reporting usage of a computer.
+    """
+    computer_consumption_model = \
+      pkg_resources.resource_string(
+        'slapos.slap',
+        'doc/computer_consumption.xsd')
 
     if self._validateXML(use_string, computer_consumption_model):
-      vifib_conduit_instance = VifibConduit.VifibConduit()
-
-      #We create the SPL
-      vifib_conduit_instance.addNode(
-        object=self, 
-        xml=use_string, 
-        computer_id=computer_id)
+      computer = self._getComputerDocument(computer_id)
+      tree = etree.fromstring(use_string)
+      source_reference = \
+          tree.find('transaction').find('reference').text or ""
+      source_reference = source_reference.encode("UTF-8")
+      computer.Computer_reportComputerConsumption(
+        source_reference,
+        use_string)
+      return "OK"
     else:
-      raise NotImplementedError("XML file sent by the node is not valid !")
-
-    return 'Content properly posted.'
+      self.REQUEST.response.setStatus(400)
+      self.REQUEST.response.setBody("")
+      return self.REQUEST.response
 
   @convertToREST
   def _computerBang(self, computer_id, message):
@@ -1237,12 +1234,6 @@ class SlapTool(BaseTool):
                              parent_uid=self._getComputerUidByReference(
                                 computer_reference))
 
-  def _getUsageReportServiceDocument(self):
-    service_document = self.Base_getUsageReportServiceDocument()
-    if service_document is not None:
-      return service_document
-    raise Unauthorized
-
   def _getSoftwareInstallationForComputer(self, url, computer_document):
     software_installation_list = self.getPortalObject().portal_catalog.unrestrictedSearchResults(
       portal_type='Software Installation',
@@ -1371,100 +1362,6 @@ class SlapTool(BaseTool):
         software_release_response._requested_state = 'available'
       software_release_list.append(software_release_response)
     return software_release_list
-
-  def _reportComputerUsage(self, computer, usage):
-    """Stores usage report of a computer."""
-    usage_report_portal_type = 'Usage Report'
-    usage_report_module = \
-      self.getPortalObject().getDefaultModule(usage_report_portal_type)
-    sale_packing_list_portal_type = 'Sale Packing List'
-    sale_packing_list_module = \
-      self.getPortalObject().getDefaultModule(sale_packing_list_portal_type)
-    sale_packing_list_line_portal_type = 'Sale Packing List Line'
-
-    software_release_portal_type = 'Software Release'
-    hosting_subscription_portal_type = 'Hosting Subscription'
-    software_instance_portal_type = 'Software Instance'
-
-    # We get the whole computer usage in one time
-    # We unmarshall it, then we create a single packing list,
-    # each line is a computer partition
-    unmarshalled_usage = xml_marshaller.xml_marshaller.loads(usage)
-
-    # Creates the Packing List
-    usage_report_sale_packing_list_document = \
-      sale_packing_list_module.newContent(
-        portal_type = sale_packing_list_portal_type,
-      )
-    usage_report_sale_packing_list_document.confirm()
-    usage_report_sale_packing_list_document.start()
-
-    # Adds a new SPL line for each Computer Partition
-    for computer_partition_usage in unmarshalled_usage\
-        .computer_partition_usage_list:
-      #Get good packing list line for a computer_partition
-      computer_partition_document = self.\
-                _getComputerPartitionDocument(
-                  computer.getReference(),
-                  computer_partition_usage.getId()
-                )
-      instance_setup_sale_packing_line = \
-          self._getDocument(
-                    portal_type='Sale Packing List Line',
-                    simulation_state='stopped',
-                    aggregate_relative_url=computer_partition_document\
-                      .getRelativeUrl(),
-                    resource_relative_url=self.portal_preferences\
-                      .getPreferredInstanceSetupResource()
-          )
-
-      # Fetching documents
-      software_release_document = \
-          self.getPortalObject().restrictedTraverse(
-              instance_setup_sale_packing_line.getAggregateList(
-                  portal_type=software_release_portal_type
-              )[0]
-          )
-      hosting_subscription_document = \
-          self.getPortalObject().restrictedTraverse(
-              instance_setup_sale_packing_line.getAggregateList(
-                  portal_type=hosting_subscription_portal_type
-              )[0]
-          )
-      software_instance_document = \
-          self.getPortalObject().restrictedTraverse(
-              instance_setup_sale_packing_line.getAggregateList(
-                  portal_type=software_instance_portal_type
-              )[0]
-          )
-      # Creates the usage document
-      usage_report_document = usage_report_module.newContent(
-        portal_type = usage_report_portal_type,
-        text_content = computer_partition_usage.usage,
-        causality_value = computer_partition_document
-      )
-      usage_report_document.validate()
-      # Creates the line
-      usage_report_sale_packing_list_document.newContent(
-        portal_type = sale_packing_list_line_portal_type,
-        # We assume that "Usage Report" is an existing service document
-        resource_value = self._getUsageReportServiceDocument(),
-        aggregate_value_list = [usage_report_document, \
-          computer_partition_document, software_release_document, \
-          hosting_subscription_document, software_instance_document
-        ]
-      )
-
-  def _reportUsage(self, computer_partition, usage):
-    """Warning : deprecated method."""
-    portal_type = 'Usage Report'
-    module = self.getPortalObject().getDefaultModule(portal_type)
-    usage_report = module.newContent(
-      portal_type=portal_type,
-      text_content=usage,
-      causality_value=computer_partition
-    )
-    usage_report.validate()
 
   @convertToREST
   def _softwareReleaseError(self, url, computer_id, error_log):

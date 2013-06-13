@@ -21,6 +21,7 @@ component_module
 computer_model_module
 computer_module
 computer_network_module
+consumption_document_module
 credential_update_module
 currency_module
 currency_module/EUR
@@ -57,6 +58,7 @@ sale_trade_condition_module
 service_module
 service_module/slapos_discount
 service_module/slapos_instance_subscription
+service_module/slapos_netdrive_consumption
 service_module/slapos_tax
 software_installation_module
 software_instance_module

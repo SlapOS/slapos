@@ -2001,3 +2001,23 @@ class TestOneTimeRestrictedAccessToken(TestSlapOSGroupRoleSecurityMixin):
         ['G-COMPANY', self.user_id], False)
     self.assertRoles(product, 'G-COMPANY', ['Assignor'])
     self.assertRoles(product, self.user_id, ['Owner'])
+
+class TestConsumptionDocumentModule(TestSlapOSGroupRoleSecurityMixin):
+  def test(self):
+    module = self.portal.consumption_document_module
+    self.assertSecurityGroup(module,
+        ['R-COMPUTER', 'zope', 'G-COMPANY'], False)
+    self.assertRoles(module, 'R-COMPUTER', ['Author'])
+    self.assertRoles(module, 'G-COMPANY', ['Author', 'Auditor'])
+    self.assertRoles(module, 'zope', ['Owner'])
+
+class TestComputerConsumptionTioXMLFile(TestSlapOSGroupRoleSecurityMixin):
+  def test_GroupCompany(self):
+    text = self.portal.consumption_document_module.newContent(
+        portal_type='Computer Consumption TioXML File')
+
+    self.assertSecurityGroup(text,
+        ['G-COMPANY', self.user_id],
+        False)
+    self.assertRoles(text, 'G-COMPANY', ['Assignor'])
+    self.assertRoles(text, self.user_id, ['Owner'])

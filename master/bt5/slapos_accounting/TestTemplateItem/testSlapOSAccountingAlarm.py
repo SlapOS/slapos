@@ -1994,3 +1994,59 @@ portal_workflow.doActionFor(context, action='edit_action', comment='Visited by O
     self.assertNotEqual(
         'Visited by OpenSaleOrder_reindexIfIndexedBeforeLine',
         open_order.workflow_history['edit_workflow'][-1]['comment'])
+
+class TestSlapOSGeneratePackingListFromTioXML(testSlapOSMixin):
+
+  def createTioXMLFile(self):
+    document = self.portal.consumption_document_module.newContent(
+      title=self.generateNewId(),
+      reference="TESTTIOCONS-%s" % self.generateNewId(),
+    )
+    return document
+
+  def _simulateComputerConsumptionTioXMLFile_solveInvoicingGeneration(self):
+    script_name = 'ComputerConsumptionTioXMLFile_solveInvoicingGeneration'
+    if script_name in self.portal.portal_skins.custom.objectIds():
+      raise ValueError('Precondition failed: %s exists in custom' % script_name)
+    createZODBPythonScript(self.portal.portal_skins.custom,
+                        script_name,
+                        '*args, **kwargs',
+                        '# Script body\n'
+"""portal_workflow = context.portal_workflow
+portal_workflow.doActionFor(context, action='edit_action', comment='Visited by ComputerConsumptionTioXMLFile_solveInvoicingGeneration') """ )
+    transaction.commit()
+
+  def _dropComputerConsumptionTioXMLFile_solveInvoicingGeneration(self):
+    script_name = 'ComputerConsumptionTioXMLFile_solveInvoicingGeneration'
+    if script_name in self.portal.portal_skins.custom.objectIds():
+      self.portal.portal_skins.custom.manage_delObjects(script_name)
+    transaction.commit()
+
+  def test_alarm(self):
+    document = self.createTioXMLFile()
+    document.submit()
+    self.tic()
+    self._simulateComputerConsumptionTioXMLFile_solveInvoicingGeneration()
+    try:
+      self.portal.portal_alarms.\
+        slapos_accounting_generate_packing_list_from_tioxml.activeSense()
+      self.tic()
+    finally:
+      self._dropComputerConsumptionTioXMLFile_solveInvoicingGeneration()
+    self.assertEqual(
+        'Visited by ComputerConsumptionTioXMLFile_solveInvoicingGeneration',
+        document.workflow_history['edit_workflow'][-1]['comment'])
+
+  def test_alarm_not_submitted(self):
+    document = self.createTioXMLFile()
+    self.tic()
+    self._simulateComputerConsumptionTioXMLFile_solveInvoicingGeneration()
+    try:
+      self.portal.portal_alarms.\
+        slapos_accounting_generate_packing_list_from_tioxml.activeSense()
+      self.tic()
+    finally:
+      self._dropComputerConsumptionTioXMLFile_solveInvoicingGeneration()
+    self.assertNotEqual(
+        'Visited by ComputerConsumptionTioXMLFile_solveInvoicingGeneration',
+        document.workflow_history['edit_workflow'][-1]['comment'])

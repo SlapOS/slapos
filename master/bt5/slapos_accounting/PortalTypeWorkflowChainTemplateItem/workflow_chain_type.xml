@@ -1,5 +1,9 @@
 <workflow_chain>
  <chain>
+  <type>Computer Consumption TioXML File</type>
+  <workflow>document_conversion_interaction_workflow, document_publication_workflow, edit_workflow</workflow>
+ </chain>
+ <chain>
   <type>Hosting Subscription</type>
   <workflow>slapos_accounting_interaction_workflow, slapos_api_invoicing_workflow</workflow>
  </chain>

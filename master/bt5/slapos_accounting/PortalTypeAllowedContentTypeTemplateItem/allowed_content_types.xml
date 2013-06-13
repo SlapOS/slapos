@@ -1,4 +1,7 @@
 <allowed_content_type_list>
+ <portal_type id="Consumption Document Module">
+  <item>Computer Consumption TioXML File</item>
+ </portal_type>
  <portal_type id="Order Tool">
   <item>SlapOS Accounting Quantity Updating Order Builder</item>
  </portal_type>

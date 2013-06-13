@@ -673,6 +673,109 @@ class TestSlapOSSlapToolComputerAccess(TestSlapOSSlapToolMixin):
     self.assertEqual(expected_xml, got_xml,
         '\n'.join([q for q in difflib.unified_diff(expected_xml.split('\n'), got_xml.split('\n'))]))
 
+  def test_useComputer_wrong_xml(self):
+    self.login(self.computer_id)
+    response = self.portal_slap.useComputer(
+        self.computer_id, "foobar")
+    self.assertEqual(400, response.status)
+    self.assertEqual("", response.body)
+
+  def assertReportComputerConsumption(self, args, kwargs):
+    stored = eval(open(self.computer_use_computer_simulator).read())
+    # do the same translation magic as in workflow
+    self.assertEqual(stored,
+      [{'recargs': args, 'reckwargs': kwargs,
+      'recmethod': 'Computer_reportComputerConsumption'}])
+
+  def test_useComputer_expected_xml(self):
+    self.computer_use_computer_simulator = tempfile.mkstemp()[1]
+    try:
+      self.login(self.computer_id)
+      self.computer.Computer_reportComputerConsumption = Simulator(
+        self.computer_use_computer_simulator,
+        'Computer_reportComputerConsumption')
+  
+      consumption_xml = """<?xml version='1.0' encoding='utf-8'?>
+<journal>
+<transaction type="Sale Packing List">
+<title>Resource consumptions</title>
+<start_date></start_date>
+<stop_date></stop_date>
+<reference>testusagé</reference>
+<currency></currency>
+<payment_mode></payment_mode>
+<category></category>
+<arrow type="Administration">
+<source></source>
+<destination></destination>
+</arrow>
+<movement>
+<resource>CPU Consumption</resource>
+<title>Title Sale Packing List Line 1</title>
+<reference>slappart0</reference>
+<quantity>42.42</quantity>
+<price>0.00</price>
+<VAT>None</VAT>
+<category>None</category>
+</movement>
+</transaction>
+</journal>"""
+  
+      response = self.portal_slap.useComputer(
+        self.computer_id, consumption_xml)
+      self.assertEqual(200, response.status)
+      self.assertEqual("OK", response.body)
+      self.assertReportComputerConsumption(
+        ("testusagé", consumption_xml,), {})
+    finally:
+      if os.path.exists(self.computer_use_computer_simulator):
+        os.unlink(self.computer_use_computer_simulator)
+
+  def test_useComputer_empty_reference(self):
+    self.computer_use_computer_simulator = tempfile.mkstemp()[1]
+    try:
+      self.login(self.computer_id)
+      self.computer.Computer_reportComputerConsumption = Simulator(
+        self.computer_use_computer_simulator,
+        'Computer_reportComputerConsumption')
+  
+      consumption_xml = """<?xml version='1.0' encoding='utf-8'?>
+<journal>
+<transaction type="Sale Packing List">
+<title>Resource consumptions</title>
+<start_date></start_date>
+<stop_date></stop_date>
+<reference></reference>
+<currency></currency>
+<payment_mode></payment_mode>
+<category></category>
+<arrow type="Administration">
+<source></source>
+<destination></destination>
+</arrow>
+<movement>
+<resource>CPU Consumption</resource>
+<title>Title Sale Packing List Line 1</title>
+<reference>slappart0</reference>
+<quantity>42.42</quantity>
+<price>0.00</price>
+<VAT>None</VAT>
+<category>None</category>
+</movement>
+</transaction>
+</journal>"""
+  
+      response = self.portal_slap.useComputer(
+        self.computer_id, consumption_xml)
+      self.assertEqual(200, response.status)
+      self.assertEqual("OK", response.body)
+      self.assertReportComputerConsumption(
+        ("", consumption_xml,), {})
+    finally:
+      if os.path.exists(self.computer_use_computer_simulator):
+        os.unlink(self.computer_use_computer_simulator)
+
+
 class TestSlapOSSlapToolInstanceAccess(TestSlapOSSlapToolMixin):
   def test_getComputerPartitionCertificate(self):
     self._makeComplexComputer()

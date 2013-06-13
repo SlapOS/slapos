@@ -117,6 +117,7 @@ slapos_administration
 slapos_cache
 slapos_cloud
 slapos_cloud_promise
+slapos_consumption
 slapos_core
 slapos_crm
 slapos_hypermedia
@@ -221,6 +222,7 @@ slapos_administration
 slapos_cache
 slapos_cloud
 slapos_cloud_promise
+slapos_consumption
 slapos_core
 slapos_crm
 slapos_hypermedia
@@ -321,6 +323,7 @@ slapos_administration
 slapos_cache
 slapos_cloud
 slapos_cloud_promise
+slapos_consumption
 slapos_core
 slapos_crm
 slapos_hypermedia
@@ -422,6 +425,7 @@ slapos_administration
 slapos_cache
 slapos_cloud
 slapos_cloud_promise
+slapos_consumption
 slapos_core
 slapos_crm
 slapos_hypermedia
@@ -520,6 +524,7 @@ slapos_administration
 slapos_cache
 slapos_cloud
 slapos_cloud_promise
+slapos_consumption
 slapos_core
 slapos_crm
 slapos_hypermedia
@@ -619,6 +624,7 @@ slapos_administration
 slapos_cache
 slapos_cloud
 slapos_cloud_promise
+slapos_consumption
 slapos_core
 slapos_crm
 slapos_hypermedia
@@ -717,6 +723,7 @@ slapos_administration
 slapos_cache
 slapos_cloud
 slapos_cloud_promise
+slapos_consumption
 slapos_core
 slapos_crm
 slapos_hypermedia
@@ -815,6 +822,7 @@ slapos_administration
 slapos_cache
 slapos_cloud
 slapos_cloud_promise
+slapos_consumption
 slapos_core
 slapos_crm
 slapos_hypermedia
@@ -913,6 +921,7 @@ slapos_administration
 slapos_cache
 slapos_cloud
 slapos_cloud_promise
+slapos_consumption
 slapos_core
 slapos_crm
 slapos_hypermedia
@@ -1013,6 +1022,7 @@ slapos_administration
 slapos_cache
 slapos_cloud
 slapos_cloud_promise
+slapos_consumption
 slapos_core
 slapos_crm
 slapos_hypermedia
