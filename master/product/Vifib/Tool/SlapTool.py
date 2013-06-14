@@ -931,7 +931,18 @@ class SlapTool(BaseTool):
         getAuthenticatedMember().getUserName()
     self._logAccess(user, software_instance.getReference(),
                     '#error bang called')
-    return software_instance.bang(bang_tree=True, comment=message)
+    timestamp = str(int(software_instance.getModificationDate()))
+    key = "%s_bangstamp" % software_instance.getReference()
+    result = "OK"
+
+    transition = self.getPortalObject().portal_workflow.getInfoFor(
+      software_instance, 'action', wf_id='instance_slap_interface_workflow')
+
+    if (self._getLastData(key) != timestamp) and \
+      (transition != 'bang'):
+      result = software_instance.bang(bang_tree=True, comment=message)
+      self._storeLastData(key, str(int(software_instance.getModificationDate())))
+    return result
 
   def _getAccessStatus(self, context_reference):
     memcached_dict = self._getMemcachedDict()
