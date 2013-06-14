@@ -4,6 +4,7 @@ working_directory = %(working_directory)s
 test_suite_directory = %(test_suite_directory)s
 log_directory = %(log_directory)s
 run_directory = %(run_directory)s
+srv_directory = %(srv_directory)s
 proxy_host = %(proxy_host)s
 proxy_port = %(proxy_port)s
 node_quantity = %(node_quantity)s
