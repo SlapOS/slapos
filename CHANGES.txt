@@ -9,6 +9,7 @@ New features:
  * slapconsole: Use readline for completion and history. [Jerome Perrin]
  * Initial windows support. [Jondy Zhao]
  * Support new/changed parameters in command line tools, defined in documentation. [Marco Mariani]
+ * Register: support for one-time authentication token. [Marco Mariani]
 
 Major Improvements:
 
