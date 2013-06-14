@@ -97,7 +97,7 @@ class Recipe(GenericBaseRecipe):
         certificate=self.options['httpd-cert-file'],
         key=self.options['httpd-key-file'],
         testnode_log_directory=self.options['log-directory'],
-        testnode_link_to_testsuite_directory=self.option['link-to-testsuite-directory'],
+        testnode_link_to_testsuite_directory=self.options['link-to-testsuite-directory'],
     )
     config_file = self.createFile(self.options['httpd-conf-file'],
        self.substituteTemplate(self.getTemplateFilename('httpd.conf.in'),
