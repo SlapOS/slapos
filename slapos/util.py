@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 
-import os, errno
+import errno
+import os
+
 
 def mkdir_p(path, mode=0o777):
     """\
@@ -17,10 +19,11 @@ def mkdir_p(path, mode=0o777):
         else:
             raise
 
+
 def chownDirectory(path, uid, gid):
   os.chown(path, uid, gid)
   for root, dirs, files in os.walk(path):
-    for items in dirs, files:
-      for item in items:
-        if not os.path.islink(os.path.join(root, item)):
-          os.chown(os.path.join(root, item), uid, gid)
+      for items in dirs, files:
+          for item in items:
+              if not os.path.islink(os.path.join(root, item)):
+                  os.chown(os.path.join(root, item), uid, gid)

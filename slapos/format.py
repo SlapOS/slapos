@@ -79,8 +79,8 @@ class OS(object):
   def _addWrapper(self, name):
     def wrapper(*args, **kw):
       arg_list = [repr(x) for x in args] + [
-              '%s=%r' % (x, y) for x, y in kw.iteritems()
-              ]
+          '%s=%r' % (x, y) for x, y in kw.iteritems()
+      ]
       self._logger.debug('%s(%s)' % (name, ', '.join(arg_list)))
       if not self._dry_run:
         getattr(self._os, name)(*args, **kw)
@@ -177,11 +177,11 @@ def _getDict(obj):
       return obj
 
   return {
-          key: _getDict(value)
-          for key, value in dikt.iteritems()
-          # do not attempt to serialize logger: it is both useless and recursive.
-          if not isinstance(value, logging.Logger)
-          }
+    key: _getDict(value)
+    for key, value in dikt.iteritems()
+    # do not attempt to serialize logger: it is both useless and recursive.
+    if not isinstance(value, logging.Logger)
+  }
 
 
 class Computer(object):
@@ -307,7 +307,6 @@ class Computer(object):
     with open(path_to_xml, 'wb') as fout:
       fout.write(new_pretty_xml)
 
-
   def backup_xml(self, path_to_archive, path_to_xml):
     """
     Stores a copy of the current xml file to an historical archive.
@@ -317,7 +316,6 @@ class Computer(object):
 
     with zipfile.ZipFile(path_to_archive, 'a') as archive:
       archive.writestr(saved_filename, xml_content, zipfile.ZIP_DEFLATED)
-
 
   @classmethod
   def load(cls, path_to_xml, reference, ipv6_interface):
@@ -336,11 +334,11 @@ class Computer(object):
 
     # Reconstructing the computer object from the xml
     computer = Computer(
-        reference = reference,
-        addr = dumped_dict['address'],
-        netmask = dumped_dict['netmask'],
-        ipv6_interface = ipv6_interface,
-        software_user = dumped_dict.get('software_user', 'slapsoft'),
+        reference=reference,
+        addr=dumped_dict['address'],
+        netmask=dumped_dict['netmask'],
+        ipv6_interface=ipv6_interface,
+        software_user=dumped_dict.get('software_user', 'slapsoft'),
     )
 
     for partition_dict in dumped_dict['partition_list']:
@@ -358,11 +356,11 @@ class Computer(object):
       address_list = partition_dict['address_list']
 
       partition = Partition(
-          reference = partition_dict['reference'],
-          path = partition_dict['path'],
-          user = user,
-          address_list = address_list,
-          tap = tap,
+          reference=partition_dict['reference'],
+          path=partition_dict['path'],
+          user=user,
+          address_list=address_list,
+          tap=tap,
       )
 
       computer.partition_list.append(partition)
@@ -725,12 +723,12 @@ class Interface(object):
       interface_name = self.name
     try:
       address_list = [
-              q
-              for q in netifaces.ifaddresses(interface_name)[socket.AF_INET6]
-              if isGlobalScopeAddress(q['addr'].split('%')[0])
-              ]
+          q
+          for q in netifaces.ifaddresses(interface_name)[socket.AF_INET6]
+          if isGlobalScopeAddress(q['addr'].split('%')[0])
+      ]
     except KeyError:
-      raise ValueError("%s must have at least one IPv6 address assigned" % \
+      raise ValueError("%s must have at least one IPv6 address assigned" %
                          interface_name)
     if sys.platform == 'cygwin':
       for q in address_list:
@@ -838,8 +836,8 @@ class Interface(object):
     while try_num > 0:
       addr = random.choice([q for q in netaddr.glob_to_iprange(
         netaddr.cidr_to_glob(self.ipv4_local_network))]).format()
-      if dict(addr=addr, netmask=netmask) not in \
-          self.getIPv4LocalAddressList():
+      if (dict(addr=addr, netmask=netmask) not in
+            self.getIPv4LocalAddressList()):
         # Checking the validity of the IPv6 address
         if self._addSystemAddress(addr, netmask, False):
           return dict(addr=addr, netmask=netmask)
@@ -926,8 +924,8 @@ class Interface(object):
       addr = ':'.join(address_dict['addr'].split(':')[:-1] + ['%x' % (
         random.randint(1, 65000), )])
       socket.inet_pton(socket.AF_INET6, addr)
-      if dict(addr=addr, netmask=netmask) not in \
-          self.getGlobalScopeAddressList():
+      if (dict(addr=addr, netmask=netmask) not in
+            self.getGlobalScopeAddressList()):
         # Checking the validity of the IPv6 address
         if self._addSystemAddress(addr, netmask):
           return dict(addr=addr, netmask=netmask)
@@ -947,8 +945,8 @@ def parse_computer_definition(conf, definition_path):
   netmask = None
   if computer_definition.has_option('computer', 'address'):
     address, netmask = computer_definition.get('computer', 'address').split('/')
-  if conf.alter_network and conf.interface_name is not None \
-      and conf.ipv4_local_network is not None:
+  if (conf.alter_network and conf.interface_name is not None
+        and conf.ipv4_local_network is not None):
     interface = Interface(logger=conf.logger,
                           name=conf.interface_name,
                           ipv4_local_network=conf.ipv4_local_network,
@@ -960,7 +958,7 @@ def parse_computer_definition(conf, definition_path):
       netmask=netmask,
       ipv6_interface=conf.ipv6_interface,
       software_user=computer_definition.get('computer', 'software_user'),
-    )
+  )
   partition_list = []
   for partition_number in range(int(conf.partition_amount)):
     section = 'partition_%s' % partition_number
@@ -1019,13 +1017,13 @@ def parse_computer_xml(conf, xml_path):
   for i in range(existing_partition_amount, partition_amount):
     # add new partitions
     partition = Partition(
-            reference='%s%s' % (conf.partition_base_name, i),
-            path=os.path.join(conf.instance_root, '%s%s' % (
-                conf.partition_base_name, i)),
-            user=User('%s%s' % (conf.user_base_name, i)),
-            address_list=None,
-            tap=Tap('%s%s' % (conf.tap_base_name, i))
-            )
+        reference='%s%s' % (conf.partition_base_name, i),
+        path=os.path.join(conf.instance_root, '%s%s' % (
+          conf.partition_base_name, i)),
+        user=User('%s%s' % (conf.user_base_name, i)),
+        address_list=None,
+        tap=Tap('%s%s' % (conf.tap_base_name, i))
+    )
     computer.partition_list.append(partition)
 
   return computer
@@ -1153,18 +1151,18 @@ class FormatConfig(object):
   def setConfig(self):
     # setup some nones
     for parameter in ['interface_name', 'partition_base_name', 'user_base_name',
-        'tap_base_name', 'ipv4_local_network', 'ipv6_interface']:
+          'tap_base_name', 'ipv4_local_network', 'ipv6_interface']:
       if getattr(self, parameter, None) is None:
         setattr(self, parameter, None)
 
     # Backward compatibility
     if not getattr(self, "interface_name", None) \
-        and getattr(self, "bridge_name", None):
+          and getattr(self, "bridge_name", None):
       setattr(self, "interface_name", self.bridge_name)
       self.logger.warning('bridge_name option is deprecated and should be '
           'replaced by interface_name.')
     if not getattr(self, "create_tap", None) \
-        and getattr(self, "no_bridge", None):
+          and getattr(self, "no_bridge", None):
       setattr(self, "create_tap", not self.no_bridge)
       self.logger.warning('no_bridge option is deprecated and should be '
           'replaced by create_tap.')

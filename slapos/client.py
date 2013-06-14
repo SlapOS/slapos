@@ -80,6 +80,7 @@ class ClientConfig(object):
     if self.cert_file:
         self.cert_file = os.path.expanduser(self.cert_file)
 
+
 def init(conf):
   """Initialize Slap instance, connect to server and create
   aliases to common software releases"""
@@ -122,13 +123,13 @@ def do_request(conf, local):
     conf.software_url = local[conf.software_url]
   try:
     partition = local['slap'].registerOpenOrder().request(
-      software_release = conf.software_url,
-      partition_reference = conf.reference,
-      partition_parameter_kw = conf.parameters,
-      software_type = conf.type,
-      filter_kw = conf.node,
-      state = conf.state,
-      shared = conf.slave
+      software_release=conf.software_url,
+      partition_reference=conf.reference,
+      partition_parameter_kw=conf.parameters,
+      software_type=conf.type,
+      filter_kw=conf.node,
+      state=conf.state,
+      shared=conf.slave
     )
     print "Instance requested.\nState is : %s." % partition.getState()
     print "Connection parameters of instance are:"
@@ -185,6 +186,7 @@ def do_console(local):
     readline.parse_and_bind("tab: complete")
 
     historyPath = os.path.expanduser("~/.slapconsolehistory")
+
     def save_history(historyPath=historyPath):
       readline.write_history_file(historyPath)
     if os.path.exists(historyPath):
