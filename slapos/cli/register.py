@@ -60,8 +60,11 @@ class RegisterCommand(Command):
                              'asks it interactively. NOTE: giving password as parameter '
                              'should be avoided for security reasons.')
 
+        ap.add_argument('--token',
+                        help="SlapOS Master authentication token "
+                             "(use '--token ask' for interactive prompt)")
+
         ap.add_argument('-t', '--create-tap',
-                        default=False,
                         action='store_true',
                         help='Will trigger creation of one virtual "tap" interface per '
                              'Partition and attach it to primary interface. Requires '
@@ -70,7 +73,6 @@ class RegisterCommand(Command):
                              ' (default: %(default)s)')
 
         ap.add_argument('-n', '--dry-run',
-                        default=False,
                         action='store_true',
                         help='Simulate the execution steps'
                              ' (default: %(default)s)')

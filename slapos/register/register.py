@@ -37,45 +37,48 @@ import shutil
 import stat
 import sys
 import tempfile
-import urllib2
 import subprocess
 from subprocess import CalledProcessError
 
-
-def authenticate(request, login, password):
-  auth = '%s:%s' % (login, password)
-  authheader = 'Basic %s' % auth.encode('base64').rstrip()
-  request.add_header('Authorization', authheader)
+import requests
 
 
 def check_credentials(url, login, password):
-  """Check if logged correctly on SlapOS Master"""
-  request = urllib2.Request(url)
-  authenticate(request, login, password)
-  return 'Logout' in urllib2.urlopen(request).read()
+  """Check if login and password are correct"""
+  req = requests.get(url, auth=(login, password), verify=False)
+  return 'Logout' in req.text
 
 
-def get_certificates(master_url_web, node_name, login, password, logger):
+def get_certificates(logger, master_url_web, node_name, token=None, login=None, password=None):
   """Download certificates from SlapOS Master"""
-  register_server_url = '/'.join([master_url_web, ("add-a-server/WebSection_registerNewComputer?dialog_id=WebSection_viewServerInformationDialog&dialog_method=WebSection_registerNewComputer&title={}&object_path=/erp5/web_site_module/hosting/add-a-server&update_method=&cancel_url=https%3A//www.vifib.net/add-a-server/WebSection_viewServerInformationDialog&Base_callDialogMethod=&field_your_title=Essai1&dialog_category=None&form_id=view".format(node_name))])
-  request = urllib2.Request(register_server_url)
-  authenticate(request, login, password)
 
-  try:
-    req = urllib2.urlopen(request)
-  except urllib2.HTTPError as exc:
+  if token:
+    req = requests.post('/'.join([master_url_web, 'add-a-server/WebSection_registerNewComputer']),
+                        data={'title': node_name},
+                        headers={'X-Access-Token': token},
+                        verify=False)
+  else:
+    register_server_url = '/'.join([master_url_web, ("add-a-server/WebSection_registerNewComputer?dialog_id=WebSection_viewServerInformationDialog&dialog_method=WebSection_registerNewComputer&title={}&object_path=/erp5/web_site_module/hosting/add-a-server&update_method=&cancel_url=https%3A//www.vifib.net/add-a-server/WebSection_viewServerInformationDialog&Base_callDialogMethod=&field_your_title=Essai1&dialog_category=None&form_id=view".format(node_name))])
+    req = requests.get(register_server_url, auth=(login, password), verify=False)
+
+  if not req.ok and 'Certificate still active.' in req.text:
     # raise a readable exception if the computer name is already used,
     # instead of an opaque 500 Internal Error.
     # this will not work with the new API.
-    if exc.getcode() == 500:
-      error_body = exc.read()
-      if 'Certificate still active.' in error_body:
-        logger.error('The node name "%s" is already in use. Please change the name, or revoke the active certificate if you want to replace the node.' % node_name)
-        sys.exit(1)
-    raise
+    logger.error('The node name "%s" is already in use. Please change the name, or revoke the active certificate if you want to replace the node.' % node_name)
+    sys.exit(1)
 
-  return req.read()
+  if req.status_code == 403:
+    if token:
+      msg = 'Please check the authentication token or require a new one.'
+    else:
+      msg = 'Please check username and password.'
+    logger.error('Access denied to the SlapOS Master. %s', msg)
+    sys.exit(1)
+  else:
+    req.raise_for_status()
 
+  return req.text
 
 
 def parse_certificates(source):
@@ -120,11 +123,10 @@ def get_slapos_conf_example():
   """
   Get slapos.cfg.example and return its path
   """
-  request = urllib2.Request('http://git.erp5.org/gitweb/slapos.core.git/blob_plain/HEAD:/slapos.cfg.example')
-  req = urllib2.urlopen(request)
   _, path = tempfile.mkstemp()
-  with open(path, 'w') as fout:
-    fout.write(req.read())
+  with open(path, 'wb') as fout:
+    req = requests.get('http://git.erp5.org/gitweb/slapos.core.git/blob_plain/HEAD:/slapos.cfg.example')
+    fout.write(req.content)
   return path
 
 
@@ -253,15 +255,24 @@ def gen_auth(conf):
 def do_register(conf):
   """Register new computer on SlapOS Master and generate slapos.cfg"""
 
-  for login, password in gen_auth(conf):
-    if check_credentials(conf.master_url_web, login, password):
-      break
-    conf.logger.warning('Wrong login/password')
-  else:
-    return 1
+  if conf.token == 'ask':
+    while True:
+      conf.token = raw_input('SlapOS Token: ').strip()
+      if conf.token:
+        break
 
-  # Get source code of page having certificate and key
-  certificate_key = get_certificates(conf.master_url_web, conf.node_name, login, password, conf.logger)
+  if conf.token:
+    certificate_key = get_certificates(conf.logger, conf.master_url_web, conf.node_name, token=conf.token)
+  else:
+    for login, password in gen_auth(conf):
+      if check_credentials(conf.master_url_web, login, password):
+        break
+      conf.logger.warning('Wrong login/password')
+    else:
+      return 1
+
+    certificate_key = get_certificates(conf.logger, conf.master_url_web, conf.node_name, login=login, password=password)
+
   # Parse certificate and key and get computer id
   certificate, key = parse_certificates(certificate_key)
   COMP = get_computer_name(certificate)
