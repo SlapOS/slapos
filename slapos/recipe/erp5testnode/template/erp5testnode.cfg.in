@@ -15,6 +15,7 @@ ipv6_address = %(ipv6_address)s
 test_suite_master_url = %(test_suite_master_url)s
 httpd_ip = %(httpd_ip)s
 httpd_port = %(httpd_port)s
+httpd_port2 = %(httpd_port2)s
 computer_id = %(computer_id)s
 server_url = %(server_url)s
 
