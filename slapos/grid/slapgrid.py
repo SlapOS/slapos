@@ -100,23 +100,23 @@ def check_missing_parameters(options):
 
 def check_missing_files(options):
   req_files = [
-          options.get('key_file'),
-          options.get('cert_file'),
-          options.get('master_ca_file'),
-          options.get('shacache-cert-file'),
-          options.get('shacache-key-file'),
-          options.get('shadir-cert-file'),
-          options.get('shadir-key-file'),
-          options.get('signature_private_key_file')
-          ]
+      options.get('key_file'),
+      options.get('cert_file'),
+      options.get('master_ca_file'),
+      options.get('shacache-cert-file'),
+      options.get('shacache-key-file'),
+      options.get('shadir-cert-file'),
+      options.get('shadir-key-file'),
+      options.get('signature_private_key_file')
+  ]
 
   req_dirs = [
-          options.get('certificate_repository_path')
-          ]
+      options.get('certificate_repository_path')
+  ]
 
   for f in req_files:
     if f and not os.path.exists(f):
-        raise RuntimeError('File %r does not exist.' % f)
+      raise RuntimeError('File %r does not exist.' % f)
 
   for d in req_dirs:
     if d and not os.path.isdir(d):
@@ -149,8 +149,8 @@ def merged_options(args, configp):
 
   # Parse cache / binary cache options
   # Backward compatibility about "binary-cache-url-blacklist" deprecated option
-  if options.get("binary-cache-url-blacklist") and not \
-      options.get("download-from-binary-cache-url-blacklist"):
+  if (options.get("binary-cache-url-blacklist") and not
+        options.get("download-from-binary-cache-url-blacklist")):
     options["download-from-binary-cache-url-blacklist"] = \
         options["binary-cache-url-blacklist"]
   options["download-from-binary-cache-url-blacklist"] = [
@@ -175,8 +175,8 @@ def random_delay(options, logger):
   maximal_delay = int(options.get('maximal_delay', '0'))
   if maximal_delay:
     duration = random.randint(1, maximal_delay)
-    logger.info('Sleeping for %s seconds. To disable this feature, ' \
-                'check --now parameter in slapgrid help.' % duration)
+    logger.info('Sleeping for %s seconds. To disable this feature, '
+                'check --now parameter in slapgrid help.', duration)
     time.sleep(duration)
 
 
@@ -185,10 +185,10 @@ def create_slapgrid_object(options, logger):
   if 'signature-certificate-list' in options:
     cert_marker = '-----BEGIN CERTIFICATE-----'
     signature_certificate_list = [
-            cert_marker + '\n' + q.strip()
-            for q in options['signature-certificate-list'].split(cert_marker)
-            if q.strip()
-            ]
+        cert_marker + '\n' + q.strip()
+        for q in options['signature-certificate-list'].split(cert_marker)
+        if q.strip()
+    ]
 
   op = options
   return Slapgrid(software_root=op['software_root'],
@@ -199,17 +199,17 @@ def create_slapgrid_object(options, logger):
                   supervisord_configuration_path=op['supervisord_configuration_path'],
                   buildout=op.get('buildout'),
                   logger=logger,
-                  force_periodicity = op.get('force_periodicity', False),
-                  maximum_periodicity = op.get('maximum_periodicity', 86400),
+                  force_periodicity=op.get('force_periodicity', False),
+                  maximum_periodicity=op.get('maximum_periodicity', 86400),
                   key_file=op.get('key_file'),
                   cert_file=op.get('cert_file'),
                   signature_private_key_file=op.get('signature_private_key_file'),
                   signature_certificate_list=signature_certificate_list,
                   download_binary_cache_url=op.get('download-binary-cache-url'),
                   upload_binary_cache_url=op.get('upload-binary-cache-url'),
-                  download_from_binary_cache_url_blacklist=\
+                  download_from_binary_cache_url_blacklist=
                       op.get('download-from-binary-cache-url-blacklist', []),
-                  upload_to_binary_cache_url_blacklist=\
+                  upload_to_binary_cache_url_blacklist=
                       op.get('upload-to-binary-cache-url-blacklist', []),
                   upload_cache_url=op.get('upload-cache-url'),
                   download_binary_dir_url=op.get('download-binary-dir-url'),
@@ -232,8 +232,8 @@ def create_slapgrid_object(options, logger):
 def check_required_only_partitions(existing, required):
   missing = set(required) - set(existing)
   if missing:
-      plural = ['s', ''][len(missing)==1]
-      raise ValueError('Unknown partition%s: %s' % (plural, ', '.join(sorted(missing))))
+    plural = ['s', ''][len(missing) == 1]
+    raise ValueError('Unknown partition%s: %s' % (plural, ', '.join(sorted(missing))))
 
 
 class Slapgrid(object):
@@ -334,8 +334,8 @@ class Slapgrid(object):
     invocation_list = [WATCHDOG_PATH]
     invocation_list.append("--master-url '%s' " % self.master_url)
     if self.certificate_repository_path:
-      invocation_list.append("--certificate-repository-path '%s'" \
-                               % self.certificate_repository_path)
+      invocation_list.append("--certificate-repository-path '%s'" %
+                                self.certificate_repository_path)
     invocation_list.append("--computer-id '%s'" % self.computer_id)
     return ' '.join(invocation_list)
 
@@ -371,7 +371,8 @@ class Slapgrid(object):
             'supervisord_pidfile': os.path.abspath(os.path.join(self.instance_root, 'var', 'run', 'supervisord.pid')),
             'supervisord_logfile_backups': '10',
             'watchdog_command': self.getWatchdogLine(),
-            })
+        }
+    )
 
   def getComputerPartitionList(self):
     try:
@@ -401,9 +402,9 @@ class Slapgrid(object):
             signature_certificate_list=self.signature_certificate_list,
             download_binary_cache_url=self.download_binary_cache_url,
             upload_binary_cache_url=self.upload_binary_cache_url,
-            download_from_binary_cache_url_blacklist=\
+            download_from_binary_cache_url_blacklist=
                 self.download_from_binary_cache_url_blacklist,
-            upload_to_binary_cache_url_blacklist=\
+            upload_to_binary_cache_url_blacklist=
                 self.upload_to_binary_cache_url_blacklist,
             upload_cache_url=self.upload_cache_url,
             download_binary_dir_url=self.download_binary_dir_url,
@@ -415,10 +416,10 @@ class Slapgrid(object):
             shadir_key_file=self.shadir_key_file)
         if state == 'available':
           completed_tag = os.path.join(software_path, '.completed')
-          if self.develop or (not os.path.exists(completed_tag) and \
-                 len(self.software_release_filter_list) == 0) or \
-                 url_hash in self.software_release_filter_list or \
-                 url_hash in (md5digest(uri) for uri in self.software_release_filter_list):
+          if (self.develop or (not os.path.exists(completed_tag) and
+                 len(self.software_release_filter_list) == 0) or
+                 url_hash in self.software_release_filter_list or
+                 url_hash in (md5digest(uri) for uri in self.software_release_filter_list)):
             try:
               software_release.building()
             except NotFoundError:
@@ -470,7 +471,6 @@ class Slapgrid(object):
     if not clean_run:
       return SLAPGRID_FAIL
     return SLAPGRID_SUCCESS
-
 
   def _launchSupervisord(self):
     launchSupervisord(self.supervisord_socket,
@@ -592,8 +592,8 @@ class Slapgrid(object):
     # Check if timestamp from server is more recent than local one.
     # If not: it's not worth processing this partition (nothing has
     # changed).
-    if computer_partition_id not in self.computer_partition_filter_list and \
-        (not self.develop) and os.path.exists(timestamp_path):
+    if (computer_partition_id not in self.computer_partition_filter_list and
+          not self.develop and os.path.exists(timestamp_path)):
       old_timestamp = open(timestamp_path).read()
       last_runtime = int(os.path.getmtime(timestamp_path))
       if timestamp:
@@ -808,7 +808,6 @@ class Slapgrid(object):
       return SLAPGRID_PROMISE_FAIL
     return SLAPGRID_SUCCESS
 
-
   def validateXML(self, to_be_validated, xsd_model):
     """Validates a given xml file"""
     #We retrieve the xsd model
@@ -819,8 +818,8 @@ class Slapgrid(object):
     try:
       document = etree.fromstring(to_be_validated)
     except (etree.XMLSyntaxError, etree.DocumentInvalid) as exc:
-      self.logger.info('Failed to parse this XML report :  %s\n%s' % \
-        (to_be_validated, _formatXMLError(exc)))
+      self.logger.info('Failed to parse this XML report :  %s\n%s' %
+                          (to_be_validated, _formatXMLError(exc)))
       self.logger.error(_formatXMLError(exc))
       return False
 
@@ -967,9 +966,8 @@ class Slapgrid(object):
             computer_partition.error('\n'.join(failed_script_list), logger=self.logger)
       # Whatever happens, don't stop processing other instances
       except Exception:
-        self.logger.info('Cannot run usage script(s) for %r: %s' % (
-                            computer_partition.getId(),
-                            traceback.format_exc()))
+        self.logger.info('Cannot run usage script(s) for %r: %s' %
+                          (computer_partition.getId(), traceback.format_exc()))
 
     #Now we loop through the different computer partitions to report
     report_usage_issue_cp_list = []
@@ -1002,7 +1000,7 @@ class Slapgrid(object):
               # report
             else:
               computer_partition_usage = self.slap.registerComputerPartition(
-                      self.computer_id, computer_partition_id)
+                  self.computer_id, computer_partition_id)
               computer_partition_usage.setUsage(usage)
               computer_partition_usage_list.append(computer_partition_usage)
               filename_delete_list.append(filename)
@@ -1015,14 +1013,12 @@ class Slapgrid(object):
 
       # Whatever happens, don't stop processing other instances
       except Exception:
-        self.logger.info('Cannot run usage script(s) for %r: %s' % (
-                            computer_partition.getId(),
-                            traceback.format_exc()))
+        self.logger.info('Cannot run usage script(s) for %r: %s' %
+                         (computer_partition.getId(), traceback.format_exc()))
 
     for computer_partition_usage in computer_partition_usage_list:
-      self.logger.info('computer_partition_usage_list: %s - %s' % (
-                          computer_partition_usage.usage,
-                          computer_partition_usage.getId()))
+      self.logger.info('computer_partition_usage_list: %s - %s' %
+                       (computer_partition_usage.usage, computer_partition_usage.getId()))
 
     #If there is, at least, one report
     if computer_partition_usage_list != []:
@@ -1041,8 +1037,8 @@ class Slapgrid(object):
           raise ValueError('XML file generated by asXML is not valid !')
       except Exception:
         issue = "Cannot report usage for %r: %s" % (
-                    computer_partition.getId(),
-                    traceback.format_exc())
+            computer_partition.getId(),
+            traceback.format_exc())
         self.logger.info(issue)
         computer_partition.error(issue, logger=self.logger)
         report_usage_issue_cp_list.append(computer_partition_id)

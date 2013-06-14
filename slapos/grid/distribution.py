@@ -62,4 +62,3 @@ def patched_linux_distribution(distname='', version='', id='',
             pass
 
     return platform.linux_distribution(distname, version, id, supported_dists, full_distribution_name)
-

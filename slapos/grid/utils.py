@@ -124,7 +124,7 @@ def getCleanEnvironment(logger, home_path='/tmp'):
   env = os.environ.copy()
   # Clean python related environment variables
   for k in PYTHON_ENVIRONMENT_REMOVE_LIST + SYSTEM_ENVIRONMENT_REMOVE_LIST \
-      + LOCALE_ENVIRONMENT_REMOVE_LIST:
+        + LOCALE_ENVIRONMENT_REMOVE_LIST:
     old = env.pop(k, None)
     if old is not None:
       removed_env.append(k)
@@ -197,8 +197,7 @@ def dropPrivileges(uid, gid, logger):
 
   # assert that privileges are dropped
   message_pre = 'After dropping to uid = %r and gid = %r ' \
-                'and group_list = %s' % (
-                            uid, gid, group_list)
+                'and group_list = %s' % (uid, gid, group_list)
   new_uid, new_gid, new_group_list = os.getuid(), os.getgid(), os.getgroups()
   if not (new_uid == uid and new_gid == gid and set(new_group_list) == group_list):
     raise OSError('%s new_uid = %r and new_gid = %r and '

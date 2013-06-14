@@ -43,7 +43,7 @@ from supervisor import xmlrpc
 
 from slapos.grid.utils import (md5digest, getCleanEnvironment,
                                SlapPopen, dropPrivileges, updateFile)
-from slapos.grid import utils # for mocked methods
+from slapos.grid import utils  # for mocked methods
 from slapos.slap.slap import NotFoundError
 from slapos.grid.svcbackend import getSupervisorRPC
 from slapos.grid.exception import (BuildoutFailedError, WrongPermissionError,
@@ -166,8 +166,8 @@ class Software(object):
       ]
 
       if (self.signature_private_key_file or
-          self.upload_cache_url or
-          self.upload_dir_url):
+            self.upload_cache_url or
+            self.upload_dir_url):
         buildout_parameter_list.append('buildout:networkcache-section=networkcache')
       for buildout_option, value in [
           ('%ssignature-private-key-file=%s', self.signature_private_key_file),
@@ -306,10 +306,7 @@ class Partition(object):
 
     uid, gid = self.getUserGroupId()
 
-    for name, path in [
-            ('certificate', self.cert_file),
-            ('key', self.key_file),
-            ]:
+    for name, path in [('certificate', self.cert_file), ('key', self.key_file)]:
       new_content = partition_certificate[name]
       old_content = None
       if os.path.exists(path):
@@ -324,7 +321,6 @@ class Partition(object):
         with os.fdopen(os.open(path, os.O_CREAT | os.O_WRONLY | os.O_TRUNC, 0o400), 'wb') as fout:
           fout.write(new_content)
         os.chown(path, uid, gid)
-
 
   def getUserGroupId(self):
     """Returns tuple of (uid, gid) of partition"""
@@ -341,17 +337,17 @@ class Partition(object):
     for runner in runner_list:
       self.partition_supervisor_configuration += '\n' + \
           program_partition_template % {
-                  'program_id': '_'.join([partition_id, runner]),
-                  'program_directory': self.instance_path,
-                  'program_command': os.path.join(path, runner),
-                  'program_name': runner + extension,
-                  'instance_path': self.instance_path,
-                  'user_id': uid,
-                  'group_id': gid,
-                  # As supervisord has no environment to inherit, setup a minimalistic one
-                  'HOME': pwd.getpwuid(uid).pw_dir,
-                  'USER': pwd.getpwuid(uid).pw_name,
-                  }
+              'program_id': '_'.join([partition_id, runner]),
+              'program_directory': self.instance_path,
+              'program_command': os.path.join(path, runner),
+              'program_name': runner + extension,
+              'instance_path': self.instance_path,
+              'user_id': uid,
+              'group_id': gid,
+              # As supervisord has no environment to inherit, setup a minimalistic one
+              'HOME': pwd.getpwuid(uid).pw_dir,
+              'USER': pwd.getpwuid(uid).pw_name,
+          }
 
   def updateSymlink(self, sr_symlink, software_path):
     if os.path.lexists(sr_symlink):
@@ -391,7 +387,7 @@ class Partition(object):
     if not os.path.exists(self.software_path):
       # XXX What should it raise?
       raise IOError('Software Release %s is not present on system.\n'
-          'Cannot deploy instance.'  % self.software_release_url)
+                    'Cannot deploy instance.' % self.software_release_url)
 
     # Generate buildout instance profile from template in Software Release
     template_location = os.path.join(self.software_path, 'instance.cfg')
@@ -412,13 +408,13 @@ class Partition(object):
     buildout_text = open(config_location).read()
     buildout_text += '\n\n' + pkg_resources.resource_string(__name__,
         'templates/buildout-tail.cfg.in') % {
-                'computer_id': self.computer_id,
-                'partition_id': self.partition_id,
-                'server_url': self.server_url,
-                'software_release_url': self.software_release_url,
-                'key_file': self.key_file,
-                'cert_file': self.cert_file,
-                }
+            'computer_id': self.computer_id,
+            'partition_id': self.partition_id,
+            'server_url': self.server_url,
+            'software_release_url': self.software_release_url,
+            'key_file': self.key_file,
+            'cert_file': self.cert_file,
+        }
     open(config_location, 'w').write(buildout_text)
     os.chmod(config_location, 0o640)
     # Try to find the best possible buildout:
@@ -482,7 +478,6 @@ class Partition(object):
                          logger=self.logger)
     self.generateSupervisorConfigurationFile()
 
-
   def generateSupervisorConfigurationFile(self):
     """
     Generates supervisord configuration file from template.
@@ -510,10 +505,10 @@ class Partition(object):
       group_partition_template = pkg_resources.resource_stream(__name__,
           'templates/group_partition_supervisord.conf.in').read()
       self.partition_supervisor_configuration = group_partition_template % {
-              'instance_id': partition_id,
-              'program_list': ','.join(['_'.join([partition_id, runner])
-                                        for runner in runner_list + service_list])
-              }
+          'instance_id': partition_id,
+          'program_list': ','.join(['_'.join([partition_id, runner])
+                                    for runner in runner_list + service_list])
+      }
       # Same method to add to service and run
       self.addServiceToGroup(partition_id, runner_list, self.run_path)
       self.addServiceToGroup(partition_id, service_list, self.service_path,
