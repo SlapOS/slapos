@@ -88,7 +88,7 @@ class Recipe(GenericBaseRecipe):
         lock_file=self.options['httpd-lock-file'],
         ip=self.options['httpd-ip'],
         port=self.options['httpd-port'],
-        port2=self.options['httpd-port2'],
+        software_access_port=self.options['httpd-software-access-port'],
         testnode_srv_directory=self.options['srv-directory'],
         error_log=os.path.join(self.options['httpd-log-directory'],
                                'httpd-error.log'),

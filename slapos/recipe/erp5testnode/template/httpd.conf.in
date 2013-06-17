@@ -73,10 +73,10 @@ SSLProxyEngine On
     </Directory>
 </VirtualHost>
 
-Listen [%(ip)s]:%(port2)s
-<VirtualHost *:%(port2)s>
+Listen [%(ip)s]:%(software_access_port)s
+<VirtualHost *:%(software_access_port)s>
     SSLEngine on
-    RewriteRule (.*) http://[%(ip)s]:%(port2)s/VirtualHostBase/https/[%(ip)s]:%(port2)s/VirtualHostRoot/$1 [L,P]
+    RewriteRule (.*) http://[%(ip)s]:%(software_access_port)s/VirtualHostBase/https/[%(ip)s]:%(software_access_port)s/VirtualHostRoot/$1 [L,P]
     DocumentRoot "%(testnode_software_directory)s"
     <Directory />
         Options FollowSymLinks
