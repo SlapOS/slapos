@@ -128,10 +128,10 @@ class testSlapOSMixin(ERP5TypeTestCase):
     self.portal.portal_caches._p_changed = 1
     transaction.commit()
     self.portal.portal_caches.updateCache()
-    if getattr(self.portal, 'set_up_once_called', 0):
+    if getattr(self.portal, 'is_site_bootstrapped', 0):
       return
     else:
-      self.portal.set_up_once_called = 1
+      self.portal.is_site_bootstrapped = 1
       self.bootstrapSite()
       self.portal._p_changed = 1
       transaction.commit()
