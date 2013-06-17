@@ -77,7 +77,7 @@ Listen [%(ip)s]:%(port2)s
 <VirtualHost *:%(port2)s>
     SSLEngine on
     RewriteRule (.*) http://[%(ip)s]:%(port2)s/VirtualHostBase/https/[%(ip)s]:%(port2)s/VirtualHostRoot/$1 [L,P]
-    DocumentRoot "%(testnode_link_to_testsuite_directory)s"
+    DocumentRoot "%(testnode_software_directory)s"
     <Directory />
         Options FollowSymLinks
         IndexOptions FancyIndexing
