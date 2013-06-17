@@ -695,8 +695,7 @@ class Interface(object):
     _, result = callAndRead(['ip', 'addr', 'list', self.name])
     self.attach_to_tap = 'DOWN' in result.split('\n', 1)[0]
 
-  def __getinitargs__(self):
-    return (self.name,)
+  # XXX no __getinitargs__, as instances of this class are never deserialized.
 
   def getIPv4LocalAddressList(self):
     """
