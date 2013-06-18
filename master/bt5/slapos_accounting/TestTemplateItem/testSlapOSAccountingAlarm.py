@@ -853,6 +853,7 @@ class TestHostingSubscription_requestUpdateOpenSaleOrder(testSlapOSMixin):
     # calculate stop date to be after now, begin with start date with precision
     # of month
     now = DateTime()
+    now = now.toZone(request_time.timezone())
     stop_date = getClosestDate(target_date=now, precision='month')
     stop_date = addToDate(stop_date, to_add={'second': -1})
     self.assertEqual(stop_date, line.getStopDate())
