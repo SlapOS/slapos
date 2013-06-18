@@ -102,6 +102,7 @@ active_process.postResult(active_result)
       'computer_model_module',
       'computer_module',
       'computer_network_module',
+      'consumption_document_module',
       'credential_recovery_module',
       'credential_request_module',
       'credential_update_module',
