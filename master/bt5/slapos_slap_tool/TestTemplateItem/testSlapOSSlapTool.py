@@ -1373,7 +1373,7 @@ class TestSlapOSSlapToolInstanceAccess(TestSlapOSSlapToolMixin):
       error_log = 'Please bang me'
       response = self.portal_slap.softwareInstanceBang(self.computer_id,
         partition_id, error_log)
-      self.assertEqual('None', response)
+      self.assertEqual('OK', response)
       created_at = rfc1123_date(DateTime())
       response = self.portal_slap.getComputerPartitionStatus(self.computer_id,
         partition_id)
@@ -2143,7 +2143,7 @@ class TestSlapOSSlapToolPersonAccess(TestSlapOSSlapToolMixin):
       error_log = 'Please bang me'
       response = self.portal_slap.softwareInstanceBang(self.computer_id,
         partition_id, error_log)
-      self.assertEqual('None', response)
+      self.assertEqual('OK', response)
       created_at = rfc1123_date(DateTime())
       response = self.portal_slap.getComputerPartitionStatus(self.computer_id,
         partition_id)
