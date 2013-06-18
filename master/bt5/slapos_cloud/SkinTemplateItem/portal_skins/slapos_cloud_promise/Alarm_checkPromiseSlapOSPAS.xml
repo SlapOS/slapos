@@ -52,10 +52,8 @@
             <key> <string>_body</string> </key>
             <value> <string>promise_dict = {\n
   \'IExtractionPlugin\': [\n
-    \'ERP5 Access Token Extraction Plugin\',\n
-  ],\n
-  \'IExtractionPlugin\': [\n
     \'SlapOS Machine Authentication Plugin\',\n
+    \'ERP5 Access Token Extraction Plugin\',\n
   ],\n
   \'IAuthenticationPlugin\': [\n
     \'SlapOS Machine Authentication Plugin\',\n
