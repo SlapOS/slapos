@@ -49,7 +49,7 @@ def check_credentials(url, login, password):
   return 'Logout' in req.text
 
 
-def get_certificates(logger, master_url_web, node_name, token=None, login=None, password=None):
+def get_certificate_key_pair(logger, master_url_web, node_name, token=None, login=None, password=None):
   """Download certificates from SlapOS Master"""
 
   if token:
@@ -78,16 +78,20 @@ def get_certificates(logger, master_url_web, node_name, token=None, login=None, 
   else:
     req.raise_for_status()
 
-  return req.text
+  return parse_certificate_key_pair(req.text)
 
 
-def parse_certificates(source):
+def parse_certificate_key_pair(html):
   """Parse html gotten from SlapOS Master to make certificate and key files"""
-  c_start = source.find("Certificate:")
-  c_end = source.find("</textarea>", c_start)
-  k_start = source.find("-----BEGIN PRIVATE KEY-----")
-  k_end = source.find("</textarea>", k_start)
-  return source[c_start:c_end], source[k_start:k_end]
+  c_start = html.find("Certificate:")
+  c_end = html.find("</textarea>", c_start)
+  certificate = html[c_start:c_end]
+
+  k_start = html.find("-----BEGIN PRIVATE KEY-----")
+  k_end = html.find("</textarea>", k_start)
+  key = html[k_start:k_end]
+
+  return certificate, key
 
 
 def get_computer_name(certificate):
@@ -262,7 +266,10 @@ def do_register(conf):
         break
 
   if conf.token:
-    certificate_key = get_certificates(conf.logger, conf.master_url_web, conf.node_name, token=conf.token)
+    certificate, key = get_certificate_key_pair(conf.logger,
+                                                conf.master_url_web,
+                                                conf.node_name,
+                                                token=conf.token)
   else:
     for login, password in gen_auth(conf):
       if check_credentials(conf.master_url_web, login, password):
@@ -271,16 +278,21 @@ def do_register(conf):
     else:
       return 1
 
-    certificate_key = get_certificates(conf.logger, conf.master_url_web, conf.node_name, login=login, password=password)
+    certificate, key = get_certificate_key_pair(conf.logger,
+                                                conf.master_url_web,
+                                                conf.node_name,
+                                                login=login,
+                                                password=password)
 
-  # Parse certificate and key and get computer id
-  certificate, key = parse_certificates(certificate_key)
+  # get computer id
   COMP = get_computer_name(certificate)
+
   # Getting configuration parameters
   conf.COMPConfig(slapos_configuration='/etc/opt/slapos/',
                   computer_id=COMP,
                   certificate=certificate,
                   key=key)
+
   # Save former configuration
   if not conf.dry_run:
     save_former_config(conf)
