@@ -939,8 +939,7 @@ class SlapTool(BaseTool):
     transition = self.getPortalObject().portal_workflow.getInfoFor(
       software_instance, 'action', wf_id='instance_slap_interface_workflow')
 
-    if (self._getLastData(key) != timestamp) and \
-      (transition != 'bang'):
+    if (self._getLastData(key) != timestamp):
       software_instance.bang(bang_tree=True, comment=message)
       self._storeLastData(key, str(int(software_instance.getModificationDate())))
     return "OK"
