@@ -1,4 +1,7 @@
 <base_category_list>
+ <portal_type id="Computer Consumption TioXML File">
+  <item>contributor</item>
+ </portal_type>
  <portal_type id="Consumption Document Module">
   <item>business_application</item>
  </portal_type>
