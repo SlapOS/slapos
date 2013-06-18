@@ -14,10 +14,69 @@ import time
 
 class TestSlapOSConfigurator(testSlapOSMixin):
 
+  def _testConfiguredPromiseViaAlarm(self, alarm_id):
+    """
+      Make sue one alarm is configured.
+    """
+    alarm = getattr(self.portal.portal_alarms, alarm_id, None)
+    self.assertNotEquals(alarm, None)
+    alarm.activeSense()
+    self.tic()
+    self.failIf(alarm.sense())
+
+  def testConfiguredPAS(self):
+    """ Make sure PAS is well configured, in this case
+        we trust on promise outcome."""
+    self._testConfiguredPromiseViaAlarm("promise_slapos_pas")
+
+  def testConfiguredPASExternal(self):
+    """ Make sure External PAS (Facebook, Google, Browser ID) 
+        is well configured, in this case we trust on promise outcome."""
+    self._testConfiguredPromiseViaAlarm("promise_slapos_pas_external")
+
+  def testConfiguredModuleGeneratorID(self):
+    """ Make sure Generator ID is well configured, in this 
+        case we trust on promise outcome."""
+    self._testConfiguredPromiseViaAlarm("promise_slapos_module_id_generator")
+
+  def testConfiguredShacacheWebSite(self):
+    """ Make sure Shacache WebSite is setuped by Alarm
+        case we trust on promise outcome."""
+    self._testConfiguredPromiseViaAlarm("promise_slapos_shacache_website")
+
+  def testConfiguredVolatileCacheViaPromise(self):
+    """ Make sure Volitile Cache was configured well, 
+        invoking the alarm to check """
+    self._testConfiguredPromiseViaAlarm("promise_memcached_server")
+
+  def testConfiguredPersistentCacheViaPromise(self):
+    """ Make sure Persistent Cache was configured well, 
+        invoking the alarm to check """
+    self._testConfiguredPromiseViaAlarm("promise_kumofs_server")
+
+  def testConfiguredConversionServerViaPromise(self):
+    """ Make sure Conversion Server was configured well, 
+        invoking the alarm to check """
+    self._testConfiguredPromiseViaAlarm("promise_conversion_server")
+
+  def testConfiguredCertificateAuthoringViaPromise(self):
+    """Make sure Certificate Authoring was configured well, 
+       invoking the alarm to check. """
+    self._testConfiguredPromiseViaAlarm("promise_certificate_autority_tool")
+
+  def testConfiguredTemplateToolViaPromise(self):
+    """ Make sure Template Tool Repositories was configured well, 
+        invoking the alarm to check """
+    self._testConfiguredPromiseViaAlarm("promise_template_tool_configuration")
+
   def testConfiguredVolatileCache(self):
+    """  Make sure Memcached is configured  
     """
-      Make sure Memcached is configured
-    """
+    if self.isLiveTest():
+      # This test is redundant with testConfiguredVolatileCacheViaPromise
+      # and it is only aims to verify if test environment is behaving as
+      # expected, nothing else, and if alamrs were invoked.
+      return
     from Products.ERP5Type.tests.ERP5TypeTestCase import \
                                          _getVolatileMemcachedServerDict
 
@@ -28,9 +87,14 @@ class TestSlapOSConfigurator(testSlapOSMixin):
                       url_string)
 
   def testConfiguredPersistentCache(self):
+    """ Make sure Kumofs is configured
     """
-      Make sure Kumofs is configured
-    """
+    if self.isLiveTest():
+      # This test is redundant with testConfiguredVolatileCacheViaPromise
+      # and it is only aims to verify if test environment is behaving as
+      # expected, nothing else, and if alamrs were invoked.
+      return
+
     from Products.ERP5Type.tests.ERP5TypeTestCase import\
             _getPersistentMemcachedServerDict
     memcached_tool = self.getPortal().portal_memcached
@@ -40,10 +104,14 @@ class TestSlapOSConfigurator(testSlapOSMixin):
                       url_string)
  
   def testConfiguredConversionServer(self):
-    """
-      Make sure Conversion Server (Cloudooo) is 
-      well configured
-    """
+    """ Make sure Conversion Server (Cloudooo) is 
+        well configured """
+    if self.isLiveTest():
+      # This test is redundant with testConfiguredVolatileCacheViaPromise
+      # and it is only aims to verify if test environment is behaving as
+      # expected, nothing else, and if alamrs were invoked.
+      return
+
     from Products.ERP5Type.tests.ERP5TypeTestCase import\
             _getConversionServerDict
     # set preference
@@ -53,19 +121,23 @@ class TestSlapOSConfigurator(testSlapOSMixin):
     self.assertEquals(preference_tool.getPreferredOoodocServerPortNumber(), conversion_dict['port'])
 
   def testConfiguredCertificateAuthoring(self):
-    """
-      Make sure Certificate Authoting is
-      well configured.
-    """
+    """ Make sure Certificate Authoting is
+        well configured. """
+
+    if self.isLiveTest():
+      # This test is redundant with testConfiguredVolatileCacheViaPromise
+      # and it is only aims to verify if test environment is behaving as
+      # expected, nothing else, and if alamrs were invoked.
+      return
+
     self.assertTrue(self.portal.hasObject('portal_certificate_authority'))
     self.assertEquals(os.environ['TEST_CA_PATH'],
           self.portal.portal_certificate_authority.certificate_authority_path)
 
   def testConfiguredBusinessTemplateList(self):
-    """
-      Make sure Installed business Templates are
-      what it is expected.
-    """
+    """ Make sure Installed business Templates are
+        what it is expected.  """
+
     expected_business_template_list = [
       'erp5_core',
       'erp5_xhtml_style',
