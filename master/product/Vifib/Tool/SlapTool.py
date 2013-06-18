@@ -541,7 +541,9 @@ class SlapTool(BaseTool):
       computer.Computer_reportComputerConsumption(
         source_reference,
         use_string)
-      return "OK"
+      self.REQUEST.response.setStatus(200)
+      self.REQUEST.response.setBody("OK")
+      return self.REQUEST.response
     else:
       self.REQUEST.response.setStatus(400)
       self.REQUEST.response.setBody("")
