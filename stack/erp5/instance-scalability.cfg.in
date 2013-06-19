@@ -1,0 +1,58 @@
+{% if slap_software_type == software_type -%}
+
+[request-common]
+recipe = slapos.cookbook:request.serialised
+software-url = ${slap-connection:software-release-url}
+sla = computer_guid
+return = url
+server-url = ${slap-connection:server-url}
+key-file = ${slap-connection:key-file}
+cert-file = ${slap-connection:cert-file}
+computer-id = ${slap-connection:computer-id}
+partition-id = ${slap-connection:partition-id}
+config =
+  use-ipv6
+  ${:extra-config}
+extra-config =
+config-use-ipv6 = {{ dumps(slapparameter_dict.get('use-ipv6', False)) }}
+
+[request-erp5-cluster]
+<=request-common
+name = ERP5 Cluster
+software-type = cluster
+
+
+[request-launcher-base]
+<=request-common
+return =
+extra-config = 
+
+
+[request-scalability-launcher-1]
+< = request-launcher-base
+name = scalability-launcher-1
+sla-computer_guid = {{ slapparameter_dict.get('scalability-launcher-computer-guid') }}
+
+# Generate launcher instance requests
+#{% for comp_name in slapparameter_dict.get('launcher-partition-dict', {'1': {}}) -%}
+#{%   set base_name = 'scalability-launcher-' ~ comp_name -%}
+#{%   set name = 'request-' ~ base_name -%}
+#[{{ name }}]
+#< = request-launcher-base
+#name = {{ base_name }}
+#sla-computer_guid = {{ comp_name }}
+#{% endfor -%}
+
+
+[publish]
+recipe = slapos.cookbook:publish.serialised
+{% for family_name, publishable in publish_dict.items() -%}
+{{   family_name }} = {{ '${' ~ publishable ~ '}' }}
+{% endfor -%}
+
+[buildout]
+parts = publish
+eggs-directory = {{ eggs_directory }}
+develop-eggs-directory = {{ develop_eggs_directory }}
+offline = true
+{% endif %}

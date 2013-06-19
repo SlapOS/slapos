@@ -1,0 +1,38 @@
+{% if software_type == slap_software_type -%}
+[buildout]
+parts =
+  scalability-launcher-instance
+
+eggs-directory = {{ eggs_directory }}
+develop-eggs-directory = {{ develop_eggs_directory }}
+offline = true
+
+[scalability-launcher-instance]
+recipe = slapos.cookbook:generic.scalability_launcher
+#
+# maybe be change this variable name
+# just need to know test_result url ?
+url = "http://foo.bar"
+# the suite to launch (?)
+test-suite-title = "ERP5-Sca"
+# Paths: Running wrappers
+scalability-launcher-wrapper = ${basedirectory:services}/scalability_launcher
+# Paths: Logs
+scalability-launcher-log = ${basedirectory:log}/scalability_launcher.log
+# Binary information
+scalability-launcher-binary = {{ parameter_dict['scalability-location'] }}/bin/scalability_launcher
+shell-path = {{ parameter_dict['dash-location'] }}/bin/dash
+
+# Directory creation
+[basedirectory]
+recipe = slapos.cookbook:mkdirectory
+log = ${rootdirectory:var}/log
+run = ${rootdirectory:var}/run
+services = ${rootdirectory:etc}/run
+
+[rootdirectory]
+recipe = slapos.cookbook:mkdirectory
+etc = ${buildout:directory}/etc
+var = ${buildout:directory}/var
+srv = ${buildout:directory}/srv
+bin = ${buildout:directory}/bin

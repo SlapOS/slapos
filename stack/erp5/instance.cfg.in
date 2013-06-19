@@ -164,6 +164,19 @@ extra-context =
 # Must match the key id in [switch-softwaretype] which uses this section.
     raw software_type cluster
 
+[dynamic-template-scalability-parameters]
+local-bt5-repository = {{ local_bt5_repository }}
+
+[dynamic-template-scalability]
+< = jinja2-template-base
+template = {{ template_scalability }}
+filename = instance-scalability.cfg
+extensions = jinja2.ext.do
+extra-context =
+    key local_bt5_repository dynamic-template-scalability-parameters:local-bt5-repository
+# Must match the key id in [switch-softwaretype] which uses this section.
+    raw software_type scalability
+
 [dynamic-template-balancer-parameters]
 apache = {{ apache_location }}
 openssl = {{ openssl_location }}
@@ -274,6 +287,7 @@ extra-context =
 recipe = slapos.cookbook:softwaretype
 default = ${template-erp5-single:rendered}
 cluster = ${dynamic-template-cluster-erp5:rendered}
+scalability = ${dynamic-template-scalability:rendered}
 kumofs = ${dynamic-template-kumofs:rendered}
 cloudooo = ${dynamic-template-cloudooo:rendered}
 zope = ${dynamic-template-zope:rendered}
