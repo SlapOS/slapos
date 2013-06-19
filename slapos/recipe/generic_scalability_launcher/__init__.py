@@ -27,10 +27,19 @@
 import os
 from slapos.recipe.librecipe import GenericBaseRecipe
 
+# options needed :
+#
+# url
+# scalability-launcher-log
+# scalability-launcher-binary
+# test-suite-title
+# shell-path
+# scalability-launcher-wrapper
+
 class Recipe(GenericBaseRecipe):
   def install(self):
 
-    # Var passed to template
+    # Variables used in the template
     config = dict(
       url=self.options['url'],
       scalability_launcher_log=self.options['scalability-launcher-log'],
@@ -39,7 +48,7 @@ class Recipe(GenericBaseRecipe):
       shell_path=self.options['shell-path'],
     )
 
-    # Executable creation and return the path
+    # Just create a wrapper 
     path_list = []
     path_list.append(self.createExecutable(self.options['scalability-launcher-wrapper'],
       self.substituteTemplate(self.getTemplateFilename('launcher.in'),
