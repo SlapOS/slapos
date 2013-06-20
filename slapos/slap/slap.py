@@ -39,7 +39,6 @@ import logging
 import re
 import socket
 import ssl
-import traceback
 import urllib
 import urlparse
 
@@ -160,7 +159,7 @@ class SoftwareRelease(SlapDocument):
         'computer_id': self.getComputerId(),
         'error_log': error_log})
     except Exception:
-      (logger or fallback_logger).error(traceback.format_exc())
+      (logger or fallback_logger).exception('')
 
   def available(self):
     self._connection_helper.POST('/availableSoftwareRelease', {
@@ -448,7 +447,7 @@ class ComputerPartition(SlapRequester):
         'computer_partition_id': self.getId(),
         'error_log': error_log})
     except Exception:
-      (logger or fallback_logger).error(traceback.format_exc())
+      (logger or fallback_logger).exception('')
 
   def bang(self, message):
     self._connection_helper.POST('/softwareInstanceBang', {
