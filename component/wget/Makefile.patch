@@ -1,0 +1,22 @@
+--- a/doc/Makefile.in	2013-06-20 13:13:09.032277064 +0200
++++ b/doc/Makefile.in	2012-08-05 22:17:16.000000000 +0200
+@@ -1647,7 +1647,7 @@
+ 	$(TEXI2POD) -D VERSION="$(VERSION)" $(srcdir)/wget.texi $@
+ 
+ $(MAN): wget.pod
+-	$(POD2MAN) --center="GNU Wget" --release="GNU Wget @VERSION@" $? > $@
++	$(POD2MAN) --errors=none --center="GNU Wget" --release="GNU Wget @VERSION@" $? > $@
+ 
+ #wget.cat: $(MAN)
+ #	nroff -man $? > $@
+--- a/doc/Makefile.am	2013-06-20 13:12:58.555667154 +0200
++++ b/doc/Makefile.am	2012-05-12 17:18:27.000000000 +0200
+@@ -57,7 +57,7 @@
+ 	$(TEXI2POD) -D VERSION="$(VERSION)" $(srcdir)/wget.texi $@
+ 
+ $(MAN): wget.pod
+-	$(POD2MAN) --center="GNU Wget" --release="GNU Wget @VERSION@" $? > $@
++	$(POD2MAN) --errors=none --center="GNU Wget" --release="GNU Wget @VERSION@" $? > $@
+ 
+ #wget.cat: $(MAN)
+ #	nroff -man $? > $@
