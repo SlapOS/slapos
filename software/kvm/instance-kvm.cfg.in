@@ -187,9 +187,8 @@ sla-instance_guid = $${slap-parameter:frontend-instance-guid}
 
 [publish-kvm-connection-information]
 recipe = slapos.cookbook:publish
-backend-url = https://[$${novnc-instance:ip}]:$${novnc-instance:port}/vnc_auto.html?host=[$${novnc-instance:ip}]&port=$${novnc-instance:port}&encrypt=1
-password = $${kvm-instance:passwd}
-url = $${request-slave-frontend:connection-url}/vnc_auto.html?host=$${request-slave-frontend:connection-domainname}&port=$${request-slave-frontend:connection-port}&encrypt=1&path=$${request-slave-frontend:connection-resource}
+backend-url = https://[$${novnc-instance:ip}]:$${novnc-instance:port}/vnc_auto.html?host=[$${novnc-instance:ip}]&port=$${novnc-instance:port}&encrypt=1&password=$${kvm-instance:passwd}
+url = $${request-slave-frontend:connection-url}/vnc_auto.html?host=$${request-slave-frontend:connection-domainname}&port=$${request-slave-frontend:connection-port}&encrypt=1&path=$${request-slave-frontend:connection-resource}&password=$${kvm-instance:passwd}
 
 
 [frontend-promise]
