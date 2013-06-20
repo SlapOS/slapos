@@ -573,10 +573,6 @@ class Slapgrid(object):
       # Try to process it anyway, it may need to be deleted.
       software_path = None
 
-    self.logger.info('  Software URL: %s' % software_url)
-    self.logger.info('  Software path: %s' % software_path)
-    self.logger.info('  Instance path: %s' % instance_path)
-
     periodicity = self.maximum_periodicity
     if software_path:
       # Get periodicity from periodicity file if not forced
@@ -614,6 +610,10 @@ class Slapgrid(object):
         except ValueError:
           os.remove(timestamp_path)
           self.logger.error(traceback.format_exc())
+
+    self.logger.info('  Software URL: %s' % software_url)
+    self.logger.info('  Software path: %s' % software_path)
+    self.logger.info('  Instance path: %s' % instance_path)
 
     local_partition = Partition(
       software_path=software_path,
