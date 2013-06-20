@@ -79,7 +79,7 @@ return json.dumps({\'access_token\': access_token.getId()})\n
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>Base_generateAccessTokenFromJS</string> </value>
+            <value> <string>Base_generateComputerTokenFromJS</string> </value>
         </item>
       </dictionary>
     </pickle>

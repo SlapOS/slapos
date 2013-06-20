@@ -60,15 +60,24 @@ return """\n
   var methods;\n
 \n
   methods = {\n
-    click: function () {\n
+    click: function (method) {\n
       $(this).click(function() {\n
         $(this).parent().parent()\n
-          .slapostoken("generateToken");\n
+          .slapostoken(method);\n
         return false;\n
       });\n
     },\n
-    generateToken: function () {\n
-      $.ajax("./Base_generateAccessTokenFromJS", {\n
+    generateComputerToken: function () {\n
+      $.ajax("./Base_generateComputerTokenFromJS", {\n
+        context: $(this),\n
+        success: function(data) {\n
+          $(this).attr("class", "alignr")\n
+                 .text("New token: " + data.access_token);\n
+        }\n
+      })\n
+    },\n
+    generateCredentialToken: function () {\n
+      $.ajax("./Base_generateCredentialTokenFromJS", {\n
         context: $(this),\n
         success: function(data) {\n
           $(this).attr("class", "alignr")\n
@@ -93,8 +102,10 @@ return """\n
   };\n
 }(jQuery));\n
 \n
-$("#tokengenerationlink")\n
-  .slapostoken("click");\n
+$("#computertokengenerationlink")\n
+  .slapostoken("click", "generateComputerToken");\n
+$("#credentialtokengenerationlink")\n
+  .slapostoken("click", "generateCredentialToken");\n
 </script>\n
 """\n
 
