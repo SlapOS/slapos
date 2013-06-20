@@ -445,14 +445,12 @@ class Slapgrid(object):
         except (SystemExit, KeyboardInterrupt):
           raise
         except Exception:
-          self.logger.error('Problem while reporting error, continuing:\n%s' %
-                            traceback.format_exc())
+          self.logger.exception('Problem while reporting error, continuing:')
 
       # For everything else: log it, send it, continue.
       except Exception:
-        exc = traceback.format_exc()
-        self.logger.error(exc)
-        software_release.error(exc, logger=self.logger)
+        self.logger.exception('')
+        software_release.error(traceback.format_exc(), logger=self.logger)
         clean_run = False
       else:
         if state == 'available':
@@ -464,7 +462,7 @@ class Slapgrid(object):
           try:
             software_release.destroyed()
           except (NotFoundError, ServerError):
-            print traceback.format_exc()
+            self.logger.exception('')
     self.logger.info('Finished software releases.')
 
     # Return success value
@@ -583,7 +581,7 @@ class Slapgrid(object):
             periodicity = int(open(periodicity_path).read())
           except ValueError:
             os.remove(periodicity_path)
-            self.logger.error(traceback.format_exc())
+            self.logger.exception('')
 
     # Check if timestamp from server is more recent than local one.
     # If not: it's not worth processing this partition (nothing has
@@ -609,7 +607,7 @@ class Slapgrid(object):
               os.remove(timestamp_path)
         except ValueError:
           os.remove(timestamp_path)
-          self.logger.error(traceback.format_exc())
+          self.logger.exception('')
 
     self.logger.info('  Software URL: %s' % software_url)
     self.logger.info('  Software path: %s' % software_path)
@@ -708,26 +706,17 @@ class Slapgrid(object):
         computer_partition.error(traceback.format_exc(), logger=self.logger)
         raise
 
-      # Buildout failed: send log but don't print it to output (already done)
-      except BuildoutFailedError as exc:
-        try:
-          computer_partition.error(exc, logger=self.logger)
-        except (SystemExit, KeyboardInterrupt):
-          raise
-        except Exception:
-          self.logger.error('Problem during reporting error, continuing:\n%s' %
-                            traceback.format_exc())
-
-      # For everything else: log it, send it, continue.
       except Exception as exc:
-        self.logger.error(traceback.format_exc())
+        # if Buildout failed: send log but don't print it to output (already done)
+        if not isinstance(exc, BuildoutFailedError):
+          # For everything else: log it, send it, continue.
+          self.logger.exception('')
         try:
           computer_partition.error(exc, logger=self.logger)
         except (SystemExit, KeyboardInterrupt):
           raise
         except Exception:
-          self.logger.error('Problem during reporting error, continuing:\n%s' %
-                            traceback.format_exc())
+          self.logger.exception('Problem while reporting error, continuing:')
 
     return filtered_computer_partition_list
 
@@ -773,31 +762,20 @@ class Slapgrid(object):
         except (SystemExit, KeyboardInterrupt):
           raise
         except Exception:
-          self.logger.error('Problem during reporting error, continuing:\n%s' %
-                            traceback.format_exc())
+          self.logger.exception('Problem while reporting error, continuing:')
 
-      # Buildout failed: send log but don't print it to output (already done)
-      except BuildoutFailedError as exc:
-        clean_run = False
-        try:
-          computer_partition.error(exc, logger=self.logger)
-        except (SystemExit, KeyboardInterrupt):
-          raise
-        except Exception:
-          self.logger.error('Problem during reporting error, continuing:\n%s' %
-                            traceback.format_exc())
-
-      # For everything else: log it, send it, continue.
       except Exception as exc:
         clean_run = False
-        self.logger.error(traceback.format_exc())
+        # if Buildout failed: send log but don't print it to output (already done)
+        if not isinstance(exc, BuildoutFailedError):
+          # For everything else: log it, send it, continue.
+          self.logger.exception('')
         try:
           computer_partition.error(exc, logger=self.logger)
         except (SystemExit, KeyboardInterrupt):
           raise
         except Exception:
-          self.logger.error('Problem during reporting error, continuing:\n%s' %
-                            traceback.format_exc())
+          self.logger.exception('Problem while reporting error, continuing:')
 
     self.logger.info('Finished computer partitions.')
 
@@ -966,8 +944,8 @@ class Slapgrid(object):
             computer_partition.error('\n'.join(failed_script_list), logger=self.logger)
       # Whatever happens, don't stop processing other instances
       except Exception:
-        self.logger.info('Cannot run usage script(s) for %r: %s' %
-                          (computer_partition.getId(), traceback.format_exc()))
+        self.logger.exception('Cannot run usage script(s) for %r:' %
+                                  computer_partition.getId())
 
     #Now we loop through the different computer partitions to report
     report_usage_issue_cp_list = []
@@ -1013,8 +991,8 @@ class Slapgrid(object):
 
       # Whatever happens, don't stop processing other instances
       except Exception:
-        self.logger.info('Cannot run usage script(s) for %r: %s' %
-                         (computer_partition.getId(), traceback.format_exc()))
+        self.logger.exception('Cannot run usage script(s) for %r:' %
+                                computer_partition.getId())
 
     for computer_partition_usage in computer_partition_usage_list:
       self.logger.info('computer_partition_usage_list: %s - %s' %
@@ -1088,9 +1066,9 @@ class Slapgrid(object):
           raise
         except Exception:
           clean_run = False
+          self.logger.exception('')
           exc = traceback.format_exc()
           computer_partition.error(exc, logger=self.logger)
-          self.logger.error(exc)
         try:
           computer_partition.destroyed()
         except NotFoundError:
