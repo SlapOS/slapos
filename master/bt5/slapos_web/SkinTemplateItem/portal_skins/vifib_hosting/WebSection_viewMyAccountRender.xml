@@ -90,7 +90,8 @@
                         <string>my_certificate_request_button</string>
                         <string>my_certificate_revoke_button</string>
                         <string>my_update_credential_button</string>
-                        <string>my_token_generate_button</string>
+                        <string>my_computer_token_generate_button</string>
+                        <string>my_credential_token_generate_button</string>
                         <string>your_ad</string>
                       </list>
                     </value>
