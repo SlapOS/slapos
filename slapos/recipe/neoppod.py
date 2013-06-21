@@ -25,6 +25,7 @@
 #
 ##############################################################################
 from slapos.recipe.librecipe import GenericBaseRecipe
+from zc.buildout import UserError
 
 class NeoBaseRecipe(GenericBaseRecipe):
 
@@ -39,7 +40,7 @@ class NeoBaseRecipe(GenericBaseRecipe):
       # allocated.
       # Only then can this recipe start succeeding and actually doing anything
       # useful, as per NEO deploying constraints.
-      raise Exception('"masters" parameter is mandatory')
+      raise UserError('"masters" parameter is mandatory')
     option_list = [
       options['binary'],
       '-l', options['logfile'],
