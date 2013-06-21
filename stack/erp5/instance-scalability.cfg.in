@@ -24,24 +24,18 @@ config =
   ${:extra-config}
 extra-config =
 config-use-ipv6 = {{ dumps(slapparameter_dict.get('use-ipv6', False)) }}
-return = url
-
 
 [launcher-param]
 binary-path = ${rootdirectory:bin}/launcher
 wrapper-path = ${rootdirectory:bin}/launcher
-log-path = ${basedirectory:log}/scalability_launcher.log
+log-path = ${basedirectory:log}/launcher.log
 test-suite-title = {{ slapparameter_dict.get('test-suite-title', '') }}
 
 [binary-wrap-launcher]
 recipe = slapos.cookbook:wrapper
-command-line = "{{ parameter_dict['launcher-location'] }}/bin/launcher \
---test_suite_title Bonjour --log ${launcher-param:log-path}"
+command-line = "${launcher-param:binary-path} --test_suite_title ${launcher-param:test-suite-title} --log ${launcher-param:log-path}"
 output = ${launcher-param:binary-path}
-
-#
-# voir : instance-mariadb.cfg.in ... (ou pas)
-#
+return = url
 
 
 [basedirectory]
