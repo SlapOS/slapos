@@ -230,6 +230,9 @@ def create_slapgrid_object(options, logger):
 
 
 def check_required_only_partitions(existing, required):
+  """
+  Verify the existence of partitions specified by the --only parameter
+  """
   missing = set(required) - set(existing)
   if missing:
     plural = ['s', ''][len(missing) == 1]
@@ -886,7 +889,7 @@ class Slapgrid(object):
           '../../../../slapos/slap/doc/partition_consumption.xsd')
 
     clean_run = True
-    # Loop on the different computer partitions
+    # Loop over the different computer partitions
     computer_partition_list = self.FilterComputerPartitionList(
        slap_computer_usage.getComputerPartitionList())
 
@@ -894,7 +897,7 @@ class Slapgrid(object):
       try:
         computer_partition_id = computer_partition.getId()
 
-        #We want execute all the script in the report folder
+        #We want to execute all the script in the report folder
         instance_path = os.path.join(self.instance_root,
             computer_partition.getId())
         report_path = os.path.join(instance_path, 'etc', 'report')
@@ -915,7 +918,7 @@ class Slapgrid(object):
           invocation_list = []
           invocation_list.append(os.path.join(instance_path, 'etc', 'report',
             script))
-          #We add the xml_file name in the invocation_list
+          #We add the xml_file name to the invocation_list
           #f = tempfile.NamedTemporaryFile()
           #name_xml = '%s.%s' % ('slapreport', os.path.basename(f.name))
           #path_to_slapreport = os.path.join(instance_path, 'var', name_xml)
@@ -1026,8 +1029,8 @@ class Slapgrid(object):
         try:
           computer_partition_id = computer_partition.getId()
           try:
-             software_url = computer_partition.getSoftwareRelease().getURI()
-             software_path = os.path.join(self.software_root, md5digest(software_url))
+            software_url = computer_partition.getSoftwareRelease().getURI()
+            software_path = os.path.join(self.software_root, md5digest(software_url))
           except (NotFoundError, TypeError):
             software_url = None
             software_path = None
