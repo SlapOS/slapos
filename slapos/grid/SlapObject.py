@@ -43,7 +43,7 @@ from supervisor import xmlrpc
 
 from slapos.grid.utils import (md5digest, getCleanEnvironment,
                                SlapPopen, dropPrivileges, updateFile)
-from slapos.grid import utils  # for mocked methods
+from slapos.grid import utils  # for methods that could be mocked, access them through the module
 from slapos.slap.slap import NotFoundError
 from slapos.grid.svcbackend import getSupervisorRPC
 from slapos.grid.exception import (BuildoutFailedError, WrongPermissionError,
