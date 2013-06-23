@@ -141,24 +141,33 @@ class Software(object):
     finally:
       shutil.rmtree(cache_dir)
 
+  def _set_ownership(self, path):
+    """
+    If running as root: copy ownership of software_root to path
+    If not running as root: do nothing
+    """
+    if os.getuid():
+      return
+    root_stat = os.stat(self.software_root)
+    path_stat = os.stat(path)
+    if (root_stat.st_uid != path_stat.st_uid or
+          root_stat.st_gid != path_stat.st_gid):
+      os.chown(path, root_stat.st_uid, root_stat.st_gid)
+
   def _install_from_buildout(self):
     """ Fetches buildout configuration from the server, run buildout with
     it. If it fails, we notify the server.
     """
-    root_stat_info = os.stat(self.software_root)
+    root_stat = os.stat(self.software_root)
     os.environ = getCleanEnvironment(logger=self.logger,
-                                     home_path=pwd.getpwuid(root_stat_info.st_uid).pw_dir)
+                                     home_path=pwd.getpwuid(root_stat.st_uid).pw_dir)
     if not os.path.isdir(self.software_path):
       os.mkdir(self.software_path)
+      self._set_ownership(self.software_path)
+
     extends_cache = tempfile.mkdtemp()
-    if os.getuid() == 0:
-      # In case when running as root copy ownership, to simplify logic
-      for path in [self.software_path, extends_cache]:
-        path_stat_info = os.stat(path)
-        if (root_stat_info.st_uid != path_stat_info.st_uid or
-              root_stat_info.st_gid != path_stat_info.st_gid):
-          os.chown(path, root_stat_info.st_uid,
-                   root_stat_info.st_gid)
+    self._set_ownership(extends_cache)
+
     try:
       buildout_parameter_list = [
           'buildout:extends-cache=%s' % extends_cache,
@@ -197,7 +206,6 @@ class Software(object):
       shutil.rmtree(extends_cache)
 
   def createProfileIfMissing(self, buildout_cfg, url):
-    root_stat_info = os.stat(self.software_root)
     if not os.path.exists(buildout_cfg):
       with open(buildout_cfg, 'wb') as fout:
         fout.write(textwrap.dedent("""\
@@ -207,7 +215,7 @@ class Software(object):
             [buildout]
             extends = {url}
             """.format(url=url)))
-        os.chown(buildout_cfg, root_stat_info.st_uid, root_stat_info.st_gid)
+      self._set_ownership(buildout_cfg)
 
   def uploadSoftwareRelease(self, tarpath):
     """
