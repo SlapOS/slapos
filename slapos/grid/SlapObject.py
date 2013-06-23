@@ -154,6 +154,27 @@ class Software(object):
           root_stat.st_gid != path_stat.st_gid):
       os.chown(path, root_stat.st_uid, root_stat.st_gid)
 
+  def _additional_buildout_parameters(self, extends_cache):
+    yield 'buildout:extends-cache=%s' % extends_cache
+    yield 'buildout:directory=%s' % self.software_path
+
+    if (self.signature_private_key_file or
+          self.upload_cache_url or
+          self.upload_dir_url):
+      yield 'buildout:networkcache-section=networkcache'
+
+    for networkcache_option, value in [
+        ('signature-private-key-file', self.signature_private_key_file),
+        ('upload-cache-url', self.upload_cache_url),
+        ('upload-dir-url', self.upload_dir_url),
+        ('shacache-cert-file', self.shacache_cert_file),
+        ('shacache-key-file', self.shacache_key_file),
+        ('shadir-cert-file', self.shadir_cert_file),
+        ('shadir-key-file', self.shadir_key_file)
+    ]:
+      if value:
+        yield 'networkcache:%s=%s' % (networkcache_option, value)
+
   def _install_from_buildout(self):
     """ Fetches buildout configuration from the server, run buildout with
     it. If it fails, we notify the server.
@@ -169,53 +190,35 @@ class Software(object):
     self._set_ownership(extends_cache)
 
     try:
-      buildout_parameter_list = [
-          'buildout:extends-cache=%s' % extends_cache,
-          'buildout:directory=%s' % self.software_path
-      ]
-
-      if (self.signature_private_key_file or
-            self.upload_cache_url or
-            self.upload_dir_url):
-        buildout_parameter_list.append('buildout:networkcache-section=networkcache')
-      for buildout_option, value in [
-          ('%ssignature-private-key-file=%s', self.signature_private_key_file),
-          ('%supload-cache-url=%s', self.upload_cache_url),
-          ('%supload-dir-url=%s', self.upload_dir_url),
-          ('%sshacache-cert-file=%s', self.shacache_cert_file),
-          ('%sshacache-key-file=%s', self.shacache_key_file),
-          ('%sshadir-cert-file=%s', self.shadir_cert_file),
-          ('%sshadir-key-file=%s', self.shadir_key_file)
-      ]:
-        if value:
-          buildout_parameter_list.append(buildout_option % ('networkcache:', value))
-
       buildout_cfg = os.path.join(self.software_path, 'buildout.cfg')
-      self.createProfileIfMissing(buildout_cfg, self.url)
+      if not os.path.exists(buildout_cfg):
+        self._create_buildout_profile(buildout_cfg, self.url)
 
-      buildout_parameter_list.extend(['-c', buildout_cfg])
+      additional_parameters = list(self._additional_buildout_parameters(extends_cache))
+      additional_parameters.extend(['-c', buildout_cfg])
+
       utils.bootstrapBuildout(path=self.software_path,
                               buildout=self.buildout,
                               logger=self.logger,
-                              additional_buildout_parameter_list=buildout_parameter_list)
+                              additional_buildout_parameter_list=additional_parameters)
+
       utils.launchBuildout(path=self.software_path,
                            buildout_binary=os.path.join(self.software_path, 'bin', 'buildout'),
                            logger=self.logger,
-                           additional_buildout_parameter_list=buildout_parameter_list)
+                           additional_buildout_parameter_list=additional_parameters)
     finally:
       shutil.rmtree(extends_cache)
 
-  def createProfileIfMissing(self, buildout_cfg, url):
-    if not os.path.exists(buildout_cfg):
-      with open(buildout_cfg, 'wb') as fout:
-        fout.write(textwrap.dedent("""\
-            # Created by slapgrid. extends {url}
-            # but you can change it for development purposes.
+  def _create_buildout_profile(self, buildout_cfg, url):
+    with open(buildout_cfg, 'wb') as fout:
+      fout.write(textwrap.dedent("""\
+          # Created by slapgrid. extends {url}
+          # but you can change it for development purposes.
 
-            [buildout]
-            extends = {url}
-            """.format(url=url)))
-      self._set_ownership(buildout_cfg)
+          [buildout]
+          extends = {url}
+          """.format(url=url)))
+    self._set_ownership(buildout_cfg)
 
   def uploadSoftwareRelease(self, tarpath):
     """
