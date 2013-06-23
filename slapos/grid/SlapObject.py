@@ -53,6 +53,9 @@ from slapos.grid.watchdog import getWatchdogID
 
 REQUIRED_COMPUTER_PARTITION_PERMISSION = 0o750
 
+# XXX not very clean. this is changed when testing
+PROGRAM_PARTITION_TEMPLATE = pkg_resources.resource_stream(__name__,
+            'templates/program_partition_supervisord.conf.in').read()
 
 class Software(object):
   """This class is responsible for installing a software release"""
@@ -343,11 +346,9 @@ class Partition(object):
   def addServiceToGroup(self, partition_id,
                         runner_list, path, extension=''):
     uid, gid = self.getUserGroupId()
-    program_partition_template = pkg_resources.resource_stream(__name__,
-            'templates/program_partition_supervisord.conf.in').read()
     for runner in runner_list:
       self.partition_supervisor_configuration += '\n' + \
-          program_partition_template % {
+          PROGRAM_PARTITION_TEMPLATE % {
               'program_id': '_'.join([partition_id, runner]),
               'program_directory': self.instance_path,
               'program_command': os.path.join(path, runner),
