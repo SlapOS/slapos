@@ -28,9 +28,9 @@
 #
 ##############################################################################
 
-import time
 import os
 import sys
+import time
 import xmlrpclib
 import socket as socketlib
 import subprocess
@@ -59,7 +59,7 @@ def launchSupervisord(socket, configuration_file, logger):
           logger.info('Supervisor in shutdown procedure, will check again later.')
           trynum += 1
           time.sleep(2 * trynum)
-      except Exception as e:
+      except Exception:
         # In case if there is problem with connection, assume that supervisord
         # is not running and try to run it
         break
@@ -109,7 +109,7 @@ def launchSupervisord(socket, configuration_file, logger):
         logger.warning('Wrong status name %(statename)r and code '
           '%(statecode)r, trying again' % status)
         trynum += 1
-      except Exception as e:
+      except Exception:
         current_timeout = 5 * trynum
         trynum += 1
       else:
