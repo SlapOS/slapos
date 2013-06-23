@@ -47,6 +47,7 @@ from slapos.grid import slapgrid
 from slapos.cli_legacy.slapgrid import parseArgumentTupleAndReturnSlapgridObject
 from slapos.grid.utils import md5digest
 from slapos.grid.watchdog import Watchdog, getWatchdogID
+from slapos.grid import SlapObject
 
 dummylogger = logging.getLogger()
 
@@ -131,6 +132,29 @@ class BasicMixin:
       pass
 
     slapos.grid.utils.bootstrapBuildout = dummy
+
+    SlapObject.PROGRAM_PARTITION_TEMPLATE = textwrap.dedent("""\
+        [program:%(program_id)s]
+        directory=%(program_directory)s
+        command=%(program_command)s
+        process_name=%(program_name)s
+        autostart=false
+        autorestart=false
+        startsecs=0
+        startretries=0
+        exitcodes=0
+        stopsignal=TERM
+        stopwaitsecs=60
+        stopasgroup=true
+        killasgroup=true
+        user=%(user_id)s
+        group=%(group_id)s
+        serverurl=AUTO
+        redirect_stderr=true
+        stdout_logfile=%(instance_path)s/.%(program_id)s.log
+        stderr_logfile=%(instance_path)s/.%(program_id)s.log
+        environment=USER="%(USER)s",LOGNAME="%(USER)s",HOME="%(HOME)s"
+        """)
 
   def launchSlapgrid(self, develop=False):
     self.setSlapgrid(develop=develop)
@@ -608,7 +632,7 @@ chmod 755 etc/run/wrapper
     self.assertEqual(self.launchSlapgrid(), slapgrid.SLAPGRID_SUCCESS)
     self.assertItemsEqual(os.listdir(self.instance_root), ['0', 'etc', 'var'])
     self.assertItemsEqual(os.listdir(instance.partition_path),
-                          ['.0_wrapper.log', '.0_wrapper.log.1', 'buildout.cfg', 'etc', 'software_release', 'worked'])
+                          ['.0_wrapper.log', 'buildout.cfg', 'etc', 'software_release', 'worked'])
     tries = 50
     expected_text = 'Signal handler called with signal 15'
     while tries > 0:
@@ -680,7 +704,7 @@ exit 1
     self.assertItemsEqual(os.listdir(self.instance_root),
                           ['0', 'etc', 'var'])
     self.assertItemsEqual(os.listdir(instance.partition_path),
-                          ['.0_wrapper.log', '.0_wrapper.log.1', 'buildout.cfg', 'etc', 'software_release', 'worked'])
+                          ['.0_wrapper.log', 'buildout.cfg', 'etc', 'software_release', 'worked'])
     tries = 50
     expected_text = 'Signal handler called with signal 15'
     while tries > 0:
