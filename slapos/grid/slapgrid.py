@@ -643,8 +643,6 @@ class Slapgrid(object):
       try:
         local_partition.install()
         computer_partition.available()
-      except Exception:
-        raise
       finally:
         # Instance has to be stopped even if buildout/reporting is wrong.
         local_partition.stop()
