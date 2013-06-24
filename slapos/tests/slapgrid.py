@@ -25,6 +25,7 @@
 #
 ##############################################################################
 
+from __future__ import absolute_import
 import httplib
 import logging
 import os
@@ -40,6 +41,7 @@ import unittest
 import urlparse
 
 import xml_marshaller
+from mock import patch
 
 import slapos.slap.slap
 import slapos.grid.utils
@@ -48,6 +50,7 @@ from slapos.cli_legacy.slapgrid import parseArgumentTupleAndReturnSlapgridObject
 from slapos.grid.utils import md5digest
 from slapos.grid.watchdog import Watchdog, getWatchdogID
 from slapos.grid import SlapObject
+
 
 dummylogger = logging.getLogger()
 
@@ -232,13 +235,13 @@ class MasterMixin(BasicMixin):
 
   def _patchHttplib(self):
     """Overrides httplib"""
-    import mock.httplib
+    import slapos.tests.mock.httplib
 
     self.saved_httplib = {}
 
-    for fake in vars(mock.httplib):
+    for fake in vars(slapos.tests.mock.httplib):
       self.saved_httplib[fake] = getattr(httplib, fake, None)
-      setattr(httplib, fake, getattr(mock.httplib, fake))
+      setattr(httplib, fake, getattr(slapos.tests.mock.httplib, fake))
 
   def _unpatchHttplib(self):
     """Restores httplib overriding"""
@@ -1021,7 +1024,6 @@ class TestSlapgridCPPartitionProcessing(MasterMixin, unittest.TestCase):
     instance.timestamp = timestamp
     instance.requested_state = 'started'
     instance.software.setPeriodicity(1)
-    self.grid.force_periodicity = True
 
     self.launchSlapgrid()
     partition = os.path.join(self.instance_root, '0')
@@ -1037,36 +1039,7 @@ class TestSlapgridCPPartitionProcessing(MasterMixin, unittest.TestCase):
     self.assertItemsEqual(os.listdir(partition),
                           ['.timestamp', 'buildout.cfg', 'software_release', 'worked'])
 
-  def test_partition_periodicity_is_not_overloaded_if_forced(self):
-    """
-    If periodicity file in software directory but periodicity is forced
-    periodicity will be the one given by parameter
-    1. We set force_periodicity parameter to True
-    2. We put a periodicity file in the software release directory
-        with an unwanted periodicity
-    3. We process partition list and wait more than unwanted periodicity
-    4. We relaunch, partition should not be processed
-    """
-    computer = ComputerForTest(self.software_root, self.instance_root)
-    instance = computer.instance_list[0]
-    timestamp = str(int(time.time()))
 
-    instance.timestamp = timestamp
-    instance.requested_state = 'started'
-    unwanted_periodicity = 2
-    instance.software.setPeriodicity(unwanted_periodicity)
-    self.grid.force_periodicity = True
-
-    self.launchSlapgrid()
-    time.sleep(unwanted_periodicity + 1)
-
-    self.setSlapgrid()
-    self.grid.force_periodicity = True
-    self.assertEqual(self.grid.processComputerPartitionList(), slapgrid.SLAPGRID_SUCCESS)
-    self.assertNotEqual(unwanted_periodicity, self.grid.maximum_periodicity)
-    self.assertEqual(computer.sequence,
-                     ['getFullComputerInformation', 'availableComputerPartition',
-                      'startedComputerPartition', 'getFullComputerInformation'])
 
   def test_one_partition_periodicity_from_file_does_not_disturb_others(self):
     """
@@ -1191,6 +1164,49 @@ class TestSlapgridCPPartitionProcessing(MasterMixin, unittest.TestCase):
                                                    '.timestamp')),
                      last_runtime)
     self.assertNotEqual(wanted_periodicity, self.grid.maximum_periodicity)
+
+  def test_one_partition_is_never_processed_when_periodicity_is_negative(self):
+    """
+    Checks that a partition is not processed when
+    its periodicity is negative
+    1. We setup one instance and set periodicity at -1
+    2. We mock the install method from slapos.grid.slapgrid.Partition
+    3. We launch slapgrid once so that .timestamp file is created and check that install method is
+    indeed called (through mocked_method.called
+    4. We launch slapgrid anew and check that install as not been called again
+    """
+
+    timestamp = str(int(time.time()))
+    computer = ComputerForTest(self.software_root, self.instance_root, 1, 1)
+    instance = computer.instance_list[0]
+    instance.software.setPeriodicity(-1)
+    instance.timestamp = timestamp
+    with patch.object(slapos.grid.slapgrid.Partition, 'install', return_value=None) as mock_method:
+      self.launchSlapgrid()
+      self.assertTrue(mock_method.called)
+      self.launchSlapgrid()
+      self.assertEqual(mock_method.call_count, 1)
+
+  def test_one_partition_is_always_processed_when_periodicity_is_zero(self):
+    """
+    Checks that a partition is always processed when
+    its periodicity is 0
+    1. We setup one instance and set periodicity at 0
+    2. We mock the install method from slapos.grid.slapgrid.Partition
+    3. We launch slapgrid once so that .timestamp file is created
+    4. We launch slapgrid anew and check that install has been called twice (one time because of the
+    new setup and one time because of periodicity = 0)
+    """
+
+    timestamp = str(int(time.time()))
+    computer = ComputerForTest(self.software_root, self.instance_root, 1, 1)
+    instance = computer.instance_list[0]
+    instance.software.setPeriodicity(0)
+    instance.timestamp = timestamp
+    with patch.object(slapos.grid.slapgrid.Partition, 'install', return_value=None) as mock_method:
+      self.launchSlapgrid()
+      self.launchSlapgrid()
+      self.assertEqual(mock_method.call_count, 2)
 
   def test_one_partition_buildout_fail_does_not_disturb_others(self):
     """
@@ -1551,26 +1567,6 @@ class TestSlapgridArgumentTuple(SlapgridInitialization):
     parser = parseArgumentTupleAndReturnSlapgridObject
     slapgrid_object = parser(*self.default_arg_tuple)[0]
     self.assertFalse(slapgrid_object.develop)
-
-  def test_force_periodicity_if_periodicity_not_given(self):
-    """
-      Check if not giving --maximum-periodicity triggers "force_periodicity"
-      option to be false.
-    """
-    parser = parseArgumentTupleAndReturnSlapgridObject
-    slapgrid_object = parser(*self.default_arg_tuple)[0]
-    self.assertFalse(slapgrid_object.force_periodicity)
-
-  def test_force_periodicity_if_periodicity_given(self):
-    """
-      Check if giving --maximum-periodicity triggers "force_periodicity" option.
-    """
-    parser = parseArgumentTupleAndReturnSlapgridObject
-    slapgrid_object = parser('--maximum-periodicity', '40', *self.default_arg_tuple)[0]
-    self.assertTrue(slapgrid_object.force_periodicity)
-
-
-class TestSlapgridConfigurationFile(SlapgridInitialization):
 
   def test_upload_binary_cache_blacklist(self):
     """

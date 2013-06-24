@@ -54,6 +54,7 @@ setup(name=name,
       ),},
       tests_require=[
           'pyflakes',
+          'mock'
       ],
       zip_safe=False, # proxy depends on Flask, which has issues with
                       # accessing templates

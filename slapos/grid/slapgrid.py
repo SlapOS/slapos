@@ -135,9 +135,6 @@ def merged_options(args, configp):
   if options.get('all'):
     options['develop'] = True
 
-  if options.get('maximum_periodicity') is not None:
-    options['force_periodicity'] = True
-
   # Supervisord configuration location
   if not options.get('supervisord_configuration_path'):
     options['supervisord_configuration_path'] = \
@@ -199,8 +196,7 @@ def create_slapgrid_object(options, logger):
                   supervisord_configuration_path=op['supervisord_configuration_path'],
                   buildout=op.get('buildout'),
                   logger=logger,
-                  force_periodicity=op.get('force_periodicity', False),
-                  maximum_periodicity=op.get('maximum_periodicity', 86400),
+                  maximum_periodicity = op.get('maximum_periodicity', 86400),
                   key_file=op.get('key_file'),
                   cert_file=op.get('cert_file'),
                   signature_private_key_file=op.get('signature_private_key_file'),
@@ -256,7 +252,6 @@ class Slapgrid(object):
                supervisord_configuration_path,
                buildout,
                logger,
-               force_periodicity=False,
                maximum_periodicity=86400,
                key_file=None,
                cert_file=None,
@@ -331,7 +326,6 @@ class Slapgrid(object):
       self.computer_partition_filter_list = \
           computer_partition_filter_list.split(",")
     self.maximum_periodicity = maximum_periodicity
-    self.force_periodicity = force_periodicity
 
   def getWatchdogLine(self):
     invocation_list = [WATCHDOG_PATH]
@@ -576,15 +570,13 @@ class Slapgrid(object):
 
     periodicity = self.maximum_periodicity
     if software_path:
-      # Get periodicity from periodicity file if not forced
-      if not self.force_periodicity:
-        periodicity_path = os.path.join(software_path, 'periodicity')
-        if os.path.exists(periodicity_path):
-          try:
-            periodicity = int(open(periodicity_path).read())
-          except ValueError:
-            os.remove(periodicity_path)
-            self.logger.exception('')
+      periodicity_path = os.path.join(software_path, 'periodicity')
+      if os.path.exists(periodicity_path):
+        try:
+          periodicity = int(open(periodicity_path).read())
+        except ValueError:
+          os.remove(periodicity_path)
+          self.logger.exception('')
 
     # Check if timestamp from server is more recent than local one.
     # If not: it's not worth processing this partition (nothing has
@@ -595,13 +587,15 @@ class Slapgrid(object):
       last_runtime = int(os.path.getmtime(timestamp_path))
       if timestamp:
         try:
-          if int(timestamp) <= int(old_timestamp):
+          if periodicity == 0:
+            os.remove(timestamp_path)
+          elif int(timestamp) <= int(old_timestamp):
             if computer_partition.getState() != COMPUTER_PARTITION_STARTED_STATE:
               return
             # Check periodicity, i.e if periodicity is one day, partition
             # should be processed at least every day.
             # Only do it for "started" instances
-            if int(time.time()) <= (last_runtime + periodicity):
+            if int(time.time()) <= (last_runtime + periodicity) or periodicity < 0:
               self.logger.info('Partition already up-to-date, skipping.')
               return
             else:
