@@ -82,7 +82,7 @@ WRAPPER_CONTENT = """#!/bin/sh
 touch worked &&
 mkdir -p etc/run &&
 echo "#!/bin/sh" > etc/run/wrapper &&
-echo "while :; do echo "Working\\nWorking\\n" ; sleep 0.1; done" >> etc/run/wrapper &&
+echo "while true; do echo Working; sleep 0.1; done" >> etc/run/wrapper &&
 chmod 755 etc/run/wrapper
 """
 
@@ -91,9 +91,9 @@ mkdir -p etc/service &&
 echo "#!/bin/sh" > etc/service/daemon &&
 echo "touch launched
 if [ -f ./crashed ]; then
-while :; do echo "Working\\nWorking\\n" ; sleep 0.1; done
+while true; do echo Working; sleep 0.1; done
 else
-touch ./crashed; echo "Failing\\nFailing\\n"; sleep 1; exit 111;
+touch ./crashed; echo Failing; sleep 1; exit 111;
 fi" >> etc/service/daemon &&
 chmod 755 etc/service/daemon &&
 touch worked
@@ -163,6 +163,26 @@ class BasicMixin:
   def launchSlapgridSoftware(self, develop=False):
     self.setSlapgrid(develop=develop)
     return self.grid.processSoftwareReleaseList()
+
+  def assertLogContent(self, log_path, expected, tries=50):
+    for i in range(tries):
+      if expected in open(log_path).read():
+        return
+      time.sleep(0.1)
+    self.fail('%r not found in %s' % (expected, log_path))
+
+  def assertIsCreated(self, path, tries=50):
+    for i in range(tries):
+      if os.path.exists(path):
+        return
+      time.sleep(0.1)
+    self.fail('%s should be created' % path)
+
+  def assertIsNotCreated(self, path, tries=50):
+    for i in range(tries):
+      if os.path.exists(path):
+        self.fail('%s should not be created' % path)
+      time.sleep(0.1)
 
   def tearDown(self):
     # XXX: Hardcoded pid, as it is not configurable in slapos
@@ -571,14 +591,8 @@ class TestSlapgridCPWithMaster(MasterMixin, unittest.TestCase):
     self.assertItemsEqual(os.listdir(self.instance_root), ['0', 'etc', 'var'])
     self.assertItemsEqual(os.listdir(partition.partition_path),
                           ['.0_wrapper.log', 'buildout.cfg', 'etc', 'software_release', 'worked'])
-    tries = 50
     wrapper_log = os.path.join(partition.partition_path, '.0_wrapper.log')
-    while tries > 0:
-      tries -= 1
-      if os.path.getsize(wrapper_log) > 0:
-        break
-      time.sleep(0.1)
-    self.assertIn('Working', open(wrapper_log).read())
+    self.assertLogContent(wrapper_log, 'Working')
     self.assertItemsEqual(os.listdir(self.software_root), [partition.software.software_hash])
     self.assertEqual(computer.sequence,
                      ['getFullComputerInformation', 'availableComputerPartition',
@@ -613,14 +627,7 @@ chmod 755 etc/run/wrapper
     self.assertItemsEqual(os.listdir(instance.partition_path),
                           ['.0_wrapper.log', 'buildout.cfg', 'etc', 'software_release', 'worked'])
     wrapper_log = os.path.join(instance.partition_path, '.0_wrapper.log')
-    tries = 50
-    while tries > 0:
-      tries -= 1
-      if os.path.getsize(wrapper_log) > 0:
-        break
-      time.sleep(0.1)
-    os.path.getsize(wrapper_log)
-    self.assertIn('Working', open(wrapper_log).read())
+    self.assertLogContent(wrapper_log, 'Working')
     self.assertItemsEqual(os.listdir(self.software_root), [instance.software.software_hash])
     self.assertEqual(computer.sequence,
                      ['getFullComputerInformation', 'availableComputerPartition',
@@ -633,15 +640,7 @@ chmod 755 etc/run/wrapper
     self.assertItemsEqual(os.listdir(self.instance_root), ['0', 'etc', 'var'])
     self.assertItemsEqual(os.listdir(instance.partition_path),
                           ['.0_wrapper.log', 'buildout.cfg', 'etc', 'software_release', 'worked'])
-    tries = 50
-    expected_text = 'Signal handler called with signal 15'
-    while tries > 0:
-      tries -= 1
-      found = expected_text in open(wrapper_log).read()
-      if found:
-        break
-      time.sleep(0.1)
-    self.assertTrue(found)
+    self.assertLogContent(wrapper_log, 'Signal handler called with signal 15')
     self.assertEqual(computer.sequence,
                      ['getFullComputerInformation', 'availableComputerPartition',
                       'stoppedComputerPartition'])
@@ -680,14 +679,7 @@ chmod 755 etc/run/wrapper
     self.assertItemsEqual(os.listdir(instance.partition_path),
                           ['.0_wrapper.log', 'buildout.cfg', 'etc', 'software_release', 'worked'])
     wrapper_log = os.path.join(instance.partition_path, '.0_wrapper.log')
-    tries = 50
-    while tries > 0:
-      tries -= 1
-      if os.path.getsize(wrapper_log) > 0:
-        break
-      time.sleep(0.1)
-    os.path.getsize(wrapper_log)
-    self.assertIn('Working', open(wrapper_log).read())
+    self.assertLogContent(wrapper_log, 'Working')
     self.assertItemsEqual(os.listdir(self.software_root),
                           [instance.software.software_hash])
     self.assertEqual(computer.sequence,
@@ -705,15 +697,7 @@ exit 1
                           ['0', 'etc', 'var'])
     self.assertItemsEqual(os.listdir(instance.partition_path),
                           ['.0_wrapper.log', 'buildout.cfg', 'etc', 'software_release', 'worked'])
-    tries = 50
-    expected_text = 'Signal handler called with signal 15'
-    while tries > 0:
-      tries -= 1
-      found = expected_text in open(wrapper_log).read()
-      if found:
-        break
-      time.sleep(0.1)
-    self.assertTrue(found)
+    self.assertLogContent(wrapper_log, 'Signal handler called with signal 15')
     self.assertEqual(computer.sequence,
                      ['getFullComputerInformation',
                       'softwareInstanceError'])
@@ -746,14 +730,8 @@ exit 1
                           ['.0_wrapper.log', 'etc', 'buildout.cfg', 'software_release', 'worked'])
     self.assertItemsEqual(os.listdir(self.software_root),
                           [instance.software.software_hash])
-    tries = 50
     wrapper_log = os.path.join(instance.partition_path, '.0_wrapper.log')
-    while tries > 0:
-      tries -= 1
-      if os.path.getsize(wrapper_log) > 0:
-        break
-      time.sleep(0.1)
-    self.assertIn('Working', open(wrapper_log).read())
+    self.assertLogContent(wrapper_log, 'Working')
     self.assertEqual(computer.sequence,
                      ['getFullComputerInformation', 'availableComputerPartition',
                       'startedComputerPartition'])
@@ -821,22 +799,9 @@ class TestSlapgridCPWithMasterWatchdog(MasterMixin, unittest.TestCase):
     self.assertItemsEqual(os.listdir(self.instance_root), ['0', 'etc', 'var'])
     self.assertItemsEqual(os.listdir(partition.partition_path),
                           ['.0_daemon.log', 'buildout.cfg', 'etc', 'software_release', 'worked'])
-    tries = 200
     daemon_log = os.path.join(partition.partition_path, '.0_daemon.log')
-    while tries > 0:
-      tries -= 1
-      if os.path.getsize(daemon_log) > 0:
-        break
-      time.sleep(0.1)
-    time.sleep(0.1)
-    self.assertIn('Failing', open(daemon_log).read())
-    tries = 200
-    while tries > 0:
-      tries -= 1
-      if os.path.exists(self.watchdog_banged):
-        break
-      time.sleep(0.1)
-    self.assertTrue(os.path.exists(self.watchdog_banged))
+    self.assertLogContent(daemon_log, 'Failing')
+    self.assertIsCreated(self.watchdog_banged)
     self.assertIn('daemon', open(self.watchdog_banged).read())
 
   def test_one_failing_daemon_in_run_will_not_bang_with_watchdog(self):
@@ -860,7 +825,7 @@ class TestSlapgridCPWithMasterWatchdog(MasterMixin, unittest.TestCase):
         mkdir -p etc/run &&
         echo "#!/bin/sh" > etc/run/daemon &&
         echo "touch launched
-        touch ./crashed; echo "Failing\\nFailing\\n"; sleep 1; exit 111;
+        touch ./crashed; echo Failing; sleep 1; exit 111;
         " >> etc/run/daemon &&
         chmod 755 etc/run/daemon &&
         touch worked
@@ -873,22 +838,9 @@ class TestSlapgridCPWithMasterWatchdog(MasterMixin, unittest.TestCase):
                           ['0', 'etc', 'var'])
     self.assertItemsEqual(os.listdir(partition.partition_path),
                           ['.0_daemon.log', 'buildout.cfg', 'etc', 'software_release', 'worked'])
-    tries = 200
     daemon_log = os.path.join(partition.partition_path, '.0_daemon.log')
-    while tries > 0:
-      tries -= 1
-      if os.path.getsize(daemon_log) > 0:
-        break
-      time.sleep(0.1)
-    time.sleep(0.1)
-    self.assertIn('Failing', open(daemon_log).read())
-    tries = 200
-    while tries > 0:
-      tries -= 1
-      if os.path.exists(self.watchdog_banged):
-        break
-      time.sleep(0.1)
-    self.assertFalse(os.path.exists(self.watchdog_banged))
+    self.assertLogContent(daemon_log, 'Failing')
+    self.assertIsNotCreated(self.watchdog_banged)
 
   def test_watched_by_watchdog_bang(self):
     """
@@ -1348,14 +1300,8 @@ class TestSlapgridUsageReport(MasterMixin, unittest.TestCase):
     self.assertItemsEqual(os.listdir(self.instance_root), ['0', 'etc', 'var'])
     self.assertItemsEqual(os.listdir(instance.partition_path),
                           ['.0_wrapper.log', 'buildout.cfg', 'etc', 'software_release', 'worked'])
-    tries = 50
     wrapper_log = os.path.join(instance.partition_path, '.0_wrapper.log')
-    while tries > 0:
-      tries -= 1
-      if os.path.getsize(wrapper_log) > 0:
-        break
-      time.sleep(0.1)
-    self.assertIn('Working', open(wrapper_log).read())
+    self.assertLogContent(wrapper_log, 'Working')
     self.assertItemsEqual(os.listdir(self.software_root), [instance.software.software_hash])
     self.assertEqual(computer.sequence,
                      ['getFullComputerInformation',
@@ -1373,16 +1319,8 @@ class TestSlapgridUsageReport(MasterMixin, unittest.TestCase):
     self.assertItemsEqual(os.listdir(self.software_root),
                           [instance.software.software_hash])
     # Assert supervisor stopped process
-    tries = 50
     wrapper_log = os.path.join(instance.partition_path, '.0_wrapper.log')
-    exists = False
-    while tries > 0:
-      tries -= 1
-      if os.path.exists(wrapper_log):
-        exists = True
-        break
-      time.sleep(0.1)
-    self.assertFalse(exists)
+    self.assertIsNotCreated(wrapper_log)
 
     self.assertEqual(computer.sequence,
                      ['getFullComputerInformation',
@@ -1411,16 +1349,8 @@ class TestSlapgridUsageReport(MasterMixin, unittest.TestCase):
     self.assertItemsEqual(os.listdir(self.software_root),
                           [instance.software.software_hash])
     # Assert supervisor stopped process
-    tries = 50
     wrapper_log = os.path.join(instance.partition_path, '.0_wrapper.log')
-    exists = False
-    while tries > 0:
-      tries -= 1
-      if os.path.exists(wrapper_log):
-        exists = True
-        break
-      time.sleep(0.1)
-    self.assertFalse(exists)
+    self.assertIsNotCreated(wrapper_log)
 
     self.assertEqual(
         computer.sequence,
@@ -1438,14 +1368,8 @@ class TestSlapgridUsageReport(MasterMixin, unittest.TestCase):
     self.assertItemsEqual(os.listdir(self.instance_root), ['0', 'etc', 'var'])
     self.assertItemsEqual(os.listdir(instance.partition_path),
                           ['.0_wrapper.log', 'buildout.cfg', 'etc', 'software_release', 'worked'])
-    tries = 50
     wrapper_log = os.path.join(instance.partition_path, '.0_wrapper.log')
-    while tries > 0:
-      tries -= 1
-      if os.path.getsize(wrapper_log) > 0:
-        break
-      time.sleep(0.1)
-    self.assertIn('Working', open(wrapper_log).read())
+    self.assertLogContent(wrapper_log, 'Working')
     self.assertItemsEqual(os.listdir(self.software_root), [instance.software.software_hash])
     self.assertEqual(computer.sequence,
                      ['getFullComputerInformation',
@@ -1459,24 +1383,13 @@ class TestSlapgridUsageReport(MasterMixin, unittest.TestCase):
     self.assertItemsEqual(os.listdir(self.instance_root), ['0', 'etc', 'var'])
     self.assertItemsEqual(os.listdir(instance.partition_path),
                           ['.0_wrapper.log', 'buildout.cfg', 'etc', 'software_release', 'worked'])
-    tries = 50
     wrapper_log = os.path.join(instance.partition_path, '.0_wrapper.log')
-    while tries > 0:
-      tries -= 1
-      if os.path.getsize(wrapper_log) > 0:
-        break
-      time.sleep(0.1)
-    self.assertIn('Working', open(wrapper_log).read())
+    self.assertLogContent(wrapper_log, 'Working')
     self.assertItemsEqual(os.listdir(self.instance_root), ['0', 'etc', 'var'])
     self.assertItemsEqual(os.listdir(instance.partition_path),
                           ['.0_wrapper.log', 'buildout.cfg', 'etc', 'software_release', 'worked'])
-    tries = 50
     wrapper_log = os.path.join(instance.partition_path, '.0_wrapper.log')
-    while tries > 0:
-      tries -= 1
-      if os.path.getsize(wrapper_log) > 0:
-        break
-      time.sleep(0.1)
+    self.assertLogContent(wrapper_log, 'Working')
     self.assertEqual(computer.sequence,
                      ['getFullComputerInformation'])
     self.assertEqual('started', instance.state)
