@@ -52,29 +52,23 @@ from slapos.grid import SlapObject
 dummylogger = logging.getLogger()
 
 
-WATCHDOG_TEMPLATE = """#!%(python_path)s -S
-
+WATCHDOG_TEMPLATE = """#!{python_path} -S
 import sys
-sys.path=%(sys_path)s
-import slapos.slap.slap
+sys.path={sys_path}
+import slapos.slap
 import slapos.grid.watchdog
 
-def setBang():
-  def getBang():
-    def bang(self_partition,message):
-      report = ""
-      for key in self_partition.__dict__:
-        report += (key + ': ' + str(self_partition.__dict__[key]) + '  ')
-        if key == '_connection_helper':
-          for el in self_partition.__dict__[key].__dict__:
-            report += ('    ' + el +': ' +
-                       str(self_partition.__dict__[key].__dict__[el]) + '  ')
-      report += message
-      open('%(watchdog_banged)s','w').write(report)
-    return bang
-  slapos.slap.ComputerPartition.bang = getBang()
+def bang(self_partition, message):
+  nl = chr(10)
+  with open('{watchdog_banged}', 'w') as fout:
+    for key, value in vars(self_partition).items():
+      fout.write('%s: %s%s' % (key, value, nl))
+      if key == '_connection_helper':
+        for k, v in vars(value).items():
+          fout.write('   %s: %s%s' % (k, v, nl))
+    fout.write(message)
 
-setBang()
+slapos.slap.ComputerPartition.bang = bang
 slapos.grid.watchdog.main()
 """
 
@@ -769,11 +763,11 @@ class TestSlapgridCPWithMasterWatchdog(MasterMixin, unittest.TestCase):
     # Prepare watchdog
     self.watchdog_banged = os.path.join(self._tempdir, 'watchdog_banged')
     watchdog_path = os.path.join(self._tempdir, 'watchdog')
-    open(watchdog_path, 'w').write(WATCHDOG_TEMPLATE % {
-        'python_path': sys.executable,
-        'sys_path': sys.path,
-        'watchdog_banged': self.watchdog_banged
-    })
+    open(watchdog_path, 'w').write(WATCHDOG_TEMPLATE.format(
+        python_path=sys.executable,
+        sys_path=sys.path,
+        watchdog_banged=self.watchdog_banged
+    ))
     os.chmod(watchdog_path, 0o755)
     self.grid.watchdog_path = watchdog_path
     slapos.grid.slapgrid.WATCHDOG_PATH = watchdog_path

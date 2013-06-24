@@ -57,6 +57,7 @@ REQUIRED_COMPUTER_PARTITION_PERMISSION = 0o750
 PROGRAM_PARTITION_TEMPLATE = pkg_resources.resource_stream(__name__,
             'templates/program_partition_supervisord.conf.in').read()
 
+
 class Software(object):
   """This class is responsible for installing a software release"""
 

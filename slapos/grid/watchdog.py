@@ -29,11 +29,14 @@
 
 import argparse
 import os.path
-import slapos.slap.slap
 import sys
+
+import slapos.slap.slap
+
 
 def getWatchdogID():
   return "-on-watch"
+
 
 def parseArgumentTuple():
   parser = argparse.ArgumentParser()
@@ -93,9 +96,9 @@ class Watchdog(object):
       self.write_stdout('READY\n')
       line = self.stdin.readline()  # read header line from stdin
       headers = dict([x.split(':') for x in line.split()])
-      data = sys.stdin.read(int(headers['len'])) # read the event payload
+      data = sys.stdin.read(int(headers['len']))  # read the event payload
       self.handle_event(headers, data)
-      self.write_stdout('RESULT 2\nOK') # transition from READY to ACKNOWLEDGED
+      self.write_stdout('RESULT 2\nOK')  # transition from READY to ACKNOWLEDGED
 
   def handle_event(self, headers, payload):
     if headers['eventname'] in self.process_state_events:
