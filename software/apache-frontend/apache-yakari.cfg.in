@@ -1,5 +1,6 @@
 {% set cached_server_dict = {} -%}
 {% set part_list = [] -%}
+{% set cache_access = "http://%s:%s" % (local_ipv4, cache_port) -%}
 {% set TRUE_VALUES = ['y', 'yes', '1', 'true'] -%}
 {% set generic_instance_parameter_dict = {'cache_access': cache_access,} -%}
 [jinja2-template-base]
