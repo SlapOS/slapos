@@ -61,10 +61,10 @@ class SoftwareInstance(Item):
       key = element.get('id').encode("UTF-8")
       value = result_dict.get(key, None)
       if value is not None:
-        value = value + ' ' + element.text
+        value = (value + ' ' + element.text).encode("UTF-8")
       else:
         value = element.text
-      result_dict[key] = value.encode("UTF-8")
+      result_dict[key] = value
     return result_dict
 
   security.declareProtected(Permissions.AccessContentsInformation,
