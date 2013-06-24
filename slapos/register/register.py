@@ -42,6 +42,8 @@ from subprocess import CalledProcessError
 
 import requests
 
+from slapos.util import parse_certificate_key_pair
+
 
 def check_credentials(url, login, password):
   """Check if login and password are correct"""
@@ -65,7 +67,9 @@ def get_certificate_key_pair(logger, master_url_web, node_name, token=None, logi
     # raise a readable exception if the computer name is already used,
     # instead of an opaque 500 Internal Error.
     # this will not work with the new API.
-    logger.error('The node name "%s" is already in use. Please change the name, or revoke the active certificate if you want to replace the node.' % node_name)
+    logger.error('The node name "%s" is already in use. '
+                 'Please change the name, or revoke the active '
+                 'certificate if you want to replace the node.', node_name)
     sys.exit(1)
 
   if req.status_code == 403:
@@ -73,25 +77,12 @@ def get_certificate_key_pair(logger, master_url_web, node_name, token=None, logi
       msg = 'Please check the authentication token or require a new one.'
     else:
       msg = 'Please check username and password.'
-    logger.error('Access denied to the SlapOS Master. %s', msg)
+    logger.critical('Access denied to the SlapOS Master. %s', msg)
     sys.exit(1)
   else:
     req.raise_for_status()
 
   return parse_certificate_key_pair(req.text)
-
-
-def parse_certificate_key_pair(html):
-  """Parse html gotten from SlapOS Master to make certificate and key files"""
-  c_start = html.find("Certificate:")
-  c_end = html.find("</textarea>", c_start)
-  certificate = html[c_start:c_end]
-
-  k_start = html.find("-----BEGIN PRIVATE KEY-----")
-  k_end = html.find("</textarea>", k_start)
-  key = html[k_start:k_end]
-
-  return certificate, key
 
 
 def get_computer_name(certificate):
@@ -119,7 +110,8 @@ def save_former_config(conf):
         saved += '.1'
     else:
         break
-  conf.logger.info("Former slapos configuration detected in %s moving to %s" % (former, saved))
+  conf.logger.info('Former slapos configuration detected '
+                   'in %s moving to %s', former, saved)
   shutil.move(former, saved)
 
 
@@ -151,13 +143,13 @@ def slapconfig(conf):
     directory = os.path.dirname(directory)
 
   if not os.path.exists(slap_conf_dir):
-    conf.logger.info("Creating directory: %s" % slap_conf_dir)
+    conf.logger.info('Creating directory: %s', slap_conf_dir)
     if not dry_run:
       os.mkdir(slap_conf_dir, 0o711)
 
   user_certificate_repository_path = os.path.join(slap_conf_dir, 'ssl')
   if not os.path.exists(user_certificate_repository_path):
-    conf.logger.info("Creating directory: %s" % user_certificate_repository_path)
+    conf.logger.info('Creating directory: %s', user_certificate_repository_path)
     if not dry_run:
       os.mkdir(user_certificate_repository_path, 0o711)
 
@@ -167,7 +159,7 @@ def slapconfig(conf):
           (conf.key, key_file),
           (conf.certificate, cert_file)
           ]:
-    conf.logger.info("Copying to %r, and setting minimum privileges" % dst)
+    conf.logger.info('Copying to %r, and setting minimum privileges', dst)
     if not dry_run:
       with open(dst, 'w') as destination:
         destination.write(''.join(src))
@@ -176,13 +168,13 @@ def slapconfig(conf):
 
   certificate_repository_path = os.path.join(slap_conf_dir, 'ssl', 'partition_pki')
   if not os.path.exists(certificate_repository_path):
-    conf.logger.info("Creating directory: %s" % certificate_repository_path)
+    conf.logger.info('Creating directory: %s', certificate_repository_path)
     if not dry_run:
       os.mkdir(certificate_repository_path, 0o711)
 
   # Put slapos configuration file
   slap_conf_file = os.path.join(slap_conf_dir, 'slapos.cfg')
-  conf.logger.info("Creating slap configuration: %s" % slap_conf_file)
+  conf.logger.info('Creating slap configuration: %s', slap_conf_file)
 
   # Get example configuration file
   slapos_cfg_example = get_slapos_conf_example()
@@ -210,7 +202,7 @@ def slapconfig(conf):
     with open(slap_conf_file, 'w') as fout:
       new_configp.write(fout)
 
-  conf.logger.info("SlapOS configuration: DONE")
+  conf.logger.info('SlapOS configuration: DONE')
 
 
 class RegisterConfig(object):
@@ -236,12 +228,12 @@ class RegisterConfig(object):
     self.key = key
 
   def displayUserConfig(self):
-    self.logger.debug("Computer Name: %s" % self.node_name)
-    self.logger.debug("Master URL: %s" % self.master_url)
-    self.logger.debug("Number of partition: %s" % self.partition_number)
-    self.logger.info("Using Interface %s" % self.interface_name)
-    self.logger.debug("Ipv4 sub network: %s" % self.ipv4_local_network)
-    self.logger.debug("Ipv6 Interface: %s" % self.ipv6_interface)
+    self.logger.debug('Computer Name: %s', self.node_name)
+    self.logger.debug('Master URL: %s', self.master_url)
+    self.logger.debug('Number of partition: %s', self.partition_number)
+    self.logger.info('Using Interface %s', self.interface_name)
+    self.logger.debug('Ipv4 sub network: %s', self.ipv4_local_network)
+    self.logger.debug('Ipv6 Interface: %s', self.ipv6_interface)
 
 
 def gen_auth(conf):
@@ -261,7 +253,7 @@ def do_register(conf):
 
   if conf.token == 'ask':
     while True:
-      conf.token = raw_input('SlapOS Token: ').strip()
+      conf.token = raw_input('Computer security token: ').strip()
       if conf.token:
         break
 

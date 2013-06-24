@@ -61,7 +61,7 @@ class RegisterCommand(Command):
                              'should be avoided for security reasons.')
 
         ap.add_argument('--token',
-                        help="SlapOS Master authentication token "
+                        help="SlapOS 'computer security' authentication token "
                              "(use '--token ask' for interactive prompt)")
 
         ap.add_argument('-t', '--create-tap',

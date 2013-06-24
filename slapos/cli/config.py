@@ -28,6 +28,13 @@ class ConfigCommand(Command):
                              (self.default_config_var, self.default_config_path))
         return ap
 
+    def config_path(self, args):
+        if args.cfg:
+            cfg_path = args.cfg
+        else:
+            cfg_path = os.environ.get(self.default_config_var, self.default_config_path)
+        return os.path.expanduser(cfg_path)
+
     def fetch_config(self, args):
         """
         Returns a configuration object if file exists/readable/valid,
@@ -36,14 +43,9 @@ class ConfigCommand(Command):
         and will clearly show what is wrong with the file.
         """
 
-        if args.cfg:
-            cfg_path = args.cfg
-        else:
-            cfg_path = os.environ.get(self.default_config_var, self.default_config_path)
+        cfg_path = self.config_path(args)
 
-        cfg_path = os.path.expanduser(cfg_path)
-
-        self.log.debug('Loading config: %s' % cfg_path)
+        self.log.debug('Loading config: %s', cfg_path)
 
         if not os.path.exists(cfg_path):
             raise ConfigError('Configuration file does not exist: %s' % cfg_path)

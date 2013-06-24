@@ -91,6 +91,7 @@ setup(name=name,
           'node instance = slapos.cli.slapgrid:InstanceCommand',
           # SlapOS client commands
           'console = slapos.cli.console:ConsoleCommand',
+          'configure client = slapos.cli.configure_client:ConfigureClientCommand',
           'proxy start = slapos.cli.proxy_start:ProxyStartCommand',
           'proxy show = slapos.cli.proxy_show:ProxyShowCommand',
           'supply = slapos.cli.supply:SupplyCommand',
