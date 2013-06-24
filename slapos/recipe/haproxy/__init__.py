@@ -112,8 +112,8 @@ class Recipe(GenericBaseRecipe):
       self.options['conf-path'],
       self.substituteTemplate(
         self.getTemplateFilename('haproxy.cfg.in'),
-        {'socket_path': self.options['socket-path']},
-        {'server_text': server_snippet},
+        {'socket_path': self.options['socket-path'],
+         'server_text': server_snippet},
       )
     )
     wrapper_path = self.createPythonScript(
