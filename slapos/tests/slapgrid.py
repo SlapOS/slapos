@@ -25,6 +25,7 @@
 #
 ##############################################################################
 
+from __future__ import absolute_import
 import httplib
 import logging
 import os
@@ -40,6 +41,7 @@ import unittest
 import urlparse
 
 import xml_marshaller
+from mock import patch
 
 import slapos.slap.slap
 import slapos.grid.utils
@@ -48,6 +50,7 @@ from slapos.cli_legacy.slapgrid import parseArgumentTupleAndReturnSlapgridObject
 from slapos.grid.utils import md5digest
 from slapos.grid.watchdog import Watchdog, getWatchdogID
 from slapos.grid import SlapObject
+
 
 dummylogger = logging.getLogger()
 
@@ -238,13 +241,13 @@ class MasterMixin(BasicMixin):
 
   def _patchHttplib(self):
     """Overrides httplib"""
-    import mock.httplib
+    import slapos.tests.mock.httplib
 
     self.saved_httplib = {}
 
-    for fake in vars(mock.httplib):
+    for fake in vars(slapos.tests.mock.httplib):
       self.saved_httplib[fake] = getattr(httplib, fake, None)
-      setattr(httplib, fake, getattr(mock.httplib, fake))
+      setattr(httplib, fake, getattr(slapos.tests.mock.httplib, fake))
 
   def _unpatchHttplib(self):
     """Restores httplib overriding"""
@@ -1172,43 +1175,44 @@ class TestSlapgridCPPartitionProcessing(MasterMixin, unittest.TestCase):
     """
     Checks that a partition is not processed when
     its periodicity is negative
+    1. We setup one instance and set periodicity at -1
+    2. We mock the install method from slapos.grid.slapgrid.Partition
+    3. We launch slapgrid once so that .timestamp file is created and check that install method is
+    indeed called (through mocked_method.called
+    4. We launch slapgrid anew and check that install as not been called again
     """
-    def get_runtime(instance):
-      self.assertTrue(os.path.exists(os.path.join(instance.partition_path, '.timestamp')))
-      return os.path.getmtime(os.path.join(instance.partition_path, '.timestamp'))
 
-    periodicity = -1
     timestamp = str(int(time.time()))
     computer = ComputerForTest(self.software_root, self.instance_root, 1, 1)
     instance = computer.instance_list[0]
-    instance.software.setPeriodicity(periodicity)
+    instance.software.setPeriodicity(-1)
     instance.timestamp = timestamp
-    self.launchSlapgrid()
-    first_runtime = get_runtime(instance)
-    self.launchSlapgrid()
-    second_runtime = get_runtime(instance)
-    self.assertEqual(first_runtime, second_runtime)
+    with patch.object(slapos.grid.slapgrid.Partition, 'install', return_value=None) as mock_method:
+      self.launchSlapgrid()
+      self.assertTrue(mock_method.called)
+      self.launchSlapgrid()
+      self.assertEqual(mock_method.call_count, 1)
 
   def test_one_partition_is_always_processed_when_periodicity_is_zero(self):
     """
     Checks that a partition is always processed when
     its periodicity is 0
+    1. We setup one instance and set periodicity at 0
+    2. We mock the install method from slapos.grid.slapgrid.Partition
+    3. We launch slapgrid once so that .timestamp file is created
+    4. We launch slapgrid anew and check that install has been called twice (one time because of the
+    new setup and one time because of periodicity = 0)
     """
-    def get_runtime(instance):
-      self.assertTrue(os.path.exists(os.path.join(instance.partition_path, '.timestamp')))
-      return os.path.getmtime(os.path.join(instance.partition_path, '.timestamp'))
 
-    periodicity = 0
     timestamp = str(int(time.time()))
     computer = ComputerForTest(self.software_root, self.instance_root, 1, 1)
     instance = computer.instance_list[0]
-    instance.software.setPeriodicity(periodicity)
+    instance.software.setPeriodicity(0)
     instance.timestamp = timestamp
-    self.launchSlapgrid()
-    first_runtime = get_runtime(instance)
-    self.launchSlapgrid()
-    second_runtime = get_runtime(instance)
-    self.assertNotEqual(first_runtime, second_runtime)
+    with patch.object(slapos.grid.slapgrid.Partition, 'install', return_value=None) as mock_method:
+      self.launchSlapgrid()
+      self.launchSlapgrid()
+      self.assertEqual(mock_method.call_count, 2)
 
   def test_one_partition_buildout_fail_does_not_disturb_others(self):
     """
