@@ -4,7 +4,7 @@ import errno
 import os
 
 
-def mkdir_p(path, mode=0o777):
+def mkdir_p(path, mode=0o700):
     """\
     Creates a directory and its parents, if needed.
 
