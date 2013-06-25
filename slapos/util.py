@@ -27,3 +27,19 @@ def chownDirectory(path, uid, gid):
           for item in items:
               if not os.path.islink(os.path.join(root, item)):
                   os.chown(os.path.join(root, item), uid, gid)
+
+
+def parse_certificate_key_pair(html):
+  """
+  Extract (certificate, key) pair from an HTML page received by SlapOS Master.
+  """
+
+  c_start = html.find("Certificate:")
+  c_end = html.find("</textarea>", c_start)
+  certificate = html[c_start:c_end]
+
+  k_start = html.find("-----BEGIN PRIVATE KEY-----")
+  k_end = html.find("</textarea>", k_start)
+  key = html[k_start:k_end]
+
+  return certificate, key

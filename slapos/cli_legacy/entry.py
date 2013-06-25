@@ -42,7 +42,6 @@ from slapos.cli_legacy.slapgrid import runSoftwareRelease as software
 from slapos.cli_legacy.slapgrid import runUsageReport as report
 from slapos.cli_legacy.svcbackend import supervisord
 from slapos.cli_legacy.svcbackend import supervisorctl
-from slapos.cli_legacy.register import main as register
 from slapos.version import version
 
 # Note: this whole file is a hack. We should better try dedicated library
@@ -125,9 +124,7 @@ def dispatch(command, is_node_command):
       sys.stderr.write('This command must be run as root.\n')
       sys.exit()
 
-    if command == 'register':
-      call(register)
-    elif command == 'software':
+    if command == 'software':
       call(software, config_path=GLOBAL_SLAPOS_CONFIGURATION,
            option=['--pidfile /opt/slapos/slapgrid-sr.pid'])
     elif command == 'instance':
@@ -192,7 +189,6 @@ Client subcommands usage:
   slapos console
 Node subcommands usage:
   slapos node
-  slapos node register <node-id>
   slapos node software
   slapos node instance
   slapos node report

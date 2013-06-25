@@ -54,6 +54,7 @@ setup(name=name,
       ),},
       tests_require=[
           'pyflakes',
+          'mock'
       ],
       zip_safe=False, # proxy depends on Flask, which has issues with
                       # accessing templates
@@ -91,6 +92,7 @@ setup(name=name,
           'node instance = slapos.cli.slapgrid:InstanceCommand',
           # SlapOS client commands
           'console = slapos.cli.console:ConsoleCommand',
+          'configure client = slapos.cli.configure_client:ConfigureClientCommand',
           'proxy start = slapos.cli.proxy_start:ProxyStartCommand',
           'proxy show = slapos.cli.proxy_show:ProxyShowCommand',
           'supply = slapos.cli.supply:SupplyCommand',

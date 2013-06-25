@@ -10,6 +10,7 @@ New features:
  * Initial windows support. [Jondy Zhao]
  * Support new/changed parameters in command line tools, defined in documentation. [Marco Mariani]
  * Register: support for one-time authentication token. [Marco Mariani]
+ * New command: "slapos configure client" [Marco Mariani]
 
 Major Improvements:
 
