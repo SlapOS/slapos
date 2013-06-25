@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 
-import logging
 import pprint
 
 from slapos.cli.config import ClientConfigCommand
@@ -24,8 +23,6 @@ def parse_option_dict(options):
 
 class RequestCommand(ClientConfigCommand):
     """request an instance and get status and parameters of instance"""
-
-    log = logging.getLogger('request')
 
     def get_parser(self, prog_name):
         ap = super(RequestCommand, self).get_parser(prog_name)

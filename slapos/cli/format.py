@@ -13,8 +13,6 @@ class FormatCommand(ConfigCommand):
     create users, partitions and network configuration
     """
 
-    log = logging.getLogger('format')
-
     def get_parser(self, prog_name):
         ap = super(FormatCommand, self).get_parser(prog_name)
 
@@ -64,7 +62,7 @@ class FormatCommand(ConfigCommand):
     def take_action(self, args):
         configp = self.fetch_config(args)
 
-        conf = FormatConfig(logger=self.log)
+        conf = FormatConfig(logger=self.app.log)
 
         conf.mergeConfig(args, configp)
 
@@ -74,7 +72,7 @@ class FormatCommand(ConfigCommand):
             file_handler = logging.FileHandler(conf.log_file)
             formatter = logging.Formatter(self.app.LOG_FILE_MESSAGE_FORMAT)
             file_handler.setFormatter(formatter)
-            self.log.addHandler(file_handler)
+            self.app.log.addHandler(file_handler)
 
         try:
             conf.setConfig()

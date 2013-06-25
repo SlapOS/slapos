@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 
-import logging
 import sys
 
 from slapos.cli.command import Command, must_be_root
@@ -11,8 +10,6 @@ class RegisterCommand(Command):
     """
     register a node in the SlapOS cloud
     """
-
-    log = logging.getLogger('register')
 
     def get_parser(self, prog_name):
         ap = super(RegisterCommand, self).get_parser(prog_name)
@@ -85,7 +82,7 @@ class RegisterCommand(Command):
     @must_be_root
     def take_action(self, args):
         try:
-            conf = RegisterConfig(logger=self.log)
+            conf = RegisterConfig(logger=self.app.log)
             conf.setConfig(args)
             return_code = do_register(conf)
         except SystemExit as err:

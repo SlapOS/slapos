@@ -12,8 +12,6 @@ class ProxyStartCommand(ConfigCommand):
     minimalist, stand-alone SlapOS Master
     """
 
-    log = logging.getLogger('proxy')
-
     def get_parser(self, prog_name):
         ap = super(ProxyStartCommand, self).get_parser(prog_name)
 
@@ -26,7 +24,7 @@ class ProxyStartCommand(ConfigCommand):
     def take_action(self, args):
         configp = self.fetch_config(args)
 
-        conf = ProxyConfig(logger=self.log)
+        conf = ProxyConfig(logger=self.app.log)
 
         conf.mergeConfig(args, configp)
 
@@ -36,7 +34,7 @@ class ProxyStartCommand(ConfigCommand):
             file_handler = logging.FileHandler(conf.log_file)
             formatter = logging.Formatter(self.app.LOG_FILE_MESSAGE_FORMAT)
             file_handler.setFormatter(formatter)
-            self.log.addHandler(file_handler)
+            self.app.log.addHandler(file_handler)
 
         conf.setConfig()
 

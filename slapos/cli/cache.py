@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 
-import logging
-
 from slapos.cli.config import ConfigCommand
 from slapos.cache import do_lookup
 
@@ -16,8 +14,6 @@ class CacheLookupCommand(ConfigCommand):
     cache of the software release, and which ones are compatible
     with the OS you are currently running.
     """
-
-    log = logging.getLogger('cache-lookup')
 
     def get_parser(self, prog_name):
         ap = super(CacheLookupCommand, self).get_parser(prog_name)

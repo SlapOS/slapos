@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 
-import logging
 import re
 import os
 import sys
@@ -15,8 +14,6 @@ class ConfigureClientCommand(ClientConfigCommand):
     """
     register a node in the SlapOS cloud
     """
-
-    log = logging.getLogger('configure-client')
 
     def get_parser(self, prog_name):
         ap = super(ConfigureClientCommand, self).get_parser(prog_name)
@@ -38,7 +35,7 @@ class ConfigureClientCommand(ClientConfigCommand):
         return ap
 
     def take_action(self, args):
-        do_configure_client(logger=self.log,
+        do_configure_client(logger=self.app.log,
                             master_url_web=args.master_url_web,
                             token=args.token,
                             config_path=self.config_path(args),

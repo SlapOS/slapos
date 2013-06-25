@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 
-import logging
-
 from slapos.cli.command import must_be_root
 from slapos.cli.config import ConfigCommand
 from slapos.bang import do_bang
@@ -11,8 +9,6 @@ class BangCommand(ConfigCommand):
     """
     request update on all partitions
     """
-
-    log = logging.getLogger('bang')
 
     def get_parser(self, prog_name):
         ap = super(BangCommand, self).get_parser(prog_name)

@@ -57,7 +57,7 @@ class SlapOSApp(cliff.app.App):
     log = logging.getLogger('slapos')
 
     CONSOLE_MESSAGE_FORMAT = '%(message)s'
-    LOG_FILE_MESSAGE_FORMAT = '[%(asctime)s] %(levelname)-8s %(name)s %(message)s'
+    LOG_FILE_MESSAGE_FORMAT = '[%(asctime)s] %(levelname)-8s %(message)s'
 
     def __init__(self):
         super(SlapOSApp, self).__init__(

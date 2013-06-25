@@ -13,8 +13,6 @@ class ConfigError(Exception):
 class ConfigCommand(Command):
     "Base class for commands that require a configuration file"
 
-    log = None
-
     default_config_var = 'SLAPOS_CONFIGURATION'
 
     # use this if default_config_var does not exist
@@ -45,7 +43,7 @@ class ConfigCommand(Command):
 
         cfg_path = self.config_path(args)
 
-        self.log.debug('Loading config: %s', cfg_path)
+        self.app.log.debug('Loading config: %s', cfg_path)
 
         if not os.path.exists(cfg_path):
             raise ConfigError('Configuration file does not exist: %s' % cfg_path)

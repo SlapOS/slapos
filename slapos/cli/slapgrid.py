@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 
-import logging
-
 from slapos.cli.command import must_be_root
 from slapos.cli.config import ConfigCommand
 
@@ -11,8 +9,6 @@ from slapos.grid.slapgrid import (merged_options, check_missing_parameters, chec
 
 
 class SlapgridCommand(ConfigCommand):
-
-    log = None
 
     method_name = NotImplemented
     default_pidfile = NotImplemented
@@ -73,14 +69,14 @@ class SlapgridCommand(ConfigCommand):
         check_missing_parameters(options)
         check_missing_files(options)
 
-        random_delay(options, logger=self.log)
+        random_delay(options, logger=self.app.log)
 
-        slapgrid_object = create_slapgrid_object(options, logger=self.log)
+        slapgrid_object = create_slapgrid_object(options, logger=self.app.log)
 
         pidfile = options.get('pidfile') or self.default_pidfile
 
         if pidfile:
-            setRunning(logger=self.log, pidfile=pidfile)
+            setRunning(logger=self.app.log, pidfile=pidfile)
         try:
             return getattr(slapgrid_object, self.method_name)()
         finally:
@@ -90,8 +86,6 @@ class SlapgridCommand(ConfigCommand):
 
 class SoftwareCommand(SlapgridCommand):
     """run software installation/deletion"""
-
-    log = logging.getLogger('software')
 
     method_name = 'processSoftwareReleaseList'
     default_pidfile = '/opt/slapos/slapgrid-sr.pid'
@@ -112,8 +106,6 @@ class SoftwareCommand(SlapgridCommand):
 class InstanceCommand(SlapgridCommand):
     """run instance deployment"""
 
-    log = logging.getLogger('instance')
-
     method_name = 'processComputerPartitionList'
     default_pidfile = '/opt/slapos/slapgrid-cp.pid'
 
@@ -132,8 +124,6 @@ class InstanceCommand(SlapgridCommand):
 
 class ReportCommand(SlapgridCommand):
     """run instance reports and garbage collection"""
-
-    log = logging.getLogger('report')
 
     method_name = 'agregateAndSendUsage'
     default_pidfile = '/opt/slapos/slapgrid-ur.pid'

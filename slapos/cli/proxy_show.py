@@ -2,7 +2,6 @@
 
 import collections
 import hashlib
-import logging
 
 import lxml.etree
 import prettytable
@@ -17,8 +16,6 @@ class ProxyShowCommand(ConfigCommand):
     """
     display proxy instances and parameters
     """
-
-    log = logging.getLogger('proxy')
 
     def get_parser(self, prog_name):
         ap = super(ProxyShowCommand, self).get_parser(prog_name)
@@ -54,7 +51,7 @@ class ProxyShowCommand(ConfigCommand):
 
     def take_action(self, args):
         configp = self.fetch_config(args)
-        conf = ProxyConfig(logger=self.log)
+        conf = ProxyConfig(logger=self.app.log)
         conf.mergeConfig(args, configp)
         conf.setConfig()
         do_show(conf=conf)

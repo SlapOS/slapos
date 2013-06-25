@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 
-import logging
-
 from slapos.cli.config import ClientConfigCommand
 from slapos.client import init, ClientConfig
 
@@ -10,8 +8,6 @@ class RemoveCommand(ClientConfigCommand):
     """
     remove a Software from a node
     """
-
-    log = logging.getLogger('remove')
 
     def get_parser(self, prog_name):
         ap = super(RemoveCommand, self).get_parser(prog_name)
