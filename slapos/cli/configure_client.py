@@ -46,8 +46,6 @@ class ConfigureClientCommand(ClientConfigCommand):
 
 
 def get_certificate_key_pair(logger, master_url_web, token):
-    url = '/'.join([master_url_web, 'myspace/my_account/request-a-certificate'])
-
     req = requests.post('/'.join([master_url_web, 'myspace/my_account/request-a-certificate/WebSection_requestNewCertificate']),
                         data={},
                         headers={'X-Access-Token': token},
