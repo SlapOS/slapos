@@ -1,9 +1,11 @@
 # -*- coding: utf-8 -*-
 
 import logging
+import pprint
 
 from slapos.cli.config import ClientConfigCommand
-from slapos.client import init, do_request, ClientConfig
+from slapos.client import init, ClientConfig
+from slapos.slap import ResourceNotReady
 
 
 def parse_option_dict(options):
@@ -65,4 +67,28 @@ class RequestCommand(ClientConfigCommand):
         conf = ClientConfig(args, configp)
 
         local = init(conf)
-        do_request(conf, local)
+        do_request(self.app.log, conf, local)
+
+
+def do_request(logger, conf, local):
+    logger.info('Requesting %s...', conf.reference)
+    if conf.software_url in local:
+        conf.software_url = local[conf.software_url]
+    try:
+        partition = local['slap'].registerOpenOrder().request(
+            software_release=conf.software_url,
+            partition_reference=conf.reference,
+            partition_parameter_kw=conf.parameters,
+            software_type=conf.type,
+            filter_kw=conf.node,
+            state=conf.state,
+            shared=conf.slave
+        )
+        logger.info('Instance requested.\nState is : %s.', partition.getState())
+        logger.info('Connection parameters of instance are:')
+        logger.info(pprint.pformat(partition.getConnectionParameterDict()))
+        logger.info('You can rerun command to get up-to-date informations.')
+    except ResourceNotReady:
+        logger.warning('Instance requested. Master is provisioning it. Please rerun in a '
+                       'couple of minutes to get connection informations.')
+        exit(2)

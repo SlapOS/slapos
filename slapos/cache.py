@@ -20,7 +20,7 @@ def looks_like_md5(s):
     return re.match('[0-9a-f]{32}', s)
 
 
-def do_lookup(configp, software_url, logger):
+def do_lookup(logger, configp, software_url):
     cache_dir = configp.get('networkcache', 'download-binary-dir-url')
 
     if looks_like_md5(software_url):

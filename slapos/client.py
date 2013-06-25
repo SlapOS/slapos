@@ -30,10 +30,8 @@
 import atexit
 import ConfigParser
 import os
-import pprint
 
 import slapos.slap.slap
-from slapos.slap import ResourceNotReady
 
 
 class ClientConfig(object):
@@ -72,7 +70,7 @@ class ClientConfig(object):
          self.cert_file is None:
         raise ValueError("No option 'key_file' and/or 'cert_file'")
     else:
-      setattr(self, 'master_url', master_url)
+      self.master_url = master_url
 
     if self.key_file:
         self.key_file = os.path.expanduser(self.key_file)
@@ -115,60 +113,6 @@ def init(conf):
   local['supply'] = shorthandSupply
 
   return local
-
-
-def do_request(conf, local):
-  print("Requesting %s..." % conf.reference)
-  if conf.software_url in local:
-    conf.software_url = local[conf.software_url]
-  try:
-    partition = local['slap'].registerOpenOrder().request(
-      software_release=conf.software_url,
-      partition_reference=conf.reference,
-      partition_parameter_kw=conf.parameters,
-      software_type=conf.type,
-      filter_kw=conf.node,
-      state=conf.state,
-      shared=conf.slave
-    )
-    print "Instance requested.\nState is : %s." % partition.getState()
-    print "Connection parameters of instance are:"
-    pprint.pprint(partition.getConnectionParameterDict())
-    print "You can rerun command to get up-to-date informations."
-  except ResourceNotReady:
-    print("Instance requested. Master is provisioning it. Please rerun in a "
-        "couple of minutes to get connection informations.")
-    exit(2)
-
-
-def do_supply(software_url, computer_id, local, remove=False):
-  """
-  Request installation of Software Release
-  'software_url' on computer 'computer_id'.
-  if destroy argument is True, request deletion of Software Release.
-  """
-  # XXX-Cedric Implement software_group support
-  # XXX-Cedric Implement computer_group support
-  if not remove:
-    state = 'available'
-    print 'Requesting installation of %s Software Release...' % software_url
-
-  else:
-    state = 'destroyed'
-    print 'Requesting deletion of %s Software Release...' % software_url
-
-  if software_url in local:
-    software_url = local[software_url]
-  local['slap'].registerSupply().supply(
-      software_release=software_url,
-      computer_guid=computer_id,
-      state=state,
-  )
-  print 'Done.'
-
-
-def do_remove(software_url, node, local):
-  do_supply(software_url, node, local, remove=True)
 
 
 def do_console(local):
