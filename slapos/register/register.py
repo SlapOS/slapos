@@ -79,6 +79,10 @@ def get_certificate_key_pair(logger, master_url_web, node_name, token=None, logi
       msg = 'Please check username and password.'
     logger.critical('Access denied to the SlapOS Master. %s', msg)
     sys.exit(1)
+  elif not req.ok and 'NotImplementedError' in req.text and not token:
+    logger.critical('This SlapOS server does not support login/password '
+                    'authentication. Please use the token.')
+    sys.exit(1)
   else:
     req.raise_for_status()
 
@@ -251,18 +255,7 @@ def gen_auth(conf):
 def do_register(conf):
   """Register new computer on SlapOS Master and generate slapos.cfg"""
 
-  if conf.token == 'ask':
-    while True:
-      conf.token = raw_input('Computer security token: ').strip()
-      if conf.token:
-        break
-
-  if conf.token:
-    certificate, key = get_certificate_key_pair(conf.logger,
-                                                conf.master_url_web,
-                                                conf.node_name,
-                                                token=conf.token)
-  else:
+  if conf.login or conf.login_auth:
     for login, password in gen_auth(conf):
       if check_credentials(conf.master_url_web, login, password):
         break
@@ -275,6 +268,14 @@ def do_register(conf):
                                                 conf.node_name,
                                                 login=login,
                                                 password=password)
+  else:
+    while not conf.token:
+      conf.token = raw_input('Computer security token: ').strip()
+
+    certificate, key = get_certificate_key_pair(conf.logger,
+                                                conf.master_url_web,
+                                                conf.node_name,
+                                                token=conf.token)
 
   # get computer id
   COMP = get_computer_name(certificate)

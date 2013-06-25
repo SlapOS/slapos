@@ -51,9 +51,13 @@ class RegisterCommand(Command):
         ap.add_argument('--ipv6-interface',
                         help='Interface name to get ipv6')
 
+        ap.add_argument('--login-auth',
+                        action='store_true',
+                        help='Force login and password authentication')
+
         ap.add_argument('--login',
-                        help="Your SlapOS Master login. If not provided, "
-                             "asks it interactively, then password.")
+                        help='Your SlapOS Master login. '
+                             'Asks it interactively, then password.')
 
         ap.add_argument('--password',
                         help='Your SlapOS Master password. If not provided, '
@@ -61,8 +65,7 @@ class RegisterCommand(Command):
                              'should be avoided for security reasons.')
 
         ap.add_argument('--token',
-                        help="SlapOS 'computer security' authentication token "
-                             "(use '--token ask' for interactive prompt)")
+                        help="SlapOS 'computer security' authentication token")
 
         ap.add_argument('-t', '--create-tap',
                         action='store_true',
