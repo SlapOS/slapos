@@ -173,18 +173,25 @@ node register
 .. program-output:: python slapos help node register
 
 
-If login is not provided, asks for user's SlapOS Master account then password.
+This will register the current node, and generate the SlapOS configuration file.
 
-Node will register itself, if not already done, to the SlapOS Master defined in
-configuration file, and will generate SlapOS configuration file.
+The command requires an authentication token, either provided as an argument,
+or given at the interactive prompt.
+Go to the SlapOS Master web page, click "My Space", then "My Account", then
+"Generate a computer security token".
+A token is valid for a single ``node resister`` command and will expire after one day.
+
+The deprecated ``--login`` and ``--password`` options can be used with old SlapOS servers
+that have no support for the token.
+
 
 ..
   XXX-Cedric should be like this: If desired node name is already taken, will raise an error.
   XXX-Cedric: --master-url-web url will disappear in REST API. Currently, "register" uses
               SlapOS master web URL to register computer, so it needs the web URL (like http://www.slapos.org)
 
-If Node is already registered (:file:`slapos.cfg` and certificate already present), issues a warning,
-backups the original configuration and creates a new one.
+If the Node is already registered (:file:`slapos.cfg` and certificate are already present), the command
+issues a warning, backups the original configuration and creates a new one.
 
 ..
   XXX-Cedric should check for IPv6 in selected interface
@@ -325,6 +332,23 @@ node supervisord
 
 SlapOS Miscellaneous commands
 -----------------------------
+
+configure client
+~~~~~~~~~~~~~~~~
+
+.. program-output:: python slapos help configure client
+
+
+This creates a client configuration file, and downloads a certificate + key pair
+from the SlapOS Master. They will be used for all the "slapos client" commands.
+
+The command requires an authentication token, either provided as an argument,
+or given at the interactive prompt.
+
+Go to the SlapOS Master web page, click "My Space", then "My Account", then
+"Generate a credential security token".
+A token is valid for a single `configure client` command and will expire after one day.
+
 
 cache lookup
 ~~~~~~~~~~~~
