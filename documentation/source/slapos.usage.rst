@@ -21,7 +21,7 @@ Notes
 
 
 ..
-  XXX TODO document 'alias' for software_url, software_group?, computer_group?
+  XXX TODO software_group?, computer_group?
 
 
 
@@ -105,7 +105,7 @@ remove
 
 .. program-output:: python slapos help remove
 
-Ask Removal of a software from a specific node or group of nodes. Existing instances won't work anymore.
+Ask removal of a software from a specific node or group of nodes. Existing instances won't work anymore.
 
 ..
   XXX "slapos autounsupply a.k.a slapos cleanup"
@@ -177,8 +177,8 @@ This will register the current node, and generate the SlapOS configuration file.
 
 The command requires an authentication token, either provided as an argument,
 or given at the interactive prompt.
-Go to the SlapOS Master web page, click "My Space", then "My Account", then
-"Generate a computer security token".
+Go to the SlapOS Master web page, click ``My Space``, then ``My Account``, then
+``Generate a computer security token``.
 A token is valid for a single ``node resister`` command and will expire after one day.
 
 The deprecated ``--login`` and ``--password`` options can be used with old SlapOS servers
@@ -345,9 +345,9 @@ from the SlapOS Master. They will be used for all the "slapos client" commands.
 The command requires an authentication token, either provided as an argument,
 or given at the interactive prompt.
 
-Go to the SlapOS Master web page, click "My Space", then "My Account", then
-"Generate a credential security token".
-A token is valid for a single `configure client` command and will expire after one day.
+Go to the SlapOS Master web page, click ``My Space``, then ``My Account``, then
+``Generate a credential security token``.
+A token is valid for a single ``configure client`` command and will expire after one day.
 
 
 cache lookup
