@@ -43,7 +43,10 @@ class Recipe(GenericBaseRecipe):
     repozo_wrapper = self.createPythonScript(
       self.options['repozo-wrapper'],
       'slapos.recipe.librecipe.execute.execute',
-      [self.options['tidstorage-repozo-binary'], '--config',
-        configuration_file, '--repozo', self.options['repozo-binary'], '-z'])
+      [self.options['tidstorage-repozo-binary'],
+        '--config', configuration_file,
+        '--repozo', self.options['repozo-binary'],
+        '--gzip',
+      ])
 
     return [configuration_file, tidstorage_wrapper, repozo_wrapper]
