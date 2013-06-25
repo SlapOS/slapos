@@ -98,22 +98,18 @@ def get_computer_name(certificate):
 
 def save_former_config(conf):
   """Save former configuration if found"""
-  # Check for config file in /etc/opt/slapos/
-  if os.path.exists('/etc/opt/slapos/slapos.cfg'):
-    former = '/etc/opt/slapos'
-  else:
+  former = '/etc/opt/slapos'
+  if not os.path.exists(os.path.join(former, 'slapos.cfg')):
     return
 
   saved = former + '.old'
-  while True:
-    if os.path.exists(saved):
-      print "Slapos configuration detected in %s" % saved
-      if saved[-1] != 'd':
-        saved = saved[:-1] + str(int(saved[-1]) + 1)
-      else:
-        saved += '.1'
+  while os.path.exists(saved):
+    conf.logger.info('Slapos configuration detected in %s', saved)
+    if saved[-1] == 'd':
+      saved += '.1'
     else:
-        break
+      # XXX this goes from 19 to 110
+      saved = saved[:-1] + str(int(saved[-1]) + 1)
   conf.logger.info('Former slapos configuration detected '
                    'in %s moving to %s', former, saved)
   shutil.move(former, saved)
@@ -292,15 +288,15 @@ def do_register(conf):
   # Prepare Slapos Configuration
   slapconfig(conf)
 
-  print "Node has successfully been configured as %s." % COMP
+  conf.logger.info('Node has successfully been configured as %s.', COMP)
   # XXX hardcoded value, relying on package installation
   # We shall fix that later
-  print "Running starting script"
+  conf.logger.info('Running starting script')
   if os.path.isfile("/usr/sbin/slapos-start"):
     try:
       subprocess.check_call("/usr/sbin/slapos-start")
     except CalledProcessError:
-      print "Error while trying to run /usr/sbin/slapos-start"
+      conf.logger.error('Error while trying to run /usr/sbin/slapos-start')
   else:
-    print "Missing file /usr/sbin/slapos-start"
+    conf.logger.warning('Missing file /usr/sbin/slapos-start')
   return 0
