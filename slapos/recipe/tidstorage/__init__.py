@@ -47,6 +47,7 @@ class Recipe(GenericBaseRecipe):
         '--config', configuration_file,
         '--repozo', self.options['repozo-binary'],
         '--gzip',
+        '--quick',
       ])
 
     return [configuration_file, tidstorage_wrapper, repozo_wrapper]
