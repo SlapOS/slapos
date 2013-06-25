@@ -814,18 +814,23 @@ class TestSlapgridCPWithMasterWatchdog(MasterMixin, unittest.TestCase):
     partition = computer.instance_list[0]
     partition.requested_state = 'started'
 
-    RUN_CONTENT = textwrap.dedent("""\
-        #!/bin/sh
+    # Content of run wrapper
+    WRAPPER_CONTENT = textwrap.dedent("""#!/bin/sh
+        touch ./launched
+        touch ./crashed
+        echo Failing
+        sleep 1
+        exit 111
+    """)
+
+    BUILDOUT_RUN_CONTENT = textwrap.dedent("""#!/bin/sh
         mkdir -p etc/run &&
-        echo "#!/bin/sh" > etc/run/daemon &&
-        echo "touch launched
-        touch ./crashed; echo Failing; sleep 1; exit 111;
-        " >> etc/run/daemon &&
+        echo "%s" >> etc/run/daemon &&
         chmod 755 etc/run/daemon &&
         touch worked
-        """)
+        """ % WRAPPER_CONTENT)
 
-    partition.software.setBuildout(RUN_CONTENT)
+    partition.software.setBuildout(BUILDOUT_RUN_CONTENT)
 
     self.assertEqual(self.grid.processComputerPartitionList(), slapgrid.SLAPGRID_SUCCESS)
     self.assertItemsEqual(os.listdir(self.instance_root),
