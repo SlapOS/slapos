@@ -53,11 +53,11 @@ Examples
 
 * Request a wordpress instance named "mybeautifulinstance" on Node named "COMP-12345"::
 
-    $ slapos request mybeautifulinstance wordpress --node id=COMP-12345
+    $ slapos request mybeautifulinstance wordpress --node computer_guid=COMP-12345
 
 * Request a kvm instance named "mykvm" on Node named "COMP-12345", specifying nbd-host and nbd-ip parameters::
 
-    $ slapos request mykvm kvm --node id=COMP-12345 --configuration \
+    $ slapos request mykvm kvm --node computer_guid=COMP-12345 --configuration \
         nbd-host=debian.nbd.vifib.net nbd-port=1024
 
 * Request a kvm instance specifying the full URL, with default settings::
