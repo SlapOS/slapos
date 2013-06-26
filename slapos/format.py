@@ -301,8 +301,7 @@ class Computer(object):
           self.backup_xml(path_to_archive, path_to_xml)
         except:
           # give up trying
-          logger.warning("Can't backup %s: %s" %
-                           (path_to_xml, traceback.format_exc()))
+          logger.exception("Can't backup %s:", path_to_xml)
 
     with open(path_to_xml, 'wb') as fout:
       fout.write(new_pretty_xml)
@@ -985,7 +984,7 @@ def parse_computer_xml(conf, xml_path):
                         ipv6_interface=conf.ipv6_interface)
 
   if os.path.exists(xml_path):
-    conf.logger.info('Loading previous computer data from %r' % xml_path)
+    conf.logger.debug('Loading previous computer data from %r' % xml_path)
     computer = Computer.load(xml_path,
                              reference=conf.computer_id,
                              ipv6_interface=conf.ipv6_interface)
@@ -993,7 +992,7 @@ def parse_computer_xml(conf, xml_path):
     computer.interface = interface
   else:
     # If no pre-existent configuration found, create a new computer object
-    conf.logger.warning('Creating new data computer with id %r' % conf.computer_id)
+    conf.logger.warning('Creating new computer data with id %r', conf.computer_id)
     computer = Computer(
       reference=conf.computer_id,
       interface=interface,
@@ -1005,13 +1004,15 @@ def parse_computer_xml(conf, xml_path):
 
   partition_amount = int(conf.partition_amount)
   existing_partition_amount = len(computer.partition_list)
-  if partition_amount < existing_partition_amount:
-    raise ValueError('Requested amount of computer partitions (%s) is lower '
-        'then already configured (%s), cannot continue' % (partition_amount,
-          existing_partition_amount))
 
-  conf.logger.info('Adding %s new partitions' %
-      (partition_amount - existing_partition_amount))
+  if partition_amount < existing_partition_amount:
+    conf.logger.critical('Requested amount of computer partitions (%s) is lower '
+                         'than already configured (%s), cannot continue',
+                         partition_amount, existing_partition_amount)
+    sys.exit(1)
+  elif partition_amount > existing_partition_amount:
+    conf.logger.info('Adding %s new partitions',
+                     partition_amount - existing_partition_amount)
 
   for i in range(existing_partition_amount, partition_amount):
     # add new partitions
@@ -1092,7 +1093,7 @@ def do_format(conf):
                   logger=conf.logger)
   conf.logger.info('Posting information to %r' % conf.master_url)
   computer.send(conf)
-  conf.logger.info('slapformat successfully prepared computer.')
+  conf.logger.info('slapos successfully prepared the computer.')
 
 
 class FormatConfig(object):
@@ -1232,7 +1233,7 @@ class FormatConfig(object):
               file_location)
           sys.exit(1)
 
-    self.logger.info("Started.")
+    self.logger.debug('Started.')
     if self.dry_run:
       self.logger.info("Dry-run mode enabled.")
     if self.create_tap:

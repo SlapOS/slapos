@@ -72,7 +72,7 @@ def do_configure_client(logger, master_url_web, token, config_path, master_url):
     # where we expect to create them. If so, ask the use to manually remove them.
 
     if os.path.exists(config_path):
-        logger.critical('There is file in %s. '
+        logger.critical('There is a file in %s. '
                         'Please remove it before creating a new configuration.', config_path)
         sys.exit(1)
 
@@ -119,4 +119,4 @@ def do_configure_client(logger, master_url_web, token, config_path, master_url):
         logger.debug('Writing key to %s', key_path)
         fout.write(key)
 
-    logger.info('SlapOS client configuration: DONE')
+    logger.info('SlapOS client configuration written to %s', config_path)

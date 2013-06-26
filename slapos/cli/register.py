@@ -213,10 +213,8 @@ def slapconfig(conf):
 
     key_file = os.path.join(user_certificate_repository_path, 'key')
     cert_file = os.path.join(user_certificate_repository_path, 'certificate')
-    for src, dst in [
-            (conf.key, key_file),
-            (conf.certificate, cert_file)
-            ]:
+
+    for src, dst in [(conf.key, key_file), (conf.certificate, cert_file)]:
         conf.logger.info('Copying to %r, and setting minimum privileges', dst)
         if not dry_run:
             with open(dst, 'w') as destination:
@@ -231,8 +229,8 @@ def slapconfig(conf):
             os.mkdir(certificate_repository_path, 0o711)
 
     # Put slapos configuration file
-    slap_conf_file = os.path.join(slap_conf_dir, 'slapos.cfg')
-    conf.logger.info('Creating slap configuration: %s', slap_conf_file)
+    config_path = os.path.join(slap_conf_dir, 'slapos.cfg')
+    conf.logger.info('Creating slap configuration: %s', config_path)
 
     # Get example configuration file
     slapos_cfg_example = get_slapos_conf_example()
@@ -241,26 +239,26 @@ def slapconfig(conf):
     os.remove(slapos_cfg_example)
 
     for section, key, value in [
-            ('slapos', 'computer_id', conf.computer_id),
-            ('slapos', 'master_url', conf.master_url),
-            ('slapos', 'key_file', key_file),
-            ('slapos', 'cert_file', cert_file),
-            ('slapos', 'certificate_repository_path', certificate_repository_path),
-            ('slapformat', 'interface_name', conf.interface_name),
-            ('slapformat', 'ipv4_local_network', conf.ipv4_local_network),
-            ('slapformat', 'partition_amount', conf.partition_number),
-            ('slapformat', 'create_tap', conf.create_tap)
-            ]:
+        ('slapos', 'computer_id', conf.computer_id),
+        ('slapos', 'master_url', conf.master_url),
+        ('slapos', 'key_file', key_file),
+        ('slapos', 'cert_file', cert_file),
+        ('slapos', 'certificate_repository_path', certificate_repository_path),
+        ('slapformat', 'interface_name', conf.interface_name),
+        ('slapformat', 'ipv4_local_network', conf.ipv4_local_network),
+        ('slapformat', 'partition_amount', conf.partition_number),
+        ('slapformat', 'create_tap', conf.create_tap)
+    ]:
         new_configp.set(section, key, value)
 
     if conf.ipv6_interface:
         new_configp.set('slapformat', 'ipv6_interface', conf.ipv6_interface)
 
     if not dry_run:
-        with open(slap_conf_file, 'w') as fout:
+        with open(config_path, 'w') as fout:
             new_configp.write(fout)
 
-    conf.logger.info('SlapOS configuration: DONE')
+    conf.logger.info('SlapOS configuration written to %s', config_path)
 
 
 class RegisterConfig(object):
