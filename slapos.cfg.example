@@ -53,7 +53,7 @@ download-binary-dir-url = http://www.shacache.org/shadir
 #   Cedric de Saint Martin
 #   Yingjie Xu
 #   Gabriel Monnerat
-#   Łukasz Nowak
+#   Lukasz Nowak
 #   Test Agent Signature
 signature-certificate-list =
   -----BEGIN CERTIFICATE-----
