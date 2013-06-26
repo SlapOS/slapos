@@ -29,7 +29,8 @@ class SlapOSCommandManager(cliff.commandmanager.CommandManager):
         name = ''
         while search_args:
             if search_args[0].startswith('-'):
-                raise ValueError('Invalid command %r' % search_args[0])
+                LOG.critical('slapos: invalid option %r' % search_args[0])
+                sys.exit(5)
             next_val = search_args.pop(0)
             name = '%s %s' % (name, next_val) if name else next_val
             if name in self.commands:
@@ -37,9 +38,13 @@ class SlapOSCommandManager(cliff.commandmanager.CommandManager):
                 cmd_factory = cmd_ep.load()
                 return (cmd_factory, name, search_args)
         else:
-            print >>sys.stderr, ('The command %r does not exist or is not yet implemented.\n'
-                                 'Please have a look at http://community.slapos.org to read documentation or forum.\n'
-                                 'Please also make sure that SlapOS Node is up to date.' % (argv,))
+            LOG.critical('slapos: the command %r does not exist or is not yet implemented.\n'
+                         '\n'
+                         'Available commands: %s\n\n'
+                         'Please find documentation and forum at http://community.slapos.org\n'
+                         'Please also make sure that the SlapOS Node package is up to date.',
+                         ' '.join(argv),
+                         ', '.join(sorted(repr(c) for c in self.commands)))
             sys.exit(5)
 
 
