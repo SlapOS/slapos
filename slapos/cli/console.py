@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+import textwrap
+
 from slapos.cli.config import ClientConfigCommand
 from slapos.client import init, do_console, ClientConfig
 
@@ -38,4 +40,27 @@ class ConsoleCommand(ClientConfigCommand):
         configp = self.fetch_config(args)
         conf = ClientConfig(args, configp)
         local = init(conf)
-        do_console(local)
+        try:
+            import IPython
+            do_ipython_console(local)
+        except ImportError:
+            do_console(local)
+
+
+def do_ipython_console(local):
+    from IPython import embed
+    embed(banner1=textwrap.dedent("""\
+          slapos console allows you interact with slap API. You can play with the global
+          "slap" object and with the global request() and supply() methods.
+
+          examples :
+          >>> # Request instance
+          >>> request(kvm, "myuniquekvm")
+          >>> # Request software installation on owned computer
+          >>> supply(kvm, "mycomputer")
+          >>> # Fetch instance informations on already launched instance
+          >>> request(kvm, "myuniquekvm").getConnectionParameter("url")
+          """),
+          #exit_msg='BYE.',
+          user_ns=local)
+
