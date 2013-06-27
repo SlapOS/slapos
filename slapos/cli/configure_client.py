@@ -12,7 +12,7 @@ from slapos.util import mkdir_p, parse_certificate_key_pair
 
 class ConfigureClientCommand(ClientConfigCommand):
     """
-    register a node in the SlapOS cloud
+    configure slapos client with an existing account
     """
 
     def get_parser(self, prog_name):
