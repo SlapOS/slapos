@@ -68,6 +68,7 @@ def updateMysql(args):
   while True:
     mysql_upgrade_list = [conf['mysql_upgrade_binary'], '--user=root']
     if 'socket' in conf:
+      mysql_upgrade_list.insert(1)
       mysql_upgrade_list.append('--socket=' + conf['socket'])
     mysql_upgrade = subprocess.Popen(mysql_upgrade_list, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     result = mysql_upgrade.communicate()[0]
@@ -82,6 +83,7 @@ def updateMysql(args):
         print "No need to upgrade MySQL database"
       mysql_list = [conf['mysql_binary'].strip(), '-B', '--user=root']
       if 'socket' in conf:
+        mysql_list.insert(1)
         mysql_list.append('--socket=' + conf['socket'])
       mysql = subprocess.Popen(mysql_list, stdin=subprocess.PIPE,
           stdout=subprocess.PIPE, stderr=subprocess.STDOUT)

@@ -1,0 +1,54 @@
+{% if slap_software_type == software_type -%}
+[buildout]
+parts =
+  erp5-cluster
+  binary-wrap-launcher
+eggs-directory = {{ eggs_directory }}
+develop-eggs-directory = {{ develop_eggs_directory }}
+offline = true
+
+[erp5-cluster]
+recipe = slapos.cookbook:request.serialised
+sla = computer_guid
+server-url = ${slap-connection:server-url}
+key-file = ${slap-connection:key-file}
+cert-file = ${slap-connection:cert-file}
+computer-id = ${slap-connection:computer-id}
+partition-id = ${slap-connection:partition-id}
+name = ERP5 Cluster
+software-url = ${slap-connection:software-release-url}
+software-type = cluster
+sla-computer_guid = {{ slapparameter_dict.get('launcher-computer-guid', computer_id) }}
+config =
+  use-ipv6
+  ${:extra-config}
+extra-config =
+config-use-ipv6 = {{ dumps(slapparameter_dict.get('use-ipv6', False)) }}
+
+[launcher-param]
+binary-path = ${rootdirectory:bin}/launcher
+wrapper-path = ${rootdirectory:bin}/launcher
+log-path = ${basedirectory:log}/launcher.log
+test-suite-title = {{ slapparameter_dict.get('test-suite-title', '') }}
+
+[binary-wrap-launcher]
+recipe = slapos.cookbook:wrapper
+command-line = "${launcher-param:binary-path} --test_suite_title ${launcher-param:test-suite-title} --log ${launcher-param:log-path}"
+output = ${launcher-param:binary-path}
+return = url
+
+
+[basedirectory]
+recipe = slapos.cookbook:mkdirectory
+log = ${rootdirectory:var}/log
+run = ${rootdirectory:var}/run
+services = ${rootdirectory:etc}/run
+
+[rootdirectory]
+recipe = slapos.cookbook:mkdirectory
+etc = ${buildout:directory}/etc
+var = ${buildout:directory}/var
+srv = ${buildout:directory}/srv
+bin = ${buildout:directory}/bin
+
+{% endif %}
