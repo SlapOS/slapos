@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+import argparse
+import collections
 import logging
 import sys
 
@@ -48,6 +50,42 @@ class SlapOSCommandManager(cliff.commandmanager.CommandManager):
             sys.exit(5)
 
 
+class SlapOSHelpAction(argparse.Action):
+    """
+    Adapted from cliff.help.HelpAction, this class detects
+    and outputs command groups, via the .command_group attribute
+    of the Command class. Must be a class attribute in case the class
+    cannot be instantiated ('Could not load' message).
+    """
+    def __call__(self, parser, namespace, values, option_string=None):
+        app = self.default
+        parser.print_help(app.stdout)
+        command_manager = app.command_manager
+        groups = collections.defaultdict(list)
+        for name, ep in sorted(command_manager):
+            command_group, help_line = self._help_line(ep, name)
+            groups[command_group].append(help_line)
+
+        for group in sorted(groups):
+            app.stdout.write('\n%s commands:\n' % group)
+            for line in sorted(groups[group]):
+                app.stdout.write(line)
+        sys.exit(0)
+
+    def _help_line(self, ep, name):
+        try:
+            factory = ep.load()
+        except Exception as err:
+            return 'Could not load %r\n' % ep
+        try:
+            cmd = factory(self, None)
+        except Exception as err:
+            return 'Could not instantiate %r: %s\n' % (ep, err)
+        one_liner = cmd.get_description().split('\n')[0]
+        group = getattr(factory, 'command_group', 'other')
+        return group, '  %-13s  %s\n' % (name, one_liner)
+
+
 class SlapOSApp(cliff.app.App):
 
     #
@@ -83,7 +121,13 @@ class SlapOSApp(cliff.app.App):
             default=None,
             help='Specify a file to log output (default: console only)',
         )
-
+        parser.add_argument(
+            '-h', '--help',
+            action=SlapOSHelpAction,
+            nargs=0,
+            default=self,  # tricky
+            help="show this help message and exit",
+        )
         return parser
 
     def initialize_app(self, argv):

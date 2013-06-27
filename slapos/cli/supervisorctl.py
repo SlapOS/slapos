@@ -11,7 +11,10 @@ import supervisor.supervisorctl
 
 
 class SupervisorctlCommand(ConfigCommand):
-    """open supervisor console, for process management"""
+    """
+    open supervisor console, for process management
+    """
+    command_group = 'node'
 
     def get_parser(self, prog_name):
         ap = super(SupervisorctlCommand, self).get_parser(prog_name)

@@ -12,6 +12,7 @@ class FormatCommand(ConfigCommand):
     """
     create users, partitions and network configuration
     """
+    command_group = 'node'
 
     def get_parser(self, prog_name):
         ap = super(FormatCommand, self).get_parser(prog_name)

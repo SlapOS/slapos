@@ -11,7 +11,9 @@ class ConfigError(Exception):
 
 
 class ConfigCommand(Command):
-    "Base class for commands that require a configuration file"
+    """
+    Base class for commands that require a configuration file
+    """
 
     default_config_var = 'SLAPOS_CONFIGURATION'
 
@@ -57,5 +59,10 @@ class ConfigCommand(Command):
 
 
 class ClientConfigCommand(ConfigCommand):
+    """
+    Base class for client commands, that use the client configuration file
+    """
+
     default_config_var = 'SLAPOS_CLIENT_CONFIGURATION'
     default_config_path = '~/.slapos/slapos-client.cfg'
+    command_group = 'client'

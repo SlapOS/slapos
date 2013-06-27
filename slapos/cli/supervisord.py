@@ -8,7 +8,10 @@ from slapos.grid.svcbackend import launchSupervisord
 
 
 class SupervisordCommand(ConfigCommand):
-    """launch, if not already running, supervisor daemon"""
+    """
+    launch, if not already running, supervisor daemon
+    """
+    command_group = 'node'
 
     @must_be_root
     def take_action(self, args):

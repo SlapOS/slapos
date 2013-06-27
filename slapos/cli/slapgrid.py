@@ -9,6 +9,7 @@ from slapos.grid.slapgrid import (merged_options, check_missing_parameters, chec
 
 
 class SlapgridCommand(ConfigCommand):
+    command_group = 'node'
 
     method_name = NotImplemented
     default_pidfile = NotImplemented
