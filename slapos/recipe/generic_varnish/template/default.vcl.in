@@ -33,149 +33,105 @@ sub vcl_recv {
         req.request != "PURGE" &&
         req.request != "DELETE") {
         /* Non-RFC2616 or CONNECT which is weird. */
-        return(pipe);
+        return (pipe);
     }
-    # Pass anything other than GET and HEAD and PURGE directly.
-    if (req.request != "GET" && req.request != "HEAD" && req.request != "PURGE") {
-        /* We only deal with GET and HEAD by default */
-        return(pass);
+    # Pass anything other than GET and HEAD directly.
+    if (req.request != "GET" && req.request != "HEAD") {
+        unset req.http.If-Modified-Since;
+        return (pass);
     }
     if (req.http.Authorization) {
         /* Not cacheable by default */
+        unset req.http.If-Modified-Since;
         return (pass);
     }
 
-    # no need to have cookies for the resources
-    if (req.url ~ "\.(css|js|ico)$") {
-        unset req.http.cookie;
+    # No need to have cookies for static resources
+    if (req.url ~ "\.(css|gif|ico|jpg|js|png)$") {
+        unset req.http.Cookie;
     }
-    # remove bogus cookies
+    # Remove bogus cookies
     if (req.http.Cookie) {
         set req.http.Cookie = regsuball(req.http.Cookie, "(^|; ) *__utm.=[^;]+;? *", "\1");
         set req.http.Cookie = regsuball(req.http.Cookie, "(^|; ) *__ac_name=\x22\x22;? *", "\1");
         set req.http.Cookie = regsuball(req.http.Cookie, "(^|; ) *__ac=\x22Og.3D.3D\x22;? *", "\1");
     }
     if (req.http.Cookie == "") {
-        remove req.http.Cookie;
+        unset req.http.Cookie;
     }
     if (req.http.Cookie && req.http.Cookie ~ "(^|; ) *__ac=") {
-        /* Not cacheable for authorised users,
-           but KM images are cacheable */
-        if (!(req.url ~ "/km_img/.*\.(png|gif)$")) {
-            return (pass);
-        }
-    }
-    # XXX Is it OK to remove this of all the case?
-    remove req.http.Set-Cookie;
-
-    if (req.http.Accept-Encoding) {
-        if (req.http.Accept-Encoding ~ "gzip") {
-            set req.http.Accept-Encoding = "gzip";
-        } elsif (req.http.Accept-Encoding ~ "deflate") {
-            set req.http.Accept-Encoding = "deflate";
-        } else {
-            # unkown algorithm
-            remove req.http.Accept-Encoding;
-        }
-    }
-    # We do not care about Accept-Language, this is url controlled
-    remove req.http.Accept-Language;
-
-    ## XXX login form can defer based on __ac_name cookie value
-    if (req.url ~ "/(login_form|WebSite_viewLoginDialog)($|\?)") {
+        unset req.http.If-Modified-Since;
         return (pass);
     }
+
+    # We do not care about Accept-Encoding, because we don't use varnish as the front most HTTP server.
+    unset req.http.Accept-Encoding;
 
     if (req.backend.healthy) {
         set req.grace = 1h;
     } else {
         set req.grace = 1w;
     }
-    return(lookup);
+    return (lookup);
 }
 
 # Creates the varnish cache key by the url
 sub vcl_hash {
+    # We use url only for hash.
     hash_data(req.url);
-    return(hash);
+    return (hash);
 }
 
 # Called after a cache lookup if the requested document was found in the cache
 sub vcl_hit {
-    # According Vary Header do not return those headers
-    remove req.http.Accept-Language;
-    remove req.http.Accept-Encoding;
-    remove req.http.Cookie;
-    return(deliver);
+    return (deliver);
 }
 
 # Called after a cache lookup if the requested document was not found in the cache
 sub vcl_miss {
-    return(fetch);
+    return (fetch);
 }
 
 # Called after a document has been successfully retrieved from the backend
 sub vcl_fetch {
-    # we only cache 200 (OK) and 304 (Not Modified) responses.
+    # Unset Expires that is always overridden by Cache-Control.
+    unset beresp.http.Expires;
+
+    # Unset Pragma header that is obsolete.
+    unset beresp.http.Pragma;
+
+    # We only cache 200 (OK) and 304 (Not Modified) responses.
     if (beresp.status != 200 && beresp.status != 304) {
         set beresp.ttl = 0s;
     }
 
-    if (beresp.http.cache-control ~ "no-cache") {
-        set beresp.ttl = 0s;
+    # If max-age is 0 or not set, we want no browser cache.
+    if (beresp.ttl <= 0s) {
+        set beresp.http.Cache-Control = "no-store";
+        # Mark as hit_for_pass for the next 2 minutes.
+        set beresp.ttl = 120s;
+        return (hit_for_pass);
     }
 
-    if (beresp.ttl == 0s) {
-        unset beresp.http.expires;
-        set beresp.http.cache-control = "no-cache";
-        return(hit_for_pass);
-    }
-
-    # we don't care haproxy's cookie.
+    # We don't care haproxy's cookie.
     if (beresp.http.Set-Cookie && beresp.http.Set-Cookie !~ "^SERVERID=[^;]+; path=/$") {
-        return(hit_for_pass);
+        return (hit_for_pass);
+    } else {
+        unset beresp.http.Set-Cookie;
     }
 
-    if (req.url ~ "\.(css|js|ico)$") {
-        unset beresp.http.set-cookie;
-        set beresp.http.cache-control = regsub(beresp.http.cache-control, "^", "public,");
-        set beresp.http.cache-control = regsub(beresp.http.cache-control, ",$", "");
-    }
-
-    # remove some headers added by caching policy manager to avoid
-    # '304 Not Modified' in case of login <-> logout switching.
-    if (beresp.http.content-type ~ "^text/html") {
-       unset beresp.http.last-modified;
-    }
-
+    # We set long enough grace for cachable objects.
     set beresp.grace = 1w;
-    /* Never send request to backend even if client ask refreshed content */
-    if (beresp.ttl > 0s) {
-        /* Setup grace period for 30days for all cacheable contents */
-        set beresp.grace = 30d;
-        # /* Set the clients TTL on this object */
-        # set beresp.http.cache-control = "max-age = 300";
-        /* Set how long Varnish will keep it */
-        set beresp.ttl = 1w;
-        /* marker for vcl_deliver to reset Age: */
-        set beresp.http.magicmarker = "1";
-    }
 
-    return(deliver);
+    return (deliver);
 }
 
 # Called before a cached object is delivered to the client
 sub vcl_deliver {
-    if (resp.http.magicmarker) {
-        /* Remove the magic marker */
-        unset resp.http.magicmarker;
-        /* By definition we have a fresh object */
-        set resp.http.age = "0";
-    }
     if (obj.hits > 0) {
         set resp.http.X-Cache = obj.hits;
     } else {
         set resp.http.X-Cache = "MISS";
     }
-    return(deliver);
+    return (deliver);
 }
