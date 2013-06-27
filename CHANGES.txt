@@ -7,6 +7,7 @@ Changes
 New features:
 
  * slapconsole: Use readline for completion and history. [Jerome Perrin]
+ * slapos console: support for ipython and bpython [Marco Mariani]
  * Initial windows support. [Jondy Zhao]
  * Support new/changed parameters in command line tools, defined in documentation. [Marco Mariani]
  * Register: support for one-time authentication token. [Marco Mariani]
