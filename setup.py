@@ -47,6 +47,8 @@ setup(name=name,
           'cliff',
           'iniparse',
           'requests',
+          'ipython',
+          'bpython',
         ] + additional_install_requires,
       extra_requires={'docs': (
         'Sphinx',
