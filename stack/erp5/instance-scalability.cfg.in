@@ -2,7 +2,8 @@
 [buildout]
 parts =
   erp5-cluster
-  binary-wrap-launcher
+  launcher
+#  binary-wrap-launcher
 eggs-directory = {{ eggs_directory }}
 develop-eggs-directory = {{ develop_eggs_directory }}
 offline = true
@@ -31,11 +32,15 @@ wrapper-path = ${rootdirectory:bin}/launcher
 log-path = ${basedirectory:log}/launcher.log
 test-suite-title = {{ slapparameter_dict.get('test-suite-title', '') }}
 
-[binary-wrap-launcher]
-recipe = slapos.cookbook:wrapper
-command-line = "${launcher-param:binary-path} --test_suite_title ${launcher-param:test-suite-title} --log ${launcher-param:log-path}"
-output = ${launcher-param:binary-path}
-return = url
+[launcher]
+erp5.util.benchmark.scalability_launcher:main
+
+#[binary-wrap-launcher]
+#recipe = slapos.cookbook:wrapper
+#command-line = "${launcher-param:binary-path} --test_suite_title ${launcher-param:test-suite-title} --log ${launcher-param:log-path}"
+#output = ${launcher-param:binary-path}
+#return = url
+
 
 
 [basedirectory]
