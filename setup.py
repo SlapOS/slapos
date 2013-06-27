@@ -45,6 +45,7 @@ setup(name=name,
           'zope.interface', # slap library implementes interfaces
           'zc.buildout',
           'cliff',
+          'iniparse',
           'requests',
         ] + additional_install_requires,
       extra_requires={'docs': (

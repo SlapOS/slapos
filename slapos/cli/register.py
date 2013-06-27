@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 
-import ConfigParser
 import getpass
 import os
 import shutil
@@ -9,6 +8,7 @@ import sys
 import tempfile
 import subprocess
 
+import iniparse
 import requests
 
 from slapos.cli.command import Command, must_be_root
@@ -174,13 +174,21 @@ def save_former_config(conf):
     shutil.move(former, saved)
 
 
-def get_slapos_conf_example():
+def get_slapos_conf_example(logger):
     """
     Get slapos.cfg.example and return its path
     """
     _, path = tempfile.mkstemp()
     with open(path, 'wb') as fout:
         req = requests.get('http://git.erp5.org/gitweb/slapos.core.git/blob_plain/HEAD:/slapos.cfg.example')
+        try:
+            req.content.decode('ascii')
+        except UnicodeDecodeError:
+            # we have to reject the file because iniparse chokes on non-ascii,
+            # and similar packages (cfgparse, INITools etc) have issues with
+            # multiline values, like certificates, or do not retain comments (ConfigParser).
+            logger.critical('Cannot create configuration file (bad template).')
+            sys.exit(1)
         fout.write(req.content)
     return path
 
@@ -231,11 +239,10 @@ def slapconfig(conf):
 
     # Put slapos configuration file
     config_path = os.path.join(slap_conf_dir, 'slapos.cfg')
-    conf.logger.info('Creating slap configuration: %s', config_path)
 
     # Get example configuration file
-    slapos_cfg_example = get_slapos_conf_example()
-    new_configp = ConfigParser.RawConfigParser()
+    slapos_cfg_example = get_slapos_conf_example(conf.logger)
+    new_configp = iniparse.RawConfigParser()
     new_configp.read(slapos_cfg_example)
     os.remove(slapos_cfg_example)
 
