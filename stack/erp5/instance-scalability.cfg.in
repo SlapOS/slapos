@@ -3,7 +3,8 @@
 parts =
   erp5-cluster
   launcher
-#  binary-wrap-launcher
+  binary-wrap-launcher
+  
 eggs-directory = {{ eggs_directory }}
 develop-eggs-directory = {{ develop_eggs_directory }}
 offline = true
@@ -26,34 +27,32 @@ config =
 extra-config =
 config-use-ipv6 = {{ dumps(slapparameter_dict.get('use-ipv6', False)) }}
 
-[launcher-param]
-binary-path = ${rootdirectory:bin}/launcher
-wrapper-path = ${rootdirectory:bin}/launcher
-log-path = ${basedirectory:log}/launcher.log
-test-suite-title = {{ slapparameter_dict.get('test-suite-title', '') }}
 
+# Create bin
 [launcher]
-erp5.util.benchmark.scalability_launcher:main
+scripts =
+  runScalabilityTestSuite = erp5.util.scalability.scalability_launcher:main
+log-path = ${basedirectory:log}/runScalabilityTestSuite.log
+binary-path = ${:bin-directory}/runScalabilityTestSuite
+# Create wrapper and execute command with parameters
+[binary-wrap-launcher]
+recipe = slapos.cookbook:wrapper
+wrapper-path = ${rootdirectory:bin}/launcher
+output = ${launcher:binary-path}
+command-line = "${binary-wrap-launcher:wrapper-path} --log ${launcher:log-path} --help"
+return = url
 
-#[binary-wrap-launcher]
-#recipe = slapos.cookbook:wrapper
-#command-line = "${launcher-param:binary-path} --test_suite_title ${launcher-param:test-suite-title} --log ${launcher-param:log-path}"
-#output = ${launcher-param:binary-path}
-#return = url
 
 
 
 [basedirectory]
 recipe = slapos.cookbook:mkdirectory
 log = ${rootdirectory:var}/log
-run = ${rootdirectory:var}/run
-services = ${rootdirectory:etc}/run
 
 [rootdirectory]
 recipe = slapos.cookbook:mkdirectory
 etc = ${buildout:directory}/etc
 var = ${buildout:directory}/var
-srv = ${buildout:directory}/srv
 bin = ${buildout:directory}/bin
 
 {% endif %}
