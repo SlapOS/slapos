@@ -37,12 +37,10 @@ sub vcl_recv {
     }
     # Pass anything other than GET and HEAD directly.
     if (req.request != "GET" && req.request != "HEAD") {
-        unset req.http.If-Modified-Since;
         return (pass);
     }
     if (req.http.Authorization) {
         /* Not cacheable by default */
-        unset req.http.If-Modified-Since;
         return (pass);
     }
 
@@ -60,7 +58,6 @@ sub vcl_recv {
         unset req.http.Cookie;
     }
     if (req.http.Cookie && req.http.Cookie ~ "(^|; ) *__ac=") {
-        unset req.http.If-Modified-Since;
         return (pass);
     }
 
@@ -73,6 +70,14 @@ sub vcl_recv {
         set req.grace = 1w;
     }
     return (lookup);
+}
+
+# Run after a pass in vcl_recv OR after a lookup that returned a hitpass
+sub vcl_pass {
+    # unset If-Modified-Since to avoid reusing anonymous's browser cache
+    # after login.
+    unset req.http.If-Modified-Since;
+    return (pass);
 }
 
 # Creates the varnish cache key by the url
@@ -97,7 +102,7 @@ sub vcl_fetch {
     # Unset Expires that is always overridden by Cache-Control.
     unset beresp.http.Expires;
 
-    # Unset Pragma header that is obsolete.
+    # Unset Pragma that is obsolete.
     unset beresp.http.Pragma;
 
     # We only cache 200 (OK) and 304 (Not Modified) responses.
