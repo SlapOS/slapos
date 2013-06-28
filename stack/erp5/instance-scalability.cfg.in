@@ -3,6 +3,7 @@
 parts =
   erp5-cluster
   binary-wrap-launcher
+  scalability-launcher-instance
   
 eggs-directory = {{ eggs_directory }}
 develop-eggs-directory = {{ develop_eggs_directory }}
@@ -38,14 +39,27 @@ output = ${binary-wrap-launcher:binary-path}
 erp5-url = http://foo.bar
 # Run scalability test suite wrapper command with parameters
 # -\ dirty way to conserve spaces
-command-line = "${binary-wrap-launcher:binary-path}" --erp5-url ${binary-wrap-launcher:erp5-url} --test-result-path {{ slapparameter_dict.get('test-result-path') }} --revision {{ slapparameter_dict.get('revision') }} --node-title {{ slapparameter_dict.get('node-title') }} --test-suite-master-url {{ slapparameter_dict.get('test-suite-master-url') }} --log-path ${binary-wrap-launcher:log-path}
+# command-line = "${binary-wrap-launcher:binary-path}" --erp5-url ${binary-wrap-launcher:erp5-url} --test-result-path {{ slapparameter_dict.get('test-result-path') }} --revision {{ slapparameter_dict.get('revision') }} --node-title {{ slapparameter_dict.get('node-title') }} --test-suite-master-url {{ slapparameter_dict.get('test-suite-master-url') }} --log-path ${binary-wrap-launcher:log-path}
+command-line = ${binary-wrap-launcher:binary-path}
 return = url
 
+
+[scalability-launcher-instance]
+recipe = slapos.cookbook:scalability
+configuration-file = ${rootdirectory:etc}/scalability_runner.conf
+wrapper = ${basedirectory:services}/scalability_runner
+erp5-url = ${binary-wrap-launcher:erp5-url}
+test-result-path = {{ slapparameter_dict.get('test-result-path') }}
+revision = {{ slapparameter_dict.get('revision') }}
+node-title = {{ slapparameter_dict.get('node-title') }}
+test-suite-master-url = {{ slapparameter_dict.get('test-suite-master-url') }}
+log-path = ${binary-wrap-launcher:log-path}
 
 # Create partition's directories
 [basedirectory]
 recipe = slapos.cookbook:mkdirectory
 log = ${rootdirectory:var}/log
+services = ${rootdirectory:etc}/run
 
 [rootdirectory]
 recipe = slapos.cookbook:mkdirectory
