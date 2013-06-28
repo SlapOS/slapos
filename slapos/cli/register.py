@@ -8,7 +8,6 @@ import stat
 import sys
 import subprocess
 
-import iniparse
 import requests
 
 from slapos.cli.command import Command, must_be_root

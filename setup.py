@@ -45,7 +45,6 @@ setup(name=name,
           'zope.interface', # slap library implementes interfaces
           'zc.buildout',
           'cliff',
-          'iniparse',
           'requests',
           'ipython',
           'bpython',
