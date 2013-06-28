@@ -2,8 +2,11 @@
 extends = ${template-runner:output}
           ${pbsready-import:output}
 
-
 parts +=
+    certificate-authority
+    ca-nginx
+    nginx_conf
+    nginx-launcher
     slaprunner
 # have to repeat the next one, as it's not inherited from pbsready-import
     import-on-notification

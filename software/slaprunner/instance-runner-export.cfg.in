@@ -4,6 +4,10 @@ extends = ${template-runner:output}
 
 parts +=
     urls
+    certificate-authority
+    ca-nginx
+    nginx_conf
+    nginx-launcher
     slaprunner
     cron-entry-backup
 
@@ -22,6 +26,6 @@ rsync-binary = ${rsync:location}/bin/rsync
 <= resilient-publish-connection-parameter
 backend_url = $${slaprunner:access-url}
 url =  $${request-frontend:connection-site_url}
-cloud9_url = $${cloud9:access-url}
+cloud9_url = https://[$${nginx-frontend:ip}]:$${nginx-frontend:port}
 ssh_command = ssh $${dropbear-runner-server:host} -p $${dropbear-runner-server:port}
 password_recovery_code = $${recovery-code:passwd}

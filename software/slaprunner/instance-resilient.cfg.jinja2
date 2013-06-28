@@ -34,6 +34,7 @@ config-domain = ${slap-parameter:domain}
 
 [publish-connection-informations]
 recipe = slapos.cookbook:publish
+1_info = Set your passord in slaprunner in order to access cloud9
 backend_url = ${request-runner:connection-backend_url}
 url = ${request-runner:connection-url}
 cloud9_url = ${request-runner:connection-cloud9_url}
