@@ -23,4 +23,3 @@ def install_library(options, sections):
     built_package = os.path.join(compile_directory, 'junixsocket-1.3', 'dist', filename)
     dst = os.path.join(options['location'], filename)
     shutil.copyfile(built_package, dst)
-
