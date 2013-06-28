@@ -87,6 +87,9 @@ slave-reference = {{ slave_instance.get('slave_reference') }}
 reference = {{ slave_instance.get('slave_reference') }}
 public-ipv4 = {{ public_ipv4 }}
 domain = {{ slave_instance.get('domain') }}
+url = http://{{ slave_instance.get('domain') }}
+# Backward compatibility
+site_url = ${:url}
 {% endfor -%}
 
 
