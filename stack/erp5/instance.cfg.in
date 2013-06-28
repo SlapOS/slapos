@@ -240,6 +240,18 @@ extra-context =
 # Must match the key id in [switch-softwaretype] which uses this section.
     raw software_type cluster-zope
 
+[dynamic-template-scalability]
+< = jinja2-template-base
+template = {{ template_scalability }}
+filename = instance-scalability.cfg
+extensions = jinja2.ext.do
+bin_directory = {{ bin_directory }}
+extra-context =
+    key bin_directory dynamic-template-scalability:bin_directory
+    key local_bt5_repository dynamic-template-cluster-erp5-parameters:local-bt5-repository
+# Must match the key id in [switch-softwaretype] which uses this section.
+    raw software_type scalability
+
 [dynamic-template-kumofs-parameters]
 dash-location = {{ dash_location }}
 dcron-location = {{ dcron_location }}

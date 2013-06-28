@@ -2,7 +2,6 @@
 [buildout]
 parts =
   erp5-cluster
-  launcher
   binary-wrap-launcher
   
 eggs-directory = {{ eggs_directory }}
@@ -28,32 +27,18 @@ config =
 extra-config =
 config-use-ipv6 = {{ dumps(slapparameter_dict.get('use-ipv6', False)) }}
 
-
-# Create binary
-[launcher]
-scripts =
-  runScalabilityTestSuite = erp5.util.scalability.runScalabilityTestSuite:main
-log-path = ${basedirectory:log}/runScalabilityTestSuite.log
-binary-path = ${:bin-directory}/runScalabilityTestSuite
-
-# TODO : make also a wrapper for performance_tester (used by runScalabilityTestSuite)
-
-
 # Create wrapper and execute command with parameters
 [binary-wrap-launcher]
 recipe = slapos.cookbook:wrapper
+log-path = ${basedirectory:log}/runScalabilityTestSuite.log
+binary-path = {{ bin_directory }}/runScalabilityTestSuite
 wrapper-path = ${rootdirectory:bin}/runScalabilityTestSuite
-output = ${launcher:binary-path}
+output = ${binary-wrap-launcher:binary-path}
 # TODO : get the erp5-cluster main url (apache listening user port ?)
 erp5-url = http://foo.bar
 # Run scalability test suite wrapper command with parameters
-command-line = "${binary-wrap-launcher:wrapper-path}\
- --erp5-url ${binary-wrap-launcher:erp5-url}\
- --test-result-path {{ dumps(slapparameter_dict.get('test-result-path')) }}\
- --revision {{ dumps(slapparameter_dict.get('revision')) }}\
- --node-title {{ dumps(slapparameter_dict.get('node-title')) }}\
- --test-suite-master-url {{ dumps(slapparameter_dict.get('test-suite-master-url')) }}\
- --log-path = ${launcher:log-path}"
+# -\ dirty way to conserve spaces
+command-line = "${binary-wrap-launcher:binary-path}" --erp5-url ${binary-wrap-launcher:erp5-url} --test-result-path {{ slapparameter_dict.get('test-result-path') }} --revision {{ slapparameter_dict.get('revision') }} --node-title {{ slapparameter_dict.get('node-title') }} --test-suite-master-url {{ slapparameter_dict.get('test-suite-master-url') }} --log-path ${binary-wrap-launcher:log-path}
 return = url
 
 
