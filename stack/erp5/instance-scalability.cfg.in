@@ -32,14 +32,17 @@ config-use-ipv6 = {{ dumps(slapparameter_dict.get('use-ipv6', False)) }}
 # Create binary
 [launcher]
 scripts =
-  runScalabilityTestSuite = erp5.util.scalability.scalability_launcher:main
+  runScalabilityTestSuite = erp5.util.scalability.runScalabilityTestSuite:main
 log-path = ${basedirectory:log}/runScalabilityTestSuite.log
 binary-path = ${:bin-directory}/runScalabilityTestSuite
+
+# TODO : make also a wrapper for performance_tester (used by runScalabilityTestSuite)
+
 
 # Create wrapper and execute command with parameters
 [binary-wrap-launcher]
 recipe = slapos.cookbook:wrapper
-wrapper-path = ${rootdirectory:bin}/launcher
+wrapper-path = ${rootdirectory:bin}/runScalabilityTestSuite
 output = ${launcher:binary-path}
 # TODO : get the erp5-cluster main url (apache listening user port ?)
 erp5-url = http://foo.bar
