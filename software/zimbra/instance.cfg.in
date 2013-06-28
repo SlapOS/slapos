@@ -240,8 +240,8 @@ make-binary = ${ant:location}/bin/ant
 make-targets =
 environment-dependency = ${environment:recipe}
 junit-path = ${junit:destination}/${junit:filename}
-pre-make-hook = ${:_profile_base_location_}/junixsocket-hooks.py:fix_build_xml
-post-make-hook = ${:_profile_base_location_}/junixsocket-hooks.py:install_library
+pre-make-hook = {{ junixsocket_hooks }}:fix_build_xml
+post-make-hook = {{ junixsocket_hooks }}:install_library
 
 
 [junixsocket-sources]
