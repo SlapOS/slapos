@@ -1,12 +1,11 @@
 # -*- coding: utf-8 -*-
 
-import ConfigParser
 import getpass
 import os
+import re
 import shutil
 import stat
 import sys
-import tempfile
 import subprocess
 
 import requests
@@ -173,15 +172,10 @@ def save_former_config(conf):
     shutil.move(former, saved)
 
 
-def get_slapos_conf_example():
-    """
-    Get slapos.cfg.example and return its path
-    """
-    _, path = tempfile.mkstemp()
-    with open(path, 'wb') as fout:
-        req = requests.get('http://git.erp5.org/gitweb/slapos.core.git/blob_plain/HEAD:/slapos.cfg.example')
-        fout.write(req.content)
-    return path
+def fetch_configuration_template():
+    req = requests.get('http://git.erp5.org/gitweb/slapos.core.git/blob_plain/HEAD:/slapos.cfg.example')
+    req.raise_for_status()
+    return req.text
 
 
 def slapconfig(conf):
@@ -232,31 +226,28 @@ def slapconfig(conf):
     config_path = os.path.join(slap_conf_dir, 'slapos.cfg')
     conf.logger.info('Creating slap configuration: %s', config_path)
 
-    # Get example configuration file
-    slapos_cfg_example = get_slapos_conf_example()
-    new_configp = ConfigParser.RawConfigParser()
-    new_configp.read(slapos_cfg_example)
-    os.remove(slapos_cfg_example)
+    cfg = fetch_configuration_template()
 
-    for section, key, value in [
-        ('slapos', 'computer_id', conf.computer_id),
-        ('slapos', 'master_url', conf.master_url),
-        ('slapos', 'key_file', key_file),
-        ('slapos', 'cert_file', cert_file),
-        ('slapos', 'certificate_repository_path', certificate_repository_path),
-        ('slapformat', 'interface_name', conf.interface_name),
-        ('slapformat', 'ipv4_local_network', conf.ipv4_local_network),
-        ('slapformat', 'partition_amount', conf.partition_number),
-        ('slapformat', 'create_tap', conf.create_tap)
-    ]:
-        new_configp.set(section, key, value)
-
+    to_replace = [
+        ('computer_id', conf.computer_id),
+        ('master_url', conf.master_url),
+        ('key_file', key_file),
+        ('cert_file', cert_file),
+        ('certificate_repository_path', certificate_repository_path),
+        ('interface_name', conf.interface_name),
+        ('ipv4_local_network', conf.ipv4_local_network),
+        ('partition_amount', conf.partition_number),
+        ('create_tap', conf.create_tap)
+    ]
     if conf.ipv6_interface:
-        new_configp.set('slapformat', 'ipv6_interface', conf.ipv6_interface)
+        to_replace.append([('ipv6_interface', conf.ipv6_interface)])
+
+    for key, value in to_replace:
+        cfg = re.sub('%s\s+=.*' % key, '%s = %s' % (key, value), cfg)
 
     if not dry_run:
         with open(config_path, 'w') as fout:
-            new_configp.write(fout)
+            fout.write(cfg.encode('utf8'))
 
     conf.logger.info('SlapOS configuration written to %s', config_path)
 
