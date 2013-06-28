@@ -70,7 +70,6 @@ apache_custom_https = {{ dumps(apache_custom_https) }}
 {%   do part_list.append(publish_section_title) -%}
 [{{ publish_section_title }}]
 recipe = slapos.cookbook:publish
-reference = {{ slave_instance.get('slave_reference') }}
 public-ipv4 = {{ public_ipv4 }}
 slave-reference = {{ slave_instance.get('slave_reference') }}
 {% endfor -%}
