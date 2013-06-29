@@ -1204,7 +1204,9 @@ class FormatConfig(object):
       self.checkRequiredBinary(['brctl'])
 
     # Check if root is needed
-    if (self.alter_network or self.alter_user) and not self.dry_run:
+    if sys.platform == 'cygwin':
+      root_needed = False
+    elif (self.alter_network or self.alter_user) and not self.dry_run:
       root_needed = True
     else:
       root_needed = False
