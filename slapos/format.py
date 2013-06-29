@@ -729,7 +729,7 @@ class Interface(object):
                          interface_name)
     if sys.platform == 'cygwin':
       for q in address_list:
-        q.setdefault('netmask', 'FFFF:FFFF:FFFF:FFFF::')
+        q.setdefault('netmask', 'FFFF:FFFF:FFFF:FFFF:FFFF::')
     # XXX: Missing implementation of Unique Local IPv6 Unicast Addresses as
     # defined in http://www.rfc-editor.org/rfc/rfc4193.txt
     # XXX: XXX: XXX: IT IS DISALLOWED TO IMPLEMENT link-local addresses as
