@@ -54,7 +54,7 @@ ip = {{ (ipv6_set | list)[0] }}
 {% else -%}
 ip = {{ (ipv4_set | list)[0] }}
 {% endif -%}
-port = 45678
+port = {{ slapparameter_dict['tcpv4-port'] }}
 socket = ${directory:run}/mariadb.sock
 data-directory = ${directory:mariadb-data}
 pid-file = ${directory:run}/mariadb.pid

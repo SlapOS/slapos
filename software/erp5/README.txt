@@ -14,6 +14,48 @@ Parameters are expected to be passed as of *.serialised recipes expect them::
 
 where `...` is a json expression (typically a dict).
 
+TCPv4 ports allocation
+----------------------
+Service listening ports are allocated in the following pattern.
+Base port of each software can be overridden, those are the default values.
+- kumofs (persistent)
+  2000: manager
+  2001: server port (?)
+  2002: server listen port (?)
+  2003: gateway port (?)
+- kumofs (volatile)
+  2010: manager
+  2011: server port (?)
+  2012: server listen port (?)
+  2013: gateway port (?)
+- cloudooo
+  2020: cloudooo
+  2021: openoffice
+- mariadb
+  2099: mariadb
+- zeo & tidstorage
+  2100: tidstorage
+  2101: first zeo
+  2102: second zeo
+  (etc)
+- haproxy
+  2150: first haproxy
+  2151: first apache
+  2152: second haproxy
+  2153: second apache
+  (etc)
+- cluster-zope
+  2200: first zope
+  2201: second zope
+  (etc)
+Note: these are not applicable when (yet unsupported) ipv6 mode is enabled, as
+stunnel (used to tunnel ipv4-only services over ipv6) needs its own listening
+ports.
+This pattern was chosen to make it possible to deploy this software release in
+a setup where all partitions would share the same IPv4 without having to
+provide many parameters.
+Some ports are unused in the overall range to allow software types to grow.
+
 common
 ------
 Parameters which are available to all software types.
@@ -24,6 +66,9 @@ MariaDB (used for catalog, activity tables and id generator) instance
 parameters.
 Defaults to {}.
 Possible keys and associated value types:
+'tcpv4-port' (int, optional)
+  TCPv4 port to listen on.
+  Defaults to 2099.
 'database-list' (list, optional)
   Define the list of databases mariadb must provide, and the user having entire
   access to each database. Each entry in the list is a dict, with these
@@ -122,6 +167,12 @@ Storage mechanism to use. To know the list of supported values, see all keys in
 instance.cfg.in's section [switch-softwaretype] which start with "zodb-".
 Defaults to 'zeo'.
 
+'zodb-tcpv4-port' (int, optional)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Base TCPv4 port for ZODB provider, if applicable (depends on chosen
+software-type).
+Defaults to 2100.
+
 'zodb-dict' (dict, optional)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Describes ZODBs to create and use in the instance. At least one entry is
@@ -216,13 +267,18 @@ value (dict)
     Start allocating ports at this value. Useful if one needs to make several
     partitions share the same port range (ie, several partitions bound to a
     single address).
-    Defaults to 2000.
+    Defaults to 2200.
 
 'haproxy-maxconn' (int, optional)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 The number of connections haproxy accepts for a given backend.
 See haproxy's "server maxconn" setting.
 Defaults to 1 (correct for single-worker-threaded zopes).
+
+'haproxy-tcpv4-port' (int, optional)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Base TCPv4 port for load-balancer (haproxy + backend apache).
+Defaults to 2150.
 
 'haproxy-server-check-path' (str, optional)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -266,25 +322,41 @@ Possible keys and associated value types:
 'company' (str, optional)
   Company name. Defaults to 'Dummy Company'.
 
-'use-ipv6' (boolean, optional)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Use IPv6 to communicate between partitions.
-Defaults to False.
-
 'mariadb-computer-guid' (str, optional)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Computer GUID identifying the partition mariadb is to be requested on.
 Defaults to "cluster" software type's partition's effective computer GUID.
+
+'cloudooo-tcpv4-port' (int, optional)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Base TCPv4 port for cloudooo.
+Defaults to 2020.
 
 'cloudooo-computer-guid' (str, optional)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Computer GUID identifying the partition cloudooo is to be requested on.
 Defaults to "cluster" software type's partition's effective computer GUID.
 
+'memcached-size' (int, optional)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Megabytes of ram to allocate for volatile memcached use.
+Defaults to 64.
+Negative/zero values cause undefined behaviour which may change in the future.
+
+'memcached-tcpv4-port'
+~~~~~~~~~~~~~~~~~~~~~~
+Base TCPv4 port for volatile memcached.
+Defaults to 2010.
+
 'memcached-computer-guid' (str, optional)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Computer GUID identifying the partition memcached is to be requested on.
 Defaults to "cluster" software type's partition's effective computer GUID.
+
+'kumofs-tcpv4-port'
+~~~~~~~~~~~~~~~~~~~
+Base TCPv4 port for persistent memcached.
+Defaults to 2000.
 
 'kumofs-computer-guid' (str, optional)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -302,10 +374,10 @@ Computer GUID identifying the partition balander (haproxy, apache, some HTTP
 cache) is to be requested on.
 Defaults to "cluster" software type's partition's effective computer GUID.
 
-'cloudooo-json' (str, optional)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-XXX: what is this ?
-XXX: should not require serialising json by hand as parameter value
+'font-url-list' (list of strings, optional)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+List of extra fonts URLs to be used by cloudooo.
+Defaults to [].
 
 'bt5' (str, optional)
 ~~~~~~~~~~~~~~~~~~~~~

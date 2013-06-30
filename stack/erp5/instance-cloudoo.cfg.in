@@ -1,5 +1,4 @@
 {% if software_type == slap_software_type -%}
-{% set json = json_module.loads(parameter_dict.get('cloudooo-json', '{}')) -%}
 {% set bin_directory = parameter_dict['buildout-bin-directory'] -%}
 {% set use_ipv6 = slapparameter_dict.get('use-ipv6', False) -%}
 [buildout]
@@ -26,8 +25,9 @@ recipe = slapos.cookbook:generic.cloudooo
 
 # Network options
 ip = ${slap-network-information:local-ipv4}
-port = 23000
-openoffice-port = 23060
+{% set tcpv4_port = slapparameter_dict['tcpv4-port'] -%}
+port = {{ tcpv4_port }}
+openoffice-port = {{ tcpv4_port + 1 }}
 
 # Paths
 configuration-file = ${directory:etc}/cloudooo.cfg
@@ -51,7 +51,7 @@ recipe = slapos.cookbook:fontconfig
 conf-path = ${directory:etc}/font.conf
 font-system-folder = {{ parameter_dict['fonts'] }}
 font-folder = ${directory:font}
-url-list = {{ json.get('font_url_list', []) | join(' ') }}
+url-list = {{ slapparameter_dict.get('font-url-list', []) | join(' ') }}
 service-folder = ${directory:service}
 onetimedownload_path = {{ bin_directory }}/onetimedownload
 

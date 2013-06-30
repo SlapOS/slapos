@@ -1,6 +1,5 @@
 {% if slap_software_type == software_type -%}
 {% set has_frontend = slapparameter_dict.get('frontend-software-url', '') != '' -%}
-{% set port_base = 2000 -%}
 {% set site_id = slapparameter_dict.get('site-id', 'erp5') -%}
 [request-common]
 recipe = slapos.cookbook:request.serialised
@@ -32,8 +31,11 @@ extra-config = {{ ' '.join(mariadb_dict) }}
 [request-cloudooo]
 <=request-common
 name = Cloudooo
-extra-config = cloudooo-json
-config-cloudooo-json = {{ slapparameter_dict.get('cloudooo-json', '') }}
+extra-config =
+  font-url-list
+  tcpv4-port
+config-font-url-list = {{ dumps(slapparameter_dict.get('font-url-list', [])) }}
+tcpv4-port = {{ dumps(slapparameter_dict.get(cloudooo-tcpv4-port, 2020)) }}
 software-type = cloudooo
 sla-computer_guid = {{ slapparameter_dict.get('cloudooo-computer-guid', computer_id) }}
 
@@ -44,13 +46,18 @@ software-type = kumofs
 sla-computer_guid = {{ slapparameter_dict.get('memcached-computer-guid', computer_id) }}
 extra-config =
   ram-storage-size
-config-ram-storage-size = 64m
+  tcpv4-port
+config-ram-storage-size = {{ slapparameter_dict.get('memcached-size', 64) ~ 'm' }}
+config-tcpv4-port = {{ dumps(slapparameter_dict.get('memcached-tcpv4-port', 2010)) }}
 
 [request-kumofs]
 <=request-common
 name = KumoFS
 software-type = kumofs
 sla-computer_guid = {{ slapparameter_dict.get('kumofs-computer-guid', computer_id) }}
+extra-config =
+  tcpv4-port
+config-tcpv4-port = {{ dumps(slapparameter_dict.get('kumofs-tcpv4-port', 2000)) }}
 
 [request-zope-base]
 <=request-common
@@ -102,6 +109,8 @@ return =
 extra-config =
   zodb-dict
   tidstorage-dict
+  tcpv4-port
+config-tcpv4-port = {{ dumps(slapparameter_dict.get('zodb-tcpv4-port', 2100)) }}
 config-zodb-dict = {{ dumps(slapparameter_dict.get('zodb-dict', {'root': {}})) }}
 config-tidstorage-dict = {{ dumps(slapparameter_dict.get('tidstorage-dict')) }}
 software-type = zodb-{{ slapparameter_dict.get('zodb-software-type', 'zeo') }}
@@ -120,7 +129,7 @@ config-thread-amount = {{ dumps(zope_parameter_dict.get('thread-amount', 1)) }}
 config-timerserver-interval = {{ dumps(zope_parameter_dict.get('timerserver-interval', 5)) }}
 config-longrequest-logger-interval = {{ dumps(zope_parameter_dict.get('longrequest-logger-interval', -1)) }}
 config-longrequest-logger-timeout = {{ dumps(zope_parameter_dict.get('longrequest-logger-timeout', 1)) }}
-config-port-base = {{ dumps(zope_parameter_dict.get('port-base', port_base)) }}
+config-port-base = {{ dumps(zope_parameter_dict.get('port-base', 2200)) }}
 sla-computer_guid = {{ zope_parameter_dict.get('computer-guid', computer_id) }}
 {% endfor -%}
 
@@ -153,6 +162,7 @@ name = balancer
 software-type = balancer
 sla-computer_guid = {{ slapparameter_dict.get('balancer-computer-guid', computer_id) }}
 extra-config =
+  tcpv4-port
   haproxy-maxconn
   haproxy-server-check-path
   apache-access-control-string
@@ -164,6 +174,7 @@ extra-config =
 return =
   {{ zope_family_dict.keys() | join(' ') }}
 config-zope-family-dict = {{ dumps(zope_family_parameter_dict) }}
+config-tcpv4-port = {{ dumps(slapparameter_dict.get('', 2150)) }}
 {% for zope_section_id, name in zope_address_list_id_dict.items() -%}
 config-{{ name }} = {{ ' ${' ~ zope_section_id ~ ':connection-zope-address-list}' }}
 {% endfor -%}

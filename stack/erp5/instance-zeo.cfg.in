@@ -1,6 +1,6 @@
 {% if software_type == slap_software_type -%}
 {% set use_ipv6 = slapparameter_dict.get('use-ipv6', False) -%}
-{% set next_port = 2000 -%}
+{% set next_port = slapparameter_dict['tcpv4-port'] -%}
 {% set part_list = [] -%}
 {% set storage_dict = {} -%}
 {% set zodb_dict = {} -%}
