@@ -1,5 +1,6 @@
 {% if slap_software_type == software_type -%}
-{% set has_frontend = slapparameter_dict.get('frontend-software-url', '') != '' -%}
+{% set frontend_dict = slapparameter_dict.get('frontend', {}) %}
+{% set has_frontend = frontend_dict.get('software-url', '') != '' -%}
 {% set site_id = slapparameter_dict.get('site-id', 'erp5') -%}
 [request-common]
 recipe = slapos.cookbook:request.serialised
@@ -17,50 +18,30 @@ config =
 extra-config =
 config-use-ipv6 = {{ dumps(slapparameter_dict.get('use-ipv6', False)) }}
 
-[request-mariadb]
-<=request-common
-name = MariaDB DataBase
-software-type = mariadb
-sla-computer_guid = {{ slapparameter_dict.get('mariadb-computer-guid', computer_id) }}
-{% set mariadb_dict = slapparameter_dict.get('mariadb-dict', {}) -%}
-{% for option, value in mariadb_dict.items() -%}
+{% macro request(name, software_type, config_key, config={}, ret=None) -%}
+{% do config.update(slapparameter_dict.get(config_key, {})) -%}
+[request-{{ name }}]
+< = request-common
+name = {{ name }}
+software-type = {{ software_type }}
+{% if ret != None -%}
+return = {{ ret }}
+{% endif -%}
+sla-computer_guid = {{ slapparameter_dict.get(computer_guid_key + '-computer-guid', computer_id) }}
+extra-config = {{ ' '.join(config) }}
+{% for option, value in config.items() -%}
 config-{{ option }} = {{ dumps(value) }}
 {% endfor -%}
-extra-config = {{ ' '.join(mariadb_dict) }}
+{% endmacro -%}
 
-[request-cloudooo]
-<=request-common
-name = Cloudooo
-extra-config =
-  font-url-list
-  tcpv4-port
-config-font-url-list = {{ dumps(slapparameter_dict.get('font-url-list', [])) }}
-tcpv4-port = {{ dumps(slapparameter_dict.get(cloudooo-tcpv4-port, 2020)) }}
-software-type = cloudooo
-sla-computer_guid = {{ slapparameter_dict.get('cloudooo-computer-guid', computer_id) }}
-
-[request-memcached]
-<=request-common
-name = KumoFS-ram
-software-type = kumofs
-sla-computer_guid = {{ slapparameter_dict.get('memcached-computer-guid', computer_id) }}
-extra-config =
-  ram-storage-size
-  tcpv4-port
-config-ram-storage-size = {{ slapparameter_dict.get('memcached-size', 64) ~ 'm' }}
-config-tcpv4-port = {{ dumps(slapparameter_dict.get('memcached-tcpv4-port', 2010)) }}
-
-[request-kumofs]
-<=request-common
-name = KumoFS
-software-type = kumofs
-sla-computer_guid = {{ slapparameter_dict.get('kumofs-computer-guid', computer_id) }}
-extra-config =
-  tcpv4-port
-config-tcpv4-port = {{ dumps(slapparameter_dict.get('kumofs-tcpv4-port', 2000)) }}
+{{ request('memcached-persistent', 'kumofs', 'kumofs', {'tcpv4-port': 2000}) }}
+{{ request('memcached-volatile', 'kumofs', 'memcached', {'tcpv4-port': 2010, 'ram-storage-size': 64}) }}
+{{ request('cloudooo', 'cloudooo', 'cloudooo', {'tcpv4-port': 2020}) }}
+{{ request('mariadb', 'mariadb', 'mariadb', {'tcpv4-port': 2099}) }}
+{{ request('zodb', slapparameter_dict.get('zodb-software-type', 'zeo'), 'zodb', {'tcpv4-port': 2100, 'zodb-dict': {'root': {}}}, 'zodb-storage-type zodb-dict tidstorage-ip tidstorage-port') }}
 
 [request-zope-base]
-<=request-common
+< = request-common
 return =
   zope-address-list
 extra-config =
@@ -94,27 +75,9 @@ config-zodb-dict = ${request-zodb:connection-zodb-dict}
 config-zodb-storage-type = ${request-zodb:connection-zodb-storage-type}
 config-tidstorage-ip = ${request-zodb:connection-tidstorage-ip}
 config-tidstorage-port = ${request-zodb:connection-tidstorage-port}
-config-timezone = {{ slapparameter_dict.get('timezone', 'Europe/Paris') }}
+config-timezone = {{ slapparameter_dict.get('timezone', 'UTC') }}
 config-site-id = {{ site_id }}
 software-type = cluster-zope
-
-[request-zodb]
-< = request-common
-name = zodb
-return =
-  zodb-storage-type
-  zodb-dict
-  tidstorage-ip
-  tidstorage-port
-extra-config =
-  zodb-dict
-  tidstorage-dict
-  tcpv4-port
-config-tcpv4-port = {{ dumps(slapparameter_dict.get('zodb-tcpv4-port', 2100)) }}
-config-zodb-dict = {{ dumps(slapparameter_dict.get('zodb-dict', {'root': {}})) }}
-config-tidstorage-dict = {{ dumps(slapparameter_dict.get('tidstorage-dict')) }}
-software-type = zodb-{{ slapparameter_dict.get('zodb-software-type', 'zeo') }}
-sla-computer_guid = {{ slapparameter_dict.get('zodb-computer-guid', computer_id) }}
 
 {% set zope_family_dict = {} -%}
 {% for custom_name, zope_parameter_dict in slapparameter_dict.get('zope-partition-dict', {'1': {}}).items() -%}
@@ -189,16 +152,16 @@ config-ca = {{ dumps(slapparameter_dict.get('ca', {})) }}
 [request-frontend-base]
 {% if has_frontend -%}
 < = request-common
-software-url = {{ slapparameter_dict['frontend-software-url'] }}
-software-type = {{ slapparameter_dict.get('frontend-software-type', 'RootSoftwareInstance') }}
+software-url = {{ frontend_dict['software-url'] }}
+software-type = {{ frontend_dict.get('software-type', 'RootSoftwareInstance') }}
 sla = instance_guid
-sla-instance_guid = {{ slapparameter_dict['frontend-instance-guid'] }}
+sla-instance_guid = {{ frontend_dict['instance-guid'] }}
 slave = true
 {% set config_dict = {
   'type': 'zope',
 } -%}
-{%   if slapparameter_dict.get('frontend-domain') -%}
-{%     do config_dict.__setitem__('custom_domain', slapparameter_dict['frontend-domain']) -%}
+{%   if frontend_dict.get('domain') -%}
+{%     do config_dict.__setitem__('custom_domain', frontend_dict['domain']) -%}
 {%   endif -%}
 extra-config = url {{ config_dict.keys() | join(' ') }}
 {%   for name, value in config_dict.items() -%}

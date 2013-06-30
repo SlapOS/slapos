@@ -44,8 +44,7 @@ gateway-port = {{ tcpv4_port + 3 }}
 # Paths: Data
 {% set ram_storage_size = slapparameter_dict.get('ram-storage-size') -%}
 {% if ram_storage_size -%}
-data-path = *#capsiz=${:storage-size}
-storage-size = {{ ram_storage_size }}
+data-path = *#capsiz={{ ram_storage_size }}m
 {% else -%}
 data-directory = ${directory:kumofs-data}
 {% endif -%}
