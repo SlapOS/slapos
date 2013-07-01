@@ -2,8 +2,8 @@
 {% set site_id = slapparameter_dict.get('site-id', 'erp5') -%}
 {% set promise_path = slapparameter_dict.get('promise-path', 'erp5') -%}
 [buildout]
-extends = {{ template_cluster_zope }}
-  {{ template_erp5_cluster }}
+extends = {{ template_erp5_cluster }}
+  {{ template_zope }}
 parts =
   erp5-cluster
   binary-wrap-launcher
@@ -12,34 +12,10 @@ parts =
   erp5-bootstrap
   erp5-promise
   promise-erp5-site
-  
+
 eggs-directory = {{ eggs_directory }}
 develop-eggs-directory = {{ develop_eggs_directory }}
 offline = true
-
-[erp5-bootstrap]
-recipe = slapos.cookbook:erp5.bootstrap
-runner-path = ${basedirectory:services}/erp5-bootstrap
-mysql-url =  ${request-mariadb:connection-url}
-# Dirty way to get parameters
-zope-url = http://${zope-0:user}:insecure@${zope-0:ip}:${zope-0:port}/{{ site_id }}
-
-[erp5-promise]
-recipe = slapos.cookbook:erp5.promise
-promise-path = {{ promise_path }}
-kumofs-url = ${request-kumofs:connection-url}
-memcached-url = ${request-memcached:connection-url}
-cloudooo-url = ${request-cloudooo:connection-url}
-smtp-url = ${slap-parameter:smtp-url}
-bt5 = ${slap-parameter:bt5}
-bt5-repository-url = ${slap-parameter:bt5-repository-url}
-
-[promise-erp5-site]
-recipe = slapos.cookbook:check_url_available
-path = ${basedirectory:promises}/erp5site
-url = http://${zope-instance:ip}:${zope-instance:port}/${slap-parameter:site-id}
-dash_path = {{ dash_location }}/bin/dash
-curl_path = {{ curl_location }}/bin/curl
 
 # Request erp5-cluster instance
 [erp5-cluster]
@@ -109,5 +85,41 @@ recipe = slapos.cookbook:mkdirectory
 etc = ${buildout:directory}/etc
 var = ${buildout:directory}/var
 bin = ${buildout:directory}/bin
+
+
+
+
+
+
+
+[erp5-bootstrap]
+recipe = slapos.cookbook:erp5.bootstrap
+runner-path = ${basedirectory:services}/erp5-bootstrap
+mysql-url =  ${request-mariadb:connection-url}
+zope-url = http://${zope-instance:user}:${zope-instance:password}@${zope-instance:ip}:${zope-instance:port}/{{ site_id }}
+
+[erp5-promise]
+recipe = slapos.cookbook:erp5.promise
+promise-path = {{ promise_path }}
+kumofs-url = ${request-kumofs:connection-url}
+memcached-url = ${request-memcached:connection-url}
+cloudooo-url = ${request-cloudooo:connection-url}
+smtp-url =
+bt5 =
+bt5-repository-url =
+
+[zope-instance]
+promise-path = {{ promise_path }}
+site-id = {{ site_id }}
+
+[promise-erp5-site]
+recipe = slapos.cookbook:check_url_available
+path = ${basedirectory:promises}/erp5site
+url = http://${zope-instance:ip}:${zope-instance:port}/{{ site_id }}
+dash_path = {{ dash_location }}/bin/dash
+curl_path = {{ curl_location }}/bin/curl
+
+
+
 
 {% endif %}
