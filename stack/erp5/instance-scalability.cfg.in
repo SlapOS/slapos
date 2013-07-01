@@ -1,13 +1,45 @@
 {% if slap_software_type == software_type -%}
+{% set site_id = slapparameter_dict.get('site-id', 'erp5') -%}
+{% set promise_path = slapparameter_dict.get('promise-path', 'erp5') -%}
 [buildout]
+extends = {{ template_cluster_zope }}
+  {{ template_erp5_cluster }}
 parts =
   erp5-cluster
   binary-wrap-launcher
   scalability-launcher-instance
+  binary-wrap-performance-tester
+  erp5-bootstrap
+  erp5-promise
+  promise-erp5-site
   
 eggs-directory = {{ eggs_directory }}
 develop-eggs-directory = {{ develop_eggs_directory }}
 offline = true
+
+[erp5-bootstrap]
+recipe = slapos.cookbook:erp5.bootstrap
+runner-path = ${basedirectory:services}/erp5-bootstrap
+mysql-url =  ${request-mariadb:connection-url}
+# Dirty way to get parameters
+zope-url = http://${zope-0:user}:insecure@${zope-0:ip}:${zope-0:port}/{{ site_id }}
+
+[erp5-promise]
+recipe = slapos.cookbook:erp5.promise
+promise-path = {{ promise_path }}
+kumofs-url = ${request-kumofs:connection-url}
+memcached-url = ${request-memcached:connection-url}
+cloudooo-url = ${request-cloudooo:connection-url}
+smtp-url = ${slap-parameter:smtp-url}
+bt5 = ${slap-parameter:bt5}
+bt5-repository-url = ${slap-parameter:bt5-repository-url}
+
+[promise-erp5-site]
+recipe = slapos.cookbook:check_url_available
+path = ${basedirectory:promises}/erp5site
+url = http://${zope-instance:ip}:${zope-instance:port}/${slap-parameter:site-id}
+dash_path = {{ dash_location }}/bin/dash
+curl_path = {{ curl_location }}/bin/curl
 
 # Request erp5-cluster instance
 [erp5-cluster]
@@ -28,7 +60,7 @@ config =
 extra-config =
 config-use-ipv6 = {{ dumps(slapparameter_dict.get('use-ipv6', False)) }}
 
-# Create wrapper and execute command with parameters
+# Create wrapper
 [binary-wrap-launcher]
 recipe = slapos.cookbook:wrapper
 log-path = ${basedirectory:log}/runScalabilityTestSuite.log
@@ -40,14 +72,25 @@ erp5-url = http://foo.bar
 # Run scalability test suite wrapper command with parameters
 # -\ dirty way to conserve spaces
 # command-line = "${binary-wrap-launcher:binary-path}" --erp5-url ${binary-wrap-launcher:erp5-url} --test-result-path {{ slapparameter_dict.get('test-result-path') }} --revision {{ slapparameter_dict.get('revision') }} --node-title {{ slapparameter_dict.get('node-title') }} --test-suite-master-url {{ slapparameter_dict.get('test-suite-master-url') }} --log-path ${binary-wrap-launcher:log-path}
+parameters-extra = $*
 command-line = ${binary-wrap-launcher:binary-path}
 return = url
 
+# Create wrapper
+[binary-wrap-performance-tester]
+recipe = slapos.cookbook:wrapper
+binary-path = {{ bin_directory }}/performance_tester
+wrapper-path = ${rootdirectory:bin}/performance_tester
+output = ${binary-wrap-performance-tester:binary-path}
+parameters-extra = $*
+command-line = ${binary-wrap-performance-tester:binary-path}
+return = url
 
 [scalability-launcher-instance]
 recipe = slapos.cookbook:scalability
 configuration-file = ${rootdirectory:etc}/scalability_runner.conf
 wrapper = ${basedirectory:services}/scalability_runner
+exec-path = ${binary-wrap-launcher:wrapper-path}
 erp5-url = ${binary-wrap-launcher:erp5-url}
 test-result-path = {{ slapparameter_dict.get('test-result-path') }}
 revision = {{ slapparameter_dict.get('revision') }}

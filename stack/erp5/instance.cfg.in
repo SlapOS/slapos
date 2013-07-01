@@ -248,7 +248,11 @@ extensions = jinja2.ext.do
 bin_directory = {{ bin_directory }}
 extra-context =
     key bin_directory dynamic-template-scalability:bin_directory
+    key curl_location template-erp5-single-parameters:curl
+    key dash_location template-erp5-single-parameters:dash
     key local_bt5_repository dynamic-template-cluster-erp5-parameters:local-bt5-repository
+    key template_cluster_zope dynamic-template-cluster-zope:rendered
+    key template_erp5_cluster dynamic-template-cluster-erp5:rendered
 # Must match the key id in [switch-softwaretype] which uses this section.
     raw software_type scalability
 
