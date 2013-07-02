@@ -10,6 +10,7 @@ parts =
 {% if web_checker_parameter is defined %}
   web-checker
   cron-entry-web-checker
+  logrotate-entry-web-checker
 {% endif %}
 
 eggs-directory = {{ eggs_directory }}
@@ -93,6 +94,17 @@ conf = ${rootdirectory:etc}/logrotate.conf
 logrotate-entries = ${directory:logrotate-entries}
 backup = ${directory:logrotate-backup}
 state-file = ${rootdirectory:srv}/logrotate.status
+
+[logrotate-entry-web-checker]
+<= logrotate
+recipe = slapos.cookbook:logrotate.d
+name = web-checker
+log = ${web-checker:web-checker-log}
+frequency = daily
+rotate-num = 30
+sharedscripts = true
+notifempty = true
+create = true
 
 [basedirectory]
 recipe = slapos.cookbook:mkdirectory
