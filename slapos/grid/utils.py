@@ -109,8 +109,9 @@ class SlapPopen(subprocess.Popen):
       line = self.stdout.readline()
       if line == '' and self.poll() is not None:
         break
-      output_lines.append(line)
-      logger.info(line.rstrip('\n'))
+      if line:
+        output_lines.append(line)
+        logger.info(line.rstrip('\n'))
     self.output = ''.join(output_lines)
 
 
