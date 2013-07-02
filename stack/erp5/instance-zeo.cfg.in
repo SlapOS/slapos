@@ -46,7 +46,7 @@ ipv6 = {{ ipv6 }}
 
 {% for export_id, mountpoint_dict in slapparameter_dict['zodb-dict'].items() -%}
 {%   do storage_dict.setdefault(
-       mountpoint_dict.get('storage-family', 'default'), []
+       mountpoint_dict.get('storage-family', 'default').lower(), []
      ).append((
        export_id,
        mountpoint_dict.get('mount-point', '/'),
