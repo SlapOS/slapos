@@ -1,0 +1,172 @@
+{
+  "definitions": {
+    "tcpv4port": {
+      "minimum": 1,
+      "maximum": 65535,
+      "type": "integer"
+    }
+  },
+
+  "description": "Parameters to instanciate ERP5",
+  "type": "object",
+  "properties": {
+    "site-id": {
+      "description": "ERP5Site object's id",
+      "default": "erp5",
+      "type": "string"
+    },
+    "timezone": {
+      "description": "Main site's timezone",
+      "default": "UTC",
+      "type": "string"
+    },
+    "zope-partition-dict": {
+      "description": "Zope layout definition",
+      "patternProperties": {
+        ".*": {
+          "properties": {
+            "family": {
+              "description": "The family this partition is part of. For example: 'public', 'admin', 'backoffice', 'web-service'... Each family gets its own frontend (=client-facing ip & port). It has no special meaning for the system.",
+              "default": "default",
+              "type": "string",
+            },
+            "instance-count": {
+              "description": "Number of Zopes to setup on this partition",
+              "default": 1,
+              "type": "integer"
+            },
+            "thread-amount": {
+              "description": "Number of worker threads for each created Zope process",
+              "default": 1,
+              "type": "integer"
+            },
+            "timerserver-interval": {
+              "description": "Timerserver tick perdiod, in seconds, or 0 to disable",
+              "default": 5,
+              "type": "integer" // float actually ?
+            },
+            "longrequest-logger-interval": {
+              "description": "Period, in seconds, with which LongRequestLogger polls worker thread stack traces, or -1 to disable",
+              "default": -1,
+              "type": "integer"
+            },
+            "longrequest-logger-timeout": {
+              "description": "Transaction duration after which LongRequestLogger will start logging its stack trace, in seconds",
+              "default": 1,
+              "type": "integer"
+            },
+            "port-base": {
+              "allOf": [{
+                "$ref": "#/definitions/tcpv4port"
+              }, {
+                "description": "Start allocating ports at this value. Useful if one needs to make several partitions share the same port range (ie, several partitions bound to a single address)",
+                "default": 2200
+              }]
+            },
+            "computer-guid": {
+              "description": "GUID of computer instance must be requested on",
+              "type": "string"
+            },
+          },
+          "type": "object"
+        },
+      },
+      "type": "object"
+    },
+// Deprecated, to move to a user-triggered tool dedicated to initialising an ERP5 site
+//  "bt5-repository-url": {},
+//  "bt5": {},
+//  "smtp-url": {},
+// Not ready yet.
+//   "use-ipv6": {
+//     "description": "Use IPv6 between partitions",
+//     "default": false,
+//     "type": "boolean"
+//   },
+    "frontend": {
+      "properties": {
+        "software-url": {
+          "description": "Software URL of an existing frontend",
+          "type": "string",
+        },
+        // XXX: instance-guid should be replaced by something which allows
+        // replacing frontend partition without having to change related
+        // instances' parameters.
+        "instance-guid": {
+          "description": "Frontend's instance GUID",
+          "type": "string"
+        },
+        "software-type": {
+          "description": "Frontend software type in given software relase",
+          "default": "RootSoftwareInsance",
+          "type": "string"
+        },
+        "domain": {
+          "description": "Domain name belonging to this instance",
+          "default": "",
+          "type": "string",
+        },
+      },
+      "default": {},
+      "type": "object"
+    },
+
+    "kumofs-computer-guid": {
+      "description": "GUID of computer instance must be requested on",
+      "type": "string"
+    },
+    "kumofs": {
+      "description": "Persistent memcached service",
+      "additionalProperties": {
+        "$ref": "./instance-kumofs-input-schema.json",
+      },
+      "type": "object"
+    },
+    "memcached-computer-guid": {
+      "description": "GUID of computer instance must be requested on",
+      "type": "string"
+    },
+    "memcached": {
+      "description": "Volatile memcached service",
+      "additionalProperties": {
+        "$ref": "./instance-kumofs-input-schema.json",
+      },
+      "type": "object"
+    },
+    "cloudooo-computer-guid": {
+      "description": "GUID of computer instance must be requested on",
+      "type": "string"
+    },
+    "cloudooo": {
+      "description": "Format conversion service",
+      "additionalProperties": {
+        "$ref": "./instance-cloudooo-input-schema.json",
+      },
+      "type": "object"
+    },
+    "mariadb-computer-guid": {
+      "description": "GUID of computer instance must be requested on",
+      "type": "string"
+    },
+    "mariadb": {
+      "description": "Relational database service",
+      "additionalProperties": {
+        "$ref": "./instance-mariadb-input-schema.json",
+      },
+      "type": "object"
+    },
+    "zodb-software-type": {
+      "description": "Zope Object DataBase implementation",
+      "default": "zeo",
+      "enum": ["zeo"],
+      "type": "string"
+    },
+    "zodb": {
+      "description": "Zope Object DataBase service",
+      "oneOf": [
+        {"$ref": "./instance-zeo-input-schema.json"},
+      ]
+    },
+  },
+  "$schema": "http://json-schema.org/draft-04/schema#"
+}
