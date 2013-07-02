@@ -79,7 +79,7 @@ class Part(GenericBaseRecipe):
     log = self.options['log']
 
     part_path = self.createFile(os.path.join(logrotate_d, self.options['name']),
-                    "%(logfiles)s {\n%(conf)s\n}" % {
+                    "%(logfiles)s {\n%(conf)s\n}\n" % {
                       'logfiles': log,
                       'conf': '\n'.join(conf),
                     }
