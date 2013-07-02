@@ -3,6 +3,7 @@
 DAEMON_OPTS="-F \
              -a %(varnish_ip)s:%(varnishd_server_port)s \
              -T %(varnish_ip)s:%(varnishd_manager_port)s \
+             -t 0 \
              -n %(varnish_instance_name)s \
              -f %(vcl_file)s \
              -s file,%(varnish_data)s/varnish_storage.bin,1G"

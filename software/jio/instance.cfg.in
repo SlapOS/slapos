@@ -46,4 +46,6 @@ LD_LIBRARY_PATH = ${libxslt:location}/lib:${libxml2:location}/lib:${zlib:locatio
 recipe = slapos.cookbook:wrapper
 command-line = ${phantomjs:location}/phantomjs-slapos
 wrapper-path = $${directory:bin}/phantomjs
-parameters-extra = true
+# XXX we must use "parameters-extra" (- instead of _)
+# when new slapos.cookbook will be used
+parameters_extra = true
