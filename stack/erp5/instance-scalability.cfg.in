@@ -7,7 +7,7 @@ extends = {{ template_erp5_cluster }}
 parts =
   erp5-cluster
   binary-wrap-launcher
-  scalability-launcher-instance
+#  scalability-launcher-instance
   binary-wrap-performance-tester
   erp5-bootstrap
   erp5-promise
@@ -35,7 +35,7 @@ config =
   ${:extra-config}
 extra-config =
 config-use-ipv6 = {{ dumps(slapparameter_dict.get('use-ipv6', False)) }}
-return = mariadb user
+return = mariadb-url family-user
 
 
 # Create wrapper
