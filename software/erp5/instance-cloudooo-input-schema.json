@@ -1,0 +1,22 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "extends": "./schema-definitions.json#",
+  "required": ["tcpv4-port"],
+  "properties": {
+    "tcpv4-port": {
+      "allOf": [{
+        "$ref": "#/definitions/tcpv4port"
+      }, {
+        "description": "Start allocating ports at this value, going upward",
+      }]
+    },
+    "font-url-list": {
+      "description": "List of URLs from which fonts are to be downloaded",
+      "default": [],
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    }
+  }
+}

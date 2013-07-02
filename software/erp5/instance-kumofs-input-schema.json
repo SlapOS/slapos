@@ -1,0 +1,19 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "extends": "./schema-definitions.json#",
+  "required": ["tcpv4-port"],
+  "properties": {
+    "tcpv4-port": {
+      "allOf": [{
+        "$ref": "#/definitions/tcpv4port"
+      }, {
+        "description": "Start allocating ports at this value, going upward"
+      }]
+    },
+    "ram-storage-size": {
+      "description": "If 0 use disk storage, otherwise use ram and limit data size to this many megabytes",
+      "default": 0,
+      "type": "integer"
+    }
+  }
+}

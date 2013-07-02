@@ -1,0 +1,11 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "description": "Values returned by Cloudooo instanciation",
+  "properties": {
+    "url": {
+      "description": "Conversion service access information",
+      "type": "string"
+    }
+  },
+  "type": "object"
+}

@@ -1,0 +1,11 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "description": "Values returned by MariaDB instanciation",
+  "properties": {
+    "url": {
+      "description": "Relational database access information",
+      "type": "string"
+    }
+  },
+  "type": "object"
+}

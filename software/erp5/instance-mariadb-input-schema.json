@@ -1,0 +1,89 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "extends": "./schema-definitions.json#",
+  "required": ["tcpv4-port"],
+  "properties": {
+    "tcpv4-port": {
+      "allOf": [{
+        "$ref": "#/definitions/tcpv4port"
+      }, {
+        "description": "Start allocating ports at this value, going downward"
+      }]
+    },
+    "database-list": {
+      "description": "Databases to create and respective user credentials getting all privileges on it",
+      "default": [{
+        "name": "erp5",
+        "user": "user",
+        "password": "insecure"
+      }],
+      "minItems": 1,
+      "items": {
+        "required": ["name", "user", "password"],
+        "properties": {
+          "name": {
+            "description": "Database name",
+            "type": "string"
+          },
+          "user": {
+            "description": "User name",
+            "type": "string"
+          },
+          "password": {
+            "description": "User password",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "type": "array"
+    },
+    "test-database-amount": {
+      "description": "The number of test databases to create, adding auto-generated entries to database-list",
+      "default": 0,
+      "minimum": 0,
+      "type": "integer"
+    },
+    "catalog-backup": {
+      "description": "Backup control knobs",
+      "properties": {
+        "full-retention-days": {
+          "description": "How many days full backups must be retained, -1 meaning full backups are disabled and 0 meaning no expiration",
+          "default": 7,
+          "minimum": -1,
+          "type": "integer"
+        },
+        "incremental-retention-days": {
+          "description": "How many days incremental backups (binlogs) must be retained, -1 meaning incremental backups are disabled and 0 meaning no expiration",
+          "minimum": -1,
+          "default": "full-retention-days' value",
+          "type": "integer"
+        }
+      },
+      "type": "object"
+    },
+    "innodb-buffer-size": {
+      "description": "See MariaDB documentation on innodb_buffer_pool_size",
+      "minimum": 0,
+      "default": "MariaDB's default",
+      "type": "integer"
+    },
+    "innodb-log-file-size": {
+      "description": "See MariaDB documentation on innodb_log_file_size",
+      "minimum": 0,
+      "default": "MariaDB's default",
+      "type": "integer"
+    },
+    "innodb-log-buffer-size": {
+      "description": "See MariaDB documentation on innodb_log_buffer_size",
+      "minimum": 0,
+      "default": "MariaDB's default",
+      "type": "integer"
+    },
+    "mariadb-relaxed-writes": {
+      "description": "When enabled, sets innodb_flush_log_at_trx_commit = 0, innodb_flush_method = nosync, innodb_doublewrite = 0 and sync_frm = 0 - RTFM, those options are dangerous",
+      "default": false,
+      "type": "boolean"
+    }
+  }
+}

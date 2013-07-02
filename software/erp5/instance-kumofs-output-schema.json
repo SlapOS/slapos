@@ -1,0 +1,11 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "description": "Values returned by KumoFS instanciation",
+  "properties": {
+    "url": {
+      "description": "Persistent memcached access information",
+      "type": "string"
+    }
+  },
+  "type": "object"
+}

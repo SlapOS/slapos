@@ -1,0 +1,86 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "extends": "./schema-definitions.json#",
+  "required": ["tcpv4-port", "zodb-dict"],
+  "properties": {
+    "tcpv4-port": {
+      "allOf": [{
+        "$ref": "#/definitions/tcpv4port"
+      }, {
+        "description": "Start allocating ports at this value, going upward"
+      }]
+    },
+    "tidstorage-dict": {
+      "description": "Controls ZODB backup generation and retention",
+      "properties": {
+        "zodb-dict": {
+          "description": "Maps an export identifier to the path it must be backed up into",
+          "default": {},
+          "patternProperties": {
+            ".*": {
+              "description": "'%(backup)s' is expanded to partition's ZODB backup path (typically 'srv/backup/zodb')",
+              "default": "%(backup)s/<export identifier>",
+              "type": "string"
+            }
+          },
+          "type": "object"
+        },
+        "timestamp-path": {
+          "description": "Path to backup timestamp file, occurrences of '%(backup)s' being eplaced with the path to partition's srv/backup/tidstorage directory",
+          "default": "%(backup)s/repozo_tidstorage_timestamp.log",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "zodb-dict": {
+      "description": "Maps an export identifier to its settings",
+      "patternProperties": {
+        ".*": {
+          "properties": {
+            "storage-family": {
+              "description": "Opaque name used to regroup/separate mountpoints under different ZEO processes (must be valid as a file name and as a ConfigParser section name)",
+              "default": "default",
+              "pattern": "^[^<>:\"/\\|?*\\]\\[ ]*$",
+              "type": "string"
+            },
+            "mount-point": {
+              "description": "Traversal path export should be mounted at (opaque to this software type)",
+              "default": "/",
+               "pattern": "^[^<>:\"/\\|?*]*$",
+              "type": "string"
+            },
+            "cache-size": {
+              "description": "Client-side cache size in object count (opaque to this software type)",
+              "default": -1,
+              "type": "integer"
+            },
+            "storage-dict": {
+              "default": {},
+              "properties": {
+                "path": {
+                  "description": "FileStorage file path, '%(zodb)s' occurrences are replaced with the path to partition's srv/zodb directory",
+                  "default": "%(zodb)s/<export identifier>.fs",
+                  "type": "string"
+                },
+                "client": {
+                  "description": "Client-side settings for this mountpoint",
+                  "default": {},
+                  "patternProperties": {
+                    ".*": {
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
+                }
+              },
+              "type": "object"
+            }
+          },
+          "type": "object"
+        }
+      },
+      "type": "object"
+    }
+  }
+}

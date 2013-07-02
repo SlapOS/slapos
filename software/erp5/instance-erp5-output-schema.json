@@ -1,0 +1,29 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "description": "Values returned by ERP5 instanciation",
+  "properties": {
+    "kumofs-url": {
+      "description": "Persistent memcached access information",
+      "type": "string"
+    },
+    "memcached-url": {
+      "description": "Volatile memcached access information",
+      "type": "string"
+    },
+    "cloudooo-url": {
+      "description": "Conversion service access information",
+      "type": "string"
+    },
+    "mariadb-url": {
+      "description": "Relational database access information",
+      "type": "string"
+    }
+  },
+  "patternProperties": {
+    "family-.*": {
+      "description": "Zope family access information",
+      "type": "string"
+    }
+  },
+  "type": "object"
+}
