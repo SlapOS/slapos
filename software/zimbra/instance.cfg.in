@@ -41,16 +41,6 @@
 # -------------------
 #
 #
-# IP=192.168.3.97
-# iptables -t nat -A PREROUTING -p tcp -d $IP --dport 80 -j DNAT --to-destination $IP:10080
-# iptables -t nat -A PREROUTING -p tcp -d $IP --dport 443 -j DNAT --to-destination $IP:10443
-# iptables -t nat -A PREROUTING -p tcp -d $IP --dport 143 -j DNAT --to-destination $IP:10143
-# iptables -t nat -A PREROUTING -p tcp -d $IP --dport 993 -j DNAT --to-destination $IP:10993
-# iptables -t nat -A PREROUTING -p tcp -d $IP --dport 110 -j DNAT --to-destination $IP:10110
-# iptables -t nat -A PREROUTING -p tcp -d $IP --dport 995 -j DNAT --to-destination $IP:10995
-#
-#
-#
 # sudo apt-get install authbind=2.1.1
 # sudo touch /etc/authbind/byport/{80,110,143,443,\!993,\!995}
 # sudo chown `id -u`.`id -u` /etc/authbind/byport/{80,110,143,443,\!993,\!995}
@@ -79,7 +69,6 @@ extends =
   http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/heads/zimbra:/component/sqlite3/buildout.cfg
   http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/heads/zimbra:/component/pax/buildout.cfg
   http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/heads/zimbra:/component/p7zip/buildout.cfg
-  http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/heads/zimbra:/component/git/buildout.cfg
 
 
 parts =
@@ -508,6 +497,7 @@ install_cmd =
   mkdir -p data/clamav/db
   mkdir -p data/postfix/spool/pid
   mkdir -p conf/sa
+  mkdir -p logger/db/data
 
   mkdir -p zimlets-deployed
   mkdir -p log # only provided with zimbra-store
@@ -599,6 +589,7 @@ install_cmd =
   mkdir -p data/clamav/db
   mkdir -p data/postfix/spool/pid
   mkdir -p conf/sa
+  mkdir -p logger/db/data
 
   mkdir -p zimlets-deployed
   mkdir -p log # only provided with zimbra-store
