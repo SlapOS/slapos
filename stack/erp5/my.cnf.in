@@ -57,7 +57,7 @@ log_bin = {{ log_bin }}
 {% endif -%}
 
 {# Note: strictly check equality to one, as a last line of defense against users not reading the doc. -#}
-{% if parameter_dict.get('relaxed_writes') == 1 -%}
+{% if parameter_dict.get('relaxed-writes') -%}
 innodb_flush_log_at_trx_commit = 0
 innodb_flush_method = nosync
 innodb_doublewrite = 0
