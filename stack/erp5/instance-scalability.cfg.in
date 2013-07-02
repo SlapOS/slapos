@@ -2,8 +2,7 @@
 {% set site_id = slapparameter_dict.get('site-id', 'erp5') -%}
 {% set promise_path = slapparameter_dict.get('promise-path', 'erp5') -%}
 [buildout]
-extends = {{ template_erp5_cluster }}
-  {{ template_zope }}
+extends = {{ template_zope }}
 parts =
   erp5-cluster
   binary-wrap-launcher
