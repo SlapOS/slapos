@@ -1,0 +1,183 @@
+
+
+Most of the official Zimbra docs still apply with this build, and the
+administration scripts (zmcontrol and so on) work as described:
+
+        http://www.zimbra.com/community/documentation.html
+
+Whenever the Zimbra guide refers to /opt/zimbra, we will use the 'zbuild/home' directory
+that is created by running buildout.
+
+The following scripts do not work because it is not possible or does not make sense to run them as non-root:
+
+ - libexec/zmfixperms
+ - libexec/zmsyslogsetup
+
+The following optional packages will be created by the build, but cannot be
+installed because they have not been completely modified and tested for buildout:
+
+ - zimbra-apache
+ - zimbra-logger
+ - zimbra-memcached
+ - zimbra-proxy
+ - zimbra-snmp
+ - zimbra-spell
+
+
+
+
+
+=====================
+How to install Zimbra
+=====================
+
+ - Install Ubuntu 12.04.x 64 bit server with at least 2GB RAM / 15 GB HD
+
+
+ - Install additional packages
+
+        # for slapos components
+        sudo apt-get install python gcc g++ make uml-utilities bridge-utils linux-headers-$(uname -r) patch wget \
+                python-dev libxml2-dev libxslt-dev 
+
+        # for zimbra third party components
+        sudo apt-get install libcloog-ppl0 libncurses5-dev gcc-multilib
+
+        # misc
+        sudo apt-get install git libcap2-bin sysstat netcat
+
+
+ - The /etc/hosts file must be configured as required by Zimbra - something like
+
+        127.0.0.1       localhost
+        #127.0.1.1      myserver
+        192.168.0.118   myserver.mydomain.com myserver
+
+   Note that we commented/removed the line with 127.0.1.1. This file is actually checked by the zmsetup.pl script
+   to retrieve the host and domain names.
+
+
+ - DNS must be set up according to Zimbra documentation (myhost.mydomain.com has both A and MX records)
+
+
+ - The global limits for 'number of open files' must be increased from the default of 1024.
+   Many maintenance scripts call 'ulimit -n 32768' - therefore the following must be added
+   to /etc/security/limits.conf
+
+        ----- cut here --------------------------------
+        *                hard    nofile          32768
+        *                soft    nofile          32768
+        ----- cut here --------------------------------
+
+   After this change, reboot the system to make it effective.
+
+
+ - system logging must be configured in order to have server monitoring from the admin interface
+
+   The following must be uncommented in /etc/rsyslog.conf:
+
+        ----- cut here ----------------
+        # provides UDP syslog reception
+        $ModLoad imudp
+        $UDPServerRun 514
+        
+        # provides TCP syslog reception
+        $ModLoad imtcp
+        $InputTCPServerRun 514
+        ----- cut here ----------------
+
+
+ - set up authbind
+
+        wget http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/heads/zimbra:/software/zimbra/authbind_2.1.1_amd64.deb
+        sudo dpkg -i authbind_2.1.1_amd64.deb
+        sudo touch /etc/authbind/byport/{80,110,143,443,\!993,\!995}
+        sudo chown `id -u`.`id -g` /etc/authbind/byport/{80,110,143,443,\!993,\!995}
+        sudo chmod 755 /etc/authbind/byport/{80,110,143,443,\!993,\!995}
+
+  Note that `id -u` and `id -g` are the user and group that will run Zimbra.
+
+
+ - Create the directory to contain zimbra build and clone the {slapos, zimbra} repositories.
+
+        $ mkdir zbuild; cd zbuild
+        $ git clone http://git.erp5.org/repos/slapos.git -b zimbra slapos
+
+   You can use a different name for the directory 'zbuild'.
+   From this point, we will refer to it as '/home/user/zbuild'
+   NB: the user that runs the build MUST be the same that will run Zimbra.
+
+
+ - create buildout.cfg
+
+        $ echo -e "[buildout]\nextends = slapos/software/zimbra/buildout.cfg\ndevelop = slapos\n" >buildout.cfg
+
+    In case of repeated builds (i.e. when debugging) you can improve performance by using a local
+    repository for zimbra:
+
+        $ git clone http://git.erp5.org/repos/zimbra.git -b authbind zimbra
+        $ echo -e "[zimbra-sources]\nrepository = /home/user/zbuild/zimbra\n" >>buildout.cfg
+
+
+ - run buildout
+
+        wget https://raw.github.com/buildout/buildout/1/bootstrap/bootstrap.py
+        python bootstrap.py
+        ./bin/buildout
+
+   You should find the following files:
+
+        $ ls parts/zimbra-sources/ZimbraBuild/amd64/*deb
+
+      XXX insert list of files here XXX
+
+   Be patient, and do NOT run buildout twice. If you do, the content
+   of parts/zimbra-sources will be removed, and that part will be built again.
+   You may backup the *.deb files to be sure you don't lose them by mistake.
+
+
+ - deploy zimbra
+
+        ./bin/buildout install zimbra-deploy-all
+
+   If setcap is required (for ldap and postfix) a root password might be asked at this point.
+
+
+ - configure zimbra
+
+   Source the environment variables for SlapOS components
+
+        . /home/user/zbuild/environment.sh
+
+   and the ones that refer to Zimbra components:
+
+        . /home/user/zbuild/home/.bashrc
+
+   Now you run the actual configuration script.
+
+        cd /home/user/zbuild/home/; ZIMBRA_INSTALLED_PKGS="zimbra-core zimbra-ldap zimbra-mta zimbra-store" ./libexec/zmsetup.pl
+
+   the last two lines are printed after you run 'buildout install zimbra-deploy-all'.
+
+
+ - using the configuration menu, set up an admin password and other options.
+   Refer to the official Zimbra documentation for this part of the setup.
+
+   After you type (a)pply, a lot of configuration files, certificates, and databases are created.
+   At the end of this process, the log is copied in home/log/zmsetup.*.txt
+   and the zimbra services are run.
+
+
+ - check that zimbra is running:
+
+        cd /home/user/zimbra-target/home/bin
+        ./zmcontrol status
+
+
+ - Before running any of the maintenance commands in bin/ or libexec/,
+   the following files must be sourced by the shell:
+
+        . /home/user/zbuild/environment.sh
+        . /home/user/zbuild/home/.bashrc
+
+
