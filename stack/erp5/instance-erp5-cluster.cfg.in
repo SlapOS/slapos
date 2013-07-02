@@ -31,7 +31,7 @@ return = {{ ret.keys() | join(' ') }}
 {%     do publish_dict.__setitem__(name ~ '-' ~ ret, '${' ~ section ~ ':connection-' ~ ret ~ '}')%}
 {%   endif -%}
 {% endfor -%}
-sla-computer_guid = {{ slapparameter_dict.get(computer_guid_key + '-computer-guid', computer_id) }}
+sla-computer_guid = {{ slapparameter_dict.get(config_key + '-computer-guid', computer_id) }}
 extra-config = {{ ' '.join(config) }}
 {% for option, value in config.items() -%}
 config-{{ option }} = {{ dumps(value) }}
