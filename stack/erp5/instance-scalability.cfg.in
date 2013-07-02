@@ -35,6 +35,8 @@ config =
   ${:extra-config}
 extra-config =
 config-use-ipv6 = {{ dumps(slapparameter_dict.get('use-ipv6', False)) }}
+return = mariadb user
+
 
 # Create wrapper
 [binary-wrap-launcher]
