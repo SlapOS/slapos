@@ -26,9 +26,10 @@ Other fixes:
 
  * Refuse to run 'slapos node' commands as non root. [Marco Mariani]
  * Register: Replace all reference to vifib by SlapOS Master. [Cedric de Saint Martin]
+ * Slapgrid: avoid spurious empty lines in Popen() stdout/log. [Marco Mariani]
  * Slapgrid: Properly include any partition containing any SR informations in the list of partitions to proceed. [Cedric de Saint Martin]
  * Slapgrid: Remove the timestamp file after defined periodicity. Fixes odd use cases when an instance failing to process after some time is still considered as valid by the node. [Cedric de Saint Martin]
- * Slapgrid: Fix scary but harmless warnings, fix english, remove references to ViFiB. [Cedric de Saint Martin, Jérome Perrin]
+ * Slapgrid: Fix scary but harmless warnings, fix grammar, remove references to ViFiB. [Cedric de Saint Martin, Jérome Perrin, Marco Mariani]
  * Slapgrid: Fixes support of Python >= 2.6. [Arnaud Fontaine]
  * Slapgrid: Check if SR is upload-blacklisted only if we have upload informations. [Cedric de Saint Martin]
  * Slapgrid: override $HOME to be software_path or instance_path. Fix leaking files like /opt/slapgrid/.npm. [Marco Mariani]
