@@ -5,6 +5,11 @@ import collections
 import logging
 import sys
 
+import os
+# hack to avoid a bug in cmd2: https://bitbucket.org/catherinedevlin/cmd2/issue/1/silent-editor-check
+# must be done before importing cliff
+os.environ.setdefault('EDITOR', '/bin/vi')
+
 import cliff
 import cliff.app
 from cliff.app import LOG
