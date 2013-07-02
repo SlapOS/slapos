@@ -30,7 +30,7 @@ http {
         scgi_temp_path {{ param_tempdir['scgi_temp_path'] }};
         location / {
             auth_basic  "Restricted";
-            auth_basic_user_file   /srv/slapgrid-erp5/slappart2/etc/.htpasswd;
+            auth_basic_user_file   {{ param_nginx_frontend['etc_dir'] }}/.htpasswd;
             proxy_pass  http://{{ param_nginx_frontend['backend-ip'] }}:{{ param_nginx_frontend['backend-port'] }};
             proxy_next_upstream error timeout invalid_header http_500 http_502 http_503 http_504;
             proxy_redirect off;
