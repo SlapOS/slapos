@@ -1,4 +1,5 @@
 {% if slap_software_type == software_type -%}
+{% set publish_dict = {} -%}
 {% set frontend_dict = slapparameter_dict.get('frontend', {}) %}
 {% set has_frontend = frontend_dict.get('software-url', '') != '' -%}
 {% set site_id = slapparameter_dict.get('site-id', 'erp5') -%}
@@ -6,7 +7,6 @@
 recipe = slapos.cookbook:request.serialised
 software-url = ${slap-connection:software-release-url}
 sla = computer_guid
-return = url
 server-url = ${slap-connection:server-url}
 key-file = ${slap-connection:key-file}
 cert-file = ${slap-connection:cert-file}
@@ -18,15 +18,19 @@ config =
 extra-config =
 config-use-ipv6 = {{ dumps(slapparameter_dict.get('use-ipv6', False)) }}
 
-{% macro request(name, software_type, config_key, config={}, ret=None) -%}
+{% macro request(name, software_type, config_key, config={}, ret={'ret': True}) -%}
 {% do config.update(slapparameter_dict.get(config_key, {})) -%}
-[request-{{ name }}]
+{% set section = 'request-' ~ name -%}
+[{{ section }}]
 < = request-common
 name = {{ name }}
 software-type = {{ software_type }}
-{% if ret != None -%}
-return = {{ ret }}
-{% endif -%}
+return = {{ ret.keys() | join(' ') }}
+{% for ret, publish in ret.items() -%}
+{%   if publish -%}
+{%     do publish_dict.__setitem__(name ~ '-' ~ ret, '${' ~ section ~ ':connection-' ~ ret ~ '}')%}
+{%   endif -%}
+{% endfor -%}
 sla-computer_guid = {{ slapparameter_dict.get(computer_guid_key + '-computer-guid', computer_id) }}
 extra-config = {{ ' '.join(config) }}
 {% for option, value in config.items() -%}
@@ -38,7 +42,7 @@ config-{{ option }} = {{ dumps(value) }}
 {{ request('memcached-volatile', 'kumofs', 'memcached', {'tcpv4-port': 2010, 'ram-storage-size': 64}) }}
 {{ request('cloudooo', 'cloudooo', 'cloudooo', {'tcpv4-port': 2020}) }}
 {{ request('mariadb', 'mariadb', 'mariadb', {'tcpv4-port': 2099}) }}
-{{ request('zodb', slapparameter_dict.get('zodb-software-type', 'zeo'), 'zodb', {'tcpv4-port': 2100, 'zodb-dict': {'root': {}}}, 'zodb-storage-type zodb-dict tidstorage-ip tidstorage-port') }}
+{{ request('zodb', slapparameter_dict.get('zodb-software-type', 'zeo'), 'zodb', {'tcpv4-port': 2100, 'zodb-dict': {'root': {}}}, {'zodb-storage-type': False, 'zodb-dict': False, 'tidstorage-ip': False, 'tidstorage-port': False}) }}
 
 [request-zope-base]
 < = request-common
@@ -99,7 +103,6 @@ sla-computer_guid = {{ zope_parameter_dict.get('computer-guid', computer_id) }}
 {# We need to concatenate lists that we cannot read as lists, so this gets hairy. -#}
 {% set zope_address_list_id_dict = {} -%}
 {% set zope_family_parameter_dict = {} -%}
-{% set publish_dict = {} -%}
 {% for family_name, zope_section_id_list in zope_family_dict.items() -%}
 {%   for zope_section_id in zope_section_id_list -%}
 {%     set parameter_name = 'zope-family-entry-' ~ zope_section_id -%}
@@ -116,7 +119,7 @@ config-url = {{ backend_url }}
 {%   else -%}
 {%     set publishable = 'request-balancer:connection-' ~ family_name -%}
 {%   endif -%}
-{%   do publish_dict.__setitem__(family_name, publishable) -%}
+{%   do publish_dict.__setitem__('family-' ~ family_name, '${' ~ publishable ~ '}' ) -%}
 {% endfor -%}
 
 [request-balancer]
@@ -172,8 +175,8 @@ return = site_url
 
 [publish]
 recipe = slapos.cookbook:publish.serialised
-{% for family_name, publishable in publish_dict.items() -%}
-{{   family_name }} = {{ '${' ~ publishable ~ '}' }}
+{% for name, value in publish_dict.items() -%}
+{{   name }} = {{ value }}
 {% endfor -%}
 
 [buildout]
