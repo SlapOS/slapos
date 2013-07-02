@@ -2,7 +2,7 @@
 {% set site_id = slapparameter_dict.get('site-id', 'erp5') -%}
 {% set promise_path = slapparameter_dict.get('promise-path', 'erp5') -%}
 [buildout]
-extends = {{ template_zope }}
+extends = 
 parts =
   erp5-cluster
   binary-wrap-launcher
@@ -34,7 +34,7 @@ config =
   ${:extra-config}
 extra-config =
 config-use-ipv6 = {{ dumps(slapparameter_dict.get('use-ipv6', False)) }}
-return = mariadb-url family-user
+return = mariadb-url family-scalability-site_url kumofs-url memcached-url cloudooo-url
 
 
 # Create wrapper
@@ -90,21 +90,19 @@ bin = ${buildout:directory}/bin
 
 
 
-
-
-
 [erp5-bootstrap]
 recipe = slapos.cookbook:erp5.bootstrap
 runner-path = ${basedirectory:services}/erp5-bootstrap
 mysql-url =  ${erp5-cluster:connection-mariadb-url}
-zope-url = http://${zope-instance:user}:${zope-instance:password}@${zope-instance:ip}:${zope-instance:port}/{{ site_id }}
+zope-url = 
+zope-url = ${erp5-cluster:site_url}/{{ site_id }}
 
 [erp5-promise]
 recipe = slapos.cookbook:erp5.promise
 promise-path = {{ promise_path }}
-kumofs-url = ${request-kumofs:connection-url}
-memcached-url = ${request-memcached:connection-url}
-cloudooo-url = ${request-cloudooo:connection-url}
+kumofs-url = ${erp5-cluster:connection-kumofs-url}
+memcached-url = ${erp5-cluster:connection-memcached-url}
+cloudooo-url = ${erp5-cluster:connection-cloudooo-url}
 smtp-url =
 bt5 =
 bt5-repository-url =
@@ -116,7 +114,7 @@ site-id = {{ site_id }}
 [promise-erp5-site]
 recipe = slapos.cookbook:check_url_available
 path = ${basedirectory:promises}/erp5site
-url = http://${zope-instance:ip}:${zope-instance:port}/{{ site_id }}
+url = ${erp5-cluster:site_url}/{{ site_id }}
 dash_path = {{ dash_location }}/bin/dash
 curl_path = {{ curl_location }}/bin/curl
 
