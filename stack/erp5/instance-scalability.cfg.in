@@ -97,7 +97,7 @@ bin = ${buildout:directory}/bin
 [erp5-bootstrap]
 recipe = slapos.cookbook:erp5.bootstrap
 runner-path = ${basedirectory:services}/erp5-bootstrap
-mysql-url =  ${erp5-cluster:connection-mariadb}
+mysql-url =  ${erp5-cluster:connection-mariadb-url}
 zope-url = http://${zope-instance:user}:${zope-instance:password}@${zope-instance:ip}:${zope-instance:port}/{{ site_id }}
 
 [erp5-promise]
