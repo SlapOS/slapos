@@ -33,6 +33,10 @@ How to install Zimbra
 
  - Install Ubuntu 12.04.x 64 bit server with at least 2GB RAM / 15 GB HD
 
+   For instance, you can download it from
+   http://releases.ubuntu.com/precise/ubuntu-12.04.2-server-amd64.iso
+   and just 'dd' the image to an USB key, then boot with it.
+
 
  - Install additional packages
 
@@ -72,7 +76,7 @@ How to install Zimbra
    After this change, reboot the system to make it effective.
 
 
- - system logging must be configured in order to have server monitoring from the admin interface
+ - System logging must be configured in order to have server monitoring from the admin interface
 
    The following must be uncommented in /etc/rsyslog.conf:
 
@@ -87,13 +91,13 @@ How to install Zimbra
         ----- cut here ----------------
 
 
- - set up authbind
+ - Set up authbind
 
-        wget http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/heads/zimbra:/software/zimbra/authbind_2.1.1_amd64.deb
-        sudo dpkg -i authbind_2.1.1_amd64.deb
-        sudo touch /etc/authbind/byport/{80,110,143,443,\!993,\!995}
-        sudo chown `id -u`.`id -g` /etc/authbind/byport/{80,110,143,443,\!993,\!995}
-        sudo chmod 755 /etc/authbind/byport/{80,110,143,443,\!993,\!995}
+        $ wget http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/heads/zimbra:/software/zimbra/authbind_2.1.1_amd64.deb
+        $ sudo dpkg -i authbind_2.1.1_amd64.deb
+        $ sudo touch /etc/authbind/byport/{80,110,143,443,\!993,\!995}
+        $ sudo chown `id -u`.`id -g` /etc/authbind/byport/{80,110,143,443,\!993,\!995}
+        $ sudo chmod 755 /etc/authbind/byport/{80,110,143,443,\!993,\!995}
 
   Note that `id -u` and `id -g` are the user and group that will run Zimbra.
 
@@ -108,7 +112,7 @@ How to install Zimbra
    NB: the user that runs the build MUST be the same that will run Zimbra.
 
 
- - create buildout.cfg
+ - Create buildout.cfg
 
         $ echo -e "[buildout]\nextends = slapos/software/zimbra/buildout.cfg\ndevelop = slapos\n" >buildout.cfg
 
@@ -119,11 +123,11 @@ How to install Zimbra
         $ echo -e "[zimbra-sources]\nrepository = /home/user/zbuild/zimbra\n" >>buildout.cfg
 
 
- - run buildout
+ - Run buildout
 
-        wget https://raw.github.com/buildout/buildout/1/bootstrap/bootstrap.py
-        python bootstrap.py
-        ./bin/buildout
+        $ wget https://raw.github.com/buildout/buildout/1/bootstrap/bootstrap.py
+        $ python bootstrap.py
+        $ ./bin/buildout
 
    You should find the following files:
 
@@ -136,48 +140,114 @@ How to install Zimbra
    You may backup the *.deb files to be sure you don't lose them by mistake.
 
 
- - deploy zimbra
+ - Run buildout again to install the *.deb files
 
-        ./bin/buildout install zimbra-deploy-all
+        $ ./bin/buildout install zimbra-deploy-all
 
-   If setcap is required (for ldap and postfix) a root password might be asked at this point.
+   The files will not be really installed by dpkg, only uncompressed under the 'zbuild/home' directory.
+   If setcap is required at this point (for ldap and postfix) a root password might be asked.
 
 
- - configure zimbra
+ - Configure zimbra
 
    Source the environment variables for SlapOS components
 
-        . /home/user/zbuild/environment.sh
+        $ source /home/user/zbuild/environment.sh
 
    and the ones that refer to Zimbra components:
 
-        . /home/user/zbuild/home/.bashrc
+        $ source /home/user/zbuild/home/.bashrc
 
    Now you run the actual configuration script.
 
-        cd /home/user/zbuild/home/; ZIMBRA_INSTALLED_PKGS="zimbra-core zimbra-ldap zimbra-mta zimbra-store" ./libexec/zmsetup.pl
+        $ cd /home/user/zbuild/home/; ZIMBRA_INSTALLED_PKGS="zimbra-core zimbra-ldap zimbra-mta zimbra-store" ./libexec/zmsetup.pl
 
    the last two lines are printed after you run 'buildout install zimbra-deploy-all'.
 
 
- - using the configuration menu, set up an admin password and other options.
+ - Using the configuration menu, set up an admin password and other options.
+   Usually, only an admin password is required.
+
    Refer to the official Zimbra documentation for this part of the setup.
+   Here you can also change things like ipv4/ipv6, etc.
 
    After you type (a)pply, a lot of configuration files, certificates, and databases are created.
    At the end of this process, the log is copied in home/log/zmsetup.*.txt
    and the zimbra services are run.
 
 
- - check that zimbra is running:
+ - Check that zimbra is running:
 
-        cd /home/user/zimbra-target/home/bin
-        ./zmcontrol status
+        $ cd /home/user/zimbra-target/home/bin
+        $ ./zmcontrol status
+
+     XXX include zmcontrol output XXX
+
+
+ - You should now be able to connect to https://myserver.mydomain.com
+   and send/receive emails, and log in to the administration interface.
 
 
  - Before running any of the maintenance commands in bin/ or libexec/,
    the following files must be sourced by the shell:
 
-        . /home/user/zbuild/environment.sh
-        . /home/user/zbuild/home/.bashrc
+        $ source /home/user/zbuild/environment.sh
+        $ source /home/user/zbuild/home/.bashrc
 
+
+To install a multi-server system, use the deploy-zimbra-ldap, deploy-zimbra-mta
+and deploy-zimbra-store parts, configuring as described by the official documentation.
+
+
+
+===========================
+Further links and resources
+===========================
+
+http://www.zimbra.com/forums/installation/
+http://wiki.zimbra.com/wiki/Main_Page
+http://pm.zimbra.com/
+http://www.zimbrafr.org/forum/topic/483-les-commandes-zimbra-qui-depannent/
+http://wiki.zimbra.com/wiki/Logger_(ZCS_6.0.x_and_later)
+http://wiki.zimbra.com/wiki/Zmprov_Examples
+http://wiki.zimbra.com/wiki/Bulk_Provisioning
+
+
+
+===============
+Useful commands
+===============
+
+ - list all the admins:
+
+        $ zmprov gaaa
+
+
+ - reset the admin (or any other) password:
+
+        $ zmprov sp <admin email address> <new password>
+
+
+ - password recovery:
+
+        $ zmlocalconfig -s | grep ldap_amavis_password
+        $ zmlocalconfig -s | grep ldap_nginx_password
+        $ zmlocalconfig -s | grep ldap_postfix_password
+        $ zmlocalconfig -s | grep ldap_replication_password
+        $ zmlocalconfig -s | grep ldap_root_password
+        $ zmlocalconfig -s | grep zimbra_ldap_password
+
+
+ - remove a mail store (i.e. when it has been added for testing)
+
+        $ zmprov ds "myhost.mydomain.com"
+
+ (must be run on the ldap server)
+
+
+ - add ipv6 to an existing ipv4 install:
+
+        $ zmprov ms zimbra1.cutedomain.co.uk zimbraIPMode both
+        $ libexec/zmiptool
+        $ zmcontrol restart
 
