@@ -73,7 +73,7 @@ class RegisterCommand(Command):
         ap.add_argument('--token',
                         help="SlapOS 'computer security' authentication token")
 
-        ap.add_argument('-t', '--create-tap',
+        ap.add_argument('--create-tap', '-t',
                         action='store_true',
                         help='Will trigger creation of one virtual "tap" interface per '
                              'Partition and attach it to primary interface. Requires '
@@ -81,7 +81,7 @@ class RegisterCommand(Command):
                              'Needed to host virtual machines'
                              ' (default: %(default)s)')
 
-        ap.add_argument('-n', '--dry-run',
+        ap.add_argument('--dry-run', '-n',
                         action='store_true',
                         help='Simulate the execution steps'
                              ' (default: %(default)s)')
