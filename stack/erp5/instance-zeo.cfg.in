@@ -57,9 +57,9 @@ ipv6 = {{ ipv6 }}
 {% for storage_family, export_list in storage_dict.items() -%}
 {%   set known_tid_storage_identifier_host = ((ipv4, next_port), ) -%}
 {%   set client_dict = {} -%}
-{%   for export_id, mount_point, cache_size, storage_dict in export_list -%}
-{%     do storage_dict.__setitem__('path', storage_dict.get('path', '%(zodb)s/' ~ export_id ~ '.fs') % {'zodb': default_zodb_path}) -%}
-{%     do client_dict.update(storage_dict.get('client', {})) -%}
+{%   for export_id, mount_point, cache_size, export_storage_dict in export_list -%}
+{%     do export_storage_dict.__setitem__('path', export_storage_dict.get('path', '%(zodb)s/' ~ export_id ~ '.fs') % {'zodb': default_zodb_path}) -%}
+{%     do client_dict.update(export_storage_dict.get('client', {})) -%}
 {%     do client_dict.__setitem__('storage', export_id) -%}
 {#     XXX: I would like to raise if export_id is present in zodb_dict -#}
 {%     do zodb_dict.__setitem__(export_id, [
@@ -70,7 +70,7 @@ ipv6 = {{ ipv6 }}
 {%     if tidstorage_dict != None -%}
 {%       do known_tid_storage_identifier_dict.__setitem__(
            json_module.dumps((known_tid_storage_identifier_host, export_id)), (
-             storage_dict['path'],
+             export_storage_dict['path'],
              tidstorage_dict.get('zodb-dict', {}).get(export_id, '%(backup)s/' ~ export_id) % {'backup': zodb_backup_path},
              mount_point,
            ),
@@ -83,8 +83,8 @@ ipv6 = {{ ipv6 }}
 base-name = zeo-{{ storage_family }}
 port = {{ next_port }}
 {%   set storage_list = [] -%}
-{%   for storage_name, _, _, storage_dict in export_list -%}
-{%     do storage_list.append((storage_name, storage_dict['path'])) -%}
+{%   for storage_name, _, _, export_storage_dict in export_list -%}
+{%     do storage_list.append((storage_name, export_storage_dict['path'])) -%}
 {%   endfor -%}
 storage = {{ dumps(storage_list) }}
 
