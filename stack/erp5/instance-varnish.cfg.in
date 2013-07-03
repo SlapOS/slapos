@@ -28,18 +28,23 @@ recipe = slapos.cookbook:generic.varnish
 ip = ${slap-network-information:local-ipv4}
 server-port = 6001
 manager-port = 6002
+stunnel-port = 6003
 
 # Paths: Running wrappers
 varnishd-wrapper = ${basedirectory:services}/varnishd
 varnishlog-wrapper = ${rootdirectory:bin}/varnishlog
+stunnel-wrapper = ${basedirectory:services}/stunnel
 
 # Binary information
 varnishd-binary = {{ parameter_dict['varnish'] }}/sbin/varnishd
 varnishlog-binary = {{ parameter_dict['varnish'] }}/bin/varnishlog
 shell-path = {{ parameter_dict['dash'] }}/bin/dash
+stunnel-binary = {{ parameter_dict['stunnel'] }}/bin/stunnel
 # Configuration by VCL
 vcl-file = ${rootdirectory:etc}/default.vcl
 pid-file = ${basedirectory:run}/varnishd.pid
+stunnel-conf-file = ${rootdirectory:etc}/stunnel.conf
+stunnel-pid-file = ${basedirectory:run}/stunnel.pid
 varnish-data = ${directory:varnish-data}
 # this will pass at -n option
 varnish-instance-name = ${directory:varnish-instance}
