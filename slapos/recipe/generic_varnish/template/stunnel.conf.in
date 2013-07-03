@@ -1,5 +1,4 @@
 foreground = yes
-output = /dev/stdout
 pid = %(stunnel_pid_file)s
 debug = 4
 
