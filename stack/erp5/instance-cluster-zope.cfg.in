@@ -1,5 +1,5 @@
 {% if slap_software_type == software_type -%}
-{% set use_ipv6 = parameter_dict.get('use-ipv6', False) -%}
+{% set use_ipv6 = slapparameter_dict.get('use-ipv6', False) -%}
 {% set next_port = slapparameter_dict['port-base'] -%}
 {% set site_id = slapparameter_dict['site-id'] -%}
 {% set storage_type = slapparameter_dict['zodb-storage-type'] -%}
