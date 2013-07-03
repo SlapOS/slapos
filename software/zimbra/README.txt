@@ -39,7 +39,7 @@ Also, in the software/zimbra directory:
 Changes in the Zimbra repository
 ================================
 
-The first problem with the official Zimbra repository has been usage of Perforce.
+The official VCS of Zimbra is Perforce.
 Since Perforce keeps no state on the client, it has poor performance and very
 poor visibility for anonymous users.
 
@@ -64,10 +64,9 @@ Our fork contains unofficial bug fixes in both 'vanillabuild' and 'authbind' bra
 
  - authbind branch
     https://git.erp5.org/gitweb/zimbra.git/shortlog/refs/heads/authbind?js=1
-    This does NOT build with the conventional method, but will work with buildout.
+    This does NOT build with the conventional method, but works with buildout, and can build
+    and be deployed as a regular user, with no need for root access except for some preparatory steps.
     The rest of this documentation describes the changes made to the 'authbind' branch.
-    which uses buildout, and can build and be deployed as a regular user, with no
-    need for root access except for some preparatory steps.
 
 
 
@@ -76,9 +75,9 @@ Types of changes
 ----------------
 
 While building or running an application as complex as Zimbra, there are many
-scripts and processes that make one or more of the following assumptions.
+scripts and processes that make one or more (usually all) of the following assumptions.
 
-This order roughly reflects the level of difficulty encountered in the project,
+The order roughly reflects the level of difficulty encountered in the project,
 from the esiest to solve, to the hardest.
 
 
@@ -346,7 +345,7 @@ Assumption 5: processes can be run by a specific user (zimbra, postfix, postdrop
 
 
       - Removed calls to chown/chmod and zmfixperms
-        This required directly changing permissions of files in the repository to allow +x.
+        This also required directly changing permissions of files in the repository to allow +x.
 
 
       - Granting access to IP ports lower than 1024
