@@ -56,7 +56,7 @@ Our fork contains unofficial bug fixes in both 'vanillabuild' and 'authbind' bra
     This is basically a fixed version of the upstream build.
     The 'vanillabuild' branch is able to build on one of the supported platforms (tested mainly with Ubutnu 12.04)
     in the default zimbra location - /opt/zimbra which should also be the $HOME of the user 'zimbra'.
-    The build process creates *.deb files that need to be installed and configured as root.
+    The build process creates .deb files that need to be installed and configured as root.
     Most zimbra processes and third party components will then run as root and switch to the 'zimbra' user
     (or postfix, or postdrop, and so on).
     This build has been tested with both IPv4/IPv6, in different configurations (ldap only, mta only, store only,
@@ -81,6 +81,7 @@ scripts and processes that make one or more of the following assumptions.
 This order roughly reflects the level of difficulty encountered in the project,
 from the esiest to solve, to the hardest.
 
+
 Assumption 1: the system can be prepared by a root user, with specific system-level
               configuration, before running the build.
 
@@ -104,6 +105,7 @@ Assumption 2: many libraries can be provided by apt-get, rpm, zypper and so on.
     Wherever possible, changes have been made to use libraries and tools
     provided by the Zimbra build itself (better option), or by SlapOS components.
     Both building and actually running the system can require these.
+
     A couple of files are needed to setup environment variables,
     both while building (done automatically by buildout) and while running
     the Zimbra system or administration scripts.
@@ -115,7 +117,64 @@ Assumption 2: many libraries can be provided by apt-get, rpm, zypper and so on.
     These need to be executed with the '.' (source) command before any activity.
 
     A few packages could not be provided by zimbra or slapos, or could not be detected
-    by the makefiles.
+    by the makefiles. They have to be provided by the linux distribution.
+
+        - libcloog-ppl0: CLooG is a software which generates loops for scanning Z-polyhedra.
+            This library is used by GCC and implements the "graphite optimization"
+            used to build libmemcached and opendkim. The optimization could probably be
+            disabled and the dependency removed.
+
+        - libncurses5-dev
+            Although it is usually easy to provide a custom ncurses to a makefile/configure,
+            this was not the case for heimdal, and would need changing the configure scripts.
+
+        - gcc-multilib
+            Needed to compile junixsocket without patches. It may be not needed if the skip32
+            flag is provided to ant (see build.xml)
+
+    As noted, such package dependencies can probably be removed with a little further research.
+
+
+Assumption 3: scripts provided by the packaging system (preinst, postinst, /etc/init.d/*)
+              will be run, as root, when necessary
+
+    Many applications have build procedures that can also install packages in a "target" directory,
+    where it can be directly configured and run.
+    In the case of Zimbra, this would be a "developer build" which would not be
+    configured for production purposes.
+    The standard Zimbra build populates /opt/zimbra (in our case, zbuild/home) then it take parts
+    and pieces of that content and creates .deb or .rpm files. Some parts (i.e. mysql) will be split
+    or be part of multiple packages.
+
+    The buildout parts that deploy Zimbra (zimbra-deploy-ldap and so on) open the .deb packages
+    and extract the data.tar.gz contents, therefore 'faking' the presence of them into the system,
+    but there is no way to run the control scripts as a regular user.
+    Typical tasks performed by preinst and postinst scripts are:
+
+        - set up and update symlinks: /opt/zimbra/{bdb, mysql, jdk..}
+        - set up directories to hold data: log, redolog, store, index, backup..
+        - creating configuration files: postfix/conf/main.cf, etc.
+        - removing obsolete config files or databases: i.e. /opt/zimbra/sleepycat
+        - set up /etc/sudoers for the zimbra user: i.e. in zimbra-core.postinst
+        - set up /etc/pam.d and /etc/security
+        - set up /etc/ld.so.conf, run ldconfig
+        - set up /etc/rc*.d with the S## and K## files
+        - set up crontab
+        - java -client -Xshare:dump (what is this for?)
+        - set up a tmpfs in /etc/fstab and mount it under amavisd/tmp
+        - patch db/db.sql with the hostname of the system before initializing the database
+
+    All of these need to be examined, reverse engineered and replicated in the buildout.cfg
+    (the simplest case being the many mkdir and ln commands).
+
+    Other tasks which we don't need to replicate are:
+
+        - set up /etc/prelink.conf, run prelink
+        - create users and groups for zimbra, postfix, postdrop
+        - running zmfixperms
+
+    New releases of Zimbra, even minor ones, add more tasks to the control files, depending on
+    new components, data migrations and environment constraints.
 
 
 
