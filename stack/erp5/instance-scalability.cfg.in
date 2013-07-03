@@ -30,6 +30,8 @@ name = ERP5 Cluster
 software-url = ${slap-connection:software-release-url}
 software-type = cluster
 sla-computer_guid = {{ slapparameter_dict.get('launcher-computer-guid', computer_id) }}
+{# Add a zope scalability family to the erp5 cluster configuration, -#}
+{# this zope family is used by erp5-bootstrap and may serve to scalability monitoring tools. -#}
 {% set additional_scalability_zope = {'scalability':{'family':'scalability', 'computer-guid':computer_id}} -%}
 {% do slapparameter_dict.get('cluster').get('zope-partition-dict').update( additional_scalability_zope ) -%}
 {% set cluster_parameter_dict = slapparameter_dict.get('cluster', {}) -%}
@@ -37,7 +39,6 @@ config = {{ cluster_parameter_dict.keys() | join(' ') }}
 {% for key, value in cluster_parameter_dict.items() -%}
 config-{{ key }} = {{ dumps(value) }}
 {% endfor -%}
-
 return = mariadb-url family-scalability memcached-persistent-url memcached-volatile-url cloudooo-url
 
 # Create wrapper
