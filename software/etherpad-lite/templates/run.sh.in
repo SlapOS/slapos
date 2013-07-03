@@ -1,0 +1,21 @@
+#!/bin/sh
+
+# Copy repository content from the software release
+mkdir ${:etherpad-repository-location}
+cp -R ${:etherpad-location}/* ${:etherpad-repository-location}
+
+#Move to the folder where ep-lite is installed
+cd ${:etherpad-repository-location}
+
+# XXX Vivien: very ugly, definitely need to find a cleaner way
+cp ${:etherpad-deps-script-location} ${:etherpad-repository-location}/bin/installDeps.sh
+cp ${:etherpad-conf-location} ${:etherpad-repository-location}/${:etherpad-conf-name}
+
+export PATH=$PATH:${:postgre-location}/bin
+
+#prepare the enviroment
+bin/installDeps.sh $* || exit 1
+
+#Move to the node folder and start
+echo "start..."
+${:nodejs-location}/bin/node node_modules/ep_etherpad-lite/node/server.js $*
