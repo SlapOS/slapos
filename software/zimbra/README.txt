@@ -177,6 +177,185 @@ Assumption 3: scripts provided by the packaging system (preinst, postinst, /etc/
     new components, data migrations and environment constraints.
 
 
+Assumption 4: scripts, binaries, libraries, configuration files and databases will be present
+              under specific filesystem locations (like /opt/zimbra/ or /etc)
+
+    Although it is possible to specify a $ZIMBRA_HOME environment variable to
+    attemp a build targeting a different directory, that is seldom used, and
+    hardcoded pathnames abound in makefiles, scripts and even Java code, with
+    literally thousands of references to /opt/zimbra.
+
+    A naive approach that replaces /opt/zimbra with the desired target would break several scripts
+    in ways that are not possible to predict and hard to debug.
+
+    A layered approach has been applied:
+
+
+    - when possible, replace /opt/zimbra with ${ZIMBRA_HOME} in bash
+        (and /usr/local/java with JAVA_HOME)
+
+        Pay attention to the quotes. Inside shell scripts, "$VAR" does variable
+        replacement, but '$VAR' does not. Therefore, in order to replace
+        '/opt/zimbra' the quoting must be changed as well: "${ZIMBRA_HOME}"
+        and not '${ZIMBRA_HOME}'. Proper escaping of quotes must be applied
+        in case of embedded command strings, and strings written to files that
+        will later be executed.
+
+        Make the variable mandatory and remove assignments to the old default.
+        An error is returned in buildThirdParty.sh if ZIMBRA_HOME is not set up.
+
+
+    - use $(ZIMBRA_HOME) in makefiles
+        Be careful of using proper parens: $() and not ${}
+
+        Makefiles will automatically use the envvar if defined, but when debugging
+        we need to build individual Third Party packages, and be sure that
+        environment.sh has been sourced.
+        By removing the many "ZIMBRA_HOME ?= /opt/zimbra" from all the Makefiles,
+        we make sure we remember to use of environment.sh
+
+
+    - plain sed replacement
+        Before starting the build, all remaining /opt/zimbra occurrences are replaced
+        with a global
+
+        sed 's#/opt/zimbra#${ZIMBRA_HOME}#g'
+
+        (see buildout.cfg:[zimbra-sources-search-replace])
+
+
+    - replace s/../../ with s|..|..| in bash (and m|...| in Perl)
+        There are several occurences of /opt/zimbra in regular expressions, where
+        it appears as \/opt\/zimbra.
+
+        The delimiter has been changed in bash and Perl scripts, therefore
+        a s/\/opt\/zimbra\/whatever/ become s|/opt/zimbra/whatever| and can be
+        replaced by the sed command described above.
+
+        Pay attention to Perl: regexps can be 'naked', therefore an expression like
+
+            $cmdline =~ /\/opt\/zimbra\/db/
+
+        would be changed to
+
+            $cmdline =~ m|/opt/zimbra/db|
+
+        As always, in bash, look the quote characters around the regexp, if present,
+        and change them from ' to " where needed.
+
+
+    - sed replacement for awk
+
+        Unfortunately, awk cannot use other characters in place of the slash delimiter.
+        A more complex sed substitution is performed for these cases:
+
+            ZIMBRA_HOME_WITH_BACKSLASHES=`echo $ZIMBRA_HOME | sed "s#/#\\\\\\\\\\\\\\\\/#g"`
+            SUB3="s#\\\\/opt\\\\/zimbra#$ZIMBRA_HOME_WITH_BACKSLASHES#g"
+
+
+    - sed replacement for Java code
+
+        There is also a case of '/opt/zimbra' that is built by string composition in Java.
+
+        A file-specific substitution is applied here:
+
+            find . -name LocalConfig.java -exec sed -i 's#= FS + "opt" + FS + "zimbra"#= "${:ZIMBRA_HOME}"#g' {} \;
+
+        A grep search for all occurrences of 'opt' in Java sources may help to detect similar cases.
+
+
+
+Assumption 5: processes can be run by a specific user (zimbra, postfix, postdrop) or as root
+
+    The first issue posed by this assumption is that we need to allow the application to
+    use the resources it needs. Giving permissions to regular users through linux
+    capabilities is a possible approach, but only solves a part of the use cases.
+
+    A limitation of setcap is described in
+        http://stackoverflow.com/questions/9843178/linux-capabilities-setcap-seems-to-disable-ld-library-path
+
+    The second issue is the amount of code that was written in order to report errors if the current
+    user does not match, call processes through su/sudo, change file permissions, set up usernames and uids
+    in configuration files, and so on. This code may be part of the build process, the configuration/deployment
+    scripts, or administration scripts.
+
+    The changes can be grouped by purpose:
+
+      - Removing user checks
+        The first thing to remove are the parts of code that abort a script when run by a different user.
+        This change should generally be applied as soon as possible, so that further permission problems can be detected.
+
+        The code often looks like
+
+            if [ x`whoami` != xzimbra ]; then
+              echo Error: must be run as zimbra user
+              exit 1
+            fi
+
+        or with `id -un` in place of whoami.
+        In Perl, the checks can take very different forms, which are hard to find with grep:
+
+            ($>) and usage();
+
+
+      - Removing usage of su/sudo
+
+        This goes both ways: scripts run by root that need to run scripts as zimbra, and vice-versa.
+        For the latter, Zimbra requires /etc/sudoers to be properly set up:
+
+        %zimbra ALL=NOPASSWD:/opt/zimbra/libexec/zmstat-fd *
+        %zimbra   ALL=NOPASSWD:/opt/zimbra/openldap/libexec/slapd
+        %zimbra   ALL=NOPASSWD:/opt/zimbra/libexec/zmslapd
+        %zimbra   ALL=NOPASSWD:/opt/zimbra/postfix/sbin/postfix, /opt/zimbra/postfix/sbin/postalias,
+                               /opt/zimbra/postfix/sbin/qshape.pl, /opt/zimbra/postfix/sbin/postconf,
+                               /opt/zimbra/postfix/sbin/postsuper
+        %zimbra   ALL=NOPASSWD:/opt/zimbra/libexec/zmqstat,/opt/zimbra/libexec/zmmtastatus
+        %zimbra ALL=NOPASSWD:/opt/zimbra/libexec/zmmailboxdmgr
+        %zimbra ALL=NOPASSWD:/opt/zimbra/bin/zmcertmgr
+
+        We have removed all the explicit calls to sudo.
+        Sometimes it's as easy as removing the 'sudo' word before a command, but at times the
+        subprocess behavior must be retained, so that
+
+            $SU = "su - zimbra -c -l ";
+
+        becomes
+
+            $SU = "bash -c ";
+
+        While applying this kind of change, string quoting/backquoting and escaped characters
+        may need to be adjusted.
+
+
+      - Configuration changes
+        Users "zimbra", "postfix" and "postdrop" are referenced in the configuration files
+        used by postfix, opendkim, amavis, clamd, dspam.
+        Some of these files are provided as templates and need to be patched by sed replacement
+        (see buildout.cfg:[zimbra-sources-search-replace]).
+        The actual configuration files are written by zmconfigd.
+
+
+      - Ad-hoc patches to C code
+        Three patches to postfix are provided, to avoid using initgroups(3), seteuid(2),
+        setgid(2) and explicit user checks.
+
+        A patch is also needed for the mailbox wrapper (zmmailboxdmgr) to avoid the stripping
+        of LD_PRELOAD from the environment variables.
+        The stripping of such variable is a security need when zmmailboxdmgr runs as root,
+        but we don't, so we allow it because authbind relies on it to preload libauthbind.so
+
+
+      - Removed calls to chown/chmod and zmfixperms
+        This required directly changing permissions of files in the repository to allow +x.
+
+
+      - Granting access to IP ports lower than 1024
+        This is a common requirement, and port forwarding through iptables is not always possible.
+        The only solution that we found working with ipv4/ipv6, with all versions of Java and allows
+        LD_PRELOAD/LD_LIBRARY_PATH usage is the authbind package.
+        Versions 1.x only work with IPv4, therefore we backported 2.1.1 to Ubuntu 12.04 and provided
+        it together with the buildout.cfg
+
 
 
 
