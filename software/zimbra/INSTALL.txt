@@ -200,6 +200,24 @@ and deploy-zimbra-store parts, configuring as described by the official document
 
 
 
+=========================
+Partial third-party build
+=========================
+
+If you need to build a single component in ThirdParty, maybe because it has failed
+and want to investigate the reason, remember to load the environment.sh script first,
+then run the proper makefile.
+
+        $ source environment.sh
+        $ cd parts/zimbra-sources/ThirdParty/mysql/
+        $ make
+
+Unfortunately, the scripts provide no generic way to interrupt and restart
+a third party build without rebuilding everything. So, after fixing the problem,
+you will have to rebuild all of the components.
+
+
+
 ===========================
 Further links and resources
 ===========================

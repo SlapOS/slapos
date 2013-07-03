@@ -70,7 +70,6 @@ Our fork contains unofficial bug fixes in both 'vanillabuild' and 'authbind' bra
 
 
 
-
 Types of changes
 ----------------
 
@@ -263,7 +262,6 @@ Assumption 4: scripts, binaries, libraries, configuration files and databases wi
         A grep search for all occurrences of 'opt' in Java sources may help to detect similar cases.
 
 
-
 Assumption 5: processes can be run by a specific user (zimbra, postfix, postdrop) or as root
 
     The first issue posed by this assumption is that we need to allow the application to
@@ -323,7 +321,13 @@ Assumption 5: processes can be run by a specific user (zimbra, postfix, postdrop
             $SU = "bash -c ";
 
         While applying this kind of change, string quoting/backquoting and escaped characters
-        may need to be adjusted.
+        may need to be adjusted, or parens added for grouping command pipes:
+
+            su - zimbra -c "${zimbra_home}/bin/zmprov -m -l -- ${zmprov_opts} ${key} | sed  -e 's/^${key}: //' > ${tmpfile} 2> /dev/null" 2>/dev/null && mv -f ${tmpfile} ${file} 2> /dev/null
+
+        becomes
+
+            ( ${zimbra_home}/bin/zmprov -m -l -- ${zmprov_opts} ${key} | sed  -e "s/^${key}::* //" > ${tmpfile} 2> /dev/null ) && mv -f ${tmpfile} ${file}
 
 
       - Configuration changes
@@ -336,7 +340,7 @@ Assumption 5: processes can be run by a specific user (zimbra, postfix, postdrop
 
       - Ad-hoc patches to C code
         Three patches to postfix are provided, to avoid using initgroups(3), seteuid(2),
-        setgid(2) and explicit user checks.
+        setgid(2), setsid(2) and explicit user checks.
 
         A patch is also needed for the mailbox wrapper (zmmailboxdmgr) to avoid the stripping
         of LD_PRELOAD from the environment variables.
@@ -350,14 +354,72 @@ Assumption 5: processes can be run by a specific user (zimbra, postfix, postdrop
 
       - Granting access to IP ports lower than 1024
         This is a common requirement, and port forwarding through iptables is not always possible.
-        The only solution that we found working with ipv4/ipv6, with all versions of Java and allows
+        The only solution that we found that works with IPv4/IPv6, with all versions of Java and allows
         LD_PRELOAD/LD_LIBRARY_PATH usage is the authbind package.
         Versions 1.x only work with IPv4, therefore we backported 2.1.1 to Ubuntu 12.04 and provided
         it together with the buildout.cfg
+        With authbind, if the application /path/to/binary needs the privilege to bind low ports,
+        it must be called as
+
+            $ authbind /path/to/binary [...options...]
+
+        or (as seen in bin/zmmailboxdctl) as
+
+            $ authbind --deep /path/to/binary [...options...]
+
+        The latter form is required to grant the privilege to future subprocesses as well.
 
 
 
+Other context-specific changes
+------------------------------
 
-[to be continued]
+In the script buildThirdParty.sh, explicit checks for the presence of required libraries
+have been removed.
+
+Other changes not described in the previous section:
+
+   - clamav:
+      Explicitly provide bzip2 from slapos.
+
+    - cyrus-sasl
+      The build of this component is bugged, as it will favor the use of libtool
+      provided in /usr/bin over the one provided by Zimbra.
+      Our changes fix this, and also explicitly reference the aclocal file with --system-acdir
+      in ThirdParty/cyrus-sasl/zimbra-cyrus-sasl-build.sh
+
+      For the same reason, the Thirdparty/Makefile build order
+      has been changed to build libtool before cyrus-sasl.
+
+    - mysql
+      Compile mysql with the embedded yaSSL library, instead of openssl.
+      Also, explicitly provide ncurses from slapos.
+
+    - nginx / postfix:
+      Explicitly provide libpcre from slapos.
+
+    - perl
+      SlapOS Perl: Build with -fPIC to allow linking with OpenLDAP Perl backend.
+      Zimbra perl:
+            Install the Devel::Trace module to help debug.
+            Use the public cpan.yahoo.com mirror by default instead of the
+            inaccessible, privat one at zre-matrix.eng.vmware.com
+      Changed /usr/bin/perl shebangs, to /usr/bin/env or to $PERL_BINARY with a regexp.
+
+
+
+Resources
+---------
+
+The following documents have been useful to build / debug third party libraries.
+
+ autotools tutorial
+    www.lrde.epita.fr/~adl/dl/autotools.pdf
+
+ openldap administrator guide
+    http://www.openldap.org/doc/admin24/ 
+
+ very detailed explanation of shared libraries
+    www.akkadia.org/drepper/dsohowto.pdf
 
 
