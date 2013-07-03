@@ -96,10 +96,9 @@ bin = ${buildout:directory}/bin
 recipe = slapos.cookbook:erp5.bootstrap
 runner-path = ${basedirectory:services}/erp5-bootstrap
 mysql-url =  ${erp5-cluster:connection-mariadb-url}
-# Must look like : https://user:password@ip:port/site_id
-# But actually looks like : https://ip:port/site_id
-#zope-url = ${erp5-cluster:connection-family-scalability}/{{ site_id }}
-zope-url = https://zope:insecure@192.168.241.110:2153/erp5
+zope-username = zope
+zope-password = insecure
+zope-url = ${erp5-cluster:connection-family-scalability}/{{ site_id }}
 
 [erp5-promise]
 recipe = slapos.cookbook:erp5.promise

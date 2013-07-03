@@ -48,10 +48,20 @@ class Recipe(GenericBaseRecipe):
 
     zope_parsed = urlparse.urlparse(self.options['zope-url'])
 
+    # Extract zope username/password from url, or get it from options
+    if zope_parsed.username:
+      zope_username = zope_parsed.username
+    else:
+      zope_username = self.options['zope-username']
+    if zope_parsed.password:
+      zope_password = zope_parsed.password
+    else:
+      zope_password = self.options['zope-password']
+
     config = dict(
       python_path=sys.executable,
-      user=zope_parsed.username,
-      password=zope_parsed.password,
+      user=zope_username,
+      password=zope_password,
       site_id=zope_parsed.path.split('/')[1],
       host="%s:%s" % (zope_parsed.hostname, zope_parsed.port),
       sql_connection_string=mysql_connection_string,
