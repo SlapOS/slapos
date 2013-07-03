@@ -2,7 +2,7 @@
 The following is a detailed list of the changes made to the Zimbra sources,
 and also explains parts of the buildout.cfg profile.
 
-If you only need to build Zimbra, you may skip this and just read INSTALL.txt
+If you only need to build Zimbra, you may skip this file and just read INSTALL.txt
 
 
 
@@ -10,10 +10,12 @@ If you only need to build Zimbra, you may skip this and just read INSTALL.txt
 Changes in the SlapOS repository
 ================================
 
-The zimbra branch includes two additional components:
+The zimbra branch includes additional components:
 
  - components/pax
  - components/p7zip
+ - components/unzip
+ - components/cloog-ppl (not used at the moment)
 
 Also, in the software/zimbra directory:
 
@@ -26,12 +28,12 @@ Also, in the software/zimbra directory:
    After the build, it copies the compiled library where needed.
 
  - authbind_2.1.1_amd64.deb
-   Pre-compiled backport of authbind built under Ubuntu 12.04.
+   Pre-compiled backport of authbind built for Ubuntu 12.04.
    Needed for IPv6, because only versions >= 2.0 support it.
 
  - software.cfg
  - instance.cfg
-   Experimental. Ignore them.
+   Experimental.
 
 
 
@@ -39,7 +41,7 @@ Also, in the software/zimbra directory:
 Changes in the Zimbra repository
 ================================
 
-The official VCS of Zimbra is Perforce.
+Perforce is the official VCS tool of the Zimbra project.
 Since Perforce keeps no state on the client, it has poor performance and very
 poor visibility for anonymous users.
 
@@ -369,6 +371,10 @@ Assumption 5: processes can be run by a specific user (zimbra, postfix, postdrop
 
         The latter form is required to grant the privilege to future subprocesses as well.
 
+        For openldap and postfix, we still use setcap inside the buildout.
+        This requires the sudo password, and could be dispensed with, now that there is support for
+        authbind. But it would require some changes to the wrapper scripts, as described above.
+
 
 
 Other context-specific changes
@@ -376,6 +382,9 @@ Other context-specific changes
 
 In the script buildThirdParty.sh, explicit checks for the presence of required libraries
 have been removed.
+
+The script zmsetup.pl has been modified to look in $ZIMBRA_INSTALLED_PKGS for the list
+of packages to setup. This would normally go through apt-get and detect what has been installed.
 
 Other changes not described in the previous section:
 

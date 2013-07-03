@@ -102,7 +102,7 @@ How to install Zimbra
   Note that `id -u` and `id -g` are the user and group that will run Zimbra.
 
 
- - Create the directory to contain zimbra build and clone the {slapos, zimbra} repositories.
+ - Create the directory to contain zimbra build and clone the slapos repository.
 
         $ mkdir zbuild; cd zbuild
         $ git clone http://git.erp5.org/repos/slapos.git -b zimbra slapos
@@ -129,22 +129,40 @@ How to install Zimbra
         $ python bootstrap.py
         $ ./bin/buildout
 
-   You should find the following files:
+   Some Java warnings are expected.
+
+   Third party libraries build with the messages:
+
+        *** Building in openssl SUCCEEDED.
+        ...
+        *** Building in zeromq SUCCEEDED.
+
+   If any of them shows FAILED, check the dependencies, then read the section "Partial third-party build"
+
+   When buildout has finished, you should find the following files:
 
         $ ls parts/zimbra-sources/ZimbraBuild/amd64/*deb
+        zimbra-apache_8.0.4.GA.5682.UBUNTU12.64_amd64.deb
+        zimbra-core_8.0.4.GA.5682.UBUNTU12.64_amd64.deb
+        zimbra-ldap_8.0.4.GA.5682.UBUNTU12.64_amd64.deb
+        zimbra-logger_8.0.4.GA.5682.UBUNTU12.64_amd64.deb
+        zimbra-memcached_8.0.4.GA.5682.UBUNTU12.64_amd64.deb
+        zimbra-mta_8.0.4.GA.5682.UBUNTU12.64_amd64.deb
+        zimbra-proxy_8.0.4.GA.5682.UBUNTU12.64_amd64.deb
+        zimbra-snmp_8.0.4.GA.5682.UBUNTU12.64_amd64.deb
+        zimbra-spell_8.0.4.GA.5682.UBUNTU12.64_amd64.deb
+        zimbra-store_8.0.4.GA.5682.UBUNTU12.64_amd64.deb
 
-      XXX insert list of files here XXX
-
-   Be patient, and do NOT run buildout twice. If you do, the content
+   Be patient, and do not run buildout twice. If you do, the content
    of parts/zimbra-sources will be removed, and that part will be built again.
    You may backup the *.deb files to be sure you don't lose them by mistake.
 
 
- - Run buildout again to install the *.deb files
+ - Run the deployment section to install the *.deb files
 
         $ ./bin/buildout install zimbra-deploy-all
 
-   The files will not be really installed by dpkg, only uncompressed under the 'zbuild/home' directory.
+   The files will not be really installed by dpkg, but uncompressed under the 'zbuild/home' directory.
    If setcap is required at this point (for ldap and postfix) a root password might be asked.
 
 
@@ -158,20 +176,24 @@ How to install Zimbra
 
         $ source /home/user/zbuild/home/.bashrc
 
-   Now you run the actual configuration script.
+   Now run the actual configuration script.
 
         $ cd /home/user/zbuild/home/; ZIMBRA_INSTALLED_PKGS="zimbra-core zimbra-ldap zimbra-mta zimbra-store" ./libexec/zmsetup.pl
 
-   the last two lines are printed after you run 'buildout install zimbra-deploy-all'.
+   The last two lines are printed after running "buildout install zimbra-deploy-all".
 
 
- - Using the configuration menu, set up an admin password and other options.
-   Usually, only an admin password is required.
+ - Fill the required options in the configuration menu.
+
+   Usually, only an admin password is required: menu 3 and then 4.
+   Other mandatory options (as in case of zimbra-deploy-store) are be marked by an asterisk.
 
    Refer to the official Zimbra documentation for this part of the setup.
-   Here you can also change things like ipv4/ipv6, etc.
+   Here you can also change things like IPv4/IPv6, etc.
 
-   After you type (a)pply, a lot of configuration files, certificates, and databases are created.
+   After typing (a)pply, many configuration files, certificates, and databases are created.
+   A verbose log will show up on the screen.
+
    At the end of this process, the log is copied in home/log/zmsetup.*.txt
    and the zimbra services are run.
 
@@ -180,12 +202,13 @@ How to install Zimbra
 
         $ cd /home/user/zimbra-target/home/bin
         $ ./zmcontrol status
-
-     XXX include zmcontrol output XXX
-
+        antispam                Running
+        [...]
+        zmconfigd               Running
 
  - You should now be able to connect to https://myserver.mydomain.com
-   and send/receive emails, and log in to the administration interface.
+   and send/receive emails, and log in to the administration interface
+   (drop-down menu, top right).
 
 
  - Before running any of the maintenance commands in bin/ or libexec/,
@@ -196,7 +219,8 @@ How to install Zimbra
 
 
 To install a multi-server system, use the deploy-zimbra-ldap, deploy-zimbra-mta
-and deploy-zimbra-store parts, configuring as described by the official documentation.
+and deploy-zimbra-store parts. Only the "configuration menu" part is different
+and should be completed as described by the official documentation.
 
 
 
