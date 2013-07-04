@@ -164,7 +164,7 @@ Assumption 3: scripts provided by the packaging system (preinst, postinst, /etc/
         - set up a tmpfs in /etc/fstab and mount it under amavisd/tmp
         - patch db/db.sql with the hostname of the system before initializing the database
 
-    All of these need to be examined, reverse engineered and replicated in the buildout.cfg
+    All of these needed to be examined, reverse engineered and replicated in the buildout.cfg
     (the simplest case being the many mkdir and ln commands).
 
     Other tasks which we don't need to replicate are:
@@ -392,8 +392,8 @@ Other changes not described in the previous section:
       Explicitly provide bzip2 from slapos.
 
     - cyrus-sasl
-      The build of this component is bugged, as it will favor the use of libtool
-      provided in /usr/bin over the one provided by Zimbra.
+      The build of this component is bugged, because it uses libtool provided in /usr/bin
+      instead of the one provided by Zimbra.
       Our changes fix this, and also explicitly reference the aclocal file with --system-acdir
       in ThirdParty/cyrus-sasl/zimbra-cyrus-sasl-build.sh
 
@@ -423,12 +423,12 @@ Resources
 The following documents have been useful to build / debug third party libraries.
 
  autotools tutorial
-    www.lrde.epita.fr/~adl/dl/autotools.pdf
+    http://www.lrde.epita.fr/~adl/dl/autotools.pdf
 
  openldap administrator guide
     http://www.openldap.org/doc/admin24/ 
 
  very detailed explanation of shared libraries
-    www.akkadia.org/drepper/dsohowto.pdf
+    http://www.akkadia.org/drepper/dsohowto.pdf
 
 
