@@ -39,7 +39,7 @@ config = {{ cluster_parameter_dict.keys() | join(' ') }}
 {% for key, value in cluster_parameter_dict.items() -%}
 config-{{ key }} = {{ dumps(value) }}
 {% endfor -%}
-return = mariadb-url family-scalability memcached-persistent-url memcached-volatile-url cloudooo-url
+return = mariadb-url family-scalability family-user memcached-persistent-url memcached-volatile-url cloudooo-url
 
 # Create wrapper
 [binary-wrap-launcher]
@@ -48,11 +48,9 @@ log-path = ${basedirectory:log}/runScalabilityTestSuite.log
 binary-path = {{ bin_directory }}/runScalabilityTestSuite
 wrapper-path = ${rootdirectory:bin}/runScalabilityTestSuite
 output = ${binary-wrap-launcher:binary-path}
-# TODO : get the erp5-cluster main url (apache listening user port ?)
-erp5-url = http://foo.bar
-# Run scalability test suite wrapper command with parameters
-# -\ dirty way to conserve spaces
-# command-line = "${binary-wrap-launcher:binary-path}" --erp5-url ${binary-wrap-launcher:erp5-url} --test-result-path {{ slapparameter_dict.get('test-result-path') }} --revision {{ slapparameter_dict.get('revision') }} --node-title {{ slapparameter_dict.get('node-title') }} --test-suite-master-url {{ slapparameter_dict.get('test-suite-master-url') }} --log-path ${binary-wrap-launcher:log-path}
+site-id = "/{{ site_id }}"
+# Suppose that there is a user zope family in the configuration
+erp5-url = ${erp5-cluster:connection-family-user}${:site-id}
 parameters-extra = $*
 command-line = ${binary-wrap-launcher:binary-path}
 return = url
