@@ -6,7 +6,7 @@ extends =
 parts =
   erp5-cluster
   binary-wrap-launcher
-#  scalability-launcher-instance
+  scalability-launcher-instance
   binary-wrap-performance-tester
   erp5-bootstrap
   erp5-promise
