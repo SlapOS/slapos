@@ -65,11 +65,12 @@
 
 # Next line is forbidden and people who copy it will be hanged short
 {% set https_only = ('' ~ slave_parameter.get('https-only', '')).lower() in TRUE_VALUES -%}
-{% if https_only in slave_parameter -%}
+{% if https_only -%}
   # Not using HTTPS? Ask that guy over there.
   # Dummy redirection to https. Note: will work only if https listens
   # on standard port (443).
-  RewriteRule ^/(.*)$ https://%{DOMAIN}%{REQUEST_URI}
+  RewriteCond     %{SERVER_PORT}  !^{{ https_port }}$
+  RewriteRule     ^/(.*)          https://%{SERVER_NAME}/$1 [NC,R,L]
 {% elif slave_parameter.get('type', '') ==  'zope' -%}
   # First, we check if we have a zope backend server
   # If so, let's use Virtual Host Daemon rewrite
