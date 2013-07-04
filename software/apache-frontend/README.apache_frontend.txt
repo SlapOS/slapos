@@ -416,7 +416,7 @@ the proxy::
   SSLCertificateChainFile %(ssl_ca_crt)s
   # Configure personal logs
   ErrorLog "%(error_log)s"
-  LogLevel warn
+  LogLevel info
   LogFormat "%%h %%l %%{REMOTE_USER}i %%t \"%%r\" %%>s %%b \"%%{Referer}i\" \"%%{User-Agent}i\" %%D" combined
   CustomLog "%(access_log)s" combined
   # Rewrite part
@@ -442,7 +442,7 @@ the proxy::
   RewriteEngine On
   # Configure personal logs
   ErrorLog "%(error_log)s"
-  LogLevel warn
+  LogLevel info
   LogFormat "%%h %%l %%{REMOTE_USER}i %%t \"%%r\" %%>s %%b \"%%{Referer}i\" \"%%{User-Agent}i\" %%D" combined
   CustomLog "%(access_log)s" combined
   # Remove "Secure" from cookies, as backend may be https

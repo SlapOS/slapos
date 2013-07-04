@@ -26,7 +26,7 @@ ServerTokens Prod
 
 # Log configuration
 ErrorLog "{{ error_log }}"
-LogLevel warn
+LogLevel info
 # LogFormat "%h %{REMOTE_USER}i %{Host}i %l %u %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\"" combined
 # LogFormat "%h %{REMOTE_USER}i %{Host}i %l %u %t \"%r\" %>s %b" common
 # CustomLog "{{ access_log }}" common

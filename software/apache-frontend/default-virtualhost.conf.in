@@ -24,7 +24,7 @@
 
   # One Slave two logs
   ErrorLog "{{ error_log }}"
-  LogLevel warn
+  LogLevel info
   LogFormat "%h %l %{REMOTE_USER}i %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\" %D" combined
   CustomLog "{{ access_log }}" combined
 
@@ -57,7 +57,7 @@
 
   # One Slave two logs
   ErrorLog "{{ error_log }}"
-  LogLevel warn
+  LogLevel info
   LogFormat "%h %l %{REMOTE_USER}i %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\" %D" combined
   CustomLog "{{ access_log }}" combined
 
