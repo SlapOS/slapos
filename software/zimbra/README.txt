@@ -417,6 +417,147 @@ Other changes not described in the previous section:
 
 
 
+
+==================
+What did we learn?
+==================
+
+Overall, the Zimbra application suite has a clean architecture, and the build
+system is not hard to modify/debug if a stable snapshot is used (which was not
+the case at first). The only major improvement I would suggest to the upstream
+maintainers is to make it easier to incrementally build third party packages,
+instead of erasing everything every time, and building 24 applications and 80 perl
+modules in a single shot.
+
+Porting to buildout has however proven cumbersome and the correctness of all the
+parts in the system is still unproven. A missing symlink to a certificate could make
+opendkim ineffective, a missing archiver binary might render the antivirus system
+unable to open many types of attachments, and so on.
+Inside bash and perl scripts, many commands fail silently, or their stdout and
+stderr is redirected to /dev/null and the status code is not checked.
+This is still in the best case, when the failing command is in the script we want to run.
+
+Sometimes the effects of a failing command can only be detected much later,
+when running an application that runs with the default configuration instead of
+the one created from the configuration templates, because there is a Java
+daemon running a Jython script that should refresh them every few minutes, but runs
+into busy loops because an environment variable was not properly set up (really
+happened, took a while to fix).
+
+So if we have a non-trivial application to bring into SlapOS tomorrow, how can
+we better evaluate the complexity of the task?
+
+The following are characteristics of a software project that are easy to verify,
+and can raise early warnings.
+
+
+ - The use of Perforce or other cumbersome VCS
+
+   While I don't deny the quality of the tool when used every day, it is not
+   intuitive to most developers, not transparent (and very slow) to anonymous
+   read-only users, and makes it difficult to propose improvements upstream.
+   There are a few Zimbra mirrors on github and similar sites, but they all
+   are all one-way, outdated, only track some branches, or have collapsed commits.
+   Attemps to directly use a git-p4 bridge have been disappointing, both for
+   lack of familiarity and for the limitations of the anonymous access.
+
+
+ - Support for a limited number of platforms
+
+   Linux distributions supported by ZCS 8.0.4:
+
+        Ubuntu 10.04 (deprecated), 12.04
+        SUSE Linux Enterprise Server 11
+        Red Hat Enterprice / CentOS 6
+
+   Outside of this limited list, the build scripts *do* fail (i.e. on Ubuntu 13
+   or OpenSuse) and **there is no documented way** to deploy a production instance
+   without going through .deb or .rpm packages.
+
+   For Zimbra, there is code to detect the distro inside get_plat_tag.sh which is
+   a starting point, but more if..else ad-hoc code in spread all over the makefiles
+   and administration scripts - but we only get to test them when we think the
+   build has succeeded and deployed.
+
+   Have a look at ZimbraNative/Makefile. There is code to specifically target
+   OS/X 10.4 PowerPC, 10.5 i386, 10.6, 10.7 with different compiler flags, and yet OSX
+   is not officially supported. Which ones have been recently tested?
+
+   Generally - the bigger the system, the more limited the number of platforms it can
+   be reliably built with. Very often, it's not only a matter of missing phone
+   support, there are technical reasons. Or simply all the developers use Ubuntu, all
+   the customers use CentOS.
+   It is useful to manually build an application on several distributions,
+   old and new, before attempting a port to buildout. Identify where the constraints
+   are, and how they can be removed.
+
+
+ - Third party libraries and applications cannot be provided separately
+
+   Not only does Zimbra provide its own mysql/openldap/perl/etc applications as part
+   of the zimbra-core*.deb, zimbra-ldap*.deb and such packages, but they
+   are expected to be installed in /opt/zimbra and compiled with a given set of features.
+   If the official documentation stated that you need a working mysql instance somewhere,
+   and just provide authentication credentials while running zmsetup.pl, it would be much
+   easier to reuse the mysql/mariadb component from SlapOS.
+
+
+ - Several toolchains are employed
+
+   Make, cmake, GNU autoconf/autotools/libtool, ant, cpan.. all of them in the
+   same project may require a lot of searches for specific flags to provide in
+   obscure cases.
+   This is not a big issue if the build already targets several platforms, and
+   there are hooks to provide locations for the required dependencies.
+   Also watch out for ancient C software that is still using plain Makfile.
+   Case in point: ftp://ftp.ucsb.edu/pub/mirrors/procmail/procmail-3.22.tar.gz
+
+
+ - The deployment step is complex, long or requires a lot of interaction.
+
+   Let's say you are building the FooBar application.
+   Hopefully, the build system can also deploy, and put a working application
+   in /opt/foobar.
+
+   If the build system creates .deb or .rpm packages, or .tar packages that need
+   to be installed as root, watch out for control scripts: start/stop wrappers,
+   daemon scripts and cron configuration files. Any functionality there might need
+   to be examined and rewritten for buildout.
+
+   Even if the build deploys directly in /opt/foobar, a later configuration step
+   might be more compex than it seems.
+   Zimbra requires to run zmsetup.pl - an interactive dynamic menu and sub-menu
+   application that is very easy to use - it's magic! - totalling about 12000
+   lines of perl and bash, with a complexity equivalent to 24000 lines of
+   Python code.
+   This configuration menu is the biggest red flag we have met so far.
+
+
+ - The application can auto-update itself, install plugins and extensions
+
+   Can the application update itself from the Internet? If so, any change we make to
+   the sources could be replaced by the new version. The new version may expect
+   things to be in /opt/foobar instead of /srv/slapgrid, or may rely on values in
+   /etc/ld.so.conf which can't be controlled in SlapOS, and so on.
+
+   Even for simple things like themes and plugins, try to download a few of them and
+   look for hardcoded pathnames, and bash/php/python code. Browser-side JavaScript
+   is usually harmless (see zimlets in Zimbra).
+   Don't overlook this point. If the application can be built, but the plugins
+   don't work, a customer could quickly lose interest.
+
+
+ - Installing the application changes /etc/sudoers
+
+   This might actually be useful to detect early which binaries and scripts will need to
+   be run as root, or as specific users. Try to find the reason behind this requirement
+   as soon as possible. Also see if setuid/setgid binaries have been installed.
+
+
+
+
+
+
 Resources
 ---------
 
