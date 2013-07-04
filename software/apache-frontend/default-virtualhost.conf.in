@@ -47,7 +47,6 @@
 <VirtualHost *:{{ http_port }}>
   ServerName {{ slave_parameter.get('domain') }}
   ServerAlias {{ slave_parameter.get('domain') }}
-  SSLEngine on
   SSLProxyEngine on
   # Rewrite part
   ProxyVia On

@@ -7,7 +7,7 @@ ServerName {{ domain }}
 DocumentRoot {{ document_root }}
 ServerRoot {{ instance_home }}
 
-{% for ip in (ipv4_addr, ipv6_addr) -%}
+{% for ip in (ipv4_addr, "[%s]" % ipv6_addr) -%}
 {%   for port in (http_port, https_port) -%}
 {{ "Listen %s:%s" % (ip, port)  }}
 {%   endfor -%}
