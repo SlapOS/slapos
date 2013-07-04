@@ -98,7 +98,7 @@ runner-path = ${basedirectory:services}/erp5-bootstrap
 mysql-url =  ${erp5-cluster:connection-mariadb-url}
 zope-username = zope
 zope-password = insecure
-zope-url = ${erp5-cluster:connection-family-scalability}/{{ site_id }}
+zope-url = ${erp5-cluster:connection-family-scalability}/erp5
 
 [erp5-promise]
 recipe = slapos.cookbook:erp5.promise
