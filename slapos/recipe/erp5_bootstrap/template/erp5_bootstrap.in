@@ -20,7 +20,7 @@ if protocol == 'https':
 elif protocol == 'http':
   zope_connection = httplib.HTTPConnection(host)  
 else:
-  raise ValueError("Protocol '%s' is not implemented" %(protocol))
+  raise ValueError("Protocol not implemented")
   
 # Check if an ERP5 site is already created, as ERP5 does support having
 # 2 instances in the same zope, and this script should not destroy user data
@@ -35,7 +35,7 @@ if result.status == 204: # and (result.read() == "False"):
   elif protocol == 'http':
     zope_connection = httplib.HTTPConnection(host)  
   else:
-    raise ValueError("Protocol '%s' is not implemented" %(protocol)) 
+    raise ValueError("Protocol pot implemented") 
 
   # Create the expected ERP5 instance
   zope_connection.request(

@@ -1,5 +1,5 @@
 {% if slap_software_type == software_type -%}
-{% set site_id = slapparameter_dict.get('site-id', 'erp5') -%}
+{% set site_id = slapparameter_dict.get('cluster').get('site-id', 'erp5') -%}
 {% set promise_path = slapparameter_dict.get('promise-path', 'erp5') -%}
 [buildout]
 extends = 
