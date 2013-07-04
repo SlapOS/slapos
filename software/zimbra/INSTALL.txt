@@ -33,9 +33,9 @@ How to install Zimbra
 
  *) Install Ubuntu 12.04.x 64 bit server with at least 2GB RAM / 15 GB HD
 
-   For instance, you can download it from
-   http://releases.ubuntu.com/precise/ubuntu-12.04.2-server-amd64.iso
-   and just 'dd' the image to an USB key, then boot with it.
+    For instance, you can download it from
+    http://releases.ubuntu.com/precise/ubuntu-12.04.2-server-amd64.iso
+    and just 'dd' the image to an USB key, then boot with it.
 
 
  *) Install additional packages
@@ -57,28 +57,28 @@ How to install Zimbra
         #127.0.1.1      myserver
         192.168.0.118   myserver.mydomain.com myserver
 
-   Note that we commented/removed the line with 127.0.1.1. This file is actually checked by the zmsetup.pl script
-   to retrieve the host and domain names.
+    Note that we commented/removed the line with 127.0.1.1. This file is actually checked by the zmsetup.pl script
+    to retrieve the host and domain names.
 
 
  *) DNS must be set up according to Zimbra documentation (myhost.mydomain.com has both A and MX records)
 
 
  *) The global limits for 'number of open files' must be increased from the default of 1024.
-   Many maintenance scripts call 'ulimit -n 32768' - therefore the following must be added
-   to /etc/security/limits.conf
+    Many maintenance scripts call 'ulimit -n 32768' - therefore the following must be added
+    to /etc/security/limits.conf
 
         ----- cut here --------------------------------
         *                hard    nofile          32768
         *                soft    nofile          32768
         ----- cut here --------------------------------
 
-   After this change, reboot the system to make it effective.
+    After this change, reboot the system to make it effective.
 
 
  *) System logging must be configured in order to have server monitoring from the admin interface
 
-   The following must be uncommented in /etc/rsyslog.conf:
+    The following must be uncommented in /etc/rsyslog.conf:
 
         ----- cut here ----------------
         # provides UDP syslog reception
@@ -99,7 +99,7 @@ How to install Zimbra
         $ sudo chown `id -u`.`id -g` /etc/authbind/byport/{80,110,143,443,\!993,\!995}
         $ sudo chmod 755 /etc/authbind/byport/{80,110,143,443,\!993,\!995}
 
-  Note that `id -u` and `id -g` are the user and group that will run Zimbra.
+    Note that `id -u` and `id -g` are the user and group that will run Zimbra.
 
 
  *) Create the directory to contain zimbra build and clone the slapos repository.
@@ -107,9 +107,9 @@ How to install Zimbra
         $ mkdir zbuild; cd zbuild
         $ git clone http://git.erp5.org/repos/slapos.git -b zimbra slapos
 
-   You can use a different name for the directory 'zbuild'.
-   From this point, we will refer to it as '/home/user/zbuild'
-   NB: the user that runs the build MUST be the same that will run Zimbra.
+    You can use a different name for the directory 'zbuild'.
+    From this point, we will refer to it as '/home/user/zbuild'
+    NB: the user that runs the build MUST be the same that will run Zimbra.
 
 
  *) Create buildout.cfg
@@ -125,13 +125,13 @@ How to install Zimbra
 
  *) Build SlapOS and Java components
 
-   Bootstrap and run buildout a first time without arguments:
+    Bootstrap and run buildout a first time without arguments:
 
         $ wget https://raw.github.com/buildout/buildout/1/bootstrap/bootstrap.py
         $ python bootstrap.py
         $ ./bin/buildout
 
-   After some time, you should read:
+    After some time, you should read:
 
         BUILD SUCCESSFUL
         [...]
@@ -140,7 +140,7 @@ How to install Zimbra
         tar --extract --bzip2 --file /home/user/zbuild/parts/junixsocket/junixsocket-1.3-bin.tar.bz2 --wildcards '*.so' --strip-components=2'
         Unused options for junixsocket-sources: 'update-command'.
 
-   You might see instead:
+    You might see instead:
 
         BUILD FAILED
         /home/user/zbuild/parts/junixsocket__compile__/junixsocket-1.3/build.xml:411: Test org.newsclub.net.unix.SoTimeoutTest failed
@@ -152,28 +152,28 @@ How to install Zimbra
           Installing junixsocket.
         Error: System error
 
-   This happens sometimes, and is an unpredictable timing issue.
-   Running buildout again fixes the problem.
+    This happens sometimes, and is an unpredictable timing issue.
+    Running buildout again fixes the problem.
 
 
  *) Build Zimbra components
 
-   This is provided as a separate step to allow building and deploying on different machines.
+    This is provided as a separate step to allow building and deploying on different machines.
 
         $ source environment.sh
         $ ./bin/buildout install zimbra-build
 
-   Some Java warnings are expected.
+    Some Java warnings are expected.
 
-   Third party libraries build with the messages:
+    Third party libraries build with the messages:
 
         *** Building in openssl SUCCEEDED.
         ...
         *** Building in zeromq SUCCEEDED.
 
-   If any of them shows FAILED, check the dependencies, then read the section "Partial third-party build"
+    If any of them shows FAILED, check the dependencies, then read the section "Partial third-party build"
 
-   When buildout has finished, you should find the following files:
+    When buildout has finished, you should find the following files:
 
         $ ls parts/zimbra-sources/ZimbraBuild/amd64/*deb
         zimbra-apache_8.0.4.GA.5682.UBUNTU12.64_amd64.deb
@@ -187,50 +187,50 @@ How to install Zimbra
         zimbra-spell_8.0.4.GA.5682.UBUNTU12.64_amd64.deb
         zimbra-store_8.0.4.GA.5682.UBUNTU12.64_amd64.deb
 
-   You may backup the .deb files to be sure you don't lose them by mistake (i.e. if you run
-   this buildout step again, they will be deleted).
-   If you want to install zimbra on another or multiple servers, you can skip this step
-   by reusing the .deb files - but only if the username and path of the build directory are the same.
+    You may backup the .deb files to be sure you don't lose them by mistake (i.e. if you run
+    this buildout step again, they will be deleted).
+    If you want to install zimbra on another or multiple servers, you can skip this step
+    by reusing the .deb files - but only if the username and path of the build directory are the same.
 
 
  *) Run the deployment section to install the .deb files
 
         $ ./bin/buildout install zimbra-deploy-all
 
-   The files will not be really installed by dpkg, but uncompressed under the 'zbuild/home' directory.
-   If setcap is required at this point (for ldap and postfix) a root password might be asked.
+    The files will not be really installed by dpkg, but uncompressed under the 'zbuild/home' directory.
+    If setcap is required at this point (for ldap and postfix) a root password might be asked.
 
 
  *) Configure zimbra
 
-   Be sure to have sourced the environment variables for SlapOS components
+    Be sure to have sourced the environment variables for SlapOS components
 
         $ source /home/user/zbuild/environment.sh
 
-   and the ones that refer to Zimbra components:
+    and the ones that refer to Zimbra components:
 
         $ source /home/user/zbuild/home/.bashrc
 
-   Now run the actual configuration script.
+    Now run the actual configuration script.
 
         $ cd /home/user/zbuild/home/; ZIMBRA_INSTALLED_PKGS="zimbra-core zimbra-ldap zimbra-mta zimbra-store" ./libexec/zmsetup.pl
 
-   The last two lines are printed after running "buildout install zimbra-deploy-all".
+    The last two lines are printed after running "buildout install zimbra-deploy-all".
 
 
  *) Fill the required options in the configuration menu.
 
-   Usually, only an admin password is required: menu 3 and then 4.
-   Other mandatory options (as in case of zimbra-deploy-store) are be marked by an asterisk.
+    Usually, only an admin password is required: menu 3 and then 4.
+    Other mandatory options (as in case of zimbra-deploy-store) are be marked by an asterisk.
 
-   Refer to the official Zimbra documentation for this part of the setup.
-   Here you can also change things like IPv4/IPv6, etc.
+    Refer to the official Zimbra documentation for this part of the setup.
+    Here you can also change things like IPv4/IPv6, etc.
 
-   After typing (a)pply, many configuration files, certificates, and databases are created.
-   A verbose log will show up on the screen.
+    After typing (a)pply, many configuration files, certificates, and databases are created.
+    A verbose log will show up on the screen.
 
-   At the end of this process, the log is copied in home/log/zmsetup.*.txt
-   and the zimbra services are run.
+    At the end of this process, the log is copied in home/log/zmsetup.*.txt
+    and the zimbra services are run.
 
 
  *) Check that zimbra is running:
@@ -242,12 +242,12 @@ How to install Zimbra
         zmconfigd               Running
 
  *) You should now be able to connect to https://myserver.mydomain.com
-   and send/receive emails, and log in to the administration interface
-   (drop-down menu, top right).
+    and send/receive emails, and log in to the administration interface
+    (drop-down menu, top right).
 
 
  *) Before running any of the maintenance commands in bin/ or libexec/,
-   the following files must be sourced by the shell:
+    the following files must be sourced by the shell:
 
         $ source /home/user/zbuild/environment.sh
         $ source /home/user/zbuild/home/.bashrc
@@ -319,7 +319,7 @@ Useful commands
 
         $ zmprov ds "myhost.mydomain.com"
 
- (must be run on the ldap server)
+   (must be run on the ldap server)
 
 
  - add ipv6 to an existing ipv4 install:
