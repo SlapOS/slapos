@@ -38,6 +38,8 @@ test-user = erp5_test
 test-database = erp5_test
 mysql-test-database-base = testdb
 mysql-test-user-base = testuser
+password = ${generate-password:passwd}
+test-password = ${:password}
 
 # Paths
 wrapper = ${basedirectory:services}/mariadb
@@ -101,6 +103,11 @@ pt-variable-advisor-binary = {{ perl_siteprefix }}/bin/pt-variable-advisor
 pt-visual-explain-binary = {{ perl_siteprefix }}/bin/pt-visual-explain
 xtrabackup-binary = {{ xtrabackup_location }}/bin/xtrabackup_51
 perl-binary = {{ perl_location }}/bin/perl
+
+[generate-password]
+recipe = slapos.cookbook:generate.password
+storage-path = ${rootdirectory:srv}/passwd
+bytes = 32
 
 [logrotate]
 recipe = slapos.cookbook:logrotate
