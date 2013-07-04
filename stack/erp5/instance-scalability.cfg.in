@@ -10,7 +10,7 @@ parts =
   binary-wrap-performance-tester
   erp5-bootstrap
   erp5-promise
-#  promise-erp5-site
+  promise-erp5-site
   publish
 
 eggs-directory = {{ eggs_directory }}
@@ -98,7 +98,8 @@ runner-path = ${basedirectory:services}/erp5-bootstrap
 mysql-url =  ${erp5-cluster:connection-mariadb-url}
 zope-username = zope
 zope-password = insecure
-zope-url = ${erp5-cluster:connection-family-scalability}/{{ site_id }}
+zope-site-id = {{ site_id }}
+zope-url = ${erp5-cluster:connection-family-scalability}
 
 [erp5-promise]
 recipe = slapos.cookbook:erp5.promise
@@ -110,12 +111,13 @@ smtp-url =
 bt5 =
 bt5-repository-url =
 
-#[promise-erp5-site]
-#recipe = slapos.cookbook:check_url_available
-#path = ${basedirectory:promises}/erp5site
-#url = ${erp5-cluster:connection-family-scalability}/{{ site_id }}
-#dash_path = {{ dash_location }}/bin/dash
-#curl_path = {{ curl_location }}/bin/curl
+[promise-erp5-site]
+recipe = slapos.cookbook:check_url_available
+path = ${basedirectory:promises}/erp5site
+site-id = "/{{ site_id }}"
+url = ${erp5-cluster:connection-family-scalability}${:site-id}
+dash_path = {{ dash_location }}/bin/dash
+curl_path = {{ curl_location }}/bin/curl
 
 [publish]
 recipe = slapos.cookbook:publish.serialised
