@@ -99,6 +99,7 @@ dash = {{ dash_location }}
 dcron = {{ dcron_location }}
 gzip =  {{ gzip_location }}
 logrotate = {{ logrotate_location }}
+stunnel = {{ stunnel_location }}
 varnish = {{ varnish_location }}
 wget = {{ wget_location }}
 buildout-bin-directory = {{ buildout_bin_directory }}

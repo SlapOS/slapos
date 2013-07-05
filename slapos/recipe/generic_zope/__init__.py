@@ -35,10 +35,21 @@ _isurl = re.compile('([a-zA-Z0-9+.-]+)://').match
 
 # based on Zope2.utilities.mkzopeinstance.write_inituser
 def Zope2InitUser(path, username, password):
+  # Set password only once
+  # Currently, rely on existence of a simple file:
+  # Create it the first time, then next time, detect this file and do no-op.
+  inituser_done_path = '%s_done' % path
+  if os.path.exists(inituser_done_path):
+    return
+
+  if os.path.exists(path):
+    return
   open(path, 'w').write('')
   os.chmod(path, 0600)
-  open(path, "w").write('%s:{SHA}%s\n' % (
+  open(path, 'w').write('%s:{SHA}%s\n' % (
     username,binascii.b2a_base64(hashlib.sha1(password).digest())[:-1]))
+
+  open(inituser_done_path, 'w').write('"inituser" file already created once.')
 
 class Recipe(GenericBaseRecipe):
   def _options(self, options):

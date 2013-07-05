@@ -18,5 +18,4 @@ if [ -z "${VARNISHLOG_ENABLED}" ] || \
   exit 0;
 fi
 
-output=$(/bin/tempfile -s.varnish)
-exec %(varnishlog_binary)s ${DAEMON_OPTS} > ${output} 2>&1
+exec %(varnishlog_binary)s ${DAEMON_OPTS} 2>&1
