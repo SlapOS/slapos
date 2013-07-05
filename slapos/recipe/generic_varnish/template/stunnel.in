@@ -1,0 +1,3 @@
+#!%(shell_path)s
+DAEMON_OPTS="%(stunnel_conf_file)s"
+exec %(stunnel_binary)s ${DAEMON_OPTS} 2>&1

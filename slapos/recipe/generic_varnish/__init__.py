@@ -39,9 +39,28 @@ class Recipe(GenericSlapRecipe):
     ip = self.options['ip']
     backend_url = self.parameter_dict['tidstorage-url']
     backend_server, backend_port = self._getBackendServer(backend_url)
+    path_list = []
+    if backend_url.startswith('https://'):
+      config = dict(
+        stunnel_binary=self.options['stunnel-binary'],
+        stunnel_server=ip,
+        stunnel_port=int(self.options['stunnel-port']),
+        stunnel_pid_file=self.options['stunnel-pid-file'],
+        stunnel_conf_file=self.options['stunnel-conf-file'],
+        shell_path=self.options['shell-path'],
+        backend_server=backend_server.replace('[', '').replace(']', ''),
+        backend_port=backend_port,
+      )
+      path_list.append(self.createExecutable(self.options['stunnel-wrapper'],
+        self.substituteTemplate(self.getTemplateFilename('stunnel.in'),
+          config)))
+      path_list.append(self.createFile(self.options['stunnel-conf-file'],
+        self.substituteTemplate(self.getTemplateFilename('stunnel.conf.in'),
+          config)))
+      backend_server = ip
+      backend_port = int(self.options['stunnel-port'])
     varnishd_manager_port = int(self.options['manager-port'])
     varnishd_server_port = int(self.options['server-port'])
-    path_list = []
     config = dict(
       varnishd_binary=self.options['varnishd-binary'],
       varnish_ip=ip,

@@ -11,6 +11,4 @@ DAEMON_OPTS="-F \
 PIDFILE=%(varnishd_pid_file)s
 # exporting PATH here so that we will pass the PATH variable to the subprocess
 export PATH
-output=$(/bin/tempfile -s.varnish)
-exec %(varnishd_binary)s -P ${PIDFILE} ${DAEMON_OPTS} > ${output} 2>&1
-
+exec %(varnishd_binary)s -P ${PIDFILE} ${DAEMON_OPTS} 2>&1
