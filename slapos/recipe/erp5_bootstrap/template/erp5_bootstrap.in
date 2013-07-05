@@ -10,11 +10,18 @@ host = "%(host)s"
 site_id = "%(site_id)s"
 erp5_catalog_storage = 'erp5_mysql_innodb_catalog'
 mysql_url = "%(sql_connection_string)s"
+protocol = "%(protocol)s"
 
 header_dict = {'Authorization': 'Basic %%s' %% \
   base64.encodestring('%%s:%%s' %% (user, password)).strip()}
-zope_connection = httplib.HTTPConnection(host)
 
+if protocol == 'https':
+  zope_connection = httplib.HTTPSConnection(host)
+elif protocol == 'http':
+  zope_connection = httplib.HTTPConnection(host)  
+else:
+  raise ValueError("Protocol not implemented")
+  
 # Check if an ERP5 site is already created, as ERP5 does support having
 # 2 instances in the same zope, and this script should not destroy user data
 zope_connection.request('GET', '/isERP5SitePresent', headers=header_dict)
@@ -23,7 +30,12 @@ result = zope_connection.getresponse()
 if result.status == 204: # and (result.read() == "False"):
 
   # Use a new connection
-  zope_connection = httplib.HTTPConnection(host)
+  if protocol == 'https':
+    zope_connection = httplib.HTTPSConnection(host)
+  elif protocol == 'http':
+    zope_connection = httplib.HTTPConnection(host)  
+  else:
+    raise ValueError("Protocol pot implemented") 
 
   # Create the expected ERP5 instance
   zope_connection.request(

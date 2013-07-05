@@ -23,7 +23,7 @@ ipv4 = {{ ipv4 }}
 {% endif -%}
 {% set haproxy_dict = {} -%}
 {% set apache_dict = {} -%}
-{% set next_port = 9000 -%}
+{% set next_port = slapparameter_dict['tcpv4-port'] -%}
 {% for family_name, parameter_id_list in slapparameter_dict['zope-family-dict'].items() -%}
 {%   set zope_family_address_list = [] -%}
 {%   for parameter_id in parameter_id_list -%}

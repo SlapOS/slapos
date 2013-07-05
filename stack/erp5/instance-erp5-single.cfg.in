@@ -103,15 +103,11 @@ partition-id = ${slap-connection:partition-id}
 name = MariaDB DataBase
 config = test-database-amount mariadb-binlogs database-list innodb-buffer-size innodb-log-file-size innodb-log-buffer-size mariadb-relaxed-writes
 software-type = mariadb
-{% set config_list = ('mariadb-binlogs', 'database-list', 'innodb-buffer-size', 'innodb-log-file-size', 'innodb-log-buffer-size', 'mariadb-relaxed-writes') -%}
-config = test-database-amount {{ config_list | join(' ') }}
-# BBB: 100 is too much, but kept for backward compatibility.
-config-test-database-amount = {{ dumps(slapparameter_dict.get('test-database-amount', 100)) }}
-{% for option in config_list -%}
-{%   if option in slapparameter_dict -%}
-config-{{ option }} = {{ dumps(slapparameter_dict[option]) }}
-{%   endif -%}
+{% set mariadb_dict = slapparameter_dict.get('mariadb-dict', {}) -%}
+{% for option, value in mariadb_dict.items() -%}
+config-{{ option }} = {{ dumps(value) }}
 {% endfor -%}
+config = {{ ' '.join(mariadb_dict) }}
 
 [request-cloudooo]
 <=request-common

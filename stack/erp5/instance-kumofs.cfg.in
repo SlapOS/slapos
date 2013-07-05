@@ -36,15 +36,15 @@ address-family = inet6
 ip = ${slap-network-information:local-ipv4}
 address-family = inet4
 {% endif -%}
-manager-port = 13101
-server-port = 13201
-server-listen-port = 13202
-gateway-port = 13301
+{% set tcpv4_port = slapparameter_dict['tcpv4-port'] -%}
+manager-port = {{ tcpv4_port }}
+server-port = {{ tcpv4_port + 1 }}
+server-listen-port = {{ tcpv4_port + 2 }}
+gateway-port = {{ tcpv4_port + 3 }}
 # Paths: Data
 {% set ram_storage_size = slapparameter_dict.get('ram-storage-size') -%}
 {% if ram_storage_size -%}
-data-path = *#capsiz=${:storage-size}
-storage-size = {{ ram_storage_size }}
+data-path = *#capsiz={{ ram_storage_size }}m
 {% else -%}
 data-directory = ${directory:kumofs-data}
 {% endif -%}
@@ -69,8 +69,7 @@ shell-path = {{ parameter_dict['dash-location'] }}/bin/dash
 <= logrotate
 recipe = slapos.cookbook:logrotate.d
 name = kumofs
-log = ${kumofs-instance:kumo-gateway-log} ${kumofs-instance:kumo-manager-log}
-  ${kumofs-instance:kumo-server-log}
+log = ${kumofs-instance:kumo-gateway-log} ${kumofs-instance:kumo-manager-log} ${kumofs-instance:kumo-server-log}
 
 # rest of parts are candidates for some generic stuff
 

@@ -14,70 +14,113 @@ Parameters are expected to be passed as of *.serialised recipes expect them::
 
 where `...` is a json expression (typically a dict).
 
+TCPv4 ports allocation
+----------------------
+Service listening ports are allocated in the following pattern.
+Base port of each software can be overridden, those are the default values.
+- kumofs (persistent)
+  2000: manager
+  2001: server port (?)
+  2002: server listen port (?)
+  2003: gateway port (?)
+- kumofs (volatile)
+  2010: manager
+  2011: server port (?)
+  2012: server listen port (?)
+  2013: gateway port (?)
+- cloudooo
+  2020: cloudooo
+  2021: openoffice
+- mariadb
+  2099: mariadb
+- zeo & tidstorage
+  2100: tidstorage
+  2101: first zeo
+  2102: second zeo
+  (etc)
+- haproxy
+  2150: first haproxy
+  2151: first apache
+  2152: second haproxy
+  2153: second apache
+  (etc)
+- cluster-zope
+  2200: first zope
+  2201: second zope
+  (etc)
+Note: these are not applicable when (yet unsupported) ipv6 mode is enabled, as
+stunnel (used to tunnel ipv4-only services over ipv6) needs its own listening
+ports.
+This pattern was chosen to make it possible to deploy this software release in
+a setup where all partitions would share the same IPv4 without having to
+provide many parameters.
+Some ports are unused in the overall range to allow software types to grow.
+
 common
 ------
 Parameters which are available to all software types.
 
-'test-database-amount' (int, optional)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Number of test databases to generate in addition of requested databases.
-A test database, if it were provided as a database-list entry, would look like:
-  {'name': 'erp5_test_0', 'user': 'testuser_0', 'password': 'testpassword0'}
-with '0' being all numbers from 0 to test-database-amount - 1.
-Defaults to 0.
-
-'mariadb-binlogs' (dict, optional)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Enable writing data-modifying requests to binlogs. Useful to restore data
-further after latest available full backup.
-Defaults to {'expire-days': 0} (binlogs are disabled).
+'mariadb-dict' (dict, optional)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+MariaDB (used for catalog, activity tables and id generator) instance
+parameters.
+Defaults to {}.
 Possible keys and associated value types:
-'expire-days' (int, optional)
-  The number of days binlogs will be kept.
-  If 0, binlogs are disabled.
-  If -1, binlogs are never expired.
-  Defaults to 7.
-
+'tcpv4-port' (int, optional)
+  TCPv4 port to listen on.
+  Defaults to 2099.
 'database-list' (list, optional)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Define the list of databases mariadb must provide, and the user having entire
-access to each database. Each entry in the list is a dict, with these possible
-keys and associated value types:
-'name' (str, mandatory)
-  Database name
-'user' (str, mandatory)
-  User login
-'password' (str, mandatory)
-  User password
-Defaults to: [{'name': 'erp5', 'user': 'user', 'password': 'insecure'}]
-
+  Define the list of databases mariadb must provide, and the user having entire
+  access to each database. Each entry in the list is a dict, with these
+  possible keys and associated value types:
+  'name' (str, mandatory)
+    Database name
+  'user' (str, mandatory)
+    User login
+  'password' (str, mandatory)
+    User password
+  Defaults to: [{'name': 'erp5', 'user': 'user', 'password': 'insecure'}]
+'test-database-amount' (int, optional)
+  Number of test databases to generate in addition of requested databases.
+  A test database, if it were provided as a database-list entry, would look
+  like:
+    {'name': 'erp5_test_0', 'user': 'testuser_0', 'password': 'testpassword0'}
+  with '0' being all numbers from 0 to test-database-amount - 1.
+  Defaults to 30.
+  Note: the default is way too much for "normal" usage. You are encouraged to
+  provide this key to some lower value: 0 if you don't intend to run any unit
+  test (ex: production instance) 3..5 if you intend to run tests without
+  paralellism.
+'full-retention-days' (int, optional)
+  The number of days full backups will be kept.
+  If -1, backups are disabled.
+  If 0, backup never expire.
+  Defaults to 7.
+'incremental-retention-days' (int, optional)
+  The number of days binlogs will be kept.
+  If -1, binlogs are disabled.
+  If 0, binlogs are never expired.
+  Defaults to 'full-retention-days' value.
 'innodb-buffer-pool-size' (str, optional)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-See mariadb documentation for innodb_buffer_pool_size configuration parameter.
-Value is used verbatim in configuration file.
-Empty string means unconfigured (ie, bail out to mariadb's default).
-Defaults to "".
-
+  See mariadb documentation for innodb_buffer_pool_size configuration
+  parameter. Value is used verbatim in configuration file.
+  Empty string means unconfigured (ie, bail out to mariadb's default).
+  Defaults to "".
 'innodb-log-file-size' (str, optional)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-See mariadb documentation for innodb_log_file_size configuration parameter.
-Value is used verbatim in configuration file.
-Empty string means unconfigured (ie, bail out to mariadb's default).
-Defaults to "".
-
+  See mariadb documentation for innodb_log_file_size configuration parameter.
+  Value is used verbatim in configuration file.
+  Empty string means unconfigured (ie, bail out to mariadb's default).
+  Defaults to "".
 'innodb-log-buffer-size' (str, optional)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-See mariadb documentation for innodb_log_buffer_size configuration parameter.
-Value is used verbatim in configuration file.
-Empty string means unconfigured (ie, bail out to mariadb's default).
-Defaults to "".
-
+  See mariadb documentation for innodb_log_buffer_size configuration parameter.
+  Value is used verbatim in configuration file.
+  Empty string means unconfigured (ie, bail out to mariadb's default).
+  Defaults to "".
 'mariadb-relaxed-writes' (int, optional)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Controls relaxed writes, which improves performances at the cost of data
-safety. DO NOT ENABLE THIS ON PRODUCTION. It's fine for unit tests and may be
-acceptable for development instances. Set to 1 to enable.
-Default: 0
+  Controls relaxed writes, which improves performances at the cost of data
+  safety. DO NOT ENABLE THIS ON PRODUCTION. It's fine for unit tests and may be
+  acceptable for development instances. Set to 1 to enable.
+  Default: 0
 
 single (default)
 ----------------
@@ -123,6 +166,12 @@ Publishes a dict in which each entry is the URL to a balancer entry point
 Storage mechanism to use. To know the list of supported values, see all keys in
 instance.cfg.in's section [switch-softwaretype] which start with "zodb-".
 Defaults to 'zeo'.
+
+'zodb-tcpv4-port' (int, optional)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Base TCPv4 port for ZODB provider, if applicable (depends on chosen
+software-type).
+Defaults to 2100.
 
 'zodb-dict' (dict, optional)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -218,13 +267,18 @@ value (dict)
     Start allocating ports at this value. Useful if one needs to make several
     partitions share the same port range (ie, several partitions bound to a
     single address).
-    Defaults to 2000.
+    Defaults to 2200.
 
 'haproxy-maxconn' (int, optional)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 The number of connections haproxy accepts for a given backend.
 See haproxy's "server maxconn" setting.
 Defaults to 1 (correct for single-worker-threaded zopes).
+
+'haproxy-tcpv4-port' (int, optional)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Base TCPv4 port for load-balancer (haproxy + backend apache).
+Defaults to 2150.
 
 'haproxy-server-check-path' (str, optional)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -268,25 +322,41 @@ Possible keys and associated value types:
 'company' (str, optional)
   Company name. Defaults to 'Dummy Company'.
 
-'use-ipv6' (boolean, optional)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Use IPv6 to communicate between partitions.
-Defaults to False.
-
 'mariadb-computer-guid' (str, optional)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Computer GUID identifying the partition mariadb is to be requested on.
 Defaults to "cluster" software type's partition's effective computer GUID.
+
+'cloudooo-tcpv4-port' (int, optional)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Base TCPv4 port for cloudooo.
+Defaults to 2020.
 
 'cloudooo-computer-guid' (str, optional)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Computer GUID identifying the partition cloudooo is to be requested on.
 Defaults to "cluster" software type's partition's effective computer GUID.
 
+'memcached-size' (int, optional)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Megabytes of ram to allocate for volatile memcached use.
+Defaults to 64.
+Negative/zero values cause undefined behaviour which may change in the future.
+
+'memcached-tcpv4-port'
+~~~~~~~~~~~~~~~~~~~~~~
+Base TCPv4 port for volatile memcached.
+Defaults to 2010.
+
 'memcached-computer-guid' (str, optional)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Computer GUID identifying the partition memcached is to be requested on.
 Defaults to "cluster" software type's partition's effective computer GUID.
+
+'kumofs-tcpv4-port'
+~~~~~~~~~~~~~~~~~~~
+Base TCPv4 port for persistent memcached.
+Defaults to 2000.
 
 'kumofs-computer-guid' (str, optional)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -304,10 +374,10 @@ Computer GUID identifying the partition balander (haproxy, apache, some HTTP
 cache) is to be requested on.
 Defaults to "cluster" software type's partition's effective computer GUID.
 
-'cloudooo-json' (str, optional)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-XXX: what is this ?
-XXX: should not require serialising json by hand as parameter value
+'font-url-list' (list of strings, optional)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+List of extra fonts URLs to be used by cloudooo.
+Defaults to [].
 
 'bt5' (str, optional)
 ~~~~~~~~~~~~~~~~~~~~~

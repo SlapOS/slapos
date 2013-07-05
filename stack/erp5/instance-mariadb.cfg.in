@@ -1,27 +1,14 @@
 {% if software_type == slap_software_type -%}
+{% set part_list = [] -%}
+{% macro section(name) %}{% do part_list.append(name) %}{{ name }}{% endmacro -%}
 {% set use_ipv6 = slapparameter_dict.get('use-ipv6', False) -%}
 {% set database_list = slapparameter_dict.get('database-list', [{'name': 'erp5', 'user': 'user', 'password': 'insecure'}]) -%}
 {% for database_count in range(slapparameter_dict.get('test-database-amount', 0)) -%}
 {%   do database_list.append({'name': 'erp5_test_' ~ database_count, 'user': 'testuser_' ~ database_count, 'password': 'testpassword' ~ database_count}) -%}
 {% endfor -%}
-{% set binlog_parameter_dict = slapparameter_dict.get('mariadb-binlogs', {'expire-days': 0}) -%}
-{% set binlog_expire_days = slapparameter_dict.get('expire-days', 7) %}
-[buildout]
-parts =
-  publish-mariadb-url
-  logrotate
-  logrotate-entry-mariadb
-  cron
-  cron-entry-logrotate
-  cron-entry-mariadb-backup
-  binary-link
-  update-mysql
-  mysqld
-  promise
-
-eggs-directory = {{ eggs_directory }}
-develop-eggs-directory = {{ develop_eggs_directory }}
-offline = true
+{% set catalog_backup = slapparameter_dict.get('catalog-backup', {}) -%}
+{% set full_backup_retention_days = catalog_backup.get('full-retention-days', 7) -%}
+{% set incremental_backup_retention_days = catalog_backup.get('incremental-retention-days', full_backup_retention_days) -%}
 
 [publish-mariadb-url]
 recipe = slapos.cookbook:publish.serialised
@@ -34,7 +21,8 @@ recipe = slapos.cookbook:publish.serialised
 {% set database = database_list[0] %}
 url = mysql://{{ database['user'] }}:{{ database['password'] }}@{{ address }}:${my-cnf-parameters:port}/{{ database['name'] }}
 
-[cron-entry-mariadb-backup]
+{% if full_backup_retention_days > -1 -%}
+[{{ section('cron-entry-mariadb-backup') }}]
 <= cron
 recipe = slapos.cookbook:cron.d
 name = mariadb-backup
@@ -45,8 +33,20 @@ frequency = 0 22 * * *
 #   can be fully restored.
 # master-data: use value "2" as we are not in a replication case
 #}
-command = "${binary-wrap-mysqldump:wrapper-path}" -u root --all-databases {% if binlog_expire_days %}--flush-logs --master-data=2 {% endif %}| gzip > "${directory:mariadb-backup-full}/$(date "+%Y%m%d%H%M%S").sql.gz"
-# TODO: expire full backups
+command = "${binary-wrap-mysqldump:wrapper-path}" -u root --all-databases {% if incremental_backup_retention_days > -1 %}--flush-logs --master-data=2 {% endif %}| {{ parameter_dict['gzip-location'] }}/bin/gzip > "${directory:mariadb-backup-full}/$({{ parameter_dict['coreutils-location'] }}/bin/date "+%Y%m%d%H%M%S").sql.gz"
+{# KEEP GLOB PATTERN IN SYNC with generated filenames above
+#           YYYYmmddHHMMSS -#}
+file-glob = ??????????????.sql.gz
+
+{% if full_backup_retention_days > 0 -%}
+[{{ section("cron-entry-mariadb-backup-expire") }}]
+<= cron
+recipe = slapos.cookbook:cron.d
+name = mariadb-backup-expire
+frequency = 0 22 * * *
+command = {{ parameter_dict['findutils-location'] }}/bin/find "${directory:mariadb-backup-full}" -maxdepth 1 -name "${cron-entry-mariadb-backup:file-glob}" -daystart -mtime +{{ full_backup_retention_days }} -delete
+{%- endif %}
+{%- endif %}
 
 [my-cnf-parameters]
 {% if use_ipv6 -%}
@@ -54,7 +54,7 @@ ip = {{ (ipv6_set | list)[0] }}
 {% else -%}
 ip = {{ (ipv4_set | list)[0] }}
 {% endif -%}
-port = 45678
+port = {{ slapparameter_dict['tcpv4-port'] }}
 socket = ${directory:run}/mariadb.sock
 data-directory = ${directory:mariadb-data}
 pid-file = ${directory:run}/mariadb.pid
@@ -64,10 +64,10 @@ innodb-buffer-size = {{ slapparameter_dict.get('innodb-buffer-size', '') }}
 innodb-log-file-size = {{ slapparameter_dict.get('innodb-log-file-size', '') }}
 innodb-log-buffer-size = {{ slapparameter_dict.get('innodb-log-buffer-size', '') }}
 relaxed_writes = {{ dumps(slapparameter_dict.get('mariadb-relaxed-writes', 0)) }}
-{% if binlog_expire_days -%}
+{% if incremental_backup_retention_days > -1 -%}
 binlog-path = ${directory:mariadb-backup-incremental}/binlog
 # XXX: binlog rotation happens along with other log's rotation
-binlog-expire-days = {{ binlog_expire_days }}
+binlog-expire-days = {{ incremental_backup_retention_days }}
 {% endif -%}
 
 [my-cnf]
@@ -217,4 +217,23 @@ recipe = slapos.cookbook:check_port_listening
 path = ${directory:promise}/mariadb
 hostname = ${my-cnf-parameters:ip}
 port = ${my-cnf-parameters:port}
+
+[buildout]
+parts =
+  publish-mariadb-url
+  logrotate
+  logrotate-entry-mariadb
+  cron
+  cron-entry-logrotate
+  cron-entry-mariadb-backup
+  cron-entry-mariadb-backup-expire
+  binary-link
+  update-mysql
+  mysqld
+  promise
+  {{ part_list | join('\n  ') }}
+
+eggs-directory = {{ eggs_directory }}
+develop-eggs-directory = {{ develop_eggs_directory }}
+offline = true
 {% endif %}

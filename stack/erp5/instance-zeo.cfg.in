@@ -1,6 +1,6 @@
 {% if software_type == slap_software_type -%}
 {% set use_ipv6 = slapparameter_dict.get('use-ipv6', False) -%}
-{% set next_port = 2000 -%}
+{% set next_port = slapparameter_dict['tcpv4-port'] -%}
 {% set part_list = [] -%}
 {% set storage_dict = {} -%}
 {% set zodb_dict = {} -%}
@@ -18,6 +18,11 @@ partition. No more (undefined result), no less (IndexError).
 {% set tidstorage_ip = ipv4 -%}
 {% set tidstorage_port = 6001 -%}
 {% set bin_directory = parameter_dict['buildout-bin-directory'] -%}
+
+[logrotate-base]
+recipe = slapos.cookbook:logrotate.d
+logrotate-entries = ${logrotate:logrotate-entries}
+backup = ${logrotate:backup}
 
 [zeo-base]
 recipe = slapos.cookbook:zeo
@@ -50,7 +55,7 @@ ipv6 = {{ ipv6 }}
      )) -%}
 {% endfor -%}
 {% for storage_family, export_list in storage_dict.items() -%}
-{%   set known_tid_storage_identifier_host = (ipv4, local_current_port) -%}
+{%   set known_tid_storage_identifier_host = ((ipv4, next_port), ) -%}
 {%   set client_dict = {} -%}
 {%   for export_id, mount_point, cache_size, storage_dict in export_list -%}
 {%     do storage_dict.__setitem__('path', storage_dict.get('path', '%(zodb)s/' ~ export_id ~ '.fs') % {'zodb': default_zodb_path}) -%}
@@ -64,7 +69,7 @@ ipv6 = {{ ipv6 }}
        ]) -%}
 {%     if tidstorage_dict != None -%}
 {%       do known_tid_storage_identifier_dict.__setitem__(
-           (known_tid_storage_identifier_host, export_id), (
+           json_module.dumps((known_tid_storage_identifier_host, export_id)), (
              storage_dict['path'],
              tidstorage_dict.get('zodb-dict', {}).get(export_id, '%(backup)s/' ~ export_id) % {'backup': zodb_backup_path},
              mount_point,
@@ -82,6 +87,12 @@ port = {{ next_port }}
 {%     do storage_list.append((storage_name, storage_dict['path'])) -%}
 {%   endfor -%}
 storage = {{ dumps(storage_list) }}
+
+[{{ section("logrotate-" ~ zeo_section_name) }}]
+< = logrotate-base
+name = {{ "${" ~ zeo_section_name ~ ":base-name}" }}
+log = {{ "${" ~ zeo_section_name ~ ":log-path}" }}
+post = {{ bin_directory }}/killpidfromfile {{ "${" ~ zeo_section_name ~ ":pid-path}" }} SIGUSR2
 
 [{{ section(zeo_section_name ~ "-promise") }}]
 recipe = slapos.cookbook:check_port_listening
@@ -158,9 +169,7 @@ frequency = 0 0 * * *
 command = ${tidstorage:repozo-wrapper}
 
 [{{ section("logrotate-tidstorage") }}]
-recipe = slapos.cookbook:logrotate.d
-logrotate-entries = ${logrotate:logrotate-entries}
-backup = ${logrotate:backup}
+< = logrotate-base
 name = tidstorage
 log = ${tidstorage:logfile-name}
 post = {{ bin_directory }}/killpidfromfile ${tidstorage:pidfile-name} SIGHUP

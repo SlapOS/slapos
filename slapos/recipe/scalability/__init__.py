@@ -1,6 +1,6 @@
 ##############################################################################
 #
-# Copyright (c) 2011 Vifib SARL and Contributors. All Rights Reserved.
+# Copyright (c) 2010 Vifib SARL and Contributors. All Rights Reserved.
 #
 # WARNING: This program as such is intended to be used by professional
 # programmers who take the whole responsibility of assessing all potential
@@ -25,29 +25,35 @@
 #
 ##############################################################################
 import os
+
 from slapos.recipe.librecipe import GenericBaseRecipe
 
 class Recipe(GenericBaseRecipe):
   def install(self):
+    path_list = []
     configuration_file = self.createFile(
-      self.options['configuration-path'],
-      self.substituteTemplate(
-        self.getTemplateFilename('tidstorage.py.in'), self.options))
-
-    tidstorage_wrapper = self.createPythonScript(
-      self.options['tidstorage-wrapper'],
-      'slapos.recipe.librecipe.execute.execute',
-      [self.options['tidstoraged-binary'],  '--nofork', '--config',
-        configuration_file])
-
-    repozo_wrapper = self.createPythonScript(
-      self.options['repozo-wrapper'],
-      'slapos.recipe.librecipe.execute.execute',
-      [self.options['tidstorage-repozo-binary'],
-        '--config', configuration_file,
-        '--repozo', self.options['repozo-binary'],
-        '--gzip',
-        '--quick',
-      ])
-
-    return [configuration_file, tidstorage_wrapper, repozo_wrapper]
+      self.options['configuration-file'],
+      '',
+    )
+    path_list.append(configuration_file)
+    path_list.append(
+      self.createPythonScript(
+        self.options['wrapper'],
+        'slapos.recipe.librecipe.execute.executee',
+        [ # Executable
+          [ self.options['exec-path'],
+            '--erp5-url', self.options['erp5-url'],
+            '--test-result-path', self.options['test-result-path'],
+            '--test-suite-master-url', self.options['test-suite-master-url'],
+            '--node-title', self.options['node-title'],
+            '--revision', self.options['revision'],
+            '--log-path', self.options['log-path'],
+          ],
+          # Environment
+          {
+            'GIT_SSL_NO_VERIFY': '1',
+          }
+        ],
+      )
+    )
+    return path_list
