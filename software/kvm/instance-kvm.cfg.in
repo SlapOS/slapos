@@ -10,6 +10,9 @@ parts =
   kvm-promise
   websockify-sighandler
   novnc-promise
+  kvm-monitor
+  cron
+  cron-entry-monitor
   frontend-promise
 
 eggs-directory = ${buildout:eggs-directory}
@@ -22,12 +25,16 @@ etc = $${buildout:directory}/etc
 bin = $${buildout:directory}/bin
 srv = $${buildout:directory}/srv
 var = $${buildout:directory}/var
+log = $${:var}/log
 scripts = $${:etc}/run
 services = $${:etc}/service
 promises = $${:etc}/promise
 novnc-conf = $${:etc}/novnc
 run = $${:var}/run
 ca-dir = $${:srv}/ssl
+cron-entries = $${:etc}/cron.d
+crontabs = $${:etc}/crontabs
+cronstamps = $${:etc}/cronstamps
 
 [create-mac]
 recipe = slapos.cookbook:generate.mac
@@ -123,9 +130,41 @@ port = $${novnc-instance:port}
 
 
 [kvm-monitor]
-recipe = slapos.cookbook:generic.slapmonitor
-db-path = $${directory:srv}/slapmonitor_database
+recipe = slapos.cookbook:wrapper
+wrapper-path = $${directory:services}/kvm_monitor
+command-line = ${buildout:bin-directory}/kvm.monitor.test 
+             $${buildout:directory}/buildout-switch-softwaretype.cfg
+             $${buildout:directory}/report.xml
+             -s slap-parameter
+             -opts disk-size ram-size cpu-count
 
+
+
+#----------------
+#--
+#-- Deploy cron.
+
+[cron]
+recipe = slapos.cookbook:cron
+dcrond-binary = ${dcron:location}/sbin/crond
+cron-entries = $${directory:cron-entries}
+crontabs = $${directory:crontabs}
+cronstamps = $${directory:cronstamps}
+catcher = $${cron-simplelogger:wrapper}
+binary = $${directory:services}/crond
+
+[cron-simplelogger]
+recipe = slapos.cookbook:simplelogger
+wrapper = $${directory:bin}/cron_simplelogger
+log = $${directory:log}/crond.log
+
+
+[cron-entry-monitor]
+<= cron
+recipe = slapos.cookbook:cron.d
+name = kvm_monitor
+frequency = 0 0 * * *
+command = $${kvm-monitor:wrapper-path}
 
 [request-slave-frontend]
 recipe = slapos.cookbook:requestoptional
@@ -164,7 +203,7 @@ curl_path = ${curl:location}/bin/curl
 # Default values if not specified
 frontend-software-type = frontend
 frontend-software-url = http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.92:/software/kvm/software.cfg
-
+frontend-instance-guid = 
 nbd-port = 1024
 nbd-host = debian.nbd.vifib.net
 nbd2-port = 1024
