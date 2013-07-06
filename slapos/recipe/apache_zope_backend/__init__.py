@@ -76,8 +76,7 @@ class Recipe(GenericBaseRecipe):
           'vhosts': ''.join(self.substituteTemplate(vhost_template_name, {
             'ip': ip,
             'port': port,
-            'backend': backend,
-            'backend-path': backend_path,
+            'backend': ('%s/%s' % (backend.rstrip('/'), backend_path.strip('/'))).rstrip('/'),
             'ssl_enable': ssl_enable,
           }) for (port, backend) in backend_list),
         },
