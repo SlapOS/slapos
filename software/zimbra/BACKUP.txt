@@ -1,0 +1,271 @@
+
+This document explores backup and disaster recovery issues with Zimbra (Buildout Edition).
+
+As we have not yet automated a backup solution, here we show some of the alternatives
+and the possible tradeoffs.
+
+
+-----------------------------
+Backup in the Network Edition
+-----------------------------
+
+The commercial version of ZCS ships with automatically configured "on the fly"
+weekly (full) and daily (incremental) backup, of all user and server data.
+There is no need to shut down any service while the backup is performed.
+
+Although most backup related commands are not provided in the Open Source Edition,
+they may be referenced in blogs, forums or wiki of the Zimbra project.
+
+The following commands are not available in OSE/BE:
+
+        zmbackup
+        zmbackupabort
+        zmbackupquery
+        zmmailboxmove
+        zmrestore
+        zmrestoreldap
+        zmrestoreoffline
+        zmschedulebackup
+
+Official documentiation is available at
+
+http://www.zimbra.com/docs/ne/8.0.4/administration_guide/wwhelp/wwhimpl/js/html/wwhelp.htm#href=804_Network_Admin.Backup_and_Restore.html
+
+
+To offer a similar experience for OSE users willing to pay, a company
+named ZeXtras provides a commercial solution, see http://www.zextras.com
+
+
+
+
+---------------------------------
+Backup in the Open Source Edition
+---------------------------------
+
+Over the years, many backup scripts and packages have been created by the community.
+They basically need to be tailored to each context, and use one of two approaches:
+full snapshot of /opt/zimbra (for disaster recovery), or data export user-by-user
+(for restoring data after human error - either by users or admins).
+
+Most of the backup scripts we have examined use hardcoded pathnames for
+/opt/zimbra and need to be run as 'root' or 'zimbra' user. Therefore, the code
+must be adapted in order to work with the Buildout Edition.
+
+A full backup would contain at least:
+
+    - mail content: ./store (filesystem)
+    - mail metadata/indexes: ./db/data (mysql)
+    - user contacts, calendar: ./db/data (mysql)
+    - ldap database: ./data/ldap
+    - user passwords and settings: ldap
+    - authentication certificate/keys: filesystem + ldap
+    - mysql antispam: data/amavisd (mysql)
+    - ./conf/localconfig.xml
+    - other configuration settings (in subfolders and mysql)
+    - server ip address (mysql)
+    - logs (needed for forensic analysis)
+
+
+A comprehensive list of the techniques is discussed in the Zimbra forum at
+
+    http://www.zimbra.com/forums/administrators/15275-solved-yet-another-backup-script-community-version.html
+
+
+
+
+
+Disaster Recovery: Open Source Edition
+--------------------------------------
+
+Most backup tools in this group follow the pattern:
+
+    - live rsync of /opt/zimbra
+    - zmcontrol stop
+    - cold rsync of /opt/zimbra
+    - zmcontrol restart
+    - copy the backup offsite
+
+The archived content of /opt/zimbra can later be restored on a similar server.
+The new server must:
+
+    - have the same Linux distribution, version and architecture
+    - have the same hostname and FQDN in /etc/hosts
+    - have a matching 'zimbra' user with the same User ID as the one in the old server.
+    - have blocked/firewalled outgoing SMTP ports to avoid mail duplicates
+
+Some of the scripts use LVM snapshot instead of rsync.
+With rsync, additional care must be taken due to the presence of a huge (86GB) sparse
+memory-mapped file used by OpenLDAP (see below).
+
+The restore procedure relies on the fresh installation of .deb packages identical
+to those installed in the old server, then replacing of the content in /opt/zimbra.
+It is described by a blog post at
+    http://blog.zimbra.com/blog/archives/2007/10/moving-zcs-to-another-server.html
+
+Even in case of cold backup with no LDAP service running, Zimbra developers strongly
+recommend a text dump of the LDAP database to avoid corruption, see
+http://bugzilla.zimbra.com/show_bug.cgi?id=78781
+
+Bacula is also a popular choice for off-site backup among Zimbra administrators.
+
+List of backup scripts for disaster recovery:
+
+    http://www.harkness.co.uk/tech_notes/Tech_Notes/Tech/Entries/2013/3/9_Zimbra_migration.html
+    http://blog.zimbra.com/blog/archives/2007/10/moving-zcs-to-another-server.html
+    http://sangacollins.wordpress.com/2013/04/21/zimbra-backup-script-with-ldap-export-for-zimbra-8/
+    http://wiki.zimbra.com/wiki/Open_Source_Edition_Backup_Procedure
+    http://wiki.zimbra.com/wiki/Backing_up_and_restoring_Zimbra_(Open_Source_Version)
+    http://www.osoffice.de/howto/yet-another-backup-script-for-zimbra-community-edition-groupware-server.html
+    https://github.com/tuanta/zimbra-lvm-backup
+
+
+
+
+Disaster Recovery: Buildout Edition
+-----------------------------------
+
+As with the Open Source Edition, we start with a full backup of $ZIMBRA_HOME.
+The recovery procedure is almost the same, except we don't need to install the .deb
+packages because everything is provided by buildout.
+
+The new server must:
+
+    - have the same Linux distribution, version and architecture
+    - have the same $ZIMBRA_HOME path
+    - have the same hostname and FQDN in /etc/hosts
+    - have a matching 'slapuser#' user with the same name and UID as the one in the old server
+    - have blocked/firewalled outgoing SMTP ports to avoid mail duplicates
+    - buildout parts have been executed for slapos components (no need to build and deploy zimbra)
+
+
+If the hostname has changed, it should be updated as described in
+
+    http://wiki.zimbra.com/index.php?title=ZmSetServerName
+
+If only the IP has changed but the hostname is the same, no update is needed.
+
+
+
+
+User backup: Open Source Edition
+--------------------------------
+
+This high-level method allows a partial extraction of the data, generally
+including email, contacts and calendar, but no user passwords, application
+settings, antispam training or LDAP database.
+
+The purpose is to be able to retrieve a whole account or specific messages that
+may have been deleted by the users themselves or the admins. Doing the same on
+a snapshot of /opt/zimbra would require installing a parallel instance and
+restoring everything there.
+
+This type of backup is done with a running system, and cannot be incremental:
+all of the account data is exported every time, possibly creating huge zip files.
+Data is downloaded and uploaded through a REST interface, the operation can be
+quite slow and cpu/memory intensive for some accounts.
+
+The backup tools in this group follow the pattern:
+
+        # backup
+        for each user:
+           zmmailbox -z -m user@domain.com getRestURL "//?fmt=zip" > /path/to/backup/user@domain.com.zip
+
+        # restore
+        for each user:
+           zmmailbox -z -m user@domain.com postRestURL "//?fmt=zip&resolve=reset" /path/to/backup/user@domain.com.zip
+
+Accounts to restore must be created in advance.
+User settings and passwords are stored in LDAP and can be managed with the zmprov command.
+
+
+Each user account can be put in "maintenance mode" while running the necessary operation.
+Login is disabled and incoming mail is queued by MTA:
+
+    $ zmprov ma user@domain.com zimbraAccountStatus maintenance
+
+If for some reason an account is left in maintenance mode by the zmmailbox command, it can be reactivated:
+
+    $ zmprov ma user@domain.com zimbraAccountStatus active
+
+
+
+
+List of backup scripts for user-by-user backup:
+
+    https://github.com/bggo/Zmbkpose
+    https://github.com/jasensio/BackupZimbraAccount
+    https://github.com/wingyplus/zmbackup
+    http://wiki.zimbra.com/wiki/HOT_Backup_with_rdiff-backup
+    http://blog.zimbra.com/blog/archives/2008/09/zcs-to-zcs-migrations.html
+    http://wiki.zimbra.com/wiki/Per_User_Mailbox_Backup_(OE_Version)
+    (obsolete, but explains metadata in mysql)
+
+
+
+
+User backup: Buildout Edition
+-----------------------------
+
+The same procedure applies in OSE and Buildout Edition.
+
+
+
+Version upgrade: Open Source Edition
+------------------------------------
+
+When a new version of Zimbra is released, it can be installed with:
+
+    - download from http://www.zimbra.com/downloads/os-downloads.html
+    - backup of /opt/zimbra (see disaster recovery)
+    - unpack the .tar.gz of the new version
+    - install.sh (which will run necessary data migration, configuration
+      and schema changes)
+
+Moving to another server and upgrading Zimbra version cannot be done at
+the same time. The application must be migrated to the new server,
+then the new version can be installed.
+
+
+
+Version upgrade: Buildout Edition
+---------------------------------
+
+XXX
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+------------------------------------------------------
+What type of backup is needed in the Buildout Edition?
+------------------------------------------------------
+
+ - disaster recovery
+ - user error backup
+ - application upgrades (minor or major)
+ - security fixes
+    upstream (see application upgrades)
+    in slapos components
+    in zimbra components
+
+
+
+
+
+
+sparse mdb file
+http://www.zimbra.com/forums/administrators/59592-ldap-database-went-97meg-86gig.html
+
+
+
+
+
