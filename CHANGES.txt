@@ -1,7 +1,7 @@
 Changes
 =======
 
-1.0.0 (2013-06-05)
+1.0.0 (Unreleased)
 ------------------
 
 New features:
@@ -37,6 +37,7 @@ Other fixes:
  * Slapformat: Make sure everybody can read slapos configuration directory. [Cedric de Saint Martin]
  * Slapformat: Fix support of slapproxy. [Marco Mariani]
  * Slapformat: slapos.xml backup: handle corrupted zip files. [Marco Mariani]
+ * Slapformat: Don't erase shell information for each user, every time. Allows easy debugging. [Cédric de Saint Martin]
 
 
 0.35.1 (2013-02-18)
