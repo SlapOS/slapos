@@ -179,7 +179,7 @@ The command requires an authentication token, either provided as an argument,
 or given at the interactive prompt.
 Go to the SlapOS Master web page, click ``My Space``, then ``My Account``, then
 ``Generate a computer security token``.
-A token is valid for a single ``node resister`` command and will expire after one day.
+A token is valid for a single ``node register`` command and will expire after one day.
 
 The deprecated ``--login`` and ``--password`` options can be used with old SlapOS servers
 that have no support for the token.
