@@ -1,7 +1,7 @@
 
 This document explores backup and disaster recovery issues with Zimbra (Buildout Edition).
 
-As we have not yet automated a backup solution, here we show some of the alternatives
+As we have not yet automated a backup solution, we show some of the alternatives
 and the possible tradeoffs.
 
 
@@ -90,23 +90,39 @@ The new server must:
 
     - have the same Linux distribution, version and architecture
     - have the same hostname and FQDN in /etc/hosts
-    - have a matching 'zimbra' user with the same User ID as the one in the old server.
+    - have a matching 'zimbra' user with the same User ID as the one in the old server
     - have blocked/firewalled outgoing SMTP ports to avoid mail duplicates
+      (or empty message queues)
 
 Some of the scripts use LVM snapshot instead of rsync.
-With rsync, additional care must be taken due to the presence of a huge (86GB) sparse
-memory-mapped file used by OpenLDAP (see below).
 
 The restore procedure relies on the fresh installation of .deb packages identical
 to those installed in the old server, then replacing of the content in /opt/zimbra.
 It is described by a blog post at
+
     http://blog.zimbra.com/blog/archives/2007/10/moving-zcs-to-another-server.html
+
 
 Even in case of cold backup with no LDAP service running, Zimbra developers strongly
 recommend a text dump of the LDAP database to avoid corruption, see
 http://bugzilla.zimbra.com/show_bug.cgi?id=78781
 
 Bacula is also a popular choice for off-site backup among Zimbra administrators.
+
+
+* A note on LDAP and sparse files *
+
+    With version 8.x, zimbra is preconfigured with a huge (86GB) memory-mapped sparse
+    file for holding LDAP data. Additional care must be take into account when
+    making a copy of this file, with rsync or other methods:
+
+        http://www.zimbra.com/forums/administrators/59592-ldap-database-went-97meg-86gig.html
+        http://wiki.zimbra.com/wiki/OpenLDAP_Performance_Tuning_8.0#Notes_on_MDB
+
+    The file can either be separately copied with the mdb_copy utility, or dumped as
+    a text file with zmslapcat. Using rsync with the --sparse option is not recommended.
+
+
 
 List of backup scripts for disaster recovery:
 
@@ -117,6 +133,7 @@ List of backup scripts for disaster recovery:
     http://wiki.zimbra.com/wiki/Backing_up_and_restoring_Zimbra_(Open_Source_Version)
     http://www.osoffice.de/howto/yet-another-backup-script-for-zimbra-community-edition-groupware-server.html
     https://github.com/tuanta/zimbra-lvm-backup
+
 
 
 
@@ -135,7 +152,7 @@ The new server must:
     - have the same hostname and FQDN in /etc/hosts
     - have a matching 'slapuser#' user with the same name and UID as the one in the old server
     - have blocked/firewalled outgoing SMTP ports to avoid mail duplicates
-    - buildout parts have been executed for slapos components (no need to build and deploy zimbra)
+    - buildout parts have been executed for slapos components (no need to build and deploy zimbra parts)
 
 
 If the hostname has changed, it should be updated as described in
@@ -179,14 +196,13 @@ User settings and passwords are stored in LDAP and can be managed with the zmpro
 
 
 Each user account can be put in "maintenance mode" while running the necessary operation.
-Login is disabled and incoming mail is queued by MTA:
+In maintenance mode, login is disabled and incoming mail is queued by MTA:
 
     $ zmprov ma user@domain.com zimbraAccountStatus maintenance
 
 If for some reason an account is left in maintenance mode by the zmmailbox command, it can be reactivated:
 
     $ zmprov ma user@domain.com zimbraAccountStatus active
-
 
 
 
@@ -215,13 +231,12 @@ Version upgrade: Open Source Edition
 
 When a new version of Zimbra is released, it can be installed with:
 
-    - download from http://www.zimbra.com/downloads/os-downloads.html
-    - backup of /opt/zimbra (see disaster recovery)
-    - unpack the .tar.gz of the new version
+    - stop services, backup /opt/zimbra
+    - unpack the new version's .tar.gz
     - install.sh (which will run necessary data migration, configuration
       and schema changes)
 
-Moving to another server and upgrading Zimbra version cannot be done at
+Moving to another server and upgrading Zimbra version can NOT be done at
 the same time. The application must be migrated to the new server,
 then the new version can be installed.
 
@@ -230,42 +245,37 @@ then the new version can be installed.
 Version upgrade: Buildout Edition
 ---------------------------------
 
-XXX
+At the moment we don't have two version of zimbra that compile with buildout, therefore
+we cannot test any version migration procedure.
+
+As current proposal, when a new version of Zimbra will be released:
+
+    - take a snapshot of its Perforce branch to git
+    - rebase our commits in https://git.erp5.org/gitweb/zimbra.git/shortlog/refs/heads/authbind
+      to the new version
+    - examine any new or changed maintenance script, if needed adapt them
+      by applying the techniques described in README.txt
+    - IMPORTANT: adapt the related migration steps in ZimbraBuild/rpmconf/Upgrade/zmupgrade.pm,
+      push the changes to a new branch
+    - test the migration on a pair of dedicated Zimbra instances (old and new version,
+      with test data)
+    - build the new branch on a separate machine with matching distribution, version,
+      architecture, $ZIMBRA_HOME, hostname, FQDN, username/UID of the user that runs zimbra
+      on the target server.
+      DO NOT run this step on the target server, as it would remove all the data.
+    - backup $ZIMBRA_HOME on the target server
+    - deploy the new version in the taget server with
+
+        $ bin/buildout install deploy-zimbra-{all,ldap,mta,store}
+
+    - run libexec/zmsetup.pl
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-------------------------------------------------------
-What type of backup is needed in the Buildout Edition?
-------------------------------------------------------
-
- - disaster recovery
- - user error backup
- - application upgrades (minor or major)
- - security fixes
-    upstream (see application upgrades)
-    in slapos components
-    in zimbra components
-
-
-
-
-
-
-sparse mdb file
-http://www.zimbra.com/forums/administrators/59592-ldap-database-went-97meg-86gig.html
-
-
-
+    NOTE:
+        Security updates to the components provided by SlapOS itself should be applied by rebuilding
+        these parts. Testing the safety of the procedure is not trivial.
+        If any component is released with a new version and library names change, it might also be
+        required to rebuild the full Zimbra part. This MUST be done in a separate server with matching
+        parameters, and can then be deployed on the target server as described above.
 
 
