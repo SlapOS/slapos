@@ -1,5 +1,5 @@
 Listen %(ip)s:%(port)s
 <VirtualHost *:%(port)s>
   %(ssl_enable)s
-  RewriteRule ^/(.*) %(backend)s%(backend-path)s/$1 [L,P]
+  RewriteRule ^/(.*) %(backend)s/$1 [L,P]
 </VirtualHost>
