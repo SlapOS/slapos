@@ -238,7 +238,11 @@ When a new version of Zimbra is released, it can be installed with:
 
 Moving to another server and upgrading Zimbra version can NOT be done at
 the same time. The application must be migrated to the new server,
-then the new version can be installed.
+then the new version can be installed. A more complex procedure to both
+update the version and move to a server with possibly different architecture
+is described in
+
+    http://blog.spanger.org/?p=1168
 
 
 
@@ -277,4 +281,10 @@ As current proposal, when a new version of Zimbra will be released:
         required to rebuild the full Zimbra part. This MUST be done in a separate server with matching
         parameters, and can then be deployed on the target server as described above.
 
+
+The procedure described in
+
+    http://blog.spanger.org/?p=1168
+
+could also be adapted to the Buildout Edition.
 
