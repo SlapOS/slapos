@@ -37,11 +37,11 @@ plugin_load = ha_mroonga.so;handlersocket.so
 # we may have much more connections
 max_connections = 1000
 
-{% set innodb_buffer_pool_size = parameter_dict.get('innodb-buffer-pool-size') -%}
+{% set innodb_buffer_pool_size = parameter_dict['innodb-buffer-pool-size'] -%}
 {% if innodb_buffer_pool_size %}innodb_buffer_pool_size = {{ innodb_buffer_pool_size }}{% endif %}
-{% set innodb_log_file_size = parameter_dict.get('innodb-log-file-size') -%}
+{% set innodb_log_file_size = parameter_dict['innodb-log-file-size'] -%}
 {% if innodb_log_file_size %} innodb_log_file_size = {{ innodb_log_file_size }}{% endif %}
-{% set innodb_log_buffer_size = parameter_dict.get('innodb-log-buffer-size') -%}
+{% set innodb_log_buffer_size = parameter_dict['innodb-log-buffer-size'] -%}
 {% if innodb_log_buffer_size %} innodb_log_buffer_size = {{ innodb_log_buffer_size }}{% endif %}
 
 # very important to allow parallel indexing
@@ -49,15 +49,15 @@ max_connections = 1000
 # doesn't use "insert ... select" (in any number of queries) pattern.
 innodb_locks_unsafe_for_binlog = 1
 
-{% set log_bin = parameter_dict.get('binlog-path') -%}
+{% set log_bin = parameter_dict['binlog-path'] -%}
 {% if log_bin -%}
 log_bin = {{ log_bin }}
-{% set binlog_expire_days = parameter_dict.get('binlog-expire-days') -%}
+{% set binlog_expire_days = parameter_dict['binlog-expire-days'] -%}
 {% if binlog_expire_days > 0 %}expire_logs_days = {{ binlog_expire_days }}{% endif %}
 {% endif -%}
 
 {# Note: strictly check equality to one, as a last line of defense against users not reading the doc. -#}
-{% if parameter_dict.get('relaxed-writes') -%}
+{% if parameter_dict['relaxed-writes'] -%}
 innodb_flush_log_at_trx_commit = 0
 innodb_flush_method = nosync
 innodb_doublewrite = 0

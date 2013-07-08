@@ -68,6 +68,8 @@ relaxed-writes = {{ dumps(slapparameter_dict.get('mariadb-relaxed-writes', False
 binlog-path = ${directory:mariadb-backup-incremental}/binlog
 # XXX: binlog rotation happens along with other log's rotation
 binlog-expire-days = {{ incremental_backup_retention_days }}
+{% else %}
+binlog-path =
 {% endif -%}
 
 [my-cnf]
