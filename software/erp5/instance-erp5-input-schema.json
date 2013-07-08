@@ -141,12 +141,13 @@
     "zodb-software-type": {
       "description": "Zope Object DataBase implementation",
       "default": "zeo",
-      "enum": ["zeo"],
+      "enum": ["zeo", "neo"],
       "type": "string"
     },
     "zodb": {
       "description": "Zope Object DataBase service",
       "oneOf": [
+        {"$ref": "./instance-neo-input-schema.json#properties"},
         {"$ref": "./instance-zeo-input-schema.json#properties"}
       ]
     }

@@ -1,0 +1,21 @@
+{% if software_type == slap_software_type -%}
+{% set zodb_dict = {} -%}
+{% for export_id, mountpoint_dict in slapparameter_dict['zodb-dict'].items() -%}
+{%   do zodb_dict.__setitem__(export_id, [
+       mountpoint_dict.get('mount-point', '/'),
+       mountpoint_dict.get('cache-size', -1),
+       mountpoint_dict.get('storage-dict', {}),
+     ]) -%}
+{% endfor -%}
+[publish]
+recipe = slapos.cookbook:publish.serialised
+zodb-storage-type = NEOStorage
+zodb-dict = {{ dumps(zodb_dict) }}
+
+[buildout]
+parts +=
+  publish
+eggs-directory = {{ eggs_directory }}
+develop-eggs-directory = {{ develop_eggs_directory }}
+offline = true
+{% endif %}

@@ -1,0 +1,22 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "description": "Values returned by ZEO instanciation",
+  "properties": {
+    "zodb-storage-type": {
+      "description": "zope.cfg-friendly storage type",
+      "enum": ["NEOStorage"],
+      "type": "string"
+    },
+    "zodb-dict": {
+      "description": "Maps an export identifier to values received as parameters",
+      "patternProperties": {
+        ".*": {
+          "description": "Contains the mount-point, cache-size and client-dict received as parameters for current export identifier (client-dict's 'storage' and 'server' entries are overwritten with actual values)",
+          "type": "array"
+        }
+      },
+      "type": "object"
+    },
+  },
+  "type": "object"
+}

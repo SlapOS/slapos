@@ -1,0 +1,47 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "extends": "./schema-definitions.json#",
+  "required": ["zodb-dict"],
+  "properties": {
+    "zodb-dict": {
+      "description": "Maps an export identifier to its settings",
+      "patternProperties": {
+        ".*": {
+          "properties": {
+            "mount-point": {
+              "description": "Traversal path export should be mounted at (opaque to this software type)",
+              "default": "/",
+              "type": "string"
+            },
+            "cache-size": {
+              "description": "Client-side cache size in object count (opaque to this software type)",
+              "default": -1,
+              "type": "integer"
+            },
+            "storage-dict": {
+              "default": {},
+              "required": ["name", "master_nodes"],
+              "properties": {
+                "name": {
+                  "description": "NEO cluster's name",
+                  "type": "string"
+                },
+                "master_nodes": {
+                  "description": "Client-side settings for this mountpoint",
+                  "minItems": 1,
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                }
+              },
+              "type": "object"
+            }
+          },
+          "type": "object"
+        }
+      },
+      "type": "object"
+    }
+  }
+}
