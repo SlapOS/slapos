@@ -46,6 +46,7 @@ class Recipe(GenericBaseRecipe):
             '--test-result-path', self.options['test-result-path'],
             '--test-suite-master-url', self.options['test-suite-master-url'],
             '--node-title', self.options['node-title'],
+            '--test-suite', self.options['test-suite'],
             '--revision', self.options['revision'],
             '--log-path', self.options['log-path'],
           ],
