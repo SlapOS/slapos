@@ -51,6 +51,7 @@ recipe = slapos.cookbook:fontconfig
 conf-path = ${directory:etc}/font.conf
 font-system-folder = {{ parameter_dict['fonts'] }}
 font-folder = ${directory:font}
+{# XXX: violates "instanciation happens offline" rule -#}
 url-list = {{ slapparameter_dict.get('font-url-list', []) | join(' ') }}
 service-folder = ${directory:service}
 onetimedownload_path = {{ bin_directory }}/onetimedownload
