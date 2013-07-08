@@ -257,8 +257,7 @@ As current proposal, when a new version of Zimbra will be released:
       by applying the techniques described in README.txt
     - IMPORTANT: adapt the related migration steps in ZimbraBuild/rpmconf/Upgrade/zmupgrade.pm,
       push the changes to a new branch
-    - test the migration on a pair of dedicated Zimbra instances (old and new version,
-      with test data)
+    - test the migration on a dedicated Zimbra instance, with test data
     - build the new branch on a separate machine with matching distribution, version,
       architecture, $ZIMBRA_HOME, hostname, FQDN, username/UID of the user that runs zimbra
       on the target server.
