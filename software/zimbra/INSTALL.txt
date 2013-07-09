@@ -211,6 +211,10 @@ How to install Zimbra
 
         $ source /home/user/zbuild/home/.bashrc
 
+    Also, LDAP looks for its configuration file in $HOME:
+
+        $ ln -s /home/user/zbuild/home/.ldaprc ~/
+
     Now run the actual configuration script.
 
         $ cd /home/user/zbuild/home/; ZIMBRA_INSTALLED_PKGS="zimbra-core zimbra-ldap zimbra-mta zimbra-store" ./libexec/zmsetup.pl
