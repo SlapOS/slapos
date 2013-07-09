@@ -244,6 +244,8 @@ is described in
 
     http://blog.spanger.org/?p=1168
 
+but it also requires to install the old version on the new server.
+
 
 
 Version upgrade: Buildout Edition
@@ -287,4 +289,5 @@ The procedure described in
     http://blog.spanger.org/?p=1168
 
 could also be adapted to the Buildout Edition.
+
 
