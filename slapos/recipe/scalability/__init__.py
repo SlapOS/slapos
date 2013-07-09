@@ -49,6 +49,7 @@ class Recipe(GenericBaseRecipe):
             '--test-suite', self.options['test-suite'],
             '--revision', self.options['revision'],
             '--log-path', self.options['log-path'],
+            '--runner-path', self.options['runner-path'],
           ],
           # Environment
           {

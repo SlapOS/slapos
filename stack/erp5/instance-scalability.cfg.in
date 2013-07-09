@@ -77,6 +77,7 @@ node-title = {{ slapparameter_dict.get('node-title', 'Unknown') }}
 test-suite = {{ slapparameter_dict.get('test-suite') }}
 test-suite-master-url = {{ slapparameter_dict.get('test-suite-master-url') }}
 log-path = ${binary-wrap-launcher:log-path}
+runner-path = ${binary-wrap-performance-tester:wrapper-path}
 
 # Create partition's directories
 [basedirectory]
