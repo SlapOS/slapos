@@ -50,8 +50,6 @@ class NeoBaseRecipe(GenericBaseRecipe):
       #'-n', options['name'],
       '-c', options['cluster'],
     ]
-    if options['verbose']:
-      option_list.append('-v')
     option_list.extend(self._getOptionList())
     return [self.createPythonScript(
       options['wrapper'],

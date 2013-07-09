@@ -37,11 +37,6 @@ Defautls to 12.
 Number of replicates.
 Defaults to 0 (no resilience).
 
-'verbose' (int, optional)
-~~~~~~~~~~~~~~~~~~~~~~~~~
-Non-zero to increase verbosity.
-Defaults to 0.
-
 'mysql-storage-count' (int, optional)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Number of MySQL-based storage nodes to deploy. One master node is deployed

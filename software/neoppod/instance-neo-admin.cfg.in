@@ -16,7 +16,6 @@ ip = ${publish:ip}
 port = ${publish:port}
 cluster = ${slap-parameter:cluster}
 masters = ${slap-parameter:masters}
-verbose = ${slap-parameter:verbose}
 
 [publish]
 recipe = slapos.cookbook:publish

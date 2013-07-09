@@ -33,7 +33,6 @@ logfile = ${directory:log}/neostorage.log
 ip = [${slap-network-information:global-ipv6}]
 cluster = ${slap-parameter:cluster}
 masters = ${slap-parameter:masters}
-verbose = ${slap-parameter:verbose}
 database-adapter = MySQL
 database-parameters = ${mariadb-instance:user}:${mariadb-instance:password}@${mariadb-instance:database}${mariadb-instance:socket}
 wait-database = 60
