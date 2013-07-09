@@ -44,7 +44,7 @@ return = mariadb-url family-scalability family-user memcached-persistent-url mem
 # Create wrapper
 [binary-wrap-launcher]
 recipe = slapos.cookbook:wrapper
-log-path = ${basedirectory:log}/runScalabilityTestSuite.log
+log-path = ${basedirectory:log}
 binary-path = {{ bin_directory }}/runScalabilityTestSuite
 wrapper-path = ${rootdirectory:bin}/runScalabilityTestSuite
 output = ${binary-wrap-launcher:binary-path}
