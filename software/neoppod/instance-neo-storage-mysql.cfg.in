@@ -10,6 +10,7 @@ database = neo
 conf-file = ${directory:etc}/mariadb.cnf
 # No networking (ip & port options)
 data-directory = ${directory:srv_mariadb}
+bin-directory = ${directory:bin}
 pid-file = ${directory:var_run}/mariadb.pid
 socket = ${directory:var_run}/mariadb.sock
 error-log = ${directory:log}/mariadb_error.log
