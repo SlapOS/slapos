@@ -33,6 +33,7 @@ link-binary = ${neo-admin:wrapper}
 
 [directory]
 recipe = slapos.cookbook:mkdirectory
+promises = ${buildout:directory}/etc/promises
 run = ${buildout:directory}/etc/run
 log = ${buildout:directory}/var/log
 bin = ${buildout:directory}/bin
