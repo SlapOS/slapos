@@ -55,3 +55,49 @@ if result.status == 204: # and (result.read() == "False"):
   #created the ERP5 site.
   result.read()
   print "ERP5 site created."
+
+
+# Scalability: Install and configure small buisiness
+
+is_scalability_case = %(scalability)%
+if is_scalability_case:
+  # Here check if configurator is available
+  configurator_available = False
+  if not configurator_available:
+    if is_scalability_case:
+      import os
+      # Fix site consistency
+      if protocol == 'https':
+        zope_connection = httplib.HTTPSConnection(host)
+      elif protocol == 'http':
+        zope_connection = httplib.HTTPConnection(host)  
+      else:
+        raise ValueError("Protocol not implemented")
+      zope_connection.request(
+        'POST', '/ERP5Site_updateConfigurationConsistency',
+        urllib.urlencode({
+          'update_method': 'ERP5Site_updateConfigurationConsistency',
+          'dialog_id': 'ERP5Site_viewCheckConsistency',
+          'dialog_method': 'ERP5Site_fixConfigurationConsistency',
+          'field_your_enable_alarm': 'on',
+          'object_path': os.path.join('/', site_id),
+          'uids;list':'598',
+          'listbox_uid;list':'598',
+          'uids;list':'595',
+          'listbox_uid;list':'595',
+          'uids;list':'599',
+          'listbox_uid;list':'599',
+        }),
+        headers=header_dict)
+      result = zope_connection.getresponse()
+      result.read()
+
+  # Here check if configurator is available
+  configurator_available = False
+  # Here check if S&MB not already installed
+  configurator_already_applied = False
+  if configurator_available and not configurator_already_applied:
+    # install small and medium business via configurator
+    pass
+
+   
