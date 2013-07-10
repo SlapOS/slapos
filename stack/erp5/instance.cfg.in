@@ -56,113 +56,27 @@ extra-context =
     section parameter_dict dynamic-template-cloudooo-parameters
 # Must match the key id in [switch-softwaretype] which uses this section.
     raw software_type cloudooo
-
-[dynamic-template-varnish-parameters]
-dash = {{ dash_location }}
-dcron = {{ dcron_location }}
-gzip =  {{ gzip_location }}
-logrotate = {{ logrotate_location }}
-stunnel = {{ stunnel_location }}
-varnish = {{ varnish_location }}
-wget = {{ wget_location }}
-buildout-bin-directory = {{ buildout_bin_directory }}
-
-[dynamic-template-varnish]
-< = jinja2-template-base
-template = {{ template_varnish }}
-filename = instance-varnish.cfg
-extra-context =
-    section parameter_dict dynamic-template-varnish-parameters
-# Must match the key id in [switch-softwaretype] which uses this section.
-    raw software_type varnish
-
-[dynamic-template-zope-parameters]
-apache = {{ apache_location }}
-aspell = {{ aspell_location }}
-bin-directory = {{ bin_directory }}
-coreutils = {{ coreutils_location }}
-dcron = {{ dcron_location }}
-dmtx-utils = {{ dmtx_utils_location }}
-erp5 = {{ erp5_location }}
-git = {{ git_location }}
-graphviz = {{ graphviz_location }}
-grep = {{ grep_location }}
-gzip = {{ gzip_location }}
-imagemagick = {{ imagemagick_location }}
-librsvg = {{ librsvg_location }}
-logrotate = {{ logrotate_location }}
-mariadb = {{ mariadb_location }}
-openssl = {{ openssl_location }}
-poppler = {{ poppler_location }}
-sed = {{ sed_location }}
-tesseract = {{ tesseract_location }}
-w3m = {{ w3m_location }}
-jsl = {{ jsl_location }}
-
-[dynamic-template-zope]
-< = jinja2-template-base
-template = {{ template_zope }}
-filename = instance-zope.cfg
-extensions = jinja2.ext.do
-# XXX: duplicates above section, so less is modified in template in this
-# commit. Should be replaced by a single "section" line.
-extra-context =
-    key apache_location dynamic-template-zope-parameters:apache
-    key aspell_location dynamic-template-zope-parameters:aspell
-    key bin_directory dynamic-template-zope-parameters:bin-directory
-    key coreutils_location dynamic-template-zope-parameters:coreutils
-    key dcron_location dynamic-template-zope-parameters:dcron
-    key dmtx_utils_location dynamic-template-zope-parameters:dmtx-utils
-    key erp5_location dynamic-template-zope-parameters:erp5
-    key git_location dynamic-template-zope-parameters:git
-    key graphviz_location dynamic-template-zope-parameters:graphviz
-    key grep_location dynamic-template-zope-parameters:grep
-    key gzip_location dynamic-template-zope-parameters:gzip
-    key imagemagick_location dynamic-template-zope-parameters:imagemagick
-    key librsvg_location dynamic-template-zope-parameters:librsvg
-    key logrotate_location dynamic-template-zope-parameters:logrotate
-    key mariadb_location dynamic-template-zope-parameters:mariadb
-    key openssl_location dynamic-template-zope-parameters:openssl
-    key poppler_location dynamic-template-zope-parameters:poppler
-    key sed_location dynamic-template-zope-parameters:sed
-    key tesseract_location dynamic-template-zope-parameters:tesseract
-    key w3m_location dynamic-template-zope-parameters:w3m
-    key jsl_location dynamic-template-zope-parameters:jsl
-
-[template-erp5-single-parameters]
-bin-directory = {{ bin_directory }}
-openssl = {{ openssl_location }}
-local_bt5_repository = {{ local_bt5_repository  }}
-dash = {{ dash_location }}
-curl = {{ curl_location }}
-
-[template-erp5-single]
-< = jinja2-template-base
-template = {{ template_erp5_single }}
-filename = instance-erp5-single.cfg
-# XXX: duplicates above section, so less is modified in template in this
-# commit. Should be replaced by a "section" line (preserving template_zope
-# definition).
-extra-context =
-    key bin_directory template-erp5-single-parameters:bin-directory
-    key openssl_location template-erp5-single-parameters:openssl
-    key curl_location template-erp5-single-parameters:curl
-    key dash_location template-erp5-single-parameters:dash
-    key template_zope dynamic-template-zope:rendered
-    key local_bt5_repository template-erp5-single-parameters:local_bt5_repository
-
-[dynamic-template-cluster-erp5-parameters]
+[dynamic-template-erp5-parameters]
 local-bt5-repository = {{ local_bt5_repository }}
 
-[dynamic-template-cluster-erp5]
+[dynamic-template-erp5]
 < = jinja2-template-base
-template = {{ template_erp5_cluster }}
-filename = instance-cluster-erp5.cfg
+template = {{ template_erp5 }}
+filename = instance-erp5.cfg
 extensions = jinja2.ext.do
 extra-context =
-    key local_bt5_repository dynamic-template-cluster-erp5-parameters:local-bt5-repository
+    key local_bt5_repository dynamic-template-erp5-parameters:local-bt5-repository
 # Must match the key id in [switch-softwaretype] which uses this section.
-    raw software_type cluster
+    key software_type :software-type
+software-type = default
+
+[dynamic-template-erp5-cluster]
+< = dynamic-template-erp5
+software-type = cluster
+
+[dynamic-template-erp5-RootSoftwareInstance]
+< = dynamic-template-erp5
+software-type = RootSoftwareInstance
 
 [dynamic-template-balancer-parameters]
 apache = {{ apache_location }}
@@ -210,7 +124,7 @@ extra-context =
 # Must match the key id in [switch-softwaretype] which uses this section.
     raw software_type zodb-zeo
 
-[dynamic-template-cluster-zope-parameters]
+[dynamic-template-zope-parameters]
 zope-conf-template = {{ template_zope_conf }}
 instance-logrotate-cfg = {{ template_logrotate_base }}
 git = {{ git_location }}
@@ -229,16 +143,21 @@ openssl = {{ openssl_location }}
 dash = {{ dash_location }}
 jsl = {{ jsl_location }}
 
-[dynamic-template-cluster-zope]
+[dynamic-template-zope]
 < = jinja2-template-base
-template = {{ template_cluster_zope }}
-filename = instance-cluster-zope.cfg
+template = {{ template_zope }}
+filename = instance-zope.cfg
 extensions = jinja2.ext.do
 extra-context =
     key buildout_directory buildout:directory
-    section parameter_dict dynamic-template-cluster-zope-parameters
+    section parameter_dict dynamic-template-zope-parameters
 # Must match the key id in [switch-softwaretype] which uses this section.
-    raw software_type cluster-zope
+    key software_type :software-type
+software-type = zope
+
+[dynamic-template-cluster-zope]
+< = dynamic-template-zope
+software-type = cluster-zope
 
 [dynamic-template-kumofs-parameters]
 dash-location = {{ dash_location }}
@@ -283,17 +202,20 @@ extra-context =
 
 [switch-softwaretype]
 recipe = slapos.cookbook:softwaretype
-default = ${template-erp5-single:rendered}
-cluster = ${dynamic-template-cluster-erp5:rendered}
+default = ${dynamic-template-erp5:rendered}
+# BBB
+cluster = ${dynamic-template-erp5-cluster:rendered}
+cluster-zope = ${dynamic-template-cluster-zope:rendered}
+# Common misspelling for "default".
+RootSoftwareInstance = ${dynamic-template-erp5-RootSoftwareInstance:rendered}
+
 kumofs = ${dynamic-template-kumofs:rendered}
 cloudooo = ${dynamic-template-cloudooo:rendered}
-zope = ${dynamic-template-zope:rendered}
 mariadb = ${dynamic-template-mariadb:rendered}
-varnish = ${dynamic-template-varnish:rendered}
 balancer = ${dynamic-template-balancer:rendered}
 zodb-neo = ${dynamic-template-neo:rendered}
 zodb-zeo = ${dynamic-template-zeo:rendered}
-cluster-zope = ${dynamic-template-cluster-zope:rendered}
+zope = ${dynamic-template-zope:rendered}
 
 [slap-connection]
 # part to migrate to new - separated words

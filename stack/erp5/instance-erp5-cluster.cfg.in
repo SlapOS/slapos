@@ -81,7 +81,7 @@ config-tidstorage-ip = ${request-zodb:connection-tidstorage-ip}
 config-tidstorage-port = ${request-zodb:connection-tidstorage-port}
 config-timezone = {{ slapparameter_dict.get('timezone', 'UTC') }}
 config-site-id = {{ site_id }}
-software-type = cluster-zope
+software-type = zope
 
 {% set zope_family_dict = {} -%}
 {% for custom_name, zope_parameter_dict in slapparameter_dict.get('zope-partition-dict', {'1': {}}).items() -%}
