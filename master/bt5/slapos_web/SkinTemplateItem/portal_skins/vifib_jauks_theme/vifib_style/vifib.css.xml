@@ -50,7 +50,8 @@
 /**********************/\n
 /* Global definitions */\n
 /**********************/\n
-*{margin:0;padding:0}\n
+*{padding:0}\n
+.top_area * {margin:0;}\n
 body{ font-family:Arial,Helvetica,sans-serif;\n
       text-align:center;\n
       background:#59bae2 url(<tal:block tal:replace="images_path"/>body_bg.png) repeat-x top left;\n
