@@ -43,7 +43,8 @@ def _wait_files_creation(file_list):
             directories[dirname][event.name] = True
 
   finally:
-    os.close(fd)
+    if isinstance(fd, int):
+      os.close(fd)
 
 def execute(args):
   """Portable execution with process replacement"""

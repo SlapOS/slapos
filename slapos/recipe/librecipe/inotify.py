@@ -48,4 +48,5 @@ def subfiles(directory):
       subfiles = [file_.name for file_ in inotifyx.get_events(watchfd)]
 
   finally:
-    os.close(watchfd)
+    if isinstance(watchfd, int): 
+      os.close(watchfd)
