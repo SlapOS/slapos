@@ -82,8 +82,15 @@ class Recipe(object):
       installation of request section will fail.
       Possible names depend on requested partition's software type.
 
+    state (optional)
+     Requested state, default value is "started".
+
     Output:
       See "return" input key.
+      "instance-state"
+          The current state of the instance.
+      "requested-state"
+          The requested state of the instance.
   """
   failed = None
 
@@ -106,6 +113,7 @@ class Recipe(object):
     ))
     slave = options.get('slave', 'false').lower() in \
       librecipe.GenericBaseRecipe.TRUE_VALUES
+    requested_state = options.get('state', 'started')
     slap = slapmodule.slap()
     slap.initializeConnection(
       options['server-url'],
@@ -123,7 +131,7 @@ class Recipe(object):
     try:
       self.instance = request(software_url, software_type,
           name, partition_parameter_kw=partition_parameter_kw,
-          filter_kw=filter_kw, shared=slave)
+          filter_kw=filter_kw, shared=slave, state=requested_state)
       return_parameter_dict = self._getReturnParameterDict(self.instance,
           return_parameters)
       if not slave:
@@ -147,6 +155,8 @@ class Recipe(object):
       except KeyError:
         if self.failed is None:
           self.failed = param
+    options['requested-state'] = requested_state
+    options['instance-state'] = self.instance.getState()
 
   def _filterForStorage(self, partition_parameter_kw):
     return partition_parameter_kw

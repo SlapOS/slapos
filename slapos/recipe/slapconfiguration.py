@@ -78,6 +78,8 @@ class Recipe(object):
       Partition parameter whose name cannot be represented unambiguously in
       buildout syntax are ignored. They cannot be accessed from buildout syntax
       anyway, and are available through "configuration" output key.
+    instance-state
+      The instance state.
   """
 
   # XXX: used to detect if a configuration key is a valid section key. This
@@ -91,10 +93,12 @@ class Recipe(object):
           options.get('key'),
           options.get('cert'),
       )
-      parameter_dict = slap.registerComputerPartition(
+      computerPartition = slap.registerComputerPartition(
           options['computer'],
           options['partition'],
-      ).getInstanceParameterDict()
+      )
+      parameter_dict = computerPartition.getInstanceParameterDict()
+      options['instance-state'] = computerPartition.getState()
       # XXX: those are not partition parameters, strictly speaking.
       # Make them available as individual section keys.
       for his_key in (
