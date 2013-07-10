@@ -40,6 +40,7 @@ config = {{ cluster_parameter_dict.keys() | join(' ') }}
 config-{{ key }} = {{ dumps(value) }}
 {% endfor -%}
 return = mariadb-url family-scalability family-user memcached-persistent-url memcached-volatile-url cloudooo-url
+state = {{ root_instance_state }}
 
 # Create wrapper
 [binary-wrap-launcher]
