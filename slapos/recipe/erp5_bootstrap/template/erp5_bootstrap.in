@@ -8,9 +8,11 @@ user = "%(user)s"
 password = "%(password)s"
 host = "%(host)s"
 site_id = "%(site_id)s"
-erp5_catalog_storage = 'erp5_mysql_innodb_catalog'
 mysql_url = "%(sql_connection_string)s"
 protocol = "%(protocol)s"
+scalability = True
+
+erp5_catalog_storage = 'erp5_mysql_innodb_catalog'
 
 header_dict = {'Authorization': 'Basic %%s' %% \
   base64.encodestring('%%s:%%s' %% (user, password)).strip()}
@@ -58,12 +60,11 @@ if result.status == 204: # and (result.read() == "False"):
 
 
 # Scalability: Install and configure small buisiness
-
-is_scalability_case = "%(scalability)s" == "True"
-if is_scalability_case:
+if scalability:
   print "Scalability case"
   # Here check if configurator is available
   configurator_available = False
+  cancel_url = "https%3A%2F%2F192.168.241.110%3A2153%2Ferp5%2FERP5Site_viewCheckConsistency"
   if not configurator_available:
     if is_scalability_case:
       import os
@@ -79,8 +80,7 @@ if is_scalability_case:
         urllib.urlencode({
           'update_method': 'ERP5Site_updateConfigurationConsistency',
           'dialog_id'='ERP5Site_viewCheckConsistency',
-          # TODO: change ip
-          'cancel_url'='https%3A%2F%2F192.168.241.110%3A2153%2Ferp5%2FERP5Site_viewCheckConsistency',
+          'cancel_url'=cancel_url,
           'dialog_method'='ERP5Site_fixConfigurationConsistency',
           'dialog_category'='None',
           'object_path'='%2Ferp5',
@@ -102,8 +102,8 @@ if is_scalability_case:
           'listbox_uid%3Alist'='599',
           'Base_callDialogMethod%3Amethod'='',
         }),
-        headers=header_dict
-      )
+        headers=header_dict)
+      
       print "POST sent"
       result = zope_connection.getresponse()
       print result.read()

@@ -101,6 +101,7 @@ zope-username = zope
 zope-password = insecure
 zope-site-id = {{ site_id }}
 zope-url = ${erp5-cluster:connection-family-scalability}
+scalability = True
 
 [erp5-promise]
 recipe = slapos.cookbook:erp5.promise

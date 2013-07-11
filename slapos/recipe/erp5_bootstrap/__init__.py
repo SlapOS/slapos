@@ -107,7 +107,7 @@ class Recipe(GenericBaseRecipe):
     elif self.options.get('zope-url'):
       zope_port = zope_parsed.port
     else:
-      zope_port = 8080
+      zope_port = "8080"
     # Zope username and password
     if self.options.get('zope-username') and self.options.get('zope-password'):
       zope_username = self.options['zope-username']
@@ -133,15 +133,21 @@ class Recipe(GenericBaseRecipe):
     else:
       zope_site_id = 'erp5'
 
+    # Scalability
+    if self.options.get('scalability'):
+      scalability = self.options['scalability']
+    else:
+      scalability = "False"
+
     config = dict(
       python_path=sys.executable,
       user=zope_username,
       password=zope_password,
       site_id=zope_site_id,
-      host="%s:%s" % (zope_hostname, zope_port),
+      host="%s:%s" % (zope_hostname, str(zope_port)),
       protocol=zope_protocol,
       sql_connection_string=mysql_connection_string,
-      scalability=self.options.get('scalability', 'False'),
+      scalability=scalability,
     )
 
     # Runners
