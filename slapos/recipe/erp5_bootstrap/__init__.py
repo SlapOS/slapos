@@ -33,6 +33,44 @@ import urlparse
 class Recipe(GenericBaseRecipe):
   """
   Instanciate ERP5 in Zope
+
+  Input:
+    mysql-url
+      mysql url, must contain connexion informations.    
+
+    zope-url (optional)
+      Url of zope, this url will be parsed to get these values:
+      protocol://username@password:hostname:port/site_id
+
+    If specified following inputs have priority on parsed zope-url values:
+    zope-hostname (optional)
+      Zope hostname.
+      Default value: "localhost", if not contained in zope-url.
+    zope-port (optional)
+      Zope port.
+      Default value: "80", if not contained in zope-url.
+    zope-protocol (optional)
+      Protocol used.
+      Default "http" if not contained in zope-url.
+    zope-password (optional)
+      Zope user password.
+      Default value: "insecure", if not contained in zope-url.
+    zope-username (optional)
+      Zope username.
+      Default value: "zope", if not contained in zope-url.
+    site-id (optional)
+      Site id
+      ex: erp5
+      Default value: "erp5", if not contained in zope-url.
+
+    runner-path
+      The path to create the runner.
+
+    scalability (optional)
+      Boolean, default value: "False"
+      If true erp5 site will fix the site consistency and
+      will use configurator to automaticlly install a
+      small and medium buisiness. 
   """
 
   def install(self):
