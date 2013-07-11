@@ -1,0 +1,27 @@
+[buildout]
+extends = ${template-runner:output}
+          ${pbsready-export:output}
+
+parts +=
+    urls
+    slaprunner
+    cron-entry-backup
+
+[exporter]
+recipe = slapos.cookbook:slaprunner.export
+wrapper = $${directory:bin}/$${slap-parameter:namebase}-exporter
+srv-directory = $${directory:srv}
+etc-directory = $${directory:etc}
+backup-directory = $${directory:backup}
+shell-binary = ${dash:location}/bin/dash
+rsync-binary = ${rsync:location}/bin/rsync
+
+
+# Extends publish section with resilient parameters
+[urls]
+<= resilient-publish-connection-parameter
+backend_url = $${slaprunner:access-url}
+url =  $${request-frontend:connection-site_url}
+cloud9_url = $${cloud9:access-url}
+ssh_command = ssh $${dropbear-runner-server:host} -p $${dropbear-runner-server:port}
+password_recovery_code = $${recovery-code:passwd}
