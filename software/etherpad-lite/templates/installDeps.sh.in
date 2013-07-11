@@ -1,5 +1,9 @@
 #!/bin/sh
 
+# Ugly setup
+cd ${:etherpad-location}
+export PATH=$PATH:${:postgre-location}/bin
+
 #Is gnu-grep (ggrep) installed on SunOS (Solaris)
 if [ $(uname) = "SunOS" ]; then
   hash ggrep > /dev/null 2>&1 || { 
