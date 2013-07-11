@@ -64,50 +64,47 @@ if scalability:
   print "Scalability case"
   # Here check if configurator is available
   configurator_available = False
-  cancel_url = "https%3A%2F%2F192.168.241.110%3A2153%2Ferp5%2FERP5Site_viewCheckConsistency"
   if not configurator_available:
-    if is_scalability_case:
-      import os
-      # Fix site consistency
-      if protocol == 'https':
-        zope_connection = httplib.HTTPSConnection(host)
-      elif protocol == 'http':
-        zope_connection = httplib.HTTPConnection(host)
-      else:
-        raise ValueError("Protocol not implemented")
-      zope_connection.request(
-        'POST', '/ERP5Site_updateConfigurationConsistency',
-        urllib.urlencode({
-          'update_method': 'ERP5Site_updateConfigurationConsistency',
-          'dialog_id':'ERP5Site_viewCheckConsistency',
-          'cancel_url':cancel_url,
-          'dialog_method':'ERP5Site_fixConfigurationConsistency',
-          'dialog_category':'None',
-          'object_path':'%2Ferp5',
-          'form_id':'view',
-          'select_favorite':'',
-          'select_module':'',
-          'select_language':'en',
-          'all_languages':'1',
-          'field_your_search_text':'Search',
-          'default_field_your_enable_alarm%3Aint':'0',
-          'field_your_enable_alarm':'on',
-          'list_selection_name':'erp5_site_check_consistency_selection',
-          'listbox_list_selection_name':'erp5_site_check_consistency_selection',
-          'md5_object_uid_list':'d751713988987e9331980363e24189ce',
-          'listbox_title':'',
-          'uids%3Alist':'598',
-          'listbox_uid%3Alist':'598',
-          'listbox_uid%3Alist':'595',
-          'listbox_uid%3Alist':'599',
-          'Base_callDialogMethod%3Amethod':'',
-        }),
-        headers=header_dict)
-      
-      print "POST sent"
-      result = zope_connection.getresponse()
-      print result.read()
-      print "POST read"
+    import os
+    # Fix site consistency
+    if protocol == 'https':
+      zope_connection = httplib.HTTPSConnection(host)
+    elif protocol == 'http':
+      zope_connection = httplib.HTTPConnection(host)
+    else:
+      raise ValueError("Protocol not implemented")
+    zope_connection.request(
+      'POST', '/ERP5Site_updateConfigurationConsistency',
+      urllib.urlencode({
+        'update_method': 'ERP5Site_updateConfigurationConsistency',
+        'dialog_id':'ERP5Site_viewCheckConsistency',
+        'dialog_method':'ERP5Site_fixConfigurationConsistency',
+        'dialog_category':'None',
+        'object_path':'/erp5',
+        'form_id':'view',
+        'select_favorite':'',
+        'select_module':'',
+        'select_language':'en',
+        'all_languages':'1',
+        'field_your_search_text':'Search',
+        'default_field_your_enable_alarm;int':'0',
+        'field_your_enable_alarm':'on',
+        'list_selection_name':'erp5_site_check_consistency_selection',
+        'listbox_list_selection_name':'erp5_site_check_consistency_selection',
+        'md5_object_uid_list':'d751713988987e9331980363e24189ce',
+        'listbox_title':'',
+        'uids;list':'598',
+        'listbox_uid;list':'598',
+        'listbox_uid;list':'595',
+        'listbox_uid;list':'599',
+        'Base_callDialogMethod;method':'',
+      }),
+      headers=header_dict)
+    
+    print "POST sent"
+    result = zope_connection.getresponse()
+    print result.read()
+    print "POST read"
       
 
   # Here check if configurator is available
