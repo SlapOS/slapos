@@ -147,7 +147,7 @@ class Recipe(GenericBaseRecipe):
       host="%s:%s" % (zope_hostname, str(zope_port)),
       protocol=zope_protocol,
       sql_connection_string=mysql_connection_string,
-      scalability=scalability,
+      scalability="True",
     )
 
     # Runners
