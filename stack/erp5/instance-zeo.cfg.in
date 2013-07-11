@@ -4,7 +4,7 @@
 {% set part_list = [] -%}
 {% set storage_dict = {} -%}
 {% set zodb_dict = {} -%}
-{% set tidstorage_dict = slapparameter_dict.get('tidstorage-dict') -%}
+{% set tidstorage_dict = slapparameter_dict.get('tidstorage-dict', {}) -%}
 {% set known_tid_storage_identifier_dict = {} -%}
 {% set default_zodb_path = buildout_directory ~ '/srv/zodb' -%}
 {% set zodb_backup_path = buildout_directory ~ '/srv/backup/zodb' -%}

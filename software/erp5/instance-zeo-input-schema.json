@@ -11,7 +11,8 @@
       }]
     },
     "tidstorage-dict": {
-      "description": "Controls ZODB backup generation and retention",
+      "description": "Controls ZODB backup generation and retention (disabled if null)",
+      "default": {},
       "properties": {
         "zodb-dict": {
           "description": "Maps an export identifier to the path it must be backed up into",
@@ -31,7 +32,7 @@
           "type": "string"
         }
       },
-      "type": "object"
+      "type": ["object", "null"]
     },
     "zodb-dict": {
       "description": "Maps an export identifier to its settings",
