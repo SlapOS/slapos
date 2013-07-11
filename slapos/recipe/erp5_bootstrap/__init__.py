@@ -36,7 +36,7 @@ class Recipe(GenericBaseRecipe):
 
   Input:
     mysql-url
-      mysql url, must contain connexion informations.    
+      mysql url, must contain connexion informations.
 
     zope-url (optional)
       Url of zope, this url will be parsed to get these values:
@@ -70,7 +70,7 @@ class Recipe(GenericBaseRecipe):
       Boolean, default value: "False"
       If true erp5 site will fix the site consistency and
       will use configurator to automaticlly install a
-      small and medium buisiness. 
+      small and medium buisiness.
   """
 
   def install(self):
@@ -86,7 +86,7 @@ class Recipe(GenericBaseRecipe):
 
     # Init zope configuration
     zope_username = None
-    zope_password = None    
+    zope_password = None
     zope_hostname = None
     zope_port = None
     zope_protocol = None
@@ -105,7 +105,7 @@ class Recipe(GenericBaseRecipe):
     if self.options.get('zope-port'):
       zope_port = self.options['zope-port']
     elif self.options.get('zope-url'):
-      zope_port = zope_parsed.port
+      zope_port = str(zope_parsed.port)
     else:
       zope_port = "8080"
     # Zope username and password

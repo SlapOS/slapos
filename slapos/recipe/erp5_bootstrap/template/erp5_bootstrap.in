@@ -10,7 +10,7 @@ host = "%(host)s"
 site_id = "%(site_id)s"
 mysql_url = "%(sql_connection_string)s"
 protocol = "%(protocol)s"
-scalability = True
+scalability = "%(scalability)s" == "True"
 
 erp5_catalog_storage = 'erp5_mysql_innodb_catalog'
 
@@ -20,7 +20,7 @@ header_dict = {'Authorization': 'Basic %%s' %% \
 if protocol == 'https':
   zope_connection = httplib.HTTPSConnection(host)
 elif protocol == 'http':
-  zope_connection = httplib.HTTPConnection(host)  
+  zope_connection = httplib.HTTPConnection(host)
 else:
   raise ValueError("Protocol not implemented")
   
@@ -35,9 +35,9 @@ if result.status == 204: # and (result.read() == "False"):
   if protocol == 'https':
     zope_connection = httplib.HTTPSConnection(host)
   elif protocol == 'http':
-    zope_connection = httplib.HTTPConnection(host)  
+    zope_connection = httplib.HTTPConnection(host)
   else:
-    raise ValueError("Protocol pot implemented") 
+    raise ValueError("Protocol not implemented")
 
   # Create the expected ERP5 instance
   zope_connection.request(
@@ -53,8 +53,8 @@ if result.status == 204: # and (result.read() == "False"):
   # been done by the same script.
   result = zope_connection.getresponse()
 
-  # Read result make sure the site really finished to 
-  #created the ERP5 site.
+  # Read result make sure the site really finished to
+  # created the ERP5 site.
   result.read()
   print "ERP5 site created."
 
@@ -72,35 +72,35 @@ if scalability:
       if protocol == 'https':
         zope_connection = httplib.HTTPSConnection(host)
       elif protocol == 'http':
-        zope_connection = httplib.HTTPConnection(host)  
+        zope_connection = httplib.HTTPConnection(host)
       else:
         raise ValueError("Protocol not implemented")
       zope_connection.request(
         'POST', '/ERP5Site_updateConfigurationConsistency',
         urllib.urlencode({
           'update_method': 'ERP5Site_updateConfigurationConsistency',
-          'dialog_id'='ERP5Site_viewCheckConsistency',
-          'cancel_url'=cancel_url,
-          'dialog_method'='ERP5Site_fixConfigurationConsistency',
-          'dialog_category'='None',
-          'object_path'='%2Ferp5',
-          'form_id'='view',
-          'select_favorite'='',
-          'select_module'='',
-          'select_language'='en',
-          'all_languages'='1',
-          'field_your_search_text'='Search',
-          'default_field_your_enable_alarm%3Aint'='0',
-          'field_your_enable_alarm'='on',
-          'list_selection_name'='erp5_site_check_consistency_selection',
-          'listbox_list_selection_name'='erp5_site_check_consistency_selection',
-          'md5_object_uid_list'='d751713988987e9331980363e24189ce',
-          'listbox_title'='',
-          'uids%3Alist'='598',
-          'listbox_uid%3Alist'='598',
-          'listbox_uid%3Alist'='595',
-          'listbox_uid%3Alist'='599',
-          'Base_callDialogMethod%3Amethod'='',
+          'dialog_id':'ERP5Site_viewCheckConsistency',
+          'cancel_url':cancel_url,
+          'dialog_method':'ERP5Site_fixConfigurationConsistency',
+          'dialog_category':'None',
+          'object_path':'%2Ferp5',
+          'form_id':'view',
+          'select_favorite':'',
+          'select_module':'',
+          'select_language':'en',
+          'all_languages':'1',
+          'field_your_search_text':'Search',
+          'default_field_your_enable_alarm%3Aint':'0',
+          'field_your_enable_alarm':'on',
+          'list_selection_name':'erp5_site_check_consistency_selection',
+          'listbox_list_selection_name':'erp5_site_check_consistency_selection',
+          'md5_object_uid_list':'d751713988987e9331980363e24189ce',
+          'listbox_title':'',
+          'uids%3Alist':'598',
+          'listbox_uid%3Alist':'598',
+          'listbox_uid%3Alist':'595',
+          'listbox_uid%3Alist':'599',
+          'Base_callDialogMethod%3Amethod':'',
         }),
         headers=header_dict)
       
@@ -117,5 +117,3 @@ if scalability:
   if configurator_available and not configurator_already_applied:
     # install small and medium business via configurator
     pass
-
-   
