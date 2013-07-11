@@ -59,7 +59,7 @@ if result.status == 204: # and (result.read() == "False"):
 
 # Scalability: Install and configure small buisiness
 
-is_scalability_case = %(scalability)%
+is_scalability_case = %(scalability)s
 if is_scalability_case:
   # Here check if configurator is available
   configurator_available = False
