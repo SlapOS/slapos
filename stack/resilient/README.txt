@@ -127,6 +127,27 @@ wrapper. I suggest you only add options and specify your export/import recipe.
 
 
 
+
+Checking that it works
+----------------------
+
+To check that your software instance is resilient you can proceed this way:
+Once all instances are successfully deployed, go to your export instance, connect as the instance user and run:
+$ ~/bin/exporter
+It is the script responsible for triggering the resiliency stack on your instance. After doing a backup of your data, it will notify the pull-backup instances of a new backup, triggering the transfer of this data to the import instances.
+
+Once this script is run successfully, go to your import instance, connect as its instance user and check ~/srv/backup/"your sofwtare"/, the location of the data you wanted to receive. The last part of the resiliency is up to your import script.
+
+DEBUGGING:
+Here is a partial list of things you can check to understand what is causing the problem:
+
+- Check that your import script does not fail and successfully places your data in ~/srv/backup/"your software" (as the import instance user) by runnig:
+$ ~/bin/"your software"-exporter
+- Check the export instance script is run successfully as this instance user by running:
+$ ~/bin/exporter
+- Check the pull-instance system did its job by going to one of your pull-backup instance, connect as its user and check the log : ~/var/log/equeue.log
+
+
 -----------------------------------------------------------------------------------------
 
 Finally, instance-mysoftware-import.cfg.in and

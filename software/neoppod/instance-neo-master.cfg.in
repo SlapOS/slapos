@@ -17,7 +17,6 @@ cluster = ${slap-parameter:cluster}
 partitions = ${slap-parameter:partitions}
 replicas = ${slap-parameter:replicas}
 masters = ${slap-parameter:masters}
-verbose = ${slap-parameter:verbose}
 
 [publish]
 recipe = slapos.cookbook:publish
@@ -34,6 +33,7 @@ link-binary = ${neo-master:wrapper}
 
 [directory]
 recipe = slapos.cookbook:mkdirectory
+promises = ${buildout:directory}/etc/promises
 run = ${buildout:directory}/etc/run
 log = ${buildout:directory}/var/log
 bin = ${buildout:directory}/bin
