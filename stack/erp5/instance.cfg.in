@@ -26,7 +26,6 @@ context =
     key slap_software_type slap-configuration:slap-software-type
     key slapparameter_dict slap-configuration:configuration
     key computer_id slap-configuration:computer
-    key root_instance_state slap-configuration:instance-state
     ${:extra-context}
 
 [dynamic-template-cloudooo-parameters]

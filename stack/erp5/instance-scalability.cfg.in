@@ -17,6 +17,14 @@ eggs-directory = {{ eggs_directory }}
 develop-eggs-directory = {{ develop_eggs_directory }}
 offline = true
 
+[slap-configuration]
+recipe = slapos.cookbook:slapconfiguration.serialised
+computer = ${slap-connection:computer-id}
+partition = ${slap-connection:partition-id}
+url = ${slap-connection:server-url}
+key = ${slap-connection:key-file}
+cert = ${slap-connection:cert-file}
+
 # Request erp5-cluster instance
 [erp5-cluster]
 recipe = slapos.cookbook:request.serialised
@@ -40,7 +48,7 @@ config = {{ cluster_parameter_dict.keys() | join(' ') }}
 config-{{ key }} = {{ dumps(value) }}
 {% endfor -%}
 return = mariadb-url family-scalability family-user memcached-persistent-url memcached-volatile-url cloudooo-url
-state = {{ root_instance_state }}
+state = ${slap-configuration:instance-state}
 
 # Create wrapper
 [binary-wrap-launcher]
