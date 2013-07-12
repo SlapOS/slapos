@@ -39,6 +39,7 @@ varnishd-binary = {{ parameter_dict['varnish'] }}/sbin/varnishd
 varnishlog-binary = {{ parameter_dict['varnish'] }}/bin/varnishlog
 shell-path = {{ parameter_dict['dash'] }}/bin/dash
 stunnel-binary = {{ parameter_dict['stunnel'] }}/bin/stunnel
+gcc-location = {{ parameter_dict['gcc'] }}/bin
 # Configuration by VCL
 vcl-file = ${rootdirectory:etc}/default.vcl
 pid-file = ${basedirectory:run}/varnishd.pid

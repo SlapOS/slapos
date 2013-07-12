@@ -27,6 +27,7 @@ context =
 [dynamic-template-varnish-parameters]
 dash = {{ dash_location }}
 dcron = {{ dcron_location }}
+gcc =  {{ gcc_location }}
 gzip =  {{ gzip_location }}
 logrotate = {{ logrotate_location }}
 stunnel = {{ stunnel_location }}

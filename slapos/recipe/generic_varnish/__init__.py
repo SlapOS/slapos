@@ -73,6 +73,7 @@ class Recipe(GenericSlapRecipe):
       varnishd_pid_file=self.options['pid-file'],
       varnish_instance_name=self.options['varnish-instance-name'],
       varnish_data=self.options['varnish-data'],
+      gcc_location=self.options['gcc-location'],
       shell_path=self.options['shell-path'],
       vcl_file=self.options['vcl-file'],
       backend_port=backend_port,
