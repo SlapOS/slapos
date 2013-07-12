@@ -3,6 +3,7 @@
 import httplib
 import urllib
 import base64
+import time
 
 user = "%(user)s"
 password = "%(password)s"
@@ -55,8 +56,12 @@ if result.status == 204: # and (result.read() == "False"):
 
   # Read result make sure the site really finished to
   # created the ERP5 site.
-  result.read()
+  print result.read()
   print "ERP5 site created."
+
+
+#dirty way to wait erp5 site creation
+time.sleep(30)
 
 
 # Scalability: Install and configure small buisiness
@@ -74,14 +79,14 @@ if scalability:
     else:
       raise ValueError("Protocol not implemented")
     zope_connection.request(
-      'POST', '/erp5/ERP5Site_fixConfigurationConsistency',
+      'POST', '/%%s/ERP5Site_fixConfigurationConsistency' %%(site_id),
       urllib.urlencode({
         'update_method': 'ERP5Site_updateConfigurationConsistency',
         'dialog_id':'ERP5Site_viewCheckConsistency',
-        'cancel_url':'https://192.168.241.110:2153%2Ferp5%2FERP5Site_viewCheckConsistency',
+        'cancel_url':'%%s://%%s/%%s/ERP5Site_viewCheckConsistency' %%(protocol, host, site_id),
         'dialog_method':'ERP5Site_fixConfigurationConsistency',
         'dialog_category':'None',
-        'object_path':'/erp5',
+        'object_path':'/%%s' %%(site_id),
         'form_id':'view',
         'select_favorite':'',
         'select_module':'',
@@ -92,8 +97,6 @@ if scalability:
         'field_your_enable_alarm':'on',
         'list_selection_name':'erp5_site_check_consistency_selection',
         'listbox_list_selection_name':'erp5_site_check_consistency_selection',
-        #TODO: change MD5 (old: d751713988987e9331980363e24189ce)
-        'md5_object_uid_list':'',
         'listbox_title':'',
         'uids:list':'598',
         'uids:list':'595',
