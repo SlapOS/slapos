@@ -1,0 +1,43 @@
+[buildout]
+parts =
+  directory
+  main
+  publish-connection-parameter
+
+eggs-directory = ${buildout:eggs-directory}
+develop-eggs-directory = ${buildout:develop-eggs-directory}
+offline = true
+
+[instance-parameter]
+recipe = slapos.cookbook:slapconfiguration
+computer = $${slap_connection:computer_id}
+partition = $${slap_connection:partition_id}
+url = $${slap_connection:server_url}
+key = $${slap_connection:key_file}
+cert = $${slap_connection:cert_file}
+
+configuration.name = Anonymous
+
+[directory]
+recipe = slapos.cookbook:mkdirectory
+etc = $${buildout:directory}/etc
+script = $${:etc}/run
+service = $${:etc}/service
+promise = $${:etc}/promise
+report = $${buildout:directory}/var/xml_report
+
+[main]
+recipe = slapos.cookbook:wrapper
+command-line = ${buildout:bin-directory}/netdrive-reporter
+  --master-url=$${instance-parameter:url}
+  --computer-id=$${instance-parameter:computer}
+  --cert-file=$${instance-parameter:cert}
+  --key-file=$${instance-parameter:key}
+  --report-path=$${directory:report}
+  --report-interval=300.0
+  --data-file=$${directory:etc}/data
+wrapper-path = $${directory:service}/netdrive-reporter
+
+[publish-connection-parameter]
+recipe = slapos.cookbook:publish
+name = Net Drive Usage Report -- $${instance-parameter:configuration.name}!
