@@ -37,7 +37,10 @@ class Recipe(GenericSlapRecipe):
   """
   def _install(self):
     ip = self.options['ip']
-    backend_url = self.parameter_dict['tidstorage-url']
+    backend_url = self.parameter_dict.get(
+      'backend-url',
+      self.parameter_dict.get('tidstorage-url') # BBB
+    )
     backend_server, backend_port = self._getBackendServer(backend_url)
     path_list = []
     if backend_url.startswith('https://'):
