@@ -1,0 +1,137 @@
+{% set web_checker_parameter = slapparameter_dict['web-checker-mail-address'] -%}
+[buildout]
+parts =
+  publish-varnish-connection-information
+  varnish-instance
+  cron
+  cron-entry-logrotate
+  {# When web_checker related parameter is given, web_checker will be enabled.#}
+{% if web_checker_parameter is defined %}
+  web-checker
+  cron-entry-web-checker
+  logrotate-entry-web-checker
+{% endif %}
+
+eggs-directory = {{ eggs_directory }}
+develop-eggs-directory = {{ develop_eggs_directory }}
+offline = true
+
+[publish-varnish-connection-information]
+recipe = slapos.cookbook:publishurl
+url = http://${varnish-instance:ip}:${varnish-instance:server-port}/
+
+[varnish-instance]
+recipe = slapos.cookbook:generic.varnish
+
+# Network options
+ip = ${slap-network-information:local-ipv4}
+server-port = 6001
+manager-port = 6002
+stunnel-port = 6003
+
+# Paths: Running wrappers
+varnishd-wrapper = ${basedirectory:services}/varnishd
+varnishlog-wrapper = ${rootdirectory:bin}/varnishlog
+stunnel-wrapper = ${basedirectory:services}/stunnel
+
+# Binary information
+varnishd-binary = {{ parameter_dict['varnish'] }}/sbin/varnishd
+varnishlog-binary = {{ parameter_dict['varnish'] }}/bin/varnishlog
+shell-path = {{ parameter_dict['dash'] }}/bin/dash
+stunnel-binary = {{ parameter_dict['stunnel'] }}/bin/stunnel
+# Configuration by VCL
+vcl-file = ${rootdirectory:etc}/default.vcl
+pid-file = ${basedirectory:run}/varnishd.pid
+stunnel-conf-file = ${rootdirectory:etc}/stunnel.conf
+stunnel-pid-file = ${basedirectory:run}/stunnel.pid
+varnish-data = ${directory:varnish-data}
+# this will pass at -n option
+varnish-instance-name = ${directory:varnish-instance}
+web-checker = {{ parameter_dict['buildout-bin-directory'] }}/web_checker_utility
+
+[cron-entry-web-checker]
+<= cron
+recipe = slapos.cookbook:cron.d
+name = web-checker
+frequency = 0 0 * * *
+command = ${varnish-instance:web-checker} ${web-checker:web-checker-config}
+
+[web-checker]
+recipe = slapos.cookbook:webchecker
+web-checker-config = ${rootdirectory:etc}/web_checker.cfg
+web-checker-working-directory = ${directory:web-checker}
+frontend-url = ${varnish-instance:ip}:${varnish-instance:server-port}
+wget-binary-path = {{ parameter_dict['wget'] }}/bin/wget
+varnishlog-binary-path = ${varnish-instance:varnishlog-wrapper}
+web-checker-log = ${basedirectory:log}/web-checker.log
+
+[cron]
+recipe = slapos.cookbook:cron
+dcrond-binary = {{ parameter_dict['dcron'] }}/sbin/crond
+cron-entries = ${directory:cron-entries}
+crontabs = ${directory:crontabs}
+cronstamps = ${directory:cronstamps}
+binary = ${basedirectory:services}/crond
+catcher = ${cron-simplelogger:wrapper}
+
+[cron-simplelogger]
+recipe = slapos.cookbook:simplelogger
+wrapper = ${rootdirectory:bin}/cron_simplelogger
+log = ${basedirectory:log}/cron.log
+
+[cron-entry-logrotate]
+<= cron
+recipe = slapos.cookbook:cron.d
+name = logrotate
+frequency = 0 0 * * *
+command = ${logrotate:wrapper}
+
+[logrotate]
+recipe = slapos.cookbook:logrotate
+# Binaries
+logrotate-binary = {{ parameter_dict['logrotate'] }}/usr/sbin/logrotate
+gzip-binary = {{ parameter_dict['gzip'] }}/bin/gzip
+gunzip-binary = {{ parameter_dict['gzip'] }}/bin/gunzip
+# Directories
+wrapper = ${rootdirectory:bin}/logrotate
+conf = ${rootdirectory:etc}/logrotate.conf
+logrotate-entries = ${directory:logrotate-entries}
+backup = ${directory:logrotate-backup}
+state-file = ${rootdirectory:srv}/logrotate.status
+
+[logrotate-entry-web-checker]
+<= logrotate
+recipe = slapos.cookbook:logrotate.d
+name = web-checker
+log = ${web-checker:web-checker-log}
+frequency = daily
+rotate-num = 30
+sharedscripts = true
+notifempty = true
+create = true
+
+[basedirectory]
+recipe = slapos.cookbook:mkdirectory
+services = ${rootdirectory:etc}/run
+run = ${rootdirectory:var}/run
+backup = ${rootdirectory:srv}/backup
+log = ${rootdirectory:var}/log
+backup = ${rootdirectory:srv}/backup
+
+[directory]
+recipe = slapos.cookbook:mkdirectory
+varnish-data = ${rootdirectory:srv}/varnish
+varnish-instance = ${directory:varnish-data}/instance
+cron-entries = ${rootdirectory:etc}/cron.d
+crontabs = ${rootdirectory:etc}/crontabs
+cronstamps = ${rootdirectory:etc}/cronstamps
+logrotate-backup = ${basedirectory:backup}/logrotate
+logrotate-entries = ${rootdirectory:etc}/logrotate.d
+web-checker = ${rootdirectory:srv}/web-checker
+
+[rootdirectory]
+recipe = slapos.cookbook:mkdirectory
+etc = ${buildout:directory}/etc
+var = ${buildout:directory}/var
+srv = ${buildout:directory}/srv
+bin = ${buildout:directory}/bin
