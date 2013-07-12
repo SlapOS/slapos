@@ -74,10 +74,11 @@ if scalability:
     else:
       raise ValueError("Protocol not implemented")
     zope_connection.request(
-      'POST', '/ERP5Site_updateConfigurationConsistency',
+      'POST', '/erp5/ERP5Site_fixConfigurationConsistency',
       urllib.urlencode({
         'update_method': 'ERP5Site_updateConfigurationConsistency',
         'dialog_id':'ERP5Site_viewCheckConsistency',
+        'cancel_url':'https://192.168.241.110:2153%2Ferp5%2FERP5Site_viewCheckConsistency',
         'dialog_method':'ERP5Site_fixConfigurationConsistency',
         'dialog_category':'None',
         'object_path':'/erp5',
@@ -87,17 +88,20 @@ if scalability:
         'select_language':'en',
         'all_languages':'1',
         'field_your_search_text':'Search',
-        'default_field_your_enable_alarm;int':'0',
+        'default_field_your_enable_alarm:int':'0',
         'field_your_enable_alarm':'on',
         'list_selection_name':'erp5_site_check_consistency_selection',
         'listbox_list_selection_name':'erp5_site_check_consistency_selection',
-        'md5_object_uid_list':'d751713988987e9331980363e24189ce',
+        #TODO: change MD5 (old: d751713988987e9331980363e24189ce)
+        'md5_object_uid_list':'',
         'listbox_title':'',
-        'uids;list':'598',
-        'listbox_uid;list':'598',
-        'listbox_uid;list':'595',
-        'listbox_uid;list':'599',
-        'Base_callDialogMethod;method':'',
+        'uids:list':'598',
+        'uids:list':'595',
+        'uids:list':'599',
+        'listbox_uid:list':'598',
+        'listbox_uid:list':'595',
+        'listbox_uid:list':'599',
+        'Base_callDialogMethod:method':'',
       }),
       headers=header_dict)
     
