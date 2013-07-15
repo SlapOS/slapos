@@ -56,6 +56,7 @@ recipe = slapos.cookbook:wrapper
 log-path = ${basedirectory:log}
 binary-path = {{ bin_directory }}/runScalabilityTestSuite
 wrapper-path = ${rootdirectory:bin}/runScalabilityTestSuite
+erp5-location = {{ erp5_location }} 
 output = ${binary-wrap-launcher:binary-path}
 site-id = "/{{ site_id }}"
 # Suppose that there is a user zope family in the configuration

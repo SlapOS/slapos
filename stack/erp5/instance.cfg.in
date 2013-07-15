@@ -163,12 +163,17 @@ extra-context =
 # Must match the key id in [switch-softwaretype] which uses this section.
     raw software_type cluster
 
+[dynamic-template-scalability-parameters]
+erp5 = {{ erp5_location }}
+erp5_dev = {{ erp5_dev_location }}
+
 [dynamic-template-scalability]
 < = jinja2-template-base
 template = {{ template_scalability }}
 filename = instance-scalability.cfg
 extensions = jinja2.ext.do
 extra-context =
+    key erp5_location ${dynamic-template-scalability-parameters:erp5_dev}
     key local_bt5_repository dynamic-template-cluster-erp5-parameters:local-bt5-repository
 # Must match the key id in [switch-softwaretype] which uses this section.
     raw software_type scalability
