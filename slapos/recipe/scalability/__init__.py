@@ -50,6 +50,7 @@ class Recipe(GenericBaseRecipe):
             '--revision', self.options['revision'],
             '--log-path', self.options['log-path'],
             '--runner-path', self.options['runner-path'],
+            '--erp5-location', self.options['erp5-location'],
           ],
           # Environment
           {
