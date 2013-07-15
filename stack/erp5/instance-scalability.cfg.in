@@ -56,7 +56,6 @@ recipe = slapos.cookbook:wrapper
 log-path = ${basedirectory:log}
 binary-path = {{ bin_directory }}/runScalabilityTestSuite
 wrapper-path = ${rootdirectory:bin}/runScalabilityTestSuite
-erp5-location = {{ erp5_location }}
 output = ${binary-wrap-launcher:binary-path}
 site-id = "/{{ site_id }}"
 # Suppose that there is a user zope family in the configuration
@@ -88,6 +87,7 @@ test-suite = {{ slapparameter_dict.get('test-suite') }}
 test-suite-master-url = {{ slapparameter_dict.get('test-suite-master-url') }}
 log-path = ${binary-wrap-launcher:log-path}
 runner-path = ${binary-wrap-performance-tester:wrapper-path}
+erp5-location = {{ erp5_location }}
 
 # Create partition's directories
 [basedirectory]

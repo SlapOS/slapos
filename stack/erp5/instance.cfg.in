@@ -163,20 +163,6 @@ extra-context =
 # Must match the key id in [switch-softwaretype] which uses this section.
     raw software_type cluster
 
-[dynamic-template-scalability-parameters]
-erp5 = {{ erp5_location }}
-erp5_dev = {{ erp5_dev_location }}
-
-[dynamic-template-scalability]
-< = jinja2-template-base
-template = {{ template_scalability }}
-filename = instance-scalability.cfg
-extensions = jinja2.ext.do
-extra-context =
-    key erp5_location ${dynamic-template-scalability-parameters:erp5_dev}
-    key local_bt5_repository dynamic-template-cluster-erp5-parameters:local-bt5-repository
-# Must match the key id in [switch-softwaretype] which uses this section.
-    raw software_type scalability
 
 [dynamic-template-balancer-parameters]
 apache = {{ apache_location }}
@@ -245,6 +231,10 @@ extra-context =
 # Must match the key id in [switch-softwaretype] which uses this section.
     raw software_type cluster-zope
 
+[dynamic-template-scalability-parameters]
+erp5 = {{ erp5_location }}
+erp5_dev = {{ erp5_dev_location }}
+
 [dynamic-template-scalability]
 < = jinja2-template-base
 template = {{ template_scalability }}
@@ -255,6 +245,7 @@ extra-context =
     key bin_directory dynamic-template-scalability:bin_directory
     key curl_location template-erp5-single-parameters:curl
     key dash_location template-erp5-single-parameters:dash
+    key erp5_location dynamic-template-scalability-parameters:erp5_dev
     key local_bt5_repository dynamic-template-cluster-erp5-parameters:local-bt5-repository
     key template_zope dynamic-template-zope:rendered
     key template_cluster_zope dynamic-template-cluster-zope:rendered
