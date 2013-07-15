@@ -1,5 +1,20 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 1bae7e8..a0c069f 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -311,10 +311,6 @@ IF(NOT WITHOUT_SERVER)
+    ADD_SUBDIRECTORY(libmysqld/examples)
+   ENDIF(WITH_EMBEDDED_SERVER)
+ 
+-  ADD_SUBDIRECTORY(mysql-test)
+-  ADD_SUBDIRECTORY(mysql-test/lib/My/SafeProcess)
+-  ADD_SUBDIRECTORY(sql-bench)
+-
+   IF(EXISTS ${CMAKE_SOURCE_DIR}/internal/CMakeLists.txt)
+     ADD_SUBDIRECTORY(internal)
+   ENDIF()
 diff --git a/client/mysql.cc b/client/mysql.cc
-index ad792ab..9fc0ef6 100644
+index 3cd078a..67b0142 100644
 --- a/client/mysql.cc
 +++ b/client/mysql.cc
 @@ -60,8 +60,8 @@ static char *server_version= NULL;
@@ -35,8 +50,30 @@ index 08dc092..e4f28a2 100644
  #endif
       /* Push the parameter on the stack. */
       "pushl %[d]\n\t"
+diff --git a/scripts/mysql_system_tables_data.sql b/scripts/mysql_system_tables_data.sql
+index a222d22..a75ef36 100644
+--- a/scripts/mysql_system_tables_data.sql
++++ b/scripts/mysql_system_tables_data.sql
+@@ -31,8 +31,6 @@ SELECT REPLACE((SELECT REPLACE(@get_hostname,'_','\_')),'%','\%') INTO @current_
+ -- Fill "db" table with default grants for anyone to
+ -- access database 'test' and 'test_%' if "db" table didn't exist
+ CREATE TEMPORARY TABLE tmp_db LIKE db;
+-INSERT INTO tmp_db VALUES ('%','test','','Y','Y','Y','Y','Y','Y','N','Y','Y','Y','Y','Y','Y','Y','Y','N','N','Y','Y');
+-INSERT INTO tmp_db VALUES ('%','test\_%','','Y','Y','Y','Y','Y','Y','N','Y','Y','Y','Y','Y','Y','Y','Y','N','N','Y','Y');
+ INSERT INTO db SELECT * FROM tmp_db WHERE @had_db_table=0;
+ DROP TABLE tmp_db;
+ 
+@@ -44,8 +42,6 @@ INSERT INTO tmp_user VALUES ('localhost','root','','Y','Y','Y','Y','Y','Y','Y','
+ REPLACE INTO tmp_user SELECT @current_hostname,'root','','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','','','','',0,0,0,0,'','' FROM dual WHERE LOWER( @current_hostname) != 'localhost';
+ REPLACE INTO tmp_user VALUES ('127.0.0.1','root','','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','','','','',0,0,0,0,'','');
+ REPLACE INTO tmp_user VALUES ('::1','root','','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','','','','',0,0,0,0,'','');
+-INSERT INTO tmp_user (host,user) VALUES ('localhost','');
+-INSERT INTO tmp_user (host,user) SELECT @current_hostname,'' FROM dual WHERE LOWER(@current_hostname ) != 'localhost';
+ INSERT INTO user SELECT * FROM tmp_user WHERE @had_user_table=0;
+ DROP TABLE tmp_user;
+ 
 diff --git a/sql/CMakeLists.txt b/sql/CMakeLists.txt
-index ad22446..73a19e5 100644
+index 347cb09..a1d6dce 100644
 --- a/sql/CMakeLists.txt
 +++ b/sql/CMakeLists.txt
 @@ -31,7 +31,7 @@ ${CMAKE_CURRENT_BINARY_DIR}/lex_hash.h
