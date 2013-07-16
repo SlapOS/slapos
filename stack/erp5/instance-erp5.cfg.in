@@ -50,6 +50,7 @@ return =
   zope-address-list
 extra-config =
   mysql-url-list
+  mysql-test-url-list
   memcached-url
   cloudooo-url
   kumofs-url
@@ -69,6 +70,7 @@ extra-config =
   longrequest-logger-timeout
   port-base
 config-mysql-url-list = ${request-mariadb:connection-database-list}
+config-mysql-test-url-list = ${request-mariadb:connection-test-database-list}
 config-memcached-url = ${request-memcached-volatile:connection-url}
 config-cloudooo-url = ${request-cloudooo:connection-url}
 config-kumofs-url = ${request-memcached-persistent:connection-url}

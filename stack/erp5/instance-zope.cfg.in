@@ -15,6 +15,32 @@ partition. No more (undefined result), no less (IndexError).
 -#}
 {% set ipv4 = (ipv4_set | list)[0] -%}
 
+[test-runner]
+recipe = slapos.cookbook:erp5.test
+certificate-authority-path = ${test-certificate-authority:ca-dir}
+mysql-url-list = {{ dumps(slapparameter_dict['mysql-test-url-list']) }}
+kumofs-url = {{ slapparameter_dict['kumofs-url'] }}
+memcached-url = {{ slapparameter_dict['memcached-url'] }}
+cloudooo-url = {{ slapparameter_dict['cloudooo-url'] }}
+test-instance-path = ${directory:unit-test-path}
+prepend-path = ${buildout:bin-directory}
+run-unit-test = ${buildout:bin-directory}/runUnitTest
+run-test-suite = ${buildout:bin-directory}/runTestSuite
+openssl-binary = ${test-certificate-authority:openssl-binary}
+run-unit-test-binary = {{ parameter_dict['bin-directory'] }}/runUnitTest
+run-test-suite-binary = {{ parameter_dict['bin-directory'] }}/runTestSuite
+
+[test-certificate-authority]
+recipe = slapos.cookbook:certificate_authority
+openssl-binary = ${binary-link:target-directory}/bin/openssl
+ca-dir = ${directory:test-ca-dir}
+requests-directory = ${directory:ca-requests}
+wrapper = ${directory:services}/test-ca
+ca-private = ${directory:ca-private}
+ca-certs = ${directory:ca-certs}
+ca-newcerts = ${directory:ca-newcerts}
+ca-crl = ${directory:ca-crl}
+
 [directory]
 recipe = slapos.cookbook:mkdirectory
 bin = ${buildout:directory}/bin
@@ -37,6 +63,13 @@ srv = ${buildout:directory}/srv
 tmp = ${buildout:directory}/tmp
 var = ${buildout:directory}/var
 promises = ${:etc}/promise
+unit-test-path = ${:srv}/test-instance/unit_test
+test-ca-dir = ${:srv}/test-ca
+ca-requests = ${:test-ca-dir}/requests
+ca-private = ${:test-ca-dir}/private
+ca-certs = ${:test-ca-dir}/certs
+ca-newcerts = ${:test-ca-dir}/newcerts
+ca-crl = ${:test-ca-dir}/crl
 
 [binary-link]
 recipe = slapos.cookbook:symbolic.link
@@ -287,7 +320,7 @@ offline = true
 extends =
   {{ parameter_dict['instance-logrotate-cfg'] }}
 parts +=
-  binary-link
+  test-runner
   erp5-promise
   {{ part_list | join('\n  ') }}
   publish-zope

@@ -125,6 +125,7 @@ extra-context =
     raw software_type zodb-zeo
 
 [dynamic-template-zope-parameters]
+bin-directory = {{ bin_directory }}
 zope-conf-template = {{ template_zope_conf }}
 instance-logrotate-cfg = {{ template_logrotate_base }}
 git = {{ git_location }}
