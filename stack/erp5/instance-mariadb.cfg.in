@@ -3,23 +3,31 @@
 {% macro section(name) %}{% do part_list.append(name) %}{{ name }}{% endmacro -%}
 {% set use_ipv6 = slapparameter_dict.get('use-ipv6', False) -%}
 {% set database_list = slapparameter_dict.get('database-list', [{'name': 'erp5', 'user': 'user', 'password': 'insecure'}]) -%}
+{% set test_database_list = [] %}
 {% for database_count in range(slapparameter_dict.get('test-database-amount', 30)) -%}
-{%   do database_list.append({'name': 'erp5_test_' ~ database_count, 'user': 'testuser_' ~ database_count, 'password': 'testpassword' ~ database_count}) -%}
+{%   do test_database_list.append({'name': 'erp5_test_' ~ database_count, 'user': 'testuser_' ~ database_count, 'password': 'testpassword' ~ database_count}) -%}
 {% endfor -%}
 {% set catalog_backup = slapparameter_dict.get('catalog-backup', {}) -%}
 {% set full_backup_retention_days = catalog_backup.get('full-retention-days', 7) -%}
 {% set incremental_backup_retention_days = catalog_backup.get('incremental-retention-days', full_backup_retention_days) -%}
+{% set port = slapparameter_dict['tcpv4-port'] %}
+{% if use_ipv6 -%}
+{%   set ip = (ipv6_set | list)[0] -%}
+{% else -%}
+{%   set ip = (ipv4_set | list)[0] -%}
+{% endif -%}
 
 [publish-mariadb-url]
 recipe = slapos.cookbook:publish.serialised
-{% if use_ipv6 -%}
-{%   set address = "[${my-cnf-parameters:ip}]" -%}
-{% else -%}
-{%   set address = "${my-cnf-parameters:ip}" -%}
-{% endif -%}
-{# TODO: support any number of databases -#}
-{% set database = database_list[0] %}
-url = mysql://{{ database['user'] }}:{{ database['password'] }}@{{ address }}:${my-cnf-parameters:port}/{{ database['name'] }}
+{% macro render_database_list(database_list) -%}
+{% set publish_database_list = [] -%}
+{% for database in database_list -%}
+{%   do publish_database_list.append("mysql://" ~ database['user'] ~ ":" ~ database['password'] ~ "@" ~ ip ~ ":" ~ port ~ "/" ~ database['name']) -%}
+{% endfor -%}
+{{ dumps(publish_database_list) }}
+{% endmacro -%}
+database-list = {{ render_database_list(database_list) }}
+test-database-list = {{ render_database_list(test_database_list) }}
 
 {% if full_backup_retention_days > -1 -%}
 [{{ section('cron-entry-mariadb-backup') }}]
@@ -49,12 +57,8 @@ command = {{ parameter_dict['findutils-location'] }}/bin/find "${directory:maria
 {%- endif %}
 
 [my-cnf-parameters]
-{% if use_ipv6 -%}
-ip = {{ (ipv6_set | list)[0] }}
-{% else -%}
-ip = {{ (ipv4_set | list)[0] }}
-{% endif -%}
-port = {{ slapparameter_dict['tcpv4-port'] }}
+ip = {{ ip }}
+port = {{ port }}
 socket = ${directory:run}/mariadb.sock
 data-directory = ${directory:mariadb-data}
 pid-file = ${directory:run}/mariadb.pid
@@ -79,7 +83,7 @@ template = {{ parameter_dict['template-my-cnf'] }}
 context = section parameter_dict my-cnf-parameters
 
 [init-script-parameters]
-database-list = {{ dumps(database_list) }}
+database-list = {{ dumps(database_list + test_database_list) }}
 
 [init-script]
 recipe = slapos.recipe.template:jinja2

@@ -38,12 +38,25 @@ class Recipe(GenericBaseRecipe):
     # XXX: assume existence of 100 test databases, because slaves are not
     # functional yet in slapos: testdb_0...testdb_100, with testuser_N
     mysql_template = "%s@%s:%s %s %s"
-    mysql_parsed = urlparse.urlparse(self.options['mysql-url'])
-    for i in range(0, 100):
-      mysql_connection_string_list.append(mysql_template % ('testdb_%s'% i,
-        mysql_parsed.hostname, mysql_parsed.port, 'testuser_%s'% i, mysql_parsed.password))
-    mysql_connection_string = mysql_template % ('erp5_test', mysql_parsed.hostname,
-      mysql_parsed.port, 'erp5_test', mysql_parsed.password)
+    mysql_url_list = self.options.get('mysql-url-list')
+    if mysql_url_list is None:
+      mysql_parsed = urlparse.urlparse(self.options['mysql-url'])
+      for i in range(0, 100):
+        mysql_connection_string_list.append(mysql_template % ('testdb_%s'% i,
+          mysql_parsed.hostname, mysql_parsed.port, 'testuser_%s'% i, mysql_parsed.password))
+      mysql_connection_string = mysql_template % ('erp5_test', mysql_parsed.hostname,
+        mysql_parsed.port, 'erp5_test', mysql_parsed.password)
+    else:
+      for mysql_url in mysql_url_list:
+        mysql_parsed = urlparse.urlparse(mysql_url)
+        mysql_connection_string_list.append(mysql_template % (
+          mysql_parsed.path.lstrip('/'),
+          mysql_parsed.hostname,
+          mysql_parsed.port,
+          mysql_parsed.username,
+          mysql_parsed.password,
+        ))
+      mysql_connection_string = mysql_connection_string_list.pop()
     cloudooo_parsed = urlparse.urlparse(self.options['cloudooo-url'])
     memcached_parsed = urlparse.urlparse(self.options['memcached-url'])
     kumofs_parsed = urlparse.urlparse(self.options['kumofs-url'])
