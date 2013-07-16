@@ -50,8 +50,10 @@ buildout-bin-directory = {{ buildout_bin_directory }}
 < = jinja2-template-base
 template = {{ template_cloudooo }}
 filename = instance-cloudoo.cfg
+extensions = jinja2.ext.do
 extra-context =
     section parameter_dict dynamic-template-cloudooo-parameters
+    key ipv4_set slap-parameters:ipv4
 
 [switch-softwaretype]
 recipe = slapos.cookbook:softwaretype

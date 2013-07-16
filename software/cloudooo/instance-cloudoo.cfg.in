@@ -1,4 +1,7 @@
+{% set ipv4 = (ipv4_set | list)[0] -%}
 {% set bin_directory = parameter_dict['buildout-bin-directory'] -%}
+{% set section_list = [] -%}
+{% macro section(name) %}{% do section_list.append(name) %}{{ name }}{% endmacro -%}
 [buildout]
 parts =
   publish-cloudooo-connection-information
@@ -14,8 +17,7 @@ url = cloudooo://${haproxy:ip}:${haproxy:port}/
 
 [cloudooo-base]
 recipe = slapos.cookbook:generic.cloudooo
-ip = ${slap-network-information:local-ipv4}
-wrapper = ${basedirectory:services}/cloudooo
+ip = {{ ipv4 }}
 environment =
   LD_LIBRARY_PATH = {{ parameter_dict['file'] }}/lib:{{ parameter_dict['fontconfig'] }}/lib:{{ parameter_dict['freetype'] }}/lib:{{ parameter_dict['libICE'] }}/lib:{{ parameter_dict['libpng12'] }}/lib:{{ parameter_dict['libSM'] }}/lib:{{ parameter_dict['libX11'] }}/lib:{{ parameter_dict['libXau'] }}/lib:{{ parameter_dict['libXdmcp'] }}/lib:{{ parameter_dict['libXext'] }}/lib:{{ parameter_dict['libxcb'] }}/lib:{{ parameter_dict['libXrender'] }}/lib:{{ parameter_dict['zlib'] }}/lib
   FONTCONFIG_FILE = ${fontconfig-instance:conf-path}
@@ -27,28 +29,31 @@ ooo-paster = {{ bin_directory }}/cloudooo_paster
 ooo-uno-path = {{ parameter_dict['libreoffice-bin'] }}/basis-link/program
 
 {% set cloudooo_port = 23000 -%}
-{% for index in range(slapparameter_dict.get('backend_count', 1)) -%}
+{% set backend_count = slapparameter_dict.get('backend-count', 1) | int -%}
+{% for index in range(backend_count) -%}
 {%   set name = 'cloudooo-' ~ index -%}
 [{{ section(name) }}]
 < = cloudooo-base
 port = {{ cloudooo_port }}
 openoffice-port = {{ cloudooo_port + 1 }}
 configuration-file = ${rootdirectory:etc}/{{ name }}.cfg
+data-directory = ${rootdirectory:srv}/{{ name }}
+wrapper = ${basedirectory:services}/{{ name }}
 
 {%   set cloudooo_port = cloudooo_port + 2 -%}
 {% endfor -%}
 
 [haproxy]
 recipe = slapos.cookbook:haproxy
-name = haproxy
+name = cloudooo
 conf-path = ${directory:etc}/haproxy.cfg
+socket-path = ${directory:run}/haproxy.sock
 ip = {{ ipv4 }}
 port = 8001
-maxconn = {{ slapparameter_dict['haproxy-maxconn'] }}
-# XXX: should be optional (check recipe code)
-server-check-path = {{ slapparameter_dict['haproxy-server-check-path'] }}
+maxconn = 1
 wrapper-path = ${directory:services}/haproxy
 binary-path = {{ parameter_dict['haproxy'] }}/sbin/haproxy
+ctl-path = ${directory:bin}/haproxy-ctl
 backend-list =
 {%- for section_name in section_list %}
   {{ "${" ~ section_name ~ ":ip}:${" ~ section_name ~ ":port}" }}
@@ -65,8 +70,8 @@ prepend-path = ${buildout:bin-directory}
 run-unit-test = ${buildout:bin-directory}/runUnitTest
 run-test-suite = ${buildout:bin-directory}/runTestSuite
 
-ooo-paster = ${cloudooo-instance:ooo-paster}
-configuration-file = ${cloudooo-instance:configuration-file}
+ooo-paster = ${cloudooo-0:ooo-paster}
+configuration-file = ${cloudooo-0:configuration-file}
 
 run-unit-test-binary = {{ bin_directory }}/runCloudoooUnitTest
 run-test-suite-binary = {{ bin_directory }}/runCloudoooTestSuite
@@ -104,7 +109,11 @@ services = ${rootdirectory:etc}/run
 
 [directory]
 recipe = slapos.cookbook:mkdirectory
-cloudooo-data = ${rootdirectory:srv}/cloudooo
+bin = ${rootdirectory:bin}
+etc = ${rootdirectory:etc}
+services = ${:etc}/run
+var = ${rootdirectory:var}
+run = ${:var}/run
 font = ${rootdirectory:srv}/font
 
 [rootdirectory]
@@ -112,3 +121,4 @@ recipe = slapos.cookbook:mkdirectory
 etc = ${buildout:directory}/etc
 srv = ${buildout:directory}/srv
 bin = ${buildout:directory}/bin
+var = ${buildout:directory}/var
