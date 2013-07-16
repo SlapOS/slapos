@@ -32,7 +32,7 @@ run-test-suite-binary = {{ parameter_dict['bin-directory'] }}/runTestSuite
 
 [test-certificate-authority]
 recipe = slapos.cookbook:certificate_authority
-openssl-binary = ${binary-link:target-directory}/bin/openssl
+openssl-binary = ${binary-link:target-directory}/openssl
 ca-dir = ${directory:test-ca-dir}
 requests-directory = ${directory:ca-requests}
 wrapper = ${directory:services}/test-ca
@@ -75,25 +75,9 @@ ca-crl = ${:test-ca-dir}/crl
 recipe = slapos.cookbook:symbolic.link
 target-directory = ${directory:bin}
 link-binary =
-  {{ parameter_dict['coreutils'] }}/bin/basename
-  {{ parameter_dict['coreutils'] }}/bin/cat
-  {{ parameter_dict['coreutils'] }}/bin/cp
-  {{ parameter_dict['coreutils'] }}/bin/ls
-  {{ parameter_dict['coreutils'] }}/bin/tr
-  {{ parameter_dict['coreutils'] }}/bin/uname
-  {{ parameter_dict['git'] }}/bin/git
-  {{ parameter_dict['graphviz'] }}/bin/dot
-  {{ parameter_dict['grep'] }}/bin/grep
-  {{ parameter_dict['imagemagick'] }}/bin/convert
-  {{ parameter_dict['imagemagick'] }}/bin/identify
-  {{ parameter_dict['sed'] }}/bin/sed
-  {{ parameter_dict['tesseract'] }}/bin/tesseract
-  {{ parameter_dict['w3m'] }}/bin/w3m
-  {{ parameter_dict['openssl'] }}/bin/openssl
-  {{ parameter_dict['poppler'] }}/bin/pdfinfo
-  {{ parameter_dict['poppler'] }}/bin/pdftotext
-  {{ parameter_dict['poppler'] }}/bin/pdftohtml
-  {{ parameter_dict['dmtx-utils'] }}/bin/dmtxwrite
+{%- for bin in parameter_dict['binary-links'].splitlines() %}
+  {{ bin }}
+{%- endfor %}
 
 [certificate-authority-common]
 requests-directory = ${directory:requests}
@@ -106,7 +90,7 @@ ca-crl = ${directory:crl}
 [certificate-authority]
 < = certificate-authority-common
 recipe = slapos.cookbook:certificate_authority
-openssl-binary = {{ parameter_dict['openssl'] }}/bin/openssl
+openssl-binary = ${binary-link:target-directory}/openssl
 wrapper = ${directory:services}/ca
 
 {% if use_ipv6 -%}

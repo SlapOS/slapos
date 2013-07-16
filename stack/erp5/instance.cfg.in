@@ -128,21 +128,13 @@ extra-context =
 bin-directory = {{ bin_directory }}
 zope-conf-template = {{ template_zope_conf }}
 instance-logrotate-cfg = {{ template_logrotate_base }}
-git = {{ git_location }}
-graphviz = {{ graphviz_location }}
 buildout-bin-directory = {{ buildout_bin_directory }}
-coreutils = {{ coreutils_location }}
-grep = {{ grep_location }}
-imagemagick = {{ imagemagick_location }}
-sed = {{ sed_location }}
-tesseract = {{ tesseract_location }}
-w3m = {{ w3m_location }}
-poppler = {{ poppler_location }}
-dmtx-utils = {{ dmtx_utils_location }}
-openssl = {{ openssl_location }}
 6tunnel = {{ sixtunnel_location }}
 dash = {{ dash_location }}
 jsl = {{ jsl_location }}
+binary-links =
+{%- for path in zope_binary_links.splitlines() %}  {{ path }}
+{% endfor %}
 
 [dynamic-template-zope]
 < = jinja2-template-base
