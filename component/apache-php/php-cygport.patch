@@ -1,0 +1,189 @@
+diff --git a/php.cygport b/php.cygport
+index bc01e31..820789f 100644
+--- a/php.cygport
++++ b/php.cygport
+@@ -53,19 +53,19 @@ DIFF_EXCLUDES="aclocal.m4 configure generated_lists libtool.m4 lt*.m4 ltmain.sh
+ # gd: not compatible with system libgd, https://bugs.php.net/bug.php?id=60108
+ 
+ # location of php.ini files
+-inidir=/etc/php${VERSION%%.*}
++inidir=etc/php${VERSION%%.*}
+ 
+ # required for all configure runs
+ common_args="
+   --cache-file=../config.cache
+-  --sysconfdir=${inidir}
+-  --libdir=/usr/lib/php
+-  --datadir=/usr/share/php
++  --sysconfdir=${CYGCONF_PREFIX}/${inidir}
++  --libdir=${CYGCONF_PREFIX}/lib/php
++  --datadir=${CYGCONF_PREFIX}/share/php
+ 
+   --disable-static
+   --disable-rpath
+-  --with-config-file-path=${inidir}
+-  --with-config-file-scan-dir=${inidir}/conf.d
++  --with-config-file-path=${CYGCONF_PREFIX}/${inidir}
++  --with-config-file-scan-dir=${CYGCONF_PREFIX}/${inidir}/conf.d
+   --with-layout=GNU
+   --with-regex=system
+ 
+@@ -98,23 +98,20 @@ cli_args="
+   --with-cdb
+   --enable-inifile
+   --enable-flatfile
+-  --with-enchant=shared,/usr
++  --without-enchant
+   --enable-exif=shared
+   --enable-fileinfo=shared
+   --enable-ftp=shared
+   --with-gd=shared
+-  --with-vpx-dir=/usr
+-  --with-jpeg-dir=/usr
+-  --with-png-dir=/usr
++  --with-jpeg-dir=${CYGCONF_PREFIX}/../libjpeg
++  --with-png-dir=${CYGCONF_PREFIX}/../libpng
+   --with-zlib-dir=/usr
+-  --with-xpm-dir=/usr
+-  --with-freetype-dir=/usr
+-  --with-t1lib=/usr
++  --with-freetype-dir=${CYGCONF_PREFIX}/../freetype
+   --enable-gd-native-ttf
+   --with-gettext=shared
+   --with-gmp=shared,/usr
+   --with-iconv=shared,/usr
+-  --with-imap=shared,/usr
++  --without-imap
+   --with-kerberos=no
+   --with-imap-ssl=yes
+   --with-interbase=no
+@@ -124,13 +121,12 @@ cli_args="
+   --with-icu-dir=/usr
+   --enable-json=shared
+   --enable-mbstring=shared
+-  --with-onig=/usr
++  --without-onig
+   --enable-mbregex=yes
+   --enable-mbregex_backtrack=yes
+-  --with-mcrypt=shared,/usr
+-  --with-mssql=shared,/usr
+-  --with-mysql=shared,mysqlnd
+-  --with-mysql-sock=/var/run/mysql.sock
++  --with-mcrypt=shared,${CYGCONF_PREFIX}/../libmcrypt
++  --with-mysql=shared,${CYGCONF_PREFIX}/../mariadb
++  --with-mysql-sock=${CYGCONF_PREFIX}/var/run/mysql.sock 
+   --with-mysqli=shared,mysqlnd
+   --enable-embedded_mysqli=no
+   --with-oci8=no
+@@ -143,24 +139,19 @@ cli_args="
+   --with-empress-bcs=no
+   --with-birdstep=no
+   --with-custom-odbc=no
+-  --with-iodbc=shared,/usr
+   --with-esoob=no
+   --with-unixODBC=no
+   --with-dbmaker=no
+   --enable-pcntl=no
+-  --with-pdo-dblib=shared,/usr
+   --with-pdo-firebird=no
+   --with-pdo-mysql=shared,mysqlnd
+   --with-pdo-oci=no
+-  --with-pdo-odbc=shared,iodbc,/usr
+-  --with-pdo-pgsql=shared,/usr
+-  --with-pdo-sqlite=shared,/usr
+-  --with-pgsql=shared,/usr
++  --with-pdo-sqlite=no
++  --without-pgsql
+   --enable-phar=shared
+   --enable-posix=shared
+-  --with-pspell=shared,/usr
++  --without-pspell
+   --with-libedit=no
+-  --with-readline=shared,/usr
+   --with-recode=no
+   --with-mm=no
+   --enable-session=shared
+@@ -169,12 +160,11 @@ cli_args="
+   --with-snmp=no
+   --enable-soap=shared
+   --with-sqlite3=shared,/usr
+-  --with-sybase-ct=shared,/usr
+-  --enable-sockets=shared
++  --without-sybase-ct
+   --enable-sysvmsg=shared
+   --enable-sysvsem=shared
+   --enable-sysvshm=shared
+-  --with-tidy=shared,/usr
++  --without-tidy
+   --enable-tokenizer=shared
+   --enable-wddx=shared
+   --enable-xmlreader=shared
+@@ -303,35 +293,35 @@ src_install() {
+ 	# sanitize php-config
+ 	sed -e "s#^libs=.*#libs=\"-lphp${VERSION%%.*}\"#" \
+ 		-e 's#^php_sapis=.*#php_sapis="cli cgi embed fpm apache2handler"#' \
+-		-i ${D}/usr/bin/php-config
++		-i ${D}/bin/php-config
+ 
+ 	# provide default php.ini
+-	insinto ${inidir}
++	insinto ${D}/${inidir}
+ 	newins ${S}/php.ini-production php.ini
+-	make_etc_defaults ${inidir}/php.ini
++	make_etc_defaults ${D}/${inidir}/php.ini
+ 
+ 	# add .ini files for each extension, so that it's loaded once installed
+ 	local date=$(date +%F)
+ 	local time=$(date +%T)
+ 	local timestamp=$(date +%s)
+-	local regdir=/usr/share/pear/.registry/.channel.pecl.php.net
+-	local xdir=$(${D}/usr/bin/php-config --extension-dir)
++	local regdir=${D}/share/pear/.registry/.channel.pecl.php.net
++	local xdir=$(${D}/bin/php-config --extension-dir) 
+ 	local dll ext docdir path_len summary_len p
+ 
+-	keepdir ${inidir}/conf.d
++	keepdir ${D}/${inidir}/conf.d 
+ 	dodir ${regdir}
+ 
+ 	for x in ${D}${xdir}/*.dll
+ 	do
+ 		dll=${x##*/}
+ 		ext=${dll%.dll}
+-		docdir=/usr/share/pear/doc/${ext}
++		docdir=${D}/share/pear/doc/${ext}
+ 		doc_len=$((${#docdir} + 8))	# /CREDITS
+ 		path_len=$((${#xdir} + ${#dll} + 1))
+ 		summary_len=$((${#ext} + 14))	# PHP ___ extension
+ 
+ 		# create .ini file for automatic extension loading
+-		echo "extension = ${dll}" >> ${D}${inidir}/conf.d/${ext}.ini
++		echo "extension = ${dll}" >> ${D}/${inidir}/conf.d/${ext}.ini
+ 
+ 		# register extension with pecl to prevent accidental
+ 		# installation of obsolete versions
+@@ -352,13 +342,13 @@ src_install() {
+ 			s,@VERSION@,${VERSION},g;
+ 			s,@VERSION_LEN@,${#VERSION},g;
+ 			s,@TIMESTAMP@,${timestamp}," \
+-			${S}/template-ext.reg > ${D}${regdir}/${ext}.reg
++			${S}/template-ext.reg > ${regdir}/${ext}.reg
+ 	done
+ 
+ 	# builtin extensions
+ 	for ext in filter hash pdo
+ 	do
+-		docdir=/usr/share/pear/doc/${ext}
++		docdir=${D}/share/pear/doc/${ext}
+ 		doc_len=$((${#docdir} + 8))	# /CREDITS
+ 		summary_len=$((${#ext} + 22))	# PHP ___ builtin extension
+ 
+@@ -377,7 +367,7 @@ src_install() {
+ 			s,@VERSION@,${VERSION},g;
+ 			s,@VERSION_LEN@,${#VERSION},g;
+ 			s,@TIMESTAMP@,${timestamp}," \
+-			${S}/template-builtin.reg > ${D}${regdir}/${ext}.reg
++			${S}/template-builtin.reg > ${regdir}/${ext}.reg
+ 	done
+ 
+ 	# Un/load mod_php5 from httpd.conf on postinstall/preremove
