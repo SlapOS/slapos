@@ -1,6 +1,8 @@
---- old/Makefile	2011-09-22 13:19:53.000000000 +0100
-+++ new/Makefile	2011-11-09 15:02:54.038306922 +0100
-@@ -280,7 +280,11 @@
+diff --git a/Makefile b/Makefile
+index 5fcf1dd..c5c5f7b 100644
+--- a/Makefile
++++ b/Makefile
+@@ -280,7 +280,11 @@ SH=sh
  SYSTEM=unix
  TOOLS=tools
  TOUCH=touch
@@ -13,7 +15,7 @@
  
  # Primary build command
  
-@@ -580,7 +584,6 @@
+@@ -580,7 +584,6 @@ sslunix sslsco:
  	@echo +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
  	@echo
  	@echo Do you want to continue this build anyway?  Type y or n please:
@@ -21,7 +23,15 @@
  
  nounenc:
  	@echo +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-@@ -639,7 +642,7 @@
+@@ -603,7 +606,6 @@ sslnone:
+ 	@echo +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 	@echo
+ 	@echo Do you want to continue this build anyway?  Type y or n please:
+-	@$(SH) -c 'read x; case "$$x" in y) exit 0;; *) (make nonossl;exit 1);; esac'
+ 
+ nonossl:
+ 	@echo +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+@@ -639,7 +641,7 @@ ip6:
  	@echo +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
  	@echo
  	@echo Do you want to build with IPv6 anyway?  Type y or n please:
@@ -30,7 +40,7 @@
  	@echo OK, I will remember that you really want to build with IPv6.
  	@echo You will not see this message again.
  	@$(TOUCH) ip6
-@@ -731,6 +734,24 @@
+@@ -731,6 +733,24 @@ clean:
  	$(SH) -c '$(RM) an ua OSTYPE SPECIALS c-client mtest imapd ipopd mailutil mlock dmail tmail || true'
  	$(CD) tools;$(MAKE) clean
  
