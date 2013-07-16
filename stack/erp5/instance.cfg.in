@@ -307,12 +307,3 @@ varnish = ${dynamic-template-varnish:rendered}
 balancer = ${dynamic-template-balancer:rendered}
 zodb-zeo = ${dynamic-template-zeo:rendered}
 cluster-zope = ${dynamic-template-cluster-zope:rendered}
-
-[slap-connection]
-# part to migrate to new - separated words
-computer-id = ${slap_connection:computer_id}
-partition-id = ${slap_connection:partition_id}
-server-url = ${slap_connection:server_url}
-software-release-url = ${slap_connection:software_release_url}
-key-file = ${slap_connection:key_file}
-cert-file = ${slap_connection:cert_file}
