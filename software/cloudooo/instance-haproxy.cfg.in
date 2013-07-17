@@ -1,0 +1,39 @@
+{% if slap_software_type == 'haproxy' -%}
+{% set bin_directory = parameter_dict['buildout-bin-directory'] -%}
+[buildout]
+parts =
+  publish-cloudooo-connection-information
+
+eggs-directory = {{ eggs_directory }}
+develop-eggs-directory = {{ develop_eggs_directory }}
+offline = true
+
+[publish-cloudooo-connection-information]
+recipe = slapos.cookbook:publishurl
+url = cloudooo://${haproxy:ip}:${haproxy:port}/
+
+[haproxy]
+recipe = slapos.cookbook:haproxy
+name = cloudooo
+conf-path = ${directory:etc}/haproxy.cfg
+socket-path = ${directory:run}/haproxy.sock
+ip = {{ ipv4 }}
+port = 8001
+maxconn = 1
+wrapper-path = ${directory:services}/haproxy
+binary-path = {{ parameter_dict['haproxy'] }}/sbin/haproxy
+ctl-path = ${directory:bin}/haproxy-ctl
+backend-list =
+{%- for section_name in section_list %}
+  {{ "${" ~ section_name ~ ":ip}:${" ~ section_name ~ ":port}" }}
+{%- endfor %}
+
+# rest of parts are candidates for some generic stuff
+[directory]
+recipe = slapos.cookbook:mkdirectory
+bin = ${buildout:directory}/bin
+etc = ${buildout:directory}/etc
+run = ${:var}/run
+services = ${:etc}/run
+var = ${buildout:directory}/var
+{% endif -%}

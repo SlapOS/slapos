@@ -1,20 +1,9 @@
+{% if slap_software_type != 'haproxy' -%}
 {% set ipv4 = (ipv4_set | list)[0] -%}
 {% set bin_directory = parameter_dict['buildout-bin-directory'] -%}
 {% set section_list = [] -%}
+{% set publish_list = [] -%}
 {% macro section(name) %}{% do section_list.append(name) %}{{ name }}{% endmacro -%}
-[buildout]
-parts =
-  publish-cloudooo-connection-information
-  cloudooo-test-runner
-
-eggs-directory = {{ eggs_directory }}
-develop-eggs-directory = {{ develop_eggs_directory }}
-offline = true
-
-[publish-cloudooo-connection-information]
-recipe = slapos.cookbook:publish.serialised
-url = cloudooo://${haproxy:ip}:${haproxy:port}/
-
 [cloudooo-base]
 recipe = slapos.cookbook:generic.cloudooo
 ip = {{ ipv4 }}
@@ -39,25 +28,14 @@ openoffice-port = {{ cloudooo_port + 1 }}
 configuration-file = ${directory:etc}/{{ name }}.cfg
 data-directory = ${directory:srv}/{{ name }}
 wrapper = ${directory:services}/{{ name }}
-
+{% set publish_info = ipv4 ~ ':' ~ cloudooo_port -%}
+{% do publish_list.append(publish_info) -%}
 {%   set cloudooo_port = cloudooo_port + 2 -%}
 {% endfor -%}
 
-[haproxy]
-recipe = slapos.cookbook:haproxy
-name = cloudooo
-conf-path = ${directory:etc}/haproxy.cfg
-socket-path = ${directory:run}/haproxy.sock
-ip = {{ ipv4 }}
-port = 8001
-maxconn = 1
-wrapper-path = ${directory:services}/haproxy
-binary-path = {{ parameter_dict['haproxy'] }}/sbin/haproxy
-ctl-path = ${directory:bin}/haproxy-ctl
-backend-list =
-{%- for section_name in section_list %}
-  {{ "${" ~ section_name ~ ":ip}:${" ~ section_name ~ ":port}" }}
-{%- endfor %}
+[cloudooo-instance]
+# Paths: Data
+data-directory = ${directory:cloudooo-data}
 
 [cloudooo-test-runner]
 recipe = slapos.cookbook:cloudooo.test
@@ -99,6 +77,21 @@ link-binary =
   {{ parameter_dict['poppler'] }}/bin/pdftotext
   {{ parameter_dict['poppler'] }}/bin/pdftohtml
 
+[publish-cloudooo-cluster-information]
+recipe = slapos.cookbook:publish.serialised
+cloudooo-address-list = {{ dumps(publish_list) }}
+url = cloudooo://${cloudooo-0:ip}:${cloudooo-0:port}/
+
+[buildout]
+parts =
+  publish-cloudooo-cluster-information
+  cloudooo-test-runner
+  {{ section_list | join('\n\t') }}
+
+eggs-directory = {{ eggs_directory }}
+develop-eggs-directory = {{ develop_eggs_directory }}
+offline = true
+
 # rest of parts are candidates for some generic stuff
 [directory]
 recipe = slapos.cookbook:mkdirectory
@@ -109,3 +102,4 @@ run = ${:var}/run
 services = ${:etc}/run
 srv = ${buildout:directory}/srv
 var = ${buildout:directory}/var
+{% endif -%}

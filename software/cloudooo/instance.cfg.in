@@ -22,13 +22,13 @@ context =
     key eggs_directory buildout:eggs-directory
     key develop_eggs_directory buildout:develop-eggs-directory
     key slapparameter_dict slap-parameters:configuration
+    key slap_software_type slap-parameters:slap-software-type
     ${:extra-context}
 
 [dynamic-template-cloudooo-parameters]
 file = {{ file_location }}
 fontconfig = {{ fontconfig_location }}
 freetype = {{ freetype_location }}
-haproxy = {{ haproxy_location }}
 libICE = {{ libICE_location }}
 libpng12 = {{ libpng12_location }}
 libSM = {{ libSM_location }}
@@ -46,6 +46,10 @@ imagemagick = {{ imagemagick_location }}
 poppler = {{ poppler_location }}
 buildout-bin-directory = {{ buildout_bin_directory }}
 
+[dynamic-template-haproxy-parameters]
+haproxy = {{ haproxy_location }}
+buildout-bin-directory = {{ buildout_bin_directory }}
+
 [dynamic-template-cloudooo]
 < = jinja2-template-base
 template = {{ template_cloudooo }}
@@ -55,9 +59,19 @@ extra-context =
     section parameter_dict dynamic-template-cloudooo-parameters
     key ipv4_set slap-parameters:ipv4
 
+[dynamic-template-haproxy]
+< = jinja2-template-base
+template = {{ template_haproxy }}
+filename = instance-cloudoo.cfg
+extensions = jinja2.ext.do
+extra-context =
+    section parameter_dict dynamic-template-haproxy-parameters
+    key ipv4_set slap-parameters:ipv4
+
 [switch-softwaretype]
 recipe = slapos.cookbook:softwaretype
 default = ${dynamic-template-cloudooo:rendered}
+haproxy = ${dynamic-template-haproxy:rendered}
 
 [slap-connection]
 # part to migrate to new - separated words
