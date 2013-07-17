@@ -1,0 +1,2 @@
+#!/bin/sh
+${:sendmail-location} -C ${:postfix-config-dir} $*

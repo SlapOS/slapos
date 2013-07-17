@@ -1,0 +1,2 @@
+#!/bin/sh
+${:postfix-location} -c ${:postfix-config-dir} start
