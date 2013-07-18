@@ -132,7 +132,7 @@ buildout-bin-directory = {{ buildout_bin_directory }}
 6tunnel = {{ sixtunnel_location }}
 dash = {{ dash_location }}
 jsl = {{ jsl_location }}
-binary-links = {{ dumps(zope_binary_links) }}
+link-binary = {{ dumps(zope_link_binary) }}
 
 [dynamic-template-zope]
 < = jinja2-template-base

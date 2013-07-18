@@ -74,7 +74,7 @@ ca-crl = ${:test-ca-dir}/crl
 [binary-link]
 recipe = slapos.cookbook:symbolic.link
 target-directory = ${directory:bin}
-link-binary = {{ dumps(parameter_dict['binary-links']) }}
+link-binary = {{ dumps(parameter_dict['link-binary']) }}
 
 [certificate-authority-common]
 requests-directory = ${directory:requests}
