@@ -12,7 +12,7 @@ develop-eggs-directory = {{ develop_eggs_directory }}
 offline = true
 
 [publish-cloudooo-connection-information]
-recipe = slapos.cookbook:publishurl
+recipe = slapos.cookbook:publish.serialised
 url = cloudooo://${haproxy:ip}:${haproxy:port}/
 
 [cloudooo-base]
@@ -28,7 +28,7 @@ ooo-binary-path = {{ parameter_dict['libreoffice-bin'] }}/program
 ooo-paster = {{ bin_directory }}/cloudooo_paster
 ooo-uno-path = {{ parameter_dict['libreoffice-bin'] }}/basis-link/program
 
-{% set cloudooo_port = 23000 -%}
+{% set cloudooo_port = slapparameter_dict.get('tcpv4_port', 23000) | int -%}
 {% set backend_count = slapparameter_dict.get('backend-count', 1) | int -%}
 {% for index in range(backend_count) -%}
 {%   set name = 'cloudooo-' ~ index -%}
@@ -77,7 +77,8 @@ recipe = slapos.cookbook:fontconfig
 conf-path = ${directory:etc}/font.conf
 font-system-folder = {{ parameter_dict['fonts'] }}
 font-folder = ${directory:font}
-url-list =
+{# XXX: violates "instanciation happens offline" rule -#}
+url-list = {{ slapparameter_dict.get('font-url-list', []) | join(' ') }}
 service-folder = ${directory:services}
 onetimedownload_path = {{ bin_directory }}/onetimedownload
 
