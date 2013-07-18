@@ -1,11 +1,30 @@
 Changes
 =======
 
-0.78.1 (2013-05-31)
+0.78.4.dev (2013-07-18)
+-----------------------
+
+
+
+0.78.3 (2013-07-18)
+-------------------
+
+ * slapos.cookbook:publish: Add support to publish information for slaves. [Cedric Le Ninivin]
+
+0.78.2 (2013-07-18)
 -------------------
 
  * Fix slapos.cookbook:request: Add backward compatiblity about getInstanceGuid(). [Cedric de Saint Martin]
  * slapos.cookbook:check_* promises: Add timeout to curl that is not otherwise killed by slapos promise subsystem. [Cedric de Saint Martin]
+ * Cloudooo: Allow any environment variables. [Yusei Tahara]
+ * ERP5: disable MariaDB query cache completely by 'query_cache_type = 0' for ERP5. [Kazuhiko Shiozaki]
+ * ERP5: enable haproxy admin socket and install haproxyctl script. [Kazuhiko Shiozaki]
+ * ERP5: increase the maximum number of open file descriptors before starting mysqld. [Kazuhiko Shiozaki]
+ * python 2.7: updated to 2.7.5 [Cedric de Saint Martin]
+
+0.78.1 (2013-05-31)
+-------------------
+
  * Add boinc recipe: Allow to deploy an empty BOINC project. [Alain Takoudjou]
  * Add boinc.app recipe: Allow to deploy and update a BOINC application into existing BOINC server instance . [Alain Takoudjou]
  * Add boinc.client recipe: Allow to deploy a BOINC Client instance on SlapOS. [Alain Takoudjou]
@@ -15,10 +34,6 @@ Changes
  * Add trac recipe: for deploying Trac and manage project with support of SVN and GIT. [Alain Takoudjou]
  * Add bonjourgrid recipe: for deploying BonjourGrid Master and submit BOINC or Condor project. [Alain Takoudjou]
  * Add bonjourgrid.client recipe: for deploying BonjourGrid Worker instance and execute BOINC or Condor Jobs. [Alain Takoudjou]
- * Cloudooo: Allow any environment variables. [Yusei Tahara]
- * ERP5: disable MariaDB query cache completely by 'query_cache_type = 0' for ERP5. [Kazuhiko Shiozaki]
- * ERP5: enable haproxy admin socket and install haproxyctl script. [Kazuhiko Shiozaki]
- * ERP5: increase the maximum number of open file descriptors before starting mysqld. [Kazuhiko Shiozaki]
 
 0.78.0 (2013-04-28)
 -------------------
