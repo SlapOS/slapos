@@ -10,7 +10,6 @@ parts =
   {% if use_ipv6 %}promise-tunnel{% endif %}
 eggs-directory = {{ eggs_directory }}
 develop-eggs-directory = {{ develop_eggs_directory }}
-offline = true
 
 [publish-cloudooo-connection-information]
 recipe = slapos.cookbook:publish.serialised
@@ -24,7 +23,7 @@ url = cloudooo://${cloudooo-instance:ip}:${cloudooo-instance:port}/
 recipe = slapos.cookbook:generic.cloudooo
 
 # Network options
-ip = ${slap-network-information:local-ipv4}
+ip = {{ (ipv4_set | list)[0] }}
 {% set tcpv4_port = slapparameter_dict['tcpv4-port'] -%}
 port = {{ tcpv4_port }}
 openoffice-port = {{ tcpv4_port + 1 }}

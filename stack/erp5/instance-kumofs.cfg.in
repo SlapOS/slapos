@@ -15,7 +15,6 @@ parts =
 
 eggs-directory = {{ eggs_directory }}
 develop-eggs-directory = {{ develop_eggs_directory }}
-offline = true
 
 [publish-kumofs-connection-information]
 recipe = slapos.cookbook:publish.serialised
@@ -30,10 +29,10 @@ recipe = slapos.cookbook:generic.kumofs
 
 # Network options
 {% if use_ipv6 -%}
-ip = ${slap-network-information:global-ipv6}
+ip = {{ (ipv6_set | list)[0] }}
 address-family = inet6
 {% else -%}
-ip = ${slap-network-information:local-ipv4}
+ip = {{ (ipv4_set | list)[0] }}
 address-family = inet4
 {% endif -%}
 {% set tcpv4_port = slapparameter_dict['tcpv4-port'] -%}

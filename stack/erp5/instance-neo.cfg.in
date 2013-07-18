@@ -17,5 +17,4 @@ parts +=
   publish
 eggs-directory = {{ eggs_directory }}
 develop-eggs-directory = {{ develop_eggs_directory }}
-offline = true
 {% endif %}

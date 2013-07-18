@@ -297,7 +297,6 @@ bt5-repository-url = {{ slapparameter_dict['bt5-repository-url'] }}
 [buildout]
 eggs-directory = {{ eggs_directory }}
 develop-eggs-directory = {{ develop_eggs_directory }}
-offline = true
 extends =
   {{ parameter_dict['instance-logrotate-cfg'] }}
 parts +=

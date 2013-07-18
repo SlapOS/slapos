@@ -4,7 +4,6 @@ parts =
 
 eggs-directory = {{ eggs_directory }}
 develop-eggs-directory = {{ develop_eggs_directory }}
-offline = true
 
 [slap-configuration]
 recipe = slapos.cookbook:slapconfiguration.serialised
@@ -188,7 +187,23 @@ extra-context =
     raw software_type mariadb
 
 [switch-softwaretype]
-recipe = slapos.cookbook:softwaretype
+recipe = slapos.recipe.build
+script =
+  import subprocess, sys
+  software_type = self.buildout["slap-configuration"]["slap-software-type"]
+  # XXX-Antoine: We gotta find a better way to do this. I tried to check
+  # out how slapgrid-cp was running buildout. But it is worse than that.
+  args = sys.argv[:]
+  args += map("slap-connection:%%s=%%s".__mod__,
+              self.buildout["slap-connection"].iteritems())
+  args += ("buildout:directory=${buildout:directory}",
+           "buildout:installed=.installed-${:_buildout_section_name_}.cfg",
+           '-oc', self.options[software_type])
+  subprocess.check_call(args)
+update_script = ${:script}
+slapos_promise =
+slapos_update_promise = ${:slapos_promise}
+
 default = ${dynamic-template-erp5:rendered}
 # BBB
 cluster = ${dynamic-template-erp5-cluster:rendered}
@@ -203,12 +218,3 @@ balancer = ${dynamic-template-balancer:rendered}
 zodb-neo = ${dynamic-template-neo:rendered}
 zodb-zeo = ${dynamic-template-zeo:rendered}
 zope = ${dynamic-template-zope:rendered}
-
-[slap-connection]
-# part to migrate to new - separated words
-computer-id = ${slap_connection:computer_id}
-partition-id = ${slap_connection:partition_id}
-server-url = ${slap_connection:server_url}
-software-release-url = ${slap_connection:software_release_url}
-key-file = ${slap_connection:key_file}
-cert-file = ${slap_connection:cert_file}
