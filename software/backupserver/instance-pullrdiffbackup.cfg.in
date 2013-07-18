@@ -1,0 +1,151 @@
+{% set part_list = [] -%}
+{% set crontab_line_list = [] -%}
+###############################
+#
+# Instanciate dcron
+#
+###############################
+
+[directory]
+recipe = slapos.cookbook:mkdirectory
+etc = $${buildout:directory}/etc
+bin = $${buildout:directory}/bin
+srv = $${buildout:directory}/srv
+var = $${buildout:directory}/var
+log = $${:var}/log
+# scripts = $${:etc}/run
+services = $${:etc}/service
+cron-entries = $${:etc}/cron.d
+cron-lines = $${:etc}/cron.lines
+crontabs = $${:etc}/crontabs
+cronstamps = $${:etc}/cronstamps
+backup = $${:srv}/backup
+backupscript = $${:etc}/backup
+home = $${:etc}/home
+ssh = $${:home}/.ssh
+
+#################################
+# Cron service
+#################################
+[dcron-service]
+recipe = slapos.recipe.template
+url = ${template-dcron-service:output}
+output = $${directory:services}/crond
+mode = 0700
+logfile = $${directory:log}/crond.log
+
+#################################
+# Slave backup scripts and crontab
+#################################
+# Go throught slave list to set their configuration
+{% for slave_instance in slave_instance_list -%}
+{%   set slave_reference = slave_instance.get('slave_reference') -%}
+{%   set frequency = slave_instance.get('frequency', '') -%}
+{%   set hostname = slave_instance.get('hostname', '') -%}
+{%   set connection = slave_instance.get('connection', '') -%}
+{%   set include = slave_instance.get('include', '') -%}
+{%   set include_string = "' --include='".join(include.split(' ')) -%}
+{%   set exclude = slave_instance.get('exclude', '') -%}
+{%   set exclude_string = '' -%}
+{%   set sudo = slave_instance.get('sudo', 'False') -%}
+{%   set remote_schema = 'rdiff-backup --server --restrict-read-only / -- "$@"' -%}
+
+{%   if (exclude != '') -%}
+{%     set exclude_string = "' --exclude='".join(exclude.split(' ')) -%}
+{%     set exclude_string = "--exclude='" + exclude_string + "'" -%}
+{%   endif -%}
+
+{%   if (sudo == 'True') -%}
+{%     set remote_schema = 'sudo backupagent_rdiff-backup' -%}
+{%   endif -%}
+
+{%   if (frequency != '') and (hostname != '') and (connection != '') and (include != '') -%}
+
+[{{ slave_reference }}-backup-directory]
+recipe = slapos.cookbook:mkdirectory
+directory = $${directory:backup}/$${:_buildout_section_name_}
+
+[{{ slave_reference }}-backup-private_key]
+recipe = plone.recipe.command
+stop-on-error = true
+command = ${dropbear-output:keygen} -t $${:type} -s 2048 -f $${:key} 
+key = $${directory:ssh}/$${:_buildout_section_name_}
+location = $${:key}
+type = rsa
+
+[{{ slave_reference }}-backup-public_key]
+recipe = plone.recipe.command
+stop-on-error = true
+update-command = $${:command}
+command = ${coreutils-output:rm} -f $${:key} && ${dropbear-output:keygen} -y -f {{ '$${' ~ slave_reference }}-backup-private_key:key} | ${grep-output:grep} {{ '$${' ~ slave_reference }}-backup-private_key:type} > $${:key}
+key = {{ '$${' ~ slave_reference }}-backup-private_key:key}.pub
+location = $${:key}
+
+[{{ slave_reference }}-backup-check-public_key]
+recipe = plone.recipe.command
+stop-on-error = true
+update-command = $${:command}
+command = grep ssh-{{ '$${' ~ slave_reference }}-backup-private_key:type} {{ '$${' ~ slave_reference }}-backup-public_key:key}
+
+[{{ slave_reference }}-backup-read-public_key]
+recipe = slapos.cookbook:generate.password
+storage-path = {{ '$${' ~ slave_reference }}-backup-public_key:key}
+bytes = 8
+
+# Publish slave {{ slave_reference }} information
+[{{ slave_reference }}-backup-publish]
+recipe = slapos.cookbook:publish
+-slave-reference = {{ slave_reference }}
+authorized_key = {{ '$${' ~ slave_reference }}-backup-read-public_key:passwd}
+{%   do part_list.append("%s-backup-publish" % slave_reference) -%}
+
+[{{ slave_reference }}-backup-script]
+recipe = slapos.recipe.template
+url = ${template-backup-script:output}
+output = $${directory:backupscript}/$${:_buildout_section_name_}
+mode = 0700
+datadirectory = {{ '$${' ~ slave_reference }}-backup-directory:directory}
+sshkey = {{ '$${' ~ slave_reference }}-backup-private_key:key}
+connection = {{ connection }}
+hostname = {{ hostname }}
+include = {{ include_string }}
+exclude_string = {{ exclude_string }}
+remote_schema = {{ remote_schema }}
+
+[{{ slave_reference }}-backup-crontab-line]
+recipe = slapos.recipe.template
+url = ${template-crontab-line:output}
+output = $${directory:cron-lines}/$${:_buildout_section_name_}
+mode = 0600
+script = {{ '$${' ~ slave_reference }}-backup-script:output}
+frequency = {{ frequency }}
+{%   do crontab_line_list.append("$${%s-backup-crontab-line:output}" % slave_reference) -%}
+
+{%   endif -%}
+{% endfor -%}
+
+#################################
+# Generate crontab file
+#################################
+
+{% set crontab_line_list_string = " ".join(crontab_line_list) -%}
+[activate-crontab-file]
+# XXX File is never removed
+recipe = plone.recipe.command
+stop-on-error = true
+update-command = $${:command}
+command = ${coreutils-output:cat} ${template-crontab:output} {{ crontab_line_list_string }} | ${dcron-output:crontab} -c $${directory:crontabs} -
+
+
+# Add parts generated by template
+[buildout]
+parts =
+  dcron-service
+  activate-crontab-file
+{% for part in part_list -%}
+{{ '    %s' % part }}
+{% endfor -%}
+
+eggs-directory = ${buildout:eggs-directory}
+develop-eggs-directory = ${buildout:develop-eggs-directory}
+offline = true
