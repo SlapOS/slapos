@@ -12,15 +12,14 @@ On slap console, you can instanciate varnish like this:
 instance = request(
   software_type='varnish',
   partition_parameter_kw={
-     'tidstorage-url':'http://[your tidstrage address]:your tid strage port',
+     'backend-url':'https://[your_backend_address]:your_backend_port',
      'web-checker-frontend-url':'http://www.example.com',
      'web-checker-mail-address':'web-checker-result@example.com',
      'web-checker-smtp-host':'mail.example.com',
   }
 )
 
-tidstrage-url is the backend url that varnish will cache. It is expected that
-the backend is created by tidstorage recipe.
+backend-url is the backend url that varnish will cache.
 
 web-checker-frontend-url is the entry-point-url that web checker will check
 the HTTP headers of all the pages in the web site.

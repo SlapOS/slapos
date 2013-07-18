@@ -1,0 +1,70 @@
+#!/bin/sh
+
+# Ugly setup
+cd ${:etherpad-location}
+export PATH=$PATH:${:postgre-location}/bin
+
+#Is gnu-grep (ggrep) installed on SunOS (Solaris)
+if [ $(uname) = "SunOS" ]; then
+  hash ggrep > /dev/null 2>&1 || { 
+    echo "Please install ggrep (pkg install gnu-grep)" >&2
+    exit 1 
+  }
+fi
+
+#Is wget installed?
+hash ${:curl-location}/bin/curl > /dev/null 2>&1 || { 
+  echo "Please install curl" >&2
+  exit 1 
+}
+
+#Is node installed?
+hash ${:nodejs-location}/bin/node > /dev/null 2>&1 || { 
+  echo "Please install node.js ( http://nodejs.org )" >&2
+  exit 1 
+}
+
+#Is npm installed?
+hash ${:nodejs-location}/bin/npm > /dev/null 2>&1 || { 
+  echo "Please install npm ( http://npmjs.org )" >&2
+  exit 1 
+}
+
+echo "Ensure that all dependencies are up to date...  If this is the first time you have run Etherpad please be patient."
+(
+  mkdir -p node_modules
+  cd node_modules
+  [ -e ep_etherpad-lite ] || ln -s ../src ep_etherpad-lite
+  cd ep_etherpad-lite
+  ${:nodejs-location}/bin/npm install --loglevel warn
+) || { 
+  rm -rf node_modules
+  exit 1 
+}
+
+echo "Ensure jQuery is downloaded and up to date..."
+DOWNLOAD_JQUERY="true"
+NEEDED_VERSION="1.9.1"
+
+if [ $DOWNLOAD_JQUERY = "true" ]; then
+  ${:curl-location}/bin/curl -lo src/static/js/jquery.js http://code.jquery.com/jquery-$NEEDED_VERSION.js || exit 1
+fi
+
+#Remove all minified data to force node creating it new
+echo "Clear minfified cache..."
+rm -f var/minified*
+
+echo "ensure custom css/js files are created..."
+
+for f in "index" "pad" "timeslider"
+do
+  if [ ! -f "src/static/custom/$f.js" ]; then
+    cp "src/static/custom/js.template" "src/static/custom/$f.js" || exit 1
+  fi
+  
+  if [ ! -f "src/static/custom/$f.css" ]; then
+    cp "src/static/custom/css.template" "src/static/custom/$f.css" || exit 1
+  fi
+done
+
+exit 0

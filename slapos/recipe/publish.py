@@ -35,20 +35,22 @@ class Recipe(GenericSlapRecipe):
     publish_dict = dict()
     options = self.options.copy()
     del options['recipe']
-
+    slave_reference = options.pop('-slave-reference', None)
     for k, v in options.iteritems():
+      if k[:1] == '-':
+        continue
       publish_dict[k] = v
-    self._setConnectionDict(publish_dict)
+    self._setConnectionDict(publish_dict, slave_reference)
     return []
 
-  def _setConnectionDict(self, publish_dict):
-    return self.setConnectionDict(publish_dict)
+  def _setConnectionDict(self, publish_dict, slave_reference=None):
+    return self.setConnectionDict(publish_dict, slave_reference)
 
 SERIALISED_MAGIC_KEY = '_'
 
 class Serialised(Recipe):
-  def _setConnectionDict(self, publish_dict):
-    return super(Serialised, self)._setConnectionDict(wrap(publish_dict))
+  def _setConnectionDict(self, publish_dict, slave_reference=None):
+    return super(Serialised, self)._setConnectionDict(wrap(publish_dict), slave_reference)
 
 
 

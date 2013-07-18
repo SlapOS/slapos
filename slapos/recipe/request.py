@@ -33,6 +33,12 @@ import traceback
 
 DEFAULT_SOFTWARE_TYPE = 'RootSoftwareInstance'
 
+def getListOption(option_dict, key, default=()):
+  result = option_dict.get(key, default)
+  if isinstance(result, basestring):
+    result = result.split()
+  return result
+
 class Recipe(object):
   """
   Request a partition to a slap master.
@@ -91,18 +97,18 @@ class Recipe(object):
     self.logger = logging.getLogger(name)
     software_url = options['software-url']
     name = options['name']
-    return_parameters = options.get('return', '').split()
+    return_parameters = getListOption(options, 'return')
     if not return_parameters:
       self.logger.debug("No parameter to return to main instance."
         "Be careful about that...")
     software_type = options.get('software-type', DEFAULT_SOFTWARE_TYPE)
     filter_kw = dict(
-      (x, options['sla-' + x]) for x in options.get('sla', '').split()
+      (x, options['sla-' + x]) for x in getListOption(options, 'sla')
       if options['sla-' + x]
     )
     partition_parameter_kw = self._filterForStorage(dict(
       (x, options['config-' + x])
-      for x in options.get('config', '').split()
+      for x in getListOption(options, 'config')
     ))
     slave = options.get('slave', 'false').lower() in \
       librecipe.GenericBaseRecipe.TRUE_VALUES

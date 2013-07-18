@@ -34,19 +34,23 @@ class Recipe(GenericBaseRecipe):
   """
 
   def install(self):
-
     promise_parser = ConfigParser.RawConfigParser()
-
-    promise_parser.add_section('portal_templates')
-    promise_parser.set('portal_templates', 'repository', self.options['bt5-repository-url'])
-    promise_parser.set('portal_templates', 'expected_bt5', self.options['bt5'])
-
-    promise_parser.add_section('external_service')
-    promise_parser.set('external_service', 'cloudooo_url', self.options['cloudooo-url'])
-    promise_parser.set('external_service', 'memcached_url', self.options['memcached-url'])
-    promise_parser.set('external_service', 'kumofs_url', self.options['kumofs-url'])
-    promise_parser.set('external_service', 'smtp_url', self.options['smtp-url'])
-
+    for section_name, option_id_list in (
+          ('portal_templates', (
+            ('repository', 'bt5-repository-url'),
+            ('expected_bt5', 'bt5'),
+          )),
+          ('external_service', (
+            ('cloudooo_url', 'cloudooo-url'),
+            ('memcached_url', 'memcached-url'),
+            ('kumofs_url', 'kumofs-url'),
+            ('smtp_url', 'smtp-url'),
+          )),
+        ):
+      promise_parser.add_section(section_name)
+      for internal_id, option_id in option_id_list:
+        option = self.options.get(option_id)
+        if option:
+          promise_parser.set(section_name, internal_id, option)
     promise_parser.write(open(self.options['promise-path'], 'w'))
-
     return [self.options['promise-path']]
