@@ -1,6 +1,11 @@
 Changes
 =======
 
+0.78.3 (2013-07-18)
+-------------------
+
+ * slapos.cookbook:publish: Add support to publish information for slaves. [Cedric Le Ninivin]
+
 0.78.2 (2013-07-18)
 -------------------
 
