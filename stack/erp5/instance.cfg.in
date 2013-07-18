@@ -170,16 +170,12 @@ extra-context =
 coreutils-location = {{ coreutils_location }}
 dcron-location = {{ dcron_location }}
 findutils-location = {{ findutils_location }}
-gettext-location = {{ gettext_location }}
-grep-location = {{ grep_location }}
 gzip-location = {{ gzip_location }}
 logrotate-location = {{ logrotate_location }}
 mariadb-location = {{ mariadb_location }}
-perl-location = {{ perl_location }}
-perl-siteprefix = {{ perl_siteprefix }}
-sed-location = {{ sed_location }}
 template-my-cnf = {{ template_my_cnf }}
 template-mariadb-initial-setup = {{ template_mariadb_initial_setup }}
+link-binary = {{ dumps(mariadb_link_binary) }}
 
 [dynamic-template-mariadb]
 < = jinja2-template-base

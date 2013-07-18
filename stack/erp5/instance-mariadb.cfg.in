@@ -163,16 +163,7 @@ command = ${logrotate:wrapper}
 [binary-link]
 recipe = slapos.cookbook:symbolic.link
 target-directory = ${directory:bin}
-link-binary =
-  {{ parameter_dict['coreutils-location'] }}/bin/basename
-  {{ parameter_dict['coreutils-location'] }}/bin/cat
-  {{ parameter_dict['coreutils-location'] }}/bin/cp
-  {{ parameter_dict['coreutils-location'] }}/bin/ls
-  {{ parameter_dict['coreutils-location'] }}/bin/tr
-  {{ parameter_dict['coreutils-location'] }}/bin/uname
-  {{ parameter_dict['gettext-location'] }}/lib/gettext/hostname
-  {{ parameter_dict['grep-location'] }}/bin/grep
-  {{ parameter_dict['sed-location'] }}/bin/sed
+link-binary = {{ dumps(parameter_dict['link-binary']) }}
 
 [binary-wrap-base]
 recipe = slapos.cookbook:wrapper
