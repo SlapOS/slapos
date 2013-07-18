@@ -36,9 +36,9 @@ ooo-uno-path = {{ parameter_dict['libreoffice-bin'] }}/basis-link/program
 < = cloudooo-base
 port = {{ cloudooo_port }}
 openoffice-port = {{ cloudooo_port + 1 }}
-configuration-file = ${rootdirectory:etc}/{{ name }}.cfg
-data-directory = ${rootdirectory:srv}/{{ name }}
-wrapper = ${basedirectory:services}/{{ name }}
+configuration-file = ${directory:etc}/{{ name }}.cfg
+data-directory = ${directory:srv}/{{ name }}
+wrapper = ${directory:services}/{{ name }}
 
 {%   set cloudooo_port = cloudooo_port + 2 -%}
 {% endfor -%}
@@ -59,10 +59,6 @@ backend-list =
   {{ "${" ~ section_name ~ ":ip}:${" ~ section_name ~ ":port}" }}
 {%- endfor %}
 
-[cloudooo-instance]
-# Paths: Data
-data-directory = ${directory:cloudooo-data}
-
 [cloudooo-test-runner]
 recipe = slapos.cookbook:cloudooo.test
 
@@ -78,16 +74,16 @@ run-test-suite-binary = {{ bin_directory }}/runCloudoooTestSuite
 
 [fontconfig-instance]
 recipe = slapos.cookbook:fontconfig
-conf-path = ${rootdirectory:etc}/font.conf
+conf-path = ${directory:etc}/font.conf
 font-system-folder = {{ parameter_dict['fonts'] }}
 font-folder = ${directory:font}
 url-list =
-service-folder = ${basedirectory:services}
+service-folder = ${directory:services}
 onetimedownload_path = {{ bin_directory }}/onetimedownload
 
 [binary-link]
 recipe = slapos.cookbook:symbolic.link
-target-directory = ${rootdirectory:bin}
+target-directory = ${directory:bin}
 link-binary =
   {{ parameter_dict['coreutils'] }}/bin/basename
   {{ parameter_dict['coreutils'] }}/bin/cat
@@ -103,22 +99,12 @@ link-binary =
   {{ parameter_dict['poppler'] }}/bin/pdftohtml
 
 # rest of parts are candidates for some generic stuff
-[basedirectory]
-recipe = slapos.cookbook:mkdirectory
-services = ${rootdirectory:etc}/run
-
 [directory]
 recipe = slapos.cookbook:mkdirectory
-bin = ${rootdirectory:bin}
-etc = ${rootdirectory:etc}
-services = ${:etc}/run
-var = ${rootdirectory:var}
-run = ${:var}/run
-font = ${rootdirectory:srv}/font
-
-[rootdirectory]
-recipe = slapos.cookbook:mkdirectory
-etc = ${buildout:directory}/etc
-srv = ${buildout:directory}/srv
 bin = ${buildout:directory}/bin
+etc = ${buildout:directory}/etc
+font = ${:srv}/font
+run = ${:var}/run
+services = ${:etc}/run
+srv = ${buildout:directory}/srv
 var = ${buildout:directory}/var
