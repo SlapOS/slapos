@@ -70,7 +70,6 @@ if scalability:
   # Here check if configurator is available
   configurator_available = False
   if not configurator_available:
-    import os
     # Fix site consistency
     if protocol == 'https':
       zope_connection = httplib.HTTPSConnection(host)
@@ -96,8 +95,41 @@ if scalability:
   configurator_available = False
   # Here check if S&MB not already installed
   configurator_already_applied = False
+
+  business_object_name = "default_standard_configuration"
   if configurator_available and not configurator_already_applied:
     # install small and medium business via configurator
-    pass
+    if protocol == 'https':
+      zope_connection = httplib.HTTPSConnection(host)
+    elif protocol == 'http':
+      zope_connection = httplib.HTTPConnection(host)
+    else:
+      raise ValueError("Protocol not implemented")
+      https://192.168.241.110:2153/erp5/business_configuration_module/view
+    zope_connection.request(
+      'GET', '/%%s/business_configuration_module/%%s/build' %%(business_object_name, site_id),
+      headers=header_dict
+    )
+    print "Business building sent"
+    print result.read()
+    print "Response read"
+
+    time.sleep(20)
+
+    # install small and medium business via configurator
+    if protocol == 'https':
+      zope_connection = httplib.HTTPSConnection(host)
+    elif protocol == 'http':
+      zope_connection = httplib.HTTPConnection(host)
+    else:
+      raise ValueError("Protocol not implemented")
+      https://192.168.241.110:2153/erp5/business_configuration_module/view
+    zope_connection.request(
+      'GET', '/%%s/business_configuration_module/%%s/install' %%(business_object_name, site_id),
+      headers=header_dict
+    )
+    print "Business building sent"
+    print result.read()
+    print "Response read"
 
 
