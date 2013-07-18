@@ -31,10 +31,10 @@ KVM with Remote and gzipped Image
     gzip = true
     
     # Use -hda instead -drive arg
-    # Default is drive (see Options bellow)
+    # Default is drive (see Options below)
     image_type = hda
 
-    ### Common Configuration bellow. ###
+    ### Common Configuration below. ###
     
     # VNC is optional
     kvm_vnc = <SOME-IP>:<VNC-DISPLAY>
