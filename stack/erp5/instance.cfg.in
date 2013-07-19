@@ -197,20 +197,19 @@ script =
   args += map("slap-connection:%%s=%%s".__mod__,
               self.buildout["slap-connection"].iteritems())
   args += ("buildout:directory=${buildout:directory}",
-           "buildout:installed=.installed-${:_buildout_section_name_}.cfg",
-           '-oc', self.options[software_type])
-  subprocess.check_call(args)
+           "buildout:installed=.installed-${:_buildout_section_name_}.cfg")
+  buildout = self.options[software_type]
+  # Options.get (from zc.buildout) should deserialize.
+  try: override = self.options["override"][software_type]
+  except (KeyError, TypeError): pass
+  else: args.append("buildout:extends=" + buildout); buildout = override
+  subprocess.check_call(args + ["-oc", buildout])
 update_script = ${:script}
 slapos_promise =
 slapos_update_promise = ${:slapos_promise}
+override = {{ dumps(override_switch_softwaretype |default) }}
 
 default = ${dynamic-template-erp5:rendered}
-# BBB
-cluster = ${dynamic-template-erp5-cluster:rendered}
-cluster-zope = ${dynamic-template-cluster-zope:rendered}
-# Common misspelling for "default".
-RootSoftwareInstance = ${dynamic-template-erp5-RootSoftwareInstance:rendered}
-
 kumofs = ${dynamic-template-kumofs:rendered}
 cloudooo = ${dynamic-template-cloudooo:rendered}
 mariadb = ${dynamic-template-mariadb:rendered}
