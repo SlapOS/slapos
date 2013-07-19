@@ -1,0 +1,13 @@
+--- a/src/util/chroot_uid.c
++++ b/src/util/chroot_uid.c
+@@ -57,8 +57,8 @@ void    chroot_uid(const char *root_dir, const char *user_name)
+ 	gid = pwd->pw_gid;
+ 	if (setgid(gid) < 0)
+ 	    msg_fatal("setgid(%ld): %m", (long) gid);
+-	if (initgroups(user_name, gid) < 0)
+-	    msg_fatal("initgroups: %m");
++	/*if (initgroups(user_name, gid) < 0)
++	    msg_fatal("initgroups: %m");*/
+     }
+ 
+     /*
