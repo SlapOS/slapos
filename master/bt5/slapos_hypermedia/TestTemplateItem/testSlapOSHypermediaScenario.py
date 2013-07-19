@@ -230,3 +230,112 @@ class TestSlapOSHypermediaPersonScenario(testSlapOSMixin):
     self.assertEquals(response.status, 200)
     self.assertEquals(response.getheader('Content-Type'), content_type)
     news_hal = json.loads(response.read())
+
+    # We are going to check computer and software
+    # First create a computer and a software. We could alternatively later
+    # create them through hypermedia links
+    self.login(erp5_person.getReference())
+    self.portal.portal_slap.requestComputer(
+                       "computer %s" % erp5_person.getReference())
+    self.tic()
+    computer = self.portal.portal_catalog(portal_type="Computer",
+                   sort_on=[('creation_date','descending')])[0].getObject()
+    self.tic()
+    self.portal.portal_slap.supplySupply("http://foo.com/software.cfg",
+                                         computer.getReference(), "available")
+    self.tic()
+    self.logout()
+
+    #####################################################
+    # Get user's computer list
+    #####################################################
+    content_type = "application/vnd.slapos.org.hal+json; " \
+                   "class=slapos.org.collection"
+    user_link_dict = user_hal['_links']\
+        ['http://slapos.org/reg/computer']
+
+    connection = httplib.HTTPConnection(api_netloc)
+    connection.request(
+      method=user_link_dict.get('method', 'GET'),
+      url=user_link_dict['href'],
+      headers={
+       'Authorization': authorization,
+       'Accept': user_link_dict['type'],
+      },
+      body="",
+    )
+    response = connection.getresponse()
+ 
+    self.assertEquals(response.status, 200)
+    self.assertEquals(response.getheader('Content-Type'), content_type)
+    computer_collection_hal = json.loads(response.read())
+
+    #####################################################
+    # Get user's computer
+    #####################################################
+    content_type = "application/vnd.slapos.org.hal+json; " \
+                   "class=slapos.org.computer"
+    computer_link_dict = computer_collection_hal['_links']\
+        ['item'][0]
+
+    connection = httplib.HTTPConnection(api_netloc)
+    connection.request(
+      method=computer_link_dict.get('method', 'GET'),
+      url=computer_link_dict['href'],
+      headers={
+       'Authorization': authorization,
+       'Accept': computer_link_dict['type'],
+      },
+      body="",
+    )
+    response = connection.getresponse()
+ 
+    self.assertEquals(response.status, 200)
+    self.assertEquals(response.getheader('Content-Type'), content_type)
+    computer_hal = json.loads(response.read())
+
+    #####################################################
+    # Get computer's software list
+    #####################################################
+    content_type = "application/vnd.slapos.org.hal+json; " \
+                   "class=slapos.org.collection"
+    computer_link_dict = computer_hal['_links']\
+        ['http://slapos.org/reg/software']
+
+    connection = httplib.HTTPConnection(api_netloc)
+    connection.request(
+      method=computer_link_dict.get('method', 'GET'),
+      url=computer_link_dict['href'],
+      headers={
+       'Authorization': authorization,
+       'Accept': computer_link_dict['type'],
+      },
+      body="",
+    )
+    response = connection.getresponse()
+ 
+    self.assertEquals(response.status, 200)
+    self.assertEquals(response.getheader('Content-Type'), content_type)
+    software_collection_hal = json.loads(response.read())
+
+    #####################################################
+    # Get user's software
+    #####################################################
+    content_type = "application/vnd.slapos.org.hal+json; " \
+                   "class=slapos.org.software"
+    software_link_dict = software_collection_hal['_links']\
+        ['item'][0]
+
+    connection = httplib.HTTPConnection(api_netloc)
+    connection.request(
+      method=software_link_dict.get('method', 'GET'),
+      url=software_link_dict['href'],
+      headers={
+       'Authorization': authorization,
+       'Accept': software_link_dict['type'],
+      },
+      body="",
+    )
+    response = connection.getresponse()
+    self.assertEquals(response.getheader('Content-Type'), content_type)
+    software_hal = json.loads(response.read())

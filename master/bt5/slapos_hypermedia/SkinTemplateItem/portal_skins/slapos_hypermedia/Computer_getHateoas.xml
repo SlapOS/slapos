@@ -56,7 +56,7 @@ if REQUEST is None:\n
   raise Unauthorized\n
 \n
 response = REQUEST.RESPONSE\n
-type = \'application/vnd.slapos.org.hal+json; class=slapos.org.person\'\n
+type = \'application/vnd.slapos.org.hal+json; class=slapos.org.computer\'\n
 \n
 if REQUEST.other[\'method\'] != "GET":\n
   response.setStatus(405)\n
@@ -64,31 +64,23 @@ if REQUEST.other[\'method\'] != "GET":\n
 elif type != context.Base_handleAcceptHeader([type]):\n
   response.setStatus(406)\n
   return ""\n
-elif context.getPortalType() != "Person":\n
+elif context.getPortalType() != "Computer":\n
   response.setStatus(403)\n
   return ""\n
 else:\n
+\n
+  # XXX Set more properties on the document\n
+\n
   import json\n
   result_dict = {\n
-      \'_class\': \'slapos.org.person\',\n
+      \'_class\': \'slapos.org.computer\',\n
       \'title\': context.getTitle(),\n
       \'_links\': {\n
         "self": { "href": context.Base_getRequestUrl(),\n
-                  "type": "application/vnd.slapos.org.hal+json; class=slapos.org.person" },\n
+                  "type": "application/vnd.slapos.org.hal+json; class=slapos.org.computer" },\n
 \n
-        "http://slapos.org/reg/request": {\n
-          "href": "%s/Person_requestHateoasHostingSubscription" % context.absolute_url(),\n
-          "method": "POST",\n
-          "type": "application/json; class=slapos.org.hosting_subscription",\n
-        },\n
-\n
-        "http://slapos.org/reg/computer": {\n
-          "href": "%s/Person_getHateoasComputerList" % context.absolute_url(),\n
-          "type": "application/vnd.slapos.org.hal+json; class=slapos.org.collection",\n
-        },\n
-\n
-        "http://slapos.org/reg/hosting_subscription": {\n
-          "href": "%s/Person_getHateoasHostingSubscriptionList" % context.absolute_url(),\n
+        "http://slapos.org/reg/software": {\n
+          "href": "%s/Computer_getHateoasSoftwareList" % context.absolute_url(),\n
           "type": "application/vnd.slapos.org.hal+json; class=slapos.org.collection",\n
         },\n
 \n
@@ -105,7 +97,7 @@ else:\n
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>Person_getHateoas</string> </value>
+            <value> <string>Computer_getHateoas</string> </value>
         </item>
       </dictionary>
     </pickle>

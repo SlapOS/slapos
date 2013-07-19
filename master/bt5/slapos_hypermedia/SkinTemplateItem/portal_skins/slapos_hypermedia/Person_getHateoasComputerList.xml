@@ -56,7 +56,7 @@ if REQUEST is None:\n
   raise Unauthorized\n
 \n
 response = REQUEST.RESPONSE\n
-type = \'application/vnd.slapos.org.hal+json; class=slapos.org.person\'\n
+type = \'application/vnd.slapos.org.hal+json; class=slapos.org.collection\'\n
 \n
 if REQUEST.other[\'method\'] != "GET":\n
   response.setStatus(405)\n
@@ -70,30 +70,23 @@ elif context.getPortalType() != "Person":\n
 else:\n
   import json\n
   result_dict = {\n
-      \'_class\': \'slapos.org.person\',\n
-      \'title\': context.getTitle(),\n
+      \'_class\': \'slapos.org.collection\',\n
       \'_links\': {\n
         "self": { "href": context.Base_getRequestUrl(),\n
-                  "type": "application/vnd.slapos.org.hal+json; class=slapos.org.person" },\n
-\n
-        "http://slapos.org/reg/request": {\n
-          "href": "%s/Person_requestHateoasHostingSubscription" % context.absolute_url(),\n
-          "method": "POST",\n
-          "type": "application/json; class=slapos.org.hosting_subscription",\n
-        },\n
-\n
-        "http://slapos.org/reg/computer": {\n
-          "href": "%s/Person_getHateoasComputerList" % context.absolute_url(),\n
-          "type": "application/vnd.slapos.org.hal+json; class=slapos.org.collection",\n
-        },\n
-\n
-        "http://slapos.org/reg/hosting_subscription": {\n
-          "href": "%s/Person_getHateoasHostingSubscriptionList" % context.absolute_url(),\n
-          "type": "application/vnd.slapos.org.hal+json; class=slapos.org.collection",\n
-        },\n
-\n
+                  "type": type },\n
+        "item": [],\n
       },\n
     }\n
+\n
+  for sql_obj in context.getPortalObject().portal_catalog(\n
+                                                 portal_type="Computer",\n
+                                                 source_administration_uid=context.getUid(),\n
+                                                 ):\n
+    obj = sql_obj.getObject()\n
+    result_dict[\'_links\'][\'item\'].append({\n
+      \'href\': \'%s/Computer_getHateoas\' % obj.absolute_url(),\n
+      \'type\': \'application/vnd.slapos.org.hal+json; class=slapos.org.computer\',\n
+    })\n
 \n
   response.setHeader(\'Content-Type\', type)\n
   return json.dumps(result_dict)\n
@@ -105,7 +98,7 @@ else:\n
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>Person_getHateoas</string> </value>
+            <value> <string>Person_getHateoasComputerList</string> </value>
         </item>
       </dictionary>
     </pickle>

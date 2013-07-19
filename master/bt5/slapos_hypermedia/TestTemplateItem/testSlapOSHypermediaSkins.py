@@ -920,3 +920,187 @@ class TestSlapOSInstance_getHateoasNews(testSlapOSMixin):
         },
       },
     })))
+
+class ComputerAndSoftwareMixin(testSlapOSMixin):
+
+  script_name = None
+
+  def afterSetUp(self):
+    self.logout()
+    self.login('ERP5TypeTestCase')
+    self.erp5_person = self._makePerson()
+    #self.logout()
+    self.login(self.erp5_person.getReference())
+    self.portal.portal_slap.requestComputer(
+                       "computer %s" % self.erp5_person.getReference())
+    self.tic()
+    self.computer = self.portal.portal_catalog(portal_type="Computer",
+                   sort_on=[('creation_date','descending')])[0].getObject()
+    self.tic()
+    self.portal.portal_slap.supplySupply("http://foo.com/software.cfg",
+                                         self.computer.getReference(), "available")
+    self.tic()
+    self.software_installation = self.portal.portal_catalog(
+          portal_type="Software Installation",
+          aggregate_relative_url=self.computer.getRelativeUrl())[0].getObject()
+    
+    
+
+  def _makePerson(self):
+    new_id = self.generateNewId()
+    person_user = self.portal.person_module.template_member.\
+                                 Base_createCloneDocument(batch_mode=1)
+    person_user.edit(
+      title="live_test_%s" % new_id,
+      reference="live_test_%s" % new_id,
+      default_email_text="live_test_%s@example.org" % new_id,
+    )
+
+    person_user.validate()
+    for assignment in person_user.contentValues(portal_type="Assignment"):
+      assignment.open()
+    self.tic()
+    return person_user
+
+  def test_REQUEST_mandatory(self):
+    self.assertRaises(
+      Unauthorized,
+      getattr(self.portal, self.script_name)
+    )
+
+  @simulate('Base_getRequestHeader', '*args, **kwargs', 
+            'return "application/vnd+bar"')
+  def test_wrong_ACCEPT(self):
+    fake_request = do_fake_request("GET")
+    result = getattr(self.portal, self.script_name)(REQUEST=fake_request)
+    self.assertEquals(fake_request.RESPONSE.status, 406)
+    self.assertEquals(result, "")
+
+  def test_bad_method(self):
+    @simulate('Base_getRequestHeader', '*args, **kwargs', 
+              'return "application/vnd.slapos.org.hal+json; ' \
+                    'class=' + self.json_class + '"')
+    def check_bad_method(self):
+      fake_request = do_fake_request("POST")
+      result = getattr(self.portal, self.script_name)(REQUEST=fake_request)
+      self.assertEquals(fake_request.RESPONSE.status, 405)
+      self.assertEquals(result, "")
+    check_bad_method(self)
+
+  def test_request_not_correct_context(self):
+    @simulate('Base_getRequestHeader', '*args, **kwargs', 
+              'return "application/vnd.slapos.org.hal+json; ' \
+                    'class=' + self.json_class + '"')
+    def check_not_correct_context(self):
+      fake_request = do_fake_request("GET")
+      result = getattr(self.portal, self.script_name)(REQUEST=fake_request)
+      self.assertEquals(fake_request.RESPONSE.status, 403)
+      self.assertEquals(result, "")
+    check_not_correct_context(self)
+
+
+  def checkResult(self, context, expected_data):
+    @simulate('Base_getRequestUrl', '*args, **kwargs', 
+        'return "http://example.org/foo"')
+    @simulate('Base_getRequestHeader', '*args, **kwargs', 
+              'return "application/vnd.slapos.org.hal+json; ' \
+                      'class=' + self.json_class + '"')
+    def check(self):
+      fake_request = do_fake_request("GET")
+      result = getattr(context, self.script_name)(REQUEST=fake_request)
+      self.assertEquals(fake_request.RESPONSE.status, 200)
+      self.assertEquals(fake_request.RESPONSE.getHeader('Content-Type'),
+        "application/vnd.slapos.org.hal+json; class=" + self.json_class
+      )
+      self.assertEquals(result, json.dumps(expected_data))
+    check(self)
+
+class TestSlapOSPerson_getHateoasComputerList(ComputerAndSoftwareMixin):
+
+  script_name = "Person_getHateoasComputerList"
+  json_class = "slapos.org.collection"
+
+  def test_result(self):
+    self.checkResult(self.erp5_person, {
+      '_class': 'slapos.org.collection',
+      '_links': {
+        "self": {
+          "href": "http://example.org/foo",
+          "type": "application/vnd.slapos.org.hal+json; " \
+                  "class=slapos.org.collection"
+        },
+        "item": [{
+          "href": "%s/Computer_getHateoas" % \
+              self.computer.absolute_url(),
+          "type": "application/vnd.slapos.org.hal+json; " \
+                  "class=slapos.org.computer"
+        }],
+      },
+    })
+
+class TestSlapOSComputer_getHateoas(ComputerAndSoftwareMixin):
+
+  script_name = "Computer_getHateoas"
+  json_class = "slapos.org.computer"
+
+  def test_result(self):
+    self.checkResult(self.computer, {
+      '_class': 'slapos.org.computer',
+      'title': self.computer.getTitle(),
+      '_links': {
+        "self": {
+          "href": "http://example.org/foo",
+          "type": "application/vnd.slapos.org.hal+json; " \
+                  "class=slapos.org.computer"
+        },
+        "http://slapos.org/reg/software": {
+          "href": "%s/Computer_getHateoasSoftwareList" % \
+              self.computer.absolute_url(),
+          "type": "application/vnd.slapos.org.hal+json; " \
+                  "class=slapos.org.collection"
+        },
+      },
+    })
+
+class TestSlapOSComputer_getSoftwareList(ComputerAndSoftwareMixin):
+
+  script_name = "Computer_getHateoasSoftwareList"
+  json_class = "slapos.org.collection"
+
+  def test_result(self):
+    self.checkResult(self.computer, {
+      '_class': 'slapos.org.collection',
+      '_links': {
+        "self": {
+          "href": "http://example.org/foo",
+          "type": "application/vnd.slapos.org.hal+json; " \
+                  "class=slapos.org.collection"
+        },
+        "item": [{
+          "href": "%s/Software_getHateoas" % \
+              self.software_installation.absolute_url(),
+          "type": "application/vnd.slapos.org.hal+json; " \
+                  "class=slapos.org.software"
+        }],
+      },
+    })
+
+class TestSlapOSSoftware_getHateoas(ComputerAndSoftwareMixin):
+
+  script_name = "Software_getHateoas"
+  json_class = "slapos.org.software"
+
+  def test_result(self):
+    self.checkResult(self.software_installation, {
+      '_class': 'slapos.org.software',
+      'title': self.software_installation.getTitle(),
+      'status': 'started',
+      'software_url': "http://foo.com/software.cfg",
+      '_links': {
+        "self": {
+          "href": "http://example.org/foo",
+          "type": "application/vnd.slapos.org.hal+json; " \
+                  "class=slapos.org.software"
+        },
+      },
+    })
