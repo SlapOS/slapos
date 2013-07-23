@@ -1,4 +1,5 @@
 {% set web_checker_parameter = slapparameter_dict['web-checker-mail-address'] -%}
+{% set tcpv4_port = slapparameter_dict.get('tcpv4_port', 6001) | int -%}
 [buildout]
 parts =
   publish-varnish-connection-information
@@ -17,7 +18,7 @@ develop-eggs-directory = {{ develop_eggs_directory }}
 offline = true
 
 [publish-varnish-connection-information]
-recipe = slapos.cookbook:publishurl
+recipe = slapos.cookbook:publish.serialised
 url = http://${varnish-instance:ip}:${varnish-instance:server-port}/
 
 [varnish-instance]
@@ -25,9 +26,9 @@ recipe = slapos.cookbook:generic.varnish
 
 # Network options
 ip = ${slap-network-information:local-ipv4}
-server-port = 6001
-manager-port = 6002
-stunnel-port = 6003
+server-port =  {{ tcpv4_port }}
+manager-port = {{ tcpv4_port + 1 }}
+stunnel-port = {{ tcpv4_port + 2}}
 
 # Paths: Running wrappers
 varnishd-wrapper = ${basedirectory:services}/varnishd
