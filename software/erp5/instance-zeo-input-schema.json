@@ -48,7 +48,6 @@
             "mount-point": {
               "description": "Traversal path export should be mounted at (opaque to this software type)",
               "default": "/",
-               "pattern": "^[^<>:\"/\\|?*]*$",
               "type": "string"
             },
             "cache-size": {
