@@ -15,7 +15,8 @@ partition. No more (undefined result), no less (IndexError).
 -#}
 {% set ipv4 = (ipv4_set | list)[0] -%}
 
-[test-runner]
+{% if slapparameter_dict['mysql-test-url-list'] -%}
+[{{ section('test-runner') }}]
 recipe = slapos.cookbook:erp5.test
 certificate-authority-path = ${test-certificate-authority:ca-dir}
 mysql-url-list = {{ dumps(slapparameter_dict['mysql-test-url-list']) }}
@@ -40,6 +41,7 @@ ca-private = ${directory:ca-private}
 ca-certs = ${directory:ca-certs}
 ca-newcerts = ${directory:ca-newcerts}
 ca-crl = ${directory:ca-crl}
+{%- endif %}
 
 [directory]
 recipe = slapos.cookbook:mkdirectory
@@ -300,7 +302,6 @@ develop-eggs-directory = {{ develop_eggs_directory }}
 extends =
   {{ parameter_dict['instance-logrotate-cfg'] }}
 parts +=
-  test-runner
   erp5-promise
   {{ part_list | join('\n  ') }}
   publish-zope
