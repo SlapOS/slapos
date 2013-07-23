@@ -52,6 +52,14 @@ class Recipe(GenericBaseRecipe):
                            user, password
                           ])
 
+    htdocs_location = self.options['htdocs']
+    if not (os.path.exists(htdocs_location) and os.listdir(htdocs_location)):
+      try:
+        os.rmdir(htdocs_location)
+      except:
+        pass
+      shutil.copytree(self.options['source'], htdocs_location)
+
     # Install php.ini
     php_ini = self.createFile(os.path.join(self.options['php-ini-dir'],
                                              'php.ini'),
