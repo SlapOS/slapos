@@ -62,7 +62,7 @@
       },
       "type": "object"
     },
-    "innodb-buffer-size": {
+    "innodb-buffer-pool-size": {
       "description": "See MariaDB documentation on innodb_buffer_pool_size",
       "minimum": 0,
       "default": "MariaDB's default",
