@@ -5,6 +5,16 @@ import urllib
 import base64
 import time
 
+MAX_INSTALLATION_TIME = 60*30
+
+def getConnection(protocol, host):
+  if protocol == 'https':
+    return httplib.HTTPSConnection(host)
+  elif protocol == 'http':
+    return httplib.HTTPConnection(host)
+  else:
+    raise ValueError("Protocol not implemented")
+
 user = "%(user)s"
 password = "%(password)s"
 host = "%(host)s"
@@ -18,12 +28,7 @@ erp5_catalog_storage = 'erp5_mysql_innodb_catalog'
 header_dict = {'Authorization': 'Basic %%s' %% \
   base64.encodestring('%%s:%%s' %% (user, password)).strip()}
 
-if protocol == 'https':
-  zope_connection = httplib.HTTPSConnection(host)
-elif protocol == 'http':
-  zope_connection = httplib.HTTPConnection(host)
-else:
-  raise ValueError("Protocol not implemented")
+zope_connection = getConnection(protocol,host)
   
 # Check if an ERP5 site is already created, as ERP5 does support having
 # 2 instances in the same zope, and this script should not destroy user data
@@ -33,12 +38,7 @@ result = zope_connection.getresponse()
 if result.status == 204: # and (result.read() == "False"):
 
   # Use a new connection
-  if protocol == 'https':
-    zope_connection = httplib.HTTPSConnection(host)
-  elif protocol == 'http':
-    zope_connection = httplib.HTTPConnection(host)
-  else:
-    raise ValueError("Protocol not implemented")
+  zope_connection = getConnection(protocol,host)
 
   # Create the expected ERP5 instance
   zope_connection.request(
@@ -71,12 +71,7 @@ if scalability:
   configurator_available = False
   if not configurator_available:
     # Fix site consistency
-    if protocol == 'https':
-      zope_connection = httplib.HTTPSConnection(host)
-    elif protocol == 'http':
-      zope_connection = httplib.HTTPConnection(host)
-    else:
-      raise ValueError("Protocol not implemented")
+    zope_connection = getConnection(protocol,host)
     zope_connection.request(
       'GET', '/%%s/ERP5Site_launchFixConfigurationConsistency' %%(site_id),
       headers=header_dict
@@ -96,16 +91,10 @@ if scalability:
   # Here check if S&MB not already installed
   configurator_already_applied = False
 
-  business_object_name = "default_standard_configuration"
+  business_object_name = "1"
   if configurator_available and not configurator_already_applied:
     # install small and medium business via configurator
-    if protocol == 'https':
-      zope_connection = httplib.HTTPSConnection(host)
-    elif protocol == 'http':
-      zope_connection = httplib.HTTPConnection(host)
-    else:
-      raise ValueError("Protocol not implemented")
-      #https://192.168.241.110:2153/erp5/business_configuration_module/view
+    zope_connection = getConnection(protocol,host)
     zope_connection.request(
       'GET', '/%%s/business_configuration_module/%%s/build' %%(business_object_name, site_id),
       headers=header_dict
@@ -113,23 +102,3 @@ if scalability:
     print "Business building sent"
     print result.read()
     print "Response read"
-
-    time.sleep(20)
-
-    # install small and medium business via configurator
-    if protocol == 'https':
-      zope_connection = httplib.HTTPSConnection(host)
-    elif protocol == 'http':
-      zope_connection = httplib.HTTPConnection(host)
-    else:
-      raise ValueError("Protocol not implemented")
-      #https://192.168.241.110:2153/erp5/business_configuration_module/view
-    zope_connection.request(
-      'GET', '/%%s/business_configuration_module/%%s/install' %%(business_object_name, site_id),
-      headers=header_dict
-    )
-    print "Business building sent"
-    print result.read()
-    print "Response read"
-
-
