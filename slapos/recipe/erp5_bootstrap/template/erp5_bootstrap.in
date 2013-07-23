@@ -102,3 +102,26 @@ if scalability:
     print "Business building sent"
     print result.read()
     print "Response read"
+
+
+    # Here, how to know if the build is ready ?
+    # Check size of :
+    # https://192.168.242.72:1234/erp5/portal_activities/getMessageList
+    # Wait for 0-pending activities
+    start_time = time.time()
+    while MAX_INSTALLATION_TIME > time.time()-start_time:
+      zope_connection = getConnection(protocol,host)
+      zope_connection.request(
+        'GET', '/%%s/portal_activities/getMessageList' %%(site_id),
+        headers=header_dict
+      )
+      message_list_text = result.read()
+      message_list = [s.strip() for s in message_list_text[1:-1].split(',')]
+      if len(message_list)==0:
+        print "There is no pending activities."
+        print "Testing scalability business configuration is ready."
+        break
+      print "Testing scalability business configuration not ready yet"
+      time.sleep(15)
+      
+      
