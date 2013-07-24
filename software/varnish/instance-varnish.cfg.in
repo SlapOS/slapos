@@ -1,5 +1,5 @@
 {% set web_checker_parameter = slapparameter_dict['web-checker-mail-address'] -%}
-{% set tcpv4_port = slapparameter_dict.get('tcpv4_port', 6001) | int -%}
+{% set tcpv4_port = slapparameter_dict.get('tcpv4_port', 6001) -%}
 [buildout]
 parts =
   publish-varnish-connection-information
