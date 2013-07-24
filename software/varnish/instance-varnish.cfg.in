@@ -23,6 +23,7 @@ url = http://${varnish-instance:ip}:${varnish-instance:server-port}/
 
 [varnish-instance]
 recipe = slapos.cookbook:generic.varnish
+backend-url = {{ slapparameter_dict['backend-url'] }}
 
 # Network options
 ip = ${slap-network-information:local-ipv4}
