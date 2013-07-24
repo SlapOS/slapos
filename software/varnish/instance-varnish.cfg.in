@@ -27,7 +27,7 @@ web-checker-working-directory = ${directory:web-checker}
 frontend-url = {{ web_checker_dict.get('frontend-url', 'http://%(ip)s:%(port)s/') % {
   'ip': ip,
   'port': tcpv4_port,
-} -%}
+} }}
 mail-address = {{ web_checker_dict['mail-address'] }}
 smtp-host = {{ web_checker_dict['smtp-host'] }}
 wget-binary-path = {{ parameter_dict['wget'] }}/bin/wget
