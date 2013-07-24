@@ -1,17 +1,50 @@
-{% set web_checker_parameter = slapparameter_dict['web-checker-mail-address'] -%}
 {% set tcpv4_port = slapparameter_dict.get('tcpv4_port', 6001) -%}
+{% set ip = (ipv4_set | list)[0] %}
 [buildout]
 parts =
   publish-varnish-connection-information
   varnish-instance
   cron
   cron-entry-logrotate
-  {# When web_checker related parameter is given, web_checker will be enabled.#}
-{% if web_checker_parameter is defined %}
+  {# When web_checker related parameter is given, web_checker will be enabled.-#}
+{% set web_checker_dict = slapparameter_dict.get('web-checker', {}) -%}
+{% if web_checker_dict -%}
   web-checker
   cron-entry-web-checker
   logrotate-entry-web-checker
-{% endif %}
+
+[cron-entry-web-checker]
+<= cron
+recipe = slapos.cookbook:cron.d
+name = web-checker
+frequency = 0 0 * * *
+command = ${varnish-instance:web-checker} ${web-checker:web-checker-config}
+
+[web-checker]
+recipe = slapos.cookbook:webchecker
+web-checker-config = ${rootdirectory:etc}/web_checker.cfg
+web-checker-working-directory = ${directory:web-checker}
+frontend-url = {{ web_checker_dict.get('frontend-url', 'http://%(ip)s:%(port)s/') % {
+  'ip': ip,
+  'port': tcpv4_port,
+} -%}
+mail-address = {{ web_checker_dict['mail-address'] }}
+smtp-host = {{ web_checker_dict['smtp-host'] }}
+wget-binary-path = {{ parameter_dict['wget'] }}/bin/wget
+varnishlog-binary-path = ${varnish-instance:varnishlog-wrapper}
+web-checker-log = ${basedirectory:log}/web-checker.log
+
+[logrotate-entry-web-checker]
+<= logrotate
+recipe = slapos.cookbook:logrotate.d
+name = web-checker
+log = ${web-checker:web-checker-log}
+frequency = daily
+rotate-num = 30
+sharedscripts = true
+notifempty = true
+create = true
+{%- endif %}
 
 eggs-directory = {{ eggs_directory }}
 develop-eggs-directory = {{ develop_eggs_directory }}
@@ -26,7 +59,7 @@ recipe = slapos.cookbook:generic.varnish
 backend-url = {{ slapparameter_dict['backend-url'] }}
 
 # Network options
-ip = ${slap-network-information:local-ipv4}
+ip = {{ ip }}
 server-port =  {{ tcpv4_port }}
 manager-port = {{ tcpv4_port + 1 }}
 stunnel-port = {{ tcpv4_port + 2}}
@@ -51,22 +84,6 @@ varnish-data = ${directory:varnish-data}
 # this will pass at -n option
 varnish-instance-name = ${directory:varnish-instance}
 web-checker = {{ parameter_dict['buildout-bin-directory'] }}/web_checker_utility
-
-[cron-entry-web-checker]
-<= cron
-recipe = slapos.cookbook:cron.d
-name = web-checker
-frequency = 0 0 * * *
-command = ${varnish-instance:web-checker} ${web-checker:web-checker-config}
-
-[web-checker]
-recipe = slapos.cookbook:webchecker
-web-checker-config = ${rootdirectory:etc}/web_checker.cfg
-web-checker-working-directory = ${directory:web-checker}
-frontend-url = ${varnish-instance:ip}:${varnish-instance:server-port}
-wget-binary-path = {{ parameter_dict['wget'] }}/bin/wget
-varnishlog-binary-path = ${varnish-instance:varnishlog-wrapper}
-web-checker-log = ${basedirectory:log}/web-checker.log
 
 [cron]
 recipe = slapos.cookbook:cron
@@ -101,17 +118,6 @@ conf = ${rootdirectory:etc}/logrotate.conf
 logrotate-entries = ${directory:logrotate-entries}
 backup = ${directory:logrotate-backup}
 state-file = ${rootdirectory:srv}/logrotate.status
-
-[logrotate-entry-web-checker]
-<= logrotate
-recipe = slapos.cookbook:logrotate.d
-name = web-checker
-log = ${web-checker:web-checker-log}
-frequency = daily
-rotate-num = 30
-sharedscripts = true
-notifempty = true
-create = true
 
 [basedirectory]
 recipe = slapos.cookbook:mkdirectory

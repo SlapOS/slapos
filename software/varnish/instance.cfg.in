@@ -22,6 +22,7 @@ context =
     key eggs_directory buildout:eggs-directory
     key develop_eggs_directory buildout:develop-eggs-directory
     key slapparameter_dict slap-parameters:configuration
+    key ipv4_set slap-configuration:ipv4
     ${:extra-context}
 
 [dynamic-template-varnish-parameters]
