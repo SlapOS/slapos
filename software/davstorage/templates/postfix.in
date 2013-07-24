@@ -1,2 +1,15 @@
-#!/bin/sh
-${:postfix-location} -c ${:postfix-config-dir} start
+#!${:python-location}
+import subprocess
+import signal
+import time
+
+def handler(signum,frame):
+    subprocess.call("kill -9 `cat ${:pid-location}`")
+
+subprocess.call("${:postfix-location} -c ${:postfix-config-dir} start")
+
+signal.signal(-1,handler)
+
+while True:
+    time.sleep(120)
+    
