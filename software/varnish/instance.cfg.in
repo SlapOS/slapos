@@ -6,7 +6,7 @@ eggs-directory = {{ eggs_directory }}
 develop-eggs-directory = {{ develop_eggs_directory }}
 offline = true
 
-[slap-parameters]
+[slap-configuration]
 recipe = slapos.cookbook:slapconfiguration.serialised
 computer = ${slap-connection:computer-id}
 partition = ${slap-connection:partition-id}
@@ -21,7 +21,7 @@ extra-context =
 context =
     key eggs_directory buildout:eggs-directory
     key develop_eggs_directory buildout:develop-eggs-directory
-    key slapparameter_dict slap-parameters:configuration
+    key slapparameter_dict slap-configuration:configuration
     key ipv4_set slap-configuration:ipv4
     ${:extra-context}
 
