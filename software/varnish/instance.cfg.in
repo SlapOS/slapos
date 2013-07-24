@@ -7,7 +7,7 @@ develop-eggs-directory = {{ develop_eggs_directory }}
 offline = true
 
 [slap-parameters]
-recipe = slapos.cookbook:slapconfiguration
+recipe = slapos.cookbook:slapconfiguration.serialised
 computer = ${slap-connection:computer-id}
 partition = ${slap-connection:partition-id}
 url = ${slap-connection:server-url}
