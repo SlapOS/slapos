@@ -40,13 +40,13 @@ class ConsoleCommand(ClientConfigCommand):
 
         shell = ap.add_mutually_exclusive_group()
 
-        shell.add_argument('-b', '--bpython',
-                           action='store_true',
-                           help='Use BPython shell if available (default)')
-
         shell.add_argument('-i', '--ipython',
                            action='store_true',
-                           help='Use IPython shell if available')
+                           help='Use IPython shell if available (default)')
+
+        shell.add_argument('-b', '--bpython',
+                           action='store_true',
+                           help='Use BPython shell if available')
 
         shell.add_argument('-p', '--python',
                            action='store_true',
@@ -60,7 +60,7 @@ class ConsoleCommand(ClientConfigCommand):
         local = init(conf)
 
         if not any([args.python, args.ipython, args.bpython]):
-            args.bpython = True
+            args.ipython = True
 
         if args.ipython:
             try:
