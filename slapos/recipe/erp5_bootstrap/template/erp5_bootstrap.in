@@ -45,7 +45,7 @@ def waitFor0PendingActivities():
 
 def testIfExist(page, unexcepted_word_content="Site Error"):
   zope_connection = getConnection()
-  zope_connection.request('GET', '/%%s/%%s', site_id, pages)
+  zope_connection.request('GET', '/%%s/%%s', site_id, page)
   result = zope_connection.getresponse()
   return not unexcepted_content in result.read()
 
