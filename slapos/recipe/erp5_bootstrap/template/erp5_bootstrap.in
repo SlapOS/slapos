@@ -41,7 +41,7 @@ def waitFor0PendingActivities():
     if len(message_list)==0:
       print "There is no pending activities."
       break
-    print "There is %d pending activities" %len(message_list)
+    print "There is %%d pending activities" %%len(message_list)
 
 def testIfExist(page, unexcepted_word_content="Site Error"):
   zope_connection = getConnection()
@@ -83,7 +83,7 @@ if result.status == 204: # and (result.read() == "False"):
 if scalability:
   
   # Fix site consistency
-  if not testIfExist("/%%s/portal_configurator/" %site_id):
+  if not testIfExist("/%%s/portal_configurator/" %%site_id):
     zope_connection = getConnection()
     zope_connection.request(
       'GET', '/%%s/ERP5Site_launchFixConfigurationConsistency' %%(site_id),
@@ -97,8 +97,8 @@ if scalability:
     print "Site consistency checking: done."
 
   # Install testing scalability business configuration if not exists
-  if testIfExist("/%%s/portal_configurator/" %site_id) \
-     and not testIfExist("/%%s/sale_order_module/" %site_id):
+  if testIfExist("/%%s/portal_configurator/" %%site_id) \
+     and not testIfExist("/%%s/sale_order_module/" %%site_id):
     zope_connection = getConnection()
     zope_connection.request(
       'GET', '/%%s/business_configuration_module/1/build' %%(business_object_name, site_id),
