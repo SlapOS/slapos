@@ -42,6 +42,7 @@ def waitFor0PendingActivities():
       'GET', '/%%s/portal_activities/getMessageList' %%(site_id),
       headers=header_dict
     )
+    result = zope_connection.getresponse()
     message_list_text = result.read()
     message_list = [s.strip() for s in message_list_text[1:-1].split(',')]
     if len(message_list)==0:
@@ -96,8 +97,8 @@ if scalability:
       'GET', '/%%s/ERP5Site_launchFixConfigurationConsistency' %%(site_id),
       headers=header_dict
     )
-    print "Check consistency..."
     result = zope_connection.getresponse()
+    print "Check consistency..."
     print result.read()
     # Wait activities
     waitFor0PendingActivities()
@@ -111,6 +112,7 @@ if scalability:
       'GET', '/%%s/business_configuration_module/1/build' %%site_id,
       headers=header_dict
     )
+    result = zope_connection.getresponse()
     print "Build scalability business configuration..."
     print result.read()
     # Wait activities
