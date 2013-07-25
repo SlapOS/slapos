@@ -42,6 +42,7 @@ def waitFor0PendingActivities():
       print "There is no pending activities."
       break
     print "There is %%d pending activities" %%len(message_list)
+    time.sleep(5)
 
 def testIfExist(page, unexcepted_content="Site Error"):
   zope_connection = getConnection()
