@@ -1,9 +1,10 @@
 <html>
 <head>
-<title>New Document - Created By AjaXplorer</title>
+<title>Empty Website</title>
 <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
 </head>
 <body bgcolor="#FFFFFF" text="#000000">
-  <h2>Hi, this website folder is still empty. Please go to your File Manager administration and replace this folder by your new website files.</h2>
+  <h3>Hi, this website folder is still empty. Please go to your File Manager administration (filemanager-url) and 
+  upload your files into ${:folder} folder.</h3>
 </body>
 </html>

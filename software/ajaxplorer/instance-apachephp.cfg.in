@@ -1,0 +1,394 @@
+[buildout]
+
+parts =
+  certificate-authority
+  ca-stunnel
+  logrotate
+  logrotate-entry-apache
+  logrotate-entry-stunnel
+  cron
+  cron-entry-logrotate
+  promise
+
+  frontend-ajaxupload-promise
+  frontend-website2-promise
+  frontend-website-promise
+#  content-promise
+  configure-ajaxplorer
+  publish-connection-informations
+
+eggs-directory = ${buildout:eggs-directory}
+develop-eggs-directory = ${buildout:develop-eggs-directory}
+offline = true
+
+
+#----------------
+#--
+#-- Creation of all needed directories.
+
+[rootdirectory]
+recipe = slapos.cookbook:mkdirectory
+etc = $${buildout:directory}/etc
+var = $${buildout:directory}/var
+srv = $${buildout:directory}/srv
+bin = $${buildout:directory}/bin
+tmp = $${buildout:directory}/tmp
+
+[basedirectory]
+recipe = slapos.cookbook:mkdirectory
+log = $${rootdirectory:var}/log
+services = $${rootdirectory:etc}/service
+run = $${rootdirectory:var}/run
+backup = $${rootdirectory:srv}/backup
+promises = $${rootdirectory:etc}/promise
+
+[directory]
+recipe = slapos.cookbook:mkdirectory
+cron-entries = $${rootdirectory:etc}/cron.d
+crontabs = $${rootdirectory:etc}/crontabs
+cronstamps = $${rootdirectory:etc}/cronstamps
+ca-dir = $${rootdirectory:srv}/ssl
+httpd-log = $${basedirectory:log}/apache
+php-ini-dir = $${rootdirectory:etc}/php
+tmp-php = $${rootdirectory:tmp}/php
+logrotate-entries = $${rootdirectory:etc}/logrotate.d
+logrotate-backup = $${basedirectory:backup}/logrotate
+report = $${rootdirectory:etc}/report
+stunnel-conf = $${rootdirectory:etc}/stunnel
+xml-report = $${rootdirectory:var}/xml_report
+www = $${rootdirectory:srv}/www/
+
+[cadirectory]
+recipe = slapos.cookbook:mkdirectory
+requests = $${directory:ca-dir}/requests
+private = $${directory:ca-dir}/private
+certs = $${directory:ca-dir}/certs
+newcerts = $${directory:ca-dir}/newcerts
+crl = $${directory:ca-dir}/crl
+
+
+#----------------
+#--
+#-- Deploy cron.
+
+[cron]
+recipe = slapos.cookbook:cron
+dcrond-binary = ${dcron:location}/sbin/crond
+cron-entries = $${directory:cron-entries}
+crontabs = $${directory:crontabs}
+cronstamps = $${directory:cronstamps}
+catcher = $${cron-simplelogger:wrapper}
+binary = $${basedirectory:services}/crond
+
+[cron-simplelogger]
+recipe = slapos.cookbook:simplelogger
+wrapper = $${rootdirectory:bin}/cron_simplelogger
+log = $${basedirectory:log}/crond.log
+
+
+#----------------
+#--
+#-- Deploy logrotate.
+
+[cron-entry-logrotate]
+<= cron
+recipe = slapos.cookbook:cron.d
+name = logrotate
+frequency = 0 0 * * *
+command = $${logrotate:wrapper}
+
+[logrotate]
+recipe = slapos.cookbook:logrotate
+# Binaries
+logrotate-binary = ${logrotate:location}/usr/sbin/logrotate
+gzip-binary = ${gzip:location}/bin/gzip
+gunzip-binary = ${gzip:location}/bin/gunzip
+# Directories
+wrapper = $${rootdirectory:bin}/logrotate
+conf = $${rootdirectory:etc}/logrotate.conf
+logrotate-entries = $${directory:logrotate-entries}
+backup = $${directory:logrotate-backup}
+state-file = $${rootdirectory:srv}/logrotate.status
+
+
+#----------------
+#--
+#-- Deploy stunnel.
+
+[stunnel]
+recipe = slapos.cookbook:stunnel
+client = true
+stunnel-binary = ${stunnel:location}/bin/stunnel
+remote-host = $${mariadb-urlparse:host}
+remote-port = $${mariadb-urlparse:port}
+local-host = $${slap-network-information:local-ipv4}
+local-port = 3306
+log-file = $${basedirectory:log}/stunnel.log
+config-file = $${directory:stunnel-conf}/stunnel.conf
+key-file = $${directory:stunnel-conf}/stunnel.key
+cert-file = $${directory:stunnel-conf}/stunnel.crt
+pid-file = $${basedirectory:run}/stunnel.pid
+wrapper = $${rootdirectory:bin}/raw_stunnel
+post-rotate-script = $${rootdirectory:bin}/stunnel_post_rotate
+
+[logrotate-entry-stunnel]
+<= logrotate
+recipe = slapos.cookbook:logrotate.d
+name = stunnel
+log = $${stunnel:log-file}
+frequency = daily
+rotate-num = 30
+notifempty = true
+create = true
+post = $${stunnel:post-rotate-script}
+
+
+#----------------
+#--
+#-- Certificate stuff.
+
+[certificate-authority]
+recipe = slapos.cookbook:certificate_authority
+openssl-binary = ${openssl:location}/bin/openssl
+ca-dir = $${directory:ca-dir}
+requests-directory = $${cadirectory:requests}
+wrapper = $${basedirectory:services}/ca
+ca-private = $${cadirectory:private}
+ca-certs = $${cadirectory:certs}
+ca-newcerts = $${cadirectory:newcerts}
+ca-crl = $${cadirectory:crl}
+
+[ca-stunnel]
+<= certificate-authority
+recipe = slapos.cookbook:certificate_authority.request
+executable = $${stunnel:wrapper}
+wrapper = $${basedirectory:services}/stunnel
+key-file = $${stunnel:key-file}
+cert-file = $${stunnel:cert-file}
+
+
+#----------------
+#--
+#-- Request MariaDB instance and parse its URL.
+
+[request-mariadb]
+<= slap-connection
+recipe = slapos.cookbook:request
+name = MariaDB
+software-url = $${slap-connection:software-release-url}
+software-type = mariadb
+return = url
+sla = computer_guid
+sla-computer_guid = $${slap-connection:computer-id}
+
+[mariadb-urlparse]
+recipe = slapos.cookbook:urlparse
+url = $${request-mariadb:connection-url}
+
+
+#----------------
+#--
+#-- Deploy Apache + PHP application.
+[httpd-conf]
+recipe = slapos.recipe.template
+url = ${template-httpd-conf:location}/${template-httpd-conf:filename}
+output = $${rootdirectory:etc}/apache.conf
+mode = 0600
+
+document_root = $${rootdirectory:srv}/www/
+public_html = $${:document_root}data/files/public_html/
+public_html2 = $${:document_root}data/files/public_html2/
+pid_file = $${basedirectory:run}/apache.pid
+lock_file = $${basedirectory:run}/apache.lock
+ip = $${slap-network-information:global-ipv6}
+port = 8080
+port2 = 8070
+port3 = 8090
+error_log = $${directory:httpd-log}/error.log
+access_log = $${directory:httpd-log}/access.log
+php_ini_dir = $${directory:php-ini-dir}
+php_lib_path = ${apache-php:location}/lib/php
+
+
+# Deploy Apache + PHP application
+[apache-php]
+recipe = slapos.cookbook:apachephp
+source = ${application:location}
+template = 
+configuration = 
+
+htdocs = $${directory:www}
+pid-file = $${basedirectory:run}/apache.pid
+lock-file = $${basedirectory:run}/apache.lock
+ip = $${httpd-conf:ip}
+port = $${httpd-conf:port}
+url = http://[$${:ip}]:$${:port}/
+error-log = $${directory:httpd-log}/error.log
+access-log = $${directory:httpd-log}/access.log
+php-ini-dir = $${directory:php-ini-dir}
+tmp-dir = $${directory:tmp-php}
+wrapper = $${basedirectory:services}/apache
+
+httpd-binary = ${apache:location}/bin/httpd
+
+default-conf = false
+httpd-conf = $${httpd-conf:output}
+
+mysql-username = $${mariadb-urlparse:username}
+mysql-password = $${mariadb-urlparse:password}
+mysql-database = $${mariadb-urlparse:path}
+mysql-host = $${stunnel:local-host}
+mysql-port = $${stunnel:local-port}
+
+environment = 
+  PATH=${apache-php:location}/bin:${imagemagick:location}/bin
+
+[configure-ajaxplorer]
+recipe = plone.recipe.command
+convert = ${imagemagick:location}/bin/convert
+command = mkdir -p $${httpd-conf:public_html} && \
+  mkdir -p $${httpd-conf:public_html2} && \
+  sed -i 's#/usr/bin/convert#$${:convert}#' $${apache-php:htdocs}/plugins/editor.imagick/manifest.xml && \
+  sed -i 's#enabled="false"#enabled="true"#' $${apache-php:htdocs}/plugins/editor.imagick/manifest.xml
+update-command = $${:command}
+
+[logrotate-entry-apache]
+<= logrotate
+recipe = slapos.cookbook:logrotate.d
+name = apache
+log = $${apache-php:error-log} $${apache-php:access-log}
+frequency = daily
+rotate-num = 30
+sharedscripts = true
+notifempty = true
+create = true
+
+
+#----------------
+#--
+#-- Request frontends.
+
+[request-frontend]
+<= slap-connection
+recipe = slapos.cookbook:requestoptional
+name = Frontend-public_html
+software-url = $${slap-parameter:frontend-software-url}
+slave = true
+config = url custom_domain
+config-url = http://[$${apache-php:ip}]:$${apache-php:port}/
+return = site_url
+config-custom_domain = $${slap-parameter:site-domain}
+
+[request-frontend-ajaxupload]
+<= slap-connection
+recipe = slapos.cookbook:requestoptional
+name = Frontend-FileManager
+software-url = $${slap-parameter:frontend-software-url}
+slave = true
+config = url custom_domain
+config-url = http://[$${httpd-conf:ip}]:$${httpd-conf:port2}/
+return = site_url
+config-custom_domain = $${slap-parameter:filemanager-domain}
+
+[request-frontend2]
+<= slap-connection
+recipe = slapos.cookbook:requestoptional
+name = Frontend-public_html2
+software-url = $${slap-parameter:frontend-software-url}
+slave = true
+config = url custom_domain
+config-url = http://[$${httpd-conf:ip}]:$${httpd-conf:port3}/
+return = site_url
+config-custom_domain = $${slap-parameter:site2-domain}
+
+
+#----------------
+#--
+#-- Deploy slapmonitor.
+
+#[slapmonitor]
+#recipe = slapos.cookbook:slapmonitor
+#pid-file = $${basedirectory:run}/apache.pid
+#database-path = $${basedirectory:log}/slapmonitor.db
+#slapmonitor-path = ${buildout:bin-directory}/slapmonitor
+#path = $${basedirectory:services}/slapmonitor
+#
+#[slapmonitor-xml]
+#recipe = slapos.cookbook:slapmonitor-xml
+#database-path = $${basedirectory:log}/slapmonitor.db
+#slapmonitor-xml-path = ${buildout:bin-directory}/slapmonitor-xml
+#path = $${directory:report}/slapmonitor-xml
+
+
+#----------------
+#--
+#-- Publish instance parameters.
+
+[publish-connection-informations]
+recipe = slapos.cookbook:publish
+public_html_backend = $${apache-php:url}
+public_html = $${request-frontend:connection-site_url}
+public_html2_backend = http://[$${apache-php:ip}]:$${httpd-conf:port3}
+public_html2  = $${request-frontend2:connection-site_url}
+fileManager_backend = http://[$${apache-php:ip}]:$${httpd-conf:port2}
+fileManager = $${request-frontend-ajaxupload:connection-site_url}
+mysql_username = $${apache-php:mysql-username}
+mysql_password = $${apache-php:mysql-password}
+mysql_database = $${apache-php:mysql-database}
+mysql_host = $${apache-php:mysql-host}
+mysql_port = $${apache-php:mysql-port}
+
+
+#----------------
+#--
+#-- Deploy promises scripts.
+
+[promise]
+recipe = slapos.cookbook:check_port_listening
+path = $${basedirectory:promises}/apache
+hostname = $${apache-php:ip}
+port = $${apache-php:port}
+
+[frontend-website-promise]
+recipe = slapos.cookbook:check_url_available
+path = $${basedirectory:promises}/frontend-website
+url = $${request-frontend:connection-site_url}
+dash_path = ${dash:location}/bin/dash
+curl_path = ${curl:location}/bin/curl
+
+[frontend-website2-promise]
+recipe = slapos.cookbook:check_url_available
+path = $${basedirectory:promises}/frontend-website2
+url = $${request-frontend2:connection-site_url}
+dash_path = ${dash:location}/bin/dash
+curl_path = ${curl:location}/bin/curl
+
+[frontend-ajaxupload-promise]
+recipe = slapos.cookbook:check_url_available
+path = $${basedirectory:promises}/frontend-ajaxupload
+url = $${request-frontend-ajaxupload:connection-site_url}
+dash_path = ${dash:location}/bin/dash
+curl_path = ${curl:location}/bin/curl
+
+[content-promise]
+recipe = slapos.cookbook:check_page_content
+path = $${basedirectory:promises}/content
+url = $${request-frontend-ajaxupload:connection-site_url}
+match = AjaXplorer
+dash_path = ${dash:location}/bin/dash
+curl_path = ${curl:location}/bin/curl
+
+
+
+
+[slap-parameter]
+# Default value if no domain is specified
+site-domain =
+filemanager-domain =
+site2-domain =
+frontend-software-url = http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg
+# Default value if no ssh parameter is specified
+logbox-ip =
+logbox-port =
+logbox-user =
+logbox-passwd =

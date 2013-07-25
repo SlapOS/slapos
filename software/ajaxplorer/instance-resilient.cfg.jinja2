@@ -1,0 +1,63 @@
+# vim: set ft=cfg:
+
+{% import 'parts' as parts %}
+{% import 'replicated' as replicated %}
+
+[buildout]
+eggs-directory = {{ eggs_directory }}
+develop-eggs-directory = {{ develop_eggs_directory }}
+offline = true
+
+# += because we need to take up parts (like instance-custom, slapmonitor etc) from the profile we extended
+parts +=
+  {{ parts.replicate("apache", "3") }}
+  publish-connection-informations
+
+{{ replicated.replicate("apache", "3", "apache-export", "apache-import") }}
+
+# Bubble up the parameters
+[request-apache]
+return = url ssh-public-key ssh-url notification-id ip public_html_backend public_html public_html2_backend public_html2 fileManager_backend fileManager mysql_username mysql_password mysql_database mysql_host mysql_port
+# XXX: hardcoded values
+config = filemanager-domain site-domain site2-domain frontend-software-url number authorized-key notify ip-list namebase mariadb1-computer-guid pbs-mariadb1-computer-guid mariadb2-computer-guid pbs-mariadb2-computer-guid mariadb3-computer-guid pbs-mariadb3-computer-guid
+config-mariadb1-computer-guid = ${slap-parameter:mariadb1-computer-guid}
+config-pbs-mariadb1-computer-guid = ${slap-parameter:pbs-mariadb1-computer-guid}
+config-mariadb2-computer-guid = ${slap-parameter:mariadb2-computer-guid}
+config-pbs-mariadb2-computer-guid = ${slap-parameter:pbs-mariadb2-computer-guid}
+config-mariadb3-computer-guid = ${slap-parameter:mariadb3-computer-guid}
+config-pbs-mariadb3-computer-guid = ${slap-parameter:pbs-mariadb3-computer-guid}
+config-filemanager-domain = ${slap-parameter:filemanager-domain}
+config-site-domain = ${slap-parameter:site-domain}
+config-site2-domain = ${slap-parameter:site2-domain}
+config-frontend-software-url = ${slap-parameter:frontend-software-url}
+
+[publish-connection-informations]
+recipe = slapos.cookbook:publish
+public_html_backend = ${request-apache:connection-public_html_backend}
+public_html = ${request-apache:connection-public_html}
+public_html2_backend = ${request-apache:connection-public_html2_backend}
+public_html2  = ${request-apache:connection-public_html2}
+fileManager_backend = ${request-apache:connection-fileManager_backend}
+fileManager = ${request-apache:connection-fileManager}
+mysql_username = ${request-apache:connection-mysql_username}
+mysql_password = ${request-apache:connection-mysql_password}
+mysql_database = ${request-apache:connection-mysql_database}
+mysql_host = ${request-apache:connection-mysql_host}
+mysql_port = ${request-apache:connection-mysql_port}
+
+[slap-parameter]
+# Default parameters for distributed deployment
+# I.e state "backup1 of maria should go there, ..."
+# XXX-Cedric: Hardcoded number of backups. Should be dynamically generated.
+mariadb1-computer-guid =
+pbs-mariadb1-computer-guid =
+mariadb2-computer-guid =
+pbs-mariadb2-computer-guid =
+mariadb3-computer-guid =
+pbs-mariadb3-computer-guid =
+# XXX-Cedric: Hardcoded parameters. Should be dynamically generated.
+# Default value if no domain is specified
+site-domain =
+filemanager-domain =
+site2-domain =
+frontend-software-url = http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg

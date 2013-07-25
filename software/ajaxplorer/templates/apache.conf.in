@@ -3,9 +3,9 @@
 
 # Basic server configuration
 PidFile "${:pid_file}"
-Listen ${:ip}:8070
-Listen ${:ip}:8080
-Listen ${:ip}:8090
+Listen ${:ip}:${:port}
+Listen ${:ip}:${:port2}
+Listen ${:ip}:${:port3}
 PHPINIDir ${:php_ini_dir}
 ServerAdmin someone@email
 TypesConfig conf/mime.types
@@ -21,10 +21,10 @@ LogFormat "%h %{REMOTE_USER}i %l %u %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-Ag
 LogFormat "%h %{REMOTE_USER}i %l %u %t \"%r\" %>s %b" common
 CustomLog "${:access_log}" common
 
-NameVirtualHost ${:ip}:8090
-NameVirtualHost ${:ip}:8080
-NameVirtualHost ${:ip}:8070
-<VirtualHost ${:ip}:8070>
+NameVirtualHost ${:ip}:${:port2}
+NameVirtualHost ${:ip}:${:port}
+NameVirtualHost ${:ip}:${:port3}
+<VirtualHost ${:ip}:${:port2}>
   #ServerName www.example.com
   
   # Directory protection
@@ -45,7 +45,7 @@ NameVirtualHost ${:ip}:8070
 
 </VirtualHost>
 
-<VirtualHost ${:ip}:8080>
+<VirtualHost ${:ip}:${:port}>
   #ServerName www.example.com
   
   # Directory protection
@@ -55,18 +55,18 @@ NameVirtualHost ${:ip}:8070
       Require all denied
   </Directory>
   
-  <Directory ${:document_root}data/files/website/>
+  <Directory ${:public_html}>
     Options FollowSymLinks
     AllowOverride All
     Require all granted
   </Directory>
   
-  DocumentRoot ${:document_root}data/files/website/
+  DocumentRoot ${:public_html}
   DirectoryIndex index.html index.php
 
 </VirtualHost>
 
-<VirtualHost ${:ip}:8090>
+<VirtualHost ${:ip}:${:port3}>
   #ServerName www.example.com
   
   # Directory protection
@@ -76,16 +76,24 @@ NameVirtualHost ${:ip}:8070
       Require all denied
   </Directory>
   
-  <Directory ${:document_root}data/files/website2/>
+  <Directory ${:public_html2}>
     Options FollowSymLinks
     AllowOverride All
     Require all granted
   </Directory>
   
-  DocumentRoot ${:document_root}data/files/website2/
+  DocumentRoot ${:public_html2}
   DirectoryIndex index.html index.php
 
 </VirtualHost>
+
+#Update PHP.INI
+
+php_value include_path ".:${:php_lib_path}"
+php_value upload_max_filesize 20M
+php_value post_max_size 20M
+php_value output_buffering none
+
 
 # List of modules
 LoadModule unixd_module modules/mod_unixd.so
