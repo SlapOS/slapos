@@ -28,7 +28,7 @@ from setuptools import setup, find_packages
 import glob
 import os
 
-version = '0.78.1.dev'
+version = '0.78.4.dev'
 name = 'slapos.cookbook'
 long_description = open("README.txt").read() + "\n" + \
     open("CHANGES.txt").read() + "\n"
@@ -188,6 +188,8 @@ setup(name=name,
           'slapreport = slapos.recipe.slapreport:Recipe',
           'slaprunner = slapos.recipe.slaprunner:Recipe',
           'slaprunner.test = slapos.recipe.slaprunner:Test',
+          'slaprunner.export = slapos.recipe.slaprunner.backup:ExportRecipe',
+          'slaprunner.import = slapos.recipe.slaprunner.backup:ImportRecipe',
           'softwaretype = slapos.recipe.softwaretype:Recipe',
           'sphinx= slapos.recipe.sphinx:Recipe',
           'sshkeys_authority = slapos.recipe.sshkeys_authority:Recipe',
@@ -195,6 +197,7 @@ setup(name=name,
           'stunnel = slapos.recipe.stunnel:Recipe',
           'symbolic.link = slapos.recipe.symbolic_link:Recipe',
           'tidstorage = slapos.recipe.tidstorage:Recipe',
+          'trac = slapos.recipe.trac:Recipe',
           'urlparse = slapos.recipe._urlparse:Recipe',
           'uuid = slapos.recipe._uuid:Recipe',
           'vifib = slapos.recipe.vifib:Recipe',

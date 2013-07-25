@@ -1,0 +1,22 @@
+--- a/Makefile.am	2012-05-13 16:44:48.000000000 +0200
++++ b/Makefile.am	2013-06-21 15:05:07.519274542 +0200
+@@ -41,7 +41,7 @@
+ ACLOCAL_AMFLAGS = -I m4
+ 
+ # subdirectories in the distribution
+-SUBDIRS = lib src doc po tests util
++SUBDIRS = lib src po tests util
+ 
+ EXTRA_DIST = ChangeLog.README MAILING-LIST \
+              msdos/ChangeLog msdos/config.h msdos/Makefile.DJ \
+--- a/Makefile.in	2012-08-05 22:17:17.000000000 +0200
++++ b/Makefile.in	2013-06-21 15:05:04.351269286 +0200
+@@ -1195,7 +1195,7 @@
+ ACLOCAL_AMFLAGS = -I m4
+ 
+ # subdirectories in the distribution
+-SUBDIRS = lib src doc po tests util
++SUBDIRS = lib src po tests util
+ EXTRA_DIST = ChangeLog.README MAILING-LIST \
+              msdos/ChangeLog msdos/config.h msdos/Makefile.DJ \
+              msdos/Makefile.WC ABOUT-NLS \

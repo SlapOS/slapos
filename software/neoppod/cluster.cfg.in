@@ -19,10 +19,9 @@ partition-id = ${slap-connection:partition-id}
 config-cluster = {{ slapparameter_dict['cluster'] }}
 config-partitions = {{ slapparameter_dict.get('partitions', 12) }}
 config-replicas = {{ slapparameter_dict.get('replicas', 0) }}
-config-verbose = {{ dumps(slapparameter_dict.get('verbose', 0)) }}
 
 [request-config]
-base = cluster verbose
+base = cluster
 master = partitions replicas
 node = masters
 

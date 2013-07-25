@@ -466,12 +466,14 @@ post = {{ bin_directory }}/killpidfromfile ${apache-{{ backend_name }}:pid-file}
 recipe = slapos.cookbook:haproxy
 name = {{ backend_name }}
 conf-path = ${directory:etc}/haproxy-{{ backend_name }}.cfg
+socket-path = ${directory:run}/haproxy-{{ backend_name }}.sock
 ip = {{ ipv4 }}
 port = {{ current_haproxy_port }}
 maxconn = {{ backend_configuration['maxconn'] }}
 server-check-path = /{{ site_id }}/getId
 wrapper-path = ${directory:services}/haproxy-{{ backend_name }}
 binary-path = {{ parameter_dict['haproxy'] }}/sbin/haproxy
+ctl-path = ${directory:bin}/haproxy-{{ backend_name }}-ctl
 backend-list = {{ haproxy_backend_list | join(' ')}}
 {%-  endif %}
 {% endfor -%}

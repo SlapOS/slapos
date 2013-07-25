@@ -36,7 +36,11 @@ class Recipe(GenericBaseRecipe):
 
   binary-path -- location of the haproxy command
 
+  ctl-path -- location of the haproxy control script
+
   conf-path -- location of the configuration file
+
+  socket-path -- location of the socket file for administration
 
   ip -- ip of the haproxy server
 
@@ -83,7 +87,11 @@ class Recipe(GenericBaseRecipe):
       'haproxy-listen-snippet.cfg.in')
     server_snippet = ""
     ip = self.options['ip']
-    server_check_path = self.options['server-check-path']
+    server_check_path = self.options.get('server-check-path', None)
+    if server_check_path:
+      httpchk = 'option httpchk GET %s' % server_check_path
+    else:
+      httpchk = ''
     # FIXME: maxconn must be provided per-backend, not globally
     maxconn = self.options['maxconn']
     i = 0
@@ -93,7 +101,7 @@ class Recipe(GenericBaseRecipe):
           'name': name,
           'ip': ip,
           'port': port,
-          'server_check_path': server_check_path,
+          'httpchk': httpchk,
         })
       for address in backend_list:
         i += 1
@@ -108,11 +116,16 @@ class Recipe(GenericBaseRecipe):
       self.options['conf-path'],
       self.substituteTemplate(
         self.getTemplateFilename('haproxy.cfg.in'),
-        {'server_text': server_snippet},
+        {'socket_path': self.options['socket-path'],
+         'server_text': server_snippet},
       )
     )
     wrapper_path = self.createPythonScript(
       self.options['wrapper-path'],
       'slapos.recipe.librecipe.execute.execute',
       arguments=[self.options['binary-path'].strip(), '-f', configuration_path],)
-    return [configuration_path, wrapper_path]
+    ctl_path = self.createPythonScript(
+      self.options['ctl-path'],
+      '%s.haproxy.haproxyctl' % __name__,
+      {'socket_path':self.options['socket-path']})
+    return [configuration_path, wrapper_path, ctl_path]

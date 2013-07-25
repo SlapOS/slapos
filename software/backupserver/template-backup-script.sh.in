@@ -1,0 +1,17 @@
+#!${dash-output:dash}
+
+# trap "echo Backing up failed for $${:hostname}" ERR
+
+export HOME=$${directory:home}
+
+set -e
+cd $${:datadirectory}
+${rdiff-backup-output:rdiff-backup} \
+  $${:exclude_string} \
+  --include='$${:include}' \
+  --exclude='**' \
+  --remote-schema '${dropbear-output:ssh} -T -y -i $${:sshkey} %s $${:remote_schema}' \
+  $${:connection}::/ ./
+
+# python scripts/verify_with_sudo.py ./ $${:connection}:/
+

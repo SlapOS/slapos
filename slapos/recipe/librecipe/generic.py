@@ -156,7 +156,7 @@ class GenericBaseRecipe(object):
     if parameters_extra:
         # pass-through further parameters
         lines[-1] += ' \\'
-        lines.append('\t$@')
+        lines.append('\t"$@"')
 
     content = '\n'.join(lines) + '\n'
     return self.createFile(name, content, 0700)

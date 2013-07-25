@@ -16,9 +16,6 @@ offline = true
 [directory]
 recipe = slapos.cookbook:mkdirectory
 etc = $${buildout:directory}/etc
-script = $${:etc}/run/
-service = $${:etc}/service
-promise = $${:etc}/promise/
 bin = $${buildout:directory}/bin/
 
 [download-source]
@@ -47,6 +44,8 @@ LD_LIBRARY_PATH = ${libxslt:location}/lib:${libxml2:location}/lib:${zlib:locatio
 
 [phantomjs-wrapper]
 recipe = slapos.cookbook:wrapper
-command-line = ${phantomjs:location}/bin/phantomjs
+command-line = ${phantomjs:location}/phantomjs-slapos
 wrapper-path = $${directory:bin}/phantomjs
+# XXX we must use "parameters-extra" (- instead of _)
+# when new slapos.cookbook will be used
 parameters_extra = true
