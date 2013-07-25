@@ -27,6 +27,12 @@ def getConnection():
   else:
     raise ValueError("Protocol not implemented")
 
+def testIfExist(page, unexcepted_content="Site Error"):
+  zope_connection = getConnection()
+  zope_connection.request('GET', '/%%s/%%s' %%(site_id, page))
+  result = zope_connection.getresponse()
+  return not unexcepted_content in result.read()
+  
 def waitFor0PendingActivities():
   # TODO: tolerate 1 pending activities ? (mail server...)
   start_time = time.time()
@@ -44,11 +50,11 @@ def waitFor0PendingActivities():
     print "There is %%d pending activities" %%len(message_list)
     time.sleep(5)
 
-def testIfExist(page, unexcepted_content="Site Error"):
-  zope_connection = getConnection()
-  zope_connection.request('GET', '/%%s/%%s' %%(site_id, page))
-  result = zope_connection.getresponse()
-  return not unexcepted_content in result.read()
+    #Hack to do not take into account persistent Alarm_installMailServer acitivities
+    if len(message_list)==0 and testIfExist("/%%s/portal_activities" %%site_id, "Alarm_installMailServer"):
+      print "1 pending activity for 'Alarm_installMailServer'."
+      print "ok."
+      break
 
   
 # Check if an ERP5 site is already created, as ERP5 does support having
@@ -102,7 +108,7 @@ if scalability:
      and not testIfExist("/%%s/sale_order_module/" %%site_id):
     zope_connection = getConnection()
     zope_connection.request(
-      'GET', '/%%s/business_configuration_module/1/build' %%(business_object_name, site_id),
+      'GET', '/%%s/business_configuration_module/1/build' %%site_id,
       headers=header_dict
     )
     print "Build scalability business configuration..."
