@@ -86,7 +86,7 @@ ca-certs = ${directory:certs}
 ca-newcerts = ${directory:newcerts}
 ca-crl = ${directory:crl}
 
-[certificate-authority]
+[{{ section('certificate-authority') }}]
 < = certificate-authority-common
 recipe = slapos.cookbook:certificate_authority
 openssl-binary = ${binary-link:target-directory}/openssl
@@ -240,8 +240,8 @@ longrequest-logger-timeout =
 longrequest-logger-interval =
 {% else -%}
 longrequest-logger-file = {{ longrequest_logger_base_path ~ name ~ ".log" }}
-longrequest-logger-timeout = {{longrequest_logger_timeout}}
-longrequest-logger-interval = {{longrequest_logger_interval}}
+longrequest-logger-timeout = {{ longrequest_logger_timeout }}
+longrequest-logger-interval = {{ longrequest_logger_interval }}
 {% endif -%}
 wrapper = ${directory:services}/{{ name }}
 configuration-file = {{ '${' ~ conf_name ~ ':rendered}' }}
