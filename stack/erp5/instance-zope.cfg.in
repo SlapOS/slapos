@@ -35,12 +35,12 @@ run-test-suite-binary = {{ parameter_dict['bin-directory'] }}/runTestSuite
 recipe = slapos.cookbook:certificate_authority
 openssl-binary = ${binary-link:target-directory}/openssl
 ca-dir = ${directory:test-ca-dir}
-requests-directory = ${directory:ca-requests}
+requests-directory = ${directory:test-ca-requests}
 wrapper = ${directory:services}/test-ca
-ca-private = ${directory:ca-private}
-ca-certs = ${directory:ca-certs}
-ca-newcerts = ${directory:ca-newcerts}
-ca-crl = ${directory:ca-crl}
+ca-private = ${directory:test-ca-private}
+ca-certs = ${directory:test-ca-certs}
+ca-newcerts = ${directory:test-ca-newcerts}
+ca-crl = ${directory:test-ca-crl}
 {%- endif %}
 
 [directory]
@@ -67,11 +67,17 @@ var = ${buildout:directory}/var
 promises = ${:etc}/promise
 unit-test-path = ${:srv}/test-instance/unit_test
 test-ca-dir = ${:srv}/test-ca
-ca-requests = ${:test-ca-dir}/requests
-ca-private = ${:test-ca-dir}/private
-ca-certs = ${:test-ca-dir}/certs
-ca-newcerts = ${:test-ca-dir}/newcerts
-ca-crl = ${:test-ca-dir}/crl
+test-ca-requests = ${:test-ca-dir}/requests
+test-ca-private = ${:test-ca-dir}/private
+test-ca-certs = ${:test-ca-dir}/certs
+test-ca-newcerts = ${:test-ca-dir}/newcerts
+test-ca-crl = ${:test-ca-dir}/crl
+ca-dir = ${:srv}/ca
+ca-requests = ${:ca-dir}/requests
+ca-private = ${:ca-dir}/private
+ca-certs = ${:ca-dir}/certs
+ca-newcerts = ${:ca-dir}/newcerts
+ca-crl = ${:ca-dir}/crl
 
 [binary-link]
 recipe = slapos.cookbook:symbolic.link
@@ -79,12 +85,12 @@ target-directory = ${directory:bin}
 link-binary = {{ dumps(parameter_dict['link-binary']) }}
 
 [certificate-authority-common]
-requests-directory = ${directory:requests}
+requests-directory = ${directory:ca-requests}
 ca-dir = ${directory:ca-dir}
-ca-private = ${directory:private}
-ca-certs = ${directory:certs}
-ca-newcerts = ${directory:newcerts}
-ca-crl = ${directory:crl}
+ca-private = ${directory:ca-private}
+ca-certs = ${directory:ca-certs}
+ca-newcerts = ${directory:ca-newcerts}
+ca-crl = ${directory:ca-crl}
 
 [{{ section('certificate-authority') }}]
 < = certificate-authority-common
