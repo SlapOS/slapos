@@ -16,6 +16,12 @@ configure-options =
   TARGETDIR=$${buildout:directory}
   /quiet
   /log $${buildout:directory}/slapos-windows-installer.log
+pre-install =
+  cp ${installer:cygroot}/slapos-windows-wrapper.bat $${buildout:directory}/
+  cp ${installer:cygroot}/cygwin/etc/opt/slapos/ssl/computer.key $${buildout:directory}/cygwin/
+  cp ${installer:cygroot}/cygwin/etc/opt/slapos/ssl/computer.crt $${buildout:directory}/cygwin/
+  cp ~/.slapos/key $${buildout:directory}/cygwin/
+  cp ~/.slapos/certificate $${buildout:directory}/cygwin/
 make-binary = true
-post-install = 
-  $${buildout:directory}/cygwin/etc/slapos/scripts/slapos-configure.sh
+post-install =
+  $${buildout:directory}/slapos-windows-wrapper.bat slapos-configure slaproot
