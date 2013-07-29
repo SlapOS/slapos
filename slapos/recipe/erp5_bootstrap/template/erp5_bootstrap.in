@@ -118,3 +118,19 @@ if scalability:
     # Wait activities
     waitFor0PendingActivities()
     print "Scalability business configuration building: done."
+
+  # Create scalability users
+  if testIfExist("/%%s/person_module/scalability_user/getTitle" %%site_id) \
+     and not testIfExist("/%%s/person_module/scalability_user_0/getTitle" %%site_id):
+    zope_connection = getConnection()
+    zope_connection.request(
+      'GET', '/%%s/clone_scalability_user' %%site_id,
+      headers=header_dict
+    )
+    result = zope_connection.getresponse()
+    print "Creating scalaiblity users..."
+    assert(result.read()=="1")
+    # Wait activities
+    waitFor0PendingActivities()
+    print "Scalability users creation: done."
+
