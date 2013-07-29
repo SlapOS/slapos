@@ -1,36 +1,21 @@
 [buildout]
 parts =
-  rootdirectory
-  basedirectory
   slapos-instance
 
 eggs-directory = ${buildout:eggs-directory}
 develop-eggs-directory = ${buildout:develop-eggs-directory}
 offline = true
 
-[rootdirectory]
-recipe = slapos.cookbook:mkdirectory
-etc = $${buildout:directory}/etc
-var = $${buildout:directory}/var
-srv = $${buildout:directory}/srv
-bin = $${buildout:directory}/bin
-tmp = $${buildout:directory}/tmp
-
-[basedirectory]
-recipe = slapos.cookbook:mkdirectory
-log = $${rootdirectory:var}/log
-services = $${rootdirectory:etc}/service
-scripts = $${rootdirectory:etc}/run
-run = $${rootdirectory:var}/run
-backup = $${rootdirectory:srv}/backup
-promises = $${rootdirectory:etc}/promise
-
 [slapos-instance]
-recipe = recipe = slapos.recipe.cmmi
-url = ${buildout:directory}/slapos-0.158.8-windows-all-in-one.exe
+recipe = slapos.recipe.cmmi
+# This url is useless
+url = /usr/bin/true.exe
 configure-command = msiexec.exe
-configure-options = /SILENT
+configure-options =
+  /i ${installer:location}/slapos-windows-all-in-one.exe
+  TARGETDIR=$${buildout:directory}
+  /quiet
+  /log $${buildout:directory}/slapos-windows-installer.log
 make-binary = true
-post-install = slapos-configure.sh
-
-  
+post-install = 
+  $${buildout:directory}/cygwin/etc/slapos/scripts/slapos-configure.sh
