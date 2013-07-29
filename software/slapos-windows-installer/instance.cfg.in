@@ -9,7 +9,7 @@ offline = true
 [slapos-instance]
 recipe = slapos.recipe.cmmi
 # This url is useless
-url = /usr/bin/true.exe
+path = $${buildout:directory}
 configure-command = msiexec.exe
 configure-options =
   /i ${installer:location}/slapos-windows-all-in-one.exe
