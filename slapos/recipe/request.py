@@ -89,7 +89,7 @@ class Recipe(object):
       Possible names depend on requested partition's software type.
 
     state (optional)
-     Requested state, default value is "started".
+     Requested state, default value is the state of the requester.
 
     Output:
       See "return" input key.
@@ -119,7 +119,8 @@ class Recipe(object):
     ))
     slave = options.get('slave', 'false').lower() in \
       librecipe.GenericBaseRecipe.TRUE_VALUES
-    requested_state = options.get('state', 'started')
+    # By default
+    requested_state = options.get('state', buildout['slap-connection'].get('requested','started'))
     slap = slapmodule.slap()
     slap.initializeConnection(
       options['server-url'],
