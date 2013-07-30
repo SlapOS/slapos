@@ -1,0 +1,42 @@
+# vim: set ft=cfg:
+
+{% import 'parts' as parts %}
+{% import 'replicated' as replicated %}
+
+[buildout]
+eggs-directory = {{ eggs_directory }}
+develop-eggs-directory = {{ develop_eggs_directory }}
+offline = true
+
+# += because we need to take up parts (like instance-custom, slapmonitor etc) from the profile we extended
+parts +=
+  {{ parts.replicate("kvm", "2") }}
+  publish-connection-informations
+
+{{ replicated.replicate("kvm", "2", "kvm-export", "kvm-import") }}
+
+# Bubble up/down the parameters
+[request-kvm]
+return =
+# Resilient related parameters
+  url ssh-public-key ssh-url notification-id ip
+# KVM related parameters
+  backend-url url
+# XXX-Cedric: add all KVM parameters
+config = number authorized-key notify ip-list namebase
+
+# XXX-Cedric: add all KVM parameters
+# config-disk-size = 
+
+[publish-connection-informations]
+recipe = slapos.cookbook:publish
+backend-url = ${request-kvm:connection-backend-url}
+url = ${request-kvm:connection-url}
+
+[slap-parameter]
+# Default parameters for distributed deployment
+# I.e state "backup1 of maria should go there, ..."
+# XXX-Cedric: Hardcoded parameters. Should be dynamically generated.
+# XXX-Cedric: add all KVM parameters
+# config-disk-size = 
+

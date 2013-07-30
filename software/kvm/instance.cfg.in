@@ -13,3 +13,9 @@ kvm = ${template-kvm:output}
 nbd = ${template-nbd:output}
 frontend = ${template-frontend:output}
 
+kvm-resilient = ${template-kvm-resilient:rendered}
+kvm-import = ${template-kvm-import:output}
+kvm-export = ${template-kvm-export:output}
+
+frozen = ${instance-frozen:output}
+pull-backup = ${template-pull-backup:output}
