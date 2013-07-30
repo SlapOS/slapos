@@ -127,7 +127,7 @@ if scalability:
     print Going to create scalability users..
     zope_connection = getConnection()
     zope_connection.request(
-      'GET', '/%%s/clone_scalability_user' %%site_id,
+      'GET', '/%%s/init_scalability' %%site_id,
       headers=header_dict
     )
     result = zope_connection.getresponse()
