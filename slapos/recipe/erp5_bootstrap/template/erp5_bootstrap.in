@@ -124,7 +124,7 @@ if scalability:
   # Create scalability users
   if testIfExist("/%%s/person_module/scalability_user/getTitle" %%site_id) \
      and not testIfExist("/%%s/person_module/scalability_user_0/getTitle" %%site_id):
-    print Going to create scalability users..
+    print "Going to create scalability users.."
     zope_connection = getConnection()
     zope_connection.request(
       'GET', '/%%s/init_scalability' %%site_id,
