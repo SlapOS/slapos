@@ -10,9 +10,7 @@ parts +=
   kvm-promise
   websockify-sighandler
   novnc-promise
-  kvm-monitor
   cron
-  cron-entry-monitor
   frontend-promise
 
 # Create the exporter executable, which is a simple shell script

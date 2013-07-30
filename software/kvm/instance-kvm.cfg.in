@@ -10,9 +10,9 @@ parts =
   kvm-promise
   websockify-sighandler
   novnc-promise
-  kvm-monitor
+#  kvm-monitor
   cron
-  cron-entry-monitor
+#  cron-entry-monitor
   frontend-promise
 
 eggs-directory = ${buildout:eggs-directory}
@@ -129,14 +129,14 @@ hostname = $${novnc-instance:ip}
 port = $${novnc-instance:port}
 
 
-[kvm-monitor]
-recipe = slapos.cookbook:wrapper
-wrapper-path = $${directory:services}/kvm_monitor
-command-line = ${buildout:bin-directory}/kvm.monitor.test 
-             $${buildout:directory}/buildout-switch-softwaretype.cfg
-             $${buildout:directory}/report.xml
-             -s slap-parameter
-             -opts disk-size ram-size cpu-count
+#[kvm-monitor]
+#recipe = slapos.cookbook:wrapper
+#wrapper-path = $${directory:services}/kvm_monitor
+#command-line = ${buildout:bin-directory}/kvm.monitor.test 
+#             $${buildout:directory}/buildout-switch-softwaretype.cfg
+#             $${buildout:directory}/report.xml
+#             -s slap-parameter
+#             -opts disk-size ram-size cpu-count
 
 
 
@@ -159,12 +159,12 @@ wrapper = $${directory:bin}/cron_simplelogger
 log = $${directory:log}/crond.log
 
 
-[cron-entry-monitor]
-<= cron
-recipe = slapos.cookbook:cron.d
-name = kvm_monitor
-frequency = 0 0 * * *
-command = $${kvm-monitor:wrapper-path}
+#[cron-entry-monitor]
+#<= cron
+#recipe = slapos.cookbook:cron.d
+#name = kvm_monitor
+#frequency = 0 0 * * *
+#command = $${kvm-monitor:wrapper-path}
 
 [request-slave-frontend]
 recipe = slapos.cookbook:requestoptional
