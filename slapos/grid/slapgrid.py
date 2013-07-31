@@ -627,6 +627,10 @@ class Slapgrid(object):
       logger=self.logger)
 
     computer_partition_state = computer_partition.getState()
+
+    self.logger.info('  Instance type: %s' % computer_partition.getType())
+    self.logger.info('  Instance status: %s' % computer_partition_state)
+
     if computer_partition_state == COMPUTER_PARTITION_STARTED_STATE:
       local_partition.install()
       computer_partition.available()
