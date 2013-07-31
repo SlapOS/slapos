@@ -6,11 +6,11 @@ extends =
 parts =
   erp5-cluster
   binary-wrap-launcher
-  scalability-launcher-instance
   binary-wrap-performance-tester
   erp5-bootstrap
   erp5-promise
   promise-erp5-site
+  scalability-launcher-instance
   publish
 
 eggs-directory = {{ eggs_directory }}
