@@ -14,7 +14,7 @@ pre-configure =
   echo "#! /bin/bash" > $${:configure-command}
   echo "declare -r installer=${installer:location}/slapos-windows-all-in-one.exe" >> $${:configure-command}
   echo "declare -r targetdir=\$(cygpath -w $${buildout:directory})" >> $${:configure-command}
-  echo "declare -r logfile=\$(cygpath -w $${buildout:directory}/slapos-windows-installer.log" >> $${:configure-command}
+  echo "declare -r logfile=\$(cygpath -w $${buildout:directory}/slapos-windows-installer.log)" >> $${:configure-command}
   echo "\$installer /DIR=\"\$targetdir\" /LOG=\"\$logfile\" /VERYSILENT" >> $${:configure-command}
   chmod +x $${:configure-command}
 configure-command = $${buildout:directory}/bootloader.sh
