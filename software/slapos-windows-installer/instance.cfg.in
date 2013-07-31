@@ -10,18 +10,16 @@ offline = true
 recipe = slapos.recipe.cmmi
 # This url is useless
 path = $${buildout:directory}
-configure-command = msiexec.exe
-configure-options =
-  /i ${installer:location}/slapos-windows-all-in-one.exe
-  TARGETDIR=$${buildout:directory}
-  /quiet
-  /log $${buildout:directory}/slapos-windows-installer.log
+pre-configure =
+  echo -e "#! /bin/bash\nmsiexec.exe /i `cygpath -w ${installer:location}/slapos-windows-all-in-one.exe` TARGETDIR=`cygpath -w $${buildout:directory}` /log `cygpath -w $${buildout:directory}/slapos-windows-installer.log` /quiet" > $${buildout:directory}/boot-installer
+  chmod +x $${buildout:directory}/boot-installer
+configure-command = $${buildout:directory}/boot-installer
 pre-install =
   cp ${installer:cygroot}/slapos-windows-wrapper.bat $${buildout:directory}/
   cp ${installer:cygroot}/test-computer.key $${buildout:directory}/cygwin/computer.key
   cp ${installer:cygroot}/test-/computer.crt $${buildout:directory}/cygwin/computer.crt
-  cp ~/.slapos/key $${buildout:directory}/cygwin/key
-  cp ~/.slapos/certificate $${buildout:directory}/cygwin/certificate
+  cp ${installer:cygroot}/.slapos/key $${buildout:directory}/cygwin/key
+  cp ${installer:cygroot}/.slapos/certificate $${buildout:directory}/cygwin/certificate
 make-binary = true
 # The parameter "slaptester" is the password of slapos administrator
 # passed to configure script
