@@ -78,7 +78,7 @@ def waitFor0PendingActivities():
       time.sleep(5)
 
       #Hack to do not take into account persistent Alarm_installMailServer acitivities
-      if len(message_list)==0 and testIfExist("/%%s/portal_activities" %%site_id, "Alarm_installMailServer"):
+      if len(message_list)==1:
         print "1 pending activity for 'Alarm_installMailServer'."
         print "ok."
         break
@@ -86,7 +86,7 @@ def waitFor0PendingActivities():
     except:
       time.sleep(5)
       print "Getting activities failed, retry."
-  raise ValueError("Cannot testIfExist after %%d try (for %%s s)" %%(count, str(time.time()-start_time)))
+  raise ValueError("Pending activities always here after %%d check/try (for %%s s)" %%(count, str(time.time()-start_time)))
 
 
   
