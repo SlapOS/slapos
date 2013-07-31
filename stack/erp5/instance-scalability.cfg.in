@@ -10,6 +10,7 @@ parts =
   erp5-bootstrap
   erp5-promise
   promise-erp5-site
+  promise-scalability-user-data
   scalability-launcher-instance
   publish
 
@@ -127,6 +128,15 @@ recipe = slapos.cookbook:check_url_available
 path = ${basedirectory:promises}/erp5site
 site-id = "/{{ site_id }}"
 url = ${erp5-cluster:connection-family-scalability}${:site-id}
+dash_path = {{ dash_location }}/bin/dash
+curl_path = {{ curl_location }}/bin/curl
+
+[promise-scalability-user-data]
+recipe = slapos.cookbook:check_url_available
+path = ${basedirectory:promises}/scalabilityData
+site-id = "/{{ site_id }}"
+page = "/person_module/scalability_user_0/getTitle"
+url = ${erp5-cluster:connection-family-scalability}${:site-id}${:page}
 dash_path = {{ dash_location }}/bin/dash
 curl_path = {{ curl_location }}/bin/curl
 
