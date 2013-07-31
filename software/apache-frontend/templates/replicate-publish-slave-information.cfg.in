@@ -1,0 +1,39 @@
+{% set part_list = [] -%}
+{% set slave_information_dict = {} -%}
+
+# regroup slave information from all frontends
+{%- for frontend, slave_list_raw in slave_information.iteritems() -%}
+{%   set slave_list = json_module.loads(slave_list_raw) -%}
+{%   for slave_dict in slave_list -%}
+{%     set slave_reference = slave_dict.pop('slave-reference') %}
+{%     set current_slave_dict = slave_information_dict.get(slave_reference, {}) %}
+{%     do current_slave_dict.update(slave_dict) -%}
+{%     do current_slave_dict.__setitem__(
+            'replication_number',
+            current_slave_dict.get('replication_number', 0) + 1
+            ) -%}
+{%     do slave_information_dict.__setitem__(slave_reference, current_slave_dict) -%}
+{%   endfor -%}
+{% endfor %}
+
+# Publish information for each slave
+{% for slave_reference, slave_information in slave_information_dict.iteritems() %}
+{%   set publish_section_title = 'publish-%s' % slave_reference -%}
+{%   do part_list.append(publish_section_title) -%}
+[{{ publish_section_title }}]
+recipe = slapos.cookbook:publish
+slave-reference = {{ slave_reference }}
+{%   for key, value in slave_information.iteritems() -%}
+{{ key }} = {{ value }}
+{%   endfor -%}
+{% endfor %}
+
+[buildout]
+parts =
+{% for part in part_list %}
+{{ '  %s' % part }}
+{% endfor %}
+
+eggs-directory = {{ eggs_directory }}
+develop-eggs-directory = {{ develop_eggs_directory }}
+offline = true

@@ -1,7 +1,13 @@
+{% if software_type == slap_software_type -%}
+
 {% set cached_server_dict = {} -%}
 {% set part_list = [] -%}
 {% set cache_access = "http://%s:%s" % (local_ipv4, cache_port) -%}
 {% set generic_instance_parameter_dict = {'cache_access': cache_access,} -%}
+{% if extra_slave_instance_list -%}
+{%   set slave_instance_information_list = []-%}
+{%   set slave_instance_list = slave_instance_list + json_module.loads(extra_slave_instance_list) -%}
+{% endif -%}
 [jinja2-template-base]
 recipe = slapos.recipe.template:jinja2
 rendered = {{ apache_configuration_directory }}/${:filename}
@@ -66,14 +72,29 @@ apache_custom_https = {{ dumps(apache_custom_https) }}
 {%   endif -%}
 
 # Publish slave information
-{%   set publish_section_title = 'publish-%s-connection-information' % slave_instance.get('slave_reference') -%}
-{%   do part_list.append(publish_section_title) -%}
+{%   if not extra_slave_instance_list -%}
+{%     set publish_section_title = 'publish-%s-connection-information' % slave_instance.get('slave_reference') -%}
+{%     do part_list.append(publish_section_title) -%}
 [{{ publish_section_title }}]
 recipe = slapos.cookbook:publish
 public-ipv4 = {{ public_ipv4 }}
 slave-reference = {{ slave_instance.get('slave_reference') }}
+{%   else -%}
+{%     do slave_instance_information_list.append({'slave-reference':slave_instance.get('slave_reference'), 'public-ipv4':public_ipv4, 'domain':slave_instance.get('domain'), 'url':"http://%s" % slave_instance.get('domain'), 'site_url':"http://%s" % slave_instance.get('domain')}) -%}
+{%   endif -%}
 {% endfor -%}
 
+# Publish information for the instance
+{% set publish_section_title = 'publish-apache-information' -%}
+{% do part_list.append(publish_section_title) -%}
+[{{ publish_section_title }}]
+recipe = slapos.cookbook:publish
+public-ipv4 = {{ public_ipv4 }}
+private-ipv4 = {{ local_ipv4 }}
+domain = {{ domain }}
+{% if extra_slave_instance_list -%}
+slave-instance-information-list = {{ json_module.dumps(slave_instance_information_list) }}
+{% endif -%}
 
 {% do part_list.append('cached-rewrite-rules') -%}
 [cached-rewrite-rules]
@@ -97,3 +118,5 @@ eggs-directory = {{ eggs_directory }}
 develop-eggs-directory = {{ develop_eggs_directory }}
 offline = true
 cache-access = {{ cache_access }}
+
+{% endif -%}
