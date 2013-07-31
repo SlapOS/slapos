@@ -7,6 +7,7 @@ import time
 
 MAX_INSTALLATION_TIME = 60*30
 MAX_TESTING_TIME = 60
+MAX_GETTING_CONNECTION_TIME = 60*5
 
 user = "%(user)s"
 password = "%(password)s"
@@ -21,12 +22,20 @@ header_dict = {'Authorization': 'Basic %%s' %% \
 
 def getConnection():
   print "Getting new connection"
-  if protocol == 'https':
-    return httplib.HTTPSConnection(host)
-  elif protocol == 'http':
-    return httplib.HTTPConnection(host)
-  else:
-    raise ValueError("Protocol not implemented")
+  start_time = time.time()
+  count = 0
+  while MAX_GETTING_CONNECTION_TIME > time.time()-start_time:
+    try:
+      count = count + 1
+      if protocol == 'https':
+        return httplib.HTTPSConnection(host)
+      elif protocol == 'http':
+        return httplib.HTTPConnection(host)
+      else:
+        raise ValueError("Protocol not implemented")
+      except:
+        print "Getting new connection failed, retry"
+  raise ValueError("Cannot get new connection after %%d try (for %%s s)" %%(count, str(time.time()-start_time)))
 
 def testIfExist(page, unexcepted_content="Site Error"):
   print "Test if %%s exists" %%(page)
