@@ -1,5 +1,8 @@
 {
-  "name": "Input Parameters",
+  "type": "object",
+  "$schema": "http://json-schema.org/draft-04/schema",
+
+  "title": "Input Parameters",
   "properties": {
     "ram-size": {
       "title": "RAM size",
@@ -7,7 +10,7 @@
       "type": "integer",
       "default": 1024,
       "minimum": 128,
-      "divisibleBy": 128,
+      "multipleOf": 128,
       "maximum": 16384
     },
     "disk-size": {
