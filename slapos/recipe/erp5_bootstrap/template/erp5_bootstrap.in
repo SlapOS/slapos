@@ -20,6 +20,7 @@ header_dict = {'Authorization': 'Basic %%s' %% \
   base64.encodestring('%%s:%%s' %% (user, password)).strip()}
 
 def getConnection():
+  print "Getting new connection"
   if protocol == 'https':
     return httplib.HTTPSConnection(host)
   elif protocol == 'http':
@@ -28,6 +29,7 @@ def getConnection():
     raise ValueError("Protocol not implemented")
 
 def testIfExist(page, unexcepted_content="Site Error"):
+  print "Test if %%s exists" %%(page)
   zope_connection = getConnection()
   zope_connection.request('GET', '/%%s/%%s' %%(site_id, page))
   result = zope_connection.getresponse()
@@ -35,6 +37,7 @@ def testIfExist(page, unexcepted_content="Site Error"):
   
 def waitFor0PendingActivities():
   # TODO: tolerate 1 pending activities ? (mail server...)
+  print "waitFor0PendingActivities.."
   start_time = time.time()
   while MAX_INSTALLATION_TIME > time.time()-start_time:
     zope_connection = getConnection()
