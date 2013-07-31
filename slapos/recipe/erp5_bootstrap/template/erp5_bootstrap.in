@@ -60,7 +60,8 @@ def waitFor0PendingActivities():
   print "waitFor0PendingActivities.."
   start_time = time.time()
   count = 0
-  while MAX_INSTALLATION_TIME > time.time()-start_time:
+  ok = False
+  while MAX_INSTALLATION_TIME > time.time()-start_time and not ok:
     try:
       count = count + 1
       zope_connection = getConnection()
@@ -71,22 +72,25 @@ def waitFor0PendingActivities():
       result = zope_connection.getresponse()
       message_list_text = result.read()
       message_list = [s.strip() for s in message_list_text[1:-1].split(',')]
+      
       if len(message_list)==0:
         print "There is no pending activities."
-        break
-      print "There is %%d pending activities" %%len(message_list)
-      time.sleep(5)
-
+        ok = True
       #Hack to do not take into account persistent Alarm_installMailServer acitivities
       if len(message_list)==1:
         print "1 pending activity for 'Alarm_installMailServer'."
         print "ok."
-        break
+        ok = True
+        
+      print "There is %%d pending activities" %%len(message_list)
+      time.sleep(5)
         
     except:
       time.sleep(5)
       print "Getting activities failed, retry."
-  raise ValueError("Pending activities always here after %%d check/try (for %%s s)" %%(count, str(time.time()-start_time)))
+  
+  if not ok:
+    raise ValueError("Pending activities always here after %%d check/try (for %%s s)" %%(count, str(time.time()-start_time)))
 
 
   
