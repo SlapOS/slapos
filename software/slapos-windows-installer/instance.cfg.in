@@ -11,11 +11,15 @@ recipe = slapos.recipe.cmmi
 # This url is useless
 path = $${buildout:directory}
 pre-configure =
-  echo -e "#! /bin/bash\nmsiexec.exe /i `cygpath -w ${installer:location}/slapos-windows-all-in-one.exe` TARGETDIR=`cygpath -w $${buildout:directory}` /log `cygpath -w $${buildout:directory}/slapos-windows-installer.log` /quiet" > $${buildout:directory}/boot-installer
-  chmod +x $${buildout:directory}/boot-installer
-configure-command = $${buildout:directory}/boot-installer
+  echo "#! /bin/bash" > $${:configure-command}
+  echo "declare -r installer=${installer:location}/slapos-windows-all-in-one.exe" >> $${:configure-command}
+  echo "declare -r targetdir=\$(cygpath -w $${buildout:directory})" >> $${:configure-command}
+  echo "declare -r logfile=\$(cygpath -w $${buildout:directory}/slapos-windows-installer.log" >> $${:configure-command}
+  echo "\$installer /DIR=\"\$targetdir\" /LOG=\"\$logfile\" /VERYSILENT" >> $${:configure-command}
+  chmod +x $${:configure-command}
+configure-command = $${buildout:directory}/bootloader.sh
 pre-install =
-  cp ${installer:cygroot}/slapos-windows-wrapper.bat $${buildout:directory}/
+  cp ${installer:cygroot}/slapos-windows-wrapper.bat $${buildout:directory}/slapos-windows-wrapper.bat
   cp ${installer:cygroot}/test-computer.key $${buildout:directory}/cygwin/computer.key
   cp ${installer:cygroot}/test-/computer.crt $${buildout:directory}/cygwin/computer.crt
   cp ${installer:cygroot}/.slapos/key $${buildout:directory}/cygwin/key
