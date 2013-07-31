@@ -639,6 +639,8 @@ class Slapgrid(object):
       computer_partition.started()
     elif computer_partition_state == COMPUTER_PARTITION_STOPPED_STATE:
       try:
+        # We want to process the partition, even if stopped, because it should
+        # propagate the state to children if any.
         local_partition.install()
         computer_partition.available()
       finally:
