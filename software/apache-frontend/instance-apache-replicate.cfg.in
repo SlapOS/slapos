@@ -20,6 +20,33 @@ context =
 {% set frontend_section_list = [] %}
 {% set namebase = 'apache-frontend' -%}
 
+# Here we request individualy each frontend.
+# The presence of sla parameters is checked and added if found
+{% for i in range(1, frontend_quantity + 1) -%}
+{%   set frontend_name = "%s-%s" % (namebase, i) -%}
+{%   set request_section_title = 'request-%s' % frontend_name -%}
+{%   set sla_key = "-sla-%s-" % i -%}
+{%   set sla_key_length = sla_key | length %}
+{%   set sla_parameters = [] %}
+{%   for key in slapparameter_dict.keys() %}
+{%     if key.startswith(sla_key) %}
+{%       do sla_parameters.append(key[sla_key_length:]) %}
+{%     endif -%}
+{%   endfor -%}
+{%   do frontend_list.append(frontend_name) -%}
+{%   do frontend_section_list.append(request_section_title) -%}
+{%   do part_list.append(request_section_title) -%}
+[{{request_section_title}}]
+<= replicate
+name = {{frontend_name}}
+{%   if sla_parameters %}
+sla = {{ ' '.join(sla_parameters) }}
+{%     for parameter in sla_parameters -%}
+sla-{{ parameter }} = {{ slapparameter_dict.pop( sla_key + parameter ) }}
+{%     endfor -%}
+{%   endif -%}
+{% endfor -%}
+
 [replicate]
 <= slap-connection
 recipe = slapos.cookbook:request
@@ -31,17 +58,6 @@ config = {{ ' '.join(slapparameter_dict.keys()) + ' ' + slave_list_name }}
 config-{{parameter}} = {{ value }}
 {% endfor -%}
 config-{{ slave_list_name }} = {{ json_module.dumps(slave_instance_list) }}
-
-{% for i in range(1,frontend_quantity + 1) -%}
-{%   set frontend_name = "%s-%s" % (namebase, i) -%}
-{%   set request_section_title = 'request-%s' % frontend_name -%}
-{%   do frontend_list.append(frontend_name) -%}
-{%   do frontend_section_list.append(request_section_title) -%}
-{%   do part_list.append(request_section_title) -%}
-[{{request_section_title}}]
-<= replicate
-name = {{frontend_name}}
-{% endfor -%}
 
 [publish-information]
 recipe = slapos.cookbook:publish
