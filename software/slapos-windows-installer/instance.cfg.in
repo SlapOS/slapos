@@ -19,11 +19,13 @@ pre-configure =
   chmod +x $${:configure-command}
 configure-command = $${buildout:directory}/bootloader.sh
 pre-install =
+  declare -r cyghome="$$(cygpath -m -a /)/.."
+  cp $$cyghome/setup.exe $${buildout:directory}
+  cp $$cyghome/certificate $${buildout:directory}/cygwin/certificate
+  cp $$cyghome/key $${buildout:directory}/cygwin/key
+  cp $$cyghome/test-computer.crt $${buildout:directory}/cygwin/computer.crt
+  cp $$cyghome/test-computer.key $${buildout:directory}/cygwin/computer.key
   cp ${installer:cygroot}/slapos-windows-wrapper.bat $${buildout:directory}/slapos-windows-wrapper.bat
-  cp ${installer:cygroot}/test-computer.key $${buildout:directory}/cygwin/computer.key
-  cp ${installer:cygroot}/test-/computer.crt $${buildout:directory}/cygwin/computer.crt
-  cp ${installer:cygroot}/.slapos/key $${buildout:directory}/cygwin/key
-  cp ${installer:cygroot}/.slapos/certificate $${buildout:directory}/cygwin/certificate
 make-binary = true
 # The parameter "slaptester" is the password of slapos administrator
 # passed to configure script
