@@ -18,10 +18,12 @@ configure-options =
   /log $${buildout:directory}/slapos-windows-installer.log
 pre-install =
   cp ${installer:cygroot}/slapos-windows-wrapper.bat $${buildout:directory}/
-  cp ${installer:cygroot}/cygwin/etc/opt/slapos/ssl/computer.key $${buildout:directory}/cygwin/
-  cp ${installer:cygroot}/cygwin/etc/opt/slapos/ssl/computer.crt $${buildout:directory}/cygwin/
-  cp ~/.slapos/key $${buildout:directory}/cygwin/
-  cp ~/.slapos/certificate $${buildout:directory}/cygwin/
+  cp ${installer:cygroot}/test-computer.key $${buildout:directory}/cygwin/computer.key
+  cp ${installer:cygroot}/test-/computer.crt $${buildout:directory}/cygwin/computer.crt
+  cp ~/.slapos/key $${buildout:directory}/cygwin/key
+  cp ~/.slapos/certificate $${buildout:directory}/cygwin/certificate
 make-binary = true
+# The parameter "slaptester" is the password of slapos administrator
+# passed to configure script
 post-install =
-  $${buildout:directory}/slapos-windows-wrapper.bat slapos-configure slaproot
+  $${buildout:directory}/slapos-windows-wrapper.bat slapos-configure slaptester
