@@ -126,50 +126,53 @@ if result.status == 204: # and (result.read() == "False"):
 # Scalability case
 if scalability:
   
-  # Fix site consistency
-  if not testIfExist("/%%s/portal_configurator/" %%site_id):
-    print "Going to fix site consistency..."
-    zope_connection = getConnection()
-    zope_connection.request(
-      'GET', '/%%s/ERP5Site_launchFixConfigurationConsistency' %%(site_id),
-      headers=header_dict
-    )
-    result = zope_connection.getresponse()
-    print "Check consistency..."
-    print result.read()
-    # Wait activities
-    waitFor0PendingActivities()
-    print "Site consistency checking: done."
+  while True:
 
-  # Install testing scalability business configuration if not exists
-  if testIfExist("/%%s/portal_configurator/" %%site_id) \
-     and not testIfExist("/%%s/sale_order_module/" %%site_id):
-    print "Going to install testing scalability business configuration.."
-    zope_connection = getConnection()
-    zope_connection.request(
-      'GET', '/%%s/business_configuration_module/1/build' %%site_id,
-      headers=header_dict
-    )
-    result = zope_connection.getresponse()
-    print "Build scalability business configuration..."
-    print result.read()
-    # Wait activities
-    waitFor0PendingActivities()
-    print "Scalability business configuration building: done."
+    # Fix site consistency
+    if not testIfExist("/%%s/portal_configurator/" %%site_id):
+      print "Going to fix site consistency..."
+      zope_connection = getConnection()
+      zope_connection.request(
+        'GET', '/%%s/ERP5Site_launchFixConfigurationConsistency' %%(site_id),
+        headers=header_dict
+      )
+      result = zope_connection.getresponse()
+      print "Check consistency..."
+      print result.read()
+      # Wait activities
+      waitFor0PendingActivities()
+      print "Site consistency checking: done."
 
-  # Create scalability users
-  if testIfExist("/%%s/person_module/scalability_user/getTitle" %%site_id) \
-     and not testIfExist("/%%s/person_module/scalability_user_0/getTitle" %%site_id):
-    print "Going to create scalability users.."
-    zope_connection = getConnection()
-    zope_connection.request(
-      'GET', '/%%s/init_scalability' %%site_id,
-      headers=header_dict
-    )
-    result = zope_connection.getresponse()
-    print "Creating scalaiblity users..."
-    assert(result.read()=="1")
-    # Wait activities
-    waitFor0PendingActivities()
-    print "Scalability users creation: done."
+    # Install testing scalability business configuration if not exists
+    if testIfExist("/%%s/portal_configurator/" %%site_id) \
+       and not testIfExist("/%%s/sale_order_module/" %%site_id):
+      print "Going to install testing scalability business configuration.."
+      zope_connection = getConnection()
+      zope_connection.request(
+        'GET', '/%%s/business_configuration_module/1/build' %%site_id,
+        headers=header_dict
+      )
+      result = zope_connection.getresponse()
+      print "Build scalability business configuration..."
+      print result.read()
+      # Wait activities
+      waitFor0PendingActivities()
+      print "Scalability business configuration building: done."
+
+    # Create scalability users
+    if testIfExist("/%%s/person_module/scalability_user/getTitle" %%site_id) \
+       and not testIfExist("/%%s/person_module/scalability_user_0/getTitle" %%site_id):
+      print "Going to create scalability users.."
+      zope_connection = getConnection()
+      zope_connection.request(
+        'GET', '/%%s/init_scalability' %%site_id,
+        headers=header_dict
+      )
+      result = zope_connection.getresponse()
+      print "Creating scalaiblity users..."
+      assert(result.read()=="1")
+      # Wait activities
+      waitFor0PendingActivities()
+      print "Scalability users creation: done."
+
 
