@@ -51,6 +51,7 @@ bytes = 8
 recipe = slapos.cookbook:kvm
 vnc-ip = $${slap-network-information:local-ipv4}
 vnc-port = 5901
+default-disk-image = ${debian-amd64-netinst.iso:location}/${debian-amd64-netinst.iso:filename}
 nbd-host = $${slap-parameter:nbd-host}
 nbd-port = $${slap-parameter:nbd-port}
 nbd2-host = $${slap-parameter:nbd2-host}
@@ -132,7 +133,7 @@ port = $${novnc-instance:port}
 #[kvm-monitor]
 #recipe = slapos.cookbook:wrapper
 #wrapper-path = $${directory:services}/kvm_monitor
-#command-line = ${buildout:bin-directory}/kvm.monitor.test 
+#command-line = ${buildout:bin-directory}/kvm.monitor.test
 #             $${buildout:directory}/buildout-switch-softwaretype.cfg
 #             $${buildout:directory}/report.xml
 #             -s slap-parameter
@@ -202,9 +203,9 @@ curl_path = ${curl:location}/bin/curl
 # Default values if not specified
 frontend-software-type = frontend
 frontend-software-url = http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.92:/software/kvm/software.cfg
-frontend-instance-guid = 
+frontend-instance-guid =
 nbd-port = 1024
-nbd-host = debian.nbd.vifib.net
+nbd-host =
 nbd2-port = 1024
 nbd2-host =
 
