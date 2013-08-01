@@ -26,7 +26,11 @@ pre-install =
   cp $cyghome/test-computer.key $${buildout:directory}/cygwin/computer.key
   cp ${installer:cygroot}/slapos-windows-wrapper.bat $${buildout:directory}/slapos-windows-wrapper.bat
 make-binary = true
-# The parameter "slaptester" is the password of slapos administrator
-# passed to configure script
 post-install =
-  $${buildout:directory}/slapos-windows-wrapper.bat slapos-configure slaptester
+  $${buildout:directory}/slapos-windows-wrapper.bat /etc/slapos/scripts/slapos-configure.sh \
+      --password=slaptester \
+      --ipv4-local-network=10.89.208.0/24 \
+      --client-certificate=/certificate \
+      --client-key=/key \
+      --computer-certificate=/computer.crt \
+      --computer-key=/computer.key
