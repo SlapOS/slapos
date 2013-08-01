@@ -112,5 +112,9 @@ software_release_url = ${slap-connection:software-release-url}
 key_file = ${slap-connection:key-file}
 cert_file = ${slap-connection:cert-file}
 
+[slap-parameter]
+slave_instance_list =
+-frontend-quantity = 2
+-frontend-type = default
 
 {%- endif %}
