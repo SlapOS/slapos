@@ -56,14 +56,14 @@
 old_sr_url = context.getUrlString()\n
 portal = context.getPortalObject()\n
 \n
-if comp_uid_list != []:\n
+if comp_reference_list != []:\n
   hosting_sub_list = portal.portal_catalog.searchAndActivate(\n
     portal_type = \'Hosting Subscription\',\n
     default_specialise_related_uid = [x.getUid() for x in portal.portal_catalog(\n
       portal_type = [\'Software Instance\', \'Slave Instance\'],\n
       default_aggregate_uid = [y.getUid() for y in portal.portal_catalog(\n
         portal_type = \'Computer Partition\',\n
-        parent_uid = comp_uid_list,\n
+        parent_reference = comp_reference_list,\n
         free_for_request = 0,\n
         software_release_url = old_sr_url\n
       )]\n
@@ -85,7 +85,7 @@ else:\n
         </item>
         <item>
             <key> <string>_params</string> </key>
-            <value> <string>new_sr_url, comp_uid_list, tag, **kw</string> </value>
+            <value> <string>new_sr_url, comp_reference_list, tag, **kw</string> </value>
         </item>
         <item>
             <key> <string>id</string> </key>

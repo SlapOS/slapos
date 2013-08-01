@@ -263,7 +263,7 @@
       <dictionary>
         <item>
             <key> <string>_text</string> </key>
-            <value> <string>python: [(x.getReference(),x.getUrl()) for x in cell.SoftwareRelease_getUsableComputerList()]</string> </value>
+            <value> <string>python: [(x.getReference(),x.getReference()) for x in cell.SoftwareRelease_getUsableComputerList()]</string> </value>
         </item>
       </dictionary>
     </pickle>

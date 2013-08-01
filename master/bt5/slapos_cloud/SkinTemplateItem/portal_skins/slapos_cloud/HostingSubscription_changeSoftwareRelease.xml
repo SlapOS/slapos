@@ -52,24 +52,27 @@
             <key> <string>_body</string> </key>
             <value> <string>person = context.getDestinationSectionValue(portal_type="Person")\n
 \n
-status = context.getSlapState()\n
+computer = context.getSpecialiseRelatedValue().getAggregateValue().getParentValue()\n
 \n
-if status == "start_requested":\n
-  state = "started"\n
-elif status == "stop_requested":\n
-  state = "stopped"\n
-elif status == "destroy_requested":\n
-  state = "destroyed"\n
+if new_sr_url in computer.Computer_getSoftwareReleaseUrlStringList():\n
+  status = context.getSlapState()\n
+\n
+  if status == "start_requested":\n
+    state = "started"\n
+  elif status == "stop_requested":\n
+    state = "stopped"\n
+  elif status == "destroy_requested":\n
+    state = "destroyed"\n
   \n
-person.requestSoftwareInstance(\n
-  state=state,\n
-  software_release=new_sr_url,\n
-  software_title=context.getTitle(),\n
-  software_type=context.getSourceReference(),\n
-  instance_xml=context.getTextContent(),\n
-  sla_xml=context.getSlaXml(),\n
-  shared=context.isRootSlave()\n
-)\n
+  person.requestSoftwareInstance(\n
+    state=state,\n
+    software_release=new_sr_url,\n
+    software_title=context.getTitle(),\n
+    software_type=context.getSourceReference(),\n
+    instance_xml=context.getTextContent(),\n
+    sla_xml=context.getSlaXml(),\n
+    shared=context.isRootSlave()\n
+  )\n
 </string> </value>
         </item>
         <item>

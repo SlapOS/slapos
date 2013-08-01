@@ -56,21 +56,26 @@ if listbox is None:\n
   listbox = []\n
 \n
 portal = context.getPortalObject()\n
+message_list = []\n
 \n
 for parameters in listbox:\n
   new_sr_path = parameters[\'workflow_action\']\n
 \n
   if new_sr_path is not None and new_sr_path != \'\':\n
-    old_sr_document = portal.restrictedTraverse(parameters[\'listbox_key\'])\n
     new_sr_document = portal.restrictedTraverse(new_sr_path)\n
+    new_sr_url = new_sr_document.getUrlString()\n
+\n
+    comp_reference_list = parameters[\'computer_filter\']\n
+    if comp_reference_list != []:\n
+      for comp_reference in comp_reference_list:\n
+        if new_sr_url not in portal.portal_catalog.getResultValue(portal_type=\'Computer\', reference=comp_reference).Computer_getSoftwareReleaseUrlStringList():\n
+          message_list.append("Software Release %s not installed on %s." % (new_sr_document.getTitle(), comp_reference))\n
+\n
+    old_sr_document = portal.restrictedTraverse(parameters[\'listbox_key\'])\n
     \n
     tag = \'software_release_change_from_%s_to_%s\' % (old_sr_document.getReference(), new_sr_document.getReference())\n
 \n
-    comp_uid_list = []\n
-    for comp in parameters[\'computer_filter\']:\n
-      comp_uid_list.append(portal.restrictedTraverse(comp).getUid())\n
-\n
-    old_sr_document.activate(tag=tag).SoftwareRelease_requestInstanceUpgrade(new_sr_document.getUrlString(), comp_uid_list, tag)\n
+    old_sr_document.activate(tag=tag).SoftwareRelease_requestInstanceUpgrade(new_sr_url, comp_reference_list, tag)\n
 \n
     # activate something on the module after everything, so that user can know that something is happening in the background\n
     context.activate(after_tag=tag).getTitle()\n
@@ -78,8 +83,13 @@ for parameters in listbox:\n
 # reset selection checked uids\n
 context.portal_selections.setSelectionCheckedUidsFor(selection_name, [])\n
 \n
+portal_status_message = "Upgrade of instances in progress.\\r\\n"\n
+\n
+if message_list != []:\n
+  portal_status_message += "\\r\\n".join(message_list)\n
+  \n
 return context.Base_redirect(form_id,\n
-                             keep_items=dict(portal_status_message=translateString("Upgrade of instances in progress.")))\n
+                             keep_items=dict(portal_status_message=translateString(portal_status_message)))\n
 </string> </value>
         </item>
         <item>
