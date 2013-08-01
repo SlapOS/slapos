@@ -127,9 +127,11 @@ if result.status == 204: # and (result.read() == "False"):
 if scalability:
   
   while True:
-
+    count = 0
+    
     # Fix site consistency
     if not testIfExist("/%%s/portal_configurator/" %%site_id):
+      count = count + 1
       print "Going to fix site consistency..."
       zope_connection = getConnection()
       zope_connection.request(
@@ -146,6 +148,7 @@ if scalability:
     # Install testing scalability business configuration if not exists
     if testIfExist("/%%s/portal_configurator/" %%site_id) \
        and not testIfExist("/%%s/sale_order_module/" %%site_id):
+      count = count + 1
       print "Going to install testing scalability business configuration.."
       zope_connection = getConnection()
       zope_connection.request(
@@ -162,6 +165,7 @@ if scalability:
     # Create scalability users
     if testIfExist("/%%s/person_module/scalability_user/getTitle" %%site_id) \
        and not testIfExist("/%%s/person_module/scalability_user_0/getTitle" %%site_id):
+      count = count + 1
       print "Going to create scalability users.."
       zope_connection = getConnection()
       zope_connection.request(
@@ -175,4 +179,21 @@ if scalability:
       waitFor0PendingActivities()
       print "Scalability users creation: done."
 
-
+    # Try to Updates roles and sleep
+    if count == 0:
+      print "Trying to update roles.."
+      try:
+        zope_connection = getConnection()
+        zope_connection.request(
+          'GET', '/%%s/update_roles_scalability' %%site_id,
+          headers=header_dict
+        )
+        result = zope_connection.getresponse()
+        assert(result.read()=="1")
+        # Wait activities
+        waitFor0PendingActivities()
+        print "Update roles: done."
+      except:
+        print "Update roles: fail. (but may be already done before)"
+      time.sleep(30)
+    
