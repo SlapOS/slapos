@@ -50,7 +50,7 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string>return context.portal_catalog.countResults(portal_type=\'Computer Partition\', software_release_url=context.getUrlString(), free_for_request=0)[0][0]\n
+            <value> <string>return context.portal_catalog.countResults(portal_type=(\'Software Instance\',\'Slave Instance\'), url_string=context.getUrlString())[0][0]\n
 </string> </value>
         </item>
         <item>

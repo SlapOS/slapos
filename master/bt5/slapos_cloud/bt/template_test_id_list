@@ -4,3 +4,4 @@ testSlapOSCloudSecurityGroup
 testSlapOSCloudShadow
 testSlapOSCloudWorkflow
 testSlapOSCloudDocument
+testSlapOSCloudMassUpgrade
