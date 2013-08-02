@@ -89,8 +89,8 @@ class TestSlapOSMassUpgrade(testSlapOSMixin):
       self.tic()
   
   def _makeSoftwareProduct(self, new_id):
-    self.software_product = self.portal.portal_catalog(
-      portal_type='Software Product')[0].Base_createCloneDocument(batch_mode=1)
+    self.software_product = self.portal.software_product_module\
+      .template_software_product.Base_createCloneDocument(batch_mode=1)
     self.software_product.edit(
       reference='TESTSOFTPROD-%s' % new_id,
       title='Test software product %s' % new_id
@@ -99,8 +99,8 @@ class TestSlapOSMassUpgrade(testSlapOSMixin):
     self.tic()
 
   def _makeSoftwareReleases(self, new_id):
-    self.start_requested_software_release = self.portal.portal_catalog(
-      portal_type='Software Release')[0].Base_createCloneDocument(batch_mode=1)
+    self.start_requested_software_release = self.portal.software_release_module\
+      .template_software_release.Base_createCloneDocument(batch_mode=1)
     self.start_requested_software_release.edit(
       url_string=self.start_requested_software_release_url,
       aggregate=self.software_product.getRelativeUrl(),
@@ -109,9 +109,8 @@ class TestSlapOSMassUpgrade(testSlapOSMixin):
     )
     self.start_requested_software_release.release()
 
-    self.destroy_requested_software_release = self.portal.portal_catalog(
-      portal_type='Software Release')[0]\
-      .Base_createCloneDocument(batch_mode=1)
+    self.destroy_requested_software_release = self.portal.software_release_module\
+      .template_software_release.Base_createCloneDocument(batch_mode=1)
     self.destroy_requested_software_release.edit(
       url_string=self.destroy_requested_software_release_url,
       aggregate=self.software_product.getRelativeUrl(),
