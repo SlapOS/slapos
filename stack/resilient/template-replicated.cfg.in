@@ -18,12 +18,22 @@ software-type = {{typeexport}}
 name = {{namebase}}0
 return = ssh-public-key ssh-url notification-id ip
 
-config = number authorized-key notify ip-list namebase
+config =
+# Resilient related parameters
+  number authorized-key notify ip-list namebase
+{% if slapparameter_dict is defined %}
+# Software Instance related parameters
+  {% for parameter_name in slapparameter_dict.keys() %}{{parameter_name}} {% endfor %}
+{% endif %}
 config-number = 0
 config-authorized-key = {% for id in range(1,nbbackup|int) %} ${request-pbs-{{namebase}}-{{id}}:connection-ssh-key}{% endfor %}
 config-notify = {% for id in range(1,nbbackup|int) %} ${request-pbs-{{namebase}}-{{id}}:connection-notification-url}{% endfor %}
 config-ip-list =
-
+# Bubble up all the instance parameters to the requested export instance.
+{% if slapparameter_dict is defined %}
+{% for parameter_name, parameter_value in slapparameter_dict.items() %}config-{{parameter_name}} = {{parameter_value}}
+{% endfor %}
+{% endif %}
 
 {% for id in range(1,nbbackup|int) %}
 
@@ -135,3 +145,4 @@ pbs-{{namebase}}{{id}}-computer-guid =
 {% endfor %}
 
 {% endmacro %}
+
