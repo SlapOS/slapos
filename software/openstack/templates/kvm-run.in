@@ -1,0 +1,60 @@
+#!${:python_path}
+# BEWARE: This file is operated by slapgrid
+# BEWARE: It will be overwritten automatically
+
+# Echo client program
+import os
+import socket
+import subprocess
+
+def getSocketStatus(host, port):
+  s = None
+  for res in socket.getaddrinfo(host, port,
+      socket.AF_UNSPEC, socket.SOCK_STREAM):
+    af, socktype, proto, canonname, sa = res
+    try:
+      s = socket.socket(af, socktype, proto)
+    except socket.error, msg:
+      s = None
+      continue
+    try:
+      s.connect(sa)
+    except socket.error, msg:
+      s.close()
+      s = None
+      continue
+    break
+  return s
+
+# create disk if doesn't exist
+disk_path = '${:disk_path}'
+if not os.path.exists(disk_path):
+  subprocess.Popen(['${:qemu_img_path}', 'create' ,'-f', 'qcow2',
+      disk_path, '${:disk_size}G'])
+
+# Generate NAT rules for ssh connexion
+nat_rules = ",".join("hostfwd=tcp:${:vnc_ip}:%s-:%s" % (port, port) for port in [80, 443, 5000, 6080, 6082, 3333, 9292, 3306, 35357])
+
+kvm_argument_list = ['${:qemu_path}',
+  '-enable-kvm', '-net', 'nic,macaddr=${:mac_address}',
+  '-net', 'user,hostfwd=tcp:${:vnc_ip}:22222-:22,%s' % nat_rules,
+  '-smp', '${:smp_count}',
+  '-m', '${:ram_size}',
+  '-drive', 'file=${:disk_path},if=${:disk_type}',
+  '-vnc', '${:vnc_ip}:1,ipv4,password',
+  '-boot', 'menu=on',
+  '-qmp', 'unix:${:socket_path},server',
+  '-pidfile', '${:pid_file_path}',
+]
+
+s = getSocketStatus('${:nbd_ip}', ${:nbd_port})
+if s is None:
+  # NBD is not available : launch kvm without it
+  print 'Warning : Nbd is not available.'
+else:
+  # NBD is available
+  kvm_argument_list.extend([
+      '-drive',
+      'file=nbd:[%s]:%s,media=cdrom' % ('${:nbd_ip}', ${:nbd_port})])
+
+os.execv('${:qemu_path}', kvm_argument_list)
