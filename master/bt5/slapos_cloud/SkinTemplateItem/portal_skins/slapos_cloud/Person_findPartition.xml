@@ -53,6 +53,7 @@
             <value> <string encoding="cdata"><![CDATA[
 
 import random\n
+from Products.ZSQLCatalog.SQLCatalog import SimpleQuery\n
 person = context\n
 \n
 computer_partition = None\n
@@ -75,17 +76,17 @@ else:\n
 explicit_location = False\n
 if "computer_guid" in filter_kw:\n
   explicit_location = True\n
-  query_kw["parent_reference"] = filter_kw.pop("computer_guid")\n
+  query_kw["parent_reference"] = SimpleQuery(parent_reference=filter_kw.pop("computer_guid"))\n
 \n
 if "instance_guid" in filter_kw:\n
   explicit_location = True\n
   portal = context.getPortalObject()\n
   instance_guid = filter_kw.pop("instance_guid")\n
-  query_kw["aggregate_related_reference"] = instance_guid\n
+  query_kw["aggregate_related_reference"] = SimpleQuery(aggregate_related_reference=filter_kw.pop("instance_guid"))\n
 \n
 if \'network_guid\' in filter_kw:\n
   network_guid = filter_kw.pop(\'network_guid\')\n
-  query_kw["default_subordination_reference"] = network_guid\n
+  query_kw["default_subordination_reference"] = SimpleQuery(default_subordination_reference=filter_kw.pop("network_guid"))\n
 \n
 computer_base_category_list = [\n
   \'group\',\n
