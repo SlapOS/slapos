@@ -1,4 +1,4 @@
-{% if software_type == slap_software_type -%}
+{% if slap_software_type.startswith(software_type) -%}
 
 [jinja2-template-base]
 recipe = slapos.recipe.template:jinja2
@@ -13,7 +13,13 @@ context =
     ${:extra-context}
 
 {% set part_list = [] -%}
-{% set frontend_type = slapparameter_dict.pop('-frontend-type', 'default') -%}
+{% set type_key = 'replicate-' %}
+{% set type_key_length = type_key | length %}
+{% if slap_software_type.startswith(type_key) %}
+{%   set frontend_type = slap_software_type[type_key_length:] -%}
+{% else -%}
+{%   set frontend_type = slapparameter_dict.pop('-frontend-type', 'default') -%}
+{% endif -%}
 {% set frontend_quantity = slapparameter_dict.pop('-frontend-quantity', '2') | int -%}
 {% set slave_list_name = 'extra_slave_instance_list' -%}
 {% set frontend_list = [] %}
