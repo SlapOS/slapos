@@ -166,7 +166,7 @@ if scalability:
     # TODO: Use an other way to do the load balancing (for example
     # using zope.conf, and using family-zope group names).
     # Apply load balacing
-    if count == 0:
+    if testIfExist("/%%s/portal_activities/manageLoadBalancing" %%site_id):
       print "Load balacing.."
       try:
         zope_connection = getConnection()
