@@ -162,26 +162,6 @@ if scalability:
       waitFor0PendingActivities()
       print "Scalability business configuration building: done."
 
-    # XXX: Hack to perform load balacing
-    # TODO: Use an other way to do the load balancing (for example
-    # using zope.conf, and using family-zope group names).
-    # Apply load balacing
-    if testIfExist("/%%s/portal_activities/manageLoadBalancing" %%site_id):
-      print "Load balacing.."
-      try:
-        zope_connection = getConnection()
-        zope_connection.request(
-          'GET', '/%%s/apply_load_balancing_scalability' %%site_id,
-          headers=header_dict
-        )
-        result = zope_connection.getresponse()
-        assert("Processing Nodes" in result.read())
-        # Wait activities
-        waitFor0PendingActivities()
-        print "Load balancing init: done."
-      except:
-        print "Load balancing init: fail."
-
     # Create scalability users
     if testIfExist("/%%s/person_module/scalability_user/getTitle" %%site_id) \
        and not testIfExist("/%%s/person_module/scalability_user_0/getTitle" %%site_id):
@@ -216,4 +196,26 @@ if scalability:
       except:
         print "Update roles: fail. (but may be already done before)"
       time.sleep(30)
+
+
+    # XXX: Hack to perform load balacing
+    # TODO: Use an other way to do the load balancing (for example
+    # using zope.conf, and using family-zope group names).
+    # Apply load balacing
+    if testIfExist("/%%s/portal_activities/manageLoadBalancing" %%site_id) \
+        and testIfExist("/%%s/person_module/scalability_user_0/getTitle" %%site_id):
+      print "Load balacing.."
+      try:
+        zope_connection = getConnection()
+        zope_connection.request(
+          'GET', '/%%s/apply_load_balancing_scalability' %%site_id,
+          headers=header_dict
+        )
+        result = zope_connection.getresponse()
+        assert("Processing Nodes" in result.read())
+        # Wait activities
+        waitFor0PendingActivities()
+        print "Load balancing init: done."
+      except:
+        print "Load balancing init: fail."
     
