@@ -1,0 +1,37 @@
+[buildout]
+# Here, we don't need KVM to run to import data, so we don't
+# even extend the kvm instance profile.
+extends = ${pbsready-import:output}
+
+eggs-directory = ${buildout:eggs-directory}
+develop-eggs-directory = ${buildout:develop-eggs-directory}
+offline = true
+
+[directory]
+recipe = slapos.cookbook:mkdirectory
+etc = $${buildout:directory}/etc
+bin = $${buildout:directory}/bin
+srv = $${buildout:directory}/srv
+var = $${buildout:directory}/var
+log = $${:var}/log
+scripts = $${:etc}/run
+services = $${:etc}/service
+promises = $${:etc}/promise
+novnc-conf = $${:etc}/novnc
+run = $${:var}/run
+ca-dir = $${:srv}/ssl
+cron-entries = $${:etc}/cron.d
+crontabs = $${:etc}/crontabs
+cronstamps = $${:etc}/cronstamps
+
+[importer]
+recipe = slapos.recipe.template
+url = ${template-kvm-import-script:location}/${template-kvm-import-script:filename}
+output = $${directory:bin}/$${slap-parameter:namebase}-importer
+mode = 0755
+backup-disk-path = $${directory:backup}/virtual.qcow2
+disk-path = $${directory:srv}/virtual.qcow2
+# Resilient stack wants a "wrapper" parameter
+wrapper = $${:output}
+
+backup-disk-path = $${directory:backup}/virtual.qcow2

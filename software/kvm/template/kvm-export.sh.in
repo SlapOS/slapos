@@ -1,0 +1,18 @@
+#!/bin/bash
+# Create a backup of the disk image of the virtual machine
+QEMU_IMG=${kvm-instance:qemu-img-path}
+SNAPSHOT_NAME=$(date +%s)
+DISK_PATH=${kvm-instance:disk-path}
+BACKUP_PATH=${:backup-disk-path}
+
+if [ ! -f $DISK_PATH ]; then
+  echo "Nothing to backup, disk image doesn't exist yet."
+  exit 0;
+fi
+
+$QEMU_IMG snapshot -c $SNAPSHOT_NAME $DISK_PATH
+if [ -f $BACKUP_PATH ]; then
+  rm $BACKUP_PATH
+fi
+$QEMU_IMG convert -f qcow2 -O qcow2 -s $SNAPSHOT_NAME $DISK_PATH $BACKUP_PATH
+$QEMU_IMG snapshot -d $SNAPSHOT_NAME $DISK_PATH

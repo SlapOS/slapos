@@ -2,7 +2,21 @@
 
 extends = ${pbsready:output}
 
-parts +=
+# Explicitely define extended parts from pbsready
+# then add local parts
+parts =
+  resiliency
+  logrotate
+  logrotate-entry-cron
+  logrotate-entry-equeue
+  cron
+  cron-entry-logrotate
+  sshkeys-authority
+  dropbear-server
+  sshkeys-dropbear
+  dropbear-server-pbs-authorized-key
+  notifier
+
   import-on-notification
   resilient-publish-connection-parameter
 

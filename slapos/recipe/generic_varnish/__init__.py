@@ -37,9 +37,11 @@ class Recipe(GenericSlapRecipe):
   """
   def _install(self):
     ip = self.options['ip']
-    backend_url = self.parameter_dict.get(
-      'backend-url',
-      self.parameter_dict.get('tidstorage-url') # BBB
+    backend_url = self.options.get('backend-url',
+      # BBB: Peeking in partition parameters directly. Eew.
+      self.parameter_dict.get('backend-url',
+        self.parameter_dict.get('tidstorage-url') # BBB
+      )
     )
     backend_server, backend_port = self._getBackendServer(backend_url)
     path_list = []
