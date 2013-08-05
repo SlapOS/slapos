@@ -1914,6 +1914,27 @@ class TestSlapOSCoreSoftwareInstanceRequest(testSlapOSMixin):
         requested_instance2.getSlaXml())
     self.assertEqual(bang_amount+1, self._countBang(requested_instance))
 
+  def test_update_connection_bang_requester(self):
+    # XXX Romain Couscous
+    request_kw = self.request_kw.copy()
+
+    request_kw['software_title'] = self.generateNewSoftwareTitle()
+    self.software_instance.requestInstance(**request_kw)
+
+    requested_instance = self.software_instance.REQUEST.get(
+        'request_instance')
+
+    self.tic()
+
+    bang_amount = self._countBang(self.software_instance)
+
+    connection_xml = self.generateSafeXml()
+    requested_instance.updateConnection(connection_xml=connection_xml)
+
+    transaction.commit()
+
+    self.assertEqual(bang_amount+1, self._countBang(self.software_instance))
+
 class TestSlapOSCorePersonRequest(testSlapOSMixin):
 
   def afterSetUp(self):
