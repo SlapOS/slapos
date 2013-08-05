@@ -1915,7 +1915,6 @@ class TestSlapOSCoreSoftwareInstanceRequest(testSlapOSMixin):
     self.assertEqual(bang_amount+1, self._countBang(requested_instance))
 
   def test_update_connection_bang_requester(self):
-    # XXX Romain Couscous
     request_kw = self.request_kw.copy()
 
     request_kw['software_title'] = self.generateNewSoftwareTitle()
