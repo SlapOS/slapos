@@ -4,6 +4,7 @@ Changes
 0.78.4.dev (2013-07-18)
 -----------------------
 
+ * slapos.cookbook:slaprunner: Update to use https. [Cedric Le Ninivin]
 
 
 0.78.3 (2013-07-18)
