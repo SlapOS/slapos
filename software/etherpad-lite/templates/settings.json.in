@@ -52,7 +52,7 @@
   */
   
   //the default text of a pad
-  "defaultPadText" : "Welcome to Etherpad!\n\nThis pad text is synchronized as you type, so that everyone viewing this page sees the same text. This allows you to collaborate seamlessly on documents!\n\nGet involved with Etherpad at http:\/\/etherpad.org\n",
+  "defaultPadText" : "Bienvenue sur Etherpad!\n\nLe texte que vous écrivez est synchronisez en ce moment même, pour que tout le monde puisse voir la page avec le même texte. Cela vous permet de collaborer sur des documents sans aucun problème!\n",
   
   /* Users must have a session to access pads. This effectively allows only group pads to be accessed. */
   "requireSession" : false,
