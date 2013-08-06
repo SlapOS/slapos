@@ -71,6 +71,7 @@ skip_character_set_client_handshake
 
 [client]
 socket = {{ socket }}
+user = root
 
 [mysql]
 no_auto_rehash
