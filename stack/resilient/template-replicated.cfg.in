@@ -1,4 +1,15 @@
-{% macro replicate(namebase, nbbackup, typeexport, typeimport, heriteLeader='', heriteBackup='') %}
+{% macro replicate(namebase, nbbackup, typeexport, typeimport, heriteLeader='', heriteBackup='', slapparameter_dict={}) %}
+
+{% set sla_parameter_dict = {} -%}
+# prepare sla-parameters
+{% if slapparameter_dict is defined -%}
+{%   for key in slapparameter_dict.keys() -%}
+{%     if key.startswith('-sla-') -%}
+{%       do sla_parameter_dict.__setitem__(key, slapparameter_dict.pop(key)) -%}
+{%     endif -%}
+{%   endfor -%}
+{% endif -%}
+
 
 ## Tells the Backupable recipe that we want a backup
 [resilient]
@@ -34,6 +45,26 @@ config-ip-list =
 {% for parameter_name, parameter_value in slapparameter_dict.items() %}config-{{parameter_name}} = {{parameter_value}}
 {% endfor %}
 {% endif %}
+{% if sla_parameter_dict -%}
+{%   set sla_key_main = "-sla-%s%s-" % (namebase, 0) -%}
+{%   set sla_key_secondary = "-sla-%s-" % (0) -%}
+{%   set sla_key_main_length = sla_key_main | length -%}
+{%   set sla_key_secondary_length = sla_key_secondary | length -%}
+{%   set sla_dict = {} -%}
+{%   for key in sla_parameter_dict.keys() -%}
+{%     if key.startswith(sla_key_main) -%}
+{%       do sla_dict.__setitem__(key[sla_key_main_length:], sla_parameter_dict.get(key)) -%}
+{%     elif key.startswith(sla_key_secondary) and not sla_dict.has_key(key[sla_key_secondary_length:]) -%}
+{%         do sla_dict.__setitem__(key[sla_key_secondary_length:], sla_parameter_dict.get(key)) -%}
+{%     endif -%}
+{%   endfor -%}
+{%   if sla_dict %}
+sla = {{ ' '.join(sla_dict.keys()) }}
+{%     for key, value in sla_dict.iteritems() -%}
+sla-{{ key }} = {{ value }}
+{%     endfor -%}
+{%   endif -%}
+{% endif -%}
 
 {% for id in range(1,nbbackup|int) %}
 
@@ -55,12 +86,29 @@ config-number = {{id}}
 config-authorized-key = ${request-pbs-{{namebase}}-{{id}}:connection-ssh-key}
 config-on-notification = ${request-pbs-{{namebase}}-{{id}}:connection-feeds-url}${:pbs-notification-id}
 config-ip-list =
+{% if sla_parameter_dict -%}
+{%   set sla_key_main = "-sla-%s%s-" % (namebase, id) -%}
+{%   set sla_key_secondary = "-sla-%s-" % (id) -%}
+{%   set sla_key_main_length = sla_key_main | length -%}
+{%   set sla_key_secondary_length = sla_key_secondary | length -%}
+{%   set sla_dict = {} -%}
+{%   for key in sla_parameter_dict.keys() -%}
+{%     if key.startswith(sla_key_main) -%}
+{%       do sla_dict.__setitem__(key[sla_key_main_length:], sla_parameter_dict.get(key)) -%}
+{%     elif key.startswith(sla_key_secondary) and not sla_dict.has_key(key[sla_key_secondary_length:]) -%}
+{%         do sla_dict.__setitem__(key[sla_key_secondary_length:], sla_parameter_dict.get(key)) -%}
+{%     endif -%}
+{%   endfor -%}
+{%   if sla_dict %}
+sla = {{ ' '.join(sla_dict.keys()) }}
+{%     for key, value in sla_dict.iteritems() -%}
+sla-{{ key }} = {{ value }}
+{%     endfor -%}
+{%   endif %}
+{% endif %}
 
-sla = computer_guid
-sla-computer_guid = ${slap-parameter:{{namebase}}{{id}}-computer-guid}
 
-
-{% endfor %}
+{% endfor -%}
 
 [iplist]
 config-ip-list = ${request-{{namebase}}:connection-ip}{% for j in range(1,nbbackup|int) %} ${request-{{namebase}}-pseudo-replicating-{{j}}:connection-ip}{% endfor %}
@@ -100,8 +148,27 @@ software-type = pull-backup
 name = PBS ({{namebase}} / {{id}})
 return = ssh-key notification-url feeds-url
 slave = false
-sla = computer_guid
-sla-computer_guid = ${slap-parameter:pbs-{{namebase}}{{id}}-computer-guid}
+{% if sla_parameter_dict -%}
+{%   set sla_key_main = "-sla-%s%s-" % ("pbs", id) -%}
+{%   set sla_key_secondary = "-sla-%s-" % (id) -%}
+{%   set sla_key_main_length = sla_key_main | length -%}
+{%   set sla_key_secondary_length = sla_key_secondary | length -%}
+{%   set sla_dict = {} -%}
+{%   for key in sla_parameter_dict.keys() -%}
+{%     if key.startswith(sla_key_main) -%}
+{%       do sla_dict.__setitem__(key[sla_key_main_length:], sla_parameter_dict.get(key)) -%}
+{%     elif key.startswith(sla_key_secondary) and not sla_dict.has_key(key[sla_key_secondary_length:]) -%}
+{%         do sla_dict.__setitem__(key[sla_key_secondary_length:], sla_parameter_dict.get(key)) -%}
+{%     endif -%}
+{%   endfor -%}
+{%   if sla_dict %}
+sla = {{ ' '.join(sla_dict.keys()) }}
+{%     for key, value in sla_dict.iteritems() -%}
+sla-{{ key }} = {{ value }}
+{%     endfor %}
+{%   endif %}
+{% endif %}
+
 
 [request-pull-backup-server-{{namebase}}-{{id}}]
 <= request-pbs-common
