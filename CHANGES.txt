@@ -1,6 +1,11 @@
 Changes
 =======
 
+0.78.5 (2013-08-06)
+-----------------------
+
+ * check_url_available: add option to check secure links [6cbce4d8231]
+
 0.78.4 (2013-08-06)
 -----------------------
 
