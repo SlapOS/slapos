@@ -162,6 +162,22 @@ if scalability:
       waitFor0PendingActivities()
       print "Scalability business configuration building: done."
 
+    # Force to use random id generator
+    print "Force to use random id.."
+    try:
+      zope_connection = getConnection()
+      zope_connection.request(
+        'GET', '/%%s/use_random_id_scalability' %%site_id,
+        headers=header_dict
+      )
+      result = zope_connection.getresponse()
+      assert(result.read()=="1")
+      # Wait activities
+      waitFor0PendingActivities()
+      print "use_random_id_scalability: done."
+    except:
+      print "use_random_id_scalability: fail."
+
     # Create scalability users
     if testIfExist("/%%s/person_module/scalability_user/getTitle" %%site_id) \
        and not testIfExist("/%%s/person_module/scalability_user_0/getTitle" %%site_id):
@@ -196,8 +212,7 @@ if scalability:
       except:
         print "Update roles: fail. (but may be already done before)"
       time.sleep(30)
-
-
+      
     # XXX: Hack to perform load balacing
     # TODO: Use an other way to do the load balancing (for example
     # using zope.conf, and using family-zope group names).
@@ -218,4 +233,6 @@ if scalability:
         print "Load balancing init: done."
       except:
         print "Load balancing init: fail."
-    
+
+    # sleep
+    time.sleep(30)
