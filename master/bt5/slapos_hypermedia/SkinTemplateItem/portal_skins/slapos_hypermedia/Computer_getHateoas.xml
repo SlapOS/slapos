@@ -80,7 +80,7 @@ else:\n
                   "type": "application/vnd.slapos.org.hal+json; class=slapos.org.computer" },\n
 \n
         "http://slapos.org/reg/software": {\n
-          "href": "%s/Computer_getHateoasSoftwareList" % context.absolute_url(),\n
+          "href": "%s/Computer_getHateoasSoftwareInstallationList" % context.absolute_url(),\n
           "type": "application/vnd.slapos.org.hal+json; class=slapos.org.collection",\n
         },\n
 \n

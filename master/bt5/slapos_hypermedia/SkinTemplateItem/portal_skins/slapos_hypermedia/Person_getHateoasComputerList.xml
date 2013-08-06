@@ -80,7 +80,7 @@ else:\n
 \n
   for sql_obj in context.getPortalObject().portal_catalog(\n
                                                  portal_type="Computer",\n
-                                                 source_administration_uid=context.getUid(),\n
+                                                 default_source_administration_uid=context.getUid(),\n
                                                  ):\n
     obj = sql_obj.getObject()\n
     result_dict[\'_links\'][\'item\'].append({\n

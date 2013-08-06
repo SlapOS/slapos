@@ -56,7 +56,7 @@ if REQUEST is None:\n
   raise Unauthorized\n
 \n
 response = REQUEST.RESPONSE\n
-type = \'application/vnd.slapos.org.hal+json; class=slapos.org.software\'\n
+type = \'application/vnd.slapos.org.hal+json; class=slapos.org.collection\'\n
 \n
 if REQUEST.other[\'method\'] != "GET":\n
   response.setStatus(405)\n
@@ -64,29 +64,30 @@ if REQUEST.other[\'method\'] != "GET":\n
 elif type != context.Base_handleAcceptHeader([type]):\n
   response.setStatus(406)\n
   return ""\n
-elif context.getPortalType() not in ["Software Installation"]:\n
+elif context.getPortalType() != "Computer":\n
   response.setStatus(403)\n
   return ""\n
 else:\n
-\n
-  if context.getSlapState() == "stop_requested":\n
-    state = \'stopped\'\n
-  elif context.getSlapState() == "start_requested":\n
-    state = \'started\'\n
-  else:\n
-    state = \'destroyed\'\n
-\n
   import json\n
   result_dict = {\n
-      \'_class\': \'slapos.org.software\',\n
-      \'title\': context.getTitle(),\n
-      \'software_url\': context.getUrlString(),\n
-      \'status\': state,\n
+      \'_class\': \'slapos.org.collection\',\n
       \'_links\': {\n
         "self": { "href": context.Base_getRequestUrl(),\n
-                  "type": "application/vnd.slapos.org.hal+json; class=slapos.org.software" },\n
+                  "type": type },\n
+        "item": [],\n
       },\n
     }\n
+\n
+  for sql_obj in context.getPortalObject().portal_catalog(\n
+                                                 portal_type=\'Software Installation\',\n
+                                                 default_aggregate_uid=context.getUid(),\n
+                                                 validation_state=\'validated\',\n
+                                                 ):\n
+    obj = sql_obj.getObject()\n
+    result_dict[\'_links\'][\'item\'].append({\n
+      \'href\': \'%s/SoftwareInstallation_getHateoas\' % obj.absolute_url(),\n
+      \'type\': \'application/vnd.slapos.org.hal+json; class=slapos.org.software_installation\',\n
+    })\n
 \n
   response.setHeader(\'Content-Type\', type)\n
   return json.dumps(result_dict)\n
@@ -98,7 +99,7 @@ else:\n
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>Software_getHateoas</string> </value>
+            <value> <string>Computer_getHateoasSoftwareInstallationList</string> </value>
         </item>
       </dictionary>
     </pickle>

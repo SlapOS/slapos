@@ -322,7 +322,7 @@ class TestSlapOSHypermediaPersonScenario(testSlapOSMixin):
     # Get user's software
     #####################################################
     content_type = "application/vnd.slapos.org.hal+json; " \
-                   "class=slapos.org.software"
+                   "class=slapos.org.software_installation"
     software_link_dict = software_collection_hal['_links']\
         ['item'][0]
 
