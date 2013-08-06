@@ -17,6 +17,7 @@ parts +=
   slaprunner-promise
   slaprunner-frontend-promise
   cloud9-promise
+  cloud9-frontend-promise
   dropbear-promise
   symlinks
   node-frontend-promise
