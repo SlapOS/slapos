@@ -183,17 +183,13 @@ class GenericBaseRecipe(object):
         'template/%s' % template_name)
 
   def generatePassword(self, len_=32):
-    """
-    The purpose of this method is to generate a password which doesn't change
-    from one execution to the next, so the generated password doesn't change
-    on each slapgrid-cp execution.
-
-    Currently, it returns a hardcoded password because no decision has been
-    taken on where a generated password should be kept (so it is generated
-    once only).
-    """
-    # TODO: implement a real password generator which remember the last
-    # call.
+    # TODO: Consider having generate.password recipe inherit this class,
+    #       so that it can be easily inheritable.
+    #       In the long-term, it's probably better that passwords are provided
+    #       by software requesters, to avoid keeping unhashed secrets in
+    #       partitions when possible.
+    log.warning("GenericBaseRecipe.generatePassword is deprecated."
+                " Use generate.password recipe instead.")
     return "insecure"
 
   def isTrueValue(self, value):
