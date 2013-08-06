@@ -13,7 +13,7 @@ parts +=
   {{ parts.replicate("runner", "3") }}
   publish-connection-informations
 
-{{ replicated.replicate("runner", "3", "runner-export", "runner-import") }}
+{{ replicated.replicate("runner", "3", "runner-export", "runner-import", slapparameter_dict=slapparameter_dict) }}
 
 # Bubble up the parameters
 [request-runner]
