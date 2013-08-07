@@ -68,6 +68,18 @@
       "maximum": 65535
     },
 
+    "use-tap": {
+      "title": "Use QEMU TAP network interface",
+      "description": "Use QEMU TAP network interface, requires a bridge on SlapOS Node. If false, use user-mode network stack (NAT).",
+      "type": "boolean",
+      "default": false
+    },
+    "nat-rules": {
+      "title": "List of rules for NAT of QEMU user mode network stack.",
+      "description": "List of rules for NAT of QEMU user mode network stack, as comma-separated list of ports. For each port specified, it will redirect port x of the VM (example: 80) to the port x + 10000 of the public IPv6 (example: 10080). Defaults to \"22 80 443\". Ignored if \"use-tap\" parameter is enabled.",
+      "type": "string",
+    },
+
 
     "frontend-instance-guid": {
       "title": "Frontend Instance ID",

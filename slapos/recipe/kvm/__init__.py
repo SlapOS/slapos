@@ -65,11 +65,40 @@ class Recipe(GenericBaseRecipe):
       default_disk_image=self.options['default-disk-image'],
     )
 
-    # Runners
-    runner_path = self.createExecutable(
-      self.options['runner-path'],
-      self.substituteTemplate(self.getTemplateFilename('kvm_run.in'),
-                              config))
+    path_list = []
+
+    use_tap = self.options.get('use-tap')
+    if self.isTrueValue(use_tap):
+      runner_path = self.createExecutable(
+        self.options['runner-path'],
+        self.substituteTemplate(self.getTemplateFilename('kvm_run.in'),
+                                config))
+      path_list.append(runner_path)
+    else:
+      config['nat_rules'] = self.options['nat-rules']
+      runner_path = self.createExecutable(
+        self.options['runner-path'],
+        self.substituteTemplate(self.getTemplateFilename('kvm_run_nat.in'),
+                                config))
+      path_list.append(runner_path)
+      # XXX This could be done using Jinja.
+      for port in self.options['nat-rules'].split():
+        ipv6_port = int(port) + 10000
+        tunnel_path = self.createExecutable(
+            '%s-%sto%s' % (self.options['6tunnel-wrapper-path'], port, ipv6_port),
+            self.substituteTemplate(
+                self.getTemplateFilename('6to4.in'),
+                {
+                    'ipv6': self.options['ipv6'],
+                    'ipv6_port': ipv6_port,
+                    'ipv4': self.options['ipv4'],
+                    'ipv4_port': port,
+                    'shell_path': self.options['shell-path'],
+                    '6tunnel_path': self.options['6tunnel-path'],
+                },
+            ),
+        )
+        path_list.append(tunnel_path)
 
     controller_path = self.createExecutable(
       self.options['controller-path'],
@@ -77,4 +106,4 @@ class Recipe(GenericBaseRecipe):
                               config))
 
 
-    return [runner_path, controller_path]
+    return path_list
