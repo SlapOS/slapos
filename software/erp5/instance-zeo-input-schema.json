@@ -10,7 +10,7 @@
         "description": "Start allocating ports at this value, going upward"
       }]
     },
-    "tidstorage-dict": {
+    "backup": {
       "description": "Controls ZODB backup generation and retention (disabled if null)",
       "default": {},
       "properties": {
@@ -26,7 +26,7 @@
           },
           "type": "object"
         },
-        "timestamp-path": {
+        "tidstorage-timestamp-path": {
           "description": "Path to backup timestamp file, occurrences of '%(backup)s' being eplaced with the path to partition's srv/backup/tidstorage directory",
           "default": "%(backup)s/repozo_tidstorage_timestamp.log",
           "type": "string"

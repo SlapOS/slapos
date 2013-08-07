@@ -4,7 +4,7 @@
 {% set part_list = [] -%}
 {% set storage_dict = {} -%}
 {% set zodb_dict = {} -%}
-{% set tidstorage_dict = slapparameter_dict.get('tidstorage-dict', {}) -%}
+{% set tidstorage_dict = slapparameter_dict.get('backup', {}) -%}
 {% set known_tid_storage_identifier_dict = {} -%}
 {% set default_zodb_path = buildout_directory ~ '/srv/zodb' -%}
 {% set zodb_backup_path = buildout_directory ~ '/srv/backup/zodb' -%}
@@ -127,7 +127,7 @@ known-tid-storage-identifier-dict = {{ dumps(known_tid_storage_identifier_dict) 
 configuration-path = ${directory:etc}/tidstorage.py
 ip = {{ tidstorage_ip }}
 port = {{ tidstorage_port }}
-timestamp-file-path = {{ tidstorage_dict.get('timestamp-path', '%(backup)s/repozo_tidstorage_timestamp.log' % {'backup': default_tidstorage_timestamp_path}) }}
+timestamp-file-path = {{ tidstorage_dict.get('tidstorage-timestamp-path', '%(backup)s/repozo_tidstorage_timestamp.log' % {'backup': default_tidstorage_timestamp_path}) }}
 logfile-name = ${directory:log}/tidstorage.log
 pidfile-name = ${directory:run}/tidstorage.pid
 status-file = ${directory:tidstorage}/tidstorage.tid
