@@ -63,6 +63,7 @@ class Recipe(GenericBaseRecipe):
       qemu_img_path=self.options['qemu-img-path'],
       vnc_passwd=self.options['passwd'],
       default_disk_image=self.options['default-disk-image'],
+      virtual_hard_drive_url=self.options['virtual-hard-drive-url'],
     )
 
     path_list = []

@@ -37,7 +37,6 @@
       "maximum": 8
     },
 
-
     "nbd-host": {
       "title": "NBD hostname",
       "description": "hostname (or IP) of the NBD server containing the boot image.",
@@ -66,6 +65,13 @@
       "type": "integer",
       "minimum": 1,
       "maximum": 65535
+    },
+
+    "virtual-hard-drive-url": {
+      "title": "Existing disk image URL",
+      "description": "If specified, will download an existing disk image (qcow2, raw, ...), and will use it as main virtual hard drive. Can be used to download and use an already installed and customized virtual hard drive.",
+      "format": "uri",
+      "type": "string",
     },
 
     "use-tap": {

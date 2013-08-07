@@ -2,13 +2,21 @@
 # BEWARE: This file is operated by slapgrid
 # BEWARE: It will be overwritten automatically
 
-# Echo client program
+import hashlib
 import os
 import socket
 import subprocess
+import urllib
 
-# XXX: give all of this through parameter, don't use this as template
-default_disk_image = '%(default_disk_image)s'
+def md5Checksum(file_path):
+    with open(file_path, 'rb') as fh:
+        m = hashlib.md5()
+        while True:
+            data = fh.read(8192)
+            if not data:
+                break
+            m.update(data)
+        return m.hexdigest()
 
 def getSocketStatus(host, port):
   s = None
@@ -29,9 +37,23 @@ def getSocketStatus(host, port):
     break
   return s
 
+# XXX: give all of this through parameter, don't use this as template
+default_disk_image = '%(default_disk_image)s'
+disk_path = '%(disk_path)s'
+virtual_hard_drive_url = '%(virtual_hard_drive_url)s'.strip()
+virtual_hard_drive_md5_url = '%(virtual_hard_drive_md5_url)s'.strip()
+
+# Download existing hard drive if needed at first boot
+if not os.path.exists(disk_path) and virtual_hard_drive_url != '':
+  urllib.urlretrieve(virtual_hard_drive_url, disk_path)
+  local_md5sum = md5Checksum(disk_path)
+  md5sum = urllib.urlopen(virtual_hard_drive_md5_url).read().strip()
+  if local_md5sum != md5sum:
+    os.remove(disk_path)
+    raise Exception('MD5 mismatch.')
+
 # Create disk if doesn't exist
 # XXX: move to Buildout profile
-disk_path = '%(disk_path)s'
 if not os.path.exists(disk_path):
   subprocess.Popen(['%(qemu_img_path)s', 'create' ,'-f', 'qcow2',
       disk_path, '%(disk_size)sG'])
