@@ -188,8 +188,8 @@ class GenericBaseRecipe(object):
     #       In the long-term, it's probably better that passwords are provided
     #       by software requesters, to avoid keeping unhashed secrets in
     #       partitions when possible.
-    log.warning("GenericBaseRecipe.generatePassword is deprecated."
-                " Use generate.password recipe instead.")
+    self.logger.warning("GenericBaseRecipe.generatePassword is deprecated."
+                        " Use generate.password recipe instead.")
     return "insecure"
 
   def isTrueValue(self, value):
@@ -243,7 +243,8 @@ class GenericBaseRecipe(object):
       destination = self.location
     if os.path.exists(destination):
         # leftovers from a previous failed attempt, removing it.
-        log.warning('Removing already existing directory %s' % destination)
+        self.logger.warning('Removing already existing directory %s',
+                            destination)
         shutil.rmtree(destination)
     os.mkdir(destination)
 
