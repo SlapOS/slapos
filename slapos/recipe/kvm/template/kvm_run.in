@@ -42,6 +42,15 @@ default_disk_image = '%(default_disk_image)s'
 disk_path = '%(disk_path)s'
 virtual_hard_drive_url = '%(virtual_hard_drive_url)s'.strip()
 virtual_hard_drive_md5_url = '%(virtual_hard_drive_md5_url)s'.strip()
+nat_rules = '%(nat_rules)s'.strip()
+use_tap = '%(use_tap)s'
+
+# Generate NAT rules, if any
+# XXX: use_tap should be a boolean
+if use_tap == 'True':
+  qemu_network_parameter = 'user,' + ','.join('hostfwd=tcp:%(vnc_ip)s:%%s-:%%s' %% (int(port) + 10000, port) for port in nat_rules.split())
+else:
+  qemu_network_parameter = 'tap,ifname=%(tap_interface)s,script=no,downscript=no'
 
 # Download existing hard drive if needed at first boot
 if not os.path.exists(disk_path) and virtual_hard_drive_url != '':
@@ -60,7 +69,7 @@ if not os.path.exists(disk_path):
 
 kvm_argument_list = ['%(qemu_path)s',
   '-enable-kvm', '-net', 'nic,macaddr=%(mac_address)s',
-  '-net', 'tap,ifname=%(tap_interface)s,script=no,downscript=no',
+  '-net', qemu_network_parameter,
   '-smp', '%(smp_count)s',
   '-m', '%(ram_size)s',
   '-drive', 'file=%(disk_path)s,if=%(disk_type)s',

@@ -64,24 +64,13 @@ class Recipe(GenericBaseRecipe):
       vnc_passwd=self.options['passwd'],
       default_disk_image=self.options['default-disk-image'],
       virtual_hard_drive_url=self.options['virtual-hard-drive-url'],
+      use_tap=self.options['use-tap'],
+      nat_rules = self.options.get('nat-rules', ''),
     )
 
     path_list = []
 
-    use_tap = self.options.get('use-tap')
-    if self.isTrueValue(use_tap):
-      runner_path = self.createExecutable(
-        self.options['runner-path'],
-        self.substituteTemplate(self.getTemplateFilename('kvm_run.in'),
-                                config))
-      path_list.append(runner_path)
-    else:
-      config['nat_rules'] = self.options['nat-rules']
-      runner_path = self.createExecutable(
-        self.options['runner-path'],
-        self.substituteTemplate(self.getTemplateFilename('kvm_run_nat.in'),
-                                config))
-      path_list.append(runner_path)
+    if not self.isTrueValue(self.options.get('use-tap')):
       # XXX This could be done using Jinja.
       for port in self.options['nat-rules'].split():
         ipv6_port = int(port) + 10000
@@ -100,6 +89,13 @@ class Recipe(GenericBaseRecipe):
             ),
         )
         path_list.append(tunnel_path)
+
+
+    runner_path = self.createExecutable(
+        self.options['runner-path'],
+        self.substituteTemplate(self.getTemplateFilename('kvm_run.in'),
+                                config))
+    path_list.append(runner_path)
 
     controller_path = self.createExecutable(
       self.options['controller-path'],
