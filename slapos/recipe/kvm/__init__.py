@@ -41,32 +41,7 @@ class Recipe(GenericBaseRecipe):
           '"virtio" value.'
       self.options['disk-type'] = 'virtio'
 
-    config = dict(
-      tap_interface=self.options['tap'],
-      vnc_ip=self.options['vnc-ip'],
-      vnc_port=self.options['vnc-port'],
-      nbd_ip=self.options['nbd-host'],
-      nbd_port=self.options['nbd-port'],
-      nbd2_ip=self.options.get('nbd2-host', ''),
-      nbd2_port=self.options.get('nbd2-port', 1024),
-      disk_path=self.options['disk-path'],
-      disk_size=self.options['disk-size'],
-      disk_type=self.options['disk-type'],
-      mac_address=self.options['mac-address'],
-      smp_count=self.options['smp-count'],
-      ram_size=self.options['ram-size'],
-      socket_path=self.options['socket-path'],
-      pid_file_path=self.options['pid-path'],
-      python_path=sys.executable,
-      shell_path=self.options['shell-path'],
-      qemu_path=self.options['qemu-path'],
-      qemu_img_path=self.options['qemu-img-path'],
-      vnc_passwd=self.options['passwd'],
-      default_disk_image=self.options['default-disk-image'],
-      virtual_hard_drive_url=self.options['virtual-hard-drive-url'],
-      use_tap=self.options['use-tap'],
-      nat_rules = self.options.get('nat-rules', ''),
-    )
+    self.options['python-path'] = sys.executable
 
     path_list = []
 
@@ -90,17 +65,16 @@ class Recipe(GenericBaseRecipe):
         )
         path_list.append(tunnel_path)
 
-
     runner_path = self.createExecutable(
         self.options['runner-path'],
         self.substituteTemplate(self.getTemplateFilename('kvm_run.in'),
-                                config))
+                                self.options))
     path_list.append(runner_path)
 
     controller_path = self.createExecutable(
       self.options['controller-path'],
       self.substituteTemplate(self.getTemplateFilename('kvm_controller_run.in'),
-                              config))
+                              self.options))
 
 
     return path_list

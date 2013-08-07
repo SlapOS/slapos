@@ -51,12 +51,11 @@ bytes = 8
 # Specific code. It needs Jinja.
 recipe = slapos.cookbook:kvm
 
-# XXX-Cedric: should be removed and replaced
-vnc-ip = $${slap-network-information:local-ipv4}
-passwd = $${gen-passwd:passwd}
+vnc-passwd = $${gen-passwd:passwd}
 
 ipv4 = $${slap-network-information:local-ipv4}
 ipv6 = $${slap-network-information:global-ipv6}
+vnc-ip = $${:ipv4}
 
 vnc-port = 5901
 
@@ -67,14 +66,14 @@ nbd-port = $${slap-parameter:nbd-port}
 nbd2-host = $${slap-parameter:nbd2-host}
 nbd2-port = $${slap-parameter:nbd2-port}
 
-tap = $${slap-network-information:network-interface}
+tap-interface = $${slap-network-information:network-interface}
 
 disk-path = $${directory:srv}/virtual.qcow2
 disk-size = $${slap-parameter:disk-size}
 disk-type = $${slap-parameter:disk-type}
 
 socket-path = $${directory:var}/qmp_socket
-pid-path = $${directory:run}/pid_file
+pid-file-path = $${directory:run}/pid_file
 
 smp-count = $${slap-parameter:cpu-count}
 ram-size = $${slap-parameter:ram-size}
@@ -89,6 +88,7 @@ nat-rules = $${slap-parameter:nat-rules}
 6tunnel-wrapper-path = $${directory:services}/6tunnel
 
 virtual-hard-drive-url = $${slap-parameter:virtual-hard-drive-url}
+virtual-hard-drive-md5-url = $${slap-parameter:virtual-hard-drive-md5-url}
 
 shell-path = ${dash:location}/bin/dash
 qemu-path = ${kvm:location}/bin/qemu-system-x86_64
@@ -212,8 +212,8 @@ sla-instance_guid = $${slap-parameter:frontend-instance-guid}
 
 [publish-connection-information]
 recipe = slapos.cookbook:publish
-backend-url = https://[$${novnc-instance:ip}]:$${novnc-instance:port}/vnc_auto.html?host=[$${novnc-instance:ip}]&port=$${novnc-instance:port}&encrypt=1&password=$${kvm-instance:passwd}
-url = $${request-slave-frontend:connection-url}/vnc_auto.html?host=$${request-slave-frontend:connection-domainname}&port=$${request-slave-frontend:connection-port}&encrypt=1&path=$${request-slave-frontend:connection-resource}&password=$${kvm-instance:passwd}
+backend-url = https://[$${novnc-instance:ip}]:$${novnc-instance:port}/vnc_auto.html?host=[$${novnc-instance:ip}]&port=$${novnc-instance:port}&encrypt=1&password=$${kvm-instance:vnc-passwd}
+url = $${request-slave-frontend:connection-url}/vnc_auto.html?host=$${request-slave-frontend:connection-domainname}&port=$${request-slave-frontend:connection-port}&encrypt=1&path=$${request-slave-frontend:connection-resource}&password=$${kvm-instance:vnc-passwd}
 
 
 [frontend-promise]
@@ -243,4 +243,4 @@ nat-rules = 22 80 443
 use-tap = False
 
 virtual-hard-drive-url =
-
+virtual-hard-drive-md5-url =
