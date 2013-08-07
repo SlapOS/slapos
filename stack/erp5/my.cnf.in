@@ -27,7 +27,7 @@ pid_file = {{ parameter_dict['pid-file'] }}
 log_error = {{ parameter_dict['error-log'] }}
 slow_query_log
 slow_query_log_file = {{ parameter_dict['slow-query-log'] }}
-long_query_time = 1
+long_query_time = {{ parameter_dict['long-query-time'] }}
 max_allowed_packet = 128M
 query_cache_size = 32M
 

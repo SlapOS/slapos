@@ -64,6 +64,7 @@ data-directory = ${directory:mariadb-data}
 pid-file = ${directory:run}/mariadb.pid
 error-log = ${directory:log}/mariadb_error.log
 slow-query-log = ${directory:log}/mariadb_slowquery.log
+long-query-time = {{ slapparameter_dict.get('long-query-time', 1) }}
 innodb-buffer-pool-size = {{ dumps(slapparameter_dict.get('innodb-buffer-pool-size', 0)) }}
 innodb-log-file-size = {{ dumps(slapparameter_dict.get('innodb-log-file-size', 0)) }}
 innodb-log-buffer-size = {{ dumps(slapparameter_dict.get('innodb-log-buffer-size', 0)) }}
