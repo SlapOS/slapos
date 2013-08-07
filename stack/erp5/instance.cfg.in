@@ -200,9 +200,12 @@ script =
            "buildout:installed=.installed-${:_buildout_section_name_}.cfg")
   buildout = self.options[software_type]
   # Options.get (from zc.buildout) should deserialize.
-  try: override = self.options["override"][software_type]
+  try: override = open(self.options["override"][software_type]).read()
   except (KeyError, TypeError): pass
-  else: args.append("buildout:extends=" + buildout); buildout = override
+  else: \
+    override = "[buildout]\nextends = %%s\n\n" %% buildout + override; \
+    buildout = "${buildout:parts-directory}/${:_buildout_section_name_}.cfg"; \
+    open(buildout, "w", 0).write(override)
   subprocess.check_call(args + ["-oc", buildout])
 update_script = ${:script}
 slapos_promise =
