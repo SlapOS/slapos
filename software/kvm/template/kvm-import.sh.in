@@ -1,0 +1,7 @@
+#!/bin/bash
+DISK_PATH=${:disk-path}
+BACKUP_PATH=${:backup-disk-path}
+
+# TODO: Use rdiff
+rm $DISK_PATH
+cp $BACKUP_PATH $DISK_PATH

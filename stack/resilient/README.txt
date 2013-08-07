@@ -127,6 +127,27 @@ wrapper. I suggest you only add options and specify your export/import recipe.
 
 
 
+
+Checking that it works
+----------------------
+
+To check that your software instance is resilient you can proceed this way:
+Once all instances are successfully deployed, go to your export instance, connect as the instance user and run:
+$ ~/bin/exporter
+It is the script responsible for triggering the resiliency stack on your instance. After doing a backup of your data, it will notify the pull-backup instances of a new backup, triggering the transfer of this data to the import instances.
+
+Once this script is run successfully, go to your import instance, connect as its instance user and check ~/srv/backup/"your sofwtare"/, the location of the data you wanted to receive. The last part of the resiliency is up to your import script.
+
+DEBUGGING:
+Here is a partial list of things you can check to understand what is causing the problem:
+
+- Check that your import script does not fail and successfully places your data in ~/srv/backup/"your software" (as the import instance user) by runnig:
+$ ~/bin/"your software"-exporter
+- Check the export instance script is run successfully as this instance user by running:
+$ ~/bin/exporter
+- Check the pull-instance system did its job by going to one of your pull-backup instance, connect as its user and check the log : ~/var/log/equeue.log
+
+
 -----------------------------------------------------------------------------------------
 
 Finally, instance-mysoftware-import.cfg.in and
@@ -193,12 +214,12 @@ parts +=
 
 {{ replicated.replicate("Name", "3",
                         "mysoftware-export", "mysoftware-import",
-                        "ArgLeader","ArgBackup") }}
+                        "ArgLeader","ArgBackup", slapparameter_dict=slapparameter_dict) }}
 
 and it'll expend into the sections require to request Name0, Name1 and Name2,
 backuped and resilient. The leader will expend the section [ArgLeader], backups
-will expend [ArgBackup]. If you don't need to specify any options, you can
-omit the last two arguments in replicate().
+will expend [ArgBackup]. slapparameter_dict is the dict containing the parameters given to the instance. If you don't need to specify any options, you can
+omit the last three arguments in replicate().
 
 Since you will compile your template with jinja2, there should be no $${},
 because it is not yet possible to use jinja2 -> buildout template.
@@ -206,3 +227,36 @@ because it is not yet possible to use jinja2 -> buildout template.
 To compile with jinja2, see jinja2's recipe.
 
 
+Deploying your resilient software
+---------------------------------
+You can provide sla parameters to each request you make (a lot: for export, import and pbs).
+
+example:
+Here is a small example of parameters you can provide to control the deployment (case of a runner):
+<?xml version='1.0' encoding='utf-8'?>
+<instance>
+  <parameter id="-sla-1-computer_guid">COMP-GRP1</parameter>
+  <parameter id="-sla-pbs1-computer_guid">COMP-PBS1</parameter>
+  <parameter id="-sla-2-computer_guid">COMP-GROUP2</parameter>
+  <parameter id="-sla-runner2-computer_guid">COMP-RUN2</parameter>
+  <parameter id="-sla-2-network_guid">NET-2</parameter>
+  <parameter id="-sla-runner0-computer_guid">COMP-RUN0</parameter>
+</instance>
+Consequence on sla parameters by request:
+  * runner0: computer_guid = COMP-RUN0 (provided directly)
+  * runner1: computer_guid = COMP-GRP1 (provided by group 1)
+  * runner2: computer_guid = COMP-RUN2 (provided by group 2 but overided directly)
+             network_guid  = NET-2 (provided by group 2)
+  * PBS 1:   computer_guid = COMP-PBS1 (provided by group 1 but overided directly)
+  * PBS 2:   computer_guid = COMP-GRP2 (provided by group 2)
+             network_guid  = NET-2 (provided by group 2)
+
+
+Parameters are analysed this way:
+ * If it starts with "-sla-" it is not transmitted to requested instance and is used to do the request as sla.
+ * -sla-foo-bar=example (foo being a magic key) will be use for each request considering "foo" as a key to use and the sla parameter is "bar". So for each group using the "foo" key, sla parameter "bar" is used with value "example"
+About magic keys:
+We can find 2 kinds of magic keys:
+ * id : example, in "-sla-2-foo" 2 is the magic key and the parameter will be used for each request with id 2 (in case of kvm: kvm2 and PBS 2)
+ * nameid : example, in "-sla-kvm2-foo", foo will be used for kvm2 request. Name for pbs is "pbs" -> "-sla-pbs2-foo".
+IMPORTANT NOTE: in case the same foo parameter is asked for the group, the nameid key prevail

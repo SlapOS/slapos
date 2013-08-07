@@ -1,0 +1,59 @@
+# vim: set ft=cfg:
+
+{% import 'parts' as parts %}
+{% import 'replicated' as replicated %}
+
+[buildout]
+eggs-directory = {{ eggs_directory }}
+develop-eggs-directory = {{ develop_eggs_directory }}
+offline = true
+
+# += because we need to take up parts (like instance-custom, slapmonitor etc) from the profile we extended
+parts +=
+  {{ parts.replicate("runner", "3") }}
+  publish-connection-informations
+
+{{ replicated.replicate("runner", "3", "runner-export", "runner-import", slapparameter_dict=slapparameter_dict) }}
+
+# Bubble up the parameters
+[request-runner]
+return = url ssh-public-key ssh-url notification-id ip backend_url url cloud9_url ssh_command password_recovery_code cloud9_backend_url
+config = instance-amount debug domain number authorized-key notify ip-list namebase runner1-computer-guid pbs-runner1-computer-guid runner2-computer-guid pbs-runner2-computer-guid runner3-computer-guid pbs-runner3-computer-guid
+# XXX Cedric LN Ugly hack, resilient stack and slaprunner stack sharing too much ssh sections
+config-authorized-key = ${request-pbs-runner-1:connection-ssh-key} ${request-pbs-runner-2:connection-ssh-key} ${slap-parameter:authorized-key}
+config-instance-amount = ${slap-parameter:instance-amount}
+config-debug = ${slap-parameter:debug}
+config-runner1-computer-guid = ${slap-parameter:runner1-computer-guid}
+config-pbs-runner1-computer-guid = ${slap-parameter:pbs-runner1-computer-guid}
+config-runner2-computer-guid = ${slap-parameter:runner2-computer-guid}
+config-pbs-runner2-computer-guid = ${slap-parameter:pbs-runner2-computer-guid}
+config-runner3-computer-guid = ${slap-parameter:runner3-computer-guid}
+config-pbs-runner3-computer-guid = ${slap-parameter:pbs-runner3-computer-guid}
+config-domain = ${slap-parameter:domain}
+
+
+[publish-connection-informations]
+recipe = slapos.cookbook:publish
+1_info = Set your passord in slaprunner in order to access cloud9
+backend_url = ${request-runner:connection-backend_url}
+url = ${request-runner:connection-url}
+cloud9_url = ${request-runner:connection-cloud9_url}
+cloud9_backend_url = ${request-runner:connection-cloud9_backend_url}
+ssh_command = ${request-runner:connection-ssh_command}
+password_recovery_code = ${request-runner:connection-password_recovery_code}
+
+[slap-parameter]
+# Default parameters for distributed deployment
+# I.e state "backup1 of maria should go there, ..."
+# XXX-Cedric: Hardcoded number of backups. Should be dynamically generated.
+runner1-computer-guid =
+pbs-runner1-computer-guid =
+runner2-computer-guid =
+pbs-runner2-computer-guid =
+runner3-computer-guid =
+pbs-runner3-computer-guid =
+# XXX-Cedric: Hardcoded parameters. Should be dynamically generated.
+domain =
+authorized-key =
+instance-amount = 10
+debug = false

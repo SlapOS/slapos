@@ -1,0 +1,27 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "extends": "./schema-definitions.json#",
+  "properties": {
+    "tcpv4-port": {
+      "allOf": [{
+        "$ref": "#/definitions/tcpv4port"
+      }, {
+        "description": "Start allocating ports at this value, going upward",
+        "default": 23000
+      }]
+    },
+    "font-url-list": {
+      "description": "List of URLs from which fonts are to be downloaded",
+      "default": [],
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    },
+    "backend-count": {
+      "description": "Number of backend cloudooo instances",
+      "default": 1,
+      "type": "integer"
+    }
+  }
+}

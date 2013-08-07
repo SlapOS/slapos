@@ -180,7 +180,7 @@ runzope-binary = {{ bin_directory }}/runzope
 bt5-repository-list =
 
 [deadlock-debugger-password]
-recipe = slapos.cookbook:pwgen.stable
+recipe = slapos.cookbook:generate.password
 
 [zope-conf-parameter-base]
 ip = {{ ipv4 }}
@@ -199,7 +199,7 @@ context =
   key instance directory:instance
   key instance_products directory:instance-products
   raw deadlock_path /manage_debug_threads
-  key deadlock_debugger_password deadlock-debugger-password:password
+  key deadlock_debugger_password deadlock-debugger-password:passwd
   key tidstorage_ip tidstorage:ipv4
   key tidstorage_port tidstorage:ipv4-port
   key promise_path erp5-promise:promise-path

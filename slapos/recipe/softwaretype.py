@@ -87,8 +87,6 @@ class Recipe:
       computer_partition_id)
     self.parameter_dict = self.computer_partition.getInstanceParameterDict()
     software_type = self.parameter_dict['slap_software_type']
-    self.logger.info('Deploying instance with software type %s' % \
-        software_type)
 
     # Raise if request software_type does not exist ...
     if software_type not in self.options:

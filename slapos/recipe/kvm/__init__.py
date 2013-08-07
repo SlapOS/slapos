@@ -61,7 +61,8 @@ class Recipe(GenericBaseRecipe):
       shell_path=self.options['shell-path'],
       qemu_path=self.options['qemu-path'],
       qemu_img_path=self.options['qemu-img-path'],
-      vnc_passwd=self.options['passwd']
+      vnc_passwd=self.options['passwd'],
+      default_disk_image=self.options['default-disk-image'],
     )
 
     # Runners

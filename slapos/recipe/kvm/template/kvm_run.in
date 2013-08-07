@@ -7,6 +7,9 @@ import os
 import socket
 import subprocess
 
+# XXX: give all of this through parameter, don't use this as template
+default_disk_image = '%(default_disk_image)s'
+
 def getSocketStatus(host, port):
   s = None
   for res in socket.getaddrinfo(host, port,
@@ -26,7 +29,8 @@ def getSocketStatus(host, port):
     break
   return s
 
-# create disk if doesn't exist
+# Create disk if doesn't exist
+# XXX: move to Buildout profile
 disk_path = '%(disk_path)s'
 if not os.path.exists(disk_path):
   subprocess.Popen(['%(qemu_img_path)s', 'create' ,'-f', 'qcow2',
@@ -57,5 +61,11 @@ for nbd_ip, nbd_port in (
       kvm_argument_list.extend([
           '-drive',
           'file=nbd:[%%s]:%%s,media=cdrom' %% (nbd_ip, nbd_port)])
+
+# If no NBD is specified/available: use internal disk image
+else:
+  kvm_argument_list.extend([
+      '-drive', 'file=%%s,media=cdrom' %% default_disk_image
+  ])
 
 os.execv('%(qemu_path)s', kvm_argument_list)

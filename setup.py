@@ -28,7 +28,7 @@ from setuptools import setup, find_packages
 import glob
 import os
 
-version = '0.78.2.dev'
+version = '0.78.5'
 name = 'slapos.cookbook'
 long_description = open("README.txt").read() + "\n" + \
     open("CHANGES.txt").read() + "\n"
@@ -165,8 +165,6 @@ setup(name=name,
           'publish.serialised = slapos.recipe.publish:Serialised',
           'publishsection = slapos.recipe.publish:PublishSection',
           'publishurl = slapos.recipe.publishurl:Recipe',
-          'pwgen = slapos.recipe.pwgen:Recipe',
-          'pwgen.stable = slapos.recipe.pwgen:StablePasswordGeneratorRecipe',
           'redis.server = slapos.recipe.redis:Recipe',
           'request = slapos.recipe.request:Recipe',
           'request.serialised = slapos.recipe.request:Serialised',
@@ -188,6 +186,8 @@ setup(name=name,
           'slapreport = slapos.recipe.slapreport:Recipe',
           'slaprunner = slapos.recipe.slaprunner:Recipe',
           'slaprunner.test = slapos.recipe.slaprunner:Test',
+          'slaprunner.export = slapos.recipe.slaprunner.backup:ExportRecipe',
+          'slaprunner.import = slapos.recipe.slaprunner.backup:ImportRecipe',
           'softwaretype = slapos.recipe.softwaretype:Recipe',
           'sphinx= slapos.recipe.sphinx:Recipe',
           'sshkeys_authority = slapos.recipe.sshkeys_authority:Recipe',
