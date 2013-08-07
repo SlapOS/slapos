@@ -159,13 +159,12 @@ path = ${directory:promises}/tidstorage
 
 [{{ section("cron-entry-tidstorage-backup") }}]
 # TODO:
-# - configurable periodicity
 # - configurable full/incremental
 # - configurable retention
 recipe = slapos.cookbook:cron.d
 cron-entries = ${cron:cron-entries}
 name = tidstorage
-frequency = 0 0 * * *
+time = {{ tidstorage_dict.get('periodicity', 'daily') }}
 command = ${tidstorage:repozo-wrapper}
 
 [{{ section("logrotate-tidstorage") }}]

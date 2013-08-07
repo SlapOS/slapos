@@ -14,6 +14,11 @@
       "description": "Controls ZODB backup generation and retention (disabled if null)",
       "default": {},
       "properties": {
+        "periodicity": {
+          "description": "When to backup, specified in the same format as for systemd.time(7) calendar events (years & seconds not supported, DoW & DoM can not be combined)",
+          "default": "daily",
+          "type": "string",
+        },
         "zodb-dict": {
           "description": "Maps an export identifier to the path it must be backed up into",
           "default": {},
