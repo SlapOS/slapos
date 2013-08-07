@@ -33,7 +33,10 @@ if not os.path.exists(disk_path):
       disk_path, '${:disk_size}G'])
 
 # Generate NAT rules for ssh connexion
-nat_rules = ",".join("hostfwd=tcp:${:vnc_ip}:%s-:%s" % (port, port) for port in [80, 443, 5000, 6080, 6082, 3333, 9292, 3306, 35357])
+if "${:software_type}".strip() == "compute":
+  nat_rules = ",".join("hostfwd=tcp:${:vnc_ip}:%s-:%s" % (port, port) for port in [80, 443])
+else:
+  nat_rules = ",".join("hostfwd=tcp:${:vnc_ip}:%s-:%s" % (port, port) for port in [80, 443, 5000, 6080, 6082, 3333, 9292, 3306, 35357])
 
 kvm_argument_list = ['${:qemu_path}',
   '-enable-kvm', '-net', 'nic,macaddr=${:mac_address}',
