@@ -1,8 +1,13 @@
 Changes
 =======
 
+0.80 (2013-08-06)
+----------------
+
+ * Add a simple readline recipe. [f4fce7e]
+
 0.79 (2013-08-06)
------------------------
+-----------------
 
  * KVM SR: Add support for NAT based networking (User Mode Network). [627895fe35]
  * KVM SR: add virtual-hard-drive-url support. [aeb5df40cd, 8ce5a9aa1d0, a5034801aa9]
