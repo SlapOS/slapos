@@ -214,7 +214,7 @@ sla-instance_guid = $${slap-parameter:frontend-instance-guid}
 recipe = slapos.cookbook:publish
 backend-url = https://[$${novnc-instance:ip}]:$${novnc-instance:port}/vnc_auto.html?host=[$${novnc-instance:ip}]&port=$${novnc-instance:port}&encrypt=1&password=$${kvm-instance:vnc-passwd}
 url = $${request-slave-frontend:connection-url}/vnc_auto.html?host=$${request-slave-frontend:connection-domainname}&port=$${request-slave-frontend:connection-port}&encrypt=1&path=$${request-slave-frontend:connection-resource}&password=$${kvm-instance:vnc-passwd}
-
+ipv6 = $${slap-network-information:global-ipv6}
 
 [frontend-promise]
 recipe = slapos.cookbook:check_url_available
