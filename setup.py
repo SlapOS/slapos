@@ -28,7 +28,7 @@ from setuptools import setup, find_packages
 import glob
 import os
 
-version = '0.78.5'
+version = '0.81-dev'
 name = 'slapos.cookbook'
 long_description = open("README.txt").read() + "\n" + \
     open("CHANGES.txt").read() + "\n"
@@ -165,6 +165,7 @@ setup(name=name,
           'publish.serialised = slapos.recipe.publish:Serialised',
           'publishsection = slapos.recipe.publish:PublishSection',
           'publishurl = slapos.recipe.publishurl:Recipe',
+          'readline = slapos.recipe.readline:Recipe',
           'redis.server = slapos.recipe.redis:Recipe',
           'request = slapos.recipe.request:Recipe',
           'request.serialised = slapos.recipe.request:Serialised',
