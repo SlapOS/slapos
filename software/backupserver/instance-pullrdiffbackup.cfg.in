@@ -80,23 +80,18 @@ update-command = $${:command}
 command = ${coreutils-output:rm} -f $${:key} && ${dropbear-output:keygen} -y -f {{ '$${' ~ slave_reference }}-backup-private_key:key} | ${grep-output:grep} {{ '$${' ~ slave_reference }}-backup-private_key:type} > $${:key}
 key = {{ '$${' ~ slave_reference }}-backup-private_key:key}.pub
 location = $${:key}
-
-[{{ slave_reference }}-backup-check-public_key]
-recipe = plone.recipe.command
-stop-on-error = true
-update-command = $${:command}
-command = grep ssh-{{ '$${' ~ slave_reference }}-backup-private_key:type} {{ '$${' ~ slave_reference }}-backup-public_key:key}
+# Insert as a beginning part, to ensure that all public keys are generated before trying to publish. This will reduce the number of slapgrid-cp run.
+{%   do part_list.insert(0, "%s-backup-public_key" % slave_reference) -%}
 
 [{{ slave_reference }}-backup-read-public_key]
-recipe = slapos.cookbook:generate.password
+recipe = slapos.cookbook:readline
 storage-path = {{ '$${' ~ slave_reference }}-backup-public_key:key}
-bytes = 8
 
 # Publish slave {{ slave_reference }} information
 [{{ slave_reference }}-backup-publish]
 recipe = slapos.cookbook:publish
 -slave-reference = {{ slave_reference }}
-authorized_key = {{ '$${' ~ slave_reference }}-backup-read-public_key:passwd}
+authorized_key = {{ '$${' ~ slave_reference }}-backup-read-public_key:readline}
 {%   do part_list.append("%s-backup-publish" % slave_reference) -%}
 
 [{{ slave_reference }}-backup-script]
