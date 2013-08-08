@@ -1,13 +1,20 @@
 Changes
 =======
 
-0.78.5 (2013-08-06)
+0.79 (2013-08-06)
 -----------------------
+
+ * KVM SR: Add support for NAT based networking (User Mode Network). [627895fe35]
+ * KVM SR: add virtual-hard-drive-url support. [aeb5df40cd, 8ce5a9aa1d0, a5034801aa9]
+ * Fix regression in GenericBaseRecipe.generatePassword. [3333b07d33c]
+
+0.78.5 (2013-08-06)
+-------------------
 
  * check_url_available: add option to check secure links [6cbce4d8231]
 
 0.78.4 (2013-08-06)
------------------------
+-------------------
 
  * slapos.cookbook:slaprunner: Update to use https. [Cedric Le Ninivin]
 
