@@ -76,7 +76,6 @@ type = rsa
 [{{ slave_reference }}-backup-public_key]
 recipe = plone.recipe.command
 stop-on-error = true
-update-command = $${:command}
 command = ${coreutils-output:rm} -f $${:key} && ${dropbear-output:keygen} -y -f {{ '$${' ~ slave_reference }}-backup-private_key:key} | ${grep-output:grep} {{ '$${' ~ slave_reference }}-backup-private_key:type} > $${:key}
 key = {{ '$${' ~ slave_reference }}-backup-private_key:key}.pub
 location = $${:key}
@@ -128,7 +127,6 @@ frequency = {{ frequency }}
 # XXX File is never removed
 recipe = plone.recipe.command
 stop-on-error = true
-update-command = $${:command}
 command = ${coreutils-output:cat} ${template-crontab:output} {{ crontab_line_list_string }} | ${dcron-output:crontab} -c $${directory:crontabs} -
 
 
