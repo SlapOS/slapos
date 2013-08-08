@@ -6,10 +6,13 @@
 [buildout]
 parts =
   certificate-authority
-  publish-kvm-connection-information
+  publish-connection-information
   kvm-promise
   websockify-sighandler
   novnc-promise
+#  kvm-monitor
+  cron
+#  cron-entry-monitor
   frontend-promise
 
 eggs-directory = ${buildout:eggs-directory}
@@ -22,12 +25,16 @@ etc = $${buildout:directory}/etc
 bin = $${buildout:directory}/bin
 srv = $${buildout:directory}/srv
 var = $${buildout:directory}/var
+log = $${:var}/log
 scripts = $${:etc}/run
 services = $${:etc}/service
 promises = $${:etc}/promise
 novnc-conf = $${:etc}/novnc
 run = $${:var}/run
 ca-dir = $${:srv}/ssl
+cron-entries = $${:etc}/cron.d
+crontabs = $${:etc}/crontabs
+cronstamps = $${:etc}/cronstamps
 
 [create-mac]
 recipe = slapos.cookbook:generate.mac
@@ -38,31 +45,56 @@ recipe = slapos.cookbook:generate.password
 storage-path = $${directory:srv}/passwd
 bytes = 8
 
+
 [kvm-instance]
 # XXX-Cedric: change "KVM" recipe to simple "create wrappers". No need for this
-# Specific code
+# Specific code. It needs Jinja.
 recipe = slapos.cookbook:kvm
-vnc-ip = $${slap-network-information:local-ipv4}
+
+vnc-passwd = $${gen-passwd:passwd}
+
+ipv4 = $${slap-network-information:local-ipv4}
+ipv6 = $${slap-network-information:global-ipv6}
+vnc-ip = $${:ipv4}
+
 vnc-port = 5901
+
+# XXX-Cedric: should be named "default-cdrom-iso"
+default-disk-image = ${debian-amd64-netinst.iso:location}/${debian-amd64-netinst.iso:filename}
 nbd-host = $${slap-parameter:nbd-host}
 nbd-port = $${slap-parameter:nbd-port}
 nbd2-host = $${slap-parameter:nbd2-host}
 nbd2-port = $${slap-parameter:nbd2-port}
-tap = $${slap-network-information:network-interface}
+
+tap-interface = $${slap-network-information:network-interface}
+
 disk-path = $${directory:srv}/virtual.qcow2
 disk-size = $${slap-parameter:disk-size}
 disk-type = $${slap-parameter:disk-type}
+
 socket-path = $${directory:var}/qmp_socket
-pid-path = $${directory:run}/pid_file
+pid-file-path = $${directory:run}/pid_file
+
 smp-count = $${slap-parameter:cpu-count}
 ram-size = $${slap-parameter:ram-size}
 mac-address = $${create-mac:mac-address}
+
+# XXX-Cedric: should be named runner-wrapper-path and controller-wrapper-path
 runner-path = $${directory:services}/kvm
 controller-path = $${directory:scripts}/kvm_controller
+
+use-tap = $${slap-parameter:use-tap}
+nat-rules = $${slap-parameter:nat-rules}
+6tunnel-wrapper-path = $${directory:services}/6tunnel
+
+virtual-hard-drive-url = $${slap-parameter:virtual-hard-drive-url}
+virtual-hard-drive-md5-url = $${slap-parameter:virtual-hard-drive-md5-url}
+
 shell-path = ${dash:location}/bin/dash
 qemu-path = ${kvm:location}/bin/qemu-system-x86_64
 qemu-img-path = ${kvm:location}/bin/qemu-img
-passwd = $${gen-passwd:passwd}
+6tunnel-path = ${6tunnel:location}/bin/6tunnel
+
 
 [kvm-promise]
 recipe = slapos.cookbook:check_port_listening
@@ -122,10 +154,42 @@ hostname = $${novnc-instance:ip}
 port = $${novnc-instance:port}
 
 
-[kvm-monitor]
-recipe = slapos.cookbook:generic.slapmonitor
-db-path = $${directory:srv}/slapmonitor_database
+#[kvm-monitor]
+#recipe = slapos.cookbook:wrapper
+#wrapper-path = $${directory:services}/kvm_monitor
+#command-line = ${buildout:bin-directory}/kvm.monitor.test
+#             $${buildout:directory}/buildout-switch-softwaretype.cfg
+#             $${buildout:directory}/report.xml
+#             -s slap-parameter
+#             -opts disk-size ram-size cpu-count
 
+
+
+#----------------
+#--
+#-- Deploy cron.
+
+[cron]
+recipe = slapos.cookbook:cron
+dcrond-binary = ${dcron:location}/sbin/crond
+cron-entries = $${directory:cron-entries}
+crontabs = $${directory:crontabs}
+cronstamps = $${directory:cronstamps}
+catcher = $${cron-simplelogger:wrapper}
+binary = $${directory:services}/crond
+
+[cron-simplelogger]
+recipe = slapos.cookbook:simplelogger
+wrapper = $${directory:bin}/cron_simplelogger
+log = $${directory:log}/crond.log
+
+
+#[cron-entry-monitor]
+#<= cron
+#recipe = slapos.cookbook:cron.d
+#name = kvm_monitor
+#frequency = 0 0 * * *
+#command = $${kvm-monitor:wrapper-path}
 
 [request-slave-frontend]
 recipe = slapos.cookbook:requestoptional
@@ -146,17 +210,16 @@ sla = instance_guid
 sla-instance_guid = $${slap-parameter:frontend-instance-guid}
 
 
-[publish-kvm-connection-information]
+[publish-connection-information]
 recipe = slapos.cookbook:publish
-backend-url = https://[$${novnc-instance:ip}]:$${novnc-instance:port}/vnc_auto.html?host=[$${novnc-instance:ip}]&port=$${novnc-instance:port}&encrypt=1
-password = $${kvm-instance:passwd}
-url = $${request-slave-frontend:connection-url}/vnc_auto.html?host=$${request-slave-frontend:connection-domainname}&port=$${request-slave-frontend:connection-port}&encrypt=1&path=$${request-slave-frontend:connection-resource}
+backend-url = https://[$${novnc-instance:ip}]:$${novnc-instance:port}/vnc_auto.html?host=[$${novnc-instance:ip}]&port=$${novnc-instance:port}&encrypt=1&password=$${kvm-instance:vnc-passwd}
+url = $${request-slave-frontend:connection-url}/vnc_auto.html?host=$${request-slave-frontend:connection-domainname}&port=$${request-slave-frontend:connection-port}&encrypt=1&path=$${request-slave-frontend:connection-resource}&password=$${kvm-instance:vnc-passwd}
 
 
 [frontend-promise]
 recipe = slapos.cookbook:check_url_available
 path = $${directory:promises}/frontend_promise
-url = $${publish-kvm-connection-information:url}
+url = $${publish-connection-information:url}
 dash_path = ${dash:location}/bin/dash
 curl_path = ${curl:location}/bin/curl
 
@@ -164,9 +227,9 @@ curl_path = ${curl:location}/bin/curl
 # Default values if not specified
 frontend-software-type = frontend
 frontend-software-url = http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.92:/software/kvm/software.cfg
-
+frontend-instance-guid =
 nbd-port = 1024
-nbd-host = debian.nbd.vifib.net
+nbd-host =
 nbd2-port = 1024
 nbd2-host =
 
@@ -175,3 +238,9 @@ disk-size = 10
 disk-type = virtio
 
 cpu-count = 1
+
+nat-rules = 22 80 443
+use-tap = False
+
+virtual-hard-drive-url =
+virtual-hard-drive-md5-url =

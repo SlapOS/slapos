@@ -1,11 +1,42 @@
-#!%(python_path)s
+#!%(python-path)s
 # BEWARE: This file is operated by slapgrid
 # BEWARE: It will be overwritten automatically
 
-# Echo client program
+import hashlib
 import os
 import socket
 import subprocess
+import urllib
+
+# XXX: give all of this through parameter, don't use this as template, but as module
+qemu_img_path = '%(qemu-img-path)s'
+qemu_path = '%(qemu-path)s'
+disk_size = '%(disk-size)s'
+disk_type = '%(disk-type)s'
+socket_path = '%(socket-path)s'
+nbd_list = (('%(nbd-host)s', %(nbd-port)s), ('%(nbd2-host)s', %(nbd2-port)s))
+default_disk_image = '%(default-disk-image)s'
+disk_path = '%(disk-path)s'
+virtual_hard_drive_url = '%(virtual-hard-drive-url)s'.strip()
+virtual_hard_drive_md5_url = '%(virtual-hard-drive-md5-url)s'.strip()
+nat_rules = '%(nat-rules)s'.strip()
+use_tap = '%(use-tap)s'
+tap_interface = '%(tap-interface)s'
+listen_ip = '%(ipv4)s'
+mac_address = '%(mac-address)s'
+smp_count = '%(smp-count)s'
+ram_size = '%(ram-size)s'
+pid_file_path = '%(pid-file-path)s'
+
+def md5Checksum(file_path):
+    with open(file_path, 'rb') as fh:
+        m = hashlib.md5()
+        while True:
+            data = fh.read(8192)
+            if not data:
+                break
+            m.update(data)
+        return m.hexdigest()
 
 def getSocketStatus(host, port):
   s = None
@@ -26,27 +57,44 @@ def getSocketStatus(host, port):
     break
   return s
 
-# create disk if doesn't exist
-disk_path = '%(disk_path)s'
-if not os.path.exists(disk_path):
-  subprocess.Popen(['%(qemu_img_path)s', 'create' ,'-f', 'qcow2',
-      disk_path, '%(disk_size)sG'])
+# Download existing hard drive if needed at first boot
+if not os.path.exists(disk_path) and virtual_hard_drive_url != '':
+  urllib.urlretrieve(virtual_hard_drive_url, disk_path)
+  local_md5sum = md5Checksum(disk_path)
+  md5sum = urllib.urlopen(virtual_hard_drive_md5_url).read().strip()
+  if local_md5sum != md5sum:
+    os.remove(disk_path)
+    raise Exception('MD5 mismatch.')
 
-kvm_argument_list = ['%(qemu_path)s',
-  '-enable-kvm', '-net', 'nic,macaddr=%(mac_address)s',
-  '-net', 'tap,ifname=%(tap_interface)s,script=no,downscript=no',
-  '-smp', '%(smp_count)s',
-  '-m', '%(ram_size)s',
-  '-drive', 'file=%(disk_path)s,if=%(disk_type)s',
-  '-vnc', '%(vnc_ip)s:1,ipv4,password',
+# Create disk if doesn't exist
+# XXX: move to Buildout profile
+if not os.path.exists(disk_path):
+  subprocess.Popen([qemu_img_path, 'create' ,'-f', 'qcow2',
+      disk_path, '%%sG' %% disk_size])
+
+# Generate network parameters
+# XXX: use_tap should be a boolean
+if use_tap == 'True':
+  qemu_network_parameter = 'tap,ifname=%%s,script=no,downscript=no' %% tap_interface
+else:
+  qemu_network_parameter = 'user,' + ','.join('hostfwd=tcp:%%s:%%s-:%%s' %% (listen_ip, int(port) + 10000, port) for port in nat_rules.split())
+
+kvm_argument_list = [qemu_path,
+  '-enable-kvm', '-net', 'nic,macaddr=%%s' %% mac_address,
+  '-net', qemu_network_parameter,
+  '-smp', smp_count,
+  '-m', ram_size,
+  '-drive', 'file=%%s,if=%%s' %% (disk_path, disk_type),
+  '-vnc', '%%s:1,ipv4,password' %% listen_ip,
   '-boot', 'menu=on',
-  '-qmp', 'unix:%(socket_path)s,server',
-  '-pidfile', '%(pid_file_path)s',
+  '-qmp', 'unix:%%s,server' %% socket_path,
+  '-pidfile', pid_file_path,
 ]
 
-# Try to connect to NBD server (and second nbd if defined)
-for nbd_ip, nbd_port in (
-    ('%(nbd_ip)s', %(nbd_port)s), ('%(nbd2_ip)s', %(nbd2_port)s)):
+# Try to connect to NBD server (and second nbd if defined).
+# If not available, don't even specify it in qemu command line parameters.
+# Reason: if qemu starts with unavailable NBD drive, it will just crash.
+for nbd_ip, nbd_port in nbd_list:
   if nbd_ip and nbd_port:
     s = getSocketStatus(nbd_ip, nbd_port)
     if s is None:
@@ -57,5 +105,10 @@ for nbd_ip, nbd_port in (
       kvm_argument_list.extend([
           '-drive',
           'file=nbd:[%%s]:%%s,media=cdrom' %% (nbd_ip, nbd_port)])
+# If no NBD is specified/available: use internal disk image
+else:
+  kvm_argument_list.extend([
+      '-drive', 'file=%%s,media=cdrom' %% default_disk_image
+  ])
 
-os.execv('%(qemu_path)s', kvm_argument_list)
+os.execv(qemu_path, kvm_argument_list)
