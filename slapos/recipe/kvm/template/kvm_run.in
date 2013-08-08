@@ -18,7 +18,7 @@ nbd_list = (('%(nbd-host)s', %(nbd-port)s), ('%(nbd2-host)s', %(nbd2-port)s))
 default_disk_image = '%(default-disk-image)s'
 disk_path = '%(disk-path)s'
 virtual_hard_drive_url = '%(virtual-hard-drive-url)s'.strip()
-virtual_hard_drive_md5_url = '%(virtual-hard-drive-md5-url)s'.strip()
+virtual_hard_drive_md5sum = '%(virtual-hard-drive-md5sum)s'.strip()
 nat_rules = '%(nat-rules)s'.strip()
 use_tap = '%(use-tap)s'
 tap_interface = '%(tap-interface)s'
@@ -59,18 +59,27 @@ def getSocketStatus(host, port):
 
 # Download existing hard drive if needed at first boot
 if not os.path.exists(disk_path) and virtual_hard_drive_url != '':
+  print('Downloading virtual hard drive...')
   urllib.urlretrieve(virtual_hard_drive_url, disk_path)
-  local_md5sum = md5Checksum(disk_path)
-  md5sum = urllib.urlopen(virtual_hard_drive_md5_url).read().strip()
-  if local_md5sum != md5sum:
-    os.remove(disk_path)
-    raise Exception('MD5 mismatch.')
+  md5sum = virtual_hard_drive_md5sum.strip()
+  if md5sum:
+    print('Checking MD5 checksum...')
+    local_md5sum = md5Checksum(disk_path)
+    if local_md5sum != md5sum:
+      os.remove(disk_path)
+      raise Exception('MD5 mismatch. MD5 of local file is %%s, Specified MD5 is %%s.' %% (
+          local_md5sum, md5sum))
+    print('MD5sum check passed.')
+  else:
+    print('Warning: not checksum specified.')
 
 # Create disk if doesn't exist
 # XXX: move to Buildout profile
 if not os.path.exists(disk_path):
+  print('Creating virtual hard drive...')
   subprocess.Popen([qemu_img_path, 'create' ,'-f', 'qcow2',
       disk_path, '%%sG' %% disk_size])
+  print('Done.')
 
 # Generate network parameters
 # XXX: use_tap should be a boolean

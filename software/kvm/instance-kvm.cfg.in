@@ -88,7 +88,7 @@ nat-rules = $${slap-parameter:nat-rules}
 6tunnel-wrapper-path = $${directory:services}/6tunnel
 
 virtual-hard-drive-url = $${slap-parameter:virtual-hard-drive-url}
-virtual-hard-drive-md5-url = $${slap-parameter:virtual-hard-drive-md5-url}
+virtual-hard-drive-md5sum = $${slap-parameter:virtual-hard-drive-md5sum}
 
 shell-path = ${dash:location}/bin/dash
 qemu-path = ${kvm:location}/bin/qemu-system-x86_64
@@ -243,4 +243,4 @@ nat-rules = 22 80 443
 use-tap = False
 
 virtual-hard-drive-url =
-virtual-hard-drive-md5-url =
+virtual-hard-drive-md5sum =
