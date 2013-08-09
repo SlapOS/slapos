@@ -8,7 +8,8 @@ log = logging.getLogger(__name__)
 logging.basicConfig(level=logging.DEBUG)
 
 def takeover(server_url, key_file, cert_file, computer_guid,
-             partition_id, software_release, namebase):
+             partition_id, software_release, namebase,
+             winner_instance_suffix = None):
   """
   This function does
 
@@ -24,11 +25,19 @@ def takeover(server_url, key_file, cert_file, computer_guid,
 
   slap = slapos.slap.slap()
   slap.initializeConnection(server_url, key_file, cert_file)
+  current_partition = slap.registerComputerPartition(computer_guid=computer_guid,
+                                                     partition_id=partition_id)
 
   # partition that will take over.
-  # This script is run in the winning partition: use this one as winner
-  cp_winner = slap.registerComputerPartition(computer_guid=computer_guid,
-                                               partition_id=partition_id)
+  if winner_instance_suffix:
+    winner_instance_name = namebase + winner_instance_suffix
+    # XXX: we hardcode a lot of values here, because request is a settergetter, all at once.
+    cp_winner = current_partition.request(software_release=software_release,
+                                  software_type='importer',
+                                  partition_reference=winner_instance_name)
+  else:
+    # This script is run in the winning partition: use this one as winner
+    cp_winner = current_partition
   # XXX although we can already rename cp_winner, to change its software type we need to
   # get hold of the root cp as well
 
