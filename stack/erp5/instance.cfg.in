@@ -251,7 +251,7 @@ extra-context =
     key template_cluster_zope dynamic-template-cluster-zope:rendered
     key template_erp5_cluster dynamic-template-cluster-erp5:rendered
 # Must match the key id in [switch-softwaretype] which uses this section.
-    raw software_type scalability
+    raw software_type test 
 
 [dynamic-template-kumofs-parameters]
 dash-location = {{ dash_location }}
