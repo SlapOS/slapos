@@ -1,16 +1,66 @@
 # -*- coding: utf-8 -*-
+import logging
+import time
 
-import slapos.recipe.addresiliency.renamer
+import slapos
+
+log = logging.getLogger(__name__)
+logging.basicConfig(level=logging.DEBUG)
+
+def takeover(server_url, key_file, cert_file, computer_guid,
+             partition_id, software_release, namebase):
+  """
+  This function does
+
+  - retrieve the broken computer partition
+  - change its reference to 'broken-...' and its software type to 'frozen'
+  - retrieve the winner computer partition (attached to this process)
+  - change its reference to replace the broken one.
+    later, slapgrid will change its software_type as well.
+
+  Then, after running slapgrid-cp a few times, the winner takes over and
+  a new cp is created to replace it as an importer.
+  """
+
+  slap = slapos.slap.slap()
+  slap.initializeConnection(server_url, key_file, cert_file)
+
+  # partition that will take over.
+  # This script is run in the winning partition: use this one as winner
+  cp_winner = slap.registerComputerPartition(computer_guid=computer_guid,
+                                               partition_id=partition_id)
+  # XXX although we can already rename cp_winner, to change its software type we need to
+  # get hold of the root cp as well
+
+  cp_exporter_ref = namebase + '0'       # this is ok. the boss is always number zero.
+
+  # partition to be deactivated
+  cp_broken = cp_winner.request(software_release=software_release,
+                                software_type='frozen',
+                                state='stopped',
+                                partition_reference=cp_exporter_ref)
+
+  broken_new_ref = 'broken-{}'.format(time.strftime("%d-%b_%H:%M:%S", time.gmtime()))
+
+  log.debug("Renaming {}: {}".format(cp_broken.getId(), broken_new_ref))
+
+  cp_broken.rename(new_name=broken_new_ref)
+
+  log.debug("Renaming {}: {}".format(cp_winner.getId(), cp_exporter_ref))
+
+  # update name (and later, software type) for the partition that will take over
+
+  cp_winner.rename(new_name=cp_exporter_ref)
+  cp_winner.bang(message='partitions have been renamed!')
+  # Note: Root instance will reconfigure itself the winning instance (software_type
+  # and parameters.)
 
 def run(args):
-    renamer = slapos.recipe.addresiliency.renamer.Renamer(server_url = args.pop('server_url'),
-                                                          key_file = args.pop('key_file'),
-                                                          cert_file = args.pop('cert_file'),
-                                                          computer_guid = args.pop('computer_id'),
-                                                          partition_id = args.pop('partition_id'),
-                                                          software_release = args.pop('software'),
-                                                          namebase = args.pop('namebase'))
-
-    renamer.failover()
-
+  slapos.recipe.addresiliency.renamer.Renamer(server_url = args.pop('server_url'),
+                                              key_file = args.pop('key_file'),
+                                              cert_file = args.pop('cert_file'),
+                                              computer_guid = args.pop('computer_id'),
+                                              partition_id = args.pop('partition_id'),
+                                              software_release = args.pop('software'),
+                                              namebase = args.pop('namebase'))
 
