@@ -39,5 +39,10 @@ notify = $${slap-parameter:notify}
 <= cron
 recipe = slapos.cookbook:cron.d
 name = backup
-frequency = 0 * * * *
+frequency = $${slap-parameter:resiliency-backup-periodicity} * * * *
 command = $${notifier-exporter:wrapper}
+
+[slap-parameter]
+# in minutes, modulo 60, in cron.d format (i.e */15 is accepted).
+resiliency-backup-periodicity = 0
+
