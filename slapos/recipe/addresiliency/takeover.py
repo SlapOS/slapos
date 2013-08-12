@@ -33,7 +33,7 @@ def takeover(server_url, key_file, cert_file, computer_guid,
     winner_instance_name = namebase + winner_instance_suffix
     # XXX: we hardcode a lot of values here, because request is a settergetter, all at once.
     cp_winner = current_partition.request(software_release=software_release,
-                                  software_type='importer',
+                                  software_type='%s-import' % namebase,
                                   partition_reference=winner_instance_name)
   else:
     # This script is run in the winning partition: use this one as winner
@@ -65,11 +65,11 @@ def takeover(server_url, key_file, cert_file, computer_guid,
   # and parameters.)
 
 def run(args):
-  slapos.recipe.addresiliency.renamer.Renamer(server_url = args.pop('server_url'),
-                                              key_file = args.pop('key_file'),
-                                              cert_file = args.pop('cert_file'),
-                                              computer_guid = args.pop('computer_id'),
-                                              partition_id = args.pop('partition_id'),
-                                              software_release = args.pop('software'),
-                                              namebase = args.pop('namebase'))
+  slapos.recipe.addresiliency.takeover.takeover(server_url = args.pop('server_url'),
+                                                key_file = args.pop('key_file'),
+                                                cert_file = args.pop('cert_file'),
+                                                computer_guid = args.pop('computer_id'),
+                                                partition_id = args.pop('partition_id'),
+                                                software_release = args.pop('software'),
+                                                namebase = args.pop('namebase'))
 
