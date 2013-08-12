@@ -187,6 +187,29 @@ extra-context =
 # Must match the key id in [switch-softwaretype] which uses this section.
     raw software_type mariadb
 
+[dynamic-template-scalability-parameters]
+erp5 = {{ erp5_location }}
+erp5-dev = {{ erp5_dev_location }}
+local-bt5-repository = {{ local_bt5_repository }}
+curl-location = {{ curl_location }}
+dash-location = {{ dash_location }}
+bin-directory = {{ bin_directory }}
+
+
+[dynamic-template-scalability]
+< = jinja2-template-base
+template = {{ template_scalability }}
+filename = instance-scalability.cfg
+extensions = jinja2.ext.do
+extra-context =
+    key bin_directory dynamic-template-scalability-parameters:bin-directory
+    key curl_location dynamic-template-scalability-parameters:curl-location
+    key dash_location dynamic-template-scalability-parameters:dash-location
+    key erp5_location dynamic-template-scalability-parameters:erp5-dev
+    key local_bt5_repository dynamic-template-scalability-parameters:local-bt5-repository
+# Must match the key id in [switch-softwaretype] which uses this section.
+    raw software_type test 
+
 [switch-softwaretype]
 recipe = slapos.recipe.build
 script =
@@ -214,6 +237,7 @@ slapos_update_promise = ${:slapos_promise}
 override = {{ dumps(override_switch_softwaretype |default) }}
 
 default = ${dynamic-template-erp5:rendered}
+test = ${dynamic-template-scalability:rendered}
 kumofs = ${dynamic-template-kumofs:rendered}
 cloudooo = ${dynamic-template-cloudooo:rendered}
 mariadb = ${dynamic-template-mariadb:rendered}
@@ -221,3 +245,4 @@ balancer = ${dynamic-template-balancer:rendered}
 zodb-neo = ${dynamic-template-neo:rendered}
 zodb-zeo = ${dynamic-template-zeo:rendered}
 zope = ${dynamic-template-zope:rendered}
+RootSoftwareInstance = ${dynamic-template-erp5-RootSoftwareInstance:rendered}

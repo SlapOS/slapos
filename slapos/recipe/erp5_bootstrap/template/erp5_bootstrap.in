@@ -3,43 +3,242 @@
 import httplib
 import urllib
 import base64
+import time
+
+MAX_INSTALLATION_TIME = 60*30
+MAX_TESTING_TIME = 60*2
+MAX_GETTING_CONNECTION_TIME = 60*5
 
 user = "%(user)s"
 password = "%(password)s"
 host = "%(host)s"
 site_id = "%(site_id)s"
-erp5_catalog_storage = 'erp5_mysql_innodb_catalog'
 mysql_url = "%(sql_connection_string)s"
-
+protocol = "%(protocol)s"
+scalability = "%(scalability)s" == "True"
+erp5_catalog_storage = 'erp5_mysql_innodb_catalog'
 header_dict = {'Authorization': 'Basic %%s' %% \
   base64.encodestring('%%s:%%s' %% (user, password)).strip()}
-zope_connection = httplib.HTTPConnection(host)
 
-# Check if an ERP5 site is already created, as ERP5 does support having
-# 2 instances in the same zope, and this script should not destroy user data
-zope_connection.request('GET', '/isERP5SitePresent', headers=header_dict)
-result = zope_connection.getresponse()
+def getConnection():
+  print "Getting new connection"
+  start_time = time.time()
+  count = 0
+  while MAX_GETTING_CONNECTION_TIME > time.time()-start_time:
+    try:
+      count = count + 1
+      if protocol == 'https':
+        return httplib.HTTPSConnection(host)
+      elif protocol == 'http':
+        return httplib.HTTPConnection(host)
+      else:
+        raise ValueError("Protocol not implemented")
+    except:
+      print "Getting new connection failed, retry"
+      time.sleep(10)
+  raise ValueError("Cannot get new connection after %%d try (for %%s s)" %%(count, str(time.time()-start_time)))
 
-if result.status == 204: # and (result.read() == "False"):
+def testIfExist(page, unexcepted_content="Site Error"):
+  print "Test if %%s exists" %%(page)
+  start_time = time.time()
+  count = 0
+  while MAX_TESTING_TIME > time.time()-start_time:
+    try:
+      count = count + 1
+      zope_connection = getConnection()
+      zope_connection.request('GET', '/%%s/%%s' %%(site_id, page))
+      result = zope_connection.getresponse()
+      return not unexcepted_content in result.read()
+    except:
+      print "Test if exists failed, retry..."
+      time.sleep(10)
+  raise ValueError("Cannot testIfExist after %%d try (for %%s s)" %%(count, str(time.time()-start_time)))
+  
+  
+def waitFor0PendingActivities():
+  # TODO: tolerate 1 pending activities ? (mail server...)
+  print "waitFor0PendingActivities.."
+  start_time = time.time()
+  count = 0
+  ok = False
+  while MAX_INSTALLATION_TIME > time.time()-start_time and not ok:
+    try:
+      count = count + 1
+      zope_connection = getConnection()
+      zope_connection.request(
+        'GET', '/%%s/portal_activities/getMessageList' %%(site_id),
+        headers=header_dict
+      )
+      result = zope_connection.getresponse()
+      message_list_text = result.read()
+      message_list = [s.strip() for s in message_list_text[1:-1].split(',')]
+      
+      if len(message_list)==0:
+        print "There is no pending activities."
+        ok = True
+      #Hack to do not take into account persistent Alarm_installMailServer acitivities
+      if len(message_list)==1:
+        print "1 pending activity for 'Alarm_installMailServer'."
+        print "ok."
+        ok = True
+        
+      print "There is %%d pending activities" %%len(message_list)
+      time.sleep(5)
+        
+    except:
+      time.sleep(5)
+      print "Getting activities failed, retry."
+  
+  if not ok:
+    raise ValueError("Pending activities always here after %%d check/try (for %%s s)" %%(count, str(time.time()-start_time)))
 
-  # Use a new connection
-  zope_connection = httplib.HTTPConnection(host)
 
-  # Create the expected ERP5 instance
-  zope_connection.request(
-    'POST', '/manage_addProduct/ERP5/manage_addERP5Site',
-    urllib.urlencode({
-      'id': site_id,
-      'erp5_catalog_storage': erp5_catalog_storage,
-      'erp5_sql_connection_string': mysql_url,
-      'cmf_activity_sql_connection_string': mysql_url,
-    }),
-    headers=header_dict)
-  # Wait for the erp5 response, to prevent multiple requests
-  # been done by the same script.
+  
+
+def createERP5Site():
+  # Check if an ERP5 site is already created, as ERP5 does support having
+  # 2 instances in the same zope, and this script should not destroy user data
+  zope_connection = getConnection()
+  zope_connection.request('GET', '/isERP5SitePresent', headers=header_dict)
   result = zope_connection.getresponse()
 
-  # Read result make sure the site really finished to 
-  #created the ERP5 site.
-  result.read()
-  print "ERP5 site created."
+  if result.status == 204: # and (result.read() == "False"):
+    # Use a new connection
+    zope_connection = getConnection()
+    # Create the expected ERP5 instance
+    zope_connection.request(
+      'POST', '/manage_addProduct/ERP5/manage_addERP5Site',
+      urllib.urlencode({
+        'id': site_id,
+        'erp5_catalog_storage': erp5_catalog_storage,
+        'erp5_sql_connection_string': mysql_url,
+        'cmf_activity_sql_connection_string': mysql_url,
+      }),
+      headers=header_dict)
+    # Wait for the erp5 response, to prevent multiple requests
+    # been done by the same script.
+    result = zope_connection.getresponse()
+
+    # Read result make sure the site really finished to
+    # created the ERP5 site.
+    print result.read()
+    print "ERP5 site created."
+
+
+createERP5Site()
+
+# Scalability case
+if scalability:
+  
+  while True:
+    count = 0
+
+    createERP5Site()
+    
+    # Fix site consistency
+    if not testIfExist("/%%s/portal_configurator/" %%site_id):
+      count = count + 1
+      print "Going to fix site consistency..."
+      zope_connection = getConnection()
+      zope_connection.request(
+        'GET', '/%%s/ERP5Site_launchFixConfigurationConsistency' %%(site_id),
+        headers=header_dict
+      )
+      result = zope_connection.getresponse()
+      print "Check consistency..."
+      print result.read()
+      # Wait activities
+      waitFor0PendingActivities()
+      print "Site consistency checking: done."
+
+    # Install testing scalability business configuration if not exists
+    if testIfExist("/%%s/portal_configurator/" %%site_id) \
+       and not testIfExist("/%%s/sale_order_module/" %%site_id):
+      count = count + 1
+      print "Going to install testing scalability business configuration.."
+      zope_connection = getConnection()
+      zope_connection.request(
+        'GET', '/%%s/business_configuration_module/1/build' %%site_id,
+        headers=header_dict
+      )
+      result = zope_connection.getresponse()
+      print "Build scalability business configuration..."
+      print result.read()
+      # Wait activities
+      waitFor0PendingActivities()
+      print "Scalability business configuration building: done."
+
+    # Force to use random id generator
+    print "Force to use random id.."
+    try:
+      zope_connection = getConnection()
+      zope_connection.request(
+        'GET', '/%%s/use_random_id_scalability' %%site_id,
+        headers=header_dict
+      )
+      result = zope_connection.getresponse()
+      assert(result.read()=="1")
+      # Wait activities
+      waitFor0PendingActivities()
+      print "use_random_id_scalability: done."
+    except:
+      print "use_random_id_scalability: fail."
+
+    # Create scalability users
+    if testIfExist("/%%s/person_module/scalability_user/getTitle" %%site_id) \
+       and not testIfExist("/%%s/person_module/scalability_user_0/getTitle" %%site_id):
+      count = count + 1
+      print "Going to create scalability users.."
+      zope_connection = getConnection()
+      zope_connection.request(
+        'GET', '/%%s/init_scalability' %%site_id,
+        headers=header_dict
+      )
+      result = zope_connection.getresponse()
+      print "Creating scalaiblity users..."
+      assert(result.read()=="1")
+      # Wait activities
+      waitFor0PendingActivities()
+      print "Scalability users creation: done."
+
+    # Try to Updates roles and sleep
+    if count == 0:
+      print "Trying to update roles.."
+      try:
+        zope_connection = getConnection()
+        zope_connection.request(
+          'GET', '/%%s/update_roles_scalability' %%site_id,
+          headers=header_dict
+        )
+        result = zope_connection.getresponse()
+        assert(result.read()=="1")
+        # Wait activities
+        waitFor0PendingActivities()
+        print "Update roles: done."
+      except:
+        print "Update roles: fail. (but may be already done before)"
+      time.sleep(30)
+      
+    # XXX: Hack to perform load balacing
+    # TODO: Use an other way to do the load balancing (for example
+    # using zope.conf, and using family-zope group names).
+    # Apply load balacing
+    if testIfExist("/%%s/portal_activities/manageLoadBalancing" %%site_id) \
+        and testIfExist("/%%s/person_module/scalability_user_0/getTitle" %%site_id):
+      print "Load balacing.."
+      try:
+        zope_connection = getConnection()
+        zope_connection.request(
+          'GET', '/%%s/apply_load_balancing_scalability' %%site_id,
+          headers=header_dict
+        )
+        result = zope_connection.getresponse()
+        assert("Processing Nodes" in result.read())
+        # Wait activities
+        waitFor0PendingActivities()
+        print "Load balancing init: done."
+      except:
+        print "Load balancing init: fail."
+
+    # sleep
+    time.sleep(30)

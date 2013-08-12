@@ -3,6 +3,14 @@
 {% set frontend_dict = slapparameter_dict.get('frontend', {}) %}
 {% set has_frontend = frontend_dict.get('software-url', '') != '' -%}
 {% set site_id = slapparameter_dict.get('site-id', 'erp5') -%}
+[slap-configuration]
+recipe = slapos.cookbook:slapconfiguration.serialised
+computer = ${slap-connection:computer-id}
+partition = ${slap-connection:partition-id}
+url = ${slap-connection:server-url}
+key = ${slap-connection:key-file}
+cert = ${slap-connection:cert-file}
+
 [request-common]
 recipe = slapos.cookbook:request.serialised
 software-url = ${slap-connection:software-release-url}
@@ -17,6 +25,7 @@ config =
   ${:extra-config}
 extra-config =
 config-use-ipv6 = {{ dumps(slapparameter_dict.get('use-ipv6', False)) }}
+state = ${slap-configuration:instance-state}
 
 {% macro request(name, software_type, config_key, config={}, ret={'url': True}) -%}
 {% do config.update(slapparameter_dict.get(config_key, {})) -%}

@@ -1,0 +1,148 @@
+{% if slap_software_type == software_type -%}
+{% set site_id = slapparameter_dict.get('cluster').get('site-id', 'erp5') -%}
+{% set promise_path = slapparameter_dict.get('promise-path', 'erp5') -%}
+[buildout]
+extends = 
+parts =
+  erp5-cluster
+  binary-wrap-launcher
+  binary-wrap-performance-tester
+  erp5-bootstrap
+  erp5-promise
+  promise-erp5-site
+  promise-scalability-user-data
+  scalability-launcher-instance
+  publish
+
+eggs-directory = {{ eggs_directory }}
+develop-eggs-directory = {{ develop_eggs_directory }}
+offline = true
+
+[slap-configuration]
+recipe = slapos.cookbook:slapconfiguration.serialised
+computer = ${slap-connection:computer-id}
+partition = ${slap-connection:partition-id}
+url = ${slap-connection:server-url}
+key = ${slap-connection:key-file}
+cert = ${slap-connection:cert-file}
+
+# Request erp5-cluster instance
+[erp5-cluster]
+recipe = slapos.cookbook:request.serialised
+sla = computer_guid
+server-url = ${slap-connection:server-url}
+key-file = ${slap-connection:key-file}
+cert-file = ${slap-connection:cert-file}
+computer-id = ${slap-connection:computer-id}
+partition-id = ${slap-connection:partition-id}
+name = ERP5 Cluster
+software-url = ${slap-connection:software-release-url}
+software-type = default
+sla-computer_guid = {{ slapparameter_dict.get('launcher-computer-guid', computer_id) }}
+{# Add a zope scalability family to the erp5 cluster configuration, -#}
+{# this zope family is used by erp5-bootstrap and may serve to scalability monitoring tools. -#}
+{% set additional_scalability_zope = {'scalability':{'family':'scalability', 'computer-guid':computer_id}} -%}
+{% do slapparameter_dict.get('cluster').get('zope-partition-dict').update( additional_scalability_zope ) -%}
+{% set cluster_parameter_dict = slapparameter_dict.get('cluster', {}) -%}
+config = {{ cluster_parameter_dict.keys() | join(' ') }}
+{% for key, value in cluster_parameter_dict.items() -%}
+config-{{ key }} = {{ dumps(value) }}
+{% endfor -%}
+return = mariadb-database-list family-scalability family-user memcached-persistent-url memcached-volatile-url cloudooo-url
+state = ${slap-configuration:instance-state}
+
+# Create wrapper
+[binary-wrap-launcher]
+recipe = slapos.cookbook:wrapper
+log-path = ${basedirectory:log}
+binary-path = {{ bin_directory }}/runScalabilityTestSuite
+wrapper-path = ${rootdirectory:bin}/runScalabilityTestSuite
+output = ${binary-wrap-launcher:binary-path}
+site-id = "/{{ site_id }}"
+# Suppose that there is a user zope family in the configuration
+erp5-url = ${erp5-cluster:connection-family-user}${:site-id}
+parameters-extra = $*
+command-line = ${binary-wrap-launcher:binary-path}
+return = url
+
+# Create wrapper
+[binary-wrap-performance-tester]
+recipe = slapos.cookbook:wrapper
+binary-path = {{ bin_directory }}/performance_tester
+wrapper-path = ${rootdirectory:bin}/performance_tester
+output = ${binary-wrap-performance-tester:binary-path}
+parameters-extra = $*
+command-line = ${binary-wrap-performance-tester:binary-path}
+return = url
+
+[scalability-launcher-instance]
+recipe = slapos.cookbook:scalability
+configuration-file = ${rootdirectory:etc}/scalability_runner.conf
+wrapper = ${basedirectory:services}/scalability_runner
+exec-path = ${binary-wrap-launcher:wrapper-path}
+erp5-url = ${binary-wrap-launcher:erp5-url}
+test-result-path = {{ slapparameter_dict.get('test-result-path') }}
+revision = {{ slapparameter_dict.get('test-suite-revision') }}
+node-title = {{ slapparameter_dict.get('node-title', 'Unknown') }}
+test-suite = {{ slapparameter_dict.get('test-suite') }}
+test-suite-master-url = {{ slapparameter_dict.get('test-suite-master-url') }}
+log-path = ${binary-wrap-launcher:log-path}
+runner-path = ${binary-wrap-performance-tester:wrapper-path}
+erp5-location = {{ erp5_location }}
+
+# Create partition's directories
+[basedirectory]
+recipe = slapos.cookbook:mkdirectory
+log = ${rootdirectory:var}/log
+services = ${rootdirectory:etc}/run
+promises = ${rootdirectory:etc}/promise/
+
+[rootdirectory]
+recipe = slapos.cookbook:mkdirectory
+etc = ${buildout:directory}/etc
+var = ${buildout:directory}/var
+bin = ${buildout:directory}/bin
+
+[erp5-bootstrap]
+recipe = slapos.cookbook:erp5.bootstrap
+runner-path = ${basedirectory:services}/erp5-bootstrap
+#mysql-url =  ${erp5-cluster:mariadb-url}
+mysql-url-list =  ${erp5-cluster:connection-mariadb-database-list}
+zope-username = zope
+zope-password = insecure
+zope-site-id = {{ site_id }}
+zope-url = ${erp5-cluster:connection-family-scalability}
+scalability = True
+
+[erp5-promise]
+recipe = slapos.cookbook:erp5.promise
+promise-path = {{ promise_path }}
+kumofs-url = ${erp5-cluster:connection-memcached-persistent-url}
+memcached-url = ${erp5-cluster:connection-memcached-volatile-url}
+cloudooo-url = ${erp5-cluster:connection-cloudooo-url}
+smtp-url =
+bt5 =
+bt5-repository-url =
+
+[promise-erp5-site]
+recipe = slapos.cookbook:check_url_available
+path = ${basedirectory:promises}/erp5site
+site-id = "/{{ site_id }}"
+url = ${erp5-cluster:connection-family-scalability}${:site-id}
+dash_path = {{ dash_location }}/bin/dash
+curl_path = {{ curl_location }}/bin/curl
+
+[promise-scalability-user-data]
+recipe = slapos.cookbook:check_url_available
+path = ${basedirectory:promises}/scalabilityData
+site-id = "/{{ site_id }}"
+page = "/person_module/scalability_user_0/getTitle"
+url = ${erp5-cluster:connection-family-scalability}${:site-id}${:page}
+dash_path = {{ dash_location }}/bin/dash
+curl_path = {{ curl_location }}/bin/curl
+
+[publish]
+recipe = slapos.cookbook:publish.serialised
+erp5-frontend-url = ${scalability-launcher-instance:erp5-url}
+erp5-scalability-url = ${erp5-cluster:connection-family-scalability}
+{% endif %}
