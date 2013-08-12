@@ -1,0 +1,54 @@
+[buildout]
+
+eggs-directory = ${buildout:eggs-directory}
+develop-eggs-directory = ${buildout:develop-eggs-directory}
+offline = true
+
+parts =
+  deploy-resiliency-test
+  request-resilient-kvm
+
+[directory]
+recipe = slapos.cookbook:mkdirectory
+etc = $${buildout:directory}/etc/
+var = $${buildout:directory}/var/
+srv = $${buildout:directory}/srv/
+bin = $${buildout:directory}/bin/
+tmp = $${buildout:directory}/tmp/
+
+services = $${:etc}/service/
+scripts = $${:etc}/run/
+
+[deploy-resiliency-test]
+recipe = slapos.cookbook:wrapper
+#log-path = {directory:log}
+wrapper-path = $${directory:bin}/runKVMResiliencyTestSuite
+#output = $${binary-wrap-launcher:binary-path}
+#site-id = "{site_id}"
+# Suppose that there is a user zope family in the configuration
+#erp5-url = $${erp5-cluster:connection-family-user}{:site-id}
+#parameters-extra = $*
+command-line = ${buildout:bin-directory}/runKVMResiliencyTestSuite --server-url=$${slap-connection:server-url} --key-file=$${slap-connection:key-file} --cert-file=$${slap-connection:cert-file} --computer-id=$${slap-connection:computer-id} --partition-id=$${slap-connection:partition-id} --software=$${slap-connection:software-release-url} --namebase=kvm --kvm-rootinstance-name='$${request-resilient-kvm:name}'
+#return = url
+
+[request-resilient-kvm]
+<= slap-connection
+recipe = slapos.cookbook:request
+software-url = $${slap-connection:software-release-url}
+software-type = kvm-resilient
+name = Resilient KVM (Root Instance)
+config = virtual-hard-drive-url virtual-hard-drive-md5sum resiliency-backup-periodicity
+config-virtual-hard-drive-url = $${slap-parameter:virtual-hard-drive-url}
+config-virtual-hard-drive-md5sum = $${slap-parameter:virtual-hard-drive-md5sum}
+config-resiliency-backup-periodicity = */5
+# We don't use url parameter, but we want it to be there to make sure root instance is ready.
+return = url
+# XXX What to do?
+#sla = instance_guid
+#sla-instance_guid = $${slap-parameter:frontend-instance-guid}
+
+[slap-parameter]
+virtual-hard-drive-url = https://softinst43236.host.vifib.net/data/public/8e2138.php?dl=true
+virtual-hard-drive-md5sum = de0f10c7c6538e9928879332afd9be7a
+# XXX: what to do about pbs-kvm1-computer-guid and kvm1-computer-guid ?
+
