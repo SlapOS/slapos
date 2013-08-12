@@ -1,6 +1,11 @@
 Changes
 =======
 
+0.81 (2013-08-12)
+-----------------
+
+ * KVM SR: implement resiliency test. [Cedric de Saint Martin]
+
 0.80 (2013-08-06)
 ----------------
 
