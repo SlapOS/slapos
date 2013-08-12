@@ -10,10 +10,10 @@ offline = true
 
 # += because we need to take up parts (like instance-custom, slapmonitor etc) from the profile we extended
 parts +=
-  {{ parts.replicate("kvm", "2") }}
+  {{ parts.replicate("kvm", "3") }}
   publish-connection-informations
 
-{{ replicated.replicate("kvm", "2", "kvm-export", "kvm-import") }}
+{{ replicated.replicate("kvm", "3", "kvm-export", "kvm-import") }}
 
 # Bubble down the parameters of the requested instance to the user
 [request-kvm]
