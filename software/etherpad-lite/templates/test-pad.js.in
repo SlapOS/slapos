@@ -1,0 +1,20 @@
+var page = require('webpage').create();
+url = '${:content-url}/p/test'
+page.open(url, function (status) {
+setTimeout(function(){
+    var text = page.evaluate(function(){
+        var container = document.getElementById('editorcontainer');
+        var iframe = container.firstChild;
+        container = iframe.contentDocument.getElementById('outerdocbody');
+        iframe = container.firstChild;
+        container = iframe.contentDocument.getElementById('innerdocbody');
+        return container.textContent;
+    });
+
+    if (text === null) {
+        phantom.exit();
+    } else {
+       phantom.exit(1);
+    }
+ },2500);
+});

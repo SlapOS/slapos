@@ -1,0 +1,10 @@
+#!%(dash-path)s
+# BEWARE: This file is operated by slapgrid
+# BEWARE: It will be overwritten automatically
+
+%(phantomjs-path)s %(phantomjs-options)s %(script-path)s
+
+if [ $? != 0 ]; then
+  echo "PhantomJS script returned non zero output" >&2
+  exit 1
+fi
