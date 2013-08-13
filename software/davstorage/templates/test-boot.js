@@ -2,11 +2,11 @@ var page = require('webpage').create();
 var url = '${:content-url}'
 
 page.open(url,function(status){
-  var text = page.evaluate(function(){
-    return document.getElementById('start_button').textContent;
+  var form = page.evaluate(function(){
+    return document.getElementById('login_form');
   });
 
-  if(text !== 'Start wizard!'){
+  if(form === null){
     phantom.exit(1);
   } else {
     phantom.exit();
