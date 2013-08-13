@@ -48,16 +48,16 @@ class Recipe(GenericBaseRecipe):
     if not self.isTrueValue(self.options.get('use-tap')):
       # XXX This could be done using Jinja.
       for port in self.options['nat-rules'].split():
-        ipv6_port = int(port) + 10000
+        tunnel_port = int(port) + 10000
         tunnel_path = self.createExecutable(
-            '%s-%sto%s' % (self.options['6tunnel-wrapper-path'], port, ipv6_port),
+            '%s-%s' % (self.options['6tunnel-wrapper-path'], tunnel_port),
             self.substituteTemplate(
                 self.getTemplateFilename('6to4.in'),
                 {
                     'ipv6': self.options['ipv6'],
-                    'ipv6_port': ipv6_port,
+                    'ipv6_port': tunnel_port,
                     'ipv4': self.options['ipv4'],
-                    'ipv4_port': port,
+                    'ipv4_port': tunnel_port,
                     'shell_path': self.options['shell-path'],
                     '6tunnel_path': self.options['6tunnel-path'],
                 },
