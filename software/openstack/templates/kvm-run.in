@@ -3,9 +3,11 @@
 # BEWARE: It will be overwritten automatically
 
 # Echo client program
+import hashlib
 import os
 import socket
 import subprocess
+import urllib
 
 def getSocketStatus(host, port):
   s = None
@@ -26,8 +28,19 @@ def getSocketStatus(host, port):
     break
   return s
 
-# create disk if doesn't exist
 disk_path = '${:disk_path}'
+virtual_hard_drive_url = '${:virtual-hard-drive-url}'.strip()
+virtual_hard_drive_md5_url = '${:virtual-hard-drive-md5-url}'.strip()
+# Download existing hard drive if needed at first boot
+if not os.path.exists(disk_path) and virtual_hard_drive_url != '':
+  urllib.urlretrieve(virtual_hard_drive_url, disk_path)
+  local_md5sum = md5Checksum(disk_path)
+  md5sum = urllib.urlopen(virtual_hard_drive_md5_url).read().strip()
+  if local_md5sum != md5sum:
+    os.remove(disk_path)
+    raise Exception('MD5 mismatch.')
+
+# create disk if doesn't exist
 if not os.path.exists(disk_path):
   subprocess.Popen(['${:qemu_img_path}', 'create' ,'-f', 'qcow2',
       disk_path, '${:disk_size}G'])

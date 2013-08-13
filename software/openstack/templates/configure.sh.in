@@ -1,0 +1,242 @@
+#!/usr/bin/env bash
+
+#configure.sh: Should install and configure all needed openstack packages.
+
+NETWORK_CONFIG ="/etc/network/interfaces"
+BRCTL_EXEC=`which brctl`
+GCC_EXEC=`which gcc`
+GIT_EXEC=`which git`
+NOV_URL="${:nova-url}"
+NOVA_CONFIG="/etc/nova/nova.conf"
+BASE_DIR=$HOME
+EZ_SETUP="http://peak.telecommunity.com/dist/ez_setup.py"
+EASY_INSTALL=`which easy_install`
+PYTHON=`which python`
+NOVA_USER=$USER
+
+IPv4=`ip addr show eth0 | grep 'inet ' | awk '{print $2}' | cut -d/ -f1`
+if [ -z "$IPv4" ];
+  then IPv4="127.0.0.1"
+fi
+echo " " 
+echo " " 
+echo " " 
+echo "#########################################################################################"
+echo "#########                                                                     ###########"
+echo "#########  AUTO CONFIGURE AND INSTALL SCRIPT FOR OPENSTACK NOVA-COMPUTE NODE  ###########"
+echo "#########                                                                     ###########"
+echo "#########             ******Network ip adress: $IPv4                          ###########"
+echo "#########                                                                     ###########"
+echo "#########################################################################################"
+echo " " 
+echo " " 
+echo " " 
+ip link set eth0 promisc on
+
+cat >$NETWORK_CONFIG <<EOF
+# The loopback network interface
+auto lo
+iface lo inet loopback
+
+# The primary network interface
+auto eth0
+                    
+# Bridge network interface for VM networks 
+auto br100 
+iface br100 inet static 
+address 192.168.100.1 
+netmask 255.255.255.0 
+bridge_stp off
+bridge_fd 0
+EOF
+
+
+if [ -z "$BRCTL_EXEC" -o ! -x "$BRCTL_EXEC" ]; then
+  apt-get install -y bridge-utils ;
+fi
+
+$BRCTL_EXEC addbr br100
+
+#Restart the network to take  new network configuration.
+/etc/init.d/networking restart
+
+if [ -z "$GCC_EXEC" -o ! -x "$GCC_EXEC" ]; then
+  apt-get install -y gcc g++ ;
+fi
+
+apt-get install -y python-dev
+apt-get install -y gnutls-bin gnutls-dev
+apt-get install -y libdevmapper-dev libdevmapper
+apt-get install -y python-all-dev
+apt-get install -y kvm libvirt-bin
+apt-get install -y python-libvirt
+apt-get install -y libxml2-dev libxslt-dev
+apt-get install -y python-lxml
+
+if [ -z "$GIT_EXEC" -o ! -x "$GIT_EXEC" ]; then
+  apt-get install -y git ;
+fi
+
+#Remove all pip tmp cache is to prevent installation failure
+rm -rf /tmp/pip_build_root/*
+#Install python packages*/
+
+if [ -z "$EASY_INSTALL" -o ! -x "$EASY_INSTALL" ]; then
+  cd $BASE_DIR; wget $EZ_SETUP -O ez_setup.py ;
+  $PYTHON $BASE_DIR/ez_setup.py ;
+  EASY_INSTALL=`which easy_install` ;
+fi
+
+$GIT_EXEC clone $NOV_URL $BASE_DIR/nova;
+chown -R $NOVA_USER: $BASE_DIR/nova
+$EASY_INSTALL pip
+$EASY_INSTALL pbr
+cd $BASE_DIR/nova; $PYTHON setup.py install
+
+#Create Nova Working directory
+mkdir -p /opt/stack
+mkdir -p /opt/stack/data
+mkdir -p /opt/stack/data/nova
+mkdir -p /opt/stack/data/nova/instances
+mkdir -p /opt/stack/log
+
+cp -rf $BASE_DIR/nova/etc/nova /etc/
+
+cat >$NOVA_CONFIG <<EOF
+[DEFAULT]
+firewall_driver = nova.virt.libvirt.firewall.IptablesFirewallDriver
+compute_driver = libvirt.LibvirtDriver
+flat_interface = eth0
+flat_network_bridge = br100
+vlan_interface = eth0
+public_interface = br100
+network_manager = nova.network.manager.FlatDHCPManager
+host = ${:nova-host}
+glance_api_servers = ${:slap-ipv4}:9292
+rabbit_password = ${:nova-passwd}
+rabbit_host = ${:slap-ipv4}
+rpc_backend = nova.openstack.common.rpc.impl_kombu
+ec2_dmz_host = ${:slap-ipv4}
+vncserver_proxyclient_address = $IPv4
+vncserver_listen = $IPv4
+vnc_enabled = true
+xvpvncproxy_base_url = http://$IPv4:6081/console
+novncproxy_base_url = ${:vnc-url}/vnc_auto.html
+logging_exception_prefix = %(color)s%(asctime)s.%(msecs)03d TRACE %(name)s ESC[01;35m%(instance)sESC[00m
+logging_debug_format_suffix = ESC[00;33mfrom (pid=%(process)d) %(funcName)s %(pathname)s:%(lineno)dESC[00m
+logging_default_format_string = %(asctime)s.%(msecs)03d %(color)s%(levelname)s %(name)s [ESC[00;36m-%(color)s] ESC[01;35m%(instance)s%(color)s%(message)sESC[00m
+logging_context_format_string = %(asctime)s.%(msecs)03d %(color)s%(levelname)s %(name)s [ESC[01;36m%(request_id)s ESC[00;36m%(user_name)s %(project_name)s%(color)s] ESC[01;35m%(instance)s%(color)s%(message)sESC[00m
+instances_path = /opt/stack/data/nova/instances
+lock_path = /opt/stack/data/nova
+state_path = /opt/stack/data/nova
+log_dir = /opt/stack/log
+volume_api_class = nova.volume.cinder.API
+enabled_apis = ec2,osapi_compute,metadata
+instance_name_template = instance-%08x
+libvirt_cpu_mode = none
+libvirt_type = qemu
+sql_connection = mysql://root:${:nova-passwd}@${:slap-ipv4}/nova?charset=utf8
+my_ip = $IPv4
+osapi_compute_extension = nova.api.openstack.compute.contrib.standard_extensions
+s3_port = 3333
+s3_host = ${:slap-ipv4}
+ec2_host = ${:slap-ipv4}
+rabbit_host = ${:slap-ipv4}
+osapi_compute_listen = ${:slap-ipv4}
+keystone_ec2_url = http://${:slap-ipv4}:5000/v2.0/ec2tokens
+default_floating_pool = public
+iscsi_ip_prefix = 192.168.100
+fixed_range = 
+force_dhcp_release = True
+dhcpbridge_flagfile = /etc/nova/nova.conf
+scheduler_driver = nova.scheduler.filter_scheduler.FilterScheduler
+rootwrap_config = /etc/nova/rootwrap.conf
+api_paste_config = /etc/nova/api-paste.ini
+allow_resize_to_same_host = True
+auth_strategy = keystone
+debug = True
+verbose = True
+
+[osapi_v3]
+enabled = True
+
+[spice]
+enabled = false
+html5proxy_base_url = http://$IPv4:6082/spice_auto.html
+EOF
+
+NOVA_COMPUTE_EXEX=`which nova-compute`
+if [ -z "$EASY_INSTALL" -o ! -x "$EASY_INSTALL" ]; then
+  echo "ERROR: can't find nova-compute executable file!!!!"
+  exit 1
+fi
+
+#Add Nova-compute in init.d If file not exist now
+cat >/etc/init.d/nova-compute <<EOF
+#!/bin/sh
+
+PATH=/bin:/usr/bin:/sbin:/usr/sbin
+DAEMON=$NOVA_COMPUTE_EXEX
+NAME=nova-compute
+DESC="OpenStack Conpute Node"
+
+pid=\`ps ax | egrep nova-compute | egrep nova.conf | cut -d ' ' -f1\`
+
+case "\$1" in
+start)
+if [ -z "\$pid" ]; then
+echo -n "Starting \$DESC: \$NAME"
+$NOVA_COMPUTE_EXEX --config-file $NOVA_CONFIG & > /dev/null
+else
+echo "\$DESC: \$NAME is curently under execution";
+fi
+
+echo "."
+;;
+
+stop)
+if [ -z "\$pid" ]; then
+echo " nova-compute isn't running, so not killed" ;
+else
+kill -TERM \$pid > /dev/null ;
+fi
+echo "."
+;;
+
+restart)
+if [ -z "\$pid" ]; then
+echo " nova-compute isn't running!!" ;
+else
+kill -TERM \$pid > /dev/null ;
+fi
+# Attente d'une seconde avant de continuer le script
+sleep 1
+
+$NOVA_COMPUTE_EXEX --config-file $NOVA_CONFIG & > /dev/null
+echo "."
+;;
+
+status)
+if [ -z "\$pid" ]; then
+echo " nova-compute: STOPPED/EXITED" ;
+else
+echo " nova-compute: RUNNING PID:\$pid" ;
+fi
+echo "."
+;;
+
+*)
+echo "Usage: /etc/init.d/\$NAME start|stop|restart" >&2
+exit 1
+;;
+esac
+
+exit 0
+EOF
+
+chmod +x /etc/init.d/nova-compute
+
+update-rc.d nova-compute defaults
+/etc/init.d/nova-compute restart > /dev/null 2>&1
+
+exit 0

@@ -1,0 +1,76 @@
+#!${:python_path}
+# BEWARE: This file is operated by slapgrid
+# BEWARE: It will be overwritten automatically
+
+# Echo client program
+import os
+import traceback
+import sys
+import time
+
+pythonPath = []
+eggs = '${:eggs-dir}'
+for item in os.listdir(eggs):
+  path = os.path.join(eggs, item)
+  pythonPath.append(path)
+sys.path[0:0] = pythonPath
+
+import paramiko
+
+check_ssh_args = ['${:ssh-check-script}']
+password = '${:system-passwd}'
+username = '${:system-user}'
+port = ${:ssh-port}
+hostname = '${:host-ip}'
+ssh_run = os.path.join('${:nova-result}', 'nova-configure.log')
+ssh_check = os.path.join('${:nova-result}', 'ssh_check.log')
+nova_configure = '${:nova-configure}'
+
+def getClient():
+  try:
+    client = paramiko.SSHClient()
+    client.load_system_host_keys()
+    client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+    print '*** Connecting...'
+    client.connect(hostname, port, username, password)
+    return client
+  except Exception, e:
+      print "Could not connect to host... Will retry after a few minutes"
+      return None
+
+if __name__ == '__main__':
+  client = None
+  while not client:
+    client = getClient()
+    time.sleep(5)
+  try:
+    #Write file configure.sh to use.
+    sftp = client.open_sftp()
+    result = sftp.put(nova_configure, 'configure.sh' )
+    print 'Nova configure copied successfully! File size: %s' % result.st_size
+    sftp.close()
+    
+    #Install nova components and services
+    print "Installing nova..." 
+    install_command = "echo %s | sudo -S /bin/sh configure.sh" % password
+    stdin, stdout, stderr = client.exec_command(install_command)
+    with open(ssh_run, 'a') as output:
+      output.write(stdout.read())
+    
+    #Check nova service status
+    print "Checking nova service status..."
+    nova_command = 'echo %s | sudo -S /etc/init.d/nova-compute status' % password
+    stdin, stdout, stderr = client.exec_command(nova_command)
+    with open(ssh_check, 'a') as output:
+      output.write(stdout.read())
+    client.close()
+  except Exception, e:
+    print '*** Caught exception: %s: %s' % (e.__class__, e)
+    traceback.print_exc()
+    try:
+        client.close()
+    except:
+        pass
+    sys.exit(1)
+  
+  
