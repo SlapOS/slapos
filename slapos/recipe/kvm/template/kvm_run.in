@@ -86,7 +86,12 @@ if not os.path.exists(disk_path):
 if use_tap == 'True':
   qemu_network_parameter = 'tap,ifname=%%s,script=no,downscript=no' %% tap_interface
 else:
-  qemu_network_parameter = 'user,' + ','.join('hostfwd=tcp:%%s:%%s-:%%s' %% (listen_ip, int(port) + 10000, port) for port in nat_rules.split())
+  qemu_network_parameter = 'user'
+  for item in nat_rules.split():
+    ports = item.split(':')
+    if len(ports) == 1:
+      ports.append(int(ports[0]) + 10000)
+    qemu_network_parameter += ',hostfwd=tcp:%%s:%%s-:%%s' %% (listen_ip, ports[1], ports[0])
 
 kvm_argument_list = [qemu_path,
   '-enable-kvm', '-net', 'nic,macaddr=%%s' %% mac_address,

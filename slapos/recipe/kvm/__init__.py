@@ -47,8 +47,12 @@ class Recipe(GenericBaseRecipe):
 
     if not self.isTrueValue(self.options.get('use-tap')):
       # XXX This could be done using Jinja.
-      for port in self.options['nat-rules'].split():
-        tunnel_port = int(port) + 10000
+      for item in self.options['nat-rules'].split():
+        ports = item.split(':')
+        if len(ports) == 1:
+          tunnel_port = int(ports[0]) + 10000
+        else:
+          tunnel_port = int(ports[1])
         tunnel_path = self.createExecutable(
             '%s-%s' % (self.options['6tunnel-wrapper-path'], tunnel_port),
             self.substituteTemplate(
