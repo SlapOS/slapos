@@ -18,7 +18,7 @@ import platform
 import shutil
 import traceback
 
-from slapos.grid.distribution import os_matches, patched_linux_distribution
+from slapos.grid.distribution import os_matches, distribution_tuple
 
 try:
     try:
@@ -88,7 +88,7 @@ def download_network_cached(cache_url, dir_url, software_url, software_root,
                 if tags.get('machine') != platform.machine():
                     continue
                 if not os_matches(ast.literal_eval(tags.get('os')),
-                                  patched_linux_distribution()):
+                                  distribution_tuple()):
                     continue
                 if tags.get('software_url') != software_url:
                     continue
@@ -134,7 +134,7 @@ def upload_network_cached(software_root, software_url, cached_key,
       software_url=software_url,
       software_root=software_root,
       machine=platform.machine(),
-      os=str(patched_linux_distribution())
+      os=str(distribution_tuple())
     )
 
     f = open(path, 'r')
