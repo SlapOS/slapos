@@ -64,8 +64,8 @@
               "default": {},
               "properties": {
                 "path": {
-                  "description": "FileStorage file path, '%(zodb)s' occurrences are replaced with the path to partition's srv/zodb directory",
-                  "default": "%(zodb)s/<export identifier>.fs",
+                  "description": "FileStorage file path, '%(zodb)s' occurrences are replaced with the path to partition's srv/zodb directory, and %(name)s with the export id",
+                  "default": "%(zodb)s/%(name)s.fs",
                   "type": "string"
                 },
                 "client": {
