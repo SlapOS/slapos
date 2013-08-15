@@ -744,6 +744,7 @@ class SlapTool(BaseTool):
                                start_date=DateTime(year, month, 1),
                                )
       spl.newContent( portal_type='Sale Packing List Line',
+                      resource_value=sequence.get('resource'),
                       delivery_date=report_date,
                       resource_value=computer_id,
                       quantity=usage_amount)
