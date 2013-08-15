@@ -54,6 +54,7 @@ download-binary-dir-url = http://www.shacache.org/shadir
 #   Yingjie Xu
 #   Gabriel Monnerat
 #   Lukasz Nowak
+#   Marco Mariani
 #   Test Agent Signature
 signature-certificate-list =
   -----BEGIN CERTIFICATE-----
@@ -146,6 +147,19 @@ signature-certificate-list =
   cgiNV2+Z5oNTrHgmzWvSY4duECOTBxeuIOnhql3vLlaQmo0p8Z4c13kTZq2s3nhd
   Loe5mIHsjRVKvzB6SvIaFUYq/EzmHnqNdpIGkT/Mj7r/iUs61btTcGUCLsUiUeci
   Vd0Ozh79JSRpkrdI8R/NRQ2XPHAo+29TT70=
+  -----END CERTIFICATE-----
+  -----BEGIN CERTIFICATE-----
+  MIIB9jCCAV+gAwIBAgIJAL9FOtBJZBqAMA0GCSqGSIb3DQEBBQUAMBMxETAPBgNV
+  BAMMCENPTVAtOTIyMCAXDTEyMDkyNjE2MDkwM1oYDzIxMTIwOTAyMTYwOTAzWjAT
+  MREwDwYDVQQDDAhDT01QLTkyMjCBnzANBgkqhkiG9w0BAQEFAAOBjQAwgYkCgYEA
+  wlGVd6qOsc2xrtAQ5/rpflzS14/84SE/joaujMw2GGk6EFVSOcqKLq1TnHxkcCkv
+  nv1NYRPK/hpQOIKcGC1f+DvXXpMJI29R/rt2b2/y1oolxXonSVigBtCQlSyDoOFN
+  6LBX84CI5aYMvy3mqJCvfGEFBaPqze/PVugq9IpgZg0CAwEAAaNQME4wHQYDVR0O
+  BBYEFJ7HWyzVKkeSYnSK4FIwcdyng/tRMB8GA1UdIwQYMBaAFJ7HWyzVKkeSYnSK
+  4FIwcdyng/tRMAwGA1UdEwQFMAMBAf8wDQYJKoZIhvcNAQEFBQADgYEAZQWob2ki
+  ie6h90FgSctozXrotb8NIis2MtLIj+WonE0wSqYefxwBmAGjB9cfWz/sNamhM4rn
+  BP1A2ojVhF6hOE1qvTP5YxcGXOoYTrEQSuDF1hn12WlA4vqIAz1f+4CiMJNlXPwh
+  7N+X2kvRpHdXAHkBOxX3j34AeCZrSpu/yDQ=
   -----END CERTIFICATE-----
   -----BEGIN CERTIFICATE-----
   MIIB9jCCAV+gAwIBAgIJAKRvzcy7OH0UMA0GCSqGSIb3DQEBBQUAMBMxETAPBgNV
