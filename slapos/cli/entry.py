@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
 
 import argparse
+import codecs
 import collections
+import locale
 import logging
 import sys
 
