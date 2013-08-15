@@ -699,64 +699,6 @@ class SlapTool(BaseTool):
     self.REQUEST.response.setBody(result)
     return self.REQUEST.response
 
-  security.declareProtected(Permissions.AccessContentsInformation,
-    'reportNetDriveUsageFromXML')
-  def reportNetDriveUsageFromXML(self, xml):
-    "Generate sale packing list from net drive usage report"
-    #We retrieve XSD model
-    try:
-      netdrive_usage_model = \
-        pkg_resources.resource_string(
-          'slapos.slap',
-          'doc/netdrive_usage.xsd')
-    except IOError:
-      netdrive_usage_model = \
-        pkg_resources.resource_string(
-          __name__,
-          '../../../../slapos/slap/doc/netdrive_usage.xsd')
-
-    if not self._validateXML(xml, netdrive_usage_model):
-      raise NotImplementedError('XML file sent by the node is not valid !')
-
-    splm = self.getPortalObject().getDefaultModule('Sale Packing List')
-    computer_id = ''
-
-    # Insert one line
-    root = etree.XML(xml)
-    for element in root.iter('item'):
-      if not computer_id == element[0].text:
-        computer_id = element[0].text
-        computer = self._getComputerDocument(computer_id)
-      domain_account = element[1].text
-      report_date = element[2].text
-      usage_amount = element[3].text
-
-      # Search sale packing list by domain_account and the month of report_date
-      year, month, day = report_date.split('-')
-      reference="NetDriveUsage-%s-%d.%d" % (domain_account, year, month)
-      spl = splm.searchFolder(reference=reference)
-      if spl is None:
-        spl = splm.newContent( portal_type='Sale Packing List',
-                               title='Net Drive Usage - %s' % domain_account,
-                               reference=reference,
-                               source_value = 'Net Drive',
-                               destination_value = domain_account,
-                               start_date=DateTime(year, month, 1),
-                               )
-      spl.newContent( portal_type='Sale Packing List Line',
-                      resource_value=sequence.get('resource'),
-                      delivery_date=report_date,
-                      resource_value=computer_id,
-                      quantity=usage_amount)
-
-      # step through all steps of packing list workflow
-      # spl.confirm()
-      # spl.setReady()
-      # spl.start()
-      # spl.stop()
-      # spl.deliver()
-    return 'Content properly posted.'
-
   ####################################################
   # Internal methods
   ####################################################
