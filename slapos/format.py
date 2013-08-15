@@ -1211,7 +1211,7 @@ class FormatConfig(object):
 
     # check root
     # XXX in the new CLI, this is checked by the @must_be_root decorator.
-    if root_needed and os.getuid() != 0:
+    if sys.platform != 'cygwin' and root_needed and os.getuid() != 0:
       message = "Root rights are needed"
       self.logger.error(message)
       sys.stderr.write(message + '\n')
