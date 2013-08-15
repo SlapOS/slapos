@@ -844,7 +844,7 @@ class Interface(object):
 
   def addIPv4LocalAddress(self, addr=None):
     """Adds local IPv4 address in ipv4_local_network"""
-    netmask = '255.255.255.254' if sys.platform == 'cygwin' \
+    netmask = str(netaddr.IPNetwork(self.ipv4_local_network).netmask) if sys.platform == 'cygwin' \
              else '255.255.255.255'
     local_address_list = self.getIPv4LocalAddressList()
     if addr is None:
