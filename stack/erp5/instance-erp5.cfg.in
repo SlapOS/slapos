@@ -44,6 +44,14 @@ config-{{ option }} = {{ dumps(value) }}
 {{ request('mariadb', 'mariadb', 'mariadb', {'tcpv4-port': 2099}, {'database-list': True, 'test-database-list': True}) }}
 {{ request('zodb', 'zodb-' ~ slapparameter_dict.get('zodb-software-type', 'zeo'), 'zodb', {'tcpv4-port': 2100, 'zodb-dict': {'root': {}}}, {'zodb-storage-type': False, 'zodb-dict': False, 'tidstorage-ip': False, 'tidstorage-port': False}) }}
 
+[deadlock-debugger-password]
+{% set deadlock_debugger_password = slapparameter_dict.get('deadlock-debugger-password') -%}
+{% if deadlock_debugger_password -%}
+passwd = {{ deadlock_debugger_password }}
+{% else -%}
+recipe = slapos.cookbook:generate.password
+{% endif -%}
+
 [request-zope-base]
 < = request-common
 return =
@@ -69,6 +77,7 @@ extra-config =
   longrequest-logger-interval
   longrequest-logger-timeout
   port-base
+  deadlock-debugger-password
 config-mysql-url-list = ${request-mariadb:connection-database-list}
 config-mysql-test-url-list = ${request-mariadb:connection-test-database-list}
 config-memcached-url = ${request-memcached-volatile:connection-url}
@@ -83,6 +92,7 @@ config-tidstorage-ip = ${request-zodb:connection-tidstorage-ip}
 config-tidstorage-port = ${request-zodb:connection-tidstorage-port}
 config-timezone = {{ slapparameter_dict.get('timezone', 'UTC') }}
 config-site-id = {{ site_id }}
+config-deadlock-debugger-password = ${deadlock-debugger-password:passwd}
 software-type = zope
 
 {% set zope_family_dict = {} -%}
