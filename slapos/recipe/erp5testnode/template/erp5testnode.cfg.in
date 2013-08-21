@@ -13,7 +13,6 @@ test_node_title = %(test_node_title)s
 ipv4_address = %(ipv4_address)s
 ipv6_address = %(ipv6_address)s
 test_suite_master_url = %(test_suite_master_url)s
-hateoas_slapos_master_url = %(hateoas_slapos_master_url)s
 httpd_ip = %(httpd_ip)s
 httpd_port = %(httpd_port)s
 httpd_software_access_port = %(httpd_software_access_port)s
