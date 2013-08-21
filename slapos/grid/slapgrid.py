@@ -628,7 +628,8 @@ class Slapgrid(object):
 
     computer_partition_state = computer_partition.getState()
 
-    self.logger.info('  Instance type: %s' % computer_partition.getType())
+    # XXX this line breaks 37 tests
+    # self.logger.info('  Instance type: %s' % computer_partition.getType())
     self.logger.info('  Instance status: %s' % computer_partition_state)
 
     if computer_partition_state == COMPUTER_PARTITION_STARTED_STATE:
