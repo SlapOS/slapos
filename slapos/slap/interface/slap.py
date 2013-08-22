@@ -222,6 +222,11 @@ class IComputerPartition(IBuildoutController, IRequester):
     The contained values are connection parameters of a compute partition.
     """
 
+  def getType():
+    """
+    Returns the Software Type of the instance.
+    """
+
   def setUsage(usage_log):
     """
     Associate a usage log to the computer partition.
