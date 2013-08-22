@@ -28,6 +28,13 @@ kvm-test-parameters = server_url=${slap-connection:server-url} key_file=${slap-c
 
 command-line = {{ bin_directory }}/runResiliencyTest ${:testnode-parameters} ${:kvm-test-parameters}
 
+
+[deploy-standalone-resiliency-test]
+# Used to manually run the KVM test if we don't have a running testnode.
+recipe = slapos.cookbook:wrapper
+wrapper-path = ${directory:bin}/runStandaloneKVMResiliencyTestSuite
+command-line = {{ bin_directory }}/runStandaloneResiliencyTest --test-suite-title=kvm ${deploy-resiliency-test:kvm-test-parameters}
+
 [request-resilient-kvm]
 <= slap-connection
 recipe = slapos.cookbook:request
