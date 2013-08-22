@@ -143,6 +143,10 @@
       },
       "type": "object"
     },
+    "zodb-computer-guid": {
+      "description": "GUID of computer instance must be requested on",
+      "type": "string"
+    },
     "zodb-software-type": {
       "description": "Zope Object DataBase implementation",
       "default": "zeo",
