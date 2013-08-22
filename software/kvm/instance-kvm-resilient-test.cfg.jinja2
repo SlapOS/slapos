@@ -7,6 +7,7 @@ offline = true
 parts =
   deploy-resiliency-test
   request-resilient-kvm
+  deploy-standalone-resiliency-test
 
 [directory]
 recipe = slapos.cookbook:mkdirectory
@@ -32,7 +33,7 @@ command-line = {{ bin_directory }}/runResiliencyTest ${:testnode-parameters} ${:
 [deploy-standalone-resiliency-test]
 # Used to manually run the KVM test if we don't have a running testnode.
 recipe = slapos.cookbook:wrapper
-wrapper-path = ${directory:bin}/runStandaloneKVMResiliencyTestSuite
+wrapper-path = ${directory:bin}/runStandaloneResiliencyTestSuite
 command-line = {{ bin_directory }}/runStandaloneResiliencyTest --test-suite-title=kvm ${deploy-resiliency-test:kvm-test-parameters}
 
 [request-resilient-kvm]
