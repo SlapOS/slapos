@@ -8,6 +8,8 @@ events {
   # multi_accept on;
 }
 
+error_log $${nginx-configuration:error_log};
+
 http {  
   
   ##
@@ -54,6 +56,13 @@ server {
   ssl                 on;
   ssl_certificate $${nginx-configuration:ssl_crt};
   ssl_certificate_key $${nginx-configuration:ssl_key};
+
+  fastcgi_temp_path  $${directory:varnginx} 1 2;
+  uwsgi_temp_path  $${directory:varnginx} 1 2;
+  scgi_temp_path  $${directory:varnginx} 1 2;
+
+  client_body_temp_path $${directory:varnginx} 1 2;
+  proxy_temp_path $${directory:varnginx} 1 2;
 
   ## Only allow GET and HEAD request methods
   if ($request_method !~ ^(GET|HEAD)$ ) {

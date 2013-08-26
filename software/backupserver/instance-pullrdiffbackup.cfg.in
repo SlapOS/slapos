@@ -14,6 +14,7 @@ srv = $${buildout:directory}/srv
 var = $${buildout:directory}/var
 run = $${:var}/run
 log = $${:var}/log
+varnginx = $${:var}/nginx
 # scripts = $${:etc}/run
 services = $${:etc}/service
 cron-entries = $${:etc}/cron.d
