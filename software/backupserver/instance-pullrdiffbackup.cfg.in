@@ -75,7 +75,6 @@ recipe = plone.recipe.command
 stop-on-error = true
 command = ${dropbear-output:keygen} -t $${:type} -s 2048 -f $${:key} 
 key = $${directory:ssh}/$${:_buildout_section_name_}
-location = $${:key}
 type = rsa
 
 [{{ slave_reference }}-backup-public_key]
