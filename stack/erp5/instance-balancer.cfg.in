@@ -66,7 +66,7 @@ backend-dict = {{ dumps(haproxy_dict) }}
 [apache]
 recipe = slapos.cookbook:apache.zope.backend
 backend-list = {{ dumps(apache_dict.values()) }}
-ip = {% if use_ipv6 %}{{ ipv6 }}{% else %}{{ ipv4 }}{% endif %}
+ip = {{ dumps([ipv6, ipv4]) }}
 wrapper = ${directory:bin}/apache
 scheme = https
 key-file = ${directory:apache-conf}/apache.key
@@ -88,11 +88,8 @@ ssl-authentication-crl = ${certificate-authority:ca-crl}
 [publish]
 recipe = slapos.cookbook:publish.serialised
 {% for family_name, (apache_port, _) in apache_dict.items() -%}
-{%   if use_ipv6 -%}
-{{     family_name }} = ${apache:scheme}://[${apache:ip}]:{{ apache_port }}
-{%   else -%}
-{{     family_name }} = ${apache:scheme}://${apache:ip}:{{ apache_port }}
-{%   endif -%}
+{{   family_name ~ '-v6' }} = ${apache:scheme}://[{{ ipv6 }}]:{{ apache_port }}
+{{   family_name }} = ${apache:scheme}://{{ ipv4 }}:{{ apache_port }}
 {% endfor -%}
 
 [certificate-authority]

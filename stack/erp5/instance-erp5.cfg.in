@@ -127,7 +127,7 @@ sla-computer_guid = {{ zope_parameter_dict.get('computer-guid', computer_id) }}
 [{{ frontend_name }}]
 < = request-frontend-base
 name = {{ frontend_name }}
-config-url = {{ backend_url }}
+config-url = ${request-balancer:{{ family_name }}-v6}
 {%   else -%}
 {%     set publishable = 'request-balancer:connection-' ~ family_name -%}
 {%   endif -%}
@@ -150,7 +150,10 @@ extra-config =
   zope-family-dict
   {{ zope_address_list_id_dict.values() | join(' ') }}
 return =
-  {{ zope_family_dict.keys() | join(' ') }}
+{%- for family in zope_family_dict %}
+  {{ family }}
+  {{ family }}-v6
+{% endfor -%}
 config-zope-family-dict = {{ dumps(zope_family_parameter_dict) }}
 config-tcpv4-port = {{ dumps(slapparameter_dict.get('', 2150)) }}
 {% for zope_section_id, name in zope_address_list_id_dict.items() -%}
