@@ -57,7 +57,9 @@ class Recipe(GenericBaseRecipe):
     else:
       raise ValueError('Unsupported scheme %s' % scheme)
 
-    ip = self.options['ip']
+    ip_list = self.options['ip']
+    if isinstance(ip_list, basestring):
+      ip_list = [ip_list]
     backend_path = self.options.get('backend-path', '/')
     vhost_template_name = self.getTemplateFilename('vhost.in')
     apache_config_file = self.createFile(
@@ -78,7 +80,7 @@ class Recipe(GenericBaseRecipe):
             'port': port,
             'backend': ('%s/%s' % (backend.rstrip('/'), backend_path.strip('/'))).rstrip('/'),
             'ssl_enable': ssl_enable,
-          }) for (port, backend) in backend_list),
+          }) for (port, backend) in backend_list for ip in ip_list),
         },
       )
     )
