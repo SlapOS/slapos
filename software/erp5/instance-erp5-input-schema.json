@@ -26,7 +26,7 @@
           "additionalProperties": false,
           "properties": {
             "family": {
-              "description": "The family this partition is part of. For example: 'public', 'admin', 'backoffice', 'web-service'... Each family gets its own frontend (=client-facing ip & port). It has no special meaning for the system.",
+              "description": "The family this partition is part of. For example: 'public', 'admin', 'backoffice', 'web-service'... Each family gets its own balancer entry. It has no special meaning for the system.",
               "default": "default",
               "type": "string"
             },
@@ -71,32 +71,6 @@
           "type": "object"
         }
       },
-      "type": "object"
-    },
-    "frontend": {
-      "additionalProperties": false,
-      "properties": {
-        "software-url": {
-          "description": "Software URL of an existing frontend, no frontend will be requested if this value is empty",
-          "default": "",
-          "type": "string"
-        },
-        "instance-guid": {
-          "description": "Frontend's instance GUID, required if software-url is non-empty (not perfect: if frontend is moved and its instance GUID changes, you need to update this value)",
-          "type": "string"
-        },
-        "software-type": {
-          "description": "Frontend software type in given software relase",
-          "default": "RootSoftwareInsance",
-          "type": "string"
-        },
-        "domain": {
-          "description": "Domain name belonging to this instance",
-          "default": "",
-          "type": "string"
-        }
-      },
-      "default": {},
       "type": "object"
     },
     "kumofs-computer-guid": {
