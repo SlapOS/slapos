@@ -22,6 +22,7 @@ ${rdiff-backup-output:rdiff-backup} \
 RESULT=$?
  
 # Inform about backup status
+${coreutils-output:rm} -f $${:status_log}
 if [ $RESULT -eq 0 ]
 then
   ${coreutils-output:echo} "`${coreutils-output:date} -u`, $${:hostname} backup success" >> $${:status_log}
