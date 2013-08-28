@@ -262,7 +262,7 @@ path = ${directory:promises}/{{ name }}
 base-name = {{ zope_tunnel_base_name }}
 ipv6-port = {{ port }}
 ipv4-port = {{ port }}
-{%   do publish_list.append("[" ~ ipv6 ~ "]:" ~ port) -%}
+{%   do publish_list.append(("[" ~ ipv6 ~ "]:" ~ port, thread_amount)) -%}
 
 [{{ section("promise-tunnel-" ~ name) }}]
 recipe = slapos.cookbook:check_port_listening
@@ -270,7 +270,7 @@ hostname = {{ '${' ~ zope_tunnel_section_name ~ ':ipv6}' }}
 port = {{ '${' ~ zope_tunnel_section_name ~ ':ipv6-port}' }}
 path = ${directory:promises}/{{ zope_tunnel_base_name }}
 {% else -%}
-{%   do publish_list.append(ipv4 ~ ":" ~ port) -%}
+{%   do publish_list.append((ipv4 ~ ":" ~ port, thread_amount)) -%}
 {% endif -%}
 
 [{{ section('logrotate-entry-' ~ name) }}]

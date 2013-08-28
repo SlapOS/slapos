@@ -85,6 +85,7 @@ instance-logrotate-cfg = {{ template_logrotate_base }}
 bin-directory = {{ bin_directory }}
 6tunnel = {{ sixtunnel_location }}
 dash = {{ dash_location }}
+template-haproxy-cfg = {{ template_haproxy_cfg }}
 
 [dynamic-template-balancer]
 < = jinja2-template-base

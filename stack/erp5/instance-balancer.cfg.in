@@ -10,9 +10,9 @@ per partition. No more (undefined result), no less (IndexError).
 # And think of a way to specify which urls goe through varnish, which go
 # directly to haproxy. (maybe just passing literal configuration file chunk)
 {% set ipv4 = (ipv4_set | list)[0] -%}
+{% set ipv6 = (ipv6_set | list)[0] -%}
 
 {% if use_ipv6 -%}
-{% set ipv6 = (ipv6_set | list)[0] -%}
 [zope-tunnel-base]
 recipe = slapos.cookbook:ipv4toipv6
 runner-path = ${directory:services}/${:base-name}
@@ -28,7 +28,7 @@ ipv4 = {{ ipv4 }}
 {%   set zope_family_address_list = [] -%}
 {%   for parameter_id in parameter_id_list -%}
 {%     set zope_address_list = slapparameter_dict[parameter_id] -%}
-{%     for zope_address in zope_address_list -%}
+{%     for zope_address, maxconn in zope_address_list -%}
 {%       if use_ipv6 -%}
 [{{ section('zope-tunnel-' ~ next_port) }}]
 < = zope-tunnel-base
@@ -41,7 +41,7 @@ ipv6 = {{ zope_address.split(']:')[0][1:] }}
 {%       else -%}
 {%         set zope_effective_address = zope_address -%}
 {%       endif -%}
-{%       do zope_family_address_list.append(zope_effective_address) -%}
+{%       do zope_family_address_list.append((zope_effective_address, maxconn)) -%}
 {%     endfor -%}
 {%   endfor -%}
 {%   set haproxy_port = next_port -%}
@@ -51,17 +51,24 @@ ipv6 = {{ zope_address.split(']:')[0][1:] }}
 {%   set next_port = next_port + 1 -%}
 {% endfor -%}
 
-[haproxy]
-recipe = slapos.cookbook:haproxy
-conf-path = ${directory:etc}/haproxy.cfg
-ip = {{ ipv4 }}
-maxconn = {{ slapparameter_dict['haproxy-maxconn'] }}
-server-check-path = {{ slapparameter_dict['haproxy-server-check-path'] }}
-wrapper-path = ${directory:services}/haproxy
-ctl-path = ${directory:bin}/haproxy-ctl
+[haproxy-cfg-parameter-dict]
 socket-path = ${directory:run}/haproxy.sock
-binary-path = {{ parameter_dict['haproxy'] }}/sbin/haproxy
+server-check-path = {{ slapparameter_dict['haproxy-server-check-path'] }}
 backend-dict = {{ dumps(haproxy_dict) }}
+ip = {{ ipv4 }}
+
+[haproxy-cfg]
+recipe = slapos.recipe.template:jinja2
+template = {{ parameter_dict['template-haproxy-cfg'] }}
+rendered = ${directory:etc}/haproxy.cfg
+context = section parameter_dict haproxy-cfg-parameter-dict
+
+[{{ section('haproxy') }}]
+recipe = slapos.cookbook:wrapper
+wrapper-path = ${directory:services}/haproxy
+command-line = "{{ parameter_dict['haproxy'] }}/sbin/haproxy" -f "${haproxy-cfg:rendered}"
+
+{# TODO: build socat and wrap it as "${directory:bin}/haproxy-ctl" to connect to "${haproxy-cfg-parameter-dict:socket-path}" #}
 
 [apache]
 recipe = slapos.cookbook:apache.zope.backend
