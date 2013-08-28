@@ -79,11 +79,17 @@ class Part(GenericBaseRecipe):
 day_of_week_dict = dict((name, dow) for dow, name in enumerate(
     "sunday monday tuesday wednesday thursday friday saturday".split())
   for name in (name, name[:3]))
+symbolic_dict = dict(hourly  = '0 * * * *',
+                     daily   = '0 0 * * *',
+                     monthly = '0 0 1 * *',
+                     weekly  = '0 0 * * 0')
 
 def systemd_to_cron(spec):
   """Convert from systemd.time(7) calendar spec to crontab spec"""
-  if spec in ("hourly", "daily", "monthly", "weekly"):
-    return '@' + spec
+  try:
+    return symbolic_dict[spec]
+  except KeyError:
+    pass
   if not spec.strip():
     raise ValueError
   spec = spec.split(' ')
