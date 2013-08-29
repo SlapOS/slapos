@@ -41,6 +41,8 @@ recipe = slapos.cookbook:request
 software-url = ${slap-connection:software-release-url}
 software-type = resilient
 name = Resilient Instance (Root Instance)
+config = resiliency-backup-periodicity
+config-resiliency-backup-periodicity = *
 return = backend_url
 
 [slap-parameter]
