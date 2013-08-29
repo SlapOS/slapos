@@ -56,18 +56,12 @@
 old_sr_url = context.getUrlString()\n
 portal = context.getPortalObject()\n
 \n
-hosting_sub_list = portal.portal_catalog.searchAndActivate(\n
-  portal_type = \'Hosting Subscription\',\n
-  default_specialise_related_uid = [x.getUid() for x in portal.portal_catalog(\n
-    portal_type = [\'Software Instance\', \'Slave Instance\'],\n
-    url_string = old_sr_url,\n
-    default_aggregate_uid = [y.getUid() for y in portal.portal_catalog(\n
-      portal_type = \'Computer Partition\',\n
-      parent_reference = comp_reference_list,\n
-      free_for_request = 0\n
-    )]\n
-  )],\n
-  method_id = \'HostingSubscription_changeSoftwareRelease\',\n
+portal.portal_catalog.searchAndActivate(   \n
+  portal_type = \'Computer Partition\',\n
+  parent_reference = comp_reference_list,\n
+  free_for_request = 0,\n
+  software_release_url = old_sr_url,\n
+  method_id = \'ComputerPartition_changeHostingSubscriptionSoftwareRelease\',\n
   method_kw = {\'new_sr_url\': new_sr_url},\n
   activate_kw = {\'tag\': tag}\n
 )\n
