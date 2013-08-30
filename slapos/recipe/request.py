@@ -119,7 +119,7 @@ class Recipe(object):
     ))
     slave = options.get('slave', 'false').lower() in \
       librecipe.GenericBaseRecipe.TRUE_VALUES
-    # By default
+    # By default XXXX Way of doing it is ugly and dangerous
     requested_state = options.get('state', buildout['slap-connection'].get('requested','started'))
     slap = slapmodule.slap()
     slap.initializeConnection(
