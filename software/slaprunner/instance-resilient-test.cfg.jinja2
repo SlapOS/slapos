@@ -26,7 +26,7 @@ recipe = slapos.cookbook:wrapper
 testnode-parameters = --test-result-path={{ slapparameter_dict.get('test-result-path') }} --revision={{ slapparameter_dict.get('test-suite-revision') }} --node-title={{ slapparameter_dict.get('scalability-launcher-title') }} --test-suite={{ slapparameter_dict.get('test-suite') }} --test-suite-master-url={{ slapparameter_dict.get('test-suite-master-url') }} --log-path=${directory:log}
 test-parameters = server_url=${slap-connection:server-url} key_file=${slap-connection:key-file} cert_file=${slap-connection:cert-file} computer_id=${slap-connection:computer-id} partition_id=${slap-connection:partition-id} software=${slap-connection:software-release-url} namebase=runner slaprunner_rootinstance_name='${request-resilient-instance:name}'
 command-line = {{ bin_directory }}/runResiliencyTest ${:testnode-parameters} ${:test-parameters}
-wrapper-path = ${directory:scripts}/runKVMResiliencyTestSuite
+wrapper-path = ${directory:scripts}/runResiliencyTestSuite
 
 [deploy-standalone-resiliency-test]
 # Used to manually run the KVM test if we don't have a running testnode.
