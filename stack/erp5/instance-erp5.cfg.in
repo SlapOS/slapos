@@ -190,6 +190,7 @@ return = site_url
 
 [publish]
 recipe = slapos.cookbook:publish.serialised
+deadlock-debugger-password = ${deadlock-debugger-password:passwd}
 {% for name, value in publish_dict.items() -%}
 {{   name }} = {{ value }}
 {% endfor -%}
