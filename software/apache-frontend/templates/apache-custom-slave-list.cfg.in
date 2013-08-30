@@ -78,7 +78,7 @@ apache_custom_https = {{ dumps(apache_custom_https) }}
 [{{ publish_section_title }}]
 recipe = slapos.cookbook:publish
 public-ipv4 = {{ public_ipv4 }}
-slave-reference = {{ slave_instance.get('slave_reference') }}
+-slave-reference = {{ slave_instance.get('slave_reference') }}
 {%   else -%}
 {%     do slave_instance_information_list.append({'slave-reference':slave_instance.get('slave_reference'), 'public-ipv4':public_ipv4}) -%}
 {%   endif -%}

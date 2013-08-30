@@ -22,7 +22,7 @@
 {%   do part_list.append(publish_section_title) -%}
 [{{ publish_section_title }}]
 recipe = slapos.cookbook:publish
-slave-reference = {{ slave_reference }}
+-slave-reference = {{ slave_reference }}
 {%   for key, value in slave_information.iteritems() -%}
 {{ key }} = {{ value }}
 {%   endfor -%}
