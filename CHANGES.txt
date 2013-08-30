@@ -1,6 +1,15 @@
 Changes
 =======
 
+0.82 (2013-08-30)
+-----------------
+
+ * Certificate Authority: Can receice certificate to install. [Cedric Le Ninivin]
+ * Squid: Add squid recipe. [Romain Courteaud]
+ * Request: Trasmit instace state to requested instances. [Benjamin Blanc / Cédric Le Ninivin]
+ * Slapconfiguration: Now return instance state. [Cédric Le Ninivin]
+ * Apache Frontend: Remove recipe
+
 0.81 (2013-08-12)
 -----------------
 
