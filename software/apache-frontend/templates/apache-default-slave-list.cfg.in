@@ -1,4 +1,4 @@
-{% if software_type == slap_software_type -%}
+{% if slap_software_type in (software_type1, software_type2)  -%}
 
 {% set cached_server_dict = {} -%}
 {% set part_list = [] -%}
