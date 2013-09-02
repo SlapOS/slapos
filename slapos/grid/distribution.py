@@ -13,6 +13,9 @@ patched_linux_distribution(...):
         see http://bugs.python.org/issue9514
 
     otherwise, Ubuntu will always be reported as an unstable Debian, regardless of the version.
+
+distribution_tuple()
+    returns a (distname, version, id) tuple under linux or cygwin
 """
 
 import platform
@@ -62,3 +65,10 @@ def patched_linux_distribution(distname='', version='', id='',
             pass
 
     return platform.linux_distribution(distname, version, id, supported_dists, full_distribution_name)
+
+
+def distribution_tuple():
+    if platform.system().startswith('CYGWIN_'):
+        return (platform.system(), platform.platform(), '')
+    else:
+        return patched_linux_distribution()

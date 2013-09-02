@@ -220,7 +220,8 @@ class Software(object):
           # but you can change it for development purposes.
 
           [buildout]
-          extends = {url}
+          extends =
+            {url}
           """.format(url=url)))
     self._set_ownership(buildout_cfg)
 

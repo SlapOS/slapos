@@ -482,6 +482,18 @@ class ComputerPartition(SlapRequester):
       raise ResourceNotReady()
     return self._requested_state
 
+  def getType(self):
+    """
+    return the Software Type of the instance.
+    Raise RessourceNotReady if not present.
+    """
+    # XXX: software type should not belong to the parameter dict.
+    software_type = self.getInstanceParameterDict().get(
+        'slap_software_type', None)
+    if not software_type:
+      raise ResourceNotReady()
+    return software_type
+
   def getInstanceParameterDict(self):
     return getattr(self, '_parameter_dict', None) or {}
 

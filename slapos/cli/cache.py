@@ -10,7 +10,7 @@ import sys
 import prettytable
 
 from slapos.grid import networkcache
-from slapos.grid.distribution import patched_linux_distribution
+from slapos.grid.distribution import distribution_tuple
 from slapos.cli.config import ConfigCommand
 
 
@@ -76,7 +76,7 @@ def do_lookup(logger, cache_dir, software_url):
 
     pt = prettytable.PrettyTable(['distribution', 'version', 'id', 'compatible?'])
 
-    linux_distribution = patched_linux_distribution()
+    linux_distribution = distribution_tuple()
 
     for os in ostable:
         compatible = 'yes' if networkcache.os_matches(os, linux_distribution) else 'no'

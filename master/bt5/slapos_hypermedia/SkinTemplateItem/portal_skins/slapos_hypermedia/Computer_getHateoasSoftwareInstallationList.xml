@@ -80,12 +80,13 @@ else:\n
 \n
   for sql_obj in context.getPortalObject().portal_catalog(\n
                                                  portal_type=\'Software Installation\',\n
-                                                 aggregate_relative_url=context.getRelativeUrl(),\n
+                                                 default_aggregate_uid=context.getUid(),\n
+                                                 validation_state=\'validated\',\n
                                                  ):\n
     obj = sql_obj.getObject()\n
     result_dict[\'_links\'][\'item\'].append({\n
-      \'href\': \'%s/Software_getHateoas\' % obj.absolute_url(),\n
-      \'type\': \'application/vnd.slapos.org.hal+json; class=slapos.org.software\',\n
+      \'href\': \'%s/SoftwareInstallation_getHateoas\' % obj.absolute_url(),\n
+      \'type\': \'application/vnd.slapos.org.hal+json; class=slapos.org.software_installation\',\n
     })\n
 \n
   response.setHeader(\'Content-Type\', type)\n
@@ -98,7 +99,7 @@ else:\n
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>Computer_getHateoasSoftwareList</string> </value>
+            <value> <string>Computer_getHateoasSoftwareInstallationList</string> </value>
         </item>
       </dictionary>
     </pickle>

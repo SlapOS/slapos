@@ -844,7 +844,7 @@ class Interface(object):
 
   def addIPv4LocalAddress(self, addr=None):
     """Adds local IPv4 address in ipv4_local_network"""
-    netmask = '255.255.255.254' if sys.platform == 'cygwin' \
+    netmask = str(netaddr.IPNetwork(self.ipv4_local_network).netmask) if sys.platform == 'cygwin' \
              else '255.255.255.255'
     local_address_list = self.getIPv4LocalAddressList()
     if addr is None:
@@ -1211,7 +1211,7 @@ class FormatConfig(object):
 
     # check root
     # XXX in the new CLI, this is checked by the @must_be_root decorator.
-    if root_needed and os.getuid() != 0:
+    if sys.platform != 'cygwin' and root_needed and os.getuid() != 0:
       message = "Root rights are needed"
       self.logger.error(message)
       sys.stderr.write(message + '\n')

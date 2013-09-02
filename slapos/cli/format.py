@@ -57,6 +57,8 @@ class FormatCommand(ConfigCommand):
                         help="Don't actually do anything"
                              " (default: %(default)s)")
 
+        ap.add_argument('-c', '--console',
+                        help="Console output (obsolete)")
         return ap
 
     @must_be_root

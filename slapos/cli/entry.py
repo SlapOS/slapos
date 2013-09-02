@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
 
 import argparse
+import codecs
 import collections
+import locale
 import logging
 import sys
 
@@ -113,6 +115,30 @@ class SlapOSApp(cliff.app.App):
             version=slapos.version.version,
             command_manager=SlapOSCommandManager('slapos.cli'),
         )
+
+    def _set_streams(self, stdin, stdout, stderr):
+        try:
+            # SlapOS: might fail in some systems
+            locale.setlocale(locale.LC_ALL, '')
+        except locale.Error:
+            pass
+
+        if sys.version_info[:2] == (2, 6):
+            # Configure the input and output streams. If a stream is
+            # provided, it must be configured correctly by the
+            # caller. If not, make sure the versions of the standard
+            # streams used by default are wrapped with encodings. This
+            # works around a problem with Python 2.6 fixed in 2.7 and
+            # later (http://hg.python.org/cpython/rev/e60ef17561dc/).
+            lang, encoding = locale.getdefaultlocale()
+            encoding = getattr(sys.stdout, 'encoding', None) or encoding
+            self.stdin = stdin or codecs.getreader(encoding)(sys.stdin)
+            self.stdout = stdout or codecs.getwriter(encoding)(sys.stdout)
+            self.stderr = stderr or codecs.getwriter(encoding)(sys.stderr)
+        else:
+            self.stdin = stdin or sys.stdin
+            self.stdout = stdout or sys.stdout
+            self.stderr = stderr or sys.stderr
 
     def build_option_parser(self, *args, **kw):
         kw.setdefault('argparse_kwargs', {})

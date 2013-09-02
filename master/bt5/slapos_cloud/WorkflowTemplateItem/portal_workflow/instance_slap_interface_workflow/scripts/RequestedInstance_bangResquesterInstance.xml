@@ -50,55 +50,24 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string>from zExceptions import Unauthorized\n
-from AccessControl import getSecurityManager\n
-if REQUEST is None:\n
-  raise Unauthorized\n
+            <value> <string>instance = state_change[\'object\']\n
+portal = instance.getPortalObject()\n
 \n
-response = REQUEST.RESPONSE\n
-type = \'application/vnd.slapos.org.hal+json; class=slapos.org.software\'\n
-\n
-if REQUEST.other[\'method\'] != "GET":\n
-  response.setStatus(405)\n
-  return ""\n
-elif type != context.Base_handleAcceptHeader([type]):\n
-  response.setStatus(406)\n
-  return ""\n
-elif context.getPortalType() not in ["Software Installation"]:\n
-  response.setStatus(403)\n
-  return ""\n
-else:\n
-\n
-  if context.getSlapState() == "stop_requested":\n
-    state = \'stopped\'\n
-  elif context.getSlapState() == "start_requested":\n
-    state = \'started\'\n
-  else:\n
-    state = \'destroyed\'\n
-\n
-  import json\n
-  result_dict = {\n
-      \'_class\': \'slapos.org.software\',\n
-      \'title\': context.getTitle(),\n
-      \'software_url\': context.getUrlString(),\n
-      \'status\': state,\n
-      \'_links\': {\n
-        "self": { "href": context.Base_getRequestUrl(),\n
-                  "type": "application/vnd.slapos.org.hal+json; class=slapos.org.software" },\n
-      },\n
-    }\n
-\n
-  response.setHeader(\'Content-Type\', type)\n
-  return json.dumps(result_dict)\n
+for requester_instance in portal.portal_catalog(\n
+    portal_type="Software Instance",\n
+    default_predecessor_uid=instance.getUid()):\n
+  requester_instance.getObject().bang(\n
+    bang_tree=False,\n
+    comment="%s parameters changed" % instance.getRelativeUrl())\n
 </string> </value>
         </item>
         <item>
             <key> <string>_params</string> </key>
-            <value> <string>REQUEST=None</string> </value>
+            <value> <string>state_change</string> </value>
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>Software_getHateoas</string> </value>
+            <value> <string>RequestedInstance_bangResquesterInstance</string> </value>
         </item>
       </dictionary>
     </pickle>

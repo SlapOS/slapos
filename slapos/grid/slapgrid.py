@@ -627,6 +627,11 @@ class Slapgrid(object):
       logger=self.logger)
 
     computer_partition_state = computer_partition.getState()
+
+    # XXX this line breaks 37 tests
+    # self.logger.info('  Instance type: %s' % computer_partition.getType())
+    self.logger.info('  Instance status: %s' % computer_partition_state)
+
     if computer_partition_state == COMPUTER_PARTITION_STARTED_STATE:
       local_partition.install()
       computer_partition.available()
@@ -635,6 +640,8 @@ class Slapgrid(object):
       computer_partition.started()
     elif computer_partition_state == COMPUTER_PARTITION_STOPPED_STATE:
       try:
+        # We want to process the partition, even if stopped, because it should
+        # propagate the state to children if any.
         local_partition.install()
         computer_partition.available()
       finally:
