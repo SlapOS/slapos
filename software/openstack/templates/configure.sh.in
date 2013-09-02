@@ -3,9 +3,7 @@
 #configure.sh: Should install and configure all needed openstack packages.
 
 NETWORK_CONFIG ="/etc/network/interfaces"
-BRCTL_EXEC=`which brctl`
 GCC_EXEC=`which gcc`
-GIT_EXEC=`which git`
 NOV_URL="${:nova-url}"
 NOVA_CONFIG="/etc/nova/nova.conf"
 BASE_DIR=$HOME
@@ -54,6 +52,7 @@ EOF
 if [ -z "$BRCTL_EXEC" -o ! -x "$BRCTL_EXEC" ]; then
   apt-get install -y bridge-utils ;
 fi
+BRCTL_EXEC=`which brctl`
 
 $BRCTL_EXEC addbr br100
 
@@ -76,6 +75,7 @@ apt-get install -y python-lxml
 if [ -z "$GIT_EXEC" -o ! -x "$GIT_EXEC" ]; then
   apt-get install -y git ;
 fi
+GIT_EXEC=`which git`
 
 #Remove all pip tmp cache is to prevent installation failure
 rm -rf /tmp/pip_build_root/*
@@ -99,6 +99,12 @@ mkdir -p /opt/stack/data
 mkdir -p /opt/stack/data/nova
 mkdir -p /opt/stack/data/nova/instances
 mkdir -p /opt/stack/log
+
+NOVA_COMPUTE_EXEX=`which nova-compute`
+if [ -z "$NOVA_COMPUTE_EXEX" -o ! -x "$NOVA_COMPUTE_EXEX" ]; then
+  echo "ERROR: can't find nova-compute executable file!!!!"
+  exit 1
+fi
 
 cp -rf $BASE_DIR/nova/etc/nova /etc/
 
@@ -165,73 +171,152 @@ enabled = false
 html5proxy_base_url = http://$IPv4:6082/spice_auto.html
 EOF
 
-NOVA_COMPUTE_EXEX=`which nova-compute`
-if [ -z "$EASY_INSTALL" -o ! -x "$EASY_INSTALL" ]; then
-  echo "ERROR: can't find nova-compute executable file!!!!"
-  exit 1
-fi
-
 #Add Nova-compute in init.d If file not exist now
-cat >/etc/init.d/nova-compute <<EOF
-#!/bin/sh
+cat > /etc/init.d/nova-compute << EOF
+#! /bin/sh
+### BEGIN INIT INFO
+# Provides:          skeleton
+# Required-Start:    \$remote_fs \$syslog
+# Required-Stop:     \$remote_fs \$syslog
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: Example initscript
+# Description:       This file should be used to construct scripts to be
+#                    placed in /etc/init.d.
+### END INIT INFO
 
-PATH=/bin:/usr/bin:/sbin:/usr/sbin
-DAEMON=$NOVA_COMPUTE_EXEX
-NAME=nova-compute
+PATH=/sbin:/usr/sbin:/bin:/usr/bin
 DESC="OpenStack Conpute Node"
+NAME=nova-compute
+DAEMON=$NOVA_COMPUTE_EXEX
+DAEMON_ARGS="--config-file $NOVA_CONFIG"
+PIDFILE=/var/run/\$NAME.pid
+SCRIPTNAME=/etc/init.d/\$NAME
 
-pid=\`ps ax | egrep nova-compute | egrep nova.conf | cut -d ' ' -f1\`
+# Exit if the package is not installed
+[ -x "\$DAEMON" ] || exit 0
+
+# Load the VERBOSE setting and other rcS variables
+. /lib/init/vars.sh
+
+# Define LSB log_* functions.
+# Depend on lsb-base (>= 3.2-14) to ensure that this file is present
+# and status_of_proc is working.
+. /lib/lsb/init-functions
+
+#
+# Function that starts the daemon/service
+#
+do_start()
+{
+  # Return
+	#   0 if daemon has been started
+	#   1 if daemon was already running
+	#   2 if daemon could not be started
+	start-stop-daemon --start --quiet --background -m --oknodo --pidfile \$PIDFILE --exec \$DAEMON --test > /dev/null \\
+		|| return 1
+	start-stop-daemon --start --quiet --background -m --oknodo --pidfile \$PIDFILE --exec \$DAEMON -- \\
+		\$DAEMON_ARGS \\
+		|| return 2
+}
+
+#
+# Function that stops the daemon/service
+#
+do_stop()
+{
+	# Return
+	#   0 if daemon has been stopped
+	#   1 if daemon was already stopped
+	#   2 if daemon could not be stopped
+	#   other if a failure occurred
+	start-stop-daemon --stop --quiet --retry=TERM/30/KILL/5 --pidfile \$PIDFILE --name \$NAME
+	RETVAL="\$?"
+	[ "\$RETVAL" = 2 ] && return 2
+	# Wait for children to finish too if this is a daemon that forks
+	# and if the daemon is only ever run from this initscript.
+	# If the above conditions are not satisfied then add some other code
+	# that waits for the process to drop all resources that could be
+	# needed by services started subsequently.  A last resort is to
+	# sleep for some time.
+	start-stop-daemon --stop --quiet --oknodo --retry=0/30/KILL/5 --exec \$DAEMON
+	[ "\$?" = 2 ] && return 2
+	# Many daemons don't delete their pidfiles when they exit.
+	rm -f \$PIDFILE
+	return "\$RETVAL"
+}
+
+#
+# Function that sends a SIGHUP to the daemon/service
+#
+do_reload() {
+	#
+	# If the daemon can reload its configuration without
+	# restarting (for example, when it is sent a SIGHUP),
+	# then implement that here.
+	#
+	start-stop-daemon --stop --signal 1 --quiet --pidfile \$PIDFILE --name \$NAME
+	return 0
+}
 
 case "\$1" in
-start)
-if [ -z "\$pid" ]; then
-echo -n "Starting \$DESC: \$NAME"
-$NOVA_COMPUTE_EXEX --config-file $NOVA_CONFIG & > /dev/null
-else
-echo "\$DESC: \$NAME is curently under execution";
-fi
-
-echo "."
-;;
-
-stop)
-if [ -z "\$pid" ]; then
-echo " nova-compute isn't running, so not killed" ;
-else
-kill -TERM \$pid > /dev/null ;
-fi
-echo "."
-;;
-
-restart)
-if [ -z "\$pid" ]; then
-echo " nova-compute isn't running!!" ;
-else
-kill -TERM \$pid > /dev/null ;
-fi
-# Attente d'une seconde avant de continuer le script
-sleep 1
-
-$NOVA_COMPUTE_EXEX --config-file $NOVA_CONFIG & > /dev/null
-echo "."
-;;
-
-status)
-if [ -z "\$pid" ]; then
-echo " nova-compute: STOPPED/EXITED" ;
-else
-echo " nova-compute: RUNNING PID:\$pid" ;
-fi
-echo "."
-;;
-
-*)
-echo "Usage: /etc/init.d/\$NAME start|stop|restart" >&2
-exit 1
-;;
+  start)
+	[ "\$VERBOSE" != no ] && log_daemon_msg "Starting \$DESC" "\$NAME"
+	do_start
+	case "\$?" in
+		0|1) [ "\$VERBOSE" != no ] && log_end_msg 0 ;;
+		2) [ "\$VERBOSE" != no ] && log_end_msg 1 ;;
+	esac
+	;;
+  stop)
+	[ "\$VERBOSE" != no ] && log_daemon_msg "Stopping \$DESC" "\$NAME"
+	do_stop
+	case "\$?" in
+		0|1) [ "\$VERBOSE" != no ] && log_end_msg 0 ;;
+		2) [ "\$VERBOSE" != no ] && log_end_msg 1 ;;
+	esac
+	;;
+  status)
+       status_of_proc "\$DAEMON" "\$NAME" && exit 0 || exit \$?
+       ;;
+  #reload|force-reload)
+	#
+	# If do_reload() is not implemented then leave this commented out
+	# and leave 'force-reload' as an alias for 'restart'.
+	#
+	#log_daemon_msg "Reloading \$DESC" "\$NAME"
+	#do_reload
+	#log_end_msg \$?
+	#;;
+  restart|force-reload)
+	#
+	# If the "reload" option is implemented then remove the
+	# 'force-reload' alias
+	#
+	log_daemon_msg "Restarting \$DESC" "\$NAME"
+	do_stop
+	case "\$?" in
+	  0|1)
+		do_start
+		case "\$?" in
+			0) log_end_msg 0 ;;
+			1) log_end_msg 1 ;; # Old process is still running
+			*) log_end_msg 1 ;; # Failed to start
+		esac
+		;;
+	  *)
+	  	# Failed to stop
+		log_end_msg 1
+		;;
+	esac
+	;;
+  *)
+	echo "Usage: \$SCRIPTNAME {start|stop|status|restart|force-reload}" >&2
+	exit 3
+	;;
 esac
 
-exit 0
+:
 EOF
 
 chmod +x /etc/init.d/nova-compute
