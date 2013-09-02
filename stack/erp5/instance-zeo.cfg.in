@@ -56,10 +56,9 @@ ipv6 = {{ ipv6 }}
 {% endfor -%}
 {% for storage_family, export_list in storage_dict.items() -%}
 {%   set known_tid_storage_identifier_host = ((ipv4, next_port), ) -%}
-{%   set client_dict = {} -%}
 {%   for export_id, mount_point, cache_size, export_storage_dict in export_list -%}
 {%     do export_storage_dict.__setitem__('path', export_storage_dict.get('path', '%(zodb)s/%(name)s.fs') % {'zodb': default_zodb_path, 'name': export_id}) -%}
-{%     do client_dict.update(export_storage_dict.get('client', {})) -%}
+{%     set client_dict = export_storage_dict.get('client', {}).copy() -%}
 {%     do client_dict.__setitem__('storage', export_id) -%}
 {#     XXX: I would like to raise if export_id is present in zodb_dict -#}
 {%     do zodb_dict.__setitem__(export_id, [
@@ -101,7 +100,7 @@ port = {{ next_port }}
 path = ${directory:promises}/zeo-{{ storage_family }}
 
 {%   if use_ipv6 -%}
-{%     do client_dict.__setitem__('server', '[' ~ ipv6 ~ ']:' ~ next_port) -%}
+{%     set address = '[' ~ ipv6 ~ ']:' ~ next_port -%}
 {%     set tunnel_section_name = zeo_section_name ~ "-tunnel" -%}
 [{{ tunnel_section_name }}]
 < = ipv6toipv4-base
@@ -115,8 +114,11 @@ hostname = {{ "${" ~ tunnel_section_name ~ ":ipv6}" }}
 port = {{ next_port }}
 path = ${directory:promises}/zeo-tunnel-{{ storage_family }}
 {%   else -%}
-{%     do client_dict.__setitem__('server', ipv4 ~ ':' ~ next_port) -%}
+{%     set address = ipv4 ~ ':' ~ next_port -%}
 {%   endif -%}
+{%   for export in export_list -%}
+{%     do zodb_dict[export[0]][2].__setitem__('server', address) -%}
+{%   endfor -%}
 {%   set next_port = next_port + 1 -%}
 {% endfor -%}
 
