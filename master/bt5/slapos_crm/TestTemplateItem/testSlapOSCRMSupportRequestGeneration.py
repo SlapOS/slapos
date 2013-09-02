@@ -169,6 +169,39 @@ portal_workflow.doActionFor(context, action='edit_action', comment='Visited by B
       self.portal.portal_skins.custom.manage_delObjects(script_name)
     transaction.commit()
 
+  def _simulateComputer_getLastestContactedDate(self):
+    script_name = 'Computer_getLastestContactedDate'
+    if script_name in self.portal.portal_skins.custom.objectIds():
+      raise ValueError('Precondition failed: %s exists in custom' % script_name)
+    createZODBPythonScript(self.portal.portal_skins.custom,
+      script_name,
+      '*args, **kw',
+      '# Script body\n'
+"""from DateTime import DateTime
+import json
+
+portal = context.getPortalObject()
+
+# Check if computer has error reported
+memcached_dict = portal.portal_memcached.getMemcachedDict(
+    key_prefix='slap_tool',
+    plugin_path='portal_memcached/default_memcached_plugin')
+
+try:
+  d = memcached_dict[context.getReference()]
+except KeyError:
+  return "Computer didn't contact the server"
+
+log_dict = json.loads(d)
+return DateTime(log_dict.get('created_at'))""")
+    transaction.commit()
+
+  def _dropComputer_getLastestContactedDate(self):
+    script_name = 'Computer_getLastestContactedDate'
+    if script_name in self.portal.portal_skins.custom.objectIds():
+      self.portal.portal_skins.custom.manage_delObjects(script_name)
+    transaction.commit()
+
   def test_Computer_checkState(self):
     computer = self._makeComputer(self.new_id)
     memcached_dict = self.portal.portal_memcached.getMemcachedDict(
@@ -180,12 +213,14 @@ portal_workflow.doActionFor(context, action='edit_action', comment='Visited by B
     )
 
     self._simulateBase_generateSupportRequestForSlapOS()
+    self._simulateComputer_getLastestContactedDate()
 
     try:
       computer.Computer_checkState()
       self.tic()
     finally:
       self._dropBase_generateSupportRequestForSlapOS()
+      self._dropComputer_getLastestContactedDate()
     
     self.assertEqual('Visited by Base_generateSupportRequestForSlapOS',
       computer.workflow_history['edit_workflow'][-1]['comment'])
@@ -194,12 +229,14 @@ portal_workflow.doActionFor(context, action='edit_action', comment='Visited by B
     computer = self._makeComputer(self.new_id)
 
     self._simulateBase_generateSupportRequestForSlapOS()
+    self._simulateComputer_getLastestContactedDate()
 
     try:
       computer.Computer_checkState()
       self.tic()
     finally:
       self._dropBase_generateSupportRequestForSlapOS()
+      self._dropComputer_getLastestContactedDate()
     
     self.assertNotEqual('Visited by Base_generateSupportRequestForSlapOS',
       computer.workflow_history['edit_workflow'][-1]['comment'])
@@ -315,38 +352,6 @@ portal_workflow.doActionFor(context, action='edit_action', comment='Visited by B
     
     self.assertNotEqual('Visited by Base_generateSupportRequestForSlapOS',
       instance.workflow_history['edit_workflow'][-1]['comment'])
-
-  def test_Alarm_checkCloudIsFull(self):
-    computer = self._makeComputer(self.new_id)
-    computer.edit(capacity_scope='close')
-
-    self._simulateBase_generateSupportRequestForSlapOS()
-    try:
-      self.portal.portal_alarms.slapos_check_cloud_is_full.activeSense()
-      self.tic()
-    finally:
-      self._dropBase_generateSupportRequestForSlapOS()
-
-    self.assertEqual('Visited by Base_generateSupportRequestForSlapOS',
-      self.portal.portal_alarms.slapos_check_cloud_is_full.workflow_history['edit_workflow'][-1]['comment'])
-
-  def test_Alarm_checkCloudIsFull_open_computer(self):
-    computer = self._makeComputer(self.new_id)
-    computer.edit(capacity_scope='open')
-    self.tic()
-
-    # Reset slapos_check_cloud_is_full workflow_history for edit_workflow last action
-    self.portal.portal_alarms.slapos_check_cloud_is_full.workflow_history['edit_workflow'][-1]['comment'] = ''
-
-    self._simulateBase_generateSupportRequestForSlapOS()
-    try:
-      self.portal.portal_alarms.slapos_check_cloud_is_full.activeSense()
-      self.tic()
-    finally:
-      self._dropBase_generateSupportRequestForSlapOS()
-
-    self.assertNotEqual('Visited by Base_generateSupportRequestForSlapOS',
-                        self.portal.portal_alarms.slapos_check_cloud_is_full.workflow_history['edit_workflow'][-1]['comment'])
 
   def _simulateSoftwareInstance_checkState(self):
     script_name = 'SoftwareInstance_checkState'
