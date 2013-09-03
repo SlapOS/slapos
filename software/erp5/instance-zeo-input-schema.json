@@ -24,8 +24,8 @@
           "default": {},
           "patternProperties": {
             ".*": {
-              "description": "'%(backup)s' is expanded to partition's ZODB backup path (typically 'srv/backup/zodb')",
-              "default": "%(backup)s/<export identifier>",
+              "description": "'%(backup)s' is expanded to partition's ZODB backup path (typically 'srv/backup/zodb'), and %(name)s with the export id",
+              "default": "%(backup)s/%(name)s",
               "type": "string"
             }
           },

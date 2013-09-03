@@ -70,7 +70,7 @@ ipv6 = {{ ipv6 }}
 {%       do known_tid_storage_identifier_dict.__setitem__(
            json_module.dumps((known_tid_storage_identifier_host, export_id)), (
              export_storage_dict['path'],
-             tidstorage_dict.get('zodb-dict', {}).get(export_id, '%(backup)s/' ~ export_id) % {'backup': zodb_backup_path},
+             tidstorage_dict.get('zodb-dict', {}).get(export_id, '%(backup)s/%(name)s') % {'backup': zodb_backup_path, 'name': export_id},
              mount_point,
            ),
          ) -%}
