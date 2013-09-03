@@ -73,7 +73,7 @@ command-line = "{{ parameter_dict['haproxy'] }}/sbin/haproxy" -f "${haproxy-cfg:
 [apache]
 recipe = slapos.cookbook:apache.zope.backend
 backend-list = {{ dumps(apache_dict.values()) }}
-ip = {{ dumps([ipv6, ipv4]) }}
+ip = {{ dumps(['[' ~ ipv6 ~ ']', ipv4]) }}
 wrapper = ${directory:bin}/apache
 scheme = https
 key-file = ${directory:apache-conf}/apache.key
