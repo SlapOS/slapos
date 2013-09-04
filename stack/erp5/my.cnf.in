@@ -54,15 +54,16 @@ innodb_locks_unsafe_for_binlog = 1
 log_bin = {{ log_bin }}
 {% set binlog_expire_days = parameter_dict['binlog-expire-days'] -%}
 {% if binlog_expire_days > 0 %}expire_logs_days = {{ binlog_expire_days }}{% endif %}
-{% endif -%}
+{% endif %}
 
+# Some dangerous settings you may want to uncomment temporarily
+# if you only want performance or less disk access.
 {# Note: strictly check equality to one, as a last line of defense against users not reading the doc. -#}
-{% if parameter_dict['relaxed-writes'] -%}
-innodb_flush_log_at_trx_commit = 0
-innodb_flush_method = nosync
-innodb_doublewrite = 0
-sync_frm = 0
-{% endif -%}
+{% set x = '' if parameter_dict['relaxed-writes'] else '#' -%}
+{{x}}innodb_flush_log_at_trx_commit = 0
+{{x}}innodb_flush_method = nosync
+{{x}}innodb_doublewrite = 0
+{{x}}sync_frm = 0
 
 # Force utf8 usage
 collation_server = utf8_unicode_ci
