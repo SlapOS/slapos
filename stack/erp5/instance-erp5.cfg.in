@@ -141,7 +141,6 @@ software-type = balancer
 sla-computer_guid = {{ slapparameter_dict.get('balancer-computer-guid', computer_id) }}
 extra-config =
   tcpv4-port
-  haproxy-maxconn
   haproxy-server-check-path
   apache-access-control-string
   apache-ssl-authentication
@@ -160,7 +159,6 @@ config-tcpv4-port = {{ dumps(slapparameter_dict.get('', 2150)) }}
 config-{{ name }} = {{ ' ${' ~ zope_section_id ~ ':connection-zope-address-list}' }}
 {% endfor -%}
 # XXX: should those really be same for all families ?
-config-haproxy-maxconn = {{ slapparameter_dict.get('haproxy-maxconn', 1) }}
 config-haproxy-server-check-path = {{ slapparameter_dict.get('haproxy-server-check-path', '/%(site-id)s/getId') % {'site-id': site_id} }}
 config-apache-access-control-string = {{ slapparameter_dict.get('apache-access-control-string', 'all') }}
 config-apache-ssl-authentication = {{ slapparameter_dict.get('apache-ssl-authentication', '0') }}
