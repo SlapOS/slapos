@@ -223,8 +223,6 @@ parts =
   logrotate-entry-mariadb
   cron
   cron-entry-logrotate
-  cron-entry-mariadb-backup
-  cron-entry-mariadb-backup-expire
   binary-link
   update-mysql
   mysqld
