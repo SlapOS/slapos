@@ -1,0 +1,40 @@
+#############################
+#
+# Deploy hello-world instance
+#
+#############################
+[buildout]
+parts =
+  zerovm-tests-wrapper
+  zpython-samples-wrapper
+
+# Define egg directories to be the one from Software Release
+# (/opt/slapgrid/...)
+# Always the same.
+eggs-directory = ${buildout:eggs-directory}
+develop-eggs-directory = ${buildout:develop-eggs-directory}
+offline = true
+
+
+# Create all needed directories, depending on your needs
+[directory]
+recipe = slapos.cookbook:mkdirectory
+etc = $${buildout:directory}/etc
+# Executables put here will be started and monitored (for daemons)
+service = $${:etc}/service
+scripts = $${:etc}/run
+# Executables put here will be launched after buildout has completed to see
+# if instance is running
+promise = $${:etc}/promise/
+
+
+[zerovm-tests-wrapper]
+recipe = plone.recipe.command
+command = cp ${template-ftests.sh:output} $${directory:scripts}/ftests.sh && chmod +x $${directory:scripts}/ftests.sh
+update-command = cp ${template-ftests.sh:output} $${directory:scripts}/ftests.sh && chmod +x $${directory:scripts}/ftests.sh
+
+[zpython-samples-wrapper]
+recipe = plone.recipe.command
+command = cp ${template-zpython_samples.sh:output} $${directory:scripts}/zpython_samples.sh && chmod +x $${directory:scripts}/zpython_samples.sh
+update-command = cp ${template-zpython_samples.sh:output} $${directory:scripts}/zpython_samples.sh && chmod +x $${directory:scripts}/zpython_samples.sh
+

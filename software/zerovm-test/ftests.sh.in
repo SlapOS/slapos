@@ -1,0 +1,10 @@
+#!/bin/bash
+
+export ZVM_PREFIX=${zerovm:location}
+export ZEROVM_ROOT=${zerovm-source:location}
+export PATH=$ZVM_PREFIX/bin:$PATH
+
+export LD_LIBRARY_PATH=${zeromq2:location}/lib:${zerovm:location}/usr/lib:${glib:location}/lib
+
+$ZEROVM_ROOT/ftests.sh |& sed -r "s/\x1B\[([0-9]{1,3}((;[0-9]{1,3})*)?)?[m|K]//g"
+

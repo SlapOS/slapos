@@ -1,0 +1,11 @@
+#!/bin/bash -e
+
+export ZVM_PREFIX=${zerovm:location}
+export ZEROVM_ROOT=${zerovm-source:location}
+export PATH=$ZVM_PREFIX/bin:$PATH
+
+export LD_LIBRARY_PATH=${zeromq2:location}/lib:${zerovm:location}/usr/lib:${glib:location}/lib
+
+cd ${zerovm-samples-source:location}/zshell
+exec ./run_python_samples.sh
+
