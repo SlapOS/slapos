@@ -10,7 +10,11 @@ per partition. No more (undefined result), no less (IndexError).
 # And think of a way to specify which urls goe through varnish, which go
 # directly to haproxy. (maybe just passing literal configuration file chunk)
 {% set ipv4 = (ipv4_set | list)[0] -%}
-{% set ipv6 = (ipv6_set | list)[0] -%}
+{% set apache_ip_list = [ipv4] -%}
+{% if ipv6_set -%}
+{%   set ipv6 = (ipv6_set | list)[0] -%}
+{%   do apache_ip_list.append('[' ~ ipv6 ~ ']') -%}
+{% endif -%}
 
 {% if use_ipv6 -%}
 [zope-tunnel-base]
@@ -73,7 +77,7 @@ command-line = "{{ parameter_dict['haproxy'] }}/sbin/haproxy" -f "${haproxy-cfg:
 [apache]
 recipe = slapos.cookbook:apache.zope.backend
 backend-list = {{ dumps(apache_dict.values()) }}
-ip = {{ dumps(['[' ~ ipv6 ~ ']', ipv4]) }}
+ip = {{ dumps(apache_ip_list) }}
 wrapper = ${directory:bin}/apache
 scheme = https
 key-file = ${directory:apache-conf}/apache.key
@@ -95,7 +99,9 @@ ssl-authentication-crl = ${certificate-authority:ca-crl}
 [publish]
 recipe = slapos.cookbook:publish.serialised
 {% for family_name, (apache_port, _) in apache_dict.items() -%}
-{{   family_name ~ '-v6' }} = ${apache:scheme}://[{{ ipv6 }}]:{{ apache_port }}
+{%   if ipv6_set -%}
+{{     family_name ~ '-v6' }} = ${apache:scheme}://[{{ ipv6 }}]:{{ apache_port }}
+{%   endif -%}
 {{   family_name }} = ${apache:scheme}://{{ ipv4 }}:{{ apache_port }}
 {% endfor -%}
 
