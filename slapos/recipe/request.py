@@ -163,7 +163,12 @@ class Recipe(object):
         if self.failed is None:
           self.failed = param
     options['requested-state'] = requested_state
-    options['instance-state'] = self.instance.getState()
+    try:
+      options['instance-state'] = self.instance.getState()
+    except slapmodule.ResourceNotReady:
+       # Odd case: SlapOS Master doesn't send the state of a slave partition.
+       # XXX Should be fixed in the SlapOS Master, we should not care here.
+       pass
 
   def _filterForStorage(self, partition_parameter_kw):
     return partition_parameter_kw
