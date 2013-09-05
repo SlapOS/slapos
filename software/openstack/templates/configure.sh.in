@@ -48,11 +48,11 @@ bridge_stp off
 bridge_fd 0
 EOF
 
-
+BRCTL_EXEC=`which brctl`
 if [ -z "$BRCTL_EXEC" -o ! -x "$BRCTL_EXEC" ]; then
   apt-get install -y bridge-utils ;
+  BRCTL_EXEC=`which brctl`
 fi
-BRCTL_EXEC=`which brctl`
 
 $BRCTL_EXEC addbr br100
 
@@ -72,8 +72,10 @@ apt-get install -y python-libvirt
 apt-get install -y libxml2-dev libxslt-dev
 apt-get install -y python-lxml
 
+GIT_EXEC=`which git`
 if [ -z "$GIT_EXEC" -o ! -x "$GIT_EXEC" ]; then
   apt-get install -y git ;
+  GIT_EXEC=`which git`
 fi
 GIT_EXEC=`which git`
 

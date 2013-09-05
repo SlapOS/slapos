@@ -1,0 +1,62 @@
+#!/usr/bin/env bash
+
+#configure.sh: Should automate Openstack installation with all needed packages.
+
+REPO_URL="${:nova-url}"
+NOVA_CONFIG="/etc/nova/nova.conf"
+BASE_DIR="/opt/openstack"
+INSTALL_LOG="/opt/openstack/log"
+NOVA_PASSWD="${:nova-passwd}"
+NOVA_USER="${:nova-user}"
+
+IPv4=`ip addr show eth0 | grep 'inet ' | awk '{print $2}' | cut -d/ -f1`
+if [ -z "$IPv4" ];
+  then IPv4="127.0.0.1"
+fi
+
+if [ -z "$GIT_EXEC" -o ! -x "$GIT_EXEC" ]; then
+  apt-get install -y git ;
+fi
+GIT_EXEC=`which git`
+
+$GIT_EXEC clone $REPO_URL $BASE_DIR;
+mkdir -p $INSTALL_LOG
+
+cp -f $BASE_DIR/samples/local.sh $BASE_DIR/local.sh
+
+cat >$BASE_DIR/localrc <<EOF
+
+DATABASE_PASSWORD=$NOVA_PASSWD
+RABBIT_PASSWORD=$NOVA_PASSWD
+SERVICE_TOKEN=$NOVA_PASSWD
+SERVICE_PASSWORD=$NOVA_PASSWD
+ADMIN_PASSWORD=$NOVA_PASSWD
+
+SERVICE_HOST=$IPv4
+HOST_IP=$IPv4
+
+LOGFILE=$INSTALL_LOG/stack.sh.log
+LOGDAYS=7
+
+# Nova Network Configuration
+PUBLIC_INTERFACE=br100
+FLAT_INTERFACE=eth0
+FLAT_NETWORK_BRIDGE_DEFAULT=br100
+VLAN_INTERFACE = eth0
+ISCSI_IP_PREFIX=192.168.100
+FIXED_RANGE=
+NET_MAN=FlatDHCPManager
+MULTI_HOST=1
+
+EOF
+chmod 600 $BASE_DIR/localrc
+
+#Install Openstack...
+chown -R $NOVA_USER: $BASE_DIR
+
+#sudo dpkg --configure -a
+cd $BASE_DIR; ./stack.sh
+cd $BASE_DIR; ./local.sh
+
+exit 0
+
