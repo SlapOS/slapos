@@ -32,15 +32,11 @@ Simple, easy to (un)marshall classes for slap client/server communication
 
 __all__ = ["slap", "ComputerPartition", "Computer", "SoftwareRelease",
            "SoftwareProductCollection",
-           "Supply", "OpenOrder", "NotFoundError", "Unauthorized",
+           "Supply", "OpenOrder", "NotFoundError",
            "ResourceNotReady", "ServerError"]
 
-import httplib
 import logging
 import re
-import socket
-import ssl
-import urllib
 import urlparse
 from util import xml2dict
 
@@ -48,6 +44,12 @@ from xml.sax import saxutils
 import zope.interface
 from interface import slap as interface
 from xml_marshaller import xml_marshaller
+
+import requests
+# silence messages like 'Starting connection' that are logged with INFO
+urllib3_logger = logging.getLogger('requests.packages.urllib3')
+urllib3_logger.setLevel(logging.WARNING)
+
 
 # XXX fallback_logger to be deprecated together with the old CLI entry points.
 fallback_logger = logging.getLogger(__name__)
@@ -59,25 +61,12 @@ fallback_logger.addHandler(fallback_handler)
 DEFAULT_SOFTWARE_TYPE = 'RootSoftwareInstance'
 
 
-# httplib.HTTPSConnection with key verification
-class HTTPSConnectionCA(httplib.HTTPSConnection):
-  """Patched version of HTTPSConnection which verifies server certificate"""
-  def __init__(self, *args, **kwargs):
-    self.ca_file = kwargs.pop('ca_file')
-    if self.ca_file is None:
-      raise ValueError('ca_file is required argument.')
-    httplib.HTTPSConnection.__init__(self, *args, **kwargs)
+class AuthenticationError(Exception):
+  pass
 
-  def connect(self):
-    "Connect to a host on a given (SSL) port and verify its certificate."
 
-    sock = socket.create_connection((self.host, self.port),
-                                    self.timeout, self.source_address)
-    if self._tunnel_host:
-      self.sock = sock
-      self._tunnel()
-    self.sock = ssl.wrap_socket(sock, self.key_file, self.cert_file,
-        ca_certs=self.ca_file, cert_reqs=ssl.CERT_REQUIRED)
+class ConnectionError(Exception):
+  pass
 
 
 class SlapDocument:
@@ -94,7 +83,7 @@ class SlapRequester(SlapDocument):
   """
   def _requestComputerPartition(self, request_dict):
     try:
-      xml = self._connection_helper.POST('/requestComputerPartition', request_dict)
+      xml = self._connection_helper.POST('requestComputerPartition', request_dict)
     except ResourceNotReady:
       return ComputerPartition(
         request_dict=request_dict,
@@ -156,7 +145,7 @@ class SoftwareRelease(SlapDocument):
   def error(self, error_log, logger=None):
     try:
       # Does not follow interface
-      self._connection_helper.POST('/softwareReleaseError', {
+      self._connection_helper.POST('softwareReleaseError', {
         'url': self.getURI(),
         'computer_id': self.getComputerId(),
         'error_log': error_log})
@@ -164,17 +153,17 @@ class SoftwareRelease(SlapDocument):
       (logger or fallback_logger).exception('')
 
   def available(self):
-    self._connection_helper.POST('/availableSoftwareRelease', {
+    self._connection_helper.POST('availableSoftwareRelease', {
       'url': self.getURI(),
       'computer_id': self.getComputerId()})
 
   def building(self):
-    self._connection_helper.POST('/buildingSoftwareRelease', {
+    self._connection_helper.POST('buildingSoftwareRelease', {
       'url': self.getURI(),
       'computer_id': self.getComputerId()})
 
   def destroyed(self):
-    self._connection_helper.POST('/destroyedSoftwareRelease', {
+    self._connection_helper.POST('destroyedSoftwareRelease', {
       'url': self.getURI(),
       'computer_id': self.getComputerId()})
 
@@ -233,16 +222,12 @@ class NotFoundError(Exception):
   zope.interface.implements(interface.INotFoundError)
 
 
-class Unauthorized(Exception):
-  zope.interface.implements(interface.IUnauthorized)
-
-
 class Supply(SlapDocument):
   zope.interface.implements(interface.ISupply)
 
   def supply(self, software_release, computer_guid=None, state='available'):
     try:
-      self._connection_helper.POST('/supplySupply', {
+      self._connection_helper.POST('supplySupply', {
         'url': software_release,
         'computer_id': computer_guid,
         'state': state})
@@ -282,7 +267,7 @@ class OpenOrder(SlapRequester):
     """
     Requests a computer.
     """
-    xml = self._connection_helper.POST('/requestComputer',
+    xml = self._connection_helper.POST('requestComputer',
       {'computer_title': computer_reference})
     computer = xml_marshaller.loads(xml)
     computer._connection_helper = self._connection_helper
@@ -341,30 +326,29 @@ class Computer(SlapDocument):
   def reportUsage(self, computer_usage):
     if computer_usage == "":
       return
-    self._connection_helper.POST('/useComputer', {
+    self._connection_helper.POST('useComputer', {
       'computer_id': self._computer_id,
       'use_string': computer_usage})
 
   def updateConfiguration(self, xml):
     return self._connection_helper.POST(
-        '/loadComputerConfigurationFromXML', {'xml': xml})
+        'loadComputerConfigurationFromXML', data={'xml': xml})
 
   def bang(self, message):
-    self._connection_helper.POST('/computerBang', {
+    self._connection_helper.POST('computerBang', {
       'computer_id': self._computer_id,
       'message': message})
 
   def getStatus(self):
-    xml = self._connection_helper.GET(
-        '/getComputerStatus?computer_id=%s' % self._computer_id)
+    xml = self._connection_helper.GET('getComputerStatus', {'computer_id': self._computer_id})
     return xml_marshaller.loads(xml)
 
   def revokeCertificate(self):
-    self._connection_helper.POST('/revokeComputerCertificate', {
+    self._connection_helper.POST('revokeComputerCertificate', {
       'computer_id': self._computer_id})
 
   def generateCertificate(self):
-    xml = self._connection_helper.POST('/generateComputerCertificate', {
+    xml = self._connection_helper.POST('generateComputerCertificate', {
       'computer_id': self._computer_id})
     return xml_marshaller.loads(xml)
 
@@ -436,36 +420,36 @@ class ComputerPartition(SlapRequester):
     return self._requestComputerPartition(request_dict)
 
   def building(self):
-    self._connection_helper.POST('/buildingComputerPartition', {
+    self._connection_helper.POST('buildingComputerPartition', {
       'computer_id': self._computer_id,
       'computer_partition_id': self.getId()})
 
   def available(self):
-    self._connection_helper.POST('/availableComputerPartition', {
+    self._connection_helper.POST('availableComputerPartition', {
       'computer_id': self._computer_id,
       'computer_partition_id': self.getId()})
 
   def destroyed(self):
-    self._connection_helper.POST('/destroyedComputerPartition', {
+    self._connection_helper.POST('destroyedComputerPartition', {
       'computer_id': self._computer_id,
       'computer_partition_id': self.getId(),
       })
 
   def started(self):
-    self._connection_helper.POST('/startedComputerPartition', {
+    self._connection_helper.POST('startedComputerPartition', {
       'computer_id': self._computer_id,
       'computer_partition_id': self.getId(),
       })
 
   def stopped(self):
-    self._connection_helper.POST('/stoppedComputerPartition', {
+    self._connection_helper.POST('stoppedComputerPartition', {
       'computer_id': self._computer_id,
       'computer_partition_id': self.getId(),
       })
 
   def error(self, error_log, logger=None):
     try:
-      self._connection_helper.POST('/softwareInstanceError', {
+      self._connection_helper.POST('softwareInstanceError', {
         'computer_id': self._computer_id,
         'computer_partition_id': self.getId(),
         'error_log': error_log})
@@ -473,7 +457,7 @@ class ComputerPartition(SlapRequester):
       (logger or fallback_logger).exception('')
 
   def bang(self, message):
-    self._connection_helper.POST('/softwareInstanceBang', {
+    self._connection_helper.POST('softwareInstanceBang', {
       'computer_id': self._computer_id,
       'computer_partition_id': self.getId(),
       'message': message})
@@ -486,7 +470,7 @@ class ComputerPartition(SlapRequester):
             }
     if slave_reference:
       post_dict['slave_reference'] = slave_reference
-    self._connection_helper.POST('/softwareInstanceRename', post_dict)
+    self._connection_helper.POST('softwareInstanceRename', post_dict)
 
   def getId(self):
     if not getattr(self, '_partition_id', None):
@@ -540,7 +524,7 @@ class ComputerPartition(SlapRequester):
 
   def setConnectionDict(self, connection_dict, slave_reference=None):
     if self.getConnectionParameterDict() != connection_dict:
-      self._connection_helper.POST('/setComputerPartitionConnectionXml', {
+      self._connection_helper.POST('setComputerPartitionConnectionXml', {
           'computer_id': self._computer_id,
           'computer_partition_id': self._partition_id,
           'connection_xml': xml_marshaller.dumps(connection_dict),
@@ -565,39 +549,39 @@ class ComputerPartition(SlapRequester):
     self.usage = usage_log
 
   def getCertificate(self):
-    xml = self._connection_helper.GET(
-        '/getComputerPartitionCertificate?computer_id=%s&'
-        'computer_partition_id=%s' % (self._computer_id, self._partition_id))
+    xml = self._connection_helper.GET('getComputerPartitionCertificate',
+            {
+                'computer_id': self._computer_id,
+                'computer_partition_id': self._partition_id,
+                }
+            )
     return xml_marshaller.loads(xml)
 
   def getStatus(self):
-    xml = self._connection_helper.GET(
-        '/getComputerPartitionStatus?computer_id=%s&'
-        'computer_partition_id=%s' % (self._computer_id, self._partition_id))
+    xml = self._connection_helper.GET('getComputerPartitionStatus',
+            {
+                'computer_id': self._computer_id,
+                'computer_partition_id': self._partition_id,
+                }
+            )
     return xml_marshaller.loads(xml)
 
 
 class ConnectionHelper:
-  error_message_timeout = "\nThe connection timed out. Please try again later."
-  error_message_connect_fail = "Couldn't connect to the server. Please " \
-      "double check given master-url argument, and make sure that IPv6 is " \
-      "enabled on your machine and that the server is available. The " \
-      "original error was: "
-  ssl_error_message_connect_fail = "\nCouldn't authenticate computer. Please "\
-      "check that certificate and key exist and are valid. "
-
-  def __init__(self, connection_wrapper, host, path, key_file=None,
+  def __init__(self, master_url, key_file=None,
                cert_file=None, master_ca_file=None, timeout=None):
-    self.connection_wrapper = connection_wrapper
-    self.host = host
-    self.path = path
+    if master_url.endswith('/'):
+        self.slapgrid_uri = master_url
+    else:
+        # add a slash or the last path segment will be ignored by urljoin
+        self.slapgrid_uri = master_url + '/'
     self.key_file = key_file
     self.cert_file = cert_file
     self.master_ca_file = master_ca_file
     self.timeout = timeout
 
   def getComputerInformation(self, computer_id):
-    xml = self.GET('/getComputerInformation?computer_id=%s' % computer_id)
+    xml = self.GET('getComputerInformation', {'computer_id': computer_id})
     return xml_marshaller.loads(xml)
 
   def getFullComputerInformation(self, computer_id):
@@ -605,100 +589,87 @@ class ConnectionHelper:
     Retrieve from SlapOS Master Computer instance containing all needed
     informations (Software Releases, Computer Partitions, ...).
     """
-    method = '/getFullComputerInformation?computer_id=%s' % computer_id
+    path = 'getFullComputerInformation'
+    params = {'computer_id': computer_id}
     if not computer_id:
       # XXX-Cedric: should raise something smarter than "NotFound".
-      raise NotFoundError(method)
+      raise NotFoundError('%r %r' (path, params))
     try:
-      xml = self.GET(method)
+      xml = self.GET(path, params)
     except NotFoundError:
       # XXX: This is a ugly way to keep backward compatibility,
       # We should stablise slap library soon.
-      xml = self.GET('/getComputerInformation?computer_id=%s' % computer_id)
+      xml = self.GET('getComputerInformation', {'computer_id': computer_id})
 
     return xml_marshaller.loads(xml)
 
-  def connect(self):
-    connection_dict = {
-            'host': self.host
-            }
-    if self.key_file and self.cert_file:
-      connection_dict['key_file'] = self.key_file
-      connection_dict['cert_file'] = self.cert_file
-    if self.master_ca_file:
-      connection_dict['ca_file'] = self.master_ca_file
-    self.connection = self.connection_wrapper(**connection_dict)
+  def do_request(self, method, path, params=None, data=None, headers=None):
+    url = urlparse.urljoin(self.slapgrid_uri, path)
+    if path.startswith('/'):
+      raise ValueError('method path should be relative: %s' % path)
 
-  def GET(self, path):
     try:
-      default_timeout = socket.getdefaulttimeout()
-      socket.setdefaulttimeout(self.timeout)
-      try:
-        self.connect()
-        self.connection.request('GET', self.path + path)
-        response = self.connection.getresponse()
-      # If ssl error : may come from bad configuration
-      except ssl.SSLError as exc:
-        if exc.message == 'The read operation timed out':
-          raise socket.error(str(exc) + self.error_message_timeout)
-        raise ssl.SSLError(str(exc) + self.ssl_error_message_connect_fail)
-      except socket.error as exc:
-        if exc.message == 'timed out':
-          raise socket.error(str(exc) + self.error_message_timeout)
-        raise socket.error(self.error_message_connect_fail + str(exc))
+      if url.startswith('https'):
+        cert = (self.cert_file, self.key_file)
+      else:
+        cert = None
 
-      # check self.response.status and raise exception early
-      if response.status == httplib.REQUEST_TIMEOUT:
-        # resource is not ready
+      # XXX TODO: handle host cert verify
+
+      req = method(url=url,
+                   params=params,
+                   cert=cert,
+                   verify=False,
+                   data=data,
+                   headers=headers,
+                   timeout=self.timeout)
+      req.raise_for_status()
+
+    except (requests.Timeout, requests.ConnectionError) as exc:
+      raise ConnectionError("Couldn't connect to the server. Please "
+                            "double check given master-url argument, and make sure that IPv6 is "
+                            "enabled on your machine and that the server is available. The "
+                            "original error was:\n%s" % exc)
+    except requests.HTTPError as exc:
+      if exc.response.status_code == requests.status_codes.codes.not_found:
+        msg = url
+        if params:
+            msg += ' - %s' % params
+        raise NotFoundError(msg)
+      elif exc.response.status_code == requests.status_codes.codes.request_timeout:
+        # this is explicitly returned by SlapOS master, and does not really mean timeout
         raise ResourceNotReady(path)
-      elif response.status == httplib.NOT_FOUND:
-        raise NotFoundError(path)
-      elif response.status == httplib.FORBIDDEN:
-        raise Unauthorized(path)
-      elif response.status != httplib.OK:
-        message = parsed_error_message(response.status,
-                                       response.read(),
-                                       path)
-        raise ServerError(message)
-    finally:
-      socket.setdefaulttimeout(default_timeout)
+        # XXX TODO test request timeout and resource not found
+      else:
+        # we don't know how or don't want to handle these (including Unauthorized)
+        req.raise_for_status()
+    except requests.exceptions.SSLError as exc:
+      raise AuthenticationError("%s\nCouldn't authenticate computer. Please "
+                                "check that certificate and key exist and are valid." % exc)
 
-    return response.read()
+#    XXX TODO parse server messages for client configure and node register
+#    elif response.status != httplib.OK:
+#      message = parsed_error_message(response.status,
+#                                     response.read(),
+#                                     path)
+#      raise ServerError(message)
 
-  def POST(self, path, parameter_dict,
+    return req
+
+  def GET(self, path, params=None):
+    req = self.do_request(requests.get,
+                          path=path,
+                          params=params)
+    return req.text
+
+  def POST(self, path, params=None, data=None,
            content_type='application/x-www-form-urlencoded'):
-    try:
-      default_timeout = socket.getdefaulttimeout()
-      socket.setdefaulttimeout(self.timeout)
-      try:
-        self.connect()
-        header_dict = {'Content-type': content_type}
-        self.connection.request("POST", self.path + path,
-            urllib.urlencode(parameter_dict), header_dict)
-      # If ssl error : must come from bad configuration
-      except ssl.SSLError as exc:
-        raise ssl.SSLError(self.ssl_error_message_connect_fail + str(exc))
-      except socket.error as exc:
-        raise socket.error(self.error_message_connect_fail + str(exc))
-
-      response = self.connection.getresponse()
-      # check self.response.status and raise exception early
-      if response.status == httplib.REQUEST_TIMEOUT:
-        # resource is not ready
-        raise ResourceNotReady("%s - %s" % (path, parameter_dict))
-      elif response.status == httplib.NOT_FOUND:
-        raise NotFoundError("%s - %s" % (path, parameter_dict))
-      elif response.status == httplib.FORBIDDEN:
-        raise Unauthorized("%s - %s" % (path, parameter_dict))
-      elif response.status != httplib.OK:
-        message = parsed_error_message(response.status,
-                                       response.read(),
-                                       path)
-        raise ServerError(message)
-    finally:
-      socket.setdefaulttimeout(default_timeout)
-
-    return response.read()
+    req = self.do_request(requests.post,
+                          path=path,
+                          params=params,
+                          data=data,
+                          headers={'Content-type': content_type})
+    return req.text
 
 
 class slap:
@@ -706,22 +677,10 @@ class slap:
 
   def initializeConnection(self, slapgrid_uri, key_file=None, cert_file=None,
                            master_ca_file=None, timeout=60):
-    scheme, netloc, path, query, fragment = urlparse.urlsplit(slapgrid_uri)
-    if not (query == '' and fragment == ''):
-      raise AttributeError('Passed URL %r issue: not parseable' % slapgrid_uri)
+    if master_ca_file:
+      raise NotImplementedError('Master certificate not verified in this version: %s' % master_ca_file)
 
-    if scheme == 'http':
-      connection_wrapper = httplib.HTTPConnection
-    elif scheme == 'https':
-      if master_ca_file is not None:
-        connection_wrapper = HTTPSConnectionCA
-      else:
-        connection_wrapper = httplib.HTTPSConnection
-    else:
-      raise AttributeError('Passed URL %r issue: there is no support '
-                           'for %r protocol' % (slapgrid_uri, scheme))
-    self._connection_helper = ConnectionHelper(connection_wrapper,
-          netloc, path, key_file, cert_file, master_ca_file, timeout)
+    self._connection_helper = ConnectionHelper(slapgrid_uri, key_file, cert_file, master_ca_file, timeout)
 
   # XXX-Cedric: this method is never used and thus should be removed.
   def registerSoftwareRelease(self, software_release):
@@ -749,9 +708,12 @@ class slap:
       # XXX-Cedric: should raise something smarter than NotFound
       raise NotFoundError
 
-    xml = self._connection_helper.GET('/registerComputerPartition?' \
-        'computer_reference=%s&computer_partition_reference=%s' % (
-          computer_guid, partition_id))
+    xml = self._connection_helper.GET('registerComputerPartition',
+            {
+                'computer_reference': computer_guid,
+                'computer_partition_reference': partition_id,
+                }
+            )
     result = xml_marshaller.loads(xml)
     # XXX: dirty hack to make computer partition usable. xml_marshaller is too
     # low-level for our needs here.

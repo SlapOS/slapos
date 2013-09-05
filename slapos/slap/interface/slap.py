@@ -53,12 +53,6 @@ class IResourceNotReady(IException):
   ready on the slap server.
   """
 
-class IUnauthorized(IException):
-  """
-  Classes which implement IUnauthorized are used to report missing
-  permissions on the slap server.
-  """
-
 class IRequester(Interface):
   """
   Classes which implement IRequester can request software instance to the
