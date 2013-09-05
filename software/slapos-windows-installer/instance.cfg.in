@@ -11,25 +11,22 @@ recipe = slapos.recipe.cmmi
 # This url is useless
 path = $${buildout:directory}
 pre-configure =
-  declare -r installer=${installer:location}/slapos-windows-all-in-one.exe
+  declare -r installer=/opt/publish/slapos-windows-all-in-one.exe
   declare -r targetdir=$(cygpath -w $${buildout:directory})
   declare -r logfile=$(cygpath -w $${buildout:directory}/slapos-windows-installer.log)
   echo "$installer /DIR=\"\$targetdir\" /LOG=\"\$logfile\" /VERYSILENT" > $${:configure-command}
   chmod +x $${:configure-command}
 configure-command = $${buildout:directory}/bootloader.sh
 pre-install =
-  declare -r cyghome="$(cygpath -m -a /)/.."
-  cp $cyghome/setup.exe $${buildout:directory}
-  cp $cyghome/certificate $${buildout:directory}/cygwin/certificate
-  cp $cyghome/key $${buildout:directory}/cygwin/key
-  cp $cyghome/test-computer.crt $${buildout:directory}/cygwin/computer.crt
-  cp $cyghome/test-computer.key $${buildout:directory}/cygwin/computer.key
-  cp ${installer:cygroot}/slapos-windows-wrapper.bat $${buildout:directory}/slapos-windows-wrapper.bat
+  cp /certificate $${buildout:directory}/cygwin/certificate
+  cp /key $${buildout:directory}/cygwin/key
+  cp /test-computer.crt $${buildout:directory}/cygwin/computer.crt
+  cp /test-computer.key $${buildout:directory}/cygwin/computer.key
+  cp /etc/slapos/scripts/slapos-windows-wrapper.bat $${buildout:directory}/slapos-windows-wrapper.bat
 make-binary = true
 post-install =
   $${buildout:directory}/slapos-windows-wrapper.bat /etc/slapos/scripts/slapos-configure.sh \
       --password=slaptester \
-      --ipv4-local-network=10.89.208.0/24 \
       --client-certificate=/certificate \
       --client-key=/key \
       --computer-certificate=/computer.crt \
