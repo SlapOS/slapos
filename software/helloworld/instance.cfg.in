@@ -4,7 +4,7 @@
 #
 #############################
 #
-# In this file is explained how to add a new value that the software will handle
+# Now we are going how to add new parts, using new recipes
 #
 #############################
 [buildout]
@@ -12,6 +12,8 @@ parts =
   directory
   hello-world
   publish-connection-parameter
+# Don't forget to include the new part ! It will also call [template-get] in software.cfg
+  template-creation
 
 # Define egg directories to be the one from Software Release
 # (/opt/slapgrid/...)
@@ -55,6 +57,8 @@ recipe = slapos.cookbook:mkdirectory
 home = $${buildout:directory}
 etc = $${:home}/etc
 var = $${:home}/var
+# Creation of the folder wich will contain the jinja template
+data-fold = $${:home}/srv/data
 # Executables put here will be started but not monitored (for startup scripts)
 script = $${:etc}/run/
 # Executables put here will be started and monitored (for daemons)
@@ -64,6 +68,28 @@ service = $${:etc}/service
 promise = $${:etc}/promise/
 # Path of the log directory used by our service (see [hello-world])
 log = $${:var}/log
+
+
+# It is now time for Jinja !
+[template-creation]
+recipe = slapos.recipe.template:jinja2
+# We could also define the template inline.
+#template = inline:
+#  ----------------------------------
+#  Title : {{title}}
+#  ----------------------------------
+#  Hello {{name}}
+# the value of template will be replaced thanks to the information given in software.cfg, during its own buildout
+template = ${template-get:location}/${template-get:filename}
+# Here we can declare where we want to get the new file rendered by Jinja
+rendered = $${directory:data-fold}/data1.txt
+mode = 700
+# In the context we can define the specific values wich will be substituted in the template
+# key mean that the value is to get in another section of this buildout config file. Go to http://git.erp5.org/gitweb/slapos.recipe.template.git/blob/HEAD:/slapos/recipe/template/README.jinja2.txt?js=1 for more information
+context =
+  key name instance-parameter:configuration.name
+  key title instance-parameter:configuration.title
+
 
 # Create a simple shell script that will only output your name if you
 # specified it as instance parameter.
@@ -87,4 +113,5 @@ wrapper-path = $${directory:service}/hello-world
 recipe = slapos.cookbook:publish
 name = Hello $${instance-parameter:configuration.name}!
 # Adds the published parameter "title". By default, its value is "Title : " + the value declared in the section [instance-parameter] above.
-title = Title : $${instance-parameter:configuration.title}
+title = $${instance-parameter:configuration.title}
+path = $${template-creation:rendered}
