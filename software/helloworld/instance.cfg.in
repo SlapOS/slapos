@@ -112,6 +112,6 @@ wrapper-path = $${directory:service}/hello-world
 [publish-connection-parameter]
 recipe = slapos.cookbook:publish
 name = Hello $${instance-parameter:configuration.name}!
-# Adds the published parameter "title". By default, its value is "Title : " + the value declared in the section [instance-parameter] above.
+# Adds the published parameter "title". 
 title = $${instance-parameter:configuration.title}
 path = $${template-creation:rendered}
