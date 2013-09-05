@@ -83,7 +83,7 @@ class SlapRequester(SlapDocument):
   """
   def _requestComputerPartition(self, request_dict):
     try:
-      xml = self._connection_helper.POST('requestComputerPartition', request_dict)
+      xml = self._connection_helper.POST('requestComputerPartition', data=request_dict)
     except ResourceNotReady:
       return ComputerPartition(
         request_dict=request_dict,
@@ -145,7 +145,7 @@ class SoftwareRelease(SlapDocument):
   def error(self, error_log, logger=None):
     try:
       # Does not follow interface
-      self._connection_helper.POST('softwareReleaseError', {
+      self._connection_helper.POST('softwareReleaseError', data={
         'url': self.getURI(),
         'computer_id': self.getComputerId(),
         'error_log': error_log})
@@ -153,17 +153,17 @@ class SoftwareRelease(SlapDocument):
       (logger or fallback_logger).exception('')
 
   def available(self):
-    self._connection_helper.POST('availableSoftwareRelease', {
+    self._connection_helper.POST('availableSoftwareRelease', data={
       'url': self.getURI(),
       'computer_id': self.getComputerId()})
 
   def building(self):
-    self._connection_helper.POST('buildingSoftwareRelease', {
+    self._connection_helper.POST('buildingSoftwareRelease', data={
       'url': self.getURI(),
       'computer_id': self.getComputerId()})
 
   def destroyed(self):
-    self._connection_helper.POST('destroyedSoftwareRelease', {
+    self._connection_helper.POST('destroyedSoftwareRelease', data={
       'url': self.getURI(),
       'computer_id': self.getComputerId()})
 
@@ -227,7 +227,7 @@ class Supply(SlapDocument):
 
   def supply(self, software_release, computer_guid=None, state='available'):
     try:
-      self._connection_helper.POST('supplySupply', {
+      self._connection_helper.POST('supplySupply', data={
         'url': software_release,
         'computer_id': computer_guid,
         'state': state})
@@ -267,8 +267,7 @@ class OpenOrder(SlapRequester):
     """
     Requests a computer.
     """
-    xml = self._connection_helper.POST('requestComputer',
-      {'computer_title': computer_reference})
+    xml = self._connection_helper.POST('requestComputer', data={'computer_title': computer_reference})
     computer = xml_marshaller.loads(xml)
     computer._connection_helper = self._connection_helper
     return computer
@@ -326,16 +325,15 @@ class Computer(SlapDocument):
   def reportUsage(self, computer_usage):
     if computer_usage == "":
       return
-    self._connection_helper.POST('useComputer', {
+    self._connection_helper.POST('useComputer', data={
       'computer_id': self._computer_id,
       'use_string': computer_usage})
 
   def updateConfiguration(self, xml):
-    return self._connection_helper.POST(
-        'loadComputerConfigurationFromXML', data={'xml': xml})
+    return self._connection_helper.POST('loadComputerConfigurationFromXML', data={'xml': xml})
 
   def bang(self, message):
-    self._connection_helper.POST('computerBang', {
+    self._connection_helper.POST('computerBang', data={
       'computer_id': self._computer_id,
       'message': message})
 
@@ -344,11 +342,11 @@ class Computer(SlapDocument):
     return xml_marshaller.loads(xml)
 
   def revokeCertificate(self):
-    self._connection_helper.POST('revokeComputerCertificate', {
+    self._connection_helper.POST('revokeComputerCertificate', data={
       'computer_id': self._computer_id})
 
   def generateCertificate(self):
-    xml = self._connection_helper.POST('generateComputerCertificate', {
+    xml = self._connection_helper.POST('generateComputerCertificate', data={
       'computer_id': self._computer_id})
     return xml_marshaller.loads(xml)
 
@@ -420,36 +418,36 @@ class ComputerPartition(SlapRequester):
     return self._requestComputerPartition(request_dict)
 
   def building(self):
-    self._connection_helper.POST('buildingComputerPartition', {
+    self._connection_helper.POST('buildingComputerPartition', data={
       'computer_id': self._computer_id,
       'computer_partition_id': self.getId()})
 
   def available(self):
-    self._connection_helper.POST('availableComputerPartition', {
+    self._connection_helper.POST('availableComputerPartition', data={
       'computer_id': self._computer_id,
       'computer_partition_id': self.getId()})
 
   def destroyed(self):
-    self._connection_helper.POST('destroyedComputerPartition', {
+    self._connection_helper.POST('destroyedComputerPartition', data={
       'computer_id': self._computer_id,
       'computer_partition_id': self.getId(),
       })
 
   def started(self):
-    self._connection_helper.POST('startedComputerPartition', {
+    self._connection_helper.POST('startedComputerPartition', data={
       'computer_id': self._computer_id,
       'computer_partition_id': self.getId(),
       })
 
   def stopped(self):
-    self._connection_helper.POST('stoppedComputerPartition', {
+    self._connection_helper.POST('stoppedComputerPartition', data={
       'computer_id': self._computer_id,
       'computer_partition_id': self.getId(),
       })
 
   def error(self, error_log, logger=None):
     try:
-      self._connection_helper.POST('softwareInstanceError', {
+      self._connection_helper.POST('softwareInstanceError', data={
         'computer_id': self._computer_id,
         'computer_partition_id': self.getId(),
         'error_log': error_log})
@@ -457,7 +455,7 @@ class ComputerPartition(SlapRequester):
       (logger or fallback_logger).exception('')
 
   def bang(self, message):
-    self._connection_helper.POST('softwareInstanceBang', {
+    self._connection_helper.POST('softwareInstanceBang', data={
       'computer_id': self._computer_id,
       'computer_partition_id': self.getId(),
       'message': message})
@@ -470,7 +468,7 @@ class ComputerPartition(SlapRequester):
             }
     if slave_reference:
       post_dict['slave_reference'] = slave_reference
-    self._connection_helper.POST('softwareInstanceRename', post_dict)
+    self._connection_helper.POST('softwareInstanceRename', data=post_dict)
 
   def getId(self):
     if not getattr(self, '_partition_id', None):
@@ -524,7 +522,7 @@ class ComputerPartition(SlapRequester):
 
   def setConnectionDict(self, connection_dict, slave_reference=None):
     if self.getConnectionParameterDict() != connection_dict:
-      self._connection_helper.POST('setComputerPartitionConnectionXml', {
+      self._connection_helper.POST('setComputerPartitionConnectionXml', data={
           'computer_id': self._computer_id,
           'computer_partition_id': self._partition_id,
           'connection_xml': xml_marshaller.dumps(connection_dict),
