@@ -6,7 +6,7 @@ import sys
 from slapos.cli.command import must_be_root
 from slapos.cli.config import ConfigCommand
 from slapos.format import do_format, FormatConfig, tracing_monkeypatch, UsageError
-
+from slapos.util import string_to_boolean
 
 class FormatCommand(ConfigCommand):
     """
@@ -61,13 +61,17 @@ class FormatCommand(ConfigCommand):
                         help="Console output (obsolete)")
         return ap
 
-    @must_be_root
     def take_action(self, args):
         configp = self.fetch_config(args)
 
         conf = FormatConfig(logger=self.app.log)
 
         conf.mergeConfig(args, configp)
+
+        # Parse if we have to check if running from root
+        # XXX document this feature.
+        if string_to_boolean(getattr(conf, 'root_check', 'True').lower()):
+          must_be_root(lambda:None)
 
         if not self.app.options.log_file and conf.log_file:
             # no log file is provided by argparser,
