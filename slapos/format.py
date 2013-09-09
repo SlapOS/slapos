@@ -54,6 +54,7 @@ import xml_marshaller.xml_marshaller
 
 from slapos.util import chownDirectory
 from slapos.util import mkdir_p
+from slapos.util import is_string_true
 import slapos.slap as slap
 
 
@@ -1202,20 +1203,6 @@ class FormatConfig(object):
     # Required, even for dry run
     if self.alter_network and self.create_tap:
       self.checkRequiredBinary(['brctl'])
-
-    # Check if root is needed
-    if (self.alter_network or self.alter_user) and not self.dry_run:
-      root_needed = True
-    else:
-      root_needed = False
-
-    # check root
-    # XXX in the new CLI, this is checked by the @must_be_root decorator.
-    if sys.platform != 'cygwin' and root_needed and os.getuid() != 0:
-      message = "Root rights are needed"
-      self.logger.error(message)
-      sys.stderr.write(message + '\n')
-      sys.exit()
 
     # Check mandatory options
     for parameter in ('computer_id', 'instance_root', 'master_url',
