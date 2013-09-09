@@ -54,7 +54,6 @@ import xml_marshaller.xml_marshaller
 
 from slapos.util import chownDirectory
 from slapos.util import mkdir_p
-from slapos.util import is_string_true
 import slapos.slap as slap
 
 
@@ -367,6 +366,33 @@ class Computer(object):
 
     return computer
 
+  def _speedHackAddAllOldIpsToInterface(self):
+    """
+    Speed hack:
+    Blindly add all IPs from existing configuration, just to speed up actual
+    computer configuration later on.
+    """
+    # XXX-TODO: only add an address if it doesn't already exist.
+    if self.ipv6_interface:
+      interface_name = self.ipv6_interface
+    elif self.interface:
+      interface_name = self.interface.name
+    else:
+      return
+
+    for partition in self.partition_list:
+      try:
+        for address in partition.address_list:
+          try:
+            netmask = netmaskToPrefixIPv6(address['netmask'])
+          except:
+            continue
+          callAndRead(['ip', 'addr', 'add',
+                       '%s/%s' % (address['addr'], netmask),
+                       'dev', interface_name])
+      except ValueError:
+        pass
+
   def construct(self, alter_user=True, alter_network=True, create_tap=True):
     """
     Construct the computer object as it is.
@@ -389,26 +415,8 @@ class Computer(object):
       chownDirectory(slapsoft.path, slapsoft_pw.pw_uid, slapsoft_pw.pw_gid)
     os.chmod(self.software_root, 0o755)
 
-    # Speed hack:
-    # Blindly add all IPs from existing configuration, just to speed up actual
-    # computer configuration later on.
-    # XXX-TODO: only add an address if it doesn't already exist.
-    if self.ipv6_interface:
-      interface_name = self.ipv6_interface
-    else:
-      interface_name = self.interface.name
-    for partition in self.partition_list:
-      try:
-        for address in partition.address_list:
-          try:
-            netmask = netmaskToPrefixIPv6(address['netmask'])
-          except:
-            continue
-          callAndRead(['ip', 'addr', 'add',
-                       '%s/%s' % (address['addr'], netmask),
-                       'dev', interface_name])
-      except ValueError:
-        pass
+    if alter_network:
+      self._speedHackAddAllOldIpsToInterface()
 
     try:
       for partition_index, partition in enumerate(self.partition_list):
