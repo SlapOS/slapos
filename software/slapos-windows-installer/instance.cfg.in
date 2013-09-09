@@ -18,16 +18,12 @@ pre-configure =
   chmod +x $${:configure-command}
 configure-command = $${buildout:directory}/bootloader.sh
 pre-install =
-  cp /certificate $${buildout:directory}/cygwin/certificate
-  cp /key $${buildout:directory}/cygwin/key
-  cp /test-computer.crt $${buildout:directory}/cygwin/computer.crt
-  cp /test-computer.key $${buildout:directory}/cygwin/computer.key
+  cp /opt/test-agent/certificate $${buildout:directory}/cygwin/certificate
+  cp /opt/test-agent/key $${buildout:directory}/cygwin/key
+  cp /opt/test-agent/computer.crt $${buildout:directory}/cygwin/computer.crt
+  cp /opt/test-agent/computer.key $${buildout:directory}/cygwin/computer.key
   cp /etc/slapos/scripts/slapos-windows-wrapper.bat $${buildout:directory}/slapos-windows-wrapper.bat
 make-binary = true
 post-install =
   $${buildout:directory}/slapos-windows-wrapper.bat /etc/slapos/scripts/slapos-configure.sh \
-      --password=slaptester \
-      --client-certificate=/certificate \
-      --client-key=/key \
-      --computer-certificate=/computer.crt \
-      --computer-key=/computer.key
+      --password=slaptester
