@@ -26,4 +26,6 @@ pre-install =
 make-binary = true
 post-install =
   $${buildout:directory}/slapos-windows-wrapper.bat /etc/slapos/scripts/slapos-configure.sh \
-      --password=slaptester
+      --password=slaptester \
+      --computer-certificate=/computer.crt \
+      --computer-key=/computer.key
