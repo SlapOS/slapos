@@ -18,8 +18,8 @@ pre-configure =
   chmod +x $${:configure-command}
 configure-command = $${buildout:directory}/bootloader.sh
 pre-install =
-  cp /opt/test-agent/certificate $${buildout:directory}/cygwin/certificate
-  cp /opt/test-agent/key $${buildout:directory}/cygwin/key
+  cp /opt/test-agent/client.crt $${buildout:directory}/cygwin/client.crt
+  cp /opt/test-agent/client.key $${buildout:directory}/cygwin/client.key
   cp /opt/test-agent/computer.crt $${buildout:directory}/cygwin/computer.crt
   cp /opt/test-agent/computer.key $${buildout:directory}/cygwin/computer.key
   cp /etc/slapos/scripts/slapos-windows-wrapper.bat $${buildout:directory}/slapos-windows-wrapper.bat
