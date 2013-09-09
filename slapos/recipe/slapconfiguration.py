@@ -133,11 +133,11 @@ class Recipe(object):
 
       # also export single ip values for those recipes that don't support sets.
       if ipv4_set:
-          options['ipv4-random'] = list(ipv4_set)[0]
+          options['ipv4-random'] = list(ipv4_set)[0].encode('UTF-8')
       if ipv6_set:
-          options['ipv6-random'] = list(ipv6_set)[0]
+          options['ipv6-random'] = list(ipv6_set)[0].encode('UTF-8')
 
-      options['tap'] = tap_set
+      options['tap'] = tap_set.encode('UTF-8')
       parameter_dict = self._expandParameterDict(options, parameter_dict)
       match = self.OPTCRE_match
       for key, value in parameter_dict.iteritems():
