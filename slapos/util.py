@@ -43,3 +43,24 @@ def parse_certificate_key_pair(html):
   key = html[k_start:k_end]
 
   return certificate, key
+
+
+def string_to_boolean(string):
+  """
+  Return True if the value of the "string" parameter can be parsed as True.
+  Return False if the value of the "string" parameter can be parsed as False.
+  Otherwise, Raise.
+
+  The parser is completely arbitrary, see code for actual implementation.
+  """
+  if not isinstance(string, str) and not isinstance(string, unicode):
+    raise ValueError('Given value is not a string.')
+  acceptable_true_values = ['true']
+  acceptable_false_values = ['false']
+  string = string.lower()
+  if string in acceptable_true_values:
+    return True
+  if string in acceptable_false_values:
+    return False
+  else:
+    raise ValueError('%s is neither True nor False.' % string)

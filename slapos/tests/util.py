@@ -26,13 +26,13 @@
 ##############################################################################
 import os
 import slapos.util
+from slapos.util import string_to_boolean
 import tempfile
 import unittest
 import shutil
 from pwd import getpwnam
 
-
-class TestMkdirP(unittest.TestCase):
+class TestUtil(unittest.TestCase):
   """
   Tests methods available in the slapos.util module.
   """
@@ -106,6 +106,27 @@ class TestMkdirP(unittest.TestCase):
     self.assertTrue(gid == gid_check_file_txt)
 
     shutil.rmtree(root_slaptest)
+
+  def test_string_to_boolean_with_true_values(self):
+    """
+    Check that mkdir_p doesn't raise if directory already exist.
+    """
+    for value in ['true', 'True', 'TRUE']:
+      self.assertTrue(string_to_boolean(value))
+
+  def test_string_to_boolean_with_false_values(self):
+    """
+    Check that mkdir_p doesn't raise if directory already exist.
+    """
+    for value in ['false', 'False', 'False']:
+      self.assertFalse(string_to_boolean(value))
+
+  def test_string_to_boolean_with_incorrect_values(self):
+    """
+    Check that mkdir_p doesn't raise if directory already exist.
+    """
+    for value in [True, False, 1, '1', 't', 'tru', 'truelle', 'f', 'fals', 'falsey']:
+      self.assertRaises(ValueError, string_to_boolean, value)
 
 if __name__ == '__main__':
   unittest.main()
