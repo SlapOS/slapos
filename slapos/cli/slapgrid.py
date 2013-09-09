@@ -7,6 +7,7 @@ from slapos.grid.utils import setRunning, setFinished
 from slapos.grid.slapgrid import (merged_options, check_missing_parameters, check_missing_files,
                                   random_delay, create_slapgrid_object)
 
+from slapos.util import string_to_boolean
 
 class SlapgridCommand(ConfigCommand):
     command_group = 'node'
@@ -62,10 +63,14 @@ class SlapgridCommand(ConfigCommand):
                         help='Deprecated. Will only work from configuration file in the future.')
         return ap
 
-    @must_be_root
     def take_action(self, args):
         configp = self.fetch_config(args)
         options = merged_options(args, configp)
+
+        # Parse if we have to check if running from root
+        # XXX document this feature.
+        if string_to_boolean(options.get('root_check', 'True').lower()):
+          must_be_root(lambda:None)
 
         check_missing_parameters(options)
         check_missing_files(options)
