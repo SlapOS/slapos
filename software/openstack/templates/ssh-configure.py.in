@@ -51,7 +51,7 @@ def installCompute():
   print "Checking nova service status..."
   nova_command = 'echo %s | sudo -S /etc/init.d/nova-compute status' % password
   stdin, stdout, stderr = client.exec_command(nova_command)
-  with open(ssh_check, 'a') as output:
+  with open(ssh_check, 'w') as output:
     output.write(stdout.read())
 
 def installManage():
@@ -60,14 +60,14 @@ def installManage():
   print "Downloading and installing Openstack on computer..."
   install_command = "echo %s | sudo -S /bin/sh configure.sh" % password
   stdin, stdout, stderr = client.exec_command(install_command)
-  with open(ssh_run, 'a') as output:
+  with open(ssh_run, 'w') as output:
     output.write(stdout.read())
   #Check installation status
   #Check nova service status
   print "Checking nova service status..."
   nova_command = 'nova-manage service list'
   stdin, stdout, stderr = client.exec_command(nova_command)
-  with open(ssh_check, 'a') as output:
+  with open(ssh_check, 'w') as output:
     output.write(stdout.read())
 
 if __name__ == '__main__':

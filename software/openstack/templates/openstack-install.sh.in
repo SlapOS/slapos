@@ -20,6 +20,9 @@ fi
 GIT_EXEC=`which git`
 
 $GIT_EXEC clone $REPO_URL $BASE_DIR;
+cd $BASE_DIR
+$GIT_EXEC reset --hard ${:devstack-revision}
+
 mkdir -p $INSTALL_LOG
 
 cp -f $BASE_DIR/samples/local.sh $BASE_DIR/local.sh
@@ -42,7 +45,7 @@ LOGDAYS=7
 PUBLIC_INTERFACE=br100
 FLAT_INTERFACE=eth0
 FLAT_NETWORK_BRIDGE_DEFAULT=br100
-VLAN_INTERFACE = eth0
+VLAN_INTERFACE=eth0
 ISCSI_IP_PREFIX=192.168.100
 FIXED_RANGE=
 NET_MAN=FlatDHCPManager
@@ -56,7 +59,15 @@ chown -R $NOVA_USER: $BASE_DIR
 
 #sudo dpkg --configure -a
 cd $BASE_DIR; ./stack.sh
-cd $BASE_DIR; ./local.sh
+#cd $BASE_DIR; ./local.sh
 
+if grep "/opt/stack/openstack/rejoin-stack.sh" /etc/rc.local > /dev/null
+then  
+  echo "Skipping configuring rc.local file..."
+else
+  sudo sed -n '$!p' /etc/rc.local > temp-rc.local;
+  sudo mv temp-rc.local /etc/rc.local;
+  sudo echo -e "/opt/stack/openstack/rejoin-stack.sh \n\nexit 0" >> /etc/rc.local;
+fi
 exit 0
 
