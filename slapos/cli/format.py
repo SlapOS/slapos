@@ -35,13 +35,11 @@ class FormatCommand(ConfigCommand):
 
         ap.add_argument('--alter_user',
                         choices=['True', 'False'],
-                        default='True',
                         help='Shall slapformat alter user database'
                              ' (default: %(default)s)')
 
         ap.add_argument('--alter_network',
                         choices=['True', 'False'],
-                        default='True',
                         help='Shall slapformat alter network configuration'
                              ' (default: %(default)s)')
 
