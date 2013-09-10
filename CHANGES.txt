@@ -1,6 +1,11 @@
 Changes
 =======
 
+0.83.1 (2013-09-10)
+------------------
+
+ * slapconfiguration: fixes previous releasei (don't encode tap_set because it's not a string). [Cedric de Saint Martin]
+
 0.83 (2013-09-10)
 -----------------
 
