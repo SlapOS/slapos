@@ -1,6 +1,15 @@
 Changes
 =======
 
+0.83 (2013-09-10)
+-----------------
+
+ * slaprunner recipe: remove trailing / from master_url. [Cedric de Saint Martin]
+ * librecipe: add pidfile option for singletons. [Cedric de Saint Martin]
+ * Resiliency: Use new pidfile option. [Cedric de Saint Martin]
+ * Fix request.py for slave instances. [Cedric de Saint Martin]
+ * slapconfiguration recipe: cast some parameters from unicode to str. [Cedric de Saint Martin]
+
 0.82 (2013-08-30)
 -----------------
 
