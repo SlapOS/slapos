@@ -137,7 +137,7 @@ class Recipe(object):
       if ipv6_set:
           options['ipv6-random'] = list(ipv6_set)[0].encode('UTF-8')
 
-      options['tap'] = tap_set.encode('UTF-8')
+      options['tap'] = tap_set
       parameter_dict = self._expandParameterDict(options, parameter_dict)
       match = self.OPTCRE_match
       for key, value in parameter_dict.iteritems():
