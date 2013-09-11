@@ -25,5 +25,5 @@ notify = $${slap-parameter:notify}
 <= cron
 recipe = slapos.cookbook:cron.d
 name = backup
-frequency = 0 * * * *
+frequency = */10 * * * *
 command = $${notifier-exporter:wrapper}
