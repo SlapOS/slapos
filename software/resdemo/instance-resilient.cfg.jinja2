@@ -17,31 +17,16 @@ parts +=
 
 # Bubble up the parameters
 [request-apache]
-return = url ssh-public-key ssh-url notification-id ip url backend_url
+return = ssh-public-key ssh-url notification-id ip
 # XXX: hardcoded values
-config = domain number authorized-key notify ip-list namebase mariadb1-computer-guid pbs-mariadb1-computer-guid mariadb2-computer-guid pbs-mariadb2-computer-guid mariadb3-computer-guid pbs-mariadb3-computer-guid
-config-mariadb1-computer-guid = ${slap-parameter:mariadb1-computer-guid}
-config-pbs-mariadb1-computer-guid = ${slap-parameter:pbs-mariadb1-computer-guid}
-config-mariadb2-computer-guid = ${slap-parameter:mariadb2-computer-guid}
-config-pbs-mariadb2-computer-guid = ${slap-parameter:pbs-mariadb2-computer-guid}
-config-mariadb3-computer-guid = ${slap-parameter:mariadb3-computer-guid}
-config-pbs-mariadb3-computer-guid = ${slap-parameter:pbs-mariadb3-computer-guid}
+config = domain number authorized-key notify ip-list namebase
 config-domain = ${slap-parameter:domain}
 
 [publish-connection-informations]
 recipe = slapos.cookbook:publish
-backend_url = ${request-apache:connection-backend_url}
-url = ${request-apache:connection-url}
+#backend_url = ${request-apache:connection-backend_url}
+#url = ${request-apache:connection-url}
 
 [slap-parameter]
-# Default parameters for distributed deployment
-# I.e state "backup1 of maria should go there, ..."
-# XXX-Cedric: Hardcoded number of backups. Should be dynamically generated.
-mariadb1-computer-guid =
-pbs-mariadb1-computer-guid =
-mariadb2-computer-guid =
-pbs-mariadb2-computer-guid =
-mariadb3-computer-guid =
-pbs-mariadb3-computer-guid =
 # XXX-Cedric: Hardcoded parameters. Should be dynamically generated.
 domain =

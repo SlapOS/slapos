@@ -11,23 +11,21 @@ extends = {{templateapache}}
           {{templatepbsreadyexport}}
 
 parts +=
-    {{ parts.replicate("mariadb", "3") }}
+    certificate-authority
+    logrotate
+    cron
+    publish-connection-informations
+    cron-entry-backup
+
 
 # Repeating parts from instance-apache-php.
 # XXX-Cedric: how to simplify this?
-    certificate-authority
-    ca-stunnel
-    logrotate
-    logrotate-entry-apache
-    logrotate-entry-stunnel
-    cron
-    cron-entry-logrotate
-    promise
-    frontend-promise
-    content-promise
-    publish-connection-informations
+#    logrotate-entry-apache
+#    cron-entry-logrotate
+#    promise
+#    frontend-promise
+#    content-promise
 
-{{ replicated.replicate("mariadb", "3", "mariadb-export", "mariadb-import") }}
 
 # Nothing to do for the exporter. This wrapper is intended
 # to produce the "dump" files that have to be backed up.
@@ -51,8 +49,3 @@ path = ${directory:www}
 # parameters of the requested instance. Requirement: aggregated publish.
 <= resilient-publish-connection-parameter
 
-# XXX-Cedric: resilient overwrites what's returned from request-mariadb
-# XXX-Cedric: change the request method to return everything from
-#             getConnectionParameterDict()
-[request-mariadb]
-return = ssh-public-key ssh-url notification-id ip url
