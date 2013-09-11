@@ -49,7 +49,7 @@ class Recipe(GenericBaseRecipe):
     configuration = dict(
         software_root=self.software_directory,
         instance_root=self.instance_directory,
-        master_url='http://%s:%s/' % (self.ipv4, self.proxy_port),
+        master_url='http://%s:%s' % (self.ipv4, self.proxy_port),
         computer_id='slaprunner',
         partition_amount=self.partition_amount,
         slapgrid_sr=self.options['slapgrid_sr'],

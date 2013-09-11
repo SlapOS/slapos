@@ -14,6 +14,7 @@ srv = $${buildout:directory}/srv
 var = $${buildout:directory}/var
 run = $${:var}/run
 log = $${:var}/log
+varnginx = $${:var}/nginx
 # scripts = $${:etc}/run
 services = $${:etc}/service
 cron-entries = $${:etc}/cron.d
@@ -71,10 +72,9 @@ directory = $${directory:backup}/$${:_buildout_section_name_}
 
 [{{ slave_reference }}-backup-private_key]
 recipe = plone.recipe.command
-stop-on-error = true
+stop-on-error = false
 command = ${dropbear-output:keygen} -t $${:type} -s 2048 -f $${:key} 
 key = $${directory:ssh}/$${:_buildout_section_name_}
-location = $${:key}
 type = rsa
 
 [{{ slave_reference }}-backup-public_key]

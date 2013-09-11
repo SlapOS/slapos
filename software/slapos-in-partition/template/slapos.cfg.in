@@ -1,0 +1,23 @@
+[slapos]
+software_root = ${:software-root}
+instance_root = ${:instance-root}
+master_url = ${:master-url}
+
+key_file = ${:computer-key-file}
+cert_file = ${:computer-certificate-file}
+certificate_repository_path = ${:certificate-repository-path}
+
+computer_id = ${:computer-id}
+maximal_delay = 0
+
+# Don't check if we are using root
+root_check = false
+
+[slapformat]
+alter_user = false
+alter_network = false
+input_definition_file = ${:computer-definition-file}
+computer_xml = ${:computer-xml}
+partition_amount = 1
+create_tap = false
+

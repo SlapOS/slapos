@@ -88,8 +88,15 @@ class Recipe(object):
       installation of request section will fail.
       Possible names depend on requested partition's software type.
 
+    state (optional)
+     Requested state, default value is the state of the requester.
+
     Output:
       See "return" input key.
+      "instance-state"
+          The current state of the instance.
+      "requested-state"
+          The requested state of the instance.
   """
   failed = None
 
@@ -112,6 +119,8 @@ class Recipe(object):
     ))
     slave = options.get('slave', 'false').lower() in \
       librecipe.GenericBaseRecipe.TRUE_VALUES
+    # By default XXXX Way of doing it is ugly and dangerous
+    requested_state = options.get('state', buildout['slap-connection'].get('requested','started'))
     slap = slapmodule.slap()
     slap.initializeConnection(
       options['server-url'],
@@ -129,7 +138,7 @@ class Recipe(object):
     try:
       self.instance = request(software_url, software_type,
           name, partition_parameter_kw=partition_parameter_kw,
-          filter_kw=filter_kw, shared=slave)
+          filter_kw=filter_kw, shared=slave, state=requested_state)
       return_parameter_dict = self._getReturnParameterDict(self.instance,
           return_parameters)
       if not slave:
@@ -153,6 +162,13 @@ class Recipe(object):
       except KeyError:
         if self.failed is None:
           self.failed = param
+    options['requested-state'] = requested_state
+    try:
+      options['instance-state'] = self.instance.getState()
+    except slapmodule.ResourceNotReady:
+       # Odd case: SlapOS Master doesn't send the state of a slave partition.
+       # XXX Should be fixed in the SlapOS Master, we should not care here.
+       pass
 
   def _filterForStorage(self, partition_parameter_kw):
     return partition_parameter_kw

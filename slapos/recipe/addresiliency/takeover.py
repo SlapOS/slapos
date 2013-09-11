@@ -3,6 +3,7 @@ import logging
 import time
 
 import slapos
+from slapos.slap.slap import NotFoundError
 
 log = logging.getLogger(__name__)
 logging.basicConfig(level=logging.DEBUG)
@@ -58,8 +59,15 @@ def takeover(server_url, key_file, cert_file, computer_guid,
   log.debug("Renaming {}: {}".format(cp_winner.getId(), cp_exporter_ref))
 
   # update name (and later, software type) for the partition that will take over
+  while True:
+    time.sleep(10)
+    try:
+      cp_winner.rename(new_name=cp_exporter_ref)
+      break
+    except NotFoundError:
+      log.warning('Impossible to rename. Retrying in a few seconds...')
+  log.debug('Renamed.')
 
-  cp_winner.rename(new_name=cp_exporter_ref)
   cp_winner.bang(message='partitions have been renamed!')
   # Note: Root instance will reconfigure itself the winning instance (software_type
   # and parameters.)

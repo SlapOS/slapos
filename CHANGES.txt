@@ -1,6 +1,29 @@
 Changes
 =======
 
+0.83.1 (2013-09-10)
+------------------
+
+ * slapconfiguration: fixes previous releasei (don't encode tap_set because it's not a string). [Cedric de Saint Martin]
+
+0.83 (2013-09-10)
+-----------------
+
+ * slaprunner recipe: remove trailing / from master_url. [Cedric de Saint Martin]
+ * librecipe: add pidfile option for singletons. [Cedric de Saint Martin]
+ * Resiliency: Use new pidfile option. [Cedric de Saint Martin]
+ * Fix request.py for slave instances. [Cedric de Saint Martin]
+ * slapconfiguration recipe: cast some parameters from unicode to str. [Cedric de Saint Martin]
+
+0.82 (2013-08-30)
+-----------------
+
+ * Certificate Authority: Can receice certificate to install. [Cedric Le Ninivin]
+ * Squid: Add squid recipe. [Romain Courteaud]
+ * Request: Trasmit instace state to requested instances. [Benjamin Blanc / Cédric Le Ninivin]
+ * Slapconfiguration: Now return instance state. [Cédric Le Ninivin]
+ * Apache Frontend: Remove recipe
+
 0.81 (2013-08-12)
 -----------------
 

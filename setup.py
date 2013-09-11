@@ -28,7 +28,7 @@ from setuptools import setup, find_packages
 import glob
 import os
 
-version = '0.82-dev'
+version = '0.83.1'
 name = 'slapos.cookbook'
 long_description = open("README.txt").read() + "\n" + \
     open("CHANGES.txt").read() + "\n"
@@ -70,7 +70,6 @@ setup(name=name,
         'zc.buildout': [
           'addresiliency = slapos.recipe.addresiliency:Recipe',
           'agent = slapos.recipe.agent:Recipe',
-          'apache.frontend = slapos.recipe.apache_frontend:Recipe',
           'apache.zope.backend = slapos.recipe.apache_zope_backend:Recipe',
           'apacheperl = slapos.recipe.apacheperl:Recipe',
           'apachephp = slapos.recipe.apachephp:Recipe',
@@ -191,6 +190,7 @@ setup(name=name,
           'slaprunner.import = slapos.recipe.slaprunner.backup:ImportRecipe',
           'softwaretype = slapos.recipe.softwaretype:Recipe',
           'sphinx= slapos.recipe.sphinx:Recipe',
+          'squid = slapos.recipe.squid:Recipe',
           'sshkeys_authority = slapos.recipe.sshkeys_authority:Recipe',
           'sshkeys_authority.request = slapos.recipe.sshkeys_authority:Request',
           'stunnel = slapos.recipe.stunnel:Recipe',

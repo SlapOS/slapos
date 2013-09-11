@@ -19,6 +19,12 @@ parts =
 
   cron-entry-backup
 
+[resilient-directory]
+recipe = slapos.cookbook:mkdirectory
+home = $${buildout:directory}
+var = $${:home}/var
+pid = $${:var}/pid
+
 [resilient-publish-connection-parameter]
 notification-id = http://[$${notifier:host}]:$${notifier:port}/get/$${notifier-exporter:name}
 
@@ -32,6 +38,7 @@ title = Dumping $${slap-parameter:namebase}
 executable = $${exporter:wrapper}
 wrapper = $${rootdirectory:bin}/exporter
 notify = $${slap-parameter:notify}
+pidfile = $${resilient-directory:pid}/$${:name}.pid
 
 [cron-entry-backup]
 # Schedule the periodic database dump.
