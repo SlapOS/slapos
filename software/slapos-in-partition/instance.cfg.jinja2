@@ -2,7 +2,7 @@
 parts =
   slapos-configuration-file
   cron-entry-slapos
-  slapos-node-format-wrapper
+  slapos-node-format-wrapper-script
 
   httpd-wrapper
 
@@ -45,7 +45,7 @@ bin = ${buildout:directory}/bin/
 
 sshkeys = ${:srv}/sshkeys
 service = ${:etc}/service/
-scripts = ${:etc}/run/
+script = ${:etc}/run/
 ssh = ${:etc}/ssh/
 log = ${:var}/log/
 run = ${:var}/run/
@@ -114,29 +114,41 @@ computer-key-file = ${slapos-computer-key-file:output}
 computer-certificate-file = ${slapos-computer-certificate-file:output}
 certificate-repository-path = ${directory:slapos-partitions-certificate-repository}
 
-[slapos-node-format-wrapper]
-recipe = slapos.cookbook:wrapper
-command-line = {{ bin_directory }}/slapos node format --cfg ${slapos-configuration-file:output} --logfile=${directory:slapos-log}/slapos-node-format.log --now
-wrapper-path = ${directory:scripts}/slapos-node-format
-parameters-extra = true
-
 [slapos-node-instance-wrapper]
 recipe = slapos.cookbook:wrapper
 command-line = {{ bin_directory }}/slapos node instance --cfg ${slapos-configuration-file:output} --pidfile ${directory:run}/slapos-instance.pid --logfile ${directory:slapos-log}/slapos-instance.cfg
-wrapper-path = ${buildout:bin-directory}/slapos-node-instance
+wrapper-path = ${directory:bin}/slapos-node-instance
 parameters-extra = true
 
 [slapos-node-software-wrapper]
 recipe = slapos.cookbook:wrapper
 command-line = {{ bin_directory }}/slapos node software --cfg ${slapos-configuration-file:output} --pidfile ${directory:run}/slapos-software.pid --logfile ${directory:slapos-log}/slapos-software.cfg
-wrapper-path = ${buildout:bin-directory}/slapos-node-software
+wrapper-path = ${directory:bin}/slapos-node-software
 parameters-extra = true
 
 [slapos-node-report-wrapper]
 recipe = slapos.cookbook:wrapper
 command-line = {{ bin_directory }}/slapos node report --cfg ${slapos-configuration-file:output} --pidfile ${directory:run}/slapos-report.pid --logfile ${directory:slapos-log}/slapos-report.cfg
-wrapper-path = ${buildout:bin-directory}/slapos-node-report
+wrapper-path = ${directory:bin}/slapos-node-report
 parameters-extra = true
+
+[slapos-node-format-wrapper]
+recipe = slapos.cookbook:wrapper
+command-line = {{ bin_directory }}/slapos node format --cfg ${slapos-configuration-file:output} --logfile=${directory:slapos-log}/slapos-node-format.log --now
+wrapper-path = ${directory:bin}/slapos-node-format
+parameters-extra = true
+
+[slapos-node-format-wrapper-script]
+# Create a wrapper of the wrapper in etc/run
+recipe = collective.recipe.template
+input = inline:#!{{ bash_executable }}
+  false
+  while [ ! $? -eq 0 ]; do
+    ${slapos-node-format-wrapper:wrapper-path}
+  done
+output = ${directory:script}/slapos-node-format
+mode = 700
+
 
 #########
 # Deploy some http server to see logs online
