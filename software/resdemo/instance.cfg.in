@@ -11,9 +11,6 @@ offline = true
 recipe = slapos.cookbook:softwaretype
 default = ${instance-apache-php:output}
 resilient = ${instance-resilient:rendered}
-mariadb = ${instance-mariadb:output}
-mariadb-import = ${instance-mariadb-import:output}
-mariadb-export = ${instance-mariadb-export:output}
 apache-import = ${instance-apache-import:output}
 apache-export = ${instance-apache-export:rendered}
 
