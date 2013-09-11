@@ -76,6 +76,8 @@ if __name__ == '__main__':
     client = getClient()
     time.sleep(5)
   try:
+    #Try to run openstack command before all other system process are started
+    time.sleep(30)
     #Write file configure.sh to use.
     sftp = client.open_sftp()
     result = sftp.put(nova_configure, 'configure.sh' )
