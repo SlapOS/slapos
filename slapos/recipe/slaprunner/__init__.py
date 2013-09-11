@@ -76,10 +76,10 @@ class Recipe(GenericBaseRecipe):
         cloud9_url=self.cloud9_url
     )
 
-    config_file = self.createFile(self.options['slapos.cfg'],
-        self.substituteTemplate(self.getTemplateFilename('slapos.cfg.in'),
-        configuration))
-    path_list.append(config_file)
+    #config_file = self.createFile(self.options['slapos.cfg'],
+    #    self.substituteTemplate(self.getTemplateFilename('slapos.cfg.in'),
+    #    configuration))
+    config_file = configuration['etc_dir'] + 'slapos.cfg'
 
     environment = dict(
         PATH=os.path.dirname(
