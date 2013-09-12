@@ -2,6 +2,7 @@
 parts =
   slapos-configuration-file
   cron-entry-slapos
+  slapos-node-status-wrapper
   slapos-node-format-wrapper-script
 
   httpd-wrapper
@@ -130,6 +131,12 @@ parameters-extra = true
 recipe = slapos.cookbook:wrapper
 command-line = {{ bin_directory }}/slapos node report --cfg ${slapos-configuration-file:output} --pidfile ${directory:run}/slapos-report.pid --logfile ${directory:slapos-log}/slapos-report.cfg
 wrapper-path = ${directory:bin}/slapos-node-report
+parameters-extra = true
+
+[slapos-node-status-wrapper]
+recipe = slapos.cookbook:wrapper
+command-line = {{ bin_directory }}/slapos node status --cfg ${slapos-configuration-file:output}
+wrapper-path = ${directory:bin}/slapos-node-status
 parameters-extra = true
 
 [slapos-node-format-wrapper]
