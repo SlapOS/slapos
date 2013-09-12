@@ -50,7 +50,7 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string>return context.portal_catalog.countResults(portal_type=(\'Software Instance\',\'Slave Instance\'), url_string=context.getUrlString(), slap_state=[\'start_requested\',\'stop_requested\'])[0][0]\n
+            <value> <string>return [x for x in context.Base_getRelatedObjectList(portal_type=\'Software Release\') if context.portal_catalog(portal_type=\'Software Installation\', slap_state=\'start_requested\', url_string=x.getUrlString(), limit=1)]\n
 </string> </value>
         </item>
         <item>
@@ -59,7 +59,7 @@
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>SoftwareRelease_getUsage</string> </value>
+            <value> <string>SoftwareProduct_getInstalledSoftwareReleaseList</string> </value>
         </item>
       </dictionary>
     </pickle>

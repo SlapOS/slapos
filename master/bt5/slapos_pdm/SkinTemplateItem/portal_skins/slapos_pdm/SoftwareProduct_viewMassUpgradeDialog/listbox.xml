@@ -81,10 +81,6 @@
                     <value>
                       <list>
                         <tuple>
-                          <string>usage</string>
-                          <string>Usage</string>
-                        </tuple>
-                        <tuple>
                           <string>title</string>
                           <string>Software Release</string>
                         </tuple>
@@ -165,7 +161,7 @@
       <dictionary>
         <item>
             <key> <string>method_name</string> </key>
-            <value> <string>SoftwareProduct_getInstalledSoftwareReleases</string> </value>
+            <value> <string>SoftwareProduct_getInstalledSoftwareReleaseList</string> </value>
         </item>
       </dictionary>
     </pickle>

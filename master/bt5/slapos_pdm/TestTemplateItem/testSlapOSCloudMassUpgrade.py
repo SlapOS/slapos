@@ -64,7 +64,6 @@ class TestSlapOSMassUpgrade(testSlapOSMixin):
 
     return computer
 
-  
   def _makeComputerPartitions(self,computer):
     for i in range(1, 5):
       id_ = 'partition%s' % (i, )
@@ -100,6 +99,21 @@ class TestSlapOSMassUpgrade(testSlapOSMixin):
 
     return software_release
 
+  def _makeSoftwareInstallation(self, new_id, computer, software_release_url):
+     software_installation = self.portal\
+       .software_installation_module.template_software_installation\
+       .Base_createCloneDocument(batch_mode=1)
+     software_installation.edit(
+       url_string=software_release_url,
+       aggregate=computer.getRelativeUrl(),
+       reference='TESTSOFTINSTS-%s' % new_id,
+       title='Start requested for %s' % computer.getUid()
+     )
+     software_installation.validate()
+     software_installation.requestStart()
+
+     return software_installation
+
   def _makeHostingSubscription(self, new_id):
     hosting_subscription = self.portal\
       .hosting_subscription_module.template_hosting_subscription\
@@ -125,19 +139,32 @@ class TestSlapOSMassUpgrade(testSlapOSMixin):
     )
     hosting_subscription.requestStart(**kw)
     hosting_subscription.requestInstance(**kw)
-    
-  def test_SoftwareRelease_getUsage_no_instance(self):
-    software_release = self._makeSoftwareRelease(self.new_id)
-    self.assertEqual(0,software_release.SoftwareRelease_getUsage())
 
-  def test_SoftwareRelease_getUsage_with_instance(self):
+  def test_SoftwareProduct_getInstalledSoftwareReleaseList(self):
+    computer = self._makeComputer(self.new_id)
+    software_product = self._makeSoftwareProduct(self.new_id)
     software_release = self._makeSoftwareRelease(self.new_id)
-    hosting_subscription = self._makeHostingSubscription(self.new_id)
-    self._makeSoftwareInstance(hosting_subscription, 
+    software_release.edit(aggregate_value = software_product.getRelativeUrl())
+    self._makeSoftwareInstallation(self.new_id, computer,
       software_release.getUrlString())
-    self.tic()
-    self.assertEqual(1,software_release.SoftwareRelease_getUsage())
 
+    self.tic()
+    self.assertEqual(
+      len(software_product.SoftwareProduct_getInstalledSoftwareReleaseList()),
+      1
+    )
+
+  def test_SoftwareProduct_getInstalledSoftwareReleaseList_no_installation(self):
+    software_product = self._makeSoftwareProduct(self.new_id)
+    software_release = self._makeSoftwareRelease(self.new_id)
+    software_release.edit(aggregate_value = software_product.getRelativeUrl())
+    self.tic()
+
+    self.assertEqual(
+      len(software_product.SoftwareProduct_getInstalledSoftwareReleaseList()),
+      0
+    )
+    
   def test_ComputerPartition_changeHostingSubscriptionSoftwareRelease(self):
     computer = self._makeComputer(self.new_id)
     self._makeComputerPartitions(computer)

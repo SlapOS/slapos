@@ -70,7 +70,7 @@ for parameters in listbox:\n
     if comp_reference_list != []:\n
       for comp_reference in comp_reference_list:\n
         comp = portal.portal_catalog.getResultValue(portal_type = \'Computer\', reference = comp_reference)\n
-        if new_sr_url not in portal.portal_catalog.getResultValue(portal_type=\'Software Installation\', aggregate_related_value=comp.getRelativeUrl()):\n
+        if new_sr_url not in portal.portal_catalog.getResultValue(portal_type=\'Software Installation\', default_aggregate_related_value=comp.getRelativeUrl()):\n
           message_list.append("Software Release %s not installed on %s." % (new_sr_document.getTitle(), comp_reference))\n
     else:\n
       message_list.append("No computers selected for upgrade from %s to %s" % (old_sr_document.getUrlString(), new_sr_url))\n
