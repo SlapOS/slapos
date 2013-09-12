@@ -317,6 +317,7 @@ key = ${instance-parameter:configuration.authorized-key}
 [publish-connection-informations]
 recipe = slapos.cookbook:publish
 log-viewer-url = http://[${httpd-configuration-file:listening-ip}]:${httpd-configuration-file:listening-port}
+ssh_command = ssh $${dropbear-runner:host} -p $${dropbear-runner:port}
 
 #########
 # Deploy promises scripts
