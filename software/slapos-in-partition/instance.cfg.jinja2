@@ -16,7 +16,10 @@ parts =
   dropbear-server-add-authorized-key
   sshkeys-authority
   publish-connection-informations
+
   dropbear-promise
+  httpd-promise
+  slapos-promise
 
 
 eggs-directory = {{ eggs_directory }}
@@ -184,23 +187,6 @@ wrapper-path = ${directory:service}/httpd
 # generated parameter containing url to use for other sections
 url = http://[${httpd-configuration-file:listening-ip}]/
 
-#[httpd-wrapper]
-#recipe = collective.recipe.template
-#input = inline:
-#  #!${buildout:executable}
-#  import SimpleHTTPServer
-#  import SocketServer
-#  PORT = ${:listening-port}
-#  LISTENING_IP = '${:listening-ip}'
-#  Handler = SimpleHTTPServer.SimpleHTTPRequestHandler
-#  httpd = SocketServer.TCPServer((LISTENING_IP, PORT), Handler)
-#  print "serving at port", PORT
-#  httpd.serve_forever()
-#output = ${directory:service}/httpd
-#listening-ip = ${instance-parameter:ipv6-random}
-#listening-port = 8080
-#mode = 755
-
 
 #########
 # Deploy logrotate
@@ -340,4 +326,17 @@ recipe = slapos.cookbook:check_port_listening
 path = ${directory:promises}/dropbear
 hostname = ${dropbear-server:host}
 port = ${dropbear-server:port}
+
+[httpd-promise]
+recipe = slapos.cookbook:check_port_listening
+path = ${directory:promises}/httpd
+hostname = ${httpd-configuration-file:listening-ip}
+port = ${httpd-configuration-file:listening-port}
+
+[slapos-promise]
+recipe = collective.recipe.template
+input = inline:#!/{{ bash_executable }}
+  {{ bin_directory }}/slapgrid-supervisorctl ${slapos-configuration-file:output} status watchdog | grep RUNNING
+output = ${directory:promises}/slapos
+mode = 0700
 
