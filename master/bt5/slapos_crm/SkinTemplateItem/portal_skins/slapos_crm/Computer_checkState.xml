@@ -53,19 +53,29 @@
             <value> <string encoding="cdata"><![CDATA[
 
 from DateTime import DateTime\n
+import json\n
 \n
 portal = context.getPortalObject()\n
 \n
-last_contact = context.Computer_getLastestContactedDate()\n
 reference = context.getReference()\n
+memcached_dict = context.getPortalObject().portal_memcached.getMemcachedDict(\n
+  key_prefix=\'slap_tool\',\n
+  plugin_path=\'portal_memcached/default_memcached_plugin\')\n
+  \n
+try:\n
+  d = memcached_dict[reference]\n
+except KeyError:\n
+  return\n
 \n
-if last_contact != "Computer didn\'t contact the server":\n
-  if (DateTime() - last_contact) > 1:\n
-    tag = "Support Request generation for %s" % reference\n
-    context.activate(tag=tag).Base_generateSupportRequestForSlapOS(\n
-      "Support Request for %s" % reference,\n
-      "%s has not contacted the server for more than 24 hours" % reference\n
-    )\n
+d = json.loads(d)\n
+last_contact = DateTime(d.get(\'created_at\'))\n
+\n
+if (DateTime() - last_contact) > 1:\n
+  return context.Base_generateSupportRequestForSlapOS(\n
+    "Lost contact with %s" % reference,\n
+    "%s has not contacted the server for more than 24 hours (last contact date: %s)" % (reference, last_contact),\n
+    context.getRelativeUrl()\n
+  )\n
 
 
 ]]></string> </value>

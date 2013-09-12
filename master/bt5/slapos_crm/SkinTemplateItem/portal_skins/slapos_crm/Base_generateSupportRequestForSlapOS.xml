@@ -50,31 +50,40 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string>portal = context.getPortalObject()\n
+            <value> <string>from DateTime import DateTime\n
 \n
-software_release_preference = portal.portal_preferences.getPreferredSoftwareReleaseToTestForSpace()\n
+portal = context.getPortalObject()\n
 \n
-if software_release_preference != \'\':\n
-  software_release_list = software_release_preference.split("\\n")\n
+support_request_in_progress = portal.portal_catalog.getResultValue(\n
+  portal_type = \'Support Request\',\n
+  title = title,\n
+  simulation_state = ["validated","submitted","suspended"],\n
+  source_project_value = source_relative_url\n
+)\n
 \n
-  portal.portal_catalog.searchAndActivate(\n
-    portal_type = \'Software Release\',\n
-    url_string = software_release_list,\n
-\n
-    method_id = \'SoftwareRelease_testForAllocation\',\n
-    activate_kw = {\'tag\':tag}  \n
+if support_request_in_progress is None:\n
+  support_request = portal.\\\n
+    support_request_module.\\\n
+    slapos_crm_support_request_template_for_monitoring.\\\n
+    Base_createCloneDocument(batch_mode=1)\n
+  support_request.edit(\n
+    title = title,\n
+    description = description,\n
+    start_date = DateTime(),\n
+    source_project_value = source_relative_url\n
   )\n
+  support_request.validate()\n
 \n
-context.activate(after_tag=tag).getId()\n
+  return support_request.getRelativeUrl()\n
 </string> </value>
         </item>
         <item>
             <key> <string>_params</string> </key>
-            <value> <string>tag, fixit, params</string> </value>
+            <value> <string>title, description, source_relative_url</string> </value>
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>Alarm_checkCloudIsFull</string> </value>
+            <value> <string>Base_generateSupportRequestForSlapOS</string> </value>
         </item>
       </dictionary>
     </pickle>

@@ -1,4 +1,5 @@
 event_module/slapos_crm_web_message_template
+person_module/allocation_tester
 portal_alarms/slapos_check_cloud_is_full
 portal_alarms/slapos_check_computer_state
 portal_alarms/slapos_check_software_instance_state
@@ -22,3 +23,4 @@ service_module/slapos_crm_spam
 service_module/slapos_crm_stop_acknowledgement
 service_module/slapos_crm_stop_reminder
 support_request_module/slapos_crm_support_request_template
+support_request_module/slapos_crm_support_request_template_for_monitoring

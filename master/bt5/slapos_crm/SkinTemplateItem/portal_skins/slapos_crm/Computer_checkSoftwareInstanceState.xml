@@ -58,7 +58,7 @@ partition_list = portal.portal_catalog(portal_type = \'Computer Partition\',\n
 )\n
 \n
 for partition in partition_list:\n
-  instance = partition.getAggregateRelatedValue()\n
+  instance = partition.getAggregateRelatedValue(portal_type=\'Software Instance\')\n
   if instance is not None:\n
     instance.activate().SoftwareInstance_checkState()\n
 </string> </value>

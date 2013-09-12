@@ -69,24 +69,28 @@ d = json.loads(d)\n
 result = d[\'text\']\n
 last_contact = DateTime(d.get(\'created_at\'))\n
 now = DateTime()\n
+title = ""\n
 \n
 if result.startswith(\'#error \'):\n
   # If no change in the last 2 hours generate a support request\n
   if (now - last_contact) > 0.08:\n
     tag = "Support Request generation for %s" % reference\n
-    context.activate(tag=tag).Base_generateSupportRequestForSlapOS(\n
-      "Support Request for %s" % reference,\n
-      "%s has been in error state for more than 2 hours" % reference\n
-    )\n
+    title = "Instance %s in error state" % reference\n
+    description = "%s has been in error state for more than 2 hours (last contact date: %s)" % (reference, last_contact)\n
 \n
 elif result.startswith(\'#access \'):\n
   # If there was no contact for more than one day generate a support request\n
   if (now - last_contact) > 1:\n
     tag = "Support Request generation for %s" % reference\n
-    context.activate(tag=tag).Base_generateSupportRequestForSlapOS(\n
-      "Support Request for %s" % reference,\n
-      "%s has not contacted the server for more than 24 hours" % reference\n
-    )\n
+    title = "Instance %s in unknown state" % reference\n
+    description = "%s has not contacted the server for more than 24 hours (last contact date: %s)" % (reference, last_contact)\n
+\n
+if title != "":\n
+  return context.Base_generateSupportRequestForSlapOS(\n
+    title,\n
+    description,\n
+    context.getRelativeUrl()\n
+  )\n
 
 
 ]]></string> </value>
