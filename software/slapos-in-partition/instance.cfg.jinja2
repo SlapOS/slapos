@@ -120,19 +120,19 @@ certificate-repository-path = ${directory:slapos-partitions-certificate-reposito
 
 [slapos-node-instance-wrapper]
 recipe = slapos.cookbook:wrapper
-command-line = {{ bin_directory }}/slapos node instance --cfg ${slapos-configuration-file:output} --pidfile ${directory:run}/slapos-instance.pid --logfile ${directory:slapos-log}/slapos-instance.cfg
+command-line = {{ bin_directory }}/slapos node instance --cfg ${slapos-configuration-file:output} --pidfile ${directory:run}/slapos-instance.pid --logfile ${directory:slapos-log}/slapos-instance.log
 wrapper-path = ${directory:bin}/slapos-node-instance
 parameters-extra = true
 
 [slapos-node-software-wrapper]
 recipe = slapos.cookbook:wrapper
-command-line = {{ bin_directory }}/slapos node software --cfg ${slapos-configuration-file:output} --pidfile ${directory:run}/slapos-software.pid --logfile ${directory:slapos-log}/slapos-software.cfg
+command-line = {{ bin_directory }}/slapos node software --cfg ${slapos-configuration-file:output} --pidfile ${directory:run}/slapos-software.pid --logfile ${directory:slapos-log}/slapos-software.log
 wrapper-path = ${directory:bin}/slapos-node-software
 parameters-extra = true
 
 [slapos-node-report-wrapper]
 recipe = slapos.cookbook:wrapper
-command-line = {{ bin_directory }}/slapos node report --cfg ${slapos-configuration-file:output} --pidfile ${directory:run}/slapos-report.pid --logfile ${directory:slapos-log}/slapos-report.cfg
+command-line = {{ bin_directory }}/slapos node report --cfg ${slapos-configuration-file:output} --pidfile ${directory:run}/slapos-report.pid --logfile ${directory:slapos-log}/slapos-report.log
 wrapper-path = ${directory:bin}/slapos-node-report
 parameters-extra = true
 
