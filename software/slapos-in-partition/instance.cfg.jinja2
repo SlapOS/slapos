@@ -308,16 +308,13 @@ recipe = slapos.cookbook:dropbear.add_authorized_key
 key = ${instance-parameter:configuration.authorized-key}
 
 
-# Deploy a frontend for log
-# XXX TODO
-
 #########
 # Send informations to SlapOS Master
 #########
 [publish-connection-informations]
 recipe = slapos.cookbook:publish
 log-viewer-url = http://[${httpd-configuration-file:listening-ip}]:${httpd-configuration-file:listening-port}
-ssh_command = ssh $${dropbear-runner:host} -p $${dropbear-runner:port}
+ssh_command = ssh ${dropbear-server:host} -p ${dropbear-server:port}
 
 #########
 # Deploy promises scripts
