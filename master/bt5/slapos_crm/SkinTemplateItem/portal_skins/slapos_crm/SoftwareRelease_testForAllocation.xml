@@ -1,0 +1,93 @@
+<?xml version="1.0"?>
+<ZopeData>
+  <record id="1" aka="AAAAAAAAAAE=">
+    <pickle>
+      <global name="PythonScript" module="Products.PythonScripts.PythonScript"/>
+    </pickle>
+    <pickle>
+      <dictionary>
+        <item>
+            <key> <string>Script_magic</string> </key>
+            <value> <int>3</int> </value>
+        </item>
+        <item>
+            <key> <string>_bind_names</string> </key>
+            <value>
+              <object>
+                <klass>
+                  <global name="NameAssignments" module="Shared.DC.Scripts.Bindings"/>
+                </klass>
+                <tuple/>
+                <state>
+                  <dictionary>
+                    <item>
+                        <key> <string>_asgns</string> </key>
+                        <value>
+                          <dictionary>
+                            <item>
+                                <key> <string>name_container</string> </key>
+                                <value> <string>container</string> </value>
+                            </item>
+                            <item>
+                                <key> <string>name_context</string> </key>
+                                <value> <string>context</string> </value>
+                            </item>
+                            <item>
+                                <key> <string>name_m_self</string> </key>
+                                <value> <string>script</string> </value>
+                            </item>
+                            <item>
+                                <key> <string>name_subpath</string> </key>
+                                <value> <string>traverse_subpath</string> </value>
+                            </item>
+                          </dictionary>
+                        </value>
+                    </item>
+                  </dictionary>
+                </state>
+              </object>
+            </value>
+        </item>
+        <item>
+            <key> <string>_body</string> </key>
+            <value> <string>portal = context.getPortalObject()\n
+software_release = context\n
+software_release_url = software_release.getUrlString()\n
+\n
+user = portal.person_module.allocation_tester\n
+\n
+result = user.Person_restrictMethodAsShadowUser(\n
+        shadow_document=user,\n
+        callable_object=user.Person_findPartition,\n
+        argument_list=[\n
+          software_release_url,\n
+          \'\',\n
+          \'Software Instance\',\n
+          {}\n
+        ],\n
+        argument_dict={\n
+          \'test_mode\': True})\n
+\n
+if not result:\n
+  title = "Can\'t allocate new instances for software release %s" % software_release_url\n
+  description = "Need more public computers that can instanciate the software release %s" % software_release_url\n
+\n
+  return software_release.Base_generateSupportRequestForSlapOS(\n
+    title,\n
+    description,\n
+    software_release.getRelativeUrl()\n
+  )\n
+</string> </value>
+        </item>
+        <item>
+            <key> <string>_params</string> </key>
+            <value> <string></string> </value>
+        </item>
+        <item>
+            <key> <string>id</string> </key>
+            <value> <string>SoftwareRelease_testForAllocation</string> </value>
+        </item>
+      </dictionary>
+    </pickle>
+  </record>
+</ZopeData>

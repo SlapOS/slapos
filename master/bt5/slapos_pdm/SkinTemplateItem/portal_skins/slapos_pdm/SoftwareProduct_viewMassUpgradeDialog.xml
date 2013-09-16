@@ -35,7 +35,7 @@
         </item>
         <item>
             <key> <string>action</string> </key>
-            <value> <string>Base_edit</string> </value>
+            <value> <string>SoftwareProduct_launchMassUpgrade</string> </value>
         </item>
         <item>
             <key> <string>description</string> </key>
@@ -59,9 +59,6 @@
             <key> <string>group_list</string> </key>
             <value>
               <list>
-                <string>left</string>
-                <string>right</string>
-                <string>center</string>
                 <string>bottom</string>
                 <string>hidden</string>
               </list>
@@ -74,40 +71,19 @@
                 <item>
                     <key> <string>bottom</string> </key>
                     <value>
-                      <list/>
-                    </value>
-                </item>
-                <item>
-                    <key> <string>center</string> </key>
-                    <value>
-                      <list/>
+                      <list>
+                        <string>listbox</string>
+                      </list>
                     </value>
                 </item>
                 <item>
                     <key> <string>hidden</string> </key>
                     <value>
-                      <list/>
-                    </value>
-                </item>
-                <item>
-                    <key> <string>left</string> </key>
-                    <value>
                       <list>
-                        <string>my_preferred_regularisation_request_template</string>
-                        <string>my_preferred_support_request_template</string>
-                        <string>my_preferred_web_message_template</string>
-                        <string>my_preferred_slapos_web_site_url</string>
-                        <string>my_preferred_support_request_resource_for_monitoring</string>
-                      </list>
-                    </value>
-                </item>
-                <item>
-                    <key> <string>right</string> </key>
-                    <value>
-                      <list>
-                        <string>my_preferred_regularisation_request_use_list</string>
-                        <string>my_preferred_regularisation_request_resource</string>
-                        <string>my_preferred_software_release_to_test_for_space</string>
+                        <string>listbox_workflow_action</string>
+                        <string>your_comment</string>
+                        <string>listbox_usage</string>
+                        <string>listbox_computer_filter</string>
                       </list>
                     </value>
                 </item>
@@ -116,7 +92,7 @@
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>SystemPreference_viewSlapOSCRM</string> </value>
+            <value> <string>SoftwareProduct_viewMassUpgradeDialog</string> </value>
         </item>
         <item>
             <key> <string>method</string> </key>
@@ -124,11 +100,11 @@
         </item>
         <item>
             <key> <string>name</string> </key>
-            <value> <string>SystemPreference_viewSlapOSAccounting</string> </value>
+            <value> <string>SoftwareProduct_viewMassUpgradeDialog</string> </value>
         </item>
         <item>
             <key> <string>pt</string> </key>
-            <value> <string>form_view</string> </value>
+            <value> <string>form_dialog</string> </value>
         </item>
         <item>
             <key> <string>row_length</string> </key>
@@ -140,7 +116,7 @@
         </item>
         <item>
             <key> <string>title</string> </key>
-            <value> <string>SlapOS CRM</string> </value>
+            <value> <string>Mass upgrade</string> </value>
         </item>
         <item>
             <key> <string>unicode_mode</string> </key>
