@@ -142,10 +142,23 @@ request_kw.update(\n
   state="started",\n
 )\n
 \n
-person.requestSoftwareInstance(**request_kw)\n
+result = person.Person_restrictMethodAsShadowUser(\n
+              shadow_document=person,\n
+              callable_object=person.Person_findPartition,\n
+              argument_list=[\n
+                   url,\n
+                   software_type,\n
+                   \'Software Instance\', {}],\n
+              argument_dict={\'test_mode\': True})\n
 \n
-message = context.Base_translateString("Your instance is under creation. Please wait few minutes for partitions to appear.")\n
-return context.REQUEST.get(\'request_hosting_subscription\').Base_redirect(keep_items={\'portal_status_message\': message})\n
+if result:\n
+ person.requestSoftwareInstance(**request_kw)\n
+\n
+ message = context.Base_translateString("Your instance is under creation. Please wait few minutes for partitions to appear.")\n
+ return context.REQUEST.get(\'request_hosting_subscription\').Base_redirect(keep_items={\'portal_status_message\': message})\n
+else:\n
+ message = context.Base_translateString("We are sorry. We cannot allocate your request because we are out of capacity for the software choose, please try again later!")\n
+ return context.myspace.Base_redirect(keep_items={\'portal_status_message\': message})\n
 
 
 ]]></string> </value>
