@@ -94,8 +94,19 @@ if can_allocate:\n
 if can_allocate:\n
   # Check the computer capacity.\n
   # there is a arbitrary hardcoded default value: not more than 1000000 (!) instances on\n
-  # a computer\n
-  computer_capacity_quantity = computer.getCapacityQuantity(1000000)\n
+  # a computer.\n
+  default_maximum_value = 1000000\n
+  computer_capacity_quantity = computer.getCapacityQuantity(default_maximum_value)\n
+  if computer_capacity_quantity == default_maximum_value:\n
+    # Verify if Computer Model defines it:\n
+    computer_model = computer.getSpecialiseValue(portal_type=\'Computer Model\')\n
+    if computer_model is not None:\n
+      computer_capacity_quantity = computer_model.getCapacityQuantity(default_maximum_value)\n
+\n
+    # The update the computer with the initial value.\n
+    if computer_capacity_quantity != default_maximum_value:\n
+      computer.edit(capacity_quantity=computer_capacity_quantity)\n
+\n
   software_release_capacity_dict = {}\n
   consumed_capacity = 0\n
 \n
