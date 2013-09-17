@@ -133,8 +133,6 @@ config-ip-list = ${request-{{namebase}}:connection-ip}{% for j in range(1,nbback
 ## Having 3 backups pulling from the same PBS provides
 ##only availability, not resiliency
 
-## WARNING : SLAVES ARE ALLOCATED AT RANDOM, THIS NEEDS TO BE FIXED.
-
 [request-pbs-common]
 <= slap-connection
 recipe = slapos.cookbook:request
