@@ -1089,6 +1089,66 @@ class TestSlapOSUpdateComputerCapacityScopeAlarm(testSlapOSMixin):
     self.computer.Computer_checkAndUpdateCapacityScope()
     self.assertEqual('open', self.computer.getCapacityScope())
 
+  def _newComputerModel(self, quantity=None):
+    computer_model = self.portal.computer_model_module.\
+        template_computer_model.Base_createCloneDocument(batch_mode=1)
+    computer_model.edit(capacity_quantity=quantity,
+        reference='TESTCM-%s' % self.generateNewId(),
+    )
+    return computer_model
+
+  def _addPartitionToComputer(self):
+    partition = self.computer.newContent(portal_type='Computer Partition',
+        reference='part1')
+    partition.markFree()
+    partition.markBusy()
+    partition.validate()
+    self.software_instance.setAggregate(partition.getRelativeUrl())
+    self.tic()
+
+  def test_Computer_checkAndUpdateCapacityScope_model(self):
+    computer_model = self._newComputerModel(9999)
+
+    self.computer.edit(specialise_value=computer_model, 
+                       capacity_quantity=None)
+    transaction.commit()
+
+    self.computer.Computer_checkAndUpdateCapacityScope()
+    self.assertEqual('open', self.computer.getCapacityScope())
+    self.assertEqual(computer_model.getCapacityQuantity(),
+                     self.computer.getCapacityQuantity())
+
+  def test_Computer_checkAndUpdateCapacityScope_model_no_capacity(self):
+    self._makeTree()
+
+    computer_model = self._newComputerModel(1)
+    self.computer.edit(specialise_value=computer_model, 
+                       capacity_quantity=None)
+
+    self._addPartitionToComputer() 
+    self.computer.Computer_checkAndUpdateCapacityScope()
+    self.assertEqual('close', self.computer.getCapacityScope())
+    self.assertEqual('Computer capacity limit exceeded',
+        self.computer.workflow_history['edit_workflow'][-1]['comment'])
+
+    self.assertEqual(computer_model.getCapacityQuantity(),
+                     self.computer.getCapacityQuantity())
+
+  def test_Computer_checkAndUpdateCapacityScope_model_has_capacity(self):
+    # If capacity is set on computer, model value is ignored.
+    self._makeTree()
+
+    computer_model = self._newComputerModel(1)
+    self.computer.edit(specialise_value=computer_model, 
+                       capacity_quantity=2)
+
+    self._addPartitionToComputer()
+    self.computer.Computer_checkAndUpdateCapacityScope()
+    self.assertEqual('open', self.computer.getCapacityScope())
+
+    self.assertNotEqual(computer_model.getCapacityQuantity(),
+                     self.computer.getCapacityQuantity())
+
   def test_Computer_checkAndUpdateCapacityScope_with_old_access(self):
     memcached_dict = self.portal.portal_memcached.getMemcachedDict(
         key_prefix='slap_tool',
@@ -1106,14 +1166,7 @@ class TestSlapOSUpdateComputerCapacityScopeAlarm(testSlapOSMixin):
   def test_Computer_checkAndUpdateCapacityScope_no_capacity_quantity(self):
     self._makeTree()
     self.computer.edit(capacity_quantity=1)
-    partition = self.computer.newContent(portal_type='Computer Partition',
-        reference='part1')
-    partition.markFree()
-    partition.markBusy()
-    partition.validate()
-    self.software_instance.setAggregate(partition.getRelativeUrl())
-    self.tic()
-
+    self._addPartitionToComputer()
     self.computer.Computer_checkAndUpdateCapacityScope()
     self.assertEqual('close', self.computer.getCapacityScope())
     self.assertEqual('Computer capacity limit exceeded',

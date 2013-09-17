@@ -1,6 +1,8 @@
 acl_users/slapos_access_token_extraction
 acl_users/slapos_machine
 acl_users/slapos_shadow
+computer_model_module/template_computer_model
+computer_model_module/template_computer_model/**
 computer_module/template_computer
 computer_module/template_computer/**
 hosting_subscription_module/template_hosting_subscription
