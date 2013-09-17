@@ -78,6 +78,8 @@ class Recipe(object):
       Partition parameter whose name cannot be represented unambiguously in
       buildout syntax are ignored. They cannot be accessed from buildout syntax
       anyway, and are available through "configuration" output key.
+    instance-state
+      The instance state.
   """
 
   # XXX: used to detect if a configuration key is a valid section key. This
@@ -91,10 +93,12 @@ class Recipe(object):
           options.get('key'),
           options.get('cert'),
       )
-      parameter_dict = slap.registerComputerPartition(
+      computer_partition = slap.registerComputerPartition(
           options['computer'],
           options['partition'],
-      ).getInstanceParameterDict()
+      )
+      parameter_dict = computer_partition.getInstanceParameterDict()
+      options['instance-state'] = computer_partition.getState()
       # XXX: those are not partition parameters, strictly speaking.
       # Make them available as individual section keys.
       for his_key in (
@@ -129,9 +133,9 @@ class Recipe(object):
 
       # also export single ip values for those recipes that don't support sets.
       if ipv4_set:
-          options['ipv4-random'] = list(ipv4_set)[0]
+          options['ipv4-random'] = list(ipv4_set)[0].encode('UTF-8')
       if ipv6_set:
-          options['ipv6-random'] = list(ipv6_set)[0]
+          options['ipv6-random'] = list(ipv6_set)[0].encode('UTF-8')
 
       options['tap'] = tap_set
       parameter_dict = self._expandParameterDict(options, parameter_dict)

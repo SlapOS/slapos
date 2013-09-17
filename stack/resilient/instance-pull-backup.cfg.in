@@ -105,7 +105,8 @@ promises-directory = $${basedirectory:promises}
 directory = $${directory:pbs-backup}
 cron-entries = $${cron:cron-entries}
 wrappers-directory = $${directory:pbs-wrappers}
-notifier-url = http://[$${notifier:host}]:$${notifier:port}/
+# XXX: this should be named "notifier-host"
+notifier-url = http://[$${notifier:host}]:$${notifier:port}
 slave-instance-list = $${slap-parameter:slave_instance_list}
 
 

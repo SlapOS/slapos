@@ -37,7 +37,12 @@ class Recipe(GenericSlapRecipe):
   """
   def _install(self):
     ip = self.options['ip']
-    backend_url = self.parameter_dict['tidstorage-url']
+    backend_url = self.options.get('backend-url',
+      # BBB: Peeking in partition parameters directly. Eew.
+      self.parameter_dict.get('backend-url',
+        self.parameter_dict.get('tidstorage-url') # BBB
+      )
+    )
     backend_server, backend_port = self._getBackendServer(backend_url)
     path_list = []
     if backend_url.startswith('https://'):
@@ -70,6 +75,7 @@ class Recipe(GenericSlapRecipe):
       varnishd_pid_file=self.options['pid-file'],
       varnish_instance_name=self.options['varnish-instance-name'],
       varnish_data=self.options['varnish-data'],
+      gcc_location=self.options['gcc-location'],
       shell_path=self.options['shell-path'],
       vcl_file=self.options['vcl-file'],
       backend_port=backend_port,

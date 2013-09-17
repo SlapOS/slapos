@@ -1,0 +1,57 @@
+[buildout]
+
+eggs-directory = {{ eggs_directory }}
+develop-eggs-directory = {{ develop_eggs_directory }}
+offline = true
+
+parts =
+  deploy-resiliency-test
+  request-resilient-kvm
+  deploy-standalone-resiliency-test
+
+[directory]
+recipe = slapos.cookbook:mkdirectory
+home = ${buildout:directory}
+etc = ${:home}/etc/
+var = ${:home}/var/
+srv = ${:home}/srv/
+bin = ${:home}/bin/
+tmp = ${:home}/tmp/
+log = ${:var}/log/
+services = ${:etc}/service/
+scripts = ${:etc}/run/
+
+[deploy-resiliency-test]
+recipe = slapos.cookbook:wrapper
+wrapper-path = ${directory:scripts}/runKVMResiliencyTestSuite
+testnode-parameters = --test-result-path={{ slapparameter_dict.get('test-result-path') }} --revision={{ slapparameter_dict.get('test-suite-revision') }} --node-title={{ slapparameter_dict.get('scalability-launcher-title') }} --test-suite={{ slapparameter_dict.get('test-suite') }} --test-suite-master-url={{ slapparameter_dict.get('test-suite-master-url') }} --log-path=${directory:log}
+kvm-test-parameters = server_url=${slap-connection:server-url} key_file=${slap-connection:key-file} cert_file=${slap-connection:cert-file} computer_id=${slap-connection:computer-id} partition_id=${slap-connection:partition-id} software=${slap-connection:software-release-url} namebase=kvm kvm_rootinstance_name='${request-resilient-kvm:name}'
+
+command-line = {{ bin_directory }}/runResiliencyTest ${:testnode-parameters} ${:kvm-test-parameters}
+
+
+[deploy-standalone-resiliency-test]
+# Used to manually run the KVM test if we don't have a running testnode.
+recipe = slapos.cookbook:wrapper
+wrapper-path = ${directory:bin}/runStandaloneResiliencyTestSuite
+command-line = {{ bin_directory }}/runStandaloneResiliencyTest --test-suite-title=kvm ${deploy-resiliency-test:kvm-test-parameters}
+
+[request-resilient-kvm]
+<= slap-connection
+recipe = slapos.cookbook:request
+software-url = ${slap-connection:software-release-url}
+software-type = kvm-resilient
+name = Resilient KVM (Root Instance)
+config = virtual-hard-drive-url virtual-hard-drive-md5sum resiliency-backup-periodicity
+config-virtual-hard-drive-url = ${slap-parameter:virtual-hard-drive-url}
+config-virtual-hard-drive-md5sum = ${slap-parameter:virtual-hard-drive-md5sum}
+config-resiliency-backup-periodicity = */5
+# We don't use url parameter, but we want it to be there to make sure root instance is ready.
+return = url
+# XXX What to do?
+#sla = instance_guid
+#sla-instance_guid = ${slap-parameter:frontend-instance-guid}
+
+[slap-parameter]
+virtual-hard-drive-url = https://softinst43236.host.vifib.net/data/public/8e2138.php?dl=true
+virtual-hard-drive-md5sum = de0f10c7c6538e9928879332afd9be7a

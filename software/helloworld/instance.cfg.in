@@ -45,7 +45,9 @@ configuration.name = John Doe
 # Create all needed directories, depending on your needs
 [directory]
 recipe = slapos.cookbook:mkdirectory
-etc = $${buildout:directory}/etc
+home = $${buildout:directory}
+etc = $${:home}/etc
+var = $${:home}/var
 # Executables put here will be started but not monitored (for startup scripts)
 script = $${:etc}/run/
 # Executables put here will be started and monitored (for daemons)
@@ -53,7 +55,8 @@ service = $${:etc}/service
 # Executables put here will be launched after buildout has completed to see
 # if instance is running
 promise = $${:etc}/promise/
-
+# Path of the log directory used by our service (see [hello-world])
+log = $${:var}/log
 
 # Create a simple shell script that will only output your name if you
 # specified it as instance parameter.
@@ -62,9 +65,11 @@ promise = $${:etc}/promise/
 # This recipe will try to "exec" the command-line after separating parameters.
 recipe = slapos.cookbook:wrapper
 # Notice that there is only one $ at ${dash:location}, it is because it comes from the Software Release buildout profile.
-command-line = ${dash:location}/bin/dash -c 'echo "Hello $${instance-parameter:configuration.name}!"; sleep 100000;' 
+command-line = ${dash:location}/bin/dash -c 'echo "Hello $${instance-parameter:configuration.name}, it is $(date)." > $${directory:log}/log.log; sleep 1000000;'
 # Put this shell script in the "etc/service" directory. Every executable of this
-# repository will be started and monitored by supervisord
+# repository will be started and monitored by supervisord. If one service
+# exits/crashes, it will trigger a "bang" and cause run of slapgrid for the
+# instance.
 wrapper-path = $${directory:service}/hello-world
 
 
