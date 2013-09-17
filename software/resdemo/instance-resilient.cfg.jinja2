@@ -13,7 +13,7 @@ parts +=
   {{ parts.replicate("apache", "3") }}
   publish-connection-informations
 
-{{ replicated.replicate("apache", "3", "apache-export", "apache-import") }}
+{{ replicated.replicate("apache", "3", "apache-export", "apache-import", slapparameter_dict=slapparameter_dict) }}
 
 # Bubble up the parameters
 [request-apache]
