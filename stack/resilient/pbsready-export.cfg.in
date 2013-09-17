@@ -25,6 +25,12 @@ home = $${buildout:directory}
 var = $${:home}/var
 pid = $${:var}/pid
 
+# Define port of ssh server. It has to be different from import so that it
+# supports export/import using same IP (slaprunner, slapos-in-partition,
+# ipv4...)
+[dropbear-server]
+port = 22221
+
 [resilient-publish-connection-parameter]
 notification-id = http://[$${notifier:host}]:$${notifier:port}/get/$${notifier-exporter:name}
 
