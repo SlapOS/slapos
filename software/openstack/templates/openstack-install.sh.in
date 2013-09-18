@@ -17,7 +17,8 @@ if [ -z "$IPv4" ];
   then IPv4="127.0.0.1"
 fi
 
-apt-get update
+sudo apt-get update
+sudo apt-get -y upgrade
 if [ -z "$GIT_EXEC" -o ! -x "$GIT_EXEC" ]; then
   apt-get install -y git ;
 fi
@@ -46,7 +47,7 @@ LOGDAYS=7
 
 # Nova Network Configuration
 FLAT_INTERFACE=eth0
-FIXED_RANGE=10.0.2.0/24
+FIXED_RANGE=10.0.0.0/24
 FIXED_NETWORK_SIZE=256
 FLOATING_RANGE=$FLOATING_RANGE
 
@@ -68,7 +69,7 @@ chown -R $NOVA_USER: $BASE_DIR
 
 #sudo dpkg --configure -a
 cd $BASE_DIR; ./stack.sh
-#cd $BASE_DIR; ./local.sh
+cd $BASE_DIR; ./local.sh
 
 if grep "$BASE_DIR/rejoin-stack.sh" /etc/rc.local > /dev/null
 then  

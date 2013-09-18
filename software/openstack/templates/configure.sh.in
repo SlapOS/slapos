@@ -59,6 +59,8 @@ $BRCTL_EXEC addbr br100
 #Restart the network to take  new network configuration.
 /etc/init.d/networking restart
 
+sudo apt-get update
+sudo apt-get -y upgrade
 if [ -z "$GCC_EXEC" -o ! -x "$GCC_EXEC" ]; then
   apt-get install -y gcc g++ ;
 fi
