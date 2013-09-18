@@ -5,15 +5,19 @@
 REPO_URL="${:nova-url}"
 NOVA_CONFIG="/etc/nova/nova.conf"
 BASE_DIR="/opt/openstack"
+INSTALL_DIR="/opt/stack"
 INSTALL_LOG="/opt/openstack/log"
 NOVA_PASSWD="${:nova-passwd}"
 NOVA_USER="${:nova-user}"
+FLOATING_RANGE=172.24.4.224/28
+GIT_EXEC=`which git`
 
 IPv4=`ip addr show eth0 | grep 'inet ' | awk '{print $2}' | cut -d/ -f1`
 if [ -z "$IPv4" ];
   then IPv4="127.0.0.1"
 fi
 
+apt-get update
 if [ -z "$GIT_EXEC" -o ! -x "$GIT_EXEC" ]; then
   apt-get install -y git ;
 fi
@@ -35,21 +39,26 @@ SERVICE_TOKEN=$NOVA_PASSWD
 SERVICE_PASSWORD=$NOVA_PASSWD
 ADMIN_PASSWORD=$NOVA_PASSWD
 
-SERVICE_HOST=$IPv4
 HOST_IP=$IPv4
 
 LOGFILE=$INSTALL_LOG/stack.sh.log
 LOGDAYS=7
 
 # Nova Network Configuration
-PUBLIC_INTERFACE=br100
 FLAT_INTERFACE=eth0
-FLAT_NETWORK_BRIDGE_DEFAULT=br100
-VLAN_INTERFACE=eth0
-ISCSI_IP_PREFIX=192.168.100
-FIXED_RANGE=
-NET_MAN=FlatDHCPManager
-MULTI_HOST=1
+FIXED_RANGE=10.0.2.0/24
+FIXED_NETWORK_SIZE=256
+FLOATING_RANGE=$FLOATING_RANGE
+
+disable_service n-net
+enable_service q-svc
+enable_service q-agt
+enable_service q-dhcp
+enable_service q-l3
+enable_service q-meta
+enable_service neutron
+# Optional, to enable tempest configuration as part of devstack
+enable_service tempest
 
 EOF
 chmod 600 $BASE_DIR/localrc
@@ -61,13 +70,18 @@ chown -R $NOVA_USER: $BASE_DIR
 cd $BASE_DIR; ./stack.sh
 #cd $BASE_DIR; ./local.sh
 
-if grep "/opt/stack/openstack/rejoin-stack.sh" /etc/rc.local > /dev/null
+if grep "$BASE_DIR/rejoin-stack.sh" /etc/rc.local > /dev/null
 then  
   echo "Skipping configuring rc.local file..."
 else
   sudo sed -n '$!p' /etc/rc.local > temp-rc.local;
   sudo mv temp-rc.local /etc/rc.local;
-  sudo echo -e "/opt/stack/openstack/rejoin-stack.sh \n\nexit 0" >> /etc/rc.local;
+  sudo echo -e "sudo losetup -f $INSTALL_DIR/data/stack-volumes-backing-file \n$BASE_DIR/rejoin-stack.sh > /dev/null \n\nexit 0" >> /etc/rc.local;
+  sudo chmod +x /etc/rc.local
 fi
+
+#Allow openstack images to access to internet
+#sudo iptables -t nat -A POSTROUTING -s $FLOATING_RANGE -j MASQUERADE
+
 exit 0
 

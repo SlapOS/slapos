@@ -153,7 +153,7 @@ rabbit_host = ${:slap-ipv4}
 osapi_compute_listen = ${:slap-ipv4}
 keystone_ec2_url = http://${:slap-ipv4}:5000/v2.0/ec2tokens
 default_floating_pool = public
-iscsi_ip_prefix = 192.168.100
+#iscsi_ip_prefix = 192.168.100
 fixed_range = 
 force_dhcp_release = True
 dhcpbridge_flagfile = /etc/nova/nova.conf
@@ -164,6 +164,16 @@ allow_resize_to_same_host = True
 auth_strategy = keystone
 debug = True
 verbose = True
+
+# Network settings
+network_api_class=nova.network.neutronv2.api.API
+neutron_url=http://${:slap-ipv4}:9696
+neutron_auth_strategy=keystone
+neutron_admin_tenant_name=service
+neutron_admin_username=neutron
+neutron_admin_password=${:nova-passwd}
+neutron_admin_auth_url=http://${:slap-ipv4}:35357/v2.0
+libvirt_vif_driver=nova.virt.libvirt.vif.LibvirtHybridOVSBridgeDriver
 
 [osapi_v3]
 enabled = True
