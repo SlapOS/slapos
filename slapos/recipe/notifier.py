@@ -50,6 +50,9 @@ class Recipe(GenericBaseRecipe):
 class Callback(GenericBaseRecipe):
 
   def createCallback(self, notification_id, callback):
+    # XXX: hashing the name here and in
+    # slapos.toolbox/slapos/pubsub/__init__.py is completely messed up and
+    # prevent any debug.
     callback_id = sha512(notification_id).hexdigest()
 
     filepath = os.path.join(self.options['callbacks'], callback_id)

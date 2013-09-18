@@ -25,7 +25,6 @@
 #
 ##############################################################################
 
-import hashlib
 import json
 import os
 import signal
@@ -88,12 +87,10 @@ class Recipe(GenericSlapRecipe, Notify, Callback):
     if not url:
       raise ValueError('Missing URL parameter for PBS recipe')
 
-    # We assume that thanks to sha512 there's no collisions
-    url_hash = hashlib.sha512(url).hexdigest()
-    name_hash = hashlib.sha512(entry['name']).hexdigest()
+    slave_id = entry['notification-id']
 
     promise_path = os.path.join(self.options['promises-directory'],
-                                url_hash)
+                                slave_id)
     parsed_url = urlparse.urlparse(url)
     promise_dict = self.promise_base_dict.copy()
     promise_dict.update(user=parsed_url.username,
@@ -104,13 +101,11 @@ class Recipe(GenericSlapRecipe, Notify, Callback):
                                       promise_dict)
     path_list.append(promise)
 
-
     host = parsed_url.hostname
     known_hosts_file[host] = entry['server-key']
 
     # XXX use -y because the host might not yet be in the
     #     trusted hosts file until the next time slapgrid is run.
-
     remote_schema = '%(ssh)s -y -p %%s %(user)s@%(host)s' % \
       {
         'ssh': self.options['sshclient-binary'],
@@ -123,8 +118,7 @@ class Recipe(GenericSlapRecipe, Notify, Callback):
     remote_directory = '%(port)s::%(path)s' % {'port': parsed_url.port,
                                                'path': parsed_url.path}
 
-    local_directory = self.createDirectory(self.options['directory'],
-                                           name_hash)
+    local_directory = self.createDirectory(self.options['directory'], entry['name'])
 
     if entry['type'] == 'push':
       parameters.extend(['--restore-as-of', 'now'])
@@ -136,7 +130,7 @@ class Recipe(GenericSlapRecipe, Notify, Callback):
       comments = ['','Pull data from a PBS *-export instance.','']
 
     wrapper_basepath = os.path.join(self.options['wrappers-directory'],
-                                    url_hash)
+                                    slave_id)
 
     if 'notify' in entry:
       wrapper_path = wrapper_basepath + '_raw'
@@ -156,18 +150,17 @@ class Recipe(GenericSlapRecipe, Notify, Callback):
                                     wrapper=wrapper_basepath,
                                     executable=wrapper_path,
                                     log=os.path.join(self.options['feeds'], entry['notification-id']),
-                                    title=entry.get('title', 'Untitled'),
+                                    title=entry.get('title', slave_id),
                                     notification_url=entry['notify'],
                                     feed_url=feed_url,
                                   )
       path_list.append(wrapper)
-      #self.setConnectionDict(dict(feed_url=feed_url), entry['slave_reference'])
 
     if 'on-notification' in entry:
       path_list.append(self.createCallback(str(entry['on-notification']),
                                            wrapper))
     else:
-      cron_entry = os.path.join(self.options['cron-entries'], url_hash)
+      cron_entry = os.path.join(self.options['cron-entries'], slave_id)
       with open(cron_entry, 'w') as cron_entry_file:
         cron_entry_file.write('%s %s' % (entry['frequency'], wrapper))
       path_list.append(cron_entry)
@@ -194,7 +187,6 @@ class Recipe(GenericSlapRecipe, Notify, Callback):
       slaves = json.loads(self.options['slave-instance-list'])
       known_hosts = KnownHostsFile(self.options['known-hosts'])
       with known_hosts:
-        # XXX this API could be cleaner
         for slave in slaves:
           path_list.extend(self.add_slave(slave, known_hosts))
     else:
