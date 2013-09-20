@@ -31,7 +31,18 @@ import subprocess
 import re
 
 from slapos.recipe.librecipe import GenericBaseRecipe
-from slapos.recipe.librecipe.inotify import subfiles
+
+
+def subfiles(d):
+  import time
+  ret = set()
+  while True:
+    for f in os.listdir(d):
+      if not f in ret:
+        yield os.path.join(d, f)
+      ret.add(f)
+    time.sleep(2)
+
 
 # This authority only works with dropbear sshkey generator
 def sshkeys_authority(args):
