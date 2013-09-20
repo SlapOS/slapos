@@ -1,5 +1,4 @@
 * Report, from pbs and from clone, when a backup failed
-* When a rdiff-backup command failed, automatically recover from it (by removing rdiff-backup-data?). How not to loose all history?
 
 * PBSs and mirrors should monitor/replace themselves
 * Report errors from backup

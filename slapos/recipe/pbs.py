@@ -30,6 +30,7 @@ import os
 import signal
 import subprocess
 import sys
+import textwrap
 import urlparse
 
 from slapos.recipe.librecipe import GenericSlapRecipe
@@ -88,10 +89,13 @@ class Recipe(GenericSlapRecipe, Notify, Callback):
       raise ValueError('Missing URL parameter for PBS recipe')
     parsed_url = urlparse.urlparse(url)
 
-    slave_id = entry['notification-id']
     slave_type = entry['type']
     if not slave_type in ['pull', 'push']:
       raise ValueError('type parameter must be either pull or push.')
+
+    slave_id = entry['notification-id']
+
+    print 'Processing PBS slave %s with type %s' % (slave_id, slave_type)
 
     promise_path = os.path.join(self.options['promises-directory'], slave_id)
     promise_dict = self.promise_base_dict.copy()
@@ -106,42 +110,84 @@ class Recipe(GenericSlapRecipe, Notify, Callback):
     host = parsed_url.hostname
     known_hosts_file[host] = entry['server-key']
 
-    notifier_path = os.path.join(self.options['wrappers-directory'], slave_id)
-    rdiff_path = notifier_path + '_raw'
+    notifier_wrapper_path = os.path.join(self.options['wrappers-directory'], slave_id)
+    rdiff_wrapper_path = notifier_wrapper_path + '_raw'
 
     # Create the rdiff-backup wrapper
     # It is useful to separate it from the notifier so that we can run it
     # Manually.
-    rdiff_parameter_list = []
+    rdiffbackup_parameter_list = []
+
     # XXX use -y because the host might not yet be in the
     #     trusted hosts file until the next time slapgrid is run.
-    rdiff_parameter_list.extend([
-        '--remote-schema', '%(ssh)s -y -p %%s %(user)s@%(host)s' % {
+    rdiffbackup_remote_schema = '%(ssh)s -y -p %%s %(user)s@%(host)s' % {
             'ssh': self.options['sshclient-binary'],
             'user': parsed_url.username,
             'host': parsed_url.hostname,
-    }])
-    if slave_type == 'push':
-      rdiff_parameter_list.extend(['--restore-as-of', 'now', '--force'])
-      comments = ['','Push data to a PBS *-import instance.', '']
-    elif slave_type == 'pull':
-      comments = ['','Pull data from a PBS *-export instance.', '']
+    }
     remote_directory = '%(port)s::%(path)s' % {'port': parsed_url.port,
                                                'path': parsed_url.path}
     local_directory = self.createDirectory(self.options['directory'], entry['name'])
-    rdiff_parameter_list.extend([local_directory, remote_directory])
-    rdiff_wrapper = self.createWrapper(
-        name=rdiff_path,
-        command=self.options['rdiffbackup-binary'],
-        parameters=rdiff_parameter_list,
-        comments=comments,
-    )
+
+    if slave_type == 'push':
+      # Create a simple rdiff-backup wrapper that will push
+      rdiffbackup_parameter_list.extend(['--remote-schema', rdiffbackup_remote_schema])
+      rdiffbackup_parameter_list.extend(['--restore-as-of', 'now'])
+      rdiffbackup_parameter_list.append('--force')
+      rdiffbackup_parameter_list.append(local_directory)
+      rdiffbackup_parameter_list.append(remote_directory)
+      comments = ['', 'Push data to a PBS *-import instance.', '']
+      rdiff_wrapper = self.createWrapper(
+          name=rdiff_wrapper_path,
+          command=self.options['rdiffbackup-binary'],
+          parameters=rdiffbackup_parameter_list,
+          comments=comments,
+      )
+    elif slave_type == 'pull':
+      # Wrap rdiff-backup call into a script that checks consistency of backup
+      # We need to manually escape the remote schema
+      rdiffbackup_parameter_list.extend(['--remote-schema', '"%s"' % rdiffbackup_remote_schema])
+      rdiffbackup_parameter_list.append(remote_directory)
+      rdiffbackup_parameter_list.append(local_directory)
+      comments = ['', 'Pull data from a PBS *-export instance.', '']
+      rdiff_wrapper_template = textwrap.dedent("""\
+          #!/bin/sh
+          # %(comment)s
+          RDIFF_BACKUP="%(rdiffbackup_binary)s"
+          $RDIFF_BACKUP %(rdiffbackup_parameter)s
+          if [ ! $? -eq 0 ]; then
+              # Check the backup, go to the last consistent backup, so that next
+              # run will be okay.
+              echo "Checking backup directory..."
+              $RDIFF_BACKUP --check-destination-dir %(local_directory)s
+              if [ ! $? -eq 0 ]; then
+                  # Here, two possiblities:
+                  # * The first backup failed. It is safe to remove it since there is nothing valuable there.
+                  # * The backup has been complete, but is now in a really weird state. Not safe to remove it.
+                  echo "Impossible to check backup: we move it to a safe place."
+                  # XXX: bang
+                  mv %(local_directory)s %(local_directory)s.$(date +%%s)
+              fi
+          fi
+          """)
+      rdiff_wrapper_content = rdiff_wrapper_template % {
+              'comment': comments,
+              'rdiffbackup_binary': self.options['rdiffbackup-binary'],
+              'local_directory': local_directory,
+              'rdiffbackup_parameter': ' \\\n    '.join(rdiffbackup_parameter_list),
+      }
+      rdiff_wrapper = self.createFile(
+          name=rdiff_wrapper_path,
+          content=rdiff_wrapper_content,
+          mode=0700
+      )
+
     path_list.append(rdiff_wrapper)
 
     # Create notifier wrapper
     notifier_wrapper = self.createNotifier(
         notifier_binary=self.options['notifier-binary'],
-        wrapper=notifier_path,
+        wrapper=notifier_wrapper_path,
         executable=rdiff_wrapper,
         log=os.path.join(self.options['feeds'], entry['notification-id']),
         title=entry.get('title', slave_id),
@@ -195,4 +241,3 @@ class Recipe(GenericSlapRecipe, Notify, Callback):
       path_list.append(wrapper)
 
     return path_list
-
