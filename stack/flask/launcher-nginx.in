@@ -1,0 +1,6 @@
+#! {{ param_nginx_frontend['path_shell'] }}
+# BEWARE: This file is operated by slapgrid
+# BEWARE: It will be overwritten automatically
+# Run nginx
+
+exec {{ param_nginx_frontend['bin_nginx'] }} -c {{ param_nginx_frontend['path_nginx_conf'] }}
