@@ -86,12 +86,14 @@ class Recipe(GenericSlapRecipe, Notify, Callback):
     url = entry.get('url')
     if not url:
       raise ValueError('Missing URL parameter for PBS recipe')
+    parsed_url = urlparse.urlparse(url)
 
     slave_id = entry['notification-id']
+    slave_type = entry['type']
+    if not slave_type in ['pull', 'push']:
+      raise ValueError('type parameter must be either pull or push.')
 
-    promise_path = os.path.join(self.options['promises-directory'],
-                                slave_id)
-    parsed_url = urlparse.urlparse(url)
+    promise_path = os.path.join(self.options['promises-directory'], slave_id)
     promise_dict = self.promise_base_dict.copy()
     promise_dict.update(user=parsed_url.username,
                         host=parsed_url.hostname,
@@ -104,65 +106,57 @@ class Recipe(GenericSlapRecipe, Notify, Callback):
     host = parsed_url.hostname
     known_hosts_file[host] = entry['server-key']
 
+    notifier_path = os.path.join(self.options['wrappers-directory'], slave_id)
+    rdiff_path = notifier_path + '_raw'
+
+    # Create the rdiff-backup wrapper
+    # It is useful to separate it from the notifier so that we can run it
+    # Manually.
+    rdiff_parameter_list = []
     # XXX use -y because the host might not yet be in the
     #     trusted hosts file until the next time slapgrid is run.
-    remote_schema = '%(ssh)s -y -p %%s %(user)s@%(host)s' % \
-      {
-        'ssh': self.options['sshclient-binary'],
-        'user': parsed_url.username,
-        'host': parsed_url.hostname,
-      }
-
-    parameters = ['--remote-schema', remote_schema]
-
+    rdiff_parameter_list.extend([
+        '--remote-schema', '%(ssh)s -y -p %%s %(user)s@%(host)s' % {
+            'ssh': self.options['sshclient-binary'],
+            'user': parsed_url.username,
+            'host': parsed_url.hostname,
+    }])
+    if slave_type == 'push':
+      rdiff_parameter_list.extend(['--restore-as-of', 'now', '--force'])
+      comments = ['','Push data to a PBS *-import instance.', '']
+    elif slave_type == 'pull':
+      comments = ['','Pull data from a PBS *-export instance.', '']
     remote_directory = '%(port)s::%(path)s' % {'port': parsed_url.port,
                                                'path': parsed_url.path}
-
     local_directory = self.createDirectory(self.options['directory'], entry['name'])
+    rdiff_parameter_list.extend([local_directory, remote_directory])
+    rdiff_wrapper = self.createWrapper(
+        name=rdiff_path,
+        command=self.options['rdiffbackup-binary'],
+        parameters=rdiff_parameter_list,
+        comments=comments,
+    )
+    path_list.append(rdiff_wrapper)
 
-    if entry['type'] == 'push':
-      parameters.extend(['--restore-as-of', 'now'])
-      parameters.append('--force')
-      parameters.extend([local_directory, remote_directory])
-      comments = ['','Push data to a PBS *-import instance.','']
-    else:
-      parameters.extend([remote_directory, local_directory])
-      comments = ['','Pull data from a PBS *-export instance.','']
-
-    wrapper_basepath = os.path.join(self.options['wrappers-directory'],
-                                    slave_id)
-
-    if 'notify' in entry:
-      wrapper_path = wrapper_basepath + '_raw'
-    else:
-      wrapper_path = wrapper_basepath
-
-    wrapper = self.createWrapper(name=wrapper_path,
-                                 command=self.options['rdiffbackup-binary'],
-                                 parameters=parameters,
-                                 comments = comments)
-    path_list.append(wrapper)
-
-    if 'notify' in entry:
-      feed_url = '%s/get/%s' % (self.options['notifier-url'],
-                                entry['notification-id'])
-      wrapper = self.createNotifier(notifier_binary=self.options['notifier-binary'],
-                                    wrapper=wrapper_basepath,
-                                    executable=wrapper_path,
-                                    log=os.path.join(self.options['feeds'], entry['notification-id']),
-                                    title=entry.get('title', slave_id),
-                                    notification_url=entry['notify'],
-                                    feed_url=feed_url,
-                                  )
-      path_list.append(wrapper)
+    # Create notifier wrapper
+    notifier_wrapper = self.createNotifier(
+        notifier_binary=self.options['notifier-binary'],
+        wrapper=notifier_path,
+        executable=rdiff_wrapper,
+        log=os.path.join(self.options['feeds'], entry['notification-id']),
+        title=entry.get('title', slave_id),
+        notification_url=entry['notify'],
+        feed_url='%s/get/%s' % (self.options['notifier-url'], entry['notification-id']),
+    )
+    path_list.append(notifier_wrapper)
 
     if 'on-notification' in entry:
       path_list.append(self.createCallback(str(entry['on-notification']),
-                                           wrapper))
+                                           notifier_wrapper))
     else:
       cron_entry = os.path.join(self.options['cron-entries'], slave_id)
       with open(cron_entry, 'w') as cron_entry_file:
-        cron_entry_file.write('%s %s' % (entry['frequency'], wrapper))
+        cron_entry_file.write('%s %s' % (entry['frequency'], notifier_wrapper))
       path_list.append(cron_entry)
 
     return path_list
