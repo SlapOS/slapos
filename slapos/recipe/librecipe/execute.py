@@ -6,6 +6,13 @@ import time
 
 import inotifyx
 
+def busy_wait_files_creation(file_list):
+  import os, time
+  while True:
+    if all(os.path.exists(f) for f in file_list):
+      return
+    time.sleep(2)
+
 def _wait_files_creation(file_list):
   # Etablish a list of directory and subfiles
   directories = dict()
@@ -80,7 +87,7 @@ def generic_exec(args):
       exec_env.update(environment_overriding)
 
   if file_list is not None:
-      _wait_files_creation(file_list)
+      busy_wait_files_creation(file_list)
 
   os.execve(exec_list[0], exec_list + sys.argv[1:], exec_env)
 
