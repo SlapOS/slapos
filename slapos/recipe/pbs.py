@@ -142,6 +142,7 @@ class Recipe(GenericSlapRecipe, Notify, Callback):
           command=self.options['rdiffbackup-binary'],
           parameters=rdiffbackup_parameter_list,
           comments=comments,
+          pidfile=os.path.join(self.options['run-directory'], '%s_raw.pid' % slave_id),
       )
     elif slave_type == 'pull':
       # Wrap rdiff-backup call into a script that checks consistency of backup
@@ -193,6 +194,7 @@ class Recipe(GenericSlapRecipe, Notify, Callback):
         title=entry.get('title', slave_id),
         notification_url=entry['notify'],
         feed_url='%s/get/%s' % (self.options['notifier-url'], entry['notification-id']),
+        pidfile=os.path.join(self.options['run-directory'], '%s.pid' % slave_id)
     )
     path_list.append(notifier_wrapper)
 
