@@ -13,13 +13,6 @@
       "description": "URL used to connect to the service.",
       "type": "uri",
       "required": false
-    },
-
-    "password": {
-      "title": "Password",
-      "description": "Password used to authenticate in the service webpage.",
-      "type": "uri",
-      "required": true
     }
   }
 }

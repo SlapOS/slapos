@@ -1,0 +1,126 @@
+{% if slap_software_type.startswith(software_type) -%}
+
+[jinja2-template-base]
+recipe = slapos.recipe.template:jinja2
+rendered = ${buildout:directory}/${:filename}
+extra-context =
+context =
+    import json_module json
+    key eggs_directory buildout:eggs-directory
+    key develop_eggs_directory buildout:develop-eggs-directory
+    key slap_software_type slap-parameter:slap_software_type
+    key slave_instance_list slap-parameter:slave_instance_list
+    ${:extra-context}
+
+{% set part_list = [] -%}
+{% set type_key = 'replicate-' %}
+{% set type_key_length = type_key | length %}
+{% if slap_software_type.startswith(type_key) %}
+{%   set frontend_type = slap_software_type[type_key_length:] -%}
+{% else -%}
+{%   set frontend_type = slapparameter_dict.pop('-frontend-type', 'default') -%}
+{% endif -%}
+{% set frontend_quantity = slapparameter_dict.pop('-frontend-quantity', '2') | int -%}
+{% set slave_list_name = 'extra_slave_instance_list' -%}
+{% set frontend_list = [] %}
+{% set frontend_section_list = [] %}
+{% set namebase = 'apache-frontend' -%}
+
+# Here we request individualy each frontend.
+# The presence of sla parameters is checked and added if found
+{% for i in range(1, frontend_quantity + 1) -%}
+{%   set frontend_name = "%s-%s" % (namebase, i) -%}
+{%   set request_section_title = 'request-%s' % frontend_name -%}
+{%   set sla_key = "-sla-%s-" % i -%}
+{%   set sla_key_length = sla_key | length %}
+{%   set sla_parameters = [] %}
+{%   for key in slapparameter_dict.keys() %}
+{%     if key.startswith(sla_key) %}
+{%       do sla_parameters.append(key[sla_key_length:]) %}
+{%     endif -%}
+{%   endfor -%}
+{%   do frontend_list.append(frontend_name) -%}
+{%   do frontend_section_list.append(request_section_title) -%}
+{%   do part_list.append(request_section_title) -%}
+[{{request_section_title}}]
+<= replicate
+name = {{frontend_name}}
+{%   if sla_parameters %}
+sla = {{ ' '.join(sla_parameters) }}
+{%     for parameter in sla_parameters -%}
+sla-{{ parameter }} = {{ slapparameter_dict.pop( sla_key + parameter ) }}
+{%     endfor -%}
+{%   endif -%}
+{% endfor -%}
+
+[replicate]
+<= slap-connection
+recipe = slapos.cookbook:request
+software-url = ${slap-connection:software-release-url}
+software-type = {{frontend_type}}
+return = private-ipv4 public-ipv4 slave-instance-information-list
+config = {{ ' '.join(slapparameter_dict.keys()) + ' ' + slave_list_name }}
+{% for parameter, value in slapparameter_dict.iteritems() -%}
+config-{{parameter}} = {{ value }}
+{% endfor -%}
+config-{{ slave_list_name }} = {{ json_module.dumps(slave_instance_list) }}
+
+[publish-information]
+recipe = slapos.cookbook:publish
+domain = {{ slapparameter_dict.get('domain') }}
+slave-amount = {{ slave_instance_list | length }}
+{% for frontend in frontend_list -%}
+#{{frontend}}-private-ipv4 = ${request-{{frontend}}:private-ipv4}
+{% endfor -%}
+
+
+#----------------------------
+#--
+#-- Publish slave information
+[publish-slave-information]
+recipe = slapos.cookbook:softwaretype
+default = ${dynamic-publish-slave-information:rendered}
+replicate = ${dynamic-publish-slave-information:rendered}
+
+[slave-information]
+{% for frontend_section in frontend_section_list -%}
+{{ frontend_section }} = {{ "${%s:connection-slave-instance-information-list}" % frontend_section }}
+{% endfor -%}
+
+[dynamic-publish-slave-information]
+< = jinja2-template-base
+template = {{ template_publish_slave_information }}
+filename = dynamic-publish-slave-information.cfg
+extensions = jinja2.ext.do
+extra-context =
+    section slave_information slave-information
+
+[buildout]
+parts =
+  publish-slave-information
+  publish-information
+{% for part in part_list -%}
+{{ '  %s' % part }}
+{% endfor -%}
+#      publish-information
+
+eggs-directory = {{ eggs_directory }}
+develop-eggs-directory = {{ develop_eggs_directory }}
+offline = true
+
+
+[slap_connection]
+# Kept for backward compatiblity
+computer_id = ${slap-connection:computer-id}
+partition_id = ${slap-connection:partition-id}
+server_url = ${slap-connection:server-url}
+software_release_url = ${slap-connection:software-release-url}
+key_file = ${slap-connection:key-file}
+cert_file = ${slap-connection:cert-file}
+
+[slap-parameter]
+slave_instance_list =
+-frontend-quantity = 2
+-frontend-type = default
+
+{%- endif %}

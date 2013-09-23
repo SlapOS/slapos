@@ -1,0 +1,143 @@
+{% if slap_software_type in software_type  -%}
+
+{% set cached_server_dict = {} -%}
+{% set part_list = [] -%}
+{% set cache_access = "http://%s:%s" % (local_ipv4, cache_port) -%}
+{% set TRUE_VALUES = ['y', 'yes', '1', 'true'] -%}
+{% set generic_instance_parameter_dict = {'cache_access': cache_access,} -%}
+{% if extra_slave_instance_list -%}
+{%   set slave_instance_information_list = []-%}
+{%   set slave_instance_list = slave_instance_list + json_module.loads(extra_slave_instance_list) -%}
+{% endif -%}
+[jinja2-template-base]
+recipe = slapos.recipe.template:jinja2
+rendered = {{ apache_configuration_directory }}/${:filename}
+extra-context =
+context =
+    key eggs_directory buildout:eggs-directory
+    key develop_eggs_directory buildout:develop-eggs-directory
+    ${:extra-context}
+
+# Go throught slave list to set their configuration
+{% for slave_instance in slave_instance_list -%}
+{%   set slave_reference = slave_instance.get('slave_reference') -%}
+{%   set slave_section_title = 'dynamic-template-slave-instance-%s' % slave_reference -%}
+{%   set slave_parameter_dict = generic_instance_parameter_dict.copy() -%}
+# Set slave domain if none was defined
+{%   if slave_instance.get('domain', None) == None -%}
+# Backward compatibility
+{%     if slave_instance.get('custom_domain', None) != None -%}
+{%       do slave_instance.__setitem__('domain', slave_instance.get('custom_domain') )-%}
+{%     else -%}
+{%       do slave_instance.__setitem__('domain', "%s.%s" % (slave_instance.get('slave_reference').replace("-", "").lower(), domain)) -%}
+{%     endif -%}
+{%   endif -%}
+# Set personal log, two per slave
+{%   set access_log = '/'.join([apache_log_directory, '%s_access_log' % slave_reference]) -%}
+{%   set error_log = '/'.join([apache_log_directory, '%s_error_log' % slave_reference]) -%}
+# The slave use cache
+# Next line is forbidden and people who copy it will be hanged short
+{%   set enable_cache = ('' ~ slave_instance.get('enable_cache', '')).lower() in TRUE_VALUES -%}
+{%   if enable_cache -%}
+{%     do cached_server_dict.__setitem__(slave_instance.get('domain'), slave_instance.get('url')) -%}
+{%     do slave_instance.__setitem__('url', cache_access) -%}
+{%   endif -%}
+{%   do part_list.append(slave_section_title) -%}
+# Set up slave configuration file
+[{{ slave_section_title }}]
+< = jinja2-template-base
+template = {{ template_slave_configuration }}
+filename = {{ '%s.conf' % slave_reference }}
+extensions = jinja2.ext.do
+extra-context =
+    section slave_parameter {{ 'slave-instance-%s-configuration' % slave_reference }}
+    raw domain {{ domain }}
+    raw https_port {{ https_port }}
+    raw http_port {{ http_port }}
+    raw access_log {{ access_log }}
+    raw error_log {{ error_log }}
+{{ '\n' }}
+
+# Set ssl certificates for each slave
+{%   for cert_name in ('ssl_key', 'ssl_crt', 'ssl_ca_crt', 'ssl_csr')-%}
+{%     if cert_name in slave_instance -%}
+{%       set cert_title = '%s-%s' % (slave_reference, cert_name.replace('ssl_', '')) -%}
+{%       set cert_file = '/'.join([custom_ssl_directory, cert_title.replace('-','.')]) -%}
+{%       do part_list.append(cert_title) -%}
+{%       do slave_instance.__setitem__('path_to_' ~ cert_name, cert_file) -%}
+# Store certificates on fs
+[{{ cert_title }}]
+< = jinja2-template-base
+template = {{ empty_template }}
+rendered = {{ cert_file }}
+extra-context =
+    key content {{ cert_title + '-config:value' }}
+# Store certificate in config
+[{{ cert_title + '-config' }}]
+value = {{ dumps(slave_instance.get(cert_name)) }}
+{%     endif -%}
+{%   endfor -%}
+
+# Set apache configuration for slave
+[{{ ('slave-instance-%s-configuration' % slave_reference) }}]
+{%   for key, value in slave_instance.iteritems() -%}
+{{ key }} = {{ dumps(value) }}
+{%   endfor %}
+
+# Publish slave information
+{%   if not extra_slave_instance_list -%}
+{%     set publish_section_title = 'publish-%s-connection-information' % slave_instance.get('slave_reference') -%}
+{%     do part_list.append(publish_section_title) -%}
+[{{ publish_section_title }}]
+recipe = slapos.cookbook:publish
+-slave-reference = {{ slave_instance.get('slave_reference') }}
+public-ipv4 = {{ public_ipv4 }}
+domain = {{ slave_instance.get('domain') }}
+url = http://{{ slave_instance.get('domain') }}
+# Backward compatibility
+site_url = ${:url}
+{%   else -%}
+{%     do slave_instance_information_list.append({'slave-reference':slave_instance.get('slave_reference'), 'public-ipv4':public_ipv4, 'domain':slave_instance.get('domain'), 'url':"http://%s" % slave_instance.get('domain'), 'site_url':"http://%s" % slave_instance.get('domain')}) -%}
+{%   endif -%}
+{% endfor -%}
+
+# Publish information for the instance
+{% set publish_section_title = 'publish-apache-information' -%}
+{% do part_list.append(publish_section_title) -%}
+[{{ publish_section_title }}]
+recipe = slapos.cookbook:publish
+public-ipv4 = {{ public_ipv4 }}
+private-ipv4 = {{ local_ipv4 }}
+domain = {{ domain }}
+{% if extra_slave_instance_list -%}
+slave-instance-information-list = {{ json_module.dumps(slave_instance_information_list) }}
+{% endif -%}
+
+
+{% do part_list.append('cached-rewrite-rules') -%}
+# Set rewrite rules for second apache
+[cached-rewrite-rules]
+< = jinja2-template-base
+template = {{ template_rewrite_cached }}
+rendered = {{ rewrite_cached_configuration }}
+extra-context =
+    import json_module json
+    key server_dict rewrite-rules:rules
+
+# Store Rewrite rules for second apache
+[rewrite-rules]
+rules = {{ dumps(cached_server_dict) }}
+
+# Add parts generated by template
+[buildout]
+parts +=
+{% for part in part_list -%}
+{{ '    %s' % part }}
+{% endfor -%}
+
+eggs-directory = {{ eggs_directory }}
+develop-eggs-directory = {{ develop_eggs_directory }}
+offline = true
+cache-access = {{ cache_access }}
+
+{% endif -%}

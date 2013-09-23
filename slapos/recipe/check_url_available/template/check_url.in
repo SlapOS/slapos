@@ -31,6 +31,13 @@ if [ $CODE -eq 000 ]; then
   exit 1
 fi
 
+if [ %(check_secure)s -eq 1 ]; then
+  if [ $CODE -eq 401 ]; then
+    echo "$URL is protected (returned $CODE)." >&2
+    exit 0
+  fi
+fi
+
 if ! [ $CODE -eq 200 ]; then
   echo "$URL is not available (returned $CODE)." >&2
   exit 2
