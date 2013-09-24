@@ -37,6 +37,7 @@ class Recipe(GenericBaseRecipe):
       'url': self.options['url'],
       'shell_path': self.options['dash_path'],
       'curl_path': self.options['curl_path'],
+      'check_secure': self.options.get('check-secure', 0)
     }
 
     # XXX-Cedric in this script, curl won't check certificate

@@ -3,9 +3,27 @@ extends = ${template-runner:output}
           ${pbsready-export:output}
 
 parts +=
-    urls
-    slaprunner
-    cron-entry-backup
+  nginx_conf
+  nginx-launcher
+  cloud9
+  certificate-authority
+  ca-nginx
+  ca-node-frontend
+  slaprunner
+  test-runner
+  sshkeys-dropbear-runner
+  dropbear-server-add-authorized-key
+  sshkeys-authority
+  slaprunner-promise
+  slaprunner-frontend-promise
+  cloud9-promise
+  cloud9-frontend-promise
+  dropbear-promise
+  symlinks
+  node-frontend-promise
+  nginx-promise
+  urls
+  cron-entry-backup
 
 [exporter]
 recipe = slapos.cookbook:slaprunner.export
@@ -21,7 +39,8 @@ rsync-binary = ${rsync:location}/bin/rsync
 [urls]
 <= resilient-publish-connection-parameter
 backend_url = $${slaprunner:access-url}
-url =  $${request-frontend:connection-site_url}
-cloud9_url = $${cloud9:access-url}
+url =  https://$${request-frontend:connection-domain}
+cloud9_backend_url = $${node-frontend:access-url}
+cloud9_url = https://$${request-cloud9-frontend:connection-domain}
 ssh_command = ssh $${dropbear-runner-server:host} -p $${dropbear-runner-server:port}
 password_recovery_code = $${recovery-code:passwd}

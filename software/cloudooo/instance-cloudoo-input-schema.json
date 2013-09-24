@@ -17,7 +17,7 @@
         "type": "string"
       },
       "type": "array"
-    }
+    },
     "backend-count": {
       "description": "Number of backend cloudooo instances",
       "default": 1,

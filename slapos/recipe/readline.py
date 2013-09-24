@@ -1,6 +1,7 @@
+# vim: set et sts=2:
 ##############################################################################
 #
-# Copyright (c) 2010 Vifib SARL and Contributors. All Rights Reserved.
+# Copyright (c) 2013 Vifib SARL and Contributors. All Rights Reserved.
 #
 # WARNING: This program as such is intended to be used by professional
 # programmers who take the whole responsibility of assessing all potential
@@ -24,37 +25,39 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #
 ##############################################################################
-import subprocess
-import os
 
-from slapos.recipe.librecipe import GenericBaseRecipe
+import errno
 
-class Recipe(GenericBaseRecipe):
+class Recipe(object):
+  """Read the first line of a file.
 
-  def _options(self, options):
-    if not os.path.exists(self.options['file']):
-      password = subprocess.check_output([self.options['pwgen-binary'], '-1']).strip()
-      with open(self.options['file'], 'w') as password_file:
-        password_file.write(password)
-    else:
-      with open(self.options['file'], 'r') as password_file:
-        password = password_file.read()
-    options['password'] = password
+  As the result has to be provided as an options, it is mandatory that the
+  buildout profile fills the file content (if needed) before trying to read it.
+
+    Options:
+    - storage-path: file to read
+
+    Result set in options:
+    - readline: first line of the file
+  """
+
+  def __init__(self, buildout, name, options):
+    storage_path = options['storage-path']
+    try:
+      with open(storage_path) as f:
+        readline = f.readline()
+    except IOError, e:
+      if e.errno != errno.ENOENT:
+        raise
+      readline = None
+
+    self.readline = readline
+    options['readline'] = readline
 
   def install(self):
-    os.chmod(self.options['file'], 0600)
-    return []
+    if self.readline is None:
+      raise ValueError('Unable to read the file content.')
+    return ()
 
-class StablePasswordGeneratorRecipe(GenericBaseRecipe):
-  """
-  The purpose of this class is to generate a password which doesn't change
-  from one execution to the next (hence "stable"), so the generated password
-  doesn't change on each slapgrid-cp execution.
-
-  See GenericBaseRecipe.generatePassword .
-  """
-
-  def _options(self, options):
-    options['password'] = self.generatePassword()
-
-  update = install = lambda self: []
+  def update(self):
+    return ()

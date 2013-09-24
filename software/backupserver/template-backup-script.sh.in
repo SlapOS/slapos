@@ -4,7 +4,13 @@
 
 export HOME=$${directory:home}
 
-set -e
+# Clean status file (no history needed)
+${coreutils-output:rm} -f $${:status_log}
+
+# Inform about beginning of backup
+${coreutils-output:echo} "`${coreutils-output:date} -u`, $${:hostname} backup running" >> $${:status_log}
+
+# set -e
 cd $${:datadirectory}
 ${rdiff-backup-output:rdiff-backup} \
   $${:exclude_string} \
@@ -12,6 +18,17 @@ ${rdiff-backup-output:rdiff-backup} \
   --exclude='**' \
   --remote-schema '${dropbear-output:ssh} -T -y -i $${:sshkey} %s $${:remote_schema}' \
   $${:connection}::/ ./
+
+RESULT=$?
+ 
+# Inform about backup status
+${coreutils-output:rm} -f $${:status_log}
+if [ $RESULT -eq 0 ]
+then
+  ${coreutils-output:echo} "`${coreutils-output:date} -u`, $${:hostname} backup success" >> $${:status_log}
+else
+  ${coreutils-output:echo} "`${coreutils-output:date} -u`, $${:hostname} backup failed" >> $${:status_log}
+fi
 
 # python scripts/verify_with_sudo.py ./ $${:connection}:/
 
