@@ -1,4 +1,6 @@
 * Report, from pbs and from clone, when a backup failed
+* Make sure, when a takeover is done, that "importer" script finishes to run while importer instance is changed into exporter.
+* Test that, after a successful backup/takeover, another backup is possible and will be successful.
 
 * PBSs and mirrors should monitor/replace themselves
 * Report errors from backup
