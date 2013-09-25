@@ -149,7 +149,7 @@ recipe = slapos.cookbook:pbs
 client = false
 path = $${directory:backup}
 wrapper = $${rootdirectory:bin}/rdiffbackup-server
-rdiffbackup-binary = ${buildout:bin-directory}/rdiff-backup
+rdiffbackup-binary = /usr/bin/rdiff-backup
 
 
 #----------------
