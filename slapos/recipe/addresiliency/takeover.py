@@ -65,6 +65,7 @@ def takeover(server_url, key_file, cert_file, computer_guid,
       cp_winner.rename(new_name=cp_exporter_ref)
       break
     except NotFoundError:
+      traceback.print_exc()
       log.warning('Impossible to rename. Retrying in a few seconds...')
   log.debug('Renamed.')
 
