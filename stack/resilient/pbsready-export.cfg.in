@@ -51,5 +51,5 @@ command = $${notifier-exporter:wrapper}
 
 [slap-parameter]
 # in minutes, modulo 60, in cron.d format (i.e */15 is accepted).
-resiliency-backup-periodicity = 0
+resiliency-backup-periodicity = */5
 
