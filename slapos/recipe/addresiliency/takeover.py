@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import logging
 import time
+import traceback
 
 import slapos
 from slapos.slap.slap import NotFoundError
