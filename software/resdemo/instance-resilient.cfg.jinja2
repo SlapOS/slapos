@@ -1,7 +1,7 @@
 # vim: set ft=cfg:
 
 {% import 'parts' as parts %}
-{% import 'replicated' as replicated %}
+{% import 'replicated' as replicated with context %}
 
 [buildout]
 eggs-directory = {{ eggs_directory }}
