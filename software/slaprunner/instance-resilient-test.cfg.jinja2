@@ -46,7 +46,7 @@ config = resiliency-backup-periodicity frontend-domain cloud9-frontend-domain {{
 {% for key, value in cluster_parameter_dict.items() -%}
 config-{{ key }} = {{ dumps(value) }}
 {% endfor -%}
-config-resiliency-backup-periodicity = */5
+config-resiliency-backup-periodicity = *
 # XXX hardcoded
 config-frontend-domain = google.com
 config-cloud9-frontend-domain = google.com
