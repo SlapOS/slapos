@@ -34,7 +34,11 @@ from slapos.recipe.librecipe import GenericBaseRecipe
 
 def login_shell(args):
   password = args['password']
-  entered_password = getpass()
+  
+  if (password != ''):
+    entered_password = getpass()
+  else:
+    entered_password = ''
 
   if entered_password != password:
     return 1
