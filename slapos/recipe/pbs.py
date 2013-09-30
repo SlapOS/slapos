@@ -169,6 +169,9 @@ class Recipe(GenericSlapRecipe, Notify, Callback):
                   # XXX: bang
                   mv %(local_directory)s %(local_directory)s.$(date +%%s)
               fi
+          else
+              # Everything's okay, cleaning up...
+              $RDIFF_BACKUP --remove-older-than %(remove_backup_older_than)s --force %(local_directory)s
           fi
           """)
       rdiff_wrapper_content = rdiff_wrapper_template % {
@@ -176,6 +179,8 @@ class Recipe(GenericSlapRecipe, Notify, Callback):
               'rdiffbackup_binary': self.options['rdiffbackup-binary'],
               'local_directory': local_directory,
               'rdiffbackup_parameter': ' \\\n    '.join(rdiffbackup_parameter_list),
+              # XXX: only 10 increments is not enough by default.
+              'remove_backup_older_than': entry.get('remove-backup-older-than', '3B')
       }
       rdiff_wrapper = self.createFile(
           name=rdiff_wrapper_path,
