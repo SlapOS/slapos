@@ -22,7 +22,7 @@ parts +=
   symlinks
   node-frontend-promise
   nginx-promise
-  urls
+  publish-connection-informations
   cron-entry-backup
 
 [exporter]
@@ -36,11 +36,5 @@ rsync-binary = ${rsync:location}/bin/rsync
 
 
 # Extends publish section with resilient parameters
-[urls]
+[publish-connection-informations]
 <= resilient-publish-connection-parameter
-backend_url = $${slaprunner:access-url}
-url =  https://$${request-frontend:connection-domain}
-cloud9_backend_url = $${node-frontend:access-url}
-cloud9_url = https://$${request-cloud9-frontend:connection-domain}
-ssh_command = ssh $${dropbear-runner-server:host} -p $${dropbear-runner-server:port}
-password_recovery_code = $${recovery-code:passwd}
