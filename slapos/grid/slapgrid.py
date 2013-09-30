@@ -665,10 +665,6 @@ class Slapgrid(object):
 
     # If partition has been successfully processed, write timestamp
     if timestamp:
-      timestamp_path = os.path.join(
-          instance_path,
-          COMPUTER_PARTITION_TIMESTAMP_FILENAME
-      )
       open(timestamp_path, 'w').write(timestamp)
 
   def FilterComputerPartitionList(self, computer_partition_list):
