@@ -1,0 +1,112 @@
+<?xml version="1.0"?>
+<ZopeData>
+  <record id="1" aka="AAAAAAAAAAE=">
+    <pickle>
+      <global name="ZopePageTemplate" module="Products.PageTemplates.ZopePageTemplate"/>
+    </pickle>
+    <pickle>
+      <dictionary>
+        <item>
+            <key> <string>_bind_names</string> </key>
+            <value>
+              <object>
+                <klass>
+                  <global name="NameAssignments" module="Shared.DC.Scripts.Bindings"/>
+                </klass>
+                <tuple/>
+                <state>
+                  <dictionary>
+                    <item>
+                        <key> <string>_asgns</string> </key>
+                        <value>
+                          <dictionary>
+                            <item>
+                                <key> <string>name_subpath</string> </key>
+                                <value> <string>traverse_subpath</string> </value>
+                            </item>
+                          </dictionary>
+                        </value>
+                    </item>
+                  </dictionary>
+                </state>
+              </object>
+            </value>
+        </item>
+        <item>
+            <key> <string>_text</string> </key>
+            <value> <unicode encoding="cdata"><![CDATA[
+
+<html>\n
+\n
+  <tal:block tal:define="website_url python: here.getWebSiteValue().absolute_url();\n
+                         dummy python: request.RESPONSE.setCookie(\'redirect_after_login\', context.REQUEST.form.get(\'callback_url\', website_url), path=\'/\');">\n
+  </tal:block>\n
+    <script src="https://code.jquery.com/jquery-1.9.1.js"></script>\n
+    <script src="https://browserid.org/include.js" type="text/javascript"></script>\n
+    <script type="text/javascript">\n
+    $(document).ready(function() {navigator.id.get(gotAssertion);\n
+    return false;});\n
+\n
+function post_to_url(path, params, method) {\n
+    method = method || "post"; // Set method to post by default, if not specified.\n
+\n
+    // The rest of this code assumes you are not using a library.\n
+    // It can be made less wordy if you use one.\n
+    var form = document.createElement("form");\n
+    form.setAttribute("method", method);\n
+    form.setAttribute("action", path);\n
+\n
+    for(var key in params) {\n
+        if(params.hasOwnProperty(key)) {\n
+            var hiddenField = document.createElement("input");\n
+            hiddenField.setAttribute("type", "hidden");\n
+            hiddenField.setAttribute("name", key);\n
+            hiddenField.setAttribute("value", params[key]);\n
+\n
+            form.appendChild(hiddenField);\n
+         }\n
+    }\n
+\n
+    document.body.appendChild(form);\n
+    form.submit();\n
+}\n
+\n
+function gotAssertion(assertion) {\n
+  // got an assertion, now send it up to the server for verification\n
+  if (assertion !== null) {\n
+    post_to_url("https://www.slapos.org/login_with_browser_id/", {\'assertion\': assertion})\n
+  }\n
+}\n
+</script>\n
+\n
+<body>\n
+  Waiting login ....\n
+</body>\n
+</html>
+
+]]></unicode> </value>
+        </item>
+        <item>
+            <key> <string>content_type</string> </key>
+            <value> <string>text/html</string> </value>
+        </item>
+        <item>
+            <key> <string>expand</string> </key>
+            <value> <int>0</int> </value>
+        </item>
+        <item>
+            <key> <string>id</string> </key>
+            <value> <string>WebSection_viewBrowserIdLogin</string> </value>
+        </item>
+        <item>
+            <key> <string>output_encoding</string> </key>
+            <value> <string>utf-8</string> </value>
+        </item>
+        <item>
+            <key> <string>title</string> </key>
+            <value> <unicode></unicode> </value>
+        </item>
+      </dictionary>
+    </pickle>
+  </record>
+</ZopeData>
