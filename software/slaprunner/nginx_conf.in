@@ -69,6 +69,8 @@ http {
 	location /shellinabox {
             proxy_pass  http://[::1]:{{ shellinabox_port }}/;
             proxy_next_upstream error timeout invalid_header http_500 http_502 http_503 http_504;
+            auth_basic  "Restricted";
+            auth_basic_user_file   /srv/slapgrid/slappart6/etc//.htpasswd;
             proxy_redirect off;
             proxy_buffering off;
             proxy_set_header        Host              $host;
