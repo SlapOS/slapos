@@ -3,7 +3,7 @@
 import logging
 import sys
 
-from slapos.cli.command import must_be_root
+from slapos.cli.command import check_root_user
 from slapos.cli.config import ConfigCommand
 from slapos.format import do_format, FormatConfig, tracing_monkeypatch, UsageError
 from slapos.util import string_to_boolean
@@ -69,7 +69,7 @@ class FormatCommand(ConfigCommand):
         # Parse if we have to check if running from root
         # XXX document this feature.
         if string_to_boolean(getattr(conf, 'root_check', 'True').lower()):
-          must_be_root(lambda:None)
+          check_root_user(self)
 
         if not self.app.options.log_file and conf.log_file:
             # no log file is provided by argparser,

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from slapos.cli.command import must_be_root
+from slapos.cli.command import check_root_user
 from slapos.cli.config import ConfigCommand
 
 from slapos.grid.utils import setRunning, setFinished
@@ -70,7 +70,7 @@ class SlapgridCommand(ConfigCommand):
         # Parse if we have to check if running from root
         # XXX document this feature.
         if string_to_boolean(options.get('root_check', 'True').lower()):
-          must_be_root(lambda:None)
+          check_root_user(self)
 
         check_missing_parameters(options)
         check_missing_files(options)
