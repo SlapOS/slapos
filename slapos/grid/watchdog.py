@@ -32,6 +32,7 @@ import os.path
 import sys
 
 import slapos.slap.slap
+import slapos.grid.slapgrid
 
 
 def getWatchdogID():
@@ -49,11 +50,13 @@ def parseArgumentTuple():
   parser.add_argument("--certificate-repository-path",
                       help="Path to partition certificates.",
                       default=None)
+  parser.add_argument("--instance-root-path",
+                      help="Path to instance root directory.",
+                      default=None)
   option = parser.parse_args()
 
   # Build option_dict
   option_dict = {}
-
   for argument_key, argument_value in vars(option).iteritems():
     option_dict.update({argument_key: argument_value})
 
@@ -64,9 +67,13 @@ class Watchdog(object):
 
   process_state_events = ['PROCESS_STATE_EXITED', 'PROCESS_STATE_FATAL']
 
-  def __init__(self, option_dict):
-    for option, value in option_dict.items():
-      setattr(self, option, value)
+  def __init__(self, master_url, computer_id,
+               certificate_repository_path=None, instance_root_path=None):
+    self.master_url = master_url
+    self.computer_id = computer_id
+    self.certificate_repository_path = certificate_repository_path
+    self.instance_root_path = instance_root_path
+
     self.stdin = sys.stdin
     self.stdout = sys.stdout
     self.stderr = sys.stderr
@@ -103,8 +110,75 @@ class Watchdog(object):
   def handle_event(self, headers, payload):
     if headers['eventname'] in self.process_state_events:
       payload_dict = dict([x.split(':') for x in payload.split()])
-      if getWatchdogID() in payload_dict['processname']:
+      if getWatchdogID() in payload_dict['processname'] and \
+         not self.has_bang_already_been_called(payload_dict['groupname']):
         self.handle_process_state_change_event(headers, payload_dict)
+
+  def has_bang_already_been_called(self, partition_name):
+    """
+    Checks if bang has already been called since last successful deployment
+    """
+    if not self.instance_root_path:
+      # Backward compatibility
+      return False
+
+    partition_home_path = os.path.join(
+        self.instance_root_path,
+        partition_name
+    )
+    partition_timestamp_file_path = os.path.join(
+        partition_home_path,
+        slapos.grid.slapgrid.COMPUTER_PARTITION_TIMESTAMP_FILENAME
+    )
+    slapos_last_bang_timestamp_file_path = os.path.join(
+        partition_home_path,
+        slapos.grid.slapgrid.COMPUTER_PARTITION_LATEST_BANG_TIMESTAMP_FILENAME
+    )
+
+    if not os.path.exists(slapos_last_bang_timestamp_file_path):
+      # Never heard of any previous bang
+      return False
+
+    if not os.path.exists(partition_timestamp_file_path):
+      # Partition never managed to deploy successfully, ignore bang
+      return True
+
+    last_bang_timestamp = int(open(slapos_last_bang_timestamp_file_path, 'r').read())
+    deployment_timestamp = int(open(partition_timestamp_file_path, 'r').read())
+    if deployment_timestamp > last_bang_timestamp:
+      # It previously banged BEFORE latest successful deployment
+      # i.e it haven't banged since last successful deployment
+      return False
+
+    # It previously banged AFTER latest successful deployment: ignore
+    return True
+
+  def create_partition_bang_timestamp_file(self, partition_name):
+    """
+    Copy the timestamp file of the partition to a bang timestamp file.
+    If timestamp file does not exist, create a dummy bang timestamp file.
+    """
+    if not self.instance_root_path:
+      # Backward compatibility
+      return
+
+    partition_home_path = os.path.join(
+        self.instance_root_path,
+        partition_name
+    )
+    partition_timestamp_file_path = os.path.join(
+        partition_home_path,
+        slapos.grid.slapgrid.COMPUTER_PARTITION_TIMESTAMP_FILENAME
+    )
+    slapos_last_bang_timestamp_file_path = os.path.join(
+        partition_home_path,
+        slapos.grid.slapgrid.COMPUTER_PARTITION_LATEST_BANG_TIMESTAMP_FILENAME
+    )
+    if os.path.exists(partition_timestamp_file_path):
+      timestamp = open(partition_timestamp_file_path, 'r').read()
+    else:
+      timestamp = '0'
+    open(slapos_last_bang_timestamp_file_path, 'w').write(timestamp)
 
   def handle_process_state_change_event(self, headers, payload_dict):
     partition_id = payload_dict['groupname']
@@ -115,10 +189,11 @@ class Watchdog(object):
       partition_id=partition_id)
     partition.bang("%s process in partition %s encountered a problem"
                    % (payload_dict['processname'], partition_id))
+    self.create_partition_bang_timestamp_file(payload_dict['groupname'])
 
 
 def main():
-  watchdog = Watchdog(parseArgumentTuple())
+  watchdog = Watchdog(**parseArgumentTuple())
   watchdog.run()
 
 if __name__ == '__main__':

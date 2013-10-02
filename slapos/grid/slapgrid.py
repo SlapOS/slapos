@@ -70,6 +70,7 @@ SLAPGRID_PROMISE_FAIL = 2
 WATCHDOG_PATH = '/opt/slapos/bin/slapos-watchdog'
 
 COMPUTER_PARTITION_TIMESTAMP_FILENAME = '.timestamp'
+COMPUTER_PARTITION_LATEST_BANG_TIMESTAMP_FILENAME = '.slapos_latest_bang_timestamp'
 
 
 class _formatXMLError(Exception):
@@ -334,6 +335,7 @@ class Slapgrid(object):
       invocation_list.append("--certificate-repository-path '%s'" %
                                 self.certificate_repository_path)
     invocation_list.append("--computer-id '%s'" % self.computer_id)
+    invocation_list.append("--instance-root '%s'" % self.instance_root)
     return ' '.join(invocation_list)
 
   def checkEnvironmentAndCreateStructure(self):
