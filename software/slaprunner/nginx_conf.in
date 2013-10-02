@@ -55,6 +55,7 @@ http {
         fastcgi_temp_path {{ param_tempdir['fastcgi_temp_path'] }};
         uwsgi_temp_path {{ param_tempdir['uwsgi_temp_path'] }};
         scgi_temp_path {{ param_tempdir['scgi_temp_path'] }};
+	error_page 401 @login;
         location / {
             proxy_pass  http://{{ param_nginx_frontend['runner-ip'] }}:{{ param_nginx_frontend['runner-port'] }};
             proxy_next_upstream error timeout invalid_header http_500 http_502 http_503 http_504;
@@ -90,5 +91,8 @@ http {
             proxy_set_header        X-Real-IP         $remote_addr;
             proxy_set_header        X-Forwarded-For   $proxy_add_x_forwarded_for;
 	}
+	location @login {
+            rewrite .* /login permanent;
+        }
     }
 }
