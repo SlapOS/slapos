@@ -58,13 +58,13 @@ class SlapMixin(unittest.TestCase):
 
   def _patchHttplib(self):
     """Overrides httplib"""
-    import mock.httplib
+    import slapmock.httplib
 
     self.saved_httplib = {}
 
-    for fake in vars(mock.httplib):
+    for fake in vars(slapmock.httplib):
       self.saved_httplib[fake] = getattr(httplib, fake, None)
-      setattr(httplib, fake, getattr(mock.httplib, fake))
+      setattr(httplib, fake, getattr(slapmock.httplib, fake))
 
   def _unpatchHttplib(self):
     """Restores httplib overriding"""

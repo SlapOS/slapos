@@ -236,13 +236,13 @@ class MasterMixin(BasicMixin):
 
   def _patchHttplib(self):
     """Overrides httplib"""
-    import slapos.tests.mock.httplib
+    import slapos.tests.slapmock.httplib
 
     self.saved_httplib = {}
 
-    for fake in vars(slapos.tests.mock.httplib):
+    for fake in vars(slapos.tests.slapmock.httplib):
       self.saved_httplib[fake] = getattr(httplib, fake, None)
-      setattr(httplib, fake, getattr(slapos.tests.mock.httplib, fake))
+      setattr(httplib, fake, getattr(slapos.tests.slapmock.httplib, fake))
 
   def _unpatchHttplib(self):
     """Restores httplib overriding"""
