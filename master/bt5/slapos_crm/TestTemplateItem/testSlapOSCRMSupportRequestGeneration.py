@@ -38,6 +38,15 @@ class TestSlapOSCloudSupportRequestGeneration(testSlapOSMixin):
   def afterSetUp(self):
     super(TestSlapOSCloudSupportRequestGeneration, self).afterSetUp()
     self.new_id = self.generateNewId()
+    self._cancelTestSupportRequestList()
+
+  def _cancelTestSupportRequestList(self):
+    for support_request in self.portal.portal_catalog(
+                        portal_type="Support Request",
+                        title="Test Support Request %", 
+                        simulation_state="validated"):
+      support_request.invalidate()
+    self.tic()
 
   def _makeComputer(self,new_id):
     # Clone computer document
@@ -206,10 +215,10 @@ class TestSlapOSCloudSupportRequestGeneration(testSlapOSMixin):
     finally:
       self._dropBase_generateSupportRequestForSlapOS()
     
-    self.assertNotEqual('Visited Base_generateSupportRequestForSlapOS',
+    self.assertEqual('Visited Base_generateSupportRequestForSlapOS',
       result)
 
-  def test_SoftwareInstance_checkState_error_out_time(self):
+  def test_SoftwareInstance_checkState_error_new_instance(self):
     host_sub = self._makeHostingSubscription(self.new_id)
     self._makeSoftwareInstance(host_sub,self.generateNewSoftwareReleaseUrl())
     instance = host_sub.getPredecessorValue()
@@ -219,7 +228,39 @@ class TestSlapOSCloudSupportRequestGeneration(testSlapOSMixin):
       plugin_path='portal_memcached/default_memcached_plugin')
 
     memcached_dict[instance.getReference()] = json.dumps(
-        {"created_at":"%s" % (DateTime() - 0.1), "text":"#error "}
+        {"created_at":"%s" % DateTime(), "text":"#error "}
+    )
+
+    self._simulateBase_generateSupportRequestForSlapOS()
+
+    try:
+      result = instance.SoftwareInstance_checkState()
+    finally:
+      self._dropBase_generateSupportRequestForSlapOS()
+    
+    self.assertNotEqual('Visited Base_generateSupportRequestForSlapOS',
+      result)
+
+  def test_SoftwareInstance_checkState_error_out_time(self):
+    host_sub = self._makeHostingSubscription(self.new_id)
+    self._makeSoftwareInstance(host_sub,self.generateNewSoftwareReleaseUrl())
+    instance = host_sub.getPredecessorValue()
+    
+    instance.workflow_history['edit_workflow'] = [{
+           'comment':'edit',
+           'error_message': '',
+           'actor': 'ERP5TypeTestCase',
+           'state': 'current',
+           'time': DateTime('2012/11/30 11:11'),
+           'action': 'edit'
+       }]
+
+    memcached_dict = self.portal.portal_memcached.getMemcachedDict(
+      key_prefix='slap_tool',
+      plugin_path='portal_memcached/default_memcached_plugin')
+
+    memcached_dict[instance.getReference()] = json.dumps(
+        {"created_at":"%s" % DateTime(), "text":"#error "}
     )
 
     self._simulateBase_generateSupportRequestForSlapOS()
@@ -253,29 +294,6 @@ class TestSlapOSCloudSupportRequestGeneration(testSlapOSMixin):
       self._dropBase_generateSupportRequestForSlapOS()
     
     self.assertNotEqual('Visited Base_generateSupportRequestForSlapOS',
-      result)
-
-  def test_SoftwareInstance_checkState_access_out_time(self):
-    host_sub = self._makeHostingSubscription(self.new_id)
-    self._makeSoftwareInstance(host_sub,self.generateNewSoftwareReleaseUrl())
-    instance = host_sub.getPredecessorValue()
-    
-    memcached_dict = self.portal.portal_memcached.getMemcachedDict(
-      key_prefix='slap_tool',
-      plugin_path='portal_memcached/default_memcached_plugin')
-
-    memcached_dict[instance.getReference()] = json.dumps(
-        {"created_at":"%s" % (DateTime() - 1.1), "text":"#access "}
-    )
-
-    self._simulateBase_generateSupportRequestForSlapOS()
-
-    try:
-      result = instance.SoftwareInstance_checkState()
-    finally:
-      self._dropBase_generateSupportRequestForSlapOS()
-    
-    self.assertEqual('Visited Base_generateSupportRequestForSlapOS',
       result)
 
   def test_SoftwareInstance_checkState_access_in_time(self):

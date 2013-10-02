@@ -57,15 +57,24 @@ import json\n
 \n
 portal = context.getPortalObject()\n
 \n
+if portal.ERP5Site_isSupportRequestCreationClosed():\n
+  # Stop ticket creation\n
+  return\n
+\n
 reference = context.getReference()\n
 memcached_dict = context.getPortalObject().portal_memcached.getMemcachedDict(\n
   key_prefix=\'slap_tool\',\n
   plugin_path=\'portal_memcached/default_memcached_plugin\')\n
-  \n
+\n
 try:\n
   d = memcached_dict[reference]\n
 except KeyError:\n
-  return\n
+  return context.Base_generateSupportRequestForSlapOS(\n
+    "No information about %s" % reference,\n
+    "%s has not contacted the server (No Contact Information)" % reference,\n
+    context.getRelativeUrl()\n
+  )\n
+  \n
 \n
 d = json.loads(d)\n
 last_contact = DateTime(d.get(\'created_at\'))\n
