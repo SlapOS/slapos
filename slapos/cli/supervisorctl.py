@@ -3,9 +3,11 @@
 import argparse
 import os
 
-from slapos.cli.command import must_be_root
+from slapos.cli.command import check_root_user
 from slapos.cli.config import ConfigCommand
 from slapos.grid.svcbackend import launchSupervisord
+
+from slapos.util import string_to_boolean
 
 import supervisor.supervisorctl
 
@@ -23,9 +25,19 @@ class SupervisorctlCommand(ConfigCommand):
                         help='parameters passed to supervisorctl')
         return ap
 
-    @must_be_root
+    def _should_check_current_user_is_root(self, configp):
+      if not configp.has_option('slapos', 'root_check'):
+        return True
+      return configp.getboolean('slapos', 'root_check')
+
     def take_action(self, args):
         configp = self.fetch_config(args)
+
+        # Parse if we have to check if running from root
+        # XXX document this feature.
+        if self._should_check_current_user_is_root(configp):
+          check_root_user(self)
+
         instance_root = configp.get('slapos', 'instance_root')
         configuration_file = os.path.join(instance_root, 'etc', 'supervisord.conf')
         launchSupervisord(socket=os.path.join(instance_root, 'supervisord.socket'),
