@@ -803,7 +803,7 @@ class TestSlapgridCPWithMasterWatchdog(MasterMixin, unittest.TestCase):
 
   def test_one_failing_daemon_in_run_will_not_bang_with_watchdog(self):
     """
-    Check that a failing service watched by watchdog trigger bang
+    Check that a failing service watched by watchdog does not trigger bang
     1.Prepare computer and set a service named daemon in etc/run
        (not watched by watchdog). This daemon will fail.
     2.Prepare file for supervisord to call watchdog
@@ -856,11 +856,11 @@ class TestSlapgridCPWithMasterWatchdog(MasterMixin, unittest.TestCase):
     certificate_repository_path = os.path.join(self._tempdir, 'partition_pki')
     instance.setCertificate(certificate_repository_path)
 
-    watchdog = Watchdog({
-        'master_url': 'https://127.0.0.1/',
-        'computer_id': self.computer_id,
-        'certificate_repository_path': certificate_repository_path
-    })
+    watchdog = Watchdog(
+        master_url='https://127.0.0.1/',
+        computer_id=self.computer_id,
+        certificate_repository_path=certificate_repository_path
+    )
     for event in watchdog.process_state_events:
       instance.sequence = []
       instance.header_list = []
@@ -880,11 +880,11 @@ class TestSlapgridCPWithMasterWatchdog(MasterMixin, unittest.TestCase):
     computer = ComputerForTest(self.software_root, self.instance_root)
     instance = computer.instance_list[0]
 
-    watchdog = Watchdog({
-        'master_url': self.master_url,
-        'computer_id': self.computer_id,
-        'certificate_repository_path': None
-    })
+    watchdog = Watchdog(
+        master_url=self.master_url,
+        computer_id=self.computer_id,
+        certificate_repository_path=None
+    )
     for event in ['EVENT', 'PROCESS_STATE', 'PROCESS_STATE_RUNNING',
                   'PROCESS_STATE_BACKOFF', 'PROCESS_STATE_STOPPED']:
       computer.sequence = []
@@ -903,11 +903,11 @@ class TestSlapgridCPWithMasterWatchdog(MasterMixin, unittest.TestCase):
     computer = ComputerForTest(self.software_root, self.instance_root)
     instance = computer.instance_list[0]
 
-    watchdog = Watchdog({
-        'master_url': self.master_url,
-        'computer_id': self.computer_id,
-        'certificate_repository_path': None
-    })
+    watchdog = Watchdog(
+        master_url=self.master_url,
+        computer_id=self.computer_id,
+        certificate_repository_path=None
+    )
     for event in watchdog.process_state_events:
       computer.sequence = []
       headers = {'eventname': event}
@@ -916,6 +916,203 @@ class TestSlapgridCPWithMasterWatchdog(MasterMixin, unittest.TestCase):
       watchdog.handle_event(headers, payload)
       self.assertEqual(computer.sequence, [])
 
+  def test_watchdog_create_bang_file_after_bang(self):
+    """
+    For a partition that has been successfully deployed (thus .timestamp file
+    existing), check that bang file is created and contains the timestamp of
+    .timestamp file.
+    """
+    computer = ComputerForTest(self.software_root, self.instance_root)
+    instance = computer.instance_list[0]
+    certificate_repository_path = os.path.join(self._tempdir, 'partition_pki')
+    instance.setCertificate(certificate_repository_path)
+    partition = os.path.join(self.instance_root, '0')
+    timestamp_content = '1234'
+    timestamp_file = open(os.path.join(partition, slapos.grid.slapgrid.COMPUTER_PARTITION_TIMESTAMP_FILENAME), 'w')
+    timestamp_file.write(timestamp_content)
+    timestamp_file.close()
+
+    watchdog = Watchdog(
+        master_url='https://127.0.0.1/',
+        computer_id=self.computer_id,
+        certificate_repository_path=certificate_repository_path,
+        instance_root_path=self.instance_root
+    )
+    event = watchdog.process_state_events[0]
+    instance.sequence = []
+    instance.header_list = []
+    headers = {'eventname': event}
+    payload = 'processname:%s groupname:%s from_state:RUNNING' % (
+        'daemon' + getWatchdogID(), instance.name)
+    watchdog.handle_event(headers, payload)
+    self.assertEqual(instance.sequence, ['softwareInstanceBang'])
+    self.assertEqual(instance.header_list[0]['key'], instance.key)
+    self.assertEqual(instance.header_list[0]['certificate'], instance.certificate)
+
+    self.assertEqual(open(os.path.join(partition, slapos.grid.slapgrid.COMPUTER_PARTITION_LATEST_BANG_TIMESTAMP_FILENAME)).read(), timestamp_content)
+
+
+  def test_watchdog_ignore_bang_if_partition_not_deployed(self):
+    """
+    For a partition that has never been successfully deployed (buildout is
+    failing, promise is not passing, etc), test that bang is ignored.
+
+    Practically speaking, .timestamp file in the partition does not exsit.
+    """
+    computer = ComputerForTest(self.software_root, self.instance_root)
+    instance = computer.instance_list[0]
+    certificate_repository_path = os.path.join(self._tempdir, 'partition_pki')
+    instance.setCertificate(certificate_repository_path)
+    partition = os.path.join(self.instance_root, '0')
+    timestamp_content = '1234'
+
+    watchdog = Watchdog(
+        master_url='https://127.0.0.1/',
+        computer_id=self.computer_id,
+        certificate_repository_path=certificate_repository_path,
+        instance_root_path=self.instance_root
+    )
+    event = watchdog.process_state_events[0]
+    instance.sequence = []
+    instance.header_list = []
+    headers = {'eventname': event}
+    payload = 'processname:%s groupname:%s from_state:RUNNING' % (
+        'daemon' + getWatchdogID(), instance.name)
+    watchdog.handle_event(headers, payload)
+    self.assertEqual(instance.sequence, ['softwareInstanceBang'])
+    self.assertEqual(instance.header_list[0]['key'], instance.key)
+    self.assertEqual(instance.header_list[0]['certificate'], instance.certificate)
+
+    self.assertNotEqual(open(os.path.join(partition, slapos.grid.slapgrid.COMPUTER_PARTITION_LATEST_BANG_TIMESTAMP_FILENAME)).read(), timestamp_content)
+
+
+  def test_watchdog_bang_only_once_if_partition_never_deployed(self):
+    """
+    For a partition that has been never successfully deployed (promises are not passing,
+    etc), test that:
+     * First bang is transmitted
+     * subsequent bangs are ignored until a deployment is successful.
+    """
+    computer = ComputerForTest(self.software_root, self.instance_root)
+    instance = computer.instance_list[0]
+    certificate_repository_path = os.path.join(self._tempdir, 'partition_pki')
+    instance.setCertificate(certificate_repository_path)
+    partition = os.path.join(self.instance_root, '0')
+
+    watchdog = Watchdog(
+        master_url='https://127.0.0.1/',
+        computer_id=self.computer_id,
+        certificate_repository_path=certificate_repository_path,
+        instance_root_path=self.instance_root
+    )
+    # First bang
+    event = watchdog.process_state_events[0]
+    instance.sequence = []
+    instance.header_list = []
+    headers = {'eventname': event}
+    payload = 'processname:%s groupname:%s from_state:RUNNING' % (
+        'daemon' + WATCHDOG_MARK, instance.name)
+    watchdog.handle_event(headers, payload)
+    self.assertEqual(instance.sequence, ['softwareInstanceBang'])
+    self.assertEqual(instance.header_list[0]['key'], instance.key)
+    self.assertEqual(instance.header_list[0]['certificate'], instance.certificate)
+
+    # Second bang
+    event = watchdog.process_state_events[0]
+    instance.sequence = []
+    instance.header_list = []
+    headers = {'eventname': event}
+    payload = 'processname:%s groupname:%s from_state:RUNNING' % (
+        'daemon' + WATCHDOG_MARK, instance.name)
+    watchdog.handle_event(headers, payload)
+    self.assertEqual(instance.sequence, [])
+
+
+  def test_watchdog_bang_only_once_if_timestamp_did_not_change(self):
+    """
+    For a partition that has been successfully deployed (promises are passing,
+    etc), test that:
+     * First bang is transmitted
+     * subsequent bangs are ignored until a new deployment is successful.
+    Scenario:
+     * slapgrid successfully deploys a partition
+     * A process crashes, watchdog calls bang
+     * Another deployment (run of slapgrid) is done, but not successful (
+       promise is failing)
+     * The process crashes again, but watchdog ignores it
+     * Yet another deployment is done, and it is successful
+     * The process crashes again, watchdog calls bang
+     * The process crashes again, watchdog ignroes it
+    """
+    computer = ComputerForTest(self.software_root, self.instance_root)
+    instance = computer.instance_list[0]
+    certificate_repository_path = os.path.join(self._tempdir, 'partition_pki')
+    instance.setCertificate(certificate_repository_path)
+    partition = os.path.join(self.instance_root, '0')
+    timestamp_content = '1234'
+    timestamp_file = open(os.path.join(partition, slapos.grid.slapgrid.COMPUTER_PARTITION_TIMESTAMP_FILENAME), 'w')
+    timestamp_file.write(timestamp_content)
+    timestamp_file.close()
+
+    watchdog = Watchdog(
+        master_url='https://127.0.0.1/',
+        computer_id=self.computer_id,
+        certificate_repository_path=certificate_repository_path,
+        instance_root_path=self.instance_root
+    )
+    # First bang
+    event = watchdog.process_state_events[0]
+    instance.sequence = []
+    instance.header_list = []
+    headers = {'eventname': event}
+    payload = 'processname:%s groupname:%s from_state:RUNNING' % (
+        'daemon' + getWatchdogID(), instance.name)
+    watchdog.handle_event(headers, payload)
+    self.assertEqual(instance.sequence, ['softwareInstanceBang'])
+    self.assertEqual(instance.header_list[0]['key'], instance.key)
+    self.assertEqual(instance.header_list[0]['certificate'], instance.certificate)
+
+    self.assertEqual(open(os.path.join(partition, slapos.grid.slapgrid.COMPUTER_PARTITION_LATEST_BANG_TIMESTAMP_FILENAME)).read(), timestamp_content)
+
+    # Second bang
+    event = watchdog.process_state_events[0]
+    instance.sequence = []
+    instance.header_list = []
+    headers = {'eventname': event}
+    payload = 'processname:%s groupname:%s from_state:RUNNING' % (
+        'daemon' + getWatchdogID(), instance.name)
+    watchdog.handle_event(headers, payload)
+    self.assertEqual(instance.sequence, [])
+
+    # Second successful deployment
+    timestamp_content = '12345'
+    timestamp_file = open(os.path.join(partition, slapos.grid.slapgrid.COMPUTER_PARTITION_TIMESTAMP_FILENAME), 'w')
+    timestamp_file.write(timestamp_content)
+    timestamp_file.close()
+
+    # Third bang
+    event = watchdog.process_state_events[0]
+    instance.sequence = []
+    instance.header_list = []
+    headers = {'eventname': event}
+    payload = 'processname:%s groupname:%s from_state:RUNNING' % (
+        'daemon' + getWatchdogID(), instance.name)
+    watchdog.handle_event(headers, payload)
+    self.assertEqual(instance.sequence, ['softwareInstanceBang'])
+    self.assertEqual(instance.header_list[0]['key'], instance.key)
+    self.assertEqual(instance.header_list[0]['certificate'], instance.certificate)
+
+    self.assertEqual(open(os.path.join(partition, slapos.grid.slapgrid.COMPUTER_PARTITION_LATEST_BANG_TIMESTAMP_FILENAME)).read(), timestamp_content)
+
+    # Fourth bang
+    event = watchdog.process_state_events[0]
+    instance.sequence = []
+    instance.header_list = []
+    headers = {'eventname': event}
+    payload = 'processname:%s groupname:%s from_state:RUNNING' % (
+        'daemon' + getWatchdogID(), instance.name)
+    watchdog.handle_event(headers, payload)
+    self.assertEqual(instance.sequence, [])
 
 class TestSlapgridCPPartitionProcessing(MasterMixin, unittest.TestCase):
 
