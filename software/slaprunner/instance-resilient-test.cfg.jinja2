@@ -29,7 +29,7 @@ command-line = {{ bin_directory }}/runResiliencyTest ${:testnode-parameters} ${:
 wrapper-path = ${directory:scripts}/runResiliencyTestSuite
 
 [deploy-standalone-resiliency-test]
-# Used to manually run the KVM test if we don't have a running testnode.
+# Used to manually run the resilient test if we don't have a running testnode.
 recipe = slapos.cookbook:wrapper
 test-suite-title = slaprunner
 command-line = {{ bin_directory }}/runStandaloneResiliencyTest --test-suite-title=${:test-suite-title} ${deploy-resiliency-test:test-parameters}
@@ -41,7 +41,11 @@ recipe = slapos.cookbook:request
 software-url = ${slap-connection:software-release-url}
 software-type = resilient
 name = Resilient Instance (Root Instance)
-config = resiliency-backup-periodicity frontend-domain cloud9-frontend-domain
+{% set cluster_parameter_dict = slapparameter_dict.get('cluster', {}) -%}
+config = resiliency-backup-periodicity frontend-domain cloud9-frontend-domain {{ cluster_parameter_dict.keys() | join(' ') }}
+{% for key, value in cluster_parameter_dict.items() -%}
+config-{{ key }} = {{ dumps(value) }}
+{% endfor -%}
 config-resiliency-backup-periodicity = *
 # XXX hardcoded
 config-frontend-domain = google.com

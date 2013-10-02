@@ -2,7 +2,8 @@
 parts =
   slapos-configuration-file
   cron-entry-slapos
-  slapos-node-format-wrapper
+  slapos-node-status-wrapper
+  slapos-node-format-wrapper-script
 
   httpd-wrapper
 
@@ -15,7 +16,10 @@ parts =
   dropbear-server-add-authorized-key
   sshkeys-authority
   publish-connection-informations
+
   dropbear-promise
+  httpd-promise
+  slapos-promise
 
 
 eggs-directory = {{ eggs_directory }}
@@ -45,7 +49,7 @@ bin = ${buildout:directory}/bin/
 
 sshkeys = ${:srv}/sshkeys
 service = ${:etc}/service/
-scripts = ${:etc}/run/
+script = ${:etc}/run/
 ssh = ${:etc}/ssh/
 log = ${:var}/log/
 run = ${:var}/run/
@@ -107,36 +111,54 @@ instance-root = ${directory:instance-root}
 master-url = ${instance-parameter:configuration.master-url}
 computer-id = ${instance-parameter:configuration.computer-id}
 # XXX should be a parameter
-#partition-amount = 10
+partition-amount = 10
 computer-definition-file = ${computer-definition-file:output}
 computer-xml = ${directory:var}/slapos.xml
 computer-key-file = ${slapos-computer-key-file:output}
 computer-certificate-file = ${slapos-computer-certificate-file:output}
 certificate-repository-path = ${directory:slapos-partitions-certificate-repository}
 
-[slapos-node-format-wrapper]
-recipe = slapos.cookbook:wrapper
-command-line = {{ bin_directory }}/slapos node format --cfg ${slapos-configuration-file:output} --logfile=${directory:slapos-log}/slapos-node-format.log --now
-wrapper-path = ${directory:scripts}/slapos-node-format
-parameters-extra = true
-
 [slapos-node-instance-wrapper]
 recipe = slapos.cookbook:wrapper
-command-line = {{ bin_directory }}/slapos node instance --cfg ${slapos-configuration-file:output} --pidfile ${directory:run}/slapos-instance.pid --logfile ${directory:slapos-log}/slapos-instance.cfg
-wrapper-path = ${buildout:bin-directory}/slapos-node-instance
+command-line = {{ bin_directory }}/slapos node instance --cfg ${slapos-configuration-file:output} --pidfile ${directory:run}/slapos-instance.pid --logfile ${directory:slapos-log}/slapos-instance.log
+wrapper-path = ${directory:bin}/slapos-node-instance
 parameters-extra = true
 
 [slapos-node-software-wrapper]
 recipe = slapos.cookbook:wrapper
-command-line = {{ bin_directory }}/slapos node software --cfg ${slapos-configuration-file:output} --pidfile ${directory:run}/slapos-software.pid --logfile ${directory:slapos-log}/slapos-software.cfg
-wrapper-path = ${buildout:bin-directory}/slapos-node-software
+command-line = {{ bin_directory }}/slapos node software --cfg ${slapos-configuration-file:output} --pidfile ${directory:run}/slapos-software.pid --logfile ${directory:slapos-log}/slapos-software.log
+wrapper-path = ${directory:bin}/slapos-node-software
 parameters-extra = true
 
 [slapos-node-report-wrapper]
 recipe = slapos.cookbook:wrapper
-command-line = {{ bin_directory }}/slapos node report --cfg ${slapos-configuration-file:output} --pidfile ${directory:run}/slapos-report.pid --logfile ${directory:slapos-log}/slapos-report.cfg
-wrapper-path = ${buildout:bin-directory}/slapos-node-report
+command-line = {{ bin_directory }}/slapos node report --cfg ${slapos-configuration-file:output} --pidfile ${directory:run}/slapos-report.pid --logfile ${directory:slapos-log}/slapos-report.log
+wrapper-path = ${directory:bin}/slapos-node-report
 parameters-extra = true
+
+[slapos-node-status-wrapper]
+recipe = slapos.cookbook:wrapper
+command-line = {{ bin_directory }}/slapos node status --cfg ${slapos-configuration-file:output}
+wrapper-path = ${directory:bin}/slapos-node-status
+parameters-extra = true
+
+[slapos-node-format-wrapper]
+recipe = slapos.cookbook:wrapper
+command-line = {{ bin_directory }}/slapos node format --cfg ${slapos-configuration-file:output} --logfile=${directory:slapos-log}/slapos-node-format.log --now
+wrapper-path = ${directory:bin}/slapos-node-format
+parameters-extra = true
+
+[slapos-node-format-wrapper-script]
+# Create a wrapper of the wrapper in etc/run
+recipe = collective.recipe.template
+input = inline:#!{{ bash_executable }}
+  false
+  while [ ! $? -eq 0 ]; do
+    ${slapos-node-format-wrapper:wrapper-path}
+  done
+output = ${directory:script}/slapos-node-format
+mode = 700
+
 
 #########
 # Deploy some http server to see logs online
@@ -164,23 +186,6 @@ command-line = ${:apache-executable} -f ${httpd-configuration-file:output} -DFOR
 wrapper-path = ${directory:service}/httpd
 # generated parameter containing url to use for other sections
 url = http://[${httpd-configuration-file:listening-ip}]/
-
-#[httpd-wrapper]
-#recipe = collective.recipe.template
-#input = inline:
-#  #!${buildout:executable}
-#  import SimpleHTTPServer
-#  import SocketServer
-#  PORT = ${:listening-port}
-#  LISTENING_IP = '${:listening-ip}'
-#  Handler = SimpleHTTPServer.SimpleHTTPRequestHandler
-#  httpd = SocketServer.TCPServer((LISTENING_IP, PORT), Handler)
-#  print "serving at port", PORT
-#  httpd.serve_forever()
-#output = ${directory:service}/httpd
-#listening-ip = ${instance-parameter:ipv6-random}
-#listening-port = 8080
-#mode = 755
 
 
 #########
@@ -303,15 +308,13 @@ recipe = slapos.cookbook:dropbear.add_authorized_key
 key = ${instance-parameter:configuration.authorized-key}
 
 
-# Deploy a frontend for log
-# XXX TODO
-
 #########
 # Send informations to SlapOS Master
 #########
 [publish-connection-informations]
 recipe = slapos.cookbook:publish
 log-viewer-url = http://[${httpd-configuration-file:listening-ip}]:${httpd-configuration-file:listening-port}
+ssh_command = ssh ${dropbear-server:host} -p ${dropbear-server:port}
 
 #########
 # Deploy promises scripts
@@ -321,4 +324,17 @@ recipe = slapos.cookbook:check_port_listening
 path = ${directory:promises}/dropbear
 hostname = ${dropbear-server:host}
 port = ${dropbear-server:port}
+
+[httpd-promise]
+recipe = slapos.cookbook:check_port_listening
+path = ${directory:promises}/httpd
+hostname = ${httpd-configuration-file:listening-ip}
+port = ${httpd-configuration-file:listening-port}
+
+[slapos-promise]
+recipe = collective.recipe.template
+input = inline:#!/{{ bash_executable }}
+  {{ bin_directory }}/slapgrid-supervisorctl ${slapos-configuration-file:output} status watchdog | grep RUNNING
+output = ${directory:promises}/slapos
+mode = 0700
 

@@ -42,15 +42,19 @@ recipe = slapos.cookbook:request
 software-url = ${slap-connection:software-release-url}
 software-type = kvm-resilient
 name = Resilient KVM (Root Instance)
-config = virtual-hard-drive-url virtual-hard-drive-md5sum resiliency-backup-periodicity
+{% set cluster_parameter_dict = slapparameter_dict.get('cluster', {}) -%}
+config = virtual-hard-drive-url virtual-hard-drive-md5sum resiliency-backup-periodicity {{ cluster_parameter_dict.keys() | join(' ') }}
+{% for key, value in cluster_parameter_dict.items() -%}
+config-{{ key }} = {{ dumps(value) }}
+{% endfor -%}
 config-virtual-hard-drive-url = ${slap-parameter:virtual-hard-drive-url}
 config-virtual-hard-drive-md5sum = ${slap-parameter:virtual-hard-drive-md5sum}
 config-resiliency-backup-periodicity = */5
 # We don't use url parameter, but we want it to be there to make sure root instance is ready.
 return = url
 # XXX What to do?
-#sla = instance_guid
-#sla-instance_guid = ${slap-parameter:frontend-instance-guid}
+sla = computer_guid
+sla-computer_guid = ${slap-connection:computer-id}
 
 [slap-parameter]
 virtual-hard-drive-url = https://softinst43236.host.vifib.net/data/public/8e2138.php?dl=true
