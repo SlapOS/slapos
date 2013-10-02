@@ -32,11 +32,10 @@ import os.path
 import sys
 
 import slapos.slap.slap
-import slapos.grid.slapgrid
+from slapos.grid.slapgrid import COMPUTER_PARTITION_TIMESTAMP_FILENAME, \
+    COMPUTER_PARTITION_LATEST_BANG_TIMESTAMP_FILENAME
 
-
-def getWatchdogID():
-  return "-on-watch"
+from slapos.grid.SlapObject import WATCHDOG_MARK
 
 
 def parseArgumentTuple():
@@ -110,7 +109,7 @@ class Watchdog(object):
   def handle_event(self, headers, payload):
     if headers['eventname'] in self.process_state_events:
       payload_dict = dict([x.split(':') for x in payload.split()])
-      if getWatchdogID() in payload_dict['processname'] and \
+      if WATCHDOG_MARK in payload_dict['processname'] and \
          not self.has_bang_already_been_called(payload_dict['groupname']):
         self.handle_process_state_change_event(headers, payload_dict)
 
@@ -128,11 +127,11 @@ class Watchdog(object):
     )
     partition_timestamp_file_path = os.path.join(
         partition_home_path,
-        slapos.grid.slapgrid.COMPUTER_PARTITION_TIMESTAMP_FILENAME
+        COMPUTER_PARTITION_TIMESTAMP_FILENAME
     )
     slapos_last_bang_timestamp_file_path = os.path.join(
         partition_home_path,
-        slapos.grid.slapgrid.COMPUTER_PARTITION_LATEST_BANG_TIMESTAMP_FILENAME
+        COMPUTER_PARTITION_LATEST_BANG_TIMESTAMP_FILENAME
     )
 
     if not os.path.exists(slapos_last_bang_timestamp_file_path):
@@ -168,11 +167,11 @@ class Watchdog(object):
     )
     partition_timestamp_file_path = os.path.join(
         partition_home_path,
-        slapos.grid.slapgrid.COMPUTER_PARTITION_TIMESTAMP_FILENAME
+        COMPUTER_PARTITION_TIMESTAMP_FILENAME
     )
     slapos_last_bang_timestamp_file_path = os.path.join(
         partition_home_path,
-        slapos.grid.slapgrid.COMPUTER_PARTITION_LATEST_BANG_TIMESTAMP_FILENAME
+        COMPUTER_PARTITION_LATEST_BANG_TIMESTAMP_FILENAME
     )
     if os.path.exists(partition_timestamp_file_path):
       timestamp = open(partition_timestamp_file_path, 'r').read()

@@ -48,8 +48,9 @@ import slapos.grid.utils
 from slapos.grid import slapgrid
 from slapos.cli_legacy.slapgrid import parseArgumentTupleAndReturnSlapgridObject
 from slapos.grid.utils import md5digest
-from slapos.grid.watchdog import Watchdog, getWatchdogID
+from slapos.grid.watchdog import Watchdog
 from slapos.grid import SlapObject
+from slapos.grid.SlapObject import WATCHDOG_MARK
 
 
 dummylogger = logging.getLogger()
@@ -866,7 +867,7 @@ class TestSlapgridCPWithMasterWatchdog(MasterMixin, unittest.TestCase):
       instance.header_list = []
       headers = {'eventname': event}
       payload = 'processname:%s groupname:%s from_state:RUNNING' % (
-          'daemon' + getWatchdogID(), instance.name)
+          'daemon' + WATCHDOG_MARK, instance.name)
       watchdog.handle_event(headers, payload)
       self.assertEqual(instance.sequence, ['softwareInstanceBang'])
       self.assertEqual(instance.header_list[0]['key'], instance.key)
@@ -890,7 +891,7 @@ class TestSlapgridCPWithMasterWatchdog(MasterMixin, unittest.TestCase):
       computer.sequence = []
       headers = {'eventname': event}
       payload = 'processname:%s groupname:%s from_state:RUNNING' % (
-          'daemon' + getWatchdogID(), instance.name)
+          'daemon' + WATCHDOG_MARK, instance.name)
       watchdog.handle_event(headers, payload)
       self.assertEqual(instance.sequence, [])
 
@@ -943,7 +944,7 @@ class TestSlapgridCPWithMasterWatchdog(MasterMixin, unittest.TestCase):
     instance.header_list = []
     headers = {'eventname': event}
     payload = 'processname:%s groupname:%s from_state:RUNNING' % (
-        'daemon' + getWatchdogID(), instance.name)
+        'daemon' + WATCHDOG_MARK, instance.name)
     watchdog.handle_event(headers, payload)
     self.assertEqual(instance.sequence, ['softwareInstanceBang'])
     self.assertEqual(instance.header_list[0]['key'], instance.key)
@@ -977,7 +978,7 @@ class TestSlapgridCPWithMasterWatchdog(MasterMixin, unittest.TestCase):
     instance.header_list = []
     headers = {'eventname': event}
     payload = 'processname:%s groupname:%s from_state:RUNNING' % (
-        'daemon' + getWatchdogID(), instance.name)
+        'daemon' + WATCHDOG_MARK, instance.name)
     watchdog.handle_event(headers, payload)
     self.assertEqual(instance.sequence, ['softwareInstanceBang'])
     self.assertEqual(instance.header_list[0]['key'], instance.key)
@@ -1066,7 +1067,7 @@ class TestSlapgridCPWithMasterWatchdog(MasterMixin, unittest.TestCase):
     instance.header_list = []
     headers = {'eventname': event}
     payload = 'processname:%s groupname:%s from_state:RUNNING' % (
-        'daemon' + getWatchdogID(), instance.name)
+        'daemon' + WATCHDOG_MARK, instance.name)
     watchdog.handle_event(headers, payload)
     self.assertEqual(instance.sequence, ['softwareInstanceBang'])
     self.assertEqual(instance.header_list[0]['key'], instance.key)
@@ -1080,7 +1081,7 @@ class TestSlapgridCPWithMasterWatchdog(MasterMixin, unittest.TestCase):
     instance.header_list = []
     headers = {'eventname': event}
     payload = 'processname:%s groupname:%s from_state:RUNNING' % (
-        'daemon' + getWatchdogID(), instance.name)
+        'daemon' + WATCHDOG_MARK, instance.name)
     watchdog.handle_event(headers, payload)
     self.assertEqual(instance.sequence, [])
 
@@ -1096,7 +1097,7 @@ class TestSlapgridCPWithMasterWatchdog(MasterMixin, unittest.TestCase):
     instance.header_list = []
     headers = {'eventname': event}
     payload = 'processname:%s groupname:%s from_state:RUNNING' % (
-        'daemon' + getWatchdogID(), instance.name)
+        'daemon' + WATCHDOG_MARK, instance.name)
     watchdog.handle_event(headers, payload)
     self.assertEqual(instance.sequence, ['softwareInstanceBang'])
     self.assertEqual(instance.header_list[0]['key'], instance.key)
@@ -1110,7 +1111,7 @@ class TestSlapgridCPWithMasterWatchdog(MasterMixin, unittest.TestCase):
     instance.header_list = []
     headers = {'eventname': event}
     payload = 'processname:%s groupname:%s from_state:RUNNING' % (
-        'daemon' + getWatchdogID(), instance.name)
+        'daemon' + WATCHDOG_MARK, instance.name)
     watchdog.handle_event(headers, payload)
     self.assertEqual(instance.sequence, [])
 

@@ -49,7 +49,9 @@ from slapos.grid.svcbackend import getSupervisorRPC
 from slapos.grid.exception import (BuildoutFailedError, WrongPermissionError,
                                    PathDoesNotExistError)
 from slapos.grid.networkcache import download_network_cached, upload_network_cached
-from slapos.grid.watchdog import getWatchdogID
+
+
+WATCHDOG_MARK = '-on-watch'
 
 REQUIRED_COMPUTER_PARTITION_PERMISSION = 0o750
 
@@ -526,7 +528,7 @@ class Partition(object):
       # Same method to add to service and run
       self.addServiceToGroup(partition_id, runner_list, self.run_path)
       self.addServiceToGroup(partition_id, service_list, self.service_path,
-                             extension=getWatchdogID())
+                             extension=WATCHDOG_MARK)
       updateFile(self.supervisord_partition_configuration_path,
                  self.partition_supervisor_configuration)
     self.updateSupervisor()
