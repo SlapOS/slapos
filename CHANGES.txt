@@ -27,6 +27,7 @@ Other fixes:
 
  * Refuse to run 'slapos node' commands as non root. [Marco Mariani]
  * Register: Replace all reference to vifib by SlapOS Master. [Cedric de Saint Martin]
+ * Watchdog: won't call bang if bang was already called but problem has not been solved. [Cédric de Saint Martin]
  * Slapgrid: avoid spurious empty lines in Popen() stdout/log. [Marco Mariani]
  * Slapgrid: Properly include any partition containing any SR informations in the list of partitions to proceed. [Cedric de Saint Martin]
  * Slapgrid: Remove the timestamp file after defined periodicity. Fixes odd use cases when an instance failing to process after some time is still considered as valid by the node. [Cedric de Saint Martin]
