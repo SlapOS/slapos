@@ -85,4 +85,3 @@ fi
 #sudo iptables -t nat -A POSTROUTING -s $FLOATING_RANGE -j MASQUERADE
 
 exit 0
-

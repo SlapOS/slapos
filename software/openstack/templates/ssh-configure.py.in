@@ -24,6 +24,9 @@ hostname = '${:host-ip}'
 ssh_run = os.path.join('${:nova-result}', 'nova-configure.log')
 ssh_check = os.path.join('${:nova-result}', 'ssh_check.log')
 nova_configure = '${:nova-configure}'
+keystone_script = '${:keystone-script}'
+keystone_endpoints_script = '${:keystone-endpoints-script}'
+floating_ip_generate_script = '${:floating-ip-generate}'
 instance = '${:instance}'.strip() #Type: manage or compute
 
 def getClient():
@@ -42,7 +45,7 @@ def installCompute():
 
   #Install nova components and services
   print "Installing nova..." 
-  install_command = "echo %s | sudo -S /bin/sh configure.sh" % password
+  install_command = "echo %s | sudo -S /bin/bash -xe configure.sh 2>&1 | tee install.log" % password
   stdin, stdout, stderr = client.exec_command(install_command)
   with open(ssh_run, 'a') as output:
     output.write(stdout.read())
@@ -55,17 +58,27 @@ def installCompute():
     output.write(stdout.read())
 
 def installManage():
-
+  
+  #copy keystone configure and network address generate scripts
+  sftp = client.open_sftp()
+  result = sftp.put(keystone_script, 'keystone_basic.sh' )
+  print 'Keystone Basic Configuration script has been copied successfully! File size: %s' % result.st_size
+  result = sftp.put(keystone_endpoints_script, 'keystone_endpoints_basic.sh' )
+  print 'Keystone Endpoints Configuration script has been copied successfully! File size: %s' % result.st_size
+  result = sftp.put(floating_ip_generate_script, 'network.py' )
+  print 'Network generate script has been copied successfully! File size: %s' % result.st_size
+  sftp.close()
+  
   #Install nova components and services
   print "Downloading and installing Openstack on computer..."
-  install_command = "echo %s | sudo -S /bin/sh configure.sh" % password
+  install_command = "echo %s | sudo -S /bin/bash -xe configure.sh 2>&1 | tee install.log" % password
   stdin, stdout, stderr = client.exec_command(install_command)
   with open(ssh_run, 'w') as output:
     output.write(stdout.read())
-  #Check installation status
+    
   #Check nova service status
   print "Checking nova service status..."
-  nova_command = 'nova-manage service list'
+  nova_command = 'echo %s | sudo -S nova-manage service list' % password
   stdin, stdout, stderr = client.exec_command(nova_command)
   with open(ssh_check, 'w') as output:
     output.write(stdout.read())
@@ -77,11 +90,11 @@ if __name__ == '__main__':
     time.sleep(5)
   try:
     #Try to run openstack command before all other system process are started
-    time.sleep(30)
+    time.sleep(20)
     #Write file configure.sh to use.
     sftp = client.open_sftp()
     result = sftp.put(nova_configure, 'configure.sh' )
-    print 'Nova configuration file has been copied successfully! File size: %s' % result.st_size
+    print 'Nova configuration scipt has been copied successfully! File size: %s' % result.st_size
     sftp.close()
     if instance == "manage":
       installManage()
