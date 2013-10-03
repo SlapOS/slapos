@@ -50,11 +50,9 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string>kw[\'portal_type\'] = "Support Request"\n
-kw[\'resource_value\'] = "service_module/slapos_crm_monitoring"\n
-kw[\'simulation_state\'] = [\'validated\',\'submitted\',\'suspended\']\n
+            <value> <string>kw[\'simulation_state\'] = [\'validated\',\'submitted\']\n
 kw[\'sort_on\'] = [(\'modification_date\', \'DESC\'),]\n
-return context.getPortalObject().portal_catalog(**kw)\n
+return context.searchFolder(**kw)\n
 </string> </value>
         </item>
         <item>
@@ -63,7 +61,7 @@ return context.getPortalObject().portal_catalog(**kw)\n
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>Base_getOpenMonitoringSupportRequestList</string> </value>
+            <value> <string>Folder_getOpenTicketList</string> </value>
         </item>
       </dictionary>
     </pickle>
