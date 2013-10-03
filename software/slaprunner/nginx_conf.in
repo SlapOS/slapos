@@ -55,11 +55,11 @@ http {
         fastcgi_temp_path {{ param_tempdir['fastcgi_temp_path'] }};
         uwsgi_temp_path {{ param_tempdir['uwsgi_temp_path'] }};
         scgi_temp_path {{ param_tempdir['scgi_temp_path'] }};
-	error_page 401 @login;
+	error_page 401 /login;
         location / {
-            proxy_pass  http://{{ param_nginx_frontend['runner-ip'] }}:{{ param_nginx_frontend['runner-port'] }};
+            proxy_pass http://{{ param_nginx_frontend['runner-ip'] }}:{{ param_nginx_frontend['runner-port'] }};
             proxy_next_upstream error timeout invalid_header http_500 http_502 http_503 http_504;
-            auth_basic  "Restricted";
+            auth_basic "Restricted";
             auth_basic_user_file {{ param_nginx_frontend['etc_dir'] }}/.htpasswd;
             proxy_redirect off;
             proxy_buffering off;
@@ -70,7 +70,7 @@ http {
             proxy_set_header        X-Forwarded-Host  $http_host;
         }
         location ~ ^(/login|/doLogin|/static|/setAccount|/configAccount|/slapgridResult) {
-            proxy_pass  http://{{ param_nginx_frontend['runner-ip'] }}:{{ param_nginx_frontend['runner-port'] }};
+            proxy_pass http://{{ param_nginx_frontend['runner-ip'] }}:{{ param_nginx_frontend['runner-port'] }};
             proxy_next_upstream error timeout invalid_header http_500 http_502 http_503 http_504;
             proxy_redirect off;
             proxy_buffering off;
@@ -83,7 +83,7 @@ http {
 	location /shellinabox {
             proxy_pass  http://[::1]:{{ shellinabox_port }}/;
             proxy_next_upstream error timeout invalid_header http_500 http_502 http_503 http_504;
-            auth_basic  "Restricted";
+            auth_basic "Restricted";
             auth_basic_user_file {{ param_nginx_frontend['etc_dir'] }}/.htpasswd;
             proxy_redirect off;
             proxy_buffering off;
@@ -91,8 +91,5 @@ http {
             proxy_set_header        X-Real-IP         $remote_addr;
             proxy_set_header        X-Forwarded-For   $proxy_add_x_forwarded_for;
 	}
-	location @login {
-            rewrite .* /login permanent;
-        }
     }
 }
