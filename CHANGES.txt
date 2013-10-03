@@ -1,6 +1,23 @@
 Changes
 =======
 
+0.84.1 (2013-10-03)
+-------------------
+
+ * Resiliency: PBS: promise should NOT bang. [64886cd]
+
+0.84 (2013-09-30)
+-----------------
+
+ * Request.py: improve instance-state handling. [ba5f160]
+ * Resilient recipe: remove hashing of urls/names. [ee2aec8]
+ * Resilient pbs recipe: recover from rdiff-backup failures. [be7f2fc, 92ee0c3]
+ * Resilience: add pidfiles in PBS. [0b3ad5c]
+ * Resilient: don't hide exception, print it. [05b3d64, d2b0494]
+ * Resiliency: Only keep 10 increments of backup. [4e89e33]
+ * KVM SR: add fallback in case of download exception. [de8d796]
+ * slaprunner: don't check certificate for importer. [53dc772]
+
 0.83.1 (2013-09-10)
 ------------------
 

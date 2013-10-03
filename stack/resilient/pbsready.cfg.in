@@ -213,7 +213,8 @@ wrapper = $${basedirectory:services}/sshd
 [dropbear-server]
 recipe = slapos.cookbook:dropbear
 host = $${slap-network-information:global-ipv6}
-port = 2222
+# Explicitely excludes to define "port" argument. It will be defined in
+# pbs-ready-import.cfg.in and pbs-ready-export.cfg.in
 home = $${directory:ssh}
 wrapper = $${rootdirectory:bin}/raw_sshd
 shell = $${rdiff-backup-server:wrapper}

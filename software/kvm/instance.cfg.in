@@ -34,6 +34,7 @@ cert = $${slap-connection:cert-file}
 recipe = slapos.recipe.template:jinja2
 template = ${template-kvm-resilient:location}/instance-kvm-resilient.cfg.jinja2
 rendered = $${buildout:directory}/template-kvm-resilient.cfg
+extensions = jinja2.ext.do
 context =
     key develop_eggs_directory buildout:develop-eggs-directory
     key eggs_directory buildout:eggs-directory
