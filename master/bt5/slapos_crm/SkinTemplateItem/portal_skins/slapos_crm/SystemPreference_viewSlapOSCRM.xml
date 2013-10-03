@@ -97,7 +97,6 @@
                         <string>my_preferred_support_request_template</string>
                         <string>my_preferred_web_message_template</string>
                         <string>my_preferred_slapos_web_site_url</string>
-                        <string>my_preferred_support_request_resource_for_monitoring</string>
                       </list>
                     </value>
                 </item>
@@ -107,7 +106,6 @@
                       <list>
                         <string>my_preferred_regularisation_request_use_list</string>
                         <string>my_preferred_regularisation_request_resource</string>
-                        <string>my_preferred_software_release_to_test_for_space</string>
                       </list>
                     </value>
                 </item>
