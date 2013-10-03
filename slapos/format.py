@@ -177,8 +177,8 @@ def _getDict(obj):
       return obj
 
   return {
-    key: _getDict(value)
-    for key, value in dikt.iteritems()
+    key: _getDict(value) \
+    for key, value in dikt.iteritems() \
     # do not attempt to serialize logger: it is both useless and recursive.
     if not isinstance(value, logging.Logger)
   }
