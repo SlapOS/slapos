@@ -78,7 +78,6 @@
       "description": "MD5 checksum of virtual hard drive, used if virtual-hard-drive-url is specified.",
       "type": "string",
     },
-virtual-hard-drive-md5sum
 
     "use-tap": {
       "title": "Use QEMU TAP network interface",
