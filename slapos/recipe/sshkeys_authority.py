@@ -113,11 +113,11 @@ class Request(GenericBaseRecipe):
       hashlib.sha256(options['name']).hexdigest())
     self.public_key = self.private_key + '.pub'
 
+    options['public-key-value'] = ''
     if os.path.exists(self.public_key):
-      with open(self.public_key) as key:
-        options['public-key-value'] = key.read()
-    else:
-      options['public-key-value'] = ''
+      key_content = open(self.public_key).read()
+      if key_content:
+        options['public-key-value'] = key_content
 
   def install(self):
     requests_directory = self.options['request-directory']
