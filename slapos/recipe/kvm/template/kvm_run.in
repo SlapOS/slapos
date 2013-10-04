@@ -60,7 +60,11 @@ def getSocketStatus(host, port):
 # Download existing hard drive if needed at first boot
 if not os.path.exists(disk_path) and virtual_hard_drive_url != '':
   print('Downloading virtual hard drive...')
-  urllib.urlretrieve(virtual_hard_drive_url, disk_path)
+  try:
+    urllib.urlretrieve(virtual_hard_drive_url, disk_path)
+  except:
+    os.remove(disk_path)
+    raise
   md5sum = virtual_hard_drive_md5sum.strip()
   if md5sum:
     print('Checking MD5 checksum...')

@@ -23,6 +23,12 @@ parts =
 [resilient-publish-connection-parameter]
 notification-url = http://[$${notifier:host}]:$${notifier:port}/notify
 
+# Define port of ssh server. It has to be different from import so that it
+# supports export/import using same IP (slaprunner, slapos-in-partition,
+# ipv4...)
+[dropbear-server]
+port = 22220
+
 [import-on-notification]
 # notifier.callback runs a script when a notification (sent by a parent PBS)
 # is received
