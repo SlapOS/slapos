@@ -12,6 +12,7 @@ offline = true
 parts +=
   {{ parts.replicate("kvm", "3") }}
   publish-connection-informations
+  kvm-frontend-url-promise
 
 {{ replicated.replicate("kvm", "3", "kvm-export", "kvm-import", slapparameter_dict=slapparameter_dict) }}
 
@@ -29,3 +30,14 @@ recipe = slapos.cookbook:publish
 backend-url = ${request-kvm:connection-backend-url}
 url = ${request-kvm:connection-url}
 ipv6 = ${request-kvm:connection-ipv6}
+
+[kvm-frontend-url-promise]
+# Check that url parameter is complete
+recipe = collective.recipe.template
+input = inline:#!/bin/sh
+  URL="${request-kvm:connection-url}"
+  if [[ ! "$URL" == https://* ]]; then
+    exit 1
+  fi
+output = ${resilient-directory:promise}/kvm-frontend-url
+mode = 700
