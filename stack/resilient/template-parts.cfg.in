@@ -4,10 +4,12 @@
 
   request-{{namebase}}
   request-{{namebase}}-2
+  resilient-request-{{namebase}}-public-key-promise
   
   {% for i in range(1,nbbackup|int) %}
   request-{{namebase}}-pseudo-replicating-{{i}}
   request-{{namebase}}-pseudo-replicating-{{i}}-2
+  resilient-request-{{namebase}}-pseudo-replicating-{{i}}-public-key-promise
   {% endfor %}
   
   {% for i in range(1,nbbackup|int) %}

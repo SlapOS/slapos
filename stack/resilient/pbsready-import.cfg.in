@@ -14,6 +14,7 @@ parts =
   sshkeys-authority
   dropbear-server
   sshkeys-dropbear
+  resilient-sshkeys-dropbear-promise
   dropbear-server-pbs-authorized-key
   notifier
 
