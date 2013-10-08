@@ -4,13 +4,17 @@ QEMU_IMG=${kvm-instance:qemu-img-path}
 SNAPSHOT_NAME=$(date +%s)
 DISK_PATH=${kvm-instance:disk-path}
 BACKUP_PATH=${:backup-disk-path}
+QMP_CLIENT=${buildout:directory}/software_release/bin/qemu-qmp-client
 
 if [ ! -f $DISK_PATH ]; then
   echo "Nothing to backup, disk image doesn't exist yet."
   exit 0;
 fi
 
+$QMP_CLIENT ${kvm-instance:socket-path} suspend && \
 $QEMU_IMG snapshot -c $SNAPSHOT_NAME $DISK_PATH
+$QMP_CLIENT ${kvm-instance:socket-path} resume
+
 if [ -f $BACKUP_PATH ]; then
   rm $BACKUP_PATH
 fi
