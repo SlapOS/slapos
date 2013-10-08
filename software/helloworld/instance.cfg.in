@@ -4,7 +4,7 @@
 #
 #############################
 #
-# Now we are going how to add new parts, using new recipes
+# Adding a binary to this software : logrotate
 #
 #############################
 [buildout]
@@ -14,6 +14,10 @@ parts =
   publish-connection-parameter
 # Don't forget to include the new part ! It will also call [template-get] in software.cfg
   template-creation
+  cron
+  cron-entry-logrotate
+  logrotate
+  logrotate-entry
 
 # Define egg directories to be the one from Software Release
 # (/opt/slapgrid/...)
@@ -56,9 +60,11 @@ configuration.title =
 recipe = slapos.cookbook:mkdirectory
 home = $${buildout:directory}
 etc = $${:home}/etc
+bin = $${:home}/bin
 var = $${:home}/var
+srv = $${:home}/srv
 # Creation of the folder wich will contain the jinja template
-data-fold = $${:home}/srv/data
+data-fold = $${:srv}/data
 # Executables put here will be started but not monitored (for startup scripts)
 script = $${:etc}/run/
 # Executables put here will be started and monitored (for daemons)
@@ -68,6 +74,69 @@ service = $${:etc}/service
 promise = $${:etc}/promise/
 # Path of the log directory used by our service (see [hello-world])
 log = $${:var}/log
+# Cron directories
+cron-entries = $${:etc}/cron.d
+crontabs = $${:etc}/crontabs
+cronstamps = $${:etc}/cronstamps
+# Logrotate directories
+backup = $${:srv}/backup
+logrotate-backup = $${:backup}/logrotate
+logrotate-entries = $${:etc}/logrotate.d
+
+
+# Deploy cron
+[cron]
+recipe = slapos.cookbook:cron
+dcrond-binary = ${dcron:location}/sbin/crond
+cron-entries = $${directory:cron-entries}
+crontabs = $${directory:crontabs}
+cronstamps = $${directory:cronstamps}
+catcher = $${cron-simplelogger:wrapper}
+binary = $${directory:service}/crond
+
+[cron-simplelogger]
+recipe = slapos.cookbook:simplelogger
+wrapper = $${directory:bin}/cron_simplelogger
+log = $${directory:log}/cron.log
+
+[cron-entry-logrotate]
+<= cron
+recipe = slapos.cookbook:cron.d
+name = logrotate
+frequency = 0 * * * *
+# Now that the cron is set up, we can define
+# the command to launch every XX
+command = $${logrotate:wrapper}
+
+# Deploy Logrotate
+# To know more about which arguments are necessary,
+# and why they are used for, you should read the recipe,
+# in ../../slapos/recipe/logrogate.py
+[logrotate]
+recipe = slapos.cookbook:logrotate
+# Binaries
+logrotate-binary = ${logrotate:location}/usr/sbin/logrotate
+gzip-binary = ${gzip:location}/bin/gzip
+gunzip-binary = ${gzip:location}/bin/gunzip
+# Directories
+wrapper = $${directory:bin}/logrotate
+conf = $${directory:etc}/logrotate.conf
+# in this folder will be defined tho files to save, and how to save them
+logrotate-entries = $${directory:logrotate-entries}
+# in this folder the logs will be compressed then saved
+backup = $${directory:logrotate-backup}
+state-file = $${directory:srv}/logrotate.status
+
+[logrotate-entry]
+<= logrotate
+recipe = slapos.cookbook:logrotate.d
+name = helloworld-logrotate
+log = $${directory:log}/log.log
+frequency = daily
+rotatep-num = 30
+sharedscripts = true
+notifempty = true
+create = true
 
 
 # It is now time for Jinja !
