@@ -131,7 +131,7 @@ recipe = collective.recipe.template
 # XXX: don't use system executable
 input = inline:#!/bin/sh
   PUBLIC_KEY_CONTENT="${request-{{namebase}}-2:connection-ssh-public-key})"
-  if [ ! -n "$PUBLIC_KEY_CONTENT" ]; then
+  if [[ ! -n "$PUBLIC_KEY_CONTENT" -o "$PUBLIC_KEY_CONTENT" == None ]]; then
     exit 1
   fi
 output = ${resilient-directory:promise}/resilient-request-{{namebase}}-public-key
@@ -149,7 +149,7 @@ recipe = collective.recipe.template
 # XXX: don't use system executable
 input = inline:#!/bin/sh
   PUBLIC_KEY_CONTENT="${request-{{namebase}}-pseudo-replicating-{{id}}-2:connection-ssh-public-key})"
-  if [ ! -n "$PUBLIC_KEY_CONTENT" ]; then
+  if [ ! -n "$PUBLIC_KEY_CONTENT" -a  "$PUBLIC_KEY_CONTENT" == None ]; then
     exit 1
   fi
 output = ${resilient-directory:promise}/resilient-request-{{namebase}}-pseudo-replicating-{{id}}-public-key
@@ -199,6 +199,19 @@ sla-{{ key }} = {{ value }}
 {%     endfor %}
 {%   endif %}
 {% endif %}
+
+[resilient-request-pbs-{{namebase}}-{{id}}-public-key-promise]
+# Check that public-key-value parameter exists and is not empty
+# XXX: maybe we should consider empty values to be non-nexistent.
+recipe = collective.recipe.template
+# XXX: don't use system executable
+input = inline:#!/bin/sh
+  PUBLIC_KEY_CONTENT="${request-pbs-{{namebase}}-{{id}}:connection-ssh-key}:connection-ssh-key})"
+  if [ ! -n "$PUBLIC_KEY_CONTENT" -a  "$PUBLIC_KEY_CONTENT" == None ]; then
+    exit 1
+  fi
+output = ${resilient-directory:promise}/resilient-request-{{namebase}}-pseudo-replicating-{{id}}-public-key
+mode = 700
 
 
 [request-pull-backup-server-{{namebase}}-{{id}}]
