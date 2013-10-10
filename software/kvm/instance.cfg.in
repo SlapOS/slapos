@@ -39,6 +39,7 @@ context =
     key develop_eggs_directory buildout:develop-eggs-directory
     key eggs_directory buildout:eggs-directory
     key slapparameter_dict slap-configuration:configuration
+    raw curl_executable_location ${curl:location}/bin/curl
 template-parts-destination = ${template-parts:destination}
 template-replicated-destination = ${template-replicated:destination}
 import-list = file parts :template-parts-destination
@@ -54,5 +55,4 @@ context =
     key eggs_directory buildout:eggs-directory
     key slapparameter_dict slap-configuration:configuration
     raw bin_directory ${buildout:bin-directory}
-    raw curl-executable-location ${curl:location}/bin/curl
 mode = 0644
