@@ -19,8 +19,8 @@ parts +=
 
 [directory]
 recipe = slapos.cookbook:mkdirectory
-etc = $${buildout:directory}/etc
-promises = $${:etc}/promise
+etc = ${buildout:directory}/etc
+promises = ${:etc}/promise
 
 # Bubble down the parameters of the requested instance to the user
 [request-kvm]
