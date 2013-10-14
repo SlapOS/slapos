@@ -1,8 +1,5 @@
 #!/bin/bash
 # Create a backup of the disk image of the virtual machine
-QEMU_IMG=${kvm-instance:qemu-img-path}
-SNAPSHOT_NAME=$(date +%s)
-DISK_PATH=${kvm-instance:disk-path}
 BACKUP_PATH=${:backup-disk-path}
 QMP_CLIENT=${buildout:directory}/software_release/bin/qemu-qmp-client
 
@@ -11,15 +8,5 @@ if [ ! -f $DISK_PATH ]; then
   exit 0;
 fi
 
-$QMP_CLIENT ${kvm-instance:socket-path} suspend && \
-$QEMU_IMG snapshot -c $SNAPSHOT_NAME $DISK_PATH
-$QMP_CLIENT ${kvm-instance:socket-path} resume
+$QMP_CLIENT --socket ${kvm-instance:socket-path} --drive-backup $BACKUP_PATH
 
-if [ -f $BACKUP_PATH ]; then
-  rm $BACKUP_PATH
-fi
-$QEMU_IMG convert -f qcow2 -O qcow2 -s $SNAPSHOT_NAME $DISK_PATH $BACKUP_PATH
-
-$QMP_CLIENT ${kvm-instance:socket-path} suspend && \
-$QEMU_IMG snapshot -d $SNAPSHOT_NAME $DISK_PATH
-$QMP_CLIENT ${kvm-instance:socket-path} resume
