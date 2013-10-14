@@ -230,9 +230,9 @@ wrapper = $${basedirectory:services}/sshd
 [resilient-sshkeys-dropbear-promise]
 # Check that public key file exists and is not empty
 recipe = collective.recipe.template
-input = inline:#!${dash:location}/bin/dash
+input = inline:#!${bash:location}/bin/bash
   PUBLIC_KEY_CONTENT="$${sshkeys-dropbear:public-key-value}"
-  if [ ! -n "$PUBLIC_KEY_CONTENT" ]; then
+  if [[ ! -n "$PUBLIC_KEY_CONTENT" || "$PUBLIC_KEY_CONTENT" == *None* ]]; then
     exit 1
   fi
 output = $${basedirectory:promises}/public-key-existence

@@ -131,7 +131,7 @@ recipe = collective.recipe.template
 # XXX: don't use system executable
 input = inline:#!/bin/sh
   PUBLIC_KEY_CONTENT="${request-{{namebase}}-2:connection-ssh-public-key})"
-  if [[ ! -n "$PUBLIC_KEY_CONTENT" && "$PUBLIC_KEY_CONTENT" == None ]]; then
+  if [[ ! -n "$PUBLIC_KEY_CONTENT" || "$PUBLIC_KEY_CONTENT" == *None* ]]; then
     exit 1
   fi
 output = ${resilient-directory:promise}/resilient-request-{{namebase}}-public-key
@@ -149,7 +149,7 @@ recipe = collective.recipe.template
 # XXX: don't use system executable
 input = inline:#!/bin/sh
   PUBLIC_KEY_CONTENT="${request-{{namebase}}-pseudo-replicating-{{id}}-2:connection-ssh-public-key})"
-  if [ ! -n "$PUBLIC_KEY_CONTENT" &&  "$PUBLIC_KEY_CONTENT" == None ]; then
+  if [[ ! -n "$PUBLIC_KEY_CONTENT" || "$PUBLIC_KEY_CONTENT" == *None* ]]; then
     exit 1
   fi
 output = ${resilient-directory:promise}/resilient-request-{{namebase}}-pseudo-replicating-{{id}}-public-key
@@ -207,7 +207,7 @@ recipe = collective.recipe.template
 # XXX: don't use system executable
 input = inline:#!/bin/sh
   PUBLIC_KEY_CONTENT="${request-pbs-{{namebase}}-{{id}}:connection-ssh-key}:connection-ssh-key})"
-  if [ ! -n "$PUBLIC_KEY_CONTENT" &&  "$PUBLIC_KEY_CONTENT" == None ]; then
+  if [[ ! -n "$PUBLIC_KEY_CONTENT" || "$PUBLIC_KEY_CONTENT" == *None* ]]; then
     exit 1
   fi
 output = ${resilient-directory:promise}/resilient-request-{{namebase}}-pseudo-replicating-{{id}}-public-key
