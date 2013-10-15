@@ -50,12 +50,10 @@ config-{{ key }} = {{ dumps(value) }}
 config-virtual-hard-drive-url = ${slap-parameter:virtual-hard-drive-url}
 config-virtual-hard-drive-md5sum = ${slap-parameter:virtual-hard-drive-md5sum}
 config-resiliency-backup-periodicity = */5
-# We don't use url parameter, but we want it to be there to make sure root instance is ready.
-return = url
 # XXX What to do?
 sla = computer_guid
 sla-computer_guid = ${slap-connection:computer-id}
 
 [slap-parameter]
 virtual-hard-drive-url = https://softinst43236.host.vifib.net/data/public/8e2138.php?dl=true
-virtual-hard-drive-md5sum = de0f10c7c6538e9928879332afd9be7a
+virtual-hard-drive-md5sum = 465e1024447997e7b86ee2e5151e031b
