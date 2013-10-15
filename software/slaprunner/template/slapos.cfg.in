@@ -22,8 +22,6 @@ ipv6_address = {{ ipv6 }}
 etc_dir = {{ etc_dir }}
 run_dir = {{ run_dir }}
 log_dir = {{ log_dir }}
-default_repo = {{ default_repo }}
-default_sr = {{ default_sr }}
 auto_deploy = {{ auto_deploy }}
 
 [slapproxy]
