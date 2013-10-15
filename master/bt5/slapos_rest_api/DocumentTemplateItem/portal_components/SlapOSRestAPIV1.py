@@ -599,9 +599,21 @@ class StatusPublisher(GenericPublisher):
         self.__status_list()
 
   def __status_list(self):
+    portal = self.getPortalObject()
+    open_friend = portal.restrictedTraverse(
+      "portal_categories/allocation_scope/open/friend" None).getUid()
+    open_personal = portal.restrictedTraverse(
+      "portal_categories/allocation_scope/open/personal", None).getUid()
+    open_public = portal.restrictedTraverse(
+      "portal_categories/allocation_scope/open/public", None).getUid()
+
     kw = dict(
       portal_type=('Computer', 'Software Instance'),
       validation_state="validated",
+      default_allocation_scope_uid=[open_friend,
+                                    open_personal,
+                                    open_public],
+      slap_state=['start_requested','stop_requested']
     )
     d = {"list": []}
     a = d['list'].append

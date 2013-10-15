@@ -1931,3 +1931,21 @@ class TestStatusGET(SlapOSRestAPIV1InstanceMixin):
       'list': ['/'.join([self.api_url, 'status',
                          self.software_instance.getRelativeUrl()])]
       }, self.json_response)
+
+  def test_check_no_destroyed_instance(self):
+    self.software_instance = self.createSoftwareInstance(self.customer)
+    self.software_instance.edit(slap_state='destroy_requested')
+    transaction.commit()
+    self.connection.request(method='GET',
+      url='/'.join([self.api_path, 'status']),
+      headers={'REMOTE_USER': self.customer_reference})
+    self.prepareResponse()
+    self.assertBasicResponse()
+    self.assertResponseCode(200)
+    self.assertCacheControlHeader()
+    self.assertResponseJson()
+    self.assertEqual({
+      'list': []
+      }, self.json_response)
+
+
