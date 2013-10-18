@@ -601,7 +601,7 @@ class StatusPublisher(GenericPublisher):
   def __status_list(self):
     portal = self.getPortalObject()
     open_friend = portal.restrictedTraverse(
-      "portal_categories/allocation_scope/open/friend" None).getUid()
+      "portal_categories/allocation_scope/open/friend", None).getUid()
     open_personal = portal.restrictedTraverse(
       "portal_categories/allocation_scope/open/personal", None).getUid()
     open_public = portal.restrictedTraverse(
