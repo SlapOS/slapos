@@ -22,6 +22,9 @@ ipv6_address = {{ ipv6 }}
 etc_dir = {{ etc_dir }}
 run_dir = {{ run_dir }}
 log_dir = {{ log_dir }}
+console = {{ console }}
+verbose = {{ verbose }}
+debug = {{ debug }}
 auto_deploy = {{ auto_deploy }}
 
 [slapproxy]
