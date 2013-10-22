@@ -50,6 +50,7 @@ crontabs = $${rootdirectory:etc}/crontabs
 cronstamps = $${rootdirectory:etc}/cronstamps
 logrotate-entries = $${rootdirectory:etc}/logrotate.d
 logrotate-backup = $${basedirectory:backup}/logrotate
+cgi-bin = $${rootdirectory:srv}/cgi-bin
 
 #----------------
 #--
