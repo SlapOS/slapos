@@ -29,5 +29,11 @@
       "description": "Periodicity of backup, in cron format.",
       "type": "string"
     }
+    "remove-backup-older-than": {
+      "title": "Remove backups older than...",
+      "description": "Remove all the backups in PBS that are older than specified value. It should be rdiff-backup-compatible."
+      "type": "string",
+      "default": "3B"
+    }
   }
 }

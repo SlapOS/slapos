@@ -50,6 +50,7 @@ class ERP5Updater(object):
     base64string = base64.encodestring(authentication_string).strip()
 
     self.header_dict['Authorization'] = 'Basic %s' % base64string
+    self.header_dict['Referer'] = 'http://%s/manage_addProduct/ERP5/addERP5Site' % host
 
     self.host = host
     self.site_id = site_id
