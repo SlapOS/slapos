@@ -95,6 +95,7 @@
                       <list>
                         <string>my_title</string>
                         <string>my_reference</string>
+                        <string>my_url_string</string>
                         <string>my_group</string>
                         <string>my_cpu_core</string>
                         <string>my_cpu_frequency</string>

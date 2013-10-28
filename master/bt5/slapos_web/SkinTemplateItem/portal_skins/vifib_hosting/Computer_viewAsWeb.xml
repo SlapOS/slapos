@@ -102,6 +102,7 @@
                         <string>my_title</string>
                         <string>my_reference</string>
                         <string>your_monitoring_status</string>
+                        <string>my_url_string</string>
                         <string>your_monitoring_status_js</string>
                         <string>your_system_message</string>
                         <string>your_allocation_scope_update</string>
