@@ -5,6 +5,7 @@
  <portal_type id="Computer">
   <item>SlaposCapacity</item>
   <item>SlaposComputerConstraint</item>
+  <item>Url</item>
  </portal_type>
  <portal_type id="Computer Model">
   <item>SlaposCapacity</item>

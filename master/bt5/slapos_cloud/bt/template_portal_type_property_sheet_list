@@ -4,6 +4,7 @@ Computer Partition | ComputerPartition
 Computer Partition | SlaposComputerPartitionConstraint
 Computer | SlaposCapacity
 Computer | SlaposComputerConstraint
+Computer | Url
 Email | SlaposEmailConstraint
 Hosting Subscription | HostingSubscription
 Hosting Subscription | SlaposHostingSubscriptionConstraint
