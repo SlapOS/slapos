@@ -17,6 +17,11 @@ parts +=
 
 {{ replicated.replicate("kvm", "3", "kvm-export", "kvm-import", slapparameter_dict=slapparameter_dict) }}
 
+[directory]
+recipe = slapos.cookbook:mkdirectory
+etc = ${buildout:directory}/etc
+promises = ${:etc}/promise
+
 # Bubble down the parameters of the requested instance to the user
 [request-kvm]
 # Note: += doesn't work.
@@ -47,6 +52,6 @@ mode = 700
 # Check that backend url is reachable
 recipe = slapos.cookbook:check_url_available
 path = ${directory:promises}/frontend_promise
-url = ${publish-connection-information:url}
+url = ${publish-connection-informations:url}
 dash_path = /bin/sh
 curl_path = {{ curl_executable_location }}
