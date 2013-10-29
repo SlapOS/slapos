@@ -285,6 +285,18 @@ class testSlapOSMixin(ERP5TypeTestCase):
     self.partition.markFree()
     self.partition.validate()
     self.tic()
+    return self.computer, self.partition
+
+  def _makeComputerNetwork(self):
+    reference = 'TESTCOMPNETWORK-%s' % self.generateNewId()
+    self.computer_network = self.portal.computer_network_module.newContent(
+        portal_type='Computer Network',
+        reference=reference,
+        title=reference
+    )
+    self.computer_network.validate()
+    self.tic()
+    return self.computer_network
 
   def _makeComplexComputer(self, person=None, with_slave=False):
     for i in range(1, 5):
