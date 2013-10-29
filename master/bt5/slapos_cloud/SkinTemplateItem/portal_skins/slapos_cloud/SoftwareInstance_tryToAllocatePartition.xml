@@ -50,7 +50,10 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string>from Products.DCWorkflow.DCWorkflow import ValidationFailed\n
+            <value> <string encoding="cdata"><![CDATA[
+
+from Products.DCWorkflow.DCWorkflow import ValidationFailed\n
+from Products.ZSQLCatalog.SQLCatalog import SimpleQuery, ComplexQuery\n
 from zExceptions import Unauthorized\n
 \n
 if context.getPortalType() not in (\'Software Instance\', \'Slave Instance\'):\n
@@ -63,7 +66,7 @@ def markHistory(document, comment):\n
   if last_workflow_item != comment:\n
     portal_workflow.doActionFor(document, action=\'edit_action\', comment=comment)\n
 \n
-def assignComputerPartition(software_instance):\n
+def assignComputerPartition(software_instance, hosting_subscription):\n
   computer_partition = software_instance.getAggregateValue(\n
       portal_type="Computer Partition")\n
   if computer_partition is None:\n
@@ -75,18 +78,66 @@ def assignComputerPartition(software_instance):\n
     if not person.Person_isAllowedToAllocate():\n
       raise Unauthorized(\'Allocation disallowed\')\n
 \n
+    tag = None\n
     try:\n
       sla_dict = software_instance.getSlaXmlAsDict()\n
     except Exception:\n
       # Note: it is impossible to import module exceptions from python scripts\n
       computer_partition_relative_url = None\n
     else:\n
+\n
+      # "Each instance should be allocated to a different network." (i.e at most one instance of the tree per network)\n
+      computer_network_query = None\n
+      if sla_dict.get(\'mode\', None) == \'unique_by_network\':\n
+        # Prevent creating two instances in the same computer_network\n
+        hosting_subscription_uid = hosting_subscription.getUid()\n
+        tag = "%s_inProgress" % hosting_subscription_uid\n
+        if (context.getPortalObject().portal_activities.countMessageWithTag(tag) > 0):\n
+          # The software instance is already under creation but can not be fetched from catalog\n
+          # As it is not possible to fetch informations, just ignore\n
+          markHistory(software_instance,\n
+              \'Allocation failed: blocking activites in progress for %s\' % hosting_subscription_uid)\n
+\n
+        sla_dict.pop(\'mode\')\n
+        # XXX: does NOT scale if hosting subscription contains many SoftwareInstance\n
+        hosting_subscription = software_instance.getSpecialiseValue()\n
+        software_instance_tree_list = [sql_obj.getObject() \\\n
+            for sql_obj in context.getPortalObject().portal_catalog(\n
+                portal_type=[\'Software Instance\', \'Slave Instance\'],\n
+                default_specialise_uid=hosting_subscription.getUid(),\n
+            )\n
+        ]\n
+        computer_network_query_list = []\n
+        # Don\'t deploy in computer with no network\n
+        computer_network_query_list.append(ComplexQuery(\n
+            SimpleQuery(\n
+            default_subordination_uid=\'\'),\n
+            logical_operator=\'not\',\n
+        ))\n
+        for software_instance in software_instance_tree_list:\n
+          computer_partition = software_instance.getAggregateValue()\n
+          if not computer_partition:\n
+            continue\n
+          computer_network = computer_partition.getParentValue().getSubordinationValue()\n
+          if computer_network:\n
+            computer_network_query_list.append(ComplexQuery(\n
+                SimpleQuery(\n
+                default_subordination_uid=computer_network.getUid()),\n
+                logical_operator=\'not\',\n
+            ))\n
+      \n
+        computer_network_query = ComplexQuery(*computer_network_query_list)\n
+        hosting_subscription.serialize()\n
+\n
+      elif sla_dict.get(\'mode\'):\n
+        computer_network_query = \'-1\'\n
+\n
       computer_partition_relative_url = person.Person_restrictMethodAsShadowUser(\n
         shadow_document=person,\n
         callable_object=person.Person_findPartition,\n
         argument_list=[software_instance.getUrlString(), software_instance.getSourceReference(),\n
-        software_instance.getPortalType(), sla_dict])\n
-    return computer_partition_relative_url\n
+        software_instance.getPortalType(), sla_dict, computer_network_query])\n
+    return computer_partition_relative_url, tag\n
 \n
 software_instance = context\n
 if software_instance.getValidationState() != \'validated\' \\\n
@@ -94,12 +145,23 @@ if software_instance.getValidationState() != \'validated\' \\\n
   or software_instance.getAggregateValue(portal_type=\'Computer Partition\') is not None:\n
   return\n
 \n
+hosting_subscription = software_instance.getSpecialiseValue()\n
 try:\n
-  computer_partition_url = assignComputerPartition(software_instance)\n
+  computer_partition_url, tag = assignComputerPartition(software_instance,\n
+      hosting_subscription)\n
+\n
+  # XXX: We create a dummy activity to prevent to allocations on the same network\n
+  if tag:\n
+    hosting_subscription.activate(activity="SQLQueue", tag=tag,\n
+        after_tag="allocate_%s" % computer_partition_url).getId()\n
+  \n
 except ValueError:\n
   # It was not possible to find free Computer Partition\n
   markHistory(software_instance, \'Allocation failed: no free Computer Partition\')\n
 except Unauthorized, e:\n
+  # user has bad balance\n
+  markHistory(software_instance, \'Allocation failed: %s\' % e)\n
+except NotImplementedError, e:\n
   # user has bad balance\n
   markHistory(software_instance, \'Allocation failed: %s\' % e)\n
 else:\n
@@ -111,7 +173,9 @@ else:\n
       markHistory(software_instance, \'Allocation failed: consistency failed\')\n
     else:\n
       software_instance.allocatePartition(computer_partition_url=computer_partition_url)\n
-</string> </value>
+
+
+]]></string> </value>
         </item>
         <item>
             <key> <string>_params</string> </key>

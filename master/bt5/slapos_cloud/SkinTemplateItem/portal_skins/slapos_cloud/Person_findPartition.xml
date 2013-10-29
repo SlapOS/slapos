@@ -53,7 +53,7 @@
             <value> <string encoding="cdata"><![CDATA[
 
 import random\n
-from Products.ZSQLCatalog.SQLCatalog import SimpleQuery\n
+from Products.ZSQLCatalog.SQLCatalog import SimpleQuery, ComplexQuery\n
 person = context\n
 \n
 computer_partition = None\n
@@ -87,6 +87,15 @@ if "instance_guid" in filter_kw:\n
 if \'network_guid\' in filter_kw:\n
   network_guid = filter_kw.pop(\'network_guid\')\n
   query_kw["default_subordination_reference"] = SimpleQuery(default_subordination_reference=network_guid)\n
+\n
+if computer_network_query:\n
+  if query_kw.get("default_subordination_reference"):\n
+    query_kw["default_subordination_reference"] = ComplexQuery(\n
+        query_kw["default_subordination_reference"],\n
+        computer_network_query\n
+    )\n
+  else:\n
+    query_kw["default_subordination_reference"] = computer_network_query\n
 \n
 computer_base_category_list = [\n
   \'group\',\n
@@ -161,7 +170,7 @@ return computer_partition.getRelativeUrl()\n
         </item>
         <item>
             <key> <string>_params</string> </key>
-            <value> <string>software_release_url, software_type, software_instance_portal_type, filter_kw, test_mode=False</string> </value>
+            <value> <string>software_release_url, software_type, software_instance_portal_type, filter_kw, computer_network_query=None, test_mode=False</string> </value>
         </item>
         <item>
             <key> <string>id</string> </key>

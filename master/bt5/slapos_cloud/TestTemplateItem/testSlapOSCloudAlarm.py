@@ -585,6 +585,265 @@ portal_workflow.doActionFor(context, action='edit_action', comment='Visited by S
     self.assertEqual(self.partition.getRelativeUrl(),
         self.software_instance.getAggregate(portal_type='Computer Partition'))
 
+  def test_allocation_mode_unique_by_network_one_network(self):
+    """
+    Test that when mode is "unique_by_network", we deploy new instance on
+    computer network not already used by any software instance of the
+    hosting subscription.
+    Then test that we do NOT deploy new instance on
+    computer network already used by any software instance of the
+    hosting subscription.
+    """
+    sla_xml = """<?xml version='1.0' encoding='utf-8'?>
+        <instance>
+        <parameter id='mode'>unique_by_network</parameter>
+        </instance>"""
+    self._makeTree()
+    computer1, partition1 = self._makeComputer()
+    computer2, partition2 = self._makeComputer()
+    self._installSoftware(computer1, self.software_instance.getUrlString())
+    self._installSoftware(computer2, self.software_instance.getUrlString())
+
+    new_id = self.generateNewId()
+    computer_network = self.portal.computer_network_module.newContent(
+        portal_type='Computer Network',
+        title="live_test_%s" % new_id,
+        reference="live_test_%s" % new_id)
+    computer_network.validate()
+    computer1.edit(subordination_value=computer_network)
+    computer2.edit(subordination_value=computer_network)
+
+    self.assertEqual(None, self.software_instance.getAggregateValue(
+        portal_type='Computer Partition'))
+
+    software_instance2 = self.portal.software_instance_module\
+        .template_software_instance.Base_createCloneDocument(batch_mode=1)
+    software_instance2.edit(
+      title=self.generateNewSoftwareTitle(),
+      reference="TESTSI-%s" % self.generateNewId(),
+      url_string=self.software_instance.getUrlString(),
+      source_reference=self.generateNewSoftwareType(),
+      text_content=self.generateSafeXml(),
+      sla_xml=sla_xml,
+      specialise=self.hosting_subscription.getRelativeUrl(),
+    )
+    self.portal.portal_workflow._jumpToStateFor(software_instance2, 'start_requested')
+    software_instance2.validate()
+    self.tic()
+
+    self.software_instance.setSlaXml(sla_xml)
+    self.software_instance.SoftwareInstance_tryToAllocatePartition()
+    self.assertEqual(
+        computer_network.getReference(),
+        self.software_instance.getAggregateValue(portal_type='Computer Partition')\
+            .getParentValue().getSubordinationReference(),
+    )
+
+    self.tic()
+    software_instance2.SoftwareInstance_tryToAllocatePartition()
+    self.assertEqual(
+        None,
+        software_instance2.getAggregate(portal_type='Computer Partition')
+    )
+
+  def test_allocation_mode_unique_by_network_several_network(self):
+    """
+    Test that when mode is "unique_by_network", we deploy new instance on
+    computer network not already used by any software instance of the
+    hosting subscription.
+    Then test that we do NOT deploy new instance on
+    computer network already used by any software instance of the
+    hosting subscription.
+    Test with 3 instances and 3 existing computers on 2 different networks.
+    """
+    sla_xml = """<?xml version='1.0' encoding='utf-8'?>
+        <instance>
+        <parameter id='mode'>unique_by_network</parameter>
+        </instance>"""
+    self._makeTree()
+    computer1, partition1 = self._makeComputer()
+    computer2, partition2 = self._makeComputer()
+    computer3, partition3 = self._makeComputer()
+    computer_network1 = self._makeComputerNetwork()
+    computer_network2 = self._makeComputerNetwork()
+
+    computer1.edit(subordination_value=computer_network1)
+    computer2.edit(subordination_value=computer_network1)
+    computer3.edit(subordination_value=computer_network2)
+
+    self._installSoftware(computer1, self.software_instance.getUrlString())
+    self._installSoftware(computer2, self.software_instance.getUrlString())
+    self._installSoftware(computer3, self.software_instance.getUrlString())
+
+    self.assertEqual(None, self.software_instance.getAggregateValue(
+        portal_type='Computer Partition'))
+
+    self.software_instance.setSlaXml("""<?xml version='1.0' encoding='utf-8'?>
+        <instance>
+        <parameter id='mode'>unique_by_network</parameter>
+        <parameter id='computer_guid'>%s</parameter>
+        </instance>""" % computer1.getReference())
+    self.software_instance.SoftwareInstance_tryToAllocatePartition()
+    self.assertEqual(
+        self.software_instance.getAggregate(portal_type='Computer Partition'),
+        partition1.getRelativeUrl(),
+    )
+
+    software_instance2 = self.portal.software_instance_module\
+        .template_software_instance.Base_createCloneDocument(batch_mode=1)
+    software_instance2.edit(
+      title=self.generateNewSoftwareTitle(),
+      reference="TESTSI-%s" % self.generateNewId(),
+      url_string=self.software_instance.getUrlString(),
+      source_reference=self.generateNewSoftwareType(),
+      text_content=self.generateSafeXml(),
+      sla_xml=sla_xml,
+      specialise=self.hosting_subscription.getRelativeUrl(),
+    )
+    self.portal.portal_workflow._jumpToStateFor(software_instance2, 'start_requested')
+    software_instance2.validate()
+    self.tic()
+    software_instance2.SoftwareInstance_tryToAllocatePartition()
+    self.assertEqual(
+        software_instance2.getAggregate(portal_type='Computer Partition'),
+        partition3.getRelativeUrl(),
+    )
+
+    software_instance3 = self.portal.software_instance_module\
+        .template_software_instance.Base_createCloneDocument(batch_mode=1)
+    software_instance3.edit(
+      title=self.generateNewSoftwareTitle(),
+      reference="TESTSI-%s" % self.generateNewId(),
+      url_string=self.software_instance.getUrlString(),
+      source_reference=self.generateNewSoftwareType(),
+      text_content=self.generateSafeXml(),
+      sla_xml=sla_xml,
+      specialise=self.hosting_subscription.getRelativeUrl(),
+    )
+    self.portal.portal_workflow._jumpToStateFor(software_instance3, 'start_requested')
+    software_instance3.validate()
+    self.tic()
+
+    software_instance3.SoftwareInstance_tryToAllocatePartition()
+    self.assertEqual(
+        None,
+        software_instance3.getAggregate(portal_type='Computer Partition')
+    )
+
+  def test_allocation_mode_unique_by_network_no_network(self):
+    """
+    Test that when we request instance with mode as 'unique_by_network',
+    instance is not deployed on computer with no network.
+    """
+    self._makeTree()
+    self._makeComputer()
+    self._installSoftware(self.computer,
+        self.software_instance.getUrlString())
+
+    self.assertEqual(None, self.software_instance.getAggregateValue(
+        portal_type='Computer Partition'))
+
+    self.software_instance.setSlaXml("""<?xml version='1.0' encoding='utf-8'?>
+        <instance>
+        <parameter id='mode'>unique_by_network</parameter>
+        </instance>""")
+    self.software_instance.SoftwareInstance_tryToAllocatePartition()
+    self.assertEqual(
+        None,
+        self.software_instance.getAggregate(portal_type='Computer Partition')
+    )
+
+  def test_allocation_mode_unique_by_network_check_serialize_called(self):
+    """
+    Test that on being_requested serialise is being called
+    code stolen from testERP5Security:test_MultiplePersonReferenceConcurrentTransaction
+    """
+    class DummyTestException(Exception):
+      pass
+
+    def verify_serialize_call(self):
+      # it is checking that anything below computer_module raises exception
+      # thanks to this this test do not have to be destructive
+      if self.getPortalType() == "Hosting Subscription":
+        raise DummyTestException
+      else:
+        return self.serialize_call()
+
+    self._makeTree()
+    self.software_instance.setSlaXml("""<?xml version='1.0' encoding='utf-8'?>
+        <instance>
+        <parameter id='mode'>unique_by_network</parameter>
+        </instance>""")
+
+    from Products.ERP5Type.Base import Base
+    Base.serialize_call = Base.serialize
+    try:
+      Base.serialize = verify_serialize_call
+      self.assertRaises(DummyTestException,
+        self.software_instance.SoftwareInstance_tryToAllocatePartition)
+    finally:
+      Base.serialize = Base.serialize_call
+
+    transaction.abort()
+
+  def test_allocation_mode_unique_by_network_no_parallel(self):
+    """
+    Test that when we request two instances of the same Hosting Subscription
+    with mode as 'unique_by_network' at the same time, they don't get
+    allocated to the same network.
+    """
+    sla_xml = """<?xml version='1.0' encoding='utf-8'?>
+        <instance>
+        <parameter id='mode'>unique_by_network</parameter>
+        </instance>"""
+    self._makeTree()
+    computer1, partition1 = self._makeComputer()
+    computer2, partition2 = self._makeComputer()
+    self._installSoftware(computer1, self.software_instance.getUrlString())
+    self._installSoftware(computer2, self.software_instance.getUrlString())
+
+    new_id = self.generateNewId()
+    computer_network = self.portal.computer_network_module.newContent(
+        portal_type='Computer Network',
+        title="live_test_%s" % new_id,
+        reference="live_test_%s" % new_id)
+    computer_network.validate()
+    computer1.edit(subordination_value=computer_network)
+    computer2.edit(subordination_value=computer_network)
+
+    self.assertEqual(None, self.software_instance.getAggregateValue(
+        portal_type='Computer Partition'))
+
+    software_instance2 = self.portal.software_instance_module\
+        .template_software_instance.Base_createCloneDocument(batch_mode=1)
+    software_instance2.edit(
+      title=self.generateNewSoftwareTitle(),
+      reference="TESTSI-%s" % self.generateNewId(),
+      url_string=self.software_instance.getUrlString(),
+      source_reference=self.generateNewSoftwareType(),
+      text_content=self.generateSafeXml(),
+      sla_xml=sla_xml,
+      specialise=self.hosting_subscription.getRelativeUrl(),
+    )
+    self.portal.portal_workflow._jumpToStateFor(software_instance2, 'start_requested')
+    software_instance2.validate()
+    self.tic()
+
+    self.software_instance.setSlaXml(sla_xml)
+    self.software_instance.SoftwareInstance_tryToAllocatePartition()
+    software_instance2.SoftwareInstance_tryToAllocatePartition()
+    # First is deployed
+    self.assertEqual(
+        computer_network.getReference(),
+        self.software_instance.getAggregateValue(portal_type='Computer Partition')\
+            .getParentValue().getSubordinationReference(),
+    )
+    # But second is not yet deployed because of pending activities containing tag
+    self.assertEqual(
+        None,
+        software_instance2.getAggregate(portal_type='Computer Partition')
+    )
+
   def test_allocation_unexpected_sla_parameter(self):
     self._makeTree()
 
@@ -1731,4 +1990,3 @@ portal_workflow.doActionFor(context, action='edit_action', comment='Visited by S
     self.assertEqual(
         'Visited by SoftwareInstance_tryToInvalidateIfDestroyed',
         instance.workflow_history['edit_workflow'][-1]['comment'])
-
