@@ -7,7 +7,8 @@
 parts =
   certificate-authority
   publish-connection-information
-  kvm-promise
+  kvm-vnc-promise
+  kvm-disk-image-corruption-promise
   websockify-sighandler
   novnc-promise
 #  kvm-monitor
@@ -96,11 +97,19 @@ qemu-img-path = ${kvm:location}/bin/qemu-img
 6tunnel-path = ${6tunnel:location}/bin/6tunnel
 
 
-[kvm-promise]
+[kvm-vnc-promise]
 recipe = slapos.cookbook:check_port_listening
 path = $${directory:promises}/vnc_promise
 hostname = $${kvm-instance:vnc-ip}
 port = $${kvm-instance:vnc-port}
+
+[kvm-disk-image-corruption-promise]
+# Check that disk image is not corrupted
+recipe = collective.recipe.template
+input = inline:#!/bin/sh
+  $${kvm-instance:qemu-img-path} check $${kvm-instance:disk-path}
+output = $${directory:promises}/kvm-disk-image-corruption
+mode = 700
 
 
 [novnc-instance]

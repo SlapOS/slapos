@@ -1,13 +1,9 @@
 {
-  "type": "object",
   "$schema": "http://json-schema.org/draft-04/schema",
-  "items": {
-      "allOf": [
-          {
-              "$ref": "instance-kvm-input-schema.json"
-          }
-      ],
-  "title": "Input Parameters",
+  "title": "Resiliency Parameters",
+  "description": "List of possible parameters used in the resilient stack",
+  "type": "object",
+
   "properties": {
     "-sla-0-computer_guid": {
       "title": "Target computer for main instance",
@@ -26,7 +22,7 @@
     },
     "resiliency-backup-periodicity": {
       "title": "Periodicity of backup",
-      "description": "Periodicity of backup, in cron format.",
+      "description": "Periodicity of backup, in cron format. Default is every hour.",
       "type": "string"
     },
     "remove-backup-older-than": {

@@ -18,11 +18,17 @@ parts =
   dropbear-server-pbs-authorized-key
   notifier
 
+  resilient-web-takeover-cgi-script
+  resilient-web-takeover-httpd-wrapper
+  resilient-web-takeover-httpd-promise
+
   import-on-notification
   resilient-publish-connection-parameter
 
 [resilient-publish-connection-parameter]
 notification-url = http://[$${notifier:host}]:$${notifier:port}/notify
+takeover-url = http://[$${resilient-web-takeover-httpd-configuration-file:listening-ip}]:$${resilient-web-takeover-httpd-configuration-file:listening-port}/
+takeover-password = $${resilient-web-takeover-password:passwd}
 
 # Define port of ssh server. It has to be different from import so that it
 # supports export/import using same IP (slaprunner, slapos-in-partition,
@@ -37,3 +43,67 @@ port = 22220
 recipe = slapos.cookbook:notifier.callback
 on-notification-id = $${slap-parameter:on-notification}
 callback = $${importer:wrapper}
+
+###########
+# Deploy a webserver allowing to do takeover from a web browser.
+###########
+[resilient-web-takeover-password]
+recipe = slapos.cookbook:generate.password
+storage-path = $${directory:srv}/passwd
+bytes = 8
+
+[resilient-web-takeover-cgi-script]
+recipe = collective.recipe.template
+input = ${resilient-web-takeover-cgi-script-download:destination}
+output = $${directory:cgi-bin}/web-takeover.cgi
+password = $${resilient-web-takeover-password:passwd}
+mode = 700
+
+# XXX could it be something lighter?
+# XXX Add SSL
+[resilient-web-takeover-httpd-configuration-file]
+recipe = collective.recipe.template
+input = inline:
+  PidFile "$${:pid-file}"
+  Listen [$${:listening-ip}]:$${:listening-port}
+  ServerAdmin someone@email
+  DocumentRoot "$${:document-root}"
+  ErrorLog "$${:error-log}"
+  LoadModule unixd_module modules/mod_unixd.so
+  LoadModule access_compat_module modules/mod_access_compat.so
+  LoadModule authz_core_module modules/mod_authz_core.so
+  LoadModule authz_host_module modules/mod_authz_host.so
+  LoadModule mime_module modules/mod_mime.so
+  LoadModule cgid_module modules/mod_cgid.so
+  LoadModule dir_module modules/mod_dir.so
+  ScriptSock $${:cgid-pid-file}
+  <Directory $${:document-root}>
+    # XXX: security????
+    Options +ExecCGI
+    AddHandler cgi-script .cgi
+    DirectoryIndex web-takeover.cgi
+  </Directory>
+output = $${directory:etc}/resilient-web-takeover-httpd.conf
+# md5sum =
+listening-ip = $${slap-network-information:global-ipv6}
+# XXX: randomize-me
+listening-port = 9263
+htdocs = $${directory:cgi-bin}
+pid-file = $${directory:run}/resilient-web-takeover-httpd.pid
+cgid-pid-file = $${directory:run}/resilient-web-takeover-httpd-cgid.pid
+document-root = $${directory:cgi-bin}
+error-log = $${directory:log}/resilient-web-takeover-httpd-error-log
+
+[resilient-web-takeover-httpd-wrapper]
+recipe = slapos.cookbook:wrapper
+apache-executable = ${apache:location}/bin/httpd
+command-line = $${:apache-executable} -f $${resilient-web-takeover-httpd-configuration-file:output} -DFOREGROUND
+wrapper-path = $${basedirectory:services}/resilient-web-takeover-httpd
+
+[resilient-web-takeover-httpd-promise]
+recipe = slapos.cookbook:check_url_available
+path = $${basedirectory:promises}/resilient-web-takeover-httpd
+url = http://[$${resilient-web-takeover-httpd-configuration-file:listening-ip}]:$${resilient-web-takeover-httpd-configuration-file:listening-port}/
+dash_path = ${dash:location}/bin/dash
+curl_path = ${curl:location}/bin/curl
+
