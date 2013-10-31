@@ -1916,8 +1916,47 @@ class TestStatusGET(SlapOSRestAPIV1InstanceMixin):
     self.assertBasicResponse()
     self.assertResponseCode(204)
 
-  def test_search_existing_instance(self):
+  def test_search_existing_start_instance(self):
     self.software_instance = self.createSoftwareInstance(self.customer)
+    self.software_instance.workflow_history[\
+         'instance_slap_interface_workflow'].append({
+                              'comment':'Directly in Started state',
+                              'error_message': '',
+                              'actor': 'ERP5TypeTestCase',
+                              'slap_state': 'start_requested',
+                              'time': DateTime(),
+                              'action': 'foo_transition'})
+    transaction.commit()
+    self.software_instance.recursiveImmediateReindexObject()   
+    transaction.commit()
+    self.connection.request(method='GET',
+      url='/'.join([self.api_path, 'status']),
+      headers={'REMOTE_USER': self.customer_reference})
+    self.prepareResponse()
+    self.assertBasicResponse()
+    self.assertResponseCode(200)
+    self.assertCacheControlHeader()
+    self.assertResponseJson()
+    self.assertEqual({
+      'list': ['/'.join([self.api_url, 'status',
+                         self.software_instance.getRelativeUrl()])]
+      }, self.json_response)
+
+
+  def test_search_existing_stop_instance(self):
+    self.software_instance = self.createSoftwareInstance(self.customer)
+    self.software_instance.workflow_history[\
+         'instance_slap_interface_workflow'].append({
+                              'comment':'Directly in stop state',
+                              'error_message': '',
+                              'actor': 'ERP5TypeTestCase',
+                              'slap_state': 'stop_requested',
+                              'time': DateTime(),
+                              'action': 'foo_transition'})
+
+    
+    transaction.commit()
+    self.software_instance.recursiveImmediateReindexObject()   
     transaction.commit()
     self.connection.request(method='GET',
       url='/'.join([self.api_path, 'status']),
@@ -1934,18 +1973,21 @@ class TestStatusGET(SlapOSRestAPIV1InstanceMixin):
 
   def test_check_no_destroyed_instance(self):
     self.software_instance = self.createSoftwareInstance(self.customer)
-    self.software_instance.edit(slap_state='destroy_requested')
+    self.software_instance.workflow_history[\
+         'instance_slap_interface_workflow'].append({
+                              'comment':'Directly in destroyed state',
+                              'error_message': '',
+                              'actor': 'ERP5TypeTestCase',
+                              'slap_state': 'destroy_requested',
+                              'time': DateTime(),
+                              'action': 'foo_transition'})
+    transaction.commit()
+    self.software_instance.recursiveImmediateReindexObject()   
     transaction.commit()
     self.connection.request(method='GET',
       url='/'.join([self.api_path, 'status']),
       headers={'REMOTE_USER': self.customer_reference})
     self.prepareResponse()
     self.assertBasicResponse()
-    self.assertResponseCode(200)
-    self.assertCacheControlHeader()
-    self.assertResponseJson()
-    self.assertEqual({
-      'list': []
-      }, self.json_response)
-
+    self.assertResponseCode(204)
 

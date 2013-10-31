@@ -608,16 +608,19 @@ class StatusPublisher(GenericPublisher):
       "portal_categories/allocation_scope/open/public", None).getUid()
 
     kw = dict(
-      portal_type=('Computer', 'Software Instance'),
       validation_state="validated",
-      default_allocation_scope_uid=[open_friend,
-                                    open_personal,
-                                    open_public],
-      slap_state=['start_requested','stop_requested']
-    )
+      portal_type=['Computer', 'Software Instance']
+      )
     d = {"list": []}
     a = d['list'].append
     for si in self.getPortalObject().portal_catalog(**kw):
+      if si.getPortalType() == "Software Instance" and \
+           si.getSlapState() not in ['start_requested','stop_requested']:
+        continue
+      if si.getPortalType() == "Computer" and \
+           si.getAllocationScopeUid() not in [open_friend, open_personal, open_public]:
+        continue
+      
       a('/'.join([self.getAPIRoot(), 'status', si.getRelativeUrl()]))
     try:
       d['list'][0]
