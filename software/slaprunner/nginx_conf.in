@@ -77,7 +77,7 @@ http {
             proxy_pass http://unix:{{ socket }};
         }
 	location /shellinabox {
-            proxy_pass  http://{{ param_nginx_frontend['global-ip'] }}:{{ shellinabox_port }}/;
+            proxy_pass  http://[{{ param_nginx_frontend['global-ip'] }}]:{{ shellinabox_port }}/;
             proxy_next_upstream error timeout invalid_header http_500 http_502 http_503 http_504;
             auth_basic "Restricted";
             auth_basic_user_file {{ param_nginx_frontend['etc_dir'] }}/.htpasswd;
