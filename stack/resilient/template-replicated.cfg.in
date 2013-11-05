@@ -51,7 +51,10 @@ config-ip-list =
 {% for parameter_name, parameter_value in slapparameter_dict.items() %}config-{{parameter_name}} = {{parameter_value}}
 {% endfor %}
 {% endif %}
-{% if sla_parameter_dict -%}
+{% if sla_parameter_dict == {} -%}
+sla = mode
+sla-mode = unique_by_network
+{% else %}
 {%   set sla_key_main = "-sla-%s%s-" % (namebase, 0) -%}
 {%   set sla_key_secondary = "-sla-%s-" % (0) -%}
 {%   set sla_key_main_length = sla_key_main | length -%}
@@ -71,7 +74,6 @@ sla-{{ key }} = {{ value }}
 {%     endfor -%}
 {%   endif -%}
 {% endif -%}
-
 
 {% for id in range(1,nbbackup|int) %}
 
@@ -93,7 +95,10 @@ config-number = {{id}}
 config-authorized-key = ${request-pbs-{{namebase}}-{{id}}:connection-ssh-key}
 config-on-notification = ${request-pbs-{{namebase}}-{{id}}:connection-feeds-url}${:pbs-notification-id}
 config-ip-list =
-{% if sla_parameter_dict -%}
+{% if sla_parameter_dict == {} -%}
+sla = mode
+sla-mode = unique_by_network
+{% else %}
 {%   set sla_key_main = "-sla-%s%s-" % (namebase, id) -%}
 {%   set sla_key_secondary = "-sla-%s-" % (id) -%}
 {%   set sla_key_main_length = sla_key_main | length -%}
@@ -179,7 +184,10 @@ software-type = pull-backup
 name = PBS ({{namebase}} / {{id}})
 return = ssh-key notification-url feeds-url
 slave = false
-{% if sla_parameter_dict -%}
+{% if sla_parameter_dict == {} -%}
+sla = mode
+sla-mode = unique_by_network
+{% else %}
 {%   set sla_key_main = "-sla-%s%s-" % ("pbs", id) -%}
 {%   set sla_key_secondary = "-sla-%s-" % (id) -%}
 {%   set sla_key_main_length = sla_key_main | length -%}
