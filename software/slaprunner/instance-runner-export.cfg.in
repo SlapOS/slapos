@@ -27,7 +27,6 @@ parts +=
   request-cloud9-frontend
   node-frontend-promise
   nginx-promise
-  publish-connection-informations
   shellinabox
   slapos-cfg
   slapos-repo-config
