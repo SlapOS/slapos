@@ -185,7 +185,7 @@ log = ${directory:log}/crond.log
 #--
 #-- Deploy frontend.
 
-[request-slave-frontend]
+[request-vnc-frontend]
 recipe = slapos.cookbook:requestoptional
 software-url = ${slap-parameter:frontend-software-url}
 server-url = ${slap-connection:server-url}
@@ -211,12 +211,69 @@ dash_path = {{ dash_executable_location }}
 curl_path = {{ curl_executable_location }}
 
 
+{% if slapparameter_dict.get('custom-frontend-backend-port') -%}
+# Requests, if defined, a frontend to allow access to a server
+# located inside of the virtual machine listening to port X
+# to LAN IPv4.
+# Internaly, the frontend will be asked to listen on the IPv6
+# with port X + 10000, to match NAT rules of Qemu.
+[request-custom-frontend]
+recipe = slapos.cookbook:request
+software-url = {{ slapparameter_dict.get('custom-frontend-software-url', 'http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg') }}
+software-type = {{ slapparameter_dict.get('custom-frontend-software-type', 'RootSoftwareInstance') }}
+slave = true
+name = Custom Web Frontend
+
+server-url = ${slap-connection:server-url}
+key-file = ${slap-connection:key-file}
+cert-file = ${slap-connection:cert-file}
+computer-id = ${slap-connection:computer-id}
+partition-id = ${slap-connection:partition-id}
+
+{% if slapparameter_dict.get('custom-frontend-instance-guid') -%}
+sla = instance_guid
+sla-instance_guid = ${slap-parameter:frontend-instance-guid}
+{% endif -%}
+
+config = url type custom-domain
+# XXX: allow http/https configuration
+config-url = {{ slapparameter_dict.get('custom-frontend-backend-scheme', 'https://') }}[${slap-network-information:global-ipv6}]:{{ slapparameter_dict.get('custom-frontend-backend-port')|int() + 10000}}
+config-custom-domain = {% if slapparameter_dict.get('custom-frontend-domain') -%} {{ slapparameter_dict.get('custom-frontend-domain') }} {% endif %}
+config-type = {% if slapparameter_dict.get('custom-frontend-type') -%} {{ slapparameter_dict.get('custom-frontend-type') }} {% endif %}
+config-path = {% if slapparameter_dict.get('custom-frontend-path') -%} {{ slapparameter_dict.get('custom-frontend-path') }} {% endif %}
+return = frontend_ipv4_address site_url
+
+[custom-frontend-promise]
+recipe = slapos.cookbook:check_url_available
+path = ${directory:promises}/custom_frontend_promise
+url = ${request-custom-frontend:connection-site_url}
+dash_path = {{ dash_executable_location }}
+curl_path = {{ curl_executable_location }}
+
+[publish-connection-information]
+custom-frontend-url = ${request-custom-frontend:connection-site_url}
+custom-frontend-ipv4 = ${request-custom-frontend:connection-frontend_ipv4_address}
+
+[buildout]
+# XXX: hardcoded and duplicated list of parts.
+parts =
+  certificate-authority
+  publish-connection-information
+  kvm-vnc-promise
+  kvm-disk-image-corruption-promise
+  websockify-sighandler
+  novnc-promise
+  cron
+  frontend-promise
+  custom-frontend-promise
+{% endif -%}
+
+
 [publish-connection-information]
 recipe = slapos.cookbook:publish
 backend-url = https://[${novnc-instance:ip}]:${novnc-instance:port}/vnc_auto.html?host=[${novnc-instance:ip}]&port=${novnc-instance:port}&encrypt=1&password=${kvm-instance:vnc-passwd}
-url = ${request-slave-frontend:connection-url}/vnc_auto.html?host=${request-slave-frontend:connection-domainname}&port=${request-slave-frontend:connection-port}&encrypt=1&path=${request-slave-frontend:connection-resource}&password=${kvm-instance:vnc-passwd}
+url = ${request-vnc-frontend:connection-url}/vnc_auto.html?host=${request-vnc-frontend:connection-domainname}&port=${request-vnc-frontend:connection-port}&encrypt=1&path=${request-vnc-frontend:connection-resource}&password=${kvm-instance:vnc-passwd}
 # Publish NAT port mapping status
-# XXX: hardcoded value from [slap-parameter]
 {% set nat_rule_list = slapparameter_dict.get('nat-rules', '22 80 443') %}
 {% for port in nat_rule_list.split(' ') -%}
   {% set external_port = 10000 + port|int() -%}
@@ -245,3 +302,4 @@ use-tap = False
 
 virtual-hard-drive-url =
 virtual-hard-drive-md5sum =
+
