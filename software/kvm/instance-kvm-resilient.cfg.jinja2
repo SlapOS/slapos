@@ -31,11 +31,14 @@ return =
 # KVM related parameters
 # XXX: return ALL parameters (like nat rules), through jinja
   backend-url url
+# Hardcode this value in case it is not defined
+  connection-custom-frontend-url =
 
 [publish-connection-informations]
 recipe = slapos.cookbook:publish
 backend-url = ${request-kvm:connection-backend-url}
 url = ${request-kvm:connection-url}
+custom-frontend-url = ${request-kvm:connection-custom-frontend-url}
 
 [kvm-frontend-url-promise]
 # Check that url parameter is complete
