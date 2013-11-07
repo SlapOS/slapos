@@ -87,6 +87,8 @@ class Recipe(object):
       As long as requested partition doesn't publish all those values,
       installation of request section will fail.
       Possible names depend on requested partition's software type.
+      Note that this recipe will create options from all existing parameters
+      even if they are not specified by "return", but won't be mandatory.
 
     state (optional)
      Requested state, default value is the state of the requester.
@@ -143,8 +145,7 @@ class Recipe(object):
       self.instance = request(software_url, software_type,
           name, partition_parameter_kw=partition_parameter_kw,
           filter_kw=filter_kw, shared=slave, state=requested_state)
-      return_parameter_dict = self._getReturnParameterDict(self.instance,
-          return_parameters)
+      return_parameter_dict = self.instance.getConnectionParameterDict()
       # Fetch the instance-guid and the instance-state
       # Note: SlapOS Master does not support it for slave instances
       if not slave:
@@ -161,26 +162,17 @@ class Recipe(object):
       self._raise_request_exception_formatted = traceback.format_exc()
       return_parameter_dict = {}
 
-    # Then try to get all the parameters. In case of problem, put empty string.
+    # Set all the connection-* options from all parameters
+    for parameter, value in return_parameter_dict.iteritems():
+      options['connection-%s' % parameter] = value
+    # Then try to get all mandatory parameters. In case of problem, put empty string.
     for param in return_parameters:
-      options['connection-%s' % param] = ''
-      try:
-        options['connection-%s' % param] = return_parameter_dict[param]
-      except KeyError:
-        if self.failed is None:
-          self.failed = param
+      if not return_parameter_dict.has_key(param) and self.failed is None:
+        self.failed = param
+        break
 
   def _filterForStorage(self, partition_parameter_kw):
     return partition_parameter_kw
-
-  def _getReturnParameterDict(self, instance, return_parameter_list):
-    result = {}
-    for param in return_parameter_list:
-      try:
-        result[param] = str(instance.getConnectionParameter(param))
-      except slapmodule.NotFoundError:
-        pass
-    return result
 
   def install(self):
     if self._raise_request_exception:
