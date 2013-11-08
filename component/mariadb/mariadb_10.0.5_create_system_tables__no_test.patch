@@ -5,9 +5,9 @@ circumstances as it is checked first.
 See http://bugs.debian.org/301741
 and http://bugs.mysql.com/bug.php?id=6901
 
---- scripts/mysql_system_tables_data.sql	2008-12-04 22:59:44.000000000 +0100
-+++ scripts/mysql_system_tables_data.sql	2008-12-04 23:00:07.000000000 +0100
-@@ -27,8 +27,6 @@
+--- scripts/mysql_system_tables_data.sql.orig   2013-11-05 17:46:05.000000000 +0100
++++ scripts/mysql_system_tables_data.sql        2013-11-08 09:28:34.707291508 +0100
+@@ -31,8 +31,6 @@
  -- Fill "db" table with default grants for anyone to
  -- access database 'test' and 'test_%' if "db" table didn't exist
  CREATE TEMPORARY TABLE tmp_db LIKE db;
@@ -15,13 +15,13 @@ and http://bugs.mysql.com/bug.php?id=6901
 -INSERT INTO tmp_db VALUES ('%','test\_%','','Y','Y','Y','Y','Y','Y','N','Y','Y','Y','Y','Y','Y','Y','Y','N','N','Y','Y');
  INSERT INTO db SELECT * FROM tmp_db WHERE @had_db_table=0;
  DROP TABLE tmp_db;
- 
-@@ -41,8 +39,6 @@
- REPLACE INTO tmp_user SELECT @current_hostname,'root','','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','','','','',0,0,0,0,'','' FROM dual WHERE LOWER( @current_hostname) != 'localhost';
- REPLACE INTO tmp_user VALUES ('127.0.0.1','root','','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','','','','',0,0,0,0,'','');
- REPLACE INTO tmp_user VALUES ('::1','root','','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','','','','',0,0,0,0,'','');
+
+@@ -44,8 +42,6 @@
+ REPLACE INTO tmp_user SELECT @current_hostname,'root','','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','','','','',0,0,0,0,'','','N','N' FROM dual WHERE LOWER( @current_hostname) != 'localhost';
+ REPLACE INTO tmp_user VALUES ('127.0.0.1','root','','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','','','','',0,0,0,0,'','','N','N');
+ REPLACE INTO tmp_user VALUES ('::1','root','','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','','','','',0,0,0,0,'','','N','N');
 -INSERT INTO tmp_user (host,user) VALUES ('localhost','');
 -INSERT INTO tmp_user (host,user) SELECT @current_hostname,'' FROM dual WHERE LOWER(@current_hostname ) != 'localhost';
  INSERT INTO user SELECT * FROM tmp_user WHERE @had_user_table=0;
  DROP TABLE tmp_user;
- 
+
