@@ -49,7 +49,7 @@ config-{{ key }} = {{ dumps(value) }}
 {% endfor -%}
 config-virtual-hard-drive-url = ${slap-parameter:virtual-hard-drive-url}
 config-virtual-hard-drive-md5sum = ${slap-parameter:virtual-hard-drive-md5sum}
-config-resiliency-backup-periodicity = */5
+config-resiliency-backup-periodicity = */5 * * * *
 # XXX What to do?
 sla = computer_guid
 sla-computer_guid = ${slap-connection:computer-id}
