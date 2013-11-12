@@ -1,4 +1,3 @@
-
 Base resilient stack
 ====================
 
@@ -231,6 +230,9 @@ Deploying your resilient software
 ---------------------------------
 You can provide sla parameters to each request you make (a lot: for export, import and pbs).
 
+If you don't provide sla parameters, SlapOS Master will automatically deploy the instances in a
+different network, one instance per network at most.
+
 example:
 Here is a small example of parameters you can provide to control the deployment (case of a runner):
 <?xml version='1.0' encoding='utf-8'?>
@@ -260,3 +262,28 @@ We can find 2 kinds of magic keys:
  * id : example, in "-sla-2-foo" 2 is the magic key and the parameter will be used for each request with id 2 (in case of kvm: kvm2 and PBS 2)
  * nameid : example, in "-sla-kvm2-foo", foo will be used for kvm2 request. Name for pbs is "pbs" -> "-sla-pbs2-foo".
 IMPORTANT NOTE: in case the same foo parameter is asked for the group, the nameid key prevail
+
+
+How to check that resiliency is working
+---------------------------------------
+
+Because it is still a young stack, the resilient stack needs a few checks
+to ensure that backups and resiliency of your service is correctly done.
+
+To do that, you need to:
+
+ * Log through SSH to the machine hosting the main instance, go to the
+   partition, and check the content of var/log/crond.log file to see if there
+   is error.
+ * Log through SSH to the machine hosting a PBS, go to the PBS partition, and
+   check var/log/equeue.log file to see if there is any error, then check that
+   backup is at srv/backup/pbs/
+ * Log through SSH to the machine hosting a clone, go to the clone partition, and
+   check that backup is at srv/backup/kvm (for KVM) and that data is correctly
+   replicated (for kvm, there should be a srv/virtual.qcow2 image, for runner,
+   there should be a srv/runner/projet/XXX directory, etc).
+
+Please note that currently, the backup is done once every two days by default.
+So, at first, if no backup is there yet it doesn't mean that resiliency doesn't work.
+
+Note: This should be automatically checked by promises.
