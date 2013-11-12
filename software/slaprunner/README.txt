@@ -28,3 +28,31 @@ instance-amount
 Optional parameter.
 
 Default: 10
+
+Resilience :
+------------
+
+To order a resilient runner, you have to request a runner with the option: "--type resilient"
+
+You can then decide on which node you want to deploy each instance, with the parameters.xml :
+	<?xml version='1.0' encoding='utf-8'?>
+	<instance>
+	  <parameter id="-sla-runner2-computer_guid">COMP-XXXX</parameter>
+	  <parameter id="-sla-pbs2-computer_guid">COMP-XXXX</parameter>
+	  <parameter id="-sla-pbs1-computer_guid">COMP-XXXX</parameter>
+	  <parameter id="-sla-runner1-computer_guid">COMP-XXXX</parameter>
+	  <parameter id="-sla-runner0-computer_guid">COMP-XXXX</parameter>
+	</instance>
+
+If you want to check by yourself that the pull-backup instances do their job, you can change directory to the slappart of runner0, and run ./bin/exporter (after creating your account, using the given backend_url or url): it would fill ./srv/backup/runner with data. If you then go to an import instance (runner1 or runner2) on the port 50005, you should be able to sign in the runner.
+
+
+Tips :
+~~~~~
+
+To find in which partition the instance has been deployed, you can open the page of this specific instance, and look for "slappartXX" on the page.
+
+Tests :
+-------
+
+For the tests, please refer to the README in slapos.toolbox.git/slapos/resiliencytest
