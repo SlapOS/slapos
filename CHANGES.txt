@@ -13,6 +13,7 @@ New features:
  * Register: support for one-time authentication token. [Marco Mariani]
  * New command: "slapos configure client" [Marco Mariani]
  * add new "root_check" option in slapos configuration file (true by default) allowing to bypass "am I root" checks in slapos. [Cedric de Saint Martin]
+ * Add support for getSoftwareReleaseListFromSoftwareProduct() SLAP method. [Cedric de Saint Martin]
 
 Major Improvements:
 

@@ -353,6 +353,34 @@ class SlapTool(BaseTool):
     computer = _assertACI(computer)
     return self._getAccessStatus(computer_id)
 
+  security.declareProtected(Permissions.AccessContentsInformation,
+    'getSoftwareReleaseListFromSoftwareProduct')
+  def getSoftwareReleaseListFromSoftwareProduct(self, software_product_reference):
+    """
+    Get the list of published software releases from a given software product,
+    sorted by descending age (latest first).
+    """
+    software_product_list = self.getPortalObject().portal_catalog.unrestrictedSearchResults(
+      portal_type='Software Product',
+      reference=software_product_reference,
+      validation_state='published')
+    if len(software_product_list) is 0:
+      return xml_marshaller.xml_marshaller.dumps([])
+    if len(software_product_list) > 1:
+      raise NotImplementedError('Several Software Product with the same title.')
+    software_release_list = \
+        software_product_list[0].getObject().getAggregateRelatedValueList()
+    software_release_list = sorted(
+        software_release_list,
+        key=lambda software_release: software_release.getCreationDate(),
+        reverse=True,
+    )
+    return xml_marshaller.xml_marshaller.dumps(
+      [software_release.getUrlString()
+        for software_release in software_release_list
+          if software_release.getValidationState() == 'published'])
+
+
   ####################################################
   # Public POST methods
   ####################################################

@@ -491,6 +491,28 @@ class testSlapOSMixin(ERP5TypeTestCase):
       self.tic()
     self._cleaupREQUEST()
 
+  def _makeSoftwareProduct(self, new_id):
+    software_product = self.portal.software_product_module\
+      .template_software_product.Base_createCloneDocument(batch_mode=1)
+    software_product.edit(
+      reference='TESTSOFTPROD-%s' % new_id,
+      title='Test software product %s' % new_id
+    )
+    software_product.publish()
+    return software_product
+
+  def _makeSoftwareRelease(self, new_id):
+    software_release = self.portal.software_release_module\
+      .template_software_release.Base_createCloneDocument(batch_mode=1)
+    software_release.edit(
+      url_string=self.generateNewSoftwareReleaseUrl(),
+      reference='TESTSOFTRELS-%s' % new_id,
+      title='Start requested for %s' % new_id
+    )
+    software_release.release()
+    return software_release
+
+
   def _cleaupREQUEST(self):
     self.portal.REQUEST['request_instance'] = None
     self.portal.REQUEST.headers = {}
