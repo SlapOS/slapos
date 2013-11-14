@@ -1,0 +1,7 @@
+<VirtualHost *:{{ https_port }}>
+{{ apache_custom_https }}
+</VirtualHost>
+
+<VirtualHost *:{{ http_port }}>
+{{ apache_custom_http }}
+</VirtualHost>
