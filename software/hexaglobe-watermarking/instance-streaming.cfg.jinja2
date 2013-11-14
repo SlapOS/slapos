@@ -1,0 +1,107 @@
+{% set frontend_count = slapparameter_dict.get('frontend-count', 2)|int %}
+[buildout]
+parts =
+  directory
+  nginx
+  nginx-promise
+  publish-connection-parameter
+{% for i in range(frontend_count) %}
+  request-frontend-{{i}}
+{% endfor %}
+
+# Define egg directories to be the one from Software Release
+# (/opt/slapgrid/...)
+eggs-directory = {{ eggs_directory }}
+develop-eggs-directory = {{ develop_eggs_directory }}
+offline = true
+
+# XXX: shoudl disappear in favor of slapparameter given by jinja
+[slap-parameter]
+# Set default parameters
+backend-port = 1935
+frontend-port = 1935
+
+# Create needed directories
+[directory]
+recipe = slapos.cookbook:mkdirectory
+home = ${buildout:directory}
+bin = ${:home}/bin
+etc = ${:home}/etc
+srv = ${:home}/srv
+service = ${:etc}/service
+promise = ${:etc}/promise
+var = ${:home}/var
+
+backup = ${:srv}/backup
+log = ${:var}/log
+run = ${:var}/run
+
+nginx-configuration = ${:etc}/nginx
+nginx-vhost-configuration = ${:nginx-configuration}/vhost
+nginx-log = ${:home}/logs
+nginx-cache = ${:var}/cache
+nginx-temp-path = ${:srv}/nginx-proxy
+
+
+
+# Deploy nginx
+[nginx-configuration]
+recipe = collective.recipe.template
+input = {{ nginx_conf_in }}
+output = ${directory:nginx-configuration}/nginx.conf
+backend-port = ${slap-parameter:backend-port}
+backend-ip = [${slap-network-information:global-ipv6}]
+home-directory = ${buildout:directory}
+mode = 700
+
+[nginx]
+recipe = slapos.cookbook:wrapper
+command-line = {{ nginx_executable_location }} -c ${nginx-configuration:output} -p ${directory:home}
+wrapper-path = ${directory:service}/nginx
+
+[nginx-promise]
+recipe = slapos.cookbook:check_port_listening
+path = ${directory:promise}/nginx-promise
+hostname = ${slap-network-information:global-ipv6}
+port = ${nginx-configuration:backend-port}
+
+
+
+
+# Request frontends for streaming
+{% for i in range(frontend_count) %}
+[request-frontend-{{i}}]
+recipe = slapos.cookbook:request
+
+software-url = ${slap-parameter:frontend-software-url}
+server-url = ${slap-connection:server-url}
+key-file = ${slap-connection:key-file}
+cert-file = ${slap-connection:cert-file}
+computer-id = ${slap-connection:computer-id}
+partition-id = ${slap-connection:partition-id}
+
+name = frontend-{{i}}
+software-url = ${slap-connection:software-release-url}
+software-type = frontend
+config = backend-port backend-host
+config-backend-port = ${nginx-configuration:backend-port}
+config-backend-host = ${nginx-configuration:backend-ip}
+config-frontend-port = ${slap-parameter:frontend-port}
+return = url stat-url
+
+sla = mode
+sla-mode = unique_by_network
+
+[publish-connection-parameter]
+frontend-{{i}}-url = ${request-frontend-{{i}}:connection-url}
+frontend-{{i}}-stat-url = ${request-frontend-{{i}}:connection-stat-url}
+
+{% endfor %}
+
+
+
+# Publish instance connection parameters
+[publish-connection-parameter]
+recipe = slapos.cookbook:publish
+backend-url = rtmp://[${slap-network-information:global-ipv6}]:${nginx-configuration:backend-port}
+

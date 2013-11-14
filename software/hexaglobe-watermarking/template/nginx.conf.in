@@ -1,30 +1,26 @@
+rtmp_auto_push on;
+rtmp_auto_push_reconnect 1s;
+
 daemon off;
+worker_processes 1;
 
-worker_processes  1;
-
-pid %(pid-file)s;
+# XXX: add pid
 
 events {
-    worker_connections  1024;
+   worker_connections 1024;
 }
 
-http {
-    log_format up_log '$remote_addr - $remote_user [$time_local]  $request '
-                  'upstream_response_time $upstream_response_time '
-                  'msec $msec request_time $request_time'
-                  'cache_status $upstream_cache_status';
+rtmp_socket_dir ${:home-directory};
 
-    log_format  sysl  '"$time_local", "$http_referer", "$host", "$request", '
-                  '"$status", "$http_user_agent", "$remote_addr", '
-                  '"$bytes_sent", "$request_time"';
+rtmp {
+  server {
+    listen ${:backend-ip}:${:backend-port};
+    allow publish all;
+    allow play all;
 
-    proxy_temp_path   %(nginx-temp-path)s;
-
-    include       %(nginx-prefix)s/conf/mime.types;
-    default_type  application/octet-stream;
-    sendfile        on;
-
-    keepalive_timeout  65;
-
-    include %(vhost-configuration-directory-location)s/*.conf;
+    application easicloud {
+      live on;
+    }
+  }
 }
+

@@ -1,0 +1,67 @@
+[buildout]
+parts =
+  directory
+  nginx
+  nginx-promise
+  publish-connection-parameter
+
+# Define egg directories to be the one from Software Release
+# (/opt/slapgrid/...)
+eggs-directory = {{ eggs_directory }}
+develop-eggs-directory = {{ develop_eggs_directory }}
+offline = true
+
+# Create needed directories
+[directory]
+recipe = slapos.cookbook:mkdirectory
+home = ${buildout:directory}
+bin = ${:home}/bin
+etc = ${:home}/etc
+srv = ${:home}/srv
+service = ${:etc}/service
+promise = ${:etc}/promise
+var = ${:home}/var
+
+backup = ${:srv}/backup
+log = ${:var}/log
+run = ${:var}/run
+
+nginx-configuration = ${:etc}/nginx
+nginx-vhost-configuration = ${:nginx-configuration}/vhost
+nginx-log = ${:home}/logs
+nginx-cache = ${:var}/cache
+nginx-temp-path = ${:srv}/nginx-proxy
+
+
+# Deploy nginx
+[nginx-configuration]
+recipe = collective.recipe.template
+input = {{ nginx_conf_in }}
+output = ${directory:nginx-configuration}/nginx.conf
+frontend-port = 1935
+frontend-http-port = 8080
+frontend-ip = [${slap-network-information:global-ipv6}]
+backend-port = ${slap-parameter:backend-port}
+backend-host = ${slap-parameter:backend-host}
+home-directory = ${buildout:directory}
+mode = 700
+
+[nginx]
+recipe = slapos.cookbook:wrapper
+command-line = {{ nginx_executable_location }} -c ${nginx-configuration:output} -p ${directory:home}
+wrapper-path = ${directory:service}/nginx
+
+[nginx-promise]
+recipe = slapos.cookbook:check_port_listening
+path = ${directory:promise}/nginx-promise
+hostname = ${slap-network-information:global-ipv6}
+port = ${nginx-configuration:frontend-port}
+
+
+
+# Publish instance connection parameters
+[publish-connection-parameter]
+recipe = slapos.cookbook:publish
+url = rtmp://${nginx-configuration:frontend-ip}
+stat-url = http://${nginx-configuration:frontend-ip}:${nginx-configuration:frontend-http-port}/stat
+

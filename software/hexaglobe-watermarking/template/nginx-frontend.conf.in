@@ -1,0 +1,33 @@
+rtmp_auto_push on;
+rtmp_auto_push_reconnect 1s;
+
+daemon off;
+
+events {
+   worker_connections 1024;
+}
+
+rtmp_socket_dir ${:home-directory};
+
+rtmp {
+  server {
+    listen ${:frontend-ip}:${:frontend-port};
+    deny publish all;
+    allow play all;
+
+    application easicloud {
+      live on;
+      pull rtmp://${:backend-host}:${:backend-port}/easicloud/live;
+      session_relay on;
+    }
+  }
+}
+
+http {
+  server {
+    listen ${:frontend-ip}:${:frontend-http-port};
+    location /stat {
+      rtmp_stat all;
+    }
+  }
+}
