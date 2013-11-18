@@ -36,7 +36,7 @@ class Simulator:
 
 class TestSlapOSSlapToolMixin(testSlapOSMixin):
   def afterSetUp(self, person=None):
-    super(TestSlapOSSlapToolMixin, self).afterSetUp()
+    testSlapOSMixin.afterSetUp(self)
     self.portal_slap = self.portal.portal_slap
     new_id = self.generateNewId()
 
@@ -1686,7 +1686,7 @@ class TestSlapOSSlapToolPersonAccess(TestSlapOSSlapToolMixin):
     person.recursiveImmediateReindexObject()
     self.person = person
     self.person_reference = person.getReference()
-    super(TestSlapOSSlapToolPersonAccess, self).afterSetUp(person=person)
+    TestSlapOSSlapToolMixin.afterSetUp(self, person=person)
 
   def test_not_accessed_getComputerStatus(self):
     self.login(self.person_reference)

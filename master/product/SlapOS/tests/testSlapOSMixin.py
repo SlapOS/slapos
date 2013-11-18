@@ -93,12 +93,12 @@ class testSlapOSMixin(ERP5TypeTestCase):
   def _setUpDummyMailHost(self):
     """Do not play with NON persistent replacement of MailHost"""
     if not self.isLiveTest():
-      super(testSlapOSMixin, self)._setUpDummyMailHost()
+      ERP5TypeTestCase._setUpDummyMailHost(self)
 
   def _restoreMailHost(self):
     """Do not play with NON persistent replacement of MailHost"""
     if not self.isLiveTest():
-      super(testSlapOSMixin, self)._restoreMailHost()
+      ERP5TypeTestCase._restoreMailHost(self)
 
   def beforeTearDown(self):
     if self.isLiveTest():
