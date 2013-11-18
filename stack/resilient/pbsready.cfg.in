@@ -10,6 +10,7 @@ parts =
   sshkeys-authority
   dropbear-server
   sshkeys-dropbear
+  resilient-sshkeys-dropbear-promise
   dropbear-server-pbs-authorized-key
   notifier
 
@@ -49,6 +50,7 @@ crontabs = $${rootdirectory:etc}/crontabs
 cronstamps = $${rootdirectory:etc}/cronstamps
 logrotate-entries = $${rootdirectory:etc}/logrotate.d
 logrotate-backup = $${basedirectory:backup}/logrotate
+cgi-bin = $${rootdirectory:srv}/cgi-bin
 
 #----------------
 #--
@@ -181,6 +183,27 @@ notifier-binary = ${buildout:bin-directory}/pubsubnotifier
 
 #----------------
 #--
+#-- Dropbear.
+
+[dropbear-server]
+recipe = slapos.cookbook:dropbear
+host = $${slap-network-information:global-ipv6}
+# Explicitely excludes to define "port" argument. It will be defined in
+# pbs-ready-import.cfg.in and pbs-ready-export.cfg.in
+home = $${directory:ssh}
+wrapper = $${rootdirectory:bin}/raw_sshd
+shell = $${rdiff-backup-server:wrapper}
+rsa-keyfile = $${directory:ssh}/server_key.rsa
+dropbear-binary = ${dropbear:location}/sbin/dropbear
+
+[dropbear-server-pbs-authorized-key]
+<= dropbear-server
+recipe = slapos.cookbook:dropbear.add_authorized_key
+key = $${slap-parameter:authorized-key}
+
+
+#----------------
+#--
 #-- sshkeys
 
 [sshkeys-directory]
@@ -205,31 +228,21 @@ public-key = $${dropbear-server:rsa-keyfile}.pub
 private-key = $${dropbear-server:rsa-keyfile}
 wrapper = $${basedirectory:services}/sshd
 
-
-#----------------
-#--
-#-- Dropbear.
-
-[dropbear-server]
-recipe = slapos.cookbook:dropbear
-host = $${slap-network-information:global-ipv6}
-# Explicitely excludes to define "port" argument. It will be defined in
-# pbs-ready-import.cfg.in and pbs-ready-export.cfg.in
-home = $${directory:ssh}
-wrapper = $${rootdirectory:bin}/raw_sshd
-shell = $${rdiff-backup-server:wrapper}
-rsa-keyfile = $${directory:ssh}/server_key.rsa
-dropbear-binary = ${dropbear:location}/sbin/dropbear
-
-[dropbear-server-pbs-authorized-key]
-<= dropbear-server
-recipe = slapos.cookbook:dropbear.add_authorized_key
-key = $${slap-parameter:authorized-key}
+[resilient-sshkeys-dropbear-promise]
+# Check that public key file exists and is not empty
+recipe = collective.recipe.template
+input = inline:#!${bash:location}/bin/bash
+  PUBLIC_KEY_CONTENT="$${sshkeys-dropbear:public-key-value}"
+  if [[ ! -n "$PUBLIC_KEY_CONTENT" || "$PUBLIC_KEY_CONTENT" == *None* ]]; then
+    exit 1
+  fi
+output = $${basedirectory:promises}/public-key-existence
+mode = 700
 
 
 #----------------
 #--
-#-- Conncetion informations to re-use.
+#-- Connection informations to re-use.
 # XXX-Cedric: when "aggregation" system is done in libslap, directly publish.
 [resilient-publish-connection-parameter]
 recipe = slapos.cookbook:publish

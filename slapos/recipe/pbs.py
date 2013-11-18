@@ -27,7 +27,6 @@
 
 import json
 import os
-import signal
 import subprocess
 import sys
 import textwrap
@@ -37,31 +36,13 @@ from slapos.recipe.librecipe import GenericSlapRecipe
 from slapos.recipe.dropbear import KnownHostsFile
 from slapos.recipe.notifier import Notify
 from slapos.recipe.notifier import Callback
-from slapos import slap as slapmodule
 
 
 def promise(args):
-
-  def failed_ssh():
-    sys.stderr.write("SSH Connection failed\n")
-    partition = slap.registerComputerPartition(args['computer_id'],
-                                               args['partition_id'])
-    partition.bang("SSH Connection failed. rdiff-backup is unusable.")
-
-  def sigterm_handler(signum, frame):
-    failed_ssh()
-
-  signal.signal(signal.SIGTERM, sigterm_handler)
-
-  slap = slapmodule.slap()
-  slap.initializeConnection(args['server_url'],
-                            key_file=args.get('key_file'),
-                            cert_file=args.get('cert_file'))
-
-  ssh = subprocess.Popen([args['ssh_client'], '%(user)s@%(host)s/%(port)s' % args],
-                         stdin=subprocess.PIPE,
-                         stdout=open(os.devnull, 'w'),
-                         stderr=open(os.devnull, 'w'))
+  ssh = subprocess.Popen(
+      [args['ssh_client'], '%(user)s@%(host)s/%(port)s' % args],
+      stdin=subprocess.PIPE, stdout=None, stderr=None
+  )
 
   # Rdiff Backup protocol quit command
   quitcommand = 'q' + chr(255) + chr(0) * 7
@@ -74,7 +55,7 @@ def promise(args):
   if ssh.poll() is None:
     return 1
   if ssh.returncode != 0:
-    failed_ssh()
+    sys.stderr.write("SSH Connection failed\n")
   return ssh.returncode
 
 
@@ -98,8 +79,8 @@ class Recipe(GenericSlapRecipe, Notify, Callback):
     print 'Processing PBS slave %s with type %s' % (slave_id, slave_type)
 
     promise_path = os.path.join(self.options['promises-directory'], slave_id)
-    promise_dict = self.promise_base_dict.copy()
-    promise_dict.update(user=parsed_url.username,
+    promise_dict = dict(ssh_client=self.options['sshclient-binary'],
+                        user=parsed_url.username,
                         host=parsed_url.hostname,
                         port=parsed_url.port)
     promise = self.createPythonScript(promise_path,
@@ -220,16 +201,6 @@ class Recipe(GenericSlapRecipe, Notify, Callback):
 
     if self.optionIsTrue('client', True):
       self.logger.info("Client mode")
-
-      slap_connection = self.buildout['slap-connection']
-      self.promise_base_dict = {
-              'server_url': slap_connection['server-url'],
-              'computer_id': slap_connection['computer-id'],
-              'cert_file': slap_connection.get('cert-file'),
-              'key_file': slap_connection.get('key-file'),
-              'partition_id': slap_connection['partition-id'],
-              'ssh_client': self.options['sshclient-binary'],
-        }
 
       slaves = json.loads(self.options['slave-instance-list'])
       known_hosts = KnownHostsFile(self.options['known-hosts'])

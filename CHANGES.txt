@@ -1,6 +1,16 @@
 Changes
 =======
 
+0.84.2 (2013-10-04)
+-------------------
+
+ * sshkeys_authority: don't allow to return None as parameter. [9e340a0]
+
+0.84.1 (2013-10-03)
+-------------------
+
+ * Resiliency: PBS: promise should NOT bang. [64886cd]
+
 0.84 (2013-09-30)
 -----------------
 

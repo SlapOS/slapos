@@ -1,0 +1,35 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema",
+  "title": "Resiliency Parameters",
+  "description": "List of possible parameters used in the resilient stack",
+  "type": "object",
+
+  "properties": {
+    "-sla-0-computer_guid": {
+      "title": "Target computer for main instance",
+      "description": "Target computer GUID for main instance.",
+      "type": "string"
+    },
+    "-sla-1-computer_guid": {
+      "title": "Target computer for first clone",
+      "description": "Target computer for first clone and PBS.",
+      "type": "string"
+    },
+    "-sla-2-computer_guid": {
+      "title": "Target computer for second clone",
+      "description": "Target computer for second clone and PBS.",
+      "type": "string"
+    },
+    "resiliency-backup-periodicity": {
+      "title": "Periodicity of backup",
+      "description": "Periodicity of backup, in cron format. Default is every hour.",
+      "type": "string"
+    },
+    "remove-backup-older-than": {
+      "title": "Remove backups older than...",
+      "description": "Remove all the backups in PBS that are older than specified value. It should be rdiff-backup-compatible.",
+      "type": "string",
+      "default": "2W"
+    }
+  }
+}

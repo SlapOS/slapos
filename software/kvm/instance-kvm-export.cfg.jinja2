@@ -1,13 +1,15 @@
 [buildout]
-extends = ${template-kvm:output}
-          ${pbsready-export:output}
+extends =
+  {{ kvm_template }}
+  {{ pbsready_export_template }}
 
 parts +=
   cron-entry-backup
 
   certificate-authority
   publish-connection-information
-  kvm-promise
+  kvm-vnc-promise
+  kvm-disk-image-corruption-promise
   websockify-sighandler
   novnc-promise
   cron
@@ -16,12 +18,12 @@ parts +=
 # Create the exporter executable, which is a simple shell script
 [exporter]
 recipe = slapos.recipe.template
-url = ${template-kvm-export-script:location}/${template-kvm-export-script:filename}
-output = $${directory:bin}/$${slap-parameter:namebase}-exporter
+url = {{ template_kvm_export }}
+output = ${directory:bin}/${slap-parameter:namebase}-exporter
 mode = 0755
-backup-disk-path = $${directory:backup}/virtual.qcow2
+backup-disk-path = ${directory:backup}/virtual.qcow2
 # Resilient stack wants a "wrapper" parameter
-wrapper = $${:output}
+wrapper = ${:output}
 
 # Extends publish section with resilient parameters
 [publish-connection-information]

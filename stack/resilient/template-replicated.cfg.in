@@ -11,6 +11,13 @@
 {% endif -%}
 
 
+[resilient-directory]
+recipe = slapos.cookbook:mkdirectory
+home = ${buildout:directory}
+etc = ${:home}/etc
+promise = ${:etc}/promise
+
+
 ## Tells the Backupable recipe that we want a backup
 [resilient]
 recipe = slapos.cookbook:request
@@ -28,7 +35,6 @@ software-url = ${slap-connection:software-release-url}
 software-type = {{typeexport}}
 name = {{namebase}}0
 return = ssh-public-key ssh-url notification-id ip
-
 config =
 # Resilient related parameters
   number authorized-key notify ip-list namebase
@@ -45,7 +51,10 @@ config-ip-list =
 {% for parameter_name, parameter_value in slapparameter_dict.items() %}config-{{parameter_name}} = {{parameter_value}}
 {% endfor %}
 {% endif %}
-{% if sla_parameter_dict -%}
+{% if sla_parameter_dict == {} -%}
+sla = mode
+sla-mode = unique_by_network
+{% else %}
 {%   set sla_key_main = "-sla-%s%s-" % (namebase, 0) -%}
 {%   set sla_key_secondary = "-sla-%s-" % (0) -%}
 {%   set sla_key_main_length = sla_key_main | length -%}
@@ -86,7 +95,10 @@ config-number = {{id}}
 config-authorized-key = ${request-pbs-{{namebase}}-{{id}}:connection-ssh-key}
 config-on-notification = ${request-pbs-{{namebase}}-{{id}}:connection-feeds-url}${:pbs-notification-id}
 config-ip-list =
-{% if sla_parameter_dict -%}
+{% if sla_parameter_dict == {} -%}
+sla = mode
+sla-mode = unique_by_network
+{% else %}
 {%   set sla_key_main = "-sla-%s%s-" % (namebase, id) -%}
 {%   set sla_key_secondary = "-sla-%s-" % (id) -%}
 {%   set sla_key_main_length = sla_key_main | length -%}
@@ -107,8 +119,8 @@ sla-{{ key }} = {{ value }}
 {%   endif %}
 {% endif %}
 
-
 {% endfor -%}
+
 
 [iplist]
 config-ip-list = ${request-{{namebase}}:connection-ip}{% for j in range(1,nbbackup|int) %} ${request-{{namebase}}-pseudo-replicating-{{j}}:connection-ip}{% endfor %}
@@ -117,10 +129,36 @@ config-ip-list = ${request-{{namebase}}:connection-ip}{% for j in range(1,nbback
 <= request-{{namebase}}
    iplist
 
+[resilient-request-{{namebase}}-public-key-promise]
+# Check that public-key-value parameter exists and is not empty
+# XXX: maybe we should consider empty values to be non-nexistent.
+recipe = collective.recipe.template
+# XXX: don't use system executable
+input = inline:#!/bin/sh
+  PUBLIC_KEY_CONTENT="${request-{{namebase}}-2:connection-ssh-public-key})"
+  if [[ ! -n "$PUBLIC_KEY_CONTENT" || "$PUBLIC_KEY_CONTENT" == *None* ]]; then
+    exit 1
+  fi
+output = ${resilient-directory:promise}/resilient-request-{{namebase}}-public-key
+mode = 700
+
 {% for id in range(1,nbbackup|int) %}
 [request-{{namebase}}-pseudo-replicating-{{id}}-2]
 <= request-{{namebase}}-pseudo-replicating-{{id}}
    iplist
+
+[resilient-request-{{namebase}}-pseudo-replicating-{{id}}-public-key-promise]
+# Check that public-key-value parameter exists and is not empty
+# XXX: maybe we should consider empty values to be non-nexistent.
+recipe = collective.recipe.template
+# XXX: don't use system executable
+input = inline:#!/bin/sh
+  PUBLIC_KEY_CONTENT="${request-{{namebase}}-pseudo-replicating-{{id}}-2:connection-ssh-public-key})"
+  if [[ ! -n "$PUBLIC_KEY_CONTENT" || "$PUBLIC_KEY_CONTENT" == *None* ]]; then
+    exit 1
+  fi
+output = ${resilient-directory:promise}/resilient-request-{{namebase}}-pseudo-replicating-{{id}}-public-key
+mode = 700
 
 {% endfor %}
 
@@ -146,7 +184,10 @@ software-type = pull-backup
 name = PBS ({{namebase}} / {{id}})
 return = ssh-key notification-url feeds-url
 slave = false
-{% if sla_parameter_dict -%}
+{% if sla_parameter_dict == {} -%}
+sla = mode
+sla-mode = unique_by_network
+{% else %}
 {%   set sla_key_main = "-sla-%s%s-" % ("pbs", id) -%}
 {%   set sla_key_secondary = "-sla-%s-" % (id) -%}
 {%   set sla_key_main_length = sla_key_main | length -%}
@@ -167,6 +208,19 @@ sla-{{ key }} = {{ value }}
 {%   endif %}
 {% endif %}
 
+[resilient-request-pbs-{{namebase}}-{{id}}-public-key-promise]
+# Check that public-key-value parameter exists and is not empty
+# XXX: maybe we should consider empty values to be non-nexistent.
+recipe = collective.recipe.template
+# XXX: don't use system executable
+input = inline:#!/bin/sh
+  PUBLIC_KEY_CONTENT="${request-pbs-{{namebase}}-{{id}}:connection-ssh-key}:connection-ssh-key})"
+  if [[ ! -n "$PUBLIC_KEY_CONTENT" || "$PUBLIC_KEY_CONTENT" == *None* ]]; then
+    exit 1
+  fi
+output = ${resilient-directory:promise}/resilient-request-{{namebase}}-pseudo-replicating-{{id}}-public-key
+mode = 700
+
 
 [request-pull-backup-server-{{namebase}}-{{id}}]
 <= request-pbs-common
@@ -180,7 +234,7 @@ config-notify = ${request-pbs-{{namebase}}-{{id}}:connection-notification-url}
 config-notification-id = ${slap-connection:computer-id}-${slap-connection:partition-id}-{{namebase}}-{{id}}-pull
 config-name = ${slap-connection:computer-id}-${slap-connection:partition-id}-{{namebase}}-{{id}}
 config-title = Pulling from {{namebase}}
-config-remove-backup-older-than = {{ slapparameter_dict.get('remove-backup-older-than', '3B') }}
+config-remove-backup-older-than = {{ slapparameter_dict.get('remove-backup-older-than', '2W') }}
 slave = true
 sla = instance_guid
 sla-instance_guid = ${request-pbs-{{namebase}}-{{id}}:instance_guid}
