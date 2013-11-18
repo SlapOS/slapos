@@ -2,25 +2,20 @@
 
 #stack_controller_grizzly.sh: Should install and configure all needed openstack packages.
 #This script should work on SlapOS environment, using a Virtual Machine
-# Warning: this script has been tested only on Ubuntu 12.04.
-
-#sudo su
+# Warning: this script may not work on Ubuntu 12.04 - Use ubuntu 13.04
 
 export DEBIAN_FRONTEND=noninteractive
 
-apt-get -y install ubuntu-cloud-keyring python-software-properties software-properties-common python-keyring
-echo deb http://ubuntu-cloud.archive.canonical.com/ubuntu precise-updates/grizzly main >> /etc/apt/sources.list.d/grizzly.list
-
 apt-get update
-apt-get -y upgrade
-apt-get -y dist-upgrade
+apt-get upgrade -y
+apt-get dist-upgrade -y
 
 
 ###############################################################################################
 #####  Configure Network
 ###############################################################################################
 
-apt-get install -y openvswitch-switch openvswitch-datapath-lts-raring-dkms
+apt-get install -y openvswitch-switch openvswitch-datapath-dkms
 apt-get install -y vlan bridge-utils
 
 #br-int will be used for VM integration
@@ -89,8 +84,20 @@ sed -i 's/#net.ipv4.ip_forward=1/net.ipv4.ip_forward=1/' /etc/sysctl.conf
 # To save you from rebooting, perform the following
 sysctl net.ipv4.ip_forward=1
 
-iptables --table nat --append POSTROUTING --out-interface eth1 -j MASQUERADE
+iptables --table nat --append POSTROUTING --out-interface eth0 -j MASQUERADE
 iptables --append FORWARD --in-interface br-ex -j ACCEPT
+
+#Add iptable command to rc.local to allow auto reconfiguring of network NAT after reboot
+sudo sed -n '$!p' /etc/rc.local > temp-rc.local
+sudo mv temp-rc.local /etc/rc.local
+sudo chmod +x /etc/rc.local
+/bin/cat << EOF >> /etc/rc.local
+
+iptables --table nat --append POSTROUTING --out-interface eth0 -j MASQUERADE
+iptables --append FORWARD --in-interface br-ex -j ACCEPT
+
+exit 0
+EOF
 
 ###############################################################################################
 #####  Variables to use
@@ -129,7 +136,13 @@ apt-get install -y rabbitmq-server
 
 apt-get install -y ntp
 
-sed -i 's/server ntp.ubuntu.com/server ntp.ubuntu.com\nserver 127.127.1.0\nfudge 127.127.1.0 stratum 10/g' /etc/ntp.conf
+#Comment the ubuntu NTP servers
+sed -i 's/server 0.ubuntu.pool.ntp.org/#server 0.ubuntu.pool.ntp.org/g' /etc/ntp.conf
+sed -i 's/server 1.ubuntu.pool.ntp.org/#server 1.ubuntu.pool.ntp.org/g' /etc/ntp.conf
+sed -i 's/server 2.ubuntu.pool.ntp.org/#server 2.ubuntu.pool.ntp.org/g' /etc/ntp.conf
+sed -i 's/server 3.ubuntu.pool.ntp.org/#server 3.ubuntu.pool.ntp.org/g' /etc/ntp.conf
+
+sed -e 's/server ntp.ubuntu.com/server $PUBLIC_ADDRESS/g' /etc/ntp.conf
 service ntp restart
 
 sleep 1.5
@@ -170,7 +183,7 @@ service keystone status
 CONF=/etc/keystone/keystone.conf
 cp $CONF $CONF.orig
 /bin/sed \
-	-e "s/^#*connection *=.*/connection = mysql:\/\/openstack:$MYSQLPASS@$HOST_IP\/keystone/" \
+  -e "s/^#*connection *=.*/connection = mysql:\/\/openstack:$MYSQLPASS@$HOST_IP\/keystone/" \
 	$CONF.orig > $CONF
 #	-e "s/^#* *admin_token *=.*/admin_token = $ADMIN_PASSWORD/" \
 
@@ -320,6 +333,13 @@ sed -e "s/^auth_host *=.*/auth_host = $HOST_IP/" \
 	-e "s/%SERVICE_PASSWORD%/$ADMIN_PASSWORD/" \
 	$CONF.orig > $CONF
 
+echo "Giving quantum user passwordless sudo privileges"
+# UEC images ``/etc/sudoers`` does not have a ``#includedir``, add one
+grep -q "^#includedir.*/etc/sudoers.d" /etc/sudoers ||
+    echo "#includedir /etc/sudoers.d" >> /etc/sudoers
+( umask 226 && echo "quantum ALL=(ALL) NOPASSWD:ALL" \
+    > /etc/sudoers.d/quantum_sudoers )
+
 
 cd /etc/init.d/; for i in $( ls quantum-* ); do sudo service $i restart; done
 sleep 1.5
@@ -348,6 +368,8 @@ cgroup_device_acl = [
 ]
 EOF
 
+service dbus restart && service libvirt-bin restart
+sleep 1.5
 virsh net-destroy default
 virsh net-undefine default
 
@@ -599,7 +621,7 @@ quantum l3-agent-router-add $L3_AGENT_ID router_$PROJECT
 quantum router-interface-add $ROUTER_ID $SUBNET_ID
 
 cd /etc/init.d/; for i in $( ls quantum-* ); do sudo service $i restart; done
-sleep 2
+sleep 8
 cd $CURRENT_DIR
 chmod +x network.py
 EXT_NET_ID=$(get_id quantum net-create --tenant-id $ADMIN_ROLE ext_net --router:external=True)
