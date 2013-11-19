@@ -355,11 +355,27 @@ class SlapTool(BaseTool):
 
   security.declareProtected(Permissions.AccessContentsInformation,
     'getSoftwareReleaseListFromSoftwareProduct')
-  def getSoftwareReleaseListFromSoftwareProduct(self, software_product_reference):
+  def getSoftwareReleaseListFromSoftwareProduct(self,
+      software_product_reference=None, software_release_url=None):
     """
-    Get the list of published software releases from a given software product,
+    Get the list of all published Software Releases related to one of either:
+      * A given Software Product as aggregate
+      * Another Software Release from the same Software Product as aggregate,
     sorted by descending age (latest first).
+    If both software_product_reference/software_release_url are defined, raise.
+    If referenced Software Product does not exist, return empty list.
+    If referenced Software Release does not exist, raise.
     """
+    if software_product_reference is None:
+      assert(software_release_url is not None)
+      software_product_reference = self.getPortalObject().portal_catalog.unrestrictedSearchResults(
+        portal_type='Software Release',
+        url_string=software_release_url
+      )[0].getObject().getAggregateValue().getReference()
+    else:
+      # Don't accept both parameters
+      assert(software_release_url is None)
+
     software_product_list = self.getPortalObject().portal_catalog.unrestrictedSearchResults(
       portal_type='Software Product',
       reference=software_product_reference,

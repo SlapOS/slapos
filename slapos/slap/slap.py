@@ -736,7 +736,13 @@ class slap:
   def registerSupply(self):
     return Supply(connection_helper=self._connection_helper)
 
-  def getSoftwareReleaseListFromSoftwareProduct(self, software_product_reference):
-    xml = self._connection_helper.GET('/getSoftwareReleaseListFromSoftwareProduct?' \
-        'software_product_reference=%s' % software_product_reference)
-    return xml_marshaller.loads(xml)
+  def getSoftwareReleaseListFromSoftwareProduct(self,
+      software_product_reference=None, software_release_url=None):
+    url = '/getSoftwareReleaseListFromSoftwareProduct?'
+    if software_product_reference:
+      assert(software_release_url is None)
+      url += 'software_product_reference=%s' % software_product_reference
+    else:
+      assert(software_release_url is not None)
+      url += 'software_release_url=%s' % software_release_url
+    return xml_marshaller.loads(self._connection_helper.GET(url))

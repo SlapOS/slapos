@@ -474,7 +474,8 @@ class slap(Interface):
     Instanciate a supply in the slap library.
     """
 
-  def getSoftwareReleaseListFromProduct(software_product_reference):
+  def getSoftwareReleaseListFromProduct(software_product_reference, software_release_url):
     """
-    Get the list of Software Releases from a product.
+    Get the list of Software Releases from a product or from another related
+    Sofware Release, from a Software Product point of view.
     """
