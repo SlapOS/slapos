@@ -29,7 +29,7 @@
       "title": "Remove backups older than...",
       "description": "Remove all the backups in PBS that are older than specified value. It should be rdiff-backup-compatible.",
       "type": "string",
-      "default": "3B"
+      "default": "2W"
     }
   }
 }
