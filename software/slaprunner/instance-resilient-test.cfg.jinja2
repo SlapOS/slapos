@@ -50,6 +50,9 @@ config-resiliency-backup-periodicity = * * * * *
 # XXX hardcoded
 config-frontend-domain = google.com
 config-cloud9-frontend-domain = google.com
+# XXX Hack to deploy Root Instance on the same computer as the type-test Instance
+sla = computer_guid
+sla-computer_guid = ${slap-connection:computer-id}
 return = backend_url
 
 [slap-parameter]
