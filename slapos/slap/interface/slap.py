@@ -154,6 +154,22 @@ class ISoftwareRelease(IBuildoutController):
     been correctly destroyed.
     """
 
+class ISoftwareProductCollection(Interface):
+  """
+  Fake object representing the abstract of all Software Products.
+  Can be used to call "Product().mysoftwareproduct", or, simpler,
+  "product.mysoftwareproduct", to get the best Software Release URL of the
+  Software Product "mysoftwareproduct".
+
+  Example: product.kvm will have the value of the latest Software
+  Release URL of KVM.
+  """
+  def get(software_product):
+    """
+    Return the best Software Release URL of the Software Product
+    software_product, by querying SlapOS Master.
+    """
+
 class IComputerPartition(IBuildoutController, IRequester):
   """
   Computer Partition interface specification
@@ -474,7 +490,7 @@ class slap(Interface):
     Instanciate a supply in the slap library.
     """
 
-  def getSoftwareReleaseListFromProduct(software_product_reference, software_release_url):
+  def getSoftwareReleaseListFromSoftwareProduct(software_product_reference, software_release_url):
     """
     Get the list of Software Releases from a product or from another related
     Sofware Release, from a Software Product point of view.

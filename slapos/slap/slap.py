@@ -31,6 +31,7 @@ Simple, easy to (un)marshall classes for slap client/server communication
 """
 
 __all__ = ["slap", "ComputerPartition", "Computer", "SoftwareRelease",
+           "SoftwareProductCollection",
            "Supply", "OpenOrder", "NotFoundError", "Unauthorized",
            "ResourceNotReady", "ServerError"]
 
@@ -178,6 +179,27 @@ class SoftwareRelease(SlapDocument):
 
   def getState(self):
     return getattr(self, '_requested_state', 'available')
+
+
+class SoftwareProductCollection(object):
+  zope.interface.implements(interface.ISoftwareProductCollection)
+
+  def __init__(self, logger, slap):
+    self.logger = logger
+    self.slap = slap
+    self.__getattr__ = self.get
+  def get(self, software_product):
+      self.logger.info('Getting best Software Release corresponging to '
+                       'this Software Product...')
+      software_release_list = \
+          self.slap.getSoftwareReleaseListFromSoftwareProduct(software_product)
+      try:
+          software_release_url = software_release_list[0] # First is best one.
+          self.logger.info('Found as %s.' % software_release_url)
+          return software_release_url
+      except IndexError:
+          raise AttributeError('No Software Release corresponding to this '
+                           'Software Product has been found.')
 
 
 # XXX What is this SoftwareInstance class?
@@ -740,9 +762,16 @@ class slap:
       software_product_reference=None, software_release_url=None):
     url = '/getSoftwareReleaseListFromSoftwareProduct?'
     if software_product_reference:
-      assert(software_release_url is None)
+      if software_release_url is not None:
+        raise AttributeError('Both software_product_reference and '
+                             'software_release_url parameters are specified.')
       url += 'software_product_reference=%s' % software_product_reference
     else:
-      assert(software_release_url is not None)
+      if software_release_url is None:
+        raise AttributeError('None of software_product_reference and '
+                             'software_release_url parameters are specified.')
       url += 'software_release_url=%s' % software_release_url
-    return xml_marshaller.loads(self._connection_helper.GET(url))
+
+    result = xml_marshaller.loads(self._connection_helper.GET(url))
+    assert(type(result) == list)
+    return result

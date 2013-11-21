@@ -29,45 +29,31 @@ following informations :
 See slapos.cfg.example for examples.
 
 
-Global functions
-~~~~~~~~~~~~~~~~
+Global functions/variables
+~~~~~~~~~~~~~~~~~~~~~~~~~~
 
- * request() is a shorthand for slap.registerOpenOrder().request() allowing
+ * "request()" is a shorthand for slap.registerOpenOrder().request() allowing
    to request instances.
- * supply() is a shorthand for slap.registerSupply().supply() allowing to
+ * "supply()" is a shorthand for slap.registerSupply().supply() allowing to
    request software installation.
 
 For more information about those methods, please read the SLAP library
 documentation.
 
+ * "product" is an instance of slap.SoftwareProductCollection whose only goal is to retrieve
+   the URL of the best Software Release of a given Software Product as attribute.
+   for each attribute call, it will retrieve from the SlapOS Master the best
+   available Software Release URL and return it.
 
-Global aliases
-~~~~~~~~~~~~~~
+   This allows to request instances in a few words, i.e::
 
-"software_list" is a list containing all the Software Release URLs defined in
-client slapos.cfg configuration file.
+      request("mykvm", "http://www.url.com/path/to/current/best/known/kvm/software.cfg")
 
-Also, each Software Release defined in this configuration file is translated
-into a global variable to ease the request of those Sofware Releases.
+   can be simplified into ::
 
-This allows to request instances in a few words, i.e::
+     request("mykvm", product.kvm)
 
-  request("http://www.url.com/path/to/kvm/software.cfg", "mykvm")
-
-can be simplified into ::
-
-  request(kvm, "mykvm")
-
-If the slapos.cfg file contains ::
-
-  alias =
-    kvm http://www.url.com/path/to/kvm/software.cfg
-
-
-Global objects
-~~~~~~~~~~~~~~
-
-"slap" is an instance of the SLAP library. It is only used for advanced usages.
+ * "slap" is an instance of the SLAP library. It is only used for advanced usages.
 "slap" instance is obtained by doing ::
 
   slap = slapos.slap.slap()
@@ -81,22 +67,22 @@ Examples
 ::
 
   >>> # Request instance
-  >>> request(kvm, "myuniquekvm")
+  >>> request(product.kvm, "myuniquekvm")
 
   >>> # Request instance on specific computer
-  >>> request(kvm, "myotheruniquekvm",
+  >>> request(product.kvm, "myotheruniquekvm",
     filter_kw={ "computer_guid": "COMP-12345" })
   
   >>> # Request instance, specifying parameters (here nbd_ip and nbd_port)
-  >>> request(kvm, "mythirduniquekvm",
+  >>> request(product.kvm, "mythirduniquekvm",
     partition_parameter_kw={"nbd_ip":"2a01:e35:2e27:460:e2cb:4eff:fed9:48dc",
     "nbd_port":"1024"})
 
   >>> # Request software installation on owned computer
-  >>> supply(kvm, "mycomputer")
+  >>> supply(product.kvm, "mycomputer")
 
   >>> # Fetch existing instance status
-  >>> request(kvm, "myuniquekvm").getState()
+  >>> request(product.kvm, "myuniquekvm").getState()
 
   >>> # Fetch instance information on already launched instance
-  >>> request(kvm, "myuniquekvm").getConnectionParameter("url")
+  >>> request(product.kvm, "myuniquekvm").getConnectionParameter("url")

@@ -1,8 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from slapos.cli.config import ClientConfigCommand
-from slapos.client import init, ClientConfig
-
+from slapos.client import init, ClientConfig, _getSoftwareReleaseFromSoftwareString
 
 class SupplyCommand(ClientConfigCommand):
     """
@@ -23,23 +22,23 @@ class SupplyCommand(ClientConfigCommand):
     def take_action(self, args):
         configp = self.fetch_config(args)
         conf = ClientConfig(args, configp)
-        local = init(conf)
+        local = init(conf, self.app.log)
         do_supply(self.app.log, args.software_url, args.node, local)
 
 
-def do_supply(logger, software_url, computer_id, local):
+def do_supply(logger, software_release, computer_id, local):
     """
     Request installation of Software Release
-    'software_url' on computer 'computer_id'.
+    'software_release' on computer 'computer_id'.
     """
-    # XXX-Cedric Implement software_group support
-    # XXX-Cedric Implement computer_group support
-    logger.info('Requesting installation of %s Software Release...', software_url)
+    logger.info('Requesting software installation of %s...',
+                software_release)
 
-    if software_url in local:
-        software_url = local[software_url]
-    local['slap'].registerSupply().supply(
-        software_release=software_url,
+    software_release = _getSoftwareReleaseFromSoftwareString(
+        logger, software_release, local['product'])
+
+    local['supply'](
+        software_release=software_release,
         computer_guid=computer_id,
         state='available'
     )

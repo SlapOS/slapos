@@ -30,9 +30,12 @@
 import atexit
 import ConfigParser
 import os
+import sys
 
 import slapos.slap.slap
+from slapos.slap import SoftwareProductCollection
 
+SOFTWARE_PRODUCT_NAMESPACE = "product."
 
 class ClientConfig(object):
   state = None
@@ -79,7 +82,7 @@ class ClientConfig(object):
         self.cert_file = os.path.expanduser(self.cert_file)
 
 
-def init(conf):
+def init(conf, logger):
   """Initialize Slap instance, connect to server and create
   aliases to common software releases"""
   # XXX check certificate and key existence
@@ -88,32 +91,33 @@ def init(conf):
       key_file=conf.key_file, cert_file=conf.cert_file)
   local = globals().copy()
   local['slap'] = slap
-  # Create aliases as global variables
-  try:
-    alias = conf.alias.split('\n')
-  except AttributeError:
-    alias = []
-  software_list = []
-  for software in alias:
-    if software:
-      name, url = software.split(' ')
-      software_list.append(name)
-      local[name] = url
-  # Create global variable too see available aliases
-  local['software_list'] = software_list
   # Create global shortcut functions to request instance and software
-
   def shorthandRequest(*args, **kwargs):
     return slap.registerOpenOrder().request(*args, **kwargs)
-
   def shorthandSupply(*args, **kwargs):
+    # XXX-Cedric Implement computer_group support
     return slap.registerSupply().supply(*args, **kwargs)
-
   local['request'] = shorthandRequest
   local['supply'] = shorthandSupply
+  local['product'] = SoftwareProductCollection(logger, slap)
 
   return local
 
+def _getSoftwareReleaseFromSoftwareString(logger, software_string, product):
+    """
+    If Software string is a product:
+    Return the best Software Release URL of the Software Product "X" of the
+    string "product.X".
+    Else, return as is.
+    """
+    if not software_string.startswith(SOFTWARE_PRODUCT_NAMESPACE):
+        return software_string
+
+    try:
+        return product.get(software_string[len(SOFTWARE_PRODUCT_NAMESPACE):])
+    except AttributeError as e:
+       logger.error('Error: %s Exiting now.' % e.message)
+       sys.exit(1)
 
 def do_console(local):
   # try to enable readline with completion and history

@@ -14,6 +14,7 @@ New features:
  * New command: "slapos configure client" [Marco Mariani]
  * add new "root_check" option in slapos configuration file (true by default) allowing to bypass "am I root" checks in slapos. [Cedric de Saint Martin]
  * Add support for getSoftwareReleaseListFromSoftwareProduct() SLAP method. [Cedric de Saint Martin]
+ * Add support for Software Product in request, supply and console. [Cedric de Saint Martin]
 
 Major Improvements:
 

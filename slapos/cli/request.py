@@ -3,8 +3,9 @@
 import pprint
 
 from slapos.cli.config import ClientConfigCommand
-from slapos.client import init, ClientConfig
+from slapos.client import init, ClientConfig, _getSoftwareReleaseFromSoftwareString
 from slapos.slap import ResourceNotReady
+
 
 
 def parse_option_dict(options):
@@ -63,12 +64,17 @@ class RequestCommand(ClientConfigCommand):
         configp = self.fetch_config(args)
         conf = ClientConfig(args, configp)
 
-        local = init(conf)
+        local = init(conf, self.app.log)
         do_request(self.app.log, conf, local)
 
 
 def do_request(logger, conf, local):
-    logger.info('Requesting %s...', conf.reference)
+    logger.info('Requesting %s as instance of %s...',
+                conf.reference, conf.software_url)
+
+    conf.software_url = _getSoftwareReleaseFromSoftwareString(
+        logger, conf.software_url, local['product'])
+
     if conf.software_url in local:
         conf.software_url = local[conf.software_url]
     try:

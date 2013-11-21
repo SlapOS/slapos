@@ -57,7 +57,7 @@ class ConsoleCommand(ClientConfigCommand):
     def take_action(self, args):
         configp = self.fetch_config(args)
         conf = ClientConfig(args, configp)
-        local = init(conf)
+        local = init(conf, self.app.log)
 
         if not any([args.python, args.ipython, args.bpython]):
             args.ipython = True
