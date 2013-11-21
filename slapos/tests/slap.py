@@ -26,6 +26,7 @@
 ##############################################################################
 
 import httplib
+import logging
 import os
 import unittest
 import urlparse
@@ -40,7 +41,7 @@ class UndefinedYetException(Exception):
 
 class SlapMixin(unittest.TestCase):
   """
-  Usefull methods for slap tests
+  Useful methods for slap tests
   """
   def setUp(self):
     self._server_url = os.environ.get('TEST_SLAP_SERVER_URL', None)
@@ -287,6 +288,74 @@ class TestSlap(SlapMixin):
                       self.slap.registerComputerPartition,
                       None, None)
 
+
+  def test_getSoftwareReleaseListFromSoftwareProduct_software_product_reference(self):
+    """
+    Check that slap.getSoftwareReleaseListFromSoftwareProduct calls
+    "/getSoftwareReleaseListFromSoftwareProduct" URL with correct parameters,
+    with software_product_reference parameter being specified.
+    """
+    self.slap.initializeConnection(self.server_url)
+    software_product_reference = 'random_reference'
+    software_release_url_list = ['1', '2']
+
+    def server_response(self_httpconnection, path, method, body, header):
+      parsed_url = urlparse.urlparse(path.lstrip('/'))
+      parsed_qs = urlparse.parse_qs(parsed_url.query)
+      if parsed_url.path == 'getSoftwareReleaseListFromSoftwareProduct' \
+         and parsed_qs == {'software_product_reference': [software_product_reference]}:
+        return (200, {}, xml_marshaller.xml_marshaller.dumps(software_release_url_list))
+    httplib.HTTPConnection._callback = server_response
+
+    self.assertEqual(
+      self.slap.getSoftwareReleaseListFromSoftwareProduct(
+          software_product_reference=software_product_reference),
+      software_release_url_list
+    )
+
+  def test_getSoftwareReleaseListFromSoftwareProduct_software_release_url(self):
+    """
+    Check that slap.getSoftwareReleaseListFromSoftwareProduct calls
+    "/getSoftwareReleaseListFromSoftwareProduct" URL with correct parameters,
+    with software_release_url parameter being specified.
+    """
+    self.slap.initializeConnection(self.server_url)
+    software_release_url = 'random_url'
+    software_release_url_list = ['1', '2']
+
+    def server_response(self_httpconnection, path, method, body, header):
+      parsed_url = urlparse.urlparse(path.lstrip('/'))
+      parsed_qs = urlparse.parse_qs(parsed_url.query)
+      if parsed_url.path == 'getSoftwareReleaseListFromSoftwareProduct' \
+         and parsed_qs == {'software_release_url': [software_release_url]}:
+        return (200, {}, xml_marshaller.xml_marshaller.dumps(software_release_url_list))
+    httplib.HTTPConnection._callback = server_response
+
+    self.assertEqual(
+      self.slap.getSoftwareReleaseListFromSoftwareProduct(
+          software_release_url=software_release_url),
+      software_release_url_list
+    )
+
+  def test_getSoftwareReleaseListFromSoftwareProduct_too_many_parameters(self):
+    """
+    Check that slap.getSoftwareReleaseListFromSoftwareProduct raises if
+    both parameters are set.
+    """
+    self.assertRaises(
+      AttributeError,
+      self.slap.getSoftwareReleaseListFromSoftwareProduct, 'foo', 'bar'
+    )
+
+  def test_getSoftwareReleaseListFromSoftwareProduct_no_parameter(self):
+    """
+    Check that slap.getSoftwareReleaseListFromSoftwareProduct raises if
+    both parameters are either not set or None.
+    """
+    self.assertRaises(
+      AttributeError,
+      self.slap.getSoftwareReleaseListFromSoftwareProduct
+    )
 
 class TestComputer(SlapMixin):
   """
@@ -803,6 +872,61 @@ class TestOpenOrder(SlapMixin):
     computer_partition = open_order.request(software_release_uri, 'myrefe')
     self.assertIsInstance(computer_partition, slapos.slap.ComputerPartition)
     self.assertEqual(requested_partition_id, computer_partition.getId())
+
+
+
+
+class TestSoftwareProductCollection(SlapMixin):
+  def setUp(self):
+    SlapMixin.setUp(self)
+    self.real_getSoftwareReleaseListFromSoftwareProduct =\
+        slapos.slap.slap.getSoftwareReleaseListFromSoftwareProduct
+
+    def fake_getSoftwareReleaseListFromSoftwareProduct(inside_self, software_product_reference):
+      return self.getSoftwareReleaseListFromSoftwareProduct_response
+    slapos.slap.slap.getSoftwareReleaseListFromSoftwareProduct =\
+        fake_getSoftwareReleaseListFromSoftwareProduct
+
+    self.product_collection = slapos.slap.SoftwareProductCollection(
+        logging.getLogger(), slapos.slap.slap())
+
+  def tearDown(self):
+    slapos.slap.slap.getSoftwareReleaseListFromSoftwareProduct =\
+        self.real_getSoftwareReleaseListFromSoftwareProduct
+
+  def test_get_product(self):
+    """
+    Test that the get method (aliased to __getattr__) returns the first element
+    of the list given by getSoftwareReleaseListFromSoftwareProduct (i.e the
+    best one).
+    """
+    self.getSoftwareReleaseListFromSoftwareProduct_response = ['0', '1', '2']
+    self.assertEqual(
+      self.product_collection.get('random_reference'),
+      self.getSoftwareReleaseListFromSoftwareProduct_response[0]
+    )
+
+  def test_get_product_empty_product(self):
+    """
+    Test that the get method (aliased to __getattr__) raises if no
+    Software Release is related to the Software Product, or if the
+    Software Product does not exist.
+    """
+    self.getSoftwareReleaseListFromSoftwareProduct_response = []
+    self.assertRaises(
+      AttributeError,
+      self.product_collection.get, 'random_reference',
+    )
+
+  def test_get_product_gettattr(self):
+    """
+    Test that __getattr__ method is bound to get() method.
+    """
+    self.getSoftwareReleaseListFromSoftwareProduct_response = []
+    self.assertEqual(
+      self.product_collection.__getattr__,
+      self.product_collection.get
+    )
 
 if __name__ == '__main__':
   print 'You can point to any SLAP server by setting TEST_SLAP_SERVER_URL '\
