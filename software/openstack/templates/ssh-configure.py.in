@@ -27,6 +27,7 @@ nova_configure = '${:nova-configure}'
 keystone_script = '${:keystone-script}'
 keystone_endpoints_script = '${:keystone-endpoints-script}'
 floating_ip_generate_script = '${:floating-ip-generate}'
+auto_signed_certificate_script = '${:signed-certificate-generate}'
 instance = '${:instance}'.strip() #Type: manage or compute
 
 def getClient():
@@ -67,6 +68,8 @@ def installManage():
   print 'Keystone Endpoints Configuration script has been copied successfully! File size: %s' % result.st_size
   result = sftp.put(floating_ip_generate_script, 'network.py' )
   print 'Network generate script has been copied successfully! File size: %s' % result.st_size
+  result = sftp.put(auto_signed_certificate_script, 'generate_cert.py')
+  print 'Auto-signed certificate script has been copied successfully! File size: %s' % result.st_size
   sftp.close()
   
   #Install nova components and services
