@@ -136,9 +136,10 @@ EOF
 
 source localrc
 CURRENT_DIR=`pwd`
-VNC_BASE="${:vnc-frontend}"
-if [ -z "$VNC_BASE" ]; then
-    VNC_BASE=https://$PUBLIC_ADDRESS:6080
+
+VNC_BASE_URL="${:vnc-frontend}"
+if [ -z "`echo $VNC_BASE_URL | egrep https?://`" ]; then
+    VNC_BASE_URL=https://$PUBLIC_ADDRESS:6080/vnc_auto.html
 fi
 
 
@@ -472,7 +473,7 @@ novnc_enabled=true
 ssl_only=true
 cert=/etc/nova/ssl/nova.crt
 key=/etc/nova/ssl/nova.key
-novncproxy_base_url=$VNC_BASE/vnc_auto.html
+novncproxy_base_url=$VNC_BASE_URL
 novncproxy_port=6080
 vncserver_proxyclient_address=$HOST_IP
 vncserver_listen=0.0.0.0
