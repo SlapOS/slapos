@@ -477,3 +477,21 @@ def request_slave():
                                        ip_list=address_list)
 
   return xml_marshaller.xml_marshaller.dumps(software_instance)
+
+
+@app.route('/getSoftwareReleaseListFromSoftwareProduct', methods=['GET'])
+def getSoftwareReleaseListFromSoftwareProduct():
+  software_product_reference = request.args.get('software_product_reference')
+  software_release_url = request.args.get('software_release_url')
+
+  if software_release_url:
+    assert(software_product_reference is None)
+    raise NotImplementedError('software_release_url parameter is not supported yet.')
+  else:
+    assert(software_product_reference is not None)
+    if app.config['software_product_list'].has_key(software_product_reference):
+      software_release_url_list =\
+          [app.config['software_product_list'][software_product_reference]]
+    else:
+      software_release_url_list =[]
+    return xml_marshaller.xml_marshaller.dumps(software_release_url_list)

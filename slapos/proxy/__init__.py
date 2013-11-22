@@ -2,7 +2,7 @@
 # vim: set et sts=2:
 ##############################################################################
 #
-# Copyright (c) 2010, 2011, 2012 Vifib SARL and Contributors.
+# Copyright (c) 2010, 2011, 2012, 2013 Vifib SARL and Contributors.
 # All Rights Reserved.
 #
 # WARNING: This program as such is intended to be used by professional
@@ -31,6 +31,24 @@
 import logging
 
 
+def _generateSoftwareProductListFromString(software_product_list_string):
+  """
+  Take a string as argument (which usually comes from the software_product_list
+  parameter of the slapproxy configuration file), and parse it to generate
+  list of Software Products that slapproxy will use.
+  """
+  try:
+    software_product_string_split = software_product_list_string.split('\n')
+  except AttributeError:
+    return {}
+  software_product_list = {}
+  for line in software_product_string_split:
+    if line:
+      software_reference, url = line.split(' ')
+      software_product_list[software_reference] = url
+  return software_product_list
+
+
 class ProxyConfig(object):
   def __init__(self, logger):
     self.logger = logger
@@ -40,7 +58,7 @@ class ProxyConfig(object):
     for option, value in args.__dict__.items():
       setattr(self, option, value)
 
-    # Merges the arguments and configuration
+    # Merge the arguments and configuration
     for section in ("slapproxy", "slapos"):
       configuration_dict = dict(configp.items(section))
       for key in configuration_dict:
@@ -51,6 +69,8 @@ class ProxyConfig(object):
   def setConfig(self):
     if not self.database_uri:
       raise ValueError('database-uri is required.')
+      self.software_product_list = _generateSoftwareProductListFromString(
+          getattr(self, 'software_product_list', ''))
 
 
 def do_proxy(conf):
@@ -60,6 +80,5 @@ def do_proxy(conf):
   app.logger.setLevel(logging.INFO)
   app.config['computer_id'] = conf.computer_id
   app.config['DATABASE_URI'] = conf.database_uri
+  app.config['software_product_list'] = conf.software_product_list
   app.run(host=conf.host, port=int(conf.port))
-
-

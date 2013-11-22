@@ -8,24 +8,3 @@ master_url = https://slap.vifib.com/
 # Conclusion: node certificate != person certificate.
 cert_file = certificate file location coming from your slapos master account
 key_file = key file location coming from your slapos master account
-# Below are softwares maintained by slapos.org and contributors
-alias =
-  apache_frontend http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg
-  dokuwiki http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.158:/software/dokuwiki/software.cfg
-  drupal http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.151:/software/erp5/software.cfg
-  erp5 http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.143:/software/erp5/software.cfg
-  erp5_branch http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/heads/erp5:/software/erp5/software.cfg
-  fengoffice http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.158:/software/fengoffice/software.cfg
-  kumofs http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.141:/software/kumofs/software.cfg
-  kvm http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.192:/software/kvm/software.cfg
-  maarch http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.159:/software/maarch/software.cfg
-  mariadb http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.152:/software/mariadb/software.cfg
-  memcached http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.82:/software/memcached/software.cfg
-  mysql http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.65:/software/mysql-5.1/software.cfg
-  opengoo http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.158:/software/opengoo/software.cfg
-  postgresql http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.157:/software/postgres/software.cfg
-  slaposwebrunner http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.160:/software/slaprunner/software.cfg
-  slaposwebrunner_lite http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.164:/software/slaprunner-lite/software.cfg
-  wordpress http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.163:/software/wordpress/software.cfg
-  xwiki http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.46:/software/xwiki/software.cfg
-  zabbixagent http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.162:/software/zabbix-agent/software.cfg

@@ -101,6 +101,7 @@ database_uri = %(tempdir)s/lib/proxy.db
     views.app.config['DATABASE_URI'] = self.proxy_db
     views.app.config['HOST'] = conf.host
     views.app.config['port'] = conf.port
+    self.app_config = views.app.config
     self.app = views.app.test_client()
 
   def add_free_partition(self, partition_amount):
@@ -181,6 +182,65 @@ class TestInformation(BasicMixin, unittest.TestCase):
         self.assertIsNone(slap_partition._software_release_document)
         self.assertEqual(slap_partition._requested_state, 'destroyed')
         self.assertEqual(slap_partition._need_modification, 0)
+
+  def test_getSoftwareReleaseListFromSoftwareProduct_software_product_reference(self):
+    """
+    Check that calling getSoftwareReleaseListFromSoftwareProduct() in slapproxy
+    using a software_product_reference as parameter behaves correctly.
+    """
+    software_product_reference = 'my_product'
+    software_release_url = 'my_url'
+    self.app_config['software_product_list'] = {
+        software_product_reference: software_release_url
+    }
+    response = self.app.get('/getSoftwareReleaseListFromSoftwareProduct'
+                            '?software_product_reference=%s' %\
+                            software_product_reference)
+    software_release_url_list = xml_marshaller.xml_marshaller.loads(
+        response.data)
+    self.assertEqual(
+        software_release_url_list,
+        [software_release_url]
+    )
+
+  def test_getSoftwareReleaseListFromSoftwareProduct_noSoftwareProduct(self):
+    """
+    Check that calling getSoftwareReleaseListFromSoftwareProduct() in slapproxy
+    using a software_product_reference that doesn't exist as parameter
+    returns empty list.
+    """
+    self.app_config['software_product_list'] = {'random': 'random'}
+    response = self.app.get('/getSoftwareReleaseListFromSoftwareProduct'
+                            '?software_product_reference=idonotexist')
+    software_release_url_list = xml_marshaller.xml_marshaller.loads(
+        response.data)
+    self.assertEqual(
+        software_release_url_list,
+        []
+    )
+
+  def test_getSoftwareReleaseListFromSoftwareProduct_bothParameter(self):
+    """
+    Test that a call to getSoftwareReleaseListFromSoftwareProduct with no
+    parameter raises
+    """
+    self.assertRaises(
+        AssertionError,
+       self.app.get,
+       '/getSoftwareReleaseListFromSoftwareProduct'
+       '?software_product_reference=foo'
+       '&software_release_url=bar'
+    )
+
+  def test_getSoftwareReleaseListFromSoftwareProduct_noParameter(self):
+    """
+    Test that a call to getSoftwareReleaseListFromSoftwareProduct with both
+    software_product_reference and software_release_url parameters raises
+    """
+    self.assertRaises(
+        AssertionError,
+        self.app.get, '/getSoftwareReleaseListFromSoftwareProduct'
+    )
 
 
 class MasterMixin(BasicMixin):

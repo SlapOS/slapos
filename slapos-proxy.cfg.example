@@ -1,0 +1,20 @@
+# This is an example configuration file for a standalone micro slapos master
+# a.k.a slapproxy
+[slapproxy]
+host = 127.0.0.1
+port = 5000
+database_uri = /opt/slapos/slapproxy.db
+
+# Below is the list of software maintained by slapos.org and contributors
+# It is used to simulate a proper configuration of a real slapos master.
+software_product_list =
+  erp5 http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.143:/software/erp5/software.cfg
+  erp5_branch http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/heads/erp5:/software/erp5/software.cfg
+  kumofs http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.141:/software/kumofs/software.cfg
+  kvm http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.193:/software/kvm/software.cfg
+  maarch http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.159:/software/maarch/software.cfg
+  mariadb http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.152:/software/mariadb/software.cfg
+  memcached http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.82:/software/memcached/software.cfg
+  slaposwebrunner http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.160:/software/slaprunner/software.cfg
+  wordpress http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.163:/software/wordpress/software.cfg
+  zabbixagent http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.162:/software/zabbix-agent/software.cfg
