@@ -86,6 +86,12 @@ BrowserMatch "^gnome-vfs" redirect-carefully
 BrowserMatch "^XML Spy" redirect-carefully
 BrowserMatch "^Dreamweaver-WebDAV-SCM1" redirect-carefully
 
+# Increase IPReadLimit to 10
+<IfModule antiloris_module>
+   # IPReadLimit - Maximum simultaneous connections in READ state per IP address 
+   IPReadLimit {{ slapparameter_dict.get('ip-read-limit', '10') }}
+</IfModule>
+
 # Cache directives
 CacheEnable mem /
 CacheDefaultExpire 3600
