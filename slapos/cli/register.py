@@ -233,6 +233,7 @@ def slapconfig(conf):
     # Put slapos configuration file
     config_path = os.path.join(slap_conf_dir, 'slapos.cfg')
 
+    # XXX: We should actually get the template from the egg, not from git
     cfg = fetch_configuration_template()
 
     to_replace = [

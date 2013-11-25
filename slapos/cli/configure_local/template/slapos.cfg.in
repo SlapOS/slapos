@@ -1,30 +1,26 @@
 [slapos]
 # Replace computer_id by the unique identifier of your computer on your SlapOS,
 # Master, usually starting by COMP-
-computer_id = COMP-123456789
-master_url = https://slap.vifib.com/
-key_file = /etc/opt/slapos/ssl/computer.key
-cert_file =  /etc/opt/slapos/ssl/computer.crt
-certificate_repository_path = /etc/opt/slapos/ssl/partition_pki
+computer_id = %(computer_id)s
+master_url = %(master_url)s
 software_root = /opt/slapgrid
 instance_root = /srv/slapgrid
 
 [slapformat]
 # Replace by your network interface providing IPv6 if you don't use re6st
-interface_name = lo
+interface_name = %(interface_name)s
 # Change "create_tap" into "true" if you need to host KVM services
 create_tap = false
-partition_amount = 10
+partition_amount = %(partition_amount)s
 computer_xml = /opt/slapos/slapos.xml
 log_file = /opt/slapos/log/slapos-node-format.log
 partition_base_name = slappart
-user_base_name = slapuser
-tap_base_name = slaptap
+user_base_name = slappart
 # You can choose any other local network which does not conflict with your
 # current machine configuration
-ipv4_local_network = 10.0.0.0/16
+ipv4_local_network = %(ipv4_local_network)
 # Change to true if you want slapos to use local-only IPv6
-use_unique_local_address = False
+use_unique_local_address = True
 
 [networkcache]
 # Define options for binary cache, used to download already compiled software.

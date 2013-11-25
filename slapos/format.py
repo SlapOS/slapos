@@ -393,12 +393,28 @@ class Computer(object):
       except ValueError:
         pass
 
-  def construct(self, alter_user=True, alter_network=True, create_tap=True):
+  def _addUniqueLocalAddressIpv6(self, interface_name):
+    """
+    Create a unique local address in the interface interface_name, so that
+    slapformat can build upon this.
+    See https://en.wikipedia.org/wiki/Unique_local_address.
+    """
+    command = 'ip address add dev %s fd00::1/64' % interface_name
+    subprocess.Popen(command.split()).communicate()
+
+  def construct(self, alter_user=True, alter_network=True, create_tap=True, unique_local_address=False):
     """
     Construct the computer object as it is.
     """
     if alter_network and self.address is not None:
       self.interface.addAddr(self.address, self.netmask)
+
+    if unique_local_address and alter_network:
+      if self.ipv6_interface:
+        network_interface_name = self.ipv6_interface
+      else:
+        network_interface_name = self.name
+      self._addUniqueLocalAddressIpv6(network_interface_name)
 
     for path in self.instance_root, self.software_root:
       if not os.path.exists(path):
@@ -1089,7 +1105,8 @@ def do_format(conf):
 
   computer.construct(alter_user=conf.alter_user,
                      alter_network=conf.alter_network,
-                     create_tap=conf.create_tap)
+                     create_tap=conf.create_tap,
+                     unique_local_address=conf.use_unique_local_address_block)
 
   if getattr(conf, 'certificate_repository_path', None):
     mkdir_p(conf.certificate_repository_path, mode=0o700)
@@ -1117,6 +1134,7 @@ class FormatConfig(object):
   output_definition_file = None
   dry_run = None
   software_user = None
+  use_unique_local_address_block = None
 
   def __init__(self, logger):
     self.logger = logger
@@ -1184,9 +1202,11 @@ class FormatConfig(object):
       self.software_user = 'slapsoft'
     if self.create_tap is None:
       self.create_tap = True
+    if self.use_unique_local_address_block is None:
+      self.use_unique_local_address_block = False
 
     # Convert strings to booleans
-    for option in ['alter_network', 'alter_user', 'create_tap']:
+    for option in ['alter_network', 'alter_user', 'create_tap', 'use_unique_local_address_block']:
       attr = getattr(self, option)
       if isinstance(attr, str):
         if attr.lower() == 'true':

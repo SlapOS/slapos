@@ -59,6 +59,7 @@ def get_certificate_key_pair(logger, master_url_web, token):
 
 
 def fetch_configuration_template():
+    # XXX: change to local version.
     req = requests.get('http://git.erp5.org/gitweb/slapos.core.git/blob_plain/HEAD:/slapos-client.cfg.example')
     req.raise_for_status()
     return req.text
