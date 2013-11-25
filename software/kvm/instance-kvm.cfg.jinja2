@@ -108,6 +108,13 @@ port = ${kvm-instance:vnc-port}
 recipe = collective.recipe.template
 input = inline:#!/bin/sh
   ${kvm-instance:qemu-img-path} check ${kvm-instance:disk-path}
+  EXIT_VALUE=$?
+  # Exit code 3 is used to say "there are leaks but it's ok"
+  # See http://git.qemu.org/?p=qemu.git;a=blob;f=qemu-img.c;h=b6b5644cb6afaf7441f950c85ff1e652c79bdbff;hb=HEAD#l522
+  if [[ ! $EXIT_VALUE -eq 0 && ! $EXIT_VALUE -eq 3 ]]; then
+    exit 1
+  fi
+  exit 0
 output = ${directory:promises}/kvm-disk-image-corruption
 mode = 700
 
