@@ -125,6 +125,7 @@ class ImportRecipe(GenericBaseRecipe):
                 read user pass remaining < %(etc-directory)s/.users
                 IFS=$ifs
                 %(curl-binary)s --insecure -vg6L -F clogin="$user" -F cpwd="$pass" --dump-header login_cookie  %(backend-url)s/doLogin;
+                %(curl-binary)s --insecure -vg6L --cookie login_cookie --max-time 5  %(backend-url)s/isSRReady;
                 %(curl-binary)s --insecure -vg6LX POST --cookie login_cookie --max-time 5  %(backend-url)s/runSoftwareProfile --user "$user":"$pass";
                 rm -f login_cookie
                 """ % self.options)
