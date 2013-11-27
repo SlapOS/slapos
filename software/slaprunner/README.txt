@@ -70,3 +70,21 @@ Tests :
 -------
 
 For the tests, please refer to the README in slapos.toolbox.git/slapos/resiliencytest
+
+Request custom frontend :
+-------------------------
+
+While deploying a server in your instance, you may need to ask for a custom ipv4 frontend.
+
+The way to do that is to send a new parameter to your runner instance, using the parameters XML. The name of it is "custom-frontend-backend-url".
+
+To create the frontend, you now have to wait the slaprunner to be processed.
+
+If you deploy a server, which uses basic auth, you also have to declare the parameter "custom-frontend-basic-auth" as true, or your slaprunner instance won't show as correctly instanciated.
+
+Example :
+	<?xml version='1.0' encoding='utf-8'?>
+	<instance>
+	<parameter id="custom-frontend-backend-url">http(s)://[THE_IPV6_ADDRESS]:PORT</parameter>
+	<parameter id="custom-frontend-basic-auth">true</parameter>
+	</instance>
