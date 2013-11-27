@@ -1294,7 +1294,7 @@ class TestSlapgridCPPartitionProcessing(MasterMixin, unittest.TestCase):
 
   def test_one_partition_stopped_is_not_processed_after_periodicity(self):
     """
-    Check that periodicity doesn't force processing a partition if it is not
+    Check that periodicity forces processing a partition even if it is not
     started.
     """
     computer = ComputerForTest(self.software_root, self.instance_root, 20, 20)
@@ -1320,18 +1320,19 @@ class TestSlapgridCPPartitionProcessing(MasterMixin, unittest.TestCase):
     time.sleep(1)
     self.launchSlapgrid()
     self.assertEqual(instance0.sequence,
-                     ['availableComputerPartition', 'stoppedComputerPartition'])
+                     ['availableComputerPartition', 'stoppedComputerPartition',
+                      'availableComputerPartition', 'stoppedComputerPartition'])
     for instance in computer.instance_list[1:]:
       self.assertEqual(instance.sequence,
                        ['availableComputerPartition', 'stoppedComputerPartition'])
-    self.assertEqual(os.path.getmtime(os.path.join(instance0.partition_path,
-                                                   '.timestamp')),
-                     last_runtime)
+    self.assertNotEqual(os.path.getmtime(os.path.join(instance0.partition_path,
+                                                      '.timestamp')),
+                        last_runtime)
     self.assertNotEqual(wanted_periodicity, self.grid.maximum_periodicity)
 
   def test_one_partition_destroyed_is_not_processed_after_periodicity(self):
     """
-    Check that periodicity doesn't force processing a partition if it is not
+    Check that periodicity forces processing a partition even if it is not
     started.
     """
     computer = ComputerForTest(self.software_root, self.instance_root, 20, 20)
@@ -1359,13 +1360,14 @@ class TestSlapgridCPPartitionProcessing(MasterMixin, unittest.TestCase):
     instance0.requested_state = 'destroyed'
     self.launchSlapgrid()
     self.assertEqual(instance0.sequence,
-                     ['availableComputerPartition', 'stoppedComputerPartition'])
+                     ['availableComputerPartition', 'stoppedComputerPartition',
+                                                    'stoppedComputerPartition'])
     for instance in computer.instance_list[1:]:
       self.assertEqual(instance.sequence,
                        ['availableComputerPartition', 'stoppedComputerPartition'])
-    self.assertEqual(os.path.getmtime(os.path.join(instance0.partition_path,
-                                                   '.timestamp')),
-                     last_runtime)
+    self.assertNotEqual(os.path.getmtime(os.path.join(instance0.partition_path,
+                                                      '.timestamp')),
+                        last_runtime)
     self.assertNotEqual(wanted_periodicity, self.grid.maximum_periodicity)
 
   def test_one_partition_is_never_processed_when_periodicity_is_negative(self):

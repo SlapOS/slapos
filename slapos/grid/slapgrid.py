@@ -592,11 +592,8 @@ class Slapgrid(object):
           if periodicity == 0:
             os.remove(timestamp_path)
           elif int(timestamp) <= int(old_timestamp):
-            if computer_partition.getState() != COMPUTER_PARTITION_STARTED_STATE:
-              return
             # Check periodicity, i.e if periodicity is one day, partition
             # should be processed at least every day.
-            # Only do it for "started" instances
             if int(time.time()) <= (last_runtime + periodicity) or periodicity < 0:
               self.logger.info('Partition already up-to-date, skipping.')
               return
