@@ -1,5 +1,5 @@
 [buildout]
-extends = ${template-runner:output}
+extends = template-runner.cfg
           ${pbsready-import:output}
 
 parts +=
