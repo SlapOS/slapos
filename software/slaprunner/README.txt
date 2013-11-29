@@ -69,7 +69,13 @@ To find in which partition the instance has been deployed, you can open the page
 Tests :
 -------
 
-For the tests, please refer to the README in slapos.toolbox.git/slapos/resiliencytest
+To test the runner, start by ordering a runner with default type. Then READ the important note below :
+
+/!\ IMPORTANT NOTE ON THE TESTS /!\ : in order to make them work, you have to comment the last line of the file __init__.py in the runner module (which is just : "run()"). Indeed, this line is used to load the config, when importing this module throught Gunicorn (the wsgi server). But the test suite loads itself the configuration, in fonction of the tested scenarios, etc... (You can find the module in the SR folder directory, under ./eggs/slapos.toolbox, or under parts/slapos.toolbox if you have a development version)
+
+Then, su in the concerned slapuserX and run "./bin/runTestSuite".
+
+For the tests on the resiliency of the webrunner, please refer to the README in slapos.toolbox.git/slapos/resiliencytest
 
 Request custom frontend :
 -------------------------
