@@ -60,19 +60,19 @@ http {
             auth_basic "Restricted";
             auth_basic_user_file {{ param_nginx_frontend['etc_dir'] }}/.htpasswd;
             proxy_redirect off;
-            proxy_set_header X-Forwarded-Proto $scheme;
-            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-            proxy_set_header X-Forwarded-Host $http_host;
-            proxy_set_header X-Accel-Mapping /private/;
+            proxy_set_header   X-Forwarded-Proto $scheme;
+            proxy_set_header   X-Forwarded-For   $proxy_add_x_forwarded_for;
+            proxy_set_header   X-Forwarded-Host  $http_host;
+            proxy_set_header   X-Accel-Mapping   /private/;
 
             proxy_pass http://unix:{{ socket }};
         }
         location ~ ^(/login|/doLogin|/static|/setAccount|/configAccount|/slapgridResult|/isSRReady) {
             proxy_redirect off;
-            proxy_set_header X-Forwarded-Proto $scheme;
-            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-            proxy_set_header X-Forwarded-Host $http_host;
-            proxy_set_header X-Accel-Mapping /private/;
+            proxy_set_header   X-Forwarded-Proto $scheme;
+            proxy_set_header   X-Forwarded-For   $proxy_add_x_forwarded_for;
+            proxy_set_header   X-Forwarded-Host  $http_host;
+            proxy_set_header   X-Accel-Mapping   /private/;
 
             proxy_pass http://unix:{{ socket }};
         }
