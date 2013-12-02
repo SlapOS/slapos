@@ -27,78 +27,8 @@
 from slapos.recipe.librecipe import GenericBaseRecipe
 import os
 
-class Recipe(GenericBaseRecipe):
-
-  def _options(self, options):
-    self.ipv4 = options['ipv4'].strip()
-    self.ipv6 = options['ipv6'].strip()
-    self.proxy_port = options['proxy_port'].strip()
-    self.runner_port = options['runner_port'].strip()
-    self.workdir = options['working-directory'].strip()
-    self.software_directory = options['software-directory'].strip()
-    self.instance_directory = options['instance-directory'].strip()
-    self.partition_amount = options['partition-amount'].strip()
-    self.cloud9_url = options.get('cloud9-url', '').strip()
-    self.log_file = os.path.join(options['log_dir'].strip(), 'slaprunner.log')
-    # Set slaprunner access URL, CLN Beware ipv6 access is made throught nginx
-    options['access-url'] = 'https://[%s]:%s' % (self.ipv6, self.runner_port)
-
-  def install(self):
-    path_list = []
-
-    configuration = dict(
-        software_root=self.software_directory,
-        instance_root=self.instance_directory,
-        master_url='http://%s:%s' % (self.ipv4, self.proxy_port),
-        computer_id='slaprunner',
-        partition_amount=self.partition_amount,
-        slapgrid_sr=self.options['slapgrid_sr'],
-        slapgrid_cp=self.options['slapgrid_cp'],
-        slapproxy=self.options['slapproxy'],
-        supervisor=self.options['supervisor'],
-        supervisord_config=os.path.join(self.instance_directory, 'etc',
-          'supervisord.conf'),
-        runner_workdir=self.workdir,
-        etc_dir=self.options['etc_dir'],
-        run_dir=self.options['run_dir'],
-        log_dir=self.options['log_dir'],
-        runner_host=self.ipv4,
-        runner_port=self.runner_port,
-        ipv4_address=self.ipv4,
-        ipv6_address=self.ipv6,
-        proxy_host=self.ipv4,
-        proxy_port=self.proxy_port,
-        proxy_database=os.path.join(self.workdir, 'proxy.db'),
-        git=self.options['git-binary'],
-        ssh_client=self.options['ssh_client'],
-        public_key=self.options['public_key'],
-        private_key=self.options['private_key'],
-        cloud9_url=self.cloud9_url
-    )
-
-    config_file = self.createFile(self.options['slapos.cfg'],
-        self.substituteTemplate(self.getTemplateFilename('slapos.cfg.in'),
-        configuration))
-    config_file = configuration['etc_dir'] + 'slapos.cfg'
-
-    environment = dict(
-        PATH=os.path.dirname(
-            self.options['git-binary']) + ':' + os.environ['PATH'],
-        GIT_SSH=self.options['ssh_client']
-    )
-    launch_args = [self.options['slaprunner'].strip(), config_file,
-                   '--log_file', self.log_file]
-    if self.optionIsTrue('debug', default=False):
-      launch_args.append('--debug')
-
-    wrapper = self.createPythonScript(self.options['wrapper'],
-        'slapos.recipe.librecipe.execute.executee',
-        (launch_args, environment)
-    )
-    path_list.append(wrapper)
-
-    return path_list
-
+#XXX-Nicolas This recipe has to be deleted as soon as possible
+#No changes allowed, except full-replacement using buildout
 class Test(GenericBaseRecipe):
   def _options(self, options):
     self.ipv4 = options['ipv4'].strip()
