@@ -1,6 +1,17 @@
 Changes
 =======
 
+0.85 (2013-12-03)
+-----------------
+
+ * Slaprunner: recipe replaced by a buildout profile [14fbcd92]
+ * Slaprunner: import instances can automatically deploy Software Releases [64c48388]
+ * Slaprunner: backup script passes basic authentification [8877615]
+ * Slaprunner: backup doesn't destroy symlinks for Software Releases [f519a078]
+ * Shellinabox: now uses uid and gid to start [e9349c65]
+ * Shellinabox: can do autoconnection [516e772]
+ * Librecipe-generic: correction of bash code for /bin/sh compatibility [bee8c9c8]
+
 0.84.2 (2013-10-04)
 -------------------
 
