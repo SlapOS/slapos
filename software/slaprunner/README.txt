@@ -94,3 +94,8 @@ Example :
 	<parameter id="custom-frontend-backend-url">http(s)://[THE_IPV6_ADDRESS]:PORT</parameter>
 	<parameter id="custom-frontend-basic-auth">true</parameter>
 	</instance>
+
+Things to notice for the nex developer :
+----------------------------------------
+
+As you can see in instance-runner-*.cfg, the buildout section extends a hard-coded template file. If one day you need to modify the filename, do not forget to modify it in instance.cfg, but also in these files ! (the problem is that the content of instance.cfg is not known by buildout while the deployment of the software release)
