@@ -35,3 +35,6 @@ shell-binary = ${dash:location}/bin/dash
 rsync-binary = ${rsync:location}/bin/rsync
 curl-binary = ${curl:location}/bin/curl
 backend-url = $${slaprunner:access-url}
+
+[slap-parameter]
+auto-deploy-instance = false

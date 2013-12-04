@@ -49,7 +49,7 @@ Last but not least, it is also possible to switch the branch with the parameter 
 for instance
 ~~~~~~~~~~~~
 
-The parameter "auto-deploy-instance" can be explicitly set to allow or prevent the runner to deploy the instance at START TIME (if you manually restart the runner, or if the server reboots). Values : "true" or "false". Default value is "true"
+The parameter "auto-deploy-instance" can be explicitly set to allow or prevent the runner to deploy the instance at START TIME (if you manually restart the runner, or if the server reboots). Values : "true" or "false". Default value is "true", except for the instances of import (while type is resilient or test) which is "false"
 
 Resilience :
 ------------
