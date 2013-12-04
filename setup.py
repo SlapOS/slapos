@@ -28,7 +28,7 @@ from setuptools import setup, find_packages
 import glob
 import os
 
-version = '0.84.2'
+version = '0.85'
 name = 'slapos.cookbook'
 long_description = open("README.txt").read() + "\n" + \
     open("CHANGES.txt").read() + "\n"
@@ -184,7 +184,6 @@ setup(name=name,
           'slapmonitor = slapos.recipe.slapmonitor:MonitorRecipe',
           'slapmonitor-xml = slapos.recipe.slapmonitor:MonitorXMLRecipe',
           'slapreport = slapos.recipe.slapreport:Recipe',
-          'slaprunner = slapos.recipe.slaprunner:Recipe',
           'slaprunner.test = slapos.recipe.slaprunner:Test',
           'slaprunner.export = slapos.recipe.slaprunner.backup:ExportRecipe',
           'slaprunner.import = slapos.recipe.slaprunner.backup:ImportRecipe',

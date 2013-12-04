@@ -1,5 +1,5 @@
 [buildout]
-extends = ${template-runner:output}
+extends = template-runner.cfg
           ${pbsready-export:output}
 
 parts +=
@@ -9,20 +9,28 @@ parts +=
   certificate-authority
   ca-nginx
   ca-node-frontend
-  slaprunner
+  ca-shellinabox
+  gunicorn-launcher
+  gunicorn-graceful
   test-runner
   sshkeys-dropbear-runner
   dropbear-server-add-authorized-key
   sshkeys-authority
+  publish-connection-informations
   slaprunner-promise
   slaprunner-frontend-promise
   cloud9-promise
   cloud9-frontend-promise
   dropbear-promise
+  shellinabox-promise
   symlinks
+  request-cloud9-frontend
   node-frontend-promise
   nginx-promise
-  publish-connection-informations
+  shellinabox
+  slapos-cfg
+  slapos-repo-config
+  prepare-software
   cron-entry-backup
 
 [exporter]
