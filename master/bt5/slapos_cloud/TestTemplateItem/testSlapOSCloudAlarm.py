@@ -180,6 +180,67 @@ class TestSlapOSAllocation(testSlapOSMixin):
     super(TestSlapOSAllocation, self).\
         _makeTree(requested_template_id=requested_template_id)
 
+  def _simulatePerson_isAllowedToAllocate(self):
+    script_name = 'Person_isAllowedToAllocate'
+    if script_name in self.portal.portal_skins.custom.objectIds():
+      raise ValueError('Precondition failed: %s exists in custom' % script_name)
+    createZODBPythonScript(self.portal.portal_skins.custom,
+                        script_name,
+                        '*args, **kwargs',
+                        '# Script body\n'
+"""portal_workflow = context.portal_workflow
+portal_workflow.doActionFor(context, action='edit_action', comment='Visited by Person_isAllowedToAllocate')
+return True""" )
+    transaction.commit()
+
+  def _simulatePerson_isNotAllowedToAllocate(self):
+    script_name = 'Person_isAllowedToAllocate'
+    if script_name in self.portal.portal_skins.custom.objectIds():
+      raise ValueError('Precondition failed: %s exists in custom' % script_name)
+    createZODBPythonScript(self.portal.portal_skins.custom,
+                        script_name,
+                        '*args, **kwargs',
+                        '# Script body\n'
+"""return False""")
+    transaction.commit()
+
+  def _dropPerson_isAllowedToAllocate(self):
+    script_name = 'Person_isAllowedToAllocate'
+    if script_name in self.portal.portal_skins.custom.objectIds():
+      self.portal.portal_skins.custom.manage_delObjects(script_name)
+    transaction.commit()
+
+  def test_person_allocation_checked(self):
+    self._makeTree()
+    self._simulatePerson_isAllowedToAllocate()
+    try:
+      self.software_instance.SoftwareInstance_tryToAllocatePartition()
+    finally:
+      self._dropPerson_isAllowedToAllocate()
+    self.assertEqual(
+        'Visited by Person_isAllowedToAllocate',
+        self.person_user.workflow_history['edit_workflow'][-1]['comment'])
+
+  def test_no_allocation_if_person_is_not_allowed(self):
+    self._makeTree()
+
+    self._makeComputer()
+    self._installSoftware(self.computer,
+        self.software_instance.getUrlString())
+
+    self.assertEqual(None, self.software_instance.getAggregateValue(
+        portal_type='Computer Partition'))
+    self._simulatePerson_isNotAllowedToAllocate()
+    try:
+      self.software_instance.SoftwareInstance_tryToAllocatePartition()
+    finally:
+      self._dropPerson_isAllowedToAllocate()
+    self.assertEqual(None, self.software_instance.getAggregateValue(
+        portal_type='Computer Partition'))
+    self.assertEqual(
+        'Allocation failed: Allocation disallowed',
+        self.software_instance.workflow_history['edit_workflow'][-1]['comment'])
+
   def test_allocation_no_free_partition(self):
     self._makeTree()
 
