@@ -1,5 +1,7 @@
 testSlapOSAccountingSkins
 testSlapOSConsumptionSkins
+testSlapOSContractAlarm
+testSlapOSContractSkins
 testSlapOSAccountingAlarm
 testSlapOSAccountingBuilder
 testSlapOSAccountingConstraint

@@ -2021,3 +2021,22 @@ class TestComputerConsumptionTioXMLFile(TestSlapOSGroupRoleSecurityMixin):
         False)
     self.assertRoles(text, 'G-COMPANY', ['Assignor'])
     self.assertRoles(text, self.user_id, ['Owner'])
+
+class TestCloudContractModule(TestSlapOSGroupRoleSecurityMixin):
+  def test(self):
+    module = self.portal.cloud_contract_module
+    self.assertSecurityGroup(module,
+        ['zope', 'G-COMPANY'], False)
+    self.assertRoles(module, 'G-COMPANY', ['Author', 'Auditor'])
+    self.assertRoles(module, 'zope', ['Owner'])
+
+class TestCloudContract(TestSlapOSGroupRoleSecurityMixin):
+  def test_GroupCompany(self):
+    text = self.portal.cloud_contract_module.newContent(
+        portal_type='Cloud Contract')
+
+    self.assertSecurityGroup(text,
+        ['G-COMPANY', self.user_id],
+        False)
+    self.assertRoles(text, 'G-COMPANY', ['Assignor'])
+    self.assertRoles(text, self.user_id, ['Owner'])

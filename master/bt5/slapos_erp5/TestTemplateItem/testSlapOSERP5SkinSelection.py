@@ -112,6 +112,7 @@ class TestSlaposSkinSelection(testSlapOSMixin):
 custom
 slapos_upgrader
 vifib_hosting
+slapos_contract
 slapos_accounting
 slapos_administration
 slapos_cache
@@ -217,6 +218,7 @@ zpt_generic
 """
 custom
 slapos_upgrader
+slapos_contract
 slapos_accounting
 slapos_administration
 slapos_cache
@@ -318,6 +320,7 @@ zpt_generic
 """
 custom
 slapos_upgrader
+slapos_contract
 slapos_accounting
 slapos_administration
 slapos_cache
@@ -420,6 +423,7 @@ zpt_generic
 """
 custom
 slapos_upgrader
+slapos_contract
 slapos_accounting
 slapos_administration
 slapos_cache
@@ -519,6 +523,7 @@ zpt_generic
 """
 custom
 slapos_upgrader
+slapos_contract
 slapos_accounting
 slapos_administration
 slapos_cache
@@ -619,6 +624,7 @@ zpt_generic
 """
 custom
 slapos_upgrader
+slapos_contract
 slapos_accounting
 slapos_administration
 slapos_cache
@@ -718,6 +724,7 @@ zpt_generic
 """
 custom
 slapos_upgrader
+slapos_contract
 slapos_accounting
 slapos_administration
 slapos_cache
@@ -817,6 +824,7 @@ zpt_generic
 """
 custom
 slapos_upgrader
+slapos_contract
 slapos_accounting
 slapos_administration
 slapos_cache
@@ -916,6 +924,7 @@ zpt_generic
 """
 custom
 slapos_upgrader
+slapos_contract
 slapos_accounting
 slapos_administration
 slapos_cache
@@ -1017,6 +1026,7 @@ zpt_generic
 """
 custom
 slapos_upgrader
+slapos_contract
 slapos_accounting
 slapos_administration
 slapos_cache

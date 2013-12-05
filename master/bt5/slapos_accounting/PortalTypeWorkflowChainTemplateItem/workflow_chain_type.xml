@@ -1,5 +1,9 @@
 <workflow_chain>
  <chain>
+  <type>Cloud Contract</type>
+  <workflow>edit_workflow, item_workflow</workflow>
+ </chain>
+ <chain>
   <type>Computer Consumption TioXML File</type>
   <workflow>document_conversion_interaction_workflow, document_publication_workflow, edit_workflow</workflow>
  </chain>

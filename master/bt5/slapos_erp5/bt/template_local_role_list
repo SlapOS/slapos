@@ -17,6 +17,7 @@ business_process_module/slapos_aggregated_business_process
 business_process_module/slapos_consumption_business_process
 business_process_module/slapos_subscription_business_process
 campaign_module
+cloud_contract_module
 component_module
 computer_model_module
 computer_module
@@ -56,6 +57,7 @@ sale_order_module
 sale_packing_list_module
 sale_trade_condition_module
 service_module
+service_module/slapos_account_validation
 service_module/slapos_discount
 service_module/slapos_instance_subscription
 service_module/slapos_netdrive_consumption

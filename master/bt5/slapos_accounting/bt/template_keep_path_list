@@ -7,3 +7,4 @@ service_module/slapos_instance_setup
 service_module/slapos_instance_update
 service_module/slapos_instance_subscription
 service_module/slapos_netdrive_consumption
+service_module/slapos_account_validation

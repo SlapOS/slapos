@@ -4,6 +4,7 @@ service_module/slapos_instance_cleanup
 service_module/slapos_instance_setup
 service_module/slapos_instance_update
 service_module/slapos_netdrive_consumption
+service_module/slapos_account_validation
 account_module/bank
 account_module/capital
 account_module/coll_vat

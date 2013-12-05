@@ -1,0 +1,188 @@
+<?xml version="1.0"?>
+<ZopeData>
+  <record id="1" aka="AAAAAAAAAAE=">
+    <pickle>
+      <global name="PythonScript" module="Products.PythonScripts.PythonScript"/>
+    </pickle>
+    <pickle>
+      <dictionary>
+        <item>
+            <key> <string>Script_magic</string> </key>
+            <value> <int>3</int> </value>
+        </item>
+        <item>
+            <key> <string>_bind_names</string> </key>
+            <value>
+              <object>
+                <klass>
+                  <global name="NameAssignments" module="Shared.DC.Scripts.Bindings"/>
+                </klass>
+                <tuple/>
+                <state>
+                  <dictionary>
+                    <item>
+                        <key> <string>_asgns</string> </key>
+                        <value>
+                          <dictionary>
+                            <item>
+                                <key> <string>name_container</string> </key>
+                                <value> <string>container</string> </value>
+                            </item>
+                            <item>
+                                <key> <string>name_context</string> </key>
+                                <value> <string>context</string> </value>
+                            </item>
+                            <item>
+                                <key> <string>name_m_self</string> </key>
+                                <value> <string>script</string> </value>
+                            </item>
+                            <item>
+                                <key> <string>name_subpath</string> </key>
+                                <value> <string>traverse_subpath</string> </value>
+                            </item>
+                          </dictionary>
+                        </value>
+                    </item>
+                  </dictionary>
+                </state>
+              </object>
+            </value>
+        </item>
+        <item>
+            <key> <string>_body</string> </key>
+            <value> <string encoding="cdata"><![CDATA[
+
+from zExceptions import Unauthorized\n
+if REQUEST is not None:\n
+  raise Unauthorized\n
+\n
+portal = context.getPortalObject()\n
+software_instance = context\n
+hosting_subscription = software_instance.getSpecialiseValue()\n
+person = hosting_subscription.getDestinationSectionValue(portal_type=\'Person\')\n
+payment_portal_type = "Payment Transaction"\n
+contract_portal_type = "Cloud Contract"\n
+\n
+tag = "%s_requestValidationPayment_inProgress" % person.getUid()\n
+if (portal.portal_activities.countMessageWithTag(tag) > 0):\n
+  # The cloud contract is already under creation but can not be fetched from catalog\n
+  # As it is not possible to fetch informations, it is better to raise an error\n
+  return None\n
+\n
+contract = portal.portal_catalog.getResultValue(\n
+  portal_type=contract_portal_type,\n
+  default_destination_section_uid=person.getUid(),\n
+  validation_state=[\'invalidated\', \'validated\'],\n
+)\n
+\n
+if (contract is None):\n
+  # Prevent concurrent transaction to create 2 contracts for the same person\n
+  person.serialize()\n
+\n
+  # Time to create the contract\n
+  contract = portal.cloud_contract_module.newContent(\n
+    portal_type=contract_portal_type,\n
+    title=\'Contract for "%s"\' % person.getTitle(),\n
+    destination_section_value=person\n
+  )\n
+  contract.validate(comment=\'New automatic contract for %s\' % context.getTitle())\n
+  contract.invalidate(comment=\'New automatic contract for %s\' % context.getTitle())\n
+\n
+  contract.reindexObject(activate_kw={\'tag\': tag})\n
+\n
+if (contract.getValidationState() == "invalidated"):\n
+  # Prevent concurrent transaction to create 2 invoices for the same person\n
+  person.serialize()\n
+\n
+  # search if the user already paid anything\n
+  payment = portal.portal_catalog.getResultValue(\n
+    portal_type=payment_portal_type,\n
+    default_destination_section_uid=person.getUid(),\n
+    simulation_state=[\'stopped\'],\n
+  )\n
+\n
+  if (payment is None):\n
+    # Manually create an invoice to request payment validation\n
+    current_invoice = contract.getCausalityValue()\n
+\n
+    if current_invoice is None:\n
+      # Create the validation invoice\n
+      # XXX Hardcoded\n
+      invoice_template = portal.restrictedTraverse("accounting_module/template_contract_sale_invoice_transaction")\n
+      current_invoice = invoice_template.Base_createCloneDocument(batch_mode=1)\n
+      contract.edit(causality_value=current_invoice)\n
+      contract.reindexObject(activate_kw={\'tag\': tag})\n
+\n
+      current_invoice.edit(\n
+        title="Account validation",\n
+        source_value=person,\n
+        destination_value=person,\n
+        destination_section_value=person,\n
+        destination_decision_value=person,\n
+        start_date=DateTime(),\n
+        stop_date=None,\n
+      )\n
+      comment = "Validation invoice for contract %s" % contract.getRelativeUrl()\n
+      current_invoice.plan(comment=comment)\n
+      current_invoice.confirm(comment=comment)\n
+      current_invoice.startBuilding(comment=comment)\n
+      current_invoice.reindexObject(activate_kw={\'tag\': tag})\n
+\n
+\n
+    else:\n
+      # Check if the invoice is still ongoing\n
+      simulation_state = current_invoice.getSimulationState() \n
+\n
+      if simulation_state in ("planned", "confirmed", "ordered", "started"):\n
+        # Waiting for payment\n
+        result = "ongoing"\n
+      elif simulation_state in ("cancelled", "deleted", "draft"):\n
+        result = "cancelled"\n
+      elif simulation_state in ("stopped", "delivered"):\n
+        # Invoice is in final state.\n
+        paid = True\n
+        for line in current_invoice.getMovementList(portal.getPortalAccountingMovementTypeList()):\n
+          node_value = line.getSourceValue(portal_type=\'Account\')\n
+\n
+          if node_value.getAccountType() == \'asset/receivable\':\n
+            if not line.hasGroupingReference():\n
+              paid = False\n
+              break\n
+\n
+        if paid:\n
+          result = "paid"\n
+        else:\n
+          result = "ongoing"\n
+\n
+      else:\n
+        raise NotImplementedError, "Unknow state %s" % simulation_state\n
+\n
+      if result in ("paid", "cancelled"):\n
+        # Maybe have been paid or not (mirror invoice may have been created)\n
+        # Check in next alarm loop for a payment\n
+        contract.edit(causality_value=None)\n
+        contract.reindexObject(activate_kw={\'tag\': tag})\n
+\n
+  else:\n
+    # Found one payment, the contract can be validated\n
+    comment = "Contract validated as paid payment %s found" % payment.getRelativeUrl()\n
+    contract.validate(comment=comment)\n
+    contract.reindexObject(activate_kw={\'tag\': tag})\n
+\n
+return contract\n
+
+
+]]></string> </value>
+        </item>
+        <item>
+            <key> <string>_params</string> </key>
+            <value> <string>REQUEST=None</string> </value>
+        </item>
+        <item>
+            <key> <string>id</string> </key>
+            <value> <string>SoftwareInstance_requestValidationPayment</string> </value>
+        </item>
+      </dictionary>
+    </pickle>
+  </record>
+</ZopeData>
