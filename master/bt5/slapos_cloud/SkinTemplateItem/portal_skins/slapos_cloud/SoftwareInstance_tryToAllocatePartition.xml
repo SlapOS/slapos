@@ -114,8 +114,8 @@ def assignComputerPartition(software_instance, hosting_subscription):\n
             default_subordination_uid=\'\'),\n
             logical_operator=\'not\',\n
         ))\n
-        for software_instance in software_instance_tree_list:\n
-          computer_partition = software_instance.getAggregateValue()\n
+        for other_software_instance in software_instance_tree_list:\n
+          computer_partition = other_software_instance.getAggregateValue()\n
           if not computer_partition:\n
             continue\n
           computer_network = computer_partition.getParentValue().getSubordinationValue()\n
