@@ -50,11 +50,14 @@ class TestSlapOSCloudSupportRequestGeneration(testSlapOSMixin):
 
   def _makeComputer(self,new_id):
     # Clone computer document
+    person = self.portal.person_module.template_member\
+         .Base_createCloneDocument(batch_mode=1)
     computer = self.portal.computer_module\
       .template_computer.Base_createCloneDocument(batch_mode=1)
     computer.edit(
       title="computer ticket %s" % (new_id, ),
-      reference="TESTCOMPT-%s" % (new_id, )
+      reference="TESTCOMPT-%s" % (new_id, ),
+      source_administration_value=person
     )
     computer.validate()
 
@@ -100,6 +103,8 @@ class TestSlapOSCloudSupportRequestGeneration(testSlapOSMixin):
      return software_installation
 
   def _makeHostingSubscription(self, new_id):
+    person = self.portal.person_module.template_member\
+         .Base_createCloneDocument(batch_mode=1)
     hosting_subscription = self.portal\
       .hosting_subscription_module.template_hosting_subscription\
       .Base_createCloneDocument(batch_mode=1)
@@ -107,6 +112,7 @@ class TestSlapOSCloudSupportRequestGeneration(testSlapOSMixin):
     hosting_subscription.edit(
         title= "Test hosting sub ticket %s" % new_id,
         reference="TESTHST-%s" % new_id,
+        destination_section_value=person
     )
 
     return hosting_subscription
@@ -125,7 +131,8 @@ class TestSlapOSCloudSupportRequestGeneration(testSlapOSMixin):
     hosting_subscription.requestStart(**kw)
     hosting_subscription.requestInstance(**kw)
 
-  def test_Base_generateSupportRequestForSlapOS(self):
+  def test_computer_Base_generateSupportRequestForSlapOS(self):
+    self._dropBase_generateSupportRequestForSlapOS()
     title = "Test Support Request %s" % self.new_id
     computer = self._makeComputer(self.new_id)
     support_request = computer.Base_generateSupportRequestForSlapOS(
@@ -133,7 +140,32 @@ class TestSlapOSCloudSupportRequestGeneration(testSlapOSMixin):
     )
     self.tic()
 
-    self.assertNotEqual(support_request,None)
+    self.assertNotEqual(support_request, None)
+
+    support_request = self.portal.restrictedTraverse(support_request)
+
+    # The support request is added to computer owner.
+    self.assertEquals(support_request.getDestinationDecision(),
+                      computer.getSourceAdministration())
+
+  def test_software_instance_Base_generateSupportRequestForSlapOS(self):
+    host_sub = self._makeHostingSubscription(self.new_id)
+    self._makeSoftwareInstance(host_sub,self.generateNewSoftwareReleaseUrl())
+    instance = host_sub.getPredecessorValue()
+
+    title = "Test Support Request %s" % self.new_id
+    support_request = instance.Base_generateSupportRequestForSlapOS(
+      title, title, instance.getRelativeUrl()
+    )
+    self.tic()
+
+    self.assertNotEqual(support_request, None)
+
+    support_request = self.portal.restrictedTraverse(support_request)
+ 
+    # The support request is added to computer owner.
+    self.assertEquals(support_request.getDestinationDecision(),
+                      host_sub.getDestinationSection())
 
   def test_Base_generateSupportRequestForSlapOS_do_not_recreate_if_open(self):
     title = "Test Support Request %s" % self.new_id
@@ -149,6 +181,23 @@ class TestSlapOSCloudSupportRequestGeneration(testSlapOSMixin):
     self.tic()
 
     self.assertEqual(support_request, None)
+
+  def test_ERP5Site_isSupportRequestCreationClosed(self):
+
+    self.assertFalse(self.portal.ERP5Site_isSupportRequestCreationClosed())
+
+    def newSupportRequest():
+      sr = self.portal.support_request_module.newContent(\
+                                 title="Test Support Request POIUY")
+      sr.validate()
+      sr.immediateReindexObject()
+
+    newSupportRequest()
+    self.assertFalse(self.portal.ERP5Site_isSupportRequestCreationClosed())
+    newSupportRequest()
+    self.assertFalse(self.portal.ERP5Site_isSupportRequestCreationClosed())
+    newSupportRequest()
+    self.assertTrue(self.portal.ERP5Site_isSupportRequestCreationClosed())
 
   def test_Base_generateSupportRequestForSlapOS_recreate_if_closed(self):
     title = "Test Support Request %s" % self.new_id
@@ -184,6 +233,7 @@ class TestSlapOSCloudSupportRequestGeneration(testSlapOSMixin):
     if script_name in self.portal.portal_skins.custom.objectIds():
       self.portal.portal_skins.custom.manage_delObjects(script_name)
     transaction.commit()
+    self.assertFalse(script_name in self.portal.portal_skins.custom.objectIds())
 
   def test_Computer_checkState(self):
     computer = self._makeComputer(self.new_id)

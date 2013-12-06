@@ -60,6 +60,13 @@ if portal.ERP5Site_isSupportRequestCreationClosed():\n
 \n
 source_project_value = portal.restrictedTraverse(source_relative_url)\n
 \n
+if source_project_value.getPortalType() == "Computer":\n
+  destination_decision = source_project_value.getSourceAdministration()\n
+elif source_project_value.getPortalType() == "Software Instance":\n
+  destination_decision = source_project_value.getSpecialiseValue().getDestinationSection()\n
+else:\n
+  destination_decision = None\n
+\n
 support_request_in_progress = portal.portal_catalog.getResultValue(\n
   portal_type = \'Support Request\',\n
   title = title,\n
@@ -76,6 +83,7 @@ if support_request_in_progress is None:\n
     title = title,\n
     description = description,\n
     start_date = DateTime(),\n
+    destination_decision=destination_decision,\n
     source_project_value = source_relative_url\n
   )\n
   support_request.validate()\n
