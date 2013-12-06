@@ -9,6 +9,25 @@ from zExceptions import Unauthorized
 from DateTime import DateTime
 from Products.ERP5Type.DateUtils import addToDate
 from App.Common import rfc1123_date
+from functools import wraps
+
+def simulate(script_id, params_string, code_string):
+  def upperWrap(f):
+    @wraps(f)
+    def decorated(self, *args, **kw):
+      if script_id in self.portal.portal_skins.custom.objectIds():
+        raise ValueError('Precondition failed: %s exists in custom' % script_id)
+      createZODBPythonScript(self.portal.portal_skins.custom,
+                          script_id, params_string, code_string)
+      try:
+        result = f(self, *args, **kw)
+      finally:
+        if script_id in self.portal.portal_skins.custom.objectIds():
+          self.portal.portal_skins.custom.manage_delObjects(script_id)
+        transaction.commit()
+      return result
+    return decorated
+  return upperWrap
 
 class TestSlapOSCorePromiseSlapOSModuleIdGeneratorAlarm(testSlapOSMixin):
 
@@ -241,6 +260,7 @@ return True""" )
         'Allocation failed: Allocation disallowed',
         self.software_instance.workflow_history['edit_workflow'][-1]['comment'])
 
+  @simulate('Person_isAllowedToAllocate', '*args, **kwargs', 'return True')
   def test_allocation_no_free_partition(self):
     self._makeTree()
 
@@ -250,6 +270,7 @@ return True""" )
     self.assertEqual(None, self.software_instance.getAggregateValue(
         portal_type='Computer Partition'))
 
+  @simulate('Person_isAllowedToAllocate', '*args, **kwargs', 'return True')
   def test_allocation_no_host_instance(self):
     self._makeSlaveTree()
 
@@ -269,6 +290,7 @@ return True""" )
     software_installation.requestStart()
     self.tic()
 
+  @simulate('Person_isAllowedToAllocate', '*args, **kwargs', 'return True')
   def test_allocation_free_partition(self):
     self._makeTree()
 
@@ -289,6 +311,7 @@ return True""" )
     computer_partition.markBusy()
     self.tic()
 
+  @simulate('Person_isAllowedToAllocate', '*args, **kwargs', 'return True')
   def test_allocation_host_instance(self):
     self._makeSlaveTree()
 
@@ -302,6 +325,7 @@ return True""" )
     self.assertEqual(self.partition.getRelativeUrl(),
         self.software_instance.getAggregate(portal_type='Computer Partition'))
 
+  @simulate('Person_isAllowedToAllocate', '*args, **kwargs', 'return True')
   def test_allocation_capacity_scope_close(self):
     self._makeTree()
 
@@ -317,6 +341,7 @@ return True""" )
     self.assertEqual(None,
         self.software_instance.getAggregate(portal_type='Computer Partition'))
 
+  @simulate('Person_isAllowedToAllocate', '*args, **kwargs', 'return True')
   def test_allocation_host_capacity_scope_close(self):
     self._makeSlaveTree()
 
@@ -332,6 +357,7 @@ return True""" )
     self.assertEqual(None,
         self.software_instance.getAggregate(portal_type='Computer Partition'))
 
+  @simulate('Person_isAllowedToAllocate', '*args, **kwargs', 'return True')
   def test_allocation_allocation_scope_close(self):
     self._makeTree()
 
@@ -347,6 +373,7 @@ return True""" )
     self.assertEqual(None,
         self.software_instance.getAggregate(portal_type='Computer Partition'))
 
+  @simulate('Person_isAllowedToAllocate', '*args, **kwargs', 'return True')
   def test_allocation_host_allocation_scope_close(self):
     self._makeSlaveTree()
 
@@ -362,6 +389,7 @@ return True""" )
     self.assertEqual(None,
         self.software_instance.getAggregate(portal_type='Computer Partition'))
 
+  @simulate('Person_isAllowedToAllocate', '*args, **kwargs', 'return True')
   def test_allocation_allocation_scope_open_personal(self):
     self._makeTree()
 
@@ -378,6 +406,7 @@ return True""" )
     self.assertEqual(self.partition.getRelativeUrl(),
         self.software_instance.getAggregate(portal_type='Computer Partition'))
 
+  @simulate('Person_isAllowedToAllocate', '*args, **kwargs', 'return True')
   def test_allocation_host_allocation_scope_open_personal(self):
     self._makeSlaveTree()
 
@@ -394,6 +423,7 @@ return True""" )
     self.assertEqual(self.partition.getRelativeUrl(),
         self.software_instance.getAggregate(portal_type='Computer Partition'))
 
+  @simulate('Person_isAllowedToAllocate', '*args, **kwargs', 'return True')
   def test_allocation_allocation_scope_open_friend(self):
     self._makeTree()
 
@@ -426,6 +456,7 @@ return True""" )
     self.assertEqual(self.partition.getRelativeUrl(),
         self.software_instance.getAggregate(portal_type='Computer Partition'))
 
+  @simulate('Person_isAllowedToAllocate', '*args, **kwargs', 'return True')
   def test_allocation_host_allocation_scope_open_friend(self):
     self._makeSlaveTree()
 
@@ -458,6 +489,7 @@ return True""" )
     self.assertEqual(self.partition.getRelativeUrl(),
         self.software_instance.getAggregate(portal_type='Computer Partition'))
 
+  @simulate('Person_isAllowedToAllocate', '*args, **kwargs', 'return True')
   def test_allocation_does_not_fail_on_instance_with_damaged_sla_xml(self):
     self._makeTree()
 
@@ -469,6 +501,7 @@ return True""" )
         portal_type='Computer Partition'))
     transaction.abort()
 
+  @simulate('Person_isAllowedToAllocate', '*args, **kwargs', 'return True')
   def test_allocation_does_not_fail_on_slave_with_damaged_sla_xml(self):
     self._makeSlaveTree()
 
@@ -498,6 +531,7 @@ portal_workflow.doActionFor(context, action='edit_action', comment='Visited by S
       self.portal.portal_skins.custom.manage_delObjects(script_name)
     transaction.commit()
 
+  @simulate('Person_isAllowedToAllocate', '*args, **kwargs', 'return True')
   def test_alarm_software_instance_unallocated(self):
     self._makeTree()
 
@@ -511,6 +545,7 @@ portal_workflow.doActionFor(context, action='edit_action', comment='Visited by S
         'Visited by SoftwareInstance_tryToAllocatePartition',
         self.software_instance.workflow_history['edit_workflow'][-1]['comment'])
 
+  @simulate('Person_isAllowedToAllocate', '*args, **kwargs', 'return True')
   def test_alarm_slave_instance_unallocated(self):
     self._makeSlaveTree()
 
@@ -524,6 +559,7 @@ portal_workflow.doActionFor(context, action='edit_action', comment='Visited by S
         'Visited by SoftwareInstance_tryToAllocatePartition',
         self.software_instance.workflow_history['edit_workflow'][-1]['comment'])
 
+  @simulate('Person_isAllowedToAllocate', '*args, **kwargs', 'return True')
   def test_alarm_software_instance_allocated(self):
     self._makeTree()
 
@@ -540,6 +576,7 @@ portal_workflow.doActionFor(context, action='edit_action', comment='Visited by S
         'Visited by SoftwareInstance_tryToAllocatePartition',
         self.software_instance.workflow_history['edit_workflow'][-1]['comment'])
 
+  @simulate('Person_isAllowedToAllocate', '*args, **kwargs', 'return True')
   def test_alarm_slave_instance_allocated(self):
     self._makeSlaveTree()
 
@@ -556,6 +593,7 @@ portal_workflow.doActionFor(context, action='edit_action', comment='Visited by S
         'Visited by SoftwareInstance_tryToAllocatePartition',
         self.software_instance.workflow_history['edit_workflow'][-1]['comment'])
 
+  @simulate('Person_isAllowedToAllocate', '*args, **kwargs', 'return True')
   def test_allocation_computer_guid(self):
     self._makeTree()
 
@@ -582,6 +620,7 @@ portal_workflow.doActionFor(context, action='edit_action', comment='Visited by S
     self.assertEqual(self.partition.getRelativeUrl(),
         self.software_instance.getAggregate(portal_type='Computer Partition'))
 
+  @simulate('Person_isAllowedToAllocate', '*args, **kwargs', 'return True')
   def test_allocation_instance_guid(self):
     self._makeSlaveTree()
 
@@ -610,6 +649,7 @@ portal_workflow.doActionFor(context, action='edit_action', comment='Visited by S
     self.assertEqual(self.partition.getRelativeUrl(),
         self.software_instance.getAggregate(portal_type='Computer Partition'))
 
+  @simulate('Person_isAllowedToAllocate', '*args, **kwargs', 'return True')
   def test_allocation_network_guid(self):
     self._makeTree()
 
@@ -646,6 +686,7 @@ portal_workflow.doActionFor(context, action='edit_action', comment='Visited by S
     self.assertEqual(self.partition.getRelativeUrl(),
         self.software_instance.getAggregate(portal_type='Computer Partition'))
 
+  @simulate('Person_isAllowedToAllocate', '*args, **kwargs', 'return True')
   def test_allocation_mode_unique_by_network_one_network(self):
     """
     Test that when mode is "unique_by_network", we deploy new instance on
@@ -707,6 +748,7 @@ portal_workflow.doActionFor(context, action='edit_action', comment='Visited by S
         software_instance2.getAggregate(portal_type='Computer Partition')
     )
 
+  @simulate('Person_isAllowedToAllocate', '*args, **kwargs', 'return True')
   def test_allocation_mode_unique_by_network_several_network(self):
     """
     Test that when mode is "unique_by_network", we deploy new instance on
@@ -791,6 +833,7 @@ portal_workflow.doActionFor(context, action='edit_action', comment='Visited by S
         software_instance3.getAggregate(portal_type='Computer Partition')
     )
 
+  @simulate('Person_isAllowedToAllocate', '*args, **kwargs', 'return True')
   def test_allocation_mode_unique_by_network_no_network(self):
     """
     Test that when we request instance with mode as 'unique_by_network',
@@ -814,6 +857,7 @@ portal_workflow.doActionFor(context, action='edit_action', comment='Visited by S
         self.software_instance.getAggregate(portal_type='Computer Partition')
     )
 
+  @simulate('Person_isAllowedToAllocate', '*args, **kwargs', 'return True')
   def test_allocation_mode_unique_by_network_check_serialize_called(self):
     """
     Test that on being_requested serialise is being called
@@ -847,6 +891,7 @@ portal_workflow.doActionFor(context, action='edit_action', comment='Visited by S
 
     transaction.abort()
 
+  @simulate('Person_isAllowedToAllocate', '*args, **kwargs', 'return True')
   def test_allocation_mode_unique_by_network_no_parallel(self):
     """
     Test that when we request two instances of the same Hosting Subscription
@@ -905,6 +950,7 @@ portal_workflow.doActionFor(context, action='edit_action', comment='Visited by S
         software_instance2.getAggregate(portal_type='Computer Partition')
     )
 
+  @simulate('Person_isAllowedToAllocate', '*args, **kwargs', 'return True')
   def test_allocation_unexpected_sla_parameter(self):
     self._makeTree()
 
@@ -962,6 +1008,7 @@ portal_workflow.doActionFor(context, action='edit_action', comment='Visited by S
     self.assertEqual(self.partition.getRelativeUrl(),
         self.software_instance.getAggregate(portal_type='Computer Partition'))
 
+  @simulate('Person_isAllowedToAllocate', '*args, **kwargs', 'return True')
   def test_allocation_group_sla(self):
     return self.check_allocation_category_sla('group', 'vifib', 'ovh')
 
@@ -969,33 +1016,42 @@ portal_workflow.doActionFor(context, action='edit_action', comment='Visited by S
   def test_allocation_cpu_core_sla(self):
     return self.check_allocation_category_sla('cpu_core', 'vifib', 'ovh')
 
+  @simulate('Person_isAllowedToAllocate', '*args, **kwargs', 'return True')
   def test_allocation_cpu_frequency_sla(self):
     return self.check_allocation_category_sla('cpu_frequency', '1000', '2000')
 
+  @simulate('Person_isAllowedToAllocate', '*args, **kwargs', 'return True')
   def test_allocation_cpu_type_sla(self):
     return self.check_allocation_category_sla('cpu_type', 'x86', 'x86/x86_32')
 
+  @simulate('Person_isAllowedToAllocate', '*args, **kwargs', 'return True')
   def test_allocation_local_area_network_type_sla(self):
     return self.check_allocation_category_sla('local_area_network_type', 
                                               'ethernet', 'wifi')
 
+  @simulate('Person_isAllowedToAllocate', '*args, **kwargs', 'return True')
   def test_allocation_memory_size_sla(self):
     return self.check_allocation_category_sla('memory_size', '128', '256')
 
+  @simulate('Person_isAllowedToAllocate', '*args, **kwargs', 'return True')
   def test_allocation_memory_type_sla(self):
     return self.check_allocation_category_sla('memory_type', 'ddr2', 'ddr3')
 
+  @simulate('Person_isAllowedToAllocate', '*args, **kwargs', 'return True')
   def test_allocation_region_sla(self):
     return self.check_allocation_category_sla('region', 'africa', 
                                               'america')
 
+  @simulate('Person_isAllowedToAllocate', '*args, **kwargs', 'return True')
   def test_allocation_storage_capacity_sla(self):
     return self.check_allocation_category_sla('storage_capacity', 'finite', 
                                               'infinite')
 
+  @simulate('Person_isAllowedToAllocate', '*args, **kwargs', 'return True')
   def test_allocation_storage_interface_sla(self):
     return self.check_allocation_category_sla('storage_interface', 'nas', 'san')
 
+  @simulate('Person_isAllowedToAllocate', '*args, **kwargs', 'return True')
   def test_allocation_storage_redundancy_sla(self):
     return self.check_allocation_category_sla('storage_redundancy', 'dht', 'raid')
 
