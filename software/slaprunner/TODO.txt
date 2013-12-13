@@ -1,2 +1,3 @@
 - resilient sr: Cloned instances should not launch slapgrid-sr if it was not launched on export instance
 - shellinabox password should be the same in all the resilient instances
+- add test for parameter auto-deploy-instance
