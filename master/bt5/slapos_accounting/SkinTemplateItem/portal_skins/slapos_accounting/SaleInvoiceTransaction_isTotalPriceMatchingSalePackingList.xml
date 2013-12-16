@@ -50,10 +50,17 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string>invoice = context\n
+            <value> <string encoding="cdata"><![CDATA[
+
+invoice = context\n
 specialise = context.getPortalObject().portal_preferences.getPreferredAggregatedSaleTradeCondition()\n
 if invoice.getSpecialise() != specialise:\n
   raise TypeError(\'Only invoice specialised by %s shall be checked\' % specialise)\n
+\n
+if len(invoice.getCausalityRelatedList(portal_type=\'Cloud Contract\')) > 0:\n
+  # Nothing to compare\n
+  return True\n
+\n
 \n
 delivery_list = invoice.getCausalityValueList(portal_type=\'Sale Packing List\')\n
 amount = len(delivery_list)\n
@@ -62,7 +69,9 @@ if amount != 1:\n
 delivery = delivery_list[0]\n
 \n
 return delivery.getTotalPrice(use=\'use/trade/sale\') == context.getTotalPrice(use=\'use/trade/sale\')\n
-</string> </value>
+
+
+]]></string> </value>
         </item>
         <item>
             <key> <string>_params</string> </key>
