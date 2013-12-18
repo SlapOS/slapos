@@ -1,0 +1,77 @@
+[directory]
+home = $${buildout:directory}
+etc = $${:home}/etc
+bin = $${:home}/bin
+var = $${:home}/var
+cron-entries = $${:etc}/cron.d
+crontabs = $${:etc}/crontabs
+cronstamps = $${:etc}/cronstamps
+log = $${:var}/log
+monitor = $${:etc}/monitor
+monitor-result = $${:var}/monitor
+promise = $${:etc}/promise
+
+[cron]
+recipe = slapos.cookbook:cron
+dcrond-binary = ${dcron:location}/sbin/crond
+cron-entries = $${directory:cron-entries}
+crontabs = $${directory:crontabs}
+cronstamps = $${directory:cronstamps}
+catcher = $${cron-simplelogger:wrapper}
+binary = $${directory:service}/crond
+
+# Add log to cron
+[cron-simplelogger]
+recipe = slapos.cookbook:simplelogger
+wrapper = $${directory:bin}/cron_simplelogger
+log = $${directory:log}/cron.log
+
+[cron-entry-monitor]
+<= cron
+recipe = slapos.cookbook:cron.d
+name = launch-monitor
+frequency = * * * * *
+command = $${deploy-run-monitor-script:rendered}
+
+[cron-entry-rss]
+<= cron
+recipe = slapos.cookbook:cron.d
+name = build-rss
+frequency = * * * * *
+command = $${make-rss:output}
+
+[deploy-run-monitor-script]
+recipe = slapos.recipe.template:jinja2
+template = ${run-monitor-script:location}/${run-monitor-script:filename}
+rendered = $${directory:bin}/run-monitor.sh
+mode = 0744
+context =
+  raw dash_bin ${dash:location}/bin/dash
+  key monitor_bin deploy-monitor-script:rendered
+  key output_directory directory:monitor-result
+  raw output_file_verbose monitor.json
+  raw output_file_quiet monitor.bool
+
+[deploy-monitor-script]
+recipe = slapos.recipe.template:jinja2
+template = ${monitor-bin:location}/${monitor-bin:filename}
+rendered = $${directory:bin}/monitor.py
+mode = 0744
+context =
+  section directory directory
+  
+[deploy-rss-script]
+recipe = hexagonit.recipe.download
+url = ${rss-bin:destination}/${rss-bin:filename}
+destination = $${directory:bin}
+filename = ${rss-bin:filename}
+#md5sum =
+mode = 0744
+download-only = true
+
+[make-rss]
+recipe = slapos.recipe.template
+url = ${make-rss-script:output}
+output = $${directory:bin}/make-rss.sh
+#md5sum = 
+mode = 0744

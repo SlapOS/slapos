@@ -1,0 +1,9 @@
+#!${dash-output:dash}
+
+status=$${directory:monitor-result}/monitor.bool
+RSS_DIR=$${directory:monitor-result}
+PYTHON=${buildout:directory}/bin/${extra-eggs:interpreter}
+STATUS2RSS=${rss-bin:location}/${rss-bin:filename}
+
+NAME=`basename $status`
+cat $status | $PYTHON $STATUS2RSS "Backup status $NAME" "http://localhost/$NAME.rss" > $RSS_DIR/monitor.rss
