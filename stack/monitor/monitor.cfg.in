@@ -1,8 +1,19 @@
+[slap-parameters]
+recipe = slapos.cookbook:slapconfiguration
+computer = $${slap-connection:computer-id}
+partition = $${slap-connection:partition-id}
+url = $${slap-connection:server-url}
+key = $${slap-connection:key-file}
+cert = $${slap-connection:cert-file}
+
 [directory]
 home = $${buildout:directory}
 etc = $${:home}/etc
 bin = $${:home}/bin
+srv = $${:home}/srv
+
 var = $${:home}/var
+ca-dir = $${:srv}/ssl
 cron-entries = $${:etc}/cron.d
 crontabs = $${:etc}/crontabs
 cronstamps = $${:etc}/cronstamps
@@ -10,6 +21,10 @@ log = $${:var}/log
 monitor = $${:etc}/monitor
 monitor-result = $${:var}/monitor
 promise = $${:etc}/promise
+run = $${:etc}/run
+service = $${:etc}/service/
+tmp = $${:home}/tmp
+www = $${:var}/www
 
 [cron]
 recipe = slapos.cookbook:cron
@@ -75,3 +90,73 @@ url = ${make-rss-script:output}
 output = $${directory:bin}/make-rss.sh
 #md5sum = 
 mode = 0744
+
+[tempdirectory]
+recipe = slapos.cookbook:mkdirectory
+client_body_temp_path = $${directory:tmp}/client_body_temp_path
+proxy_temp_path = $${directory:tmp}/proxy_temp_path
+fastcgi_temp_path = $${directory:tmp}/fastcgi_temp_path
+uwsgi_temp_path = $${directory:tmp}/uwsgi_temp_path
+scgi_temp_path = $${directory:tmp}/scgi_temp_path
+
+[cadirectory]
+recipe = slapos.cookbook:mkdirectory
+requests = $${directory:ca-dir}/requests/
+private = $${directory:ca-dir}/private/
+certs = $${directory:ca-dir}/certs/
+newcerts = $${directory:ca-dir}/newcerts/
+crl = $${directory:ca-dir}/crl/
+
+[certificate-authority]
+recipe = slapos.cookbook:certificate_authority
+openssl-binary = ${openssl:location}/bin/openssl
+ca-dir = $${directory:ca-dir}
+requests-directory = $${cadirectory:requests}
+wrapper = $${directory:service}/certificate_authority
+ca-private = $${cadirectory:private}
+ca-certs = $${cadirectory:certs}
+ca-newcerts = $${cadirectory:newcerts}
+ca-crl = $${cadirectory:crl}
+
+[ca-nginx]
+<= certificate-authority
+recipe = slapos.cookbook:certificate_authority.request
+key-file = $${cadirectory:certs}/nginx_rss.key
+cert-file = $${cadirectory:certs}/nginx_rss.crt
+executable = $${nginx-parameters:bin_launcher}
+wrapper = $${directory:service}/nginx-rss
+# Put domain name
+name = example.com
+
+[nginx-parameters]
+nb_workers = 2
+port = 9685
+global-ip = $${slap-parameters:ipv6}
+# SSL
+ssl-certificate = $${ca-nginx:cert-file}
+ssl-key = $${ca-nginx:key-file}
+# Log
+path_pid = $${directory:run}/nginx.pid
+path_log = $${directory:log}/nginx.log
+path_access_log = $${directory:log}/nginx.access.log
+path_error_log = $${directory:log}/nginx.error.log
+path_tmp = $${directory:tmp}
+# Config files
+nginx_conf = $${nginx-conf:rendered}
+# Executables
+bin_nginx = ${nginx:location}/sbin/nginx
+bin_launcher = $${directory:bin}/nginx-launcher
+www = $${directory:www}
+
+[nginx-conf]
+recipe = slapos.recipe.template:jinja2
+template = ${template-nginx-conf:location}/${template-nginx-conf:filename}
+rendered = $${directory:etc}/nginx_rss.conf
+context =
+    section param_nginx nginx-parameters
+    section param_tempdir tempdirectory
+
+[nginx-service]
+recipe = slapos.cookbook:wrapper
+wrapper-path = $${nginx-parameters:bin_launcher}
+command-line = $${nginx-parameters:bin_nginx} -c $${nginx-parameters:nginx_conf}
