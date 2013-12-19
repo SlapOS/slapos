@@ -1,5 +1,6 @@
 #!/usr/bin/python
 
+import datetime
 import json
 import os
 import subprocess
@@ -86,12 +87,14 @@ def runScripts(directory):
 
 
 def writeFiles(monitors):
-  open(monitoring_file_json, "w+").write(json.dumps(monitors))
   if len(monitors) == 0:
-    open(monitoring_file_bool, "w+").write("SUCCESS : everything is ok")
+    message = "SUCCESS : everything is ok"
   else:
-    open(monitoring_file_bool, "w+").write("FAILURE : something went wrong")
-
+    message ="FAILURE : something went wrong"
+  date = datetime.datetime.now().ctime()
+  monitors['datetime'] = date
+  open(monitoring_file_bool, "w+").write(date + "," +  message)
+  open(monitoring_file_json, "w+").write(json.dumps(monitors))
 
 if __name__ == "__main__":
   parser = OptionParser(option_list=option_list)
