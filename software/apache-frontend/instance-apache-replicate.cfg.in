@@ -1,4 +1,4 @@
-{% if slap_software_type.startswith(software_type) -%}
+{% if slap_software_type in software_type -%}
 
 [jinja2-template-base]
 recipe = slapos.recipe.template:jinja2
@@ -13,18 +13,22 @@ context =
     ${:extra-context}
 
 {% set part_list = [] -%}
-{% set type_key = 'replicate-' %}
-{% set type_key_length = type_key | length %}
-{% if slap_software_type.startswith(type_key) %}
-{%   set frontend_type = slap_software_type[type_key_length:] -%}
+{% set single_type_key = 'single-' %}
+{% if slap_software_type in ("replicate", "RootSoftwareInstance") %}
+{%   set frontend_type = slapparameter_dict.pop('-frontend-type', 'single-default') -%}
 {% else -%}
-{%   set frontend_type = slapparameter_dict.pop('-frontend-type', 'default') -%}
+{%   set frontend_type = "%s%s" % (single_type_key, slap_software_type) -%}
 {% endif -%}
-{% set frontend_quantity = slapparameter_dict.pop('-frontend-quantity', '2') | int -%}
+{% set frontend_quantity = slapparameter_dict.pop('-frontend-quantity', '1') | int -%}
 {% set slave_list_name = 'extra_slave_instance_list' -%}
 {% set frontend_list = [] %}
 {% set frontend_section_list = [] %}
 {% set namebase = 'apache-frontend' -%}
+# XXX Dirty hack, not possible to define default value before
+{% set sla_computer_apache_1_key = '-sla-1-computer_guid' -%}
+{% if not sla_computer_apache_1_key in slapparameter_dict -%}
+{%   do slapparameter_dict.__setitem__(sla_computer_apache_1_key, '${slap-connection:computer-id}') -%}
+{% endif -%}
 
 # Here we request individualy each frontend.
 # The presence of sla parameters is checked and added if found
@@ -81,6 +85,8 @@ slave-amount = {{ slave_instance_list | length }}
 recipe = slapos.cookbook:softwaretype
 default = ${dynamic-publish-slave-information:rendered}
 replicate = ${dynamic-publish-slave-information:rendered}
+custom-personal = ${dynamic-publish-slave-information:rendered}
+custom-group = ${dynamic-publish-slave-information:rendered}
 
 [slave-information]
 {% for frontend_section in frontend_section_list -%}
@@ -120,7 +126,6 @@ cert_file = ${slap-connection:cert-file}
 
 [slap-parameter]
 slave_instance_list =
--frontend-quantity = 2
--frontend-type = default
-
+-frontend-quantity = 1
+-frontend-type = single-default
 {%- endif %}
