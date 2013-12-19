@@ -1,4 +1,0 @@
-#!{{ dash_bin }}
-
-echo "`date`, `{{ monitor_bin }} -v`" > {{ output_directory }}/{{ output_file_verbose }}
-echo "`date`, `{{ monitor_bin }}`" > {{ output_directory }}/{{ output_file_quiet }}

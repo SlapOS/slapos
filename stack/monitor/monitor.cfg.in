@@ -46,7 +46,7 @@ log = $${directory:log}/cron.log
 recipe = slapos.cookbook:cron.d
 name = launch-monitor
 frequency = * * * * *
-command = $${deploy-run-monitor-script:rendered}
+command = $${deploy-monitor-script:rendered}
 
 [cron-entry-rss]
 <= cron
@@ -55,18 +55,6 @@ name = build-rss
 frequency = * * * * *
 command = $${make-rss:output}
 
-[deploy-run-monitor-script]
-recipe = slapos.recipe.template:jinja2
-template = ${run-monitor-script:location}/${run-monitor-script:filename}
-rendered = $${directory:bin}/run-monitor.sh
-mode = 0744
-context =
-  raw dash_bin ${dash:location}/bin/dash
-  key monitor_bin deploy-monitor-script:rendered
-  key output_directory directory:monitor-result
-  raw output_file_verbose monitor.json
-  raw output_file_quiet monitor.bool
-
 [deploy-monitor-script]
 recipe = slapos.recipe.template:jinja2
 template = ${monitor-bin:location}/${monitor-bin:filename}
@@ -74,6 +62,8 @@ rendered = $${directory:bin}/monitor.py
 mode = 0744
 context =
   section directory directory
+  raw monitoring_file_json $${directory:monitor-result}/monitor.json
+  raw monitoring_file_bool $${directory:monitor-result}/monitor.bool
   
 [deploy-rss-script]
 recipe = hexagonit.recipe.download

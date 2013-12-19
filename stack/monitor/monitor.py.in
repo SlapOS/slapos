@@ -5,12 +5,15 @@ import os
 import subprocess
 import sys
 import time
-from optparse import OptionParser
 
 promise_dir = "{{ directory['promise'] }}"
 service_dir = "{{ directory['service'] }}"
 monitor_dir = "{{ directory['monitor'] }}"
 instance_path = "{{ directory['home'] }}"
+
+monitoring_file_json = "{{ monitoring_file_json }}"
+monitoring_file_bool = "{{ monitoring_file_bool }}"
+
 
 def getListOfScripts():
   scripts = []
@@ -24,14 +27,15 @@ def getListOfScripts():
     exit("There is a problem in your directories" \
           "of monitoring. Please check them")
 
+
 def run():
   scripts = getListOfScripts()
   script_timeout = 3
-  failed_scripts = []
-  failed_bool = False
-  for script_path in scripts:
-    command = [os.path.join(promise_dir, script_path)]
+  result = {}
+  for script in scripts:
+    command = [os.path.join(promise_dir, script)]
     script = os.path.basename(command[0])
+    result[script] = ''
     
     process_handler = subprocess.Popen(command,
                                        cwd=instance_path,
@@ -47,27 +51,20 @@ def run():
 
     if process_handler.poll() is None:
       process_handler.terminate()
-      failed_bool = True
-      failed_scripts.append({script_path : "Time Out"})
+      result[script] = "Time Out"
     elif process_handler.poll() != 0:
       stderr = process_handler.communicate()[1]
       if stderr is not None:
-        failed_bool = True
-        failed_scripts.append({script_path : stderr.strip()})
-  return failed_scripts
+        result[script] = stderr.strip()
+  return result
 
 
 if __name__ == "__main__":
-  parser = OptionParser()
-  parser.add_option("-v", "--verbose", action="store_true", dest="verbose",
-                    help="return a json containing info for each monitored script")
-  (options, args) = parser.parse_args()
-  fails = run()
-  if options.verbose:
-    print fails
-  elif len(fails) == 0:
-    print 0
+  monitors = run()
+  open(monitoring_file_json, "w+").write(json.dumps(fails))
+  if len(monitors) == 0:
+    open(monitoring_file_bool, "w+").write("SUCCESS : everything is ok")
     exit(0)
   else:
-    print 1
+    open(monitoring_file_bool, "w+").write("FAILURE : something went wrong")
     exit(1)
