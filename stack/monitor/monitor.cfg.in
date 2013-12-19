@@ -21,7 +21,7 @@ log = $${:var}/log
 monitor = $${:etc}/monitor
 monitor-result = $${:var}/monitor
 promise = $${:etc}/promise
-run = $${:etc}/run
+run = $${:var}/run
 service = $${:etc}/service/
 tmp = $${:home}/tmp
 www = $${:var}/www
@@ -46,7 +46,7 @@ log = $${directory:log}/cron.log
 recipe = slapos.cookbook:cron.d
 name = launch-monitor
 frequency = * * * * *
-command = $${deploy-monitor-script:rendered}
+command = $${deploy-monitor-script:rendered} -a
 
 [cron-entry-rss]
 <= cron
@@ -126,7 +126,7 @@ global-ip = $${slap-parameters:ipv6}
 ssl-certificate = $${ca-nginx:cert-file}
 ssl-key = $${ca-nginx:key-file}
 # Log
-path_pid = $${directory:run}/nginx.pid
+path_pid = $${directory:run}/nginx-rss.pid
 path_log = $${directory:log}/nginx.log
 path_access_log = $${directory:log}/nginx.access.log
 path_error_log = $${directory:log}/nginx.error.log

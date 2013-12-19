@@ -5,31 +5,57 @@ import os
 import subprocess
 import sys
 import time
+from optparse import OptionParser, make_option
 
-promise_dir = "{{ directory['promise'] }}"
-service_dir = "{{ directory['service'] }}"
-monitor_dir = "{{ directory['monitor'] }}"
 instance_path = "{{ directory['home'] }}"
+monitor_dir = "{{ directory['monitor'] }}"
+pid_dir = "{{ directory['run'] }}"
+promise_dir = "{{ directory['promise'] }}"
 
-monitoring_file_json = "{{ monitoring_file_json }}"
 monitoring_file_bool = "{{ monitoring_file_bool }}"
+monitoring_file_json = "{{ monitoring_file_json }}"
+
+option_list = [
+  make_option("-a", "--all", action="store_true", dest="all",
+              help="test everything : promises, services, customs"),
+  make_option("-n", "--no-write", action="store_true", dest="only_stdout",
+              help="just show the json output on stdout"),
+  make_option("-m", "--monitors", action="store_true", dest="monitor",
+              help="add the custom monitoring file to the files to monitor"),
+  make_option("-p", "--promises", action="store_true", dest="promise",
+              help="add the promises\'file to the files to monitor"),
+  make_option("-s", "--services", action="store_true", dest="service",
+              help="add the file containing services\'pid to the files to monitor")
+]
 
 
-def getListOfScripts():
+def getListOfScripts(directory):
   scripts = []
-  for dir in (promise_dir, monitor_dir):
-    if os.path.exists(dir) and os.path.isdir(dir):
-      for file in os.listdir(dir):
-        scripts.append(os.path.join(dir, file))
-  if scripts:
-    return scripts
+  if os.path.exists(directory) and os.path.isdir(directory):
+    for file in os.listdir(directory):
+      scripts.append(os.path.join(directory, file))
   else:
     exit("There is a problem in your directories" \
           "of monitoring. Please check them")
+  return scripts
+
+def runServices(directory):
+  services = getListOfScripts(directory)
+  result = {}
+  for service in services:
+    service_path = os.path.join(pid_dir, service)
+    service_name = os.path.basename(service_path)
+    pid = int(open(service_path).read())
+    try:
+      os.kill(pid, 0)
+      result[service_name] = ''
+    except OSError:
+      result[service_name] = "This service is not running anymore"
+  return result
 
 
-def run():
-  scripts = getListOfScripts()
+def runScripts(directory):
+  scripts = getListOfScripts(directory)
   script_timeout = 3
   result = {}
   for script in scripts:
@@ -59,12 +85,36 @@ def run():
   return result
 
 
-if __name__ == "__main__":
-  monitors = run()
-  open(monitoring_file_json, "w+").write(json.dumps(fails))
+def writeFiles(monitors):
+  open(monitoring_file_json, "w+").write(json.dumps(monitors))
   if len(monitors) == 0:
     open(monitoring_file_bool, "w+").write("SUCCESS : everything is ok")
-    exit(0)
   else:
     open(monitoring_file_bool, "w+").write("FAILURE : something went wrong")
+
+
+if __name__ == "__main__":
+  parser = OptionParser(option_list=option_list)
+  monitors = {}
+  (options, args) = parser.parse_args()
+  
+  if not (options.monitor or options.promise
+         or options.service or options.all):
+    exit("Please provide at list one arg in : -a, -m, -p, -s")
+  
+  if options.monitor or options.all:
+    monitors.update(runScripts(monitor_dir))
+  if options.promise or options.all:
+    monitors.update(runScripts(promise_dir))
+  if options.service or options.all:
+    monitors.update(runServices(pid_dir))
+    
+  if options.only_stdout:
+    print json.dumps(monitors)
+  else:
+    writeFiles(monitors)
+  if len(monitors) == 0:
+    exit(0)
+  else:
     exit(1)
+    
