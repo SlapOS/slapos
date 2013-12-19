@@ -45,5 +45,9 @@ http {
         location / {
           root {{ param_nginx['www'] }};
         }
+        location /feed {
+          root {{ param_nginx['www'] }};
+          index {{ param_nginx['rss_feed'] }};
+        }
      }
 }

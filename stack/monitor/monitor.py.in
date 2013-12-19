@@ -13,8 +13,8 @@ monitor_dir = "{{ directory['monitor'] }}"
 pid_dir = "{{ directory['run'] }}"
 promise_dir = "{{ directory['promise'] }}"
 
-monitoring_file_bool = "{{ monitoring_file_bool }}"
 monitoring_file_json = "{{ monitoring_file_json }}"
+monitoring_folder_bool = "{{ monitoring_folder_bool }}"
 
 option_list = [
   make_option("-a", "--all", action="store_true", dest="all",
@@ -88,13 +88,15 @@ def runScripts(directory):
 
 def writeFiles(monitors):
   if len(monitors) == 0:
-    message = "SUCCESS : everything is ok"
+    message = "SUCCESS : everything is ok\n"
   else:
-    message ="FAILURE : something went wrong"
+    message ="FAILURE : something went wrong\n"
   date = datetime.datetime.now().ctime()
   monitors['datetime'] = date
-  open(monitoring_file_bool, "w+").write(date + "," +  message)
+  file_bool = os.path.join(monitoring_folder_bool, str(time.time()))
+  open(file_bool, "w+").write(date + "," +  message)
   open(monitoring_file_json, "w+").write(json.dumps(monitors))
+
 
 if __name__ == "__main__":
   parser = OptionParser(option_list=option_list)

@@ -6,6 +6,14 @@ url = $${slap-connection:server-url}
 key = $${slap-connection:key-file}
 cert = $${slap-connection:cert-file}
 
+[monitor-parameters]
+monitor-dir = $${directory:monitor-result}
+result-dir = $${:monitor-dir}/bool
+json-filename = monitor.json
+json-path = $${:monitor-dir}/$${:json-filename}
+rss-path = $${directory:www}/monitor.html
+executable = $${directory:bin}/monitor.py
+
 [directory]
 home = $${buildout:directory}
 etc = $${:home}/etc
@@ -20,6 +28,7 @@ cronstamps = $${:etc}/cronstamps
 log = $${:var}/log
 monitor = $${:etc}/monitor
 monitor-result = $${:var}/monitor
+monitor-result-bool = $${monitor-parameters:result-dir}
 promise = $${:etc}/promise
 run = $${:var}/run
 service = $${:etc}/service/
@@ -46,7 +55,7 @@ log = $${directory:log}/cron.log
 recipe = slapos.cookbook:cron.d
 name = launch-monitor
 frequency = * * * * *
-command = $${deploy-monitor-script:rendered} -a
+command = $${monitor-parameters:executable} -a
 
 [cron-entry-rss]
 <= cron
@@ -58,12 +67,12 @@ command = $${make-rss:output}
 [deploy-monitor-script]
 recipe = slapos.recipe.template:jinja2
 template = ${monitor-bin:location}/${monitor-bin:filename}
-rendered = $${directory:bin}/monitor.py
+rendered = $${monitor-parameters:executable}
 mode = 0744
 context =
   section directory directory
-  raw monitoring_file_json $${directory:monitor-result}/monitor.json
-  raw monitoring_file_bool $${directory:monitor-result}/monitor.bool
+  key monitoring_file_json monitor-parameters:json-path
+  key monitoring_folder_bool monitor-parameters:result-dir
   
 [deploy-rss-script]
 recipe = hexagonit.recipe.download
@@ -136,6 +145,7 @@ nginx_conf = $${nginx-conf:rendered}
 # Executables
 bin_nginx = ${nginx:location}/sbin/nginx
 bin_launcher = $${directory:bin}/nginx-launcher
+rss_feed = $${monitor-parameters:rss-path}
 www = $${directory:www}
 
 [nginx-conf]
