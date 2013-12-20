@@ -4,10 +4,10 @@ import cgitb
 import os
 import subprocess
 import sys
-cgitb.enable()
+cgitb.enable(display=0)
 
 print "Content-Type: text/html"
-print    
+print
 
 form = cgi.FieldStorage()
 if "password" not in form:
