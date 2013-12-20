@@ -137,6 +137,16 @@ wrapper = $${directory:service}/nginx-rss
 # Put domain name
 name = example.com
 
+[ca-httpd]
+<= certificate-authority
+recipe = slapos.cookbook:certificate_authority.request
+key-file = $${cadirectory:certs}/httpd.key
+cert-file = $${cadirectory:certs}/httpd.crt
+executable = $${cgi-httpd-wrapper:wrapper-path}
+wrapper = $${directory:service}/cgi-httpd
+# Put domain name
+name = example.com
+
 [nginx-parameters]
 nb_workers = 2
 port = 9685
@@ -185,6 +195,7 @@ bytes = 8
 recipe = collective.recipe.template
 input = inline:
   PidFile "$${:pid-file}"
+  ServerName example.com
   Listen [$${:listening-ip}]:$${:listening-port}
   ServerAdmin someone@email
   DocumentRoot "$${:document-root}"
@@ -196,8 +207,23 @@ input = inline:
   LoadModule mime_module modules/mod_mime.so
   LoadModule cgid_module modules/mod_cgid.so
   LoadModule dir_module modules/mod_dir.so
+  LoadModule ssl_module modules/mod_ssl.so
+  # SSL Configuration
+  SSLCertificateFile $${ca-httpd:cert-file}
+  SSLCertificateKeyFile $${ca-httpd:key-file}
+  SSLRandomSeed startup builtin
+  SSLRandomSeed connect builtin
+  SSLRandomSeed startup /dev/urandom 256
+  SSLRandomSeed connect builtin
+  SSLProtocol -ALL +SSLv3 +TLSv1
+  SSLHonorCipherOrder On
+  SSLCipherSuite RC4-SHA:HIGH:!ADH
+  SSLEngine   On
   ScriptSock $${:cgid-pid-file}
   <Directory $${:document-root}>
+    SSLVerifyDepth    1
+    SSLRequireSSL
+    SSLOptions        +StrictRequire
     # XXX: security????
     Options +ExecCGI
     AddHandler cgi-script .cgi
@@ -218,7 +244,7 @@ error-log = $${directory:log}/cgi-httpd-error-log
 recipe = slapos.cookbook:wrapper
 apache-executable = ${apache:location}/bin/httpd
 command-line = $${:apache-executable} -f $${cgi-httpd-configuration-file:output} -DFOREGROUND
-wrapper-path = $${directory:service}/cgi-httpd
+wrapper-path = $${directory:bin}/cgi-httpd
 
 [publish-connection-parameter]
 recipe = slapos.cookbook:publish
