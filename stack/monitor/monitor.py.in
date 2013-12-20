@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!${buildout:executable}
 
 import datetime
 import json
@@ -46,7 +46,11 @@ def runServices(directory):
   for service in services:
     service_path = os.path.join(pid_dir, service)
     service_name = os.path.basename(service_path)
-    pid = int(open(service_path).read())
+    try:
+      pid = int(open(service_path).read())
+    ### because apache (or others) can write sockets
+    except IOError:
+      continue
     try:
       os.kill(pid, 0)
       result[service_name] = ''
