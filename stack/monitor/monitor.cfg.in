@@ -22,6 +22,7 @@ srv = $${:home}/srv
 
 var = $${:home}/var
 ca-dir = $${:srv}/ssl
+cgi-bin = $${:www}/cgi-bin
 cron-entries = $${:etc}/cron.d
 crontabs = $${:etc}/crontabs
 cronstamps = $${:etc}/cronstamps
@@ -63,6 +64,15 @@ recipe = slapos.cookbook:cron.d
 name = build-rss
 frequency = * * * * *
 command = $${make-rss:output}
+
+[deploy-cgi-script]
+recipe = slapos.recipe.template:jinja2
+template = ${cgi-bin:location}/${cgi-bin:filename}
+rendered = $${directory:cgi-bin}/index.cgi
+mode = 0744
+context =
+  key json_file monitor-parameters:json-path
+  key password cgi-password:passwd
 
 [deploy-monitor-script]
 recipe = slapos.recipe.template:jinja2
@@ -130,7 +140,7 @@ name = example.com
 [nginx-parameters]
 nb_workers = 2
 port = 9685
-global-ip = $${slap-parameters:ipv6}
+global-ip = $${slap-parameters:ipv6-random}
 # SSL
 ssl-certificate = $${ca-nginx:cert-file}
 ssl-key = $${ca-nginx:key-file}
@@ -160,3 +170,57 @@ context =
 recipe = slapos.cookbook:wrapper
 wrapper-path = $${nginx-parameters:bin_launcher}
 command-line = $${nginx-parameters:bin_nginx} -c $${nginx-parameters:nginx_conf}
+
+###########
+# Deploy a webserver running cgi scripts for monitoring
+###########
+[cgi-password]
+recipe = slapos.cookbook:generate.password
+storage-path = $${directory:var}/cgi-passwd
+bytes = 8
+
+# XXX could it be something lighter?
+# XXX Add SSL
+[cgi-httpd-configuration-file]
+recipe = collective.recipe.template
+input = inline:
+  PidFile "$${:pid-file}"
+  Listen [$${:listening-ip}]:$${:listening-port}
+  ServerAdmin someone@email
+  DocumentRoot "$${:document-root}"
+  ErrorLog "$${:error-log}"
+  LoadModule unixd_module modules/mod_unixd.so
+  LoadModule access_compat_module modules/mod_access_compat.so
+  LoadModule authz_core_module modules/mod_authz_core.so
+  LoadModule authz_host_module modules/mod_authz_host.so
+  LoadModule mime_module modules/mod_mime.so
+  LoadModule cgid_module modules/mod_cgid.so
+  LoadModule dir_module modules/mod_dir.so
+  ScriptSock $${:cgid-pid-file}
+  <Directory $${:document-root}>
+    # XXX: security????
+    Options +ExecCGI
+    AddHandler cgi-script .cgi
+    DirectoryIndex $${deploy-cgi-script:rendered}
+  </Directory>
+output = $${directory:etc}/cgi-httpd.conf
+# md5sum =
+listening-ip = $${slap-parameters:ipv6-random}
+# XXX: randomize-me
+listening-port = 9685
+htdocs = $${directory:cgi-bin}
+pid-file = $${directory:run}/cgi-httpd.pid
+cgid-pid-file = $${directory:run}/cgi-httpd-cgid.pid
+document-root = $${directory:cgi-bin}
+error-log = $${directory:log}/cgi-httpd-error-log
+
+[cgi-httpd-wrapper]
+recipe = slapos.cookbook:wrapper
+apache-executable = ${apache:location}/bin/httpd
+command-line = $${:apache-executable} -f $${cgi-httpd-configuration-file:output} -DFOREGROUND
+wrapper-path = $${directory:service}/cgi-httpd
+
+[publish-connection-parameter]
+recipe = slapos.cookbook:publish
+monitor_url = http://[$${cgi-httpd-configuration-file:listening-ip}]:$${cgi-httpd-configuration-file:listening-port}
+monitor_password = $${cgi-password:passwd}
