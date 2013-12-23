@@ -136,7 +136,7 @@ name = example.com
 ###########
 [cgi-password]
 recipe = slapos.cookbook:generate.password
-storage-path = $${directory:var}/cgi-passwd
+storage-path = $${directory:etc}/cgi-passwd
 bytes = 8
 
 # XXX could it be something lighter?
