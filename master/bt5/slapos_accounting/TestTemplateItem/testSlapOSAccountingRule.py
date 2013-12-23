@@ -158,6 +158,81 @@ class TestDefaultInvoiceTransactionRule(testSlapOSMixin):
       SimulationMovement.getSimulationState = SimulationMovement\
         .original_getSimulationState
 
+
+class TestDefaultInvoiceRule(testSlapOSMixin):
+  @withAbort
+  def test_simulation(self):
+    SimulationMovement.original_getSimulationState = SimulationMovement\
+        .getSimulationState
+    try:
+      SimulationMovement.getSimulationState = getSimulationStatePlanned
+
+      source = self.portal.person_module.template_member\
+          .Base_createCloneDocument(batch_mode=1)
+      destination = self.portal.person_module.template_member\
+          .Base_createCloneDocument(batch_mode=1)
+      resource = self.portal.service_module.slapos_account_validation
+      start_date = DateTime('2011/02/16')
+      stop_date = DateTime('2011/02/16')
+
+      root_applied_rule = self.portal.portal_simulation.newContent(
+          specialise_value=self.portal.portal_rules\
+              .slapos_invoice_root_simulation_rule,
+          portal_type='Applied Rule')
+
+      root_simulation_movement = root_applied_rule.newContent(
+          id='root_simulation_movement',
+          portal_type='Simulation Movement',
+          price=1.67,
+          quantity=1,
+          source_value=source,
+          source_section_value=source,
+          destination_value=destination,
+          destination_section_value=destination,
+          resource_value=resource,
+          start_date=start_date,
+          stop_date=stop_date,
+          base_contribution_list=['base_amount/invoicing/discounted',
+              'base_amount/invoicing/taxable'],
+          price_currency='currency_module/EUR',
+          use='trade/sale',
+          trade_phase='slapos/invoicing',
+          quantity_unit='unit/piece',
+          specialise='sale_trade_condition_module/slapos_aggregated_trade_condition',
+          causality_list=['business_process_module/slapos_aggregated_business_process/invoice_path', 
+                          'business_process_module/slapos_aggregated_business_process/invoice'])
+
+      self.assertEqual('planned',
+          root_simulation_movement.getSimulationState())
+      root_simulation_movement.expand(expand_policy='immediate')
+
+      applied_rule_list = root_simulation_movement.contentValues(
+          portal_type='Applied Rule')
+
+      # movement in not final state, it shall not be expanded
+      self.assertEqual(0, len(applied_rule_list))
+      # movement is in final state, it shall be expanded
+      SimulationMovement.getSimulationState = getSimulationStatePlannedDelivered
+      self.assertEqual('delivered',
+          root_simulation_movement.getSimulationState())
+      root_simulation_movement.expand(expand_policy='immediate')
+      applied_rule_list = root_simulation_movement.contentValues(
+          portal_type='Applied Rule')
+      self.assertEqual(2, len(applied_rule_list))
+
+      SimulationMovement.getSimulationState = getSimulationStateDelivered
+      root_simulation_movement.expand(expand_policy='immediate')
+      child_applied_rule_type_list = [q.getSpecialiseReference() for q in \
+          root_simulation_movement.contentValues(portal_type='Applied Rule')]
+      self.assertSameSet(
+          ['default_invoice_transaction_rule', 'default_trade_model_rule'],
+          child_applied_rule_type_list)
+
+    finally:
+      SimulationMovement.getSimulationState = SimulationMovement\
+        .original_getSimulationState
+
+
 class TestDefaultInvoicingRule(testSlapOSMixin):
   @withAbort
   def test_simulation(self):
