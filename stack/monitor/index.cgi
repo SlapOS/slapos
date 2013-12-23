@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!{{ python_executable }}
 
 import cgi
 import cgitb
@@ -21,7 +21,7 @@ if "password" not in form:
   <body>
   <h1>This is the monitoring interface</h1>
   <p>Please enter the monitor_password in the next field to access the data</p>
-  <form action="/" method="post">
+  <form action="/index.cgi" method="post">
     Password : <input type="password" name="password">
     <input type="submit" value="Access">
   </form></body></html>"""

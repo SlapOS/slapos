@@ -11,7 +11,7 @@ monitor-dir = $${directory:monitor-result}
 result-dir = $${:monitor-dir}/bool
 json-filename = monitor.json
 json-path = $${:monitor-dir}/$${:json-filename}
-rss-path = $${directory:www}/monitor.html
+rss-path = $${directory:www}/index.html
 executable = $${directory:bin}/monitor.py
 
 [directory]
@@ -22,7 +22,6 @@ srv = $${:home}/srv
 
 var = $${:home}/var
 ca-dir = $${:srv}/ssl
-cgi-bin = $${:www}/cgi-bin
 cron-entries = $${:etc}/cron.d
 crontabs = $${:etc}/crontabs
 cronstamps = $${:etc}/cronstamps
@@ -68,11 +67,13 @@ command = $${make-rss:output}
 [deploy-cgi-script]
 recipe = slapos.recipe.template:jinja2
 template = ${cgi-bin:location}/${cgi-bin:filename}
-rendered = $${directory:cgi-bin}/index.cgi
+rendered = $${directory:www}/$${:filename}
+filename = index.cgi
 mode = 0744
 context =
   key json_file monitor-parameters:json-path
   key password cgi-password:passwd
+  raw python_executable ${buildout:executable}
 
 [deploy-monitor-script]
 recipe = slapos.recipe.template:jinja2
@@ -83,6 +84,7 @@ context =
   section directory directory
   key monitoring_file_json monitor-parameters:json-path
   key monitoring_folder_bool monitor-parameters:result-dir
+  raw python_executable ${buildout:executable}
   
 [deploy-rss-script]
 recipe = hexagonit.recipe.download
@@ -99,14 +101,6 @@ url = ${make-rss-script:output}
 output = $${directory:bin}/make-rss.sh
 #md5sum = 
 mode = 0744
-
-[tempdirectory]
-recipe = slapos.cookbook:mkdirectory
-client_body_temp_path = $${directory:tmp}/client_body_temp_path
-proxy_temp_path = $${directory:tmp}/proxy_temp_path
-fastcgi_temp_path = $${directory:tmp}/fastcgi_temp_path
-uwsgi_temp_path = $${directory:tmp}/uwsgi_temp_path
-scgi_temp_path = $${directory:tmp}/scgi_temp_path
 
 [cadirectory]
 recipe = slapos.cookbook:mkdirectory
@@ -127,16 +121,6 @@ ca-certs = $${cadirectory:certs}
 ca-newcerts = $${cadirectory:newcerts}
 ca-crl = $${cadirectory:crl}
 
-[ca-nginx]
-<= certificate-authority
-recipe = slapos.cookbook:certificate_authority.request
-key-file = $${cadirectory:certs}/nginx_rss.key
-cert-file = $${cadirectory:certs}/nginx_rss.crt
-executable = $${nginx-parameters:bin_launcher}
-wrapper = $${directory:service}/nginx-rss
-# Put domain name
-name = example.com
-
 [ca-httpd]
 <= certificate-authority
 recipe = slapos.cookbook:certificate_authority.request
@@ -147,40 +131,6 @@ wrapper = $${directory:service}/cgi-httpd
 # Put domain name
 name = example.com
 
-[nginx-parameters]
-nb_workers = 2
-port = 9685
-global-ip = $${slap-parameters:ipv6-random}
-# SSL
-ssl-certificate = $${ca-nginx:cert-file}
-ssl-key = $${ca-nginx:key-file}
-# Log
-path_pid = $${directory:run}/nginx-rss.pid
-path_log = $${directory:log}/nginx.log
-path_access_log = $${directory:log}/nginx.access.log
-path_error_log = $${directory:log}/nginx.error.log
-path_tmp = $${directory:tmp}
-# Config files
-nginx_conf = $${nginx-conf:rendered}
-# Executables
-bin_nginx = ${nginx:location}/sbin/nginx
-bin_launcher = $${directory:bin}/nginx-launcher
-rss_feed = $${monitor-parameters:rss-path}
-www = $${directory:www}
-
-[nginx-conf]
-recipe = slapos.recipe.template:jinja2
-template = ${template-nginx-conf:location}/${template-nginx-conf:filename}
-rendered = $${directory:etc}/nginx_rss.conf
-context =
-    section param_nginx nginx-parameters
-    section param_tempdir tempdirectory
-
-[nginx-service]
-recipe = slapos.cookbook:wrapper
-wrapper-path = $${nginx-parameters:bin_launcher}
-command-line = $${nginx-parameters:bin_nginx} -c $${nginx-parameters:nginx_conf}
-
 ###########
 # Deploy a webserver running cgi scripts for monitoring
 ###########
@@ -190,7 +140,6 @@ storage-path = $${directory:var}/cgi-passwd
 bytes = 8
 
 # XXX could it be something lighter?
-# XXX Add SSL
 [cgi-httpd-configuration-file]
 recipe = collective.recipe.template
 input = inline:
@@ -227,17 +176,17 @@ input = inline:
     # XXX: security????
     Options +ExecCGI
     AddHandler cgi-script .cgi
-    DirectoryIndex $${deploy-cgi-script:rendered}
+    DirectoryIndex $${monitor-parameters:rss-path}
   </Directory>
 output = $${directory:etc}/cgi-httpd.conf
 # md5sum =
 listening-ip = $${slap-parameters:ipv6-random}
 # XXX: randomize-me
 listening-port = 9685
-htdocs = $${directory:cgi-bin}
+htdocs = $${directory:www}
 pid-file = $${directory:run}/cgi-httpd.pid
 cgid-pid-file = $${directory:run}/cgi-httpd-cgid.pid
-document-root = $${directory:cgi-bin}
+document-root = $${directory:www}
 error-log = $${directory:log}/cgi-httpd-error-log
 
 [cgi-httpd-wrapper]

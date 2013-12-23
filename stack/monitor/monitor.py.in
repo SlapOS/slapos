@@ -1,4 +1,4 @@
-#!${buildout:executable}
+#!{{ python_executable }}
 
 import datetime
 import json
