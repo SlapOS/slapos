@@ -1,0 +1,53 @@
+#!{{ python_executable }}
+
+import cgi
+import cgitb
+import ConfigParser
+
+cgitb.enable(display=0, logdir="/tmp/cgi.log")
+
+# Headers
+print "Content-Type: text/html"
+print
+
+# Body content
+form = cgi.FieldStorage()
+if "password" not in form:
+  print """<html>
+  <body>
+  <h1>This is the monitoring interface</h1>
+  <p>Please enter the monitor_password in the next field to access the data</p>
+  <form action="/{{ this_filename }}" method="post">
+    Password : <input type="password" name="password">
+    <input type="submit" value="Access">
+  </form></body></html>"""
+
+elif form['password'].value != '{{ password }}':
+  print "<html><body><h1>Error</h1><p>Wrong password</p></body></html>"
+  
+else:
+  parser = ConfigParser.ConfigParser()
+  parser.read("{{ config_cfg }}")
+  if len(form) > 1:
+    for name in form:
+      if name != 'password':
+        parser.set('public', name, form[name].value)
+    with open("{{ config_cfg }}", 'w') as file:
+      parser.write(file)
+  print "<html><body>"
+  print "<h1>Values to be defined by the user</h1>"
+  print "<form action=\"/control.cgi\" method=\"post\">"
+  print "<input type=\"hidden\" name=\"password\" value=\"{{ password }}\">"
+  for option in parser.options("public"):
+    print "%s : <input type=\"text\" name=\"%s\" \
+    value=\"%s\"><br>"% (option, option, parser.get('public', option))
+  print "<input type=\"submit\" value=\"Save\"></form>"
+  
+  print "<h1>Other values:</h1>"
+  for section in parser.sections():
+    if section != 'public':
+      for option in parser.options(section):
+        print "<b>%s</b> : value=\"%s\"<br>" % (option,
+        parser.get(section, option))
+  
+  print "</body></html>"
