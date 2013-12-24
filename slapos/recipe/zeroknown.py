@@ -92,8 +92,8 @@ class ReadRecipe(GenericBaseRecipe):
     self.parser = ConfigParser.ConfigParser()
     if os.path.exists(self.path):
       self.parser.read(self.path)
-    for section in self.parser.sections():
-      for key ,value in self.parser.items(section):
-          options[key] = value
+      for section in self.parser.sections():
+        for key ,value in self.parser.items(section):
+            options[key] = value
 
   install = update = lambda self: []
