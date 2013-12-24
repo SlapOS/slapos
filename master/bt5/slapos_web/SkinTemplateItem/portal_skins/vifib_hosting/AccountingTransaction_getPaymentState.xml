@@ -69,7 +69,14 @@ else:\n
         paid = False\n
         break\n
 \n
-  if paid:\n
+  reversal = portal.portal_catalog.getResultValue(\n
+      portal_type="Sale Invoice Transaction",\n
+      simulation_state="stopped",\n
+      default_causality_uid=context.getUid()\n
+    )\n
+  if reversal is not None and (context.getTotalPrice() + reversal.getTotalPrice()) == 0:\n
+    result = "Cancelled"\n
+  elif paid:\n
     result = "Paid"\n
   elif context.getTotalPrice() == 0:\n
     result = "Free!"\n

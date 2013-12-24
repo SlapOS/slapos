@@ -11,6 +11,7 @@
             <value>
               <list>
                 <string>columns</string>
+                <string>editable_columns</string>
                 <string>list_method</string>
                 <string>portal_types</string>
                 <string>search</string>
@@ -113,6 +114,17 @@
                         <tuple>
                           <string>download</string>
                           <string>Download</string>
+                        </tuple>
+                      </list>
+                    </value>
+                </item>
+                <item>
+                    <key> <string>editable_columns</string> </key>
+                    <value>
+                      <list>
+                        <tuple>
+                          <string>total_price</string>
+                          <string>Total Price</string>
                         </tuple>
                       </list>
                     </value>
