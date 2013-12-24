@@ -1,5 +1,6 @@
 #!{{ python_executable }}
 
+import os
 import cgi
 import cgitb
 import ConfigParser
@@ -26,8 +27,13 @@ elif form['password'].value != '{{ password }}':
   print "<html><body><h1>Error</h1><p>Wrong password</p></body></html>"
   
 else:
+  config_file = "{{ config_cfg }}"
+  if not os.path.exists(config_file):
+    print "Your software does <b>not</b> embed 0-knowledge. \
+    This interface is useless in this case"
+    exit(0)
   parser = ConfigParser.ConfigParser()
-  parser.read("{{ config_cfg }}")
+  parser.read(config_file)
   if len(form) > 1:
     for name in form:
       if name != 'password':
