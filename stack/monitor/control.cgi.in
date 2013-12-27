@@ -41,7 +41,7 @@ else:
     with open("{{ config_cfg }}", 'w') as file:
       parser.write(file)
   print "<html><body>"
-  print "<h1>Values to be defined by the user</h1>"
+  print "<h1>Values that can be defined by the user :</h1>"
   print "<form action=\"/control.cgi\" method=\"post\">"
   print "<input type=\"hidden\" name=\"password\" value=\"{{ password }}\">"
   for option in parser.options("public"):
@@ -49,11 +49,12 @@ else:
     value=\"%s\"><br>"% (option, option, parser.get('public', option))
   print "<input type=\"submit\" value=\"Save\"></form>"
   
-  print "<h1>Other values:</h1>"
+  print "<h1>Other values :</h1>"
   for section in parser.sections():
     if section != 'public':
       for option in parser.options(section):
         print "<b>%s</b> : value=\"%s\"<br>" % (option,
         parser.get(section, option))
   
+  print "<br><br><p><a href=\"/monitor.cgi\">Monitor interface</a></p>"
   print "</body></html>"

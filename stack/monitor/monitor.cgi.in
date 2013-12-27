@@ -46,4 +46,5 @@ else:
   for r in result:
     if result[r] == '':
       print "<h3>%s</h3><p>%s</p>" % (r, result[r])
+  print "<br><br><p><a href=\"/control.cgi\">Control interface</a></p>"
   print "</body></html>"

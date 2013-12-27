@@ -72,7 +72,7 @@ filename = monitor.cgi
 mode = 0744
 context =
   key json_file monitor-parameters:json-path
-  key password zero-parameters:cgi-password
+  key password zero-parameters:monitor-password
   raw python_executable ${buildout:executable}
   key this_filename :filename
 
@@ -84,7 +84,7 @@ filename = control.cgi
 mode = 0744
 context =
   raw config_cfg $${buildout:directory}/knowledge0.cfg
-  key password zero-parameters:cgi-password
+  key password zero-parameters:monitor-password
   raw python_executable ${buildout:executable}
   key this_filename :filename
 
@@ -150,7 +150,7 @@ name = example.com
 [public]
 recipe = slapos.cookbook:zeroknown.write
 filename = knowledge0.cfg
-cgi-password = passwordtochange
+monitor-password = passwordtochange
 
 [zero-parameters]
 recipe = slapos.cookbook:zeroknown.read
@@ -215,4 +215,4 @@ wrapper-path = $${directory:bin}/cgi-httpd
 [publish-connection-parameter]
 recipe = slapos.cookbook:publish
 monitor_url = https://[$${cgi-httpd-configuration-file:listening-ip}]:$${cgi-httpd-configuration-file:listening-port}/index.html
-IMPORTANT_monitor_info = change the password as soon as possible ! Default is : passwordtochange
+IMPORTANT_monitor_info = change the monitor_password as soon as possible ! Default is : $${public:monitor-password}
