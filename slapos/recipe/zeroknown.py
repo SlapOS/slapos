@@ -41,39 +41,33 @@ class WriteRecipe(GenericBaseRecipe):
     
     self.filename = options['filename'].strip()
     self.path = os.path.join(buildout['buildout']['directory'], self.filename)
-    del options['filename']
+    self.name = name
+    self.options = options.copy()
+    del self.options['filename']
+    del self.options['recipe']
     
-    # We don't want to save the recipe name
-    recipe = options.pop('recipe')
-
     # Set up the parser, and write config file if needed
     self.parser = ConfigParser.ConfigParser()
     try:
       self.parser.read(self.path)
       #clean_options(options)
-      for key in options:
-        if key not in self.parser.options(name):
-          self.parser.set(name, key, options[key])
+      for key in self.options:
+        if key not in self.parser.options(self.name):
+          self.parser.set(self.name, key, self.options[key])
       with open(self.path, 'w') as file:
         self.parser.write(file)
     # If the file or section do not exist
     except ConfigParser.NoSectionError, IOError:
-      #clean_options(options)
-      self.full_install(name, options)
-    
-    # Or buildout will fail
-    options['recipe'] = recipe
-    # So that we can get the value in another buildout section
-    options['filename'] = self.filename
-
+      self.full_install()
 
   install = update = lambda self: []
 
   
-  def full_install(self, name, options):
-    self.parser.add_section(name)
-    for key in options:
-      self.parser.set(name, key, options[key])
+  def full_install(self):
+    self.parser.read(self.path)
+    self.parser.add_section(self.name)
+    for key in self.options:
+      self.parser.set(self.name, key, self.options[key])
     with open(self.path, 'w') as file:
       self.parser.write(file)
 
