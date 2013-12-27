@@ -58,18 +58,24 @@ class WriteRecipe(GenericBaseRecipe):
         self.parser.write(file)
     # If the file or section do not exist
     except ConfigParser.NoSectionError, IOError:
-      self.full_install()
+      self.install()
 
-  install = update = lambda self: []
 
-  
-  def full_install(self):
+  def install(self):
+    """XXX-Nicolas : when some parameter's value is changed in 
+    buildout profile, this will override custom user defined values"""
     self.parser.read(self.path)
+    if self.parser.has_section(self.name):
+      self.parser.remove_section(self.name)
     self.parser.add_section(self.name)
     for key in self.options:
       self.parser.set(self.name, key, self.options[key])
     with open(self.path, 'w') as file:
       self.parser.write(file)
+
+    
+  def update(self):
+    pass
 
 
 class ReadRecipe(GenericBaseRecipe):
