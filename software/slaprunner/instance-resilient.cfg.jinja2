@@ -17,11 +17,11 @@ parts +=
 
 # Bubble up the parameters
 [request-runner]
-return = url ssh-public-key ssh-url notification-id ip backend_url url cloud9_url ssh_command password_recovery_code cloud9_backend_url shell_password access_url
+return = url ssh-public-key ssh-url notification-id ip backend_url url cloud9_url ssh_command password_recovery_code cloud9_backend_url shell_password access_url 1_info
 
 [publish-connection-informations]
 recipe = slapos.cookbook:publish
-1_info = Set your passord in slaprunner in order to access cloud9
+1_info = ${request-runner:connection-1_info}
 backend_url = ${request-runner:connection-backend_url}
 access_url = ${request-runner:connection-access_url}
 url = ${request-runner:connection-url}
