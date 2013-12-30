@@ -21,7 +21,7 @@ Implementation :
   public
   zero-parameters
   cgi-httpd-wrapper
-  publish-connection-parameter
+  publish-connection-informations
 
 * If you want to add a custom monitoring script, you can write it (in whatever language you wish) and save it in YOUR_INSTANCE_FOLDER/etc/monitor.
 The only thing to know, is that if your script successfully passed, do not return or print nothing. If there is a problem, you can print the explanation on stdout or stderr
