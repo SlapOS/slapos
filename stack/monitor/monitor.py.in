@@ -91,10 +91,14 @@ def runScripts(directory):
 
 
 def writeFiles(monitors):
-  if len(monitors) == 0:
-    message = "SUCCESS : everything is ok\n"
+  fail = False
+  for i in monitors.values():
+    if i != "" :
+      fail = True
+  if fail:
+    message = "FAILURE : something went wrong\n"
   else:
-    message ="FAILURE : something went wrong\n"
+    message = "SUCCESS : everything is ok\n"
   date = datetime.datetime.now().ctime()
   monitors['datetime'] = date
   file_bool = os.path.join(monitoring_folder_bool, str(time.time()))
