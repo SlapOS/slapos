@@ -215,4 +215,5 @@ wrapper-path = $${directory:bin}/cgi-httpd
 [publish-connection-informations]
 recipe = slapos.cookbook:publish
 monitor_url = https://[$${cgi-httpd-configuration-file:listening-ip}]:$${cgi-httpd-configuration-file:listening-port}/index.html
+control_url = https://[$${cgi-httpd-configuration-file:listening-ip}]:$${cgi-httpd-configuration-file:listening-port}/control.cgi
 IMPORTANT_monitor_info = change the monitor_password as soon as possible ! Default is : $${public:monitor-password}
