@@ -2,34 +2,53 @@
 
 import cgi
 import cgitb
+import Cookie
 import json
+import os
 import sys
 
 cgitb.enable(display=0, logdir="/tmp/cgi.log")
 
-json_file = "{{ json_file }}"
-result = json.load(open(json_file))
-
-# Headers
-print "Content-Type: text/html"
-print
-
-# Body content
 form = cgi.FieldStorage()
-if "password" not in form:
-  print """<html>
-  <body>
-  <h1>This is the monitoring interface</h1>
-  <p>Please enter the monitor_password in the next field to access the data</p>
-  <form action="/{{ this_filename }}" method="post">
-    Password : <input type="password" name="password">
-    <input type="submit" value="Access">
+cookie = Cookie.SimpleCookie()                                                                           
+
+print "Content-Type: text/html"
+
+if "password" in form:                                                                                   
+  password = form['password'].value                                                                      
+  if password == '{{ password }}' :                                                                     
+    cookie['password'] = password                                                                        
+    print cookie
+else:                                                                                                    
+  cookie_string = os.environ.get('HTTP_COOKIE')                                                          
+  if cookie_string:
+    cookie.load(cookie_string)                                                                           
+    try:
+      password = cookie['password'].value                                                                
+    except KeyError: 
+      password = None                                                                                    
+  else: 
+    password = None                                                                                      
+
+print 
+
+if not password or password != '{{ password }}':
+  print "<html><body>"
+  if password is None:
+    print "<h1>This is the monitoring interface</h1>"
+  else:
+    print "<h1>Error</h1><p>Wrong password</p>"
+  print """
+  <p>Please enter the monitor_password in the next field to access the data</p>                          
+  <form action="/settings.cgi" method="post">                                                            
+    Password : <input type="password" name="password">                                                   
+    <input type="submit" value="Access">                                                                 
   </form></body></html>"""
 
-elif form['password'].value != '{{ password }}':
-  print "<html><body><h1>Error</h1><p>Wrong password</p></body></html>"
-
 else:
+  json_file = "{{ json_file }}"
+  result = json.load(open(json_file))
+
   print "<html><body>"
   print "<h1>Monitoring :</h1>"
   print "<p><em>Last time of monitoring process : %s</em></p>" % (result['datetime'])
@@ -46,5 +65,4 @@ else:
   for r in result:
     if result[r] == '':
       print "<h3>%s</h3><p>%s</p>" % (r, result[r])
-  print "<br><br><p><a href=\"/control.cgi\">Control interface</a></p>"
   print "</body></html>"

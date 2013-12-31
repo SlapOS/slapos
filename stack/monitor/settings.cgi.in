@@ -4,27 +4,45 @@ import os
 import cgi
 import cgitb
 import ConfigParser
+import Cookie
 
 cgitb.enable(display=0, logdir="/tmp/cgi.log")
 
-# Headers
+form = cgi.FieldStorage()                                                                                
+cookie = Cookie.SimpleCookie()                                                                           
+
 print "Content-Type: text/html"
-print
 
-# Body content
-form = cgi.FieldStorage()
-if "password" not in form:
-  print """<html>
-  <body>
-  <h1>This is the monitoring interface</h1>
-  <p>Please enter the monitor_password in the next field to access the data</p>
-  <form action="/{{ this_filename }}" method="post">
-    Password : <input type="password" name="password">
-    <input type="submit" value="Access">
+if "password" in form:                                                                                   
+  password = form['password'].value                                                                      
+  if password == '{{ password }}' :                                                                     
+    cookie['password'] = password                                                                        
+    print cookie
+else:                                                                                                    
+  cookie_string = os.environ.get('HTTP_COOKIE')                                                          
+  if cookie_string:
+    cookie.load(cookie_string)                                                                           
+    try:
+      password = cookie['password'].value                                                                
+    except KeyError: 
+      password = None                                                                                    
+  else: 
+    password = None                                                                                      
+
+print 
+
+if not password or password != '{{ password }}':
+  print "<html><body>"
+  if password is None:
+    print "<h1>This is the monitoring interface</h1>"
+  else:
+    print "<h1>Error</h1><p>Wrong password</p>"
+  print """
+  <p>Please enter the monitor_password in the next field to access the data</p>                          
+  <form action="/settings.cgi" method="post">                                                            
+    Password : <input type="password" name="password">                                                   
+    <input type="submit" value="Access">                                                                 
   </form></body></html>"""
-
-elif form['password'].value != '{{ password }}':
-  print "<html><body><h1>Error</h1><p>Wrong password</p></body></html>"
   
 else:
   config_file = "{{ config_cfg }}"
@@ -42,7 +60,7 @@ else:
       parser.write(file)
   print "<html><body>"
   print "<h1>Values that can be defined by the user :</h1>"
-  print "<form action=\"/control.cgi\" method=\"post\">"
+  print "<form action=\"/{{ this_filename }}\" method=\"post\">"
   print "<input type=\"hidden\" name=\"password\" value=\"{{ password }}\">"
   for option in parser.options("public"):
     print "%s : <input type=\"text\" name=\"%s\" \
@@ -56,5 +74,4 @@ else:
         print "<b>%s</b> : value=\"%s\"<br>" % (option,
         parser.get(section, option))
   
-  print "<br><br><p><a href=\"/monitor.cgi\">Monitor interface</a></p>"
   print "</body></html>"
