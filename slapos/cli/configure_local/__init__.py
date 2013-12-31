@@ -28,21 +28,23 @@
 #
 ##############################################################################
 
-import logging
 import os
 import pkg_resources
 import re
 import subprocess
 import sys
 
-from slapos.cli.command import Command, must_be_root
-from slapos.grid.utils import updateFile
+from slapos.cli.command import must_be_root
+from slapos.format import FormatConfig
+from slapos.cli.config import ConfigCommand
+from slapos.grid.slapgrid import create_slapgrid_object
+from slapos.grid.utils import updateFile, createPrivateDirectory
 from slapos.grid.svcbackend import launchSupervisord
 
 DEFAULT_COMPUTER_ID = 'local_computer'
 
 
-class ConfigureLocalCommand(Command):
+class ConfigureLocalCommand(ConfigCommand):
     """
     Configure a slapos node, from scratch to ready-ro-use, using slapproxy.
     """
@@ -74,9 +76,24 @@ class ConfigureLocalCommand(Command):
                              ' (default: %(default)s)')
 
         ap.add_argument('--daemon-listen-port',
-                        default='127.0.0.1',
+                        default='8080',
                         help='Listening port of the "slapproxy" daemon'
                              ' (default: %(default)s)')
+
+        ap.add_argument('--slapos-instance-root',
+                        default='/srv/slapgrid',
+                        help='Target location of the SlapOS configuration'
+                             ' directory (default: %(default)s)')
+
+        ap.add_argument('--slapos-software-root',
+                        default='/opt/slapgrid',
+                        help='Target location of the SlapOS configuration'
+                             ' directory (default: %(default)s)')
+
+        ap.add_argument('--slapos-buildout-directory',
+                        default='/opt/slapos',
+                        help='Target location of the SlapOS configuration'
+                             ' directory (default: %(default)s)')
 
         ap.add_argument('--slapos-configuration-directory',
                         default='/etc/opt/slapos',
@@ -88,100 +105,86 @@ class ConfigureLocalCommand(Command):
     @must_be_root
     def take_action(self, args):
         try:
-            return_code = do_configure(args, logger)
+            return_code = do_configure(args, self.fetch_config, self.app.log)
         except SystemExit as err:
             return_code = err
-
         sys.exit(return_code)
 
-
-def _createDirectoryIfNotExist(target_directory, logger):
+def _createConfigurationDirectory(target_directory):
     target_directory = os.path.normpath(target_directory)
-    # XXX: hardcoded
-    if os.path.exists(os.path.join(target_directory, 'slapos.cfg')):
-        logger.error('A SlapOS configuration directory already exist at'
-                     ' %s. Aborting.' % target_directory)
-        raise SystemExit(1)
     if not os.path.exists(target_directory):
-      os.mkdir(target_directory, 0o711)
-    return target_directory
-
+      os.makedirs(target_directory)
 
 def _replaceParameterValue(original_content, to_replace):
     """
     Replace in a .ini-like file the value of all parameters specified in
     to_replace by their value.
     """
-    # XXX: Can be cleaned up by being replaced by a simple dict
-    new_content = ''
     for key, value in to_replace:
-        # Replace all values of the given parameters to the specified values
-        new_content = re.sub(
-            '%s\s+=.*' % key, '%s = %s' % (key, value),
-            original_content
-        )
-    return new_content
+        original_content = re.sub('%s\s+=.*' % key, '%s = %s' % (key, value),
+          original_content)
+    return original_content
 
-def _generateSlaposNodeConfigurationFile(target_directory,
-                                         listening_ip, listening_port,
-                                         interface_name,
-                                         ipv4_local_network,
-                                         partition_number):
-    slapos_node_configuration_template = pkg_resources.resource_stream(
-        __name__, 'template/slapos.cfg.in').read()
-    slapos_node_configuration_file_location = os.path.join(
-        target_directory, 'slapos.cfg')
+def _generateSlaposNodeConfigurationFile(slapos_node_config_path, args):
+    template_arg_list = (__name__.split('.')[0], 'slapos.cfg.example')
+    with pkg_resources.resource_stream(*template_arg_list) as fout:
+      slapos_node_configuration_template = fout.read()
+    master_url = 'http://%s:%s' % (args.daemon_listen_ip, args.daemon_listen_port)
+    slapos_home = args.slapos_buildout_directory
     to_replace = [
         ('computer_id', DEFAULT_COMPUTER_ID),
-        ('master_url', 'http://%s:%s' % (listening_ip, listening_port)),
-        ('interface_name', interface_name),
-        ('ipv4_local_network', ipv4_local_network),
-        ('partition_amount', partition_number),
+        ('master_url', master_url),
+        ('interface_name', args.interface_name),
+        ('ipv4_local_network', args.ipv4_local_network),
+        ('partition_amount', args.partition_number),
+        ('instance_root', args.slapos_instance_root),
+        ('software_root', args.slapos_software_root),
+        ('computer_xml', '%s/slapos.xml' % slapos_home),
+        ('log_file', '%s/log/slapos-node-format.log' % slapos_home),
         ('use_unique_local_address', 'true')
     ]
 
     slapos_node_configuration_content = _replaceParameterValue(
         slapos_node_configuration_template, to_replace)
-
-    with open(slapos_node_configuration_file_location, 'w') as fout:
+    slapos_node_configuration_content = re.sub(
+        '(key_file|cert_file|certificate_repository_path).*=.*\n',
+        '', slapos_node_configuration_content)
+    with open(slapos_node_config_path, 'w') as fout:
         fout.write(slapos_node_configuration_content.encode('utf8'))
 
-
-def _generateSlaposProxyConfigurationFile(target_directory,
-                                          listening_ip, listening_port
-                                          ):
-    slapos_proxy_configuration_template = pkg_resources.resource_stream(
-        __name__, 'template/slapos-proxy.cfg.in').read()
-    slapos_proxy_configuration_file_location = os.path.join(
-        target_directory, 'slapos-proxy.cfg')
+def _generateSlaposProxyConfigurationFile(conf):
+    template_arg_list = (__name__.split('.')[0], 'slapos-proxy.cfg.example')
+    with pkg_resources.resource_stream(*template_arg_list) as fout:
+      slapos_proxy_configuration_template = fout.read()
+    slapos_proxy_configuration_path = os.path.join(
+      conf.slapos_configuration_directory, 'slapos-proxy.cfg')
+    listening_ip, listening_port = \
+      conf.daemon_listen_ip, conf.daemon_listen_port
     to_replace = [
         ('host', listening_ip),
         ('port', listening_port),
+        ('master_url', 'http://%s:%s/' % (listening_ip, listening_port)),
+        ('computer_id', DEFAULT_COMPUTER_ID),
+        ('instance_root', conf.instance_root),
+        ('software_root', conf.software_root)
     ]
 
     slapos_proxy_configuration_content = _replaceParameterValue(
         slapos_proxy_configuration_template, to_replace)
 
-    with open(slapos_proxy_configuration_file_location, 'w') as fout:
+    with open(slapos_proxy_configuration_path, 'w') as fout:
         fout.write(slapos_proxy_configuration_content.encode('utf8'))
 
-    return slapos_proxy_configuration_file_location
+    return slapos_proxy_configuration_path
 
-def _addProxyToSupervisor(proxy_configuration_file):
+def _addProxyToSupervisor(conf):
     """
     Create a supervisord configuration file containing informations to run
     slapproxy as daemon
     """
-    # In the beginning God created SlapOS.
-    # And SlapOS was without form, and void; and darkness was upon the face of the deep.
-    # And God said, Let there be supervisord manager.
-    # But God was drunk. The result can be found by the Brave in slapgrid, but it may turn the Brave blind forever.
-    # So, for the sake of God, I'm not using that helper.
-
-    # XXX every path here is hardcoded, assuming default values
     program_partition_template = """\
 [program:slapproxy]
-directory=/opt/slapos
+directory=%(slapos_buildout_directory)s
 command=%(program_command)s
 process_name=slapproxy
 autostart=true
@@ -201,24 +204,28 @@ stdout_logfile_backups=1
 stderr_logfile=%(log_file)s
 stderr_logfile_maxbytes=100KB
 stderr_logfile_backups=1
-""" % {'log_file': '/opt/slapos/log/slapos-proxy.log',
-       'program_command': '/opt/slapos/bin/slapproxy %s' % proxy_configuration_file}
+""" % {'log_file': '%s/log/slapos-proxy.log' % conf.slapos_buildout_directory,
+       'slapos_buildout_directory': conf.slapos_buildout_directory,
+       'program_command': '%s/bin/slapproxy %s' % \
+          (conf.slapos_buildout_directory, conf.proxy_configuration_file)}
 
+    supervisord_conf_folder_path = os.path.join(conf.instance_root,
+        'etc', 'supervisord.conf.d')
+    _createConfigurationDirectory(supervisord_conf_folder_path)
     updateFile(
-        '/srv/slapgrid/etc/supervisord.conf.d/slapproxy.conf',
-        program_partition_template
-    )
+        os.path.join(supervisord_conf_folder_path, 'slapproxy.conf'),
+        program_partition_template)
 
-def _runFormat():
+def _runFormat(slapos_directory):
     """
     Launch slapos node format.
     """
-    # XXX: hardcoded
-    command = '/opt/slapos/bin/slapos node format --now -v'.split()
-    subprocess.Popen(command).communicate()
+    subprocess.Popen(
+      ["%s/bin/slapos" % slapos_directory,
+        "node", "format", "--now"]).communicate()
 
 
-def do_configure(conf, logger):
+def do_configure(args, fetch_config_func, logger):
     """
     Generate configuration files,
     Create the instance path by running slapformat (but will crash),
@@ -226,28 +233,43 @@ def do_configure(conf, logger):
     Run supervisor, which will run the proxy,
     Run format, which will finish correctly.
     """
-    slapos_configuration_directory = _createDirectoryIfNotExist(
-        conf.slapos_configuration_directory, logger)
-
-    _generateSlaposNodeConfigurationFile(
-        slapos_configuration_directory,
-        conf.daemon_listen_ip,
-        conf.daemon_listen_port,
-        conf.interface_name,
-        conf.ipv4_local_network,
-        conf.partition_number
+    slapos_node_config_path = os.path.join(
+        args.slapos_configuration_directory, 'slapos.cfg')
+    if os.path.exists(slapos_node_config_path):
+        logger.error('A SlapOS configuration directory already exist at'
+                     ' %s. Aborting.' % slapos_node_config_path)
+        raise SystemExit(1)
+    if not getattr(args, 'cfg', None):
+        args.cfg = slapos_node_config_path
+    _createConfigurationDirectory(args.slapos_configuration_directory)
+    _generateSlaposNodeConfigurationFile(slapos_node_config_path, args)
+    configp = fetch_config_func(args)
+    conf = FormatConfig(logger=logger)
+    conf.mergeConfig(args, configp)
+    supervisord_socket_path = os.path.join(conf.instance_root,
+       'supervisord.socket')
+    supervisord_conf_path = os.path.join(conf.instance_root,
+       'etc', 'supervisord.conf')
+    conf_property_list = (
+      ('supervisord_socket', supervisord_socket_path),
+      ('supervisord_configuration_path', supervisord_conf_path),
     )
-    proxy_configuration_file_location = _generateSlaposProxyConfigurationFile(
-        slapos_configuration_directory,
-        conf.daemon_listen_ip,
-        conf.daemon_listen_port
-    )
-    _runFormat()
-    _addProxyToSupervisor(proxy_configuration_file_location)
-    # XXX hardcoded
-    launchSupervisord(
-        '/srv/slapgrid/supervisord.socket',
-        '/srv/slapgrid/etc/supervisord.conf',
-        logger=logger)
-    _runFormat()
+    for key, value in conf_property_list:
+        if not getattr(conf, key, None):
+            setattr(conf, key, value)
+    slapgrid = create_slapgrid_object(conf.__dict__, logger)
+    createPrivateDirectory(os.path.join(conf.slapos_buildout_directory, 'log'))
+    _runFormat(conf.slapos_buildout_directory)
+    slapgrid.checkEnvironmentAndCreateStructure()
+    proxy_configuration_file = _generateSlaposProxyConfigurationFile(conf)
+    conf.proxy_configuration_file = proxy_configuration_file
+    _addProxyToSupervisor(conf)
+    home_folder_path = os.environ['HOME']
+    createPrivateDirectory("%s/.slapos" % home_folder_path)
+    slapos_client_cfg_path = '%s/.slapos/slapos-client.cfg' % home_folder_path
+    if not os.path.exists(slapos_client_cfg_path):
+        os.symlink(slapos_node_config_path, slapos_client_cfg_path)
+    launchSupervisord(socket=supervisord_socket_path,
+      configuration_file=supervisord_conf_path, logger=logger)
+    _runFormat(conf.slapos_buildout_directory)
     return 0

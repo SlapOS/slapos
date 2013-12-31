@@ -1,5 +1,10 @@
 # This is an example configuration file for a standalone micro slapos master
 # a.k.a slapproxy
+[slapos]
+instance_root = /srv/slapgrid
+software_root = /opt/slapgrid
+computer_id = local_computer
+ 
 [slapproxy]
 host = 127.0.0.1
 port = 5000
@@ -8,7 +13,7 @@ database_uri = /opt/slapos/slapproxy.db
 # Below is the list of software maintained by slapos.org and contributors
 # It is used to simulate a proper configuration of a real slapos master.
 software_product_list =
-  erp5 http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.143:/software/erp5/software.cfg
+  erp5 http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.195:/software/erp5/software.cfg
   erp5_branch http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/heads/erp5:/software/erp5/software.cfg
   kumofs http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.141:/software/kumofs/software.cfg
   kvm http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.193:/software/kvm/software.cfg

@@ -5,10 +5,10 @@ import functools
 import os
 import sys
 
-import cliff
+from cliff import command
 
 
-class Command(cliff.command.Command):
+class Command(command.Command):
 
     def get_parser(self, prog_name):
         parser = argparse.ArgumentParser(

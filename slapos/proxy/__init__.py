@@ -69,8 +69,6 @@ class ProxyConfig(object):
   def setConfig(self):
     if not self.database_uri:
       raise ValueError('database-uri is required.')
-      self.software_product_list = _generateSoftwareProductListFromString(
-          getattr(self, 'software_product_list', ''))
 
 
 def do_proxy(conf):
@@ -80,5 +78,7 @@ def do_proxy(conf):
   app.logger.setLevel(logging.INFO)
   app.config['computer_id'] = conf.computer_id
   app.config['DATABASE_URI'] = conf.database_uri
-  app.config['software_product_list'] = conf.software_product_list
+  app.config['software_product_list'] = \
+    _generateSoftwareProductListFromString(
+      getattr(conf, 'software_product_list', ""))
   app.run(host=conf.host, port=int(conf.port))

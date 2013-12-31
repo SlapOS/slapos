@@ -1,15 +1,21 @@
 from setuptools import setup, find_packages
+from shutil import copyfile
 import glob
 import os
 
 from slapos.version import version
-
 name = 'slapos.core'
 long_description = open("README.txt").read() + "\n" + \
     open("CHANGES.txt").read() + "\n"
 
 for f in sorted(glob.glob(os.path.join('slapos', 'README.*.txt'))):
   long_description += '\n' + open(f).read() + '\n'
+
+slapos_folder_path = os.path.dirname(__file__)
+for template_name in ('slapos-client.cfg.example',
+    'slapos-proxy.cfg.example', 'slapos.cfg.example'):
+  copyfile(os.path.join(slapos_folder_path, template_name),
+    os.path.join(slapos_folder_path, 'slapos', template_name))
 
 additional_install_requires = []
 # Even if argparse is available in python2.7, some python2.7 installations

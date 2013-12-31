@@ -65,6 +65,7 @@ COMPUTER_PARTITION_STOPPED_STATE = 'stopped'
 SLAPGRID_SUCCESS = 0
 SLAPGRID_FAIL = 1
 SLAPGRID_PROMISE_FAIL = 2
+PROMISE_TIMEOUT = 3
 
 # XXX hardcoded watchdog_path
 WATCHDOG_PATH = '/opt/slapos/bin/slapos-watchdog'
@@ -214,7 +215,7 @@ def create_slapgrid_object(options, logger):
                   upload_dir_url=op.get('upload-dir-url'),
                   master_ca_file=op.get('master_ca_file'),
                   certificate_repository_path=op.get('certificate_repository_path'),
-                  promise_timeout=op['promise_timeout'],
+                  promise_timeout=op.get('promise_timeout', PROMISE_TIMEOUT),
                   shacache_cert_file=op.get('shacache-cert-file'),
                   shacache_key_file=op.get('shacache-key-file'),
                   shadir_cert_file=op.get('shadir-cert-file'),
