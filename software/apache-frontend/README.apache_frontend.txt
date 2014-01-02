@@ -120,6 +120,11 @@ plain_http_port
 Port used by apache to serve plain http (only used to redirect to https).
 Optional parameter, defaults to 8080.
 
+ip-read-limit
+~~~~~~~~~~~~~
+Use to set IPReadLimit Parameter for antiloris.
+Optional parameter, defaults to 10.
+
 apache_custom_http (custom-group)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Jinja template for apache virtualhost http configuration. It will be used by all slaves

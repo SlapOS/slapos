@@ -1,2 +1,2 @@
-- Use https to connect to the runner. !!! Critical
 - resilient sr: Cloned instances should not launch slapgrid-sr if it was not launched on export instance
+- shellinabox password should be the same in all the resilient instances
