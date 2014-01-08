@@ -5,10 +5,8 @@ extends = template-runner.cfg
 parts +=
   nginx_conf
   nginx-launcher
-  cloud9
   certificate-authority
   ca-nginx
-  ca-node-frontend
   ca-shellinabox
   gunicorn-launcher
   gunicorn-graceful
@@ -19,14 +17,9 @@ parts +=
   publish-connection-informations
   slaprunner-promise
   slaprunner-frontend-promise
-  cloud9-promise
-  cloud9-frontend-promise
   dropbear-promise
   shellinabox-promise
   symlinks
-  request-cloud9-frontend
-  node-frontend-promise
-  nginx-promise
   shellinabox
   slapos-cfg
   slapos-repo-config
