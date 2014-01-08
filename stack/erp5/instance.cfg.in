@@ -23,6 +23,7 @@ context =
     key develop_eggs_directory buildout:develop-eggs-directory
     key slap_software_type slap-parameters:slap-software-type
     key slapparameter_dict slap-parameters:configuration
+    raw slapos_core_version {{ slapos_core_version }}
     ${:extra-context}
 
 [dynamic-template-tidstorage-parameters]
