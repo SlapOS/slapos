@@ -41,4 +41,3 @@ private_key = {{ private_key }}
 git = {{ git }}
 
 [cloud9_IDE]
-cloud9 = {{ cloud9_url }}
