@@ -247,7 +247,7 @@ def slapconfig(conf):
         ('create_tap', conf.create_tap)
     ]
     if conf.ipv6_interface:
-        to_replace.append([('ipv6_interface', conf.ipv6_interface)])
+        to_replace.append(('ipv6_interface', conf.ipv6_interface))
 
     for key, value in to_replace:
         cfg = re.sub('%s\s+=.*' % key, '%s = %s' % (key, value), cfg)
