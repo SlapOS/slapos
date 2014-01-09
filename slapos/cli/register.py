@@ -343,14 +343,5 @@ def do_register(conf):
     slapconfig(conf)
 
     conf.logger.info('Node has successfully been configured as %s.', COMP)
-    # XXX hardcoded value, relying on package installation
-    # We shall fix that later
-    conf.logger.info('Running starting script')
-    if os.path.isfile("/usr/sbin/slapos-start"):
-        try:
-            subprocess.check_call("/usr/sbin/slapos-start")
-        except subprocess.CalledProcessError:
-            conf.logger.error('Error while trying to run /usr/sbin/slapos-start')
-    else:
-        conf.logger.warning('Missing file /usr/sbin/slapos-start')
+    conf.logger.info('Now please invoke /usr/sbin/slapos-start on your site.')
     return 0
