@@ -20,6 +20,7 @@ parts +=
 eggs-directory = {{ eggs_directory }}
 develop-eggs-directory = {{ develop_eggs_directory }}
 offline = true
+versions = versions
 
 [slap-parameter]
 # default site id
@@ -135,3 +136,6 @@ path = ${basedirectory:promises}/erp5site
 url = http://${zope-instance:ip}:${zope-instance:port}/${slap-parameter:site-id}
 dash_path = {{ dash_location }}/bin/dash
 curl_path = {{ curl_location }}/bin/curl
+
+[versions]
+slapos.core = {{ slapos_core_version }}
