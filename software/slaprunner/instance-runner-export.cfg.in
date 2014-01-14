@@ -33,16 +33,17 @@ parts +=
   cron-entry-monitor
   cron-entry-rss
   deploy-index
+  deploy-index-template
   deploy-monitor-script
   deploy-rss-script
   deploy-settings-cgi
   deploy-status-cgi
   make-rss
+  setup-static-files
   certificate-authority
   public
   zero-parameters
   cgi-httpd-wrapper
-
 
 [exporter]
 recipe = slapos.cookbook:slaprunner.export

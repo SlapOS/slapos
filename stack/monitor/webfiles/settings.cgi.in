@@ -1,0 +1,43 @@
+#!{{ python_executable }}
+
+import cgi
+import cgitb
+import ConfigParser
+import os
+
+cgitb.enable()
+form = cgi.FieldStorage()
+
+print "<html><body>"
+
+config_file = "{{ config_cfg }}"
+
+if not os.path.exists(config_file):
+  print "Your software does <b>not</b> embed 0-knowledge. \
+  This interface is useless in this case"
+  exit(0)
+
+parser = ConfigParser.ConfigParser()
+parser.read(config_file)
+
+for name in form:
+  parser.set('public', name, form[name].value)
+with open(config_file, 'w') as file:
+  parser.write(file)
+
+print "<h1>Values that can be defined by the user :</h1>"
+print "<form action=\"/index.cgi\" method=\"post\">"
+print "<input type=\"hidden\" name=\"posting-script\" value=\"{{ pwd }}/{{ this_file }}\">"
+for option in parser.options("public"):
+  print "%s : <input type=\"text\" name=\"%s\" \
+  value=\"%s\"><br>"% (option, option, parser.get('public', option))
+print "<input type=\"submit\" value=\"Save\"></form>"
+
+print "<h1>Other values :</h1>"
+for section in parser.sections():
+  if section != 'public':
+    for option in parser.options(section):
+      print "<b>%s</b> : value=\"%s\"<br>" % (option,
+      parser.get(section, option))
+
+print "</body></html>"
