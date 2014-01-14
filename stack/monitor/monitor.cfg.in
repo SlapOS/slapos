@@ -199,6 +199,8 @@ input = inline:
   ServerName example.com
   Listen [$${:listening-ip}]:$${:listening-port}
   ServerAdmin someone@email
+  StartServers 2
+  ThreadsPerChild 1
   DocumentRoot "$${:document-root}"
   ErrorLog "$${:error-log}"
   LoadModule unixd_module modules/mod_unixd.so
