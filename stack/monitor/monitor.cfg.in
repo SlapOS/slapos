@@ -230,7 +230,7 @@ input = inline:
     # XXX: security????
     Options +ExecCGI
     AddHandler cgi-script .cgi
-    DirectoryIndex $${monitor-parameters:rss-path}
+    DirectoryIndex $${deploy-index:rendered}
   </Directory>
 output = $${directory:etc}/cgi-httpd.conf
 # md5sum =
