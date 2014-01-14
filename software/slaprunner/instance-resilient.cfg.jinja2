@@ -17,7 +17,7 @@ parts +=
 
 # Bubble up the parameters
 [request-runner]
-return = url ssh-public-key ssh-url notification-id ip backend_url url ssh_command access_url 1_info 2_info control_url monitor_url IMPORTANT_monitor_info 
+return = url ssh-public-key ssh-url notification-id ip backend_url url ssh_command access_url 1_info 2_info monitor_url IMPORTANT_monitor_info 
 
 [publish-connection-informations]
 recipe = slapos.cookbook:publish
@@ -27,7 +27,6 @@ backend_url = ${request-runner:connection-backend_url}
 access_url = ${request-runner:connection-access_url}
 url = ${request-runner:connection-url}
 ssh_command = ${request-runner:connection-ssh_command}
-control_url = ${request-runner:connection-control_url}
 monitor_url = ${request-runner:connection-monitor_url}
 IMPORTANT_monitor_info = ${request-runner:connection-IMPORTANT_monitor_info}
 
