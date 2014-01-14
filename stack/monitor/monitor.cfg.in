@@ -61,14 +61,14 @@ log = $${directory:log}/cron.log
 <= cron
 recipe = slapos.cookbook:cron.d
 name = launch-monitor
-frequency = * * * * *
+frequency = */5 * * * *
 command = $${monitor-parameters:executable} -a
 
 [cron-entry-rss]
 <= cron
 recipe = slapos.cookbook:cron.d
 name = build-rss
-frequency = * * * * *
+frequency = */5 * * * *
 command = $${make-rss:output}
 
 [setup-static-files]
