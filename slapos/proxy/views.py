@@ -358,6 +358,8 @@ def request_not_shared():
 
   # XXX it should be ComputerPartition, not a SoftwareInstance
   software_instance = SoftwareInstance(xml=partition['xml'],
+                                       _connection_dict=xml2dict(partition['connection_xml']),
+                                       _parameter_dict=xml2dict(partition['xml']),
                                        connection_xml=partition['connection_xml'],
                                        slap_computer_id=app.config['computer_id'],
                                        slap_computer_partition_id=partition['reference'],
