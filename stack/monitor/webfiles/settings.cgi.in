@@ -8,7 +8,10 @@ import os
 cgitb.enable()
 form = cgi.FieldStorage()
 
-print "<html><body>"
+print "<html><head>"
+print "<link rel=\"stylesheet\" href=\"pure-min.css\">"
+print "<link rel=\"stylesheet\" href=\"/style.css\">"
+print "</head><body>"
 
 config_file = "{{ config_cfg }}"
 
@@ -26,18 +29,25 @@ with open(config_file, 'w') as file:
   parser.write(file)
 
 print "<h1>Values that can be defined by the user :</h1>"
-print "<form action=\"/index.cgi\" method=\"post\">"
+print "<form action=\"/index.cgi\" method=\"post\" class=\"pure-form-aligned\">"
 print "<input type=\"hidden\" name=\"posting-script\" value=\"{{ pwd }}/{{ this_file }}\">"
 for option in parser.options("public"):
-  print "%s : <input type=\"text\" name=\"%s\" \
-  value=\"%s\"><br>"% (option, option, parser.get('public', option))
-print "<input type=\"submit\" value=\"Save\"></form>"
+  print "<div class=\"pure-control-group\">"
+  print "<label for=\"=%s\">%s</label>"%(option, option)
+  print "<input type=\"text\" name=\"%s\" value=\"%s\" readonly>"%(option, parser.get('public', option))
+  print "</div>"
+print "<div class=\"pure-controls\"><button type=\"submit\" class=\"pure-button \
+ pure-button-primary\">Save</button></div></form>"
 
-print "<h1>Other values :</h1>"
+print "<br><h1>Other values :</h1>"
+print "<form class=\"pure-form-aligned\">"
 for section in parser.sections():
   if section != 'public':
     for option in parser.options(section):
-      print "<b>%s</b> : value=\"%s\"<br>" % (option,
-      parser.get(section, option))
+      print "<div class=\"pure-control-group\">"
+      print "<label for=\"=%s\">%s</label>"%(option, option)
+      print "<input type=\"text\" name=\"%s\" value=\"%s\">"%(option, parser.get(section, option))
+      print "</div>"
+print "</form>"
 
 print "</body></html>"

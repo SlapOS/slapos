@@ -8,7 +8,10 @@ cgitb.enable(display=0, logdir="/tmp/cgi.log")
 json_file = "{{ json_file }}"
 result = json.load(open(json_file))
 
-print "<html><body>"
+print "<html><head>"
+print "<link rel=\"stylesheet\" href=\"pure-min.css\">"
+print "<link rel=\"stylesheet\" href=\"/style.css\">"
+print "</head><body>"
 print "<h1>Monitoring :</h1>"
 print "<p><em>Last time of monitoring process : %s</em></p>" % (result['datetime'])
 del result['datetime']
