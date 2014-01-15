@@ -927,7 +927,6 @@ class TestOpenOrder(SlapMixin):
     computer_partition = open_order.request(software_release_uri, 'myrefe')
     self.assertIsInstance(computer_partition, slapos.slap.ComputerPartition)
     self.assertEqual(requested_partition_id, computer_partition.getId())
-    import pdb;pdb.set_trace()
     self.assertEqual("URL_CONNECTION_PARAMETER", 
                      computer_partition.getConnectionParameter('url'))
 
