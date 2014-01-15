@@ -42,6 +42,7 @@ import socket
 import ssl
 import urllib
 import urlparse
+from util import xml2dict
 
 from xml.sax import saxutils
 import zope.interface
@@ -520,8 +521,13 @@ class ComputerPartition(SlapRequester):
     return getattr(self, '_parameter_dict', None) or {}
 
   def getConnectionParameterDict(self):
-    return getattr(self, '_connection_dict', None) or {}
+    connection_dict = getattr(self, '_connection_dict', None)
+    if connection_dict is None:
+      # XXX Backward compatibility for older slapproxy (<= 1.0.0)
+      connection_dict = xml2dict(getattr(self, 'connection_xml', '')) 
 
+    return connection_dict or {}
+      
   def getSoftwareRelease(self):
     """
     Returns the software release associate to the computer partition.
@@ -548,7 +554,7 @@ class ComputerPartition(SlapRequester):
       raise NotFoundError("%s not found" % key)
 
   def getConnectionParameter(self, key):
-    connection_dict = getattr(self, '_connection_dict', None) or {}
+    connection_dict = self.getConnectionParameterDict()
     if key in connection_dict:
       return connection_dict[key]
     else:
