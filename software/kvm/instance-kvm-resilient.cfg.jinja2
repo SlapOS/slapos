@@ -12,8 +12,15 @@ offline = true
 parts +=
   {{ parts.replicate("kvm", "3") }}
   publish-connection-informations
+  kvm-frontend-url-promise
+  kvm-backend-url-promise
 
-{{ replicated.replicate("kvm", "3", "kvm-export", "kvm-import") }}
+{{ replicated.replicate("kvm", "3", "kvm-export", "kvm-import", slapparameter_dict=slapparameter_dict) }}
+
+[directory]
+recipe = slapos.cookbook:mkdirectory
+etc = ${buildout:directory}/etc
+promises = ${:etc}/promise
 
 # Bubble down the parameters of the requested instance to the user
 [request-kvm]
@@ -22,10 +29,29 @@ return =
 # Resilient related parameters
   url ssh-public-key ssh-url notification-id ip
 # KVM related parameters
-  backend-url url ipv6
+# XXX: return ALL parameters (like nat rules), through jinja
+  backend-url url
 
 [publish-connection-informations]
 recipe = slapos.cookbook:publish
 backend-url = ${request-kvm:connection-backend-url}
 url = ${request-kvm:connection-url}
-ipv6 = ${request-kvm:connection-ipv6}
+
+[kvm-frontend-url-promise]
+# Check that url parameter is complete
+recipe = collective.recipe.template
+input = inline:#!/bin/sh
+  URL="${request-kvm:connection-url}"
+  if [[ ! "$URL" == https://* ]]; then
+    exit 1
+  fi
+output = ${resilient-directory:promise}/kvm-frontend-url
+mode = 700
+
+[kvm-backend-url-promise]
+# Check that backend url is reachable
+recipe = slapos.cookbook:check_url_available
+path = ${directory:promises}/frontend_promise
+url = ${publish-connection-informations:url}
+dash_path = /bin/sh
+curl_path = {{ curl_executable_location }}

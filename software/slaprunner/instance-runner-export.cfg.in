@@ -1,28 +1,29 @@
 [buildout]
-extends = ${template-runner:output}
+extends = template-runner.cfg
           ${pbsready-export:output}
 
 parts +=
   nginx_conf
   nginx-launcher
-  cloud9
   certificate-authority
   ca-nginx
-  ca-node-frontend
-  slaprunner
+  ca-shellinabox
+  gunicorn-launcher
+  gunicorn-graceful
   test-runner
   sshkeys-dropbear-runner
   dropbear-server-add-authorized-key
   sshkeys-authority
+  publish-connection-informations
   slaprunner-promise
   slaprunner-frontend-promise
-  cloud9-promise
-  cloud9-frontend-promise
   dropbear-promise
+  shellinabox-promise
   symlinks
-  node-frontend-promise
-  nginx-promise
-  urls
+  shellinabox
+  slapos-cfg
+  slapos-repo-config
+  prepare-software
   cron-entry-backup
 
 [exporter]
@@ -36,11 +37,5 @@ rsync-binary = ${rsync:location}/bin/rsync
 
 
 # Extends publish section with resilient parameters
-[urls]
+[publish-connection-informations]
 <= resilient-publish-connection-parameter
-backend_url = $${slaprunner:access-url}
-url =  https://$${request-frontend:connection-domain}
-cloud9_backend_url = $${node-frontend:access-url}
-cloud9_url = https://$${request-cloud9-frontend:connection-domain}
-ssh_command = ssh $${dropbear-runner-server:host} -p $${dropbear-runner-server:port}
-password_recovery_code = $${recovery-code:passwd}

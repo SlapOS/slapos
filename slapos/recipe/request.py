@@ -88,8 +88,15 @@ class Recipe(object):
       installation of request section will fail.
       Possible names depend on requested partition's software type.
 
+    state (optional)
+     Requested state, default value is the state of the requester.
+
     Output:
       See "return" input key.
+      "instance-state"
+          The current state of the instance.
+      "requested-state"
+          The requested state of the instance.
   """
   failed = None
 
@@ -112,6 +119,11 @@ class Recipe(object):
     ))
     slave = options.get('slave', 'false').lower() in \
       librecipe.GenericBaseRecipe.TRUE_VALUES
+
+    # By default XXXX Way of doing it is ugly and dangerous
+    requested_state = options.get('state', buildout['slap-connection'].get('requested','started'))
+    options['requested-state'] = requested_state
+
     slap = slapmodule.slap()
     slap.initializeConnection(
       options['server-url'],
@@ -125,21 +137,25 @@ class Recipe(object):
     self._raise_request_exception = None
     self._raise_request_exception_formatted = None
     self.instance = None
+
     # Try to do the request and fetch parameter dict...
     try:
       self.instance = request(software_url, software_type,
           name, partition_parameter_kw=partition_parameter_kw,
-          filter_kw=filter_kw, shared=slave)
+          filter_kw=filter_kw, shared=slave, state=requested_state)
       return_parameter_dict = self._getReturnParameterDict(self.instance,
           return_parameters)
+      # Fetch the instance-guid and the instance-state
+      # Note: SlapOS Master does not support it for slave instances
       if not slave:
         try:
           options['instance-guid'] = self.instance.getInstanceGuid()
           # XXX: deprecated, to be removed
           options['instance_guid'] = self.instance.getInstanceGuid()
+          options['instance-state'] = self.instance.getState()
         except (slapmodule.ResourceNotReady, AttributeError):
           # Backward compatibility. Old SlapOS master and core don't know this.
-          self.logger.warning("Impossible to fetch instance GUID.")
+          self.logger.warning("Impossible to fetch instance GUID nor state.")
     except (slapmodule.NotFoundError, slapmodule.ServerError, slapmodule.ResourceNotReady) as exc:
       self._raise_request_exception = exc
       self._raise_request_exception_formatted = traceback.format_exc()

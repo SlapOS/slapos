@@ -1,9 +1,0 @@
-<Directory %(path)s>
-  Order Deny,Allow
-  Allow from %(access_control_string)s
-</Directory>
-
-<Directory %(document_root)s>
-  Order Allow,Deny
-  Allow from All
-</Directory>

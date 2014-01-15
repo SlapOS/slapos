@@ -1,6 +1,62 @@
 Changes
 =======
 
+0.85 (2013-12-03)
+-----------------
+
+ * Slaprunner: recipe replaced by a buildout profile [14fbcd92]
+ * Slaprunner: import instances can automatically deploy Software Releases [64c48388]
+ * Slaprunner: backup script passes basic authentification [8877615]
+ * Slaprunner: backup doesn't destroy symlinks for Software Releases [f519a078]
+ * Shellinabox: now uses uid and gid to start [e9349c65]
+ * Shellinabox: can do autoconnection [516e772]
+ * Librecipe-generic: correction of bash code for /bin/sh compatibility [bee8c9c8]
+
+0.84.2 (2013-10-04)
+-------------------
+
+ * sshkeys_authority: don't allow to return None as parameter. [9e340a0]
+
+0.84.1 (2013-10-03)
+-------------------
+
+ * Resiliency: PBS: promise should NOT bang. [64886cd]
+
+0.84 (2013-09-30)
+-----------------
+
+ * Request.py: improve instance-state handling. [ba5f160]
+ * Resilient recipe: remove hashing of urls/names. [ee2aec8]
+ * Resilient pbs recipe: recover from rdiff-backup failures. [be7f2fc, 92ee0c3]
+ * Resilience: add pidfiles in PBS. [0b3ad5c]
+ * Resilient: don't hide exception, print it. [05b3d64, d2b0494]
+ * Resiliency: Only keep 10 increments of backup. [4e89e33]
+ * KVM SR: add fallback in case of download exception. [de8d796]
+ * slaprunner: don't check certificate for importer. [53dc772]
+
+0.83.1 (2013-09-10)
+------------------
+
+ * slapconfiguration: fixes previous releasei (don't encode tap_set because it's not a string). [Cedric de Saint Martin]
+
+0.83 (2013-09-10)
+-----------------
+
+ * slaprunner recipe: remove trailing / from master_url. [Cedric de Saint Martin]
+ * librecipe: add pidfile option for singletons. [Cedric de Saint Martin]
+ * Resiliency: Use new pidfile option. [Cedric de Saint Martin]
+ * Fix request.py for slave instances. [Cedric de Saint Martin]
+ * slapconfiguration recipe: cast some parameters from unicode to str. [Cedric de Saint Martin]
+
+0.82 (2013-08-30)
+-----------------
+
+ * Certificate Authority: Can receice certificate to install. [Cedric Le Ninivin]
+ * Squid: Add squid recipe. [Romain Courteaud]
+ * Request: Trasmit instace state to requested instances. [Benjamin Blanc / Cédric Le Ninivin]
+ * Slapconfiguration: Now return instance state. [Cédric Le Ninivin]
+ * Apache Frontend: Remove recipe
+
 0.81 (2013-08-12)
 -----------------
 

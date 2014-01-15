@@ -33,6 +33,7 @@ import sys
 import inspect
 import re
 import shutil
+from textwrap import dedent
 import urllib
 import urlparse
 
@@ -129,10 +130,14 @@ class GenericBaseRecipe(object):
     return script
 
   def createWrapper(self, name, command, parameters, comments=[],
-        parameters_extra=False, environment=None):
+      parameters_extra=False, environment=None,
+      pidfile=None
+  ):
     """
     Creates a very simple (one command) shell script for process replacement.
     Takes care of quoting.
+    if pidfile parameter is specified, then it will make the wrapper a singleton,
+    accepting to run only if no other instance is running.
     """
 
     lines = [ '#!/bin/sh' ]
@@ -143,6 +148,21 @@ class GenericBaseRecipe(object):
     if environment:
       for key in environment:
         lines.append('export %s=%s' % (key, environment[key]))
+
+    if pidfile:
+      lines.append(dedent("""\
+          # Check for other instances
+          pidfile=%s
+          if [ -e $pidfile ]; then
+            pid=$(cat $pidfile)
+            if [ ! -z $(ps -p "$pid" | grep $(basename %s)) ]; then
+              echo "Already running with pid $pid."
+              exit 1
+            else
+              rm $pidfile
+            fi
+          fi
+          echo $$ > $pidfile""" % (pidfile, command)))
 
     lines.append('exec %s' % shlex.quote(command))
 

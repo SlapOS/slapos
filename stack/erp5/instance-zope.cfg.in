@@ -308,4 +308,8 @@ parts +=
   erp5-promise
   {{ part_list | join('\n  ') }}
   publish-zope
+versions = versions
+
+[versions]
+slapos.core = {{ slapos_core_version }}
 {% endif %}

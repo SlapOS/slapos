@@ -6,6 +6,8 @@
 import socket
 import time
 
+# XXX: to be factored with slapos.toolbox qemu qmp wrapper.
+
 socket_path = '%(socket-path)s'
 vnc_password = '%(vnc-passwd)s'
 

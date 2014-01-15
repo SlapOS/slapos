@@ -45,7 +45,8 @@ gateway-port = {{ tcpv4_port + 3 }}
 {% if ram_storage_size -%}
 data-path = *#capsiz={{ ram_storage_size }}m
 {% else -%}
-data-directory = ${directory:kumofs-data}
+# (with 10M buckets and HDBTLARGE option)
+data-path = ${directory:kumofs-data}/kumodb.tch#bnum=10485760#opts=l
 {% endif -%}
 
 # Paths: Running wrappers
