@@ -1,0 +1,34 @@
+<registered_skin_selection>
+ <skin_folder_selection>
+  <skin_folder>erp5_hal_json_style</skin_folder>
+  <skin_selection>Hal</skin_selection>
+ </skin_folder_selection>
+ <skin_folder_selection>
+  <skin_folder>erp5_km_theme</skin_folder>
+  <skin_selection>Hal</skin_selection>
+ </skin_folder_selection>
+ <skin_folder_selection>
+  <skin_folder>erp5_xhtml_style</skin_folder>
+  <skin_selection>Hal</skin_selection>
+ </skin_folder_selection>
+ <skin_folder_selection>
+  <skin_folder>vifib_hosting</skin_folder>
+  <skin_selection>Hal</skin_selection>
+ </skin_folder_selection>
+ <skin_folder_selection>
+  <skin_folder>vifib_hosting_theme</skin_folder>
+  <skin_selection>Hal</skin_selection>
+ </skin_folder_selection>
+ <skin_folder_selection>
+  <skin_folder>vifib_jauks_theme</skin_folder>
+  <skin_selection>Hal</skin_selection>
+ </skin_folder_selection>
+ <skin_folder_selection>
+  <skin_folder>vifib_jauks_widget_library</skin_folder>
+  <skin_selection>Hal</skin_selection>
+ </skin_folder_selection>
+ <skin_folder_selection>
+  <skin_folder>vifib_web</skin_folder>
+  <skin_selection>Hal</skin_selection>
+ </skin_folder_selection>
+</registered_skin_selection>
