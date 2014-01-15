@@ -1,6 +1,17 @@
 Changes
 =======
 
+1.0.1 (2014-01-14)
+------------------
+
+New features:
+
+ * Add configure-local command for standalone slapos [Cedric de Saint Martin/Gabriel Monnerat]
+
+Fixes:
+
+ * Fix slapproxy missing _connection_dict [Rafael Monnerat]
+
 1.0.0 (2014-01-01)
 ------------------
 
