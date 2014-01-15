@@ -874,6 +874,62 @@ class TestOpenOrder(SlapMixin):
     self.assertEqual(requested_partition_id, computer_partition.getId())
 
 
+  def test_request_getConnectionParameter(self):
+    """ Backward compatibility API for slapproxy older them 1.0.1 """
+    software_release_uri = 'http://server/new/' + self._getTestComputerId()
+    self.slap = slapos.slap.slap()
+    self.slap.initializeConnection(self.server_url)
+    # XXX: Interface lack registerOpenOrder method declaration
+    open_order = self.slap.registerOpenOrder()
+    computer_guid = self._getTestComputerId()
+    requested_partition_id = 'PARTITION_01'
+
+    def server_response(self, path, method, body, header):
+      from slapos.slap.slap import SoftwareInstance
+      slap_partition = SoftwareInstance(
+          _connection_dict = {"url": 'URL_CONNECTION_PARAMETER'},
+          slap_computer_id=computer_guid,
+          slap_computer_partition_id=requested_partition_id)
+      return (200, {}, xml_marshaller.xml_marshaller.dumps(slap_partition))
+
+    httplib.HTTPConnection._callback = server_response
+
+    computer_partition = open_order.request(software_release_uri, 'myrefe')
+    self.assertIsInstance(computer_partition, slapos.slap.ComputerPartition)
+    self.assertEqual(requested_partition_id, computer_partition.getId())
+    self.assertEqual("URL_CONNECTION_PARAMETER", 
+                     computer_partition.getConnectionParameter('url'))
+
+
+  def test_request_connection_dict_backward_compatibility(self):
+    """ Backward compatibility API for slapproxy older them 1.0.1 """
+    software_release_uri = 'http://server/new/' + self._getTestComputerId()
+    self.slap = slapos.slap.slap()
+    self.slap.initializeConnection(self.server_url)
+    # XXX: Interface lack registerOpenOrder method declaration
+    open_order = self.slap.registerOpenOrder()
+    computer_guid = self._getTestComputerId()
+    requested_partition_id = 'PARTITION_01'
+
+    def server_response(self, path, method, body, header):
+      from slapos.slap.slap import SoftwareInstance
+      slap_partition = SoftwareInstance(
+          connection_xml="""<?xml version='1.0' encoding='utf-8'?>
+<instance>
+  <parameter id="url">URL_CONNECTION_PARAMETER</parameter>
+</instance>""",
+          slap_computer_id=computer_guid,
+          slap_computer_partition_id=requested_partition_id)
+      return (200, {}, xml_marshaller.xml_marshaller.dumps(slap_partition))
+
+    httplib.HTTPConnection._callback = server_response
+
+    computer_partition = open_order.request(software_release_uri, 'myrefe')
+    self.assertIsInstance(computer_partition, slapos.slap.ComputerPartition)
+    self.assertEqual(requested_partition_id, computer_partition.getId())
+    import pdb;pdb.set_trace()
+    self.assertEqual("URL_CONNECTION_PARAMETER", 
+                     computer_partition.getConnectionParameter('url'))
 
 
 class TestSoftwareProductCollection(SlapMixin):
