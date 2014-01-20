@@ -18,7 +18,7 @@ config =
 extra-config =
 config-use-ipv6 = {{ dumps(slapparameter_dict.get('use-ipv6', False)) }}
 
-{% macro request(name, software_type, config_key, config={}, ret={'url': True}) -%}
+{% macro request(name, software_type, config_key, config, ret={'url': True}) -%}
 {% do config.update(slapparameter_dict.get(config_key, {})) -%}
 {% set section = 'request-' ~ name -%}
 [{{ section }}]
