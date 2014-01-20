@@ -86,7 +86,7 @@
       "default": 1,
       "type": "number"
     },
-    "mariadb-relaxed-writes": {
+    "relaxed-writes": {
       "description": "When enabled, sets innodb_flush_log_at_trx_commit = 0, innodb_flush_method = nosync, innodb_doublewrite = 0 and sync_frm = 0 - RTFM, those options are dangerous",
       "default": false,
       "type": "boolean"
