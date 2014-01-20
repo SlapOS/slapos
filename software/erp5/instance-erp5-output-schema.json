@@ -2,6 +2,10 @@
   "$schema": "http://json-schema.org/draft-04/schema#",
   "description": "Values returned by ERP5 instanciation",
   "properties": {
+    "site-id": {
+      "description": "Chosen ERP5Site object identifier",
+      "type": "string"
+    },
     "kumofs-url": {
       "description": "Persistent memcached access information",
       "type": "string"

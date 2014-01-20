@@ -1,8 +1,8 @@
 {% if slap_software_type == software_type -%}
-{% set publish_dict = {} -%}
 {% set frontend_dict = slapparameter_dict.get('frontend', {}) %}
 {% set has_frontend = frontend_dict.get('software-url', '') != '' -%}
 {% set site_id = slapparameter_dict.get('site-id', 'erp5') -%}
+{% set publish_dict = {'site-id': site_id} -%}
 [request-common]
 recipe = slapos.cookbook:request.serialised
 software-url = ${slap-connection:software-release-url}
