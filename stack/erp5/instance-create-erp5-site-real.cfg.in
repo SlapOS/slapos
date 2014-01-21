@@ -1,0 +1,31 @@
+[directory]
+recipe = slapos.cookbook:mkdirectory
+etc = ${buildout:directory}/etc
+services = ${:etc}/run
+promise = ${:etc}/promise
+
+[erp5-bootstrap]
+recipe = slapos.cookbook:erp5.bootstrap
+runner-path = ${directory:services}/erp5-bootstrap
+{# XXX: Expect the first database to be the one to use for catalog. -#}
+mysql-url = {{ publish['mariadb-database-list'][0] }}
+{# Pick the first family found, they should be all equivalent anyway. -#}
+{% set family_list = [] -%}
+{% for key, value in publish.items() -%}
+{%   if key.startswith('family-') -%}
+{%     do family_list.append(value.split('://', 1)) -%}
+{%   endif -%}
+{%  endfor -%}
+zope-url = {{ family_list[0][0] + '://zope:insecure@' + family_list[0][1] + '/' + publish['site-id'] }}
+
+[promise-erp5-site]
+recipe = slapos.cookbook:check_url_available
+url = ${erp5-bootstrap:zope-url}
+path = ${directory:promise}/erp5-site
+dash_path = {{ parameter_dict['dash-location'] }}/bin/dash
+curl_path = {{ parameter_dict['curl-location'] }}/bin/curl
+
+[buildout]
+parts = promise-erp5-site
+eggs-directory = {{ eggs_directory }}
+develop-eggs-directory = {{ develop_eggs_directory }}

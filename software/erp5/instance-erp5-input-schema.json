@@ -18,7 +18,32 @@
       "description": "Password for /manage_debug_threads",
       "default": "random",
       "type": "string"
-    }
+    },
+    "frontend": {
+      "description": "Front-end slave instance request parameters",
+      "properties": {
+        "software-url": {
+          "description": "Front-end's software type. If this parameter is the empty string, no front-end instance is requested.",
+          "default": "",
+          "type": "string"
+        },
+        "domain": {
+          "description": "The domain name to request front-end to respond as.",
+          "default": "",
+          "type": "string"
+        },
+        "software-type": {
+          "description": "Request a front-end slave instance of this software type.",
+          "default": "RootSoftwareInstance",
+          "type": ""
+        },
+        "instance-guid": {
+          "description": "GUID of computer instance must be requested on. Mandatory if software-url is a non-empty string.",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
     "zope-partition-dict": {
       "description": "Zope layout definition",
       "patternProperties": {

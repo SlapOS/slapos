@@ -1,0 +1,41 @@
+{% if software_type == slap_software_type -%}
+{# To create the script (wrapper) which creates the ERP5Site object, pieces
+ # of what is published by extended file are required. Because they are not
+ # available at the time the file you are reading is rendered, and because
+ # those values are composed (lists, dicts...) of which items are needed,
+ # they cannot be accessed. Instead, make buildout provide these values to
+ # a second template, rendered at a convenient time.
+-#}
+[instance-create-erp5-site-real-parameters]
+dash-location = {{ parameter_dict['dash-location'] }}
+curl-location = {{ parameter_dict['curl-location'] }}
+
+[instance-create-erp5-site-real]
+recipe = slapos.recipe.template:jinja2
+template = {{ parameter_dict['template-create-erp5-site-real'] }}
+rendered = ${buildout:directory}/instance-create-erp5-site-real.cfg
+extensions = jinja2.ext.do
+context =
+  section publish publish
+  section parameter_dict instance-create-erp5-site-real-parameters
+  key eggs_directory buildout:eggs-directory
+  key develop_eggs_directory buildout:develop-eggs-directory
+
+[instance-create-erp5-site-real-run]
+recipe = slapos.recipe.build
+script =
+  import subprocess, sys
+  subprocess.check_call([
+    sys.argv[0],
+    "buildout:directory=${buildout:directory}",
+    "buildout:installed=.installed-${:_buildout_section_name_}.cfg",
+    "-Uoc", self.options['run'],
+  ])
+run = ${instance-create-erp5-site-real:rendered}
+slapos_promise =
+
+[buildout]
+extends = {{ parameter_dict['instance-erp5'] }}
+parts +=
+  instance-create-erp5-site-real-run
+{% endif %}
