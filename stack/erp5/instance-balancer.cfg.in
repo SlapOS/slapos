@@ -48,6 +48,13 @@ ipv6 = {{ zope_address.split(']:')[0][1:] }}
 {%       do zope_family_address_list.append((zope_effective_address, maxconn)) -%}
 {%     endfor -%}
 {%   endfor -%}
+{# Make rendering fail artificially if any family has no known backend.
+ # This is useful as haproxy's hot-reconfiguration mechanism is
+ # supervisord-incompatible.
+ # As jinja2 postpones KeyError until place-holder value is actually used,
+ # do a no-op, type-safe concatenation.
+-#}
+{%   do '#' ~ zope_family_address_list[0] -%}
 {%   set haproxy_port = next_port -%}
 {%   set next_port = next_port + 1 -%}
 {%   do haproxy_dict.__setitem__(family_name, (haproxy_port, zope_family_address_list)) -%}
