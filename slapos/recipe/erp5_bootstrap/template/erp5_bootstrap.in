@@ -1,46 +1,22 @@
 #!%(python_path)s
-
-import httplib
 import urllib
-import base64
 
-user = "%(user)s"
-password = "%(password)s"
-host = "%(host)s"
-site_id = "%(site_id)s"
-erp5_catalog_storage = 'erp5_mysql_innodb_catalog'
-mysql_url = "%(sql_connection_string)s"
+def isSuccess(response):
+  return 200 <= response.code < 300
 
-header_dict = {'Authorization': 'Basic %%s' %% \
-  base64.encodestring('%%s:%%s' %% (user, password)).strip(),
-               'Referer':'http://%%s/manage_addProduct/ERP5/addERP5Site' %% host}
-zope_connection = httplib.HTTPConnection(host)
-
-# Check if an ERP5 site is already created, as ERP5 does support having
-# 2 instances in the same zope, and this script should not destroy user data
-zope_connection.request('GET', '/isERP5SitePresent', headers=header_dict)
-result = zope_connection.getresponse()
-
-if result.status == 204: # and (result.read() == "False"):
-
-  # Use a new connection
-  zope_connection = httplib.HTTPConnection(host)
-
-  # Create the expected ERP5 instance
-  zope_connection.request(
-    'POST', '/manage_addProduct/ERP5/manage_addERP5Site',
-    urllib.urlencode({
-      'id': site_id,
-      'erp5_catalog_storage': erp5_catalog_storage,
+base_url = %(base_url)r
+response = urllib.urlopen(base_url + '/isERP5SitePresent')
+if isSuccess(response) and response.read() == '':
+  mysql_url = %(sql_connection_string)r
+  response = urllib.urlopen(
+    base_url + '/manage_addProduct/ERP5/manage_addERP5Site',
+    data=urllib.urlencode({
+      'id': %(site_id)r,
+      'erp5_catalog_storage': 'erp5_mysql_innodb_catalog',
       'erp5_sql_connection_string': mysql_url,
       'cmf_activity_sql_connection_string': mysql_url,
     }),
-    headers=header_dict)
-  # Wait for the erp5 response, to prevent multiple requests
-  # been done by the same script.
-  result = zope_connection.getresponse()
-
-  # Read result make sure the site really finished to 
-  #created the ERP5 site.
-  result.read()
+  )
+  if not isSuccess(response):
+    raise ValueError('Failed creating site, status=%%i: %%s' %% (response.code, response.read()))
   print "ERP5 site created."
