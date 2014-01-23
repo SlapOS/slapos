@@ -1,0 +1,20 @@
+diff --git a/makedefs b/makedefs
+index 93b5949..9209a61 100644
+--- a/makedefs
++++ b/makedefs
+@@ -290,7 +290,6 @@ case "$SYSTEM.$RELEASE" in
+ 			# by including <db.h> and by linking with -ldb
+ 			echo "No <db.h> include file found." 1>&2
+ 			echo "Install the appropriate db*-devel package first." 1>&2
+-			exit 1
+ 		    fi
+ 		    SYSLIBS="-ldb"
+ 		    ;;
+@@ -361,7 +360,6 @@ EOF
+ 			# by including <db.h> and by linking with -ldb
+ 			echo "No <db.h> include file found." 1>&2
+ 			echo "Install the appropriate db*-devel package first." 1>&2
+-			exit 1
+ 		    fi
+ 		    SYSLIBS="-ldb"
+ 		    ;;

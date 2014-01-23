@@ -1,0 +1,11 @@
+#!${:dash-path}
+
+${:test-sendmail-php-location} > /dev/null
+
+RETURN=$(${:sendmail-binary} -bp)
+
+if [ "$RETURN" != "Mail queue is empty" ]; then
+  exit 0
+else
+  exit 1
+fi

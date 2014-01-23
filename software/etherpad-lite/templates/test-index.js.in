@@ -1,0 +1,13 @@
+var page = require('webpage').create();
+url = '${:content-url}'
+page.open(url, function (status) {
+  var text = page.evaluate(function(){
+    return document.getElementById('button').textContent
+  });
+
+  if(text !== "" && text !== null) {
+    phantom.exit();
+  } else {
+    phantom.exit(1);
+  }
+});

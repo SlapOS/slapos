@@ -1,0 +1,16 @@
+#!${:python-location}
+import subprocess
+import signal
+import time
+
+def handler(signum,frame):
+    pid_file = open("${:pid-location}","r")
+    pid = pid_file.read().strip()
+    subprocess.call(["kill", "-9", pid])
+
+subprocess.call(["${:postfix-location}", "-c", "${:postfix-config-dir}", "start"])
+
+signal.signal(signal.SIGINT,handler)
+
+while True:
+    time.sleep(120)

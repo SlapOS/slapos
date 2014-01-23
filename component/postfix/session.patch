@@ -1,0 +1,13 @@
+--- a/src/master/master.c
++++ b/src/master/master.c
+@@ -392,8 +392,10 @@ int     main(int argc, char **argv)
+      * all MTA processes cleanly. Give up if we can't separate from our
+      * parent process. We're not supposed to blow away the parent.
+      */
++    /*
+     if (debug_me == 0 && master_detach != 0 && setsid() == -1 && getsid(0) != getpid())
+ 	msg_fatal("unable to set session and process group ID: %m");
++    */
+ 
+     /*
+      * Make some room for plumbing with file descriptors. XXX This breaks

@@ -49,3 +49,26 @@ class Recipe(GenericBaseRecipe):
     )
 
     return [promise]
+
+class PhantomJSRecipe(GenericBaseRecipe):
+  """
+  Create script for checking page content at url with js script
+  """
+  
+  def install(self):
+    config = {
+      'script-path': self.options['script-path'].strip(),
+      'dash-path': self.options['dash-path'].strip(),
+      'phantomjs-path': self.options['phantomjs-path'].strip(),
+      'phantomjs-options': self.options.get('phantomjs-options','')
+    }
+    
+    promise = self.createExecutable(
+      self.options['path'].strip(),
+      self.substituteTemplate(
+        self.getTemplateFilename('check_page_content_phantomjs.in'),
+        config
+      )
+    )
+
+    return [promise]
