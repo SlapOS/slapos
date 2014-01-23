@@ -6,6 +6,7 @@ PidFile "${:pid_file}"
 Listen ${:ip}:${:port}
 Listen ${:ip}:${:port2}
 Listen ${:ip}:${:port3}
+Listen ${:ip}:${:port4}
 PHPINIDir ${:php_ini_dir}
 ServerAdmin someone@email
 TypesConfig conf/mime.types
@@ -21,9 +22,13 @@ LogFormat "%h %{REMOTE_USER}i %l %u %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-Ag
 LogFormat "%h %{REMOTE_USER}i %l %u %t \"%r\" %>s %b" common
 CustomLog "${:access_log}" common
 
+SSLRandomSeed startup builtin
+SSLRandomSeed connect builtin
+
 NameVirtualHost ${:ip}:${:port2}
 NameVirtualHost ${:ip}:${:port}
 NameVirtualHost ${:ip}:${:port3}
+NameVirtualHost ${:ip}:${:port4}
 <VirtualHost ${:ip}:${:port2}>
   #ServerName www.example.com
   
@@ -42,6 +47,9 @@ NameVirtualHost ${:ip}:${:port3}
   
   DocumentRoot ${:document_root}
   DirectoryIndex index.html index.php
+  SSLEngine on
+  SSLCertificateFile ${:cert_file}
+  SSLCertificateKeyFile ${:key_file}
 
 </VirtualHost>
 
@@ -76,14 +84,43 @@ NameVirtualHost ${:ip}:${:port3}
       Require all denied
   </Directory>
   
-  <Directory ${:public_html2}>
+  <Directory ${:phpmyadmin_root}>
     Options FollowSymLinks
     AllowOverride All
     Require all granted
   </Directory>
   
-  DocumentRoot ${:public_html2}
+  DocumentRoot ${:phpmyadmin_root}
   DirectoryIndex index.html index.php
+  SSLEngine on
+  SSLCertificateFile ${:cert_file}
+  SSLCertificateKeyFile ${:key_file}
+
+</VirtualHost>
+
+<VirtualHost ${:ip}:${:port4}>
+  #ServerName www.example.com
+  
+  # Directory protection
+  <Directory />
+      Options FollowSymLinks
+      AllowOverride None
+      Require all denied
+  </Directory>
+  
+  <Directory ${:dashboard_root}>
+    Options FollowSymLinks
+    AuthName "LAMP Service Dashboard"
+    AuthType Basic
+    AuthUserFile ${:dashboard_pwd}
+    require valid-user
+  </Directory>
+  
+  DocumentRoot ${:dashboard_root}
+  DirectoryIndex index.html index.php
+  SSLEngine on
+  SSLCertificateFile ${:cert_file}
+	SSLCertificateKeyFile ${:key_file}
 
 </VirtualHost>
 
@@ -100,6 +137,10 @@ LoadModule unixd_module modules/mod_unixd.so
 LoadModule access_compat_module modules/mod_access_compat.so
 LoadModule authz_core_module modules/mod_authz_core.so
 LoadModule authz_host_module modules/mod_authz_host.so
+LoadModule auth_basic_module modules/mod_auth_basic.so
+LoadModule authz_user_module modules/mod_authz_user.so
+LoadModule authn_file_module modules/mod_authn_file.so
+LoadModule authn_core_module modules/mod_authn_core.so
 LoadModule log_config_module modules/mod_log_config.so
 LoadModule setenvif_module modules/mod_setenvif.so
 LoadModule version_module modules/mod_version.so
@@ -114,3 +155,4 @@ LoadModule headers_module modules/mod_headers.so
 LoadModule dir_module modules/mod_dir.so
 LoadModule php5_module modules/libphp5.so
 LoadModule alias_module modules/mod_alias.so
+LoadModule ssl_module modules/mod_ssl.so

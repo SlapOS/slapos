@@ -10,12 +10,19 @@ parts =
   cron-entry-logrotate
   promise
 
-  frontend-ajaxupload-promise
-  frontend-website2-promise
-  frontend-website-promise
-#  content-promise
-  configure-ajaxplorer
+  ca-apache
+  phpmyadmin.inc
+  configure-sites  
   publish-connection-informations
+  dashboard-parameters    
+  
+  configuration-promise
+  frontend-ajaxupload-promise
+  frontend-phpmyadmin-promise
+  frontend-website-promise
+  frontend-dashboard-promise
+  ajaxplorer-load-promise
+#  content-promise
 
 eggs-directory = ${buildout:eggs-directory}
 develop-eggs-directory = ${buildout:develop-eggs-directory}
@@ -56,7 +63,11 @@ logrotate-backup = $${basedirectory:backup}/logrotate
 report = $${rootdirectory:etc}/report
 stunnel-conf = $${rootdirectory:etc}/stunnel
 xml-report = $${rootdirectory:var}/xml_report
-www = $${rootdirectory:srv}/www/
+www = $${rootdirectory:srv}/www
+www-data = $${rootdirectory:srv}/www-data
+www-dsh = $${rootdirectory:srv}/www-dsh
+ssl = $${rootdirectory:etc}/ssl
+phantomjs-scripts = $${rootdirectory:etc}/phantomjs
 
 [cadirectory]
 recipe = slapos.cookbook:mkdirectory
@@ -166,6 +177,14 @@ wrapper = $${basedirectory:services}/stunnel
 key-file = $${stunnel:key-file}
 cert-file = $${stunnel:cert-file}
 
+[ca-apache]
+<= certificate-authority
+recipe = slapos.cookbook:certificate_authority.request
+key-file = $${httpd-conf:key_file}
+cert-file = $${httpd-conf:cert_file}
+executable = $${apache-php:wrapper}
+wrapper = $${basedirectory:services}/apache
+
 
 #----------------
 #--
@@ -189,6 +208,19 @@ url = $${request-mariadb:connection-url}
 #----------------
 #--
 #-- Deploy Apache + PHP application.
+[dashboard_credential]
+recipe = slapos.cookbook:generate.password
+storage-path = $${rootdirectory:etc}/.dashboard.passwd
+user = $${slap-parameter:dashboard-user}
+bytes = 4
+
+[htpasswd]
+recipe = plone.recipe.command
+output = $${rootdirectory:etc}/.dhtpasswd
+command =
+  ${apache:location}/bin/htpasswd -cb $${:output} $${dashboard_credential:user} $${dashboard_credential:passwd}
+update-command = $${:command}
+
 [httpd-conf]
 recipe = slapos.recipe.template
 url = ${template-httpd-conf:location}/${template-httpd-conf:filename}
@@ -197,17 +229,23 @@ mode = 0600
 
 document_root = $${rootdirectory:srv}/www/
 public_html = $${:document_root}data/files/public_html/
-public_html2 = $${:document_root}data/files/public_html2/
+phpmyadmin_root = $${directory:www-data}
+dashboard_root = $${directory:www-dsh}
+dashboard_pwd = $${htpasswd:output}
 pid_file = $${basedirectory:run}/apache.pid
 lock_file = $${basedirectory:run}/apache.lock
 ip = $${slap-network-information:global-ipv6}
 port = 8080
-port2 = 8070
-port3 = 8090
+port2 = 8060
+port3 = 8070
+port4 = 8090
+port_https = 4443
 error_log = $${directory:httpd-log}/error.log
 access_log = $${directory:httpd-log}/access.log
 php_ini_dir = $${directory:php-ini-dir}
 php_lib_path = ${apache-php:location}/lib/php
+key_file = $${directory:ssl}/services.key
+cert_file = $${directory:ssl}/services.crt
 
 
 # Deploy Apache + PHP application
@@ -227,7 +265,7 @@ error-log = $${directory:httpd-log}/error.log
 access-log = $${directory:httpd-log}/access.log
 php-ini-dir = $${directory:php-ini-dir}
 tmp-dir = $${directory:tmp-php}
-wrapper = $${basedirectory:services}/apache
+wrapper = $${rootdirectory:bin}/apache_raw
 
 httpd-binary = ${apache:location}/bin/httpd
 
@@ -243,14 +281,21 @@ mysql-port = $${stunnel:local-port}
 environment = 
   PATH=${apache-php:location}/bin:${imagemagick:location}/bin
 
-[configure-ajaxplorer]
-recipe = plone.recipe.command
-convert = ${imagemagick:location}/bin/convert
-command = mkdir -p $${httpd-conf:public_html} && \
-  mkdir -p $${httpd-conf:public_html2} && \
-  sed -i 's#/usr/bin/convert#$${:convert}#' $${apache-php:htdocs}/plugins/editor.imagick/manifest.xml && \
-  sed -i 's#enabled="false"#enabled="true"#' $${apache-php:htdocs}/plugins/editor.imagick/manifest.xml
-update-command = $${:command}
+[rand_password]
+recipe = slapos.cookbook:generate.password
+storage-path = $${rootdirectory:etc}/.cookie.phpmyadmin
+bytes = 6
+ 
+
+[phpmyadmin.inc]
+recipe = slapos.recipe.template
+url = ${template-phpmyadmin:location}/${template-phpmyadmin:filename}
+output = $${httpd-conf:phpmyadmin_root}/config.inc.php
+mode = 0600
+
+mysql_host = $${stunnel:local-host}
+mysql_port = $${stunnel:local-port}
+rand_pwd = $${rand_password:passwd}
 
 [logrotate-entry-apache]
 <= logrotate
@@ -286,20 +331,31 @@ name = Frontend-FileManager
 software-url = $${slap-parameter:frontend-software-url}
 slave = true
 config = url custom_domain
-config-url = http://[$${httpd-conf:ip}]:$${httpd-conf:port2}/
+config-url = https://[$${httpd-conf:ip}]:$${httpd-conf:port2}/
 return = site_url
-config-custom_domain = $${slap-parameter:filemanager-domain}
+config-custom_domain = 
 
-[request-frontend2]
+[request-frontend-phpmyadmin]
 <= slap-connection
 recipe = slapos.cookbook:requestoptional
-name = Frontend-public_html2
+name = Frontend-Phpmyadmin
 software-url = $${slap-parameter:frontend-software-url}
 slave = true
 config = url custom_domain
-config-url = http://[$${httpd-conf:ip}]:$${httpd-conf:port3}/
+config-url = https://[$${httpd-conf:ip}]:$${httpd-conf:port3}/
 return = site_url
-config-custom_domain = $${slap-parameter:site2-domain}
+config-custom_domain = 
+
+[request-frontend-dashboard]
+<= slap-connection
+recipe = slapos.cookbook:requestoptional
+name = Frontend-Dashboard
+software-url = $${slap-parameter:frontend-software-url}
+slave = true
+config = url custom_domain
+config-url = https://[$${httpd-conf:ip}]:$${httpd-conf:port4}/
+return = site_url
+config-custom_domain = 
 
 
 #----------------
@@ -326,18 +382,37 @@ config-custom_domain = $${slap-parameter:site2-domain}
 
 [publish-connection-informations]
 recipe = slapos.cookbook:publish
+dashboard_backend = https://[$${apache-php:ip}]:$${httpd-conf:port4}
+dashboard = $${request-frontend-dashboard:connection-site_url}
+login = $${dashboard_credential:user}
+password = $${dashboard_credential:passwd}
+
+[dashboard-parameters]
+recipe = slapos.recipe.template
+url = ${template-dashboard:location}/${template-dashboard:filename}
+output = $${directory:www-dsh}/config.php
+mode = 0600
+
 public_html_backend = $${apache-php:url}
 public_html = $${request-frontend:connection-site_url}
-public_html2_backend = http://[$${apache-php:ip}]:$${httpd-conf:port3}
-public_html2  = $${request-frontend2:connection-site_url}
-fileManager_backend = http://[$${apache-php:ip}]:$${httpd-conf:port2}
-fileManager = $${request-frontend-ajaxupload:connection-site_url}
+phpmyadmin_backend = https://[$${apache-php:ip}]:$${httpd-conf:port3}
+phpmyadmin  = $${request-frontend-phpmyadmin:connection-site_url}
+filemanager_backend = https://[$${apache-php:ip}]:$${httpd-conf:port2}
+filemanager = $${request-frontend-ajaxupload:connection-site_url}
 mysql_username = $${apache-php:mysql-username}
 mysql_password = $${apache-php:mysql-password}
 mysql_database = $${apache-php:mysql-database}
 mysql_host = $${apache-php:mysql-host}
 mysql_port = $${apache-php:mysql-port}
-
+apache_error_log = $${apache-php:error-log}
+apache_access_log = $${apache-php:access-log}
+joomla_folder = ${joomla:location}
+prestashop_folder = ${prestashop:location}/prestashop
+drupal_folder = ${drupal:location}
+wp_folder = ${wordpress:location}
+#XXX - This folder should exist in Ajaxplorer directory
+upload_folder = $${directory:www}/data/files/upload/
+www_folder = $${httpd-conf:public_html}
 
 #----------------
 #--
@@ -349,26 +424,30 @@ path = $${basedirectory:promises}/apache
 hostname = $${apache-php:ip}
 port = $${apache-php:port}
 
-[frontend-website-promise]
+[check-url-promise]
 recipe = slapos.cookbook:check_url_available
+dash_path = ${dash:location}/bin/dash
+curl_path = ${curl:location}/bin/curl
+
+[frontend-website-promise]
+<= check-url-promise
 path = $${basedirectory:promises}/frontend-website
 url = $${request-frontend:connection-site_url}
-dash_path = ${dash:location}/bin/dash
-curl_path = ${curl:location}/bin/curl
 
-[frontend-website2-promise]
-recipe = slapos.cookbook:check_url_available
-path = $${basedirectory:promises}/frontend-website2
-url = $${request-frontend2:connection-site_url}
-dash_path = ${dash:location}/bin/dash
-curl_path = ${curl:location}/bin/curl
+[frontend-phpmyadmin-promise]
+<= check-url-promise
+path = $${basedirectory:promises}/frontend-phpmyadmin
+url = $${request-frontend-phpmyadmin:connection-site_url}
 
 [frontend-ajaxupload-promise]
-recipe = slapos.cookbook:check_url_available
+<= check-url-promise
 path = $${basedirectory:promises}/frontend-ajaxupload
 url = $${request-frontend-ajaxupload:connection-site_url}
-dash_path = ${dash:location}/bin/dash
-curl_path = ${curl:location}/bin/curl
+
+[frontend-dashboard-promise]
+<= check-url-promise
+path = $${basedirectory:promises}/frontend-dashboard
+url = $${request-frontend-dashboard:connection-site_url}
 
 [content-promise]
 recipe = slapos.cookbook:check_page_content
@@ -379,16 +458,61 @@ dash_path = ${dash:location}/bin/dash
 curl_path = ${curl:location}/bin/curl
 
 
-
-
 [slap-parameter]
 # Default value if no domain is specified
 site-domain =
-filemanager-domain =
-site2-domain =
 frontend-software-url = http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg
-# Default value if no ssh parameter is specified
-logbox-ip =
-logbox-port =
-logbox-user =
-logbox-passwd =
+dashboard-user = admin
+ajaxplorer-user = admin
+ajaxplorer-pwd = insecure
+
+#
+# * Configure Ajaxplorer, setup imagemagik in ajaxplorer
+# * Copy phpmyadmin files sources into phpmyadmin_root folder
+#
+[configuration-js]
+recipe = slapos.recipe.template
+url = ${template-configure:location}/${template-configure:filename}
+content-url = https://[$${apache-php:ip}]:$${httpd-conf:port2}/
+user = $${slap-parameter:ajaxplorer-user}
+password = $${slap-parameter:ajaxplorer-pwd}
+storage-type = serial
+output = $${directory:phantomjs-scripts}/configure.js
+mode = 0644
+
+[configuration-promise]
+recipe = slapos.cookbook:check_page_content_phantomjs
+path = $${basedirectory:promises}/configuration-promise
+dash-path = ${dash:location}/bin/dash
+phantomjs-path = ${phantomjs:location}/phantomjs-slapos
+phantomjs-options = --ignore-ssl-errors=true
+script-path = $${configuration-js:output}
+
+[ajaxplorer-load-js]
+recipe = slapos.recipe.template
+url = ${template-testboot:location}/${template-testboot:filename}
+content-url = https://[$${apache-php:ip}]:$${httpd-conf:port2}/
+mode = 0644
+output = $${directory:phantomjs-scripts}/test-boot.js
+
+[ajaxplorer-load-promise]
+recipe = slapos.cookbook:check_page_content_phantomjs
+path = $${basedirectory:promises}/ajaxplorer-load-promise
+dash-path = ${dash:location}/bin/dash
+phantomjs-path = ${phantomjs:location}/phantomjs-slapos
+phantomjs-options = --ignore-ssl-errors=true
+script-path = $${ajaxplorer-load-js:output}
+
+[configure-sites]
+recipe = plone.recipe.command
+convert = ${imagemagick:location}/bin/convert
+command = mkdir -p $${httpd-conf:public_html} && \
+  chmod -R 700 $${httpd-conf:public_html} && \
+  sed -i 's#/usr/bin/convert#$${:convert}#' $${apache-php:htdocs}/plugins/editor.imagick/manifest.xml && \
+  sed -i 's#enabled="false"#enabled="true"#' $${apache-php:htdocs}/plugins/editor.imagick/manifest.xml && \
+  sed -i 's#//define("AJXP_LOCALE", "en_EN.UTF-8");#define("AJXP_LOCALE", "fr_FR.UTF-8");#' $${apache-php:htdocs}/conf/bootstrap_conf.php && \  
+  sed -i 's#default="en"#default="fr"#' $${apache-php:htdocs}/plugins/boot.conf/manifest.xml && \
+  sed -i 's#default="en"#default="fr"#' $${apache-php:htdocs}/plugins/core.ajaxplorer/manifest.xml && \
+  cp -nr ${phpmyadmin:location}/* $${httpd-conf:phpmyadmin_root}  && \
+  cp -nr ${dashboard:location}/* $${httpd-conf:dashboard_root}
+update-command = $${:command}

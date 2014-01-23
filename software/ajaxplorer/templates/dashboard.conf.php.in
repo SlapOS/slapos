@@ -1,0 +1,26 @@
+<?php
+/**
+ * The base configurations of the Dashboard.
+ *
+ */
+
+
+define('PUBLIC_BACKEND_URL', '${:public_html_backend}');
+define('PUBLIC_URL', '${:public_html}');
+define('MYSQL_BACKEND_URL', '${:phpmyadmin_backend}');
+define('MYSQL_URL', '${:phpmyadmin}');
+define('FILE_BACKEND_URL', '${:filemanager_backend}');
+define('FILE_URL', '${:filemanager}');
+define('DB_USER', '${:mysql_username}');
+define('DB_PASSWORD', '${:mysql_password}');
+define('DB_NAME', '${:mysql_database}');
+define('DB_HOST', '${:mysql_host}');
+define('DB_PORT', '${:mysql_port}');
+define('APACHE_ERROR_FILE', '${:apache_error_log}');
+define('APACHE_ACCESS_FILE', '${:apache_access_log}');
+define('WWW_FOLDER', '${:www_folder}');
+define('UPLOAD_FOLDER', '${:upload_folder}');
+define('JOOMLA_FOLDER', '${:joomla_folder}');
+define('PRESTASHOP_FOLDER', '${:prestashop_folder}');
+define('DRUPAL_FOLDER', '${:drupal_folder}');
+define('WP_FOLDER', '${:wp_folder}');
