@@ -6,4 +6,4 @@ PYTHON=${buildout:directory}/bin/${extra-eggs:interpreter}
 STATUS2RSS=${rss-bin:location}/${rss-bin:filename}
 
 NAME=`basename $STATUS`
-cat $STATUS/* | $PYTHON $STATUS2RSS "Monitoring RSS feed" "https://[$${slap-parameters:ipv6-random}]:$${cgi-httpd-configuration-file:listening-port}/$${deploy-index:filename}" > $RSS_FILE
+cat $STATUS/* | $PYTHON $STATUS2RSS "Monitoring RSS feed" "https://[$${slap-parameters:ipv6-random}]:$${monitor-parameters:port}/$${deploy-index:filename}" > $RSS_FILE

@@ -17,6 +17,7 @@ executable = $${directory:bin}/monitor.py
 cgi-bin = $${directory:cgi-bin}
 monitoring-cgi = $${directory:monitoring-cgi}
 knowledge0-cgi = $${directory:knowledge0-cgi}
+port = 9685
 
 [directory]
 home = $${buildout:directory}
@@ -174,7 +175,7 @@ ca-crl = $${cadirectory:crl}
 recipe = slapos.cookbook:certificate_authority.request
 key-file = $${cadirectory:certs}/httpd.key
 cert-file = $${cadirectory:certs}/httpd.crt
-executable = $${cgi-httpd-wrapper:wrapper-path}
+executable = $${directory:bin}/cgi-httpd
 wrapper = $${directory:service}/cgi-httpd
 # Put domain name
 name = example.com
@@ -247,7 +248,7 @@ error-log = $${directory:log}/cgi-httpd-error-log
 recipe = slapos.cookbook:wrapper
 apache-executable = ${apache:location}/bin/httpd
 command-line = $${:apache-executable} -f $${cgi-httpd-configuration-file:output} -DFOREGROUND
-wrapper-path = $${directory:bin}/cgi-httpd
+wrapper-path = $${ca-httpd:executable}
 
 [publish-connection-informations]
 recipe = slapos.cookbook:publish
