@@ -1,7 +1,6 @@
 [buildout]
 extends = template-runner.cfg
           ${pbsready-import:output}
-          ${monitor-template:output}
 
 parts +=
   nginx_conf

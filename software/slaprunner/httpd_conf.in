@@ -1,0 +1,76 @@
+PidFile "{{ parameters.path_pid }}"
+ServerName example.com
+ServerAdmin someone@email
+
+<IfDefine !MonitorPort>
+  Listen [{{ parameters.global_ip }}]:{{ parameters.monitor_port }}
+  Define MonitorPort
+</IfDefine>
+
+LoadModule unixd_module modules/mod_unixd.so
+LoadModule access_compat_module modules/mod_access_compat.so
+LoadModule auth_basic_module modules/mod_auth_basic.so
+LoadModule authz_core_module modules/mod_authz_core.so
+LoadModule authz_user_module modules/mod_authz_user.so
+LoadModule authz_host_module modules/mod_authz_host.so
+LoadModule authn_core_module modules/mod_authn_core.so
+LoadModule authn_file_module modules/mod_authn_file.so
+LoadModule mime_module modules/mod_mime.so
+LoadModule cgid_module modules/mod_cgid.so
+LoadModule ssl_module modules/mod_ssl.so
+LoadModule alias_module modules/mod_alias.so
+LoadModule env_module modules/mod_env.so
+LoadModule rewrite_module modules/mod_rewrite.so
+LoadModule log_config_module modules/mod_log_config.so
+
+ErrorLog "{{ parameters.path_error_log }}"
+LogFormat "%h %l %u %t \"%r\" %>s %b" common
+CustomLog "{{ parameters.path_access_log }}" common
+
+# SSL Configuration
+Define SSLConfigured
+SSLCertificateFile {{ parameters.cert_file }}
+SSLCertificateKeyFile {{ parameters.key_file }}
+SSLRandomSeed startup builtin
+SSLRandomSeed connect builtin
+SSLRandomSeed startup /dev/urandom 256
+SSLRandomSeed connect builtin
+SSLProtocol -ALL +SSLv3 +TLSv1
+SSLHonorCipherOrder On
+SSLCipherSuite RC4-SHA:HIGH:!ADH
+SSLEngine   On
+
+ScriptSock {{ parameters.path_pid }}
+
+SetEnv GIT_PROJECT_ROOT {{ parameters.project_folder }}
+SetEnv GIT_HTTP_EXPORT_ALL
+ScriptAlias /git/ {{ parameters.git_http_backend }}/
+ScriptAlias /git-public/ {{ parameters.git_http_backend }}/
+
+RewriteCond %{QUERY_STRING} service=git-receive-pack [OR]
+RewriteCond %{REQUEST_URI} /git-receive-pack$
+RewriteRule ^/git/ - [E=AUTHREQUIRED:yes]
+RewriteRule ^/git-public/ - [E=AUTHREQUIRED:yes]
+
+<LocationMatch "^/git-public/">
+        Order Deny,Allow
+        Deny from env=AUTHREQUIRED
+
+        AuthType Basic
+        AuthName "Git Access"
+        AuthUserFile "{{ parameters.etc_dir }}/.htpasswd"
+        Require valid-user
+        Satisfy any
+</LocationMatch>
+
+<LocationMatch "^/git/">
+        Order Deny,Allow
+        Deny from env=AUTHREQUIRED
+
+        AuthType Basic
+        AuthName "Git Access"
+        AuthUserFile "{{ parameters.etc_dir }}/.htpasswd"
+        Require valid-user
+</LocationMatch>
+
+include {{ parameters.cgi_httpd_conf }} 

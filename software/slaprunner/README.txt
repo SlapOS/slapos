@@ -103,6 +103,17 @@ Example :
 	<parameter id="custom-frontend-basic-auth">true</parameter>
 	</instance>
 
+Git repositories :
+------------------
+
+It is easy to give access to your git repository/ies to everyone, or to clone it on your own computer. For this, there are 2 urls to remember:
+  - For read only, you can clone : https://[IPV6]:PORT/git-public/YourRepo.git/
+  - For read and write access, using your runner account : https://[IPV6]:PORT/git/YourRepo.git/
+
+To create the repo, go in the folder srv/runner/project and initiate a new git repo (git init/clone --bare XXX).
+
+For the moment, the PORT is the port of monitoring, which is 9685.
+
 Things to notice for the nex developer :
 ----------------------------------------
 
