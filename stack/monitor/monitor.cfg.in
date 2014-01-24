@@ -198,10 +198,11 @@ recipe = collective.recipe.template
 input = inline:
   PidFile "$${:pid-file}"
   ServerName example.com
-  Listen [$${:listening-ip}]:$${:listening-port}
   ServerAdmin someone@email
-  StartServers 2
-  ThreadsPerChild 1
+  <IfDefine !MonitorPort>
+  Listen [$${:listening-ip}]:$${:listening-port}
+  Define MonitorPort
+  </IfDefine>
   DocumentRoot "$${:document-root}"
   ErrorLog "$${:error-log}"
   LoadModule unixd_module modules/mod_unixd.so
@@ -213,6 +214,8 @@ input = inline:
   LoadModule dir_module modules/mod_dir.so
   LoadModule ssl_module modules/mod_ssl.so
   # SSL Configuration
+  <IfDefine !SSLConfigured>
+  Define SSLConfigured
   SSLCertificateFile $${ca-httpd:cert-file}
   SSLCertificateKeyFile $${ca-httpd:key-file}
   SSLRandomSeed startup builtin
@@ -222,6 +225,7 @@ input = inline:
   SSLProtocol -ALL +SSLv3 +TLSv1
   SSLHonorCipherOrder On
   SSLCipherSuite RC4-SHA:HIGH:!ADH
+  </IfDefine> 
   SSLEngine   On
   ScriptSock $${:cgid-pid-file}
   <Directory $${:document-root}>
