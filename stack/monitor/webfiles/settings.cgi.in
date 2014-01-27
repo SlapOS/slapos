@@ -34,7 +34,7 @@ print "<input type=\"hidden\" name=\"posting-script\" value=\"{{ pwd }}/{{ this_
 for option in parser.options("public"):
   print "<div class=\"pure-control-group\">"
   print "<label for=\"=%s\">%s</label>"%(option, option)
-  print "<input type=\"text\" name=\"%s\" value=\"%s\" readonly>"%(option, parser.get('public', option))
+  print "<input type=\"text\" name=\"%s\" value=\"%s\">"%(option, parser.get('public', option))
   print "</div>"
 print "<div class=\"pure-controls\"><button type=\"submit\" class=\"pure-button \
  pure-button-primary\">Save</button></div></form>"
@@ -46,7 +46,7 @@ for section in parser.sections():
     for option in parser.options(section):
       print "<div class=\"pure-control-group\">"
       print "<label for=\"=%s\">%s</label>"%(option, option)
-      print "<input type=\"text\" name=\"%s\" value=\"%s\">"%(option, parser.get(section, option))
+      print "<input type=\"text\" name=\"%s\" value=\"%s\" readonly>"%(option, parser.get(section, option))
       print "</div>"
 print "</form>"
 
