@@ -85,16 +85,20 @@ else:
 print '\n'
 
 if not password or password != '{{ password }}':
-  print "<html><body>"
+  print "<html><head>"
+  print """
+    <link rel="stylesheet" href="pure-min.css">
+    <link rel="stylesheet" href="/style.css">"""
+  print "</head><body>"
   if password is None:
     print "<h1>This is the monitoring interface</h1>"
   else:
     print "<h1>Error</h1><p>Wrong password</p>"
   print """
   <p>Please enter the monitor_password in the next field to access the data</p>
-  <form action="/index.cgi" method="post">
+  <form action="/index.cgi" method="post" class="pure-form-aligned">
     Password : <input type="password" name="password">
-    <input type="submit" value="Access">
+    <button type="submit" class="pure-button pure-button-primary">Access</button>
   </form>
   </body></html>"""
 
