@@ -28,7 +28,7 @@ for name in form:
 with open(config_file, 'w') as file:
   parser.write(file)
 
-print "<h1>Values that can be defined by the user :</h1>"
+print "<h1>Values that can be defined :</h1>"
 print "<form action=\"/index.cgi\" method=\"post\" class=\"pure-form-aligned\">"
 print "<input type=\"hidden\" name=\"posting-script\" value=\"{{ pwd }}/{{ this_file }}\">"
 for option in parser.options("public"):
