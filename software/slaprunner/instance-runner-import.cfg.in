@@ -38,6 +38,7 @@ parts +=
   deploy-settings-cgi
   deploy-status-cgi
   make-rss
+  monitor-promise
   certificate-authority
   public
   zero-parameters
