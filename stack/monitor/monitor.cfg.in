@@ -121,7 +121,7 @@ mode = 0744
 context =
   raw config_cfg $${buildout:directory}/knowledge0.cfg
   raw python_executable ${buildout:executable}
-  raw pwd monitoring
+  key pwd monitor-parameters:knowledge0-cgi
   key this_file :filename
 
 [deploy-monitor-script]
