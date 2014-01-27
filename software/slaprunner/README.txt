@@ -53,6 +53,16 @@ The parameter "auto-deploy-instance" can be explicitly set to allow or prevent t
 
 There also exists the parameter "autorun", which will build&run your software if set to true. For this, you need "auto_deploy" to true, and set the parameter "slapos-software" to the software you want to deploy. Do not hesitate to clone a different repo than "slapos", or to change the tag/branch to use your custom Software Release. (see "slapos-repository" and "slapos-reference" in previous section).
 
+To deploy the instance with some parameters, just give to the runner parameters starting with "parameter-", they will be correctly forwarded to the instance, which will use them for its configuration. For example, if you want to send to the sofware helloworld the parameter "name" with the value "nicolas", here is how to configure the parameter.xml of the webrunner for auto-depolyment :
+
+<?xml version='1.0' encoding='utf-8'?>
+<instance>
+<parameter id="slapos-software">software/helloworld</parameter>
+<parameter id="auto_deploy">true</parameter>
+<parameter id="autorun">true</parameter>
+<parameter id="parameter-name">nicolas</parameter>
+</instance>
+
 Resilience :
 ------------
 

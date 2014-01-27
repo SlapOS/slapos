@@ -26,6 +26,7 @@ parts +=
   slapos-repo-config
   cron-entry-backup
   cron-entry-prepare-software
+  deploy-instance-parameters
 ###Parts to add for monitoring
   slap-parameters
   certificate-authority

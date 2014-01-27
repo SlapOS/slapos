@@ -1,0 +1,18 @@
+{% set inst_parameter_dict = {} -%}
+{% if slapparameter_dict is defined -%}
+{%   for key in slapparameter_dict.keys() -%}
+{%     if key.startswith('parameter-') -%}
+{%       do inst_parameter_dict.__setitem__(key[10:], slapparameter_dict.pop(key)) -%}
+{%     endif -%}
+{%   endfor -%}
+{% endif -%}
+
+<?xml version='1.0' encoding='utf-8'?>
+<instance>
+{% if slapparameter_dict is defined %}
+  {% for parameter_name in inst_parameter_dict.keys() %}
+  <parameter id="{{ parameter_name }}">{{ inst_parameter_dict[parameter_name] }}</parameter>
+  {% endfor %}
+{% endif %}
+</instance>
+

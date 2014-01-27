@@ -23,6 +23,7 @@ parts +=
   slapos-cfg
   slapos-repo-config
   cron-entry-prepare-software
+  deploy-instance-parameters
 # have to repeat the next one, as it's not inherited from pbsready-import
   import-on-notification
 ###Parts to add for monitoring
