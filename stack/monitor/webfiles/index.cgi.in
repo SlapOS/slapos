@@ -64,7 +64,6 @@ def make_menu():
 
 # Beginning of response
 print "Content-Type: text/html"
-print
 
 # Check if user is logged
 if "password" in form:
@@ -82,6 +81,8 @@ else:
       password = None
   else:
     password = None
+
+print '\n'
 
 if not password or password != '{{ password }}':
   print "<html><body>"
