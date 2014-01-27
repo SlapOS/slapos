@@ -26,6 +26,7 @@ bin = $${:home}/bin
 srv = $${:home}/srv
 var = $${:home}/var
 
+promises = $${:etc}/promise
 ca-dir = $${:srv}/ssl
 cgi-bin = $${:var}/cgi-bin
 monitoring-cgi = $${:cgi-bin}/monitoring
@@ -253,6 +254,14 @@ recipe = slapos.cookbook:wrapper
 apache-executable = ${apache:location}/bin/httpd
 command-line = $${:apache-executable} -f $${cgi-httpd-configuration-file:output} -DFOREGROUND
 wrapper-path = $${ca-httpd:executable}
+
+[monitor-promise]
+recipe = slapos.cookbook:check_url_available
+path = $${directory:promises}/monitor
+url = $${publish-connection-informations:monitor_url}
+check-secure = 1
+dash_path = ${dash:location}/bin/dash
+curl_path = ${curl:location}/bin/curl
 
 [publish-connection-informations]
 recipe = slapos.cookbook:publish
