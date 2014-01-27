@@ -92,6 +92,7 @@ context =
   raw index_template $${deploy-index-template:location}/$${deploy-index-template:filename}
   key password zero-parameters:monitor-password
   raw extra_eggs_interpreter ${buildout:directory}/bin/${extra-eggs:interpreter}
+  raw default_page /index.cgi?script=$${monitor-parameters:knowledge0-cgi}%2F$${deploy-settings-cgi:filename}
 
 [deploy-index-template]
 recipe = hexagonit.recipe.download
