@@ -201,7 +201,7 @@ input = inline:
   ServerName example.com
   ServerAdmin someone@email
   <IfDefine !MonitorPort>
-  Listen [$${:listening-ip}]:$${:listening-port}
+  Listen [$${:listening-ip}]:$${monitor-parameters:port}
   Define MonitorPort
   </IfDefine>
   DocumentRoot "$${:document-root}"
@@ -242,7 +242,6 @@ output = $${directory:etc}/cgi-httpd.conf
 # md5sum =
 listening-ip = $${slap-parameters:ipv6-random}
 # XXX: randomize-me
-listening-port = 9685
 htdocs = $${directory:www}
 pid-file = $${directory:run}/cgi-httpd.pid
 cgid-pid-file = $${directory:run}/cgi-httpd-cgid.pid
