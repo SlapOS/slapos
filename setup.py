@@ -54,14 +54,15 @@ setup(name=name,
           'zc.buildout',
           'cliff',
           'requests',
-          'ipython',
-          'bpython',
         ] + additional_install_requires,
-      extras_require={'docs': (
+      extras_require={
+      'docs': (
         'Sphinx',
         'repoze.sphinx.autointerface',
         'sphinxcontrib.programoutput'
-      ),},
+      ),
+      'ipython_console': ('ipython',),
+      'bpython_console': ('bpython',)},
       tests_require=[
           'pyflakes',
           'mock'
