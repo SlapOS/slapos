@@ -57,7 +57,7 @@ setup(name=name,
           'ipython',
           'bpython',
         ] + additional_install_requires,
-      extra_requires={'docs': (
+      extras_require={'docs': (
         'Sphinx',
         'repoze.sphinx.autointerface',
         'sphinxcontrib.programoutput'
