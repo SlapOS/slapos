@@ -270,7 +270,7 @@ def supplySupply():
 @app.route('/requestComputerPartition', methods=['POST'])
 def requestComputerPartition():
   shared_xml = request.form.get('shared_xml')
-  share = xml_marshaller.xml_marshaller.loads(shared_xml)
+  share = xml_marshaller.xml_marshaller.loads(shared_xml.encode())
   if not share:
     return request_not_shared()
   else:
@@ -294,7 +294,7 @@ def request_not_shared():
   partition_reference = request.form.get('partition_reference', '').encode()
   partition_id = request.form.get('computer_partition_id', '').encode()
   partition_parameter_kw = request.form.get('partition_parameter_xml', None)
-  requested_state = xml_marshaller.xml_marshaller.loads(request.form.get('state'))
+  requested_state = xml_marshaller.xml_marshaller.loads(request.form.get('state').encode())
   if partition_parameter_kw:
     partition_parameter_kw = xml_marshaller.xml_marshaller.loads(
                                               partition_parameter_kw.encode())
