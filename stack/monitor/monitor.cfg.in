@@ -122,6 +122,7 @@ filename = settings.cgi
 mode = 0744
 context =
   raw config_cfg $${buildout:directory}/knowledge0.cfg
+  raw timestamp $${buildout:directory}/.timestamp
   raw python_executable ${buildout:executable}
   key pwd monitor-parameters:knowledge0-cgi
   key this_file :filename
