@@ -250,18 +250,6 @@ cgid-pid-file = $${directory:run}/cgi-httpd-cgid.pid
 document-root = $${directory:www}
 error-log = $${directory:log}/cgi-httpd-error-log
 
-[monitor-frontend]
-<= slap-connection
-recipe = slapos.cookbook:requestoptional
-name = Monitor Frontend
-# XXX We have hardcoded SR URL here.
-software-url = http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg
-slave = true
-config = url domain
-config-url = https://[$${cgi-httpd-configuration-file:listening-ip}]:$${monitor-parameters:port}
-config-domain = $${slap-parameter:frontend-domain}
-return = site_url domain
-
 [cgi-httpd-wrapper]
 recipe = slapos.cookbook:wrapper
 apache-executable = ${apache:location}/bin/httpd
@@ -271,12 +259,12 @@ wrapper-path = $${ca-httpd:executable}
 [monitor-promise]
 recipe = slapos.cookbook:check_url_available
 path = $${directory:promises}/monitor
-url = $${monitor-frontend:config-url}/$${deploy-index:filename}
+url = https://[$${cgi-httpd-configuration-file:listening-ip}]:$${monitor-parameters:port}/$${deploy-index:filename}
 check-secure = 1
 dash_path = ${dash:location}/bin/dash
 curl_path = ${curl:location}/bin/curl
 
 [publish-connection-informations]
 recipe = slapos.cookbook:publish
-monitor_url = https://$${monitor-frontend:connection-domain}/index.cgi
+monitor_url = https://[$${cgi-httpd-configuration-file:listening-ip}]:$${monitor-parameters:port}/$${deploy-index:filename}
 IMPORTANT_monitor_info = change the monitor_password as soon as possible ! Default is : $${public:monitor-password}

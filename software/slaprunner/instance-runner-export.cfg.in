@@ -57,7 +57,11 @@ backup-directory = $${directory:backup}
 shell-binary = ${dash:location}/bin/dash
 rsync-binary = ${rsync:location}/bin/rsync
 
+# XXX-Nicolas : this promise will test ipv4 frontend only if software-type is runner-export
+[monitor-promise]
+url = $${monitor-frontend:config-url}/$${deploy-index:filename}
 
 # Extends publish section with resilient parameters
 [publish-connection-informations]
 <= resilient-publish-connection-parameter
+monitor_url = https://$${monitor-frontend:connection-domain}/index.cgi
