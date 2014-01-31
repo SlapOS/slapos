@@ -29,7 +29,10 @@ with open(config_file, 'w') as file:
   parser.write(file)
 
 if len(form) > 0:
-  os.remove("{{ timestamp }}")
+  try:
+    os.remove("{{ timestamp }}")
+  except OSError:
+    pass
 
 print "<h1>Values that can be defined :</h1>"
 print "<form action=\"/index.cgi\" method=\"post\" class=\"pure-form-aligned\">"
