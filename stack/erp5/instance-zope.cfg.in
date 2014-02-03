@@ -20,9 +20,9 @@ partition. No more (undefined result), no less (IndexError).
 recipe = slapos.cookbook:erp5.test
 certificate-authority-path = ${test-certificate-authority:ca-dir}
 mysql-url-list = {{ dumps(slapparameter_dict['mysql-test-url-list']) }}
-kumofs-url = {{ slapparameter_dict['kumofs-url'] }}
-memcached-url = {{ slapparameter_dict['memcached-url'] }}
-cloudooo-url = {{ slapparameter_dict['cloudooo-url'] }}
+kumofs-url = {{ dumps(slapparameter_dict['kumofs-url']) }}
+memcached-url = {{ dumps(slapparameter_dict['memcached-url']) }}
+cloudooo-url = {{ dumps(slapparameter_dict['cloudooo-url']) }}
 test-instance-path = ${directory:unit-test-path}
 prepend-path = ${buildout:bin-directory}
 run-unit-test = ${buildout:bin-directory}/runUnitTest
@@ -131,8 +131,8 @@ ipv6 = {{ storage_server.split(']:')[0][1:] }}
 < = zeo-tunnel-base
 base-name = tidstorage-tunnel
 ipv4-port = {{ next_port }}
-ipv6 = {{ slapparameter_dict.get('tidstorage-ip') }}
-ipv6-port = {{ slapparameter_dict.get('tidstorage-port') }}
+ipv6 = {{ dumps(slapparameter_dict.get('tidstorage-ip')) }}
+ipv6-port = {{ dumps(slapparameter_dict.get('tidstorage-port')) }}
 {%     do slapparameter_dict.__setitem__('tidstorage-ip', ipv4) -%}
 {%     do slapparameter_dict.__setitem__('tidstorage-port', next_port) -%}
 {%     set next_port = next_port + 1 -%}
@@ -155,8 +155,8 @@ ipv6 = {{ ipv6 }}
 
 {% if slapparameter_dict.get('tidstorage-ip') -%}
 [tidstorage]
-ipv4 = {{ slapparameter_dict['tidstorage-ip'] }}
-ipv4-port = {{ slapparameter_dict['tidstorage-port'] }}
+ipv4 = {{ dumps(slapparameter_dict['tidstorage-ip']) }}
+ipv4-port = {{ dumps(slapparameter_dict['tidstorage-port']) }}
 {% else -%}
 [tidstorage]
 ipv4 =
@@ -165,10 +165,10 @@ ipv4-port =
 
 [zope-base]
 recipe = slapos.cookbook:generic.zope.zeo.client
-user = {{ slapparameter_dict['inituser-login'] }}
-password = {{ slapparameter_dict['inituser-password'] }}
+user = {{ dumps(slapparameter_dict['inituser-login']) }}
+password = {{ dumps(slapparameter_dict['inituser-password']) }}
 ip = {{ ipv4 }}
-timezone = {{ slapparameter_dict['timezone'] }}
+timezone = {{ dumps(slapparameter_dict['timezone']) }}
 tidstorage-ip = ${tidstorage:ipv4}
 tidstorage-port = ${tidstorage:ipv4-port}
 instance-etc = ${directory:instance-etc}
@@ -198,7 +198,7 @@ context =
   key instance directory:instance
   key instance_products directory:instance-products
   raw deadlock_path /manage_debug_threads
-  raw deadlock_debugger_password {{ slapparameter_dict['deadlock-debugger-password'] }}
+  raw deadlock_debugger_password {{ dumps(slapparameter_dict['deadlock-debugger-password']) }}
   key tidstorage_ip tidstorage:ipv4
   key tidstorage_port tidstorage:ipv4-port
   key promise_path erp5-promise:promise-path
@@ -294,12 +294,12 @@ zope-address-list = {{ dumps(publish_list) }}
 [erp5-promise]
 recipe = slapos.cookbook:erp5.promise
 promise-path = ${directory:etc}/erp5promise.cfg
-kumofs-url = {{ slapparameter_dict['kumofs-url'] }}
-memcached-url = {{ slapparameter_dict['memcached-url'] }}
-cloudooo-url = {{ slapparameter_dict['cloudooo-url'] }}
-smtp-url = {{ slapparameter_dict['smtp-url'] }}
-bt5 = {{ slapparameter_dict['bt5'] }}
-bt5-repository-url = {{ slapparameter_dict['bt5-repository-url'] }}
+kumofs-url = {{ dumps(slapparameter_dict['kumofs-url']) }}
+memcached-url = {{ dumps(slapparameter_dict['memcached-url']) }}
+cloudooo-url = {{ dumps(slapparameter_dict['cloudooo-url']) }}
+smtp-url = {{ dumps(slapparameter_dict['smtp-url']) }}
+bt5 = {{ dumps(slapparameter_dict['bt5']) }}
+bt5-repository-url = {{ dumps(slapparameter_dict['bt5-repository-url']) }}
 
 [buildout]
 eggs-directory = {{ eggs_directory }}

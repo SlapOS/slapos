@@ -98,7 +98,7 @@ data-directory = ${directory:mariadb-data}
 pid-file = ${directory:run}/mariadb.pid
 error-log = ${directory:log}/mariadb_error.log
 slow-query-log = ${directory:log}/mariadb_slowquery.log
-long-query-time = {{ slapparameter_dict.get('long-query-time', 1) }}
+long-query-time = {{ dumps(slapparameter_dict.get('long-query-time', 1)) }}
 innodb-buffer-pool-size = {{ dumps(slapparameter_dict.get('innodb-buffer-pool-size', 0)) }}
 innodb-log-file-size = {{ dumps(slapparameter_dict.get('innodb-log-file-size', 0)) }}
 innodb-log-buffer-size = {{ dumps(slapparameter_dict.get('innodb-log-buffer-size', 0)) }}
@@ -106,7 +106,7 @@ relaxed-writes = {{ dumps(slapparameter_dict.get('relaxed-writes', False)) }}
 {% if incremental_backup_retention_days > -1 -%}
 binlog-path = ${directory:mariadb-backup-incremental}/binlog
 # XXX: binlog rotation happens along with other log's rotation
-binlog-expire-days = {{ incremental_backup_retention_days }}
+binlog-expire-days = {{ dumps(incremental_backup_retention_days) }}
 {% else %}
 binlog-path =
 {%- endif %}
@@ -150,7 +150,7 @@ mysql-base-directory = {{ parameter_dict['mariadb-location'] }}
 [mariadb-instance]
 # Options
 user = user
-parallel-test-database-amount = {{ slapparameter_dict.get('test-database-amount', 30) }}
+parallel-test-database-amount = {{ dumps(slapparameter_dict.get('test-database-amount', 30)) }}
 database = erp5
 test-user = erp5_test
 test-database = erp5_test

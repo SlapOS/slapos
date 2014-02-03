@@ -64,7 +64,7 @@ ipv6 = {{ zope_address.split(']:')[0][1:] }}
 
 [haproxy-cfg-parameter-dict]
 socket-path = ${directory:run}/haproxy.sock
-server-check-path = {{ slapparameter_dict['haproxy-server-check-path'] }}
+server-check-path = {{ dumps(slapparameter_dict['haproxy-server-check-path']) }}
 backend-dict = {{ dumps(haproxy_dict) }}
 ip = {{ ipv4 }}
 
@@ -90,15 +90,15 @@ scheme = https
 key-file = ${directory:apache-conf}/apache.key
 cert-file = ${directory:apache-conf}/apache.crt
 configuration-file = ${directory:apache-conf}/apache.conf
-access-control-string = {{ slapparameter_dict['apache-access-control-string'] }}
+access-control-string = {{ dumps(slapparameter_dict['apache-access-control-string']) }}
 pid-file = ${directory:run}/apache.pid
 lock-file = ${directory:run}/apache.lock
 ssl-session-cache = $${directory:log}/apache-ssl-session-cache
 error-log = ${directory:log}/apache-error.log
 access-log = ${directory:log}/apache-access.log
 apache-binary = {{ parameter_dict['apache'] }}/bin/httpd
-ssl-authentication = {{ slapparameter_dict['apache-ssl-authentication'] }}
-backend-path = {{ slapparameter_dict['apache-backend-path'] }}
+ssl-authentication = {{ dumps(slapparameter_dict['apache-ssl-authentication']) }}
+backend-path = {{ dumps(slapparameter_dict['apache-backend-path']) }}
 # Note: Without certificate-authority main certificate have to be hardcoded
 ssl-authentication-certificate = ${certificate-authority:ca-dir}/cacert.pem
 ssl-authentication-crl = ${certificate-authority:ca-crl}
@@ -123,11 +123,11 @@ ca-certs = ${directory:certs}
 ca-newcerts = ${directory:newcerts}
 ca-crl = ${directory:crl}
 {% set ca = slapparameter_dict['ca'] -%}
-country-code = {{ ca.get('country-code', 'ZZ') }}
-email = {{ ca.get('email', 'nobody@example.com') }}
-state = {{ ca.get('state', 'Dummy State') }}
-city = {{ ca.get('city', 'Dummy City') }}
-company = {{ ca.get('company', 'Dummy Company') }}
+country-code = {{ dumps(ca.get('country-code', 'ZZ')) }}
+email = {{ dumps(ca.get('email', 'nobody@example.com')) }}
+state = {{ dumps(ca.get('state', 'Dummy State')) }}
+city = {{ dumps(ca.get('city', 'Dummy City')) }}
+company = {{ dumps(ca.get('company', 'Dummy Company')) }}
 
 [ca-apache]
 < = certificate-authority

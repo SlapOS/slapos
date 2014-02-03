@@ -16,7 +16,7 @@ mysql-url = {{ publish['mariadb-database-list'][0] }}
 {%     do family_list.append(value.split('://', 1)) -%}
 {%   endif -%}
 {%  endfor -%}
-zope-url = {{ family_list[0][0] + '://' + publish['inituser-login'] + ':' + publish['inituser-password'] + '@' + family_list[0][1] + '/' + publish['site-id'] }}
+zope-url = {{ dumps(family_list[0][0] + '://' + publish['inituser-login'] + ':' + publish['inituser-password'] + '@' + family_list[0][1] + '/' + publish['site-id']) }}
 
 [promise-erp5-site]
 recipe = slapos.cookbook:check_url_available

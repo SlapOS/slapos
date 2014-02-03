@@ -129,7 +129,7 @@ known-tid-storage-identifier-dict = {{ dumps(known_tid_storage_identifier_dict) 
 configuration-path = ${directory:etc}/tidstorage.py
 ip = {{ tidstorage_ip }}
 port = {{ tidstorage_port }}
-timestamp-file-path = {{ tidstorage_dict.get('tidstorage-timestamp-path', '%(backup)s/repozo_tidstorage_timestamp.log' % {'backup': default_tidstorage_timestamp_path}) }}
+timestamp-file-path = {{ dumps(tidstorage_dict.get('tidstorage-timestamp-path', '%(backup)s/repozo_tidstorage_timestamp.log' % {'backup': default_tidstorage_timestamp_path})) }}
 logfile-name = ${directory:log}/tidstorage.log
 pidfile-name = ${directory:run}/tidstorage.pid
 status-file = ${directory:tidstorage}/tidstorage.tid
@@ -166,7 +166,7 @@ path = ${directory:promises}/tidstorage
 recipe = slapos.cookbook:cron.d
 cron-entries = ${cron:cron-entries}
 name = tidstorage
-time = {{ tidstorage_dict.get('periodicity', 'daily') }}
+time = {{ dumps(tidstorage_dict.get('periodicity', 'daily')) }}
 command = ${tidstorage:repozo-wrapper}
 
 [{{ section("logrotate-tidstorage") }}]

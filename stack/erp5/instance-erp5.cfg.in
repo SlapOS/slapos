@@ -56,7 +56,7 @@ recipe = slapos.cookbook:generate.password
 [deadlock-debugger-password]
 {% set deadlock_debugger_password = slapparameter_dict.get('deadlock-debugger-password') -%}
 {% if deadlock_debugger_password -%}
-passwd = {{ deadlock_debugger_password }}
+passwd = {{ dumps(deadlock_debugger_password) }}
 {% else -%}
 recipe = slapos.cookbook:generate.password
 {% endif -%}
@@ -95,15 +95,15 @@ config-mysql-test-url-list = ${request-mariadb:connection-test-database-list}
 config-memcached-url = ${request-memcached-volatile:connection-url}
 config-cloudooo-url = ${request-cloudooo:connection-url}
 config-kumofs-url = ${request-memcached-persistent:connection-url}
-config-bt5 = {{ slapparameter_dict.get('bt5', 'erp5_full_text_myisam_catalog erp5_configurator_standard erp5_configurator_maxma_demo erp5_configurator_ung erp5_configurator_run_my_doc') }}
-config-bt5-repository-url = {{ slapparameter_dict.get('bt5-repository-url', local_bt5_repository) }}
-config-smtp-url = {{ slapparameter_dict.get('smtp-url', 'smtp://localhost:25/') }}
+config-bt5 = {{ dumps(slapparameter_dict.get('bt5', 'erp5_full_text_myisam_catalog erp5_configurator_standard erp5_configurator_maxma_demo erp5_configurator_ung erp5_configurator_run_my_doc')) }}
+config-bt5-repository-url = {{ dumps(slapparameter_dict.get('bt5-repository-url', local_bt5_repository)) }}
+config-smtp-url = {{ dumps(slapparameter_dict.get('smtp-url', 'smtp://localhost:25/')) }}
 config-zodb-dict = ${request-zodb:connection-zodb-dict}
 config-zodb-storage-type = ${request-zodb:connection-zodb-storage-type}
 config-tidstorage-ip = ${request-zodb:connection-tidstorage-ip}
 config-tidstorage-port = ${request-zodb:connection-tidstorage-port}
-config-timezone = {{ slapparameter_dict.get('timezone', 'UTC') }}
-config-site-id = {{ site_id }}
+config-timezone = {{ dumps(slapparameter_dict.get('timezone', 'UTC')) }}
+config-site-id = {{ dumps(site_id) }}
 config-deadlock-debugger-password = ${deadlock-debugger-password:passwd}
 config-inituser-login = {{ dumps(inituser_login) }}
 config-inituser-password = ${inituser-password:passwd}
@@ -124,7 +124,7 @@ config-timerserver-interval = {{ dumps(zope_parameter_dict.get('timerserver-inte
 config-longrequest-logger-interval = {{ dumps(zope_parameter_dict.get('longrequest-logger-interval', -1)) }}
 config-longrequest-logger-timeout = {{ dumps(zope_parameter_dict.get('longrequest-logger-timeout', 1)) }}
 config-port-base = {{ dumps(zope_parameter_dict.get('port-base', 2200)) }}
-sla-computer_guid = {{ zope_parameter_dict.get('computer-guid', computer_id) }}
+sla-computer_guid = {{ dumps(zope_parameter_dict.get('computer-guid', computer_id)) }}
 {% endfor -%}
 
 {# We need to concatenate lists that we cannot read as lists, so this gets hairy. -#}
@@ -153,7 +153,7 @@ config-url = ${request-balancer:{{ family_name }}-v6}
 < = request-common
 name = balancer
 software-type = balancer
-sla-computer_guid = {{ slapparameter_dict.get('balancer-computer-guid', computer_id) }}
+sla-computer_guid = {{ dumps(slapparameter_dict.get('balancer-computer-guid', computer_id)) }}
 extra-config =
   tcpv4-port
   haproxy-server-check-path
@@ -174,19 +174,19 @@ config-tcpv4-port = {{ dumps(slapparameter_dict.get('', 2150)) }}
 config-{{ name }} = {{ ' ${' ~ zope_section_id ~ ':connection-zope-address-list}' }}
 {% endfor -%}
 # XXX: should those really be same for all families ?
-config-haproxy-server-check-path = {{ slapparameter_dict.get('haproxy-server-check-path', '/') % {'site-id': site_id} }}
-config-apache-access-control-string = {{ slapparameter_dict.get('apache-access-control-string', 'all') }}
-config-apache-ssl-authentication = {{ slapparameter_dict.get('apache-ssl-authentication', '0') }}
-config-apache-backend-path = {{ slapparameter_dict.get('apache-backend-path', '/') % {'site-id': site_id} }}
+config-haproxy-server-check-path = {{ dumps(slapparameter_dict.get('haproxy-server-check-path', '/') % {'site-id': site_id}) }}
+config-apache-access-control-string = {{ dumps(slapparameter_dict.get('apache-access-control-string', 'all')) }}
+config-apache-ssl-authentication = {{ dumps(slapparameter_dict.get('apache-ssl-authentication', '0')) }}
+config-apache-backend-path = {{ dumps(slapparameter_dict.get('apache-backend-path', '/') % {'site-id': site_id}) }}
 config-ca = {{ dumps(slapparameter_dict.get('ca', {})) }}
 
 [request-frontend-base]
 {% if has_frontend -%}
 < = request-common
-software-url = {{ frontend_dict['software-url'] }}
-software-type = {{ frontend_dict.get('software-type', 'RootSoftwareInstance') }}
+software-url = {{ dumps(frontend_dict['software-url']) }}
+software-type = {{ dumps(frontend_dict.get('software-type', 'RootSoftwareInstance')) }}
 sla = instance_guid
-sla-instance_guid = {{ frontend_dict['instance-guid'] }}
+sla-instance_guid = {{ dumps(frontend_dict['instance-guid']) }}
 slave = true
 {% set config_dict = {
   'type': 'zope',
@@ -206,7 +206,7 @@ recipe = slapos.cookbook:publish.serialised
 deadlock-debugger-password = ${deadlock-debugger-password:passwd}
 inituser-password = ${inituser-password:passwd}
 {% for name, value in publish_dict.items() -%}
-{{   name }} = {{ value }}
+{{   name }} = {{ dumps(value) }}
 {% endfor -%}
 
 [buildout]
