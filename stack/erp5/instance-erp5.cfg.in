@@ -89,6 +89,7 @@ extra-config =
   deadlock-debugger-password
   inituser-login
   inituser-password
+  developer-list
 config-mysql-url-list = ${request-mariadb:connection-database-list}
 config-mysql-test-url-list = ${request-mariadb:connection-test-database-list}
 config-memcached-url = ${request-memcached-volatile:connection-url}
@@ -106,6 +107,7 @@ config-site-id = {{ site_id }}
 config-deadlock-debugger-password = ${deadlock-debugger-password:passwd}
 config-inituser-login = {{ dumps(inituser_login) }}
 config-inituser-password = ${inituser-password:passwd}
+config-developer-list = {{ dumps(slapparameter_dict.get('developer-list', [inituser_login])) }}
 software-type = zope
 
 {% set zope_family_dict = {} -%}

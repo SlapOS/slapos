@@ -29,6 +29,16 @@
       "default": "random",
       "type": "string"
     },
+    "developer-list": {
+      "description": "List of logins which should get the Developper role (required to modify portal_components' content)",
+      "default": "inituser-login's value",
+      "items": {
+        "pattern": "/^\S+$/",
+        "type": "string"
+      },
+      "uniqueItems": true,
+      "type": "array"
+    },
     "frontend": {
       "description": "Front-end slave instance request parameters",
       "properties": {

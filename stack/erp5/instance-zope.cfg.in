@@ -188,6 +188,7 @@ site-id = {{ site_id }}
 {%   do zodb_list.append([key, mount_point, cache_size, storage_type, storage_dict]) -%}
 {% endfor -%}
 zodb-list = {{ dumps(zodb_list) }}
+developer-list = {{ dumps(slapparameter_dict['developer-list']) }}
 
 [zope-conf-base]
 recipe = slapos.recipe.template:jinja2

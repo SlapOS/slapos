@@ -81,6 +81,14 @@ products {{ instance_products }}
   container-class Products.TemporaryFolder.TemporaryContainer
 </zodb_db>
 
+{% set developer_list = parameter_dict['developer-list'] -%}
+{% if developer_list -%}
+%import Products.ERP5Type
+<ERP5Type erp5>
+  developers {{ developer_list | join(' ') }}
+</ERP5Type>
+
+{%- endif %}
 {% for db_name, mount_point, cache_size, storage_type, storage_dict in parameter_dict['zodb-list'] -%}
 <zodb_db {{ db_name }}>
 {%-   if cache_size >= 0 %}
