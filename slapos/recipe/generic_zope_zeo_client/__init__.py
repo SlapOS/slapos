@@ -53,7 +53,8 @@ def Zope2InitUser(path, username, password):
 
 class Recipe(GenericBaseRecipe):
   def _options(self, options):
-    options['password'] = self.generatePassword()
+    if 'password' not in options:
+      options['password'] = self.generatePassword()
 
   def install(self):
     """
