@@ -6,6 +6,14 @@
       "description": "Chosen ERP5Site object identifier",
       "type": "string"
     },
+    "inituser-login": {
+      "description": "Initial user login",
+      "type": "string"
+    },
+    "inituser-password": {
+      "description": "Initial user password",
+      "type": "string"
+    },
     "kumofs-url": {
       "description": "Persistent memcached access information",
       "type": "string"

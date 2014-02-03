@@ -19,6 +19,16 @@
       "default": "random",
       "type": "string"
     },
+    "inituser-login": {
+      "description": "Login of the initial/rescue user",
+      "default": "zope",
+      "type": "string"
+    },
+    "inituser-password": {
+      "description": "Password of the initial/rescue user",
+      "default": "random",
+      "type": "string"
+    },
     "frontend": {
       "description": "Front-end slave instance request parameters",
       "properties": {

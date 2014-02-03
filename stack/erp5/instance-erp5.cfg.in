@@ -2,7 +2,8 @@
 {% set frontend_dict = slapparameter_dict.get('frontend', {}) %}
 {% set has_frontend = frontend_dict.get('software-url', '') != '' -%}
 {% set site_id = slapparameter_dict.get('site-id', 'erp5') -%}
-{% set publish_dict = {'site-id': site_id} -%}
+{% set inituser_login = slapparameter_dict.get('inituser-login', 'zope') -%}
+{% set publish_dict = {'site-id': site_id, 'inituser-login': inituser_login} -%}
 [request-common]
 recipe = slapos.cookbook:request.serialised
 software-url = ${slap-connection:software-release-url}
@@ -44,6 +45,14 @@ config-{{ option }} = {{ dumps(value) }}
 {{ request('mariadb', 'mariadb', 'mariadb', {'tcpv4-port': 2099}, {'database-list': True, 'test-database-list': True}) }}
 {{ request('zodb', 'zodb-' ~ slapparameter_dict.get('zodb-software-type', 'zeo'), 'zodb', {'tcpv4-port': 2100, 'zodb-dict': {'root': {}}}, {'zodb-storage-type': False, 'zodb-dict': False, 'tidstorage-ip': False, 'tidstorage-port': False}) }}
 
+[inituser-password]
+{% set inituser_password = slapparameter_dict.get('inituser-password') -%}
+{% if inituser_password -%}
+passwd = {{ dumps(inituser_password) }}
+{% else -%}
+recipe = slapos.cookbook:generate.password
+{% endif -%}
+
 [deadlock-debugger-password]
 {% set deadlock_debugger_password = slapparameter_dict.get('deadlock-debugger-password') -%}
 {% if deadlock_debugger_password -%}
@@ -78,6 +87,8 @@ extra-config =
   longrequest-logger-timeout
   port-base
   deadlock-debugger-password
+  inituser-login
+  inituser-password
 config-mysql-url-list = ${request-mariadb:connection-database-list}
 config-mysql-test-url-list = ${request-mariadb:connection-test-database-list}
 config-memcached-url = ${request-memcached-volatile:connection-url}
@@ -93,6 +104,8 @@ config-tidstorage-port = ${request-zodb:connection-tidstorage-port}
 config-timezone = {{ slapparameter_dict.get('timezone', 'UTC') }}
 config-site-id = {{ site_id }}
 config-deadlock-debugger-password = ${deadlock-debugger-password:passwd}
+config-inituser-login = {{ dumps(inituser_login) }}
+config-inituser-password = ${inituser-password:passwd}
 software-type = zope
 
 {% set zope_family_dict = {} -%}
@@ -189,6 +202,7 @@ return = site_url
 [publish]
 recipe = slapos.cookbook:publish.serialised
 deadlock-debugger-password = ${deadlock-debugger-password:passwd}
+inituser-password = ${inituser-password:passwd}
 {% for name, value in publish_dict.items() -%}
 {{   name }} = {{ value }}
 {% endfor -%}

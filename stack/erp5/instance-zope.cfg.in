@@ -165,7 +165,8 @@ ipv4-port =
 
 [zope-base]
 recipe = slapos.cookbook:generic.zope.zeo.client
-user = zope
+user = {{ slapparameter_dict['inituser-login'] }}
+password = {{ slapparameter_dict['inituser-password'] }}
 ip = {{ ipv4 }}
 timezone = {{ slapparameter_dict['timezone'] }}
 tidstorage-ip = ${tidstorage:ipv4}
