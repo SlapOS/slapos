@@ -129,7 +129,7 @@ ipv6 = {{ storage_server.split(']:')[0][1:] }}
 {%   if slapparameter_dict.get('tidstorage-ip') -%}
 [tidstorage-tunnel]
 < = zeo-tunnel-base
-base-name = {{ 'tidstorage-tunnel' }}
+base-name = tidstorage-tunnel
 ipv4-port = {{ next_port }}
 ipv6 = {{ slapparameter_dict.get('tidstorage-ip') }}
 ipv6-port = {{ slapparameter_dict.get('tidstorage-port') }}
