@@ -473,7 +473,7 @@ ajaxplorer-pwd = insecure
 [configuration-js]
 recipe = slapos.recipe.template
 url = ${template-configure:location}/${template-configure:filename}
-content-url = https://[$${apache-php:ip}]:$${httpd-conf:port2}/
+content-url = https://[$${apache-php:ip}]:$${httpd-conf:port2}/index.php?ignore_tests=true
 user = $${slap-parameter:ajaxplorer-user}
 password = $${slap-parameter:ajaxplorer-pwd}
 storage-type = serial
