@@ -19,7 +19,7 @@ parts =
   configuration-promise
   frontend-ajaxupload-promise
   frontend-phpmyadmin-promise
-  frontend-website-promise
+#  frontend-website-promise
   frontend-dashboard-promise
   ajaxplorer-load-promise
 #  content-promise
@@ -330,7 +330,8 @@ recipe = slapos.cookbook:requestoptional
 name = Frontend-FileManager
 software-url = $${slap-parameter:frontend-software-url}
 slave = true
-config = url custom_domain
+config = url https-only custom_domain
+config-https-only = true
 config-url = https://[$${httpd-conf:ip}]:$${httpd-conf:port2}/
 return = site_url
 config-custom_domain = 
@@ -341,7 +342,8 @@ recipe = slapos.cookbook:requestoptional
 name = Frontend-Phpmyadmin
 software-url = $${slap-parameter:frontend-software-url}
 slave = true
-config = url custom_domain
+config = url https-only custom_domain
+config-https-only = true
 config-url = https://[$${httpd-conf:ip}]:$${httpd-conf:port3}/
 return = site_url
 config-custom_domain = 
@@ -352,7 +354,8 @@ recipe = slapos.cookbook:requestoptional
 name = Frontend-Dashboard
 software-url = $${slap-parameter:frontend-software-url}
 slave = true
-config = url custom_domain
+config = url https-only custom_domain
+config-https-only = true
 config-url = https://[$${httpd-conf:ip}]:$${httpd-conf:port4}/
 return = site_url
 config-custom_domain = 
