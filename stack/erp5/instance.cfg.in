@@ -68,9 +68,13 @@ extra-context =
     raw software_type tidstorage
 
 [dynamic-template-cloudooo-parameters]
+cups = {{ cups_location }}
+dbus = {{ dbus_location }}
+dbus-glib = {{ dbus_glib_location }}
 file = {{ file_location }}
 fontconfig = {{ fontconfig_location }}
 freetype = {{ freetype_location }}
+glib = {{ glib_location }}
 libffi = {{ libffi_location }}
 libICE = {{ libICE_location }}
 libpng12 = {{ libpng12_location }}
