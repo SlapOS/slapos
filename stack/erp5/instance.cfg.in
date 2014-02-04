@@ -71,6 +71,7 @@ extra-context =
 file = {{ file_location }}
 fontconfig = {{ fontconfig_location }}
 freetype = {{ freetype_location }}
+libffi = {{ libffi_location }}
 libICE = {{ libICE_location }}
 libpng12 = {{ libpng12_location }}
 libSM = {{ libSM_location }}
