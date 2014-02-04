@@ -54,6 +54,8 @@
 
 from zExceptions import Unauthorized\n
 from AccessControl import getSecurityManager\n
+from ZTUtils import make_query\n
+from Products.ZSQLCatalog.SQLCatalog import Query, NegatedQuery\n
 import json\n
 if REQUEST is None:\n
   REQUEST = context.REQUEST\n
@@ -204,19 +206,19 @@ def renderForm(form, response_dict):\n
   #           context.log(field_property)\n
 \n
 #       group_list.append((group[\'gid\'], field_list))\n
-# \n
-#   group_list[-1][1].append(("form_id", {\n
-#     "type": "StringField",\n
-#     "key": "form_id",\n
-#     "default": form.id,\n
-#     "editable": 0,\n
-#     "css_class": "",\n
-#     "hidden": 1,\n
-#     "description": "",\n
-#     "title": "form_id",\n
-#     "required": 1,\n
-#   }))\n
-# \n
+\n
+  response_dict["form_id"] = {\n
+    "type": "StringField",\n
+    "key": "form_id",\n
+    "default": form.id,\n
+    "editable": 0,\n
+    "css_class": "",\n
+    "hidden": 1,\n
+    "description": "",\n
+    "title": "form_id",\n
+    "required": 1,\n
+  }\n
+\n
 #   response_dict["group_list"] = group_list\n
 # rendered_response_dict["_embedded"] = {\n
 #   "form": raw_response_dict\n
@@ -227,6 +229,7 @@ context.Base_prepareCorsResponse(RESPONSE=response)\n
 \n
 mime_type = \'application/hal+json\'\n
 portal = context.getPortalObject()\n
+sql_catalog = context.portal_catalog.getSQLCatalog()\n
 \n
 # Calculate the site root to prevent unexpected browsing\n
 is_web_mode = (context.REQUEST.get(\'current_web_section\', None) is not None) or context.isWebMode()\n
@@ -341,7 +344,7 @@ elif mode == \'document\':\n
     renderer_form = context.restrictedTraverse(form_id, None)\n
     # XXX Proxy field are not correctly handled in context of web site\n
     renderer_form = getattr(context, form_id)\n
-    context.log(form_id)\n
+#     context.log(form_id)\n
     if (renderer_form is not None):\n
       embedded_dict = {\n
         \'_links\': {\n
@@ -361,16 +364,19 @@ elif mode == \'document\':\n
       for group in renderer_form.Form_getGroupTitleAndId():\n
         for field in renderer_form.get_fields_in_group(group[\'goid\']):\n
           field_id = field.id\n
-          context.log(field_id)\n
+#           context.log(field_id)\n
           if field_id.startswith(\'my_\'):\n
             property_name = field_id[len(\'my_\'):]\n
-            context.log(property_name)\n
+#             context.log(property_name)\n
             property_value = context.getProperty(property_name, d=None)\n
             if (property_value is not None):\n
               if not same_type(property_value, DateTime()):\n
                 # XXX Serialize DateTime\n
                 result_dict[property_name] = property_value \n
 \n
+  ##############\n
+  # XXX Custom slapos code\n
+  ##############\n
   if is_site_root:\n
     # Global action users for the jIO plugin\n
     # XXX Would be better to not hardcode them but put them as portal type\n
@@ -401,6 +407,233 @@ elif mode == \'document\':\n
     if person is not None:\n
       result_dict[\'_links\'][\'me\'] = {\n
         \'href\': \'%s/%s\' % (person.absolute_url(), script.id),\n
+        \'_relative_url\': person.getRelativeUrl()\n
+      }\n
+\n
+    query = sql_catalog.buildQuery({\n
+        "portal_type": "Software Product",\n
+        "validation_state": \'published\'\n
+      }).asSearchTextExpression(sql_catalog)\n
+    http_query = make_query({\n
+      "mode": "search",\n
+      "query": query\n
+    })\n
+    result_dict[\'_links\'][\'slapos_jump\'] = {\n
+      "href": "%s/%s?%s" % (site_root.absolute_url(), script.id, http_query),\n
+      \'_query\': query,\n
+      \'name\': \'public_software_product\'\n
+    }\n
+\n
+  else:\n
+    context_portal_type = context.getPortalType()\n
+    if context_portal_type == "Person":\n
+      query = sql_catalog.buildQuery({\n
+          "portal_type": "Hosting Subscription",\n
+          "default_destination_section_uid": context.getUid(),\n
+          "validation_state": \'validated\'\n
+        }).asSearchTextExpression(sql_catalog)\n
+      http_query = make_query({\n
+        "mode": "search",\n
+        "query": query\n
+      })\n
+      result_dict[\'_links\'][\'slapos_jump\'] = [{\n
+        "href": "%s/%s?%s" % (site_root.absolute_url(), script.id, http_query),\n
+        \'name\': \'current_hosting_subscription\',\n
+        \'_query\': query\n
+      }]\n
+\n
+      # List of validated computers\n
+      query = sql_catalog.buildQuery({\n
+          "portal_type": "Computer",\n
+          "local_roles": "Assignee",\n
+          "default_strict_allocation_scope_uid": "!=%s" % context.getPortalObject().portal_categories.allocation_scope.close.forever.getUid(),\n
+          "validation_state": \'validated\'\n
+        }).asSearchTextExpression(sql_catalog)\n
+      http_query = make_query({\n
+        "mode": "search",\n
+        "query": query\n
+      })\n
+      result_dict[\'_links\'][\'slapos_jump\'].append({\n
+        "href": "%s/%s?%s" % (site_root.absolute_url(), script.id, http_query),\n
+        \'name\': \'current_computer\',\n
+        \'_query\': query\n
+      })\n
+\n
+      # List of networks\n
+      query = sql_catalog.buildQuery({\n
+          "portal_type": "Computer Network",\n
+          "local_roles": "Assignee"\n
+        }).asSearchTextExpression(sql_catalog)\n
+      http_query = make_query({\n
+        "mode": "search",\n
+        "query": query\n
+      })\n
+      result_dict[\'_links\'][\'slapos_jump\'].append({\n
+        "href": "%s/%s?%s" % (site_root.absolute_url(), script.id, http_query),\n
+        \'name\': \'current_network\',\n
+        \'_query\': query\n
+      })\n
+\n
+      # List of invoices\n
+      query = sql_catalog.buildQuery({\n
+          "portal_type": "Sale Invoice Transaction",\n
+          "default_destination_section_uid": context.getUid(),\n
+          "query": NegatedQuery(Query(title="Reversal Transaction for %")),\n
+        }).asSearchTextExpression(sql_catalog)\n
+      http_query = make_query({\n
+        "mode": "search",\n
+        "query": query\n
+      })\n
+      result_dict[\'_links\'][\'slapos_jump\'].append({\n
+        "href": "%s/%s?%s" % (site_root.absolute_url(), script.id, http_query),\n
+        \'name\': \'current_invoice\',\n
+        \'_query\': query\n
+      })\n
+\n
+      # List of tickets\n
+      query = sql_catalog.buildQuery({\n
+          "portal_type": ["Support Request", "Regularisation Request"],\n
+          "default_destination_decision_uid": context.getUid(),\n
+        }).asSearchTextExpression(sql_catalog)\n
+      http_query = make_query({\n
+        "mode": "search",\n
+        "query": query\n
+      })\n
+      result_dict[\'_links\'][\'slapos_jump\'].append({\n
+        "href": "%s/%s?%s" % (site_root.absolute_url(), script.id, http_query),\n
+        \'name\': \'current_ticket\',\n
+        \'_query\': query\n
+      })\n
+\n
+      action_dict[\'request\'] = {\n
+        \'href\': "%s/Person_requestInstanceFromJio" % context.absolute_url(),\n
+        \'method\': \'POST\'\n
+      }\n
+      action_dict[\'request_computer\'] = {\n
+        \'href\': "%s/Person_requestComputerFromJio" % context.absolute_url(),\n
+        \'method\': \'POST\'\n
+      }\n
+      action_dict[\'request_computer_network\'] = {\n
+        \'href\': "%s/Person_requestComputerNetworkFromJio" % context.absolute_url(),\n
+        \'method\': \'POST\'\n
+      }\n
+      action_dict[\'request_ticket\'] = {\n
+        \'href\': "%s/Person_requestTicketFromJio" % context.absolute_url(),\n
+        \'method\': \'POST\'\n
+      }\n
+\n
+    elif context_portal_type == "Hosting Subscription":\n
+      # Link to all ongoing Hosting Subscriptions\n
+      query = sql_catalog.buildQuery({\n
+          "portal_type": ["Software Instance", "Slave Instance"],\n
+          "default_specialise_uid": context.getUid(),\n
+          "validation_state": \'validated\'\n
+        }).asSearchTextExpression(sql_catalog)\n
+      http_query = make_query({\n
+        "mode": "search",\n
+        "query": query\n
+      })\n
+      result_dict[\'_links\'][\'slapos_jump\'] = {\n
+        "href": "%s/%s?%s" % (site_root.absolute_url(), script.id, http_query),\n
+        \'name\': \'related_instance\',\n
+        \'_query\': query\n
+      }\n
+\n
+      # Actions to modify the hosting subscription\n
+      action_dict[\'start\'] = {\n
+        \'href\': "%s/HostingSubscription_changeRequestedStateFromJio?action=started" % context.absolute_url(),\n
+        \'method\': \'POST\'\n
+      }\n
+      action_dict[\'stop\'] = {\n
+        \'href\': "%s/HostingSubscription_changeRequestedStateFromJio?action=stopped" % context.absolute_url(),\n
+        \'method\': \'POST\'\n
+      }\n
+      action_dict[\'destroy\'] = {\n
+        \'href\': "%s/HostingSubscription_changeRequestedStateFromJio?action=destroyed" % context.absolute_url(),\n
+        \'method\': \'POST\'\n
+      }\n
+\n
+    elif context_portal_type == "Software Installation":\n
+      action_dict[\'destroy\'] = {\n
+        \'href\': "%s/SoftwareInstallation_destroyFromJio" % context.absolute_url(),\n
+        \'method\': \'POST\'\n
+      }\n
+\n
+    elif context_portal_type == "Software Product":\n
+      # Link to all Software Releases\n
+      query = sql_catalog.buildQuery({\n
+          "portal_type": "Software Release",\n
+          "default_aggregate_uid": context.getUid(),\n
+          "validation_state": ["shared", "shared_alive", "released", "released_alive", "published", "published_alive"]\n
+        }).asSearchTextExpression(sql_catalog)\n
+      http_query = make_query({\n
+        "mode": "search",\n
+        "query": query\n
+      })\n
+      result_dict[\'_links\'][\'slapos_jump\'] = {\n
+        "href": "%s/%s?%s" % (site_root.absolute_url(), script.id, http_query),\n
+        \'name\': \'related_software_release\',\n
+        \'_query\': query\n
+      }\n
+\n
+    elif context_portal_type == "Computer":\n
+      # Link to related Software Installation\n
+      query = sql_catalog.buildQuery({\n
+          "portal_type": "Software Installation",\n
+          "default_aggregate_uid": context.getUid(),\n
+          "validation_state": "validated"\n
+        }).asSearchTextExpression(sql_catalog)\n
+      http_query = make_query({\n
+        "mode": "search",\n
+        "query": query\n
+      })\n
+      result_dict[\'_links\'][\'slapos_jump\'] = {\n
+        "href": "%s/%s?%s" % (site_root.absolute_url(), script.id, http_query),\n
+        \'name\': \'related_software_installation\',\n
+        \'_query\': query\n
+      }\n
+\n
+      action_dict[\'update_allocation_scope\'] = {\n
+        \'href\': "%s/Computer_updateAllocationScopeFromJio" % context.absolute_url(),\n
+        \'method\': \'POST\'\n
+      }\n
+      action_dict[\'generate_certificate\'] = {\n
+        \'href\': "%s/Computer_requestNewComputerCertificateFromJio" % context.absolute_url(),\n
+        \'method\': \'POST\'\n
+      }\n
+      action_dict[\'revoke_certificate\'] = {\n
+        \'href\': "%s/Computer_revokeComputerCertificateFromJio" % context.absolute_url(),\n
+        \'method\': \'POST\'\n
+      }\n
+      action_dict[\'request_installation\'] = {\n
+        \'href\': "%s/Person_requestInstallationFromJio" % context.absolute_url(),\n
+        \'method\': \'POST\'\n
+      }\n
+\n
+    elif context_portal_type == "Sale Invoice Transaction":\n
+      result_dict[\'_links\'][\'slapos_jump\'] = {\n
+        "href": "%s/SaleInvoiceTransaction_viewSlapOSPrintout" % context.absolute_url(),\n
+        \'name\': \'current_printout\',\n
+      }\n
+\n
+    elif context_portal_type in ["Support Request", "Regularisation Request"]:\n
+      # Link to all Events\n
+      query = sql_catalog.buildQuery({\n
+          "default_follow_up_uid": context.getUid(),\n
+        }).asSearchTextExpression(sql_catalog)\n
+      http_query = make_query({\n
+        "mode": "search",\n
+        "query": query\n
+      })\n
+      result_dict[\'_links\'][\'slapos_jump\'] = {\n
+        "href": "%s/%s?%s" % (site_root.absolute_url(), script.id, http_query),\n
+        \'name\': \'related_event\',\n
+        \'_query\': query\n
+      }\n
+\n
+      action_dict[\'update\'] = {\n
+        \'href\': "%s/Ticket_updateFromJio" % context.absolute_url(),\n
+        \'method\': \'POST\'\n
       }\n
 \n
   # Define document action\n
@@ -442,6 +675,9 @@ elif mode == \'search\':\n
         document_result[select] = document.getProperty(select, d=None)\n
       result_list.append(document_result)\n
     result_dict[\'_embedded\'] = {"contents": result_list}\n
+  result_dict[\'_query\'] = query\n
+  result_dict[\'_limit\'] = limit\n
+  result_dict[\'_select_list\'] = select_list\n
 \n
 \n
 elif mode == \'newContent\':\n

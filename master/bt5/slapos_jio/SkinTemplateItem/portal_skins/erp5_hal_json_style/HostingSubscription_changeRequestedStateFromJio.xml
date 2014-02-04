@@ -50,54 +50,34 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string encoding="cdata"><![CDATA[
-
-"""\n
-   This script factorises code required to redirect to the appropriate\n
-   page from a script. It should probably be extended, reviewed and documented\n
-   so that less code is copied and pasted in dialog scripts.\n
+            <value> <string>if REQUEST.other[\'method\'] != "POST":\n
+  response.setStatus(405)\n
+  return ""\n
 \n
-   TODO: improve API and extensively document. ERP5Site_redirect may \n
-   be redundant.\n
-"""\n
-from ZTUtils import make_query\n
-request_form = context.REQUEST.form\n
-request_form.update(kw)\n
-request_form = context.ERP5Site_filterParameterList(request_form)\n
-request_form.update(keep_items)\n
+if action not in ("started", "stopped", "destroyed"):\n
+  raise NotImplementedError, "Unknown action %s" % action\n
 \n
-if form_id == \'view\':\n
-  redirect_url = "%s/ERP5Document_getHateoas" % context.absolute_url()\n
-else:\n
-  redirect_url = \'%s/%s\' % (context.absolute_url(), form_id)\n
+person = context.getDestinationSectionValue()\n
+person.requestSoftwareInstance(\n
+  state=action,\n
+  software_release=context.getUrlString(),\n
+  software_title=context.getTitle(),\n
+  software_type=context.getSourceReference(),\n
+  instance_xml=context.getTextContent(),\n
+  sla_xml=context.getSlaXml(),\n
+  shared=context.isRootSlave()\n
+)\n
 \n
-parameters = make_query(dict([(k, v) for k, v in request_form.items() if k and v is not None]))\n
-if len(parameters):\n
-  if \'?\' in redirect_url:\n
-    separator = \'&\'\n
-  else:\n
-    separator = \'?\'\n
-  redirect_url = \'%s%s%s\' % (redirect_url, separator, parameters)\n
-\n
-\n
-# XXX Allow CORS\n
-response = context.REQUEST.RESPONSE\n
-context.Base_prepareCorsResponse(RESPONSE=response)\n
-# http://en.wikipedia.org/wiki/Post/Redirect/Get\n
-response.setStatus(201)\n
-response.setHeader("Location", redirect_url)\n
-return\n
-
-
-]]></string> </value>
+context.Base_redirect()\n
+</string> </value>
         </item>
         <item>
             <key> <string>_params</string> </key>
-            <value> <string>form_id=\'view\', keep_items={}, **kw</string> </value>
+            <value> <string>action, REQUEST=None</string> </value>
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>Base_redirect</string> </value>
+            <value> <string>HostingSubscription_changeRequestedStateFromJio</string> </value>
         </item>
       </dictionary>
     </pickle>

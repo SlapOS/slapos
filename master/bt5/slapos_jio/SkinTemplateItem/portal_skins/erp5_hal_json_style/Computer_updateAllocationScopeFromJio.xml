@@ -50,54 +50,55 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string encoding="cdata"><![CDATA[
-
-"""\n
-   This script factorises code required to redirect to the appropriate\n
-   page from a script. It should probably be extended, reviewed and documented\n
-   so that less code is copied and pasted in dialog scripts.\n
+            <value> <string>if REQUEST.other[\'method\'] != "POST":\n
+  response.setStatus(405)\n
+  return ""\n
 \n
-   TODO: improve API and extensively document. ERP5Site_redirect may \n
-   be redundant.\n
-"""\n
-from ZTUtils import make_query\n
-request_form = context.REQUEST.form\n
-request_form.update(kw)\n
-request_form = context.ERP5Site_filterParameterList(request_form)\n
-request_form.update(keep_items)\n
+portal = context.getPortalObject()\n
+computer = context\n
 \n
-if form_id == \'view\':\n
-  redirect_url = "%s/ERP5Document_getHateoas" % context.absolute_url()\n
+if allocation_scope == \'open/public\':\n
+  # Public computer capacity is handle by an alarm\n
+  capacity_scope = \'close\'\n
+elif allocation_scope.startswith(\'open\'):\n
+  # Capacity is not handled for \'private\' computers\n
+  capacity_scope = \'open\'\n
 else:\n
-  redirect_url = \'%s/%s\' % (context.absolute_url(), form_id)\n
+  capacity_scope = \'close\'\n
 \n
-parameters = make_query(dict([(k, v) for k, v in request_form.items() if k and v is not None]))\n
-if len(parameters):\n
-  if \'?\' in redirect_url:\n
-    separator = \'&\'\n
-  else:\n
-    separator = \'?\'\n
-  redirect_url = \'%s%s%s\' % (redirect_url, separator, parameters)\n
+edit_kw = {\n
+  \'allocation_scope\': allocation_scope,\n
+  \'capacity_scope\': capacity_scope,\n
+}\n
 \n
+self_person = computer.getSourceAdministrationValue(portal_type="Person")\n
+self_email = self_person.getDefaultEmailCoordinateText()\n
+if allocation_scope == \'open/public\':\n
+  # reset friends and update in place\n
+  edit_kw[\'subject_list\'] = [\'\']\n
+  edit_kw[\'destination_section\'] = None\n
+elif allocation_scope == \'open/personal\':\n
+  # reset friends to self and update in place\n
+  edit_kw[\'subject_list\'] = [self_email]\n
+  edit_kw[\'destination_section_value\'] = self_person\n
+else:\n
+  if self_email not in subject_list:\n
+    # add self as friend\n
+    subject_list.append(self_email)\n
+  edit_kw[\'subject_list\'] = subject_list\n
 \n
-# XXX Allow CORS\n
-response = context.REQUEST.RESPONSE\n
-context.Base_prepareCorsResponse(RESPONSE=response)\n
-# http://en.wikipedia.org/wiki/Post/Redirect/Get\n
-response.setStatus(201)\n
-response.setHeader("Location", redirect_url)\n
-return\n
-
-
-]]></string> </value>
+computer.edit(**edit_kw)\n
+\n
+return ""\n
+</string> </value>
         </item>
         <item>
             <key> <string>_params</string> </key>
-            <value> <string>form_id=\'view\', keep_items={}, **kw</string> </value>
+            <value> <string>allocation_scope, subject_list, REQUEST=None</string> </value>
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>Base_redirect</string> </value>
+            <value> <string>Computer_updateAllocationScopeFromJio</string> </value>
         </item>
       </dictionary>
     </pickle>
