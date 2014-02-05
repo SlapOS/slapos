@@ -90,6 +90,25 @@
       "description": "When enabled, sets innodb_flush_log_at_trx_commit = 0, innodb_flush_method = nosync, innodb_doublewrite = 0 and sync_frm = 0 - RTFM, those options are dangerous",
       "default": false,
       "type": "boolean"
+    },
+    "ssl": {
+      "description": "Enable and define SSL support for network connections",
+      "default": {},
+      "properties": {
+        "ca-crt": {
+          "description": "Certificate Authority's certificate, in PEM format",
+          "type": "string",
+        },
+        "crt": {
+          "description": "Server's certificate, in PEM format (mandatory to enable SSL support)",
+          "type": "string"
+        },
+        "key": {
+          "description": "Server's key, in PEM format (mandatory to enable SSL support)",
+          "type": "string"
+        }
+      },
+      "type": "object"
     }
   }
 }

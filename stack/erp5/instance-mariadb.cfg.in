@@ -29,6 +29,40 @@ recipe = slapos.cookbook:publish.serialised
 database-list = {{ render_database_list(database_list) }}
 test-database-list = {{ render_database_list(test_database_list) }}
 
+[simplefile]
+recipe = slapos.recipe.template:jinja2
+template = inline:{{ '{{ content }}' }}
+
+{% macro simplefile(section_name, file_path, content, mode='') -%}
+{%   set content_section_name = section_name ~ '-content' -%}
+[{{  content_section_name }}]
+content = {{ dumps(content) }}
+
+[{{  section(section_name) }}]
+< = simplefile
+rendered = {{ file_path }}
+context = key content {{content_section_name}}:content
+mode = {{ mode }}
+{%- endmacro %}
+{% set ssl_dict = {} -%}
+{% macro sslfile(key, content, mode='644') -%}
+{%   set path = '${directory:mariadb-ssl}/' ~ key ~ '.pem' -%}
+{%   do ssl_dict.__setitem__(key, path) -%}
+{{   simplefile('ssl-file-' ~ key, path, content, mode) }}
+{%- endmacro %}
+{% set ssl_parameter_dict = slapparameter_dict.get('ssl') -%}
+{% if ssl_parameter_dict -%}
+{%   set base_directory = '${directory:mariadb-ssl}/' -%}
+{# Note: The key content will be stored in .installed.cfg, and this template's
+rendering, so the only point of mode is to avoid risking mariadb complaining
+about laxist file mode. -#}
+{{   sslfile('key', ssl_parameter_dict['key'], mode='600') }}
+{{   sslfile('crt', ssl_parameter_dict['crt']) }}
+{%   if 'ca-crt' in ssl_parameter_dict -%}
+{{     sslfile('ca-crt', ssl_parameter_dict['ca-crt']) }}
+{%   endif -%}
+{%- endif %}
+
 {% if full_backup_retention_days > -1 -%}
 [{{ section('cron-entry-mariadb-backup') }}]
 <= cron
@@ -75,7 +109,10 @@ binlog-path = ${directory:mariadb-backup-incremental}/binlog
 binlog-expire-days = {{ incremental_backup_retention_days }}
 {% else %}
 binlog-path =
-{% endif -%}
+{%- endif %}
+{%- for key, value in ssl_dict.items() -%}
+ssl-{{ key }} = {{ value }}
+{% endfor %}
 
 [my-cnf]
 recipe = slapos.recipe.template:jinja2
@@ -206,6 +243,7 @@ mariadb-backup-full = ${:backup}/mariadb-full
 mariadb-backup-incremental = ${:backup}/mariadb-incremental
 logrotate-backup = ${:backup}/logrotate
 mariadb-data = ${:srv}/mariadb
+mariadb-ssl = ${:etc}/mariadb-ssl
 var = ${buildout:directory}/var
 log = ${:var}/log
 run = ${:var}/run

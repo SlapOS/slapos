@@ -70,6 +70,14 @@ collation_server = utf8_unicode_ci
 character_set_server = utf8
 skip_character_set_client_handshake
 
+{% if 'ssl-key' in parameter_dict -%}
+ssl_cert = {{ parameter_dict['ssl-crt'] }}
+ssl_key = {{ parameter_dict['ssl-key'] }}
+{%   if 'ssl-ca-crt' in parameter_dict -%}
+ssl_ca = {{ parameter_dict['ssl-ca-crt'] }}
+{%-  endif %}
+{%- endif %}
+
 [client]
 socket = {{ socket }}
 user = root
