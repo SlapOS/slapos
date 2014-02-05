@@ -12,16 +12,19 @@ Implementation :
   cron
   cron-entry-monitor
   cron-entry-rss
-  deploy-monitor-cgi
-  deploy-control-cgi
+  deploy-index
+  deploy-index-template
   deploy-monitor-script
   deploy-rss-script
+  deploy-settings-cgi
+  deploy-status-cgi
   make-rss
+  monitor-promise
+  setup-static-files
   certificate-authority
   public
   zero-parameters
-  cgi-httpd-wrapper
-  publish-connection-informations
+  cgi-httpd-wrappers
 
 * If you want to add a custom monitoring script, you can write it (in whatever language you wish) and save it in YOUR_INSTANCE_FOLDER/etc/monitor.
 The only thing to know, is that if your script successfully passed, do not return or print nothing. If there is a problem, you can print the explanation on stdout or stderr
@@ -42,7 +45,7 @@ dash_path = ${dash:location}/bin/dash
 curl_path = ${curl:location}/bin/curl
 
 
-CGI SCripts:
+CGI Scripts:
 ------------
 This stack also provides a web interface, in wich you can execute custom cgi scripts, or just print files. The web link is provided in the published parameters, as for the password that you have to change as soon as possible
 
@@ -60,3 +63,4 @@ Notice :
 * The control interface will let you change the values of the options declared in the [public] section of the config file (see zeroknown recipe). Other section's values will just be printed. These values won't be overwritten by buildout.
 * If you want to allow a user to change a parameter, use the recipe zeroknown, with the buildout section name : "[public]"
 * If you manually change a parameter, it could take some time for the modifications to be applied (at least 1 or 2 slapgrid-cp)
+* If you need to change the port of the web interface of the monitoring stack, just create in your software release file a part called [monitor-parameters] and give the new port value to the parameter "port".
