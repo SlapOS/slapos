@@ -39,7 +39,7 @@ print "<form action=\"/index.cgi\" method=\"post\" class=\"pure-form-aligned\">"
 print "<input type=\"hidden\" name=\"posting-script\" value=\"{{ pwd }}/{{ this_file }}\">"
 for option in parser.options("public"):
   print "<div class=\"pure-control-group\">"
-  print "<label for=\"=%s\">%s</label>"%(option, option)
+  print "<label for=\"%s\">%s</label>"%(option, option)
   print "<input type=\"text\" name=\"%s\" value=\"%s\">"%(option, parser.get('public', option))
   print "</div>"
 print "<div class=\"pure-controls\"><button type=\"submit\" class=\"pure-button \
@@ -51,7 +51,7 @@ for section in parser.sections():
   if section != 'public':
     for option in parser.options(section):
       print "<div class=\"pure-control-group\">"
-      print "<label for=\"=%s\">%s</label>"%(option, option)
+      print "<label for=\"%s\">%s</label>"%(option, option)
       print "<input type=\"text\" name=\"%s\" value=\"%s\" readonly>"%(option, parser.get(section, option))
       print "</div>"
 print "</form>"
