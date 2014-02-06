@@ -50,5 +50,10 @@
                                 "type": "boolean",
                                 "default": "false"
                         }
+                        "monitor-port": {
+                                "description": "allow to manually change the port on wich the apache server running monitoring interface is listening. The default value for the webrunner is different from the default value of the standalone stack-monitor server",
+                                "type": "integer",
+                                "default": 9684
+                        }
                 }
 }
