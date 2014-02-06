@@ -24,7 +24,9 @@ for r in result:
 print "<br/>"
 
 print "<h2>These scripts and promises were successful :</h2>"
+print "<ul>"
 for r in result:
   if result[r] == '':
-    print "<h3>%s</h3><p>%s</p>" % (r, result[r])
+    print "<li>%s</li>" % (r)
+print "</ul>"
 print "</body></html>"
