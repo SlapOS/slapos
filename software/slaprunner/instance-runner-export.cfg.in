@@ -47,6 +47,7 @@ parts +=
   public
   zero-parameters
   cgi-httpd-wrapper
+  public-symlink
 
 [exporter]
 recipe = slapos.cookbook:slaprunner.export
