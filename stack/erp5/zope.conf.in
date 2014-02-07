@@ -3,6 +3,14 @@
 %define INSTANCE {{ instance }}
 instancehome $INSTANCE
 zserver-threads {{ parameter_dict['thread-amount'] }}
+# When ownership checking is enabled, the roles a script runs as are the
+# intersection between user's roles and script owner's roles. This means
+# that revoking a code author's access to the system prevent all scripts
+# owned by that user from being of much use.
+# This is not how ERP5 approaches development: Managers write code,
+# Managers must be trustable and trusted, and their past work should not be
+# revoked when their account is terminated.
+skip-ownership-checking true
 
 lock-filename {{ parameter_dict['lock-file'] }}
 pid-filename {{ parameter_dict['pid-file'] }}
