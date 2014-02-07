@@ -17,6 +17,7 @@ executable = $${directory:bin}/monitor.py
 cgi-bin = $${directory:cgi-bin}
 monitoring-cgi = $${directory:monitoring-cgi}
 knowledge0-cgi = $${directory:knowledge0-cgi}
+public-cgi = $${directory:public-cgi}
 port = 9685
 
 [directory]
@@ -39,10 +40,16 @@ monitor = $${:etc}/monitor
 monitor-result = $${monitor-parameters:monitor-dir}
 monitor-result-bool = $${monitor-parameters:result-dir}
 promise = $${:etc}/promise
+public-cgi = $${:cgi-bin}/public
 run = $${:var}/run
 service = $${:etc}/service/
 tmp = $${:home}/tmp
 www = $${:var}/www
+
+[public-symlink]
+recipe = cns.recipe.symlink
+symlink = $${monitor-parameters:public-cgi} = $${directory:www}/public
+autocreate = true
 
 [cron]
 recipe = slapos.cookbook:cron
