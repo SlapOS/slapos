@@ -153,39 +153,24 @@ def renderForm(form, response_dict):\n
     "title": context.getTitle()\n
   }\n
 \n
-# # XXX form action update, etc\n
-# def renderRawField(field):\n
-#   meta_type = field.meta_type\n
-#   if meta_type == "MethodField":\n
-#     result = {\n
-#       "meta_type": field.meta_type\n
-#     }\n
-#   else:\n
-#     result = {\n
-#       "meta_type": field.meta_type,\n
-#       "_values": field.values,\n
-#       # XXX TALES expression is not JSON serializable by default\n
-#       # "_tales": field.tales\n
-#       "_overrides": field.overrides\n
-#     }\n
-#   if meta_type == "ProxyField":\n
-#     result[\'_delegated_list\'] = field.delegated_list\n
-# #     try:\n
-# #       result[\'_delegated_list\'].pop(\'list_method\')\n
-# #     except KeyError:\n
-# #       pass\n
-# \n
-#   # XXX ListMethod is not JSON serialized by default\n
-#   try:\n
-#     result[\'_values\'].pop(\'list_method\')\n
-#   except KeyError:\n
-#     pass\n
-#   try:\n
-#     result[\'_overrides\'].pop(\'list_method\')\n
-#   except KeyError:\n
-#     pass\n
-#   return result\n
-# \n
+  form_definition = {\n
+    "_links": {\n
+      "self": {\n
+        "href": "%s/%s?mode=form_definition&skin_id=%s" % \\\n
+          (site_root.absolute_url(), script.id, form.id),\n
+        \'name\': form.id\n
+      }\n
+    }\n
+  }\n
+  renderFormDefinition(form, form_definition)\n
+  response_dict[\'_embedded\'] = {\n
+    \'form_definition\': form_definition\n
+  }\n
+  response_dict[\'_links\'][\'form_definition\'] = {\n
+    "href": "%s/%s?mode=form_definition&skin_id=%s" % \\\n
+      (site_root.absolute_url(), script.id, form.id),\n
+    \'name\': form.id\n
+  }\n
 \n
   group_list = []\n
   for group in form.Form_getGroupTitleAndId():\n
@@ -223,6 +208,60 @@ def renderForm(form, response_dict):\n
 # rendered_response_dict["_embedded"] = {\n
 #   "form": raw_response_dict\n
 # }\n
+\n
+\n
+# XXX form action update, etc\n
+def renderRawField(field):\n
+  meta_type = field.meta_type\n
+\n
+  return {\n
+    "meta_type": field.meta_type\n
+  }\n
+\n
+\n
+  if meta_type == "MethodField":\n
+    result = {\n
+      "meta_type": field.meta_type\n
+    }\n
+  else:\n
+    result = {\n
+      "meta_type": field.meta_type,\n
+      "_values": field.values,\n
+      # XXX TALES expression is not JSON serializable by default\n
+      # "_tales": field.tales\n
+      "_overrides": field.overrides\n
+    }\n
+  if meta_type == "ProxyField":\n
+    result[\'_delegated_list\'] = field.delegated_list\n
+#     try:\n
+#       result[\'_delegated_list\'].pop(\'list_method\')\n
+#     except KeyError:\n
+#       pass\n
+\n
+  # XXX ListMethod is not JSON serialized by default\n
+  try:\n
+    result[\'_values\'].pop(\'list_method\')\n
+  except KeyError:\n
+    pass\n
+  try:\n
+    result[\'_overrides\'].pop(\'list_method\')\n
+  except KeyError:\n
+    pass\n
+  return result\n
+\n
+\n
+def renderFormDefinition(form, response_dict):\n
+  group_list = []\n
+  for group in form.Form_getGroupTitleAndId():\n
+\n
+    if group[\'gid\'].find(\'hidden\') < 0:\n
+      field_list = []\n
+\n
+      for field in form.get_fields_in_group(group[\'goid\']):\n
+        field_list.append((field.id, renderRawField(field)))\n
+\n
+      group_list.append((group[\'gid\'], field_list))\n
+  response_dict["group_list"] = group_list\n
 \n
 \n
 context.Base_prepareCorsResponse(RESPONSE=response)\n
@@ -358,6 +397,7 @@ elif mode == \'document\':\n
         \'_view\': embedded_dict\n
         # embedded_action_key: embedded_dict\n
       }\n
+#       result_dict[\'_links\']["_view"] = {"href": embedded_url}\n
 \n
       # Include properties in document JSON\n
       # XXX Extract from renderer form?\n
@@ -729,6 +769,17 @@ elif mode == \'form\':\n
   renderForm(form, result_dict)\n
 \n
 \n
+elif mode == \'form_definition\':\n
+  #################################################\n
+  # Get raw form definitions\n
+  #################################################\n
+  if REQUEST.other[\'method\'] != "GET":\n
+    response.setStatus(405)\n
+    return ""\n
+\n
+  form = getattr(portal, skin_id)\n
+  renderFormDefinition(form, result_dict)\n
+\n
 else:\n
   raise NotImplementedError, "Unsupported mode %s" % mode\n
 \n
@@ -740,7 +791,7 @@ return json.dumps(result_dict, indent=2)\n
         </item>
         <item>
             <key> <string>_params</string> </key>
-            <value> <string>REQUEST=None, response=None, view=None, mode=\'document\', query=None, select_list=None, limit=None, form=None</string> </value>
+            <value> <string>REQUEST=None, response=None, view=None, mode=\'document\', query=None, select_list=None, limit=None, form=None, skin_id=None</string> </value>
         </item>
         <item>
             <key> <string>id</string> </key>
