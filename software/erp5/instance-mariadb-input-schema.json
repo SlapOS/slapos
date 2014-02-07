@@ -40,7 +40,7 @@
     },
     "test-database-amount": {
       "description": "The number of test databases to create, adding auto-generated entries to database-list",
-      "default": 30,
+      "default": 0,
       "minimum": 0,
       "type": "integer"
     },
