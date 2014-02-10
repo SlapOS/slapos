@@ -29,6 +29,12 @@ Optional parameter.
 
 Default: 10
 
+
+Public-directory
+----------------
+You can serve static files with the webrunner. For that, just put your data in "srv/runner/public". All these files will be served throught the url of the webrunner + "/public/". Useful for developping your own static website.
+
+
 AUTO-DEPLOYMENT
 ---------------
 
