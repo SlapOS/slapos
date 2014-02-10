@@ -101,6 +101,7 @@ setup(name=name,
           'node report = slapos.cli.slapgrid:ReportCommand',
           'node software = slapos.cli.slapgrid:SoftwareCommand',
           'node instance = slapos.cli.slapgrid:InstanceCommand',
+          'node boot = slapos.cli.boot:BootCommand',
           # SlapOS client commands
           'console = slapos.cli.console:ConsoleCommand',
           'configure local = slapos.cli.configure_local:ConfigureLocalCommand',
