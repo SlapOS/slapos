@@ -126,12 +126,16 @@ def renderField(field, meta_type=None):\n
       "type": meta_type,\n
       "column_list": [x[1] for x in columns],\n
       "line_list": line_list,\n
+      "title": field.get_value("title"),\n
+      "key": field.generate_field_key(),\n
     }\n
   else:\n
     # XXX Not implemented\n
     result = {\n
       "type": meta_type,\n
-      "_debug": "Unsupported field type"\n
+      "_debug": "Unsupported field type",\n
+      "title": field.get_value("title"),\n
+      "key": field.generate_field_key(),\n
     }\n
   return result\n
 \n
