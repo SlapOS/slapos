@@ -727,36 +727,12 @@ elif mode == \'newContent\':\n
   if REQUEST.other[\'method\'] != "POST":\n
     response.setStatus(405)\n
     return ""\n
-#   # XXX SlapOS custom API\n
-#   portal_type = REQUEST.form["portal_type"]\n
-#   if portal_type == "Computer":\n
-#     person = portal.ERP5Site_getAuthenticatedMemberPersonValue()\n
-#     request_kw = dict(computer_title=REQUEST.form["title"])\n
-#     person.requestComputer(**request_kw)\n
-#     computer = context.restrictedTraverse(context.REQUEST.get(\'computer\'))\n
-#     return computer.Base_redirect(form_id=script.id)\n
-# \n
-#   elif portal_type == "Computer Network":\n
-#     # XXX Copy/Paste from WebSection_registerNewNetwork\n
-#     reference = "NET-%s" % portal.portal_ids.generateNewId(\n
-#       id_group=\'slap_network_reference\',\n
-#       id_generator=\'uid\')\n
-#     module = portal.getDefaultModule(portal_type=portal_type)\n
-#     network = module.newContent(\n
-#       portal_type=portal_type,\n
-#       title=REQUEST.form["title"],\n
-#       reference=reference,\n
-#       source_administration=context.ERP5Site_getAuthenticatedMemberPersonValue().getRelativeUrl()\n
-#     )\n
-#     network.validate()\n
-#     return network.Base_redirect(form_id=script.id)\n
-# \n
-#   else:\n
-#     raise NotImplementedError, "Can not add %s" % portal_type\n
-#   return ""\n
-\n
-  raise NotImplementedError, "Can not add %s" % portal_type\n
-\n
+  portal_type = REQUEST.form["portal_type"]\n
+  module = portal.getDefaultModule(portal_type=portal_type)\n
+  document = module.newContent(\n
+    portal_type=portal_type\n
+  )\n
+  return document.Base_redirect(form_id=script.id)\n
 \n
 elif mode == \'form\':\n
   #################################################\n
