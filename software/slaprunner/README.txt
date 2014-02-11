@@ -146,3 +146,7 @@ List of ports used by the webrunner:
 22222 : dropbear
 50000 : slapproxy
 50005 : webrunner (flask app), webdav access
+
+Tips:
+-----
+You can use shellinabox in fullscreen, by accessing : https://[IPV6]:8080
