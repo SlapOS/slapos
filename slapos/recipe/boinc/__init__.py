@@ -40,6 +40,9 @@ class Recipe(GenericBaseRecipe):
     stat_info = os.stat(options['home'].strip())
     options['user'] = pwd.getpwuid(stat_info.st_uid)[0]
     url_base = options['url-base']
+    if str(options.get('force-ipv6')).lower() in ['y', 'yes', '1', 'true'] :
+      url_base = options['url-ipv6'].strip()
+      options['url-base'] = url_base
     project = options['project'].strip()
     root = options['installroot'].strip()
     options['home_page'] = url_base + "/" + project
