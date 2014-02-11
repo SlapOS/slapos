@@ -31,6 +31,7 @@ import pwd
 import json
 import signal
 import zc.buildout
+from urlparse import urlparse
 
 class Recipe(GenericBaseRecipe):
   """Deploy a fully operational boinc architecture."""
@@ -380,6 +381,17 @@ class Client(GenericBaseRecipe):
     #get current uig to create a unique rpc-port for this client
     stat_info = os.stat(options['home'].strip())
     options['rpc-port'] = pwd.getpwuid(stat_info.st_uid)[2] + 5000
+    if options['project-url'].find('://[') != -1 : #ipv6 URL
+      uparse = urlparse(options['project-url'])
+      options['project-host'] = uparse.hostname
+      options['project-port'] = uparse.port
+      options['project-url'] = uparse.scheme + '://' + options['local-ipv4'] + \
+                                ':' + str(uparse.port) + uparse.path
+    else:
+      options['project-host'] = "::1"
+      options['project-port'] = "8080"
+      options['tunnel-wapper'] = os.path.join(options['home'].strip(),
+                                                '6tunnel_raw')
 
     return GenericBaseRecipe.__init__(self, buildout, name, options)
 
@@ -388,7 +400,7 @@ class Client(GenericBaseRecipe):
     boincbin = self.options['boinc-bin'].strip()
     cmdbin = self.options['cmd-bin'].strip()
     installdir = self.options['install-dir'].strip()
-    url = self.options['server-url'].strip()
+    url = self.options['project-url'].strip()
     key = self.options['key'].strip()
     boinc_wrapper = self.options['client-wrapper'].strip()
     cmd_wrapper = self.options['cmd-wrapper'].strip()

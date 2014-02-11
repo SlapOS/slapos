@@ -320,9 +320,12 @@ def runCmd(args):
   client_config = os.path.join(args['installdir'], 'client_state.xml')
   checkFile(client_config, 5)
   time.sleep(10)
-  #Scan client state xml to find client ipv4 adress
-  host = re.search("<ip_addr>([\w\d\.:]+)</ip_addr>",
-                open(client_config, 'r').read()).group(1)
+  #Scan client state xml to find client ipv4 adress  
+  try:
+    host = re.search("<ip_addr>([\w\d\.:]+)</ip_addr>",
+                  open(client_config, 'r').read()).group(1)
+  except:
+    host = "127.0.0.1"
   args['base_cmd'][2] = host + ':' + args['base_cmd'][2]
   print "Run boinccmd with host at %s " % args['base_cmd'][2]
   project_args = args['base_cmd'] + ['--project_attach', args['project_url'],
