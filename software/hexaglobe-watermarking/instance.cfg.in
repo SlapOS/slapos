@@ -1,0 +1,14 @@
+[buildout]
+parts =
+  switch-softwaretype
+
+eggs-directory = ${buildout:eggs-directory}
+develop-eggs-directory = ${buildout:develop-eggs-directory}
+offline = true
+
+[switch-softwaretype]
+recipe = slapos.cookbook:softwaretype
+default = ${watermarking-instance-profile:output}
+watermarking = ${watermarking-instance-profile:output}
+edge = ${edge-instance-profile:output}
+

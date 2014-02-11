@@ -9,7 +9,7 @@ if [ -z $URL ]; then
   exit 3
 fi
 
-CODE=$(%(curl_path)s -g -k -sL $URL -w %%{http_code} -o /dev/null)
+CODE=$(%(curl_path)s -g -k -sL $URL -w %%{http_code} --max-time 10 -o /dev/null)
 
 if [ $? -eq 3 ]; then
   echo "URL malformed: $URL." >&2
@@ -29,6 +29,13 @@ fi
 if [ $CODE -eq 000 ]; then
   echo "$URL is not available (server not reachable)." >&2
   exit 1
+fi
+
+if [ %(check_secure)s -eq 1 ]; then
+  if [ $CODE -eq 401 ]; then
+    echo "$URL is protected (returned $CODE)." >&2
+    exit 0
+  fi
 fi
 
 if ! [ $CODE -eq 200 ]; then

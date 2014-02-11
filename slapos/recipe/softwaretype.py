@@ -87,8 +87,6 @@ class Recipe:
       computer_partition_id)
     self.parameter_dict = self.computer_partition.getInstanceParameterDict()
     software_type = self.parameter_dict['slap_software_type']
-    self.logger.info('Deploying instance with software type %s' % \
-        software_type)
 
     # Raise if request software_type does not exist ...
     if software_type not in self.options:
@@ -114,10 +112,14 @@ class Recipe:
     if not buildout.has_section('slap-parameter'):
       buildout.add_section('slap-parameter')
     for parameter, value in self.parameter_dict.items():
-      if isinstance(value, str):
-        buildout.set('slap-parameter', parameter, value)
-      else:
-        buildout.set('slap-parameter', parameter, json.dumps(value))
+      # All parameters evaluating to False are... False, and shouldn't
+      # convey any information.
+      # Here, all those parameters are simply ignored.
+      if value:
+        if isinstance(value, str):
+          buildout.set('slap-parameter', parameter, value)
+        else:
+          buildout.set('slap-parameter', parameter, json.dumps(value))
 
     buildout.add_section('slap-network-information')
     buildout.set('slap-network-information', 'local-ipv4',

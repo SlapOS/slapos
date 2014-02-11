@@ -1,0 +1,18 @@
+# This script generates a file (with the name `hostname`) of the characteristics of the machine
+
+Mhz=`grep -i Mhz /proc/cpuinfo | cut -d : -f2 | head -1 | cut -f2 -d " "`
+mem=`grep -i MemTotal /proc/meminfo | cut -f2 -d :`
+Ram=`echo $mem | cut -f1 -d " "`
+Cpu=`uname -a | cut -f3 -d " "`
+H=`hostname`
+Nbproc=`grep processor /proc/cpuinfo |wc -l`
+Ip=%(ip_address)s
+status="in execution"
+secours="host1"
+middleware="%(middleware)s"
+project="%(project)s"
+
+c="{'"MHZ"':\"$Mhz\",'"Ram"':\"$Ram\",'"Cpu"':\"$Cpu\",'"HOST"':\"$H\",'"IP"':\"$Ip\",'"STATUS"':\"$status\",'"SECOURS"':\"$secours\",'"MIDDLEWARE"':\"$middleware\",'"PROJECT"':\"$project\",}"
+
+filename=`hostname`
+echo $c > $filename

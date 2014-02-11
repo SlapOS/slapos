@@ -18,6 +18,7 @@ parts =
 eggs-directory = {{ eggs_directory }}
 develop-eggs-directory = {{ develop_eggs_directory }}
 offline = true
+versions = versions
 
 {% if 'frontend-software-url' in slapparameter_dict -%}
 [request-slave-frontend]
@@ -196,10 +197,10 @@ link-binary =
   {{ librsvg_location }}/bin/rsvg-convert
   {{ mariadb_location }}/bin/mysql
   {{ mariadb_location }}/bin/mysqldump
-  {{ pdftk_location }}/bin/pdftk
   {{ sed_location }}/bin/sed
   {{ tesseract_location }}/bin/tesseract
   {{ w3m_location }}/bin/w3m
+  {{ openssl_location }}/bin/openssl
   {{ poppler_location }}/bin/pdfinfo
   {{ poppler_location }}/bin/pdfseparate
   {{ poppler_location }}/bin/pdftotext
@@ -207,6 +208,7 @@ link-binary =
   {{ poppler_location }}/bin/pdfunite
   {{ dmtx_utils_location }}/bin/dmtxwrite
   {{ aspell_location }}/bin/aspell
+  {{ jsl_location }}/bin/jsl
 [certificate-authority]
 recipe = slapos.cookbook:certificate_authority
 openssl-binary = {{ openssl_location }}/bin/openssl
@@ -306,3 +308,5 @@ path = ${basedirectory:promises}/apache-backend
 hostname = ${apache-zope-backend-instance:ip}
 port = ${apache-zope-backend-instance:port}
 
+[versions]
+slapos.core = {{ slapos_core_version }}

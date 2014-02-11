@@ -1,0 +1,24 @@
+<VirtualHost *:{{ https_port }}>
+  ServerName www.example.org
+  SSLEngine on
+  SSLProxyEngine on
+  SSLProtocol -ALL +SSLv3 +TLSv1
+  SSLHonorCipherOrder On
+  SSLCipherSuite RC4-SHA:HIGH:!ADH
+
+  # Rewrite part
+  ProxyVia On
+  ProxyPreserveHost On
+  ProxyTimeout 600
+  RewriteEngine On
+
+
+  ErrorDocument 404 /notfound.html
+
+</VirtualHost>
+
+<VirtualHost *:{{ http_port }}>
+
+  ServerName www.example.org
+  ErrorDocument 404 /notfound.html
+</VirtualHost>

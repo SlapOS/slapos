@@ -1,3 +1,4 @@
+{% if slap_software_type == software_type -%}
 #############################
 #
 # Request erp5 production environnment
@@ -12,6 +13,7 @@ parts =
 eggs-directory = {{ eggs_directory }}
 develop-eggs-directory = {{ develop_eggs_directory }}
 offline = true
+versions = versions
 
 [request-common]
 recipe = slapos.cookbook:request
@@ -104,3 +106,7 @@ smtp-url = smtp://localhost:25/
 [basedirectory]
 recipe = slapos.cookbook:mkdirectory
 etc = ${buildout:directory}/etc/run
+{% endif %}
+
+[versions]
+slapos.core = {{ slapos_core_version }}

@@ -1,0 +1,51 @@
+#############################
+#
+# Deploy jio instance
+#
+#############################
+[buildout]
+parts =
+  test-runner
+  phantomjs-wrapper
+
+eggs-directory = ${buildout:eggs-directory}
+develop-eggs-directory = ${buildout:develop-eggs-directory}
+offline = true
+
+# Create all needed directories, depending on your needs
+[directory]
+recipe = slapos.cookbook:mkdirectory
+etc = $${buildout:directory}/etc
+bin = $${buildout:directory}/bin/
+
+[download-source]
+recipe = slapos.recipe.build:gitclone
+git-executable = ${git:location}/bin/git
+
+# Local development
+[jio]
+<= download-source
+repository = ${jio-repository:location}
+
+[test-runner]
+recipe = slapos.cookbook:egg_test
+run-test-suite = $${directory:bin}/runTestSuite
+run-test-suite-binary = ${buildout:bin-directory}/runTestSuite
+test-list =
+  $${jio:location}
+prepend-path = ${git:location}/bin:${libxslt:location}/bin:${python2.7:location}/bin:${buildout:bin-directory}
+environment = environment
+
+[environment]
+CPPFLAGS = -I${python2.7:location}/include/python2.7 -I${libxml2:location}/include -I${libxslt:location}/include
+LDFLAGS = -L${python2.7:location}/lib -L${libxml2:location}/lib -L${libxslt:location}/lib -L${zlib:location}/lib -L${fontconfig:location}/lib -L${libexpat:location}/lib -L${freetype:location}/lib
+PYTHONPATH = ${python-setuptools:pythonpath}
+LD_LIBRARY_PATH = ${libxslt:location}/lib:${libxml2:location}/lib:${zlib:location}/lib:${fontconfig:location}/lib:${libexpat:location}/lib:${freetype:location}/lib
+
+[phantomjs-wrapper]
+recipe = slapos.cookbook:wrapper
+command-line = ${phantomjs:location}/phantomjs-slapos
+wrapper-path = $${directory:bin}/phantomjs
+# XXX we must use "parameters-extra" (- instead of _)
+# when new slapos.cookbook will be used
+parameters_extra = true

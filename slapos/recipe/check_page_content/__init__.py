@@ -29,15 +29,17 @@ import sys
 
 class Recipe(GenericBaseRecipe):
   """
-  Create script that will check if content at "url" is available 
+  Create script that will check if content at "url" is available
   (e.g page has a link to itself).
   """
 
   def install(self):
+    url = self.options['url'].strip()
     config = {
-      'url': self.options['url'],
+      'url': url,
       'shell_path': self.options['dash_path'],
       'curl_path': self.options['curl_path'],
+      'match': self.options.get('match', url)
     }
 
     # XXX-Cedric in this script, curl won't check certificate

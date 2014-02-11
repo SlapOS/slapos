@@ -9,3 +9,5 @@ eggs/
 parts/
 slapos.cookbook.egg-info
 .*.swp
+*~
+\#*\#

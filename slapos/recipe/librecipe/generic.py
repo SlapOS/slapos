@@ -32,6 +32,8 @@ import os
 import sys
 import inspect
 import re
+import shutil
+from textwrap import dedent
 import urllib
 import urlparse
 
@@ -98,9 +100,9 @@ class GenericBaseRecipe(object):
 
     line must be unicode."""
 
-    try:
-      lines = io.open(filepath, 'r', encoding=encoding).readlines()
-    except IOError:
+    if os.path.exists(filepath):
+      lines = [l.rstrip('\n') for l in io.open(filepath, 'r', encoding=encoding)]
+    else:
       lines = []
 
     if not line in lines:
@@ -127,16 +129,40 @@ class GenericBaseRecipe(object):
       path, arguments=arguments)[0]
     return script
 
-  def createWrapper(self, name, command, parameters, comments=[], parameters_extra=False):
+  def createWrapper(self, name, command, parameters, comments=[],
+      parameters_extra=False, environment=None,
+      pidfile=None
+  ):
     """
     Creates a very simple (one command) shell script for process replacement.
     Takes care of quoting.
+    if pidfile parameter is specified, then it will make the wrapper a singleton,
+    accepting to run only if no other instance is running.
     """
 
     lines = [ '#!/bin/sh' ]
 
     for comment in comments:
       lines.append('# %s' % comment)
+
+    if environment:
+      for key in environment:
+        lines.append('export %s=%s' % (key, environment[key]))
+
+    if pidfile:
+      lines.append(dedent("""\
+          # Check for other instances
+          pidfile=%s
+          if [ -e $pidfile ]; then
+            pid=$(cat $pidfile)
+            if [ ! -z $(ps -p "$pid" | grep $(basename %s)) ]; then
+              echo "Already running with pid $pid."
+              exit 1
+            else
+              rm $pidfile
+            fi
+          fi
+          echo $$ > $pidfile""" % (pidfile, command)))
 
     lines.append('exec %s' % shlex.quote(command))
 
@@ -150,7 +176,7 @@ class GenericBaseRecipe(object):
     if parameters_extra:
         # pass-through further parameters
         lines[-1] += ' \\'
-        lines.append('\t$@')
+        lines.append('\t"$@"')
 
     content = '\n'.join(lines) + '\n'
     return self.createFile(name, content, 0700)
@@ -177,17 +203,13 @@ class GenericBaseRecipe(object):
         'template/%s' % template_name)
 
   def generatePassword(self, len_=32):
-    """
-    The purpose of this method is to generate a password which doesn't change
-    from one execution to the next, so the generated password doesn't change
-    on each slapgrid-cp execution.
-
-    Currently, it returns a hardcoded password because no decision has been
-    taken on where a generated password should be kept (so it is generated
-    once only).
-    """
-    # TODO: implement a real password generator which remember the last
-    # call.
+    # TODO: Consider having generate.password recipe inherit this class,
+    #       so that it can be easily inheritable.
+    #       In the long-term, it's probably better that passwords are provided
+    #       by software requesters, to avoid keeping unhashed secrets in
+    #       partitions when possible.
+    self.logger.warning("GenericBaseRecipe.generatePassword is deprecated."
+                        " Use generate.password recipe instead.")
     return "insecure"
 
   def isTrueValue(self, value):
@@ -226,3 +248,31 @@ class GenericBaseRecipe(object):
     url = urlparse.urlunparse((scheme, netloc, path, params, query, fragment))
 
     return url
+
+  def setLocationOption(self):
+    if not self.options.get('location'):
+      self.options['location'] = os.path.join(
+          self.buildout['buildout']['parts-directory'], self.name)
+
+  def download(self, destination=None):
+    """ A simple wrapper around h.r.download, downloading to self.location"""
+    self.setLocationOption()
+
+    import hexagonit.recipe.download
+    if not destination:
+      destination = self.location
+    if os.path.exists(destination):
+        # leftovers from a previous failed attempt, removing it.
+        self.logger.warning('Removing already existing directory %s',
+                            destination)
+        shutil.rmtree(destination)
+    os.mkdir(destination)
+
+    try:
+      options = self.options.copy()
+      options['destination'] = destination
+      hexagonit.recipe.download.Recipe(
+          self.buildout, self.name, options).install()
+    except:
+      shutil.rmtree(destination)
+      raise

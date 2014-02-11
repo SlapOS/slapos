@@ -34,7 +34,11 @@ from slapos.recipe.librecipe import GenericBaseRecipe
 
 def login_shell(args):
   password = args['password']
-  entered_password = getpass()
+  
+  if (password != ''):
+    entered_password = getpass()
+  else:
+    entered_password = ''
 
   if entered_password != password:
     return 1
@@ -54,11 +58,11 @@ def shellinabox(args):
     with open(args['ssl_certificate']) as public_key_file:
       print >> certificate_file, public_key_file.read()
 
-  user = pwd.getpwuid(os.getuid()).pw_name
-  group = grp.getgrgid(os.getgid()).gr_name
+  user = pwd.getpwuid(os.getuid()).pw_uid
+  group = grp.getgrgid(os.getgid()).gr_gid
   service = '/:%(user)s:%(group)s:%(directory)s:%(command)s' % {
-    'user': group,
-    'group': user,
+    'user': user,
+    'group': group,
     'directory': args['directory'],
     'command': args['login_shell'],
   }

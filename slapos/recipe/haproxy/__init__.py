@@ -36,7 +36,11 @@ class Recipe(GenericBaseRecipe):
 
   binary-path -- location of the haproxy command
 
+  ctl-path -- location of the haproxy control script
+
   conf-path -- location of the configuration file
+
+  socket-path -- location of the socket file for administration
 
   ip -- ip of the haproxy server
 
@@ -66,40 +70,62 @@ class Recipe(GenericBaseRecipe):
     #      stick in other nodes and are not coming back. Please note this option
     #      is not an issue if you have more than (maxqueue * node_quantity) requests
     #      because haproxy will handle a top-level queue
+    try:
+      backend_dict = self.options['backend-dict']
+    except KeyError:
+      backend_list = self.options['backend-list']
+      if isinstance(backend_list, str):
+        # BBB
+        backend_list = backend_list.split()
+      backend_dict = {
+        self.options['name']: (self.options['port'], backend_list),
+      }
 
-    snippet_filename = self.getTemplateFilename(
-                                    'haproxy-server-snippet.cfg.in')
-    # Prepare all filestorages
+    server_snippet_filename = self.getTemplateFilename(
+      'haproxy-server-snippet.cfg.in')
+    listen_snippet_filename = self.getTemplateFilename(
+      'haproxy-listen-snippet.cfg.in')
     server_snippet = ""
+    ip = self.options['ip']
+    server_check_path = self.options.get('server-check-path', None)
+    if server_check_path:
+      httpchk = 'option httpchk GET %s' % server_check_path
+    else:
+      httpchk = ''
+    # FIXME: maxconn must be provided per-backend, not globally
+    maxconn = self.options['maxconn']
     i = 0
-    name = self.options['name']
-    backend_list = self.options['backend-list']
-    if isinstance(backend_list, str):
-      # BBB
-      backend_list = backend_list.split()
-    for address in backend_list:
-      i += 1
+    for name, (port, backend_list) in backend_dict.iteritems():
       server_snippet += self.substituteTemplate(
-          snippet_filename, dict(
-             name='%s_%s' % (name, i),
-             address=address,
-             cluster_zope_thread_amount=self.options['maxconn']))
+        listen_snippet_filename, {
+          'name': name,
+          'ip': ip,
+          'port': port,
+          'httpchk': httpchk,
+        })
+      for address in backend_list:
+        i += 1
+        server_snippet += self.substituteTemplate(
+          server_snippet_filename, {
+            'name': '%s_%s' % (name, i),
+            'address': address,
+            'cluster_zope_thread_amount': maxconn,
+          })
 
-    config = dict(
-        name=name,
-        ip=self.options['ip'],
-        port=self.options['port'],
-        server_text=server_snippet,
-        server_check_path=self.options['server-check-path'],)
-    template_filename = self.getTemplateFilename('haproxy.cfg.in')
     configuration_path = self.createFile(
-        self.options['conf-path'],
-        self.substituteTemplate(template_filename, config))
-
-    # Create running wrapper
+      self.options['conf-path'],
+      self.substituteTemplate(
+        self.getTemplateFilename('haproxy.cfg.in'),
+        {'socket_path': self.options['socket-path'],
+         'server_text': server_snippet},
+      )
+    )
     wrapper_path = self.createPythonScript(
       self.options['wrapper-path'],
       'slapos.recipe.librecipe.execute.execute',
       arguments=[self.options['binary-path'].strip(), '-f', configuration_path],)
-
-    return [configuration_path, wrapper_path]
+    ctl_path = self.createPythonScript(
+      self.options['ctl-path'],
+      '%s.haproxy.haproxyctl' % __name__,
+      {'socket_path':self.options['socket-path']})
+    return [configuration_path, wrapper_path, ctl_path]

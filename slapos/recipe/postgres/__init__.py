@@ -70,8 +70,7 @@ class Recipe(GenericBaseRecipe):
     """
 
     def _options(self, options):
-        options['password'] = self.generatePassword()
-        options['url'] = 'postgresql://%(superuser)s:%(password)s@[%(ipv6_random)s]:%(port)s/%(dbname)s' % options
+        options['url'] = 'postgresql://%(superuser)s:%(password)s@[%(ipv6-random)s]:%(port)s/%(dbname)s' % options
 
 
     def install(self):
@@ -155,16 +154,18 @@ class Recipe(GenericBaseRecipe):
                 '# TYPE  DATABASE        USER            ADDRESS                 METHOD',
                 '',
                 '# "local" is for Unix domain socket connections only (check unix_socket_permissions!)',
-                'local   all             all                                     ident',
+                'local   all             all                                     trust',
                 'host    all             all             127.0.0.1/32            md5',
                 'host    all             all             ::1/128                 md5',
             ]
 
+            ipv4_netmask_bits = self.options.get('ipv4-netmask-bits', '32')
             for ip in ipv4:
-                cfg_lines.append('host    all             all             %s/32                   md5' % ip)
+                cfg_lines.append('host    all             all             %s/%s                   md5' % (ip, ipv4_netmask_bits))
 
+            ipv6_netmask_bits = self.options.get('ipv6-netmask-bits', '128')
             for ip in ipv6:
-                cfg_lines.append('host    all             all             %s/128                   md5' % ip)
+                cfg_lines.append('host    all             all             %s/%s                   md5' % (ip, ipv6_netmask_bits))
 
             cfg.write('\n'.join(cfg_lines))
 

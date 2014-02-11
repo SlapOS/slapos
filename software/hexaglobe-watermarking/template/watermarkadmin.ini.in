@@ -1,0 +1,20 @@
+[nginx]
+vhosts   = %(nginx-vhost-configuration-directory-location)s
+log      = %(nginx-log-directory-location)s
+data     = %(nginx-cache-directory-location)s
+max_size = 1024m
+inactive = 120m
+port     = %(nginx-port)s
+pidfile  = %(nginx-pidfile-location)s
+nginx_bin = %(nginx-executable-location)s
+conf     = %(nginx-configuration-file-location)s
+prefix   = %(nginx-prefix)s
+
+[flask]
+DATABASE = %(flask-database-location)s
+MAX_CONTENT_LENGTH = 4096
+
+[api]
+user = admin
+pass = 276eeed9056ac2486f9c0237bb0be227
+ip   = %(global-ip)s

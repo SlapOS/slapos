@@ -1,23 +1,79 @@
-{% macro replicate(namebase, nbbackup, typeexport, typeimport, heriteLeader='', heriteBackup='') %}
+{% macro replicate(namebase, nbbackup, typeexport, typeimport, heriteLeader='', heriteBackup='', slapparameter_dict={}) %}
+
+{% set sla_parameter_dict = {} -%}
+# prepare sla-parameters
+{% if slapparameter_dict is defined -%}
+{%   for key in slapparameter_dict.keys() -%}
+{%     if key.startswith('-sla-') -%}
+{%       do sla_parameter_dict.__setitem__(key, slapparameter_dict.pop(key)) -%}
+{%     endif -%}
+{%   endfor -%}
+{% endif -%}
+
+
+[resilient-directory]
+recipe = slapos.cookbook:mkdirectory
+home = ${buildout:directory}
+etc = ${:home}/etc
+promise = ${:etc}/promise
+
 
 ## Tells the Backupable recipe that we want a backup
 [resilient]
+recipe = slapos.cookbook:request
 config-namebase = {{namebase}}
+software-url = ${slap-connection:software-release-url}
 
 ## Every request is double to provide the 3 IPs.
+## First, we request with ip-list parameter hardcoded.
+## Then, we request the same thing without this.
+## XXX-Cedric: is it useful?
 [request-{{namebase}}]
 <= resilient
    slap-connection
    {{heriteLeader}}
 software-type = {{typeexport}}
 name = {{namebase}}0
-return = url ssh-public-key ssh-url notification-id ip
-
-config = number authorized-key notify ip-list namebase
+return = ssh-public-key ssh-url notification-id ip
+config =
+# Resilient related parameters
+  number authorized-key notify ip-list namebase
+{% if slapparameter_dict is defined %}
+# Software Instance related parameters
+  {% for parameter_name in slapparameter_dict.keys() %}{{parameter_name}} {% endfor %}
+{% endif %}
 config-number = 0
 config-authorized-key = {% for id in range(1,nbbackup|int) %} ${request-pbs-{{namebase}}-{{id}}:connection-ssh-key}{% endfor %}
 config-notify = {% for id in range(1,nbbackup|int) %} ${request-pbs-{{namebase}}-{{id}}:connection-notification-url}{% endfor %}
 config-ip-list =
+# Bubble up all the instance parameters to the requested export instance.
+{% if slapparameter_dict is defined %}
+{% for parameter_name, parameter_value in slapparameter_dict.items() %}config-{{parameter_name}} = {{parameter_value}}
+{% endfor %}
+{% endif %}
+{% if sla_parameter_dict == {} -%}
+sla = mode
+sla-mode = unique_by_network
+{% else %}
+{%   set sla_key_main = "-sla-%s%s-" % (namebase, 0) -%}
+{%   set sla_key_secondary = "-sla-%s-" % (0) -%}
+{%   set sla_key_main_length = sla_key_main | length -%}
+{%   set sla_key_secondary_length = sla_key_secondary | length -%}
+{%   set sla_dict = {} -%}
+{%   for key in sla_parameter_dict.keys() -%}
+{%     if key.startswith(sla_key_main) -%}
+{%       do sla_dict.__setitem__(key[sla_key_main_length:], sla_parameter_dict.get(key)) -%}
+{%     elif key.startswith(sla_key_secondary) and not sla_dict.has_key(key[sla_key_secondary_length:]) -%}
+{%         do sla_dict.__setitem__(key[sla_key_secondary_length:], sla_parameter_dict.get(key)) -%}
+{%     endif -%}
+{%   endfor -%}
+{%   if sla_dict %}
+sla = {{ ' '.join(sla_dict.keys()) }}
+{%     for key, value in sla_dict.iteritems() -%}
+sla-{{ key }} = {{ value }}
+{%     endfor -%}
+{%   endif -%}
+{% endif -%}
 
 {% for id in range(1,nbbackup|int) %}
 
@@ -30,59 +86,79 @@ name = {{namebase}}{{id}}
 
 software-url = ${slap-connection:software-release-url}
 software-type = {{typeimport}}
-return = url ssh-public-key ssh-url notification-url ip
+return = ssh-public-key ssh-url notification-url ip
 
-pbs-notification-id = ${slap-connection:computer-id}-${slap-connection:partition-id}-{{namebase}}-push
+pbs-notification-id = ${slap-connection:computer-id}-${slap-connection:partition-id}-{{namebase}}-{{id}}-push
 
 config = number authorized-key on-notification ip-list namebase
 config-number = {{id}}
 config-authorized-key = ${request-pbs-{{namebase}}-{{id}}:connection-ssh-key}
 config-on-notification = ${request-pbs-{{namebase}}-{{id}}:connection-feeds-url}${:pbs-notification-id}
 config-ip-list =
+{% if sla_parameter_dict == {} -%}
+sla = mode
+sla-mode = unique_by_network
+{% else %}
+{%   set sla_key_main = "-sla-%s%s-" % (namebase, id) -%}
+{%   set sla_key_secondary = "-sla-%s-" % (id) -%}
+{%   set sla_key_main_length = sla_key_main | length -%}
+{%   set sla_key_secondary_length = sla_key_secondary | length -%}
+{%   set sla_dict = {} -%}
+{%   for key in sla_parameter_dict.keys() -%}
+{%     if key.startswith(sla_key_main) -%}
+{%       do sla_dict.__setitem__(key[sla_key_main_length:], sla_parameter_dict.get(key)) -%}
+{%     elif key.startswith(sla_key_secondary) and not sla_dict.has_key(key[sla_key_secondary_length:]) -%}
+{%         do sla_dict.__setitem__(key[sla_key_secondary_length:], sla_parameter_dict.get(key)) -%}
+{%     endif -%}
+{%   endfor -%}
+{%   if sla_dict %}
+sla = {{ ' '.join(sla_dict.keys()) }}
+{%     for key, value in sla_dict.iteritems() -%}
+sla-{{ key }} = {{ value }}
+{%     endfor -%}
+{%   endif %}
+{% endif %}
 
-{% endfor %}
+{% endfor -%}
+
 
 [iplist]
 config-ip-list = ${request-{{namebase}}:connection-ip}{% for j in range(1,nbbackup|int) %} ${request-{{namebase}}-pseudo-replicating-{{j}}:connection-ip}{% endfor %}
 
 [request-{{namebase}}-2]
-<= resilient
-   slap-connection
+<= request-{{namebase}}
    iplist
-   {{heriteLeader}}
 
-recipe = slapos.cookbook:request
-name = {{namebase}}0
-
-software-url = ${slap-connection:software-release-url}
-software-type = {{typeexport}}
-return = url ssh-public-key ssh-url notification-id ip
-
-config = number authorized-key notify ip-list namebase
-config-number = 0
-config-authorized-key = {% for id in range(1,nbbackup|int) %} ${request-pbs-{{namebase}}-{{id}}:connection-ssh-key}{% endfor %}
-config-notify = {% for id in range(1,nbbackup|int) %} ${request-pbs-{{namebase}}-{{id}}:connection-notification-url}{% endfor %}
+[resilient-request-{{namebase}}-public-key-promise]
+# Check that public-key-value parameter exists and is not empty
+# XXX: maybe we should consider empty values to be non-nexistent.
+recipe = collective.recipe.template
+# XXX: don't use system executable
+input = inline:#!/bin/sh
+  PUBLIC_KEY_CONTENT="${request-{{namebase}}-2:connection-ssh-public-key})"
+  if [[ ! -n "$PUBLIC_KEY_CONTENT" || "$PUBLIC_KEY_CONTENT" == *None* ]]; then
+    exit 1
+  fi
+output = ${resilient-directory:promise}/resilient-request-{{namebase}}-public-key
+mode = 700
 
 {% for id in range(1,nbbackup|int) %}
 [request-{{namebase}}-pseudo-replicating-{{id}}-2]
-<= slap-connection
-   resilient
+<= request-{{namebase}}-pseudo-replicating-{{id}}
    iplist
-   {{heriteBackup}}
 
-recipe = slapos.cookbook:request
-name = {{namebase}}{{id}}
-
-software-url = ${slap-connection:software-release-url}
-software-type = {{typeimport}}
-return = url ssh-public-key ssh-url notification-url
-
-pbs-notification-id = ${slap-connection:computer-id}-${slap-connection:partition-id}-{{namebase}}-push
-
-config = number authorized-key on-notification ip-list namebase
-config-number = {{id}}
-config-authorized-key = ${request-pbs-{{namebase}}-{{id}}:connection-ssh-key}
-config-on-notification = ${request-pbs-{{namebase}}-{{id}}:connection-feeds-url}${:pbs-notification-id}
+[resilient-request-{{namebase}}-pseudo-replicating-{{id}}-public-key-promise]
+# Check that public-key-value parameter exists and is not empty
+# XXX: maybe we should consider empty values to be non-nexistent.
+recipe = collective.recipe.template
+# XXX: don't use system executable
+input = inline:#!/bin/sh
+  PUBLIC_KEY_CONTENT="${request-{{namebase}}-pseudo-replicating-{{id}}-2:connection-ssh-public-key})"
+  if [[ ! -n "$PUBLIC_KEY_CONTENT" || "$PUBLIC_KEY_CONTENT" == *None* ]]; then
+    exit 1
+  fi
+output = ${resilient-directory:promise}/resilient-request-{{namebase}}-pseudo-replicating-{{id}}-public-key
+mode = 700
 
 {% endfor %}
 
@@ -94,8 +170,6 @@ config-on-notification = ${request-pbs-{{namebase}}-{{id}}:connection-feeds-url}
 
 ## Having 3 backups pulling from the same PBS provides
 ##only availability, not resiliency
-
-## WARNING : SLAVES ARE ALLOCATED AT RANDOM, THIS NEEDS TO BE FIXED.
 
 [request-pbs-common]
 <= slap-connection
@@ -110,19 +184,57 @@ software-type = pull-backup
 name = PBS ({{namebase}} / {{id}})
 return = ssh-key notification-url feeds-url
 slave = false
+{% if sla_parameter_dict == {} -%}
+sla = mode
+sla-mode = unique_by_network
+{% else %}
+{%   set sla_key_main = "-sla-%s%s-" % ("pbs", id) -%}
+{%   set sla_key_secondary = "-sla-%s-" % (id) -%}
+{%   set sla_key_main_length = sla_key_main | length -%}
+{%   set sla_key_secondary_length = sla_key_secondary | length -%}
+{%   set sla_dict = {} -%}
+{%   for key in sla_parameter_dict.keys() -%}
+{%     if key.startswith(sla_key_main) -%}
+{%       do sla_dict.__setitem__(key[sla_key_main_length:], sla_parameter_dict.get(key)) -%}
+{%     elif key.startswith(sla_key_secondary) and not sla_dict.has_key(key[sla_key_secondary_length:]) -%}
+{%         do sla_dict.__setitem__(key[sla_key_secondary_length:], sla_parameter_dict.get(key)) -%}
+{%     endif -%}
+{%   endfor -%}
+{%   if sla_dict %}
+sla = {{ ' '.join(sla_dict.keys()) }}
+{%     for key, value in sla_dict.iteritems() -%}
+sla-{{ key }} = {{ value }}
+{%     endfor %}
+{%   endif %}
+{% endif %}
+
+[resilient-request-pbs-{{namebase}}-{{id}}-public-key-promise]
+# Check that public-key-value parameter exists and is not empty
+# XXX: maybe we should consider empty values to be non-nexistent.
+recipe = collective.recipe.template
+# XXX: don't use system executable
+input = inline:#!/bin/sh
+  PUBLIC_KEY_CONTENT="${request-pbs-{{namebase}}-{{id}}:connection-ssh-key}:connection-ssh-key})"
+  if [[ ! -n "$PUBLIC_KEY_CONTENT" || "$PUBLIC_KEY_CONTENT" == *None* ]]; then
+    exit 1
+  fi
+output = ${resilient-directory:promise}/resilient-request-{{namebase}}-pseudo-replicating-{{id}}-public-key
+mode = 700
+
 
 [request-pull-backup-server-{{namebase}}-{{id}}]
 <= request-pbs-common
 name = PBS {{id}} pulling from ${request-{{namebase}}:name}
-config = url name type server-key on-notification notify notification-id title
+config = url name type server-key on-notification notify notification-id title remove-backup-older-than
 config-url = ${request-{{namebase}}:connection-ssh-url}
-config-name = ${slap-connection:computer-id}-${slap-connection:partition-id}-{{namebase}}-{{id}}
 config-type = pull
 config-server-key = ${request-{{namebase}}:connection-ssh-public-key}
 config-on-notification = ${request-{{namebase}}:connection-notification-id}
 config-notify = ${request-pbs-{{namebase}}-{{id}}:connection-notification-url}
 config-notification-id = ${slap-connection:computer-id}-${slap-connection:partition-id}-{{namebase}}-{{id}}-pull
+config-name = ${slap-connection:computer-id}-${slap-connection:partition-id}-{{namebase}}-{{id}}
 config-title = Pulling from {{namebase}}
+config-remove-backup-older-than = {{ slapparameter_dict.get('remove-backup-older-than', '2W') }}
 slave = true
 sla = instance_guid
 sla-instance_guid = ${request-pbs-{{namebase}}-{{id}}:instance_guid}
@@ -132,16 +244,25 @@ sla-instance_guid = ${request-pbs-{{namebase}}-{{id}}:instance_guid}
 name = PBS pushing on ${request-{{namebase}}-pseudo-replicating-{{id}}:name}
 config = url name type server-key on-notification notify notification-id title
 config-url = ${request-{{namebase}}-pseudo-replicating-{{id}}:connection-ssh-url}
-config-name = ${request-pull-backup-server-{{namebase}}-{{id}}:config-name}
 config-type = push
 config-server-key = ${request-{{namebase}}-pseudo-replicating-{{id}}:connection-ssh-public-key}
 config-on-notification = ${request-pbs-{{namebase}}-{{id}}:connection-feeds-url}${request-pull-backup-server-{{namebase}}-{{id}}:config-notification-id}
 config-notify = ${request-{{namebase}}-pseudo-replicating-{{id}}:connection-notification-url}
 config-notification-id = ${request-{{namebase}}-pseudo-replicating-{{id}}:pbs-notification-id}
+config-name = ${slap-connection:computer-id}-${slap-connection:partition-id}-{{namebase}}-{{id}}
 config-title = Pushing to {{namebase}} backup {{id}}
 slave = true
 sla = instance_guid
 sla-instance_guid = ${request-pbs-{{namebase}}-{{id}}:instance_guid}
 {% endfor %}
 
+[slap-parameter]
+# Default parameters for distributed deployment
+# I.e state "backup1 of maria should go there, ..."
+{% for id in range(1,nbbackup|int) %}
+{{namebase}}{{id}}-computer-guid =
+pbs-{{namebase}}{{id}}-computer-guid =
+{% endfor %}
+
 {% endmacro %}
+

@@ -25,6 +25,7 @@
 #
 ##############################################################################
 import slapos.slap
+from slapos.recipe.librecipe import unwrap
 from ConfigParser import RawConfigParser
 from netaddr import valid_ipv4, valid_ipv6
 
@@ -64,9 +65,9 @@ class Recipe(object):
       Set of IPv4 addresses.
     ipv6
       Set of IPv6 addresses.
-    ipv4_random
+    ipv4-random
       One of the IPv4 addresses.
-    ipv6_random
+    ipv6-random
       One of the IPv6 addresses.
     tap
       Set of TAP interfaces.
@@ -77,6 +78,8 @@ class Recipe(object):
       Partition parameter whose name cannot be represented unambiguously in
       buildout syntax are ignored. They cannot be accessed from buildout syntax
       anyway, and are available through "configuration" output key.
+    instance-state
+      The instance state.
   """
 
   # XXX: used to detect if a configuration key is a valid section key. This
@@ -90,14 +93,28 @@ class Recipe(object):
           options.get('key'),
           options.get('cert'),
       )
-      parameter_dict = slap.registerComputerPartition(
+      computer_partition = slap.registerComputerPartition(
           options['computer'],
           options['partition'],
-      ).getInstanceParameterDict()
+      )
+      parameter_dict = computer_partition.getInstanceParameterDict()
+      options['instance-state'] = computer_partition.getState()
       # XXX: those are not partition parameters, strictly speaking.
-      # Discard them, and make them available as separate section keys.
-      options['slap-software-type'] = parameter_dict.pop(
-          'slap_software_type')
+      # Make them available as individual section keys.
+      for his_key in (
+                  'slap_software_type',
+                  'slap_computer_partition_id',
+                  'slap_computer_id',
+                  'slap_software_release_url',
+                  'slave_instance_list',
+                  'timestamp',
+              ):
+          try:
+              value = parameter_dict.pop(his_key)
+          except KeyError:
+              pass
+          else:
+              options[his_key.replace('_', '-')] = value
       ipv4_set = set()
       v4_add = ipv4_set.add
       ipv6_set = set()
@@ -116,16 +133,28 @@ class Recipe(object):
 
       # also export single ip values for those recipes that don't support sets.
       if ipv4_set:
-          options['ipv4_random'] = list(ipv4_set)[0]
+          options['ipv4-random'] = list(ipv4_set)[0].encode('UTF-8')
       if ipv6_set:
-          options['ipv6_random'] = list(ipv6_set)[0]
+          options['ipv6-random'] = list(ipv6_set)[0].encode('UTF-8')
 
       options['tap'] = tap_set
-      options['configuration'] = parameter_dict
+      parameter_dict = self._expandParameterDict(options, parameter_dict)
       match = self.OPTCRE_match
       for key, value in parameter_dict.iteritems():
           if match(key) is not None:
               continue
           options['configuration.' + key] = value
 
+  def _expandParameterDict(self, options, parameter_dict):
+      options['configuration'] = parameter_dict
+      return parameter_dict
+
   install = update = lambda self: []
+
+class Serialised(Recipe):
+  def _expandParameterDict(self, options, parameter_dict):
+      options['configuration'] = parameter_dict = unwrap(parameter_dict)
+      if isinstance(parameter_dict, dict):
+          return parameter_dict
+      else:
+          return {}

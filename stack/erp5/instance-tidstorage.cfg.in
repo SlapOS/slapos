@@ -134,10 +134,10 @@ link-binary =
   {{ parameter_dict['imagemagick'] }}/bin/identify
   {{ parameter_dict['mariadb'] }}/bin/mysql
   {{ parameter_dict['mariadb'] }}/bin/mysqldump
-  {{ parameter_dict['pdftk'] }}/bin/pdftk
   {{ parameter_dict['sed'] }}/bin/sed
   {{ parameter_dict['tesseract'] }}/bin/tesseract
   {{ parameter_dict['w3m'] }}/bin/w3m
+  {{ parameter_dict['openssl'] }}/bin/openssl
   {{ parameter_dict['poppler'] }}/bin/pdfinfo
   {{ parameter_dict['poppler'] }}/bin/pdfseparate
   {{ parameter_dict['poppler'] }}/bin/pdftotext
@@ -331,7 +331,7 @@ runzope-binary = {{ bin_directory }}/runzope
 bt5-repository-list =
 
 [deadlock-debugger-password]
-recipe = slapos.cookbook:pwgen.stable
+recipe = slapos.cookbook:generate.password
 
 [zope-conf-parameter-base]
 ip = {{ ipv4 }}
@@ -346,7 +346,7 @@ context =
   key instance directory:instance
   key instance_products directory:instance-products
   raw deadlock_path /manage_debug_threads
-  key deadlock_debugger_password deadlock-debugger-password:password
+  key deadlock_debugger_password deadlock-debugger-password:passwd
   key tidstorage_ip tidstorage:ip
   key tidstorage_port tidstorage:port
   key promise_path erp5-promise:promise-path
@@ -466,12 +466,14 @@ post = {{ bin_directory }}/killpidfromfile ${apache-{{ backend_name }}:pid-file}
 recipe = slapos.cookbook:haproxy
 name = {{ backend_name }}
 conf-path = ${directory:etc}/haproxy-{{ backend_name }}.cfg
+socket-path = ${directory:run}/haproxy-{{ backend_name }}.sock
 ip = {{ ipv4 }}
 port = {{ current_haproxy_port }}
 maxconn = {{ backend_configuration['maxconn'] }}
 server-check-path = /{{ site_id }}/getId
 wrapper-path = ${directory:services}/haproxy-{{ backend_name }}
 binary-path = {{ parameter_dict['haproxy'] }}/sbin/haproxy
+ctl-path = ${directory:bin}/haproxy-{{ backend_name }}-ctl
 backend-list = {{ haproxy_backend_list | join(' ')}}
 {%-  endif %}
 {% endfor -%}

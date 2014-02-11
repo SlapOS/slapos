@@ -1,3 +1,4 @@
+# vim: set et sts=2:
 ##############################################################################
 #
 # Copyright (c) 2012 Vifib SARL and Contributors. All Rights Reserved.
@@ -24,27 +25,70 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #
 ##############################################################################
-import random
+
+import errno
 import os
-import binascii
+import random
+import string
 
-from slapos.recipe.librecipe import GenericBaseRecipe
+def generatePassword(length):
+  return ''.join(random.SystemRandom().sample(string.ascii_lowercase, length))
 
-class Recipe(GenericBaseRecipe):
+
+class Recipe(object):
+  """Generate a password that is only composed of lowercase letters
+
+    This recipe only makes sure that ${:passwd} does not end up in `.installed`
+    file, which is world-readable by default. So be careful not to spread it
+    throughout the buildout configuration by referencing it directly: see
+    recipes like slapos.recipe.template:jinja2 to safely process the password.
+
+    Options:
+    - bytes: password length (default: 8 characters)
+    - storage-path: plain-text persistent storage for password,
+                    that can only be accessed by the user
+      (default: ${buildout:parts-directory}/${:_buildout_section_name_})
+  """
 
   def __init__(self, buildout, name, options):
-    if os.path.exists(options['storage-path']):
-      open_file = open(options['storage-path'], 'r')
-      options['passwd'] = open_file.read()
-      open_file.close()
+    options_get = options.get
+    try:
+      self.storage_path = options['storage-path']
+    except KeyError:
+      self.storage_path = options['storage-path'] = os.path.join(
+        buildout['buildout']['parts-directory'], name)
+    try:
+      with open(self.storage_path) as f:
+        passwd = f.read()
+    except IOError, e:
+      if e.errno != errno.ENOENT:
+        raise
+      passwd = None
+    if not passwd:
+      passwd = self.generatePassword(int(options_get('bytes', '8')))
+      self.update = self.install
+    self.passwd = passwd
+    # Password must not go into .installed file, for 2 reasons:
+    # security of course but also to prevent buildout to always reinstall.
+    options.get = lambda option, *args, **kw: passwd \
+      if option == 'passwd' else options_get(option, *args, **kw)
 
-    if options.get('passwd', '') == '':
-      options['passwd'] = binascii.hexlify(os.urandom(
-                            int(options.get('bytes', '24'))))
-    return GenericBaseRecipe.__init__(self, buildout, name, options)
+  generatePassword = staticmethod(generatePassword)
 
   def install(self):
-    open_file = open(self.options['storage-path'], 'w')
-    open_file.write(self.options['passwd'])
-    open_file.close()
-    return [self.options['storage-path']]
+    if self.storage_path:
+      try:
+        os.unlink(self.storage_path)
+      except OSError, e:
+        if e.errno != errno.ENOENT:
+          raise
+      fd = os.open(self.storage_path,
+        os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0600)
+      try:
+        os.write(fd, self.passwd)
+      finally:
+        os.close(fd)
+    return self.storage_path
+
+  def update(self):
+    return ()

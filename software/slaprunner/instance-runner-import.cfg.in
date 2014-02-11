@@ -1,0 +1,37 @@
+[buildout]
+extends = template-runner.cfg
+          ${pbsready-import:output}
+
+parts +=
+  nginx_conf
+  nginx-launcher
+  certificate-authority
+  ca-nginx
+  ca-shellinabox
+  gunicorn-launcher
+  gunicorn-graceful
+  test-runner
+  sshkeys-dropbear-runner
+  dropbear-server-add-authorized-key
+  sshkeys-authority
+  slaprunner-promise
+  dropbear-promise
+  shellinabox-promise
+  shellinabox
+  symlinks
+  slapos-cfg
+  slapos-repo-config
+  prepare-software
+# have to repeat the next one, as it's not inherited from pbsready-import
+  import-on-notification
+
+[importer]
+recipe = slapos.cookbook:slaprunner.import
+wrapper = $${directory:bin}/$${slap-parameter:namebase}-importer
+srv-directory = $${directory:srv}
+etc-directory = $${directory:etc}
+backup-directory = $${directory:backup}
+shell-binary = ${dash:location}/bin/dash
+rsync-binary = ${rsync:location}/bin/rsync
+curl-binary = ${curl:location}/bin/curl
+backend-url = $${slaprunner:access-url}

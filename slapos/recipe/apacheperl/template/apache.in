@@ -1,0 +1,73 @@
+# Apache static configuration
+
+LoadModule log_config_module modules/mod_log_config.so
+LoadModule setenvif_module modules/mod_setenvif.so
+LoadModule version_module modules/mod_version.so
+LoadModule headers_module modules/mod_headers.so
+LoadModule dir_module modules/mod_dir.so
+LoadModule mime_module modules/mod_mime.so
+LoadModule perl_module modules/mod_perl.so
+LoadModule apreq_module modules/mod_apreq2.so
+
+# Basic server configuration
+PidFile "%(pid_file)s"
+Listen [%(ip)s]:%(port)s
+ServerAdmin someone@email
+DefaultType text/plain
+TypesConfig conf/mime.types
+AddType application/x-compress .Z
+AddType application/x-gzip .gz .tgz
+
+# Log configuration
+ErrorLog "%(error_log)s"
+LogLevel warn
+LogFormat "%%h %%{REMOTE_USER}i %%l %%u %%t \"%%r\" %%>s %%b \"%%{Referer}i\" \"%%{User-Agent}i\"" combined
+LogFormat "%%h %%{REMOTE_USER}i %%l %%u %%t \"%%r\" %%>s %%b" common
+CustomLog "%(access_log)s" common
+
+<Perl>
+  use strict;
+  use warnings;
+  package mytest;
+
+  use Apache2::Const -compile => qw(OK);
+  use Apache2::RequestIO ();
+  use Apache2::RequestRec ();
+
+  use Apache2::Request;
+  use Date::Calc ();
+  use Image::Magick;
+
+  sub test_handler {
+    my ($r) = @_;
+    $r->content_type('text/plain');
+    {
+      my $date = localtime();
+      $r->print("Hello world! Current time: $date\n");
+    }
+    {
+      my $year = (localtime())[5] + 1900;
+      $r->print("Testing Date::Calc: English ordinal for current year is "
+        . Date::Calc::English_Ordinal($year) . "\n");
+    }
+    {
+      my $apreq = new Apache2::Request($r);
+      my $hello = $apreq->param('hello');
+      $r->print("Testing Apache2::Request: The parameter 'hello' is '$hello'\n");
+    }
+    {
+      my $im = new Image::Magick;
+      $r->print("Testing Image::Magick: PerlMagick success: "
+                . Image::Magick->Success . "\n");
+    }
+    return Apache2::Const::OK;
+  }
+</Perl>
+
+<Location />
+  SetHandler perl-script
+  PerlHandler mytest::test_handler
+</Location>
+
+DocumentRoot %(document_root)s
+DirectoryIndex index.html

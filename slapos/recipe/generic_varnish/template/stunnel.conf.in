@@ -1,0 +1,9 @@
+foreground = yes
+pid = %(stunnel_pid_file)s
+debug = 4
+
+[remote]
+accept = %(stunnel_server)s:%(stunnel_port)s
+client = yes
+connect = %(backend_server)s:%(backend_port)s
+sni = %(stunnel_server)s

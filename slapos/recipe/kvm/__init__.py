@@ -41,39 +41,40 @@ class Recipe(GenericBaseRecipe):
           '"virtio" value.'
       self.options['disk-type'] = 'virtio'
 
-    config = dict(
-      tap_interface=self.options['tap'],
-      vnc_ip=self.options['vnc-ip'],
-      vnc_port=self.options['vnc-port'],
-      nbd_ip=self.options['nbd-host'],
-      nbd_port=self.options['nbd-port'],
-      nbd2_ip=self.options.get('nbd2-host', ''),
-      nbd2_port=self.options.get('nbd2-port', 1024),
-      disk_path=self.options['disk-path'],
-      disk_size=self.options['disk-size'],
-      disk_type=self.options['disk-type'],
-      mac_address=self.options['mac-address'],
-      smp_count=self.options['smp-count'],
-      ram_size=self.options['ram-size'],
-      socket_path=self.options['socket-path'],
-      pid_file_path=self.options['pid-path'],
-      python_path=sys.executable,
-      shell_path=self.options['shell-path'],
-      qemu_path=self.options['qemu-path'],
-      qemu_img_path=self.options['qemu-img-path'],
-      vnc_passwd=self.options['passwd']
-    )
+    self.options['python-path'] = sys.executable
 
-    # Runners
+    path_list = []
+
+    if not self.isTrueValue(self.options.get('use-tap')):
+      # XXX This could be done using Jinja.
+      for port in self.options['nat-rules'].split():
+        tunnel_port = int(port) + 10000
+        tunnel_path = self.createExecutable(
+            '%s-%s' % (self.options['6tunnel-wrapper-path'], tunnel_port),
+            self.substituteTemplate(
+                self.getTemplateFilename('6to4.in'),
+                {
+                    'ipv6': self.options['ipv6'],
+                    'ipv6_port': tunnel_port,
+                    'ipv4': self.options['ipv4'],
+                    'ipv4_port': tunnel_port,
+                    'shell_path': self.options['shell-path'],
+                    '6tunnel_path': self.options['6tunnel-path'],
+                },
+            ),
+        )
+        path_list.append(tunnel_path)
+
     runner_path = self.createExecutable(
-      self.options['runner-path'],
-      self.substituteTemplate(self.getTemplateFilename('kvm_run.in'),
-                              config))
+        self.options['runner-path'],
+        self.substituteTemplate(self.getTemplateFilename('kvm_run.in'),
+                                self.options))
+    path_list.append(runner_path)
 
     controller_path = self.createExecutable(
       self.options['controller-path'],
       self.substituteTemplate(self.getTemplateFilename('kvm_controller_run.in'),
-                              config))
+                              self.options))
 
 
-    return [runner_path, controller_path]
+    return path_list

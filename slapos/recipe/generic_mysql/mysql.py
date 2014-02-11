@@ -34,6 +34,22 @@ def runMysql(args):
   print "Starting %r" % mysqld_wrapper_list[0]
   sys.stdout.flush()
   sys.stderr.flush()
+  # try to increase the maximum number of open file descriptors.
+  # it seems that mysqld requires (max_connections + 810) file descriptors.
+  # to make it possible, you need to set the hard limit of nofile in
+  # /etc/security/limits.conf like the following :
+  #   @slapsoft hard nofile 2048
+  try:
+    import resource
+    required_nofile = 2048 # XXX hardcoded value more than 1000 + 810
+    nofile_limit_list = [max(x, required_nofile) for x in resource.getrlimit(resource.RLIMIT_NOFILE)]
+    resource.setrlimit(resource.RLIMIT_NOFILE, nofile_limit_list)
+  except ImportError:
+    # resource library is only available on Unix platform.
+    pass
+  except ValueError:
+    # 'ValueError: not allowed to raise maximum limit'
+    pass
   os.execl(mysqld_wrapper_list[0], *mysqld_wrapper_list)
 
 
@@ -41,8 +57,18 @@ def updateMysql(args):
   conf = args[0]
   sleep = 30
   is_succeed = False
+  try:
+    script_filename = conf.pop('mysql_script_file')
+  except KeyError:
+    pass
+  else:
+    assert 'mysql_script' not in conf
+    with open(script_filename) as script_file:
+      conf['mysql_script'] = script_file.read()
   while True:
-    mysql_upgrade_list = [conf['mysql_upgrade_binary'], '--no-defaults', '--user=root', '--socket=%s' % conf['socket']]
+    mysql_upgrade_list = [conf['mysql_upgrade_binary'], '--no-defaults', '--user=root']
+    if 'socket' in conf:
+      mysql_upgrade_list.append('--socket=' + conf['socket'])
     mysql_upgrade = subprocess.Popen(mysql_upgrade_list, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     result = mysql_upgrade.communicate()[0]
     if mysql_upgrade.returncode is None:
@@ -54,7 +80,9 @@ def updateMysql(args):
         print "MySQL database upgraded with result:\n%s" % result
       else:
         print "No need to upgrade MySQL database"
-      mysql_list = [conf['mysql_binary'].strip(), '--no-defaults', '-B', '--user=root', '--socket=%s' % conf['socket']]
+      mysql_list = [conf['mysql_binary'].strip(), '--no-defaults', '-B', '--user=root']
+      if 'socket' in conf:
+        mysql_list.append('--socket=' + conf['socket'])
       mysql = subprocess.Popen(mysql_list, stdin=subprocess.PIPE,
           stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
       result = mysql.communicate(conf['mysql_script'])[0]

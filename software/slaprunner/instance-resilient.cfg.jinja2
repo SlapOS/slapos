@@ -1,0 +1,46 @@
+# vim: set ft=cfg:
+
+{% import 'parts' as parts %}
+{% import 'replicated' as replicated %}
+
+[buildout]
+eggs-directory = {{ eggs_directory }}
+develop-eggs-directory = {{ develop_eggs_directory }}
+offline = true
+
+# += because we need to take up parts (like instance-custom, slapmonitor etc) from the profile we extended
+parts +=
+  {{ parts.replicate("runner", "3") }}
+  publish-connection-informations
+
+{{ replicated.replicate("runner", "3", "runner-export", "runner-import", slapparameter_dict=slapparameter_dict) }}
+
+# Bubble up the parameters
+[request-runner]
+return = url ssh-public-key ssh-url notification-id ip backend_url url ssh_command password_recovery_code shell_password access_url 1_info
+
+[publish-connection-informations]
+recipe = slapos.cookbook:publish
+1_info = ${request-runner:connection-1_info}
+backend_url = ${request-runner:connection-backend_url}
+access_url = ${request-runner:connection-access_url}
+url = ${request-runner:connection-url}
+ssh_command = ${request-runner:connection-ssh_command}
+password_recovery_code = ${request-runner:connection-password_recovery_code}
+shell_password = ${request-runner:connection-shell_password}
+
+[slap-parameter]
+# Default parameters for distributed deployment
+# I.e state "backup1 of maria should go there, ..."
+# XXX-Cedric: Hardcoded number of backups. Should be dynamically generated.
+runner1-computer-guid =
+pbs-runner1-computer-guid =
+runner2-computer-guid =
+pbs-runner2-computer-guid =
+runner3-computer-guid =
+pbs-runner3-computer-guid =
+# XXX-Cedric: Hardcoded parameters. Should be dynamically generated.
+domain =
+authorized-key =
+instance-amount = 10
+debug = false

@@ -1,6 +1,218 @@
 Changes
 =======
 
+0.85 (2013-12-03)
+-----------------
+
+ * Slaprunner: recipe replaced by a buildout profile [14fbcd92]
+ * Slaprunner: import instances can automatically deploy Software Releases [64c48388]
+ * Slaprunner: backup script passes basic authentification [8877615]
+ * Slaprunner: backup doesn't destroy symlinks for Software Releases [f519a078]
+ * Shellinabox: now uses uid and gid to start [e9349c65]
+ * Shellinabox: can do autoconnection [516e772]
+ * Librecipe-generic: correction of bash code for /bin/sh compatibility [bee8c9c8]
+
+0.84.2 (2013-10-04)
+-------------------
+
+ * sshkeys_authority: don't allow to return None as parameter. [9e340a0]
+
+0.84.1 (2013-10-03)
+-------------------
+
+ * Resiliency: PBS: promise should NOT bang. [64886cd]
+
+0.84 (2013-09-30)
+-----------------
+
+ * Request.py: improve instance-state handling. [ba5f160]
+ * Resilient recipe: remove hashing of urls/names. [ee2aec8]
+ * Resilient pbs recipe: recover from rdiff-backup failures. [be7f2fc, 92ee0c3]
+ * Resilience: add pidfiles in PBS. [0b3ad5c]
+ * Resilient: don't hide exception, print it. [05b3d64, d2b0494]
+ * Resiliency: Only keep 10 increments of backup. [4e89e33]
+ * KVM SR: add fallback in case of download exception. [de8d796]
+ * slaprunner: don't check certificate for importer. [53dc772]
+
+0.83.1 (2013-09-10)
+------------------
+
+ * slapconfiguration: fixes previous releasei (don't encode tap_set because it's not a string). [Cedric de Saint Martin]
+
+0.83 (2013-09-10)
+-----------------
+
+ * slaprunner recipe: remove trailing / from master_url. [Cedric de Saint Martin]
+ * librecipe: add pidfile option for singletons. [Cedric de Saint Martin]
+ * Resiliency: Use new pidfile option. [Cedric de Saint Martin]
+ * Fix request.py for slave instances. [Cedric de Saint Martin]
+ * slapconfiguration recipe: cast some parameters from unicode to str. [Cedric de Saint Martin]
+
+0.82 (2013-08-30)
+-----------------
+
+ * Certificate Authority: Can receice certificate to install. [Cedric Le Ninivin]
+ * Squid: Add squid recipe. [Romain Courteaud]
+ * Request: Trasmit instace state to requested instances. [Benjamin Blanc / Cédric Le Ninivin]
+ * Slapconfiguration: Now return instance state. [Cédric Le Ninivin]
+ * Apache Frontend: Remove recipe
+
+0.81 (2013-08-12)
+-----------------
+
+ * KVM SR: implement resiliency test. [Cedric de Saint Martin]
+
+0.80 (2013-08-06)
+----------------
+
+ * Add a simple readline recipe. [f4fce7e]
+
+0.79 (2013-08-06)
+-----------------
+
+ * KVM SR: Add support for NAT based networking (User Mode Network). [627895fe35]
+ * KVM SR: add virtual-hard-drive-url support. [aeb5df40cd, 8ce5a9aa1d0, a5034801aa9]
+ * Fix regression in GenericBaseRecipe.generatePassword. [3333b07d33c]
+
+0.78.5 (2013-08-06)
+-------------------
+
+ * check_url_available: add option to check secure links [6cbce4d8231]
+
+0.78.4 (2013-08-06)
+-------------------
+
+ * slapos.cookbook:slaprunner: Update to use https. [Cedric Le Ninivin]
+
+
+0.78.3 (2013-07-18)
+-------------------
+
+ * slapos.cookbook:publish: Add support to publish information for slaves. [Cedric Le Ninivin]
+
+0.78.2 (2013-07-18)
+-------------------
+
+ * Fix slapos.cookbook:request: Add backward compatiblity about getInstanceGuid(). [Cedric de Saint Martin]
+ * slapos.cookbook:check_* promises: Add timeout to curl that is not otherwise killed by slapos promise subsystem. [Cedric de Saint Martin]
+ * Cloudooo: Allow any environment variables. [Yusei Tahara]
+ * ERP5: disable MariaDB query cache completely by 'query_cache_type = 0' for ERP5. [Kazuhiko Shiozaki]
+ * ERP5: enable haproxy admin socket and install haproxyctl script. [Kazuhiko Shiozaki]
+ * ERP5: increase the maximum number of open file descriptors before starting mysqld. [Kazuhiko Shiozaki]
+ * python 2.7: updated to 2.7.5 [Cedric de Saint Martin]
+
+0.78.1 (2013-05-31)
+-------------------
+
+ * Add boinc recipe: Allow to deploy an empty BOINC project. [Alain Takoudjou]
+ * Add boinc.app recipe: Allow to deploy and update a BOINC application into existing BOINC server instance . [Alain Takoudjou]
+ * Add boinc.client recipe: Allow to deploy a BOINC Client instance on SlapOS. [Alain Takoudjou]
+ * Add condor recipe: Allow to deploy Condor Manager or Condor worker instance on SlapOS. [Alain Takoudjou]
+ * Add condor.submit recipe: Allow to deploy or update application into existing Condor Manager instance. [Alain Takoudjou]
+ * Add redis.server recipe: Allow to deploy Redis server. [Alain Takoudjou]
+ * Add trac recipe: for deploying Trac and manage project with support of SVN and GIT. [Alain Takoudjou]
+ * Add bonjourgrid recipe: for deploying BonjourGrid Master and submit BOINC or Condor project. [Alain Takoudjou]
+ * Add bonjourgrid.client recipe: for deploying BonjourGrid Worker instance and execute BOINC or Condor Jobs. [Alain Takoudjou]
+
+0.78.0 (2013-04-28)
+-------------------
+
+ * LAMP stack: Allow to give application-dependent parameters to application configuration file. [Cedric de Saint Martin]
+ * zabbix-agent: Allow user to pass zabbix parameter. [Cedric de Saint Martin]
+ * kvm frontend: listen to ipv6 and ipv4. [Jean-Baptiste Petre]
+
+0.77.1 (2013-04-18)
+-------------------
+
+ * Re-release of 0.77.0.
+
+0.77.0 (2013-04-18)
+-------------------
+
+ * Allow to pass extra parameters when creating simple wrapper. [Sebastien Robin]
+ * Apache frontend: Append all rewrite module options to http as well. [Cedric de Saint Martin]
+ * Apache frontend: Add https-only support. [Cedric de Saint Martin]
+ * Apache frontend: make logrotate work by using "generic" component. [Cedric de Saint Martin]
+
+0.76.0 (2013-04-03)
+-------------------
+
+ * Add 'generic' phpconfigure recipe, allowing to configure any PHP-based app. [Cedric de Saint Martin]
+ * apache_frontend: Have more useful access_log in apache frontend. [Cedric de Saint Martin]
+ * apache_frontend: Add "SSLProxyEngine On" to http apache frontend vhost to be able to proxy https -> http. [Cedric de Saint Martin]
+ * Add first preliminary version of nginx-based reverse proxy. [Cedric de Saint Martin]
+ * Request-optional is not verbose anymore (again) if it failed. [Cedric de Saint Martin]
+ * Add possibility to fetch web ip and port from apache recipe. [Cedric de Saint Martin]
+
+0.75.0 (2013-03-26)
+-------------------
+
+ * Add backward compatibility about Partition.getInstanceGuid() in request.py. [Cedric de Saint Martin]
+ * request.py: Don't crash if resource is not ready. [Cedric de Saint Martin]
+ * Use memory-based kumofs instead of memcached to have no limitation for key length and data size. [Kazuhiko Shiozaki]
+ * Postgres: allow slapuser# to connect as postgres user. [Marco Mariani]
+ * apache_frontend: Sanitize inputs, disable Varnish cache, don't touch to custom file if already present. [Cedric de Saint Martin]
+ * Resiliency: simpler, more robust PBS recipe and promise. [Marco Mariani]
+ * Add helper method to set "location" parameter in librecipe. [Cedric de Saint Martin]
+ * Add download helper function in librecipe. [Cedric de Saint Martin]
+ * Update wrapper recipe to make it simpler and more dev-friendly. [Cedric de Saint Martin]
+ * Add configurationfile recipe. [Cedric de Saint Martin]
+ * Add request-edge recipe. [Cedric de Saint Martin]
+ * Add publishsection recipe. [Cedric de Saint Martin]
+ * Add match support for promise check_page_content. [Cedric de Saint Martin]
+
+0.74.0 (2013-03-05)
+-------------------
+
+ * Generate mysql password randomly in LAMP stack. [Alain Takoudjou]
+ * Add support for apache and haproxy to have more than one listening port. [Vincent Pelletier]
+ * Use a more consistent parameter naming in 6tunnel recipe. [Vincent Pelletier]
+ * Provide an SR-transparent way to (de)serialise master data. [Vincent Pelletier]
+ * Initial version of neoppod recipe. [Vincent Pelletier]
+ * Initial version of clusterized erp5 recipes. [Vincent Pelletier]
+ * General cleanup of the request recipe (simpler parsing, less calls to master). [Vincent Pelletier, Cedric de Saint Martin]
+
+0.73.1 (2013-02-19)
+-------------------
+
+ * softwaretype recipe: all falsy parameter values are now ignored. [Cedric de Saint Martin]
+
+0.73.0 (2013-02-18)
+-------------------
+
+ * Add mioga and apacheperl recipes. [Viktor Horvath]
+ * request.py: Properly fetch instance_guid of instance. [Cedric de Saint Martin]
+ * request.py: Only append SLA parameter to the list if the key actually exists and is not empty string. [Cedric de Saint Martin]
+
+0.72.0 (2013-02-11)
+-------------------
+
+ * librecipe: correctly handle newline and missing file in addLineToFile(). [Marco Mariani]
+ * LAMP: Copy php application even if directory exists but is empty. This handle new resilient LAMP stack. [Cedric de Saint Martin]
+ * LAMP: Don't even try to restart/reload/graceful Apache. This fix "Apache hangs" problem. [Cedric de Saint Martin]
+
+0.71.4 (2013-02-01)
+-------------------
+
+ * Enable IPv6 support in KumoFS. [Vincent Pelletier]
+ * Use new connection and get result when try to create new erp5 site. [Rafael Monnerat]
+ * Set up timezone database in mariab's mysql table so that we can use timezone conversion function. [Kazuhiko Shiozaki]
+ * Make erp5_bootstrap wait for manage_addERP5Site response [Rafael Monnerat]
+
+0.71.3 (2013-01-31)
+-------------------
+
+ * Add mysql_ip and mysql_port parameters in apachephp recipe [Cedric de Saint
+   Martin]
+ * Random password for postgres in standalone SR and lapp stack; accept
+   connections from the world. [Marco Mariani]
+
+0.71.2 (2013-01-29)
+-------------------
+
+ * revised postgres/lapp recipe. [Marco Mariani]
+
+
 0.71.1 (2013-01-04)
 -------------------
 
@@ -80,13 +292,13 @@ Changes
     [Antoine Catton]
 
 0.64 (2012-08-27)
-----------------
+-----------------
 
   * Fix: remove "template" recipe which was collinding with slapos.recipe.template.
     [Antoine Catton]
 
 0.63 (2012-08-22)
-----------------
+-----------------
 
   * Add the ability to run command line in shellinabox. [Antoine Catton]
   * Add the ability to run shellinabox as root. (for LXC purpose) [Antoine Catton]
@@ -144,7 +356,7 @@ Changes
   * Add slapmonitor and slapreport recipes. [Mohamadou Mbengue]
 
 0.54.1 (2012-06-18)
------------------
+-------------------
 
   * Fix 0.54 release containing wrong code in request.py.
 
@@ -261,7 +473,7 @@ Changes
    [Cedric de Saint Martin]
 
 0.40.1 (2012-03-01)
------------------
+-------------------
 
  * Fix manifest to include files needed for apache. [Cedric de Saint Martin]
 
@@ -323,7 +535,7 @@ Changes
 -----------------
 
   * LAMP : Recipe can now call lampconfigure from slapos.toolbox which will
-   configure PHP application instance when needed. [Alain Takoudjou Kamdem]
+    configure PHP application instance when needed. [Alain Takoudjou Kamdem]
 
 0.31 (2011-10-16)
 -----------------
@@ -459,7 +671,7 @@ Changes
 -----------------
 
  * Add PHPMyAdmin software release used in SlapOS tutorials
- [Cedric de Saint Martin]
+   [Cedric de Saint Martin]
  * Add slaprunner software release [Cedric de Saint Martin]
 
 

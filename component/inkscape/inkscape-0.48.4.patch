@@ -1,0 +1,11 @@
+--- src/widgets/desktop-widget.h~       2011-07-08 20:25:09.000000000 +0200
++++ src/widgets/desktop-widget.h        2014-01-17 13:22:48.503773743 +0100
+@@ -239,7 +239,7 @@
+ private:
+     GtkWidget *tool_toolbox;
+     GtkWidget *aux_toolbox;
+-    GtkWidget *commands_toolbox,;
++    GtkWidget *commands_toolbox;
+     GtkWidget *snap_toolbox;
+ 
+     static void init(SPDesktopWidget *widget);

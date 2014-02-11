@@ -103,16 +103,27 @@ class Request(Recipe):
     key_file = self.options['key-file']
     cert_file = self.options['cert-file']
 
+    key_content = self.options.get('key-content', None)
+    cert_content = self.options.get('cert-content', None)
+    request_needed = True
+
     name = self.options['name']
     hash_ = hashlib.sha512(name).hexdigest()
     key = os.path.join(self.ca_private, hash_ + self.ca_key_ext)
     certificate = os.path.join(self.ca_certs, hash_ + self.ca_crt_ext)
-    parser = ConfigParser.RawConfigParser()
-    parser.add_section('certificate')
-    parser.set('certificate', 'name', name)
-    parser.set('certificate', 'key_file', key)
-    parser.set('certificate', 'certificate_file', certificate)
-    parser.write(open(os.path.join(self.request_directory, hash_), 'w'))
+
+    # XXX Ugly hack to quickly provide custom certificate/key to everyone using the recipe
+    if key_content and cert_content:
+      open(key, 'w').write(key_content)
+      open(certificate, 'w').write(cert_content)
+      request_needed = False
+    else:
+      parser = ConfigParser.RawConfigParser()
+      parser.add_section('certificate')
+      parser.set('certificate', 'name', name)
+      parser.set('certificate', 'key_file', key)
+      parser.set('certificate', 'certificate_file', certificate)
+      parser.write(open(os.path.join(self.request_directory, hash_), 'w'))
 
     for link in [key_file, cert_file]:
       if os.path.islink(link):
@@ -123,11 +134,14 @@ class Request(Recipe):
     os.symlink(key, key_file)
     os.symlink(certificate, cert_file)
 
-    wrapper = self.createPythonScript(
-      self.options['wrapper'],
-      'slapos.recipe.librecipe.execute.execute_wait',
-      [ [self.options['executable']],
-        [certificate, key] ],
-    )
+    path_list = [key_file, cert_file]
+    if request_needed:
+      wrapper = self.createPythonScript(
+        self.options['wrapper'],
+        'slapos.recipe.librecipe.execute.execute_wait',
+        [ [self.options['executable']],
+          [certificate, key] ],
+      )
+      path_list.append(wrapper)
 
-    return [key_file, cert_file, wrapper]
+    return path_list

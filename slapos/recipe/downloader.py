@@ -36,6 +36,11 @@ from slapos.recipe.librecipe import GenericBaseRecipe
 
 BUFFER_SIZE = 1024
 
+# XXX-Cedric: For god's sake, why do we always reinvent the wheel???
+# DON'T use this and use h.r.download, except if you need the "confirm" feature.
+
+# XXX-Cedric: implement "confirm" feature in h.r.download
+
 def service(args):
     environ = os.environ.copy()
     environ.update(PATH=args['path'])

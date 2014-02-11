@@ -23,6 +23,7 @@ context =
     key develop_eggs_directory buildout:develop-eggs-directory
     key slap_software_type slap-parameters:slap-software-type
     key slapparameter_dict slap-parameters:configuration
+    raw slapos_core_version {{ slapos_core_version }}
     ${:extra-context}
 
 [dynamic-template-tidstorage-parameters]
@@ -39,7 +40,6 @@ grep = {{ grep_location }}
 imagemagick = {{ imagemagick_location }}
 librsvg = {{ librsvg_location }}
 mariadb = {{ mariadb_location }}
-pdftk = {{ pdftk_location }}
 sed = {{ sed_location }}
 tesseract = {{ tesseract_location }}
 w3m = {{ w3m_location }}
@@ -48,6 +48,7 @@ poppler = {{ poppler_location }}
 dmtx-utils = {{ dmtx_utils_location }}
 buildout-bin-directory = {{ buildout_bin_directory }}
 zope-conf-template = {{ template_zope_conf }}
+jsl = {{ jsl_location }}
 
 [dynamic-template-tidstorage]
 < = jinja2-template-base
@@ -67,9 +68,14 @@ extra-context =
     raw software_type tidstorage
 
 [dynamic-template-cloudooo-parameters]
+cups = {{ cups_location }}
+dbus = {{ dbus_location }}
+dbus-glib = {{ dbus_glib_location }}
 file = {{ file_location }}
 fontconfig = {{ fontconfig_location }}
 freetype = {{ freetype_location }}
+glib = {{ glib_location }}
+libffi = {{ libffi_location }}
 libICE = {{ libICE_location }}
 libpng12 = {{ libpng12_location }}
 libSM = {{ libSM_location }}
@@ -99,6 +105,7 @@ dash = {{ dash_location }}
 dcron = {{ dcron_location }}
 gzip =  {{ gzip_location }}
 logrotate = {{ logrotate_location }}
+stunnel = {{ stunnel_location }}
 varnish = {{ varnish_location }}
 wget = {{ wget_location }}
 buildout-bin-directory = {{ buildout_bin_directory }}
@@ -129,11 +136,11 @@ librsvg = {{ librsvg_location }}
 logrotate = {{ logrotate_location }}
 mariadb = {{ mariadb_location }}
 openssl = {{ openssl_location }}
-pdftk = {{ pdftk_location }}
 poppler = {{ poppler_location }}
 sed = {{ sed_location }}
 tesseract = {{ tesseract_location }}
 w3m = {{ w3m_location }}
+jsl = {{ jsl_location }}
 
 [dynamic-template-zope]
 < = jinja2-template-base
@@ -159,11 +166,11 @@ extra-context =
     key logrotate_location dynamic-template-zope-parameters:logrotate
     key mariadb_location dynamic-template-zope-parameters:mariadb
     key openssl_location dynamic-template-zope-parameters:openssl
-    key pdftk_location dynamic-template-zope-parameters:pdftk
     key poppler_location dynamic-template-zope-parameters:poppler
     key sed_location dynamic-template-zope-parameters:sed
     key tesseract_location dynamic-template-zope-parameters:tesseract
     key w3m_location dynamic-template-zope-parameters:w3m
+    key jsl_location dynamic-template-zope-parameters:jsl
 
 [template-erp5-single-parameters]
 bin-directory = {{ bin_directory }}
@@ -187,11 +194,30 @@ extra-context =
     key template_zope dynamic-template-zope:rendered
     key local_bt5_repository template-erp5-single-parameters:local_bt5_repository
 
+[dynamic-template-cluster-parameters]
+local-bt5-repository = {{ local_bt5_repository }}
+
+[dynamic-template-cluster]
+< = jinja2-template-base
+template = {{ template_erp5_cluster }}
+filename = instance-erp5-cluster.cfg
+extra-context =
+    key local_bt5_repository dynamic-template-cluster-parameters:local-bt5-repository
+# Must match the key id in [switch-softwaretype] which uses this section.
+# XXX: it is dangerous to use buildout-style expansion in jinja context declaration
+    raw software_type ${:software-type}
+software-type = cluster
+
+# BBB: use "cluster" software type instead
+[dynamic-template-production]
+< = dynamic-template-cluster
+software-type = production
+
 [switch-softwaretype]
 recipe = slapos.cookbook:softwaretype
 default = ${template-erp5-single:rendered}
-production = {{ template_erp5_cluster }}
-cluster = {{ template_erp5_cluster }}
+production = ${dynamic-template-production:rendered}
+cluster = ${dynamic-template-cluster:rendered}
 kumofs = {{ template_kumofs }}
 memcached = {{ template_memcached }}
 cloudooo = ${dynamic-template-cloudooo:rendered}
