@@ -63,6 +63,17 @@ if REQUEST is None:\n
 if response is None:\n
   response = REQUEST.RESPONSE\n
 \n
+url_template_dict = {\n
+  "form_action": "%(context_url)s/%(action_id)s",\n
+  "document_hal": "%(context_url)s/%(script_id)s",\n
+  "form_definition_hal": "%(root_url)s/%(script_id)s?mode=form_definition" + \\\n
+                         "&skin_id=%(skin_id)s",\n
+  "search_template": "%(root_url)s/%(script_id)s?mode=search" + \\\n
+                     "{&query,select_list*,limit*}",\n
+  "traverse_template": "%(root_url)s/{+relative_url}/%(script_id)s{?view}",\n
+  "new_content_action": "%(root_url)s/%(script_id)s?mode=newContent",\n
+}\n
+\n
 def renderField(field, meta_type=None):\n
   if meta_type is None:\n
     meta_type = field.meta_type\n
@@ -113,7 +124,10 @@ def renderField(field, meta_type=None):\n
     for row in row_list:\n
       document = row.getObject()\n
       line = {\n
-        \'url\': "%s/ERP5Document_getHateoas?portal_skin=Hal" % document.absolute_url(),\n
+        "url": url_template_dict["document_hal"] % {\n
+          "context_url": document.absolute_url(),\n
+          "script_id": script.id\n
+        }\n
       }\n
       for property, title in columns:\n
         prop = document.getProperty(property)\n
@@ -146,13 +160,19 @@ def renderForm(form, response_dict):\n
   # Form action\n
   response_dict[\'_actions\'] = {\n
     \'put\': {\n
-      "href": "%s/%s" % (context.absolute_url(), form.action),\n
+      "href": url_template_dict["form_action"] % {\n
+        "context_url": context.absolute_url(),\n
+        "action_id": form.action\n
+      },\n
       "method": form.method,\n
     }\n
   }\n
   # Form context\n
   response_dict[\'_links\'][\'context\'] = {\n
-    "href": "%s/%s" % (context.absolute_url(), script.id),\n
+    "href": url_template_dict["document_hal"] % {\n
+      "context_url": context.absolute_url(),\n
+      "script_id": script.id\n
+    },\n
     "name": context.getRelativeUrl(),\n
     "title": context.getTitle()\n
   }\n
@@ -160,8 +180,11 @@ def renderForm(form, response_dict):\n
   form_definition = {\n
     "_links": {\n
       "self": {\n
-        "href": "%s/%s?mode=form_definition&skin_id=%s" % \\\n
-          (site_root.absolute_url(), script.id, form.id),\n
+        "href": url_template_dict["form_definition_hal"] % {\n
+          "root_url": site_root.absolute_url(),\n
+          "script_id": script.id,\n
+          "skin_id": form.id\n
+        },\n
         \'name\': form.id\n
       }\n
     }\n
@@ -171,8 +194,11 @@ def renderForm(form, response_dict):\n
     \'form_definition\': form_definition\n
   }\n
   response_dict[\'_links\'][\'form_definition\'] = {\n
-    "href": "%s/%s?mode=form_definition&skin_id=%s" % \\\n
-      (site_root.absolute_url(), script.id, form.id),\n
+    "href": url_template_dict["form_definition_hal"] % {\n
+      "root_url": site_root.absolute_url(),\n
+      "script_id": script.id,\n
+      "skin_id": form.id,\n
+    },\n
     \'name\': form.id\n
   }\n
 \n
@@ -294,7 +320,10 @@ result_dict = {\n
     },\n
     # Always inform about site root\n
     "site_root": {\n
-      "href": "%s/%s" % (site_root.absolute_url(), script.id),\n
+      "href": url_template_dict["document_hal"] % {\n
+        "context_url": site_root.absolute_url(),\n
+        "script_id": script.id\n
+      },\n
       "name": site_root.getTitle(),\n
     }\n
   }\n
@@ -320,7 +349,10 @@ elif mode == \'document\':\n
   # Add a link to the portal type if possible\n
   if not is_portal:\n
     result_dict[\'_links\'][\'type\'] = {\n
-      "href": "%s/%s" % (portal.portal_types[context.getPortalType()].absolute_url(), script.id),\n
+      "href": url_template_dict["document_hal"] % {\n
+        "context_url": portal.portal_types[context.getPortalType()].absolute_url(),\n
+        "script_id": script.id\n
+      },\n
       "name": context.getPortalType(),\n
     }\n
 \n
@@ -384,7 +416,7 @@ elif mode == \'document\':\n
     # renderer_form_relative_url = view_action[\'url\'][len(portal.absolute_url()):]\n
     form_id = embedded_url.split(\'?\', 1)[0].split("/")[-1]\n
     # XXX Drop (or do something else...) all query parameters (?reset:int=1)\n
-    renderer_form = context.restrictedTraverse(form_id, None)\n
+    # renderer_form = context.restrictedTraverse(form_id, None)\n
     # XXX Proxy field are not correctly handled in context of web site\n
     renderer_form = getattr(context, form_id)\n
 #     context.log(form_id)\n
@@ -431,17 +463,26 @@ elif mode == \'document\':\n
 #       \'name\': \'Global Search\'\n
 #     }\n
     result_dict[\'_links\'][\'raw_search\'] = {\n
-      "href": "%s/%s?mode=search{&query,select_list*,limit*}" % (site_root.absolute_url(), script.id),\n
+      "href": url_template_dict["search_template"] % {\n
+        "root_url": site_root.absolute_url(),\n
+        "script_id": script.id\n
+      },\n
       \'name\': \'Raw Search\',\n
       \'templated\': True\n
     }\n
     result_dict[\'_links\'][\'traverse\'] = {\n
-      \'href\': \'%s/{+relative_url}/%s{?view}\' % (site_root.absolute_url(), script.id),\n
+      "href": url_template_dict["traverse_template"] % {\n
+        "root_url": site_root.absolute_url(),\n
+        "script_id": script.id\n
+      },\n
       \'name\': \'Traverse\',\n
       \'templated\': True\n
     }\n
     action_dict[\'add\'] = {\n
-      \'href\': "%s/%s?mode=newContent" % (site_root.absolute_url(), script.id),\n
+      "href": url_template_dict["new_content_action"] % {\n
+        "root_url": site_root.absolute_url(),\n
+        "script_id": script.id\n
+      },\n
       \'method\': \'POST\',\n
       \'name\': \'New Content\',\n
     }\n
@@ -450,7 +491,10 @@ elif mode == \'document\':\n
     person = portal.ERP5Site_getAuthenticatedMemberPersonValue()\n
     if person is not None:\n
       result_dict[\'_links\'][\'me\'] = {\n
-        \'href\': \'%s/%s\' % (person.absolute_url(), script.id),\n
+        "href": url_template_dict["document_hal"] % {\n
+          "context_url": person.absolute_url(),\n
+          "script_id": script.id\n
+        },\n
         \'_relative_url\': person.getRelativeUrl()\n
       }\n
 \n
@@ -702,7 +746,10 @@ elif mode == \'search\':\n
     for sql_document in sql_list:\n
       document = sql_document.getObject()\n
       result_list.append({\n
-        \'href\': \'%s/%s\' % (document.absolute_url(), script.id),\n
+        "href": url_template_dict["document_hal"] % {\n
+          "context_url": document.absolute_url(),\n
+          "script_id": script.id\n
+        },\n
       })\n
     result_dict[\'_links\'][\'contents\'] = result_list\n
 \n
@@ -712,7 +759,12 @@ elif mode == \'search\':\n
       document_result = {\n
         \'_relative_url\': sql_document.path[length:],\n
         \'_links\': {\n
-          \'self\': {\'href\': \'%s/%s\' % (document.absolute_url(), script.id)},\n
+          \'self\': {\n
+            "href": url_template_dict["document_hal"] % {\n
+              "context_url": document.absolute_url(),\n
+              "script_id": script.id\n
+            },\n
+          },\n
         }\n
       }\n
       for select in select_list:\n
