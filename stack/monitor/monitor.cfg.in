@@ -245,7 +245,7 @@ input = inline:
     # XXX: security????
     Options +ExecCGI
     AddHandler cgi-script .cgi
-    DirectoryIndex $${deploy-index:rendered}
+    DirectoryIndex $${deploy-index:filename}
   </Directory>
 output = $${directory:etc}/cgi-httpd.conf
 # md5sum =
@@ -273,5 +273,5 @@ curl_path = ${curl:location}/bin/curl
 
 [publish-connection-informations]
 recipe = slapos.cookbook:publish
-monitor_url = https://[$${cgi-httpd-configuration-file:listening-ip}]:$${monitor-parameters:port}/$${deploy-index:filename}
+monitor_url = https://[$${cgi-httpd-configuration-file:listening-ip}]:$${monitor-parameters:port}
 IMPORTANT_monitor_info = Change the monitor_password as soon as possible ! Default is : $${public:monitor-password}
