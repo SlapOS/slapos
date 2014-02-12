@@ -1,0 +1,51 @@
+# https://mail.zope.org/pipermail/zodb-dev/2014-February/015182.html
+diff --git a/src/ZODB/FileStorage/FileStorage.py b/src/ZODB/FileStorage/FileStorage.py
+index d45cbbf..d662bf4 100644
+--- a/src/ZODB/FileStorage/FileStorage.py
++++ b/src/ZODB/FileStorage/FileStorage.py
+@@ -683,6 +683,7 @@ def tpc_vote(self, transaction):
+                 # Hm, an error occurred writing out the data. Maybe the
+                 # disk is full. We don't want any turd at the end.
+                 self._file.truncate(self._pos)
++                self._files.flush()
+                 raise
+             self._nextpos = self._pos + (tl + 8)
+ 
+@@ -737,6 +738,7 @@ def _finish_finish(self, tid):
+     def _abort(self):
+         if self._nextpos:
+             self._file.truncate(self._pos)
++            self._files.flush()
+             self._nextpos=0
+             self._blob_tpc_abort()
+ 
+@@ -1996,6 +1998,15 @@ def __init__(self, file_name):
+         self._out = []
+         self._cond = threading.Condition()
+ 
++    def flush(self):
++        """Empty read buffers.
++
++        This is required if they may contain data of rolled back transactions.
++        """
++        with self.write_lock():
++            for f in self._files:
++                f.flush()
++
+     @contextlib.contextmanager
+     def write_lock(self):
+         with self._cond:
+
+# https://github.com/zopefoundation/ZODB/pull/15/files
+diff -ur a/src/ZODB/FileStorage/FileStorage.py b/src/ZODB/FileStorage/FileStorage.py
+--- a/src/ZODB/FileStorage/FileStorage.py
++++ b/src/ZODB/FileStorage/FileStorage.py
+@@ -430,7 +430,7 @@
+                 if h.tid == serial:
+                     break
+                 pos = h.prev
+-                if not pos:
++                if h.tid < serial or not pos:
+                     raise POSKeyError(oid)
+             if h.plen:
+                 return self._file.read(h.plen)
