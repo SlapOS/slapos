@@ -64,15 +64,23 @@ if response is None:\n
   response = REQUEST.RESPONSE\n
 \n
 url_template_dict = {\n
-  "form_action": "%(context_url)s/%(action_id)s",\n
-  "document_hal": "%(context_url)s/%(script_id)s",\n
-  "form_definition_hal": "%(root_url)s/%(script_id)s?mode=form_definition" + \\\n
-                         "&skin_id=%(skin_id)s",\n
+  "form_action": "%(traversed_document_url)s/%(action_id)s",\n
+  "traverse_template": "%(root_url)s/%(script_id)s?mode=traverse" + \\\n
+                       "{&relative_url,view}",\n
+  "document_hal": "%(root_url)s/%(script_id)s?mode=traverse" + \\\n
+                  "&relative_url=%(relative_url)s",\n
   "search_template": "%(root_url)s/%(script_id)s?mode=search" + \\\n
                      "{&query,select_list*,limit*}",\n
-  "traverse_template": "%(root_url)s/{+relative_url}/%(script_id)s{?view}",\n
   "new_content_action": "%(root_url)s/%(script_id)s?mode=newContent",\n
 }\n
+\n
+def getFormRelativeUrl(form):\n
+  return portal.portal_catalog(\n
+    portal_type="Form",\n
+    uid=form.getUid(),\n
+    limit=1,\n
+    select_dict={\'relative_url\': None}\n
+  )[0].relative_url\n
 \n
 def renderField(field, meta_type=None):\n
   if meta_type is None:\n
@@ -113,7 +121,7 @@ def renderField(field, meta_type=None):\n
     # XXX Not implemented\n
     columns = field.get_value("columns")\n
 \n
-    list_method = getattr(context, context.Listbox_getListMethodName(field))\n
+    list_method = getattr(traversed_document, traversed_document.Listbox_getListMethodName(field))\n
     portal_types = [x[1] for x in field.get_value(\'portal_types\')]\n
     default_params = dict(field.get_value(\'default_params\'))\n
     default_params.update(REQUEST.form)\n
@@ -125,7 +133,8 @@ def renderField(field, meta_type=None):\n
       document = row.getObject()\n
       line = {\n
         "url": url_template_dict["document_hal"] % {\n
-          "context_url": document.absolute_url(),\n
+          "root_url": site_root.absolute_url(),\n
+          "relative_url": document.getRelativeUrl(),\n
           "script_id": script.id\n
         }\n
       }\n
@@ -155,52 +164,64 @@ def renderField(field, meta_type=None):\n
 \n
 \n
 def renderForm(form, response_dict):\n
-  REQUEST.set(\'here\', context)\n
+  REQUEST.set(\'here\', traversed_document)\n
 \n
   # Form action\n
   response_dict[\'_actions\'] = {\n
     \'put\': {\n
       "href": url_template_dict["form_action"] % {\n
-        "context_url": context.absolute_url(),\n
+        "traversed_document_url": traversed_document.absolute_url(),\n
         "action_id": form.action\n
       },\n
       "method": form.method,\n
     }\n
   }\n
-  # Form context\n
-  response_dict[\'_links\'][\'context\'] = {\n
+  # Form traversed_document\n
+  response_dict[\'_links\'][\'traversed_document\'] = {\n
     "href": url_template_dict["document_hal"] % {\n
-      "context_url": context.absolute_url(),\n
+      "root_url": site_root.absolute_url(),\n
+      "relative_url": traversed_document.getRelativeUrl(),\n
       "script_id": script.id\n
     },\n
-    "name": context.getRelativeUrl(),\n
-    "title": context.getTitle()\n
+    "name": traversed_document.getRelativeUrl(),\n
+    "title": traversed_document.getTitle()\n
   }\n
 \n
-  form_definition = {\n
-    "_links": {\n
-      "self": {\n
-        "href": url_template_dict["form_definition_hal"] % {\n
-          "root_url": site_root.absolute_url(),\n
-          "script_id": script.id,\n
-          "skin_id": form.id\n
-        },\n
-        \'name\': form.id\n
-      }\n
-    }\n
-  }\n
-  renderFormDefinition(form, form_definition)\n
-  response_dict[\'_embedded\'] = {\n
-    \'form_definition\': form_definition\n
-  }\n
-  response_dict[\'_links\'][\'form_definition\'] = {\n
-    "href": url_template_dict["form_definition_hal"] % {\n
-      "root_url": site_root.absolute_url(),\n
-      "script_id": script.id,\n
-      "skin_id": form.id,\n
-    },\n
-    \'name\': form.id\n
-  }\n
+#   form_definition = {\n
+#     "_links": {\n
+#       "self": {\n
+#         "href": url_template_dict["document_hal"] % {\n
+#           "root_url": site_root.absolute_url(),\n
+#           "script_id": script.id,\n
+#           "relative_url": getFormRelativeUrl(form)\n
+#         },\n
+#         \'name\': form.id\n
+#       }\n
+#     }\n
+#   }\n
+#   traversed_document.log("cosucous" * 20)\n
+#   for key in REQUEST.keys():\n
+#     traversed_document.log("-" * 20)\n
+#     traversed_document.log(key)\n
+#     traversed_document.log(REQUEST[key])\n
+\n
+#   traversed_document.log(portal.portal_catalog(portal_type="Form", uid=form.getUid(),\n
+#                                     limit=1, select_dict={\'relative_url\': None})[0].relative_url)\n
+#   renderFormDefinition(form, form_definition)\n
+#   response_dict[\'_embedded\'] = {\n
+#     \'form_definition\': form_definition\n
+#   }\n
+\n
+\n
+  # XXX Need ERP5Form patch\n
+#   response_dict[\'_links\'][\'form_definition\'] = {\n
+#     "href": url_template_dict["document_hal"] % {\n
+#       "root_url": site_root.absolute_url(),\n
+#       "script_id": script.id,\n
+#       "relative_url": getFormRelativeUrl(form)\n
+#     },\n
+#     \'name\': form.id\n
+#   }\n
 \n
   group_list = []\n
   for group in form.Form_getGroupTitleAndId():\n
@@ -213,12 +234,12 @@ def renderForm(form, response_dict):\n
           response_dict[field.id] = renderField(field)\n
 \n
   #       for field_group in field.form.get_groups():\n
-  #         context.log("Field group: " + field_group)\n
-  #         context.log(field_group)\n
+  #         traversed_document.log("Field group: " + field_group)\n
+  #         traversed_document.log(field_group)\n
   #         for field_property in field.form.get_fields_in_group(field_group):\n
-  # #           context.log("Field attribute: " + field_property.id)\n
+  # #           traversed_document.log("Field attribute: " + field_property.id)\n
   # #           field.get_value(field_property.id)\n
-  #           context.log(field_property)\n
+  #           traversed_document.log(field_property)\n
 \n
 #       group_list.append((group[\'gid\'], field_list))\n
 \n
@@ -298,30 +319,36 @@ context.Base_prepareCorsResponse(RESPONSE=response)\n
 \n
 mime_type = \'application/hal+json\'\n
 portal = context.getPortalObject()\n
-sql_catalog = context.portal_catalog.getSQLCatalog()\n
+sql_catalog = portal.portal_catalog.getSQLCatalog()\n
 \n
 # Calculate the site root to prevent unexpected browsing\n
 is_web_mode = (context.REQUEST.get(\'current_web_section\', None) is not None) or context.isWebMode()\n
-# is_web_mode =  context.isWebMode()\n
+# is_web_mode =  traversed_document.isWebMode()\n
 if is_web_mode:\n
   site_root = context.getWebSiteValue()\n
 else:\n
   site_root = portal\n
 \n
-# Check if context is the site_root\n
-is_site_root = (context.getPath() == site_root.getPath())\n
-is_portal = (context.getPath() == portal.getPath())\n
+# Check if traversed_document is the site_root\n
+if relative_url:\n
+  traversed_document = site_root.restrictedTraverse(relative_url)\n
+else:\n
+  traversed_document = context\n
+is_site_root = (traversed_document.getPath() == site_root.getPath())\n
+is_portal = (traversed_document.getPath() == portal.getPath())\n
 \n
 result_dict = {\n
   \'_debug\': mode,\n
   \'_links\': {\n
     "self": {\n
-      "href": context.Base_getRequestUrl()\n
+      # XXX Include query parameters\n
+      "href": traversed_document.Base_getRequestUrl()\n
     },\n
     # Always inform about site root\n
     "site_root": {\n
       "href": url_template_dict["document_hal"] % {\n
-        "context_url": site_root.absolute_url(),\n
+        "root_url": site_root.absolute_url(),\n
+        "relative_url": "",\n
         "script_id": script.id\n
       },\n
       "name": site_root.getTitle(),\n
@@ -330,12 +357,12 @@ result_dict = {\n
 }\n
 \n
 \n
-if mime_type != context.Base_handleAcceptHeader([mime_type]):\n
+if mime_type != traversed_document.Base_handleAcceptHeader([mime_type]):\n
   response.setStatus(406)\n
   return ""\n
 \n
 \n
-elif mode == \'document\':\n
+elif (mode == \'root\') or (mode == \'traverse\'):\n
   #################################################\n
   # Raw document\n
   #################################################\n
@@ -344,21 +371,23 @@ elif mode == \'document\':\n
     return ""\n
   # Default properties shared by all ERP5 Document and Site\n
   action_dict = {}\n
-  result_dict[\'_relative_url\'] = context.getRelativeUrl()\n
+  result_dict[\'_relative_url\'] = traversed_document.getRelativeUrl()\n
 \n
   # Add a link to the portal type if possible\n
   if not is_portal:\n
     result_dict[\'_links\'][\'type\'] = {\n
       "href": url_template_dict["document_hal"] % {\n
-        "context_url": portal.portal_types[context.getPortalType()].absolute_url(),\n
+        "root_url": site_root.absolute_url(),\n
+        "relative_url": portal.portal_types[traversed_document.getPortalType()]\\\n
+                          .getRelativeUrl(), \n
         "script_id": script.id\n
       },\n
-      "name": context.getPortalType(),\n
+      "name": traversed_document.getPortalType(),\n
     }\n
 \n
   # XXX Loop on form rendering\n
   erp5_action_dict = portal.Base_filterDuplicateActions(\n
-    portal.portal_actions.listFilteredActionsFor(context))\n
+    portal.portal_actions.listFilteredActionsFor(traversed_document))\n
 \n
   embedded_url = None\n
   embedded_action_key = None\n
@@ -384,7 +413,7 @@ elif mode == \'document\':\n
       result_dict[\'_links\']["action_" + erp5_action_key] = erp5_action_list\n
 \n
 #   for view_action in erp5_action_dict.get(\'object_view\', []):\n
-#     context.log(view_action)\n
+#     traversed_document.log(view_action)\n
 #     # XXX Check the action condition\n
 # #     if (view is None) or (view != view_action[\'name\']):\n
 #     object_view_list.append({\n
@@ -392,9 +421,9 @@ elif mode == \'document\':\n
 #       \'name\': view_action[\'name\']\n
 #     })\n
 \n
-#   # XXX Check that context is not the portal\n
-#   if (context.getRelativeUrl() != portal.getRelativeUrl()) and (context.getRelativeUrl() != site_root.getRelativeUrl()):\n
-#     parent = context.getParentValue()\n
+#   # XXX Check that traversed_document is not the portal\n
+#   if (traversed_document.getRelativeUrl() != portal.getRelativeUrl()) and (traversed_document.getRelativeUrl() != site_root.getRelativeUrl()):\n
+#     parent = traversed_document.getParentValue()\n
 #     if (is_web_mode and (parent.getRelativeUrl() != portal.getRelativeUrl())):\n
 #       result_dict[\'_links\'][\'parent\'] = {\n
 #         \'href\': \'%s\' % parent.absolute_url(),\n
@@ -402,24 +431,24 @@ elif mode == \'document\':\n
 #       }\n
 # \n
 #   if (renderer_form is not None):\n
-#     context_property_dict, renderer_form_json = context.Base_renderFormAsSomething(renderer_form)\n
+#     traversed_document_property_dict, renderer_form_json = traversed_document.Base_renderFormAsSomething(renderer_form)\n
 #     result_dict[\'_embedded\'] = {\n
 #       \'object_view\': renderer_form_json\n
 #     }\n
-#     result_dict.update(context_property_dict)\n
+#     result_dict.update(traversed_document_property_dict)\n
 \n
   # XXX XXX XXX XXX\n
   if (embedded_url is not None):\n
-    # XXX Try to fetch the form in the context of the document\n
+    # XXX Try to fetch the form in the traversed_document of the document\n
     # Of course, this code will completely crash in many cases (page template\n
     # instead of form, unexpected action TALES expression). Happy debugging.\n
     # renderer_form_relative_url = view_action[\'url\'][len(portal.absolute_url()):]\n
     form_id = embedded_url.split(\'?\', 1)[0].split("/")[-1]\n
     # XXX Drop (or do something else...) all query parameters (?reset:int=1)\n
-    # renderer_form = context.restrictedTraverse(form_id, None)\n
-    # XXX Proxy field are not correctly handled in context of web site\n
-    renderer_form = getattr(context, form_id)\n
-#     context.log(form_id)\n
+    # renderer_form = traversed_document.restrictedTraverse(form_id, None)\n
+    # XXX Proxy field are not correctly handled in traversed_document of web site\n
+    renderer_form = getattr(traversed_document, form_id)\n
+#     traversed_document.log(form_id)\n
     if (renderer_form is not None):\n
       embedded_dict = {\n
         \'_links\': {\n
@@ -440,11 +469,11 @@ elif mode == \'document\':\n
       for group in renderer_form.Form_getGroupTitleAndId():\n
         for field in renderer_form.get_fields_in_group(group[\'goid\']):\n
           field_id = field.id\n
-#           context.log(field_id)\n
+#           traversed_document.log(field_id)\n
           if field_id.startswith(\'my_\'):\n
             property_name = field_id[len(\'my_\'):]\n
-#             context.log(property_name)\n
-            property_value = context.getProperty(property_name, d=None)\n
+#             traversed_document.log(property_name)\n
+            property_value = traversed_document.getProperty(property_name, d=None)\n
             if (property_value is not None):\n
               if not same_type(property_value, DateTime()):\n
                 # XXX Serialize DateTime\n
@@ -492,7 +521,8 @@ elif mode == \'document\':\n
     if person is not None:\n
       result_dict[\'_links\'][\'me\'] = {\n
         "href": url_template_dict["document_hal"] % {\n
-          "context_url": person.absolute_url(),\n
+          "root_url": site_root.absolute_url(),\n
+          "relative_url": person.getRelativeUrl(), \n
           "script_id": script.id\n
         },\n
         \'_relative_url\': person.getRelativeUrl()\n
@@ -513,11 +543,11 @@ elif mode == \'document\':\n
     }\n
 \n
   else:\n
-    context_portal_type = context.getPortalType()\n
-    if context_portal_type == "Person":\n
+    traversed_document_portal_type = traversed_document.getPortalType()\n
+    if traversed_document_portal_type == "Person":\n
       query = sql_catalog.buildQuery({\n
           "portal_type": "Hosting Subscription",\n
-          "default_destination_section_uid": context.getUid(),\n
+          "default_destination_section_uid": traversed_document.getUid(),\n
           "validation_state": \'validated\'\n
         }).asSearchTextExpression(sql_catalog)\n
       http_query = make_query({\n
@@ -534,7 +564,7 @@ elif mode == \'document\':\n
       query = sql_catalog.buildQuery({\n
           "portal_type": "Computer",\n
           "local_roles": "Assignee",\n
-          "default_strict_allocation_scope_uid": "!=%s" % context.getPortalObject().portal_categories.allocation_scope.close.forever.getUid(),\n
+          "default_strict_allocation_scope_uid": "!=%s" % traversed_document.getPortalObject().portal_categories.allocation_scope.close.forever.getUid(),\n
           "validation_state": \'validated\'\n
         }).asSearchTextExpression(sql_catalog)\n
       http_query = make_query({\n
@@ -565,7 +595,7 @@ elif mode == \'document\':\n
       # List of invoices\n
       query = sql_catalog.buildQuery({\n
           "portal_type": "Sale Invoice Transaction",\n
-          "default_destination_section_uid": context.getUid(),\n
+          "default_destination_section_uid": traversed_document.getUid(),\n
           "query": NegatedQuery(Query(title="Reversal Transaction for %")),\n
         }).asSearchTextExpression(sql_catalog)\n
       http_query = make_query({\n
@@ -581,7 +611,7 @@ elif mode == \'document\':\n
       # List of tickets\n
       query = sql_catalog.buildQuery({\n
           "portal_type": ["Support Request", "Regularisation Request"],\n
-          "default_destination_decision_uid": context.getUid(),\n
+          "default_destination_decision_uid": traversed_document.getUid(),\n
         }).asSearchTextExpression(sql_catalog)\n
       http_query = make_query({\n
         "mode": "search",\n
@@ -594,27 +624,27 @@ elif mode == \'document\':\n
       })\n
 \n
       action_dict[\'request\'] = {\n
-        \'href\': "%s/Person_requestInstanceFromJio" % context.absolute_url(),\n
+        \'href\': "%s/Person_requestInstanceFromJio" % traversed_document.absolute_url(),\n
         \'method\': \'POST\'\n
       }\n
       action_dict[\'request_computer\'] = {\n
-        \'href\': "%s/Person_requestComputerFromJio" % context.absolute_url(),\n
+        \'href\': "%s/Person_requestComputerFromJio" % traversed_document.absolute_url(),\n
         \'method\': \'POST\'\n
       }\n
       action_dict[\'request_computer_network\'] = {\n
-        \'href\': "%s/Person_requestComputerNetworkFromJio" % context.absolute_url(),\n
+        \'href\': "%s/Person_requestComputerNetworkFromJio" % traversed_document.absolute_url(),\n
         \'method\': \'POST\'\n
       }\n
       action_dict[\'request_ticket\'] = {\n
-        \'href\': "%s/Person_requestTicketFromJio" % context.absolute_url(),\n
+        \'href\': "%s/Person_requestTicketFromJio" % traversed_document.absolute_url(),\n
         \'method\': \'POST\'\n
       }\n
 \n
-    elif context_portal_type == "Hosting Subscription":\n
+    elif traversed_document_portal_type == "Hosting Subscription":\n
       # Link to all ongoing Hosting Subscriptions\n
       query = sql_catalog.buildQuery({\n
           "portal_type": ["Software Instance", "Slave Instance"],\n
-          "default_specialise_uid": context.getUid(),\n
+          "default_specialise_uid": traversed_document.getUid(),\n
           "validation_state": \'validated\'\n
         }).asSearchTextExpression(sql_catalog)\n
       http_query = make_query({\n
@@ -629,29 +659,29 @@ elif mode == \'document\':\n
 \n
       # Actions to modify the hosting subscription\n
       action_dict[\'start\'] = {\n
-        \'href\': "%s/HostingSubscription_changeRequestedStateFromJio?action=started" % context.absolute_url(),\n
+        \'href\': "%s/HostingSubscription_changeRequestedStateFromJio?action=started" % traversed_document.absolute_url(),\n
         \'method\': \'POST\'\n
       }\n
       action_dict[\'stop\'] = {\n
-        \'href\': "%s/HostingSubscription_changeRequestedStateFromJio?action=stopped" % context.absolute_url(),\n
+        \'href\': "%s/HostingSubscription_changeRequestedStateFromJio?action=stopped" % traversed_document.absolute_url(),\n
         \'method\': \'POST\'\n
       }\n
       action_dict[\'destroy\'] = {\n
-        \'href\': "%s/HostingSubscription_changeRequestedStateFromJio?action=destroyed" % context.absolute_url(),\n
+        \'href\': "%s/HostingSubscription_changeRequestedStateFromJio?action=destroyed" % traversed_document.absolute_url(),\n
         \'method\': \'POST\'\n
       }\n
 \n
-    elif context_portal_type == "Software Installation":\n
+    elif traversed_document_portal_type == "Software Installation":\n
       action_dict[\'destroy\'] = {\n
-        \'href\': "%s/SoftwareInstallation_destroyFromJio" % context.absolute_url(),\n
+        \'href\': "%s/SoftwareInstallation_destroyFromJio" % traversed_document.absolute_url(),\n
         \'method\': \'POST\'\n
       }\n
 \n
-    elif context_portal_type == "Software Product":\n
+    elif traversed_document_portal_type == "Software Product":\n
       # Link to all Software Releases\n
       query = sql_catalog.buildQuery({\n
           "portal_type": "Software Release",\n
-          "default_aggregate_uid": context.getUid(),\n
+          "default_aggregate_uid": traversed_document.getUid(),\n
           "validation_state": ["shared", "shared_alive", "released", "released_alive", "published", "published_alive"]\n
         }).asSearchTextExpression(sql_catalog)\n
       http_query = make_query({\n
@@ -664,11 +694,11 @@ elif mode == \'document\':\n
         \'_query\': query\n
       }\n
 \n
-    elif context_portal_type == "Computer":\n
+    elif traversed_document_portal_type == "Computer":\n
       # Link to related Software Installation\n
       query = sql_catalog.buildQuery({\n
           "portal_type": "Software Installation",\n
-          "default_aggregate_uid": context.getUid(),\n
+          "default_aggregate_uid": traversed_document.getUid(),\n
           "validation_state": "validated"\n
         }).asSearchTextExpression(sql_catalog)\n
       http_query = make_query({\n
@@ -682,32 +712,32 @@ elif mode == \'document\':\n
       }\n
 \n
       action_dict[\'update_allocation_scope\'] = {\n
-        \'href\': "%s/Computer_updateAllocationScopeFromJio" % context.absolute_url(),\n
+        \'href\': "%s/Computer_updateAllocationScopeFromJio" % traversed_document.absolute_url(),\n
         \'method\': \'POST\'\n
       }\n
       action_dict[\'generate_certificate\'] = {\n
-        \'href\': "%s/Computer_requestNewComputerCertificateFromJio" % context.absolute_url(),\n
+        \'href\': "%s/Computer_requestNewComputerCertificateFromJio" % traversed_document.absolute_url(),\n
         \'method\': \'POST\'\n
       }\n
       action_dict[\'revoke_certificate\'] = {\n
-        \'href\': "%s/Computer_revokeComputerCertificateFromJio" % context.absolute_url(),\n
+        \'href\': "%s/Computer_revokeComputerCertificateFromJio" % traversed_document.absolute_url(),\n
         \'method\': \'POST\'\n
       }\n
       action_dict[\'request_installation\'] = {\n
-        \'href\': "%s/Person_requestInstallationFromJio" % context.absolute_url(),\n
+        \'href\': "%s/Person_requestInstallationFromJio" % traversed_document.absolute_url(),\n
         \'method\': \'POST\'\n
       }\n
 \n
-    elif context_portal_type == "Sale Invoice Transaction":\n
+    elif traversed_document_portal_type == "Sale Invoice Transaction":\n
       result_dict[\'_links\'][\'slapos_jump\'] = {\n
-        "href": "%s/SaleInvoiceTransaction_viewSlapOSPrintout" % context.absolute_url(),\n
+        "href": "%s/SaleInvoiceTransaction_viewSlapOSPrintout" % traversed_document.absolute_url(),\n
         \'name\': \'current_printout\',\n
       }\n
 \n
-    elif context_portal_type in ["Support Request", "Regularisation Request"]:\n
+    elif traversed_document_portal_type in ["Support Request", "Regularisation Request"]:\n
       # Link to all Events\n
       query = sql_catalog.buildQuery({\n
-          "default_follow_up_uid": context.getUid(),\n
+          "default_follow_up_uid": traversed_document.getUid(),\n
         }).asSearchTextExpression(sql_catalog)\n
       http_query = make_query({\n
         "mode": "search",\n
@@ -720,9 +750,12 @@ elif mode == \'document\':\n
       }\n
 \n
       action_dict[\'update\'] = {\n
-        \'href\': "%s/Ticket_updateFromJio" % context.absolute_url(),\n
+        \'href\': "%s/Ticket_updateFromJio" % traversed_document.absolute_url(),\n
         \'method\': \'POST\'\n
       }\n
+\n
+    elif traversed_document_portal_type == "Form":\n
+      renderFormDefinition(traversed_document, result_dict)\n
 \n
   # Define document action\n
   if action_dict:\n
@@ -738,7 +771,7 @@ elif mode == \'search\':\n
     return ""\n
   # XXX\n
   length = len(\'/%s/\' % portal.getId())\n
-  sql_list = context.portal_catalog(full_text=query, limit=limit)\n
+  sql_list = portal.portal_catalog(full_text=query, limit=limit)\n
   result_list = []\n
 \n
   if (select_list is None):\n
@@ -747,7 +780,8 @@ elif mode == \'search\':\n
       document = sql_document.getObject()\n
       result_list.append({\n
         "href": url_template_dict["document_hal"] % {\n
-          "context_url": document.absolute_url(),\n
+          "root_url": site_root.absolute_url(),\n
+          "relative_url": document.getRelativeUrl(), \n
           "script_id": script.id\n
         },\n
       })\n
@@ -761,7 +795,8 @@ elif mode == \'search\':\n
         \'_links\': {\n
           \'self\': {\n
             "href": url_template_dict["document_hal"] % {\n
-              "context_url": document.absolute_url(),\n
+              "root_url": site_root.absolute_url(),\n
+              "relative_url": document.getRelativeUrl(), \n
               "script_id": script.id\n
             },\n
           },\n
@@ -801,16 +836,16 @@ elif mode == \'form\':\n
   renderForm(form, result_dict)\n
 \n
 \n
-elif mode == \'form_definition\':\n
-  #################################################\n
-  # Get raw form definitions\n
-  #################################################\n
-  if REQUEST.other[\'method\'] != "GET":\n
-    response.setStatus(405)\n
-    return ""\n
-\n
-  form = getattr(portal, skin_id)\n
-  renderFormDefinition(form, result_dict)\n
+# elif mode == \'form_definition\':\n
+#   #################################################\n
+#   # Get raw form definitions\n
+#   #################################################\n
+#   if REQUEST.other[\'method\'] != "GET":\n
+#     response.setStatus(405)\n
+#     return ""\n
+# \n
+#   form = getattr(portal, skin_id)\n
+#   renderFormDefinition(form, result_dict)\n
 \n
 else:\n
   raise NotImplementedError, "Unsupported mode %s" % mode\n
@@ -823,7 +858,7 @@ return json.dumps(result_dict, indent=2)\n
         </item>
         <item>
             <key> <string>_params</string> </key>
-            <value> <string>REQUEST=None, response=None, view=None, mode=\'document\', query=None, select_list=None, limit=None, form=None, skin_id=None</string> </value>
+            <value> <string>REQUEST=None, response=None, view=None, mode=\'root\', query=None, select_list=None, limit=None, form=None, relative_url=None</string> </value>
         </item>
         <item>
             <key> <string>id</string> </key>
