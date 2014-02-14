@@ -33,19 +33,11 @@ from slapos.recipe.librecipe import GenericBaseRecipe
 
 class Recipe(GenericBaseRecipe):
   def install(self):
-    path_list = []
+    self.path_list = []
     options = self.options.copy()
     del options['recipe']
     CONFIG = {k.replace('-', '_'): v for k, v in options.iteritems()}
     CONFIG['PATH'] = os.environ['PATH']
-
-    if CONFIG['bt5_path']:
-      additional_bt5_repository_id_list = CONFIG['bt5_path'].split(",")
-      CONFIG['bt5_path'] = ''
-      for bt5_repository_id in additional_bt5_repository_id_list:
-        id_path = os.path.join(CONFIG['slapos_directory'], bt5_repository_id)
-        bt_path = os.path.join(id_path, "bt5")
-        CONFIG['bt5_path'] += "%s,%s," % (id_path, bt_path)
 
     if self.options['instance-dict']:
       config_instance_dict = ConfigParser.ConfigParser()
@@ -58,25 +50,11 @@ class Recipe(GenericBaseRecipe):
       config_instance_dict.write(value)
       CONFIG['instance_dict'] = value.getvalue()
 
-    vcs_repository_list = json.loads(self.options['repository-list'])
-    config_repository_list = ConfigParser.ConfigParser()
-    i = 0
-    for repository in vcs_repository_list:
-      section_name = 'vcs_repository_%d' % i
-      config_repository_list.add_section(section_name)
-      config_repository_list.set(section_name, 'url', repository['url'])
-      if 'branch' in repository:
-        config_repository_list.set(section_name, 'branch', repository['branch'])
-      if 'profile_path' in repository:
-        config_repository_list.set(section_name, 'profile_path',
-                                   repository['profile_path'])
-      if 'buildout_section_id' in repository:
-        config_repository_list.set(section_name, 'buildout_section_id',
-                                   repository['buildout_section_id'])
-      i += 1
-    value = StringIO.StringIO()
-    config_repository_list.write(value)
-    CONFIG['repository_list'] = value.getvalue()
+    software_path_list = json.loads(self.options['software-path-list'])
+    if software_path_list:
+      CONFIG["software_path_list"] = "[software_list]"
+      CONFIG["software_path_list"] += \
+          "\npath_list = %s" % ",".join(software_path_list)
 
     configuration_file = self.createFile(
       self.options['configuration-file'],
@@ -85,8 +63,8 @@ class Recipe(GenericBaseRecipe):
         CONFIG
       ),
     )
-    path_list.append(configuration_file)
-    path_list.append(
+    self.path_list.append(configuration_file)
+    self.path_list.append(
       self.createPythonScript(
         self.options['wrapper'],
         'slapos.recipe.librecipe.execute.executee',
@@ -100,4 +78,33 @@ class Recipe(GenericBaseRecipe):
         ],
       )
     )
-    return path_list
+    self.installApache()
+    return self.path_list
+
+  def installApache(self):
+    apache_config = dict(
+        pid_file=self.options['httpd-pid-file'],
+        lock_file=self.options['httpd-lock-file'],
+        ip=self.options['httpd-ip'],
+        port=self.options['httpd-port'],
+        error_log=os.path.join(self.options['httpd-log-directory'],
+                               'httpd-error.log'),
+        access_log=os.path.join(self.options['httpd-log-directory'],
+                                'httpd-access.log'),
+        certificate=self.options['httpd-cert-file'],
+        key=self.options['httpd-key-file'],
+        testnode_log_directory=self.options['log-directory'],
+    )
+    config_file = self.createFile(self.options['httpd-conf-file'],
+       self.substituteTemplate(self.getTemplateFilename('httpd.conf.in'),
+                               apache_config)
+    )
+    self.path_list.append(config_file)
+    wrapper = self.createPythonScript(self.options['httpd-wrapper'],
+      'slapos.recipe.librecipe.execute.execute',
+      [self.options['apache-binary'], '-f', config_file, '-DFOREGROUND'])
+    self.path_list.append(wrapper)
+    # create empty html page to not allow listing of /
+    page = open(os.path.join(self.options['log-directory'], "index.html"), "w")
+    page.write("<html/>")
+    page.close()
