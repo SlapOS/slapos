@@ -208,7 +208,7 @@ class Recipe(GenericBaseRecipe):
     #Generate Boinc start project wrapper
     start_args = [os.path.join(self.installroot, 'bin/start')]
     start_boinc = os.path.join(self.home, '.start_boinc')
-    if os.path.exists(start_boinc):
+    if os.path.exists(start_boinc) and drop_install:
       os.unlink(start_boinc)
     boinc_parameter = dict(service_status=service_status,
         installroot=self.installroot, drop_install=drop_install,

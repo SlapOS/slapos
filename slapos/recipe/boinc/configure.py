@@ -73,7 +73,8 @@ def restart_boinc(args):
   if args['drop_install']:
     checkFile(args['service_status'], 3)
   else:
-    checkMysql(args)
+    print "Skip BOINC restart..."
+    return
   print "Restart Boinc..."
   env = os.environ
   env['PATH'] = args['environment']['PATH']
