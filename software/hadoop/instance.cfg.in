@@ -1,0 +1,21 @@
+[buildout]
+
+parts =
+  sh-environment
+
+
+[sh-environment]
+# environment needed for running/debugging the applications, exported to a shell script to be sourced.
+recipe = collective.recipe.template
+output = $${buildout:directory}/environment.sh
+input = inline:
+  export JAVA_HOME="${java:location}"
+  export HADOOP_PREFIX="${hadoop:location}"
+  export HADOOP_HOME="${hadoop:location} "
+  export HADOOP_COMMON_HOME="${hadoop:location}"
+  export HADOOP_CONF_DIR="$${buildout:directory}/etc/hadoop"
+  export HADOOP_HDFS_HOME="${hadoop:location}"
+  export HADOOP_MAPRED_HOME="${hadoop:location}"
+  export HADOOP_YARN_HOME="${hadoop:location}"
+
+
