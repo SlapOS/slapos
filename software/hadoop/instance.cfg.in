@@ -3,6 +3,10 @@
 parts =
   deploy-config
   sh-environment
+  put-files
+  mapper
+  reducer
+  run-demo
 
 eggs-directory = ${buildout:eggs-directory}
 develop-eggs-directory = ${buildout:develop-eggs-directory}
@@ -15,6 +19,7 @@ output = $${buildout:directory}/environment.sh
 input = inline:
   export JAVA_HOME="${java:location}"
   export HADOOP_PREFIX="${hadoop:location}"
+  export PATH=$PATH:$HADOOP_PREFIX/bin
   export HADOOP_HOME="${hadoop:location} "
   export HADOOP_COMMON_HOME="${hadoop:location}"
   export HADOOP_CONF_DIR="$${buildout:directory}/etc/hadoop"
@@ -25,11 +30,42 @@ input = inline:
 
 
 [deploy-config]
-recipe = cp.recipe.cmd
-update_cmd = /bin/true
-install_cmd =
-  cp -a ${hadoop:location}/etc $${buildout:directory}/
+recipe = slapos.recipe.template
+url = ${:_profile_base_location_}/deploy-config.sh.in
+output = $${buildout:directory}/deploy-config.sh
+# md5sum = 
+mode = 0755
 
 
+[put-files]
+recipe = slapos.recipe.template
+url = ${:_profile_base_location_}/put-files.sh.in
+output = $${buildout:directory}/put-files.sh
+# md5sum = 
+mode = 0755
 
+
+# http://www.michael-noll.com/tutorials/writing-an-hadoop-mapreduce-program-in-python/
+
+[mapper]
+recipe = slapos.recipe.template
+url = ${:_profile_base_location_}/gutenberg-mapper.py.in
+output = $${buildout:directory}/gutenberg-mapper.py
+# md5sum =
+mode = 0755
+
+
+[reducer]
+recipe = slapos.recipe.template
+url = ${:_profile_base_location_}/gutenberg-reducer.py.in
+output = $${buildout:directory}/gutenberg-reducer.py
+# md5sum =
+mode = 0755
+
+[run-demo]
+recipe = slapos.recipe.template
+url = ${:_profile_base_location_}/run-demo.sh.in
+output = $${buildout:directory}/run-demo.sh
+# md5sum =
+mode = 0755
 

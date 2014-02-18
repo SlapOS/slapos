@@ -1,0 +1,8 @@
+#!/bin/bash
+
+# exit on error
+set -e
+
+source environment.sh
+echo cp -a $HADOOP_PREFIX/etc ${buildout:directory}/
+
