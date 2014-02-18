@@ -1,7 +1,11 @@
 [buildout]
 
 parts =
+  deploy-config
   sh-environment
+
+eggs-directory = ${buildout:eggs-directory}
+develop-eggs-directory = ${buildout:develop-eggs-directory}
 
 
 [sh-environment]
@@ -17,5 +21,15 @@ input = inline:
   export HADOOP_HDFS_HOME="${hadoop:location}"
   export HADOOP_MAPRED_HOME="${hadoop:location}"
   export HADOOP_YARN_HOME="${hadoop:location}"
+
+
+
+[deploy-config]
+recipe = cp.recipe.cmd
+update_cmd = /bin/true
+install_cmd =
+  cp -a ${hadoop:location}/etc $${buildout:directory}/
+
+
 
 
