@@ -1,12 +1,13 @@
 [buildout]
 
 parts =
-  deploy-config
   sh-environment
   put-files
   mapper
   reducer
   run-demo
+  start-daemons
+  deploy-tar
 
 eggs-directory = ${buildout:eggs-directory}
 develop-eggs-directory = ${buildout:develop-eggs-directory}
@@ -18,29 +19,37 @@ recipe = collective.recipe.template
 output = $${buildout:directory}/environment.sh
 input = inline:
   export JAVA_HOME="${java:location}"
-  export HADOOP_PREFIX="${hadoop:location}"
-  export PATH=$PATH:$HADOOP_PREFIX/bin
-  export HADOOP_HOME="${hadoop:location} "
-  export HADOOP_COMMON_HOME="${hadoop:location}"
-  export HADOOP_CONF_DIR="$${buildout:directory}/etc/hadoop"
-  export HADOOP_HDFS_HOME="${hadoop:location}"
-  export HADOOP_MAPRED_HOME="${hadoop:location}"
-  export HADOOP_YARN_HOME="${hadoop:location}"
+  export HADOOP_PREFIX="$${directories:hadoop-prefix}"
+  export PATH="$PATH:$HADOOP_PREFIX/bin"
+  export HADOOP_HOME="$HADOOP_PREFIX"
+  export HADOOP_COMMON_HOME="$HADOOP_PREFIX"
+  export HADOOP_CONF_DIR="$HADOOP_PREFIX/etc/"
+  export HADOOP_HDFS_HOME="$HADOOP_PREFIX"
+  export HADOOP_MAPRED_HOME="$HADOOP_PREFIX"
+  export HADOOP_YARN_HOME="$HADOOP_PREFIX"
+
+
+[deploy-tar]
+recipe = plone.recipe.command
+update = true
+command =
+    [ -d $${directories:hadoop-prefix}/bin} ] || tar xf ${hadoop:location}/${hadoop:filename} -C $${directories:hadoop-prefix}  --strip-components=1
 
 
 
-[deploy-config]
-recipe = slapos.recipe.template
-url = ${:_profile_base_location_}/deploy-config.sh.in
-output = $${buildout:directory}/deploy-config.sh
-# md5sum = 
-mode = 0755
+[directories]
+recipe = slapos.cookbook:mkdirectory
+bin = $${buildout:directory}/bin
+etc = $${buildout:directory}/etc
+hadoop-prefix = $${buildout:directory}/hadoop
+services = $${directories:etc}/service
+promises = $${directories:etc}/promise
 
 
 [put-files]
 recipe = slapos.recipe.template
-url = ${:_profile_base_location_}/put-files.sh.in
-output = $${buildout:directory}/put-files.sh
+url = ${:_profile_base_location_}/template/bin/put-files.sh.in
+output = $${directories:bin}/put-files.sh
 # md5sum = 
 mode = 0755
 
@@ -49,23 +58,30 @@ mode = 0755
 
 [mapper]
 recipe = slapos.recipe.template
-url = ${:_profile_base_location_}/gutenberg-mapper.py.in
-output = $${buildout:directory}/gutenberg-mapper.py
+url = ${:_profile_base_location_}/template/bin/gutenberg-mapper.py.in
+output = $${directories:bin}/gutenberg-mapper.py
 # md5sum =
 mode = 0755
 
 
 [reducer]
 recipe = slapos.recipe.template
-url = ${:_profile_base_location_}/gutenberg-reducer.py.in
-output = $${buildout:directory}/gutenberg-reducer.py
+url = ${:_profile_base_location_}/template/bin/gutenberg-reducer.py.in
+output = $${directories:bin}/gutenberg-reducer.py
 # md5sum =
 mode = 0755
 
 [run-demo]
 recipe = slapos.recipe.template
-url = ${:_profile_base_location_}/run-demo.sh.in
-output = $${buildout:directory}/run-demo.sh
+url = ${:_profile_base_location_}/template/bin/run-demo.sh.in
+output = $${directories:bin}/run-demo.sh
+# md5sum =
+mode = 0755
+
+[start-daemons]
+recipe = slapos.recipe.template
+url = ${:_profile_base_location_}/template/bin/start-daemons.sh.in
+output = $${directories:bin}/start-daemons.sh
 # md5sum =
 mode = 0755
 
