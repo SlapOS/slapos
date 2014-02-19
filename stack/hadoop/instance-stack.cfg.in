@@ -2,10 +2,6 @@
 
 parts =
   sh-environment
-  put-files
-  mapper
-  reducer
-  run-demo
   start-daemons
   deploy-tar
 
@@ -36,47 +32,15 @@ command =
     [ -d $${directories:hadoop-prefix}/bin} ] || tar xf ${hadoop:location}/${hadoop:filename} -C $${directories:hadoop-prefix}  --strip-components=1
 
 
-
 [directories]
 recipe = slapos.cookbook:mkdirectory
 bin = $${buildout:directory}/bin
 etc = $${buildout:directory}/etc
+var = $${buildout:directory}/var
 hadoop-prefix = $${buildout:directory}/hadoop
 services = $${directories:etc}/service
 promises = $${directories:etc}/promise
 
-
-[put-files]
-recipe = slapos.recipe.template
-url = ${:_profile_base_location_}/template/bin/put-files.sh.in
-output = $${directories:bin}/put-files.sh
-# md5sum = 
-mode = 0755
-
-
-# http://www.michael-noll.com/tutorials/writing-an-hadoop-mapreduce-program-in-python/
-
-[mapper]
-recipe = slapos.recipe.template
-url = ${:_profile_base_location_}/template/bin/gutenberg-mapper.py.in
-output = $${directories:bin}/gutenberg-mapper.py
-# md5sum =
-mode = 0755
-
-
-[reducer]
-recipe = slapos.recipe.template
-url = ${:_profile_base_location_}/template/bin/gutenberg-reducer.py.in
-output = $${directories:bin}/gutenberg-reducer.py
-# md5sum =
-mode = 0755
-
-[run-demo]
-recipe = slapos.recipe.template
-url = ${:_profile_base_location_}/template/bin/run-demo.sh.in
-output = $${directories:bin}/run-demo.sh
-# md5sum =
-mode = 0755
 
 [start-daemons]
 recipe = slapos.recipe.template

@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 
 import bz2
 import os
@@ -39,23 +40,7 @@ def process_xml(input):
     parser.parse(input)
 
 
-
-
 if __name__ == '__main__':
   input = bz2.BZ2File('/dev/fd/0')
   process_xml(input)
-
-
-
-#  dirname = '/srv/slapgrid/slappart20/srv/runner/instance/slappart0/software_release/raw-data/'
-#  filenames = os.listdir(dirname)
-#  # ['enwiki-20140203-pages-meta-current1.xml-p000000010p000010000.bz2']
-#  for fname in filenames:
-#      process_xml(os.path.join(dirname, fname))
-#      input = bz2.BZ2File(process_xml(os.path.join(dirname, fname)))
-
-
-
-
-
 

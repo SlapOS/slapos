@@ -1,5 +1,0 @@
-#!/bin/bash
-
-. environment.sh
-hadoop jar software_release/parts/hadoop-streaming/*jar -mapper gutenberg-mapper.py -reducer gutenberg-reducer.py -input gutenberg/* -output gutenberg-output
-

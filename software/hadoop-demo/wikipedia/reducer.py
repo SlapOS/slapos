@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 
 import bz2
 import os

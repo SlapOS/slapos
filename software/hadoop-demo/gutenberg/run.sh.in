@@ -1,0 +1,11 @@
+#!/bin/bash
+
+# http://www.michael-noll.com/tutorials/writing-an-hadoop-mapreduce-program-in-python/
+
+. environment.sh
+hadoop jar software_release/parts/hadoop-streaming/*jar \
+    -mapper demo/gutenberg/mapper.py \
+    -reducer demo/gutenberg/reducer.py \
+    -input var/gutenberg/input/* \
+    -output var/gutenberg/output
+
