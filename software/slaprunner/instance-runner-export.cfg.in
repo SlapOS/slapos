@@ -64,4 +64,3 @@ url = $${monitor-frontend:config-url}/$${deploy-index:filename}
 # Extends publish section with resilient parameters
 [publish-connection-informations]
 <= resilient-publish-connection-parameter
-monitor_url = https://$${monitor-frontend:connection-domain}/index.cgi
