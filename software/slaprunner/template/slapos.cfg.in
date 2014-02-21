@@ -17,6 +17,7 @@ supervisord_config = {{ supervisord_config }}
 runner_workdir = {{ runner_workdir }}
 runner_host = {{ ipv4 }}
 runner_port = {{ runner_port }}
+instance_monitoring_url = {{ instance_monitoring_url }}
 ipv4_address = {{ ipv4 }}
 ipv6_address = {{ ipv6 }}
 etc_dir = {{ etc_dir }}
