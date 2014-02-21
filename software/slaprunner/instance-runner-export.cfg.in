@@ -40,6 +40,7 @@ parts +=
   deploy-settings-cgi
   deploy-status-cgi
   make-rss
+  monitor-frontend
   monitor-promise
   setup-static-files
   certificate-authority
