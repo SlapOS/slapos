@@ -158,7 +158,6 @@ download-only = true
 recipe = slapos.recipe.template
 url = ${make-rss-script:output}
 output = $${directory:bin}/make-rss.sh
-md5sum = 8d3a4b212784b591316b8b93d6bd163e
 mode = 0744
 
 [cadirectory]
