@@ -32,6 +32,9 @@ Default: 10
 AUTO-DEPLOYMENT
 ---------------
 
+for software
+~~~~~~~~~~~~
+
 You can automatically deploy a software release while deploying the webrunner itself, using the paramater XML.
 
 To do this, you only need to pass as a parameter named "slapos-software" : "AAA/BBB", where AAA is the folder of slapos.git where is located your BBB software.
@@ -42,6 +45,11 @@ This is possible because the slapos.git is automatically downloaded when the web
 It is also possible to download you own git repository, by providing the url in the "slapos-repository" parameter.
 
 Last but not least, it is also possible to switch the branch with the parameter "slapos-reference" (by default pointing on master)
+
+for instance
+~~~~~~~~~~~~
+
+The parameter "auto-deploy-instance" can be explicitly set to allow or prevent the runner to deploy the instance at START TIME (if you manually restart the runner, or if the server reboots). Values : "true" or "false". Default value is "true"
 
 Resilience :
 ------------

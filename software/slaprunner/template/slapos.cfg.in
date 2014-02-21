@@ -26,6 +26,7 @@ console = {{ console }}
 verbose = {{ verbose }}
 debug = {{ debug }}
 auto_deploy = {{ auto_deploy }}
+auto_deploy_instance = {{ auto_deploy_instance }}
 
 [slapproxy]
 host = {{ proxy_host }}
