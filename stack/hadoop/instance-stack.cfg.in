@@ -44,7 +44,7 @@ promises = $${directories:etc}/promise
 
 [start-daemons]
 recipe = slapos.recipe.template
-url = ${:_profile_base_location_}/template/bin/start-daemons.sh.in
+url = ${:_profile_base_location_}/template/start-daemons.sh.in
 output = $${directories:bin}/start-daemons.sh
 # md5sum =
 mode = 0755
