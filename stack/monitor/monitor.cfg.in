@@ -108,7 +108,7 @@ url = ${index-template:location}/$${:filename}
 destination = $${directory:www}
 filename = ${index-template:filename}
 download-only = true
-#md5sum = 
+#md5sum =
 mode = 0644
 
 [deploy-status-cgi]
@@ -144,7 +144,7 @@ context =
   key monitoring_file_json monitor-parameters:json-path
   key monitoring_folder_bool monitor-parameters:result-dir
   raw python_executable ${buildout:executable}
-  
+
 [deploy-rss-script]
 recipe = hexagonit.recipe.download
 url = ${rss-bin:destination}/${rss-bin:filename}
@@ -158,7 +158,7 @@ download-only = true
 recipe = slapos.recipe.template
 url = ${make-rss-script:output}
 output = $${directory:bin}/make-rss.sh
-#md5sum = 
+#md5sum =
 mode = 0744
 
 [cadirectory]
@@ -235,7 +235,7 @@ input = inline:
   SSLProtocol -ALL +SSLv3 +TLSv1
   SSLHonorCipherOrder On
   SSLCipherSuite RC4-SHA:HIGH:!ADH
-  </IfDefine> 
+  </IfDefine>
   SSLEngine   On
   ScriptSock $${:cgid-pid-file}
   <Directory $${:document-root}>

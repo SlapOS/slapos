@@ -51,7 +51,7 @@ def return_document():
 
 def make_menu():
   # Transform deep-2 tree in json
-  folder_list = {} 
+  folder_list = {}
   for folder in os.listdir(cgi_path):
     if os.path.isdir(os.path.join(cgi_path, folder)):
       folder_list[folder] = []

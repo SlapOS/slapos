@@ -36,16 +36,16 @@ class WriteRecipe(GenericBaseRecipe):
   """
   """
   def __init__(self, buildout, name, options):
-    if not "filename" in options: 
+    if not "filename" in options:
       raise zc.buildout.UserError("You have to provide the parameter \"filename\"")
-    
+
     self.filename = options['filename'].strip()
     self.path = os.path.join(buildout['buildout']['directory'], self.filename)
     self.name = name
     self.options = options.copy()
     del self.options['filename']
     del self.options['recipe']
-    
+
     # Set up the parser, and write config file if needed
     self.parser = ConfigParser.ConfigParser()
     try:
@@ -63,7 +63,7 @@ class WriteRecipe(GenericBaseRecipe):
   install = update = lambda self: []
 
   def full_install(self):
-    """XXX-Nicolas : when some parameter's value is changed in 
+    """XXX-Nicolas : when some parameter's value is changed in
     buildout profile, this will override custom user defined values"""
     self.parser.read(self.path)
     if self.parser.has_section(self.name):
@@ -74,14 +74,14 @@ class WriteRecipe(GenericBaseRecipe):
     with open(self.path, 'w') as file:
       self.parser.write(file)
 
-    
+
 class ReadRecipe(GenericBaseRecipe):
   """
   """
   def __init__(self, buildout, name, options):
-    if not "filename" in options: 
+    if not "filename" in options:
       raise zc.buildout.UserError("You have to provide the parameter \"filename\"")
-    
+
     self.filename = options['filename'].strip()
     self.path = os.path.join(buildout['buildout']['directory'], self.filename)
 

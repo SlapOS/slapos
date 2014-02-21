@@ -73,4 +73,4 @@ RewriteRule ^/git-public/ - [E=AUTHREQUIRED:yes]
         Require valid-user
 </LocationMatch>
 
-include {{ parameters.cgi_httpd_conf }} 
+include {{ parameters.cgi_httpd_conf }}

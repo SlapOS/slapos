@@ -67,7 +67,7 @@ def runScripts(directory):
     command = [os.path.join(promise_dir, script)]
     script = os.path.basename(command[0])
     result[script] = ''
-    
+
     process_handler = subprocess.Popen(command,
                                        cwd=instance_path,
                                        env=None if sys.platform == 'cygwin' else {},
@@ -110,18 +110,18 @@ if __name__ == "__main__":
   parser = OptionParser(option_list=option_list)
   monitors = {}
   (options, args) = parser.parse_args()
-  
+
   if not (options.monitor or options.promise
          or options.service or options.all):
     exit("Please provide at list one arg in : -a, -m, -p, -s")
-  
+
   if options.monitor or options.all:
     monitors.update(runScripts(monitor_dir))
   if options.promise or options.all:
     monitors.update(runScripts(promise_dir))
   if options.service or options.all:
     monitors.update(runServices(pid_dir))
-    
+
   if options.only_stdout:
     print json.dumps(monitors)
   else:
@@ -130,4 +130,4 @@ if __name__ == "__main__":
     exit(0)
   else:
     exit(1)
-    
+
