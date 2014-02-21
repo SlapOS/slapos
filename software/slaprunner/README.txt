@@ -51,6 +51,8 @@ for instance
 
 The parameter "auto-deploy-instance" can be explicitly set to allow or prevent the runner to deploy the instance at START TIME (if you manually restart the runner, or if the server reboots). Values : "true" or "false". Default value is "true", except for the instances of import (while type is resilient or test) which is "false"
 
+There also exists the parameter "autorun", which will build&run your software if set to true. For this, you need "auto_deploy" to true, and set the parameter "slapos-software" to the software you want to deploy. Do not hesitate to clone a different repo than "slapos", or to change the tag/branch to use your custom Software Release. (see "slapos-repository" and "slapos-reference" in previous section).
+
 Resilience :
 ------------
 

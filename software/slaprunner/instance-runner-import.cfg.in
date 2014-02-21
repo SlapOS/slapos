@@ -16,12 +16,13 @@ parts +=
   sshkeys-authority
   slaprunner-promise
   dropbear-promise
+  private
   shellinabox-promise
   shellinabox
   symlinks
   slapos-cfg
   slapos-repo-config
-  prepare-software
+  cron-entry-prepare-software
 # have to repeat the next one, as it's not inherited from pbsready-import
   import-on-notification
 ###Parts to add for monitoring

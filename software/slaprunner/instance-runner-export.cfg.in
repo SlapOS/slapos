@@ -18,13 +18,14 @@ parts +=
   slaprunner-promise
   slaprunner-frontend-promise
   dropbear-promise
+  private
   shellinabox-promise
   symlinks
   shellinabox
   slapos-cfg
   slapos-repo-config
-  prepare-software
   cron-entry-backup
+  cron-entry-prepare-software
 ###Parts to add for monitoring
   slap-parameters
   certificate-authority
