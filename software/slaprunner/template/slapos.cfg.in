@@ -29,6 +29,7 @@ debug = {{ debug }}
 auto_deploy = {{ auto_deploy }}
 auto_deploy_instance = {{ auto_deploy_instance }}
 autorun = {{ autorun }}
+knowledge0_cfg = {{ knowledge0_file }}
 
 [slapproxy]
 host = {{ proxy_host }}
