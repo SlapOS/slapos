@@ -251,7 +251,7 @@ def slapconfig(conf):
         to_replace.append(('ipv6_interface', conf.ipv6_interface))
 
     for key, value in to_replace:
-        cfg = re.sub('%s\s+=.*' % key, '%s = %s' % (key, value), cfg)
+        cfg = re.sub('\n\s*%s\s*=.*' % key, '\n%s = %s' % (key, value), cfg)
 
     if not dry_run:
         with open(config_path, 'w') as fout:
