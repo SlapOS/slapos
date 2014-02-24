@@ -50,24 +50,22 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string>from zExceptions import Unauthorized\n
-if REQUEST is not None:\n
-  raise Unauthorized\n
-\n
-RESPONSE.setHeader("Access-Control-Allow-Credentials", "true")\n
-RESPONSE.setHeader("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept")\n
-RESPONSE.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS, HEAD, DELETE, PUT, POST")\n
-RESPONSE.setHeader("Access-Control-Allow-Origin", context.Base_getRequestHeader("Origin"))\n
-RESPONSE.setHeader("Access-Control-Expose-Headers", "Content-Type, Content-Length, WWW-Authenticate, X-Location")\n
+            <value> <string>portal = context.getPortalObject()\n
+skin_tool = portal.portal_skins\n
+for skin_folder in portal.portal_skins.objectValues():\n
+  for skin_document in skin_folder.objectValues():\n
+    if skin_document.meta_type == "ERP5 Form":\n
+      skin_document.setUid(None)\n
+      skin_document.reindexObject()\n
 </string> </value>
         </item>
         <item>
             <key> <string>_params</string> </key>
-            <value> <string>REQUEST=None, RESPONSE=None</string> </value>
+            <value> <string>sql_catalog_id=None, additional_priority=0, final_activity_tag=None</string> </value>
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>Base_prepareCorsResponse</string> </value>
+            <value> <string>ERP5Site_reindexSkinList</string> </value>
         </item>
       </dictionary>
     </pickle>

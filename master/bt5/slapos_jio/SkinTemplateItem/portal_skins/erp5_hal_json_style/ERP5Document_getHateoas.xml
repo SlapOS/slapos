@@ -67,17 +67,23 @@ url_template_dict = {\n
   "form_action": "%(traversed_document_url)s/%(action_id)s",\n
   "traverse_template": "%(root_url)s/%(script_id)s?mode=traverse" + \\\n
                        "{&relative_url,view}",\n
-  "document_hal": "%(root_url)s/%(script_id)s?mode=traverse" + \\\n
-                  "&relative_url=%(relative_url)s",\n
   "search_template": "%(root_url)s/%(script_id)s?mode=search" + \\\n
                      "{&query,select_list*,limit*}",\n
   "new_content_action": "%(root_url)s/%(script_id)s?mode=newContent",\n
+  # XXX View is set by default to empty\n
+  "document_hal": "%(root_url)s/%(script_id)s?mode=traverse" + \\\n
+                  "&relative_url=%(relative_url)s",\n
+  "jio_get_template": "urn:jio:get:%(relative_url)s",\n
+  "jio_search_template": "urn:jio:allDocs?%(query)s",\n
 }\n
+\n
+default_document_uri_template = url_template_dict["jio_get_template"]\n
 \n
 def getFormRelativeUrl(form):\n
   return portal.portal_catalog(\n
     portal_type="Form",\n
     uid=form.getUid(),\n
+    id=form.getId(),\n
     limit=1,\n
     select_dict={\'relative_url\': None}\n
   )[0].relative_url\n
@@ -100,7 +106,7 @@ def renderField(field, meta_type=None):\n
       "title": field.get_value("title"),\n
       "required": field.get_value("required"),\n
       # XXX Message can not be converted to json as is\n
-      # "items": field.get_value("items"),\n
+      "items": field.get_value("items"),\n
     }\n
   elif meta_type in ("StringField", "FloatField", "RelationStringField",\n
                      "MultiRelationStringField", "EmailField", "TextAreaField",\n
@@ -121,36 +127,65 @@ def renderField(field, meta_type=None):\n
     # XXX Not implemented\n
     columns = field.get_value("columns")\n
 \n
-    list_method = getattr(traversed_document, traversed_document.Listbox_getListMethodName(field))\n
-    portal_types = [x[1] for x in field.get_value(\'portal_types\')]\n
+    # XXX \n
+#     list_method = getattr(traversed_document, traversed_document.Listbox_getListMethodName(field))\n
+    # portal_types = [x[1] for x in field.get_value(\'portal_types\')]\n
+    portal_types = field.get_value(\'portal_types\')\n
     default_params = dict(field.get_value(\'default_params\'))\n
-    default_params.update(REQUEST.form)\n
+    # How to implement pagination?\n
+    # default_params.update(REQUEST.form)\n
     lines = field.get_value(\'lines\')\n
-    row_list = list_method(limit=lines, portal_type=portal_types,\n
-                           **default_params)\n
-    line_list = []\n
-    for row in row_list:\n
-      document = row.getObject()\n
-      line = {\n
-        "url": url_template_dict["document_hal"] % {\n
-          "root_url": site_root.absolute_url(),\n
-          "relative_url": document.getRelativeUrl(),\n
-          "script_id": script.id\n
-        }\n
-      }\n
-      for property, title in columns:\n
-        prop = document.getProperty(property)\n
-        if same_type(prop, DateTime()):\n
-          prop = "XXX Serialize DateTime"  \n
-        line[title] = prop\n
-      line_list.append(line)\n
+    list_method_name = traversed_document.Listbox_getListMethodName(field)\n
+    list_method_query_dict = dict(\n
+      portal_type=[x[1] for x in portal_types], **default_params\n
+    )\n
+\n
+    if (list_method_name == "portal_catalog"):\n
+      pass\n
+    elif (list_method_name in ("searchFolder", "objectValues")):\n
+      list_method_query_dict["parent_uid"] = traversed_document.getUid()\n
+    # XXX How to handle script queries?\n
+#     else:\n
+#       raise NotImplementedError("Unsupported list method %s" % list_method_name)\n
+      \n
+\n
+\n
+#     row_list = list_method(limit=lines, portal_type=portal_types,\n
+#                            **default_params)\n
+#     line_list = []\n
+#     for row in row_list:\n
+#       document = row.getObject()\n
+#       line = {\n
+#         "url": url_template_dict["document_hal"] % {\n
+#           "root_url": site_root.absolute_url(),\n
+#           "relative_url": document.getRelativeUrl(),\n
+#           "script_id": script.id\n
+#         }\n
+#       }\n
+#       for property, title in columns:\n
+#         prop = document.getProperty(property)\n
+#         if same_type(prop, DateTime()):\n
+#           prop = "XXX Serialize DateTime"  \n
+#         line[title] = prop\n
+#         line["_relative_url"] = document.getRelativeUrl()\n
+#       line_list.append(line)\n
 \n
     result = {\n
       "type": meta_type,\n
-      "column_list": [x[1] for x in columns],\n
-      "line_list": line_list,\n
+      # "column_list": [x[1] for x in columns],\n
+      "column_list": columns,\n
+#       "line_list": line_list,\n
       "title": field.get_value("title"),\n
       "key": field.generate_field_key(),\n
+      "portal_type": portal_types,\n
+      "lines": lines,\n
+      "default_params": default_params,\n
+      "list_method": list_method_name,\n
+      "query": url_template_dict["jio_search_template"] % {\n
+          "query": make_query({"query": sql_catalog.buildQuery(\n
+            list_method_query_dict\n
+          ).asSearchTextExpression(sql_catalog)})\n
+        }\n
     }\n
   else:\n
     # XXX Not implemented\n
@@ -178,7 +213,7 @@ def renderForm(form, response_dict):\n
   }\n
   # Form traversed_document\n
   response_dict[\'_links\'][\'traversed_document\'] = {\n
-    "href": url_template_dict["document_hal"] % {\n
+    "href": default_document_uri_template % {\n
       "root_url": site_root.absolute_url(),\n
       "relative_url": traversed_document.getRelativeUrl(),\n
       "script_id": script.id\n
@@ -187,41 +222,17 @@ def renderForm(form, response_dict):\n
     "title": traversed_document.getTitle()\n
   }\n
 \n
-#   form_definition = {\n
-#     "_links": {\n
-#       "self": {\n
-#         "href": url_template_dict["document_hal"] % {\n
-#           "root_url": site_root.absolute_url(),\n
-#           "script_id": script.id,\n
-#           "relative_url": getFormRelativeUrl(form)\n
-#         },\n
-#         \'name\': form.id\n
-#       }\n
-#     }\n
-#   }\n
-#   traversed_document.log("cosucous" * 20)\n
-#   for key in REQUEST.keys():\n
-#     traversed_document.log("-" * 20)\n
-#     traversed_document.log(key)\n
-#     traversed_document.log(REQUEST[key])\n
-\n
-#   traversed_document.log(portal.portal_catalog(portal_type="Form", uid=form.getUid(),\n
-#                                     limit=1, select_dict={\'relative_url\': None})[0].relative_url)\n
-#   renderFormDefinition(form, form_definition)\n
-#   response_dict[\'_embedded\'] = {\n
-#     \'form_definition\': form_definition\n
-#   }\n
-\n
-\n
-  # XXX Need ERP5Form patch\n
-#   response_dict[\'_links\'][\'form_definition\'] = {\n
-#     "href": url_template_dict["document_hal"] % {\n
+  response_dict[\'_links\'][\'form_definition\'] = {\n
+#     "href": default_document_uri_template % {\n
 #       "root_url": site_root.absolute_url(),\n
 #       "script_id": script.id,\n
 #       "relative_url": getFormRelativeUrl(form)\n
 #     },\n
-#     \'name\': form.id\n
-#   }\n
+    "href": default_document_uri_template % {\n
+      "relative_url": getFormRelativeUrl(form)\n
+    },\n
+    \'name\': form.id\n
+  }\n
 \n
   group_list = []\n
   for group in form.Form_getGroupTitleAndId():\n
@@ -346,12 +357,23 @@ result_dict = {\n
     },\n
     # Always inform about site root\n
     "site_root": {\n
-      "href": url_template_dict["document_hal"] % {\n
+      "href": default_document_uri_template % {\n
         "root_url": site_root.absolute_url(),\n
-        "relative_url": "",\n
+        "relative_url": site_root.getRelativeUrl(),\n
         "script_id": script.id\n
       },\n
       "name": site_root.getTitle(),\n
+    },\n
+    # Always inform about portal\n
+    "portal": {\n
+      "href": default_document_uri_template % {\n
+        "root_url": portal.absolute_url(),\n
+        # XXX the portal has an empty getRelativeUrl. Make it still compatible\n
+        # with restrictedTraverse\n
+        "relative_url": portal.getId(),\n
+        "script_id": script.id\n
+      },\n
+      "name": portal.getTitle(),\n
     }\n
   }\n
 }\n
@@ -371,12 +393,12 @@ elif (mode == \'root\') or (mode == \'traverse\'):\n
     return ""\n
   # Default properties shared by all ERP5 Document and Site\n
   action_dict = {}\n
-  result_dict[\'_relative_url\'] = traversed_document.getRelativeUrl()\n
+#   result_dict[\'_relative_url\'] = traversed_document.getRelativeUrl()\n
 \n
   # Add a link to the portal type if possible\n
   if not is_portal:\n
     result_dict[\'_links\'][\'type\'] = {\n
-      "href": url_template_dict["document_hal"] % {\n
+      "href": default_document_uri_template % {\n
         "root_url": site_root.absolute_url(),\n
         "relative_url": portal.portal_types[traversed_document.getPortalType()]\\\n
                           .getRelativeUrl(), \n
@@ -520,12 +542,12 @@ elif (mode == \'root\') or (mode == \'traverse\'):\n
     person = portal.ERP5Site_getAuthenticatedMemberPersonValue()\n
     if person is not None:\n
       result_dict[\'_links\'][\'me\'] = {\n
-        "href": url_template_dict["document_hal"] % {\n
+        "href": default_document_uri_template % {\n
           "root_url": site_root.absolute_url(),\n
           "relative_url": person.getRelativeUrl(), \n
           "script_id": script.id\n
         },\n
-        \'_relative_url\': person.getRelativeUrl()\n
+#         \'_relative_url\': person.getRelativeUrl()\n
       }\n
 \n
     query = sql_catalog.buildQuery({\n
@@ -769,43 +791,85 @@ elif mode == \'search\':\n
   if REQUEST.other[\'method\'] != "GET":\n
     response.setStatus(405)\n
     return ""\n
-  # XXX\n
-  length = len(\'/%s/\' % portal.getId())\n
-  sql_list = portal.portal_catalog(full_text=query, limit=limit)\n
+\n
+  if query == "__root__":\n
+    # XXX Hardcoded behaviour to get root object with jIO\n
+    sql_list = [site_root]\n
+\n
+  elif query == "__portal__":\n
+    # XXX Hardcoded behaviour to get portal object with jIO\n
+    sql_list = [portal]\n
+\n
+#     document = site_root\n
+#     document_result = {\n
+# #       \'_relative_url\': site_root.getRelativeUrl(),\n
+#       \'_links\': {\n
+#         \'self\': {\n
+#           "href": default_document_uri_template % {\n
+#             "root_url": site_root.absolute_url(),\n
+#             "relative_url": document.getRelativeUrl(), \n
+#             "script_id": script.id\n
+#           },\n
+#         },\n
+#       }\n
+#     }\n
+#     for select in select_list:\n
+#       document_result[select] = document.getProperty(select, d=None)\n
+#     result_dict[\'_embedded\'] = {"contents": [document_result]}\n
+  else:\n
+#     raise NotImplementedError("Unsupported query: %s" % query)\n
+    \n
+\n
+#   # XXX\n
+#   length = len(\'/%s/\' % portal.getId())\n
+#   # context.log(portal.portal_catalog(full_text=query, limit=limit, src__=1))\n
+#   context.log(query)\n
+    if query:\n
+      sql_list = portal.portal_catalog(full_text=query, limit=limit)\n
+    else:\n
+      sql_list = portal.portal_catalog(limit=limit)\n
+\n
   result_list = []\n
 \n
-  if (select_list is None):\n
-    # Only include links\n
-    for sql_document in sql_list:\n
-      document = sql_document.getObject()\n
-      result_list.append({\n
-        "href": url_template_dict["document_hal"] % {\n
-          "root_url": site_root.absolute_url(),\n
-          "relative_url": document.getRelativeUrl(), \n
-          "script_id": script.id\n
-        },\n
-      })\n
-    result_dict[\'_links\'][\'contents\'] = result_list\n
+#   if (select_list is None):\n
+#     # Only include links\n
+#     for sql_document in sql_list:\n
+#       document = sql_document.getObject()\n
+#       result_list.append({\n
+#         "href": default_document_uri_template % {\n
+#           "root_url": site_root.absolute_url(),\n
+#           "relative_url": document.getRelativeUrl(), \n
+#           "script_id": script.id\n
+#         },\n
+#       })\n
+#     result_dict[\'_links\'][\'contents\'] = result_list\n
+# \n
+#   else:\n
 \n
-  else:\n
-    for sql_document in sql_list:\n
+  for sql_document in sql_list:\n
+    try:\n
       document = sql_document.getObject()\n
-      document_result = {\n
-        \'_relative_url\': sql_document.path[length:],\n
-        \'_links\': {\n
-          \'self\': {\n
-            "href": url_template_dict["document_hal"] % {\n
-              "root_url": site_root.absolute_url(),\n
-              "relative_url": document.getRelativeUrl(), \n
-              "script_id": script.id\n
-            },\n
+    except AttributeError:\n
+      # XXX ERP5 Site is not an ERP5 document\n
+      document = sql_document\n
+    document_result = {\n
+#       \'_relative_url\': sql_document.path[length:],\n
+      \'_links\': {\n
+        \'self\': {\n
+          "href": default_document_uri_template % {\n
+            "root_url": site_root.absolute_url(),\n
+            # XXX ERP5 Site is not an ERP5 document\n
+            "relative_url": document.getRelativeUrl() or document.getId(), \n
+            "script_id": script.id\n
           },\n
-        }\n
+        },\n
       }\n
-      for select in select_list:\n
-        document_result[select] = document.getProperty(select, d=None)\n
-      result_list.append(document_result)\n
-    result_dict[\'_embedded\'] = {"contents": result_list}\n
+    }\n
+    for select in select_list:\n
+      document_result[select] = document.getProperty(select, d=None)\n
+    result_list.append(document_result)\n
+  result_dict[\'_embedded\'] = {"contents": result_list}\n
+\n
   result_dict[\'_query\'] = query\n
   result_dict[\'_limit\'] = limit\n
   result_dict[\'_select_list\'] = select_list\n
@@ -823,7 +887,15 @@ elif mode == \'newContent\':\n
   document = module.newContent(\n
     portal_type=portal_type\n
   )\n
-  return document.Base_redirect(form_id=script.id)\n
+  # http://en.wikipedia.org/wiki/Post/Redirect/Get\n
+  response.setStatus(201)\n
+  response.setHeader("X-Location",\n
+    default_document_uri_template % {\n
+      "root_url": site_root.absolute_url(),\n
+      "relative_url": document.getRelativeUrl(),\n
+      "script_id": script.id\n
+    })\n
+  return \'\'\n
 \n
 elif mode == \'form\':\n
   #################################################\n

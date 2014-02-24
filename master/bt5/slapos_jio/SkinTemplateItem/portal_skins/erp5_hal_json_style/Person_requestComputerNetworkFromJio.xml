@@ -69,9 +69,10 @@ network = module.newContent(\n
   reference=reference,\n
   source_administration=context.getRelativeUrl()\n
 )\n
-network.validate()\n
 \n
-return network.Base_redirect()\n
+\n
+network.Base_redirect()\n
+network.validate()\n
 </string> </value>
         </item>
         <item>

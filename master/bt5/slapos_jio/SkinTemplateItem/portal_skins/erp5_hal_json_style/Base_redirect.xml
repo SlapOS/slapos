@@ -85,7 +85,7 @@ response = context.REQUEST.RESPONSE\n
 context.Base_prepareCorsResponse(RESPONSE=response)\n
 # http://en.wikipedia.org/wiki/Post/Redirect/Get\n
 response.setStatus(201)\n
-response.setHeader("Location", redirect_url)\n
+response.setHeader("X-Location", "urn:jio:get:%s" % context.getRelativeUrl())\n
 return\n
 
 
