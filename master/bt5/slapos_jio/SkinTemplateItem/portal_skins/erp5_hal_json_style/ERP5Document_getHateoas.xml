@@ -81,7 +81,7 @@ default_document_uri_template = url_template_dict["jio_get_template"]\n
 \n
 def getFormRelativeUrl(form):\n
   return portal.portal_catalog(\n
-    portal_type="Form",\n
+    portal_type="ERP5 Form",\n
     uid=form.getUid(),\n
     id=form.getId(),\n
     limit=1,\n
@@ -776,7 +776,7 @@ elif (mode == \'root\') or (mode == \'traverse\'):\n
         \'method\': \'POST\'\n
       }\n
 \n
-    elif traversed_document_portal_type == "Form":\n
+    elif traversed_document_portal_type == "ERP5 Form":\n
       renderFormDefinition(traversed_document, result_dict)\n
 \n
   # Define document action\n
