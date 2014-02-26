@@ -55,7 +55,7 @@ skin_tool = portal.portal_skins\n
 for skin_folder in portal.portal_skins.objectValues():\n
   for skin_document in skin_folder.objectValues():\n
     if skin_document.meta_type == "ERP5 Form":\n
-      skin_document.setUid(None)\n
+      # skin_document.setUid(None)\n
       skin_document.reindexObject()\n
 </string> </value>
         </item>
