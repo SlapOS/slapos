@@ -17,6 +17,7 @@ supervisord_config = {{ supervisord_config }}
 runner_workdir = {{ runner_workdir }}
 runner_host = {{ ipv4 }}
 runner_port = {{ runner_port }}
+instance_monitoring_url = {{ instance_monitoring_url }}
 ipv4_address = {{ ipv4 }}
 ipv6_address = {{ ipv6 }}
 etc_dir = {{ etc_dir }}
@@ -26,6 +27,8 @@ console = {{ console }}
 verbose = {{ verbose }}
 debug = {{ debug }}
 auto_deploy = {{ auto_deploy }}
+auto_deploy_instance = {{ auto_deploy_instance }}
+autorun = {{ autorun }}
 
 [slapproxy]
 host = {{ proxy_host }}

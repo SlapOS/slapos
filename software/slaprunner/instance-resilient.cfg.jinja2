@@ -17,17 +17,20 @@ parts +=
 
 # Bubble up the parameters
 [request-runner]
-return = url ssh-public-key ssh-url notification-id ip backend_url url ssh_command password_recovery_code shell_password access_url 1_info
+return = url ssh-public-key ssh-url notification-id ip backend_url url ssh_command access_url 1_info 2_info monitor_url IMPORTANT_monitor_info webdav_url public_url
 
 [publish-connection-informations]
 recipe = slapos.cookbook:publish
 1_info = ${request-runner:connection-1_info}
+2_info = ${request-runner:connection-2_info}
 backend_url = ${request-runner:connection-backend_url}
 access_url = ${request-runner:connection-access_url}
 url = ${request-runner:connection-url}
 ssh_command = ${request-runner:connection-ssh_command}
-password_recovery_code = ${request-runner:connection-password_recovery_code}
-shell_password = ${request-runner:connection-shell_password}
+monitor_url = ${request-runner:connection-monitor_url}
+IMPORTANT_monitor_info = ${request-runner:connection-IMPORTANT_monitor_info}
+webdav_url = ${request-runner:connection-webdav_url}
+public_url = ${request-runner:connection-public_url}
 
 [slap-parameter]
 # Default parameters for distributed deployment

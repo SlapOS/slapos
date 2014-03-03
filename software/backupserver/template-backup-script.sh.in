@@ -6,9 +6,11 @@ export HOME=$${directory:home}
 
 # Clean status file (no history needed)
 ${coreutils-output:rm} -f $${:status_log}
+${coreutils-output:rm} -f $${:statistic_log}
 
 # Inform about beginning of backup
 ${coreutils-output:echo} "`${coreutils-output:date} -u`, $${:hostname} backup running" >> $${:status_log}
+${coreutils-output:echo} "Available only if backup succeed." >> $${:statistic_log}
 
 # set -e
 cd $${:datadirectory}
@@ -25,9 +27,11 @@ RESULT=$?
 ${coreutils-output:rm} -f $${:status_log}
 if [ $RESULT -eq 0 ]
 then
-  ${coreutils-output:echo} "`${coreutils-output:date} -u`, $${:hostname} backup success" >> $${:status_log}
+  ${coreutils-output:echo} "`${coreutils-output:date} -u`,$${:statistic_log},$${:hostname} backup success" >> $${:status_log}
+  ${coreutils-output:rm} -f $${:statistic_log}
+  ${findutils-output:find} rdiff-backup-data/ -name "session_statistic*" | ${coreutils-output:sort} | ${coreutils-output:tail} -n 1 | ${findutils-output:xargs} ${rdiff-backup-output:rdiff-backup} --calculate-average >> $${:statistic_log}
 else
-  ${coreutils-output:echo} "`${coreutils-output:date} -u`, $${:hostname} backup failed" >> $${:status_log}
+  ${coreutils-output:echo} "`${coreutils-output:date} -u`,$${:statistic_log},$${:hostname} backup failed" >> $${:status_log}
 fi
 
 # python scripts/verify_with_sudo.py ./ $${:connection}:/
