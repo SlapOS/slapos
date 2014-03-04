@@ -43,5 +43,3 @@ private_key = {{ slaprunner['private_key'] }}
 
 [gitclient]
 git = {{ slaprunner['git-binary'] }}
-
-[cloud9_IDE]
