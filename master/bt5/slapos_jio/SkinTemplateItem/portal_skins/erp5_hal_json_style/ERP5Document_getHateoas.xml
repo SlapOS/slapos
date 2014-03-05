@@ -870,7 +870,9 @@ elif mode == \'search\':\n
       }\n
     }\n
     for select in select_list:\n
-      document_result[select] = document.getProperty(select, d=None)\n
+      property_value = document.getProperty(select, d=None)\n
+      if property_value is not None:\n
+        document_result[select] = property_value\n
     result_list.append(document_result)\n
   result_dict[\'_embedded\'] = {"contents": result_list}\n
 \n
