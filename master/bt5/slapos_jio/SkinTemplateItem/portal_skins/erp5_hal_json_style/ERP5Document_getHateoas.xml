@@ -846,6 +846,10 @@ elif mode == \'search\':\n
 # \n
 #   else:\n
 \n
+  # Cast to list if only one element is provided\n
+  if same_type(select_list, ""):\n
+    select_list = [select_list]\n
+\n
   for sql_document in sql_list:\n
     try:\n
       document = sql_document.getObject()\n
