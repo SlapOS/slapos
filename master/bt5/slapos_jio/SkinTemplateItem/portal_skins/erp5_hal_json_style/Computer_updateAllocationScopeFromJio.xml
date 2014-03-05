@@ -56,6 +56,9 @@
 \n
 portal = context.getPortalObject()\n
 computer = context\n
+response = REQUEST.RESPONSE\n
+\n
+context.Base_prepareCorsResponse(RESPONSE=response)\n
 \n
 if allocation_scope == \'open/public\':\n
   # Public computer capacity is handle by an alarm\n
