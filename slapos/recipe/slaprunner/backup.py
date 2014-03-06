@@ -71,7 +71,7 @@ class ExportRecipe(GenericBaseRecipe):
                   done
                 }
                 sync_element %(srv-directory)s/runner  %(backup-directory)s/runner/ instance project  proxy.db
-                sync_element %(etc-directory)s  %(backup-directory)s/etc/ .rcode .project .users .htpasswd ssh
+                sync_element %(etc-directory)s  %(backup-directory)s/etc/ .rcode .project .users .htpasswd config.json ssh
                 if [ -d %(backup-directory)s/runner/software ]; then
                   rm %(backup-directory)s/runner/software/*
                 fi
@@ -120,7 +120,7 @@ class ImportRecipe(GenericBaseRecipe):
                   done
                 }
                 restore_element %(backup-directory)s/runner/ %(srv-directory)s/runner  instance project  proxy.db
-                restore_element  %(backup-directory)s/etc/ %(etc-directory)s .rcode .project .users .htpasswd ssh
+                restore_element  %(backup-directory)s/etc/ %(etc-directory)s .rcode .project .users .htpasswd config.json ssh
                 ifs=$IFS IFS=';'
                 read user pass remaining < %(etc-directory)s/.users
                 IFS=$ifs

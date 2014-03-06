@@ -39,7 +39,6 @@ in software.cfg, replace instance-recipe-egg part by
 
 [instance-recipe-egg]
 recipe = zc.recipe.egg
-python = python2.7
 eggs =
     ${mysql-python:egg}
     ${instance-recipe:egg}
