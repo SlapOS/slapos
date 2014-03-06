@@ -23,6 +23,7 @@ crontabs = $${:etc}/crontabs
 cronstamps = $${:etc}/cronstamps
 backup = $${:srv}/backup
 status = $${:srv}/status
+statistic = $${:srv}/statistic
 backupscript = $${:etc}/backup
 www = $${:srv}/www
 home = $${:etc}/home
@@ -111,7 +112,9 @@ include = {{ include_string }}
 exclude_string = {{ exclude_string }}
 remote_schema = {{ remote_schema }}
 status_name = {{ slave_reference }}_status.txt
+statistic_name = {{ slave_reference }}_statistic.txt
 status_log = $${directory:status}/$${:status_name}
+statistic_log = $${directory:statistic}/$${:statistic_name}
 
 [{{ slave_reference }}-backup-crontab-line]
 recipe = slapos.recipe.template

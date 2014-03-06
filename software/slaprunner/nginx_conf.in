@@ -64,5 +64,22 @@ http {
             proxy_set_header        X-Forwarded-For   $proxy_add_x_forwarded_for;
 	    proxy_set_header        X-Forwarded-Host  $http_host;
 	}
+        location /public/ {
+            root {{ param_nginx_frontend['work_dir'] }};
+            index index.html index.htm;
+        }
+        location /share {
+            rewrite ^/share / break;
+
+            auth_basic "Restricted";
+            auth_basic_user_file {{ param_nginx_frontend['etc_dir'] }}/.htpasswd;
+
+            dav_methods PUT DELETE MKCOL COPY MOVE;
+            dav_ext_methods PROPFIND OPTIONS;
+
+            root {{ param_nginx_frontend['work_dir'] }};
+
+            create_full_put_path   on;
+        }
     }
 }

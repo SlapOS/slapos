@@ -16,14 +16,36 @@ parts +=
   sshkeys-authority
   slaprunner-promise
   dropbear-promise
+  private
   shellinabox-promise
   shellinabox
   symlinks
   slapos-cfg
   slapos-repo-config
-  prepare-software
+  cron-entry-prepare-software
+  deploy-instance-parameters
 # have to repeat the next one, as it's not inherited from pbsready-import
   import-on-notification
+###Parts to add for monitoring
+  slap-parameters
+  certificate-authority
+  cron
+  cron-entry-monitor
+  cron-entry-rss
+  deploy-index
+  deploy-index-template
+  deploy-monitor-script
+  deploy-rss-script
+  deploy-settings-cgi
+  deploy-status-cgi
+  make-rss
+  monitor-promise
+  setup-static-files
+  certificate-authority
+  public
+  zero-parameters
+  cgi-httpd-wrapper
+  public-symlink
 
 [importer]
 recipe = slapos.cookbook:slaprunner.import
@@ -35,3 +57,6 @@ shell-binary = ${dash:location}/bin/dash
 rsync-binary = ${rsync:location}/bin/rsync
 curl-binary = ${curl:location}/bin/curl
 backend-url = $${slaprunner:access-url}
+
+[slap-parameter]
+auto-deploy-instance = false

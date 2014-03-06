@@ -29,8 +29,17 @@ Optional parameter.
 
 Default: 10
 
+
+Public-directory
+----------------
+You can serve static files with the webrunner. For that, just put your data in "srv/runner/public". All these files will be served throught the url of the webrunner + "/public/". Useful for developping your own static website.
+
+
 AUTO-DEPLOYMENT
 ---------------
+
+for software
+~~~~~~~~~~~~
 
 You can automatically deploy a software release while deploying the webrunner itself, using the paramater XML.
 
@@ -42,6 +51,23 @@ This is possible because the slapos.git is automatically downloaded when the web
 It is also possible to download you own git repository, by providing the url in the "slapos-repository" parameter.
 
 Last but not least, it is also possible to switch the branch with the parameter "slapos-reference" (by default pointing on master)
+
+for instance
+~~~~~~~~~~~~
+
+The parameter "auto-deploy-instance" can be explicitly set to allow or prevent the runner to deploy the instance at START TIME (if you manually restart the runner, or if the server reboots). Values : "true" or "false". Default value is "true", except for the instances of import (while type is resilient or test) which is "false"
+
+There also exists the parameter "autorun", which will build&run your software if set to true. For this, you need "auto_deploy" to true, and set the parameter "slapos-software" to the software you want to deploy. Do not hesitate to clone a different repo than "slapos", or to change the tag/branch to use your custom Software Release. (see "slapos-repository" and "slapos-reference" in previous section).
+
+To deploy the instance with some parameters, just give to the runner parameters starting with "parameter-", they will be correctly forwarded to the instance, which will use them for its configuration. For example, if you want to send to the sofware helloworld the parameter "name" with the value "nicolas", here is how to configure the parameter.xml of the webrunner for auto-depolyment :
+
+<?xml version='1.0' encoding='utf-8'?>
+<instance>
+<parameter id="slapos-software">software/helloworld</parameter>
+<parameter id="auto_deploy">true</parameter>
+<parameter id="autorun">true</parameter>
+<parameter id="parameter-name">nicolas</parameter>
+</instance>
 
 Resilience :
 ------------
@@ -95,7 +121,32 @@ Example :
 	<parameter id="custom-frontend-basic-auth">true</parameter>
 	</instance>
 
+Git repositories :
+------------------
+
+It is easy to give access to your git repository/ies to everyone, or to clone it on your own computer. For this, there are 2 urls to remember:
+  - For read only, you can clone : https://[IPV6]:PORT/git-public/YourRepo.git/
+  - For read and write access, using your runner account : https://[IPV6]:PORT/git/YourRepo.git/
+
+To create the repo, go in the folder srv/runner/project and initiate a new git repo (git init/clone --bare XXX).
+
+For the moment, the PORT is the port of monitoring, which is 9685.
+
 Things to notice for the nex developer :
 ----------------------------------------
 
 As you can see in instance-runner-*.cfg, the buildout section extends a hard-coded template file. If one day you need to modify the filename, do not forget to modify it in instance.cfg, but also in these files ! (the problem is that the content of instance.cfg is not known by buildout while the deployment of the software release)
+
+
+List of ports used by the webrunner:
+------------------------------------
+8602 : slapproxy, while running tests
+8080 : shellinabox
+9684 : apache (monitoring of slaprunner, git access)
+22222 : dropbear
+50000 : slapproxy
+50005 : webrunner (flask app), webdav access
+
+Tips:
+-----
+You can use shellinabox in fullscreen, by accessing : https://[IPV6]:8080
