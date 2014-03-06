@@ -9,7 +9,7 @@ ${coreutils-output:rm} -f $${:status_log}
 ${coreutils-output:rm} -f $${:statistic_log}
 
 # Inform about beginning of backup
-${coreutils-output:echo} "`${coreutils-output:date} -u`, $${:hostname} backup running" >> $${:status_log}
+${coreutils-output:echo} "`${coreutils-output:date} -u`,$${:statistic_log}, $${:hostname} backup running" >> $${:status_log}
 ${coreutils-output:echo} "Available only if backup succeed." >> $${:statistic_log}
 
 # set -e
