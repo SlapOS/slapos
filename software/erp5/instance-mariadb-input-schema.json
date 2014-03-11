@@ -106,6 +106,14 @@
         "key": {
           "description": "Server's key, in PEM format (mandatory to enable SSL support)",
           "type": "string"
+        },
+        "crl": {
+          "description": "Server's certificate revocation list, in PEM format",
+          "type": "string"
+        },
+        "cipher": {
+          "description": "Permissible cipher specifications, separated by colons",
+          "type": "string"
         }
       },
       "type": "object"

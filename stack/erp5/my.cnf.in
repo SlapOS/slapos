@@ -76,6 +76,12 @@ ssl_key = {{ parameter_dict['ssl-key'] }}
 {%   if 'ssl-ca-crt' in parameter_dict -%}
 ssl_ca = {{ parameter_dict['ssl-ca-crt'] }}
 {%-  endif %}
+{%   if 'ssl-crl' in parameter_dict -%}
+ssl_crl = {{ parameter_dict['ssl-crl'] }}
+{%-  endif %}
+{%   if 'ssl-cipher' in parameter_dict -%}
+ssl_cipher = {{ parameter_dict['ssl-cipher'] }}
+{%-  endif %}
 {%- endif %}
 
 [client]

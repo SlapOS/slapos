@@ -61,6 +61,9 @@ about laxist file mode. -#}
 {%   if 'ca-crt' in ssl_parameter_dict -%}
 {{     sslfile('ca-crt', ssl_parameter_dict['ca-crt']) }}
 {%   endif -%}
+{%   if 'crl' in ssl_parameter_dict -%}
+{{     sslfile('crl', ssl_parameter_dict['crl']) }}
+{%   endif -%}
 {%- endif %}
 
 {% if full_backup_retention_days > -1 -%}
