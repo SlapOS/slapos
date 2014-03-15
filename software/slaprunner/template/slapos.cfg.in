@@ -11,6 +11,7 @@ partition_amount = {{ slaprunner['partition-amount'] }}
 
 [slaprunner]
 slapos = {{ slaprunner['slapos'] }}
+slapos_cfg = {{ slaprunner['slapos.cfg'] }}
 slapproxy = {{ slaprunner['slapproxy'] }}
 supervisor = {{ slaprunner['supervisor'] }}
 supervisord_config = {{ slaprunner['supervisord_config'] }}
