@@ -4,13 +4,13 @@ instance_root = {{ slaprunner['instance_root'] }}
 master_url = http://{{ slaprunner['ipv4'] }}:{{ slaprunner['proxy_port'] }}
 computer_id = slaprunner
 maximal_delay = 0
+root_check = {{ slaprunner['root_check'] }}
 
 [slapformat]
 partition_amount = {{ slaprunner['partition-amount'] }}
 
 [slaprunner]
-slapgrid_sr = {{ slaprunner['slapgrid_sr'] }}
-slapgrid_cp = {{ slaprunner['slapgrid_cp'] }}
+slapos = {{ slaprunner['slapos'] }}
 slapproxy = {{ slaprunner['slapproxy'] }}
 supervisor = {{ slaprunner['supervisor'] }}
 supervisord_config = {{ slaprunner['supervisord_config'] }}
