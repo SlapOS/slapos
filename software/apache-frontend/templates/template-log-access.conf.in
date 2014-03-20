@@ -1,0 +1,18 @@
+{% for slave, directory in slave_log_directory.iteritems() %}
+Alias /{{slave}}/ {{directory}}/
+<Directory {{directory}}>
+  Order Deny,Allow
+  Deny from env=AUTHREQUIRED
+  <Files ".??*">
+    Order Allow,Deny
+    Deny from all
+  </Files>
+  AuthType Basic
+  AuthName "Log Access {{slave}}"
+  AuthUserFile "{{ apache_configuration_directory + '/.' + slave.upper() + '.htaccess'}}"
+  Require user {{slave.upper()}}
+  Options Indexes FollowSymLinks
+  Satisfy all
+</Directory>
+
+{% endfor %}
