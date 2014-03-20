@@ -64,6 +64,11 @@ LoadModule headers_module     {{ httpd_home }}/modules/mod_headers.so
 LoadModule cache_module       {{ httpd_home }}/modules/mod_cache.so
 LoadModule mem_cache_module   {{ httpd_home }}/modules/mod_mem_cache.so
 LoadModule antiloris_module   {{ httpd_home }}/modules/mod_antiloris.so
+LoadModule alias_module       {{ httpd_home }}/modules/mod_alias.so
+LoadModule autoindex_module   {{ httpd_home }}/modules/mod_autoindex.so
+LoadModule auth_basic_module  {{ httpd_home }}/modules/mod_auth_basic.so
+LoadModule authz_user_module  {{ httpd_home }}/modules/mod_authz_user.so
+LoadModule authn_file_module  {{ httpd_home }}/modules/mod_authn_file.so
 
 # The following directives modify normal HTTP response behavior to
 # handle known problems with browser implementations.
@@ -124,6 +129,8 @@ SSLCipherSuite RC4-SHA:HIGH:!ADH
 # Accept proxy to sites using self-signed SSL certificates
 SSLProxyCheckPeerCN off
 SSLProxyCheckPeerExpire off
+
+include {{frontend_configuration.get('log-access-configuration')}}
 
 NameVirtualHost *:{{ http_port }}
 NameVirtualHost *:{{ https_port }}
