@@ -90,8 +90,8 @@ def do_request(logger, conf, local):
         logger.info('Instance requested.\nState is : %s.', partition.getState())
         logger.info('Connection parameters of instance are:')
         logger.info(pprint.pformat(partition.getConnectionParameterDict()))
-        logger.info('You can rerun command to get up-to-date informations.')
+        logger.info('You can rerun the command to get up-to-date information.')
     except ResourceNotReady:
         logger.warning('Instance requested. Master is provisioning it. Please rerun in a '
-                       'couple of minutes to get connection informations.')
+                       'couple of minutes to get connection information.')
         exit(2)
