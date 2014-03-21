@@ -543,7 +543,7 @@ class Slapgrid(object):
          (computer_partition_id not in self.computer_partition_filter_list):
       return
 
-    self.logger.info('Processing Computer Partition %s.' % computer_partition_id)
+    self.logger.debug('Check if %s requires processing...' % computer_partition_id)
 
     instance_path = os.path.join(self.instance_root, computer_partition_id)
 
@@ -596,7 +596,7 @@ class Slapgrid(object):
             # Check periodicity, i.e if periodicity is one day, partition
             # should be processed at least every day.
             if int(time.time()) <= (last_runtime + periodicity) or periodicity < 0:
-              self.logger.info('Partition already up-to-date, skipping.')
+              self.logger.debug('Partition already up-to-date, skipping.')
               return
             else:
               # Periodicity forced processing this partition. Removing
@@ -606,6 +606,7 @@ class Slapgrid(object):
           os.remove(timestamp_path)
           self.logger.exception('')
 
+    self.logger.info('Processing Computer Partition %s.' % computer_partition_id)
     self.logger.info('  Software URL: %s' % software_url)
     self.logger.info('  Software path: %s' % software_path)
     self.logger.info('  Instance path: %s' % instance_path)
