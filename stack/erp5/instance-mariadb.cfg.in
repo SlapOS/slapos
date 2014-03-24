@@ -228,6 +228,7 @@ command = mysql_upgrade
 
 [binary-wrap-mysql_tzinfo_to_sql]
 < = binary-wrap-base
+command-line = "{{ parameter_dict['mariadb-location'] }}/bin/${:command}"
 command = mysql_tzinfo_to_sql
 
 [directory]
