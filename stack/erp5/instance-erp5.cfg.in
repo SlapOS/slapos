@@ -32,7 +32,7 @@ return = {{ ret.keys() | join(' ') }}
 {%     do publish_dict.__setitem__(name ~ '-' ~ ret, '${' ~ section ~ ':connection-' ~ ret ~ '}')%}
 {%   endif -%}
 {% endfor -%}
-sla-computer_guid = {{ slapparameter_dict.get(config_key + '-computer-guid', computer_id) }}
+sla-computer_guid = {{ dumps(slapparameter_dict.get(config_key + '-computer-guid', computer_id)) }}
 extra-config = {{ ' '.join(config) }}
 {% for option, value in config.items() -%}
 config-{{ option }} = {{ dumps(value) }}
@@ -43,7 +43,9 @@ config-{{ option }} = {{ dumps(value) }}
 {{ request('memcached-volatile', 'kumofs', 'memcached', {'tcpv4-port': 2010, 'ram-storage-size': 64}) }}
 {{ request('cloudooo', 'cloudooo', 'cloudooo', {'tcpv4-port': 2020}) }}
 {{ request('mariadb', 'mariadb', 'mariadb', {'tcpv4-port': 2099}, {'database-list': True, 'test-database-list': True}) }}
-{{ request('zodb', 'zodb-' ~ slapparameter_dict.get('zodb-software-type', 'zeo'), 'zodb', {'tcpv4-port': 2100, 'zodb-dict': {'root': {}}}, {'zodb-storage-type': False, 'zodb-dict': False, 'tidstorage-ip': False, 'tidstorage-port': False}) }}
+{# Fail early if an unexpected value is provided -#}
+{% set possible_software_type_dict = {'zeo': 'zeo', 'neo': 'neo'} -%}
+{{ request('zodb', 'zodb-' ~ possible_software_type_dict[slapparameter_dict.get('zodb-software-type', 'zeo')], 'zodb', {'tcpv4-port': 2100, 'zodb-dict': {'root': {}}}, {'zodb-storage-type': False, 'zodb-dict': False, 'tidstorage-ip': False, 'tidstorage-port': False}) }}
 
 [inituser-password]
 {% set inituser_password = slapparameter_dict.get('inituser-password') -%}
