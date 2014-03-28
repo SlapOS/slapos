@@ -1,0 +1,116 @@
+#!${:python_path}
+# BEWARE: This file is operated by slapgrid
+# BEWARE: It will be overwritten automatically
+
+# Echo client program
+import os
+import traceback
+import sys
+import time
+
+pythonPath = []
+eggs = '${:eggs-dir}'
+for item in os.listdir(eggs):
+  path = os.path.join(eggs, item)
+  pythonPath.append(path)
+sys.path[0:0] = pythonPath
+
+import paramiko
+
+password = '${:system-passwd}'
+username = '${:system-user}'
+port = ${:ssh-port}
+hostname = '${:host-ip}'
+ssh_run = os.path.join('${:nova-result}', 'nova-configure.log')
+ssh_check = os.path.join('${:nova-result}', 'ssh_check.log')
+nova_configure = '${:nova-configure}'
+keystone_script = '${:keystone-script}'
+keystone_endpoints_script = '${:keystone-endpoints-script}'
+floating_ip_generate_script = '${:floating-ip-generate}'
+auto_signed_certificate_script = '${:signed-certificate-generate}'
+instance = '${:instance}'.strip() #Type: manage or compute
+
+def getClient():
+  try:
+    client = paramiko.SSHClient()
+    client.load_system_host_keys()
+    client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+    print '*** Connecting...'
+    client.connect(hostname, port, username, password)
+    return client
+  except Exception, e:
+      print "Could not connect to host... Will retry after a few minutes"
+      return None
+
+def installCompute():
+
+  #Install nova components and services
+  print "Installing nova..." 
+  install_command = "echo %s | sudo -S /bin/bash -xe configure.sh 2>&1 | tee install.log" % password
+  stdin, stdout, stderr = client.exec_command(install_command)
+  with open(ssh_run, 'a') as output:
+    output.write(stdout.read())
+  
+  #Check nova service status
+  print "Checking nova service status..."
+  nova_command = 'echo %s | sudo -S /etc/init.d/nova-compute status' % password
+  stdin, stdout, stderr = client.exec_command(nova_command)
+  with open(ssh_check, 'w') as output:
+    output.write(stdout.read())
+
+def installManage():
+  
+  #copy keystone configure and network address generate scripts
+  sftp = client.open_sftp()
+  result = sftp.put(keystone_script, 'keystone_basic.sh' )
+  print 'Keystone Basic Configuration script has been copied successfully! File size: %s' % result.st_size
+  result = sftp.put(keystone_endpoints_script, 'keystone_endpoints_basic.sh' )
+  print 'Keystone Endpoints Configuration script has been copied successfully! File size: %s' % result.st_size
+  result = sftp.put(floating_ip_generate_script, 'network.py' )
+  print 'Network generate script has been copied successfully! File size: %s' % result.st_size
+  result = sftp.put(auto_signed_certificate_script, 'generate_cert.py')
+  print 'Auto-signed certificate script has been copied successfully! File size: %s' % result.st_size
+  sftp.close()
+  
+  #Install nova components and services
+  print "Downloading and installing Openstack on computer..."
+  install_command = "echo %s | sudo -S /bin/bash -xe configure.sh 2>&1 | tee install.log" % password
+  stdin, stdout, stderr = client.exec_command(install_command)
+  with open(ssh_run, 'w') as output:
+    output.write(stdout.read())
+    
+  #Check nova service status
+  print "Checking nova service status..."
+  nova_command = 'echo %s | sudo -S nova-manage service list' % password
+  stdin, stdout, stderr = client.exec_command(nova_command)
+  with open(ssh_check, 'w') as output:
+    output.write(stdout.read())
+
+if __name__ == '__main__':
+  client = None
+  while not client:
+    client = getClient()
+    time.sleep(5)
+  try:
+    #Try to run openstack command before all other system process are started
+    time.sleep(20)
+    #Write file configure.sh to use.
+    sftp = client.open_sftp()
+    result = sftp.put(nova_configure, 'configure.sh' )
+    print 'Nova configuration scipt has been copied successfully! File size: %s' % result.st_size
+    sftp.close()
+    if instance == "manage":
+      installManage()
+    elif instance == "compute":
+      installCompute()
+    client.close()
+  except Exception, e:
+    print '*** Caught exception: %s: %s' % (e.__class__, e)
+    traceback.print_exc()
+    try:
+        client.close()
+    except:
+        pass
+    sys.exit(1)
+  
+  

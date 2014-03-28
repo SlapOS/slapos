@@ -50,6 +50,9 @@ class Recipe(GenericBaseRecipe):
 class Callback(GenericBaseRecipe):
 
   def createCallback(self, notification_id, callback):
+    # XXX: hashing the name here and in
+    # slapos.toolbox/slapos/pubsub/__init__.py is completely messed up and
+    # prevent any debug.
     callback_id = sha512(notification_id).hexdigest()
 
     filepath = os.path.join(self.options['callbacks'], callback_id)
@@ -64,7 +67,7 @@ class Callback(GenericBaseRecipe):
 class Notify(GenericBaseRecipe):
 
   def createNotifier(self, notifier_binary, wrapper, executable,
-                     log, title, notification_url, feed_url):
+                     log, title, notification_url, feed_url, pidfile=None):
 
     if not os.path.exists(log):
       # Just a touch
@@ -82,6 +85,7 @@ class Notify(GenericBaseRecipe):
     return self.createWrapper(name=wrapper,
                               command=notifier_binary,
                               parameters=parameters,
+                              pidfile=pidfile,
                               comments=[
                                   '',
                                   'Call an executable and send notification(s).',
@@ -101,6 +105,7 @@ class Notify(GenericBaseRecipe):
                                  executable=options['executable'],
                                  log=log,
                                  title=options['title'],
+                                 pidfile=options['pidfile'],
                                  notification_url=options['notify'],
                                  feed_url=feed_url)
     return [script]

@@ -1,0 +1,340 @@
+[buildout]
+parts =
+  slapos-configuration-file
+  cron-entry-slapos
+  slapos-node-status-wrapper
+  slapos-node-format-wrapper-script
+
+  httpd-wrapper
+
+  cron
+  logrotate
+  logrotate-entry-httpd
+  logrotate-entry-slapos
+
+  sshkeys-dropbear
+  dropbear-server-add-authorized-key
+  sshkeys-authority
+  publish-connection-informations
+
+  dropbear-promise
+  httpd-promise
+  slapos-promise
+
+
+eggs-directory = {{ eggs_directory }}
+develop-eggs-directory = {{ develop_eggs_directory }}
+offline = true
+
+[instance-parameter]
+recipe = slapos.cookbook:slapconfiguration
+computer = ${slap_connection:computer_id}
+partition = ${slap_connection:partition_id}
+url = ${slap_connection:server_url}
+key = ${slap_connection:key_file}
+cert = ${slap_connection:cert_file}
+
+configuration.master-url = https://slap.vifib.com
+configuration.authorized-key =
+
+# Create all needed directories
+[directory]
+recipe = slapos.cookbook:mkdirectory
+mode = 0750
+
+etc = ${buildout:directory}/etc/
+var = ${buildout:directory}/var/
+srv = ${buildout:directory}/srv/
+bin = ${buildout:directory}/bin/
+
+sshkeys = ${:srv}/sshkeys
+service = ${:etc}/service/
+script = ${:etc}/run/
+ssh = ${:etc}/ssh/
+log = ${:var}/log/
+run = ${:var}/run/
+backup = ${:srv}/backup/
+promises = ${:etc}/promise/
+
+slapos-partitions-certificate-repository = ${:var}/pki
+software-root = ${:srv}/slapos-software
+instance-root = ${:srv}/slapos-instance
+slapos-log = ${:log}/slapos
+
+{% for i in range(0,10) %}
+slappart{{i}} = ${:instance-root}/slappart{{i}}
+{% endfor %}
+
+cron-entries = ${:etc}/cron.d
+crontabs = ${:etc}/crontabs
+cronstamps = ${:etc}/cronstamps
+
+logrotate-entries = ${:etc}/logrotate.d
+logrotate-backup = ${:backup}/logrotate
+
+httpd-log = ${:log}/httpd
+
+
+########
+# Deploy slapos.cfg, computer certificates and slapos node wrapper
+########
+[slapos-computer-certificate-file]
+recipe = collective.recipe.template
+input = inline:${instance-parameter:configuration.computer-certificate}
+output = ${directory:var}/slapos-computer.crt
+
+[slapos-computer-key-file]
+recipe = collective.recipe.template
+input = inline:${instance-parameter:configuration.computer-key}
+output = ${directory:var}/slapos-computer.key
+
+[computer-definition-file]
+recipe = collective.recipe.template
+input = inline:
+  [computer]
+{% for i in range(0,10|int) %}
+  [partition_{{i}}]
+  address = ${instance-parameter:ipv4-random}/255.255.255.0 ${instance-parameter:ipv6-random}/64
+  pathname = slappart{{i}}
+  user = dummy
+  network_interface = dummy
+{% endfor %}
+output = ${directory:etc}/slapos-computer-definition.cfg
+
+[slapos-configuration-file]
+recipe = slapos.recipe.template
+url = {{ slapos_configuration_file_template_path }}
+output = ${directory:etc}/slapos.cfg
+#md5sum = 4861be4a581686feef9f9edea865d7ee
+software-root = ${directory:software-root}
+instance-root = ${directory:instance-root}
+master-url = ${instance-parameter:configuration.master-url}
+computer-id = ${instance-parameter:configuration.computer-id}
+# XXX should be a parameter
+partition-amount = 10
+computer-definition-file = ${computer-definition-file:output}
+computer-xml = ${directory:var}/slapos.xml
+computer-key-file = ${slapos-computer-key-file:output}
+computer-certificate-file = ${slapos-computer-certificate-file:output}
+certificate-repository-path = ${directory:slapos-partitions-certificate-repository}
+
+[slapos-node-instance-wrapper]
+recipe = slapos.cookbook:wrapper
+command-line = {{ bin_directory }}/slapos node instance --cfg ${slapos-configuration-file:output} --pidfile ${directory:run}/slapos-instance.pid --logfile ${directory:slapos-log}/slapos-instance.log
+wrapper-path = ${directory:bin}/slapos-node-instance
+parameters-extra = true
+
+[slapos-node-software-wrapper]
+recipe = slapos.cookbook:wrapper
+command-line = {{ bin_directory }}/slapos node software --cfg ${slapos-configuration-file:output} --pidfile ${directory:run}/slapos-software.pid --logfile ${directory:slapos-log}/slapos-software.log
+wrapper-path = ${directory:bin}/slapos-node-software
+parameters-extra = true
+
+[slapos-node-report-wrapper]
+recipe = slapos.cookbook:wrapper
+command-line = {{ bin_directory }}/slapos node report --cfg ${slapos-configuration-file:output} --pidfile ${directory:run}/slapos-report.pid --logfile ${directory:slapos-log}/slapos-report.log
+wrapper-path = ${directory:bin}/slapos-node-report
+parameters-extra = true
+
+[slapos-node-status-wrapper]
+recipe = slapos.cookbook:wrapper
+command-line = {{ bin_directory }}/slapos node status --cfg ${slapos-configuration-file:output}
+wrapper-path = ${directory:bin}/slapos-node-status
+parameters-extra = true
+
+[slapos-node-format-wrapper]
+recipe = slapos.cookbook:wrapper
+command-line = {{ bin_directory }}/slapos node format --cfg ${slapos-configuration-file:output} --logfile=${directory:slapos-log}/slapos-node-format.log --now
+wrapper-path = ${directory:bin}/slapos-node-format
+parameters-extra = true
+
+[slapos-node-format-wrapper-script]
+# Create a wrapper of the wrapper in etc/run
+recipe = collective.recipe.template
+input = inline:#!{{ bash_executable }}
+  false
+  while [ ! $? -eq 0 ]; do
+    ${slapos-node-format-wrapper:wrapper-path}
+  done
+output = ${directory:script}/slapos-node-format
+mode = 700
+
+
+#########
+# Deploy some http server to see logs online
+#########
+# XXX could it be something lighter?
+[httpd-configuration-file]
+recipe = slapos.recipe.template
+url = {{ httpd_configuration_file_template_path }}
+output = ${directory:etc}/httpd.conf
+# md5sum =
+listening-ip = ${instance-parameter:ipv6-random}
+listening-port = 8080
+htdocs = ${directory:log}
+pid-file = ${directory:run}/httpd.pid
+access-log = ${directory:httpd-log}/access-log
+error-log = ${directory:httpd-log}/error-log
+document-root = ${directory:log}
+
+# XXX logrotate for httpd
+
+[httpd-wrapper]
+recipe = slapos.cookbook:wrapper
+apache-executable = {{ httpd_executable }}
+command-line = ${:apache-executable} -f ${httpd-configuration-file:output} -DFOREGROUND
+wrapper-path = ${directory:service}/httpd
+# generated parameter containing url to use for other sections
+url = http://[${httpd-configuration-file:listening-ip}]/
+
+
+#########
+# Deploy logrotate
+#########
+[logrotate]
+recipe = slapos.cookbook:logrotate
+# Binaries
+logrotate-binary = {{ logrotate_executable }}
+gzip-binary = {{ gzip_executable }}
+gunzip-binary = {{ gunzip_executable }}
+# Directories
+wrapper = ${directory:bin}/logrotate
+conf = ${directory:etc}/logrotate.conf
+logrotate-entries = ${directory:logrotate-entries}
+backup = ${directory:logrotate-backup}
+state-file = ${directory:srv}/logrotate.status
+
+[logrotate-entry-httpd]
+<= logrotate
+recipe = slapos.cookbook:logrotate.d
+name = httpd
+log = ${httpd-configuration-file:access-log} ${httpd-configuration-file:error-log}
+frequency = daily
+rotate-num = 30
+post = {{ bin_directory }}/killpidfromfile $${apache-configuration:pid-file} SIGUSR1
+sharedscripts = true
+notifempty = true
+create = true
+
+[logrotate-entry-slapos]
+<= logrotate
+recipe = slapos.cookbook:logrotate.d
+name = slapos
+log = ${directory:slapos-log}/*.log
+frequency = daily
+rotate-num = 30
+#post = {{ bin_directory }}/killpidfromfile ${nginx-configuration:pid-file} SIGUSR1
+sharedscripts = true
+notifempty = true
+create = true
+
+###########
+# Deploy cron and configure it
+###########
+[cron-simplelogger]
+recipe = slapos.cookbook:simplelogger
+wrapper = ${directory:bin}/cron_simplelogger
+log = ${directory:log}/crond.log
+
+[cron]
+recipe = slapos.cookbook:cron
+dcrond-binary = {{ dcron_executable }}
+cron-entries = ${directory:cron-entries}
+crontabs = ${directory:crontabs}
+cronstamps = ${directory:cronstamps}
+catcher = ${cron-simplelogger:wrapper}
+binary = ${directory:service}/crond
+
+[cron-entry-slapos]
+recipe = collective.recipe.template
+# Add current PATH to environment, otherwise, gcc is not able to find its own cc1.
+# We don't add it in the top of the script, because dcron disallow it.
+# XXX: maybe it works if we take PATH from instance, not software.
+input = inline:
+  * * * * * PATH={{ path }} ${slapos-node-instance-wrapper:wrapper-path} > /dev/null 2>&1
+  * * * * * PATH={{ path }} ${slapos-node-software-wrapper:wrapper-path} > /dev/null 2>&1
+  * * * * * PATH={{ path }} ${slapos-node-report-wrapper:wrapper-path} > /dev/null 2>&1
+output = ${directory:cron-entries}/slapos
+
+[cron-entry-logrotate]
+<= cron
+recipe = slapos.cookbook:cron.d
+name = logrotate
+frequency = 0 0 * * *
+command = $${logrotate:wrapper}
+
+
+
+# XXX what to do for slapformat?
+
+#########
+# Deploy dropbear (minimalist SSH server)
+#########
+[sshkeys-directory]
+recipe = slapos.cookbook:mkdirectory
+requests = ${directory:sshkeys}/requests/
+keys = ${directory:sshkeys}/keys/
+
+[sshkeys-authority]
+recipe = slapos.cookbook:sshkeys_authority
+request-directory = ${sshkeys-directory:requests}
+keys-directory = ${sshkeys-directory:keys}
+wrapper = ${directory:service}/sshkeys_authority
+keygen-binary = {{ dropbearkey_executable }}
+
+[dropbear-server]
+recipe = slapos.cookbook:dropbear
+host = ${instance-parameter:ipv6-random}
+port = 2222
+home = ${directory:ssh}
+wrapper = ${directory:bin}/raw_sshd
+shell = {{ bash_executable }}
+rsa-keyfile = ${directory:ssh}/server_key.rsa
+dropbear-binary = {{ dropbear_executable }}
+
+[sshkeys-dropbear]
+<= sshkeys-authority
+recipe = slapos.cookbook:sshkeys_authority.request
+name = dropbear
+type = rsa
+executable = ${dropbear-server:wrapper}
+public-key = ${dropbear-server:rsa-keyfile}.pub
+private-key = ${dropbear-server:rsa-keyfile}
+wrapper = ${directory:service}/sshd
+
+[dropbear-server-add-authorized-key]
+<= dropbear-server
+recipe = slapos.cookbook:dropbear.add_authorized_key
+key = ${instance-parameter:configuration.authorized-key}
+
+
+#########
+# Send informations to SlapOS Master
+#########
+[publish-connection-informations]
+recipe = slapos.cookbook:publish
+log-viewer-url = http://[${httpd-configuration-file:listening-ip}]:${httpd-configuration-file:listening-port}
+ssh_command = ssh ${dropbear-server:host} -p ${dropbear-server:port}
+
+#########
+# Deploy promises scripts
+#########
+[dropbear-promise]
+recipe = slapos.cookbook:check_port_listening
+path = ${directory:promises}/dropbear
+hostname = ${dropbear-server:host}
+port = ${dropbear-server:port}
+
+[httpd-promise]
+recipe = slapos.cookbook:check_port_listening
+path = ${directory:promises}/httpd
+hostname = ${httpd-configuration-file:listening-ip}
+port = ${httpd-configuration-file:listening-port}
+
+[slapos-promise]
+recipe = collective.recipe.template
+input = inline:#!/{{ bash_executable }}
+  {{ bin_directory }}/slapgrid-supervisorctl ${slapos-configuration-file:output} status watchdog | grep RUNNING
+output = ${directory:promises}/slapos
+mode = 0700
+

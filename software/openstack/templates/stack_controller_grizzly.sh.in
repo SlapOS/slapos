@@ -1,0 +1,690 @@
+#!/bin/bash -xe
+
+#stack_controller_grizzly.sh: Should install and configure all needed openstack packages.
+#This script should work on SlapOS environment, using a Virtual Machine
+# Warning: this script may not work on Ubuntu 12.04 - Use ubuntu 13.04
+
+export DEBIAN_FRONTEND=noninteractive
+
+###############################################################################################
+#####  Check Installation and internet connexion
+###############################################################################################
+if [ -f .installed ]; then
+    echo "An installation of openstack already exist. Exiting..."
+    exit 0;
+fi
+
+wget -q --tries=10 --timeout=20 http://google.com
+if [[ $? -eq 0 ]]; then
+    echo "OK: Succefully check internet connection with success. Go next ...";
+else
+    echo "ERROR:  We can't install openstack without internet connection. Please check it before retry installation...";
+    exit 1;
+fi
+
+###############################################################################################
+
+apt-get update
+apt-get upgrade -y
+apt-get dist-upgrade -y
+
+
+###############################################################################################
+#####  Configure Network
+###############################################################################################
+
+apt-get install -y openvswitch-switch openvswitch-datapath-dkms
+apt-get install -y vlan bridge-utils
+
+#br-int will be used for VM integration
+ovs-vsctl add-br br-int
+
+#br-ex is used to make to access the internet (not covered in this guide)
+ovs-vsctl add-br br-ex
+ovs-vsctl add-port br-ex eth0
+
+if [ -f network.conf ]
+then
+    IPv4=`cat network.conf | cut -d: -f1`
+    MASK=`cat network.conf | cut -d: -f2`
+    GATEWAY=`cat network.conf | cut -d: -f3`
+    BCAST=`cat network.conf | cut -d: -f4`
+else
+    GATEWAY=`route | grep default | awk '{print $2}'`
+    MASK=`ifconfig eth0 | egrep '(inet ad)d?r:' |  awk '{ print $4}' | cut -d: -f2`
+    BCAST=`ifconfig eth0 | egrep '(inet ad)d?r:' |  awk '{ print $3}' | cut -d: -f2`
+    IPv4=`ip addr show eth0 | grep 'inet ' | awk '{print $2}' | cut -d/ -f1`
+    echo "$IPv4:$MASK:$GATEWAY:$BCAST" > network.conf
+fi
+
+/bin/cat << EOF > /etc/network/interfaces
+# This file describes the network interfaces available on your system
+# and how to activate them. For more information, see interfaces(5).
+# The loopback network interface
+auto lo
+iface lo inet loopback
+# The primary network interface
+
+#For Exposing OpenStack API over the internet
+# VM internet Access
+auto eth0
+iface eth0 inet manual
+up ifconfig \$IFACE 0.0.0.0 up
+up ip link set \$IFACE promisc on
+down ip link set \$IFACE promisc off
+down ifconfig \$IFACE down
+
+auto br-ex
+iface br-ex inet static
+        address $IPv4
+        netmask $MASK
+        broadcast $BCAST
+        gateway $GATEWAY
+        dns-nameservers 8.8.8.8
+
+#Not internet connected(used for OpenStack management)
+#auto eth0
+#iface eth0 inet static
+#address 10.10.100.51
+#netmask 255.255.255.0
+
+EOF
+
+chmod 644 /etc/network/interfaces
+/etc/init.d/networking restart
+
+###############################################################################################
+#####  Network Fowarding
+###############################################################################################
+
+sed -i 's/#net.ipv4.ip_forward=1/net.ipv4.ip_forward=1/' /etc/sysctl.conf
+
+# To save you from rebooting, perform the following
+sysctl net.ipv4.ip_forward=1
+
+iptables --table nat --append POSTROUTING --out-interface eth0 -j MASQUERADE
+iptables --append FORWARD --in-interface br-ex -j ACCEPT
+
+#Add iptable command to rc.local to allow auto reconfiguring of network NAT after reboot
+sudo sed -n '$!p' /etc/rc.local > temp-rc.local
+sudo mv temp-rc.local /etc/rc.local
+sudo chmod +x /etc/rc.local
+/bin/cat << EOF >> /etc/rc.local
+
+iptables --table nat --append POSTROUTING --out-interface eth0 -j MASQUERADE
+iptables --append FORWARD --in-interface br-ex -j ACCEPT
+
+exit 0
+EOF
+
+###############################################################################################
+#####  Variables to use
+###############################################################################################
+/bin/cat << EOF > localrc
+MYSQLPASS=${:nova-passwd}
+ADMIN_PASSWORD=${:nova-passwd}
+SERVICE_PASSWORD=${:nova-passwd}
+RABBIT_PASS=${:nova-passwd}
+HOST_IP=$IPv4
+PUBLIC_ADDRESS=$IPv4
+EXT_HOST_IP=$IPv4
+USER_PASSWORD=\$ADMIN_PASSWORD
+USER_NAME=${:user-name}
+PROJECT=${:project}
+
+EOF
+
+source localrc
+CURRENT_DIR=`pwd`
+
+VNC_BASE_URL="${:vnc-frontend}"
+if [ -z "`echo $VNC_BASE_URL | egrep https?://`" ]; then
+    VNC_BASE_URL=https://$PUBLIC_ADDRESS:6080/vnc_auto.html
+fi
+
+
+###############################################################################################
+#####  Install Mysql, ntp, MysqlDB and RabbitMQ
+###############################################################################################
+apt-get install -y mysql-server python-mysqldb
+
+mysqladmin -u root password $MYSQLPASS
+/sbin/stop mysql
+
+sed -i 's/127.0.0.1/0.0.0.0/g' /etc/mysql/my.cnf
+service mysql restart
+
+sleep 5
+
+apt-get install -y rabbitmq-server
+
+apt-get install -y ntp
+
+#Comment the ubuntu NTP servers
+sed -i 's/server 0.ubuntu.pool.ntp.org/#server 0.ubuntu.pool.ntp.org/g' /etc/ntp.conf
+sed -i 's/server 1.ubuntu.pool.ntp.org/#server 1.ubuntu.pool.ntp.org/g' /etc/ntp.conf
+sed -i 's/server 2.ubuntu.pool.ntp.org/#server 2.ubuntu.pool.ntp.org/g' /etc/ntp.conf
+sed -i 's/server 3.ubuntu.pool.ntp.org/#server 3.ubuntu.pool.ntp.org/g' /etc/ntp.conf
+
+sed -e 's/server ntp.ubuntu.com/server $PUBLIC_ADDRESS/g' /etc/ntp.conf
+service ntp restart
+
+sleep 1.5
+
+##############################################################################
+## Create MySQL accounts and databases of Nova, Glance, Keystone and Cinder
+##############################################################################
+
+/bin/cat << EOF | /usr/bin/mysql -uroot -p$MYSQLPASS
+DROP DATABASE IF EXISTS keystone;
+DROP DATABASE IF EXISTS glance;
+DROP DATABASE IF EXISTS nova;
+DROP DATABASE IF EXISTS cinder;
+DROP DATABASE IF EXISTS horizon;
+DROP DATABASE IF EXISTS quantum;
+CREATE DATABASE keystone;
+CREATE DATABASE glance;
+CREATE DATABASE nova;
+CREATE DATABASE cinder;
+CREATE DATABASE horizon;
+CREATE DATABASE quantum;
+GRANT ALL ON keystone.* TO 'openstack'@'%'   IDENTIFIED BY '$MYSQLPASS';
+GRANT ALL ON glance.*   TO 'openstack'@'%'   IDENTIFIED BY '$MYSQLPASS';
+GRANT ALL ON nova.*     TO 'openstack'@'%'   IDENTIFIED BY '$MYSQLPASS';
+GRANT ALL ON cinder.*   TO 'openstack'@'%'   IDENTIFIED BY '$MYSQLPASS';
+GRANT ALL ON horizon.*   TO 'openstack'@'%'   IDENTIFIED BY '$MYSQLPASS';
+GRANT ALL ON quantum.*   TO 'openstack'@'%'   IDENTIFIED BY '$MYSQLPASS';
+EOF
+
+###############################################################################################
+#####  Install Keystone
+###############################################################################################
+
+apt-get install -y keystone
+
+service keystone status
+
+CONF=/etc/keystone/keystone.conf
+cp $CONF $CONF.orig
+/bin/sed \
+  -e "s/^#*connection *=.*/connection = mysql:\/\/openstack:$MYSQLPASS@$HOST_IP\/keystone/" \
+	$CONF.orig > $CONF
+#	-e "s/^#* *admin_token *=.*/admin_token = $ADMIN_PASSWORD/" \
+
+service keystone restart
+sleep 1.5
+keystone-manage db_sync
+sleep 1.5
+
+cd $CURRENT_DIR
+source localrc
+chmod +x keystone_basic.sh
+chmod +x keystone_endpoints_basic.sh
+
+./keystone_basic.sh
+./keystone_endpoints_basic.sh
+
+/bin/cat << EOF > creds
+export OS_TENANT_NAME=admin
+export OS_USERNAME=admin
+export OS_PASSWORD=$ADMIN_PASSWORD
+export OS_AUTH_URL="http://$EXT_HOST_IP:5000/v2.0/"
+
+EOF
+
+source creds
+keystone user-list
+
+###############################################################################################
+#####  Install and configure Glance
+###############################################################################################
+
+apt-get install -y glance
+service glance-api status
+service glance-registry status
+
+CONF=/etc/glance/glance-api.conf
+cp $CONF $CONF.orig
+/bin/sed \
+	-e "s#^sql_connection *=.*#sql_connection = mysql://openstack:$MYSQLPASS@$HOST_IP/glance#" \
+	-e 's/^#*flavor *=.*/flavor = keystone/' \
+	$CONF.orig > $CONF
+
+CONF=/etc/glance/glance-api-paste.ini
+cp $CONF $CONF.orig
+sed -e "/delay_auth_decision/a\auth_host = $HOST_IP" \
+	-e "/delay_auth_decision/a\auth_port = 35357" \
+	-e "/delay_auth_decision/a\auth_protocol = http" \
+	-e "/delay_auth_decision/a\admin_tenant_name = service" \
+	-e "/delay_auth_decision/a\admin_user = glance" \
+	-e "/delay_auth_decision/a\admin_password = $ADMIN_PASSWORD" \
+	$CONF.orig > $CONF
+
+#    -e "s/^auth_host *=.*/auth_host = $HOST_IP/" \
+#	-e 's/%SERVICE_TENANT_NAME%/service/' \
+#	-e 's/%SERVICE_USER%/glance/' \
+#	-e "s/%SERVICE_PASSWORD%/$SERVICE_PASSWORD/" \
+#	-e 's[^#* *config_file *=.*[config_file = /etc/glance/glance-api-paste.ini[' \
+#    -e "s/127.0.0.1/$HOST_IP/" \
+#    -e "s/localhost/$HOST_I/" \
+#    -e "s/^rabbit_host *=.*/rabbit_host = 127.0.0.1/" \
+#    -e 's/^notifier_strategy *=.*/notifier_strategy = rabbit/' \
+#    -e "s/^rabbit_host *=.*/rabbit_host = $HOST_IP/" \
+#    -e 's/^rabbit_userid *=.*/rabbit_userid = nova/' \
+#    -e "s/^rabbit_password *=.*/rabbit_password = $RABBIT_PASS/" \
+#    -e "s/^rabbit_virtual_host *=.*/rabbit_virtual_host = \/nova/" \	
+
+CONF=/etc/glance/glance-registry.conf
+cp $CONF $CONF.orig
+/bin/sed \
+	-e "s/^sql_connection *=.*/sql_connection = mysql:\/\/openstack:$MYSQLPASS@$HOST_IP\/glance/" \
+	-e 's/^#*flavor *=.*/flavor=keystone/' \
+	$CONF.orig > $CONF
+
+#    -e "s/127.0.0.1/$HOST_IP/" \
+#    -e "s/localhost/$HOST_IP/" \
+#	-e 's/^#* *config_file *=.*/config_file = \/etc\/glance\/glance-registry-paste.ini/' \
+#    -e "s/^auth_host *=.*/auth_host = $HOST_IP/" \
+#	-e 's/%SERVICE_TENANT_NAME%/service/' \
+#	-e 's/%SERVICE_USER%/glance/' \
+#	-e "s/%SERVICE_PASSWORD%/$ADMIN_PASSWORD/" \
+
+CONF=/etc/glance/glance-registry-paste.ini
+cp $CONF $CONF.orig
+sed -e "/keystoneclient.middleware.auth_token:filter_factory/a\auth_host = $HOST_IP" \
+	-e "/keystoneclient.middleware.auth_token:filter_factory/a\auth_port = 35357" \
+	-e "/keystoneclient.middleware.auth_token:filter_factory/a\auth_protocol = http" \
+	-e "/keystoneclient.middleware.auth_token:filter_factory/a\admin_tenant_name = service" \
+	-e "/keystoneclient.middleware.auth_token:filter_factory/a\admin_user = glance" \
+	-e "/keystoneclient.middleware.auth_token:filter_factory/a\admin_password = $ADMIN_PASSWORD" \
+	$CONF.orig > $CONF
+
+service glance-api restart; service glance-registry restart
+sleep 1.5
+glance-manage db_sync
+service glance-registry restart; service glance-api restart
+sleep 1.5
+
+glance image-create --name ${:image-name} --is-public true --container-format bare --disk-format qcow2 --location ${:image-url}
+glance image-list
+
+###############################################################################################
+#####  Install and configure Quantum
+###############################################################################################
+
+apt-get install -y quantum-server quantum-plugin-openvswitch quantum-plugin-openvswitch-agent dnsmasq quantum-dhcp-agent quantum-l3-agent
+
+#Replace configuration file:
+
+CONF=/etc/quantum/api-paste.ini
+cp $CONF $CONF.orig
+sed -e "/keystoneclient.middleware.auth_token:filter_factory/a\auth_host = $HOST_IP" \
+	-e "/keystoneclient.middleware.auth_token:filter_factory/a\auth_port = 35357" \
+	-e "/keystoneclient.middleware.auth_token:filter_factory/a\auth_protocol = http" \
+	-e "/keystoneclient.middleware.auth_token:filter_factory/a\admin_tenant_name = service" \
+	-e "/keystoneclient.middleware.auth_token:filter_factory/a\admin_user = quantum" \
+	-e "/keystoneclient.middleware.auth_token:filter_factory/a\admin_password = $ADMIN_PASSWORD" \
+	$CONF.orig > $CONF
+
+CONF=/etc/quantum/plugins/openvswitch/ovs_quantum_plugin.ini
+cp $CONF $CONF.orig
+sed -e "s/^sql_connection *=.*/sql_connection = mysql:\/\/openstack:$MYSQLPASS@$HOST_IP\/quantum/" \
+	-e "s/^# firewall_driver *=.*/firewall_driver = quantum.agent.linux.iptables_firewall.OVSHybridIptablesFirewallDriver/" \
+	-e "/^# Example: bridge_mappings/a\tenant_network_type = gre" \
+	-e "/^# Example: bridge_mappings/a\tunnel_id_ranges = 1:1000" \
+	-e "/^# Example: bridge_mappings/a\integration_bridge = br-int" \
+	-e "/^# Example: bridge_mappings/a\tunnel_bridge = br-tun" \
+	-e "/^# Example: bridge_mappings/a\local_ip = $HOST_IP" \
+	-e "/^# Example: bridge_mappings/a\enable_tunneling = True" \
+	$CONF.orig > $CONF
+
+CONF=/etc/quantum/metadata_agent.ini
+cp $CONF $CONF.orig
+sed -e "s/^auth_url *=.*/auth_url = http:\/\/$HOST_IP:35357\/v2.0/" \
+	-e 's/%SERVICE_TENANT_NAME%/service/' \
+	-e 's/%SERVICE_USER%/quantum/' \
+	-e "s/%SERVICE_PASSWORD%/$ADMIN_PASSWORD/" \
+	-e "s/^# nova_metadata_ip *=.*/nova_metadata_ip = 127.0.0.1/" \
+	-e "s/^# nova_metadata_port *=.*/nova_metadata_port = 8775/" \
+	-e "s/^# metadata_proxy_shared_secret *=.*/metadata_proxy_shared_secret = helloOpenStack/" \
+	$CONF.orig > $CONF
+
+CONF=/etc/quantum/quantum.conf
+cp $CONF $CONF.orig
+sed -e "s/^auth_host *=.*/auth_host = $HOST_IP/" \
+	-e 's/%SERVICE_TENANT_NAME%/service/' \
+	-e 's/%SERVICE_USER%/quantum/' \
+	-e "s/%SERVICE_PASSWORD%/$ADMIN_PASSWORD/" \
+	$CONF.orig > $CONF
+
+echo "Giving quantum user passwordless sudo privileges"
+# UEC images ``/etc/sudoers`` does not have a ``#includedir``, add one
+grep -q "^#includedir.*/etc/sudoers.d" /etc/sudoers ||
+    echo "#includedir /etc/sudoers.d" >> /etc/sudoers
+( umask 226 && echo "quantum ALL=(ALL) NOPASSWD:ALL" \
+    > /etc/sudoers.d/quantum_sudoers )
+
+
+cd /etc/init.d/; for i in $( ls quantum-* ); do sudo service $i restart; done
+sleep 1.5
+service dnsmasq restart
+sleep 1.5
+
+
+###############################################################################################
+#####  Install and configure Nova
+###############################################################################################
+
+apt-get -y install cpu-checker
+#kvm-ok
+#sleep 1.5
+apt-get install -y kvm libvirt-bin pm-utils
+
+CONF=/etc/libvirt/qemu.conf
+cp $CONF $CONF.orig
+
+/bin/cat << EOF >> $CONF
+cgroup_device_acl = [
+"/dev/null", "/dev/full", "/dev/zero",
+"/dev/random", "/dev/urandom",
+"/dev/ptmx", "/dev/kvm", "/dev/kqemu",
+"/dev/rtc", "/dev/hpet","/dev/net/tun"
+]
+EOF
+
+service dbus restart && service libvirt-bin restart
+sleep 1.5
+virsh net-destroy default
+virsh net-undefine default
+
+CONF=/etc/libvirt/libvirtd.conf
+cp $CONF $CONF.orig
+/bin/sed \
+	-e 's/^#listen_tls *=.*/listen_tls = 0/' \
+    -e 's/^#listen_tcp *=.*/listen_tcp = 1/' \
+    -e 's/^#auth_tcp *=.*/auth_tcp = "none"/' \
+    $CONF.orig > $CONF
+
+CONF=/etc/init/libvirt-bin.conf
+cp $CONF $CONF.orig
+/bin/sed \
+	-e 's/^env libvirtd_opts=.*/env libvirtd_opts="-d -l"/' \
+	$CONF.orig > $CONF
+
+CONF=/etc/default/libvirt-bin
+cp $CONF $CONF.orig
+/bin/sed \
+	-e 's/^libvirtd_opts=.*/libvirtd_opts="-d -l"/' \
+	$CONF.orig > $CONF
+
+service dbus restart && service libvirt-bin restart
+sleep 1.5
+
+#Install Nova-* services
+apt-get install -y nova-api nova-cert novnc nova-consoleauth nova-scheduler nova-novncproxy nova-doc nova-conductor nova-compute-kvm
+
+cd /etc/init.d/; for i in $( ls nova-* ); do service $i status; cd; done
+
+CONF=/etc/nova/api-paste.ini
+cp $CONF $CONF.orig
+/bin/sed \
+    -e "s/^auth_host *=.*/auth_host = $HOST_IP/" \
+	-e 's/%SERVICE_TENANT_NAME%/service/' \
+	-e 's/%SERVICE_USER%/nova/' \
+	-e "s/%SERVICE_PASSWORD%/$ADMIN_PASSWORD/" \
+	-e "s/^#signing_dir *=.*/signing_dirname = \/tmp\/keystone-signing-nova/" \
+	$CONF.orig > $CONF
+  
+#Generate certificate to use for nova
+cd $CURRENT_DIR
+chmod +x generate_cert.py
+mkdir -p /etc/nova/ssl
+./generate_cert.py /etc/nova/ssl nova
+chown -R nova: /etc/nova/ssl
+chmod -R 700 /etc/nova/ssl
+
+#Configure nova
+
+CONF=/etc/nova/nova.conf
+cp $CONF $CONF.orig
+/bin/cat << EOF > $CONF
+[DEFAULT]
+logdir=/var/log/nova
+state_path=/var/lib/nova
+lock_path=/run/lock/nova
+verbose=True
+api_paste_config=/etc/nova/api-paste.ini
+compute_scheduler_driver=nova.scheduler.simple.SimpleScheduler
+rabbit_host=$HOST_IP
+nova_url=http://$HOST_IP:8774/v1.1/
+sql_connection=mysql://openstack:$MYSQLPASS@$HOST_IP/nova
+root_helper=sudo nova-rootwrap /etc/nova/rootwrap.conf
+
+# Auth
+use_deprecated_auth=false
+auth_strategy=keystone
+
+# Imaging service
+glance_api_servers=$HOST_IP:9292
+image_service=nova.image.glance.GlanceImageService
+
+# Vnc configuration
+novnc_enabled=true
+ssl_only=true
+cert=/etc/nova/ssl/nova.crt
+key=/etc/nova/ssl/nova.key
+novncproxy_base_url=$VNC_BASE_URL
+novncproxy_port=6080
+vncserver_proxyclient_address=$HOST_IP
+vncserver_listen=0.0.0.0
+
+# Network settings
+network_api_class=nova.network.quantumv2.api.API
+quantum_url=http://$HOST_IP:9696
+quantum_auth_strategy=keystone
+quantum_admin_tenant_name=service
+quantum_admin_username=quantum
+quantum_admin_password=$SERVICE_PASSWORD
+quantum_admin_auth_url=http://$HOST_IP:35357/v2.0
+libvirt_vif_driver=nova.virt.libvirt.vif.LibvirtHybridOVSBridgeDriver
+linuxnet_interface_driver=nova.network.linux_net.LinuxOVSInterfaceDriver
+#If you want Quantum + Nova Security groups
+firewall_driver=nova.virt.firewall.NoopFirewallDriver
+security_group_api=quantum
+#If you want Nova Security groups only, comment the two lines above and uncomment line -1-.
+#-1-firewall_driver=nova.virt.libvirt.firewall.IptablesFirewallDriver
+
+#Metadata
+service_quantum_metadata_proxy = True
+quantum_metadata_proxy_shared_secret = helloOpenStack
+metadata_host = $HOST_IP
+metadata_listen = 127.0.0.1
+metadata_listen_port = 8775
+
+# Compute #
+compute_driver=libvirt.LibvirtDriver
+
+# Cinder #
+volume_api_class=nova.volume.cinder.API
+osapi_volume_listen_port=5900
+EOF
+
+CONF=/etc/nova/nova-compute.conf
+cp $CONF $CONF.orig
+/bin/cat << EOF > $CONF
+[DEFAULT]
+libvirt_type=qemu
+libvirt_ovs_bridge=br-int
+libvirt_vif_type=ethernet
+libvirt_vif_driver=nova.virt.libvirt.vif.LibvirtHybridOVSBridgeDriver
+libvirt_use_virtio_for_bridges=True
+EOF
+
+nova-manage db sync
+cd /etc/init.d/; for i in $( ls nova-* ); do sudo service $i restart; done
+sleep 1.5
+nova-manage service list
+sleep 1.5
+
+
+###############################################################################################
+#####  Install and configure Cinder
+###############################################################################################
+
+apt-get install -y cinder-api cinder-scheduler cinder-volume iscsitarget open-iscsi iscsitarget-dkms
+sed -i 's/false/true/g' /etc/default/iscsitarget
+
+service iscsitarget start
+service open-iscsi start
+
+
+CONF=/etc/cinder/cinder.conf
+cp $CONF $CONF.orig
+/bin/cat << EOF > $CONF
+[DEFAULT]
+rootwrap_config = /etc/cinder/rootwrap.conf
+api_paste_confg = /etc/cinder/api-paste.ini
+iscsi_helper = ietadm
+volume_name_template = volume-%s
+volume_group = cinder-volumes
+verbose = True
+auth_strategy = keystone
+state_path = /var/lib/cinder
+lock_path = /var/lock/cinder
+volumes_dir = /var/lib/cinder/volumes
+# LOGGING
+log_file=cinder.log
+log_dir=/var/log/cinder
+
+# OSAPI
+osapi_volume_extension = cinder.api.openstack.volume.contrib.standard_extensions
+osapi_max_limit = 2000
+
+# RABBIT
+#rabbit_host=$HOST_IP
+#rabbit_virtual_host=/nova
+#rabbit_userid=nova
+#rabbit_password=$RABBIT_PASS
+
+# MYSQL
+sql_connection = mysql://openstack:$MYSQLPASS@$HOST_IP/cinder
+
+debug = True
+EOF
+
+CONF=/etc/cinder/api-paste.ini
+cp $CONF $CONF.orig
+/bin/sed \
+    -e "s/^service_host *=.*/service_host = $PUBLIC_ADDRESS/" \
+    -e "s/^auth_host *=.*/auth_host = $HOST_IP/" \
+	-e 's/%SERVICE_TENANT_NAME%/service/' \
+	-e 's/%SERVICE_USER%/cinder/' \
+	-e "s/%SERVICE_PASSWORD%/$ADMIN_PASSWORD/" \
+	$CONF.orig > $CONF
+
+cinder-manage db sync
+
+CINDER_VOL_DIR=/var/lib/cinder
+cd $CINDER_VOL_DIR
+dd if=/dev/zero of=cinder-volumes bs=1 count=0 seek=2G
+losetup /dev/loop2 cinder-volumes
+
+#Skip this part
+#fdisk /dev/loop2
+#n
+#p
+#1
+#ENTER
+#ENTER
+#t
+#8e
+#w
+
+pvcreate /dev/loop2
+vgcreate cinder-volumes /dev/loop2
+
+/bin/cat << EOF > /etc/init.d/cinder-setup-backing-file
+losetup /dev/loop2 $CINDER_VOL_DIR/cinder-volumes
+exit 0
+EOF
+
+sudo chmod 755 /etc/init.d/cinder-setup-backing-file
+sudo ln -s /etc/init.d/cinder-setup-backing-file /etc/rc2.d/S10cinder-setup-backing-file
+cd $CURRENT_DIR
+
+###############################################################################################
+#####  Restore user access on files
+###############################################################################################
+for i in nova keystone glance cinder
+do
+	chown -R $i /etc/$i
+done
+rm -r /var/log/cinder/cinder*
+cd /etc/init.d/; for i in $( ls cinder-* ); do sudo service $i restart; done
+sleep 1.5
+cd /etc/init.d/; for i in $( ls cinder-* ); do sudo service $i status; done
+sleep 1.5
+
+###############################################################################################
+#####  Install Horizon
+###############################################################################################
+
+apt-get -y install openstack-dashboard memcached
+dpkg --purge openstack-dashboard-ubuntu-theme
+service apache2 restart; service memcached restart
+
+###############################################################################################
+#####  Configure quantum network
+###############################################################################################
+apt-get install -y python-netaddr
+cd $CURRENT_DIR
+
+function get_id () {
+    echo `"$@" | awk '/ id / { print $4 }'`
+}
+
+source creds
+MEMDER_ROLE=$(keystone role-list | grep " Member" | awk '{print $2}')
+ADMIN_ROLE=$(keystone role-list | grep " admin" | awk '{print $2}')
+L3_AGENT_ID=$(quantum agent-list | grep " L3 agent" | awk '{print $2}')
+PROJECT_ID=$(get_id keystone tenant-create --name $PROJECT)
+USER_ID=$(get_id keystone user-create --name=$USER_NAME --pass=$USER_PASSWORD --tenant-id $PROJECT_ID --email=$USER_NAME@domain.com)
+keystone user-role-add --tenant-id $PROJECT_ID  --user-id $USER_ID --role-id $MEMDER_ROLE
+quantum net-create --tenant-id $PROJECT_ID net_$PROJECT
+SUBNET_ID=$(get_id quantum subnet-create --tenant-id $PROJECT_ID net_$PROJECT 50.50.1.0/24 --dns_nameservers list=true 8.8.8.7 8.8.8.8)
+ROUTER_ID=$(get_id quantum router-create --tenant-id $PROJECT_ID router_$PROJECT)
+
+quantum l3-agent-router-add $L3_AGENT_ID router_$PROJECT
+quantum router-interface-add $ROUTER_ID $SUBNET_ID
+
+cd /etc/init.d/; for i in $( ls quantum-* ); do sudo service $i restart; done
+sleep 8
+cd $CURRENT_DIR
+chmod +x network.py
+EXT_NET_ID=$(get_id quantum net-create --tenant-id $ADMIN_ROLE ext_net --router:external=True)
+
+NETWORK=`./network.py $IPv4 $MASK | cut -d' ' -f2`
+POOL_START=`./network.py $IPv4 $MASK | cut -d' ' -f3`
+POOL_END=`./network.py $IPv4 $MASK | cut -d' ' -f4`
+quantum subnet-create --tenant-id $ADMIN_ROLE --allocation-pool start=$POOL_START,end=$POOL_END --gateway $IPv4 ext_net $NETWORK --enable_dhcp=False
+
+quantum router-gateway-set $ROUTER_ID $EXT_NET_ID
+
+/bin/cat << EOF > creds_$PROJECT
+
+export OS_TENANT_NAME=$PROJECT
+export OS_USERNAME=$USER_NAME
+export OS_PASSWORD=$USER_PASSWORD
+export OS_AUTH_URL="http://$PUBLIC_ADDRESS:5000/v2.0/"
+
+EOF
+
+source creds_$PROJECT
+
+nova --no-cache secgroup-add-rule default icmp -1 -1 0.0.0.0/0
+nova --no-cache secgroup-add-rule default tcp 22 22 0.0.0.0/0
+
+quantum floatingip-create ext_net
+
+#End Installation ...
+echo "done" > $CURRENT_DIR/.installed

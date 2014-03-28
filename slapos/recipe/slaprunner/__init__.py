@@ -40,8 +40,8 @@ class Recipe(GenericBaseRecipe):
     self.partition_amount = options['partition-amount'].strip()
     self.cloud9_url = options.get('cloud9-url', '').strip()
     self.log_file = os.path.join(options['log_dir'].strip(), 'slaprunner.log')
-    # Set slaprunner access URL
-    options['access-url'] = 'http://[%s]:%s' % (self.ipv6, self.runner_port)
+    # Set slaprunner access URL, CLN Beware ipv6 access is made throught nginx
+    options['access-url'] = 'https://[%s]:%s' % (self.ipv6, self.runner_port)
 
   def install(self):
     path_list = []
@@ -49,7 +49,7 @@ class Recipe(GenericBaseRecipe):
     configuration = dict(
         software_root=self.software_directory,
         instance_root=self.instance_directory,
-        master_url='http://%s:%s/' % (self.ipv4, self.proxy_port),
+        master_url='http://%s:%s' % (self.ipv4, self.proxy_port),
         computer_id='slaprunner',
         partition_amount=self.partition_amount,
         slapgrid_sr=self.options['slapgrid_sr'],
@@ -62,7 +62,7 @@ class Recipe(GenericBaseRecipe):
         etc_dir=self.options['etc_dir'],
         run_dir=self.options['run_dir'],
         log_dir=self.options['log_dir'],
-        runner_host=self.ipv6,
+        runner_host=self.ipv4,
         runner_port=self.runner_port,
         ipv4_address=self.ipv4,
         ipv6_address=self.ipv6,
@@ -132,7 +132,7 @@ class Test(GenericBaseRecipe):
         etc_dir=self.options['etc_dir'],
         run_dir=self.options['etc_dir'],
         log_dir=self.workdir,
-        runner_host=self.ipv6,
+        runner_host=self.ipv4,
         runner_port=self.runner_port,
         ipv4_address=self.ipv4,
         ipv6_address=self.ipv6,

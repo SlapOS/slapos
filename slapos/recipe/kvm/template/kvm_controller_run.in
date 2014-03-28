@@ -1,4 +1,4 @@
-#!%(python_path)s
+#!%(python-path)s
 # BEWARE: This file is operated by slapgrid
 # BEWARE: It will be overwritten automatically
 
@@ -6,12 +6,17 @@
 import socket
 import time
 
+# XXX: to be factored with slapos.toolbox qemu qmp wrapper.
+
+socket_path = '%(socket-path)s'
+vnc_password = '%(vnc-passwd)s'
+
 # Connect to KVM qmp socket
 so = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
 connected = False
 while not connected:
   try:
-    so.connect('%(socket_path)s')
+    so.connect(socket_path)
   except socket.error:
     time.sleep(1)
   else:
@@ -25,7 +30,7 @@ data = so.recv(1024)
 # Set VNC password
 so.send('{ "execute": "change", ' \
         '"arguments": { "device": "vnc", "target": "password", ' \
-        '               "arg": "%(vnc_passwd)s" } }')
+        '               "arg": "' + vnc_password + '" } }')
 data = so.recv(1024)
 
 # Finish

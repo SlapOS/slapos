@@ -1,0 +1,36 @@
+#!${buildout:executable}
+import cgi
+import cgitb
+import os
+import subprocess
+import sys
+cgitb.enable()
+
+print "Content-Type: text/html"
+print    
+
+form = cgi.FieldStorage()
+if "password" not in form:
+  print """<html>
+<body>
+  <h1>This is takeover web interface.</h1>
+  <p>Calling takeover will stop and freeze the current main instance, and make this clone instance the new main instance, replacing the old one.</p>
+  <p><b>Warning: submit the form only if you understand what you are doing.</b></p>
+  <p>Note: the password asked here can be found within the parameters of your SlapOS instance page.</p>
+  <form action="/">
+    Password: <input type="text" name="password">
+    <input type="submit" value="Take over" style="background: red;">
+  </form>
+</body>
+</html>"""
+  sys.exit(0)
+
+if form['password'].value != '${:password}':
+  print "<H1>Error</H1>"
+  print "Password is invalid."
+  sys.exit(1)
+
+# XXX hardcoded location
+result = subprocess.check_output([os.path.expanduser("~/bin/takeover")], stderr=subprocess.STDOUT)
+print 'Success.'
+print '<pre>%s</pre>' % result

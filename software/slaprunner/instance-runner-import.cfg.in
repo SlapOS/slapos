@@ -2,11 +2,25 @@
 extends = ${template-runner:output}
           ${pbsready-import:output}
 
-
 parts +=
-    slaprunner
+  nginx_conf
+  nginx-launcher
+  cloud9
+  certificate-authority
+  ca-nginx
+  ca-node-frontend
+  slaprunner
+  test-runner
+  sshkeys-dropbear-runner
+  dropbear-server-add-authorized-key
+  sshkeys-authority
+  slaprunner-promise
+  cloud9-promise
+  dropbear-promise
+  symlinks
+  nginx-promise
 # have to repeat the next one, as it's not inherited from pbsready-import
-    import-on-notification
+  import-on-notification
 
 [importer]
 recipe = slapos.cookbook:slaprunner.import

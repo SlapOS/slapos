@@ -1,9 +1,77 @@
 Changes
 =======
 
-0.78.4.dev (2013-07-18)
------------------------
+0.84.2 (2013-10-04)
+-------------------
 
+ * sshkeys_authority: don't allow to return None as parameter. [9e340a0]
+
+0.84.1 (2013-10-03)
+-------------------
+
+ * Resiliency: PBS: promise should NOT bang. [64886cd]
+
+0.84 (2013-09-30)
+-----------------
+
+ * Request.py: improve instance-state handling. [ba5f160]
+ * Resilient recipe: remove hashing of urls/names. [ee2aec8]
+ * Resilient pbs recipe: recover from rdiff-backup failures. [be7f2fc, 92ee0c3]
+ * Resilience: add pidfiles in PBS. [0b3ad5c]
+ * Resilient: don't hide exception, print it. [05b3d64, d2b0494]
+ * Resiliency: Only keep 10 increments of backup. [4e89e33]
+ * KVM SR: add fallback in case of download exception. [de8d796]
+ * slaprunner: don't check certificate for importer. [53dc772]
+
+0.83.1 (2013-09-10)
+------------------
+
+ * slapconfiguration: fixes previous releasei (don't encode tap_set because it's not a string). [Cedric de Saint Martin]
+
+0.83 (2013-09-10)
+-----------------
+
+ * slaprunner recipe: remove trailing / from master_url. [Cedric de Saint Martin]
+ * librecipe: add pidfile option for singletons. [Cedric de Saint Martin]
+ * Resiliency: Use new pidfile option. [Cedric de Saint Martin]
+ * Fix request.py for slave instances. [Cedric de Saint Martin]
+ * slapconfiguration recipe: cast some parameters from unicode to str. [Cedric de Saint Martin]
+
+0.82 (2013-08-30)
+-----------------
+
+ * Certificate Authority: Can receice certificate to install. [Cedric Le Ninivin]
+ * Squid: Add squid recipe. [Romain Courteaud]
+ * Request: Trasmit instace state to requested instances. [Benjamin Blanc / Cédric Le Ninivin]
+ * Slapconfiguration: Now return instance state. [Cédric Le Ninivin]
+ * Apache Frontend: Remove recipe
+
+0.81 (2013-08-12)
+-----------------
+
+ * KVM SR: implement resiliency test. [Cedric de Saint Martin]
+
+0.80 (2013-08-06)
+----------------
+
+ * Add a simple readline recipe. [f4fce7e]
+
+0.79 (2013-08-06)
+-----------------
+
+ * KVM SR: Add support for NAT based networking (User Mode Network). [627895fe35]
+ * KVM SR: add virtual-hard-drive-url support. [aeb5df40cd, 8ce5a9aa1d0, a5034801aa9]
+ * Fix regression in GenericBaseRecipe.generatePassword. [3333b07d33c]
+
+0.78.5 (2013-08-06)
+-------------------
+
+ * check_url_available: add option to check secure links [6cbce4d8231]
+
+0.78.4 (2013-08-06)
+-------------------
+
+ * slapos.cookbook:slaprunner: Update to use https. [Cedric Le Ninivin]
 
 
 0.78.3 (2013-07-18)

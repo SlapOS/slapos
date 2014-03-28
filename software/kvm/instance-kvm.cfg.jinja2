@@ -1,0 +1,247 @@
+#############################
+#
+# Instanciate kvm
+#
+#############################
+[buildout]
+parts =
+  certificate-authority
+  publish-connection-information
+  kvm-vnc-promise
+  kvm-disk-image-corruption-promise
+  websockify-sighandler
+  novnc-promise
+#  kvm-monitor
+  cron
+#  cron-entry-monitor
+  frontend-promise
+
+eggs-directory = {{ eggs_directory }}
+develop-eggs-directory = {{ develop_eggs_directory }}
+offline = true
+
+[directory]
+recipe = slapos.cookbook:mkdirectory
+etc = ${buildout:directory}/etc
+bin = ${buildout:directory}/bin
+srv = ${buildout:directory}/srv
+var = ${buildout:directory}/var
+log = ${:var}/log
+scripts = ${:etc}/run
+services = ${:etc}/service
+promises = ${:etc}/promise
+novnc-conf = ${:etc}/novnc
+run = ${:var}/run
+ca-dir = ${:srv}/ssl
+cron-entries = ${:etc}/cron.d
+crontabs = ${:etc}/crontabs
+cronstamps = ${:etc}/cronstamps
+
+[create-mac]
+recipe = slapos.cookbook:generate.mac
+storage-path = ${directory:srv}/mac
+
+[gen-passwd]
+recipe = slapos.cookbook:generate.password
+storage-path = ${directory:srv}/passwd
+bytes = 8
+
+
+[kvm-instance]
+# XXX-Cedric: change "KVM" recipe to simple "create wrappers". No need for this
+# Specific code. It needs Jinja.
+recipe = slapos.cookbook:kvm
+
+vnc-passwd = ${gen-passwd:passwd}
+
+ipv4 = ${slap-network-information:local-ipv4}
+ipv6 = ${slap-network-information:global-ipv6}
+vnc-ip = ${:ipv4}
+
+vnc-port = 5901
+
+# XXX-Cedric: should be named "default-cdrom-iso"
+default-disk-image = {{ debian_amd64_netinst_location }}
+nbd-host = ${slap-parameter:nbd-host}
+nbd-port = ${slap-parameter:nbd-port}
+nbd2-host = ${slap-parameter:nbd2-host}
+nbd2-port = ${slap-parameter:nbd2-port}
+
+tap-interface = ${slap-network-information:network-interface}
+
+disk-path = ${directory:srv}/virtual.qcow2
+disk-size = ${slap-parameter:disk-size}
+disk-type = ${slap-parameter:disk-type}
+
+socket-path = ${directory:var}/qmp_socket
+pid-file-path = ${directory:run}/pid_file
+
+smp-count = ${slap-parameter:cpu-count}
+ram-size = ${slap-parameter:ram-size}
+mac-address = ${create-mac:mac-address}
+
+# XXX-Cedric: should be named runner-wrapper-path and controller-wrapper-path
+runner-path = ${directory:services}/kvm
+controller-path = ${directory:scripts}/kvm_controller
+
+use-tap = ${slap-parameter:use-tap}
+nat-rules = ${slap-parameter:nat-rules}
+6tunnel-wrapper-path = ${directory:services}/6tunnel
+
+virtual-hard-drive-url = ${slap-parameter:virtual-hard-drive-url}
+virtual-hard-drive-md5sum = ${slap-parameter:virtual-hard-drive-md5sum}
+
+shell-path = {{ dash_executable_location }}
+qemu-path =  {{ qemu_executable_location }}
+qemu-img-path = {{ qemu_img_executable_location }}
+6tunnel-path = {{ sixtunnel_executable_location }}
+
+
+[kvm-vnc-promise]
+recipe = slapos.cookbook:check_port_listening
+path = ${directory:promises}/vnc_promise
+hostname = ${kvm-instance:vnc-ip}
+port = ${kvm-instance:vnc-port}
+
+[kvm-disk-image-corruption-promise]
+# Check that disk image is not corrupted
+recipe = collective.recipe.template
+input = inline:#!/bin/sh
+  ${kvm-instance:qemu-img-path} check ${kvm-instance:disk-path}
+output = ${directory:promises}/kvm-disk-image-corruption
+mode = 700
+
+
+[novnc-instance]
+recipe = slapos.cookbook:novnc
+path = ${ca-novnc:executable}
+ip = ${slap-network-information:global-ipv6}
+port = 6080
+vnc-ip = ${kvm-instance:vnc-ip}
+vnc-port = ${kvm-instance:vnc-port}
+novnc-location = {{ novnc_location }}
+websockify-path = {{ websockify_executable_location }}
+ssl-key-path = ${ca-novnc:key-file}
+ssl-cert-path = ${ca-novnc:cert-file}
+
+[websockify-sighandler]
+recipe = slapos.cookbook:signalwrapper
+wrapper-path = ${directory:services}/websockify
+wrapped-path = ${novnc-instance:path}
+
+[certificate-authority]
+recipe = slapos.cookbook:certificate_authority
+openssl-binary = {{ openssl_executable_location }}
+ca-dir = ${directory:ca-dir}
+requests-directory = ${cadirectory:requests}
+wrapper = ${directory:services}/certificate_authority
+ca-private = ${cadirectory:private}
+ca-certs = ${cadirectory:certs}
+ca-newcerts = ${cadirectory:newcerts}
+ca-crl = ${cadirectory:crl}
+
+[cadirectory]
+recipe = slapos.cookbook:mkdirectory
+requests = ${directory:ca-dir}/requests/
+private = ${directory:ca-dir}/private/
+certs = ${directory:ca-dir}/certs/
+newcerts = ${directory:ca-dir}/newcerts/
+crl = ${directory:ca-dir}/crl/
+
+[ca-novnc]
+<= certificate-authority
+recipe = slapos.cookbook:certificate_authority.request
+key-file = ${directory:novnc-conf}/novnc.key
+cert-file = ${directory:novnc-conf}/novnc.crt
+executable = ${directory:bin}/novnc
+wrapper = ${directory:bin}/websockify
+
+[novnc-promise]
+recipe = slapos.cookbook:check_port_listening
+path = ${directory:promises}/novnc_promise
+hostname = ${novnc-instance:ip}
+port = ${novnc-instance:port}
+
+
+#----------------
+#--
+#-- Deploy cron.
+
+[cron]
+recipe = slapos.cookbook:cron
+dcrond-binary = {{ dcron_executable_location }}
+cron-entries = ${directory:cron-entries}
+crontabs = ${directory:crontabs}
+cronstamps = ${directory:cronstamps}
+catcher = ${cron-simplelogger:wrapper}
+binary = ${directory:services}/crond
+
+[cron-simplelogger]
+recipe = slapos.cookbook:simplelogger
+wrapper = ${directory:bin}/cron_simplelogger
+log = ${directory:log}/crond.log
+
+#----------------
+#--
+#-- Deploy frontend.
+
+[request-slave-frontend]
+recipe = slapos.cookbook:requestoptional
+software-url = ${slap-parameter:frontend-software-url}
+server-url = ${slap-connection:server-url}
+key-file = ${slap-connection:key-file}
+cert-file = ${slap-connection:cert-file}
+computer-id = ${slap-connection:computer-id}
+partition-id = ${slap-connection:partition-id}
+name = VNC Frontend
+software-type = ${slap-parameter:frontend-software-type}
+slave = true
+config = host port
+config-host = ${novnc-instance:ip}
+config-port = ${novnc-instance:port}
+return = url resource port domainname
+sla = instance_guid
+sla-instance_guid = ${slap-parameter:frontend-instance-guid}
+
+[frontend-promise]
+recipe = slapos.cookbook:check_url_available
+path = ${directory:promises}/frontend_promise
+url = ${publish-connection-information:url}
+dash_path = {{ dash_executable_location }}
+curl_path = {{ curl_executable_location }}
+
+
+[publish-connection-information]
+recipe = slapos.cookbook:publish
+backend-url = https://[${novnc-instance:ip}]:${novnc-instance:port}/vnc_auto.html?host=[${novnc-instance:ip}]&port=${novnc-instance:port}&encrypt=1&password=${kvm-instance:vnc-passwd}
+url = ${request-slave-frontend:connection-url}/vnc_auto.html?host=${request-slave-frontend:connection-domainname}&port=${request-slave-frontend:connection-port}&encrypt=1&path=${request-slave-frontend:connection-resource}&password=${kvm-instance:vnc-passwd}
+# Publish NAT port mapping status
+# XXX: hardcoded value from [slap-parameter]
+{% set nat_rule_list = slapparameter_dict.get('nat-rules', '22 80 443') %}
+{% for port in nat_rule_list.split(' ') -%}
+  {% set external_port = 10000 + port|int() -%}
+  nat-rule-port-{{port}} = ${slap-network-information:global-ipv6} : {{external_port}}
+{% endfor -%}
+
+
+[slap-parameter]
+# Default values if not specified
+frontend-software-type = frontend
+frontend-software-url = http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.92:/software/kvm/software.cfg
+frontend-instance-guid =
+nbd-port = 1024
+nbd-host =
+nbd2-port = 1024
+nbd2-host =
+
+ram-size = 1024
+disk-size = 10
+disk-type = virtio
+
+cpu-count = 1
+
+nat-rules = 22 80 443
+use-tap = False
+
+virtual-hard-drive-url =
+virtual-hard-drive-md5sum =

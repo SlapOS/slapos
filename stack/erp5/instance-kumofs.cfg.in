@@ -34,8 +34,8 @@ gateway-wrapper = ${basedirectory:services}/kumofs_gateway
 manager-wrapper = ${basedirectory:services}/kumofs_manager
 server-wrapper = ${basedirectory:services}/kumofs_server
 
-# Paths: Data
-data-directory = ${directory:kumofs-data}
+# Paths: Data (with 10M buckets and HDBTLARGE option)
+data-path = ${directory:kumofs-data}/kumodb.tch#bnum=10485760#opts=l
 
 # Paths: Logs
 kumo-gateway-log = ${basedirectory:log}/kumo-gateway.log

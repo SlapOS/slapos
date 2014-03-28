@@ -2,8 +2,35 @@
 
 extends = ${pbsready:output}
 
-parts +=
+# Explicitely define extended parts from pbsready
+# then add local parts
+parts =
+  resiliency
+  logrotate
+  logrotate-entry-cron
+  logrotate-entry-equeue
+  cron
+  cron-entry-logrotate
+  sshkeys-authority
+  dropbear-server
+  sshkeys-dropbear
+  resilient-sshkeys-dropbear-promise
+  dropbear-server-pbs-authorized-key
+  notifier
+
   cron-entry-backup
+
+[resilient-directory]
+recipe = slapos.cookbook:mkdirectory
+home = $${buildout:directory}
+var = $${:home}/var
+pid = $${:var}/pid
+
+# Define port of ssh server. It has to be different from import so that it
+# supports export/import using same IP (slaprunner, slapos-in-partition,
+# ipv4...)
+[dropbear-server]
+port = 22221
 
 [resilient-publish-connection-parameter]
 notification-id = http://[$${notifier:host}]:$${notifier:port}/get/$${notifier-exporter:name}
@@ -18,6 +45,7 @@ title = Dumping $${slap-parameter:namebase}
 executable = $${exporter:wrapper}
 wrapper = $${rootdirectory:bin}/exporter
 notify = $${slap-parameter:notify}
+pidfile = $${resilient-directory:pid}/$${:name}.pid
 
 [cron-entry-backup]
 # Schedule the periodic database dump.
@@ -25,5 +53,10 @@ notify = $${slap-parameter:notify}
 <= cron
 recipe = slapos.cookbook:cron.d
 name = backup
-frequency = 0 * * * *
+frequency = $${slap-parameter:resiliency-backup-periodicity}
 command = $${notifier-exporter:wrapper}
+
+[slap-parameter]
+# In cron.d format (i.e things like */15 * * * * are accepted).
+resiliency-backup-periodicity = 0 0 * * *
+

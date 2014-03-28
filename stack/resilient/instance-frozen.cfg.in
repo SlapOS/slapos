@@ -1,2 +1,6 @@
 [buildout]
-  parts = 
+eggs-directory = ${buildout:eggs-directory}
+develop-eggs-directory = ${buildout:develop-eggs-directory}
+offline = true
+parts = 
+

@@ -33,6 +33,7 @@ import sys
 import inspect
 import re
 import shutil
+from textwrap import dedent
 import urllib
 import urlparse
 
@@ -129,10 +130,14 @@ class GenericBaseRecipe(object):
     return script
 
   def createWrapper(self, name, command, parameters, comments=[],
-        parameters_extra=False, environment=None):
+      parameters_extra=False, environment=None,
+      pidfile=None
+  ):
     """
     Creates a very simple (one command) shell script for process replacement.
     Takes care of quoting.
+    if pidfile parameter is specified, then it will make the wrapper a singleton,
+    accepting to run only if no other instance is running.
     """
 
     lines = [ '#!/bin/sh' ]
@@ -143,6 +148,21 @@ class GenericBaseRecipe(object):
     if environment:
       for key in environment:
         lines.append('export %s=%s' % (key, environment[key]))
+
+    if pidfile:
+      lines.append(dedent("""\
+          # Check for other instances
+          pidfile=%s
+          if [ -e $pidfile ]; then
+            pid=$(cat $pidfile)
+            if [[ ! -z $(ps -p "$pid" | grep $(basename %s)) ]]; then
+              echo "Already running with pid $pid."
+              exit 1
+            else
+              rm $pidfile
+            fi
+          fi
+          echo $$ > $pidfile""" % (pidfile, command)))
 
     lines.append('exec %s' % shlex.quote(command))
 
@@ -183,17 +203,13 @@ class GenericBaseRecipe(object):
         'template/%s' % template_name)
 
   def generatePassword(self, len_=32):
-    """
-    The purpose of this method is to generate a password which doesn't change
-    from one execution to the next, so the generated password doesn't change
-    on each slapgrid-cp execution.
-
-    Currently, it returns a hardcoded password because no decision has been
-    taken on where a generated password should be kept (so it is generated
-    once only).
-    """
-    # TODO: implement a real password generator which remember the last
-    # call.
+    # TODO: Consider having generate.password recipe inherit this class,
+    #       so that it can be easily inheritable.
+    #       In the long-term, it's probably better that passwords are provided
+    #       by software requesters, to avoid keeping unhashed secrets in
+    #       partitions when possible.
+    self.logger.warning("GenericBaseRecipe.generatePassword is deprecated."
+                        " Use generate.password recipe instead.")
     return "insecure"
 
   def isTrueValue(self, value):
@@ -247,7 +263,8 @@ class GenericBaseRecipe(object):
       destination = self.location
     if os.path.exists(destination):
         # leftovers from a previous failed attempt, removing it.
-        log.warning('Removing already existing directory %s' % destination)
+        self.logger.warning('Removing already existing directory %s',
+                            destination)
         shutil.rmtree(destination)
     os.mkdir(destination)
 
