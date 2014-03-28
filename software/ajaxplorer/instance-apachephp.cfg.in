@@ -234,7 +234,8 @@ dashboard_root = $${directory:www-dsh}
 dashboard_pwd = $${htpasswd:output}
 pid_file = $${basedirectory:run}/apache.pid
 lock_file = $${basedirectory:run}/apache.lock
-ip = $${slap-network-information:global-ipv6}
+ipv6 = $${slap-network-information:global-ipv6}
+ipv4 = $${slap-network-information:local-ipv4}
 port = 8080
 port2 = 8060
 port3 = 8070
@@ -258,7 +259,7 @@ configuration =
 htdocs = $${directory:www}
 pid-file = $${basedirectory:run}/apache.pid
 lock-file = $${basedirectory:run}/apache.lock
-ip = $${httpd-conf:ip}
+ip = $${httpd-conf:ipv6}
 port = $${httpd-conf:port}
 url = http://[$${:ip}]:$${:port}/
 error-log = $${directory:httpd-log}/error.log
@@ -332,7 +333,7 @@ software-url = $${slap-parameter:frontend-software-url}
 slave = true
 config = url https-only custom_domain
 config-https-only = true
-config-url = https://[$${httpd-conf:ip}]:$${httpd-conf:port2}/
+config-url = https://[$${httpd-conf:ipv6}]:$${httpd-conf:port2}/
 return = site_url
 config-custom_domain = 
 
@@ -344,7 +345,7 @@ software-url = $${slap-parameter:frontend-software-url}
 slave = true
 config = url https-only custom_domain
 config-https-only = true
-config-url = https://[$${httpd-conf:ip}]:$${httpd-conf:port3}/
+config-url = https://[$${httpd-conf:ipv6}]:$${httpd-conf:port3}/
 return = site_url
 config-custom_domain = 
 
@@ -356,7 +357,7 @@ software-url = $${slap-parameter:frontend-software-url}
 slave = true
 config = url https-only custom_domain
 config-https-only = true
-config-url = https://[$${httpd-conf:ip}]:$${httpd-conf:port4}/
+config-url = https://[$${httpd-conf:ipv6}]:$${httpd-conf:port4}/
 return = site_url
 config-custom_domain = 
 
@@ -386,7 +387,9 @@ config-custom_domain =
 [publish-connection-informations]
 recipe = slapos.cookbook:publish
 dashboard_backend = https://[$${apache-php:ip}]:$${httpd-conf:port4}
+urlweb_ipv6 = http://[$${apache-php:ip}]:$${httpd-conf:port}/
 dashboard = $${request-frontend-dashboard:connection-site_url}
+urlweb = $${request-frontend:connection-site_url}
 login = $${dashboard_credential:user}
 password = $${dashboard_credential:passwd}
 
@@ -410,6 +413,7 @@ mysql_port = $${apache-php:mysql-port}
 apache_error_log = $${apache-php:error-log}
 apache_access_log = $${apache-php:access-log}
 joomla_folder = ${joomla:location}
+moodle_folder = ${moodle:location}
 prestashop_folder = ${prestashop:location}/prestashop
 drupal_folder = ${drupal:location}
 wp_folder = ${wordpress:location}
@@ -468,6 +472,9 @@ frontend-software-url = http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/s
 dashboard-user = admin
 ajaxplorer-user = admin
 ajaxplorer-pwd = insecure
+# wordpress | joomla | drupal | moodle | prestashop
+default-app = 
+locale = fr_FR.UTF-8
 
 #
 # * Configure Ajaxplorer, setup imagemagik in ajaxplorer
@@ -513,9 +520,11 @@ command = mkdir -p $${httpd-conf:public_html} && \
   chmod -R 700 $${httpd-conf:public_html} && \
   sed -i 's#/usr/bin/convert#$${:convert}#' $${apache-php:htdocs}/plugins/editor.imagick/manifest.xml && \
   sed -i 's#enabled="false"#enabled="true"#' $${apache-php:htdocs}/plugins/editor.imagick/manifest.xml && \
-  sed -i 's#//define("AJXP_LOCALE", "en_EN.UTF-8");#define("AJXP_LOCALE", "fr_FR.UTF-8");#' $${apache-php:htdocs}/conf/bootstrap_conf.php && \  
+  sed -i 's#//define("AJXP_LOCALE", "en_EN.UTF-8");#define("AJXP_LOCALE", "$${slap-parameter:locale}");#' $${apache-php:htdocs}/conf/bootstrap_conf.php && \  
   sed -i 's#default="en"#default="fr"#' $${apache-php:htdocs}/plugins/boot.conf/manifest.xml && \
   sed -i 's#default="en"#default="fr"#' $${apache-php:htdocs}/plugins/core.ajaxplorer/manifest.xml && \
   cp -nr ${phpmyadmin:location}/* $${httpd-conf:phpmyadmin_root}  && \
-  cp -nr ${dashboard:location}/* $${httpd-conf:dashboard_root}
+  cp -nr ${dashboard:location}/* $${httpd-conf:dashboard_root} && \
+  APP="$${slap-parameter:default-app}" && FOLDER="${buildout:parts-directory}/$APP" && \
+  if [ -z "$APP" ]; then echo "NO Default App"; else if [ -d "$FOLDER" ]; then [ "$(ls -A $${httpd-conf:public_html} )" ] && echo "Skip install defaul app..." || cp -r $FOLDER/* $${httpd-conf:public_html}/; fi fi
 update-command = $${:command}

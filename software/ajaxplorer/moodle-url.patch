@@ -1,0 +1,28 @@
+diff -Naur old/lib/installlib.php new/lib/installlib.php
+--- old/lib/installlib.php	2014-03-20 09:00:14.000000000 +0100
++++ new/lib/installlib.php	2014-03-27 11:49:22.768407281 +0100
+@@ -52,11 +52,7 @@
+     } else {
+         $wwwroot .= 'https://';
+     }
+-    $hostport = explode(':', $_SERVER['HTTP_HOST']);
+-    $wwwroot .= reset($hostport);
+-    if ($_SERVER['SERVER_PORT'] != 80 and $_SERVER['SERVER_PORT'] != '443') {
+-        $wwwroot .= ':'.$_SERVER['SERVER_PORT'];
+-    }
++    $wwwroot .= $_SERVER['HTTP_HOST'];
+     $wwwroot .= $_SERVER['SCRIPT_NAME'];
+ 
+     list($wwwroot, $xtra) = explode('/install.php', $wwwroot);
+diff -Naur old/lib/setuplib.php new/lib/setuplib.php
+--- old/lib/setuplib.php	2014-03-20 09:00:14.000000000 +0100
++++ new/lib/setuplib.php	2014-03-27 11:49:52.588408724 +0100
+@@ -867,7 +867,7 @@
+ function setup_get_remote_url() {
+     $rurl = array();
+     if (isset($_SERVER['HTTP_HOST'])) {
+-        list($rurl['host']) = explode(':', $_SERVER['HTTP_HOST']);
++        $rurl['host'] = $_SERVER['SERVER_NAME'];
+     } else {
+         $rurl['host'] = null;
+     }

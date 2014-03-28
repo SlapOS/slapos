@@ -24,3 +24,4 @@ define('JOOMLA_FOLDER', '${:joomla_folder}');
 define('PRESTASHOP_FOLDER', '${:prestashop_folder}');
 define('DRUPAL_FOLDER', '${:drupal_folder}');
 define('WP_FOLDER', '${:wp_folder}');
+define('MOODLE_FOLDER', '${:moodle_folder}');

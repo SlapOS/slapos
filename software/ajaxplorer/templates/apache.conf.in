@@ -3,10 +3,10 @@
 
 # Basic server configuration
 PidFile "${:pid_file}"
-Listen ${:ip}:${:port}
-Listen ${:ip}:${:port2}
-Listen ${:ip}:${:port3}
-Listen ${:ip}:${:port4}
+Listen ${:ipv6}:${:port}
+Listen ${:ipv6}:${:port2}
+Listen ${:ipv6}:${:port3}
+Listen ${:ipv6}:${:port4}
 PHPINIDir ${:php_ini_dir}
 ServerAdmin someone@email
 TypesConfig conf/mime.types
@@ -25,11 +25,11 @@ CustomLog "${:access_log}" common
 SSLRandomSeed startup builtin
 SSLRandomSeed connect builtin
 
-NameVirtualHost ${:ip}:${:port2}
-NameVirtualHost ${:ip}:${:port}
-NameVirtualHost ${:ip}:${:port3}
-NameVirtualHost ${:ip}:${:port4}
-<VirtualHost ${:ip}:${:port2}>
+NameVirtualHost ${:ipv6}:${:port2}
+NameVirtualHost ${:ipv6}:${:port}
+NameVirtualHost ${:ipv6}:${:port3}
+NameVirtualHost ${:ipv6}:${:port4}
+<VirtualHost ${:ipv6}:${:port2}>
   #ServerName www.example.com
   
   # Directory protection
@@ -53,7 +53,7 @@ NameVirtualHost ${:ip}:${:port4}
 
 </VirtualHost>
 
-<VirtualHost ${:ip}:${:port}>
+<VirtualHost ${:ipv6}:${:port}>
   #ServerName www.example.com
   
   # Directory protection
@@ -74,7 +74,9 @@ NameVirtualHost ${:ip}:${:port4}
 
 </VirtualHost>
 
-<VirtualHost ${:ip}:${:port3}>
+
+
+<VirtualHost ${:ipv6}:${:port3}>
   #ServerName www.example.com
   
   # Directory protection
@@ -98,7 +100,7 @@ NameVirtualHost ${:ip}:${:port4}
 
 </VirtualHost>
 
-<VirtualHost ${:ip}:${:port4}>
+<VirtualHost ${:ipv6}:${:port4}>
   #ServerName www.example.com
   
   # Directory protection
@@ -127,8 +129,8 @@ NameVirtualHost ${:ip}:${:port4}
 #Update PHP.INI
 
 php_value include_path ".:${:php_lib_path}"
-php_value upload_max_filesize 20M
-php_value post_max_size 20M
+php_value upload_max_filesize 50M
+php_value post_max_size 50M
 php_value output_buffering none
 
 
