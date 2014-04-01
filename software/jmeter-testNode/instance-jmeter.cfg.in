@@ -1,0 +1,217 @@
+[buildout]
+
+eggs-directory = ${buildout:eggs-directory}
+develop-eggs-directory = ${buildout:develop-eggs-directory}
+offline = true
+
+parts =
+    publish
+    frontend-promise
+    shellinabox
+    nginx-config
+    nginx-launch
+    certificate-authority
+    ca-shellinabox
+    ca-nginx
+    jmeter-job
+
+[rootdirectory]
+recipe = slapos.cookbook:mkdirectory
+etc = $${buildout:directory}/etc
+tmp = $${buildout:directory}/tmp
+srv = $${buildout:directory}/srv
+bin = $${buildout:directory}/bin
+jmeter = $${buildout:directory}/jmeter
+tmp = $${buildout:directory}/tmp
+var = $${buildout:directory}/var
+
+[basedirectory]
+recipe = slapos.cookbook:mkdirectory
+services = $${rootdirectory:etc}/service
+promises = $${rootdirectory:etc}/promise
+log = $${rootdirectory:jmeter}/log
+
+[directory]
+recipe = slapos.cookbook:mkdirectory
+shellinabox = $${rootdirectory:srv}/shellinabox
+ca-dir = $${rootdirectory:srv}/ca
+log = $${rootdirectory:var}/log
+run = $${rootdirectory:var}/run
+
+[cadirectory]
+recipe = slapos.cookbook:mkdirectory
+requests = $${directory:ca-dir}/requests/
+private = $${directory:ca-dir}/private/
+certs = $${directory:ca-dir}/certs/
+newcerts = $${directory:ca-dir}/newcerts/
+crl = $${directory:ca-dir}/crl/
+
+[tempdirectory]
+recipe = slapos.cookbook:mkdirectory
+client_body_temp_path = $${rootdirectory:tmp}/client_body_temp_path
+proxy_temp_path = $${rootdirectory:tmp}/proxy_temp_path
+fastcgi_temp_path = $${rootdirectory:tmp}/fastcgi_temp_path
+uwsgi_temp_path = $${rootdirectory:tmp}/uwsgi_temp_path
+scgi_temp_path = $${rootdirectory:tmp}/scgi_temp_path
+
+[environ]
+recipe = collective.recipe.environment
+
+[make-binary-link]
+recipe = slapos.cookbook:symbolic.link
+target-directory = $${rootdirectory:jmeter}
+link-binary = 
+  ${jmeter:location}/bin
+
+[jmeter-job]
+recipe = slapos.recipe.template
+url = ${jmeter-script:location}/${jmeter-script:filename}
+#md5sum = d160bb15d8d3a3913706a4ed29c49388
+output = $${basedirectory:services}/jmeter
+mode = 0700
+
+command-line = java -jar $${rootdirectory:jmeter}/bin/ApacheJMeter.jar -j $${basedirectory:log}/jmeter.log -l $${basedirectory:log}/result.jtl -d $${rootdirectory:jmeter} -n
+env-path = ${java:location}/bin:$${rootdirectory:jmeter}/bin
+jmx-url = $${slap-parameter:jmx-url}
+jmeter-dir = $${rootdirectory:jmeter}
+jmeter-options = $${slap-parameter:jmeter-options}
+
+[shell]
+recipe = slapos.cookbook:shell
+wrapper = $${rootdirectory:bin}/sh
+shell = ${busybox:location}/bin/sh
+home = $${buildout:directory}
+ps1 = "\\w> "
+path =
+    ${java:location}/bin/
+    ${busybox:location}/bin/
+    ${busybox:location}/usr/bin/
+    ${buildout:bin-directory}/
+    $${make-binary-link:target-directory}/bin/
+#    ${busybox:location}/sbin/
+#    ${busybox:location}/usr/sbin/
+
+[shellinabox]
+recipe = slapos.cookbook:shellinabox
+ipv6 = $${slap-network-information:global-ipv6}
+port = 8081
+shell = $${shell:wrapper}
+wrapper = $${rootdirectory:bin}/shellinaboxd_raw
+shellinabox-binary = ${shellinabox:location}/bin/shellinaboxd
+password = $${slap-parameter:shell-password}
+directory = $${buildout:directory}/
+login-shell = $${rootdirectory:bin}/login
+certificate-directory = $${directory:shellinabox}
+cert-file = $${directory:shellinabox}/public.crt
+key-file = $${directory:shellinabox}/private.key
+
+[shellinabox-promise]
+recipe = slapos.cookbook:check_port_listening
+path = $${directory:promises}/shellinabox
+hostname = $${shellinabox:ipv6}
+port = $${shellinabox:port}
+
+[nginx-parameters]
+nb_workers = 2
+local-ip = $${slap-network-information:local-ipv4}
+port = 8080
+global-ip = $${slap-network-information:global-ipv6}
+global-port = $${:port}
+# SSL
+ssl-certificate = $${ca-nginx:cert-file}
+ssl-key = $${ca-nginx:key-file}
+# Log
+path_pid = $${directory:run}/nginx.pid
+path_log = $${directory:log}/nginx.log
+path_access_log = $${directory:log}/nginx.access.log
+path_error_log = $${directory:log}/nginx.error.log
+path_tmp = $${rootdirectory:tmp}/
+# Config files
+path_nginx_conf = $${rootdirectory:etc}/nginx.conf
+# Executables
+bin_nginx = ${nginx:location}/sbin/nginx
+bin_launcher = $${rootdirectory:bin}/nginx_launch
+# Utils
+path_shell = ${dash:location}/bin/dash
+# Misc.
+etc_dir = $${rootdirectory:etc}
+result_dir = $${rootdirectory:jmeter}/log/
+
+[nginx-config]
+recipe = slapos.recipe.template:jinja2
+template = ${template-nginx-conf:location}/${template-nginx-conf:filename}
+rendered = $${nginx-parameters:path_nginx_conf}
+context =
+    key shell_port shellinabox:port
+    section param_nginx nginx-parameters
+    section param_tempdir tempdirectory
+
+[nginx-launch]
+recipe = slapos.recipe.template:jinja2
+template = ${template-nginx:location}/${template-nginx:filename}
+rendered = $${nginx-parameters:bin_launcher}
+mode = 700
+context =
+    section param_nginx nginx-parameters
+
+[certificate-authority]
+recipe = slapos.cookbook:certificate_authority
+openssl-binary = ${openssl:location}/bin/openssl
+ca-dir = $${directory:ca-dir}
+requests-directory = $${cadirectory:requests}
+wrapper = $${basedirectory:services}/ca
+ca-private = $${cadirectory:private}
+ca-certs = $${cadirectory:certs}
+ca-newcerts = $${cadirectory:newcerts}
+ca-crl = $${cadirectory:crl}
+
+[ca-shellinabox]
+<= certificate-authority
+recipe = slapos.cookbook:certificate_authority.request
+executable = $${shellinabox:wrapper}
+wrapper = $${basedirectory:services}/shellinaboxd
+key-file = $${shellinabox:key-file}
+cert-file = $${shellinabox:cert-file}
+
+[ca-nginx]
+<= certificate-authority
+recipe = slapos.cookbook:certificate_authority.request
+key-file = $${cadirectory:certs}/nginx_frontend.key
+cert-file = $${cadirectory:certs}/nginx_frontend.crt
+executable = $${nginx-launch:rendered}
+wrapper = $${basedirectory:services}/nginx-frontend
+
+[request-frontend]
+<= slap-connection
+recipe = slapos.cookbook:requestoptional
+name = Jmeter Frontend
+software-url = $${slap-parameter:frontend-software-url}
+slave = true
+config = url domain https-only
+config-https-only = true
+config-url = https://[$${nginx-parameters:global-ip}]:$${nginx-parameters:global-port}/
+config-domain = $${slap-parameter:frontend-domain}
+return = site_url
+
+[frontend-promise]
+recipe = slapos.cookbook:check_page_content
+path = $${basedirectory:promises}/frontend
+url = $${request-frontend:connection-site_url}
+match = ShellInABox
+dash_path = ${dash:location}/bin/dash
+curl_path = ${curl:location}/bin/curl
+
+
+[publish]
+recipe = slapos.cookbook:publish
+url-base = https://[$${nginx-parameters:global-ip}]:$${nginx-parameters:global-port}/
+result-url = $${request-frontend:connection-site_url}/result/
+shell-url = $${request-frontend:connection-site_url}
+shell-password = $${slap-parameter:shell-password}
+
+[slap-parameter]
+shell-password = slapos
+jmx-url = http://jmeter.apache.org/demos/LoopTestPlan.jmx
+jmeter-options = 
+frontend-software-url = http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg
+frontend-domain = 

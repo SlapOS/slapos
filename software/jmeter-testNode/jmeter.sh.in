@@ -1,0 +1,12 @@
+#!/bin/sh
+
+export PATH=${:env-path}:$PATH
+JMX_FILE="${:jmx-url}"
+
+if [ -z "$JMX_FILE" ]; then
+  echo "NO Jmeter JOB";
+else
+  wget -O ${:jmeter-dir}/jmeter-task.jmx $JMX_FILE;
+  ${:command-line} --testfile ${:jmeter-dir}/jmeter-task.jmx ${:jmeter-options};
+fi
+
