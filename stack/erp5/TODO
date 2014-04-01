@@ -1,0 +1,19 @@
+Release-critical:
+- review partition parameters & published values to make reasonably likely evolutions will not break them
+- expire repozo FileStorage index backups (can take a lot of space)
+
+General:
+- varnish/squid
+- enable zope webdav service and provide access through haproxy & backend apache
+- ipv6 support (besides frontend-backend apache connection)
+  requires important changes at ERP5 level
+- resilience
+- daily slow-query digest
+  make percona toolkit available in mysql instance and decide how to send digest
+
+Backups:
+- flush binlogs independently from full backups (in addition to anyway flushing them on full backup creation)
+- rotate tidstorage consistency points
+- make mysql backup path an instance parameter
+- make srv/backup/zodb the default value for a parameter (zodb{ 'backup_root': ...} or so) to have a single value to modify to relocate zodb backups of a partition
+- make srv/backup/logrotate customisable (per partition, otherwise files will overwrite each other)
