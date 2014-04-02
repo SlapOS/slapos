@@ -151,6 +151,7 @@ config-url = ${request-balancer:{{ family_name }}-v6}
 {%   do publish_dict.__setitem__('family-' ~ family_name, '${' ~ publishable ~ '}' ) -%}
 {% endfor -%}
 
+{% set balancer_dict = slapparameter_dict.get('balancer', {}) -%}
 [request-balancer]
 < = request-common
 name = balancer
@@ -171,16 +172,16 @@ return =
   {{ family }}-v6
 {% endfor -%}
 config-zope-family-dict = {{ dumps(zope_family_parameter_dict) }}
-config-tcpv4-port = {{ dumps(slapparameter_dict.get('', 2150)) }}
+config-tcpv4-port = {{ dumps(balancer_dict.get('tcpv4-port', 2150)) }}
 {% for zope_section_id, name in zope_address_list_id_dict.items() -%}
 config-{{ name }} = {{ ' ${' ~ zope_section_id ~ ':connection-zope-address-list}' }}
 {% endfor -%}
 # XXX: should those really be same for all families ?
-config-haproxy-server-check-path = {{ dumps(slapparameter_dict.get('haproxy-server-check-path', '/') % {'site-id': site_id}) }}
-config-apache-access-control-string = {{ dumps(slapparameter_dict.get('apache-access-control-string', 'all')) }}
-config-apache-ssl-authentication = {{ dumps(slapparameter_dict.get('apache-ssl-authentication', '0')) }}
-config-apache-backend-path = {{ dumps(slapparameter_dict.get('apache-backend-path', '/') % {'site-id': site_id}) }}
-config-ca = {{ dumps(slapparameter_dict.get('ca', {})) }}
+config-haproxy-server-check-path = {{ dumps(balancer_dict.get('haproxy-server-check-path', '/') % {'site-id': site_id}) }}
+config-apache-access-control-string = {{ dumps(balancer_dict.get('apache-access-control-string', 'all')) }}
+config-apache-ssl-authentication = {{ dumps(balancer_dict.get('apache-ssl-authentication', '0')) }}
+config-apache-backend-path = {{ dumps(balancer_dict.get('apache-backend-path', '/') % {'site-id': site_id}) }}
+config-ca = {{ dumps(balancer_dict.get('ca', {})) }}
 
 [request-frontend-base]
 {% if has_frontend -%}
