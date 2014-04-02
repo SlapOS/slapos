@@ -62,6 +62,7 @@ recipe = slapos.cookbook:symbolic.link
 target-directory = $${rootdirectory:jmeter}
 link-binary = 
   ${jmeter:location}/bin
+  ${jmeter:location}/lib
 
 [jmeter-job]
 recipe = slapos.recipe.template
@@ -70,11 +71,12 @@ url = ${jmeter-script:location}/${jmeter-script:filename}
 output = $${basedirectory:services}/jmeter
 mode = 0700
 
-command-line = java -jar $${rootdirectory:jmeter}/bin/ApacheJMeter.jar -j $${basedirectory:log}/jmeter.log -l $${basedirectory:log}/result.jtl -d $${rootdirectory:jmeter} -n
 env-path = ${java:location}/bin:$${rootdirectory:jmeter}/bin
 jmx-url = $${slap-parameter:jmx-url}
 jmeter-dir = $${rootdirectory:jmeter}
 jmeter-options = $${slap-parameter:jmeter-options}
+log-dir = $${basedirectory:log}
+custom-cmd = $${slap-parameter:custom-graph-cmd}
 
 [shell]
 recipe = slapos.cookbook:shell
@@ -131,6 +133,7 @@ path_nginx_conf = $${rootdirectory:etc}/nginx.conf
 # Executables
 bin_nginx = ${nginx:location}/sbin/nginx
 bin_launcher = $${rootdirectory:bin}/nginx_launch
+mime_types = ${nginx:location}/conf/mime.types
 # Utils
 path_shell = ${dash:location}/bin/dash
 # Misc.
@@ -211,7 +214,8 @@ shell-password = $${slap-parameter:shell-password}
 
 [slap-parameter]
 shell-password = slapos
-jmx-url = http://jmeter.apache.org/demos/LoopTestPlan.jmx
+jmx-url = http://jmeter-plugins.org/img/examples/ActiveThreadsOverTimeExample.jmx
 jmeter-options = 
+custom-graph-cmd = 
 frontend-software-url = http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg
 frontend-domain = 

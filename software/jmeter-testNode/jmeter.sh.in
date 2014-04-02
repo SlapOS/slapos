@@ -2,11 +2,39 @@
 
 export PATH=${:env-path}:$PATH
 JMX_FILE="${:jmx-url}"
+JMETER_DIR="${:jmeter-dir}"
+JMETER_LOGDIR="${:log-dir}"
+CUSTOM_CMD="${:custom-cmd}"
 
 if [ -z "$JMX_FILE" ]; then
   echo "NO Jmeter JOB";
 else
   wget -O ${:jmeter-dir}/jmeter-task.jmx $JMX_FILE;
-  ${:command-line} --testfile ${:jmeter-dir}/jmeter-task.jmx ${:jmeter-options};
+  rm -f $JMETER_LOGDIR/result.jtl
+  #Run Jmeter task
+  java -jar $JMETER_DIR/bin/ApacheJMeter.jar -j $JMETER_LOGDIR/jmeter.log \
+  -l $JMETER_LOGDIR/result.jtl -d $JMETER_DIR -n --testfile $JMETER_DIR/jmeter-task.jmx ${:jmeter-options};
+  #Draw image and export data into csv format
+  java -jar $JMETER_DIR/lib/ext/CMDRunner.jar --tool Reporter --generate-png $JMETER_LOGDIR/ResponseTimesOverTime.png \
+  --input-jtl $JMETER_LOGDIR/result.jtl --plugin-type ResponseTimesOverTime --width 800 --height 600;
+  java -jar $JMETER_DIR/lib/ext/CMDRunner.jar --tool Reporter --generate-png $JMETER_LOGDIR/LatenciesOverTime.png \
+  --input-jtl $JMETER_LOGDIR/result.jtl --plugin-type LatenciesOverTime --width 800 --height 600;
+  java -jar $JMETER_DIR/lib/ext/CMDRunner.jar --tool Reporter --generate-png $JMETER_LOGDIR/BytesThroughputOverTime.png \
+  --input-jtl $JMETER_LOGDIR/result.jtl --plugin-type BytesThroughputOverTime --width 800 --height 600;
+  java -jar $JMETER_DIR/lib/ext/CMDRunner.jar --tool Reporter --generate-png $JMETER_LOGDIR/ThreadsStateOverTime.png \
+  --input-jtl $JMETER_LOGDIR/result.jtl --plugin-type ThreadsStateOverTime --width 800 --height 600;
+  java -jar $JMETER_DIR/lib/ext/CMDRunner.jar --tool Reporter --generate-png $JMETER_LOGDIR/ResponseTimesDistribution.png \
+  --input-jtl $JMETER_LOGDIR/result.jtl --plugin-type ResponseTimesDistribution --width 800 --height 600;
+  
+  java -jar $JMETER_DIR/lib/ext/CMDRunner.jar --tool Reporter --generate-csv $JMETER_LOGDIR/AggregateReport.csv \
+  --input-jtl $JMETER_LOGDIR/result.jtl --plugin-type AggregateReport;
+  
+  #custom graph export command
+  if [ -n "$CUSTOM_CMD" ]; then
+      java -jar $JMETER_DIR/lib/ext/CMDRunner.jar --tool Reporter --generate-png $JMETER_LOGDIR/UserCustomGraph.png \
+      --input-jtl $JMETER_LOGDIR/result.jtl $CUSTOM_CMD;
+  fi
 fi
-
+#PageDataExtractorOverTime
+#ThreadsStateOverTime
+#--extractor-regexps "(serv.*)={;}serv.*=(.*)"
