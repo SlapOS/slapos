@@ -208,7 +208,7 @@ recipe = slapos.cookbook:publish.serialised
 deadlock-debugger-password = ${deadlock-debugger-password:passwd}
 inituser-password = ${inituser-password:passwd}
 {% for name, value in publish_dict.items() -%}
-{{   name }} = {{ dumps(value) }}
+{{   name }} = {{ value }}
 {% endfor -%}
 
 [buildout]
