@@ -1,5 +1,4 @@
 Release-critical:
-- review partition parameters & published values to make reasonably likely evolutions will not break them
 - expire repozo FileStorage index backups (can take a lot of space)
 
 General:
