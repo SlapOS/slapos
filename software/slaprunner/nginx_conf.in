@@ -18,31 +18,6 @@ http {
         ''      close;
      }
      server {
-        listen {{ param_nginx_frontend['local-ip'] }}:{{ param_nginx_frontend['port'] }};
-        server_name _;
-
-        keepalive_timeout 90s;
-        client_body_temp_path {{ param_tempdir['client_body_temp_path'] }};
-        proxy_temp_path {{ param_tempdir['proxy_temp_path'] }};
-        fastcgi_temp_path {{ param_tempdir['fastcgi_temp_path'] }};
-        uwsgi_temp_path {{ param_tempdir['uwsgi_temp_path'] }};
-        scgi_temp_path {{ param_tempdir['scgi_temp_path'] }};
-        location / {
-            auth_basic  "Restricted";
-            auth_basic_user_file   {{ param_nginx_frontend['etc_dir'] }}/.htpasswd;
-            proxy_pass  http://{{ param_nginx_frontend['cloud9-ip'] }}:{{ param_nginx_frontend['cloud9-port'] }};
-            proxy_next_upstream error timeout invalid_header http_500 http_502 http_503 http_504;
-            proxy_redirect off;
-            proxy_buffering off;
-            proxy_http_version 1.1;
-            proxy_set_header Upgrade $http_upgrade;
-            proxy_set_header Connection $connection_upgrade;
-            proxy_set_header        Host            $host;
-            proxy_set_header        X-Real-IP       $remote_addr;
-            proxy_set_header        X-Forwarded-For $proxy_add_x_forwarded_for;
-        }
-    }
-     server {
         listen [{{ param_nginx_frontend['global-ip'] }}]:{{ param_nginx_frontend['global-port'] }} ssl;
         server_name _;
         ssl_certificate     {{ param_nginx_frontend['ssl-certificate'] }};
@@ -55,16 +30,56 @@ http {
         fastcgi_temp_path {{ param_tempdir['fastcgi_temp_path'] }};
         uwsgi_temp_path {{ param_tempdir['uwsgi_temp_path'] }};
         scgi_temp_path {{ param_tempdir['scgi_temp_path'] }};
+	error_page 401 /login;
         location / {
-            proxy_pass  http://{{ param_nginx_frontend['runner-ip'] }}:{{ param_nginx_frontend['runner-port'] }};
+            auth_basic "Restricted";
+            auth_basic_user_file {{ param_nginx_frontend['etc_dir'] }}/.htpasswd;
+            proxy_redirect off;
+            proxy_set_header   X-Forwarded-Proto $scheme;
+            proxy_set_header   X-Forwarded-For   $proxy_add_x_forwarded_for;
+            proxy_set_header   X-Forwarded-Host  $http_host;
+            proxy_set_header   X-Accel-Mapping   /private/;
+
+            proxy_pass http://unix:{{ socket }};
+        }
+        location ~ ^(/login|/doLogin|/static|/setAccount|/configAccount|/slapgridResult|/isSRReady) {
+            proxy_redirect off;
+            proxy_set_header   X-Forwarded-Proto $scheme;
+            proxy_set_header   X-Forwarded-For   $proxy_add_x_forwarded_for;
+            proxy_set_header   X-Forwarded-Host  $http_host;
+            proxy_set_header   X-Accel-Mapping   /private/;
+
+            proxy_pass http://unix:{{ socket }};
+        }
+	location /shellinabox {
+            proxy_pass  http://[{{ param_nginx_frontend['global-ip'] }}]:{{ shellinabox_port }}/;
             proxy_next_upstream error timeout invalid_header http_500 http_502 http_503 http_504;
+            auth_basic "Restricted";
+            auth_basic_user_file {{ param_nginx_frontend['etc_dir'] }}/.htpasswd;
             proxy_redirect off;
             proxy_buffering off;
             proxy_set_header        Host              $host;
             proxy_set_header        X-Real-IP         $remote_addr;
-            proxy_set_header        X-Forwarded-Proto $scheme;
+	    proxy_set_header        X-Forwarded-Proto $scheme;
             proxy_set_header        X-Forwarded-For   $proxy_add_x_forwarded_for;
-            proxy_set_header        X-Forwarded-Host  $http_host;
+	    proxy_set_header        X-Forwarded-Host  $http_host;
+	}
+        location /public/ {
+            root {{ param_nginx_frontend['work_dir'] }};
+            index index.html index.htm;
+        }
+        location /share {
+            rewrite ^/share / break;
+
+            auth_basic "Restricted";
+            auth_basic_user_file {{ param_nginx_frontend['etc_dir'] }}/.htpasswd;
+
+            dav_methods PUT DELETE MKCOL COPY MOVE;
+            dav_ext_methods PROPFIND OPTIONS;
+
+            root {{ param_nginx_frontend['work_dir'] }};
+
+            create_full_put_path   on;
         }
     }
 }

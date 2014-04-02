@@ -1,26 +1,51 @@
 [buildout]
-extends = ${template-runner:output}
+extends = template-runner.cfg
           ${pbsready-import:output}
 
 parts +=
   nginx_conf
   nginx-launcher
-  cloud9
   certificate-authority
   ca-nginx
-  ca-node-frontend
-  slaprunner
+  ca-shellinabox
+  gunicorn-launcher
+  gunicorn-graceful
   test-runner
   sshkeys-dropbear-runner
   dropbear-server-add-authorized-key
   sshkeys-authority
   slaprunner-promise
-  cloud9-promise
   dropbear-promise
+  private
+  shellinabox-promise
+  shellinabox
   symlinks
-  nginx-promise
+  slapos-cfg
+  slapos-repo-config
+  cron-entry-prepare-software
+  deploy-instance-parameters
 # have to repeat the next one, as it's not inherited from pbsready-import
   import-on-notification
+###Parts to add for monitoring
+  slap-parameters
+  certificate-authority
+  cron
+  cron-entry-monitor
+  cron-entry-rss
+  deploy-index
+  deploy-index-template
+  deploy-monitor-script
+  deploy-rss-script
+  deploy-settings-cgi
+  deploy-status-cgi
+  make-rss
+  monitor-promise
+  setup-static-files
+  certificate-authority
+  public
+  zero-parameters
+  cgi-httpd-wrapper
+  public-symlink
 
 [importer]
 recipe = slapos.cookbook:slaprunner.import
@@ -32,3 +57,6 @@ shell-binary = ${dash:location}/bin/dash
 rsync-binary = ${rsync:location}/bin/rsync
 curl-binary = ${curl:location}/bin/curl
 backend-url = $${slaprunner:access-url}
+
+[slap-parameter]
+auto-deploy-instance = false

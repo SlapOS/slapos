@@ -1,0 +1,74 @@
+commit e2d340aa5eff721eaff24003a3d04eb01f0aaa3c
+Author: Kouhei Sutou <kou@clear-code.com>
+Date:   Sat Mar 15 17:47:08 2014 +0900
+
+    mariadb: support MariaDB 10.0.9
+    
+    Redmine: fixes #2387
+    
+    We drop MariaDB 10.0.0 - 10.0.8 support. You should use the latest
+    MariaDB for 10.0 series.
+    
+    Reported by Kazuhiko Shiozaki. Thanks!!!
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 496deed..3310a16 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -182,6 +182,13 @@ else()
+   set_mysql_config_value("--version" MYSQL_VERSION)
+ endif()
+ 
++if((${MYSQL_VERSION} VERSION_GREATER "10.0.0") AND
++    (${MYSQL_VERSION} VERSION_LESS "10.0.9"))
++  message(FATAL_ERROR
++    "Mroonga doesn't supports MariaDB 10.0.0-10.0.8: <${MYSQL_VERSION}>")
++  return()
++endif()
++
+ if(MRN_GROONGA_BUNDLED)
+   set(GROONGA_INCLUDE_DIRS "${MRN_BUNDLED_GROONGA_DIR}/include")
+   set(GROONGA_LIBRARY_DIRS "${MRN_BUNDLED_GROONGA_DIR}/lib")
+diff --git a/mrn_mysql_compat.h b/mrn_mysql_compat.h
+index 4dd878b..7312dd7 100644
+--- a/mrn_mysql_compat.h
++++ b/mrn_mysql_compat.h
+@@ -105,12 +105,11 @@
+ #  define MRN_ITEM_HAVE_ITEM_NAME
+ #endif
+ 
+-#if MYSQL_VERSION_ID >= 50500 && \
+-  !(defined(MRN_MARIADB_P) && MYSQL_VERSION_ID >= 100004)
++#if MYSQL_VERSION_ID >= 50500 && MYSQL_VERSION_ID < 50700
+ #  define MRN_HAVE_TABLE_DEF_CACHE
+ #endif
+ 
+-#if defined(MRN_MARIADB_P) && MYSQL_VERSION_ID >= 100004
++#if defined(MRN_MARIADB_P) && MYSQL_VERSION_ID >= 100009
+ #  define MRN_HAVE_TDC_ACQUIRE_SHARE
+ #endif
+ 
+diff --git a/mrn_table.cpp b/mrn_table.cpp
+index 7a7d4c2..79e1c83 100644
+--- a/mrn_table.cpp
++++ b/mrn_table.cpp
+@@ -1,7 +1,7 @@
+ /* -*- c-basic-offset: 2 -*- */
+ /*
+   Copyright(C) 2011-2013 Kentoku SHIBA
+-  Copyright(C) 2011-2013 Kouhei Sutou <kou@clear-code.com>
++  Copyright(C) 2011-2014 Kouhei Sutou <kou@clear-code.com>
+ 
+   This library is free software; you can redistribute it and/or
+   modify it under the terms of the GNU Lesser General Public
+@@ -970,7 +970,9 @@ TABLE_SHARE *mrn_get_table_share(TABLE_LIST *table_list, int *error)
+                           hash_value);
+ #elif defined(MRN_HAVE_TDC_ACQUIRE_SHARE)
+   share = tdc_acquire_share(thd, table_list->db, table_list->table_name, key,
+-                            key_length, GTS_TABLE, NULL);
++                            key_length,
++                            table_list->mdl_request.key.tc_hash_value(),
++                            GTS_TABLE, NULL);
+ #else
+   share = get_table_share(thd, table_list, key, key_length, 0, error);
+ #endif

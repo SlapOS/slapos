@@ -13,6 +13,7 @@ parts =
 eggs-directory = {{ eggs_directory }}
 develop-eggs-directory = {{ develop_eggs_directory }}
 offline = true
+versions = versions
 
 [request-common]
 recipe = slapos.cookbook:request
@@ -106,3 +107,6 @@ smtp-url = smtp://localhost:25/
 recipe = slapos.cookbook:mkdirectory
 etc = ${buildout:directory}/etc/run
 {% endif %}
+
+[versions]
+slapos.core = {{ slapos_core_version }}

@@ -18,6 +18,7 @@ parts =
 eggs-directory = {{ eggs_directory }}
 develop-eggs-directory = {{ develop_eggs_directory }}
 offline = true
+versions = versions
 
 {% if 'frontend-software-url' in slapparameter_dict -%}
 [request-slave-frontend]
@@ -307,3 +308,5 @@ path = ${basedirectory:promises}/apache-backend
 hostname = ${apache-zope-backend-instance:ip}
 port = ${apache-zope-backend-instance:port}
 
+[versions]
+slapos.core = {{ slapos_core_version }}

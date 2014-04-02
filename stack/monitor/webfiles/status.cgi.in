@@ -1,0 +1,32 @@
+#!{{ python_executable }}
+
+import cgitb
+import json
+
+cgitb.enable(display=0, logdir="/tmp/cgi.log")
+
+json_file = "{{ json_file }}"
+result = json.load(open(json_file))
+
+print "<html><head>"
+print "<link rel=\"stylesheet\" href=\"pure-min.css\">"
+print "<link rel=\"stylesheet\" href=\"/style.css\">"
+print "</head><body>"
+print "<h1>Monitoring :</h1>"
+print "<p><em>Last time of monitoring process : %s</em></p>" % (result['datetime'])
+del result['datetime']
+print "<br/>"
+
+print "<h2>These scripts and promises have failed :</h2>"
+for r in result:
+  if result[r] != '':
+    print "<h3>%s</h3><p style=\"padding-left:30px;\">%s</p>" % (r, result[r])
+print "<br/>"
+
+print "<h2>These scripts and promises were successful :</h2>"
+print "<ul>"
+for r in result:
+  if result[r] == '':
+    print "<li>%s</li>" % (r)
+print "</ul>"
+print "</body></html>"

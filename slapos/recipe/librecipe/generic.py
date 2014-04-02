@@ -155,7 +155,7 @@ class GenericBaseRecipe(object):
           pidfile=%s
           if [ -e $pidfile ]; then
             pid=$(cat $pidfile)
-            if [[ ! -z $(ps -p "$pid" | grep $(basename %s)) ]]; then
+            if [ ! -z $(ps -p "$pid" | grep $(basename %s)) ]; then
               echo "Already running with pid $pid."
               exit 1
             else

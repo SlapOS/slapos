@@ -1,0 +1,59 @@
+{
+        "$schema": "http://json-schema.org/draft-04/schema#",
+                "properties": {
+                        "authorized-key": {
+                                "description" : "SSH public key in order to connect to the SSH server of this runner instance",
+                                "type": "string"
+                        },
+                        "instance-amount": {
+                                "description": "number of slappart to deploy inside the runner",
+                                "type": "integer",
+                                "default": 10
+                        },
+                        "slapos-software": {
+                                "description": "a relative path from the slapos git repo to a folder containing a software release, which will be automaticaly deployed while the runner instanciation, and only if the parameter auto-deploy is set to 'true'. For example: 'software/helloworld",
+                                "type": "string"
+                        }, "auto-deploy": { "description": "authorizes the software declared with 'slapos-software' to be automatically deployed, or not",
+                                "type": "boolean",
+                                "default": "true"
+                        },
+                        "slapos-repository": {
+                                "description": "url of the default git repository that will be download by the runner while its instanciation. Will be cloned in a directory named 'slapos'",
+                                "type": "string",
+                                "default": "http://git.erp5.org/repos/slapos.git"
+                        },
+                        "slapos-reference": {
+                                "description": "commit reference on which the default repository will checkout",
+                                "type": "string",
+                                "default": "master"
+                        },
+                        "auto-deploy-instance": {
+                                "description": "prevent the runner from deploying and starting instances",
+                                "type": "boolean",
+                                "default": "true, but is set to false for instances of type 'import' in resiliency"
+                        },
+                        "autorun": {
+                                "description": "let automaticaly build and run a declared software with 'slapos-software'. Only works if 'slapos-software' is set, and 'auto-deploy' is true",
+                                "type": "boolean",
+                                "default": "false"
+                        },
+                        "parameter-*": {
+                                "description": "'*' is a parameter which will be used to configure the instance inside the runner.",
+                                "type": "string"
+                        },
+                        "custom-frontend-backend-url": {
+                                "description": "return an ipv4 frontend of the given ipv6(+optional port)",
+                                "type": "string"
+                        },
+                        "custom-frontend-basic-auth": {
+                                "description": "if the ip given with 'custom-frontend-backend-url' is secure, set it to true for the promise do not fail",
+                                "type": "boolean",
+                                "default": "false"
+                        }
+                        "monitor-port": {
+                                "description": "allow to manually change the port on wich the apache server running monitoring interface is listening. The default value for the webrunner is different from the default value of the standalone stack-monitor server",
+                                "type": "integer",
+                                "default": 9684
+                        }
+                }
+}

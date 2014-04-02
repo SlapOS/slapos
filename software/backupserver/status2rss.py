@@ -23,11 +23,12 @@ while 1:
   if not line:
     break
 
-  time, desc = line.split(',', 1)
+  time, statistic, desc = line.split(',', 2)
 
   rss_item = PyRSS2Gen.RSSItem(
     title = desc,
-    description = "%s, %s" % (time, desc),
+    description = "<p>%s</p>" % "<br/>".join(("%s, %s\n<a href='http://www.nongnu.org/rdiff-backup/FAQ.html#statistics'>Lastest statistic</a>\n%s" % (time, desc,
+      open(statistic).read())).split("\n")),
     link = LINK,
     pubDate = datetime.datetime.fromtimestamp(mktime_tz(parsedate_tz(time))),
     guid = PyRSS2Gen.Guid(base64.b64encode("%s, %s" % (time, desc)))

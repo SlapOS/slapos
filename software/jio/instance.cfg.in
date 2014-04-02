@@ -39,7 +39,7 @@ environment = environment
 [environment]
 CPPFLAGS = -I${python2.7:location}/include/python2.7 -I${libxml2:location}/include -I${libxslt:location}/include
 LDFLAGS = -L${python2.7:location}/lib -L${libxml2:location}/lib -L${libxslt:location}/lib -L${zlib:location}/lib -L${fontconfig:location}/lib -L${libexpat:location}/lib -L${freetype:location}/lib
-PYTHONPATH = ${python-setuptools:location}
+PYTHONPATH = ${python-setuptools:pythonpath}
 LD_LIBRARY_PATH = ${libxslt:location}/lib:${libxml2:location}/lib:${zlib:location}/lib:${fontconfig:location}/lib:${libexpat:location}/lib:${freetype:location}/lib
 
 [phantomjs-wrapper]

@@ -42,14 +42,16 @@ software-url = ${slap-connection:software-release-url}
 software-type = resilient
 name = Resilient Instance (Root Instance)
 {% set cluster_parameter_dict = slapparameter_dict.get('cluster', {}) -%}
-config = resiliency-backup-periodicity frontend-domain cloud9-frontend-domain {{ cluster_parameter_dict.keys() | join(' ') }}
+config = resiliency-backup-periodicity frontend-domain {{ cluster_parameter_dict.keys() | join(' ') }}
 {% for key, value in cluster_parameter_dict.items() -%}
 config-{{ key }} = {{ dumps(value) }}
 {% endfor -%}
-config-resiliency-backup-periodicity = *
+config-resiliency-backup-periodicity = * * * * *
 # XXX hardcoded
 config-frontend-domain = google.com
-config-cloud9-frontend-domain = google.com
+# XXX Hack to deploy Root Instance on the same computer as the type-test Instance
+sla = computer_guid
+sla-computer_guid = ${slap-connection:computer-id}
 return = backend_url
 
 [slap-parameter]

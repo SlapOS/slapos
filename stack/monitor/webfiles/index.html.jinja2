@@ -1,0 +1,28 @@
+<html>
+<head>
+ <title>Monitoring Interface</title>
+ <link rel="stylesheet" href="pure-min.css">
+ <link rel="stylesheet" href="/style.css">
+ <script src="jquery-1.10.2.min.js"></script>
+ <script src="script.js"></script>
+</head>
+<body>
+ <div id="div-menu">
+  <h1>Monitoring</h1>
+ <div id="script-categories" class="pure-menu pure-menu-open">
+  <ul>
+   {% for category in tree %}
+   <li class="pure-menu-heading category">{{ category }}</li>
+    {% for script in tree[category] %}
+    <li><a href="{{ category }}/{{ script }}" class="script">{{ script }}</a></li>
+    {% endfor %}
+   {% endfor %}
+  </ul>
+ </div>
+ </div>
+ <div id="content">
+ <iframe src="{{ default_page }}">
+ </iframe>
+ </div>
+</body>
+</html>
