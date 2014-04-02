@@ -1,6 +1,3 @@
-Release-critical:
-- expire repozo FileStorage index backups (can take a lot of space)
-
 General:
 - varnish/squid
 - enable zope webdav service and provide access through haproxy & backend apache

@@ -44,6 +44,7 @@ ipv4 = {{ ipv4 }}
 ipv6 = {{ ipv6 }}
 {% endif -%}
 
+{% set backup_directory_list = [] -%}
 {% for export_id, mountpoint_dict in slapparameter_dict['zodb-dict'].items() -%}
 {%   do storage_dict.setdefault(
        mountpoint_dict.get('storage-family', 'default').lower(), []
@@ -67,10 +68,12 @@ ipv6 = {{ ipv6 }}
          client_dict,
        ]) -%}
 {%     if tidstorage_dict != None -%}
+{%       set backup_directory = tidstorage_dict.get('zodb-dict', {}).get(export_id, '%(backup)s/%(name)s') % {'backup': zodb_backup_path, 'name': export_id} -%}
+{%       do backup_directory_list.append(backup_directory) -%}
 {%       do known_tid_storage_identifier_dict.__setitem__(
            json_module.dumps((known_tid_storage_identifier_host, export_id)), (
              export_storage_dict['path'],
-             tidstorage_dict.get('zodb-dict', {}).get(export_id, '%(backup)s/%(name)s') % {'backup': zodb_backup_path, 'name': export_id},
+             backup_directory,
              mount_point,
            ),
          ) -%}
@@ -169,6 +172,15 @@ name = tidstorage
 time = {{ dumps(tidstorage_dict.get('periodicity', 'daily')) }}
 command = ${tidstorage:repozo-wrapper}
 
+{% if backup_directory_list -%}
+[{{ section("cron-entry-purge-repozo-fsindex") }}]
+recipe = slapos.cookbook:cron.d
+cron-entries = ${cron:cron-entries}
+name = purge-repozo-fsindex
+time = ${cron-entry-tidstorage-backup:time}
+command = {{ parameter_dict['findutils-location'] }}/bin/find {% for backup_directory in backup_directory_list %}'{{ backup_directory.replace("\\", "\\\\").replace("'", "\\'") }}' {% endfor %}-name "????-??-??-??-??-??.index" -daystart -mtime +2 -delete
+
+{% endif -%}
 [{{ section("logrotate-tidstorage") }}]
 < = logrotate-base
 name = tidstorage
