@@ -189,20 +189,17 @@ site-id = {{ site_id }}
 {% endfor -%}
 zodb-list = {{ dumps(zodb_list) }}
 developer-list = {{ dumps(slapparameter_dict['developer-list']) }}
+instance = ${directory:instance}
+instance-products = ${directory:instance-products}
+deadlock-path = /manage_debug_threads
+deadlock-debugger-password = {{ dumps(slapparameter_dict['deadlock-debugger-password']) }}
+tidstorage-ip = ${tidstorage:ipv4}
+tidstorage-port = ${tidstorage:ipv4-port}
+promise-path = ${erp5-promise:promise-path}
 
 [zope-conf-base]
 recipe = slapos.recipe.template:jinja2
 template = {{ parameter_dict['zope-conf-template'] }}
-extra-context =
-context =
-  key instance directory:instance
-  key instance_products directory:instance-products
-  raw deadlock_path /manage_debug_threads
-  raw deadlock_debugger_password {{ dumps(slapparameter_dict['deadlock-debugger-password']) }}
-  key tidstorage_ip tidstorage:ipv4
-  key tidstorage_port tidstorage:ipv4-port
-  key promise_path erp5-promise:promise-path
-  ${:extra-context}
 
 [logrotate-entry-base]
 recipe = slapos.cookbook:logrotate.d
@@ -234,7 +231,7 @@ z2-log = ${directory:log}/{{ name }}-Z2.log
 [{{ conf_name }}]
 < = zope-conf-base
 rendered = ${directory:etc}/{{ name }}.conf
-extra-context =
+context =
   section parameter_dict {{ conf_parameter_name }}
 
 [{{ name }}]

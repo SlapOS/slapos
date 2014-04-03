@@ -1,6 +1,6 @@
 # Note: Environment is setup in running wrapper script, as zope.conf is read
 # too late for some components.
-%define INSTANCE {{ instance }}
+%define INSTANCE {{ parameter_dict['instance'] }}
 instancehome $INSTANCE
 zserver-threads {{ parameter_dict['thread-amount'] }}
 # When ownership checking is enabled, the roles a script runs as are the
@@ -20,7 +20,7 @@ rest-input-encoding utf-8
 rest-output-encoding utf-8
 
 # XXX: isn't this entry implicit ?
-products {{ instance_products }}
+products {{ parameter_dict['instance-products'] }}
 
 <http-server>
   address {{ parameter_dict['ip'] }}:{{ parameter_dict['port'] }}
@@ -40,14 +40,14 @@ products {{ instance_products }}
 </zoperunner>
 
 <product-config DeadlockDebugger>
-  dump_url /manage_debug_threads
-  secret {{ deadlock_debugger_password }}
+  dump_url {{ parameter_dict['deadlock-path'] }}
+  secret {{ parameter_dict['deadlock-debugger-password'] }}
 </product-config>
 
 {% if tidstorage_ip -%}
 <product-config TIDStorage>
-  backend-ip {{ tidstorage_ip }}
-  backend-port {{ tidstorage_port }}
+  backend-ip {{ parameter_dict['tidstorage-ip'] }}
+  backend-port {{ parameter_dict['tidstorage-port'] }}
 </product-config>
 
 {% endif -%}
@@ -59,6 +59,7 @@ products {{ instance_products }}
 </timer-server>
 
 {% endif -%}
+{% set promise_path = parameter_dict['promise-path'] -%}
 {% if promise_path -%}
 <product-config /{{ parameter_dict['site-id'] }}>
   promise_path {{ promise_path }}
