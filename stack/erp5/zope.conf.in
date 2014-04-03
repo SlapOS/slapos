@@ -44,9 +44,10 @@ products {{ parameter_dict['instance-products'] }}
   secret {{ parameter_dict['deadlock-debugger-password'] }}
 </product-config>
 
+{% set tidstorage_ip = parameter_dict['tidstorage-ip'] -%}
 {% if tidstorage_ip -%}
 <product-config TIDStorage>
-  backend-ip {{ parameter_dict['tidstorage-ip'] }}
+  backend-ip {{ tidstorage_ip }}
   backend-port {{ parameter_dict['tidstorage-port'] }}
 </product-config>
 
