@@ -109,7 +109,7 @@ extra-context =
 
 [dynamic-template-neo]
 < = jinja2-template-base
-template = {{ template_zeo }}
+template = {{ template_neo }}
 filename = instance-neo.cfg
 extensions = jinja2.ext.do
 extra-context =
