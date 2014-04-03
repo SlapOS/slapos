@@ -121,6 +121,7 @@ buildout-bin-directory = {{ buildout_bin_directory }}
 instance-logrotate-cfg = {{ template_logrotate_base }}
 6tunnel = {{ sixtunnel_location }}
 dash = {{ dash_location }}
+findutils-location = {{ findutils_location }}
 
 [dynamic-template-zeo]
 < = jinja2-template-base
