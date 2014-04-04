@@ -1,7 +1,7 @@
 {
         "$schema": "http://json-schema.org/draft-04/schema#",
                 "properties": {
-                        "authorized-key": {
+                        "user-authorized-key": {
                                 "description" : "SSH public key in order to connect to the SSH server of this runner instance",
                                 "type": "string"
                         },
