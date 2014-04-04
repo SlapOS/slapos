@@ -68,8 +68,8 @@ about laxist file mode. -#}
 
 {% if full_backup_retention_days > -1 -%}
 [{{ section('cron-entry-mariadb-backup') }}]
-<= cron
 recipe = slapos.cookbook:cron.d
+cron-entries = ${cron:cron-entries}
 name = mariadb-backup
 frequency = 0 22 * * *
 {# When binlogs are enabled:
@@ -85,8 +85,8 @@ file-glob = ??????????????.sql.gz
 
 {% if full_backup_retention_days > 0 -%}
 [{{ section("cron-entry-mariadb-backup-expire") }}]
-<= cron
 recipe = slapos.cookbook:cron.d
+cron-entries = ${cron:cron-entries}
 name = mariadb-backup-expire
 frequency = 0 22 * * *
 command = {{ parameter_dict['findutils-location'] }}/bin/find "${directory:mariadb-backup-full}" -maxdepth 1 -name "${cron-entry-mariadb-backup:file-glob}" -daystart -mtime +{{ full_backup_retention_days }} -delete
@@ -150,46 +150,13 @@ data-directory = ${my-cnf-parameters:data-directory}
 mysql-install-binary = {{ parameter_dict['mariadb-location'] }}/scripts/mysql_install_db
 mysql-base-directory = {{ parameter_dict['mariadb-location'] }}
 
-[logrotate]
-recipe = slapos.cookbook:logrotate
-# Binaries
-logrotate-binary = {{ parameter_dict['logrotate-location'] }}/usr/sbin/logrotate
-gzip-binary = {{ parameter_dict['gzip-location'] }}/bin/gzip
-gunzip-binary = {{ parameter_dict['gzip-location'] }}/bin/gunzip
-# Directories
-wrapper = ${directory:bin}/logrotate
-conf = ${directory:etc}/logrotate.conf
-logrotate-entries = ${directory:logrotate-entries}
-backup = ${directory:logrotate-backup}
-state-file = ${directory:srv}/logrotate.status
-
 [logrotate-entry-mariadb]
-<= logrotate
 recipe = slapos.cookbook:logrotate.d
+logrotate-entries = ${logrotate:logrotate-entries}
+backup = ${logrotate:backup}
 name = mariadb
 log = ${my-cnf-parameters:error-log} ${my-cnf-parameters:slow-query-log}
 post = "${binary-wrap-mysql:wrapper-path}" -B -u root -e "FLUSH LOGS"
-
-[cron]
-recipe = slapos.cookbook:cron
-dcrond-binary = {{ parameter_dict['dcron-location'] }}/sbin/crond
-cron-entries = ${directory:cron-entries}
-crontabs = ${directory:crontabs}
-cronstamps = ${directory:cronstamps}
-catcher = ${cron-simplelogger:wrapper}
-binary = ${directory:services}/crond
-
-[cron-simplelogger]
-recipe = slapos.cookbook:simplelogger
-wrapper = ${directory:bin}/cron_simplelogger
-log = ${directory:log}/cron.log
-
-[cron-entry-logrotate]
-<= cron
-recipe = slapos.cookbook:cron.d
-name = logrotate
-frequency = 0 0 * * *
-command = ${logrotate:wrapper}
 
 [binary-link]
 recipe = slapos.cookbook:symbolic.link
@@ -227,15 +194,10 @@ bin = ${buildout:directory}/bin
 etc = ${buildout:directory}/etc
 services = ${:etc}/run
 promise = ${:etc}/promise
-cron-entries = ${:etc}/cron.d
-crontabs = ${:etc}/crontabs
-cronstamps = ${:etc}/cronstamps
-logrotate-entries = ${:etc}/logrotate.d
 srv = ${buildout:directory}/srv
 backup = ${:srv}/backup
 mariadb-backup-full = ${:backup}/mariadb-full
 mariadb-backup-incremental = ${:backup}/mariadb-incremental
-logrotate-backup = ${:backup}/logrotate
 mariadb-data = ${:srv}/mariadb
 mariadb-ssl = ${:etc}/mariadb-ssl
 var = ${buildout:directory}/var
@@ -249,12 +211,11 @@ hostname = ${my-cnf-parameters:ip}
 port = ${my-cnf-parameters:port}
 
 [buildout]
-parts =
+extends =
+  {{ parameter_dict['instance-logrotate-cfg'] }}
+parts +=
   publish-mariadb-url
-  logrotate
   logrotate-entry-mariadb
-  cron
-  cron-entry-logrotate
   binary-link
   update-mysql
   mysqld
