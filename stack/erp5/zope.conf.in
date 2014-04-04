@@ -52,7 +52,7 @@ products {{ parameter_dict['instance-products'] }}
 </product-config>
 
 {% endif -%}
-{% set timerserver_interval = parameter_dict.get('timerserver-interval', 0) -%}
+{% set timerserver_interval = parameter_dict['timerserver-interval'] -%}
 {% if timerserver_interval -%}
 %import timerserver
 <timer-server>
