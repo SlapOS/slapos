@@ -6,6 +6,8 @@ General:
 - resilience
 - daily slow-query digest
   make percona toolkit available in mysql instance and decide how to send digest
+- make mariadb user accounts accept connections only from relevant IPs
+  or make x509 mandatory on all non-localhost accounts (needs ZMySQLD*A support)
 
 Backups:
 - flush binlogs independently from full backups (in addition to anyway flushing them on full backup creation)
