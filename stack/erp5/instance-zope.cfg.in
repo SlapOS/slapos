@@ -196,6 +196,9 @@ deadlock-debugger-password = {{ dumps(slapparameter_dict['deadlock-debugger-pass
 tidstorage-ip = ${tidstorage:ipv4}
 tidstorage-port = ${tidstorage:ipv4-port}
 promise-path = ${erp5-promise:promise-path}
+{% set thread_amount = slapparameter_dict['thread-amount'] -%}
+thread-amount = {{ thread_amount }}
+timerserver-interval = {{ dumps(slapparameter_dict['timerserver-interval']) }}
 
 [zope-conf-base]
 recipe = slapos.recipe.template:jinja2
@@ -209,8 +212,6 @@ backup = ${logrotate:backup}
 {% macro zope(
   name,
   port,
-  thread_amount,
-  timerserver_interval,
   longrequest_logger_timeout,
   longrequest_logger_interval
 ) -%}
@@ -223,8 +224,6 @@ backup = ${logrotate:backup}
 pid-file = ${directory:run}/{{ name }}.pid
 lock-file = ${directory:run}/{{ name }}.lock
 port = {{ port }}
-thread-amount = {{ thread_amount }}
-timerserver-interval = {{ dumps(timerserver_interval) }}
 event-log = ${directory:log}/{{ name }}-event.log
 z2-log = ${directory:log}/{{ name }}-Z2.log
 
@@ -280,7 +279,7 @@ post = {{ bin_directory }}/killpidfromfile {{ '${' ~ conf_parameter_name ~ ':pid
 {% endmacro -%}
 
 {% for i in range(slapparameter_dict.get('instance-count', 1)) -%}
-{{   zope("zope-" ~ i, next_port, slapparameter_dict['thread-amount'], slapparameter_dict['timerserver-interval'], slapparameter_dict['longrequest-logger-timeout'], slapparameter_dict['longrequest-logger-interval']) }}
+{{   zope("zope-" ~ i, next_port, slapparameter_dict['longrequest-logger-timeout'], slapparameter_dict['longrequest-logger-interval']) }}
 {%   set next_port = next_port + 1 -%}
 {% endfor -%}
 
