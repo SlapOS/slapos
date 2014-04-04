@@ -19,6 +19,9 @@ class Command(command.Command):
 
         return parser
 
+    def run(self, parsed_args):
+        return self.take_action(parsed_args)
+
 def check_root_user(config_command_instance):
   if sys.platform != 'cygwin' and os.getuid() != 0:
       config_command_instance.app.log.error('This slapos command must be run as root.')
