@@ -144,6 +144,13 @@ recipe = slapos.cookbook:wrapper
 wrapper-path = ${directory:services}/apache
 command-line = "{{ parameter_dict['apache'] }}/bin/httpd" -f "${apache-conf:rendered}" -DFOREGROUND
 
+[{{ section('apache-promise') }}]
+# Check any apache port in ipv4, expect other ports and ipv6 to behave consistently
+recipe = slapos.cookbook:check_port_listening
+path = ${directory:promise}/apache
+hostname = {{ ipv4 }}
+port = {{ apache_dict.values()[0][0] }}
+
 [publish]
 recipe = slapos.cookbook:publish.serialised
 {% for family_name, (apache_port, scheme, _) in apache_dict.items() -%}
@@ -188,6 +195,7 @@ recipe = slapos.cookbook:mkdirectory
 apache-conf = ${:etc}/apache
 bin = ${buildout:directory}/bin
 etc = ${buildout:directory}/etc
+promise = ${directory:etc}/promise
 services = ${:etc}/run
 var = ${buildout:directory}/var
 run = ${:var}/run
