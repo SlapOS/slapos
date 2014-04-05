@@ -1,3 +1,4 @@
+{% set server_check_path = parameter_dict['server-check-path'] -%}
 global
   maxconn 4096
   stats socket {{ parameter_dict['socket-path'] }} level admin
@@ -14,10 +15,6 @@ defaults
   balance roundrobin
   stats uri /haproxy
   stats realm Global\ statistics
-{% set server_check_path = parameter_dict['server-check-path'] -%}
-{% if server_check_path -%}
-  option httpchk GET {{ server_check_path }}
-{% endif -%}
   # it is useless to have timeout much bigger than the one of apache.
   # By default apache use 300s, so we set slightly more in order to
   # make sure that apache will first stop the connection.
@@ -40,8 +37,13 @@ defaults
 
 {% for name, (port, backend_list) in parameter_dict['backend-dict'].items() -%}
 listen {{ name }} {{ parameter_dict['ip'] }}:{{ port }}
-{%   for address, connection_count in backend_list -%}
+{%   set has_webdav = [] -%}
+{%   for address, connection_count, webdav in backend_list -%}
+{%     if webdav %}{% do has_webdav.append(None) %}{% endif -%}
 {%     set server_name = name ~ '-' ~ loop.index0 -%}
   server {{ server_name }} {{ address }} cookie {{ server_name }} check inter 3s rise 1 fall 2 maxqueue 5 maxconn {{ connection_count }}
 {%   endfor -%}
+{%-  if not has_webdav and server_check_path %}
+  option httpchk GET {{ server_check_path }}
+{%   endif -%}
 {% endfor %}

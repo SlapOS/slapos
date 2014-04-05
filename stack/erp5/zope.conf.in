@@ -22,19 +22,17 @@ rest-output-encoding utf-8
 # XXX: isn't this entry implicit ?
 products {{ parameter_dict['instance-products'] }}
 
+{% if parameter_dict['webdav'] -%}
+<webdav-source-server>
+  address {{ parameter_dict['ip'] }}:{{ parameter_dict['port'] }}
+  force-connection-close off
+</webdav-source-server>
+{% else %}
 <http-server>
   address {{ parameter_dict['ip'] }}:{{ parameter_dict['port'] }}
 </http-server>
+{%- endif %}
 
-{# TODO: enable
-{% if webdav_port -%}
-<webdav-source-server>
-  address {{ parameter_dict['ip'] }}:{{ parameter_dict['webdav_port'] }}
-  force-connection-close off
-</webdav-source-server>
-
-{% endif -%}
--#}
 <zoperunner>
     program $INSTANCE/bin/runzope
 </zoperunner>

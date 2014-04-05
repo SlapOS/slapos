@@ -9,10 +9,10 @@ recipe = slapos.cookbook:erp5.bootstrap
 runner-path = ${directory:services}/erp5-bootstrap
 {# XXX: Expect the first database to be the one to use for catalog. -#}
 mysql-url = {{ publish['mariadb-database-list'][0] }}
-{# Pick the first family found, they should be all equivalent anyway. -#}
+{# Pick the first http[s] family found, they should be all equivalent anyway. -#}
 {% set family_list = [] -%}
 {% for key, value in publish.items() -%}
-{%   if key.startswith('family-') -%}
+{%   if key.startswith('family-') and value.startswith('http') -%}
 {%     do family_list.append(value.split('://', 1)) -%}
 {%   endif -%}
 {%  endfor -%}

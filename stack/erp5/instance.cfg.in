@@ -96,6 +96,7 @@ bin-directory = {{ bin_directory }}
 6tunnel = {{ sixtunnel_location }}
 dash = {{ dash_location }}
 template-haproxy-cfg = {{ template_haproxy_cfg }}
+template-apache-conf = {{ template_apache_conf }}
 
 [dynamic-template-balancer]
 < = jinja2-template-base

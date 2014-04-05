@@ -198,7 +198,14 @@ tidstorage-port = ${tidstorage:ipv4-port}
 promise-path = ${erp5-promise:promise-path}
 {% set thread_amount = slapparameter_dict['thread-amount'] -%}
 thread-amount = {{ thread_amount }}
-timerserver-interval = {{ dumps(slapparameter_dict['timerserver-interval']) }}
+{% set webdav = slapparameter_dict['webdav'] -%}
+webdav = {{ dumps(webdav) }}
+{% if webdav -%}
+{%   set timerserver_interval = 0 -%}
+{% else -%}
+{%   set timerserver_interval = slapparameter_dict['timerserver-interval'] -%}
+{%- endif %}
+timerserver-interval = {{ dumps(timerserver_interval) }}
 
 [zope-conf-base]
 recipe = slapos.recipe.template:jinja2
@@ -260,7 +267,7 @@ path = ${directory:promises}/{{ name }}
 base-name = {{ zope_tunnel_base_name }}
 ipv6-port = {{ port }}
 ipv4-port = {{ port }}
-{%   do publish_list.append(("[" ~ ipv6 ~ "]:" ~ port, thread_amount)) -%}
+{%   do publish_list.append(("[" ~ ipv6 ~ "]:" ~ port, thread_amount, webdav)) -%}
 
 [{{ section("promise-tunnel-" ~ name) }}]
 recipe = slapos.cookbook:check_port_listening
@@ -268,7 +275,7 @@ hostname = {{ '${' ~ zope_tunnel_section_name ~ ':ipv6}' }}
 port = {{ '${' ~ zope_tunnel_section_name ~ ':ipv6-port}' }}
 path = ${directory:promises}/{{ zope_tunnel_base_name }}
 {% else -%}
-{%   do publish_list.append((ipv4 ~ ":" ~ port, thread_amount)) -%}
+{%   do publish_list.append((ipv4 ~ ":" ~ port, thread_amount, webdav)) -%}
 {% endif -%}
 
 [{{ section('logrotate-entry-' ~ name) }}]

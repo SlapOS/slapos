@@ -1,6 +1,5 @@
 General:
 - varnish/squid
-- enable zope webdav service and provide access through haproxy & backend apache
 - ipv6 support (besides frontend-backend apache connection)
   requires important changes at ERP5 level
 - resilience

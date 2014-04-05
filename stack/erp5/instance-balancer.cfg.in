@@ -1,5 +1,6 @@
 {% if software_type == slap_software_type -%}
 {% set part_list = [] -%}
+{% set ssl_parameter_dict = slapparameter_dict.get('ssl', {}) %}
 {% macro section(name) %}{% do part_list.append(name) %}{{ name }}{% endmacro -%}
 {% set use_ipv6 = slapparameter_dict.get('use-ipv6', False) -%}
 {#
@@ -16,6 +17,22 @@ per partition. No more (undefined result), no less (IndexError).
 {%   do apache_ip_list.append('[' ~ ipv6 ~ ']') -%}
 {% endif -%}
 
+[simplefile]
+recipe = slapos.recipe.template:jinja2
+template = inline:{{ '{{ content }}' }}
+
+{% macro simplefile(section_name, file_path, content, mode='') -%}
+{%   set content_section_name = section_name ~ '-content' -%}
+[{{  content_section_name }}]
+content = {{ dumps(content) }}
+
+[{{  section(section_name) }}]
+< = simplefile
+rendered = {{ file_path }}
+context = key content {{content_section_name}}:content
+mode = {{ mode }}
+{%- endmacro %}
+
 {% if use_ipv6 -%}
 [zope-tunnel-base]
 recipe = slapos.cookbook:ipv4toipv6
@@ -30,9 +47,13 @@ ipv4 = {{ ipv4 }}
 {% set next_port = slapparameter_dict['tcpv4-port'] -%}
 {% for family_name, parameter_id_list in slapparameter_dict['zope-family-dict'].items() -%}
 {%   set zope_family_address_list = [] -%}
+{%   set has_webdav = [] -%}
 {%   for parameter_id in parameter_id_list -%}
 {%     set zope_address_list = slapparameter_dict[parameter_id] -%}
-{%     for zope_address, maxconn in zope_address_list -%}
+{%     for zope_address, maxconn, webdav in zope_address_list -%}
+{%       if webdav -%}
+{%         do has_webdav.append(None) %}
+{%       endif -%}
 {%       if use_ipv6 -%}
 [{{ section('zope-tunnel-' ~ next_port) }}]
 < = zope-tunnel-base
@@ -45,20 +66,27 @@ ipv6 = {{ zope_address.split(']:')[0][1:] }}
 {%       else -%}
 {%         set zope_effective_address = zope_address -%}
 {%       endif -%}
-{%       do zope_family_address_list.append((zope_effective_address, maxconn)) -%}
+{%       do zope_family_address_list.append((zope_effective_address, maxconn, webdav)) -%}
 {%     endfor -%}
 {%   endfor -%}
 {# Make rendering fail artificially if any family has no known backend.
  # This is useful as haproxy's hot-reconfiguration mechanism is
  # supervisord-incompatible.
  # As jinja2 postpones KeyError until place-holder value is actually used,
- # do a no-op, type-safe concatenation.
+ # do a no-op getitem.
 -#}
-{%   do '#' ~ zope_family_address_list[0] -%}
+{%   do zope_family_address_list[0][0] -%}
 {%   set haproxy_port = next_port -%}
 {%   set next_port = next_port + 1 -%}
 {%   do haproxy_dict.__setitem__(family_name, (haproxy_port, zope_family_address_list)) -%}
-{%   do apache_dict.__setitem__(family_name, (next_port, 'http://' ~ ipv4 ~ ':' ~ haproxy_port)) -%}
+{%   if has_webdav -%}
+{%     set internal_scheme = 'http' -%}{# mod_rewrite does not recognise webdav scheme -#}
+{%     set external_scheme = 'webdavs' -%}
+{%   else %}
+{%     set internal_scheme = 'http' -%}
+{%     set external_scheme = 'https' -%}
+{%   endif -%}
+{%   do apache_dict.__setitem__(family_name, (next_port, external_scheme, internal_scheme ~ '://' ~ ipv4 ~ ':' ~ haproxy_port ~ slapparameter_dict['backend-path'])) -%}
 {%   set next_port = next_port + 1 -%}
 {% endfor -%}
 
@@ -73,6 +101,7 @@ recipe = slapos.recipe.template:jinja2
 template = {{ parameter_dict['template-haproxy-cfg'] }}
 rendered = ${directory:etc}/haproxy.cfg
 context = section parameter_dict haproxy-cfg-parameter-dict
+extensions = jinja2.ext.do
 
 [{{ section('haproxy') }}]
 recipe = slapos.cookbook:wrapper
@@ -81,69 +110,78 @@ command-line = "{{ parameter_dict['haproxy'] }}/sbin/haproxy" -f "${haproxy-cfg:
 
 {# TODO: build socat and wrap it as "${directory:bin}/haproxy-ctl" to connect to "${haproxy-cfg-parameter-dict:socket-path}" #}
 
-[apache]
-recipe = slapos.cookbook:apache.zope.backend
+[apache-conf-ssl]
+cert = ${directory:apache-conf}/apache.crt
+key = ${directory:apache-conf}/apache.pem
+ca-cert =  ${directory:apache-conf}/ca.crt
+crl = ${directory:apache-conf}/crl.pem
+
+[apache-conf-parameter-dict]
 backend-list = {{ dumps(apache_dict.values()) }}
-ip = {{ dumps(apache_ip_list) }}
-wrapper = ${directory:bin}/apache
-scheme = https
-key-file = ${directory:apache-conf}/apache.key
-cert-file = ${directory:apache-conf}/apache.crt
-configuration-file = ${directory:apache-conf}/apache.conf
-access-control-string = {{ dumps(slapparameter_dict['apache-access-control-string']) }}
+ip-list = {{ dumps(apache_ip_list) }}
 pid-file = ${directory:run}/apache.pid
-lock-file = ${directory:run}/apache.lock
-ssl-session-cache = $${directory:log}/apache-ssl-session-cache
 error-log = ${directory:log}/apache-error.log
 access-log = ${directory:log}/apache-access.log
-apache-binary = {{ parameter_dict['apache'] }}/bin/httpd
-ssl-authentication = {{ dumps(slapparameter_dict['apache-ssl-authentication']) }}
-backend-path = {{ dumps(slapparameter_dict['apache-backend-path']) }}
-# Note: Without certificate-authority main certificate have to be hardcoded
-ssl-authentication-certificate = ${certificate-authority:ca-dir}/cacert.pem
-ssl-authentication-crl = ${certificate-authority:ca-crl}
+# Apache 2.4's default value (60 seconds) can be a bit too short
+timeout = 300
+# Basic SSL server configuration
+cert = ${apache-ssl:cert}
+key = ${apache-ssl:key}
+cipher =
+ssl-session-cache = ${directory:log}/apache-ssl-session-cache
+# Client x509 auth
+ca-cert = ${apache-ssl-client:cert}
+crl = ${apache-ssl-client:crl}
+
+[apache-conf]
+recipe = slapos.recipe.template:jinja2
+template = {{ parameter_dict['template-apache-conf'] }}
+rendered = ${directory:apache-conf}/apache.conf
+context = section parameter_dict apache-conf-parameter-dict
+
+[{{ section('apache') }}]
+recipe = slapos.cookbook:wrapper
+wrapper-path = ${directory:services}/apache
+command-line = "{{ parameter_dict['apache'] }}/bin/httpd" -f "${apache-conf:rendered}" -DFOREGROUND
 
 [publish]
 recipe = slapos.cookbook:publish.serialised
-{% for family_name, (apache_port, _) in apache_dict.items() -%}
-{%   if ipv6_set -%}
-{{     family_name ~ '-v6' }} = ${apache:scheme}://[{{ ipv6 }}]:{{ apache_port }}
-{%   endif -%}
-{{   family_name }} = ${apache:scheme}://{{ ipv4 }}:{{ apache_port }}
+{% for family_name, (apache_port, scheme, _) in apache_dict.items() -%}
+{{   family_name ~ '-v6' }} = {% if ipv6_set %}{{ scheme ~ '://[' ~ ipv6 ~ ']:' ~ apache_port }}{% endif %}
+{{   family_name }} = {{ scheme ~ '://' ~ ipv4 ~ ':' ~ apache_port }}
 {% endfor -%}
 
-[certificate-authority]
-recipe = slapos.cookbook:certificate_authority
-openssl-binary = {{ parameter_dict['openssl'] }}/bin/openssl
-ca-dir = ${directory:ca-dir}
-requests-directory = ${directory:requests}
-wrapper = ${directory:services}/ca
-ca-private = ${directory:private}
-ca-certs = ${directory:certs}
-ca-newcerts = ${directory:newcerts}
-ca-crl = ${directory:crl}
-{% set ca = slapparameter_dict['ca'] -%}
-country-code = {{ dumps(ca.get('country-code', 'ZZ')) }}
-email = {{ dumps(ca.get('email', 'nobody@example.com')) }}
-state = {{ dumps(ca.get('state', 'Dummy State')) }}
-city = {{ dumps(ca.get('city', 'Dummy City')) }}
-company = {{ dumps(ca.get('company', 'Dummy Company')) }}
+[apache-ssl]
+{% if ssl_parameter_dict.get('key') -%}
+key = ${apache-ssl-key:rendered}
+cert = ${apache-ssl-cert:rendered}
+{{ simplefile('apache-ssl-key', '${apache-conf-ssl:key}', ssl_parameter_dict['key']) }}
+{{ simplefile('apache-ssl-cert', '${apache-conf-ssl:cert}', ssl_parameter_dict['cert']) }}
+{% else %}
+recipe = plone.recipe.command
+command = "{{ parameter_dict['openssl'] }}/bin/openssl" req -newkey rsa -batch -new -x509 -days 3650 -nodes -keyout "${:key}" -out "${:cert}"
+key = ${apache-conf-ssl:key}
+cert = ${apache-conf-ssl:cert}
+{%- endif %}
 
-[ca-apache]
-< = certificate-authority
-recipe = slapos.cookbook:certificate_authority.request
-key-file = ${apache:key-file}
-cert-file = ${apache:cert-file}
-executable = ${apache:wrapper}
-wrapper = ${directory:services}/apache
+[apache-ssl-client]
+{% if ssl_parameter_dict.get('ca-cert') -%}
+cert = ${apache-ssl-ca:rendered}
+crl = ${apache-ssl-crl:rendered}
+{{ simplefile('apache-ssl-ca', '${apache-conf-ssl:ca-cert}', ssl_parameter_dict['ca-cert']) }}
+{{ simplefile('apache-ssl-crl', '${apache-conf-ssl:crl}', ssl_parameter_dict['crl']) }}
+{% else %}
+cert =
+crl =
+{%- endif %}
 
 [logrotate-apache]
 recipe = slapos.cookbook:logrotate.d
 logrotate-entries = ${logrotate:logrotate-entries}
 backup = ${logrotate:backup}
 name = apache
-log = ${apache:error-log} ${apache:access-log}
-post = {{ parameter_dict['bin-directory'] }}/killpidfromfile ${apache:pid-file} SIGUSR1
+log = ${apache-conf-parameter-dict:error-log} ${apache-conf-parameter-dict:access-log}
+post = {{ parameter_dict['bin-directory'] }}/killpidfromfile ${apache-conf-parameter-dict:pid-file} SIGUSR1
 
 [directory]
 recipe = slapos.cookbook:mkdirectory
@@ -166,8 +204,6 @@ extends = {{ parameter_dict['instance-logrotate-cfg'] }}
 parts +=
   publish
   logrotate-apache
-  haproxy
-  ca-apache
   {{ part_list | join('\n  ') }}
 eggs-directory = {{ eggs_directory }}
 develop-eggs-directory = {{ develop_eggs_directory }}

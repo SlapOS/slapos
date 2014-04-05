@@ -92,6 +92,7 @@ extra-config =
   inituser-login
   inituser-password
   developer-list
+  webdav
 config-mysql-url-list = ${request-mariadb:connection-database-list}
 config-mysql-test-url-list = ${request-mariadb:connection-test-database-list}
 config-memcached-url = ${request-memcached-volatile:connection-url}
@@ -126,6 +127,7 @@ config-timerserver-interval = {{ dumps(zope_parameter_dict.get('timerserver-inte
 config-longrequest-logger-interval = {{ dumps(zope_parameter_dict.get('longrequest-logger-interval', -1)) }}
 config-longrequest-logger-timeout = {{ dumps(zope_parameter_dict.get('longrequest-logger-timeout', 1)) }}
 config-port-base = {{ dumps(zope_parameter_dict.get('port-base', 2200)) }}
+config-webdav = {{ dumps(zope_parameter_dict.get('webdav', False)) }}
 sla-computer_guid = {{ dumps(zope_parameter_dict.get('computer-guid', computer_id)) }}
 {% endfor -%}
 
@@ -160,10 +162,8 @@ sla-computer_guid = {{ dumps(slapparameter_dict.get('balancer-computer-guid', co
 extra-config =
   tcpv4-port
   haproxy-server-check-path
-  apache-access-control-string
-  apache-ssl-authentication
-  apache-backend-path
-  ca
+  backend-path
+  ssl
   zope-family-dict
   {{ zope_address_list_id_dict.values() | join(' ') }}
 return =
@@ -178,10 +178,8 @@ config-{{ name }} = {{ ' ${' ~ zope_section_id ~ ':connection-zope-address-list}
 {% endfor -%}
 # XXX: should those really be same for all families ?
 config-haproxy-server-check-path = {{ dumps(balancer_dict.get('haproxy-server-check-path', '/') % {'site-id': site_id}) }}
-config-apache-access-control-string = {{ dumps(balancer_dict.get('apache-access-control-string', 'all')) }}
-config-apache-ssl-authentication = {{ dumps(balancer_dict.get('apache-ssl-authentication', '0')) }}
-config-apache-backend-path = {{ dumps(balancer_dict.get('apache-backend-path', '/') % {'site-id': site_id}) }}
-config-ca = {{ dumps(balancer_dict.get('ca', {})) }}
+config-backend-path = {{ dumps(balancer_dict.get('apache-backend-path', '/') % {'site-id': site_id}) }}
+config-ssl = {{ dumps(balancer_dict.get('ssl', {})) }}
 
 [request-frontend-base]
 {% if has_frontend -%}
