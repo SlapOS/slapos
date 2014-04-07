@@ -4,7 +4,7 @@
 {% set use_ipv6 = slapparameter_dict.get('use-ipv6', False) -%}
 {% set database_list = slapparameter_dict.get('database-list', [{'name': 'erp5', 'user': 'user', 'password': 'insecure'}]) -%}
 {% set test_database_list = [] %}
-{% for database_count in range(slapparameter_dict.get('test-database-amount', 0)) -%}
+{% for database_count in range(slapparameter_dict.get('test-database-amount', 30)) -%}
 {%   do test_database_list.append({'name': 'erp5_test_' ~ database_count, 'user': 'testuser_' ~ database_count, 'password': 'testpassword' ~ database_count}) -%}
 {% endfor -%}
 {% set catalog_backup = slapparameter_dict.get('catalog-backup', {}) -%}
