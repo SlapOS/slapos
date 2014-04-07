@@ -1,0 +1,19 @@
+#!/bin/sh
+
+if [ -f "${:installed_file}" ]
+then
+    echo "Database is configured. Exiting...";
+    exit 0;
+fi
+sleep 60
+
+echo "Installing file schema.sql..."
+cat ${:mysql_schema} | ${:mysql_bin} -h${:mysql_host} -P${:mysql_port} -u${:mysql_user} -p${:mysql_pwd} ${:mysql_db}
+echo "Installing file images.sql..."
+cat ${:mysql_images} | ${:mysql_bin} -h${:mysql_host} -P${:mysql_port} -u${:mysql_user} -p${:mysql_pwd} ${:mysql_db}
+echo "Installing file data.sql..."
+cat ${:mysql_data} | ${:mysql_bin} -h${:mysql_host} -P${:mysql_port} -u${:mysql_user} -p${:mysql_pwd} ${:mysql_db}
+
+echo "installed" > ${:installed_file}
+
+exit 0

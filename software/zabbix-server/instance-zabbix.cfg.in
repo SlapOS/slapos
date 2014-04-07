@@ -1,0 +1,84 @@
+[buildout]
+
+eggs-directory = ${buildout:eggs-directory}
+develop-eggs-directory = ${buildout:develop-eggs-directory}
+offline = true
+
+[httpd-conf]
+recipe = slapos.recipe.template
+url = ${template-httpd-conf:location}/${template-httpd-conf:filename}
+output = $${rootdirectory:etc}/apache.conf
+mode = 0600
+
+document_root = $${directory:www}
+pid_file = $${basedirectory:run}/apache.pid
+lock_file = $${basedirectory:run}/apache.lock
+ipv6 = $${apache-network-configuration:listening-ip}
+port = $${apache-network-configuration:listening-port}
+error_log = $${directory:httpd-log}/error.log
+access_log = $${directory:httpd-log}/access.log
+php_ini_dir = $${directory:php-ini-dir}
+php_lib_path = ${apache-php:location}/lib/php
+
+[zabbix-conf]
+recipe = slapos.recipe.template
+url = ${template-zabbix-conf:location}/${template-zabbix-conf:filename}
+output = $${rootdirectory:etc}/zabbix_server.conf
+mode = 0600
+
+log_file = $${basedirectory:log}/zabbix_server.log
+pid_file = $${basedirectory:run}/zabbix_server.pid
+ip = $${slap-network-information:global-ipv6}
+port = 10051
+mysql_user = $${apache-php:mysql-username}
+mysql_password = $${apache-php:mysql-password}
+mysql_db = $${apache-php:mysql-database}
+mysql_host = $${apache-php:mysql-host}
+mysql_port = $${apache-php:mysql-port}
+
+[install-zabbix-db]
+recipe = slapos.recipe.template
+url = ${template-zabbix-database:location}/${template-zabbix-database:filename}
+output = $${basedirectory:scripts}/prepare-database
+mode = 0700
+
+installed_file = $${buildout:directory}/.zabbix.db.installed
+mysql_bin = ${mariadb:location}/bin/mysql
+mysql_host = $${apache-php:mysql-host}
+mysql_db = $${apache-php:mysql-database}
+mysql_port = $${apache-php:mysql-port}
+mysql_user = $${apache-php:mysql-username}
+mysql_pwd = $${apache-php:mysql-password}
+mysql_schema = ${zabbix-server:compile-directory}/zabbix-${zabbix-server:version}/database/mysql/schema.sql
+mysql_data = ${zabbix-server:compile-directory}/zabbix-${zabbix-server:version}/database/mysql/data.sql
+mysql_images = ${zabbix-server:compile-directory}/zabbix-${zabbix-server:version}/database/mysql/images.sql
+
+#force to install other parts
+httpd-conf = $${httpd-conf:output}
+logrotate = $${logrotate-entry-zabbix:name}
+wrapper = $${zabbix:wrapper-path}
+
+[zabbix-wrapper]
+recipe = slapos.cookbook:wrapper
+zabbix-server = ${zabbix-server:location}/sbin/zabbix_server
+zabbix-conf = $${zabbix-conf:output}
+command-line = $${:zabbix-server} -c $${:zabbix-conf}
+wrapper-path = $${rootdirectory:bin}/zabbix_server_raw
+
+[zabbix]
+recipe = slapos.cookbook:wrapper
+script-file = ${zabbix-svcdeamon:location}/${zabbix-svcdeamon:filename}
+command-line = ${buildout:executable} $${:script-file} $${zabbix-wrapper:wrapper-path} $${zabbix-conf:pid_file} 10
+wrapper-path = $${basedirectory:services}/zabbix_server
+
+[logrotate-entry-zabbix]
+<= logrotate
+recipe = slapos.cookbook:logrotate.d
+name = zabbix_server
+log = $${zabbix-conf:log_file}
+frequency = daily
+rotate-num = 30
+sharedscripts = true
+notifempty = true
+create = true
+
