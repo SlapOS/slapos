@@ -38,11 +38,11 @@ mysql_port = $${apache-php:mysql-port}
 
 [install-zabbix-db]
 recipe = slapos.recipe.template
-url = ${template-zabbix-database:location}/${template-zabbix-database:filename}
+url = ${configure-dbscript:location}/${configure-dbscript:filename}
 output = $${basedirectory:scripts}/prepare-database
 mode = 0700
 
-installed_file = $${buildout:directory}/.zabbix.db.installed
+installed_file = $${zabbix-wrapper:check-file}
 mysql_bin = ${mariadb:location}/bin/mysql
 mysql_host = $${apache-php:mysql-host}
 mysql_db = $${apache-php:mysql-database}
@@ -52,6 +52,7 @@ mysql_pwd = $${apache-php:mysql-password}
 mysql_schema = ${zabbix-server:compile-directory}/zabbix-${zabbix-server:version}/database/mysql/schema.sql
 mysql_data = ${zabbix-server:compile-directory}/zabbix-${zabbix-server:version}/database/mysql/data.sql
 mysql_images = ${zabbix-server:compile-directory}/zabbix-${zabbix-server:version}/database/mysql/images.sql
+python_bin = ${buildout:executable}
 
 #force to install other parts
 httpd-conf = $${httpd-conf:output}
@@ -64,6 +65,8 @@ zabbix-server = ${zabbix-server:location}/sbin/zabbix_server
 zabbix-conf = $${zabbix-conf:output}
 command-line = $${:zabbix-server} -c $${:zabbix-conf}
 wrapper-path = $${rootdirectory:bin}/zabbix_server_raw
+check-file = $${buildout:directory}/.zabbix.db.installed
+wait-for-files = $${:check-file}
 
 [zabbix]
 recipe = slapos.cookbook:wrapper
