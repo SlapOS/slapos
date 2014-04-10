@@ -6,8 +6,15 @@
 {%   set slave_list = json_module.loads(slave_list_raw) -%}
 {%   for slave_dict in slave_list -%}
 {%     set slave_reference = slave_dict.pop('slave-reference') %}
+{%     set log_access_url = slave_dict.pop('log-access', '') %}
 {%     set current_slave_dict = slave_information_dict.get(slave_reference, {}) %}
 {%     do current_slave_dict.update(slave_dict) -%}
+{%     set log_access_list = current_slave_dict.get('log-access-urls', []) %}
+{%     do log_access_list.append( frontend + ': ' + log_access_url) %}
+{%     do current_slave_dict.__setitem__(
+            'log-access-urls',
+            log_access_list
+            ) %}
 {%     do current_slave_dict.__setitem__(
             'replication_number',
             current_slave_dict.get('replication_number', 0) + 1
@@ -23,6 +30,7 @@
 [{{ publish_section_title }}]
 recipe = slapos.cookbook:publish
 -slave-reference = {{ slave_reference }}
+log-access-url = {{ json_module.dumps(slave_information.pop('log-access-urls', 1000)) }}
 {%   for key, value in slave_information.iteritems() -%}
 {{ key }} = {{ value }}
 {%   endfor -%}
