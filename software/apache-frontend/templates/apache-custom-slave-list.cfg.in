@@ -4,8 +4,9 @@
 {% set part_list = [] -%}
 {% set cache_access = "http://%s:%s" % (local_ipv4, cache_port) -%}
 {% set generic_instance_parameter_dict = {'cache_access': cache_access,} -%}
+{% set slave_log_dict = {} -%}
 {% if extra_slave_instance_list -%}
-{%   set slave_instance_information_list = []-%}
+{%   set slave_instance_information_list = [] -%}
 {%   set slave_instance_list = slave_instance_list + json_module.loads(extra_slave_instance_list) -%}
 {% endif -%}
 [jinja2-template-base]
@@ -17,15 +18,73 @@ context =
     key develop_eggs_directory buildout:develop-eggs-directory
     ${:extra-context}
 
+{% do logrotate_dict.pop('recipe') %}
+[logrotate]
+{% for key, value in logrotate_dict.iteritems() -%}
+{{ key }} = {{ value }}
+{% endfor %}
+
 # Loop trhought slave list to set up slaves
 {% for slave_instance in slave_instance_list -%}
 {%   set slave_reference = slave_instance.get('slave_reference') -%}
 {%   set slave_section_title = 'dynamic-template-slave-instance-%s' % slave_reference -%}
 {%   set slave_parameter_dict = generic_instance_parameter_dict.copy() -%}
 {%   do part_list.append(slave_section_title) -%}
+
+
+{%   set slave_directory_section = slave_reference + "-directory" -%}
+{%   set slave_log_folder = logrotate_dict.get('backup') + '/' + slave_reference + "-logs" -%}
+[{{slave_directory_section}}]
+recipe = slapos.cookbook:mkdirectory
+log-folder = {{slave_log_folder}}
+
 # Set Up log files
 {%   do slave_parameter_dict.__setitem__('access_log', '/'.join([apache_log_directory, '%s_access_log' % slave_reference])) -%}
 {%   do slave_parameter_dict.__setitem__('error_log', '/'.join([apache_log_directory, '%s_error_log' % slave_reference])) -%}
+
+# Set slave logrotate entry
+{%   set slave_logrotate_section = slave_reference + "-logs" -%}
+{%   do part_list.append(slave_logrotate_section) -%}
+[{{slave_logrotate_section}}]
+<= logrotate
+recipe = slapos.cookbook:logrotate.d
+name = ${:_buildout_section_name_}
+log = {{slave_parameter_dict.get('access_log')}} {{slave_parameter_dict.get('error_log')}}
+backup = {{ '${' + slave_directory_section + ':log-folder}' }}
+frequency = daily
+rotatep-num = 30
+post = ${buildout:bin-directory}/killpidfromfile {{ apache_configuration.get('pid-file') }} SIGUSR1
+sharedscripts = true
+notifempty = true
+create = true
+
+# integrate current logs inside
+{%   set slave_ln_section = slave_reference + "-ln" -%}
+{%   do part_list.append(slave_ln_section) -%}
+[{{slave_ln_section}}]
+recipe = plone.recipe.command
+stop-on-error = false
+command = ln -s {{slave_parameter_dict.get('error_log')}} {{ '${' + slave_directory_section + ':log-folder}' }}/apache-error.log && ln -s {{slave_parameter_dict.get('access_log')}} {{ '${' + slave_directory_section + ':log-folder}' }}/apache-access.log
+
+# Set password for slave
+{%   set slave_password_section = slave_reference + "-password" -%}
+[{{slave_password_section}}]
+recipe = slapos.cookbook:generate.password
+storage-path = {{apache_configuration_directory}}/.{{slave_reference}}.passwd
+bytes = 8
+
+# Set up htaccess file for slave
+{%   set slave_htaccess_section = slave_reference + '-htaccess' %}
+{%   do part_list.append(slave_htaccess_section) -%}
+[{{slave_htaccess_section}}]
+recipe = plone.recipe.command
+stop-on-error = true
+htaccess-path = {{apache_configuration_directory}}/.{{slave_reference}}.htaccess
+command = {{frontend_configuration.get('apache-directory')}}/bin/htpasswd -cb ${:htaccess-path} {{ slave_reference }} {{ '${' + slave_password_section + ':passwd}' }}
+
+# Add slave log directory to the slave log access dict
+{%   do slave_log_dict.__setitem__(slave_reference, slave_log_folder) %}
+
 # Set up apache configuration file for slave
 [{{ slave_section_title }}]
 < = jinja2-template-base
@@ -72,17 +131,36 @@ apache_custom_https = {{ dumps(apache_custom_https) }}
 {%   endif -%}
 
 # Publish slave information
+{%   set slave_log_access_url = 'https://' + slave_reference + ':${'+ slave_password_section +':passwd}@[' + frontend_configuration.get('apache-ipv6') + ']:' + frontend_configuration.get('apache-https-port') + '/' + slave_reference.lower() + '/' %}
 {%   if not extra_slave_instance_list -%}
 {%     set publish_section_title = 'publish-%s-connection-information' % slave_instance.get('slave_reference') -%}
 {%     do part_list.append(publish_section_title) -%}
 [{{ publish_section_title }}]
 recipe = slapos.cookbook:publish
 public-ipv4 = {{ public_ipv4 }}
+log-access = {{ slave_log_access_url }}
 -slave-reference = {{ slave_instance.get('slave_reference') }}
 {%   else -%}
-{%     do slave_instance_information_list.append({'slave-reference':slave_instance.get('slave_reference'), 'public-ipv4':public_ipv4}) -%}
+{%     do slave_instance_information_list.append({'slave-reference':slave_instance.get('slave_reference'), 'public-ipv4':public_ipv4, 'log-access': slave_log_access_url}) -%}
 {%   endif -%}
 {% endfor -%}
+
+[slave-log-directories]
+{% for key, value in slave_log_dict.iteritems() -%}
+{{ key }} = {{ value }}
+{% endfor %}
+
+# Define log access
+{% set log_access_section = "apache-log-access" %}
+{% do part_list.append(log_access_section) -%}
+[{{log_access_section}}]
+< = jinja2-template-base
+template = {{frontend_configuration.get('template-log-access')}}
+rendered = {{frontend_configuration.get('log-access-configuration')}}
+extra-context =
+    section slave_log_directory slave-log-directories
+    raw apache_log_directory {{apache_log_directory}}
+    raw apache_configuration_directory {{apache_configuration_directory}}
 
 # Publish information for the instance
 {% set publish_section_title = 'publish-apache-information' -%}
