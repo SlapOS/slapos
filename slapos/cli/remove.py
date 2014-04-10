@@ -23,7 +23,7 @@ class RemoveCommand(ClientConfigCommand):
     def take_action(self, args):
         configp = self.fetch_config(args)
         conf = ClientConfig(args, configp)
-        local = init(conf)
+        local = init(conf, self.app.log)
         do_remove(self.app.log, args.software_url, args.node, local)
 
 
