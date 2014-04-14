@@ -102,26 +102,21 @@ class Recipe(GenericBaseRecipe):
         # Always provide a URL-Type
         append("file://" + link)
 
-    zope_environment = dict(
-      TMP=self.options['tmp-path'],
-      TMPDIR=self.options['tmp-path'],
-      HOME=self.options['tmp-path'],
-      PATH=self.options['bin-path'],
-      TZ=self.options['timezone'],
-    )
+    zope_environment = {
+      'TMP': self.options['tmp-path'],
+      'TMPDIR': self.options['tmp-path'],
+      'HOME': self.options['tmp-path'],
+      'PATH': self.options['bin-path'],
+      'TZ': self.options['timezone'],
+    }
 
     # longrequestlogger product which requires environment settings
     longrequest_logger_file = self.options.get('longrequest-logger-file', None)
-    longrequest_logger_timeout = \
-      self.options.get('longrequest-logger-timeout', None)
-    longrequest_logger_interval= \
-      self.options.get('longrequest-logger-interval', None)
     if longrequest_logger_file:
       # add needed zope configuration
-      zope_environment.update(
-        **dict(longrequestlogger_file = longrequest_logger_file,
-               longrequestlogger_timeout = longrequest_logger_timeout,
-               longrequestlogger_interval = longrequest_logger_interval))
+      zope_environment['longrequestlogger_file'] = longrequest_logger_file
+      zope_environment['longrequestlogger_timeout'] = self.options.get('longrequest-logger-timeout', None)
+      zope_environment['longrequestlogger_interval'] = self.options.get('longrequest-logger-interval', None)
 
     # configure default Zope2 zcml
     open(self.options['site-zcml'], 'w').write(open(self.getTemplateFilename(
