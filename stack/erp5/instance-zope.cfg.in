@@ -165,20 +165,15 @@ ipv4-port =
 
 [zope-base]
 recipe = slapos.cookbook:generic.zope.zeo.client
+inituser = ${directory:instance}/inituser
 user = {{ dumps(slapparameter_dict['inituser-login']) }}
 password = {{ dumps(slapparameter_dict['inituser-password']) }}
-ip = {{ ipv4 }}
 timezone = {{ dumps(slapparameter_dict['timezone']) }}
-tidstorage-ip = ${tidstorage:ipv4}
-tidstorage-port = ${tidstorage:ipv4-port}
-instance-etc = ${directory:instance-etc}
-bt5-repository = ${directory:var}/bt5_repository
 tmp-path = ${directory:tmp}
 bin-path = ${directory:bin}
-site-zcml = ${:instance-etc}/site.zcml
-inituser = ${directory:instance}/inituser
+site-zcml = ${directory:instance-etc}/site.zcml
 runzope-binary = {{ bin_directory }}/runzope
-bt5-repository-list =
+bt5-repository =
 
 [zope-conf-parameter-base]
 ip = {{ ipv4 }}
@@ -240,7 +235,7 @@ rendered = ${directory:etc}/{{ name }}.conf
 context =
   section parameter_dict {{ conf_parameter_name }}
 
-[{{ name }}]
+[{{ section(name) }}]
 < = zope-base
 {% if longrequest_logger_interval < 0 -%}
 longrequest-logger-file =
@@ -253,12 +248,11 @@ longrequest-logger-interval = {{ longrequest_logger_interval }}
 {% endif -%}
 wrapper = ${directory:services}/{{ name }}
 configuration-file = {{ '${' ~ conf_name ~ ':rendered}' }}
-port = {{ '${' ~ conf_parameter_name ~ ':port}' }}
 
 [{{ section("promise-" ~ name) }}]
 recipe = slapos.cookbook:check_port_listening
-hostname = {{ '${' ~ name ~ ':ip}' }}
-port = {{ '${' ~ name ~ ':port}' }}
+hostname = {{ ipv4 }}
+port = {{ port }}
 path = ${directory:promises}/{{ name }}
 
 {% if use_ipv6 -%}
