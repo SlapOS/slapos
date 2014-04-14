@@ -24,6 +24,7 @@ long_query_time = 1
 max_allowed_packet = 128M
 query_cache_size = 0
 query_cache_type = 0
+innodb_file_per_table = 0
 
 plugin-load = ha_mroonga.so;handlersocket.so
 
