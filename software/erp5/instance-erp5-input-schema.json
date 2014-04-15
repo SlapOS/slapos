@@ -39,6 +39,23 @@
       "uniqueItems": true,
       "type": "array"
     },
+    "hosts": {
+      "description": "Host entries to be used in addition to and/or overriding auto-generated ones",
+      "default": {
+        "erp5-catalog-0": "some-ip",
+        "erp5-catalog-...": "some-ip",
+        "erp5-cloudooo": "some-ip",
+        "erp5-memcached-persistent": "some-ip",
+        "erp5-memcached-volatile": "some-ip"
+      },
+      "patternProperties": {
+        ".*": {
+          "description": "An IP to which current entry will resolve",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
     "frontend": {
       "description": "Front-end slave instance request parameters",
       "properties": {

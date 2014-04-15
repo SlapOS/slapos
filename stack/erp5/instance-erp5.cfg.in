@@ -67,12 +67,14 @@ recipe = slapos.cookbook:generate.password
 < = request-common
 return =
   zope-address-list
+  hosts-dict
 extra-config =
   bt5
   bt5-repository-url
   cloudooo-url
   deadlock-debugger-password
   developer-list
+  hosts-dict
   inituser-login
   inituser-password
   instance-count
@@ -99,6 +101,7 @@ config-bt5-repository-url = {{ dumps(slapparameter_dict.get('bt5-repository-url'
 config-cloudooo-url = ${request-cloudooo:connection-url}
 config-deadlock-debugger-password = ${deadlock-debugger-password:passwd}
 config-developer-list = {{ dumps(slapparameter_dict.get('developer-list', [inituser_login])) }}
+config-hosts-dict = {{ dumps(slapparameter_dict.get('hosts-dict', {})) }}
 config-inituser-login = {{ dumps(inituser_login) }}
 config-inituser-password = ${inituser-password:passwd}
 config-kumofs-url = ${request-memcached-persistent:connection-url}
@@ -208,6 +211,11 @@ return = site_url
 recipe = slapos.cookbook:publish.serialised
 deadlock-debugger-password = ${deadlock-debugger-password:passwd}
 inituser-password = ${inituser-password:passwd}
+{#
+Pick any published hosts-dict, they are expected to be identical - and there is
+no way to check here.
+-#}
+hosts-dict = {{ '${' ~ zope_address_list_id_dict.keys()[0] ~ ':connection-hosts-dict}' }}
 {% for name, value in publish_dict.items() -%}
 {{   name }} = {{ value }}
 {% endfor -%}

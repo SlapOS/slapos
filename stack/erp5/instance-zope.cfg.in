@@ -164,6 +164,53 @@ ipv4 =
 ipv4-port =
 {% endif -%}
 
+{% set hosts_dict = {} -%}
+{% for alias, url in (
+    ('erp5-memcached-volatile', slapparameter_dict['memcached-url']),
+    ('erp5-memcached-persistent', slapparameter_dict['kumofs-url']),
+    ('erp5-cloudooo', slapparameter_dict['cloudooo-url']),
+  ) -%}
+{%   do hosts_dict.__setitem__(
+       alias,
+       urlparse.urlparse(url).hostname,
+     )  -%}
+{%- endfor %}
+{# jinja2 does not support enumerate... -#}
+{% set catalog_counter = 0 %}
+{% for url in slapparameter_dict['mysql-url-list'] -%}
+{%   do hosts_dict.__setitem__(
+       'erp5-catalog-' ~ catalog_counter,
+       urlparse.urlparse(url).hostname,
+     ) -%}
+{%   set catalog_counter = catalog_counter + 1 -%}
+{%- endfor %}
+{% do hosts_dict.update(slapparameter_dict['hosts-dict']) -%}
+[hosts-parameter]
+host-dict = {{ dumps(hosts_dict) }}
+
+[hosts]
+recipe = slapos.recipe.template:jinja2
+template = inline: {{ '
+  {% for alias, aliased in host_dict.items() -%}
+  {{ aliased }} {{ alias }}
+  {% endfor %}
+' }}
+rendered = ${directory:etc}/hosts
+context = key host_dict hosts-parameter:host-dict
+
+[preload-userhosts-runzope-parameter]
+runzope-binary = {{ bin_directory }}/runzope
+libuserhosts = {{ parameter_dict['libuserhosts'] }}
+shell-path = {{ parameter_dict['dash'] }}/bin/dash
+hosts = ${hosts:rendered}
+
+[preload-userhosts-runzope]
+recipe = slapos.recipe.template:jinja2
+rendered = ${directory:bin}/runzope_userhosts_preloaded
+context = section parameter_dict preload-userhosts-runzope-parameter
+template = {{ parameter_dict['runzope-userhosts-preloaded-template'] }}
+mode = 755
+
 [zope-base]
 recipe = slapos.cookbook:generic.zope.zeo.client
 inituser = ${directory:instance}/inituser
@@ -173,7 +220,7 @@ timezone = {{ dumps(slapparameter_dict['timezone']) }}
 tmp-path = ${directory:tmp}
 bin-path = ${directory:bin}
 site-zcml = ${directory:instance-etc}/site.zcml
-runzope-binary = {{ bin_directory }}/runzope
+runzope-binary = ${preload-userhosts-runzope:rendered}
 bt5-repository =
 
 [zope-conf-parameter-base]
@@ -295,6 +342,14 @@ post = {{ bin_directory }}/killpidfromfile {{ '${' ~ conf_parameter_name ~ ':pid
 [publish-zope]
 recipe = slapos.cookbook:publish.serialised
 zope-address-list = {{ dumps(publish_list) }}
+{#
+Note: hosts_dist is generated at zope level rather than at erp5 (root partition)
+level, as it is easier: we can access urls as python values trivially here.
+This has the downside of making each zope partition publish the (hopefuly) same
+dict toward erp5 partition, violating the DRY principle and making the intent
+hard to guess.
+-#}
+hosts-dict = {{ dumps(hosts_dict) }}
 
 [erp5-promise]
 recipe = slapos.cookbook:erp5.promise

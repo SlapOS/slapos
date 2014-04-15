@@ -16,6 +16,7 @@ template = {{ parameter_dict['template-create-erp5-site-real'] }}
 rendered = ${buildout:directory}/instance-create-erp5-site-real.cfg
 extensions = jinja2.ext.do
 context =
+  import urlparse urlparse
   section publish publish
   section parameter_dict instance-create-erp5-site-real-parameters
   key eggs_directory buildout:eggs-directory

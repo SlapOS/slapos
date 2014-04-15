@@ -141,6 +141,8 @@ buildout-bin-directory = {{ buildout_bin_directory }}
 dash = {{ dash_location }}
 jsl = {{ jsl_location }}
 link-binary = {{ dumps(zope_link_binary) }}
+libuserhosts = {{ libuserhosts_location }}
+runzope-userhosts-preloaded-template = {{ template_runzope_userhosts_preloaded }}
 
 [dynamic-template-zope]
 < = jinja2-template-base
@@ -150,6 +152,7 @@ extensions = jinja2.ext.do
 extra-context =
     key buildout_directory buildout:directory
     section parameter_dict dynamic-template-zope-parameters
+    import urlparse urlparse
 # Must match the key id in [switch-softwaretype] which uses this section.
     key software_type :software-type
 software-type = zope
