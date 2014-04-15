@@ -68,49 +68,49 @@ recipe = slapos.cookbook:generate.password
 return =
   zope-address-list
 extra-config =
-  mysql-url-list
-  mysql-test-url-list
-  memcached-url
-  cloudooo-url
-  kumofs-url
-  smtp-url
   bt5
   bt5-repository-url
-  zodb-dict
-  zodb-storage-type
-  tidstorage-ip
-  tidstorage-port
-  instance-count
-  thread-amount
-  timerserver-interval
-  timezone
-  site-id
-  longrequest-logger-interval
-  longrequest-logger-timeout
-  port-base
+  cloudooo-url
   deadlock-debugger-password
+  developer-list
   inituser-login
   inituser-password
-  developer-list
+  instance-count
+  kumofs-url
+  longrequest-logger-interval
+  longrequest-logger-timeout
+  memcached-url
+  mysql-test-url-list
+  mysql-url-list
+  port-base
+  site-id
+  smtp-url
+  thread-amount
+  tidstorage-ip
+  tidstorage-port
+  timerserver-interval
+  timezone
   webdav
-config-mysql-url-list = ${request-mariadb:connection-database-list}
-config-mysql-test-url-list = ${request-mariadb:connection-test-database-list}
-config-memcached-url = ${request-memcached-volatile:connection-url}
-config-cloudooo-url = ${request-cloudooo:connection-url}
-config-kumofs-url = ${request-memcached-persistent:connection-url}
+  zodb-dict
+  zodb-storage-type
 config-bt5 = {{ dumps(slapparameter_dict.get('bt5', 'erp5_full_text_myisam_catalog erp5_configurator_standard erp5_configurator_maxma_demo erp5_configurator_ung erp5_configurator_run_my_doc')) }}
 config-bt5-repository-url = {{ dumps(slapparameter_dict.get('bt5-repository-url', local_bt5_repository)) }}
+config-cloudooo-url = ${request-cloudooo:connection-url}
+config-deadlock-debugger-password = ${deadlock-debugger-password:passwd}
+config-developer-list = {{ dumps(slapparameter_dict.get('developer-list', [inituser_login])) }}
+config-inituser-login = {{ dumps(inituser_login) }}
+config-inituser-password = ${inituser-password:passwd}
+config-kumofs-url = ${request-memcached-persistent:connection-url}
+config-memcached-url = ${request-memcached-volatile:connection-url}
+config-mysql-test-url-list = ${request-mariadb:connection-test-database-list}
+config-mysql-url-list = ${request-mariadb:connection-database-list}
+config-site-id = {{ dumps(site_id) }}
 config-smtp-url = {{ dumps(slapparameter_dict.get('smtp-url', 'smtp://localhost:25/')) }}
-config-zodb-dict = ${request-zodb:connection-zodb-dict}
-config-zodb-storage-type = ${request-zodb:connection-zodb-storage-type}
 config-tidstorage-ip = ${request-zodb:connection-tidstorage-ip}
 config-tidstorage-port = ${request-zodb:connection-tidstorage-port}
 config-timezone = {{ dumps(slapparameter_dict.get('timezone', 'UTC')) }}
-config-site-id = {{ dumps(site_id) }}
-config-deadlock-debugger-password = ${deadlock-debugger-password:passwd}
-config-inituser-login = {{ dumps(inituser_login) }}
-config-inituser-password = ${inituser-password:passwd}
-config-developer-list = {{ dumps(slapparameter_dict.get('developer-list', [inituser_login])) }}
+config-zodb-dict = ${request-zodb:connection-zodb-dict}
+config-zodb-storage-type = ${request-zodb:connection-zodb-storage-type}
 software-type = zope
 
 {% set zope_family_dict = {} -%}
