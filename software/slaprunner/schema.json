@@ -13,9 +13,10 @@
                         "slapos-software": {
                                 "description": "a relative path from the slapos git repo to a folder containing a software release, which will be automaticaly deployed while the runner instanciation, and only if the parameter auto-deploy is set to 'true'. For example: 'software/helloworld",
                                 "type": "string"
-                        }, "auto-deploy": { "description": "authorizes the software declared with 'slapos-software' to be automatically deployed, or not",
+                        },
+                        "auto-deploy": { "description": "authorizes the software declared with 'slapos-software' to be automatically deployed, or not",
                                 "type": "boolean",
-                                "default": "true"
+                                "default": "false"
                         },
                         "slapos-repository": {
                                 "description": "url of the default git repository that will be download by the runner while its instanciation. Will be cloned in a directory named 'slapos'",
