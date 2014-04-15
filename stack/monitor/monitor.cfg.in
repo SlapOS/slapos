@@ -193,12 +193,12 @@ name = example.com
 # Deploy a webserver running cgi scripts for monitoring
 ###########
 [public]
-recipe = slapos.cookbook:zeroknown.write
+recipe = slapos.cookbook:zero-knowledge.write
 filename = knowledge0.cfg
 monitor-password = passwordtochange
 
 [zero-parameters]
-recipe = slapos.cookbook:zeroknown.read
+recipe = slapos.cookbook:zero-knowledge.read
 filename = $${public:filename}
 
 # XXX could it be something lighter?
