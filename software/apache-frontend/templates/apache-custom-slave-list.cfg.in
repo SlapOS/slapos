@@ -172,6 +172,10 @@ private-ipv4 = {{ local_ipv4 }}
 {% if extra_slave_instance_list -%}
 slave-instance-information-list = {{ json_module.dumps(slave_instance_information_list) }}
 {% endif -%}
+{% do connection_information_dict.pop('recipe') %}
+{% for key, value in connection_information_dict.iteritems() -%}
+{{ key }} = {{ value }}
+{% endfor %}
 
 {% do part_list.append('cached-rewrite-rules') -%}
 [cached-rewrite-rules]
