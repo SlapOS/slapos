@@ -2,6 +2,7 @@
 
 import errno
 import os
+import subprocess
 
 
 def mkdir_p(path, mode=0o700):
@@ -21,12 +22,18 @@ def mkdir_p(path, mode=0o700):
 
 
 def chownDirectory(path, uid, gid):
-  os.chown(path, uid, gid)
-  for root, dirs, files in os.walk(path):
-      for items in dirs, files:
-          for item in items:
-              if not os.path.islink(os.path.join(root, item)):
-                  os.chown(os.path.join(root, item), uid, gid)
+  chown_cmd = '/bin/chown'
+  if os.path.exists(chown_cmd):
+    subprocess.check_call([chown_cmd, '-R', '%s:%s' % (uid, gid), path])
+  else:
+    # slow fallback.. not unix?
+    print 'chown..', path
+    os.chown(path, uid, gid)
+    for root, dirs, files in os.walk(path):
+        for items in dirs, files:
+            for item in items:
+                if not os.path.islink(os.path.join(root, item)):
+                    os.chown(os.path.join(root, item), uid, gid)
 
 
 def parse_certificate_key_pair(html):
