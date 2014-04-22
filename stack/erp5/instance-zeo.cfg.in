@@ -178,7 +178,12 @@ recipe = slapos.cookbook:cron.d
 cron-entries = ${cron:cron-entries}
 name = purge-repozo-fsindex
 time = ${cron-entry-tidstorage-backup:time}
-command = {{ parameter_dict['findutils-location'] }}/bin/find {% for backup_directory in backup_directory_list %}'{{ backup_directory.replace("\\", "\\\\").replace("'", "\\'") }}' {% endfor %}-name "????-??-??-??-??-??.index" -daystart -mtime +2 -delete
+command = ${cron-script-purge-repozo-fsindex:wrapper-path}
+
+[cron-script-purge-repozo-fsindex]
+recipe = slapos.cookbook:wrapper
+command-line = "{{ parameter_dict['findutils-location'] }}/bin/find" {% for backup_directory in backup_directory_list %}'{{ backup_directory.replace("\\", "\\\\").replace("'", "\\'") }}' {% endfor %}-name "????-??-??-??-??-??.index" -daystart -mtime +2 -delete
+wrapper-path = ${directory:bin}/cron-purge-repozo-fsindex
 
 {% endif -%}
 [{{ section("logrotate-tidstorage") }}]
@@ -210,6 +215,7 @@ tidstorage-port = ${tidstorage:port}
 
 [directory]
 recipe = slapos.cookbook:mkdirectory
+bin = ${buildout:directory}/bin
 etc = ${buildout:directory}/etc
 services = ${:etc}/run
 promises = ${:etc}/promise
