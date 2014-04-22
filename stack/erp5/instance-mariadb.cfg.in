@@ -163,6 +163,10 @@ recipe = slapos.cookbook:symbolic.link
 target-directory = ${directory:bin}
 link-binary = {{ dumps(parameter_dict['link-binary']) }}
 
+[{{ section("binary-link-mysqlbinlog") }}]
+< = binary-link
+link-binary = {{ parameter_dict['mariadb-location'] }}/bin/mysqlbinlog
+
 [binary-wrap-base]
 recipe = slapos.cookbook:wrapper
 # Note: --defaults-file must be the first argument, otherwise wrapped binary
