@@ -30,6 +30,7 @@ slow_query_log_file = {{ parameter_dict['slow-query-log'] }}
 long_query_time = {{ parameter_dict['long-query-time'] }}
 max_allowed_packet = 128M
 query_cache_size = 32M
+innodb_file_per_table = 0
 
 plugin_load = ha_mroonga.so;handlersocket.so
 
