@@ -7,10 +7,12 @@ DROP FUNCTION IF EXISTS sphinx_snippets;
 
 {% macro database(name, user, password) -%}
 CREATE DATABASE IF NOT EXISTS {{ name }};
+{% if user -%}
 GRANT ALL PRIVILEGES ON {{ name }}.* TO {{ user }}@'%' IDENTIFIED BY '{{ password }}';
 GRANT ALL PRIVILEGES ON {{ name }}.* TO {{ user }}@'localhost' IDENTIFIED BY '{{ password }}';
+{%- endif %}
 {% endmacro -%}
 
 {% for entry in parameter_dict['database-list'] -%}
-{{   database(entry['name'], entry['user'], entry['password']) }}
+{{   database(entry['name'], entry.get('user'), entry.get('password')) }}
 {% endfor -%}
