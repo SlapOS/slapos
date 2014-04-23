@@ -1,0 +1,106 @@
+daemon off; # run in the foreground so supervisord can look after it
+
+worker_processes 4;
+pid $${directory:run}/nginx.pid;
+
+events {
+  worker_connections 768;
+  # multi_accept on;
+}
+
+error_log $${nginx-configuration:error_log};
+
+http {
+
+  ##
+  # Basic Settings
+  ##
+
+  sendfile on;
+  tcp_nopush on;
+  tcp_nodelay on;
+  keepalive_timeout 65;
+  types_hash_max_size 2048;
+  server_tokens off;
+
+  # server_names_hash_bucket_size 64;
+  # server_name_in_redirect off;
+
+  default_type application/octet-stream;
+  include ${nginx-push-stream-output:mime};
+
+  ##
+  # Logging Settings
+  ##
+
+  access_log $${nginx-configuration:access_log};
+  error_log $${nginx-configuration:error_log};
+
+  ##
+  # Gzip Settings
+  ##
+
+  gzip on;
+  gzip_disable "msie6";
+
+  gzip_vary on;
+  gzip_proxied any;
+  gzip_comp_level 6;
+  gzip_buffers 16 8k;
+  gzip_http_version 1.1;
+  gzip_types text/plain text/css application/json application/x-javascript text/xml application/xml application/xml+rss text/javascript;
+  ##
+  # Push stream Settings
+  ##
+  push_stream_shared_memory_size                32m;
+
+server {
+  listen [$${nginx-configuration:ip}]:$${nginx-configuration:port};
+
+  fastcgi_temp_path  $${directory:varnginx} 1 2;
+  uwsgi_temp_path  $${directory:varnginx} 1 2;
+  scgi_temp_path  $${directory:varnginx} 1 2;
+
+  client_body_temp_path $${directory:varnginx} 1 2;
+  proxy_temp_path $${directory:varnginx} 1 2;
+
+  ## Serve an error 204 (No Content) for favicon.ico
+  location = /favicon.ico {
+    return 204;
+  }
+
+  location /pub {
+            push_stream_publisher;
+
+            push_stream_channels_path               $arg_id;
+            # store messages in memory
+            push_stream_store_messages              $${nginx-configuration:publisher_push_stream_store_messages};
+
+            # Message size limit
+            # client_max_body_size MUST be equal to client_body_buffer_size or
+            # you will be sorry.
+            client_max_body_size                    $${nginx-configuration:publisher_client_max_body_size};
+            client_body_buffer_size                 $${nginx-configuration:publisher_client_body_buffer_size};
+
+   }
+
+   location ~ /sub/(.*) {
+            # activate subscriber mode for this location
+            add_header "Access-Control-Allow-Origin" $${nginx-configuration:subscriber_allow_origin};
+            add_header 'Access-Control-Allow-Credentials' $${nginx-configuration:subscriber_allow_credential};
+            add_header 'Access-Control-Allow-Methods' $${nginx-configuration:subscriber_allow_methods};
+            add_header 'Access-Control-Allow-Headers' $${nginx-configuration:subscriber_allow_headers};
+
+            push_stream_subscriber eventsource;
+            # positional channel path
+            push_stream_channels_path                   $1;
+
+            # content-type
+            default_type                                "text/event-stream; charset=utf-8";
+  }
+
+  location / {
+      root $${directory:www};
+  }
+}
+}
