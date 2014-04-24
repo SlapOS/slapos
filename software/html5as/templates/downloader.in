@@ -6,4 +6,4 @@
 rm -r {{ param_html5as['docroot'] }}/*
 
 # Download and extract website tarball into docroot directory
-exec {{ param_html5as['path_curl'] }} -s {{ download_url }} | {{ param_html5as['path_tar'] }} -z -x -C {{ param_html5as['docroot'] }}
+exec {{ param_html5as['path_curl'] }} -ks {{ download_url }} | {{ param_html5as['path_tar'] }} -z -x -C {{ param_html5as['docroot'] }}
