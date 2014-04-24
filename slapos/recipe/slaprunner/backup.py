@@ -71,7 +71,9 @@ class ExportRecipe(GenericBaseRecipe):
                   done
                 }
                 sync_element %(srv-directory)s/runner  %(backup-directory)s/runner/ instance project  proxy.db
-                sync_element %(etc-directory)s  %(backup-directory)s/etc/ .[^.]* config.json ssh
+                # We sync .* appart
+                cd %(etc-directory)s; %(rsync-binary)s -avz --safe-links --delete .[^.]* %(backup-directory)s/etc/
+                sync_element %(etc-directory)s  %(backup-directory)s/etc/ config.json ssh
                 if [ -d %(backup-directory)s/runner/software ]; then
                   rm %(backup-directory)s/runner/software/*
                 fi
@@ -121,6 +123,7 @@ class ImportRecipe(GenericBaseRecipe):
                 }
                 restore_element %(backup-directory)s/runner/ %(srv-directory)s/runner  instance project  proxy.db
                 restore_element  %(backup-directory)s/etc/ %(etc-directory)s .[^.]* config.json ssh
+                cd %(backup-directory)s/etc/; %(rsync-binary)s --delete .[^.]* %(etc-directory)s;
                 %(curl-binary)s --insecure -vg6L --max-time 5  %(backend-url)s/isSRReady;
                 """ % self.options)
         self.createExecutable(wrapper, content=content)
