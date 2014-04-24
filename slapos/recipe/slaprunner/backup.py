@@ -71,7 +71,7 @@ class ExportRecipe(GenericBaseRecipe):
                   done
                 }
                 sync_element %(srv-directory)s/runner  %(backup-directory)s/runner/ instance project  proxy.db
-                sync_element %(etc-directory)s  %(backup-directory)s/etc/ .rcode .project .users .htpasswd config.json ssh
+                sync_element %(etc-directory)s  %(backup-directory)s/etc/ .* config.json ssh
                 if [ -d %(backup-directory)s/runner/software ]; then
                   rm %(backup-directory)s/runner/software/*
                 fi
@@ -120,14 +120,8 @@ class ImportRecipe(GenericBaseRecipe):
                   done
                 }
                 restore_element %(backup-directory)s/runner/ %(srv-directory)s/runner  instance project  proxy.db
-                restore_element  %(backup-directory)s/etc/ %(etc-directory)s .rcode .project .users .htpasswd config.json ssh
-                ifs=$IFS IFS=';'
-                read user pass remaining < %(etc-directory)s/.users
-                IFS=$ifs
-                %(curl-binary)s --insecure -vg6L -F clogin="$user" -F cpwd="$pass" --dump-header login_cookie  %(backend-url)s/doLogin;
-                %(curl-binary)s --insecure -vg6L --cookie login_cookie --max-time 5  %(backend-url)s/isSRReady;
-                %(curl-binary)s --insecure -vg6LX POST --cookie login_cookie --max-time 5  %(backend-url)s/runSoftwareProfile --user "$user":"$pass";
-                rm -f login_cookie
+                restore_element  %(backup-directory)s/etc/ %(etc-directory)s .* config.json ssh
+                %(curl-binary)s --insecure -vg6L --max-time 5  %(backend-url)s/isSRReady;
                 """ % self.options)
         self.createExecutable(wrapper, content=content)
 
