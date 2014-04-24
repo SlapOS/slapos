@@ -24,9 +24,9 @@ recipe = slapos.cookbook:publish.serialised
 {% for database in database_list -%}
 {%   if database.get('user') -%}
 {%     do publish_database_list.append("mysql://" ~ database['user'] ~ ":" ~ database['password'] ~ "@" ~ ip ~ ":" ~ port ~ "/" ~ database['name']) -%}
-{%-  else -%}
+{%   else -%}
 {%     do publish_database_list.append("mysql://" ~ ip ~ ":" ~ port ~ "/" ~ database['name']) -%}
-{%-  endif %}
+{%   endif -%}
 {% endfor -%}
 {{ dumps(publish_database_list) }}
 {% endmacro -%}
