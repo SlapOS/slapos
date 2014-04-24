@@ -72,7 +72,7 @@ class ExportRecipe(GenericBaseRecipe):
                 }
                 sync_element %(srv-directory)s/runner  %(backup-directory)s/runner/ instance project  proxy.db
                 # We sync .* appart
-                cd %(etc-directory)s; %(rsync-binary)s -ptgovz .* %(backup-directory)s/etc/
+                cp -r %(etc-directory)s/.??* %(backup-directory)s/etc/
                 sync_element %(etc-directory)s  %(backup-directory)s/etc/ config.json ssh
                 if [ -d %(backup-directory)s/runner/software ]; then
                   rm %(backup-directory)s/runner/software/*
@@ -123,7 +123,7 @@ class ImportRecipe(GenericBaseRecipe):
                 }
                 restore_element %(backup-directory)s/runner/ %(srv-directory)s/runner  instance project  proxy.db
                 restore_element  %(backup-directory)s/etc/ %(etc-directory)s .[^.]* config.json ssh
-                cd %(backup-directory)s/etc/; %(rsync-binary)s -ptgovz .[^.]* %(etc-directory)s;
+                cp -r %(backup-directory)s/etc/.* %(etc-directory)s;
                 %(curl-binary)s --insecure -vg6L --max-time 5  %(backend-url)s/isSRReady;
                 """ % self.options)
         self.createExecutable(wrapper, content=content)
