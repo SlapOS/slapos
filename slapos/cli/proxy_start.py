@@ -2,7 +2,6 @@
 
 import logging
 
-from slapos.cli.command import must_be_root
 from slapos.cli.config import ConfigCommand
 from slapos.proxy import do_proxy, ProxyConfig
 
@@ -20,7 +19,6 @@ class ProxyStartCommand(ConfigCommand):
 
         return ap
 
-    @must_be_root
     def take_action(self, args):
         configp = self.fetch_config(args)
 
