@@ -122,8 +122,8 @@ class ImportRecipe(GenericBaseRecipe):
                   done
                 }
                 restore_element %(backup-directory)s/runner/ %(srv-directory)s/runner  instance project  proxy.db
-                restore_element  %(backup-directory)s/etc/ %(etc-directory)s .[^.]* config.json ssh
-                cp -r %(backup-directory)s/etc/.* %(etc-directory)s;
+                restore_element  %(backup-directory)s/etc/ %(etc-directory)s config.json ssh
+                cp -r %(backup-directory)s/etc/.??* %(etc-directory)s;
                 %(curl-binary)s --insecure -vg6L --max-time 5  %(backend-url)s/isSRReady;
                 """ % self.options)
         self.createExecutable(wrapper, content=content)
