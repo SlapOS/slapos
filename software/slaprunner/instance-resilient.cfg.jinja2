@@ -1,5 +1,11 @@
 # vim: set ft=cfg:
 
+# Default parameters
+# NOTE: in case of resilient instance, auto-deploy-instance
+# set to false (else it could be dangerous)
+{% do slapparameter_dict.__setitem__('auto-deploy', slapparameter_dict.get('auto-deploy', 'true')) %}
+{% do slapparameter_dict.__setitem__('auto-deploy-instance', slapparameter_dict.get('auto-deploy-instance', 'false')) %}
+
 {% import 'parts' as parts %}
 {% import 'replicated' as replicated %}
 
