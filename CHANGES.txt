@@ -1,6 +1,12 @@
 Changes
 =======
 
+1.0.5 (2014-04-29)
+------------------
+
+ * Fix slapgrid commands return code
+ * slapos proxy start do not need to be launched as root
+
 1.0.2.1 (2014-01-16)
 ------------------
 
