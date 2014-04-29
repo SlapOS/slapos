@@ -83,7 +83,6 @@ command = $${make-rss:output}
 [setup-static-files]
 recipe = hexagonit.recipe.download
 url = ${download-static-files:destination}/${download-static-files:filename}
-md5sum = e98585b85634de48240b2c215e946769
 filename = static
 destination = $${directory:www}
 ignore-existing = true
@@ -108,7 +107,6 @@ url = ${index-template:location}/$${:filename}
 destination = $${directory:www}
 filename = ${index-template:filename}
 download-only = true
-md5sum = aa375a4225e2587b22f68c28cafd7871
 mode = 0644
 
 [deploy-status-cgi]
@@ -150,7 +148,6 @@ recipe = hexagonit.recipe.download
 url = ${rss-bin:destination}/${rss-bin:filename}
 destination = $${directory:bin}
 filename = ${rss-bin:filename}
-md5sum = 916f37f083b1ef391adea2f7a717bf8a
 mode = 0744
 download-only = true
 
@@ -247,7 +244,6 @@ input = inline:
     DirectoryIndex $${deploy-index:filename}
   </Directory>
 output = $${directory:etc}/cgi-httpd.conf
-# md5sum =
 listening-ip = $${slap-parameters:ipv6-random}
 # XXX: randomize-me
 htdocs = $${directory:www}
