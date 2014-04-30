@@ -10,7 +10,6 @@ parts +=
   ca-shellinabox
   gunicorn-launcher
   gunicorn-graceful
-  test-runner
   sshkeys-dropbear-runner
   dropbear-server-add-authorized-key
   sshkeys-authority
@@ -18,7 +17,7 @@ parts +=
   slaprunner-promise
   slaprunner-frontend-promise
   dropbear-promise
-  private
+  runtestsuite
   shellinabox-promise
   symlinks
   shellinabox

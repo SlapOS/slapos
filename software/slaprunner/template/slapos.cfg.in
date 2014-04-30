@@ -1,46 +1,46 @@
 [slapos]
-software_root = {{ software_root }}
-instance_root = {{instance_root }}
-master_url = http://{{ ipv4 }}:{{ proxy_port }}
+software_root = {{ slaprunner['software_root'] }}
+instance_root = {{ slaprunner['instance_root'] }}
+master_url = http://{{ slaprunner['ipv4'] }}:{{ slaprunner['proxy_port'] }}
 computer_id = slaprunner
 maximal_delay = 0
+root_check = {{ slaprunner['root_check'] }}
 
 [slapformat]
-partition_amount = {{ partition_amount }}
+partition_amount = {{ slaprunner['partition-amount'] }}
 
 [slaprunner]
-slapgrid_sr = {{ slapgrid_sr }}
-slapgrid_cp = {{ slapgrid_cp }}
-slapproxy = {{ slapproxy }}
-supervisor = {{ supervisor }}
-supervisord_config = {{ supervisord_config }}
-runner_workdir = {{ runner_workdir }}
-runner_host = {{ ipv4 }}
-runner_port = {{ runner_port }}
-instance_monitoring_url = {{ instance_monitoring_url }}
-ipv4_address = {{ ipv4 }}
-ipv6_address = {{ ipv6 }}
-etc_dir = {{ etc_dir }}
-run_dir = {{ run_dir }}
-log_dir = {{ log_dir }}
-console = {{ console }}
-verbose = {{ verbose }}
-debug = {{ debug }}
-auto_deploy = {{ auto_deploy }}
-auto_deploy_instance = {{ auto_deploy_instance }}
-autorun = {{ autorun }}
+slapos = {{ slaprunner['slapos'] }}
+slapos_cfg = {{ slaprunner['slapos.cfg'] }}
+slapproxy = {{ slaprunner['slapproxy'] }}
+supervisor = {{ slaprunner['supervisor'] }}
+supervisord_config = {{ slaprunner['supervisord_config'] }}
+runner_workdir = {{ slaprunner['working-directory'] }}
+runner_host = {{ slaprunner['ipv4'] }}
+runner_port = {{ slaprunner['runner_port'] }}
+instance_monitoring_url = {{ slaprunner['instance-monitor-url'] }}
+ipv4_address = {{ slaprunner['ipv4'] }}
+ipv6_address = {{ slaprunner['ipv6'] }}
+etc_dir = {{ slaprunner['etc_dir'] }}
+run_dir = {{ slaprunner['run_dir'] }}
+log_dir = {{ slaprunner['log_dir'] }}
+console = {{ slaprunner['console'] }}
+verbose = {{ slaprunner['verbose'] }}
+debug = {{ slaprunner['debug'] }}
+auto_deploy = {{ slaprunner['auto_deploy'] }}
+auto_deploy_instance = {{ slaprunner['auto_deploy_instance'] }}
+autorun = {{ slaprunner['autorun'] }}
+knowledge0_cfg = {{ slaprunner['knowledge0_file'] }}
 
 [slapproxy]
-host = {{ proxy_host }}
-port = {{ proxy_port }}
-database_uri = {{ proxy_database }}
+host = {{ slaprunner['ipv4'] }}
+port = {{ slaprunner['proxy_port'] }}
+database_uri = {{ slaprunner['proxy_database'] }}
 
 [sshkeys_authority]
-ssh_client = {{ ssh_client }}
-public_key = {{ public_key }}
-private_key = {{ private_key }}
+ssh_client = {{ slaprunner['ssh_client'] }}
+public_key = {{ slaprunner['public_key'] }}
+private_key = {{ slaprunner['private_key'] }}
 
 [gitclient]
-git = {{ git }}
-
-[cloud9_IDE]
+git = {{ slaprunner['git-binary'] }}

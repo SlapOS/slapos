@@ -28,7 +28,7 @@ from setuptools import setup, find_packages
 import glob
 import os
 
-version = '0.85'
+version = '0.87'
 name = 'slapos.cookbook'
 long_description = open("README.txt").read() + "\n" + \
     open("CHANGES.txt").read() + "\n"
@@ -207,8 +207,8 @@ setup(name=name,
           'zabbixagent = slapos.recipe.zabbixagent:Recipe',
           'zimbra.kvm = slapos.recipe.zimbra_kvm:Recipe',
           'zeo = slapos.recipe.zeo:Recipe',
-          'zeroknown.read = slapos.recipe.zeroknown:ReadRecipe',
-          'zeroknown.write = slapos.recipe.zeroknown:WriteRecipe'
+          'zero-knowledge.read = slapos.recipe.zero_knowledge:ReadRecipe',
+          'zero-knowledge.write = slapos.recipe.zero_knowledge:WriteRecipe'
         ],
         'slapos.recipe.nosqltestbed.plugin': [
           'kumo = slapos.recipe.nosqltestbed.kumo:KumoTestBed',
