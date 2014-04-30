@@ -20,7 +20,7 @@ parts =
   frontend-ajaxupload-promise
   frontend-phpmyadmin-promise
 #  frontend-website-promise
-  frontend-dashboard-promise
+  url-dashboard-promise
   ajaxplorer-load-promise
 #  content-promise
 
@@ -386,12 +386,12 @@ config-custom_domain =
 
 [publish-connection-informations]
 recipe = slapos.cookbook:publish
-dashboard_backend = https://[$${apache-php:ip}]:$${httpd-conf:port4}
-urlweb_ipv6 = http://[$${apache-php:ip}]:$${httpd-conf:port}/
-dashboard = $${request-frontend-dashboard:connection-site_url}
-urlweb = $${request-frontend:connection-site_url}
-login = $${dashboard_credential:user}
-password = $${dashboard_credential:passwd}
+backend_ipv6 = https://$${dashboard_credential:user}:$${dashboard_credential:passwd}@[$${apache-php:ip}]:$${httpd-conf:port4}
+url_ipv6 = http://[$${apache-php:ip}]:$${httpd-conf:port}/
+backend_url = $${request-frontend-dashboard:connection-site_url}
+url_web = $${request-frontend:connection-site_url}
+backend_login = $${dashboard_credential:user}
+backend_password = $${dashboard_credential:passwd}
 
 [dashboard-parameters]
 recipe = slapos.recipe.template
@@ -451,10 +451,10 @@ url = $${request-frontend-phpmyadmin:connection-site_url}
 path = $${basedirectory:promises}/frontend-ajaxupload
 url = $${request-frontend-ajaxupload:connection-site_url}
 
-[frontend-dashboard-promise]
+[url-dashboard-promise]
 <= check-url-promise
-path = $${basedirectory:promises}/frontend-dashboard
-url = $${request-frontend-dashboard:connection-site_url}
+path = $${basedirectory:promises}/check-url-dashboard
+url = https://$${dashboard_credential:user}:$${dashboard_credential:passwd}@[$${apache-php:ip}]:$${httpd-conf:port4}
 
 [content-promise]
 recipe = slapos.cookbook:check_page_content
