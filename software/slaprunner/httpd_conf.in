@@ -22,6 +22,8 @@ LoadModule alias_module modules/mod_alias.so
 LoadModule env_module modules/mod_env.so
 LoadModule rewrite_module modules/mod_rewrite.so
 LoadModule log_config_module modules/mod_log_config.so
+LoadModule dav_module modules/mod_dav.so
+LoadModule dav_fs_module modules/mod_dav_fs.so
 
 ErrorLog "{{ parameters.path_error_log }}"
 LogFormat "%h %l %u %t \"%r\" %>s %b" common
@@ -39,6 +41,27 @@ SSLProtocol -ALL +SSLv3 +TLSv1
 SSLHonorCipherOrder On
 SSLCipherSuite RC4-SHA:HIGH:!ADH
 SSLEngine   On
+
+Alias /public {{ parameters.runner_home }}/public
+<Directory {{ parameters.runner_home }}/public>
+    Order Allow,Deny
+    Allow from all
+    Satisfy Any
+    Options Indexes FollowSymLinks
+</Directory>
+
+
+DavLockDB {{ parameters.var_dir }}/DavLock
+Alias /share {{ parameters.runner_home }}
+<Directory {{ parameters.runner_home }}>
+    DirectoryIndex disabled
+    DAV On
+    Options Indexes FollowSymLinks
+    AuthType Basic
+    AuthName "webdav"
+    AuthUserFile "{{ parameters.etc_dir }}/.htpasswd"
+    Require valid-user
+</Directory>
 
 ScriptSock {{ parameters.path_pid }}
 

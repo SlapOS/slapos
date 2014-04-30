@@ -1,5 +1,4 @@
 import datetime
-import uuid
 import PyRSS2Gen
 import sys
 from email.utils import parsedate_tz, mktime_tz
@@ -35,6 +34,7 @@ while 1:
   items.append(rss_item)
 
 ### Build the rss feed
+items.reverse()
 rss_feed = PyRSS2Gen.RSS2 (
   title = TITLE,
   link = LINK,
