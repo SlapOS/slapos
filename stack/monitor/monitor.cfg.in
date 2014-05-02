@@ -29,6 +29,16 @@ etc = $${:home}/etc
 bin = $${:home}/bin
 srv = $${:home}/srv
 var = $${:home}/var
+log = $${:var}/log
+run = $${:var}/run
+service = $${:etc}/service/
+etc-run = $${:etc}/run/
+tmp = $${:home}/tmp
+promise = $${:etc}/promise
+
+cron-entries = $${:etc}/cron.d
+crontabs = $${:etc}/crontabs
+cronstamps = $${:etc}/cronstamps
 
 promises = $${:etc}/promise
 ca-dir = $${:srv}/ssl
@@ -103,7 +113,7 @@ context =
   raw index_template $${deploy-index-template:location}/$${deploy-index-template:filename}
   key password zero-parameters:monitor-password
   raw extra_eggs_interpreter ${buildout:directory}/bin/${extra-eggs:interpreter}
-  raw default_page /index.cgi?script=$${monitor-parameters:knowledge0-cgi}%2F$${deploy-settings-cgi:filename}
+  raw default_page /welcome.html
 
 [deploy-index-template]
 recipe = hexagonit.recipe.download
@@ -295,6 +305,11 @@ apache-executable = ${apache:location}/bin/httpd
 command-line = $${:apache-executable} -f $${cgi-httpd-configuration-file:output} -DFOREGROUND
 wrapper-path = $${ca-httpd:executable}
 
+[cgi-httpd-graceful-wrapper]
+recipe = slapos.cookbook:wrapper
+command-line = kill -USR1 $(cat $${cgi-httpd-configuration-file:pid-file})
+wrapper-path = $${monitor-directory:etc-run}/cgi-httpd-graceful
+
 [monitor-promise]
 recipe = slapos.cookbook:check_url_available
 path = $${monitor-directory:promises}/monitor
@@ -305,5 +320,5 @@ curl_path = ${curl:location}/bin/curl
 
 [publish-connection-informations]
 recipe = slapos.cookbook:publish
-monitor_url = https://[$${cgi-httpd-configuration-file:listening-ip}]:$${monitor-parameters:port}
-IMPORTANT_monitor_info = Change the monitor_password as soon as possible ! Default is : $${public:monitor-password}
+monitor_url = $${monitor-parameters:url}
+IMPORTANT_monitor_info = Change the monitor_password as soon as possible ! Default is : $${public:monitor-password} . You can change it in the setting.cgi section of your monitorin interface
