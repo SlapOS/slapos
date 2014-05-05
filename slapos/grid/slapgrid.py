@@ -39,6 +39,7 @@ import tempfile
 import time
 import traceback
 import warnings
+import logging
 
 if sys.version_info < (2, 6):
   warnings.warn('Used python version (%s) is old and has problems with'
@@ -48,6 +49,7 @@ from lxml import etree
 
 from slapos.slap.slap import NotFoundError
 from slapos.slap.slap import ServerError
+from slapos.util import mkdir_p, chownDirectory
 from slapos.grid.exception import BuildoutFailedError
 from slapos.grid.SlapObject import Software, Partition
 from slapos.grid.svcbackend import launchSupervisord
@@ -606,63 +608,81 @@ class Slapgrid(object):
           os.remove(timestamp_path)
           self.logger.exception('')
 
-    self.logger.info('Processing Computer Partition %s.' % computer_partition_id)
-    self.logger.info('  Software URL: %s' % software_url)
-    self.logger.info('  Software path: %s' % software_path)
-    self.logger.info('  Instance path: %s' % instance_path)
+    # Include Partition Logging
+    log_folder_path = "%s/.slapgrid/log" % instance_path
+    mkdir_p(log_folder_path)
+    partition_file_handler = logging.FileHandler(
+                filename="%s/instance.log" % (log_folder_path)
+            )
+    stat_info = os.stat(instance_path)
+    chownDirectory("%s/.slapgrid" % instance_path, 
+                   uid=stat_info.st_uid,
+                   gid=stat_info.st_gid)
 
-    local_partition = Partition(
-      software_path=software_path,
-      instance_path=instance_path,
-      supervisord_partition_configuration_path=os.path.join(
-        self.supervisord_configuration_directory, '%s.conf' %
-        computer_partition_id),
-      supervisord_socket=self.supervisord_socket,
-      computer_partition=computer_partition,
-      computer_id=self.computer_id,
-      partition_id=computer_partition_id,
-      server_url=self.master_url,
-      software_release_url=software_url,
-      certificate_repository_path=self.certificate_repository_path,
-      buildout=self.buildout,
-      logger=self.logger)
+    formatter = logging.Formatter(
+       '[%(asctime)s] %(levelname)-8s %(name)s %(message)s')
+    partition_file_handler.setFormatter(formatter)
+    self.logger.addHandler(partition_file_handler)
 
-    computer_partition_state = computer_partition.getState()
-
-    # XXX this line breaks 37 tests
-    # self.logger.info('  Instance type: %s' % computer_partition.getType())
-    self.logger.info('  Instance status: %s' % computer_partition_state)
-
-    if computer_partition_state == COMPUTER_PARTITION_STARTED_STATE:
-      local_partition.install()
-      computer_partition.available()
-      local_partition.start()
-      self._checkPromises(computer_partition)
-      computer_partition.started()
-    elif computer_partition_state == COMPUTER_PARTITION_STOPPED_STATE:
-      try:
-        # We want to process the partition, even if stopped, because it should
-        # propagate the state to children if any.
+    try:
+      self.logger.info('Processing Computer Partition %s.' % computer_partition_id)
+      self.logger.info('  Software URL: %s' % software_url)
+      self.logger.info('  Software path: %s' % software_path)
+      self.logger.info('  Instance path: %s' % instance_path)
+  
+      local_partition = Partition(
+        software_path=software_path,
+        instance_path=instance_path,
+        supervisord_partition_configuration_path=os.path.join(
+          self.supervisord_configuration_directory, '%s.conf' %
+          computer_partition_id),
+        supervisord_socket=self.supervisord_socket,
+        computer_partition=computer_partition,
+        computer_id=self.computer_id,
+        partition_id=computer_partition_id,
+        server_url=self.master_url,
+        software_release_url=software_url,
+        certificate_repository_path=self.certificate_repository_path,
+        buildout=self.buildout,
+        logger=self.logger)
+      computer_partition_state = computer_partition.getState()
+  
+      # XXX this line breaks 37 tests
+      # self.logger.info('  Instance type: %s' % computer_partition.getType())
+      self.logger.info('  Instance status: %s' % computer_partition_state)
+  
+      if computer_partition_state == COMPUTER_PARTITION_STARTED_STATE:
         local_partition.install()
         computer_partition.available()
-      finally:
-        # Instance has to be stopped even if buildout/reporting is wrong.
-        local_partition.stop()
-      computer_partition.stopped()
-    elif computer_partition_state == COMPUTER_PARTITION_DESTROYED_STATE:
-      local_partition.stop()
-      try:
+        local_partition.start()
+        self._checkPromises(computer_partition)
+        computer_partition.started()
+      elif computer_partition_state == COMPUTER_PARTITION_STOPPED_STATE:
+        try:
+          # We want to process the partition, even if stopped, because it should
+          # propagate the state to children if any.
+          local_partition.install()
+          computer_partition.available()
+        finally:
+          # Instance has to be stopped even if buildout/reporting is wrong.
+          local_partition.stop()
         computer_partition.stopped()
-      except (SystemExit, KeyboardInterrupt):
-        computer_partition.error(traceback.format_exc(), logger=self.logger)
-        raise
-      except Exception:
-        pass
-    else:
-      error_string = "Computer Partition %r has unsupported state: %s" % \
-        (computer_partition_id, computer_partition_state)
-      computer_partition.error(error_string, logger=self.logger)
-      raise NotImplementedError(error_string)
+      elif computer_partition_state == COMPUTER_PARTITION_DESTROYED_STATE:
+        local_partition.stop()
+        try:
+          computer_partition.stopped()
+        except (SystemExit, KeyboardInterrupt):
+          computer_partition.error(traceback.format_exc(), logger=self.logger)
+          raise
+        except Exception:
+          pass
+      else:
+        error_string = "Computer Partition %r has unsupported state: %s" % \
+          (computer_partition_id, computer_partition_state)
+        computer_partition.error(error_string, logger=self.logger)
+        raise NotImplementedError(error_string)
+    finally:
+       self.logger.removeHandler(partition_file_handler)
 
     # If partition has been successfully processed, write timestamp
     if timestamp:
