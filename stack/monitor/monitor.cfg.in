@@ -120,6 +120,9 @@ filename = status.cgi
 mode = 0744
 context =
   key json_file monitor-parameters:json-path
+  key monitor_bin monitor-parameters:executable
+  key pwd monitor-directory:monitoring-cgi
+  key this_file :filename
   raw python_executable ${buildout:executable}
 
 [deploy-settings-cgi]
