@@ -17,6 +17,7 @@ htaccess-file = $${monitor-directory:etc}/.htaccess-monitor
 url = https://[$${slap-parameters:ipv6-random}]:$${:port}
 index-filename = index.cgi
 index-path = $${monitor-directory:www}/$${:index-filename}
+db-path = $${monitor-directory:etc}/monitor.db
 
 [monitor-directory]
 recipe = slapos.cookbook:mkdirectory
@@ -47,7 +48,7 @@ public-cgi = $${:cgi-bin}/public
 
 monitor-custom-scripts = $${:etc}/monitor
 monitor-result = $${:var}/monitor
-monitor-result-bool = $${:monitor-result}/bool
+
 private-directory = $${:srv}/monitor-private
 
 [public-symlink]
@@ -145,6 +146,7 @@ rendered = $${monitor-parameters:executable}
 mode = 0744
 context =
   section directory monitor-directory
+  section monitor_parameter monitor-parameters
   key monitoring_file_json monitor-parameters:json-path
   raw python_executable ${buildout:executable}
 

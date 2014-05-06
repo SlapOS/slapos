@@ -1,9 +1,8 @@
 #!${dash-output:dash}
 
-STATUS={{ directory['monitor-result-bool'] }}
+STATUS_DB={{ monitor_parameters['db-path'] }}
 RSS_FILE={{ monitor_parameters['rss-path'] }}
 PYTHON=${buildout:directory}/bin/${extra-eggs:interpreter}
 STATUS2RSS=${rss-bin:location}/${rss-bin:filename}
 
-NAME=`basename $STATUS`
-cat $STATUS/* | $PYTHON $STATUS2RSS "Monitoring RSS feed" "{{ monitor_parameters['url'] }}/{{ monitor_parameters['index-filename'] }}" > $RSS_FILE
+$PYTHON $STATUS2RSS "Monitoring RSS feed" "{{ monitor_parameters['url'] }}/{{ monitor_parameters['index-filename'] }}" $STATUS_DB > $RSS_FILE
