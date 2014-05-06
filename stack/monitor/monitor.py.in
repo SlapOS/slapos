@@ -55,7 +55,8 @@ def runServices(directory):
     try:
       pid = int(open(service_path).read())
     ### because apache (or others) can write sockets
-    except IOError:
+    ### We also ignore not readable pid files
+    except (IOError, ValueError):
       continue
     try:
       os.kill(pid, 0)
