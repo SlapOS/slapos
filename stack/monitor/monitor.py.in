@@ -9,12 +9,12 @@ import time
 from optparse import OptionParser, make_option
 
 instance_path = "{{ directory['home'] }}"
-monitor_dir = "{{ directory['monitor'] }}"
+monitor_dir = "{{ directory['monitor-custom-scripts'] }}"
 pid_dir = "{{ directory['run'] }}"
 promise_dir = "{{ directory['promise'] }}"
 
 monitoring_file_json = "{{ monitoring_file_json }}"
-monitoring_folder_bool = "{{ monitoring_folder_bool }}"
+monitoring_folder_bool = "{{ directory['monitor-result-bool'] }}"
 
 option_list = [
   make_option("-a", "--all", action="store_true", dest="all",
@@ -31,14 +31,20 @@ option_list = [
 
 
 def getListOfScripts(directory):
+  """
+  Get the list of script inside of a directory (not recursive)
+  """
   scripts = []
   if os.path.exists(directory) and os.path.isdir(directory):
-    for file in os.listdir(directory):
-      scripts.append(os.path.join(directory, file))
+    for file_name in os.listdir(directory):
+      file = os.path.join(directory, file_name)
+      if os.access(file, os.X_OK) and not os.path.isdir(file):
+        scripts.append(file)
   else:
     exit("There is a problem in your directories" \
           "of monitoring. Please check them")
   return scripts
+
 
 def runServices(directory):
   services = getListOfScripts(directory)
