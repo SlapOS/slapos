@@ -1,0 +1,34 @@
+[buildout]
+
+parts =
+    sh-instance-environment
+
+
+[instance-environment]
+UNO_PATH=${libreoffice-bin:location}/program
+PGDATA=$${postgres-instance:pgdata-directory}
+PGHOST=$${:PGDATA}
+PGUSER=postgres
+ABILIAN_CONFIG=${abilian-config:location}/${abilian-config:filename}
+EXTRANET_INSTANCE_PATH=$${directories:extranet_spr-instance}
+ABILIAN_CONFIG_EXTRA_PYTHON=$${config-staging-py:rendered}
+ABILIAN_CONFIG_EXTRA_JSON=$${buildout:directory}/partition-parameters.json:$${json-extra-configuration:json-output}
+LD_LIBRARY_PATH=${cairo:location}/lib:${glib:location}/lib:${pango:location}/lib
+
+
+
+[sh-instance-environment]
+recipe = collective.recipe.template
+inline =
+    export UNO_PATH=$${instance-environment:UNO_PATH}
+    export PGDATA=$${instance-environment:PGDATA}
+    export PGHOST=$${instance-environment:PGHOST}
+    export PGUSER=$${instance-environment:PGUSER}
+    export ABILIAN_CONFIG=$${instance-environment:ABILIAN_CONFIG}
+    export EXTRANET_INSTANCE_PATH=$${instance-environment:EXTRANET_INSTANCE_PATH}
+    export ABILIAN_CONFIG_EXTRA_PYTHON=$${instance-environment:ABILIAN_CONFIG_EXTRA_PYTHON}
+    export ABILIAN_CONFIG_EXTRA_JSON=$${instance-environment:ABILIAN_CONFIG_EXTRA_JSON}
+    export LD_LIBRARY_PATH=$${instance-environment:LD_LIBRARY_PATH}
+output = $${buildout:directory}/environment.sh
+
+

@@ -1,0 +1,22 @@
+[buildout]
+
+parts =
+    extranet-symlinks
+    config-staging-py
+
+
+[extranet-symlinks]
+recipe = slapos.cookbook:symbolic.link
+target-directory = $${directories:bin}
+link-binary =
+    ${buildout:directory}/bin/abilian
+
+
+[config-staging-py]
+recipe = slapos.recipe.template:jinja2
+template = ${config-staging-py-template:location}/${config-staging-py-template:filename}
+rendered = $${buildout:directory}/etc/staging.py
+mode = 600
+#context =
+#    section config config-staging
+

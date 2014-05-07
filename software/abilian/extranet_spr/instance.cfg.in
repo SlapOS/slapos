@@ -1,0 +1,89 @@
+
+[buildout]
+extends =
+    ${instance-postgres:output}
+    ${instance-extranet:output}
+    ${instance-environment:output}
+
+parts =
+    directories
+    sh-instance-environment
+    postgres-instance
+    postgres-promise
+    postgres-symlinks
+    extranet-symlinks
+    config-staging-py
+    json-configuration
+    json-extra-configuration
+    request-web-frontend
+    publish-connection-parameter
+
+
+
+
+[json-configuration]
+recipe = slapos.cookbook:slapconfiguration.jsondump
+json-output = $${buildout:directory}/partition-parameters.json
+computer = $${slap-connection:computer-id}
+partition = $${slap-connection:partition-id}
+url = $${slap-connection:server-url}
+key = $${slap-connection:key-file}
+cert = $${slap-connection:cert-file}
+
+
+[json-extra-configuration]
+recipe = slapos.cookbook:jsondump
+json-output = $${buildout:directory}/abilian-config-extra.json
+UNOCONV_LOCATION = ${unoconv-repository:location}/unoconv
+BROKER_URL = redis://localhost:6379/2
+CELERY_RESULT_BACKEND = redis://localhost:6379/2
+
+
+
+
+
+
+#----------------
+#-- Instance-level buildout profiles.
+
+[instance]
+recipe = slapos.recipe.template
+url = ${:_profile_base_location_}/instance.cfg.in
+output = ${buildout:directory}/instance.cfg
+md5sum = d8b833a2054b82b6031a9420008b58fd
+mode = 0644
+
+
+
+[directories]
+recipe = slapos.cookbook:mkdirectory
+bin = $${buildout:directory}/bin
+etc = $${buildout:directory}/etc
+srv = $${buildout:directory}/srv
+services = $${directories:etc}/service
+promises = $${directories:etc}/promise
+var = $${buildout:directory}/var
+extranet_spr-instance = $${:var}/extranet_spr-instance
+cache = $${:extranet_spr-instance}/cache
+data = $${:extranet_spr-instance}/data
+log = $${:extranet_spr-instance}/log
+tmp = $${:extranet_spr-instance}/tmp
+whoosh = $${:data}/whoosh
+
+
+[request-web-frontend]
+<= slap-connection
+recipe = slapos.cookbook:requestoptional
+name = Web Frontend
+# XXX We have hardcoded SR URL here.
+software-url = http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg
+slave = true
+config = url
+config-url = https://[$${instance-parameters:ipv6}]:5000/
+return = site_url
+
+
+[publish-connection-parameter]
+recipe = slapos.cookbook:publish
+url = $${request-web-frontend:connection-site_url}
+name = test parameter

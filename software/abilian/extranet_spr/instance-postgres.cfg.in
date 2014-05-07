@@ -1,0 +1,101 @@
+[buildout]
+parts =
+  postgres-instance
+  postgres-promise
+  postgres-symlinks
+
+
+# Define egg directories to be the one from Software Release
+# (/opt/slapgrid/...)
+eggs-directory = ${buildout:eggs-directory}
+develop-eggs-directory = ${buildout:develop-eggs-directory}
+offline = true
+
+
+
+
+#----------------
+#--
+#-- Creates a Postgres cluster, configuration files, and a database.
+
+[postgres-instance]
+recipe = slapos.cookbook:postgres
+
+# Options
+ipv6 = $${instance-parameters:ipv6}
+# listen to connections from anywhere
+ipv6-netmask-bits = 0
+ipv4 = $${instance-parameters:ipv4}
+# listen to connections from anywhere
+ipv4-netmask-bits = 0
+ipv6-random = $${instance-parameters:ipv6-random}
+superuser = postgres
+password = $${gen-passwd:passwd}
+port = 5432
+dbname = db
+# pgdata_directory is created by initdb, and should not exist beforehand.
+pgdata-directory = $${directories:var}/data
+bin = ${postgresql91:location}/bin
+services = $${directories:services}
+
+
+#----------------
+#--
+#-- Generates a random password and stores it in the filesystem
+
+[gen-passwd]
+recipe = slapos.cookbook:generate.password
+storage-path = $${directories:srv}/postgres_passwd
+bytes = 16
+
+
+#----------------
+#--
+#-- Deploy promise scripts.
+
+[postgres-promise]
+recipe = slapos.cookbook:check_port_listening
+path = $${directories:promises}/postgres
+hostname = $${instance-parameters:ipv6-random}
+port = $${postgres-instance:port}
+
+
+[postgres-symlinks]
+recipe = slapos.cookbook:symbolic.link
+target-directory = $${directories:bin}
+link-binary =
+    ${postgresql91:location}/bin/createdb
+    ${postgresql91:location}/bin/createuser
+    ${postgresql91:location}/bin/dropdb
+    ${postgresql91:location}/bin/dropuser
+    ${postgresql91:location}/bin/psql
+    ${postgresql91:location}/bin/pg_dump
+    ${postgresql91:location}/bin/pg_dumpall
+    ${postgresql91:location}/bin/pg_resetxlog
+    ${postgresql91:location}/bin/pg_restore
+    ${postgresql91:location}/bin/postgres
+    ${postgresql91:location}/bin/reindexdb
+    ${postgresql91:location}/bin/vacuumdb
+
+
+#----------------
+#--
+#-- Publish instance parameters.
+
+[publish]
+recipe = slapos.cookbook:publish
+url = $${postgres-instance:url}
+
+
+#----------------
+#--
+#-- Fetches parameters defined in SlapOS Master for this instance
+
+[instance-parameters]
+recipe = slapos.cookbook:slapconfiguration
+computer = $${slap-connection:computer-id}
+partition = $${slap-connection:partition-id}
+url = $${slap-connection:server-url}
+key = $${slap-connection:key-file}
+cert = $${slap-connection:cert-file}
+
