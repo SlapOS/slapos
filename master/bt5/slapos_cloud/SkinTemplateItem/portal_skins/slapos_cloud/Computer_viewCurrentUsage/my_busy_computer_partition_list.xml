@@ -8,7 +8,7 @@
       <dictionary>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>your_busy_computer_partition_list</string> </value>
+            <value> <string>my_busy_computer_partition_list</string> </value>
         </item>
         <item>
             <key> <string>message_values</string> </key>
@@ -402,11 +402,27 @@
                           <string>Title</string>
                         </tuple>
                         <tuple>
+                          <string>instance_title</string>
+                          <string>Instance Title</string>
+                        </tuple>
+                        <tuple>
                           <string>image</string>
                           <string>Image</string>
                         </tuple>
                         <tuple>
-                          <string>ComputerPartition_getSoftwareInstanceStatus</string>
+                          <string>owner_title</string>
+                          <string>Owner</string>
+                        </tuple>
+                        <tuple>
+                          <string>creation_date</string>
+                          <string>Instance Creation Date</string>
+                        </tuple>
+                        <tuple>
+                          <string>ComputerPartition_getLastestContactedDate</string>
+                          <string>Latest Contact Date</string>
+                        </tuple>
+                        <tuple>
+                          <string>status</string>
                           <string>Status</string>
                         </tuple>
                       </list>
@@ -464,8 +480,20 @@
                     <value>
                       <list>
                         <tuple>
+                          <string>instance_title</string>
+                          <string>Instance Title</string>
+                        </tuple>
+                        <tuple>
                           <string>image</string>
                           <string>Image</string>
+                        </tuple>
+                        <tuple>
+                          <string>creation_date</string>
+                          <string>Instance Creation Date</string>
+                        </tuple>
+                        <tuple>
+                          <string>ComputerPartition_getLastestContactedDate</string>
+                          <string>Latest Contact Date</string>
                         </tuple>
                       </list>
                     </value>
@@ -498,7 +526,7 @@
                 </item>
                 <item>
                     <key> <string>lines</string> </key>
-                    <value> <int>1000</int> </value>
+                    <value> <int>10</int> </value>
                 </item>
                 <item>
                     <key> <string>list_action</string> </key>
@@ -614,12 +642,24 @@
                           <string>ComputerPartition_getUsageReportUrl</string>
                         </tuple>
                         <tuple>
-                          <string>image</string>
-                          <string>ComputerPartition_getUsageReportUrl</string>
+                          <string>instance_title</string>
+                          <string>ComputerPartition_getInstanceUrlString</string>
                         </tuple>
                         <tuple>
-                          <string>SoftwareInstance_getStatus</string>
-                          <string>ComputerPartition_getUsageReportUrl</string>
+                          <string>creation_date</string>
+                          <string>ComputerPartition_getInstanceUrlString</string>
+                        </tuple>
+                        <tuple>
+                          <string>image</string>
+                          <string>ComputerPartition_getInstanceUrlString</string>
+                        </tuple>
+                        <tuple>
+                          <string>ComputerPartition_getLastestContactedDate</string>
+                          <string>ComputerPartition_getInstanceUrlString</string>
+                        </tuple>
+                        <tuple>
+                          <string>status</string>
+                          <string></string>
                         </tuple>
                       </list>
                     </value>

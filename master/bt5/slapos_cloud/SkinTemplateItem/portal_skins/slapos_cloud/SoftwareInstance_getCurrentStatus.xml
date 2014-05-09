@@ -50,24 +50,38 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string encoding="cdata"><![CDATA[
-
-software_instance = context.getAggregateRelatedValue(portal_type=\'Software Instance\')\n
+            <value> <string>"""Dirty script to return Software Instance state"""\n
+import json\n
+state = context.getSlapState()\n
+has_partition = context.getAggregate(portal_type="Computer Partition")\n
+result = \'Unable to calculate the status...\'\n
+if has_partition:\n
+  try:\n
+    memcached_dict = context.getPortalObject().portal_memcached.getMemcachedDict(\n
+      key_prefix=\'slap_tool\',\n
+      plugin_path=\'portal_memcached/default_memcached_plugin\')\n
+    try:\n
+      d = memcached_dict[context.getReference()]\n
+    except KeyError:\n
+      result = context.getSlapStateTitle()\n
+    else:\n
+      d = json.loads(d)\n
+      result = d[\'text\']\n
+      if result.startswith(\'#access \'):\n
+        result = result[len(\'#access \'):]\n
 \n
-status = ""\n
-state = \'green\'\n
-if software_instance is not None:\n
-  status = software_instance.SoftwareInstance_getCurrentStatus()\n
-  \n
-  if status.startswith(\'#error \'):\n
-   state = "red"\n
+  except Exception:\n
+    raise\n
+    result = \'There is system issue, please try again later.\'\n
 \n
-  return \'<a href="%s" style="background-color: %s; display: block; height: 2em; width: 2em; float: left; margin: 5px;"></a> \' \\\n
-        \'<p style="float: left; line-height: 10px; margin-left: 10px;">%s</p>\' % (\n
-        software_instance.getUrl(), state, status)\n
-
-
-]]></string> </value>
+else:\n
+  if state in ["start_requested", "stop_requested"]:\n
+    result = \'Looking for a free partition\'\n
+  elif state in ["destroy_requested"]:\n
+    result = \'Destroyed\'\n
+\n
+return result\n
+</string> </value>
         </item>
         <item>
             <key> <string>_params</string> </key>
@@ -75,7 +89,7 @@ if software_instance is not None:\n
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>ComputerPartition_getSoftwareInstanceStatus</string> </value>
+            <value> <string>SoftwareInstance_getCurrentStatus</string> </value>
         </item>
       </dictionary>
     </pickle>

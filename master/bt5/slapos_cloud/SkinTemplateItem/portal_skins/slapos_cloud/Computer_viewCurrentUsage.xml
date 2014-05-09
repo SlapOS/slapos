@@ -2,7 +2,7 @@
 <ZopeData>
   <record id="1" aka="AAAAAAAAAAE=">
     <pickle>
-      <global name="ERP5Form" module="Products.ERP5Form.Form"/>
+      <global name="ERP5 Form" module="erp5.portal_type"/>
     </pickle>
     <pickle>
       <dictionary>
@@ -75,7 +75,7 @@
                     <key> <string>bottom</string> </key>
                     <value>
                       <list>
-                        <string>your_busy_computer_partition_list</string>
+                        <string>my_busy_computer_partition_list</string>
                         <string>listbox</string>
                       </list>
                     </value>
@@ -90,11 +90,15 @@
                     <key> <string>hidden</string> </key>
                     <value>
                       <list>
-                        <string>your_busy_computer_partition_list_image</string>
+                        <string>my_busy_computer_partition_list_image</string>
                         <string>listbox_image</string>
                         <string>listbox_software_release</string>
                         <string>listbox_installation_state</string>
                         <string>listbox_usage</string>
+                        <string>my_busy_computer_partition_list_creation_date</string>
+                        <string>my_busy_computer_partition_list_status</string>
+                        <string>my_busy_computer_partition_list_owner_title</string>
+                        <string>my_busy_computer_partition_list_instance_title</string>
                       </list>
                     </value>
                 </item>

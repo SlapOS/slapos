@@ -50,24 +50,37 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string encoding="cdata"><![CDATA[
-
-software_instance = context.getAggregateRelatedValue(portal_type=\'Software Instance\')\n
+            <value> <string>from DateTime import DateTime\n
+portal = context.getPortalObject()\n
+import json\n
 \n
-status = ""\n
-state = \'green\'\n
-if software_instance is not None:\n
-  status = software_instance.SoftwareInstance_getCurrentStatus()\n
-  \n
-  if status.startswith(\'#error \'):\n
-   state = "red"\n
+partition = context\n
+memcached_dict = context.getPortalObject().portal_memcached.getMemcachedDict(\n
+  key_prefix=\'slap_tool\',\n
+  plugin_path=\'portal_memcached/default_memcached_plugin\')\n
 \n
-  return \'<a href="%s" style="background-color: %s; display: block; height: 2em; width: 2em; float: left; margin: 5px;"></a> \' \\\n
-        \'<p style="float: left; line-height: 10px; margin-left: 10px;">%s</p>\' % (\n
-        software_instance.getUrl(), state, status)\n
-
-
-]]></string> </value>
+result = ""\n
+date = None\n
+\n
+for si in partition.getAggregateRelatedValueList(portal_type=["Software Instance", "Slave Instance"]):\n
+  obj = si.getObject()  \n
+\n
+  if obj.getValidationState() != "validated":\n
+    continue\n
+  if obj.getSlapState() == "destroy_requested":\n
+    continue\n
+\n
+  try:\n
+    d = memcached_dict[obj.getReference()]\n
+  except KeyError:\n
+    result = "#missing no data found for %s" % obj.getReference()\n
+  else:\n
+    d = json.loads(d)\n
+    date = DateTime(d[\'created_at\'])\n
+    result = date.strftime(\'%Y/%m/%d %H:%M\')\n
+\n
+return result\n
+</string> </value>
         </item>
         <item>
             <key> <string>_params</string> </key>
@@ -75,7 +88,7 @@ if software_instance is not None:\n
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>ComputerPartition_getSoftwareInstanceStatus</string> </value>
+            <value> <string>ComputerPartition_getLastestContactedDate</string> </value>
         </item>
       </dictionary>
     </pickle>

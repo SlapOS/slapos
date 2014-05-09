@@ -175,6 +175,14 @@
                     <value> <string></string> </value>
                 </item>
                 <item>
+                    <key> <string>image_pre_converted_only</string> </key>
+                    <value> <string></string> </value>
+                </item>
+                <item>
+                    <key> <string>image_quality</string> </key>
+                    <value> <string></string> </value>
+                </item>
+                <item>
                     <key> <string>image_resolution</string> </key>
                     <value> <string></string> </value>
                 </item>

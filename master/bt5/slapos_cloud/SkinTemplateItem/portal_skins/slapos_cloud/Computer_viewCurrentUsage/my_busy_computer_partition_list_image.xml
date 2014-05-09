@@ -8,7 +8,7 @@
       <dictionary>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>your_busy_computer_partition_list_image</string> </value>
+            <value> <string>my_busy_computer_partition_list_image</string> </value>
         </item>
         <item>
             <key> <string>message_values</string> </key>
@@ -175,6 +175,14 @@
                     <value> <string></string> </value>
                 </item>
                 <item>
+                    <key> <string>image_pre_converted_only</string> </key>
+                    <value> <string></string> </value>
+                </item>
+                <item>
+                    <key> <string>image_quality</string> </key>
+                    <value> <string></string> </value>
+                </item>
+                <item>
                     <key> <string>image_resolution</string> </key>
                     <value> <string></string> </value>
                 </item>
@@ -297,16 +305,13 @@
   </record>
   <record id="2" aka="AAAAAAAAAAI=">
     <pickle>
-      <tuple>
-        <global name="TALESMethod" module="Products.Formulator.TALESField"/>
-        <tuple/>
-      </tuple>
+      <global name="TALESMethod" module="Products.Formulator.TALESField"/>
     </pickle>
     <pickle>
       <dictionary>
         <item>
             <key> <string>_text</string> </key>
-            <value> <string>cell/SoftwareInstance_getDefaultImageAbsoluteUrl</string> </value>
+            <value> <string>python: cell.ComputerPartition_getRelatedImageAbsoluteUrl()</string> </value>
         </item>
       </dictionary>
     </pickle>
