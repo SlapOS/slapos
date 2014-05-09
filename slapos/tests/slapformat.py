@@ -501,19 +501,6 @@ class TestComputer(SlapformatMixin):
 
 class TestPartition(SlapformatMixin):
 
-  def test_createPath(self):
-    global USER_LIST
-    USER_LIST = ['testuser']
-    self.partition.createPath()
-    self.assertEqual(
-      [
-        "mkdir('/part_path', 488)",
-        "chown('/part_path', 0, 0)",
-        "chmod('/part_path', 488)"
-      ],
-      self.test_result.bucket
-    )
-
   def test_createPath_no_alter_user(self):
     self.partition.createPath(False)
     self.assertEqual(

@@ -75,10 +75,11 @@ class TestUtil(unittest.TestCase):
       gid = getpwnam(user)[3]
     except KeyError:
       raise unittest.SkipTest("user %s doesn't exist." % user)
-    try:
-      slapos.util.chownDirectory(root_slaptest, uid, gid)
-    except OSError:
+
+    if os.getuid() != 0:
       raise unittest.SkipTest("No root privileges, impossible to chown.")
+
+    slapos.util.chownDirectory(root_slaptest, uid, gid)
 
     uid_check_root_slaptest = os.stat(root_slaptest)[4]
     gid_check_root_slaptest = os.stat(root_slaptest)[5]
