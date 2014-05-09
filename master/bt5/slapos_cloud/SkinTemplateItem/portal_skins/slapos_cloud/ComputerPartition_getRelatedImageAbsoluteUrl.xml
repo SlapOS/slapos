@@ -50,24 +50,22 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string encoding="cdata"><![CDATA[
-
-software_instance = context.getAggregateRelatedValue(portal_type=\'Software Instance\')\n
+            <value> <string>partition = context\n
+portal = context.getPortalObject()\n
+image_url = ""\n
 \n
-status = ""\n
-state = \'green\'\n
-if software_instance is not None:\n
-  status = software_instance.SoftwareInstance_getCurrentStatus()\n
-  \n
-  if status.startswith(\'#error \'):\n
-   state = "red"\n
+software_instance = partition.getAggregateRelatedValue(portal_type="Software Instance")\n
 \n
-  return \'<a href="%s" style="background-color: %s; display: block; height: 2em; width: 2em; float: left; margin: 5px;"></a> \' \\\n
-        \'<p style="float: left; line-height: 10px; margin-left: 10px;">%s</p>\' % (\n
-        software_instance.getUrl(), state, status)\n
-
-
-]]></string> </value>
+release = portal.portal_catalog.getResultValue(\n
+    portal_type="Software Release",\n
+    url_string=software_instance.getUrlString(),\n
+)\n
+if release is not None:\n
+  software_product = release.getAggregateValue()\n
+  image_url = \'%s/index_html\' % software_product.getDefaultImageAbsoluteUrl()\n
+\n
+return image_url\n
+</string> </value>
         </item>
         <item>
             <key> <string>_params</string> </key>
@@ -75,7 +73,7 @@ if software_instance is not None:\n
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>ComputerPartition_getSoftwareInstanceStatus</string> </value>
+            <value> <string>ComputerPartition_getRelatedImageAbsoluteUrl</string> </value>
         </item>
       </dictionary>
     </pickle>

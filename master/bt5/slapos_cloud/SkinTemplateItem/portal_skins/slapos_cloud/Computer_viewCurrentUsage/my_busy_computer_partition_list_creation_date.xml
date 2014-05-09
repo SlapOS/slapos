@@ -10,15 +10,15 @@
             <key> <string>delegated_list</string> </key>
             <value>
               <list>
-                <string>display_width</string>
-                <string>title</string>
                 <string>default</string>
+                <string>editable</string>
+                <string>title</string>
               </list>
             </value>
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>listbox_installation_state</string> </value>
+            <value> <string>my_busy_computer_partition_list_creation_date</string> </value>
         </item>
         <item>
             <key> <string>message_values</string> </key>
@@ -72,6 +72,10 @@
                     <key> <string>target</string> </key>
                     <value> <string></string> </value>
                 </item>
+                <item>
+                    <key> <string>title</string> </key>
+                    <value> <string></string> </value>
+                </item>
               </dictionary>
             </value>
         </item>
@@ -80,8 +84,12 @@
             <value>
               <dictionary>
                 <item>
-                    <key> <string>display_width</string> </key>
-                    <value> <int>20</int> </value>
+                    <key> <string>default</string> </key>
+                    <value> <string></string> </value>
+                </item>
+                <item>
+                    <key> <string>editable</string> </key>
+                    <value> <int>0</int> </value>
                 </item>
                 <item>
                     <key> <string>field_id</string> </key>
@@ -97,7 +105,7 @@
                 </item>
                 <item>
                     <key> <string>title</string> </key>
-                    <value> <string>listbox_installation_state</string> </value>
+                    <value> <string>Instance creation date</string> </value>
                 </item>
               </dictionary>
             </value>
@@ -113,7 +121,7 @@
       <dictionary>
         <item>
             <key> <string>_text</string> </key>
-            <value> <string>cell/Base_getSoftwareReleaseStateOnComputer</string> </value>
+            <value> <string>cell/ComputerPartition_getRelatedInstanceCreationDate</string> </value>
         </item>
       </dictionary>
     </pickle>
