@@ -1,0 +1,16 @@
+--- DBD-mysql-4.027/Makefile.PL.orig	2014-03-14 19:34:06.000000000 +0100
++++ DBD-mysql-4.027/Makefile.PL	2014-05-10 07:34:50.497350471 +0200
+@@ -974,7 +974,12 @@
+   delete $params{ABSTRACT_FROM} if $] < 5.005;
+   delete $params{BINARY_LOCATION} if $] < 5.005;
+ 
+-  ExtUtils::MakeMaker::WriteMakefile(%params);
++  my %config;
++  if (defined($ENV{'OTHERLDFLAGS'})) {
++    $config{dynamic_lib} = { OTHERLDFLAGS => " $ENV{'OTHERLDFLAGS'} " };
++  }
++
++  ExtUtils::MakeMaker::WriteMakefile(%params, %config);
+ }
+ __DATA__
+ 
