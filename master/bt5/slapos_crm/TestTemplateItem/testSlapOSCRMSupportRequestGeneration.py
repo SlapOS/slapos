@@ -43,10 +43,32 @@ class TestSlapOSCloudSupportRequestGeneration(testSlapOSMixin):
   def _cancelTestSupportRequestList(self):
     for support_request in self.portal.portal_catalog(
                         portal_type="Support Request",
-                        title="Test Support Request %", 
+                        title="Test Support Request %",
                         simulation_state="validated"):
       support_request.invalidate()
+    for support_request in self.portal.portal_catalog(
+                        portal_type="Support Request",
+                        title="Allocation scope has been changed for TESTCOMPT%",
+                        simulation_state="suspended"):
+      support_request.invalidate()
     self.tic()
+    
+  def _updatePersonAssignment(self, person, role='role/member'):
+    for assignment in person.contentValues(portal_type="Assignment"):
+      assignment.cancel()
+    assignment = person.newContent(portal_type='Assignment')
+    assignment.setRole(role)
+    assignment.setStartDate(DateTime())
+    assignment.open()
+    return assignment
+  
+  def _makePerson(self, new_id):
+    # Clone computer document
+    person = self.portal.person_module.template_member\
+         .Base_createCloneDocument(batch_mode=1)
+    person.edit(reference='TESTPERSON-%s' % (new_id, ))
+    person.immediateReindexObject()
+    return person
 
   def _makeComputer(self,new_id):
     # Clone computer document
@@ -183,21 +205,35 @@ class TestSlapOSCloudSupportRequestGeneration(testSlapOSMixin):
     self.assertEqual(support_request, None)
 
   def test_ERP5Site_isSupportRequestCreationClosed(self):
-
+    
+    person = self._makePerson(self.new_id)
+    other_person = self._makePerson('other-%s' % self.new_id)
+    url = person.getRelativeUrl()
+    self.assertFalse(self.portal.ERP5Site_isSupportRequestCreationClosed(url))
     self.assertFalse(self.portal.ERP5Site_isSupportRequestCreationClosed())
 
     def newSupportRequest():
       sr = self.portal.support_request_module.newContent(\
-                                 title="Test Support Request POIUY")
+                        title="Test Support Request POIUY",
+                        destination_decision=url)
       sr.validate()
       sr.immediateReindexObject()
 
     newSupportRequest()
-    self.assertFalse(self.portal.ERP5Site_isSupportRequestCreationClosed())
+    self.assertFalse(self.portal.ERP5Site_isSupportRequestCreationClosed(url))
     newSupportRequest()
-    self.assertFalse(self.portal.ERP5Site_isSupportRequestCreationClosed())
+    self.assertFalse(self.portal.ERP5Site_isSupportRequestCreationClosed(url))
     newSupportRequest()
+    self.assertFalse(self.portal.ERP5Site_isSupportRequestCreationClosed(url))
+    newSupportRequest()
+    self.assertFalse(self.portal.ERP5Site_isSupportRequestCreationClosed(url))
+    newSupportRequest()
+    self.assertTrue(self.portal.ERP5Site_isSupportRequestCreationClosed(url))
+    
     self.assertTrue(self.portal.ERP5Site_isSupportRequestCreationClosed())
+    
+    self.assertFalse(self.portal.ERP5Site_isSupportRequestCreationClosed(
+                     other_person.getRelativeUrl()))
 
   def test_Base_generateSupportRequestForSlapOS_recreate_if_closed(self):
     title = "Test Support Request %s" % self.new_id
@@ -656,3 +692,48 @@ portal_workflow.doActionFor(context, action='edit_action', comment='Visited by S
 
       self.assertEqual('Visited by SoftwareRelease_testForAllocation',
         software_release.workflow_history['edit_workflow'][-1]['comment'])
+
+  def test_Alarm_notAllowedAllocationScope(self):        
+    computer = self._makeComputer(self.new_id)
+    person = computer.getSourceAdministrationValue()
+    self._updatePersonAssignment(person, 'role/member')
+    
+    computer.edit(allocation_scope='open/public')
+    self.portal.portal_alarms.slapos_check_update_allocation_scope.activeSense()
+    self.tic()
+    self.assertEquals(computer.getAllocationScope(), 'open/personal')
+    
+    computer.edit(allocation_scope='open/personal')
+    self.portal.portal_alarms.slapos_check_update_allocation_scope.activeSense()
+    self.tic()
+    self.assertEquals(computer.getAllocationScope(), 'open/personal')
+    
+    friend_person = self._makePerson(self.new_id)
+    computer.edit(allocation_scope='open/friend',
+        destination_section=friend_person.getRelativeUrl())
+    self.portal.portal_alarms.slapos_check_update_allocation_scope.activeSense()
+    self.tic()
+    self.assertEquals(computer.getAllocationScope(), 'open/personal')
+
+  def test_Alarm_allowedAllocationScope(self):
+    computer = self._makeComputer(self.new_id)
+    person = computer.getSourceAdministrationValue()
+    self._updatePersonAssignment(person, 'role/service_provider')
+    
+    computer.edit(allocation_scope='open/public')
+    self.portal.portal_alarms.slapos_check_update_allocation_scope.activeSense()
+    self.tic()
+    self.assertEquals(computer.getAllocationScope(), 'open/public')
+    
+    computer.edit(allocation_scope='open/personal')
+    self.portal.portal_alarms.slapos_check_update_allocation_scope.activeSense()
+    self.tic()
+    self.assertEquals(computer.getAllocationScope(), 'open/personal')
+    
+    friend_person = self._makePerson(self.new_id)
+    computer.edit(allocation_scope='open/friend',
+        destination_section=friend_person.getRelativeUrl())
+    self.portal.portal_alarms.slapos_check_update_allocation_scope.activeSense()
+    self.tic()
+    self.assertEquals(computer.getAllocationScope(), 'open/friend')
+  

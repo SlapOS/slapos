@@ -51,20 +51,23 @@
         <item>
             <key> <string>_body</string> </key>
             <value> <string># HARDCODED LIMIT TO BE MOVED TO GLOBAL PREFERENCES\n
-limit = 3\n
+limit = 5\n
 \n
-support_request_list = context.portal_catalog(\n
-  portal_type = \'Support Request\',\n
-  simulation_state = ["validated","submitted", "suspended"],\n
-  limit=limit\n
-)\n
+kw[\'limit\'] = limit\n
+kw[\'portal_type\'] = \'Support Request\'\n
+kw[\'simulation_state\'] = ["validated","submitted", "suspended"]\n
+if destination_decision:\n
+  kw[\'default_destination_decision_uid\'] = context.restrictedTraverse(\n
+                          destination_decision).getUid()\n
+\n
+support_request_list = context.portal_catalog(**kw)\n
 \n
 return len(support_request_list) == limit\n
 </string> </value>
         </item>
         <item>
             <key> <string>_params</string> </key>
-            <value> <string></string> </value>
+            <value> <string>destination_decision=None, **kw</string> </value>
         </item>
         <item>
             <key> <string>id</string> </key>

@@ -57,6 +57,7 @@ from DateTime import DateTime\n
 computer = context\n
 portal = context.getPortalObject()\n
 allocation_scope = computer.getAllocationScope()\n
+computer_reference = computer.getReference()\n
 \n
 if allocation_scope != \'open/public\' and \\\n
    allocation_scope != \'open/friend\':\n
@@ -66,7 +67,6 @@ is_service_provider = False\n
 person = computer.getSourceAdministrationValue(portal_type="Person")\n
 \n
 for assignment in person.contentValues(portal_type="Assignment"):\n
-  assignment = assignment.getObject()\n
   if assignment.getRole() == \'service_provider\':\n
     is_service_provider = True\n
     break\n
@@ -75,67 +75,64 @@ if not is_service_provider:\n
   #Turn this computer allocation scope to \'open/personal\'\n
   edit_kw = {\n
     \'allocation_scope\': \'open/personal\',\n
-    \'subject_list\': [\'\'],\n
-    \'destination_section_value\': person,\n
-  } \n
+  }\n
   computer.edit(**edit_kw)\n
 \n
   # Create a ticket (or re-open it) for this issue!\n
-  ticket_title = \'Allocation scope has been changed for %s\' % computer.\\\n
-    getReference()\n
-  message = """Dear user,\n
-\n
-Your computer %s with ID %s was configured with allocation scope \'%s\', but you are\n
-not allowed to turn computer to \'public\' or \'friend\' state because you are not a service provider.\n
-The computer allocation scope has been changed to \'open/personal\'. Please contact us for more informations.\n
-\n
-Regards,\n
-\n
-SlapOS Team\n
-""" % (computer.getTitle(), computer.getReference(),\n
-       allocation_scope)\n
+  request_title = \'Allocation scope has been changed for %s\' % computer_reference\n
+  request_description = \'Allocation scope has been changed back to \' \\\n
+                       \'open/personal for %s\' % computer_reference\n
+  message_title = \'We have changed allocation scope for %s\' % computer_reference\n
+  notification_reference = \'slapos-crm-computer_allocation_scope.notification\'\n
+  notification_message = portal.portal_notifications.getDocumentValue(\n
+                 reference=notification_reference)\n
   ressource = portal.service_module.slapos_crm_information.getRelativeUrl()\n
-  \n
-  support_request_in_progress = portal.portal_catalog.getResultValue(\n
-    portal_type = \'Support Request\',\n
-    title = ticket_title,\n
-    simulation_state = ["validated","submitted","suspended"],\n
-    source_project_uid = computer.getUid()\n
-  )\n
-  if support_request_in_progress is None:\n
-    support_request = portal.support_request_module.\\\n
-    slapos_crm_support_request_template.\\\n
-    Base_createCloneDocument(batch_mode=1)\n
-    support_request.edit(\n
-      title = ticket_title,\n
-      resource = ressource,\n
-      description = ticket_title,\n
-      start_date = DateTime(),\n
-      destination_decision=computer.getSourceAdministration(),\n
-      source_project_value = computer.getRelativeUrl()\n
-    )\n
-    support_request.validate()\n
+  mapping_dict = {\'computer_title\':computer.getTitle(),\n
+                  \'computer_id\':computer_reference,\n
+                  \'allocation_scope\':allocation_scope}\n
+  message = notification_message.asText(\n
+            substitution_method_parameter_dict={\'mapping_dict\':mapping_dict})\n
+            \n
+  support_request_url = context.Base_generateSupportRequestForSlapOS(\n
+                 request_title,\n
+                 request_description,\n
+                 computer.getRelativeUrl()\n
+               )\n
+  if support_request_url:\n
+    support_request = portal.restrictedTraverse(support_request_url)\n
     support_request.suspend()\n
   else:\n
-    support_request = support_request_in_progress.getObject()\n
+    # XXX - Base_generateSupportRequestForSlapOS return None if the \n
+    # support_request already exist, but we want to use it again so...\n
+    support_request = portal.portal_catalog.getResultValue(\n
+          portal_type = \'Support Request\',\n
+          title = request_title,\n
+          simulation_state = \'suspended\',\n
+          source_project_uid = computer.getUid()\n
+    )\n
+    if support_request is None:\n
+      # Existing ticket not found, can not create event for the moment\n
+      return\n
+    support_request_url = support_request.getRelativeUrl()\n
   \n
   # create Web message if needed for this ticket\n
-  event_list = context.portal_catalog(follow_up_uid=support_request.getUid(), \n
+  last_event = context.portal_catalog.getResultValue(\n
+               follow_up_uid=support_request.getUid(), \n
                sort_on=[(\'delivery.start_date\', \'DESC\')],\n
   )\n
-  if len(event_list) > 0 and \\\n
-      (event_list[0].getStartDate() - DateTime()  < 1):\n
-    # User has already been notified this day.\n
+  if last_event and \\\n
+      (DateTime() - last_event.getStartDate()  < 1):\n
+    # User has already been notified this last 24h.\n
     return\n
   event = portal.event_module.slapos_crm_web_message_template.\\\n
     Base_createCloneDocument(batch_mode=1)\n
   event.edit(\n
-    title=\'We have changed allocation scope for %s\' % computer.getReference(),\n
+    title=message_title,\n
     text_content=message,\n
     start_date = DateTime(),\n
     resource = ressource,\n
     source=person.getRelativeUrl(),\n
-    follow_up=support_request.getRelativeUrl(),\n
+    follow_up=support_request_url,\n
   )\n
   event.stop()\n
   event.deliver()\n
