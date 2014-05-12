@@ -39,7 +39,7 @@ class RequestCommand(ClientConfigCommand):
 
         ap.add_argument('--node',
                         nargs='+',
-                        help="Node request option 'option1=value1 option2=value2'")
+                        help="Node request option 'option1=value1 option2=value2' (i.e. computer_guid=COMP-1234)")
 
         ap.add_argument('--type',
                         help='Software type to be requested')
