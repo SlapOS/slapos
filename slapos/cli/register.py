@@ -344,5 +344,5 @@ def do_register(conf):
     slapconfig(conf)
 
     conf.logger.info('Node has successfully been configured as %s.', COMP)
-    conf.logger.info('Now please invoke /usr/sbin/slapos-start on your site.')
+    conf.logger.info('Now please invoke slapos node boot on your site.')
     return 0
