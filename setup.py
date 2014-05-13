@@ -73,17 +73,7 @@ setup(name=name,
       entry_points={
         'console_scripts': [
           'slapos-watchdog = slapos.grid.watchdog:main',
-          'slapproxy = slapos.cli_legacy.proxy_start:main',
           'slapos = slapos.cli.entry:main',
-          # Deprecated entry points
-          'slapconsole = slapos.cli_legacy.console:console',
-          'slapformat = slapos.cli_legacy.format:main',
-          'slapgrid-sr = slapos.cli_legacy.slapgrid:runSoftwareRelease',
-          'slapgrid-cp = slapos.cli_legacy.slapgrid:runComputerPartition',
-          'slapgrid-ur = slapos.cli_legacy.slapgrid:runUsageReport',
-          'slapgrid-supervisorctl = slapos.cli_legacy.svcbackend:supervisorctl',
-          'slapgrid-supervisord = slapos.cli_legacy.svcbackend:supervisord',
-          'bang = slapos.cli_legacy.bang:main',
         ],
         'slapos.cli': [
           # Utilities
