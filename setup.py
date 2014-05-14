@@ -48,6 +48,7 @@ setup(name=name,
           'netifaces', # to fetch information about network devices
           'setuptools', # namespaces
           'supervisor', # slapgrid uses supervisor to manage processes
+          'psutil',
           'xml_marshaller>=0.9.3', # to unmarshall/marshall python objects to/from
                                    # XML
           'zope.interface', # slap library implementes interfaces
@@ -102,6 +103,7 @@ setup(name=name,
           'node software = slapos.cli.slapgrid:SoftwareCommand',
           'node instance = slapos.cli.slapgrid:InstanceCommand',
           'node boot = slapos.cli.boot:BootCommand',
+          'node collect = slapos.cli.collect:CollectCommand',
           # SlapOS client commands
           'console = slapos.cli.console:ConsoleCommand',
           'configure local = slapos.cli.configure_local:ConfigureLocalCommand',
