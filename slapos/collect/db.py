@@ -1,0 +1,275 @@
+import sqlite3
+import os
+from time import time, strftime
+
+class Database:
+
+  database_name = "collector.db"
+  table_list = ["user", "computer", "system", "disk"]
+  CREATE_USER_TABLE = "create table if not exists user " \
+                        "(partition text, pid real, process text, " \
+                        " cpu_percent real, cpu_time real, " \
+                        " cpu_num_threads real,  memory_percent real, " \
+                        " memory_rss real, io_rw_counter real, " \
+                        " io_cycles_counter real, date text, time text, " \
+                        " reported integer NULL DEFAULT 0)"
+
+  CREATE_COMPUTER_TABLE = "create table if not exists computer "\
+                          "(cpu_num_core real, cpu_frequency real, cpu_type text," \
+                          " memory_size real, memory_type text, partition_list text," \
+                          " date text, time text, reported integer NULL DEFAULT 0)"
+
+
+  CREATE_SYSTEM_TABLE = "create table if not exists system " \
+                        "(loadavg real, cpu_percent real, memory_used real, "\
+                        " memory_free real, net_in_bytes real, net_in_errors real, "\
+                        " net_in_dropped real, net_out_bytes real, net_out_errors real, "\
+                        " net_out_dropped real, date text, time text, " \
+                        " reported integer NULL DEFAULT 0)"
+
+  CREATE_DISK_PARTITION = "create table if not exists disk "\
+                          "(partition text, used text, free text, mountpoint text, " \
+                          " date text, time text, reported integer NULL DEFAULT 0)" 
+
+
+  INSERT_USER_TEMPLATE = "insert into user(" \
+            "partition, pid, process, cpu_percent, cpu_time, " \
+             "cpu_num_threads, memory_percent," \
+             "memory_rss, io_rw_counter, io_cycles_counter, " \
+             "date, time) values " \
+             "('%s', %s, '%s', %s, %s, %s, %s, %s, %s, %s, '%s', '%s' )" 
+
+
+
+  INSERT_COMPUTER_TEMPLATE = "insert into computer("\
+            " cpu_num_core, cpu_frequency, cpu_type," \
+            "memory_size, memory_type, partition_list," \
+            "date, time) values "\
+            "(%s, %s, '%s', %s, '%s', '%s', '%s', '%s' )"
+
+  INSERT_DISK_TEMPLATE = "insert into disk("\
+            " partition, used, free, mountpoint," \
+            " date, time) "\
+            "values ('%s', %s,  %s, '%s', '%s', '%s' )"
+    
+  INSERT_SYSTEM_TEMPLATE = "insert into system("\
+            " loadavg, cpu_percent, memory_used, memory_free," \
+            " net_in_bytes, net_in_errors, net_in_dropped," \
+            " net_out_bytes, net_out_errors, net_out_dropped, " \
+            " date, time) values "\
+            "( %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, '%s', '%s' )"
+
+  def __init__(self, directory = None):
+    assert self.database_name is not None
+    self.uri = os.path.join(directory, self.database_name)
+    self.connection = None
+    self.cursor = None
+    self._bootstrap()
+
+  def connect(self):
+    self.connection = sqlite3.connect(self.uri)
+    self.cursor = self.connection.cursor()
+
+  def commit(self):
+    assert self.connection is not None
+    self.connection.commit()
+
+  def close(self):
+    assert self.connection is not None
+    self.cursor.close()
+    self.connection.close()
+
+  def _execute(self, sql):
+    assert self.connection is not None
+    return self.cursor.execute(sql)
+
+  def _bootstrap(self):
+    assert self.CREATE_USER_TABLE is not None
+    self.connect()
+    self._execute(self.CREATE_USER_TABLE)
+    self._execute(self.CREATE_COMPUTER_TABLE)
+    self._execute(self.CREATE_SYSTEM_TABLE)
+    self._execute(self.CREATE_DISK_PARTITION)
+    self.commit()
+    self.close()
+
+  def _getInsertionDateTuple(self):
+    return strftime("%Y-%m-d -- %H:%M:%S").split(" -- ")
+
+  ###################
+  # Insertion methods
+  ###################
+  def insertUserSnapshot(self, partition, pid, process, cpu_percent, cpu_time, 
+        cpu_num_threads, memory_percent, memory_rss, io_rw_counter, 
+        io_cycles_counter, insertion_date, insertion_time):
+    """ Insert user processes snapshots information on a database """
+    insertion_sql = self.INSERT_USER_TEMPLATE % \
+              ( partition, pid, process, cpu_percent, cpu_time,
+                cpu_num_threads, memory_percent,
+                memory_rss, io_rw_counter, io_cycles_counter,
+                insertion_date, insertion_time)
+    self._execute(insertion_sql)
+    return insertion_sql
+
+  def insertComputerSnapshot(self, cpu_num_core, cpu_frequency, cpu_type,
+         memory_size, memory_type, partition_list, insertion_date, insertion_time):
+    """Insert Computer general informations snapshots informations on 
+       the database
+    """
+    insertion_sql = self.INSERT_COMPUTER_TEMPLATE % \
+              ( cpu_num_core, cpu_frequency, cpu_type, 
+                memory_size, memory_type, 
+                partition_list, insertion_date, 
+                insertion_time)
+    self._execute(insertion_sql)  
+    return insertion_sql
+
+  def insertDiskPartitionSnapshot(self, partition, used, free, mountpoint,
+                                        insertion_date, insertion_time):
+    """ Insert Disk Partitions informations on the database """
+    insertion_sql = self.INSERT_DISK_TEMPLATE % \
+             ( partition, used, free, mountpoint, 
+               insertion_date, insertion_time )
+    self._execute(insertion_sql)  
+    return insertion_sql
+    
+  def insertSystemSnapshot(self, loadavg, cpu_percent, memory_used, memory_free,
+       net_in_bytes, net_in_errors, net_in_dropped, net_out_bytes, 
+       net_out_errors, net_out_dropped, insertion_date, insertion_time):
+    """ Include System general Snapshot on the database 
+    """
+    insertion_sql = self.INSERT_SYSTEM_TEMPLATE % \
+             ( loadavg, cpu_percent, memory_used, memory_free,
+               net_in_bytes, net_in_errors, net_in_dropped,
+               net_out_bytes, net_out_errors, net_out_dropped,
+               insertion_date, insertion_time )
+    self._execute(insertion_sql)  
+    return insertion_sql
+
+  def getDataScopeList(self, ignore_date=None, reported=0):
+    """ Get from the present unique dates from the system
+        Use a smaller table to sabe time.
+    """
+    if ignore_date is not None:
+      where_clause = " AND date != '%s'" % ignore_date
+    else:
+      where_clause = ""
+    select_sql = "SELECT date, count(time) FROM system "\
+                 " WHERE reported = %s %s GROUP BY date" % \
+                                    (reported, where_clause)
+    return self._execute(select_sql)
+
+  def markDayAsReported(self, date_scope, table_list):
+    """ Mark all registers from a certain date as reported """
+    update_sql = "UPDATE %s SET reported = 1 " \
+                 "WHERE date = '%s' AND reported = 0"
+    for table in table_list:
+      self._execute(update_sql % (table, date_scope))
+
+  def select(self, table, date=None, columns="*"):
+    """ Query database for a full table information """
+    if date is not None:
+      where_clause = " WHERE date = '%s' " % date
+    else:
+      where_clause = ""
+    select_sql = "SELECT %s FROM %s %s " % (columns, table, where_clause)
+    return self._execute(select_sql)
+
+
+  #####################################################
+  # Export Tables as Dict for handle realtime plotting
+  #####################################################
+  def exportSystemAsDict(self, date):
+    """ Export system table as dictionally, formatting the output 
+        for present it in a nicer presentation. 
+    """  
+    collected_entry_dict = {}
+
+    collected_entry_dict["loadavg"] = []
+    collected_entry_dict["cpu_percent"] = []
+    collected_entry_dict["memory_used"] = []
+    collected_entry_dict["memory_free"] = []
+    collected_entry_dict["net_in_bytes"] = []
+    collected_entry_dict["net_in_errors"] = []
+    collected_entry_dict["net_in_dropped"] = []
+    collected_entry_dict["net_out_bytes"] = []
+    collected_entry_dict["net_out_errors"] = []
+    collected_entry_dict["net_out_dropped"] = []
+
+    first_entry = 1
+    last_entry_in = 0
+    last_entry_out = 0
+    entry_list =  self._execute(
+        "SELECT loadavg, cpu_percent, memory_used, memory_free," \
+               " net_in_bytes, net_in_errors, net_in_dropped," \
+               " net_out_bytes, net_out_errors, net_out_dropped, " \
+               " date, time FROM system WHERE date = '%s'" % date) 
+
+    for entry in entry_list:
+
+      entry_time = "%s %s" % (entry[10], str(entry[11]))
+      if not first_entry:
+        _entry_in = entry[4] - last_entry_in
+        last_entry_in = entry[4]
+        entry_in = _entry_in
+
+        _entry_out = entry[7] - last_entry_out
+        last_entry_out = entry[7]
+        entry_out = _entry_out
+      
+      else:
+        first_entry = 0
+        last_entry_in = entry[4]
+        last_entry_out = entry[7]
+        continue
+
+      collected_entry_dict["loadavg"].append(
+             {'entry': entry[0], 'time': entry_time })
+      collected_entry_dict["cpu_percent"].append(
+             {'entry': entry[1], 'time': entry_time })
+      collected_entry_dict["memory_used"].append(
+             {'entry': entry[2]/1024, 'time': entry_time })
+      collected_entry_dict["memory_free"].append(
+             {'entry': entry[3]/1024, 'time': entry_time })
+      collected_entry_dict["net_in_bytes"].append(
+             {'entry': entry_in/1024, 'time': entry_time })
+      collected_entry_dict["net_in_errors"].append(
+             {'entry': entry[5], 'time': entry_time })
+      collected_entry_dict["net_in_dropped"].append(
+             {'entry': entry[6], 'time': entry_time })
+      collected_entry_dict["net_out_bytes"].append(
+             {'entry': entry_out/1024, 'time': entry_time })
+      collected_entry_dict["net_out_errors"].append(
+             {'entry': entry[8], 'time': entry_time })
+      collected_entry_dict["net_out_dropped"].append(
+             {'entry': entry[9], 'time': entry_time })
+
+    return collected_entry_dict
+
+  def exportDiskAsDict(self, date):
+    """ Export a column from a table for a given date.
+    """
+    collected_entry_dict = {}
+    entry_list =  self._execute(
+        "SELECT partition, used, free, date, time "\
+        "from disk WHERE date = '%s'" % (date))
+
+    for partition, used, free,  __date, __time in entry_list:
+      partition_used = "%s-used" % partition
+      partition_free = "%s-free" % partition
+      if partition_used not in collected_entry_dict:
+        collected_entry_dict[partition_used] = []
+
+      if partition_free not in collected_entry_dict:
+        collected_entry_dict[partition_free] = []
+
+      collected_entry_dict[partition_used].append(
+        {'entry': int(used)/1024, 
+         'time': "%s %s" % (__date, str(__time))})
+
+      collected_entry_dict[partition_free].append(
+        {'entry': int(free)/1024, 
+         'time': "%s %s" % (__date, str(__time))})
+
+    return collected_entry_dict
+
