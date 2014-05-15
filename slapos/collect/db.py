@@ -39,8 +39,6 @@ class Database:
              "date, time) values " \
              "('%s', %s, '%s', %s, %s, %s, %s, %s, %s, %s, '%s', '%s' )" 
 
-
-
   INSERT_COMPUTER_TEMPLATE = "insert into computer("\
             " cpu_num_core, cpu_frequency, cpu_type," \
             "memory_size, memory_type, partition_list," \

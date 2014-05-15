@@ -44,7 +44,6 @@ class User(object):
     database.commit()
     database.close()
 
-
 class Computer(dict):
 
   def __init__(self, computer_snapshot):
@@ -86,7 +85,6 @@ class Computer(dict):
       net_out_dropped=snapshot.get("net_out_dropped"),
       insertion_date=collected_date, 
       insertion_time=collected_time)
-
 
   def _save_disk_partition_snapshot(self, database, collected_date, collected_time):
     for disk_partition in self.computer_snapshot.get("disk_snapshot_list"):

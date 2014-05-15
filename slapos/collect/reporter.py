@@ -25,7 +25,6 @@ class SystemReporter(Dumper):
       partition_id = partition.split("-")[0].split("/")[-1]
       item = "memory_%s" % partition.split("-")[1]
       self.writeFile("disk_%s_%s" % (item, partition_id), folder, collected_item_list)
-      self.writeFile("disk_%s_%s" % (item, partition_id), folder, collected_item_list)
 
     self.db.close()
 

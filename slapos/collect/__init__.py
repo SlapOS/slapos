@@ -4,6 +4,10 @@ from slapos.collect.db import Database
 from slapos.util import mkdir_p
 # Local import
 from snapshot import ProcessSnapshot, SystemSnapshot, ComputerSnapshot
+from slapos.collect.reporter import SystemJSONReporterDumper, \
+                                    RawCSVDumper, \
+                                    SystemCSVReporterDumper
+
 from entity import get_user_list, Computer
 
 def _get_time():
@@ -44,21 +48,18 @@ def do_collect(conf):
     except (KeyboardInterrupt, SystemExit, NoSuchProcess):
       raise
       
-    # XXX: we should use a value from the config file and not a hardcoded one
-    instance_root = conf.get("slapos", "instance_root")
-    mkdir_p("%s/var/data-log/" % instance_root)
-    database = Database("%s/var/data-log/" % instance_root)
+    log_directory = "%s/var/data-log" % conf.get("slapos", "instance_root")
+    mkdir_p(log_directory)
+    database = Database(log_directory)
 
     computer = Computer(ComputerSnapshot())
     computer.save(database, collected_date, collected_time)
 
     for user in user_dict.values():
       user.save(database, collected_date, collected_time)
-
-    from slapos.collect.reporter import SystemJSONReporterDumper, RawCSVDumper, SystemCSVReporterDumper
-    #SystemJSONReporterDumper(database).dump()
-    SystemCSVReporterDumper(database).dump("%s/var/data-log/" % instance_root)
-    RawCSVDumper(database).dump("%s/var/data-log/" % instance_root)
+    
+    SystemCSVReporterDumper(database).dump(log_directory)
+    RawCSVDumper(database).dump(log_directory)
 
   except AccessDenied:
     print "You HAVE TO execute this script with root permission."
