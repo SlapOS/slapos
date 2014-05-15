@@ -144,7 +144,13 @@ class Database:
     self._execute(insertion_sql)  
     return insertion_sql
 
-  def getDataScopeList(self, ignore_date=None, reported=0):
+  def getTableList(self):
+    """ Get the list of tables from the database 
+    """
+    return [i[0] for i in self._execute(
+           "SELECT name FROM sqlite_master WHERE type='table'")]
+
+  def getDateScopeList(self, ignore_date=None, reported=0):
     """ Get from the present unique dates from the system
         Use a smaller table to sabe time.
     """

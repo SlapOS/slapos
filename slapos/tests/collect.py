@@ -79,11 +79,9 @@ class TestCollectDatabase(unittest.TestCase):
         database = db.Database(self.instance_root)
         database.connect()
         try:
-          table_list = database._execute(
-              "SELECT name FROM sqlite_master WHERE type='table'")
           self.assertEquals(
-              [(u'user',), (u'computer',), (u'system',), (u'disk',)],
-              [i for i in table_list])
+              [u'user', u'computer', u'system', u'disk'],
+              database.getTableList())
         finally:
           database.close()
 

@@ -53,11 +53,14 @@ class RawDumper(Dumper):
   def dump(self, folder):
     date = strftime("%Y-%m-%d")
     self.db.connect()
-    for date_scope, amount in self.db.getDataScopeList(ignore_date=date):
-      self.writeFile("system", folder, date_scope, self.db.select("system", date_scope))
-      self.writeFile("user", folder, date_scope, self.db.select("user", date_scope))
-      self.writeFile("disk", folder, date_scope, self.db.select("disk", date_scope))
-      self.db.markDayAsReported(date_scope, table_list = ["system", "user", "disk"])
+    table_list = self.db.getTableList()
+    for date_scope, amount in self.db.getDateScopeList(ignore_date=date):
+      for table in table_list:
+        self.writeFile(table, folder, date_scope, 
+              self.db.select(table, date_scope))
+
+      self.db.markDayAsReported(date_scope, 
+                                table_list=table_list)
     self.db.commit()
     self.db.close()
 
