@@ -200,13 +200,6 @@ def slapconfig(conf):
         if not dry_run:
             os.mkdir(slap_conf_dir, 0o711)
 
-    # Hack that should be removed when we switch to re6st
-    # Force start of vpn
-    openvpn_needed_file = os.path.join(slap_conf_dir, 'openvpn-needed')
-    if not os.path.exists(openvpn_needed_file):
-        if not dry_run:
-            open(openvpn_needed_file, 'w').write('')
-
     user_certificate_repository_path = os.path.join(slap_conf_dir, 'ssl')
     if not os.path.exists(user_certificate_repository_path):
         conf.logger.info('Creating directory: %s', user_certificate_repository_path)
