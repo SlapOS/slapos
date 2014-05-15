@@ -34,7 +34,7 @@ import slapos.cli.collect
 import slapos.slap
 import psutil
 from slapos.cli.collect import CollectCommand
-from slapos.collect import entity, snapshot
+from slapos.collect import entity, snapshot, db
 from slapos.cli.entry import SlapOSApp
 from argparse import Namespace
 from ConfigParser import ConfigParser
@@ -63,6 +63,147 @@ class FakeDatabase(object):
 
     def insertDiskPartitionSnapshot(self, *args, **kw):
       self.invoked_method_list.append(("insertDiskPartitionSnapshot", (args, kw)))
+
+
+
+
+class TestCollectDatabase(unittest.TestCase):
+
+    def setUp(self):
+        self.instance_root = tempfile.mkdtemp()
+
+    def tearDown(self):
+        if os.path.exists(self.instance_root):
+          shutil.rmtree(self.instance_root)
+
+    def test_database_bootstrap(self):
+        self.assertFalse(os.path.exists(
+                  "%s/collector.db" % self.instance_root ))
+        database = db.Database(self.instance_root)
+        database.connect()
+        try:
+          table_list = database._execute(
+              "SELECT name FROM sqlite_master WHERE type='table'")
+          self.assertEquals(
+              [(u'user',), (u'computer',), (u'system',), (u'disk',)],
+              [i for i in table_list])
+        finally:
+          database.close()
+
+        self.assertTrue(os.path.exists(
+                  "%s/collector.db" % self.instance_root ))
+
+    def test_insert_user_snapshot(self):
+
+        database = db.Database(self.instance_root)
+        database.connect()
+        try:
+            database.insertUserSnapshot(
+             'fakeuser0', 10, '10-12345', '0.1', '10.0', '1',
+             '10.0', '10.0', '0.1', '0.1', 'DATE', 'TIME')
+            database.commit()
+            self.assertEquals([i for i in database.select('user')], 
+                            [(u'fakeuser0', 10.0, u'10-12345', 0.1, 10.0, 
+                             1.0, 10.0, 10.0, 0.1, 0.1, u'DATE', u'TIME', 0)])
+        finally:
+            database.close()
+
+    def test_insert_computer_snapshot(self):
+
+        database = db.Database(self.instance_root)
+        database.connect()
+        try:
+            database.insertComputerSnapshot(
+              '1', '0', '0', '100', '0', '/dev/sdx1', 'DATE', 'TIME')
+            database.commit()
+            self.assertEquals([i for i in database.select('computer')], 
+                    [(1.0, 0.0, u'0', 100.0, u'0', u'/dev/sdx1', u'DATE', u'TIME', 0)]) 
+        finally:
+          database.close()
+
+    def test_insert_disk_partition_snapshot(self):
+
+        database = db.Database(self.instance_root)
+        database.connect()
+        try:
+            database.insertDiskPartitionSnapshot(
+                 '/dev/sdx1', '10', '20', '/mnt', 'DATE', 'TIME')
+            database.commit() 
+            self.assertEquals([i for i in database.select('disk')], 
+                            [(u'/dev/sdx1', u'10', u'20', u'/mnt', u'DATE', u'TIME', 0)])
+        finally:
+          database.close()
+
+    def test_insert_system_snapshot(self):
+
+        database = db.Database(self.instance_root)
+        database.connect()
+        try:
+            database.insertSystemSnapshot("0.1", '10.0', '100.0', '100.0', 
+                         '10.0', '1', '2', '12.0', '1', '1', 'DATE', 'TIME')
+            database.commit()
+
+            self.assertEquals([i for i in database.select('system')], 
+                             [(0.1, 10.0, 100.0, 100.0, 10.0, 1.0, 
+                               2.0, 12.0, 1.0, 1.0, u'DATE', u'TIME', 0)])
+        finally:
+          database.close()
+
+    def test_date_scope(self):
+
+        database = db.Database(self.instance_root)
+        database.connect()
+        try:
+            database.insertSystemSnapshot("0.1", '10.0', '100.0', '100.0', 
+                 '10.0', '1', '2', '12.0', '1', '1', 'EXPECTED-DATE', 'TIME')
+            database.commit()
+
+            self.assertEquals([i for i in database.getDateScopeList()], 
+                             [('EXPECTED-DATE', 1)])
+
+            self.assertEquals([i for i in \
+               database.getDateScopeList(ignore_date='EXPECTED-DATE')], 
+               [])
+
+            self.assertEquals([i for i in \
+               database.getDateScopeList(reported=1)], 
+               [])
+
+        finally:
+          database.close()
+
+
+    def test_mark_day_as_reported(self):
+
+        database = db.Database(self.instance_root)
+        database.connect()
+        try:
+            database.insertSystemSnapshot("0.1", '10.0', '100.0', '100.0', 
+                 '10.0', '1', '2', '12.0', '1', '1', 'EXPECTED-DATE', 'TIME')
+            database.insertSystemSnapshot("0.1", '10.0', '100.0', '100.0', 
+                 '10.0', '1', '2', '12.0', '1', '1', 'NOT-EXPECTED-DATE', 'TIME')
+            database.commit()
+
+            self.assertEquals([i for i in database.select('system')], 
+                             [(0.1, 10.0, 100.0, 100.0, 10.0, 1.0, 
+                               2.0, 12.0, 1.0, 1.0, u'EXPECTED-DATE', u'TIME', 0),
+                             (0.1, 10.0, 100.0, 100.0, 10.0, 1.0, 
+                               2.0, 12.0, 1.0, 1.0, u'NOT-EXPECTED-DATE', u'TIME', 0)])
+
+            database.markDayAsReported(date_scope="EXPECTED-DATE", 
+                                       table_list=["system"])
+            database.commit()
+
+            self.assertEquals([i for i in database.select('system')], 
+                             [(0.1, 10.0, 100.0, 100.0, 10.0, 1.0, 
+                               2.0, 12.0, 1.0, 1.0, u'EXPECTED-DATE', u'TIME', 1),
+                             (0.1, 10.0, 100.0, 100.0, 10.0, 1.0, 
+                               2.0, 12.0, 1.0, 1.0, u'NOT-EXPECTED-DATE', u'TIME', 0)])
+
+        finally:
+          database.close()
+
+
 
 class TestCollectSnapshot(unittest.TestCase):
 
