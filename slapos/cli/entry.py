@@ -176,10 +176,10 @@ class SlapOSApp(cliff.app.App):
     def run(self, argv):
         # same as cliff.App.run except that it won't re-raise
         # a logged exception, and doesn't use --debug
+        self.options, remainder = self.parser.parse_known_args(argv)
+        self.configure_logging()
+        self.interactive_mode = not remainder
         try:
-            self.options, remainder = self.parser.parse_known_args(argv)
-            self.configure_logging()
-            self.interactive_mode = not remainder
             self.initialize_app(remainder)
         except Exception as err:
             LOG.exception(err)
