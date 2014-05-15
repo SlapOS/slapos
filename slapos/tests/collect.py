@@ -26,15 +26,15 @@
 ##############################################################################
 
 import os
+import glob
 import unittest
 import shutil
 import tempfile
-import slapos.collect
-import slapos.cli.collect
 import slapos.slap
 import psutil
+from time import strftime
 from slapos.cli.collect import CollectCommand
-from slapos.collect import entity, snapshot, db
+from slapos.collect import entity, snapshot, db, reporter
 from slapos.cli.entry import SlapOSApp
 from argparse import Namespace
 from ConfigParser import ConfigParser
@@ -198,7 +198,65 @@ class TestCollectDatabase(unittest.TestCase):
         finally:
           database.close()
 
+class TestCollectReport(unittest.TestCase):
 
+    def setUp(self):
+        self.instance_root = tempfile.mkdtemp()
+
+    def tearDown(self):
+        if os.path.exists(self.instance_root):
+          shutil.rmtree(self.instance_root)
+
+    def test_raw_csv_report(self):
+
+        database = db.Database(self.instance_root)
+        database.connect()
+        database.insertSystemSnapshot("0.1", '10.0', '100.0', '100.0', 
+                         '10.0', '1', '2', '12.0', '1', '1', '1983-01-10', 'TIME')
+        database.insertDiskPartitionSnapshot(
+                 '/dev/sdx1', '10', '20', '/mnt', '1983-01-10', 'TIME')
+        database.insertComputerSnapshot(
+              '1', '0', '0', '100', '0', '/dev/sdx1', '1983-01-10', 'TIME')
+        database.commit()
+        database.close()
+        reporter.RawCSVDumper(database).dump(self.instance_root)
+        self.assertTrue(os.path.exists("%s/1983-01-10" % self.instance_root))
+
+        csv_path_list = ['%s/1983-01-10/dump_disk.csv' % self.instance_root,
+                         '%s/1983-01-10/dump_computer.csv' % self.instance_root,
+                         '%s/1983-01-10/dump_user.csv' % self.instance_root,
+                         '%s/1983-01-10/dump_system.csv' % self.instance_root]
+
+        self.assertEquals(glob.glob("%s/1983-01-10/*.csv" % self.instance_root), 
+                          csv_path_list)
+
+    def test_system_csv_report(self):
+        database = db.Database(self.instance_root)
+        database.connect()
+        database.insertSystemSnapshot("0.1", '10.0', '100.0', '100.0', 
+                         '10.0', '1', '2', '12.0', '1', '1', strftime("%Y-%m-%d"), 'TIME')
+        database.insertDiskPartitionSnapshot(
+                 '/dev/sdx1', '10', '20', '/mnt', strftime("%Y-%m-%d"), 'TIME')
+        database.insertComputerSnapshot(
+              '1', '0', '0', '100', '0', '/dev/sdx1', strftime("%Y-%m-%d"), 'TIME')
+        database.commit()
+        database.close()
+
+        reporter.SystemCSVReporterDumper(database).dump(self.instance_root)
+        csv_path_list = ['%s/system_memory_used.csv' % self.instance_root,
+                         '%s/system_cpu_percent.csv' % self.instance_root,
+                         '%s/system_net_out_bytes.csv' % self.instance_root,
+                         '%s/system_net_in_bytes.csv' % self.instance_root,
+                         '%s/system_disk_memory_free_sdx1.csv' % self.instance_root,
+                         '%s/system_net_out_errors.csv' % self.instance_root,
+                         '%s/system_disk_memory_used_sdx1.csv' % self.instance_root,
+                         '%s/system_net_out_dropped.csv' % self.instance_root,
+                         '%s/system_memory_free.csv' % self.instance_root,
+                         '%s/system_net_in_errors.csv' % self.instance_root,
+                         '%s/system_net_in_dropped.csv' % self.instance_root,
+                         '%s/system_loadavg.csv' % self.instance_root]
+
+        self.assertEquals(glob.glob("%s/*.csv" % self.instance_root), csv_path_list) 
 
 class TestCollectSnapshot(unittest.TestCase):
 
