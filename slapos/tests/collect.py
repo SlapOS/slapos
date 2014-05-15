@@ -64,9 +64,6 @@ class FakeDatabase(object):
     def insertDiskPartitionSnapshot(self, *args, **kw):
       self.invoked_method_list.append(("insertDiskPartitionSnapshot", (args, kw)))
 
-
-
-
 class TestCollectDatabase(unittest.TestCase):
 
     def setUp(self):
@@ -216,9 +213,6 @@ class TestCollectSnapshot(unittest.TestCase):
         self.software_root = tempfile.mkdtemp()
         if os.path.exists(self.temp_dir):
           shutil.rmtree(self.temp_dir)
-
-    def tearDown(self):
-        pass
 
     def test_process_snapshot(self):
         process = psutil.Process(os.getpid())

@@ -23,5 +23,4 @@ class CollectCommand(ConfigCommand):
     @must_be_root
     def take_action(self, args):
         configp = self.fetch_config(args)
-        # Make sure ipv4 is working
         do_collect(configp)
