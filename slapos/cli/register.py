@@ -174,10 +174,10 @@ def save_former_config(conf):
 
 
 def fetch_configuration_template():
-    req = requests.get('http://git.erp5.org/gitweb/slapos.core.git/blob_plain/HEAD:/slapos.cfg.example')
-    req.raise_for_status()
-    return req.text
-
+    template_arg_list = (__name__.split('.')[0], 'slapos.cfg.example')
+    with pkg_resources.resource_stream(*template_arg_list) as fout:
+      slapos_node_configuration_template = fout.read()
+    return slapos_node_configuration_template
 
 def slapconfig(conf):
     """Base Function to configure slapos in /etc/opt/slapos"""
