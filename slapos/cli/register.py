@@ -174,10 +174,10 @@ def save_former_config(conf):
 
 
 def fetch_configuration_template():
-    req = requests.get('http://git.erp5.org/gitweb/slapos.core.git/blob_plain/HEAD:/slapos.cfg.example')
-    req.raise_for_status()
-    return req.text
-
+    template_arg_list = (__name__.split('.')[0], 'slapos.cfg.example')
+    with pkg_resources.resource_stream(*template_arg_list) as fout:
+      slapos_node_configuration_template = fout.read()
+    return slapos_node_configuration_template
 
 def slapconfig(conf):
     """Base Function to configure slapos in /etc/opt/slapos"""
@@ -199,13 +199,6 @@ def slapconfig(conf):
         conf.logger.info('Creating directory: %s', slap_conf_dir)
         if not dry_run:
             os.mkdir(slap_conf_dir, 0o711)
-
-    # Hack that should be removed when we switch to re6st
-    # Force start of vpn
-    openvpn_needed_file = os.path.join(slap_conf_dir, 'openvpn-needed')
-    if not os.path.exists(openvpn_needed_file):
-        if not dry_run:
-            open(openvpn_needed_file, 'w').write('')
 
     user_certificate_repository_path = os.path.join(slap_conf_dir, 'ssl')
     if not os.path.exists(user_certificate_repository_path):
@@ -344,5 +337,5 @@ def do_register(conf):
     slapconfig(conf)
 
     conf.logger.info('Node has successfully been configured as %s.', COMP)
-    conf.logger.info('Now please invoke /usr/sbin/slapos-start on your site.')
+    conf.logger.info('Now please invoke slapos node boot on your site.')
     return 0

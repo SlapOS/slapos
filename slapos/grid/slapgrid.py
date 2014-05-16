@@ -39,6 +39,7 @@ import tempfile
 import time
 import traceback
 import warnings
+import logging
 
 if sys.version_info < (2, 6):
   warnings.warn('Used python version (%s) is old and has problems with'
@@ -48,6 +49,7 @@ from lxml import etree
 
 from slapos.slap.slap import NotFoundError
 from slapos.slap.slap import ServerError
+from slapos.util import mkdir_p, chownDirectory
 from slapos.grid.exception import BuildoutFailedError
 from slapos.grid.SlapObject import Software, Partition
 from slapos.grid.svcbackend import launchSupervisord
@@ -606,63 +608,81 @@ class Slapgrid(object):
           os.remove(timestamp_path)
           self.logger.exception('')
 
-    self.logger.info('Processing Computer Partition %s.' % computer_partition_id)
-    self.logger.info('  Software URL: %s' % software_url)
-    self.logger.info('  Software path: %s' % software_path)
-    self.logger.info('  Instance path: %s' % instance_path)
+    # Include Partition Logging
+    log_folder_path = "%s/.slapgrid/log" % instance_path
+    mkdir_p(log_folder_path)
+    partition_file_handler = logging.FileHandler(
+                filename="%s/instance.log" % (log_folder_path)
+            )
+    stat_info = os.stat(instance_path)
+    chownDirectory("%s/.slapgrid" % instance_path, 
+                   uid=stat_info.st_uid,
+                   gid=stat_info.st_gid)
 
-    local_partition = Partition(
-      software_path=software_path,
-      instance_path=instance_path,
-      supervisord_partition_configuration_path=os.path.join(
-        self.supervisord_configuration_directory, '%s.conf' %
-        computer_partition_id),
-      supervisord_socket=self.supervisord_socket,
-      computer_partition=computer_partition,
-      computer_id=self.computer_id,
-      partition_id=computer_partition_id,
-      server_url=self.master_url,
-      software_release_url=software_url,
-      certificate_repository_path=self.certificate_repository_path,
-      buildout=self.buildout,
-      logger=self.logger)
+    formatter = logging.Formatter(
+       '[%(asctime)s] %(levelname)-8s %(name)s %(message)s')
+    partition_file_handler.setFormatter(formatter)
+    self.logger.addHandler(partition_file_handler)
 
-    computer_partition_state = computer_partition.getState()
-
-    # XXX this line breaks 37 tests
-    # self.logger.info('  Instance type: %s' % computer_partition.getType())
-    self.logger.info('  Instance status: %s' % computer_partition_state)
-
-    if computer_partition_state == COMPUTER_PARTITION_STARTED_STATE:
-      local_partition.install()
-      computer_partition.available()
-      local_partition.start()
-      self._checkPromises(computer_partition)
-      computer_partition.started()
-    elif computer_partition_state == COMPUTER_PARTITION_STOPPED_STATE:
-      try:
-        # We want to process the partition, even if stopped, because it should
-        # propagate the state to children if any.
+    try:
+      self.logger.info('Processing Computer Partition %s.' % computer_partition_id)
+      self.logger.info('  Software URL: %s' % software_url)
+      self.logger.info('  Software path: %s' % software_path)
+      self.logger.info('  Instance path: %s' % instance_path)
+  
+      local_partition = Partition(
+        software_path=software_path,
+        instance_path=instance_path,
+        supervisord_partition_configuration_path=os.path.join(
+          self.supervisord_configuration_directory, '%s.conf' %
+          computer_partition_id),
+        supervisord_socket=self.supervisord_socket,
+        computer_partition=computer_partition,
+        computer_id=self.computer_id,
+        partition_id=computer_partition_id,
+        server_url=self.master_url,
+        software_release_url=software_url,
+        certificate_repository_path=self.certificate_repository_path,
+        buildout=self.buildout,
+        logger=self.logger)
+      computer_partition_state = computer_partition.getState()
+  
+      # XXX this line breaks 37 tests
+      # self.logger.info('  Instance type: %s' % computer_partition.getType())
+      self.logger.info('  Instance status: %s' % computer_partition_state)
+  
+      if computer_partition_state == COMPUTER_PARTITION_STARTED_STATE:
         local_partition.install()
         computer_partition.available()
-      finally:
-        # Instance has to be stopped even if buildout/reporting is wrong.
-        local_partition.stop()
-      computer_partition.stopped()
-    elif computer_partition_state == COMPUTER_PARTITION_DESTROYED_STATE:
-      local_partition.stop()
-      try:
+        local_partition.start()
+        self._checkPromises(computer_partition)
+        computer_partition.started()
+      elif computer_partition_state == COMPUTER_PARTITION_STOPPED_STATE:
+        try:
+          # We want to process the partition, even if stopped, because it should
+          # propagate the state to children if any.
+          local_partition.install()
+          computer_partition.available()
+        finally:
+          # Instance has to be stopped even if buildout/reporting is wrong.
+          local_partition.stop()
         computer_partition.stopped()
-      except (SystemExit, KeyboardInterrupt):
-        computer_partition.error(traceback.format_exc(), logger=self.logger)
-        raise
-      except Exception:
-        pass
-    else:
-      error_string = "Computer Partition %r has unsupported state: %s" % \
-        (computer_partition_id, computer_partition_state)
-      computer_partition.error(error_string, logger=self.logger)
-      raise NotImplementedError(error_string)
+      elif computer_partition_state == COMPUTER_PARTITION_DESTROYED_STATE:
+        local_partition.stop()
+        try:
+          computer_partition.stopped()
+        except (SystemExit, KeyboardInterrupt):
+          computer_partition.error(traceback.format_exc(), logger=self.logger)
+          raise
+        except Exception:
+          pass
+      else:
+        error_string = "Computer Partition %r has unsupported state: %s" % \
+          (computer_partition_id, computer_partition_state)
+        computer_partition.error(error_string, logger=self.logger)
+        raise NotImplementedError(error_string)
+    finally:
+       self.logger.removeHandler(partition_file_handler)
 
     # If partition has been successfully processed, write timestamp
     if timestamp:
@@ -893,7 +913,7 @@ class Slapgrid(object):
       try:
         computer_partition_id = computer_partition.getId()
 
-        #We want to execute all the script in the report folder
+        # We want to execute all the script in the report folder
         instance_path = os.path.join(self.instance_root,
             computer_partition.getId())
         report_path = os.path.join(instance_path, 'etc', 'report')
@@ -902,7 +922,7 @@ class Slapgrid(object):
         else:
           script_list_to_run = []
 
-        #We now generate the pseudorandom name for the xml file
+        # We now generate the pseudorandom name for the xml file
         # and we add it in the invocation_list
         f = tempfile.NamedTemporaryFile()
         name_xml = '%s.%s' % ('slapreport', os.path.basename(f.name))
@@ -914,13 +934,13 @@ class Slapgrid(object):
           invocation_list = []
           invocation_list.append(os.path.join(instance_path, 'etc', 'report',
             script))
-          #We add the xml_file name to the invocation_list
+          # We add the xml_file name to the invocation_list
           #f = tempfile.NamedTemporaryFile()
           #name_xml = '%s.%s' % ('slapreport', os.path.basename(f.name))
           #path_to_slapreport = os.path.join(instance_path, 'var', name_xml)
 
           invocation_list.append(path_to_slapreport)
-          #Dropping privileges
+          # Dropping privileges
           uid, gid = None, None
           stat_info = os.stat(instance_path)
           #stat sys call to get statistics informations
@@ -946,47 +966,51 @@ class Slapgrid(object):
         self.logger.exception('Cannot run usage script(s) for %r:' %
                                   computer_partition.getId())
 
-    #Now we loop through the different computer partitions to report
+    # Now we loop through the different computer partitions to report
     report_usage_issue_cp_list = []
     for computer_partition in computer_partition_list:
       try:
         filename_delete_list = []
         computer_partition_id = computer_partition.getId()
         instance_path = os.path.join(self.instance_root, computer_partition_id)
-        dir_reports = os.path.join(instance_path, 'var', 'xml_report')
-        #The directory xml_report contain a number of files equal
-        #to the number of software instance running inside the same partition
-        if os.path.isdir(dir_reports):
-          filename_list = os.listdir(dir_reports)
-        else:
-          filename_list = []
-        #self.logger.debug('name List %s' % filename_list)
-
-        for filename in filename_list:
-
-          file_path = os.path.join(dir_reports, filename)
-          if os.path.exists(file_path):
-            usage = open(file_path, 'r').read()
-
-            #We check the validity of xml content of each reports
-            if not self.validateXML(usage, partition_consumption_model):
-              self.logger.info('WARNING: The XML file %s generated by slapreport is '
-                               'not valid - This report is left as is at %s where you can '
-                               'inspect what went wrong ' % (filename, dir_reports))
-              # Warn the SlapOS Master that a partition generates corrupted xml
-              # report
-            else:
-              computer_partition_usage = self.slap.registerComputerPartition(
-                  self.computer_id, computer_partition_id)
-              computer_partition_usage.setUsage(usage)
-              computer_partition_usage_list.append(computer_partition_usage)
-              filename_delete_list.append(filename)
+        dir_report_list = [os.path.join(instance_path, 'var', 'xml_report'),
+            os.path.join(self.instance_root, 'var', 'xml_report', 
+                         computer_partition_id)]
+        
+        for dir_reports in dir_report_list:
+          # The directory xml_report contain a number of files equal
+          # to the number of software instance running inside the same partition
+          if os.path.isdir(dir_reports):
+            filename_list = os.listdir(dir_reports)
           else:
-            self.logger.debug('Usage report %r not found, ignored' % file_path)
+            filename_list = []
+          # self.logger.debug('name List %s' % filename_list)
 
-        #After sending the aggregated file we remove all the valid xml reports
-        for filename in filename_delete_list:
-          os.remove(os.path.join(dir_reports, filename))
+          for filename in filename_list:
+
+            file_path = os.path.join(dir_reports, filename)
+            if os.path.exists(file_path):
+              usage = open(file_path, 'r').read()
+
+              # We check the validity of xml content of each reports
+              if not self.validateXML(usage, partition_consumption_model):
+                self.logger.info('WARNING: The XML file %s generated by slapreport is '
+                                 'not valid - This report is left as is at %s where you can '
+                                 'inspect what went wrong ' % (filename, dir_reports))
+                # Warn the SlapOS Master that a partition generates corrupted xml
+                # report
+              else:
+                computer_partition_usage = self.slap.registerComputerPartition(
+                    self.computer_id, computer_partition_id)
+                computer_partition_usage.setUsage(usage)
+                computer_partition_usage_list.append(computer_partition_usage)
+                filename_delete_list.append(filename)
+            else:
+              self.logger.debug('Usage report %r not found, ignored' % file_path)
+
+          # After sending the aggregated file we remove all the valid xml reports
+          for filename in filename_delete_list:
+            os.remove(os.path.join(dir_reports, filename))
 
       # Whatever happens, don't stop processing other instances
       except Exception:
@@ -997,15 +1021,15 @@ class Slapgrid(object):
       self.logger.info('computer_partition_usage_list: %s - %s' %
                        (computer_partition_usage.usage, computer_partition_usage.getId()))
 
-    #If there is, at least, one report
+    # If there is, at least, one report
     if computer_partition_usage_list != []:
       try:
-        #We generate the final XML report with asXML method
+        # We generate the final XML report with asXML method
         computer_consumption = self.asXML(computer_partition_usage_list)
 
         self.logger.info('Final xml report: %s' % computer_consumption)
 
-        #We test the XML report before sending it
+        # We test the XML report before sending it
         if self.validateXML(computer_consumption, computer_consumption_model):
           self.logger.info('XML file generated by asXML is valid')
           slap_computer_usage.reportUsage(computer_consumption)

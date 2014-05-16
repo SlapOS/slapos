@@ -48,6 +48,7 @@ setup(name=name,
           'netifaces', # to fetch information about network devices
           'setuptools', # namespaces
           'supervisor', # slapgrid uses supervisor to manage processes
+          'psutil',
           'xml_marshaller>=0.9.3', # to unmarshall/marshall python objects to/from
                                    # XML
           'zope.interface', # slap library implementes interfaces
@@ -72,17 +73,7 @@ setup(name=name,
       entry_points={
         'console_scripts': [
           'slapos-watchdog = slapos.grid.watchdog:main',
-          'slapproxy = slapos.cli_legacy.proxy_start:main',
           'slapos = slapos.cli.entry:main',
-          # Deprecated entry points
-          'slapconsole = slapos.cli_legacy.console:console',
-          'slapformat = slapos.cli_legacy.format:main',
-          'slapgrid-sr = slapos.cli_legacy.slapgrid:runSoftwareRelease',
-          'slapgrid-cp = slapos.cli_legacy.slapgrid:runComputerPartition',
-          'slapgrid-ur = slapos.cli_legacy.slapgrid:runUsageReport',
-          'slapgrid-supervisorctl = slapos.cli_legacy.svcbackend:supervisorctl',
-          'slapgrid-supervisord = slapos.cli_legacy.svcbackend:supervisord',
-          'bang = slapos.cli_legacy.bang:main',
         ],
         'slapos.cli': [
           # Utilities
@@ -102,6 +93,7 @@ setup(name=name,
           'node software = slapos.cli.slapgrid:SoftwareCommand',
           'node instance = slapos.cli.slapgrid:InstanceCommand',
           'node boot = slapos.cli.boot:BootCommand',
+          'node collect = slapos.cli.collect:CollectCommand',
           # SlapOS client commands
           'console = slapos.cli.console:ConsoleCommand',
           'configure local = slapos.cli.configure_local:ConfigureLocalCommand',

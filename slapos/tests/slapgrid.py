@@ -46,7 +46,6 @@ from mock import patch
 import slapos.slap.slap
 import slapos.grid.utils
 from slapos.grid import slapgrid
-from slapos.cli_legacy.slapgrid import parseArgumentTupleAndReturnSlapgridObject
 from slapos.grid.utils import md5digest
 from slapos.grid.watchdog import Watchdog
 from slapos.grid import SlapObject
@@ -543,7 +542,8 @@ class TestSlapgridCPWithMaster(MasterMixin, unittest.TestCase):
     self.assertEqual(self.grid.processComputerPartitionList(), slapgrid.SLAPGRID_SUCCESS)
     self.assertItemsEqual(os.listdir(self.instance_root), ['0', 'etc', 'var'])
     partition = os.path.join(self.instance_root, '0')
-    self.assertItemsEqual(os.listdir(partition), ['buildout.cfg', 'software_release', 'worked'])
+    self.assertItemsEqual(os.listdir(partition), ['.slapgrid', 'buildout.cfg', 
+                                                  'software_release', 'worked'])
     self.assertItemsEqual(os.listdir(self.software_root), [instance.software.software_hash])
     self.assertEqual(computer.sequence,
                      ['getFullComputerInformation', 'availableComputerPartition',
@@ -559,7 +559,8 @@ class TestSlapgridCPWithMaster(MasterMixin, unittest.TestCase):
     self.assertEqual(self.grid.processComputerPartitionList(), slapgrid.SLAPGRID_SUCCESS)
     self.assertItemsEqual(os.listdir(self.instance_root), ['0', 'etc', 'var'])
     partition = os.path.join(self.instance_root, '0')
-    self.assertItemsEqual(os.listdir(partition), ['buildout.cfg', 'software_release', 'worked'])
+    self.assertItemsEqual(os.listdir(partition), ['.slapgrid', 'buildout.cfg', 
+                                                  'software_release', 'worked'])
     self.assertItemsEqual(os.listdir(self.software_root), [instance.software.software_hash])
     self.assertEqual(computer.sequence,
                      ['getFullComputerInformation', 'availableComputerPartition',
@@ -588,7 +589,8 @@ class TestSlapgridCPWithMaster(MasterMixin, unittest.TestCase):
     self.assertEqual(self.grid.processComputerPartitionList(), slapgrid.SLAPGRID_SUCCESS)
     self.assertItemsEqual(os.listdir(self.instance_root), ['0', 'etc', 'var'])
     self.assertItemsEqual(os.listdir(partition.partition_path),
-                          ['.0_wrapper.log', 'buildout.cfg', 'etc', 'software_release', 'worked'])
+                          ['.slapgrid', '.0_wrapper.log', 'buildout.cfg', 
+                           'etc', 'software_release', 'worked'])
     wrapper_log = os.path.join(partition.partition_path, '.0_wrapper.log')
     self.assertLogContent(wrapper_log, 'Working')
     self.assertItemsEqual(os.listdir(self.software_root), [partition.software.software_hash])
@@ -623,7 +625,8 @@ chmod 755 etc/run/wrapper
     self.assertEqual(self.grid.processComputerPartitionList(), slapgrid.SLAPGRID_SUCCESS)
     self.assertItemsEqual(os.listdir(self.instance_root), ['0', 'etc', 'var'])
     self.assertItemsEqual(os.listdir(instance.partition_path),
-                          ['.0_wrapper.log', 'buildout.cfg', 'etc', 'software_release', 'worked'])
+                          ['.slapgrid', '.0_wrapper.log', 'buildout.cfg', 
+                           'etc', 'software_release', 'worked'])
     wrapper_log = os.path.join(instance.partition_path, '.0_wrapper.log')
     self.assertLogContent(wrapper_log, 'Working')
     self.assertItemsEqual(os.listdir(self.software_root), [instance.software.software_hash])
@@ -637,7 +640,8 @@ chmod 755 etc/run/wrapper
     self.assertEqual(self.launchSlapgrid(), slapgrid.SLAPGRID_SUCCESS)
     self.assertItemsEqual(os.listdir(self.instance_root), ['0', 'etc', 'var'])
     self.assertItemsEqual(os.listdir(instance.partition_path),
-                          ['.0_wrapper.log', 'buildout.cfg', 'etc', 'software_release', 'worked'])
+                          ['.slapgrid', '.0_wrapper.log', 'buildout.cfg', 
+                           'etc', 'software_release', 'worked'])
     self.assertLogContent(wrapper_log, 'Signal handler called with signal 15')
     self.assertEqual(computer.sequence,
                      ['getFullComputerInformation', 'availableComputerPartition',
@@ -675,7 +679,8 @@ chmod 755 etc/run/wrapper
     self.assertEqual(self.grid.processComputerPartitionList(), slapgrid.SLAPGRID_SUCCESS)
     self.assertItemsEqual(os.listdir(self.instance_root), ['0', 'etc', 'var'])
     self.assertItemsEqual(os.listdir(instance.partition_path),
-                          ['.0_wrapper.log', 'buildout.cfg', 'etc', 'software_release', 'worked'])
+                          ['.slapgrid', '.0_wrapper.log', 'buildout.cfg', 
+                           'etc', 'software_release', 'worked'])
     wrapper_log = os.path.join(instance.partition_path, '.0_wrapper.log')
     self.assertLogContent(wrapper_log, 'Working')
     self.assertItemsEqual(os.listdir(self.software_root),
@@ -694,7 +699,8 @@ exit 1
     self.assertItemsEqual(os.listdir(self.instance_root),
                           ['0', 'etc', 'var'])
     self.assertItemsEqual(os.listdir(instance.partition_path),
-                          ['.0_wrapper.log', 'buildout.cfg', 'etc', 'software_release', 'worked'])
+                          ['.slapgrid', '.0_wrapper.log', 'buildout.cfg', 
+                           'etc', 'software_release', 'worked'])
     self.assertLogContent(wrapper_log, 'Signal handler called with signal 15')
     self.assertEqual(computer.sequence,
                      ['getFullComputerInformation',
@@ -711,7 +717,7 @@ exit 1
     self.assertItemsEqual(os.listdir(self.instance_root), ['0', 'etc', 'var'])
     partition = os.path.join(self.instance_root, '0')
     self.assertItemsEqual(os.listdir(partition),
-                          ['buildout.cfg', 'etc', 'software_release', 'worked'])
+                          ['.slapgrid', 'buildout.cfg', 'etc', 'software_release', 'worked'])
     self.assertItemsEqual(os.listdir(self.software_root),
                           [instance.software.software_hash])
     self.assertEqual(computer.sequence,
@@ -725,7 +731,8 @@ exit 1
     self.assertItemsEqual(os.listdir(self.instance_root), ['0', 'etc', 'var'])
     partition = os.path.join(self.instance_root, '0')
     self.assertItemsEqual(os.listdir(partition),
-                          ['.0_wrapper.log', 'etc', 'buildout.cfg', 'software_release', 'worked'])
+                          ['.slapgrid', '.0_wrapper.log', 'etc', 
+                           'buildout.cfg', 'software_release', 'worked'])
     self.assertItemsEqual(os.listdir(self.software_root),
                           [instance.software.software_hash])
     wrapper_log = os.path.join(instance.partition_path, '.0_wrapper.log')
@@ -752,7 +759,7 @@ exit 1
 
     self.assertItemsEqual(os.listdir(self.instance_root), ['0', 'etc', 'var'])
     partition = os.path.join(self.instance_root, '0')
-    self.assertItemsEqual(os.listdir(partition), [dummy_file_name])
+    self.assertItemsEqual(os.listdir(partition), ['.slapgrid', dummy_file_name])
     self.assertItemsEqual(os.listdir(self.software_root), [instance.software.software_hash])
     self.assertEqual(computer.sequence,
                      ['getFullComputerInformation',
@@ -796,7 +803,8 @@ class TestSlapgridCPWithMasterWatchdog(MasterMixin, unittest.TestCase):
     self.assertEqual(self.grid.processComputerPartitionList(), slapgrid.SLAPGRID_SUCCESS)
     self.assertItemsEqual(os.listdir(self.instance_root), ['0', 'etc', 'var'])
     self.assertItemsEqual(os.listdir(partition.partition_path),
-                          ['.0_daemon.log', 'buildout.cfg', 'etc', 'software_release', 'worked'])
+                          ['.slapgrid', '.0_daemon.log', 'buildout.cfg', 
+                           'etc', 'software_release', 'worked'])
     daemon_log = os.path.join(partition.partition_path, '.0_daemon.log')
     self.assertLogContent(daemon_log, 'Failing')
     self.assertIsCreated(self.watchdog_banged)
@@ -840,7 +848,8 @@ class TestSlapgridCPWithMasterWatchdog(MasterMixin, unittest.TestCase):
     self.assertItemsEqual(os.listdir(self.instance_root),
                           ['0', 'etc', 'var'])
     self.assertItemsEqual(os.listdir(partition.partition_path),
-                          ['.0_daemon.log', 'buildout.cfg', 'etc', 'software_release', 'worked'])
+                          ['.slapgrid', '.0_daemon.log', 'buildout.cfg', 
+                           'etc', 'software_release', 'worked'])
     daemon_log = os.path.join(partition.partition_path, '.0_daemon.log')
     self.assertLogContent(daemon_log, 'Failing')
     self.assertIsNotCreated(self.watchdog_banged)
@@ -1127,7 +1136,7 @@ class TestSlapgridCPPartitionProcessing(MasterMixin, unittest.TestCase):
     self.assertItemsEqual(os.listdir(self.instance_root), ['0', 'etc', 'var'])
     partition = os.path.join(self.instance_root, '0')
     self.assertItemsEqual(os.listdir(partition),
-                          ['.timestamp', 'buildout.cfg', 'software_release', 'worked'])
+                          ['.slapgrid', '.timestamp', 'buildout.cfg', 'software_release', 'worked'])
     self.assertItemsEqual(os.listdir(self.software_root), [instance.software.software_hash])
     timestamp_path = os.path.join(instance.partition_path, '.timestamp')
     self.setSlapgrid()
@@ -1146,7 +1155,8 @@ class TestSlapgridCPPartitionProcessing(MasterMixin, unittest.TestCase):
     self.assertItemsEqual(os.listdir(self.instance_root), ['0', 'etc', 'var'])
     partition = os.path.join(self.instance_root, '0')
     self.assertItemsEqual(os.listdir(partition),
-                          ['.timestamp', 'buildout.cfg', 'software_release', 'worked'])
+                          ['.slapgrid', '.timestamp', 'buildout.cfg', 
+                           'software_release', 'worked'])
     self.assertItemsEqual(os.listdir(self.software_root), [instance.software.software_hash])
 
     self.assertEqual(self.launchSlapgrid(develop=True),
@@ -1167,7 +1177,7 @@ class TestSlapgridCPPartitionProcessing(MasterMixin, unittest.TestCase):
     self.assertItemsEqual(os.listdir(self.instance_root), ['0', 'etc', 'var'])
     partition = os.path.join(self.instance_root, '0')
     self.assertItemsEqual(os.listdir(partition),
-                          ['.timestamp', 'buildout.cfg', 'software_release', 'worked'])
+                          ['.slapgrid', '.timestamp', 'buildout.cfg', 'software_release', 'worked'])
     self.assertItemsEqual(os.listdir(self.software_root), [instance.software.software_hash])
     instance.timestamp = str(int(timestamp) - 1)
     self.assertEqual(self.launchSlapgrid(), slapgrid.SLAPGRID_SUCCESS)
@@ -1184,7 +1194,7 @@ class TestSlapgridCPPartitionProcessing(MasterMixin, unittest.TestCase):
     self.assertItemsEqual(os.listdir(self.instance_root), ['0', 'etc', 'var'])
     partition = os.path.join(self.instance_root, '0')
     self.assertItemsEqual(os.listdir(partition),
-                          ['.timestamp', 'buildout.cfg', 'software_release', 'worked'])
+                          ['.slapgrid', '.timestamp', 'buildout.cfg', 'software_release', 'worked'])
     self.assertItemsEqual(os.listdir(self.software_root), [instance.software.software_hash])
     instance.timestamp = str(int(timestamp) + 1)
     self.assertEqual(self.launchSlapgrid(), slapgrid.SLAPGRID_SUCCESS)
@@ -1205,7 +1215,7 @@ class TestSlapgridCPPartitionProcessing(MasterMixin, unittest.TestCase):
     self.assertItemsEqual(os.listdir(self.instance_root), ['0', 'etc', 'var'])
     partition = os.path.join(self.instance_root, '0')
     self.assertItemsEqual(os.listdir(partition),
-                          ['.timestamp', 'buildout.cfg', 'software_release', 'worked'])
+                          ['.slapgrid', '.timestamp', 'buildout.cfg', 'software_release', 'worked'])
     self.assertItemsEqual(os.listdir(self.software_root),
                           [instance.software.software_hash])
     instance.timestamp = None
@@ -1231,7 +1241,8 @@ class TestSlapgridCPPartitionProcessing(MasterMixin, unittest.TestCase):
     self.launchSlapgrid()
     partition = os.path.join(self.instance_root, '0')
     self.assertItemsEqual(os.listdir(partition),
-                          ['.timestamp', 'buildout.cfg', 'software_release', 'worked'])
+                          ['.slapgrid', '.timestamp', 'buildout.cfg', 
+                           'software_release', 'worked'])
 
     time.sleep(2)
     # dummify install() so that it doesn't actually do anything so that it
@@ -1240,9 +1251,8 @@ class TestSlapgridCPPartitionProcessing(MasterMixin, unittest.TestCase):
 
     self.launchSlapgrid()
     self.assertItemsEqual(os.listdir(partition),
-                          ['.timestamp', 'buildout.cfg', 'software_release', 'worked'])
-
-
+                          ['.slapgrid', '.timestamp', 'buildout.cfg', 
+                           'software_release', 'worked'])
 
   def test_one_partition_periodicity_from_file_does_not_disturb_others(self):
     """
@@ -1514,7 +1524,8 @@ class TestSlapgridUsageReport(MasterMixin, unittest.TestCase):
     self.assertEqual(self.grid.processComputerPartitionList(), slapgrid.SLAPGRID_SUCCESS)
     self.assertItemsEqual(os.listdir(self.instance_root), ['0', 'etc', 'var'])
     self.assertItemsEqual(os.listdir(instance.partition_path),
-                          ['.0_wrapper.log', 'buildout.cfg', 'etc', 'software_release', 'worked'])
+                          ['.slapgrid', '.0_wrapper.log', 'buildout.cfg', 
+                           'etc', 'software_release', 'worked'])
     wrapper_log = os.path.join(instance.partition_path, '.0_wrapper.log')
     self.assertLogContent(wrapper_log, 'Working')
     self.assertItemsEqual(os.listdir(self.software_root), [instance.software.software_hash])
@@ -1582,7 +1593,8 @@ class TestSlapgridUsageReport(MasterMixin, unittest.TestCase):
     self.assertEqual(self.grid.processComputerPartitionList(), slapgrid.SLAPGRID_SUCCESS)
     self.assertItemsEqual(os.listdir(self.instance_root), ['0', 'etc', 'var'])
     self.assertItemsEqual(os.listdir(instance.partition_path),
-                          ['.0_wrapper.log', 'buildout.cfg', 'etc', 'software_release', 'worked'])
+                          ['.slapgrid', '.0_wrapper.log', 'buildout.cfg', 
+                           'etc', 'software_release', 'worked'])
     wrapper_log = os.path.join(instance.partition_path, '.0_wrapper.log')
     self.assertLogContent(wrapper_log, 'Working')
     self.assertItemsEqual(os.listdir(self.software_root), [instance.software.software_hash])
@@ -1597,12 +1609,14 @@ class TestSlapgridUsageReport(MasterMixin, unittest.TestCase):
     self.assertEqual(self.grid.agregateAndSendUsage(), slapgrid.SLAPGRID_SUCCESS)
     self.assertItemsEqual(os.listdir(self.instance_root), ['0', 'etc', 'var'])
     self.assertItemsEqual(os.listdir(instance.partition_path),
-                          ['.0_wrapper.log', 'buildout.cfg', 'etc', 'software_release', 'worked'])
+                          ['.slapgrid', '.0_wrapper.log', 'buildout.cfg', 
+                           'etc', 'software_release', 'worked'])
     wrapper_log = os.path.join(instance.partition_path, '.0_wrapper.log')
     self.assertLogContent(wrapper_log, 'Working')
     self.assertItemsEqual(os.listdir(self.instance_root), ['0', 'etc', 'var'])
     self.assertItemsEqual(os.listdir(instance.partition_path),
-                          ['.0_wrapper.log', 'buildout.cfg', 'etc', 'software_release', 'worked'])
+                          ['.slapgrid', '.0_wrapper.log', 'buildout.cfg', 
+                           'etc', 'software_release', 'worked'])
     wrapper_log = os.path.join(instance.partition_path, '.0_wrapper.log')
     self.assertLogContent(wrapper_log, 'Working')
     self.assertEqual(computer.sequence,
@@ -1708,187 +1722,6 @@ buildout = /path/to/buildout/binary
     self.slapos_config_descriptor.close()
     self.signature_key_file_descriptor.close()
     shutil.rmtree(self.certificate_repository_path, True)
-
-
-class TestSlapgridArgumentTuple(SlapgridInitialization):
-  """
-  Test suite about arguments given to slapgrid command.
-  """
-
-  def test_empty_argument_tuple(self):
-    """
-      Raises if the argument list if empty and without configuration file.
-    """
-    parser = parseArgumentTupleAndReturnSlapgridObject
-    # XXX: SystemExit is too generic exception, it is only known that
-    #      something is wrong
-    self.assertRaises(SystemExit, parser, *())
-
-  def test_default_argument_tuple(self):
-    """
-      Check if we can have the slapgrid object returned with the minimum
-      arguments.
-    """
-    parser = parseArgumentTupleAndReturnSlapgridObject
-    return_list = parser(*self.default_arg_tuple)
-    self.assertEquals(2, len(return_list))
-
-  def test_signature_private_key_file_non_exists(self):
-    """
-      Raises if the  signature_private_key_file does not exists.
-    """
-    parser = parseArgumentTupleAndReturnSlapgridObject
-    argument_tuple = ("--signature_private_key_file",
-                      "/non/exists/path") + self.default_arg_tuple
-    self.assertRaisesRegexp(RuntimeError,
-                            "File '/non/exists/path' does not exist.",
-                            parser, *argument_tuple)
-
-  def test_signature_private_key_file(self):
-    """
-      Check if the signature private key argument value is available on
-      slapgrid object.
-    """
-    parser = parseArgumentTupleAndReturnSlapgridObject
-    argument_tuple = ("--signature_private_key_file",
-                      self.signature_key_file_descriptor.name) + self.default_arg_tuple
-    slapgrid_object = parser(*argument_tuple)[0]
-    self.assertEquals(self.signature_key_file_descriptor.name,
-                      slapgrid_object.signature_private_key_file)
-
-  def test_backward_compatibility_all(self):
-    """
-      Check if giving --all triggers "develop" option.
-    """
-    parser = parseArgumentTupleAndReturnSlapgridObject
-    slapgrid_object = parser('--all', *self.default_arg_tuple)[0]
-    self.assertTrue(slapgrid_object.develop)
-
-  def test_backward_compatibility_not_all(self):
-    """
-      Check if not giving --all neither --develop triggers "develop"
-      option to be False.
-    """
-    parser = parseArgumentTupleAndReturnSlapgridObject
-    slapgrid_object = parser(*self.default_arg_tuple)[0]
-    self.assertFalse(slapgrid_object.develop)
-
-  def test_upload_binary_cache_blacklist(self):
-    """
-      Check if giving --upload-to-binary-cache-url-blacklist triggers option.
-    """
-    self.slapos_config_descriptor.write("""
-[slapos]
-software_root = /opt/slapgrid
-instance_root = /srv/slapgrid
-master_url = https://slap.vifib.com/
-computer_id = your computer id
-buildout = /path/to/buildout/binary
-[networkcache]
-upload-to-binary-cache-url-blacklist =
-  http://1
-  http://2/bla
-""")
-    self.slapos_config_descriptor.seek(0)
-    slapgrid_object = parseArgumentTupleAndReturnSlapgridObject(
-        *self.default_arg_tuple)[0]
-    self.assertEqual(
-        slapgrid_object.upload_to_binary_cache_url_blacklist,
-        ['http://1', 'http://2/bla']
-    )
-    self.assertEqual(
-        slapgrid_object.download_from_binary_cache_url_blacklist,
-        []
-    )
-
-  def test_download_binary_cache_blacklist(self):
-    """
-      Check if giving --download-from-binary-cache-url-blacklist triggers option.
-    """
-    self.slapos_config_descriptor.write("""
-[slapos]
-software_root = /opt/slapgrid
-instance_root = /srv/slapgrid
-master_url = https://slap.vifib.com/
-computer_id = your computer id
-buildout = /path/to/buildout/binary
-[networkcache]
-download-from-binary-cache-url-blacklist =
-  http://1
-  http://2/bla
-""")
-    self.slapos_config_descriptor.seek(0)
-    slapgrid_object = parseArgumentTupleAndReturnSlapgridObject(
-        *self.default_arg_tuple)[0]
-    self.assertEqual(
-        slapgrid_object.upload_to_binary_cache_url_blacklist,
-        []
-    )
-    self.assertEqual(
-        slapgrid_object.download_from_binary_cache_url_blacklist,
-        ['http://1', 'http://2/bla']
-    )
-
-  def test_upload_download_binary_cache_blacklist(self):
-    """
-      Check if giving both --download-from-binary-cache-url-blacklist
-      and --upload-to-binary-cache-url-blacklist triggers options.
-    """
-    self.slapos_config_descriptor.write("""
-[slapos]
-software_root = /opt/slapgrid
-instance_root = /srv/slapgrid
-master_url = https://slap.vifib.com/
-computer_id = your computer id
-buildout = /path/to/buildout/binary
-[networkcache]
-upload-to-binary-cache-url-blacklist =
-  http://1
-  http://2/bla
-download-from-binary-cache-url-blacklist =
-  http://3
-  http://4/bla
-""")
-    self.slapos_config_descriptor.seek(0)
-    slapgrid_object = parseArgumentTupleAndReturnSlapgridObject(
-        *self.default_arg_tuple)[0]
-    self.assertEqual(
-        slapgrid_object.upload_to_binary_cache_url_blacklist,
-        ['http://1', 'http://2/bla']
-    )
-    self.assertEqual(
-        slapgrid_object.download_from_binary_cache_url_blacklist,
-        ['http://3', 'http://4/bla']
-    )
-
-  def test_backward_compatibility_download_binary_cache_blacklist(self):
-    """
-      Check if giving both --binary-cache-url-blacklist
-      and --upload-to-binary-cache-blacklist triggers options.
-    """
-    self.slapos_config_descriptor.write("""
-[slapos]
-software_root = /opt/slapgrid
-instance_root = /srv/slapgrid
-master_url = https://slap.vifib.com/
-computer_id = your computer id
-buildout = /path/to/buildout/binary
-[networkcache]
-binary-cache-url-blacklist =
-  http://1
-  http://2/bla
-""")
-    self.slapos_config_descriptor.seek(0)
-    slapgrid_object = parseArgumentTupleAndReturnSlapgridObject(
-        *self.default_arg_tuple)[0]
-    self.assertEqual(
-        slapgrid_object.upload_to_binary_cache_url_blacklist,
-        []
-    )
-    self.assertEqual(
-        slapgrid_object.download_from_binary_cache_url_blacklist,
-        ['http://1', 'http://2/bla']
-    )
 
 
 class TestSlapgridCPWithMasterPromise(MasterMixin, unittest.TestCase):
