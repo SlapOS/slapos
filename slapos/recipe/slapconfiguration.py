@@ -24,6 +24,10 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #
 ##############################################################################
+
+import json
+import os
+
 import slapos.slap
 from slapos.recipe.librecipe import unwrap
 from ConfigParser import RawConfigParser
@@ -87,6 +91,15 @@ class Recipe(object):
   OPTCRE_match = RawConfigParser.OPTCRE.match
 
   def __init__(self, buildout, name, options):
+      parameter_dict = self.fetch_parameter_dict(options)
+
+      match = self.OPTCRE_match
+      for key, value in parameter_dict.iteritems():
+          if match(key) is not None:
+              continue
+          options['configuration.' + key] = value
+
+  def fetch_parameter_dict(self, options):
       slap = slapos.slap.slap()
       slap.initializeConnection(
           options['url'],
@@ -138,12 +151,7 @@ class Recipe(object):
           options['ipv6-random'] = list(ipv6_set)[0].encode('UTF-8')
 
       options['tap'] = tap_set
-      parameter_dict = self._expandParameterDict(options, parameter_dict)
-      match = self.OPTCRE_match
-      for key, value in parameter_dict.iteritems():
-          if match(key) is not None:
-              continue
-          options['configuration.' + key] = value
+      return self._expandParameterDict(options, parameter_dict)
 
   def _expandParameterDict(self, options, parameter_dict):
       options['configuration'] = parameter_dict
@@ -158,3 +166,10 @@ class Serialised(Recipe):
           return parameter_dict
       else:
           return {}
+
+class JsonDump(Recipe):
+  def __init__(self, buildout, name, options):
+    parameter_dict = self.fetch_parameter_dict(options)
+    with os.fdopen(os.open(options['json-output'], os.O_WRONLY | os.O_CREAT, 0600), 'w') as fout:
+      fout.write(json.dumps(parameter_dict, indent=2, sort_keys=True))
+
