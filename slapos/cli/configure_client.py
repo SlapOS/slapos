@@ -108,15 +108,15 @@ def do_configure_client(logger, master_url_web, token, config_path, master_url):
 
     # write everything
 
-    with os.fdopen(os.open(config_path, os.O_CREAT | os.O_WRONLY, 0o600), 'w') as fout:
+    with os.fdopen(os.open(config_path, os.O_CREAT | os.O_TRUNC | os.O_WRONLY, 0o600), 'w') as fout:
         logger.debug('Writing configuration to %s', config_path)
         fout.write(cfg)
 
-    with os.fdopen(os.open(cert_path, os.O_CREAT | os.O_WRONLY, 0o600), 'w') as fout:
+    with os.fdopen(os.open(cert_path, os.O_CREAT | os.O_TRUNC | os.O_WRONLY, 0o600), 'w') as fout:
         logger.debug('Writing certificate to %s', cert_path)
         fout.write(certificate)
 
-    with os.fdopen(os.open(key_path, os.O_CREAT | os.O_WRONLY, 0o600), 'w') as fout:
+    with os.fdopen(os.open(key_path, os.O_CREAT | os.O_TRUNC | os.O_WRONLY, 0o600), 'w') as fout:
         logger.debug('Writing key to %s', key_path)
         fout.write(key)
 
