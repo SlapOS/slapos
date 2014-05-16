@@ -60,7 +60,7 @@ class Recipe(object):
     try:
       with open(self.storage_path) as f:
         passwd = f.read()
-    except IOError, e:
+    except IOError as e:
       if e.errno != errno.ENOENT:
         raise
       passwd = None
@@ -79,11 +79,11 @@ class Recipe(object):
     if self.storage_path:
       try:
         os.unlink(self.storage_path)
-      except OSError, e:
+      except OSError as e:
         if e.errno != errno.ENOENT:
           raise
       fd = os.open(self.storage_path,
-        os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0600)
+        os.O_CREAT | os.O_EXCL | os.O_WRONLY | os.O_TRUNC, 0600)
       try:
         os.write(fd, self.passwd)
       finally:
