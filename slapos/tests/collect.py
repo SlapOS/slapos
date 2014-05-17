@@ -227,8 +227,8 @@ class TestCollectReport(unittest.TestCase):
                          '%s/1983-01-10/dump_user.csv' % self.instance_root,
                          '%s/1983-01-10/dump_system.csv' % self.instance_root]
 
-        self.assertEquals(glob.glob("%s/1983-01-10/*.csv" % self.instance_root), 
-                          csv_path_list)
+        self.assertEquals(set(glob.glob("%s/1983-01-10/*.csv" % self.instance_root)),
+                          set(csv_path_list))
 
     def test_system_csv_report(self):
         database = db.Database(self.instance_root)
@@ -256,7 +256,7 @@ class TestCollectReport(unittest.TestCase):
                          '%s/system_net_in_dropped.csv' % self.instance_root,
                          '%s/system_loadavg.csv' % self.instance_root]
 
-        self.assertEquals(glob.glob("%s/*.csv" % self.instance_root), csv_path_list) 
+        self.assertEquals(set(glob.glob("%s/*.csv" % self.instance_root)), set(csv_path_list)) 
 
 class TestCollectSnapshot(unittest.TestCase):
 
