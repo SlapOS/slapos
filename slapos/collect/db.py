@@ -1,6 +1,7 @@
 import sqlite3
 import os
 from time import time, strftime
+import datetime
 
 class Database:
 
@@ -149,6 +150,34 @@ class Database:
     """
     return [i[0] for i in self._execute(
            "SELECT name FROM sqlite_master WHERE type='table'")]
+
+  def _getGarbageCollectionDateList(self, days_to_preserve=3):
+    """ Return the list of dates to Preserve when data collect
+    """
+    base = datetime.datetime.today()
+    date_list = []
+    for x in range(0, days_to_preserve):
+      date_list.append((base - datetime.timedelta(days=x)).strftime("%Y-%m-%d"))
+    return date_list
+
+  def garbageCollect(self):
+    """ Garbase collect the database, by removing older records already
+        reported.
+    """
+    date_list = self._getGarbageCollectionDateList()
+    print date_list 
+    where_clause = "reported = 1" 
+    for _date in date_list:
+      where_clause += " AND date != '%s' " % _date
+    
+    delete_sql = "DELETE FROM %s WHERE %s"
+
+    self.connect()
+    for table in self.table_list:
+      self._execute(delete_sql % (table, where_clause))
+
+    self.commit()
+    self.close()
 
   def getDateScopeList(self, ignore_date=None, reported=0):
     """ Get from the present unique dates from the system

@@ -167,6 +167,40 @@ class TestCollectDatabase(unittest.TestCase):
         finally:
           database.close()
 
+    def test_garbage_collection_date_list(self):
+        database = db.Database(self.instance_root)
+        self.assertEquals(len(database._getGarbageCollectionDateList()), 3)
+        self.assertEquals(len(database._getGarbageCollectionDateList(1)), 1)
+        self.assertEquals(len(database._getGarbageCollectionDateList(0)), 0)
+
+        self.assertEquals(database._getGarbageCollectionDateList(1), 
+                           [strftime("%Y-%m-%d")])
+
+    def test_garbage(self):
+
+        database = db.Database(self.instance_root)
+        database.connect()
+        database.insertSystemSnapshot("0.1", '10.0', '100.0', '100.0', 
+                         '10.0', '1', '2', '12.0', '1', '1', '1983-01-10', 'TIME')
+        database.insertDiskPartitionSnapshot(
+                 '/dev/sdx1', '10', '20', '/mnt', '1983-01-10', 'TIME')
+        database.insertComputerSnapshot(
+              '1', '0', '0', '100', '0', '/dev/sdx1', '1983-01-10', 'TIME')
+        database.commit()
+        database.markDayAsReported(date_scope="1983-01-10", 
+                                       table_list=database.table_list)
+        database.commit()
+        self.assertEquals(len([x for x in database.select('system')]), 1)
+        self.assertEquals(len([x for x in database.select('computer')]), 1)
+        self.assertEquals(len([x for x in database.select('disk')]), 1)
+        database.close()
+
+        database.garbageCollect()
+        database.connect()
+
+        self.assertEquals(len([x for x in database.select('system')]), 0)
+        self.assertEquals(len([x for x in database.select('computer')]), 0)
+        self.assertEquals(len([x for x in database.select('disk')]), 0)
 
     def test_mark_day_as_reported(self):
 

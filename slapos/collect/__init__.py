@@ -61,6 +61,9 @@ def do_collect(conf):
     SystemCSVReporterDumper(database).dump(log_directory)
     RawCSVDumper(database).dump(log_directory)
 
+    # Drop older entries already reported
+    database.garbageCollect()
+
   except AccessDenied:
     print "You HAVE TO execute this script with root permission."
 
