@@ -112,12 +112,15 @@ The way to do that is to send a new parameter to your runner instance, using the
 
 To create the frontend, you now have to wait the slaprunner to be processed.
 
+You can define the type of your backend using "custom-frontend-backend-type". eg: zope
+
 If you deploy a server, which uses basic auth, you also have to declare the parameter "custom-frontend-basic-auth" as true, or your slaprunner instance won't show as correctly instanciated.
 
 Example :
 	<?xml version='1.0' encoding='utf-8'?>
 	<instance>
 	<parameter id="custom-frontend-backend-url">http(s)://[THE_IPV6_ADDRESS]:PORT</parameter>
+	<parameter id="custom-frontend-backend-type">zope</parameter>
 	<parameter id="custom-frontend-basic-auth">true</parameter>
 	</instance>
 
