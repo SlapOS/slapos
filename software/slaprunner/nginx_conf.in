@@ -13,6 +13,7 @@ events {
 http {
      default_type application/octet-stream;
      access_log {{ param_nginx_frontend['path_access_log'] }} combined;
+     client_max_body_size 10M;
      map $http_upgrade $connection_upgrade {
         default upgrade;
         ''      close;
