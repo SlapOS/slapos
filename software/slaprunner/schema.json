@@ -46,11 +46,30 @@
                                 "description": "return an ipv4 frontend of the given ipv6(+optional port)",
                                 "type": "string"
                         },
+                        "custom-frontend-backend-type": {
+                                "description": "The type of the frontend slave instance to ask",
+                                "type": "string"
+                        },
                         "custom-frontend-basic-auth": {
                                 "description": "if the ip given with 'custom-frontend-backend-url' is secure, set it to true for the promise do not fail",
                                 "type": "boolean",
                                 "default": "false"
-                        }
+                        },
+                        "custom-frontend-instance-guid": {
+                                "description": "Instance guid of the frontend you whish to use",
+                                "type": "string",
+                                "default": "none"
+                        },
+                        "custom-frontend-software-type": {
+                                "description": "SoftwareType of the frontend you request",
+                                "default": "RootSoftwareInstance",
+                                "type": "string"
+                        },
+                        "custom-frontend-software-url": {
+                                "description": "Software Url of the frontend you request",
+                                "default": "http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg"
+                                "type": "string"
+                        },
                         "monitor-port": {
                                 "description": "allow to manually change the port on wich the apache server running monitoring interface is listening. The default value for the webrunner is different from the default value of the standalone stack-monitor server",
                                 "type": "integer",
