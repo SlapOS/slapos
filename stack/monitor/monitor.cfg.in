@@ -170,6 +170,12 @@ recipe = plone.recipe.command
 command = ln -s $${:source} $${monitor-directory:private-directory}
 source =
 
+[monitor-instance-log-access]
+recipe = plone.recipe.command
+command = if [ -d $${:source} ]; then ln -s $${:source} $${monitor-directory:private-directory}/instance-logs; fi
+update-command = if [ -d $${:source} ]; then ln -s $${:source} $${monitor-directory:private-directory}/instance-logs; fi
+source = $${monitor-directory:home}/.slapgrid/log/
+
 [cadirectory]
 recipe = slapos.cookbook:mkdirectory
 requests = $${monitor-directory:ca-dir}/requests/
