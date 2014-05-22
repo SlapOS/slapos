@@ -50,8 +50,13 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string>computer = context.REQUEST.get(\'here\')\n
-software_release = context\n
+            <value> <string>current = context.REQUEST.get(\'here\')\n
+if current.getPortalType() == \'Software Release\':  \n
+  software_release = current\n
+  computer = context\n
+else:\n
+  computer = current\n
+  software_release = context\n
 \n
 return computer.Computer_getSoftwareReleaseUsage(software_release.getUid())\n
 </string> </value>

@@ -2,7 +2,7 @@
 <ZopeData>
   <record id="1" aka="AAAAAAAAAAE=">
     <pickle>
-      <global name="ERP5Form" module="Products.ERP5Form.Form"/>
+      <global name="ERP5 Form" module="erp5.portal_type"/>
     </pickle>
     <pickle>
       <dictionary>
@@ -82,7 +82,10 @@
                 <item>
                     <key> <string>center</string> </key>
                     <value>
-                      <list/>
+                      <list>
+                        <string>my_url_string</string>
+                        <string>your_free_partition_count</string>
+                      </list>
                     </value>
                 </item>
                 <item>
@@ -90,16 +93,14 @@
                     <value>
                       <list>
                         <string>listbox_free_partition</string>
+                        <string>listbox_amount</string>
                       </list>
                     </value>
                 </item>
                 <item>
                     <key> <string>left</string> </key>
                     <value>
-                      <list>
-                        <string>my_url_string</string>
-                        <string>your_free_partition_count</string>
-                      </list>
+                      <list/>
                     </value>
                 </item>
                 <item>
