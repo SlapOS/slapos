@@ -165,7 +165,6 @@ class Database:
         reported.
     """
     date_list = self._getGarbageCollectionDateList()
-    print date_list 
     where_clause = "reported = 1" 
     for _date in date_list:
       where_clause += " AND date != '%s' " % _date
