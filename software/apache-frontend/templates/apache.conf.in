@@ -120,9 +120,7 @@ SSLSessionCache shmcb:/{{ httpd_mod_ssl_cache_directory }}/ssl_scache(512000)
 SSLSessionCacheTimeout  300
 SSLRandomSeed startup /dev/urandom 256
 SSLRandomSeed connect builtin
-SSLProtocol -ALL +SSLv3 +TLSv1
-SSLHonorCipherOrder On
-SSLCipherSuite RC4-SHA:HIGH:!ADH
+SSLProtocol ALL -SSLv2
 <FilesMatch "\.(cgi|shtml|phtml|php)$">
       SSLOptions +StdEnvVars
 </FilesMatch>
