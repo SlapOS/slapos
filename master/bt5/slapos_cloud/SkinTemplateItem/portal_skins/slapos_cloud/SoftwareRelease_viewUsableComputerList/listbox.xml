@@ -10,8 +10,12 @@
             <key> <string>delegated_list</string> </key>
             <value>
               <list>
+                <string>all_columns</string>
                 <string>columns</string>
+                <string>count_method</string>
+                <string>hide_rows_on_no_search_criterion</string>
                 <string>list_method</string>
+                <string>search_columns</string>
                 <string>select</string>
                 <string>selection_name</string>
                 <string>title</string>
@@ -58,6 +62,14 @@
             <value>
               <dictionary>
                 <item>
+                    <key> <string>columns</string> </key>
+                    <value> <string></string> </value>
+                </item>
+                <item>
+                    <key> <string>count_method</string> </key>
+                    <value> <string></string> </value>
+                </item>
+                <item>
                     <key> <string>field_id</string> </key>
                     <value> <string></string> </value>
                 </item>
@@ -66,7 +78,15 @@
                     <value> <string></string> </value>
                 </item>
                 <item>
+                    <key> <string>hide_rows_on_no_search_criterion</string> </key>
+                    <value> <string></string> </value>
+                </item>
+                <item>
                     <key> <string>list_method</string> </key>
+                    <value> <string></string> </value>
+                </item>
+                <item>
+                    <key> <string>search_columns</string> </key>
                     <value> <string></string> </value>
                 </item>
                 <item>
@@ -81,6 +101,10 @@
                     <key> <string>title</string> </key>
                     <value> <string></string> </value>
                 </item>
+                <item>
+                    <key> <string>url_columns</string> </key>
+                    <value> <string></string> </value>
+                </item>
               </dictionary>
             </value>
         </item>
@@ -88,6 +112,12 @@
             <key> <string>values</string> </key>
             <value>
               <dictionary>
+                <item>
+                    <key> <string>all_columns</string> </key>
+                    <value>
+                      <list/>
+                    </value>
+                </item>
                 <item>
                     <key> <string>columns</string> </key>
                     <value>
@@ -108,8 +138,20 @@
                           <string>allocation_scope_translated_title</string>
                           <string>Allocation Scope</string>
                         </tuple>
+                        <tuple>
+                          <string>capacity_scope_translated_title</string>
+                          <string>Capacity Scope</string>
+                        </tuple>
+                        <tuple>
+                          <string>amount</string>
+                          <string>Amount</string>
+                        </tuple>
                       </list>
                     </value>
+                </item>
+                <item>
+                    <key> <string>count_method</string> </key>
+                    <value> <string></string> </value>
                 </item>
                 <item>
                     <key> <string>field_id</string> </key>
@@ -117,12 +159,22 @@
                 </item>
                 <item>
                     <key> <string>form_id</string> </key>
-                    <value> <string>Base_viewWebFieldLibrary</string> </value>
+                    <value> <string>Base_viewFieldLibrary</string> </value>
+                </item>
+                <item>
+                    <key> <string>hide_rows_on_no_search_criterion</string> </key>
+                    <value> <int>0</int> </value>
                 </item>
                 <item>
                     <key> <string>list_method</string> </key>
                     <value>
                       <persistent> <string encoding="base64">AAAAAAAAAAI=</string> </persistent>
+                    </value>
+                </item>
+                <item>
+                    <key> <string>search_columns</string> </key>
+                    <value>
+                      <list/>
                     </value>
                 </item>
                 <item>
@@ -155,6 +207,10 @@
                         </tuple>
                         <tuple>
                           <string>free_partition</string>
+                          <string>Computer_getUsageReportUrl</string>
+                        </tuple>
+                        <tuple>
+                          <string>amount</string>
                           <string>Computer_getUsageReportUrl</string>
                         </tuple>
                       </list>
