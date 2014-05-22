@@ -1,0 +1,90 @@
+<?xml version="1.0"?>
+<ZopeData>
+  <record id="1" aka="AAAAAAAAAAE=">
+    <pickle>
+      <global name="PythonScript" module="Products.PythonScripts.PythonScript"/>
+    </pickle>
+    <pickle>
+      <dictionary>
+        <item>
+            <key> <string>Script_magic</string> </key>
+            <value> <int>3</int> </value>
+        </item>
+        <item>
+            <key> <string>_bind_names</string> </key>
+            <value>
+              <object>
+                <klass>
+                  <global name="NameAssignments" module="Shared.DC.Scripts.Bindings"/>
+                </klass>
+                <tuple/>
+                <state>
+                  <dictionary>
+                    <item>
+                        <key> <string>_asgns</string> </key>
+                        <value>
+                          <dictionary>
+                            <item>
+                                <key> <string>name_container</string> </key>
+                                <value> <string>container</string> </value>
+                            </item>
+                            <item>
+                                <key> <string>name_context</string> </key>
+                                <value> <string>context</string> </value>
+                            </item>
+                            <item>
+                                <key> <string>name_m_self</string> </key>
+                                <value> <string>script</string> </value>
+                            </item>
+                            <item>
+                                <key> <string>name_subpath</string> </key>
+                                <value> <string>traverse_subpath</string> </value>
+                            </item>
+                          </dictionary>
+                        </value>
+                    </item>
+                  </dictionary>
+                </state>
+              </object>
+            </value>
+        </item>
+        <item>
+            <key> <string>_body</string> </key>
+            <value> <string>portal = context.getPortalObject()\n
+message = "Please select at least one computer."\n
+dialog = dialog_id\n
+item_count = 0\n
+keep_items = {}\n
+software_release = portal.portal_catalog.getResultValue(url_string=url_string,\n
+                            portal_type=\'Software Release\')\n
+\n
+if len(uids) and software_release:  \n
+  dialog = "SoftwareRelease_viewUsableComputerList"\n
+  for computer in portal.portal_catalog(uid=uids, portal_type="Computer"):    \n
+    # XXX - We won\'t destroy Software release if it used on this computer\n
+    if not computer.Computer_getSoftwareReleaseUsage(software_release.getUid()):      \n
+      computer.requestSoftwareRelease(software_release_url=url_string,\n
+                                      state=\'destroyed\')\n
+      item_count += 1\n
+\n
+  message = "Destruction request submited on %d computer(s)." % item_count\n
+\n
+keep_items={\'portal_status_message\':context.Base_translateString(message)}\n
+if cancel_url:\n
+  keep_items[\'cancel_url\'] = cancel_url\n
+\n
+return context.Base_redirect(dialog, keep_items=keep_items)\n
+</string> </value>
+        </item>
+        <item>
+            <key> <string>_params</string> </key>
+            <value> <string>dialog_id, url_string, form_id, uids=[], cancel_url=None, **kw</string> </value>
+        </item>
+        <item>
+            <key> <string>id</string> </key>
+            <value> <string>SoftwareRelease_requestDestroyOnComputerList</string> </value>
+        </item>
+      </dictionary>
+    </pickle>
+  </record>
+</ZopeData>
