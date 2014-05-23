@@ -33,10 +33,8 @@ import tempfile
 import slapos.slap
 import psutil
 from time import strftime
-from slapos.cli.collect import CollectCommand
 from slapos.collect import entity, snapshot, db, reporter
 from slapos.cli.entry import SlapOSApp
-from argparse import Namespace
 from ConfigParser import ConfigParser
 
 class FakeDatabase(object):
