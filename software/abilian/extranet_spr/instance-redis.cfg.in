@@ -1,0 +1,36 @@
+[buildout]
+
+parts =
+  publish-redis-connection-parameters
+  redis
+
+
+[redis-passwd]
+recipe = slapos.cookbook:generate.password
+storage-path = $${directories:etc}/.redis-passwd
+bytes = 4
+
+[redis]
+recipe = slapos.cookbook:redis.server
+server_bin = ${redis:location}/bin/redis-server
+ipv6 = $${instance-parameters:ipv6-random}
+port = 6379
+use_passwd = $${slap-parameter:use_passwd}
+pid_file = $${directories:run}/redis.pid
+server_dir = $${directories:srv}
+passwd = $${redis-passwd:passwd}
+config_file = $${directories:etc}/redis.conf
+log_file = $${directories:log}/redis.log
+wrapper = $${directories:services}/redis_server
+promise_wrapper = $${directories:promises}/redis
+
+# Send informations to SlapOS Master
+[publish-redis-connection-parameters]
+recipe = slapos.cookbook:publish
+redis_ip = $${redis:ipv6}
+redis_port = $${redis:port}
+redis_passwd = $${redis:passwd}
+redis_uses_password = $${redis:use_passwd}
+  
+[slap-parameter]
+use_passwd = false

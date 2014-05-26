@@ -1,8 +1,13 @@
-
 [buildout]
+
+eggs-directory = ${buildout:eggs-directory}
+develop-eggs-directory = ${buildout:develop-eggs-directory}
+offline = true
+
 extends =
     ${instance-postgres:output}
     ${instance-extranet:output}
+    ${instance-redis:output}
     ${instance-environment:output}
 
 parts =
@@ -16,7 +21,9 @@ parts =
     json-configuration
     json-extra-configuration
     request-web-frontend
-    publish-connection-parameter
+    publish-connection-parameters
+    redis
+    publish-redis-connection-parameters
 
 
 
@@ -59,6 +66,8 @@ mode = 0644
 recipe = slapos.cookbook:mkdirectory
 bin = $${buildout:directory}/bin
 etc = $${buildout:directory}/etc
+run = $${directories:var}/run
+scripts = $${directories:etc}/run
 srv = $${buildout:directory}/srv
 services = $${directories:etc}/service
 promises = $${directories:etc}/promise
@@ -66,8 +75,8 @@ var = $${buildout:directory}/var
 extranet_spr-instance = $${:var}/extranet_spr-instance
 cache = $${:extranet_spr-instance}/cache
 data = $${:extranet_spr-instance}/data
-log = $${:extranet_spr-instance}/log
-tmp = $${:extranet_spr-instance}/tmp
+log = $${directories:var}/log
+tmp = $${directories:var}/tmp
 whoosh = $${:data}/whoosh
 
 
@@ -83,7 +92,7 @@ config-url = https://[$${instance-parameters:ipv6}]:5000/
 return = site_url
 
 
-[publish-connection-parameter]
+[publish-connection-parameters]
 recipe = slapos.cookbook:publish
 url = $${request-web-frontend:connection-site_url}
 name = test parameter
