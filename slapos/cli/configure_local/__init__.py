@@ -205,7 +205,7 @@ stderr_logfile_maxbytes=100KB
 stderr_logfile_backups=1
 """ % {'log_file': '%s/log/slapos-proxy.log' % conf.slapos_buildout_directory,
        'slapos_buildout_directory': conf.slapos_buildout_directory,
-       'program_command': '%s/slapos proxy start --cfg %s' % \
+       'program_command': '%s/bin/slapos proxy start --cfg %s' % \
           (conf.slapos_buildout_directory, conf.proxy_configuration_file)}
 
     supervisord_conf_folder_path = os.path.join(conf.instance_root,
