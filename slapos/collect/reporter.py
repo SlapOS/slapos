@@ -49,8 +49,8 @@ class SystemReporter(Dumper):
       self.writeFile(item, folder, collected_item_list)
 
     for partition, collected_item_list in self.db.exportDiskAsDict(_date).iteritems():
-      partition_id = partition.split("-")[0].split("/")[-1]
-      item = "memory_%s" % partition.split("-")[1]
+      partition_id = "_".join(partition.split("-")[:-1]).replace("/", "_")
+      item = "memory_%s" % partition.split("-")[-1]
       self.writeFile("disk_%s_%s" % (item, partition_id), folder, collected_item_list)
 
     self.db.close()
