@@ -25,7 +25,6 @@ parts =
     request-web-frontend
     publish-connection-parameters
     redis
-    publish-redis-connection-parameters
 
 
 
@@ -90,11 +89,12 @@ name = Web Frontend
 software-url = http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg
 slave = true
 config = url
-config-url = https://[$${instance-parameters:ipv6}]:5000/
+config-url = https://[$${instance-parameters:ipv6-random}]:$${extranet-promise:port}/
 return = site_url
 
 
 [publish-connection-parameters]
 recipe = slapos.cookbook:publish
 url = $${request-web-frontend:connection-site_url}
+ipv6_url = http://[$${instance-parameters:ipv6-random}]:$${extranet-promise:port}/
 name = test parameter

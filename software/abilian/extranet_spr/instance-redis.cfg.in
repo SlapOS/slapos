@@ -7,8 +7,8 @@ parts =
 
 [redis-passwd]
 recipe = slapos.cookbook:generate.password
-storage-path = $${directories:etc}/.redis-passwd
-bytes = 4
+storage-path = $${directories:etc}/redis_passwd
+bytes = 16
 
 [redis]
 recipe = slapos.cookbook:redis.server
@@ -24,13 +24,13 @@ log_file = $${directories:log}/redis.log
 wrapper = $${directories:services}/redis_server
 promise_wrapper = $${directories:promises}/redis
 
-# Send informations to SlapOS Master
-[publish-redis-connection-parameters]
-recipe = slapos.cookbook:publish
-redis_ip = $${redis:ipv6}
-redis_port = $${redis:port}
-redis_passwd = $${redis:passwd}
-redis_uses_password = $${redis:use_passwd}
+## Send informations to SlapOS Master
+#[publish-redis-connection-parameters]
+#recipe = slapos.cookbook:publish
+#redis_ip = $${redis:ipv6}
+#redis_port = $${redis:port}
+#redis_passwd = $${redis:passwd}
+#redis_uses_password = $${redis:use_passwd}
   
 [slap-parameter]
 use_passwd = false

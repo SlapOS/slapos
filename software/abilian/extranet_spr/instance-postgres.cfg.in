@@ -30,7 +30,7 @@ ipv4 = $${instance-parameters:ipv4}
 ipv4-netmask-bits = 0
 ipv6-random = $${instance-parameters:ipv6-random}
 superuser = postgres
-password = $${gen-passwd:passwd}
+password = $${postgres-passwd:passwd}
 port = 5432
 dbname = db
 # pgdata_directory is created by initdb, and should not exist beforehand.
@@ -43,7 +43,7 @@ services = $${directories:services}
 #--
 #-- Generates a random password and stores it in the filesystem
 
-[gen-passwd]
+[postgres-passwd]
 recipe = slapos.cookbook:generate.password
 storage-path = $${directories:srv}/postgres_passwd
 bytes = 16
@@ -76,15 +76,6 @@ link-binary =
     ${postgresql91:location}/bin/postgres
     ${postgresql91:location}/bin/reindexdb
     ${postgresql91:location}/bin/vacuumdb
-
-
-#----------------
-#--
-#-- Publish instance parameters.
-
-[publish]
-recipe = slapos.cookbook:publish
-url = $${postgres-instance:url}
 
 
 #----------------
