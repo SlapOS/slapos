@@ -2,6 +2,8 @@
 
 parts =
     extranet-symlinks
+    extranet-service
+    extranet-promise
     config-staging-py
 
 
@@ -12,6 +14,27 @@ link-binary =
     ${buildout:directory}/bin/abilian
 
 
+[extranet-service]
+recipe = slapos.recipe.template:jinja2
+template = inline:
+    #!/bin/sh
+    . {{environment}}
+    exec {{abilian}} run
+rendered = $${directories:services}/abilian-start
+mode = 700
+context =
+    raw     environment     $${buildout:directory}/environment.sh
+    raw     abilian         ${buildout:directory}/bin/abilian
+
+
+
+[extranet-promise]
+recipe = slapos.cookbook:check_port_listening
+path = $${directories:promises}/extranet
+hostname = $${instance-parameters:ipv6-random}
+port = 5000
+
+
 [config-staging-py]
 recipe = slapos.recipe.template:jinja2
 template = ${config-staging-py-template:location}/${config-staging-py-template:filename}
@@ -19,4 +42,5 @@ rendered = $${buildout:directory}/etc/staging.py
 mode = 600
 #context =
 #    section config config-staging
+
 

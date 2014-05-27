@@ -17,6 +17,8 @@ parts =
     postgres-promise
     postgres-symlinks
     extranet-symlinks
+    extranet-service
+    extranet-promise
     config-staging-py
     json-configuration
     json-extra-configuration

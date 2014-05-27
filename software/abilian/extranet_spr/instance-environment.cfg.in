@@ -14,6 +14,8 @@ EXTRANET_INSTANCE_PATH=$${directories:extranet_spr-instance}
 ABILIAN_CONFIG_EXTRA_PYTHON=$${config-staging-py:rendered}
 ABILIAN_CONFIG_EXTRA_JSON=$${buildout:directory}/partition-parameters.json:$${json-extra-configuration:json-output}
 LD_LIBRARY_PATH=${cairo:location}/lib:${glib:location}/lib:${pango:location}/lib
+# abilian/services/conversion.py does not like it, if PATH does not exist
+PATH=/usr/sbin:/usr/bin:/sbin:/bin
 
 
 
@@ -29,6 +31,7 @@ inline =
     export ABILIAN_CONFIG_EXTRA_PYTHON=$${instance-environment:ABILIAN_CONFIG_EXTRA_PYTHON}
     export ABILIAN_CONFIG_EXTRA_JSON=$${instance-environment:ABILIAN_CONFIG_EXTRA_JSON}
     export LD_LIBRARY_PATH=$${instance-environment:LD_LIBRARY_PATH}
+    export PATH=$${instance-environment:PATH}
 output = $${buildout:directory}/environment.sh
 
 
