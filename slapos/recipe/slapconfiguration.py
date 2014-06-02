@@ -170,6 +170,12 @@ class Serialised(Recipe):
 class JsonDump(Recipe):
   def __init__(self, buildout, name, options):
     parameter_dict = self.fetch_parameter_dict(options)
-    with os.fdopen(os.open(options['json-output'], os.O_WRONLY | os.O_CREAT, 0600), 'w') as fout:
+    self._json_output = options['json-output']
+    with os.fdopen(os.open(self._json_output, os.O_WRONLY | os.O_CREAT, 0600), 'w') as fout:
       fout.write(json.dumps(parameter_dict, indent=2, sort_keys=True))
+
+    def install(self):
+        return [self._json_output]
+
+    update = install
 
