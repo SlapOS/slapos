@@ -1,0 +1,50 @@
+{% if software_type == slap_software_type -%}
+[buildout]
+parts =
+  certificate-authority
+  cron-entry-monitor
+  cron-entry-rss
+  cron
+  deploy-index
+  deploy-settings-cgi
+  deploy-status-cgi
+  deploy-status-history-cgi
+  setup-static-files
+  certificate-authority
+  zero-parameters
+  public-symlink
+  cgi-httpd-wrapper
+  cgi-httpd-graceful-wrapper
+  monitor-promise
+  monitor-instance-log-access
+  monitor-check-web-page-http-cache-hit
+  publish-http-monitor
+
+extends = {{ parameter_dict["template-monitor"] }}
+
+eggs-directory = {{ eggs_directory }}
+develop-eggs-directory = {{ develop_eggs_directory }}
+
+[monitor-check-web-page-http-cache-hit]
+recipe = slapos.cookbook:wrapper
+command-line = "{{ parameter_dict['bin-directory'] }}/check-web-page-http-cache-hit" -K "${public:filename}"
+wrapper-path = ${monitor-directory:monitor-custom-scripts}/check-web-page-http-cache-hit
+
+[public]
+recipe = slapos.cookbook:zero-knowledge.write
+filename = knowledge0.cfg
+status-history-length = 5
+# Each one of the following 2 list keys should be defined in only one line
+# ex: resolve-list = www.example.com:80:127.0.0.1 www.perdu.com:80:10.0.0.1
+url-list =
+resolve-list =
+
+[zero-parameters]
+recipe = slapos.cookbook:zero-knowledge.read
+filename = ${public:filename}
+
+[publish-http-monitor]
+recipe = slapos.cookbook:publish.serialised
+monitor-url = ${monitor-parameters:url}
+
+{% endif %}

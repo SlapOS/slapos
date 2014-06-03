@@ -116,6 +116,7 @@ jsl = {{ jsl_location }}
 link-binary = {{ dumps(zope_link_binary) }}
 userhosts = {{ userhosts_location }}
 runzope-userhosts-preloaded-template = {{ template_runzope_userhosts_preloaded }}
+template-monitor = {{ template_monitor }}
 
 [dynamic-template-zope]
 < = jinja2-template-base
@@ -152,6 +153,7 @@ template-mariadb-initial-setup = {{ template_mariadb_initial_setup }}
 link-binary = {{ dumps(mariadb_link_binary) }}
 bin-directory = {{ bin_directory }}
 mariadb-resiliency-after-import-script = {{ mariadb_resiliency_after_import_script }}
+template-monitor = {{ template_monitor }}
 
 [dynamic-template-mariadb]
 < = jinja2-template-base
@@ -173,6 +175,18 @@ template = {{ template_create_erp5_site }}
 filename = instance-create-erp5-site.cfg
 extra-context =
     section parameter_dict dynamic-template-create-erp5-site-parameters
+
+[dynamic-template-http-monitor-parameters]
+template-monitor = {{ template_monitor }}
+bin-directory = {{ bin_directory }}
+
+[dynamic-template-http-monitor]
+< = jinja2-template-base
+template = {{ template_http_monitor }}
+filename = instance-http-monitor.cfg
+extra-context =
+    section parameter_dict dynamic-template-http-monitor-parameters
+    raw software_type http-monitor
 
 [switch-softwaretype]
 recipe = slapos.cookbook:switch-softwaretype
