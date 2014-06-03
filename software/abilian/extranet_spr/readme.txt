@@ -4,6 +4,8 @@
         IOError: encoder error -2 when writing image file
         Wrong JPEG library version: library is 62, caller expects 80
 
+ * apt-get install rsync
+
  * the host needs
     /etc/security/limits.conf
     *                hard    nofile          32768

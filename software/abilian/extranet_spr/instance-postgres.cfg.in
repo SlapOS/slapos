@@ -64,16 +64,24 @@ port = $${postgres-instance:port}
 recipe = slapos.cookbook:symbolic.link
 target-directory = $${directories:bin}
 link-binary =
+    ${postgresql91:location}/bin/clusterdb
     ${postgresql91:location}/bin/createdb
+    ${postgresql91:location}/bin/createlang
     ${postgresql91:location}/bin/createuser
     ${postgresql91:location}/bin/dropdb
+    ${postgresql91:location}/bin/droplang
     ${postgresql91:location}/bin/dropuser
+    ${postgresql91:location}/bin/initdb
     ${postgresql91:location}/bin/psql
+    ${postgresql91:location}/bin/pg_basebackup
+    ${postgresql91:location}/bin/pg_controldata
+    ${postgresql91:location}/bin/pg_ctl
     ${postgresql91:location}/bin/pg_dump
     ${postgresql91:location}/bin/pg_dumpall
     ${postgresql91:location}/bin/pg_resetxlog
     ${postgresql91:location}/bin/pg_restore
     ${postgresql91:location}/bin/postgres
+    ${postgresql91:location}/bin/postmaster
     ${postgresql91:location}/bin/reindexdb
     ${postgresql91:location}/bin/vacuumdb
 
