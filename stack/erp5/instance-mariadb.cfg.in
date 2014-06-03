@@ -31,6 +31,7 @@ recipe = slapos.cookbook:publish.serialised
 {% endmacro -%}
 database-list = {{ render_database_list(database_list) }}
 test-database-list = {{ render_database_list(test_database_list) }}
+monitor-url = ${publish-connection-informations:monitor_url}
 
 [simplefile]
 recipe = slapos.recipe.template:jinja2
@@ -217,8 +218,21 @@ command-line = "{{ parameter_dict['bin-directory'] }}/is-local-tcp-port-opened" 
 wrapper-path = ${directory:promise}/mariadb
 parameters-extra = true
 
+[{{ section('monitor-current-log-access') }}]
+< = monitor-directory-access
+source = ${directory:log}
+
+[{{ section('monitor-backup-log-access') }}]
+< = monitor-directory-access
+source = ${logrotate-entry-mariadb:backup}
+
+[monitor-parameters]
+port = 3380
+
 [buildout]
-extends = {{ logrotate_cfg }}
+extends =
+  {{ logrotate_cfg }}
+  {{ parameter_dict['template-monitor'] }}
 parts +=
   publish-mariadb-url
   logrotate-entry-mariadb
@@ -226,4 +240,19 @@ parts +=
   update-mysql
   mysqld
   promise
+
+# Access to mariadb logs
+  certificate-authority
+  cron-entry-monitor
+  cron-entry-rss
+  deploy-index
+  setup-static-files
+  certificate-authority
+  public-symlink
+  cgi-httpd-wrapper
+  cgi-httpd-graceful-wrapper
+  monitor-promise
+  monitor-instance-log-access
+
+# Complete parts with sections
   {{ part_list | join('\n  ') }}

@@ -44,6 +44,7 @@ config-{{ option }} = {{ dumps(value) }}
 {% else -%}
 {% do zodb_extern[0] %}
 {% endif -%}
+{{ request('http-monitor', 'http-monitor', 'http-monitor', {}, {'monitor-url': True}) }}
 
 [inituser-password]
 {% set inituser_password = slapparameter_dict.get('inituser-password') -%}
