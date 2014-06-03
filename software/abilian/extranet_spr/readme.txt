@@ -1,0 +1,13 @@
+
+ * libjpeg62-dev must not be installed before building the SR, or
+   Pillow will link against the wrong library version and raise this exception:
+        IOError: encoder error -2 when writing image file
+        Wrong JPEG library version: library is 62, caller expects 80
+
+ * the host needs
+    /etc/security/limits.conf
+    *                hard    nofile          32768
+    *                soft    nofile          32768
+
+ * 'extra' parameters from json or partition configuration can only be strings
+
