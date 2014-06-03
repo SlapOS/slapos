@@ -77,6 +77,7 @@ ca-private = ${:ca-dir}/private
 ca-certs = ${:ca-dir}/certs
 ca-newcerts = ${:ca-dir}/newcerts
 ca-crl = ${:ca-dir}/crl
+logrotate-backup = ${:var}/logrotate
 
 [binary-link]
 recipe = slapos.cookbook:symbolic.link
@@ -96,6 +97,17 @@ ca-crl = ${directory:ca-crl}
 recipe = slapos.cookbook:certificate_authority
 openssl-binary = ${binary-link:target-directory}/openssl
 wrapper = ${directory:services}/ca
+
+[{{ section('monitor-current-log-access') }}]
+< = monitor-directory-access
+source = ${directory:log}
+
+[{{ section('monitor-backup-log-access') }}]
+< = monitor-directory-access
+source = ${directory:logrotate-backup}
+
+[monitor-parameters]
+port = {{ slapparameter_dict['port-base'] + 5000 }}
 
 {% if use_ipv6 -%}
 {%   set ipv6 = (ipv6_set | list)[0] -%}
@@ -326,6 +338,7 @@ dict toward erp5 partition, violating the DRY principle and making the intent
 hard to guess.
 -#}
 hosts-dict = {{ dumps(hosts_dict) }}
+monitor-url = ${monitor-parameters:url}
 
 [erp5-promise]
 recipe = slapos.cookbook:erp5.promise
@@ -338,9 +351,24 @@ bt5 = {{ dumps(slapparameter_dict['bt5']) }}
 bt5-repository-url = {{ dumps(slapparameter_dict['bt5-repository-url']) }}
 
 [buildout]
-extends = {{ logrotate_cfg }}
+eggs-directory = {{ eggs_directory }}
+develop-eggs-directory = {{ develop_eggs_directory }}
+extends =
+  {{ logrotate_cfg }}
+  {{ parameter_dict['template-monitor'] }}
 parts +=
   erp5-promise
+  certificate-authority
+  cron-entry-monitor
+  cron-entry-rss
+  deploy-index
+  setup-static-files
+  certificate-authority
+  public-symlink
+  cgi-httpd-wrapper
+  cgi-httpd-graceful-wrapper
+  monitor-promise
+  monitor-instance-log-access
   {{ part_list | join('\n  ') }}
   publish-zope
 versions = versions
