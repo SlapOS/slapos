@@ -89,16 +89,17 @@ equeue-binary = ${buildout:bin-directory}/equeue
 # notifier.notify adds the [exporter, notifier] to the execution queue
 # notifier.notify.callback sets up a callback
 [notifier]
-recipe = slapos.cookbook:notifier
-feeds = $${directory:notifier-feeds}
-callbacks = $${directory:notifier-callbacks}
-id-file = $${rootdirectory:etc}/notifier.id
-equeue-socket = $${equeue:socket}
+recipe = slapos.recipe.template:jinja2
+template = ${template-wrapper:output}
+rendered = $${:wrapper}
+wrapper = $${basedirectory:services}/notifier
+mode = 0700
+command = ${buildout:bin-directory}/pubsubserver --callbacks $${directory:notifier-callbacks} --feeds $${directory:notifier-feeds} --equeue-socket $${equeue:socket} --logfile $${basedirectory:log}/notifier.log $${:host} $${:port}
 host = $${slap-network-information:global-ipv6}
 port = 8088
-wrapper = $${basedirectory:services}/notifier
-server-binary = ${buildout:bin-directory}/pubsubserver
-notifier-binary = ${buildout:bin-directory}/pubsubnotifier
+context =
+  key content notifier:command
+
 
 [logrotate-entry-equeue]
 <= logrotate
@@ -118,6 +119,10 @@ rotate-num = 30
 <= notifier
 recipe = slapos.cookbook:pbs
 client = true
+feeds = $${directory:notifier-feeds}
+callbacks = $${directory:notifier-callbacks}
+equeue-socket = $${equeue:socket}
+notifier-binary = ${buildout:bin-directory}/pubsubnotifier
 rdiffbackup-binary = ${buildout:bin-directory}/rdiff-backup
 sshclient-binary = $${dropbear-client:wrapper}
 known-hosts = $${directory:dot-ssh}/known_hosts
