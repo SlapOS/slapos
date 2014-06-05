@@ -26,39 +26,40 @@ parts +=
   cron-entry-backup
   cron-entry-prepare-software
   deploy-instance-parameters
+## Monitoring part
 ###Parts to add for monitoring
-  slap-parameters
   certificate-authority
-  cron
   cron-entry-monitor
   cron-entry-rss
   deploy-index
-  deploy-index-template
-  deploy-monitor-script
-  deploy-rss-script
   deploy-settings-cgi
   deploy-status-cgi
-  make-rss
-  monitor-frontend
-  monitor-promise
   setup-static-files
   certificate-authority
-  public
   zero-parameters
-  cgi-httpd-wrapper
   public-symlink
+  cgi-httpd-wrapper
+  cgi-httpd-graceful-wrapper
+  monitor-promise
+  monitor-instance-log-access
+## Monitor for runner
+  monitor-current-log-access
+
 
 [exporter]
-recipe = slapos.cookbook:slaprunner.export
-wrapper = $${directory:bin}/$${slap-parameter:namebase}-exporter
-srv-directory = $${directory:srv}
-etc-directory = $${directory:etc}
-backup-directory = $${directory:backup}
-shell-binary = ${dash:location}/bin/dash
-rsync-binary = ${rsync:location}/bin/rsync
+recipe = slapos.recipe.template:jinja2
+template = ${template-runner-export-script:location}/${template-runner-export-script:filename}
+rendered = $${directory:bin}/$${slap-parameter:namebase}-exporter
+# backward compatibility for resilient stack
+wrapper = $${:rendered}
+mode = 700
+context =
+  section directory directory
+  raw  shell_binary ${dash:location}/bin/dash
+  raw  rsync_binary ${rsync:location}/bin/rsync
 
 [monitor-promise]
-url = $${monitor-frontend:config-url}/$${deploy-index:filename}
+url = $${monitor-frontend:config-url}/$${deploy-index-template:filename}
 
 # Extends publish section with resilient parameters
 [publish-connection-informations]
