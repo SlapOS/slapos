@@ -1,14 +1,34 @@
 [buildout]
 
 parts =
-  connection-dict
+  publish-connection-informations
   pbs
   logrotate
   cron
   cron-entry-logrotate
   sshkeys-authority
   sshkeys-dropbear
+## Monitoring part
+###Parts to add for monitoring
+  certificate-authority
+  cron-entry-monitor
+  cron-entry-rss
+  deploy-index
+  deploy-settings-cgi
+  deploy-status-cgi
+  setup-static-files
+  certificate-authority
+  zero-parameters
+  public-symlink
+  cgi-httpd-wrapper
+  cgi-httpd-graceful-wrapper
+  monitor-promise
+  monitor-instance-log-access
+## Monitor for pbs
+  monitor-current-log-access
+  monitor-backup-log-access
 
+extends = ${monitor-template:output}
 eggs-directory = ${buildout:eggs-directory}
 develop-eggs-directory = ${buildout:develop-eggs-directory}
 offline = true
@@ -215,9 +235,21 @@ slave_instance_list = []
 #--
 #-- Publish instance parameters.
 
-[connection-dict]
+[publish-connection-informations]
 recipe = slapos.cookbook:publish
 ssh-key = $${sshkeys-dropbear:public-key-value}
 notification-url = http://[$${notifier:host}]:$${notifier:port}/notify
 feeds-url = http://[$${notifier:host}]:$${notifier:port}/get/
 
+
+#----------------
+#--
+#-- Monitor
+
+[monitor-backup-log-access]
+< = monitor-directory-access
+source = $${directory:logrotate-backup}
+
+[monitor-current-log-access]
+< = monitor-directory-access
+source = $${basedirectory:log}
