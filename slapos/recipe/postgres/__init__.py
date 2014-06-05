@@ -76,14 +76,16 @@ class Recipe(GenericBaseRecipe):
     def install(self):
         pgdata = self.options['pgdata-directory']
 
-        # if the pgdata already exists, skip all steps, we don't need to do anything.
+        # if the pgdata already exists, only update the configuration files.
 
         if not os.path.exists(pgdata):
             self.createCluster()
-            self.createConfig()
+            self.updateConfig()
             self.createDatabase()
             self.updateSuperuser()
             self.createRunScript()
+        else:
+            self.updateConfig()
 
         # install() methods usually return the pathnames of managed files.
         # If they are missing, they will be rebuilt.
@@ -121,53 +123,44 @@ class Recipe(GenericBaseRecipe):
             raise UserError('Could not create cluster directory in %s' % pgdata)
 
 
-    def createConfig(self):
+    def updateConfig(self):
+        ret = []
+
         pgdata = self.options['pgdata-directory']
         ipv4 = self.options['ipv4']
         ipv6 = self.options['ipv6']
 
-        with open(os.path.join(pgdata, 'postgresql.conf'), 'wb') as cfg:
-            cfg.write(textwrap.dedent("""\
-                    listen_addresses = '%s'
-                    logging_collector = on
-                    log_rotation_size = 50MB
-                    max_connections = 100
-                    datestyle = 'iso, mdy'
+        postgresql_conf_path = os.path.join(pgdata, 'postgresql.conf')
+        with open(postgresql_conf_path, 'wb') as cfg:
+            ret.append(postgresql_conf_path)
+            template = self.options['template-postgresql-conf'].lstrip()
+            cfg.write(template.format(listen_addresses=','.join(ipv4.union(ipv6)),
+                                      unix_socket_directory=pgdata))
+            cfg.write('\n')
 
-                    lc_messages = 'en_US.UTF-8'
-                    lc_monetary = 'en_US.UTF-8'
-                    lc_numeric = 'en_US.UTF-8'
-                    lc_time = 'en_US.UTF-8'
-                    default_text_search_config = 'pg_catalog.english'
-
-                    unix_socket_directory = '%s'
-                    unix_socket_permissions = 0700
-                    """ % (
-                        ','.join(ipv4.union(ipv6)),
-                        pgdata,
-                        )))
-
-        with open(os.path.join(pgdata, 'pg_hba.conf'), 'wb') as cfg:
+        pghba_conf_path = os.path.join(pgdata, 'pg_hba.conf')
+        with open(pghba_conf_path, 'wb') as cfg:
+            ret.append(pghba_conf_path)
             # see http://www.postgresql.org/docs/9.2/static/auth-pg-hba-conf.html
 
-            cfg_lines = [
-                '# TYPE  DATABASE        USER            ADDRESS                 METHOD',
-                '',
-                '# "local" is for Unix domain socket connections only (check unix_socket_permissions!)',
-                'local   all             all                                     trust',
-                'host    all             all             127.0.0.1/32            md5',
-                'host    all             all             ::1/128                 md5',
-            ]
+            template_hba_ipv4 = self.options.get('template-hba-ipv4').strip()
+            ipv4_auth = ''
+            if template_hba_ipv4:
+                for ip in ipv4:
+                    ipv4_auth += template_hba_ipv4.format(ip=ip)
 
-            ipv4_netmask_bits = self.options.get('ipv4-netmask-bits', '32')
-            for ip in ipv4:
-                cfg_lines.append('host    all             all             %s/%s                   md5' % (ip, ipv4_netmask_bits))
+            template_hba_ipv6 = self.options.get('template-hba-ipv6').strip()
+            ipv6_auth = ''
+            if template_hba_ipv6:
+                for ip in ipv6:
+                    ipv6_auth += template_hba_ipv6.format(ip=ip)
 
-            ipv6_netmask_bits = self.options.get('ipv6-netmask-bits', '128')
-            for ip in ipv6:
-                cfg_lines.append('host    all             all             %s/%s                   md5' % (ip, ipv6_netmask_bits))
+            template = self.options['template-pg-hba-conf'].lstrip()
+            cfg.write(template.format(ipv4_auth=ipv4_auth,
+                                      ipv6_auth=ipv6_auth))
+            cfg.write('\n')
 
-            cfg.write('\n'.join(cfg_lines))
+        return ret
 
 
     def createDatabase(self):
