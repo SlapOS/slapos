@@ -13,6 +13,8 @@ extends =
 parts =
     directories
     sh-instance-environment
+    json-configuration
+    json-extra-configuration
     postgres-instance
     postgres-promise
     postgres-symlinks
@@ -20,8 +22,6 @@ parts =
     extranet-service
     extranet-promise
     config-staging-py
-    json-configuration
-    json-extra-configuration
     request-web-frontend
     publish-connection-parameters
     redis
