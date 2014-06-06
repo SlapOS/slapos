@@ -96,4 +96,6 @@ return = site_url
 recipe = slapos.cookbook:publish
 url = $${request-web-frontend:connection-site_url}
 ipv6_url = http://[$${instance-parameters:ipv6-random}]:$${extranet-promise:port}/
-name = test parameter
+postgres_host = $${postgres-promise:hostname}
+postgres_port = $${postgres-promise:port}
+
