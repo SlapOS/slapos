@@ -32,7 +32,8 @@ import random
 import string
 
 def generatePassword(length):
-  return ''.join(random.SystemRandom().sample(string.ascii_lowercase, length))
+  choice = random.SystemRandom().choice
+  return ''.join(choice(string.ascii_lowercase) for i in range(length))
 
 
 class Recipe(object):
