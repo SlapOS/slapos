@@ -59,20 +59,24 @@ sla-{{ parameter }} = {{ slapparameter_dict.pop( sla_key + parameter ) }}
 
 [replicate]
 <= slap-connection
-recipe = slapos.cookbook:request
+recipe = slapos.cookbook:requestoptional
 software-url = ${slap-connection:software-release-url}
 software-type = {{frontend_type}}
-return = private-ipv4 public-ipv4 slave-instance-information-list
+return = private-ipv4 public-ipv4 slave-instance-information-list monitor_url
 config = {{ ' '.join(slapparameter_dict.keys()) + ' ' + slave_list_name }}
 {% for parameter, value in slapparameter_dict.iteritems() -%}
 config-{{parameter}} = {{ value }}
 {% endfor -%}
 config-{{ slave_list_name }} = {{ json_module.dumps(slave_instance_list) }}
+connection-monitor_url =
 
 [publish-information]
 recipe = slapos.cookbook:publish
 domain = {{ slapparameter_dict.get('domain') }}
 slave-amount = {{ slave_instance_list | length }}
+{% for frontend in frontend_section_list %}
+{{ frontend }}-monitor-url = {{ '${' + frontend + ':connection-monitor_url}' }}
+{% endfor -%}
 {% for frontend in frontend_list -%}
 #{{frontend}}-private-ipv4 = ${request-{{frontend}}:private-ipv4}
 {% endfor -%}
