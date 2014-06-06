@@ -45,8 +45,7 @@ json-output = $${buildout:directory}/abilian-config-extra.json
 UNOCONV_LOCATION = ${unoconv-repository:location}/unoconv
 BROKER_URL = redis://localhost:6379/2
 CELERY_RESULT_BACKEND = redis://localhost:6379/2
-
-
+SECRET_KEY = $${csrf-secret-key:passwd}
 
 
 

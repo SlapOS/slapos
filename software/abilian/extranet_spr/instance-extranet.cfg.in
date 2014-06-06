@@ -5,6 +5,7 @@ parts =
     extranet-service
     extranet-promise
     config-staging-py
+    csrf-secret-key
 
 
 [extranet-symlinks]
@@ -43,4 +44,10 @@ mode = 600
 #context =
 #    section config config-staging
 
+
+[csrf-secret-key]
+recipe = slapos.cookbook:generate.password
+#no need to write other than in the json parameter file
+#storage-path = $${directories:etc}/csrf_secret_key
+bytes = 50
 
