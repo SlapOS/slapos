@@ -1,9 +1,18 @@
 #!{{ python_executable }}
 
+import cgi
 import cgitb
 import json
+import subprocess
+
+def refresh():
+  command = ["{{ monitor_bin }}", "-a"]
+  subprocess.call(command)
 
 cgitb.enable(display=0, logdir="/tmp/cgi.log")
+form = cgi.FieldStorage()
+if "refresh" in form:
+  refresh()
 
 json_file = "{{ json_file }}"
 result = json.load(open(json_file))
@@ -13,8 +22,12 @@ print "<link rel=\"stylesheet\" href=\"pure-min.css\">"
 print "<link rel=\"stylesheet\" href=\"/style.css\">"
 print "</head><body>"
 print "<h1>Monitoring :</h1>"
+print "<form action=\"/index.cgi\" method=\"post\" class=\"pure-form-aligned\">"
+print "<input type=\"hidden\" name=\"posting-script\" value=\"{{ pwd }}/{{ this_file }}\">"
 print "<p><em>Last time of monitoring process : %s</em></p>" % (result['datetime'])
 del result['datetime']
+print "<div class=\"pure-controls\"><button type=\"submit\" class=\"pure-button \
+ pure-button-primary\" name=\"refresh\" value=\"refresh\">Refresh</button></div></form>"
 print "<br/>"
 
 print "<h2>These scripts and promises have failed :</h2>"
