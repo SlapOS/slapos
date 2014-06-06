@@ -64,3 +64,14 @@ url = $${monitor-frontend:config-url}/$${deploy-index-template:filename}
 # Extends publish section with resilient parameters
 [publish-connection-informations]
 <= resilient-publish-connection-parameter
+
+[monitor-check-resilient-feed-file]
+recipe = slapos.recipe.template:jinja2
+template = ${template-monitor-check-resilient-feed:location}/${template-monitor-check-resilient-feed:filename}
+rendered = $${monitor-directory:monitor-custom-scripts}/check-create-resilient-feed-files.py
+mode = 700
+context =
+  key input_feed_directory directory:notifier-feeds
+  key monitor_feed_directory monitor-directory:public-cgi
+  raw base_url http://[$${notifier:host}]:$${notifier:port}/get/
+  raw python_executable ${buildout:executable}

@@ -27,6 +27,7 @@ parts =
 ## Monitor for pbs
   monitor-current-log-access
   monitor-backup-log-access
+  monitor-check-resilient-feed-file
 
 extends = ${monitor-template:output}
 eggs-directory = ${buildout:eggs-directory}
@@ -258,3 +259,14 @@ source = $${directory:logrotate-backup}
 [monitor-current-log-access]
 < = monitor-directory-access
 source = $${basedirectory:log}
+
+[monitor-check-resilient-feed-file]
+recipe = slapos.recipe.template:jinja2
+template = ${template-monitor-check-resilient-feed:location}/${template-monitor-check-resilient-feed:filename}
+rendered = $${monitor-directory:monitor-custom-scripts}/check-create-resilient-feed-files.py
+mode = 700
+context =
+  key input_feed_directory directory:notifier-feeds
+  key monitor_feed_directory monitor-directory:public-cgi
+  key base_url publish-connection-informations:feeds-url
+  raw python_executable ${buildout:executable}
