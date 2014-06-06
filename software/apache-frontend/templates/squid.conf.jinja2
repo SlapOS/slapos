@@ -23,6 +23,8 @@ header_replace X-Forwarded-For
 follow_x_forwarded_for allow all
 forwarded_for on
 
+cache_dir aufs {{ cache_path }} 5000 16 256
+
 # Use 1Go of RAM
 cache_mem 1024 MB
 # But do not keep big object in RAM

@@ -7,104 +7,108 @@ key = $${slap-connection:key-file}
 cert = $${slap-connection:cert-file}
 
 [monitor-parameters]
-monitor-dir = $${directory:var}/monitor
-result-dir = $${:monitor-dir}/bool
 json-filename = monitor.json
-json-path = $${:monitor-dir}/$${:json-filename}
-rss-path = $${:public-cgi}/$${:rss-filename}
+json-path = $${monitor-directory:monitor-result}/$${:json-filename}
 rss-filename = rssfeed.html
-executable = $${directory:bin}/monitor.py
-cgi-bin = $${directory:cgi-bin}
-monitoring-cgi = $${directory:monitoring-cgi}
-knowledge0-cgi = $${directory:knowledge0-cgi}
-public-cgi = $${directory:public-cgi}
+rss-path = $${monitor-directory:public-cgi}/$${:rss-filename}
+executable = $${monitor-directory:bin}/monitor.py
 port = 9685
+htaccess-file = $${monitor-directory:etc}/.htaccess-monitor
+url = https://[$${slap-parameters:ipv6-random}]:$${:port}
+index-filename = index.cgi
+index-path = $${monitor-directory:www}/$${:index-filename}
+db-path = $${monitor-directory:etc}/monitor.db
 
-[directory]
+[monitor-directory]
+recipe = slapos.cookbook:mkdirectory
+# Standard directory needed by monitoring stack
 home = $${buildout:directory}
 etc = $${:home}/etc
 bin = $${:home}/bin
 srv = $${:home}/srv
 var = $${:home}/var
+log = $${:var}/log
+run = $${:var}/run
+service = $${:etc}/service/
+etc-run = $${:etc}/run/
+tmp = $${:home}/tmp
+promise = $${:etc}/promise
 
-promises = $${:etc}/promise
-ca-dir = $${:srv}/ssl
-cgi-bin = $${:var}/cgi-bin
-monitoring-cgi = $${:cgi-bin}/monitoring
-knowledge0-cgi = $${:cgi-bin}/zero-knowledge
 cron-entries = $${:etc}/cron.d
 crontabs = $${:etc}/crontabs
 cronstamps = $${:etc}/cronstamps
-log = $${:var}/log
-monitor = $${:etc}/monitor
-monitor-result = $${monitor-parameters:monitor-dir}
-monitor-result-bool = $${monitor-parameters:result-dir}
-promise = $${:etc}/promise
-public-cgi = $${:cgi-bin}/public
-run = $${:var}/run
-service = $${:etc}/service/
-tmp = $${:home}/tmp
+
+ca-dir = $${:srv}/ssl
 www = $${:var}/www
+
+cgi-bin = $${:var}/cgi-bin
+monitoring-cgi = $${:cgi-bin}/monitoring
+knowledge0-cgi = $${:cgi-bin}/zero-knowledge
+public-cgi = $${:cgi-bin}/public
+
+monitor-custom-scripts = $${:etc}/monitor
+monitor-result = $${:var}/monitor
+
+private-directory = $${:srv}/monitor-private
 
 [public-symlink]
 recipe = cns.recipe.symlink
-symlink = $${monitor-parameters:public-cgi} = $${directory:www}/public
+symlink = $${monitor-directory:public-cgi} = $${monitor-directory:www}/public
 autocreate = true
 
 [cron]
 recipe = slapos.cookbook:cron
 dcrond-binary = ${dcron:location}/sbin/crond
-cron-entries = $${directory:cron-entries}
-crontabs = $${directory:crontabs}
-cronstamps = $${directory:cronstamps}
+cron-entries = $${monitor-directory:cron-entries}
+crontabs = $${monitor-directory:crontabs}
+cronstamps = $${monitor-directory:cronstamps}
 catcher = $${cron-simplelogger:wrapper}
-binary = $${directory:service}/crond
+binary = $${monitor-directory:service}/crond
 
 # Add log to cron
 [cron-simplelogger]
 recipe = slapos.cookbook:simplelogger
-wrapper = $${directory:bin}/cron_simplelogger
-log = $${directory:log}/cron.log
+wrapper = $${monitor-directory:bin}/cron_simplelogger
+log = $${monitor-directory:log}/cron.log
 
 [cron-entry-monitor]
 <= cron
 recipe = slapos.cookbook:cron.d
 name = launch-monitor
 frequency = */5 * * * *
-command = $${monitor-parameters:executable} -a
+command = $${deploy-monitor-script:rendered} -a
 
 [cron-entry-rss]
 <= cron
 recipe = slapos.cookbook:cron.d
 name = build-rss
 frequency = */5 * * * *
-command = $${make-rss:output}
+command = $${make-rss:rendered}
 
 [setup-static-files]
 recipe = hexagonit.recipe.download
 url = ${download-static-files:destination}/${download-static-files:filename}
 filename = static
-destination = $${directory:www}
+destination = $${monitor-directory:www}
 ignore-existing = true
 mode = 0644
 
 [deploy-index]
 recipe = slapos.recipe.template:jinja2
 template = ${index:location}/${index:filename}
-rendered = $${directory:www}/$${:filename}
-filename = index.cgi
+rendered = $${monitor-parameters:index-path}
 mode = 0744
 context =
-  key cgi_directory monitor-parameters:cgi-bin
+  key cgi_directory monitor-directory:cgi-bin
   raw index_template $${deploy-index-template:location}/$${deploy-index-template:filename}
   key password zero-parameters:monitor-password
   raw extra_eggs_interpreter ${buildout:directory}/bin/${extra-eggs:interpreter}
-  raw default_page /index.cgi?script=$${monitor-parameters:knowledge0-cgi}%2F$${deploy-settings-cgi:filename}
+  raw default_page /welcome.html
 
 [deploy-index-template]
 recipe = hexagonit.recipe.download
 url = ${index-template:location}/$${:filename}
-destination = $${directory:www}
+destination = $${monitor-directory:www}
 filename = ${index-template:filename}
 download-only = true
 mode = 0644
@@ -112,24 +116,27 @@ mode = 0644
 [deploy-status-cgi]
 recipe = slapos.recipe.template:jinja2
 template = ${status-cgi:location}/${status-cgi:filename}
-rendered = $${monitor-parameters:monitoring-cgi}/$${:filename}
+rendered = $${monitor-directory:monitoring-cgi}/$${:filename}
 filename = status.cgi
 mode = 0744
 context =
   key json_file monitor-parameters:json-path
+  key monitor_bin monitor-parameters:executable
+  key pwd monitor-directory:monitoring-cgi
+  key this_file :filename
   raw python_executable ${buildout:executable}
 
 [deploy-settings-cgi]
 recipe = slapos.recipe.template:jinja2
 template = ${settings-cgi:location}/${settings-cgi:filename}
-rendered = $${monitor-parameters:knowledge0-cgi}/$${:filename}
+rendered = $${monitor-directory:knowledge0-cgi}/$${:filename}
 filename = settings.cgi
 mode = 0744
 context =
   raw config_cfg $${buildout:directory}/knowledge0.cfg
   raw timestamp $${buildout:directory}/.timestamp
   raw python_executable ${buildout:executable}
-  key pwd monitor-parameters:knowledge0-cgi
+  key pwd monitor-directory:knowledge0-cgi
   key this_file :filename
 
 [deploy-monitor-script]
@@ -138,39 +145,51 @@ template = ${monitor-bin:location}/${monitor-bin:filename}
 rendered = $${monitor-parameters:executable}
 mode = 0744
 context =
-  section directory directory
+  section directory monitor-directory
+  section monitor_parameter monitor-parameters
   key monitoring_file_json monitor-parameters:json-path
-  key monitoring_folder_bool monitor-parameters:result-dir
   raw python_executable ${buildout:executable}
 
-[deploy-rss-script]
-recipe = hexagonit.recipe.download
-url = ${rss-bin:destination}/${rss-bin:filename}
-destination = $${directory:bin}
-filename = ${rss-bin:filename}
-mode = 0744
-download-only = true
-
 [make-rss]
-recipe = slapos.recipe.template
-url = ${make-rss-script:output}
-output = $${directory:bin}/make-rss.sh
+recipe = slapos.recipe.template:jinja2
+template = ${make-rss-script:output}
+rendered = $${monitor-directory:bin}/make-rss.sh
 mode = 0744
+context =
+  section directory monitor-directory
+  section monitor_parameters monitor-parameters
+
+[monitor-htaccess]
+recipe = plone.recipe.command
+stop-on-error = true
+htaccess-path = $${monitor-parameters:htaccess-file}
+command = ${apache:location}/bin/htpasswd -cb $${:htaccess-path} admin $${zero-parameters:monitor-password}
+
+[monitor-directory-access]
+recipe = plone.recipe.command
+command = ln -s $${:source} $${monitor-directory:private-directory}
+source =
+
+[monitor-instance-log-access]
+recipe = plone.recipe.command
+command = if [ -d $${:source} ]; then ln -s $${:source} $${monitor-directory:private-directory}/instance-logs; fi
+update-command = if [ -d $${:source} ]; then ln -s $${:source} $${monitor-directory:private-directory}/instance-logs; fi
+source = $${monitor-directory:home}/.slapgrid/log/
 
 [cadirectory]
 recipe = slapos.cookbook:mkdirectory
-requests = $${directory:ca-dir}/requests/
-private = $${directory:ca-dir}/private/
-certs = $${directory:ca-dir}/certs/
-newcerts = $${directory:ca-dir}/newcerts/
-crl = $${directory:ca-dir}/crl/
+requests = $${monitor-directory:ca-dir}/requests/
+private = $${monitor-directory:ca-dir}/private/
+certs = $${monitor-directory:ca-dir}/certs/
+newcerts = $${monitor-directory:ca-dir}/newcerts/
+crl = $${monitor-directory:ca-dir}/crl/
 
 [certificate-authority]
 recipe = slapos.cookbook:certificate_authority
 openssl-binary = ${openssl:location}/bin/openssl
-ca-dir = $${directory:ca-dir}
+ca-dir = $${monitor-directory:ca-dir}
 requests-directory = $${cadirectory:requests}
-wrapper = $${directory:service}/certificate_authority
+wrapper = $${monitor-directory:service}/certificate_authority
 ca-private = $${cadirectory:private}
 ca-certs = $${cadirectory:certs}
 ca-newcerts = $${cadirectory:newcerts}
@@ -181,8 +200,8 @@ ca-crl = $${cadirectory:crl}
 recipe = slapos.cookbook:certificate_authority.request
 key-file = $${cadirectory:certs}/httpd.key
 cert-file = $${cadirectory:certs}/httpd.crt
-executable = $${directory:bin}/cgi-httpd
-wrapper = $${directory:service}/cgi-httpd
+executable = $${monitor-directory:bin}/cgi-httpd
+wrapper = $${monitor-directory:service}/cgi-httpd
 # Put domain name
 name = example.com
 
@@ -214,11 +233,18 @@ input = inline:
   LoadModule unixd_module modules/mod_unixd.so
   LoadModule access_compat_module modules/mod_access_compat.so
   LoadModule authz_core_module modules/mod_authz_core.so
+  LoadModule authn_core_module modules/mod_authn_core.so
   LoadModule authz_host_module modules/mod_authz_host.so
   LoadModule mime_module modules/mod_mime.so
   LoadModule cgid_module modules/mod_cgid.so
   LoadModule dir_module modules/mod_dir.so
   LoadModule ssl_module modules/mod_ssl.so
+  LoadModule alias_module modules/mod_alias.so
+  LoadModule autoindex_module modules/mod_autoindex.so
+  LoadModule auth_basic_module modules/mod_auth_basic.so
+  LoadModule authz_user_module modules/mod_authz_user.so
+  LoadModule authn_file_module modules/mod_authn_file.so
+
   # SSL Configuration
   <IfDefine !SSLConfigured>
   Define SSLConfigured
@@ -241,16 +267,31 @@ input = inline:
     # XXX: security????
     Options +ExecCGI
     AddHandler cgi-script .cgi
-    DirectoryIndex $${deploy-index:filename}
+    DirectoryIndex $${monitor-parameters:index-filename}
   </Directory>
-output = $${directory:etc}/cgi-httpd.conf
+  Alias /private/ $${monitor-directory:private-directory}/
+  <Directory $${monitor-directory:private-directory}>
+  Order Deny,Allow
+  Deny from env=AUTHREQUIRED
+  <Files ".??*">
+    Order Allow,Deny
+    Deny from all
+  </Files>
+  AuthType Basic
+  AuthName "Private access"
+  AuthUserFile "$${monitor-htaccess:htaccess-path}"
+  Require valid-user
+  Options Indexes FollowSymLinks
+  Satisfy all
+  </Directory>
+output = $${monitor-directory:etc}/cgi-httpd.conf
 listening-ip = $${slap-parameters:ipv6-random}
 # XXX: randomize-me
-htdocs = $${directory:www}
-pid-file = $${directory:run}/cgi-httpd.pid
-cgid-pid-file = $${directory:run}/cgi-httpd-cgid.pid
-document-root = $${directory:www}
-error-log = $${directory:log}/cgi-httpd-error-log
+htdocs = $${monitor-directory:www}
+pid-file = $${monitor-directory:run}/cgi-httpd.pid
+cgid-pid-file = $${monitor-directory:run}/cgi-httpd-cgid.pid
+document-root = $${monitor-directory:www}
+error-log = $${monitor-directory:log}/cgi-httpd-error-log
 
 [cgi-httpd-wrapper]
 recipe = slapos.cookbook:wrapper
@@ -258,15 +299,20 @@ apache-executable = ${apache:location}/bin/httpd
 command-line = $${:apache-executable} -f $${cgi-httpd-configuration-file:output} -DFOREGROUND
 wrapper-path = $${ca-httpd:executable}
 
+[cgi-httpd-graceful-wrapper]
+recipe = slapos.cookbook:wrapper
+command-line = kill -USR1 $(cat $${cgi-httpd-configuration-file:pid-file})
+wrapper-path = $${monitor-directory:etc-run}/cgi-httpd-graceful
+
 [monitor-promise]
 recipe = slapos.cookbook:check_url_available
-path = $${directory:promises}/monitor
-url = https://[$${cgi-httpd-configuration-file:listening-ip}]:$${monitor-parameters:port}/$${deploy-index:filename}
+path = $${monitor-directory:promise}/monitor
+url = $${monitor-parameters:url}/$${monitor-parameters:index-filename}
 check-secure = 1
 dash_path = ${dash:location}/bin/dash
 curl_path = ${curl:location}/bin/curl
 
 [publish-connection-informations]
 recipe = slapos.cookbook:publish
-monitor_url = https://[$${cgi-httpd-configuration-file:listening-ip}]:$${monitor-parameters:port}
-IMPORTANT_monitor_info = Change the monitor_password as soon as possible ! Default is : $${public:monitor-password}
+monitor_url = $${monitor-parameters:url}
+IMPORTANT_monitor_info = Change the monitor_password as soon as possible ! Default is : $${public:monitor-password} . You can change it in the setting.cgi section of your monitorin interface
