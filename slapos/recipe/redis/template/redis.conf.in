@@ -153,7 +153,7 @@ dir %(server_dir)s
 # starting the replication synchronization process, otherwise the master will
 # refuse the slave request.
 #
-%(master_passwd)s
+%(masterauth)s
 
 # When a slave lost the connection with the master, or when the replication
 # is still in progress, the slave can act in two different ways:
@@ -212,7 +212,7 @@ slave-read-only yes
 # 150k passwords per second against a good box. This means that you should
 # use a very strong password otherwise it will be very easy to break.
 #
-# requirepass foobared
+%(requirepass)s
 
 # Command renaming.
 #

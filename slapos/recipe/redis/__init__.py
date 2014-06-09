@@ -33,17 +33,30 @@ class Recipe(GenericBaseRecipe):
   def install(self):
     path_list = []
 
+    # XXX use_passwd and passwd should be deprecated, they have confusing names.
     if not self.optionIsTrue('use_passwd', False):
-      master_passwd = "# masterauth <master-password>"
+      masterauth = "# masterauth <master-password>"
     else:
-      master_passwd = "masterauth %s" % self.options['passwd']
+      masterauth = "masterauth %s" % self.options['passwd']
+
+    if self.options.get('masterauth'):
+      masterauth = "masterauth %s" % self.options['masterauth']
+    else:
+      masterauth = "# masterauth <master-password>"
+
+    if self.options.get('requirepass'):
+      requirepass = "requirepass %s" % self.options['requirepass']
+    else:
+      requirepass = "# requirepass foobared"
+
     config_file = self.options['config_file'].strip()
     configuration = dict(pid_file=self.options['pid_file'],
                         port=self.options['port'],
                         ipv6=self.options['ipv6'],
                         server_dir=self.options['server_dir'],
                         log_file=self.options['log_file'],
-                        master_passwd=master_passwd
+                        masterauth=masterauth,
+                        requirepass=requirepass
     )
 
     config = self.createFile(config_file,
@@ -63,7 +76,11 @@ class Recipe(GenericBaseRecipe):
       promise = self.createPythonScript(
         promise_script,
         '%s.promise.main' % __name__,
-        dict(host=self.options['ipv6'], port=self.options['port'])
+        {
+          'host': self.options['ipv6'],
+          'port': self.options['port'],
+          'requirepass_file': self.options.get('promise_requirepass_file')
+        }
       )
       path_list.append(promise)
 

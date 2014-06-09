@@ -7,12 +7,17 @@ import sys
 def main(args):
   host = args['host']
   port = int(args['port'])
+  password = None
   try:
-    pool = redis.ConnectionPool(host=host, port=port, db=0)
+    # use a passfile, we don't store it cleartext on the recipe
+    if 'requirepass_file' in args:
+      with open(args['requirepass_file']) as fin:
+        password = fin.read()
+    pool = redis.ConnectionPool(host=host, port=port, db=0, password=password)
     r = redis.Redis(connection_pool=pool)
-    r.publish("Promise-Service","SlapOS Promise")
+    r.publish('Promise-Service', 'SlapOS Promise')
     pool.disconnect()
     sys.exit(0)
-  except Exception, e:
+  except Exception as e:
     print str(e)
     sys.exit(1)
