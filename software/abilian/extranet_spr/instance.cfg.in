@@ -17,7 +17,6 @@ parts =
     json-extra-configuration
     postgres-instance
     postgres-promise
-    postgres-symlinks
     extranet-symlinks
     extranet-service
     extranet-promise
