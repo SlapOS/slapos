@@ -18,8 +18,20 @@ link-binary =
 [extranet-service]
 recipe = slapos.recipe.template:jinja2
 template = inline:
-    #!/bin/sh
+    #!/bin/bash
     . {{environment}}
+    [ -f "$${json-extra-configuration:json-output}" ] || {
+        echo "Configuration file $${json-extra-configuration:json-output} does not exist (yet?)" >&2
+        exit 10
+    }
+    [ -f "$${buildout:directory}/partition-parameters.json" ] || {
+        echo "Configuration file $${buildout:directory}/partition-parameters.json does not exist (yet?)" >&2
+        exit 20
+    }
+    [ -f "$${config-staging-py:rendered}" ] || {
+        echo "Configuration file $${config-staging-py:rendered} does not exist (yet?)" >&2
+        exit 30
+    }
     exec {{abilian}} run
 rendered = $${directories:services}/abilian-start
 mode = 700

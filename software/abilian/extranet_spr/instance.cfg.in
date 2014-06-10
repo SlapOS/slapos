@@ -12,9 +12,9 @@ extends =
 
 parts =
     directories
-    sh-instance-environment
     json-configuration
     json-extra-configuration
+    sh-instance-environment
     postgres-instance
     postgres-promise
     extranet-symlinks
