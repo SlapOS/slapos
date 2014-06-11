@@ -2,6 +2,8 @@
 parts =
   postgres-instance
   postgres-promise
+  postgres-backup
+  cron-postgres-backup
 
 
 # Define egg directories to be the one from Software Release
@@ -99,4 +101,26 @@ partition = $${slap-connection:partition-id}
 url = $${slap-connection:server-url}
 key = $${slap-connection:key-file}
 cert = $${slap-connection:cert-file}
+
+
+[postgres-backup]
+recipe = slapos.recipe.template:jinja2
+template = inline:
+    #!/bin/bash
+    . {{environment}}
+    {{postgres_bin}}/pg_dumpall --clean --file=$${directories:backup}/dumpall
+    echo "backup done"
+rendered = $${directories:bin}/postgres-backup
+mode = 700
+context =
+    raw     environment     $${buildout:directory}/environment.sh
+    raw     postgres_bin    $${postgres-instance:bin}
+
+
+[cron-postgres-backup]
+<= cron
+recipe = slapos.cookbook:cron.d
+name = postgres-backup
+frequency = 0 3 * * *
+command = $${postgres-backup:rendered}
 

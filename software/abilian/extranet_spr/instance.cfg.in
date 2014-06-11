@@ -24,6 +24,9 @@ parts =
     request-web-frontend
     publish-connection-parameters
     redis
+    cron
+    postgres-backup
+    cron-postgres-backup
 
 
 
@@ -65,18 +68,39 @@ mode = 0644
 recipe = slapos.cookbook:mkdirectory
 bin = $${buildout:directory}/bin
 etc = $${buildout:directory}/etc
-run = $${directories:var}/run
-scripts = $${directories:etc}/run
+cron-entries = $${:etc}/cron.d
+crontabs = $${:etc}/crontabs
+cronstamps = $${:etc}/cronstamps
+run = $${:var}/run
+scripts = $${:etc}/run
 srv = $${buildout:directory}/srv
-services = $${directories:etc}/service
-promises = $${directories:etc}/promise
+services = $${:etc}/service
+promises = $${:etc}/promise
 var = $${buildout:directory}/var
+backup = $${:var}/backup
 extranet_spr-instance = $${:var}/extranet_spr-instance
 cache = $${:extranet_spr-instance}/cache
 data = $${:extranet_spr-instance}/data
-log = $${directories:var}/log
-tmp = $${directories:var}/tmp
+log = $${:var}/log
+tmp = $${:var}/tmp
 whoosh = $${:data}/whoosh
+
+
+[cron-simplelogger]
+recipe = slapos.cookbook:simplelogger
+wrapper = $${directories:bin}/cron_simplelogger
+log = $${directories:log}/cron.log
+
+
+[cron]
+recipe = slapos.cookbook:cron
+dcrond-binary = ${dcron:location}/sbin/crond
+cron-entries = $${directories:cron-entries}
+crontabs = $${directories:crontabs}
+cronstamps = $${directories:cronstamps}
+catcher = $${cron-simplelogger:wrapper}
+binary = $${directories:services}/crond
+
 
 
 [request-web-frontend]

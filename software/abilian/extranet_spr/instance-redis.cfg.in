@@ -21,7 +21,7 @@ server_dir = $${directories:srv}
 requirepass = $${redis-requirepass:passwd}
 config_file = $${directories:etc}/redis.conf
 log_file = $${directories:log}/redis.log
-wrapper = $${directories:services}/redis_server
+wrapper = $${directories:services}/redis-server
 promise_wrapper = $${directories:promises}/redis
 promise_requirepass_file = $${redis-requirepass:storage-path}
 
