@@ -45,7 +45,7 @@ print "<br/>"
 print "<h2>These scripts and promises have failed :</h2>"
 for r in result:
   if result[r] != '':
-    print "<h3>%s</h3><p style=\"padding-left:30px;\">%s</p>" % (r, result[r])
+    print "<h3>%s</h3><pre style=\"padding-left:30px;\">%s</pre>" % (cgi.escape(r), cgi.escape(result[r]))
 print "<br/>"
 
 print "<h2>These scripts and promises were successful :</h2>"
