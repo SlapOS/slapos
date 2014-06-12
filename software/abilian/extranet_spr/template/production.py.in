@@ -1,0 +1,46 @@
+# coding=utf-8
+"""
+"""
+from __future__ import absolute_import
+
+SERVER_NAME = 'extranet2.systematic-paris-region.org'
+PRODUCTION = True
+DEBUG = False
+TESTING = False
+CSRF_ENABLED = True
+
+LOGGING_CONFIG_FILE = 'logging-production.yml'
+
+SQL_QUERIES_COUNT_ALERT = 150
+
+#SQLALCHEMY_DATABASE_URI =
+SQLALCHEMY_ECHO = False
+
+#API_KEY =
+#SECRET_KEY =
+#SALT =
+
+WHOOSH_BASE = 'data/whoosh'
+
+SITE_NAME = u'SPR'
+
+#SENTRY_DSN =
+
+MAIL_SENDER = u'extranet-admin@systematic-paris-region.org'
+BULK_MAIL_SENDER = u'noreply@systematic-paris-region.org'
+MAIL_FAIL_SILENTLY = False
+
+PREFERRED_URL_SCHEME = 'https'
+
+#UNOCONV_LOCATION =
+
+# celery settings
+#BROKER_URL =
+#CELERY_RESULT_BACKEND =
+CELERYD_CONCURRENCY = 2
+CELERYD_PREFETCH_MULTIPLIER = 1
+
+# in particular periodic tasks should be listed here
+CELERY_IMPORTS = [
+    'extranet_spr.apps.notifications.views',
+    ]

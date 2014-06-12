@@ -5,6 +5,7 @@ parts =
     extranet-service
     extranet-promise
     config-staging-py
+    config-production-py
     csrf-secret-key
 
 
@@ -32,13 +33,16 @@ template = inline:
         echo "Configuration file $${config-staging-py:rendered} does not exist (yet?)" >&2
         exit 30
     }
+    [ -f "$${config-production-py:rendered}" ] || {
+        echo "Configuration file $${config-production-py:rendered} does not exist (yet?)" >&2
+        exit 40
+    }
     exec {{abilian}} run
 rendered = $${directories:services}/abilian-start
 mode = 700
 context =
     raw     environment     $${buildout:directory}/environment.sh
     raw     abilian         ${buildout:directory}/bin/abilian
-
 
 
 [extranet-promise]
@@ -55,6 +59,14 @@ rendered = $${buildout:directory}/etc/staging.py
 mode = 600
 #context =
 #    section config config-staging
+
+
+[config-production-py]
+recipe = slapos.recipe.template:jinja2
+template = ${config-production-py-template:location}/${config-production-py-template:filename}
+rendered = $${buildout:directory}/etc/production.py
+mode = 600
+
 
 
 [csrf-secret-key]
