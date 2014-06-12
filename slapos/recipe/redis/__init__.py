@@ -24,7 +24,6 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #
 ##############################################################################
-import os
 
 from slapos.recipe.librecipe import GenericBaseRecipe
 
@@ -49,15 +48,38 @@ class Recipe(GenericBaseRecipe):
     else:
       requirepass = "# requirepass foobared"
 
+    if self.options.get('ipv6'):
+      bind6 = "bind6 %s" % self.options['ipv6']
+    else:
+      bind6 = "# bind6 <address>"
+
+    if self.options.get('ipv4'):
+      bind = "bind %s" % self.options['ipv4']
+    else:
+      bind = "# bind <address>"
+
+    if self.options.get('port6'):
+      port6 = "port6 %s" % self.options['port6']
+    else:
+      port6 = "# port6 6379"
+
+    if self.options.get('port'):
+      port = "port %s" % self.options['port']
+    else:
+      port = "# port 6379"
+
     config_file = self.options['config_file'].strip()
-    configuration = dict(pid_file=self.options['pid_file'],
-                        port=self.options['port'],
-                        ipv6=self.options['ipv6'],
-                        server_dir=self.options['server_dir'],
-                        log_file=self.options['log_file'],
-                        masterauth=masterauth,
-                        requirepass=requirepass
-    )
+    configuration = {
+            'pid_file': self.options['pid_file'],
+            'bind6': bind6,
+            'bind': bind,
+            'port6': port6,
+            'port': port,
+            'server_dir': self.options['server_dir'],
+            'log_file': self.options['log_file'],
+            'masterauth': masterauth,
+            'requirepass': requirepass
+        }
 
     config = self.createFile(config_file,
       self.substituteTemplate(self.getTemplateFilename('redis.conf.in'),
@@ -78,7 +100,7 @@ class Recipe(GenericBaseRecipe):
         '%s.promise.main' % __name__,
         {
           'host': self.options['ipv6'],
-          'port': self.options['port'],
+          'port': self.options['port6'],
           'requirepass_file': self.options.get('promise_requirepass_file')
         }
       )
