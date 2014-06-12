@@ -44,6 +44,8 @@ parts +=
 ## Monitor for runner
   monitor-current-log-access
   monitor-backup-log-access
+## Monitor for import runner
+  monitor-latest-restored-backup
 
 [importer]
 recipe = slapos.recipe.template:jinja2
@@ -62,6 +64,18 @@ context =
 [slap-parameter]
 auto-deploy-instance = false
 
+[resilient-publish-connection-parameter]
+monitor-url = $${monitor-parameters:url}
+
 [monitor-backup-log-access]
 < = monitor-directory-access
 source = $${directory:logrotate-backup}
+
+[monitor-latest-restored-backup]
+recipe = slapos.recipe.template:jinja2
+command = if [ -f $${directory:etc}/.resilient-timestamp ]; then echo "$(date -d @$(cat $${directory:etc}/.resilient-timestamp) +%c)"; else echo "No backup timestamp found"; fi
+rendered = $${monitor-directory:monitoring-cgi}/latest-restored-backup
+template = ${template-wrapper:output}
+mode = 744
+context =
+  key content :command
