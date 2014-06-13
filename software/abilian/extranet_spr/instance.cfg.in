@@ -6,6 +6,7 @@ offline = true
 
 extends =
     ${instance-postgres:output}
+    ${instance-nginx:output}
     ${instance-extranet:output}
     ${instance-redis:output}
     ${instance-environment:output}
@@ -27,6 +28,7 @@ parts =
     cron
     postgres-backup
     cron-postgres-backup
+    nginx
 
 
 
@@ -67,24 +69,30 @@ mode = 0644
 
 [directories]
 recipe = slapos.cookbook:mkdirectory
-bin = $${buildout:directory}/bin
-etc = $${buildout:directory}/etc
+home = $${buildout:directory}
+bin = $${:home}/bin
+etc = $${:home}/etc
 cron-entries = $${:etc}/cron.d
 crontabs = $${:etc}/crontabs
 cronstamps = $${:etc}/cronstamps
 run = $${:var}/run
 scripts = $${:etc}/run
-srv = $${buildout:directory}/srv
+srv = $${:home}/srv
 services = $${:etc}/service
 promises = $${:etc}/promise
-var = $${buildout:directory}/var
+var = $${:home}/var
 backup = $${:var}/backup
 extranet_spr-instance = $${:var}/extranet_spr-instance
 cache = $${:extranet_spr-instance}/cache
 data = $${:extranet_spr-instance}/data
-log = $${:var}/log
+log = $${:home}/logs
 tmp = $${:var}/tmp
 whoosh = $${:data}/whoosh
+nginx-configuration = $${:etc}/nginx
+nginx-vhost-configuration = $${:nginx-configuration}/vhost
+nginx-cache = $${:var}/cache
+nginx-temp-path = $${:srv}/nginx-proxy
+
 
 
 [cron-simplelogger]

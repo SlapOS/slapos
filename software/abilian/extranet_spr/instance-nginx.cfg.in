@@ -1,0 +1,43 @@
+[buildout]
+parts =
+  nginx
+
+
+# Define egg directories to be the one from Software Release
+# (/opt/slapgrid/...)
+eggs-directory = ${buildout:eggs-directory}
+develop-eggs-directory = ${buildout:develop-eggs-directory}
+offline = true
+
+
+
+[nginx-configuration]
+recipe = slapos.recipe.template:jinja2
+template = ${nginx.conf.in:location}/nginx.conf.in
+rendered = $${directories:nginx-configuration}/nginx.conf
+context =
+    raw     pid_file                $${directories:run}/nginx.pid
+    raw     error_log               $${directories:log}/nginx.log
+    raw     server_name             test
+    raw     ssl_certificate         $${directories:home}/server.crt
+    raw     ssl_certificate_key     $${directories:home}/server.key
+    raw     access_log              $${directories:log}/test-ssl-access.log
+    raw     ipv6                    $${instance-parameters:ipv6-random}
+
+
+
+#configuration-template-path = ${nginx.conf.in:location}/nginx.conf.in
+#
+#vhost-configuration-directory-location = $${directories:nginx-vhost-configuration}
+#nginx-prefix = ${nginx-enable-sub:location}
+#nginx-temp-path = $${directories:nginx-temp-path}
+#home-directory = $${directories:home}
+
+
+[nginx]
+recipe = slapos.cookbook:wrapper
+nginx-executable = $${:nginx-prefix}/sbin/nginx
+nginx-prefix = ${nginx-enable-sub:location}
+command-line = $${:nginx-executable} -c $${nginx-configuration:rendered} -p $${directories:home}
+wrapper-path = $${directories:services}/nginx
+
