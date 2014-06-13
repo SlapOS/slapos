@@ -3,6 +3,7 @@
 import cgi
 import cgitb
 import json
+import os
 import subprocess
 
 def refresh():
@@ -11,10 +12,21 @@ def refresh():
 
 cgitb.enable(display=0, logdir="/tmp/cgi.log")
 form = cgi.FieldStorage()
-if "refresh" in form:
-  refresh()
 
 json_file = "{{ json_file }}"
+
+if not os.path.exists(json_file) or "refresh" in form:
+  refresh()
+
+if not os.path.exists(json_file):
+  print """<html><head>
+  <link rel="stylesheet" href="pure-min.css">
+  <link rel="stylesheet" href="/style.css">
+  </head><body>
+  <h1>Monitoring :</h1>
+  No status file found</p></body></html>"""
+  exit(0)
+
 result = json.load(open(json_file))
 
 print "<html><head>"
