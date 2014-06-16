@@ -17,14 +17,19 @@ config_file = "{{ config_cfg }}"
 
 if not os.path.exists(config_file):
   print "Your software does <b>not</b> embed 0-knowledge. \
-  This interface is useless in this case"
+  This interface is useless in this case</body></html>"
   exit(0)
 
 parser = ConfigParser.ConfigParser()
 parser.read(config_file)
 
+if not parser.has_section('public'):
+  print "<p>Your software does not use 0-knowledge settings.</p></body></html>"
+  exit(0)
+
 for name in form:
-  parser.set('public', name, form[name].value)
+  if parser.has_option('public', name):
+    parser.set('public', name, form[name].value)
 with open(config_file, 'w') as file:
   parser.write(file)
 

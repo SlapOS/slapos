@@ -18,6 +18,7 @@ url = https://[$${slap-parameters:ipv6-random}]:$${:port}
 index-filename = index.cgi
 index-path = $${monitor-directory:www}/$${:index-filename}
 db-path = $${monitor-directory:etc}/monitor.db
+monitor-password-path = $${monitor-directory:etc}/.monitor.shadow
 
 [monitor-directory]
 recipe = slapos.cookbook:mkdirectory
@@ -97,11 +98,14 @@ mode = 0644
 recipe = slapos.recipe.template:jinja2
 template = ${index:location}/${index:filename}
 rendered = $${monitor-parameters:index-path}
+update-apache-access = ${apache:location}/bin/htpasswd -cb $${monitor-parameters:htaccess-file} admin
 mode = 0744
 context =
   key cgi_directory monitor-directory:cgi-bin
   raw index_template $${deploy-index-template:location}/$${deploy-index-template:filename}
-  key password zero-parameters:monitor-password
+  key monitor_password_path monitor-parameters:monitor-password-path
+  key monitor_password_script_path deploy-monitor-password-cgi:rendered
+  key apache_update_command :update-apache-access
   raw extra_eggs_interpreter ${buildout:directory}/bin/${extra-eggs:interpreter}
   raw default_page /welcome.html
 
@@ -139,6 +143,17 @@ context =
   key pwd monitor-directory:knowledge0-cgi
   key this_file :filename
 
+[deploy-monitor-password-cgi]
+recipe = slapos.recipe.template:jinja2
+template = ${monitor-password-cgi:location}/${monitor-password-cgi:filename}
+rendered = $${monitor-directory:knowledge0-cgi}/$${:filename}
+filename = monitor-password.cgi
+mode = 0744
+context =
+  raw python_executable ${buildout:executable}
+  key pwd monitor-directory:knowledge0-cgi
+  key this_file :filename
+
 [deploy-monitor-script]
 recipe = slapos.recipe.template:jinja2
 template = ${monitor-bin:location}/${monitor-bin:filename}
@@ -158,12 +173,6 @@ mode = 0744
 context =
   section directory monitor-directory
   section monitor_parameters monitor-parameters
-
-[monitor-htaccess]
-recipe = plone.recipe.command
-stop-on-error = true
-htaccess-path = $${monitor-parameters:htaccess-file}
-command = ${apache:location}/bin/htpasswd -cb $${:htaccess-path} admin $${zero-parameters:monitor-password}
 
 [monitor-directory-access]
 recipe = plone.recipe.command
@@ -211,7 +220,6 @@ name = example.com
 [public]
 recipe = slapos.cookbook:zero-knowledge.write
 filename = knowledge0.cfg
-monitor-password = passwordtochange
 
 [zero-parameters]
 recipe = slapos.cookbook:zero-knowledge.read
@@ -279,7 +287,7 @@ input = inline:
   </Files>
   AuthType Basic
   AuthName "Private access"
-  AuthUserFile "$${monitor-htaccess:htaccess-path}"
+  AuthUserFile "$${monitor-parameters:htaccess-file}"
   Require valid-user
   Options Indexes FollowSymLinks
   Satisfy all
@@ -315,4 +323,3 @@ curl_path = ${curl:location}/bin/curl
 [publish-connection-informations]
 recipe = slapos.cookbook:publish
 monitor_url = $${monitor-parameters:url}
-IMPORTANT_monitor_info = Change the monitor_password as soon as possible ! Default is : $${public:monitor-password} . You can change it in the setting.cgi section of your monitorin interface
