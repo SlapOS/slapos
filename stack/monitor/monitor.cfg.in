@@ -131,6 +131,17 @@ context =
   key this_file :filename
   raw python_executable ${buildout:executable}
 
+[deploy-status-history-cgi]
+recipe = slapos.recipe.template:jinja2
+template = ${status-history-cgi:location}/${status-history-cgi:filename}
+rendered = $${monitor-directory:monitoring-cgi}/$${:filename}
+filename = status-history.cgi
+mode = 0744
+context =
+  key monitor_db_path monitor-parameters:db-path
+  key status_history_length zero-parameters:status-history-length
+  raw python_executable ${buildout:executable}
+
 [deploy-settings-cgi]
 recipe = slapos.recipe.template:jinja2
 template = ${settings-cgi:location}/${settings-cgi:filename}
@@ -221,6 +232,7 @@ name = example.com
 [public]
 recipe = slapos.cookbook:zero-knowledge.write
 filename = knowledge0.cfg
+status-history-length = 5
 
 [zero-parameters]
 recipe = slapos.cookbook:zero-knowledge.read
