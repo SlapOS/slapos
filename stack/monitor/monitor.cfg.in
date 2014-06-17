@@ -88,10 +88,11 @@ command = $${make-rss:rendered}
 
 [setup-static-files]
 recipe = hexagonit.recipe.download
-url = ${download-static-files:destination}/${download-static-files:filename}
+url = ${download-monitor-static:destination}/${download-monitor-static:filename}
 filename = static
 destination = $${monitor-directory:www}
 ignore-existing = true
+strip-top-level-dir = true
 mode = 0644
 
 [deploy-index]
