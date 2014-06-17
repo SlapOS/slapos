@@ -3,6 +3,7 @@
 import cgi
 import cgitb
 import json
+import os
 import subprocess
 
 def refresh():
@@ -11,15 +12,26 @@ def refresh():
 
 cgitb.enable(display=0, logdir="/tmp/cgi.log")
 form = cgi.FieldStorage()
-if "refresh" in form:
-  refresh()
 
 json_file = "{{ json_file }}"
+
+if not os.path.exists(json_file) or "refresh" in form:
+  refresh()
+
+if not os.path.exists(json_file):
+  print """<html><head>
+  <link rel="stylesheet" href="static/pure-min.css">
+  <link rel="stylesheet" href="static/style.css">
+  </head><body>
+  <h1>Monitoring :</h1>
+  No status file found</p></body></html>"""
+  exit(0)
+
 result = json.load(open(json_file))
 
 print "<html><head>"
-print "<link rel=\"stylesheet\" href=\"pure-min.css\">"
-print "<link rel=\"stylesheet\" href=\"/style.css\">"
+print "<link rel=\"stylesheet\" href=\"static/pure-min.css\">"
+print "<link rel=\"stylesheet\" href=\"static/style.css\">"
 print "</head><body>"
 print "<h1>Monitoring :</h1>"
 print "<form action=\"/index.cgi\" method=\"post\" class=\"pure-form-aligned\">"
@@ -33,7 +45,7 @@ print "<br/>"
 print "<h2>These scripts and promises have failed :</h2>"
 for r in result:
   if result[r] != '':
-    print "<h3>%s</h3><p style=\"padding-left:30px;\">%s</p>" % (r, result[r])
+    print "<h3>%s</h3><pre style=\"padding-left:30px;\">%s</pre>" % (cgi.escape(r), cgi.escape(result[r]))
 print "<br/>"
 
 print "<h2>These scripts and promises were successful :</h2>"

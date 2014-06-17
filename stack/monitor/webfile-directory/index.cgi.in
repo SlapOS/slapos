@@ -1,0 +1,188 @@
+#!{{ extra_eggs_interpreter }}
+
+import cgi
+import cgitb
+import Cookie
+import base64
+import hashlib
+import hmac
+import jinja2
+import os
+import subprocess
+import urllib
+
+cgitb.enable(display=0, logdir="/tmp/cgi.log")
+
+form = cgi.FieldStorage()
+cookie = Cookie.SimpleCookie()
+
+cgi_path = "{{ cgi_directory }}"
+
+monitor_password_path = "{{ monitor_password_path }}"
+monitor_password_script_path = "{{ monitor_password_script_path }}"
+
+monitor_apache_password_command = "{{ apache_update_command }}"
+
+########
+# Password functions
+#######
+def crypt(word, salt="$$"):
+  salt = salt.split("$")
+  algo = salt[0] or 'sha1'
+  if algo in hashlib.algorithms:
+    H = getattr(hashlib, algo)
+  elif algo == "plain":
+    return "%s$%s" % (algo, word)
+  else:
+    raise ValueError
+  rounds = min(max(0, int(salt[1])), 30) if salt[1] else 9
+  salt = salt[2] or base64.b64encode(os.urandom(12), "./")
+  h = hmac.new(salt, word, H).digest()
+  for x in xrange(1, 1 << rounds):
+    h = H(h).digest()
+  return "%s$%s$%s$%s" % (algo, rounds, salt,
+    base64.b64encode(h, "./").rstrip("="))
+
+def is_password_set():
+  if not os.path.exists(monitor_password_path):
+    return False
+  hashed_password = open(monitor_password_path, 'r').read()
+  try:
+    void, algo, salt, hsh = hashed_password.split('$')
+  except ValueError:
+    return False
+  return True
+
+def set_password(raw_password):
+  hashed_password = crypt(raw_password)
+  subprocess.check_call(monitor_apache_password_command + " %s" % raw_password,
+                        shell=True)
+  open(monitor_password_path, 'w').write(hashed_password)
+
+
+def check_password(raw_password):
+  """
+  Returns a boolean of whether the raw_password was correct. Handles
+  encryption formats behind the scenes.
+  """
+  if not os.path.exists(monitor_password_path) or not raw_password:
+    return False
+  hashed_password = open(monitor_password_path, 'r').read()
+  return hashed_password == crypt(raw_password, hashed_password)
+### End of password functions
+
+def forward_form():
+  command = os.path.join(cgi_path, form['posting-script'].value)
+  params_dict = {}
+  for f in form:
+    params_dict[f] = form[f].value
+  del params_dict['posting-script']
+  os.environ['QUERY_STRING'] = urllib.urlencode(params_dict)
+  try:
+    if os.access(command, os.X_OK):
+      print '\n', subprocess.check_output([command])
+  except subprocess.CalledProcessError:
+    print "There is a problem with sub-process"
+    pass
+
+
+def return_document(command=None):
+  if not command:
+    script = form['script'].value
+    command = os.path.join(cgi_path, script)
+  #XXX this functions should be called only for display,
+  #so a priori it doesn't need form data
+  os.environ['QUERY_STRING'] = ''
+  try:
+    if os.access(command, os.X_OK):
+      print '\n', subprocess.check_output([command])
+    elif os.access(command, os.R_OK):
+      print open(command).read()
+    else:
+      raise OSError
+  except (subprocess.CalledProcessError, OSError) as e:
+    print "<p>Error :</p><pre>%s</pre>" % e
+
+
+def make_menu():
+  # Transform deep-2 tree in json
+  folder_list = {}
+  for folder in os.listdir(cgi_path):
+    if os.path.isdir(os.path.join(cgi_path, folder)):
+      folder_list[folder] = []
+  for folder in folder_list:
+    for file in os.listdir(os.path.join(cgi_path, folder)):
+      if os.path.isfile(os.path.join(cgi_path, folder, file)):
+        folder_list[folder].append(file)
+  return folder_list
+
+
+def get_cookie_password():
+  cookie_string = os.environ.get('HTTP_COOKIE')
+  if cookie_string:
+    cookie.load(cookie_string)
+    try:
+      return cookie['password'].value
+    except KeyError:
+      pass
+  return None
+
+def set_cookie_password(password):
+  cookie['password'] = password
+  print cookie, "; Path=/; HttpOnly"
+
+
+# Beginning of response
+print "Content-Type: text/html"
+
+password = None
+
+# Check if user is logged
+if "password_2" in form and "password" in form:
+  password_2 = form['password_2'].value
+  password_1 = form['password'].value
+  password = get_cookie_password()
+  if not is_password_set() or check_password(password):
+    if password_2 == password_1:
+      password = password_1
+      set_password(password)
+      set_cookie_password(password)
+elif "password" in form:
+  password = form['password'].value
+  if is_password_set() and check_password(password):
+    set_cookie_password(password)
+else:
+  password = get_cookie_password()
+print '\n'
+
+
+if not is_password_set():
+  return_document(monitor_password_script_path)
+elif not check_password(password):
+  print "<html><head>"
+  print """
+    <link rel="stylesheet" href="static/pure-min.css">
+    <link rel="stylesheet" href="static/style.css">"""
+  print "</head><body>"
+  if password is None:
+    print "<h1>This is the monitoring interface</h1>"
+  else:
+    print "<h1>Error</h1><p>Wrong password</p>"
+  print """
+  <p>Please enter the monitor_password in the next field to access the data</p>
+  <form action="/index.cgi" method="post" class="pure-form-aligned">
+    Password : <input type="password" name="password">
+    <button type="submit" class="pure-button pure-button-primary">Access</button>
+  </form>
+  </body></html>"""
+# redirection to the required script/page
+else:
+  print
+  if "posting-script" in form:
+    forward_form()
+  elif "script" in form:
+    return_document()
+  else:
+    html_base = jinja2.Template(open('{{ index_template }}').read())
+    print
+    print html_base.render(tree=make_menu(), default_page="{{ default_page }}")

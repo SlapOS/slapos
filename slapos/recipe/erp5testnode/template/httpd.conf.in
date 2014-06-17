@@ -50,12 +50,38 @@ SSLHonorCipherOrder On
 SSLCipherSuite RC4-SHA:HIGH:!ADH
 SSLProxyEngine On
 
-DocumentRoot "%(testnode_log_directory)s"
+
+#DocumentRoot "%(testnode_log_directory)s"
+# Directory protection
+#<Directory />
+#    Options Indexes FollowSymLinks
+#    IndexOptions FancyIndexing
+#    order allow,deny
+#    Allow from All
+#</Directory>
 
 # Directory protection
-<Directory />
-    Options Indexes FollowSymLinks
-    IndexOptions FancyIndexing
-    order allow,deny
-    Allow from All
-</Directory>
+<VirtualHost *:%(port)s>
+    SSLEngine on
+    RewriteRule (.*) http://[%(ip)s]:%(port)s/VirtualHostBase/https/[%(ip)s]:%(port)s/VirtualHostRoot/$1 [L,P]
+    DocumentRoot "%(testnode_log_directory)s"
+    <Directory />
+        Options Indexes FollowSymLinks
+        IndexOptions FancyIndexing
+        order allow,deny
+        Allow from All
+    </Directory>
+</VirtualHost>
+
+Listen [%(ip)s]:%(software_access_port)s
+<VirtualHost *:%(software_access_port)s>
+    SSLEngine on
+    RewriteRule (.*) http://[%(ip)s]:%(software_access_port)s/VirtualHostBase/https/[%(ip)s]:%(software_access_port)s/VirtualHostRoot/$1 [L,P]
+    DocumentRoot "%(testnode_software_directory)s"
+    <Directory />
+        Options FollowSymLinks
+        IndexOptions FancyIndexing
+        order allow,deny
+        Allow from All
+   </Directory>
+</VirtualHost>
