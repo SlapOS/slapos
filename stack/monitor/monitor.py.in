@@ -7,6 +7,7 @@ import subprocess
 import sys
 import sqlite3
 import time
+import threading
 from optparse import OptionParser, make_option
 
 
@@ -34,6 +35,26 @@ option_list = [
               help="add the file containing services\'pid to the files to monitor")
 ]
 
+class Popen(subprocess.Popen):
+  __timeout = None
+
+  def timeout(self, delay, delay_before_kill=5):
+    if self.__timeout is not None: self.__timeout.cancel()
+    self.__timeout = threading.Timer(delay, self.stop, [delay_before_kill])
+    self.__timeout.start()
+    def waiter():
+        self.wait()
+        self.__timeout.cancel()
+    threading.Thread(target=waiter).start()
+
+  def stop(self, delay_before_kill=5):
+    if self.__timeout is not None: self.__timeout.cancel()
+    self.terminate()
+    t = threading.Timer(delay_before_kill, self.kill)
+    t.start()
+    r = self.wait()
+    t.cancel()
+    return r
 
 def init_db():
   db = sqlite3.connect(db_path)
@@ -89,24 +110,26 @@ def runServices(directory):
 
 def runScripts(directory):
   scripts = getListOfScripts(directory)
-  script_timeout = 3
+  # XXX script_timeout could be passed as parameters
+  script_timeout = 60 # in seconds
   result = {}
   for script in scripts:
     command = [os.path.join(promise_dir, script)]
     script = os.path.basename(command[0])
     result[script] = ''
 
-    process_handler = subprocess.Popen(command,
-                                       cwd=instance_path,
-                                       env=None if sys.platform == 'cygwin' else {},
-                                       stdout=subprocess.PIPE,
-                                       stderr=subprocess.PIPE,
-                                       stdin=subprocess.PIPE)
+    process_handler = Popen(command,
+                            cwd=instance_path,
+                            env=None if sys.platform == 'cygwin' else {},
+                            stdout=subprocess.PIPE,
+                            stderr=subprocess.PIPE,
+                            stdin=subprocess.PIPE)
     process_handler.stdin.flush()
     process_handler.stdin.close()
     process_handler.stdin = None
 
-    time.sleep(script_timeout)
+    process_handler.timeout(script_timeout)
+    process_handler.wait()
 
     if process_handler.poll() is None:
       process_handler.terminate()
