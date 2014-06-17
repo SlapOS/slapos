@@ -12,8 +12,8 @@ status_history_length = '{{ status_history_length }}'
 db = sqlite3.connect(db_path)
 
 print """<html><head>
-  <link rel="stylesheet" href="pure-min.css">
-  <link rel="stylesheet" href="/style.css">
+  <link rel="stylesheet" href="static/pure-min.css">
+  <link rel="stylesheet" href="static/style.css">
   </head><body>
   <h1>Monitor Status History :</h1>"""
 

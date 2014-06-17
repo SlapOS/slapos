@@ -87,13 +87,9 @@ frequency = */5 * * * *
 command = $${make-rss:rendered}
 
 [setup-static-files]
-recipe = hexagonit.recipe.download
-url = ${download-monitor-static:destination}/${download-monitor-static:filename}
-filename = static
-destination = $${monitor-directory:www}
-ignore-existing = true
-strip-top-level-dir = true
-mode = 0644
+recipe = plone.recipe.command
+command = ln -s ${download-monitor-jquery:destination} $${monitor-directory:www}/static
+update-command = $${:command}
 
 [deploy-index]
 recipe = slapos.recipe.template:jinja2
@@ -108,7 +104,7 @@ context =
   key monitor_password_script_path deploy-monitor-password-cgi:rendered
   key apache_update_command :update-apache-access
   raw extra_eggs_interpreter ${buildout:directory}/bin/${extra-eggs:interpreter}
-  raw default_page /welcome.html
+  raw default_page /static/welcome.html
 
 [deploy-index-template]
 recipe = hexagonit.recipe.download

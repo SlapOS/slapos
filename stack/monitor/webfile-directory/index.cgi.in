@@ -161,8 +161,8 @@ if not is_password_set():
 elif not check_password(password):
   print "<html><head>"
   print """
-    <link rel="stylesheet" href="pure-min.css">
-    <link rel="stylesheet" href="/style.css">"""
+    <link rel="stylesheet" href="static/pure-min.css">
+    <link rel="stylesheet" href="static/style.css">"""
   print "</head><body>"
   if password is None:
     print "<h1>This is the monitoring interface</h1>"

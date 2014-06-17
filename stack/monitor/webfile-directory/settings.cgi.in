@@ -9,8 +9,8 @@ cgitb.enable()
 form = cgi.FieldStorage()
 
 print "<html><head>"
-print "<link rel=\"stylesheet\" href=\"pure-min.css\">"
-print "<link rel=\"stylesheet\" href=\"/style.css\">"
+print "<link rel=\"stylesheet\" href=\"static/pure-min.css\">"
+print "<link rel=\"stylesheet\" href=\"static/style.css\">"
 print "</head><body>"
 
 config_file = "{{ config_cfg }}"
