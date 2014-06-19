@@ -23,6 +23,13 @@ def load_config():
         if key in ['SECRET_KEY']:
             globals()[key] = str(value)
 
+    # interpolate password if needed
+
+    try:
+        globals()['SQLALCHEMY_DATABASE_URI'] = SQLALCHEMY_DATABASE_URI % {'password': SQLALCHEMY_DATABASE_PASSWORD}
+    except NameError:
+        pass
+
 
 load_config()
 del load_config

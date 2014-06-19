@@ -54,7 +54,8 @@ template-pg-hba-conf =
     # TYPE  DATABASE        USER            ADDRESS                 METHOD
     # "local" is for Unix domain socket connections only (check unix_socket_permissions!)
     local   all             all                                     trust
-    host    all             all             127.0.0.1/32            md5
+    #do not conflict with other postgres instances on the same node
+    #host    all             all             127.0.0.1/32            md5
     {ipv4_auth}
 
 template-hba-ipv4 =
