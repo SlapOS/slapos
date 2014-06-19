@@ -70,7 +70,7 @@ class Recipe(GenericBaseRecipe):
     """
 
     def _options(self, options):
-        options['url'] = 'postgresql://%(superuser)s:%(password)s@[%(ipv6-random)s]:%(port)s/%(dbname)s' % options
+        options['url'] = 'postgresql://%(superuser)s:%(password)s@[%(ipv4)s]:%(port)s/%(dbname)s' % options
 
 
     def install(self):
@@ -128,13 +128,15 @@ class Recipe(GenericBaseRecipe):
 
         pgdata = self.options['pgdata-directory']
         ipv4 = self.options['ipv4']
-        ipv6 = self.options['ipv6']
+        ipv6 = self.options.get('ipv6', set())
 
         postgresql_conf_path = os.path.join(pgdata, 'postgresql.conf')
         with open(postgresql_conf_path, 'wb') as cfg:
             ret.append(postgresql_conf_path)
             template = self.options['template-postgresql-conf'].lstrip()
-            cfg.write(template.format(listen_addresses=','.join(ipv4.union(ipv6)),
+            cfg.write(template.format(ipv4_listen_addresses=','.join(ipv4),
+                                      ipv6_listen_addresses=','.join(ipv6),
+                                      listen_addresses=','.join(ipv4.union(ipv6)),
                                       unix_socket_directory=pgdata))
             cfg.write('\n')
 
@@ -143,13 +145,13 @@ class Recipe(GenericBaseRecipe):
             ret.append(pghba_conf_path)
             # see http://www.postgresql.org/docs/9.2/static/auth-pg-hba-conf.html
 
-            template_hba_ipv4 = self.options.get('template-hba-ipv4').strip()
+            template_hba_ipv4 = self.options.get('template-hba-ipv4', '').strip()
             ipv4_auth = ''
             if template_hba_ipv4:
                 for ip in ipv4:
                     ipv4_auth += template_hba_ipv4.format(ip=ip)
 
-            template_hba_ipv6 = self.options.get('template-hba-ipv6').strip()
+            template_hba_ipv6 = self.options.get('template-hba-ipv6', '').strip()
             ipv6_auth = ''
             if template_hba_ipv6:
                 for ip in ipv6:

@@ -112,7 +112,7 @@ name = Web Frontend
 software-url = http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg
 slave = true
 config = url
-config-url = https://[$${instance-parameters:ipv6-random}]:$${extranet-promise:port}/
+config-url = https://[$${instance-parameters:ipv6-random}]:$${extranet-promise:port}
 return = site_url
 
 
