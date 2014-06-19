@@ -282,6 +282,8 @@ class TestSlapOSSlapToolComputerAccess(TestSlapOSSlapToolMixin):
                   <unicode>%(slave_1_instance_guid)s</unicode>
                   <string>slave_title</string>
                   <unicode>%(slave_1_title)s</unicode>
+                  <string>timestamp</string>
+                  <int>%(partition_1_timestamp)s</int>
                 </dictionary>
               </list>
               <string>timestamp</string>
@@ -891,6 +893,8 @@ class TestSlapOSSlapToolInstanceAccess(TestSlapOSSlapToolMixin):
                   <unicode>%(slave_1_instance_guid)s</unicode>
                   <string>slave_title</string>
                   <unicode>%(slave_1_title)s</unicode>
+                  <string>timestamp</string>
+                  <int>%(timestamp)s</int>
                 </dictionary>
               </list>
               <string>timestamp</string>
@@ -1095,6 +1099,8 @@ class TestSlapOSSlapToolInstanceAccess(TestSlapOSSlapToolMixin):
             <unicode>%(slave_1_instance_guid)s</unicode>
             <string>slave_title</string>
             <unicode>%(slave_1_title)s</unicode>
+            <string>timestamp</string>
+            <int>%(timestamp)s</int>
           </dictionary>
         </list>
         <string>timestamp</string>
@@ -2107,6 +2113,8 @@ class TestSlapOSSlapToolPersonAccess(TestSlapOSSlapToolMixin):
             <unicode>%(slave_1_instance_guid)s</unicode>
             <string>slave_title</string>
             <unicode>%(slave_1_title)s</unicode>
+            <string>timestamp</string>
+            <int>%(timestamp)s</int>
           </dictionary>
         </list>
         <string>timestamp</string>
