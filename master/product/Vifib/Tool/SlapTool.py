@@ -1366,15 +1366,16 @@ class SlapTool(BaseTool):
         slave_instance = _assertACI(slave_instance.getObject())
         # XXX Use catalog to filter more efficiently
         if slave_instance.getSlapState() == "start_requested":
+          newtimestamp = int(slave_instance.getBangTimestamp(int(software_instance.getModificationDate())))                  
           append({
             'slave_title': slave_instance.getTitle().decode("UTF-8"),
             'slap_software_type': \
                 slave_instance.getSourceReference().decode("UTF-8"),
             'slave_reference': slave_instance.getReference().decode("UTF-8"),
+            'timestamp': newtimestamp,
             'xml': slave_instance.getTextContent(),
             'connection_xml': slave_instance.getConnectionXml(),
           })
-          newtimestamp = int(slave_instance.getBangTimestamp(int(software_instance.getModificationDate())))                  
           if (newtimestamp > timestamp):                                            
             timestamp = newtimestamp
     return {
