@@ -103,13 +103,16 @@ sla-{{ parameter }} = {{ slapparameter_dict.pop( sla_key + parameter ) }}
 {%   if slave_state ==  slave_deploy %}
 {%     do slave_configuration.get(slave_reference).__setitem__('deploy_configuration', slave_configuration.get(slave_reference).get('configuration')) %}
 {%   elif slave_state == slave_test %}
-{%     do slave_test_list.append(slave_configuration.get(slave_reference, 'configuration')) %}
+{%     do slave_test_list.append(slave_configuration.get(slave_reference).get('configuration')) %}
 {%   endif %}
 {%   if slave_state !=  slave_stop and slave_configuration.get(slave_reference).has_key('deploy_configuration') %}
-{%     do slave_deploy_list.append(slave_configuration.get(slave_reference, 'configuration')) %}
+{%     do slave_deploy_list.append(slave_configuration.get(slave_reference).get('deploy_configuration')) %}
+{%     if slave_state != slave_test %}
+{%       do slave_test_list.append(slave_configuration.get(slave_reference).get('configuration')) %}
+{%     endif %}
 {%   endif %}
 {% endfor %}
-{% do json_module.dump(slave_configuration, builtin.open(slave_configuration_path, 'w')) %}
+{% do json_module.dump(slave_configuration, builtin.open(slave_configuration_path, 'w'), indent=2) %}
 
 [replicate]
 <= slap-connection
@@ -162,6 +165,73 @@ extra-context =
 ###########################
 # Deploy slave configuration
 #
+{{ dumps(slave_test_list) }}
+
+
+# Hardcoded dummy cache, we never start the apache
+{% set cache_access = "http://%s:%s" % ("127.0.0.0", "23432") -%}
+{% set generic_instance_parameter_dict = {'cache_access': cache_access,} -%}
+{% set apache_log_directory = root_directory + '/var/log/httpd/' -%}
+{% set slave_configuration_directory = root_directory + '/etc/apache-slave-conf.d/' -%}
+{% set custom_ssl_directory = slave_configuration_directory + 'ssl/' -%}
+
+# Loop trhought slave list to set up slaves
+{% for slave_instance in slave_test_list -%}
+{%   set slave_reference = slave_instance.get('slave_reference') -%}
+{%   set slave_section_title = 'dynamic-template-slave-instance-%s' % slave_reference -%}
+{%   set slave_parameter_dict = generic_instance_parameter_dict.copy() -%}
+{%   do part_list.append(slave_section_title) -%}
+
+# Set Up log files
+{%   do slave_parameter_dict.__setitem__('access_log', '/'.join([apache_log_directory, '%s_access_log' % slave_reference])) -%}
+{%   do slave_parameter_dict.__setitem__('error_log', '/'.join([apache_log_directory, '%s_error_log' % slave_reference])) -%}
+
+
+# Set up apache configuration file for slave
+[{{ slave_section_title }}]
+< = jinja2-template-base
+template = {{ build_path.get('template-slave-configuration') }}
+filename = {{ '%s.conf' % slave_reference }}
+rendered = {{ slave_configuration_directory }}/${:filename}
+extra-context =
+    key apache_custom_https {{ 'slave-instance-%s-configuration:apache_custom_https' % slave_reference }}
+    key apache_custom_http {{ 'slave-instance-%s-configuration:apache_custom_http' % slave_reference }}
+    raw https_port {{ slapparameter_dict.get('port', 4443) }}
+    raw http_port {{ slapparameter_dict.get('plain_http_port', 8080) }}
+{{ '\n' }}
+
+# Set ssl certificates for each slave
+{%   for cert_name in ('ssl_key', 'ssl_crt', 'ssl_ca_crt', 'ssl_csr')-%}
+{%     if cert_name in slave_instance -%}
+{%       set cert_title = '%s-%s' % (slave_reference, cert_name.replace('ssl_', '')) -%}
+{%       set cert_file = '/'.join([custom_ssl_directory, cert_title.replace('-','.')]) -%}
+{%       do part_list.append(cert_title) -%}
+{%       do slave_parameter_dict.__setitem__(cert_name, cert_file) -%}
+# Store certificates on fs
+[{{ cert_title }}]
+< = jinja2-template-base
+template = {{ build_path.get('template-empty') }}
+rendered = {{ cert_file }}
+extra-context =
+    key content {{ cert_title + '-config:value' }}
+# Store certificate in config
+[{{ cert_title + '-config' }}]
+value = {{ dumps(slave_instance.get(cert_name)) }}
+{%     endif -%}
+{%   endfor -%}
+
+# Set apache configuration value for slave
+[{{ ('slave-instance-%s-configuration' % slave_reference) }}]
+{%   set apache_custom_http = ((slave_instance.get('apache_custom_http', '')) % slave_parameter_dict) -%}
+{%   set apache_custom_https = ((slave_instance.get('apache_custom_https', '')) % slave_parameter_dict) -%}
+apache_custom_http = {{ dumps(apache_custom_http) }}
+apache_custom_https = {{ dumps(apache_custom_https) }}
+{{ '\n' }}
+{% endfor -%}
+
+###########################
+# Deploy apache configuration
+#
 
 [directory]
 recipe = slapos.cookbook:mkdirectory
@@ -173,6 +243,7 @@ var = ${buildout:directory}/var/
 
 service = ${:etc}/service
 log = ${:var}/log
+httpd-log = {{ apache_log_directory }}
 ca-dir = ${:srv}/ssl
 run = ${:var}/run
 
@@ -222,11 +293,11 @@ extra-context =
 [apache-directory]
 recipe = slapos.cookbook:mkdirectory
 document-root = ${directory:srv}/htdocs
-slave-configuration = ${directory:etc}/apache-slave-conf.d/
+slave-configuration = {{ slave_configuration_directory }}
 cache = ${directory:var}/cache
 mod-ssl = ${:cache}/httpd_mod_ssl
-vh-ssl = ${:slave-configuration}/ssl
-slave-log = ${directory:log}/httpd
+vh-ssl = {{ custom_ssl_directory }}
+slave-log = {{ apache_log_directory }}
 
 [apache-configuration]
 frontend-configuration = ${directory:etc}/apache_frontend.conf
