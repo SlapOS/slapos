@@ -128,7 +128,9 @@ SSLProtocol ALL -SSLv2
 SSLProxyCheckPeerCN off
 SSLProxyCheckPeerExpire off
 
+{% if 'log-access-configuration' in frontend_configuration %}
 include {{frontend_configuration.get('log-access-configuration')}}
+{% endif %}
 
 NameVirtualHost *:{{ http_port }}
 NameVirtualHost *:{{ https_port }}

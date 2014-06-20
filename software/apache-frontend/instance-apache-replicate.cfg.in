@@ -10,6 +10,7 @@ context =
     key develop_eggs_directory buildout:develop-eggs-directory
     key slap_software_type slap-parameter:slap_software_type
     key slave_instance_list slap-parameter:slave_instance_list
+    section slapparameter_dict slap-parameter
     ${:extra-context}
 
 ################################
@@ -158,10 +159,143 @@ extensions = jinja2.ext.do
 extra-context =
     section slave_information slave-information
 
+###########################
+# Deploy slave configuration
+#
+
+[directory]
+recipe = slapos.cookbook:mkdirectory
+
+bin = ${buildout:directory}/bin/
+etc = ${buildout:directory}/etc/
+srv = ${buildout:directory}/srv/
+var = ${buildout:directory}/var/
+
+service = ${:etc}/service
+log = ${:var}/log
+ca-dir = ${:srv}/ssl
+run = ${:var}/run
+
+
+[frontend-configuration]
+#template-log-access = ${template-log-access:target}
+apache-directory = {{ build_path.get('apache-location') }}
+apache-ipv6 = ${slap-network-information:global-ipv6}
+apache-https-port = ${slap-parameter:port}
+
+[dynamic-template-default-vh]
+< = jinja2-template-base
+template = {{ build_path.get('template-default-virtualhost') }}
+rendered = ${apache-directory:slave-configuration}/000.conf
+extensions = jinja2.ext.do
+extra-context =
+    key http_port slap-parameter:plain_http_port
+    key https_port slap-parameter:port
+
+[dynamic-apache-frontend-template]
+< = jinja2-template-base
+template = {{ build_path.get('template-apache-frontend-configuration') }}
+rendered = ${apache-configuration:frontend-configuration}
+extra-context =
+    raw httpd_home {{ build_path.get('apache-location') }}
+    key httpd_mod_ssl_cache_directory apache-directory:mod-ssl
+    key domain slap-parameter:domain
+    key document_root apache-directory:document-root
+    key instance_home buildout:directory
+    key ipv4_addr slap-network-information:local-ipv4
+    key ipv6_addr slap-network-information:global-ipv6
+    key http_port slap-parameter:plain_http_port
+    key https_port slap-parameter:port
+    raw server_admin Admin
+    key protected_path apache-configuration:protected-path
+    key access_control_string apache-configuration:access-control-string
+    key login_certificate ca-frontend:cert-file
+    key login_key ca-frontend:key-file
+    key ca_dir  certificate-authority:ca-dir
+    key ca_crl certificate-authority:ca-crl
+    key access_log apache-configuration:access-log
+    key error_log apache-configuration:error-log
+    key pid_file apache-configuration:pid-file
+    key slave_configuration_directory apache-directory:slave-configuration
+    section frontend_configuration frontend-configuration
+
+[apache-directory]
+recipe = slapos.cookbook:mkdirectory
+document-root = ${directory:srv}/htdocs
+slave-configuration = ${directory:etc}/apache-slave-conf.d/
+cache = ${directory:var}/cache
+mod-ssl = ${:cache}/httpd_mod_ssl
+vh-ssl = ${:slave-configuration}/ssl
+slave-log = ${directory:log}/httpd
+
+[apache-configuration]
+frontend-configuration = ${directory:etc}/apache_frontend.conf
+cached-configuration = ${directory:etc}/apache_frontend_cached.conf
+access-log = ${directory:log}/frontend-apache-access.log
+error-log = ${directory:log}/frontend-apache-error.log
+pid-file = ${directory:run}/httpd.pid
+protected-path = /
+access-control-string = none
+cached-rewrite-file = ${directory:etc}/apache_rewrite_cached.txt
+frontend-configuration-verification = {{ build_path.get('apache-location') }}/bin/httpd -Sf ${:frontend-configuration}
+frontend-graceful-command = ${:frontend-configuration-verification}; if [ $? -eq 0 ]; then kill -USR1 $(cat ${:pid-file}); fi
+cached-configuration-verification = {{ build_path.get('apache-location') }}/bin/httpd -Sf ${:cached-configuration}
+cached-graceful-command = ${:cached-configuration-verification}; if [ $? -eq 0 ]; then kill -USR1 $(cat ${apache-configuration:cache-pid-file}); fi
+
+# Apache for cache configuration
+cache-access-log = ${directory:log}/frontend-apache-access-cached.log
+cache-error-log = ${directory:log}/frontend-apache-error-cached.log
+cache-pid-file = ${directory:run}/httpd-cached.pid
+
+[configtest]
+recipe = slapos.cookbook:wrapper
+command-line = {{ build_path.get('apache-location') }}/bin/httpd -f ${directory:etc}/apache_frontend.conf -t
+wrapper-path = ${directory:bin}/apache-configtest
+
+[certificate-authority]
+recipe = slapos.cookbook:certificate_authority
+openssl-binary = {{ build_path.get('openssl-location') }}/bin/openssl
+ca-dir = ${directory:ca-dir}
+requests-directory = ${cadirectory:requests}
+wrapper = ${directory:service}/certificate_authority
+ca-private = ${cadirectory:private}
+ca-certs = ${cadirectory:certs}
+ca-newcerts = ${cadirectory:newcerts}
+ca-crl = ${cadirectory:crl}
+
+[cadirectory]
+recipe = slapos.cookbook:mkdirectory
+requests = ${directory:ca-dir}/requests/
+private = ${directory:ca-dir}/private/
+certs = ${directory:ca-dir}/certs/
+newcerts = ${directory:ca-dir}/newcerts/
+crl = ${directory:ca-dir}/crl/
+
+[ca-frontend]
+<= certificate-authority
+recipe = slapos.cookbook:certificate_authority.request
+key-file = ${cadirectory:certs}/apache_frontend.key
+cert-file = ${cadirectory:certs}/apache_frontend.crt
+executable = ${directory:service}/frontend_apache
+wrapper = ${directory:service}/frontend_apache
+key-content =  ${slap-parameter:apache-key}
+cert-content = ${slap-parameter:apache-certificate}
+# Put domain name
+name = ${slap-parameter:domain}
+
+
+#####################
+# Buidout elements
+#
+
+
 [buildout]
 parts =
   publish-slave-information
   publish-information
+  dynamic-apache-frontend-template
+  configtest
+  dynamic-template-default-vh
 {% for part in part_list -%}
 {{ '  %s' % part }}
 {% endfor -%}
@@ -170,7 +304,6 @@ parts =
 eggs-directory = {{ eggs_directory }}
 develop-eggs-directory = {{ develop_eggs_directory }}
 offline = true
-
 
 [slap_connection]
 # Kept for backward compatiblity
@@ -185,4 +318,10 @@ cert_file = ${slap-connection:cert-file}
 slave_instance_list =
 -frontend-quantity = 1
 -frontend-type = single-default
+plain_http_port = 8080
+port = 4443
+domain = example.com
+apache-key =
+apache-certificate =
+
 {%- endif %}
