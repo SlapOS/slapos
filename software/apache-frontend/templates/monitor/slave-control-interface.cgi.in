@@ -1,0 +1,76 @@
+#!{{ python_executable }}
+
+import cgi
+import cgitb
+import json
+import os
+
+cgitb.enable()
+form = cgi.FieldStorage()
+
+print "<html><head>"
+print "<link rel=\"stylesheet\" href=\"static/pure-min.css\">"
+print "<link rel=\"stylesheet\" href=\"static/style.css\">"
+print "</head><body>"
+
+slave_configuration_file = "{{ slave_configuration_json }}"
+
+if not os.path.exists(slave_configuration_file):
+  print "No slave configuration file</body></html>"
+  exit(0)
+
+slave_configuration_json = open(slave_configuration_file, 'r').read()
+try:
+  slave_configuration = json.loads(slave_configuration_json)
+except ValueError as e:
+  print "<pre>%s</pre></body></html>" % e
+  exit(0)
+
+
+slave_status = {
+  '{{ slave_status_ignore }}': "Ignore",
+  '{{ slave_status_test }}': "Test",
+  '{{ slave_status_deploy }}': "Deploy",
+  '{{ slave_status_stop }}': "Stop",
+}
+
+def print_slave_line(slave_reference, current_state):
+
+  print """
+  <div class="pure-control-group">
+    <label for="%(slave_reference)s">%(slave_reference)s: </label>
+    <select name="%(slave_reference)s">
+""" % {'slave_reference': slave_reference}
+
+  print '<option value="" selected></option>'
+  for state, title in slave_status.iteritems():
+    if current_state == state:
+      print '<option value="%s" selected>%s</option>' % (state, title)
+    else:
+      print '<option value="%s">%s</option>' % (state, title)
+  print """</select></div>"""
+
+###
+# Update Status
+#
+for name in form:
+  if slave_configuration.has_key(name):
+    slave_configuration.get(name)['state'] = form[name].value
+
+if len(form) > 0:
+  json.dump(slave_configuration, open(slave_configuration_file, 'w'), indent=2)
+  try:
+    os.remove("{{ timestamp }}")
+  except OSError:
+    pass
+
+print "<h1>Slave List status :</h1>"
+print "<form action=\"/index.cgi\" method=\"post\" class=\"pure-form-aligned\">"
+print "<input type=\"hidden\" name=\"posting-script\" value=\"{{ pwd }}/{{ this_file }}\">"
+for slave_reference, slave in slave_configuration.iteritems():
+  print_slave_line(slave_reference, slave.get('state'))
+print """<div class="pure-controls">
+  <button type="submit" class="pure-button pure-button-primary">Update</button>
+  </div></form>"""
+
+print "</body></html>"

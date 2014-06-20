@@ -354,11 +354,33 @@ cert-content = ${slap-parameter:apache-certificate}
 # Put domain name
 name = ${slap-parameter:domain}
 
+####################
+# Monitor and control
+#
+[publish-information]
+root-monitor-url = ${monitor-parameters:url}
+
+[slave-control-interface]
+recipe = slapos.recipe.template:jinja2
+template = {{ build_path.get('template-slave-control-interface') }}
+rendered = ${monitor-directory:monitoring-cgi}/${:filename}
+filename = slave-control-interface.cgi
+mode = 0744
+context =
+  raw slave_configuration_json {{ slave_configuration_path }}
+  raw slave_status_stop {{ slave_stop }}
+  raw slave_status_deploy {{ slave_deploy }}
+  raw slave_status_test {{ slave_test }}
+  raw slave_status_ignore {{ slave_ignore }}
+  raw timestamp ${buildout:directory}/.timestamp
+  key pwd monitor-directory:monitoring-cgi
+  key this_file :filename
+  raw python_executable ${buildout:executable}
+
 
 #####################
 # Buidout elements
 #
-
 
 [buildout]
 parts =
@@ -370,7 +392,26 @@ parts =
 {% for part in part_list -%}
 {{ '  %s' % part }}
 {% endfor -%}
-#      publish-information
+###Parts to add for monitoring
+  certificate-authority
+  cron-entry-monitor
+  cron-entry-rss
+  deploy-index
+  deploy-settings-cgi
+  deploy-status-cgi
+  deploy-status-history-cgi
+  setup-static-files
+  certificate-authority
+  zero-parameters
+  public-symlink
+  cgi-httpd-wrapper
+  cgi-httpd-graceful-wrapper
+  monitor-promise
+  monitor-instance-log-access
+## Monitor for apache Root
+  slave-control-interface
+
+extends = {{ build_path.get('monitor-template') }}
 
 eggs-directory = {{ eggs_directory }}
 develop-eggs-directory = {{ develop_eggs_directory }}
