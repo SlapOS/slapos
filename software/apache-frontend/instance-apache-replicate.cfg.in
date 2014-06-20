@@ -12,6 +12,8 @@ context =
     key slave_instance_list slap-parameter:slave_instance_list
     ${:extra-context}
 
+################################
+## Configure number of frontend
 {% set part_list = [] -%}
 {% set single_type_key = 'single-' %}
 {% if slap_software_type in ("replicate", "RootSoftwareInstance") %}
@@ -30,6 +32,8 @@ context =
 {%   do slapparameter_dict.__setitem__(sla_computer_apache_1_key, '${slap-connection:computer-id}') -%}
 {% endif -%}
 
+###############################
+# Configure frontend allocation
 # Here we request individualy each frontend.
 # The presence of sla parameters is checked and added if found
 {% for i in range(1, frontend_quantity + 1) -%}
@@ -56,6 +60,9 @@ sla-{{ parameter }} = {{ slapparameter_dict.pop( sla_key + parameter ) }}
 {%     endfor -%}
 {%   endif -%}
 {% endfor -%}
+
+###############################
+# Prepare Slave List
 
 # Prepare states
 {% set slave_deploy = slave_list_parameter.get('deploy') %}
