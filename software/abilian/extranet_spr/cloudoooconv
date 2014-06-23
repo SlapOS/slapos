@@ -1,0 +1,60 @@
+#!/usr/bin/env cloudoooconv-python
+# -*- coding: utf-8 -*-
+
+import argparse
+import os
+
+# ./conv.py -f pdf -o hello.pdf hello.odp
+
+__version__ = '0.1'
+
+import base64
+import sys
+import xmlrpclib
+import mimetypes
+
+import magic
+
+extension_remap = {
+    '.xlb': '.xls'
+}
+
+
+def process_file(in_fn, out_fn, fmt):
+    cloudooo_uri = os.environ['CLOUDOOO_URI']
+    proxy = xmlrpclib.ServerProxy(cloudooo_uri, allow_none=True)
+    with file(in_fn) as fin:
+        data = fin.read()
+        input_mimetype = magic.Magic(mime=True).from_buffer(data)
+        input_extension = os.path.splitext(in_fn)[1] or mimetypes.guess_extension(input_mimetype)
+        input_extension = extension_remap.get(input_extension, input_extension)
+        data = proxy.convertFile(base64.encodestring(data),
+                                      input_extension.lstrip('.'),
+                                      fmt)
+    with file(out_fn, 'wb') as fout:
+        fout.write(base64.decodestring(data))
+
+
+
+def run(argv):
+    prog = argv[0]
+    parser = argparse.ArgumentParser(prog=prog)
+    parser.add_argument('--version', action='version', version='%(prog)s v' + __version__)
+    parser.add_argument('-f', '--format')
+    parser.add_argument('-o', '--output')
+    parser.add_argument('input', nargs='?', help='input file')
+    args = parser.parse_args(argv[1:])
+    if 'input' in args:
+        process_file(args.input,
+                     args.output,
+                     args.format)
+    else:
+        sys.stderr.write('%s: you have to provide a filename as argument\n' % prog)
+        sys.stderr.write("Try `%s -h' for more information." % prog)
+
+
+
+if __name__ == '__main__':
+    run(sys.argv)
+
+

@@ -44,7 +44,8 @@ cert = $${slap-connection:cert-file}
 [json-extra-configuration]
 recipe = slapos.cookbook:jsondump
 json-output = $${buildout:directory}/abilian-config-extra.json
-UNOCONV_LOCATION = ${unoconv-repository:location}/unoconv
+#UNOCONV_LOCATION = ${unoconv-repository:location}/unoconv
+UNOCONV_LOCATION = ${cloudoooconv:location}/${cloudoooconv:filename}
 BROKER_URL = redis://:$${redis-requirepass:passwd}@[$${redis:ipv4}]:$${redis:port}/2
 CELERY_RESULT_BACKEND = redis://:$${redis-requirepass:passwd}@[$${redis:ipv4}]:$${redis:port}/2
 SECRET_KEY = $${csrf-secret-key:passwd}

@@ -174,8 +174,11 @@ class JsonDump(Recipe):
     with os.fdopen(os.open(self._json_output, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600), 'w') as fout:
       fout.write(json.dumps(parameter_dict, indent=2, sort_keys=True))
 
-    def install(self):
-        return [self._json_output]
+    # also augment the buildout section
+    options.update(parameter_dict)
 
-    update = install
+  def install(self):
+      return [self._json_output]
+
+  update = install
 

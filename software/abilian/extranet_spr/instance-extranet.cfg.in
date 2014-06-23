@@ -14,6 +14,7 @@ recipe = slapos.cookbook:symbolic.link
 target-directory = $${directories:bin}
 link-binary =
     ${buildout:directory}/bin/abilian
+    ${buildout:directory}/bin/cloudoooconv-python
 
 
 [extranet-service]
