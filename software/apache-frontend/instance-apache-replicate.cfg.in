@@ -104,6 +104,10 @@ sla-{{ parameter }} = {{ slapparameter_dict.pop( sla_key + parameter ) }}
 {%   endif %}
 ## Put slave in the list according to its status
 {%   set slave_state = slave_configuration.get(slave_reference).get('state')  %}
+# If slave is in state stop, its configuration needs to be revalidated
+{%   if slave_state ==  slave_stop %}
+{%     do slave_configuration.get(slave_reference).pop('deploy_configuration', '') %}
+{%   endif %}
 {%   if slave_state ==  slave_deploy %}
 {%     do slave_configuration.get(slave_reference).__setitem__('deploy_configuration', slave_configuration.get(slave_reference).get('configuration')) %}
 {%   elif slave_state == slave_test %}
@@ -169,8 +173,6 @@ extra-context =
 ###########################
 # Deploy slave configuration
 #
-{{ dumps(slave_test_list) }}
-
 
 # Hardcoded dummy cache, we never start the apache
 {% set cache_access = "http://%s:%s" % ("127.0.0.0", "23432") -%}
