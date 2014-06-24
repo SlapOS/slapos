@@ -94,7 +94,7 @@ sla-{{ parameter }} = {{ slapparameter_dict.pop( sla_key + parameter ) }}
 {%     if slave.get('timestamp') != slave_configuration.get(slave_reference).get('timestamp') %}
 {%       do slave_configuration.get(slave_reference).__setitem__('timestamp', slave.get('timestamp')) %}
 {%       do slave_configuration.get(slave_reference).__setitem__('configuration', slave) %}
-{%       do slave_configuration.get(slave_reference).__setitem__('status', default_slave_state) %}
+{%       do slave_configuration.get(slave_reference).__setitem__('state', default_slave_state) %}
 {%     endif %}
 {%   else %}
 {%     do slave_configuration.__setitem__(slave_reference, {}) %}
