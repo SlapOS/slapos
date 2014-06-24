@@ -70,7 +70,7 @@ sla-{{ parameter }} = {{ slapparameter_dict.pop( sla_key + parameter ) }}
 {% set slave_test = slave_list_parameter.get('test') %}
 {% set slave_ignore = slave_list_parameter.get('ignore') %}
 {% set slave_stop = slave_list_parameter.get('stop') %}
-{% set default_slave_state = slapparameter_dict.pop('default-slave-state', slave_deploy ) %}
+{% set default_slave_state = slapparameter_dict.pop('default-slave-state', slave_test ) %}
 
 # Prepare slave list
 {% set slave_deploy_list = [] %}
