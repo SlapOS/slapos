@@ -322,10 +322,8 @@ cache-access-log = ${directory:log}/frontend-apache-access-cached.log
 cache-error-log = ${directory:log}/frontend-apache-error-cached.log
 cache-pid-file = ${directory:run}/httpd-cached.pid
 
-[configtest]
-recipe = slapos.cookbook:wrapper
-command-line = {{ build_path.get('apache-location') }}/bin/httpd -f ${directory:etc}/apache_frontend.conf -t
-wrapper-path = ${directory:bin}/apache-configtest
+####
+# Certificates
 
 [certificate-authority]
 recipe = slapos.cookbook:certificate_authority
@@ -381,6 +379,26 @@ context =
   key this_file :filename
   raw python_executable ${buildout:executable}
 
+####
+# Check configuration
+
+[frontend-apache-configuration]
+< = jinja2-template-base
+template = {{ build_path.get('template-wrapper') }}
+rendered = ${monitor-directory:monitoring-cgi}/front-httpd-configuration
+mode = 0700
+command = echo "<pre>$(${apache-configuration:frontend-configuration-verification})</pre>"
+extra-context =
+  key content :command
+
+
+[promise-frontend-apache-configuration]
+< = jinja2-template-base
+template = {{ build_path.get('template-wrapper') }}
+rendered = ${monitor-directory:monitor-custom-scripts}/frontend-apache-configuration-promise
+mode = 0700
+extra-context =
+    key content apache-configuration:frontend-configuration-verification
 
 #####################
 # Buidout elements
@@ -391,7 +409,8 @@ parts =
   publish-slave-information
   publish-information
   dynamic-apache-frontend-template
-  configtest
+  frontend-apache-configuration
+  promise-frontend-apache-configuration
   dynamic-template-default-vh
 {% for part in part_list -%}
 {{ '  %s' % part }}
