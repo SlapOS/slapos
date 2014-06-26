@@ -34,6 +34,7 @@ parts +=
   deploy-index
   deploy-settings-cgi
   deploy-status-cgi
+  deploy-status-history-cgi
   setup-static-files
   certificate-authority
   zero-parameters
