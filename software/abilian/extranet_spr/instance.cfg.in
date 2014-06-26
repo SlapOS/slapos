@@ -26,6 +26,10 @@ parts =
     redis
     cron
     postgres-backup
+    postgres-restore
+    postgres-start
+    postgres-stop
+    postgres-status
     cron-postgres-backup
 
 
