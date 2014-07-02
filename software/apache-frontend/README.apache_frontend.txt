@@ -20,16 +20,18 @@ Apache frontend is available in 3 software types:
 About replicate frontend
 ========================
 
-Slaves of the root instance (type "replicate") are sent as a parameter to requested frontends which will process them. The only difference is that they will then return the « would-be published information » to the root instance instead of publishing it. The root instance will then do a synthesis and publish the information to its slaves. The replicate instance only use 3 type of parameters for itself and will transmit the rest to requested frontends.
+Slaves of the root instance (type "replicate") are sent as a parameter to requested frontends which will process them. The only difference is that they will then return the « would-be published information » to the root instance instead of publishing it. The root instance will then do a synthesis and publish the information to its slaves. The replicate instance only use 4 type of parameters for itself and will transmit the rest to requested frontends.
 These parameters are :
   * "-frontend-type" : the type to deploy frontends with. (default to 2)
   * "-frontend-quantity" : The quantity of frontends to request (default to "default")
+  * "-frontend-i-state": The state of frontend i
   * "-sla-i-foo" : where "i" is the number of the concerned frontend (between 1 and "-frontend-quantity") and "foo" a sla parameter.
 ex:
 <parameter id="-frontend-quantity">3</parameter>
 <parameter id="-frontend-type">custom-personal</parameter>
+<parameter id="-frontend-2-state">stopped</parameter>
 <parameter id="-sla-3-computer_guid">COMP-1234</parameter>
-will request the third frontend on COMP-1234. All frontends will be of software type "custom-personal".
+will request the third frontend on COMP-1234. All frontends will be of software type "custom-personal". The second frontend will be requested with the state stopped
 
 Note: the way slaves are transformed to a parameter avoid modifying more than 3 lines in the frontend logic.
 Important NOTE: The way you ask for slave to a replicate frontend is the same as the one you would use for the software given in "-frontend-quantity". Do not forget to use "replicate" for software type. XXXXX So far it is not possible to do a simple request on a replicate frontend if you do not know the software_guid or other sla-parameter of the master instance. In fact we do not know yet the software type of the "requested" frontends. TO BE IMPLEMENTED

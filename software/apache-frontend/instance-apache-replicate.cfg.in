@@ -49,6 +49,10 @@ context =
 [{{request_section_title}}]
 <= replicate
 name = {{frontend_name}}
+{%   set state_key = "-frontend-%s-state" % i %}
+{%   if slapparameter_dict.has_key(state_key) %}
+state = {{ slapparameter_dict.pop(state_key) }}
+{%   endif%}
 {%   if sla_parameters %}
 sla = {{ ' '.join(sla_parameters) }}
 {%     for parameter in sla_parameters -%}
