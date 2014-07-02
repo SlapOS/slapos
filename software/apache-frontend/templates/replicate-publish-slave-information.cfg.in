@@ -3,7 +3,11 @@
 
 # regroup slave information from all frontends
 {%- for frontend, slave_list_raw in slave_information.iteritems() -%}
-{%   set slave_list = json_module.loads(slave_list_raw) -%}
+{%   if slave_list_raw %}
+{%     set slave_list = json_module.loads(slave_list_raw) -%}
+{%   else %}
+{%    set slave_list = [] %}
+{%   endif %}
 {%   for slave_dict in slave_list -%}
 {%     set slave_reference = slave_dict.pop('slave-reference') %}
 {%     set log_access_url = slave_dict.pop('log-access', '') %}
