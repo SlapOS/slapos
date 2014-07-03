@@ -26,11 +26,8 @@
 ##############################################################################
 from slapos.recipe.librecipe import GenericBaseRecipe
 import os
-import subprocess
 import pwd
 import json
-import signal
-import zc.buildout
 from urlparse import urlparse
 
 class Recipe(GenericBaseRecipe):
@@ -232,21 +229,19 @@ class App(GenericBaseRecipe):
   """This recipe allow to deploy an scientific applications using boinc
   Note that recipe use depend on boinc-server parameter"""
 
-  def downloadFiles(self, app):
+  def getDownloadFiles(self, app, files_dict, prefix):
     """This is used to download app files if necessary and update options values"""
+    
     for key in ('input-file', 'template-result', 'template-wu', 'binary'):
-      param = app[key]
-      if param and (param.startswith('http') or param.startswith('ftp')):
-        #download the specified file
-        cache = os.path.join(self.options['home'].strip(), 'tmp')
-        downloader = zc.buildout.download.Download(self.buildout['buildout'],
-                        hash_name=True, cache=cache)
-        path, _ = downloader(param, md5sum=None)
-        mode = 0600
-        if key == 'binary':
-          mode = 0700
-        os.chmod(path, mode)
-        app[key] = path
+      src = app[key]
+      if not src:
+        continue
+      if src.startswith('/'):
+        src = "file:" + src
+      filename = (prefix + '_' + key).replace('-', '_')
+      files_dict[filename] = src
+      app[key] = os.path.join(self.options['download-folder'].strip(),
+                              filename)
 
   def getAppList(self):
     """Load parameters,
@@ -262,7 +257,7 @@ class App(GenericBaseRecipe):
       for version in app_list[app]:
         current_app = app_list[app][version]
         #Use default value if empty and Use_default is True
-        #Initialize all values to empty if not define by the user
+        #Initialize all values to empty if not defined by the user
         if current_app['use_default']:
           current_app['template-result'] = current_app.get('template-result',
                         default_template_result).strip()
@@ -300,6 +295,7 @@ class App(GenericBaseRecipe):
   def install(self):
 
     app_list = self.getAppList()
+    download_list_dict = dict()
 
     path_list = []
     package = self.options['boinc'].strip()
@@ -343,7 +339,9 @@ class App(GenericBaseRecipe):
       for version in app_list[appname]:
         if not app_list[appname][version]:
           continue
-        self.downloadFiles(app_list[appname][version])
+        # Get the list of files to download
+        self.getDownloadFiles(app_list[appname][version],
+                          download_list_dict, appname+'_'+version)
         platform = app_list[appname][version]['platform']
         application = os.path.join(apps_dir, appname, version, platform)
         if app_list[appname][version]['binary'] and not platform:
@@ -369,6 +367,9 @@ class App(GenericBaseRecipe):
           '%s.configure.deployApp' % __name__, parameter
         )
         path_list.append(deploy_app)
+    
+    with open(self.options['download-json-file'].strip(), 'w') as file_list:
+      file_list.write(json.dumps(download_list_dict))
 
     return path_list
 

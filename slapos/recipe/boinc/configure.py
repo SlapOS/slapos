@@ -191,6 +191,11 @@ def services(args):
 
 def deployApp(args):
   """Deploy Boinc App with lock"""
+  print "Check if all files have been downloaded..."
+  for name in ['t_input', 'binary', 't_result', 't_wu']:
+    if args[name]:
+      checkFile(args[name], 5)
+  
   print "Asking to enter in execution with lock mode..."
   with LockFile(args['lockfile'], wait=True):
     print "acquire the lock file..."
