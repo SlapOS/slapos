@@ -1,0 +1,83 @@
+######################################################################
+##
+##  stork_config
+##
+######################################################################
+#ENABLE_IPV6 = TRUE
+PORT = %(port)s
+NETWORK_INTERFACE = %(ipv4)s
+COLLECTOR_HOST =  %(ipv4)s:$(PORT)
+CONDOR_HOST =  %(ipv4)s
+
+RELEASE_DIR             =  %(releasedir)s
+##Stork startup arguments
+## Start Stork on a well-known port.  Uncomment to simplify connecting to a
+## remote Stork server.  Note: this interface may change in a future release.
+SBIN_DIR = %(releasedir)s/sbin
+STORK= $(SBIN_DIR)/stork_server
+
+ARGS = -p $(STORK_PORT) -f -Serverlog $(STORK_LOG_BASE)
+
+## HOST may specify an optional default remote Stork server and port.
+#HOST  = %(stork_host)s:$(PORT)
+
+HOST  = %(ipv4)s:$(PORT)
+## When Stork starts up, it can place its address (IP and port) into
+## a file. This way, tools running on the local machine don't
+## need an additional "-n host:port" command line option.  This
+## feature can be turned off by commenting out this setting.
+STORK_ADDRESS_FILE = $(RELEASE_DIR)/.stork_address
+
+## STORK_LOG_BASE specifies the basename for heritage Stork log files.
+## Stork uses this macro to create the following output log files:
+## $(STORK_LOG_BASE): Stork server job queue classad collection
+## journal file.
+## $(STORK_LOG_BASE).history: Used to track completed jobs.
+## $(STORK_LOG_BASE).user_log: User level log, also used by DAGMan.
+STORK_LOG_BASE= $(RELEASE_DIR)/log)/storkserver.log
+STORK_LOG = $(RELEASE_DIR)/log/storklog.log
+
+DEBUG = D_FULLDEBUG
+MAX_STORK_LOG = 4000000
+
+## Limits the number of concurrent data placements handled by Stork.
+#MAX_NUM_JOBS = 10
+
+## Limits the number of retries for a failed data placement.
+#MAX_RETRY = 5
+
+## Limits the run time for a data placement job, after which the
+## placement is considered failed.
+#MAXDELAY_INMINUTES = 10
+
+## Directory containing Stork binaries
+BIN_DIR = %(releasedir)s/bin
+
+## Directory containing Stork transfer modules
+MODULE_DIR = %(storkpackage)s/libexec
+
+## Directory to store temporary files and execute transfer modules in
+TMP_DIR = $(RELEASE_DIR)/tmp
+
+## Directory in which server state files should be stored (and the directory in
+## which the Stork server will execute)
+LOG = $(RELEASE_DIR)/log
+
+## Set to true to enable reporting of anonymous usage statistics to the
+## Stork developers. This report contains ONLY the version string and
+## platform Stork was built for.
+## This information helps us improve Stork, so please enable it. :)
+ENABLE_STAT_REPORT = TRUE
+STAT_REPORT_SERVER = stork.cct.lsu.edu
+
+## Additional values passed to transfer modules.
+#RECURSIVE_COPY = FALSE
+#VERIFY_CHECKSUM = FALSE
+#VERIFY_FILESIZE = FALSE
+#NETWORK_CHECK = FALSE
+#CHECKPOINT_TRANSFER = TRUE
+#FILE_CKPT = TRUE
+#SYNC_ONLY = FALSE
+#SET_PERMISSIONS = FALSE
+#TEST_MODE = 0
+#SET_PARALLELISM = 10
