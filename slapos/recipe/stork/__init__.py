@@ -191,13 +191,13 @@ class AppSubmit(GenericBaseRecipe):
       # XXX - Simply, we don't want to download file twice with stork,
       #       skip file if it already exists at dest_url (only for file:path)
       for filename in file_list:
-        log_name = filename
+        download_name = filename
         if dest_url.startswith('file:'):
           destination = os.path.join(dest_url.replace('file:', ''), filename)
           if os.path.exists(destination+'_part') or os.path.exists(destination):
             continue
           download_dest_list[filename] = destination
-          filename = filename + '_part'
+          download_name = filename + '_part'
         stork_file.write("""[
 src_url="%s";
 dest_url="%s/%s";
@@ -207,7 +207,7 @@ dap_type = "transfer";
 set_permission = "600" ;
 ]
 
-""" % (file_list[filename], dest_url, filename, log_name, log_name)
+""" % (file_list[filename], dest_url, download_name, filename, filename)
           )
   
     parameter = dict(submit=stork_submit,
