@@ -181,31 +181,33 @@ class AppSubmit(GenericBaseRecipe):
     
     stork_submit = os.path.join(self.options['bin'].strip(), 'stork_submit')
     file_list = '{}'
-    if str(self.options.get('src_from_file')).lower() in ['y', 'yes', '1', 'true'] \
-            and os.path.exists(source_url_list):
-      with open(source_url_list, 'r') as file_source:
-        file_list = json.loads(file_source.read())
+    if str(self.options.get('src_from_file')).lower() in ['y', 'yes', '1', 'true']:
+      if os.path.exists(source_url_list):
+        with open(source_url_list, 'r') as file_source:
+          file_list = json.loads(file_source.read())
     else:
       file_list = json.loads(source_url_list)
     with open(submitfile, 'w') as stork_file:
       # XXX - Simply, we don't want to download file twice with stork,
       #       skip file if it already exists at dest_url (only for file:path)
       for filename in file_list:
+        log_name = filename
         if dest_url.startswith('file:'):
           destination = os.path.join(dest_url.replace('file:', ''), filename)
           if os.path.exists(destination+'_part') or os.path.exists(destination):
             continue
           download_dest_list[filename] = destination
+          filename = filename + '_part'
         stork_file.write("""[
 src_url="%s";
-dest_url="%s/%s_part";
+dest_url="%s/%s";
 err = "%s.err";
 output = "%s.out";
 dap_type = "transfer";
 set_permission = "600" ;
 ]
 
-""" % (file_list[filename], dest_url, filename, filename, filename)
+""" % (file_list[filename], dest_url, filename, log_name, log_name)
           )
   
     parameter = dict(submit=stork_submit,
