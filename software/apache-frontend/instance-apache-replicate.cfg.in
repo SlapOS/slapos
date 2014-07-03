@@ -64,7 +64,12 @@ sla-{{ parameter }} = {{ slapparameter_dict.pop( sla_key + parameter ) }}
 [replicate]
 <= slap-connection
 recipe = slapos.cookbook:requestoptional
+{% set frontend_software_url_key = "-frontend-software-release-url" %}
+{% if slapparameter_dict.has_key(frontend_software_url_key) %}
+software-url = {{ slapparameter_dict.pop(frontend_software_url_key) }}
+{% else %}
 software-url = ${slap-connection:software-release-url}
+{% endif %}
 software-type = {{frontend_type}}
 return = private-ipv4 public-ipv4 slave-instance-information-list monitor_url
 config = {{ ' '.join(slapparameter_dict.keys()) + ' ' + slave_list_name }}
