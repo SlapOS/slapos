@@ -497,9 +497,10 @@ elif (mode == \'root\') or (mode == \'traverse\'):\n
 #             traversed_document.log(property_name)\n
             property_value = traversed_document.getProperty(property_name, d=None)\n
             if (property_value is not None):\n
-              if not same_type(property_value, DateTime()):\n
-                # XXX Serialize DateTime\n
-                result_dict[property_name] = property_value \n
+              if same_type(property_value, DateTime()):\n
+                # Serialize DateTime\n
+                property_value = rfc822()\n
+              result_dict[property_name] = property_value \n
 \n
   ##############\n
   # XXX Custom slapos code\n
