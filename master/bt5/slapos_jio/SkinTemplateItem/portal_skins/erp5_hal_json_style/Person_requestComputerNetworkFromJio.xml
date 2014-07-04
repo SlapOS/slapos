@@ -65,7 +65,7 @@ reference = "NET-%s" % portal.portal_ids.generateNewId(\n
 module = portal.getDefaultModule(portal_type=network_portal_type)\n
 network = module.newContent(\n
   portal_type=network_portal_type,\n
-  title=network_title,\n
+  title=title,\n
   reference=reference,\n
   source_administration=context.getRelativeUrl()\n
 )\n
@@ -77,7 +77,7 @@ network.validate()\n
         </item>
         <item>
             <key> <string>_params</string> </key>
-            <value> <string>network_title, REQUEST=None</string> </value>
+            <value> <string>title, REQUEST=None</string> </value>
         </item>
         <item>
             <key> <string>id</string> </key>

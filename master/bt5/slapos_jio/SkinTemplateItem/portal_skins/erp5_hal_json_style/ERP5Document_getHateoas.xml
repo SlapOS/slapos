@@ -746,7 +746,7 @@ elif (mode == \'root\') or (mode == \'traverse\'):\n
         \'method\': \'POST\'\n
       }\n
       action_dict[\'request_installation\'] = {\n
-        \'href\': "%s/Person_requestInstallationFromJio" % traversed_document.absolute_url(),\n
+        \'href\': "%s/Computer_requestInstallationFromJio" % traversed_document.absolute_url(),\n
         \'method\': \'POST\'\n
       }\n
 \n
