@@ -75,10 +75,6 @@ extra-context =
     key software_type :software-type
 software-type = default
 
-[dynamic-template-erp5-cluster]
-< = dynamic-template-erp5
-software-type = cluster
-
 [dynamic-template-erp5-RootSoftwareInstance]
 < = dynamic-template-erp5
 software-type = RootSoftwareInstance
@@ -244,6 +240,8 @@ override = {{ dumps(override_switch_softwaretype |default) }}
 # Public software types
 default = ${dynamic-template-erp5:rendered}
 create-erp5-site = ${dynamic-template-create-erp5-site:rendered}
+# BBB: Legacy software types, aliased to "default"
+RootSoftwareInstance = ${dynamic-template-erp5-RootSoftwareInstance:rendered}
 # Internal software types
 kumofs = ${dynamic-template-kumofs:rendered}
 cloudooo = ${dynamic-template-cloudooo:rendered}
