@@ -64,6 +64,7 @@ context =
 
 [slap-parameter]
 auto-deploy-instance = false
+auto-deploy = true
 
 [resilient-publish-connection-parameter]
 monitor-url = $${monitor-parameters:url}
