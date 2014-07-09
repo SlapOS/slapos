@@ -2,6 +2,7 @@
 extends =
   {{ kvm_template }}
   {{ pbsready_export_template }}
+  {{ monitor_template_output }}
 
 parts +=
   cron-entry-backup
@@ -14,6 +15,26 @@ parts +=
   novnc-promise
   cron
   frontend-promise
+## Parts introduced by monitoring
+  slap-parameters                                                              
+  certificate-authority
+  cron
+  cron-entry-monitor                                                           
+  cron-entry-rss                                                               
+  deploy-index                                                                 
+  deploy-index-template
+  deploy-monitor-script
+##  deploy-rss-script
+  deploy-settings-cgi
+  deploy-status-cgi
+  make-rss
+  monitor-promise
+  setup-static-files                                                           
+  certificate-authority                                                        
+  public
+  zero-parameters
+  cgi-httpd-wrapper
+  public-symlink
 
 # Create the exporter executable, which is a simple shell script
 [exporter]

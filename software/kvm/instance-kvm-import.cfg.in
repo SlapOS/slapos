@@ -2,6 +2,7 @@
 # Here, we don't need KVM to run to import data, so we don't
 # even extend the kvm instance profile.
 extends = ${pbsready-import:output}
+          ${monitor-template:output}
 
 eggs-directory = ${buildout:eggs-directory}
 develop-eggs-directory = ${buildout:develop-eggs-directory}

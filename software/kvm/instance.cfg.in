@@ -49,6 +49,7 @@ context =
     raw qemu_img_executable_location ${kvm:location}/bin/qemu-img
     raw sixtunnel_executable_location ${6tunnel:location}/bin/6tunnel
     raw websockify_executable_location ${buildout:directory}/bin/websockify
+    raw monitor_template_output ${monitor-template:output}
 template-parts-destination = ${template-parts:destination}
 template-replicated-destination = ${template-replicated:destination}
 import-list = file parts :template-parts-destination
@@ -82,6 +83,7 @@ context =
     raw kvm_template $${dynamic-template-kvm:rendered}
     raw template_kvm_export ${template-kvm-export-script:location}/${template-kvm-export-script:filename}
     raw pbsready_export_template ${pbsready-export:output}
+    raw monitor_template_output ${monitor-template:output}
 mode = 0644
 
 [dynamic-template-kvm-resilient-test]
