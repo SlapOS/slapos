@@ -56,6 +56,7 @@ http {
 
 server {
   listen [$${nginx-configuration:ip}]:$${nginx-configuration:port};
+  listen $${nginx-configuration:local_ip}:$${nginx-configuration:port};
 
   fastcgi_temp_path  $${directory:varnginx} 1 2;
   uwsgi_temp_path  $${directory:varnginx} 1 2;
