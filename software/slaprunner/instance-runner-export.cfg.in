@@ -28,6 +28,7 @@ parts +=
   deploy-instance-parameters
 ## Monitoring part
 ###Parts to add for monitoring
+  cron
   certificate-authority
   cron-entry-monitor
   cron-entry-rss
