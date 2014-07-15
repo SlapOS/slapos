@@ -33,6 +33,7 @@ mode = 0600
 access_log = $${directory:log}/nginx-access.log
 error_log = $${directory:log}/nginx-error.log
 ip = $${slap-network-information:global-ipv6}
+local_ip = $${slap-network-information:local-ipv4}
 port = 9443
 publisher_push_stream_store_messages = off
 publisher_client_max_body_size = 16k
