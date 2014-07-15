@@ -13,3 +13,11 @@
 
  * 'extra' parameters from json or partition configuration can only be strings
 
+ * Required instance parameters:
+   (before node software)
+   CLOUDOO_URI = http://xxx.xxx.xxx.xxx:8001/
+   (before node instance)
+   SQLALCHEMY_DATABASE_PASSWORD = .....
+   SQLALCHEMY_DATABASE_URI = postgres://user_name:%(password)s@xxx.xxx.xxx.xxx:5432/database_name
+   
+
