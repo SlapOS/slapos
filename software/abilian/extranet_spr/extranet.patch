@@ -1,0 +1,42 @@
+diff --git a/etc/deps.txt b/etc/deps.txt
+index b8fb0ec..c136c2f 100644
+--- a/etc/deps.txt
++++ b/etc/deps.txt
+@@ -26,7 +26,7 @@ requests >= 2.3, < 2.4
+ iso8601==0.1.4
+ passlib==1.6.1
+ py-bcrypt==0.3
+-Pillow>=2.0.0
++Pillow>=2.4.0
+ python-magic==0.4.6
+ twill>=1.8.0
+ validate_email==1.2
+ 
+diff --git a/extranet_spr/application.py b/extranet_spr/application.py
+index 9d8e84c..72a83ee 100644
+--- a/extranet_spr/application.py
++++ b/extranet_spr/application.py
+@@ -80,7 +80,7 @@ def create_app(config=None, config_file=None):
+     assert not config
+     config = Config(config_file)
+ 
+-  app = Application(config=config)
++  app = Application(config=config, instance_path=os.environ.get('EXTRANET_INSTANCE_PATH'))
+   return app
+ 
+ # loader to be used by celery workers
+diff --git a/extranet_spr/commands/manage.py b/extranet_spr/commands/manage.py
+index b144c66..1f14ab2 100755
+--- a/extranet_spr/commands/manage.py
++++ b/extranet_spr/commands/manage.py
+@@ -78,8 +78,9 @@ def run():
+ 
+   DEBUG = app.config.get('DEBUG')
+   PORT = app.config.get('PORT', 5000)
++  HOST = app.config.get('INSTANCE_HOST', '0.0.0.0')
+ 
+-  app.run(host="0.0.0.0", debug=DEBUG, port=PORT)
++  app.run(host=HOST, debug=DEBUG, port=PORT)
+ 
+ 
+ @manager.command
