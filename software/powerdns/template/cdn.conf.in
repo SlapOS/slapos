@@ -1,0 +1,481 @@
+{% set cdn = json_module.loads(json_cdn) %}
+
+$RECORD {{ cdn.get('record') }}
+$ORIGIN {{ cdn.get('origin') }}
+
+0 {{ cdn.get('default')}}
+
+# Andorra
+20 {{ cdn.get('europe', 'eu') }}
+# United Arab Emirates
+784 {{ cdn.get('west-asia', 'as') }}
+# Afghanistan
+4 {{ cdn.get('west-asia', 'as') }}
+# Antigua and Barbuda
+28 {{ cdn.get('south-america', 'sa') }}
+# Anguilla
+660 {{ cdn.get('south-america', 'sa') }}
+# Albania
+8 {{ cdn.get('europe', 'eu') }}
+# Armenia
+51 {{ cdn.get('west-asia', 'as') }}
+# Netherlands Antilles
+530 {{ cdn.get('south-america', 'sa') }}
+# Angola
+24 {{ cdn.get('africa', 'af') }}
+# Antarctica
+10 {{ cdn.get('europe', 'eu') }}
+# Argentina
+32 {{ cdn.get('south-america', 'sa') }}
+# American Samoa
+16 {{ cdn.get('oceania', 'oc') }}
+# Austria
+40 {{ cdn.get('europe', 'eu') }}
+# Australia
+36 {{ cdn.get('oceania', 'oc') }}
+# Aruba
+533 {{ cdn.get('south-america', 'sa') }}
+# Azerbaijan
+31 {{ cdn.get('west-asia', 'as') }}
+# Bosnia and Herzegovina
+70 {{ cdn.get('europe', 'eu') }}
+# Barbados
+52 {{ cdn.get('south-america', 'sa') }}
+# Bangladesh
+50 {{ cdn.get('east-asia', 'as') }}
+# Belgium
+56 {{ cdn.get('europe', 'eu') }}
+# Burkina Faso
+854 {{ cdn.get('africa', 'af') }}
+# Bulgaria
+100 {{ cdn.get('europe', 'eu') }}
+# Bahrain
+48 {{ cdn.get('west-asia', 'as') }}
+# Burundi
+108 {{ cdn.get('africa', 'af') }}
+# Benin
+204 {{ cdn.get('africa', 'af') }}
+# Bermuda
+60 {{ cdn.get('south-america', 'sa') }}
+# Brunei Darussalam
+96 {{ cdn.get('east-asia', 'as') }}
+# Bolivia
+68 {{ cdn.get('south-america', 'sa') }}
+# Brazil
+76 {{ cdn.get('south-america', 'sa') }}
+# Bahamas
+44 {{ cdn.get('south-america', 'sa') }}
+# Bhutan
+64 {{ cdn.get('east-asia', 'as') }}
+# Bouvet Island
+74 {{ cdn.get('africa', 'af') }}
+# Botswana
+72 {{ cdn.get('africa', 'af') }}
+# Belarus
+112 {{ cdn.get('europe', 'eu') }}
+# Belize
+84 {{ cdn.get('south-america', 'sa') }}
+# Canada
+124 {{ cdn.get('north-america', 'na') }}
+# Cocos (Keeling) Islands
+166 {{ cdn.get('west-asia', 'as') }}
+# Congo, The Democratic Republic of the
+178 {{ cdn.get('africa', 'af') }}
+# Central African Republic
+140 {{ cdn.get('africa', 'af') }}
+# Switzerland
+756 {{ cdn.get('europe', 'eu') }}
+# Cote D'Ivoire
+384 {{ cdn.get('africa', 'af') }}
+# Cook Islands
+184 {{ cdn.get('oceania', 'oc') }}
+# Chile
+152 {{ cdn.get('south-america', 'sa') }}
+# Cameroon
+120 {{ cdn.get('africa', 'af') }}
+# China
+156 {{ cdn.get('china', 'cn') }}
+# Colombia
+170 {{ cdn.get('south-america', 'sa') }}
+# Costa Rica
+188 {{ cdn.get('south-america', 'sa') }}
+# Cuba
+192 {{ cdn.get('south-america', 'sa') }}
+# Cape Verde
+132 {{ cdn.get('africa', 'af') }}
+# Christmas Island
+162 {{ cdn.get('east-asia', 'as') }}
+# Cyprus
+196 {{ cdn.get('west-asia', 'as') }}
+# Czech Republic
+203 {{ cdn.get('europe', 'eu') }}
+# Germany
+276 {{ cdn.get('europe', 'eu') }}
+# Djibouti
+262 {{ cdn.get('africa', 'af') }}
+# Denmark
+208 {{ cdn.get('europe', 'eu') }}
+# Dominica
+212 {{ cdn.get('south-america', 'sa') }}
+# Dominican Republic
+214 {{ cdn.get('south-america', 'sa') }}
+# Algeria
+12 {{ cdn.get('africa', 'af') }}
+# Ecuador
+218 {{ cdn.get('south-america', 'sa') }}
+# Estonia
+233 {{ cdn.get('europe', 'eu') }}
+# Egypt
+818 {{ cdn.get('africa', 'af') }}
+# Western Sahara
+732 {{ cdn.get('africa', 'af') }}
+# Eritrea
+232 {{ cdn.get('africa', 'af') }}
+# Spain
+724 {{ cdn.get('europe', 'eu') }}
+# Ethiopia
+210 {{ cdn.get('africa', 'af') }}
+# Finland
+246 {{ cdn.get('europe', 'eu') }}
+# Fiji
+242 {{ cdn.get('oceania', 'oc') }}
+# Falkland Islands (Malvinas)
+238 {{ cdn.get('south-america', 'sa') }}
+# Micronesia, Federated States of
+583 {{ cdn.get('oceania', 'oc') }}
+# Faroe Islands
+234 {{ cdn.get('europe', 'eu') }}
+# France
+250 {{ cdn.get('europe', 'eu') }}
+# France, Metropolitan
+249 {{ cdn.get('europe', 'eu') }}
+# Gabon
+266 {{ cdn.get('africa', 'af') }}
+# United Kingdom
+826 {{ cdn.get('europe', 'eu') }}
+# Grenada
+308 {{ cdn.get('south-america', 'sa') }}
+# Georgia
+268 {{ cdn.get('west-asia', 'as') }}
+# French Guiana
+254 {{ cdn.get('south-america', 'sa') }}
+# Ghana
+288 {{ cdn.get('africa', 'af') }}
+# Gibraltar
+292 {{ cdn.get('europe', 'eu') }}
+# Greenland
+304 {{ cdn.get('south-america', 'sa') }}
+# Gambia
+270 {{ cdn.get('africa', 'af') }}
+# Guinea
+324 {{ cdn.get('africa', 'af') }}
+# Guadeloupe
+312 {{ cdn.get('south-america', 'sa') }}
+# Equatorial Guinea
+226 {{ cdn.get('africa', 'af') }}
+# Greece
+300 {{ cdn.get('europe', 'eu') }}
+# Guatemala
+320 {{ cdn.get('south-america', 'sa') }}
+# Guam
+316 {{ cdn.get('oceania', 'oc') }}
+# Guinea-Bissau
+624 {{ cdn.get('africa', 'af') }}
+# Guyana
+328 {{ cdn.get('south-america', 'sa') }}
+# Hong Kong
+344 {{ cdn.get('hong-kong', 'hk') }}
+# Heard Island and McDonald Islands
+334 {{ cdn.get('africa', 'af') }}
+# Honduras
+340 {{ cdn.get('south-america', 'sa') }}
+# Croatia
+191 {{ cdn.get('europe', 'eu') }}
+# Haiti
+332 {{ cdn.get('south-america', 'sa') }}
+# Hungary
+348 {{ cdn.get('europe', 'eu') }}
+# Indonesia
+360 {{ cdn.get('east-asia', 'as') }}
+# Ireland
+372 {{ cdn.get('europe', 'eu') }}
+# Israel
+376 {{ cdn.get('west-asia', 'as') }}
+# India
+356 {{ cdn.get('east-asia', 'as') }}
+# British Indian Ocean Territory
+86 {{ cdn.get('east-asia', 'as') }}
+# Iraq
+368 {{ cdn.get('west-asia', 'as') }}
+# Iran, Islamic Republic of
+364 {{ cdn.get('west-asia', 'as') }}
+# Iceland
+352 {{ cdn.get('europe', 'eu') }}
+# Italy
+380 {{ cdn.get('europe', 'eu') }}
+# Jamaica
+388 {{ cdn.get('south-america', 'sa') }}
+# Jordan
+400 {{ cdn.get('west-asia', 'as') }}
+# Japan
+392 {{ cdn.get('japan', 'jp') }}
+# Kenya
+404 {{ cdn.get('africa', 'af') }}
+# Kyrgyzstan
+417 {{ cdn.get('west-asia', 'as') }}
+# Cambodia
+116 {{ cdn.get('east-asia', 'as') }}
+# Kiribati
+296 {{ cdn.get('oceania', 'oc') }}
+# Comoros
+174 {{ cdn.get('africa', 'af') }}
+# Saint Kitts and Nevis
+659 {{ cdn.get('south-america', 'sa') }}
+# Korea, Democratic People's Republic of
+408 {{ cdn.get('east-asia', 'as') }}
+# Korea, Republic of
+410 {{ cdn.get('east-asia', 'as') }}
+# Kuwait
+414 {{ cdn.get('west-asia', 'as') }}
+# Cayman Islands
+136 {{ cdn.get('south-america', 'sa') }}
+# Kazakhstan
+398 {{ cdn.get('west-asia', 'as') }}
+# Lao People's Democratic Republic
+418 {{ cdn.get('east-asia', 'as') }}
+# Lebanon
+422 {{ cdn.get('west-asia', 'as') }}
+# Saint Lucia
+662 {{ cdn.get('south-america', 'sa') }}
+# Liechtenstein
+438 {{ cdn.get('europe', 'eu') }}
+# Sri Lanka
+144 {{ cdn.get('east-asia', 'as') }}
+# Liberia
+430 {{ cdn.get('africa', 'af') }}
+# Lesotho
+426 {{ cdn.get('africa', 'af') }}
+# Lithuania
+440 {{ cdn.get('europe', 'eu') }}
+# Luxembourg
+442 {{ cdn.get('europe', 'eu') }}
+# Latvia
+428 {{ cdn.get('europe', 'eu') }}
+# Libyan Arab Jamahiriya
+434 {{ cdn.get('africa', 'af') }}
+# Morocco
+504 {{ cdn.get('africa', 'af') }}
+# Monaco
+492 {{ cdn.get('europe', 'eu') }}
+# Moldova, Republic of
+498 {{ cdn.get('europe', 'eu') }}
+# Madagascar
+450 {{ cdn.get('africa', 'af') }}
+# Marshall Islands
+584 {{ cdn.get('oceania', 'oc') }}
+# Macedonia, the Former Yugoslav Republic of
+807 {{ cdn.get('europe', 'eu') }}
+# Mali
+466 {{ cdn.get('africa', 'af') }}
+# Myanmar
+104 {{ cdn.get('east-asia', 'as') }}
+# Mongolia
+496 {{ cdn.get('east-asia', 'as') }}
+# Macao
+446 {{ cdn.get('east-asia', 'as') }}
+# Northern Mariana Islands
+580 {{ cdn.get('oceania', 'oc') }}
+# Martinique
+474 {{ cdn.get('south-america', 'sa') }}
+# Mauritania
+478 {{ cdn.get('africa', 'af') }}
+# Montserrat
+500 {{ cdn.get('south-america', 'sa') }}
+# Malta
+470 {{ cdn.get('europe', 'eu') }}
+# Mauritius
+480 {{ cdn.get('africa', 'af') }}
+# Maldives
+462 {{ cdn.get('east-asia', 'as') }}
+# Malawi
+454 {{ cdn.get('africa', 'af') }}
+# Mexico
+484 {{ cdn.get('north-america', 'na') }}
+# Malaysia
+458 {{ cdn.get('east-asia', 'as') }}
+# Mozambique
+508 {{ cdn.get('africa', 'af') }}
+# Namibia
+516 {{ cdn.get('africa', 'af') }}
+# New Caledonia
+540 {{ cdn.get('oceania', 'oc') }}
+# Niger
+562 {{ cdn.get('africa', 'af') }}
+# Norfolk Island
+574 {{ cdn.get('oceania', 'oc') }}
+# Nigeria
+566 {{ cdn.get('africa', 'af') }}
+# Nicaragua
+558 {{ cdn.get('south-america', 'sa') }}
+# Netherlands
+528 {{ cdn.get('europe', 'eu') }}
+# Norway
+578 {{ cdn.get('europe', 'eu') }}
+# Nepal
+524 {{ cdn.get('east-asia', 'as') }}
+# Nauru
+520 {{ cdn.get('oceania', 'oc') }}
+# Niue
+570 {{ cdn.get('oceania', 'oc') }}
+# New Zealand
+554 {{ cdn.get('oceania', 'oc') }}
+# Oman
+512 {{ cdn.get('west-asia', 'as') }}
+# Panama
+591 {{ cdn.get('south-america', 'sa') }}
+# Peru
+604 {{ cdn.get('south-america', 'sa') }}
+# French Polynesia
+258 {{ cdn.get('oceania', 'oc') }}
+# Papua New Guinea
+598 {{ cdn.get('oceania', 'oc') }}
+# Philippines
+608 {{ cdn.get('east-asia', 'as') }}
+# Pakistan
+586 {{ cdn.get('west-asia', 'as') }}
+# Poland
+616 {{ cdn.get('europe', 'eu') }}
+# Saint Pierre and Miquelon
+666 {{ cdn.get('south-america', 'sa') }}
+# Pitcairn
+612 {{ cdn.get('oceania', 'oc') }}
+# Puerto Rico
+630 {{ cdn.get('south-america', 'sa') }}
+# Portugal
+620 {{ cdn.get('europe', 'eu') }}
+# Palau
+585 {{ cdn.get('oceania', 'oc') }}
+# Paraguay
+600 {{ cdn.get('south-america', 'sa') }}
+# Qatar
+634 {{ cdn.get('west-asia', 'as') }}
+# Reunion
+638 {{ cdn.get('africa', 'af') }}
+# Romania
+642 {{ cdn.get('europe', 'eu') }}
+# Russian Federation
+643 {{ cdn.get('west-asia', 'as') }}
+# Rwanda
+646 {{ cdn.get('africa', 'af') }}
+# Saudi Arabia
+682 {{ cdn.get('west-asia', 'as') }}
+# Solomon Islands
+90 {{ cdn.get('oceania', 'oc') }}
+# Seychelles
+690 {{ cdn.get('africa', 'af') }}
+# Sudan
+736 {{ cdn.get('africa', 'af') }}
+# Sweden
+752 {{ cdn.get('europe', 'eu') }}
+# Singapore
+702 {{ cdn.get('east-asia', 'as') }}
+# Saint Helena
+654 {{ cdn.get('africa', 'af') }}
+# Slovenia
+705 {{ cdn.get('europe', 'eu') }}
+# Svalbard and Jan Mayen
+744 {{ cdn.get('europe', 'eu') }}
+# Slovakia
+703 {{ cdn.get('europe', 'eu') }}
+# Sierra Leone
+694 {{ cdn.get('africa', 'af') }}
+# San Marino
+674 {{ cdn.get('europe', 'eu') }}
+# Senegal
+686 {{ cdn.get('africa', 'af') }}
+# Somalia
+706 {{ cdn.get('africa', 'af') }}
+# Suriname
+740 {{ cdn.get('south-america', 'sa') }}
+# Sao Tome and Principe
+678 {{ cdn.get('africa', 'af') }}
+# El Salvador
+222 {{ cdn.get('south-america', 'sa') }}
+# Syrian Arab Republic
+760 {{ cdn.get('west-asia', 'as') }}
+# Swaziland
+748 {{ cdn.get('africa', 'af') }}
+# Turks and Caicos Islands
+796 {{ cdn.get('south-america', 'sa') }}
+# Chad
+148 {{ cdn.get('africa', 'af') }}
+# French Southern Territories
+260 {{ cdn.get('africa', 'af') }}
+# Togo
+768 {{ cdn.get('africa', 'af') }}
+# Thailand
+764 {{ cdn.get('east-asia', 'as') }}
+# Tajikistan
+762 {{ cdn.get('west-asia', 'as') }}
+# Tokelau
+772 {{ cdn.get('oceania', 'oc') }}
+# Turkmenistan
+795 {{ cdn.get('west-asia', 'as') }}
+# Tonga
+788 {{ cdn.get('oceania', 'oc') }}
+# East Timor
+776 {{ cdn.get('east-asia', 'as') }}
+# Turkey
+792 {{ cdn.get('west-asia', 'as') }}
+# Trinidad and Tobago
+780 {{ cdn.get('south-america', 'sa') }}
+# Tuvalu
+798 {{ cdn.get('oceania', 'oc') }}
+# Taiwan
+158 {{ cdn.get('east-asia', 'as') }}
+# Tanzania, United Republic of
+834 {{ cdn.get('africa', 'af') }}
+# Ukraine
+804 {{ cdn.get('europe', 'eu') }}
+# Uganda
+800 {{ cdn.get('africa', 'af') }}
+# United States Minor Outlying Islands
+581 {{ cdn.get('oceania', 'oc') }}
+# United States
+840 {{ cdn.get('north-america', 'na') }}
+# Uruguay
+858 {{ cdn.get('south-america', 'sa') }}
+# Uzbekistan
+860 {{ cdn.get('west-asia', 'as') }}
+# Holy See (Vatican City State)
+336 {{ cdn.get('europe', 'eu') }}
+# Saint Vincent and the Grenadines
+670 {{ cdn.get('south-america', 'sa') }}
+# Venezuela
+862 {{ cdn.get('south-america', 'sa') }}
+# Virgin Islands, British
+92 {{ cdn.get('south-america', 'sa') }}
+# Virgin Islands, U.S.
+850 {{ cdn.get('south-america', 'sa') }}
+# Vietnam
+704 {{ cdn.get('east-asia', 'as') }}
+# Vanuatu
+548 {{ cdn.get('oceania', 'oc') }}
+# Wallis and Futuna
+876 {{ cdn.get('oceania', 'oc') }}
+# Samoa
+882 {{ cdn.get('oceania', 'oc') }}
+# Yemen
+887 {{ cdn.get('west-asia', 'as') }}
+# Mayotte
+175 {{ cdn.get('africa', 'af') }}
+# Yugoslavia
+891 {{ cdn.get('europe', 'eu') }}
+# South Africa
+710 {{ cdn.get('africa', 'af') }}
+# Zambia
+894 {{ cdn.get('africa', 'af') }}
+# Zaire
+180 {{ cdn.get('africa', 'af') }}
+# Zimbabwe
+716 {{ cdn.get('africa', 'af') }}
