@@ -54,6 +54,8 @@ BROKER_URL = redis://:$${redis-requirepass:passwd}@[$${redis:ipv4}]:$${redis:por
 CELERY_RESULT_BACKEND = redis://:$${redis-requirepass:passwd}@[$${redis:ipv4}]:$${redis:port}/2
 SECRET_KEY = $${csrf-secret-key:passwd}
 INSTANCE_HOST = $${instance-parameters:ipv6-random}
+POSTGRES_IPV4 = $${postgres-promise:hostname}
+SQLALCHEMY_DATABASE_URI = postgres://extranet_spr_production:%(password)s@%(ipv4)s:5432/extranet_spr_production
 
 
 

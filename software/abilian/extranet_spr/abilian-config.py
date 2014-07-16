@@ -23,12 +23,15 @@ def load_config():
         if key in ['SECRET_KEY']:
             globals()[key] = str(value)
 
-    # interpolate password if needed
+    # interpolate password and host provided by separate files
 
     try:
-        globals()['SQLALCHEMY_DATABASE_URI'] = SQLALCHEMY_DATABASE_URI % {'password': SQLALCHEMY_DATABASE_PASSWORD}
+        globals()['SQLALCHEMY_DATABASE_URI'] = SQLALCHEMY_DATABASE_URI % {
+                'password': SQLALCHEMY_DATABASE_PASSWORD,
+                'ipv4': POSTGRES_IPV4
+                }
     except NameError:
-        pass
+        raise NameError("The configuration is not complete yet")
 
 
 load_config()
