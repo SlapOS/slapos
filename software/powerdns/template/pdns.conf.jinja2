@@ -1,0 +1,91 @@
+# -------------------------------------------------------------------------
+
+# Configure ip/port binding
+local-address={{ pdns.get('local-ipv4') }}
+local-ipv6={{ pdns.get('ipv6') }}
+local-port={{ pdns.get('port') }}
+
+
+socket-dir={{ pdns.get('socket-directory') }}
+
+# Monitoring
+webserver=yes
+webserver-address={{ pdns.get('local-ipv4') }}
+webserver-port={{ pdns.get('webserver-port') }}
+
+# These totally disable query+packet caching for all zones.  This is necessary
+# because otherwise when the exact same question is asked twice in a short
+# period of time (by default, 10 seconds), the same response will be given
+# without any backends getting involved.
+#
+# This is bad for geobackend because obviously every question can potentially
+# require a new answer based only on the IP of the user's nameserver.  Now, it
+# should be noted that if you have other zones in PowerDNS then they will have
+# their query cache disabled as well.  That's not ideal, so you probably want
+# to run a separate instance of PowerDNS just for geobackend.  Maybe one day
+# there will be config options to set per-zone query caching time or something.
+query-cache-ttl=0
+cache-ttl=0
+
+# Log a lot of stuff.  Logging is slow.  We will disable this when we are happy
+# things are working. :)
+log-dns-details=yes
+log-dns-queries=yes
+log-failed-updates=yes
+loglevel=4
+
+# This disables wildcards which is more efficient.  geobackend doesn't use
+# them, so if none of your backends need them, set this, otherwise comment it
+# out.
+# wildcards=no
+
+# The geobackend
+launch=geo
+
+# The zone that your geo-balanced RR is inside of.  The whole zone has to be
+# delegated to the PowerDNS backend, so you will generally want to make up some
+# subzone of your main zone.  We chose "geo.blitzed.org".
+#
+geo-zone={{ slapparameter_dict.get('zone', 'example.com') }}
+
+# The only parts of the SOA for "geo.blitzed.org" that apply here are the
+# master server name and the contact address.
+geo-soa-values={{ slapparameter_dict.get('soa', 'ns0.example.com,admin@example.com') }}
+
+# List of NS records of the PowerDNS servers that are authoritative for your
+# GLB zone.
+geo-ns-records={{ slapparameter_dict.get('ns-record', 'ns0.example.com,ns1.example.com') }}
+
+# The TTL of the CNAME records that geobackend will return.  Since the same
+# resolver will always get the same CNAME (apart from if the director-map
+# changes) it is safe to return a reasonable TTL, so if you leave this
+# commented then a sane default will be chosen.
+#geo-ttl=3600
+
+# The TTL of the NS records that will be returned.  Leave this commented if you
+# don't understand.
+#geo-ns-ttl=86400
+
+# This is the real guts of the data that drives this backend.  This is a DNS
+# zone file for RBLDNSD, a nameserver specialised for running large DNS zones
+# typical of DNSBLs and such.  We choose it for our data because it is easier
+# to parse than the BIND-format one.
+#
+# Anyway, it comes from http://countries.nerd.dk/more.html - there are details
+# there for how to rsync your own copy.  You'll want to do that regularly,
+# every couple of days maybe.  We believe the nerd.dk guys take the netblock
+# info from Regional Internet Registries (RIRs) like RIPE, ARIN, APNIC.  From
+# that they build a big zonefile of IP/prefixlen -> ISO-country-code mappings.
+geo-ip-map-zonefile={{  geo.get('ip-map-zonefile') }}
+
+# And finally this last directive tells the geobackend where to find the map
+# files that say a) which RR to answer for, and b) what actual resource record
+# to return for each ISO country code.  The setting here is a comma-separated
+# list of paths, each of which may either be a single map file or a directory
+# that will contain map files.  If you are only ever going to serve one RR then
+# a single file is probably better, but if you're going to serve many then a
+# directory would probably be better.  The rest of this documentation will
+# assume you chose a directory.
+geo-maps={{  geo.get('geo-maps') }}
+
+# -------------------------------------------------------------------------
