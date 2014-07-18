@@ -151,8 +151,11 @@ template = inline:
     #!/bin/bash
     . {{environment}}
     # shut down postgres
-    backup_dir={{backup_dir}}
-    [ -n "$1" ] && backup_dir="$1"
+    if [ ! -d "$1" ]; then
+        echo "Usage: postgres-restore [directory]"
+        exit 10
+    fi
+    backup_dir="$1"
     $${directories:bin}/postgres-stop
     # check that postgres is down or refuse to run
     $${directories:bin}/postgres-status | grep STOPPED || exit 10
