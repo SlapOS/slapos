@@ -38,6 +38,10 @@
                                 "type": "boolean",
                                 "default": "false"
                         },
+                        "slapos-software-type": {
+                                "description": "Software type of your instance inside the runner",
+                                "type": "string"
+                        },
                         "parameter-*": {
                                 "description": "'*' is a parameter which will be used to configure the instance inside the runner.",
                                 "type": "string"

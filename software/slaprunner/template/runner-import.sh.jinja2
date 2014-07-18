@@ -1,0 +1,19 @@
+#!{{ shell_binary }}
+umask 077
+restore_element () {
+  backup_path=$1
+  restore_path=$2
+  shift 2
+  element_list=$*
+  for element in $element_list
+  do
+    cd $backup_path;
+    if [ -f $element ] || [ -d $element ]; then
+       {{ rsync_binary }} -avz --delete $backup_path/$element $restore_path;
+    fi
+  done
+}
+restore_element {{ directory['backup'] }}/runner/ {{ directory['srv'] }}/runner  instance project  proxy.db
+restore_element  {{ directory['backup'] }}/etc/ {{ directory['etc'] }} config.json ssh
+cp -r {{ directory['backup'] }}/etc/.??* {{ directory['etc'] }};
+{{ curl_binary }} --insecure -vg6L --max-time 5  {{ backend_url }}/isSRReady;

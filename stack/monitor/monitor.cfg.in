@@ -45,7 +45,7 @@ www = $${:var}/www
 cgi-bin = $${:var}/cgi-bin
 monitoring-cgi = $${:cgi-bin}/monitoring
 knowledge0-cgi = $${:cgi-bin}/zero-knowledge
-public-cgi = $${:cgi-bin}/public
+public-cgi = $${:cgi-bin}/monitor-public
 
 monitor-custom-scripts = $${:etc}/monitor
 monitor-result = $${:var}/monitor
@@ -54,7 +54,7 @@ private-directory = $${:srv}/monitor-private
 
 [public-symlink]
 recipe = cns.recipe.symlink
-symlink = $${monitor-directory:public-cgi} = $${monitor-directory:www}/public
+symlink = $${monitor-directory:public-cgi} = $${monitor-directory:www}/monitor-public
 autocreate = true
 
 [cron]
