@@ -1,0 +1,23 @@
+#!{{ python_executable }}
+
+import os
+import urllib2
+import sys
+
+input_feed_directory = '{{ input_feed_directory }}'
+monitor_feed_directory = '{{ monitor_feed_directory }}'
+base_url = "{{ base_url }}"
+feed_file_list = os.listdir(input_feed_directory)
+
+rss_ok = True
+
+for feed_file_name in feed_file_list:
+  print "Getting %s" % feed_file_name
+  url = base_url + feed_file_name
+  try:
+    feed = urllib2.urlopen(url)
+    body = feed.read()
+    open(os.path.join(monitor_feed_directory, feed_file_name + '.rss'), 'w').write(body)
+    print "FEED is ok"
+  except urllib2.HTTPError as e:
+    sys.exit("%s is unvailable: %s" % (feed_file_name, e))

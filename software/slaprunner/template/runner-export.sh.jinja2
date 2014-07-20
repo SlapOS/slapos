@@ -1,0 +1,23 @@
+#!{{ shell_binary }}
+umask 077
+sync_element () {
+  path=$1
+  backup_path=$2
+  shift 2
+  element_list=$*
+  for element in $element_list
+  do
+    cd $path;
+    if [ -f $element ] || [ -d $element ]; then
+       {{ rsync_binary }} -avz --safe-links --delete $element  $backup_path;
+    fi
+  done
+}
+sync_element {{ directory['srv'] }}/runner  {{ directory['backup'] }}/runner/ instance project  proxy.db
+# We sync .* appart
+date +%s -u > {{ directory['etc'] }}/.resilient-timestamp
+cp -r {{ directory['etc'] }}/.??* {{ directory['backup'] }}/etc/
+sync_element {{ directory['etc'] }}  {{ directory['backup'] }}/etc/ config.json ssh
+if [ -d {{ directory['backup'] }}/runner/software ]; then
+  rm {{ directory['backup'] }}/runner/software/*
+fi
