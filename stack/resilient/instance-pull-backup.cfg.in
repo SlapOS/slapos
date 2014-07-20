@@ -1,14 +1,36 @@
 [buildout]
 
 parts =
-  connection-dict
+  publish-connection-informations
   pbs
   logrotate
   cron
   cron-entry-logrotate
   sshkeys-authority
   sshkeys-dropbear
+## Monitoring part
+###Parts to add for monitoring
+  certificate-authority
+  cron-entry-monitor
+  cron-entry-rss
+  deploy-index
+  deploy-settings-cgi
+  deploy-status-cgi
+  deploy-status-history-cgi
+  setup-static-files
+  certificate-authority
+  zero-parameters
+  public-symlink
+  cgi-httpd-wrapper
+  cgi-httpd-graceful-wrapper
+  monitor-promise
+  monitor-instance-log-access
+## Monitor for pbs
+  monitor-current-log-access
+  monitor-backup-log-access
+  monitor-check-resilient-feed-file
 
+extends = ${monitor-template:output}
 eggs-directory = ${buildout:eggs-directory}
 develop-eggs-directory = ${buildout:develop-eggs-directory}
 offline = true
@@ -69,16 +91,17 @@ equeue-binary = ${buildout:bin-directory}/equeue
 # notifier.notify adds the [exporter, notifier] to the execution queue
 # notifier.notify.callback sets up a callback
 [notifier]
-recipe = slapos.cookbook:notifier
-feeds = $${directory:notifier-feeds}
-callbacks = $${directory:notifier-callbacks}
-id-file = $${rootdirectory:etc}/notifier.id
-equeue-socket = $${equeue:socket}
+recipe = slapos.recipe.template:jinja2
+template = ${template-wrapper:output}
+rendered = $${:wrapper}
+wrapper = $${basedirectory:services}/notifier
+mode = 0700
+command = ${buildout:bin-directory}/pubsubserver --callbacks $${directory:notifier-callbacks} --feeds $${directory:notifier-feeds} --equeue-socket $${equeue:socket} --logfile $${basedirectory:log}/notifier.log $${:host} $${:port}
 host = $${slap-network-information:global-ipv6}
 port = 8088
-wrapper = $${basedirectory:services}/notifier
-server-binary = ${buildout:bin-directory}/pubsubserver
-notifier-binary = ${buildout:bin-directory}/pubsubnotifier
+context =
+  key content notifier:command
+
 
 [logrotate-entry-equeue]
 <= logrotate
@@ -98,6 +121,10 @@ rotate-num = 30
 <= notifier
 recipe = slapos.cookbook:pbs
 client = true
+feeds = $${directory:notifier-feeds}
+callbacks = $${directory:notifier-callbacks}
+equeue-socket = $${equeue:socket}
+notifier-binary = ${buildout:bin-directory}/pubsubnotifier
 rdiffbackup-binary = ${buildout:bin-directory}/rdiff-backup
 sshclient-binary = $${dropbear-client:wrapper}
 known-hosts = $${directory:dot-ssh}/known_hosts
@@ -215,9 +242,32 @@ slave_instance_list = []
 #--
 #-- Publish instance parameters.
 
-[connection-dict]
+[publish-connection-informations]
 recipe = slapos.cookbook:publish
 ssh-key = $${sshkeys-dropbear:public-key-value}
 notification-url = http://[$${notifier:host}]:$${notifier:port}/notify
 feeds-url = http://[$${notifier:host}]:$${notifier:port}/get/
 
+
+#----------------
+#--
+#-- Monitor
+
+[monitor-backup-log-access]
+< = monitor-directory-access
+source = $${directory:logrotate-backup}
+
+[monitor-current-log-access]
+< = monitor-directory-access
+source = $${basedirectory:log}
+
+[monitor-check-resilient-feed-file]
+recipe = slapos.recipe.template:jinja2
+template = ${template-monitor-check-resilient-feed:location}/${template-monitor-check-resilient-feed:filename}
+rendered = $${monitor-directory:monitor-custom-scripts}/check-create-resilient-feed-files.py
+mode = 700
+context =
+  key input_feed_directory directory:notifier-feeds
+  key monitor_feed_directory monitor-directory:public-cgi
+  key base_url publish-connection-informations:feeds-url
+  raw python_executable ${buildout:executable}

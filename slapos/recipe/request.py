@@ -153,6 +153,7 @@ class Recipe(object):
           # XXX: deprecated, to be removed
           options['instance_guid'] = self.instance.getInstanceGuid()
           options['instance-state'] = self.instance.getState()
+          options['instance-status'] = self.instance.getStatus()
         except (slapmodule.ResourceNotReady, AttributeError):
           # Backward compatibility. Old SlapOS master and core don't know this.
           self.logger.warning("Impossible to fetch instance GUID nor state.")
