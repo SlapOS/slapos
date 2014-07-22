@@ -126,6 +126,7 @@ active_process.postResult(active_result)
       'credential_request_module',
       'credential_update_module',
       'currency_module',
+      'cloud_contract_module',
       'data_set_module',
       'document_ingestion_module',
       'document_module',
