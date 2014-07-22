@@ -1,0 +1,80 @@
+{
+  "type": "object",
+  "$schema": "http://json-schema.org/draft-04/schema",
+
+  "title": "Input Parameters",
+  "properties": {
+    "url": {
+      "title": "Backend URL",
+      "description": "Url of the backend",
+      "type": "string"
+    },
+    "custom_domain": {
+      "title": "Custom Domain",
+      "description": "Custom Domain to use for the website",
+      "type": "string",
+      "pattern": "^([a-zA-Z0-9]([a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,6}$"
+    },
+    "type": {
+      "title": "Backend Type",
+      "description": "Type of the backend",
+      "type": "string",
+      "default": "",
+      "enum": ["", "zope"]
+    },
+
+    "path": {
+      "title": "Backend Path",
+      "description": "Path to proxy to in the backend",
+      "type": "string",
+      "default": ""
+    },
+
+    "ssl_crt": {
+      "title": "SSL Certificate",
+      "description": "SSL Certificate",
+      "type": "string",
+      "default": ""
+    },
+    "ssl_key": {
+      "title": "SSL Key",
+      "description": "SSL Key",
+      "type": "string",
+      "default": ""
+    },
+
+    "ssl_ca_crt": {
+      "title": "SSL Certificate Authority's Certificate",
+      "description": "SSL Key",
+      "type": "string",
+      "default": ""
+    },
+    "https-only": {
+      "title": "HTTPS Only",
+      "description": "If set to true, http request are redirect to https",
+      "type": "string",
+      "default": "false",
+      "enum": ["false", "true"]
+    },
+
+    "enable_cache": {
+      "title": "Enable Cache",
+      "description": "If set to true, the cache is used",
+      "type": "string",
+      "default": "false",
+      "enum": ["false", "true"]
+    },
+    "apache_custom_http": {
+      "title": "HTTP configuration",
+      "description": "Raw http configuration in python template format. Your site will be rejected if you use it without notification and approval of the frontend adminastrator",
+      "default": "",
+      "type": "string"
+    },
+    "apache_custom_https": {
+      "title": "HTTPS configuration",
+      "description": "Raw https configuration in python template format. Your site will be rejected if you use it without notification and approval of the frontend adminastrator",
+      "default": "",
+      "type": "string"
+    }
+  }
+}
