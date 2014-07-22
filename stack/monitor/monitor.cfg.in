@@ -237,77 +237,11 @@ filename = $${public:filename}
 # XXX could it be something lighter?
 [cgi-httpd-configuration-file]
 recipe = collective.recipe.template
-input = inline:
-  PidFile "$${:pid-file}"
-  ServerName example.com
-  ServerAdmin someone@email
-  <IfDefine !MonitorPort>
-  Listen [$${:listening-ip}]:$${monitor-parameters:port}
-  Define MonitorPort
-  </IfDefine>
-  DocumentRoot "$${:document-root}"
-  ErrorLog "$${:error-log}"
-  LoadModule unixd_module modules/mod_unixd.so
-  LoadModule access_compat_module modules/mod_access_compat.so
-  LoadModule authz_core_module modules/mod_authz_core.so
-  LoadModule authn_core_module modules/mod_authn_core.so
-  LoadModule authz_host_module modules/mod_authz_host.so
-  LoadModule mime_module modules/mod_mime.so
-  LoadModule cgid_module modules/mod_cgid.so
-  LoadModule dir_module modules/mod_dir.so
-  LoadModule ssl_module modules/mod_ssl.so
-  LoadModule alias_module modules/mod_alias.so
-  LoadModule autoindex_module modules/mod_autoindex.so
-  LoadModule auth_basic_module modules/mod_auth_basic.so
-  LoadModule authz_user_module modules/mod_authz_user.so
-  LoadModule authn_file_module modules/mod_authn_file.so
-
-  # SSL Configuration
-  <IfDefine !SSLConfigured>
-  Define SSLConfigured
-  SSLCertificateFile $${ca-httpd:cert-file}
-  SSLCertificateKeyFile $${ca-httpd:key-file}
-  SSLRandomSeed startup builtin
-  SSLRandomSeed connect builtin
-  SSLRandomSeed startup /dev/urandom 256
-  SSLRandomSeed connect builtin
-  SSLProtocol -ALL +SSLv3 +TLSv1
-  SSLHonorCipherOrder On
-  SSLCipherSuite RC4-SHA:HIGH:!ADH
-  </IfDefine>
-  SSLEngine   On
-  ScriptSock $${:cgid-pid-file}
-  <Directory $${:document-root}>
-    SSLVerifyDepth    1
-    SSLRequireSSL
-    SSLOptions        +StrictRequire
-    # XXX: security????
-    Options +ExecCGI
-    AddHandler cgi-script .cgi
-    DirectoryIndex $${monitor-parameters:index-filename}
-  </Directory>
-  Alias /private/ $${monitor-directory:private-directory}/
-  <Directory $${monitor-directory:private-directory}>
-  Order Deny,Allow
-  Deny from env=AUTHREQUIRED
-  <Files ".??*">
-    Order Allow,Deny
-    Deny from all
-  </Files>
-  AuthType Basic
-  AuthName "Private access"
-  AuthUserFile "$${monitor-parameters:htaccess-file}"
-  Require valid-user
-  Options Indexes FollowSymLinks
-  Satisfy all
-  </Directory>
+input = ${monitor-httpd-template:destination}/${monitor-httpd-template:filename}
 output = $${monitor-directory:etc}/cgi-httpd.conf
 listening-ip = $${slap-parameters:ipv6-random}
-# XXX: randomize-me
-htdocs = $${monitor-directory:www}
 pid-file = $${monitor-directory:run}/cgi-httpd.pid
 cgid-pid-file = $${monitor-directory:run}/cgi-httpd-cgid.pid
-document-root = $${monitor-directory:www}
 error-log = $${monitor-directory:log}/cgi-httpd-error-log
 
 [cgi-httpd-wrapper]
