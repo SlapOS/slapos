@@ -61,6 +61,17 @@ sla-{{ parameter }} = {{ slapparameter_dict.pop( sla_key + parameter ) }}
 {%   endif -%}
 {% endfor -%}
 
+{% set authorized_slave_string = slapparameter_dict.pop('-frontend-authorized-slave-string', '') -%}
+{% set authorized_slave_list = [] %}
+{% set rejected_slave_list = [] %}
+{% for slave in slave_instance_list %}
+{%   if not (slave.has_key('apache_custom_http') and not slave.get('slave_reference') in authorized_slave_string) %}
+{%     do authorized_slave_list.append(slave) %}
+{%   else %}
+{%     do rejected_slave_list.append(slave.get('slave_reference')) %}
+{%   endif %}
+{% endfor -%}
+
 [replicate]
 <= slap-connection
 recipe = slapos.cookbook:requestoptional
@@ -76,13 +87,16 @@ config = {{ ' '.join(slapparameter_dict.keys()) + ' ' + slave_list_name }}
 {% for parameter, value in slapparameter_dict.iteritems() -%}
 config-{{parameter}} = {{ value }}
 {% endfor -%}
-config-{{ slave_list_name }} = {{ json_module.dumps(slave_instance_list) }}
+config-{{ slave_list_name }} = {{ json_module.dumps(authorized_slave_list) }}
 connection-monitor_url =
 
 [publish-information]
 recipe = slapos.cookbook:publish
 domain = {{ slapparameter_dict.get('domain') }}
 slave-amount = {{ slave_instance_list | length }}
+accepted-slave-amount = {{ authorized_slave_list | length }}
+rejected-slave-amount = {{ rejected_slave_list | length }}
+rejected-slave-list = {{ json_module.dumps(rejected_slave_list) }}
 {% for frontend in frontend_section_list %}
 {{ frontend }}-monitor-url = {{ '${' + frontend + ':connection-monitor_url}' }}
 {% endfor -%}
