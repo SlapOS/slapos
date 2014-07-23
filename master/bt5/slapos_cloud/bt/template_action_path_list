@@ -1,4 +1,5 @@
 Computer Model | view_capacity
+Computer Network | view_software_release
 Computer Partition | unfiltered_tracking_list
 Computer | computer_usage
 Computer | view_capacity
@@ -14,5 +15,7 @@ Software Instance Module | view
 Software Instance | jump_to_software_instance
 Software Instance | unfiltered_tracking_list
 Software Instance | view
+Software Release | destroy_computer_list
 Software Release | usable_computer
+Software Release | usable_network
 Software Release | view_capacity

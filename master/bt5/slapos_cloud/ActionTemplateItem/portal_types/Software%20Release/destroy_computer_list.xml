@@ -40,7 +40,7 @@
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>sr_detroy_computer_list</string> </value>
+            <value> <string>destroy_computer_list</string> </value>
         </item>
         <item>
             <key> <string>permissions</string> </key>
