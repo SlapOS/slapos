@@ -1,0 +1,113 @@
+<?xml version="1.0"?>
+<ZopeData>
+  <record id="1" aka="AAAAAAAAAAE=">
+    <pickle>
+      <global name="PythonScript" module="Products.PythonScripts.PythonScript"/>
+    </pickle>
+    <pickle>
+      <dictionary>
+        <item>
+            <key> <string>Script_magic</string> </key>
+            <value> <int>3</int> </value>
+        </item>
+        <item>
+            <key> <string>_bind_names</string> </key>
+            <value>
+              <object>
+                <klass>
+                  <global name="NameAssignments" module="Shared.DC.Scripts.Bindings"/>
+                </klass>
+                <tuple/>
+                <state>
+                  <dictionary>
+                    <item>
+                        <key> <string>_asgns</string> </key>
+                        <value>
+                          <dictionary>
+                            <item>
+                                <key> <string>name_container</string> </key>
+                                <value> <string>container</string> </value>
+                            </item>
+                            <item>
+                                <key> <string>name_context</string> </key>
+                                <value> <string>context</string> </value>
+                            </item>
+                            <item>
+                                <key> <string>name_m_self</string> </key>
+                                <value> <string>script</string> </value>
+                            </item>
+                            <item>
+                                <key> <string>name_subpath</string> </key>
+                                <value> <string>traverse_subpath</string> </value>
+                            </item>
+                          </dictionary>
+                        </value>
+                    </item>
+                  </dictionary>
+                </state>
+              </object>
+            </value>
+        </item>
+        <item>
+            <key> <string>_body</string> </key>
+            <value> <string encoding="cdata"><![CDATA[
+
+from DateTime import DateTime\n
+from Products.ERP5Type.DateUtils import addToDate\n
+\n
+hosting_subscription = context\n
+portal = context.getPortalObject()\n
+\n
+if portal.ERP5Site_isSupportRequestCreationClosed():\n
+  # Stop ticket creation\n
+  return\n
+\n
+hs_title = hosting_subscription.getTitle()\n
+date_check_limit = addToDate(DateTime(), to_add={\'hour\': -4})\n
+has_newest_allocated_instance = False\n
+has_unallocated_instance = False\n
+source_instance = hosting_subscription.getPredecessorValue()\n
+failing_instance = None\n
+\n
+if not source_instance:\n
+  return\n
+software_instance_list = [source_instance]\n
+predecessors_instance = source_instance.getPredecessorValueList()\n
+if len(predecessors_instance) > 0:\n
+  software_instance_list.extend(predecessors_instance)\n
+\n
+# Check if at least one software Instance is Allocated\n
+for instance in software_instance_list:\n
+  if instance.getAggregate("") != "":\n
+    if (instance.getCreationDate() - date_check_limit) < 0:\n
+      # This instance is created for more than 4 hours\n
+      has_newest_allocated_instance = True\n
+  else:\n
+   has_unallocated_instance = True\n
+   failing_instance = instance\n
+\n
+if has_unallocated_instance and has_newest_allocated_instance:\n
+  return context.Base_generateSupportRequestForSlapOS(\n
+    "Hosting Subscription %s (%s) is partially allocated" % (hs_title,\n
+                                                          hosting_subscription.getReference()),\n
+    "%s has allocated instance(s) but, instance %s (%s) has been unallocated for more than 4 hours." % (\n
+      hs_title, failing_instance.getTitle(), failing_instance.getAbsoluteUrl()),\n
+    source_instance.getRelativeUrl())\n
+else:\n
+  return\n
+
+
+]]></string> </value>
+        </item>
+        <item>
+            <key> <string>_params</string> </key>
+            <value> <string></string> </value>
+        </item>
+        <item>
+            <key> <string>id</string> </key>
+            <value> <string>HostingSubscription_checkSofwareInstanceState</string> </value>
+        </item>
+      </dictionary>
+    </pickle>
+  </record>
+</ZopeData>
