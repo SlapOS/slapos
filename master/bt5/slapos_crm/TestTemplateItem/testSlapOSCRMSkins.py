@@ -75,7 +75,7 @@ class TestSlapOSPerson_checkToCreateRegularisationRequest(testSlapOSMixin):
                       ticket.getSource())
     expected_text_content = """Dear user,
 
-A new invoice has been generated. 
+A new invoice has been generated.
 You can access it in your invoice section at http://foobar.org/.
 
 Do not hesitate to visit the web forum (http://community.slapos.org/forum) in case of question.
@@ -89,7 +89,7 @@ The slapos team
                                            expected_text_content.splitlines())]))
     self.assertEquals(event.getSimulationState(), 'delivered')
 
-  @simulate('NotificationTool_getDocumentValue', 
+  @simulate('NotificationTool_getDocumentValue',
             'reference=None',
   'assert reference == "slapos-crm.create.regularisation.request"\n' \
   'return context.restrictedTraverse(' \
@@ -165,7 +165,7 @@ The slapos team
     self.assertEquals(event2, None)
 
   @simulate('Entity_statBalance', '*args, **kwargs', 'return "0"')
-  @simulate('RegularisationRequest_checkToSendUniqEvent', 
+  @simulate('RegularisationRequest_checkToSendUniqEvent',
             '*args, **kwargs',
             'raise NotImplementedError, "Should not have been called"')
   def test_addRegularisationRequest_balance_ok(self):
@@ -479,12 +479,12 @@ class TestSlapOSRegularisationRequest_cancelInvoiceIfPersonOpenOrderIsEmpty(
       ticket.RegularisationRequest_cancelInvoiceIfPersonOpenOrderIsEmpty,
       REQUEST={})
 
-  @simulate('SaleInvoiceTransaction_createReversalPayzenTransaction', 
+  @simulate('SaleInvoiceTransaction_createReversalPayzenTransaction',
             '*args, **kwargs',
   'context.portal_workflow.doActionFor(' \
   'context, action="edit_action", ' \
   'comment="Visited by SaleInvoiceTransaction_createReversalPayzenTransaction")')
-  @simulate('RegularisationRequest_checkToSendUniqEvent', 
+  @simulate('RegularisationRequest_checkToSendUniqEvent',
             'service_relative_url, title, text_content, comment, REQUEST=None',
   'context.portal_workflow.doActionFor(' \
   'context, action="edit_action", ' \
@@ -548,10 +548,10 @@ The slapos team
     self.assertEqual(event, "fooevent")
     self.assertEqual(invoice_list, [invoice.getRelativeUrl()])
 
-  @simulate('SaleInvoiceTransaction_createReversalPayzenTransaction', 
+  @simulate('SaleInvoiceTransaction_createReversalPayzenTransaction',
             '*args, **kwargs',
             'raise NotImplementedError, "Should not have been called"')
-  @simulate('RegularisationRequest_checkToSendUniqEvent', 
+  @simulate('RegularisationRequest_checkToSendUniqEvent',
             '*args, **kwargs',
             'raise NotImplementedError, "Should not have been called"')
   def test_cancelInvoiceIfPersonOpenOrderIsEmpty_not_suspended_ticket(self):
@@ -568,10 +568,10 @@ The slapos team
     self.assertEqual(event, None)
     self.assertEqual(invoice_list, [])
 
-  @simulate('SaleInvoiceTransaction_createReversalPayzenTransaction', 
+  @simulate('SaleInvoiceTransaction_createReversalPayzenTransaction',
             '*args, **kwargs',
             'raise NotImplementedError, "Should not have been called"')
-  @simulate('RegularisationRequest_checkToSendUniqEvent', 
+  @simulate('RegularisationRequest_checkToSendUniqEvent',
             '*args, **kwargs',
             'raise NotImplementedError, "Should not have been called"')
   def test_cancelInvoiceIfPersonOpenOrderIsEmpty_no_person_related(self):
@@ -585,10 +585,10 @@ The slapos team
     self.assertEqual(event, None)
     self.assertEqual(invoice_list, [])
 
-  @simulate('SaleInvoiceTransaction_createReversalPayzenTransaction', 
+  @simulate('SaleInvoiceTransaction_createReversalPayzenTransaction',
             '*args, **kwargs',
             'raise NotImplementedError, "Should not have been called"')
-  @simulate('RegularisationRequest_checkToSendUniqEvent', 
+  @simulate('RegularisationRequest_checkToSendUniqEvent',
             '*args, **kwargs',
             'raise NotImplementedError, "Should not have been called"')
   def test_cancelInvoiceIfPersonOpenOrderIsEmpty_no_open_order(self):
@@ -606,10 +606,10 @@ The slapos team
     self.assertEqual(event, None)
     self.assertEqual(invoice_list, [])
 
-  @simulate('SaleInvoiceTransaction_createReversalPayzenTransaction', 
+  @simulate('SaleInvoiceTransaction_createReversalPayzenTransaction',
             '*args, **kwargs',
             'raise NotImplementedError, "Should not have been called"')
-  @simulate('RegularisationRequest_checkToSendUniqEvent', 
+  @simulate('RegularisationRequest_checkToSendUniqEvent',
             '*args, **kwargs',
             'raise NotImplementedError, "Should not have been called"')
   def test_cancelInvoiceIfPersonOpenOrderIsEmpty_with_open_order_line(self):
@@ -633,10 +633,10 @@ The slapos team
     self.assertEqual(event, None)
     self.assertEqual(invoice_list, [])
 
-  @simulate('SaleInvoiceTransaction_createReversalPayzenTransaction', 
+  @simulate('SaleInvoiceTransaction_createReversalPayzenTransaction',
             '*args, **kwargs',
             'raise NotImplementedError, "Should not have been called"')
-  @simulate('RegularisationRequest_checkToSendUniqEvent', 
+  @simulate('RegularisationRequest_checkToSendUniqEvent',
             'service_relative_url, title, text_content, comment, REQUEST=None',
   'context.portal_workflow.doActionFor(' \
   'context, action="edit_action", ' \
@@ -686,7 +686,7 @@ class TestSlapOSRegularisationRequest_checkToTriggerNextEscalationStep(
       0, ticket.getRelativeUrl(), '', '', '', ''
       )
 
-  @simulate('RegularisationRequest_checkToSendUniqEvent', 
+  @simulate('RegularisationRequest_checkToSendUniqEvent',
             'service_relative_url, title, text_content, comment, REQUEST=None',
   'context.portal_workflow.doActionFor(' \
   'context, action="edit_action", ' \
@@ -709,7 +709,7 @@ class TestSlapOSRegularisationRequest_checkToTriggerNextEscalationStep(
 
     event2 = ticket.RegularisationRequest_checkToTriggerNextEscalationStep(
         7, 'service_module/slapos_crm_acknowledgement',
-        'service_module/slapos_crm_spam', 
+        'service_module/slapos_crm_spam',
         'foo2 title', 'foo2 content', 'foo2 comment')
 
     self.assertEquals(event2, event.getRelativeUrl())
@@ -719,7 +719,7 @@ class TestSlapOSRegularisationRequest_checkToTriggerNextEscalationStep(
        'foo2 comment'),
       ticket.workflow_history['edit_workflow'][-1]['comment'])
 
-  @simulate('RegularisationRequest_checkToSendUniqEvent', 
+  @simulate('RegularisationRequest_checkToSendUniqEvent',
             '*args, **kwargs',
             'raise NotImplementedError, "Should not have been called"')
   def test_checkToTriggerNextEscalationStep_recent_event(self):
@@ -738,12 +738,12 @@ class TestSlapOSRegularisationRequest_checkToTriggerNextEscalationStep(
 
     event2 = ticket.RegularisationRequest_checkToTriggerNextEscalationStep(
         7, 'service_module/slapos_crm_acknowledgement',
-        'service_module/slapos_crm_spam', 
+        'service_module/slapos_crm_spam',
         'foo2 title', 'foo2 content', 'foo2 comment')
 
     self.assertEquals(event2, None)
 
-  @simulate('RegularisationRequest_checkToSendUniqEvent', 
+  @simulate('RegularisationRequest_checkToSendUniqEvent',
             '*args, **kwargs',
             'raise NotImplementedError, "Should not have been called"')
   def test_checkToTriggerNextEscalationStep_other_ticket_event(self):
@@ -761,12 +761,12 @@ class TestSlapOSRegularisationRequest_checkToTriggerNextEscalationStep(
 
     event2 = ticket.RegularisationRequest_checkToTriggerNextEscalationStep(
         1, 'service_module/slapos_crm_acknowledgement',
-        'service_module/slapos_crm_spam', 
+        'service_module/slapos_crm_spam',
         'foo2 title', 'foo2 content', 'foo2 comment')
 
     self.assertEquals(event2, None)
 
-  @simulate('RegularisationRequest_checkToSendUniqEvent', 
+  @simulate('RegularisationRequest_checkToSendUniqEvent',
             '*args, **kwargs',
             'raise NotImplementedError, "Should not have been called"')
   def test_checkToTriggerNextEscalationStep_other_resource_event(self):
@@ -785,12 +785,12 @@ class TestSlapOSRegularisationRequest_checkToTriggerNextEscalationStep(
 
     event2 = ticket.RegularisationRequest_checkToTriggerNextEscalationStep(
         1, 'service_module/slapos_crm_acknowledgement',
-        'service_module/slapos_crm_spam', 
+        'service_module/slapos_crm_spam',
         'foo2 title', 'foo2 content', 'foo2 comment')
 
     self.assertEquals(event2, None)
 
-  @simulate('RegularisationRequest_checkToSendUniqEvent', 
+  @simulate('RegularisationRequest_checkToSendUniqEvent',
             '*args, **kwargs',
             'raise NotImplementedError, "Should not have been called"')
   def test_checkToTriggerNextEscalationStep_no_current_event(self):
@@ -802,12 +802,12 @@ class TestSlapOSRegularisationRequest_checkToTriggerNextEscalationStep(
 
     event2 = ticket.RegularisationRequest_checkToTriggerNextEscalationStep(
         1, 'service_module/slapos_crm_acknowledgement',
-        'service_module/slapos_crm_spam', 
+        'service_module/slapos_crm_spam',
         'foo2 title', 'foo2 content', 'foo2 comment')
 
     self.assertEquals(event2, None)
 
-  @simulate('RegularisationRequest_checkToSendUniqEvent', 
+  @simulate('RegularisationRequest_checkToSendUniqEvent',
             '*args, **kwargs',
             'raise NotImplementedError, "Should not have been called"')
   def test_checkToTriggerNextEscalationStep_no_ticket_resource(self):
@@ -825,12 +825,12 @@ class TestSlapOSRegularisationRequest_checkToTriggerNextEscalationStep(
 
     event2 = ticket.RegularisationRequest_checkToTriggerNextEscalationStep(
         1, 'service_module/slapos_crm_acknowledgement',
-        'service_module/slapos_crm_spam', 
+        'service_module/slapos_crm_spam',
         'foo2 title', 'foo2 content', 'foo2 comment')
 
     self.assertEquals(event2, None)
 
-  @simulate('RegularisationRequest_checkToSendUniqEvent', 
+  @simulate('RegularisationRequest_checkToSendUniqEvent',
             '*args, **kwargs',
             'raise NotImplementedError, "Should not have been called"')
   def test_checkToTriggerNextEscalationStep_not_suspended(self):
@@ -848,7 +848,7 @@ class TestSlapOSRegularisationRequest_checkToTriggerNextEscalationStep(
 
     event2 = ticket.RegularisationRequest_checkToTriggerNextEscalationStep(
         1, 'service_module/slapos_crm_acknowledgement',
-        'service_module/slapos_crm_spam', 
+        'service_module/slapos_crm_spam',
         'foo2 title', 'foo2 content', 'foo2 comment')
 
     self.assertEquals(event2, None)
@@ -883,7 +883,7 @@ class TestSlapOSRegularisationRequest_triggerAcknowledgmentEscalation(
       ticket.RegularisationRequest_triggerAcknowledgmentEscalation,
       REQUEST={})
 
-  @simulate('RegularisationRequest_checkToTriggerNextEscalationStep', 
+  @simulate('RegularisationRequest_checkToTriggerNextEscalationStep',
             'day, current, next, title, text_content, comment, REQUEST=None',
   'context.portal_workflow.doActionFor(' \
   'context, action="edit_action", ' \
@@ -912,12 +912,12 @@ The slapos team
        'Stopping reminder.'),
       ticket.workflow_history['edit_workflow'][-1]['comment'])
 
-  @simulate('NotificationTool_getDocumentValue', 
+  @simulate('NotificationTool_getDocumentValue',
             'reference=None',
   'assert reference == "slapos-crm.acknowledgment.escalation"\n' \
   'return context.restrictedTraverse(' \
   'context.REQUEST["test_checkToTriggerNextEscalationStep_notification_message"])')
-  @simulate('RegularisationRequest_checkToTriggerNextEscalationStep', 
+  @simulate('RegularisationRequest_checkToTriggerNextEscalationStep',
             'day, current, next, title, text_content, comment, REQUEST=None',
   'context.portal_workflow.doActionFor(' \
   'context, action="edit_action", ' \
@@ -969,7 +969,7 @@ class TestSlapOSRegularisationRequest_triggerStopReminderEscalation(
       ticket.RegularisationRequest_triggerStopReminderEscalation,
       REQUEST={})
 
-  @simulate('RegularisationRequest_checkToTriggerNextEscalationStep', 
+  @simulate('RegularisationRequest_checkToTriggerNextEscalationStep',
             'day, current, next, title, text_content, comment, REQUEST=None',
   'context.portal_workflow.doActionFor(' \
   'context, action="edit_action", ' \
@@ -998,12 +998,12 @@ The slapos team
        'Stopping acknowledgment.'),
       ticket.workflow_history['edit_workflow'][-1]['comment'])
 
-  @simulate('NotificationTool_getDocumentValue', 
+  @simulate('NotificationTool_getDocumentValue',
             'reference=None',
   'assert reference == "slapos-crm.stop.reminder.escalation"\n' \
   'return context.restrictedTraverse(' \
   'context.REQUEST["test_checkToTriggerNextEscalationStep_notification_message"])')
-  @simulate('RegularisationRequest_checkToTriggerNextEscalationStep', 
+  @simulate('RegularisationRequest_checkToTriggerNextEscalationStep',
             'day, current, next, title, text_content, comment, REQUEST=None',
   'context.portal_workflow.doActionFor(' \
   'context, action="edit_action", ' \
@@ -1055,7 +1055,7 @@ class TestSlapOSRegularisationRequest_triggerStopAcknowledgmentEscalation(
       ticket.RegularisationRequest_triggerStopAcknowledgmentEscalation,
       REQUEST={})
 
-  @simulate('RegularisationRequest_checkToTriggerNextEscalationStep', 
+  @simulate('RegularisationRequest_checkToTriggerNextEscalationStep',
             'day, current, next, title, text_content, comment, REQUEST=None',
   'context.portal_workflow.doActionFor(' \
   'context, action="edit_action", ' \
@@ -1084,12 +1084,12 @@ The slapos team
        'Deleting reminder.'),
       ticket.workflow_history['edit_workflow'][-1]['comment'])
 
-  @simulate('NotificationTool_getDocumentValue', 
+  @simulate('NotificationTool_getDocumentValue',
             'reference=None',
   'assert reference == "slapos-crm.stop.acknowledgment.escalation"\n' \
   'return context.restrictedTraverse(' \
   'context.REQUEST["test_checkToTriggerNextEscalationStep_notification_message"])')
-  @simulate('RegularisationRequest_checkToTriggerNextEscalationStep', 
+  @simulate('RegularisationRequest_checkToTriggerNextEscalationStep',
             'day, current, next, title, text_content, comment, REQUEST=None',
   'context.portal_workflow.doActionFor(' \
   'context, action="edit_action", ' \
@@ -1141,7 +1141,7 @@ class TestSlapOSRegularisationRequest_triggerDeleteReminderEscalation(
       ticket.RegularisationRequest_triggerDeleteReminderEscalation,
       REQUEST={})
 
-  @simulate('RegularisationRequest_checkToTriggerNextEscalationStep', 
+  @simulate('RegularisationRequest_checkToTriggerNextEscalationStep',
             'day, current, next, title, text_content, comment, REQUEST=None',
   'context.portal_workflow.doActionFor(' \
   'context, action="edit_action", ' \
@@ -1170,12 +1170,12 @@ The slapos team
        'Deleting acknowledgment.'),
       ticket.workflow_history['edit_workflow'][-1]['comment'])
 
-  @simulate('NotificationTool_getDocumentValue', 
+  @simulate('NotificationTool_getDocumentValue',
             'reference=None',
   'assert reference == "slapos-crm.delete.reminder.escalation"\n' \
   'return context.restrictedTraverse(' \
   'context.REQUEST["test_checkToTriggerNextEscalationStep_notification_message"])')
-  @simulate('RegularisationRequest_checkToTriggerNextEscalationStep', 
+  @simulate('RegularisationRequest_checkToTriggerNextEscalationStep',
             'day, current, next, title, text_content, comment, REQUEST=None',
   'context.portal_workflow.doActionFor(' \
   'context, action="edit_action", ' \
@@ -1254,7 +1254,7 @@ class TestSlapOSRegularisationRequest_stopHostingSubscriptionList(
       'footag',
       REQUEST={})
 
-  @simulate('HostingSubscription_stopFromRegularisationRequest', 
+  @simulate('HostingSubscription_stopFromRegularisationRequest',
             'person, REQUEST=None',
   'context.portal_workflow.doActionFor(' \
   'context, action="edit_action", ' \
@@ -1286,7 +1286,7 @@ class TestSlapOSRegularisationRequest_stopHostingSubscriptionList(
       '%s' % person.getRelativeUrl(),
       hosting_subscription.workflow_history['edit_workflow'][-1]['comment'])
 
-  @simulate('HostingSubscription_stopFromRegularisationRequest', 
+  @simulate('HostingSubscription_stopFromRegularisationRequest',
             'person, REQUEST=None',
   'context.portal_workflow.doActionFor(' \
   'context, action="edit_action", ' \
@@ -1318,7 +1318,7 @@ class TestSlapOSRegularisationRequest_stopHostingSubscriptionList(
       '%s' % person.getRelativeUrl(),
       hosting_subscription.workflow_history['edit_workflow'][-1]['comment'])
 
-  @simulate('HostingSubscription_stopFromRegularisationRequest', 
+  @simulate('HostingSubscription_stopFromRegularisationRequest',
             '*args, **kwargs',
             'raise NotImplementedError, "Should not have been called"')
   def test_stopHostingSubscriptionList_other_subscription(self):
@@ -1341,7 +1341,7 @@ class TestSlapOSRegularisationRequest_stopHostingSubscriptionList(
 
     self.tic()
 
-  @simulate('HostingSubscription_stopFromRegularisationRequest', 
+  @simulate('HostingSubscription_stopFromRegularisationRequest',
             '*args, **kwargs',
             'raise NotImplementedError, "Should not have been called"')
   def test_stopHostingSubscriptionList_no_person(self):
@@ -1362,7 +1362,7 @@ class TestSlapOSRegularisationRequest_stopHostingSubscriptionList(
 
     self.tic()
 
-  @simulate('HostingSubscription_stopFromRegularisationRequest', 
+  @simulate('HostingSubscription_stopFromRegularisationRequest',
             '*args, **kwargs',
             'raise NotImplementedError, "Should not have been called"')
   def test_stopHostingSubscriptionList_not_suspended(self):
@@ -1384,7 +1384,7 @@ class TestSlapOSRegularisationRequest_stopHostingSubscriptionList(
 
     self.tic()
 
-  @simulate('HostingSubscription_stopFromRegularisationRequest', 
+  @simulate('HostingSubscription_stopFromRegularisationRequest',
             '*args, **kwargs',
             'raise NotImplementedError, "Should not have been called"')
   def test_stopHostingSubscriptionList_other_resource(self):
@@ -1662,7 +1662,7 @@ class TestSlapOSRegularisationRequest_deleteHostingSubscriptionList(
       'footag',
       REQUEST={})
 
-  @simulate('HostingSubscription_deleteFromRegularisationRequest', 
+  @simulate('HostingSubscription_deleteFromRegularisationRequest',
             'person, REQUEST=None',
   'context.portal_workflow.doActionFor(' \
   'context, action="edit_action", ' \
@@ -1694,7 +1694,7 @@ class TestSlapOSRegularisationRequest_deleteHostingSubscriptionList(
       '%s' % person.getRelativeUrl(),
       hosting_subscription.workflow_history['edit_workflow'][-1]['comment'])
 
-  @simulate('HostingSubscription_deleteFromRegularisationRequest', 
+  @simulate('HostingSubscription_deleteFromRegularisationRequest',
             '*args, **kwargs',
             'raise NotImplementedError, "Should not have been called"')
   def test_deleteHostingSubscriptionList_other_subscription(self):
@@ -1717,7 +1717,7 @@ class TestSlapOSRegularisationRequest_deleteHostingSubscriptionList(
 
     self.tic()
 
-  @simulate('HostingSubscription_deleteFromRegularisationRequest', 
+  @simulate('HostingSubscription_deleteFromRegularisationRequest',
             '*args, **kwargs',
             'raise NotImplementedError, "Should not have been called"')
   def test_deleteHostingSubscriptionList_no_person(self):
@@ -1738,7 +1738,7 @@ class TestSlapOSRegularisationRequest_deleteHostingSubscriptionList(
 
     self.tic()
 
-  @simulate('HostingSubscription_deleteFromRegularisationRequest', 
+  @simulate('HostingSubscription_deleteFromRegularisationRequest',
             '*args, **kwargs',
             'raise NotImplementedError, "Should not have been called"')
   def test_deleteHostingSubscriptionList_not_suspended(self):
@@ -1760,7 +1760,7 @@ class TestSlapOSRegularisationRequest_deleteHostingSubscriptionList(
 
     self.tic()
 
-  @simulate('HostingSubscription_deleteFromRegularisationRequest', 
+  @simulate('HostingSubscription_deleteFromRegularisationRequest',
             '*args, **kwargs',
             'raise NotImplementedError, "Should not have been called"')
   def test_deleteHostingSubscriptionList_other_resource(self):
@@ -1782,3 +1782,177 @@ class TestSlapOSRegularisationRequest_deleteHostingSubscriptionList(
     self.assertFalse(result)
 
     self.tic()
+  
+  
+  
+class TestSlapOSComputer_notifyWrongAllocationScope(testSlapOSMixin):
+
+  def beforeTearDown(self):
+    transaction.abort()
+  
+  def afterSetUp(self):
+    super(TestSlapOSComputer_notifyWrongAllocationScope, self).afterSetUp()
+    self.new_id = self.generateNewId()
+    self._cancelTestSupportRequestList()
+  
+  def _cancelTestSupportRequestList(self):
+    for support_request in self.portal.portal_catalog(
+                        portal_type="Support Request",
+                        title="Allocation scope has been changed for TESTCOMPT%",
+                        simulation_state="suspended"):
+      support_request.invalidate()
+    self.tic()
+  
+  def _makeComputer(self,new_id):
+    # Clone computer document
+    person = self.portal.person_module.template_member\
+         .Base_createCloneDocument(batch_mode=1)
+    computer = self.portal.computer_module\
+      .template_computer.Base_createCloneDocument(batch_mode=1)
+    computer.edit(
+      title="computer ticket %s" % (new_id, ),
+      reference="TESTCOMPT-%s" % (new_id, ),
+      source_administration_value=person
+    )
+    computer.validate()
+    return computer
+  
+  def _makePerson(self, new_id):
+    # Clone computer document
+    person = self.portal.person_module.template_member\
+         .Base_createCloneDocument(batch_mode=1)
+    person.edit(reference='TESTPERSON-%s' % (new_id, ))
+    person.immediateReindexObject()
+    return person
+  
+  def _updatePersonAssignment(self, person, role='role/member'):
+    for assignment in person.contentValues(portal_type="Assignment"):
+      assignment.cancel()
+    assignment = person.newContent(portal_type='Assignment')
+    assignment.setRole(role)
+    assignment.setStartDate(DateTime())
+    assignment.open()
+    return assignment
+    
+  def _getGeneratedSupportRequest(self, computer):
+    request_title = 'Allocation scope has been changed for %s' % computer.getReference()
+    support_request = self.portal.portal_catalog.getResultValue(
+          portal_type = 'Support Request',
+          title = request_title,
+          simulation_state = 'suspended',
+          source_project_uid = computer.getUid()
+    )
+    return support_request
+  
+  def _makeNotificationMessage(self, reference):
+    notification_message = self.portal.notification_message_module.newContent(
+      portal_type="Notification Message",
+      title='We have changed allocation scope for %s' % reference,
+      text_content='Test NM content<br/>%s<br/>' % reference,
+      content_type='text/html',
+      )
+    
+    return notification_message.getRelativeUrl()
+  
+  
+  @simulate('NotificationTool_getDocumentValue',
+            'reference=None',
+  'assert reference == "slapos-crm-computer_allocation_scope.notification"\n' \
+  'return context.restrictedTraverse(' \
+  'context.REQUEST["test_computerNotAllowedAllocationScope_OpenPublic"])')
+  @simulate('SupportRequest_trySendNotificationMessage',
+            'message_title, message, source_relative_url',
+  'context.portal_workflow.doActionFor(' \
+  'context, action="edit_action", ' \
+  'comment="Visited by SupportRequest_trySendNotificationMessage ' \
+  '%s %s %s" % (message_title, message, source_relative_url))')
+  def test_computerNotAllowedAllocationScope_OpenPublic(self):
+    new_id = self.generateNewId()
+    computer = self._makeComputer(self.new_id)
+    person = computer.getSourceAdministrationValue()
+    self._updatePersonAssignment(person, 'role/member')
+    
+    self.portal.REQUEST['test_computerNotAllowedAllocationScope_OpenPublic'] = \
+        self._makeNotificationMessage(computer.getReference())
+    
+    computer.edit(allocation_scope='open/public')
+    computer.Computer_checkAndUpdateAllocationScope()
+    self.tic()
+    self.assertEquals(computer.getAllocationScope(), 'open/personal')
+    ticket = self._getGeneratedSupportRequest(computer)
+    self.assertEquals(ticket.getSimulationState(), 'suspended')
+    self.assertEqual('Visited by SupportRequest_trySendNotificationMessage ' \
+      '%s %s %s' % \
+      ('We have changed allocation scope for %s' % computer.getReference(),
+       'Test NM content\n%s\n' % computer.getReference(), person.getRelativeUrl()),
+      ticket.workflow_history['edit_workflow'][-1]['comment'])
+    
+    
+  @simulate('NotificationTool_getDocumentValue',
+            'reference=None',
+  'assert reference == "slapos-crm-computer_allocation_scope.notification"\n' \
+  'return context.restrictedTraverse(' \
+  'context.REQUEST["test_computerNotAllowedAllocationScope_OpenFriend"])')
+  @simulate('SupportRequest_trySendNotificationMessage',
+            'message_title, message, source_relative_url',
+  'context.portal_workflow.doActionFor(' \
+  'context, action="edit_action", ' \
+  'comment="Visited by SupportRequest_trySendNotificationMessage ' \
+  '%s %s %s" % (message_title, message, source_relative_url))')
+  def test_computerNotAllowedAllocationScope_OpenFriend(self):
+    new_id = self.generateNewId()
+    computer = self._makeComputer(self.new_id)
+    person = computer.getSourceAdministrationValue()
+    self._updatePersonAssignment(person, 'role/member')
+    
+    self.portal.REQUEST['test_computerNotAllowedAllocationScope_OpenFriend'] = \
+        self._makeNotificationMessage(computer.getReference())
+    
+    friend_person = self._makePerson(self.generateNewId())
+    computer.edit(allocation_scope='open/friend',
+        destination_section=friend_person.getRelativeUrl())
+    computer.Computer_checkAndUpdateAllocationScope()
+    self.tic()
+    self.assertEquals(computer.getAllocationScope(), 'open/personal')
+    ticket = self._getGeneratedSupportRequest(computer)
+    self.assertEquals(ticket.getSimulationState(), 'suspended')
+    self.assertEqual('Visited by SupportRequest_trySendNotificationMessage ' \
+      '%s %s %s' % \
+      ('We have changed allocation scope for %s' % computer.getReference(),
+       'Test NM content\n%s\n' % computer.getReference(), person.getRelativeUrl()),
+      ticket.workflow_history['edit_workflow'][-1]['comment'])
+    
+    
+  def test_computerNormalAllocationScope_OpenPersonal(self):
+    computer = self._makeComputer(self.new_id)
+    person = computer.getSourceAdministrationValue()
+    self._updatePersonAssignment(person, 'role/member')
+    
+    computer.edit(allocation_scope='open/personal')
+    computer.Computer_checkAndUpdateAllocationScope()
+    self.tic()
+    self.assertEquals(computer.getAllocationScope(), 'open/personal')
+  
+
+  def test_computerAllowedAllocationScope_OpenPublic(self):
+    computer = self._makeComputer(self.new_id)
+    person = computer.getSourceAdministrationValue()
+    self._updatePersonAssignment(person, 'role/service_provider')
+    
+    computer.edit(allocation_scope='open/public')
+    computer.Computer_checkAndUpdateAllocationScope()
+    self.tic()
+    self.assertEquals(computer.getAllocationScope(), 'open/public')
+    
+  
+  def test_computerAllowedAllocationScope_OpenFriend(self):
+    computer = self._makeComputer(self.new_id)
+    person = computer.getSourceAdministrationValue()
+    self._updatePersonAssignment(person, 'role/service_provider')
+    
+    friend_person = self._makePerson(self.generateNewId())
+    computer.edit(allocation_scope='open/friend',
+        destination_section=friend_person.getRelativeUrl())
+    computer.Computer_checkAndUpdateAllocationScope()
+    self.tic()
+    self.assertEquals(computer.getAllocationScope(), 'open/friend')
