@@ -54,6 +54,8 @@
 portal = context.getPortalObject()\n
 \n
 software_instance = hosting_subscription.getPredecessorValue()\n
+if not software_instance:\n
+  return ""\n
 software_release_list = context.SoftwareProduct_getSortedSoftwareReleaseList(\n
                           software_release_url=software_instance.getUrlString())\n
 \n

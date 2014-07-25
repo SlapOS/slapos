@@ -56,10 +56,14 @@ portal = context.getPortalObject()\n
 \n
 if software_product_reference is None:\n
   assert(software_release_url is not None)\n
-  software_product_reference = portal.portal_catalog.getResultValue(\n
-             portal_type=\'Software Release\',\n
-             url_string=software_release_url\n
-  ).getAggregateValue().getReference()\n
+  try:\n
+    software_product_reference = portal.portal_catalog.getResultValue(\n
+               portal_type=\'Software Release\',\n
+               url_string=software_release_url\n
+    ).getAggregateValue().getReference()\n
+  except:\n
+    # Could not find Software Release or Software Product\n
+    return []\n
 else:\n
   # Don\'t accept both parameters\n
   assert(software_release_url is None)\n
@@ -74,9 +78,8 @@ if not product_list:\n
 if len(product_list) > 1:\n
   raise NotImplementedError(\'Several Software Product with the same title.\')\n
 \n
-software_release_list = product_list[0].getAggregateRelatedValueList()\n
 software_release_list = sorted(\n
-         software_release_list,\n
+         product_list[0].getAggregateRelatedValueList(),\n
          key=lambda software_release: software_release.getCreationDate(),\n
          reverse=True,\n
      )\n
