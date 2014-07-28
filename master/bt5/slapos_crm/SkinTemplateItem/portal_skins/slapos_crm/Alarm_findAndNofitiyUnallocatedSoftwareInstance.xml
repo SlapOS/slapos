@@ -63,20 +63,21 @@ software_instance_list = context.portal_catalog(\n
   # XXX slap_state=["start_requested", "stop_requested"],\n
   default_aggregate_uid=None,\n
   select_dict=select_dict,\n
-  left_join_list=select_dict.keys()\n
+  left_join_list=select_dict.keys(),\n
+  group_by="specialise_uid"\n
   )\n
 \n
 #Get the list of concerned Hosting Subscription reference\n
-hs_reference_list = set([si.getSpecialiseReference() for si in software_instance_list \n
+hs_reference_list = [si.getSpecialiseReference() for si in software_instance_list \n
                    if si.getSlapState() in [\'start_requested\', \'stop_requested\']\n
-                  ])\n
+                  ]\n
 \n
 if len(hs_reference_list) > 0:\n
   portal.portal_catalog.searchAndActivate(\n
     portal_type=\'Hosting Subscription\',\n
     validation_state=\'validated\',\n
     reference=hs_reference_list,\n
-    method_id=\'HostingSubscription_checkSofwareInstanceState\',\n
+    method_id=\'HostingSubscription_checkSofwareInstanceAllocationState\',\n
     activate_kw = {\'tag\':tag}\n
   )\n
 \n
