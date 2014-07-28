@@ -183,6 +183,23 @@ class TestSlapOSCloudSupportRequestGeneration(testSlapOSMixin):
     # The support request is added to computer owner.
     self.assertEquals(support_request.getDestinationDecision(),
                       host_sub.getDestinationSection())
+  
+  def test_hosting_subscription_Base_generateSupportRequestForSlapOS(self):
+    host_sub = self._makeHostingSubscription(self.new_id)
+
+    title = "Test Support Request %s" % self.new_id
+    support_request = host_sub.Base_generateSupportRequestForSlapOS(
+      title, title, host_sub.getRelativeUrl()
+    )
+    self.tic()
+
+    self.assertNotEqual(support_request, None)
+
+    support_request = self.portal.restrictedTraverse(support_request)
+ 
+    # The support request is added to computer owner.
+    self.assertEquals(support_request.getDestinationDecision(),
+                      host_sub.getDestinationSection())
 
   def test_Base_generateSupportRequestForSlapOS_do_not_recreate_if_open(self):
     title = "Test Support Request %s" % self.new_id
@@ -775,7 +792,7 @@ portal_workflow.doActionFor(context, action='edit_action', comment='Visited by C
       computer.workflow_history['edit_workflow'][-1]['comment'])
   
   def _simulateHostingSubscription_checkSofwareInstanceState(self):
-    script_name = 'HostingSubscription_checkSofwareInstanceState'
+    script_name = 'HostingSubscription_checkSofwareInstanceAllocationState'
     if script_name in self.portal.portal_skins.custom.objectIds():
       raise ValueError('Precondition failed: %s exists in custom' % script_name)
     createZODBPythonScript(self.portal.portal_skins.custom,
@@ -783,11 +800,11 @@ portal_workflow.doActionFor(context, action='edit_action', comment='Visited by C
       '*args, **kw',
       '# Script body\n'
 """portal_workflow = context.portal_workflow
-portal_workflow.doActionFor(context, action='edit_action', comment='Visited by HostingSubscription_checkSofwareInstanceState') """ )
+portal_workflow.doActionFor(context, action='edit_action', comment='Visited by HostingSubscription_checkSofwareInstanceAllocationState') """ )
     transaction.commit()
   
   def _dropHostingSubscription_checkSofwareInstanceState(self):
-    script_name = 'HostingSubscription_checkSofwareInstanceState'
+    script_name = 'HostingSubscription_checkSofwareInstanceAllocationState'
     if script_name in self.portal.portal_skins.custom.objectIds():
       self.portal.portal_skins.custom.manage_delObjects(script_name)
     transaction.commit()
@@ -806,6 +823,6 @@ portal_workflow.doActionFor(context, action='edit_action', comment='Visited by H
     finally:
       self._dropHostingSubscription_checkSofwareInstanceState()
 
-    self.assertEqual('Visited by HostingSubscription_checkSofwareInstanceState',
+    self.assertEqual('Visited by HostingSubscription_checkSofwareInstanceAllocationState',
       host_sub.workflow_history['edit_workflow'][-1]['comment'])
     
