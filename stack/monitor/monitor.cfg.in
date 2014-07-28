@@ -105,6 +105,7 @@ context =
   key apache_update_command :update-apache-access
   raw extra_eggs_interpreter ${buildout:directory}/bin/${extra-eggs:interpreter}
   raw default_page /static/welcome.html
+  section rewrite_element monitor-rewrite-rule
 
 [deploy-index-template]
 recipe = hexagonit.recipe.download
@@ -234,6 +235,8 @@ status-history-length = 5
 recipe = slapos.cookbook:zero-knowledge.read
 filename = $${public:filename}
 
+[monitor-rewrite-rule]
+
 # XXX could it be something lighter?
 [monitor-httpd-configuration]
 pid-file = $${monitor-directory:run}/cgi-httpd.pid
@@ -252,6 +255,7 @@ context =
   section directory monitor-directory
   section monitor_parameters monitor-parameters
   section httpd_configuration monitor-httpd-configuration
+  section monitor_rewrite_rule monitor-rewrite-rule
 
 [cgi-httpd-wrapper]
 recipe = slapos.cookbook:wrapper
