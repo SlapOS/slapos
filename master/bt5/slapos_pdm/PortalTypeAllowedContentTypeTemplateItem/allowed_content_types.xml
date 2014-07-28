@@ -2,4 +2,10 @@
  <portal_type id="Software Product">
   <item>Embedded File</item>
  </portal_type>
+ <portal_type id="Upgrade Decision">
+  <item>Upgrade Decision Line</item>
+ </portal_type>
+ <portal_type id="Upgrade Decision Module">
+  <item>Upgrade Decision</item>
+ </portal_type>
 </allowed_content_type_list>

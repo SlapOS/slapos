@@ -3,4 +3,8 @@
   <type>Software Product</type>
   <workflow>-validation_workflow, commerce_validation_workflow</workflow>
  </chain>
+ <chain>
+  <type>Upgrade Decision</type>
+  <workflow>upgrade_decision_workflow</workflow>
+ </chain>
 </workflow_chain>
