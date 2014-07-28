@@ -1835,7 +1835,8 @@ class TestSlapOSComputer_notifyWrongAllocationScope(testSlapOSMixin):
     return assignment
     
   def _getGeneratedSupportRequest(self, computer):
-    request_title = 'Allocation scope has been changed for %s' % computer.getReference()
+    request_title = '[MONITORING] Allocation scope has been changed for %s' % \
+                        computer.getReference()
     support_request = self.portal.portal_catalog.getResultValue(
           portal_type = 'Support Request',
           title = request_title,
