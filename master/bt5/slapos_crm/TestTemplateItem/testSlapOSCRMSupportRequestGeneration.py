@@ -44,12 +44,7 @@ class TestSlapOSCloudSupportRequestGeneration(testSlapOSMixin):
     for support_request in self.portal.portal_catalog(
                         portal_type="Support Request",
                         title="Test Support Request %",
-                        simulation_state="validated"):
-      support_request.invalidate()
-    for support_request in self.portal.portal_catalog(
-                        portal_type="Support Request",
-                        title="Allocation scope has been changed for TESTCOMPT%",
-                        simulation_state="suspended"):
+                        simulation_state=["validated", "suspended"]):
       support_request.invalidate()
     self.tic()
     
@@ -234,6 +229,29 @@ class TestSlapOSCloudSupportRequestGeneration(testSlapOSMixin):
     
     self.assertFalse(self.portal.ERP5Site_isSupportRequestCreationClosed(
                      other_person.getRelativeUrl()))
+  
+  def test_ERP5Site_isSupportRequestCreationClosed_submitted_state(self):
+    person = self._makePerson(self.new_id)
+    url = person.getRelativeUrl()
+    self.assertFalse(self.portal.ERP5Site_isSupportRequestCreationClosed(url))
+    self.assertFalse(self.portal.ERP5Site_isSupportRequestCreationClosed())
+    
+    def newSupportRequest():
+      sr = self.portal.support_request_module.newContent(\
+                        title="Test Support Request POIUY",
+                        destination_decision=url)
+      sr.validate()
+      sr.suspend()
+      sr.immediateReindexObject()
+    # Create five tickets, the limit of ticket creation
+    newSupportRequest()
+    newSupportRequest()
+    newSupportRequest()
+    newSupportRequest()
+    newSupportRequest()
+    self.assertFalse(self.portal.ERP5Site_isSupportRequestCreationClosed(url))
+    self.assertFalse(self.portal.ERP5Site_isSupportRequestCreationClosed())
+    
 
   def test_Base_generateSupportRequestForSlapOS_recreate_if_closed(self):
     title = "Test Support Request %s" % self.new_id
