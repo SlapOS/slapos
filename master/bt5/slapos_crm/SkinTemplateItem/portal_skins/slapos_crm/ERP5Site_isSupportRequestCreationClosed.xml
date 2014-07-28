@@ -55,7 +55,7 @@ limit = 5\n
 \n
 kw[\'limit\'] = limit\n
 kw[\'portal_type\'] = \'Support Request\'\n
-kw[\'simulation_state\'] = ["validated","submitted", "suspended"]\n
+kw[\'simulation_state\'] = ["validated","submitted"]\n
 if destination_decision:\n
   kw[\'default_destination_decision_uid\'] = context.restrictedTraverse(\n
                           destination_decision).getUid()\n
