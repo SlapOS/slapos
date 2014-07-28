@@ -43,7 +43,7 @@ class TestSlapOSCloudSupportRequestGeneration(testSlapOSMixin):
   def _cancelTestSupportRequestList(self):
     for support_request in self.portal.portal_catalog(
                         portal_type="Support Request",
-                        title="Test Support Request %",
+                        title="%Test Support Request %",
                         simulation_state=["validated", "suspended"]):
       support_request.invalidate()
     self.tic()
