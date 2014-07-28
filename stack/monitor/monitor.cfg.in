@@ -235,24 +235,33 @@ recipe = slapos.cookbook:zero-knowledge.read
 filename = $${public:filename}
 
 # XXX could it be something lighter?
-[cgi-httpd-configuration-file]
-recipe = collective.recipe.template
-input = ${monitor-httpd-template:destination}/${monitor-httpd-template:filename}
-output = $${monitor-directory:etc}/cgi-httpd.conf
-listening-ip = $${slap-parameters:ipv6-random}
+[monitor-httpd-configuration]
 pid-file = $${monitor-directory:run}/cgi-httpd.pid
 cgid-pid-file = $${monitor-directory:run}/cgi-httpd-cgid.pid
 error-log = $${monitor-directory:log}/cgi-httpd-error-log
+listening-ip = $${slap-parameters:ipv6-random}
+certificate = $${ca-httpd:cert-file}
+key = $${ca-httpd:key-file}
+
+[monitor-httpd-configuration-file]
+recipe = slapos.recipe.template:jinja2
+template = ${monitor-httpd-template:destination}/${monitor-httpd-template:filename}
+rendered = $${monitor-directory:etc}/cgi-httpd.conf
+mode = 0744
+context =
+  section directory monitor-directory
+  section monitor_parameters monitor-parameters
+  section httpd_configuration monitor-httpd-configuration
 
 [cgi-httpd-wrapper]
 recipe = slapos.cookbook:wrapper
 apache-executable = ${apache:location}/bin/httpd
-command-line = $${:apache-executable} -f $${cgi-httpd-configuration-file:output} -DFOREGROUND
+command-line = $${:apache-executable} -f $${monitor-httpd-configuration-file:rendered} -DFOREGROUND
 wrapper-path = $${ca-httpd:executable}
 
 [cgi-httpd-graceful-wrapper]
 recipe = slapos.cookbook:wrapper
-command-line = kill -USR1 $(cat $${cgi-httpd-configuration-file:pid-file})
+command-line = kill -USR1 $(cat $${monitor-httpd-configuration:pid-file})
 wrapper-path = $${monitor-directory:etc-run}/cgi-httpd-graceful
 
 [monitor-promise]
