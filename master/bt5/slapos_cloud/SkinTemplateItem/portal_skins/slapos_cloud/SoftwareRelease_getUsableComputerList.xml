@@ -50,7 +50,17 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string>return [x.getParentValue() for x in context.portal_catalog(software_release_url=context.getUrlString(), group_by="parent_uid")]\n
+            <value> <string>software_installation_list = context.portal_catalog(url_string=context.getUrlString(),\n
+                       portal_type=\'Software Installation\', validation_state=\'validated\')\n
+computer_list = []\n
+allocation_scope_list = [\'open/personal\', \'open/public\', \'open/frien\']\n
+for software_installation in software_installation_list:\n
+  computer = software_installation.getAggregateValue()\n
+  if software_installation.getSlapState() == \'start_requested\' and \\\n
+              computer.getAllocationScope() in allocation_scope_list:\n
+    computer_list.append(computer)\n
+\n
+return computer_list\n
 </string> </value>
         </item>
         <item>
