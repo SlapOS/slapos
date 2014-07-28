@@ -264,9 +264,14 @@ command-line = $${:apache-executable} -f $${monitor-httpd-configuration-file:ren
 wrapper-path = $${ca-httpd:executable}
 
 [cgi-httpd-graceful-wrapper]
-recipe = slapos.cookbook:wrapper
-command-line = kill -USR1 $(cat $${monitor-httpd-configuration:pid-file})
-wrapper-path = $${monitor-directory:etc-run}/cgi-httpd-graceful
+recipe = slapos.recipe.template:jinja2
+template = ${template-wrapper:output}
+rendered = $${monitor-directory:etc-run}/cgi-httpd-graceful
+mode = 0700
+context =
+    key content :command
+command = kill -USR1 $(cat $${monitor-httpd-configuration:pid-file})
+
 
 [monitor-promise]
 recipe = slapos.cookbook:check_url_available
