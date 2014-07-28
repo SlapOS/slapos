@@ -68,7 +68,8 @@ if portal.ERP5Site_isSupportRequestCreationClosed(destination_decision):\n
   # Stop ticket creation\n
   return\n
 \n
-title = \'[MONITORING] \' + title\n
+if not title.startswith(\'[MONITORING]\'):\n
+  title = \'[MONITORING] \' + title\n
 support_request_in_progress = portal.portal_catalog.getResultValue(\n
   portal_type = \'Support Request\',\n
   title = title,\n
