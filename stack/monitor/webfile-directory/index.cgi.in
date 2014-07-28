@@ -23,6 +23,8 @@ monitor_password_script_path = "{{ monitor_password_script_path }}"
 
 monitor_apache_password_command = "{{ apache_update_command }}"
 
+monitor_rewrite = "{{ ' '.join(rewrite_element.keys())  }}"
+
 ########
 # Password functions
 #######
@@ -185,4 +187,4 @@ else:
   else:
     html_base = jinja2.Template(open('{{ index_template }}').read())
     print
-    print html_base.render(tree=make_menu(), default_page="{{ default_page }}")
+    print html_base.render(tree=make_menu(), default_page="{{ default_page }}", monitor_rewrite=monitor_rewrite)
