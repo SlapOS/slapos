@@ -51,9 +51,11 @@
         <item>
             <key> <string>_body</string> </key>
             <value> <string>list = []\n
-for si in context.portal_catalog(software_release_url=context.getUrlString(), group_by="parent_uid"):\n
-  computer = si.getParentValue()\n
-  if not computer.Computer_getSoftwareReleaseUsage(context.getUid()):\n
+for si in context.portal_catalog(url_string=context.getUrlString(), portal_type=\'Software Installation\', validation_state=\'validated\'):\n
+  computer = si.getAggregateValue()\n
+  if si.getSlapState() == \'start_requested\' and \\\n
+      not computer.Computer_getSoftwareReleaseUsage(context.getUid()) \\\n
+      and computer.getValidationState() == \'validated\':\n
     list.append(computer)\n
 \n
 return list\n
