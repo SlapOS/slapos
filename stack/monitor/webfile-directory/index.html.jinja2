@@ -19,6 +19,11 @@
    {% endfor %}
    <li class="pure-menu-heading category">Files</li>
    <li><a href="./private/" class="link">  User: admin</br>  Password is yours</a></li>
+   <li class="pure-menu-heading category">Local Service</li>
+   {% set rewrite_list = monitor_rewrite.split() %}
+   {% for path in rewrite_list %}
+   <li><a href="./rewrite/{{path}}/" class="link">{{path}}</a></li>
+   {% endfor %}
   </ul>
  </div>
  </div>

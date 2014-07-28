@@ -21,6 +21,9 @@ LoadModule autoindex_module modules/mod_autoindex.so
 LoadModule auth_basic_module modules/mod_auth_basic.so
 LoadModule authz_user_module modules/mod_authz_user.so
 LoadModule authn_file_module modules/mod_authn_file.so
+LoadModule proxy_module      modules/mod_proxy.so
+LoadModule proxy_http_module modules/mod_proxy_http.so
+LoadModule rewrite_module modules/mod_rewrite.so
 
 # SSL Configuration
 <IfDefine !SSLConfigured>
@@ -61,3 +64,16 @@ Require valid-user
 Options Indexes FollowSymLinks
 Satisfy all
 </Directory>
+
+<Location /rewrite>
+AuthType Basic
+AuthName "Private access"
+AuthUserFile "{{ monitor_parameters.get('htaccess-file') }}"
+Require valid-user
+</Location>
+
+ProxyVia On
+RewriteEngine On
+{% for key, value in monitor_rewrite_rule.iteritems() %}
+RewriteRule ^/rewrite/{{ key }}($|/.*) {{ value }}/$1 [P,L]
+{% endfor %}
