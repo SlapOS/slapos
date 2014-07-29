@@ -80,7 +80,7 @@ if not is_service_provider:\n
 \n
   # Create a ticket (or re-open it) for this issue!\n
   support_request = None\n
-  request_title = \'Allocation scope has been changed for %s\' % computer_reference\n
+  request_title = \'[MONITORING] Allocation scope has been changed for %s\' % computer_reference\n
   request_description = \'Allocation scope has been changed back to \' \\\n
                        \'open/personal for %s\' % computer_reference\n
   message_title = \'We have changed allocation scope for %s\' % computer_reference\n
