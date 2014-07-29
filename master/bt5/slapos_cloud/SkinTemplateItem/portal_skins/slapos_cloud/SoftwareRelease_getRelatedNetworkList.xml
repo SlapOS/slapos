@@ -50,20 +50,11 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string>software_release_url = context.getUrlString()\n
-portal = context.getPortalObject()\n
-network_list = []\n
-\n
-kw[\'portal_type\']=\'Computer Network\'\n
-kw[\'validation_state\']=\'validated\'\n
-\n
-full_network_list = portal.portal_catalog(**kw)\n
-for network in full_network_list:\n
-  computer_list = network.getSubordinationRelatedValueList()\n
-  for computer in computer_list:\n
-    if software_release_url in computer.Computer_getSoftwareReleaseUrlStringList():\n
-      network_list.append(network)\n
-      break\n
+            <value> <string>network_list = []\n
+for computer in context.SoftwareRelease_getUsableComputerList():\n
+  network = computer.getSubordinationValue()\n
+  if network and not network in network_list:\n
+    network_list.append(network)\n
 \n
 return network_list\n
 </string> </value>

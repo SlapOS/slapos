@@ -50,10 +50,13 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string>software_installation_list = context.portal_catalog(url_string=context.getUrlString(),\n
-                       portal_type=\'Software Installation\', validation_state=\'validated\')\n
+            <value> <string>kw[\'portal_type\'] = \'Software Installation\'\n
+kw[\'validation_state\'] = \'validated\'\n
+kw[\'url_string\'] = context.getUrlString()\n
+\n
+software_installation_list = context.portal_catalog(**kw)\n
 computer_list = []\n
-allocation_scope_list = [\'open/personal\', \'open/public\', \'open/frien\']\n
+allocation_scope_list = [\'open/personal\', \'open/public\', \'open/friend\']\n
 for software_installation in software_installation_list:\n
   computer = software_installation.getAggregateValue()\n
   if software_installation.getSlapState() == \'start_requested\' and \\\n
