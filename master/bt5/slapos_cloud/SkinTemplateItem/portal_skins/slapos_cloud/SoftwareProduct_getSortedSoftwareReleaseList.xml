@@ -52,6 +52,8 @@
             <key> <string>_body</string> </key>
             <value> <string encoding="cdata"><![CDATA[
 
+from DateTime import DateTime\n
+\n
 portal = context.getPortalObject()\n
 \n
 if software_product_reference is None:\n
@@ -81,12 +83,20 @@ if len(product_list) > 1:\n
   raise NotImplementedError(\'Several Software Product with the same title.\')\n
 \n
 software_release_list = product_list[0].getAggregateRelatedValueList()\n
+\n
+def sortkey(software_release):\n
+  publication_date = software_release.getEffectiveDate()\n
+  if publication_date:\n
+    if (publication_date - DateTime()) > 0:\n
+      return DateTime(\'1900/05/02\')\n
+    return publication_date\n
+  return software_release.getCreationDate()\n
+\n
 software_release_list = sorted(\n
          software_release_list,\n
-         key=lambda software_release: software_release.getCreationDate(),\n
-         reverse=True,\n
+         key=sortkey, reverse=True,\n
      )\n
-\n
+     \n
 return [software_release for software_release in software_release_list\n
           if software_release.getValidationState() in\n
             ["published"]\n
