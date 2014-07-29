@@ -54,10 +54,10 @@
   # Update Decision is not on started state, Upgrade is not possible!\n
   return False\n
 \n
-hosting_subscription = context.UpgradeDecision_getHostingSubscription()\n
+computer = context.UpgradeDecision_getComputer()\n
 software_release = context.UpgradeDecision_getSoftwareRelease()\n
 \n
-if hosting_subscription is None:\n
+if computer is None:\n
   return False\n
 \n
 if software_release is None:\n
@@ -65,26 +65,9 @@ if software_release is None:\n
 \n
 software_release_url = software_release.getUrlString()\n
 \n
-person = hosting_subscription.getDestinationSectionValue(portal_type="Person")\n
-\n
-status = hosting_subscription.getSlapState()\n
-\n
-if status == "start_requested":\n
-  state = "started"\n
-elif status == "stop_requested":\n
-  state = "stopped"\n
-elif status == "destroy_requested":\n
-  state = "destroyed"\n
-  \n
-person.requestSoftwareInstance(\n
-  state=state,\n
-  software_release=software_release_url,\n
-  software_title=hosting_subscription.getTitle(),\n
-  software_type=hosting_subscription.getSourceReference(),\n
-  instance_xml=hosting_subscription.getTextContent(),\n
-  sla_xml=hosting_subscription.getSlaXml(),\n
-  shared=hosting_subscription.isRootSlave()\n
-)\n
+computer.requestSoftwareRelease(\n
+   software_release_url=software_release_url,\n
+   state="available")\n
 \n
 context.stop()\n
 \n
@@ -97,7 +80,7 @@ return True\n
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>UpgradeDecision_upgradeHostingSubscription</string> </value>
+            <value> <string>UpgradeDecision_upgradeComputer</string> </value>
         </item>
       </dictionary>
     </pickle>
