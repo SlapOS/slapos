@@ -7,6 +7,7 @@ from DateTime import DateTime
 from functools import wraps
 from Products.ERP5Type.tests.utils import createZODBPythonScript
 import difflib
+import json
 
 def simulate(script_id, params_string, code_string):
   def upperWrap(f):
@@ -1798,8 +1799,8 @@ class TestSlapOSComputer_notifyWrongAllocationScope(testSlapOSMixin):
   def _cancelTestSupportRequestList(self):
     for support_request in self.portal.portal_catalog(
                         portal_type="Support Request",
-                        title="Allocation scope has been changed for TESTCOMPT%",
-                        simulation_state="suspended"):
+                        title="[MONITORING] % TESTCOMPT-%",
+                        simulation_state=["validated", "suspended"]):
       support_request.invalidate()
     self.tic()
   
@@ -1862,13 +1863,12 @@ class TestSlapOSComputer_notifyWrongAllocationScope(testSlapOSMixin):
   'return context.restrictedTraverse(' \
   'context.REQUEST["test_computerNotAllowedAllocationScope_OpenPublic"])')
   @simulate('SupportRequest_trySendNotificationMessage',
-            'message_title, message, source_relative_url',
+            'message_title, message, source_relative_url, interval_of_day=1',
   'context.portal_workflow.doActionFor(' \
   'context, action="edit_action", ' \
   'comment="Visited by SupportRequest_trySendNotificationMessage ' \
-  '%s %s %s" % (message_title, message, source_relative_url))')
+  '%s %s %s %s" % (message_title, message, source_relative_url, interval_of_day))')
   def test_computerNotAllowedAllocationScope_OpenPublic(self):
-    new_id = self.generateNewId()
     computer = self._makeComputer(self.new_id)
     person = computer.getSourceAdministrationValue()
     self._updatePersonAssignment(person, 'role/member')
@@ -1883,9 +1883,9 @@ class TestSlapOSComputer_notifyWrongAllocationScope(testSlapOSMixin):
     ticket = self._getGeneratedSupportRequest(computer)
     self.assertEquals(ticket.getSimulationState(), 'suspended')
     self.assertEqual('Visited by SupportRequest_trySendNotificationMessage ' \
-      '%s %s %s' % \
+      '%s %s %s %s' % \
       ('We have changed allocation scope for %s' % computer.getReference(),
-       'Test NM content\n%s\n' % computer.getReference(), person.getRelativeUrl()),
+       'Test NM content\n%s\n' % computer.getReference(), person.getRelativeUrl(), '1'),
       ticket.workflow_history['edit_workflow'][-1]['comment'])
     
     
@@ -1895,13 +1895,12 @@ class TestSlapOSComputer_notifyWrongAllocationScope(testSlapOSMixin):
   'return context.restrictedTraverse(' \
   'context.REQUEST["test_computerNotAllowedAllocationScope_OpenFriend"])')
   @simulate('SupportRequest_trySendNotificationMessage',
-            'message_title, message, source_relative_url',
+            'message_title, message, source_relative_url, interval_of_day=1',
   'context.portal_workflow.doActionFor(' \
   'context, action="edit_action", ' \
   'comment="Visited by SupportRequest_trySendNotificationMessage ' \
-  '%s %s %s" % (message_title, message, source_relative_url))')
+  '%s %s %s %s" % (message_title, message, source_relative_url, interval_of_day))')
   def test_computerNotAllowedAllocationScope_OpenFriend(self):
-    new_id = self.generateNewId()
     computer = self._makeComputer(self.new_id)
     person = computer.getSourceAdministrationValue()
     self._updatePersonAssignment(person, 'role/member')
@@ -1918,9 +1917,9 @@ class TestSlapOSComputer_notifyWrongAllocationScope(testSlapOSMixin):
     ticket = self._getGeneratedSupportRequest(computer)
     self.assertEquals(ticket.getSimulationState(), 'suspended')
     self.assertEqual('Visited by SupportRequest_trySendNotificationMessage ' \
-      '%s %s %s' % \
+      '%s %s %s %s' % \
       ('We have changed allocation scope for %s' % computer.getReference(),
-       'Test NM content\n%s\n' % computer.getReference(), person.getRelativeUrl()),
+       'Test NM content\n%s\n' % computer.getReference(), person.getRelativeUrl(), '1'),
       ticket.workflow_history['edit_workflow'][-1]['comment'])
     
     
@@ -1957,3 +1956,181 @@ class TestSlapOSComputer_notifyWrongAllocationScope(testSlapOSMixin):
     computer.Computer_checkAndUpdateAllocationScope()
     self.tic()
     self.assertEquals(computer.getAllocationScope(), 'open/friend')
+
+
+class TestSlapOSComputer_CheckState(testSlapOSMixin):
+
+  def beforeTearDown(self):
+    self._cancelTestSupportRequestList()
+    transaction.abort()
+  
+  def afterSetUp(self):
+    super(TestSlapOSComputer_CheckState, self).afterSetUp()
+    self.new_id = self.generateNewId()
+    self._cancelTestSupportRequestList()
+  
+  def _cancelTestSupportRequestList(self):
+    for support_request in self.portal.portal_catalog(
+                        portal_type="Support Request",
+                        title="[MONITORING] % TESTCOMPT-%",
+                        simulation_state=["validated", "suspended"]):
+      support_request.invalidate()
+    self.tic()
+  
+  def _makeNotificationMessage(self, reference):
+    notification_message = self.portal.notification_message_module.newContent(
+      portal_type="Notification Message",
+      title='The Computer %s has not contacted the server for more than 24 hours' % reference,
+      text_content='Test NM content<br/>%s<br/>' % reference,
+      content_type='text/html',
+      )
+    
+    return notification_message.getRelativeUrl()
+  
+  def _getGeneratedSupportRequest(self, computer_uid, request_title):
+    support_request = self.portal.portal_catalog.getResultValue(
+          portal_type = 'Support Request',
+          title = request_title,
+          simulation_state = 'validated',
+          source_project_uid = computer_uid
+    )
+    return support_request
+  
+  def _makeComputer(self,new_id):
+    # Clone computer document
+    person = self.portal.person_module.template_member\
+         .Base_createCloneDocument(batch_mode=1)
+    computer = self.portal.computer_module\
+      .template_computer.Base_createCloneDocument(batch_mode=1)
+    computer.edit(
+      title="computer ticket %s" % (new_id, ),
+      reference="TESTCOMPT-%s" % (new_id, ),
+      source_administration_value=person
+    )
+    computer.validate()
+    return computer
+  
+  def _simulateBase_generateSupportRequestForSlapOS(self):
+    script_name = 'Base_generateSupportRequestForSlapOS'
+    if script_name in self.portal.portal_skins.custom.objectIds():
+      raise ValueError('Precondition failed: %s exists in custom' % script_name)
+    createZODBPythonScript(self.portal.portal_skins.custom,
+      script_name,
+      '*args, **kw',
+      '# Script body\n'
+"""return 'Visited Base_generateSupportRequestForSlapOS'""")
+    transaction.commit()
+
+  def _dropBase_generateSupportRequestForSlapOS(self):
+    script_name = 'Base_generateSupportRequestForSlapOS'
+    if script_name in self.portal.portal_skins.custom.objectIds():
+      self.portal.portal_skins.custom.manage_delObjects(script_name)
+    transaction.commit()
+    self.assertFalse(script_name in self.portal.portal_skins.custom.objectIds())
+
+
+  def test_Computer_checkState_call_support_request(self):
+    computer = self._makeComputer(self.new_id)
+    memcached_dict = self.portal.portal_memcached.getMemcachedDict(
+      key_prefix='slap_tool',
+      plugin_path='portal_memcached/default_memcached_plugin')
+
+    memcached_dict[computer.getReference()] = json.dumps(
+        {"created_at":"%s" % (DateTime() - 1.1)}
+    )
+
+    self._simulateBase_generateSupportRequestForSlapOS()
+
+    try:
+      result = computer.Computer_checkState()
+    finally:
+      self._dropBase_generateSupportRequestForSlapOS()
+
+    self.assertEqual('Visited Base_generateSupportRequestForSlapOS',
+      result)
+
+  def test_Computer_checkState_empty_cache(self):
+    computer = self._makeComputer(self.new_id)
+
+    self._simulateBase_generateSupportRequestForSlapOS()
+
+    try:
+      result = computer.Computer_checkState()
+    finally:
+      self._dropBase_generateSupportRequestForSlapOS()
+    
+    self.assertEqual('Visited Base_generateSupportRequestForSlapOS',
+      result)
+  
+  @simulate('NotificationTool_getDocumentValue',
+            'reference=None',
+  'assert reference == "slapos-crm-computer_check_state.notification"\n' \
+  'return context.restrictedTraverse(' \
+  'context.REQUEST["test_Computer_checkState_notify"])')
+  @simulate('SupportRequest_trySendNotificationMessage',
+            'message_title, message, source_relative_url, interval_of_day=1',
+  'context.portal_workflow.doActionFor(' \
+  'context, action="edit_action", ' \
+  'comment="Visited by SupportRequest_trySendNotificationMessage ' \
+  '%s %s %s %s" % (message_title, message, source_relative_url, interval_of_day))')
+  def test_Computer_checkState_notify(self):
+    computer = self._makeComputer(self.new_id)
+    person = computer.getSourceAdministrationValue()
+    
+    memcached_dict = self.portal.portal_memcached.getMemcachedDict(
+      key_prefix='slap_tool',
+      plugin_path='portal_memcached/default_memcached_plugin')
+
+    memcached_dict[computer.getReference()] = json.dumps(
+        {"created_at":"%s" % (DateTime() - 1.1)}
+    )
+    message_interval_per_day = 5
+    
+    self.portal.REQUEST['test_Computer_checkState_notify'] = \
+        self._makeNotificationMessage(computer.getReference())
+    
+    computer.Computer_checkState()
+    self.tic()
+    
+    ticket_title = "[MONITORING] Lost contact with computer %s" % computer.getReference()
+    ticket = self._getGeneratedSupportRequest(computer.getUid(), ticket_title)
+    self.assertNotEqual(ticket, None)
+    self.assertEqual('Visited by SupportRequest_trySendNotificationMessage ' \
+      '%s %s %s %d' % ( \
+      ticket_title.replace('[MONITORING] ', ''),
+      'Test NM content\n%s\n' % computer.getReference(),
+      person.getRelativeUrl(), message_interval_per_day),
+      ticket.workflow_history['edit_workflow'][-1]['comment'])
+  
+  @simulate('NotificationTool_getDocumentValue',
+            'reference=None',
+  'assert reference == "slapos-crm-computer_check_state.notification"\n' \
+  'return context.restrictedTraverse(' \
+  'context.REQUEST["test_Computer_checkState_empty_cache_notify"])')
+  @simulate('SupportRequest_trySendNotificationMessage',
+            'message_title, message, source_relative_url, interval_of_day=1',
+  'context.portal_workflow.doActionFor(' \
+  'context, action="edit_action", ' \
+  'comment="Visited by SupportRequest_trySendNotificationMessage ' \
+  '%s %s %s %s" % (message_title, message, source_relative_url, interval_of_day))')
+  def test_Computer_checkState_empty_cache_notify(self):
+    computer = self._makeComputer(self.new_id)
+    person = computer.getSourceAdministrationValue()
+    
+    message_interval_per_day = 5
+    
+    self.portal.REQUEST['test_Computer_checkState_empty_cache_notify'] = \
+        self._makeNotificationMessage(computer.getReference())
+    
+    computer.Computer_checkState()
+    self.tic()
+    
+    ticket_title = "[MONITORING] No information about %s" % computer.getReference()
+    ticket = self._getGeneratedSupportRequest(computer.getUid(), ticket_title)
+    self.assertNotEqual(ticket, None)
+    self.assertEqual('Visited by SupportRequest_trySendNotificationMessage ' \
+      '%s %s %s %d' % ( \
+      ticket_title.replace('[MONITORING] ', ''),
+      'Test NM content\n%s\n' % computer.getReference(),
+      person.getRelativeUrl(), message_interval_per_day),
+      ticket.workflow_history['edit_workflow'][-1]['comment'])

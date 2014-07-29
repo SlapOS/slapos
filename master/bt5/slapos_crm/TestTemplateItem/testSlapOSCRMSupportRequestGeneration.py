@@ -325,6 +325,47 @@ class TestSlapOSCloudSupportRequestGeneration(testSlapOSMixin):
 
     self.assertEqual('Visited Base_generateSupportRequestForSlapOS',
       result)
+  
+  def test_SupportRequest_trySendNotificationMessage(self):
+    title = "Test Support Request %s" % self.new_id
+    text_content='Test NM content<br/>%s<br/>' % self.new_id
+    computer = self._makeComputer(self.new_id)
+    support_request_url = computer.Base_generateSupportRequestForSlapOS(
+      title, title, computer.getRelativeUrl()
+    )
+    support_request = self.portal.restrictedTraverse(support_request_url)
+    person = computer.getSourceAdministrationValue()
+    time_before_next = 2
+    self.tic()
+    
+    first_event = support_request.SupportRequest_trySendNotificationMessage(
+      message_title=title, message=text_content,
+      source_relative_url=person.getRelativeUrl(),
+      interval_of_day=time_before_next
+    )
+    self.assertNotEqual(first_event, None)
+    
+    first_event.edit(start_date=(DateTime() - 1.8))
+    self.tic()
+    
+    event = support_request.SupportRequest_trySendNotificationMessage(
+      message_title=title, message=text_content,
+      source_relative_url=person.getRelativeUrl(),
+      interval_of_day=time_before_next
+    )
+    self.assertEqual(event, None)
+    
+    time_before_next = 1
+    
+    event = support_request.SupportRequest_trySendNotificationMessage(
+      message_title=title, message=text_content,
+      source_relative_url=person.getRelativeUrl(),
+      interval_of_day=time_before_next
+    )
+    self.assertEqual(event.getTitle(), title)
+    
+    
+    
 
   def test_Computer_checkState_empty_cache(self):
     computer = self._makeComputer(self.new_id)
