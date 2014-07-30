@@ -70,4 +70,5 @@ support_request_module
 support_request_module/slapos_crm_support_request_template
 system_event_module
 transformation_module
+upgrade_decision_module
 web_page_module

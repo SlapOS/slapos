@@ -82,6 +82,7 @@ Query
 Query Module
 Regularisation Request
 Regularisation Request Module
+Restricted Access Token
 Sale Invoice Transaction
 Sale Opportunity
 Sale Opportunity Module
@@ -111,6 +112,8 @@ System Event Module
 Text
 Transformation
 Transformation Module
+Upgrade Decision
+Upgrade Decision Module
 Visit
 Web Message
 Web Page
