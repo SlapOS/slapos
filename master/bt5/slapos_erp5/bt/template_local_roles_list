@@ -57,11 +57,11 @@ sale_order_module
 sale_packing_list_module
 sale_trade_condition_module
 service_module
+service_module/slapos_account_validation
 service_module/slapos_discount
 service_module/slapos_instance_subscription
 service_module/slapos_netdrive_consumption
 service_module/slapos_tax
-service_module/slapos_account_validation
 software_installation_module
 software_instance_module
 software_product_module
@@ -70,4 +70,5 @@ support_request_module
 support_request_module/slapos_crm_support_request_template
 system_event_module
 transformation_module
+upgrade_decision_module
 web_page_module
