@@ -1,0 +1,96 @@
+{
+  "type": "object",
+  "$schema": "http://json-schema.org/draft-04/schema",
+
+  "title": "Input Parameters",
+  "properties": {
+
+    "record": {
+      "title": "Record",
+      "description": "Record for the configuration",
+      "type": "string"
+    },
+
+    "origin": {
+      "title": "Origin",
+      "description": "Used to qualify RR in the configuration. i.e.: if your origin is a.example.com and the RR for Europe is 'eu' the european clients will use eu.a.exmple.com",
+      "type": "string"
+    },
+
+    "default": {
+      "title": "Default RR",
+      "description": "Defautl record to use when the ip is not regognized",
+      "type": "string"
+    },
+
+    "europe": {
+      "title": "Europe RR",
+      "description": "Records to use for Europe",
+      "default": "eu",
+      "type": "string"
+    },
+
+    "africa": {
+      "title": "Africa RR",
+      "description": "Records to use for Africa",
+      "default": "af",
+      "type": "string"
+    },
+
+    "south-america": {
+      "title": "South America RR",
+      "description": "Records to use for South America",
+      "default": "sa",
+      "type": "string"
+    },
+
+    "north-america": {
+      "title": "North America RR",
+      "description": "Records to use for North America",
+      "default": "na",
+      "type": "string"
+    },
+
+    "china": {
+      "title": "China RR",
+      "description": "Records to use for China",
+      "default": "cn",
+      "type": "string"
+    },
+
+    "japan": {
+      "title": "Japan RR",
+      "description": "Records to use for Japan",
+      "default": "jp",
+      "type": "string"
+    },
+
+    "hong-kong": {
+      "title": "Honk Kong RR",
+      "description": "Records to use for Hong Kong",
+      "default": "hk",
+      "type": "string"
+    },
+
+    "east-asia": {
+      "title": "East Asia RR",
+      "description": "Records to use for East Asia",
+      "default": "as",
+      "type": "string"
+    },
+
+    "west-asia": {
+      "title": "West Asia RR",
+      "description": "Records to use for West Asia",
+      "default": "eu",
+      "type": "string"
+    },
+
+    "oceania": {
+      "title": "Oceania RR",
+      "description": "Records to use for Oceania",
+      "default": "oc",
+      "type": "string"
+    }
+  }
+}

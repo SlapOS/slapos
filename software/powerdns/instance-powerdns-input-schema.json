@@ -1,0 +1,65 @@
+{
+  "type": "object",
+  "$schema": "http://json-schema.org/draft-04/schema",
+
+  "title": "Input Parameters",
+  "properties": {
+
+    "-dns-type": {
+      "title": "DNS Software type",
+      "description": "Software type of DNS nodes",
+      "default": "single-default",
+      "type": "string"
+    },
+
+    "-dns-software-release-url": {
+      "title": "DNS Software Release",
+      "description": "Url of the software release to be used for the nodes",
+      "default": "",
+      "type": "string"
+    },
+
+    "-dns-quantity": {
+      "title": "DNS Quantity",
+      "description": "DNS Nodes Quantity",
+      "default": 1,
+      "type": "integer"
+    },
+
+    "-dns-i-state": {
+      "title": "Requested state of node i",
+      "description": "Requested State of node i of the replication. i must inferior or equal to '-dns-quantity'",
+      "default": "started",
+      "type": "string"
+    },
+
+    "-sla-i-sla_parameter": {
+      "title": "sla_parameter used to request node i",
+      "description": "Parameter used to provide sla parameter to request dns nodes",
+      "default": "",
+      "type": "string"
+    },
+
+    "zone": {
+      "title": "Zone",
+      "description": "Zone to be handled by the DNS cluster",
+      "type": "string",
+      "default": "domain.com",
+      "pattern": "^([a-zA-Z0-9]([a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,6}$"
+    },
+
+    "server-admin": {
+      "title": "Zone Administrator Email",
+      "description": "Email of the zone administrator, it is used to generate SOA value",
+      "type": "string",
+      "default": "admin@domain.com"
+    },
+
+    "dns-name-template-string": {
+      "title": "DNS domains template string",
+      "description": "Template used to generate DNS domain name",
+      "type": "string",
+      "default": "ns%s." + zone
+    }
+  }
+}
