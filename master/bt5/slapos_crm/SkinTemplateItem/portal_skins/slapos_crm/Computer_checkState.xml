@@ -117,11 +117,20 @@ if should_notify:\n
   notification_reference = \'slapos-crm-computer_check_state.notification\'\n
   notification_message = portal.portal_notifications.getDocumentValue(\n
                  reference=notification_reference)\n
-  mapping_dict = {\'computer_title\':context.getTitle(),\n
-                  \'computer_id\':reference,\n
-                  \'last_contact\':last_contact}\n
-  message = notification_message.asText(\n
-            substitution_method_parameter_dict={\'mapping_dict\':mapping_dict})\n
+  if notification_message is None:\n
+    message = """Dear user,\n
+%s.\n
+Do not hesitate to visit the web forum (http://community.slapos.org/forum) in case of question.\n
+\n
+Regards,\n
+\n
+The slapos team""" % description\n
+  else:\n
+    mapping_dict = {\'computer_title\':context.getTitle(),\n
+                    \'computer_id\':reference,\n
+                    \'last_contact\':last_contact}\n
+    message = notification_message.asText(\n
+              substitution_method_parameter_dict={\'mapping_dict\':mapping_dict})\n
   \n
   support_request.SupportRequest_trySendNotificationMessage(\n
               ticket_title.replace(\'[MONITORING] \', \'\'),\n
