@@ -1,5 +1,0 @@
-#!{{ shell_path }}
-# BEWARE: This file is operated by slapgrid
-# BEWARE: It will be overwritten automatically
-export NODE_PATH={{ node_env }}
-exec {{ node_path }} {{ conf_path }} {{ ip }} {{ port }} {{ key }} {{ certificate }} {{ backend_ip }} {{ backend_port }}
