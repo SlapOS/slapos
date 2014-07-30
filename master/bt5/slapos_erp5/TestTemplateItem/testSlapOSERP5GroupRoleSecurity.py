@@ -2002,6 +2002,16 @@ class TestOneTimeRestrictedAccessToken(TestSlapOSGroupRoleSecurityMixin):
     self.assertRoles(product, 'G-COMPANY', ['Assignor'])
     self.assertRoles(product, self.user_id, ['Owner'])
 
+class TestRestrictedAccessToken(TestSlapOSGroupRoleSecurityMixin):
+  def test_GroupCompany(self):
+    product = self.portal.access_token_module.newContent(
+        portal_type='Restricted Access Token')
+    product.updateLocalRolesOnSecurityGroups()
+    self.assertSecurityGroup(product,
+        ['G-COMPANY', self.user_id], False)
+    self.assertRoles(product, 'G-COMPANY', ['Assignor'])
+    self.assertRoles(product, self.user_id, ['Owner'])
+
 class TestConsumptionDocumentModule(TestSlapOSGroupRoleSecurityMixin):
   def test(self):
     module = self.portal.consumption_document_module
@@ -2040,3 +2050,37 @@ class TestCloudContract(TestSlapOSGroupRoleSecurityMixin):
         False)
     self.assertRoles(text, 'G-COMPANY', ['Assignor'])
     self.assertRoles(text, self.user_id, ['Owner'])
+
+class TestUpgradeDecisionModule(TestSlapOSGroupRoleSecurityMixin):
+  def test(self):
+    module = self.portal.upgrade_decision_module
+    self.assertSecurityGroup(module,
+        ['G-COMPANY', 'R-MEMBER', 'zope'], True)
+    self.assertRoles(module, 'G-COMPANY', ['Auditor', 'Author'])
+    self.assertRoles(module, 'R-MEMBER', ['Auditor', 'Author'])
+    self.assertRoles(module, 'zope', ['Owner'])
+
+class TestUpgradeDecision(TestSlapOSGroupRoleSecurityMixin):
+  def test_GroupCompany(self):
+    product = self.portal.upgrade_decision_module.newContent(
+        portal_type='Upgrade Decision')
+    product.updateLocalRolesOnSecurityGroups()
+    self.assertSecurityGroup(product,
+        ['G-COMPANY', self.user_id], False)
+    self.assertRoles(product, 'G-COMPANY', ['Assignor'])
+    self.assertRoles(product, self.user_id, ['Owner'])
+
+  def test_Customer(self):
+    reference = 'TESTPERSON-%s' % self.generateNewId()
+    person = self.portal.person_module.newContent(portal_type='Person',
+        reference=reference)
+    product = self.portal.upgrade_decision_module.newContent(
+        portal_type='Upgrade Decision',
+        destination_decision_value=person,
+        )
+    product.updateLocalRolesOnSecurityGroups()
+    self.assertSecurityGroup(product,
+        ['G-COMPANY', reference, self.user_id], False)
+    self.assertRoles(product, 'G-COMPANY', ['Assignor'])
+    self.assertRoles(product, reference, ['Assignee'])
+    self.assertRoles(product, self.user_id, ['Owner'])
