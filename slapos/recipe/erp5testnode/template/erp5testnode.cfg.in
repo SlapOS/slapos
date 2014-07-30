@@ -21,9 +21,7 @@ server_url = %(server_url)s
 
 # Binaries
 git_binary = %(git_binary)s
-slapgrid_partition_binary = %(slapgrid_partition_binary)s
-slapgrid_software_binary = %(slapgrid_software_binary)s
-slapproxy_binary = %(slapproxy_binary)s
+slapos_binary = %(slapos_binary)s
 zip_binary = %(zip_binary)s
 
 [environment]
