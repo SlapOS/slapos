@@ -386,9 +386,18 @@ class SlapTool(BaseTool):
       raise NotImplementedError('Several Software Product with the same title.')
     software_release_list = \
         software_product_list[0].getObject().getAggregateRelatedValueList()
+    
+    def sortkey(software_release):
+      publication_date = software_release.getEffectiveDate()
+      if publication_date:
+        if (publication_date - DateTime()) > 0:
+          return DateTime('1900/05/02')
+        return publication_date
+      return software_release.getCreationDate()
+  
     software_release_list = sorted(
         software_release_list,
-        key=lambda software_release: software_release.getCreationDate(),
+        key=sortkey,
         reverse=True,
     )
     return xml_marshaller.xml_marshaller.dumps(

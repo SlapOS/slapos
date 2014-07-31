@@ -62,29 +62,81 @@ if portal.ERP5Site_isSupportRequestCreationClosed():\n
   return\n
 \n
 reference = context.getReference()\n
+computer_title = context.getTitle()\n
+ticket_title = "[MONITORING] Lost contact with computer %s" % reference\n
+description = ""\n
+should_notify = True\n
+last_contact = "No Contact Information"\n
+\n
 memcached_dict = context.getPortalObject().portal_memcached.getMemcachedDict(\n
   key_prefix=\'slap_tool\',\n
   plugin_path=\'portal_memcached/default_memcached_plugin\')\n
 \n
 try:\n
   d = memcached_dict[reference]\n
+  d = json.loads(d)\n
+  last_contact = DateTime(d.get(\'created_at\'))\n
+  if (DateTime() - last_contact) > 1:\n
+    description = "The Computer %s (%s) has not contacted the server for more than 24 hours" \\\n
+    "(last contact date: %s)" % (computer_title, reference, last_contact)\n
+  else:\n
+    should_notify = False\n
 except KeyError:\n
-  return context.Base_generateSupportRequestForSlapOS(\n
-    "No information about %s" % reference,\n
-    "%s has not contacted the server (No Contact Information)" % reference,\n
+  ticket_title = "[MONITORING] No information about %s" % reference\n
+  description = "The Computer %s (%s)  has not contacted the server (No Contact Information)" % (\n
+                  computer_title, reference)\n
+  \n
+\n
+if should_notify:\n
+  support_request_url = context.Base_generateSupportRequestForSlapOS(\n
+    ticket_title,\n
+    description,\n
     context.getRelativeUrl()\n
   )\n
   \n
+  support_request = None\n
+  person = context.getSourceAdministrationValue(portal_type="Person")\n
+  if not person:\n
+    return support_request_url\n
+    \n
+  if support_request_url:\n
+    support_request = portal.restrictedTraverse(support_request_url, None)\n
+  else:\n
+    # XXX - the support request might already exists\n
+    support_request = portal.portal_catalog.getResultValue(\n
+          portal_type = \'Support Request\',\n
+          title = ticket_title,\n
+          simulation_state = \'validated\',\n
+          source_project_uid = context.getUid()\n
+    )\n
+  if support_request is None:\n
+    # Existing ticket not found, can not create event for the moment\n
+    return support_request_url\n
+  \n
+  # Send Notification message\n
+  notification_reference = \'slapos-crm-computer_check_state.notification\'\n
+  notification_message = portal.portal_notifications.getDocumentValue(\n
+                 reference=notification_reference)\n
+  if notification_message is None:\n
+    message = """Dear user,\n
+%s.\n
+Do not hesitate to visit the web forum (http://community.slapos.org/forum) in case of question.\n
 \n
-d = json.loads(d)\n
-last_contact = DateTime(d.get(\'created_at\'))\n
+Regards,\n
 \n
-if (DateTime() - last_contact) > 1:\n
-  return context.Base_generateSupportRequestForSlapOS(\n
-    "Lost contact with %s" % reference,\n
-    "%s has not contacted the server for more than 24 hours (last contact date: %s)" % (reference, last_contact),\n
-    context.getRelativeUrl()\n
-  )\n
+The slapos team""" % description\n
+  else:\n
+    mapping_dict = {\'computer_title\':context.getTitle(),\n
+                    \'computer_id\':reference,\n
+                    \'last_contact\':last_contact}\n
+    message = notification_message.asText(\n
+              substitution_method_parameter_dict={\'mapping_dict\':mapping_dict})\n
+  \n
+  support_request.SupportRequest_trySendNotificationMessage(\n
+              ticket_title.replace(\'[MONITORING] \', \'\'),\n
+              message, person.getRelativeUrl(), 5)\n
+              \n
+  return support_request_url\n
 
 
 ]]></string> </value>

@@ -43,13 +43,8 @@ class TestSlapOSCloudSupportRequestGeneration(testSlapOSMixin):
   def _cancelTestSupportRequestList(self):
     for support_request in self.portal.portal_catalog(
                         portal_type="Support Request",
-                        title="Test Support Request %",
-                        simulation_state="validated"):
-      support_request.invalidate()
-    for support_request in self.portal.portal_catalog(
-                        portal_type="Support Request",
-                        title="Allocation scope has been changed for TESTCOMPT%",
-                        simulation_state="suspended"):
+                        title="%Test Support Request %",
+                        simulation_state=["validated", "suspended"]):
       support_request.invalidate()
     self.tic()
     
@@ -188,6 +183,23 @@ class TestSlapOSCloudSupportRequestGeneration(testSlapOSMixin):
     # The support request is added to computer owner.
     self.assertEquals(support_request.getDestinationDecision(),
                       host_sub.getDestinationSection())
+  
+  def test_hosting_subscription_Base_generateSupportRequestForSlapOS(self):
+    host_sub = self._makeHostingSubscription(self.new_id)
+
+    title = "Test Support Request %s" % self.new_id
+    support_request = host_sub.Base_generateSupportRequestForSlapOS(
+      title, title, host_sub.getRelativeUrl()
+    )
+    self.tic()
+
+    self.assertNotEqual(support_request, None)
+
+    support_request = self.portal.restrictedTraverse(support_request)
+ 
+    # The support request is added to computer owner.
+    self.assertEquals(support_request.getDestinationDecision(),
+                      host_sub.getDestinationSection())
 
   def test_Base_generateSupportRequestForSlapOS_do_not_recreate_if_open(self):
     title = "Test Support Request %s" % self.new_id
@@ -234,6 +246,29 @@ class TestSlapOSCloudSupportRequestGeneration(testSlapOSMixin):
     
     self.assertFalse(self.portal.ERP5Site_isSupportRequestCreationClosed(
                      other_person.getRelativeUrl()))
+  
+  def test_ERP5Site_isSupportRequestCreationClosed_submitted_state(self):
+    person = self._makePerson(self.new_id)
+    url = person.getRelativeUrl()
+    self.assertFalse(self.portal.ERP5Site_isSupportRequestCreationClosed(url))
+    self.assertFalse(self.portal.ERP5Site_isSupportRequestCreationClosed())
+    
+    def newSupportRequest():
+      sr = self.portal.support_request_module.newContent(\
+                        title="Test Support Request POIUY",
+                        destination_decision=url)
+      sr.validate()
+      sr.suspend()
+      sr.immediateReindexObject()
+    # Create five tickets, the limit of ticket creation
+    newSupportRequest()
+    newSupportRequest()
+    newSupportRequest()
+    newSupportRequest()
+    newSupportRequest()
+    self.assertFalse(self.portal.ERP5Site_isSupportRequestCreationClosed(url))
+    self.assertFalse(self.portal.ERP5Site_isSupportRequestCreationClosed())
+    
 
   def test_Base_generateSupportRequestForSlapOS_recreate_if_closed(self):
     title = "Test Support Request %s" % self.new_id
@@ -290,6 +325,47 @@ class TestSlapOSCloudSupportRequestGeneration(testSlapOSMixin):
 
     self.assertEqual('Visited Base_generateSupportRequestForSlapOS',
       result)
+  
+  def test_SupportRequest_trySendNotificationMessage(self):
+    title = "Test Support Request %s" % self.new_id
+    text_content='Test NM content<br/>%s<br/>' % self.new_id
+    computer = self._makeComputer(self.new_id)
+    support_request_url = computer.Base_generateSupportRequestForSlapOS(
+      title, title, computer.getRelativeUrl()
+    )
+    support_request = self.portal.restrictedTraverse(support_request_url)
+    person = computer.getSourceAdministrationValue()
+    time_before_next = 2
+    self.tic()
+    
+    first_event = support_request.SupportRequest_trySendNotificationMessage(
+      message_title=title, message=text_content,
+      source_relative_url=person.getRelativeUrl(),
+      interval_of_day=time_before_next
+    )
+    self.assertNotEqual(first_event, None)
+    
+    first_event.edit(start_date=(DateTime() - 1.8))
+    self.tic()
+    
+    event = support_request.SupportRequest_trySendNotificationMessage(
+      message_title=title, message=text_content,
+      source_relative_url=person.getRelativeUrl(),
+      interval_of_day=time_before_next
+    )
+    self.assertEqual(event, None)
+    
+    time_before_next = 1
+    
+    event = support_request.SupportRequest_trySendNotificationMessage(
+      message_title=title, message=text_content,
+      source_relative_url=person.getRelativeUrl(),
+      interval_of_day=time_before_next
+    )
+    self.assertEqual(event.getTitle(), title)
+    
+    
+    
 
   def test_Computer_checkState_empty_cache(self):
     computer = self._makeComputer(self.new_id)
@@ -757,7 +833,7 @@ portal_workflow.doActionFor(context, action='edit_action', comment='Visited by C
       computer.workflow_history['edit_workflow'][-1]['comment'])
   
   def _simulateHostingSubscription_checkSofwareInstanceState(self):
-    script_name = 'HostingSubscription_checkSofwareInstanceState'
+    script_name = 'HostingSubscription_checkSofwareInstanceAllocationState'
     if script_name in self.portal.portal_skins.custom.objectIds():
       raise ValueError('Precondition failed: %s exists in custom' % script_name)
     createZODBPythonScript(self.portal.portal_skins.custom,
@@ -765,11 +841,11 @@ portal_workflow.doActionFor(context, action='edit_action', comment='Visited by C
       '*args, **kw',
       '# Script body\n'
 """portal_workflow = context.portal_workflow
-portal_workflow.doActionFor(context, action='edit_action', comment='Visited by HostingSubscription_checkSofwareInstanceState') """ )
+portal_workflow.doActionFor(context, action='edit_action', comment='Visited by HostingSubscription_checkSofwareInstanceAllocationState') """ )
     transaction.commit()
   
   def _dropHostingSubscription_checkSofwareInstanceState(self):
-    script_name = 'HostingSubscription_checkSofwareInstanceState'
+    script_name = 'HostingSubscription_checkSofwareInstanceAllocationState'
     if script_name in self.portal.portal_skins.custom.objectIds():
       self.portal.portal_skins.custom.manage_delObjects(script_name)
     transaction.commit()
@@ -788,6 +864,6 @@ portal_workflow.doActionFor(context, action='edit_action', comment='Visited by H
     finally:
       self._dropHostingSubscription_checkSofwareInstanceState()
 
-    self.assertEqual('Visited by HostingSubscription_checkSofwareInstanceState',
+    self.assertEqual('Visited by HostingSubscription_checkSofwareInstanceAllocationState',
       host_sub.workflow_history['edit_workflow'][-1]['comment'])
     

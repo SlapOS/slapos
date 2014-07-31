@@ -115,6 +115,7 @@
                         <string>my_crawling_scope</string>
                         <string>my_crawling_depth</string>
                         <string>my_update_frequency</string>
+                        <string>my_effective_date</string>
                       </list>
                     </value>
                 </item>
