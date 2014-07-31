@@ -29,11 +29,20 @@
 import transaction
 from Products.SlapOS.tests.testSlapOSMixin import testSlapOSMixin
 from Products.ERP5Type.tests.utils import createZODBPythonScript
+from DateTime import DateTime
 
 class TestSlapOSPDMSkins(testSlapOSMixin):
   def afterSetUp(self):
     super(TestSlapOSPDMSkins, self).afterSetUp()
     self.new_id = self.generateNewId()
+    self.request_kw = dict(
+        software_title=self.generateNewSoftwareTitle(),
+        software_type=self.generateNewSoftwareType(),
+        instance_xml=self.generateSafeXml(),
+        sla_xml=self.generateEmptyXml(),
+        shared=False,
+        state="started"
+    )
 
   def generateNewId(self):
      return "%sTEST" % self.portal.portal_ids.generateNewId(
@@ -81,6 +90,12 @@ class TestSlapOSPDMSkins(testSlapOSMixin):
       p.markFree()
       p.validate()
   
+  def _markComputerPartitionBusy(self, computer, software_instance):
+    for partition in computer.contentValues(portal_type='Computer Partition'):
+      if partition.getSlapState() == 'free':
+        software_instance.edit(aggregate=partition.getRelativeUrl())
+        break;
+  
   def _makeSoftwareProduct(self, new_id):
     software_product = self.portal.software_product_module\
       .template_software_product.Base_createCloneDocument(batch_mode=1)
@@ -89,6 +104,7 @@ class TestSlapOSPDMSkins(testSlapOSMixin):
       title='Test software product %s' % new_id
     )
     software_product.validate()
+    software_product.publish()
 
     return software_product
 
@@ -102,6 +118,17 @@ class TestSlapOSPDMSkins(testSlapOSMixin):
     )
     software_release.release()
 
+    return software_release
+  
+  def _requestSoftwareRelease(self, new_id, software_product_url, effective_date=None):
+    software_release = self._makeSoftwareRelease(new_id)
+    if not effective_date:
+      effective_date = DateTime()
+    software_release.edit(
+        aggregate_value=software_product_url,
+        effective_date=effective_date
+    )
+    software_release.publish()
     return software_release
 
   def _makeSoftwareInstallation(self, new_id, computer, software_release_url):
@@ -144,11 +171,54 @@ class TestSlapOSPDMSkins(testSlapOSMixin):
     )
     hosting_subscription.requestStart(**kw)
     hosting_subscription.requestInstance(**kw)
+    
+  def _makeFullHostingSubscription(self, new_id, software_url="", person=None):
+    if not person:
+      person = self._makePerson(new_id)
+    
+    hosting_subscription = self.portal\
+      .hosting_subscription_module.template_hosting_subscription\
+      .Base_createCloneDocument(batch_mode=1)
+    hosting_subscription.edit(
+        title=self.request_kw['software_title'],
+        reference="TESTHS-%s" % new_id,
+        url_string=software_url,
+        source_reference=self.request_kw['software_type'],
+        text_content=self.request_kw['instance_xml'],
+        sla_xml=self.request_kw['sla_xml'],
+        root_slave=self.request_kw['shared'],
+        destination_section=person.getRelativeUrl()
+    )
+    hosting_subscription.validate()
+    self.portal.portal_workflow._jumpToStateFor(hosting_subscription, 'start_requested')
+
+    return hosting_subscription
+
+  def _makeFullSoftwareInstance(self, hosting_subscription, software_url):
+    
+    software_instance = self.portal.software_instance_module\
+        .template_software_instance.Base_createCloneDocument(batch_mode=1)
+    software_instance.edit(
+        title=self.request_kw['software_title'],
+        reference="TESTSI-%s" % self.generateNewId(),
+        url_string=software_url,
+        source_reference=self.request_kw['software_type'],
+        text_content=self.request_kw['instance_xml'],
+        sla_xml=self.request_kw['sla_xml'],
+        specialise=hosting_subscription.getRelativeUrl()
+    )
+    hosting_subscription.edit(
+        predecessor=software_instance.getRelativeUrl()
+    )
+    self.portal.portal_workflow._jumpToStateFor(software_instance, 'start_requested')
+    software_instance.validate()
+    
+    return software_instance
 
   def _makeUpgradeDecision(self):
     return self.portal.\
        upgrade_decision_module.newContent(
-         portal_type="Upgrade Decision", 
+         portal_type="Upgrade Decision",
          title="TESTUPDE-%s" % self.new_id)
 
   def _makeUpgradeDecisionLine(self, upgrade_decision):
@@ -158,9 +228,9 @@ class TestSlapOSPDMSkins(testSlapOSMixin):
 
   def testUpgradeDecision_getComputer(self):
     computer = self._makeComputer(self.new_id)
-    upgrade_decision = self._makeUpgradeDecision() 
+    upgrade_decision = self._makeUpgradeDecision()
 
-    upgrade_decision_line = self._makeUpgradeDecisionLine(upgrade_decision) 
+    upgrade_decision_line = self._makeUpgradeDecisionLine(upgrade_decision)
     upgrade_decision_line.setAggregateValue(computer)
 
     found_computer = upgrade_decision.UpgradeDecision_getComputer()
@@ -169,12 +239,12 @@ class TestSlapOSPDMSkins(testSlapOSMixin):
 
   def testUpgradeDecision_getComputer_2_lines(self):
     computer = self._makeComputer(self.new_id)
-    upgrade_decision = self._makeUpgradeDecision() 
+    upgrade_decision = self._makeUpgradeDecision()
 
-    upgrade_decision_line = self._makeUpgradeDecisionLine(upgrade_decision) 
+    upgrade_decision_line = self._makeUpgradeDecisionLine(upgrade_decision)
     upgrade_decision_line.setAggregateValue(computer)
 
-    upgrade_decision_line = self._makeUpgradeDecisionLine(upgrade_decision) 
+    upgrade_decision_line = self._makeUpgradeDecisionLine(upgrade_decision)
 
     found_computer = upgrade_decision.UpgradeDecision_getComputer()
     self.assertEquals(computer.getRelativeUrl(),
@@ -183,19 +253,19 @@ class TestSlapOSPDMSkins(testSlapOSMixin):
 
   def testUpgradeDecision_getComputer_2_computer(self):
     computer = self._makeComputer(self.new_id)
-    upgrade_decision = self._makeUpgradeDecision() 
+    upgrade_decision = self._makeUpgradeDecision()
 
-    upgrade_decision_line = self._makeUpgradeDecisionLine(upgrade_decision) 
+    upgrade_decision_line = self._makeUpgradeDecisionLine(upgrade_decision)
     upgrade_decision_line.setAggregateValue(computer)
 
-    upgrade_decision_line = self._makeUpgradeDecisionLine(upgrade_decision) 
+    upgrade_decision_line = self._makeUpgradeDecisionLine(upgrade_decision)
     upgrade_decision_line.setAggregateValue(computer)
 
     self.assertRaises(ValueError, upgrade_decision.UpgradeDecision_getComputer)
 
   def testUpgradeDecision_getComputer_O_computer(self):
-    upgrade_decision = self._makeUpgradeDecision() 
-    upgrade_decision_line = self._makeUpgradeDecisionLine(upgrade_decision) 
+    upgrade_decision = self._makeUpgradeDecision()
+    upgrade_decision_line = self._makeUpgradeDecisionLine(upgrade_decision)
 
     found_computer = upgrade_decision.UpgradeDecision_getComputer()
     self.assertEquals(None, found_computer)
@@ -203,9 +273,9 @@ class TestSlapOSPDMSkins(testSlapOSMixin):
      
   def testUpgradeDecision_getSoftwareRelease(self):
     software_release = self._makeSoftwareRelease(self.new_id)
-    upgrade_decision = self._makeUpgradeDecision() 
+    upgrade_decision = self._makeUpgradeDecision()
 
-    upgrade_decision_line = self._makeUpgradeDecisionLine(upgrade_decision) 
+    upgrade_decision_line = self._makeUpgradeDecisionLine(upgrade_decision)
     upgrade_decision_line.setAggregateValue(software_release)
 
     found_software_release = upgrade_decision.UpgradeDecision_getSoftwareRelease()
@@ -214,9 +284,9 @@ class TestSlapOSPDMSkins(testSlapOSMixin):
 
   def testUpgradeDecision_getHostingSubscription(self):
     hosting_subscription = self._makeHostingSubscription(self.new_id)
-    upgrade_decision = self._makeUpgradeDecision() 
+    upgrade_decision = self._makeUpgradeDecision()
 
-    upgrade_decision_line = self._makeUpgradeDecisionLine(upgrade_decision) 
+    upgrade_decision_line = self._makeUpgradeDecisionLine(upgrade_decision)
     upgrade_decision_line.setAggregateValue(hosting_subscription)
 
     found_hosting_subscription = upgrade_decision.UpgradeDecision_getHostingSubscription()
@@ -226,12 +296,12 @@ class TestSlapOSPDMSkins(testSlapOSMixin):
 
   def testUpgradeDecision_getHostingSubscription_2_lines(self):
     hosting_subscription = self._makeHostingSubscription(self.new_id)
-    upgrade_decision = self._makeUpgradeDecision() 
+    upgrade_decision = self._makeUpgradeDecision()
 
-    upgrade_decision_line = self._makeUpgradeDecisionLine(upgrade_decision) 
+    upgrade_decision_line = self._makeUpgradeDecisionLine(upgrade_decision)
     upgrade_decision_line.setAggregateValue(hosting_subscription)
 
-    upgrade_decision_line = self._makeUpgradeDecisionLine(upgrade_decision) 
+    upgrade_decision_line = self._makeUpgradeDecisionLine(upgrade_decision)
 
     found_hosting_subscription = upgrade_decision.UpgradeDecision_getHostingSubscription()
     self.assertEquals(hosting_subscription.getRelativeUrl(),
@@ -240,19 +310,19 @@ class TestSlapOSPDMSkins(testSlapOSMixin):
 
   def testUpgradeDecision_getHostingSubscription_2_hosting(self):
     hosting_subscription = self._makeHostingSubscription(self.new_id)
-    upgrade_decision = self._makeUpgradeDecision() 
+    upgrade_decision = self._makeUpgradeDecision()
 
-    upgrade_decision_line = self._makeUpgradeDecisionLine(upgrade_decision) 
+    upgrade_decision_line = self._makeUpgradeDecisionLine(upgrade_decision)
     upgrade_decision_line.setAggregateValue(hosting_subscription)
 
-    upgrade_decision_line = self._makeUpgradeDecisionLine(upgrade_decision) 
+    upgrade_decision_line = self._makeUpgradeDecisionLine(upgrade_decision)
     upgrade_decision_line.setAggregateValue(hosting_subscription)
 
     self.assertRaises(ValueError, upgrade_decision.UpgradeDecision_getHostingSubscription)
 
   def testUpgradeDecision_getHostingSubscription_O_hosting(self):
-    upgrade_decision = self._makeUpgradeDecision() 
-    upgrade_decision_line = self._makeUpgradeDecisionLine(upgrade_decision) 
+    upgrade_decision = self._makeUpgradeDecision()
+    upgrade_decision_line = self._makeUpgradeDecisionLine(upgrade_decision)
 
     found_hosting_subscription = upgrade_decision.UpgradeDecision_getHostingSubscription()
     self.assertEquals(None, found_hosting_subscription)
@@ -260,9 +330,9 @@ class TestSlapOSPDMSkins(testSlapOSMixin):
      
   def testUpgradeDecision_getSoftwareRelease(self):
     software_release = self._makeSoftwareRelease(self.new_id)
-    upgrade_decision = self._makeUpgradeDecision() 
+    upgrade_decision = self._makeUpgradeDecision()
 
-    upgrade_decision_line = self._makeUpgradeDecisionLine(upgrade_decision) 
+    upgrade_decision_line = self._makeUpgradeDecisionLine(upgrade_decision)
     upgrade_decision_line.setAggregateValue(software_release)
 
     found_software_release = upgrade_decision.UpgradeDecision_getSoftwareRelease()
@@ -271,12 +341,12 @@ class TestSlapOSPDMSkins(testSlapOSMixin):
 
   def testUpgradeDecision_getSoftwareRelease_2_lines(self):
     software_release = self._makeSoftwareRelease(self.new_id)
-    upgrade_decision = self._makeUpgradeDecision() 
+    upgrade_decision = self._makeUpgradeDecision()
 
-    upgrade_decision_line = self._makeUpgradeDecisionLine(upgrade_decision) 
+    upgrade_decision_line = self._makeUpgradeDecisionLine(upgrade_decision)
     upgrade_decision_line.setAggregateValue(software_release)
 
-    upgrade_decision_line = self._makeUpgradeDecisionLine(upgrade_decision) 
+    upgrade_decision_line = self._makeUpgradeDecisionLine(upgrade_decision)
 
     found_software_release = upgrade_decision.UpgradeDecision_getSoftwareRelease()
     self.assertEquals(software_release.getRelativeUrl(),
@@ -284,19 +354,19 @@ class TestSlapOSPDMSkins(testSlapOSMixin):
 
   def testUpgradeDecision_getSoftwareRelease_2_sr(self):
     software_release = self._makeSoftwareRelease(self.new_id)
-    upgrade_decision = self._makeUpgradeDecision() 
+    upgrade_decision = self._makeUpgradeDecision()
 
-    upgrade_decision_line = self._makeUpgradeDecisionLine(upgrade_decision) 
+    upgrade_decision_line = self._makeUpgradeDecisionLine(upgrade_decision)
     upgrade_decision_line.setAggregateValue(software_release)
 
-    upgrade_decision_line = self._makeUpgradeDecisionLine(upgrade_decision) 
+    upgrade_decision_line = self._makeUpgradeDecisionLine(upgrade_decision)
     upgrade_decision_line.setAggregateValue(software_release)
 
     self.assertRaises(ValueError, upgrade_decision.UpgradeDecision_getSoftwareRelease)
 
   def testUpgradeDecision_getSoftwareRelease_O_sr(self):
-    upgrade_decision = self._makeUpgradeDecision() 
-    upgrade_decision_line = self._makeUpgradeDecisionLine(upgrade_decision) 
+    upgrade_decision = self._makeUpgradeDecision()
+    upgrade_decision_line = self._makeUpgradeDecisionLine(upgrade_decision)
 
     found_software_release = upgrade_decision.UpgradeDecision_getSoftwareRelease()
     self.assertEquals(None, found_software_release)
@@ -308,7 +378,7 @@ class TestSlapOSPDMSkins(testSlapOSMixin):
     hosting_subscription.edit(
           destination_section_value = person.getRelativeUrl())
 
-    self._makeSoftwareInstance(hosting_subscription, 
+    self._makeSoftwareInstance(hosting_subscription,
                                hosting_subscription.getUrlString())
    
     software_release = self._makeSoftwareRelease(self.new_id)
@@ -345,7 +415,7 @@ class TestSlapOSPDMSkins(testSlapOSMixin):
     hosting_subscription.edit(
           destination_section_value = person.getRelativeUrl())
 
-    self._makeSoftwareInstance(hosting_subscription, 
+    self._makeSoftwareInstance(hosting_subscription,
                                hosting_subscription.getUrlString())
    
     upgrade_decision = self._makeUpgradeDecision()
@@ -361,7 +431,7 @@ class TestSlapOSPDMSkins(testSlapOSMixin):
 
   def testUpgradeDecision_upgradeHostingSubscription_no_hosting_subscripion(self):
 
-    software_release = self._makeSoftwareRelease(self.new_id) 
+    software_release = self._makeSoftwareRelease(self.new_id)
     upgrade_decision = self._makeUpgradeDecision()
     upgrade_decision_line = self._makeUpgradeDecisionLine(upgrade_decision)
     upgrade_decision_line.setAggregateValueList([software_release])
@@ -394,7 +464,7 @@ class TestSlapOSPDMSkins(testSlapOSMixin):
 
   def testUpgradeDecision_upgradeComputer_no_hosting_subscripion(self):
 
-    software_release = self._makeSoftwareRelease(self.new_id) 
+    software_release = self._makeSoftwareRelease(self.new_id)
     upgrade_decision = self._makeUpgradeDecision()
     upgrade_decision_line = self._makeUpgradeDecisionLine(upgrade_decision)
     upgrade_decision_line.setAggregateValueList([software_release])
@@ -409,7 +479,7 @@ class TestSlapOSPDMSkins(testSlapOSMixin):
   def testUpgradeDecision_upgradeComputer(self):
     person = self._makePerson(self.new_id)
     computer = self._makeComputer(self.new_id)
-    software_release = self._makeSoftwareRelease(self.new_id) 
+    software_release = self._makeSoftwareRelease(self.new_id)
     upgrade_decision = self._makeUpgradeDecision()
     upgrade_decision_line = self._makeUpgradeDecisionLine(upgrade_decision)
     upgrade_decision_line.setAggregateValueList([software_release, computer])
@@ -432,3 +502,103 @@ class TestSlapOSPDMSkins(testSlapOSMixin):
     self.assertEqual('validated', software_installation.getValidationState())
     self.assertEqual('stopped', upgrade_decision.getSimulationState())
 
+
+  def testSoftwareRelease_createUpgradeDecision(self):
+    person = self._makePerson(self.new_id)
+    computer = self._makeComputer(self.new_id)
+    computer.edit(source_administration_value=person)
+    software_release = self._makeSoftwareRelease(self.new_id)
+    
+    upgrade_decision = software_release.SoftwareRelease_createUpgradeDecision(
+          computer_url=computer.getRelativeUrl(),
+          title="TEST-SRUPDE-%s" % self.new_id)
+    self.tic()
+    
+    self.assertEqual(upgrade_decision.getSimulationState(), 'confirmed')
+    self.assertEqual(upgrade_decision.getDestinationSection(),
+                       person.getRelativeUrl())
+    
+    decision_line = upgrade_decision.contentValues(
+                    portal_type='Upgrade Decision Line')[0]
+    
+    self.assertEqual(decision_line.getTitle(),
+                        'Request decision upgrade for %s on computer %s' % (
+                        software_release.getTitle(), computer.getReference())
+                    )
+    self.assertEqual(decision_line.getAggregate(portal_type='Computer'),
+                      computer.getRelativeUrl())
+    self.assertEqual(decision_line.getAggregate(portal_type='Software Release'),
+                      software_release.getRelativeUrl())
+  
+  
+  def testSoftwareRelease_isUpgradeDecisionInProgress(self):
+    computer = self._makeComputer(self.new_id)
+    software_release = self._makeSoftwareRelease(self.new_id)
+    upgrade_decision = self._makeUpgradeDecision()
+    upgrade_decision_line = self._makeUpgradeDecisionLine(upgrade_decision)
+    upgrade_decision_line.setAggregateValueList([software_release, computer])
+    software_release2 = self._makeSoftwareRelease(self.generateNewId())
+    upgrade_decision.confirm()
+    
+    self.tic()
+    
+    in_progress = software_release.SoftwareRelease_isUpgradeDecisionInProgress(
+                                title=upgrade_decision.getTitle()
+                              )
+    self.assertEqual(in_progress, True)
+    
+    in_progress = software_release.SoftwareRelease_isUpgradeDecisionInProgress()
+    self.assertEqual(in_progress, True)
+    
+    in_progress = software_release.SoftwareRelease_isUpgradeDecisionInProgress(
+                                title=upgrade_decision.getTitle(),
+                                simulation_state='stopped'
+                              )
+    self.assertEqual(in_progress, False)
+    
+    in_progress = software_release2.SoftwareRelease_isUpgradeDecisionInProgress(
+                                title=upgrade_decision.getTitle()
+                              )
+    self.assertEqual(in_progress, False)
+    
+  
+  def testComputer_checkAndCreateUpgradeDecision(self):
+    person = self._makePerson(self.new_id)
+    computer = self._makeComputer(self.new_id)
+    computer.edit(source_administration_value=person)
+    software_product = self._makeSoftwareProduct(self.new_id)
+    software_release = self._requestSoftwareRelease(self.new_id,
+                                    software_product.getRelativeUrl())
+    self._makeSoftwareInstallation(self.new_id,
+                              computer, software_release.getUrlString())
+    self.tic()
+    
+    upgrade_decision = computer.Computer_checkAndCreateUpgradeDecision()
+    self.assertEqual(upgrade_decision, None)
+    
+    software_release2 = self._requestSoftwareRelease(self.generateNewId(),
+                                      software_product.getRelativeUrl())
+    # Should be ignored, Publication Date is for tomorrow
+    self._requestSoftwareRelease(self.generateNewId(),
+                                      software_product.getRelativeUrl(),
+                                      (DateTime() + 1))
+    self.tic()
+    
+    upgrade_decision = computer.Computer_checkAndCreateUpgradeDecision()
+    
+    self.assertNotEqual(upgrade_decision, None)
+    self.assertEqual(upgrade_decision.getSimulationState(), 'confirmed')
+    
+    computer_aggregate = upgrade_decision.UpgradeDecision_getComputer()
+    self.assertEqual(computer_aggregate.getReference(),
+                      computer.getReference())
+    url_string = upgrade_decision.UpgradeDecision_getSoftwareRelease()
+    self.assertEqual(url_string.getUrlString(),
+                                software_release2.getUrlString())
+    
+    self.tic()
+    upgrade_decision2 = computer.Computer_checkAndCreateUpgradeDecision()
+    
+    self.assertEqual(upgrade_decision2, None)
+    
+    
