@@ -62,9 +62,14 @@ if len(upgrade_decision_in_progress) == 0:\n
 \n
 in_progress = False\n
 for decision_in_progress in upgrade_decision_in_progress:\n
-  found_url = decision_in_progress.\\\n
-              UpgradeDecision_getSoftwareRelease().getUrlString()\n
-  if found_url == url_string:\n
+  try:\n
+    software_release = decision_in_progress.\\\n
+              UpgradeDecision_getSoftwareRelease()\n
+  except ValueError:\n
+    continue\n
+  if not software_release:\n
+    continue\n
+  if url_string == software_release.getUrlString():\n
     in_progress = True\n
     break\n
 \n

@@ -50,62 +50,32 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string encoding="cdata"><![CDATA[
-
-from DateTime import DateTime\n
+            <value> <string>portal = context.getPortalObject()\n
 \n
-portal = context.getPortalObject()\n
+public_scope_uid = portal.restrictedTraverse(\n
+  "portal_categories/allocation_scope/open/public", None).getUid()\n
+friend_scope_uid =  portal.restrictedTraverse(\n
+  "portal_categories/allocation_scope/open/friend", None).getUid()\n
 \n
-software_release = context\n
-source_product = portal.restrictedTraverse(source_url, None)\n
-if not source_product:\n
-  return\n
-\n
-portal_type = source_product.getPortalType()\n
-if portal_type == \'Computer\':\n
-  person_url = source_product.getSourceAdministration()\n
-elif portal_type == \'Hosting Subscription\':\n
-  person_url = source_product.getDestinationSection()\n
-else:\n
-  return\n
-\n
-if not person_url:\n
-  return\n
-\n
-upgrade_decision = portal.upgrade_decision_module.\\\n
-            template_upgrade_decision.Base_createCloneDocument(batch_mode=1) \n
-upgrade_decision.edit(\n
-        title=title,\n
-        destination_section=person_url,\n
-        destination_decision=person_url,\n
-        start_date=DateTime()\n
-)\n
-upgrade_decision.confirm()\n
-decision_line_list = upgrade_decision.contentValues(\n
-                    portal_type=\'Upgrade Decision Line\')\n
-if len(decision_line_list) > 0:\n
-  decision_line = decision_line_list[0]\n
-else:\n
-  decision_line = upgrade_decision.newContent(\n
-                    portal_type=\'Upgrade Decision Line\')\n
-\n
-decision_line.edit(\n
-  title=\'Request decision upgrade for %s on %s %s\' % (\n
-    software_release.getTitle(), portal_type, source_product.getReference()),\n
-  aggregate=[source_url, software_release.getRelativeUrl()])\n
-\n
-return upgrade_decision\n
-
-
-]]></string> </value>
+if public_scope_uid and friend_scope_uid:\n
+  portal.portal_catalog.searchAndActivate(\n
+    portal_type=\'Computer\',\n
+    validation_state = \'validated\',\n
+    default_allocation_scope_uid=[public_scope_uid, friend_scope_uid],\n
+    method_id = \'Computer_hostingSubscriptionCreateUpgradeDecision\',\n
+    activate_kw = {\'tag\':tag}\n
+  )\n
+  \n
+  context.activate(after_tag=tag).getId()\n
+</string> </value>
         </item>
         <item>
             <key> <string>_params</string> </key>
-            <value> <string>source_url, title</string> </value>
+            <value> <string>tag, fixit, params</string> </value>
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>SoftwareRelease_createUpgradeDecision</string> </value>
+            <value> <string>Alarm_computerCheckUpgradeHostingSubscription</string> </value>
         </item>
       </dictionary>
     </pickle>
