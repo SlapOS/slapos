@@ -8,11 +8,11 @@
       <dictionary>
         <item>
             <key> <string>active_sense_method_id</string> </key>
-            <value> <string>Alarm_computerCheckUpgradeSoftwareRelease</string> </value>
+            <value> <string>Alarm_computerCheckUpgradeHostingSubscription</string> </value>
         </item>
         <item>
             <key> <string>description</string> </key>
-            <value> <string>Create Upgrade Decision for computers to upgrade Software Releases to a newer version.</string> </value>
+            <value> <string>Create Upgrade Decision for computers to upgrade Hosting Subscriptions to a newer version.</string> </value>
         </item>
         <item>
             <key> <string>enabled</string> </key>
@@ -20,7 +20,7 @@
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>slapos_pdm_computer_create_upgrade_decision</string> </value>
+            <value> <string>slapos_hosting_subscription_create_upgrade_decision</string> </value>
         </item>
         <item>
             <key> <string>periodicity_day_frequency</string> </key>
@@ -103,7 +103,7 @@
         </item>
         <item>
             <key> <string>title</string> </key>
-            <value> <string>Create Upgrade Decision for computers</string> </value>
+            <value> <string>Create Upgrade Decision for Hosting Subscriptions</string> </value>
         </item>
       </dictionary>
     </pickle>

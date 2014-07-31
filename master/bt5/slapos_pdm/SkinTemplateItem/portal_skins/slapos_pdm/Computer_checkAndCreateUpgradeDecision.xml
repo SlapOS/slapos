@@ -88,7 +88,7 @@ for software_release in software_release_list:\n
       continue\n
   \n
     return newer_release.SoftwareRelease_createUpgradeDecision(\n
-        computer_url=computer.getRelativeUrl(), title=title\n
+        source_url=computer.getRelativeUrl(), title=title\n
       )\n
 </string> </value>
         </item>

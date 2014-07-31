@@ -108,7 +108,8 @@ return %s
       '*args, **kw',
       '# Script body\n'
 """portal_workflow = context.portal_workflow
-portal_workflow.doActionFor(context, action='edit_action', comment='Visited by Computer_checkAndCreateUpgradeDecision') """ )
+portal_workflow.doActionFor(context, action='edit_action', comment='%s') """ % \
+      'Visited by Computer_checkAndCreateUpgradeDecision')
     transaction.commit()
 
   def _dropComputer_checkAndCreateUpgradeDecision(self):
@@ -137,4 +138,45 @@ portal_workflow.doActionFor(context, action='edit_action', comment='Visited by C
     
     self.assertNotEqual('Visited by Computer_checkAndCreateUpgradeDecision',
       computer2.workflow_history['edit_workflow'][-1]['comment'])
+  
+  def _simulateComputer_hostingSubscriptionCreateUpgradeDecision(self):
+    script_name = 'Computer_hostingSubscriptionCreateUpgradeDecision'
+    if script_name in self.portal.portal_skins.custom.objectIds():
+      raise ValueError('Precondition failed: %s exists in custom' % script_name)
+    createZODBPythonScript(self.portal.portal_skins.custom,
+      script_name,
+      '*args, **kw',
+      '# Script body\n'
+"""portal_workflow = context.portal_workflow
+portal_workflow.doActionFor(context, action='edit_action', comment='%s') """ % \
+      'Visited by Computer_hostingSubscriptionCreateUpgradeDecision')
+    transaction.commit()
 
+  def _dropComputer_hostingSubscriptionCreateUpgradeDecision(self):
+    script_name = 'Computer_hostingSubscriptionCreateUpgradeDecision'
+    if script_name in self.portal.portal_skins.custom.objectIds():
+      self.portal.portal_skins.custom.manage_delObjects(script_name)
+    transaction.commit()
+  
+  def test_Alarm_computerCheckUpgradeHostingSubscription(self):
+    computer = self._makeComputer(self.new_id)
+    computer.edit(allocation_scope = 'open/public')
+    computer2 = self._makeComputer(self.generateNewId())
+    computer2.edit(allocation_scope = 'open/personal')
+    
+    self._simulateComputer_hostingSubscriptionCreateUpgradeDecision()
+
+    try:
+      self.portal.portal_alarms.slapos_hosting_subscription_create_upgrade_decision.\
+        activeSense()
+      self.tic()
+    finally:
+      self._dropComputer_hostingSubscriptionCreateUpgradeDecision()
+
+    self.assertEqual('Visited by Computer_hostingSubscriptionCreateUpgradeDecision',
+      computer.workflow_history['edit_workflow'][-1]['comment'])
+    
+    self.assertNotEqual('Visited by Computer_hostingSubscriptionCreateUpgradeDecision',
+      computer2.workflow_history['edit_workflow'][-1]['comment'])
+      
+      

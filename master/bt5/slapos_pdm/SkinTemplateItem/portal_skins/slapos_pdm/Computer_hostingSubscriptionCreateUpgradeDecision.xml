@@ -50,62 +50,65 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string encoding="cdata"><![CDATA[
-
-from DateTime import DateTime\n
-\n
+            <value> <string>computer = context\n
 portal = context.getPortalObject()\n
 \n
-software_release = context\n
-source_product = portal.restrictedTraverse(source_url, None)\n
-if not source_product:\n
+partition_list = portal.portal_catalog(portal_type=\'Computer Partition\',\n
+                                        free_for_request=0,\n
+                                        parent_uid=computer.getUid())\n
+\n
+# Get Hosting Subscription for all allocated partition\n
+hosting_subscription_list = []\n
+for partition in partition_list:\n
+  software_instance = partition.getAggregateRelatedValue(\n
+                            portal_type=\'Software Instance\')\n
+  if software_instance:\n
+    hs = software_instance.getSpecialiseValue(\n
+                  portal_type=\'Hosting Subscription\')\n
+    if hs and hs.getSlapState() in \\\n
+        [\'start_requested\', \'stop_requested\'] and \\\n
+        not hs in hosting_subscription_list:\n
+      hosting_subscription_list.append(hs)\n
+\n
+if len(hosting_subscription_list) == 0:\n
   return\n
 \n
-portal_type = source_product.getPortalType()\n
-if portal_type == \'Computer\':\n
-  person_url = source_product.getSourceAdministration()\n
-elif portal_type == \'Hosting Subscription\':\n
-  person_url = source_product.getDestinationSection()\n
-else:\n
-  return\n
+for hosting_subscription in hosting_subscription_list:\n
+  is_upgradable = hosting_subscription.HostingSubscription_isUpgradable()\n
+  if not is_upgradable:\n
+    continue\n
+  \n
+  newer_release_string = hosting_subscription.\\\n
+                    HostingSubscription_getNewerSofwareRelease()\n
+  if not newer_release_string:\n
+    continue\n
+  \n
+  software_release = portal.portal_catalog.getResultValue(\n
+                              portal_type=\'Software Release\',\n
+                              url_string=newer_release_string)\n
+  if not software_release:\n
+    continue\n
+  \n
+  title = \'A new software release is available for %s\' % \\\n
+                        hosting_subscription.getReference()\n
+  # Search if exist upgrade decision for this Hosting Subscription (by title)\n
+  is_decision_in_progress = software_release.\\\n
+          SoftwareRelease_isUpgradeDecisionInProgress(title=title)\n
+  if is_decision_in_progress:\n
+    continue\n
 \n
-if not person_url:\n
-  return\n
-\n
-upgrade_decision = portal.upgrade_decision_module.\\\n
-            template_upgrade_decision.Base_createCloneDocument(batch_mode=1) \n
-upgrade_decision.edit(\n
-        title=title,\n
-        destination_section=person_url,\n
-        destination_decision=person_url,\n
-        start_date=DateTime()\n
-)\n
-upgrade_decision.confirm()\n
-decision_line_list = upgrade_decision.contentValues(\n
-                    portal_type=\'Upgrade Decision Line\')\n
-if len(decision_line_list) > 0:\n
-  decision_line = decision_line_list[0]\n
-else:\n
-  decision_line = upgrade_decision.newContent(\n
-                    portal_type=\'Upgrade Decision Line\')\n
-\n
-decision_line.edit(\n
-  title=\'Request decision upgrade for %s on %s %s\' % (\n
-    software_release.getTitle(), portal_type, source_product.getReference()),\n
-  aggregate=[source_url, software_release.getRelativeUrl()])\n
-\n
-return upgrade_decision\n
-
-
-]]></string> </value>
+  return software_release.SoftwareRelease_createUpgradeDecision(\n
+      source_url=hosting_subscription.getRelativeUrl(), title=title\n
+    )\n
+</string> </value>
         </item>
         <item>
             <key> <string>_params</string> </key>
-            <value> <string>source_url, title</string> </value>
+            <value> <string></string> </value>
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>SoftwareRelease_createUpgradeDecision</string> </value>
+            <value> <string>Computer_hostingSubscriptionCreateUpgradeDecision</string> </value>
         </item>
       </dictionary>
     </pickle>
