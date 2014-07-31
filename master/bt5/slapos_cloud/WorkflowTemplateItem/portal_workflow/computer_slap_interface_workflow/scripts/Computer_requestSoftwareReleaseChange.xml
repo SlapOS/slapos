@@ -103,7 +103,7 @@ else:\n
     url_string=software_release_url,\n
     aggregate=computer.getRelativeUrl(),\n
     activate_kw={\'tag\': tag},\n
-    destination_section=portal.ERP5Site_getAuthenticatedMemberPersonValue().getRelativeUrl()\n
+    destination_section=computer.getSourceAdministration()\n
   )\n
 \n
 # Change desired state\n

@@ -55,7 +55,7 @@
 support_request = context\n
 portal = context.getPortalObject()\n
 \n
-ressource = portal.service_module.slapos_crm_information.getRelativeUrl()\n
+resource = portal.service_module.slapos_crm_information.getRelativeUrl()\n
 # create Web message if needed for this ticket\n
 last_event = context.portal_catalog.getResultValue(\n
              follow_up_uid=support_request.getUid(), \n
@@ -71,7 +71,7 @@ event.edit(\n
   title=message_title,\n
   text_content=message,\n
   start_date = DateTime(),\n
-  resource = ressource,\n
+  resource = resource,\n
   source=source_relative_url,\n
   follow_up=support_request.getRelativeUrl(),\n
 )\n
