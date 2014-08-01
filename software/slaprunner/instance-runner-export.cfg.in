@@ -46,6 +46,7 @@ parts +=
   monitor-instance-log-access
 ## Monitor for runner
   monitor-current-log-access
+  monitor-check-resilient-feed-file
 
 
 [exporter]
