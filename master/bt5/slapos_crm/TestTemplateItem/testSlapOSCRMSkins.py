@@ -76,7 +76,7 @@ class TestSlapOSPerson_checkToCreateRegularisationRequest(testSlapOSMixin):
                       ticket.getSource())
     expected_text_content = """Dear user,
 
-A new invoice has been generated.
+A new invoice has been generated. 
 You can access it in your invoice section at http://foobar.org/.
 
 Do not hesitate to visit the web forum (http://community.slapos.org/forum) in case of question.

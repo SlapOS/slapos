@@ -60,17 +60,11 @@ computer_reference = computer.getReference()\n
 if allocation_scope not in [\'open/public\', \'open/friend\']:\n
   return\n
 \n
-is_service_provider = False\n
 person = computer.getSourceAdministrationValue(portal_type="Person")\n
 if not person:\n
   return\n
 \n
-for assignment in person.contentValues(portal_type="Assignment"):\n
-  if assignment.getRole() == \'service_provider\':\n
-    is_service_provider = True\n
-    break\n
-\n
-if not is_service_provider:\n
+if not person.Person_isServiceProvider():\n
   #Turn this computer allocation scope to \'open/personal\'\n
   edit_kw = {\n
     \'allocation_scope\': \'open/personal\',\n
