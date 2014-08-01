@@ -181,6 +181,7 @@ active_process.postResult(active_result)
       'task_module',
       'task_report_module',
       'transformation_module',
+      'upgrade_decision_module',
       'web_page_module',
       'web_site_module',
       'workflow_module',
