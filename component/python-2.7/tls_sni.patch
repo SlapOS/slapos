@@ -1,0 +1,117 @@
+Description: Support TLS SNI extension in ssl module
+Author: markk
+Bug-Python: http://bugs.python.org/issue5639
+
+--- a/Lib/ssl.py
++++ b/Lib/ssl.py
+@@ -202,6 +202,7 @@
+     def __init__(self, sock, keyfile=None, certfile=None,
+                  server_side=False, cert_reqs=CERT_NONE,
+                  ssl_version=PROTOCOL_SSLv23, ca_certs=None,
++                 server_hostname=None,
+                  do_handshake_on_connect=True,
+                  suppress_ragged_eofs=True, ciphers=None):
+         # Can't use sock.type as other flags (such as SOCK_NONBLOCK) get
+@@ -238,6 +239,7 @@
+             self._sslobj = _ssl.sslwrap(self._sock, server_side,
+                                         keyfile, certfile,
+                                         cert_reqs, ssl_version, ca_certs,
++                                        server_hostname,
+                                         ciphers)
+             if do_handshake_on_connect:
+                 self.do_handshake()
+@@ -246,6 +248,7 @@
+         self.cert_reqs = cert_reqs
+         self.ssl_version = ssl_version
+         self.ca_certs = ca_certs
++        self.server_hostname = server_hostname
+         self.ciphers = ciphers
+         self.do_handshake_on_connect = do_handshake_on_connect
+         self.suppress_ragged_eofs = suppress_ragged_eofs
+@@ -411,7 +414,7 @@
+             raise ValueError("attempt to connect already-connected SSLSocket!")
+         self._sslobj = _ssl.sslwrap(self._sock, False, self.keyfile, self.certfile,
+                                     self.cert_reqs, self.ssl_version,
+-                                    self.ca_certs, self.ciphers)
++                                    self.ca_certs, self.server_hostname, self.ciphers)
+         try:
+             if return_errno:
+                 rc = socket.connect_ex(self, addr)
+@@ -452,6 +455,7 @@
+                               cert_reqs=self.cert_reqs,
+                               ssl_version=self.ssl_version,
+                               ca_certs=self.ca_certs,
++                              server_hostname=None,
+                               ciphers=self.ciphers,
+                               do_handshake_on_connect=self.do_handshake_on_connect,
+                               suppress_ragged_eofs=self.suppress_ragged_eofs),
+@@ -566,7 +570,7 @@
+         sock = sock._sock
+ 
+     ssl_sock = _ssl.sslwrap(sock, 0, keyfile, certfile, CERT_NONE,
+-                            PROTOCOL_SSLv23, None)
++                            PROTOCOL_SSLv23, None, None, None)
+     try:
+         sock.getpeername()
+     except socket_error:
+--- a/Modules/_ssl.c
++++ b/Modules/_ssl.c
+@@ -267,7 +267,7 @@
+                enum py_ssl_server_or_client socket_type,
+                enum py_ssl_cert_requirements certreq,
+                enum py_ssl_version proto_version,
+-               char *cacerts_file, char *ciphers)
++               char *cacerts_file, char *server_hostname, char *ciphers)
+ {
+     PySSLObject *self;
+     char *errstr = NULL;
+@@ -389,6 +389,14 @@
+ 
+     PySSL_BEGIN_ALLOW_THREADS
+     self->ssl = SSL_new(self->ctx); /* New ssl struct */
++#if OPENSSL_VERSION_NUMBER >= 0x0090806fL && !defined(OPENSSL_NO_TLSEXT)
++    /* If SNI isn't supported, we just don't call it and fail silently,
++     * as there's not much else we can do.
++     */
++    if ((socket_type == PY_SSL_CLIENT) &&
++             (proto_version != PY_SSL_VERSION_SSL2) && server_hostname)
++        SSL_set_tlsext_host_name(self->ssl, server_hostname);
++#endif
+     PySSL_END_ALLOW_THREADS
+     SSL_set_fd(self->ssl, Sock->sock_fd);       /* Set the socket for SSL */
+ #ifdef SSL_MODE_AUTO_RETRY
+@@ -431,15 +439,16 @@
+     char *key_file = NULL;
+     char *cert_file = NULL;
+     char *cacerts_file = NULL;
++    char *server_hostname = NULL;
+     char *ciphers = NULL;
+ 
+-    if (!PyArg_ParseTuple(args, "O!i|zziizz:sslwrap",
++    if (!PyArg_ParseTuple(args, "O!i|zziizzz:sslwrap",
+                           PySocketModule.Sock_Type,
+                           &Sock,
+                           &server_side,
+                           &key_file, &cert_file,
+                           &verification_mode, &protocol,
+-                          &cacerts_file, &ciphers))
++                          &cacerts_file, &server_hostname, &ciphers))
+         return NULL;
+ 
+     /*
+@@ -452,13 +461,13 @@
+ 
+     return (PyObject *) newPySSLObject(Sock, key_file, cert_file,
+                                        server_side, verification_mode,
+-                                       protocol, cacerts_file,
++                                       protocol, cacerts_file, server_hostname,
+                                        ciphers);
+ }
+ 
+ PyDoc_STRVAR(ssl_doc,
+ "sslwrap(socket, server_side, [keyfile, certfile, certs_mode, protocol,\n"
+-"                              cacertsfile, ciphers]) -> sslobject");
++"                              cacertsfile, ciphers, server_hostname]) -> sslobject");
+ 
+ /* SSL object methods */
+ 
