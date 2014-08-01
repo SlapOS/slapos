@@ -327,14 +327,16 @@ class TestSlapOSCloudSupportRequestGeneration(testSlapOSMixin):
       result)
   
   def test_SupportRequest_trySendNotificationMessage(self):
+    computer = self._makeComputer(self.new_id)
+    person = computer.getSourceAdministrationValue()
     title = "Test Support Request %s" % self.new_id
     text_content='Test NM content<br/>%s<br/>' % self.new_id
-    computer = self._makeComputer(self.new_id)
-    support_request_url = computer.Base_generateSupportRequestForSlapOS(
-      title, title, computer.getRelativeUrl()
-    )
-    support_request = self.portal.restrictedTraverse(support_request_url)
-    person = computer.getSourceAdministrationValue()
+    
+    support_request = self.portal.support_request_module.newContent(\
+            title=title, description=title,
+            destination_decision=computer.getSourceAdministration(),
+            source_project_value=computer.getRelativeUrl())
+    support_request.validate()
     time_before_next = 2
     self.tic()
     
@@ -364,7 +366,7 @@ class TestSlapOSCloudSupportRequestGeneration(testSlapOSMixin):
     )
     self.assertEqual(event.getTitle(), title)
     
-    
+  
     
 
   def test_Computer_checkState_empty_cache(self):
@@ -599,6 +601,40 @@ portal_workflow.doActionFor(context, action='edit_action', comment='Visited by S
     if script_name in self.portal.portal_skins.custom.objectIds():
       self.portal.portal_skins.custom.manage_delObjects(script_name)
     transaction.commit()
+  
+  def testHostingSubscription_CheckInstanceState(self):
+    host_sub = self._makeHostingSubscription(self.new_id)
+    self._makeSoftwareInstance(host_sub, self.generateNewSoftwareReleaseUrl())
+    instance = host_sub.getPredecessorValue()
+    
+    self._simulateSoftwareInstance_checkState()
+    try:
+      host_sub.HostingSubscription_CheckInstanceState()
+      self.tic()
+    finally:
+      self._dropSoftwareInstance_checkState()
+
+    self.assertEqual('Visited by SoftwareInstance_checkState',
+      instance.workflow_history['edit_workflow'][-1]['comment'])
+    
+  
+  def _simulateHostingSubscription_CheckInstanceState(self):
+    script_name = 'HostingSubscription_CheckInstanceState'
+    if script_name in self.portal.portal_skins.custom.objectIds():
+      raise ValueError('Precondition failed: %s exists in custom' % script_name)
+    createZODBPythonScript(self.portal.portal_skins.custom,
+      script_name,
+      '*args, **kw',
+      '# Script body\n'
+"""portal_workflow = context.portal_workflow
+portal_workflow.doActionFor(context, action='edit_action', comment='Visited by HostingSubscription_CheckInstanceState') """ )
+    transaction.commit()
+
+  def _dropHostingSubscription_CheckInstanceState(self):
+    script_name = 'HostingSubscription_CheckInstanceState'
+    if script_name in self.portal.portal_skins.custom.objectIds():
+      self.portal.portal_skins.custom.manage_delObjects(script_name)
+    transaction.commit()
 
   def test_Computer_checkSoftwareInstanceState(self):
     computer = self._makeComputer(self.new_id)
@@ -610,15 +646,15 @@ portal_workflow.doActionFor(context, action='edit_action', comment='Visited by S
     computer.partition1.markBusy()
     self.tic()
     
-    self._simulateSoftwareInstance_checkState()
+    self._simulateHostingSubscription_CheckInstanceState()
     try:
       computer.Computer_checkSoftwareInstanceState()
       self.tic()
     finally:
-      self._dropSoftwareInstance_checkState()
+      self._dropHostingSubscription_CheckInstanceState()
 
-    self.assertEqual('Visited by SoftwareInstance_checkState',
-      instance.workflow_history['edit_workflow'][-1]['comment'])
+    self.assertEqual('Visited by HostingSubscription_CheckInstanceState',
+      host_sub.workflow_history['edit_workflow'][-1]['comment'])
 
   def test_Computer_checkSoftwareInstanceState_instance_not_allocated(self):
     computer = self._makeComputer(self.new_id)
@@ -627,14 +663,14 @@ portal_workflow.doActionFor(context, action='edit_action', comment='Visited by S
     instance = host_sub.getPredecessorValue()
     self.tic()
     
-    self._simulateSoftwareInstance_checkState()
+    self._simulateHostingSubscription_CheckInstanceState()
     try:
       computer.Computer_checkSoftwareInstanceState()
       self.tic()
     finally:
-      self._dropSoftwareInstance_checkState()
+      self._dropHostingSubscription_CheckInstanceState()
 
-    self.assertNotEqual('Visited by SoftwareInstance_checkState',
+    self.assertNotEqual('Visited by HostingSubscription_CheckInstanceState',
       instance.workflow_history['edit_workflow'][-1]['comment'])
 
   def _simulateComputer_checkState(self):
