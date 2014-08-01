@@ -57,6 +57,6 @@
  </chain>
  <chain>
   <type>Upgrade Decision</type>
-  <workflow>local_permission_slapos_interation_workflow</workflow>
+  <workflow>local_permission_slapos_interaction_workflow</workflow>
  </chain>
 </workflow_chain>
