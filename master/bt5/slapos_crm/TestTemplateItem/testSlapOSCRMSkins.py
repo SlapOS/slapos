@@ -1987,12 +1987,12 @@ class TestSlapOSComputer_CheckState(testSlapOSMixin):
     
     return notification_message.getRelativeUrl()
   
-  def _getGeneratedSupportRequest(self, computer_uid, request_title):
+  def _getGeneratedSupportRequest(self, source_uid, request_title):
     support_request = self.portal.portal_catalog.getResultValue(
           portal_type = 'Support Request',
           title = request_title,
           simulation_state = 'validated',
-          source_project_uid = computer_uid
+          source_project_uid = source_uid
     )
     return support_request
   
@@ -2009,6 +2009,35 @@ class TestSlapOSComputer_CheckState(testSlapOSMixin):
     )
     computer.validate()
     return computer
+  
+  def _makeHostingSubscription(self, new_id):
+    person = self.portal.person_module.template_member\
+         .Base_createCloneDocument(batch_mode=1)
+    hosting_subscription = self.portal\
+      .hosting_subscription_module.template_hosting_subscription\
+      .Base_createCloneDocument(batch_mode=1)
+    hosting_subscription.validate()
+    hosting_subscription.edit(
+        title= "Test hosting sub ticket %s" % new_id,
+        reference="TESTHST-%s" % new_id,
+        destination_section_value=person
+    )
+
+    return hosting_subscription
+
+  def _makeSoftwareInstance(self, hosting_subscription, software_url):
+
+    kw = dict(
+      software_release=software_url,
+      software_type=self.generateNewSoftwareType(),
+      instance_xml=self.generateSafeXml(),
+      sla_xml=self.generateSafeXml(),
+      shared=False,
+      software_title=hosting_subscription.getTitle(),
+      state='started'
+    )
+    hosting_subscription.requestStart(**kw)
+    hosting_subscription.requestInstance(**kw)
   
   def _simulateBase_generateSupportRequestForSlapOS(self):
     script_name = 'Base_generateSupportRequestForSlapOS'
@@ -2133,4 +2162,58 @@ class TestSlapOSComputer_CheckState(testSlapOSMixin):
       ticket_title.replace('[MONITORING] ', ''),
       'Test NM content\n%s\n' % computer.getReference(),
       person.getRelativeUrl(), message_interval_per_day),
+      ticket.workflow_history['edit_workflow'][-1]['comment'])
+  
+  
+  @simulate('NotificationTool_getDocumentValue',
+            'reference=None',
+  'assert reference == "slapos-crm-hosting_subscription_state.notification"\n' \
+  'return context.restrictedTraverse(' \
+  'context.REQUEST["test_SoftwareInstance_checkState"])')
+  @simulate('SupportRequest_trySendNotificationMessage',
+            'message_title, message, source_relative_url, interval_of_day=1',
+  'context.portal_workflow.doActionFor(' \
+  'context, action="edit_action", ' \
+  'comment="Visited by SupportRequest_trySendNotificationMessage ' \
+  '%s %s %s %s" % (message_title, message, source_relative_url, interval_of_day))')
+  def test_SoftwareInstance_checkState(self):
+    host_sub = self._makeHostingSubscription(self.new_id)
+    self._makeSoftwareInstance(host_sub,self.generateNewSoftwareReleaseUrl())
+    instance = host_sub.getPredecessorValue()
+    person_url = host_sub.getDestinationSection()
+    
+    instance.workflow_history['edit_workflow'] = [{
+           'comment':'edit',
+           'error_message': '',
+           'actor': 'ERP5TypeTestCase',
+           'state': 'current',
+           'time': DateTime('2012/11/30 11:11'),
+           'action': 'edit'
+       }]
+
+    memcached_dict = self.portal.portal_memcached.getMemcachedDict(
+      key_prefix='slap_tool',
+      plugin_path='portal_memcached/default_memcached_plugin')
+
+    memcached_dict[instance.getReference()] = json.dumps(
+        {"created_at":"%s" % DateTime(), "text":"#error "}
+    )
+    message_interval_per_day = 0
+    
+    self.portal.REQUEST['test_SoftwareInstance_checkState'] = \
+        self._makeNotificationMessage(instance.getReference())
+    self.tic()
+    
+    ticket_url = instance.SoftwareInstance_checkState()
+    self.tic()
+    
+    self.assertNotEqual(ticket_url, None)
+    ticket_title = "[MONITORING] Service %s in error state" % host_sub.getReference()
+    ticket = self._getGeneratedSupportRequest(host_sub.getUid(), ticket_title)
+    self.assertNotEqual(ticket, None)
+    self.assertEqual('Visited by SupportRequest_trySendNotificationMessage ' \
+      '%s %s %s %s' % ( \
+      ticket_title.replace('[MONITORING] ', ''),
+      'Test NM content\n%s\n' % instance.getReference(),
+      person_url, message_interval_per_day),
       ticket.workflow_history['edit_workflow'][-1]['comment'])
