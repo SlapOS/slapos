@@ -50,7 +50,6 @@ return %s
 """ % (script_name, fake_return ))
     transaction.commit()
 
-
   def _dropScript(self, script_name):
     if script_name in self.portal.portal_skins.custom.objectIds():
       self.portal.portal_skins.custom.manage_delObjects(script_name)
@@ -61,33 +60,16 @@ return %s
     upgrade_decision.start()
     self.tic()
     
-    self._simulateScript('UpgradeDecision_upgradeHostingSubscription', 'True')
+    self._simulateScript('UpgradeDecision_processUpgrade', 'True')
     try:
       self.portal.portal_alarms.slapos_pdm_upgrade_decision_process_started.activeSense()
       self.tic()
     finally:
-      self._dropScript('UpgradeDecision_upgradeHostingSubscription')
+      self._dropScript('UpgradeDecision_processUpgrade')
     self.assertEqual(
-        'Visited by UpgradeDecision_upgradeHostingSubscription', 
+        'Visited by UpgradeDecision_processUpgrade', 
         upgrade_decision.workflow_history['edit_workflow'][-1]['comment'])
 
-  def test_alarm_upgrade_decision_process_computer(self):
-    upgrade_decision = self._makeUpgradeDecision()
-    upgrade_decision.start()
-    self.tic()
-    
-    self._simulateScript('UpgradeDecision_upgradeHostingSubscription', 'False')
-    self._simulateScript('UpgradeDecision_upgradeComputer', 'True')
-    try:
-      self.portal.portal_alarms.slapos_pdm_upgrade_decision_process_started.activeSense()
-      self.tic()
-    finally:
-      self._dropScript('UpgradeDecision_upgradeHostingSubscription')
-      self._dropScript('UpgradeDecision_upgradeComputer')
-    self.assertEqual(
-        'Visited by UpgradeDecision_upgradeComputer', 
-        upgrade_decision.workflow_history['edit_workflow'][-1]['comment'])
-  
   def test_alarm_upgrade_decision_process_planned(self):
     upgrade_decision = self._makeUpgradeDecision(confirm=0)
     upgrade_decision.plan()
@@ -132,7 +114,6 @@ return %s
     computer2.edit(allocation_scope = 'open/personal')
     
     self._simulateScript('Computer_hostingSubscriptionCreateUpgradeDecision')
-
     try:
       self.portal.portal_alarms.slapos_pdm_hosting_subscription_create_upgrade_decision.\
         activeSense()
