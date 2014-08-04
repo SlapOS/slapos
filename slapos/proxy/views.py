@@ -73,6 +73,9 @@ def dict2xml(dictionary):
 
 
 def partitiondict2partition(partition):
+  for key, value in partition.iteritems():
+    if type(value) is unicode:
+      partition[key] = value.encode()
   slap_partition = ComputerPartition(app.config['computer_id'],
       partition['reference'])
   slap_partition._software_release_document = None
@@ -433,7 +436,7 @@ def request_slave():
   if slave_instance_list is None:
     slave_instance_list = []
   else:
-    slave_instance_list = xml_marshaller.xml_marshaller.loads(slave_instance_list)
+    slave_instance_list = xml_marshaller.xml_marshaller.loads(slave_instance_list.encode())
     for x in slave_instance_list:
       if x['slave_reference'] == slave_reference:
         slave_instance_list.remove(x)
