@@ -408,6 +408,43 @@ class TestSlapOSPDMSkins(testSlapOSMixin):
     self.assertEqual(slap_state, hosting_subscription.getSlapState())
     self.assertEqual('stopped', upgrade_decision.getSimulationState())
 
+  def testUpgradeDecision_processUpgradeeHostingSubscription(self):
+    person = self._makePerson(self.new_id)
+    hosting_subscription = self._makeHostingSubscription(self.new_id)
+    hosting_subscription.edit(
+          destination_section_value = person.getRelativeUrl())
+
+    self._makeSoftwareInstance(hosting_subscription,
+                               hosting_subscription.getUrlString())
+   
+    software_release = self._makeSoftwareRelease(self.new_id)
+    upgrade_decision = self._makeUpgradeDecision()
+    upgrade_decision_line = self._makeUpgradeDecisionLine(upgrade_decision)
+    upgrade_decision_line.setAggregateValueList(
+       [software_release, hosting_subscription])
+    self.tic()
+   
+    slap_state = hosting_subscription.getSlapState()
+    
+    self.assertFalse(upgrade_decision.UpgradeDecision_processUpgrade())
+    self.assertNotEqual(software_release.getUrlString(),
+                     hosting_subscription.getUrlString())
+
+    upgrade_decision.confirm()
+    upgrade_decision.start()
+
+    # Check that url_string change, but slap state doesn't
+    self.assertNotEqual(software_release.getUrlString(),
+                     hosting_subscription.getUrlString())
+
+    self.assertTrue(upgrade_decision.UpgradeDecision_processUpgrade())
+    self.assertEqual(software_release.getUrlString(),
+                     hosting_subscription.getUrlString())
+
+    self.assertEqual(slap_state, hosting_subscription.getSlapState())
+    self.assertEqual('stopped', upgrade_decision.getSimulationState())
+
+
   def testUpgradeDecision_upgradeHostingSubscription_no_software_release(self):
 
     person = self._makePerson(self.new_id)
@@ -493,6 +530,33 @@ class TestSlapOSPDMSkins(testSlapOSMixin):
     upgrade_decision.start()
 
     self.assertTrue(upgrade_decision.UpgradeDecision_upgradeComputer())
+    self.tic()
+    
+    software_installation = computer.getAggregateRelatedValue(
+            portal_type='Software Installation')
+    self.assertEqual('start_requested', software_installation.getSlapState())
+    self.assertEqual(url, software_installation.getUrlString())
+    self.assertEqual('validated', software_installation.getValidationState())
+    self.assertEqual('stopped', upgrade_decision.getSimulationState())
+
+
+  def testUpgradeDecision_processUpgradeComputer(self):
+    person = self._makePerson(self.new_id)
+    computer = self._makeComputer(self.new_id)
+    software_release = self._makeSoftwareRelease(self.new_id)
+    upgrade_decision = self._makeUpgradeDecision()
+    upgrade_decision_line = self._makeUpgradeDecisionLine(upgrade_decision)
+    upgrade_decision_line.setAggregateValueList([software_release, computer])
+    url = software_release.getUrlString()
+    
+    self.tic()
+
+    self.assertFalse(upgrade_decision.UpgradeDecision_processUpgrade())
+
+    upgrade_decision.confirm()
+    upgrade_decision.start()
+
+    self.assertTrue(upgrade_decision.UpgradeDecision_processUpgrade())
     self.tic()
     
     software_installation = computer.getAggregateRelatedValue(
@@ -624,8 +688,7 @@ class TestSlapOSPDMSkins(testSlapOSMixin):
     upgrade_decision2 = computer.Computer_checkAndCreateUpgradeDecision()
     
     self.assertEqual(upgrade_decision2, None)
-  
-  
+
   def testComputer_hostingSubscriptionCreateUpgradeDecision_no_newer(self):
     person = self._makePerson(self.new_id)
     computer = self._makeComputer(self.new_id)
