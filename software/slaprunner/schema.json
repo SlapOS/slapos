@@ -79,5 +79,10 @@
                                 "type": "integer",
                                 "default": 9684
                         }
+                        "resilient-clone-number": {
+                                "description": "is the number of clones to be deployed when a resilient runner is ordered. Its value can be 1 or 2",
+                                "type": "integer",
+                                "default" : 2
+                        }
                 }
 }
