@@ -886,21 +886,28 @@ class SlapTool(BaseTool):
   @convertToREST
   def _buildingSoftwareRelease(self, url, computer_id):
     """
-    Log the computer status
+    Log the software release status
     """
+    computer_document = self._getComputerDocument(computer_id)
+    software_installation_reference = self._getCachedSoftwareInstallationReference(url,
+      computer_document)
     user = self.getPortalObject().portal_membership.\
         getAuthenticatedMember().getUserName()
-    self._logAccess(user, user, 'building software release %s' % url)
+    self._logAccess(user, software_installation_reference,
+      'building software release %s' % url)
 
   @convertToREST
   def _availableSoftwareRelease(self, url, computer_id):
     """
-    Log the computer status
+    Log the software release status
     """
+    computer_document = self._getComputerDocument(computer_id)
+    software_installation_reference = self._getCachedSoftwareInstallationReference(url,
+      computer_document)
     user = self.getPortalObject().portal_membership.\
         getAuthenticatedMember().getUserName()
-    self._logAccess(user, user, '#access software release %s available' % \
-        url)
+    self._logAccess(user, software_installation_reference,
+        '#access software release %s available' % url)
 
   @convertToREST
   def _destroyedSoftwareRelease(self, url, computer_id):
@@ -1318,6 +1325,19 @@ class SlapTool(BaseTool):
         computer_document.getReference(), ', '.join([q.getRelativeUrl() for q \
           in software_installation_list])
       ))
+  
+  def _getNonCachedSoftwareInstallationReference(self, url, computer_document):
+    return self._getSoftwareInstallationForComputer(url,
+              computer_document).getReference()
+  
+  def _getCachedSoftwareInstallationReference(self, url, computer_document):
+    """
+    Get the software installation reference (with this url) for the computer.
+    """
+    result = CachingMethod(self._getNonCachedSoftwareInstallationReference,
+        id='_getCachedSoftwareInstallationReference',
+        cache_factory='slap_cache_factory')(url, computer_document)
+    return result
 
   def _getSoftwareInstanceForComputerPartition(self, computer_id,
       computer_partition_id, slave_reference=None):
@@ -1433,9 +1453,12 @@ class SlapTool(BaseTool):
     """
     Log the computer status
     """
-    user = self.getPortalObject().portal_membership.getAuthenticatedMember()\
-                                                   .getUserName()
-    self._logAccess(
-        user, computer_id, '#error while installing %s' % url)
+    computer_document = self._getComputerDocument(computer_id)
+    software_installation_reference = self._getCachedSoftwareInstallationReference(url,
+      computer_document)
+    user = self.getPortalObject().portal_membership.\
+        getAuthenticatedMember().getUserName()
+    self._logAccess(user, software_installation_reference,
+        '#error while installing %s' % url)
 
 InitializeClass(SlapTool)
