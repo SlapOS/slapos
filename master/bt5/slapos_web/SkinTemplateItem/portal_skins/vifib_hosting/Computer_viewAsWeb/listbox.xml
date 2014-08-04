@@ -116,6 +116,10 @@
                     <value>
                       <list>
                         <tuple>
+                          <string>monitoring_status</string>
+                          <string>Status</string>
+                        </tuple>
+                        <tuple>
                           <string>image</string>
                           <string>Image</string>
                         </tuple>

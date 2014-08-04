@@ -119,6 +119,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.\n
           $(this).attr("class", "monitoring_ok")\n
                  .attr("title", data.text + " (" + created_at + ")" )\n
                  .attr("href", data[\'@document\']);\n
+        } else if (/#access/.test(data.text) & /software_installation_module/.test(data[\'@document\']) & (now - created_at < 86400000)) {\n
+          $(this).attr("class", "monitoring_ok")\n
+                 .attr("title", data.text + " (" + created_at + ")" )\n
+                 .attr("href", data[\'@document\']);\n
         } else {\n
           $(this).attr("class", "monitoring_error")\n
                  .attr("title", data.text + " (" + created_at + ")" )\n
