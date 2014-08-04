@@ -609,12 +609,13 @@ class StatusPublisher(GenericPublisher):
 
     kw = dict(
       validation_state="validated",
-      portal_type=['Computer', 'Software Instance']
+      portal_type=['Computer', 'Software Installation', 'Software Instance']
       )
     d = {"list": []}
     a = d['list'].append
     for si in self.getPortalObject().portal_catalog(**kw):
-      if si.getPortalType() == "Software Instance" and \
+      if (si.getPortalType() == "Software Instance" or \
+           si.getPortalType() == "Software Installation") and \
            si.getSlapState() not in ['start_requested','stop_requested']:
         continue
       if si.getPortalType() == "Computer" and \
@@ -635,7 +636,7 @@ class StatusPublisher(GenericPublisher):
     return self.REQUEST.response
 
   # XXX Use a decated document to keep the history
-  @extractDocument(['Computer', 'Software Instance'])
+  @extractDocument(['Computer', 'Software Installation',  'Software Instance'])
 #   @supportModifiedSince('document_url')
   def __status_info(self):
     certificate = False
