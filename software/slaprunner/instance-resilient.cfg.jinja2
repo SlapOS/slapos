@@ -6,9 +6,9 @@
 {% do slapparameter_dict.__setitem__('auto-deploy', slapparameter_dict.get('auto-deploy', 'true')) %}
 {% do slapparameter_dict.__setitem__('auto-deploy-instance', slapparameter_dict.get('auto-deploy-instance', 'false')) %}
 # let decide the number of clones we want. We can't have more than 2 clones
-{% set number_of_instances = slapparameter_dict.get('resilient-clone-number', 3)|int %}
-{% if number_of_instances > 3 %}
-  {% set number_of_instances = 3 %}
+{% set number_of_instances = slapparameter_dict.get('resilient-clone-number', 2)|int %}
+{% if number_of_instances > 2 %}
+  {% set number_of_instances = 2 %}
 {% endif %}
 
 {% import 'parts' as parts %}
@@ -21,10 +21,10 @@ offline = true
 
 # += because we need to take up parts (like instance-custom, slapmonitor etc) from the profile we extended
 parts +=
-  {{ parts.replicate("runner", number_of_instances) }}
+  {{ parts.replicate("runner", number_of_instances + 1) }}
   publish-connection-informations
 
-{{ replicated.replicate("runner", number_of_instances, "runner-export", "runner-import", slapparameter_dict=slapparameter_dict) }}
+{{ replicated.replicate("runner", number_of_instances + 1, "runner-export", "runner-import", slapparameter_dict=slapparameter_dict) }}
 
 # Bubble up the parameters
 [request-runner]
@@ -55,4 +55,4 @@ domain =
 authorized-key =
 instance-amount = 10
 debug = false
-resilient-clone-number = 3
+resilient-clone-number = 2
