@@ -52,6 +52,10 @@
             <key> <string>_body</string> </key>
             <value> <string>from DateTime import DateTime\n
 \n
+if context.getSimulationState() != \'planned\':\n
+  # XXX Don\'t notify the ones which are not planned.\n
+  return \n
+\n
 portal = context.getPortalObject()\n
 \n
 person = context.getDestinationDecisionValue(portal_type="Person")\n
@@ -65,49 +69,40 @@ software_product_title = software_release.getAggregateTitle(\n
                                portal_type="Software Product")\n
 reference = context.getReference()\n
 \n
+mapping_dict = {\n
+  \'software_product_title\': software_product_title,\n
+  \'upgrade_accept_link\': \'Base_acceptUpgradeDecision?reference=%s\' % reference,\n
+  \'upgrade_reject_link\': \'Base_rejectUpgradeDecision?reference=%s\' % reference,\n
+  \'software_release_name\': software_release.getTitle(),\n
+  \'software_release_reference\': software_release.getReference(),\n
+  \'new_software_release_url\': software_release.getUrlString(),\n
+\n
+}\n
 if hosting_subscription is not None:\n
-\n
-  notification_message = portal.portal_notifications.getDocumentValue(\n
-                 reference=\'slapos-upgrade-hosting-subscription.notification\')\n
-\n
+  notification_message_reference = \'slapos-upgrade-hosting-subscription.notification\'\n
   title = "New Upgrade available for %s" % hosting_subscription.getTitle()\n
-  mapping_dict = {\'software_product_title\': software_product_title,\n
-                  \'hosting_subscription_title\': hosting_subscription.getTitle(),\n
-                  \'software_release_name\': software_release.getTitle(),\n
-                  \'software_release_reference\': software_release.getReference(),\n
-                  \'upgrade_accept_link\': \n
-                    \'Base_acceptUpgradeDecision?reference=%s\' % reference,\n
-                  \'upgrade_reject_link\':\n
-                    \'Base_rejectUpgradeDecision?reference=%s\' % reference,\n
-                  \'old_software_release_url\': hosting_subscription.getUrlString(),\n
-                  \'new_software_release_url\': software_release.getUrlString(),\n
-                 }\n
+  mapping_dict.update(**{\n
+     \'hosting_subscription_title\': hosting_subscription.getTitle(),\n
+     \'old_software_release_url\': hosting_subscription.getUrlString()})\n
 \n
 \n
 elif computer is not None:\n
 \n
-  notification_message = portal.portal_notifications.getDocumentValue(\n
-                 reference=\'slapos-upgrade-computer.notification\')\n
+  notification_message_reference = \'slapos-upgrade-computer.notification\' \n
 \n
-  computer = "New Software available for Installation at %s" % computer.getTitle()\n
-  mapping_dict = {\'software_product_title\': software_product_title,\n
-                  \'computer_title\': computer.getTitle(),\n
-                  \'computer_reference\': computer.getReference(),\n
-                  \'software_release_name\': software_release.getTitle(),\n
-                  \'software_release_reference\': software_release.getReference(),\n
-                  \'upgrade_accept_link\': \n
-                    \'Base_acceptUpgradeDecision?reference=%s\' % reference,\n
-                  \'upgrade_reject_link\':\n
-                    \'Base_rejectUpgradeDecision?reference=%s\' % reference,\n
-                  \'new_software_release_url\': software_release.getUrlString(),\n
-                 }\n
+  title = "New Software available for Installation at %s" % computer.getTitle()\n
+  mapping_dict.update(**{\'computer_title\': computer.getTitle(),\n
+                         \'computer_reference\': computer.getReference()})\n
 \n
 \n
-if notification_message is not None:\n
-  message = notification_message.asEntireHTML(\n
-             substitution_method_parameter_dict={\'mapping_dict\': mapping_dict})\n
-else:\n
+if notification_message_reference is None:\n
   raise ValueError("No Notification Message")\n
+\n
+notification_message = portal.portal_notifications.getDocumentValue(\n
+                 reference=notification_message_reference)\n
+\n
+message = notification_message.asEntireHTML(\n
+            substitution_method_parameter_dict={\'mapping_dict\': mapping_dict})\n
 \n
 event = context.SupportRequest_trySendNotificationMessage(title,\n
               message, person.getRelativeUrl())\n
