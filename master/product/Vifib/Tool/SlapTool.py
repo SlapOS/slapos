@@ -352,6 +352,26 @@ class SlapTool(BaseTool):
     # Be sure to prevent accessing information to disallowed users
     computer = _assertACI(computer)
     return self._getAccessStatus(computer_id)
+  
+  security.declareProtected(Permissions.AccessContentsInformation,
+    'getSoftwareInstallationStatus')
+  def getSoftwareInstallationStatus(self, url, computer_id):
+    """
+    Get the connection status of the software installation
+    """
+    computer = self.getPortalObject().portal_catalog.unrestrictedSearchResults(
+      portal_type='Computer', reference=computer_id,
+      validation_state="validated")[0].getObject()
+    # Be sure to prevent accessing information to disallowed users
+    computer = _assertACI(computer)
+    try:
+      software_installation = self._getSoftwareInstallationForComputer(
+          url,
+          computer)
+    except NotFound:
+      return self._getAccessStatus(None)
+    else:
+      return self._getAccessStatus(software_installation.getReference())
 
   security.declareProtected(Permissions.AccessContentsInformation,
     'getSoftwareReleaseListFromSoftwareProduct')
