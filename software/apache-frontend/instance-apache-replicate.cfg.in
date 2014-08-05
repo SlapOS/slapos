@@ -38,9 +38,15 @@ context =
 {%   set sla_key = "-sla-%s-" % i -%}
 {%   set sla_key_length = sla_key | length %}
 {%   set sla_parameters = [] %}
+{%   set config_key = "-frontend-config-%s-" % i %}
+{%   set config_key_length = config_key | length %}
+{%   set config_dict = {} %}
 {%   for key in slapparameter_dict.keys() %}
 {%     if key.startswith(sla_key) %}
 {%       do sla_parameters.append(key[sla_key_length:]) %}
+# We check for specific configuration regarding the frontend
+{%     elif key.startswith(config_key) -%}
+{%       do config_dict.__setitem__(key[config_key_length:], slapparameter_dict.pop(key)) %}
 {%     endif -%}
 {%   endfor -%}
 {%   do frontend_list.append(frontend_name) -%}
@@ -53,6 +59,10 @@ name = {{frontend_name}}
 {%   if slapparameter_dict.has_key(state_key) %}
 state = {{ slapparameter_dict.pop(state_key) }}
 {%   endif%}
+extra-config = {{ ' '.join(config_dict.keys()) }}
+{%   for key, value in config_dict.iteritems() -%}
+config-{{ key }} = {{ value }}
+{%   endfor -%}
 {%   if sla_parameters %}
 sla = {{ ' '.join(sla_parameters) }}
 {%     for parameter in sla_parameters -%}
@@ -83,7 +93,7 @@ software-url = ${slap-connection:software-release-url}
 {% endif %}
 software-type = {{frontend_type}}
 return = private-ipv4 public-ipv4 slave-instance-information-list monitor_url
-config = {{ ' '.join(slapparameter_dict.keys()) + ' ' + slave_list_name }}
+config = {{ ' '.join(slapparameter_dict.keys()) + ' ${:extra-config} ' + slave_list_name }}
 {% for parameter, value in slapparameter_dict.iteritems() -%}
 config-{{parameter}} = {{ value }}
 {% endfor -%}
