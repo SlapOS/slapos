@@ -423,8 +423,8 @@ class TestSlapOSSlapToolComputerAccess(TestSlapOSSlapToolMixin):
 
   def test_accessed_getComputerStatus(self):
     self.login(self.computer_id)
-    self.portal_slap.softwareReleaseError(
-        'http://example.org', self.computer_id, 'error log')
+    
+    self.portal_slap.getFullComputerInformation(self.computer_id)
     created_at = rfc1123_date(DateTime())
     response = self.portal_slap.getComputerStatus(self.computer_id)
     self.assertEqual(200, response.status)
@@ -451,7 +451,7 @@ class TestSlapOSSlapToolComputerAccess(TestSlapOSSlapToolMixin):
     <unicode>created_at</unicode>
     <unicode>%(created_at)s</unicode>
     <unicode>text</unicode>
-    <unicode>#error while installing http://example.org</unicode>
+    <unicode>#access %(computer_id)s</unicode>
     <unicode>user</unicode>
     <unicode>%(computer_id)s</unicode>
   </dictionary>
@@ -546,6 +546,51 @@ class TestSlapOSSlapToolComputerAccess(TestSlapOSSlapToolMixin):
     finally:
       if os.path.exists(self.computer_load_configuration_simulator):
         os.unlink(self.computer_load_configuration_simulator)
+  
+  def test_not_accessed_getSoftwareInstallationStatus(self):
+    self._makeComplexComputer()
+    self.computer_bang_simulator = tempfile.mkstemp()[1]
+    self.login(self.computer_id)
+    created_at = rfc1123_date(DateTime())
+    software_installation = self.start_requested_software_installation
+    url_string = software_installation.getUrlString()
+    response = self.portal_slap.getSoftwareInstallationStatus(url_string,
+                            self.computer_id)
+    self.assertEqual(200, response.status)
+    self.assertEqual('public, max-age=60, stale-if-error=604800',
+        response.headers.get('cache-control'))
+    self.assertEqual('REMOTE_USER',
+        response.headers.get('vary'))
+    self.assertTrue('last-modified' in response.headers)
+    self.assertEqual('text/xml; charset=utf-8',
+        response.headers.get('content-type'))
+    # check returned XML
+    xml_fp = StringIO.StringIO()
+
+    xml.dom.ext.PrettyPrint(xml.dom.ext.reader.Sax.FromXml(response.body),
+        stream=xml_fp)
+    xml_fp.seek(0)
+    got_xml = xml_fp.read()
+
+    expected_xml = """\
+<?xml version='1.0' encoding='UTF-8'?>
+<marshal>
+  <dictionary id='i2'>
+    <string>created_at</string>
+    <string>%(created_at)s</string>
+    <string>text</string>
+    <unicode>#error no data found for %(reference)s</unicode>
+    <string>user</string>
+    <unicode>SlapOS Master</unicode>
+  </dictionary>
+</marshal>
+""" % dict(
+  created_at=created_at,
+  reference=software_installation.getReference()
+)
+    self.assertEqual(expected_xml, got_xml,
+        '\n'.join([q for q in difflib.unified_diff(expected_xml.split('\n'), got_xml.split('\n'))]))
+    
 
   def test_destroyedSoftwareRelease_noSoftwareInstallation(self):
     self.login(self.computer_id)
@@ -574,11 +619,14 @@ class TestSlapOSSlapToolComputerAccess(TestSlapOSSlapToolMixin):
     self._makeComplexComputer()
     self.computer_bang_simulator = tempfile.mkstemp()[1]
     self.login(self.computer_id)
+    software_installation = self.start_requested_software_installation
+    url_string = software_installation.getUrlString()
     response = self.portal_slap.availableSoftwareRelease(
-        'http://example.org', self.computer_id)
+                  url_string, self.computer_id)
     self.assertEqual('None', response)
     created_at = rfc1123_date(DateTime())
-    response = self.portal_slap.getComputerStatus(self.computer_id)
+    response = self.portal_slap.getSoftwareInstallationStatus(
+                      url_string, self.computer_id)
     # check returned XML
     xml_fp = StringIO.StringIO()
 
@@ -593,13 +641,14 @@ class TestSlapOSSlapToolComputerAccess(TestSlapOSSlapToolMixin):
     <unicode>created_at</unicode>
     <unicode>%(created_at)s</unicode>
     <unicode>text</unicode>
-    <unicode>#access software release http://example.org available</unicode>
+    <unicode>#access software release %(url_string)s available</unicode>
     <unicode>user</unicode>
     <unicode>%(computer_id)s</unicode>
   </dictionary>
 </marshal>
 """ % dict(
     created_at=created_at,
+    url_string=url_string,
     computer_id=self.computer_id,
   )
     self.assertEqual(expected_xml, got_xml,
@@ -609,11 +658,14 @@ class TestSlapOSSlapToolComputerAccess(TestSlapOSSlapToolMixin):
     self._makeComplexComputer()
     self.computer_bang_simulator = tempfile.mkstemp()[1]
     self.login(self.computer_id)
+    software_installation = self.start_requested_software_installation
+    url_string = software_installation.getUrlString()
     response = self.portal_slap.buildingSoftwareRelease(
-        'http://example.org', self.computer_id)
+                  url_string, self.computer_id)
     self.assertEqual('None', response)
     created_at = rfc1123_date(DateTime())
-    response = self.portal_slap.getComputerStatus(self.computer_id)
+    response = self.portal_slap.getSoftwareInstallationStatus(
+                      url_string, self.computer_id)
     # check returned XML
     xml_fp = StringIO.StringIO()
 
@@ -628,13 +680,14 @@ class TestSlapOSSlapToolComputerAccess(TestSlapOSSlapToolMixin):
     <unicode>created_at</unicode>
     <unicode>%(created_at)s</unicode>
     <unicode>text</unicode>
-    <unicode>building software release http://example.org</unicode>
+    <unicode>building software release %(url_string)s</unicode>
     <unicode>user</unicode>
     <unicode>%(computer_id)s</unicode>
   </dictionary>
 </marshal>
 """ % dict(
     created_at=created_at,
+    url_string=url_string,
     computer_id=self.computer_id,
   )
     self.assertEqual(expected_xml, got_xml,
@@ -644,11 +697,14 @@ class TestSlapOSSlapToolComputerAccess(TestSlapOSSlapToolMixin):
     self._makeComplexComputer()
     self.computer_bang_simulator = tempfile.mkstemp()[1]
     self.login(self.computer_id)
+    software_installation = self.start_requested_software_installation
+    url_string = software_installation.getUrlString()
     response = self.portal_slap.softwareReleaseError(
-        'http://example.org', self.computer_id, 'error log')
+                  url_string, self.computer_id, 'error log')
     self.assertEqual('None', response)
     created_at = rfc1123_date(DateTime())
-    response = self.portal_slap.getComputerStatus(self.computer_id)
+    response = self.portal_slap.getSoftwareInstallationStatus(
+                      url_string, self.computer_id)
     # check returned XML
     xml_fp = StringIO.StringIO()
 
@@ -663,13 +719,14 @@ class TestSlapOSSlapToolComputerAccess(TestSlapOSSlapToolMixin):
     <unicode>created_at</unicode>
     <unicode>%(created_at)s</unicode>
     <unicode>text</unicode>
-    <unicode>#error while installing http://example.org</unicode>
+    <unicode>#error while installing %(url_string)s</unicode>
     <unicode>user</unicode>
     <unicode>%(computer_id)s</unicode>
   </dictionary>
 </marshal>
 """ % dict(
     created_at=created_at,
+    url_string=url_string,
     computer_id=self.computer_id,
   )
     self.assertEqual(expected_xml, got_xml,
@@ -1916,8 +1973,7 @@ class TestSlapOSSlapToolPersonAccess(TestSlapOSSlapToolMixin):
 
   def test_accessed_getComputerStatus(self):
     self.login(self.computer_id)
-    self.portal_slap.softwareReleaseError(
-        'http://example.org', self.computer_id, 'error log')
+    self.portal_slap.getFullComputerInformation(self.computer_id)
     self.login(self.person_reference)
     created_at = rfc1123_date(DateTime())
     response = self.portal_slap.getComputerStatus(self.computer_id)
@@ -1945,7 +2001,7 @@ class TestSlapOSSlapToolPersonAccess(TestSlapOSSlapToolMixin):
     <unicode>created_at</unicode>
     <unicode>%(created_at)s</unicode>
     <unicode>text</unicode>
-    <unicode>#error while installing http://example.org</unicode>
+    <unicode>#access %(computer_id)s</unicode>
     <unicode>user</unicode>
     <unicode>%(computer_id)s</unicode>
   </dictionary>
