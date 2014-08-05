@@ -57,10 +57,18 @@ partition_list = portal.portal_catalog(portal_type = \'Computer Partition\',\n
   parent_uid = context.getUid()\n
 )\n
 \n
+hosting_subscription_list = []\n
 for partition in partition_list:\n
-  instance = partition.getAggregateRelatedValue(portal_type=\'Software Instance\')\n
-  if instance is not None:\n
-    instance.activate().SoftwareInstance_checkState()\n
+  software_instance = partition.getAggregateRelatedValue(\n
+                            portal_type=\'Software Instance\')\n
+  if software_instance:\n
+    hosting = software_instance.getSpecialiseValue(\n
+                  portal_type=\'Hosting Subscription\')\n
+    if hosting and not hosting in hosting_subscription_list:\n
+      hosting_subscription_list.append(hosting)\n
+      hosting.HostingSubscription_CheckInstanceState()\n
+  \n
+return len(hosting_subscription_list)\n
 </string> </value>
         </item>
         <item>

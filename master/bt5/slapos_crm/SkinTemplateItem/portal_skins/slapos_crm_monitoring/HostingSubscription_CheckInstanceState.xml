@@ -50,46 +50,29 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string encoding="cdata"><![CDATA[
-
-support_request = context\n
-portal = context.getPortalObject()\n
+            <value> <string>hosting_subscription = context\n
 \n
-resource = portal.service_module.slapos_crm_information.getRelativeUrl()\n
-# create Web message if needed for this ticket\n
-last_event = context.portal_catalog.getResultValue(\n
-             follow_up_uid=support_request.getUid(), \n
-             sort_on=[(\'delivery.start_date\', \'DESC\')],\n
-)\n
-if last_event and (interval_of_day > 0) and \\\n
-    (DateTime() - last_event.getStartDate()  < interval_of_day):\n
-  # User has already been notified this last 24h.\n
+instance = hosting_subscription.getPredecessorValue()\n
+if instance is None:\n
   return\n
-event = portal.event_module.slapos_crm_web_message_template.\\\n
-  Base_createCloneDocument(batch_mode=1)\n
-event.edit(\n
-  title=message_title,\n
-  text_content=message,\n
-  start_date = DateTime(),\n
-  resource = resource,\n
-  source=source_relative_url,\n
-  follow_up=support_request.getRelativeUrl(),\n
-)\n
-event.stop()\n
-event.deliver()\n
+instance_list = [instance]\n
+instance_list.extend(instance.getPredecessorValueList())\n
 \n
-return event\n
-
-
-]]></string> </value>
+for sub_instance in instance_list:\n
+  if sub_instance and \\\n
+    sub_instance.activate().SoftwareInstance_checkState():\n
+    # This instance is in failing state\n
+    # One notification per hosting subscription\n
+    break\n
+</string> </value>
         </item>
         <item>
             <key> <string>_params</string> </key>
-            <value> <string>message_title, message, source_relative_url, interval_of_day=1</string> </value>
+            <value> <string></string> </value>
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>SupportRequest_trySendNotificationMessage</string> </value>
+            <value> <string>HostingSubscription_CheckInstanceState</string> </value>
         </item>
       </dictionary>
     </pickle>
