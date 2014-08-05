@@ -99,6 +99,7 @@
                         <string>my_busy_computer_partition_list_status</string>
                         <string>my_busy_computer_partition_list_owner_title</string>
                         <string>my_busy_computer_partition_list_instance_title</string>
+                        <string>listbox_installation_status</string>
                       </list>
                     </value>
                 </item>

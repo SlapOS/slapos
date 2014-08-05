@@ -118,6 +118,10 @@
                           <string>usage</string>
                           <string>Usage</string>
                         </tuple>
+                        <tuple>
+                          <string>installation_status</string>
+                          <string>Status</string>
+                        </tuple>
                       </list>
                     </value>
                 </item>
