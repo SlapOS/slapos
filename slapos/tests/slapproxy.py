@@ -287,12 +287,8 @@ class MasterMixin(BasicMixin):
     computer_partition = slapos.slap.ComputerPartition(
         software_instance.slap_computer_id,
         software_instance.slap_computer_partition_id)
-    if shared:
-      computer_partition._synced = True
-      computer_partition._connection_dict = getattr(software_instance,
-                                                    '_connection_dict', None)
-      computer_partition._parameter_dict = getattr(software_instance,
-                                                   '_parameter_dict', None)
+    
+    computer_partition.__dict__.update(software_instance.__dict__)
     return computer_partition
 
   def setConnectionDict(self, partition_id,
@@ -318,6 +314,16 @@ class TestRequest(MasterMixin, unittest.TestCase):
   """
   Set of tests for requests
   """
+
+  def test_request_consistent_parameters(self):
+    """
+    Check that all different parameters related to requests (like instance_guid, state) are set and consistent
+    """
+    self.add_free_partition(1)
+    partition = self.request('http://sr//', None, 'Maria', 'slappart0')
+    self.assertEqual(partition.getState(), 'started')
+    self.assertEqual(partition.getInstanceGuid(), 'slappart0') # XXX define me
+
   def test_two_request_one_partition_free(self):
     """
     Since slapproxy does not implement scope, providing two partition_id
@@ -373,7 +379,7 @@ class TestRequest(MasterMixin, unittest.TestCase):
     requested_result2 = self.getPartitionInformation(
         request2_dict['_partition_id'])
     # Test we received same partition
-    for key in request1_dict:
+    for key in ['_partition_id', '_computer_id']:
       self.assertEqual(request1_dict[key], request2_dict[key])
     # Test that only parameters changed
     for key in requested_result2.__dict__:
@@ -410,6 +416,11 @@ class TestRequest(MasterMixin, unittest.TestCase):
         self.request('http://sr//', None, 'Maria', 'slappart2').__dict__,
         self.request('http://sr//', None, 'frontend', 'slappart2').__dict__)
 
+
+class TestSlaveRequest(TestRequest):
+  """
+  Test requests related to slave instances.
+  """
   def test_slave_request_no_corresponding_partition(self):
     """
     Slave instance request will fail if no corresponding are found
@@ -439,6 +450,17 @@ class TestRequest(MasterMixin, unittest.TestCase):
 
     our_slave = master_partition._parameter_dict['slave_instance_list'][0]
     self.assertEqual(our_slave.get('domain'), wanted_domain)
+
+  def test_master_instance_with_no_slave(self):
+    """
+    Test that a master instance with no requested slave
+    has an empty slave_instance_list parameter.
+    """
+    self.add_free_partition(6)
+    # Provide partition
+    master_partition_id = self.request('http://sr//', None, 'MyMasterInstance', 'slappart4')._partition_id
+    master_partition = self.getPartitionInformation(master_partition_id)
+    self.assertEqual(len(master_partition._parameter_dict['slave_instance_list']), 0)
 
   def test_slave_request_set_parameters_are_updated(self):
     """
@@ -475,6 +497,28 @@ class TestRequest(MasterMixin, unittest.TestCase):
     self.assertNotEqual(our_slave.get('domain'), wanted_domain_1)
     self.assertEqual(our_slave.get('domain'), wanted_domain_2)
 
+  def test_slave_request_set_connection_parameters(self):
+    """
+    Parameters set in slave instance by master instance must be put in slave instance connection parameters.
+    1. We request a slave instance
+    2. We set connection parameters for this slave instance
+    2. We check parameter is present when we do request() for the slave.
+    """
+    self.add_free_partition(6)
+    # Provide partition
+    master_partition_id = self.request('http://sr//', None, 'MyMasterInstance', 'slappart4')._partition_id
+    # First request of slave instance
+    self.request('http://sr//', None, 'MySlaveInstance', 'slappart2', shared=True)
+    # Set connection parameter
+    master_partition = self.getPartitionInformation(master_partition_id)
+    self.setConnectionDict(partition_id=master_partition._partition_id,
+                           connection_dict={'foo': 'bar'},
+                           slave_reference=master_partition._parameter_dict['slave_instance_list'][0]['slave_reference'])
+    
+    # Get updated information for slave partition
+    slave_partition = self.request('http://sr//', None, 'MySlaveInstance', 'slappart2', shared=True)
+    self.assertEqual(slave_partition.getConnectionParameter('foo'), 'bar')
+
   def test_slave_request_one_corresponding_partition(self):
     """
     Successfull request slave instance follow these steps:
@@ -510,3 +554,4 @@ class TestRequest(MasterMixin, unittest.TestCase):
                              name, requester, shared=True)
     self.assertIsInstance(our_slave, slapos.slap.ComputerPartition)
     self.assertEqual(slave_address, our_slave._connection_dict)
+
