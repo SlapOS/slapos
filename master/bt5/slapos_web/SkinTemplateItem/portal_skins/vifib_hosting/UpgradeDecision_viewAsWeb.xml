@@ -35,7 +35,7 @@
         </item>
         <item>
             <key> <string>action</string> </key>
-            <value> <string>WebSection_setInstanceParameter</string> </value>
+            <value> <string></string> </value>
         </item>
         <item>
             <key> <string>description</string> </key>
@@ -60,8 +60,9 @@
             <value>
               <list>
                 <string>normal</string>
-                <string>left</string>
                 <string>right</string>
+                <string>center</string>
+                <string>bottom</string>
                 <string>hidden</string>
               </list>
             </value>
@@ -71,27 +72,30 @@
             <value>
               <dictionary>
                 <item>
-                    <key> <string>hidden</string> </key>
+                    <key> <string>bottom</string> </key>
                     <value>
-                      <list>
-                        <string>your_shared</string>
-                      </list>
+                      <list/>
                     </value>
                 </item>
                 <item>
-                    <key> <string>left</string> </key>
+                    <key> <string>center</string> </key>
                     <value>
                       <list/>
+                    </value>
+                </item>
+                <item>
+                    <key> <string>hidden</string> </key>
+                    <value>
+                      <list>
+                        <string>your_reportbox</string>
+                      </list>
                     </value>
                 </item>
                 <item>
                     <key> <string>normal</string> </key>
                     <value>
                       <list>
-                        <string>my_description</string>
-                        <string>your_service_title</string>
-                        <string>your_instance_xml</string>
-                        <string>your_computer</string>
+                        <string>my_title</string>
                       </list>
                     </value>
                 </item>
@@ -106,7 +110,7 @@
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>WebSection_viewInstanceParameterDialog</string> </value>
+            <value> <string>UpgradeDecision_viewAsWeb</string> </value>
         </item>
         <item>
             <key> <string>method</string> </key>
@@ -114,11 +118,11 @@
         </item>
         <item>
             <key> <string>name</string> </key>
-            <value> <string>WebSection_viewCustomerInformationsDialog</string> </value>
+            <value> <string>Ticket_viewAsWeb</string> </value>
         </item>
         <item>
             <key> <string>pt</string> </key>
-            <value> <string>form_dialog</string> </value>
+            <value> <string>report_view</string> </value>
         </item>
         <item>
             <key> <string>row_length</string> </key>
@@ -130,7 +134,7 @@
         </item>
         <item>
             <key> <string>title</string> </key>
-            <value> <string>Continue</string> </value>
+            <value> <string></string> </value>
         </item>
         <item>
             <key> <string>unicode_mode</string> </key>

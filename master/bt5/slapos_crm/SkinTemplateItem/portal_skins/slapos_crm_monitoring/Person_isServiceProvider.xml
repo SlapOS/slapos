@@ -50,29 +50,23 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string># Define Reference from ID provided by portal_ids\n
-portal = context.getPortalObject()\n
-type_definition = context.getTypeInfo()\n
+            <value> <string>if \'service_provider\' in context.getRoleList():\n
+  return True\n
 \n
-short_portal_type = type_definition.getShortTitle()\n
-if not short_portal_type:\n
-  short_portal_type = \'\'.join(s for s in type_definition.getId() if s.isupper())\n
+for assignment in context.contentValues(portal_type="Assignment"):\n
+  if assignment.getRole() == \'service_provider\':\n
+    return True\n
 \n
-id_group = (\'reference\', short_portal_type)\n
-default = 1\n
-new_id = portal.portal_ids.generateNewId(id_group=id_group, default=default)\n
-reference = \'%s-%s\' % (short_portal_type, new_id)\n
-\n
-context.setReference(reference)\n
+return False\n
 </string> </value>
         </item>
         <item>
             <key> <string>_params</string> </key>
-            <value> <string>**kw</string> </value>
+            <value> <string></string> </value>
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>UpgradeDecision_init</string> </value>
+            <value> <string>Person_isServiceProvider</string> </value>
         </item>
       </dictionary>
     </pickle>
