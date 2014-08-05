@@ -35,17 +35,11 @@
         </item>
         <item>
             <key> <string>action</string> </key>
-            <value> <string>WebSection_setInstanceParameter</string> </value>
+            <value> <string>Base_edit</string> </value>
         </item>
         <item>
             <key> <string>description</string> </key>
             <value> <string></string> </value>
-        </item>
-        <item>
-            <key> <string>edit_order</string> </key>
-            <value>
-              <list/>
-            </value>
         </item>
         <item>
             <key> <string>encoding</string> </key>
@@ -59,9 +53,10 @@
             <key> <string>group_list</string> </key>
             <value>
               <list>
-                <string>normal</string>
                 <string>left</string>
                 <string>right</string>
+                <string>center</string>
+                <string>bottom</string>
                 <string>hidden</string>
               </list>
             </value>
@@ -71,10 +66,25 @@
             <value>
               <dictionary>
                 <item>
+                    <key> <string>bottom</string> </key>
+                    <value>
+                      <list>
+                        <string>your_custom_title</string>
+                        <string>my_text_content</string>
+                      </list>
+                    </value>
+                </item>
+                <item>
+                    <key> <string>center</string> </key>
+                    <value>
+                      <list/>
+                    </value>
+                </item>
+                <item>
                     <key> <string>hidden</string> </key>
                     <value>
                       <list>
-                        <string>your_shared</string>
+                        <string>my_start_date</string>
                       </list>
                     </value>
                 </item>
@@ -82,17 +92,6 @@
                     <key> <string>left</string> </key>
                     <value>
                       <list/>
-                    </value>
-                </item>
-                <item>
-                    <key> <string>normal</string> </key>
-                    <value>
-                      <list>
-                        <string>my_description</string>
-                        <string>your_service_title</string>
-                        <string>your_instance_xml</string>
-                        <string>your_computer</string>
-                      </list>
                     </value>
                 </item>
                 <item>
@@ -106,7 +105,7 @@
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>WebSection_viewInstanceParameterDialog</string> </value>
+            <value> <string>Event_viewRawDescription</string> </value>
         </item>
         <item>
             <key> <string>method</string> </key>
@@ -114,11 +113,11 @@
         </item>
         <item>
             <key> <string>name</string> </key>
-            <value> <string>WebSection_viewCustomerInformationsDialog</string> </value>
+            <value> <string>Event_view</string> </value>
         </item>
         <item>
             <key> <string>pt</string> </key>
-            <value> <string>form_dialog</string> </value>
+            <value> <string>form_view</string> </value>
         </item>
         <item>
             <key> <string>row_length</string> </key>
@@ -130,7 +129,7 @@
         </item>
         <item>
             <key> <string>title</string> </key>
-            <value> <string>Continue</string> </value>
+            <value> <string>Event</string> </value>
         </item>
         <item>
             <key> <string>unicode_mode</string> </key>
@@ -138,10 +137,6 @@
         </item>
         <item>
             <key> <string>update_action</string> </key>
-            <value> <string></string> </value>
-        </item>
-        <item>
-            <key> <string>update_action_title</string> </key>
             <value> <string></string> </value>
         </item>
       </dictionary>
