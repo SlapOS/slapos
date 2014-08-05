@@ -98,6 +98,8 @@ def partitiondict2partition(partition):
     if partition['slave_instance_list'] is not None:
       slap_partition._parameter_dict['slave_instance_list'] = \
           xml_marshaller.xml_marshaller.loads(partition['slave_instance_list'])
+    else:
+      slap_partition._parameter_dict['slave_instance_list'] = []
     slap_partition._connection_dict = xml2dict(partition['connection_xml'])
     slap_partition._software_release_document = SoftwareRelease(
       software_release=partition['software_release'],
@@ -289,7 +291,6 @@ def softwareInstanceRename():
   execute_db('partition', q, [new_name, computer_partition_id])
   return 'done'
 
-
 def request_not_shared():
   software_release = request.form['software_release'].encode()
   # some supported parameters
@@ -359,9 +360,10 @@ def request_not_shared():
   for address in execute_db('partition_network', 'SELECT * FROM %s WHERE partition_reference=?', [partition['reference']]):
     address_list.append((address['reference'], address['address']))
 
+  if not requested_state:
+    requested_state = 'started'
   # XXX it should be ComputerPartition, not a SoftwareInstance
-  software_instance = SoftwareInstance(xml=partition['xml'],
-                                       _connection_dict=xml2dict(partition['connection_xml']),
+  software_instance = SoftwareInstance(_connection_dict=xml2dict(partition['connection_xml']),
                                        _parameter_dict=xml2dict(partition['xml']),
                                        connection_xml=partition['connection_xml'],
                                        slap_computer_id=app.config['computer_id'],
@@ -369,8 +371,8 @@ def request_not_shared():
                                        slap_software_release_url=partition['software_release'],
                                        slap_server_url='slap_server_url',
                                        slap_software_type=partition['software_type'],
-                                       slave_instance_list=partition['slave_instance_list'],
-                                       instance_guid=partition['reference'],
+                                       _instance_guid=partition['reference'],
+                                       _requested_state=requested_state,
                                        ip_list=address_list)
 
   return xml_marshaller.xml_marshaller.dumps(software_instance)
@@ -473,7 +475,7 @@ def request_slave():
 
   # XXX it should be ComputerPartition, not a SoftwareInstance
   software_instance = SoftwareInstance(_connection_dict=xml2dict(slave['connection_xml']),
-                                       xml=instance_xml,
+                                       _parameter_dict=xml2dict(instance_xml),
                                        slap_computer_id=app.config['computer_id'],
                                        slap_computer_partition_id=slave['hosted_by'],
                                        slap_software_release_url=partition['software_release'],
