@@ -79,8 +79,8 @@ for software_release in software_release_list:\n
       sorted_list[0].getUrlString() not in full_software_release_list:\n
     \n
     newer_release = sorted_list[0]\n
-    title = \'A new software release is available for %s\' % \\\n
-                        software_product_reference\n
+    title = \'A new version of %s is available for %s\' % \\\n
+                        (software_product_reference, context.getTitle()) \n
     # If exist upgrade decision in progress try to cancel it\n
     decision_in_progress = newer_release.\\\n
             SoftwareRelease_getUpgradeDecisionInProgress(computer.getUid())\n
@@ -92,7 +92,12 @@ for software_release in software_release_list:\n
     upgrade_decision = newer_release.SoftwareRelease_createUpgradeDecision(\n
         source_url=computer.getRelativeUrl(),\n
         title=title)\n
-    upgrade_decision.confirm()\n
+        \n
+    if context.getAllocationScope() in ["open/public", "open/friend"]:\n
+      upgrade_decision.start()\n
+    elif context.getAllocationScope() in ["open/personal"]:\n
+      upgrade_decision.plan()\n
+      \n
     upgrade_decision_list.append(upgrade_decision)\n
 \n
 return upgrade_decision_list\n
