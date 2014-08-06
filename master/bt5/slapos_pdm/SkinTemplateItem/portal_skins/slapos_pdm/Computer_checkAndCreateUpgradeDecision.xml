@@ -53,12 +53,12 @@
             <value> <string>computer = context\n
 portal = context.getPortalObject()\n
 \n
-full_software_release_list = [si.getUrlString() for si in \n
-          portal.portal_catalog(\n
-            portal_type=\'Software Installation\',\n
-            default_aggregate_uid=computer.getUid(),\n
-            validation_state=\'validated\'\n
-          ) if si.getSlapState() == \'start_requested\']\n
+full_software_release_list = [si.getUrlString() for si in\n
+              portal.portal_catalog(\n
+                portal_type=\'Software Installation\',\n
+                default_aggregate_uid=computer.getUid(),\n
+                validation_state=\'validated\'\n
+              ) if si.getSlapState() == \'start_requested\']\n
 \n
 if len(full_software_release_list) == 0:\n
   return\n
@@ -68,7 +68,7 @@ software_release_list = portal.portal_catalog(\n
                           url_string=full_software_release_list,\n
                           group_by=\'default_aggregate_uid\'\n
                         )\n
-\n
+upgrade_decision_list = []\n
 for software_release in software_release_list:\n
   software_product_reference = software_release.getAggregateReference()\n
   sorted_list = portal.SoftwareProduct_getSortedSoftwareReleaseList(\n
@@ -79,17 +79,28 @@ for software_release in software_release_list:\n
       sorted_list[0].getUrlString() not in full_software_release_list:\n
     \n
     newer_release = sorted_list[0]\n
-    title = \'A new software release is available for %s\' % \\\n
-                        software_product_reference\n
-    # Search if exist upgrade decision for this software product (by title)\n
-    is_decision_in_progress = newer_release.\\\n
-            SoftwareRelease_isUpgradeDecisionInProgress(title=title)\n
-    if is_decision_in_progress:\n
+    title = \'A new version of %s is available for %s\' % \\\n
+                        (software_product_reference, context.getTitle()) \n
+    # If exist upgrade decision in progress try to cancel it\n
+    decision_in_progress = newer_release.\\\n
+            SoftwareRelease_getUpgradeDecisionInProgress(computer.getUid())\n
+    if decision_in_progress and \\\n
+        not decision_in_progress.UpgradeDecision_tryToCancel(\n
+          newer_release.getUrlString()):\n
       continue\n
   \n
-    return newer_release.SoftwareRelease_createUpgradeDecision(\n
-        source_url=computer.getRelativeUrl(), title=title\n
-      )\n
+    upgrade_decision = newer_release.SoftwareRelease_createUpgradeDecision(\n
+        source_url=computer.getRelativeUrl(),\n
+        title=title)\n
+        \n
+    if context.getAllocationScope() in ["open/public", "open/friend"]:\n
+      upgrade_decision.start()\n
+    elif context.getAllocationScope() in ["open/personal"]:\n
+      upgrade_decision.plan()\n
+      \n
+    upgrade_decision_list.append(upgrade_decision)\n
+\n
+return upgrade_decision_list\n
 </string> </value>
         </item>
         <item>

@@ -50,60 +50,30 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string>portal = context.getPortalObject()\n
+            <value> <string>upgrade_decision = context\n
+cancel_state_list = [\'confirmed\', \'planned\']\n
 \n
-partition_list = portal.portal_catalog(portal_type=\'Computer Partition\',\n
-                                        free_for_request=0,\n
-                                        parent_uid=context.getUid())\n
-valid_slap_state = [\'start_requested\', \'stop_requested\']\n
-\n
-hosting_subscription_list = []\n
-upgrade_decision_list = []\n
-for partition in partition_list:\n
-  software_instance = partition.getAggregateRelatedValue(\n
-                            portal_type=\'Software Instance\')\n
-  if not software_instance:\n
-    continue\n
-\n
-  hosting_subscription = software_instance.getSpecialiseValue(\n
-                portal_type=\'Hosting Subscription\')\n
-  if hosting_subscription and hosting_subscription.getSlapState() \\\n
-      in valid_slap_state and not \\\n
-      hosting_subscription in hosting_subscription_list:\n
-    hosting_subscription_list.append(hosting_subscription)\n
-  else:\n
-    continue\n
-  \n
-  newer_release = hosting_subscription.\\\n
-                    HostingSubscription_getUpgradableSoftwareRelease()\n
-  if newer_release is None:\n
-    continue\n
-  \n
-  decision_in_progress = newer_release.\\\n
-      SoftwareRelease_getUpgradeDecisionInProgress(hosting_subscription.getUid())\n
-  \n
-  if decision_in_progress and \\\n
-      not decision_in_progress.UpgradeDecision_tryToCancel(\n
-        newer_release.getUrlString()):\n
-    continue\n
-  \n
-  upgrade_decision = newer_release.SoftwareRelease_createUpgradeDecision(\n
-    source_url=hosting_subscription.getRelativeUrl(),\n
-    title=\'A new upgrade is available for %s\' % hosting_subscription.getTitle()\n
-  )\n
-  upgrade_decision.plan()\n
-  upgrade_decision_list.append(upgrade_decision)\n
-\n
-return upgrade_decision_list\n
+if upgrade_decision.getSimulationState() in cancel_state_list:\n
+  current_release = upgrade_decision.UpgradeDecision_getSoftwareRelease()\n
+  if not current_release:\n
+    # This upgrade decision is not valid\n
+    return False\n
+  if current_release.getUrlString() == new_url_string:\n
+    # Cannot cancel because the software releases are the same\n
+    return False\n
+  upgrade_decision.cancel()\n
+  return True\n
+else:\n
+  return False\n
 </string> </value>
         </item>
         <item>
             <key> <string>_params</string> </key>
-            <value> <string></string> </value>
+            <value> <string>new_url_string</string> </value>
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>Computer_hostingSubscriptionCreateUpgradeDecision</string> </value>
+            <value> <string>UpgradeDecision_tryToCancel</string> </value>
         </item>
       </dictionary>
     </pickle>
