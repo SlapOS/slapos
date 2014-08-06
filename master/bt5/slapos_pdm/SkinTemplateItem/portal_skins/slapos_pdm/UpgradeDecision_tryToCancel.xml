@@ -57,7 +57,7 @@ if upgrade_decision.getSimulationState() in cancel_state_list:\n
   current_release = upgrade_decision.UpgradeDecision_getSoftwareRelease()\n
   if not current_release:\n
     # This upgrade decision is not valid\n
-    return True\n
+    return False\n
   if current_release.getUrlString() == new_url_string:\n
     # Cannot cancel because the software releases are the same\n
     return False\n
