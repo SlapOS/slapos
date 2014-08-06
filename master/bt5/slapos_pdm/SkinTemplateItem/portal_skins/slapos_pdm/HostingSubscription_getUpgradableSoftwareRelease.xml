@@ -50,42 +50,46 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string>hosting_subscription = context\n
+            <value> <string>"""\n
+Check if this hosting subscription is upgradable to the latest version,\n
+and return the software release to upgrade with.\n
+"""\n
+\n
+hosting_subscription = context\n
 portal = context.getPortalObject()\n
 \n
 slap_state = [\'start_requested\', \'stop_requested\']\n
 \n
 if not hosting_subscription.getSlapState() in slap_state:\n
-  return False\n
+  return None\n
 \n
 source_instance = hosting_subscription.getPredecessorValue()\n
 if not source_instance or source_instance.getSlapState() not in slap_state:\n
-  return False\n
+  return None\n
 \n
-latest_software_url = hosting_subscription.HostingSubscription_getNewerSofwareRelease()\n
-if latest_software_url == "":\n
-  return False\n
+software_release = hosting_subscription.HostingSubscription_getNewerSofwareRelease()\n
+if not software_release:\n
+  return None\n
 \n
 computer = source_instance.getAggregateValue().getParentValue()\n
 if computer.getValidationState() != \'validated\':\n
-  return False\n
-isUpgradable = True\n
+  return None\n
       \n
 #Find Software Installation\n
 software_installation_list = portal.portal_catalog(\n
     portal_type="Software Installation",\n
     validation_state="validated",\n
-    url_string=latest_software_url,\n
+    url_string=software_release.getUrlString(),\n
     default_aggregate_uid=computer.getUid(),\n
     #XXX - don\'t select destroyed Software Installation\n
     slap_state=\'start_requested\'\n
   )\n
 # check again slap_state because it might be ignored in previous request!\n
-if not \'start_requested\' in [software_installation.getSlapState() \\\n
+if \'start_requested\' in [software_installation.getSlapState() \\\n
              for software_installation in software_installation_list]:\n
-  isUpgradable = False\n
+  return software_release\n
 \n
-return isUpgradable\n
+return None\n
 </string> </value>
         </item>
         <item>
@@ -94,7 +98,7 @@ return isUpgradable\n
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>HostingSubscription_isUpgradable</string> </value>
+            <value> <string>HostingSubscription_getUpgradableSoftwareRelease</string> </value>
         </item>
       </dictionary>
     </pickle>
