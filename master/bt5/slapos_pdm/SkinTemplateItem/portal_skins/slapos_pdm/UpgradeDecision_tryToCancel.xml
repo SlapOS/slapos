@@ -50,61 +50,30 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string>computer = context\n
-portal = context.getPortalObject()\n
+            <value> <string>upgrade_decision = context\n
+cancel_state_list = [\'confirmed\', \'planned\']\n
 \n
-full_software_release_list = [si.getUrlString() for si in\n
-              portal.portal_catalog(\n
-                portal_type=\'Software Installation\',\n
-                default_aggregate_uid=computer.getUid(),\n
-                validation_state=\'validated\'\n
-              ) if si.getSlapState() == \'start_requested\']\n
-\n
-if len(full_software_release_list) == 0:\n
-  return\n
-# group SR by Software Product to avoid two upgrade Decision for the same product\n
-software_release_list = portal.portal_catalog(\n
-                          portal_type=\'Software Release\',\n
-                          url_string=full_software_release_list,\n
-                          group_by=\'default_aggregate_uid\'\n
-                        )\n
-upgrade_decision_list = []\n
-for software_release in software_release_list:\n
-  software_product_reference = software_release.getAggregateReference()\n
-  sorted_list = portal.SoftwareProduct_getSortedSoftwareReleaseList(\n
-    software_product_reference=software_product_reference)\n
-  \n
-  # Check if there is a new version of this software Product\n
-  if sorted_list and \\\n
-      sorted_list[0].getUrlString() not in full_software_release_list:\n
-    \n
-    newer_release = sorted_list[0]\n
-    title = \'A new software release is available for %s\' % \\\n
-                        software_product_reference\n
-    # If exist upgrade decision in progress try to cancel it\n
-    decision_in_progress = newer_release.\\\n
-            SoftwareRelease_getUpgradeDecisionInProgress(computer.getUid())\n
-    if decision_in_progress and \\\n
-        not decision_in_progress.UpgradeDecision_tryToCancel(\n
-          newer_release.getUrlString()):\n
-      continue\n
-  \n
-    upgrade_decision = newer_release.SoftwareRelease_createUpgradeDecision(\n
-        source_url=computer.getRelativeUrl(),\n
-        title=title)\n
-    upgrade_decision.confirm()\n
-    upgrade_decision_list.append(upgrade_decision)\n
-\n
-return upgrade_decision_list\n
+if upgrade_decision.getSimulationState() in cancel_state_list:\n
+  current_release = upgrade_decision.UpgradeDecision_getSoftwareRelease()\n
+  if not current_release:\n
+    # This upgrade decision is not valid\n
+    return True\n
+  if current_release.getUrlString() == new_url_string:\n
+    # Cannot cancel because the software releases are the same\n
+    return False\n
+  upgrade_decision.cancel()\n
+  return True\n
+else:\n
+  return False\n
 </string> </value>
         </item>
         <item>
             <key> <string>_params</string> </key>
-            <value> <string></string> </value>
+            <value> <string>new_url_string</string> </value>
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>Computer_checkAndCreateUpgradeDecision</string> </value>
+            <value> <string>UpgradeDecision_tryToCancel</string> </value>
         </item>
       </dictionary>
     </pickle>

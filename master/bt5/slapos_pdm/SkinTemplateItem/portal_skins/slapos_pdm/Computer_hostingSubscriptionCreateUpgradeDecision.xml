@@ -50,30 +50,30 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string>computer = context\n
-portal = context.getPortalObject()\n
+            <value> <string>portal = context.getPortalObject()\n
 \n
 partition_list = portal.portal_catalog(portal_type=\'Computer Partition\',\n
                                         free_for_request=0,\n
-                                        parent_uid=computer.getUid())\n
+                                        parent_uid=context.getUid())\n
+valid_slap_state = [\'start_requested\', \'stop_requested\']\n
 \n
-# Get Hosting Subscription for all allocated partition\n
 hosting_subscription_list = []\n
+upgrade_decision_list = []\n
 for partition in partition_list:\n
   software_instance = partition.getAggregateRelatedValue(\n
                             portal_type=\'Software Instance\')\n
-  if software_instance:\n
-    hs = software_instance.getSpecialiseValue(\n
-                  portal_type=\'Hosting Subscription\')\n
-    if hs and hs.getSlapState() in \\\n
-        [\'start_requested\', \'stop_requested\'] and \\\n
-        not hs in hosting_subscription_list:\n
-      hosting_subscription_list.append(hs)\n
+  if not software_instance:\n
+    continue\n
 \n
-if len(hosting_subscription_list) == 0:\n
-  return\n
+  hosting_subscription = software_instance.getSpecialiseValue(\n
+                portal_type=\'Hosting Subscription\')\n
+  if hosting_subscription and hosting_subscription.getSlapState() \\\n
+      in valid_slap_state and not \\\n
+      hosting_subscription in hosting_subscription_list:\n
+    hosting_subscription_list.append(hosting_subscription)\n
+  else:\n
+    continue\n
 \n
-for hosting_subscription in hosting_subscription_list:\n
   is_upgradable = hosting_subscription.HostingSubscription_isUpgradable()\n
   if not is_upgradable:\n
     continue\n
@@ -82,7 +82,8 @@ for hosting_subscription in hosting_subscription_list:\n
                     HostingSubscription_getNewerSofwareRelease()\n
   if not newer_release_string:\n
     continue\n
-  \n
+  # XXX - Should try to change method HostingSubscription_getNewerSofwareRelease\n
+  # to return software_release object directly\n
   software_release = portal.portal_catalog.getResultValue(\n
                               portal_type=\'Software Release\',\n
                               url_string=newer_release_string)\n
@@ -91,15 +92,20 @@ for hosting_subscription in hosting_subscription_list:\n
   \n
   title = \'A new software release is available for %s\' % \\\n
                         hosting_subscription.getReference()\n
-  # Search if exist upgrade decision for this Hosting Subscription (by title)\n
-  is_decision_in_progress = software_release.\\\n
-          SoftwareRelease_isUpgradeDecisionInProgress(title=title)\n
-  if is_decision_in_progress:\n
+  decision_in_progress = software_release.\\\n
+      SoftwareRelease_getUpgradeDecisionInProgress(hosting_subscription.getUid())\n
+  \n
+  if decision_in_progress and \\\n
+      not decision_in_progress.UpgradeDecision_tryToCancel(newer_release_string):\n
     continue\n
+  \n
+  upgrade_decision = software_release.SoftwareRelease_createUpgradeDecision(\n
+    source_url=hosting_subscription.getRelativeUrl(),\n
+    title=title)\n
+  upgrade_decision.confirm()\n
+  upgrade_decision_list.append(upgrade_decision)\n
 \n
-  return software_release.SoftwareRelease_createUpgradeDecision(\n
-      source_url=hosting_subscription.getRelativeUrl(), title=title\n
-    )\n
+return upgrade_decision_list\n
 </string> </value>
         </item>
         <item>
