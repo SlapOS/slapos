@@ -46,8 +46,14 @@ Alias /public {{ parameters.runner_home }}/public
 <Directory {{ parameters.runner_home }}/public>
     Order Allow,Deny
     Allow from all
+    AllowOverride All
     Satisfy Any
     Options Indexes FollowSymLinks
+    DirectoryIndex index.html
+    <Files .htaccess>
+        order allow,deny
+        deny from all
+    </Files>
 </Directory>
 
 
