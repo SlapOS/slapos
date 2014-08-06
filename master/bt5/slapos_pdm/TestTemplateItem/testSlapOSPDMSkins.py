@@ -27,28 +27,9 @@
 ##############################################################################
 
 import transaction
-from functools import wraps
 from Products.SlapOS.tests.testSlapOSMixin import testSlapOSMixin
 from Products.ERP5Type.tests.utils import createZODBPythonScript
 from DateTime import DateTime
-
-def simulate(script_id, params_string, code_string):
-  def upperWrap(f):
-    @wraps(f)
-    def decorated(self, *args, **kw):
-      if script_id in self.portal.portal_skins.custom.objectIds():
-        raise ValueError('Precondition failed: %s exists in custom' % script_id)
-      createZODBPythonScript(self.portal.portal_skins.custom,
-                          script_id, params_string, code_string)
-      try:
-        result = f(self, *args, **kw)
-      finally:
-        if script_id in self.portal.portal_skins.custom.objectIds():
-          self.portal.portal_skins.custom.manage_delObjects(script_id)
-        transaction.commit()
-      return result
-    return decorated
-  return upperWrap
 
 class TestSlapOSPDMSkins(testSlapOSMixin):
   def afterSetUp(self):
@@ -62,14 +43,6 @@ class TestSlapOSPDMSkins(testSlapOSMixin):
         shared=False,
         state="started"
     )
-  
-  def beforeTearDown(self):
-    id_list = []
-    for upgrade_decision in self.portal.portal_catalog(
-               portal_type="Upgrade Decision", reference="UD-TEST%"):
-      id_list.append(upgrade_decision.getId())
-    self.portal.upgrade_decision_module.manage_delObjects(id_list)
-    self.tic()
 
   def generateNewId(self):
      return "%sTEST" % self.portal.portal_ids.generateNewId(
@@ -277,6 +250,7 @@ class TestSlapOSPDMSkins(testSlapOSMixin):
     self.assertEquals(computer.getRelativeUrl(),
                       found_computer.getRelativeUrl())
 
+
   def testUpgradeDecision_getComputer_2_computer(self):
     computer = self._makeComputer(self.new_id)
     upgrade_decision = self._makeUpgradeDecision()
@@ -296,6 +270,17 @@ class TestSlapOSPDMSkins(testSlapOSMixin):
     found_computer = upgrade_decision.UpgradeDecision_getComputer()
     self.assertEquals(None, found_computer)
 
+     
+  def testUpgradeDecision_getSoftwareRelease(self):
+    software_release = self._makeSoftwareRelease(self.new_id)
+    upgrade_decision = self._makeUpgradeDecision()
+
+    upgrade_decision_line = self._makeUpgradeDecisionLine(upgrade_decision)
+    upgrade_decision_line.setAggregateValue(software_release)
+
+    found_software_release = upgrade_decision.UpgradeDecision_getSoftwareRelease()
+    self.assertEquals(software_release.getRelativeUrl(),
+                      found_software_release.getRelativeUrl())
 
   def testUpgradeDecision_getHostingSubscription(self):
     hosting_subscription = self._makeHostingSubscription(self.new_id)
@@ -423,43 +408,6 @@ class TestSlapOSPDMSkins(testSlapOSMixin):
     self.assertEqual(slap_state, hosting_subscription.getSlapState())
     self.assertEqual('stopped', upgrade_decision.getSimulationState())
 
-  def testUpgradeDecision_processUpgradeeHostingSubscription(self):
-    person = self._makePerson(self.new_id)
-    hosting_subscription = self._makeHostingSubscription(self.new_id)
-    hosting_subscription.edit(
-          destination_section_value = person.getRelativeUrl())
-
-    self._makeSoftwareInstance(hosting_subscription,
-                               hosting_subscription.getUrlString())
-   
-    software_release = self._makeSoftwareRelease(self.new_id)
-    upgrade_decision = self._makeUpgradeDecision()
-    upgrade_decision_line = self._makeUpgradeDecisionLine(upgrade_decision)
-    upgrade_decision_line.setAggregateValueList(
-       [software_release, hosting_subscription])
-    self.tic()
-   
-    slap_state = hosting_subscription.getSlapState()
-    
-    self.assertFalse(upgrade_decision.UpgradeDecision_processUpgrade())
-    self.assertNotEqual(software_release.getUrlString(),
-                     hosting_subscription.getUrlString())
-
-    upgrade_decision.confirm()
-    upgrade_decision.start()
-
-    # Check that url_string change, but slap state doesn't
-    self.assertNotEqual(software_release.getUrlString(),
-                     hosting_subscription.getUrlString())
-
-    self.assertTrue(upgrade_decision.UpgradeDecision_processUpgrade())
-    self.assertEqual(software_release.getUrlString(),
-                     hosting_subscription.getUrlString())
-
-    self.assertEqual(slap_state, hosting_subscription.getSlapState())
-    self.assertEqual('stopped', upgrade_decision.getSimulationState())
-
-
   def testUpgradeDecision_upgradeHostingSubscription_no_software_release(self):
 
     person = self._makePerson(self.new_id)
@@ -555,33 +503,6 @@ class TestSlapOSPDMSkins(testSlapOSMixin):
     self.assertEqual('stopped', upgrade_decision.getSimulationState())
 
 
-  def testUpgradeDecision_processUpgradeComputer(self):
-    person = self._makePerson(self.new_id)
-    computer = self._makeComputer(self.new_id)
-    software_release = self._makeSoftwareRelease(self.new_id)
-    upgrade_decision = self._makeUpgradeDecision()
-    upgrade_decision_line = self._makeUpgradeDecisionLine(upgrade_decision)
-    upgrade_decision_line.setAggregateValueList([software_release, computer])
-    url = software_release.getUrlString()
-    
-    self.tic()
-
-    self.assertFalse(upgrade_decision.UpgradeDecision_processUpgrade())
-
-    upgrade_decision.confirm()
-    upgrade_decision.start()
-
-    self.assertTrue(upgrade_decision.UpgradeDecision_processUpgrade())
-    self.tic()
-    
-    software_installation = computer.getAggregateRelatedValue(
-            portal_type='Software Installation')
-    self.assertEqual('start_requested', software_installation.getSlapState())
-    self.assertEqual(url, software_installation.getUrlString())
-    self.assertEqual('validated', software_installation.getValidationState())
-    self.assertEqual('stopped', upgrade_decision.getSimulationState())
-
-
   def testSoftwareRelease_createUpgradeDecision_computer(self):
     person = self._makePerson(self.new_id)
     computer = self._makeComputer(self.new_id)
@@ -593,7 +514,7 @@ class TestSlapOSPDMSkins(testSlapOSMixin):
           title="TEST-SRUPDE-%s" % self.new_id)
     self.tic()
     
-    self.assertEqual(upgrade_decision.getSimulationState(), 'confirmed')
+    self.assertEqual(upgrade_decision.getSimulationState(), 'draft')
     self.assertEqual(upgrade_decision.getDestinationSection(),
                        person.getRelativeUrl())
     
@@ -622,7 +543,7 @@ class TestSlapOSPDMSkins(testSlapOSMixin):
           title="TEST-SRUPDE-%s" % self.new_id)
     self.tic()
     
-    self.assertEqual(upgrade_decision.getSimulationState(), 'confirmed')
+    self.assertEqual(upgrade_decision.getSimulationState(), 'draft')
     self.assertEqual(upgrade_decision.getDestinationSection(),
                        person.getRelativeUrl())
     
@@ -635,37 +556,179 @@ class TestSlapOSPDMSkins(testSlapOSMixin):
                       software_release.getRelativeUrl())
   
   
-  def testSoftwareRelease_isUpgradeDecisionInProgress(self):
+  def testSoftwareRelease_getUpgradeDecisionInProgress(self):
     computer = self._makeComputer(self.new_id)
-    software_release = self._makeSoftwareRelease(self.new_id)
+    software_product = self._makeSoftwareProduct(self.new_id)
+    software_release = self._requestSoftwareRelease(self.new_id,
+                                    software_product.getRelativeUrl())
     upgrade_decision = self._makeUpgradeDecision()
     upgrade_decision_line = self._makeUpgradeDecisionLine(upgrade_decision)
     upgrade_decision_line.setAggregateValueList([software_release, computer])
     software_release2 = self._makeSoftwareRelease(self.generateNewId())
     upgrade_decision.confirm()
+    reference = upgrade_decision.getReference()
     
     self.tic()
     
-    in_progress = software_release.SoftwareRelease_isUpgradeDecisionInProgress(
-                                title=upgrade_decision.getTitle()
-                              )
-    self.assertEqual(in_progress, True)
+    in_progress = software_release.SoftwareRelease_getUpgradeDecisionInProgress(
+                                computer.getUid())
+    self.assertEqual(in_progress.getReference(), reference)
     
-    in_progress = software_release.SoftwareRelease_isUpgradeDecisionInProgress()
-    self.assertEqual(in_progress, True)
+    in_progress = software_release.SoftwareRelease_getUpgradeDecisionInProgress(
+                                software_release.getUid())
+    self.assertEqual(in_progress.getReference(), reference)
     
-    in_progress = software_release.SoftwareRelease_isUpgradeDecisionInProgress(
-                                title=upgrade_decision.getTitle(),
-                                simulation_state='stopped'
-                              )
-    self.assertEqual(in_progress, False)
-    
-    in_progress = software_release2.SoftwareRelease_isUpgradeDecisionInProgress(
-                                title=upgrade_decision.getTitle()
-                              )
-    self.assertEqual(in_progress, False)
-    
+    in_progress = software_release2.SoftwareRelease_getUpgradeDecisionInProgress(
+                                computer.getUid())
+    self.assertEqual(in_progress, None)
   
+  def testSoftwareRelease_getUpgradeDecisionInProgress_cancelled(self):
+    computer = self._makeComputer(self.new_id)
+    software_product = self._makeSoftwareProduct(self.new_id)
+    software_release = self._requestSoftwareRelease(self.new_id,
+                                    software_product.getRelativeUrl())
+    upgrade_decision = self._makeUpgradeDecision()
+    upgrade_decision_line = self._makeUpgradeDecisionLine(upgrade_decision)
+    upgrade_decision_line.setAggregateValueList([software_release, computer])
+    upgrade_decision.confirm()
+    upgrade_decision.cancel()
+    
+    self.tic()
+    in_progress = software_release.SoftwareRelease_getUpgradeDecisionInProgress(
+                                computer.getUid())
+    self.assertEqual(in_progress, None)
+    
+    upgrade_decision2 = self._makeUpgradeDecision()
+    upgrade_decision_line2 = self._makeUpgradeDecisionLine(upgrade_decision2)
+    upgrade_decision_line2.setAggregateValueList([software_release, computer])
+    upgrade_decision2.confirm()
+    upgrade_decision2.start()
+    self.tic()
+    
+    in_progress = software_release.SoftwareRelease_getUpgradeDecisionInProgress(
+                                computer.getUid())
+    self.assertEqual(in_progress.getReference(), upgrade_decision2.getReference())
+  
+  def testSoftwareRelease_getUpgradeDecisionInProgress_hosting_subs(self):
+    person = self._makePerson(self.new_id)
+    hosting_subscription = self._makeHostingSubscription(self.new_id)
+    hosting_subscription.edit(
+          destination_section_value = person.getRelativeUrl())
+    software_product = self._makeSoftwareProduct(self.new_id)
+    software_release = self._requestSoftwareRelease(self.new_id,
+                                    software_product.getRelativeUrl())
+    upgrade_decision = self._makeUpgradeDecision()
+    upgrade_decision_line = self._makeUpgradeDecisionLine(upgrade_decision)
+    upgrade_decision_line.setAggregateValueList([software_release,
+                                                      hosting_subscription])
+    upgrade_decision.confirm()
+    reference = upgrade_decision.getReference()
+    self.tic()
+    
+    in_progress = software_release.SoftwareRelease_getUpgradeDecisionInProgress(
+                                hosting_subscription.getUid())
+    self.assertEqual(in_progress.getReference(), reference)
+    
+    upgrade_decision.cancel()
+    self.tic()
+    
+    in_progress = software_release.SoftwareRelease_getUpgradeDecisionInProgress(
+                                hosting_subscription.getUid())
+    self.assertEqual(in_progress, None)
+  
+  
+  def testSoftwareRelease_getUpgradeDecisionInProgress_software_product(self):
+    computer = self._makeComputer(self.new_id)
+    software_product = self._makeSoftwareProduct(self.new_id)
+    software_release = self._requestSoftwareRelease(self.new_id,
+                                    software_product.getRelativeUrl())
+    software_release2 = self._requestSoftwareRelease(self.generateNewId(),
+                                      software_product.getRelativeUrl())
+    software_release3 = self._makeSoftwareRelease(self.generateNewId())
+    upgrade_decision = self._makeUpgradeDecision()
+    upgrade_decision_line = self._makeUpgradeDecisionLine(upgrade_decision)
+    upgrade_decision_line.setAggregateValueList([software_release, computer])
+    upgrade_decision.confirm()
+    reference = upgrade_decision.getReference()
+    
+    self.tic()
+    
+    in_progress = software_release.SoftwareRelease_getUpgradeDecisionInProgress(
+                                computer.getUid())
+    self.assertEqual(in_progress.getReference(), reference)
+    
+    in_progress = software_release2.SoftwareRelease_getUpgradeDecisionInProgress(
+                                computer.getUid())
+    self.assertEqual(in_progress.getReference(), reference)
+    
+    in_progress = software_release3.SoftwareRelease_getUpgradeDecisionInProgress(
+                                computer.getUid())
+    self.assertEqual(in_progress, None)
+  
+  
+  def testSoftwareRelease_getUpgradeDecisionInProgress_software_product_hs(self):
+    person = self._makePerson(self.new_id)
+    hosting_subscription = self._makeHostingSubscription(self.new_id)
+    hosting_subscription.edit(
+          destination_section_value = person.getRelativeUrl())
+    software_product = self._makeSoftwareProduct(self.new_id)
+    software_release = self._requestSoftwareRelease(self.new_id,
+                                    software_product.getRelativeUrl())
+    software_release2 = self._requestSoftwareRelease(self.generateNewId(),
+                                      software_product.getRelativeUrl())
+    software_release3 = self._makeSoftwareRelease(self.generateNewId())
+    upgrade_decision = self._makeUpgradeDecision()
+    upgrade_decision_line = self._makeUpgradeDecisionLine(upgrade_decision)
+    upgrade_decision_line.setAggregateValueList([software_release,
+                                                      hosting_subscription])
+    upgrade_decision.confirm()
+    reference = upgrade_decision.getReference()
+    reference = upgrade_decision.getReference()
+    
+    self.tic()
+    
+    in_progress = software_release.SoftwareRelease_getUpgradeDecisionInProgress(
+                                hosting_subscription.getUid())
+    self.assertEqual(in_progress.getReference(), reference)
+    
+    in_progress = software_release2.SoftwareRelease_getUpgradeDecisionInProgress(
+                                hosting_subscription.getUid())
+    self.assertEqual(in_progress.getReference(), reference)
+    
+    in_progress = software_release3.SoftwareRelease_getUpgradeDecisionInProgress(
+                                hosting_subscription.getUid())
+    self.assertEqual(in_progress, None)
+  
+  
+  def testUpgradeDecision_tryToCancel(self):
+    computer = self._makeComputer(self.new_id)
+    software_release = self._makeSoftwareRelease(self.new_id)
+    software_release2 = self._makeSoftwareRelease(self.generateNewId())
+    upgrade_decision = self._makeUpgradeDecision()
+    upgrade_decision_line = self._makeUpgradeDecisionLine(upgrade_decision)
+    upgrade_decision_line.setAggregateValueList([software_release, computer])
+    upgrade_decision.confirm()
+    
+    upgrade_decision2 = self._makeUpgradeDecision()
+    upgrade_decision_line2 = self._makeUpgradeDecisionLine(upgrade_decision2)
+    upgrade_decision_line2.setAggregateValueList([software_release, computer])
+    upgrade_decision2.confirm()
+    upgrade_decision2.start()
+    
+    url = software_release.getUrlString()
+    url2 = software_release2.getUrlString()
+    
+    # Cancel is not possible with the same url_string
+    self.assertEqual(upgrade_decision.UpgradeDecision_tryToCancel(url), False)
+    self.assertEqual(upgrade_decision.UpgradeDecision_tryToCancel(url2), True)
+    self.assertEqual(upgrade_decision.getSimulationState(), 'cancelled')
+    
+    # Cancel is no longer possible
+    self.assertEqual(upgrade_decision2.UpgradeDecision_tryToCancel(url), False)
+    self.assertEqual(upgrade_decision2.UpgradeDecision_tryToCancel(url2), False)
+    self.assertEqual(upgrade_decision2.getSimulationState(), 'started')
+    
+    
   def testComputer_checkAndCreateUpgradeDecision(self):
     person = self._makePerson(self.new_id)
     computer = self._makeComputer(self.new_id)
@@ -676,9 +739,8 @@ class TestSlapOSPDMSkins(testSlapOSMixin):
     self._makeSoftwareInstallation(self.new_id,
                               computer, software_release.getUrlString())
     self.tic()
-    
     upgrade_decision = computer.Computer_checkAndCreateUpgradeDecision()
-    self.assertEqual(upgrade_decision, None)
+    self.assertEqual(len(upgrade_decision), 0)
     
     software_release2 = self._requestSoftwareRelease(self.generateNewId(),
                                       software_product.getRelativeUrl())
@@ -689,21 +751,48 @@ class TestSlapOSPDMSkins(testSlapOSMixin):
     self.tic()
     
     upgrade_decision = computer.Computer_checkAndCreateUpgradeDecision()
+    self.assertEqual(len(upgrade_decision), 1)
+    self.assertEqual(upgrade_decision[0].getSimulationState(), 'confirmed')
     
-    self.assertEqual(upgrade_decision.getSimulationState(), 'confirmed')
-    
-    computer_aggregate = upgrade_decision.UpgradeDecision_getComputer()
+    computer_aggregate = upgrade_decision[0].UpgradeDecision_getComputer()
     self.assertEqual(computer_aggregate.getReference(),
                       computer.getReference())
-    url_string = upgrade_decision.UpgradeDecision_getSoftwareRelease()
-    self.assertEqual(url_string.getUrlString(),
+    release = upgrade_decision[0].UpgradeDecision_getSoftwareRelease()
+    self.assertEqual(release.getUrlString(),
                                 software_release2.getUrlString())
-    
     self.tic()
     upgrade_decision2 = computer.Computer_checkAndCreateUpgradeDecision()
+    self.assertEqual(len(upgrade_decision2), 0)
+  
+  def testComputer_checkAndCreateUpgradeDecision_with_exist(self):
+    person = self._makePerson(self.new_id)
+    computer = self._makeComputer(self.new_id)
+    computer.edit(source_administration_value=person)
+    software_product = self._makeSoftwareProduct(self.new_id)
+    software_release = self._requestSoftwareRelease(self.new_id,
+                                    software_product.getRelativeUrl())
+    self._makeSoftwareInstallation(self.new_id,
+                              computer, software_release.getUrlString())
+    self._requestSoftwareRelease(self.generateNewId(),
+                                      software_product.getRelativeUrl())
+    self.tic()
     
-    self.assertEqual(upgrade_decision2, None)
-
+    upgrade_decision = computer.Computer_checkAndCreateUpgradeDecision()[0]
+    self.assertEqual(upgrade_decision.getSimulationState(), 'confirmed')
+    
+    software_release3 = self._requestSoftwareRelease(self.generateNewId(),
+                                      software_product.getRelativeUrl())
+    self.tic()
+    
+    upgrade_decision2 = computer.Computer_checkAndCreateUpgradeDecision()[0]
+    
+    self.assertEqual(upgrade_decision.getSimulationState(), 'cancelled')
+    self.assertEqual(upgrade_decision2.getSimulationState(), 'confirmed')
+    release = upgrade_decision2.UpgradeDecision_getSoftwareRelease()
+    self.assertEqual(release.getUrlString(),
+                                software_release3.getUrlString())
+    
+  
   def testComputer_hostingSubscriptionCreateUpgradeDecision_no_newer(self):
     person = self._makePerson(self.new_id)
     computer = self._makeComputer(self.new_id)
@@ -717,7 +806,7 @@ class TestSlapOSPDMSkins(testSlapOSMixin):
     self.tic()
     
     upgrade_decision = computer.Computer_hostingSubscriptionCreateUpgradeDecision()
-    self.assertEqual(upgrade_decision, None)
+    self.assertEqual(len(upgrade_decision), 0)
     
     # Create Hosting Subscription
     hosting_subscription = self._makeFullHostingSubscription(self.new_id,
@@ -725,7 +814,7 @@ class TestSlapOSPDMSkins(testSlapOSMixin):
     self.tic()
     
     upgrade_decision = computer.Computer_hostingSubscriptionCreateUpgradeDecision()
-    self.assertEqual(upgrade_decision, None)
+    self.assertEqual(len(upgrade_decision), 0)
     
     self._makeFullSoftwareInstance(hosting_subscription, url_string)
     self._markComputerPartitionBusy(computer,
@@ -736,7 +825,7 @@ class TestSlapOSPDMSkins(testSlapOSMixin):
     self.tic()
     
     upgrade_decision = computer.Computer_hostingSubscriptionCreateUpgradeDecision()
-    self.assertEqual(upgrade_decision, None)
+    self.assertEqual(len(upgrade_decision), 0)
   
   def testComputer_hostingSubscriptionCreateUpgradeDecision(self):
     person = self._makePerson(self.new_id)
@@ -760,359 +849,66 @@ class TestSlapOSPDMSkins(testSlapOSMixin):
     # Install the Newest software release
     software_release2 = self._requestSoftwareRelease(self.generateNewId(),
                                       software_product.getRelativeUrl())
-    self._makeSoftwareInstallation(self.new_id, computer,
+    self._makeSoftwareInstallation(self.generateNewId(), computer,
                                     software_release2.getUrlString())
     self.tic()
     
-    upgrade_decision = computer.Computer_hostingSubscriptionCreateUpgradeDecision()
-    self.assertEqual(upgrade_decision.getSimulationState(), 'confirmed')
+    up_decision = computer.Computer_hostingSubscriptionCreateUpgradeDecision()[0]
+    self.assertEqual(up_decision.getSimulationState(), 'confirmed')
     
-    self.assertEqual(upgrade_decision.UpgradeDecision_getHostingSubscription().\
+    self.assertEqual(up_decision.UpgradeDecision_getHostingSubscription().\
                       getReference(), hosting_subscription.getReference())
 
-    self.assertEqual(upgrade_decision.UpgradeDecision_getSoftwareRelease().\
+    self.assertEqual(up_decision.UpgradeDecision_getSoftwareRelease().\
                               getUrlString(), software_release2.getUrlString())
     
     self.tic()
-    upgrade_decision2 = computer.Computer_hostingSubscriptionCreateUpgradeDecision()
-    self.assertEqual(upgrade_decision2, None)
-
+    up_decision2 = computer.Computer_hostingSubscriptionCreateUpgradeDecision()
+    self.assertEqual(len(up_decision2), 0)
   
-  def testBase_acceptUpgradeDecision_no_reference(self):
-    upgrade_decision = self._makeUpgradeDecision()
-    self.assertRaises(ValueError, self.portal.Base_acceptUpgradeDecision, None)
-    
-  def testBase_acceptUpgradeDecision_duplicated_reference(self):
-    upgrade_decision = self._makeUpgradeDecision()
-    upgrade_decision.setReference("UD-TESTBADREFERENCE")
-    upgrade_decision = self._makeUpgradeDecision()
-    upgrade_decision.setReference("UD-TESTBADREFERENCE")
-    self.tic()
-    self.assertRaises(ValueError, self.portal.Base_acceptUpgradeDecision, None)
-
-  def testBase_acceptUpgradeDecision_no_upgrade_decision(self):
-    redirect_url = self.portal.Base_acceptUpgradeDecision('UD-UNEXISTING')
-    self.assertTrue(redirect_url.endswith(
-      "?portal_status_message=Unable%20to%20find%20the%20Upgrade%20Decision."), 
-      "%s contains the wrong message" %  redirect_url)
-     
-  def testBase_acceptUpgradeDecision_draft_upgrade_decision(self):
-    upgrade_decision = self._makeUpgradeDecision()
-    upgrade_decision.setReference("UD-TESTDRAFT")
-    self.tic()
-    redirect_url = self.portal.Base_acceptUpgradeDecision('UD-TESTDRAFT')
-    self.assertTrue(redirect_url.endswith(
-      "?portal_status_message=Sorry%2C%20the%20upgrade%20is%20not%20possible%20yet%21"), 
-      "%s contains the wrong message" %  redirect_url)
-
-  def testBase_acceptUpgradeDecision_planned_upgrade_decision(self):
-    upgrade_decision = self._makeUpgradeDecision()
-    upgrade_decision.setReference("UD-TESTPLANNED")
-    upgrade_decision.plan()
-    self.tic()
-    redirect_url = self.portal.Base_acceptUpgradeDecision('UD-TESTPLANNED')
-    self.assertTrue(redirect_url.endswith(
-      "?portal_status_message=Sorry%2C%20the%20upgrade%20is%20not%20possible%20yet%21"), 
-      "%s contains the wrong message" %  redirect_url)
-
-  def testBase_acceptUpgradeDecision_confirmed_upgrade_decision(self):
-    upgrade_decision = self._makeUpgradeDecision()
-    upgrade_decision.setReference("UD-TESTCONFIRMED")
-    upgrade_decision.confirm()
-    self.tic()
-    redirect_url = self.portal.Base_acceptUpgradeDecision('UD-TESTCONFIRMED')
-    self.assertTrue(redirect_url.endswith(
-      "?portal_status_message=This%20Upgrade%20Decision%20has%20been%20"\
-      "requested%2C%20it%20will%20be%20processed%20in%20few%20minutes."), 
-      "%s contains the wrong message" %  redirect_url)
-    self.assertEquals(upgrade_decision.getSimulationState(), 'started')
-
-  def testBase_acceptUpgradeDecision_started_decision(self):
-    upgrade_decision = self._makeUpgradeDecision()
-    upgrade_decision.setReference("UD-TESTSTARTED")
-    upgrade_decision.start()
-    self.tic()
-    redirect_url = self.portal.Base_acceptUpgradeDecision('UD-TESTSTARTED')
-    self.assertTrue(redirect_url.endswith(
-     "?portal_status_message=This%20Upgrade%20Decision%20is%20already%20Started."), 
-     "%s contains the wrong message" %  redirect_url)
-
-  def testBase_acceptUpgradeDecision_stop_decision(self):
-    upgrade_decision = self._makeUpgradeDecision()
-    upgrade_decision.setReference("UD-TESTSTOP")
-    upgrade_decision.start()
-    upgrade_decision.stop()
-    self.tic()
-    redirect_url = self.portal.Base_acceptUpgradeDecision('UD-TESTSTOP')
-    self.assertTrue(redirect_url.endswith(
-      "?portal_status_message=This%20Upgrade%20Decision%20has%20been%20already%20processed."),
-      "%s contains the wrong message" %  redirect_url)
-
-  def testBase_acceptUpgradeDecision_delivered_decision(self):
-    upgrade_decision = self._makeUpgradeDecision()
-    upgrade_decision.setReference("UD-TESTDELIVERED")
-    upgrade_decision.start()
-    upgrade_decision.stop()
-    upgrade_decision.deliver()
-    self.tic()
-    redirect_url = self.portal.Base_acceptUpgradeDecision('UD-TESTDELIVERED')
-    self.assertTrue(redirect_url.endswith(
-      "?portal_status_message=This%20Upgrade%20Decision%20has%20been%20already%20processed."),
-      "%s contains the wrong message" %  redirect_url)
-
-  def testBase_acceptUpgradeDecision_cancelled_decision(self):
-    upgrade_decision = self._makeUpgradeDecision()
-    upgrade_decision.setReference("UD-TESTCANCELLED")
-    upgrade_decision.cancel()
-    self.tic()
-    redirect_url = self.portal.Base_acceptUpgradeDecision('UD-TESTCANCELLED')
-    self.assertTrue(redirect_url.endswith(
-      "?portal_status_message=Sorry%2C%20the%20upgrade%20is%20not%20possble%2C%20Upgrade%20Decision%20was%20Canceled%20or%20Rejected%21"),
-      "%s contains the wrong message" %  redirect_url)
-
-  def testBase_acceptUpgradeDecision_rejected_decision(self):
-    upgrade_decision = self._makeUpgradeDecision()
-    upgrade_decision.setReference("UD-TESTREJECT")
-    upgrade_decision.cancel()
-    self.tic()
-    redirect_url = self.portal.Base_acceptUpgradeDecision('UD-TESTREJECT')
-    self.assertTrue(redirect_url.endswith(
-      "?portal_status_message=Sorry%2C%20the%20upgrade%20is%20not%20possble%2C%20Upgrade%20Decision%20was%20Canceled%20or%20Rejected%21"),
-      "%s contains the wrong message" %  redirect_url)
-
-  def testBase_rejectUpgradeDecision_no_reference(self):
-    upgrade_decision = self._makeUpgradeDecision()
-    self.assertRaises(ValueError, self.portal.Base_rejectUpgradeDecision, None)
-    
-  def testBase_rejectUpgradeDecision_duplicated_reference(self):
-    upgrade_decision = self._makeUpgradeDecision()
-    upgrade_decision.setReference("UD-TESTBADREFERENCE")
-    upgrade_decision = self._makeUpgradeDecision()
-    upgrade_decision.setReference("UD-TESTBADREFERENCE")
-    self.tic()
-    self.assertRaises(ValueError, self.portal.Base_acceptUpgradeDecision, None)
-
-  def testBase_rejectUpgradeDecision_no_upgrade_decision(self):
-    redirect_url = self.portal.Base_rejectUpgradeDecision('UD-UNEXISTING')
-    self.assertTrue(redirect_url.endswith(
-      "?portal_status_message=Unable%20to%20find%20the%20Upgrade%20Decision."), 
-      "%s contains the wrong message" %  redirect_url)
-     
-  def testBase_rejectUpgradeDecision_draft_upgrade_decision(self):
-    upgrade_decision = self._makeUpgradeDecision()
-    upgrade_decision.setReference("UD-TESTDRAFT")
-    self.tic()
-    redirect_url = self.portal.Base_rejectUpgradeDecision('UD-TESTDRAFT')
-    self.assertTrue(redirect_url.endswith(
-      "?portal_status_message=Thanks%20Upgrade%20Decision%20has%20been"\
-      "%20rejected%20Successfully%20%28You%20cannot%20use%20it%20anymore%29."), 
-      "%s contains the wrong message" %  redirect_url)
-    self.assertEquals(upgrade_decision.getSimulationState(), 'rejected')
-
-  def testBase_rejectUpgradeDecision_planned_upgrade_decision(self):
-    upgrade_decision = self._makeUpgradeDecision()
-    upgrade_decision.setReference("UD-TESTPLANNED")
-    upgrade_decision.plan()
-    self.tic()
-    redirect_url = self.portal.Base_rejectUpgradeDecision('UD-TESTPLANNED')
-    self.assertTrue(redirect_url.endswith(
-      "?portal_status_message=Thanks%20Upgrade%20Decision%20has%20been"\
-      "%20rejected%20Successfully%20%28You%20cannot%20use%20it%20anymore%29."), 
-      "%s contains the wrong message" %  redirect_url)
-    self.assertEquals(upgrade_decision.getSimulationState(), 'rejected')
-
-  def testBase_rejectUpgradeDecision_confirmed_upgrade_decision(self):
-    upgrade_decision = self._makeUpgradeDecision()
-    upgrade_decision.setReference("UD-TESTCONFIRMED")
-    upgrade_decision.confirm()
-    self.tic()
-    redirect_url = self.portal.Base_rejectUpgradeDecision('UD-TESTCONFIRMED')
-    self.assertTrue(redirect_url.endswith(
-      "?portal_status_message=Thanks%20Upgrade%20Decision%20has%20been"\
-      "%20rejected%20Successfully%20%28You%20cannot%20use%20it%20anymore%29."),
-      "%s contains the wrong message" %  redirect_url)
-    self.assertEquals(upgrade_decision.getSimulationState(), 'rejected')
-
-  def testBase_rejectUpgradeDecision_started_decision(self):
-    upgrade_decision = self._makeUpgradeDecision()
-    upgrade_decision.setReference("UD-TESTSTARTED")
-    upgrade_decision.start()
-    self.tic()
-    redirect_url = self.portal.Base_rejectUpgradeDecision('UD-TESTSTARTED')
-    self.assertTrue(redirect_url.endswith(
-     "?portal_status_message=Sorry%2C%20This%20Upgrade%20Decision%20is%20"\
-     "already%20Started%2C%20you%20cannot%20reject%20it%20anymore."),
-     "%s contains the wrong message" %  redirect_url)
-
-  def testBase_rejectUpgradeDecision_stop_decision(self):
-    upgrade_decision = self._makeUpgradeDecision()
-    upgrade_decision.setReference("UD-TESTSTOP")
-    upgrade_decision.start()
-    upgrade_decision.stop()
-    self.tic()
-    redirect_url = self.portal.Base_rejectUpgradeDecision('UD-TESTSTOP')
-    self.assertTrue(redirect_url.endswith(
-      "?portal_status_message=Sorry%2C%20this%20Upgrade%20Decision%20has%20been%20already%20processed."),
-      "%s contains the wrong message" %  redirect_url)
-
-  def testBase_rejectUpgradeDecision_delivered_decision(self):
-    upgrade_decision = self._makeUpgradeDecision()
-    upgrade_decision.setReference("UD-TESTDELIVERED")
-    upgrade_decision.start()
-    upgrade_decision.stop()
-    upgrade_decision.deliver()
-    self.tic()
-    redirect_url = self.portal.Base_rejectUpgradeDecision('UD-TESTDELIVERED')
-    self.assertTrue(redirect_url.endswith(
-      "?portal_status_message=Sorry%2C%20this%20Upgrade%20Decision%20has%20been%20already%20processed."),
-      "%s contains the wrong message" %  redirect_url)
-
-  def testBase_rejectUpgradeDecision_cancelled_decision(self):
-    upgrade_decision = self._makeUpgradeDecision()
-    upgrade_decision.setReference("UD-TESTCANCELLED")
-    upgrade_decision.cancel()
-    self.tic()
-    redirect_url = self.portal.Base_rejectUpgradeDecision('UD-TESTCANCELLED')
-    self.assertTrue(redirect_url.endswith(
-      "?portal_status_message=Upgrade%20Decision%20is%20already%20Rejected%21"),
-      "%s contains the wrong message" %  redirect_url)
-
-  def testBase_rejectUpgradeDecision_reject_decision(self):
-    upgrade_decision = self._makeUpgradeDecision()
-    upgrade_decision.setReference("UD-TESTREJECT")
-    upgrade_decision.reject()
-    self.tic()
-    redirect_url = self.portal.Base_rejectUpgradeDecision('UD-TESTREJECT')
-    self.assertTrue(redirect_url.endswith(
-      "?portal_status_message=Upgrade%20Decision%20is%20already%20Rejected%21"),
-      "%s contains the wrong message" %  redirect_url)
-
-  @simulate('NotificationTool_getDocumentValue',
-            'reference=None',
-  'assert reference == "slapos-upgrade-computer.notification"\n' \
-  'return context.restrictedTraverse(' \
-  'context.REQUEST["testUpgradeDecision_notify_computer"])')
-  def testUpgradeDecision_notify_computer(self):
+  
+  def testComputer_hostingSubscriptionCreateUpgradeDecision_with_exist(self):
     person = self._makePerson(self.new_id)
     computer = self._makeComputer(self.new_id)
-    software_release = self._makeSoftwareRelease(self.new_id)
+    computer.edit(source_administration_value=person)
+    self._makeComputerPartitions(computer)
     software_product = self._makeSoftwareProduct(self.new_id)
-    software_release.setAggregateValue(software_product)
-    upgrade_decision = self._makeUpgradeDecision()
-    upgrade_decision.edit(destination_decision_value=person)
-    upgrade_decision_line = self._makeUpgradeDecisionLine(upgrade_decision)
-    upgrade_decision_line.setAggregateValueList([software_release, computer])
+    software_release = self._requestSoftwareRelease(self.new_id,
+                                    software_product.getRelativeUrl())
+    url_string = software_release.getUrlString()
     
-    notification_message = self.portal.notification_message_module.newContent(
-      portal_type="Notification Message",
-      title='Test NM title %s' % self.new_id,
-      text_content_substitution_mapping_method_id=
-          "NotificationMessage_getSubstitutionMappingDictFromArgument",
-      text_content="""${software_product_title}
-${computer_title}
-${computer_reference}
-${software_release_name}
-${software_release_reference}
-${upgrade_accept_link}
-${upgrade_reject_link}
-${new_software_release_url}""",
-      content_type='text/html',
-      )
-    self.portal.REQUEST\
-        ['testUpgradeDecision_notify_computer'] = \
-        notification_message.getRelativeUrl()
+    self._makeSoftwareInstallation(self.new_id, computer, url_string)
     
+    # Create Hosting Subscription and Software Instance
+    hosting_subscription = self._makeFullHostingSubscription(self.new_id,
+                                    url_string, person)
+    self._makeFullSoftwareInstance(hosting_subscription, url_string)
+    self._markComputerPartitionBusy(computer,
+                                    hosting_subscription.getPredecessorValue())
+    
+    # Install the Newest software release
+    software_release2 = self._requestSoftwareRelease(self.generateNewId(),
+                                      software_product.getRelativeUrl())
+    self._makeSoftwareInstallation(self.generateNewId(), computer,
+                                    software_release2.getUrlString())
     self.tic()
     
-    self.assertEquals(None, upgrade_decision.UpgradeDecision_notify())
+    up_decision = computer.Computer_hostingSubscriptionCreateUpgradeDecision()[0]
+    self.assertEqual(up_decision.getSimulationState(), 'confirmed')
     
-    upgrade_decision.plan()
-    
+    # Install the another software release
+    software_release3 = self._requestSoftwareRelease(self.generateNewId(),
+                                      software_product.getRelativeUrl())
+    self._makeSoftwareInstallation(self.generateNewId(), computer,
+                                    software_release3.getUrlString())
     self.tic()
     
-    self.assertEquals(None, upgrade_decision.UpgradeDecision_notify())
+    up_decision2 = computer.Computer_hostingSubscriptionCreateUpgradeDecision()[0]
+    self.assertEqual(up_decision2.getSimulationState(), 'confirmed')
+    self.assertEqual(up_decision.getSimulationState(), 'cancelled')
+    release = up_decision2.UpgradeDecision_getSoftwareRelease()
+    self.assertEqual(release.getUrlString(),
+                                software_release3.getUrlString())
     
-    self.tic()
     
-    self.assertEquals(upgrade_decision.getSimulationState(), 'confirmed')
-    self.assertEquals(len(upgrade_decision.getFollowUpRelatedValueList()), 1)
-    event = upgrade_decision.getFollowUpRelatedValue()
     
-    self.assertEquals(event.getTitle(), 
-     "New Software available for Installation at %s" % computer.getTitle())
-     
-    self.assertEqual(event.getTextContent().splitlines(),
-      [software_product.getTitle(), computer.getTitle(), computer.getReference(),
-       software_release.getTitle(), software_release.getReference(), 
-       'Base_acceptUpgradeDecision?reference=%s' % upgrade_decision.getReference(),
-       'Base_rejectUpgradeDecision?reference=%s' % upgrade_decision.getReference(),
-       software_release.getUrlString()])
-      
-      
-    self.assertEquals(event.getSimulationState(), "delivered")
-
-  @simulate('NotificationTool_getDocumentValue',
-            'reference=None',
-  'assert reference == "slapos-upgrade-hosting-subscription.notification"\n' \
-  'return context.restrictedTraverse(' \
-  'context.REQUEST["testUpgradeDecision_notify_hosting_subscription"])')
-  def testUpgradeDecision_notify_hosting_subscription(self):
-    person = self._makePerson(self.new_id)
-    hosting_subscription = self._makeHostingSubscription(self.new_id)
-    software_release = self._makeSoftwareRelease(self.new_id)
-    software_product = self._makeSoftwareProduct(self.new_id)
-    software_release.setAggregateValue(software_product)
-    upgrade_decision = self._makeUpgradeDecision()
-    upgrade_decision.edit(destination_decision_value=person)
-    upgrade_decision_line = self._makeUpgradeDecisionLine(upgrade_decision)
-    upgrade_decision_line.setAggregateValueList([software_release, 
-                                                hosting_subscription])
-
-    old_url = hosting_subscription.getUrlString()
-
-    notification_message = self.portal.notification_message_module.newContent(
-      portal_type="Notification Message",
-      title='Test NM title %s' % self.new_id,
-      text_content_substitution_mapping_method_id=
-          "NotificationMessage_getSubstitutionMappingDictFromArgument",
-      text_content="""${software_product_title}
-${hosting_subscription_title}
-${old_software_release_url}
-${software_release_name}
-${software_release_reference}
-${upgrade_accept_link}
-${upgrade_reject_link}
-${new_software_release_url}""",
-      content_type='text/html',
-      )
-    self.portal.REQUEST\
-        ['testUpgradeDecision_notify_hosting_subscription'] = \
-        notification_message.getRelativeUrl()
-    
-    self.tic()
-    
-    self.assertEquals(None, upgrade_decision.UpgradeDecision_notify())
-    
-    upgrade_decision.plan()
-    
-    self.tic()
-    
-    self.assertEquals(None, upgrade_decision.UpgradeDecision_notify())
-    
-    self.tic()
-    
-    self.assertEquals(upgrade_decision.getSimulationState(), 'confirmed')
-    self.assertEquals(len(upgrade_decision.getFollowUpRelatedValueList()), 1)
-    event = upgrade_decision.getFollowUpRelatedValue()
-    
-    self.assertEquals(event.getTitle(), 
-     "New Upgrade available for %s" % hosting_subscription.getTitle())
-     
-    self.assertEqual(event.getTextContent().splitlines(),
-      [software_product.getTitle(), hosting_subscription.getTitle(), 
-       old_url, software_release.getTitle(), software_release.getReference(), 
-       'Base_acceptUpgradeDecision?reference=%s' % upgrade_decision.getReference(),
-       'Base_rejectUpgradeDecision?reference=%s' % upgrade_decision.getReference(),
-       software_release.getUrlString()])
-
-    self.assertEquals(event.getSimulationState(), "delivered")
