@@ -55,8 +55,8 @@
 from DateTime import DateTime\n
 \n
 portal = context.getPortalObject()\n
-\n
 software_release = context\n
+\n
 source_product = portal.restrictedTraverse(source_url, None)\n
 if not source_product:\n
   return\n
@@ -73,14 +73,12 @@ if not person_url:\n
   return\n
 \n
 upgrade_decision = portal.upgrade_decision_module.\\\n
-            template_upgrade_decision.Base_createCloneDocument(batch_mode=1) \n
+            template_upgrade_decision.Base_createCloneDocument(batch_mode=1)\n
 upgrade_decision.edit(\n
         title=title,\n
         destination_section=person_url,\n
-        destination_decision=person_url,\n
-        start_date=DateTime()\n
+        destination_decision=person_url\n
 )\n
-upgrade_decision.confirm()\n
 decision_line_list = upgrade_decision.contentValues(\n
                     portal_type=\'Upgrade Decision Line\')\n
 if len(decision_line_list) > 0:\n

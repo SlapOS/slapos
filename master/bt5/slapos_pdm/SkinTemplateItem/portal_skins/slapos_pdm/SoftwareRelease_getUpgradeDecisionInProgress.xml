@@ -50,39 +50,39 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string>url_string = context.getUrlString()\n
+            <value> <string encoding="cdata"><![CDATA[
+
 portal = context.getPortalObject()\n
+product_reference = context.getAggregateReference()\n
 \n
-# Check if there is an upgrade decision in progress\n
-kw[\'portal_type\'] = \'Upgrade Decision\'\n
-upgrade_decision_in_progress = portal.portal_catalog(**kw)\n
+decision_line_in_progress_list = portal.portal_catalog(\n
+                    portal_type=\'Upgrade Decision Line\',\n
+                    aggregate_uid=aggregate_uid)\n
 \n
-if len(upgrade_decision_in_progress) == 0:\n
-  return False\n
-\n
-in_progress = False\n
-for decision_in_progress in upgrade_decision_in_progress:\n
-  try:\n
-    software_release = decision_in_progress.\\\n
-              UpgradeDecision_getSoftwareRelease()\n
-  except ValueError:\n
+for decision_line in decision_line_in_progress_list:\n
+  upgrade_decision = decision_line.getParentValue()\n
+  if upgrade_decision.getSimulationState() not in [\'planned\',\n
+      \'confirmed\', \'started\', \'stopped\']:\n
     continue\n
-  if not software_release:\n
+  release_list = decision_line.getAggregateValueList(portal_type="Software Release")\n
+  if len(release_list) > 1:\n
     continue\n
-  if url_string == software_release.getUrlString():\n
-    in_progress = True\n
-    break\n
-\n
-return in_progress\n
-</string> </value>
+  if not release_list[0]:\n
+    continue\n
+  # If both software release belong to the same software product, there is an upgrade decision in progress \n
+  if product_reference == release_list[0].getAggregateReference():\n
+    return upgrade_decision\n
+
+
+]]></string> </value>
         </item>
         <item>
             <key> <string>_params</string> </key>
-            <value> <string>**kw</string> </value>
+            <value> <string>aggregate_uid</string> </value>
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>SoftwareRelease_isUpgradeDecisionInProgress</string> </value>
+            <value> <string>SoftwareRelease_getUpgradeDecisionInProgress</string> </value>
         </item>
       </dictionary>
     </pickle>
