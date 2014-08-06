@@ -55,17 +55,17 @@ portal = context.getPortalObject()\n
 \n
 software_instance = hosting_subscription.getPredecessorValue()\n
 if not software_instance:\n
-  return ""\n
+  return None\n
 software_release_list = context.SoftwareProduct_getSortedSoftwareReleaseList(\n
                           software_release_url=software_instance.getUrlString())\n
 \n
 if not software_release_list:\n
-  return ""\n
+  return None\n
 latest_software_release = software_release_list[0]\n
-if software_release_list[0].getUrlString() == software_instance.getUrlString():\n
-  return ""\n
+if latest_software_release.getUrlString() == software_instance.getUrlString():\n
+  return None\n
 else:\n
-  return latest_software_release.getUrlString()\n
+  return latest_software_release\n
 </string> </value>
         </item>
         <item>
