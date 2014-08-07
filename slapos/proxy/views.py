@@ -291,6 +291,11 @@ def softwareInstanceRename():
   execute_db('partition', q, [new_name, computer_partition_id])
   return 'done'
 
+@app.route('/getComputerPartitionStatus', methods=['GET'])
+def getComputerPartitionStatus():
+  # XXX: not implemented
+  return xml_marshaller.xml_marshaller.dumps('')
+
 def request_not_shared():
   software_release = request.form['software_release'].encode()
   # some supported parameters
