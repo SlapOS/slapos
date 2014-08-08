@@ -12,6 +12,10 @@
   <skin_selection>Hosting</skin_selection>
  </skin_folder_selection>
  <skin_folder_selection>
+  <skin_folder>slapos_rss</skin_folder>
+  <skin_selection>RSS</skin_selection>
+ </skin_folder_selection>
+ <skin_folder_selection>
   <skin_folder>vifib_hosting</skin_folder>
   <skin_selection>Hosting</skin_selection>
  </skin_folder_selection>
