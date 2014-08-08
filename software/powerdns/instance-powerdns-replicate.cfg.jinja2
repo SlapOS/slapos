@@ -1,0 +1,132 @@
+{% if slap_software_type in software_type -%}
+
+[jinja2-template-base]
+recipe = slapos.recipe.template:jinja2
+rendered = ${buildout:directory}/${:filename}
+extra-context =
+context =
+    import json_module json
+    key eggs_directory buildout:eggs-directory
+    key develop_eggs_directory buildout:develop-eggs-directory
+    key slap_software_type slap-parameter:slap_software_type
+    key slave_instance_list slap-parameter:slave_instance_list
+    ${:extra-context}
+
+{% set part_list = [] -%}
+{% set single_type_key = 'single-' %}
+{% if slap_software_type in ("replicate", "RootSoftwareInstance") %}
+{%   set dns_type = slapparameter_dict.pop('-dns-type', 'single-default') -%}
+{% else -%}
+{%   set dns_type = "%s%s" % (single_type_key, slap_software_type) -%}
+{% endif -%}
+{% set dns_quantity = slapparameter_dict.pop('-dns-quantity', '1') | int -%}
+{% set slave_list_name = 'extra_slave_instance_list' -%}
+{% set dns_list = [] %}
+{% set dns_domain_list = [] %}
+{% set dns_section_list = [] %}
+{% set namebase = 'powerdns' -%}
+# XXX Dirty hack, not possible to define default value before
+{% set sla_computer_powerdns_1_key = '-sla-1-computer_guid' -%}
+{% if not sla_computer_powerdns_1_key in slapparameter_dict -%}
+{%   do slapparameter_dict.__setitem__(sla_computer_powerdns_1_key, '${slap-connection:computer-id}') -%}
+{% endif -%}
+
+## DNS set up
+{% set zone = slapparameter_dict.pop('zone', 'domain.com') %}
+{% set server_admin = slapparameter_dict.pop('server-admin', 'admin@domain.com') %}
+{% set dns_name_template_string = slapparameter_dict.pop('dns-name-template-string', 'ns%s.' + zone) %}
+
+# Here we request individualy each dns.
+# The presence of sla parameters is checked and added if found
+{% for i in range(1, dns_quantity + 1) -%}
+{%   set dns_name = 'ns%s' % i -%}
+{%   set dns_domain = dns_name_template_string % i %}
+{%   set request_section_title = 'request-%s' % dns_name -%}
+{%   set sla_key = "-sla-%s-" % i -%}
+{%   set sla_key_length = sla_key | length %}
+{%   set sla_parameters = [] %}
+{%   for key in slapparameter_dict.keys() %}
+{%     if key.startswith(sla_key) %}
+{%       do sla_parameters.append(key[sla_key_length:]) %}
+{%     endif -%}
+{%   endfor -%}
+{%   do dns_list.append(dns_name) -%}
+{%   do dns_domain_list.append(dns_domain) -%}
+{%   do dns_section_list.append(request_section_title) -%}
+{%   do part_list.append(request_section_title) -%}
+
+[{{request_section_title}}]
+<= replicate
+name = {{dns_name}}
+{%   set state_key = "-dns-%s-state" % i %}
+{%   if slapparameter_dict.has_key(state_key) %}
+state = {{ slapparameter_dict.pop(state_key) }}
+{%   endif%}
+config-zone = {{ zone }}
+config-soa = {{ "%s,%s" % (dns_domain, server_admin) }}
+{%   if sla_parameters %}
+sla = {{ ' '.join(sla_parameters) }}
+{%     for parameter in sla_parameters -%}
+sla-{{ parameter }} = {{ slapparameter_dict.pop( sla_key + parameter ) }}
+{%     endfor -%}
+{%   endif -%}
+{% endfor -%}
+
+
+
+{% set ns_record = slapparameter_dict.pop('ns-record', ','.join(dns_domain_list)) %}
+[replicate]
+<= slap-connection
+recipe = slapos.cookbook:requestoptional
+{% set dns_software_url_key = "-dns-software-release-url" %}
+{% if slapparameter_dict.has_key(dns_software_url_key) %}
+software-url = {{ slapparameter_dict.pop(dns_software_url_key) }}
+{% else %}
+software-url = ${slap-connection:software-release-url}
+{% endif %}
+software-type = {{dns_type}}
+return = private-ipv4 public-ipv4 slave-instance-information-list monitor_url
+config = {{ ' '.join(slapparameter_dict.keys()) + ' zone soa server-admin ns-record ' + slave_list_name }}
+config-server-admin = {{ server_admin }}
+config-ns-record = {{ ns_record }}
+{% for parameter, value in slapparameter_dict.iteritems() -%}
+config-{{parameter}} = {{ value }}
+{% endfor -%}
+config-{{ slave_list_name }} = {{ json_module.dumps(slave_instance_list) }}
+connection-monitor_url =
+
+[publish-information]
+recipe = slapos.cookbook:publish
+domain = {{ slapparameter_dict.get('domain') }}
+slave-amount = {{ slave_instance_list | length }}
+ns-record = {{ ns_record }}
+{% for dns in dns_section_list %}
+{{ dns }}-monitor-url = {{ '${' + dns + ':connection-monitor_url}' }}
+{% endfor -%}
+
+[buildout]
+parts =
+  publish-information
+{% for part in part_list -%}
+{{ '  %s' % part }}
+{% endfor -%}
+
+eggs-directory = {{ eggs_directory }}
+develop-eggs-directory = {{ develop_eggs_directory }}
+offline = true
+
+
+[slap_connection]
+# Kept for backward compatiblity
+computer_id = ${slap-connection:computer-id}
+partition_id = ${slap-connection:partition-id}
+server_url = ${slap-connection:server-url}
+software_release_url = ${slap-connection:software-release-url}
+key_file = ${slap-connection:key-file}
+cert_file = ${slap-connection:cert-file}
+
+[slap-parameter]
+slave_instance_list =
+-dns-quantity = 1
+-dns-type = single-default
+{%- endif %}

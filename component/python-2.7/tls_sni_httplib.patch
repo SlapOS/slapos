@@ -1,0 +1,39 @@
+Author: Arnaud Fontaine <arnaud.fontaine@nexedi.com>
+Description: Enable TLS SNI support for httplib
+
+--- a/Lib/httplib.py	2014-07-31 14:50:21.178088529 +0900
++++ b/Lib/httplib.py	2014-07-31 20:11:09.279081382 +0900
+@@ -1195,7 +1195,12 @@
+             if self._tunnel_host:
+                 self.sock = sock
+                 self._tunnel()
+-            self.sock = ssl.wrap_socket(sock, self.key_file, self.cert_file)
++                server_hostname = self._tunnel_host
++            else:
++                server_hostname = self.host
++
++            self.sock = ssl.wrap_socket(sock, self.key_file, self.cert_file,
++                                        server_hostname=server_hostname)
+ 
+     __all__.append("HTTPSConnection")
+ 
+--- a/Lib/ssl.py	2014-07-31 19:33:21.911968158 +0900
++++ b/Lib/ssl.py	2014-07-31 19:33:57.428391985 +0900
+@@ -481,14 +481,15 @@
+                 server_side=False, cert_reqs=CERT_NONE,
+                 ssl_version=PROTOCOL_SSLv23, ca_certs=None,
+                 do_handshake_on_connect=True,
+-                suppress_ragged_eofs=True, ciphers=None):
++                suppress_ragged_eofs=True, ciphers=None,
++                server_hostname=None):
+ 
+     return SSLSocket(sock, keyfile=keyfile, certfile=certfile,
+                      server_side=server_side, cert_reqs=cert_reqs,
+                      ssl_version=ssl_version, ca_certs=ca_certs,
+                      do_handshake_on_connect=do_handshake_on_connect,
+                      suppress_ragged_eofs=suppress_ragged_eofs,
+-                     ciphers=ciphers)
++                     ciphers=ciphers, server_hostname=server_hostname)
+ 
+ 
+ # some utility functions

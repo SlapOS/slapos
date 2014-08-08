@@ -189,7 +189,7 @@ extra-context =
     raw http_port {{ http_port }}
 {{ '\n' }}
 
-{%     do slave_publish_dict.update(**{'slave-reference':slave_instance.get('slave_reference'), 'public-ipv4':public_ipv4, 'domain':slave_instance.get('custom_domain'), 'url':"http://%s" % slave_instance.get('custom_domain'), 'site_url':"http://%s" % slave_instance.get('custom_domain')}) %}
+{%     do slave_publish_dict.update(**{'slave-reference':slave_instance.get('slave_reference'), 'public-ipv4':public_ipv4, 'domain':slave_instance.get('custom_domain'), 'url':"http://%s" % slave_instance.get('custom_domain'), 'site_url':"http://%s" % slave_instance.get('custom_domain'), 'secure_access': 'https://%s' % slave_instance.get('custom_domain')}) %}
 
 {%   endif -%}
 
@@ -237,10 +237,7 @@ private-ipv4 = {{ local_ipv4 }}
 {% if extra_slave_instance_list -%}
 slave-instance-information-list = {{ json_module.dumps(slave_instance_information_list) }}
 {% endif -%}
-{% do connection_information_dict.pop('recipe') %}
-{% for key, value in connection_information_dict.iteritems() -%}
-{{ key }} = {{ value }}
-{% endfor %}
+monitor_url = {{ monitor_url }}
 
 {% do part_list.append('cached-rewrite-rules') -%}
 [cached-rewrite-rules]

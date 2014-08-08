@@ -1,0 +1,79 @@
+PidFile "{{ httpd_configuration.get('pid-file') }}"
+ServerName example.com
+ServerAdmin someone@email
+<IfDefine !MonitorPort>
+Listen [{{ httpd_configuration.get('listening-ip') }}]:{{ monitor_parameters.get('port') }}
+Define MonitorPort
+</IfDefine>
+DocumentRoot "{{ directory.get('www') }}"
+ErrorLog "{{ httpd_configuration.get('error-log') }}"
+LoadModule unixd_module modules/mod_unixd.so
+LoadModule access_compat_module modules/mod_access_compat.so
+LoadModule authz_core_module modules/mod_authz_core.so
+LoadModule authn_core_module modules/mod_authn_core.so
+LoadModule authz_host_module modules/mod_authz_host.so
+LoadModule mime_module modules/mod_mime.so
+LoadModule cgid_module modules/mod_cgid.so
+LoadModule dir_module modules/mod_dir.so
+LoadModule ssl_module modules/mod_ssl.so
+LoadModule alias_module modules/mod_alias.so
+LoadModule autoindex_module modules/mod_autoindex.so
+LoadModule auth_basic_module modules/mod_auth_basic.so
+LoadModule authz_user_module modules/mod_authz_user.so
+LoadModule authn_file_module modules/mod_authn_file.so
+LoadModule proxy_module      modules/mod_proxy.so
+LoadModule proxy_http_module modules/mod_proxy_http.so
+LoadModule rewrite_module modules/mod_rewrite.so
+
+# SSL Configuration
+<IfDefine !SSLConfigured>
+Define SSLConfigured
+SSLCertificateFile {{ httpd_configuration.get('certificate') }}
+SSLCertificateKeyFile {{ httpd_configuration.get('key') }}
+SSLRandomSeed startup builtin
+SSLRandomSeed connect builtin
+SSLRandomSeed startup /dev/urandom 256
+SSLRandomSeed connect builtin
+SSLProtocol -ALL +SSLv3 +TLSv1
+SSLHonorCipherOrder On
+SSLCipherSuite RC4-SHA:HIGH:!ADH
+</IfDefine>
+SSLEngine   On
+ScriptSock {{ httpd_configuration.get('cgid-pid-file') }}
+<Directory {{ directory.get('www') }}>
+  SSLVerifyDepth    1
+  SSLRequireSSL
+  SSLOptions        +StrictRequire
+  # XXX: security????
+  Options +ExecCGI
+  AddHandler cgi-script .cgi
+  DirectoryIndex {{ monitor_parameters.get('index-filename') }}
+</Directory>
+Alias /private/ {{ directory.get('private-directory') }}/
+<Directory {{ directory.get('private-directory') }}>
+Order Deny,Allow
+Deny from env=AUTHREQUIRED
+<Files ".??*">
+  Order Allow,Deny
+  Deny from all
+</Files>
+AuthType Basic
+AuthName "Private access"
+AuthUserFile "{{ monitor_parameters.get('htaccess-file') }}"
+Require valid-user
+Options Indexes FollowSymLinks
+Satisfy all
+</Directory>
+
+<Location /rewrite>
+AuthType Basic
+AuthName "Private access"
+AuthUserFile "{{ monitor_parameters.get('htaccess-file') }}"
+Require valid-user
+</Location>
+
+ProxyVia On
+RewriteEngine On
+{% for key, value in monitor_rewrite_rule.iteritems() %}
+RewriteRule ^/rewrite/{{ key }}($|/.*) {{ value }}/$1 [P,L]
+{% endfor %}
