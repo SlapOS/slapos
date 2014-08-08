@@ -97,14 +97,6 @@ BrowserMatch "^Dreamweaver-WebDAV-SCM1" redirect-carefully
    IPReadLimit {{ slapparameter_dict.get('ip-read-limit', '10') }}
 </IfModule>
 
-# Cache directives
-CacheEnable mem /
-CacheDefaultExpire 3600
-MCacheSize 8192
-MCacheMaxObjectCount 1000
-MCacheMaxObjectSize 8192
-MCacheRemovalAlgorithm LRU
-
 # Deflate
 AddOutputFilterByType DEFLATE text/html text/plain text/xml text/css text/javascript application/x-javascript application/javascript
 BrowserMatch ^Mozilla/4 gzip-only-text/html
@@ -114,6 +106,9 @@ BrowserMatch \bMSIE !no-gzip !gzip-only-text/html
 # SSL Configuration
 SSLCertificateFile {{ login_certificate }}
 SSLCertificateKeyFile {{ login_key }}
+{% if slapparameter_dict.get('apache-ca-certificate') %}
+SSLCACertificateFile {{ login_ca_crt }}
+{% endif %}
 SSLRandomSeed startup builtin
 SSLRandomSeed connect builtin
 SSLSessionCache shmcb:/{{ httpd_mod_ssl_cache_directory }}/ssl_scache(512000)

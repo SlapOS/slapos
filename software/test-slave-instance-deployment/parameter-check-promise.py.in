@@ -1,0 +1,29 @@
+#!${buildout:executable}
+import sys
+import os
+import json
+
+json_file = '$${dump-connection-informations:json-output}'
+connection_parameter_list = json.loads(open(json_file, 'r').read())
+# XXX list all problems before exit
+# XXX: factor in a clean dict loop
+test_instance_guid = connection_parameter_list['test-instance-guid']
+if not test_instance_guid == 'slappart1':
+  print 'Bad test-instance-guid connection parameter: %s' % test_instance_guid
+  sys.exit(1)
+test_instance_state = connection_parameter_list['test-instance-state']
+if not test_instance_state == 'started':
+  print 'Bad test-instance-state connection parameter: %s instead of started' % test_instance_state
+  sys.exit(1)
+test_instance_slave_instance_list = connection_parameter_list['test-instance-slave-instance-list']
+if test_instance_slave_instance_list == []:
+  print 'test-instance-slave-instance-list connection parameter is empty.'
+  sys.exit(1)
+root_instance_slave_instance_list = connection_parameter_list['root-instance-slave-instance-list']
+if root_instance_slave_instance_list != []:
+  print 'root-instance-slave-instance-list connection parameter is not empty.'
+  sys.exit(1)
+slave_instance_parameter = connection_parameter_list['slave-instance-parameter']
+if slave_instance_parameter != 'I am slave instance, and I am deployed!':
+  print 'parameter slave-instance-parameter is not correct.'
+  sys.exit(1)

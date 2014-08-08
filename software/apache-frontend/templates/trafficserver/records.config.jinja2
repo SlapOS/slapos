@@ -228,8 +228,8 @@ CONFIG proxy.config.http.cache.http INT 1
    # Enabling this setting allows the proxy to cache empty documents. This currently
    # requires that the response has a Content-Length: header, with a value of "0".
 CONFIG proxy.config.http.cache.allow_empty_doc INT 0
-CONFIG proxy.config.http.cache.ignore_client_no_cache INT 1
-CONFIG proxy.config.http.cache.ims_on_client_no_cache INT 1
+CONFIG proxy.config.http.cache.ignore_client_no_cache INT 0
+CONFIG proxy.config.http.cache.ims_on_client_no_cache INT 0
 CONFIG proxy.config.http.cache.ignore_server_no_cache INT 0
 CONFIG proxy.config.http.cache.ignore_client_cc_max_age INT 0
 CONFIG proxy.config.http.normalize_ae_gzip INT 0
@@ -331,8 +331,7 @@ CONFIG proxy.config.cache.permit.pinning INT 0
    # default the ram cache size to AUTO_SIZE (-1) based on cache size
    #   (approximately 10 MB of RAM cache per GB of disk cache)
    # alternatively, set to a fixed value such as 21474836480 (20GB)
-CONFIG proxy.config.cache.ram_cache.size INT 1G
-CONFIG proxy.config.cache.ram_cache_cutoff INT 4194304
+CONFIG proxy.config.cache.ram_cache.size INT {{ slapparameter_dict.get('ram-cache-size', '1G') }}
    # Replacement algorithm
    #  0 : Clocked Least Frequently Used by Size (CLFUS) w/optional compression
    #  1 : LRU w/o optional compression - trivially simple
@@ -366,9 +365,6 @@ CONFIG proxy.config.cache.target_fragment_size INT 1048576
 CONFIG proxy.config.cache.max_doc_size INT 0
    # enable the cache to read from an object while it is being added to the cache
 CONFIG proxy.config.cache.enable_read_while_writer INT 0
-   # This controls how many objects (average) the disk caches can hold, and
-   # how much memory it'll consume for the directory structure.
-CONFIG proxy.config.cache.min_average_object_size INT 8000
    # How many I/O threads to allocate per disk (spindle). Be aware that RAID
    # disks would show up to TS as a single spindle.
 CONFIG proxy.config.cache.threads_per_disk INT 8
