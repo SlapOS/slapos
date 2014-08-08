@@ -25,6 +25,7 @@ These parameters are :
   * "-frontend-type" : the type to deploy frontends with. (default to 2)
   * "-frontend-quantity" : The quantity of frontends to request (default to "default")
   * "-frontend-i-state": The state of frontend i
+  * "-frontend-config-i-foo": Frontend i will be requested with parameter foo
   * "-frontend-software-release-url": Software release to be used for frontends, default to the current software release
   * "-sla-i-foo" : where "i" is the number of the concerned frontend (between 1 and "-frontend-quantity") and "foo" a sla parameter.
 ex:
@@ -37,6 +38,12 @@ will request the third frontend on COMP-1234. All frontends will be of software 
 
 Note: the way slaves are transformed to a parameter avoid modifying more than 3 lines in the frontend logic.
 Important NOTE: The way you ask for slave to a replicate frontend is the same as the one you would use for the software given in "-frontend-quantity". Do not forget to use "replicate" for software type. XXXXX So far it is not possible to do a simple request on a replicate frontend if you do not know the software_guid or other sla-parameter of the master instance. In fact we do not know yet the software type of the "requested" frontends. TO BE IMPLEMENTED
+
+XXX Should be moved to specific JSON File
+Extra-parameter per frontend with default :
+ram-cache-size = 1G
+disk-cache-size = 8G
+
 
 How to deploy a frontend server
 ===============================
