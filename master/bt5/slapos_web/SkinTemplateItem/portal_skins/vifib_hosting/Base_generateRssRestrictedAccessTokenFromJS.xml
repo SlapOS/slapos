@@ -58,7 +58,7 @@ portal = context.getPortalObject()\n
 person = portal.ERP5Site_getAuthenticatedMemberPersonValue()\n
 \n
 web_site = context.getWebSiteValue()\n
-request_url = "%s/%s" % (web_site.absolute_url(), "my_rss_feed")\n
+request_url = "%s/%s" % (web_site.absolute_url(), "feed")\n
 \n
 # XXX - Cannot search in catalog with parameter url_string\n
 access_token = None\n
@@ -82,7 +82,7 @@ if access_token is None:\n
 \n
 url = "%s/%s?portal_skin=RSS&access_token=%s&access_token_secret=%s" % (\n
         web_site.absolute_url(),\n
-        "my_rss_feed",\n
+        "feed",\n
         access_token.getId(),\n
         access_token.getReference())\n
 \n
