@@ -114,6 +114,9 @@ BrowserMatch \bMSIE !no-gzip !gzip-only-text/html
 # SSL Configuration
 SSLCertificateFile {{ login_certificate }}
 SSLCertificateKeyFile {{ login_key }}
+{% if slapparameter_dict.get('apache-ca-certificate') %}
+SSLCACertificateFile {{ login_ca_crt }}
+{% endif %}
 SSLRandomSeed startup builtin
 SSLRandomSeed connect builtin
 SSLSessionCache shmcb:/{{ httpd_mod_ssl_cache_directory }}/ssl_scache(512000)

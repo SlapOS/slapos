@@ -23,6 +23,7 @@ context =
 {% set slave_list_name = 'extra_slave_instance_list' -%}
 {% set frontend_list = [] %}
 {% set frontend_section_list = [] %}
+{% set request_dict = {} %}
 {% set namebase = 'apache-frontend' -%}
 # XXX Dirty hack, not possible to define default value before
 {% set sla_computer_apache_1_key = '-sla-1-computer_guid' -%}
@@ -37,13 +38,13 @@ context =
 {%   set request_section_title = 'request-%s' % frontend_name -%}
 {%   set sla_key = "-sla-%s-" % i -%}
 {%   set sla_key_length = sla_key | length %}
-{%   set sla_parameters = [] %}
+{%   set sla_dict = {} %}
 {%   set config_key = "-frontend-config-%s-" % i %}
 {%   set config_key_length = config_key | length %}
 {%   set config_dict = {} %}
 {%   for key in slapparameter_dict.keys() %}
 {%     if key.startswith(sla_key) %}
-{%       do sla_parameters.append(key[sla_key_length:]) %}
+{%       do sla_dict.__setitem__(key[sla_key_length:], slapparameter_dict.pop(key)) %}
 # We check for specific configuration regarding the frontend
 {%     elif key.startswith(config_key) -%}
 {%       do config_dict.__setitem__(key[config_key_length:], slapparameter_dict.pop(key)) %}
@@ -52,23 +53,15 @@ context =
 {%   do frontend_list.append(frontend_name) -%}
 {%   do frontend_section_list.append(request_section_title) -%}
 {%   do part_list.append(request_section_title) -%}
-[{{request_section_title}}]
-<= replicate
-name = {{frontend_name}}
+# Filling request dict for slave
 {%   set state_key = "-frontend-%s-state" % i %}
-{%   if slapparameter_dict.has_key(state_key) %}
-state = {{ slapparameter_dict.pop(state_key) }}
-{%   endif%}
-extra-config = {{ ' '.join(config_dict.keys()) }}
-{%   for key, value in config_dict.iteritems() -%}
-config-{{ key }} = {{ value }}
-{%   endfor -%}
-{%   if sla_parameters %}
-sla = {{ ' '.join(sla_parameters) }}
-{%     for parameter in sla_parameters -%}
-sla-{{ parameter }} = {{ slapparameter_dict.pop( sla_key + parameter ) }}
-{%     endfor -%}
-{%   endif -%}
+{%   do request_dict.__setitem__(request_section_title,
+                                  {
+                                  'config': config_dict,
+                                  'name': frontend_name,
+                                  'sla': sla_dict,
+                                  'state': slapparameter_dict.pop(state_key, None)
+                                  }) %}
 {% endfor -%}
 
 {% set authorized_slave_string = slapparameter_dict.pop('-frontend-authorized-slave-string', '') -%}
@@ -93,12 +86,28 @@ software-url = ${slap-connection:software-release-url}
 {% endif %}
 software-type = {{frontend_type}}
 return = private-ipv4 public-ipv4 slave-instance-information-list monitor_url
-config = {{ ' '.join(slapparameter_dict.keys()) + ' ${:extra-config} ' + slave_list_name }}
-{% for parameter, value in slapparameter_dict.iteritems() -%}
-config-{{parameter}} = {{ value }}
-{% endfor -%}
-config-{{ slave_list_name }} = {{ json_module.dumps(authorized_slave_list) }}
+config = _
 connection-monitor_url =
+
+{% for section, frontend_request in request_dict.iteritems() %}
+[{{section}}]
+<= replicate
+name = {{ frontend_request.get('name') }}
+{%   if frontend_request.get('state') %}
+state = {{ frontend_request.get('state') }}
+{%   endif%}
+{%   set slave_configuration_dict = frontend_request.get('config') %}
+{%   do slave_configuration_dict.update(**slapparameter_dict) %}
+{%   do slave_configuration_dict.__setitem__(slave_list_name, json_module.dumps(authorized_slave_list)) %}
+config-_ = {{ json_module.dumps(slave_configuration_dict) }}
+{%   if frontend_request.get('sla') %}
+sla = {{ ' '.join(frontend_request.get('sla').keys()) }}
+{%     for parameter, value in frontend_request.get('sla').iteritems() -%}
+sla-{{ parameter }} = {{ value }}
+{%     endfor -%}
+{%   endif -%}
+{% endfor -%}
+
 
 [publish-information]
 recipe = slapos.cookbook:publish
