@@ -831,6 +831,7 @@ zpt_generic
 """
 custom
 slapos_upgrader
+slapos_rss
 slapos_contract
 slapos_crm_monitoring
 slapos_accounting
