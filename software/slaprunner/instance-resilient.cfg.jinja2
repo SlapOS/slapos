@@ -6,7 +6,7 @@
 {% do slapparameter_dict.__setitem__('auto-deploy', slapparameter_dict.get('auto-deploy', 'true')) %}
 {% do slapparameter_dict.__setitem__('auto-deploy-instance', slapparameter_dict.get('auto-deploy-instance', 'false')) %}
 # let decide the number of clones we want. We can't have more than 2 clones
-{% set number_of_instances = slapparameter_dict.get('resilient-clone-number', 2)|int %}
+{% set number_of_instances = slapparameter_dict.get('resilient-clone-number', 1)|int %}
 {% if number_of_instances > 2 %}
   {% set number_of_instances = 2 %}
 {% endif %}
@@ -55,4 +55,4 @@ domain =
 authorized-key =
 instance-amount = 10
 debug = false
-resilient-clone-number = 2
+resilient-clone-number = 1
