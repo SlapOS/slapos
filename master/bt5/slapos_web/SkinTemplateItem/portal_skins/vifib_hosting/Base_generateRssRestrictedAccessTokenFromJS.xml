@@ -57,6 +57,9 @@ import json\n
 portal = context.getPortalObject()\n
 person = portal.ERP5Site_getAuthenticatedMemberPersonValue()\n
 \n
+if person is None:\n
+  raise ValueError("User Not Found")\n
+\n
 web_site = context.getWebSiteValue()\n
 request_url = "%s/%s" % (web_site.absolute_url(), "feed")\n
 \n
@@ -69,22 +72,24 @@ for token_item in portal.portal_catalog(\n
   ):\n
   if token_item.getUrlString() == request_url:\n
     access_token = token_item\n
+    reference = access_token.getReference()\n
     break;\n
 \n
 if access_token is None:\n
   access_token = portal.access_token_module.newContent(\n
     portal_type="Restricted Access Token",\n
-    agent_value=person,\n
     url_string=request_url,\n
     url_method="GET",\n
   )\n
+  access_token.setAgentValue(person)\n
+  reference = access_token.getReference()  \n
   access_token.validate()\n
 \n
 url = "%s/%s?portal_skin=RSS&access_token=%s&access_token_secret=%s" % (\n
         web_site.absolute_url(),\n
         "feed",\n
         access_token.getId(),\n
-        access_token.getReference())\n
+        reference)\n
 \n
 request = context.REQUEST\n
 response = request.RESPONSE\n
