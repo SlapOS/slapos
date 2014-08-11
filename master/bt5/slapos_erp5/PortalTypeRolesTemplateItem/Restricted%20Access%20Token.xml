@@ -1,4 +1,9 @@
 <type_roles>
+  <role id='Auditor'>
+   <property id='title'>Agent as auditor</property>
+   <property id='base_category_script'>ERP5Type_getSecurityCategoryFromContent</property>
+   <multi_property id='base_category'>agent</multi_property>
+  </role>
   <role id='Assignor'>
    <property id='title'>Group company</property>
    <multi_property id='category'>group/company</multi_property>
