@@ -34,6 +34,7 @@ import shutil
 import tempfile
 import unittest
 import xml_marshaller
+from xml_marshaller.xml_marshaller import loads, dumps
 
 import slapos.proxy
 import slapos.proxy.views as views
@@ -104,13 +105,15 @@ database_uri = %(tempdir)s/lib/proxy.db
     self.app_config = views.app.config
     self.app = views.app.test_client()
 
-  def add_free_partition(self, partition_amount):
+  def add_free_partition(self, partition_amount, computer_id=None):
     """
     Will simulate a slapformat first run
     and create "partition_amount" partitions
     """
+    if not computer_id:
+      computer_id = self.computer_id
     computer_dict = {
-        'reference': self.computer_id,
+        'reference': computer_id,
         'address': '123.456.789',
         'netmask': 'fffffffff',
         'partition_list': [],
@@ -243,18 +246,16 @@ class TestInformation(BasicMixin, unittest.TestCase):
     )
 
 
-class MasterMixin(BasicMixin):
+class MasterMixin(BasicMixin, unittest.TestCase):
   """
   Define advanced tool for test proxy simulating behavior slap library tools
   """
-
-  def request(self, software_release, software_type, partition_reference,
+  def _requestComputerPartition(self, software_release, software_type, partition_reference,
               partition_id,
               shared=False, partition_parameter_kw=None, filter_kw=None,
               state=None):
     """
-    Simulate a request with above parameters
-    Return response by server (a computer partition or an error)
+    Check parameters, call requestComputerPartition server method and return result
     """
     if partition_parameter_kw is None:
       partition_parameter_kw = {}
@@ -276,13 +277,17 @@ class MasterMixin(BasicMixin):
         'filter_xml': xml_marshaller.xml_marshaller.dumps(filter_kw),
         'state': xml_marshaller.xml_marshaller.dumps(state),
     }
-    rv = self.app.post('/requestComputerPartition',
-                       data=request_dict)
+    return self.app.post('/requestComputerPartition', data=request_dict)
+	
+  def request(self, *args, **kwargs):
+    """
+    Simulate a request with above parameters
+    Return response by server (a computer partition or an error)
+    """
+    rv = self._requestComputerPartition(*args, **kwargs)
+    self.assertEqual(rv._status_code, 200)
     xml = rv.data
-    try:
-      software_instance = xml_marshaller.xml_marshaller.loads(xml)
-    except:
-      raise WrongFormat("Could not be parsed by xml_marshaller")
+    software_instance = xml_marshaller.xml_marshaller.loads(xml)
 
     computer_partition = slapos.slap.ComputerPartition(
         software_instance.slap_computer_id,
@@ -290,6 +295,14 @@ class MasterMixin(BasicMixin):
     
     computer_partition.__dict__.update(software_instance.__dict__)
     return computer_partition
+
+  def supply(self, url, computer_id=None, state=''):
+    if not computer_id:
+      computer_id = self.computer_id
+    request_dict = {'url':url, 'computer_id': computer_id, 'state':state}
+    rv = self.app.post('/supplySupply',
+                       data=request_dict)
+    # XXX return a Software Release
 
   def setConnectionDict(self, partition_id,
                         connection_dict, slave_reference=None):
@@ -310,7 +323,7 @@ class MasterMixin(BasicMixin):
         return instance
 
 
-class TestRequest(MasterMixin, unittest.TestCase):
+class TestRequest(MasterMixin):
   """
   Set of tests for requests
   """
@@ -320,9 +333,9 @@ class TestRequest(MasterMixin, unittest.TestCase):
     Check that all different parameters related to requests (like instance_guid, state) are set and consistent
     """
     self.add_free_partition(1)
-    partition = self.request('http://sr//', None, 'Maria', 'slappart0')
+    partition = self.request('http://sr//', None, 'MyFirstInstance', 'slappart0')
     self.assertEqual(partition.getState(), 'started')
-    self.assertEqual(partition.getInstanceGuid(), 'slappart0') # XXX define me
+    self.assertEqual(partition.getInstanceGuid(), 'computer-slappart0')
 
   def test_two_request_one_partition_free(self):
     """
@@ -331,10 +344,10 @@ class TestRequest(MasterMixin, unittest.TestCase):
     """
     self.add_free_partition(1)
     self.assertIsInstance(self.request('http://sr//', None,
-                                       'Maria', 'slappart2'),
+                                       'MyFirstInstance', 'slappart2'),
                           slapos.slap.ComputerPartition)
     self.assertIsInstance(self.request('http://sr//', None,
-                                       'Maria', 'slappart3'),
+                                       'MyFirstInstance', 'slappart3'),
                           slapos.slap.ComputerPartition)
 
   def test_two_request_two_partition_free(self):
@@ -344,10 +357,10 @@ class TestRequest(MasterMixin, unittest.TestCase):
     """
     self.add_free_partition(2)
     self.assertIsInstance(self.request('http://sr//', None,
-                                       'Maria', 'slappart2'),
+                                       'MyFirstInstance', 'slappart2'),
                           slapos.slap.ComputerPartition)
     self.assertIsInstance(self.request('http://sr//', None,
-                                       'Maria', 'slappart3'),
+                                       'MyFirstInstance', 'slappart3'),
                           slapos.slap.ComputerPartition)
 
   def test_two_same_request_from_one_partition(self):
@@ -356,8 +369,8 @@ class TestRequest(MasterMixin, unittest.TestCase):
     """
     self.add_free_partition(2)
     self.assertEqual(
-        self.request('http://sr//', None, 'Maria', 'slappart2').__dict__,
-        self.request('http://sr//', None, 'Maria', 'slappart2').__dict__)
+        self.request('http://sr//', None, 'MyFirstInstance', 'slappart2').__dict__,
+        self.request('http://sr//', None, 'MyFirstInstance', 'slappart2').__dict__)
 
   def test_two_requests_with_different_parameters_but_same_reference(self):
     """
@@ -368,12 +381,12 @@ class TestRequest(MasterMixin, unittest.TestCase):
     wanted_domain1 = 'fou.org'
     wanted_domain2 = 'carzy.org'
 
-    request1 = self.request('http://sr//', None, 'Maria', 'slappart2',
+    request1 = self.request('http://sr//', None, 'MyFirstInstance', 'slappart2',
                             partition_parameter_kw={'domain': wanted_domain1})
     request1_dict = request1.__dict__
     requested_result1 = self.getPartitionInformation(
         request1_dict['_partition_id'])
-    request2 = self.request('http://sr1//', 'Papa', 'Maria', 'slappart2',
+    request2 = self.request('http://sr1//', 'Papa', 'MyFirstInstance', 'slappart2',
                             partition_parameter_kw={'domain': wanted_domain2})
     request2_dict = request2.__dict__
     requested_result2 = self.getPartitionInformation(
@@ -403,8 +416,8 @@ class TestRequest(MasterMixin, unittest.TestCase):
     """
     self.add_free_partition(2)
     self.assertEqual(
-        self.request('http://sr//', None, 'Maria', 'slappart2').__dict__,
-        self.request('http://sr//', None, 'Maria', 'slappart3').__dict__)
+        self.request('http://sr//', None, 'MyFirstInstance', 'slappart2').__dict__,
+        self.request('http://sr//', None, 'MyFirstInstance', 'slappart3').__dict__)
 
   def test_two_different_request_from_one_partition(self):
     """
@@ -413,11 +426,11 @@ class TestRequest(MasterMixin, unittest.TestCase):
     """
     self.add_free_partition(2)
     self.assertNotEqual(
-        self.request('http://sr//', None, 'Maria', 'slappart2').__dict__,
+        self.request('http://sr//', None, 'MyFirstInstance', 'slappart2').__dict__,
         self.request('http://sr//', None, 'frontend', 'slappart2').__dict__)
 
 
-class TestSlaveRequest(TestRequest):
+class TestSlaveRequest(MasterMixin):
   """
   Test requests related to slave instances.
   """
@@ -426,8 +439,8 @@ class TestSlaveRequest(TestRequest):
     Slave instance request will fail if no corresponding are found
     """
     self.add_free_partition(2)
-    with self.assertRaises(WrongFormat):
-      self.request('http://sr//', None, 'Maria', 'slappart2', shared=True)
+    rv = self._requestComputerPartition('http://sr//', None, 'MyFirstInstance', 'slappart2', shared=True)
+    self.assertEqual(rv._status_code, 404)
 
   def test_slave_request_set_parameters(self):
     """
@@ -440,10 +453,10 @@ class TestSlaveRequest(TestRequest):
     self.add_free_partition(6)
     # Provide partition
     master_partition_id = self.request('http://sr//', None,
-                                       'Maria', 'slappart4')._partition_id
+                                       'MyFirstInstance', 'slappart4')._partition_id
     # First request of slave instance
     wanted_domain = 'fou.org'
-    self.request('http://sr//', None, 'Maria', 'slappart2', shared=True,
+    self.request('http://sr//', None, 'MyFirstInstance', 'slappart2', shared=True,
                  partition_parameter_kw={'domain': wanted_domain})
     # Get updated information for master partition
     master_partition = self.getPartitionInformation(master_partition_id)
@@ -476,10 +489,10 @@ class TestSlaveRequest(TestRequest):
     self.add_free_partition(6)
     # Provide partition
     master_partition_id = self.request('http://sr//', None,
-                                       'Maria', 'slappart4')._partition_id
+                                       'MyFirstInstance', 'slappart4')._partition_id
     # First request of slave instance
     wanted_domain_1 = 'crazy.org'
-    self.request('http://sr//', None, 'Maria', 'slappart2', shared=True,
+    self.request('http://sr//', None, 'MyFirstInstance', 'slappart2', shared=True,
                  partition_parameter_kw={'domain': wanted_domain_1})
     # Get updated information for master partition
     master_partition = self.getPartitionInformation(master_partition_id)
@@ -488,7 +501,7 @@ class TestSlaveRequest(TestRequest):
 
     # Second request of slave instance
     wanted_domain_2 = 'maluco.org'
-    self.request('http://sr//', None, 'Maria', 'slappart2', shared=True,
+    self.request('http://sr//', None, 'MyFirstInstance', 'slappart2', shared=True,
                  partition_parameter_kw={'domain': wanted_domain_2})
     # Get updated information for master partition
     master_partition = self.getPartitionInformation(master_partition_id)
@@ -511,6 +524,7 @@ class TestSlaveRequest(TestRequest):
     self.request('http://sr//', None, 'MySlaveInstance', 'slappart2', shared=True)
     # Set connection parameter
     master_partition = self.getPartitionInformation(master_partition_id)
+    # XXX change slave reference to be compatible with multiple nodes
     self.setConnectionDict(partition_id=master_partition._partition_id,
                            connection_dict={'foo': 'bar'},
                            slave_reference=master_partition._parameter_dict['slave_instance_list'][0]['slave_reference'])
@@ -533,9 +547,9 @@ class TestSlaveRequest(TestRequest):
     self.add_free_partition(6)
     # Provide partition
     master_partition_id = self.request('http://sr//', None,
-                                       'Maria', 'slappart4')._partition_id
+                                       'MyFirstInstance', 'slappart4')._partition_id
     # First request of slave instance
-    name = 'Maria'
+    name = 'MyFirstInstance'
     requester = 'slappart2'
     our_slave = self.request('http://sr//', None,
                              name, requester, shared=True)
@@ -554,4 +568,276 @@ class TestSlaveRequest(TestRequest):
                              name, requester, shared=True)
     self.assertIsInstance(our_slave, slapos.slap.ComputerPartition)
     self.assertEqual(slave_address, our_slave._connection_dict)
+
+class TestMultiNodeSupport(MasterMixin):
+  def test_multi_node_support_different_software_release_list(self):
+    """
+    Test that two different registered computers have their own
+    Software Release list.
+    """
+    self.add_free_partition(6, computer_id='COMP-0')
+    self.add_free_partition(6, computer_id='COMP-1')
+    software_release_1_url = 'http://sr1'
+    software_release_2_url = 'http://sr2'
+    software_release_3_url = 'http://sr3'
+    self.supply(software_release_1_url, 'COMP-0')
+    self.supply(software_release_2_url, 'COMP-1')
+    self.supply(software_release_3_url, 'COMP-0')
+    self.supply(software_release_3_url, 'COMP-1')
+    
+    computer_default = loads(self.app.get('/getFullComputerInformation?computer_id=%s' % self.computer_id).data)
+    computer_0 = loads(self.app.get('/getFullComputerInformation?computer_id=COMP-0').data)
+    computer_1 = loads(self.app.get('/getFullComputerInformation?computer_id=COMP-1').data) 
+    self.assertEqual(len(computer_default._software_release_list), 0)
+    self.assertEqual(len(computer_0._software_release_list), 2)
+    self.assertEqual(len(computer_1._software_release_list), 2)
+
+    self.assertEqual(
+        computer_0._software_release_list[0]._software_release,
+        software_release_1_url
+    )
+    self.assertEqual(
+        computer_0._software_release_list[0]._computer_guid,
+        'COMP-0'
+    )
+
+    self.assertEqual(
+        computer_0._software_release_list[1]._software_release,
+        software_release_3_url
+    )
+    self.assertEqual(
+        computer_0._software_release_list[1]._computer_guid,
+        'COMP-0'
+    )
+
+    self.assertEqual(
+        computer_1._software_release_list[0]._software_release,
+        software_release_2_url
+    )
+    self.assertEqual(
+        computer_1._software_release_list[0]._computer_guid,
+        'COMP-1'
+    )
+
+    self.assertEqual(
+        computer_1._software_release_list[1]._software_release,
+        software_release_3_url
+    )
+    self.assertEqual(
+        computer_1._software_release_list[1]._computer_guid,
+        'COMP-1'
+    )
+
+  def test_multi_node_support_remove_software_release(self):
+    """
+    Test that removing a software from a Computer doesn't
+    affect other computer
+    """
+    software_release_url = 'http://sr'
+    self.add_free_partition(6, computer_id='COMP-0')
+    self.add_free_partition(6, computer_id='COMP-1')
+    self.supply(software_release_url, 'COMP-0')
+    self.supply(software_release_url, 'COMP-1')
+    self.supply(software_release_url, 'COMP-0', state='destroyed')
+    computer_0 = loads(self.app.get('/getFullComputerInformation?computer_id=COMP-0').data)
+    computer_1 = loads(self.app.get('/getFullComputerInformation?computer_id=COMP-1').data)
+
+    self.assertEqual(len(computer_0._software_release_list), 0)
+    self.assertEqual(len(computer_1._software_release_list), 1)
+
+    self.assertEqual(
+        computer_1._software_release_list[0]._software_release,
+        software_release_url
+    )
+    self.assertEqual(
+        computer_1._software_release_list[0]._computer_guid,
+        'COMP-1'
+    )
+
+  def test_multi_node_support_instance_default_computer(self):
+    """
+    Test that instance request behaves correctly with default computer
+    """
+    software_release_url = 'http://sr'
+    computer_0_id = 'COMP-0'
+    computer_1_id = 'COMP-1'
+    self.add_free_partition(6, computer_id=computer_0_id)
+    self.add_free_partition(6, computer_id=computer_1_id)
+
+    # Request without SLA -> goes to default computer only.
+    # It should fail if we didn't registered partitions for default computer
+    # (default computer is always registered)
+    rv = self._requestComputerPartition('http://sr//', None, 'MyFirstInstance', 'slappart2')
+    self.assertEqual(rv._status_code, 404)
+
+    rv = self._requestComputerPartition('http://sr//', None, 'MyFirstInstance', 'slappart2',
+                                        filter_kw={'computer_guid':self.computer_id})
+    self.assertEqual(rv._status_code, 404)
+
+    # Register default computer: deployment works
+    self.add_free_partition(1)
+    self.request('http://sr//', None, 'MyFirstInstance', 'slappart0')
+    computer_default = loads(self.app.get(
+        '/getFullComputerInformation?computer_id=%s' % self.computer_id).data)
+    self.assertEqual(len(computer_default._software_release_list), 0)
+
+    # No free space on default computer: request without SLA fails
+    rv = self._requestComputerPartition('http://sr//', None, 'CanIHasPartition', 'slappart2',
+                                        filter_kw={'computer_guid':self.computer_id})
+    self.assertEqual(rv._status_code, 404)
+
+  def test_multi_node_support_instance(self):
+    """
+    Test that instance request behaves correctly with several
+    registered computers
+    """
+    software_release_url = 'http://sr'
+    computer_0_id = 'COMP-0'
+    computer_1_id = 'COMP-1'
+    software_release_1 = 'http://sr//'
+    software_release_2 = 'http://othersr//'
+
+    self.add_free_partition(2, computer_id=computer_1_id)
+
+    # Deploy to first non-default computer using SLA
+    # It should fail since computer is not registered
+    rv = self._requestComputerPartition(software_release_1, None, 'MyFirstInstance', 'slappart2', filter_kw={'computer_guid':computer_0_id})
+    self.assertEqual(rv._status_code, 404)
+
+    self.add_free_partition(2, computer_id=computer_0_id)
+
+    # Deploy to first non-default computer using SLA
+    partition = self.request(software_release_1, None, 'MyFirstInstance', 'slappart0', filter_kw={'computer_guid':computer_0_id})
+    self.assertEqual(partition.getState(), 'started')
+    self.assertEqual(partition._partition_id, 'slappart0')
+    self.assertEqual(partition._computer_id, computer_0_id)
+    # All other instances should be empty
+    computer_0 = loads(self.app.get('/getFullComputerInformation?computer_id=COMP-0').data)
+    computer_1 = loads(self.app.get('/getFullComputerInformation?computer_id=COMP-1').data)
+    self.assertEqual(computer_0._computer_partition_list[0]._software_release_document._software_release, software_release_1)
+    self.assertTrue(computer_0._computer_partition_list[1]._software_release_document == None)
+    self.assertTrue(computer_1._computer_partition_list[0]._software_release_document == None)
+    self.assertTrue(computer_1._computer_partition_list[1]._software_release_document == None)
+
+    # Deploy to second non-default computer using SLA
+    partition = self.request(software_release_2, None, 'MySecondInstance', 'slappart0', filter_kw={'computer_guid':computer_1_id})
+    self.assertEqual(partition.getState(), 'started')
+    self.assertEqual(partition._partition_id, 'slappart0')
+    self.assertEqual(partition._computer_id, computer_1_id)
+    # The two remaining instances should be free, and MyfirstInstance should still be there
+    computer_0 = loads(self.app.get('/getFullComputerInformation?computer_id=COMP-0').data)
+    computer_1 = loads(self.app.get('/getFullComputerInformation?computer_id=COMP-1').data)
+    self.assertEqual(computer_0._computer_partition_list[0]._software_release_document._software_release, software_release_1)
+    self.assertTrue(computer_0._computer_partition_list[1]._software_release_document == None)
+    self.assertEqual(computer_1._computer_partition_list[0]._software_release_document._software_release, software_release_2)
+    self.assertTrue(computer_1._computer_partition_list[1]._software_release_document == None)
+
+  def test_multi_node_support_change_instance_state(self):
+    """
+    Test that destroying an instance (i.e change state) from a Computer doesn't
+    affect other computer
+    """
+    software_release_url = 'http://sr'
+    computer_0_id = 'COMP-0'
+    computer_1_id = 'COMP-1'
+    self.add_free_partition(6, computer_id=computer_0_id)
+    self.add_free_partition(6, computer_id=computer_1_id)
+    partition_first = self.request('http://sr//', None, 'MyFirstInstance', 'slappart0', filter_kw={'computer_guid':computer_0_id})
+    partition_second = self.request('http://sr//', None, 'MySecondInstance', 'slappart0', filter_kw={'computer_guid':computer_1_id})
+
+    partition_first = self.request('http://sr//', None, 'MyFirstInstance', 'slappart0', filter_kw={'computer_guid':computer_0_id}, state='stopped')
+
+    computer_0 = loads(self.app.get('/getFullComputerInformation?computer_id=COMP-0').data)
+    computer_1 = loads(self.app.get('/getFullComputerInformation?computer_id=COMP-1').data)
+    self.assertEqual(computer_0._computer_partition_list[0].getState(), 'stopped')
+    self.assertEqual(computer_0._computer_partition_list[1].getState(), 'destroyed')
+    self.assertEqual(computer_1._computer_partition_list[0].getState(), 'started')
+    self.assertEqual(computer_1._computer_partition_list[1].getState(), 'destroyed')
+
+  def test_multi_node_support_same_reference(self):
+    """
+    Test that requesting an instance with same reference to two
+    different nodes behaves like master: once an instance is assigned to a node,
+    changing SLA will not change node.
+    """
+    software_release_url = 'http://sr'
+    computer_0_id = 'COMP-0'
+    computer_1_id = 'COMP-1'
+    self.add_free_partition(2, computer_id=computer_0_id)
+    self.add_free_partition(2, computer_id=computer_1_id)
+    partition = self.request('http://sr//', None, 'MyFirstInstance', 'slappart0', filter_kw={'computer_guid':computer_0_id})
+    partition = self.request('http://sr//', None, 'MyFirstInstance', 'slappart0', filter_kw={'computer_guid':computer_1_id})
+
+    self.assertEqual(partition._computer_id, computer_0_id)
+
+    computer_1 = loads(self.app.get('/getFullComputerInformation?computer_id=COMP-1').data)
+    self.assertTrue(computer_1._computer_partition_list[0]._software_release_document == None)
+    self.assertTrue(computer_1._computer_partition_list[1]._software_release_document == None)
+
+  def test_multi_node_support_slave_instance(self):
+    """
+    Test that slave instances are correctly deployed if SLA is specified
+    but deployed only on default computer if not specified (i.e not deployed
+    if default computer doesn't have corresponding master instance).
+    """
+    computer_0_id = 'COMP-0'
+    computer_1_id = 'COMP-1'
+    self.add_free_partition(2, computer_id=computer_0_id)
+    self.add_free_partition(2, computer_id=computer_1_id)
+    self.add_free_partition(2)
+    self.request('http://sr2//', None, 'MyFirstInstance', 'slappart0', filter_kw={'computer_guid':computer_0_id})
+    self.request('http://sr//', None, 'MyOtherInstance', 'slappart0', filter_kw={'computer_guid':computer_1_id})
+
+    # Request slave without SLA: will fail
+    rv = self._requestComputerPartition('http://sr//', None, 'MySlaveInstance', 'slappart2', shared=True)
+    self.assertEqual(rv._status_code, 404)
+
+    # Request slave with SLA on incorrect computer: will fail
+    rv = self._requestComputerPartition('http://sr//', None, 'MySlaveInstance', 'slappart2', shared=True, filter_kw={'computer_guid':computer_0_id})
+    self.assertEqual(rv._status_code, 404)
+
+    # Request computer on correct computer: will succeed
+    partition = self.request('http://sr//', None, 'MySlaveInstance', 'slappart2', shared=True, filter_kw={'computer_guid':computer_1_id})
+    self.assertEqual(partition._computer_id, computer_1_id)
+
+  def test_multi_node_support_instance_guid(self):
+    """
+    Test that instance_guid support behaves correctly with multiple nodes.
+    Warning: proxy doesn't gives unique id of instance, but gives instead unique id
+    of partition.
+    """
+    computer_0_id = 'COMP-0'
+    computer_1_id = 'COMP-1'
+    self.add_free_partition(2, computer_id=computer_0_id)
+    self.add_free_partition(2, computer_id=computer_1_id)
+    self.add_free_partition(2)
+    partition_computer_0 = self.request('http://sr2//', None, 'MyFirstInstance', 'slappart0', filter_kw={'computer_guid':computer_0_id})
+    partition_computer_1 = self.request('http://sr//', None, 'MyOtherInstance', 'slappart0', filter_kw={'computer_guid':computer_1_id})
+    partition_computer_default = self.request('http://sr//', None, 'MyThirdInstance', 'slappart0') 
+
+    self.assertEqual(partition_computer_0.getInstanceGuid(), 'COMP-0-slappart0')
+    self.assertEqual(partition_computer_1.getInstanceGuid(), 'COMP-1-slappart0')
+    self.assertEqual(partition_computer_default.getInstanceGuid(), 'computer-slappart0')
+
+  def test_multi_node_support_getComputerInformation(self):
+    """
+    Test that computer information will not be given if computer is not registered.
+    Test that it still should work for the 'default' computer specified in slapos config
+    even if not yet registered.
+    Test that computer information is given if computer is registered. 
+    """
+    new_computer_id = '%s42' % self.computer_id
+    with self.assertRaises(slapos.slap.NotFoundError):
+      self.app.get('/getComputerInformation?computer_id=%s42' % new_computer_id)
+
+    try:
+      self.app.get('/getComputerInformation?computer_id=%s' % self.computer_id)
+    except slapos.slap.NotFoundError:
+      self.fail('Could not fetch informations for default computer.')
+
+    self.add_free_partition(1, computer_id=new_computer_id)
+    try:
+      self.app.get('/getComputerInformation?computer_id=%s' % new_computer_id)
+    except slapos.slap.NotFoundError:
+      self.fail('Could not fetch informations for registered computer.')
 
