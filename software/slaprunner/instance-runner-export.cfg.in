@@ -26,6 +26,7 @@ parts +=
   cron-entry-backup
   cron-entry-prepare-software
   deploy-instance-parameters
+  minishell-cwd
 ## Monitoring part
 ###Parts to add for monitoring
   cron
@@ -46,6 +47,7 @@ parts +=
   monitor-instance-log-access
 ## Monitor for runner
   monitor-current-log-access
+  monitor-check-resilient-feed-file
 
 
 [exporter]
