@@ -1,0 +1,62 @@
+<html>
+  <head>
+    <meta charset="utf-8">
+     <style>
+
+div {
+  float: left;
+  margin: 5px;
+}
+
+    </style>
+
+  </head>
+  <body>
+    
+    <div> <b> LOADAVG </b> <div class="chart"id="loadavg"> </div></div>
+    <div> <b> CPU PERCENT </b> <div class="chart"id="cpu_percent"> </div></div>
+    <div> <b> MEMORY USED </b> <div class="chart"id="memory_used"> </div></div>
+    <div> <b> MEMORY FREE </b> <div class="chart"id="memory_free"> </div></div>
+    <div> <b> NET IN BYTES </b> <div class="chart"id="net_in_bytes"> </div></div>
+    <div> <b> NET IN ERROR </b> <div class="chart"id="net_in_errors"> </div></div>
+    <div> <b> NET IN DROPPED </b> <div class="chart"id="net_in_dropped"> </div></div>
+    <div> <b> NET OUT BYTES </b> <div class="chart"id="net_out_bytes"> </div></div>
+    <div> <b> NET OUT ERRORS </b> <div class="chart"id="net_out_errors"> </div></div>
+    <div> <b> NET OUT DROPPED </b> <div class="chart"id="net_out_dropped"> </div></div>
+    
+    <script type="text/javascript" src="dygraph-combined.js"></script>
+    <script>
+    new Dygraph(
+        document.getElementById("loadavg"), "system_loadavg.csv");
+    
+    new Dygraph(
+        document.getElementById("cpu_percent"), "system_cpu_percent.csv");
+    
+    new Dygraph(
+        document.getElementById("memory_used"), "system_memory_used.csv");
+    
+    new Dygraph(
+        document.getElementById("memory_free"), "system_memory_free.csv");
+    
+    new Dygraph(
+        document.getElementById("net_in_bytes"), "system_net_in_bytes.csv");
+    
+    new Dygraph(
+        document.getElementById("net_in_errors"), "system_net_in_errors.csv");
+    
+    new Dygraph(
+        document.getElementById("net_in_dropped"), "system_net_in_dropped.csv");
+    
+    new Dygraph(
+        document.getElementById("net_out_bytes"), "system_net_out_bytes.csv");
+    
+    new Dygraph(
+        document.getElementById("net_out_errors"), "system_net_out_errors.csv");
+    
+    new Dygraph(
+        document.getElementById("net_out_dropped"), "system_net_out_dropped.csv");
+    
+    </script>
+
+  </body>
+</html>
