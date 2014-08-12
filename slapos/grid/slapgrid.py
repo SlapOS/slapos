@@ -37,6 +37,7 @@ import subprocess
 import sys
 import tempfile
 import time
+import stat
 import traceback
 import warnings
 import logging
@@ -352,8 +353,17 @@ class Slapgrid(object):
       raise OSError('%s does not exist.' % self.instance_root)
     # Creates everything needed
 
+    # Create directory accessible for the instances.
+    var_directory = os.path.join(self.instance_root, 'var')
+    if not os.path.isdir(var_directory):
+      os.mkdir(var_directory)
+
+    os.chmod(var_directory, stat.S_IRWXU | stat.S_IROTH | stat.S_IXOTH | \
+                            stat.S_IRGRP | stat.S_IXGRP )
+
+    mkdir_p(os.path.join(self.instance_root, 'var'), 0o755)
+
     # Creates instance_root structure
-    createPrivateDirectory(os.path.join(self.instance_root, 'var'))
     createPrivateDirectory(os.path.join(self.instance_root, 'var', 'log'))
     createPrivateDirectory(os.path.join(self.instance_root, 'var', 'run'))
 
