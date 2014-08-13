@@ -1,0 +1,3 @@
+#!{{ extra_eggs_interpreter }}
+
+print "OK"
