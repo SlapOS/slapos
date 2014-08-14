@@ -1394,6 +1394,37 @@ class TestSlapOSPDMSkins(testSlapOSMixin):
       "?portal_status_message=Upgrade%20Decision%20is%20already%20Rejected%21"),
       "%s contains the wrong message" %  redirect_url)
 
+  def testUpgradeDecision_isUpgradeFinished_computer(self):
+    computer = self._makeComputer(self.new_id)
+    software_release = self._makeSoftwareRelease(self.new_id)
+    upgrade_decision = self._makeUpgradeDecision()
+    upgrade_decision_line = self._makeUpgradeDecisionLine(upgrade_decision)
+    upgrade_decision_line.setAggregateValueList([software_release, computer])
+
+    upgrade_decision.confirm()
+    upgrade_decision.stop()
+    
+    self.assertFalse(upgrade_decision.UpgradeDecision_isUpgradeFinished())
+    self._makeSoftwareInstallation(self.new_id, computer, 
+                                   software_release.getUrlString())
+    self.tic()
+    self.assertTrue(upgrade_decision.UpgradeDecision_isUpgradeFinished())
+
+  def testUpgradeDecision_isUpgradeFinished_hosting_subscription(self):
+    hosting_subscription = self._makeHostingSubscription(self.new_id)
+    software_release = self._makeSoftwareRelease(self.new_id)
+    upgrade_decision = self._makeUpgradeDecision()
+    upgrade_decision_line = self._makeUpgradeDecisionLine(upgrade_decision)
+    upgrade_decision_line.setAggregateValueList([software_release,
+                                                hosting_subscription])
+
+    upgrade_decision.confirm()
+    upgrade_decision.stop()
+    
+    self.assertFalse(upgrade_decision.UpgradeDecision_isUpgradeFinished())
+    hosting_subscription.setUrlString(software_release.getUrlString()) 
+    self.assertTrue(upgrade_decision.UpgradeDecision_isUpgradeFinished())
+
   @simulate('NotificationTool_getDocumentValue',
             'reference=None',
   'assert reference == "slapos-upgrade-computer.notification"\n' \
