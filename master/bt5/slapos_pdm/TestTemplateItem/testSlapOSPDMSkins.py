@@ -1556,3 +1556,133 @@ ${new_software_release_url}""",
     self.assertEquals(event.getSimulationState(), "delivered")
     
     
+  @simulate('NotificationTool_getDocumentValue',
+            'reference=None',
+  'assert reference == "slapos-upgrade-delivered-computer.notification"\n' \
+  'return context.restrictedTraverse(' \
+  'context.REQUEST["testUpgradeDecision_notifyDelivered_computer"])')
+  @simulate('UpgradeDecision_isUpgradeFinished',
+            '', 'return 0')
+  def testUpgradeDecision_notifyDelivered_computer(self):
+    person = self._makePerson(self.new_id)
+    computer = self._makeComputer(self.new_id)
+    software_release = self._makeSoftwareRelease(self.new_id)
+    software_product = self._makeSoftwareProduct(self.new_id)
+    software_release.setAggregateValue(software_product)
+    upgrade_decision = self._makeUpgradeDecision()
+    upgrade_decision.edit(destination_decision_value=person)
+    upgrade_decision_line = self._makeUpgradeDecisionLine(upgrade_decision)
+    upgrade_decision_line.setAggregateValueList([software_release, computer])
+    
+    notification_message = self.portal.notification_message_module.newContent(
+      portal_type="Notification Message",
+      title='Test NM title %s' % self.new_id,
+      text_content_substitution_mapping_method_id=
+          "NotificationMessage_getSubstitutionMappingDictFromArgument",
+      text_content="""${software_product_title}
+${computer_title}
+${computer_reference}
+${software_release_name}
+${software_release_reference}
+${new_software_release_url}""",
+      content_type='text/html',
+      )
+    self.portal.REQUEST\
+        ['testUpgradeDecision_notifyDelivered_computer'] = \
+        notification_message.getRelativeUrl()
+    
+    self.tic()
+    
+    self.assertEquals(None, upgrade_decision.UpgradeDecision_notifyDelivered())
+    
+    upgrade_decision.start()
+    upgrade_decision.stop()
+    
+    self.tic()
+    
+    self.assertEquals(None, upgrade_decision.UpgradeDecision_notifyDelivered())
+    
+    self.tic()
+    
+    self.assertEquals(upgrade_decision.getSimulationState(), 'delivered')
+    self.assertEquals(len(upgrade_decision.getFollowUpRelatedValueList()), 1)
+    event = upgrade_decision.getFollowUpRelatedValue()
+    
+    self.assertEquals(event.getTitle(), 
+      "Upgrade processed at %s for %s" % (computer.getTitle(), 
+                                          software_release.getReference()))
+     
+    self.assertEqual(event.getTextContent().splitlines(),
+      [software_product.getTitle(), computer.getTitle(), computer.getReference(),
+       software_release.getTitle(), software_release.getReference(),
+       software_release.getUrlString()])
+      
+    self.assertEquals(event.getSimulationState(), "delivered")
+
+  @simulate('NotificationTool_getDocumentValue',
+            'reference=None',
+  'assert reference == "slapos-upgrade-delivered-hosting-subscription.notification"\n' \
+  'return context.restrictedTraverse(' \
+  'context.REQUEST["testUpgradeDecision_notifyDelivered_hosting_subscription"])')
+  @simulate('UpgradeDecision_isUpgradeFinished',
+            '', 'return 0')
+  def testUpgradeDecision_notifyDelivered_hosting_subscription(self):
+    person = self._makePerson(self.new_id)
+    hosting_subscription = self._makeHostingSubscription(self.new_id)
+    software_release = self._makeSoftwareRelease(self.new_id)
+    software_product = self._makeSoftwareProduct(self.new_id)
+    software_release.setAggregateValue(software_product)
+    upgrade_decision = self._makeUpgradeDecision()
+    upgrade_decision.edit(destination_decision_value=person)
+    upgrade_decision_line = self._makeUpgradeDecisionLine(upgrade_decision)
+    upgrade_decision_line.setAggregateValueList([software_release, 
+                                                hosting_subscription])
+
+    old_url = hosting_subscription.getUrlString()
+
+    notification_message = self.portal.notification_message_module.newContent(
+      portal_type="Notification Message",
+      title='Test NM title %s' % self.new_id,
+      text_content_substitution_mapping_method_id=
+          "NotificationMessage_getSubstitutionMappingDictFromArgument",
+      text_content="""${software_product_title}
+${hosting_subscription_title}
+${old_software_release_url}
+${software_release_name}
+${software_release_reference}
+${new_software_release_url}""",
+      content_type='text/html',
+      )
+    self.portal.REQUEST\
+        ['testUpgradeDecision_notifyDelivered_hosting_subscription'] = \
+        notification_message.getRelativeUrl()
+    
+    self.tic()
+    
+    self.assertEquals(None, upgrade_decision.UpgradeDecision_notifyDelivered())
+    
+    upgrade_decision.start()
+    upgrade_decision.stop()
+    
+    self.tic()
+    
+    self.assertEquals(None, upgrade_decision.UpgradeDecision_notifyDelivered())
+    
+    self.tic()
+    
+    self.assertEquals(upgrade_decision.getSimulationState(), 'delivered')
+    self.assertEquals(len(upgrade_decision.getFollowUpRelatedValueList()), 1)
+    event = upgrade_decision.getFollowUpRelatedValue()
+    
+    self.assertEquals(event.getTitle(),
+      "Upgrade Processed for %s (%s)" % (hosting_subscription.getTitle(), 
+                                              software_release.getReference()))
+     
+    self.assertEqual(event.getTextContent().splitlines(),
+      [software_product.getTitle(), hosting_subscription.getTitle(), 
+       old_url, software_release.getTitle(), software_release.getReference(),
+       software_release.getUrlString()])
+
+    self.assertEquals(event.getSimulationState(), "delivered")
+    
+
