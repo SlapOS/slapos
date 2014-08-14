@@ -45,6 +45,7 @@ parts +=
   cgi-httpd-graceful-wrapper
   monitor-promise
   monitor-instance-log-access
+  bash-profile
 ## Monitor for runner
   monitor-current-log-access
   monitor-check-resilient-feed-file
