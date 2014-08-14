@@ -31,6 +31,8 @@ auto_deploy = {{ slaprunner['auto_deploy'] }}
 auto_deploy_instance = {{ slaprunner['auto_deploy_instance'] }}
 autorun = {{ slaprunner['autorun'] }}
 knowledge0_cfg = {{ slaprunner['knowledge0_file'] }}
+minishell_cwd_file = {{ slaprunner['minishell_cwd_file'] }}
+minishell_history_file = {{ slaprunner['minishell_history_file'] }}
 
 [slapproxy]
 host = {{ slaprunner['ipv4'] }}

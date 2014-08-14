@@ -5,6 +5,11 @@
 # set to false (else it could be dangerous)
 {% do slapparameter_dict.__setitem__('auto-deploy', slapparameter_dict.get('auto-deploy', 'true')) %}
 {% do slapparameter_dict.__setitem__('auto-deploy-instance', slapparameter_dict.get('auto-deploy-instance', 'false')) %}
+# let decide the number of clones we want. We can't have more than 2 clones
+{% set number_of_instances = slapparameter_dict.get('resilient-clone-number', 1)|int %}
+{% if number_of_instances > 2 %}
+  {% set number_of_instances = 2 %}
+{% endif %}
 
 {% import 'parts' as parts %}
 {% import 'replicated' as replicated %}
@@ -16,10 +21,10 @@ offline = true
 
 # += because we need to take up parts (like instance-custom, slapmonitor etc) from the profile we extended
 parts +=
-  {{ parts.replicate("runner", "3") }}
+  {{ parts.replicate("runner", number_of_instances + 1) }}
   publish-connection-informations
 
-{{ replicated.replicate("runner", "3", "runner-export", "runner-import", slapparameter_dict=slapparameter_dict) }}
+{{ replicated.replicate("runner", number_of_instances + 1, "runner-export", "runner-import", slapparameter_dict=slapparameter_dict) }}
 
 # Bubble up the parameters
 [request-runner]
@@ -41,14 +46,13 @@ public_url = ${request-runner:connection-public_url}
 # Default parameters for distributed deployment
 # I.e state "backup1 of maria should go there, ..."
 # XXX-Cedric: Hardcoded number of backups. Should be dynamically generated.
-runner1-computer-guid =
-pbs-runner1-computer-guid =
-runner2-computer-guid =
-pbs-runner2-computer-guid =
-runner3-computer-guid =
-pbs-runner3-computer-guid =
+{% for nb in range(1,number_of_instances+1) %}
+runner{{nb}}-computer-guid =
+pbs-runner{{nb}}-computer-guid =
+{% endfor %}
 # XXX-Cedric: Hardcoded parameters. Should be dynamically generated.
 domain =
 authorized-key =
 instance-amount = 10
 debug = false
+resilient-clone-number = 1

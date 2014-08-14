@@ -47,6 +47,7 @@ config = resiliency-backup-periodicity {{ cluster_parameter_dict.keys() | join('
 config-{{ key }} = {{ dumps(value) }}
 {% endfor -%}
 config-resiliency-backup-periodicity = */6 * * * *
+config-resilient-clone-number = 2
 # XXX hardcoded
 #config-frontend-domain = google.com
 # XXX Hack to deploy Root Instance on the same computer as the type-test Instance
