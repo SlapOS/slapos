@@ -1,0 +1,7 @@
+# Beware, this file is automatically processed by slapgrid
+# Do not modify it, your changes will be lost
+# If you want to load your custom bash configuration, please use a .bashrc file
+
+cd {{ workdir }}
+export PATH={{- path }}
+export PS1="\w $ "
