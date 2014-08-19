@@ -25,6 +25,8 @@ LoadModule headers_module modules/mod_headers.so
 LoadModule log_config_module modules/mod_log_config.so
 LoadModule dav_module modules/mod_dav.so
 LoadModule dav_fs_module modules/mod_dav_fs.so
+LoadModule cache_module modules/mod_cache.so
+LoadModule file_cache_module modules/mod_file_cache.so
 
 ErrorLog "{{ parameters.path_error_log }}"
 LogFormat "%h %l %u %t \"%r\" %>s %b" common
