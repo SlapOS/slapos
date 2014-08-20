@@ -40,6 +40,9 @@ import slapos.proxy
 import slapos.proxy.views as views
 import slapos.slap.slap
 
+import sqlite3
+import pkg_resources
+
 
 class WrongFormat(Exception):
   pass
@@ -137,6 +140,7 @@ database_uri = %(tempdir)s/lib/proxy.db
     Remove files generated for test
     """
     shutil.rmtree(self._tempdir, True)
+    views.is_schema_already_executed = False
 
 
 class TestInformation(BasicMixin, unittest.TestCase):
@@ -840,4 +844,82 @@ class TestMultiNodeSupport(MasterMixin):
       self.app.get('/getComputerInformation?computer_id=%s' % new_computer_id)
     except slapos.slap.NotFoundError:
       self.fail('Could not fetch informations for registered computer.')
+
+
+class TestMigrateVersion10To11(TestInformation, TestRequest, TestSlaveRequest, TestMultiNodeSupport):
+  """
+  Test that old database version are automatically migrated without failure
+  """
+  def setUp(self):
+    super(TestMigrateVersion10To11, self).setUp()
+    schema = pkg_resources.resource_stream('slapos.tests.slapproxy', 'database_dump_version_10.sql')
+    schema = schema.read() % dict(version='11')
+    self.db = sqlite3.connect(self.proxy_db)
+    self.db.cursor().executescript(schema)
+    self.db.commit()
+
+  def test_automatic_migration(self):
+    table_list = ('software11', 'computer11', 'partition11', 'slave11', 'partition_network11')
+    for table in table_list:
+      self.assertRaises(sqlite3.OperationalError, self.db.execute, "SELECT name FROM computer11")
+    # Run a dummy request to cause migration
+    self.app.get('/getComputerInformation?computer_id=computer')
+
+    # Check some partition parameters
+    self.assertEqual(
+        loads(self.app.get('/getComputerInformation?computer_id=computer').data)._computer_partition_list[0]._parameter_dict['slap_software_type'],
+        'production'
+    )
+    
+    # Lower level tests
+    computer_list = self.db.execute("SELECT * FROM computer11").fetchall()
+    self.assertEqual(
+        computer_list,
+        [(u'computer', u'127.0.0.1', u'255.255.255.255')]
+    )
+
+    software_list = self.db.execute("SELECT * FROM software11").fetchall()
+    self.assertEqual(
+        software_list,
+        [(u'/srv/slapgrid//srv//runner/project//slapos/software.cfg', u'computer')]
+    )
+
+    partition_list = self.db.execute("select * from partition11").fetchall()
+    self.assertEqual(
+        partition_list,
+        [(u'slappart0', u'computer', u'busy', u'/srv/slapgrid//srv//runner/project//slapos/software.cfg', u'<?xml version=\'1.0\' encoding=\'utf-8\'?>\n<instance>\n  <parameter id="json">{\n  "site-id": "erp5"\n  }\n}</parameter>\n</instance>\n', None, None, u'production', u'slapos', None, u'started'), (u'slappart1', u'computer', u'busy', u'/srv/slapgrid//srv//runner/project//slapos/software.cfg', u"<?xml version='1.0' encoding='utf-8'?>\n<instance/>\n", u'<?xml version=\'1.0\' encoding=\'utf-8\'?>\n<instance>\n  <parameter id="url">mysql://127.0.0.1:45678/erp5</parameter>\n</instance>\n', None, u'mariadb', u'MariaDB DataBase', u'slappart0', u'started'), (u'slappart2', u'computer', u'busy', u'/srv/slapgrid//srv//runner/project//slapos/software.cfg', u'<?xml version=\'1.0\' encoding=\'utf-8\'?>\n<instance>\n  <parameter id="cloudooo-json"></parameter>\n</instance>\n', u'<?xml version=\'1.0\' encoding=\'utf-8\'?>\n<instance>\n  <parameter id="url">cloudooo://127.0.0.1:23000/</parameter>\n</instance>\n', None, u'cloudooo', u'Cloudooo', u'slappart0', u'started'), (u'slappart3', u'computer', u'busy', u'/srv/slapgrid//srv//runner/project//slapos/software.cfg', u"<?xml version='1.0' encoding='utf-8'?>\n<instance/>\n", u'<?xml version=\'1.0\' encoding=\'utf-8\'?>\n<instance>\n  <parameter id="url">memcached://127.0.0.1:11000/</parameter>\n</instance>\n', None, u'memcached', u'Memcached', u'slappart0', u'started'), (u'slappart4', u'computer', u'busy', u'/srv/slapgrid//srv//runner/project//slapos/software.cfg', u"<?xml version='1.0' encoding='utf-8'?>\n<instance/>\n", u'<?xml version=\'1.0\' encoding=\'utf-8\'?>\n<instance>\n  <parameter id="url">memcached://127.0.0.1:13301/</parameter>\n</instance>\n', None, u'kumofs', u'KumoFS', u'slappart0', u'started'), (u'slappart5', u'computer', u'busy', u'/srv/slapgrid//srv//runner/project//slapos/software.cfg', u'<?xml version=\'1.0\' encoding=\'utf-8\'?>\n<instance>\n  <parameter id="kumofs-url">memcached://127.0.0.1:13301/</parameter>\n  <parameter id="memcached-url">memcached://127.0.0.1:11000/</parameter>\n  <parameter id="cloudooo-url">cloudooo://127.0.0.1:23000/</parameter>\n</instance>\n', u'<?xml version=\'1.0\' encoding=\'utf-8\'?>\n<instance>\n  <parameter id="url">https://[fc00::1]:10001</parameter>\n</instance>\n', None, u'tidstorage', u'TidStorage', u'slappart0', u'started'), (u'slappart6', u'computer', u'free', None, None, None, None, None, None, None, u'started'), (u'slappart7', u'computer', u'free', None, None, None, None, None, None, None, u'started'), (u'slappart8', u'computer', u'free', None, None, None, None, None, None, None, u'started'), (u'slappart9', u'computer', u'free', None, None, None, None, None, None, None, u'started')]
+    )
+
+    slave_list = self.db.execute("select * from slave11").fetchall()
+    self.assertEqual(
+        slave_list,
+        []
+    )
+
+    partition_network_list = self.db.execute("select * from partition_network11").fetchall()
+    self.assertEqual(
+        partition_network_list,
+        [(u'slappart0', u'computer', u'slappart0', u'127.0.0.1', u'255.255.255.255'), (u'slappart0', u'computer', u'slappart0', u'fc00::1', u'ffff:ffff:ffff::'), (u'slappart1', u'computer', u'slappart1', u'127.0.0.1', u'255.255.255.255'), (u'slappart1', u'computer', u'slappart1', u'fc00::1', u'ffff:ffff:ffff::'), (u'slappart2', u'computer', u'slappart2', u'127.0.0.1', u'255.255.255.255'), (u'slappart2', u'computer', u'slappart2', u'fc00::1', u'ffff:ffff:ffff::'), (u'slappart3', u'computer', u'slappart3', u'127.0.0.1', u'255.255.255.255'), (u'slappart3', u'computer', u'slappart3', u'fc00::1', u'ffff:ffff:ffff::'), (u'slappart4', u'computer', u'slappart4', u'127.0.0.1', u'255.255.255.255'), (u'slappart4', u'computer', u'slappart4', u'fc00::1', u'ffff:ffff:ffff::'), (u'slappart5', u'computer', u'slappart5', u'127.0.0.1', u'255.255.255.255'), (u'slappart5', u'computer', u'slappart5', u'fc00::1', u'ffff:ffff:ffff::'), (u'slappart6', u'computer', u'slappart6', u'127.0.0.1', u'255.255.255.255'), (u'slappart6', u'computer', u'slappart6', u'fc00::1', u'ffff:ffff:ffff::'), (u'slappart7', u'computer', u'slappart7', u'127.0.0.1', u'255.255.255.255'), (u'slappart7', u'computer', u'slappart7', u'fc00::1', u'ffff:ffff:ffff::'), (u'slappart8', u'computer', u'slappart8', u'127.0.0.1', u'255.255.255.255'), (u'slappart8', u'computer', u'slappart8', u'fc00::1', u'ffff:ffff:ffff::'), (u'slappart9', u'computer', u'slappart9', u'127.0.0.1', u'255.255.255.255'), (u'slappart9', u'computer', u'slappart9', u'fc00::1', u'ffff:ffff:ffff::')]
+    )
+
+  # Override several tests that needs an empty database
+  @unittest.skip("Not implemented")
+  def test_multi_node_support_different_software_release_list(self):
+    pass
+
+  @unittest.skip("Not implemented")
+  def test_multi_node_support_instance_default_computer(self):
+    pass
+
+  @unittest.skip("Not implemented")
+  def test_multi_node_support_instance_guid(self):
+    pass
+
+  @unittest.skip("Not implemented")
+  def test_partition_are_empty(self):
+    pass
+
+  @unittest.skip("Not implemented")
+  def test_request_consistent_parameters(self):
+    pass
 

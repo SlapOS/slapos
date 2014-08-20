@@ -108,9 +108,14 @@ def partitiondict2partition(partition):
   return slap_partition
 
 
-def execute_db(table, query, args=(), one=False):
+def execute_db(table, query, args=(), one=False, db_version=None, log=False):
+  if not db_version:
+    db_version = DB_VERSION
+  query = query % (table + db_version,)
+  if log:
+    print query
   try:
-    cur = g.db.execute(query % (table + DB_VERSION,), args)
+    cur = g.db.execute(query, args)
   except:
     app.logger.error('There was some issue during processing query %r on table %r with args %r' % (query, table, args))
     raise
@@ -122,14 +127,65 @@ def execute_db(table, query, args=(), one=False):
 def connect_db():
   return sqlite3.connect(app.config['DATABASE_URI'])
 
+def _getTableList():
+  return g.db.execute("SELECT name FROM sqlite_master WHERE type='table' ORDER BY Name").fetchall()
 
+def _getCurrentDatabaseSchemaVersion():
+  """
+  Return version of database schema.
+  As there is no actual definition of version, analyse
+  name of all tables (containing version) and take the
+  highest version (as several versions can live in the db).
+  """
+  # XXX: define an actual version and proper migration/repair procedure.
+  version = -1
+  for table_name in _getTableList():
+    try:
+      table_version = int(table_name[0][-2:])
+    except ValueError:
+      table_version = int(table_name[0][-1:])
+    if table_version > version:
+      version = table_version
+  return str(version)
+
+def _upgradeDatabaseIfNeeded():
+  """
+  Analyses current database compared to defined schema,
+  and adapt tables/data it if needed.
+  """
+  current_schema_version = _getCurrentDatabaseSchemaVersion()
+  # If version of current database is not old, do nothing
+  if current_schema_version == DB_VERSION:
+    return
+ 
+  schema = app.open_resource('schema.sql')
+  schema = schema.read() % dict(version=DB_VERSION, computer=app.config['computer_id'])
+  g.db.cursor().executescript(schema)
+  g.db.commit()
+
+  if current_schema_version == '-1':
+    return
+
+  # Migrate all data to new tables
+  app.logger.info('Old schema detected: Migrating old tables...')
+  app.logger.info('Note that old tables are not alterated.')
+  for table in ('software', 'computer', 'partition', 'slave', 'partition_network'):
+    for row in execute_db(table, 'SELECT * from %s', db_version=current_schema_version):
+      columns = ', '.join(row.keys())
+      placeholders = ':'+', :'.join(row.keys())
+      query = 'INSERT INTO %s (%s) VALUES (%s)' % ('%s', columns, placeholders)
+      execute_db(table, query, row, log=True)
+
+  g.db.commit()
+
+is_schema_already_executed = False
 @app.before_request
 def before_request():
   g.db = connect_db()
-  schema = app.open_resource('schema.sql')
-  schema = schema.read() % dict(version=DB_VERSION)
-  g.db.cursor().executescript(schema)
-  g.db.commit()
+  global is_schema_already_executed
+  if not is_schema_already_executed:
+    _upgradeDatabaseIfNeeded()
+    is_schema_already_executed = True
 
 
 @app.after_request
