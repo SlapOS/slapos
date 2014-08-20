@@ -1,0 +1,43 @@
+[unix_http_server]
+file = {{ supervisord['socket_path'] }}
+
+[supervisorctl]
+serverurl = {{ supervisord['socket_name'] }}
+
+[inet_http_server]
+port = {{ supervisord['server'] }}
+
+[supervisord]
+logfile = {{ supervisord['logfile'] }}
+pidfile = {{ supervisord['pidfile'] }}
+
+[rpcinterface:supervisor]
+supervisor.rpcinterface_factory = supervisor.rpcinterface:make_main_rpcinterface
+
+[program:{{- supervisord['slapgrid-sr'] -}}]
+command = {{ supervisord['slapgrid-sr-command'] }}
+process_name = {{ supervisord['slapgrid-sr'] }}
+numprocs = {{ supervisord['numprocs'] }}
+autostart = {{ supervisord['autostart'] }}
+exitcodes = {{ supervisord['exitcodes'] }}
+startretries = {{ supervisord['slapgrid-sr-startretries'] }}
+startsecs = {{ supervisord['startsecs'] }}
+autorestart = {{ supervisord['autorestart'] }}
+stdout_logfile = {{ supervisord['stdout_logfile'] }}
+stderr_logfile = {{ supervisord['stdout_logfile'] }}
+directory = {{ supervisord['directory'] }}
+environment = PATH="{{- supervisord['path'] -}}"
+
+[program:{{- supervisord['slapgrid-cp'] -}}]
+command = {{ supervisord['slapgrid-cp-command'] }}
+process_name = {{ supervisord['slapgrid-cp'] }}
+numprocs = {{ supervisord['numprocs'] }}
+autostart = {{ supervisord['autostart'] }}
+exitcodes = {{ supervisord['exitcodes'] }}
+startretries = {{ supervisord['slapgrid-cp-startretries'] }}
+startsecs = {{ supervisord['startsecs'] }}
+autorestart = {{ supervisord['autorestart'] }}
+stdout_logfile = {{ supervisord['stdout_logfile'] }}
+stderr_logfile = {{ supervisord['stdout_logfile'] }}
+directory = {{ supervisord['directory'] }}
+environment = PATH="{{- supervisord['path'] -}}"

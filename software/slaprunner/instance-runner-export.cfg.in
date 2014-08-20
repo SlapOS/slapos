@@ -27,6 +27,7 @@ parts +=
   cron-entry-prepare-software
   deploy-instance-parameters
   minishell-cwd
+  supervisord-wrapper
 ## Monitoring part
 ###Parts to add for monitoring
   cron
