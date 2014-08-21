@@ -296,6 +296,7 @@ def loadComputerConfigurationFromXML():
     for address in partition['address_list']:
       address['reference'] = partition['tap']['name']
       address['partition_reference'] = partition['reference']
+      address['computer_reference'] = partition['computer_reference']
       execute_db('partition_network', 'INSERT OR REPLACE INTO %s (reference, partition_reference, computer_reference, address, netmask) values(:reference, :partition_reference, :computer_reference, :addr, :netmask)', address)
 
   return 'done'
