@@ -124,7 +124,11 @@ database_uri = %(tempdir)s/lib/proxy.db
     for i in range(partition_amount):
       partition_example = {
           'reference': 'slappart%s' % i,
-          'address_list': [],
+          'address_list': [
+              {'addr': '1.2.3.4', 'netmask': '255.255.255.255'},
+              {'addr': '4.3.2.1', 'netmask': '255.255.255.255'}
+           ],
+           'tap': {'name': 'tap0'},
       }
       computer_dict['partition_list'].append(partition_example)
 
@@ -132,8 +136,9 @@ database_uri = %(tempdir)s/lib/proxy.db
         'computer_id': self.computer_id,
         'xml': xml_marshaller.xml_marshaller.dumps(computer_dict),
     }
-    self.app.post('/loadComputerConfigurationFromXML',
+    rv = self.app.post('/loadComputerConfigurationFromXML',
                   data=request_dict)
+    self.assertEqual(rv._status_code, 200)
 
   def tearDown(self):
     """
