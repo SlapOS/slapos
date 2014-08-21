@@ -1,0 +1,41 @@
+#!{{ python_executable }}
+
+import datetime
+import json
+import sys
+import xmlrpclib
+
+from supervisor import childutils
+
+
+def write_stdout(s):
+    sys.stdout.write(s)
+    sys.stdout.flush()
+
+def write_stderr(s):
+    sys.stderr.write(s)
+    sys.stderr.flush()
+
+
+def write_slapgrid_result():
+    server = xmlrpclib.Server("http://{{- supervisord['server'] -}}")
+    # Tuple of tuples containing 2 elements : process name and the path of its info file
+    watch_processes = (("slapgrid-sr", "{{- slaprunner['software_info_json'] -}}"),
+                       ("slapgrid-cp", "{{- slaprunner['instance_info_json'] -}}"))
+    for process, file in watch_processes:
+        info = server.supervisor.getProcessInfo(process)
+        result = dict()
+        result['last_build'] = datetime.datetime.fromtimestamp(info['stop']).strftime("%Y-%m-%d %H:%M:%S")
+        result['success'] = info['exitstatus']
+        open(file, 'w').write(json.dumps(result))
+
+
+def main():
+    while 1:
+        headers, payload = writer.wait()
+        write_slapgrid_result()
+        writer.ok()
+
+if __name__ == '__main__':
+    writer = childutils.EventListenerProtocol()
+    main()
