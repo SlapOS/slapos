@@ -74,11 +74,12 @@ if not person_url:\n
 \n
 upgrade_decision = portal.upgrade_decision_module.\\\n
             template_upgrade_decision.Base_createCloneDocument(batch_mode=1)\n
-upgrade_decision.edit(\n
-        title=title,\n
-        destination_section=person_url,\n
-        destination_decision=person_url\n
-)\n
+\n
+upgrade_decision.edit(title=title)\n
+\n
+upgrade_decision.setDestinationSection(person_url)\n
+upgrade_decision.setDestinationDecision(person_url)\n
+\n
 decision_line_list = upgrade_decision.contentValues(\n
                     portal_type=\'Upgrade Decision Line\')\n
 if len(decision_line_list) > 0:\n
