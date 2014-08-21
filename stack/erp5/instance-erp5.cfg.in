@@ -116,12 +116,12 @@ software-type = zope
 
 {% set zope_family_dict = {} -%}
 {% for custom_name, zope_parameter_dict in slapparameter_dict.get('zope-partition-dict', {'1': {}}).items() -%}
-{%   set base_name = 'zope-' ~ custom_name -%}
-{%   set name = 'request-' ~ base_name -%}
-{%   do zope_family_dict.setdefault(zope_parameter_dict.get('family', 'default'), []).append(name) -%}
-[{{ name }}]
+{%   set partition_name = 'zope-' ~ custom_name -%}
+{%   set section_name = 'request-' ~ partition_name -%}
+{%   do zope_family_dict.setdefault(zope_parameter_dict.get('family', 'default'), []).append(section_name) -%}
+[{{ section_name }}]
 < = request-zope-base
-name = {{ base_name }}
+name = {{ partition_name }}
 config-name = {{ dumps(custom_name) }}
 config-instance-count = {{ dumps(zope_parameter_dict.get('instance-count', 1)) }}
 config-thread-amount = {{ dumps(zope_parameter_dict.get('thread-amount', 1)) }}
