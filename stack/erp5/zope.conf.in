@@ -50,6 +50,10 @@ products {{ parameter_dict['instance-products'] }}
 </product-config>
 
 {% endif -%}
+<product-config CMFActivity>
+  node-id {{ parameter_dict['node-id'] }}
+</product-config>
+
 {% set timerserver_interval = parameter_dict['timerserver-interval'] -%}
 {% if timerserver_interval -%}
 %import timerserver

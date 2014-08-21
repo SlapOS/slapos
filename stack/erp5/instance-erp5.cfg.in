@@ -82,6 +82,7 @@ extra-config =
   memcached-url
   mysql-test-url-list
   mysql-url-list
+  name
   port-base
   site-id
   smtp-url
@@ -121,6 +122,7 @@ software-type = zope
 [{{ name }}]
 < = request-zope-base
 name = {{ base_name }}
+config-name = {{ dumps(custom_name) }}
 config-instance-count = {{ dumps(zope_parameter_dict.get('instance-count', 1)) }}
 config-thread-amount = {{ dumps(zope_parameter_dict.get('thread-amount', 1)) }}
 config-timerserver-interval = {{ dumps(zope_parameter_dict.get('timerserver-interval', 5)) }}

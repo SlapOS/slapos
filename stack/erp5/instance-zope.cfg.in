@@ -3,6 +3,7 @@
 {% set next_port = slapparameter_dict['port-base'] -%}
 {% set site_id = slapparameter_dict['site-id'] -%}
 {% set storage_type = slapparameter_dict['zodb-storage-type'] -%}
+{% set node_id_base = slapparameter_dict['name'] -%}
 {% set part_list = [] -%}
 {% set publish_list = [] -%}
 {% set zodb_dict = slapparameter_dict['zodb-dict'] -%}
@@ -212,11 +213,12 @@ logrotate-entries = ${logrotate:logrotate-entries}
 backup = ${logrotate:backup}
 
 {% macro zope(
-  name,
+  index,
   port,
   longrequest_logger_timeout,
   longrequest_logger_interval
 ) -%}
+{% set name = 'zope-' ~ index -%}
 {% set conf_name = name ~ '-conf' -%}
 {% set conf_parameter_name = conf_name ~ '-param' -%}
 {% set zope_tunnel_section_name = name ~ '-ipv6toipv4' -%}
@@ -228,6 +230,7 @@ lock-file = ${directory:run}/{{ name }}.lock
 port = {{ port }}
 event-log = ${directory:log}/{{ name }}-event.log
 z2-log = ${directory:log}/{{ name }}-Z2.log
+node-id = {{ dumps(node_id_base ~ '-' ~ index) }}
 
 [{{ conf_name }}]
 < = zope-conf-base
@@ -279,8 +282,13 @@ log = {{ '${' ~ conf_parameter_name ~ ':event-log}' }} {{ '${' ~ conf_parameter_
 post = {{ bin_directory }}/killpidfromfile {{ '${' ~ conf_parameter_name ~ ':pid-file}' }} SIGUSR2
 {% endmacro -%}
 
-{% for i in range(slapparameter_dict.get('instance-count', 1)) -%}
-{{   zope("zope-" ~ i, next_port, slapparameter_dict['longrequest-logger-timeout'], slapparameter_dict['longrequest-logger-interval']) }}
+{% for i in range(slapparameter_dict['instance-count']) -%}
+{{   zope(
+       i,
+       next_port,
+       slapparameter_dict['longrequest-logger-timeout'],
+       slapparameter_dict['longrequest-logger-interval'],
+     ) }}
 {%   set next_port = next_port + 1 -%}
 {% endfor -%}
 
