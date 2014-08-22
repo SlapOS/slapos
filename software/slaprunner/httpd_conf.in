@@ -84,17 +84,6 @@ RewriteCond %{REQUEST_URI} /git-receive-pack$
 RewriteRule ^/git/ - [E=AUTHREQUIRED:yes]
 RewriteRule ^/git-public/ - [E=AUTHREQUIRED:yes]
 
-<LocationMatch "^/git-public/">
-        Order Deny,Allow
-        Deny from env=AUTHREQUIRED
-
-        AuthType Basic
-        AuthName "Git Access"
-        AuthUserFile "{{ parameters.etc_dir }}/.htpasswd"
-        Require valid-user
-        Satisfy any
-</LocationMatch>
-
 <LocationMatch "^/git/">
         Order Deny,Allow
         Deny from env=AUTHREQUIRED
@@ -103,6 +92,7 @@ RewriteRule ^/git-public/ - [E=AUTHREQUIRED:yes]
         AuthName "Git Access"
         AuthUserFile "{{ parameters.etc_dir }}/.htpasswd"
         Require valid-user
+        Satisfy any
 </LocationMatch>
 
 include {{ parameters.cgi_httpd_conf }}
