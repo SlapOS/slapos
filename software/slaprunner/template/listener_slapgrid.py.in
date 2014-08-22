@@ -17,23 +17,26 @@ def write_stderr(s):
     sys.stderr.flush()
 
 
-def write_slapgrid_result():
+def write_slapgrid_result(process):
     server = xmlrpclib.Server("http://{{- supervisord['server'] -}}")
     # Tuple of tuples containing 2 elements : process name and the path of its info file
-    watch_processes = (("slapgrid-sr", "{{- slaprunner['software_info_json'] -}}"),
-                       ("slapgrid-cp", "{{- slaprunner['instance_info_json'] -}}"))
-    for process, file in watch_processes:
-        info = server.supervisor.getProcessInfo(process)
-        result = dict()
-        result['last_build'] = datetime.datetime.fromtimestamp(info['stop']).strftime("%Y-%m-%d %H:%M:%S")
-        result['success'] = (1 if info['statename'] == "FATAL" else info['exitstatus'])
-        open(file, 'w').write(json.dumps(result))
+    json_files = dict([("slapgrid-sr", "{{- slaprunner['software_info_json'] -}}"),
+                       ("slapgrid-cp", "{{- slaprunner['instance_info_json'] -}}")])
+    info = server.supervisor.getProcessInfo(process)
+    result = dict()
+    result['last_build'] = datetime.datetime.fromtimestamp(info['stop']).strftime("%Y-%m-%d %H:%M:%S")
+    result['success'] = (1 if info['statename'] in ("FATAL", "STARTING", "BACKOFF") else info['exitstatus'])
+    open(json_files[process], 'w').write(json.dumps(result))
 
 
 def main():
     while 1:
         headers, payload = writer.wait()
-        write_slapgrid_result()
+        try:
+            processname = dict(x.split(':') for x in payload.split())['processname']
+            write_slapgrid_result(processname)
+        except:
+            pass
         writer.ok()
 
 if __name__ == '__main__':
