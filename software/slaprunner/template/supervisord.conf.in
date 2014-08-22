@@ -23,8 +23,8 @@ exitcodes = {{ supervisord['exitcodes'] }}
 startretries = {{ supervisord['slapgrid-sr-startretries'] }}
 startsecs = {{ supervisord['startsecs'] }}
 autorestart = {{ supervisord['autorestart'] }}
-stdout_logfile = {{ supervisord['stdout_logfile'] }}
-stderr_logfile = {{ supervisord['stdout_logfile'] }}
+stdout_logfile = {{ supervisord['no_logfile'] }}
+stderr_logfile = {{ supervisord['no_logfile'] }}
 directory = {{ supervisord['directory'] }}
 environment = PATH="{{- supervisord['path'] -}}"
 
@@ -37,11 +37,13 @@ exitcodes = {{ supervisord['exitcodes'] }}
 startretries = {{ supervisord['slapgrid-cp-startretries'] }}
 startsecs = {{ supervisord['startsecs'] }}
 autorestart = {{ supervisord['autorestart'] }}
-stdout_logfile = {{ supervisord['stdout_logfile'] }}
-stderr_logfile = {{ supervisord['stdout_logfile'] }}
+stdout_logfile = {{ supervisord['no_logfile'] }}
+stderr_logfile = {{ supervisord['no_logfile'] }}
 directory = {{ supervisord['directory'] }}
 environment = PATH="{{- supervisord['path'] -}}"
 
 [eventlistener:listener-slapgrid]
 command = {{ listener_slapgrid }}
 events = PROCESS_STATE_EXITED
+stdout_logfile = {{ supervisord['no_logfile'] }}
+stderr_logfile = {{ supervisord['stderr_logfile'] }}
