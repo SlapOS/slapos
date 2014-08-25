@@ -59,7 +59,30 @@ var_lib_postfix = $${:var_lib}/postfix
 
 [postfix-main-cf]
 recipe = slapos.recipe.template:jinja2
-template = ${postfix-main-cf-template:location}/${postfix-main-cf-template:filename}
+template = inline:
+    # http://www.postfix.org/STANDARD_CONFIGURATION_README.html
+    # http://www.postfix.org/postconf.5.html
+    queue_directory = {{ queue_directory }}
+    command_directory = {{ command_directory }}
+    daemon_directory = {{ daemon_directory }}
+    data_directory = {{ data_directory }}
+    mail_owner = {{ mail_owner }}
+    myhostname = {{ myhostname }}
+    mydomain = {{ mydomain }}
+    unknown_local_recipient_reject_code = 550
+    alias_maps = {{ alias_maps }}
+    alias_database = {{ alias_database }}
+    mail_spool_directory = {{ mail_spool_directory }}
+    debug_peer_level = 2
+    sendmail_path =
+    newaliases_path =
+    mailq_path =
+    setgid_group = {{ setgid_group }}
+    html_directory =
+    manpage_directory =
+    sample_directory =
+    readme_directory =
+    inet_protocols = ipv4
 rendered = $${buildout:directory}/etc/postfix/main.cf
 extensions = jinja2.ext.do
 context =
@@ -79,11 +102,42 @@ mode = 0644
 
 [postfix-master-cf]
 recipe = slapos.recipe.template:jinja2
-template = ${postfix-master-cf-template:location}/${postfix-master-cf-template:filename}
+template = inline:
+    # http://www.postfix.org/master.5.html
+    # ==========================================================================
+    # service type  private unpriv  chroot  wakeup  maxproc command + args
+    #               (yes)   (yes)   (yes)   (never) (100)
+    # ==========================================================================
+    smtp      inet  n       -       n       -       -       smtpd
+    submission inet n       -       n       -       -       smtpd
+    pickup    unix  n       -       n       60      1       pickup
+    cleanup   unix  n       -       n       -       0       cleanup
+    qmgr      unix  n       -       n       300     1       qmgr
+    tlsmgr    unix  -       -       n       1000?   1       tlsmgr
+    rewrite   unix  -       -       n       -       -       trivial-rewrite
+    bounce    unix  -       -       n       -       0       bounce
+    defer     unix  -       -       n       -       0       bounce
+    trace     unix  -       -       n       -       0       bounce
+    verify    unix  -       -       n       -       1       verify
+    flush     unix  n       -       n       1000?   0       flush
+    proxymap  unix  -       -       n       -       -       proxymap
+    proxywrite unix -       -       n       -       1       proxymap
+    smtp      unix  -       -       n       -       -       smtp
+    relay     unix  -       -       n       -       -       smtp
+    showq     unix  n       -       n       -       -       showq
+    error     unix  -       -       n       -       -       error
+    retry     unix  -       -       n       -       -       error
+    discard   unix  -       -       n       -       -       discard
+    local     unix  -       n       n       -       -       local
+    virtual   unix  -       n       n       -       -       virtual
+    lmtp      unix  -       -       n       -       -       lmtp
+    anvil     unix  -       -       n       -       1       anvil
+    scache    unix  -       -       n       -       1       scache
 rendered = $${buildout:directory}/etc/postfix/master.cf
 extensions = jinja2.ext.do
-#context =
 mode = 0644
+
+
 
 
 [postfix-environment]
