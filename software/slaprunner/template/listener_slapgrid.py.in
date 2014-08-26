@@ -25,7 +25,7 @@ def write_slapgrid_result(process):
     info = server.supervisor.getProcessInfo(process)
     result = dict()
     result['last_build'] = datetime.datetime.fromtimestamp(info['stop']).strftime("%Y-%m-%d %H:%M:%S")
-    result['success'] = (1 if info['statename'] in ("FATAL", "STARTING", "BACKOFF") else info['exitstatus'])
+    result['success'] = info['exitstatus']
     open(json_files[process], 'w').write(json.dumps(result))
 
 

@@ -44,6 +44,6 @@ environment = PATH="{{- supervisord['path'] -}}"
 
 [eventlistener:listener-slapgrid]
 command = {{ listener_slapgrid }}
-events = PROCESS_STATE_EXITED,PROCESS_STATE_FATAL,PROCESS_STATE_BACKOFF
+events = PROCESS_STATE_EXITED
 stdout_logfile = {{ supervisord['no_logfile'] }}
 stderr_logfile = {{ supervisord['stderr_logfile'] }}
