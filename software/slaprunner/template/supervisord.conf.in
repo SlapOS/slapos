@@ -42,6 +42,19 @@ stderr_logfile = {{ supervisord['no_logfile'] }}
 directory = {{ supervisord['directory'] }}
 environment = PATH="{{- supervisord['path'] -}}"
 
+[program:{{- supervisord['slapproxy'] -}}]
+command = {{ supervisord['slapproxy-command'] }}
+process_name = {{ supervisord['slapproxy'] }}
+numprocs = {{ supervisord['numprocs'] }}
+autostart = {{ supervisord['slapproxy-autostart'] }}
+startsecs = {{ supervisord['slapproxy-startsecs'] }}
+exitcodes = {{ supervisord['exitcodes'] }}
+autorestart = {{ supervisord['slapproxy-autorestart'] }}
+stdout_logfile = {{ supervisord['no_logfile'] }}
+stderr_logfile = {{ supervisord['no_logfile'] }}
+directory = {{ supervisord['directory'] }}
+environment = PATH="{{- supervisord['path'] -}}"
+
 [eventlistener:listener-slapgrid]
 command = {{ listener_slapgrid }}
 events = PROCESS_STATE_EXITED
