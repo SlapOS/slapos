@@ -1,0 +1,7 @@
+#!${dash-output:dash}
+
+RSYNC_BIN={{ rsync_binary }}
+SLAPGRID_LOGS={{ buildout_directory }}/../var/data-logs/
+SERVERLOGS={{ server_log_directory }}
+
+$RSYNC_BIN -a $SLAPGRID_LOGS $SERVERLOGS

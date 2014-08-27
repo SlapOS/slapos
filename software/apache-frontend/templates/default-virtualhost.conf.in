@@ -1,8 +1,8 @@
 {% set TRUE_VALUES = ['y', 'yes', '1', 'true'] -%}
  
 <VirtualHost *:{{ https_port }}>
-  ServerName {{ slave_parameter.get('domain') }}
-  ServerAlias {{ slave_parameter.get('domain') }}
+  ServerName {{ slave_parameter.get('custom_domain') }}
+  ServerAlias {{ slave_parameter.get('custom_domain') }}
 
   SSLEngine on
   SSLProxyEngine on
@@ -23,10 +23,10 @@
 
 
   # One Slave two logs
-  ErrorLog "{{ error_log }}"
+  ErrorLog "{{ slave_parameter.get('error_log') }}"
   LogLevel info
   LogFormat "%h %l %{REMOTE_USER}i %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\" %D" combined
-  CustomLog "{{ access_log }}" combined
+  CustomLog "{{ slave_parameter.get('access_log') }}" combined
 
   # Rewrite part
   ProxyVia On
@@ -38,15 +38,15 @@
   # First, we check if we have a zope backend server
   # If so, let's use Virtual Host Daemon rewrite
   # We suppose that Apache listens to 443 (even indirectly thanks to things like iptables)
-  RewriteRule ^/(.*)$ {{ slave_parameter.get('url', '') }}/VirtualHostBase/https/{{ slave_parameter.get('domain', '') }}:443/{{ slave_parameter.get('path', '') }}/VirtualHostRoot/$1 [L,P]
+  RewriteRule ^/(.*)$ {{ slave_parameter.get('url', '') }}/VirtualHostBase/https/{{ slave_parameter.get('custom_domain', '') }}:443/{{ slave_parameter.get('path', '') }}/VirtualHostRoot/$1 [L,P]
 {% else -%}
   RewriteRule ^/(.*)$ {{ slave_parameter.get('url', '') }}/$1 [L,P]
 {% endif -%}
 </VirtualHost>
 
 <VirtualHost *:{{ http_port }}>
-  ServerName {{ slave_parameter.get('domain') }}
-  ServerAlias {{ slave_parameter.get('domain') }}
+  ServerName {{ slave_parameter.get('custom_domain') }}
+  ServerAlias {{ slave_parameter.get('custom_domain') }}
   SSLProxyEngine on
   # Rewrite part
   ProxyVia On
@@ -55,10 +55,10 @@
   RewriteEngine On
 
   # One Slave two logs
-  ErrorLog "{{ error_log }}"
+  ErrorLog "{{ slave_parameter.get('error_log') }}"
   LogLevel info
   LogFormat "%h %l %{REMOTE_USER}i %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\" %D" combined
-  CustomLog "{{ access_log }}" combined
+  CustomLog "{{ slave_parameter.get('access_log') }}" combined
 
   # Remove "Secure" from cookies, as backend may be https
   Header edit Set-Cookie "(?i)^(.+);secure$" "$1"
@@ -75,7 +75,7 @@
   # First, we check if we have a zope backend server
   # If so, let's use Virtual Host Daemon rewrite
   # We suppose that Apache listens to 80 (even indirectly thanks to things like iptables)
-  RewriteRule ^/(.*)$ {{ slave_parameter.get('url', '') }}/VirtualHostBase/http/{{ slave_parameter.get('domain', '') }}:80/{{ slave_parameter.get('path', '') }}/VirtualHostRoot/$1 [L,P]
+  RewriteRule ^/(.*)$ {{ slave_parameter.get('url', '') }}/VirtualHostBase/http/{{ slave_parameter.get('custom_domain', '') }}:80/{{ slave_parameter.get('path', '') }}/VirtualHostRoot/$1 [L,P]
 {% else -%}
   RewriteRule ^/(.*)$ {{ slave_parameter.get('url', '') }}/$1 [L,P]
 {% endif -%}

@@ -1,0 +1,14 @@
+diff --git a/CONFIG/src/probe_arch.c b/CONFIG/src/probe_arch.c
+index 75edef9..f440bf6 100644
+--- a/CONFIG/src/probe_arch.c
++++ b/CONFIG/src/probe_arch.c
+@@ -238,8 +238,7 @@ int main(int nargs, char **args)
+       printf("CPU MHZ=%d\n",
+              ProbeOneInt(OS, asmd, targ, "-m", "CPU MHZ=", &sure));
+    if (flags & Pthrottle)
+-      printf("CPU THROTTLE=%d\n",
+-             ProbeOneInt(OS, asmd, targ, "-t", "CPU THROTTLE=", &sure));
++      printf("CPU THROTTLE=0\n");
+    if (flags & P64)
+    {
+       if (asmd == gas_x86_64)
