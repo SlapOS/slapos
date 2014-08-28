@@ -43,6 +43,7 @@ config-{{ option }} = {{ dumps(value) }}
 {{ request('memcached-volatile', 'kumofs', 'memcached', {'tcpv4-port': 2010, 'ram-storage-size': 64}) }}
 {{ request('cloudooo', 'cloudooo', 'cloudooo', {'tcpv4-port': 2020}) }}
 {{ request('mariadb', 'mariadb', 'mariadb', {'tcpv4-port': 2099}, {'database-list': True, 'test-database-list': True}) }}
+{{ request('postfix', 'postfix', 'postfix', {'tcpv4-port': 2025}) }}
 {# Fail early if an unexpected value is provided -#}
 {% set possible_software_type_dict = {'zeo': 'zeo', 'neo': 'neo'} -%}
 {{ request('zodb', 'zodb-' ~ possible_software_type_dict[slapparameter_dict.get('zodb-software-type', 'zeo')], 'zodb', {'tcpv4-port': 2100, 'zodb-dict': {'root': {}}}, {'zodb-storage-type': False, 'zodb-dict': False, 'tidstorage-ip': False, 'tidstorage-port': False}) }}

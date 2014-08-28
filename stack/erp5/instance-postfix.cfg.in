@@ -1,0 +1,168 @@
+{% if software_type == slap_software_type -%}
+{% set part_list = [] -%}
+{% macro section(name) %}{% do part_list.append(name) %}{{ name }}{% endmacro -%}
+{% set ipv4 = (ipv4_set | list)[0] -%}
+{% set tcpv4_port = slapparameter_dict['tcpv4-port'] -%}
+
+[buildout]
+parts =
+  publish-postfix-connection-information
+  postfix-main-cf
+  postfix-master-cf
+  postfix-symlinks-bin
+  postfix-symlinks-sbin
+  postfix-symlinks-libexec
+  service-postfix-master
+  sh-postfix-environment
+  newaliases
+  {{ part_list | join('\n  ') }}
+
+eggs-directory = {{ eggs_directory }}
+develop-eggs-directory = {{ develop_eggs_directory }}
+
+
+[publish-postfix-connection-information]
+recipe = slapos.cookbook:publish.serialised
+url = smtp://${:ipv4}:${:port}/
+ipv4 = {{ ipv4 }}
+port = ${postfix-master-cf-parameters:smtp_port}
+
+
+[directory]
+recipe = slapos.cookbook:mkdirectory
+etc = ${buildout:directory}/etc
+etc_postfix = ${:etc}/postfix
+script = ${:etc}/run
+service = ${:etc}/service
+promise = ${:etc}/promise
+usr = ${buildout:directory}/usr
+usr_bin = ${:usr}/bin
+usr_sbin = ${:usr}/sbin
+var = ${buildout:directory}/var
+var_spool = ${:var}/spool
+var_spool_postfix = ${:var_spool}/postfix
+var_spool_postfix_active = ${:var_spool_postfix}/active
+var_spool_postfix_bounce = ${:var_spool_postfix}/bounce
+var_spool_postfix_corrupt = ${:var_spool_postfix}/corrupt
+var_spool_postfix_defer = ${:var_spool_postfix}/defer
+var_spool_postfix_deferred = ${:var_spool_postfix}/deferred
+var_spool_postfix_flush = ${:var_spool_postfix}/flush
+var_spool_postfix_hold = ${:var_spool_postfix}/hold
+var_spool_postfix_incoming = ${:var_spool_postfix}/incoming
+var_spool_postfix_maildrop = ${:var_spool_postfix}/maildrop
+var_spool_postfix_pid = ${:var_spool_postfix}/pid
+var_spool_postfix_private = ${:var_spool_postfix}/private
+var_spool_postfix_public = ${:var_spool_postfix}/public
+var_spool_postfix_saved = ${:var_spool_postfix}/saved
+var_spool_postfix_trace = ${:var_spool_postfix}/trace
+var_lib = ${:var}/lib
+var_mail = ${:var}/mail
+var_lib_postfix = ${:var_lib}/postfix
+
+
+[userinfo]
+recipe = slapos.cookbook:userinfo
+
+
+[postfix-main-cf]
+recipe = slapos.recipe.template:jinja2
+rendered = ${directory:etc_postfix}/main.cf
+template = {{ parameter_dict['template-postfix-main-cf'] }}
+context =
+    raw queue_directory ${directory:var_spool_postfix}
+    raw command_directory ${directory:usr_sbin}
+    raw daemon_directory {{ parameter_dict['postfix-location'] }}/usr/libexec/postfix
+    raw data_directory ${directory:var_lib_postfix}
+    raw mail_owner ${userinfo:pw_name}
+    raw alias_database hash:${aliases:rendered}
+    raw alias_maps hash:${aliases:rendered}, nis:mail.aliases
+    raw mail_spool_directory ${directory:var_mail}
+    raw mydomain localdomain
+    raw myhostname test.localdomain
+    raw setgid_group ${userinfo:gr_name}
+    raw inet_interfaces {{ ipv4 }}
+
+
+[postfix-master-cf-parameters]
+smtp_port = {{ tcpv4_port }}
+
+
+[postfix-master-cf]
+recipe = slapos.recipe.template:jinja2
+rendered = ${directory:etc_postfix}/master.cf
+template = {{ parameter_dict['template-postfix-master-cf'] }}
+context = section parameter_dict postfix-master-cf-parameters
+
+
+[aliases]
+recipe = slapos.recipe.template:jinja2
+template = inline:
+  # See http://www.postfix.org/aliases.5.html for format
+rendered = ${directory:etc_postfix}/aliases
+mode = 644
+
+
+[newaliases]
+recipe = plone.recipe.command
+stop-on-error = true
+command =
+  MAIL_CONFIG="${directory:etc_postfix}" {{ parameter_dict['postfix-location'] }}/usr/bin/newaliases
+update-command = ${:command}
+
+
+[postfix-symlinks-bin]
+recipe = slapos.cookbook:symbolic.link
+target-directory = ${directory:usr_bin}
+link-binary =
+    {{ parameter_dict['postfix-location'] }}/usr/bin/mailq
+    {{ parameter_dict['postfix-location'] }}/usr/bin/newaliases
+
+
+[postfix-symlinks-sbin]
+recipe = slapos.cookbook:symbolic.link
+target-directory = ${directory:usr_sbin}
+link-binary =
+    {{ parameter_dict['postfix-location'] }}/usr/sbin/postalias
+    {{ parameter_dict['postfix-location'] }}/usr/sbin/postcat
+    {{ parameter_dict['postfix-location'] }}/usr/sbin/postconf
+    {{ parameter_dict['postfix-location'] }}/usr/sbin/postdrop
+    {{ parameter_dict['postfix-location'] }}/usr/sbin/postfix
+    {{ parameter_dict['postfix-location'] }}/usr/sbin/postkick
+    {{ parameter_dict['postfix-location'] }}/usr/sbin/postlock
+    {{ parameter_dict['postfix-location'] }}/usr/sbin/postlog
+    {{ parameter_dict['postfix-location'] }}/usr/sbin/postmap
+    {{ parameter_dict['postfix-location'] }}/usr/sbin/postmulti
+    {{ parameter_dict['postfix-location'] }}/usr/sbin/postqueue
+    {{ parameter_dict['postfix-location'] }}/usr/sbin/postsuper
+    {{ parameter_dict['postfix-location'] }}/usr/sbin/sendmail
+
+
+[postfix-symlinks-libexec]
+recipe = slapos.cookbook:symbolic.link
+target-directory = ${directory:usr}
+link-binary =
+    {{ parameter_dict['postfix-location'] }}/usr/libexec
+
+
+[service-postfix-master]
+recipe = slapos.cookbook:wrapper
+command-line = {{ parameter_dict['postfix-location'] }}/usr/libexec/postfix/master
+wrapper-path = ${directory:service}/start-postfix-master
+environment = MAIL_CONFIG=${directory:etc_postfix}
+
+
+[postfix-environment]
+MAIL_CONFIG=${directory:etc_postfix}
+
+
+[sh-postfix-environment]
+recipe = slapos.recipe.template:jinja2
+template = inline:
+  export MAIL_CONFIG="${directory:etc_postfix}"
+rendered = ${buildout:directory}/postfix-environment.sh
+context =
+  section postfix_environment postfix-environment
+mode = 755
+
+
+{% endif %}
