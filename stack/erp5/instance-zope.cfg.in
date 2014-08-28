@@ -200,7 +200,7 @@ context = key host_dict hosts-parameter:host-dict
 
 [preload-userhosts-runzope-parameter]
 runzope-binary = {{ bin_directory }}/runzope
-libuserhosts = {{ parameter_dict['libuserhosts'] }}
+userhosts = {{ parameter_dict['userhosts'] }}
 shell-path = {{ parameter_dict['dash'] }}/bin/dash
 hosts = ${hosts:rendered}
 

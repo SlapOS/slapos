@@ -141,7 +141,7 @@ buildout-bin-directory = {{ buildout_bin_directory }}
 dash = {{ dash_location }}
 jsl = {{ jsl_location }}
 link-binary = {{ dumps(zope_link_binary) }}
-libuserhosts = {{ libuserhosts_location }}
+userhosts = {{ userhosts_location }}
 runzope-userhosts-preloaded-template = {{ template_runzope_userhosts_preloaded }}
 
 [dynamic-template-zope]
