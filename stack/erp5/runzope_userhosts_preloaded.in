@@ -1,3 +1,2 @@
 #!{{ parameter_dict['shell-path'] }}
-export HOSTS='{{ parameter_dict['hosts'] }}' LD_PRELOAD='{{ parameter_dict['userhosts'] }}'
-exec {{ parameter_dict['runzope-binary'] }} "$@"
+HOSTS='{{ parameter_dict['hosts'] }}' exec '{{ parameter_dict['userhosts'] }}' '{{ parameter_dict['runzope-binary'] }}' "$@"
