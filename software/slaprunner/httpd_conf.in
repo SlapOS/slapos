@@ -74,17 +74,26 @@ Alias /share {{ parameters.runner_home }}
 
 ScriptSock {{ parameters.path_pid }}
 
-SetEnv GIT_PROJECT_ROOT {{ parameters.project_folder }}
 SetEnv GIT_HTTP_EXPORT_ALL
 ScriptAlias /git/ {{ parameters.git_http_backend }}/
 ScriptAlias /git-public/ {{ parameters.git_http_backend }}/
 
 RewriteCond %{QUERY_STRING} service=git-receive-pack [OR]
 RewriteCond %{REQUEST_URI} /git-receive-pack$
-RewriteRule ^/git/ - [E=AUTHREQUIRED:yes]
-RewriteRule ^/git-public/ - [E=AUTHREQUIRED:yes]
+RewriteRule ^/git/ - [E=AUTHREQUIRED:yes,E=GIT_PROJECT_ROOT:{{- parameters.project_private_folder -}}]
+RewriteRule ^/git-public/ - [E=AUTHREQUIRED:yes,E=GIT_PROJECT_ROOT:{{- parameters.project_public_folder -}}]
 
 <LocationMatch "^/git/">
+        Order Deny,Allow
+        Deny from env=AUTHREQUIRED
+
+        AuthType Basic
+        AuthName "Git Access"
+        AuthUserFile "{{ parameters.etc_dir }}/.htpasswd"
+        Require valid-user
+</LocationMatch>
+
+<LocationMatch "^/git-public/">
         Order Deny,Allow
         Deny from env=AUTHREQUIRED
 
