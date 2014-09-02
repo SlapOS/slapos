@@ -71,14 +71,14 @@
                         },
                         "custom-frontend-software-url": {
                                 "description": "Software Url of the frontend you request",
-                                "default": "http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg"
+                                "default": "http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg",
                                 "type": "string"
                         },
                         "monitor-port": {
                                 "description": "allow to manually change the port on wich the apache server running monitoring interface is listening. The default value for the webrunner is different from the default value of the standalone stack-monitor server",
                                 "type": "integer",
                                 "default": 9684
-                        }
+                        },
                         "resilient-clone-number": {
                                 "description": "is the number of clones to be deployed when a resilient runner is ordered. Its value can be 1 or 2",
                                 "type": "integer",
