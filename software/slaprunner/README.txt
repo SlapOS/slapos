@@ -7,6 +7,9 @@ Introduction
 This software release is used to deploy Slaprunner instances.
 Slaprunner is an all-in-one IDE used to develop and test profiles and recipes for SlapOS.
 
+You can learn how to use it here :
+http://community.slapos.org/wiki/slapos-Wiki.Home/developer-Lecture.Web.Runner.Extended
+
 Parameters
 ----------
 
@@ -147,6 +150,7 @@ List of ports used by the webrunner:
 8949 : shellinabox
 9684 : apache (monitoring of slaprunner, git access)
 22222 : dropbear
+39986 : supervisord
 50000 : slapproxy
 50005 : webrunner (flask app), webdav access
 
