@@ -15,6 +15,7 @@ slapos_cfg = {{ slaprunner['slapos.cfg'] }}
 slapproxy = {{ slaprunner['slapproxy'] }}
 supervisor = {{ slaprunner['supervisor'] }}
 supervisord_config = {{ slaprunner['supervisord_config'] }}
+supervisord_server = {{ slaprunner['supervisord_server'] }}
 runner_workdir = {{ slaprunner['working-directory'] }}
 runner_host = {{ slaprunner['ipv4'] }}
 runner_port = {{ slaprunner['runner_port'] }}

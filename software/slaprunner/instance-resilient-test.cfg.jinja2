@@ -42,7 +42,7 @@ software-url = ${slap-connection:software-release-url}
 software-type = resilient
 name = Resilient Instance (Root Instance)
 {% set cluster_parameter_dict = slapparameter_dict.get('cluster', {}) -%}
-config = resiliency-backup-periodicity {{ cluster_parameter_dict.keys() | join(' ') }}
+config = resiliency-backup-periodicity resilient-clone-number {{ cluster_parameter_dict.keys() | join(' ') }}
 {% for key, value in cluster_parameter_dict.items() -%}
 config-{{ key }} = {{ dumps(value) }}
 {% endfor -%}
