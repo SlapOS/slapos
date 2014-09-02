@@ -1,23 +1,50 @@
---- a/src/util/set_ugid.c
-+++ b/src/util/set_ugid.c
-@@ -44,7 +44,7 @@
-
- void    set_ugid(uid_t uid, gid_t gid)
- {
--    int     saved_errno = errno;
-+/*    int     saved_errno = errno;
-
-     if (geteuid() != 0)
-        if (seteuid(0) < 0)
-@@ -58,4 +58,4 @@ void    set_ugid(uid_t uid, gid_t gid)
-     if (msg_verbose > 1)
-        msg_info("setugid: uid %ld gid %ld", (long) uid, (long) gid);
-     errno = saved_errno;
--}
-+*/}
+diff --git a/src/global/mail_params.c b/src/global/mail_params.c
+index 2d91977..0f06298 100644
+--- a/src/global/mail_params.c
++++ b/src/global/mail_params.c
+@@ -721,7 +721,9 @@ void    mail_params_init()
+     check_default_privs();
+     check_mail_owner();
+     check_sgid_group();
++    /*
+     check_overlap();
++    */
+ #ifdef HAS_DB
+     dict_db_cache_size = var_db_read_buf;
+ #endif
+diff --git a/src/master/master.c b/src/master/master.c
+index a9d5d1b..db88c55 100644
+--- a/src/master/master.c
++++ b/src/master/master.c
+@@ -315,10 +315,10 @@ int     main(int argc, char **argv)
+      * privileges for selected operations. That's right - it takes privileges
+      * to toss privileges.
+      */
+-    if (getuid() != 0)
++    /*if (getuid() != 0)
+ 	msg_fatal("the master command is reserved for the superuser");
+     if (unsafe() != 0)
+-	msg_fatal("the master command must not run as a set-uid process");
++	msg_fatal("the master command must not run as a set-uid process");*/
+ 
+     /*
+      * Process JCL.
+@@ -392,8 +392,10 @@ int     main(int argc, char **argv)
+      * all MTA processes cleanly. Give up if we can't separate from our
+      * parent process. We're not supposed to blow away the parent.
+      */
++    /*
+     if (debug_me == 0 && master_detach != 0 && setsid() == -1 && getsid(0) != getpid())
+ 	msg_fatal("unable to set session and process group ID: %m");
++    */
+ 
+     /*
+      * Make some room for plumbing with file descriptors. XXX This breaks
+diff --git a/src/postfix/postfix.c b/src/postfix/postfix.c
+index 183c825..007c805 100644
 --- a/src/postfix/postfix.c
 +++ b/src/postfix/postfix.c
-@@ -448,12 +448,12 @@ int     main(int argc, char **argv)
+@@ -450,12 +450,12 @@ int     main(int argc, char **argv)
       * privileges for selected operations. That's right - it takes privileges
       * to toss privileges.
       */
@@ -32,33 +59,8 @@
  
      /*
       * Parse switches.
---- a/src/global/mail_params.c
-+++ b/src/global/mail_params.c
-@@ -709,7 +709,9 @@ void    mail_params_init()
-     check_default_privs();
-     check_mail_owner();
-     check_sgid_group();
-+    /*
-     check_overlap();
-+    */
- #ifdef HAS_DB
-     dict_db_cache_size = var_db_read_buf;
- #endif
---- a/src/master/master.c
-+++ b/src/master/master.c
-@@ -315,10 +315,10 @@ int     main(int argc, char **argv)
-      * privileges for selected operations. That's right - it takes privileges
-      * to toss privileges.
-      */
--    if (getuid() != 0)
-+    /*if (getuid() != 0)
-        msg_fatal("the master command is reserved for the superuser");
-     if (unsafe() != 0)
--       msg_fatal("the master command must not run as a set-uid process");
-+       msg_fatal("the master command must not run as a set-uid process");*/
- 
-     /*
-      * Process JCL.
+diff --git a/src/postsuper/postsuper.c b/src/postsuper/postsuper.c
+index 9dabb5d..e678565 100644
 --- a/src/postsuper/postsuper.c
 +++ b/src/postsuper/postsuper.c
 @@ -1150,10 +1150,10 @@ int     main(int argc, char **argv)
@@ -67,10 +69,77 @@
       */
 -    if (unsafe() != 0)
 +    /*if (unsafe() != 0)
-        msg_fatal("this postfix command must not run as a set-uid process");
+ 	msg_fatal("this postfix command must not run as a set-uid process");
      if (getuid())
--       msg_fatal("use of this command is reserved for the superuser");
-+       msg_fatal("use of this command is reserved for the superuser");*/
+-	msg_fatal("use of this command is reserved for the superuser");
++	msg_fatal("use of this command is reserved for the superuser");*/
  
      /*
       * Parse JCL.
+diff --git a/src/util/chroot_uid.c b/src/util/chroot_uid.c
+index 4a7660f..d5d4e67 100644
+--- a/src/util/chroot_uid.c
++++ b/src/util/chroot_uid.c
+@@ -55,10 +55,11 @@ void    chroot_uid(const char *root_dir, const char *user_name)
+ 	    msg_fatal("unknown user: %s", user_name);
+ 	uid = pwd->pw_uid;
+ 	gid = pwd->pw_gid;
++        /*
+ 	if (setgid(gid) < 0)
+ 	    msg_fatal("setgid(%ld): %m", (long) gid);
+ 	if (initgroups(user_name, gid) < 0)
+-	    msg_fatal("initgroups: %m");
++	    msg_fatal("initgroups: %m");*/
+     }
+ 
+     /*
+@@ -74,9 +75,11 @@ void    chroot_uid(const char *root_dir, const char *user_name)
+     /*
+      * Drop the user privileges.
+      */
++    /*
+     if (user_name != 0)
+ 	if (setuid(uid) < 0)
+ 	    msg_fatal("setuid(%ld): %m", (long) uid);
++    */
+ 
+     /*
+      * Give the desperate developer a clue of what is happening.
+diff --git a/src/util/set_eugid.c b/src/util/set_eugid.c
+index ef35380..ed96a69 100644
+--- a/src/util/set_eugid.c
++++ b/src/util/set_eugid.c
+@@ -53,7 +53,7 @@
+ 
+ void    set_eugid(uid_t euid, gid_t egid)
+ {
+-    int     saved_errno = errno;
++/*    int     saved_errno = errno;
+ 
+     if (geteuid() != 0)
+ 	if (seteuid(0))
+@@ -67,4 +67,4 @@ void    set_eugid(uid_t euid, gid_t egid)
+     if (msg_verbose)
+ 	msg_info("set_eugid: euid %ld egid %ld", (long) euid, (long) egid);
+     errno = saved_errno;
+-}
++*/}
+diff --git a/src/util/set_ugid.c b/src/util/set_ugid.c
+index bbcb901..5a7a48b 100644
+--- a/src/util/set_ugid.c
++++ b/src/util/set_ugid.c
+@@ -44,7 +44,7 @@
+ 
+ void    set_ugid(uid_t uid, gid_t gid)
+ {
+-    int     saved_errno = errno;
++/*    int     saved_errno = errno;
+ 
+     if (geteuid() != 0)
+ 	if (seteuid(0) < 0)
+@@ -58,4 +58,4 @@ void    set_ugid(uid_t uid, gid_t gid)
+     if (msg_verbose > 1)
+ 	msg_info("setugid: uid %ld gid %ld", (long) uid, (long) gid);
+     errno = saved_errno;
+-}
++*/}
