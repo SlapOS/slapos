@@ -44,6 +44,19 @@ filename = instance-cloudoo.cfg
 extra-context =
     section parameter_dict dynamic-template-cloudooo-parameters
 
+[dynamic-template-postfix-parameters]
+postfix-location = {{ postfix_location }}
+template-postfix-main-cf = {{ template_postfix_main_cf }}
+template-postfix-master-cf = {{ template_postfix_master_cf }}
+
+[dynamic-template-postfix]
+< = jinja2-template-base
+template = {{ template_postfix }}
+filename = instance-postfix.cfg
+extensions = jinja2.ext.do
+extra-context =
+    section parameter_dict dynamic-template-postfix-parameters
+
 [dynamic-template-erp5-parameters]
 local-bt5-repository = {{ local_bt5_repository }}
 
@@ -167,6 +180,7 @@ kumofs = dynamic-template-kumofs:rendered
 cloudooo = dynamic-template-cloudooo:rendered
 mariadb = dynamic-template-mariadb:rendered
 balancer = dynamic-template-balancer:rendered
+postfix = dynamic-template-postfix:rendered
 zodb-zeo = dynamic-template-zeo:rendered
 zodb-neo = neo-storage-mysql:rendered
 zope = dynamic-template-zope:rendered

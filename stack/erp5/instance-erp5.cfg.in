@@ -31,6 +31,7 @@ config-{{ k }} = {{ dumps(v) }}
 {{ request('memcached-volatile', 'kumofs', 'memcached', {'tcpv4-port': 2010, 'ram-storage-size': 64}) }}
 {{ request('cloudooo', 'cloudooo', 'cloudooo', {'tcpv4-port': 2020}) }}
 {{ request('mariadb', 'mariadb', 'mariadb', {'tcpv4-port': 2099}, {'database-list': True, 'test-database-list': True}) }}
+{{ request('postfix', 'postfix', 'postfix', {'tcpv4-port': 2025}) }}
 
 {# ZODB -#}
 {% set zodb_dict = {} -%}
