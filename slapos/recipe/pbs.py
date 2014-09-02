@@ -156,7 +156,7 @@ class Recipe(GenericSlapRecipe, Notify, Callback):
           fi
           """)
       rdiff_wrapper_content = rdiff_wrapper_template % {
-              'comment': comments,
+              'comment': ''.join(('# %s\n' % comment_line) for comment_line in comments),
               'rdiffbackup_binary': self.options['rdiffbackup-binary'],
               'local_directory': local_directory,
               'rdiffbackup_parameter': ' \\\n    '.join(rdiffbackup_parameter_list),
