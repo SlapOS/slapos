@@ -54,43 +54,38 @@
 
 portal = context.getPortalObject()\n
 \n
-category_public = portal.restrictedTraverse("portal_categories/allocation_scope/open/public", None)\n
-category_friend = portal.restrictedTraverse("portal_categories/allocation_scope/open/friend", None)\n
-category_personal = portal.restrictedTraverse("portal_categories/allocation_scope/open/personal", None)\n
+hosting_subscription = context.UpgradeDecision_getHostingSubscription()\n
+computer = context.UpgradeDecision_getComputer()\n
+software_release = context.UpgradeDecision_getSoftwareRelease()\n
 \n
-if category_public is not None:\n
-  portal.portal_catalog.searchAndActivate(\n
-    portal_type=\'Computer\',\n
-    default_allocation_scope_uid=[category_public.getUid(), category_friend.getUid()],\n
-    validation_state="validated",\n
-    method_id=\'Computer_checkAndUpdateAllocationScope\',\n
-    activate_kw={\'tag\': tag}\n
-  )\n
+if hosting_subscription is not None:\n
+  if hosting_subscription.getUrlString() == software_release.getUrlString():\n
+    return True\n
 \n
-if category_personal is not None:\n
-  portal.portal_catalog.searchAndActivate(\n
-    portal_type=\'Computer\', \n
-    validation_state=\'validated\', \n
-    modification_date=(DateTime() - 30).strftime(\'<=%Y/%m/%d\'), \n
-    order_by=((\'modification_date\', "ASC"), ), \n
-    default_allocation_scope_uid=category_personal.getUid(), \n
-    left_join_list=[\'aggregate_related_uid\'], \n
-    aggregate_related_uid=None,\n
-    method_id=\'Computer_checkAndUpdatePersonalAllocationScope\',\n
-    activate_kw={\'tag\': tag})\n
+elif computer is not None:\n
+  full_software_release_list = [si for si in \n
+          portal.portal_catalog(\n
+            portal_type=\'Software Installation\',\n
+            url_string=software_release.getUrlString(),\n
+            default_aggregate_uid=computer.getUid(),\n
+            validation_state=\'validated\'\n
+          ) if si.getSlapState() == \'start_requested\']\n
 \n
-context.activate(after_tag=tag).getId()\n
+  if len(full_software_release_list) > 0:\n
+    return True\n
+\n
+return False\n
 
 
 ]]></string> </value>
         </item>
         <item>
             <key> <string>_params</string> </key>
-            <value> <string>tag, fixit, params</string> </value>
+            <value> <string></string> </value>
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>Alarm_checkAndUpdateComputerAllocationScope</string> </value>
+            <value> <string>UpgradeDecision_isUpgradeFinished</string> </value>
         </item>
       </dictionary>
     </pickle>

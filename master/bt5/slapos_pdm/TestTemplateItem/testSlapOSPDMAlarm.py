@@ -87,6 +87,23 @@ return %s
       upgrade_decision.workflow_history['edit_workflow'][-1]['comment'])
     
 
+  def test_alarm_upgrade_decision_process_stopped(self):
+    upgrade_decision = self._makeUpgradeDecision()
+    upgrade_decision.start()
+    upgrade_decision.stop()
+    self.tic()
+
+    self._simulateScript('UpgradeDecision_notifyDelivered')
+    try:
+      self.portal.portal_alarms.slapos_pdm_upgrade_decision_process_stopped.\
+        activeSense()
+      self.tic()
+    finally:
+      self._dropScript('UpgradeDecision_notifyDelivered')
+
+    self.assertEqual('Visited by UpgradeDecision_notifyDelivered',
+      upgrade_decision.workflow_history['edit_workflow'][-1]['comment'])
+
   def test_alarm_computer_create_upgrade_decision(self):
     computer = self._makeComputer(self.new_id)
     computer.edit(allocation_scope = 'open/public')

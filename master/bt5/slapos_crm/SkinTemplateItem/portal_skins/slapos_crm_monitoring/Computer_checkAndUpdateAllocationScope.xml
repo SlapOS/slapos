@@ -57,7 +57,11 @@ portal = context.getPortalObject()\n
 allocation_scope = computer.getAllocationScope()\n
 computer_reference = computer.getReference()\n
 \n
-if allocation_scope not in [\'open/public\', \'open/friend\']:\n
+if allocation_scope not in [\'open/public\', \'open/friend\', \'open/personal\']:\n
+  return\n
+\n
+if allocation_scope == target_allocation_scope:\n
+  # already changed\n
   return\n
 \n
 person = computer.getSourceAdministrationValue(portal_type="Person")\n
@@ -65,17 +69,15 @@ if not person:\n
   return\n
 \n
 if not person.Person_isServiceProvider():\n
-  #Turn this computer allocation scope to \'open/personal\'\n
   edit_kw = {\n
-    \'allocation_scope\': \'open/personal\',\n
+    \'allocation_scope\': target_allocation_scope,\n
   }\n
-  computer.edit(**edit_kw)\n
 \n
   # Create a ticket (or re-open it) for this issue!\n
   support_request = None\n
   request_title = \'We have changed allocation scope for %s\' % computer_reference\n
-  request_description = \'Allocation scope has been changed back to \' \\\n
-                       \'open/personal for %s\' % computer_reference\n
+  request_description = \'Allocation scope has been changed to \' \\\n
+                       \'%s for %s\' % (target_allocation_scope, computer_reference)\n
             \n
   support_request_url = context.Base_generateSupportRequestForSlapOS(\n
                  request_title,\n
@@ -91,7 +93,7 @@ if not person.Person_isServiceProvider():\n
     support_request = portal.portal_catalog.getResultValue(\n
           portal_type = \'Support Request\',\n
           title = request_title,\n
-          simulation_state = \'suspended\',\n
+          simulation_state = [\'suspended\', \'open\'],\n
           source_project_uid = computer.getUid()\n
     )\n
   if support_request is None:\n
@@ -100,7 +102,7 @@ if not person.Person_isServiceProvider():\n
   \n
   # Send notification message\n
   notification_message = portal.portal_notifications.getDocumentValue(\n
-                 reference=\'slapos-crm-computer_allocation_scope.notification\')\n
+                 reference=notification_message_reference)\n
 \n
   if notification_message is not None:\n
     mapping_dict = {\'computer_title\':computer.getTitle(),\n
@@ -111,13 +113,16 @@ if not person.Person_isServiceProvider():\n
   else:\n
     message = request_description\n
 \n
-  support_request.SupportRequest_trySendNotificationMessage(request_title,\n
+  event = support_request.SupportRequest_trySendNotificationMessage(request_title,\n
               message, person.getRelativeUrl())\n
+\n
+  if event is not None:\n
+    computer.edit(**edit_kw)\n
 </string> </value>
         </item>
         <item>
             <key> <string>_params</string> </key>
-            <value> <string></string> </value>
+            <value> <string>target_allocation_scope=\'open/personal\', notification_message_reference=\'slapos-crm-computer_allocation_scope.notification\'</string> </value>
         </item>
         <item>
             <key> <string>id</string> </key>
