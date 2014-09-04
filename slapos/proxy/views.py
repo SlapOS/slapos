@@ -2,7 +2,7 @@
 # vim: set et sts=2:
 ##############################################################################
 #
-# Copyright (c) 2010, 2011, 2012 Vifib SARL and Contributors.
+# Copyright (c) 2010, 2011, 2012, 2013, 2014 Vifib SARL and Contributors.
 # All Rights Reserved.
 #
 # WARNING: This program as such is intended to be used by professional
@@ -36,8 +36,12 @@ from slapos.proxy.db_version import DB_VERSION
 
 from flask import g, Flask, request, abort
 import xml_marshaller
+from xml_marshaller.xml_marshaller import loads
+from xml_marshaller.xml_marshaller import dumps
+
 app = Flask(__name__)
 
+EMPTY_DICT_XML = dumps({})
 
 class UnauthorizedError(Exception):
   pass
@@ -326,47 +330,92 @@ def supplySupply():
 
 @app.route('/requestComputerPartition', methods=['POST'])
 def requestComputerPartition():
-  shared_xml = request.form.get('shared_xml')
-  share = xml_marshaller.xml_marshaller.loads(shared_xml.encode())
-  if not share:
-    return request_not_shared()
+  parsed_form_dict = parseRequestComputerPartitionForm(request.form)
+  # By default, ALWAYS request instance on default computer
+  parsed_form_dict['filter_kw'].setdefault('computer_guid', app.config['computer_id'])
+
+  # Is it a slave instance?
+  slave = loads(request.form.get('shared_xml', EMPTY_DICT_XML).encode())
+
+  # Check first if instance is already allocated
+  if slave:
+    # XXX: change schema to include a simple "partition_reference" which
+    # is name of the instance. Then, no need to do complex search here.
+    slave_reference = parsed_form_dict['partition_id'] + '_' + parsed_form_dict['partition_reference']
+    requested_computer_id = parsed_form_dict['filter_kw']['computer_guid']
+    matching_partition = getAllocatedSlaveInstance(slave_reference, requested_computer_id)
   else:
-    return request_slave()
+    matching_partition = getAllocatedInstance(parsed_form_dict['partition_reference'])
 
-
-@app.route('/softwareInstanceRename', methods=['POST'])
-def softwareInstanceRename():
-  new_name = request.form['new_name'].encode()
-  computer_partition_id = request.form['computer_partition_id'].encode()
-  computer_id = request.form['computer_id'].encode()
-
-  q = 'UPDATE %s SET partition_reference = ? WHERE reference = ? AND computer_reference = ?'
-  execute_db('partition', q, [new_name, computer_partition_id, computer_id])
-  return 'done'
-
-@app.route('/getComputerPartitionStatus', methods=['GET'])
-def getComputerPartitionStatus():
-  return xml_marshaller.xml_marshaller.dumps('Not implemented.')
-
-def request_not_shared():
-  software_release = request.form['software_release'].encode()
-  # some supported parameters
-  software_type = request.form.get('software_type').encode()
-  partition_reference = request.form.get('partition_reference', '').encode()
-  filter_kw = request.form.get('filter_xml', None)
-  partition_id = request.form.get('computer_partition_id', '').encode()
-  partition_parameter_kw = request.form.get('partition_parameter_xml', None)
-  requested_state = xml_marshaller.xml_marshaller.loads(request.form.get('state').encode())
-  if partition_parameter_kw:
-    partition_parameter_kw = xml_marshaller.xml_marshaller.loads(
-                                              partition_parameter_kw.encode())
+  if matching_partition:
+    # Then the instance is already allocated, just update it
+    # XXX: split request and request slave into different update/allocate functions and simplify.
+    if slave:
+      software_instance = requestSlave(**parsed_form_dict)
+    else:
+      software_instance = requestNotSlave(**parsed_form_dict)
   else:
-    partition_parameter_kw = {}
-  if filter_kw:
-    filter_kw = xml_marshaller.xml_marshaller.loads(filter_kw.encode())
-    requested_computer_id = filter_kw.get('computer_guid', app.config['computer_id'])
-  else:
-    requested_computer_id = app.config['computer_id']
+    # Instance is not yet allocated: try to do it.
+    # XXX Insert here multimaster allocation
+    # XXX add support for automatic deployment on specific node depending on available SR and partitions on each Node.
+    # Note: only deploy on default node if SLA not specified
+    # XXX: split request and request slave into different update/allocate functions and simplify.
+    if slave:
+      software_instance = requestSlave(**parsed_form_dict)
+    else:
+      software_instance = requestNotSlave(**parsed_form_dict)
+
+  return dumps(software_instance)
+
+def parseRequestComputerPartitionForm(form):
+  """
+  Parse without intelligence a form from a request(), return it.
+  """
+  parsed_dict = {}
+  parsed_dict['software_release'] = form['software_release'].encode()
+  parsed_dict['software_type'] = form.get('software_type').encode()
+  parsed_dict['partition_reference'] = form.get('partition_reference', '').encode()
+  parsed_dict['partition_id'] = form.get('computer_partition_id', '').encode()
+  parsed_dict['partition_parameter_kw'] = loads(form.get('partition_parameter_xml', EMPTY_DICT_XML).encode())
+  parsed_dict['filter_kw'] = loads(form.get('filter_xml', EMPTY_DICT_XML).encode())
+  # Note: currently ignored on for slave instance (slave instances
+  # are always started).
+  parsed_dict['requested_state'] = loads(form.get('state').encode())
+
+  return parsed_dict
+
+def getAllocatedInstance(partition_reference):
+  """
+  Look for existence of instance, if so return the 
+  corresponding partition dict, else return None
+  """
+  args = []
+  a = args.append
+  table = 'partition'
+  q = 'SELECT * FROM %s WHERE partition_reference=?'
+  a(partition_reference)
+  return execute_db(table, q, args, one=True)
+
+def getAllocatedSlaveInstance(slave_reference, requested_computer_id):
+  """
+  Look for existence of instance, if so return the 
+  corresponding partition dict, else return None
+  """
+  args = []
+  a = args.append
+  # XXX: Scope currently depends on instance which requests slave.
+  # Meaning that two different instances requesting the same slave will
+  # result in two different allocated slaves.
+  table = 'slave'
+  q = 'SELECT * FROM %s WHERE reference=? and computer_reference=?'
+  a(slave_reference)
+  a(requested_computer_id)
+  # XXX: check there is only one result
+  return execute_db(table, q, args, one=True)
+
+def requestNotSlave(software_release, software_type, partition_reference, partition_id, partition_parameter_kw, filter_kw, requested_state):
+  instance_xml = dict2xml(partition_parameter_kw)
+  requested_computer_id = filter_kw['computer_guid']
 
   instance_xml = dict2xml(partition_parameter_kw)
   args = []
@@ -384,9 +433,6 @@ def request_not_shared():
     q += ', requested_state=?'
     a(requested_state)
 
-  # If partition doesn't exist: create it and insert parameters
-  # XXX add support for automatic deployment on specific node depending on available SR and partitions on each Node.
-  # Note: only deploy on default node if SLA not specified
   if partition is None:
     partition = execute_db('partition',
         'SELECT * FROM %s WHERE slap_state="free" and computer_reference=?',
@@ -412,7 +458,7 @@ def request_not_shared():
     q += ' ,software_type=?'
     a(software_type)
 
-  # Else: only update partition_parameter_kw
+  # Else: only update partition parameters
   if instance_xml:
     q += ' ,xml=?'
     a(instance_xml)
@@ -442,10 +488,10 @@ def request_not_shared():
                                        _instance_guid='%s-%s' % (partition['computer_reference'].encode(), partition['reference']),
                                        _requested_state=requested_state,
                                        ip_list=address_list)
-  return xml_marshaller.xml_marshaller.dumps(software_instance)
+  return software_instance
 
 
-def request_slave():
+def requestSlave(software_release, software_type, partition_reference, partition_id, partition_parameter_kw, filter_kw, requested_state):
   """
   Function to organise link between slave and master.
   Slave information are stored in places:
@@ -456,27 +502,9 @@ def request_slave():
       in which are stored slave_reference, software_type, slave_title and
       partition_parameter_kw stored as individual keys.
   """
-  software_release = request.form['software_release'].encode()
-  # some supported parameters
-  software_type = request.form.get('software_type').encode()
-  partition_reference = request.form.get('partition_reference', '').encode()
-  partition_id = request.form.get('computer_partition_id', '').encode()
-  # Contain slave parameters to be given to slave master
-  partition_parameter_kw = request.form.get('partition_parameter_xml', None)
-  if partition_parameter_kw:
-    partition_parameter_kw = xml_marshaller.xml_marshaller.loads(
-                                              partition_parameter_kw.encode())
-  else:
-    partition_parameter_kw = {}
-
-  filter_kw = request.form.get('filter_xml', None)
-  if filter_kw:
-    filter_kw = xml_marshaller.xml_marshaller.loads(filter_kw.encode())
-    requested_computer_id = filter_kw.get('computer_guid', app.config['computer_id'])
-  else:
-    requested_computer_id = app.config['computer_id']
-
+  requested_computer_id = filter_kw['computer_guid']
   instance_xml = dict2xml(partition_parameter_kw)
+
   # We will search for a master corresponding to request
   args = []
   a = args.append
@@ -557,8 +585,21 @@ def request_slave():
                                        slap_software_type=partition['software_type'],
                                        ip_list=address_list)
 
-  return xml_marshaller.xml_marshaller.dumps(software_instance)
+  return software_instance
 
+@app.route('/softwareInstanceRename', methods=['POST'])
+def softwareInstanceRename():
+  new_name = request.form['new_name'].encode()
+  computer_partition_id = request.form['computer_partition_id'].encode()
+  computer_id = request.form['computer_id'].encode()
+
+  q = 'UPDATE %s SET partition_reference = ? WHERE reference = ? AND computer_reference = ?'
+  execute_db('partition', q, [new_name, computer_partition_id, computer_id])
+  return 'done'
+
+@app.route('/getComputerPartitionStatus', methods=['GET'])
+def getComputerPartitionStatus():
+  return xml_marshaller.xml_marshaller.dumps('Not implemented.')
 
 @app.route('/getSoftwareReleaseListFromSoftwareProduct', methods=['GET'])
 def getSoftwareReleaseListFromSoftwareProduct():
