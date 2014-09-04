@@ -45,3 +45,7 @@ CREATE TABLE IF NOT EXISTS partition_network%(version)s (
   netmask VARCHAR(255)
 );
 
+CREATE TABLE IF NOT EXISTS forwarded_partition_request%(version)s (
+  partition_reference VARCHAR(255), -- a.k.a source_instance_id
+  master_url VARCHAR(255)
+);
