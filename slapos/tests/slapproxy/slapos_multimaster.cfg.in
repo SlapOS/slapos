@@ -1,0 +1,29 @@
+[slapos]
+software_root = %(tempdir)s/opt/slapgrid
+instance_root = %(tempdir)s/srv/slapgrid
+master_url = %(proxyaddr)s
+computer_id = computer
+
+[slapproxy]
+host = 127.0.0.1
+port = 8080
+database_uri = %(tempdir)s/lib/proxy.db
+
+# Here goes the list of slapos masters that slapproxy can contact
+# Each section beginning by multimaster is a different SlapOS Master, represented by arbitrary name.
+# For each section, you need to specify the URL of the SlapOS Master.
+# For each section, you can specify if needed the location of key/certificate used to authenticate to this slapOS Master.
+# For each section, you can specify a list of Software Releases. Any instance request matching this Softwrare Release will be automatically forwarded to this SlapOS Master and will not be allocated locally.
+[multimaster/https://slap.vifib.com]
+key = /path/to/cert.key
+cert = /path/to/cert.cert
+# XXX add wildcard support for SR list.
+software_release_list =
+  http://something.io/software.cfg
+  /some/arbitrary/local/unix/path
+
+[multimaster/http://%(external_proxy_host)s:%(external_proxy_port)s]
+# No certificate here: it is http.
+software_release_list =
+  http://mywebsite.me/exteral_software_release.cfg
+

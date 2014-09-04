@@ -30,6 +30,7 @@
 
 import logging
 
+from slapos.proxy.views import app
 
 def _generateSoftwareProductListFromString(software_product_list_string):
   """
@@ -52,33 +53,48 @@ def _generateSoftwareProductListFromString(software_product_list_string):
 class ProxyConfig(object):
   def __init__(self, logger):
     self.logger = logger
+    self.multimaster = {}
+    self.software_product_list = []
 
   def mergeConfig(self, args, configp):
-    # Set options parameters
+    # Set arguments parameters (from CLI) as members of self
     for option, value in args.__dict__.items():
       setattr(self, option, value)
 
-    # Merge the arguments and configuration
-    for section in ("slapproxy", "slapos"):
+    for section in configp.sections():
       configuration_dict = dict(configp.items(section))
-      for key in configuration_dict:
-        if not getattr(self, key, None):
-          setattr(self, key, configuration_dict[key])
-
+      if section in ("slapproxy", "slapos"):
+        # Merge the arguments and configuration as member of self
+        for key in configuration_dict:
+          if not getattr(self, key, None):
+            setattr(self, key, configuration_dict[key])
+      elif section.startswith('multimaster/'):
+        # Merge multimaster configuration if any
+        # XXX: check for duplicate SR entries
+        for key, value in configuration_dict.iteritems():
+          if key == 'software_release_list':
+            # Split multi-lines values
+            configuration_dict[key] = [line.strip() for line in value.strip().split('\n')]
+        self.multimaster[section.split('multimaster/')[1]] = configuration_dict
 
   def setConfig(self):
     if not self.database_uri:
       raise ValueError('database-uri is required.')
+    # XXX: check for duplicate SR entries.
+    self.software_product_list = _generateSoftwareProductListFromString(
+        getattr(self, 'software_product_list', ''))
 
+
+def setupFlaskConfiguration(conf):
+  app.config['computer_id'] = conf.computer_id
+  app.config['DATABASE_URI'] = conf.database_uri
+  app.config['software_product_list'] = conf.software_product_list
+  app.config['multimaster'] = conf.multimaster
 
 def do_proxy(conf):
-  from slapos.proxy.views import app
   for handler in conf.logger.handlers:
     app.logger.addHandler(handler)
   app.logger.setLevel(logging.INFO)
-  app.config['computer_id'] = conf.computer_id
-  app.config['DATABASE_URI'] = conf.database_uri
-  app.config['software_product_list'] = \
-    _generateSoftwareProductListFromString(
-      getattr(conf, 'software_product_list', ""))
-  app.run(host=conf.host, port=int(conf.port))
+  setupFlaskConfiguration(conf)
+  app.run(host=conf.host, port=int(conf.port), threaded=True)
+

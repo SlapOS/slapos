@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
+# vim: set et sts=2:
 ##############################################################################
 #
-# Copyright (c) 2012 Vifib SARL and Contributors.
+# Copyright (c) 2012, 2013, 2014 Vifib SARL and Contributors.
 # All Rights Reserved.
 #
 # WARNING: This program as such is intended to be used by professional
@@ -31,7 +32,9 @@ import ConfigParser
 import os
 import logging
 import shutil
+import subprocess
 import tempfile
+import time
 import unittest
 import xml_marshaller
 from xml_marshaller.xml_marshaller import loads, dumps
@@ -69,14 +72,7 @@ class BasicMixin(object):
     self.setFiles()
     self.startProxy()
 
-  def setFiles(self):
-    """
-    Set environment to run slapproxy
-    """
-    self.slapos_cfg = os.path.join(self._tempdir, 'slapos.cfg')
-    self.proxy_db = os.path.join(self._tempdir, 'lib', 'proxy.db')
-    self.proxyaddr = 'http://127.0.0.1:8080/'
-    self.computer_id = 'computer'
+  def createSlapOSConfigurationFile(self):
     open(self.slapos_cfg, 'w').write("""[slapos]
 software_root = %(tempdir)s/opt/slapgrid
 instance_root = %(tempdir)s/srv/slapgrid
@@ -87,6 +83,16 @@ host = 127.0.0.1
 port = 8080
 database_uri = %(tempdir)s/lib/proxy.db
 """ % {'tempdir': self._tempdir, 'proxyaddr': self.proxyaddr})
+
+  def setFiles(self):
+    """
+    Set environment to run slapproxy
+    """
+    self.slapos_cfg = os.path.join(self._tempdir, 'slapos.cfg')
+    self.proxy_db = os.path.join(self._tempdir, 'lib', 'proxy.db')
+    self.proxyaddr = 'http://localhost:80/'
+    self.computer_id = 'computer'
+    self.createSlapOSConfigurationFile()
     for directory in ['opt', 'srv', 'lib']:
       path = os.path.join(self._tempdir, directory)
       os.mkdir(path)
@@ -101,10 +107,8 @@ database_uri = %(tempdir)s/lib/proxy.db
     conf.mergeConfig(ProxyOption(self.proxy_db), configp)
     conf.setConfig()
     views.app.config['TESTING'] = True
-    views.app.config['computer_id'] = self.computer_id
-    views.app.config['DATABASE_URI'] = self.proxy_db
-    views.app.config['HOST'] = conf.host
-    views.app.config['port'] = conf.port
+    slapos.proxy.setupFlaskConfiguration(conf)
+    
     self.app_config = views.app.config
     self.app = views.app.test_client()
 
@@ -850,7 +854,280 @@ class TestMultiNodeSupport(MasterMixin):
     except slapos.slap.NotFoundError:
       self.fail('Could not fetch informations for registered computer.')
 
+class TestMultiMasterSupport(MasterMixin):
+  """
+  Test multimaster support in slapproxy.
+  """
+  external_software_release = 'http://mywebsite.me/exteral_software_release.cfg'
+  software_release_not_in_list = 'http://mywebsite.me/exteral_software_release_not_listed.cfg'
 
+  def setUp(self):
+    # XXX don't use lo
+    self.external_proxy_host = '127.0.0.1'
+    self.external_proxy_port = 8281
+    self.external_master_url = 'http://%s:%s' % (self.external_proxy_host, self.external_proxy_port)
+    self.external_computer_id = 'external_computer'
+
+    super(TestMultiMasterSupport, self).setUp()
+
+    self.db = sqlite3.connect(self.proxy_db)
+    self.external_slapproxy_configuration_file_location = os.path.join(
+        self._tempdir, 'external_slapos.cfg')
+    self.createExternalProxyConfigurationFile()
+    self.startExternalProxy()
+
+  def tearDown(self):
+    self.external_proxy_process.kill()
+    super(TestMultiMasterSupport, self).tearDown()
+
+  def createExternalProxyConfigurationFile(self):
+    open(self.external_slapproxy_configuration_file_location, 'w').write("""[slapos]
+computer_id = %(external_computer_id)s
+[slapproxy]
+host = 127.0.0.1
+port = %(port)s
+database_uri = %(tempdir)s/lib/external_proxy.db
+""" % {
+    'tempdir': self._tempdir,
+    'port': self.external_proxy_port,
+    'external_computer_id': self.external_computer_id
+    })
+
+  def startExternalProxy(self):
+    """
+    Start external slapproxy
+    """
+    # XXX use current dev version, not standard one installed through package
+    self.external_proxy_process = subprocess.Popen(['slapos', 'proxy', 'start', '--cfg', self.external_slapproxy_configuration_file_location ])
+    # Wait a bit for proxy to be started
+    time.sleep(0.5)
+    self.external_proxy_slap = slapos.slap.slap()
+    self.external_proxy_slap.initializeConnection(self.external_master_url)
+
+  def createSlapOSConfigurationFile(self):
+    """
+    Overwrite default slapos configuration file to enable specific multimaster
+    behaviours.
+    """
+    configuration = pkg_resources.resource_stream(
+        'slapos.tests.slapproxy', 'slapos_multimaster.cfg.in'
+    ).read() % {
+        'tempdir': self._tempdir, 'proxyaddr': self.proxyaddr,
+        'external_proxy_host': self.external_proxy_host,
+        'external_proxy_port': self.external_proxy_port
+    }
+    open(self.slapos_cfg, 'w').write(configuration)
+
+  def external_proxy_supply(self, url, computer_id=None):
+    if computer_id is None:
+      computer_id = self.external_computer_id
+    self.external_proxy_slap.registerSupply().supply(url, computer_id)
+
+  def external_proxy_add_free_partition(self, partition_amount, computer_id=None):
+    """
+    Will simulate a slapformat first run
+    and create "partition_amount" partitions
+    """
+    if not computer_id:
+      computer_id = self.external_computer_id
+    computer_dict = {
+        'reference': computer_id,
+        'address': '123.456.789',
+        'netmask': 'fffffffff',
+        'partition_list': [],
+    }
+    for i in range(partition_amount):
+      partition_example = {
+          'reference': 'slappart%s' % i,
+          'address_list': [
+              {'addr': '1.2.3.4', 'netmask': '255.255.255.255'},
+              {'addr': '4.3.2.1', 'netmask': '255.255.255.255'}
+           ],
+           'tap': {'name': 'tap0'},
+      }
+      computer_dict['partition_list'].append(partition_example)
+
+    request_dict = {
+        'computer_id': self.computer_id,
+        'xml': xml_marshaller.xml_marshaller.dumps(computer_dict),
+    }
+    self.external_proxy_slap._connection_helper.POST('/loadComputerConfigurationFromXML',
+                  parameter_dict=request_dict)
+
+  def _checkInstanceIsFowarded(self, name, partition_parameter_kw, software_release):
+    """
+    Test there is no instance on local proxy.
+    Test there is instance on external proxy.
+    Test there is instance reference in external table of databse of local proxy.
+    """
+    # Test it has been correctly added to local database
+    forwarded_instance_list = slapos.proxy.views.execute_db('forwarded_partition_request', 'SELECT * from %s', db=self.db)
+    self.assertEqual(len(forwarded_instance_list), 1)
+    forwarded_instance = forwarded_instance_list[0]
+    self.assertEqual(forwarded_instance['partition_reference'], name)
+    self.assertEqual(forwarded_instance['master_url'], self.external_master_url)
+
+    # Test there is nothing allocated locally
+    computer = loads(self.app.get(
+        '/getFullComputerInformation?computer_id=%s' % self.computer_id
+    ).data)
+    self.assertEqual(
+        computer._computer_partition_list[0]._software_release_document,
+        None
+    )
+
+    # Test there is an instance allocated in external master
+    external_slap = slapos.slap.slap()
+    external_slap.initializeConnection(self.external_master_url)
+    external_computer = external_slap.registerComputer(self.external_computer_id)
+    external_partition = external_computer.getComputerPartitionList()[0]
+    for k, v in partition_parameter_kw.iteritems():
+      self.assertEqual(
+          external_partition.getInstanceParameter(k),
+          v
+      )
+    self.assertEqual(
+        external_partition._software_release_document._software_release,
+        software_release
+    )
+
+  def _checkInstanceIsAllocatedLocally(self, name, partition_parameter_kw, software_release):
+    """
+    Test there is one instance on local proxy.
+    Test there NO is instance reference in external table of databse of local proxy.
+    Test there is not instance on external proxy.
+    """
+    # Test it has NOT been added to local database
+    forwarded_instance_list = slapos.proxy.views.execute_db('forwarded_partition_request', 'SELECT * from %s', db=self.db)
+    self.assertEqual(len(forwarded_instance_list), 0)
+
+    # Test there is an instance allocated locally
+    computer = loads(self.app.get(
+        '/getFullComputerInformation?computer_id=%s' % self.computer_id
+    ).data)
+    partition = computer._computer_partition_list[0]
+    for k, v in partition_parameter_kw.iteritems():
+      self.assertEqual(
+          partition.getInstanceParameter(k),
+          v
+      )
+    self.assertEqual(
+        partition._software_release_document._software_release,
+        software_release
+    )
+
+    # Test there is NOT instance allocated in external master
+    external_slap = slapos.slap.slap()
+    external_slap.initializeConnection(self.external_master_url)
+    external_computer = external_slap.registerComputer(self.external_computer_id)
+    external_partition = external_computer.getComputerPartitionList()[0]
+    self.assertEqual(
+        external_partition._software_release_document,
+        None
+    )
+
+  def testForwardToMasterInList(self):
+    """
+    Test that explicitely asking a master_url in SLA causes
+    proxy to forward request to this master.
+    """
+    dummy_parameter_dict = {'foo': 'bar'}
+    instance_reference = 'MyFirstInstance'
+    self.add_free_partition(1)
+    self.external_proxy_supply(self.external_software_release)
+    self.external_proxy_add_free_partition(1)
+
+    filter_kw = {'master_url': self.external_master_url}
+    partition = self.request(self.software_release_not_in_list, None, instance_reference, 'slappart0',
+                             filter_kw=filter_kw, partition_parameter_kw=dummy_parameter_dict)
+
+    self._checkInstanceIsFowarded(instance_reference, dummy_parameter_dict, self.software_release_not_in_list)
+    self.assertEqual(
+        partition._master_url,
+        self.external_master_url
+    )
+
+  def testForwardToMasterNotInList(self):
+    """
+    Test that explicitely asking a master_url in SLA causes
+    proxy to refuse to forward if this master_url is not whitelisted
+    """
+    self.add_free_partition(1)
+    self.external_proxy_supply(self.external_software_release)
+    self.external_proxy_add_free_partition(1)
+
+    filter_kw = {'master_url': self.external_master_url + 'bad'}
+    rv = self._requestComputerPartition(self.software_release_not_in_list, None, 'MyFirstInstance', 'slappart0', filter_kw=filter_kw)
+    self.assertEqual(rv._status_code, 404)
+
+  def testForwardRequest_SoftwareReleaseList(self):
+    """
+    Test that instance request is automatically forwarded
+    if its Software Release matches list.
+    """
+    dummy_parameter_dict = {'foo': 'bar'}
+    instance_reference = 'MyFirstInstance'
+    self.add_free_partition(1)
+    self.external_proxy_supply(self.external_software_release)
+    self.external_proxy_add_free_partition(1)
+
+    partition = self.request(self.external_software_release, None, instance_reference, 'slappart0',
+                             partition_parameter_kw=dummy_parameter_dict)
+
+    self._checkInstanceIsFowarded(instance_reference, dummy_parameter_dict, self.external_software_release)
+
+  def testRequestToCurrentMaster(self):
+    """
+    Explicitely ask deployment of an instance to current master
+    """
+    self.add_free_partition(1)
+    self.external_proxy_add_free_partition(1)
+    instance_reference = 'MyFirstInstance'
+
+    dummy_parameter_dict = {'foo': 'bar'}
+
+    filter_kw = {'master_url': self.proxyaddr}
+    self.request(self.software_release_not_in_list, None, instance_reference, 'slappart0',
+                 filter_kw=filter_kw, partition_parameter_kw=dummy_parameter_dict)
+    self._checkInstanceIsAllocatedLocally(instance_reference, dummy_parameter_dict, self.software_release_not_in_list)
+
+  def testRequestExplicitelyOnExternalMasterThenRequestAgain(self):
+    """
+    Request an instance that will get forwarded to another an instance.
+    Test that subsequent request without SLA doesn't forward
+    """
+    dummy_parameter_dict = {'foo': 'bar'}
+
+    self.testForwardToMasterInList()
+    partition = self.request(self.software_release_not_in_list, None, 'MyFirstInstance', 'slappart0', partition_parameter_kw=dummy_parameter_dict)
+    self.assertEqual(
+        getattr(partition, '_master_url', None),
+        None
+    )
+
+    # Test it has not been removed from local database (we keep track)
+    forwarded_instance_list = slapos.proxy.views.execute_db('forwarded_partition_request', 'SELECT * from %s', db=self.db)
+    self.assertEqual(len(forwarded_instance_list), 1)
+
+    # Test there is an instance allocated locally
+    computer = loads(self.app.get(
+        '/getFullComputerInformation?computer_id=%s' % self.computer_id
+    ).data)
+    partition = computer._computer_partition_list[0]
+    for k, v in dummy_parameter_dict.iteritems():
+      self.assertEqual(
+          partition.getInstanceParameter(k),
+          v
+      )
+    self.assertEqual(
+        partition._software_release_document._software_release,
+        self.software_release_not_in_list
+    )
+
+
+# XXX: when testing new schema version, 
+# rename to "TestMigrateVersion10ToLatest" and test accordingly.
+# Of course, also test version 11 to latest (should be 12).
 class TestMigrateVersion10To11(TestInformation, TestRequest, TestSlaveRequest, TestMultiNodeSupport):
   """
   Test that old database version are automatically migrated without failure

@@ -29,10 +29,13 @@
 ##############################################################################
 
 from lxml import etree
+import random
 import sqlite3
+import string
 from slapos.slap.slap import Computer, ComputerPartition, \
     SoftwareRelease, SoftwareInstance, NotFoundError
 from slapos.proxy.db_version import DB_VERSION
+import slapos.slap
 
 from flask import g, Flask, request, abort
 import xml_marshaller
@@ -112,14 +115,16 @@ def partitiondict2partition(partition):
   return slap_partition
 
 
-def execute_db(table, query, args=(), one=False, db_version=None, log=False):
+def execute_db(table, query, args=(), one=False, db_version=None, log=False, db=None):
+  if not db:
+    db = g.db
   if not db_version:
     db_version = DB_VERSION
   query = query % (table + db_version,)
   if log:
     print query
   try:
-    cur = g.db.execute(query, args)
+    cur = db.execute(query, args)
   except:
     app.logger.error('There was some issue during processing query %r on table %r with args %r' % (query, table, args))
     raise
@@ -161,7 +166,7 @@ def _upgradeDatabaseIfNeeded():
   # If version of current database is not old, do nothing
   if current_schema_version == DB_VERSION:
     return
- 
+
   schema = app.open_resource('schema.sql')
   schema = schema.read() % dict(version=DB_VERSION, computer=app.config['computer_id'])
   g.db.cursor().executescript(schema)
@@ -330,9 +335,7 @@ def supplySupply():
 
 @app.route('/requestComputerPartition', methods=['POST'])
 def requestComputerPartition():
-  parsed_form_dict = parseRequestComputerPartitionForm(request.form)
-  # By default, ALWAYS request instance on default computer
-  parsed_form_dict['filter_kw'].setdefault('computer_guid', app.config['computer_id'])
+  parsed_request_dict = parseRequestComputerPartitionForm(request.form)
 
   # Is it a slave instance?
   slave = loads(request.form.get('shared_xml', EMPTY_DICT_XML).encode())
@@ -341,29 +344,36 @@ def requestComputerPartition():
   if slave:
     # XXX: change schema to include a simple "partition_reference" which
     # is name of the instance. Then, no need to do complex search here.
-    slave_reference = parsed_form_dict['partition_id'] + '_' + parsed_form_dict['partition_reference']
-    requested_computer_id = parsed_form_dict['filter_kw']['computer_guid']
+    slave_reference = parsed_request_dict['partition_id'] + '_' + parsed_request_dict['partition_reference']
+    requested_computer_id = parsed_request_dict['filter_kw'].get('computer_guid', app.config['computer_id'])
     matching_partition = getAllocatedSlaveInstance(slave_reference, requested_computer_id)
   else:
-    matching_partition = getAllocatedInstance(parsed_form_dict['partition_reference'])
+    matching_partition = getAllocatedInstance(parsed_request_dict['partition_reference'])
 
   if matching_partition:
     # Then the instance is already allocated, just update it
     # XXX: split request and request slave into different update/allocate functions and simplify.
+    # By default, ALWAYS request instance on default computer
+    parsed_request_dict['filter_kw'].setdefault('computer_guid', app.config['computer_id'])
     if slave:
-      software_instance = requestSlave(**parsed_form_dict)
+      software_instance = requestSlave(**parsed_request_dict)
     else:
-      software_instance = requestNotSlave(**parsed_form_dict)
+      software_instance = requestNotSlave(**parsed_request_dict)
   else:
     # Instance is not yet allocated: try to do it.
-    # XXX Insert here multimaster allocation
+    external_master_url = isRequestToBeForwardedToExternalMaster(parsed_request_dict)
+    if external_master_url:
+      return forwardRequestToExternalMaster(external_master_url, request.form)
     # XXX add support for automatic deployment on specific node depending on available SR and partitions on each Node.
-    # Note: only deploy on default node if SLA not specified
+    # Note: It only deploys on default node if SLA not specified
     # XXX: split request and request slave into different update/allocate functions and simplify.
+
+    # By default, ALWAYS request instance on default computer
+    parsed_request_dict['filter_kw'].setdefault('computer_guid', app.config['computer_id'])
     if slave:
-      software_instance = requestSlave(**parsed_form_dict)
+      software_instance = requestSlave(**parsed_request_dict)
     else:
-      software_instance = requestNotSlave(**parsed_form_dict)
+      software_instance = requestNotSlave(**parsed_request_dict)
 
   return dumps(software_instance)
 
@@ -378,15 +388,123 @@ def parseRequestComputerPartitionForm(form):
   parsed_dict['partition_id'] = form.get('computer_partition_id', '').encode()
   parsed_dict['partition_parameter_kw'] = loads(form.get('partition_parameter_xml', EMPTY_DICT_XML).encode())
   parsed_dict['filter_kw'] = loads(form.get('filter_xml', EMPTY_DICT_XML).encode())
-  # Note: currently ignored on for slave instance (slave instances
+  # Note: currently ignored for slave instance (slave instances
   # are always started).
   parsed_dict['requested_state'] = loads(form.get('state').encode())
 
   return parsed_dict
 
+run_id = ''.join([random.choice(string.ascii_letters + string.digits) for n in xrange(32)])
+def checkIfMasterIsCurrentMaster(master_url):
+  """
+  Because there are several ways to contact this server, we can't easily check
+  in a request() if master_url is ourself or not. So we contact master_url,
+  and if it returns an ID we know: it is ourself
+  """
+  # Dumb way: compare with listening host/port
+  host = request.host
+  port = request.environ['SERVER_PORT']
+  if master_url == 'http://%s:%s/' % (host, port):
+    return True
+
+  # Hack way: call ourself
+  slap = slapos.slap.slap()
+  slap.initializeConnection(master_url)
+  try:
+    master_run_id = slap._connection_helper.GET('/getRunId')
+  except:
+    return False
+  if master_run_id == run_id:
+    return True
+  return False
+
+@app.route('/getRunId', methods=['GET'])
+def getRunId():
+  return run_id
+
+def checkMasterUrl(master_url):
+  """
+  Check if master_url doesn't represent ourself, and check if it is whitelisted
+  in multimaster configuration.
+  """
+  if not master_url:
+    return False
+
+  if checkIfMasterIsCurrentMaster(master_url):
+    # master_url is current server: don't forward
+    return False
+
+  master_entry = app.config.get('multimaster').get(master_url, None)
+  # Check if this master is known
+  if not master_entry:
+    # Check if it is ourself
+    if not master_url.startswith('https') and checkIfMasterIsCurrentMaster(master_url):
+      return False
+    app.logger.warning('External SlapOS Master URL %s is not listed in multimaster list.' % master_url)
+    abort(404)
+
+  return True
+
+def isRequestToBeForwardedToExternalMaster(parsed_request_dict):
+    """
+    Check if we HAVE TO forward the request.
+    Several cases:
+     * The request specifies a master_url in filter_kw
+     * The software_release of the request is in a automatic forward list
+    """
+    master_url = parsed_request_dict['filter_kw'].get('master_url')
+
+    if checkMasterUrl(master_url):
+      # Don't allocate the instance locally, but forward to specified master
+      return master_url
+
+    software_release = parsed_request_dict['software_release']
+    for mutimaster_url, mutimaster_entry in app.config.get('multimaster').iteritems():
+      if software_release in mutimaster_entry['software_release_list']:
+        # Don't allocate the instance locally, but forward to specified master
+        return mutimaster_url
+    return None
+
+def forwardRequestToExternalMaster(master_url, request_form):
+  """
+  Forward instance request to external SlapOS Master.
+  """
+  master_entry = app.config.get('multimaster').get(master_url, {})
+  key_file = master_entry.get('key')
+  cert_file = master_entry.get('cert')
+  if master_url.startswith('https') and (not key_file or not cert_file):
+    app.logger.warning('External master %s configuration did not specify key or certificate.' % master_url)
+    abort(404)
+  if master_url.startswith('https') and not master_url.startswith('https') and (key_file or cert_file):
+    app.logger.warning('External master %s configurqtion specifies key or certificate but is using plain http.' % master_url)
+    abort(404)
+
+  slap = slapos.slap.slap()
+  if key_file:
+    slap.initializeConnection(master_url, key_file=key_file, cert_file=cert_file)
+  else:
+    slap.initializeConnection(master_url)
+
+  partition_reference = request_form['partition_reference'].encode()
+  # Store in database
+  execute_db('forwarded_partition_request', 'INSERT OR REPLACE INTO %s values(:partition_reference, :master_url)',
+             {'partition_reference':partition_reference, 'master_url': master_url})
+
+  new_request_form = request_form.copy()
+  filter_kw = loads(new_request_form['filter_xml'].encode())
+  filter_kw['source_instance_id'] = partition_reference
+  new_request_form['filter_xml'] = dumps(filter_kw)
+
+  partition = loads(slap._connection_helper.POST('/requestComputerPartition', new_request_form))
+
+  # XXX move to other end
+  partition._master_url = master_url
+
+  return dumps(partition)
+
 def getAllocatedInstance(partition_reference):
   """
-  Look for existence of instance, if so return the 
+  Look for existence of instance, if so return the
   corresponding partition dict, else return None
   """
   args = []
@@ -398,7 +516,7 @@ def getAllocatedInstance(partition_reference):
 
 def getAllocatedSlaveInstance(slave_reference, requested_computer_id):
   """
-  Look for existence of instance, if so return the 
+  Look for existence of instance, if so return the
   corresponding partition dict, else return None
   """
   args = []
