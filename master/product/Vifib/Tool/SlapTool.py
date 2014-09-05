@@ -424,7 +424,12 @@ class SlapTool(BaseTool):
       [software_release.getUrlString()
         for software_release in software_release_list
           if software_release.getValidationState() == 'published'])
-
+  
+  security.declareProtected(Permissions.AccessContentsInformation,
+    'getComputerConnectionParameterList')
+  def getComputerConnectionParameterList(self, computer_id):
+    parameter_list = self._getComputerConnectionParameterList(computer_id)
+    return xml_marshaller.xml_marshaller.dumps(parameter_list)
 
   ####################################################
   # Public POST methods
@@ -1386,6 +1391,36 @@ class SlapTool(BaseTool):
           computer_id, computer_partition_id)
       else:
         return software_instance
+  
+  def _getComputerConnectionParameterList(self, computer_id):
+    computer = self._getComputerDocument(computer_id)
+  
+    parameter_list = []
+    item_list = computer.getAggregateRelatedValueList(
+        portal_type='Hosting Subscription'
+      )
+    hosting_subscription_list = sorted(item_list,
+                                      key=lambda x: x.getCreationDate())
+  
+    for hosting_subscription in hosting_subscription_list:
+      if hosting_subscription.getValidationState() != 'validated' and \
+        hosting_subscription.getSlapState() == "destroy_requested":
+        continue
+      
+      # Get the main instance
+      instance = hosting_subscription.getPredecessorValue(
+        portal_type="Software Instance")
+      if not instance or instance.getSlapState() == "destroy_requested" or \
+        instance.getValidationState() != 'validated':
+        continue
+      
+      parameter_dict = instance.getConnectionXmlAsDict()
+      if not parameter_dict:
+        parameter_dict = {}
+      parameter_list.append(parameter_dict)
+    
+    return xml_marshaller.xml_marshaller.dumps(parameter_list)
+    
 
   @UnrestrictedMethod
   def _getSoftwareInstanceAsParameterDict(self, software_instance):
