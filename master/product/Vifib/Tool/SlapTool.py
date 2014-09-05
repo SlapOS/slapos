@@ -1419,7 +1419,7 @@ class SlapTool(BaseTool):
         parameter_dict = {}
       parameter_list.append(parameter_dict)
     
-    return xml_marshaller.xml_marshaller.dumps(parameter_list)
+    return parameter_list
     
 
   @UnrestrictedMethod
