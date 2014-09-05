@@ -1,0 +1,111 @@
+<?xml version="1.0"?>
+<ZopeData>
+  <record id="1" aka="AAAAAAAAAAE=">
+    <pickle>
+      <global name="PythonScript" module="Products.PythonScripts.PythonScript"/>
+    </pickle>
+    <pickle>
+      <dictionary>
+        <item>
+            <key> <string>Script_magic</string> </key>
+            <value> <int>3</int> </value>
+        </item>
+        <item>
+            <key> <string>_bind_names</string> </key>
+            <value>
+              <object>
+                <klass>
+                  <global name="NameAssignments" module="Shared.DC.Scripts.Bindings"/>
+                </klass>
+                <tuple/>
+                <state>
+                  <dictionary>
+                    <item>
+                        <key> <string>_asgns</string> </key>
+                        <value>
+                          <dictionary>
+                            <item>
+                                <key> <string>name_container</string> </key>
+                                <value> <string>container</string> </value>
+                            </item>
+                            <item>
+                                <key> <string>name_context</string> </key>
+                                <value> <string>context</string> </value>
+                            </item>
+                            <item>
+                                <key> <string>name_m_self</string> </key>
+                                <value> <string>script</string> </value>
+                            </item>
+                            <item>
+                                <key> <string>name_subpath</string> </key>
+                                <value> <string>traverse_subpath</string> </value>
+                            </item>
+                          </dictionary>
+                        </value>
+                    </item>
+                  </dictionary>
+                </state>
+              </object>
+            </value>
+        </item>
+        <item>
+            <key> <string>_body</string> </key>
+            <value> <string encoding="cdata"><![CDATA[
+
+computer = state_change[\'object\']\n
+person = computer.getSourceAdministrationValue()\n
+\n
+# Get required arguments\n
+kwargs = state_change.kwargs\n
+\n
+# Required args\n
+# Raise TypeError if all parameters are not provided\n
+try:\n
+  software_release_url_string = kwargs[\'software_release\']\n
+  software_title = kwargs["software_title"]\n
+  software_type = kwargs["software_type"]\n
+  instance_xml = kwargs["instance_xml"]\n
+  is_slave = kwargs["shared"]\n
+  root_state = kwargs["state"]\n
+except KeyError:\n
+  raise TypeError, "Computer_requestSoftwareInstance takes exactly 6 arguments"\n
+\n
+if person is None:\n
+  return\n
+\n
+sla_xml = """<?xml version=\'1.0\' encoding=\'utf-8\'?><instance>\n
+<parameter id="computer_guid">%s</parameter>\n
+</instance>\n
+""" % computer.getReference()\n
+\n
+person.requestSoftwareInstance(\n
+  state=root_state,\n
+  software_release=software_release_url_string,\n
+  software_title=software_title,\n
+  software_type=software_type,\n
+  instance_xml=instance_xml,\n
+  sla_xml=sla_xml,\n
+  shared=is_slave\n
+)\n
+\n
+hosting_subscription = context.REQUEST.get(\'request_hosting_subscription\', None)\n
+if hosting_subscription is None:\n
+  return\n
+\n
+hosting_subscription.setAggregateValue(computer)\n
+
+
+]]></string> </value>
+        </item>
+        <item>
+            <key> <string>_params</string> </key>
+            <value> <string>state_change</string> </value>
+        </item>
+        <item>
+            <key> <string>id</string> </key>
+            <value> <string>Computer_requestSoftwareInstanceChange</string> </value>
+        </item>
+      </dictionary>
+    </pickle>
+  </record>
+</ZopeData>
