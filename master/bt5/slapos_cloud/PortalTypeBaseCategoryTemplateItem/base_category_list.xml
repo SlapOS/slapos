@@ -10,6 +10,7 @@
   <item>source_administration</item>
  </portal_type>
  <portal_type id="Hosting Subscription">
+  <item>aggregate</item>
   <item>destination_section</item>
  </portal_type>
  <portal_type id="Hosting Subscription Module">
