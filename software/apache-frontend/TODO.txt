@@ -1,13 +1,3 @@
 Apache:
 =======
-- set a redirection of / in option
-- Implement support of multiple ip (if possible) for multiple ssl (other solution is to ask master instance but quid to much apache process?)
 
-Squid:
-======
-- Only cache in ram. Problems with to much squid on the computer or too many slave?
-
-SlapOS:
-=======
-- Implement intelligent apache graceful -> Should check slave configuration and return error to slave if there is a problem (important but difficult)
-- useless srv/squid_cache directory so far
