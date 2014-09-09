@@ -26,7 +26,6 @@
                 <string>generate_certificate</string>
                 <string>report_computer_bang</string>
                 <string>request_computer_registration</string>
-                <string>request_software_instance</string>
                 <string>request_software_release</string>
                 <string>revoke_certificate</string>
               </tuple>

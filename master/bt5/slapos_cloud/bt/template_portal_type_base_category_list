@@ -3,7 +3,6 @@ Computer Network | source_administration
 Computer | destination_section
 Computer | source_administration
 Hosting Subscription Module | business_application
-Hosting Subscription | aggregate
 Hosting Subscription | destination_section
 Slave Instance | aggregate
 Slave Instance | specialise
