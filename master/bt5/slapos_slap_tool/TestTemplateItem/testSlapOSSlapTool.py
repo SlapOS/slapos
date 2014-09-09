@@ -1849,7 +1849,7 @@ class TestSlapOSSlapToolInstanceAccess(TestSlapOSSlapToolMixin):
 <marshal>
   <list id='i2'/>
 </marshal>
-"""
+""" 
     self.assertEqual(expected_xml, got_xml,
         '\n'.join([q for q in difflib.unified_diff(expected_xml.split('\n'), got_xml.split('\n'))]))
 
@@ -1867,7 +1867,7 @@ class TestSlapOSSlapToolInstanceAccess(TestSlapOSSlapToolMixin):
 <marshal>
   <list id='i2'/>
 </marshal>
-"""
+""" 
     self.assertEqual(expected_xml, got_xml,
         '\n'.join([q for q in difflib.unified_diff(expected_xml.split('\n'), got_xml.split('\n'))]))
 
@@ -1913,171 +1913,6 @@ class TestSlapOSSlapToolInstanceAccess(TestSlapOSSlapToolMixin):
   </list>
 </marshal>
 """ % (software_release2.getUrlString(), software_release1.getUrlString())
-    self.assertEqual(expected_xml, got_xml,
-        '\n'.join([q for q in difflib.unified_diff(expected_xml.split('\n'), got_xml.split('\n'))]))
-        
-  
-  def test_getComputerConnectionParameterList(self):
-    self._makeComplexComputer()
-    software_instance = self.start_requested_software_instance
-    hosting_subscription = software_instance.getSpecialiseValue(
-      software_type="Hosting Subscription")
-    hosting_subscription.setAggregateValue(self.computer)
-    
-    connection_xml = """<?xml version="1.0" encoding="utf-8"?><instance>
-<parameter id="parameter_1">value_1</parameter>
-</instance>"""
-    software_instance.updateConnection(connection_xml=connection_xml)
-    self.assertEquals(software_instance.getConnectionXml(), connection_xml)
-    self.tic()
-    
-    connection_response = self.portal_slap.getComputerConnectionParameterList(
-      self.computer.getReference())
-    
-    # check returned XML
-    xml_fp = StringIO.StringIO()
-    xml.dom.ext.PrettyPrint(xml.dom.ext.reader.Sax.FromXml(connection_response),
-        stream=xml_fp)
-    xml_fp.seek(0)
-    got_xml = xml_fp.read()
-    
-    expected_xml = """\
-<?xml version='1.0' encoding='UTF-8'?>
-<marshal>
-  <list id='i2'>
-    <dictionary id='i3'>
-      <string>parameter_1</string>
-      <string>value_1</string>
-    </dictionary>
-  </list>
-</marshal>
-"""
-    self.assertEqual(expected_xml, got_xml,
-        '\n'.join([q for q in difflib.unified_diff(expected_xml.split('\n'), got_xml.split('\n'))]))
-  
-  
-  def test_getComputerConnectionParameterList_two_hostingSubscriptions(self):
-    self._makeComplexComputer()
-    software_instance = self.start_requested_software_instance
-    hosting_subscription = software_instance.getSpecialiseValue(
-      software_type="Hosting Subscription")
-    hosting_subscription.setAggregateValue(self.computer)
-    
-    # Stop_requested HostingSubsctiption
-    software_instance2 = self.stop_requested_software_instance
-    hosting_subscription2 = software_instance2.getSpecialiseValue(
-      software_type="Hosting Subscription")
-    hosting_subscription2.setAggregateValue(self.computer)
-    
-    connection_xml = """<?xml version="1.0" encoding="utf-8"?><instance>
-<parameter id="parameter_1">value_1</parameter>
-</instance>"""
-    software_instance.updateConnection(connection_xml=connection_xml)
-    self.assertEquals(software_instance.getConnectionXml(), connection_xml)
-    
-    software_instance2.updateConnection(connection_xml=connection_xml)
-    self.assertEquals(software_instance2.getConnectionXml(), connection_xml)
-    
-    self.tic()
-    
-    connection_response = self.portal_slap.getComputerConnectionParameterList(
-      self.computer.getReference())
-    
-    # check returned XML
-    xml_fp = StringIO.StringIO()
-    xml.dom.ext.PrettyPrint(xml.dom.ext.reader.Sax.FromXml(connection_response),
-        stream=xml_fp)
-    xml_fp.seek(0)
-    got_xml = xml_fp.read()
-    
-    expected_xml = """\
-<?xml version='1.0' encoding='UTF-8'?>
-<marshal>
-  <list id='i2'>
-    <dictionary id='i3'>
-      <string>parameter_1</string>
-      <string>value_1</string>
-    </dictionary>
-    <dictionary id='i4'>
-      <string>parameter_1</string>
-      <string>value_1</string>
-    </dictionary>
-  </list>
-</marshal>
-"""
-    self.assertEqual(expected_xml, got_xml,
-        '\n'.join([q for q in difflib.unified_diff(expected_xml.split('\n'), got_xml.split('\n'))]))
-        
-  def test_getComputerConnectionParameterList_no_parameters(self):
-    self._makeComplexComputer()
-    software_instance = self.start_requested_software_instance
-    hosting_subscription = software_instance.getSpecialiseValue(
-      software_type="Hosting Subscription")
-    hosting_subscription.setAggregateValue(self.computer)
-    
-    self.tic()
-    
-    connection_response = self.portal_slap.getComputerConnectionParameterList(
-      self.computer.getReference())
-    
-    # check returned XML
-    xml_fp = StringIO.StringIO()
-    xml.dom.ext.PrettyPrint(xml.dom.ext.reader.Sax.FromXml(connection_response),
-        stream=xml_fp)
-    xml_fp.seek(0)
-    got_xml = xml_fp.read()
-    
-    expected_xml = """\
-<?xml version='1.0' encoding='UTF-8'?>
-<marshal>
-  <list id='i2'>
-    <dictionary id='i3'/>
-  </list>
-</marshal>
-"""
-    self.assertEqual(expected_xml, got_xml,
-        '\n'.join([q for q in difflib.unified_diff(expected_xml.split('\n'), got_xml.split('\n'))]))
-  
-  def test_getComputerConnectionParameterList_invalid_hs(self):
-    self._makeComplexComputer()
-    software_instance = self.start_requested_software_instance
-    hosting_subscription = software_instance.getSpecialiseValue(
-      software_type="Hosting Subscription")
-    hosting_subscription.setAggregateValue(self.computer)
-    software_instance.invalidate()
-    
-    # Destroy_requested HostingSubsctiption
-    software_instance2 = self.destroy_requested_software_instance
-    hosting_subscription2 = software_instance2.getSpecialiseValue(
-      software_type="Hosting Subscription")
-    hosting_subscription2.setAggregateValue(self.computer)
-    self.assertEqual(hosting_subscription2.getSlapState(),
-                        'destroy_requested')
-    
-    connection_xml = """<?xml version="1.0" encoding="utf-8"?><instance>
-<parameter id="parameter_1">value_1</parameter>
-</instance>"""
-    software_instance.updateConnection(connection_xml=connection_xml)
-    software_instance2.updateConnection(connection_xml=connection_xml)
-    
-    self.tic()
-    
-    connection_response = self.portal_slap.getComputerConnectionParameterList(
-      self.computer.getReference())
-    
-    # check returned XML
-    xml_fp = StringIO.StringIO()
-    xml.dom.ext.PrettyPrint(xml.dom.ext.reader.Sax.FromXml(connection_response),
-        stream=xml_fp)
-    xml_fp.seek(0)
-    got_xml = xml_fp.read()
-    
-    expected_xml = """\
-<?xml version='1.0' encoding='UTF-8'?>
-<marshal>
-  <list id='i2'/>
-</marshal>
-"""
     self.assertEqual(expected_xml, got_xml,
         '\n'.join([q for q in difflib.unified_diff(expected_xml.split('\n'), got_xml.split('\n'))]))
 
@@ -2848,7 +2683,7 @@ class TestSlapOSSlapToolPersonAccess(TestSlapOSSlapToolMixin):
     try:
       self.login(self.person_reference)
       self.computer.generateCertificate = Simulator(
-        self.generate_computer_certificate_simulator,
+        self.generate_computer_certificate_simulator, 
         'generateComputerCertificate')
 
       computer_certificate = 'live_\ncertificate_%s' % self.generateNewId()
@@ -2895,7 +2730,7 @@ class TestSlapOSSlapToolPersonAccess(TestSlapOSSlapToolMixin):
     try:
       self.login(self.person_reference)
       self.computer.revokeCertificate = Simulator(
-        self.revoke_computer_certificate_simulator,
+        self.revoke_computer_certificate_simulator, 
         'revokeComputerCertificate')
 
       response = self.portal_slap.revokeComputerCertificate(self.computer_id)

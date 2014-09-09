@@ -333,220 +333,6 @@ class TestSlapOSCoreComputerSlapInterfaceWorkflow(testSlapOSMixin):
         self.computer.requestSoftwareRelease, software_release_url=url,
         state='available')
     transaction.abort()
-  
-  def test_Computer_requestSoftwareInstance_returnHostingSubscription(self):
-    self._makePerson()
-    self.computer.edit(source_administration=self.person_user.getRelativeUrl())
-    self.tic()
-    self.login(self.person_user.getReference())
-
-    software_release = self.generateNewSoftwareReleaseUrl()
-    software_title = "Test Software Instance from Computer"
-    software_type = "test"
-    instance_xml = """<?xml version="1.0" encoding="utf-8"?>
-    <instance>
-    </instance>
-    """
-    shared = True
-    state = "started"
-    computer = self.computer
-    expected_sla_xml = """<?xml version='1.0' encoding='utf-8'?><instance>
-<parameter id="computer_guid">%s</parameter>
-</instance>
-""" % computer.getReference()
-
-    computer.requestSoftwareInstance(
-      software_release=software_release,
-      software_title=software_title,
-      software_type=software_type,
-      instance_xml=instance_xml,
-      shared=shared,
-      state=state,
-    )
-    hosting_subscription = computer.REQUEST.get('request_hosting_subscription')
-    self.assertEquals("Hosting Subscription",
-                      hosting_subscription.getPortalType())
-    self.assertEquals(computer.getRelativeUrl(),
-                      hosting_subscription.getAggregateValue().getRelativeUrl())
-    self.assertEquals(hosting_subscription.getSlaXml(), expected_sla_xml)
-    self.assertEquals(hosting_subscription.getPredecessorValue().getSlaXml(),
-                      expected_sla_xml)
-    
-  def test_Computer_requestSoftwareInstance_requiredParameter(self):
-    self._makePerson()
-    self.computer.edit(source_administration=self.person_user.getRelativeUrl())
-    self.tic()
-    self.login(self.person_user.getReference())
-
-    software_release = self.generateNewSoftwareReleaseUrl()
-    software_title = "Test Software Instance from Computer"
-    software_type = "test"
-    instance_xml = """<?xml version="1.0" encoding="utf-8"?>
-    <instance>
-    </instance>
-    """
-    shared = True
-    state = "started"
-    computer = self.computer
-
-    self.assertRaises(TypeError, computer.requestSoftwareInstance)
-
-    # software_release is mandatory
-    self.assertRaises(TypeError, computer.requestSoftwareInstance,
-      software_title=software_title,
-      software_type=software_type,
-      instance_xml=instance_xml,
-      shared=shared,
-      state=state,
-    )
-
-    # software_title is mandatory
-    self.assertRaises(TypeError, computer.requestSoftwareInstance,
-      software_release=software_release,
-      software_type=software_type,
-      instance_xml=instance_xml,
-      shared=shared,
-      state=state,
-    )
-
-    # software_type is mandatory
-    self.assertRaises(TypeError, computer.requestSoftwareInstance,
-      software_release=software_release,
-      software_title=software_title,
-      instance_xml=instance_xml,
-      shared=shared,
-      state=state,
-    )
-
-    # instance_xml is mandatory
-    self.assertRaises(TypeError, computer.requestSoftwareInstance,
-      software_release=software_release,
-      software_title=software_title,
-      software_type=software_type,
-      shared=shared,
-      state=state,
-    )
-
-    # shared is mandatory
-    self.assertRaises(TypeError, computer.requestSoftwareInstance,
-      software_release=software_release,
-      software_title=software_title,
-      software_type=software_type,
-      instance_xml=instance_xml,
-      state=state,
-    )
-
-    # state is mandatory
-    self.assertRaises(TypeError, computer.requestSoftwareInstance,
-      software_release=software_release,
-      software_title=software_title,
-      software_type=software_type,
-      instance_xml=instance_xml,
-      shared=shared,
-    )
-    
-  def test_Computer_requestSoftwareInstance_acceptedState(self):
-    self._makePerson()
-    self.computer.edit(source_administration=self.person_user.getRelativeUrl())
-    self.tic()
-    self.login(self.person_user.getReference())
-
-    software_release = self.generateNewSoftwareReleaseUrl()
-    software_title = "Test Software Instance from Computer"
-    software_type = "test"
-    instance_xml = """<?xml version="1.0" encoding="utf-8"?>
-    <instance>
-    </instance>
-    """
-    shared = True
-    state = "started"
-    computer = self.computer
-
-    # Only started, stopped, destroyed
-    self.assertRaises(ValueError, computer.requestSoftwareInstance,
-      software_release=software_release,
-      software_title=software_title,
-      software_type=software_type,
-      instance_xml=instance_xml,
-      shared=shared,
-      state="foo",
-    )
-
-    computer.requestSoftwareInstance(
-      software_release=software_release,
-      software_title="Computer started Software Instance",
-      software_type=software_type,
-      instance_xml=instance_xml,
-      shared=shared,
-      state="started",
-    )
-    hosting_subscription = computer.REQUEST.get('request_hosting_subscription')
-    self.assertEquals("start_requested", hosting_subscription.getSlapState())
-
-    computer.requestSoftwareInstance(
-      software_release=software_release,
-      software_title="Computer stopped Software Instance",
-      software_type=software_type,
-      instance_xml=instance_xml,
-      shared=shared,
-      state="stopped",
-    )
-    hosting_subscription = computer.REQUEST.get('request_hosting_subscription')
-    self.assertEquals("stop_requested", hosting_subscription.getSlapState())
-
-    computer.requestSoftwareInstance(
-      software_release=software_release,
-      software_title="Computer destroyed Software Instance",
-      software_type=software_type,
-      instance_xml=instance_xml,
-      shared=shared,
-      state="destroyed",
-    )
-    hosting_subscription = computer.REQUEST.get('request_hosting_subscription')
-    self.assertEquals(None, hosting_subscription)
-  
-  def test_Computer_requestSoftwareInstance_duplicatedHostingSubscription(self):
-    self._makePerson()
-    self.computer.edit(source_administration=self.person_user.getRelativeUrl())
-    self.tic()
-    self.login(self.person_user.getReference())
-
-    software_release = self.generateNewSoftwareReleaseUrl()
-    software_title = "Test Software Instance from Computer"
-    software_type = "test"
-    instance_xml = """<?xml version="1.0" encoding="utf-8"?>
-    <instance>
-    </instance>
-    """
-    shared = True
-    state = "started"
-    computer = self.computer
-
-    computer.requestSoftwareInstance(
-      software_release=software_release,
-      software_title=software_title,
-      software_type=software_type,
-      instance_xml=instance_xml,
-      shared=shared,
-      state=state,
-    )
-    hosting_subscription = computer.REQUEST.get('request_hosting_subscription')
-    transaction.commit()
-    hosting_subscription2 = hosting_subscription.Base_createCloneDocument(
-                                                                batch_mode=1)
-    hosting_subscription2.validate()
-
-    transaction.commit()
-    self.tic()
-
-    self.assertRaises(NotImplementedError, computer.requestSoftwareInstance,
-      software_release=software_release,
-      software_title=software_title,
-      software_type=software_type,
-      instance_xml=instance_xml,
-      shared=shared,
-      state=state,
-    )
 
   def test_revokeCertificate(self):
     self.login(self.computer.getReference())
@@ -715,7 +501,7 @@ class TestSlapOSCorePersonComputerSupply(testSlapOSMixin):
 
   def test_supply_available_createdSoftwareInstallation(self):
     previous_id = self.getPortalObject().portal_ids\
-        .generateNewId(id_group='slap_software_installation_reference',
+        .generateNewId(id_group='slap_software_installation_reference', 
                        id_generator='uid')
     software_release = self.generateNewSoftwareReleaseUrl()
 
@@ -739,7 +525,7 @@ class TestSlapOSCorePersonComputerSupply(testSlapOSMixin):
 
   def test_multiple_supply_available_createdSoftwareInstallation(self):
     previous_id = self.getPortalObject().portal_ids\
-        .generateNewId(id_group='slap_software_installation_reference',
+        .generateNewId(id_group='slap_software_installation_reference', 
                        id_generator='uid')
     software_release = self.generateNewSoftwareReleaseUrl()
 
@@ -771,7 +557,7 @@ class TestSlapOSCorePersonComputerSupply(testSlapOSMixin):
 
   def test_supply_available_destroyed(self):
     previous_id = self.getPortalObject().portal_ids\
-        .generateNewId(id_group='slap_software_installation_reference',
+        .generateNewId(id_group='slap_software_installation_reference', 
                        id_generator='uid')
     software_release = self.generateNewSoftwareReleaseUrl()
 
@@ -812,7 +598,7 @@ class TestSlapOSCorePersonComputerSupply(testSlapOSMixin):
 
   def test_supply_available_destroyed_available(self):
     previous_id = self.getPortalObject().portal_ids\
-        .generateNewId(id_group='slap_software_installation_reference',
+        .generateNewId(id_group='slap_software_installation_reference', 
                        id_generator='uid')
     software_release = self.generateNewSoftwareReleaseUrl()
 
@@ -859,7 +645,7 @@ class TestSlapOSCorePersonComputerSupply(testSlapOSMixin):
 
   def test_supply_available_destroyed_finalised_available(self):
     previous_id = self.getPortalObject().portal_ids\
-        .generateNewId(id_group='slap_software_installation_reference',
+        .generateNewId(id_group='slap_software_installation_reference', 
                        id_generator='uid')
     software_release = self.generateNewSoftwareReleaseUrl()
 
@@ -2359,7 +2145,7 @@ class TestSlapOSCorePersonRequest(testSlapOSMixin):
       state=state,
     )
     hosting_subscription = person.REQUEST.get('request_hosting_subscription')
-    self.assertEquals("Hosting Subscription",
+    self.assertEquals("Hosting Subscription", 
                       hosting_subscription.getPortalType())
 
   def test_Person_requestSoftwareInstance_createHostingSubscription(self):
@@ -2377,7 +2163,7 @@ class TestSlapOSCorePersonRequest(testSlapOSMixin):
     state = "started"
 
     previous_id = self.getPortalObject().portal_ids\
-        .generateNewId(id_group='slap_hosting_subscription_reference',
+        .generateNewId(id_group='slap_hosting_subscription_reference', 
                        id_generator='uid')
 
     person.requestSoftwareInstance(
@@ -2967,7 +2753,7 @@ class TestSlapOSCoreSlapOSCloudInteractionWorkflow(testSlapOSMixin):
 
     def verify_activeSense_call(self):
       if self.getRelativeUrl() == 'portal_alarms/slapos_allocate_instance':
-        instance.portal_workflow.doActionFor(instance, action='edit_action',
+        instance.portal_workflow.doActionFor(instance, action='edit_action', 
           comment='activeSense triggered')
       else:
         return self.activeSense_call()
@@ -3033,7 +2819,7 @@ class TestSlapOSCoreSlapOSCloudInteractionWorkflow(testSlapOSMixin):
 
     def verify_reindexObject_call(self, *args, **kw):
       if self.getRelativeUrl() == computer.getRelativeUrl():
-        computer.portal_workflow.doActionFor(computer, action='edit_action',
+        computer.portal_workflow.doActionFor(computer, action='edit_action', 
           comment='reindexObject triggered on %s' % method_id)
       else:
         return self.reindexObject_call(*args, **kw)
@@ -3094,7 +2880,7 @@ class TestSlapOSCoreSlapOSCloudInteractionWorkflow(testSlapOSMixin):
 
     def verify_reindexObject_call(self, *args, **kw):
       if self.getRelativeUrl() == partition.getRelativeUrl():
-        partition.portal_workflow.doActionFor(partition, action='edit_action',
+        partition.portal_workflow.doActionFor(partition, action='edit_action', 
           comment='reindexObject triggered on %s' % method_id)
       else:
         return self.reindexObject_call(*args, **kw)
@@ -3219,7 +3005,7 @@ class TestSlapOSCoreSlapOSCloudInteractionWorkflow(testSlapOSMixin):
     def verify_reindexObject_call(self, *args, **kw):
       if self.getRelativeUrl() in (instance2.getRelativeUrl(),
                                    instance3.getRelativeUrl()):
-        self.portal_workflow.doActionFor(instance1, action='edit_action',
+        self.portal_workflow.doActionFor(instance1, action='edit_action', 
           comment='reindexObject triggered')
       else:
         return self.reindexObject_call(*args, **kw)
