@@ -27,16 +27,17 @@
 #
 ##############################################################################
 
-
 from psutil import process_iter, NoSuchProcess, AccessDenied
 from time import strftime
 from slapos.collect.db import Database
 from slapos.util import mkdir_p
-
+import os
+import stat
 
 from slapos.collect.snapshot import ProcessSnapshot, ComputerSnapshot
 from slapos.collect.reporter import RawCSVDumper, \
-                                    SystemCSVReporterDumper
+                                    SystemCSVReporterDumper, \
+                                    compressLogFolder
 
 from entity import get_user_list, Computer
 
@@ -80,6 +81,10 @@ def do_collect(conf):
       
     log_directory = "%s/var/data-log" % conf.get("slapos", "instance_root")
     mkdir_p(log_directory, 0o755)
+
+    if stat.S_IMODE(os.stat(log_directory).st_mode) != 0o755:
+      os.chmod(log_directory, 0o755)    
+
     database = Database(log_directory)
 
     computer = Computer(ComputerSnapshot())
@@ -90,6 +95,8 @@ def do_collect(conf):
     
     SystemCSVReporterDumper(database).dump(log_directory)
     RawCSVDumper(database).dump(log_directory)
+
+    compressLogFolder(log_directory)
 
     # Drop older entries already reported
     database.garbageCollect()

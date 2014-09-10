@@ -29,6 +29,7 @@ import os
 import glob
 import unittest
 import shutil
+import tarfile
 import tempfile
 import slapos.slap
 import psutil
@@ -289,6 +290,32 @@ class TestCollectReport(unittest.TestCase):
                          '%s/system_loadavg.csv' % self.instance_root]
 
         self.assertEquals(set(glob.glob("%s/*.csv" % self.instance_root)), set(csv_path_list)) 
+
+    def test_compress_log_directory(self):
+        log_directory = "%s/test_compress" % self.instance_root
+        dump_folder = "%s/1990-01-01" % log_directory
+
+        if not os.path.exists(log_directory):
+            os.mkdir(log_directory)
+
+        if os.path.exists(dump_folder):
+            shutil.rmtree(dump_folder)
+
+        os.mkdir("%s/1990-01-01" % log_directory)
+        with open("%s/test.txt" % dump_folder, "w") as dump_file:
+            dump_file.write("hi")
+            dump_file.close()
+
+        reporter.compressLogFolder(log_directory)
+
+        self.assertFalse(os.path.exists(dump_folder))
+
+        self.assertTrue(os.path.exists("%s.tar.gz" % dump_folder))
+
+        with tarfile.open("%s.tar.gz" % dump_folder) as tf:
+            self.assertEquals(tf.getmembers()[0].name, "1990-01-01")
+            self.assertEquals(tf.getmembers()[1].name, "1990-01-01/test.txt")
+            self.assertEquals(tf.extractfile(tf.getmembers()[1]).read(), 'hi')
 
 class TestCollectSnapshot(unittest.TestCase):
 

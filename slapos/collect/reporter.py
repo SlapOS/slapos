@@ -31,6 +31,9 @@
 from slapos.util import mkdir_p
 import os.path
 import json
+import tarfile
+import glob
+import shutil
 import csv
 from time import strftime
 
@@ -38,6 +41,12 @@ class Dumper(object):
 
   def __init__(self, database):
     self.db = database
+
+  def dump(self, folder):
+    raise NotImplemented("Implemented on Subclass")
+
+  def writeFile(self, **kw):
+    raise NotImplemented("Implemented on Subclass")
 
 class SystemReporter(Dumper):
   
@@ -94,9 +103,25 @@ class RawDumper(Dumper):
 class RawCSVDumper(RawDumper):
   
   def writeFile(self, name, folder, date_scope, rows):
-    mkdir_p(os.path.join(folder, date_scope))
+    mkdir_p(os.path.join(folder, date_scope), 0o755)
     file_io = open(os.path.join(folder, "%s/dump_%s.csv" % (date_scope, name)), "w")
     csv_output = csv.writer(file_io)
     csv_output.writerows(rows)
     file_io.close()
+
+def compressLogFolder(log_directory):
+  
+    initial_folder = os.getcwd()
+    os.chdir(log_directory)
+    try:
+      for backup_to_archive in glob.glob("*-*-*/"):
+        filename = '%s.tar.gz' % backup_to_archive.strip("/")
+        with tarfile.open(filename, 'w:gz') as tfile:
+          tfile.add(backup_to_archive)
+          tfile.close() 
+        shutil.rmtree(backup_to_archive)
+    finally:
+      os.chdir(initial_folder)
+
+
 
