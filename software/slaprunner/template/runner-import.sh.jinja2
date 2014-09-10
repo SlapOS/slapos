@@ -9,7 +9,7 @@ restore_element () {
   do
     cd $backup_path;
     if [ -f $element ] || [ -d $element ]; then
-       {{ rsync_binary }} -avz --delete $backup_path/$element $restore_path;
+       {{ rsync_binary }} -av --delete $backup_path/$element $restore_path;
     fi
   done
 }
