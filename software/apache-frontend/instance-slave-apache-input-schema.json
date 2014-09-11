@@ -30,6 +30,13 @@
       "default": ""
     },
 
+    "default-path": {
+      "title": "Default Path",
+      "description": "Provide default path to redirect user to",
+      "type": "string",
+      "default": ""
+    },
+
     "ssl_crt": {
       "title": "SSL Certificate",
       "description": "SSL Certificate",
