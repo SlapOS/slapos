@@ -29,3 +29,12 @@ restore_element {{ directory['backup'] }}/runner/ {{ directory['srv'] }}/runner 
 restore_element  {{ directory['backup'] }}/etc/ {{ directory['etc'] }} config.json ssh
 cp -r {{ directory['backup'] }}/etc/.??* {{ directory['etc'] }};
 {{ curl_binary }} --insecure -vg6L --max-time 5  {{ backend_url }}/isSRReady;
+
+if [ -e  {{ directory['srv'] }}/runner-import-restore ]; then
+  touch {{ directory['srv'] }}/runner-import-restore
+  chmod +x {{ directory['srv'] }}/runner-import-restore
+fi
+
+# Invoke arbitrary script to perform specific restauration 
+# procedure.
+{{ directory['srv'] }}/runner-import-restore
