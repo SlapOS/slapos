@@ -1,6 +1,16 @@
 Changes
 =======
 
+1.2.3 (2014-09-11)
+------------------
+
+ * slapos.proxy: Add multimaster basic support.
+
+1.2.2 (2014-09-10)
+------------------
+
+ * slapos.collect: Compress historical logs and fix folder permissions.
+
 1.2.1 (2014-08-21)
 ------------------
 
