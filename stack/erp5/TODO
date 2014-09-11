@@ -1,6 +1,4 @@
 Release critical:
-- default number of test relation databases must be 0
-  This requires erp5 test nodes to be updated to a version where the correct number of databases is requested
 - update or drop frontend integration
 
 General:
