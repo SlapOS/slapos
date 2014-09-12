@@ -41,7 +41,11 @@ os.environ.setdefault('EDITOR', 'vi')
 
 import cliff
 import cliff.app
-from cliff.app import LOG
+try:
+  LOG = cliff.app.App.LOG
+except AttributeError:
+  # Support for older (< 1.7.0) cliff versions
+  from cliff.app import LOG
 import cliff.commandmanager
 
 import slapos.version
