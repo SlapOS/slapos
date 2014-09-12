@@ -32,6 +32,7 @@ import ConfigParser
 import os
 import logging
 import shutil
+import socket
 import subprocess
 import tempfile
 import time
@@ -41,6 +42,7 @@ from xml_marshaller.xml_marshaller import loads, dumps
 
 import slapos.proxy
 import slapos.proxy.views as views
+import slapos.slap
 import slapos.slap.slap
 
 import sqlite3
@@ -108,7 +110,7 @@ database_uri = %(tempdir)s/lib/proxy.db
     conf.setConfig()
     views.app.config['TESTING'] = True
     slapos.proxy.setupFlaskConfiguration(conf)
-    
+
     self.app_config = views.app.config
     self.app = views.app.test_client()
 
@@ -291,7 +293,7 @@ class MasterMixin(BasicMixin, unittest.TestCase):
         'state': xml_marshaller.xml_marshaller.dumps(state),
     }
     return self.app.post('/requestComputerPartition', data=request_dict)
-	
+
   def request(self, *args, **kwargs):
     """
     Simulate a request with above parameters
@@ -305,7 +307,7 @@ class MasterMixin(BasicMixin, unittest.TestCase):
     computer_partition = slapos.slap.ComputerPartition(
         software_instance.slap_computer_id,
         software_instance.slap_computer_partition_id)
-    
+
     computer_partition.__dict__.update(software_instance.__dict__)
     return computer_partition
 
@@ -541,7 +543,7 @@ class TestSlaveRequest(MasterMixin):
     self.setConnectionDict(partition_id=master_partition._partition_id,
                            connection_dict={'foo': 'bar'},
                            slave_reference=master_partition._parameter_dict['slave_instance_list'][0]['slave_reference'])
-    
+
     # Get updated information for slave partition
     slave_partition = self.request('http://sr//', None, 'MySlaveInstance', 'slappart2', shared=True)
     self.assertEqual(slave_partition.getConnectionParameter('foo'), 'bar')
@@ -597,10 +599,10 @@ class TestMultiNodeSupport(MasterMixin):
     self.supply(software_release_2_url, 'COMP-1')
     self.supply(software_release_3_url, 'COMP-0')
     self.supply(software_release_3_url, 'COMP-1')
-    
+
     computer_default = loads(self.app.get('/getFullComputerInformation?computer_id=%s' % self.computer_id).data)
     computer_0 = loads(self.app.get('/getFullComputerInformation?computer_id=COMP-0').data)
-    computer_1 = loads(self.app.get('/getFullComputerInformation?computer_id=COMP-1').data) 
+    computer_1 = loads(self.app.get('/getFullComputerInformation?computer_id=COMP-1').data)
     self.assertEqual(len(computer_default._software_release_list), 0)
     self.assertEqual(len(computer_0._software_release_list), 2)
     self.assertEqual(len(computer_1._software_release_list), 2)
@@ -826,7 +828,7 @@ class TestMultiNodeSupport(MasterMixin):
     self.add_free_partition(2)
     partition_computer_0 = self.request('http://sr2//', None, 'MyFirstInstance', 'slappart0', filter_kw={'computer_guid':computer_0_id})
     partition_computer_1 = self.request('http://sr//', None, 'MyOtherInstance', 'slappart0', filter_kw={'computer_guid':computer_1_id})
-    partition_computer_default = self.request('http://sr//', None, 'MyThirdInstance', 'slappart0') 
+    partition_computer_default = self.request('http://sr//', None, 'MyThirdInstance', 'slappart0')
 
     self.assertEqual(partition_computer_0.getInstanceGuid(), 'COMP-0-slappart0')
     self.assertEqual(partition_computer_1.getInstanceGuid(), 'COMP-1-slappart0')
@@ -837,7 +839,7 @@ class TestMultiNodeSupport(MasterMixin):
     Test that computer information will not be given if computer is not registered.
     Test that it still should work for the 'default' computer specified in slapos config
     even if not yet registered.
-    Test that computer information is given if computer is registered. 
+    Test that computer information is given if computer is registered.
     """
     new_computer_id = '%s42' % self.computer_id
     with self.assertRaises(slapos.slap.NotFoundError):
@@ -867,6 +869,8 @@ class TestMultiMasterSupport(MasterMixin):
     self.external_proxy_port = 8281
     self.external_master_url = 'http://%s:%s' % (self.external_proxy_host, self.external_proxy_port)
     self.external_computer_id = 'external_computer'
+    self.external_proxy_slap = slapos.slap.slap()
+    self.external_proxy_slap.initializeConnection(self.external_master_url)
 
     super(TestMultiMasterSupport, self).setUp()
 
@@ -900,9 +904,16 @@ database_uri = %(tempdir)s/lib/external_proxy.db
     # XXX use current dev version, not standard one installed through package
     self.external_proxy_process = subprocess.Popen(['slapos', 'proxy', 'start', '--cfg', self.external_slapproxy_configuration_file_location ])
     # Wait a bit for proxy to be started
-    time.sleep(0.5)
-    self.external_proxy_slap = slapos.slap.slap()
-    self.external_proxy_slap.initializeConnection(self.external_master_url)
+    attempts = 0
+    while (attempts < 20):
+      try:
+        self.external_proxy_slap._connection_helper.GET('/')
+      except slapos.slap.NotFoundError:
+        break
+      except socket.error:
+        attempts = attempts + 1
+        time.sleep(0.1)
+
 
   def createSlapOSConfigurationFile(self):
     """
@@ -1125,7 +1136,7 @@ database_uri = %(tempdir)s/lib/external_proxy.db
     )
 
 
-# XXX: when testing new schema version, 
+# XXX: when testing new schema version,
 # rename to "TestMigrateVersion10ToLatest" and test accordingly.
 # Of course, also test version 11 to latest (should be 12).
 class TestMigrateVersion10To11(TestInformation, TestRequest, TestSlaveRequest, TestMultiNodeSupport):
@@ -1152,7 +1163,7 @@ class TestMigrateVersion10To11(TestInformation, TestRequest, TestSlaveRequest, T
         loads(self.app.get('/getComputerInformation?computer_id=computer').data)._computer_partition_list[0]._parameter_dict['slap_software_type'],
         'production'
     )
-    
+
     # Lower level tests
     computer_list = self.db.execute("SELECT * FROM computer11").fetchall()
     self.assertEqual(
