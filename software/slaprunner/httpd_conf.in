@@ -27,6 +27,7 @@ LoadModule dav_module modules/mod_dav.so
 LoadModule dav_fs_module modules/mod_dav_fs.so
 LoadModule cache_module modules/mod_cache.so
 LoadModule file_cache_module modules/mod_file_cache.so
+LoadModule setenvif_module modules/mod_setenvif.so
 
 ErrorLog "{{ parameters.path_error_log }}"
 LogFormat "%h %l %u %t \"%r\" %>s %b" common
@@ -44,6 +45,12 @@ SSLProtocol -ALL +SSLv3 +TLSv1
 SSLHonorCipherOrder On
 SSLCipherSuite RC4-SHA:HIGH:!ADH
 SSLEngine   On
+
+SetEnvIf Origin "http(s)?://(www\.)?(.*)$" AccessControlAllowOrigin=$0$1
+Header always set Access-Control-Allow-Origin %{AccessControlAllowOrigin}e env=AccessControlAllowOrigin
+Header set Access-Control-Allow-Credentials "true"
+Header set Access-Control-Allow-Methods "PROPFIND, PROPPATCH, COPY, MOVE, DELETE, MKCOL, LOCK, UNLOCK, PUT, GETLIB, VERSION-CONTROL, CHECKIN, CHECKOUT, UNCHECKOUT, REPORT, UPDATE, CANCELUPLOAD, HEAD, OPTIONS, GET, POST"
+Header set Access-Control-Allow-Headers "Overwrite, Destination, Content-Type, Depth, User-Agent, X-File-Size, X-Requested-With, If-Modified-Since, X-File-Name, Cache-Control, Authorization"
 
 Alias /public {{ parameters.runner_home }}/public
 <Directory {{ parameters.runner_home }}/public>
@@ -69,7 +76,9 @@ Alias /share {{ parameters.runner_home }}
     AuthType Basic
     AuthName "webdav"
     AuthUserFile "{{ parameters.etc_dir }}/.htpasswd"
-    Require valid-user
+    <LimitExcept OPTIONS>
+        Require valid-user
+    </LimitExcept>
 </Directory>
 
 ScriptSock {{ parameters.path_pid }}
