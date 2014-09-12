@@ -929,11 +929,6 @@ database_uri = %(tempdir)s/lib/external_proxy.db
     }
     open(self.slapos_cfg, 'w').write(configuration)
 
-  def external_proxy_supply(self, url, computer_id=None):
-    if computer_id is None:
-      computer_id = self.external_computer_id
-    self.external_proxy_slap.registerSupply().supply(url, computer_id)
-
   def external_proxy_add_free_partition(self, partition_amount, computer_id=None):
     """
     Will simulate a slapformat first run
@@ -1045,7 +1040,6 @@ database_uri = %(tempdir)s/lib/external_proxy.db
     dummy_parameter_dict = {'foo': 'bar'}
     instance_reference = 'MyFirstInstance'
     self.add_free_partition(1)
-    self.external_proxy_supply(self.external_software_release)
     self.external_proxy_add_free_partition(1)
 
     filter_kw = {'master_url': self.external_master_url}
@@ -1064,7 +1058,6 @@ database_uri = %(tempdir)s/lib/external_proxy.db
     proxy to refuse to forward if this master_url is not whitelisted
     """
     self.add_free_partition(1)
-    self.external_proxy_supply(self.external_software_release)
     self.external_proxy_add_free_partition(1)
 
     filter_kw = {'master_url': self.external_master_url + 'bad'}
@@ -1079,7 +1072,6 @@ database_uri = %(tempdir)s/lib/external_proxy.db
     dummy_parameter_dict = {'foo': 'bar'}
     instance_reference = 'MyFirstInstance'
     self.add_free_partition(1)
-    self.external_proxy_supply(self.external_software_release)
     self.external_proxy_add_free_partition(1)
 
     partition = self.request(self.external_software_release, None, instance_reference, 'slappart0',
