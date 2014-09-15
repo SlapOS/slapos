@@ -1,0 +1,74 @@
+LoadModule unixd_module modules/mod_unixd.so
+LoadModule access_compat_module modules/mod_access_compat.so
+LoadModule authz_core_module modules/mod_authz_core.so
+LoadModule authz_host_module modules/mod_authz_host.so
+LoadModule log_config_module modules/mod_log_config.so
+LoadModule setenvif_module modules/mod_setenvif.so
+LoadModule version_module modules/mod_version.so
+LoadModule proxy_module modules/mod_proxy.so
+LoadModule proxy_http_module modules/mod_proxy_http.so
+LoadModule socache_shmcb_module modules/mod_socache_shmcb.so
+LoadModule ssl_module modules/mod_ssl.so
+LoadModule mime_module modules/mod_mime.so
+LoadModule dav_module modules/mod_dav.so
+LoadModule dav_fs_module modules/mod_dav_fs.so
+LoadModule negotiation_module modules/mod_negotiation.so
+LoadModule rewrite_module modules/mod_rewrite.so
+LoadModule headers_module modules/mod_headers.so
+
+PidFile "{{ parameter_dict['pid-file'] }}"
+ServerAdmin admin@
+TypesConfig conf/mime.types
+AddType application/x-compress .Z
+AddType application/x-gzip .gz .tgz
+
+ServerTokens Prod
+ServerSignature Off
+TraceEnable Off
+
+TimeOut {{ parameter_dict['timeout'] }}
+
+SSLCertificateFile {{ parameter_dict['cert'] }}
+SSLCertificateKeyFile {{ parameter_dict['key'] }}
+SSLRandomSeed startup builtin
+SSLRandomSeed connect builtin
+SSLProtocol -ALL +SSLv3 +TLSv1
+SSLHonorCipherOrder On
+{% if parameter_dict['cipher'] -%}
+SSLCipherSuite {{ parameter_dict['cipher'] }}
+{% else -%}
+SSLCipherSuite RC4-SHA:HIGH:!ADH
+{%- endif %}
+SSLSessionCache shmcb:{{ parameter_dict['ssl-session-cache'] }}(512000)
+SSLProxyEngine On
+
+# As backend is trusting REMOTE_USER header unset it always
+RequestHeader unset REMOTE_USER
+
+ErrorLog "{{ parameter_dict['error-log'] }}"
+# Default apache log format with request time in microsecond at the end
+LogFormat "%h %l %u %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\" %D" combined
+CustomLog "{{ parameter_dict['access-log'] }}" combined
+
+<Directory />
+  Options FollowSymLinks
+  AllowOverride None
+  Allow from all
+</Directory>
+
+RewriteEngine On
+{% for port, _, backend, authentication in parameter_dict['backend-list'] -%}
+{%   for ip in parameter_dict['ip-list'] -%}
+Listen {{ ip }}:{{ port }}
+{%   endfor -%}
+<VirtualHost *:{{ port }}>
+{% if authentication -%}
+  SSLVerifyClient require
+  RequestHeader set REMOTE_USER %{SSL_CLIENT_S_DN_CN}s
+  SSLCACertificateFile {{ parameter_dict['ca-cert'] }}
+  SSLCARevocationPath {{ parameter_dict['crl'] }}
+{% endif -%}
+  SSLEngine on
+  RewriteRule ^/(.*) {{ backend }}/$1 [L,P]
+</VirtualHost>
+{% endfor -%}
