@@ -662,7 +662,8 @@ class Slapgrid(object):
         software_release_url=software_url,
         certificate_repository_path=self.certificate_repository_path,
         buildout=self.buildout,
-        logger=self.logger)
+        logger=self.logger,
+        retention_delay=getattr(computer_partition, '_retention_delay', 0))
       computer_partition_state = computer_partition.getState()
 
       # XXX this line breaks 37 tests
@@ -1088,7 +1089,8 @@ class Slapgrid(object):
             software_release_url=software_url,
             certificate_repository_path=self.certificate_repository_path,
             buildout=self.buildout,
-            logger=self.logger)
+            logger=self.logger,
+            retention_delay=getattr(computer_partition, '_retention_delay', 0))
           local_partition.stop()
           try:
             computer_partition.stopped()
@@ -1101,7 +1103,7 @@ class Slapgrid(object):
             self.logger.info('Ignoring destruction of %r, as no report usage was sent' %
                                 computer_partition.getId())
             continue
-          local_partition.destroy()
+          destroyed = local_partition.destroy()
         except (SystemExit, KeyboardInterrupt):
           computer_partition.error(traceback.format_exc(), logger=self.logger)
           raise
@@ -1111,7 +1113,8 @@ class Slapgrid(object):
           exc = traceback.format_exc()
           computer_partition.error(exc, logger=self.logger)
         try:
-          computer_partition.destroyed()
+          if destroyed:
+            computer_partition.destroyed()
         except NotFoundError:
           self.logger.debug('Ignored slap error while trying to inform about '
                             'destroying not fully configured Computer Partition %r' %

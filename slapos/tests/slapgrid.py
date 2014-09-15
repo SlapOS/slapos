@@ -51,6 +51,7 @@ from slapos.grid.utils import md5digest
 from slapos.grid.watchdog import Watchdog
 from slapos.grid import SlapObject
 from slapos.grid.SlapObject import WATCHDOG_MARK
+import slapos.grid.SlapObject
 
 
 dummylogger = logging.getLogger()
@@ -436,6 +437,8 @@ class InstanceForTest:
     partition = slapos.slap.ComputerPartition(computer_id, self.name)
     partition._software_release_document = self.getSoftwareRelease()
     partition._requested_state = self.requested_state
+    if getattr(self, 'retention_delay', None):
+      partition._retention_delay = self.retention_delay
     if self.software is not None:
       if self.timestamp is not None:
         partition._parameter_dict = {'timestamp': self.timestamp}
@@ -546,7 +549,7 @@ class TestSlapgridCPWithMaster(MasterMixin, unittest.TestCase):
     self.assertItemsEqual(os.listdir(self.instance_root), ['0', 'etc', 'var'])
     partition = os.path.join(self.instance_root, '0')
     self.assertItemsEqual(os.listdir(partition), ['.slapgrid', 'buildout.cfg',
-                                                  'software_release', 'worked'])
+                                                  'software_release', 'worked', '.slapos-retention-lock-delay'])
     self.assertItemsEqual(os.listdir(self.software_root), [instance.software.software_hash])
     self.assertEqual(computer.sequence,
                      ['getFullComputerInformation', 'availableComputerPartition',
@@ -563,7 +566,7 @@ class TestSlapgridCPWithMaster(MasterMixin, unittest.TestCase):
     self.assertItemsEqual(os.listdir(self.instance_root), ['0', 'etc', 'var'])
     partition = os.path.join(self.instance_root, '0')
     self.assertItemsEqual(os.listdir(partition), ['.slapgrid', 'buildout.cfg',
-                                                  'software_release', 'worked'])
+                                                  'software_release', 'worked', '.slapos-retention-lock-delay'])
     self.assertItemsEqual(os.listdir(self.software_root), [instance.software.software_hash])
     self.assertEqual(computer.sequence,
                      ['getFullComputerInformation', 'availableComputerPartition',
@@ -593,7 +596,7 @@ class TestSlapgridCPWithMaster(MasterMixin, unittest.TestCase):
     self.assertItemsEqual(os.listdir(self.instance_root), ['0', 'etc', 'var'])
     self.assertItemsEqual(os.listdir(partition.partition_path),
                           ['.slapgrid', '.0_wrapper.log', 'buildout.cfg',
-                           'etc', 'software_release', 'worked'])
+                           'etc', 'software_release', 'worked', '.slapos-retention-lock-delay'])
     wrapper_log = os.path.join(partition.partition_path, '.0_wrapper.log')
     self.assertLogContent(wrapper_log, 'Working')
     self.assertItemsEqual(os.listdir(self.software_root), [partition.software.software_hash])
@@ -629,7 +632,7 @@ chmod 755 etc/run/wrapper
     self.assertItemsEqual(os.listdir(self.instance_root), ['0', 'etc', 'var'])
     self.assertItemsEqual(os.listdir(instance.partition_path),
                           ['.slapgrid', '.0_wrapper.log', 'buildout.cfg',
-                           'etc', 'software_release', 'worked'])
+                           'etc', 'software_release', 'worked', '.slapos-retention-lock-delay'])
     wrapper_log = os.path.join(instance.partition_path, '.0_wrapper.log')
     self.assertLogContent(wrapper_log, 'Working')
     self.assertItemsEqual(os.listdir(self.software_root), [instance.software.software_hash])
@@ -644,7 +647,7 @@ chmod 755 etc/run/wrapper
     self.assertItemsEqual(os.listdir(self.instance_root), ['0', 'etc', 'var'])
     self.assertItemsEqual(os.listdir(instance.partition_path),
                           ['.slapgrid', '.0_wrapper.log', 'buildout.cfg',
-                           'etc', 'software_release', 'worked'])
+                           'etc', 'software_release', 'worked', '.slapos-retention-lock-delay'])
     self.assertLogContent(wrapper_log, 'Signal handler called with signal 15')
     self.assertEqual(computer.sequence,
                      ['getFullComputerInformation', 'availableComputerPartition',
@@ -683,7 +686,7 @@ chmod 755 etc/run/wrapper
     self.assertItemsEqual(os.listdir(self.instance_root), ['0', 'etc', 'var'])
     self.assertItemsEqual(os.listdir(instance.partition_path),
                           ['.slapgrid', '.0_wrapper.log', 'buildout.cfg',
-                           'etc', 'software_release', 'worked'])
+                           'etc', 'software_release', 'worked', '.slapos-retention-lock-delay'])
     wrapper_log = os.path.join(instance.partition_path, '.0_wrapper.log')
     self.assertLogContent(wrapper_log, 'Working')
     self.assertItemsEqual(os.listdir(self.software_root),
@@ -703,7 +706,7 @@ exit 1
                           ['0', 'etc', 'var'])
     self.assertItemsEqual(os.listdir(instance.partition_path),
                           ['.slapgrid', '.0_wrapper.log', 'buildout.cfg',
-                           'etc', 'software_release', 'worked'])
+                           'etc', 'software_release', 'worked', '.slapos-retention-lock-delay'])
     self.assertLogContent(wrapper_log, 'Signal handler called with signal 15')
     self.assertEqual(computer.sequence,
                      ['getFullComputerInformation',
@@ -720,7 +723,7 @@ exit 1
     self.assertItemsEqual(os.listdir(self.instance_root), ['0', 'etc', 'var'])
     partition = os.path.join(self.instance_root, '0')
     self.assertItemsEqual(os.listdir(partition),
-                          ['.slapgrid', 'buildout.cfg', 'etc', 'software_release', 'worked'])
+                          ['.slapgrid', 'buildout.cfg', 'etc', 'software_release', 'worked', '.slapos-retention-lock-delay'])
     self.assertItemsEqual(os.listdir(self.software_root),
                           [instance.software.software_hash])
     self.assertEqual(computer.sequence,
@@ -735,7 +738,7 @@ exit 1
     partition = os.path.join(self.instance_root, '0')
     self.assertItemsEqual(os.listdir(partition),
                           ['.slapgrid', '.0_wrapper.log', 'etc',
-                           'buildout.cfg', 'software_release', 'worked'])
+                           'buildout.cfg', 'software_release', 'worked', '.slapos-retention-lock-delay'])
     self.assertItemsEqual(os.listdir(self.software_root),
                           [instance.software.software_hash])
     wrapper_log = os.path.join(instance.partition_path, '.0_wrapper.log')
@@ -807,7 +810,7 @@ class TestSlapgridCPWithMasterWatchdog(MasterMixin, unittest.TestCase):
     self.assertItemsEqual(os.listdir(self.instance_root), ['0', 'etc', 'var'])
     self.assertItemsEqual(os.listdir(partition.partition_path),
                           ['.slapgrid', '.0_daemon.log', 'buildout.cfg',
-                           'etc', 'software_release', 'worked'])
+                           'etc', 'software_release', 'worked', '.slapos-retention-lock-delay'])
     daemon_log = os.path.join(partition.partition_path, '.0_daemon.log')
     self.assertLogContent(daemon_log, 'Failing')
     self.assertIsCreated(self.watchdog_banged)
@@ -852,7 +855,7 @@ class TestSlapgridCPWithMasterWatchdog(MasterMixin, unittest.TestCase):
                           ['0', 'etc', 'var'])
     self.assertItemsEqual(os.listdir(partition.partition_path),
                           ['.slapgrid', '.0_daemon.log', 'buildout.cfg',
-                           'etc', 'software_release', 'worked'])
+                           'etc', 'software_release', 'worked', '.slapos-retention-lock-delay'])
     daemon_log = os.path.join(partition.partition_path, '.0_daemon.log')
     self.assertLogContent(daemon_log, 'Failing')
     self.assertIsNotCreated(self.watchdog_banged)
@@ -1139,7 +1142,7 @@ class TestSlapgridCPPartitionProcessing(MasterMixin, unittest.TestCase):
     self.assertItemsEqual(os.listdir(self.instance_root), ['0', 'etc', 'var'])
     partition = os.path.join(self.instance_root, '0')
     self.assertItemsEqual(os.listdir(partition),
-                          ['.slapgrid', '.timestamp', 'buildout.cfg', 'software_release', 'worked'])
+                          ['.slapgrid', '.timestamp', 'buildout.cfg', 'software_release', 'worked', '.slapos-retention-lock-delay'])
     self.assertItemsEqual(os.listdir(self.software_root), [instance.software.software_hash])
     timestamp_path = os.path.join(instance.partition_path, '.timestamp')
     self.setSlapgrid()
@@ -1159,7 +1162,7 @@ class TestSlapgridCPPartitionProcessing(MasterMixin, unittest.TestCase):
     partition = os.path.join(self.instance_root, '0')
     self.assertItemsEqual(os.listdir(partition),
                           ['.slapgrid', '.timestamp', 'buildout.cfg',
-                           'software_release', 'worked'])
+                           'software_release', 'worked', '.slapos-retention-lock-delay'])
     self.assertItemsEqual(os.listdir(self.software_root), [instance.software.software_hash])
 
     self.assertEqual(self.launchSlapgrid(develop=True),
@@ -1180,7 +1183,7 @@ class TestSlapgridCPPartitionProcessing(MasterMixin, unittest.TestCase):
     self.assertItemsEqual(os.listdir(self.instance_root), ['0', 'etc', 'var'])
     partition = os.path.join(self.instance_root, '0')
     self.assertItemsEqual(os.listdir(partition),
-                          ['.slapgrid', '.timestamp', 'buildout.cfg', 'software_release', 'worked'])
+                          ['.slapgrid', '.timestamp', 'buildout.cfg', 'software_release', 'worked', '.slapos-retention-lock-delay'])
     self.assertItemsEqual(os.listdir(self.software_root), [instance.software.software_hash])
     instance.timestamp = str(int(timestamp) - 1)
     self.assertEqual(self.launchSlapgrid(), slapgrid.SLAPGRID_SUCCESS)
@@ -1197,7 +1200,7 @@ class TestSlapgridCPPartitionProcessing(MasterMixin, unittest.TestCase):
     self.assertItemsEqual(os.listdir(self.instance_root), ['0', 'etc', 'var'])
     partition = os.path.join(self.instance_root, '0')
     self.assertItemsEqual(os.listdir(partition),
-                          ['.slapgrid', '.timestamp', 'buildout.cfg', 'software_release', 'worked'])
+                          ['.slapgrid', '.timestamp', 'buildout.cfg', 'software_release', 'worked', '.slapos-retention-lock-delay'])
     self.assertItemsEqual(os.listdir(self.software_root), [instance.software.software_hash])
     instance.timestamp = str(int(timestamp) + 1)
     self.assertEqual(self.launchSlapgrid(), slapgrid.SLAPGRID_SUCCESS)
@@ -1218,7 +1221,7 @@ class TestSlapgridCPPartitionProcessing(MasterMixin, unittest.TestCase):
     self.assertItemsEqual(os.listdir(self.instance_root), ['0', 'etc', 'var'])
     partition = os.path.join(self.instance_root, '0')
     self.assertItemsEqual(os.listdir(partition),
-                          ['.slapgrid', '.timestamp', 'buildout.cfg', 'software_release', 'worked'])
+                          ['.slapgrid', '.timestamp', 'buildout.cfg', 'software_release', 'worked', '.slapos-retention-lock-delay'])
     self.assertItemsEqual(os.listdir(self.software_root),
                           [instance.software.software_hash])
     instance.timestamp = None
@@ -1245,7 +1248,7 @@ class TestSlapgridCPPartitionProcessing(MasterMixin, unittest.TestCase):
     partition = os.path.join(self.instance_root, '0')
     self.assertItemsEqual(os.listdir(partition),
                           ['.slapgrid', '.timestamp', 'buildout.cfg',
-                           'software_release', 'worked'])
+                           'software_release', 'worked', '.slapos-retention-lock-delay'])
 
     time.sleep(2)
     # dummify install() so that it doesn't actually do anything so that it
@@ -1255,7 +1258,7 @@ class TestSlapgridCPPartitionProcessing(MasterMixin, unittest.TestCase):
     self.launchSlapgrid()
     self.assertItemsEqual(os.listdir(partition),
                           ['.slapgrid', '.timestamp', 'buildout.cfg',
-                           'software_release', 'worked'])
+                           'software_release', 'worked', '.slapos-retention-lock-delay'])
 
   def test_one_partition_periodicity_from_file_does_not_disturb_others(self):
     """
@@ -1528,7 +1531,7 @@ class TestSlapgridUsageReport(MasterMixin, unittest.TestCase):
     self.assertItemsEqual(os.listdir(self.instance_root), ['0', 'etc', 'var'])
     self.assertItemsEqual(os.listdir(instance.partition_path),
                           ['.slapgrid', '.0_wrapper.log', 'buildout.cfg',
-                           'etc', 'software_release', 'worked'])
+                           'etc', 'software_release', 'worked', '.slapos-retention-lock-delay'])
     wrapper_log = os.path.join(instance.partition_path, '.0_wrapper.log')
     self.assertLogContent(wrapper_log, 'Working')
     self.assertItemsEqual(os.listdir(self.software_root), [instance.software.software_hash])
@@ -1597,7 +1600,7 @@ class TestSlapgridUsageReport(MasterMixin, unittest.TestCase):
     self.assertItemsEqual(os.listdir(self.instance_root), ['0', 'etc', 'var'])
     self.assertItemsEqual(os.listdir(instance.partition_path),
                           ['.slapgrid', '.0_wrapper.log', 'buildout.cfg',
-                           'etc', 'software_release', 'worked'])
+                           'etc', 'software_release', 'worked', '.slapos-retention-lock-delay'])
     wrapper_log = os.path.join(instance.partition_path, '.0_wrapper.log')
     self.assertLogContent(wrapper_log, 'Working')
     self.assertItemsEqual(os.listdir(self.software_root), [instance.software.software_hash])
@@ -1613,13 +1616,13 @@ class TestSlapgridUsageReport(MasterMixin, unittest.TestCase):
     self.assertItemsEqual(os.listdir(self.instance_root), ['0', 'etc', 'var'])
     self.assertItemsEqual(os.listdir(instance.partition_path),
                           ['.slapgrid', '.0_wrapper.log', 'buildout.cfg',
-                           'etc', 'software_release', 'worked'])
+                           'etc', 'software_release', 'worked', '.slapos-retention-lock-delay'])
     wrapper_log = os.path.join(instance.partition_path, '.0_wrapper.log')
     self.assertLogContent(wrapper_log, 'Working')
     self.assertItemsEqual(os.listdir(self.instance_root), ['0', 'etc', 'var'])
     self.assertItemsEqual(os.listdir(instance.partition_path),
                           ['.slapgrid', '.0_wrapper.log', 'buildout.cfg',
-                           'etc', 'software_release', 'worked'])
+                           'etc', 'software_release', 'worked', '.slapos-retention-lock-delay'])
     wrapper_log = os.path.join(instance.partition_path, '.0_wrapper.log')
     self.assertLogContent(wrapper_log, 'Working')
     self.assertEqual(computer.sequence,
@@ -1891,3 +1894,38 @@ class TestSlapgridCPWithMasterPromise(MasterMixin, unittest.TestCase):
 
     self.assertEquals(instance.error, 1)
     self.assertNotEqual(instance.state, 'started')
+
+class TestSlapgridDestructionLock(MasterMixin, unittest.TestCase):
+  def test_retention_lock(self):
+    """
+    Higher level test about actual retention (or no-retention) of instance
+    if specifying a retention lock delay.
+    """
+    computer = ComputerForTest(self.software_root, self.instance_root)
+    instance = computer.instance_list[0]
+    instance.requested_state = 'started'
+    instance.retention_delay = 1.0 / (3600 * 24)
+    self.grid.processComputerPartitionList()
+    dummy_instance_file_path = os.path.join(instance.partition_path, 'dummy')
+    with open(dummy_instance_file_path, 'w') as dummy_instance_file:
+      dummy_instance_file.write('dummy')
+
+    self.assertTrue(os.path.exists(os.path.join(
+        instance.partition_path,
+        slapos.grid.SlapObject.Partition.retention_lock_delay_filename
+    )))
+
+    instance.requested_state = 'destroyed'
+    self.grid.agregateAndSendUsage()
+    self.assertTrue(os.path.exists(dummy_instance_file_path))
+    self.assertTrue(os.path.exists(os.path.join(
+        instance.partition_path,
+        slapos.grid.SlapObject.Partition.retention_lock_date_filename
+    )))
+
+    self.grid.agregateAndSendUsage()
+    self.assertTrue(os.path.exists(dummy_instance_file_path))
+
+    time.sleep(1)
+    self.grid.agregateAndSendUsage()
+    self.assertFalse(os.path.exists(dummy_instance_file_path))
