@@ -34,6 +34,9 @@ import urlparse
 import slapos.slap
 import xml_marshaller
 
+ORIGINAL_HTTPLIB_HTTPCONNECTION = httplib.HTTPConnection
+ORIGINAL_HTTPLIB_HTTPSCONNECTION = httplib.HTTPSConnection
+ORIGINAL_HTTPLIB_HTTPRESPONSE = httplib.HTTPResponse
 
 class UndefinedYetException(Exception):
   """To catch exceptions which are not yet defined"""
@@ -70,9 +73,16 @@ class SlapMixin(unittest.TestCase):
   def _unpatchHttplib(self):
     """Restores httplib overriding"""
     import httplib
+
+    # XXX not reliable
     for name, original_value in self.saved_httplib.items():
       setattr(httplib, name, original_value)
     del self.saved_httplib
+
+    # XXX this fixes upper code, to be sure it is reliable
+    httplib.HTTPConnection = ORIGINAL_HTTPLIB_HTTPCONNECTION
+    httplib.HTTPSConnection = ORIGINAL_HTTPLIB_HTTPSCONNECTION
+    httplib.HTTPResponse = ORIGINAL_HTTPLIB_HTTPRESPONSE
 
   def _getTestComputerId(self):
     """
@@ -987,3 +997,4 @@ if __name__ == '__main__':
   print 'You can point to any SLAP server by setting TEST_SLAP_SERVER_URL '\
       'environment variable'
   unittest.main()
+
