@@ -468,7 +468,7 @@ class Slapgrid(object):
         if state == 'available':
           try:
             software_release.available()
-          except NotFoundError:
+          except (NotFoundError, ServerError):
             pass
         elif state == 'destroyed':
           try:
@@ -625,7 +625,7 @@ class Slapgrid(object):
                 filename="%s/instance.log" % (log_folder_path)
             )
     stat_info = os.stat(instance_path)
-    chownDirectory("%s/.slapgrid" % instance_path, 
+    chownDirectory("%s/.slapgrid" % instance_path,
                    uid=stat_info.st_uid,
                    gid=stat_info.st_gid)
 
@@ -639,7 +639,7 @@ class Slapgrid(object):
       self.logger.info('  Software URL: %s' % software_url)
       self.logger.info('  Software path: %s' % software_path)
       self.logger.info('  Instance path: %s' % instance_path)
-  
+
       local_partition = Partition(
         software_path=software_path,
         instance_path=instance_path,
@@ -656,11 +656,11 @@ class Slapgrid(object):
         buildout=self.buildout,
         logger=self.logger)
       computer_partition_state = computer_partition.getState()
-  
+
       # XXX this line breaks 37 tests
       # self.logger.info('  Instance type: %s' % computer_partition.getType())
       self.logger.info('  Instance status: %s' % computer_partition_state)
-  
+
       if computer_partition_state == COMPUTER_PARTITION_STARTED_STATE:
         local_partition.install()
         computer_partition.available()
@@ -984,9 +984,9 @@ class Slapgrid(object):
         computer_partition_id = computer_partition.getId()
         instance_path = os.path.join(self.instance_root, computer_partition_id)
         dir_report_list = [os.path.join(instance_path, 'var', 'xml_report'),
-            os.path.join(self.instance_root, 'var', 'xml_report', 
+            os.path.join(self.instance_root, 'var', 'xml_report',
                          computer_partition_id)]
-        
+
         for dir_reports in dir_report_list:
           # The directory xml_report contain a number of files equal
           # to the number of software instance running inside the same partition
