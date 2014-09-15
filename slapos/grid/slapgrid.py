@@ -102,6 +102,14 @@ def check_missing_parameters(options):
   if missing:
     raise RuntimeError('Missing mandatory parameters: %s' % ', '.join(sorted(missing)))
 
+  # parameter can NOT be empty string or None
+  for option in required:
+    if not options.get(option):
+      missing.add(option)
+
+  if missing:
+    raise RuntimeError('Mandatory parameters present but empty: %s' % ', '.join(sorted(missing)))
+
 
 def check_missing_files(options):
   req_files = [
