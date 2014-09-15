@@ -39,14 +39,8 @@ import os
 # must be done before importing cliff
 os.environ.setdefault('EDITOR', 'vi')
 
-import cliff
-import cliff.app
-try:
-  LOG = cliff.app.App.LOG
-except AttributeError:
-  # Support for older (< 1.7.0) cliff versions
-  from cliff.app import LOG
-import cliff.commandmanager
+from cliff.app import App
+from cliff.commandmanager import CommandManager, LOG
 
 import slapos.version
 
@@ -55,7 +49,7 @@ urllib3_logger = logging.getLogger('requests.packages.urllib3')
 urllib3_logger.setLevel(logging.WARNING)
 
 
-class SlapOSCommandManager(cliff.commandmanager.CommandManager):
+class SlapOSCommandManager(CommandManager):
 
     def find_command(self, argv):
         """Given an argument list, find a command and
@@ -124,7 +118,7 @@ class SlapOSHelpAction(argparse.Action):
         return group, '  %-13s  %s\n' % (name, one_liner)
 
 
-class SlapOSApp(cliff.app.App):
+class SlapOSApp(App):
 
     #
     # self.options.verbose_level:
@@ -205,7 +199,7 @@ class SlapOSApp(cliff.app.App):
             self.log.debug('clean_up %s', cmd.__class__.__name__)
 
     def run(self, argv):
-        # same as cliff.App.run except that it won't re-raise
+        # same as cliff.app.App.run except that it won't re-raise
         # a logged exception, and doesn't use --debug
         self.options, remainder = self.parser.parse_known_args(argv)
         self.configure_logging()
@@ -213,7 +207,7 @@ class SlapOSApp(cliff.app.App):
         try:
             self.initialize_app(remainder)
         except Exception as err:
-            LOG.exception(err)
+            self.log.exception(err)
             return 1
         if self.interactive_mode:
             result = self.interact()
@@ -222,7 +216,7 @@ class SlapOSApp(cliff.app.App):
         return result
 
     def run_subcommand(self, argv):
-        # same as cliff.App.run_subcommand except that it won't re-raise
+        # same as cliff.app.App.run_subcommand except that it won't re-raise
         # a logged exception, and doesn't use --debug
         subcommand = self.command_manager.find_command(argv)
         cmd_factory, cmd_name, sub_argv = subcommand
@@ -239,16 +233,16 @@ class SlapOSApp(cliff.app.App):
             parsed_args = cmd_parser.parse_args(sub_argv)
             result = cmd.run(parsed_args)
         except Exception as err:
-            LOG.exception(err)
+            self.log.exception(err)
             try:
                 self.clean_up(cmd, result, err)
             except Exception as err2:
-                LOG.exception(err2)
+                self.log.exception(err2)
         else:
             try:
                 self.clean_up(cmd, result, None)
             except Exception as err3:
-                LOG.exception(err3)
+                self.log.exception(err3)
         return result
 
 
