@@ -34,6 +34,7 @@ import logging
 import shutil
 import socket
 import subprocess
+import sys
 import tempfile
 import time
 import unittest
@@ -903,8 +904,12 @@ database_uri = %(tempdir)s/lib/external_proxy.db
     Start external slapproxy
     """
     logging.getLogger().info('Starting external proxy, listening to %s:%s' % (self.external_proxy_host, self.external_proxy_port))
-    # XXX use current dev version, not standard one installed through package
-    self.external_proxy_process = subprocess.Popen(['slapos', 'proxy', 'start', '--cfg', self.external_slapproxy_configuration_file_location ])
+    # XXX This uses a hack to run current code of slapos.core
+    import slapos
+    self.external_proxy_process = subprocess.Popen([
+        sys.executable, '%s/cli/entry.py' % os.path.dirname(slapos.__file__),
+        'proxy', 'start', '--cfg', self.external_slapproxy_configuration_file_location
+    ])
     # Wait a bit for proxy to be started
     attempts = 0
     while (attempts < 20):
