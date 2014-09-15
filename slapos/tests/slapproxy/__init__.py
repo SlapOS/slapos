@@ -906,10 +906,13 @@ database_uri = %(tempdir)s/lib/external_proxy.db
     logging.getLogger().info('Starting external proxy, listening to %s:%s' % (self.external_proxy_host, self.external_proxy_port))
     # XXX This uses a hack to run current code of slapos.core
     import slapos
-    self.external_proxy_process = subprocess.Popen([
-        sys.executable, '%s/cli/entry.py' % os.path.dirname(slapos.__file__),
-        'proxy', 'start', '--cfg', self.external_slapproxy_configuration_file_location
-    ])
+    self.external_proxy_process = subprocess.Popen(
+        [
+            sys.executable, '%s/cli/entry.py' % os.path.dirname(slapos.__file__),
+            'proxy', 'start', '--cfg', self.external_slapproxy_configuration_file_location
+        ],
+        env={"PYTHONPATH": ':'.join(sys.path)}
+    )
     # Wait a bit for proxy to be started
     attempts = 0
     while (attempts < 20):
