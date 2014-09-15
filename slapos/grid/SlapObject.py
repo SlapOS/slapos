@@ -37,6 +37,7 @@ import subprocess
 import tarfile
 import tempfile
 import textwrap
+import time
 import xmlrpclib
 
 from supervisor import xmlrpc
@@ -273,6 +274,8 @@ class Software(object):
 class Partition(object):
   """This class is responsible of the installation of an instance
   """
+  retention_lock_delay_filename = '.slapos-retention-lock-delay'
+  retention_lock_date_filename = '.slapos-retention-lock-date'
 
   # XXX: we should give the url (or the "key") instead of the software_path
   #      then compute the path from it, like in Software.
@@ -289,6 +292,7 @@ class Partition(object):
                buildout,
                logger,
                certificate_repository_path=None,
+               retention_delay=0
                ):
     """Initialisation of class parameters"""
     self.buildout = buildout
@@ -314,6 +318,20 @@ class Partition(object):
       self.cert_file = os.path.join(certificate_repository_path,
           self.partition_id + '.crt')
       self._updateCertificate()
+
+    self.retention_delay = retention_delay
+    if type(self.retention_delay) not in (int, float) \
+       or self.retention_delay <= 0:
+      self.logger.warn('Retention delay value (%s) is not valid, ignoring.' \
+                       % self.retention_delay)
+      self.retention_delay = 0
+
+    self.retention_lock_delay_file_path = os.path.join(
+        self.instance_path, self.retention_lock_delay_filename
+    )
+    self.retention_lock_date_file_path = os.path.join(
+        self.instance_path, self.retention_lock_date_filename
+    )
 
   def _updateCertificate(self):
     try:
@@ -492,6 +510,7 @@ class Partition(object):
                          buildout_binary=buildout_binary,
                          logger=self.logger)
     self.generateSupervisorConfigurationFile()
+    self.createRetentionLockDelay()
 
   def generateSupervisorConfigurationFile(self):
     """
@@ -564,6 +583,11 @@ class Partition(object):
     """
     self.logger.info("Destroying Computer Partition %s..."
         % self.computer_partition.getId())
+
+    self.createRetentionLockDate()
+    if not self.checkRetentionIsAuthorized():
+      return False
+
     # Launches "destroy" binary if exists
     destroy_executable_location = os.path.join(self.instance_path, 'sbin',
         'destroy')
@@ -607,6 +631,8 @@ class Partition(object):
     except IOError as exc:
       raise IOError("I/O error while freeing partition (%s): %s" % (self.instance_path, exc))
 
+    return True
+
   def fetchInformations(self):
     """Fetch usage informations with buildout, returns it.
     """
@@ -649,3 +675,112 @@ class Partition(object):
       supervisor.addProcessGroup(gname)
       self.logger.info('Updated %r' % gname)
     self.logger.debug('Supervisord updated')
+
+  def _set_ownership(self, path):
+    """
+    If running as root: copy ownership of software_path to path
+    If not running as root: do nothing
+    """
+    if os.getuid():
+      return
+    root_stat = os.stat(self.software_path)
+    path_stat = os.stat(path)
+    if (root_stat.st_uid != path_stat.st_uid or
+          root_stat.st_gid != path_stat.st_gid):
+      os.chown(path, root_stat.st_uid, root_stat.st_gid)
+
+  def checkRetentionIsAuthorized(self):
+    """
+    Check if retention is authorized by checking retention lock delay or
+    retention lock date.
+
+    A retention lock delay is a delay which is:
+     * Defined by the user/machine who requested the instance
+     * Hardcoded the first time the instance is deployed, then is read-only
+       during the whole lifetime of the instance
+     * Triggered the first time the instance is requested to be destroyed
+       (retention will be ignored).
+       From this point, it is not possible to destroy the instance until the
+       delay is over.
+     * Accessible in read-only mode from the partition
+
+    A retention lock date is the date computed from (date of first
+    retention request + retention lock delay in days).
+
+    Example:
+     * User requests an instance with delay as 10 (days) to a SlapOS Master
+     * SlapOS Master transmits this information to the SlapOS Node (current code)
+     * SlapOS Node hardcodes this delay at first deployment
+     * User requests retention of instance
+     * SlapOS Node tries to destroy for the first time: it doesn't actually
+       destroy, but it triggers the creation of a retention lock date from
+       from the hardcoded delay. At this point it is not possible to
+       destroy instance until current date + 10 days.
+     * SlapOS Node continues to try to destroy: it doesn't do anything until
+       retention lock date is reached.
+    """
+    retention_lock_date = self.getExistingRetentionLockDate()
+    now = time.time()
+    if not retention_lock_date:
+      if self.getExistingRetentionLockDelay() > 0:
+        self.logger.info('Impossible to destroy partition yet because of retention lock.')
+        return False
+      # Else: OK to destroy
+    else:
+      if now < retention_lock_date:
+        self.logger.info('Impossible to destroy partition yet because of retention lock.')
+        return False
+      # Else: OK to destroy
+    return True
+
+  def createRetentionLockDelay(self):
+    """
+    Create a retention lock delay for the current partition.
+    If retention delay is not specified, create it wth "0" as value
+    """
+    if os.path.exists(self.retention_lock_delay_file_path):
+      return
+    with open(self.retention_lock_delay_file_path, 'w') as delay_file_path:
+      delay_file_path.write(str(self.retention_delay))
+    self._set_ownership(self.retention_lock_delay_file_path)
+
+  def getExistingRetentionLockDelay(self):
+    """
+    Return the retention lock delay of current partition (created at first
+    deployment) if exist.
+    Return -1 otherwise.
+    """
+    retention_delay = -1
+    if os.path.exists(self.retention_lock_delay_file_path):
+      with open(self.retention_lock_delay_file_path) as delay_file_path:
+        retention_delay = float(delay_file_path.read())
+    return retention_delay
+
+  def createRetentionLockDate(self):
+    """
+    If retention lock delay > 0:
+    Create a retention lock date for the current partition from the
+    retention lock delay.
+    Do nothing otherwise.
+    """
+    if os.path.exists(self.retention_lock_date_file_path):
+      return
+    retention_delay = self.getExistingRetentionLockDelay()
+    if retention_delay <= 0:
+      return
+    now = int(time.time())
+    retention_date = now + retention_delay * 24 * 3600
+    with open(self.retention_lock_date_file_path, 'w') as date_file_path:
+      date_file_path.write(str(retention_date))
+    self._set_ownership(self.retention_lock_date_file_path)
+
+  def getExistingRetentionLockDate(self):
+    """
+    Return the retention lock delay of current partition if exist.
+    Return None otherwise.
+    """
+    if os.path.exists(self.retention_lock_date_file_path):
+      with open(self.retention_lock_date_file_path) as date_file_path:
+        return float(date_file_path.read())
+    else:
+      return None

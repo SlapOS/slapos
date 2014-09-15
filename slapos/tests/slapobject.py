@@ -27,6 +27,7 @@
 
 import logging
 import os
+import time
 import unittest
 
 from slapos.slap import ComputerPartition as SlapComputerPartition
@@ -125,7 +126,8 @@ class MasterMixin(BasicMixin, unittest.TestCase):
       self,
       software_release_url,
       partition_id=None,
-      slap_computer_partition=None
+      slap_computer_partition=None,
+      retention_delay=None,
   ):
     """
     Create a partition, and return a Partition object created
@@ -153,10 +155,11 @@ class MasterMixin(BasicMixin, unittest.TestCase):
           self.instance_root, 'supervisor')
     os.mkdir(supervisor_configuration_path)
 
-    return Partition(
+    partition = Partition(
       software_path=software_path,
       instance_path=instance_path,
-      supervisord_partition_configuration_path=supervisor_configuration_path,
+      supervisord_partition_configuration_path=os.path.join(
+          supervisor_configuration_path, partition_id),
       supervisord_socket=os.path.join(
           supervisor_configuration_path, 'supervisor.sock'),
       computer_partition=slap_computer_partition,
@@ -168,6 +171,11 @@ class MasterMixin(BasicMixin, unittest.TestCase):
       logger=logging.getLogger(),
     )
 
+    partition.updateSupervisor = FakeCallAndNoop
+    if retention_delay:
+      partition.retention_delay = retention_delay
+
+    return partition
 
 class TestSoftwareNetworkCacheSlapObject(MasterMixin, unittest.TestCase):
   """
@@ -382,3 +390,87 @@ class TestPartitionSlapObject(MasterMixin, unittest.TestCase):
     # XXX: What should it raise?
     self.assertRaises(IOError, partition.install)
 
+class TestPartitionDestructionLock(MasterMixin, unittest.TestCase):
+  def setUp(self):
+    MasterMixin.setUp(self)
+    Partition.generateSupervisorConfigurationFile = FakeCallAndNoop()
+    utils.bootstrapBuildout = FakeCallAndNoop()
+    utils.launchBuildout = FakeCallAndStore()
+
+  def test_retention_lock_delay_creation(self):
+    delay = 42
+    software = self.createSoftware()
+    partition = self.createPartition(software.url, retention_delay=delay)
+    partition.install()
+    deployed_delay = int(open(partition.retention_lock_delay_file_path).read())
+    self.assertEqual(delay, deployed_delay)
+
+  def test_no_retention_lock_delay(self):
+    software = self.createSoftware()
+    partition = self.createPartition(software.url)
+    partition.install()
+    delay = open(partition.retention_lock_delay_file_path).read()
+    self.assertTrue(delay, '0')
+
+    self.assertTrue(partition.destroy())
+
+  def test_retention_lock_delay_does_not_change(self):
+    delay = 42
+    software = self.createSoftware()
+    partition = self.createPartition(software.url, retention_delay=delay)
+    partition.install()
+
+    partition.retention_delay = 23
+    # install/destroy many times
+    partition.install()
+    partition.destroy()
+    partition.destroy()
+    partition.install()
+    partition.destroy()
+
+    deployed_delay = int(open(partition.retention_lock_delay_file_path).read())
+    self.assertEqual(delay, deployed_delay)
+
+  def test_retention_lock_delay_is_respected(self):
+    delay = 2.0 / (3600 * 24)
+    software = self.createSoftware()
+    partition = self.createPartition(software.url, retention_delay=delay)
+    partition.install()
+
+    deployed_delay = float(open(partition.retention_lock_delay_file_path).read())
+    self.assertEqual(int(delay), int(deployed_delay))
+
+    self.assertFalse(partition.destroy())
+    time.sleep(1)
+    self.assertFalse(partition.destroy())
+    time.sleep(1)
+    self.assertTrue(partition.destroy())
+
+  def test_retention_lock_date_creation(self):
+    delay = 42
+    software = self.createSoftware()
+    partition = self.createPartition(software.url, retention_delay=delay)
+    partition.install()
+    self.assertFalse(os.path.exists(partition.retention_lock_date_file_path))
+    partition.destroy()
+    deployed_date = float(open(partition.retention_lock_date_file_path).read())
+    self.assertEqual(delay * 3600 * 24 + int(time.time()), int(deployed_date))
+
+  def test_retention_lock_date_does_not_change(self):
+    delay = 42
+    software = self.createSoftware()
+    partition = self.createPartition(software.url, retention_delay=delay)
+    now = time.time()
+    partition.install()
+    partition.destroy()
+
+    partition.retention_delay = 23
+    # install/destroy many times
+    partition.install()
+    partition.destroy()
+    partition.destroy()
+    partition.install()
+    partition.destroy()
+
+    deployed_date = float(open(partition.retention_lock_date_file_path).read())
+    self.assertEqual(delay * 3600 * 24 + int(now), int(deployed_date))
