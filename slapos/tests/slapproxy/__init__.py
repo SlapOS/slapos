@@ -865,7 +865,7 @@ class TestMultiMasterSupport(MasterMixin):
 
   def setUp(self):
     # XXX don't use lo
-    self.external_proxy_host = '127.0.0.1'
+    self.external_proxy_host = os.environ.get('LOCAL_IPV4', '127.0.0.1')
     self.external_proxy_port = 8281
     self.external_master_url = 'http://%s:%s' % (self.external_proxy_host, self.external_proxy_port)
     self.external_computer_id = 'external_computer'
@@ -888,11 +888,12 @@ class TestMultiMasterSupport(MasterMixin):
     open(self.external_slapproxy_configuration_file_location, 'w').write("""[slapos]
 computer_id = %(external_computer_id)s
 [slapproxy]
-host = 127.0.0.1
+host = %(host)s
 port = %(port)s
 database_uri = %(tempdir)s/lib/external_proxy.db
 """ % {
     'tempdir': self._tempdir,
+    'host': self.external_proxy_host,
     'port': self.external_proxy_port,
     'external_computer_id': self.external_computer_id
     })
@@ -901,6 +902,7 @@ database_uri = %(tempdir)s/lib/external_proxy.db
     """
     Start external slapproxy
     """
+    logging.getLogger().info('Starting external proxy, listening to %s:%s' % (self.external_proxy_host, self.external_proxy_port))
     # XXX use current dev version, not standard one installed through package
     self.external_proxy_process = subprocess.Popen(['slapos', 'proxy', 'start', '--cfg', self.external_slapproxy_configuration_file_location ])
     # Wait a bit for proxy to be started
