@@ -1,6 +1,12 @@
 Changes
 =======
 
+1.2.3.1 (2014-09-15)
+--------------------
+
+ * General: Add compatibility with cliff 1.7.0.
+ * tests: Prevent slap tests to leak its stubs/mocks.
+
 1.2.3 (2014-09-11)
 ------------------
 
