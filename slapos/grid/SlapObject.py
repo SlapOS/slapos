@@ -347,8 +347,7 @@ class Partition(object):
     gid = stat_info.st_gid
     return (uid, gid)
 
-  def addServiceToGroup(self, partition_id,
-                        runner_list, path, extension=''):
+  def addServiceToGroup(self, partition_id, runner_list, path, extension=''):
     uid, gid = self.getUserGroupId()
     for runner in runner_list:
       self.partition_supervisor_configuration += '\n' + \
