@@ -53,7 +53,12 @@ def chownDirectory(path, uid, gid):
     subprocess.check_call(['/bin/chown', '-R', '%s:%s' % (uid, gid), path])
   else:
     # we are probably inside webrunner
-    subprocess.check_call(['/bin/chgrp', '-R', '%s' % gid, path])
+    chgrp_location = '/bin/chgrp'
+    if not os.path.exists(chgrp_location):
+      chgrp_location = '/usr/bin/chgrp'
+    if not os.path.exists(chgrp_location):
+      chgrp_location = 'chgrp'
+    subprocess.check_call([chgrp_location, '-R', '%s' % gid, path])
 
 
 def parse_certificate_key_pair(html):
