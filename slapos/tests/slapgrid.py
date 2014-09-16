@@ -545,7 +545,7 @@ class TestSlapgridCPWithMaster(MasterMixin, unittest.TestCase):
     self.assertEqual(self.grid.processComputerPartitionList(), slapgrid.SLAPGRID_SUCCESS)
     self.assertItemsEqual(os.listdir(self.instance_root), ['0', 'etc', 'var'])
     partition = os.path.join(self.instance_root, '0')
-    self.assertItemsEqual(os.listdir(partition), ['.slapgrid', 'buildout.cfg', 
+    self.assertItemsEqual(os.listdir(partition), ['.slapgrid', 'buildout.cfg',
                                                   'software_release', 'worked'])
     self.assertItemsEqual(os.listdir(self.software_root), [instance.software.software_hash])
     self.assertEqual(computer.sequence,
@@ -562,7 +562,7 @@ class TestSlapgridCPWithMaster(MasterMixin, unittest.TestCase):
     self.assertEqual(self.grid.processComputerPartitionList(), slapgrid.SLAPGRID_SUCCESS)
     self.assertItemsEqual(os.listdir(self.instance_root), ['0', 'etc', 'var'])
     partition = os.path.join(self.instance_root, '0')
-    self.assertItemsEqual(os.listdir(partition), ['.slapgrid', 'buildout.cfg', 
+    self.assertItemsEqual(os.listdir(partition), ['.slapgrid', 'buildout.cfg',
                                                   'software_release', 'worked'])
     self.assertItemsEqual(os.listdir(self.software_root), [instance.software.software_hash])
     self.assertEqual(computer.sequence,
@@ -592,7 +592,7 @@ class TestSlapgridCPWithMaster(MasterMixin, unittest.TestCase):
     self.assertEqual(self.grid.processComputerPartitionList(), slapgrid.SLAPGRID_SUCCESS)
     self.assertItemsEqual(os.listdir(self.instance_root), ['0', 'etc', 'var'])
     self.assertItemsEqual(os.listdir(partition.partition_path),
-                          ['.slapgrid', '.0_wrapper.log', 'buildout.cfg', 
+                          ['.slapgrid', '.0_wrapper.log', 'buildout.cfg',
                            'etc', 'software_release', 'worked'])
     wrapper_log = os.path.join(partition.partition_path, '.0_wrapper.log')
     self.assertLogContent(wrapper_log, 'Working')
@@ -628,7 +628,7 @@ chmod 755 etc/run/wrapper
     self.assertEqual(self.grid.processComputerPartitionList(), slapgrid.SLAPGRID_SUCCESS)
     self.assertItemsEqual(os.listdir(self.instance_root), ['0', 'etc', 'var'])
     self.assertItemsEqual(os.listdir(instance.partition_path),
-                          ['.slapgrid', '.0_wrapper.log', 'buildout.cfg', 
+                          ['.slapgrid', '.0_wrapper.log', 'buildout.cfg',
                            'etc', 'software_release', 'worked'])
     wrapper_log = os.path.join(instance.partition_path, '.0_wrapper.log')
     self.assertLogContent(wrapper_log, 'Working')
@@ -643,7 +643,7 @@ chmod 755 etc/run/wrapper
     self.assertEqual(self.launchSlapgrid(), slapgrid.SLAPGRID_SUCCESS)
     self.assertItemsEqual(os.listdir(self.instance_root), ['0', 'etc', 'var'])
     self.assertItemsEqual(os.listdir(instance.partition_path),
-                          ['.slapgrid', '.0_wrapper.log', 'buildout.cfg', 
+                          ['.slapgrid', '.0_wrapper.log', 'buildout.cfg',
                            'etc', 'software_release', 'worked'])
     self.assertLogContent(wrapper_log, 'Signal handler called with signal 15')
     self.assertEqual(computer.sequence,
@@ -682,7 +682,7 @@ chmod 755 etc/run/wrapper
     self.assertEqual(self.grid.processComputerPartitionList(), slapgrid.SLAPGRID_SUCCESS)
     self.assertItemsEqual(os.listdir(self.instance_root), ['0', 'etc', 'var'])
     self.assertItemsEqual(os.listdir(instance.partition_path),
-                          ['.slapgrid', '.0_wrapper.log', 'buildout.cfg', 
+                          ['.slapgrid', '.0_wrapper.log', 'buildout.cfg',
                            'etc', 'software_release', 'worked'])
     wrapper_log = os.path.join(instance.partition_path, '.0_wrapper.log')
     self.assertLogContent(wrapper_log, 'Working')
@@ -702,7 +702,7 @@ exit 1
     self.assertItemsEqual(os.listdir(self.instance_root),
                           ['0', 'etc', 'var'])
     self.assertItemsEqual(os.listdir(instance.partition_path),
-                          ['.slapgrid', '.0_wrapper.log', 'buildout.cfg', 
+                          ['.slapgrid', '.0_wrapper.log', 'buildout.cfg',
                            'etc', 'software_release', 'worked'])
     self.assertLogContent(wrapper_log, 'Signal handler called with signal 15')
     self.assertEqual(computer.sequence,
@@ -734,7 +734,7 @@ exit 1
     self.assertItemsEqual(os.listdir(self.instance_root), ['0', 'etc', 'var'])
     partition = os.path.join(self.instance_root, '0')
     self.assertItemsEqual(os.listdir(partition),
-                          ['.slapgrid', '.0_wrapper.log', 'etc', 
+                          ['.slapgrid', '.0_wrapper.log', 'etc',
                            'buildout.cfg', 'software_release', 'worked'])
     self.assertItemsEqual(os.listdir(self.software_root),
                           [instance.software.software_hash])
@@ -806,7 +806,7 @@ class TestSlapgridCPWithMasterWatchdog(MasterMixin, unittest.TestCase):
     self.assertEqual(self.grid.processComputerPartitionList(), slapgrid.SLAPGRID_SUCCESS)
     self.assertItemsEqual(os.listdir(self.instance_root), ['0', 'etc', 'var'])
     self.assertItemsEqual(os.listdir(partition.partition_path),
-                          ['.slapgrid', '.0_daemon.log', 'buildout.cfg', 
+                          ['.slapgrid', '.0_daemon.log', 'buildout.cfg',
                            'etc', 'software_release', 'worked'])
     daemon_log = os.path.join(partition.partition_path, '.0_daemon.log')
     self.assertLogContent(daemon_log, 'Failing')
@@ -851,7 +851,7 @@ class TestSlapgridCPWithMasterWatchdog(MasterMixin, unittest.TestCase):
     self.assertItemsEqual(os.listdir(self.instance_root),
                           ['0', 'etc', 'var'])
     self.assertItemsEqual(os.listdir(partition.partition_path),
-                          ['.slapgrid', '.0_daemon.log', 'buildout.cfg', 
+                          ['.slapgrid', '.0_daemon.log', 'buildout.cfg',
                            'etc', 'software_release', 'worked'])
     daemon_log = os.path.join(partition.partition_path, '.0_daemon.log')
     self.assertLogContent(daemon_log, 'Failing')
@@ -1158,7 +1158,7 @@ class TestSlapgridCPPartitionProcessing(MasterMixin, unittest.TestCase):
     self.assertItemsEqual(os.listdir(self.instance_root), ['0', 'etc', 'var'])
     partition = os.path.join(self.instance_root, '0')
     self.assertItemsEqual(os.listdir(partition),
-                          ['.slapgrid', '.timestamp', 'buildout.cfg', 
+                          ['.slapgrid', '.timestamp', 'buildout.cfg',
                            'software_release', 'worked'])
     self.assertItemsEqual(os.listdir(self.software_root), [instance.software.software_hash])
 
@@ -1244,7 +1244,7 @@ class TestSlapgridCPPartitionProcessing(MasterMixin, unittest.TestCase):
     self.launchSlapgrid()
     partition = os.path.join(self.instance_root, '0')
     self.assertItemsEqual(os.listdir(partition),
-                          ['.slapgrid', '.timestamp', 'buildout.cfg', 
+                          ['.slapgrid', '.timestamp', 'buildout.cfg',
                            'software_release', 'worked'])
 
     time.sleep(2)
@@ -1254,7 +1254,7 @@ class TestSlapgridCPPartitionProcessing(MasterMixin, unittest.TestCase):
 
     self.launchSlapgrid()
     self.assertItemsEqual(os.listdir(partition),
-                          ['.slapgrid', '.timestamp', 'buildout.cfg', 
+                          ['.slapgrid', '.timestamp', 'buildout.cfg',
                            'software_release', 'worked'])
 
   def test_one_partition_periodicity_from_file_does_not_disturb_others(self):
@@ -1527,7 +1527,7 @@ class TestSlapgridUsageReport(MasterMixin, unittest.TestCase):
     self.assertEqual(self.grid.processComputerPartitionList(), slapgrid.SLAPGRID_SUCCESS)
     self.assertItemsEqual(os.listdir(self.instance_root), ['0', 'etc', 'var'])
     self.assertItemsEqual(os.listdir(instance.partition_path),
-                          ['.slapgrid', '.0_wrapper.log', 'buildout.cfg', 
+                          ['.slapgrid', '.0_wrapper.log', 'buildout.cfg',
                            'etc', 'software_release', 'worked'])
     wrapper_log = os.path.join(instance.partition_path, '.0_wrapper.log')
     self.assertLogContent(wrapper_log, 'Working')
@@ -1596,7 +1596,7 @@ class TestSlapgridUsageReport(MasterMixin, unittest.TestCase):
     self.assertEqual(self.grid.processComputerPartitionList(), slapgrid.SLAPGRID_SUCCESS)
     self.assertItemsEqual(os.listdir(self.instance_root), ['0', 'etc', 'var'])
     self.assertItemsEqual(os.listdir(instance.partition_path),
-                          ['.slapgrid', '.0_wrapper.log', 'buildout.cfg', 
+                          ['.slapgrid', '.0_wrapper.log', 'buildout.cfg',
                            'etc', 'software_release', 'worked'])
     wrapper_log = os.path.join(instance.partition_path, '.0_wrapper.log')
     self.assertLogContent(wrapper_log, 'Working')
@@ -1612,13 +1612,13 @@ class TestSlapgridUsageReport(MasterMixin, unittest.TestCase):
     self.assertEqual(self.grid.agregateAndSendUsage(), slapgrid.SLAPGRID_SUCCESS)
     self.assertItemsEqual(os.listdir(self.instance_root), ['0', 'etc', 'var'])
     self.assertItemsEqual(os.listdir(instance.partition_path),
-                          ['.slapgrid', '.0_wrapper.log', 'buildout.cfg', 
+                          ['.slapgrid', '.0_wrapper.log', 'buildout.cfg',
                            'etc', 'software_release', 'worked'])
     wrapper_log = os.path.join(instance.partition_path, '.0_wrapper.log')
     self.assertLogContent(wrapper_log, 'Working')
     self.assertItemsEqual(os.listdir(self.instance_root), ['0', 'etc', 'var'])
     self.assertItemsEqual(os.listdir(instance.partition_path),
-                          ['.slapgrid', '.0_wrapper.log', 'buildout.cfg', 
+                          ['.slapgrid', '.0_wrapper.log', 'buildout.cfg',
                            'etc', 'software_release', 'worked'])
     wrapper_log = os.path.join(instance.partition_path, '.0_wrapper.log')
     self.assertLogContent(wrapper_log, 'Working')
