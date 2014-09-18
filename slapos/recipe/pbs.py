@@ -146,13 +146,21 @@ class Recipe(GenericSlapRecipe, Notify, Callback):
                   # Here, two possiblities:
                   # * The first backup failed. It is safe to remove it since there is nothing valuable there.
                   # * The backup has been complete, but is now in a really weird state. Not safe to remove it.
-                  echo "Impossible to check backup: we move it to a safe place."
-                  # XXX: bang
-                  mv %(local_directory)s %(local_directory)s.$(date +%%s)
+                  # XXX We may need to publish the failure and ask the the equeue, re-run this script again, 
+                  # instead do a push to the clone.
               fi
           else
               # Everything's okay, cleaning up...
               $RDIFF_BACKUP --remove-older-than %(remove_backup_older_than)s --force %(local_directory)s
+          fi
+          
+          if [ -e /srv/slapgrid/slappart17/srv/backup/pbs/COMP-1867-slappart6-runner-2/backup.signature ]; them
+            cd %(local_directory)s
+            find -type f ! -name backup.signature ! -wholename "./rdiff-backup-data/*" -print0 | xargs -0 sha256sum  | sort > ../proof.signature
+            diff -ruw backup.signature ../proof.signature > ../backup.diff
+            # XXX If there is a difference on the backup, we should publish the 
+            # failure and ask the equeue, re-run this script again, 
+            # instead do a push it to the clone.
           fi
           """)
       rdiff_wrapper_content = rdiff_wrapper_template % {
@@ -160,7 +168,7 @@ class Recipe(GenericSlapRecipe, Notify, Callback):
               'rdiffbackup_binary': self.options['rdiffbackup-binary'],
               'local_directory': local_directory,
               'rdiffbackup_parameter': ' \\\n    '.join(rdiffbackup_parameter_list),
-              # XXX: only 10 increments is not enough by default.
+              # XXX: only 3 increments is not enough by default.
               'remove_backup_older_than': entry.get('remove-backup-older-than', '3B')
       }
       rdiff_wrapper = self.createFile(

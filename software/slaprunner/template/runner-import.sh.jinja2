@@ -13,6 +13,16 @@ restore_element () {
     fi
   done
 }
+
+write_backup_proof () {
+  cd {{ directory['backup'] }}
+  find -type f ! -name backup.signature ! -wholename "./rdiff-backup-data/*" -print0 | xargs -0 sha256sum  | sort > {{ directory['srv'] }}/proof.signature
+  diff -ruw {{ directory['backup'] }} {{ directory['srv'] }}/proof.signature > {{ directory['srv'] }}/backup.diff
+}
+
+# For now we just make the diff before 
+write_backup_proof
+
 restore_element {{ directory['backup'] }}/runner/ {{ directory['srv'] }}/runner  instance project  proxy.db
 restore_element  {{ directory['backup'] }}/etc/ {{ directory['etc'] }} config.json ssh
 cp -r {{ directory['backup'] }}/etc/.??* {{ directory['etc'] }};
