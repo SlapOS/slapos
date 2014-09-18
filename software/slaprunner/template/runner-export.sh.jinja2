@@ -23,3 +23,5 @@ sync_element {{ directory['etc'] }}  {{ directory['backup'] }}/etc/ config.json 
 if [ -d {{ directory['backup'] }}/runner/software ]; then
   rm {{ directory['backup'] }}/runner/software/*
 fi
+
+cd {{ directory['backup'] }} && find -type f ! -name backup.signature -exec sha256sum {} + > backup.signature
