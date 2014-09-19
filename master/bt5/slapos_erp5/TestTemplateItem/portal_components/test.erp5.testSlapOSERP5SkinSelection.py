@@ -145,7 +145,6 @@ erp5_upgrader
 erp5_access_tab
 erp5_access_token
 erp5_accounting
-erp5_accounting_bbb
 erp5_administration
 erp5_base
 erp5_bearer_token
@@ -188,6 +187,7 @@ erp5_rss_core
 erp5_secure_payment
 erp5_simplified_invoicing
 erp5_software_pdm
+erp5_stock_cache
 erp5_system_event
 erp5_toolbox
 erp5_trade
@@ -195,9 +195,9 @@ erp5_vcs
 erp5_web
 erp5_web_crm
 erp5_web_minimal_theme
+erp5_web_service
 erp5_web_widget_library
 erp5_workflow
-erp5_xhtml_jquery_style
 erp5_xhtml_style
 external_method
 Images
@@ -247,7 +247,6 @@ erp5_upgrader
 erp5_access_tab
 erp5_access_token
 erp5_accounting
-erp5_accounting_bbb
 erp5_administration
 erp5_base
 erp5_bearer_token
@@ -291,6 +290,7 @@ erp5_rss_core
 erp5_secure_payment
 erp5_simplified_invoicing
 erp5_software_pdm
+erp5_stock_cache
 erp5_system_event
 erp5_toolbox
 erp5_trade
@@ -298,9 +298,9 @@ erp5_vcs
 erp5_web
 erp5_web_crm
 erp5_web_minimal_theme
+erp5_web_service
 erp5_web_widget_library
 erp5_workflow
-erp5_xhtml_jquery_style
 erp5_xhtml_style
 external_method
 Images
@@ -351,7 +351,6 @@ erp5_upgrader
 erp5_access_tab
 erp5_access_token
 erp5_accounting
-erp5_accounting_bbb
 erp5_administration
 erp5_base
 erp5_bearer_token
@@ -395,6 +394,7 @@ erp5_rss_core
 erp5_secure_payment
 erp5_simplified_invoicing
 erp5_software_pdm
+erp5_stock_cache
 erp5_system_event
 erp5_toolbox
 erp5_trade
@@ -402,9 +402,9 @@ erp5_vcs
 erp5_web
 erp5_web_crm
 erp5_web_minimal_theme
+erp5_web_service
 erp5_web_widget_library
 erp5_workflow
-erp5_xhtml_jquery_style
 erp5_xhtml_style
 external_method
 Images
@@ -455,7 +455,6 @@ erp5_upgrader
 erp5_access_tab
 erp5_access_token
 erp5_accounting
-erp5_accounting_bbb
 erp5_administration
 erp5_base
 erp5_bearer_token
@@ -497,6 +496,7 @@ erp5_rss_core
 erp5_secure_payment
 erp5_simplified_invoicing
 erp5_software_pdm
+erp5_stock_cache
 erp5_system_event
 erp5_toolbox
 erp5_trade
@@ -504,9 +504,9 @@ erp5_vcs
 erp5_web
 erp5_web_crm
 erp5_web_minimal_theme
+erp5_web_service
 erp5_web_widget_library
 erp5_workflow
-erp5_xhtml_jquery_style
 external_method
 Images
 activity
@@ -556,7 +556,6 @@ erp5_upgrader
 erp5_access_tab
 erp5_access_token
 erp5_accounting
-erp5_accounting_bbb
 erp5_administration
 erp5_base
 erp5_bearer_token
@@ -598,6 +597,7 @@ erp5_rss_core
 erp5_secure_payment
 erp5_simplified_invoicing
 erp5_software_pdm
+erp5_stock_cache
 erp5_system_event
 erp5_toolbox
 erp5_trade
@@ -605,9 +605,9 @@ erp5_vcs
 erp5_web
 erp5_web_crm
 erp5_web_minimal_theme
+erp5_web_service
 erp5_web_widget_library
 erp5_workflow
-erp5_xhtml_jquery_style
 erp5_xhtml_style
 external_method
 Images
@@ -658,7 +658,6 @@ erp5_upgrader
 erp5_access_tab
 erp5_access_token
 erp5_accounting
-erp5_accounting_bbb
 erp5_administration
 erp5_base
 erp5_bearer_token
@@ -700,6 +699,7 @@ erp5_rss_core
 erp5_secure_payment
 erp5_simplified_invoicing
 erp5_software_pdm
+erp5_stock_cache
 erp5_system_event
 erp5_toolbox
 erp5_trade
@@ -707,9 +707,9 @@ erp5_vcs
 erp5_web
 erp5_web_crm
 erp5_web_minimal_theme
+erp5_web_service
 erp5_web_widget_library
 erp5_workflow
-erp5_xhtml_jquery_style
 external_method
 Images
 activity
@@ -759,7 +759,6 @@ erp5_upgrader
 erp5_access_tab
 erp5_access_token
 erp5_accounting
-erp5_accounting_bbb
 erp5_administration
 erp5_base
 erp5_bearer_token
@@ -801,6 +800,7 @@ erp5_rss_core
 erp5_secure_payment
 erp5_simplified_invoicing
 erp5_software_pdm
+erp5_stock_cache
 erp5_system_event
 erp5_toolbox
 erp5_trade
@@ -808,9 +808,9 @@ erp5_vcs
 erp5_web
 erp5_web_crm
 erp5_web_minimal_theme
+erp5_web_service
 erp5_web_widget_library
 erp5_workflow
-erp5_xhtml_jquery_style
 external_method
 Images
 activity
@@ -861,7 +861,6 @@ erp5_upgrader
 erp5_access_tab
 erp5_access_token
 erp5_accounting
-erp5_accounting_bbb
 erp5_administration
 erp5_base
 erp5_bearer_token
@@ -903,6 +902,7 @@ erp5_rss_core
 erp5_secure_payment
 erp5_simplified_invoicing
 erp5_software_pdm
+erp5_stock_cache
 erp5_system_event
 erp5_toolbox
 erp5_trade
@@ -910,9 +910,9 @@ erp5_vcs
 erp5_web
 erp5_web_crm
 erp5_web_minimal_theme
+erp5_web_service
 erp5_web_widget_library
 erp5_workflow
-erp5_xhtml_jquery_style
 external_method
 Images
 activity
@@ -963,7 +963,6 @@ erp5_upgrader
 erp5_access_tab
 erp5_access_token
 erp5_accounting
-erp5_accounting_bbb
 erp5_administration
 erp5_base
 erp5_bearer_token
@@ -1005,6 +1004,7 @@ erp5_rss_core
 erp5_secure_payment
 erp5_simplified_invoicing
 erp5_software_pdm
+erp5_stock_cache
 erp5_system_event
 erp5_toolbox
 erp5_trade
@@ -1012,9 +1012,9 @@ erp5_vcs
 erp5_web
 erp5_web_crm
 erp5_web_minimal_theme
+erp5_web_service
 erp5_web_widget_library
 erp5_workflow
-erp5_xhtml_jquery_style
 erp5_xhtml_style
 external_method
 Images
@@ -1066,7 +1066,6 @@ erp5_upgrader
 erp5_access_tab
 erp5_access_token
 erp5_accounting
-erp5_accounting_bbb
 erp5_administration
 erp5_base
 erp5_bearer_token
@@ -1108,6 +1107,7 @@ erp5_rss_core
 erp5_secure_payment
 erp5_simplified_invoicing
 erp5_software_pdm
+erp5_stock_cache
 erp5_system_event
 erp5_toolbox
 erp5_trade
@@ -1115,9 +1115,9 @@ erp5_vcs
 erp5_web
 erp5_web_crm
 erp5_web_minimal_theme
+erp5_web_service
 erp5_web_widget_library
 erp5_workflow
-erp5_xhtml_jquery_style
 erp5_xhtml_style
 external_method
 Images
