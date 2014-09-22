@@ -437,8 +437,8 @@ class InstanceForTest:
     partition = slapos.slap.ComputerPartition(computer_id, self.name)
     partition._software_release_document = self.getSoftwareRelease()
     partition._requested_state = self.requested_state
-    if getattr(self, 'retention_delay', None):
-      partition._retention_delay = self.retention_delay
+    if getattr(self, 'filter_dict', None):
+      partition._filter_dict = self.filter_dict
     if self.software is not None:
       if self.timestamp is not None:
         partition._parameter_dict = {'timestamp': self.timestamp}
@@ -1904,7 +1904,7 @@ class TestSlapgridDestructionLock(MasterMixin, unittest.TestCase):
     computer = ComputerForTest(self.software_root, self.instance_root)
     instance = computer.instance_list[0]
     instance.requested_state = 'started'
-    instance.retention_delay = 1.0 / (3600 * 24)
+    instance.filter_dict = {'retention_delay': 1.0 / (3600 * 24)}
     self.grid.processComputerPartitionList()
     dummy_instance_file_path = os.path.join(instance.partition_path, 'dummy')
     with open(dummy_instance_file_path, 'w') as dummy_instance_file:

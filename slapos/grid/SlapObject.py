@@ -292,7 +292,7 @@ class Partition(object):
                buildout,
                logger,
                certificate_repository_path=None,
-               retention_delay=0
+               retention_delay='0',
                ):
     """Initialisation of class parameters"""
     self.buildout = buildout
@@ -319,9 +319,9 @@ class Partition(object):
           self.partition_id + '.crt')
       self._updateCertificate()
 
-    self.retention_delay = retention_delay
-    if type(self.retention_delay) not in (int, float) \
-       or self.retention_delay <= 0:
+    try:
+      self.retention_delay = float(retention_delay)
+    except ValueError:
       self.logger.warn('Retention delay value (%s) is not valid, ignoring.' \
                        % self.retention_delay)
       self.retention_delay = 0
