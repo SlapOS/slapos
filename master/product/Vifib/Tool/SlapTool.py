@@ -750,6 +750,8 @@ class SlapTool(BaseTool):
         parameter_dict.pop('xml'))
       slap_partition._connection_dict = self._instanceXmlToDict(
         parameter_dict.pop('connection_xml'))
+      slap_partition._filter_dict = self._instanceXmlToDict(
+        parameter_dict.pop('filter_xml'))
       slap_partition._instance_guid = parameter_dict.pop('instance_guid')
       for slave_instance_dict in parameter_dict.get("slave_instance_list", []):
         if slave_instance_dict.has_key("connection_xml"):
@@ -883,6 +885,8 @@ class SlapTool(BaseTool):
         parameter_dict.pop('xml'))
       slap_partition._connection_dict = self._instanceXmlToDict(
         parameter_dict.pop('connection_xml'))
+      slap_partition._filter_dict = self._instanceXmlToDict(
+        parameter_dict.pop('filter_xml'))
       slap_partition._instance_guid = parameter_dict.pop('instance_guid')
       for slave_instance_dict in parameter_dict.get("slave_instance_list", []):
         if slave_instance_dict.has_key("connection_xml"):
@@ -1270,11 +1274,14 @@ class SlapTool(BaseTool):
           parameter_dict.pop('xml'))
         connection_xml = self._instanceXmlToDict(
           parameter_dict.pop('connection_xml'))
+        filter_xml = self._instanceXmlToDict(
+          parameter_dict.pop('filter_xml'))
         instance_guid = parameter_dict.pop('instance_guid')
 
         software_instance = SoftwareInstance(**parameter_dict)
         software_instance._parameter_dict = xml
         software_instance._connection_dict = connection_xml
+        software_instance._filter_dict = filter_xml
         software_instance._requested_state = state
         software_instance._instance_guid = instance_guid
         return xml_marshaller.xml_marshaller.dumps(software_instance)
@@ -1431,6 +1438,7 @@ class SlapTool(BaseTool):
       'instance_guid': software_instance.getReference().decode("UTF-8"),
       'xml': software_instance.getTextContent(),
       'connection_xml': software_instance.getConnectionXml(),
+      'filter_xml': software_instance.getSlaXml(),
       'slap_computer_id': \
         computer_partition.getParentValue().getReference().decode("UTF-8"),
       'slap_computer_partition_id': \
