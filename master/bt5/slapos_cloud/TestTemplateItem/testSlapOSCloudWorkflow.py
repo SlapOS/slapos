@@ -1914,23 +1914,6 @@ class TestSlapOSCoreSoftwareInstanceRequest(testSlapOSMixin):
         requested_instance2.getSlaXml())
     self.assertEqual(bang_amount+1, self._countBang(requested_instance))
 
-  def test_request_retention_delay(self):
-    retention_delay = 42
-    sla_xml = '<?xml version="1.0" encoding="utf-8"?><instance><parameter '\
-      'id="retention_delay">%s</parameter></instance>' % retention_delay
-    request_kw = self.request_kw.copy()
-
-    request_kw['software_title'] = self.generateNewSoftwareTitle()
-    request_kw['sla_xml'] = sla_xml
-    self.software_instance.requestInstance(**request_kw)
-
-    requested_instance = self.software_instance.REQUEST.get(
-        'request_instance')
-
-    self.tic()
-
-    self.assertEqual(retention_delay, requested_instance.getRetentionDelay())
-
   def test_update_connection_bang_requester(self):
     request_kw = self.request_kw.copy()
 
@@ -2510,38 +2493,6 @@ class TestSlapOSCorePersonRequest(testSlapOSMixin):
     self.assertNotEquals(hosting_subscription.getRelativeUrl(),
                          hosting_subscription2.getRelativeUrl())
 
-  def test_Person_requestSoftwareInstance_retention_delay(self):
-    person = self.getPortalObject().ERP5Site_getAuthenticatedMemberPersonValue()
-
-    retention_delay = 42
-
-    software_release = self.generateNewSoftwareReleaseUrl()
-    software_title = "test"
-    software_type = "test"
-    instance_xml = """<?xml version="1.0" encoding="utf-8"?>
-    <instance>
-    </instance>
-    """
-    shared = False
-    sla_xml = '<?xml version="1.0" encoding="utf-8"?><instance><parameter '\
-      'id="retention_delay">%s</parameter></instance>' % retention_delay
-
-    person.requestSoftwareInstance(
-      software_release=software_release,
-      software_title=software_title,
-      software_type=software_type,
-      instance_xml=instance_xml,
-      sla_xml=sla_xml,
-      shared=shared,
-      state="started",
-    )
-    hosting_subscription = person.REQUEST.get('request_hosting_subscription')
-
-    self.tic()
-
-    self.assertEquals(retention_delay,
-        hosting_subscription.getPredecessorValue().getRetentionDelay())
-
 class TestSlapOSCorePersonRequestComputer(testSlapOSMixin):
 
   def generateNewComputerTitle(self):
@@ -2956,8 +2907,7 @@ class TestSlapOSCoreSlapOSCloudInteractionWorkflow(testSlapOSMixin):
   def test_SoftwareInstance_changeState_onDestroy(self):
     return self.check_SoftwareInstance_changeState("requestDestroy")
 
-  def check_change_instance_parameter(self, portal_type, method_id,
-                                      value=None, bang_expected=True):
+  def check_change_instance_parameter(self, portal_type, method_id):
     self._makePerson()
     self.login(self.person_user.getReference())
 
@@ -2975,17 +2925,10 @@ class TestSlapOSCoreSlapOSCloudInteractionWorkflow(testSlapOSMixin):
     self.assertEqual(None,
       instance.workflow_history['instance_slap_interface_workflow'][-1]['action'])
 
-    if value:
-      instance.edit(**{method_id: value})
-    else:
-      instance.edit(**{method_id: self.generateSafeXml()})
+    instance.edit(**{method_id: self.generateSafeXml()})
     self.tic()
-    if bang_expected:
-      self.assertEqual('bang',
-        instance.workflow_history['instance_slap_interface_workflow'][-1]['action'])
-    else:
-      self.assertNotEqual('bang',
-        instance.workflow_history['instance_slap_interface_workflow'][-1]['action'])
+    self.assertEqual('bang',
+      instance.workflow_history['instance_slap_interface_workflow'][-1]['action'])
 
   def test_change_instance_parameter_onInstanceUrlString(self):
     return self.check_change_instance_parameter("Software Instance",
@@ -3002,11 +2945,6 @@ class TestSlapOSCoreSlapOSCloudInteractionWorkflow(testSlapOSMixin):
   def test_change_instance_parameter_onInstanceSlaXML(self):
     return self.check_change_instance_parameter("Software Instance",
                                                 'sla_xml')
-
-  def test_change_instance_parameter_onInstanceRetentionDelay(self):
-    return self.check_change_instance_parameter("Slave Instance",
-                                                'retention_delay',
-                                                value=42, bang_expected=False)
 
   def test_change_instance_parameter_onSlaveUrlString(self):
     return self.check_change_instance_parameter("Slave Instance",
