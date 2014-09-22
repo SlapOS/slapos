@@ -893,6 +893,10 @@ class SlapTool(BaseTool):
             slave_instance_dict.pop("xml")))
       slap_partition._parameter_dict.update(parameter_dict)
 
+      retention_delay = software_instance.getRetentionDelay()
+      if retention_delay:
+        slap_partition._retention_delay = retention_delay
+
     return slap_partition
 
   @convertToREST
