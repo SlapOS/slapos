@@ -648,6 +648,12 @@ class Slapgrid(object):
       self.logger.info('  Software path: %s' % software_path)
       self.logger.info('  Instance path: %s' % instance_path)
 
+      filter_dict = getattr(computer_partition, '_filter_dict', None)
+      if filter_dict:
+        retention_delay = filter_dict.get('retention_delay', '0')
+      else:
+        retention_delay = '0'
+
       local_partition = Partition(
         software_path=software_path,
         instance_path=instance_path,
@@ -663,7 +669,8 @@ class Slapgrid(object):
         certificate_repository_path=self.certificate_repository_path,
         buildout=self.buildout,
         logger=self.logger,
-        retention_delay=getattr(computer_partition, '_retention_delay', 0))
+        retention_delay=retention_delay,
+      )
       computer_partition_state = computer_partition.getState()
 
       # XXX this line breaks 37 tests
@@ -1090,7 +1097,7 @@ class Slapgrid(object):
             certificate_repository_path=self.certificate_repository_path,
             buildout=self.buildout,
             logger=self.logger,
-            retention_delay=getattr(computer_partition, '_retention_delay', 0))
+          )
           local_partition.stop()
           try:
             computer_partition.stopped()
