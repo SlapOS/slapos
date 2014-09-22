@@ -97,6 +97,9 @@ if computer_network_query:\n
   else:\n
     query_kw["default_subordination_reference"] = computer_network_query\n
 \n
+if "retention_delay" in filter_kw:\n
+  filter_kw.pop("retention_delay")\n
+\n
 computer_base_category_list = [\n
   \'group\',\n
   \'cpu_core\',\n
