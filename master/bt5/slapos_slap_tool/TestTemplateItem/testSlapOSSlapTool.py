@@ -1001,6 +1001,143 @@ class TestSlapOSSlapToolInstanceAccess(TestSlapOSSlapToolMixin):
     self.assertEqual(expected_xml, got_xml,
         '\n'.join([q for q in difflib.unified_diff(expected_xml.split('\n'), got_xml.split('\n'))]))
 
+  def test_getFullComputerInformation_retention_delay(self):
+    """
+    Test getFullComputerInformation() in case some Software Instances contain
+    a retention_delay.
+    """
+    retention_delay = 42
+    self._makeComplexComputer(with_slave=True)
+    self.start_requested_software_instance.setRetentionDelay(retention_delay)
+    self.tic()
+
+    self.login(self.start_requested_software_instance.getReference())
+    response = self.portal_slap.getFullComputerInformation(self.computer_id)
+    self.assertEqual(200, response.status)
+    self.assertEqual('public, max-age=1, stale-if-error=604800',
+        response.headers.get('cache-control'))
+    self.assertEqual('REMOTE_USER',
+        response.headers.get('vary'))
+    self.assertTrue('last-modified' in response.headers)
+    self.assertEqual('text/xml; charset=utf-8',
+        response.headers.get('content-type'))
+    # check returned XML
+    xml_fp = StringIO.StringIO()
+
+    xml.dom.ext.PrettyPrint(xml.dom.ext.reader.Sax.FromXml(response.body),
+        stream=xml_fp)
+    xml_fp.seek(0)
+    got_xml = xml_fp.read()
+    expected_xml = """\
+<?xml version='1.0' encoding='UTF-8'?>
+<marshal>
+  <object id='i2' module='slapos.slap.slap' class='Computer'>
+    <tuple>
+      <unicode>%(computer_id)s</unicode>
+    </tuple>
+    <dictionary id='i3'>
+      <string>_computer_id</string>
+      <unicode>%(computer_id)s</unicode>
+      <string>_computer_partition_list</string>
+      <list id='i4'>
+        <object id='i5' module='slapos.slap.slap' class='ComputerPartition'>
+          <tuple>
+            <unicode>%(computer_id)s</unicode>
+            <unicode>partition1</unicode>
+          </tuple>
+          <dictionary id='i6'>
+            <string>_computer_id</string>
+            <unicode>%(computer_id)s</unicode>
+            <string>_connection_dict</string>
+            <dictionary id='i7'/>
+            <string>_instance_guid</string>
+            <unicode>%(instance_guid)s</unicode>
+            <string>_need_modification</string>
+            <int>1</int>
+            <string>_parameter_dict</string>
+            <dictionary id='i8'>
+              <string>ip_list</string>
+              <list id='i9'>
+                <tuple>
+                  <unicode/>
+                  <unicode>ip_address_1</unicode>
+                </tuple>
+              </list>
+              <unicode>paramé</unicode>
+              <unicode>%(param)s</unicode>
+              <string>slap_computer_id</string>
+              <unicode>%(computer_id)s</unicode>
+              <string>slap_computer_partition_id</string>
+              <unicode>partition1</unicode>
+              <string>slap_software_release_url</string>
+              <unicode>%(software_release_url)s</unicode>
+              <string>slap_software_type</string>
+              <unicode>%(software_type)s</unicode>
+              <string>slave_instance_list</string>
+              <list id='i10'>
+                <dictionary id='i11'>
+                  <unicode>paramé</unicode>
+                  <unicode>%(slave_1_param)s</unicode>
+                  <string>slap_software_type</string>
+                  <unicode>%(slave_1_software_type)s</unicode>
+                  <string>slave_reference</string>
+                  <unicode>%(slave_1_instance_guid)s</unicode>
+                  <string>slave_title</string>
+                  <unicode>%(slave_1_title)s</unicode>
+                  <string>timestamp</string>
+                  <int>%(timestamp)s</int>
+                </dictionary>
+              </list>
+              <string>timestamp</string>
+              <string>%(timestamp)s</string>
+            </dictionary>
+            <string>_partition_id</string>
+            <unicode>partition1</unicode>
+            <string>_request_dict</string>
+            <none/>
+            <string>_requested_state</string>
+            <string>started</string>
+            <string>_retention_delay</string>
+            <int>42</int>
+            <string>_software_release_document</string>
+            <object id='i12' module='slapos.slap.slap' class='SoftwareRelease'>
+              <tuple>
+                <unicode>%(software_release_url)s</unicode>
+                <unicode>%(computer_id)s</unicode>
+              </tuple>
+              <dictionary id='i13'>
+                <string>_computer_guid</string>
+                <unicode>%(computer_id)s</unicode>
+                <string>_software_instance_list</string>
+                <list id='i14'/>
+                <string>_software_release</string>
+                <unicode>%(software_release_url)s</unicode>
+              </dictionary>
+            </object>
+          </dictionary>
+        </object>
+      </list>
+      <string>_software_release_list</string>
+      <list id='i15'/>
+    </dictionary>
+  </object>
+</marshal>
+""" % dict(
+    computer_id=self.computer_id,
+    instance_guid=self.start_requested_software_instance.getReference(),
+    software_release_url=self.start_requested_software_instance.getUrlString(),
+    software_type=self.start_requested_software_instance.getSourceReference(),
+    param=self.start_requested_software_instance.getInstanceXmlAsDict()['paramé'],
+    timestamp=int(self.start_requested_software_instance.getModificationDate()),
+    slave_1_param=self.start_requested_slave_instance.getInstanceXmlAsDict()['paramé'],
+    slave_1_software_type=self.start_requested_slave_instance.getSourceReference(),
+    slave_1_instance_guid=self.start_requested_slave_instance.getReference(),
+    slave_1_title=self.start_requested_slave_instance.getTitle(),
+)
+    self.assertEqual(expected_xml, got_xml,
+        '\n'.join([q for q in difflib.unified_diff(expected_xml.split('\n'), got_xml.split('\n'))]))
+
+
   def test_getComputerPartitionStatus(self):
     self._makeComplexComputer()
     partition_id = self.start_requested_software_instance.getAggregateValue(

@@ -92,6 +92,12 @@ else:\n
     (instance.getPortalType(), instance.getRelativeUrl())\n
 \n
 instance.edit(**edit_kw)\n
+\n
+if instance_portal_type == "Software Instance":\n
+  sla_dict = instance.getSlaXmlAsDict()\n
+  retention_delay = sla_dict.get(\'retention_delay\', 0)\n
+  instance.setRetentionDelay(retention_delay)\n
+\n
 # Prevent storing broken XML in text content (which prevent to update parameters after)\n
 context.Instance_checkConsistency(state_change)\n
 </string> </value>
