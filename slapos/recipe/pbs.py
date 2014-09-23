@@ -101,7 +101,7 @@ class Recipe(GenericSlapRecipe, Notify, Callback):
 
     # XXX use -y because the host might not yet be in the
     #     trusted hosts file until the next time slapgrid is run.
-    rdiffbackup_remote_schema = '%(ssh)s -y -p %%s %(user)s@%(host)s' % {
+    rdiffbackup_remote_schema = '%(ssh)s -y -K 300 -p %%s %(user)s@%(host)s' % {
             'ssh': self.options['sshclient-binary'],
             'user': parsed_url.username,
             'host': parsed_url.hostname,
