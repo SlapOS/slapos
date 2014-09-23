@@ -39,6 +39,7 @@ class TestSlapOSPerson_checkToCreateRegularisationRequest(testSlapOSMixin):
       portal_type='Person',
       title="Person %s" % new_id,
       reference="TESTPERS-%s" % new_id,
+      default_email_text="live_test_%s@example.org" % new_id,
       )
 
   @simulate('Entity_statBalance', '*args, **kwargs', 'return "1"')
@@ -297,6 +298,7 @@ class TestSlapOSRegularisationRequest_checkToSendUniqEvent(testSlapOSMixin):
       portal_type='Person',
       title="Person %s" % new_id,
       reference="TESTPERS-%s" % new_id,
+      default_email_text="live_test_%s@example.org" % new_id,
       )
 
   def createRegularisationRequest(self):
@@ -438,6 +440,7 @@ class TestSlapOSRegularisationRequest_cancelInvoiceIfPersonOpenOrderIsEmpty(
       portal_type='Person',
       title="Person %s" % new_id,
       reference="TESTPERS-%s" % new_id,
+      default_email_text="live_test_%s@example.org" % new_id,
       )
 
   def createRegularisationRequest(self):
