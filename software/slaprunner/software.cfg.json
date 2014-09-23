@@ -1,0 +1,21 @@
+{
+  "name": "Web Runner",
+  "description": "Web Runner",
+  "serialisation": "xml",
+  "software-type": {
+    "default": {
+      "title": "Default",
+      "description": "Standalone Runner",
+      "request": "instance-runner-input-schema.json",
+      "response": "instance-runner-output-schema.json",
+      "index": 0
+    },
+    "resilient": {
+      "title": "Resilient" 
+      "description": "Resilient Runner",
+      "request": "instance-runner-resilient-input-schema.json",
+      "response": "instance-runner-output-schema.json",
+      "index": 1
+    }
+  }
+}
