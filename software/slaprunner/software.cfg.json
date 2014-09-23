@@ -11,7 +11,7 @@
       "index": 0
     },
     "resilient": {
-      "title": "Resilient" 
+      "title": "Resilient", 
       "description": "Resilient Runner",
       "request": "instance-runner-resilient-input-schema.json",
       "response": "instance-runner-output-schema.json",

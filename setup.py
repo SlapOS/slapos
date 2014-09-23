@@ -52,6 +52,7 @@ setup(name=name,
       packages=find_packages(),
       include_package_data=True,
       install_requires=[
+        'jsonschema',
         'hexagonit.recipe.download',
         'lxml', # for full blown python interpreter
         'netaddr', # to manipulate on IP addresses
@@ -215,5 +216,7 @@ setup(name=name,
           'kumo = slapos.recipe.nosqltestbed.kumo:KumoTestBed',
         ],
       },
+      test_suite='slapos.recipe.test',
+      test_requires=[ 'jsonschema' ],
     )
 
