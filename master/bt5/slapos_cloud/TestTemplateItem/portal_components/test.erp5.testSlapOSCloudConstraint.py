@@ -58,8 +58,8 @@ class TestSlapOSComputerPartitionConstraint(TestSlapOSConstraintMixin):
     software_instance.immediateReindexObject()
     slave_instance.immediateReindexObject()
 
-    consistency_message = "Arity Error for Relation ['default_aggregate'], " \
-        "arity is equal to 1 but should be between 0 and 0"
+    consistency_message = "Arity Error for Relation ['default_aggregate'] and " \
+        "Type ('Software Instance', 'Slave Instance'), arity is equal to 1 but should be between 0 and 0"
 
     # test the test: no expected message found
     current_message_list = self.getMessageList(partition)
@@ -104,8 +104,9 @@ class TestSlapOSComputerPartitionConstraint(TestSlapOSConstraintMixin):
     slave_instance.immediateReindexObject()
     slave_instance_2.immediateReindexObject()
 
-    consistency_message = "Arity Error for Relation ['default_aggregate'], " \
-        "arity is equal to 0 but should be between 1 and 1"
+    consistency_message = "Arity Error for Relation ['default_aggregate'] and "\
+        "Type ('Software Instance',), arity is equal to 0 but should "\
+        "be between 1 and 1"
 
     # test the test: no expected message found
     current_message_list = self.getMessageList(partition)
@@ -121,8 +122,9 @@ class TestSlapOSComputerPartitionConstraint(TestSlapOSConstraintMixin):
     software_instance_2.edit(aggregate=partition.getRelativeUrl())
     software_instance.immediateReindexObject()
     software_instance_2.immediateReindexObject()
-    consistency_message_2 = "Arity Error for Relation ['default_aggregate'], " \
-        "arity is equal to 2 but should be between 1 and 1"
+    consistency_message_2 = "Arity Error for Relation ['default_aggregate'] and" \
+        " Type ('Software Instance',), arity is equal to 2 but should be " \
+        "between 1 and 1"
     self.assertTrue(consistency_message_2 in self.getMessageList(partition))
 
     # check case for many Slave Instane
