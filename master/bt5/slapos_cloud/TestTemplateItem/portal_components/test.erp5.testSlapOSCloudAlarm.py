@@ -734,7 +734,7 @@ portal_workflow.doActionFor(context, action='edit_action', comment='Visited by S
     self.portal.portal_workflow._jumpToStateFor(software_instance2, 'start_requested')
     software_instance2.validate()
     self.tic()
-
+    
     self.software_instance.setSlaXml(sla_xml)
     self.software_instance.SoftwareInstance_tryToAllocatePartition()
     self.assertEqual(
@@ -1674,17 +1674,6 @@ class TestSlapOSGarbageCollectStoppedRootTreeAlarm(testSlapOSMixin):
       Unauthorized,
       self.portal.Instance_tryToStopCollect,
       REQUEST={})
-
-  def test_Instance_tryToStopCollect_started_instance(self):
-    instance = self.createInstance()
-    hosting_subscription = instance.getSpecialiseValue()
-
-    self.portal.portal_workflow._jumpToStateFor(hosting_subscription,
-        'stop_requested')
-    self.assertEqual('start_requested', instance.getSlapState())
-
-    instance.Instance_tryToStopCollect()
-    self.assertEqual('stop_requested', instance.getSlapState())
 
   def test_Instance_tryToStopCollect_started_instance(self):
     instance = self.createInstance()
