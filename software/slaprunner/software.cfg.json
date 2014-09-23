@@ -1,0 +1,19 @@
+{
+  "name": "Web Runner",
+  "description": "Web Runner",
+  "serialisation": "xml",
+  "software-type": {
+    "default": {
+      "description": "Recommended for production use.",
+      "request": "instance-erp5-input-schema.json",
+      "response": "instance-erp5-output-schema.json",
+      "index": 0
+    },
+    "resilience": {
+      "description": "Automated creation of ERP5Site instance, for easy deployment. Usage in production discouraged due to the increased risk of data loss.",
+      "request": "instance-erp5-input-schema.json",
+      "response": "instance-erp5-output-schema.json",
+      "index": 1
+    }
+  }
+}

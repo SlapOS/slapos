@@ -1,0 +1,60 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "description": "Slapos Software Release instantiation descriptor",
+  "additionalProperties": false,
+  "properties": {
+    "name": {
+      "description": "A short human-friendly name for the sofware release",
+      "type": "string"
+    },
+    "description": {
+      "description": "A short description of the sofware release",
+      "type": "string"
+    },
+    "serialisation": {
+      "description": "How the parameters and results are serialised",
+      "required": true,
+      "enum": ["xml", "json-in-xml"],
+      "type": "string"
+    },
+    "software-type": {
+      "description": "Existing software types",
+      "required": true,
+      "patternProperties": {
+        ".*": {
+          "description": "Software type declaration",
+          "additionalProperties": false,
+          "properties": {
+            "description": {
+              "description": "A human-friendly description of the software type",
+              "type": "string"
+            },
+            "serialisation": {
+              "description": "How the parameters and results are serialised, if different from global setting",
+              "enum": ["xml", "json-in-xml"],
+              "type": "string"
+            },
+            "request": {
+              "required": true,
+              "description": "URL, relative to Software Release base path, of a json schema for values expected by instance of current software type",
+              "type": "string"
+            },
+            "response": {
+              "required": true,
+              "description": "URL, relative to Software Release base path, of a json schema for values published by instance of current software type",
+              "type": "string"
+            },
+            "index": {
+              "description": "Value to use instead of software type id to sort them (in order to display most relevant software types earlier in a list, for example)",
+              "type": "any"
+            }
+          },
+          "type": "object"
+        }
+      },
+      "type": "object"
+    }
+  },
+  "type": "object"
+}
+
