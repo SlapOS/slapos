@@ -34,6 +34,7 @@ import functools
 from Products.ERP5Type.tests.utils import DummyMailHost
 from Products.ERP5Type.Utils import convertToUpperCase
 import os
+import glob
 from AccessControl.SecurityManagement import getSecurityManager, \
     setSecurityManager
 
@@ -81,6 +82,23 @@ class testSlapOSMixin(ERP5TypeTestCase):
     open(os.path.join(os.environ['TEST_CA_PATH'], 'crlnumber'), 'w').write(
         '01')
     open(os.path.join(os.environ['TEST_CA_PATH'], 'index.txt'), 'w').write('')
+    private_list = glob.glob('%s/*.key' % os.path.join(os.environ['TEST_CA_PATH'],
+                              'private'))
+    for private in private_list:
+      os.remove(private)
+    crl_list = glob.glob('%s/*' % os.path.join(os.environ['TEST_CA_PATH'],
+                              'crl'))
+    for crl in crl_list:
+      os.remove(crl)
+    certs_list = glob.glob('%s/*' % os.path.join(os.environ['TEST_CA_PATH'],
+                              'certs'))
+    for cert in certs_list:
+      os.remove(cert)
+    newcerts_list = glob.glob('%s/*' % os.path.join(os.environ['TEST_CA_PATH'],
+                              'newcerts'))
+    for newcert in newcerts_list:
+      os.remove(newcert)
+      
 
   def setupPortalAlarms(self):
     if not self.portal.portal_alarms.isSubscribed():
