@@ -26,7 +26,7 @@ autorestart = {{ supervisord['autorestart'] }}
 stdout_logfile = {{ supervisord['no_logfile'] }}
 stderr_logfile = {{ supervisord['no_logfile'] }}
 directory = {{ supervisord['directory'] }}
-environment = PATH="{{- supervisord['path'] -}}"
+environment = PATH="{{- supervisord['path'] -}}",MAKEFLAGS="-j{{- '%d' % builtin.max(1, (multiprocessing.cpu_count() / builtin.int(slapparameter_dict.get('cpu-usage-ration', 4)))) -}}"
 
 [program:{{- supervisord['slapgrid-cp'] -}}]
 command = {{ supervisord['slapgrid-cp-command'] }}

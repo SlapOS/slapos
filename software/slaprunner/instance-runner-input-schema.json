@@ -91,6 +91,11 @@
             "minimum": 9683,
             "exclusiveMinimum": true,
         },
+        "cpu-usage-ratio": {
+            "description": "Ratio of the CPU use for compilation, if value is set to n, compilation will use number-of-cpu/n of cpus (need instance restart)",
+            "type": "integer",
+            "default" : 4
+        },
         "resilient-clone-number": {
             "title": "Number of Resilient Clones",
             "description": "Number of clones to be deployed when a resilient runner, if missing a single clone is provided. Its value can be 1 or 2",

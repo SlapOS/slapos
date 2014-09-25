@@ -1,0 +1,43 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "description": "Values returned by Runner instanciation",
+  "properties": {
+    "backend_url": {
+      "description": "ipv6 url to directly access your runner",
+      "type": "string"
+    },
+    "access_url": {
+      "description": "Url to set up your account and then login into your webrunner",
+      "type": "string"
+    },
+    "url": {
+      "description": "Url to access your runner once you set your account",
+      "type": "string"
+    },
+    "ssh_command": {
+      "description": "SSH command used to access your runner in ssh when you provided a ssh public key"
+      "type": "string"
+    },
+    "monitor_url": {
+      "description": "Url to access the monitoring interface of your instance. Use this url to get the recovery code needed to set up your runner",
+      "type": "string"
+    },
+    "webdav_url": {
+      "description": "Url for webdav access of your runner it access the root of your runner. Same users as the one for the runner",
+      "type": "string"
+    },
+    "public_url": {
+      "description": "Url of the public folder of your runner",
+      "type": "string"
+    },
+    "git_public_url": {
+      "description": "Public url of your repositories.",
+      "type": "string"
+    },
+    "git_private_url": {
+      "description": "Private url for your repositories. You can use it to push.",
+      "type": "string"
+    }
+  },
+  "type": "object"
+}
