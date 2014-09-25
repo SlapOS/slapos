@@ -106,7 +106,9 @@ class testSlapOSMixin(ERP5TypeTestCase):
     self.assertTrue(self.portal.portal_alarms.isSubscribed())
 
   def isLiveTest(self):
-    return 'ERP5TypeLiveTestCase' in [q.__name__ for q in self.__class__.mro()]
+    #return 'ERP5TypeLiveTestCase' in [q.__name__ for q in self.__class__.mro()]
+    # XXX - What is the better way to no if we are in live test mode ?
+    return not os.environ.has_key('TEST_CA_PATH')
 
   def _setUpDummyMailHost(self):
     """Do not play with NON persistent replacement of MailHost"""
