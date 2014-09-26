@@ -5,4 +5,7 @@
  <portal_type id="Consumption Document Module">
   <item>Computer Consumption TioXML File</item>
  </portal_type>
+ <portal_type id="Sale Invoice Transaction">
+  <item>Invoice Line</item>
+ </portal_type>
 </hidden_content_type_list>
