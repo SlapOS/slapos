@@ -51,24 +51,24 @@
                 <string>W:350, 16: Unused variable \'update_line\' (unused-variable)</string>
                 <string>W:350, 29: Unused variable \'destroy_line\' (unused-variable)</string>
                 <string>W:407, 29: Unused variable \'destroy_line\' (unused-variable)</string>
-                <string>W:527, 29: Unused variable \'destroy_line\' (unused-variable)</string>
-                <string>W:527,  4: Unused variable \'setup_line\' (unused-variable)</string>
-                <string>W:587,  4: Unused variable \'setup_line\' (unused-variable)</string>
-                <string>W:648, 29: Unused variable \'destroy_line\' (unused-variable)</string>
-                <string>W:648,  4: Unused variable \'setup_line\' (unused-variable)</string>
-                <string>W:687, 29: Unused variable \'destroy_line\' (unused-variable)</string>
-                <string>W:687,  4: Unused variable \'setup_line\' (unused-variable)</string>
-                <string>W:1362, 20: Use of eval (eval-used)</string>
-                <string>W:1363, 23: Use of eval (eval-used)</string>
-                <string>W:1384, 20: Use of eval (eval-used)</string>
-                <string>W:1385, 23: Use of eval (eval-used)</string>
-                <string>W:1449, 20: Use of eval (eval-used)</string>
-                <string>W:1450, 23: Use of eval (eval-used)</string>
-                <string>W:1459, 20: Use of eval (eval-used)</string>
-                <string>W:1460, 23: Use of eval (eval-used)</string>
-                <string>W:1522, 35: Use of eval (eval-used)</string>
-                <string>W:1523, 31: Use of eval (eval-used)</string>
-                <string>W:1689,  4: Unused variable \'movement\' (unused-variable)</string>
+                <string>W:528, 29: Unused variable \'destroy_line\' (unused-variable)</string>
+                <string>W:528,  4: Unused variable \'setup_line\' (unused-variable)</string>
+                <string>W:588,  4: Unused variable \'setup_line\' (unused-variable)</string>
+                <string>W:649, 29: Unused variable \'destroy_line\' (unused-variable)</string>
+                <string>W:649,  4: Unused variable \'setup_line\' (unused-variable)</string>
+                <string>W:688, 29: Unused variable \'destroy_line\' (unused-variable)</string>
+                <string>W:688,  4: Unused variable \'setup_line\' (unused-variable)</string>
+                <string>W:1364, 20: Use of eval (eval-used)</string>
+                <string>W:1365, 23: Use of eval (eval-used)</string>
+                <string>W:1386, 20: Use of eval (eval-used)</string>
+                <string>W:1387, 23: Use of eval (eval-used)</string>
+                <string>W:1452, 20: Use of eval (eval-used)</string>
+                <string>W:1453, 23: Use of eval (eval-used)</string>
+                <string>W:1462, 20: Use of eval (eval-used)</string>
+                <string>W:1463, 23: Use of eval (eval-used)</string>
+                <string>W:1526, 35: Use of eval (eval-used)</string>
+                <string>W:1527, 31: Use of eval (eval-used)</string>
+                <string>W:1695,  4: Unused variable \'movement\' (unused-variable)</string>
               </tuple>
             </value>
         </item>

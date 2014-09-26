@@ -479,6 +479,7 @@ class TestInstanceInvoicingAlarm(testSlapOSMixin):
       destination_section_value=person)
     instance = self.portal.software_instance_module\
         .template_slave_instance.Base_createCloneDocument(batch_mode=1)
+    
     previous_delivery = self.portal.sale_packing_list_module.newContent(
       portal_type='Sale Packing List')
     new_id = self.generateNewId()
@@ -1329,6 +1330,9 @@ class TestSlapOSTriggerBuildAlarm(testSlapOSMixin):
 
   @withAbort
   def test_SimulationMovement_buildSlapOS(self):
+    build_simulator = tempfile.mkstemp()[1]
+    activate_simulator = tempfile.mkstemp()[1]
+    
     business_process = self.portal.business_process_module.newContent(
         portal_type='Business Process')
     root_business_link = business_process.newContent(
@@ -1346,8 +1350,6 @@ class TestSlapOSTriggerBuildAlarm(testSlapOSMixin):
         causality=business_link.getRelativeUrl(),
         portal_type='Simulation Movement')
 
-    build_simulator = tempfile.mkstemp()[1]
-    activate_simulator = tempfile.mkstemp()[1]
     try:
       from Products.CMFActivity.ActiveObject import ActiveObject
       ActiveObject.original_activate = ActiveObject.activate
@@ -1411,6 +1413,9 @@ class TestSlapOSTriggerBuildAlarm(testSlapOSMixin):
 
   @withAbort
   def test_SimulationMovement_buildSlapOS_withDelivery(self):
+    build_simulator = tempfile.mkstemp()[1]
+    activate_simulator = tempfile.mkstemp()[1]
+    
     delivery = self.portal.sale_packing_list_module.newContent(
         portal_type='Sale Packing List')
     delivery_line = delivery.newContent(portal_type='Sale Packing List Line')
@@ -1433,8 +1438,6 @@ class TestSlapOSTriggerBuildAlarm(testSlapOSMixin):
         delivery=delivery_line.getRelativeUrl(),
         portal_type='Simulation Movement')
 
-    build_simulator = tempfile.mkstemp()[1]
-    activate_simulator = tempfile.mkstemp()[1]
     try:
       from Products.CMFActivity.ActiveObject import ActiveObject
       ActiveObject.original_activate = ActiveObject.activate
@@ -1501,17 +1504,18 @@ class TestSlapOSManageBuildingCalculatingDeliveryAlarm(testSlapOSMixin):
 
   @withAbort
   def _test_Delivery_manageBuildingCalculatingDelivery(self, state, empty=False):
+    updateCausalityState_simulator = tempfile.mkstemp()[1]
+    updateSimulation_simulator = tempfile.mkstemp()[1]
+    
     delivery = self.portal.sale_packing_list_module.newContent(
         title='Not visited by Delivery_manageBuildingCalculatingDelivery',
         portal_type='Sale Packing List')
     self.portal.portal_workflow._jumpToStateFor(delivery, state)
 
-    updateCausalityState_simulator = tempfile.mkstemp()[1]
-    updateSimulation_simulator = tempfile.mkstemp()[1]
     try:
       from Products.ERP5.Document.Delivery import Delivery
-      Delivery.original_updateCausalityState = Delivery\
-          .updateCausalityState
+      Delivery.original_updateCausalityState = Delivery.updateCausalityState
+      Delivery.original_updateSimulation = Delivery.updateSimulation
       Delivery.updateCausalityState = Simulator(
           updateCausalityState_simulator, 'updateCausalityState')
       Delivery.updateSimulation = Simulator(
@@ -1540,7 +1544,9 @@ class TestSlapOSManageBuildingCalculatingDeliveryAlarm(testSlapOSMixin):
         )
     finally:
       Delivery.updateCausalityState = Delivery.original_updateCausalityState
+      Delivery.updateSimulation = Delivery.original_updateSimulation
       delattr(Delivery, 'original_updateCausalityState')
+      delattr(Delivery, 'original_updateSimulation')
       if os.path.exists(updateCausalityState_simulator):
         os.unlink(updateCausalityState_simulator)
       if os.path.exists(updateSimulation_simulator):

@@ -20,12 +20,12 @@ class TestHostingSubscription(TestSlapOSConstraintMixin):
         portal_type='Hosting Subscription')
 
   def afterSetUp(self):
-    super(TestHostingSubscription, self).afterSetUp()
+    TestSlapOSConstraintMixin.afterSetUp(self)
     self._createHostingSubscription()
 
   def beforeTearDown(self):
     transaction.abort()
-    super(TestHostingSubscription, self).beforeTearDown()
+    TestSlapOSConstraintMixin.beforeTearDown(self)
 
   def test_periodicity_hour_list_value(self):
     value = 7
@@ -115,15 +115,15 @@ class TestSaleInvoiceTransaction(TestSlapOSConstraintMixin):
   def test_price_currency(self):
     invoice = self.portal.accounting_module.newContent(
         portal_type='Sale Invoice Transaction')
-    message = "Arity Error for Relation ['price_currency'], arity is equal "\
-        "to 0 but should be between 1 and 1"
+    message = "Arity Error for Relation ['price_currency'] and Type "\
+        "('Currency',), arity is equal to 0 but should be between 1 and 1"
     self._test_currency(invoice, invoice.setPriceCurrency, message)
 
   def test_resource(self):
     invoice = self.portal.accounting_module.newContent(
         portal_type='Sale Invoice Transaction')
-    message = "Arity Error for Relation ['resource'], arity is equal "\
-        "to 0 but should be between 1 and 1"
+    message = "Arity Error for Relation ['resource'] and Type "\
+        "('Currency',), arity is equal to 0 but should be between 1 and 1"
     self._test_currency(invoice, invoice.setResource, message)
 
   @withAbort
@@ -131,8 +131,8 @@ class TestSaleInvoiceTransaction(TestSlapOSConstraintMixin):
     invoice = self.portal.accounting_module.newContent(
         portal_type='Sale Invoice Transaction')
     setter = invoice.setSpecialise
-    message = "Arity Error for Relation ['specialise'], arity is equal "\
-        "to 0 but should be at least 1"
+    message = "Arity Error for Relation ['specialise'] and Type "\
+        "('Sale Trade Condition',), arity is equal to 0 but should be at least 1"
     self.assertTrue(message in self.getMessageList(invoice))
 
     sale_condition = self.portal.sale_trade_condition_module.newContent(
@@ -264,10 +264,10 @@ class TestSalePackingList(TestSlapOSConstraintMixin):
 
   @withAbort
   def _test_category_arrow(self, category):
-    message = "Arity Error for Relation ['%s'], arity is equal to "\
-        "0 but should be between 1 and 1" % category
-    message_2 = "Arity Error for Relation ['%s'], arity is equal to "\
-        "2 but should be between 1 and 1" % category
+    message = "Arity Error for Relation ['%s'] and Type ('Organisation', "\
+        "'Person'), arity is equal to 0 but should be between 1 and 1" % category
+    message_2 = "Arity Error for Relation ['%s'] and Type ('Organisation', "\
+        "'Person'), arity is equal to 2 but should be between 1 and 1" % category
     delivery = self.portal.sale_packing_list_module.newContent(
         portal_type='Sale Packing List')
     resource = self.portal.service_module.newContent(
@@ -308,10 +308,10 @@ class TestSalePackingList(TestSlapOSConstraintMixin):
   @withAbort
   def test_specialise(self):
     category = 'specialise'
-    message = "Arity Error for Relation ['%s'], arity is equal to "\
-        "0 but should be between 1 and 1" % category
-    message_2 = "Arity Error for Relation ['%s'], arity is equal to "\
-        "2 but should be between 1 and 1" % category
+    message = "Arity Error for Relation ['%s'] and Type ('Sale Trade Condition"\
+        "',), arity is equal to 0 but should be between 1 and 1" % category
+    message_2 = "Arity Error for Relation ['%s'] and Type ('Sale Trade Condition"\
+        "',), arity is equal to 2 but should be between 1 and 1" % category
     delivery = self.portal.sale_packing_list_module.newContent(
         portal_type='Sale Packing List')
     resource = self.portal.service_module.newContent(
@@ -362,10 +362,10 @@ class TestSalePackingListLine(TestSlapOSConstraintMixin):
   @withAbort
   def test_resource_arity(self):
     category = 'resource'
-    message = "Arity Error for Relation ['%s'], arity is equal to "\
-        "0 but should be between 1 and 1" % category
-    message_2 = "Arity Error for Relation ['%s'], arity is equal to "\
-        "2 but should be between 1 and 1" % category
+    message = "Arity Error for Relation ['%s'] and Type ('Service',), arity is"\
+        " equal to 0 but should be between 1 and 1" % category
+    message_2 = "Arity Error for Relation ['%s'] and Type ('Service',), arity is"\
+        " equal to 2 but should be between 1 and 1" % category
     delivery_line = self.portal.sale_packing_list_module.newContent(
         portal_type='Sale Packing List').newContent(
         portal_type='Sale Packing List Line')
