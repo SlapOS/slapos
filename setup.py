@@ -216,7 +216,7 @@ setup(name=name,
           'kumo = slapos.recipe.nosqltestbed.kumo:KumoTestBed',
         ],
       },
-      test_suite='slapos.recipe.test',
+      test_suite='slapos.test',
       test_requires=[ 'jsonschema' ],
     )
 

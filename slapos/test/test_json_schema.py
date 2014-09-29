@@ -29,12 +29,12 @@ import unittest
 import os
 import glob
 import json
-import slapos.recipe.test
+import slapos.test
 import jsonschema
 
 
 def getSchemaValidator(filename):
-  schema_json_file = "/".join(slapos.recipe.test.__file__.split("/")[:-1])
+  schema_json_file = "/".join(slapos.test.__file__.split("/")[:-1])
   schema_json_file += "/%s" % filename
   with open(schema_json_file, "r") as json_file:
     json_dict = json.loads(json_file.read())
@@ -51,7 +51,7 @@ def createTest(path, json_dict):
 
 def generateSoftwareCfgTest():
   json_dict = getSchemaValidator("schema.json")
-  base_path = "/".join(slapos.recipe.test.__file__.split("/")[:-4])
+  base_path = "/".join(slapos.test.__file__.split("/")[:-3])
   for path in glob.glob("%s/software/*/software.cfg.json" % base_path):
     test_name = "test_%s_software_cfg_json" % path.split("/")[-2]
     setattr(TestJSONSchemaValidation, test_name , createTest(path, json_dict)) 
@@ -59,7 +59,7 @@ def generateSoftwareCfgTest():
 
 def generateJSONSchemaTest():
   json_dict = getSchemaValidator("metaschema.json")
-  base_path = "/".join(slapos.recipe.test.__file__.split("/")[:-4])
+  base_path = "/".join(slapos.test.__file__.split("/")[:-3])
   for path in glob.glob("%s/software/*/*schema.json" % base_path):
     software_type = path.split("/")[-2]
     filename = path.split("/")[-1].replace("-", "_").replace(".", "_")
