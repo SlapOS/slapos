@@ -135,6 +135,8 @@ class Recipe(GenericSlapRecipe, Notify, Callback):
       rdiff_wrapper_template = textwrap.dedent("""\
           #!/bin/sh
           # %(comment)s
+          LC_ALL=C
+          export LC_ALL
           RDIFF_BACKUP="%(rdiffbackup_binary)s"
           $RDIFF_BACKUP %(rdiffbackup_parameter)s
           if [ ! $? -eq 0 ]; then
@@ -156,7 +158,7 @@ class Recipe(GenericSlapRecipe, Notify, Callback):
           
           if [ -e /srv/slapgrid/slappart17/srv/backup/pbs/COMP-1867-slappart6-runner-2/backup.signature ]; them
             cd %(local_directory)s
-            find -type f ! -name backup.signature ! -wholename "./rdiff-backup-data/*" -print0 | xargs -0 sha256sum  | sort > ../proof.signature
+            find -type f ! -name backup.signature ! -wholename "./rdiff-backup-data/*" -print0 | xargs -0 sha256sum  | LC_ALL=C sort -k 66 > ../proof.signature
             diff -ruw backup.signature ../proof.signature > ../backup.diff
             # XXX If there is a difference on the backup, we should publish the 
             # failure and ask the equeue, re-run this script again, 

@@ -1,4 +1,6 @@
 #!{{ shell_binary }}
+LC_ALL=C
+export LC_ALL
 umask 077
 restore_element () {
   backup_path=$1
@@ -16,7 +18,7 @@ restore_element () {
 
 write_backup_proof () {
   cd {{ directory['backup'] }}
-  find -type f ! -name backup.signature ! -wholename "./rdiff-backup-data/*" -print0 | xargs -0 sha256sum  | sort > {{ directory['srv'] }}/proof.signature
+  find -type f ! -name backup.signature ! -wholename "./rdiff-backup-data/*" -print0 | xargs -0 sha256sum  | LC_ALL=C sort -k 66 > {{ directory['srv'] }}/proof.signature
   diff -ruw {{ directory['backup'] }} {{ directory['srv'] }}/proof.signature > {{ directory['srv'] }}/backup.diff
 }
 
