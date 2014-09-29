@@ -77,6 +77,10 @@
             </value>
         </item>
         <item>
+            <key> <string>content_type</string> </key>
+            <value> <string>text/html</string> </value>
+        </item>
+        <item>
             <key> <string>default_reference</string> </key>
             <value> <string>Web-TEMPLATE</string> </value>
         </item>
@@ -112,8 +116,8 @@
                 </tuple>
                 <state>
                   <tuple>
-                    <float>1359032820.0</float>
-                    <string>GMT+1</string>
+                    <float>1359036420.0</float>
+                    <string>UTC</string>
                   </tuple>
                 </state>
               </object>
@@ -567,6 +571,51 @@
                       <tuple>
                         <float>1359032919.02</float>
                         <string>GMT+1</string>
+                      </tuple>
+                    </state>
+                  </object>
+                </value>
+            </item>
+          </dictionary>
+          <dictionary>
+            <item>
+                <key> <string>action</string> </key>
+                <value> <string>edit</string> </value>
+            </item>
+            <item>
+                <key> <string>actor</string> </key>
+                <value> <string>zope</string> </value>
+            </item>
+            <item>
+                <key> <string>comment</string> </key>
+                <value>
+                  <none/>
+                </value>
+            </item>
+            <item>
+                <key> <string>error_message</string> </key>
+                <value> <string></string> </value>
+            </item>
+            <item>
+                <key> <string>serial</string> </key>
+                <value> <string>937.58325.30915.36881</string> </value>
+            </item>
+            <item>
+                <key> <string>state</string> </key>
+                <value> <string>current</string> </value>
+            </item>
+            <item>
+                <key> <string>time</string> </key>
+                <value>
+                  <object>
+                    <klass> <reference id="3.1"/> </klass>
+                    <tuple>
+                      <none/>
+                    </tuple>
+                    <state>
+                      <tuple>
+                        <float>1411993815.1</float>
+                        <string>UTC</string>
                       </tuple>
                     </state>
                   </object>
