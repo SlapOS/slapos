@@ -26,6 +26,7 @@ def simulate(script_id, params_string, code_string):
         raise ValueError('Precondition failed: %s exists in custom' % script_id)
       createZODBPythonScript(self.portal.portal_skins.custom,
                           script_id, params_string, code_string)
+      transaction.commit()
       try:
         result = f(self, *args, **kw)
       finally:
@@ -55,11 +56,11 @@ def do_fake_request(request_method, headers={}):
   env.update(headers)
   return HTTPRequest(StringIO.StringIO(), env, HTTPResponse())
 
-class TestSlapOSBase_getRequestHeader(testSlapOSMixin):
+class TestASlapOSBase_getRequestHeader(testSlapOSMixin):
 
   def beforeTearDown(self):
     transaction.abort()
-
+  
   def test_getRequestHeader_REQUEST_disallowed(self):
     self.assertRaises(
       Unauthorized,
@@ -150,7 +151,7 @@ class TestSlapOSBase_handleAcceptHeader(testSlapOSMixin):
         None
         )
 
-class TestSlapOSBase_getHateoasMaster(testSlapOSMixin):
+class TestZSlapOSBase_getHateoasMaster(testSlapOSMixin):
 
   def _makePerson(self):
     new_id = self.generateNewId()
