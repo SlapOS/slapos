@@ -330,7 +330,7 @@ return Foo()
         'Visited by PaymentTransaction_createPayzenEvent',
         transaction.workflow_history['edit_workflow'][-1]['comment'])
     self.assertEqual(
-        None,
+        "",
         transaction.workflow_history['edit_workflow'][-2]['comment'])
     self.assertEquals(transaction.getSimulationState(), 'stopped')
 
