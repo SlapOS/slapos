@@ -24,4 +24,4 @@ if [ -d {{ directory['backup'] }}/runner/software ]; then
   rm {{ directory['backup'] }}/runner/software/*
 fi
 
-cd {{ directory['backup'] }} && find -type f ! -name backup.signature -print0 | xargs -0 sha256sum | LC_ALL=C sort -k 66 > backup.signature
+cd {{ directory['backup'] }} && find -type f ! -name backup.signature -print0 | xargs -P4 -0 sha256sum | LC_ALL=C sort -k 66 > backup.signature
