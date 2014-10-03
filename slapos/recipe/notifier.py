@@ -86,6 +86,7 @@ class Notify(GenericBaseRecipe):
                               command=notifier_binary,
                               parameters=parameters,
                               pidfile=pidfile,
+                              parameters_extra=True,
                               comments=[
                                   '',
                                   'Call an executable and send notification(s).',
