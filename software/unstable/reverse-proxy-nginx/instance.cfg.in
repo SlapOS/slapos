@@ -72,7 +72,7 @@ logrotate-backup = $${:backup}/logrotate
 # Deploy nginx and publish connection parameters inside of the recipe
 [reverse-proxy]
 recipe = slapos.cookbook:reverseproxy.nginx
-nginx-executable = ${nginx-unstable:location}/sbin/nginx
+nginx-executable = ${nginx:location}/sbin/nginx
 wrapper = $${directory:bin}/nginx
 
 configuration-file = $${directory:nginx-configuration}/nginx.conf

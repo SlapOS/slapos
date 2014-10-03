@@ -35,11 +35,17 @@
   RewriteEngine On
 
 {% if slave_parameter.get('type', '') ==  'zope' -%}
+  {% if 'default-path' in slave_parameter %}
+  RewriteRule ^/?$ {{ slave_parameter.get('default-path') }} [R=301,L]
+  {% endif -%}
   # First, we check if we have a zope backend server
   # If so, let's use Virtual Host Daemon rewrite
   # We suppose that Apache listens to 443 (even indirectly thanks to things like iptables)
   RewriteRule ^/(.*)$ {{ slave_parameter.get('url', '') }}/VirtualHostBase/https/{{ slave_parameter.get('custom_domain', '') }}:443/{{ slave_parameter.get('path', '') }}/VirtualHostRoot/$1 [L,P]
 {% else -%}
+  {% if 'default-path' in slave_parameter %}
+  RewriteRule ^/?$ {{ slave_parameter.get('default-path') }} [R=301,L]
+  {% endif -%}
   RewriteRule ^/(.*)$ {{ slave_parameter.get('url', '') }}/$1 [L,P]
 {% endif -%}
 </VirtualHost>
@@ -72,11 +78,17 @@
   RewriteCond     %{SERVER_PORT}  !^{{ https_port }}$
   RewriteRule     ^/(.*)          https://%{SERVER_NAME}/$1 [NC,R,L]
 {% elif slave_parameter.get('type', '') ==  'zope' -%}
+  {% if 'default-path' in slave_parameter %}
+  RewriteRule ^/?$ {{ slave_parameter.get('default-path') }} [R=301,L]
+  {% endif -%}
   # First, we check if we have a zope backend server
   # If so, let's use Virtual Host Daemon rewrite
   # We suppose that Apache listens to 80 (even indirectly thanks to things like iptables)
   RewriteRule ^/(.*)$ {{ slave_parameter.get('url', '') }}/VirtualHostBase/http/{{ slave_parameter.get('custom_domain', '') }}:80/{{ slave_parameter.get('path', '') }}/VirtualHostRoot/$1 [L,P]
 {% else -%}
+  {% if 'default-path' in slave_parameter %}
+  RewriteRule ^/?$ {{ slave_parameter.get('default-path') }} [R=301,L]
+  {% endif -%}
   RewriteRule ^/(.*)$ {{ slave_parameter.get('url', '') }}/$1 [L,P]
 {% endif -%}
   # If nothing exist : put a nice error

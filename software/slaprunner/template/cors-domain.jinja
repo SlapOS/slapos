@@ -1,0 +1,63 @@
+#!{{ python_executable }}
+
+import cgi
+import cgitb
+import ConfigParser
+import os
+import re
+import subprocess
+
+cgitb.enable(display=0, logdir="/tmp/cgi.log")
+form = cgi.FieldStorage()
+
+apache_file = "{{ apache_file }}"
+config_file = "{{ config_cfg }}"
+
+
+if not os.path.exists(config_file):
+  print "Your software does <b>not</b> embed 0-knowledge. \
+  This interface is useless in this case</body></html>"
+  exit(0)
+
+
+parser = ConfigParser.ConfigParser()
+parser.read(config_file)
+if not parser.has_section("cors"):
+  parser.add_section("cors")
+
+if not parser.has_option("cors", "cors-domain"):
+  parser.set("cors", "cors-domain", "")
+
+if "cors-domain" in form:
+  parser.set("cors", "cors-domain", form["cors-domain"].value)
+  cors_domain_list = form["cors-domain"].value.split()
+  cors_string = ""
+  for domain in cors_domain_list:
+    if cors_string:
+      cors_string += '|'
+    cors_string += re.escape(domain)
+  with open(apache_file, 'w') as file:
+    file.write('SetEnvIf Origin "^http(s)?://(.+\.)?(%s)$" origin_is=$0\n' % cors_string)
+    file.write('Header always set Access-Control-Allow-Origin %{origin_is}e env=origin_is')
+  subprocess.call('{{ httpd_graceful }}')
+
+cors_domain_parameter = parser.get("cors", "cors-domain")
+
+with open(config_file, 'w') as file:
+  parser.write(file)
+
+print "<html><head>"
+print "<link rel=\"stylesheet\" href=\"static/pure-min.css\">"
+print "<link rel=\"stylesheet\" href=\"static/style.css\">"
+print "</head><body>"
+print "<h1>Cors Domains :</h1>"
+print "<p>Enter domain names separated by space to authorized CORS on your dav storage for these domains</p>"
+print "<form action=\"/index.cgi\" method=\"post\" class=\"pure-form-aligned\">"
+print "<input type=\"hidden\" name=\"posting-script\" value=\"{{ pwd }}/{{ this_file }}\">"
+print "<div class=\"pure-control-group\">"
+print '<label for="cors-domain">CORS Domains</label>'
+print '<input type="text" name="cors-domain" value="%s">' % cors_domain_parameter
+print "</div>"
+print "<div class=\"pure-controls\"><button type=\"submit\" class=\"pure-button \
+ pure-button-primary\">Save</button></div></form>"
+print "</body></html>"

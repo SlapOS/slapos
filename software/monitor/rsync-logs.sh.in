@@ -1,7 +1,7 @@
 #!${dash-output:dash}
 
 RSYNC_BIN={{ rsync_binary }}
-SLAPGRID_LOGS={{ buildout_directory }}/../var/data-logs/
+SLAPGRID_LOGS={{ buildout_directory }}/../var/data-log/
 SERVERLOGS={{ server_log_directory }}
 
-$RSYNC_BIN -a $SLAPGRID_LOGS $SERVERLOGS
+$RSYNC_BIN -a --delete $SLAPGRID_LOGS $SERVERLOGS

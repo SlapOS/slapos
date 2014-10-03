@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF8"?>
+<manifest name="coips:model" xmlns="http://www.compatibleone.fr/schemes/cords.xsd">
+
+<description>Infrastructure profile used by production tool</description>
+	
+<node name="coips:model">
+<infrastructure name="coips:model">
+<compute name="coips:model" cores="1" speed="1GHz" architecture="x686" memory="1GB"/>
+<storage name="coips:model" size="10GB" type="SATA"/>
+<network name="coips:model" vlan="true" label="database"/>
+</infrastructure>
+</node> 
+
+
+</manifest>

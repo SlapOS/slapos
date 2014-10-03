@@ -11,7 +11,7 @@ sync_element () {
   do
     cd $path;
     if [ -f $element ] || [ -d $element ]; then
-       {{ rsync_binary }} -avz --safe-links --delete $element  $backup_path;
+       {{ rsync_binary }} -av --safe-links --delete $element  $backup_path;
     fi
   done
 }

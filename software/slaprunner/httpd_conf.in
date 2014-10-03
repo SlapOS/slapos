@@ -21,9 +21,13 @@ LoadModule ssl_module modules/mod_ssl.so
 LoadModule alias_module modules/mod_alias.so
 LoadModule env_module modules/mod_env.so
 LoadModule rewrite_module modules/mod_rewrite.so
+LoadModule headers_module modules/mod_headers.so
 LoadModule log_config_module modules/mod_log_config.so
 LoadModule dav_module modules/mod_dav.so
 LoadModule dav_fs_module modules/mod_dav_fs.so
+LoadModule cache_module modules/mod_cache.so
+LoadModule file_cache_module modules/mod_file_cache.so
+LoadModule setenvif_module modules/mod_setenvif.so
 
 ErrorLog "{{ parameters.path_error_log }}"
 LogFormat "%h %l %u %t \"%r\" %>s %b" common
@@ -41,6 +45,11 @@ SSLProtocol -ALL +SSLv3 +TLSv1
 SSLHonorCipherOrder On
 SSLCipherSuite RC4-SHA:HIGH:!ADH
 SSLEngine   On
+
+Include {{ parameters.httpd_cors_file }}
+Header set Access-Control-Allow-Credentials "true"
+Header set Access-Control-Allow-Methods "PROPFIND, PROPPATCH, COPY, MOVE, DELETE, MKCOL, LOCK, UNLOCK, PUT, GETLIB, VERSION-CONTROL, CHECKIN, CHECKOUT, UNCHECKOUT, REPORT, UPDATE, CANCELUPLOAD, HEAD, OPTIONS, GET, POST"
+Header set Access-Control-Allow-Headers "Overwrite, Destination, Content-Type, Depth, User-Agent, X-File-Size, X-Requested-With, If-Modified-Since, X-File-Name, Cache-Control, Authorization"
 
 Alias /public {{ parameters.runner_home }}/public
 <Directory {{ parameters.runner_home }}/public>
@@ -66,22 +75,33 @@ Alias /share {{ parameters.runner_home }}
     AuthType Basic
     AuthName "webdav"
     AuthUserFile "{{ parameters.etc_dir }}/.htpasswd"
-    Require valid-user
+    <LimitExcept OPTIONS>
+        Require valid-user
+    </LimitExcept>
 </Directory>
 
 ScriptSock {{ parameters.path_pid }}
 
-SetEnv GIT_PROJECT_ROOT {{ parameters.project_folder }}
 SetEnv GIT_HTTP_EXPORT_ALL
 ScriptAlias /git/ {{ parameters.git_http_backend }}/
 ScriptAlias /git-public/ {{ parameters.git_http_backend }}/
 
 RewriteCond %{QUERY_STRING} service=git-receive-pack [OR]
 RewriteCond %{REQUEST_URI} /git-receive-pack$
-RewriteRule ^/git/ - [E=AUTHREQUIRED:yes]
-RewriteRule ^/git-public/ - [E=AUTHREQUIRED:yes]
+
+<LocationMatch "^/git/">
+        SetEnv GIT_PROJECT_ROOT:{{- parameters.project_private_folder -}}
+        Order Deny,Allow
+        Deny from env=AUTHREQUIRED
+
+        AuthType Basic
+        AuthName "Git Access"
+        AuthUserFile "{{ parameters.etc_dir }}/.htpasswd"
+        Require valid-user
+</LocationMatch>
 
 <LocationMatch "^/git-public/">
+        SetEnv GIT_PROJECT_ROOT:{{- parameters.project_public_folder -}}
         Order Deny,Allow
         Deny from env=AUTHREQUIRED
 
@@ -90,16 +110,6 @@ RewriteRule ^/git-public/ - [E=AUTHREQUIRED:yes]
         AuthUserFile "{{ parameters.etc_dir }}/.htpasswd"
         Require valid-user
         Satisfy any
-</LocationMatch>
-
-<LocationMatch "^/git/">
-        Order Deny,Allow
-        Deny from env=AUTHREQUIRED
-
-        AuthType Basic
-        AuthName "Git Access"
-        AuthUserFile "{{ parameters.etc_dir }}/.htpasswd"
-        Require valid-user
 </LocationMatch>
 
 include {{ parameters.cgi_httpd_conf }}

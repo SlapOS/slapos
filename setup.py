@@ -52,6 +52,7 @@ setup(name=name,
       packages=find_packages(),
       include_package_data=True,
       install_requires=[
+        'jsonschema',
         'hexagonit.recipe.download',
         'lxml', # for full blown python interpreter
         'netaddr', # to manipulate on IP addresses
@@ -69,6 +70,7 @@ setup(name=name,
       entry_points={
         'zc.buildout': [
           'addresiliency = slapos.recipe.addresiliency:Recipe',
+          'accords = slapos.recipe.accords:Recipe',
           'agent = slapos.recipe.agent:Recipe',
           'apache.zope.backend = slapos.recipe.apache_zope_backend:Recipe',
           'apacheperl = slapos.recipe.apacheperl:Recipe',
@@ -90,6 +92,7 @@ setup(name=name,
           'condor = slapos.recipe.condor:Recipe',
           'condor.submit = slapos.recipe.condor:AppSubmit',
           'configurationfile = slapos.recipe.configurationfile:Recipe',
+          'copyfilelist = slapos.recipe.copyfilelist:Recipe',
           'cron = slapos.recipe.dcron:Recipe',
           'cron.d = slapos.recipe.dcron:Part',
           'davstorage = slapos.recipe.davstorage:Recipe',
@@ -214,5 +217,7 @@ setup(name=name,
           'kumo = slapos.recipe.nosqltestbed.kumo:KumoTestBed',
         ],
       },
+      test_suite='slapos.test',
+      test_requires=[ 'jsonschema' ],
     )
 
