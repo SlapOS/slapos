@@ -27,15 +27,20 @@
 #
 ##############################################################################
 
-
+from lxml import etree as ElementTree
 from slapos.util import mkdir_p
-import os.path
-import json
-import tarfile
-import glob
-import shutil
+
 import csv
-from time import strftime
+import glob
+import json
+import os
+import os.path
+import shutil
+import tarfile
+import time
+import psutil
+
+log_file = False
 
 class Dumper(object):
 
@@ -52,7 +57,7 @@ class SystemReporter(Dumper):
   
   def dump(self, folder):
     """ Dump data """
-    _date = strftime("%Y-%m-%d")
+    _date = time.strftime("%Y-%m-%d")
     self.db.connect()
     for item, collected_item_list in self.db.exportSystemAsDict(_date).iteritems():
       self.writeFile(item, folder, collected_item_list)
@@ -87,7 +92,7 @@ class RawDumper(Dumper):
   """ Dump raw data in a certain format
   """
   def dump(self, folder):
-    date = strftime("%Y-%m-%d")
+    date = time.strftime("%Y-%m-%d")
     self.db.connect()
     table_list = self.db.getTableList()
     for date_scope, amount in self.db.getDateScopeList(ignore_date=date):
@@ -123,5 +128,199 @@ def compressLogFolder(log_directory):
     finally:
       os.chdir(initial_folder)
 
+class ConsumptionReport(object):
+
+  def __init__(self, database, computer_id, location, user_list):
+    self.computer_id = computer_id
+    self.db = database
+    self.user_list = user_list
+    self.location = location
+
+  def buildXMLReport(self, date_scope):
+
+     xml_report_path = "%s/%s.xml" % (self.location, date_scope)
+     if os.path.exists(xml_report_path):
+       return 
+
+     if os.path.exists('%s.uploaded' % xml_report_path):
+       return 
+
+     journal = Journal()
+
+     transaction = journal.newTransaction()
+
+     journal.setProperty(transaction, "title", "Eco Information for %s " % self.computer_id)
+     journal.setProperty(transaction, "start_date", "%s 00:00:00" % date_scope)
+     journal.setProperty(transaction, "stop_date", "%s 23:59:59" % date_scope)
+   
+     journal.setProperty(transaction, "reference", "%s-global" % date_scope)
+
+     journal.setProperty(transaction, "currency", "")
+     journal.setProperty(transaction, "payment_mode", "")
+     journal.setProperty(transaction, "category", "")
+
+     arrow = ElementTree.SubElement(transaction, "arrow")
+     arrow.set("type", "Destination")
+
+     cpu_load_percent = self._getCpuLoadAverageConsumption(date_scope)
+
+     if cpu_load_percent is not None:
+       journal.newMovement(transaction, 
+                           resource="service_module/cpu_load_percent",
+                           title="CPU Load Percent Average",
+                           quantity=str(cpu_load_percent), 
+                           reference=self.computer_id,
+                           category="")
+
+     memory_used = self._getMemoryAverageConsumption(date_scope)
+
+     if memory_used is not None:
+       journal.newMovement(transaction, 
+                           resource="service_module/memory_used",
+                           title="Used Memory",
+                           quantity=str(memory_used), 
+                           reference=self.computer_id,
+                           category="")
 
 
+     if self._getZeroEmissionContribution() is not None:
+       journal.newMovement(transaction, 
+                           resource="service_module/zero_emission_ratio",
+                           title="Zero Emission Ratio",
+                           quantity=str(self._getZeroEmissionContribution()), 
+                           reference=self.computer_id, 
+                           category="")
+
+     core_amount = psutil.NUM_CPUS
+     for user in self.user_list:
+       partition_cpu_load_percent = self._getPartitionCPULoadAverage(user, date_scope)
+       if partition_cpu_load_percent is not None:
+         journal.newMovement(transaction,
+                             resource="service_module/cpu_load_percent",
+                             title="CPU Load Percent Average for %s" % (user),
+                             quantity=str(partition_cpu_load_percent/core_amount),
+                             reference=user,
+                             category="")
+
+     mb = float(2 ** 20)
+     for user in self.user_list:
+       partition_memory_used = self._getPartitionUsedMemoryAverage(user, date_scope)
+       if partition_memory_used is not None:
+         journal.newMovement(transaction,
+                             resource="service_module/memory_used",
+                             title="Memory Used Average for %s" % (user),
+                             quantity=str(partition_memory_used/mb),
+                             reference=user,
+                             category="")
+
+     with open(xml_report_path, 'w') as f:
+       f.write(journal.getXML())
+       f.close()
+
+     return xml_report_path
+
+  def _getAverageFromList(self, data_list):
+    return sum(data_list)/len(data_list)
+    
+  def _getCpuLoadAverageConsumption(self, date_scope):
+    self.db.connect()
+    query_result_cursor = self.db.select("system", date_scope, 
+                       columns="SUM(cpu_percent)/COUNT(cpu_percent)")
+
+    cpu_load_percent_list = zip(*query_result_cursor)
+    self.db.close()
+    if len(cpu_load_percent_list):
+      return cpu_load_percent_list[0][0]
+
+  def _getMemoryAverageConsumption(self, date_scope):
+    self.db.connect()
+    query_result_cursor = self.db.select("system", date_scope, 
+                       columns="SUM(memory_used)/COUNT(memory_used)")
+
+    memory_used_list = zip(*query_result_cursor)
+    self.db.close()
+    if len(memory_used_list):
+      return memory_used_list[0][0]
+
+  def _getZeroEmissionContribution(self):
+    self.db.connect()
+    zer = self.db.getLastZeroEmissionRatio()  
+    self.db.close()
+    return zer
+
+  def _getPartitionCPULoadAverage(self, partition_id, date_scope):
+    self.db.connect()
+    query_result_cursor = self.db.select("user", date_scope,
+                       columns="SUM(cpu_percent)", 
+                       where="partition = '%s'" % partition_id)
+
+    cpu_percent_sum = zip(*query_result_cursor)
+    if len(cpu_percent_sum) and cpu_percent_sum[0][0] is None:
+      return
+
+    query_result_cursor = self.db.select("user", date_scope,
+                       columns="COUNT(DISTINCT time)", 
+                       where="partition = '%s'" % partition_id)
+
+    sample_amount = zip(*query_result_cursor)
+    self.db.close()
+
+    if len(sample_amount) and len(cpu_percent_sum):
+      return cpu_percent_sum[0][0]/sample_amount[0][0]
+
+  def _getPartitionUsedMemoryAverage(self, partition_id, date_scope):
+    self.db.connect()
+    query_result_cursor = self.db.select("user", date_scope,
+                       columns="SUM(memory_rss)", 
+                       where="partition = '%s'" % partition_id)
+
+    memory_sum = zip(*query_result_cursor)
+    if len(memory_sum) and memory_sum[0][0] is None:
+      return
+
+    query_result_cursor = self.db.select("user", date_scope,
+                       columns="COUNT(DISTINCT time)", 
+                       where="partition = '%s'" % partition_id)
+
+    sample_amount = zip(*query_result_cursor)
+    self.db.close()
+
+    if len(sample_amount) and len(memory_sum):
+      return memory_sum[0][0]/sample_amount[0][0]
+
+
+class Journal(object):
+
+   def __init__(self):
+     self.root = ElementTree.Element("journal")
+
+   def getXML(self):
+     report = ElementTree.tostring(self.root) 
+     return "<?xml version='1.0' encoding='utf-8'?>%s" % report
+   
+   def newTransaction(self, portal_type="Sale Packing List"):
+     transaction = ElementTree.SubElement(self.root, "transaction")
+     transaction.set("type", portal_type)
+     return transaction
+   
+   def setProperty(self, element, name, value):
+   
+     property_element = ElementTree.SubElement(element, name)
+     property_element.text = value
+   
+   def newMovement(self, transaction, resource, title, 
+                          quantity, reference, category):
+   
+     movement = ElementTree.SubElement(transaction, "movement")
+ 
+     self.setProperty(movement, "resource", resource)
+     self.setProperty(movement, "title", title)
+     self.setProperty(movement, "reference", reference)
+     self.setProperty(movement, "quantity", quantity)
+     self.setProperty(movement, "price", "0.0")
+     self.setProperty(movement, "VAT", "")
+     # Provide units
+     self.setProperty(movement, "category", category)
+   
+     return movement
+ 

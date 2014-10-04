@@ -29,6 +29,8 @@
 
 from psutil import process_iter, NoSuchProcess, AccessDenied
 from time import strftime
+import shutil
+import datetime
 from slapos.collect.db import Database
 from slapos.util import mkdir_p
 import os
@@ -37,7 +39,8 @@ import stat
 from slapos.collect.snapshot import ProcessSnapshot, ComputerSnapshot
 from slapos.collect.reporter import RawCSVDumper, \
                                     SystemCSVReporterDumper, \
-                                    compressLogFolder
+                                    compressLogFolder, \
+                                    ConsumptionReport 
 
 from entity import get_user_list, Computer
 
@@ -49,6 +52,12 @@ def build_snapshot(proc):
     return ProcessSnapshot(proc)
   except NoSuchProcess:
     return None
+
+def _get_uptime():
+  # Linux only
+  if os.path.exists('/proc/uptime'):
+    with open('/proc/uptime', 'r') as f:
+      return datetime.timedelta(seconds=float(f.readline().split()[0]))
 
 def current_state(user_dict):
   """
@@ -81,13 +90,46 @@ def do_collect(conf):
       
     log_directory = "%s/var/data-log" % conf.get("slapos", "instance_root")
     mkdir_p(log_directory, 0o755)
+    
+    consumption_report_directory = "%s/var/consumption-report" % \
+                                        conf.get("slapos", "instance_root") 
+    mkdir_p(consumption_report_directory, 0o755)
+
+    xml_report_directory = "%s/var/xml_report/%s" % \
+                    (conf.get("slapos", "instance_root"), 
+                     conf.get("slapos", "computer_id"))
+    mkdir_p(xml_report_directory, 0o755)
 
     if stat.S_IMODE(os.stat(log_directory).st_mode) != 0o755:
       os.chmod(log_directory, 0o755)    
 
     database = Database(log_directory)
 
-    computer = Computer(ComputerSnapshot())
+    if conf.has_option("slapformat", "computer_model_id"):
+      computer_model_id = conf.get("slapformat", 
+                                  "computer_model_id")
+ 
+    else:
+      computer_model_id = "no_model"
+
+    uptime = _get_uptime()
+    if conf.has_option("slapformat", "heating_sensor_id"):
+      heating_sensor_id = conf.get("slapformat", 
+                                  "heating_sensor_id")
+      database.connect()
+      test_heating = uptime is not None and \
+                     uptime > datetime.timedelta(seconds=86400) and \
+                     database.getLastHeatingTestTime() > uptime
+      database.close()
+
+    else:
+      heating_sensor_id = "no_sensor"
+      test_heating = False
+
+    computer = Computer(ComputerSnapshot(model_id=computer_model_id, 
+                                     sensor_id = heating_sensor_id,
+                                     test_heating=test_heating))
+
     computer.save(database, collected_date, collected_time)
 
     for user in user_dict.values():
@@ -95,6 +137,19 @@ def do_collect(conf):
     
     SystemCSVReporterDumper(database).dump(log_directory)
     RawCSVDumper(database).dump(log_directory)
+    consumption_report = ConsumptionReport(
+                      computer_id=conf.get("slapos", "computer_id"), 
+                      user_list=get_user_list(conf), 
+                      database=database,
+                      location=consumption_report_directory)
+    
+    base = datetime.datetime.today()
+    for x in range(1, 3):
+      report_file = consumption_report.buildXMLReport(
+          (base - datetime.timedelta(days=x)).strftime("%Y-%m-%d"))
+
+      if report_file is not None:
+        shutil.copy(report_file, xml_report_directory)
 
     compressLogFolder(log_directory)
 

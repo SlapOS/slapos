@@ -29,6 +29,12 @@
 
 import psutil
 import os
+from temperature import collectComputerTemperature, \
+                        launchTemperatureTest
+
+from temperature.heating import get_contribution_ratio
+
+MEASURE_INTERVAL = 5
 
 class _Snapshot(object):
   def get(self, property, default=None):
@@ -61,20 +67,26 @@ class ProcessSnapshot(_Snapshot):
     self.io_cycles_counter  = ui_counter_list[0] + ui_counter_list[1]
 
   def update_cpu_percent(self):
-    # CPU percentage, we will have to get actual absolute value
-    self.cpu_percent = self.process_object.get_cpu_percent()
+    if self.process_object.is_running():
+      # CPU percentage, we will have to get actual absolute value
+      self.cpu_percent = self.process_object.get_cpu_percent()
 
 class SystemSnapshot(_Snapshot):
   """ Take a snapshot from current system usage
   """
-  def __init__(self):
+  def __init__(self, interval=MEASURE_INTERVAL):
+
+    cpu_idle_percentage = psutil.cpu_times_percent(interval=interval).idle
+    load_percent = 100 - cpu_idle_percentage
+
     memory = psutil.phymem_usage()
     net_io = psutil.net_io_counters()
     
     self.memory_used = memory.used
     self.memory_free = memory.free
     self.memory_percent = memory.percent
-    self.cpu_percent = psutil.cpu_percent()
+    #self.cpu_percent = psutil.cpu_percent()
+    self.cpu_percent = load_percent
     self.load = os.getloadavg()[0]
     self.net_in_bytes = net_io.bytes_recv
     self.net_in_errors = net_io.errin
@@ -82,6 +94,48 @@ class SystemSnapshot(_Snapshot):
     self.net_out_bytes = net_io.bytes_sent
     self.net_out_errors = net_io.errout
     self.net_out_dropped = net_io.dropout
+
+class TemperatureSnapshot(_Snapshot):
+  """ Take a snapshot from the current temperature on 
+      all available sensors
+  """
+  def __init__(self, sensor_id, temperature, alarm):
+    self.sensor_id = sensor_id
+    self.temperature = temperature
+    self.alarm = alarm
+
+class HeatingContributionSnapshot(_Snapshot):
+
+  def __init__(self, sensor_id, model_id):
+    self.initial_temperature = None
+    
+    result = launchTemperatureTest(sensor_id)
+    if result is None:
+      print "Impossible to test sensor: %s " % sensor_id
+      
+
+    initial_temperature, final_temperature, duration = result 
+    
+    self.initial_temperature = initial_temperature
+    self.final_temperature = final_temperature
+    self.delta_time = duration
+    self.model_id = model_id
+    self.sensor_id = sensor_id
+    self.zero_emission_ratio = self._get_contribution_ratio()
+
+  def _get_contribution_ratio(self):
+    delta_temperature = (self.final_temperature-self.initial_temperature)
+    contribution_value = delta_temperature/self.delta_time
+    return get_contribution_ratio(self.model_id, contribution_value)
+
+  def _get_uptime(self):
+    # Linux only
+    if os.path.exists('/proc/uptime'):
+      with open('/proc/uptime', 'r') as f:
+        return float(f.readline().split()[0])
+
+    return -1
+
 
 class DiskPartitionSnapshot(_Snapshot):
   """ Take Snapshot from general disk partitions 
@@ -100,7 +154,7 @@ class DiskPartitionSnapshot(_Snapshot):
 class ComputerSnapshot(_Snapshot):
   """ Take a snapshot from computer informations
   """
-  def __init__(self):
+  def __init__(self, model_id=None, sensor_id=None, test_heating=False):
     self.cpu_num_core = psutil.NUM_CPUS
     self.cpu_frequency = 0
     self.cpu_type = 0
@@ -112,8 +166,21 @@ class ComputerSnapshot(_Snapshot):
     # on a Computer Snapshot
     #
     self.system_snapshot = SystemSnapshot()
+    self.temperature_snapshot_list = self._get_temperature_snapshot_list()
     self.disk_snapshot_list = []
     self.partition_list = self._get_physical_disk_info()
+
+    if test_heating and model_id is not None \
+                    and sensor_id is not None:
+      self.heating_contribution_snapshot = HeatingContributionSnapshot(sensor_id, model_id)
+
+  def _get_temperature_snapshot_list(self):
+    temperature_snapshot_list = []
+    for sensor_entry in collectComputerTemperature():
+      sensor_id, temperature, maximal, critical, alarm = sensor_entry
+      temperature_snapshot_list.append(
+          TemperatureSnapshot(sensor_id, temperature, alarm))
+    return temperature_snapshot_list
 
   def _get_physical_disk_info(self):
     partition_dict = {}
@@ -127,4 +194,3 @@ class ComputerSnapshot(_Snapshot):
                                 partition.mountpoint))
 
     return [(k, v) for k, v in partition_dict.iteritems()]
-

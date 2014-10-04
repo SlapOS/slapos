@@ -35,7 +35,10 @@ import datetime
 class Database:
 
   database_name = "collector.db"
-  table_list = ["user", "computer", "system", "disk"]
+  table_list = ["user", "computer", "system", "disk", \
+                 "temperature", "heating"]
+  preserve_table_list = ["heating"]
+
   CREATE_USER_TABLE = "create table if not exists user " \
                         "(partition text, pid real, process text, " \
                         " cpu_percent real, cpu_time real, " \
@@ -61,6 +64,14 @@ class Database:
                           "(partition text, used text, free text, mountpoint text, " \
                           " date text, time text, reported integer NULL DEFAULT 0)" 
 
+  CREATE_TEMPERATURE_TABLE = "create table if not exists temperature " \
+                        "(sensor_id name, temperature real, alarm integer, "\
+                        "date text, time text, reported integer NULL DEFAULT 0)"
+
+  CREATE_HEATING_TABLE = "create table if not exists heating " \
+                        "(model_id name, sensor_id name, initial_temperature real, "\
+                        " final_temperature real, delta_time real, zero_emission_ratio real, "\
+                        "date text, time text, reported integer NULL DEFAULT 0)"
 
   INSERT_USER_TEMPLATE = "insert into user(" \
             "partition, pid, process, cpu_percent, cpu_time, " \
@@ -86,6 +97,17 @@ class Database:
             " net_out_bytes, net_out_errors, net_out_dropped, " \
             " date, time) values "\
             "( %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, '%s', '%s' )"
+
+  INSERT_TEMPERATURE_TEMPLATE = "insert into temperature("\
+            " sensor_id, temperature, alarm," \
+            " date, time) values "\
+            "( '%s', %s, %s, '%s', '%s' )"
+
+  INSERT_HEATING_TEMPLATE = "insert into heating("\
+            " model_id, sensor_id, initial_temperature, final_temperature, "\
+            " delta_time, zero_emission_ratio," \
+            " date, time) values "\
+            "( '%s', '%s', %s, %s, %s, %s, '%s', '%s' )"
 
   def __init__(self, directory = None):
     assert self.database_name is not None
@@ -118,6 +140,8 @@ class Database:
     self._execute(self.CREATE_COMPUTER_TABLE)
     self._execute(self.CREATE_SYSTEM_TABLE)
     self._execute(self.CREATE_DISK_PARTITION)
+    self._execute(self.CREATE_TEMPERATURE_TABLE)
+    self._execute(self.CREATE_HEATING_TABLE)
     self.commit()
     self.close()
 
@@ -174,6 +198,28 @@ class Database:
     self._execute(insertion_sql)  
     return insertion_sql
 
+  def insertTemperatureSnapshot(self, sensor_id, temperature, alarm,
+        insertion_date, insertion_time):
+    """ Include Temperature information Snapshot on the database 
+    """
+    insertion_sql = self.INSERT_TEMPERATURE_TEMPLATE % \
+       (sensor_id, temperature, alarm, insertion_date, insertion_time)
+
+    self._execute(insertion_sql)  
+    return insertion_sql
+
+  def insertHeatingSnapshot(self, model_id, sensor_id, initial_temperature, 
+        final_temperature, delta_time, zero_emission_ratio,
+        insertion_date, insertion_time):
+    """ Include Heating information Snapshot on the database 
+    """
+    insertion_sql = self.INSERT_HEATING_TEMPLATE % \
+       (model_id, sensor_id, initial_temperature, final_temperature, 
+        delta_time, zero_emission_ratio, insertion_date, insertion_time)
+
+    self._execute(insertion_sql)  
+    return insertion_sql
+
   def getTableList(self):
     """ Get the list of tables from the database 
     """
@@ -202,7 +248,8 @@ class Database:
 
     self.connect()
     for table in self.table_list:
-      self._execute(delete_sql % (table, where_clause))
+      if table not in self.preserve_table_list: 
+        self._execute(delete_sql % (table, where_clause))
 
     self.commit()
     self.close()
@@ -227,12 +274,17 @@ class Database:
     for table in table_list:
       self._execute(update_sql % (table, date_scope))
 
-  def select(self, table, date=None, columns="*"):
+  def select(self, table, date=None, columns="*", where=None):
     """ Query database for a full table information """
     if date is not None:
       where_clause = " WHERE date = '%s' " % date
     else:
       where_clause = ""
+    
+    if where is not None:
+      if where_clause == "":
+        where_clause += " WHERE 1 = 1 "
+      where_clause += " AND %s " % where 
     select_sql = "SELECT %s FROM %s %s " % (columns, table, where_clause)
     return self._execute(select_sql)
 
@@ -333,4 +385,33 @@ class Database:
          'time': "%s %s" % (__date, str(__time))})
 
     return collected_entry_dict
+
+  def getLastHeatingTestTime(self):
+    select_sql = "SELECT date, time FROM heating ORDER BY date, time DESC LIMIT 1"
+    for __date, __time in self._execute(select_sql):
+       _date = datetime.datetime.strptime("%s %s" % (__date, __time), "%Y-%m-%d %H:%M:%S")
+       return datetime.datetime.now() - _date
+    return datetime.timedelta(weeks=520)
+
+  def getLastZeroEmissionRatio(self):
+    select_sql = "SELECT zero_emission_ratio FROM heating ORDER BY date, time DESC LIMIT 1"
+    for entry in self._execute(select_sql):
+       return entry[0]
+    return -1 
+
+
+  def getCollectedTemperatureList(self, sensor_id=None, limit=1):
+    """ Query database for a full table information """
+    if limit > 0:
+      limit_clause = "LIMIT %s" % (limit,)
+    else:
+      limit_clause = ""
+
+    if sensor_id is not None:
+      where_clause = "WHERE sensor_id = '%s'" % (sensor_id)
+    else:
+      where_clause = ""
+
+    select_sql = "SELECT * FROM temperature %s ORDER BY time DESC %s" % (where_clause, limit_clause)
+    return self._execute(select_sql)
 

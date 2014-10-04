@@ -85,6 +85,8 @@ class Computer(dict):
     self._save_computer_snapshot(database, collected_date, collected_time)
     self._save_system_snapshot(database, collected_date, collected_time)
     self._save_disk_partition_snapshot(database, collected_date, collected_time)
+    self._save_temperature_snapshot(database, collected_date, collected_time)
+    self._save_heating_snapshot(database, collected_date, collected_time)
     database.commit()
     database.close()
 
@@ -127,3 +129,25 @@ class Computer(dict):
          insertion_date=collected_date, 
          insertion_time=collected_time)
 
+  def _save_temperature_snapshot(self, database, collected_date, collected_time):
+    for temperature_snapshot in self.computer_snapshot.get("temperature_snapshot_list"):
+      database.insertTemperatureSnapshot(
+         sensor_id=temperature_snapshot.sensor_id,
+         temperature=temperature_snapshot.temperature,
+         alarm=temperature_snapshot.alarm,
+         insertion_date=collected_date, 
+         insertion_time=collected_time)
+
+  def _save_heating_snapshot(self, database, collected_date, collected_time):
+    heating_snapshot = self.computer_snapshot.get("heating_contribution_snapshot")
+    if heating_snapshot is not None and \
+         heating_snapshot.initial_temperature is not None:
+      database.insertHeatingSnapshot(
+         initial_temperature=heating_snapshot.initial_temperature,
+         final_temperature=heating_snapshot.final_temperature,
+         delta_time=heating_snapshot.delta_time,
+         model_id=heating_snapshot.model_id, 
+         sensor_id=heating_snapshot.sensor_id,
+         zero_emission_ratio=heating_snapshot.zero_emission_ratio,
+         insertion_date=collected_date, 
+         insertion_time=collected_time)
