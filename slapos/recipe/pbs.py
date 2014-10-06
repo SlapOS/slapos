@@ -114,42 +114,50 @@ class Recipe(GenericSlapRecipe, Notify, Callback):
         export LC_ALL
         is_first_backup=$(test -d %(rdiff_backup_data)s || echo yes)
         RDIFF_BACKUP=%(rdiffbackup_binary)s
-        $RDIFF_BACKUP \\
-                --remote-schema %(remote_schema)s \\
-                %(remote_dir)s \\
-                %(local_dir)s
+        SUCCEEDED=false
+        while ! $SUCCEEDED; do
+            $RDIFF_BACKUP \\
+                    --remote-schema %(remote_schema)s \\
+                    %(remote_dir)s \\
+                    %(local_dir)s
 
-        if [ ! $? -eq 0 ]; then
-            # Check the backup, go to the last consistent backup, so that next
-            # run will be okay.
-            echo "Checking backup directory..."
-            $RDIFF_BACKUP --check-destination-dir %(local_dir)s
             if [ ! $? -eq 0 ]; then
-                # Here, two possiblities:
-                if [ is_first_backup ]; then
-                    :
-                    # The first backup failed, and check-destination as well.
-                    # we may want to remove the backup.
-                else
-                    :
-                    # The backup command has failed, while transferring an increment, and check-destination as well.
-                    # XXX We may need to publish the failure and ask the the equeue, re-run this script again,
-                    # instead do a push to the clone.
+                # Check the backup, go to the last consistent backup, so that next
+                # run will be okay.
+                echo "Checking backup directory..."
+                $RDIFF_BACKUP --check-destination-dir %(local_dir)s
+                if [ ! $? -eq 0 ]; then
+                    # Here, two possiblities:
+                    if [ is_first_backup ]; then
+                        continue
+                        # The first backup failed, and check-destination as well.
+                        # we may want to remove the backup.
+                    else
+                        continue
+                        # The backup command has failed, while transferring an increment, and check-destination as well.
+                        # XXX We may need to publish the failure and ask the the equeue, re-run this script again,
+                        # instead do a push to the clone.
+                    fi
                 fi
+            else
+                # Everything's okay, cleaning up...
+                $RDIFF_BACKUP --remove-older-than %(remove_backup_older_than)s --force %(local_dir)s
             fi
-        else
-            # Everything's okay, cleaning up...
-            $RDIFF_BACKUP --remove-older-than %(remove_backup_older_than)s --force %(local_dir)s
-        fi
 
-        if [ -e %(backup_signature)s ]; then
-          cd %(local_dir)s
-          find -type f ! -name backup.signature ! -wholename "./rdiff-backup-data/*" -print0 | xargs -P4 -0 sha256sum  | LC_ALL=C sort -k 66 > ../proof.signature
-          diff -ruw backup.signature ../proof.signature > ../backup.diff
-          # XXX If there is a difference on the backup, we should publish the
-          # failure and ask the equeue, re-run this script again,
-          # instead do a push it to the clone.
-        fi
+            SUCCEEDED=true
+
+            if [ -e %(backup_signature)s ]; then
+              cd %(local_dir)s
+              find -type f ! -name backup.signature ! -wholename "./rdiff-backup-data/*" -print0 | xargs -P4 -0 sha256sum  | LC_ALL=C sort -k 66 > ../proof.signature
+              cmp backup.signature ../proof.signature || SUCCEEDED=false
+              diff -ruw backup.signature ../proof.signature > ../backup.diff
+              # XXX If there is a difference on the backup, we should publish the
+              # failure and ask the equeue, re-run this script again,
+              # instead do a push it to the clone.
+            fi
+
+            $SUCCEEDED || find %(local_dir)s -name rdiff-backup.tmp.* -exec rm -f {} \;
+        done
         """)
 
     template_dict = {
