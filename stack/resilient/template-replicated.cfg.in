@@ -119,6 +119,9 @@ sla-{{ key }} = {{ value }}
 {%   endif %}
 {% endif %}
 
+[publish-connection-informations]
+feed-url-{{namebase}}-{{id}}-push = ${request-pbs-{{namebase}}-{{id}}:connection-feeds-url}${request-{{namebase}}-pseudo-replicating-{{id}}:pbs-notification-id}
+
 {% endfor -%}
 
 
@@ -238,6 +241,10 @@ config-remove-backup-older-than = {{ slapparameter_dict.get('remove-backup-older
 slave = true
 sla = instance_guid
 sla-instance_guid = ${request-pbs-{{namebase}}-{{id}}:instance_guid}
+
+[publish-connection-informations]
+feed-url-{{namebase}}-{{id}}-pull = ${request-pbs-{{namebase}}-{{id}}:connection-feeds-url}${request-pull-backup-server-{{namebase}}-{{id}}:config-notification-id}
+
 
 [request-pull-backup-server-{{namebase}}-backup-{{id}}]
 <= request-pbs-common
