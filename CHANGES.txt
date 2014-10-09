@@ -1,6 +1,12 @@
 Changes
 =======
 
+1.2.4.1 (2014-10-09)
+--------------------
+
+ * slapos format: Don't chown partitions.
+ * slapos format: alter_user is true again by default.
+
 1.2.4 (2014-09-23)
 ------------------
 
