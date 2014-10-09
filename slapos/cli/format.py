@@ -62,7 +62,6 @@ class FormatCommand(ConfigCommand):
 
         ap.add_argument('--alter_user',
                         choices=['True', 'False'],
-                        default=False,
                         help='Shall slapformat alter user database'
                              ' (default: %(default)s)')
 
