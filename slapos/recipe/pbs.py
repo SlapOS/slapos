@@ -110,22 +110,62 @@ class Recipe(GenericSlapRecipe, Notify, Callback):
         # Pull data from a PBS *-export instance.
         #
 
+        sigint()
+        {
+          exit 1
+        }
+
+        trap sigint SIGINT  # we can CTRL-C for ease of debugging
+
         LC_ALL=C
         export LC_ALL
         is_first_backup=$(test -d %(rdiff_backup_data)s || echo yes)
         RDIFF_BACKUP=%(rdiffbackup_binary)s
+
+        TMPDIR=%(tmpdir)s
+        BACKUP_DIR=%(local_dir)s
+        CORRUPTED_MSG="^Warning:\ Computed\ SHA1\ digest\ of\ "
+        CANTFIND_MSG="^Warning:\ Cannot\ find\ SHA1\ digest\ for\ file\ "
+        CORRUPTED_FILE=$TMPDIR/$$.rdiff_corrupted
+        CANTFIND_FILE=$TMPDIR/$$.rdiff_cantfind
+
         SUCCEEDED=false
         while ! $SUCCEEDED; do
+
+            # not using --fix-corrupted can lead to an infinite loop
+            # in case of manual changes to the backup repository.
+
+            CORRUPTED_ARGS=""
+            if [ "$1" == "--fix-corrupted" ]; then
+                VERIFY=$($RDIFF_BACKUP --verify $BACKUP_DIR 2>&1 >/dev/null)
+                echo "$VERIFY" | egrep "$CORRUPTED_MSG" | sed "s/$CORRUPTED_MSG//g" > $CORRUPTED_FILE
+
+                # Sometimes --verify reports this spurious warning:
+                echo "$VERIFY" | egrep "$CANTFIND_MSG" | sed "s/$CANTFIND_MSG\(.*\),/--always-snapshot\ '\\1'/g" > $CANTFIND_FILE
+
+                # There can be too many files, better not to provide them through separate command line parameters
+                CORRUPTED_ARGS="--always-snapshot-fromfile $CORRUPTED_FILE --always-snapshot-fromfile $CANTFIND_FILE"
+
+                if [ -s "$CORRUPTED_FILE" -o -s "$CANTFIND_FILE" ]; then
+                    echo Retransmitting $(cat "$CORRUPTED_FILE" "$CANTFIND_FILE" | wc -l) corrupted/missing files
+                else
+                    echo "No corrupted or missing files to retransmit"
+                fi
+            fi
+
             $RDIFF_BACKUP \\
+                    $CORRUPTED_ARGS \\
                     --remote-schema %(remote_schema)s \\
                     %(remote_dir)s \\
-                    %(local_dir)s
+                    $BACKUP_DIR
+
+            [ "$CORRUPTED_ARGS" ] && rm -f "$CORRUPTED_FILE" "$CANTFIND_FILE"
 
             if [ ! $? -eq 0 ]; then
                 # Check the backup, go to the last consistent backup, so that next
                 # run will be okay.
                 echo "Checking backup directory..."
-                $RDIFF_BACKUP --check-destination-dir %(local_dir)s
+                $RDIFF_BACKUP --check-destination-dir $BACKUP_DIR
                 if [ ! $? -eq 0 ]; then
                     # Here, two possiblities:
                     if [ is_first_backup ]; then
@@ -141,13 +181,13 @@ class Recipe(GenericSlapRecipe, Notify, Callback):
                 fi
             else
                 # Everything's okay, cleaning up...
-                $RDIFF_BACKUP --remove-older-than %(remove_backup_older_than)s --force %(local_dir)s
+                $RDIFF_BACKUP --remove-older-than %(remove_backup_older_than)s --force $BACKUP_DIR
             fi
 
             SUCCEEDED=true
 
             if [ -e %(backup_signature)s ]; then
-              cd %(local_dir)s
+              cd $BACKUP_DIR
               find -type f ! -name backup.signature ! -wholename "./rdiff-backup-data/*" -print0 | xargs -P4 -0 sha256sum  | LC_ALL=C sort -k 66 > ../proof.signature
               cmp backup.signature ../proof.signature || SUCCEEDED=false
               diff -ruw backup.signature ../proof.signature > ../backup.diff
@@ -156,7 +196,7 @@ class Recipe(GenericSlapRecipe, Notify, Callback):
               # instead do a push it to the clone.
             fi
 
-            $SUCCEEDED || find %(local_dir)s -name rdiff-backup.tmp.* -exec rm -f {} \;
+            $SUCCEEDED || find $BACKUP_DIR -name rdiff-backup.tmp.* -exec rm -rf {} \;
         done
         """)
 
@@ -167,6 +207,7 @@ class Recipe(GenericSlapRecipe, Notify, Callback):
       'remote_schema': shlex.quote(remote_schema),
       'remote_dir': shlex.quote(remote_dir),
       'local_dir': shlex.quote(local_dir),
+      'tmpdir': '/tmp',
       'remove_backup_older_than': shlex.quote(remove_backup_older_than)
     }
 
