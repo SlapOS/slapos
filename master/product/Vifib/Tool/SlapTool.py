@@ -352,7 +352,7 @@ class SlapTool(BaseTool):
     # Be sure to prevent accessing information to disallowed users
     computer = _assertACI(computer)
     return self._getAccessStatus(computer_id)
-
+  
   security.declareProtected(Permissions.AccessContentsInformation,
     'getSoftwareInstallationStatus')
   def getSoftwareInstallationStatus(self, url, computer_id):
@@ -406,7 +406,7 @@ class SlapTool(BaseTool):
       raise NotImplementedError('Several Software Product with the same title.')
     software_release_list = \
         software_product_list[0].getObject().getAggregateRelatedValueList()
-
+    
     def sortkey(software_release):
       publication_date = software_release.getEffectiveDate()
       if publication_date:
@@ -414,7 +414,7 @@ class SlapTool(BaseTool):
           return DateTime('1900/05/02')
         return publication_date
       return software_release.getCreationDate()
-
+  
     software_release_list = sorted(
         software_release_list,
         key=sortkey,
@@ -424,82 +424,6 @@ class SlapTool(BaseTool):
       [software_release.getUrlString()
         for software_release in software_release_list
           if software_release.getValidationState() == 'published'])
-
-  security.declareProtected(Permissions.AccessContentsInformation,
-    'getComputerPartitionList')
-  def getComputerPartitionList(self):
-    """
-    Return the list of requested instances.
-    Actually returns the list of Hosting Subscription owned by user.
-    """
-    # XXX cache
-    # XXX software_instance.getComputerPartitionList support
-    from Products.ZSQLCatalog.SQLCatalog import NegatedQuery, Query
-    portal = context.getPortalObject()
-    person_uid = portal.ERP5Site_getPropertyFromAuthenticatedMemberPersonValue('uid')
-
-    hosting_subscription_list = portal.portal_catalog(
-      portal_type="Hosting Subscription",
-      default_destination_section_uid=person_uid,validation_state='validated'
-    )
-    # XXX Shouldn't we just return list of slapos.slap.Partition ?
-    hosting_subscription_list = [{
-      'partition_reference': hosting_subscription.getTitle(),
-      'software_release': hosting_subscription.getUrl(),
-    }]
-    return xml_marshaller.xml_marshaller.dumps(hosting_subscription_list)
-
-  security.declareProtected(Permissions.AccessContentsInformation,
-    'getComputerPartitionInformation')
-  def getComputerPartitionInformation(self, partition_reference):
-    """
-    Returns XML representation of corresponding partition with HTTP code 200 OK.
-    """
-    # requested as root, so done by human
-    person = portal.ERP5Site_getAuthenticatedMemberPersonValue()
-
-    key = '_'.join([person.getRelativeUrl(), partition_reference])
-    value = dict(
-      hash=str(kw)
-    )
-    last_data = self._getLastData(key)
-    if last_data is not None and type(last_data) == type({}):
-      requested_software_instance = portal.restrictedTraverse(
-        last_data.get('request_instance'), None)
-    if last_data is None or type(last_data) != type(value) or \
-      last_data.get('hash') != value['hash'] or \
-      requested_software_instance is None:
-      person.requestSoftwareInstance(**kw)
-      requested_software_instance = self.REQUEST.get('request_instance')
-      if requested_software_instance is not None:
-        value['request_instance'] = requested_software_instance\
-          .getRelativeUrl()
-        self._storeLastData(key, value)
-
-    if requested_software_instance is None:
-      raise SoftwareInstanceNotReady
-    else:
-      if not requested_software_instance.getAggregate(portal_type="Computer Partition"):
-        raise SoftwareInstanceNotReady
-      else:
-        parameter_dict = self._getSoftwareInstanceAsParameterDict(requested_software_instance)
-
-        # software instance has to define an xml parameter
-        xml = self._instanceXmlToDict(
-          parameter_dict.pop('xml'))
-        connection_xml = self._instanceXmlToDict(
-          parameter_dict.pop('connection_xml'))
-        filter_xml = self._instanceXmlToDict(
-          parameter_dict.pop('filter_xml'))
-        instance_guid = parameter_dict.pop('instance_guid')
-
-        software_instance = SoftwareInstance(**parameter_dict)
-        software_instance._parameter_dict = xml
-        software_instance._connection_dict = connection_xml
-        software_instance._filter_dict = filter_xml
-        software_instance._requested_state = state
-        software_instance._instance_guid = instance_guid
-        return xml_marshaller.xml_marshaller.dumps(software_instance)
 
 
   ####################################################
@@ -880,7 +804,7 @@ class SlapTool(BaseTool):
     try:
       document = etree.parse(string_to_validate)
     except (etree.XMLSyntaxError, etree.DocumentInvalid) as e:
-      LOG('SlapTool::_validateXML', INFO,
+      LOG('SlapTool::_validateXML', INFO, 
         'Failed to parse this XML reports : %s\n%s' % \
           (to_be_validated, e))
       return False
@@ -1034,7 +958,7 @@ class SlapTool(BaseTool):
         computer_partition_id)
     user = self.getPortalObject().portal_membership.getAuthenticatedMember()\
                                                    .getUserName()
-    self._logAccess(user, instance.getReference(),
+    self._logAccess(user, instance.getReference(), 
                     'building the instance')
 
   @convertToREST
@@ -1047,7 +971,7 @@ class SlapTool(BaseTool):
         computer_partition_id)
     user = self.getPortalObject().portal_membership.getAuthenticatedMember()\
                                                    .getUserName()
-    self._logAccess(user, instance.getReference(),
+    self._logAccess(user, instance.getReference(), 
                     '#access instance available')
 
   @convertToREST
@@ -1061,7 +985,7 @@ class SlapTool(BaseTool):
         computer_partition_id)
     user = self.getPortalObject().portal_membership.getAuthenticatedMember()\
                                                    .getUserName()
-    self._logAccess(user, instance.getReference(),
+    self._logAccess(user, instance.getReference(), 
                     '#error while instanciating')
     #return instance.reportComputerPartitionError()
 
@@ -1428,11 +1352,11 @@ class SlapTool(BaseTool):
         computer_document.getReference(), ', '.join([q.getRelativeUrl() for q \
           in software_installation_list])
       ))
-
+  
   def _getNonCachedSoftwareInstallationReference(self, url, computer_document):
     return self._getSoftwareInstallationForComputer(url,
               computer_document).getReference()
-
+  
   def _getCachedSoftwareInstallationReference(self, url, computer_document):
     """
     Get the software installation reference (with this url) for the computer.
@@ -1498,7 +1422,7 @@ class SlapTool(BaseTool):
         slave_instance = _assertACI(slave_instance.getObject())
         # XXX Use catalog to filter more efficiently
         if slave_instance.getSlapState() == "start_requested":
-          newtimestamp = int(slave_instance.getBangTimestamp(int(software_instance.getModificationDate())))
+          newtimestamp = int(slave_instance.getBangTimestamp(int(software_instance.getModificationDate())))                  
           append({
             'slave_title': slave_instance.getTitle().decode("UTF-8"),
             'slap_software_type': \
@@ -1508,7 +1432,7 @@ class SlapTool(BaseTool):
             'xml': slave_instance.getTextContent(),
             'connection_xml': slave_instance.getConnectionXml(),
           })
-          if (newtimestamp > timestamp):
+          if (newtimestamp > timestamp):                                            
             timestamp = newtimestamp
     return {
       'instance_guid': software_instance.getReference().decode("UTF-8"),
