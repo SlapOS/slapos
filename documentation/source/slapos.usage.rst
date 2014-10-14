@@ -12,7 +12,7 @@ Notes
 * Most commands take a configuration file parameter, provided as ``--cfg /path/to/file.cfg``.
 
   If no such argument is provided:
-  
+
   * "node" commands read configuration from :file:`/etc/opt/slapos/slapos.cfg`, or the file referenced by the
     ``SLAPOS_CONFIGURATION`` environment variable.
 
@@ -43,6 +43,22 @@ SlapOS Client commands
 ----------------------
 
 These commands are used by clients (as human beings or programs) to manage their own instances.
+
+configure client
+~~~~~~~~~~~~~~~~
+
+configure slapos client with an existing account
+
+.. program-output:: python slapos help configure client
+
+
+configure local
+~~~~~~~~~~~~~~~~
+
+configure slapos node, slapos proxy and slapos client to work in a self-contained, autonomous way, without any external slapos master.
+
+.. program-output:: python slapos help configure local
+
 
 request
 ~~~~~~~
@@ -80,7 +96,7 @@ In these examples, ``wordpress`` and ``kvm`` are aliases for the full URL, and a
   Note: Not yet implemented.
   Usage:
     slapos search <search parameters ex. computer region, instance reference, source_section, etc.>
-  
+
   Returns visible instances matching search parameters.
 
 
@@ -124,7 +140,7 @@ In this example, ``wordpress`` is an alias for the full URL, and is defined in :
   Note: Not yet implemented.
   Usage:
     slapos autosupply <software | software_group> <computer_guid | computer_group>
-  
+
   Like "slapos suppply", but on-demand. Software will be (re)installed only when at least one instance
   of this software is requested. When no instance of this software is deployed on the node, it will be uninstalled.
 
@@ -142,13 +158,13 @@ console
   Note: Not yet implemented.
   Usage:
     slapos <stop|start|destroy> <instance reference>
-  
+
   Ask start/stop/destruction of selected instance.
-  
+
   Example:
-  
+
     * Ask to stop "mywordpressinstance"::
-  
+
         $ slapos stop mywordpressinstance
 
 
@@ -323,7 +339,7 @@ node supervisord
   Note: Not yet implemented.
   Usage:
     slapos node log <software|instance|report>
-  
+
   Display log.
 
 
@@ -364,7 +380,7 @@ Examples
     Software URL: http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.156:/software/kvm/software.cfg
     MD5:          4410088e11f370503e9d78db4cfa4ec4
     -------------
-    Available for: 
+    Available for:
     distribution     |   version    |       id       | compatible?
     -----------------+--------------+----------------+-------------
     CentOS           |          6.3 |     Final      | no
