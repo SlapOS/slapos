@@ -29,6 +29,7 @@
 
 import logging
 import slapos.format
+import slapos.util
 import unittest
 
 import netaddr
@@ -67,8 +68,12 @@ class FakeCallAndRead:
     retval = 0, 'UP'
     global INTERFACE_DICT
     if 'useradd' in argument_list:
+      print argument_list
       global USER_LIST
-      USER_LIST.append(argument_list[-1])
+      username = argument_list[-1]
+      if username == '-r':
+        username = argument_list[-2]
+      USER_LIST.append(username)
     elif 'groupadd' in argument_list:
       global GROUP_LIST
       GROUP_LIST.append(argument_list[-1])
@@ -144,6 +149,10 @@ class NetifacesMock:
     global INTERFACE_DICT
     return INTERFACE_DICT.keys()
 
+class SlaposUtilMock:
+  @classmethod
+  def chownDirectory(*args, **kw):
+    pass
 
 class SlapformatMixin(unittest.TestCase):
   # keep big diffs
@@ -206,6 +215,17 @@ class SlapformatMixin(unittest.TestCase):
       setattr(os, name, original_value)
     del self.saved_os
 
+  def patchSlaposUtil(self):
+    self.saved_slapos_util = {}
+    for fake in ['chownDirectory']:
+      self.saved_slapos_util[fake] = getattr(slapos.util, fake, None)
+      setattr(slapos.util, fake, getattr(SlaposUtilMock, fake))
+
+  def restoreSlaposUtil(self):
+    for name, original_value in self.saved_slapos_util.items():
+      setattr(slapos.util, name, original_value)
+    del self.saved_slapos_util
+
   def setUp(self):
     config = FakeConfig()
     config.dry_run = True
@@ -232,6 +252,7 @@ class SlapformatMixin(unittest.TestCase):
     self.patchTime()
     self.patchPwd()
     self.patchNetifaces()
+    self.patchSlaposUtil()
 
   def tearDown(self):
     self.restoreOs()
@@ -239,6 +260,7 @@ class SlapformatMixin(unittest.TestCase):
     self.restoreTime()
     self.restorePwd()
     self.restoreNetifaces()
+    self.restoreSlaposUtil()
     slapos.format.callAndRead = self.real_callAndRead
 
 
@@ -498,6 +520,46 @@ class TestComputer(SlapformatMixin):
     ],
       self.fakeCallAndRead.external_command_list)
 
+  def test_construct_use_unique_local_address_block(self):
+    """
+    Test that slapformat creates a unique local address in the interface.
+    """
+    global USER_LIST
+    USER_LIST = ['root']
+    computer = slapos.format.Computer('computer',
+      interface=slapos.format.Interface(logger=self.test_result,
+                                        name='myinterface',
+                                        ipv4_local_network='127.0.0.1/16'))
+    computer.instance_root = '/instance_root'
+    computer.software_root = '/software_root'
+    partition = slapos.format.Partition('partition', '/part_path',
+      slapos.format.User('testuser'), [], None)
+    partition.tap = slapos.format.Tap('tap')
+    computer.partition_list = [partition]
+    global INTERFACE_DICT
+    INTERFACE_DICT['myinterface'] = {
+      socket.AF_INET: [{'addr': '192.168.242.77', 'broadcast': '127.0.0.1',
+        'netmask': '255.255.255.0'}],
+      socket.AF_INET6: [{'addr': '2a01:e35:2e27::e59c', 'netmask': 'ffff:ffff:ffff:ffff::'}]
+    }
+
+    computer.construct(use_unique_local_address_block=True, alter_user=False, create_tap=False)
+    self.assertEqual([
+      "makedirs('/instance_root', 493)",
+      "makedirs('/software_root', 493)",
+      "chmod('/software_root', 493)",
+      "mkdir('/instance_root/partition', 488)",
+      "chmod('/instance_root/partition', 488)"
+    ],
+      self.test_result.bucket)
+    self.assertEqual([
+      'ip addr list myinterface',
+      'ip address add dev myinterface fd00::1/64',
+      'ip addr add ip/255.255.255.255 dev myinterface',
+      'ip addr add ip/ffff:ffff:ffff:ffff:: dev myinterface',
+      'ip -6 addr list myinterface'
+    ],
+      self.fakeCallAndRead.external_command_list)
 
 class TestPartition(SlapformatMixin):
 

@@ -140,7 +140,7 @@ def _generateSlaposNodeConfigurationFile(slapos_node_config_path, args):
         ('software_root', args.slapos_software_root),
         ('computer_xml', '%s/slapos.xml' % slapos_home),
         ('log_file', '%s/log/slapos-node-format.log' % slapos_home),
-        ('use_unique_local_address', 'true')
+        ('use_unique_local_address_block', 'false')
     ]
 
     slapos_node_configuration_content = _replaceParameterValue(
