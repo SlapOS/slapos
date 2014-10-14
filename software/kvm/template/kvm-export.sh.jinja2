@@ -1,0 +1,15 @@
+#!/bin/bash
+#
+# Create a backup of the disk image of the virtual machine
+#
+LC_ALL=C
+export LC_ALL
+BACKUP_DIR={{ directory['backup'] }}
+BACKUP_FILE=virtual.qcow2
+
+QMP_CLIENT={{ buildout['directory'] }}/software_release/bin/qemu-qmp-client
+
+$QMP_CLIENT --socket {{ socket_path }} --drive-backup $BACKUP_DIR/$BACKUP_FILE
+
+cd $BACKUP_DIR && find -type f ! -name backup.signature -print0 | xargs -P4 -0 sha256sum | LC_ALL=C sort -k 66 > backup.signature
+

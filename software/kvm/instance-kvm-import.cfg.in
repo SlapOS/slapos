@@ -25,13 +25,13 @@ crontabs = $${:etc}/crontabs
 cronstamps = $${:etc}/cronstamps
 
 [importer]
-recipe = slapos.recipe.template
-url = ${template-kvm-import-script:location}/${template-kvm-import-script:filename}
-output = $${directory:bin}/$${slap-parameter:namebase}-importer
-mode = 0755
-backup-disk-path = $${directory:backup}/virtual.qcow2
-disk-path = $${directory:srv}/virtual.qcow2
+recipe = slapos.recipe.template:jinja2
+template = ${template-kvm-import-script:location}/${template-kvm-import-script:filename}
+rendered = $${directory:bin}/$${slap-parameter:namebase}-importer
+mode = 0700
 # Resilient stack wants a "wrapper" parameter
-wrapper = $${:output}
+wrapper = $${:rendered}
+context =
+    section directory directory
 
 backup-disk-path = $${directory:backup}/virtual.qcow2

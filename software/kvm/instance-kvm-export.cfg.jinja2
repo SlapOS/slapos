@@ -17,13 +17,16 @@ parts +=
 
 # Create the exporter executable, which is a simple shell script
 [exporter]
-recipe = slapos.recipe.template
-url = {{ template_kvm_export }}
-output = ${directory:bin}/${slap-parameter:namebase}-exporter
-mode = 0755
-backup-disk-path = ${directory:backup}/virtual.qcow2
+recipe = slapos.recipe.template:jinja2
+template = {{ template_kvm_export }}
+rendered = ${directory:bin}/${slap-parameter:namebase}-exporter
 # Resilient stack wants a "wrapper" parameter
-wrapper = ${:output}
+wrapper = ${:rendered}
+mode = 0700
+context =
+    section directory directory
+    section buildout buildout
+    key socket_path kvm-instance:socket-path
 
 # Extends publish section with resilient parameters
 [publish-connection-information]
