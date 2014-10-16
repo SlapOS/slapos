@@ -16,7 +16,11 @@ write_backup_proof () {
 # For now we just make the diff before 
 write_backup_proof
 
-# TODO: Use rdiff
-rm $VM_DIR/$VM_FILE
-cp $BACKUP_DIR/$VM_FILE $VM_DIR/$VM_FILE
+if [ -f "$BACKUP_DIR/${VM_FILE}.gz" ]; then
+    {{ gzip_binary }} -t "$BACKUP_DIR/${VM_FILE}.gz" || exit 10
+    {{ zcat_binary }} "$BACKUP_DIR/${VM_FILE}.gz" > $VM_DIR/$VM_FILE
+else
+    rm $VM_DIR/$VM_FILE
+    cp $BACKUP_DIR/$VM_FILE $VM_DIR/$VM_FILE
+fi
 

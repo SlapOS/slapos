@@ -11,5 +11,19 @@ QMP_CLIENT={{ buildout['directory'] }}/software_release/bin/qemu-qmp-client
 
 $QMP_CLIENT --socket {{ socket_path }} --drive-backup $BACKUP_DIR/$BACKUP_FILE
 
+# Due to the way qmp works, the VM file cannot be compressed on the fly.
+# Although the compression step is optional, the importer uses the .gz file
+# if present. So, remove it if you are disabling the compression.
+
+# The downside of compression, here, is the temporary usage of more disk space
+# in the exporter node. The goal is to minimize disk usage on the PBS server.
+
+# If you want to compress the file in-place:
+# truncate -s $(gzip -c $BACKUP_FILE | dd of=$BACKUP_FILE conv=notrunc 2>&1 | sed -n '$ s/ .*$// p') $BACKUP_FILE
+# but the importer script would have to be adapted.
+
+echo "Compressing backup..."
+{{ gzip_binary }} --force --rsyncable $BACKUP_DIR/$BACKUP_FILE
+
 cd $BACKUP_DIR && find -type f ! -name backup.signature -print0 | xargs -P4 -0 sha256sum | LC_ALL=C sort -k 66 > backup.signature
 

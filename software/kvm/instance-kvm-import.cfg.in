@@ -33,5 +33,7 @@ mode = 0700
 wrapper = $${:rendered}
 context =
     section directory directory
+    raw zcat_binary ${gzip:location}/bin/zcat
+    raw gzip_binary ${gzip:location}/bin/gzip
 
 backup-disk-path = $${directory:backup}/virtual.qcow2
