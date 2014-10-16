@@ -3,6 +3,7 @@
 {% set ssl_parameter_dict = slapparameter_dict.get('ssl', {}) %}
 {% macro section(name) %}{% do part_list.append(name) %}{{ name }}{% endmacro -%}
 {% set use_ipv6 = slapparameter_dict.get('use-ipv6', False) -%}
+{% set ca_path = slapparameter_dict['certificate-authority-path'] -%}
 {#
 XXX: This template only supports exactly one IPv4 and (if ipv6 is used) one IPv6
 per partition. No more (undefined result), no less (IndexError).
@@ -76,22 +77,6 @@ ipv6 = {{ zope_address.split(']:')[0][1:] }}
 {%   set next_port = next_port + 1 -%}
 {% endfor -%}
 
-[apache-certificate-authority]
-recipe = slapos.cookbook:certificate_authority
-openssl-binary = {{ parameter_dict['openssl'] }}/bin/openssl
-ca-dir = ${directory:ca-dir}
-requests-directory = ${directory:requests}
-wrapper = ${directory:services}/apache-ca
-ca-private = ${directory:private}
-ca-certs = ${directory:certs}
-ca-newcerts = ${directory:newcerts}
-ca-crl = ${directory:crl}
-country-code = {{ slapparameter_dict['country-code'] }}
-email = {{ slapparameter_dict['email'] }}
-state = {{ slapparameter_dict['state'] }}
-city = {{ slapparameter_dict['city'] }}
-company = {{ slapparameter_dict['company'] }}
-
 [haproxy-cfg-parameter-dict]
 socket-path = ${directory:run}/haproxy.sock
 server-check-path = {{ dumps(slapparameter_dict['haproxy-server-check-path']) }}
@@ -136,8 +121,8 @@ ssl-session-cache = ${directory:log}/apache-ssl-session-cache
 ca-cert = {{ dumps(ssl_parameter_dict.get('ca-cert')) }}
 crl = {{ dumps(ssl_parameter_dict.get('ca-crl')) }}
 {% else -%}
-ca-cert = ${apache-certificate-authority:ca-dir}/cacert.pem
-crl = ${apache-certificate-authority:ca-crl}
+ca-cert = {{ ca_path }}/cacert.pem
+crl = {{ ca_path }}/crl
 {% endif -%}
 
 [apache-conf]
@@ -189,19 +174,12 @@ services = ${:etc}/run
 var = ${buildout:directory}/var
 run = ${:var}/run
 log = ${:var}/log
-ca-dir = ${buildout:directory}/srv/ssl
-requests = ${:ca-dir}/requests
-private = ${:ca-dir}/private
-certs = ${:ca-dir}/certs
-newcerts = ${:ca-dir}/newcerts
-crl = ${:ca-dir}/crl
 
 [buildout]
 extends = {{ parameter_dict['instance-logrotate-cfg'] }}
 parts +=
   publish
   logrotate-apache
-  apache-certificate-authority
   {{ part_list | join('\n  ') }}
 eggs-directory = {{ eggs_directory }}
 develop-eggs-directory = {{ develop_eggs_directory }}

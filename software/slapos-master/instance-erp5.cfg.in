@@ -71,6 +71,7 @@ return =
 extra-config =
   bt5
   bt5-repository-url
+  ca-path
   cloudooo-url
   deadlock-debugger-password
   developer-list
@@ -98,6 +99,7 @@ extra-config =
   zodb-storage-type
 config-bt5 = {{ dumps(slapparameter_dict.get('bt5', 'erp5_full_text_myisam_catalog erp5_configurator_standard erp5_configurator_maxma_demo erp5_configurator_ung erp5_configurator_run_my_doc slapos_configurator')) }}
 config-bt5-repository-url = {{ dumps(slapparameter_dict.get('bt5-repository-url', local_bt5_repository)) }}
+config-ca-path = ${directory:ca-dir}
 config-cloudooo-url = ${request-cloudooo:connection-url}
 config-deadlock-debugger-password = ${deadlock-debugger-password:passwd}
 config-developer-list = {{ dumps(slapparameter_dict.get('developer-list', [inituser_login])) }}
@@ -176,11 +178,7 @@ extra-config =
   ssl-authentication-dict
   ssl
   zope-family-dict
-  country-code
-  email
-  state
-  city
-  company
+  certificate-authority-path
   {{ zope_address_list_id_dict.values() | join(' ') }}
 return =
 {%- for family in zope_family_dict %}
@@ -197,11 +195,7 @@ config-{{ name }} = {{ ' ${' ~ zope_section_id ~ ':connection-zope-address-list}
 # XXX: should those really be same for all families ?
 config-haproxy-server-check-path = {{ dumps(balancer_dict.get('haproxy-server-check-path', '/') % {'site-id': site_id}) }}
 config-ssl = {{ dumps(balancer_dict.get('ssl', {})) }}
-config-country-code = {{ slapparameter_dict.get('country-code', 'ZZ') }}
-config-email = {{ slapparameter_dict.get('email', 'nobody@example.com') }}
-config-state = {{ slapparameter_dict.get('state', "('State',)") }}
-config-city = {{ slapparameter_dict.get('city', 'City') }}
-config-company = {{ slapparameter_dict.get('company', 'Compagny') }}
+config-certificate-authority-path = ${directory:ca-dir}
 
 [request-frontend-base]
 {% if has_frontend -%}
@@ -224,6 +218,39 @@ config-{{ name }} = {{ value }}
 return = site_url
 {% endif -%}
 
+
+[directory]
+recipe = slapos.cookbook:mkdirectory
+{% if slapparameter_dict.get('certificate-authority-path', '') -%}
+ca-dir = {{ slapparameter_dict.get('certificate-authority-path') }}
+{% else -%}
+ca-dir = ${buildout:directory}/srv/ssl
+{% endif -%}
+bin = ${buildout:directory}/bin
+etc = ${buildout:directory}/etc
+services = ${:etc}/run
+requests = ${:ca-dir}/requests
+private = ${:ca-dir}/private
+certs = ${:ca-dir}/certs
+newcerts = ${:ca-dir}/newcerts
+crl = ${:ca-dir}/crl
+
+[apache-certificate-authority]
+recipe = slapos.cookbook:certificate_authority
+openssl-binary = {{ openssl_location }}/bin/openssl
+ca-dir = ${directory:ca-dir}
+requests-directory = ${directory:requests}
+wrapper = ${directory:services}/service-ca
+ca-private = ${directory:private}
+ca-certs = ${directory:certs}
+ca-newcerts = ${directory:newcerts}
+ca-crl = ${directory:crl}
+country-code = {{ dumps(slapparameter_dict.get('country-code', 'ZZ')) }}
+email = {{ dumps(slapparameter_dict.get('email', 'nobody@example.com')) }}
+state = {{ dumps(slapparameter_dict.get('state', "('State',)")) }}
+city = {{ dumps(slapparameter_dict.get('city', 'City')) }}
+company = {{ dumps(slapparameter_dict.get('company', 'Compagny')) }}
+
 [publish]
 recipe = slapos.cookbook:publish.serialised
 deadlock-debugger-password = ${deadlock-debugger-password:passwd}
@@ -238,7 +265,9 @@ hosts-dict = {{ '${' ~ zope_address_list_id_dict.keys()[0] ~ ':connection-hosts-
 {% endfor -%}
 
 [buildout]
-parts = publish
+parts = 
+  apache-certificate-authority
+  publish
 eggs-directory = {{ eggs_directory }}
 develop-eggs-directory = {{ develop_eggs_directory }}
 {% endif %}
