@@ -71,9 +71,11 @@ filename = instance-erp5.cfg
 extensions = jinja2.ext.do
 extra-context =
     key local_bt5_repository dynamic-template-erp5-parameters:local-bt5-repository
+    key openssl_location :openssl-location
 # Must match the key id in [switch-softwaretype] which uses this section.
     key software_type :software-type
 software-type = default
+openssl-location = {{ openssl_location }}
 
 [dynamic-template-erp5-RootSoftwareInstance]
 < = dynamic-template-erp5
