@@ -46,6 +46,9 @@ class Recipe(GenericBaseRecipe):
             ('kumofs_url', 'kumofs-url'),
             ('smtp_url', 'smtp-url'),
           )),
+          ('portal_certificate_authority', (
+            ('certificate_authority_path', 'certificate-authority-path'),
+          )),
         ):
       promise_parser.add_section(section_name)
       for internal_id, option_id in option_id_list:
