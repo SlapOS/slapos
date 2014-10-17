@@ -251,6 +251,16 @@ state = {{ dumps(slapparameter_dict.get('state', "('State',)")) }}
 city = {{ dumps(slapparameter_dict.get('city', 'City')) }}
 company = {{ dumps(slapparameter_dict.get('company', 'Compagny')) }}
 
+# XXX - Big hack: Change access for certificate authority configuration
+#       To allow apache to read openssl.cnf in this folder
+[fix-ca-folder]
+recipe = plone.recipe.command
+stop-on-error = true
+command =
+  chmod -R 770 ${apache-certificate-authority:ca-dir} && \
+  chmod 644 ${apache-certificate-authority:ca-dir}/openssl.cnf
+update-command = ${:command}
+
 [publish]
 recipe = slapos.cookbook:publish.serialised
 deadlock-debugger-password = ${deadlock-debugger-password:passwd}
@@ -267,6 +277,7 @@ hosts-dict = {{ '${' ~ zope_address_list_id_dict.keys()[0] ~ ':connection-hosts-
 [buildout]
 parts = 
   apache-certificate-authority
+  fix-ca-folder
   publish
 eggs-directory = {{ eggs_directory }}
 develop-eggs-directory = {{ develop_eggs_directory }}
