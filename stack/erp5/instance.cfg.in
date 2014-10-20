@@ -188,6 +188,7 @@ template-my-cnf = {{ template_my_cnf }}
 template-mariadb-initial-setup = {{ template_mariadb_initial_setup }}
 link-binary = {{ dumps(mariadb_link_binary) }}
 instance-logrotate-cfg = {{ template_logrotate_base }}
+bin-directory = {{ bin_directory }}
 
 [dynamic-template-mariadb]
 < = jinja2-template-base

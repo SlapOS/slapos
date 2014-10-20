@@ -213,10 +213,10 @@ log = ${:var}/log
 run = ${:var}/run
 
 [promise]
-recipe = slapos.cookbook:check_port_listening
-path = ${directory:promise}/mariadb
-hostname = ${my-cnf-parameters:ip}
-port = ${my-cnf-parameters:port}
+recipe = slapos.cookbook:wrapper
+command-line = "{{ parameter_dict['bin-directory'] }}/is-local-tcp-port-opened" "${my-cnf-parameters:ip}" "${my-cnf-parameters:port}"
+wrapper-path = ${directory:promise}/mariadb
+parameters-extra = true
 
 [buildout]
 extends =
