@@ -968,7 +968,7 @@ database_uri = %(tempdir)s/lib/external_proxy.db
         'xml': xml_marshaller.xml_marshaller.dumps(computer_dict),
     }
     self.external_proxy_slap._connection_helper.POST('/loadComputerConfigurationFromXML',
-                  parameter_dict=request_dict)
+                                                     data=request_dict)
 
   def _checkInstanceIsFowarded(self, name, partition_parameter_kw, software_release):
     """

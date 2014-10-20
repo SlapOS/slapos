@@ -495,7 +495,7 @@ def forwardRequestToExternalMaster(master_url, request_form):
   filter_kw['source_instance_id'] = partition_reference
   new_request_form['filter_xml'] = dumps(filter_kw)
 
-  partition = loads(slap._connection_helper.POST('/requestComputerPartition', new_request_form))
+  partition = loads(slap._connection_helper.POST('/requestComputerPartition', data=new_request_form))
 
   # XXX move to other end
   partition._master_url = master_url
