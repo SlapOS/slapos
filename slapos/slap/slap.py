@@ -338,7 +338,7 @@ class Computer(SlapDocument):
       'message': message})
 
   def getStatus(self):
-    xml = self._connection_helper.GET('getComputerStatus', {'computer_id': self._computer_id})
+    xml = self._connection_helper.GET('getComputerStatus', params={'computer_id': self._computer_id})
     return xml_marshaller.loads(xml)
 
   def revokeCertificate(self):
@@ -548,7 +548,7 @@ class ComputerPartition(SlapRequester):
 
   def getCertificate(self):
     xml = self._connection_helper.GET('getComputerPartitionCertificate',
-            {
+            params={
                 'computer_id': self._computer_id,
                 'computer_partition_id': self._partition_id,
                 }
@@ -557,7 +557,7 @@ class ComputerPartition(SlapRequester):
 
   def getStatus(self):
     xml = self._connection_helper.GET('getComputerPartitionStatus',
-            {
+            params={
                 'computer_id': self._computer_id,
                 'computer_partition_id': self._partition_id,
                 }
@@ -579,7 +579,7 @@ class ConnectionHelper:
     self.timeout = timeout
 
   def getComputerInformation(self, computer_id):
-    xml = self.GET('getComputerInformation', {'computer_id': computer_id})
+    xml = self.GET('getComputerInformation', params={'computer_id': computer_id})
     return xml_marshaller.loads(xml)
 
   def getFullComputerInformation(self, computer_id):
@@ -591,20 +591,21 @@ class ConnectionHelper:
     params = {'computer_id': computer_id}
     if not computer_id:
       # XXX-Cedric: should raise something smarter than "NotFound".
-      raise NotFoundError('%r %r' (path, params))
+      raise NotFoundError('%r %r' % (path, params))
     try:
-      xml = self.GET(path, params)
+      xml = self.GET(path, params=params)
     except NotFoundError:
       # XXX: This is a ugly way to keep backward compatibility,
       # We should stablise slap library soon.
-      xml = self.GET('getComputerInformation', {'computer_id': computer_id})
+      xml = self.GET('getComputerInformation', params=params)
 
     return xml_marshaller.loads(xml)
 
   def do_request(self, method, path, params=None, data=None, headers=None):
     url = urlparse.urljoin(self.slapgrid_uri, path)
     if path.startswith('/'):
-      raise ValueError('method path should be relative: %s' % path)
+      path = path[1:]
+#      raise ValueError('method path should be relative: %s' % path)
 
     try:
       if url.startswith('https'):
@@ -707,7 +708,7 @@ class slap:
       raise NotFoundError
 
     xml = self._connection_helper.GET('registerComputerPartition',
-            {
+            params = {
                 'computer_reference': computer_guid,
                 'computer_partition_reference': partition_id,
                 }
@@ -726,18 +727,19 @@ class slap:
 
   def getSoftwareReleaseListFromSoftwareProduct(self,
       software_product_reference=None, software_release_url=None):
-    url = '/getSoftwareReleaseListFromSoftwareProduct?'
+    url = 'getSoftwareReleaseListFromSoftwareProduct'
+    params = {}
     if software_product_reference:
       if software_release_url is not None:
         raise AttributeError('Both software_product_reference and '
                              'software_release_url parameters are specified.')
-      url += 'software_product_reference=%s' % software_product_reference
+      params['software_product_reference'] = software_product_reference
     else:
       if software_release_url is None:
         raise AttributeError('None of software_product_reference and '
                              'software_release_url parameters are specified.')
-      url += 'software_release_url=%s' % software_release_url
+      params['software_release_url'] = software_release_url
 
-    result = xml_marshaller.loads(self._connection_helper.GET(url))
+    result = xml_marshaller.loads(self._connection_helper.GET(url, params=params))
     assert(type(result) == list)
     return result

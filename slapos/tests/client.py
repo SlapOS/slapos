@@ -27,8 +27,6 @@
 
 import logging
 import unittest
-# XXX: BasicMixin should be in a separated module, not in slapgrid test module.
-from slapos.tests.slapgrid import BasicMixin
 import slapos.slap
 import slapos.client
 

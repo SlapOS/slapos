@@ -66,7 +66,8 @@ setup(name=name,
       'bpython_console': ('bpython',)},
       tests_require=[
           'pyflakes',
-          'mock'
+          'mock',
+          'httmock',
       ],
       zip_safe=False, # proxy depends on Flask, which has issues with
                       # accessing templates
