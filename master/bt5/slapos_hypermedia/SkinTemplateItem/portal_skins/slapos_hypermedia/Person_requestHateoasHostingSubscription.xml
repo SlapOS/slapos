@@ -58,12 +58,12 @@ if REQUEST is None:\n
   raise Unauthorized\n
 \n
 response = REQUEST.RESPONSE\n
-type = \'application/json; class=slapos.org.hosting_subscription\'\n
+mime_type = \'application/json\'\n
 \n
 if REQUEST.other[\'method\'] != "POST":\n
   response.setStatus(405)\n
   return ""\n
-elif type != context.Base_getRequestHeader(\'Content-Type\'):\n
+elif mime_type != context.Base_getRequestHeader(\'Content-Type\'):\n
   response.setStatus(406)\n
   return ""\n
 elif context.getPortalType() != "Person":\n

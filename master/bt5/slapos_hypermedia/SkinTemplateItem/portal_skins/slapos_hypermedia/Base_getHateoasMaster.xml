@@ -56,23 +56,21 @@ if REQUEST is None:\n
   raise Unauthorized\n
 \n
 response = REQUEST.RESPONSE\n
-type = \'application/vnd.slapos.org.hal+json; class=slapos.org.master\'\n
+mime_type = \'application/hal+json\'\n
 \n
 if REQUEST.other[\'method\'] != "GET":\n
   response.setStatus(405)\n
   return ""\n
-elif type != context.Base_handleAcceptHeader([type]):\n
+elif mime_type != context.Base_handleAcceptHeader([mime_type]):\n
   response.setStatus(406)\n
   return ""\n
-else:\n
-  import json\n
-  result_dict = {\n
-      \'_class\': \'slapos.org.master\',\n
+\n
+import json\n
+result_dict = {\n
 #       \'title\': \'Vifib SlapOS Master\',\n
 #       \'description\': \'Reference implementation of the SlapOS Master specifications.\',\n
-      \'_links\': {\n
-        "self": { "href": context.Base_getRequestUrl(),\n
-                  "type": type },\n
+  \'_links\': {\n
+    "self": { "href": context.Base_getRequestUrl() },\n
 #         "http://slapos.org/reg/edit": {\n
 #           "href": "/edit",\n
 #           "method": "PUT",\n
@@ -83,21 +81,21 @@ else:\n
 #           "method": "POST",\n
 #           "type": "application/json; class=slapos.org.person",\n
 #         },\n
-      },\n
-    }\n
+  },\n
+}\n
 \n
-  portal = context.getPortalObject()\n
+portal = context.getPortalObject()\n
 \n
-  # XXX Handle also other kind of users: instance, computer, master\n
-  person = portal.ERP5Site_getAuthenticatedMemberPersonValue()\n
-  if person is not None:\n
-    result_dict[\'_links\'][\'http://slapos.org/reg/me\'] = {\n
-      \'href\': \'%s/Person_getHateoas\' % person.absolute_url(),\n
-      "type": "application/vnd.slapos.org.hal+json; class=slapos.org.person"\n
-    }\n
+# XXX Handle also other kind of users: instance, computer, master\n
+person = portal.ERP5Site_getAuthenticatedMemberPersonValue()\n
+if person is not None:\n
+  result_dict[\'_links\'][\'action_object_jump\'] = {\n
+    \'href\': \'%s/ERP5Document_getHateoas\' % person.absolute_url(),\n
+    \'title\': \'Person\'\n
+  }\n
 \n
-  response.setHeader(\'Content-Type\', type)\n
-  return json.dumps(result_dict)\n
+response.setHeader(\'Content-Type\', mime_type)\n
+return json.dumps(result_dict, indent=2)\n
 </string> </value>
         </item>
         <item>

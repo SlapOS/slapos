@@ -8,6 +8,15 @@ import httplib
 import urlparse
 import base64
 
+def hateoasGetLinkFromLinks(links, title):
+  if type(links) == dict:
+    if links.get('title') == title:
+      return links
+    return
+  for action in links:
+    if action.get('title') == title:
+      return action
+
 class TestSlapOSHypermediaPersonScenario(testSlapOSMixin):
 
   def _makeUser(self):
@@ -31,20 +40,28 @@ class TestSlapOSHypermediaPersonScenario(testSlapOSMixin):
     erp5_person = self._makeUser()
     authorization = 'Basic %s' % base64.b64encode(
       "%s:%s" % (erp5_person.getReference(), erp5_person.getReference()))
+    content_type = "application/hal+json"
     
     # XXX Default home url. 'Hardcoded' in client.
     api_scheme, api_netloc, api_path, api_query, \
         api_fragment = urlparse.urlsplit('%s/Base_getHateoasMaster' % \
         self.portal.absolute_url())
 
+    def getNewHttpConnection(api_netloc):
+      if api_scheme == 'https':
+        connection = httplib.HTTPSConnection(api_netloc)
+      else:
+        connection = httplib.HTTPConnection(api_netloc)
+      return connection
+
     #####################################################
     # Access the master home page hal
     #####################################################
-    content_type = "application/vnd.slapos.org.hal+json; class=slapos.org.master"
-    connection = httplib.HTTPConnection(api_netloc)
+
+    connection = getNewHttpConnection(api_netloc)
     connection.request(
       method='GET',
-      url='%s/Base_getHateoasMaster' % \
+      url='%s/web_site_module/hateoas/Base_getHateoasMaster' % \
           self.portal.absolute_url(),
       headers={
        'Authorization': authorization,
@@ -53,7 +70,6 @@ class TestSlapOSHypermediaPersonScenario(testSlapOSMixin):
       body="",
     )
     response = connection.getresponse()
- 
     self.assertEquals(response.status, 200)
     self.assertEquals(response.getheader('Content-Type'), content_type)
     home_page_hal = json.loads(response.read())
@@ -61,21 +77,20 @@ class TestSlapOSHypermediaPersonScenario(testSlapOSMixin):
     #####################################################
     # Fetch the user hal
     #####################################################
-    content_type = "application/vnd.slapos.org.hal+json; class=slapos.org.person"
-    user_link_dict = home_page_hal['_links']['http://slapos.org/reg/me']
+    user_link_dict = home_page_hal['_links']['action_object_jump']
+    self.assertNotEqual(user_link_dict, None)
 
-    connection = httplib.HTTPConnection(api_netloc)
+    connection = getNewHttpConnection(api_netloc)
     connection.request(
       method=user_link_dict.get('method', 'GET'),
       url=user_link_dict['href'],
       headers={
        'Authorization': authorization,
-       'Accept': user_link_dict['type'],
+       'Accept': content_type,
       },
       body="",
     )
     response = connection.getresponse()
- 
     self.assertEquals(response.status, 200)
     self.assertEquals(response.getheader('Content-Type'), content_type)
     user_hal = json.loads(response.read())
@@ -83,17 +98,19 @@ class TestSlapOSHypermediaPersonScenario(testSlapOSMixin):
     #####################################################
     # Run method to request an hosting subscription
     #####################################################
-    content_type = "application/json; " \
-                   "class=slapos.org.hosting_subscription"
-    request_link_dict = user_hal['_links']['http://slapos.org/reg/request']
 
-    connection = httplib.HTTPConnection(api_netloc)
+    request_link_dict = hateoasGetLinkFromLinks(
+        user_hal['_links']['action_object_slap_post'],
+        'requestHateoasHostingSubscription'
+    )
+    self.assertNotEqual(request_link_dict, None)
+    connection = getNewHttpConnection(api_netloc)
     connection.request(
-      method=request_link_dict.get('method', 'GET'),
+      method=request_link_dict.get('method', 'POST'),
       url=request_link_dict['href'],
       headers={
        'Authorization': authorization,
-       'Content-Type': request_link_dict['type'],
+       'Content-Type': 'application/json',
       },
       body=json.dumps({
         'software_release': 'http://example.orgé',
@@ -114,18 +131,18 @@ class TestSlapOSHypermediaPersonScenario(testSlapOSMixin):
     #####################################################
     # Get user's hosting subscription list
     #####################################################
-    content_type = "application/vnd.slapos.org.hal+json; " \
-                   "class=slapos.org.collection"
-    user_link_dict = user_hal['_links']\
-        ['http://slapos.org/reg/hosting_subscription']
-
-    connection = httplib.HTTPConnection(api_netloc)
+    user_link_dict = hateoasGetLinkFromLinks(
+        user_hal['_links']['action_object_slap'],
+        'getHateoasHostingSubscriptionList'
+    )
+    self.assertNotEqual(user_link_dict, None)
+    connection = getNewHttpConnection(api_netloc)
     connection.request(
       method=user_link_dict.get('method', 'GET'),
       url=user_link_dict['href'],
       headers={
        'Authorization': authorization,
-       'Accept': user_link_dict['type'],
+       'Accept': content_type,
       },
       body="",
     )
@@ -138,18 +155,16 @@ class TestSlapOSHypermediaPersonScenario(testSlapOSMixin):
     #####################################################
     # Get user's hosting subscription
     #####################################################
-    content_type = "application/vnd.slapos.org.hal+json; " \
-                   "class=slapos.org.hosting_subscription"
     subscription_link_dict = subscription_collection_hal['_links']\
-        ['item'][0]
-
-    connection = httplib.HTTPConnection(api_netloc)
+        ['content'][0]
+    self.assertNotEqual(subscription_link_dict, None)
+    connection = getNewHttpConnection(api_netloc)
     connection.request(
       method=subscription_link_dict.get('method', 'GET'),
       url=subscription_link_dict['href'],
       headers={
        'Authorization': authorization,
-       'Accept': subscription_link_dict['type'],
+       'Accept': content_type,
       },
       body="",
     )
@@ -162,18 +177,18 @@ class TestSlapOSHypermediaPersonScenario(testSlapOSMixin):
     #####################################################
     # Get hosting subscription's instance list
     #####################################################
-    content_type = "application/vnd.slapos.org.hal+json; " \
-                   "class=slapos.org.collection"
-    user_link_dict = subscription_hal['_links']\
-        ['http://slapos.org/reg/instance']
-
-    connection = httplib.HTTPConnection(api_netloc)
+    user_link_dict = hateoasGetLinkFromLinks(
+        subscription_hal['_links']['action_object_slap'],
+        'getHateoasInstanceList'
+    )
+    self.assertNotEqual(user_link_dict, None)
+    connection = getNewHttpConnection(api_netloc)
     connection.request(
       method=user_link_dict.get('method', 'GET'),
       url=user_link_dict['href'],
       headers={
        'Authorization': authorization,
-       'Accept': user_link_dict['type'],
+       'Accept': content_type,
       },
       body="",
     )
@@ -186,18 +201,16 @@ class TestSlapOSHypermediaPersonScenario(testSlapOSMixin):
     #####################################################
     # Get instance
     #####################################################
-    content_type = "application/vnd.slapos.org.hal+json; " \
-                   "class=slapos.org.instance"
     subscription_link_dict = instance_collection_hal['_links']\
-        ['item'][0]
-
-    connection = httplib.HTTPConnection(api_netloc)
+        ['content'][0]
+    self.assertNotEqual(subscription_link_dict, None)
+    connection = getNewHttpConnection(api_netloc)
     connection.request(
       method=subscription_link_dict.get('method', 'GET'),
       url=subscription_link_dict['href'],
       headers={
        'Authorization': authorization,
-       'Accept': subscription_link_dict['type'],
+       'Accept': content_type,
       },
       body="",
     )
@@ -210,18 +223,18 @@ class TestSlapOSHypermediaPersonScenario(testSlapOSMixin):
     #####################################################
     # Get instance news
     #####################################################
-    content_type = "application/vnd.slapos.org.hal+json; " \
-                   "class=slapos.org.news"
-    news_link_dict = instance_hal['_links']\
-        ['http://slapos.org/reg/news']
-
-    connection = httplib.HTTPConnection(api_netloc)
+    news_link_dict = hateoasGetLinkFromLinks(
+        instance_hal['_links']['action_object_slap'],
+        'getHateoasNews'
+    )
+    self.assertNotEqual(news_link_dict, None)
+    connection = getNewHttpConnection(api_netloc)
     connection.request(
       method=news_link_dict.get('method', 'GET'),
       url=news_link_dict['href'],
       headers={
        'Authorization': authorization,
-       'Accept': news_link_dict['type'],
+       'Accept': content_type,
       },
       body="",
     )
@@ -249,18 +262,18 @@ class TestSlapOSHypermediaPersonScenario(testSlapOSMixin):
     #####################################################
     # Get user's computer list
     #####################################################
-    content_type = "application/vnd.slapos.org.hal+json; " \
-                   "class=slapos.org.collection"
-    user_link_dict = user_hal['_links']\
-        ['http://slapos.org/reg/computer']
-
-    connection = httplib.HTTPConnection(api_netloc)
+    user_link_dict = hateoasGetLinkFromLinks(
+        user_hal['_links']['action_object_slap'],
+        'getHateoasComputerList'
+    )
+    self.assertNotEqual(user_link_dict, None)
+    connection = getNewHttpConnection(api_netloc)
     connection.request(
       method=user_link_dict.get('method', 'GET'),
       url=user_link_dict['href'],
       headers={
        'Authorization': authorization,
-       'Accept': user_link_dict['type'],
+       'Accept': content_type,
       },
       body="",
     )
@@ -273,18 +286,16 @@ class TestSlapOSHypermediaPersonScenario(testSlapOSMixin):
     #####################################################
     # Get user's computer
     #####################################################
-    content_type = "application/vnd.slapos.org.hal+json; " \
-                   "class=slapos.org.computer"
     computer_link_dict = computer_collection_hal['_links']\
-        ['item'][0]
-
-    connection = httplib.HTTPConnection(api_netloc)
+        ['content'][0]
+    self.assertNotEqual(computer_link_dict, None)
+    connection = getNewHttpConnection(api_netloc)
     connection.request(
       method=computer_link_dict.get('method', 'GET'),
       url=computer_link_dict['href'],
       headers={
        'Authorization': authorization,
-       'Accept': computer_link_dict['type'],
+       'Accept': content_type,
       },
       body="",
     )
@@ -297,18 +308,18 @@ class TestSlapOSHypermediaPersonScenario(testSlapOSMixin):
     #####################################################
     # Get computer's software list
     #####################################################
-    content_type = "application/vnd.slapos.org.hal+json; " \
-                   "class=slapos.org.collection"
-    computer_link_dict = computer_hal['_links']\
-        ['http://slapos.org/reg/software']
-
-    connection = httplib.HTTPConnection(api_netloc)
+    computer_link_dict = hateoasGetLinkFromLinks(
+        computer_hal['_links']['action_object_slap'],
+        'getHateoasSoftwareInstallationList'
+    )
+    self.assertNotEqual(computer_link_dict, None)
+    connection = getNewHttpConnection(api_netloc)
     connection.request(
       method=computer_link_dict.get('method', 'GET'),
       url=computer_link_dict['href'],
       headers={
        'Authorization': authorization,
-       'Accept': computer_link_dict['type'],
+       'Accept': content_type,
       },
       body="",
     )
@@ -321,18 +332,16 @@ class TestSlapOSHypermediaPersonScenario(testSlapOSMixin):
     #####################################################
     # Get user's software
     #####################################################
-    content_type = "application/vnd.slapos.org.hal+json; " \
-                   "class=slapos.org.software_installation"
     software_link_dict = software_collection_hal['_links']\
-        ['item'][0]
-
-    connection = httplib.HTTPConnection(api_netloc)
+        ['content'][0]
+    self.assertNotEqual(software_link_dict, None)
+    connection = getNewHttpConnection(api_netloc)
     connection.request(
       method=software_link_dict.get('method', 'GET'),
       url=software_link_dict['href'],
       headers={
        'Authorization': authorization,
-       'Accept': software_link_dict['type'],
+       'Accept': content_type,
       },
       body="",
     )

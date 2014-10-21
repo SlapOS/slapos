@@ -1,0 +1,10 @@
+Computer | get_hateoas_software_installation_list
+Hosting Subscription | get_hateoas_instance_list
+Hosting Subscription | get_hateoas_root_instance
+Person | get_hateoas_computer_list
+Person | get_hateoas_hosting_subscription_list
+Person | get_hateoas_information
+Person | request_hateoas_hosting_subscription
+Software Installation | get_hateoas_information
+Software Instance | get_hateoas_information
+Software Instance | get_hateoas_news
