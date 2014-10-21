@@ -65,11 +65,17 @@ request
 
 .. program-output:: python slapos help request
 
+Request the deployment of a service (instance).
+
 Examples
 
-* Request a wordpress instance named "mybeautifulinstance" on Node named "COMP-12345"::
+* Request a wordpress instance named "mybeautifulinstance" on any available machine (either owned by user, public, or shared by other user to current user)::
 
-    $ slapos request mybeautifulinstance wordpress --node computer_guid=COMP-12345
+    $ slapos request mybeautifulinstance wordpress
+
+* Request a wordpress instance named "My Beautiful Instance" on Node named "COMP-12345"::
+
+    $ slapos request "My Beautiful Instance" wordpress --node computer_guid=COMP-12345
 
 * Request a kvm instance named "mykvm" on Node named "COMP-12345", specifying nbd-host and nbd-ip parameters::
 
@@ -81,14 +87,33 @@ Examples
     $ slapos request mykvm \
         http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.156:/software/kvm/software.cfg
 
+..
+  XXX update me
 In these examples, ``wordpress`` and ``kvm`` are aliases for the full URL, and are defined in :file:`slapos-client.cfg`.
 
 
-..
-  XXX Change in slaplib: allow to fetch instance params without changing anything.
-      i.e we should do "slapos request myalreadyrequestedinstance" to fetch connection parameters
-      without erasing previously defined instance parameters.
+info
+~~~~
 
+.. program-output:: python slapos help info
+
+Get informations of specified instance, like connection parameters, Software Release.
+Return an error if instance does not exist for the current user.
+
+Examples:
+
+* Ask informations about an instance named "My Service"
+
+    $ slapos info "My Service"
+
+
+list
+~~~~
+
+.. program-output:: python slapos help list
+
+List all deployed services owned by current user.
+From SlapOS Master point of view, it should return the list of all non-destroyed Hosting Subscriptions.
 
 ..
   search

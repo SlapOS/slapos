@@ -75,6 +75,8 @@ class ClientConfig(object):
     else:
       self.master_url = master_url
 
+    self.master_rest_url = configuration_dict.get('master_rest_url')
+
     if self.key_file:
         self.key_file = os.path.expanduser(self.key_file)
 
@@ -87,7 +89,7 @@ def init(conf, logger):
   aliases to common software releases"""
   # XXX check certificate and key existence
   slap = slapos.slap.slap()
-  slap.initializeConnection(conf.master_url,
+  slap.initializeConnection(conf.master_url, conf.master_rest_url,
       key_file=conf.key_file, cert_file=conf.cert_file)
   local = globals().copy()
   local['slap'] = slap

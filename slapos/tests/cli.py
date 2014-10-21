@@ -25,11 +25,29 @@
 #
 ##############################################################################
 
+import logging
+import pprint
 import unittest
 
-import slapos.proxy
+from mock import patch, create_autospec
 
-class TestCliProxy(unittest.TestCase):
+import slapos.cli.list
+import slapos.cli.info
+from slapos.client import ClientConfig
+import slapos.proxy
+import slapos.slap
+
+def raiseNotFoundError(*args, **kwargs):
+  raise slapos.slap.NotFoundError()
+
+class CliMixin(unittest.TestCase):
+  def setUp(self):
+    slap = slapos.slap.slap()
+    self.local = {'slap': slap}
+    self.logger = create_autospec(logging.Logger)
+    self.conf = create_autospec(ClientConfig)
+
+class TestCliProxy(CliMixin):
   def test_generateSoftwareProductListFromString(self):
     """
     Test that generateSoftwareProductListFromString correctly parses a parameter
@@ -53,3 +71,58 @@ product2 url2"""
         slapos.proxy._generateSoftwareProductListFromString(''),
         {}
     )
+
+class TestCliList(CliMixin):
+  def test_list(self):
+    """
+    Test "slapos list" command output.
+    """
+    return_value = {
+      'instance1': slapos.slap.SoftwareInstance(_title='instance1', _software_release_url='SR1'),
+      'instance2': slapos.slap.SoftwareInstance(_title='instance2', _software_release_url='SR2'),
+    }
+    with patch.object(slapos.slap.slap, 'getOpenOrderDict', return_value=return_value) as _:
+      slapos.cli.list.do_list(self.logger, None, self.local)
+
+    self.logger.info.assert_any_call('%s %s', 'instance1', 'SR1')
+    self.logger.info.assert_any_call('%s %s', 'instance2', 'SR2')
+
+  def test_emptyList(self):
+    with patch.object(slapos.slap.slap, 'getOpenOrderDict', return_value={}) as _:
+      slapos.cli.list.do_list(self.logger, None, self.local)
+
+    self.logger.info.assert_called_once_with('No existing service.')
+
+@patch.object(slapos.slap.slap, 'registerOpenOrder', return_value=slapos.slap.OpenOrder())
+class TestCliInfo(CliMixin):
+  def test_info(self, _):
+    """
+    Test "slapos info" command output.
+    """
+    setattr(self.conf, 'reference', 'instance1')
+    instance = slapos.slap.SoftwareInstance(
+        _software_release_url='SR1',
+        _requested_state = 'mystate',
+        _connection_dict = {'myconnectionparameter': 'value1'},
+        _parameter_dict = {'myinstanceparameter': 'value2'}
+    )
+    with patch.object(slapos.slap.OpenOrder, 'getInformation', return_value=instance):
+      slapos.cli.info.do_info(self.logger, self.conf, self.local)
+
+    self.logger.info.assert_any_call(pprint.pformat(instance._parameter_dict))
+    self.logger.info.assert_any_call('Software Release URL: %s', instance._software_release_url)
+    self.logger.info.assert_any_call('Instance state: %s', instance._requested_state)
+    self.logger.info.assert_any_call(pprint.pformat(instance._parameter_dict))
+    self.logger.info.assert_any_call(pprint.pformat(instance._connection_dict))
+
+  def test_unknownReference(self, _):
+    """
+    Test "slapos info" command output in case reference
+    of service is not known.
+    """
+    setattr(self.conf, 'reference', 'instance1')
+    with patch.object(slapos.slap.OpenOrder, 'getInformation', side_effect=raiseNotFoundError):
+      slapos.cli.info.do_info(self.logger, self.conf, self.local)
+
+    self.logger.warning.assert_called_once_with('Instance %s does not exist.', self.conf.reference)
+
