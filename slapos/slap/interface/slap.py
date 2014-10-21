@@ -97,6 +97,16 @@ class IRequester(Interface):
        request('http://example.com/toto/titi', 'typeA', 'mysql_1')
     """
 
+  def getInformation(partition_reference):
+    """
+    Get informations about an existing instance.
+    If it is called from a Computer Partition, get informations
+    about Software Instance of the instance tree.
+
+    partition_reference -- local reference of the instance used by the recipe
+                           to identify the instances.
+    """
+
 class IBuildoutController(Interface):
   """
   Classes which implement IBuildoutController can report the buildout run
@@ -500,4 +510,9 @@ class slap(Interface):
     """
     Get the list of Software Releases from a product or from another related
     Sofware Release, from a Software Product point of view.
+    """
+
+  def getOpenOrderDict():
+    """
+    Get the list of existing open orders (services) for the current user.
     """

@@ -31,10 +31,11 @@ Simple, easy to (un)marshall classes for slap client/server communication
 """
 
 __all__ = ["slap", "ComputerPartition", "Computer", "SoftwareRelease",
-           "SoftwareProductCollection",
+           "SoftwareInstance", "SoftwareProductCollection",
            "Supply", "OpenOrder", "NotFoundError",
            "ResourceNotReady", "ServerError", "ConnectionError"]
 
+import json
 import logging
 import re
 import urlparse
@@ -61,11 +62,12 @@ fallback_logger.addHandler(fallback_handler)
 DEFAULT_SOFTWARE_TYPE = 'RootSoftwareInstance'
 
 class SlapDocument:
-  def __init__(self, connection_helper=None):
+  def __init__(self, connection_helper=None, hateoas_navigator=None):
     if connection_helper is not None:
       # Do not require connection_helper to be provided, but when it's not,
       # cause failures when accessing _connection_helper property.
       self._connection_helper = connection_helper
+      self._hateoas_navigator = hateoas_navigator
 
 
 class SlapRequester(SlapDocument):
@@ -111,7 +113,8 @@ class SoftwareRelease(SlapDocument):
 
     XXX **kw args only kept for compatibility
     """
-    SlapDocument.__init__(self, kw.pop('connection_helper', None))
+    SlapDocument.__init__(self, kw.pop('connection_helper', None),
+                                kw.pop('hateoas_navigator', None))
     self._software_instance_list = []
     if software_release is not None:
       software_release = software_release.encode('UTF-8')
@@ -257,6 +260,19 @@ class OpenOrder(SlapRequester):
       request_dict['software_type'] = DEFAULT_SOFTWARE_TYPE
     return self._requestComputerPartition(request_dict)
 
+  def getInformation(self, partition_reference):
+    if not getattr(self, '_hateoas_navigator', None):
+      raise Exception('SlapOS Master REST URL (master_rest_url) has not been configured.')
+    raw_information = self._hateoas_navigator.getHostingSubscriptionRootSoftwareInstanceInformation(partition_reference)
+    software_instance = SoftwareInstance()
+    # XXX redefine SoftwareInstance to be more consistent
+    for key, value in raw_information.iteritems():
+      if key in ['_links']:
+        continue
+      setattr(software_instance, '_%s' % key, value)
+    setattr(software_instance, '_software_release_url', raw_information['_links']['software_release'])
+    return software_instance
+
   def requestComputer(self, computer_reference):
     """
     Requests a computer.
@@ -264,6 +280,7 @@ class OpenOrder(SlapRequester):
     xml = self._connection_helper.POST('requestComputer', data={'computer_title': computer_reference})
     computer = xml_marshaller.loads(xml)
     computer._connection_helper = self._connection_helper
+    computer._hateoas_navigator = self._hateoas_navigator
     return computer
 
 
@@ -291,8 +308,8 @@ def _syncComputerInformation(func):
 class Computer(SlapDocument):
   zope.interface.implements(interface.IComputer)
 
-  def __init__(self, computer_id, connection_helper=None):
-    SlapDocument.__init__(self, connection_helper)
+  def __init__(self, computer_id, connection_helper=None, hateoas_navigator=None):
+    SlapDocument.__init__(self, connection_helper, hateoas_navigator)
     self._computer_id = computer_id
 
   def __getinitargs__(self):
@@ -308,12 +325,14 @@ class Computer(SlapDocument):
     """
     for software_relase in self._software_release_list:
       software_relase._connection_helper = self._connection_helper
+      software_relase._hateoas_navigator = self._hateoas_navigator
     return self._software_release_list
 
   @_syncComputerInformation
   def getComputerPartitionList(self):
     for computer_partition in self._computer_partition_list:
       computer_partition._connection_helper = self._connection_helper
+      computer_partition._hateoas_navigator = self._hateoas_navigator
     return [x for x in self._computer_partition_list]
 
   def reportUsage(self, computer_usage):
@@ -362,8 +381,9 @@ class ComputerPartition(SlapRequester):
   zope.interface.implements(interface.IComputerPartition)
 
   def __init__(self, computer_id=None, partition_id=None,
-               request_dict=None, connection_helper=None):
-    SlapDocument.__init__(self, connection_helper)
+               request_dict=None, connection_helper=None,
+               hateoas_navigator=None):
+    SlapDocument.__init__(self, connection_helper, hateoas_navigator)
     if request_dict is not None and (computer_id is not None or
         partition_id is not None):
       raise TypeError('request_dict conflicts with computer_id and '
@@ -463,6 +483,15 @@ class ComputerPartition(SlapRequester):
     if slave_reference:
       post_dict['slave_reference'] = slave_reference
     self._connection_helper.POST('softwareInstanceRename', data=post_dict)
+
+  def getInformation(self, partition_reference):
+    """
+    Return all needed informations about an existing Computer Partition
+    in the Instance tree of the current Computer Partition.
+    """
+    if not getattr(self, '_hateoas_navigator', None):
+      raise Exception('SlapOS Master REST URL (master_rest_url) has not been configured.')
+    return self._hateoas_navigator.getSoftwareReleaseInformation(partition_reference)
 
   def getId(self):
     if not getattr(self, '_partition_id', None):
@@ -597,6 +626,9 @@ class ConnectionHelper:
 
   def do_request(self, method, path, params=None, data=None, headers=None):
     url = urlparse.urljoin(self.slapgrid_uri, path)
+    if headers is None:
+      headers = {}
+    headers.setdefault('Accept', '*/*')
     if path.startswith('/'):
       path = path[1:]
 #      raise ValueError('method path should be relative: %s' % path)
@@ -653,7 +685,7 @@ class ConnectionHelper:
     req = self.do_request(requests.get,
                           path=path,
                           params=params)
-    return req.text
+    return req.text.encode('utf-8')
 
   def POST(self, path, params=None, data=None,
            content_type='application/x-www-form-urlencoded'):
@@ -662,18 +694,30 @@ class ConnectionHelper:
                           params=params,
                           data=data,
                           headers={'Content-type': content_type})
-    return req.text
+    return req.text.encode('utf-8')
 
 
 class slap:
   zope.interface.implements(interface.slap)
 
-  def initializeConnection(self, slapgrid_uri, key_file=None, cert_file=None,
-                           master_ca_file=None, timeout=60):
+  def initializeConnection(self, slapgrid_uri,
+                           key_file=None, cert_file=None,
+                           master_ca_file=None,
+                           timeout=60,
+                           slapgrid_rest_uri=None):
     if master_ca_file:
       raise NotImplementedError('Master certificate not verified in this version: %s' % master_ca_file)
 
     self._connection_helper = ConnectionHelper(slapgrid_uri, key_file, cert_file, master_ca_file, timeout)
+
+    if slapgrid_rest_uri:
+      self._hateoas_navigator = HateoasNavigator(
+          slapgrid_rest_uri,
+          key_file, cert_file,
+          master_ca_file, timeout
+      )
+    else:
+      self._hateoas_navigator = None
 
   # XXX-Cedric: this method is never used and thus should be removed.
   def registerSoftwareRelease(self, software_release):
@@ -682,7 +726,8 @@ class slap:
     returns SoftwareRelease class object
     """
     return SoftwareRelease(software_release=software_release,
-      connection_helper=self._connection_helper
+      connection_helper=self._connection_helper,
+      hateoas_navigator=self._hateoas_navigator
     )
 
   def registerComputer(self, computer_guid):
@@ -690,7 +735,10 @@ class slap:
     Registers connected representation of computer and
     returns Computer class object
     """
-    return Computer(computer_guid, connection_helper=self._connection_helper)
+    return Computer(computer_guid,
+      connection_helper=self._connection_helper,
+      hateoas_navigator=self._hateoas_navigator
+    )
 
   def registerComputerPartition(self, computer_guid, partition_id):
     """
@@ -711,13 +759,20 @@ class slap:
     # XXX: dirty hack to make computer partition usable. xml_marshaller is too
     # low-level for our needs here.
     result._connection_helper = self._connection_helper
+    result._hateoas_navigator = self._hateoas_navigator
     return result
 
   def registerOpenOrder(self):
-    return OpenOrder(connection_helper=self._connection_helper)
+    return OpenOrder(
+      connection_helper=self._connection_helper,
+      hateoas_navigator=self._hateoas_navigator
+  )
 
   def registerSupply(self):
-    return Supply(connection_helper=self._connection_helper)
+    return Supply(
+      connection_helper=self._connection_helper,
+      hateoas_navigator=self._hateoas_navigator
+  )
 
   def getSoftwareReleaseListFromSoftwareProduct(self,
       software_product_reference=None, software_release_url=None):
@@ -737,3 +792,100 @@ class slap:
     result = xml_marshaller.loads(self._connection_helper.GET(url, params=params))
     assert(type(result) == list)
     return result
+
+  def getOpenOrderDict(self):
+    if not getattr(self, '_hateoas_navigator', None):
+      raise Exception('SlapOS Master REST URL (master_rest_url) has not been configured.')
+    return self._hateoas_navigator.getHostingSubscriptionDict()
+
+
+class HateoasNavigator(object):
+  # XXX: needs to be designed for real. For now, just a mockup.
+  def __init__(self, slapgrid_uri,
+               key_file=None, cert_file=None,
+               master_ca_file=None, timeout=60):
+    self.slapos_master_hateoas_uri = slapgrid_uri
+    self.key_file = key_file
+    self.cert_file = cert_file
+    self.master_ca_file = master_ca_file
+    self.timeout = timeout
+
+  def GET(self, uri):
+    # XXX hack
+    connection_helper = ConnectionHelper(
+        uri, self.key_file, self.cert_file, self.master_ca_file, self.timeout)
+    return connection_helper.GET(uri)
+
+  def _hateoasGetMaster(self):
+    result = self.GET('%s/Base_getHateoasMaster' % self.slapos_master_hateoas_uri)
+    return json.loads(result)
+
+  def _hateoasGetPerson(self):
+    person_link = self._hateoasGetMaster()['_links']['action_object_jump']['href']
+    result = self.GET(person_link)
+    return json.loads(result)
+
+  def _hateoas_getHostingSubscriptionDict(self):
+    action_object_slap_list = self._hateoasGetPerson()['_links']['action_object_slap']
+    for action in action_object_slap_list:
+      if action.get('title') == 'getHateoasHostingSubscriptionList':
+        getter_link = action['href']
+        break
+    else:
+      raise Exception('Hosting subscription not found.')
+    result = self.GET(getter_link)
+    return json.loads(result)['_links']['content']
+
+  # XXX static method
+  def _hateoas_getActionObjectSlap(self, action_object_slap_list, action_title):
+    for action in action_object_slap_list:
+      if action.get('title') == action_title:
+        return action['href']
+    else:
+      raise NotFoundError('Action %s not found.' % action)
+
+  def _hateoasGetInformation(self, url):
+    result = self.GET(url)
+    result = json.loads(result)
+    object_link = self._hateoas_getActionObjectSlap(
+      result['_links']['action_object_slap'],
+      'getHateoasInformation'
+    )
+    result = self.GET(object_link)
+    return json.loads(result)
+
+  def getHostingSubscriptionDict(self):
+    hosting_subscription_link_list = self._hateoas_getHostingSubscriptionDict()
+    hosting_subscription_dict = {}
+    for hosting_subscription_link in hosting_subscription_link_list:
+      raw_information = self.getHostingSubscriptionRootSoftwareInstanceInformation(hosting_subscription_link['title'])
+      software_instance = SoftwareInstance()
+      # XXX redefine SoftwareInstance to be more consistent
+      for key, value in raw_information.iteritems():
+        if key in ['_links']:
+          continue
+        setattr(software_instance, '_%s' % key, value)
+      setattr(software_instance, '_software_release_url', raw_information['_links']['software_release'])
+      hosting_subscription_dict[software_instance._title] = software_instance
+
+    return hosting_subscription_dict
+
+  def getHostingSubscriptionRootSoftwareInstanceInformation(self, reference):
+    hosting_subscription_list = self._hateoas_getHostingSubscriptionDict()
+    for hosting_subscription in hosting_subscription_list:
+      if hosting_subscription.get('title') == reference:
+        hosting_subscription_url = hosting_subscription['href']
+        break
+    else:
+      raise NotFoundError('This document does not exist.')
+
+    hosting_subscription = json.loads(self.GET(hosting_subscription_url))
+
+    software_instance_url = self._hateoas_getActionObjectSlap(
+        hosting_subscription['_links']['action_object_slap'],
+        'getHateoasRootInstance'
+    )
+    response = self.GET(software_instance_url)
+    response = json.loads(response)
+    software_instance_url = response['_links']['content'][0]['href']
+    return self._hateoasGetInformation(software_instance_url)
