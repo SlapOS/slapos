@@ -33,7 +33,7 @@ Simple, easy to (un)marshall classes for slap client/server communication
 __all__ = ["slap", "ComputerPartition", "Computer", "SoftwareRelease",
            "SoftwareProductCollection",
            "Supply", "OpenOrder", "NotFoundError",
-           "ResourceNotReady", "ServerError"]
+           "ResourceNotReady", "ServerError", "ConnectionError"]
 
 import logging
 import re
@@ -506,10 +506,10 @@ class ComputerPartition(SlapRequester):
     connection_dict = getattr(self, '_connection_dict', None)
     if connection_dict is None:
       # XXX Backward compatibility for older slapproxy (<= 1.0.0)
-      connection_dict = xml2dict(getattr(self, 'connection_xml', '')) 
+      connection_dict = xml2dict(getattr(self, 'connection_xml', ''))
 
     return connection_dict or {}
-      
+
   def getSoftwareRelease(self):
     """
     Returns the software release associate to the computer partition.
