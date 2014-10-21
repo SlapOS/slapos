@@ -53,7 +53,8 @@ def getImplementationAssertionMethod(klass, interface):
 def getDeclarationAssertionMethod(klass):
   """Returns method which verifies if klass is declaring interface"""
   def testMethod(self):
-    self.assertNotEqual(0, len(list(zope.interface.implementedBy(klass))))
+    if len(list(zope.interface.implementedBy(klass))) == 0:
+      self.fail('%s class does not respect its interface(s).' % klass.__name__)
   return testMethod
 
 def generateTestMethodListOnClass(klass, module):
