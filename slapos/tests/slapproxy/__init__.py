@@ -865,6 +865,7 @@ class TestMultiMasterSupport(MasterMixin):
   software_release_not_in_list = 'http://mywebsite.me/exteral_software_release_not_listed.cfg'
 
   def setUp(self):
+    self.addCleanup(self.stopExternalProxy)
     # XXX don't use lo
     self.external_proxy_host = os.environ.get('LOCAL_IPV4', '127.0.0.1')
     self.external_proxy_port = 8281
@@ -882,7 +883,6 @@ class TestMultiMasterSupport(MasterMixin):
     self.startExternalProxy()
 
   def tearDown(self):
-    self.external_proxy_process.kill()
     super(TestMultiMasterSupport, self).tearDown()
 
   def createExternalProxyConfigurationFile(self):
@@ -920,10 +920,14 @@ database_uri = %(tempdir)s/lib/external_proxy.db
         self.external_proxy_slap._connection_helper.GET('/')
       except slapos.slap.NotFoundError:
         break
-      except socket.error:
+      except slapos.slap.ConnectionError, socket.error:
         attempts = attempts + 1
         time.sleep(0.1)
+    else:
+      self.fail('Could not start external proxy.')
 
+  def stopExternalProxy(self):
+    self.external_proxy_process.kill()
 
   def createSlapOSConfigurationFile(self):
     """
