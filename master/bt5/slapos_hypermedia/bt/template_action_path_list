@@ -9,3 +9,4 @@ Software Installation | get_hateoas_information
 Software Instance | get_hateoas_information
 Software Instance | get_hateoas_news
 Software Instance | get_hateoas_related_hosting_subscription
+System Preference | slapos_hypermedia_preference
