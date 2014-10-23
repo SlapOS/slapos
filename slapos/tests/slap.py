@@ -335,6 +335,61 @@ class TestSlap(SlapMixin):
       self.slap.getSoftwareReleaseListFromSoftwareProduct
     )
 
+  def test_initializeConnection_getHateoasUrl(self):
+    """
+    Test that by default, slap will try to fetch Hateoas URL from XML/RPC URL.
+    """
+    hateoas_url = 'foo'
+    def handler(url, req):
+      qs = urlparse.parse_qs(url.query)
+      if (url.path == '/getHateoasUrl'):
+        return {
+                'status_code': 200,
+                'content': hateoas_url
+                }
+
+    with httmock.HTTMock(handler):
+      self.slap.initializeConnection('http://bar')
+    self.assertEqual(
+        self.slap._hateoas_navigator.slapos_master_hateoas_uri,
+        hateoas_url
+    )
+
+  def test_initializeConnection_specifiedHateoasUrl(self):
+    """
+    Test that if rest URL is specified, slap will NOT try to fetch
+    Hateoas URL from XML/RPC URL.
+    """
+    hateoas_url = 'foo'
+    def handler(url, req):
+      qs = urlparse.parse_qs(url.query)
+      if (url.path == '/getHateoasUrl'):
+        self.fail('slap should not have contacted master to get Hateoas URL.')
+
+    with httmock.HTTMock(handler):
+      self.slap.initializeConnection('http://bar', slapgrid_rest_uri=hateoas_url)
+    self.assertEqual(
+        self.slap._hateoas_navigator.slapos_master_hateoas_uri,
+        hateoas_url
+    )
+
+  def test_initializeConnection_noHateoasUrl(self):
+    """
+    Test that if no rest URL is specified and master does not know about rest,
+    it still work.
+    """
+    hateoas_url = 'foo'
+    def handler(url, req):
+      qs = urlparse.parse_qs(url.query)
+      if (url.path == '/getHateoasUrl'):
+        return {
+                'status_code': 404,
+                }
+
+    with httmock.HTTMock(handler):
+      self.slap.initializeConnection('http://bar')
+    self.assertEqual(None, getattr(self.slap, '_hateoas_navigator', None))
+
 class TestComputer(SlapMixin):
   """
   Tests slapos.slap.slap.Computer class functionality

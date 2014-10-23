@@ -262,7 +262,7 @@ class OpenOrder(SlapRequester):
 
   def getInformation(self, partition_reference):
     if not getattr(self, '_hateoas_navigator', None):
-      raise Exception('SlapOS Master REST URL (master_rest_url) has not been configured.')
+      raise Exception('SlapOS Master Hateoas API required for this operation is not availble.')
     raw_information = self._hateoas_navigator.getHostingSubscriptionRootSoftwareInstanceInformation(partition_reference)
     software_instance = SoftwareInstance()
     # XXX redefine SoftwareInstance to be more consistent
@@ -490,7 +490,7 @@ class ComputerPartition(SlapRequester):
     in the Instance tree of the current Computer Partition.
     """
     if not getattr(self, '_hateoas_navigator', None):
-      raise Exception('SlapOS Master REST URL (master_rest_url) has not been configured.')
+      raise Exception('SlapOS Master Hateoas API required for this operation is not availble.')
     return self._hateoas_navigator.getSoftwareReleaseInformation(partition_reference)
 
   def getId(self):
@@ -710,6 +710,11 @@ class slap:
 
     self._connection_helper = ConnectionHelper(slapgrid_uri, key_file, cert_file, master_ca_file, timeout)
 
+    if not slapgrid_rest_uri:
+      try:
+        slapgrid_rest_uri = self._connection_helper.GET('getHateoasUrl')
+      except:
+        pass
     if slapgrid_rest_uri:
       self._hateoas_navigator = HateoasNavigator(
           slapgrid_rest_uri,
@@ -795,7 +800,7 @@ class slap:
 
   def getOpenOrderDict(self):
     if not getattr(self, '_hateoas_navigator', None):
-      raise Exception('SlapOS Master REST URL (master_rest_url) has not been configured.')
+      raise Exception('SlapOS Master Hateoas API required for this operation is not availble.')
     return self._hateoas_navigator.getHostingSubscriptionDict()
 
 
