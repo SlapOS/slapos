@@ -2789,3 +2789,25 @@ class TestSlapOSSlapToolPersonAccess(TestSlapOSSlapToolMixin):
     finally:
       if os.path.exists(self.revoke_computer_certificate_simulator):
         os.unlink(self.revoke_computer_certificate_simulator)
+
+  def test_getHateoasUrl_NotConfigured(self):
+    for preference in \
+      self.portal.portal_catalog(portal_type="System Preference"):
+      preference = preference.getObject()
+      if preference.getPreferenceState() == 'global':
+        preference.setPreferredHateoasUrl('')
+    self.tic()
+    self.login(self.person_reference)
+    self.assertRaises(NotFound, self.portal_slap.getHateoasUrl)
+
+  def test_getHateoasUrl(self):
+    for preference in \
+      self.portal.portal_catalog(portal_type="System Preference"):
+      preference = preference.getObject()
+      if preference.getPreferenceState() == 'global':
+        preference.setPreferredHateoasUrl('foo')
+    self.tic()
+    self.login(self.person_reference)
+    response = self.portal_slap.getHateoasUrl()
+    self.assertEqual(200, response.status)
+    self.assertEqual('foo', response.body)

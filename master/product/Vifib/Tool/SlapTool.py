@@ -425,6 +425,28 @@ class SlapTool(BaseTool):
         for software_release in software_release_list
           if software_release.getValidationState() == 'published'])
 
+  security.declareProtected(Permissions.AccessContentsInformation,
+    'getHateoasUrl')
+  def getHateoasUrl(self):
+    """
+    Return preferred HATEOAS URL.
+    """
+    try:
+      url = self.getPortalObject().portal_preferences.getPreferredHateoasUrl()
+    except AttributeError:
+      raise NotFound
+    if not url:
+      raise NotFound
+    # Keep in cache server for 7 days
+    self.REQUEST.response.setStatus(200)
+    self.REQUEST.response.setHeader('Cache-Control',
+                                    'public, max-age=1, stale-if-error=604800')
+    self.REQUEST.response.setHeader('Vary',
+                                    'REMOTE_USER')
+    self.REQUEST.response.setHeader('Last-Modified', rfc1123_date(DateTime()))
+    self.REQUEST.response.setHeader('content-type', 'text; charset=utf-8')
+    self.REQUEST.response.setBody(url)
+    return self.REQUEST.response
 
   ####################################################
   # Public POST methods
@@ -773,6 +795,7 @@ class SlapTool(BaseTool):
     self.REQUEST.response.setHeader('Content-Type', 'text/xml; charset=utf-8')
     self.REQUEST.response.setBody(result)
     return self.REQUEST.response
+
 
   ####################################################
   # Internal methods
