@@ -56,6 +56,7 @@ from slapos.grid.SlapObject import Software, Partition
 from slapos.grid.svcbackend import launchSupervisord
 from slapos.grid.utils import (md5digest, createPrivateDirectory, dropPrivileges,
                                SlapPopen, updateFile)
+from slapos.human import human2bytes
 import slapos.slap
 
 
@@ -201,6 +202,9 @@ def create_slapgrid_object(options, logger):
     ]
 
   op = options
+  software_min_free_space = human2bytes(op.get('software_min_free_space', '200M'))
+  instance_min_free_space = human2bytes(op.get('instance_min_free_space', '100M'))
+
   return Slapgrid(software_root=op['software_root'],
                   instance_root=op['instance_root'],
                   master_url=op['master_url'],
@@ -235,7 +239,9 @@ def create_slapgrid_object(options, logger):
                   # Try to fetch from deprecated argument
                   software_release_filter_list=op.get('only-sr', op.get('only_sr')),
                   # Try to fetch from deprecated argument
-                  computer_partition_filter_list=op.get('only-cp', op.get('only_cp')))
+                  computer_partition_filter_list=op.get('only-cp', op.get('only_cp')),
+                  software_min_free_space=software_min_free_space,
+                  instance_min_free_space=instance_min_free_space)
 
 
 def check_required_only_partitions(existing, required):
@@ -288,6 +294,8 @@ class Slapgrid(object):
                develop=False,
                software_release_filter_list=None,
                computer_partition_filter_list=None,
+               software_min_free_space=None,
+               instance_min_free_space=None,
                ):
     """Makes easy initialisation of class parameters"""
     # Parses arguments
@@ -339,6 +347,8 @@ class Slapgrid(object):
       self.computer_partition_filter_list = \
           computer_partition_filter_list.split(",")
     self.maximum_periodicity = maximum_periodicity
+    self.software_min_free_space = software_min_free_space
+    self.instance_min_free_space = instance_min_free_space
 
   def getWatchdogLine(self):
     invocation_list = [WATCHDOG_PATH]
@@ -433,7 +443,8 @@ class Slapgrid(object):
             shacache_cert_file=self.shacache_cert_file,
             shacache_key_file=self.shacache_key_file,
             shadir_cert_file=self.shadir_cert_file,
-            shadir_key_file=self.shadir_key_file)
+            shadir_key_file=self.shadir_key_file,
+            software_min_free_space=self.software_min_free_space)
         if state == 'available':
           completed_tag = os.path.join(software_path, '.completed')
           if (self.develop or (not os.path.exists(completed_tag) and
@@ -670,6 +681,7 @@ class Slapgrid(object):
         buildout=self.buildout,
         logger=self.logger,
         retention_delay=retention_delay,
+        instance_min_free_space=self.instance_min_free_space,
       )
       computer_partition_state = computer_partition.getState()
 
