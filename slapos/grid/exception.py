@@ -38,3 +38,8 @@ class WrongPermissionError(Exception):
 
 class BuildoutFailedError(Exception):
   pass
+
+
+class DiskSpaceError(Exception):
+  pass
+

@@ -48,8 +48,9 @@ from slapos.grid import utils  # for methods that could be mocked, access them t
 from slapos.slap.slap import NotFoundError
 from slapos.grid.svcbackend import getSupervisorRPC
 from slapos.grid.exception import (BuildoutFailedError, WrongPermissionError,
-                                   PathDoesNotExistError)
+                                   PathDoesNotExistError, DiskSpaceError)
 from slapos.grid.networkcache import download_network_cached, upload_network_cached
+from slapos.human import bytes2human
 
 
 WATCHDOG_MARK = '-on-watch'
@@ -59,6 +60,38 @@ REQUIRED_COMPUTER_PARTITION_PERMISSION = 0o750
 # XXX not very clean. this is changed when testing
 PROGRAM_PARTITION_TEMPLATE = pkg_resources.resource_stream(__name__,
             'templates/program_partition_supervisord.conf.in').read()
+
+
+def free_space(path, fn):
+  while True:
+    try:
+      disk = os.statvfs(path)
+      return fn(disk)
+    except OSError:
+      pass
+    if os.sep not in path:
+      break
+    path = os.path.split(path)[0]
+
+
+def free_space_root(path):
+  """
+  Returns free space available to the root user, in bytes.
+
+  A non-existent path can be provided, and the ancestors
+  will be queried instead.
+  """
+  return free_space(path, lambda d: d.bsize * d.f_bfree)
+
+
+def free_space_nonroot(path):
+  """
+  Returns free space available to non-root users, in bytes.
+
+  A non-existent path can be provided, and the ancestors
+  will be queried instead.
+  """
+  return free_space(path, lambda d: d.f_bsize * d.f_bavail)
 
 
 class Software(object):
@@ -73,7 +106,8 @@ class Software(object):
                download_binary_cache_url=None, upload_binary_cache_url=None,
                download_binary_dir_url=None, upload_binary_dir_url=None,
                download_from_binary_cache_url_blacklist=None,
-               upload_to_binary_cache_url_blacklist=None):
+               upload_to_binary_cache_url_blacklist=None,
+               software_min_free_space=None):
     """Initialisation of class parameters
     """
 
@@ -106,6 +140,17 @@ class Software(object):
         download_from_binary_cache_url_blacklist
     self.upload_to_binary_cache_url_blacklist = \
         upload_to_binary_cache_url_blacklist
+    self.software_min_free_space = software_min_free_space
+
+  def check_free_space(self):
+    required = self.software_min_free_space
+    available = free_space_nonroot(self.software_path)
+
+    if available < required:
+      msg = "Not enough space for {path}: available {available}, required {required} (option 'software_min_free_space')"
+      raise DiskSpaceError(msg.format(path=self.software_path,
+                                      available=bytes2human(available),
+                                      required=bytes2human(required)))
 
   def install(self):
     """ Fetches binary cache if possible.
@@ -113,6 +158,9 @@ class Software(object):
     """
     self.logger.info("Installing software release %s..." % self.url)
     cache_dir = tempfile.mkdtemp()
+
+    self.check_free_space()
+
     try:
       tarpath = os.path.join(cache_dir, self.software_url_hash)
       # Check if we can download from cache
@@ -293,6 +341,7 @@ class Partition(object):
                logger,
                certificate_repository_path=None,
                retention_delay='0',
+               instance_min_free_space=None
                ):
     """Initialisation of class parameters"""
     self.buildout = buildout
@@ -332,6 +381,19 @@ class Partition(object):
     self.retention_lock_date_file_path = os.path.join(
         self.instance_path, self.retention_lock_date_filename
     )
+
+    self.instance_min_free_space = instance_min_free_space
+
+
+  def check_free_space(self):
+    required = self.instance_min_free_space
+    available = free_space_nonroot(self.instance_path)
+
+    if available < required:
+      msg = "Not enough space for {path}: available {available}, required {required} (option 'instance_min_free_space')"
+      raise DiskSpaceError(msg.format(path=self.instance_path,
+                                      available=bytes2human(available),
+                                      required=bytes2human(required)))
 
   def _updateCertificate(self):
     try:
@@ -397,6 +459,9 @@ class Partition(object):
     """
     self.logger.info("Installing Computer Partition %s..."
         % self.computer_partition.getId())
+
+    self.check_free_space()
+
     # Checks existence and permissions of Partition directory
     # Note : Partitions have to be created and configured before running slapgrid
     if not os.path.isdir(self.instance_path):
@@ -505,6 +570,7 @@ class Partition(object):
                                 ['buildout:bin-directory=%s' %
                                     os.path.join(self.instance_path, 'sbin')])
       buildout_binary = os.path.join(self.instance_path, 'sbin', 'buildout')
+
     # Launches buildout
     utils.launchBuildout(path=self.instance_path,
                          buildout_binary=buildout_binary,
