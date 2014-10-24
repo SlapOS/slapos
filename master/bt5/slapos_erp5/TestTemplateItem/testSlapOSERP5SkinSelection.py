@@ -57,6 +57,8 @@ class TestSlaposSkinSelection(testSlapOSMixin):
         [x[0] for x in portal.portal_skins.getSkinPaths()],
         [
           'Download',
+          'Hal',
+          'HalRestricted',
           'Hosting',
           'KM',
           'Multiflex',
@@ -65,7 +67,7 @@ class TestSlaposSkinSelection(testSlapOSMixin):
           'RSS',
           'SHACACHE',
           'SHADIR',
-          'View',
+          'View'
         ]
     )
 
