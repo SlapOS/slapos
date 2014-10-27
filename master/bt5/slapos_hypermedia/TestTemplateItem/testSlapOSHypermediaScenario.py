@@ -49,9 +49,8 @@ class TestSlapOSHypermediaPersonScenario(testSlapOSMixin):
 
     def getNewHttpConnection(api_netloc):
       if api_scheme == 'https':
-        connection = httplib.HTTPSConnection(api_netloc)
-      else:
-        connection = httplib.HTTPConnection(api_netloc)
+        raise Exception('Please connect directly to the Zope server')
+      connection = httplib.HTTPConnection(api_netloc)
       return connection
 
     #####################################################
@@ -221,6 +220,32 @@ class TestSlapOSHypermediaPersonScenario(testSlapOSMixin):
     instance_hal = json.loads(response.read())
 
     #####################################################
+    # Fetch instance informations
+    #####################################################
+
+    request_link_dict = hateoasGetLinkFromLinks(
+        instance_hal['_links']['action_object_slap'],
+        'getHateoasInformation'
+    )
+    self.assertNotEqual(request_link_dict, None)
+    connection = getNewHttpConnection(api_netloc)
+    connection.request(
+      method=request_link_dict.get('method', 'GET'),
+      url=request_link_dict['href'],
+      headers={
+       'Authorization': authorization,
+       'Accept': content_type,
+      },
+      body="",
+    )
+    response = connection.getresponse()
+ 
+    self.assertEquals(response.status, 200)
+    self.assertEquals(response.getheader('Content-Type'), content_type)
+
+    self.tic()
+
+    #####################################################
     # Get instance news
     #####################################################
     news_link_dict = hateoasGetLinkFromLinks(
@@ -348,3 +373,224 @@ class TestSlapOSHypermediaPersonScenario(testSlapOSMixin):
     response = connection.getresponse()
     self.assertEquals(response.getheader('Content-Type'), content_type)
     software_hal = json.loads(response.read())
+
+
+class TestSlapOSHypermediaInstanceScenario(testSlapOSMixin):
+  def generateNewId(self):
+    return "%s" % self.portal.portal_ids.generateNewId(
+        id_group=('slapos_core_test'))
+
+  def generateNewSoftwareReleaseUrl(self):
+    return 'http://example.org/test%s.cfg' % self.generateNewId()
+
+  def generateNewSoftwareType(self):
+    return 'Type %s' % self.generateNewId()
+
+  def generateNewSoftwareTitle(self):
+    return 'Title %s' % self.generateNewId()
+
+  def test(self):
+    self._makeTree()
+    instance = self.software_instance
+    
+    remote_user = instance.getReference()
+    content_type = "application/hal+json"
+    
+    # XXX Default home url. 'Hardcoded' in client.
+    api_scheme, api_netloc, api_path, api_query, \
+        api_fragment = urlparse.urlsplit('%s/Base_getHateoasMaster' % \
+        self.portal.absolute_url())
+
+    def getNewHttpConnection(api_netloc):
+      if api_scheme == 'https':
+        raise Exception('Please connect directly to the Zope server')
+      connection = httplib.HTTPConnection(api_netloc)
+      return connection
+
+    #####################################################
+    # Access the master home page hal
+    #####################################################
+    connection = getNewHttpConnection(api_netloc)
+    connection.request(
+      method='GET',
+      url='%s/web_site_module/hateoas/Base_getHateoasMaster' % \
+          self.portal.absolute_url(),
+      headers={
+       'REMOTE_USER': remote_user,
+       'Accept': content_type,
+      },
+      body="",
+    )
+    response = connection.getresponse()
+    self.assertEquals(response.status, 200)
+    self.assertEquals(response.getheader('Content-Type'), content_type)
+    home_page_hal = json.loads(response.read())
+
+    #####################################################
+    # Fetch the instance hal
+    #####################################################
+    user_link_dict = home_page_hal['_links']['action_object_jump']
+    self.assertNotEqual(user_link_dict, None)
+
+    connection = getNewHttpConnection(api_netloc)
+    connection.request(
+      method=user_link_dict.get('method', 'GET'),
+      url=user_link_dict['href'],
+      headers={
+       'REMOTE_USER': remote_user,
+       'Accept': content_type,
+      },
+      body="",
+    )
+    response = connection.getresponse()
+    self.assertEquals(response.status, 200)
+    self.assertEquals(response.getheader('Content-Type'), content_type)
+    instance_hal = json.loads(response.read())
+
+    #####################################################
+    # Fetch instance informations
+    #####################################################
+
+    request_link_dict = hateoasGetLinkFromLinks(
+        instance_hal['_links']['action_object_slap'],
+        'getHateoasInformation'
+    )
+    self.assertNotEqual(request_link_dict, None)
+    connection = getNewHttpConnection(api_netloc)
+    connection.request(
+      method=user_link_dict.get('method', 'GET'),
+      url=user_link_dict['href'],
+      headers={
+       'REMOTE_USER': remote_user,
+       'Accept': content_type,
+      },
+      body="",
+    )
+    response = connection.getresponse()
+ 
+    self.assertEquals(response.status, 200)
+    self.assertEquals(response.getheader('Content-Type'), content_type)
+
+    self.tic()
+
+    #####################################################
+    # Get instance news
+    #####################################################
+    request_link_dict = hateoasGetLinkFromLinks(
+        instance_hal['_links']['action_object_slap'],
+        'getHateoasNews'
+    )
+    self.assertNotEqual(request_link_dict, None)
+    connection = getNewHttpConnection(api_netloc)
+    connection.request(
+      method=user_link_dict.get('method', 'GET'),
+      url=user_link_dict['href'],
+      headers={
+       'REMOTE_USER': remote_user,
+       'Accept': content_type,
+      },
+      body="",
+    )
+    response = connection.getresponse()
+ 
+    self.assertEquals(response.status, 200)
+    self.assertEquals(response.getheader('Content-Type'), content_type)
+
+    self.tic()
+
+    #####################################################
+    # Get hosting subscription of instance
+    #####################################################
+    # XXX can be simpler and doesn't need getHateoasRelatedHostingSubscription script
+    request_link_dict = hateoasGetLinkFromLinks(
+        instance_hal['_links']['action_object_slap'],
+        'getHateoasRelatedHostingSubscription'
+    )
+    self.assertNotEqual(request_link_dict, None)
+    connection = getNewHttpConnection(api_netloc)
+    connection.request(
+      method=request_link_dict.get('method', 'GET'),
+      url=request_link_dict['href'],
+      headers={
+       'REMOTE_USER': remote_user,
+       'Accept': content_type,
+      },
+      body="",
+    )
+    response = connection.getresponse()
+ 
+    self.assertEquals(response.status, 200)
+    self.assertEquals(response.getheader('Content-Type'), content_type)
+    subscription_hal = json.loads(response.read())
+
+    self.tic()
+
+
+    request_link_dict = hateoasGetLinkFromLinks(
+        subscription_hal['_links']['action_object_jump'],
+        'Hosting Subscription'
+    )
+    self.assertNotEqual(request_link_dict, None)
+    connection = getNewHttpConnection(api_netloc)
+    connection.request(
+      method=request_link_dict.get('method', 'GET'),
+      url=request_link_dict['href'],
+      headers={
+       'REMOTE_USER': remote_user,
+       'Accept': content_type,
+      },
+      body="",
+    )
+    response = connection.getresponse()
+ 
+    self.assertEquals(response.status, 200)
+    self.assertEquals(response.getheader('Content-Type'), content_type)
+    subscription_hal = json.loads(response.read())
+
+    self.tic()
+
+    #####################################################
+    # Get hosting subscription's instance list
+    #####################################################
+    user_link_dict = hateoasGetLinkFromLinks(
+        subscription_hal['_links']['action_object_slap'],
+        'getHateoasInstanceList'
+    )
+    self.assertNotEqual(user_link_dict, None)
+    connection = getNewHttpConnection(api_netloc)
+    connection.request(
+      method=user_link_dict.get('method', 'GET'),
+      url=user_link_dict['href'],
+      headers={
+       'REMOTE_USER': remote_user,
+       'Accept': content_type,
+      },
+      body="",
+    )
+    response = connection.getresponse()
+ 
+    self.assertEquals(response.status, 200)
+    self.assertEquals(response.getheader('Content-Type'), content_type)
+    instance_collection_hal = json.loads(response.read())
+
+    #####################################################
+    # Get instance
+    #####################################################
+    subscription_link_dict = instance_collection_hal['_links']\
+        ['content'][0]
+    self.assertNotEqual(subscription_link_dict, None)
+    connection = getNewHttpConnection(api_netloc)
+    connection.request(
+      method=subscription_link_dict.get('method', 'GET'),
+      url=subscription_link_dict['href'],
+      headers={
+       'REMOTE_USER': remote_user,
+       'Accept': content_type,
+      },
+      body="",
+    )
+    response = connection.getresponse()
+ 
+    self.assertEquals(response.status, 200)
+    self.assertEquals(response.getheader('Content-Type'), content_type)
+    instance_hal = json.loads(response.read())

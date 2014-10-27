@@ -361,6 +361,33 @@ class TestSlapOSBase_getHateoasMaster(TestSlapOSHypermediaMixin):
       },
     }, indent=2))
 
+  @simulate('Base_getRequestUrl', '*args, **kwargs',
+      'return "http://example.org/bar"')
+  @simulate('Base_getRequestHeader', '*args, **kwargs',
+            'return "application/hal+json"')
+  @changeSkin('Hal')
+  def test_getHateoasMaster_instance_result(self):
+    self._makeTree()
+    self.login(self.software_instance.getReference())
+    self.changeSkin('Hal')
+    fake_request = do_fake_request("GET")
+    result = self.portal.Base_getHateoasMaster(REQUEST=fake_request)
+    self.assertEquals(fake_request.RESPONSE.status, 200)
+    self.assertEquals(fake_request.RESPONSE.getHeader('Content-Type'),
+      "application/hal+json"
+    )
+    self.assertEquals(result, json.dumps({
+      '_links': {
+        "self": {
+          "href": "http://example.org/bar"
+        },
+        "action_object_jump": {
+          "href": "%s/ERP5Document_getHateoas" % self.software_instance.absolute_url(),
+          "title": "Software Instance"
+        },
+      },
+    }, indent=2))
+
 class TestSlapOSPerson_requestHateoasHostingSubscription(TestSlapOSHypermediaMixin):
 
   @changeSkin('Hal')
