@@ -41,12 +41,14 @@ os.environ.setdefault('EDITOR', 'vi')
 
 from cliff.app import App
 from cliff.commandmanager import CommandManager, LOG
+from requests.packages import urllib3
 
 import slapos.version
 
 # silence messages like 'Starting connection' that are logged with INFO
 urllib3_logger = logging.getLogger('requests.packages.urllib3')
 urllib3_logger.setLevel(logging.WARNING)
+urllib3.disable_warnings()
 
 
 class SlapOSCommandManager(CommandManager):
