@@ -792,6 +792,95 @@ class TestSlapOSInstance_getHateoasNews(TestSlapOSHypermediaMixin):
       },
     }, indent=2)))
 
+class TestSlapOSInstance_getHateoasRelatedHostingSubscription(TestSlapOSHypermediaMixin):
+
+  def _makeInstance(self):
+    instance = self.portal.software_instance_module\
+        .template_software_instance.Base_createCloneDocument(batch_mode=1)
+    instance.edit(
+        title=self.generateNewSoftwareTitle(),
+        reference="TESTHS-%s" % self.generateNewId(),
+        software_type=self.generateNewSoftwareType(),
+        url_string=self.generateNewSoftwareReleaseUrl(),
+        instance_xml=self.generateSafeXml(),
+        sla_xml=self.generateSafeXml(),
+        connection_xml=self.generateSafeXml(),
+    )
+    self.tic()
+    return instance
+
+  @changeSkin('Hal')
+  def test_getHateoasRelatedHostingSubscription_REQUEST_mandatory(self):
+    self.assertRaises(
+      Unauthorized,
+      self.portal.Instance_getHateoasRelatedHostingSubscription
+    )
+
+  @simulate('Base_getRequestHeader', '*args, **kwargs',
+            'return "application/vnd+bar"')
+  @changeSkin('Hal')
+  def test_getHateoasRelatedHostingSubscription_wrong_ACCEPT(self):
+    instance = self._makeInstance()
+    fake_request = do_fake_request("GET")
+    result = instance.Instance_getHateoasRelatedHostingSubscription(
+        REQUEST=fake_request)
+    self.assertEquals(fake_request.RESPONSE.status, 406)
+    self.assertEquals(result, "")
+
+  @simulate('Base_getRequestHeader', '*args, **kwargs',
+            'return "application/hal+json"')
+  @changeSkin('Hal')
+  def test_getHateoasRelatedHostingSubscription_bad_method(self):
+    instance = self._makeInstance()
+    fake_request = do_fake_request("POST")
+    result = instance.Instance_getHateoasRelatedHostingSubscription(
+        REQUEST=fake_request)
+    self.assertEquals(fake_request.RESPONSE.status, 405)
+    self.assertEquals(result, "")
+
+  @simulate('Base_getRequestHeader', '*args, **kwargs',
+            'return "application/hal+json"')
+  @changeSkin('Hal')
+  def test_getHateoasRelatedHostingSubscription_not_instance_context(self):
+    fake_request = do_fake_request("GET")
+    result = self.portal.Instance_getHateoasRelatedHostingSubscription(REQUEST=fake_request)
+    self.assertEquals(fake_request.RESPONSE.status, 403)
+    self.assertEquals(result, "")
+
+  @simulate('Base_getRequestUrl', '*args, **kwargs',
+      'return "http://example.org/bar"')
+  @simulate('Base_getRequestHeader', '*args, **kwargs',
+            'return "application/hal+json"')
+  @changeSkin('Hal')
+  def test_getHateoasRelatedHostingSubscription_result(self):
+    subscription = self._makeHostingSubscription()
+    instance= self._makeInstance()
+    instance.edit(specialise_value=subscription)
+    self.tic()
+    fake_request = do_fake_request("GET")
+    result = instance.Instance_getHateoasRelatedHostingSubscription(
+        REQUEST=fake_request)
+    self.assertEquals(fake_request.RESPONSE.status, 200)
+    self.assertEquals(fake_request.RESPONSE.getHeader('Content-Type'),
+      "application/hal+json"
+    )
+
+    self.assertEquals(json.loads(result), json.loads(json.dumps({
+      '_links': {
+        "self": {
+          "href": "http://example.org/bar"
+        },
+        "index": {
+          "href": "urn:jio:get:%s/ERP5Document_getHateoas" % \
+            instance.getRelativeUrl(),
+          "title": "Software Instance"
+        },
+        "action_object_jump": {
+          'href': "%s/ERP5Document_getHateoas" % subscription.getAbsoluteUrl(),
+          'title': "Hosting Subscription"
+        }
+      },
+    }, indent=2)))
 
 class TestSlapOSInstance_getHateoasInformation(TestSlapOSHypermediaMixin):
 

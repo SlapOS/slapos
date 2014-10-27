@@ -8,3 +8,4 @@ Person | request_hateoas_hosting_subscription
 Software Installation | get_hateoas_information
 Software Instance | get_hateoas_information
 Software Instance | get_hateoas_news
+Software Instance | get_hateoas_related_hosting_subscription
