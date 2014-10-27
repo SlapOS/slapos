@@ -24,10 +24,6 @@ recipe = slapos.cookbook:request
 config-namebase = {{namebase}}
 software-url = ${slap-connection:software-release-url}
 
-## Every request is double to provide the 3 IPs.
-## First, we request with ip-list parameter hardcoded.
-## Then, we request the same thing without this.
-## XXX-Cedric: is it useful?
 [request-{{namebase}}]
 <= resilient
    slap-connection
@@ -37,7 +33,7 @@ name = {{namebase}}0
 return = ssh-public-key ssh-url notification-id ip
 config =
 # Resilient related parameters
-  number authorized-key notify ip-list namebase
+  number authorized-key notify namebase
 {% if slapparameter_dict is defined %}
 # Software Instance related parameters
   {% for parameter_name in slapparameter_dict.keys() %}{{parameter_name}} {% endfor %}
@@ -45,7 +41,6 @@ config =
 config-number = 0
 config-authorized-key = {% for id in range(1,nbbackup|int) %} ${request-pbs-{{namebase}}-{{id}}:connection-ssh-key}{% endfor %}
 config-notify = {% for id in range(1,nbbackup|int) %} ${request-pbs-{{namebase}}-{{id}}:connection-notification-url}{% endfor %}
-config-ip-list =
 # Bubble up all the instance parameters to the requested export instance.
 {% if slapparameter_dict is defined %}
 {% for parameter_name, parameter_value in slapparameter_dict.items() %}config-{{parameter_name}} = {{parameter_value}}
@@ -90,11 +85,10 @@ return = ssh-public-key ssh-url notification-url ip
 
 pbs-notification-id = ${slap-connection:computer-id}-${slap-connection:partition-id}-{{namebase}}-{{id}}-push
 
-config = number authorized-key on-notification ip-list namebase
+config = number authorized-key on-notification namebase
 config-number = {{id}}
 config-authorized-key = ${request-pbs-{{namebase}}-{{id}}:connection-ssh-key}
 config-on-notification = ${request-pbs-{{namebase}}-{{id}}:connection-feeds-url}${:pbs-notification-id}
-config-ip-list =
 {% if sla_parameter_dict == {} -%}
 sla = mode
 sla-mode = unique_by_network
@@ -125,12 +119,6 @@ feed-url-{{namebase}}-{{id}}-push = ${request-pbs-{{namebase}}-{{id}}:connection
 {% endfor -%}
 
 
-[iplist]
-config-ip-list = ${request-{{namebase}}:connection-ip}{% for j in range(1,nbbackup|int) %} ${request-{{namebase}}-pseudo-replicating-{{j}}:connection-ip}{% endfor %}
-
-[request-{{namebase}}-2]
-<= request-{{namebase}}
-   iplist
 
 [resilient-request-{{namebase}}-public-key-promise]
 # Check that public-key-value parameter exists and is not empty
@@ -138,7 +126,7 @@ config-ip-list = ${request-{{namebase}}:connection-ip}{% for j in range(1,nbback
 recipe = collective.recipe.template
 # XXX: don't use system executable
 input = inline:#!/bin/sh
-  PUBLIC_KEY_CONTENT="${request-{{namebase}}-2:connection-ssh-public-key})"
+  PUBLIC_KEY_CONTENT="${request-{{namebase}}:connection-ssh-public-key})"
   if [[ ! -n "$PUBLIC_KEY_CONTENT" || "$PUBLIC_KEY_CONTENT" == *None* ]]; then
     exit 1
   fi
@@ -146,9 +134,6 @@ output = ${resilient-directory:promise}/resilient-request-{{namebase}}-public-ke
 mode = 700
 
 {% for id in range(1,nbbackup|int) %}
-[request-{{namebase}}-pseudo-replicating-{{id}}-2]
-<= request-{{namebase}}-pseudo-replicating-{{id}}
-   iplist
 
 [resilient-request-{{namebase}}-pseudo-replicating-{{id}}-public-key-promise]
 # Check that public-key-value parameter exists and is not empty
@@ -156,7 +141,7 @@ mode = 700
 recipe = collective.recipe.template
 # XXX: don't use system executable
 input = inline:#!/bin/sh
-  PUBLIC_KEY_CONTENT="${request-{{namebase}}-pseudo-replicating-{{id}}-2:connection-ssh-public-key})"
+  PUBLIC_KEY_CONTENT="${request-{{namebase}}-pseudo-replicating-{{id}}:connection-ssh-public-key})"
   if [[ ! -n "$PUBLIC_KEY_CONTENT" || "$PUBLIC_KEY_CONTENT" == *None* ]]; then
     exit 1
   fi

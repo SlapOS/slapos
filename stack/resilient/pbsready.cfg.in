@@ -128,14 +128,10 @@ rotate-num = 30
 
 #----------------
 #--
-#-- Resiliency script for the bully algorithm
+#-- Resiliency script for the node takeover
 
 [resiliency]
-# If enable-bully-service is true, the scripts will be run automatically.
-# If false, they can be run with bin/bullly for all the PBSReady instances.
-enable-bully-service = False
 recipe = slapos.cookbook:addresiliency
-wrapper-bully = bully
 wrapper-takeover = takeover
 services = $${basedirectory:services}
 bin = $${rootdirectory:bin}
