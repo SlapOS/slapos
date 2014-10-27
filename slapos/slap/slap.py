@@ -491,7 +491,17 @@ class ComputerPartition(SlapRequester):
     """
     if not getattr(self, '_hateoas_navigator', None):
       raise Exception('SlapOS Master Hateoas API required for this operation is not availble.')
-    return self._hateoas_navigator.getSoftwareReleaseInformation(partition_reference)
+
+    raw_information = self._hateoas_navigator.getRelatedInstanceInformation(partition_reference)
+    software_instance = SoftwareInstance()
+    # XXX redefine SoftwareInstance to be more consistent
+    for key, value in raw_information.iteritems():
+      if key in ['_links']:
+        continue
+      setattr(software_instance, '_%s' % key, value)
+    setattr(software_instance, '_software_release_url', raw_information['_links']['software_release'])
+    return software_instance
+
 
   def getId(self):
     if not getattr(self, '_partition_id', None):
@@ -825,6 +835,7 @@ class HateoasNavigator(object):
     result = self.GET('%s/Base_getHateoasMaster' % self.slapos_master_hateoas_uri)
     return json.loads(result)
 
+  # XXX rename to be more generic
   def _hateoasGetPerson(self):
     person_link = self._hateoasGetMaster()['_links']['action_object_jump']['href']
     result = self.GET(person_link)
@@ -841,13 +852,28 @@ class HateoasNavigator(object):
     result = self.GET(getter_link)
     return json.loads(result)['_links']['content']
 
-  # XXX static method
-  def _hateoas_getActionObjectSlap(self, action_object_slap_list, action_title):
-    for action in action_object_slap_list:
-      if action.get('title') == action_title:
+  # XXX rename me to blablaUrl(self)
+  def _hateoas_getRelatedHostingSubscription(self):
+    action_object_slap_list = self._hateoasGetPerson()['_links']['action_object_slap']
+    getter_link = self.hateoasGetLinkFromLinks(action_object_slap_list, 'getHateoasRelatedHostingSubscription')
+    result = self.GET(getter_link)
+    return json.loads(result)['_links']['action_object_jump']['href']
+
+  # Static method
+  def hateoasGetLinkFromLinks(self, links, title):
+    if type(links) == dict:
+      if links.get('title') == title:
+        return action['href']
+      raise NotFoundError('Action %s not found.' % title)
+    for action in links:
+      if action.get('title') == title:
         return action['href']
     else:
-      raise NotFoundError('Action %s not found.' % action)
+      raise NotFoundError('Action %s not found.' % title)
+
+  # XXX remove me
+  def _hateoas_getActionObjectSlap(self, action_object_slap_list, action_title):
+    return self.hateoasGetLinkFromLinks(action_object_slap_list, action_title)
 
   def _hateoasGetInformation(self, url):
     result = self.GET(url)
@@ -858,6 +884,12 @@ class HateoasNavigator(object):
     )
     result = self.GET(object_link)
     return json.loads(result)
+
+  def getHateoasInstanceList(self, hosting_subscription_url):
+    hosting_subscription = json.loads(self.GET(hosting_subscription_url))
+    instance_list_url = self.hateoasGetLinkFromLinks(hosting_subscription['_links']['action_object_slap'], 'getHateoasInstanceList')
+    instance_list = json.loads(self.GET(instance_list_url))
+    return instance_list['_links']['content']
 
   def getHostingSubscriptionDict(self):
     hosting_subscription_link_list = self._hateoas_getHostingSubscriptionDict()
@@ -894,3 +926,11 @@ class HateoasNavigator(object):
     response = json.loads(response)
     software_instance_url = response['_links']['content'][0]['href']
     return self._hateoasGetInformation(software_instance_url)
+
+  def getRelatedInstanceInformation(self, reference):
+    related_hosting_subscription_url = self._hateoas_getRelatedHostingSubscription()
+    instance_list = self.getHateoasInstanceList(related_hosting_subscription_url)
+    instance_url = self.hateoasGetLinkFromLinks(instance_list, reference)
+    instance = self._hateoasGetInformation(instance_url)
+    return instance
+
