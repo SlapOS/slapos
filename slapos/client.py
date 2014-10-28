@@ -89,8 +89,9 @@ def init(conf, logger):
   aliases to common software releases"""
   # XXX check certificate and key existence
   slap = slapos.slap.slap()
-  slap.initializeConnection(conf.master_url, conf.master_rest_url,
-      key_file=conf.key_file, cert_file=conf.cert_file)
+  slap.initializeConnection(conf.master_url,
+      key_file=conf.key_file, cert_file=conf.cert_file,
+      slapgrid_rest_uri=conf.master_rest_url)
   local = globals().copy()
   local['slap'] = slap
   # Create global shortcut functions to request instance and software
