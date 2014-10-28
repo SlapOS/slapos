@@ -136,7 +136,7 @@ class Recipe(GenericSlapRecipe, Notify, Callback):
             # in case of manual changes to the backup repository.
 
             CORRUPTED_ARGS=""
-            if [ "$1" == "--fix-corrupted" ]; then
+            if [ "$1" = "--fix-corrupted" ]; then
                 VERIFY=$($RDIFF_BACKUP --verify $BACKUP_DIR 2>&1 >/dev/null)
                 echo "$VERIFY" | egrep "$CORRUPTED_MSG" | sed "s/$CORRUPTED_MSG//g" > $CORRUPTED_FILE
 
