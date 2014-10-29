@@ -1,6 +1,7 @@
 
 import os
 import shutil
+import sys
 import tempfile
 import unittest
 
@@ -17,7 +18,11 @@ class PBSTest(unittest.TestCase):
                     'allow-hosts': '',
                     'develop-eggs-directory': '',
                     'eggs-directory': '',
+                    'python': 'testpython',
                     },
+                 'testpython': {
+                     'executable': sys.executable,
+                     },
                  'slap-connection': {
                      'computer-id': '',
                      'partition-id': '',
