@@ -517,7 +517,7 @@ class Slapgrid(object):
         command = [os.path.join(promise_dir, promise)]
 
         promise = os.path.basename(command[0])
-        self.logger.info("Checking promise %r.", promise)
+        self.logger.info("Checking promise '%s'.", promise)
 
         process_handler = subprocess.Popen(command,
                                            preexec_fn=lambda: dropPrivileges(uid, gid, logger=self.logger),
@@ -534,13 +534,13 @@ class Slapgrid(object):
 
         if process_handler.poll() is None:
           process_handler.terminate()
-          raise Slapgrid.PromiseError("The promise %r timed out" % promise)
+          raise Slapgrid.PromiseError("The promise '%s' timed out" % promise)
         elif process_handler.poll() != 0:
           stderr = process_handler.communicate()[1]
           if stderr is None:
-            stderr = 'No error output from %r.' % promise
+            stderr = "No error output from '%s'." % promise
           else:
-            stderr = 'Promise %r:' % promise + stderr
+            stderr = "Promise '%s':" % promise + stderr
           raise Slapgrid.PromiseError(stderr)
 
     if not promise_present:
