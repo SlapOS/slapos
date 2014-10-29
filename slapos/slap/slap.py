@@ -60,15 +60,6 @@ fallback_logger.addHandler(fallback_handler)
 
 DEFAULT_SOFTWARE_TYPE = 'RootSoftwareInstance'
 
-
-class AuthenticationError(Exception):
-  pass
-
-
-class ConnectionError(Exception):
-  pass
-
-
 class SlapDocument:
   def __init__(self, connection_helper=None):
     if connection_helper is not None:
@@ -197,6 +188,7 @@ class SoftwareInstance(SlapDocument):
   """
   Contains Software Instance information
   """
+  zope.interface.implements(interface.ISoftwareInstance)
 
   def __init__(self, **kwargs):
     """
@@ -207,19 +199,21 @@ class SoftwareInstance(SlapDocument):
 
 
 """Exposed exceptions"""
-
-
-# XXX Why do we need to expose exceptions?
 class ResourceNotReady(Exception):
   zope.interface.implements(interface.IResourceNotReady)
-
 
 class ServerError(Exception):
   zope.interface.implements(interface.IServerError)
 
-
 class NotFoundError(Exception):
   zope.interface.implements(interface.INotFoundError)
+
+class AuthenticationError(Exception):
+  pass
+
+
+class ConnectionError(Exception):
+  zope.interface.implements(interface.IConnectionError)
 
 
 class Supply(SlapDocument):

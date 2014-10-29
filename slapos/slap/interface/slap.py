@@ -35,6 +35,12 @@ class IException(Interface):
   Classes which implement IException are used to report errors.
   """
 
+class IConnectionError(IException):
+  """
+  Classes which implement IServerError are used to report a connection problem
+  to the slap server.
+  """
+
 class IServerError(IException):
   """
   Classes which implement IServerError are used to report unexpected error
@@ -163,6 +169,12 @@ class ISoftwareProductCollection(Interface):
     Return the best Software Release URL of the Software Product
     software_product, by querying SlapOS Master.
     """
+
+class ISoftwareInstance(Interface):
+  """
+  Classes which implement ISoftwareRelease are used by slap to represent
+  informations about a Software Instance.
+  """
 
 class IComputerPartition(IBuildoutController, IRequester):
   """
@@ -306,7 +318,7 @@ class IComputerPartition(IBuildoutController, IRequester):
 
   def getStatus():
     """
-    Returns a dictionnary containing the latest status of the 
+    Returns a dictionnary containing the latest status of the
     computer partition.
     The dictionnary keys are:
       user -- user who reported the latest status
@@ -367,7 +379,7 @@ class IComputer(Interface):
 
   def getStatus():
     """
-    Returns a dictionnary containing the latest status of the 
+    Returns a dictionnary containing the latest status of the
     computer.
     The dictionnary keys are:
       user -- user who reported the latest status
@@ -377,7 +389,7 @@ class IComputer(Interface):
 
   def generateCertificate():
     """
-    Returns a dictionnary containing the new certificate files for 
+    Returns a dictionnary containing the new certificate files for
     the computer.
     The dictionnary keys are:
       key -- key file
