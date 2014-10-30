@@ -30,13 +30,12 @@ return =
   url ssh-public-key ssh-url notification-id ip
 # KVM related parameters
 # XXX: return ALL parameters (like nat rules), through jinja
-  backend-url url ipv6
+  backend-url url
 
 [publish-connection-informations]
 recipe = slapos.cookbook:publish
 backend-url = ${request-kvm:connection-backend-url}
 url = ${request-kvm:connection-url}
-ipv6 = ${request-kvm:connection-ipv6}
 
 [kvm-frontend-url-promise]
 # Check that url parameter is complete
