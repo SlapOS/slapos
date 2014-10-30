@@ -45,7 +45,7 @@
       "description": "Zone to be handled by the DNS cluster",
       "type": "string",
       "default": "domain.com",
-      "pattern": "^([a-zA-Z0-9]([a-zA-Z0-9\\-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,6}$"
+      "pattern": "^([a-zA-Z0-9]([a-zA-Z0-9\\-]{0,61}[a-zA-Z0-9])?\\.)+[a-zA-Z]{2,6}$"
     },
 
     "server-admin": {
@@ -59,7 +59,7 @@
       "title": "DNS domains template string",
       "description": "Template used to generate DNS domain name",
       "type": "string",
-      "default": "ns%s." + zone
+      "default": "ns%s. + zone"
     }
   }
 }

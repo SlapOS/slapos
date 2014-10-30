@@ -4,92 +4,92 @@
         "user-authorized-key": {
             "title": "User Authorized Key",
             "description": "SSH public key in order to connect to the SSH server of this runner instance.",
-            "type": "string",
+            "type": "string"
         },
         "instance-amount": {
             "title": "Partition Amount",
             "description": "Number of slappart to deploy inside the runner (default is 10). Needs instance to be restarted.",
             "type": "integer",
             "minimum": 1,
-            "maximum": 40,
+            "maximum": 40
         },
         "slapos-software": {
             "title": "Pre-selected Software Release",
             "description": "a relative path from the slapos git repo to a folder containing a software release, which will be automaticaly deployed while the runner instanciation, and only if the parameter auto-deploy is set to 'true'. For example: 'software/helloworld",
-            "type": "string",
+            "type": "string"
         },
         "auto-deploy": {
             "title": "Automatically Deploy Software",
             "description": "Authorizes the software declared with 'slapos-software' to be automatically deployed, or not. Needs instance to be restarted. (default is false)",
-            "type": "boolean",
+            "type": "boolean"
         },
         "slapos-repository": {
             "title": "SlapOS Git Repository URL",
             "description": "url of the default git repository that will be download by the runner while its instanciation. Will be cloned in a directory named 'slapos' (default is http://git.erp5.org/repos/slapos.git)",
             "type": "string",
             "format": "uri",
-            "pattern": "^(http|https|ftp)://",
+            "pattern": "^(http|https|ftp)://"
         },
         "slapos-reference": {
             "title": "SlapOS Git Branch Name",
             "description": "Branch or hash on which the default repository will checkout (default is master)",
-            "type": "string",
+            "type": "string"
         },
         "auto-deploy-instance": {
             "title": "Automatically Deploy Instances",
             "description": "Prevent the runner from deploying and starting instances. Needs instance to be restarted. It is set to false for instances of type 'import' in resiliency in any case (default is false)",
-            "type": "boolean",
+            "type": "boolean"
         },
         "autorun": {
             "title": "Automatically Run Sofware/Instance",
             "description": "Let automaticaly build and run a declared software with 'slapos-software'. Only works if 'slapos-software' is set, and 'auto-deploy' is true. Needs instance to be restarted. (default is false)",
-            "type": "boolean",
+            "type": "boolean"
         },
         "slapos-software-type": {
             "title": "Deployed Instance Software Type" ,
             "description": "Software type of your instance inside the runner",
-            "type": "string",
+            "type": "string"
         },
         "custom-frontend-backend-url": {
             "title": "Custom Frontend Backend URL",
             "description": "return an ipv4 frontend of the given ipv6(+optional port)",
             "type": "string",
-            "format": "uri",
+            "format": "uri"
         },
         "custom-frontend-backend-type": {
             "title": "Custom Frontend Backend Type",
             "description": "The type of the frontend slave instance to ask",
             "type": "string",
-            "enum": ["zope"],
+            "enum": ["zope"]
         },
         "custom-frontend-basic-auth": {
             "title": "Custom Frontend Basic Auth",
             "description": "if the ip given with 'custom-frontend-backend-url' is secure, set it to true for the promise do not fail",
-            "type": "boolean",
+            "type": "boolean"
         },
         "custom-frontend-instance-guid": {
             "title": "Custom Frontend Instance GUID",
             "description": "Instance guid of the frontend you whish to use",
-            "type": "string",
+            "type": "string"
         },
         "custom-frontend-software-type": {
             "title": "Custom Frontend Software Type",
             "description": "SoftwareType of the frontend you request (default is RootSoftwareInstance)",
             "type": "string",
-            "enum": ["RootSoftwareInstance", "default"],
+            "enum": ["RootSoftwareInstance", "default"]
         },
         "custom-frontend-software-url": {
             "title": "Custom Frontend Software URL",
             "description": "Software Url of the frontend you request (ie.: http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg)",
             "type": "string",
-            "format": "uri",
+            "format": "uri"
         },
         "monitor-port": {
             "title": "Monitor Port",
             "description": "Allow to manually change the port on wich the apache server running monitoring interface is listening. The default value for the webrunner is different from the default value of the standalone stack-monitor server (default 9684)",
             "type": "integer",
             "minimum": 9683,
-            "exclusiveMinimum": true,
+            "exclusiveMinimum": true
         },
         "cpu-usage-ratio": {
             "description": "Ratio of the CPU use for compilation, if value is set to n, compilation will use number-of-cpu/n of cpus (need instance restart)",
@@ -100,7 +100,7 @@
             "title": "Number of Resilient Clones",
             "description": "Number of clones to be deployed when a resilient runner, if missing a single clone is provided. Its value can be 1 or 2",
             "type": "integer",
-            "enum": [1, 2],
+            "enum": [1, 2]
         }
     }
 }
