@@ -89,10 +89,10 @@ portal = context.getPortalObject()\n
 \n
 person = portal.ERP5Site_getAuthenticatedMemberPersonValue()\n
 if person is not None:\n
-  result_dict[\'_links\'][\'action_object_jump\'] = {\n
-    \'href\': \'%s/ERP5Document_getHateoas\' % person.absolute_url(),\n
-    \'title\': \'Person\'\n
+  result_dict[\'_links\'][\'me\'] = {\n
+    "href": "urn:jio:get:%s" % person.getRelativeUrl(),\n
   }\n
+\n
 else:\n
   user = str(portal.portal_membership.getAuthenticatedMember())\n
   if user != "Anonymous User":\n
