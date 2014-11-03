@@ -41,11 +41,12 @@ class ProcessSnapshot(_Snapshot):
     assert type(process) is psutil.Process
     ui_counter_list = process.get_io_counters()
     self.username = process.username()
+    self.process_object = process
     self.pid = process.pid 
     # Save full command line from the process.
-    self.name = "%s-%s" % (process.pid, process.create_time())
+    self.process = "%s-%s" % (process.pid, process.create_time())
     # CPU percentage, we will have to get actual absolute value
-    self.cpu_percent = process.get_cpu_percent(None)
+    self.cpu_percent = self.process_object.get_cpu_percent(None)
     # CPU Time
     self.cpu_time = sum(process.get_cpu_times())
     # Thread number, might not be really relevant
@@ -58,6 +59,10 @@ class ProcessSnapshot(_Snapshot):
     self.io_rw_counter = ui_counter_list[2] + ui_counter_list[3]
     # Read + write IO cycles
     self.io_cycles_counter  = ui_counter_list[0] + ui_counter_list[1]
+
+  def update_cpu_percent(self):
+    # CPU percentage, we will have to get actual absolute value
+    self.cpu_percent = self.process_object.get_cpu_percent()
 
 class SystemSnapshot(_Snapshot):
   """ Take a snapshot from current system usage

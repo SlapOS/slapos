@@ -59,6 +59,7 @@ class User(object):
     """ Insert collected data on user collector """
     database.connect()
     for snapshot_item in self.snapshot_list:
+      snapshot_item.update_cpu_percent()
       database.insertUserSnapshot(self.name,
             pid=snapshot_item.get("pid"),
             process=snapshot_item.get("process"),
