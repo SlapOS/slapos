@@ -354,9 +354,8 @@ class TestSlapOSBase_getHateoasMaster(TestSlapOSHypermediaMixin):
         "self": {
           "href": "http://example.org/bar"
         },
-        "action_object_jump": {
-          "href": "%s/ERP5Document_getHateoas" % person_user.absolute_url(),
-          "title": "Person"
+        "me": {
+          "href": "urn:jio:get:%s/ERP5Document_getHateoas" % person_user.getRelativeUrl(),
         },
       },
     }, indent=2))
@@ -381,9 +380,8 @@ class TestSlapOSBase_getHateoasMaster(TestSlapOSHypermediaMixin):
         "self": {
           "href": "http://example.org/bar"
         },
-        "action_object_jump": {
-          "href": "%s/ERP5Document_getHateoas" % self.software_instance.absolute_url(),
-          "title": "Software Instance"
+        "me": {
+          "href": "urn:jio:get:%s/ERP5Document_getHateoas" % self.software_instance.getRelativeUrl(),
         },
       },
     }, indent=2))

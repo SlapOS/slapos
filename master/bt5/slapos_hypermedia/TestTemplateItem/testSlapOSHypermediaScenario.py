@@ -17,6 +17,14 @@ def hateoasGetLinkFromLinks(links, title):
     if action.get('title') == title:
       return action
 
+def getRelativeUrlFromUrn(urn):
+  urn_schema = 'urn:jio:get:'
+  try:
+    _, url = urn.split(urn_schema)
+  except ValueError:
+    return
+  return url
+
 class TestSlapOSHypermediaPersonScenario(testSlapOSMixin):
 
   def _makeUser(self):
@@ -42,10 +50,8 @@ class TestSlapOSHypermediaPersonScenario(testSlapOSMixin):
       "%s:%s" % (erp5_person.getReference(), erp5_person.getReference()))
     content_type = "application/hal+json"
     
-    # XXX Default home url. 'Hardcoded' in client.
     api_scheme, api_netloc, api_path, api_query, \
-        api_fragment = urlparse.urlsplit('%s/Base_getHateoasMaster' % \
-        self.portal.absolute_url())
+        api_fragment = urlparse.urlsplit(self.portal.absolute_url())
 
     def getNewHttpConnection(api_netloc):
       if api_scheme == 'https':
@@ -76,13 +82,17 @@ class TestSlapOSHypermediaPersonScenario(testSlapOSMixin):
     #####################################################
     # Fetch the user hal
     #####################################################
-    user_link_dict = home_page_hal['_links']['action_object_jump']
+
+    user_link_dict = home_page_hal['_links']['me']
     self.assertNotEqual(user_link_dict, None)
+
+    me_url = 'http://%s%s/web_site_module/hateoas/%s' % (
+      api_netloc, api_path, getRelativeUrlFromUrn(user_link_dict['href']))
 
     connection = getNewHttpConnection(api_netloc)
     connection.request(
       method=user_link_dict.get('method', 'GET'),
-      url=user_link_dict['href'],
+      url=me_url,
       headers={
        'Authorization': authorization,
        'Accept': content_type,
@@ -396,10 +406,8 @@ class TestSlapOSHypermediaInstanceScenario(testSlapOSMixin):
     remote_user = instance.getReference()
     content_type = "application/hal+json"
     
-    # XXX Default home url. 'Hardcoded' in client.
     api_scheme, api_netloc, api_path, api_query, \
-        api_fragment = urlparse.urlsplit('%s/Base_getHateoasMaster' % \
-        self.portal.absolute_url())
+        api_fragment = urlparse.urlsplit(self.portal.absolute_url())
 
     def getNewHttpConnection(api_netloc):
       if api_scheme == 'https':
@@ -410,6 +418,7 @@ class TestSlapOSHypermediaInstanceScenario(testSlapOSMixin):
     #####################################################
     # Access the master home page hal
     #####################################################
+
     connection = getNewHttpConnection(api_netloc)
     connection.request(
       method='GET',
@@ -429,13 +438,17 @@ class TestSlapOSHypermediaInstanceScenario(testSlapOSMixin):
     #####################################################
     # Fetch the instance hal
     #####################################################
-    user_link_dict = home_page_hal['_links']['action_object_jump']
+
+    user_link_dict = home_page_hal['_links']['me']
     self.assertNotEqual(user_link_dict, None)
+
+    me_url = str('http://%s%s/web_site_module/hateoas/%s' % (
+      api_netloc, api_path, getRelativeUrlFromUrn(user_link_dict['href'])))
 
     connection = getNewHttpConnection(api_netloc)
     connection.request(
       method=user_link_dict.get('method', 'GET'),
-      url=user_link_dict['href'],
+      url=me_url,
       headers={
        'REMOTE_USER': remote_user,
        'Accept': content_type,
@@ -451,11 +464,11 @@ class TestSlapOSHypermediaInstanceScenario(testSlapOSMixin):
     # Fetch instance informations
     #####################################################
 
-    request_link_dict = hateoasGetLinkFromLinks(
+    user_link_dict = hateoasGetLinkFromLinks(
         instance_hal['_links']['action_object_slap'],
         'getHateoasInformation'
     )
-    self.assertNotEqual(request_link_dict, None)
+    self.assertNotEqual(user_link_dict, None)
     connection = getNewHttpConnection(api_netloc)
     connection.request(
       method=user_link_dict.get('method', 'GET'),
@@ -476,11 +489,11 @@ class TestSlapOSHypermediaInstanceScenario(testSlapOSMixin):
     #####################################################
     # Get instance news
     #####################################################
-    request_link_dict = hateoasGetLinkFromLinks(
+    user_link_dict = hateoasGetLinkFromLinks(
         instance_hal['_links']['action_object_slap'],
         'getHateoasNews'
     )
-    self.assertNotEqual(request_link_dict, None)
+    self.assertNotEqual(user_link_dict, None)
     connection = getNewHttpConnection(api_netloc)
     connection.request(
       method=user_link_dict.get('method', 'GET'),
@@ -502,15 +515,15 @@ class TestSlapOSHypermediaInstanceScenario(testSlapOSMixin):
     # Get hosting subscription of instance
     #####################################################
     # XXX can be simpler and doesn't need getHateoasRelatedHostingSubscription script
-    request_link_dict = hateoasGetLinkFromLinks(
+    hosting_link_dict = hateoasGetLinkFromLinks(
         instance_hal['_links']['action_object_slap'],
         'getHateoasRelatedHostingSubscription'
     )
-    self.assertNotEqual(request_link_dict, None)
+    self.assertNotEqual(hosting_link_dict, None)
     connection = getNewHttpConnection(api_netloc)
     connection.request(
-      method=request_link_dict.get('method', 'GET'),
-      url=request_link_dict['href'],
+      method=hosting_link_dict.get('method', 'GET'),
+      url=hosting_link_dict['href'],
       headers={
        'REMOTE_USER': remote_user,
        'Accept': content_type,
@@ -526,15 +539,15 @@ class TestSlapOSHypermediaInstanceScenario(testSlapOSMixin):
     self.tic()
 
 
-    request_link_dict = hateoasGetLinkFromLinks(
+    hosting_link_dict = hateoasGetLinkFromLinks(
         subscription_hal['_links']['action_object_jump'],
         'Hosting Subscription'
     )
-    self.assertNotEqual(request_link_dict, None)
+    self.assertNotEqual(hosting_link_dict, None)
     connection = getNewHttpConnection(api_netloc)
     connection.request(
-      method=request_link_dict.get('method', 'GET'),
-      url=request_link_dict['href'],
+      method=hosting_link_dict.get('method', 'GET'),
+      url=hosting_link_dict['href'],
       headers={
        'REMOTE_USER': remote_user,
        'Accept': content_type,
