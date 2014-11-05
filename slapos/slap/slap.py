@@ -837,7 +837,13 @@ class HateoasNavigator(object):
 
   # XXX rename to be more generic
   def _hateoasGetPerson(self):
-    person_link = self._hateoasGetMaster()['_links']['action_object_jump']['href']
+    hateoas_master = self._hateoasGetMaster()
+    # XXX how to properly get URLs from URNs?
+    person_path = self.getPathFromUrn(hateoas_master['_links']['me']['href'])
+    hateoas_master_url = hateoas_master['_links']['self']['href']
+    root_url = hateoas_master_url[:hateoas_master_url.rfind('/') + 1]
+    person_link = '%s%s' % (root_url, person_path)
+
     result = self.GET(person_link)
     return json.loads(result)
 
@@ -870,6 +876,14 @@ class HateoasNavigator(object):
         return action['href']
     else:
       raise NotFoundError('Action %s not found.' % title)
+
+  def getPathFromUrn(self, urn):
+    urn_schema = 'urn:jio:get:'
+    try:
+      _, url = urn.split(urn_schema)
+    except ValueError:
+      return
+    return str(url)
 
   # XXX remove me
   def _hateoas_getActionObjectSlap(self, action_object_slap_list, action_title):
