@@ -112,3 +112,102 @@ def ERP5Site_deleteVifibAccounting(self):
           ][0].Base_createCloneDocument(batch_mode=1)
     bt5.activate().install(force=1, update_catalog=0)
   return 'Done.'
+
+
+def upgradeObjectClass(self, test_before, from_class, to_class, test_after,
+                               test_only=0):
+  """
+  Upgrade the class of all objects inside this particular folder:
+    test_before and test_after have to be a method with one parameter.
+
+    from_class and to_class can be classes (o.__class___) or strings like:
+      'Products.ERP5Type.Document.Folder.Folder'
+
+  XXX Some comments by Seb:
+  - it is not designed to work for modules with thousands of objects,
+    so it totally unusable when you have millions of objects
+  - it is totally unsafe. There is even such code inside :
+      self.manage_delObjects(id of original object)
+      commit()
+      self._setObject(new object instance)
+    So it is possible to definitely loose data.
+  - There is no proof that upgrade is really working. With such a
+    dangerous operation, it would be much more safer to have a proof,
+    something like the "fix point" after doing a synchronization. Such
+    checking should even be done before doing commit (like it might
+    be possible to export objects in the xml format used for exports
+    before and after, and run a diff).
+
+  """
+  from zLOG import LOG, WARNING
+  from Acquisition import aq_base, aq_parent, aq_inner
+  import transaction
+  LOG("upgradeObjectClass: folder ", 0, self.getId())
+  test_list = []
+  def getClassFromString(a_klass):
+    from_module = '.'.join(a_klass.split('.')[:-1])
+    real_klass = a_klass.split('.')[-1]
+    # XXX It is possible that API Change for Python 2.6.
+    mod = __import__(from_module, globals(), locals(),  [real_klass])
+    return getattr(mod, real_klass)
+
+  if isinstance(from_class, type('')):
+    from_class = getClassFromString(from_class)
+
+  if isinstance(to_class, type('')):
+    to_class = getClassFromString(to_class)
+  
+  for o in self.listFolderContents():
+    if not test_before(o):
+      continue
+    # Make sure this sub object is not the same as object
+    if o.getPhysicalPath() != self.getPhysicalPath():
+      id = o.getId()
+      obase = aq_base(o)
+      # Check if the subobject have to also be upgraded
+      if hasattr(obase,'upgradeObjectClass'):
+        test_list += o.upgradeObjectClass(test_before=test_before, \
+                        from_class=from_class, to_class=to_class,
+                        test_after=test_after, test_only=test_only)
+
+      # Test if we must apply the upgrade
+      if test_before(o) is not None:
+        LOG("upgradeObjectClass: id ", 0, id)
+        klass = obase.__class__
+        LOG("upgradeObjectClass: klass ", 0 ,str(klass))
+        LOG("upgradeObjectClass: from_class ", 0 ,str(from_class))
+        if klass == from_class and not test_only:
+          try:
+            newob = to_class(obase.id)
+            newob.id = obase.id # This line activates obase.
+          except AttributeError:
+            newob = to_class(id)
+            newob.id = id
+          keys = obase.__dict__.keys()
+          for k in keys:
+            if k not in ('id', 'meta_type', '__class__'):
+              setattr(newob,k,obase.__dict__[k])
+          
+          LOG("upgradeObjectClass: ",0,"Delete old object: %s" % str(id))
+          self.manage_delObjects(id)
+          LOG("upgradeObjectClass: ",0,"add new object: %s" % str(newob.id))
+          self._setObject(id, newob)
+          transaction.commit()
+          LOG("upgradeObjectClass: ",0,"newob.__class__: %s" % str(newob.__class__))
+          object_to_test = self._getOb(id)
+          test_list += test_after(object_to_test)
+
+        if klass == from_class and test_only:
+          test_list += test_after(o)
+
+  return test_list
+
+def checkUpgradeObjectClass(self, test_method):
+  portal_type = self.getPortalType()
+  mod = __import__("erp5.portal_type", globals(), locals(),  [portal_type])
+  new_class = getattr(mod, portal_type)
+  if self.__class__ == new_class:
+    return "Object Class for '%s' is already fixed" % portal_type
+  return upgradeObjectClass(self.getPortalObject(), test_method,
+                                self.__class__, new_class, test_method)
+  
