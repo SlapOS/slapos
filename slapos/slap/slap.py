@@ -832,7 +832,7 @@ class HateoasNavigator(object):
     return connection_helper.GET(uri)
 
   def _hateoasGetMaster(self):
-    result = self.GET('%s/Base_getHateoasMaster' % self.slapos_master_hateoas_uri)
+    result = self.GET(self.slapos_master_hateoas_uri)
     return json.loads(result)
 
   # XXX rename to be more generic
