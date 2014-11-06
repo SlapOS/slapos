@@ -74,7 +74,7 @@ result_dict = {\n
     "self": { "href": context.Base_getRequestUrl() },\n
     # XXX current type\n
     "index": {\n
-      "href": "urn:jio:get:%s/ERP5Document_getHateoas" % context.getRelativeUrl(),\n
+      "href": "urn:jio:get:%s" % context.getRelativeUrl(),\n
       "title": "Person"\n
     },\n
     "content": [],\n

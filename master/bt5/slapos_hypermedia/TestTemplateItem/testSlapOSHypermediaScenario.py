@@ -86,8 +86,12 @@ class TestSlapOSHypermediaPersonScenario(testSlapOSMixin):
     user_link_dict = home_page_hal['_links']['me']
     self.assertNotEqual(user_link_dict, None)
 
-    me_url = 'http://%s%s/web_site_module/hateoas/%s' % (
-      api_netloc, api_path, getRelativeUrlFromUrn(user_link_dict['href']))
+    traverse_url_template = home_page_hal['_links']['traverse']['href']
+    me_relative_url = getRelativeUrlFromUrn(user_link_dict['href'])
+    me_url = traverse_url_template.replace(
+        '{&relative_url,view}',
+        '&relative_url=%s&view=view' % me_relative_url
+    )
 
     connection = getNewHttpConnection(api_netloc)
     connection.request(
@@ -442,8 +446,12 @@ class TestSlapOSHypermediaInstanceScenario(testSlapOSMixin):
     user_link_dict = home_page_hal['_links']['me']
     self.assertNotEqual(user_link_dict, None)
 
-    me_url = str('http://%s%s/web_site_module/hateoas/%s' % (
-      api_netloc, api_path, getRelativeUrlFromUrn(user_link_dict['href'])))
+    traverse_url_template = home_page_hal['_links']['traverse']['href']
+    me_relative_url = getRelativeUrlFromUrn(user_link_dict['href'])
+    me_url = traverse_url_template.replace(
+        '{&relative_url,view}',
+        '&relative_url=%s&view=view' % me_relative_url
+    )
 
     connection = getNewHttpConnection(api_netloc)
     connection.request(

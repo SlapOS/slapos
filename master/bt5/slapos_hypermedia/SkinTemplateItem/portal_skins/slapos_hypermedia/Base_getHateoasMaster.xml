@@ -67,30 +67,14 @@ elif mime_type != context.Base_handleAcceptHeader([mime_type]):\n
   return ""\n
 \n
 import json\n
-result_dict = {\n
-#       \'title\': \'Vifib SlapOS Master\',\n
-#       \'description\': \'Reference implementation of the SlapOS Master specifications.\',\n
-  \'_links\': {\n
-    "self": { "href": context.Base_getRequestUrl() },\n
-#         "http://slapos.org/reg/edit": {\n
-#           "href": "/edit",\n
-#           "method": "PUT",\n
-#           "type": "application/json; class=slapos.org.master",\n
-#         },\n
-#         "http://slapos.org/reg/create": {\n
-#           "href": "/new",\n
-#           "method": "POST",\n
-#           "type": "application/json; class=slapos.org.person",\n
-#         },\n
-  },\n
-}\n
+result_dict = json.loads(context.ERP5Document_getHateoas(REQUEST))\n
 \n
 portal = context.getPortalObject()\n
 \n
 person = portal.ERP5Site_getAuthenticatedMemberPersonValue()\n
 if person is not None:\n
   result_dict[\'_links\'][\'me\'] = {\n
-    "href": "urn:jio:get:%s/ERP5Document_getHateoas" % person.getRelativeUrl(),\n
+    "href": "urn:jio:get:%s" % person.getRelativeUrl(),\n
   }\n
 \n
 else:\n
@@ -98,7 +82,7 @@ else:\n
   if user != "Anonymous User":\n
     user_document = context.ERP5Site_getUserDocument(user)\n
     result_dict[\'_links\'][\'me\'] = {\n
-      \'href\': \'urn:jio:get:%s/ERP5Document_getHateoas\' % user_document.getRelativeUrl(),\n
+      \'href\': \'urn:jio:get:%s\' % user_document.getRelativeUrl(),\n
     }\n
 \n
 response.setHeader(\'Content-Type\', mime_type)\n

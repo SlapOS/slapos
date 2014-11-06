@@ -326,13 +326,11 @@ class TestSlapOSBase_getHateoasMaster(TestSlapOSHypermediaMixin):
     self.assertEquals(fake_request.RESPONSE.getHeader('Content-Type'),
       "application/hal+json"
     )
-    self.assertEquals(result, json.dumps({
-      '_links': {
-        "self": {
-          "href": "http://example.org/bar"
-        },
-      },
-    }, indent=2))
+    result = json.loads(result)
+    self.assertEquals(result['_links']['self'],
+        {"href": "http://example.org/bar"}
+    )
+    self.assertEqual(result['_links'].get('me'), None)
 
   @simulate('Base_getRequestUrl', '*args, **kwargs',
       'return "http://example.org/bar"')
@@ -349,16 +347,13 @@ class TestSlapOSBase_getHateoasMaster(TestSlapOSHypermediaMixin):
     self.assertEquals(fake_request.RESPONSE.getHeader('Content-Type'),
       "application/hal+json"
     )
-    self.assertEquals(result, json.dumps({
-      '_links': {
-        "self": {
-          "href": "http://example.org/bar"
-        },
-        "me": {
-          "href": "urn:jio:get:%s/ERP5Document_getHateoas" % person_user.getRelativeUrl(),
-        },
-      },
-    }, indent=2))
+    result = json.loads(result)
+    self.assertEquals(result['_links']['me'],
+        {"href": "urn:jio:get:%s" % person_user.getRelativeUrl()}
+    )
+    self.assertEqual(result['_links']['self'],
+        {"href": "http://example.org/bar"}
+    )
 
   @simulate('Base_getRequestUrl', '*args, **kwargs',
       'return "http://example.org/bar"')
@@ -375,16 +370,14 @@ class TestSlapOSBase_getHateoasMaster(TestSlapOSHypermediaMixin):
     self.assertEquals(fake_request.RESPONSE.getHeader('Content-Type'),
       "application/hal+json"
     )
-    self.assertEquals(result, json.dumps({
-      '_links': {
-        "self": {
-          "href": "http://example.org/bar"
-        },
-        "me": {
-          "href": "urn:jio:get:%s/ERP5Document_getHateoas" % self.software_instance.getRelativeUrl(),
-        },
-      },
-    }, indent=2))
+    result = json.loads(result)
+    self.assertEquals(result['_links']['me'],
+        {"href": "urn:jio:get:%s" % self.software_instance.getRelativeUrl()}
+    )
+    self.assertEqual(result['_links']['self'],
+        {"href": "http://example.org/bar"}
+    )
+
 
 class TestSlapOSPerson_requestHateoasHostingSubscription(TestSlapOSHypermediaMixin):
 
@@ -541,7 +534,7 @@ class TestSlapOSPerson_getHateoasHostingSubscriptionList(TestSlapOSHypermediaMix
           "href": "http://example.org/foo",
         },
         "index": {
-          "href": "urn:jio:get:%s/ERP5Document_getHateoas" % person_user.getRelativeUrl(),
+          "href": "urn:jio:get:%s" % person_user.getRelativeUrl(),
           "title": "Person"
         },
         "content": [{
@@ -621,7 +614,7 @@ class TestSlapOSHostingSubscription_getHateoasInstanceList(TestSlapOSHypermediaM
           "title": "Template Software Instance"
         }],
         "index": {
-          "href": "urn:jio:get:%s/ERP5Document_getHateoas" % subscription.getRelativeUrl(),
+          "href": "urn:jio:get:%s" % subscription.getRelativeUrl(),
           "title": "Hosting Subscription"
         },
       },
@@ -697,7 +690,7 @@ class TestSlapOSHostingSubscription_getHateoasRootSoftwareInstance(TestSlapOSHyp
               instance.absolute_url(),
         }],
         "index": {
-          "href": "urn:jio:get:%s/ERP5Document_getHateoas" % subscription.getRelativeUrl(),
+          "href": "urn:jio:get:%s" % subscription.getRelativeUrl(),
           "title": "Hosting Subscription"
         },
       },
@@ -783,7 +776,7 @@ class TestSlapOSInstance_getHateoasNews(TestSlapOSHypermediaMixin):
           "href": "http://example.org/bar"
         },
         "index": {
-          "href": "urn:jio:get:%s/ERP5Document_getHateoas" % \
+          "href": "urn:jio:get:%s" % \
             instance.getRelativeUrl(),
           "title": "Software Instance"
         },
@@ -869,7 +862,7 @@ class TestSlapOSInstance_getHateoasRelatedHostingSubscription(TestSlapOSHypermed
           "href": "http://example.org/bar"
         },
         "index": {
-          "href": "urn:jio:get:%s/ERP5Document_getHateoas" % \
+          "href": "urn:jio:get:%s" % \
             instance.getRelativeUrl(),
           "title": "Software Instance"
         },
@@ -959,7 +952,7 @@ class TestSlapOSInstance_getHateoasInformation(TestSlapOSHypermediaMixin):
           "href": "http://foo.com/software.cfg",
         },
         "index": {
-          "href": "urn:jio:get:%s/ERP5Document_getHateoas" % instance.getRelativeUrl(),
+          "href": "urn:jio:get:%s" % instance.getRelativeUrl(),
           "title": "Software Instance"
         },
       },
@@ -1025,7 +1018,7 @@ class TestSlapOSPerson_getHateoasComputerList(TestSlapOSHypermediaMixin):
           "href": "http://example.org/foo"
         },
         "index": {
-          "href": "urn:jio:get:%s/ERP5Document_getHateoas" % \
+          "href": "urn:jio:get:%s" % \
             person_user.getRelativeUrl(),
           "title": "Person"
         },
@@ -1104,7 +1097,7 @@ class TestSlapOSComputer_getHateoasSoftwareInstallationList(TestSlapOSHypermedia
           "title": "foo"
         }],
         "index": {
-          "href": "urn:jio:get:%s/ERP5Document_getHateoas" % computer.getRelativeUrl(),
+          "href": "urn:jio:get:%s" % computer.getRelativeUrl(),
           "title": "Computer"
         },
       },
@@ -1168,7 +1161,7 @@ class TestSlapOSSoftwareInstallation_getHateoasInformation(TestSlapOSHypermediaM
           "href": "http://foo.com/software.cfg",
         },
         "index": {
-          "href": "urn:jio:get:%s/ERP5Document_getHateoas" % software_installation.getRelativeUrl(),
+          "href": "urn:jio:get:%s" % software_installation.getRelativeUrl(),
           "title": "Software Installation"
         },
       },

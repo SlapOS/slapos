@@ -80,7 +80,7 @@ result_dict = {\n
   \'_links\': {\n
     "self": { "href": context.Base_getRequestUrl() },\n
     "index": {\n
-      "href": "urn:jio:get:%s/ERP5Document_getHateoas" % context.getRelativeUrl(),\n
+      "href": "urn:jio:get:%s" % context.getRelativeUrl(),\n
       "title": "Software Instance",\n
     },\n
     \'action_object_jump\': {\n

@@ -84,7 +84,7 @@ result_dict = {\n
        {\'href\': \'%s/ERP5Document_getHateoas\' % root_instance.getAbsoluteUrl()},\n
      ],\n
     "index": {\n
-      "href": "urn:jio:get:%s/ERP5Document_getHateoas" % context.getRelativeUrl(),\n
+      "href": "urn:jio:get:%s" % context.getRelativeUrl(),\n
       "title": "Hosting Subscription"\n
     },\n
   },\n
