@@ -46,6 +46,8 @@ import zope.interface
 from interface import slap as interface
 from xml_marshaller import xml_marshaller
 
+from uritemplate import expand
+
 import requests
 # silence messages like 'Starting connection' that are logged with INFO
 urllib3_logger = logging.getLogger('requests.packages.urllib3')
@@ -726,7 +728,7 @@ class slap:
       except:
         pass
     if slapgrid_rest_uri:
-      self._hateoas_navigator = HateoasNavigator(
+      self._hateoas_navigator = SlapHateoasNavigator(
           slapgrid_rest_uri,
           key_file, cert_file,
           master_ca_file, timeout
@@ -813,9 +815,14 @@ class slap:
       raise Exception('SlapOS Master Hateoas API required for this operation is not availble.')
     return self._hateoas_navigator.getHostingSubscriptionDict()
 
-
 class HateoasNavigator(object):
-  # XXX: needs to be designed for real. For now, just a mockup.
+  """
+  Navigator for HATEOAS-style APIs.
+  Inspired by
+  https://git.erp5.org/gitweb/jio.git/blob/HEAD:/src/jio.storage/erp5storage.js
+  """
+  # XXX: needs to be designed for real. For now, just a non-maintainable prototype.
+  # XXX: export to a standalone library, independant from slap.
   def __init__(self, slapgrid_uri,
                key_file=None, cert_file=None,
                master_ca_file=None, timeout=60):
@@ -826,29 +833,57 @@ class HateoasNavigator(object):
     self.timeout = timeout
 
   def GET(self, uri):
-    # XXX hack
     connection_helper = ConnectionHelper(
         uri, self.key_file, self.cert_file, self.master_ca_file, self.timeout)
     return connection_helper.GET(uri)
 
-  def _hateoasGetMaster(self):
-    result = self.GET(self.slapos_master_hateoas_uri)
+  def hateoasGetLinkFromLinks(self, links, title):
+    if type(links) == dict:
+      if links.get('title') == title:
+        return links['href']
+      raise NotFoundError('Action %s not found.' % title)
+    for action in links:
+      if action.get('title') == title:
+        return action['href']
+    else:
+      raise NotFoundError('Action %s not found.' % title)
+
+  def getRelativeUrlFromUrn(self, urn):
+    urn_schema = 'urn:jio:get:'
+    try:
+      _, url = urn.split(urn_schema)
+    except ValueError:
+      return
+    return str(url)
+
+  def getSiteDocument(self, url):
+    result = self.GET(url)
     return json.loads(result)
 
-  # XXX rename to be more generic
-  def _hateoasGetPerson(self):
-    hateoas_master = self._hateoasGetMaster()
-    # XXX how to properly get URLs from URNs?
-    person_path = self.getPathFromUrn(hateoas_master['_links']['me']['href'])
-    hateoas_master_url = hateoas_master['_links']['self']['href']
-    root_url = hateoas_master_url[:hateoas_master_url.rfind('/') + 1]
-    person_link = '%s%s' % (root_url, person_path)
+  def getRootDocument(self):
+    # XXX what about cache?
+    cached_root_document = getattr(self, 'root_document', None)
+    if cached_root_document:
+      return cached_root_document
+    self.root_document = self.getSiteDocument(self.slapos_master_hateoas_uri)
+    return self.root_document
 
-    result = self.GET(person_link)
-    return json.loads(result)
+  def getDocumentAndHateoas(self, relative_url, view='view'):
+    site_document = self.getRootDocument()
+    return expand(
+        site_document['_links']['traverse']['href'],
+        dict(relative_url=relative_url, view=view)
+    )
 
+  def getMeDocument(self):
+    person_relative_url = self.getRelativeUrlFromUrn(
+        self.getRootDocument()['_links']['me']['href'])
+    person_url = self.getDocumentAndHateoas(person_relative_url)
+    return json.loads(self.GET(person_url))
+
+class SlapHateoasNavigator(HateoasNavigator):
   def _hateoas_getHostingSubscriptionDict(self):
-    action_object_slap_list = self._hateoasGetPerson()['_links']['action_object_slap']
+    action_object_slap_list = self.getMeDocument()['_links']['action_object_slap']
     for action in action_object_slap_list:
       if action.get('title') == 'getHateoasHostingSubscriptionList':
         getter_link = action['href']
@@ -860,39 +895,15 @@ class HateoasNavigator(object):
 
   # XXX rename me to blablaUrl(self)
   def _hateoas_getRelatedHostingSubscription(self):
-    action_object_slap_list = self._hateoasGetPerson()['_links']['action_object_slap']
+    action_object_slap_list = self.getMeDocument()['_links']['action_object_slap']
     getter_link = self.hateoasGetLinkFromLinks(action_object_slap_list, 'getHateoasRelatedHostingSubscription')
     result = self.GET(getter_link)
     return json.loads(result)['_links']['action_object_jump']['href']
 
-  # Static method
-  def hateoasGetLinkFromLinks(self, links, title):
-    if type(links) == dict:
-      if links.get('title') == title:
-        return action['href']
-      raise NotFoundError('Action %s not found.' % title)
-    for action in links:
-      if action.get('title') == title:
-        return action['href']
-    else:
-      raise NotFoundError('Action %s not found.' % title)
-
-  def getPathFromUrn(self, urn):
-    urn_schema = 'urn:jio:get:'
-    try:
-      _, url = urn.split(urn_schema)
-    except ValueError:
-      return
-    return str(url)
-
-  # XXX remove me
-  def _hateoas_getActionObjectSlap(self, action_object_slap_list, action_title):
-    return self.hateoasGetLinkFromLinks(action_object_slap_list, action_title)
-
   def _hateoasGetInformation(self, url):
     result = self.GET(url)
     result = json.loads(result)
-    object_link = self._hateoas_getActionObjectSlap(
+    object_link = self.hateoasGetLinkFromLinks(
       result['_links']['action_object_slap'],
       'getHateoasInformation'
     )
@@ -932,7 +943,7 @@ class HateoasNavigator(object):
 
     hosting_subscription = json.loads(self.GET(hosting_subscription_url))
 
-    software_instance_url = self._hateoas_getActionObjectSlap(
+    software_instance_url = self.hateoasGetLinkFromLinks(
         hosting_subscription['_links']['action_object_slap'],
         'getHateoasRootInstance'
     )
