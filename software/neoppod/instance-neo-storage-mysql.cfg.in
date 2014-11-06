@@ -1,6 +1,6 @@
 [buildout]
 extends = {{ master_cfg }}
-parts += neo-storage-run-wrapper
+parts += neo-storage
 
 [mariadb-instance]
 recipe = slapos.cookbook:generic.mysql
@@ -29,21 +29,17 @@ mroonga =
 [neo-storage]
 recipe = slapos.cookbook:neoppod.storage
 binary = {{ bin_directory }}/neostorage
-wrapper = ${directory:bin}/neostorage
+wrapper = ${directory:etc_run}/neostorage
 logfile = ${directory:log}/neostorage.log
-ip = [${slap-network-information:global-ipv6}]
-cluster = ${slap-parameter:cluster}
-masters = ${slap-parameter:masters}
+ip = {{ (ipv4_set | list)[0] }}
+cluster = {{ dumps(slapparameter_dict['cluster']) }}
+masters = {{ dumps(slapparameter_dict.get('masters', '')) }}
 database-adapter = MySQL
 database-parameters = ${mariadb-instance:user}:${mariadb-instance:password}@${mariadb-instance:database}${mariadb-instance:socket}
 wait-database = 60
 
-[neo-storage-run-wrapper]
-recipe = slapos.cookbook:symbolic.link
-target-directory = ${directory:etc_run}
-link-binary = ${neo-storage:wrapper}
-
 [directory]
+bin = ${buildout:directory}/bin
 etc = ${buildout:directory}/etc
 var = ${buildout:directory}/var
 etc_run =  ${:etc}/run

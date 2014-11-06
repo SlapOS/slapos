@@ -1,4 +1,3 @@
-{% if slap_software_type == software_type -%}
 {% set use_ipv6 = slapparameter_dict.get('use-ipv6', False) -%}
 {% set next_port = slapparameter_dict['port-base'] -%}
 {% set site_id = slapparameter_dict['site-id'] -%}
@@ -362,8 +361,6 @@ bt5 = {{ dumps(slapparameter_dict['bt5']) }}
 bt5-repository-url = {{ dumps(slapparameter_dict['bt5-repository-url']) }}
 
 [buildout]
-eggs-directory = {{ eggs_directory }}
-develop-eggs-directory = {{ develop_eggs_directory }}
 extends =
   {{ parameter_dict['instance-logrotate-cfg'] }}
 parts +=
@@ -374,4 +371,3 @@ versions = versions
 
 [versions]
 slapos.core = {{ slapos_core_version }}
-{% endif %}

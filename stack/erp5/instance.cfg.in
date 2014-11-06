@@ -1,7 +1,5 @@
 [buildout]
-parts =
-  switch-softwaretype
-
+parts = switch-softwaretype
 eggs-directory = {{ eggs_directory }}
 develop-eggs-directory = {{ develop_eggs_directory }}
 
@@ -20,9 +18,6 @@ extra-context =
 context =
     key ipv4_set slap-configuration:ipv4
     key ipv6_set slap-configuration:ipv6
-    key eggs_directory buildout:eggs-directory
-    key develop_eggs_directory buildout:develop-eggs-directory
-    key slap_software_type slap-configuration:slap-software-type
     key slapparameter_dict slap-configuration:configuration
     key computer_id slap-configuration:computer
     raw slapos_core_version {{ slapos_core_version }}
@@ -59,8 +54,7 @@ template = {{ template_cloudooo }}
 filename = instance-cloudoo.cfg
 extra-context =
     section parameter_dict dynamic-template-cloudooo-parameters
-# Must match the key id in [switch-softwaretype] which uses this section.
-    raw software_type cloudooo
+
 [dynamic-template-erp5-parameters]
 local-bt5-repository = {{ local_bt5_repository }}
 
@@ -71,17 +65,6 @@ filename = instance-erp5.cfg
 extensions = jinja2.ext.do
 extra-context =
     key local_bt5_repository dynamic-template-erp5-parameters:local-bt5-repository
-# Must match the key id in [switch-softwaretype] which uses this section.
-    key software_type :software-type
-software-type = default
-
-[dynamic-template-erp5-RootSoftwareInstance]
-< = dynamic-template-erp5
-software-type = RootSoftwareInstance
-
-[dynamic-template-erp5-create-erp5-site]
-< = dynamic-template-erp5
-software-type = create-erp5-site
 
 [dynamic-template-balancer-parameters]
 apache = {{ apache_location }}
@@ -101,17 +84,12 @@ extensions = jinja2.ext.do
 filename = instance-balancer.cfg
 extra-context =
     section parameter_dict dynamic-template-balancer-parameters
-# Must match the key id in [switch-softwaretype] which uses this section.
-    raw software_type balancer
 
 [dynamic-template-neo]
 < = jinja2-template-base
 template = {{ template_neo }}
 filename = instance-neo.cfg
 extensions = jinja2.ext.do
-extra-context =
-# Must match the key id in [switch-softwaretype] which uses this section.
-    raw software_type zodb-neo
 
 [dynamic-template-zeo-parameters]
 buildout-bin-directory = {{ buildout_bin_directory }}
@@ -129,8 +107,6 @@ extra-context =
     key buildout_directory buildout:directory
     section parameter_dict dynamic-template-zeo-parameters
     import json_module json
-# Must match the key id in [switch-softwaretype] which uses this section.
-    raw software_type zodb-zeo
 
 [dynamic-template-zope-parameters]
 bin-directory = {{ bin_directory }}
@@ -153,13 +129,6 @@ extra-context =
     key buildout_directory buildout:directory
     section parameter_dict dynamic-template-zope-parameters
     import urlparse urlparse
-# Must match the key id in [switch-softwaretype] which uses this section.
-    key software_type :software-type
-software-type = zope
-
-[dynamic-template-cluster-zope]
-< = dynamic-template-zope
-software-type = cluster-zope
 
 [dynamic-template-kumofs-parameters]
 dash-location = {{ dash_location }}
@@ -174,8 +143,6 @@ template = {{ template_kumofs }}
 filename = instance-kumofs.cfg
 extra-context =
     section parameter_dict dynamic-template-kumofs-parameters
-# Must match the key id in [switch-softwaretype] which uses this section.
-    raw software_type kumofs
 
 [dynamic-template-mariadb-parameters]
 coreutils-location = {{ coreutils_location }}
@@ -197,11 +164,9 @@ filename = instance-mariadb.cfg
 extensions = jinja2.ext.do
 extra-context =
     section parameter_dict dynamic-template-mariadb-parameters
-# Must match the key id in [switch-softwaretype] which uses this section.
-    raw software_type mariadb
 
 [dynamic-template-create-erp5-site-parameters]
-instance-erp5 = ${dynamic-template-erp5-create-erp5-site:rendered}
+instance-erp5 = ${dynamic-template-erp5:rendered}
 template-create-erp5-site-real = {{ template_create_erp5_site_real }}
 dash-location = {{ dash_location }}
 curl-location = {{ curl_location }}
@@ -212,45 +177,20 @@ template = {{ template_create_erp5_site }}
 filename = instance-create-erp5-site.cfg
 extra-context =
     section parameter_dict dynamic-template-create-erp5-site-parameters
-# Must match the key id in [switch-softwaretype] which uses this section.
-    raw software_type create-erp5-site
 
 [switch-softwaretype]
-recipe = slapos.recipe.build
-script =
-  import subprocess, sys
-  software_type = self.buildout["slap-configuration"]["slap-software-type"]
-  # XXX-Antoine: We gotta find a better way to do this. I tried to check
-  # out how slapgrid-cp was running buildout. But it is worse than that.
-  args = sys.argv[:]
-  args += map("slap-connection:%%s=%%s".__mod__,
-              self.buildout["slap-connection"].iteritems())
-  args += ("buildout:directory=${buildout:directory}",
-           "buildout:installed=.installed-${:_buildout_section_name_}.cfg")
-  buildout = self.options[software_type]
-  # Options.get (from zc.buildout) should deserialize.
-  try: override = open(self.options["override"][software_type]).read()
-  except (KeyError, TypeError): pass
-  else: \
-    override = "[buildout]\nextends = %%s\n\n" %% buildout + override; \
-    buildout = "${buildout:parts-directory}/${:_buildout_section_name_}.cfg"; \
-    open(buildout, "w", 0).write(override)
-  subprocess.check_call(args + ["-oc", buildout])
-update_script = ${:script}
-slapos_promise =
-slapos_update_promise = ${:slapos_promise}
+recipe = slapos.cookbook:switch-softwaretype
 override = {{ dumps(override_switch_softwaretype |default) }}
 
 # Public software types
-default = ${dynamic-template-erp5:rendered}
-create-erp5-site = ${dynamic-template-create-erp5-site:rendered}
-# BBB: Legacy software types, aliased to "default"
-RootSoftwareInstance = ${dynamic-template-erp5-RootSoftwareInstance:rendered}
+default = dynamic-template-erp5:rendered
+create-erp5-site = dynamic-template-create-erp5-site:rendered
+RootSoftwareInstance = ${:default} # BBB
 # Internal software types
-kumofs = ${dynamic-template-kumofs:rendered}
-cloudooo = ${dynamic-template-cloudooo:rendered}
-mariadb = ${dynamic-template-mariadb:rendered}
-balancer = ${dynamic-template-balancer:rendered}
-zodb-neo = ${dynamic-template-neo:rendered}
-zodb-zeo = ${dynamic-template-zeo:rendered}
-zope = ${dynamic-template-zope:rendered}
+kumofs = dynamic-template-kumofs:rendered
+cloudooo = dynamic-template-cloudooo:rendered
+mariadb = dynamic-template-mariadb:rendered
+balancer = dynamic-template-balancer:rendered
+zodb-neo = dynamic-template-neo:rendered
+zodb-zeo = dynamic-template-zeo:rendered
+zope = dynamic-template-zope:rendered
