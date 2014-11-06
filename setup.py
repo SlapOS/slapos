@@ -48,7 +48,7 @@ setup(name=name,
           'netifaces', # to fetch information about network devices
           'setuptools', # namespaces
           'supervisor', # slapgrid uses supervisor to manage processes
-          'psutil',
+          'psutil>=2.0.0',
           'xml_marshaller>=0.9.3', # to unmarshall/marshall python objects to/from
                                    # XML
           'zope.interface', # slap library implementes interfaces
