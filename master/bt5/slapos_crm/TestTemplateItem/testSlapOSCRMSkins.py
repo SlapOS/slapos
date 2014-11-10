@@ -1867,7 +1867,8 @@ class TestSlapOSComputer_notifyWrongAllocationScope(testSlapOSMixin):
   'context.portal_workflow.doActionFor(' \
   'context, action="edit_action", ' \
   'comment="Visited by SupportRequest_trySendNotificationMessage ' \
-  '%s %s %s %s" % (message_title, message, source_relative_url, interval_of_day))')
+  '%s %s %s %s" % (message_title, message, source_relative_url, interval_of_day))\n' \
+  'return 1')
   def test_computerNotAllowedAllocationScope_OpenPublic(self):
     computer = self._makeComputer(self.new_id)
     person = computer.getSourceAdministrationValue()
@@ -1899,7 +1900,8 @@ class TestSlapOSComputer_notifyWrongAllocationScope(testSlapOSMixin):
   'context.portal_workflow.doActionFor(' \
   'context, action="edit_action", ' \
   'comment="Visited by SupportRequest_trySendNotificationMessage ' \
-  '%s %s %s %s" % (message_title, message, source_relative_url, interval_of_day))')
+  '%s %s %s %s" % (message_title, message, source_relative_url, interval_of_day))\n' \
+  'return 1')
   def test_computerNotAllowedAllocationScope_OpenFriend(self):
     computer = self._makeComputer(self.new_id)
     person = computer.getSourceAdministrationValue()
@@ -1921,8 +1923,40 @@ class TestSlapOSComputer_notifyWrongAllocationScope(testSlapOSMixin):
       ('We have changed allocation scope for %s' % computer.getReference(),
        'Test NM content\n%s\n' % computer.getReference(), person.getRelativeUrl(), '1'),
       ticket.workflow_history['edit_workflow'][-1]['comment'])
-    
-    
+  
+  @simulate('NotificationTool_getDocumentValue',
+            'reference=None',
+  'assert reference == "slapos-crm-computer_personal_allocation_scope.notification"\n' \
+  'return context.restrictedTraverse(' \
+  'context.REQUEST["test_computerToCloseAllocationScope_OpenPersonal"])')
+  @simulate('SupportRequest_trySendNotificationMessage',
+            'message_title, message, source_relative_url, interval_of_day=1',
+  'context.portal_workflow.doActionFor(' \
+  'context, action="edit_action", ' \
+  'comment="Visited by SupportRequest_trySendNotificationMessage ' \
+  '%s %s %s %s" % (message_title, message, source_relative_url, interval_of_day))\n' \
+  'return 1')
+  def test_computerToCloseAllocationScope_OpenPersonal(self):
+    computer = self._makeComputer(self.new_id)
+    person = computer.getSourceAdministrationValue()
+
+    self.portal.REQUEST['test_computerToCloseAllocationScope_OpenPersonal'] = \
+        self._makeNotificationMessage(computer.getReference())
+  
+    friend_person = self._makePerson(self.generateNewId())
+    computer.edit(allocation_scope='open/personal',
+        destination_section=friend_person.getRelativeUrl())
+    computer.Computer_checkAndUpdatePersonalAllocationScope()
+    self.tic()
+    self.assertEquals(computer.getAllocationScope(), 'close/termination')
+    ticket = self._getGeneratedSupportRequest(computer)
+    self.assertEquals(ticket.getSimulationState(), 'suspended')
+    self.assertEqual('Visited by SupportRequest_trySendNotificationMessage ' \
+      '%s %s %s %s' % \
+      ('We have changed allocation scope for %s' % computer.getReference(),
+       'Test NM content\n%s\n' % computer.getReference(), person.getRelativeUrl(), '1'),
+      ticket.workflow_history['edit_workflow'][-1]['comment'])
+
   def test_computerNormalAllocationScope_OpenPersonal(self):
     computer = self._makeComputer(self.new_id)
     person = computer.getSourceAdministrationValue()

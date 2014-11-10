@@ -1,6 +1,5 @@
 event_module/slapos_crm_web_message_template
 person_module/allocation_tester
-portal_alarms/slapos_check_cloud_is_full
 portal_alarms/slapos_check_computer_state
 portal_alarms/slapos_check_software_instance_state
 portal_alarms/slapos_crm_cancel_invoice

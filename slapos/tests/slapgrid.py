@@ -34,6 +34,7 @@ import shutil
 import signal
 import socket
 import sys
+import stat
 import tempfile
 import textwrap
 import time
@@ -535,6 +536,8 @@ class TestSlapgridCPWithMaster(MasterMixin, unittest.TestCase):
     self.assertEqual(self.grid.processComputerPartitionList(), slapgrid.SLAPGRID_SUCCESS)
     self.assertItemsEqual(os.listdir(self.instance_root), ['etc', 'var'])
     self.assertItemsEqual(os.listdir(self.software_root), [])
+    st = os.stat(os.path.join(self.instance_root, 'var'))
+    self.assertEquals(stat.S_IMODE(st.st_mode), 0o755)
 
   def test_one_partition(self):
     computer = ComputerForTest(self.software_root, self.instance_root)

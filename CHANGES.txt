@@ -1,6 +1,20 @@
 Changes
 =======
 
+1.2.1 (2014-08-21)
+------------------
+
+ * slapproxy: add automatic migration to new database schema if needed.
+
+1.2.0 (2014-08-18)
+------------------
+
+Note: not officially released as egg.
+
+ * slapproxy: add correct support for slaves, instance_guid, state.
+ * slapproxy: add getComputerPartitionStatus dummy support.
+ * slapproxy: add multi-nodes support
+
 1.1.2 (2014-06-02)
 ------------------
 

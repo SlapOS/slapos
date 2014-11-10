@@ -79,7 +79,7 @@ def do_collect(conf):
       raise
       
     log_directory = "%s/var/data-log" % conf.get("slapos", "instance_root")
-    mkdir_p(log_directory)
+    mkdir_p(log_directory, 0o755)
     database = Database(log_directory)
 
     computer = Computer(ComputerSnapshot())

@@ -51,41 +51,23 @@
         <item>
             <key> <string>_body</string> </key>
             <value> <string>portal = context.getPortalObject()\n
-software_release = context\n
-software_release_url = software_release.getUrlString()\n
+portal.portal_catalog.searchAndActivate(\n
+  portal_type=\'Upgrade Decision\',\n
+  simulation_state=\'stopped\',\n
+  method_id=\'UpgradeDecision_notifyDelivered\',\n
+  activate_kw={\'tag\': tag }\n
+)\n
 \n
-user = portal.person_module.allocation_tester\n
-\n
-result = user.Person_restrictMethodAsShadowUser(\n
-        shadow_document=user,\n
-        callable_object=user.Person_findPartition,\n
-        argument_list=[\n
-          software_release_url,\n
-          \'\',\n
-          \'Software Instance\',\n
-          {}\n
-        ],\n
-        argument_dict={\n
-          \'test_mode\': True})\n
-\n
-if not result:\n
-  title = "Can\'t allocate new instances for software release %s" % software_release_url\n
-  description = "Need more public computers that can instanciate the software release %s" % software_release_url\n
-\n
-  return software_release.Base_generateSupportRequestForSlapOS(\n
-    title,\n
-    description,\n
-    software_release.getRelativeUrl()\n
-  )\n
+context.activate(after_tag=tag).getId()\n
 </string> </value>
         </item>
         <item>
             <key> <string>_params</string> </key>
-            <value> <string></string> </value>
+            <value> <string>tag, fixit, params</string> </value>
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>SoftwareRelease_testForAllocation</string> </value>
+            <value> <string>Alarm_processStoppedUpgradeDecision</string> </value>
         </item>
       </dictionary>
     </pickle>

@@ -73,12 +73,15 @@ def dict2xml(dictionary):
 
 
 def partitiondict2partition(partition):
-  slap_partition = ComputerPartition(app.config['computer_id'],
+  for key, value in partition.iteritems():
+    if type(value) is unicode:
+      partition[key] = value.encode()
+  slap_partition = ComputerPartition(partition['computer_reference'],
       partition['reference'])
   slap_partition._software_release_document = None
   slap_partition._requested_state = 'destroyed'
   slap_partition._need_modification = 0
-  slap_partition._instance_guid = partition['reference']
+  slap_partition._instance_guid = '%s-%s' % (partition['computer_reference'], partition['reference'])
 
   if partition['software_release']:
     slap_partition._need_modification = 1
@@ -86,8 +89,8 @@ def partitiondict2partition(partition):
     slap_partition._parameter_dict = xml2dict(partition['xml'])
     address_list = []
     for address in execute_db('partition_network',
-                              'SELECT * FROM %s WHERE partition_reference=?',
-                              [partition['reference']]):
+                              'SELECT * FROM %s WHERE partition_reference=? AND computer_reference=?',
+                              [partition['reference'], partition['computer_reference']]):
       address_list.append((address['reference'], address['address']))
     slap_partition._parameter_dict['ip_list'] = address_list
     slap_partition._parameter_dict['slap_software_type'] = \
@@ -95,17 +98,24 @@ def partitiondict2partition(partition):
     if partition['slave_instance_list'] is not None:
       slap_partition._parameter_dict['slave_instance_list'] = \
           xml_marshaller.xml_marshaller.loads(partition['slave_instance_list'])
+    else:
+      slap_partition._parameter_dict['slave_instance_list'] = []
     slap_partition._connection_dict = xml2dict(partition['connection_xml'])
     slap_partition._software_release_document = SoftwareRelease(
       software_release=partition['software_release'],
-      computer_guid=app.config['computer_id'])
+      computer_guid=partition['computer_reference'])
 
   return slap_partition
 
 
-def execute_db(table, query, args=(), one=False):
+def execute_db(table, query, args=(), one=False, db_version=None, log=False):
+  if not db_version:
+    db_version = DB_VERSION
+  query = query % (table + db_version,)
+  if log:
+    print query
   try:
-    cur = g.db.execute(query % (table + DB_VERSION,), args)
+    cur = g.db.execute(query, args)
   except:
     app.logger.error('There was some issue during processing query %r on table %r with args %r' % (query, table, args))
     raise
@@ -117,14 +127,65 @@ def execute_db(table, query, args=(), one=False):
 def connect_db():
   return sqlite3.connect(app.config['DATABASE_URI'])
 
+def _getTableList():
+  return g.db.execute("SELECT name FROM sqlite_master WHERE type='table' ORDER BY Name").fetchall()
 
+def _getCurrentDatabaseSchemaVersion():
+  """
+  Return version of database schema.
+  As there is no actual definition of version, analyse
+  name of all tables (containing version) and take the
+  highest version (as several versions can live in the db).
+  """
+  # XXX: define an actual version and proper migration/repair procedure.
+  version = -1
+  for table_name in _getTableList():
+    try:
+      table_version = int(table_name[0][-2:])
+    except ValueError:
+      table_version = int(table_name[0][-1:])
+    if table_version > version:
+      version = table_version
+  return str(version)
+
+def _upgradeDatabaseIfNeeded():
+  """
+  Analyses current database compared to defined schema,
+  and adapt tables/data it if needed.
+  """
+  current_schema_version = _getCurrentDatabaseSchemaVersion()
+  # If version of current database is not old, do nothing
+  if current_schema_version == DB_VERSION:
+    return
+ 
+  schema = app.open_resource('schema.sql')
+  schema = schema.read() % dict(version=DB_VERSION, computer=app.config['computer_id'])
+  g.db.cursor().executescript(schema)
+  g.db.commit()
+
+  if current_schema_version == '-1':
+    return
+
+  # Migrate all data to new tables
+  app.logger.info('Old schema detected: Migrating old tables...')
+  app.logger.info('Note that old tables are not alterated.')
+  for table in ('software', 'computer', 'partition', 'slave', 'partition_network'):
+    for row in execute_db(table, 'SELECT * from %s', db_version=current_schema_version):
+      columns = ', '.join(row.keys())
+      placeholders = ':'+', :'.join(row.keys())
+      query = 'INSERT INTO %s (%s) VALUES (%s)' % ('%s', columns, placeholders)
+      execute_db(table, query, row, log=True)
+
+  g.db.commit()
+
+is_schema_already_executed = False
 @app.before_request
 def before_request():
   g.db = connect_db()
-  schema = app.open_resource('schema.sql')
-  schema = schema.read() % dict(version=DB_VERSION)
-  g.db.cursor().executescript(schema)
-  g.db.commit()
+  global is_schema_already_executed
+  if not is_schema_already_executed:
+    _upgradeDatabaseIfNeeded()
+    is_schema_already_executed = True
 
 
 @app.after_request
@@ -141,37 +202,39 @@ def getComputerInformation():
 @app.route('/getFullComputerInformation', methods=['GET'])
 def getFullComputerInformation():
   computer_id = request.args['computer_id']
-  if app.config['computer_id'] == computer_id:
-    slap_computer = Computer(computer_id)
-    slap_computer._software_release_list = []
-    for sr in execute_db('software', 'select * from %s'):
-      slap_computer._software_release_list.append(SoftwareRelease(
-        software_release=sr['url'], computer_guid=computer_id))
-    slap_computer._computer_partition_list = []
-    for partition in execute_db('partition', 'SELECT * FROM %s'):
-      slap_computer._computer_partition_list.append(partitiondict2partition(
-        partition))
-    return xml_marshaller.xml_marshaller.dumps(slap_computer)
-  else:
-    raise NotFoundError('Only accept request for: %s' % app.config['computer_id'])
+  computer_list = execute_db('computer', 'SELECT * FROM %s WHERE reference=?', [computer_id])
+  if len(computer_list) != 1:
+    # Backward compatibility
+    if computer_id != app.config['computer_id']:
+      raise NotFoundError('%s is not registered.' % computer_id)
+  slap_computer = Computer(computer_id)
+  slap_computer._software_release_list = []
+  for sr in execute_db('software', 'select * from %s WHERE computer_reference=?', [computer_id]):
+    slap_computer._software_release_list.append(SoftwareRelease(
+      software_release=sr['url'], computer_guid=computer_id))
+  slap_computer._computer_partition_list = []
+  for partition in execute_db('partition', 'SELECT * FROM %s WHERE computer_reference=?', [computer_id]):
+    slap_computer._computer_partition_list.append(partitiondict2partition(
+      partition))
+  return xml_marshaller.xml_marshaller.dumps(slap_computer)
 
 @app.route('/setComputerPartitionConnectionXml', methods=['POST'])
 def setComputerPartitionConnectionXml():
   slave_reference = request.form['slave_reference'].encode()
-  computer_partition_id = request.form['computer_partition_id']
-  connection_xml = request.form['connection_xml']
+  computer_partition_id = request.form['computer_partition_id'].encode()
+  computer_id = request.form['computer_id'].encode()
+  connection_xml = request.form['connection_xml'].encode()
   connection_dict = xml_marshaller.xml_marshaller.loads(
-                                            connection_xml.encode())
+                                            connection_xml)
   connection_xml = dict2xml(connection_dict)
   if slave_reference == 'None':
-    query = 'UPDATE %s SET connection_xml=? WHERE reference=?'
-    argument_list = [connection_xml, computer_partition_id.encode()]
+    query = 'UPDATE %s SET connection_xml=? WHERE reference=? AND computer_reference=?'
+    argument_list = [connection_xml, computer_partition_id, computer_id]
     execute_db('partition', query, argument_list)
     return 'done'
   else:
     query = 'UPDATE %s SET connection_xml=? , hosted_by=? WHERE reference=?'
-    argument_list = [connection_xml, computer_partition_id.encode(),
-                     slave_reference]
+    argument_list = [connection_xml, computer_partition_id, slave_reference]
     execute_db('slave', query, argument_list)
     return 'done'
 
@@ -223,47 +286,41 @@ def useComputer():
 def loadComputerConfigurationFromXML():
   xml = request.form['xml']
   computer_dict = xml_marshaller.xml_marshaller.loads(str(xml))
-  if app.config['computer_id'] == computer_dict['reference']:
-    execute_db('computer', 'INSERT OR REPLACE INTO %s values(:address, :netmask)',
-        computer_dict)
-    for partition in computer_dict['partition_list']:
+  execute_db('computer', 'INSERT OR REPLACE INTO %s values(:reference, :address, :netmask)',
+             computer_dict)
+  for partition in computer_dict['partition_list']:
+    partition['computer_reference'] = computer_dict['reference']
+    execute_db('partition', 'INSERT OR IGNORE INTO %s (reference, computer_reference) values(:reference, :computer_reference)', partition)
+    execute_db('partition_network', 'DELETE FROM %s WHERE partition_reference = ? AND computer_reference = ?',
+               [partition['reference'], partition['computer_reference']])
+    for address in partition['address_list']:
+      address['reference'] = partition['tap']['name']
+      address['partition_reference'] = partition['reference']
+      address['computer_reference'] = partition['computer_reference']
+      execute_db('partition_network', 'INSERT OR REPLACE INTO %s (reference, partition_reference, computer_reference, address, netmask) values(:reference, :partition_reference, :computer_reference, :addr, :netmask)', address)
 
-      execute_db('partition', 'INSERT OR IGNORE INTO %s (reference) values(:reference)', partition)
-      execute_db('partition_network', 'DELETE FROM %s WHERE partition_reference = ?', [partition['reference']])
-      for address in partition['address_list']:
-        address['reference'] = partition['tap']['name']
-        address['partition_reference'] = partition['reference']
-        execute_db('partition_network', 'INSERT OR REPLACE INTO %s (reference, partition_reference, address, netmask) values(:reference, :partition_reference, :addr, :netmask)', address)
-
-    return 'done'
-  else:
-    raise UnauthorizedError('Only accept request for: %s' % app.config['computer_id'])
+  return 'done'
 
 @app.route('/registerComputerPartition', methods=['GET'])
 def registerComputerPartition():
-  computer_reference = request.args['computer_reference']
-  computer_partition_reference = request.args['computer_partition_reference']
-  if app.config['computer_id'] == computer_reference:
-    partition = execute_db('partition', 'SELECT * FROM %s WHERE reference=?',
-      [computer_partition_reference.encode()], one=True)
-    if partition is None:
-      raise UnauthorizedError
-    return xml_marshaller.xml_marshaller.dumps(
-        partitiondict2partition(partition))
-  else:
-    raise UnauthorizedError('Only accept request for: %s' % app.config['computer_id'])
+  computer_reference = request.args['computer_reference'].encode()
+  computer_partition_reference = request.args['computer_partition_reference'].encode()
+  partition = execute_db('partition', 'SELECT * FROM %s WHERE reference=? and computer_reference=?',
+      [computer_partition_reference, computer_reference], one=True)
+  if partition is None:
+    raise UnauthorizedError
+  return xml_marshaller.xml_marshaller.dumps(
+      partitiondict2partition(partition))
 
 @app.route('/supplySupply', methods=['POST'])
 def supplySupply():
   url = request.form['url']
   computer_id = request.form['computer_id']
-  if app.config['computer_id'] == computer_id:
-    if request.form['state'] == 'destroyed':
-      execute_db('software', 'DELETE FROM %s WHERE url = ?', [url])
-    else:
-      execute_db('software', 'INSERT OR REPLACE INTO %s VALUES(?)', [url])
+  if request.form['state'] == 'destroyed':
+    execute_db('software', 'DELETE FROM %s WHERE url = ? AND computer_reference=?',
+               [url, computer_id])
   else:
-    raise UnauthorizedError('Only accept request for: %s' % app.config['computer_id'])
+    execute_db('software', 'INSERT OR REPLACE INTO %s VALUES(?, ?)', [url, computer_id])
   return '%r added' % url
 
 
@@ -281,17 +338,22 @@ def requestComputerPartition():
 def softwareInstanceRename():
   new_name = request.form['new_name'].encode()
   computer_partition_id = request.form['computer_partition_id'].encode()
+  computer_id = request.form['computer_id'].encode()
 
-  q = 'UPDATE %s SET partition_reference = ? WHERE reference = ?'
-  execute_db('partition', q, [new_name, computer_partition_id])
+  q = 'UPDATE %s SET partition_reference = ? WHERE reference = ? AND computer_reference = ?'
+  execute_db('partition', q, [new_name, computer_partition_id, computer_id])
   return 'done'
 
+@app.route('/getComputerPartitionStatus', methods=['GET'])
+def getComputerPartitionStatus():
+  return xml_marshaller.xml_marshaller.dumps('Not implemented.')
 
 def request_not_shared():
   software_release = request.form['software_release'].encode()
   # some supported parameters
   software_type = request.form.get('software_type').encode()
   partition_reference = request.form.get('partition_reference', '').encode()
+  filter_kw = request.form.get('filter_xml', None)
   partition_id = request.form.get('computer_partition_id', '').encode()
   partition_parameter_kw = request.form.get('partition_parameter_xml', None)
   requested_state = xml_marshaller.xml_marshaller.loads(request.form.get('state').encode())
@@ -300,6 +362,11 @@ def request_not_shared():
                                               partition_parameter_kw.encode())
   else:
     partition_parameter_kw = {}
+  if filter_kw:
+    filter_kw = xml_marshaller.xml_marshaller.loads(filter_kw.encode())
+    requested_computer_id = filter_kw.get('computer_guid', app.config['computer_id'])
+  else:
+    requested_computer_id = app.config['computer_id']
 
   instance_xml = dict2xml(partition_parameter_kw)
   args = []
@@ -318,9 +385,12 @@ def request_not_shared():
     a(requested_state)
 
   # If partition doesn't exist: create it and insert parameters
+  # XXX add support for automatic deployment on specific node depending on available SR and partitions on each Node.
+  # Note: only deploy on default node if SLA not specified
   if partition is None:
     partition = execute_db('partition',
-        'SELECT * FROM %s WHERE slap_state="free"', (), one=True)
+        'SELECT * FROM %s WHERE slap_state="free" and computer_reference=?',
+        [requested_computer_id], one=True)
     if partition is None:
       app.logger.warning('No more free computer partition')
       abort(404)
@@ -346,30 +416,32 @@ def request_not_shared():
   if instance_xml:
     q += ' ,xml=?'
     a(instance_xml)
-  q += ' WHERE reference=?'
+  q += ' WHERE reference=? AND computer_reference=?'
   a(partition['reference'].encode())
+  a(partition['computer_reference'].encode())
+
   execute_db('partition', q, args)
   args = []
-  partition = execute_db('partition', 'SELECT * FROM %s WHERE reference=?',
-      [partition['reference'].encode()], one=True)
+  partition = execute_db('partition', 'SELECT * FROM %s WHERE reference=? and computer_reference=?',
+      [partition['reference'].encode(), partition['computer_reference'].encode()], one=True)
   address_list = []
   for address in execute_db('partition_network', 'SELECT * FROM %s WHERE partition_reference=?', [partition['reference']]):
     address_list.append((address['reference'], address['address']))
 
+  if not requested_state:
+    requested_state = 'started'
   # XXX it should be ComputerPartition, not a SoftwareInstance
-  software_instance = SoftwareInstance(xml=partition['xml'],
-                                       _connection_dict=xml2dict(partition['connection_xml']),
+  software_instance = SoftwareInstance(_connection_dict=xml2dict(partition['connection_xml']),
                                        _parameter_dict=xml2dict(partition['xml']),
                                        connection_xml=partition['connection_xml'],
-                                       slap_computer_id=app.config['computer_id'],
+                                       slap_computer_id=partition['computer_reference'].encode(),
                                        slap_computer_partition_id=partition['reference'],
                                        slap_software_release_url=partition['software_release'],
                                        slap_server_url='slap_server_url',
                                        slap_software_type=partition['software_type'],
-                                       slave_instance_list=partition['slave_instance_list'],
-                                       instance_guid=partition['reference'],
+                                       _instance_guid='%s-%s' % (partition['computer_reference'].encode(), partition['reference']),
+                                       _requested_state=requested_state,
                                        ip_list=address_list)
-
   return xml_marshaller.xml_marshaller.dumps(software_instance)
 
 
@@ -397,14 +469,20 @@ def request_slave():
   else:
     partition_parameter_kw = {}
 
-  filter_kw = xml_marshaller.xml_marshaller.loads(request.form.get('filter_xml').encode())
+  filter_kw = request.form.get('filter_xml', None)
+  if filter_kw:
+    filter_kw = xml_marshaller.xml_marshaller.loads(filter_kw.encode())
+    requested_computer_id = filter_kw.get('computer_guid', app.config['computer_id'])
+  else:
+    requested_computer_id = app.config['computer_id']
 
   instance_xml = dict2xml(partition_parameter_kw)
   # We will search for a master corresponding to request
   args = []
   a = args.append
-  q = 'SELECT * FROM %s WHERE software_release=?'
+  q = 'SELECT * FROM %s WHERE software_release=? and computer_reference=?'
   a(software_release)
+  a(requested_computer_id)
   if software_type:
     q += ' AND software_type=?'
     a(software_type)
@@ -433,7 +511,7 @@ def request_slave():
   if slave_instance_list is None:
     slave_instance_list = []
   else:
-    slave_instance_list = xml_marshaller.xml_marshaller.loads(slave_instance_list)
+    slave_instance_list = xml_marshaller.xml_marshaller.loads(slave_instance_list.encode())
     for x in slave_instance_list:
       if x['slave_reference'] == slave_reference:
         slave_instance_list.remove(x)
@@ -445,33 +523,34 @@ def request_slave():
   a = args.append
   q = 'UPDATE %s SET slave_instance_list=?'
   a(xml_marshaller.xml_marshaller.dumps(slave_instance_list))
-  q += ' WHERE reference=?'
+  q += ' WHERE reference=? and computer_reference=?'
   a(partition['reference'].encode())
+  a(requested_computer_id)
   execute_db('partition', q, args)
   args = []
-  partition = execute_db('partition', 'SELECT * FROM %s WHERE reference=?',
-      [partition['reference'].encode()], one=True)
+  partition = execute_db('partition', 'SELECT * FROM %s WHERE reference=? and computer_reference=?',
+      [partition['reference'].encode(), requested_computer_id], one=True)
 
   # Add slave to slave table if not there
-  slave = execute_db('slave', 'SELECT * FROM %s WHERE reference=?',
-                     [slave_reference], one=True)
+  slave = execute_db('slave', 'SELECT * FROM %s WHERE reference=? and computer_reference=?',
+                     [slave_reference, requested_computer_id], one=True)
   if slave is None:
     execute_db('slave',
-               'INSERT OR IGNORE INTO %s (reference,asked_by,hosted_by) values(:reference,:asked_by,:hosted_by)',
-               [slave_reference, partition_id, partition['reference']])
-    slave = execute_db('slave', 'SELECT * FROM %s WHERE reference=?',
-                       [slave_reference], one=True)
+               'INSERT OR IGNORE INTO %s (reference,computer_reference,asked_by,hosted_by) values(:reference,:computer_reference,:asked_by,:hosted_by)',
+               [slave_reference, requested_computer_id, partition_id, partition['reference']])
+    slave = execute_db('slave', 'SELECT * FROM %s WHERE reference=? and computer_reference=?',
+                       [slave_reference, requested_computer_id], one=True)
 
   address_list = []
   for address in execute_db('partition_network',
-                            'SELECT * FROM %s WHERE partition_reference=?',
-                            [partition['reference']]):
+                            'SELECT * FROM %s WHERE partition_reference=? and computer_reference=?',
+                            [partition['reference'], partition['computer_reference']]):
     address_list.append((address['reference'], address['address']))
 
   # XXX it should be ComputerPartition, not a SoftwareInstance
   software_instance = SoftwareInstance(_connection_dict=xml2dict(slave['connection_xml']),
-                                       xml=instance_xml,
-                                       slap_computer_id=app.config['computer_id'],
+                                       _parameter_dict=xml2dict(instance_xml),
+                                       slap_computer_id=partition['computer_reference'],
                                        slap_computer_partition_id=slave['hosted_by'],
                                        slap_software_release_url=partition['software_release'],
                                        slap_server_url='slap_server_url',
@@ -495,5 +574,6 @@ def getSoftwareReleaseListFromSoftwareProduct():
       software_release_url_list =\
           [app.config['software_product_list'][software_product_reference]]
     else:
-      software_release_url_list =[]
+      software_release_url_list = []
     return xml_marshaller.xml_marshaller.dumps(software_release_url_list)
+

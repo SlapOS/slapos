@@ -52,29 +52,39 @@
             <key> <string>_body</string> </key>
             <value> <string>portal = context.getPortalObject()\n
 \n
-software_release_preference = portal.portal_preferences.getPreferredSoftwareReleaseToTestForSpace()\n
+notification_message = portal.portal_notifications.getDocumentValue(\n
+                 reference=\'slapos-upgrade-computer.notification\')\n
 \n
-if software_release_preference != \'\':\n
-  software_release_list = software_release_preference.split("\\n")\n
+title = "New Software available for Installation at %s" % computer.getTitle()\n
+mapping_dict = {\'software_product_title\': software_product_title,\n
+                \'computer_title\': computer.getTitle(),\n
+                \'computer_reference\': computer.getReference(),\n
+                \'software_release_name\': software_release.getTitle(),\n
+                \'software_release_reference\': software_release.getReference(),\n
+                \'upgrade_accept_link\': \n
+                  \'Base_acceptUpgradeDecision?reference=%s\' % reference,\n
+                \'upgrade_reject_link\':\n
+                  \'Base_rejectUpgradeDecision?reference=%s\' % reference,\n
+                \'new_software_release_url\': software_release.getUrlString(),\n
+               }\n
 \n
-  portal.portal_catalog.searchAndActivate(\n
-    portal_type = \'Software Release\',\n
-    url_string = software_release_list,\n
 \n
-    method_id = \'SoftwareRelease_testForAllocation\',\n
-    activate_kw = {\'tag\':tag}  \n
-  )\n
+if notification_message is not None:\n
+  message = notification_message.asEntireHTML(\n
+             substitution_method_parameter_dict={\'mapping_dict\': mapping_dict})\n
+else:\n
+  raise ValueError("No Notification Message")\n
 \n
-context.activate(after_tag=tag).getId()\n
+return title, message\n
 </string> </value>
         </item>
         <item>
             <key> <string>_params</string> </key>
-            <value> <string>tag, fixit, params</string> </value>
+            <value> <string>computer</string> </value>
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>Alarm_checkCloudIsFull</string> </value>
+            <value> <string>UpgradeDecision_getComputerNotificationMessage</string> </value>
         </item>
       </dictionary>
     </pickle>

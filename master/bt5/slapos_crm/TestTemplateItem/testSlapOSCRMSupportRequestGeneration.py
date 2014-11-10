@@ -79,7 +79,7 @@ class TestSlapOSCloudSupportRequestGeneration(testSlapOSMixin):
     computer.validate()
 
     return computer
-
+    
   def _makeComputerPartitions(self,computer):
     for i in range(1, 5):
       id_ = 'partition%s' % (i, )
@@ -365,8 +365,6 @@ class TestSlapOSCloudSupportRequestGeneration(testSlapOSMixin):
       interval_of_day=time_before_next
     )
     self.assertEqual(event.getTitle(), title)
-    
-  
     
 
   def test_Computer_checkState_empty_cache(self):
@@ -837,6 +835,7 @@ portal_workflow.doActionFor(context, action='edit_action', comment='Visited by C
 
     self.assertEqual('Visited by Computer_checkAndUpdateAllocationScope',
       computer.workflow_history['edit_workflow'][-1]['comment'])
+
   
   def test_Alarm_notAllowedAllocationScope_OpenFriend(self):
     computer = self._makeComputer(self.new_id)
@@ -867,7 +866,53 @@ portal_workflow.doActionFor(context, action='edit_action', comment='Visited by C
 
     self.assertNotEqual('Visited by Computer_checkAndUpdateAllocationScope',
       computer.workflow_history['edit_workflow'][-1]['comment'])
-  
+
+  def test_Alarm_AllowedAllocationScope_OpenPersonal_old_computer(self):
+    computer = self._makeComputer(self.new_id)
+    computer.edit(allocation_scope = 'open/personal')
+    def getModificationDate(self):
+      return DateTime() - 50
+    
+    from Products.ERP5Type.Base import Base
+    
+    self._simulateComputer_checkAndUpdateAllocationScope()
+    original_get_modification = Base.getModificationDate
+    Base.getModificationDate = getModificationDate
+
+    try:
+      self.portal.portal_alarms.slapos_crm_check_update_allocation_scope.activeSense()
+      self.tic()
+    finally:
+      Base.getModificationDate = original_get_modification
+      self._dropComputer_checkAndUpdateAllocationScope()
+
+    self.assertEqual('Visited by Computer_checkAndUpdateAllocationScope',
+      computer.workflow_history['edit_workflow'][-1]['comment'])
+
+  def test_Alarm_AllowedAllocationScope_OpenPersonalWithSoftwareInstallation(self):
+    computer = self._makeComputer(self.new_id)
+    computer.edit(allocation_scope = 'open/personal')
+    software_installation = self._makeSoftwareInstallation(
+        self.new_id, computer, "http://...")
+    def getModificationDate(self):
+      return DateTime() - 50
+    
+    from Products.ERP5Type.Base import Base
+    
+    self._simulateComputer_checkAndUpdateAllocationScope()
+    original_get_modification = Base.getModificationDate
+    Base.getModificationDate = getModificationDate
+
+    try:
+      self.portal.portal_alarms.slapos_crm_check_update_allocation_scope.activeSense()
+      self.tic()
+    finally:
+      Base.getModificationDate = original_get_modification
+      self._dropComputer_checkAndUpdateAllocationScope()
+
+    self.assertNotEqual('Visited by Computer_checkAndUpdateAllocationScope',
+      computer.workflow_history['edit_workflow'][-1]['comment'])
+
   def _simulateHostingSubscription_checkSofwareInstanceState(self):
     script_name = 'HostingSubscription_checkSofwareInstanceAllocationState'
     if script_name in self.portal.portal_skins.custom.objectIds():
