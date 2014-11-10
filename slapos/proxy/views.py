@@ -634,7 +634,12 @@ def requestSlave(software_release, software_type, partition_reference, partition
     a(software_type)
   if 'instance_guid' in filter_kw:
     q += ' AND reference=?'
-    a(filter_kw['instance_guid'])
+    # instance_guid should be like: %s-%s % (requested_computer_id, partition_id)
+    # But code is convoluted here, so we check
+    if instance_guid.startswith(requested_computer_id):
+      a(instance_guid[len(requested_computer_id) + 1:])
+    else:
+      a(instance_guid)
 
   partition = execute_db('partition', q, args, one=True)
   if partition is None:
