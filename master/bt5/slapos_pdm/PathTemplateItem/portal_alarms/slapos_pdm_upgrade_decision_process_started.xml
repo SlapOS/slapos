@@ -8,7 +8,7 @@
       <dictionary>
         <item>
             <key> <string>active_sense_method_id</string> </key>
-            <value> <string>Alarm_processPlannedUpgradeDecision</string> </value>
+            <value> <string>Alarm_processStartedUpgradeDecision</string> </value>
         </item>
         <item>
             <key> <string>description</string> </key>
@@ -22,7 +22,7 @@
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>slapos_upgrade_decision_process_planned</string> </value>
+            <value> <string>slapos_pdm_upgrade_decision_process_started</string> </value>
         </item>
         <item>
             <key> <string>periodicity_day_frequency</string> </key>
@@ -95,7 +95,7 @@
         </item>
         <item>
             <key> <string>title</string> </key>
-            <value> <string>Process Planned Upgrade Decisions</string> </value>
+            <value> <string>Process Started Upgrade Decisions</string> </value>
         </item>
       </dictionary>
     </pickle>
