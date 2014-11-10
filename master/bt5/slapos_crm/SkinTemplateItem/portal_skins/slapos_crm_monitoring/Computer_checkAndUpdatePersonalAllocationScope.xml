@@ -50,47 +50,18 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string encoding="cdata"><![CDATA[
-
-portal = context.getPortalObject()\n
-\n
-category_public = portal.restrictedTraverse("portal_categories/allocation_scope/open/public", None)\n
-category_friend = portal.restrictedTraverse("portal_categories/allocation_scope/open/friend", None)\n
-category_personal = portal.restrictedTraverse("portal_categories/allocation_scope/open/personal", None)\n
-\n
-if category_public is not None:\n
-  portal.portal_catalog.searchAndActivate(\n
-    portal_type=\'Computer\',\n
-    default_allocation_scope_uid=[category_public.getUid(), category_friend.getUid()],\n
-    validation_state="validated",\n
-    method_id=\'Computer_checkAndUpdateAllocationScope\',\n
-    activate_kw={\'tag\': tag}\n
-  )\n
-\n
-if category_personal is not None:\n
-  portal.portal_catalog.searchAndActivate(\n
-    portal_type=\'Computer\', \n
-    validation_state=\'validated\', \n
-    modification_date=(DateTime() - 30).strftime(\'<=%Y/%m/%d\'), \n
-    order_by=((\'modification_date\', "ASC"), ), \n
-    default_allocation_scope_uid=category_personal.getUid(), \n
-    left_join_list=[\'aggregate_related_uid\'], \n
-    aggregate_related_uid=None,\n
-    method_id=\'Computer_checkAndUpdatePersonalAllocationScope\',\n
-    activate_kw={\'tag\': tag})\n
-\n
-context.activate(after_tag=tag).getId()\n
-
-
-]]></string> </value>
+            <value> <string>context.Computer_checkAndUpdateAllocationScope(\n
+  target_allocation_scope = \'close/termination\',\n
+  notification_message_reference=\'slapos-crm-computer_personal_allocation_scope.notification\')\n
+</string> </value>
         </item>
         <item>
             <key> <string>_params</string> </key>
-            <value> <string>tag, fixit, params</string> </value>
+            <value> <string>**kw</string> </value>
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>Alarm_checkAndUpdateComputerAllocationScope</string> </value>
+            <value> <string>Computer_checkAndUpdatePersonalAllocationScope</string> </value>
         </item>
       </dictionary>
     </pickle>
