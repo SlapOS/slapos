@@ -3,7 +3,7 @@
 {% import 'parts' as parts %}
 {% import 'replicated' as replicated with context %}
 
-{% set backup_amount = slapparameter_dict.pop('resiliency-backup-amount', "2")|int + 1 -%}
+{% set backup_amount = slapparameter_dict.pop('resilient-clone-number', "1")|int + 1 -%}
 
 [buildout]
 eggs-directory = {{ eggs_directory }}
