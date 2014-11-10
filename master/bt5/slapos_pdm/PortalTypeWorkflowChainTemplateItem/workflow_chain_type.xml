@@ -5,6 +5,6 @@
  </chain>
  <chain>
   <type>Upgrade Decision</type>
-  <workflow>upgrade_decision_workflow</workflow>
+  <workflow>edit_workflow, upgrade_decision_workflow</workflow>
  </chain>
 </workflow_chain>
