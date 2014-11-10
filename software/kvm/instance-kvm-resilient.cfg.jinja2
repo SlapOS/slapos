@@ -3,6 +3,8 @@
 {% import 'parts' as parts %}
 {% import 'replicated' as replicated with context %}
 
+{% set backup_amount = slapparameter_dict.pop('resiliency-backup-amount', "2")|int + 1 -%}
+
 [buildout]
 eggs-directory = {{ eggs_directory }}
 develop-eggs-directory = {{ develop_eggs_directory }}
@@ -10,12 +12,12 @@ offline = true
 
 # += because we need to take up parts (like instance-custom, slapmonitor etc) from the profile we extended
 parts +=
-  {{ parts.replicate("kvm", "3") }}
+  {{ parts.replicate("kvm", backup_amount) }}
   publish-connection-informations
   kvm-frontend-url-promise
   kvm-backend-url-promise
 
-{{ replicated.replicate("kvm", "3", "kvm-export", "kvm-import", slapparameter_dict=slapparameter_dict) }}
+{{ replicated.replicate("kvm", backup_amount, "kvm-export", "kvm-import", slapparameter_dict=slapparameter_dict) }}
 
 [directory]
 recipe = slapos.cookbook:mkdirectory
