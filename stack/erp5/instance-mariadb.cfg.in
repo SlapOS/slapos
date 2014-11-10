@@ -218,8 +218,7 @@ wrapper-path = ${directory:promise}/mariadb
 parameters-extra = true
 
 [buildout]
-extends =
-  {{ parameter_dict['instance-logrotate-cfg'] }}
+extends = {{ logrotate_cfg }}
 parts +=
   publish-mariadb-url
   logrotate-entry-mariadb

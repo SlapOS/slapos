@@ -187,7 +187,7 @@ logrotate-entries = ${logrotate:logrotate-entries}
 backup = ${logrotate:backup}
 name = apache
 log = ${apache-conf-parameter-dict:error-log} ${apache-conf-parameter-dict:access-log}
-post = {{ parameter_dict['bin-directory'] }}/killpidfromfile ${apache-conf-parameter-dict:pid-file} SIGUSR1
+post = {{ parameter_dict['bin-directory'] }}/slapos-kill --pidfile ${apache-conf-parameter-dict:pid-file} -s USR1
 
 [directory]
 recipe = slapos.cookbook:mkdirectory
@@ -207,7 +207,7 @@ newcerts = ${:ca-dir}/newcerts
 crl = ${:ca-dir}/crl
 
 [buildout]
-extends = {{ parameter_dict['instance-logrotate-cfg'] }}
+extends = {{ logrotate_cfg }}
 parts +=
   publish
   logrotate-apache

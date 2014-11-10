@@ -1,6 +1,8 @@
 [buildout]
-parts =
+extends = {{ logrotate_cfg }}
+parts +=
   neo-master-promise
+  logrotate-master
 
 [neo-master]
 recipe = slapos.cookbook:neoppod.master
@@ -36,3 +38,11 @@ recipe = slapos.cookbook:check_port_listening
 hostname = ${neo-master:ip}
 port = ${neo-master:port}
 path = ${directory:promises}/neo-master-promise
+
+[logrotate-master]
+recipe = slapos.cookbook:logrotate.d
+logrotate-entries = ${logrotate:logrotate-entries}
+backup = ${logrotate:backup}
+name = neo-master
+log = ${neo-master:logfile}
+post = {{ bin_directory }}/slapos-kill -n neomaster -s RTMIN+1 ${:log}

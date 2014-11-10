@@ -1,6 +1,8 @@
 [buildout]
 extends = {{ master_cfg }}
-parts += neo-storage
+parts +=
+  neo-storage
+  logrotate-storage
 
 [mariadb-instance]
 recipe = slapos.cookbook:generic.mysql
@@ -45,3 +47,11 @@ var = ${buildout:directory}/var
 etc_run =  ${:etc}/run
 var_run =  ${:var}/run
 srv_mariadb = ${buildout:directory}/srv/mariadb
+
+[logrotate-storage]
+recipe = slapos.cookbook:logrotate.d
+logrotate-entries = ${logrotate:logrotate-entries}
+backup = ${logrotate:backup}
+name = neo-storage
+log = ${neo-storage:logfile}
+post = {{ bin_directory }}/slapos-kill -n neostorage -s RTMIN+1 ${:log}

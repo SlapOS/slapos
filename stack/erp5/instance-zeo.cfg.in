@@ -93,7 +93,7 @@ storage = {{ dumps(storage_list) }}
 < = logrotate-base
 name = {{ "${" ~ zeo_section_name ~ ":base-name}" }}
 log = {{ "${" ~ zeo_section_name ~ ":log-path}" }}
-post = {{ bin_directory }}/killpidfromfile {{ "${" ~ zeo_section_name ~ ":pid-path}" }} SIGUSR2
+post = {{ bin_directory }}/slapos-kill --pidfile {{ "${" ~ zeo_section_name ~ ":pid-path}" }} -s USR2
 
 [{{ section(zeo_section_name ~ "-promise") }}]
 recipe = slapos.cookbook:check_port_listening
@@ -189,7 +189,7 @@ wrapper-path = ${directory:bin}/cron-purge-repozo-fsindex
 < = logrotate-base
 name = tidstorage
 log = ${tidstorage:logfile-name}
-post = {{ bin_directory }}/killpidfromfile ${tidstorage:pidfile-name} SIGHUP
+post = {{ bin_directory }}/slapos-kill --pidfile ${tidstorage:pidfile-name} -s HUP
 {% else -%}
 [tidstorage]
 ip =
@@ -226,8 +226,7 @@ zodb = {{ default_zodb_path }}
 tidstorage = {{ default_tidstorage_timestamp_path }}
 
 [buildout]
-extends =
-  {{ parameter_dict['instance-logrotate-cfg'] }}
+extends = {{ logrotate_cfg }}
 parts +=
   {{ part_list | join('\n  ') }}
   publish

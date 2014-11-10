@@ -1,4 +1,3 @@
-{% if slap_software_type == software_type -%}
 {% set frontend_dict = slapparameter_dict.get('frontend', {}) %}
 {% set has_frontend = frontend_dict.get('software-url', '') != '' -%}
 {% set site_id = slapparameter_dict.get('site-id', 'erp5') -%}
@@ -239,6 +238,3 @@ hosts-dict = {{ '${' ~ zope_address_list_id_dict.keys()[0] ~ ':connection-hosts-
 
 [buildout]
 parts = publish
-eggs-directory = {{ eggs_directory }}
-develop-eggs-directory = {{ develop_eggs_directory }}
-{% endif %}

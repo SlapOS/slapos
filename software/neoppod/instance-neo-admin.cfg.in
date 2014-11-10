@@ -1,6 +1,8 @@
 [buildout]
-parts =
+extends = {{ logrotate_cfg }}
+parts +=
   neo-admin-promise
+  logrotate-admin
 
 [neo-admin]
 recipe = slapos.cookbook:neoppod.admin
@@ -30,3 +32,11 @@ recipe = slapos.cookbook:check_port_listening
 hostname = ${neo-admin:ip}
 port = ${neo-admin:port}
 path = ${directory:promises}/neo-admin-promise
+
+[logrotate-admin]
+recipe = slapos.cookbook:logrotate.d
+logrotate-entries = ${logrotate:logrotate-entries}
+backup = ${logrotate:backup}
+name = neo-admin
+log = ${neo-admin:logfile}
+post = {{ bin_directory }}/slapos-kill -n neoadmin -s RTMIN+1 ${:log}

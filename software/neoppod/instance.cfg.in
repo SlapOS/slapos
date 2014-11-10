@@ -22,6 +22,7 @@ context =
     key ipv4_set slap-configuration:ipv4
     raw bin_directory {{ bin_directory }}
     key slapparameter_dict slap-configuration:configuration
+    raw logrotate_cfg {{ logrotate_base }}
     ${:extra-context}
 
 [neo-cluster]

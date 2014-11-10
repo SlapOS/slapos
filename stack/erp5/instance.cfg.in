@@ -21,6 +21,7 @@ context =
     key slapparameter_dict slap-configuration:configuration
     key computer_id slap-configuration:computer
     raw slapos_core_version {{ slapos_core_version }}
+    raw logrotate_cfg {{ template_logrotate_base }}
     ${:extra-context}
 
 [dynamic-template-cloudooo-parameters]
@@ -70,7 +71,6 @@ extra-context =
 apache = {{ apache_location }}
 openssl = {{ openssl_location }}
 haproxy = {{ haproxy_location }}
-instance-logrotate-cfg = {{ template_logrotate_base }}
 bin-directory = {{ bin_directory }}
 6tunnel = {{ sixtunnel_location }}
 dash = {{ dash_location }}
@@ -93,7 +93,6 @@ extensions = jinja2.ext.do
 
 [dynamic-template-zeo-parameters]
 buildout-bin-directory = {{ buildout_bin_directory }}
-instance-logrotate-cfg = {{ template_logrotate_base }}
 6tunnel = {{ sixtunnel_location }}
 dash = {{ dash_location }}
 findutils-location = {{ findutils_location }}
@@ -111,7 +110,6 @@ extra-context =
 [dynamic-template-zope-parameters]
 bin-directory = {{ bin_directory }}
 zope-conf-template = {{ template_zope_conf }}
-instance-logrotate-cfg = {{ template_logrotate_base }}
 buildout-bin-directory = {{ buildout_bin_directory }}
 6tunnel = {{ sixtunnel_location }}
 dash = {{ dash_location }}
@@ -146,15 +144,12 @@ extra-context =
 
 [dynamic-template-mariadb-parameters]
 coreutils-location = {{ coreutils_location }}
-dcron-location = {{ dcron_location }}
 findutils-location = {{ findutils_location }}
 gzip-location = {{ gzip_location }}
-logrotate-location = {{ logrotate_location }}
 mariadb-location = {{ mariadb_location }}
 template-my-cnf = {{ template_my_cnf }}
 template-mariadb-initial-setup = {{ template_mariadb_initial_setup }}
 link-binary = {{ dumps(mariadb_link_binary) }}
-instance-logrotate-cfg = {{ template_logrotate_base }}
 bin-directory = {{ bin_directory }}
 
 [dynamic-template-mariadb]

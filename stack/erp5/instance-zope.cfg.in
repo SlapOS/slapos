@@ -325,7 +325,7 @@ path = ${directory:promises}/{{ zope_tunnel_base_name }}
 < = logrotate-entry-base
 name = {{ name }}
 log = {{ '${' ~ conf_parameter_name ~ ':event-log}' }} {{ '${' ~ conf_parameter_name ~ ':z2-log}' }} {{ '${' ~ name ~ ':longrequest-logger-file}' }}
-post = {{ bin_directory }}/killpidfromfile {{ '${' ~ conf_parameter_name ~ ':pid-file}' }} SIGUSR2
+post = {{ bin_directory }}/slapos-kill --pidfile {{ '${' ~ conf_parameter_name ~ ':pid-file}' }} -s USR2
 {% endmacro -%}
 
 {% for i in range(slapparameter_dict['instance-count']) -%}
@@ -361,8 +361,7 @@ bt5 = {{ dumps(slapparameter_dict['bt5']) }}
 bt5-repository-url = {{ dumps(slapparameter_dict['bt5-repository-url']) }}
 
 [buildout]
-extends =
-  {{ parameter_dict['instance-logrotate-cfg'] }}
+extends = {{ logrotate_cfg }}
 parts +=
   erp5-promise
   {{ part_list | join('\n  ') }}
