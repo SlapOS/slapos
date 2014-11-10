@@ -52,73 +52,44 @@
             <key> <string>_body</string> </key>
             <value> <string encoding="cdata"><![CDATA[
 
-return """\n
-<script>\n
-"use strict";\n
-(function ($) {\n
+import json\n
 \n
-  var methods;\n
+portal = context.getPortalObject()\n
+person = portal.ERP5Site_getAuthenticatedMemberPersonValue()\n
 \n
-  methods = {\n
-    click: function (method) {\n
-      $(this).click(function() {\n
-        $(this).parent().parent()\n
-          .slapostoken(method);\n
-        return false;\n
-      });\n
-    },\n
-    generateComputerToken: function () {\n
-      $.ajax("./Base_generateComputerTokenFromJS", {\n
-        context: $(this),\n
-        success: function(data) {\n
-          $(this).attr("class", "alignr")\n
-                 .text("New token: " + data.access_token);\n
-        }\n
-      })\n
-    },\n
-    generateCredentialToken: function () {\n
-      $.ajax("./Base_generateCredentialTokenFromJS", {\n
-        context: $(this),\n
-        success: function(data) {\n
-          $(this).attr("class", "alignr")\n
-                 .text("New token: " + data.access_token);\n
-        }\n
-      })\n
-    },\n
-    generateRssRestrictedAccessToken: function () {\n
-      $.ajax("./Base_generateRssRestrictedAccessTokenFromJS", {\n
-        context: $(this),\n
-        success: function(data) {\n
-          $(this).html("<a target=\'_blank\' href=\'" + data.restricted_access_url +\n
-              "\'>Your RSS Feed link</a>");\n
-        }\n
-      })\n
-    },\n
-  };\n
+web_site = context.getWebSiteValue()\n
+request_url = "%s/%s" % (web_site.absolute_url(), "my_rss_feed")\n
 \n
-  $.fn.slapostoken = function (method) {\n
-    var result;\n
-    if (methods.hasOwnProperty(method)) {\n
-      result = methods[method].apply(\n
-        this,\n
-        Array.prototype.slice.call(arguments, 1)\n
-      );\n
-    } else {\n
-      $.error(\'Method \' + method +\n
-              \' does not exist on jQuery.slapostoken\');\n
-    }\n
-    return result;\n
-  };\n
-}(jQuery));\n
+# XXX - Cannot search in catalog with parameter url_string\n
+access_token = None\n
+for token_item in portal.portal_catalog(\n
+  portal_type="Restricted Access Token",\n
+  default_agent_uid=person.getUid(),\n
+  validation_state=\'validated\'\n
+  ):\n
+  if token_item.getUrlString() == request_url:\n
+    access_token = token_item\n
+    break;\n
 \n
-$("#computertokengenerationlink")\n
-  .slapostoken("click", "generateComputerToken");\n
-$("#credentialtokengenerationlink")\n
-  .slapostoken("click", "generateCredentialToken");\n
-$("#rssaccesstokengenerationlink")\n
-  .slapostoken("click", "generateRssRestrictedAccessToken");\n
-</script>\n
-"""\n
+if access_token is None:\n
+  access_token = portal.access_token_module.newContent(\n
+    portal_type="Restricted Access Token",\n
+    agent_value=person,\n
+    url_string=request_url,\n
+    url_method="GET",\n
+  )\n
+  access_token.validate()\n
+\n
+url = "%s/%s?portal_skin=RSS&access_token=%s&access_token_secret=%s" % (\n
+        web_site.absolute_url(),\n
+        "my_rss_feed",\n
+        access_token.getId(),\n
+        access_token.getReference())\n
+\n
+request = context.REQUEST\n
+response = request.RESPONSE\n
+response.setHeader(\'Content-Type\', "application/json")\n
+return json.dumps({\'restricted_access_url\': url})\n
 
 
 ]]></string> </value>
@@ -129,7 +100,7 @@ $("#rssaccesstokengenerationlink")\n
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>Base_getTokenGeneratorJS</string> </value>
+            <value> <string>Base_generateRssRestrictedAccessTokenFromJS</string> </value>
         </item>
       </dictionary>
     </pickle>
