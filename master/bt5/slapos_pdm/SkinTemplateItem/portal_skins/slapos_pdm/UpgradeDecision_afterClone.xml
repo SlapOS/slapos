@@ -50,49 +50,16 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string encoding="cdata"><![CDATA[
-
-portal = context.getPortalObject()\n
-\n
-#Get all unallocated Software Instance\n
-select_dict= {\'default_aggregate_uid\': None}\n
-software_instance_list = context.portal_catalog(\n
-  portal_type=["Software Instance", "Slave Instance"],\n
-  validation_state="validated",\n
-  # Do not fetch destroyed instances\n
-  # XXX slap_state=["start_requested", "stop_requested"],\n
-  default_aggregate_uid=None,\n
-  select_dict=select_dict,\n
-  left_join_list=select_dict.keys(),\n
-  group_by="specialise_uid"\n
-  )\n
-\n
-#Get the list of concerned Hosting Subscription reference\n
-hs_reference_list = [si.getSpecialiseReference() for si in software_instance_list \n
-                   if si.getSlapState() in [\'start_requested\', \'stop_requested\']\n
-                  ]\n
-\n
-if len(hs_reference_list) > 0:\n
-  portal.portal_catalog.searchAndActivate(\n
-    portal_type=\'Hosting Subscription\',\n
-    validation_state=\'validated\',\n
-    reference=hs_reference_list,\n
-    method_id=\'HostingSubscription_checkSofwareInstanceAllocationState\',\n
-    activate_kw = {\'tag\':tag}\n
-  )\n
-\n
-context.activate(after_tag=tag).getId()\n
-
-
-]]></string> </value>
+            <value> <string>context.UpgradeDecision_init()\n
+</string> </value>
         </item>
         <item>
             <key> <string>_params</string> </key>
-            <value> <string>tag, fixit, params</string> </value>
+            <value> <string></string> </value>
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>Alarm_findAndNofitiyUnallocatedSoftwareInstance</string> </value>
+            <value> <string>UpgradeDecision_afterClone</string> </value>
         </item>
       </dictionary>
     </pickle>

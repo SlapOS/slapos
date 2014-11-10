@@ -57,8 +57,7 @@ portal = context.getPortalObject()\n
 allocation_scope = computer.getAllocationScope()\n
 computer_reference = computer.getReference()\n
 \n
-if allocation_scope != \'open/public\' and \\\n
-   allocation_scope != \'open/friend\':\n
+if allocation_scope not in [\'open/public\', \'open/friend\']:\n
   return\n
 \n
 is_service_provider = False\n
@@ -80,7 +79,7 @@ if not is_service_provider:\n
 \n
   # Create a ticket (or re-open it) for this issue!\n
   support_request = None\n
-  request_title = \'[MONITORING] Allocation scope has been changed for %s\' % computer_reference\n
+  request_title = \'We have changed allocation scope for %s\' % computer_reference\n
   request_description = \'Allocation scope has been changed back to \' \\\n
                        \'open/personal for %s\' % computer_reference\n
             \n
@@ -106,26 +105,19 @@ if not is_service_provider:\n
     return\n
   \n
   # Send notification message\n
-  message_title = \'We have changed allocation scope for %s\' % computer_reference\n
-  notification_reference = \'slapos-crm-computer_allocation_scope.notification\'\n
   notification_message = portal.portal_notifications.getDocumentValue(\n
-                 reference=notification_reference)\n
-  if notification_message is None:\n
-    message = """Dear user,\n
-%s.\n
-Do not hesitate to visit the web forum (http://community.slapos.org/forum) in case of question.\n
+                 reference=\'slapos-crm-computer_allocation_scope.notification\')\n
 \n
-Regards,\n
-\n
-The slapos team""" % request_description\n
-  else:\n
+  if notification_message is not None:\n
     mapping_dict = {\'computer_title\':computer.getTitle(),\n
                     \'computer_id\':computer_reference,\n
                     \'allocation_scope\':allocation_scope}\n
     message = notification_message.asText(\n
               substitution_method_parameter_dict={\'mapping_dict\':mapping_dict})\n
-  \n
-  support_request.SupportRequest_trySendNotificationMessage(message_title,\n
+  else:\n
+    message = request_description\n
+\n
+  support_request.SupportRequest_trySendNotificationMessage(request_title,\n
               message, person.getRelativeUrl())\n
 </string> </value>
         </item>
