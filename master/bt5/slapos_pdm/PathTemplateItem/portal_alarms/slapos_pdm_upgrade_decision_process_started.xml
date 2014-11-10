@@ -22,7 +22,7 @@
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>slapos_upgrade_decision_process</string> </value>
+            <value> <string>slapos_pdm_upgrade_decision_process_started</string> </value>
         </item>
         <item>
             <key> <string>periodicity_day_frequency</string> </key>

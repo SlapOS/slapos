@@ -50,29 +50,57 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string># Define Reference from ID provided by portal_ids\n
+            <value> <string encoding="cdata"><![CDATA[
+
+if reference is None:\n
+  raise ValueError("Missing Reference")\n
+\n
 portal = context.getPortalObject()\n
-type_definition = context.getTypeInfo()\n
 \n
-short_portal_type = type_definition.getShortTitle()\n
-if not short_portal_type:\n
-  short_portal_type = \'\'.join(s for s in type_definition.getId() if s.isupper())\n
+upgrade_decision_list = portal.portal_catalog(\n
+  portal_type="Upgrade Decision", \n
+  reference=reference, limit=2)\n
 \n
-id_group = (\'reference\', short_portal_type)\n
-default = 1\n
-new_id = portal.portal_ids.generateNewId(id_group=id_group, default=default)\n
-reference = \'%s-%s\' % (short_portal_type, new_id)\n
+if not len(upgrade_decision_list):\n
+  return context.Base_redirect("", \n
+    keep_items={"portal_status_message": \n
+       context.Base_translateString("Unable to find the Upgrade Decision.")})\n
 \n
-context.setReference(reference)\n
-</string> </value>
+if len(upgrade_decision_list) > 1:\n
+  raise ValueError("Duplicated reference for %s. Please contact site administrators." % reference)\n
+\n
+upgrade_decision = upgrade_decision_list[0]\n
+\n
+if upgrade_decision.getSimulationState() in [\'draft\', \'planned\']:\n
+  message = "Sorry, the upgrade is not possible yet!"\n
+\n
+elif upgrade_decision.getSimulationState() in [\'cancelled\', \'rejected\']:\n
+  message = "Sorry, the upgrade is not possble, Upgrade Decision was Canceled or Rejected!"\n
+\n
+elif upgrade_decision.getSimulationState() == \'started\':\n
+  message = "This Upgrade Decision is already Started."\n
+\n
+elif upgrade_decision.getSimulationState() in [\'stopped\', \'delivered\']:\n
+  message = "This Upgrade Decision has been already processed."\n
+\n
+elif upgrade_decision.getSimulationState() == \'confirmed\':\n
+  message = "This Upgrade Decision has been requested, it will be processed in few minutes."\n
+  upgrade_decision.start()\n
+\n
+return context.Base_redirect("", \n
+    keep_items={"portal_status_message": \n
+       context.Base_translateString(message)})\n
+
+
+]]></string> </value>
         </item>
         <item>
             <key> <string>_params</string> </key>
-            <value> <string>**kw</string> </value>
+            <value> <string>reference</string> </value>
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>UpgradeDecision_init</string> </value>
+            <value> <string>Base_acceptUpgradeDecision</string> </value>
         </item>
       </dictionary>
     </pickle>
