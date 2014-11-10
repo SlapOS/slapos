@@ -61,7 +61,7 @@ upgrade_decision_list = portal.portal_catalog(\n
   portal_type="Upgrade Decision", \n
   reference=reference, limit=2)\n
 \n
-if upgrade_decision_list is None:\n
+if not len(upgrade_decision_list):\n
   return context.Base_redirect("", \n
     keep_items={"portal_status_message": \n
        context.Base_translateString("Unable to find the Upgrade Decision.")})\n
@@ -74,7 +74,7 @@ upgrade_decision = upgrade_decision_list[0]\n
 if upgrade_decision.getSimulationState() in [\'draft\', \'planned\']:\n
   message = "Sorry, the upgrade is not possible yet!"\n
 \n
-elif upgrade_decision.getSimulationState() in [\'cancel\', \'rejected\']:\n
+elif upgrade_decision.getSimulationState() in [\'cancelled\', \'rejected\']:\n
   message = "Sorry, the upgrade is not possble, Upgrade Decision was Canceled or Rejected!"\n
 \n
 elif upgrade_decision.getSimulationState() == \'started\':\n
