@@ -1691,11 +1691,13 @@ class TestSlapOSSlapToolInstanceAccess(TestSlapOSSlapToolMixin):
     self.assertTrue(software_release3.getValidationState() == 'released')
     software_release1.edit(
         aggregate_value=software_product.getRelativeUrl(),
-        url_string='http://example.org/1.cfg'
+        url_string='http://example.org/1.cfg',
+        effective_date=DateTime()
     )
     software_release2.edit(
         aggregate_value=software_product.getRelativeUrl(),
-        url_string='http://example.org/2.cfg'
+        url_string='http://example.org/2.cfg',
+        effective_date=DateTime()
     )
     software_release3.edit(
         aggregate_value=software_product.getRelativeUrl(),
@@ -1720,6 +1722,56 @@ class TestSlapOSSlapToolInstanceAccess(TestSlapOSSlapToolMixin):
   </list>
 </marshal>
 """ % (software_release2.getUrlString(), software_release1.getUrlString())
+    self.assertEqual(expected_xml, got_xml,
+        '\n'.join([q for q in difflib.unified_diff(expected_xml.split('\n'), got_xml.split('\n'))]))
+  
+  def test_getSoftwareReleaseListFromSoftwareProduct_effectiveDate(self):
+    new_id = self.generateNewId()
+    software_product = self._makeSoftwareProduct(new_id)
+    # 3 published software releases
+    software_release1 = self._makeSoftwareRelease(new_id)
+    software_release2 = self._makeSoftwareRelease(self.generateNewId())
+    software_release3 = self._makeSoftwareRelease(self.generateNewId())
+    software_release1.publish()
+    software_release2.publish()
+    software_release3.publish()
+    software_release1.edit(
+        aggregate_value=software_product.getRelativeUrl(),
+        url_string='http://example.org/1.cfg',
+        effective_date=(DateTime() - 1)
+    )
+    # Should not be considered yet!
+    software_release2.edit(
+        aggregate_value=software_product.getRelativeUrl(),
+        url_string='http://example.org/2.cfg',
+        effective_date=(DateTime() + 1)
+    )
+    software_release3.edit(
+        aggregate_value=software_product.getRelativeUrl(),
+        url_string='http://example.org/3.cfg',
+        effective_date=DateTime()
+    )
+    self.tic()
+
+    response = self.portal_slap.getSoftwareReleaseListFromSoftwareProduct(
+        software_product.getReference())
+    # check returned XML
+    xml_fp = StringIO.StringIO()
+    xml.dom.ext.PrettyPrint(xml.dom.ext.reader.Sax.FromXml(response),
+        stream=xml_fp)
+    xml_fp.seek(0)
+    got_xml = xml_fp.read()
+    expected_xml = """\
+<?xml version='1.0' encoding='UTF-8'?>
+<marshal>
+  <list id='i2'>
+    <string>%s</string>
+    <string>%s</string>
+    <string>%s</string>
+  </list>
+</marshal>
+""" % (software_release3.getUrlString(), software_release1.getUrlString(),
+        software_release2.getUrlString())
     self.assertEqual(expected_xml, got_xml,
         '\n'.join([q for q in difflib.unified_diff(expected_xml.split('\n'), got_xml.split('\n'))]))
 

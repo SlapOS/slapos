@@ -62,7 +62,7 @@ last_event = context.portal_catalog.getResultValue(\n
              sort_on=[(\'delivery.start_date\', \'DESC\')],\n
 )\n
 if last_event and \\\n
-    (DateTime() - last_event.getStartDate()  < 1):\n
+    (DateTime() - last_event.getStartDate()  < interval_of_day):\n
   # User has already been notified this last 24h.\n
   return\n
 event = portal.event_module.slapos_crm_web_message_template.\\\n
@@ -77,13 +77,15 @@ event.edit(\n
 )\n
 event.stop()\n
 event.deliver()\n
+\n
+return event\n
 
 
 ]]></string> </value>
         </item>
         <item>
             <key> <string>_params</string> </key>
-            <value> <string>message_title, message, source_relative_url</string> </value>
+            <value> <string>message_title, message, source_relative_url, interval_of_day=1</string> </value>
         </item>
         <item>
             <key> <string>id</string> </key>

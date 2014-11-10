@@ -149,7 +149,8 @@ class TestSoftwareReleaseListFromSoftwareProduct(testSlapOSMixin):
     software_release1 = self._makeSoftwareRelease(new_id)
     software_release1.edit(
         aggregate_value=software_product.getRelativeUrl(),
-        url_string='http://example.org/1-%s.cfg' % new_id
+        url_string='http://example.org/1-%s.cfg' % new_id,
+        effective_date=(DateTime() + 5)
     )
     software_release1.publish()
     software_release2 = self._makeSoftwareRelease(self.generateNewId())
@@ -185,14 +186,16 @@ class TestSoftwareReleaseListFromSoftwareProduct(testSlapOSMixin):
     software_release2.publish()
     software_release2.edit(
         aggregate_value=software_product.getRelativeUrl(),
-        url_string='http://example.org/2-%s.cfg' % new_id
+        url_string='http://example.org/2-%s.cfg' % new_id,
+        effective_date=(DateTime() - 2)
     )
     # Newest software release
     software_release1 = self._makeSoftwareRelease(new_id)
     software_release1.publish()
     software_release1.edit(
         aggregate_value=software_product.getRelativeUrl(),
-        url_string='http://example.org/1-%s.cfg' % new_id
+        url_string='http://example.org/1-%s.cfg' % new_id,
+        effective_date=DateTime()
     )
     self.tic()
 
@@ -280,6 +283,7 @@ class TestSlapOSUpgradeHostingSubscription(BaseTestSlapOSMixin):
                       True)
     
     self.portal.portal_workflow._jumpToStateFor(hosting_subscription, 'destroy_requested')
+    self.tic()
     self.assertEqual(hosting_subscription.HostingSubscription_isUpgradable(),
                       False)
     

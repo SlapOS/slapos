@@ -59,6 +59,8 @@ if source_project_value.getPortalType() == "Computer":\n
   destination_decision = source_project_value.getSourceAdministration()\n
 elif source_project_value.getPortalType() == "Software Instance":\n
   destination_decision = source_project_value.getSpecialiseValue().getDestinationSection()\n
+elif source_project_value.getPortalType() == "Hosting Subscription":\n
+  destination_decision = source_project_value.getDestinationSection()\n
 else:\n
   destination_decision = None\n
 \n
@@ -66,6 +68,8 @@ if portal.ERP5Site_isSupportRequestCreationClosed(destination_decision):\n
   # Stop ticket creation\n
   return\n
 \n
+if not title.startswith(\'[MONITORING]\'):\n
+  title = \'[MONITORING] \' + title\n
 support_request_in_progress = portal.portal_catalog.getResultValue(\n
   portal_type = \'Support Request\',\n
   title = title,\n
@@ -74,6 +78,8 @@ support_request_in_progress = portal.portal_catalog.getResultValue(\n
 )\n
 \n
 if support_request_in_progress is None:\n
+  ressource = portal.service_module.\\\n
+                  slapos_crm_monitoring.getRelativeUrl()\n
   support_request = portal.\\\n
     support_request_module.\\\n
     slapos_crm_support_request_template_for_monitoring.\\\n
@@ -83,7 +89,8 @@ if support_request_in_progress is None:\n
     description = description,\n
     start_date = DateTime(),\n
     destination_decision=destination_decision,\n
-    source_project_value = source_relative_url\n
+    source_project_value = source_relative_url,\n
+    ressource=ressource\n
   )\n
   support_request.validate()\n
 \n
