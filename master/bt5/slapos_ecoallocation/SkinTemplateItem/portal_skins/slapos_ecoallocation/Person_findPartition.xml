@@ -1,0 +1,188 @@
+<?xml version="1.0"?>
+<ZopeData>
+  <record id="1" aka="AAAAAAAAAAE=">
+    <pickle>
+      <global name="PythonScript" module="Products.PythonScripts.PythonScript"/>
+    </pickle>
+    <pickle>
+      <dictionary>
+        <item>
+            <key> <string>Script_magic</string> </key>
+            <value> <int>3</int> </value>
+        </item>
+        <item>
+            <key> <string>_bind_names</string> </key>
+            <value>
+              <object>
+                <klass>
+                  <global name="NameAssignments" module="Shared.DC.Scripts.Bindings"/>
+                </klass>
+                <tuple/>
+                <state>
+                  <dictionary>
+                    <item>
+                        <key> <string>_asgns</string> </key>
+                        <value>
+                          <dictionary>
+                            <item>
+                                <key> <string>name_container</string> </key>
+                                <value> <string>container</string> </value>
+                            </item>
+                            <item>
+                                <key> <string>name_context</string> </key>
+                                <value> <string>context</string> </value>
+                            </item>
+                            <item>
+                                <key> <string>name_m_self</string> </key>
+                                <value> <string>script</string> </value>
+                            </item>
+                            <item>
+                                <key> <string>name_subpath</string> </key>
+                                <value> <string>traverse_subpath</string> </value>
+                            </item>
+                          </dictionary>
+                        </value>
+                    </item>
+                  </dictionary>
+                </state>
+              </object>
+            </value>
+        </item>
+        <item>
+            <key> <string>_body</string> </key>
+            <value> <string>import random\n
+from Products.ZSQLCatalog.SQLCatalog import SimpleQuery, ComplexQuery\n
+person = context\n
+\n
+computer_partition = None\n
+query_kw = {\n
+  \'software_release_url\': software_release_url,\n
+  \'portal_type\': \'Computer Partition\',\n
+}\n
+if software_instance_portal_type == "Slave Instance":\n
+  query_kw[\'free_for_request\'] = 0\n
+  query_kw[\'software_type\'] = software_type\n
+elif software_instance_portal_type == "Software Instance":\n
+  query_kw[\'free_for_request\'] = 1\n
+else:\n
+  raise NotImplementedError("Unknown portal type %s"%\n
+      software_instance_portal_type)\n
+\n
+# support SLA\n
+\n
+# Explicit location\n
+explicit_location = False\n
+if "computer_guid" in filter_kw:\n
+  explicit_location = True\n
+  query_kw["parent_reference"] = SimpleQuery(parent_reference=filter_kw.pop("computer_guid"))\n
+\n
+if "instance_guid" in filter_kw:\n
+  explicit_location = True\n
+  portal = context.getPortalObject()\n
+  instance_guid = filter_kw.pop("instance_guid")\n
+  query_kw["aggregate_related_reference"] = SimpleQuery(aggregate_related_reference=instance_guid)\n
+\n
+if \'network_guid\' in filter_kw:\n
+  network_guid = filter_kw.pop(\'network_guid\')\n
+  query_kw["default_subordination_reference"] = SimpleQuery(default_subordination_reference=network_guid)\n
+\n
+if computer_network_query:\n
+  if query_kw.get("default_subordination_reference"):\n
+    query_kw["default_subordination_reference"] = ComplexQuery(\n
+        query_kw["default_subordination_reference"],\n
+        computer_network_query\n
+    )\n
+  else:\n
+    query_kw["default_subordination_reference"] = computer_network_query\n
+\n
+if "retention_delay" in filter_kw:\n
+  filter_kw.pop("retention_delay")\n
+\n
+computer_base_category_list = [\n
+  \'group\',\n
+  \'cpu_core\',\n
+  \'cpu_frequency\',\n
+  \'cpu_type\',\n
+  \'local_area_network_type\',\n
+  \'region\',\n
+  \'memory_size\',\n
+  \'memory_type\',\n
+  \'storage_capacity\',\n
+  \'storage_interface\',\n
+  \'storage_redundancy\',\n
+]\n
+for base_category in computer_base_category_list:\n
+  if base_category in filter_kw:\n
+    category_relative_url = "%s" % filter_kw.pop(base_category)\n
+    # XXX Small protection to prevent entering strange strings\n
+    category = context.getPortalObject().portal_categories[base_category].restrictedTraverse(str(category_relative_url), None)\n
+    if category is None:\n
+      query_kw["uid"] = "-1"\n
+    else:\n
+      query_kw["%s_uid" % base_category] = category.getUid()\n
+\n
+query_kw["capacity_scope_uid"] = context.getPortalObject().portal_categories.capacity_scope.open.getUid()\n
+# if not explicit_location:\n
+#   # Only allocation on public computer\n
+#   query_kw["allocation_scope_uid"] = context.getPortalObject().portal_categories.allocation_scope.open.public.getUid()\n
+\n
+if filter_kw.keys():\n
+  # XXX Drop all unexpected keys\n
+  query_kw["uid"] = "-1"\n
+\n
+if test_mode:\n
+  return bool(len(context.portal_catalog(limit=1, **query_kw)))\n
+\n
+# Get only one computer_partition per computer\n
+computer_partition_list = context.portal_catalog(group_by="parent_uid", **query_kw)\n
+\n
+software_release_list = context.portal_catalog(\n
+  portal_type="Software Release",\n
+  url_string=software_release_url\n
+) \n
+\n
+if len(software_release_list) == 0:\n
+  # Forbid to allocate partitions without an existing Software Release Document.\n
+  raise KeyError(len(software_release_list))\n
+\n
+delta_co2_contribution_list = software_release_list[0].SoftwareRelease_getDeltaCO2List(computer_partition_list)\n
+\n
+isTransitionPossible = context.getPortalObject().portal_workflow.isTransitionPossible\n
+\n
+while len(delta_co2_contribution_list):\n
+  partition_candidate_list = delta_co2_contribution_list.pop(min(delta_co2_contribution_list))\n
+\n
+  for computer_partition_candidate in partition_candidate_list:\n
+    computer_partition_candidate = computer_partition_candidate.getObject()\n
+    if software_instance_portal_type == "Software Instance":\n
+      # Check if the computer partition can be marked as busy\n
+      if isTransitionPossible(computer_partition_candidate, \'mark_busy\'):\n
+        computer_partition = computer_partition_candidate\n
+        computer_partition.markBusy()\n
+        break\n
+    elif computer_partition_candidate.getSlapState() == "busy":\n
+      # Only assign slave instance on busy partition\n
+      computer_partition = computer_partition_candidate\n
+      break\n
+\n
+if computer_partition is None:\n
+  raise ValueError(\'It was not possible to find free Computer Partition\')\n
+\n
+# lock computer partition\n
+computer_partition.serialize()\n
+\n
+return computer_partition.getRelativeUrl()\n
+</string> </value>
+        </item>
+        <item>
+            <key> <string>_params</string> </key>
+            <value> <string>software_release_url, software_type, software_instance_portal_type, filter_kw, computer_network_query=None, test_mode=False</string> </value>
+        </item>
+        <item>
+            <key> <string>id</string> </key>
+            <value> <string>Person_findPartition</string> </value>
+        </item>
+      </dictionary>
+    </pickle>
+  </record>
+</ZopeData>
