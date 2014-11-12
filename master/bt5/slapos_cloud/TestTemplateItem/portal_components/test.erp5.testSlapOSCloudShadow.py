@@ -30,7 +30,7 @@ import unittest
 import random
 import transaction
 from AccessControl import getSecurityManager
-from testSlapOSCloudSecurityGroup import TestSlapOSSecurityMixin
+from erp5.component.test.testSlapOSCloudSecurityGroup import TestSlapOSSecurityMixin
 
 class TestSlapOSShadowPerson(TestSlapOSSecurityMixin):
   def test_active(self):

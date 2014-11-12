@@ -1,5 +1,5 @@
 # Copyright (c) 2002-2012 Nexedi SA and Contributors. All Rights Reserved.
-from testSlapOSERP5GroupRoleSecurity import TestSlapOSGroupRoleSecurityMixin
+from erp5.component.test.testSlapOSERP5GroupRoleSecurity import TestSlapOSGroupRoleSecurityMixin
 import transaction
 
 class TestSlapOSLocalPermissionSlapOSInteractionWorkflow(

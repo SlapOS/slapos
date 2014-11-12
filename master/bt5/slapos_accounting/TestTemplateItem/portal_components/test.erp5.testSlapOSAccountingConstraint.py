@@ -4,7 +4,7 @@
 # Copyright (c) 2012 Nexedi SA and Contributors. All Rights Reserved.
 #
 ##############################################################################
-from testSlapOSCloudConstraint import TestSlapOSConstraintMixin
+from erp5.component.test.testSlapOSCloudConstraint import TestSlapOSConstraintMixin
 from Products.ERP5Type.Base import WorkflowMethod
 from Products.SlapOS.tests.testSlapOSMixin import withAbort
 from Products.ERP5Type.tests.backportUnittest import skip

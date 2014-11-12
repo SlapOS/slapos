@@ -5,7 +5,7 @@
 #
 ##############################################################################
 
-from testSlapOSCloudSecurityGroup import TestSlapOSSecurityMixin
+from erp5.component.test.testSlapOSCloudSecurityGroup import TestSlapOSSecurityMixin
 import re
 import xml_marshaller
 from AccessControl.SecurityManagement import getSecurityManager, \
