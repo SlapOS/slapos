@@ -6,7 +6,7 @@
 ##############################################################################
 
 import transaction
-import functools
+from functools import wraps
 from Products.ERP5Type.tests.utils import createZODBPythonScript
 from Products.SlapOS.tests.testSlapOSMixin import \
   testSlapOSMixin, withAbort
@@ -38,7 +38,7 @@ class Simulator:
 
 def simulateByEditWorkflowMark(script_name):
   def wrapper(func):
-    @functools.wraps(func)
+    @wraps(func)
     def wrapped(self, *args, **kwargs):
       if script_name in self.portal.portal_skins.custom.objectIds():
         raise ValueError('Precondition failed: %s exists in custom' % script_name)
@@ -46,20 +46,21 @@ def simulateByEditWorkflowMark(script_name):
                           script_name,
                           '*args, **kwargs',
                           '# Script body\n'
-  """context.portal_workflow.doActionFor(context, action='edit_action', comment='Visited by %s') """%script_name )
+  """context.portal_workflow.doActionFor(context, action='edit_action', comment='Visited by %s') """ % script_name )
       transaction.commit()
       try:
-        func(self, *args, **kwargs)
+        result = func(self, *args, **kwargs)
       finally:
         if script_name in self.portal.portal_skins.custom.objectIds():
           self.portal.portal_skins.custom.manage_delObjects(script_name)
         transaction.commit()
+      return result
     return wrapped
   return wrapper
 
 def simulateByTitlewMark(script_name):
   def wrapper(func):
-    @functools.wraps(func)
+    @wraps(func)
     def wrapped(self, *args, **kwargs):
       if script_name in self.portal.portal_skins.custom.objectIds():
         raise ValueError('Precondition failed: %s exists in custom' % script_name)
@@ -73,11 +74,12 @@ if context.getTitle() == 'Not visited by %s':
 """ %(script_name, script_name))
       transaction.commit()
       try:
-        func(self, *args, **kwargs)
+        result = func(self, *args, **kwargs)
       finally:
         if script_name in self.portal.portal_skins.custom.objectIds():
           self.portal.portal_skins.custom.manage_delObjects(script_name)
         transaction.commit()
+      return result
     return wrapped
   return wrapper
 

@@ -15,7 +15,8 @@ class SlapOSAccountingQuantityUpdatingOrderBuilder(OrderBuilder):
       and delivery movement.
     """
     delivery = delivery_movement.getExplanationValue()
-    building = getTransactionalVariable()[BUILDING_KEY]
+    #building = getTransactionalVariable()[BUILDING_KEY]
+    building = getTransactionalVariable().get(BUILDING_KEY, ())
     if delivery in building:
       building.add(delivery_movement)
     simulation_movement.recursiveReindexObject(activate_kw=dict(

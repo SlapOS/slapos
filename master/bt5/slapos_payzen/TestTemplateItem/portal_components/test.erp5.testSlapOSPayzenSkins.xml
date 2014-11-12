@@ -1,0 +1,132 @@
+<?xml version="1.0"?>
+<ZopeData>
+  <record id="1" aka="AAAAAAAAAAE=">
+    <pickle>
+      <global name="Test Component" module="erp5.portal_type"/>
+    </pickle>
+    <pickle>
+      <dictionary>
+        <item>
+            <key> <string>default_reference</string> </key>
+            <value> <string>testSlapOSPayzenSkins</string> </value>
+        </item>
+        <item>
+            <key> <string>id</string> </key>
+            <value> <string>test.erp5.testSlapOSPayzenSkins</string> </value>
+        </item>
+        <item>
+            <key> <string>portal_type</string> </key>
+            <value> <string>Test Component</string> </value>
+        </item>
+        <item>
+            <key> <string>sid</string> </key>
+            <value>
+              <none/>
+            </value>
+        </item>
+        <item>
+            <key> <string>text_content_error_message</string> </key>
+            <value>
+              <tuple/>
+            </value>
+        </item>
+        <item>
+            <key> <string>text_content_warning_message</string> </key>
+            <value>
+              <tuple>
+                <string>W: 45,  4: Redefining name \'transaction\' from outer scope (line 2) (redefined-outer-name)</string>
+                <string>W: 51,  4: Redefining name \'transaction\' from outer scope (line 2) (redefined-outer-name)</string>
+                <string>W: 72,  4: Redefining name \'transaction\' from outer scope (line 2) (redefined-outer-name)</string>
+                <string>W: 76,  4: Redefining name \'transaction\' from outer scope (line 2) (redefined-outer-name)</string>
+                <string>W: 83,  4: Redefining name \'transaction\' from outer scope (line 2) (redefined-outer-name)</string>
+                <string>W: 88,  6: Unused variable \'mapping\' (unused-variable)</string>
+                <string>W:103,  4: Redefining name \'transaction\' from outer scope (line 2) (redefined-outer-name)</string>
+                <string>W:102,  4: Unused variable \'date\' (unused-variable)</string>
+                <string>W:124,  4: Redefining name \'transaction\' from outer scope (line 2) (redefined-outer-name)</string>
+                <string>W:158,  4: Redefining name \'transaction\' from outer scope (line 2) (redefined-outer-name)</string>
+                <string>W:164,  4: Redefining name \'transaction\' from outer scope (line 2) (redefined-outer-name)</string>
+                <string>W:175,  4: Redefining name \'transaction\' from outer scope (line 2) (redefined-outer-name)</string>
+                <string>W:174,  4: Unused variable \'date\' (unused-variable)</string>
+                <string>W:197,  4: Redefining name \'transaction\' from outer scope (line 2) (redefined-outer-name)</string>
+                <string>W:196,  4: Unused variable \'date\' (unused-variable)</string>
+                <string>W:205,  4: Redefining name \'transaction\' from outer scope (line 2) (redefined-outer-name)</string>
+                <string>W:204,  4: Unused variable \'date\' (unused-variable)</string>
+                <string>W:214,  4: Redefining name \'transaction\' from outer scope (line 2) (redefined-outer-name)</string>
+                <string>W:213,  4: Unused variable \'date\' (unused-variable)</string>
+                <string>W:243,  4: Unused variable \'date\' (unused-variable)</string>
+                <string>W:252,  4: Unused variable \'date\' (unused-variable)</string>
+                <string>W:260,  4: Unused variable \'date\' (unused-variable)</string>
+                <string>W:270,  4: Unused variable \'date\' (unused-variable)</string>
+                <string>W:282,  4: Unused variable \'date\' (unused-variable)</string>
+                <string>W:292,  4: Unused variable \'date\' (unused-variable)</string>
+                <string>W:308,  4: Unused variable \'date\' (unused-variable)</string>
+                <string>W:325,  4: Unused variable \'date\' (unused-variable)</string>
+                <string>W:343,  4: Unused variable \'date\' (unused-variable)</string>
+                <string>W:371,  4: Unused variable \'date\' (unused-variable)</string>
+                <string>W:385,  4: Unused variable \'date\' (unused-variable)</string>
+                <string>W:402,  4: Unused variable \'date\' (unused-variable)</string>
+                <string>W:420,  4: Unused variable \'date\' (unused-variable)</string>
+                <string>W:442,  4: Unused variable \'date\' (unused-variable)</string>
+                <string>W:466,  4: Unused variable \'date\' (unused-variable)</string>
+                <string>W:491,  4: Unused variable \'date\' (unused-variable)</string>
+              </tuple>
+            </value>
+        </item>
+        <item>
+            <key> <string>version</string> </key>
+            <value> <string>erp5</string> </value>
+        </item>
+        <item>
+            <key> <string>workflow_history</string> </key>
+            <value>
+              <persistent> <string encoding="base64">AAAAAAAAAAI=</string> </persistent>
+            </value>
+        </item>
+      </dictionary>
+    </pickle>
+  </record>
+  <record id="2" aka="AAAAAAAAAAI=">
+    <pickle>
+      <global name="PersistentMapping" module="Persistence.mapping"/>
+    </pickle>
+    <pickle>
+      <dictionary>
+        <item>
+            <key> <string>data</string> </key>
+            <value>
+              <dictionary>
+                <item>
+                    <key> <string>component_validation_workflow</string> </key>
+                    <value>
+                      <persistent> <string encoding="base64">AAAAAAAAAAM=</string> </persistent>
+                    </value>
+                </item>
+              </dictionary>
+            </value>
+        </item>
+      </dictionary>
+    </pickle>
+  </record>
+  <record id="3" aka="AAAAAAAAAAM=">
+    <pickle>
+      <global name="WorkflowHistoryList" module="Products.ERP5Type.patches.WorkflowTool"/>
+    </pickle>
+    <pickle>
+      <tuple>
+        <none/>
+        <list>
+          <dictionary>
+            <item>
+                <key> <string>action</string> </key>
+                <value> <string>validate</string> </value>
+            </item>
+            <item>
+                <key> <string>validation_state</string> </key>
+                <value> <string>validated</string> </value>
+            </item>
+          </dictionary>
+        </list>
+      </tuple>
+    </pickle>
+  </record>
+</ZopeData>
