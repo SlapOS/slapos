@@ -1,9 +1,7 @@
-from Products.ERP5.Document.OrderBuilder import OrderBuilder
-from Products.ERP5.Document.SimulatedDeliveryBuilder import BUILDING_KEY
-from Products.ERP5Type.TransactionalVariable import getTransactionalVariable
+from Products.ERP5.Document.GeneratedDeliveryBuilder import GeneratedDeliveryBuilder
 from Products.ERP5.mixin.builder import BuilderMixin
 
-class SlapOSAccountingQuantityUpdatingOrderBuilder(OrderBuilder):
+class SlapOSAccountingQuantityUpdatingOrderBuilder(GeneratedDeliveryBuilder):
   def _setDeliveryMovementProperties(self, delivery_movement,
                                      simulation_movement, property_dict,
                                      update_existing_movement=0,
@@ -15,10 +13,6 @@ class SlapOSAccountingQuantityUpdatingOrderBuilder(OrderBuilder):
       and delivery movement.
     """
     delivery = delivery_movement.getExplanationValue()
-    #building = getTransactionalVariable()[BUILDING_KEY]
-    building = getTransactionalVariable().get(BUILDING_KEY, ())
-    if delivery in building:
-      building.add(delivery_movement)
     simulation_movement.recursiveReindexObject(activate_kw=dict(
       activate_kw or (), tag='built:'+delivery.getPath()))
     BuilderMixin._setDeliveryMovementProperties(
