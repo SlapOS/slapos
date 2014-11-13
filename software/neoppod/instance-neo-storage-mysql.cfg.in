@@ -4,29 +4,38 @@ parts +=
   neo-storage
   logrotate-storage
 
-[mariadb-instance]
-recipe = slapos.cookbook:generic.mysql
-user = user
-database = neo
-
-conf-file = ${directory:etc}/mariadb.cnf
-# No networking (ip & port options)
+[mysqld]
+recipe = slapos.cookbook:generic.mysql.wrap_mysqld
+output = ${directory:etc_run}/mariadb
+binary = ${:mysql-base-directory}/bin/mysqld
+configuration-file = ${my-cnf:rendered}
 data-directory = ${directory:srv_mariadb}
-bin-directory = ${directory:bin}
-pid-file = ${directory:var_run}/mariadb.pid
+mysql-install-binary = ${:mysql-base-directory}/scripts/mysql_install_db
+mysql-base-directory = {{ mariadb_location }}
+
+[my-cnf-parameters]
 socket = ${directory:var_run}/mariadb.sock
+data-directory = ${mysqld:data-directory}
+pid-file = ${directory:var_run}/mariadb.pid
 error-log = ${directory:log}/mariadb_error.log
 slow-query-log = ${directory:log}/mariadb_slowquery.log
+long-query-time = {{ dumps(slapparameter_dict.get('long-query-time', 1)) }}
+relaxed-writes = {{ dumps(slapparameter_dict.get('relaxed-writes', False)) }}
+init-file = ${init-script:rendered}
 
-wrapper = ${directory:etc_run}/mariadb
-update-wrapper = ${directory:etc_run}/mariadb_update
-mysql-base-directory = {{ mariadb_location }}
-mysql-binary = {{ mariadb_location }}/bin/mysql
-mysql-install-binary = {{ mariadb_location }}/scripts/mysql_install_db
-mysql-upgrade-binary = {{ mariadb_location }}/bin/mysql_upgrade
-mysqld-binary = {{ mariadb_location }}/bin/mysqld
+[my-cnf]
+recipe = slapos.recipe.template:jinja2
+rendered = ${directory:etc}/mariadb.cnf
+template = {{ template_my_cnf }}
+context = section parameter_dict my-cnf-parameters
 
-mroonga =
+[init-script]
+recipe = slapos.recipe.template:jinja2
+# XXX: is there a better location ?
+rendered = ${directory:etc}/mariadb_initial_setup.sql
+database = neo
+template = inline:
+  CREATE DATABASE IF NOT EXISTS ${:database};
 
 [neo-storage]
 recipe = slapos.cookbook:neoppod.storage
@@ -37,7 +46,7 @@ ip = {{ (ipv4_set | list)[0] }}
 cluster = {{ dumps(slapparameter_dict['cluster']) }}
 masters = {{ dumps(slapparameter_dict.get('masters', '')) }}
 database-adapter = MySQL
-database-parameters = ${mariadb-instance:user}:${mariadb-instance:password}@${mariadb-instance:database}${mariadb-instance:socket}
+database-parameters = root@${init-script:database}${my-cnf-parameters:socket}
 wait-database = 60
 
 [directory]

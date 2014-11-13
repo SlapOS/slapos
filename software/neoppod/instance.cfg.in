@@ -46,6 +46,7 @@ template = {{ neo_storage_mysql }}
 extra-context =
     key master_cfg neo-master:rendered
     raw mariadb_location {{ mariadb_location }}
+    raw template_my_cnf {{ template_my_cnf }}
 
 [switch-softwaretype]
 recipe = slapos.cookbook:switch-softwaretype
