@@ -80,6 +80,7 @@ class ERP5HALJSONStyleSkinsMixin(ERP5TypeTestCase):
 
 class TestBase_getRequestHeader(ERP5HALJSONStyleSkinsMixin):
   def test_getRequestHeader_REQUEST_disallowed(self):
+    self.changeSkin('Hal')
     self.assertRaises(
       Unauthorized,
       self.portal.Base_getRequestHeader,
@@ -87,12 +88,14 @@ class TestBase_getRequestHeader(ERP5HALJSONStyleSkinsMixin):
       REQUEST={})
 
   def test_getRequestHeader_key_error(self):
+    self.changeSkin('Hal')
     self.assertEquals(
         self.portal.Base_getRequestHeader('foo'),
         None
         )
 
   def test_getRequestHeader_default_value(self):
+    self.changeSkin('Hal')
     self.assertEquals(
         self.portal.Base_getRequestHeader('foo', default='bar'),
         'bar'
@@ -105,6 +108,7 @@ class TestBase_getRequestHeader(ERP5HALJSONStyleSkinsMixin):
 # XXX to be migrated to erp5_hal_json_style bt
 class TestBase_getRequestUrl(ERP5HALJSONStyleSkinsMixin):
   def test_getRequestUrl_REQUEST_disallowed(self):
+    self.changeSkin('Hal')
     self.assertRaises(
       Unauthorized,
       self.portal.Base_getRequestUrl,
@@ -116,6 +120,7 @@ class TestBase_getRequestUrl(ERP5HALJSONStyleSkinsMixin):
 
 class TestBase_getRequestBody(ERP5HALJSONStyleSkinsMixin):
   def test_getRequestBody_REQUEST_disallowed(self):
+    self.changeSkin('Hal')
     self.assertRaises(
       Unauthorized,
       self.portal.Base_getRequestBody,
@@ -127,6 +132,7 @@ class TestBase_getRequestBody(ERP5HALJSONStyleSkinsMixin):
 
 class TestBase_handleAcceptHeader(ERP5HALJSONStyleSkinsMixin):
   def test_handleAcceptHeader_REQUEST_disallowed(self):
+    self.changeSkin('Hal')
     self.assertRaises(
       Unauthorized,
       self.portal.Base_handleAcceptHeader,
@@ -136,6 +142,7 @@ class TestBase_handleAcceptHeader(ERP5HALJSONStyleSkinsMixin):
   @simulate('Base_getRequestHeader', '*args, **kwargs', 'return "*/*"')
   @changeSkin('Hal')
   def test_handleAcceptHeader_star_accept(self):
+    self.changeSkin('Hal')
     self.assertEquals(
         self.portal.Base_handleAcceptHeader(['application/vnd+test',
                                              'application/vnd+test2']),
@@ -146,6 +153,7 @@ class TestBase_handleAcceptHeader(ERP5HALJSONStyleSkinsMixin):
             'return "application/vnd+2test"')
   @changeSkin('Hal')
   def test_handleAcceptHeader_matching_type(self):
+    self.changeSkin('Hal')
     self.assertEquals(
         self.portal.Base_handleAcceptHeader(['application/vnd+test',
                                              'application/vnd+2test']),
@@ -156,6 +164,7 @@ class TestBase_handleAcceptHeader(ERP5HALJSONStyleSkinsMixin):
             'return "application/vnd+2test"')
   @changeSkin('Hal')
   def test_handleAcceptHeader_non_matching_type(self):
+    self.changeSkin('Hal')
     self.assertEquals(
         self.portal.Base_handleAcceptHeader(['application/vnd+test']),
         None
@@ -1166,3 +1175,4 @@ class TestSlapOSSoftwareInstallation_getHateoasInformation(TestSlapOSHypermediaM
         },
       },
     }, indent=2)))
+

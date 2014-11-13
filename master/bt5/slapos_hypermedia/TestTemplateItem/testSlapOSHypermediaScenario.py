@@ -46,10 +46,15 @@ class TestSlapOSHypermediaPersonScenario(testSlapOSMixin):
 
   def test(self):
     erp5_person = self._makeUser()
+    self.tic()
+    self.portal.changeSkin('Hal')
+    self.portal.ERP5Site_reindexSkinList()
+    self.tic()
+
     authorization = 'Basic %s' % base64.b64encode(
       "%s:%s" % (erp5_person.getReference(), erp5_person.getReference()))
     content_type = "application/hal+json"
-    
+
     api_scheme, api_netloc, api_path, api_query, \
         api_fragment = urlparse.urlsplit(self.portal.absolute_url())
 
@@ -406,10 +411,13 @@ class TestSlapOSHypermediaInstanceScenario(testSlapOSMixin):
   def test(self):
     self._makeTree()
     instance = self.software_instance
-    
+    self.portal.changeSkin('Hal')
+    self.portal.ERP5Site_reindexSkinList()
+    self.tic()
+
     remote_user = instance.getReference()
     content_type = "application/hal+json"
-    
+
     api_scheme, api_netloc, api_path, api_query, \
         api_fragment = urlparse.urlsplit(self.portal.absolute_url())
 
@@ -615,3 +623,4 @@ class TestSlapOSHypermediaInstanceScenario(testSlapOSMixin):
     self.assertEquals(response.status, 200)
     self.assertEquals(response.getheader('Content-Type'), content_type)
     instance_hal = json.loads(response.read())
+
