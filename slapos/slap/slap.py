@@ -85,6 +85,9 @@ class SlapRequester(SlapDocument):
         request_dict=request_dict,
         connection_helper=self._connection_helper,
       )
+    if type(xml) is unicode:
+      xml = str(xml)
+      xml.encode('utf-8')
     software_instance = xml_marshaller.loads(xml)
     computer_partition = ComputerPartition(
       software_instance.slap_computer_id.encode('UTF-8'),
@@ -656,6 +659,9 @@ class ConnectionHelper:
       # We should stablise slap library soon.
       xml = self.GET('getComputerInformation', params=params)
 
+    if type(xml) is unicode:
+      xml = str(xml)
+      xml.encode('utf-8')
     return xml_marshaller.loads(xml)
 
   def do_request(self, method, path, params=None, data=None, headers=None):
@@ -794,6 +800,9 @@ class slap:
                 'computer_partition_reference': partition_id,
                 }
             )
+    if type(xml) is unicode:
+      xml = str(xml)
+      xml.encode('utf-8')
     result = xml_marshaller.loads(xml)
     # XXX: dirty hack to make computer partition usable. xml_marshaller is too
     # low-level for our needs here.
@@ -828,7 +837,11 @@ class slap:
                              'software_release_url parameters are specified.')
       params['software_release_url'] = software_release_url
 
-    result = xml_marshaller.loads(self._connection_helper.GET(url, params=params))
+    xml = self._connection_helper.GET(url, params=params)
+    if type(xml) is unicode:
+      xml = str(xml)
+      xml.encode('utf-8')
+    result = xml_marshaller.loads(xml)
     assert(type(result) == list)
     return result
 
