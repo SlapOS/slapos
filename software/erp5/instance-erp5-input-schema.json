@@ -33,7 +33,7 @@
       "description": "List of logins which should get the Developper role (required to modify portal_components' content)",
       "default": "inituser-login's value",
       "items": {
-        "pattern": "/^\S+$/",
+        "pattern": "/^\\S+$/",
         "type": "string"
       },
       "uniqueItems": true,
@@ -190,16 +190,54 @@
     },
     "zodb-software-type": {
       "description": "Zope Object DataBase implementation",
-      "default": "zeo",
-      "enum": ["zeo", "neo"],
+      "enum": ["zeo"],
       "type": "string"
     },
     "zodb": {
       "description": "Zope Object DataBase service",
       "oneOf": [
-        {"$ref": "./instance-neo-input-schema.json#properties"},
         {"$ref": "./instance-zeo-input-schema.json#properties"}
       ]
+    },
+    "zodb-extern": {
+      "description": "External ZODB Mountpoints. See https://github.com/zopefoundation/ZODB/blob/3.10/src/ZODB/component.xml for extra options.",
+      "minItems": 0,
+      "items": {
+        "required": ["storage_dict"],
+        "properties": {
+          "name": {
+            "description": "Database name",
+            "default": "main",
+            "type": "string"
+          },
+          "mount_point": {
+            "description": "Mount point",
+            "default": "/",
+            "type": "string"
+          },
+          "storage-type": {
+            "description": "Storage type",
+            "default": "NEOStorage",
+            "type": "string"
+          },
+          "storage-dict": {
+            "description": "Storage configuration. For NEOStorage, 'logfile' is automatically set (see http://git.erp5.org/gitweb/neoppod.git/blob/HEAD:/neo/client/component.xml for other settings).",
+            "patternProperties": {
+              ".": {
+                "type": "string"
+              }
+            },
+            "type": "object"
+          },
+          "patternProperties": {
+            ".": {
+              "type": "string"
+            }
+          }
+        },
+        "type": "object"
+      },
+      "type": "array"
     }
   }
 }

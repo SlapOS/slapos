@@ -85,12 +85,6 @@ filename = instance-balancer.cfg
 extra-context =
     section parameter_dict dynamic-template-balancer-parameters
 
-[dynamic-template-neo]
-< = jinja2-template-base
-template = {{ template_neo }}
-filename = instance-neo.cfg
-extensions = jinja2.ext.do
-
 [dynamic-template-zeo-parameters]
 buildout-bin-directory = {{ buildout_bin_directory }}
 6tunnel = {{ sixtunnel_location }}

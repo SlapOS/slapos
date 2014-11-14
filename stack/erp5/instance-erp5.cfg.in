@@ -43,8 +43,13 @@ config-{{ option }} = {{ dumps(value) }}
 {{ request('cloudooo', 'cloudooo', 'cloudooo', {'tcpv4-port': 2020}) }}
 {{ request('mariadb', 'mariadb', 'mariadb', {'tcpv4-port': 2099}, {'database-list': True, 'test-database-list': True}) }}
 {# Fail early if an unexpected value is provided -#}
-{% set possible_software_type_dict = {'zeo': 'zeo', 'neo': 'neo'} -%}
-{{ request('zodb', 'zodb-' ~ possible_software_type_dict[slapparameter_dict.get('zodb-software-type', 'zeo')], 'zodb', {'tcpv4-port': 2100, 'zodb-dict': {'root': {}}}, {'zodb-storage-type': False, 'zodb-dict': False, 'tidstorage-ip': False, 'tidstorage-port': False}) }}
+{% set zodb_type = slapparameter_dict.get('zodb-software-type') -%}
+{% set zodb_extern = slapparameter_dict.get('zodb-extern') -%}
+{% if {'zeo': 1, None: 0}[zodb_type] -%}
+{{   request('zodb', 'zodb-' ~ zodb_type, 'zodb', {'tcpv4-port': 2100, 'zodb-dict': {'root': {}}}, {'zodb-storage-type': False, 'zodb-dict': False, 'tidstorage-ip': False, 'tidstorage-port': False}) }}
+{% else -%}
+{% do zodb_extern[0] %}
+{% endif -%}
 
 [inituser-password]
 {% set inituser_password = slapparameter_dict.get('inituser-password') -%}
@@ -67,7 +72,7 @@ recipe = slapos.cookbook:generate.password
 return =
   zope-address-list
   hosts-dict
-extra-config =
+{% set extra_config = '
   bt5
   bt5-repository-url
   cloudooo-url
@@ -88,13 +93,9 @@ extra-config =
   site-id
   smtp-url
   thread-amount
-  tidstorage-ip
-  tidstorage-port
   timerserver-interval
   timezone
-  webdav
-  zodb-dict
-  zodb-storage-type
+  webdav' -%}
 config-bt5 = {{ dumps(slapparameter_dict.get('bt5', 'erp5_full_text_myisam_catalog erp5_configurator_standard erp5_configurator_maxma_demo erp5_configurator_ung erp5_configurator_run_my_doc')) }}
 config-bt5-repository-url = {{ dumps(slapparameter_dict.get('bt5-repository-url', local_bt5_repository)) }}
 config-cloudooo-url = ${request-cloudooo:connection-url}
@@ -109,12 +110,25 @@ config-mysql-test-url-list = ${request-mariadb:connection-test-database-list}
 config-mysql-url-list = ${request-mariadb:connection-database-list}
 config-site-id = {{ dumps(site_id) }}
 config-smtp-url = {{ dumps(slapparameter_dict.get('smtp-url', 'smtp://localhost:25/')) }}
+config-timezone = {{ dumps(slapparameter_dict.get('timezone', 'UTC')) }}
+{% if zodb_type -%}
 config-tidstorage-ip = ${request-zodb:connection-tidstorage-ip}
 config-tidstorage-port = ${request-zodb:connection-tidstorage-port}
-config-timezone = {{ dumps(slapparameter_dict.get('timezone', 'UTC')) }}
 config-zodb-dict = ${request-zodb:connection-zodb-dict}
 config-zodb-storage-type = ${request-zodb:connection-zodb-storage-type}
+{% set extra_config = extra_config ~ '
+  tidstorage-ip
+  tidstorage-port
+  zodb-dict
+  zodb-storage-type' -%}
+{% endif -%}
+{% if zodb_extern -%}
+config-zodb-extern = {{ dumps(zodb_extern) }}
+{% set extra_config = extra_config ~ '
+  zodb-extern' -%}
+{% endif -%}
 software-type = zope
+extra-config = {{ extra_config }}
 
 {% set zope_family_dict = {} -%}
 {% for custom_name, zope_parameter_dict in slapparameter_dict.get('zope-partition-dict', {'1': {}}).items() -%}
