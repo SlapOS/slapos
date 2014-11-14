@@ -41,6 +41,7 @@ import re
 import urlparse
 from util import xml2dict
 
+import netaddr
 from xml.sax import saxutils
 import zope.interface
 from interface import slap as interface
@@ -599,10 +600,31 @@ class ComputerPartition(SlapRequester):
             )
     return xml_marshaller.loads(xml)
 
+def _addIpv6Brackets(url):
+  # if master_url contains an ipv6 without bracket, add it
+  # Note that this is mostly to limit specific issues with
+  # backward compatiblity, not to ensure generic detection.
+  api_scheme, api_netloc, api_path, api_query, api_fragment = urlparse.urlsplit(url)
+  try:
+    ip = netaddr.IPAddress(api_netloc)
+    port = None
+  except netaddr.AddrFormatError:
+    try:
+      ip = netaddr.IPAddress(':'.join(api_netloc.split(':')[:-1]))
+      port = api_netloc.split(':')[-1]
+    except netaddr.AddrFormatError:
+      ip = port = None
+  if ip and ip.version == 6:
+    api_netloc = '[%s]' % ip
+    if port:
+      api_netloc = '%s:%s' % (api_netloc, port)
+    url = urlparse.urlunsplit((api_scheme, api_netloc, api_path, api_query, api_fragment))
+  return url
 
 class ConnectionHelper:
   def __init__(self, master_url, key_file=None,
                cert_file=None, master_ca_file=None, timeout=None):
+    master_url = _addIpv6Brackets(master_url)
     if master_url.endswith('/'):
         self.slapgrid_uri = master_url
     else:

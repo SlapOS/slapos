@@ -78,6 +78,66 @@ class TestSlap(SlapMixin):
     slap_instance.initializeConnection(self.server_url)
     self.assertEquals(slap_instance._connection_helper.slapgrid_uri, self.server_url)
 
+  def test_slap_initialisation_ipv6_and_port(self):
+    """
+    Asserts that slap correctly understand master_url containing
+    ipv6 and adds brackets if not there.
+    """
+    slap_instance = slapos.slap.slap()
+    slap_instance.initializeConnection("http://1234:1234:1234:1234:1:1:1:1:5000/foo/")
+    self.assertEqual(
+        slap_instance._connection_helper.slapgrid_uri,
+        "http://[1234:1234:1234:1234:1:1:1:1]:5000/foo/"
+    )
+
+  def test_slap_initialisation_ipv6_without_port(self):
+    """
+    Asserts that slap correctly understand master_url containing
+    ipv6 and adds brackets if not there.
+    """
+    slap_instance = slapos.slap.slap()
+    slap_instance.initializeConnection("http://1234:1234:1234:1234:1:1:1:1/foo/")
+    self.assertEqual(
+        slap_instance._connection_helper.slapgrid_uri,
+        "http://[1234:1234:1234:1234:1:1:1:1]/foo/"
+    )
+
+  def test_slap_initialisation_ipv6_with_bracket(self):
+    """
+    Asserts that slap correctly understand master_url containing
+    ipv6 and adds brackets if not there.
+    """
+    slap_instance = slapos.slap.slap()
+    slap_instance.initializeConnection("http://[1234:1234:1234:1234:1:1:1:1]:5000/foo/")
+    self.assertEqual(
+        slap_instance._connection_helper.slapgrid_uri,
+        "http://[1234:1234:1234:1234:1:1:1:1]:5000/foo/"
+    )
+
+  def test_slap_initialisation_ipv4(self):
+    """
+    Asserts that slap correctly understand master_url containing
+    ipv6 and adds brackets if not there.
+    """
+    slap_instance = slapos.slap.slap()
+    slap_instance.initializeConnection("http://127.0.0.1:5000/foo/")
+    self.assertEqual(
+        slap_instance._connection_helper.slapgrid_uri,
+        "http://127.0.0.1:5000/foo/"
+    )
+
+  def test_slap_initialisation_hostname(self):
+    """
+    Asserts that slap correctly understand master_url containing
+    ipv6 and adds brackets if not there.
+    """
+    slap_instance = slapos.slap.slap()
+    slap_instance.initializeConnection("http://foo.com:5000/foo/")
+    self.assertEqual(
+        slap_instance._connection_helper.slapgrid_uri,
+        "http://foo.com:5000/foo/"
+    )
+
   def test_registerComputer_with_new_guid(self):
     """
     Asserts that calling slap.registerComputer with new guid returns
