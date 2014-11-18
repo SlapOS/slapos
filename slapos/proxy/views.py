@@ -229,19 +229,20 @@ def getFullComputerInformation():
 
 @app.route('/setComputerPartitionConnectionXml', methods=['POST'])
 def setComputerPartitionConnectionXml():
-  slave_reference = request.form['slave_reference'].encode()
+  slave_reference = request.form.get('slave_reference', None)
   computer_partition_id = request.form['computer_partition_id'].encode()
   computer_id = request.form['computer_id'].encode()
   connection_xml = request.form['connection_xml'].encode()
   connection_dict = xml_marshaller.xml_marshaller.loads(
                                             connection_xml)
   connection_xml = dict2xml(connection_dict)
-  if slave_reference == 'None':
+  if not slave_reference or slave_reference == 'None':
     query = 'UPDATE %s SET connection_xml=? WHERE reference=? AND computer_reference=?'
     argument_list = [connection_xml, computer_partition_id, computer_id]
     execute_db('partition', query, argument_list)
     return 'done'
   else:
+    slave_reference = slave_reference.encode()
     query = 'UPDATE %s SET connection_xml=? , hosted_by=? WHERE reference=?'
     argument_list = [connection_xml, computer_partition_id, slave_reference]
     execute_db('slave', query, argument_list)
