@@ -640,6 +640,7 @@ def requestSlave(software_release, software_type, partition_reference, partition
     q += ' AND reference=?'
     # instance_guid should be like: %s-%s % (requested_computer_id, partition_id)
     # But code is convoluted here, so we check
+    instance_guid = filter_kw['instance_guid']
     if instance_guid.startswith(requested_computer_id):
       a(instance_guid[len(requested_computer_id) + 1:])
     else:

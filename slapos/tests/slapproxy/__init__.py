@@ -567,8 +567,7 @@ class TestSlaveRequest(MasterMixin):
     # First request of slave instance
     name = 'MyFirstInstance'
     requester = 'slappart2'
-    our_slave = self.request('http://sr//', None,
-                             name, requester, shared=True)
+    our_slave = self.request('http://sr//', None, name, requester, shared=True)
     self.assertIsInstance(our_slave, slapos.slap.ComputerPartition)
     self.assertEqual(our_slave._connection_dict, {})
     # Get updated information for master partition
@@ -584,6 +583,18 @@ class TestSlaveRequest(MasterMixin):
                              name, requester, shared=True)
     self.assertIsInstance(our_slave, slapos.slap.ComputerPartition)
     self.assertEqual(slave_address, our_slave._connection_dict)
+
+  def test_slave_request_instance_guid(self):
+    """
+    Test that instance_guid support behaves correctly.
+    Warning: proxy doesn't gives unique id of instance, but gives instead unique id
+    of partition.
+    """
+    self.add_free_partition(1)
+    partition = self.request('http://sr//', None, 'MyInstance', 'slappart1')
+    slave = self.request('http://sr//', None, 'MySlaveInstance', 'slappart1',
+         shared=True, filter_kw=dict(instance_guid=partition._instance_guid))
+    self.assertEqual(slave._partition_id, partition._partition_id)
 
 class TestMultiNodeSupport(MasterMixin):
   def test_multi_node_support_different_software_release_list(self):
