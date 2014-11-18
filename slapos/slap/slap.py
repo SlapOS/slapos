@@ -681,6 +681,14 @@ class ConnectionHelper:
 
       # XXX TODO: handle host cert verify
 
+      # Old behavior was to pass empty parameters as "None" value.
+      # Behavior kept for compatibility with old slapproxies (< v1.3.3).
+      # Can be removed when old slapproxies are no longer in use.
+      if data:
+        for k, v in data.iteritems():
+          if v is None:
+            data[k] = 'None'
+
       req = method(url=url,
                    params=params,
                    cert=cert,
