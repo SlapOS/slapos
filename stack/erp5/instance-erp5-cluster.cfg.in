@@ -18,7 +18,6 @@ versions = versions
 [request-common]
 recipe = slapos.cookbook:request
 software-url = ${slap-connection:software-release-url}
-sla = computer_guid
 return = url
 server-url = ${slap-connection:server-url}
 key-file = ${slap-connection:key-file}
@@ -35,7 +34,6 @@ sla-computer_guid = ${slap-parameter:mariadb-computer-guid}
 [request-cloudooo]
 <=request-common
 name = Cloudooo
-config = cloudooo-json
 config-cloudooo-json = ${slap-parameter:cloudooo-json}
 software-type = cloudooo
 sla-computer_guid = ${slap-parameter:cloudooo-computer-guid}
@@ -56,15 +54,6 @@ sla-computer_guid = ${slap-parameter:kumofs-computer-guid}
 <=request-common
 name = TidStorage
 return = url-login
-config =
-  json
-  mysql-url
-  memcached-url
-  cloudooo-url
-  kumofs-url
-  smtp-url
-  bt5
-  bt5-repository-url
 config-json = ${slap-parameter:json}
 config-mysql-url = ${request-mariadb:connection-url}
 config-memcached-url = ${request-memcached:connection-url}
@@ -79,7 +68,6 @@ sla-computer_guid = ${slap-parameter:tidstorage-computer-guid}
 [request-varnish]
 <=request-common
 name = Varnish
-config = tidstorage-url
 config-tidstorage-url = ${request-tidstorage:connection-url-login}
 config-web-checker-mail-address = ${slap-parameter:web-checker-mail-address}
 config-web-checker-smtp-host = ${slap-parameter:web-checker-smtp-host}

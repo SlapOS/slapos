@@ -91,7 +91,6 @@ bt5-repository-url = ${slap-parameter:bt5-repository-url}
 [request-common]
 recipe = slapos.cookbook:request
 software-url = ${slap-connection:software-release-url}
-sla = computer_guid
 sla-computer_guid = ${slap-connection:computer-id}
 return = url
 server-url = ${slap-connection:server-url}
@@ -108,7 +107,6 @@ software-type = mariadb
 [request-cloudooo]
 <=request-common
 name = Cloudooo
-config = cloudooo-json
 config-cloudooo-json = ${slap-parameter:cloudooo-json}
 software-type = cloudooo
 

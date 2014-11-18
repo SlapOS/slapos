@@ -25,7 +25,6 @@ versions = versions
 recipe = slapos.cookbook:request
 software-url = {{ slapparameter_dict['frontend-software-url'] }}
 software-type = {{ slapparameter_dict.get('frontend-software-type', 'RootSoftwareInstance') }}
-sla = instance_guid
 sla-instance_guid = {{ slapparameter_dict['frontend-instance-guid'] }}
 server-url = ${slap-connection:server-url}
 key-file = ${slap-connection:key-file}
@@ -41,7 +40,6 @@ slave = true
 {% if 'frontend-domain' in slapparameter_dict -%}
 {%   do config_dict.__setitem__('custom_domain', slapparameter_dict['frontend-domain']) -%}
 {% endif -%}
-config = {{ config_dict.keys() | join(' ') }}
 {% for name, value in config_dict.items() -%}
 config-{{ name }} = {{ value }}
 {% endfor -%}

@@ -64,12 +64,9 @@ state = {{ slapparameter_dict.pop(state_key) }}
 {%   endif%}
 config-zone = {{ zone }}
 config-soa = {{ "%s,%s" % (dns_domain, server_admin) }}
-{%   if sla_parameters %}
-sla = {{ ' '.join(sla_parameters) }}
-{%     for parameter in sla_parameters -%}
+{%   for parameter in sla_parameters -%}
 sla-{{ parameter }} = {{ slapparameter_dict.pop( sla_key + parameter ) }}
-{%     endfor -%}
-{%   endif -%}
+{%   endfor -%}
 {% endfor -%}
 
 
@@ -86,7 +83,6 @@ software-url = ${slap-connection:software-release-url}
 {% endif %}
 software-type = {{dns_type}}
 return = private-ipv4 public-ipv4 slave-instance-information-list monitor_url
-config = {{ ' '.join(slapparameter_dict.keys()) + ' zone soa server-admin ns-record ' + slave_list_name }}
 config-server-admin = {{ server_admin }}
 config-ns-record = {{ ns_record }}
 {% for parameter, value in slapparameter_dict.iteritems() -%}
