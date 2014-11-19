@@ -196,11 +196,9 @@ partition-id = ${slap-connection:partition-id}
 name = VNC Frontend
 software-type = ${slap-parameter:frontend-software-type}
 slave = true
-config = host port
 config-host = ${novnc-instance:ip}
 config-port = ${novnc-instance:port}
 return = url resource port domainname
-sla = instance_guid
 sla-instance_guid = ${slap-parameter:frontend-instance-guid}
 
 [frontend-promise]

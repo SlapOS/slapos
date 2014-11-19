@@ -82,6 +82,7 @@ context =
     raw kvm_template $${dynamic-template-kvm:rendered}
     raw template_kvm_export ${template-kvm-export-script:location}/${template-kvm-export-script:filename}
     raw pbsready_export_template ${pbsready-export:output}
+    raw gzip_binary ${gzip:location}/bin/gzip
 mode = 0644
 
 [dynamic-template-kvm-resilient-test]

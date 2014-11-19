@@ -25,31 +25,36 @@ context =
     ${:extra-context}
 
 [dynamic-template-cloudooo-parameters]
+buildout-bin-directory = {{ buildout_bin_directory }}
+coreutils = {{ coreutils_location }}
 cups = {{ cups_location }}
 dbus = {{ dbus_location }}
 dbus-glib = {{ dbus_glib_location }}
 file = {{ file_location }}
 fontconfig = {{ fontconfig_location }}
+fonts = {{ fonts_location }}
 freetype = {{ freetype_location }}
 glib = {{ glib_location }}
+glu = {{ glu_location }}
 haproxy = {{ haproxy_location }}
-libffi = {{ libffi_location }}
+imagemagick = {{ imagemagick_location }}
 libICE = {{ libICE_location }}
-libpng12 = {{ libpng12_location }}
 libSM = {{ libSM_location }}
 libX11 = {{ libX11_location }}
 libXau = {{ libXau_location }}
 libXdmcp = {{ libXdmcp_location }}
 libXext = {{ libXext_location }}
-libxcb = {{ libxcb_location }}
 libXrender = {{ libXrender_location }}
-zlib = {{ zlib_location }}
+libexpat = {{ libexpat_location }}
+libffi = {{ libffi_location }}
+libpng12 = {{ libpng12_location }}
 libreoffice-bin = {{ libreoffice_bin_location }}
-fonts = {{ fonts_location }}
-coreutils = {{ coreutils_location }}
-imagemagick = {{ imagemagick_location }}
+libxcb = {{ libxcb_location }}
+mesa = {{ mesa_location }}
 poppler = {{ poppler_location }}
-buildout-bin-directory = {{ buildout_bin_directory }}
+xdamage = {{ xdamage_location }}
+xfixes = {{ xfixes_location }}
+zlib = {{ zlib_location }}
 
 [dynamic-template-cloudooo]
 < = jinja2-template-base

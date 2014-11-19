@@ -36,6 +36,10 @@ takeover-password = $${resilient-web-takeover-password:passwd}
 [dropbear-server]
 port = 22220
 
+# Define port of notifier (same reason)
+[notifier]
+port = 65533
+
 [import-on-notification]
 # notifier.callback runs a script when a notification (sent by a parent PBS)
 # is received

@@ -13,7 +13,7 @@
       "title": "Custom Domain",
       "description": "Custom Domain to use for the website",
       "type": "string",
-      "pattern": "^([a-zA-Z0-9]([a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,6}$"
+      "pattern": "^([a-zA-Z0-9]([a-zA-Z0-9\\-]{0,61}[a-zA-Z0-9])?\\.)+[a-zA-Z]{2,6}$"
     },
     "type": {
       "title": "Backend Type",

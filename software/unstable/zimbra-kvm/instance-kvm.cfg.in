@@ -196,11 +196,9 @@ partition-id = $${slap-connection:partition-id}
 name = VNC Frontend
 software-type = $${slap-parameter:frontend-software-type}
 slave = true
-config = host port
 config-host = $${novnc-instance:ip}
 config-port = $${novnc-instance:port}
 return = url resource port domainname
-sla = instance_guid
 sla-instance_guid = $${slap-parameter:frontend-instance-guid}
 
 [request-web-frontend]
@@ -210,7 +208,6 @@ name = Web Frontend
 # XXX We have hardcoded SR URL here.
 software-url = http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg
 slave = true
-config = url custom_domain
 config-url = https://[$${tunnel-ipv6-kvm-https:ipv6}]:$${tunnel-ipv6-kvm-https:ipv6-port}/
 return = site_url
 config-custom_domain = $${slap-parameter:domain}
@@ -223,7 +220,6 @@ name = SMTP Frontend
 #software-url = http://git.erp5.org/gitweb/slapos.git/blob_plain/zimbra-kvm:/software/reverse-proxy-nginx/development.cfg
 software-url = /opt/slapdev/software/reverse-proxy-nginx/development.cfg
 slave = true
-config = smtp-upstream-host smtp-upstream-port
 config-smtp-upstream-host = $${tunnel-ipv6-kvm-smtp:ipv6}
 config-smtp-upstream-port = $${tunnel-ipv6-kvm-smtp:port}
 return = listening-ipv4

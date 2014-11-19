@@ -15,7 +15,7 @@
       "type": "string"
     },
     "ssh_command": {
-      "description": "SSH command used to access your runner in ssh when you provided a ssh public key"
+      "description": "SSH command used to access your runner in ssh when you provided a ssh public key",
       "type": "string"
     },
     "monitor_url": {

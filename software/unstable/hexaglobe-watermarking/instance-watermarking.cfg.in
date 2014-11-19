@@ -165,7 +165,6 @@ name = Frontend for $${slap-connection:computer-id} $${slap-connection:partition
 # XXX We have hardcoded SR URL here.
 software-url = http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg
 slave = true
-config = url
 config-url = http://[$${instance-parameter:ipv6-random}]:5000
 return = site_url
 

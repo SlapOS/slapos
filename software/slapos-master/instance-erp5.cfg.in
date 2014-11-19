@@ -6,16 +6,11 @@
 [request-common]
 recipe = slapos.cookbook:request.serialised
 software-url = ${slap-connection:software-release-url}
-sla = computer_guid
 server-url = ${slap-connection:server-url}
 key-file = ${slap-connection:key-file}
 cert-file = ${slap-connection:cert-file}
 computer-id = ${slap-connection:computer-id}
 partition-id = ${slap-connection:partition-id}
-config =
-  use-ipv6
-  ${:extra-config}
-extra-config =
 config-use-ipv6 = {{ dumps(slapparameter_dict.get('use-ipv6', False)) }}
 
 {% macro request(name, software_type, config_key, config, ret={'url': True}) -%}
@@ -32,7 +27,6 @@ return = {{ ret.keys() | join(' ') }}
 {%   endif -%}
 {% endfor -%}
 sla-computer_guid = {{ dumps(slapparameter_dict.get(config_key + '-computer-guid', computer_id)) }}
-extra-config = {{ ' '.join(config) }}
 {% for option, value in config.items() -%}
 config-{{ option }} = {{ dumps(value) }}
 {% endfor -%}
@@ -43,8 +37,13 @@ config-{{ option }} = {{ dumps(value) }}
 {{ request('cloudooo', 'cloudooo', 'cloudooo', {'tcpv4-port': 2020}) }}
 {{ request('mariadb', 'mariadb', 'mariadb', {'tcpv4-port': 2099}, {'database-list': True, 'test-database-list': True}) }}
 {# Fail early if an unexpected value is provided -#}
-{% set possible_software_type_dict = {'zeo': 'zeo', 'neo': 'neo'} -%}
-{{ request('zodb', 'zodb-' ~ possible_software_type_dict[slapparameter_dict.get('zodb-software-type', 'zeo')], 'zodb', {'tcpv4-port': 2100, 'zodb-dict': {'root': {}}}, {'zodb-storage-type': False, 'zodb-dict': False, 'tidstorage-ip': False, 'tidstorage-port': False}) }}
+{% set zodb_type = slapparameter_dict.get('zodb-software-type') -%}
+{% set zodb_extern = slapparameter_dict.get('zodb-extern') -%}
+{% if {'zeo': 1, None: 0}[zodb_type] -%}
+{{   request('zodb', 'zodb-' ~ zodb_type, 'zodb', {'tcpv4-port': 2100, 'zodb-dict': {'root': {}}}, {'zodb-storage-type': False, 'zodb-dict': False, 'tidstorage-ip': False, 'tidstorage-port': False}) }}
+{% else -%}
+{% do zodb_extern[0] %}
+{% endif -%}
 
 [inituser-password]
 {% set inituser_password = slapparameter_dict.get('inituser-password') -%}
@@ -67,34 +66,6 @@ recipe = slapos.cookbook:generate.password
 return =
   zope-address-list
   hosts-dict
-extra-config =
-  bt5
-  bt5-repository-url
-  cloudooo-url
-  deadlock-debugger-password
-  developer-list
-  hosts-dict
-  inituser-login
-  inituser-password
-  instance-count
-  kumofs-url
-  longrequest-logger-interval
-  longrequest-logger-timeout
-  memcached-url
-  mysql-test-url-list
-  mysql-url-list
-  name
-  port-base
-  site-id
-  smtp-url
-  thread-amount
-  tidstorage-ip
-  tidstorage-port
-  timerserver-interval
-  timezone
-  webdav
-  zodb-dict
-  zodb-storage-type
 config-bt5 = {{ dumps(slapparameter_dict.get('bt5', 'erp5_full_text_myisam_catalog erp5_configurator_standard erp5_configurator_maxma_demo erp5_configurator_ung erp5_configurator_run_my_doc slapos_configurator')) }}
 config-bt5-repository-url = {{ dumps(slapparameter_dict.get('bt5-repository-url', local_bt5_repository)) }}
 config-cloudooo-url = ${request-cloudooo:connection-url}
@@ -109,11 +80,16 @@ config-mysql-test-url-list = ${request-mariadb:connection-test-database-list}
 config-mysql-url-list = ${request-mariadb:connection-database-list}
 config-site-id = {{ dumps(site_id) }}
 config-smtp-url = {{ dumps(slapparameter_dict.get('smtp-url', 'smtp://localhost:25/')) }}
+config-timezone = {{ dumps(slapparameter_dict.get('timezone', 'UTC')) }}
+{% if zodb_type -%}
 config-tidstorage-ip = ${request-zodb:connection-tidstorage-ip}
 config-tidstorage-port = ${request-zodb:connection-tidstorage-port}
-config-timezone = {{ dumps(slapparameter_dict.get('timezone', 'UTC')) }}
 config-zodb-dict = ${request-zodb:connection-zodb-dict}
 config-zodb-storage-type = ${request-zodb:connection-zodb-storage-type}
+{% endif -%}
+{% if zodb_extern -%}
+config-zodb-extern = {{ dumps(zodb_extern) }}
+{% endif -%}
 software-type = zope
 
 {% set zope_family_dict = {} -%}
@@ -168,19 +144,6 @@ config-url = ${request-balancer:{{ family_name }}-v6}
 name = balancer
 software-type = balancer
 sla-computer_guid = {{ dumps(slapparameter_dict.get('balancer-computer-guid', computer_id)) }}
-extra-config =
-  tcpv4-port
-  haproxy-server-check-path
-  backend-path-dict
-  ssl-authentication-dict
-  ssl
-  zope-family-dict
-  country-code
-  email
-  state
-  city
-  company
-  {{ zope_address_list_id_dict.values() | join(' ') }}
 return =
 {%- for family in zope_family_dict %}
   {{ family }}
@@ -207,7 +170,6 @@ config-company = {{ slapparameter_dict.get('company', 'Compagny') }}
 < = request-common
 software-url = {{ dumps(frontend_dict['software-url']) }}
 software-type = {{ dumps(frontend_dict.get('software-type', 'RootSoftwareInstance')) }}
-sla = instance_guid
 sla-instance_guid = {{ dumps(frontend_dict['instance-guid']) }}
 slave = true
 {% set config_dict = {
@@ -216,7 +178,6 @@ slave = true
 {%   if frontend_dict.get('domain') -%}
 {%     do config_dict.__setitem__('custom_domain', frontend_dict['domain']) -%}
 {%   endif -%}
-extra-config = url {{ config_dict.keys() | join(' ') }}
 {%   for name, value in config_dict.items() -%}
 config-{{ name }} = {{ value }}
 {%   endfor -%}

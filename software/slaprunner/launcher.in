@@ -3,4 +3,6 @@
 # BEWARE: It will be overwritten automatically
 
 # Run nginx
-exec {{ param_nginx_frontend['bin_nginx'] }} -c {{ param_nginx_frontend['path_nginx_conf'] }}
+exec {{ param_nginx_frontend['bin_nginx'] }} \
+    -p {{ param_nginx_frontend['nginx_prefix'] }} \
+    -c {{ param_nginx_frontend['path_nginx_conf'] }}

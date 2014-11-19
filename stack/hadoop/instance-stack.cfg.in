@@ -1,0 +1,51 @@
+[buildout]
+
+parts =
+  sh-environment
+  start-daemons
+  deploy-tar
+
+eggs-directory = ${buildout:eggs-directory}
+develop-eggs-directory = ${buildout:develop-eggs-directory}
+
+
+[sh-environment]
+# environment needed for running/debugging the applications, exported to a shell script to be sourced.
+recipe = collective.recipe.template
+output = $${buildout:directory}/environment.sh
+input = inline:
+  export JAVA_HOME="${java:location}"
+  export HADOOP_PREFIX="$${directories:hadoop-prefix}"
+  export PATH="$PATH:$HADOOP_PREFIX/bin"
+  export HADOOP_HOME="$HADOOP_PREFIX"
+  export HADOOP_COMMON_HOME="$HADOOP_PREFIX"
+  export HADOOP_CONF_DIR="$HADOOP_PREFIX/etc/"
+  export HADOOP_HDFS_HOME="$HADOOP_PREFIX"
+  export HADOOP_MAPRED_HOME="$HADOOP_PREFIX"
+  export HADOOP_YARN_HOME="$HADOOP_PREFIX"
+
+
+[deploy-tar]
+recipe = plone.recipe.command
+update = true
+command =
+    [ -d $${directories:hadoop-prefix}/bin} ] || tar xf ${hadoop:location}/${hadoop:filename} -C $${directories:hadoop-prefix}  --strip-components=1
+
+
+[directories]
+recipe = slapos.cookbook:mkdirectory
+bin = $${buildout:directory}/bin
+etc = $${buildout:directory}/etc
+var = $${buildout:directory}/var
+hadoop-prefix = $${buildout:directory}/hadoop
+services = $${directories:etc}/service
+promises = $${directories:etc}/promise
+
+
+[start-daemons]
+recipe = slapos.recipe.template
+url = ${:_profile_base_location_}/template/start-daemons.sh.in
+output = $${directories:bin}/start-daemons.sh
+md5sum = 35a51a7f826d29e47c564c57e954db80
+mode = 0755
+
