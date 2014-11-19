@@ -38,7 +38,7 @@ return =
 recipe = slapos.cookbook:publish
 backend-url = ${request-kvm:connection-backend-url}
 url = ${request-kvm:connection-url}
-ipv6 = {request-kvm:ip}
+ipv6 = ${request-kvm:connection-ip}
 
 [kvm-frontend-url-promise]
 # Check that url parameter is complete
