@@ -70,6 +70,8 @@ ALARM_DICT = {\n
 REQUIRED_BT5_ID_LIST = [\n
 # core of core\n
   \'erp5_mysql_innodb_catalog\',\n
+  \'erp5_full_text_myisam_catalog\',\n
+  \'erp5_mysql_innodb_catalog\',\n
   \'erp5_core\',\n
   \'erp5_property_sheets\',\n
   \'erp5_xhtml_style\',\n
@@ -95,43 +97,11 @@ REQUIRED_BT5_ID_LIST = [\n
   \'erp5_km\',\n
   \'erp5_simulation\',\n
   \'erp5_trade\',\n
-  \'erp5_ui_test_core\',\n
   \'erp5_system_event\',\n
-  \'erp5_ui_test\',\n
-  \'erp5_secure_payment\',\n
+  \'erp5_payzen_secure_payment\',\n
   \'erp5_web\',\n
   \'erp5_project\',\n
   \'erp5_credential_oauth2\',\n
-# vifib deinstallation\n
-  \'vifib_web_ui_test\',\n
-  \'vifib_test\',\n
-  \'vifib_erp5\',\n
-#  \'vifib_configurator\', # not used\n
-  \'vifib_slapos_accounting\',\n
-  \'vifib_upgrader\',\n
-  \'vifib_data_web\',\n
-  \'vifib_data_simulation\',\n
-  \'vifib_data_payzen\',\n
-  \'vifib_data_category\',\n
-  \'vifib_data\',\n
-  \'vifib_slapos_rest_api\',\n
-  \'vifib_slapos_rest_api_v1\',\n
-  \'vifib_slapos_rest_api_tool_portal_type\',\n
-  \'vifib_web\',\n
-  \'vifib_agent\',\n
-  \'vifib_l10n_fr\',\n
-  \'vifib_slapos_capacity\',\n
-  \'vifib_slapos_core\',\n
-  \'vifib_software_pdm\',\n
-  \'vifib_forge_release\',\n
-  \'vifib_open_trade\',\n
-  \'vifib_payzen\',\n
-  \'vifib_crm\',\n
-  \'vifib_invoicing\',\n
-  \'vifib_core\',\n
-  \'vifib_slap\',\n
-  \'vifib_base\',\n
-  \'vifib_mysql_innodb_catalog\',\n
 # new erp5 business templates\n
   \'erp5_promise\',\n
   \'erp5_web_shacache\',\n
@@ -141,6 +111,9 @@ REQUIRED_BT5_ID_LIST = [\n
   \'slapos_configurator\',\n
   \'slapos_cache\',\n
   \'slapos_cloud\',\n
+  \'slapos_crm\',\n
+  \'slapos_hypermedia\',\n
+  \'slapos_jio\',\n
   \'slapos_slap_tool\',\n
   \'slapos_category\',\n
   \'slapos_rest_api_tool_portal_type\',\n
@@ -156,13 +129,13 @@ REINSTALLABLE_BT5_ID_LIST = ()\n
 \n
 # items to keep even if marked by BT5 to \'Remove\'\n
 KEEP_ORIGINAL_DICT = {\n
-  \'vifib_data_payzen\': ( \'portal_secure_payments\', ),\n
-  \'vifib_slapos_core\': ( \'hosting_subscription_module\', \'software_installation_module\', \'software_instance_module\',\n
+  \'erp5_secure_payment\': ( \'portal_secure_payments\', ),\n
+  \'slapos_cloud\': ( \'hosting_subscription_module\', \'software_installation_module\', \'software_instance_module\',\n
      \'portal_types/Hosting Subscription\', \'portal_types/Hosting Subscription Module\', \'portal_types/Slave Instance\',\n
      \'portal_types/Software Installation\', \'portal_types/Software Installation Module\', \'portal_types/Software Instance\',\n
      \'portal_types/Software Instance Module\'),\n
-  \'vifib_open_trade\': ( \'portal_types/Subscription Item Root Simulation Rule\', ),\n
-  \'vifib_payzen\': (\'portal_types/Payzen Event\', \'portal_types/Payzen Event Message\',),\n
+  \'slapos_accounting\': ( \'portal_types/Subscription Item Root Simulation Rule\', ),\n
+  \'slapos_payzen\': (\'portal_types/Payzen Event\', \'portal_types/Payzen Event Message\',),\n
 }\n
 \n
 # Items which need validation at upgrade time\n

@@ -1,0 +1,117 @@
+<?xml version="1.0"?>
+<ZopeData>
+  <record id="1" aka="AAAAAAAAAAE=">
+    <pickle>
+      <global name="Test Component" module="erp5.portal_type"/>
+    </pickle>
+    <pickle>
+      <dictionary>
+        <item>
+            <key> <string>default_reference</string> </key>
+            <value> <string>testSlapOSContractSkins</string> </value>
+        </item>
+        <item>
+            <key> <string>id</string> </key>
+            <value> <string>test.erp5.testSlapOSContractSkins</string> </value>
+        </item>
+        <item>
+            <key> <string>portal_type</string> </key>
+            <value> <string>Test Component</string> </value>
+        </item>
+        <item>
+            <key> <string>sid</string> </key>
+            <value>
+              <none/>
+            </value>
+        </item>
+        <item>
+            <key> <string>text_content_error_message</string> </key>
+            <value>
+              <tuple/>
+            </value>
+        </item>
+        <item>
+            <key> <string>text_content_warning_message</string> </key>
+            <value>
+              <tuple>
+                <string>W: 65,  4: Unused variable \'person\' (unused-variable)</string>
+                <string>W: 65, 22: Unused variable \'subscription\' (unused-variable)</string>
+                <string>W: 72, 22: Unused variable \'subscription\' (unused-variable)</string>
+                <string>W: 81, 22: Unused variable \'subscription\' (unused-variable)</string>
+                <string>W: 92,  4: Unused variable \'person\' (unused-variable)</string>
+                <string>W: 92, 22: Unused variable \'subscription\' (unused-variable)</string>
+                <string>W:100,  4: Unused variable \'person\' (unused-variable)</string>
+                <string>W:100, 22: Unused variable \'subscription\' (unused-variable)</string>
+                <string>W:109,  4: Unused variable \'person\' (unused-variable)</string>
+                <string>W:109, 22: Unused variable \'subscription\' (unused-variable)</string>
+                <string>W:119, 22: Unused variable \'subscription\' (unused-variable)</string>
+                <string>W:131, 22: Unused variable \'subscription\' (unused-variable)</string>
+                <string>W:148, 22: Unused variable \'subscription\' (unused-variable)</string>
+                <string>W:176, 22: Unused variable \'subscription\' (unused-variable)</string>
+                <string>W:193, 22: Unused variable \'subscription\' (unused-variable)</string>
+                <string>W:210, 22: Unused variable \'subscription\' (unused-variable)</string>
+                <string>W:233, 22: Unused variable \'subscription\' (unused-variable)</string>
+                <string>W:  7,  0: Unused import wraps (unused-import)</string>
+                <string>W:  8,  0: Unused import createZODBPythonScript (unused-import)</string>
+                <string>W:  9,  0: Unused import difflib (unused-import)</string>
+              </tuple>
+            </value>
+        </item>
+        <item>
+            <key> <string>version</string> </key>
+            <value> <string>erp5</string> </value>
+        </item>
+        <item>
+            <key> <string>workflow_history</string> </key>
+            <value>
+              <persistent> <string encoding="base64">AAAAAAAAAAI=</string> </persistent>
+            </value>
+        </item>
+      </dictionary>
+    </pickle>
+  </record>
+  <record id="2" aka="AAAAAAAAAAI=">
+    <pickle>
+      <global name="PersistentMapping" module="Persistence.mapping"/>
+    </pickle>
+    <pickle>
+      <dictionary>
+        <item>
+            <key> <string>data</string> </key>
+            <value>
+              <dictionary>
+                <item>
+                    <key> <string>component_validation_workflow</string> </key>
+                    <value>
+                      <persistent> <string encoding="base64">AAAAAAAAAAM=</string> </persistent>
+                    </value>
+                </item>
+              </dictionary>
+            </value>
+        </item>
+      </dictionary>
+    </pickle>
+  </record>
+  <record id="3" aka="AAAAAAAAAAM=">
+    <pickle>
+      <global name="WorkflowHistoryList" module="Products.ERP5Type.patches.WorkflowTool"/>
+    </pickle>
+    <pickle>
+      <tuple>
+        <none/>
+        <list>
+          <dictionary>
+            <item>
+                <key> <string>action</string> </key>
+                <value> <string>validate</string> </value>
+            </item>
+            <item>
+                <key> <string>validation_state</string> </key>
+                <value> <string>validated</string> </value>
+            </item>
+          </dictionary>
+        </list>
+      </tuple>
+    </pickle>
+  </record>
+</ZopeData>

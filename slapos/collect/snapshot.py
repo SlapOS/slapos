@@ -194,3 +194,4 @@ class ComputerSnapshot(_Snapshot):
                                 partition.mountpoint))
 
     return [(k, v) for k, v in partition_dict.iteritems()]
+

@@ -53,7 +53,8 @@
             <value> <string>configuration_save = context.restrictedTraverse(configuration_save_url)\n
 \n
 bt5_update_catalog_list = (\'erp5_ingestion_mysql_innodb_catalog\',\n
-                           \'slapos_cloud\')\n
+                           \'slapos_cloud\', \'erp5_accounting\',\n
+                           \'erp5_movement_table_catalog\')\n
 \n
 bt5_installation_list = bt5_update_catalog_list + (\'slapos_erp5\',)\n
  \n

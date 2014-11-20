@@ -1,6 +1,6 @@
-testSlapOSERP5Alarm
-testSlapOSERP5DefaultScenario
-testSlapOSERP5GroupRoleSecurity
-testSlapOSERP5LocalPermissionSlapOSInteractionWorkflow
-testSlapOSERP5SiteDump
-testSlapOSERP5SkinSelection
+test.erp5.testSlapOSERP5Alarm
+test.erp5.testSlapOSERP5LocalPermissionSlapOSInteractionWorkflow
+test.erp5.testSlapOSERP5SiteDump
+test.erp5.testSlapOSERP5GroupRoleSecurity
+test.erp5.testSlapOSERP5SkinSelection
+test.erp5.testSlapOSERP5DefaultScenario

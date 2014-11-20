@@ -748,7 +748,7 @@ class ConnectionHelper:
 class slap:
   zope.interface.implements(interface.slap)
 
-  def initializeConnection(self, slapgrid_uri,
+def initializeConnection(self, slapgrid_uri,
                            key_file=None, cert_file=None,
                            master_ca_file=None,
                            timeout=60,
