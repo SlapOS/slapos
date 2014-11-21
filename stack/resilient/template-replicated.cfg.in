@@ -154,6 +154,7 @@ software-type = pull-backup
 [request-pbs-{{namebase}}-{{id}}]
 <= request-pbs-common
 name = PBS ({{namebase}} / {{id}})
+config-ignore-known-hosts-file = ${slap-parameter:ignore-known-hosts-file}
 return = ssh-key notification-url feeds-url
 slave = false
 {% if sla_parameter_dict == {} -%}
@@ -231,6 +232,7 @@ sla-instance_guid = ${request-pbs-{{namebase}}-{{id}}:instance_guid}
 {{namebase}}{{id}}-computer-guid =
 pbs-{{namebase}}{{id}}-computer-guid =
 {% endfor %}
+ignore-known-hosts-file = false
 
 {% endmacro %}
 

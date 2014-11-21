@@ -244,7 +244,10 @@ class Recipe(GenericSlapRecipe, Notify, Callback):
                                       promise_dict)
     path_list.append(promise)
 
-    known_hosts_file[parsed_url.hostname] = entry['server-key']
+    # Create known_hosts file by default.
+    # In some case, we don't want to create it (case where we share IP mong partitions)
+    if not self.isTrueValue(self.options.get('ignore-known-hosts-file')):
+      known_hosts_file[parsed_url.hostname] = entry['server-key']
 
     notifier_wrapper_path = os.path.join(self.options['wrappers-directory'], slave_id)
     rdiff_wrapper_path = notifier_wrapper_path + '_raw'
