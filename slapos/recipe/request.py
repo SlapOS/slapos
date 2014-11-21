@@ -107,10 +107,10 @@ class Recipe(object):
     if 'config' in options or 'sla' in options:
       raise UserError("'config' & 'sla' options are obsolete."
                       " Clean up your software release.")
-    filter_kw = {k: v
+    filter_kw = {k[4:]: v
       for k, v in options.iteritems()
       if k.startswith('sla-') and v}
-    partition_parameter_kw = self._filterForStorage({k: v
+    partition_parameter_kw = self._filterForStorage({k[7:]: v
       for k, v in options.iteritems()
       if k.startswith('config-')})
     slave = options.get('slave', 'false').lower() in \
