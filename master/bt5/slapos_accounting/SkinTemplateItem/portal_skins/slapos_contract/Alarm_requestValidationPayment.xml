@@ -51,6 +51,10 @@
         <item>
             <key> <string>_body</string> </key>
             <value> <string>portal = context.getPortalObject()\n
+after_alarm = getattr(portal.portal_alarms, \'slapos_update_open_sale_order_period\', None)\n
+activate_kw = {\'tag\': tag}\n
+if after_alarm is not None:\n
+  activate_kw[\'after_path_and_method_id\'] = (after_alarm.getPath(), (\'getId\'))\n
 select_dict= {\'default_aggregate_uid\': None}\n
 portal.portal_catalog.searchAndActivate(\n
   portal_type=(\'Slave Instance\', \'Software Instance\'),\n
@@ -61,7 +65,7 @@ portal.portal_catalog.searchAndActivate(\n
 \n
   method_id=\'SoftwareInstance_requestValidationPayment\',\n
   packet_size=1, # Separate calls to many transactions\n
-  activate_kw={\'tag\': tag}\n
+  activate_kw=activate_kw\n
 )\n
 \n
 context.activate(after_tag=tag).getId()\n
