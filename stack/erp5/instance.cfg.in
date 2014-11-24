@@ -186,6 +186,5 @@ kumofs = dynamic-template-kumofs:rendered
 cloudooo = dynamic-template-cloudooo:rendered
 mariadb = dynamic-template-mariadb:rendered
 balancer = dynamic-template-balancer:rendered
-zodb-neo = dynamic-template-neo:rendered
 zodb-zeo = dynamic-template-zeo:rendered
 zope = dynamic-template-zope:rendered

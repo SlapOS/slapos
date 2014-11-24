@@ -210,7 +210,7 @@
             "default": "main",
             "type": "string"
           },
-          "mount_point": {
+          "mount-point": {
             "description": "Mount point",
             "default": "/",
             "type": "string"
