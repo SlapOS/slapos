@@ -1,4 +1,3 @@
-{% set use_ipv6 = slapparameter_dict.get('use-ipv6', False) -%}
 {% set next_port = slapparameter_dict['tcpv4-port'] -%}
 {% set part_list = [] -%}
 {% set storage_dict = {} -%}
@@ -9,10 +8,6 @@
 {% set zodb_backup_path = buildout_directory ~ '/srv/backup/zodb' -%}
 {% set default_tidstorage_timestamp_path = buildout_directory ~ '/srv/backup/tidstorage' -%}
 {% macro section(name) %}{% do part_list.append(name) %}{{ name }}{% endmacro -%}
-{#
-XXX: This template only supports exactly one IPv6 per
-partition. No more (undefined result), no less (IndexError).
--#}
 {% set ipv4 = (ipv4_set | list)[0] -%}
 {% set tidstorage_ip = ipv4 -%}
 {% set tidstorage_port = 6001 -%}
@@ -31,17 +26,6 @@ conf-path = ${directory:etc}/${:base-name}.conf
 wrapper-path = ${directory:services}/${:base-name}
 binary-path = {{ bin_directory }}/runzeo
 ip = {{ ipv4 }}
-
-{% if use_ipv6 -%}
-{% set ipv6 = (ipv6_set | list)[0] -%}
-[ipv6toipv4-base]
-recipe = slapos.cookbook:ipv6toipv4
-runner-path = ${directory:services}/${:base-name}
-6tunnel-path = {{ parameter_dict['6tunnel'] }}/bin/6tunnel
-shell-path = {{ parameter_dict['dash'] }}/bin/dash
-ipv4 = {{ ipv4 }}
-ipv6 = {{ ipv6 }}
-{% endif -%}
 
 {% set backup_directory_list = [] -%}
 {% for export_id, mountpoint_dict in slapparameter_dict['zodb-dict'].items() -%}
@@ -101,23 +85,7 @@ hostname = {{ "${" ~ zeo_section_name ~ ":ip}" }}
 port = {{ next_port }}
 path = ${directory:promises}/zeo-{{ storage_family }}
 
-{%   if use_ipv6 -%}
-{%     set address = '[' ~ ipv6 ~ ']:' ~ next_port -%}
-{%     set tunnel_section_name = zeo_section_name ~ "-tunnel" -%}
-[{{ tunnel_section_name }}]
-< = ipv6toipv4-base
-base-name = zeo-tunnel-{{ storage_family }}
-ipv6-port = {{ next_port }}
-ipv4-port = {{ next_port }}
-
-[{{ section(tunnel_section_name ~ "-promise") }}]
-recipe = slapos.cookbook:check_port_listening
-hostname = {{ "${" ~ tunnel_section_name ~ ":ipv6}" }}
-port = {{ next_port }}
-path = ${directory:promises}/zeo-tunnel-{{ storage_family }}
-{%   else -%}
-{%     set address = ipv4 ~ ':' ~ next_port -%}
-{%   endif -%}
+{%   set address = ipv4 ~ ':' ~ next_port -%}
 {%   for export in export_list -%}
 {%     do zodb_dict[export[0]][2].__setitem__('server', address) -%}
 {%   endfor -%}
@@ -146,20 +114,6 @@ recipe = slapos.cookbook:check_port_listening
 hostname = ${tidstorage:ip}
 port = ${tidstorage:port}
 path = ${directory:promises}/tidstorage
-
-{%  if use_ipv6 -%}
-[tidstorage-tunnel]
-< = ipv6toipv4-base
-base-name = tidstorage-tunnel
-ipv4-port = ${tidstorage:port}
-ipv6-port = ${tidstorage:port}
-
-[{{ section("promise-tidstorage-tunnel") }}]
-recipe = slapos.cookbook:check_port_listening
-hostname = ${tidstorage-tunnel:ipv6}
-port = ${tidstorage-tunnel:ipv6-port}
-path = ${directory:promises}/tidstorage
-{% endif -%}
 
 [{{ section("cron-entry-tidstorage-backup") }}]
 # TODO:
@@ -194,23 +148,14 @@ post = {{ bin_directory }}/slapos-kill --pidfile ${tidstorage:pidfile-name} -s H
 [tidstorage]
 ip =
 port =
-
-[tidstorage-tunnel]
-ipv6 =
-ipv6-port =
 {% endif -%}
 
 [publish]
 recipe = slapos.cookbook:publish.serialised
 zodb-storage-type = zeoclient
 zodb-dict = {{ dumps(zodb_dict) }}
-{% if use_ipv6 -%}
-tidstorage-ip = ${tidstorage-tunnel:ipv6}
-tidstorage-port = ${tidstorage-tunnel:ipv6-port}
-{% else -%}
 tidstorage-ip = ${tidstorage:ip}
 tidstorage-port = ${tidstorage:port}
-{% endif -%}
 
 [directory]
 recipe = slapos.cookbook:mkdirectory

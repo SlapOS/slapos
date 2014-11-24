@@ -100,49 +100,6 @@ wrapper = ${directory:services}/ca
 
 {% if use_ipv6 -%}
 {%   set ipv6 = (ipv6_set | list)[0] -%}
-[zeo-tunnel-base]
-recipe = slapos.cookbook:ipv4toipv6
-runner-path = ${directory:services}/${:base-name}
-6tunnel-path = {{ parameter_dict['6tunnel'] }}/bin/6tunnel
-shell-path = {{ parameter_dict['dash'] }}/bin/dash
-ipv4 = {{ ipv4 }}
-
-{%   if storage_type == 'zeoclient' -%}
-{#     ZEO needs tunelling for IPv6 (...until next version becomes current in Zope) -#}
-{%     set zeo_tunneling_dict = {} -%}
-{%     for _, _, storage_dict in zodb_dict.values() -%}
-{%       set storage_server = storage_dict['server'] -%}
-{%       if storage_server not in zeo_tunneling_dict -%}
-{%         set current_port = next_port + (zeo_tunneling_dict | length) -%}
-{%         do zeo_tunneling_dict.__setitem__(storage_server, current_port) -%}
-[{{ section('zeo-tunnel-' ~ current_port) }}]
-< = zeo-tunnel-base
-base-name = {{ 'zeo-tunnel-' ~ current_port }}
-ipv4-port = {{ current_port }}
-ipv6-port = {{ storage_server.split(']:')[1] }}
-ipv6 = {{ storage_server.split(']:')[0][1:] }}
-{%       endif -%}
-{%       do storage_dict.__setitem__('server', '' ~ ipv4 ~ ':' ~ zeo_tunneling_dict[storage_server]) -%}
-{%     endfor -%}
-{%     set next_port = next_port + (zeo_tunneling_dict | length) -%}
-{%   endif -%}
-{%   if slapparameter_dict.get('tidstorage-ip') -%}
-[tidstorage-tunnel]
-< = zeo-tunnel-base
-base-name = tidstorage-tunnel
-ipv4-port = {{ next_port }}
-ipv6 = {{ dumps(slapparameter_dict.get('tidstorage-ip')) }}
-ipv6-port = {{ dumps(slapparameter_dict.get('tidstorage-port')) }}
-{%     do slapparameter_dict.__setitem__('tidstorage-ip', ipv4) -%}
-{%     do slapparameter_dict.__setitem__('tidstorage-port', next_port) -%}
-{%     set next_port = next_port + 1 -%}
-
-[{{ section("promise-tidstorage-tunnel") }}]
-recipe = slapos.cookbook:check_port_listening
-hostname = ${tidstorage-tunnel:ipv4}
-port = ${tidstorage-tunnel:ipv4-port}
-path = ${directory:promises}/tidstorage
-{%   endif -%}
 
 [ipv6toipv4-base]
 recipe = slapos.cookbook:ipv6toipv4

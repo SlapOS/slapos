@@ -92,8 +92,6 @@ extra-context =
 
 [dynamic-template-zeo-parameters]
 buildout-bin-directory = {{ buildout_bin_directory }}
-6tunnel = {{ sixtunnel_location }}
-dash = {{ dash_location }}
 findutils-location = {{ findutils_location }}
 
 [dynamic-template-zeo]
