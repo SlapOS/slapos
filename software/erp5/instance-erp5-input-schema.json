@@ -147,7 +147,7 @@
     "kumofs": {
       "description": "Persistent memcached service",
       "additionalProperties": {
-        "$ref": "./instance-kumofs-input-schema.json#properties"
+        "$ref": "./instance-kumofs-schema.json#properties"
       },
       "type": "object"
     },
@@ -158,7 +158,7 @@
     "memcached": {
       "description": "Volatile memcached service",
       "additionalProperties": {
-        "$ref": "./instance-kumofs-input-schema.json#properties"
+        "$ref": "./instance-kumofs-schema.json#properties"
       },
       "type": "object"
     },
@@ -169,7 +169,7 @@
     "cloudooo": {
       "description": "Format conversion service",
       "additionalProperties": {
-        "$ref": "./instance-cloudooo-input-schema.json#properties"
+        "$ref": "./instance-cloudooo-schema.json#properties"
       },
       "type": "object"
     },
@@ -180,7 +180,7 @@
     "mariadb": {
       "description": "Relational database service",
       "additionalProperties": {
-        "$ref": "./instance-mariadb-input-schema.json#properties"
+        "$ref": "./instance-mariadb-schema.json#properties"
       },
       "type": "object"
     },
@@ -196,7 +196,7 @@
     "zodb": {
       "description": "Zope Object DataBase service",
       "oneOf": [
-        {"$ref": "./instance-zeo-input-schema.json#properties"}
+        {"$ref": "./instance-zeo-schema.json#properties"}
       ]
     },
     "zodb-extern": {
