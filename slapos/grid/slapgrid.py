@@ -1112,6 +1112,7 @@ class Slapgrid(object):
 
     for computer_partition in computer_partition_list:
       if computer_partition.getState() == COMPUTER_PARTITION_DESTROYED_STATE:
+        destroyed = False
         try:
           computer_partition_id = computer_partition.getId()
           try:
