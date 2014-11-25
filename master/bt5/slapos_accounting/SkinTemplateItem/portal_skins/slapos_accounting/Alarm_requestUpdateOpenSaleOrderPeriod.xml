@@ -56,7 +56,9 @@ portal.portal_catalog.searchAndActivate(\n
   validation_state=\'validated\',\n
   children_portal_type=\'Open Sale Order Line\',\n
   method_id=\'OpenSaleOrder_updatePeriod\',\n
-  activate_kw={\'tag\': tag}\n
+  activate_kw={\'tag\': tag},\n
+  packet_size=1,\n
+  activity_count=100\n
 )\n
 context.activate(after_tag=tag).getId()\n
 </string> </value>
