@@ -27,13 +27,13 @@ recipe = slapos.cookbook:wrapper
 # XXX: put it in etc/run in case of scalability test so that it runs automatically.
 wrapper-path = ${directory:bin}/runKVMResiliencyTestSuite
 testnode-parameters = --test-result-path={{ slapparameter_dict.get('test-result-path') }} --revision={{ slapparameter_dict.get('test-suite-revision') }} --node-title={{ slapparameter_dict.get('scalability-launcher-title') }} --test-suite={{ slapparameter_dict.get('test-suite') }} --test-suite-master-url={{ slapparameter_dict.get('test-suite-master-url') }} --log-path=${directory:log}
-kvm-test-parameters = server_url=${slap-connection:server-url} key_file=${slap-connection:key-file} cert_file=${slap-connection:cert-file} computer_id=${slap-connection:computer-id} partition_id=${slap-connection:partition-id} software=${slap-connection:software-release-url} namebase=kvm kvm_rootinstance_name='${request-resilient-kvm:name}'
+kvm-test-parameters = server_url=${slap-connection:server-url} key_file=${slap-connection:key-file} cert_file=${slap-connection:cert-file} computer_id=${slap-connection:computer-id} partition_id=${slap-connection:partition-id} software=${slap-connection:software-release-url} namebase=kvm root_instance_name='${request-resilient-kvm:name}'
 command-line = {{ bin_directory }}/runResiliencyScalabilityTestNode ${:testnode-parameters} ${:kvm-test-parameters}
 
 [deploy-unit-test]
 recipe = collective.recipe.template
 #testnode-parameters = --test-result-path={{ slapparameter_dict.get('test-result-path') }} --revision={{ slapparameter_dict.get('test-suite-revision') }} --node-title={{ slapparameter_dict.get('scalability-launcher-title') }} --test-suite={{ slapparameter_dict.get('test-suite') }} --test-suite-master-url={{ slapparameter_dict.get('test-suite-master-url') }} --log-path=${directory:log}
-kvm-test-parameters = server_url=${slap-connection:server-url} key_file=${slap-connection:key-file} cert_file=${slap-connection:cert-file} computer_id=${slap-connection:computer-id} partition_id=${slap-connection:partition-id} software=${slap-connection:software-release-url} namebase=kvm kvm_rootinstance_name='${request-resilient-kvm:name}'
+kvm-test-parameters = server_url=${slap-connection:server-url} key_file=${slap-connection:key-file} cert_file=${slap-connection:cert-file} computer_id=${slap-connection:computer-id} partition_id=${slap-connection:partition-id} software=${slap-connection:software-release-url} namebase=kvm root_instance_name='${request-resilient-kvm:name}'
 input = inline:
   #!/bin/sh
   exec {{ bin_directory }}/runResiliencyUnitTestTestNode $@ ${:kvm-test-parameters}
@@ -45,7 +45,7 @@ mode = 755
 recipe = slapos.cookbook:wrapper
 wrapper-path = ${directory:bin}/runStandaloneResiliencyTestSuite
 command-line = {{ bin_directory }}/runStandaloneResiliencyTest --test-suite-title=kvm ${:kvm-test-parameters}
-kvm-test-parameters = server_url=${slap-connection:server-url} key_file=${slap-connection:key-file} cert_file=${slap-connection:cert-file} computer_id=${slap-connection:computer-id} partition_id=${slap-connection:partition-id} software=${slap-connection:software-release-url} namebase=kvm kvm_rootinstance_name='${request-resilient-kvm:name}'
+kvm-test-parameters = server_url=${slap-connection:server-url} key_file=${slap-connection:key-file} cert_file=${slap-connection:cert-file} computer_id=${slap-connection:computer-id} partition_id=${slap-connection:partition-id} software=${slap-connection:software-release-url} namebase=kvm root_instance_name='${request-resilient-kvm:name}'
 
 [request-resilient-kvm]
 <= slap-connection
