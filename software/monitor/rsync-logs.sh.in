@@ -10,5 +10,5 @@ SERVERLOGS={{ server_log_directory }}
 $RSYNC_BIN -a --delete $SLAPGRID_LOGS $SERVERLOGS
 
 if [ -d $RE6STLOGS ]; then
-  $RSYNC_BIN -a --delete $RE6STLOGS $YSTEMLOGS
+  $RSYNC_BIN -a --delete $RE6STLOGS $SYSTEMLOGS
 fi
