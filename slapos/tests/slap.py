@@ -1065,7 +1065,7 @@ class TestOpenOrder(SlapMixin):
       computer_partition = open_order.request(software_release_uri, 'myrefe')
       self.assertIsInstance(computer_partition, slapos.slap.ComputerPartition)
       self.assertEqual(requested_partition_id, computer_partition.getId())
-      self.assertEqual("URL_CONNECTION_PARAMETER", 
+      self.assertEqual("URL_CONNECTION_PARAMETER",
                        computer_partition.getConnectionParameter('url'))
 
 
@@ -1097,7 +1097,7 @@ class TestOpenOrder(SlapMixin):
       computer_partition = open_order.request(software_release_uri, 'myrefe')
       self.assertIsInstance(computer_partition, slapos.slap.ComputerPartition)
       self.assertEqual(requested_partition_id, computer_partition.getId())
-      self.assertEqual("URL_CONNECTION_PARAMETER", 
+      self.assertEqual("URL_CONNECTION_PARAMETER",
                        computer_partition.getConnectionParameter('url'))
 
 
@@ -1143,15 +1143,17 @@ class TestSoftwareProductCollection(SlapMixin):
       self.product_collection.get, 'random_reference',
     )
 
-  def test_get_product_gettattr(self):
+  def test_get_product_getattr(self):
     """
     Test that __getattr__ method is bound to get() method.
     """
-    self.getSoftwareReleaseListFromSoftwareProduct_response = []
+    self.getSoftwareReleaseListFromSoftwareProduct_response = ['0']
+    self.product_collection.foo
     self.assertEqual(
       self.product_collection.__getattr__,
       self.product_collection.get
     )
+    self.assertEqual(self.product_collection.foo, '0')
 
 if __name__ == '__main__':
   print 'You can point to any SLAP server by setting TEST_SLAP_SERVER_URL '\

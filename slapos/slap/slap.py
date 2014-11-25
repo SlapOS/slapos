@@ -177,8 +177,9 @@ class SoftwareProductCollection(object):
   def __init__(self, logger, slap):
     self.logger = logger
     self.slap = slap
-    self.__getattr__ = self.get
-  def get(self, software_product):
+    self.get = self.__getattr__
+
+  def __getattr__(self, software_product):
       self.logger.info('Getting best Software Release corresponging to '
                        'this Software Product...')
       software_release_list = \
