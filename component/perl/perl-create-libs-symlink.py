@@ -15,7 +15,7 @@ def post_make_hook(options, buildout):
     print "ERROR - no libperl.* found!"
     exit
   elif nr_matches > 1:
-    print "WARNING - several libperl.a found, taking only the first one:", matches.join("\n")
+    print "WARNING - several libperl.a found, taking only the first one:", "\n".join(matches)
   
   # matches[0] is a prefix of "location"
   # For the symlink, we want the relative path.
