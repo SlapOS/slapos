@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+# vim: set et sts=2:
 ##############################################################################
 #
 # Copyright (c) 2010, 2011, 2012 Vifib SARL and Contributors.
@@ -730,10 +731,11 @@ class ConnectionHelper:
 
     return req
 
-  def GET(self, path, params=None):
+  def GET(self, path, params=None, headers=None):
     req = self.do_request(requests.get,
                           path=path,
-                          params=params)
+                          params=params,
+                          headers=headers)
     return req.text.encode('utf-8')
 
   def POST(self, path, params=None, data=None,
@@ -876,10 +878,10 @@ class HateoasNavigator(object):
     self.master_ca_file = master_ca_file
     self.timeout = timeout
 
-  def GET(self, uri):
+  def GET(self, uri, headers=None):
     connection_helper = ConnectionHelper(
         uri, self.key_file, self.cert_file, self.master_ca_file, self.timeout)
-    return connection_helper.GET(uri)
+    return connection_helper.GET(uri, headers=headers)
 
   def hateoasGetLinkFromLinks(self, links, title):
     if type(links) == dict:
@@ -900,8 +902,8 @@ class HateoasNavigator(object):
       return
     return str(url)
 
-  def getSiteDocument(self, url):
-    result = self.GET(url)
+  def getSiteDocument(self, url, headers=None):
+    result = self.GET(url, headers)
     return json.loads(result)
 
   def getRootDocument(self):
@@ -909,7 +911,10 @@ class HateoasNavigator(object):
     cached_root_document = getattr(self, 'root_document', None)
     if cached_root_document:
       return cached_root_document
-    self.root_document = self.getSiteDocument(self.slapos_master_hateoas_uri)
+    self.root_document = self.getSiteDocument(
+        self.slapos_master_hateoas_uri,
+        headers={'Cache-Control': 'no-cache'}
+    )
     return self.root_document
 
   def getDocumentAndHateoas(self, relative_url, view='view'):
