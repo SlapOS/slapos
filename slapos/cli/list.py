@@ -51,8 +51,8 @@ def do_list(logger, conf, local):
     # XXX catch exception
     instance_dict = local['slap'].getOpenOrderDict()
     if instance_dict == {}:
-      logger.info('No existing service.')
+      print('No existing service.')
       return
-    logger.info('List of services:')
+    print('List of services:')
     for title, instance in instance_dict.iteritems():
-      logger.info('%s %s', title, instance._software_release_url)
+      print('%s %s' % title, instance._software_release_url)

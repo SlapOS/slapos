@@ -61,16 +61,16 @@ def do_info(logger, conf, local):
             partition_reference=conf.reference,
         )
     except ResourceNotReady:
-        logger.warning('Instance does not exist or is not ready yet.')
-        return(2)
+        print('Instance does not exist or is not ready yet.')
+        return(3)
     except NotFoundError:
-        logger.warning('Instance %s does not exist.', conf.reference)
+        print('Instance %s does not exist.' % conf.reference)
         return(2)
 
-    logger.info('Software Release URL: %s', instance._software_release_url)
-    logger.info('Instance state: %s', instance._requested_state)
-    logger.info('Instance parameters:')
-    logger.info(pprint.pformat(instance._parameter_dict))
-    logger.info('Connection parameters:')
-    logger.info(pprint.pformat(instance._connection_dict))
+    print('Software Release URL: %s' % instance._software_release_url)
+    print('Instance state: %s' % instance._requested_state)
+    print('Instance parameters:')
+    print(pprint.pformat(instance._parameter_dict))
+    print('Connection parameters:')
+    print(pprint.pformat(instance._connection_dict))
 
