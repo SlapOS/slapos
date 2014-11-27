@@ -27,10 +27,19 @@
 #
 ##############################################################################
 
+import logging
+import sys
+
 from slapos.cli.config import ClientConfigCommand
 from slapos.client import init, ClientConfig
-from slapos.slap import ResourceNotReady
 
+def resetLogger(logger):
+    """Remove all formatters, log files, etc."""
+    if not getattr(logger, 'parent', None):
+      return
+    handler = logger.parent.handlers[0]
+    logger.parent.removeHandler(handler)
+    logger.addHandler(logging.StreamHandler(sys.stdout))
 
 class ListCommand(ClientConfigCommand):
     """request an instance and get status and parameters of instance"""
@@ -48,6 +57,7 @@ class ListCommand(ClientConfigCommand):
 
 
 def do_list(logger, conf, local):
+    resetLogger(logger)
     # XXX catch exception
     instance_dict = local['slap'].getOpenOrderDict()
     if instance_dict == {}:
