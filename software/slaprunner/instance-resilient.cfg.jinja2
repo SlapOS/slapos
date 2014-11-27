@@ -27,7 +27,7 @@ parts +=
 {{ replicated.replicate("runner", number_of_instances + 1, "runner-export", "runner-import", slapparameter_dict=slapparameter_dict) }}
 {% for id in range(1,number_of_instances + 1) %}
 
-[request-{{namebase}}-pseudo-replicating-{{id}}]
+[request-runner-pseudo-replicating-{{id}}]
 config-auto-deploy = true
 
 {% endfor %}
