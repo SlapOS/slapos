@@ -77,14 +77,23 @@ END IF;\n
 -- add a column funding_uid safely\n
 IF NOT EXISTS( (SELECT * FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE()\n
         AND COLUMN_NAME=\'funding_uid\' AND TABLE_NAME=\'stock\') ) THEN\n
-    ALTER TABLE `stock` ADD COLUMN `funding_uid` BIGINT UNSIGNED AFTER `order_id`;\n
+    ALTER TABLE `stock` ADD COLUMN `funding_uid` BIGINT UNSIGNED AFTER `project_uid`;\n
 END IF;\n
 \n
 -- add a column payment_request_uid safely\n
 IF NOT EXISTS( (SELECT * FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE()\n
         AND COLUMN_NAME=\'payment_request_uid\' AND TABLE_NAME=\'stock\') ) THEN\n
-    ALTER TABLE `stock` ADD COLUMN `payment_request_uid` BIGINT UNSIGNED AFTER `order_id`;\n
+    ALTER TABLE `stock` ADD COLUMN `payment_request_uid` BIGINT UNSIGNED AFTER `funding_uid`;\n
 END IF;\n
+\n
+-- Modify column order_id\n
+ALTER TABLE `stock` MODIFY `order_id` BIGINT UNSIGNED;\n
+\n
+-- Upgrade Index\n
+ALTER TABLE `stock` DROP INDEX `section_uid`, ADD INDEX `section_uid_portal_type_mirror_section_uid` (`section_uid`,`portal_type`, `mirror_section_uid`);\n
+ALTER TABLE `stock` ADD INDEX `funding_uid` (`funding_uid`);\n
+ALTER TABLE `stock` ADD INDEX `explanation_uid` (`explanation_uid`);\n
+ALTER TABLE `stock` DROP INDEX `resource_uid`;\n
 \n
 END//\n
 \n
