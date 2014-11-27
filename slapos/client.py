@@ -117,7 +117,7 @@ def _getSoftwareReleaseFromSoftwareString(logger, software_string, product):
         return software_string
 
     try:
-        return product.get(software_string[len(SOFTWARE_PRODUCT_NAMESPACE):])
+        return product.__getattr__(software_string[len(SOFTWARE_PRODUCT_NAMESPACE):])
     except AttributeError as e:
        logger.error('Error: %s Exiting now.' % e.message)
        sys.exit(1)

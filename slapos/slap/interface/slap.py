@@ -174,11 +174,6 @@ class ISoftwareProductCollection(Interface):
   Example: product.kvm will have the value of the latest Software
   Release URL of KVM.
   """
-  def get(software_product):
-    """
-    Return the best Software Release URL of the Software Product
-    software_product, by querying SlapOS Master.
-    """
 
 class ISoftwareInstance(Interface):
   """
