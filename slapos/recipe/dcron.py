@@ -76,10 +76,12 @@ class Part(GenericBaseRecipe):
 day_of_week_dict = dict((name, dow) for dow, name in enumerate(
     "sunday monday tuesday wednesday thursday friday saturday".split())
   for name in (name, name[:3]))
-symbolic_dict = dict(hourly  = '0 * * * *',
-                     daily   = '0 0 * * *',
-                     monthly = '0 0 1 * *',
-                     weekly  = '0 0 * * 0')
+symbolic_dict = dict(minutely = '* * * * *',
+                     hourly   = '0 * * * *',
+                     daily    = '0 0 * * *',
+                     weekly   = '0 0 * * 0',
+                     monthly  = '0 0 1 * *',
+                     yearly   = '0 0 1 1 *')
 
 def systemd_to_cron(spec):
   """Convert from systemd.time(7) calendar spec to crontab spec"""
@@ -118,13 +120,22 @@ def systemd_to_cron(spec):
     raise ValueError
   month, day = day
   hour, minute = time
-  spec = minute, hour, day, month, dow
-  for x, (y, z) in zip(spec, ((0, 60), (0, 24), (1, 31), (1, 12))):
+  spec = [minute, hour, day, month, dow]
+  for i, (y, z) in enumerate(((0, 60), (0, 24), (1, 31), (1, 12))):
+    x = spec[i]
     if x != '*':
       for x in x.split(','):
         x = map(int, x.split('/', 1))
-        x[0] -= y
-        if x[0] < 0 or len(x) > 1 and x[0] >= x[1] or z <= sum(x):
-          raise ValueError
+        a = x[0] - y
+        if 0 <= a < z:
+          if len(x) == 1:
+            continue
+          b = x[1]
+          if b > 0:
+            a = (z - a - 1) // b * b
+            if a:
+              spec[i] = '%s-%s/%s' % (x[0], x[0] + a, b)
+              continue
+        raise ValueError
   return ' '.join(spec)
 
