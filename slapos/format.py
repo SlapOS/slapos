@@ -428,7 +428,7 @@ class Computer(object):
     if alter_user:
       slapsoft.create()
       slapsoft_pw = pwd.getpwnam(slapsoft.name)
-      slapos.util.chownDirectory(slapsoft.path, slapsoft_pw.pw_uid, slapsoft_pw.pw_gid)
+      os.chown(slapsoft.path, slapsoft_pw.pw_uid, slapsoft_pw.pw_gid)
     os.chmod(self.software_root, 0o755)
 
     if alter_network:
