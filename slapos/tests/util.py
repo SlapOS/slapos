@@ -83,28 +83,28 @@ class TestUtil(unittest.TestCase):
 
     uid_check_root_slaptest = os.stat(root_slaptest)[4]
     gid_check_root_slaptest = os.stat(root_slaptest)[5]
-    self.assertTrue(uid == uid_check_root_slaptest)
-    self.assertTrue(gid == gid_check_root_slaptest)
+    self.assertEquals(uid, uid_check_root_slaptest)
+    self.assertEquals(gid, gid_check_root_slaptest)
 
     uid_check_wanted_directory0 = os.stat(wanted_directory0)[4]
     gid_check_wanted_directory0 = os.stat(wanted_directory0)[5]
-    self.assertTrue(uid == uid_check_wanted_directory0)
-    self.assertTrue(gid == gid_check_wanted_directory0)
+    self.assertEquals(uid, uid_check_wanted_directory0)
+    self.assertEquals(gid, gid_check_wanted_directory0)
 
     uid_check_wanted_directory1 = os.stat(wanted_directory1)[4]
     gid_check_wanted_directory1 = os.stat(wanted_directory1)[5]
-    self.assertTrue(uid == uid_check_wanted_directory1)
-    self.assertTrue(gid == gid_check_wanted_directory1)
+    self.assertEquals(uid, uid_check_wanted_directory1)
+    self.assertEquals(gid, gid_check_wanted_directory1)
 
     uid_check_wanted_directory2 = os.stat(wanted_directory2)[4]
     gid_check_wanted_directory2 = os.stat(wanted_directory2)[5]
-    self.assertTrue(uid == uid_check_wanted_directory2)
-    self.assertTrue(gid == gid_check_wanted_directory2)
+    self.assertEquals(uid,  uid_check_wanted_directory2)
+    self.assertEquals(gid, gid_check_wanted_directory2)
 
     uid_check_file_txt = os.stat(create_file_txt[1])[4]
     gid_check_file_txt = os.stat(create_file_txt[1])[5]
-    self.assertTrue(uid == uid_check_file_txt)
-    self.assertTrue(gid == gid_check_file_txt)
+    self.assertEquals(uid, uid_check_file_txt)
+    self.assertEquals(gid, gid_check_file_txt)
 
     shutil.rmtree(root_slaptest)
 

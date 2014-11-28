@@ -49,16 +49,14 @@ def mkdir_p(path, mode=0o700):
 
 
 def chownDirectory(path, uid, gid):
-  if os.getuid() == 0:
-    subprocess.check_call(['/bin/chown', '-R', '%s:%s' % (uid, gid), path])
-  else:
-    # we are probably inside webrunner
-    chgrp_location = '/bin/chgrp'
-    if not os.path.exists(chgrp_location):
-      chgrp_location = '/usr/bin/chgrp'
-    if not os.path.exists(chgrp_location):
-      chgrp_location = 'chgrp'
-    subprocess.check_call([chgrp_location, '-R', '%s' % gid, path])
+  if os.getuid() != 0:
+    # we are probably inside of a webrunner
+    return
+  # find /opt/slapgrid -not -user 1000 -exec chown slapsoft:slapsoft {} \;
+  subprocess.check_call([
+      '/usr/bin/find', path, '-not', '-user', str(uid), '-exec',
+      '/bin/chown', '%s:%s' % (uid, gid), '{}', ';'
+  ])
 
 
 def parse_certificate_key_pair(html):
