@@ -2,23 +2,44 @@
 LC_ALL=C
 export LC_ALL
 umask 077
+
+srv_directory={{ directory['srv'] }}
+
 sync_element () {
   path=$1
   backup_path=$2
   shift 2
   element_list=$*
-  if [ -e  {{ directory['srv'] }}/exporter.exclude ]; then
-    touch {{ directory['srv'] }}/exporter.exclude
-  fi
+
+  # Concatenate the exclude file of each partition of webrunner
+  # to create a global exclude file.
+  for partition in $srv_directory/runner/instance/slappart*
+  do
+    exclude_file="$partition/srv/exporter.exclude"
+    if [ -e "$exclude_file" ]; then
+      partition_exclude_content_relative=$(cat "$exclude_file")
+      # For every line of the local exclude file, add the absolute path
+      for line in "$partition_exclude_content_relative"
+      do
+        if [ ! -z "$line" ]; then
+          exclude_content="$exclude_content\ninstance/$(basename $partition)/$line"
+       fi
+      done
+    fi
+  done
+  echo "$exclude_content" > $srv_directory/exporter.exclude
+
   for element in $element_list
   do
+    echo "Changing current directory to $path."
     cd $path;
     if [ -f $element ] || [ -d $element ]; then
-       {{ rsync_binary }} -rlptgov --safe-links --exclude-from={{ directory['srv'] }}/exporter.exclude --delete --delete-excluded $element  $backup_path;
+       echo "Running {{ rsync_binary }} -rlptgov --safe-links --exclude-from=$srv_directory/exporter.exclude --delete --delete-excluded $element  $backup_path"
+       {{ rsync_binary }} -rlptgov --safe-links --exclude-from=$srv_directory/exporter.exclude --delete --delete-excluded $element  $backup_path;
     fi
   done
 }
-sync_element {{ directory['srv'] }}/runner {{ directory['backup'] }}/runner/ instance project proxy.db
+sync_element $srv_directory/runner {{ directory['backup'] }}/runner/ instance project proxy.db
 # We sync .* appart
 date +%s -u > {{ directory['etc'] }}/.resilient-timestamp
 cp -r {{ directory['etc'] }}/.??* {{ directory['backup'] }}/etc/
