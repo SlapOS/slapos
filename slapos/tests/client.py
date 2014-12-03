@@ -80,7 +80,7 @@ class TestClient(unittest.TestCase):
 
     def fake_get(software_product):
       raise AttributeError()
-    self.product_collection.get = fake_get
+    self.product_collection.__getattr__ = fake_get
 
     self.assertRaises(
         SystemExit,
