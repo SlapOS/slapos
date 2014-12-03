@@ -5,6 +5,8 @@ Changes
 ------------------
 
  * slapos.grid: do not ALWAYS sleep for promise_timeout. Instead, poll often, and continue if promise finished. This change allows a two-folds speed improvement in processing partitions.
+ * slapos.format: don't chown recursively Software Releases.
+ * slapos.util: use find to chown in chownDirectory.
 
 1.3.4 (2014-11-26)
 ------------------
