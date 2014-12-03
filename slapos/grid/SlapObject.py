@@ -530,7 +530,7 @@ class Partition(object):
     os.chown(config_location, -1, int(gid))
     if len(bootstrap_candidate_list) == 0:
       buildout_binary = os.path.join(self.software_path, 'bin', 'buildout')
-      self.logger.warning("Falling back to default buildout %r" %
+      self.logger.info("Falling back to default buildout %r" %
         buildout_binary)
     else:
       if len(bootstrap_candidate_list) != 1:
