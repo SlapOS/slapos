@@ -541,18 +541,27 @@ class Slapgrid(object):
         process_handler.stdin.close()
         process_handler.stdin = None
 
-        time.sleep(self.promise_timeout)
-
-        if process_handler.poll() is None:
+        # Check if the promise finished every tenth of second,
+        # but timeout after promise_timeout.
+        sleep_time = 0.1
+        increment_limit = int(self.promise_timeout / sleep_time)
+        for current_increment in range(0, increment_limit):
+          if process_handler.poll() is None:
+            time.sleep(sleep_time)
+            continue
+          if process_handler.poll() == 0:
+            # Success!
+            break
+          else:
+            stderr = process_handler.communicate()[1]
+            if stderr is None:
+              stderr = "No error output from '%s'." % promise
+            else:
+              stderr = "Promise '%s':" % promise + stderr
+            raise Slapgrid.PromiseError(stderr)
+        else:
           process_handler.terminate()
           raise Slapgrid.PromiseError("The promise '%s' timed out" % promise)
-        elif process_handler.poll() != 0:
-          stderr = process_handler.communicate()[1]
-          if stderr is None:
-            stderr = "No error output from '%s'." % promise
-          else:
-            stderr = "Promise '%s':" % promise + stderr
-          raise Slapgrid.PromiseError(stderr)
 
     if not promise_present:
       self.logger.info("No promise.")
