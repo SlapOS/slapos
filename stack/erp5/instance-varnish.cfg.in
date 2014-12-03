@@ -6,6 +6,7 @@ parts =
   varnish-instance
   cron
   cron-entry-logrotate
+  resiliency-exclude-file
   {# When web_checker related parameter is given, web_checker will be enabled.#}
 {% if web_checker_parameter is defined %}
   web-checker
@@ -110,6 +111,12 @@ rotate-num = 30
 sharedscripts = true
 notifempty = true
 create = true
+
+[resiliency-exclude-file]
+# Generate rdiff exclude file in case of resiliency
+recipe = collective.recipe.template
+input = inline: **
+output = ${rootdirectory:srv}/exporter.exclude
 
 [basedirectory]
 recipe = slapos.cookbook:mkdirectory

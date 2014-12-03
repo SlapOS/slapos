@@ -9,6 +9,7 @@ parts =
   cron-entry-mariadb-backup
   cron-entry-mariadb-backup-expire
   binary-link
+  resiliency-exclude-file
   promise
 
 eggs-directory = {{ eggs_directory }}
@@ -188,6 +189,13 @@ link-binary =
   {{ grep_location }}/bin/grep
   {{ sed_location }}/bin/sed
   {{ mariadb_location }}/bin/mysql
+
+
+[resiliency-exclude-file]
+# Generate rdiff exclude file in case of resiliency
+recipe = collective.recipe.template
+input = inline: srv/mariadb/**
+output = ${rootdirectory:srv}/exporter.exclude
 
 [rootdirectory]
 recipe = slapos.cookbook:mkdirectory

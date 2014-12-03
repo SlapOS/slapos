@@ -146,6 +146,15 @@ link-binary =
   {{ parameter_dict['dmtx-utils'] }}/bin/dmtxwrite
 
 #############################
+# Resiliency
+#############################
+[resiliency-exclude-file]
+# Generate rdiff exclude file in case of resiliency
+recipe = collective.recipe.template
+input = inline: srv/zodb/**
+output = ${directory:srv}/exporter.exclude
+
+#############################
 # CA
 #############################
 [cadirectory]
@@ -524,6 +533,7 @@ parts =
   cron-entry-logrotate
   certificate-authority
   erp5-certificate-authority
+  resiliency-exclude-file
   tidstorage
   cron-entry-tidstorage-backup
   logrotate-entry-tidstorage
