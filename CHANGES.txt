@@ -1,6 +1,11 @@
 Changes
 =======
 
+1.3.5 (2014-12-03)
+------------------
+
+ * slapos.grid: do not ALWAYS sleep for promise_timeout. Instead, poll often, and continue if promise finished. This change allows a two-folds speed improvement in processing partitions.
+
 1.3.4 (2014-11-26)
 ------------------
 
