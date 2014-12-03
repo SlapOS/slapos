@@ -31,12 +31,24 @@ restore_element  {{ directory['backup'] }}/etc/ {{ directory['etc'] }} config.js
 cp -r {{ directory['backup'] }}/etc/.??* {{ directory['etc'] }};
 {{ curl_binary }} --insecure -vg6L --max-time 5  {{ backend_url }}/isSRReady;
 
-if [ -e  $srv_directory/runner-import-restore ]; then
-  touch $srv_directory/runner-import-restore
-  chmod +x $srv_directory/runner-import-restore
-fi
 
 # Invoke arbitrary script to perform specific restoration
 # procedure.
+runner_import_restore=$srv_directory/runner-import-restore
+if [ ! -e "$runner_import_restore" ]; then
+  touch $runner_import_restore
+  chmod +x $runner_import_restore
+fi
+echo "Running $runner_import_restore script..."
 $srv_directory/runner-import-restore
 
+
+# Invoke defined scripts for each partition inside of slaprunner
+for partition in $srv_directory/runner/instance/slappart*/
+do
+  script=$partition/srv/runner-import-restore
+  if [ -e "$script" ]; then
+    echo "Running $script script..."
+    $script
+  fi
+done
