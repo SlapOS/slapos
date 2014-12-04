@@ -1,7 +1,3 @@
-{% if slap_software_type not in (
-    mysql_storage_software_type,
-    admin_software_type,
-) -%}
 {% macro section(name) %}{% do part_list.append(name) %}{{ name }}{% endmacro -%}
 {% set part_list = [] -%}
 {% set master_list = [] -%}
@@ -9,7 +5,6 @@
 [request-common]
 recipe = slapos.cookbook:request
 software-url = ${slap-connection:software-release-url}
-sla = computer_guid
 sla-computer_guid = ${slap-connection:computer-id}
 server-url = ${slap-connection:server-url}
 key-file = ${slap-connection:key-file}
@@ -17,22 +12,15 @@ cert-file = ${slap-connection:cert-file}
 computer-id = ${slap-connection:computer-id}
 partition-id = ${slap-connection:partition-id}
 config-cluster = {{ slapparameter_dict['cluster'] }}
-config-partitions = {{ slapparameter_dict.get('partitions', 12) }}
-config-replicas = {{ slapparameter_dict.get('replicas', 0) }}
-
-[request-config]
-base = cluster
-master = partitions replicas
-node = masters
 
 [node-base]
 < = request-common
-config = ${request-config:base} ${request-config:node}
 config-masters = ${all-masters:addresses}
 
 [mysql-storage-base]
 < = request-common
-config = ${request-config:base} ${request-config:master}
+config-partitions = {{ slapparameter_dict.get('partitions', 12) }}
+config-replicas = {{ slapparameter_dict.get('replicas', 0) }}
 software-type = {{ mysql_storage_software_type }}
 
 [mysql-storage-request-base]
@@ -61,7 +49,6 @@ name = {{ section_id }}
 < = mysql-storage-base
 	node-base
 name = {{ section_id }}
-config = ${request-config:base} ${request-config:master} ${request-config:node}
 
 {% endfor -%}
 {% for node_number in range(slapparameter_dict.get('admin-count', 1)) -%}
@@ -73,12 +60,9 @@ name = {{ section_id }}
 
 {% endfor -%}
 [buildout]
-parts = 
+parts =
 	{{ part_list | join('\n\t') }}
 	publish
-eggs-directory = {{ eggs_directory }}
-develop-eggs-directory = {{ develop_eggs_directory }}
-offline = true
 
 [all-masters]
 addresses = {% for master in master_list -%}
@@ -91,4 +75,3 @@ addresses = {% for admin in admin_list -%}
 {{  '${' + admin + ':connection-admin}' -}}
 {%  if not loop.last %} {% endif -%}
 {% endfor %}
-{% endif -%}

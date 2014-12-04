@@ -100,13 +100,18 @@ products {{ parameter_dict['instance-products'] }}
   developers {{ developer_list | join(' ') }}
 </ERP5Type>
 
-{%- endif %}
-{% for db_name, mount_point, cache_size, storage_type, storage_dict in parameter_dict['zodb-list'] -%}
-<zodb_db {{ db_name }}>
-{%-   if cache_size >= 0 %}
-  cache-size {{ cache_size }}
-{%-   endif %}
-  mount-point {{ mount_point }}
+{% endif -%}
+{% for m in parameter_dict['import-list'] -%}
+%import {{ m }}
+{% endfor -%}
+{% for zodb_dict in parameter_dict['zodb-list'] %}
+<zodb_db {{ zodb_dict.pop('name', 'main') }}>
+{%- set storage_type = zodb_dict.pop('storage-type', 'NEOStorage') %}
+{%- set storage_dict = zodb_dict.pop('storage-dict', {}) %}
+  mount-point {{ zodb_dict.pop('mount-point', '/') }}
+{%- for key, value in zodb_dict.iteritems() %}
+  {{ key }} {{ value }}
+{%-   endfor %}
   <{{ storage_type }}>
 {%-   for key, value in storage_dict.iteritems() %}
     {{ key }} {{ value }}

@@ -197,6 +197,7 @@ ListenIP=%(ip)s
 # Range: 1-30
 # Default:
 # Timeout=3
+Timeout=15
 
 ### Option: Include
 #	You may include individual files or all files in a directory in the configuration file.

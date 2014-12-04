@@ -54,7 +54,7 @@ pidfile = $${resilient-directory:pid}/$${:name}.pid
 recipe = slapos.cookbook:cron.d
 name = backup
 frequency = $${slap-parameter:resiliency-backup-periodicity}
-command = $${notifier-exporter:wrapper}
+command = $${notifier-exporter:wrapper} --transaction-id `date +%s`
 
 [slap-parameter]
 # In cron.d format (i.e things like */15 * * * * are accepted).

@@ -1,0 +1,15 @@
+--- ATLAS/CONFIG/src/config.c.orig	2014-07-10 18:22:02.000000000 +0200
++++ ATLAS/CONFIG/src/config.c	2014-08-22 13:28:04.990976246 +0200
+@@ -455,10 +455,10 @@
+ 
+    if (OSIsWin(OS))
+       OSextra = "-lgcc";
+-   i = strlen(path) + strlen(libnam) + strlen(OSextra) + 2 + 2 + 1 + 1 + 1;
++   i = strlen(path) * 2 + strlen(libnam) + strlen(OSextra) + 2 + 11 + 2 + 1 + 1 + 1 + 1;
+    sp = malloc(i*sizeof(char));
+    assert(sp);
+-   sprintf(sp, "-L%s -l%s %s", path, libnam, OSextra);
++   sprintf(sp, "-L%s -Wl,-rpath=%s -l%s %s", path, path, libnam, OSextra);
+    return(sp);
+ }
+ 

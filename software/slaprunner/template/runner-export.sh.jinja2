@@ -1,6 +1,6 @@
 #!{{ shell_binary }}
-LANG=en_US
-export $LANG
+LC_ALL=C
+export LC_ALL
 umask 077
 sync_element () {
   path=$1
@@ -11,7 +11,7 @@ sync_element () {
   do
     cd $path;
     if [ -f $element ] || [ -d $element ]; then
-       {{ rsync_binary }} -avz --safe-links --delete $element  $backup_path;
+       {{ rsync_binary }} -rlptgov --safe-links --delete $element  $backup_path;
     fi
   done
 }
@@ -23,3 +23,5 @@ sync_element {{ directory['etc'] }}  {{ directory['backup'] }}/etc/ config.json 
 if [ -d {{ directory['backup'] }}/runner/software ]; then
   rm {{ directory['backup'] }}/runner/software/*
 fi
+
+cd {{ directory['backup'] }} && find -type f ! -name backup.signature -print0 | xargs -P4 -0 sha256sum | LC_ALL=C sort -k 66 > backup.signature

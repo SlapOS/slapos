@@ -1,0 +1,11 @@
+#!/bin/sh
+
+export PATH=%(path)s
+
+export ENO_HOST=%(openstack_url)s
+export ENO_USER=%(userid)s
+export ENO_PASS=%(password)s
+export ENO_VERSION=v1.1
+export ENO_TENANT=%(tenantname)s
+
+testos --host $ENO_HOST --password $ENO_PASS --user $ENO_USER --version $ENO_VERSION --tenant $ENO_TENANT $1 $2 $3 $4 $5 $6 $7

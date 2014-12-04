@@ -24,6 +24,8 @@ parts +=
   cron-entry-prepare-software
   deploy-instance-parameters
   instance-software-type
+  bash-profile
+  supervisord-wrapper
 # have to repeat the next one, as it's not inherited from pbsready-import
   import-on-notification
 ## Monitoring part

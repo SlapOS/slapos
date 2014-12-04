@@ -1,0 +1,17 @@
+#!/bin/bash
+
+# exit on error
+# set -e
+
+source environment.sh
+
+hdfs dfs -mkdir var/wikipedia/input
+
+RAW_DATA=var/wikipedia/raw-data
+
+for file in `ls $RAW_DATA`; do
+  hdfs dfs -put $RAW_DATA/$file var/wikipedia/input
+done
+
+
+

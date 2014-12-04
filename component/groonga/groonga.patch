@@ -1,0 +1,15 @@
+diff --git a/lib/ii.c b/lib/ii.c
+index d10b84d..e20bdce 100644
+--- a/lib/ii.c
++++ b/lib/ii.c
+@@ -5695,7 +5695,9 @@ grn_ii_similar_search(grn_ctx *ctx, grn_ii *ii,
+     ? (optarg->similarity_threshold > GRN_HASH_SIZE(h)
+        ? GRN_HASH_SIZE(h)
+        : optarg->similarity_threshold)
+-    : (GRN_HASH_SIZE(h) >> 3) + 1;
++    : (GRN_HASH_SIZE(h) < 8
++       ? GRN_HASH_SIZE(h)
++       : ((GRN_HASH_SIZE(h) - 8) >> 3) + 8);
+   if (GRN_HASH_SIZE(h)) {
+     grn_id j, id;
+     int w2, rep;

@@ -15,7 +15,7 @@
       "type": "string"
     },
     "web-checker": {
-      "description": "Controls automated cache checker, disabled if null or empty"
+      "description": "Controls automated cache checker, disabled if null or empty",
       "properties": {
         "frontend-url": {
           "description": "Override entry-point-url web checker will check the HTTP headers of all links in the web site, '%(ip)s' and '%(port)s' being substituted with varnish's listening ip and port, respectively",

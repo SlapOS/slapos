@@ -1,0 +1,26 @@
+#!/bin/bash
+
+VM_DIR={{ directory['srv'] }}
+BACKUP_DIR={{ directory['backup'] }}
+VM_FILE=virtual.qcow2
+LC_ALL=C
+export LC_ALL
+umask 077
+
+write_backup_proof () {
+  cd {{ directory['backup'] }}
+  find -type f ! -name backup.signature ! -wholename "./rdiff-backup-data/*" -print0 | xargs -P4 -0 sha256sum  | LC_ALL=C sort -k 66 > {{ directory['srv'] }}/proof.signature
+  diff -ruw {{ directory['backup'] }} {{ directory['srv'] }}/proof.signature > {{ directory['srv'] }}/backup.diff
+}
+
+# For now we just make the diff before 
+write_backup_proof
+
+if [ -f "$BACKUP_DIR/${VM_FILE}.gz" ]; then
+    {{ gzip_binary }} -t "$BACKUP_DIR/${VM_FILE}.gz" || exit 10
+    {{ zcat_binary }} "$BACKUP_DIR/${VM_FILE}.gz" > $VM_DIR/$VM_FILE
+else
+    rm $VM_DIR/$VM_FILE
+    cp $BACKUP_DIR/$VM_FILE $VM_DIR/$VM_FILE
+fi
+

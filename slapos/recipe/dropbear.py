@@ -112,6 +112,8 @@ class Recipe(GenericBaseRecipe):
     dropbear_cmd.extend(['-p', binding_address])
     # Single user mode
     dropbear_cmd.append('-n')
+    # Keep connection alive for 5 minutes
+    dropbear_cmd.extend(['-K', '300'])
 
     if 'dss-keyfile' in self.options:
       dropbear_cmd.extend(['-d', self.options['dss-keyfile']])

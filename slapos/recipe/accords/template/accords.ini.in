@@ -1,0 +1,35 @@
+# REST host (default: 127.0.0.1)
+resthost=%(listen_ip)s
+
+# REST port (default: 8086)
+#restport=8086
+
+# Target (default: ./accords.xml)
+#target=accords.xml
+
+# Acitvate TLS (default: 0)
+#tls=0
+
+# Activate monitoring (default: 1)
+#monitor=1
+
+# Trace (default: 1)
+#trace=1
+
+# Threads (default:1)
+#threads=1
+
+# Be verbose (default: 1)
+#verbose=0
+
+# Debug (default: 1)
+#debug=1
+
+# Domain (default: occi)
+#domain=occi
+
+# Operator (default: accords)
+#operator=accords
+
+# Password (default: co-system)
+#password=co-system

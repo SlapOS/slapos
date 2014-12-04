@@ -7,6 +7,9 @@ Introduction
 This software release is used to deploy Slaprunner instances.
 Slaprunner is an all-in-one IDE used to develop and test profiles and recipes for SlapOS.
 
+You can learn how to use it here :
+http://community.slapos.org/wiki/slapos-Wiki.Home/developer-Lecture.Web.Runner.Extended
+
 Parameters
 ----------
 
@@ -127,11 +130,11 @@ Example :
 Git repositories :
 ------------------
 
-It is easy to give access to your git repository/ies to everyone, or to clone it on your own computer. For this, there are 2 urls to remember:
-  - For read only, you can clone : https://[IPV6]:PORT/git-public/YourRepo.git/
-  - For read and write access, using your runner account : https://[IPV6]:PORT/git/YourRepo.git/
+It is easy to give access to your git repository/ies to everyone, or to clone it on your own computer. For this, fetch the git_url parameter returned by your webrunner instance. It should look like that : https://[IPV6]:PORT/git/YourRepo.git/
 
-To create the repo, go in the folder srv/runner/project and initiate a new git repo (git init/clone --bare XXX).
+To create the repo, go to the folder srv/runner/project and initiate a new git repo (git init/clone --bare YourRepo). Then, to clone the repo, just append its name to the previous URL.
+
+Please notice that your repositories are in public access for reading. However, an account is needed to push to the repository (use your webrunner account, or create a new user in the parameters section of the webrunner).
 
 For the moment, the PORT is the port of monitoring, which is 9685.
 
@@ -147,6 +150,7 @@ List of ports used by the webrunner:
 8949 : shellinabox
 9684 : apache (monitoring of slaprunner, git access)
 22222 : dropbear
+39986 : supervisord
 50000 : slapproxy
 50005 : webrunner (flask app), webdav access
 

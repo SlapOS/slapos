@@ -1,0 +1,17 @@
+<os_configs>
+  <os_config
+    id="e1f892e3-slap-slap-slap-9354b95d3b17"
+    name="slaposrecipe"
+    description="Configuration of Account used by slapos recipe"
+    user="%(userid)s"
+    password="%(password)s"
+    authenticate=""
+    agent="CompatibleOne/OpenStackClient/1.0a.0.01"
+    host="%(openstack_url)s"
+    version="v1.1"
+    namespace="%(domain)s"
+    base=""
+    tls="0"
+    current="0"
+  />
+</os_configs>

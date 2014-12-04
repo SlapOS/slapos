@@ -36,6 +36,7 @@ from slapos.recipe.librecipe import GenericSlapRecipe
 from slapos.recipe.dropbear import KnownHostsFile
 from slapos.recipe.notifier import Notify
 from slapos.recipe.notifier import Callback
+from slapos.recipe.librecipe import shlex
 
 
 def promise(args):
@@ -61,6 +62,161 @@ def promise(args):
 
 
 class Recipe(GenericSlapRecipe, Notify, Callback):
+
+  def wrapper_push(self, remote_schema, local_dir, remote_dir, rdiff_wrapper_path):
+    # Create a simple rdiff-backup wrapper that will push
+
+    template = textwrap.dedent("""\
+        #!/bin/sh
+        #
+        # Push data to a PBS *-import instance.
+        #
+
+        LC_ALL=C
+        export LC_ALL
+        RDIFF_BACKUP=%(rdiffbackup_binary)s
+        until $RDIFF_BACKUP \\
+                --remote-schema %(remote_schema)s \\
+                --restore-as-of now \\
+                --force \\
+                %(local_dir)s \\
+                %(remote_dir)s; do
+          echo "repeating rdiff-backup..."
+          sleep 10
+        done
+        """)
+
+    template_dict = {
+      'rdiffbackup_binary': shlex.quote(self.options['rdiffbackup-binary']),
+      'remote_schema': shlex.quote(remote_schema),
+      'remote_dir': shlex.quote(remote_dir),
+      'local_dir': shlex.quote(local_dir)
+    }
+
+    return self.createFile(
+      name=rdiff_wrapper_path,
+      content=template % template_dict,
+      mode=0o700
+    )
+
+
+  def wrapper_pull(self, remote_schema, local_dir, remote_dir, rdiff_wrapper_path, remove_backup_older_than):
+    # Wrap rdiff-backup call into a script that checks consistency of backup
+    # We need to manually escape the remote schema
+
+    template = textwrap.dedent("""\
+        #!/bin/sh
+        #
+        # Pull data from a PBS *-export instance.
+        #
+
+        sigint()
+        {
+          exit 1
+        }
+
+        trap sigint SIGINT  # we can CTRL-C for ease of debugging
+
+        LC_ALL=C
+        export LC_ALL
+        is_first_backup=$(test -d %(rdiff_backup_data)s || echo yes)
+        RDIFF_BACKUP=%(rdiffbackup_binary)s
+
+        TMPDIR=%(tmpdir)s
+        BACKUP_DIR=%(local_dir)s
+        CORRUPTED_MSG="^Warning:\ Computed\ SHA1\ digest\ of\ "
+        CANTFIND_MSG="^Warning:\ Cannot\ find\ SHA1\ digest\ for\ file\ "
+        CORRUPTED_FILE=$TMPDIR/$$.rdiff_corrupted
+        CANTFIND_FILE=$TMPDIR/$$.rdiff_cantfind
+
+        SUCCEEDED=false
+        while ! $SUCCEEDED; do
+
+            # not using --fix-corrupted can lead to an infinite loop
+            # in case of manual changes to the backup repository.
+
+            CORRUPTED_ARGS=""
+            if [ "$1" = "--fix-corrupted" ]; then
+                VERIFY=$($RDIFF_BACKUP --verify $BACKUP_DIR 2>&1 >/dev/null)
+                echo "$VERIFY" | egrep "$CORRUPTED_MSG" | sed "s/$CORRUPTED_MSG//g" > $CORRUPTED_FILE
+
+                # Sometimes --verify reports this spurious warning:
+                echo "$VERIFY" | egrep "$CANTFIND_MSG" | sed "s/$CANTFIND_MSG\(.*\),/--always-snapshot\ '\\1'/g" > $CANTFIND_FILE
+
+                # There can be too many files, better not to provide them through separate command line parameters
+                CORRUPTED_ARGS="--always-snapshot-fromfile $CORRUPTED_FILE --always-snapshot-fromfile $CANTFIND_FILE"
+
+                if [ -s "$CORRUPTED_FILE" -o -s "$CANTFIND_FILE" ]; then
+                    echo Retransmitting $(cat "$CORRUPTED_FILE" "$CANTFIND_FILE" | wc -l) corrupted/missing files
+                else
+                    echo "No corrupted or missing files to retransmit"
+                fi
+            fi
+
+            $RDIFF_BACKUP \\
+                    $CORRUPTED_ARGS \\
+                    --remote-schema %(remote_schema)s \\
+                    %(remote_dir)s \\
+                    $BACKUP_DIR
+
+            [ "$CORRUPTED_ARGS" ] && rm -f "$CORRUPTED_FILE" "$CANTFIND_FILE"
+
+            if [ ! $? -eq 0 ]; then
+                # Check the backup, go to the last consistent backup, so that next
+                # run will be okay.
+                echo "Checking backup directory..."
+                $RDIFF_BACKUP --check-destination-dir $BACKUP_DIR
+                if [ ! $? -eq 0 ]; then
+                    # Here, two possiblities:
+                    if [ is_first_backup ]; then
+                        continue
+                        # The first backup failed, and check-destination as well.
+                        # we may want to remove the backup.
+                    else
+                        continue
+                        # The backup command has failed, while transferring an increment, and check-destination as well.
+                        # XXX We may need to publish the failure and ask the the equeue, re-run this script again,
+                        # instead do a push to the clone.
+                    fi
+                fi
+            else
+                # Everything's okay, cleaning up...
+                $RDIFF_BACKUP --remove-older-than %(remove_backup_older_than)s --force $BACKUP_DIR
+            fi
+
+            SUCCEEDED=true
+
+            if [ -e %(backup_signature)s ]; then
+              cd $BACKUP_DIR
+              find -type f ! -name backup.signature ! -wholename "./rdiff-backup-data/*" -print0 | xargs -P4 -0 sha256sum  | LC_ALL=C sort -k 66 > ../proof.signature
+              cmp backup.signature ../proof.signature || SUCCEEDED=false
+              diff -ruw backup.signature ../proof.signature > ../backup.diff
+              # XXX If there is a difference on the backup, we should publish the
+              # failure and ask the equeue, re-run this script again,
+              # instead do a push it to the clone.
+            fi
+
+            $SUCCEEDED || find $BACKUP_DIR -name rdiff-backup.tmp.* -exec rm -rf {} \;
+        done
+        """)
+
+    template_dict = {
+      'rdiffbackup_binary': shlex.quote(self.options['rdiffbackup-binary']),
+      'rdiff_backup_data': shlex.quote(os.path.join(local_dir, 'rdiff-backup-data')),
+      'backup_signature': shlex.quote(os.path.join(local_dir, 'backup.signature')),
+      'remote_schema': shlex.quote(remote_schema),
+      'remote_dir': shlex.quote(remote_dir),
+      'local_dir': shlex.quote(local_dir),
+      'tmpdir': '/tmp',
+      'remove_backup_older_than': shlex.quote(remove_backup_older_than)
+    }
+
+    return self.createFile(
+      name=rdiff_wrapper_path,
+      content=template % template_dict,
+      mode=0o700
+    )
+
 
   def add_slave(self, entry, known_hosts_file):
     path_list = []
@@ -88,86 +244,36 @@ class Recipe(GenericSlapRecipe, Notify, Callback):
                                       promise_dict)
     path_list.append(promise)
 
-    host = parsed_url.hostname
-    known_hosts_file[host] = entry['server-key']
+    known_hosts_file[parsed_url.hostname] = entry['server-key']
 
     notifier_wrapper_path = os.path.join(self.options['wrappers-directory'], slave_id)
     rdiff_wrapper_path = notifier_wrapper_path + '_raw'
 
     # Create the rdiff-backup wrapper
-    # It is useful to separate it from the notifier so that we can run it
-    # Manually.
-    rdiffbackup_parameter_list = []
+    # It is useful to separate it from the notifier so that we can run it manually.
 
     # XXX use -y because the host might not yet be in the
     #     trusted hosts file until the next time slapgrid is run.
-    rdiffbackup_remote_schema = '%(ssh)s -y -p %%s %(user)s@%(host)s' % {
-            'ssh': self.options['sshclient-binary'],
-            'user': parsed_url.username,
-            'host': parsed_url.hostname,
-    }
-    remote_directory = '%(port)s::%(path)s' % {'port': parsed_url.port,
-                                               'path': parsed_url.path}
-    local_directory = self.createDirectory(self.options['directory'], entry['name'])
+    remote_schema = '{ssh} -y -K 300 -p %s {username}@{hostname}'.format(
+              ssh=self.options['sshclient-binary'],
+              username=parsed_url.username,
+              hostname=parsed_url.hostname
+            )
+    remote_dir = '{port}::{path}'.format(port=parsed_url.port, path=parsed_url.path)
+    local_dir = self.createDirectory(self.options['directory'], entry['name'])
 
     if slave_type == 'push':
-      # Create a simple rdiff-backup wrapper that will push
-      rdiffbackup_parameter_list.extend(['--remote-schema', rdiffbackup_remote_schema])
-      rdiffbackup_parameter_list.extend(['--restore-as-of', 'now'])
-      rdiffbackup_parameter_list.append('--force')
-      rdiffbackup_parameter_list.append(local_directory)
-      rdiffbackup_parameter_list.append(remote_directory)
-      comments = ['', 'Push data to a PBS *-import instance.', '']
-      rdiff_wrapper = self.createWrapper(
-          name=rdiff_wrapper_path,
-          command=self.options['rdiffbackup-binary'],
-          parameters=rdiffbackup_parameter_list,
-          comments=comments,
-          pidfile=os.path.join(self.options['run-directory'], '%s_raw.pid' % slave_id),
-      )
+      rdiff_wrapper = self.wrapper_push(remote_schema,
+                                        local_dir,
+                                        remote_dir,
+                                        rdiff_wrapper_path)
     elif slave_type == 'pull':
-      # Wrap rdiff-backup call into a script that checks consistency of backup
-      # We need to manually escape the remote schema
-      rdiffbackup_parameter_list.extend(['--remote-schema', '"%s"' % rdiffbackup_remote_schema])
-      rdiffbackup_parameter_list.append(remote_directory)
-      rdiffbackup_parameter_list.append(local_directory)
-      comments = ['', 'Pull data from a PBS *-export instance.', '']
-      rdiff_wrapper_template = textwrap.dedent("""\
-          #!/bin/sh
-          # %(comment)s
-          RDIFF_BACKUP="%(rdiffbackup_binary)s"
-          $RDIFF_BACKUP %(rdiffbackup_parameter)s
-          if [ ! $? -eq 0 ]; then
-              # Check the backup, go to the last consistent backup, so that next
-              # run will be okay.
-              echo "Checking backup directory..."
-              $RDIFF_BACKUP --check-destination-dir %(local_directory)s
-              if [ ! $? -eq 0 ]; then
-                  # Here, two possiblities:
-                  # * The first backup failed. It is safe to remove it since there is nothing valuable there.
-                  # * The backup has been complete, but is now in a really weird state. Not safe to remove it.
-                  echo "Impossible to check backup: we move it to a safe place."
-                  # XXX: bang
-                  mv %(local_directory)s %(local_directory)s.$(date +%%s)
-              fi
-          else
-              # Everything's okay, cleaning up...
-              $RDIFF_BACKUP --remove-older-than %(remove_backup_older_than)s --force %(local_directory)s
-          fi
-          """)
-      rdiff_wrapper_content = rdiff_wrapper_template % {
-              'comment': comments,
-              'rdiffbackup_binary': self.options['rdiffbackup-binary'],
-              'local_directory': local_directory,
-              'rdiffbackup_parameter': ' \\\n    '.join(rdiffbackup_parameter_list),
-              # XXX: only 10 increments is not enough by default.
-              'remove_backup_older_than': entry.get('remove-backup-older-than', '3B')
-      }
-      rdiff_wrapper = self.createFile(
-          name=rdiff_wrapper_path,
-          content=rdiff_wrapper_content,
-          mode=0700
-      )
+      # XXX: only 3 increments is not enough by default.
+      rdiff_wrapper = self.wrapper_pull(remote_schema,
+                                        local_dir,
+                                        remote_dir,
+                                        rdiff_wrapper_path,
+                                        entry.get('remove-backup-older-than', '3B'))
 
     path_list.append(rdiff_wrapper)
 
