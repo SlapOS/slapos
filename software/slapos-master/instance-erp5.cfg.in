@@ -280,6 +280,3 @@ parts =
   apache-certificate-authority
   fix-ca-folder
   publish
-eggs-directory = {{ eggs_directory }}
-develop-eggs-directory = {{ develop_eggs_directory }}
-{% endif %}
