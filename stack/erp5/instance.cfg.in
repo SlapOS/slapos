@@ -72,6 +72,7 @@ extensions = jinja2.ext.do
 extra-context =
     key local_bt5_repository dynamic-template-erp5-parameters:local-bt5-repository
     key openssl_location :openssl-location
+openssl-location = {{ openssl_location }}
 
 [dynamic-template-balancer-parameters]
 apache = {{ apache_location }}

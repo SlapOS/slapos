@@ -238,4 +238,7 @@ hosts-dict = {{ '${' ~ zope_address_list_id_dict.keys()[0] ~ ':connection-hosts-
 {% endfor -%}
 
 [buildout]
-parts = publish
+parts = 
+  apache-certificate-authority
+  fix-ca-folder
+  publish
