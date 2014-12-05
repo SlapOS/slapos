@@ -105,6 +105,7 @@ instance-tests = ${:instance}/tests
 log = ${:var}/log
 logrotate-backup = ${:backup}/logrotate
 logrotate-entries = ${:etc}/logrotate.d
+promise = ${:etc}/promise
 run = ${:var}/run
 services = ${:etc}/run
 srv = ${buildout:directory}/srv
@@ -113,6 +114,7 @@ tmp = ${buildout:directory}/tmp
 var = ${buildout:directory}/var
 zodb = ${:srv}/zodb
 zodb-backup = ${:backup}/zodb
+zodb-recovery-test = ${:srv}/zodbrecoverytest
 
 #############################
 # Binary symlinking
@@ -148,11 +150,56 @@ link-binary =
 #############################
 # Resiliency
 #############################
+# Used for ERP5 resiliency or (more probably)
+# webrunner resiliency with erp5 inside.
 [resiliency-exclude-file]
 # Generate rdiff exclude file in case of resiliency
 recipe = collective.recipe.template
 input = inline: srv/zodb/**
 output = ${directory:srv}/exporter.exclude
+
+[resiliency-after-import-script]
+# Generate after import script used by importer instance of webrunner
+recipe = collective.recipe.template
+input = inline: #!/bin/sh
+  # DO NOT RUN THIS SCRIPT ON PRODUCTION INSTANCE
+  # OR ZODB DATA WILL BE ERASED.
+
+  # This script will restore the repozo backup to the real
+  # zodb location. It is launched by the clone (importer) instance of webrunner
+  # in the end of the import script.
+
+  # Depending on the output, it will create a file containing
+  # the status of the restoration (success or failure).
+  zodb_directory="${directory:zodb}"
+  zodb_backup_directory="${directory:zodb-backup}"
+  repozo="${tidstorage:repozo-binary}"
+  EXIT_CODE=0
+  {% for zeo_id, zeo_configuration_list in json['zeo'].iteritems() -%}
+  {%   for zeo_slave in zeo_configuration_list -%}
+  storage_name="{{ zeo_slave['storage-name'] }}"
+  zodb_path="$storage_name.fs"
+  pid_file=${zeo-instance-{{ zeo_id }}:pid-path}
+  if [ -e "$pid_file" ]; then
+    pid=$(cat $pid_file) > /dev/null 2>&1
+    if kill -0 "$pid"; then
+      echo "Zeo is already running with pid $pid. Aborting."
+      exit 1
+    fi
+  fi
+  echo "Removing $zodb_path..."
+  echo "Restoring $storage_name into $zodb_path..."
+  $repozo --recover --output="$zodb_directory/$zodb_path" --repository="$zodb_backup_directory/$storage_name"
+  CURRENT_EXIT_CODE=$?
+  if [ ! "$CURRENT_EXIT_CODE"="0" ]; then
+    EXIT_CODE="$CURRENT_EXIT_CODE"
+    echo "$storage_name Backup restoration failed."
+  fi
+  {%   endfor -%}
+  {% endfor -%}
+  exit $EXIT_CODE
+output = ${directory:srv}/runner-import-restore
+mode = 755
 
 #############################
 # CA
@@ -534,6 +581,7 @@ parts =
   certificate-authority
   erp5-certificate-authority
   resiliency-exclude-file
+  resiliency-after-import-script
   tidstorage
   cron-entry-tidstorage-backup
   logrotate-entry-tidstorage

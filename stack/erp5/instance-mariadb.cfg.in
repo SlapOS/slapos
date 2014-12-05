@@ -10,6 +10,7 @@ parts =
   cron-entry-mariadb-backup-expire
   binary-link
   resiliency-exclude-file
+  resiliency-after-import-script
   promise
 
 eggs-directory = {{ eggs_directory }}
@@ -196,6 +197,13 @@ link-binary =
 recipe = collective.recipe.template
 input = inline: srv/mariadb/**
 output = ${rootdirectory:srv}/exporter.exclude
+
+[resiliency-after-import-script]
+# Generate after import script used by importer instance of webrunner
+recipe = collective.recipe.template
+input = {{ mariadb_resiliency_after_import_script }}
+output = ${rootdirectory:srv}/runner-import-restore
+mode = 755
 
 [rootdirectory]
 recipe = slapos.cookbook:mkdirectory
