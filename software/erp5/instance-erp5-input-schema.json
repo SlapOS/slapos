@@ -4,6 +4,17 @@
   "description": "Parameters to instantiate ERP5",
   "additionalProperties": false,
   "properties": {
+    "sla-dict": {
+      "description": "Where to request instances. Each key is a query string for criterions (e.g. \"computer_guid=foo\"), and each value is a list of partition references.",
+      "patternProperties": {
+        ".": {
+          "type": "array",
+          "items": { "type": "string" },
+          "uniqueItems": true
+        }
+      },
+      "type": "object"
+    },
     "site-id": {
       "description": "ERP5Site object's id",
       "default": "erp5",
@@ -60,7 +71,7 @@
       "description": "Front-end slave instance request parameters",
       "properties": {
         "software-url": {
-          "description": "Front-end's software type. If this parameter is the empty string, no front-end instance is requested.",
+          "description": "Front-end's software type. If this parameter is empty, no front-end instance is requested. Else, sla-dict must specify 'frontend' which is a special value matching all frontends (e.g. {\"instance_guid=bar\": [\"frontend\"]}).",
           "default": "",
           "type": "string"
         },
@@ -74,10 +85,6 @@
           "default": "RootSoftwareInstance",
           "type": ""
         },
-        "instance-guid": {
-          "description": "GUID of computer instance must be requested on. Mandatory if software-url is a non-empty string.",
-          "type": "string"
-        }
       },
       "type": "object"
     },
@@ -130,19 +137,11 @@
                 "default": 2200
               }]
             },
-            "computer-guid": {
-              "description": "GUID of computer instance must be requested on",
-              "type": "string"
-            }
           },
           "type": "object"
         }
       },
       "type": "object"
-    },
-    "kumofs-computer-guid": {
-      "description": "GUID of computer instance must be requested on",
-      "type": "string"
     },
     "kumofs": {
       "description": "Persistent memcached service",
@@ -151,20 +150,12 @@
       },
       "type": "object"
     },
-    "memcached-computer-guid": {
-      "description": "GUID of computer instance must be requested on",
-      "type": "string"
-    },
     "memcached": {
       "description": "Volatile memcached service",
       "additionalProperties": {
         "$ref": "./instance-kumofs-schema.json#properties"
       },
       "type": "object"
-    },
-    "cloudooo-computer-guid": {
-      "description": "GUID of computer instance must be requested on",
-      "type": "string"
     },
     "cloudooo": {
       "description": "Format conversion service",
@@ -173,10 +164,6 @@
       },
       "type": "object"
     },
-    "mariadb-computer-guid": {
-      "description": "GUID of computer instance must be requested on",
-      "type": "string"
-    },
     "mariadb": {
       "description": "Relational database service",
       "additionalProperties": {
@@ -184,26 +171,33 @@
       },
       "type": "object"
     },
-    "zodb-computer-guid": {
-      "description": "GUID of computer instance must be requested on",
-      "type": "string"
-    },
-    "zodb-software-type": {
-      "description": "Zope Object DataBase implementation",
-      "enum": ["zeo"],
-      "type": "string"
+    "zodb-zeo": {
+      "description": "Common settings ZEO servers",
+      "properties": {
+        "tcpv4-port": {
+          "allOf": [{
+            "$ref": "#/definitions/tcpv4port"
+          }, {
+            "description": "Start allocating ports at this value, going upward"
+          }]
+        },
+        "backup-periodicity": {
+          "description": "When to backup, specified in the same format as for systemd.time(7) calendar events (years & seconds not supported, DoW & DoM can not be combined). Enter 'never' to disable backups.",
+          "default": "daily",
+          "type": "string",
+        },
+        "tidstorage-timestamp-path": {
+          "description": "Path to backup timestamp file, occurrences of '%(backup)s' being replaced with the path to partition's srv/backup/tidstorage directory",
+          "default": "%(backup)s/repozo_tidstorage_timestamp.log",
+          "type": "string"
+        }
+      },
+      "type": "object"
     },
     "zodb": {
-      "description": "Zope Object DataBase service",
-      "oneOf": [
-        {"$ref": "./instance-zeo-schema.json#properties"}
-      ]
-    },
-    "zodb-extern": {
-      "description": "External ZODB Mountpoints. See https://github.com/zopefoundation/ZODB/blob/3.10/src/ZODB/component.xml for extra options.",
-      "minItems": 0,
+      "description": "Zope Object DataBase mountpoints. See https://github.com/zopefoundation/ZODB/blob/3.10/src/ZODB/component.xml for extra options.",
       "items": {
-        "required": ["storage_dict"],
+        "required": ["type"],
         "properties": {
           "name": {
             "description": "Database name",
@@ -215,13 +209,19 @@
             "default": "/",
             "type": "string"
           },
-          "storage-type": {
+          "type": {
             "description": "Storage type",
-            "default": "NEOStorage",
+            "enum": ["zeo", "neo"],
             "type": "string"
           },
+          "server": {
+            "description": "Instantiate a server. If missing, 'storage-dict' must contain the necessary properties to mount the ZODB.",
+            "oneOf": [
+              {"$ref": "./instance-zeo-schema.json#properties"}
+            ]
+          },
           "storage-dict": {
-            "description": "Storage configuration. For NEOStorage, 'logfile' is automatically set (see http://git.erp5.org/gitweb/neoppod.git/blob/HEAD:/neo/client/component.xml for other settings).",
+            "description": "Storage configuration. For NEO, 'logfile' is automatically set (see http://git.erp5.org/gitweb/neoppod.git/blob/HEAD:/neo/client/component.xml for other settings).",
             "patternProperties": {
               ".": {
                 "type": "string"
@@ -229,10 +229,10 @@
             },
             "type": "object"
           },
-          "patternProperties": {
-            ".": {
-              "type": "string"
-            }
+        },
+        "patternProperties": {
+          ".": {
+            "type": "string"
           }
         },
         "type": "object"

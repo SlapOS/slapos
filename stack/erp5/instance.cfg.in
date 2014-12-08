@@ -71,6 +71,7 @@ filename = instance-erp5.cfg
 extensions = jinja2.ext.do
 extra-context =
     key local_bt5_repository dynamic-template-erp5-parameters:local-bt5-repository
+    import urlparse urlparse
 
 [dynamic-template-balancer-parameters]
 apache = {{ apache_location }}
@@ -92,7 +93,6 @@ extra-context =
 
 [dynamic-template-zeo-parameters]
 buildout-bin-directory = {{ buildout_bin_directory }}
-findutils-location = {{ findutils_location }}
 
 [dynamic-template-zeo]
 < = jinja2-template-base

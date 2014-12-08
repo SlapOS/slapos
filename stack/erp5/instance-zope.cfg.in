@@ -1,11 +1,10 @@
 {% set use_ipv6 = slapparameter_dict.get('use-ipv6', False) -%}
 {% set next_port = slapparameter_dict['port-base'] -%}
 {% set site_id = slapparameter_dict['site-id'] -%}
-{% set storage_type = slapparameter_dict['zodb-storage-type'] -%}
+{% set zodb_dict = slapparameter_dict['zodb-dict'] -%}
 {% set node_id_base = slapparameter_dict['name'] -%}
 {% set part_list = [] -%}
 {% set publish_list = [] -%}
-{% set zodb_dict = slapparameter_dict.get('zodb-dict', {}) -%}
 {% set longrequest_logger_base_path = buildout_directory ~ '/var/log/longrequest_logger_' -%}
 {% macro section(name) %}{% do part_list.append(name) %}{{ name }}{% endmacro -%}
 {% set bin_directory = parameter_dict['buildout-bin-directory'] -%}
@@ -110,16 +109,6 @@ ipv4 = {{ ipv4 }}
 ipv6 = {{ ipv6 }}
 {% endif -%}
 
-{% if slapparameter_dict.get('tidstorage-ip') -%}
-[tidstorage]
-ipv4 = {{ dumps(slapparameter_dict['tidstorage-ip']) }}
-ipv4-port = {{ dumps(slapparameter_dict['tidstorage-port']) }}
-{% else -%}
-[tidstorage]
-ipv4 =
-ipv4-port =
-{% endif -%}
-
 {% set hosts_dict = {} -%}
 {% for alias, url in (
     ('erp5-memcached-volatile', slapparameter_dict['memcached-url']),
@@ -131,14 +120,11 @@ ipv4-port =
        urlparse.urlparse(url).hostname,
      )  -%}
 {%- endfor %}
-{# jinja2 does not support enumerate... -#}
-{% set catalog_counter = 0 %}
-{% for url in slapparameter_dict['mysql-url-list'] -%}
+{% for i, url in enumerate(slapparameter_dict['mysql-url-list']) -%}
 {%   do hosts_dict.__setitem__(
-       'erp5-catalog-' ~ catalog_counter,
+       'erp5-catalog-' ~ i,
        urlparse.urlparse(url).hostname,
      ) -%}
-{%   set catalog_counter = catalog_counter + 1 -%}
 {%- endfor %}
 {% do hosts_dict.update(slapparameter_dict['hosts-dict']) -%}
 [hosts-parameter]
@@ -182,20 +168,19 @@ bt5-repository =
 [zope-conf-parameter-base]
 ip = {{ ipv4 }}
 site-id = {{ site_id }}
-{% set zodb_list = slapparameter_dict.get('zodb-extern', []) -%}
-{% for key, (mount_point, cache_size, storage_dict) in zodb_dict.items() -%}
-{%   do zodb_list.append({'name': key, 'mount-point': mount_point, 'storage-type': storage_type, 'storage-dict': storage_dict}) -%}
-{%   if cache_size >= 0 -%}
-{%     do zodb_list[-1].__setitem__('cache-size', cache_size) -%}
-{%   endif -%}
+{% set storage_dict = {'neo': {}, 'zeo': slapparameter_dict.get('zodb-zeo', {})} -%}
+{% for name, zodb in zodb_dict.iteritems() -%}
+{%   do zodb.setdefault('storage-dict', {}).update(storage_dict[zodb['type']].get(name, {})) -%}
 {% endfor -%}
 developer-list = {{ dumps(slapparameter_dict['developer-list']) }}
 instance = ${directory:instance}
 instance-products = ${directory:instance-products}
 deadlock-path = /manage_debug_threads
 deadlock-debugger-password = {{ dumps(slapparameter_dict['deadlock-debugger-password']) }}
-tidstorage-ip = ${tidstorage:ipv4}
-tidstorage-port = ${tidstorage:ipv4-port}
+{% if slapparameter_dict.get('tidstorage-ip') -%}
+tidstorage-ip = {{ dumps(slapparameter_dict['tidstorage-ip']) }}
+tidstorage-port = {{ dumps(slapparameter_dict['tidstorage-port']) }}
+{% endif -%}
 promise-path = ${erp5-promise:promise-path}
 {% set thread_amount = slapparameter_dict['thread-amount'] -%}
 thread-amount = {{ thread_amount }}
@@ -237,17 +222,17 @@ event-log = ${directory:log}/{{ name }}-event.log
 z2-log = ${directory:log}/{{ name }}-Z2.log
 node-id = {{ dumps(node_id_base ~ '-' ~ index) }}
 {% set log_list = [] -%}
-{% set import_set = {} -%}
-{% for zodb in zodb_list -%}
-{%   if zodb.setdefault('storage-type', 'NEOStorage') == 'NEOStorage' -%}
-{%     do import_set.__setitem__('neo.client', None) -%}
-{%     set log = buildout_directory ~ '/var/log/' ~ name ~ '-neo-' ~ zodb.get('name', 'main') ~ '.log' -%}
+{% set import_set = set() -%}
+{% for db_name, zodb in zodb_dict.iteritems() -%}
+{%   if zodb['type'] == 'neo' -%}
+{%     do import_set.add('neo.client') -%}
+{%     set log = buildout_directory ~ '/var/log/' ~ name ~ '-neo-' ~ db_name ~ '.log' -%}
 {%     do log_list.append(log) -%}
-{%     do zodb.setdefault('storage-dict', {}).__setitem__('logfile', log) -%}
+{%     do zodb['storage-dict'].__setitem__('logfile', log) -%}
 {%   endif -%}
 {% endfor -%}
-import-list = {{ dumps(import_set.keys()) }}
-zodb-list = {{ dumps(zodb_list) }}
+import-list = {{ dumps(list(import_set)) }}
+zodb-dict = {{ dumps(zodb_dict) }}
 
 [{{ conf_name }}]
 < = zope-conf-base

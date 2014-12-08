@@ -42,10 +42,9 @@ products {{ parameter_dict['instance-products'] }}
   secret {{ parameter_dict['deadlock-debugger-password'] }}
 </product-config>
 
-{% set tidstorage_ip = parameter_dict['tidstorage-ip'] -%}
-{% if tidstorage_ip -%}
+{% if 'tidstorage-ip' in parameter_dict -%}
 <product-config TIDStorage>
-  backend-ip {{ tidstorage_ip }}
+  backend-ip {{ parameter_dict['tidstorage-ip'] }}
   backend-port {{ parameter_dict['tidstorage-port'] }}
 </product-config>
 
@@ -104,11 +103,11 @@ products {{ parameter_dict['instance-products'] }}
 {% for m in parameter_dict['import-list'] -%}
 %import {{ m }}
 {% endfor -%}
-{% for zodb_dict in parameter_dict['zodb-list'] %}
-<zodb_db {{ zodb_dict.pop('name', 'main') }}>
-{%- set storage_type = zodb_dict.pop('storage-type', 'NEOStorage') %}
-{%- set storage_dict = zodb_dict.pop('storage-dict', {}) %}
-  mount-point {{ zodb_dict.pop('mount-point', '/') }}
+{% set type_dict = {'neo': 'NEOStorage', 'zeo': 'zeoclient'} %}
+{% for name, zodb_dict in parameter_dict['zodb-dict'].iteritems() %}
+<zodb_db {{ name }}>
+{%- set storage_type = type_dict[zodb_dict.pop('type')] %}
+{%- set storage_dict = zodb_dict.pop('storage-dict') %}
 {%- for key, value in zodb_dict.iteritems() %}
   {{ key }} {{ value }}
 {%-   endfor %}

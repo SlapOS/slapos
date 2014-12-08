@@ -1,4 +1,9 @@
-{% set frontend_dict = slapparameter_dict.get('frontend', {}) %}
+{% macro assert(x) %}{{ ("",)[not x] }}{% endmacro -%}
+{% set sla_dict = {} -%}
+{% for sla, ref_list in slapparameter_dict.get('sla-dict', {}).iteritems() -%}
+{%   do sla_dict.update(dict.fromkeys(ref_list, sla)) -%}
+{% endfor -%}
+{% set frontend_dict = slapparameter_dict.get('frontend', {}) -%}
 {% set has_frontend = frontend_dict.get('software-url', '') != '' -%}
 {% set site_id = slapparameter_dict.get('site-id', 'erp5') -%}
 {% set inituser_login = slapparameter_dict.get('inituser-login', 'zope') -%}
@@ -13,6 +18,14 @@ computer-id = ${slap-connection:computer-id}
 partition-id = ${slap-connection:partition-id}
 config-use-ipv6 = {{ dumps(slapparameter_dict.get('use-ipv6', False)) }}
 
+{% macro sla(name, required=False) -%}
+{% if required or name in sla_dict -%}
+{%  for k, (v,) in urlparse.parse_qs(slap_dict.pop(name), strict_parsing=1).iteritems() -%}
+sla-{{ k }} = {{ dumps(v) }}
+{%  endfor -%}
+{% endif -%}
+{% endmacro -%}
+
 {% macro request(name, software_type, config_key, config, ret={'url': True}) -%}
 {% do config.update(slapparameter_dict.get(config_key, {})) -%}
 {% set section = 'request-' ~ name -%}
@@ -20,15 +33,15 @@ config-use-ipv6 = {{ dumps(slapparameter_dict.get('use-ipv6', False)) }}
 < = request-common
 name = {{ name }}
 software-type = {{ software_type }}
-return = {{ ret.keys() | join(' ') }}
-{% for ret, publish in ret.items() -%}
+return = {{ ' '.join(ret) }}
+{% for ret, publish in ret.iteritems() -%}
 {%   if publish -%}
 {%     do publish_dict.__setitem__(name ~ '-' ~ ret, '${' ~ section ~ ':connection-' ~ ret ~ '}')%}
 {%   endif -%}
 {% endfor -%}
-sla-computer_guid = {{ dumps(slapparameter_dict.get(config_key + '-computer-guid', computer_id)) }}
-{% for option, value in config.items() -%}
-config-{{ option }} = {{ dumps(value) }}
+{{ sla(name) }}
+{% for k, v in config.iteritems() -%}
+config-{{ k }} = {{ dumps(v) }}
 {% endfor -%}
 {% endmacro -%}
 
@@ -36,14 +49,26 @@ config-{{ option }} = {{ dumps(value) }}
 {{ request('memcached-volatile', 'kumofs', 'memcached', {'tcpv4-port': 2010, 'ram-storage-size': 64}) }}
 {{ request('cloudooo', 'cloudooo', 'cloudooo', {'tcpv4-port': 2020}) }}
 {{ request('mariadb', 'mariadb', 'mariadb', {'tcpv4-port': 2099}, {'database-list': True, 'test-database-list': True}) }}
-{# Fail early if an unexpected value is provided -#}
-{% set zodb_type = slapparameter_dict.get('zodb-software-type') -%}
-{% set zodb_extern = slapparameter_dict.get('zodb-extern') -%}
-{% if {'zeo': 1, None: 0}[zodb_type] -%}
-{{   request('zodb', 'zodb-' ~ zodb_type, 'zodb', {'tcpv4-port': 2100, 'zodb-dict': {'root': {}}}, {'zodb-storage-type': False, 'zodb-dict': False, 'tidstorage-ip': False, 'tidstorage-port': False}) }}
-{% else -%}
-{% do zodb_extern[0] %}
-{% endif -%}
+
+{# ZODB -#}
+{% set zodb_dict = {} -%}
+{% set storage_dict = {} -%}
+{% set mountpoints = set() -%}
+{% for zodb in slapparameter_dict.get('zodb') or ({'type': 'zeo', 'server': {}},) -%}
+{%   do mountpoints.add(zodb.setdefault('mount-point', '/')) -%}
+{%   set name = zodb.pop('name', 'root') -%}
+{%   do assert(name not in zodb_dict) -%}
+{%   do zodb_dict.__setitem__(name, zodb) -%}
+{%   if 'server' in zodb -%}
+{%     do storage_dict.setdefault(zodb['type'], {}).__setitem__(name, zodb.pop('server')) -%}
+{%   endif -%}
+{% endfor -%}
+{% do assert(len(mountpoints) == len(zodb_dict)) %}
+{% for server_type, server_dict in storage_dict.iteritems() -%}
+{%   do assert(server_type == 'zeo') -%}
+{# BBB: for compatibility, keep 'zodb' as partition_reference for ZEO -#}
+{{   request('zodb', 'zodb-' ~ server_type, 'zodb-' ~ server_type, {'tcpv4-port': 2100, 'zodb-dict': server_dict}, dict.fromkeys(('storage-dict', 'tidstorage-ip', 'tidstorage-port'))) }}
+{% endfor -%}
 
 [inituser-password]
 {% set inituser_password = slapparameter_dict.get('inituser-password') -%}
@@ -81,14 +106,11 @@ config-mysql-url-list = ${request-mariadb:connection-database-list}
 config-site-id = {{ dumps(site_id) }}
 config-smtp-url = {{ dumps(slapparameter_dict.get('smtp-url', 'smtp://localhost:25/')) }}
 config-timezone = {{ dumps(slapparameter_dict.get('timezone', 'UTC')) }}
-{% if zodb_type -%}
+config-zodb-dict = {{ dumps(zodb_dict) }}
+{% if storage_dict -%}
+config-zodb-zeo = ${request-zodb:connection-storage-dict}
 config-tidstorage-ip = ${request-zodb:connection-tidstorage-ip}
 config-tidstorage-port = ${request-zodb:connection-tidstorage-port}
-config-zodb-dict = ${request-zodb:connection-zodb-dict}
-config-zodb-storage-type = ${request-zodb:connection-zodb-storage-type}
-{% endif -%}
-{% if zodb_extern -%}
-config-zodb-extern = {{ dumps(zodb_extern) }}
 {% endif -%}
 software-type = zope
 
@@ -100,6 +122,7 @@ software-type = zope
 [{{ section_name }}]
 < = request-zope-base
 name = {{ partition_name }}
+{{ sla(partition_name) }}
 config-name = {{ dumps(custom_name) }}
 config-instance-count = {{ dumps(zope_parameter_dict.get('instance-count', 1)) }}
 config-thread-amount = {{ dumps(zope_parameter_dict.get('thread-amount', 1)) }}
@@ -108,7 +131,6 @@ config-longrequest-logger-interval = {{ dumps(zope_parameter_dict.get('longreque
 config-longrequest-logger-timeout = {{ dumps(zope_parameter_dict.get('longrequest-logger-timeout', 1)) }}
 config-port-base = {{ dumps(zope_parameter_dict.get('port-base', 2200)) }}
 config-webdav = {{ dumps(zope_parameter_dict.get('webdav', False)) }}
-sla-computer_guid = {{ dumps(zope_parameter_dict.get('computer-guid', computer_id)) }}
 {% endfor -%}
 
 {# We need to concatenate lists that we cannot read as lists, so this gets hairy. -#}
@@ -138,7 +160,7 @@ config-url = ${request-balancer:{{ family_name }}-v6}
 < = request-common
 name = balancer
 software-type = balancer
-sla-computer_guid = {{ dumps(slapparameter_dict.get('balancer-computer-guid', computer_id)) }}
+{{ sla('balancer') }}
 return =
 {%- for family in zope_family_dict %}
   {{ family }}
@@ -159,7 +181,7 @@ config-ssl = {{ dumps(balancer_dict.get('ssl', {})) }}
 < = request-common
 software-url = {{ dumps(frontend_dict['software-url']) }}
 software-type = {{ dumps(frontend_dict.get('software-type', 'RootSoftwareInstance')) }}
-sla-instance_guid = {{ dumps(frontend_dict['instance-guid']) }}
+{{ sla('frontend', True) }}
 slave = true
 {% set config_dict = {
   'type': 'zope',
@@ -188,3 +210,5 @@ hosts-dict = {{ '${' ~ zope_address_list_id_dict.keys()[0] ~ ':connection-hosts-
 
 [buildout]
 parts = publish
+
+{{- assert(not sla_dict) }}

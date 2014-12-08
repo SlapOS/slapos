@@ -1,16 +1,12 @@
 {% set next_port = slapparameter_dict['tcpv4-port'] -%}
-{% set part_list = [] -%}
-{% set storage_dict = {} -%}
-{% set zodb_dict = {} -%}
-{% set tidstorage_dict = slapparameter_dict.get('backup', {}) -%}
-{% set known_tid_storage_identifier_dict = {} -%}
-{% set default_zodb_path = buildout_directory ~ '/srv/zodb' -%}
-{% set zodb_backup_path = buildout_directory ~ '/srv/backup/zodb' -%}
-{% set default_tidstorage_timestamp_path = buildout_directory ~ '/srv/backup/tidstorage' -%}
-{% macro section(name) %}{% do part_list.append(name) %}{{ name }}{% endmacro -%}
 {% set ipv4 = (ipv4_set | list)[0] -%}
-{% set tidstorage_ip = ipv4 -%}
-{% set tidstorage_port = 6001 -%}
+{% set backup_periodicity = slapparameter_dict.get('backup-periodicity', 'daily') -%}
+{% set default_tidstorage_timestamp_path = slapparameter_dict.get('tidstorage-timestamp-path', buildout_directory ~ '/srv/backup/tidstorage') -%}
+{% set part_list = [] -%}
+{% macro section(name) %}{% do part_list.append(name) %}{{ name }}{% endmacro -%}
+{% set storage_dict = {} -%}
+{% set default_zodb_path = buildout_directory ~ '/srv/zodb' -%}
+{% set default_backup_path = buildout_directory ~ '/srv/backup/zodb' -%}
 {% set bin_directory = parameter_dict['buildout-bin-directory'] -%}
 
 [logrotate-base]
@@ -27,50 +23,33 @@ wrapper-path = ${directory:services}/${:base-name}
 binary-path = {{ bin_directory }}/runzeo
 ip = {{ ipv4 }}
 
-{% set backup_directory_list = [] -%}
-{% for export_id, mountpoint_dict in slapparameter_dict['zodb-dict'].items() -%}
-{%   do storage_dict.setdefault(
-       mountpoint_dict.get('storage-family', 'default').lower(), []
-     ).append((
-       export_id,
-       mountpoint_dict.get('mount-point', '/'),
-       mountpoint_dict.get('cache-size', -1),
-       mountpoint_dict.get('storage-dict', {}),
-     )) -%}
+{% set known_tid_storage_identifier_dict = {} -%}
+{% set zodb_dict = {} -%}
+{% for name, zodb in slapparameter_dict['zodb-dict'].iteritems() -%}
+{%   do zodb_dict.setdefault(zodb.get('family', 'default').lower(), []).append((name, zodb)) -%}
 {% endfor -%}
-{% for storage_family, export_list in storage_dict.items() -%}
-{%   set known_tid_storage_identifier_host = ((ipv4, next_port), ) -%}
-{%   for export_id, mount_point, cache_size, export_storage_dict in export_list -%}
-{%     do export_storage_dict.__setitem__('path', export_storage_dict.get('path', '%(zodb)s/%(name)s.fs') % {'zodb': default_zodb_path, 'name': export_id}) -%}
-{%     set client_dict = export_storage_dict.get('client', {}).copy() -%}
-{%     do client_dict.__setitem__('storage', export_id) -%}
-{#     XXX: I would like to raise if export_id is present in zodb_dict -#}
-{%     do zodb_dict.__setitem__(export_id, [
-         mount_point,
-         cache_size,
-         client_dict,
-       ]) -%}
-{%     if tidstorage_dict != None -%}
-{%       set backup_directory = tidstorage_dict.get('zodb-dict', {}).get(export_id, '%(backup)s/%(name)s') % {'backup': zodb_backup_path, 'name': export_id} -%}
-{%       do backup_directory_list.append(backup_directory) -%}
-{%       do known_tid_storage_identifier_dict.__setitem__(
-           json_module.dumps((known_tid_storage_identifier_host, export_id)), (
-             export_storage_dict['path'],
-             backup_directory,
-             mount_point,
-           ),
-         ) -%}
-{%     endif -%}
+{% set tidstorage_port = next_port + len(zodb_dict) -%}
+{% for family, zodb in zodb_dict.iteritems() -%}
+{%   set storage_list = [] -%}
+{%   set known_tid_storage_identifier_host = (ipv4, next_port), -%}
+{%   for name, zodb in zodb -%}
+{%     do storage_dict.__setitem__(name, {'server': ipv4 ~ ':' ~ next_port, 'storage': name}) %}
+{%     set path = zodb.get('path', '%(zodb)s/%(name)s.fs') % {'zodb': default_zodb_path, 'name': name} -%}
+{%     do storage_list.append((name, path)) -%}
+{%     set backup_directory = zodb.get('backup', '%(backup)s/%(name)s') % {'backup': default_backup_path, 'name': name} -%}
+{# BBB: No mount-point specified because they're meaningless for ZEO and
+        TIDStorage. Pass '' for compatibility, and not None
+        because this would disable TIDStorage bootstrapping. -#}
+{%     do known_tid_storage_identifier_dict.__setitem__(json_module.dumps(
+         (known_tid_storage_identifier_host, name)),
+         (path, backup_directory, '')) -%}
 {%   endfor -%}
-{%   set zeo_section_name = 'zeo-' ~ storage_family %}
+
+{%   set zeo_section_name = 'zeo-' ~ family %}
 [{{ zeo_section_name }}]
 < = zeo-base
-base-name = zeo-{{ storage_family }}
+base-name = zeo-{{ family }}
 port = {{ next_port }}
-{%   set storage_list = [] -%}
-{%   for storage_name, _, _, export_storage_dict in export_list -%}
-{%     do storage_list.append((storage_name, export_storage_dict['path'])) -%}
-{%   endfor -%}
 storage = {{ dumps(storage_list) }}
 
 [{{ section("logrotate-" ~ zeo_section_name) }}]
@@ -82,38 +61,39 @@ post = {{ bin_directory }}/slapos-kill --pidfile {{ "${" ~ zeo_section_name ~ ":
 [{{ section(zeo_section_name ~ "-promise") }}]
 recipe = slapos.cookbook:check_port_listening
 hostname = {{ "${" ~ zeo_section_name ~ ":ip}" }}
-port = {{ next_port }}
-path = ${directory:promises}/zeo-{{ storage_family }}
+port = {{ "${" ~ zeo_section_name ~ ":port}" }}
+path = ${directory:promises}/zeo-{{ family }}
 
-{%   set address = ipv4 ~ ':' ~ next_port -%}
-{%   for export in export_list -%}
-{%     do zodb_dict[export[0]][2].__setitem__('server', address) -%}
-{%   endfor -%}
 {%   set next_port = next_port + 1 -%}
 {% endfor -%}
 
-{% if tidstorage_dict != None -%}
+{% if backup_periodicity == 'never' -%}
+{%   set known_tid_storage_identifier_dict = () %}
+{% else -%}
 [tidstorage]
 recipe = slapos.cookbook:tidstorage
 known-tid-storage-identifier-dict = {{ dumps(known_tid_storage_identifier_dict) }}
 configuration-path = ${directory:etc}/tidstorage.py
-ip = {{ tidstorage_ip }}
+ip = {{ ipv4 }}
 port = {{ tidstorage_port }}
-timestamp-file-path = {{ dumps(tidstorage_dict.get('tidstorage-timestamp-path', '%(backup)s/repozo_tidstorage_timestamp.log' % {'backup': default_tidstorage_timestamp_path})) }}
-logfile-name = ${directory:log}/tidstorage.log
+timestamp-file-path = {{ dumps(slapparameter_dict.get('tidstorage-timestamp-path', '%(backup)s/repozo_tidstorage_timestamp.log') % {'backup': default_tidstorage_timestamp_path}) }}
+{# BBB: recipe requires logfile-name for nothing because tidstorage runs in foreground mode -#}
+logfile-name =
 pidfile-name = ${directory:run}/tidstorage.pid
 status-file = ${directory:tidstorage}/tidstorage.tid
 tidstorage-repozo-binary = {{ bin_directory }}/tidstorage_repozo
 tidstoraged-binary = {{ bin_directory }}/tidstoraged
 repozo-binary = {{ bin_directory }}/repozo
-tidstorage-wrapper = ${directory:services}/tidstoraged
 repozo-wrapper = ${buildout:bin-directory}/tidstorage-repozo
+{% if len(known_tid_storage_identifier_dict) > 1 -%}
+tidstorage-wrapper = ${directory:services}/tidstoraged
 
 [{{ section("promise-tidstorage") }}]
 recipe = slapos.cookbook:check_port_listening
 hostname = ${tidstorage:ip}
 port = ${tidstorage:port}
 path = ${directory:promises}/tidstorage
+{% endif -%}
 
 [{{ section("cron-entry-tidstorage-backup") }}]
 # TODO:
@@ -122,40 +102,20 @@ path = ${directory:promises}/tidstorage
 recipe = slapos.cookbook:cron.d
 cron-entries = ${cron:cron-entries}
 name = tidstorage
-time = {{ dumps(tidstorage_dict.get('periodicity', 'daily')) }}
+time = {{ dumps(backup_periodicity) }}
 command = ${tidstorage:repozo-wrapper}
-
-{% if backup_directory_list -%}
-[{{ section("cron-entry-purge-repozo-fsindex") }}]
-recipe = slapos.cookbook:cron.d
-cron-entries = ${cron:cron-entries}
-name = purge-repozo-fsindex
-time = ${cron-entry-tidstorage-backup:time}
-command = ${cron-script-purge-repozo-fsindex:wrapper-path}
-
-[cron-script-purge-repozo-fsindex]
-recipe = slapos.cookbook:wrapper
-command-line = "{{ parameter_dict['findutils-location'] }}/bin/find" {% for backup_directory in backup_directory_list %}'{{ backup_directory.replace("\\", "\\\\").replace("'", "\\'") }}' {% endfor %}-name "????-??-??-??-??-??.index" -daystart -mtime +2 -delete
-wrapper-path = ${directory:bin}/cron-purge-repozo-fsindex
-
-{% endif -%}
-[{{ section("logrotate-tidstorage") }}]
-< = logrotate-base
-name = tidstorage
-log = ${tidstorage:logfile-name}
-post = {{ bin_directory }}/slapos-kill --pidfile ${tidstorage:pidfile-name} -s HUP
-{% else -%}
-[tidstorage]
-ip =
-port =
 {% endif -%}
 
 [publish]
 recipe = slapos.cookbook:publish.serialised
-zodb-storage-type = zeoclient
-zodb-dict = {{ dumps(zodb_dict) }}
+storage-dict = {{ dumps(storage_dict) }}
+{% if len(known_tid_storage_identifier_dict) > 1 -%}
 tidstorage-ip = ${tidstorage:ip}
 tidstorage-port = ${tidstorage:port}
+{% else -%}
+tidstorage-ip =
+tidstorage-port =
+{% endif -%}
 
 [directory]
 recipe = slapos.cookbook:mkdirectory
@@ -166,7 +126,7 @@ promises = ${:etc}/promise
 var = ${buildout:directory}/var
 log = ${:var}/log
 run = ${:var}/run
-backup-zodb = {{ zodb_backup_path }}
+backup-zodb = {{ default_backup_path }}
 zodb = {{ default_zodb_path }}
 tidstorage = {{ default_tidstorage_timestamp_path }}
 
