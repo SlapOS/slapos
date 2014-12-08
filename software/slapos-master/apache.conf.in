@@ -47,7 +47,7 @@ RequestHeader unset REMOTE_USER
 
 ErrorLog "{{ parameter_dict['error-log'] }}"
 # Default apache log format with request time in microsecond at the end
-LogFormat "%h %l %u %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\" %D" combined
+LogFormat "%h %l %{REMOTE_USER}i %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\" %D" combined
 CustomLog "{{ parameter_dict['access-log'] }}" combined
 
 <Directory />
@@ -57,7 +57,7 @@ CustomLog "{{ parameter_dict['access-log'] }}" combined
 </Directory>
 
 RewriteEngine On
-{% for port, _, backend, authentication in parameter_dict['backend-list'] -%}
+{% for family_name, (port, _, backend, authentication) in parameter_dict['backend-list'].items() -%}
 {%   for ip in parameter_dict['ip-list'] -%}
 Listen {{ ip }}:{{ port }}
 {%   endfor -%}
@@ -67,6 +67,9 @@ Listen {{ ip }}:{{ port }}
   RequestHeader set REMOTE_USER %{SSL_CLIENT_S_DN_CN}s
   SSLCACertificateFile {{ parameter_dict['ca-cert'] }}
   SSLCARevocationPath {{ parameter_dict['crl'] }}
+  
+  ErrorLog "{{ parameter_dict['log-dir'] }}/apache-{{ family_name }}-error.log"
+  CustomLog "{{ parameter_dict['log-dir'] }}/apache-{{ family_name }}-access.log" combined
 {% endif -%}
   SSLEngine on
   RewriteRule ^/(.*) {{ backend }}/$1 [L,P]
