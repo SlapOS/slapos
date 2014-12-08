@@ -136,6 +136,7 @@ run-directory = $${basedirectory:run}
 # XXX: this should be named "notifier-host"
 notifier-url = http://[$${notifier:host}]:$${notifier:port}
 slave-instance-list = $${slap-parameter:slave_instance_list}
+ignore-known-hosts-file = $${slap-parameter:ignore-known-hosts-file}
 
 
 #----------------
@@ -235,6 +236,7 @@ identity-file = $${basedirectory:ssh-home}/id_rsa
 
 [slap-parameter]
 slave_instance_list = []
+ignore-known-hosts-file = false
 
 
 
