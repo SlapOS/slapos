@@ -103,11 +103,12 @@ ca-cert =  ${directory:apache-conf}/ca.crt
 crl = ${directory:apache-conf}/crl.pem
 
 [apache-conf-parameter-dict]
-backend-list = {{ dumps(apache_dict.values()) }}
+backend-list = {{ dumps(apache_dict) }}
 ip-list = {{ dumps(apache_ip_list) }}
 pid-file = ${directory:run}/apache.pid
 error-log = ${directory:log}/apache-error.log
 access-log = ${directory:log}/apache-access.log
+log-dir = ${directory:log}
 # Apache 2.4's default value (60 seconds) can be a bit too short
 timeout = 300
 # Basic SSL server configuration
