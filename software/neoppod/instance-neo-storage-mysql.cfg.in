@@ -2,6 +2,7 @@
 extends = {{ master_cfg }}
 parts +=
   neo-storage
+  logrotate-mysql
   logrotate-storage
 
 [mysqld]
@@ -64,3 +65,11 @@ backup = ${logrotate:backup}
 name = neo-storage
 log = ${neo-storage:logfile}
 post = {{ bin_directory }}/slapos-kill -n neostorage -s RTMIN+1 ${:log}
+
+[logrotate-mysql]
+recipe = slapos.cookbook:logrotate.d
+logrotate-entries = ${logrotate:logrotate-entries}
+backup = ${logrotate:backup}
+name = mariadb
+log = ${my-cnf-parameters:error-log} ${my-cnf-parameters:slow-query-log}
+post = ${mysqld:mysql-base-directory}/bin/mysql --defaults-file="${my-cnf:rendered}" -e "FLUSH LOGS"
