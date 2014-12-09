@@ -156,6 +156,20 @@ command = "{{ parameter_dict['openssl'] }}/bin/openssl" req -newkey rsa -batch -
 key = ${apache-conf-ssl:key}
 cert = ${apache-conf-ssl:cert}
 
+{% for family_name, (_, _, _, authentication) in apache_dict.items() -%}
+{%   if authentication -%}
+{%     set base_name = 'apache-' ~ family_name -%}
+{%     do part_list.append('logrotate-' ~ base_name) -%}
+[logrotate-{{ base_name }}]
+recipe = slapos.cookbook:logrotate.d
+logrotate-entries = ${logrotate:logrotate-entries}
+backup = ${logrotate:backup}
+name = {{ base_name }}
+log = ${apache-conf-parameter-dict:log-dir}/{{ base_name }}-error.log ${apache-conf-parameter-dict:log-dir}/{{ base_name }}-access.log
+post = {{ parameter_dict['bin-directory'] }}/slapos-kill --pidfile ${apache-conf-parameter-dict:pid-file} -s USR1
+{%   endif -%}
+{% endfor -%}
+
 [logrotate-apache]
 recipe = slapos.cookbook:logrotate.d
 logrotate-entries = ${logrotate:logrotate-entries}
