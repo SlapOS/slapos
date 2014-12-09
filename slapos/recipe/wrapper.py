@@ -53,9 +53,7 @@ class Recipe(GenericBaseRecipe):
                           if filename.strip()]
         if environment is not None:
             environment = dict((k.strip(), v.strip()) for k, v in [
-                             line.split('=')
-                             for line in environment.split('\n')
-                           ])
+              line.split('=') for line in environment.splitlines() if line.strip() ])
         return [self.createPythonScript(
             wrapper_path,
             'slapos.recipe.librecipe.execute.generic_exec',

@@ -24,7 +24,7 @@ offline = true
 # It will then authenticate to SlapOS Master and fetch the instance parameters.
 # The parameters are accessible from $${instance-parameter:configuration.name-of-parameter}
 # Always the same. Just copy/paste.
-# See docstring of slapos.cookbook:slapconfiguration for more informations.
+# See docstring of slapos.cookbook:slapconfiguration for more information.
 recipe = slapos.cookbook:slapconfiguration
 computer = $${slap_connection:computer_id}
 partition = $${slap_connection:partition_id}
@@ -65,11 +65,10 @@ log = $${:var}/log
 # This recipe will try to "exec" the command-line after separating parameters.
 recipe = slapos.cookbook:wrapper
 # Notice that there is only one $ at ${dash:location}, it is because it comes from the Software Release buildout profile.
-command-line = ${dash:location}/bin/dash -c 'echo "Hello $${instance-parameter:configuration.name}, it is $(date)." > $${directory:log}/log.log; sleep 1000000;'
-# Put this shell script in the "etc/service" directory. Every executable of this
-# repository will be started and monitored by supervisord. If one service
-# exits/crashes, it will trigger a "bang" and cause run of slapgrid for the
-# instance.
+command-line = ${dash:location}/bin/dash -c 'echo "Hello $${instance-parameter:configuration.name}, it is $(date). If I were a TCP server, I would be listening on [$${instance-parameter:ipv6-random}] or $${instance-parameter:ipv4-random}" > $${directory:log}/log.log; sleep 1000000;'
+# Put this shell script in the "etc/service" directory. Each executable of this
+# repository will be started and monitored by supervisord. If a service
+# exits/crashes, it will trigger a "bang" and cause a re-run of the instance.
 wrapper-path = $${directory:service}/hello-world
 
 
