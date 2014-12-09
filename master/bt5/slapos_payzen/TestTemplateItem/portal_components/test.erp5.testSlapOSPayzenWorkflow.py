@@ -2,7 +2,7 @@
 from Products.SlapOS.tests.testSlapOSMixin import \
   testSlapOSMixin
 import transaction
-from Products.ERP5Type.tests.backportUnittest import expectedFailure
+from unittest import expectedFailure
 from Products.ERP5Type.Errors import UnsupportedWorkflowMethod
 from AccessControl.SecurityManagement import getSecurityManager, \
              setSecurityManager

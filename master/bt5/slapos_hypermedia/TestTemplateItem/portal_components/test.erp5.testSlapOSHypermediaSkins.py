@@ -5,7 +5,7 @@ from Products.SlapOS.tests.testSlapOSMixin import \
   testSlapOSMixin
 from zExceptions import Unauthorized
 from Products.ERP5Type.tests.utils import createZODBPythonScript
-from Products.ERP5Type.tests.backportUnittest import skip
+from unittest import skip
 from functools import wraps
 
 from ZPublisher.HTTPRequest import HTTPRequest

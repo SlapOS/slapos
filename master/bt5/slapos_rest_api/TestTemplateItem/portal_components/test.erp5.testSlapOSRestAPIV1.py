@@ -13,7 +13,7 @@ from App.Common import rfc1123_date
 from DateTime import DateTime
 import time
 
-from Products.ERP5Type.tests.backportUnittest import skip
+from unittest import skip
 
 def _getMemcachedDict(self):
   return self.getPortal().portal_memcached.getMemcachedDict(

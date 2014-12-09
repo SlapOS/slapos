@@ -3,7 +3,7 @@ import transaction
 from Products.SlapOS.tests.testSlapOSMixin import \
   testSlapOSMixin
 from Products.ERP5Type.tests.utils import createZODBPythonScript
-from Products.ERP5Type.tests.backportUnittest import skip
+from unittest import skip
 import json
 from zExceptions import Unauthorized
 from DateTime import DateTime
