@@ -12,8 +12,8 @@ logfile = ${directory:log}/neomaster.log
 ip = ${publish:ip}
 port = ${publish:port}
 cluster = {{ dumps(slapparameter_dict['cluster']) }}
-partitions = {{ dumps(slapparameter_dict.get('partitions', 12)) }}
-replicas = {{ dumps(slapparameter_dict.get('replicas', 0)) }}
+partitions = {{ dumps(slapparameter_dict['partitions']) }}
+replicas = {{ dumps(slapparameter_dict['replicas']) }}
 # "masters" parameter is not provided when just requesting a partition.
 # No actuall installation takes place at that time
 # (slapos.cookbook:neoppod.master raises), but cfg expansion must succeed. So

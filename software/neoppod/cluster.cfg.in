@@ -11,7 +11,7 @@ key-file = ${slap-connection:key-file}
 cert-file = ${slap-connection:cert-file}
 computer-id = ${slap-connection:computer-id}
 partition-id = ${slap-connection:partition-id}
-config-cluster = {{ slapparameter_dict['cluster'] }}
+config-cluster = {{ dumps(slapparameter_dict['cluster']) }}
 
 [node-base]
 < = request-common
@@ -19,8 +19,8 @@ config-masters = ${all-masters:addresses}
 
 [mysql-storage-base]
 < = request-common
-config-partitions = {{ slapparameter_dict.get('partitions', 12) }}
-config-replicas = {{ slapparameter_dict.get('replicas', 0) }}
+config-partitions = {{ dumps(slapparameter_dict.get('partitions', 12)) }}
+config-replicas = {{ dumps(slapparameter_dict.get('replicas', 0)) }}
 software-type = {{ mysql_storage_software_type }}
 
 [mysql-storage-request-base]
