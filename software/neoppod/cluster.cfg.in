@@ -21,6 +21,8 @@ config-masters = ${all-masters:addresses}
 < = request-common
 config-partitions = {{ dumps(slapparameter_dict.get('partitions', 12)) }}
 config-replicas = {{ dumps(slapparameter_dict.get('replicas', 0)) }}
+config-upstream-cluster = {{ dumps(slapparameter_dict.get('upstream-cluster', '')) }}
+config-upstream-masters = {{ dumps(slapparameter_dict.get('upstream-masters', '')) }}
 software-type = {{ mysql_storage_software_type }}
 
 [mysql-storage-request-base]
