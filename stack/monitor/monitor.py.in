@@ -1,6 +1,5 @@
 #!{{ python_executable }}
 
-import datetime
 import json
 import os
 import subprocess
@@ -60,10 +59,8 @@ class Popen(subprocess.Popen):
       return event.__killed
     return killed
 
-def init_db():
-  db = sqlite3.connect(db_path)
-  c = db.cursor()
-  c.executescript("""
+def init_db(db):
+  db.executescript("""
 CREATE TABLE IF NOT EXISTS status (
   timestamp INTEGER UNIQUE,
   status VARCHAR(255));
@@ -73,8 +70,6 @@ CREATE TABLE IF NOT EXISTS individual_status (
   element VARCHAR(255),
   output TEXT);
 """)
-  db.commit()
-  db.close()
 
 def getListOfScripts(directory):
   """
@@ -136,25 +131,20 @@ def runScripts(directory):
 
 def writeFiles(monitors):
   timestamp = int(time.time())
-  date = datetime.datetime.now().ctime()
-  init_db()
   db = sqlite3.connect(db_path)
-  fail = False
-  for key, value in monitors.iteritems():
-    element_status = SUCCESS
-    if value != "" :
-      fail = True
-      element_status = FAILURE
-    db.execute("insert into individual_status(timestamp, element, output, status) values (?, ?, ?, ?)", (timestamp, key, value, element_status))
-  db.commit()
+  init_db(db)
   status = SUCCESS
-  if fail:
-    status = FAILURE
+  for key, value in monitors.iteritems():
+    if value:
+      element_status = status = FAILURE
+    else:
+      element_status = SUCCESS
+    db.execute("insert into individual_status(timestamp, element, output, status) values (?, ?, ?, ?)", (timestamp, key, value, element_status))
   db.execute("insert into status(timestamp, status) values (?, ?)", (timestamp, status))
   db.commit()
   db.close()
-  monitors['datetime'] = date
-  open(monitoring_file_json, "w+").write(json.dumps(monitors))
+  monitors['datetime'] = time.ctime(timestamp)
+  json.dump(monitors, open(monitoring_file_json, "w+"))
 
 def main():
   parser = OptionParser(option_list=option_list)
