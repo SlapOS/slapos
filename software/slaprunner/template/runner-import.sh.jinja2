@@ -1,4 +1,5 @@
 #!{{ shell_binary }}
+set -e
 LC_ALL=C
 export LC_ALL
 umask 077
@@ -20,7 +21,7 @@ restore_element () {
 write_backup_proof () {
   cd {{ directory['backup'] }}
   find -type f ! -name backup.signature ! -wholename "./rdiff-backup-data/*" -print0 | xargs -P4 -0 sha256sum  | LC_ALL=C sort -k 66 > $srv_directory/proof.signature
-  diff -ruw {{ directory['backup'] }} $srv_directory/proof.signature > $srv_directory/backup.diff
+  diff -ruw {{ directory['backup'] }} $srv_directory/proof.signature > $srv_directory/backup.diff || true # diff exits with code 1 when files are different
 }
 
 # For now we just make the diff before
@@ -29,7 +30,7 @@ write_backup_proof
 restore_element {{ directory['backup'] }}/runner/ $srv_directory/runner  instance project  proxy.db
 restore_element  {{ directory['backup'] }}/etc/ {{ directory['etc'] }} config.json ssh
 cp -r {{ directory['backup'] }}/etc/.??* {{ directory['etc'] }};
-{{ curl_binary }} --insecure -vg6L --max-time 5  {{ backend_url }}/isSRReady;
+{{ curl_binary }} --insecure -g6L --max-time 5  {{ backend_url }}/isSRReady;
 
 
 # Invoke arbitrary script to perform specific restoration
@@ -40,15 +41,38 @@ if [ ! -e "$runner_import_restore" ]; then
   chmod +x $runner_import_restore
 fi
 echo "Running $runner_import_restore script..."
-$srv_directory/runner-import-restore
+# XXX create exit code file if this failed (same below), and remove this in tidstorage/mariadb
+$srv_directory/runner-import-restore || true
 
+HOME={{ directory['home'] }}
+# XXX hardcoded
+SQLITE3="$HOME/software_release/parts/sqlite3/bin/sqlite3"
+DATABASE="$HOME/srv/runner/proxy.db"
 
+# Change slapproxy database to point instances to new software release
+# XXX hackish and hardcoded
+PARTITION=$(basename $HOME)
+OLD_SOFTWARE_RELEASE=$($SQLITE3 $DATABASE "select software_release from partition11 where reference='slappart0';")
+SOFTWARE_RELEASE=$(echo $OLD_SOFTWARE_RELEASE | sed -e 's/slappart[0-9][0-9]/'"$PARTITION"'/')
+$SQLITE3 $DATABASE "update partition11 set software_release='$SOFTWARE_RELEASE' where software_release NOT NULL;"
+# Change slapproxy database to have all instances stopped
+$SQLITE3 $DATABASE "update partition11 set slap_state='stopped';"
+# Build newest software
+{{ directory['bin'] }}/slapos node software --cfg ~/etc/slapos.cfg --pidfile ~/var/run/slaponode-instance.pid --all || true
+# Remove defined scripts to force buildout to recreate them to have updated paths
+# XXX hack
+rm $srv_directory/runner/instance/slappart*/srv/runner-import-restore
+# Run slapos node instance
+# XXX hardcoded
+{{ directory['bin'] }}/slapos node instance --cfg ~/etc/slapos.cfg --pidfile ~/var/run/slaponode-instance.pid || true
 # Invoke defined scripts for each partition inside of slaprunner
 for partition in $srv_directory/runner/instance/slappart*/
 do
   script=$partition/srv/runner-import-restore
   if [ -e "$script" ]; then
     echo "Running $script script..."
-    $script
+    $script || true
   fi
 done
+# Change back slapproxy database to have all instances started
+$SQLITE3 $DATABASE "update partition11 set slap_state='started';"
