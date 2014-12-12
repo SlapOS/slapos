@@ -59,14 +59,15 @@ portal = context.getPortalObject()\n
 business_process_uid_list = [\n
   portal.business_process_module.slapos_consumption_business_process.getUid(),\n
   portal.business_process_module.slapos_subscription_business_process.getUid()]\n
-specialise_uid_list = [q.getUid() for q in portal.portal_catalog(specialise_uid=business_process_uid_list,\n
+specialise_reference_list = [q.getReference() for q in portal.portal_catalog(specialise_uid=business_process_uid_list,\n
   portal_type=\'Sale Trade Condition\')]\n
 \n
 select_kw.update(\n
   limit=50, # just take a bit\n
   portal_type=\'Sale Packing List Line\',\n
   simulation_state=\'delivered\',\n
-  parent_specialise_uid=specialise_uid_list,\n
+  parent_specialise_reference=specialise_reference_list,\n
+  parent_specialise_portal_type=\'Sale Trade Condition\',\n
   grouping_reference=None,\n
   sort_on=((\'modification_date\', \'ASC\'),) # the highest chance to find movement which can be delivered\n
 )\n
