@@ -1,6 +1,5 @@
 #!{{ python_executable }}
 
-import datetime
 import json
 import os
 import subprocess
@@ -36,30 +35,32 @@ option_list = [
 ]
 
 class Popen(subprocess.Popen):
-  __timeout = None
 
-  def timeout(self, delay, delay_before_kill=5):
-    if self.__timeout is not None: self.__timeout.cancel()
-    self.__timeout = threading.Timer(delay, self.stop, [delay_before_kill])
-    self.__timeout.start()
-    def waiter():
-        self.wait()
-        self.__timeout.cancel()
-    threading.Thread(target=waiter).start()
-
-  def stop(self, delay_before_kill=5):
-    if self.__timeout is not None: self.__timeout.cancel()
-    self.terminate()
-    t = threading.Timer(delay_before_kill, self.kill)
+  def set_timeout(self, timeout):
+    self.set_timeout = None # assert we're not called twice
+    event = threading.Event()
+    event.__killed = False # we just need a mutable
+    def t():
+      # do not call wait() or poll() because they're not thread-safe
+      if not event.wait(timeout) and self.returncode is None:
+        # race condition if waitpid completes just before the signal sent ?
+        self.terminate()
+        event.__killed = True
+        if event.wait(5):
+          return
+        if self.returncode is None:
+          self.kill() # same race as for terminate ?
+    t = threading.Thread(target=t)
+    t.daemon = True
     t.start()
-    r = self.wait()
-    t.cancel()
-    return r
+    def killed():
+      event.set()
+      t.join()
+      return event.__killed
+    return killed
 
-def init_db():
-  db = sqlite3.connect(db_path)
-  c = db.cursor()
-  c.executescript("""
+def init_db(db):
+  db.executescript("""
 CREATE TABLE IF NOT EXISTS status (
   timestamp INTEGER UNIQUE,
   status VARCHAR(255));
@@ -69,8 +70,6 @@ CREATE TABLE IF NOT EXISTS individual_status (
   element VARCHAR(255),
   output TEXT);
 """)
-  db.commit()
-  db.close()
 
 def getListOfScripts(directory):
   """
@@ -109,59 +108,43 @@ def runServices(directory):
 
 
 def runScripts(directory):
-  scripts = getListOfScripts(directory)
   # XXX script_timeout could be passed as parameters
   script_timeout = 60 # in seconds
   result = {}
-  for script in scripts:
-    command = [os.path.join(promise_dir, script)]
-    script = os.path.basename(command[0])
-    result[script] = ''
+  with open(os.devnull, 'r+') as f:
+    for script in getListOfScripts(directory):
+      command = os.path.join(promise_dir, script),
+      script = os.path.basename(script)
+      result[script] = ''
 
-    process_handler = Popen(command,
-                            cwd=instance_path,
-                            env=None if sys.platform == 'cygwin' else {},
-                            stdout=subprocess.PIPE,
-                            stderr=subprocess.PIPE,
-                            stdin=subprocess.PIPE)
-    process_handler.stdin.flush()
-    process_handler.stdin.close()
-    process_handler.stdin = None
-
-    process_handler.timeout(script_timeout)
-    process_handler.wait()
-
-    if process_handler.poll() is None:
-      process_handler.terminate()
-      result[script] = "Time Out"
-    elif process_handler.poll() != 0:
-      stderr = process_handler.communicate()[1]
-      if stderr is not None:
+      p = Popen(command, cwd=instance_path,
+                env=None if sys.platform == 'cygwin' else {},
+                stdin=f, stdout=f, stderr=subprocess.PIPE)
+      killed = p.set_timeout(script_timeout)
+      stderr = p.communicate()[1]
+      if killed():
+        result[script] = "Time Out"
+      elif p.returncode:
         result[script] = stderr.strip()
   return result
 
 
 def writeFiles(monitors):
   timestamp = int(time.time())
-  date = datetime.datetime.now().ctime()
-  init_db()
   db = sqlite3.connect(db_path)
-  fail = False
-  for key, value in monitors.iteritems():
-    element_status = SUCCESS
-    if value != "" :
-      fail = True
-      element_status = FAILURE
-    db.execute("insert into individual_status(timestamp, element, output, status) values (?, ?, ?, ?)", (timestamp, key, value, element_status))
-  db.commit()
+  init_db(db)
   status = SUCCESS
-  if fail:
-    status = FAILURE
+  for key, value in monitors.iteritems():
+    if value:
+      element_status = status = FAILURE
+    else:
+      element_status = SUCCESS
+    db.execute("insert into individual_status(timestamp, element, output, status) values (?, ?, ?, ?)", (timestamp, key, value, element_status))
   db.execute("insert into status(timestamp, status) values (?, ?)", (timestamp, status))
   db.commit()
   db.close()
-  monitors['datetime'] = date
-  open(monitoring_file_json, "w+").write(json.dumps(monitors))
+  monitors['datetime'] = time.ctime(timestamp)
+  json.dump(monitors, open(monitoring_file_json, "w+"))
 
 def main():
   parser = OptionParser(option_list=option_list)
@@ -183,10 +166,6 @@ def main():
     print json.dumps(monitors)
   else:
     writeFiles(monitors)
-  if len(monitors) == 0:
-    exit(0)
-  else:
-    exit(1)
 
 
 if __name__ == "__main__":
