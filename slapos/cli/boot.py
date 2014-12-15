@@ -91,7 +91,7 @@ def _ping6():
     if p.returncode == 0:
         print "[BOOT] IPv6 network reachable..."
         return 1
-    print "[BOOT] [ERROR] IPv4 network unreachable..."
+    print "[BOOT] [ERROR] IPv6 network unreachable..."
     return 0
 
 class BootCommand(ConfigCommand):
