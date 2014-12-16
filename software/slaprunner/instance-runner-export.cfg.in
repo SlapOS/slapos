@@ -50,6 +50,7 @@ parts +=
 ## Monitor for runner
   monitor-current-log-access
   monitor-check-resilient-feed-file
+  monitor-check-webrunner-internal-instance
 
 
 [exporter]
