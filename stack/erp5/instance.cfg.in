@@ -204,3 +204,4 @@ mariadb = dynamic-template-mariadb:rendered
 balancer = dynamic-template-balancer:rendered
 zodb-zeo = dynamic-template-zeo:rendered
 zope = dynamic-template-zope:rendered
+http-monitor = dynamic-template-http-monitor:rendered
