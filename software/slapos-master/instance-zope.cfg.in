@@ -78,11 +78,23 @@ ca-private = ${:ca-dir}/private
 ca-certs = ${:ca-dir}/certs
 ca-newcerts = ${:ca-dir}/newcerts
 ca-crl = ${:ca-dir}/crl
+logrotate-backup = ${:var}/logrotate
 
 [binary-link]
 recipe = slapos.cookbook:symbolic.link
 target-directory = ${directory:bin}
 link-binary = {{ dumps(parameter_dict['link-binary']) }}
+
+[{{ section('monitor-current-log-access') }}]
+< = monitor-directory-access
+source = ${directory:log}
+
+[{{ section('monitor-backup-log-access') }}]
+< = monitor-directory-access
+source = ${directory:logrotate-backup}
+
+[monitor-parameters]
+port = {{ slapparameter_dict['port-base'] + 5000 }}
 
 [certificate-authority-common]
 requests-directory = ${directory:ca-requests}
@@ -363,6 +375,7 @@ dict toward erp5 partition, violating the DRY principle and making the intent
 hard to guess.
 -#}
 hosts-dict = {{ dumps(hosts_dict) }}
+monitor-url = ${monitor-parameters:url}
 
 [erp5-promise]
 recipe = slapos.cookbook:erp5.promise
@@ -379,9 +392,21 @@ certificate-authority-path = {{ dumps(slapparameter_dict['ca-path']) }}
 {% endif -%}
 
 [buildout]
-extends = {{ logrotate_cfg }}
+extends = 
+  {{ logrotate_cfg }}
+  {{ parameter_dict['template-monitor'] }}
 parts +=
   erp5-promise
+  certificate-authority
+  cron-entry-monitor
+  cron-entry-rss
+  deploy-index
+  setup-static-files
+  public-symlink
+  cgi-httpd-wrapper
+  cgi-httpd-graceful-wrapper
+  monitor-promise
+  monitor-instance-log-access
   {{ part_list | join('\n  ') }}
   publish-zope
 versions = versions

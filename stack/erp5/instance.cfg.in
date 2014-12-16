@@ -205,3 +205,4 @@ balancer = dynamic-template-balancer:rendered
 zodb-neo = dynamic-template-neo:rendered
 zodb-zeo = dynamic-template-zeo:rendered
 zope = dynamic-template-zope:rendered
+http-monitor = dynamic-template-http-monitor:rendered
