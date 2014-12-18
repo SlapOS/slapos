@@ -51,14 +51,18 @@
         <item>
             <key> <string>_body</string> </key>
             <value> <string>portal = context.getPortalObject()\n
-category_uid = portal.restrictedTraverse(\n
+public_category_uid = portal.restrictedTraverse(\n
   "portal_categories/allocation_scope/open/public", None).getUid()\n
+\n
+friend_category_uid = portal.restrictedTraverse(\n
+  "portal_categories/allocation_scope/open/friend", None).getUid()\n
+\n
 \n
 if category_uid is not None:\n
   portal.portal_catalog.searchAndActivate(\n
     portal_type = \'Computer\',\n
     validation_state = \'validated\',\n
-    default_allocation_scope_uid = category_uid,\n
+    default_allocation_scope_uid = [public_category_uid, friend_category_uid],\n
     method_id = \'Computer_checkState\',\n
     activate_kw = {\'tag\':tag}  \n
   )\n
