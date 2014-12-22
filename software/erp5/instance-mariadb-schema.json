@@ -10,6 +10,11 @@
         "description": "Start allocating ports at this value, going downward"
       }]
     },
+    "monitor": {
+      "description": "Define if monitor instance will be associate to this instance of mariadb.",
+      "default": false,
+      "type": "boolean"
+    },
     "database-list": {
       "description": "Databases to create and respective user credentials getting all privileges on it",
       "default": [{

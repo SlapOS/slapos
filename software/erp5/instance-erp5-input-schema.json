@@ -99,6 +99,20 @@
       },
       "type": "object"
     },
+    "monitor": {
+      "description": "Monitoring instance request parameters",
+      "properties": {
+        "port-base": {
+          "allOf": [{
+            "$ref": "#/definitions/tcpv4port"
+          }, {
+            "description": "Start monitor allocating ports at this value. Useful if one needs to make several partitions share the same port range (ie, several partitions bound to a single address)",
+            "default": 2600
+          }]
+        }
+      },
+      "type": "object"
+    },
     "zope-partition-dict": {
       "description": "Zope layout definition",
       "patternProperties": {
@@ -147,6 +161,15 @@
                 "description": "Start allocating ports at this value. Useful if one needs to make several partitions share the same port range (ie, several partitions bound to a single address)",
                 "default": 2200
               }]
+            },
+            "monitor": {
+              "description": "Define if monitoring instance will be associate to this zope.",
+              "default": false,
+              "type": "boolean"
+            },
+            "computer-guid": {
+              "description": "GUID of computer instance must be requested on",
+              "type": "string"
             }
           },
           "type": "object"
