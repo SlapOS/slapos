@@ -14,6 +14,10 @@ XXX: This template only supports exactly one IPv4 and one IPv6 per
 partition. No more (undefined result), no less (IndexError).
 -#}
 {% set ipv4 = (ipv4_set | list)[0] -%}
+{% set monitor = slapparameter_dict['monitor']  -%}
+{% if monitor -%}
+{% set monitor_port = slapparameter_dict['monitor-port'] %}
+{% endif -%}
 
 {% if slapparameter_dict['mysql-test-url-list'] -%}
 [{{ section('test-runner') }}]
@@ -99,6 +103,7 @@ recipe = slapos.cookbook:certificate_authority
 openssl-binary = ${binary-link:target-directory}/openssl
 wrapper = ${directory:services}/ca
 
+{% if monitor -%}
 [{{ section('monitor-current-log-access') }}]
 < = monitor-directory-access
 source = ${directory:log}
@@ -108,7 +113,8 @@ source = ${directory:log}
 source = ${directory:logrotate-backup}
 
 [monitor-parameters]
-port = {{ slapparameter_dict['port-base'] + 5000 }}
+port = {{ slapparameter_dict['monitor-port'] }}
+{% endif -%}
 
 {% if use_ipv6 -%}
 {%   set ipv6 = (ipv6_set | list)[0] -%}
@@ -375,7 +381,9 @@ dict toward erp5 partition, violating the DRY principle and making the intent
 hard to guess.
 -#}
 hosts-dict = {{ dumps(hosts_dict) }}
+{% if monitor -%}
 monitor-url = ${monitor-parameters:url}
+{% endif -%}
 
 [erp5-promise]
 recipe = slapos.cookbook:erp5.promise
@@ -390,20 +398,26 @@ bt5-repository-url = {{ dumps(slapparameter_dict['bt5-repository-url']) }}
 [buildout]
 extends =
   {{ logrotate_cfg }}
+{% if monitor -%}
+# Extends template for monitor
   {{ parameter_dict['template-monitor'] }}
+{% endif -%}
 parts +=
   erp5-promise
+{% if monitor -%}
+# Access to zope logs
   certificate-authority
   cron-entry-monitor
   cron-entry-rss
   deploy-index
   setup-static-files
-  certificate-authority
   public-symlink
   cgi-httpd-wrapper
   cgi-httpd-graceful-wrapper
   monitor-promise
   monitor-instance-log-access
+{% endif -%}
+# Complete parts with sections
   {{ part_list | join('\n  ') }}
   publish-zope
 versions = versions

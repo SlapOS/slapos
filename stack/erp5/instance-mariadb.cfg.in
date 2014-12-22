@@ -10,6 +10,7 @@
 {% set full_backup_retention_days = catalog_backup.get('full-retention-days', 7) -%}
 {% set incremental_backup_retention_days = catalog_backup.get('incremental-retention-days', full_backup_retention_days) -%}
 {% set port = slapparameter_dict['tcpv4-port'] %}
+{% set monitor_port = slapparameter_dict.get('monitor-port', 0) -%}
 {% if use_ipv6 -%}
 {%   set ip = (ipv6_set | list)[0] -%}
 {% else -%}
@@ -31,7 +32,9 @@ recipe = slapos.cookbook:publish.serialised
 {% endmacro -%}
 database-list = {{ render_database_list(database_list) }}
 test-database-list = {{ render_database_list(test_database_list) }}
+{% if monitor_port -%}
 monitor-url = ${publish-connection-informations:monitor_url}
+{% endif %}
 
 [simplefile]
 recipe = slapos.recipe.template:jinja2
@@ -218,6 +221,7 @@ command-line = "{{ parameter_dict['bin-directory'] }}/is-local-tcp-port-opened" 
 wrapper-path = ${directory:promise}/mariadb
 parameters-extra = true
 
+{% if monitor_port -%}
 [{{ section('monitor-current-log-access') }}]
 < = monitor-directory-access
 source = ${directory:log}
@@ -227,12 +231,16 @@ source = ${directory:log}
 source = ${logrotate-entry-mariadb:backup}
 
 [monitor-parameters]
-port = 3380
+port = {{ monitor_port }}
+{% endif -%}
 
 [buildout]
 extends =
   {{ logrotate_cfg }}
+{% if monitor_port -%}
+# Extends template for monitor
   {{ parameter_dict['template-monitor'] }}
+{% endif -%}
 parts +=
   publish-mariadb-url
   logrotate-entry-mariadb
@@ -240,7 +248,7 @@ parts +=
   update-mysql
   mysqld
   promise
-
+{% if monitor_port -%}
 # Access to mariadb logs
   certificate-authority
   cron-entry-monitor
@@ -253,6 +261,6 @@ parts +=
   cgi-httpd-graceful-wrapper
   monitor-promise
   monitor-instance-log-access
-
+{% endif -%}
 # Complete parts with sections
   {{ part_list | join('\n  ') }}
