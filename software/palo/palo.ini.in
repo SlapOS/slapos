@@ -1,0 +1,12 @@
+data-directory {{ directory_var }}
+template-directory {{palo_olap_repository_location}}/Api
+http {{ instance_parameter:palo_olap_host }} {{ instance_parameter:palo_olap_port }}
+http [2001:67c:1254:e:c1::4206] 7770
+admin 10.0.221.4 7771
+log {{ directory_log }}/palo_olap.log
+verbose debug
+user-login
+
+#worker /srv/slapgrid/slappart8/srv/runner/instance/slappart0/sbin/erp5_login_worker /srv/slapgrid/slappart8/srv/runner/instance/slappart0/var//log//palo_login_worker.log https://aact.erp5.net/erp5/
+#workerlogin authorization
+

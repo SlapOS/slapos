@@ -1,0 +1,75 @@
+[buildout]
+parts =
+  instance-parameter
+  directory
+  palo
+  publish-connection-parameter
+
+eggs-directory = ${buildout:eggs-directory}
+develop-eggs-directory = ${buildout:develop-eggs-directory}
+offline = true
+
+
+[instance-parameter]
+recipe = slapos.cookbook:slapconfiguration
+computer = $${slap_connection:computer_id}
+partition = $${slap_connection:partition_id}
+url = $${slap_connection:server_url}
+key = $${slap_connection:key_file}
+cert = $${slap_connection:cert_file}
+
+configuration.name = John Doe
+configuration.erp5_url = 
+
+[palo_olap_parameter]
+palo_olap_host = $${instance-parameter:ipv4-random}
+palo_olap_port = 7777
+
+[directory]
+recipe = slapos.cookbook:mkdirectory
+home = $${buildout:directory}
+etc = $${:home}/etc
+var = $${:home}/var
+script = $${:etc}/run/
+service = $${:etc}/service
+promise = $${:etc}/promise/
+log = $${:var}/log
+
+[TODO]
+todo =
+  worker_login
+  tunnel
+  patch ipv6
+  etl
+  log_rotation
+
+
+[palo_ini]
+recipe = slapos.recipe.template:jinja2
+template = ${:_profile_base_location_}/palo.ini.in
+rendered = $${directory:etc}/palo.ini
+extensions = jinja2.ext.do
+context = import json_module json
+  key directory_var directory:var
+  key directory_log directory:log
+  key login_woker erp5_login_worker:wrapper-path
+  key palo_olap_repository_location :palo_olap_repository_location
+  section parameter instance-parameter
+  section palo_olap_parameter palo_olap_parameter
+  key erp5_url instance-parameter:configuration.erp5_url
+
+palo_olap_repository_location = ${palo_olap-repository.git:location}
+
+[palo]
+# This recipe will try to "exec" the command-line after separating parameters.
+recipe = slapos.cookbook:wrapper
+command-line = ${palo:location}/bin/palo --init-file $${palo_ini:rendered} --chdir
+wrapper-path = $${directory:service}/palo_olap
+
+[erp5_login_worker]
+wrapper-path = TODO
+
+[publish-connection-parameter]
+recipe = slapos.cookbook:publish
+name = Hello $${instance-parameter:configuration.name}!
+palo_olap_url = $${instance-parameter:}
