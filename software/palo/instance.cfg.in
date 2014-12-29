@@ -22,8 +22,10 @@ configuration.name = John Doe
 configuration.erp5_url = 
 
 [palo_olap_parameter]
-palo_olap_host = $${instance-parameter:ipv4-random}
+ipv4 = $${instance-parameter:ipv4-random}
+ipv6 = $${instance-parameter:ipv6-random}
 palo_olap_port = 7777
+palo_olap_admin_port = 7778
 
 [directory]
 recipe = slapos.cookbook:mkdirectory
@@ -53,12 +55,10 @@ context = import json_module json
   key directory_var directory:var
   key directory_log directory:log
   key login_woker erp5_login_worker:wrapper-path
-  key palo_olap_repository_location :palo_olap_repository_location
+  raw palo_olap_repository_location ${palo_olap-repository.git:location}
   section parameter instance-parameter
   section palo_olap_parameter palo_olap_parameter
   key erp5_url instance-parameter:configuration.erp5_url
-
-palo_olap_repository_location = ${palo_olap-repository.git:location}
 
 [palo]
 # This recipe will try to "exec" the command-line after separating parameters.
@@ -71,5 +71,7 @@ wrapper-path = TODO
 
 [publish-connection-parameter]
 recipe = slapos.cookbook:publish
-name = Hello $${instance-parameter:configuration.name}!
-palo_olap_url = $${instance-parameter:}
+palo_olap_url = $${palo_olap_parameter:ipv4}:$${palo_olap_parameter:palo_olap_port}
+palo_olap_ipv6_url = [$${palo_olap_parameter:ipv6}]:$${palo_olap_parameter:palo_olap_port}
+palo_olap_admin_url = $${palo_olap_parameter:ipv4}:$${palo_olap_parameter:palo_olap_admin_port}
+
