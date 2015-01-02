@@ -261,6 +261,15 @@ class TestInformation(BasicMixin, unittest.TestCase):
         self.app.get, '/getSoftwareReleaseListFromSoftwareProduct'
     )
 
+  def test_getComputerPartitionCertificate(self):
+    """
+    Tests that getComputerPartitionCertificate method is implemented in slapproxy.
+    """
+    rv = self.app.get(
+      '/getComputerPartitionCertificate?computer_id=%s&computer_partition_id=%s' % (
+      self.computer_id, 'slappart0'))
+    response = xml_marshaller.xml_marshaller.loads(rv.data)
+    self.assertEquals({'certificate': '', 'key': ''}, response)
 
 class MasterMixin(BasicMixin, unittest.TestCase):
   """

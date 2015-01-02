@@ -730,6 +730,11 @@ def softwareInstanceRename():
 def getComputerPartitionStatus():
   return xml_marshaller.xml_marshaller.dumps('Not implemented.')
 
+@app.route('/getComputerPartitionCertificate', methods=['GET'])
+def getComputerPartitionCertificate():
+  # proxy does not use partition certificate, but client calls this.
+  return xml_marshaller.xml_marshaller.dumps({'certificate': '', 'key': ''})
+
 @app.route('/getSoftwareReleaseListFromSoftwareProduct', methods=['GET'])
 def getSoftwareReleaseListFromSoftwareProduct():
   software_product_reference = request.args.get('software_product_reference')
