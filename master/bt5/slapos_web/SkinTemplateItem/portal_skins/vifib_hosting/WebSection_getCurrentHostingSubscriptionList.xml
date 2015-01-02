@@ -59,6 +59,7 @@ return portal.portal_catalog(\n
   portal_type="Hosting Subscription",\n
   default_destination_section_uid=person_uid,\n
   validation_state=\'validated\'\n
+  sort_on=((\'title\', ),)\n
   )\n
 </string> </value>
         </item>
