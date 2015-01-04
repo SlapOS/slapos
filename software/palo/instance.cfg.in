@@ -39,7 +39,6 @@ log = $${:var}/log
 
 [TODO]
 todo =
-  worker_login
   tunnel
   patch ipv6
   etl
@@ -54,20 +53,17 @@ extensions = jinja2.ext.do
 context = import json_module json
   key directory_var directory:var
   key directory_log directory:log
-  key login_woker erp5_login_worker:wrapper-path
   raw palo_olap_repository_location ${palo_olap-repository.git:location}
   section parameter instance-parameter
   section palo_olap_parameter palo_olap_parameter
   key erp5_url instance-parameter:configuration.erp5_url
+  raw erp5_login_worker_path ${erp5_login_worker:output}
 
 [palo]
 # This recipe will try to "exec" the command-line after separating parameters.
 recipe = slapos.cookbook:wrapper
 command-line = ${palo:location}/bin/palo --init-file $${palo_ini:rendered} --chdir
 wrapper-path = $${directory:service}/palo_olap
-
-[erp5_login_worker]
-wrapper-path = TODO
 
 [publish-connection-parameter]
 recipe = slapos.cookbook:publish
