@@ -2,7 +2,8 @@
 parts =
   instance-parameter
   directory
-  palo
+  palo_olap
+  palo_etl
   publish-connection-parameter
 
 eggs-directory = ${buildout:eggs-directory}
@@ -37,6 +38,16 @@ service = $${:etc}/service
 promise = $${:etc}/promise/
 log = $${:var}/log
 
+[directory_tomcat]
+<= directory
+catalina_base = $${:home}/var/palo_etl
+catalina_logs = $${:catalina_base}/logs
+catalina_temp = $${:catalina_base}/temp
+catalina_webapps = $${:catalina_base}/webapps
+catalina_work = $${:catalina_base}/work
+catalina_conf = $${:catalina_base}/conf
+
+
 [TODO]
 todo =
   tunnel
@@ -59,11 +70,34 @@ context = import json_module json
   key erp5_url instance-parameter:configuration.erp5_url
   raw erp5_login_worker_path ${erp5_login_worker:output}
 
-[palo]
-# This recipe will try to "exec" the command-line after separating parameters.
+[palo_olap]
 recipe = slapos.cookbook:wrapper
 command-line = ${palo:location}/bin/palo --init-file $${palo_ini:rendered} --chdir
 wrapper-path = $${directory:service}/palo_olap
+
+[palo_etl]
+recipe = slapos.cookbook:wrapper
+command-line = ${tomcat:location}/bin/catalina.sh run
+wrapper-path = $${directory:service}/palo_etl
+environment = JAVA_HOME = ${java:location}
+  CATALINA_BASE = $${directory_tomcat:catalina_base}
+dependencies = $${palo_etl_server_xml:rendered}
+
+[palo_etl_server_xml]
+recipe = slapos.recipe.template:jinja2
+template = ${:_profile_base_location_}/server.xml.in
+rendered = $${directory_tomcat:catalina_conf}/server.xml
+extensions = jinja2.ext.do
+context = import json_module json
+  section palo_etl_parameter palo_etl_parameter
+  raw palo_etl_server_war ${palo_etl_download:location}
+
+[palo_etl_parameter]
+tomcat_port = 8888
+tomcat_host = $${:ipv4}
+tomcat_server_port = 8005
+ipv4 = $${instance-parameter:ipv4-random}
+ipv6 = $${instance-parameter:ipv6-random}
 
 [publish-connection-parameter]
 recipe = slapos.cookbook:publish
