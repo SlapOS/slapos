@@ -58,7 +58,7 @@ friend_category_uid = portal.restrictedTraverse(\n
   "portal_categories/allocation_scope/open/friend", None).getUid()\n
 \n
 \n
-if category_uid is not None:\n
+if None not in [friend_category_uid, public_category_uid]:\n
   portal.portal_catalog.searchAndActivate(\n
     portal_type = \'Computer\',\n
     validation_state = \'validated\',\n
