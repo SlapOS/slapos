@@ -54,7 +54,8 @@
   tag = document.getPath() + \'_reindex\'\n
   document.activate(after_tag=after_tag).reindexObject(activate_kw=dict(tag=tag))\n
   for subdocument in document.getPredecessorValueList(portal_type=\'Software Instance\'):\n
-    reindexRecursively(subdocument, tag)\n
+    if subdocument.getValidationState() != \'invalidated\':\n
+      reindexRecursively(subdocument, tag)\n
 \n
 reindexRecursively(state_change[\'object\'],)\n
 </string> </value>
