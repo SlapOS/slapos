@@ -1,0 +1,127 @@
+<?xml version="1.0"?>
+<ZopeData>
+  <record id="1" aka="AAAAAAAAAAE=">
+    <pickle>
+      <global name="SQL" module="Products.ZSQLMethods.SQL"/>
+    </pickle>
+    <pickle>
+      <dictionary>
+        <item>
+            <key> <string>_col</string> </key>
+            <value>
+              <list>
+                <dictionary>
+                  <item>
+                      <key> <string>name</string> </key>
+                      <value> <string>security_uid</string> </value>
+                  </item>
+                  <item>
+                      <key> <string>null</string> </key>
+                      <value> <int>1</int> </value>
+                  </item>
+                  <item>
+                      <key> <string>type</string> </key>
+                      <value> <string>i</string> </value>
+                  </item>
+                  <item>
+                      <key> <string>width</string> </key>
+                      <value> <int>0</int> </value>
+                  </item>
+                </dictionary>
+                <dictionary>
+                  <item>
+                      <key> <string>name</string> </key>
+                      <value> <string>path</string> </value>
+                  </item>
+                  <item>
+                      <key> <string>null</string> </key>
+                      <value> <int>0</int> </value>
+                  </item>
+                  <item>
+                      <key> <string>type</string> </key>
+                      <value> <string>t</string> </value>
+                  </item>
+                  <item>
+                      <key> <string>width</string> </key>
+                      <value> <int>0</int> </value>
+                  </item>
+                </dictionary>
+                <dictionary>
+                  <item>
+                      <key> <string>name</string> </key>
+                      <value> <string>portal_type</string> </value>
+                  </item>
+                  <item>
+                      <key> <string>null</string> </key>
+                      <value> <int>1</int> </value>
+                  </item>
+                  <item>
+                      <key> <string>type</string> </key>
+                      <value> <string>t</string> </value>
+                  </item>
+                  <item>
+                      <key> <string>width</string> </key>
+                      <value> <int>0</int> </value>
+                  </item>
+                </dictionary>
+                <dictionary>
+                  <item>
+                      <key> <string>name</string> </key>
+                      <value> <string>uid</string> </value>
+                  </item>
+                  <item>
+                      <key> <string>null</string> </key>
+                      <value> <int>0</int> </value>
+                  </item>
+                  <item>
+                      <key> <string>type</string> </key>
+                      <value> <string>l</string> </value>
+                  </item>
+                  <item>
+                      <key> <string>width</string> </key>
+                      <value> <int>0</int> </value>
+                  </item>
+                </dictionary>
+              </list>
+            </value>
+        </item>
+        <item>
+            <key> <string>arguments_src</string> </key>
+            <value> <string></string> </value>
+        </item>
+        <item>
+            <key> <string>connection_id</string> </key>
+            <value> <string>cmf_activity_sql_connection</string> </value>
+        </item>
+        <item>
+            <key> <string>id</string> </key>
+            <value> <string>z_search_unindexed_security_uid</string> </value>
+        </item>
+        <item>
+            <key> <string>src</string> </key>
+            <value> <string>select \n
+  distinct catalog.security_uid, path, portal_type, uid  \n
+\n
+from \n
+  catalog \n
+\n
+where \n
+  portal_type != "Business Template" \n
+  and path not like "deleted" \n
+  and not exists (\n
+     select  \n
+       roles_and_users.uid \n
+     from \n
+       roles_and_users \n
+    where \n
+       catalog.security_uid = roles_and_users.uid\n
+    )</string> </value>
+        </item>
+        <item>
+            <key> <string>title</string> </key>
+            <value> <string></string> </value>
+        </item>
+      </dictionary>
+    </pickle>
+  </record>
+</ZopeData>
