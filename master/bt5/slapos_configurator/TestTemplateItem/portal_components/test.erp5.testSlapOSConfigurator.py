@@ -6,11 +6,8 @@
 ##############################################################################
 
 from Products.SlapOS.tests.testSlapOSMixin import \
-  testSlapOSMixin, withAbort
-from zExceptions import Unauthorized
-from DateTime import DateTime
+  testSlapOSMixin
 import os
-import time
 
 class TestSlapOSConfigurator(testSlapOSMixin):
 
@@ -181,7 +178,6 @@ class TestSlapOSConfigurator(testSlapOSMixin):
       'erp5_open_trade',
       'erp5_accounting',
       'erp5_commerce',
-      'erp5_xhtml_jquery_style',
       'erp5_credential',
       'erp5_km',
       'erp5_web_download_theme',
