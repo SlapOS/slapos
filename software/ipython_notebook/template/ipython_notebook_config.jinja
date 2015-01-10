@@ -1,0 +1,13 @@
+
+import ConfigParser
+
+knowledge_0 = '{{ config_cfg }}'
+
+c = get_config()
+
+parser = ConfigParser.ConfigParser()
+parser.read(knowledge_0)
+
+if parser.has_option("ipython_notebook", "password"):
+  c.NotebookApp.password = parser.get("ipython_notebook", "password")
+
