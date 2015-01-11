@@ -54,8 +54,15 @@ class Recipe(GenericBaseRecipe):
         if environment is not None:
             environment = dict((k.strip(), v.strip()) for k, v in [
               line.split('=') for line in environment.splitlines() if line.strip() ])
-        return [self.createPythonScript(
-            wrapper_path,
+
+        # We create a python script and a wrapper around the python
+        # script because the python script might have a too long #! line
+        python_script = self.createPythonScript(
+            wrapper_path+'.py',
             'slapos.recipe.librecipe.execute.generic_exec',
-            (command_line, wait_files, environment,),
-        )]
+            (command_line, wait_files, environment,), )
+        return [python_script, self.createWrapper(
+             name=wrapper_path,
+             command=python_script,
+             parameters_extra=parameters_extra) ]
+
