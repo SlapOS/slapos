@@ -2,7 +2,8 @@ PidFile "{{ httpd_configuration.get('pid-file') }}"
 ServerName example.com
 ServerAdmin someone@email
 <IfDefine !MonitorPort>
-Listen [{{ httpd_configuration.get('listening-ip') }}]:{{ monitor_parameters.get('port') }}
+#Listen [{{ httpd_configuration.get('listening-ip') }}]:{{ monitor_parameters.get('port') }}
+Listen {{ httpd_configuration.get('listening-ip') }}:{{ monitor_parameters.get('port') }}
 Define MonitorPort
 </IfDefine>
 DocumentRoot "{{ directory.get('www') }}"
