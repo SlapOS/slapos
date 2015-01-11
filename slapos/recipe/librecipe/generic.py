@@ -134,13 +134,14 @@ class GenericBaseRecipe(object):
       pidfile=None
   ):
     """
-    Creates a very simple (one command) shell script for process replacement.
+    Creates a shell script for process replacement.
     Takes care of quoting.
+    Takes care of #! line limitation when the wrapped command is a script.
     if pidfile parameter is specified, then it will make the wrapper a singleton,
     accepting to run only if no other instance is running.
     """
 
-    lines = [ '#!/bin/sh' ]
+    lines = [ '#!/bin/bash' ]
 
     for comment in comments:
       lines.append('# %s' % comment)
@@ -164,7 +165,20 @@ class GenericBaseRecipe(object):
           fi
           echo $$ > $pidfile""" % (pidfile, command)))
 
-    lines.append('exec %s' % shlex.quote(command))
+    # Inspired by http://stackoverflow.com/a/10826085
+    lines.append(dedent("""\
+    COMMAND=%s
+
+    # If the wrapped command uses a shebang, execute the referenced
+    # executable passing the script path as first argument. 
+    # This is to workaround the limitation of 127 characters in #!
+    if [ $(head -c2 "$COMMAND") = "#!" ]; then
+      SHEBANG=$(head -1 "$COMMAND")
+      INTERPRETER=( ${SHEBANG#\#!} )
+      COMMAND="${INTERPRETER[@]} $COMMAND"
+    fi
+
+    exec $COMMAND """ % shlex.quote(command)))
 
     for param in parameters:
       if len(lines[-1]) < 40:
