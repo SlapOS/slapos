@@ -1,6 +1,7 @@
 #!${buildout:executable}
 
 equeue_database = '${equeue:database}'
+equeue_lockfile = '${equeue:lockfile}'
 
 import cgi
 import cgitb
@@ -32,6 +33,14 @@ def getLatestBackupDate():
       last_backup = timestamp
   return datetime.datetime.fromtimestamp(last_backup)
 
+def isBackupInProgress():
+  """
+  Check if backup is in progress (importer script is running)
+  by checking if equeue lockfile exists.
+  """
+  # XXX: check if file is valid
+  return os.path.exists(equeue_lockfile)
+
 print "Content-Type: text/html"
 print
 
@@ -44,12 +53,13 @@ if "password" not in form:
   <p><b>Warning: submit the form only if you understand what you are doing.</b></p>
   <p>Note: the password asked here can be found within the parameters of your SlapOS instance page.</p>
   <p>Last valid backup: %s</p>
+  <p>Importer script(s) of backup in progress: %s</p>
   <form action="/">
     Password: <input type="text" name="password">
     <input type="submit" value="Take over" style="background: red;">
   </form>
 </body>
-</html>""" % getLatestBackupDate().strftime('%Y-%m-%d %H:%M:%S')
+</html>""" % (getLatestBackupDate().strftime('%Y-%m-%d %H:%M:%S'), isBackupInProgress())
   sys.exit(0)
 
 if form['password'].value != '${:password}':
