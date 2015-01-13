@@ -7,13 +7,14 @@ import subprocess
 from datetime import date
 
 base_name = "{{ name }}".strip()
+default = "{{ parameter_dict['default_parameter'] }}".strip()
 apache_log_list = """{{ parameter_dict['apache-log-list'] }}""".split('\n')
-base_list = [base.strip() for base in
+base_list = [base.strip().split(' ') for base in
                 """{{ parameter_dict['base-list'] }}""".split('\n') if base]
-skip_base_list = [base.strip() for base in
+skip_base_list = [base.strip().split(' ') for base in
                 """{{ parameter_dict['skip-base-list'] }}""".split('\n')
                 if base]
-erp5_base_list = [base.strip() for base in
+erp5_base_list = [base.strip().split(' ') for base in
                   """{{ parameter_dict['erp5-base-list'] }}""".split('\n')
                   if base]
 
@@ -31,6 +32,8 @@ if not os.path.exists(folder_today):
 apachedex = "{{ apachedex_executable }}".strip()
 argument_list = [apachedex, '--js-embed', '--out',
                   os.path.join(folder_today, 'ApacheDex-%s.html' % base_name)]
+if default:
+  argument_list += ['--default', default]
 
 log_list = []
 for logfile in apache_log_list:
@@ -48,15 +51,18 @@ if not log_list:
 
 if erp5_base_list:
   argument_list.append('--erp5-base')
-  argument_list += erp5_base_list
+  for args_list in erp5_base_list:
+    argument_list += args_list
 
 if base_list:
   argument_list.append('--base')
-  argument_list += base_list
+  for args_list in base_list:
+    argument_list += args_list
 
 if skip_base_list:
   argument_list.append('--skip-base')
-  argument_list += skip_base_list
+  for args_list in skip_base_list:
+    argument_list += args_list
 
 argument_list.append('--error-detail')
 argument_list += log_list
