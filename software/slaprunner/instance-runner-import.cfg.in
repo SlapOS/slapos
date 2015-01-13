@@ -20,7 +20,7 @@ parts +=
   shellinabox
   symlinks
   slapos-cfg
-  slapos-repo-config
+  slapos-repo
   cron-entry-prepare-software
   deploy-instance-parameters
   instance-software-type
