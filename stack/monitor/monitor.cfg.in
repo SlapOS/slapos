@@ -50,6 +50,8 @@ public-cgi = $${:cgi-bin}/monitor-public
 monitor-custom-scripts = $${:etc}/monitor
 monitor-result = $${:var}/monitor
 
+apachedex-result = $${:srv}/apachedex
+
 private-directory = $${:srv}/monitor-private
 
 [public-symlink]
@@ -187,6 +189,41 @@ context =
 recipe = plone.recipe.command
 command = ln -s $${:source} $${monitor-directory:private-directory}
 source =
+  
+[apachedex-entries-base]
+recipe = slapos.recipe.template:jinja2
+template = ${run-apachedex:location}/${run-apachedex:filename}
+rendered = $${monitor-directory:bin}/$${:script-name}
+mode = 0700
+extensions = jinja2.ext.do
+extra-context =
+context = 
+  raw python_executable ${buildout:executable}
+  raw apachedex_executable ${buildout:directory}/bin/apachedex
+  key output_folder monitor-directory:apachedex-result
+  $${:extra-context}
+  
+[apachedex-entries]
+<= apachedex-entries-base
+script-name = apachedex
+extra-context =
+  section parameter_dict apachedex-parameters
+  key name :script-name
+  
+[apachedex-parameters]
+# XXX - Sample log file with curent date: apache_access.log-%(date)s.gz
+# which will be equivalent to apache_access.log-20150112.gz if the date is 2015-01-12
+apache-log-list = 
+base-list = 
+skip-base-list = 
+erp5-base-list = 
+
+[cron-entry-apachedex]
+<= cron
+recipe = slapos.cookbook:cron.d
+name = $${apachedex-entries:script-name}
+frequency = 0 3 * * *
+command = $${apachedex-entries:rendered}
 
 [monitor-instance-log-access]
 recipe = plone.recipe.command
