@@ -1,0 +1,64 @@
+#!{{ python_executable }}
+# BEWARE: This file is operated by slapgrid
+# BEWARE: It will be overwritten automatically
+
+import os
+import subprocess
+from datetime import date
+
+base_name = "{{ name }}".strip()
+apache_log_list = """{{ parameter_dict['apache-log-list'] }}""".split('\n')
+base_list = [base.strip() for base in
+                """{{ parameter_dict['base-list'] }}""".split('\n') if base]
+skip_base_list = [base.strip() for base in
+                """{{ parameter_dict['skip-base-list'] }}""".split('\n')
+                if base]
+erp5_base_list = [base.strip() for base in
+                  """{{ parameter_dict['erp5-base-list'] }}""".split('\n')
+                  if base]
+
+output_folder = "{{ output_folder }}".strip()
+if not len(apache_log_list):
+  exit(1)
+if not os.path.exists(output_folder) or not os.path.isdir(output_folder):
+  print "ERROR: Output folder is not a directory. Exiting..."
+  exit(1)
+today = date.today().strftime("%Y-%m-%d")
+folder_today = os.path.join(output_folder, 'ApacheDex-%s' % today)
+if not os.path.exists(folder_today):
+  os.makedirs(folder_today)
+
+apachedex = "{{ apachedex_executable }}".strip()
+argument_list = [apachedex, '--js-embed', '--out',
+                  os.path.join(folder_today, 'ApacheDex-%s.html' % base_name)]
+
+log_list = []
+for logfile in apache_log_list:
+  if not logfile:
+    continue
+  # Automaticaly replace variable 'date'.
+  apache_log = logfile.strip() % {'date': date.today().strftime("%Y%m%d")}
+  if not os.path.exists(apache_log):
+    print "WARNING: File %s not found..." % apache_log
+    continue
+  log_list.append(apache_log)
+if not log_list:
+  print "WARNING: Log file list to analyse is empty or not provided. Exiting..."
+  exit(1)
+
+if erp5_base_list:
+  argument_list.append('--erp5-base')
+  argument_list += erp5_base_list
+
+if base_list:
+  argument_list.append('--base')
+  argument_list += base_list
+
+if skip_base_list:
+  argument_list.append('--skip-base')
+  argument_list += skip_base_list
+
+argument_list.append('--error-detail')
+argument_list += log_list
+
+subprocess.check_call(argument_list)
