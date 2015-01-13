@@ -16,6 +16,10 @@ per partition. No more (undefined result), no less (IndexError).
 {%   set ipv6 = (ipv6_set | list)[0] -%}
 {%   do apache_ip_list.append('[' ~ ipv6 ~ ']') -%}
 {% endif -%}
+{% set monitor = slapparameter_dict['monitor']  -%}
+{% if monitor -%}
+{% set monitor_port = slapparameter_dict['monitor-port'] %}
+{% endif -%}
 
 {% if use_ipv6 -%}
 [zope-tunnel-base]
@@ -149,6 +153,9 @@ recipe = slapos.cookbook:publish.serialised
 {{   family_name ~ '-v6' }} = {% if ipv6_set %}{{ scheme ~ '://[' ~ ipv6 ~ ']:' ~ apache_port }}{% endif %}
 {{   family_name }} = {{ scheme ~ '://' ~ ipv4 ~ ':' ~ apache_port }}
 {% endfor -%}
+{% if monitor -%}
+monitor-url = ${monitor-parameters:url}
+{% endif -%}
 
 [apache-ssl]
 recipe = plone.recipe.command
@@ -156,10 +163,12 @@ command = "{{ parameter_dict['openssl'] }}/bin/openssl" req -newkey rsa -batch -
 key = ${apache-conf-ssl:key}
 cert = ${apache-conf-ssl:cert}
 
+{% set apache_service_log_list = {} -%}
 {% for family_name, (_, _, _, authentication) in apache_dict.items() -%}
 {%   if authentication -%}
 {%     set base_name = 'apache-' ~ family_name -%}
 {%     do part_list.append('logrotate-' ~ base_name) -%}
+{%     do apache_service_log_list.__setitem__(family_name, base_name) -%}
 [logrotate-{{ base_name }}]
 recipe = slapos.cookbook:logrotate.d
 logrotate-entries = ${logrotate:logrotate-entries}
@@ -178,6 +187,69 @@ name = apache
 log = ${apache-conf-parameter-dict:error-log} ${apache-conf-parameter-dict:access-log}
 post = {{ parameter_dict['bin-directory'] }}/slapos-kill --pidfile ${apache-conf-parameter-dict:pid-file} -s USR1
 
+{% if monitor -%}
+[{{ section('monitor-current-log-access') }}]
+< = monitor-directory-access
+source = ${directory:log}
+
+[{{ section('monitor-backup-log-access') }}]
+< = monitor-directory-access
+source = ${logrotate:backup}
+
+[{{ section('monitor-apachedex-access') }}]
+< = monitor-directory-access
+source = ${monitor-directory:apachedex-result}
+
+[monitor-parameters]
+port = {{ slapparameter_dict['monitor-port'] }}
+
+[apachedex-erp5-entries]
+<= apachedex-entries-base
+script-name = apachedex-erp5
+extra-context =
+  section parameter_dict apachedex-erp5-parameters
+  key name :script-name
+
+# XXX - Hard coded values for slapos and vifib.
+[apachedex-erp5-parameters]
+apache-log-list = ${logrotate:backup}/apache-access.log-%(date)s.gz
+base-list = 
+  '+slapos.vifib.com' '/VirtualHostBase/https/slapos\.vifib\.com:443/erp5/web_site_module/commercial/VirtualHostRoot(/|$|\?)'
+  '+www.slapos.org' '/VirtualHostBase/https/www\.slapos\.org:443/erp5/web_site_module/hosting/VirtualHostRoot(/|$|\?)'
+erp5-base-list = 
+  '+vifib.erp5.net' '/VirtualHostBase/https/vifib\.erp5\.net:443/erp5/VirtualHostRoot(/|$|\?)'
+skip-base-list = 
+
+[{{ section('cron-entry-apachedex-erp5') }}]
+<= cron
+recipe = slapos.cookbook:cron.d
+name = ${apachedex-erp5-entries:script-name}
+frequency = 0 3 * * *
+command = ${apachedex-erp5-entries:rendered}
+
+{%   for family_name, log_name in apache_service_log_list.items() -%}
+[apachedex-{{ family_name }}-entries]
+<= apachedex-entries-base
+script-name = apachedex-{{ family_name }}
+extra-context =
+  section parameter_dict apachedex-{{ family_name }}-parameters
+  key name :script-name
+
+[apachedex-{{ family_name }}-parameters]
+apache-log-list = ${logrotate:backup}/{{ log_name }}-access.log-%(date)s.gz
+base-list = 
+erp5-base-list = 
+skip-base-list = 
+  
+[{{ section('cron-entry-apachedex-' ~ family_name) }}]
+<= cron
+recipe = slapos.cookbook:cron.d
+name = apachedex-{{ family_name }}
+frequency = 0 3 * * *
+command = ${apachedex-{{ family_name }}-entries:rendered}
+{%   endfor -%}
+{% endif -%}
+
 [directory]
 recipe = slapos.cookbook:mkdirectory
 apache-conf = ${:etc}/apache
@@ -191,7 +263,25 @@ log = ${:var}/log
 
 [buildout]
 extends = {{ logrotate_cfg }}
+{% if monitor -%}
+# Extends template for monitor
+  {{ parameter_dict['template-monitor'] }}
+{% endif -%}
 parts +=
   publish
   logrotate-apache
+{% if monitor -%}
+# Access to zope logs
+  certificate-authority
+  cron-entry-monitor
+  cron-entry-rss
+  deploy-index
+  setup-static-files
+  public-symlink
+  cgi-httpd-wrapper
+  cgi-httpd-graceful-wrapper
+  monitor-promise
+  monitor-instance-log-access
+{% endif -%}
+# Complete parts with sections
   {{ part_list | join('\n  ') }}

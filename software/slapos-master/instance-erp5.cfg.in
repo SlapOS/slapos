@@ -7,9 +7,10 @@
 {% set mariadb_request_dict = {'tcpv4-port': mariadb_dict.get('tcpv4-port', 2099)} -%}
 {% set monitor_dict = slapparameter_dict.get('monitor', {}) %}
 {% set monitor_port = monitor_dict.get('port-base', 2600) %}
-{% set monitor_count = 1 -%}
 {% if mariadb_dict.get('monitor', False) -%}
 {%   do mariadb_request_dict.__setitem__('monitor-port', mariadb_dict.get('monitor-port', monitor_port)) -%}
+{% set monitor_count = 2 -%}
+{% set monitor_port_balancer = monitor_port + 1 -%}
 {% endif -%}
 
 [request-common]
@@ -176,6 +177,8 @@ config-{{ name }} = {{ ' ${' ~ zope_section_id ~ ':connection-zope-address-list}
 config-haproxy-server-check-path = {{ dumps(balancer_dict.get('haproxy-server-check-path', '/') % {'site-id': site_id}) }}
 config-ssl = {{ dumps(balancer_dict.get('ssl', {})) }}
 config-certificate-authority-path = ${directory:ca-dir}
+config-monitor = {{ dumps(slapparameter_dict.get('monitoring', True)) }}
+config-monitor-port = {{ monitor_port_balancer }}
 
 [request-frontend-base]
 {% if has_frontend -%}
