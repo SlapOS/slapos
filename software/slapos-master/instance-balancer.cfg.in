@@ -212,12 +212,13 @@ extra-context =
 
 # XXX - Hard coded values for slapos and vifib.
 [apachedex-erp5-parameters]
+default_parameter = 
 apache-log-list = ${logrotate:backup}/apache-access.log-%(date)s.gz
 base-list = 
-  '+slapos.vifib.com' '/VirtualHostBase/https/slapos\.vifib\.com:443/erp5/web_site_module/commercial/VirtualHostRoot(/|$|\?)'
-  '+www.slapos.org' '/VirtualHostBase/https/www\.slapos\.org:443/erp5/web_site_module/hosting/VirtualHostRoot(/|$|\?)'
+  +slapos.vifib.com /VirtualHostBase/https/slapos\.vifib\.com:443/erp5/web_site_module/commercial/VirtualHostRoot(/|$|\?)
+  +www.slapos.org /VirtualHostBase/https/www\.slapos\.org:443/erp5/web_site_module/hosting/VirtualHostRoot(/|$|\?)
 erp5-base-list = 
-  '+vifib.erp5.net' '/VirtualHostBase/https/vifib\.erp5\.net:443/erp5/VirtualHostRoot(/|$|\?)'
+  +vifib.erp5.net /VirtualHostBase/https/vifib\.erp5\.net:443/erp5/VirtualHostRoot(/|$|\?)
 skip-base-list = 
 
 [{{ section('cron-entry-apachedex-erp5') }}]
@@ -236,6 +237,7 @@ extra-context =
   key name :script-name
 
 [apachedex-{{ family_name }}-parameters]
+default_parameter = zope-{{ family_name }}
 apache-log-list = ${logrotate:backup}/{{ log_name }}-access.log-%(date)s.gz
 base-list = 
 erp5-base-list = 
