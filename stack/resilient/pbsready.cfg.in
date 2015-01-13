@@ -157,6 +157,7 @@ rdiffbackup-binary = ${buildout:bin-directory}/rdiff-backup
 [equeue]
 recipe = slapos.cookbook:equeue
 socket = $${basedirectory:run}/equeue.sock
+lockfile = $${basedirectory:run}/equeue.lock
 log = $${basedirectory:log}/equeue.log
 database = $${rootdirectory:srv}/equeue.db
 wrapper = $${basedirectory:services}/equeue
