@@ -9,8 +9,8 @@
 {% set monitor_port = monitor_dict.get('port-base', 2600) %}
 {% if mariadb_dict.get('monitor', False) -%}
 {%   do mariadb_request_dict.__setitem__('monitor-port', mariadb_dict.get('monitor-port', monitor_port)) -%}
-{% set monitor_port_balancer = monitor_port + 1 -%}
 {% endif -%}
+{% set monitor_port_balancer = monitor_port + 1 -%}
 {% set port_count = 2 -%}
 
 [request-common]
@@ -216,7 +216,9 @@ config-haproxy-server-check-path = {{ dumps(balancer_dict.get('haproxy-server-ch
 config-ssl = {{ dumps(balancer_dict.get('ssl', {})) }}
 config-certificate-authority-path = ${directory:ca-dir}
 config-monitor = {{ dumps(slapparameter_dict.get('monitoring', True)) }}
+{% if slapparameter_dict.get('monitoring', True) -%}
 config-monitor-port = {{ monitor_port_balancer }}
+{% endif -%}
 
 [request-frontend-base]
 {% if has_frontend -%}
