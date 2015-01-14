@@ -53,6 +53,14 @@ parts +=
 ## Monitor for import runner
   monitor-latest-restored-backup
 
+# For the needs of importer, we run the full slaprunner
+# In case both exporter and importer (aka main instance and clone instance)
+# run with the same IP (usually for testing purposes),
+# run slaprunner using different ports.
+[slaprunner]
+proxy_port = 50000
+runner_port = 50005
+
 [importer]
 recipe = slapos.recipe.template:jinja2
 template = ${template-runner-import-script:location}/${template-runner-import-script:filename}
