@@ -64,13 +64,6 @@ def init_db(db):
 CREATE TABLE IF NOT EXISTS status (
   timestamp INTEGER UNIQUE,
   status VARCHAR(255));
-CREATE TABLE IF NOT EXISTS rss_entry (
-  name VARCHAR(255),
-  timestamp INTEGER,
-  status VARCHAR(255),
-  method VARCHAR(255),
-  title VARCHAR(255),
-  content VARCHAR(255));
 CREATE TABLE IF NOT EXISTS individual_status (
   timestamp INTEGER,
   status VARCHAR(255),
