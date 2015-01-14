@@ -1,0 +1,69 @@
+#!{{ python_executable }}
+# BEWARE: This file is operated by slapgrid
+# BEWARE: It will be overwritten automatically
+
+import sys
+import os
+import subprocess
+from datetime import datetime, timedelta
+
+type = "{{ type }}".strip()
+log_file_list = {{ log_file_list }}
+module_folder = "{{ log_tool_folder }}".strip()
+output_folder = "{{ log_as_rss_ouptut }}".strip()
+db_path = "{{ db_location }}".strip()
+base_link = "{{ base_link }}".strip()
+interval = {{ hour_interval }}
+rotate_time = {{ rotate_time }}
+limit = {{ item_limit }}
+PARSE_TYPE_LIST = ['zope']
+
+if not os.path.exists(module_folder) or not os.path.isdir(module_folder):
+  print "ERROR: Could not load log parsing Module. %s is not a directory. Exiting..." % module_folder
+  exit(1)
+
+if not os.path.exists(output_folder) or not os.path.isdir(output_folder):
+  print "ERROR: %s is not a directory. Exiting..." % output_folder
+  exit(1)
+
+if not type in PARSE_TYPE_LIST:
+  print "ERROR: Could not parse specified log file type. Exiting..." % output_folder
+  exit(1)
+
+sys.path.append(module_folder)
+import logTools
+
+for name, log_path in log_file_list.items():
+  if not os.path.exists(log_path):
+    print "WARNING: File %s not found..." % log_path
+    continue
+  rss_path = os.path.join(output_folder, name)
+  if not rss_path.endswith('.html'):
+    rss_path += '.html'
+  start_date = (datetime.now() - 
+                  timedelta(hours=interval)).strftime('%Y-%m-%d %H:%M:%S')
+  to_date = (datetime.now() - 
+                  timedelta(hours=rotate_time)).strftime('%Y-%m-%d %H:%M:%S')
+  item_list = []
+  if type == 'zope':
+    method = logTools.isZopeLogBeginLine
+    zope_parser = logTools.getZopeParser()
+    item_list = logTools.parseLog(log_path, zope_parser, method,
+                            filter_with="ERROR", start_date=start_date)
+  if item_list:
+    start = 0
+    size = len(item_list)
+    if limit and size > limit:
+      start = size - limit - 1
+    print "Found %s log entries matching date upper than %s..." % (size, start_date)
+    
+    logTools.insertRssDb(db_path, item_list[start:-1], name)
+    print "%s items inserted into database..." % limit
+    
+    logTools.truncateRssDb(db_path, to_date)
+    
+    print "Generating RSS entries with %s items..." % limit
+    logTools.generateRSS(db_path, name, rss_path, start_date, base_link+name, limit=limit)
+
+
+
