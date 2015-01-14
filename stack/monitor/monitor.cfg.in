@@ -19,6 +19,7 @@ index-filename = index.cgi
 index-path = $${monitor-directory:www}/$${:index-filename}
 db-path = $${monitor-directory:etc}/monitor.db
 monitor-password-path = $${monitor-directory:etc}/.monitor.shadow
+log-rss-directory = $${monitor-directory:log-rss-directory}
 
 [monitor-directory]
 recipe = slapos.cookbook:mkdirectory
@@ -53,6 +54,7 @@ monitor-result = $${:var}/monitor
 apachedex-result = $${:srv}/apachedex
 
 private-directory = $${:srv}/monitor-private
+log-rss-directory = $${:srv}/ERRORLogAsRSS
 
 [public-symlink]
 recipe = cns.recipe.symlink
@@ -189,7 +191,51 @@ context =
 recipe = plone.recipe.command
 command = ln -s $${:source} $${monitor-directory:private-directory}
 source =
-  
+
+# ErrorLog URL As RSS
+[error-log-rss-base]
+recipe = slapos.recipe.template:jinja2
+template = ${errorlog-2rss:location}/${errorlog-2rss:filename}
+rendered = $${monitor-directory:bin}/$${:script-name}
+mode = 0700
+extensions = jinja2.ext.do
+base-link = $${monitor-parameters:url}/private/
+extra-context =
+context = 
+  raw python_executable ${buildout:directory}/bin/${extra-eggs:interpreter}
+  raw log_tool_folder ${log-tools:location}
+  raw db_location $${monitor-directory:etc}/$${:script-name}.db
+  key log_as_rss_ouptut monitor-directory:log-rss-directory
+  key base_link :base-link
+  $${:extra-context}
+
+[log-as-rss-symlink]
+< = monitor-directory-access
+source = $${monitor-directory:log-rss-directory}
+
+[error-log-rss]
+<= error-log-rss-base
+script-name = fileLog_AsRSS
+# rotate_time: Max time (in hour) before remove an rss entry from database
+# item_limit: Max number of rss entries to generate per cycle
+extra-context = 
+  section log_file_list error-log-list
+  raw item_limit 10
+  raw hour_interval 1
+  raw rotate_time 24
+  raw type zope
+
+[error-log-list]
+# XXX - error-log-name = FILE_PATH
+
+[cron-entry-logAsRss]
+<= cron
+recipe = slapos.cookbook:cron.d
+name = $${error-log-rss:script-name}
+frequency = 30 * * * *
+command = $${error-log-rss:rendered}
+
+# Apache Dex
 [apachedex-entries-base]
 recipe = slapos.recipe.template:jinja2
 template = ${run-apachedex:location}/${run-apachedex:filename}
