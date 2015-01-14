@@ -100,6 +100,31 @@ source = ${directory:logrotate-backup}
 
 [monitor-parameters]
 port = {{ slapparameter_dict['monitor-port'] }}
+
+# Enable Log As RSS for all zope event log file
+{%  do part_list.append('log-as-rss-symlink') %}
+[error-log-{{ node_id_base }}]
+<= error-log-rss-base
+script-name = {{ node_id_base }}_Log_AsRSS
+extra-context = 
+  section log_file_list zopelog-{{ node_id_base }}-list
+  raw item_limit 10
+  raw hour_interval 1
+  raw rotate_time 24
+  raw type zope
+
+[zopelog-{{ node_id_base }}-list]
+{%   for i in range(slapparameter_dict['instance-count']) -%}
+{% set name = 'zope-' ~ i -%}
+{{ node_id_base ~ '-' ~ i }} = ${directory:log}/{{ name }}-event.log
+{%   endfor -%}
+
+[{{ section('cron-entry-' ~ node_id_base ~ '-logAsRss') }}]
+<= cron
+recipe = slapos.cookbook:cron.d
+name = ${error-log-{{ node_id_base }}:script-name}
+frequency = 30 * * * *
+command = ${error-log-{{ node_id_base }}:rendered}
 {% endif -%}
 
 [certificate-authority-common]

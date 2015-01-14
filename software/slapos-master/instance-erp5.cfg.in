@@ -9,9 +9,9 @@
 {% set monitor_port = monitor_dict.get('port-base', 2600) %}
 {% if mariadb_dict.get('monitor', False) -%}
 {%   do mariadb_request_dict.__setitem__('monitor-port', mariadb_dict.get('monitor-port', monitor_port)) -%}
-{% set monitor_count = 2 -%}
 {% set monitor_port_balancer = monitor_port + 1 -%}
 {% endif -%}
+{% set port_count = 2 -%}
 
 [request-common]
 recipe = slapos.cookbook:request.serialised
@@ -127,10 +127,10 @@ config-port-base = {{ dumps(zope_parameter_dict.get('port-base', 2200)) }}
 config-webdav = {{ dumps(zope_parameter_dict.get('webdav', False)) }}
 config-monitor = {{ dumps(zope_parameter_dict.get('monitor', False)) }}
 {% if zope_parameter_dict.get('monitor', False) -%}
-config-monitor-port = {{ zope_parameter_dict.get('monitor-port', monitor_port + monitor_count) }}
+config-monitor-port = {{ zope_parameter_dict.get('monitor-port', monitor_port + port_count) }}
 {% endif -%}
 sla-computer_guid = {{ dumps(zope_parameter_dict.get('computer-guid', computer_id)) }}
-{%   set monitor_count = monitor_count + 1 -%}
+{%   set port_count = port_count + 1 -%}
 {% endfor -%}
 
 {# We need to concatenate lists that we cannot read as lists, so this gets hairy. -#}
