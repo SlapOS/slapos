@@ -1,4 +1,4 @@
-from pyparsing import Word, alphas, Suppress, Combine, nums, string, Optional, Regex
+from pyparsing import Word, alphas, Suppress, Combine, nums, string, Optional, Regex, Literal
 import os, re
 import datetime
 import uuid
@@ -16,19 +16,35 @@ CREATE TABLE IF NOT EXISTS rss_entry (
   status VARCHAR(20),
   method VARCHAR(25),
   title VARCHAR(255),
-  content VARCHAR(255));
+  url VARCHAR(255),
+  content TEXT);
 """)
   db.commit()
   db.close()
 
+def getZopeLogRequestParser():
+  integer = Word(nums)
+  serverDateTime = Combine(integer + "-" + integer + "-" + integer + " " + 
+                        integer + ":" + integer + ":" + integer + "," + integer)
+  word = Word( alphas+nums+"@._-" )
+  info = Regex("([\d\w\s:\.]+;){2}")#Combine(word + ";" + Literal(" ") + word + ";")
+  request = Combine(Suppress("request: ") + Suppress(word+" ") + Regex(".*"))
+  no_request = Combine(Suppress("[No request]") + Regex(".*"))
+  bnf = serverDateTime.setResultsName("timestamp") +  Suppress("-") + \
+          info.setResultsName("title") + \
+          (no_request | request).setResultsName("link")
+  return bnf
+
 def getZopeParser():
   integer = Word(nums)
-  serverDateTime = Combine(integer + "-" + integer + "-" + integer + " " + integer + ":" + integer + ":" + integer + "," + integer)
+  serverDateTime = Combine(integer + "-" + integer + "-" + integer + " " + 
+                      integer + ":" + integer + ":" + integer + "," + integer)
   status = Word(string.uppercase, max=7, min=3)
   word = Word( alphas+nums+"@._-" )
   message = Regex(".*")
-  bnf = serverDateTime.setResultsName("timestamp") +  status.setResultsName("statusCode") + \
-          word.setResultsName("method") + message.setResultsName("content")
+  bnf = serverDateTime.setResultsName("timestamp") + \
+          status.setResultsName("statusCode") + \
+          word.setResultsName("method") + message.setResultsName("title")
   return bnf
 
 def isZopeLogBeginLine(line):
@@ -68,8 +84,9 @@ def parseLog(path, parserbnf, method, filter_with="ERROR", start_date="", date_f
                             fields.timestamp , date_format),
                             status=fields.get('statusCode', ''),
                             method=fields.get('method', ''),
-                            title=fields.content,
-                            content=fields.content))
+                            url=fields.get('link', ''),
+                            title=fields.title,
+                            content=fields.get('content', fields.title)))
           index += 1
         except Exception:
           raise
@@ -81,8 +98,8 @@ def insertRssDb(db_path, entry_list, rss_name):
   db = sqlite3.connect(db_path)
   for entry in entry_list:
     date = entry['datetime'].strftime('%Y-%m-%d %H:%M:%S')
-    db.execute("insert into rss_entry(name, datetime, status, method, title, content) values (?, ?, ?, ?, ?, ?)",
-                (rss_name, date, entry['status'], entry['method'], entry['title'], entry['content']))
+    db.execute("insert into rss_entry(name, datetime, status, method, title, url, content) values (?, ?, ?, ?, ?, ?, ?)",
+                (rss_name, date, entry['status'], entry['method'], entry['title'], entry['url'], entry['content']))
   db.commit()
   db.close()
 
@@ -94,7 +111,7 @@ def truncateRssDb(db_path, to_date):
 
 def selectRssDb(db_path, rss_name, start_date, limit=0):
   db = sqlite3.connect(db_path)
-  query = "select name, datetime, status, method, title, content from rss_entry "
+  query = "select name, datetime, status, method, title, url, content from rss_entry "
   query += "where name=? and datetime>=? order by datetime DESC"
   if limit:
     query += " limit ?"
@@ -110,7 +127,7 @@ def generateRSS(db_path, name, rss_path, start_date, url_link, limit=0):
   items = []
   
   db = sqlite3.connect(db_path)
-  query = "select name, datetime, status, method, title, content from rss_entry "
+  query = "select name, datetime, status, method, title, url, content from rss_entry "
   query += "where name=? and datetime>=? order by datetime DESC"
   if limit:
     query += " limit ?"
@@ -119,13 +136,14 @@ def generateRSS(db_path, name, rss_path, start_date, url_link, limit=0):
     entry_list = db.execute(query, (name, start_date))
   
   for entry in entry_list:
-    name, rss_date, status, method, title, content = entry
+    name, rss_date, status, method, title, url, content = entry
     if method:
       title = "[%s] %s" % (method, title)
-    title = "[%s] %s" % (status, title)
+    if status:
+      title = "[%s] %s" % (status, title)
     rss_item = PyRSS2Gen.RSSItem(
         title = title,
-        link = "",
+        link = url,
         description = content.replace('\n', '<br/>'),
         pubDate = rss_date,
         guid = PyRSS2Gen.Guid(base64.b64encode("%s, %s" % (rss_date, url_link)))

@@ -16,7 +16,7 @@ base_link = "{{ base_link }}".strip()
 interval = {{ hour_interval }}
 rotate_time = {{ rotate_time }}
 limit = {{ item_limit }}
-PARSE_TYPE_LIST = ['zope']
+PARSE_TYPE_LIST = ['zope', 'zope-longrequest']
 
 if not os.path.exists(module_folder) or not os.path.isdir(module_folder):
   print "ERROR: Could not load log parsing Module. %s is not a directory. Exiting..." % module_folder
@@ -33,6 +33,11 @@ if not type in PARSE_TYPE_LIST:
 sys.path.append(module_folder)
 import logTools
 
+start_date = (datetime.now() - 
+                  timedelta(hours=interval)).strftime('%Y-%m-%d %H:%M:%S')
+to_date = (datetime.now() - 
+                  timedelta(hours=rotate_time)).strftime('%Y-%m-%d %H:%M:%S')
+
 for name, log_path in log_file_list.items():
   if not os.path.exists(log_path):
     print "WARNING: File %s not found..." % log_path
@@ -40,16 +45,21 @@ for name, log_path in log_file_list.items():
   rss_path = os.path.join(output_folder, name)
   if not rss_path.endswith('.html'):
     rss_path += '.html'
-  start_date = (datetime.now() - 
-                  timedelta(hours=interval)).strftime('%Y-%m-%d %H:%M:%S')
-  to_date = (datetime.now() - 
-                  timedelta(hours=rotate_time)).strftime('%Y-%m-%d %H:%M:%S')
+    
   item_list = []
+  date_format = "%Y-%m-%d %H:%M:%S,%f"
+  log_filter = "ERROR"
   if type == 'zope':
     method = logTools.isZopeLogBeginLine
-    zope_parser = logTools.getZopeParser()
-    item_list = logTools.parseLog(log_path, zope_parser, method,
-                            filter_with="ERROR", start_date=start_date)
+    log_parser = logTools.getZopeParser()
+  elif type == 'zope-longrequest':
+    log_filter = ""
+    method = logTools.isZopeLogBeginLine
+    log_parser = logTools.getZopeLogRequestParser()
+  
+  item_list = logTools.parseLog(log_path, log_parser, method,
+                        filter_with=log_filter, start_date=start_date,
+                                      date_format=date_format)
   if item_list:
     start = 0
     size = len(item_list)
@@ -60,10 +70,16 @@ for name, log_path in log_file_list.items():
     logTools.insertRssDb(db_path, item_list[start:-1], name)
     print "%s items inserted into database..." % limit
     
-    logTools.truncateRssDb(db_path, to_date)
-    
     print "Generating RSS entries with %s items..." % limit
     logTools.generateRSS(db_path, name, rss_path, start_date, base_link+name, limit=limit)
+  else:
+    print "No log entries with date upper than %s..." % start_date
+  
+try:
+  # Remove olders entries from database
+  logTools.truncateRssDb(db_path, to_date)
+except Exception,e:
+  print "Database not exist!! ", str(e)
 
 
 
