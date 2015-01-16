@@ -1,0 +1,152 @@
+#!{{ extra_eggs_interpreter }}
+
+print """<html>
+<head>
+ <title>Computer Partition</title>
+ <link rel="stylesheet" href="pure-min.css">
+ <link rel="stylesheet" href="style.css">
+ <style>
+.mo-table {
+	margin:0px;padding:0px;
+	width:100%;
+	border:1px solid #ffffff;
+	
+	-moz-border-radius-bottomleft:0px;
+	-webkit-border-bottom-left-radius:0px;
+	border-bottom-left-radius:0px;
+	
+	-moz-border-radius-bottomright:0px;
+	-webkit-border-bottom-right-radius:0px;
+	border-bottom-right-radius:0px;
+	
+	-moz-border-radius-topright:0px;
+	-webkit-border-top-right-radius:0px;
+	border-top-right-radius:0px;
+	
+	-moz-border-radius-topleft:0px;
+	-webkit-border-top-left-radius:0px;
+	border-top-left-radius:0px;
+}.mo-table table{
+    border-collapse: collapse;
+        border-spacing: 0;
+	width:100%;
+	margin:0px;padding:0px;
+}.mo-table tr:last-child td:last-child {
+	-moz-border-radius-bottomright:0px;
+	-webkit-border-bottom-right-radius:0px;
+	border-bottom-right-radius:0px;
+}
+.mo-table table tr:first-child td:first-child {
+	-moz-border-radius-topleft:0px;
+	-webkit-border-top-left-radius:0px;
+	border-top-left-radius:0px;
+}
+.mo-table table tr:first-child td:last-child {
+	-moz-border-radius-topright:0px;
+	-webkit-border-top-right-radius:0px;
+	border-top-right-radius:0px;
+}.mo-table tr:last-child td:first-child{
+	-moz-border-radius-bottomleft:0px;
+	-webkit-border-bottom-left-radius:0px;
+	border-bottom-left-radius:0px;
+}.mo-table tr:hover td{
+	background-color:#EEF1F4;
+		
+
+}
+.mo-table td.upper{text-transform: uppercase;}
+.mo-table td{
+	vertical-align:middle;
+	
+	background-color:#e8eaed;
+  min-width: 190px;
+	border:1px solid #ffffff;
+	border-width:0px 1px 1px 0px;
+	text-align:left;
+	padding:12px;
+	font-size:13px;
+	font-family:Helvetica;
+	font-weight:normal;
+	color:#575757;
+}.mo-table tr:last-child td{
+	border-width:0px 1px 0px 0px;
+}.mo-table tr td:last-child{
+	border-width:0px 0px 1px 0px;
+}.mo-table tr:last-child td:last-child{
+	border-width:0px 0px 0px 0px;
+}
+.mo-table tr:first-child td{
+	background-color:#3799fc;
+	border:0px solid #ffffff;
+	text-align:left;
+	border-width:0px 0px 1px 1px;
+	font-size:16px;
+	font-family:Helvetica;
+	font-weight:normal;
+	color:#ffffff;
+}
+.mo-table tr:first-child td:first-child{
+	border-width:0px 0px 1px 0px;
+}
+.mo-table tr:first-child td:last-child{
+	border-width:0px 0px 1px 1px;
+}
+ </style>
+</head>
+<body>
+<h1>Computer Partition Parameters</h1>
+
+<div class="mo-table" >
+  <table >
+    <tr>
+      <td colspan=2>
+          Computer Partition information
+      </td>
+    </tr>
+    <tr>
+      <td class="upper" > Partition IPv4 </td>
+      <td> {{ ipv4 }} </td>
+    </tr>
+    <tr>
+      <td class="upper"> Partition IPv6 </td>
+      <td> {{ ipv6 }} </td>
+    </tr>
+    <!--<tr>
+      <td class="upper" > Instance Reference </td>
+      <td> {{ instance_reference }} </td>
+    </tr>-->
+    <tr>
+      <td class="upper" > Software Release Url </td>
+      <td> <a href="{{ software_url }}" target='_blank'>{{ software_url }}</a> </td>
+    </tr>
+    <tr>
+      <td class="upper" > Partition Home directory </td>
+      <td> {{ home }} </td>
+    </tr>
+    <tr>
+      <td class="upper" > Partition Reference </td>
+      <td> {{ partition_id }} </td>
+    </tr>
+    <tr>
+      <td class="upper" > Computer Reference </td>
+      <td> {{ computer_id }} </td>
+    </tr>
+    <tr>
+      <td class="upper" > Master Server Url </td>
+      <td> {{ master_url }} </td>
+    </tr>
+{% for key, parameter in extra_parameters.items() -%}
+    <tr>
+      <td class="upper" > {{ key }} </td>
+      <td> {{ parameter }} </td>
+    </tr>
+{% endfor -%}
+    <tr>
+      <td class="upper" > Instance Parameters </td>
+      <td> {{ slapparameter_dict }} </td>
+    </tr>
+  </table>
+</div>
+</body>
+</html>
+"""
