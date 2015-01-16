@@ -100,7 +100,8 @@ recipe = slapos.recipe.template:jinja2
 template = ${index:location}/${index:filename}
 rendered = $${monitor-parameters:index-path}
 update-apache-access = ${apache:location}/bin/htpasswd -cb $${monitor-parameters:htaccess-file} admin
-mode = 0744
+# Force deploy information.html
+mode = $${partition-parameters:mode}
 context =
   key cgi_directory monitor-directory:cgi-bin
   raw index_template $${deploy-index-template:location}/$${deploy-index-template:filename}
@@ -321,6 +322,27 @@ recipe = slapos.cookbook:zero-knowledge.read
 filename = $${public:filename}
 
 [monitor-rewrite-rule]
+
+[partition-parameters]
+recipe = slapos.recipe.template:jinja2
+template = ${info-template:location}/${info-template:filename}
+rendered = $${monitor-directory:monitoring-cgi}/information.html
+mode = 0744
+instance-id = 
+context =
+  raw extra_eggs_interpreter ${buildout:directory}/bin/${extra-eggs:interpreter}
+  key computer_id slap-connection:computer-id
+  key partition_id slap-connection:partition-id
+  key home buildout:directory
+  key master_url slap-connection:server-url
+  key software_url slap-connection:software-release-url
+  key ipv4 slap-parameters:ipv4-random
+  key ipv6 slap-parameters:ipv6-random
+  key slapparameter_dict slap-parameters:configuration
+  key instance_reference :instance-id
+  section extra_parameters extra-parameters-output
+
+[extra-parameters-output]
 
 # XXX could it be something lighter?
 [monitor-httpd-configuration]
