@@ -1,6 +1,15 @@
 Changes
 =======
 
+1.3.6 (2015-01-16)
+------------------
+
+ * supervisord: allow to start with --nodaemon.
+ * rename : zc.buildout-bootstap.py -> zc.buildout-bootstrap.py.
+ * update bootstrap.py.
+ * slapproxy: add missing getComputerPartitionCertificate method
+ * slapos boot: fix error reporting when ipv6 is not available
+
 1.3.5 (2014-12-03)
 ------------------
 
