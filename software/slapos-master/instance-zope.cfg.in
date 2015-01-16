@@ -125,6 +125,34 @@ recipe = slapos.cookbook:cron.d
 name = ${error-log-{{ node_id_base }}:script-name}
 frequency = 30 * * * *
 command = ${error-log-{{ node_id_base }}:rendered}
+
+{%   if not slapparameter_dict.get('longrequest-logger-interval', -1) < 0 -%}
+# Generate log as rss for longrequest too
+[longrequest-log-{{ node_id_base }}]
+<= error-log-rss-base
+script-name = {{ node_id_base }}_Longrequest_AsRSS
+extra-context = 
+  section log_file_list longrequestlog-{{ node_id_base }}-list
+  raw item_limit 2
+  raw hour_interval 2
+  raw rotate_time 48
+  raw type zope-longrequest
+
+[{{ section('cron-entry-' ~ node_id_base ~ '-longrequestAsRss') }}]
+<= cron
+recipe = slapos.cookbook:cron.d
+name = ${longrequest-log-{{ node_id_base }}:script-name}
+frequency = 0 */2 * * *
+command = ${longrequest-log-{{ node_id_base }}:rendered}
+
+[longrequestlog-{{ node_id_base }}-list]
+{%     for i in range(slapparameter_dict['instance-count']) -%}
+{%       set name = 'zope-' ~ i -%}
+{{ node_id_base ~ '-longrequest-' ~ i }} = {{ longrequest_logger_base_path ~ name ~ ".log" }}
+{%     endfor -%}
+
+{%   endif -%}
+{# End if monitor -#}
 {% endif -%}
 
 [certificate-authority-common]
