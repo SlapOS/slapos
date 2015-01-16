@@ -61,25 +61,25 @@ for name, log_path in log_file_list.items():
                         filter_with=log_filter, start_date=start_date,
                                       date_format=date_format)
   if item_list:
-    start = 0
+    items = item_list
     size = len(item_list)
     if limit and size > limit:
-      start = size - limit - 1
-    print "Found %s log entries matching date upper than %s..." % (size, start_date)
+      items = item_list[size-limit-1:-1]
+    print "%s: Found %s log entries matching date upper than %s..." % (name,
+                            size, start_date)
     
-    logTools.insertRssDb(db_path, item_list[start:-1], name)
-    print "%s items inserted into database..." % limit
+    logTools.insertRssDb(db_path, items, name)
     
-    print "Generating RSS entries with %s items..." % limit
-    logTools.generateRSS(db_path, name, rss_path, start_date, base_link+name, limit=limit)
+    print "Generating RSS entries with maximum %s items..." % limit
+    logTools.generateRSS(db_path, name, rss_path, base_link+name, limit=limit)
   else:
-    print "No log entries with date upper than %s..." % start_date
+    print "%s: No log entries with date upper than %s..." % (name, start_date)
   
 try:
   # Remove olders entries from database
   logTools.truncateRssDb(db_path, to_date)
 except Exception,e:
-  print "Database not exist!! ", str(e)
+  print "Database not exist!! \n", str(e)
 
 
 
