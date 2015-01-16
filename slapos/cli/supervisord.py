@@ -39,9 +39,22 @@ class SupervisordCommand(ConfigCommand):
     """
     command_group = 'node'
 
+    def get_parser(self, prog_name):
+        ap = super(SupervisordCommand, self).get_parser(prog_name)
+
+        ap.add_argument('-n', '--nodaemon', action='store_true',
+                        help='Do not daemonize supervisord')
+
+        return ap
+
     def take_action(self, args):
         configp = self.fetch_config(args)
         instance_root = configp.get('slapos', 'instance_root')
+        if args.nodaemon:
+          supervisord_additional_argument_list = ['--nodaemon']
+        else:
+          supervisord_additional_argument_list = []
         launchSupervisord(socket=os.path.join(instance_root, 'supervisord.socket'),
                           configuration_file=os.path.join(instance_root, 'etc', 'supervisord.conf'),
-                          logger=self.app.log)
+                          logger=self.app.log,
+                          supervisord_additional_argument_list=supervisord_additional_argument_list)

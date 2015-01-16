@@ -47,7 +47,7 @@ def getSupervisorRPC(socket):
   return getattr(server_proxy, 'supervisor')
 
 
-def launchSupervisord(socket, configuration_file, logger):
+def launchSupervisord(socket, configuration_file, logger, supervisord_additional_argument_list=None):
   if os.path.exists(socket):
     trynum = 1
     while trynum < 6:
@@ -76,13 +76,18 @@ def launchSupervisord(socket, configuration_file, logger):
           logger.warning(log_message)
           break
 
+  supervisord_argument_list = ['-c', configuration_file]
+  if supervisord_additional_argument_list is not None:
+    supervisord_argument_list.extend(supervisord_additional_argument_list)
+
   logger.info("Launching supervisord with clean environment.")
   # Extract python binary to prevent shebang size limit
   invocation_list = ["supervisord", '-c']
-  invocation_list.append("import sys ; sys.path=" + str(sys.path) + " ; import "
-      "supervisor.supervisord ; sys.argv[1:1]=['-c','" +
-      configuration_file +
-      "'] ; supervisor.supervisord.main()")
+  invocation_list.append(
+      "import sys ; sys.path=" + str(sys.path) + " ; " +
+      "import supervisor.supervisord ; " +
+      "sys.argv[1:1]=" + str(supervisord_argument_list) + " ; " +
+      "supervisor.supervisord.main()")
   supervisord_popen = SlapPopen(invocation_list,
                                 env={},
                                 executable=sys.executable,
