@@ -14,6 +14,7 @@ parts +=
   dropbear-server-add-authorized-key
   sshkeys-authority
   slaprunner-promise
+  slaprunner-supervisord-wrapper
   dropbear-promise
   runtestsuite
   shellinabox-promise

@@ -16,6 +16,7 @@ parts +=
   publish-connection-informations
   slaprunner-promise
   slaprunner-frontend-promise
+  slaprunner-supervisord-wrapper
   dropbear-promise
   runtestsuite
   shellinabox-promise
