@@ -40,7 +40,7 @@ def getZopeParser():
   serverDateTime = Combine(integer + "-" + integer + "-" + integer + " " + 
                       integer + ":" + integer + ":" + integer + "," + integer)
   status = Word(string.uppercase, max=7, min=3)
-  word = Word( alphas+nums+"@._-" )
+  word = Word( alphas+nums+"@._-:/#" )
   message = Regex(".*")
   bnf = serverDateTime.setResultsName("timestamp") + \
           status.setResultsName("statusCode") + \
@@ -64,21 +64,24 @@ def parseLog(path, parserbnf, method, filter_with="ERROR", start_date="", date_f
   log_result = []
   if not date_format:
     date_format = "%Y-%m-%d %H:%M:%S,%f"
+  skip_entry = False
   with open(path, 'r') as logfile:
     index = 0
     for line in logfile:
       regex = method(line)
       if not regex:
-        if index == 0 or line.strip() == "------":
+        if index == 0 or line.strip() == "------" or skip_entry:
           continue
-        # Add this line to log content
+        # Add this line to log content, if entry is not skipped
         log_result[index - 1]['content'] += ("\n" + line)
       else:
         try:
           fields = parserbnf.parseString(line)
-          if filter_with and not fields.statusCode == filter_with:
+          skip_entry = filter_with and not fields.statusCode == filter_with
+          if skip_entry:
             continue
-          if start_date and regex.group() < start_date:
+          skip_entry = start_date and regex.group() < start_date
+          if skip_entry:
             continue
           log_result.append(dict(datetime=datetime.datetime.strptime(
                             fields.timestamp , date_format),
@@ -89,7 +92,8 @@ def parseLog(path, parserbnf, method, filter_with="ERROR", start_date="", date_f
                             content=fields.get('content', fields.title)))
           index += 1
         except Exception:
-          raise
+          continue
+          #raise
           # print "WARNING: Could not parse log line. %s \n << %s >>" % (str(e), line)
   return log_result
 
@@ -123,17 +127,17 @@ def selectRssDb(db_path, rss_name, start_date, limit=0):
     return rows
   return []
 
-def generateRSS(db_path, name, rss_path, start_date, url_link, limit=0):
+def generateRSS(db_path, name, rss_path, url_link, limit=10):
   items = []
   
   db = sqlite3.connect(db_path)
   query = "select name, datetime, status, method, title, url, content from rss_entry "
-  query += "where name=? and datetime>=? order by datetime DESC"
+  query += "where name=? order by datetime DESC"
   if limit:
     query += " limit ?"
-    entry_list = db.execute(query, (name, start_date, limit))
+    entry_list = db.execute(query, (name, limit))
   else:
-    entry_list = db.execute(query, (name, start_date))
+    entry_list = db.execute(query, (name,))
   
   for entry in entry_list:
     name, rss_date, status, method, title, url, content = entry
