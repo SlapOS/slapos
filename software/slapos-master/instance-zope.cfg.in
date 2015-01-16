@@ -133,7 +133,7 @@ command = ${error-log-{{ node_id_base }}:rendered}
 script-name = {{ node_id_base }}_Longrequest_AsRSS
 extra-context = 
   section log_file_list longrequestlog-{{ node_id_base }}-list
-  raw item_limit 2
+  raw item_limit 4
   raw hour_interval 2
   raw rotate_time 48
   raw type zope-longrequest
