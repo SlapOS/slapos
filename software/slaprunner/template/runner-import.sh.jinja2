@@ -54,14 +54,18 @@ DATABASE="$HOME/srv/runner/proxy.db"
 # XXX hardcoded
 PARTITION=$(basename $HOME)
 OLD_SOFTWARE_RELEASE=$($SQLITE3 $DATABASE "select software_release from partition11 where reference='slappart0';")
-SOFTWARE_RELEASE=$(echo $OLD_SOFTWARE_RELEASE | sed -e 's/slappart[0-9][0-9]/'"$PARTITION"'/')
+SOFTWARE_RELEASE=$(echo $OLD_SOFTWARE_RELEASE | sed -e 's/\(.*\)\(slappart\|test0-\)[0-9][0-9]\?/\1'"$PARTITION"'/')
 $SQLITE3 $DATABASE "update partition11 set software_release='$SOFTWARE_RELEASE' where software_release NOT NULL;"
+$SQLITE3 $DATABASE "update software11 set url='$SOFTWARE_RELEASE' where url='$OLD_SOFTWARE_RELEASE';"
 # Change slapproxy database to have all instances stopped
 $SQLITE3 $DATABASE "update partition11 set slap_state='stopped';"
 # Build newest software
 $SLAPOS node software --cfg ~/etc/slapos.cfg --pidfile ~/var/run/slapos-node-software.pid --all >/dev/null 2>&1 || true
 # Remove defined scripts to force buildout to recreate them to have updated paths
 rm $srv_directory/runner/instance/slappart*/srv/runner-import-restore
+# Start supervisord
+$SLAPOS node supervisord --cfg ~/etc/slapos.cfg -n >/dev/null 2>&1 &
+sleep 5
 # Run slapos node instance
 # XXX hardcoded
 $SLAPOS node instance --cfg ~/etc/slapos.cfg --pidfile ~/var/run/slapos-node-instance.pid >/dev/null 2>&1 || true
