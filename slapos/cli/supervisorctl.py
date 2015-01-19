@@ -31,7 +31,6 @@ import argparse
 
 from slapos.cli.command import check_root_user
 from slapos.cli.config import ConfigCommand
-from slapos.grid.svcbackend import (launchSupervisord, _getSupervisordConfigurationFilePath)
 
 import supervisor.supervisorctl
 
@@ -54,6 +53,11 @@ class SupervisorctlCommand(ConfigCommand):
           return True
       return configp.getboolean('slapos', 'root_check')
 
+    def _should_forbid_supervisord_launch(self, configp):
+      if not configp.has_option('supervisorctl', 'forbid_supervisord_automatic_launch'):
+          return False
+      return configp.getboolean('supervisorctl', 'forbid_supervisord_automatic_launch')
+
     def take_action(self, args):
         configp = self.fetch_config(args)
 
@@ -63,11 +67,19 @@ class SupervisorctlCommand(ConfigCommand):
             check_root_user(self)
 
         instance_root = configp.get('slapos', 'instance_root')
-        launchSupervisord(instance_root=instance_root, logger=self.app.log)
-        supervisor.supervisorctl.main(
-            args=['-c', _getSupervisordConfigurationFilePath(instance_root)] + args.supervisor_args
+        forbid_supervisord_launch = self._should_forbid_supervisord_launch(configp)
+        do_supervisorctl(
+            self.app.log, instance_root, args.supervisor_args,
+            forbid_supervisord_launch
         )
 
+def do_supervisorctl(logger, instance_root, supervisor_args, forbid_supervisord_launch=False):
+    from slapos.grid.svcbackend import (launchSupervisord, _getSupervisordConfigurationFilePath)
+    if forbid_supervisord_launch is False:
+        launchSupervisord(instance_root=instance_root, logger=logger)
+    supervisor.supervisorctl.main(
+        args=['-c', _getSupervisordConfigurationFilePath(instance_root)] + supervisor_args
+    )
 
 class SupervisorctlAliasCommand(SupervisorctlCommand):
     def take_action(self, args):

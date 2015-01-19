@@ -33,9 +33,13 @@ from mock import patch, create_autospec
 
 import slapos.cli.list
 import slapos.cli.info
+import slapos.cli.supervisorctl
 from slapos.client import ClientConfig
+import slapos.grid.svcbackend
 import slapos.proxy
 import slapos.slap
+
+import supervisor.supervisorctl
 
 def raiseNotFoundError(*args, **kwargs):
   raise slapos.slap.NotFoundError()
@@ -125,4 +129,25 @@ class TestCliInfo(CliMixin):
       slapos.cli.info.do_info(self.logger, self.conf, self.local)
 
     self.logger.warning.assert_called_once_with('Instance %s does not exist.', self.conf.reference)
+
+
+@patch.object(supervisor.supervisorctl, 'main')
+class TestCliSupervisorctl(CliMixin):
+  def test_allow_supervisord_launch(self, _):
+    """
+    Test that "slapos node supervisorctl" tries to launch supervisord
+    """
+    instance_root = '/foo/bar'
+    with patch.object(slapos.grid.svcbackend, 'launchSupervisord') as launchSupervisord:
+      slapos.cli.supervisorctl.do_supervisorctl(self.logger, instance_root, ['status'], False)
+      launchSupervisord.assert_any_call(instance_root=instance_root, logger=self.logger)
+
+  def test_forbid_supervisord_launch(self, _):
+    """
+    Test that "slapos node supervisorctl" does not try to launch supervisord
+    """
+    instance_root = '/foo/bar'
+    with patch.object(slapos.grid.svcbackend, 'launchSupervisord') as launchSupervisord:
+      slapos.cli.supervisorctl.do_supervisorctl(self.logger, instance_root, ['status'], True)
+      self.assertFalse(launchSupervisord.called)
 
