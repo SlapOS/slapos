@@ -27,11 +27,8 @@
 #
 ##############################################################################
 
-import os
-
 from slapos.cli.config import ConfigCommand
-from slapos.grid.svcbackend import launchSupervisord
-
+from slapos.grid.svcbackend import (launchSupervisord, createSupervisordConfiguration)
 
 class SupervisordCommand(ConfigCommand):
     """
@@ -54,7 +51,8 @@ class SupervisordCommand(ConfigCommand):
           supervisord_additional_argument_list = ['--nodaemon']
         else:
           supervisord_additional_argument_list = []
-        launchSupervisord(socket=os.path.join(instance_root, 'supervisord.socket'),
-                          configuration_file=os.path.join(instance_root, 'etc', 'supervisord.conf'),
-                          logger=self.app.log,
-                          supervisord_additional_argument_list=supervisord_additional_argument_list)
+        createSupervisordConfiguration(instance_root)
+        launchSupervisord(
+            instance_root=instance_root, logger=self.app.log,
+            supervisord_additional_argument_list=supervisord_additional_argument_list
+        )

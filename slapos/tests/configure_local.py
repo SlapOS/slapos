@@ -38,8 +38,7 @@ from ConfigParser import ConfigParser
 
 # Disable any command to launch slapformat and supervisor
 slapos.cli.configure_local._runFormat = lambda x: "Do nothing"
-slapos.cli.configure_local.launchSupervisord = lambda socket, \
-  configuration_file, logger: "Do nothing"
+slapos.cli.configure_local.launchSupervisord = lambda instance_root, logger: "Do nothing"
 
 class TestConfigureLocal(unittest.TestCase):
 

@@ -245,17 +245,6 @@ def do_configure(args, fetch_config_func, logger):
     configp = fetch_config_func(args)
     conf = FormatConfig(logger=logger)
     conf.mergeConfig(args, configp)
-    supervisord_socket_path = os.path.join(conf.instance_root,
-       'supervisord.socket')
-    supervisord_conf_path = os.path.join(conf.instance_root,
-       'etc', 'supervisord.conf')
-    conf_property_list = (
-      ('supervisord_socket', supervisord_socket_path),
-      ('supervisord_configuration_path', supervisord_conf_path),
-    )
-    for key, value in conf_property_list:
-        if not getattr(conf, key, None):
-            setattr(conf, key, value)
     slapgrid = create_slapgrid_object(conf.__dict__, logger)
     createPrivateDirectory(os.path.join(conf.slapos_buildout_directory, 'log'))
     _runFormat(conf.slapos_buildout_directory)
@@ -268,7 +257,6 @@ def do_configure(args, fetch_config_func, logger):
     slapos_client_cfg_path = '%s/.slapos/slapos-client.cfg' % home_folder_path
     if not os.path.exists(slapos_client_cfg_path):
         os.symlink(slapos_node_config_path, slapos_client_cfg_path)
-    launchSupervisord(socket=supervisord_socket_path,
-      configuration_file=supervisord_conf_path, logger=logger)
+    launchSupervisord(instance_root=conf.instance_root, logger=logger)
     _runFormat(conf.slapos_buildout_directory)
     return 0

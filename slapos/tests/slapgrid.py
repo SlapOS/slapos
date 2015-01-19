@@ -122,8 +122,6 @@ class BasicMixin(object):
                                   self.instance_root,
                                   self.master_url,
                                   self.computer_id,
-                                  self.supervisord_socket,
-                                  self.supervisord_configuration_path,
                                   self.buildout,
                                   develop=develop,
                                   logger=logging.getLogger())
@@ -184,6 +182,12 @@ class BasicMixin(object):
       if os.path.exists(path):
         self.fail('%s should not be created' % path)
       time.sleep(0.1)
+
+  def assertInstanceDirectoryListEqual(self, instance_list):
+    instance_list.append('etc')
+    instance_list.append('var')
+    instance_list.append('supervisord.socket')
+    self.assertItemsEqual(os.listdir(self.instance_root), instance_list)
 
   def tearDown(self):
     # XXX: Hardcoded pid, as it is not configurable in slapos
@@ -520,7 +524,7 @@ class TestSlapgridCPWithMaster(MasterMixin, unittest.TestCase):
     computer = ComputerForTest(self.software_root, self.instance_root, 0, 0)
     with httmock.HTTMock(computer.request_handler):
       self.assertEqual(self.grid.processComputerPartitionList(), slapgrid.SLAPGRID_SUCCESS)
-      self.assertItemsEqual(os.listdir(self.instance_root), ['etc', 'var'])
+      self.assertInstanceDirectoryListEqual([])
       self.assertItemsEqual(os.listdir(self.software_root), [])
       st = os.stat(os.path.join(self.instance_root, 'var'))
       self.assertEquals(stat.S_IMODE(st.st_mode), 0o755)
@@ -530,7 +534,7 @@ class TestSlapgridCPWithMaster(MasterMixin, unittest.TestCase):
     with httmock.HTTMock(computer.request_handler):
       instance = computer.instance_list[0]
       self.assertEqual(self.grid.processComputerPartitionList(), slapgrid.SLAPGRID_SUCCESS)
-      self.assertItemsEqual(os.listdir(self.instance_root), ['0', 'etc', 'var'])
+      self.assertInstanceDirectoryListEqual(['0'])
       partition = os.path.join(self.instance_root, '0')
       self.assertItemsEqual(os.listdir(partition), ['.slapgrid', 'buildout.cfg',
                                                     'software_release', 'worked', '.slapos-retention-lock-delay'])
@@ -548,7 +552,7 @@ class TestSlapgridCPWithMaster(MasterMixin, unittest.TestCase):
     with httmock.HTTMock(computer.request_handler):
       instance = computer.instance_list[0]
       self.assertEqual(self.grid.processComputerPartitionList(), slapgrid.SLAPGRID_SUCCESS)
-      self.assertItemsEqual(os.listdir(self.instance_root), ['0', 'etc', 'var'])
+      self.assertInstanceDirectoryListEqual(['0'])
       partition = os.path.join(self.instance_root, '0')
       self.assertItemsEqual(os.listdir(partition), ['.slapgrid', 'buildout.cfg',
                                                     'software_release', 'worked', '.slapos-retention-lock-delay'])
@@ -568,7 +572,7 @@ class TestSlapgridCPWithMaster(MasterMixin, unittest.TestCase):
       partition = computer.instance_list[0]
       partition.requested_state = 'destroyed'
       self.assertEqual(self.grid.processComputerPartitionList(), slapgrid.SLAPGRID_SUCCESS)
-      self.assertItemsEqual(os.listdir(self.instance_root), ['0', 'etc', 'var'])
+      self.assertInstanceDirectoryListEqual(['0'])
       self.assertItemsEqual(os.listdir(partition.partition_path), [])
       self.assertItemsEqual(os.listdir(self.software_root), [])
       self.assertEqual(partition.sequence, [])
@@ -580,7 +584,7 @@ class TestSlapgridCPWithMaster(MasterMixin, unittest.TestCase):
       partition.requested_state = 'started'
       partition.software.setBuildout(WRAPPER_CONTENT)
       self.assertEqual(self.grid.processComputerPartitionList(), slapgrid.SLAPGRID_SUCCESS)
-      self.assertItemsEqual(os.listdir(self.instance_root), ['0', 'etc', 'var'])
+      self.assertInstanceDirectoryListEqual(['0'])
       self.assertItemsEqual(os.listdir(partition.partition_path),
                             ['.slapgrid', '.0_wrapper.log', 'buildout.cfg',
                              'etc', 'software_release', 'worked', '.slapos-retention-lock-delay'])
@@ -617,7 +621,7 @@ HEREDOC
 chmod 755 etc/run/wrapper
 """ % {'python': sys.executable})
       self.assertEqual(self.grid.processComputerPartitionList(), slapgrid.SLAPGRID_SUCCESS)
-      self.assertItemsEqual(os.listdir(self.instance_root), ['0', 'etc', 'var'])
+      self.assertInstanceDirectoryListEqual(['0'])
       self.assertItemsEqual(os.listdir(instance.partition_path),
                             ['.slapgrid', '.0_wrapper.log', 'buildout.cfg',
                              'etc', 'software_release', 'worked', '.slapos-retention-lock-delay'])
@@ -632,7 +636,7 @@ chmod 755 etc/run/wrapper
       computer.sequence = []
       instance.requested_state = 'stopped'
       self.assertEqual(self.launchSlapgrid(), slapgrid.SLAPGRID_SUCCESS)
-      self.assertItemsEqual(os.listdir(self.instance_root), ['0', 'etc', 'var'])
+      self.assertInstanceDirectoryListEqual(['0'])
       self.assertItemsEqual(os.listdir(instance.partition_path),
                             ['.slapgrid', '.0_wrapper.log', 'buildout.cfg',
                              'etc', 'software_release', 'worked', '.slapos-retention-lock-delay'])
@@ -672,7 +676,7 @@ HEREDOC
 chmod 755 etc/run/wrapper
 """ % {'python': sys.executable})
       self.assertEqual(self.grid.processComputerPartitionList(), slapgrid.SLAPGRID_SUCCESS)
-      self.assertItemsEqual(os.listdir(self.instance_root), ['0', 'etc', 'var'])
+      self.assertInstanceDirectoryListEqual(['0'])
       self.assertItemsEqual(os.listdir(instance.partition_path),
                             ['.slapgrid', '.0_wrapper.log', 'buildout.cfg',
                              'etc', 'software_release', 'worked', '.slapos-retention-lock-delay'])
@@ -691,8 +695,7 @@ chmod 755 etc/run/wrapper
 exit 1
 """)
       self.assertEqual(self.launchSlapgrid(), slapgrid.SLAPGRID_FAIL)
-      self.assertItemsEqual(os.listdir(self.instance_root),
-                            ['0', 'etc', 'var'])
+      self.assertInstanceDirectoryListEqual(['0'])
       self.assertItemsEqual(os.listdir(instance.partition_path),
                             ['.slapgrid', '.0_wrapper.log', 'buildout.cfg',
                              'etc', 'software_release', 'worked', '.slapos-retention-lock-delay'])
@@ -710,7 +713,7 @@ exit 1
       instance.software.setBuildout(WRAPPER_CONTENT)
       self.assertEqual(self.grid.processComputerPartitionList(), slapgrid.SLAPGRID_SUCCESS)
 
-      self.assertItemsEqual(os.listdir(self.instance_root), ['0', 'etc', 'var'])
+      self.assertInstanceDirectoryListEqual(['0'])
       partition = os.path.join(self.instance_root, '0')
       self.assertItemsEqual(os.listdir(partition),
                             ['.slapgrid', 'buildout.cfg', 'etc', 'software_release', 'worked', '.slapos-retention-lock-delay'])
@@ -724,7 +727,7 @@ exit 1
       instance.requested_state = 'started'
       computer.sequence = []
       self.assertEqual(self.launchSlapgrid(), slapgrid.SLAPGRID_SUCCESS)
-      self.assertItemsEqual(os.listdir(self.instance_root), ['0', 'etc', 'var'])
+      self.assertInstanceDirectoryListEqual(['0'])
       partition = os.path.join(self.instance_root, '0')
       self.assertItemsEqual(os.listdir(partition),
                             ['.slapgrid', '.0_wrapper.log', 'etc',
@@ -754,7 +757,7 @@ exit 1
 
       self.assertEqual(self.grid.processComputerPartitionList(), slapgrid.SLAPGRID_SUCCESS)
 
-      self.assertItemsEqual(os.listdir(self.instance_root), ['0', 'etc', 'var'])
+      self.assertInstanceDirectoryListEqual(['0'])
       partition = os.path.join(self.instance_root, '0')
       self.assertItemsEqual(os.listdir(partition), ['.slapgrid', dummy_file_name])
       self.assertItemsEqual(os.listdir(self.software_root), [instance.software.software_hash])
@@ -799,7 +802,7 @@ class TestSlapgridCPWithMasterWatchdog(MasterMixin, unittest.TestCase):
       partition.software.setBuildout(DAEMON_CONTENT)
 
       self.assertEqual(self.grid.processComputerPartitionList(), slapgrid.SLAPGRID_SUCCESS)
-      self.assertItemsEqual(os.listdir(self.instance_root), ['0', 'etc', 'var'])
+      self.assertInstanceDirectoryListEqual(['0'])
       self.assertItemsEqual(os.listdir(partition.partition_path),
                             ['.slapgrid', '.0_daemon.log', 'buildout.cfg',
                              'etc', 'software_release', 'worked', '.slapos-retention-lock-delay'])
@@ -844,8 +847,7 @@ class TestSlapgridCPWithMasterWatchdog(MasterMixin, unittest.TestCase):
       partition.software.setBuildout(BUILDOUT_RUN_CONTENT)
 
       self.assertEqual(self.grid.processComputerPartitionList(), slapgrid.SLAPGRID_SUCCESS)
-      self.assertItemsEqual(os.listdir(self.instance_root),
-                            ['0', 'etc', 'var'])
+      self.assertInstanceDirectoryListEqual(['0'])
       self.assertItemsEqual(os.listdir(partition.partition_path),
                             ['.slapgrid', '.0_daemon.log', 'buildout.cfg',
                              'etc', 'software_release', 'worked', '.slapos-retention-lock-delay'])
@@ -1126,7 +1128,7 @@ class TestSlapgridCPPartitionProcessing(MasterMixin, unittest.TestCase):
       instance.timestamp = timestamp
 
       self.assertEqual(self.grid.processComputerPartitionList(), slapgrid.SLAPGRID_SUCCESS)
-      self.assertItemsEqual(os.listdir(self.instance_root), ['0', 'etc', 'var'])
+      self.assertInstanceDirectoryListEqual(['0'])
       partition = os.path.join(self.instance_root, '0')
       self.assertItemsEqual(os.listdir(partition),
                             ['.slapgrid', '.timestamp', 'buildout.cfg', 'software_release', 'worked', '.slapos-retention-lock-delay'])
@@ -1146,7 +1148,7 @@ class TestSlapgridCPPartitionProcessing(MasterMixin, unittest.TestCase):
       instance.timestamp = timestamp
 
       self.assertEqual(self.grid.processComputerPartitionList(), slapgrid.SLAPGRID_SUCCESS)
-      self.assertItemsEqual(os.listdir(self.instance_root), ['0', 'etc', 'var'])
+      self.assertInstanceDirectoryListEqual(['0'])
       partition = os.path.join(self.instance_root, '0')
       self.assertItemsEqual(os.listdir(partition),
                             ['.slapgrid', '.timestamp', 'buildout.cfg',
@@ -1169,7 +1171,7 @@ class TestSlapgridCPPartitionProcessing(MasterMixin, unittest.TestCase):
       instance.timestamp = timestamp
 
       self.assertEqual(self.grid.processComputerPartitionList(), slapgrid.SLAPGRID_SUCCESS)
-      self.assertItemsEqual(os.listdir(self.instance_root), ['0', 'etc', 'var'])
+      self.assertInstanceDirectoryListEqual(['0'])
       partition = os.path.join(self.instance_root, '0')
       self.assertItemsEqual(os.listdir(partition),
                             ['.slapgrid', '.timestamp', 'buildout.cfg', 'software_release', 'worked', '.slapos-retention-lock-delay'])
@@ -1187,7 +1189,7 @@ class TestSlapgridCPPartitionProcessing(MasterMixin, unittest.TestCase):
       instance.timestamp = timestamp
 
       self.assertEqual(self.launchSlapgrid(), slapgrid.SLAPGRID_SUCCESS)
-      self.assertItemsEqual(os.listdir(self.instance_root), ['0', 'etc', 'var'])
+      self.assertInstanceDirectoryListEqual(['0'])
       partition = os.path.join(self.instance_root, '0')
       self.assertItemsEqual(os.listdir(partition),
                             ['.slapgrid', '.timestamp', 'buildout.cfg', 'software_release', 'worked', '.slapos-retention-lock-delay'])
@@ -1212,7 +1214,7 @@ class TestSlapgridCPPartitionProcessing(MasterMixin, unittest.TestCase):
       instance.timestamp = timestamp
 
       self.launchSlapgrid()
-      self.assertItemsEqual(os.listdir(self.instance_root), ['0', 'etc', 'var'])
+      self.assertInstanceDirectoryListEqual(['0'])
       partition = os.path.join(self.instance_root, '0')
       self.assertItemsEqual(os.listdir(partition),
                             ['.slapgrid', '.timestamp', 'buildout.cfg', 'software_release', 'worked', '.slapos-retention-lock-delay'])
@@ -1536,7 +1538,7 @@ class TestSlapgridUsageReport(MasterMixin, unittest.TestCase):
       instance.requested_state = 'started'
       instance.software.setBuildout(WRAPPER_CONTENT)
       self.assertEqual(self.grid.processComputerPartitionList(), slapgrid.SLAPGRID_SUCCESS)
-      self.assertItemsEqual(os.listdir(self.instance_root), ['0', 'etc', 'var'])
+      self.assertInstanceDirectoryListEqual(['0'])
       self.assertItemsEqual(os.listdir(instance.partition_path),
                             ['.slapgrid', '.0_wrapper.log', 'buildout.cfg',
                              'etc', 'software_release', 'worked', '.slapos-retention-lock-delay'])
@@ -1554,7 +1556,7 @@ class TestSlapgridUsageReport(MasterMixin, unittest.TestCase):
       instance.requested_state = 'destroyed'
       self.assertEqual(self.grid.agregateAndSendUsage(), slapgrid.SLAPGRID_SUCCESS)
       # Assert partition directory is empty
-      self.assertItemsEqual(os.listdir(self.instance_root), ['0', 'etc', 'var'])
+      self.assertInstanceDirectoryListEqual(['0'])
       self.assertItemsEqual(os.listdir(instance.partition_path), [])
       self.assertItemsEqual(os.listdir(self.software_root),
                             [instance.software.software_hash])
@@ -1585,7 +1587,7 @@ class TestSlapgridUsageReport(MasterMixin, unittest.TestCase):
       instance.requested_state = 'destroyed'
       self.assertEqual(self.grid.agregateAndSendUsage(), slapgrid.SLAPGRID_SUCCESS)
       # Assert partition directory is empty
-      self.assertItemsEqual(os.listdir(self.instance_root), ['0', 'etc', 'var'])
+      self.assertInstanceDirectoryListEqual(['0'])
       self.assertItemsEqual(os.listdir(instance.partition_path), [])
       self.assertItemsEqual(os.listdir(self.software_root),
                             [instance.software.software_hash])
@@ -1607,7 +1609,7 @@ class TestSlapgridUsageReport(MasterMixin, unittest.TestCase):
       instance.requested_state = 'started'
       instance.software.setBuildout(WRAPPER_CONTENT)
       self.assertEqual(self.grid.processComputerPartitionList(), slapgrid.SLAPGRID_SUCCESS)
-      self.assertItemsEqual(os.listdir(self.instance_root), ['0', 'etc', 'var'])
+      self.assertInstanceDirectoryListEqual(['0'])
       self.assertItemsEqual(os.listdir(instance.partition_path),
                             ['.slapgrid', '.0_wrapper.log', 'buildout.cfg',
                              'etc', 'software_release', 'worked', '.slapos-retention-lock-delay'])
@@ -1623,13 +1625,13 @@ class TestSlapgridUsageReport(MasterMixin, unittest.TestCase):
       # Then run usage report and see if it is still working
       computer.sequence = []
       self.assertEqual(self.grid.agregateAndSendUsage(), slapgrid.SLAPGRID_SUCCESS)
-      self.assertItemsEqual(os.listdir(self.instance_root), ['0', 'etc', 'var'])
+      self.assertInstanceDirectoryListEqual(['0'])
       self.assertItemsEqual(os.listdir(instance.partition_path),
                             ['.slapgrid', '.0_wrapper.log', 'buildout.cfg',
                              'etc', 'software_release', 'worked', '.slapos-retention-lock-delay'])
       wrapper_log = os.path.join(instance.partition_path, '.0_wrapper.log')
       self.assertLogContent(wrapper_log, 'Working')
-      self.assertItemsEqual(os.listdir(self.instance_root), ['0', 'etc', 'var'])
+      self.assertInstanceDirectoryListEqual(['0'])
       self.assertItemsEqual(os.listdir(instance.partition_path),
                             ['.slapgrid', '.0_wrapper.log', 'buildout.cfg',
                              'etc', 'software_release', 'worked', '.slapos-retention-lock-delay'])
@@ -1653,7 +1655,7 @@ class TestSlapgridUsageReport(MasterMixin, unittest.TestCase):
       instance.requested_state = 'destroyed'
       self.assertEqual(self.grid.processComputerPartitionList(), slapgrid.SLAPGRID_SUCCESS)
       # Assert partition directory is empty
-      self.assertItemsEqual(os.listdir(self.instance_root), ['0', 'etc', 'var'])
+      self.assertInstanceDirectoryListEqual(['0'])
       self.assertItemsEqual(os.listdir(instance.partition_path), [])
       self.assertItemsEqual(os.listdir(self.software_root), [instance.software.software_hash])
       self.assertEqual(computer.sequence, ['/getFullComputerInformation'])
@@ -1672,7 +1674,7 @@ class TestSlapgridUsageReport(MasterMixin, unittest.TestCase):
       instance.requested_state = 'destroyed'
       self.assertEqual(self.grid.agregateAndSendUsage(), slapgrid.SLAPGRID_SUCCESS)
       # Assert partition directory is empty
-      self.assertItemsEqual(os.listdir(self.instance_root), ['0', 'etc', 'var'])
+      self.assertInstanceDirectoryListEqual(['0'])
       self.assertItemsEqual(os.listdir(instance.partition_path), [])
       self.assertItemsEqual(os.listdir(self.software_root), [instance.software.software_hash])
       self.assertEqual(computer.sequence, ['/getFullComputerInformation'])

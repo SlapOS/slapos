@@ -29,14 +29,17 @@
 ##############################################################################
 
 import os
+import pkg_resources
+import socket as socketlib
+import subprocess
+import stat
 import sys
 import time
 import xmlrpclib
-import socket as socketlib
-import subprocess
+
+from slapos.grid.utils import (createPrivateDirectory, SlapPopen, updateFile)
 
 from supervisor import xmlrpc
-from slapos.grid.utils import SlapPopen
 
 
 def getSupervisorRPC(socket):
@@ -47,7 +50,65 @@ def getSupervisorRPC(socket):
   return getattr(server_proxy, 'supervisor')
 
 
-def launchSupervisord(socket, configuration_file, logger, supervisord_additional_argument_list=None):
+def _getSupervisordSocketPath(instance_root):
+  return os.path.join(instance_root, 'supervisord.socket')
+
+def _getSupervisordConfigurationFilePath(instance_root):
+  return os.path.join(instance_root, 'etc', 'supervisord.conf')
+
+def _getSupervisordConfigurationDirectory(instance_root):
+  return os.path.join(instance_root, 'etc', 'supervisord.conf.d')
+
+def createSupervisordConfiguration(instance_root, watchdog_command='sleep 10'):
+  """
+  Create supervisord related files and directories.
+  """
+  if not os.path.isdir(instance_root):
+    raise OSError('%s does not exist.' % instance_root)
+
+  supervisord_configuration_file_path = _getSupervisordConfigurationFilePath(instance_root)
+  supervisord_configuration_directory = _getSupervisordConfigurationDirectory(instance_root)
+  supervisord_socket = _getSupervisordSocketPath(instance_root)
+
+  # Create directory accessible for the instances.
+  var_directory = os.path.join(instance_root, 'var')
+  if not os.path.isdir(var_directory):
+    os.mkdir(var_directory)
+  os.chmod(var_directory, stat.S_IRWXU | stat.S_IROTH | stat.S_IXOTH | \
+                          stat.S_IRGRP | stat.S_IXGRP )
+  etc_directory = os.path.join(instance_root, 'etc')
+  if not os.path.isdir(etc_directory):
+    os.mkdir(etc_directory)
+
+  # Creates instance_root structure
+  createPrivateDirectory(os.path.join(instance_root, 'var', 'log'))
+  createPrivateDirectory(os.path.join(instance_root, 'var', 'run'))
+
+  createPrivateDirectory(os.path.join(instance_root, 'etc'))
+  createPrivateDirectory(supervisord_configuration_directory)
+
+  # Creates supervisord configuration
+  updateFile(supervisord_configuration_file_path,
+    pkg_resources.resource_stream(__name__,
+      'templates/supervisord.conf.in').read() % {
+          'supervisord_configuration_directory': supervisord_configuration_directory,
+          'supervisord_socket': os.path.abspath(supervisord_socket),
+          'supervisord_loglevel': 'info',
+          'supervisord_logfile': os.path.abspath(
+              os.path.join(instance_root, 'var', 'log', 'supervisord.log')),
+          'supervisord_logfile_maxbytes': '50MB',
+          'supervisord_nodaemon': 'false',
+          'supervisord_pidfile': os.path.abspath(
+              os.path.join(instance_root, 'var', 'run', 'supervisord.pid')),
+          'supervisord_logfile_backups': '10',
+          'watchdog_command': watchdog_command,
+      }
+  )
+
+def launchSupervisord(instance_root, logger,
+                      supervisord_additional_argument_list=None):
+  configuration_file = _getSupervisordConfigurationFilePath(instance_root)
+  socket = _getSupervisordSocketPath(instance_root)
   if os.path.exists(socket):
     trynum = 1
     while trynum < 6:
@@ -66,6 +127,18 @@ def launchSupervisord(socket, configuration_file, logger, supervisord_additional
       else:
         if status['statename'] == 'RUNNING' and status['statecode'] == 1:
           logger.debug('Supervisord already running.')
+
+          # Update watchdog
+          supervisor = getSupervisorRPC(socket)
+          try:
+            # XXX workaround for https://github.com/Supervisor/supervisor/issues/339
+            # In theory, only reloadConfig is needed.
+            supervisor.stopProcess('watchdog')
+            supervisor.removeProcessGroup('watchdog')
+          except:
+            pass
+          supervisor.reloadConfig()
+          supervisor.addProcessGroup('watchdog')
           return
         elif status['statename'] == 'SHUTDOWN_STATE' and status['statecode'] == 6:
           logger.info('Supervisor in shutdown procedure, will check again later.')
@@ -123,3 +196,4 @@ def launchSupervisord(socket, configuration_file, logger, supervisord_additional
     logger.warning('Issue while checking supervisord.')
   finally:
     socketlib.setdefaulttimeout(default_timeout)
+

@@ -37,7 +37,6 @@ import subprocess
 import sys
 import tempfile
 import time
-import stat
 import traceback
 import warnings
 import logging
@@ -53,9 +52,11 @@ from slapos.slap.slap import ServerError
 from slapos.util import mkdir_p, chownDirectory
 from slapos.grid.exception import BuildoutFailedError
 from slapos.grid.SlapObject import Software, Partition
-from slapos.grid.svcbackend import launchSupervisord
-from slapos.grid.utils import (md5digest, createPrivateDirectory, dropPrivileges,
-                               SlapPopen, updateFile)
+from slapos.grid.svcbackend import (launchSupervisord,
+                                    createSupervisordConfiguration,
+                                    _getSupervisordConfigurationDirectory,
+                                    _getSupervisordSocketPath)
+from slapos.grid.utils import (md5digest, dropPrivileges, SlapPopen)
 from slapos.human import human2bytes
 import slapos.slap
 
@@ -71,11 +72,11 @@ SLAPGRID_FAIL = 1
 SLAPGRID_PROMISE_FAIL = 2
 PROMISE_TIMEOUT = 3
 
-# XXX hardcoded watchdog_path
-WATCHDOG_PATH = '/opt/slapos/bin/slapos-watchdog'
-
 COMPUTER_PARTITION_TIMESTAMP_FILENAME = '.timestamp'
 COMPUTER_PARTITION_LATEST_BANG_TIMESTAMP_FILENAME = '.slapos_latest_bang_timestamp'
+
+# XXX hardcoded watchdog_path
+WATCHDOG_PATH = '/opt/slapos/bin/slapos-watchdog'
 
 
 class _formatXMLError(Exception):
@@ -149,15 +150,6 @@ def merged_options(args, configp):
   if options.get('all'):
     options['develop'] = True
 
-  # Supervisord configuration location
-  if not options.get('supervisord_configuration_path'):
-    options['supervisord_configuration_path'] = \
-      os.path.join(options['instance_root'], 'etc', 'supervisord.conf')
-  # Supervisord socket
-  if not options.get('supervisord_socket'):
-    options['supervisord_socket'] = \
-      os.path.join(options['instance_root'], 'supervisord.socket')
-
   # Parse cache / binary cache options
   # Backward compatibility about "binary-cache-url-blacklist" deprecated option
   if (options.get("binary-cache-url-blacklist") and not
@@ -209,8 +201,6 @@ def create_slapgrid_object(options, logger):
                   instance_root=op['instance_root'],
                   master_url=op['master_url'],
                   computer_id=op['computer_id'],
-                  supervisord_socket=op['supervisord_socket'],
-                  supervisord_configuration_path=op['supervisord_configuration_path'],
                   buildout=op.get('buildout'),
                   logger=logger,
                   maximum_periodicity = op.get('maximum_periodicity', 86400),
@@ -267,8 +257,6 @@ class Slapgrid(object):
                instance_root,
                master_url,
                computer_id,
-               supervisord_socket,
-               supervisord_configuration_path,
                buildout,
                logger,
                maximum_periodicity=86400,
@@ -303,8 +291,7 @@ class Slapgrid(object):
     self.instance_root = os.path.abspath(instance_root)
     self.master_url = master_url
     self.computer_id = computer_id
-    self.supervisord_socket = supervisord_socket
-    self.supervisord_configuration_path = supervisord_configuration_path
+    self.supervisord_socket = _getSupervisordSocketPath(instance_root)
     self.key_file = key_file
     self.cert_file = cert_file
     self.master_ca_file = master_ca_file
@@ -332,8 +319,6 @@ class Slapgrid(object):
         cert_file=self.cert_file, master_ca_file=self.master_ca_file)
     self.computer = self.slap.registerComputer(self.computer_id)
     # Defines all needed paths
-    self.supervisord_configuration_directory = \
-        os.path.join(self.instance_root, 'etc', 'supervisord.conf.d')
     self.buildout = buildout
     self.promise_timeout = promise_timeout
     self.develop = develop
@@ -350,7 +335,7 @@ class Slapgrid(object):
     self.software_min_free_space = software_min_free_space
     self.instance_min_free_space = instance_min_free_space
 
-  def getWatchdogLine(self):
+  def _getWatchdogLine(self):
     invocation_list = [WATCHDOG_PATH]
     invocation_list.append("--master-url '%s' " % self.master_url)
     if self.certificate_repository_path:
@@ -367,42 +352,11 @@ class Slapgrid(object):
     # Checks for software_root and instance_root existence
     if not os.path.isdir(self.software_root):
       raise OSError('%s does not exist.' % self.software_root)
-    if not os.path.isdir(self.instance_root):
-      raise OSError('%s does not exist.' % self.instance_root)
-    # Creates everything needed
 
-    # Create directory accessible for the instances.
-    var_directory = os.path.join(self.instance_root, 'var')
-    if not os.path.isdir(var_directory):
-      os.mkdir(var_directory)
+    createSupervisordConfiguration(self.instance_root, self._getWatchdogLine())
 
-    os.chmod(var_directory, stat.S_IRWXU | stat.S_IROTH | stat.S_IXOTH | \
-                            stat.S_IRGRP | stat.S_IXGRP )
-
-    mkdir_p(os.path.join(self.instance_root, 'var'), 0o755)
-
-    # Creates instance_root structure
-    createPrivateDirectory(os.path.join(self.instance_root, 'var', 'log'))
-    createPrivateDirectory(os.path.join(self.instance_root, 'var', 'run'))
-
-    createPrivateDirectory(os.path.join(self.instance_root, 'etc'))
-    createPrivateDirectory(self.supervisord_configuration_directory)
-
-    # Creates supervisord configuration
-    updateFile(self.supervisord_configuration_path,
-      pkg_resources.resource_stream(__name__,
-        'templates/supervisord.conf.in').read() % {
-            'supervisord_configuration_directory': self.supervisord_configuration_directory,
-            'supervisord_socket': os.path.abspath(self.supervisord_socket),
-            'supervisord_loglevel': 'info',
-            'supervisord_logfile': os.path.abspath(os.path.join(self.instance_root, 'var', 'log', 'supervisord.log')),
-            'supervisord_logfile_maxbytes': '50MB',
-            'supervisord_nodaemon': 'false',
-            'supervisord_pidfile': os.path.abspath(os.path.join(self.instance_root, 'var', 'run', 'supervisord.pid')),
-            'supervisord_logfile_backups': '10',
-            'watchdog_command': self.getWatchdogLine(),
-        }
-    )
+  def _launchSupervisord(self):
+    launchSupervisord(instance_root=self.instance_root, logger=self.logger)
 
   def getComputerPartitionList(self):
     try:
@@ -500,11 +454,6 @@ class Slapgrid(object):
     if not clean_run:
       return SLAPGRID_FAIL
     return SLAPGRID_SUCCESS
-
-  def _launchSupervisord(self):
-    launchSupervisord(self.supervisord_socket,
-                      self.supervisord_configuration_path,
-                      logger=self.logger)
 
   def _checkPromises(self, computer_partition):
     self.logger.info("Checking promises...")
@@ -678,7 +627,7 @@ class Slapgrid(object):
         software_path=software_path,
         instance_path=instance_path,
         supervisord_partition_configuration_path=os.path.join(
-          self.supervisord_configuration_directory, '%s.conf' %
+          _getSupervisordConfigurationDirectory(self.instance_root), '%s.conf' %
           computer_partition_id),
         supervisord_socket=self.supervisord_socket,
         computer_partition=computer_partition,
@@ -1136,7 +1085,7 @@ class Slapgrid(object):
             instance_path=os.path.join(self.instance_root,
                 computer_partition.getId()),
             supervisord_partition_configuration_path=os.path.join(
-              self.supervisord_configuration_directory, '%s.conf' %
+              _getSupervisordConfigurationDirectory(self.instance_root), '%s.conf' %
               computer_partition_id),
             supervisord_socket=self.supervisord_socket,
             computer_partition=computer_partition,
