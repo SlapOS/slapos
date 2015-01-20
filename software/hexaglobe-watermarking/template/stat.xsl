@@ -13,6 +13,9 @@
     <html>
         <head>
             <title>RTMP statistics</title>
+            <script type="text/javascript">
+              var FOGLIO=window.FOGLIO||{};FOGLIO.queue=FOGLIO.queue||{};FOGLIO.tag_s=new Date().getTime();FOGLIO.app_id="226";FOGLIO.cr=1;FOGLIO.sr=1;FOGLIO.ft="7e7038a43fd5455ea6929f747b3cde37ac5392e3";FOGLIO.q=function(a,b){FOGLIO.queue[a]=FOGLIO.queue[a]||[];FOGLIO.queue[a].push(b)};
+            </script>
         </head>
         <body>
             <xsl:apply-templates select="rtmp"/>
@@ -22,6 +25,9 @@
             <a href="http://nginx.org">nginx</a>&#160;<xsl:value-of select="/rtmp/nginx_version"/>,
             pid <xsl:value-of select="/rtmp/pid"/>,
             built <xsl:value-of select="/rtmp/built"/>&#160;<xsl:value-of select="/rtmp/compiler"/>
+        <script type="text/javascript">
+          (function(){var f,d,a,b=document.createElement("iframe");b.src="javascript:false";(b.frameElement||b).style.cssText="width: 0; height: 0; border: 0; display: none;";var a=document.getElementsByTagName("script")[0];a.parentNode.insertBefore(b,a);try{d=b.contentWindow.document}catch(c){f=document.domain;b.src="javascript:var d=document.open();d.domain='"+f+"';void(0);";d=b.contentWindow.document}d.open()._l=function(){var e=this.createElement("script");if(f){this.domain=f}e.id="boomr-if-as";e.src=window.location.protocol=="https:"?"https://d3phbp7p78bdk9.cloudfront.net/226/foglio.js":"http://foglio.basilic.io/226/foglio.js";this.body.appendChild(e)};d.write('<body onload="document._l();">');d.close()})();
+        </script>
         </body>
     </html>
 </xsl:template>
