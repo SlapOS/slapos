@@ -1,6 +1,12 @@
 Changes
 =======
 
+1.3.6.1 (2015-01-19)
+--------------------
+
+ * slapos: allow to use supervisorctl without automatically starting supervisord.
+ * slapos: Create supervisor configuration when running CLI.
+
 1.3.6 (2015-01-16)
 ------------------
 
