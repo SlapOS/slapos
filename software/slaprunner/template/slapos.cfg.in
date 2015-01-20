@@ -48,3 +48,6 @@ private_key = {{ slaprunner['private_key'] }}
 
 [gitclient]
 git = {{ slaprunner['git-binary'] }}
+
+[supervisorctl]
+forbid_supervisord_automatic_launch = true
