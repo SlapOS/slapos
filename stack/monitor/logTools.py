@@ -167,3 +167,72 @@ def generateRSS(db_path, name, rss_path, url_link, limit=10):
 
   with open(rss_path, 'w') as rss_ouput:
     rss_ouput.write(rss_feed.to_xml())
+
+def tail(f, lines=20):
+  """
+  Returns the last `lines` lines of file `f`. It is an implementation of tail -f n.
+  """
+  BUFSIZ = 1024
+  f.seek(0, 2)
+  bytes = f.tell()
+  size = lines + 1
+  block = -1
+  data = []
+  while size > 0 and bytes > 0:
+      if bytes - BUFSIZ > 0:
+          # Seek back one whole BUFSIZ
+          f.seek(block * BUFSIZ, 2)
+          # read BUFFER
+          data.insert(0, f.read(BUFSIZ))
+      else:
+          # file too small, start from begining
+          f.seek(0, 0)
+          # only read what was not read
+          data.insert(0, f.read(bytes))
+      linesFound = data[0].count('\n')
+      size -= linesFound
+      bytes -= BUFSIZ
+      block -= 1
+  return '\n'.join(''.join(data).splitlines()[-lines:])
+
+
+def readFileFrom(f, lastPosition, limit=20000):
+  """
+  Returns the last lines of file `f`, from position lastPosition.
+  and the last position
+  limit = max number of characters to read
+  """
+  BUFSIZ = 1024
+  f.seek(0, 2)
+  # XXX-Marco do now shadow 'bytes'
+  bytes = f.tell()
+  block = -1
+  data = ""
+  length = bytes
+  truncated = False  # True if a part of log data has been truncated
+  if (lastPosition <= 0 and length > limit) or (length - lastPosition > limit):
+    lastPosition = length - limit
+    truncated = True
+  size = bytes - lastPosition
+  while bytes > lastPosition:
+    if abs(block * BUFSIZ) <= size:
+      # Seek back one whole BUFSIZ
+      f.seek(block * BUFSIZ, 2)
+      data = f.read(BUFSIZ) + data
+    else:
+      margin = abs(block * BUFSIZ) - size
+      if length < BUFSIZ:
+        f.seek(0, 0)
+      else:
+        seek = block * BUFSIZ + margin
+        f.seek(seek, 2)
+      data = f.read(BUFSIZ - margin) + data
+    bytes -= BUFSIZ
+    block -= 1
+  f.close()
+  return {
+    'content': data,
+    'position': length,
+    'truncated': truncated
+  }
+  

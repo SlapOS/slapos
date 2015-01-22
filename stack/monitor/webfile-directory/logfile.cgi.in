@@ -1,0 +1,177 @@
+#!{{ python_executable }}
+
+import cgi
+import cgitb
+import json
+import os
+import subprocess
+import logTools
+import codecs
+
+cgitb.enable(display=0, logdir="/tmp/cgi.log")
+form = cgi.FieldStorage()
+base_folder_list = {{ base_folder_list }}
+script_path = "{{ script_path }}"
+logpath = form.getvalue("path", "")
+size = int(form.getvalue("size", "200"))
+
+
+print """<html><head>
+<link rel="stylesheet" href="static/pure-min.css">
+<link rel="stylesheet" href="static/style.css">
+<script src="static/jquery-1.10.2.min.js"></script>
+<style>
+.head{
+	background-color:#0078e7;
+	border:0px solid #ffffff;
+	text-align:left;
+	border-width:0px 0px 1px 1px;
+	font-size:18px;
+	font-family:Helvetica;
+	font-weight:normal;
+	color:#ffffff;
+	display: block;
+	padding: 10px;
+	margin: 0;
+}
+.box{
+  border: 1px solid #e8eaed;
+  padding: 5px;
+}
+textarea {width: 100%; height: 470px; margin-top: 10px;}
+ul {margin:0px; padding: 0px; list-style: none;}
+.button {margin-top: 5px;}
+.button div {margin: 0; margin-right: 10px; float: left; }
+</style>
+<script language="javascript" type="text/javascript">
+$(document).ready(function () {
+  $(".file").click(function() {
+    var child = $(this).children('input[type=checkbox]');
+    if (! $(child).is(':checked') ) {
+        $(child).prop( "checked", true );
+    }
+    else {$(child).prop( "checked", false );}
+  });
+  $( "#open" ).click(function() {
+    var file_list = "";
+    $(".file").each(function () {
+      if ($(this).children('input[type=checkbox]').is(':checked') ) {
+        file_list += $(this).attr("rel") + "#";
+      }
+    });
+    if (file_list == "") { return false;}
+    $("#path").val(file_list);
+    $( "#log_form" ).submit();
+    return false;
+  });
+  
+  $( "#check" ).click(function() {
+    $(".file").each(function () {
+      var child = $(this).children('input[type=checkbox]');
+      if (! $(child).is(':checked') ) {
+        $(child).prop( "checked", true );
+      }
+    });
+    return false;
+  });
+  $( "#uncheck" ).click(function() {
+    $(".file").each(function () {
+      var child = $(this).children('input[type=checkbox]');
+      if ($(child).is(':checked') ) {
+        $(child).prop( "checked", false );
+      }
+    });
+    return false;
+  });
+  
+  $( "#reload" ).click(function() {
+    $( "#log_form" ).submit();
+    return false;
+  });
+  
+  $( "#return" ).click(function() {
+    $("#path").val("");
+    $( "#log_form" ).submit();
+    return false;
+  });
+  var textarea = $("#logcontent")
+  
+  if (textarea != undefined) {
+    $(textarea).animate({ scrollTop: $(textarea)[0].scrollHeight - $(textarea).height() }, "slow");
+  }
+});
+</script>
+</head><body>"""
+if not logpath:
+  print """
+<form action="/index.cgi" method="post" class="pure-form-aligned" id="log_form">
+  <input type="hidden" name="posting-script" value="%s" />
+  <div class="box pure-menu pure-menu-open">
+    <h2 class="head">Select file(s) in the list bellow</h2>
+  <ul>""" % script_path
+  for base_folder in base_folder_list.values():
+    if os.path.exists(base_folder):
+      for filename in os.listdir(base_folder):
+        path = os.path.join(base_folder, filename)
+        if not os.path.isdir(path):
+          print """  <li>
+      <a href="#" class="script file" rel="%s" title="%s">
+      <input type="checkbox" />
+      %s</a></li>""" % (
+              path, path, filename)
+        else:
+          # accept a folder containing log files
+          for sub_filename in os.listdir(path):
+            sub_path = os.path.join(path, sub_filename)
+            if os.path.isdir(sub_path):
+              continue
+            print """  <li><a href="#" class="script file" rel="%s" title="%s">%s</a></li>""" % (
+              sub_path, sub_path, sub_filename)
+  print """  </ul>
+  </div>
+  <div class="button">
+    <div><label for="size">Lines: </label><select name="size" id="size">
+      <option value="50" selected>50</option>
+      <option value="100">100</option>
+      <option value="200">200</option>
+      <option value="500">500</option>
+      <option value="1500">1500</option>
+    </select></div>
+    <button type="button" class="pure-button pure-button-primary" id="uncheck">Uncheck All</button>
+    <button type="button" class="pure-button pure-button-primary" id="check">Check All</button>
+    <button type="button" class="pure-button pure-button-primary" id="open">Open File(s)</button>
+  </div>
+  <div style='clear:both'></div>
+  <input type="hidden" name="path" id="path" value="" />
+</form>"""
+else:
+  path_list = [x for x in logpath.split('#') if x]
+  log_content = ""
+  title = ""
+  for filepath in path_list:
+    if os.path.exists(filepath) and os.path.isfile(filepath):
+      title += " " + filepath.split('/')[-1:][0]
+      try:
+        content = logTools.tail(codecs.open(filepath, "r", "utf_8"), size)
+      except Exception, e:
+        content = str(e)
+      if content:
+        log_content += "TAIL FILE %s >>>>\n\n" % filepath
+        log_content += content + "\n\n\n"
+  print """
+<form action="/index.cgi" method="post" class="pure-form-aligned" id="log_form">
+  <input type="hidden" name="posting-script" value="%s" />
+  <input type="hidden" name="path" id="path" value="%s" />
+</form>
+<div class="box">
+  <h2 class="head">Tail: %s </h2>
+  <div class="button">
+    <button type="submit" class="pure-button pure-button-primary" id="return">Return</button>
+    <button type="submit" class="pure-button pure-button-primary" id="reload">Refresh</button>
+  </div>
+  <div style='clear:both'></div>
+  <textarea id="logcontent">%s</textarea>
+</div>
+""" % (script_path, logpath, title, log_content)
+print """
+</body></html>"""
