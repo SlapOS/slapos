@@ -232,6 +232,9 @@ source = ${logrotate-entry-mariadb:backup}
 
 [monitor-parameters]
 port = {{ monitor_port }}
+
+[log-folder-cgi]
+log-folder = ${directory:log}
 {% endif -%}
 
 [buildout]
@@ -254,6 +257,7 @@ parts +=
   cron-entry-monitor
   cron-entry-rss
   deploy-index
+  deploy-logfile-cgi
   setup-static-files
   certificate-authority
   public-symlink
