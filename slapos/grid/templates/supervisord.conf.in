@@ -22,4 +22,3 @@ chmod=0700
 [eventlistener:watchdog]
 command=%(watchdog_command)s
 events=PROCESS_STATE_EXITED, PROCESS_STATE_FATAL
-autorestart=true

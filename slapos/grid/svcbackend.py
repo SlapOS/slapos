@@ -39,7 +39,7 @@ import xmlrpclib
 
 from slapos.grid.utils import (createPrivateDirectory, SlapPopen, updateFile)
 
-from supervisor import xmlrpc
+from supervisor import xmlrpc, states
 
 
 def getSupervisorRPC(socket):
@@ -59,7 +59,7 @@ def _getSupervisordConfigurationFilePath(instance_root):
 def _getSupervisordConfigurationDirectory(instance_root):
   return os.path.join(instance_root, 'etc', 'supervisord.conf.d')
 
-def createSupervisordConfiguration(instance_root, watchdog_command='sleep 10'):
+def createSupervisordConfiguration(instance_root, watchdog_command=''):
   """
   Create supervisord related files and directories.
   """
@@ -105,6 +105,21 @@ def createSupervisordConfiguration(instance_root, watchdog_command='sleep 10'):
       }
   )
 
+def _updateWatchdog(socket):
+  """
+  In special cases, supervisord can be started using configuration
+  with empty watchdog parameter.
+  Then, when running slapgrid, the real watchdog configuration is generated.
+  We thus need to reload watchdog configuration if needed and start it.
+  """
+  supervisor = getSupervisorRPC(socket)
+  if supervisor.getProcessInfo('watchdog')['state'] not in states.RUNNING_STATES:
+    # XXX workaround for https://github.com/Supervisor/supervisor/issues/339
+    # In theory, only reloadConfig is needed.
+    supervisor.removeProcessGroup('watchdog')
+    supervisor.reloadConfig()
+    supervisor.addProcessGroup('watchdog')
+
 def launchSupervisord(instance_root, logger,
                       supervisord_additional_argument_list=None):
   configuration_file = _getSupervisordConfigurationFilePath(instance_root)
@@ -127,18 +142,7 @@ def launchSupervisord(instance_root, logger,
       else:
         if status['statename'] == 'RUNNING' and status['statecode'] == 1:
           logger.debug('Supervisord already running.')
-
-          # Update watchdog
-          supervisor = getSupervisorRPC(socket)
-          try:
-            # XXX workaround for https://github.com/Supervisor/supervisor/issues/339
-            # In theory, only reloadConfig is needed.
-            supervisor.stopProcess('watchdog')
-            supervisor.removeProcessGroup('watchdog')
-          except:
-            pass
-          supervisor.reloadConfig()
-          supervisor.addProcessGroup('watchdog')
+          _updateWatchdog(socket)
           return
         elif status['statename'] == 'SHUTDOWN_STATE' and status['statecode'] == 6:
           logger.info('Supervisor in shutdown procedure, will check again later.')
