@@ -219,6 +219,6 @@ setup(name=name,
         ],
       },
       test_suite='slapos.test',
-      test_requires=[ 'jsonschema' ],
+      tests_require=[ 'jsonschema' ],
     )
 
