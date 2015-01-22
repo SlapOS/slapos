@@ -101,6 +101,10 @@ source = ${directory:logrotate-backup}
 [monitor-parameters]
 port = {{ slapparameter_dict['monitor-port'] }}
 
+[log-folder-cgi]
+log-folder = ${directory:log}
+
+
 # Enable Log As RSS for all zope event log file
 {%  do part_list.append('log-as-rss-symlink') %}
 [error-log-{{ node_id_base }}]
@@ -467,6 +471,7 @@ parts +=
   cron-entry-monitor
   cron-entry-rss
   deploy-index
+  deploy-logfile-cgi
   setup-static-files
   public-symlink
   cgi-httpd-wrapper
