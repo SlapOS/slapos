@@ -24,6 +24,7 @@ LoadModule authn_file_module modules/mod_authn_file.so
 LoadModule proxy_module      modules/mod_proxy.so
 LoadModule proxy_http_module modules/mod_proxy_http.so
 LoadModule rewrite_module modules/mod_rewrite.so
+LoadModule env_module modules/mod_env.so
 
 # SSL Configuration
 <IfDefine !SSLConfigured>
@@ -38,6 +39,9 @@ SSLProtocol -ALL +SSLv3 +TLSv1
 SSLHonorCipherOrder On
 SSLCipherSuite RC4-SHA:HIGH:!ADH
 </IfDefine>
+{% for key, value in environment_dict.items() -%}
+SetEnv {{ key }} "{{ value }}"
+{% endfor -%}
 SSLEngine   On
 ScriptSock {{ httpd_configuration.get('cgid-pid-file') }}
 <Directory {{ directory.get('www') }}>
