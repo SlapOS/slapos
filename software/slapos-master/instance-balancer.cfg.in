@@ -203,6 +203,9 @@ source = ${monitor-directory:apachedex-result}
 [monitor-parameters]
 port = {{ slapparameter_dict['monitor-port'] }}
 
+[log-folder-cgi]
+log-folder = ${directory:log}
+
 [apachedex-erp5-entries]
 <= apachedex-entries-base
 script-name = apachedex-erp5
@@ -278,6 +281,7 @@ parts +=
   cron-entry-monitor
   cron-entry-rss
   deploy-index
+  deploy-logfile-cgi
   setup-static-files
   public-symlink
   cgi-httpd-wrapper
