@@ -53,6 +53,15 @@ class Recipe(GenericBaseRecipe):
     else:
       networking = 'skip-networking'
 
+    log_bin = self.options.get('binlog-path', '')
+    if log_bin:
+      log_bin = 'log_bin = %s' % log_bin
+    expire_logs_days = self.options.get('binlog-expire-days')
+    if expire_logs_days > 0:
+      expire_logs_days = 'expire_logs_days = %s' % expire_logs_days
+    else:
+      expire_logs_days = ''
+
     mysql_conf_file = self.createFile(
       self.options['conf-file'],
       self.substituteTemplate(template_filename, {
@@ -62,6 +71,8 @@ class Recipe(GenericBaseRecipe):
         'socket': self.options['socket'],
         'error_log': self.options['error-log'],
         'slow_query_log': self.options['slow-query-log'],
+        'log_bin': log_bin,
+        'expire_logs_days': expire_logs_days,
       })
     )
     path_list.append(mysql_conf_file)

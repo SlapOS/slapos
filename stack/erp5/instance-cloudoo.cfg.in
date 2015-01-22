@@ -4,6 +4,7 @@
 parts =
   publish-cloudooo-connection-information
   cloudooo-instance
+  resiliency-exclude-file
   promise
   promise-openoffice
   {% if use_ipv6 %}promise-tunnel{% endif %}
@@ -51,6 +52,12 @@ font-folder = ${directory:font}
 url-list = {{ dumps(slapparameter_dict.get('font-url-list', []) | join(' ')) }}
 service-folder = ${directory:service}
 onetimedownload_path = {{ bin_directory }}/onetimedownload
+
+[resiliency-exclude-file]
+# Generate rdiff exclude file in case of resiliency
+recipe = collective.recipe.template
+input = inline: **
+output = ${directory:srv}/exporter.exclude
 
 [promise]
 recipe = slapos.cookbook:check_port_listening

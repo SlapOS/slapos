@@ -1,7 +1,9 @@
 #!{{ shell_binary }}
+set -e
 LC_ALL=C
 export LC_ALL
 umask 077
+srv_directory={{ directory['srv'] }}
 restore_element () {
   backup_path=$1
   restore_path=$2
@@ -18,14 +20,66 @@ restore_element () {
 
 write_backup_proof () {
   cd {{ directory['backup'] }}
-  find -type f ! -name backup.signature ! -wholename "./rdiff-backup-data/*" -print0 | xargs -P4 -0 sha256sum  | LC_ALL=C sort -k 66 > {{ directory['srv'] }}/proof.signature
-  diff -ruw {{ directory['backup'] }} {{ directory['srv'] }}/proof.signature > {{ directory['srv'] }}/backup.diff
+  find -type f ! -name backup.signature ! -wholename "./rdiff-backup-data/*" -print0 | xargs -P4 -0 sha256sum  | LC_ALL=C sort -k 66 > $srv_directory/proof.signature
+  diff -ruw {{ directory['backup'] }} $srv_directory/proof.signature > $srv_directory/backup.diff || true # diff exits with code 1 when files are different
 }
 
-# For now we just make the diff before 
+# For now we just make the diff before
 write_backup_proof
 
-restore_element {{ directory['backup'] }}/runner/ {{ directory['srv'] }}/runner  instance project  proxy.db
+restore_element {{ directory['backup'] }}/runner/ $srv_directory/runner  instance project  proxy.db
 restore_element  {{ directory['backup'] }}/etc/ {{ directory['etc'] }} config.json ssh
 cp -r {{ directory['backup'] }}/etc/.??* {{ directory['etc'] }};
-{{ curl_binary }} --insecure -vg6L --max-time 5  {{ backend_url }}/isSRReady;
+{{ curl_binary }} --insecure -g6L --max-time 5  {{ backend_url }}/isSRReady;
+
+
+# Invoke arbitrary script to perform specific restoration
+# procedure.
+RESTORE_EXIT_CODE=0
+runner_import_restore=$srv_directory/runner-import-restore
+if [ ! -e "$runner_import_restore" ]; then
+  touch $runner_import_restore
+  chmod +x $runner_import_restore
+fi
+echo "Running $runner_import_restore script..."
+$srv_directory/runner-import-restore || RESTORE_EXIT_CODE=$?
+
+echo "Updating slapproxy database, software release and instances..."
+HOME="{{ directory['home'] }}"
+SLAPOS="{{ directory['bin'] }}/slapos"
+# XXX hardcoded
+SQLITE3="$HOME/software_release/parts/sqlite3/bin/sqlite3"
+DATABASE="$HOME/srv/runner/proxy.db"
+# Change slapproxy database to point instances to new software release
+# XXX hardcoded
+PARTITION=$(basename $HOME)
+OLD_SOFTWARE_RELEASE=$($SQLITE3 $DATABASE "select software_release from partition11 where reference='slappart0';")
+SOFTWARE_RELEASE=$(echo $OLD_SOFTWARE_RELEASE | sed -e 's/slappart[0-9][0-9]/'"$PARTITION"'/')
+$SQLITE3 $DATABASE "update partition11 set software_release='$SOFTWARE_RELEASE' where software_release NOT NULL;"
+# Change slapproxy database to have all instances stopped
+$SQLITE3 $DATABASE "update partition11 set slap_state='stopped';"
+# Build newest software
+$SLAPOS node software --cfg ~/etc/slapos.cfg --pidfile ~/var/run/slapos-node-software.pid --all >/dev/null 2>&1 || true
+# Remove defined scripts to force buildout to recreate them to have updated paths
+rm $srv_directory/runner/instance/slappart*/srv/runner-import-restore
+# Run slapos node instance
+# XXX hardcoded
+$SLAPOS node instance --cfg ~/etc/slapos.cfg --pidfile ~/var/run/slapos-node-instance.pid >/dev/null 2>&1 || true
+
+# Invoke defined scripts for each partition inside of slaprunner
+for partition in $srv_directory/runner/instance/slappart*/
+do
+  script=$partition/srv/runner-import-restore
+  if [ -e "$script" ]; then
+    echo "Running $script script..."
+    $script || RESTORE_EXIT_CODE=$?
+  fi
+done
+
+# Change back slapproxy database to have all instances started
+$SQLITE3 $DATABASE "update partition11 set slap_state='started';"
+
+# Write exit code to an arbitrary file that will be checked by promise/monitor
+RESTORE_EXIT_CODE_FILE="{{ restore_exit_code_file }}"
+echo $RESTORE_EXIT_CODE > $RESTORE_EXIT_CODE_FILE
+exit $RESTORE_EXIT_CODE

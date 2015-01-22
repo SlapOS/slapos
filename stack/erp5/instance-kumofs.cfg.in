@@ -5,6 +5,7 @@ parts +=
   publish-kumofs-connection-information
   kumofs-instance
   logrotate-entry-kumofs
+  resiliency-exclude-file
   promise-kumofs-server
   promise-kumofs-server-listen
   promise-kumofs-gateway
@@ -72,6 +73,12 @@ log = ${buildout:directory}/var/log
 services = ${buildout:directory}/etc/run
 promise = ${buildout:directory}/etc/promise
 kumofs-data = ${buildout:directory}/srv/kumofs
+
+[resiliency-exclude-file]
+# Generate rdiff exclude file in case of resiliency
+recipe = collective.recipe.template
+input = inline: **
+output = ${directory:srv}/exporter.exclude
 
 # Deploy zope promises scripts
 [promise-template]

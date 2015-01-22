@@ -1,0 +1,59 @@
+#!/bin/sh
+
+# DO NOT RUN THIS SCRIPT ON PRODUCTION INSTANCE
+# OR MYSQL DATA WILL BE ERASED.
+
+# This script will import the dump of the mysql database to the real
+# database. It is launched by the clone (importer) instance of webrunner
+# in the end of the import script.
+
+# Depending on the output, it will create a file containing
+# the status of the restoration (success or failure)
+
+mysql_executable="${mariadb-instance:mysql-binary}"
+mysqldump_executable="${binary-wrap-mysqldump:wrapper-path}"
+mariadb_data_directory="${directory:mariadb-data}"
+mariadb_backup_directory="${directory:mariadb-backup-full}"
+instance_directory="${buildout:directory}"
+pid_file="${mariadb-instance:pid-file}"
+binlog_path="${mariadb-instance:binlog-path}"
+
+# Make sure mariadb is not already running
+if [ -e "$pid_file" ]; then
+  pid=$(cat $pid_file) > /dev/null 2>&1
+  if kill -0 "$pid"; then
+    echo "Mariadb is already running with pid $pid. Aborting."
+    exit 1
+  fi
+fi
+
+echo "Deleting existing database..."
+rm -r $mariadb_data_directory/*
+
+echo "Adapting binlog database to new paths..."
+new_binlog_directory="$(dirname $binlog_path)"
+binlog_index_file="$new_binlog_directory/binlog.index"
+old_binlog_directory="$(dirname $(head -n 1 $binlog_index_file))"
+sed -e "s|$old_binlog_directory|$new_binlog_directory|g" $binlog_index_file > $binlog_index_file
+
+echo "Starting mariadb..."
+# XXX hardcoded
+$instance_directory/etc/run/mariadb &
+mysqld_pid=$!
+$instance_directory/etc/run/mariadb_update > /dev/null 2>&1
+
+echo "Importing data..."
+# Use latest dump XXX can contain funny characters
+dump=$(ls -r $mariadb_backup_directory | head -1)
+zcat "$mariadb_backup_directory/$dump" | $mysql_executable -u root --socket="$instance_directory/var/run/mariadb.sock"
+RESTORE_EXIT_CODE=$?
+
+kill "$mysqld_pid"
+
+if [ $RESTORE_EXIT_CODE -eq 0 ]; then
+  echo 'Backup restoration successfully completed.'
+else
+  echo 'Backup restoration failed.'
+fi
+
+exit $RESTORE_EXIT_CODE

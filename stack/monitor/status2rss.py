@@ -34,9 +34,12 @@ for row in rows:
 
   event_time = datetime.datetime.fromtimestamp(line_timestamp).strftime('%Y-%m-%d %H:%M:%S')
 
+  individual_rows = db.execute("select status, element, output from individual_status where timestamp=?", (line_timestamp,))
+  description = '\n'.join(['%s: %s %s' % row for row in individual_rows])
+
   rss_item = PyRSS2Gen.RSSItem(
     title = status,
-    description = "%s: %s" % (event_time, status),
+    description = "%s: %s\n%s" % (event_time, status, description),
     link = LINK,
     pubDate = event_time,
     guid = PyRSS2Gen.Guid(base64.b64encode("%s, %s" % (event_time, status)))

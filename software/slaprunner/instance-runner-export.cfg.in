@@ -16,13 +16,14 @@ parts +=
   publish-connection-informations
   slaprunner-promise
   slaprunner-frontend-promise
+  slaprunner-supervisord-wrapper
   dropbear-promise
   runtestsuite
   shellinabox-promise
   symlinks
   shellinabox
   slapos-cfg
-  slapos-repo-config
+  slapos-repo
   cron-entry-backup
   cron-entry-prepare-software
   deploy-instance-parameters
@@ -50,6 +51,7 @@ parts +=
 ## Monitor for runner
   monitor-current-log-access
   monitor-check-resilient-feed-file
+  monitor-check-webrunner-internal-instance
 
 
 [exporter]

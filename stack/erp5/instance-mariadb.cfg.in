@@ -211,6 +211,12 @@ var = ${buildout:directory}/var
 log = ${:var}/log
 run = ${:var}/run
 
+[resiliency-exclude-file]
+# Generate rdiff exclude file in case of resiliency
+recipe = collective.recipe.template
+input = inline: srv/mariadb/**
+output = ${directory:srv}/exporter.exclude
+
 [promise]
 recipe = slapos.cookbook:wrapper
 command-line = "{{ parameter_dict['bin-directory'] }}/is-local-tcp-port-opened" "${my-cnf-parameters:ip}" "${my-cnf-parameters:port}"
@@ -225,5 +231,6 @@ parts +=
   binary-link
   update-mysql
   mysqld
+  resiliency-exclude-file
   promise
   {{ part_list | join('\n  ') }}

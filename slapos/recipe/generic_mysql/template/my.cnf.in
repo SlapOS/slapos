@@ -48,9 +48,8 @@ innodb_locks_unsafe_for_binlog = 1
 #innodb_doublewrite = 0
 #sync_frm = 0
 
-# Uncomment the following if you need binary logging, which is recommended
-# on production instances (either for replication or incremental backups).
-#log-bin=mysql-bin
+%(log_bin)s
+%(expire_logs_days)s
 
 # Force utf8 usage
 collation_server = utf8_unicode_ci
