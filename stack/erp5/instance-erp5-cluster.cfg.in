@@ -29,6 +29,7 @@ partition-id = ${slap-connection:partition-id}
 <=request-common
 name = MariaDB DataBase
 software-type = mariadb
+config-mariadb-json = ${slap-parameter:mariadb-json}
 sla-computer_guid = ${slap-parameter:mariadb-computer-guid}
 
 [request-cloudooo]

@@ -8,6 +8,7 @@ Note: all port counters are pre-incremented. No idea why base port is skipped.
 {% set current_apache_port = apache_port_base | int -%}
 {% set current_haproxy_port = haproxy_port_base | int -%}
 {% set json = json_module.loads(slapparameter_dict['json']) -%}
+{% set backup_periodicity = json.get('backup-periodicity', 'daily') -%}
 {% set bin_directory = parameter_dict['buildout-bin-directory'] -%}
 {#
 XXX: This template only supports exactly one IPv4 and one IPv6 per
@@ -560,7 +561,7 @@ repozo-wrapper = ${buildout:bin-directory}/tidstorage-repozo
 < = cron-base
 recipe = slapos.cookbook:cron.d
 name = tidstorage
-frequency = 0 0 * * *
+frequency = {{ backup_periodicity }}
 command = ${tidstorage:repozo-wrapper}
 
 [logrotate-entry-tidstorage]
