@@ -2,7 +2,7 @@
 # BEWARE: This file is operated by slapgrid
 # BEWARE: It will be overwritten automatically
 
-import os
+import os, errno
 import subprocess
 from datetime import date
 
@@ -26,8 +26,14 @@ if not os.path.exists(output_folder) or not os.path.isdir(output_folder):
   exit(1)
 today = date.today().strftime("%Y-%m-%d")
 folder_today = os.path.join(output_folder, 'ApacheDex-%s' % today)
-if not os.path.exists(folder_today):
+
+# XXX- don't raise if folder_today exist
+try:
   os.makedirs(folder_today)
+except OSError as exc:
+  if exc.errno == errno.EEXIST and os.path.isdir(folder_today):
+    pass
+  else: raise
 
 apachedex = "{{ apachedex_executable }}".strip()
 argument_list = [apachedex, '--js-embed', '--out',
