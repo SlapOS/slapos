@@ -60,9 +60,9 @@ $SQLITE3 $DATABASE "update software11 set url='$SOFTWARE_RELEASE' where url='$OL
 # Change slapproxy database to have all instances stopped
 $SQLITE3 $DATABASE "update partition11 set slap_state='stopped';"
 # Build newest software
-$SLAPOS node software --cfg $HOME/etc/slapos.cfg --pidfile $HOME/var/run/slapos-node-software.pid --all >/dev/null 2>&1 || true
+$SLAPOS node software --cfg $HOME/etc/slapos.cfg --pidfile $HOME/var/run/slapos-node-software.pid --all --pidfile $HOME/var/run/slapos-node-software.pid >/dev/null 2>&1 || true
 # Remove defined scripts to force buildout to recreate them to have updated paths
-rm $srv_directory/runner/instance/slappart*/srv/runner-import-restore
+rm $srv_directory/runner/instance/slappart*/srv/runner-import-restore || true
 # Start supervisord
 $SLAPOS node supervisord --cfg $HOME/etc/slapos.cfg -n >/dev/null 2>&1 &
 sleep 5
