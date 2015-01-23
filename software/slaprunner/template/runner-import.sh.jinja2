@@ -63,9 +63,6 @@ $SQLITE3 $DATABASE "update partition11 set slap_state='stopped';"
 $SLAPOS node software --cfg $HOME/etc/slapos.cfg --pidfile $HOME/var/run/slapos-node-software.pid --all --pidfile $HOME/var/run/slapos-node-software.pid >/dev/null 2>&1 || true
 # Remove defined scripts to force buildout to recreate them to have updated paths
 rm $srv_directory/runner/instance/slappart*/srv/runner-import-restore || true
-# Start supervisord
-$SLAPOS node supervisord --cfg $HOME/etc/slapos.cfg -n >/dev/null 2>&1 &
-sleep 5
 # Run slapos node instance
 # XXX hardcoded
 $SLAPOS node instance --cfg $HOME/etc/slapos.cfg --pidfile $HOME/var/run/slapos-node-instance.pid >/dev/null 2>&1 || true
