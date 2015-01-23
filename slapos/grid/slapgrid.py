@@ -225,7 +225,7 @@ def create_slapgrid_object(options, logger):
                   shacache_key_file=op.get('shacache-key-file'),
                   shadir_cert_file=op.get('shadir-cert-file'),
                   shadir_key_file=op.get('shadir-key-file'),
-                  forbid_supervisord_automatic_launch=string_to_boolean(op.get('forbid_supervisord_automatic_launch')),
+                  forbid_supervisord_automatic_launch=string_to_boolean(op.get('forbid_supervisord_automatic_launch', 'false')),
                   develop=op.get('develop', False),
                   # Try to fetch from deprecated argument
                   software_release_filter_list=op.get('only-sr', op.get('only_sr')),
