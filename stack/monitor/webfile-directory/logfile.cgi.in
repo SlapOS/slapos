@@ -13,6 +13,7 @@ form = cgi.FieldStorage()
 base_folder_list = {{ base_folder_list }}
 script_path = "{{ script_path }}"
 logpath = form.getvalue("path", "")
+action = form.getvalue("action", "tail")
 size = int(form.getvalue("size", "200"))
 
 
@@ -39,9 +40,11 @@ print """<html><head>
   padding: 5px;
 }
 textarea {width: 100%; height: 470px; margin-top: 10px;}
-ul {margin:0px; padding: 0px; list-style: none;}
+ul.file-list {margin:0px; padding: 0px; list-style: none; height:400px; overflow: auto;}
 .button {margin-top: 5px;}
 .button div {margin: 0; margin-right: 10px; float: left; }
+.grep {float: left; margin: 5px 0;}
+#pattern {width:300px; padding:5px;}
 </style>
 <script language="javascript" type="text/javascript">
 $(document).ready(function () {
@@ -61,6 +64,21 @@ $(document).ready(function () {
     });
     if (file_list == "") { return false;}
     $("#path").val(file_list);
+    $( "#log_form" ).submit();
+    return false;
+  });
+  
+  $( "#grep" ).click(function() {
+    var file_list = "";
+    $(".file").each(function () {
+      if ($(this).children('input[type=checkbox]').is(':checked') ) {
+        file_list += $(this).attr("rel") + "#";
+      }
+    });
+    if (file_list == "") { return false;}
+    if ( $("#pattern").val() == "") { return false;}
+    $("#path").val(file_list);
+    $("#action").val("grep");
     $( "#log_form" ).submit();
     return false;
   });
@@ -94,10 +112,10 @@ $(document).ready(function () {
     $( "#log_form" ).submit();
     return false;
   });
-  var textarea = $("#logcontent")
+  var textarea = $("#logcontent")[0]
   
-  if (textarea != undefined) {
-    $(textarea).animate({ scrollTop: $(textarea)[0].scrollHeight - $(textarea).height() }, "slow");
+  if ($(textarea) !== undefined) {
+    $(textarea).scrollTop($(textarea)[0].scrollHeight - $(textarea).height());
   }
 });
 </script>
@@ -108,7 +126,7 @@ if not logpath:
   <input type="hidden" name="posting-script" value="%s" />
   <div class="box pure-menu pure-menu-open">
     <h2 class="head">Select file(s) in the list bellow</h2>
-  <ul>""" % script_path
+  <ul class="file-list">""" % script_path
   for base_folder in base_folder_list.values():
     if os.path.exists(base_folder):
       for filename in os.listdir(base_folder):
@@ -125,12 +143,18 @@ if not logpath:
             sub_path = os.path.join(path, sub_filename)
             if os.path.isdir(sub_path):
               continue
-            print """  <li><a href="#" class="script file" rel="%s" title="%s">%s</a></li>""" % (
+            print """  <li><a href="#" class="script file" rel="%s" title="%s">
+              <input type="checkbox" />
+              %s</a></li>""" % (
               sub_path, sub_path, sub_filename)
   print """  </ul>
   </div>
+  <div class='grep'>
+    <input type="text" name="pattern" id="pattern" value="" placeholder="type a string | regex here...">
+  </div>
+  <div style='clear:both'></div>
   <div class="button">
-    <div><label for="size">Lines: </label><select name="size" id="size">
+    <div><label for="size">Tail Lines: </label><select name="size" id="size">
       <option value="50" selected>50</option>
       <option value="100">100</option>
       <option value="200">200</option>
@@ -139,29 +163,42 @@ if not logpath:
     </select></div>
     <button type="button" class="pure-button pure-button-primary" id="uncheck">Uncheck All</button>
     <button type="button" class="pure-button pure-button-primary" id="check">Check All</button>
-    <button type="button" class="pure-button pure-button-primary" id="open">Open File(s)</button>
+    <button type="button" class="pure-button pure-button-primary" id="open">Tail</button>
+    <button type="button" class="pure-button pure-button-primary" id="grep">Grep</button>
   </div>
   <div style='clear:both'></div>
   <input type="hidden" name="path" id="path" value="" />
+  <input type="hidden" name="action" id="action" value="tail" />
 </form>"""
 else:
   path_list = [x for x in logpath.split('#') if x]
   log_content = ""
   title = ""
+  pattern = ""
   for filepath in path_list:
     if os.path.exists(filepath) and os.path.isfile(filepath):
       title += " " + filepath.split('/')[-1:][0]
       try:
-        content = logTools.tail(codecs.open(filepath, "r", "utf_8"), size)
+        if action == "tail":
+          pattern = form.getvalue("pattern", "")
+          content = logTools.tail(codecs.open(filepath, "r", "utf_8"), size, pattern)
+        elif action == "grep":
+          pattern = form.getvalue("pattern")
+          content = logTools.grep(filepath, pattern)
+        else:
+          content = ""
       except Exception, e:
         content = str(e)
       if content:
-        log_content += "TAIL FILE %s >>>>\n\n" % filepath
+        log_content += "%s FILE %s >>>>\n\n" % (action.upper(), filepath)
         log_content += content + "\n\n\n"
   print """
 <form action="/index.cgi" method="post" class="pure-form-aligned" id="log_form">
   <input type="hidden" name="posting-script" value="%s" />
   <input type="hidden" name="path" id="path" value="%s" />
+  <input type="hidden" name="action" id="action" value="%s" />
+  <input type="hidden" name="pattern" id="pattern" value="%s" />
+  <input type="hidden" name="size" id="size" value="%s" />
 </form>
 <div class="box">
   <h2 class="head">Tail: %s </h2>
@@ -170,8 +207,10 @@ else:
     <button type="submit" class="pure-button pure-button-primary" id="reload">Refresh</button>
   </div>
   <div style='clear:both'></div>
-  <textarea id="logcontent">%s</textarea>
+  <textarea id="logcontent" readonly>%s</textarea>
 </div>
-""" % (script_path, logpath, title, log_content)
+""" % (script_path, logpath, action, pattern, size, title, log_content)
+  if pattern:
+    print "<p>Pattern string is: %s</p>" % pattern
 print """
 </body></html>"""

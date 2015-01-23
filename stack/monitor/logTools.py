@@ -168,7 +168,7 @@ def generateRSS(db_path, name, rss_path, url_link, limit=10):
   with open(rss_path, 'w') as rss_ouput:
     rss_ouput.write(rss_feed.to_xml())
 
-def tail(f, lines=20):
+def tail(f, lines=20, pattern=""):
   """
   Returns the last `lines` lines of file `f`. It is an implementation of tail -f n.
   """
@@ -193,7 +193,12 @@ def tail(f, lines=20):
       size -= linesFound
       bytes -= BUFSIZ
       block -= 1
-  return '\n'.join(''.join(data).splitlines()[-lines:])
+  lines_list = ''.join(data).splitlines()[-lines:]
+  if not pattern:
+    return '\n'.join(lines_list)
+  else:
+    return '\n'.join([ line for line in lines_list
+                    if re.search( r"%s" % pattern, line, re.IGNORECASE )])
 
 
 def readFileFrom(f, lastPosition, limit=20000):
@@ -235,4 +240,16 @@ def readFileFrom(f, lastPosition, limit=20000):
     'position': length,
     'truncated': truncated
   }
+
+def grep(filepath, pattern):
+  if not os.path.exists(filepath) or not os.path.isfile(filepath):
+    return "ERROR: %s is not exist or is not a file" % filepath
+  match_lines = ""
+  index = 0
+  with open(filepath, 'r') as f:
+    for line in f:
+      index += 1
+      if re.search( r"%s" % pattern, line, re.IGNORECASE ):
+        match_lines += '[line %s] %s\n' % (index, line)
+  return match_lines
   
