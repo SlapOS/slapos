@@ -49,7 +49,7 @@ from lxml import etree
 
 from slapos.slap.slap import NotFoundError
 from slapos.slap.slap import ServerError
-from slapos.util import mkdir_p, chownDirectory
+from slapos.util import mkdir_p, chownDirectory, string_to_boolean
 from slapos.grid.exception import BuildoutFailedError
 from slapos.grid.SlapObject import Software, Partition
 from slapos.grid.svcbackend import (launchSupervisord,
@@ -225,6 +225,7 @@ def create_slapgrid_object(options, logger):
                   shacache_key_file=op.get('shacache-key-file'),
                   shadir_cert_file=op.get('shadir-cert-file'),
                   shadir_key_file=op.get('shadir-key-file'),
+                  forbid_supervisord_automatic_launch=string_to_boolean(op.get('forbid_supervisord_automatic_launch')),
                   develop=op.get('develop', False),
                   # Try to fetch from deprecated argument
                   software_release_filter_list=op.get('only-sr', op.get('only_sr')),
@@ -279,6 +280,7 @@ class Slapgrid(object):
                shacache_key_file=None,
                shadir_cert_file=None,
                shadir_key_file=None,
+               forbid_supervisord_automatic_launch=False,
                develop=False,
                software_release_filter_list=None,
                computer_partition_filter_list=None,
@@ -312,6 +314,7 @@ class Slapgrid(object):
     self.shacache_key_file = shacache_key_file
     self.shadir_cert_file = shadir_cert_file
     self.shadir_key_file = shadir_key_file
+    self.forbid_supervisord_automatic_launch = forbid_supervisord_automatic_launch
     self.logger = logger
     # Creates objects from slap module
     self.slap = slapos.slap.slap()
@@ -356,7 +359,8 @@ class Slapgrid(object):
     createSupervisordConfiguration(self.instance_root, self._getWatchdogLine())
 
   def _launchSupervisord(self):
-    launchSupervisord(instance_root=self.instance_root, logger=self.logger)
+    if not self.forbid_supervisord_automatic_launch:
+      launchSupervisord(instance_root=self.instance_root, logger=self.logger)
 
   def getComputerPartitionList(self):
     try:

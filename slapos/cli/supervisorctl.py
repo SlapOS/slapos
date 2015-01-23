@@ -54,9 +54,9 @@ class SupervisorctlCommand(ConfigCommand):
       return configp.getboolean('slapos', 'root_check')
 
     def _should_forbid_supervisord_launch(self, configp):
-      if not configp.has_option('supervisorctl', 'forbid_supervisord_automatic_launch'):
+      if not configp.has_option('slapos', 'forbid_supervisord_automatic_launch'):
           return False
-      return configp.getboolean('supervisorctl', 'forbid_supervisord_automatic_launch')
+      return configp.getboolean('slapos', 'forbid_supervisord_automatic_launch')
 
     def take_action(self, args):
         configp = self.fetch_config(args)
