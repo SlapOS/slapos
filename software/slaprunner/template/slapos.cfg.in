@@ -5,6 +5,7 @@ master_url = http://{{ slaprunner['ipv4'] }}:{{ slaprunner['proxy_port'] }}
 computer_id = slaprunner
 maximal_delay = 0
 root_check = {{ slaprunner['root_check'] }}
+forbid_supervisord_automatic_launch = true
 
 [slapformat]
 partition_amount = {{ slaprunner['partition-amount'] }}
@@ -48,6 +49,3 @@ private_key = {{ slaprunner['private_key'] }}
 
 [gitclient]
 git = {{ slaprunner['git-binary'] }}
-
-[supervisorctl]
-forbid_supervisord_automatic_launch = true
