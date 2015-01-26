@@ -13,6 +13,7 @@ sync_element () {
 
   # Concatenate the exclude file of each partition of webrunner
   # to create a global exclude file.
+  exclude_content="instance/supervisord.socket"
   for partition in $srv_directory/runner/instance/slappart*
   do
     exclude_file="$partition/srv/exporter.exclude"
