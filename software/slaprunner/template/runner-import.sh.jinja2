@@ -46,6 +46,9 @@ $srv_directory/runner-import-restore || RESTORE_EXIT_CODE=$?
 
 echo "Updating slapproxy database, software release and instances..."
 HOME="{{ directory['home'] }}"
+# XXX Hardcoded
+export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+export MAKEFLAGS=-j4
 SLAPOS="{{ directory['bin'] }}/slapos"
 # XXX hardcoded
 SQLITE3="$HOME/software_release/parts/sqlite3/bin/sqlite3"
