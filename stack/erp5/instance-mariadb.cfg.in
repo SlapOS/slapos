@@ -1,5 +1,5 @@
 {% if software_type == slap_software_type -%}
-{% set json = json_module.loads(parameter_dict.get('mariadb-json', '{}')) -%}
+{% set json = json_module.loads(slapparameter_dict.get('mariadb-json', '{}')) -%}
 {% set backup_periodicity = json.get('backup-periodicity', '0 22 * * *') -%}
 {% set bin_directory = parameter_dict['buildout-bin-directory'] -%}
 
@@ -42,7 +42,7 @@ command = mysqldump
 recipe = slapos.cookbook:cron.d
 cron-entries = ${cron:cron-entries}
 name = mariadb-backup
-frequency = ${slap-parameter:backup-periodicity}
+frequency = {{ backup_periodicity }}
 {# When binlogs are enabled:
 # flush-logs: used so no manipulation on binlogs is needed to restore from
 #   full + binlogs. The first binlog after a dump starts from dump snapshot and

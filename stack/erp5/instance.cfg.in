@@ -124,11 +124,15 @@ extra-context =
 # Must match the key id in [switch-softwaretype] which uses this section.
     raw software_type varnish
 
+[dynamic-template-mariadb-parameters]
+buildout-bin-directory = {{ buildout_bin_directory }}
+
 [dynamic-template-mariadb]
 < = jinja2-template-base
 template = {{ template_mariadb }}
 filename = instance-mariadb.cfg
 extra-context =
+    section parameter_dict dynamic-template-mariadb-parameters
     raw coreutils_location {{ coreutils_location }}
     raw dcron_location {{ dcron_location }}
     raw findutils_location {{ findutils_location }}
@@ -142,7 +146,6 @@ extra-context =
     raw perl_siteprefix {{ perl_siteprefix }}
     raw sed_location {{ sed_location }}
     raw xtrabackup_location {{ xtrabackup_location }}
-    raw buildout-bin-directory {{ buildout_bin_directory }}
     import json_module json
 # Must match the key id in [switch-softwaretype] which uses this section.
     raw software_type mariadb
