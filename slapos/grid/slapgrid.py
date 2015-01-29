@@ -711,8 +711,10 @@ class Slapgrid(object):
         except (NotFoundError, TypeError, NameError):
           software_url = None
         if computer_partition_state == COMPUTER_PARTITION_DESTROYED_STATE and \
-           os.listdir(computer_partition_path) == [] and \
            not software_url:
+          if os.listdir(computer_partition_path) != []:
+            self.logger.warning("Free partition %s contains file(s) in %s." % (
+                computer_partition.getId(), computer_partition_path))
           continue
 
         # Everything seems fine
