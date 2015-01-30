@@ -201,7 +201,7 @@ else:
   <input type="hidden" name="size" id="size" value="%s" />
 </form>
 <div class="box">
-  <h2 class="head">Tail: %s </h2>
+  <h2 class="head">%s: %s </h2>
   <div class="button">
     <button type="submit" class="pure-button pure-button-primary" id="return">Return</button>
     <button type="submit" class="pure-button pure-button-primary" id="reload">Refresh</button>
@@ -209,7 +209,8 @@ else:
   <div style='clear:both'></div>
   <textarea id="logcontent" readonly>%s</textarea>
 </div>
-""" % (script_path, logpath, action, pattern, size, title, log_content)
+""" % (script_path, logpath, action, pattern, size, action.upper(),
+        title, log_content)
   if pattern:
     print "<p>Pattern string is: %s</p>" % pattern
 print """

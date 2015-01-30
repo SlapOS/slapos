@@ -195,6 +195,19 @@ context =
 [log-folder-cgi]
 log-folder = $${monitor-directory:log}
 
+[deploy-ressource-monitoring-cgi]
+recipe = slapos.recipe.template:jinja2
+template = ${ressources-cgi:location}/${ressources-cgi:filename}
+rendered = $${monitor-directory:monitoring-cgi}/$${:filename}
+filename = ressources.cgi
+mode = 0744
+# XXX - We need to find a proper way to set db_path here, maybe by using zero-parameters ??
+context =
+  key monitor_bin monitor-parameters:executable
+  raw python_executable ${buildout:directory}/bin/${extra-eggs:interpreter}
+  key root_folder buildout:directory
+  raw db_path /srv/slapgrid/var/data-log/
+
 [make-rss]
 recipe = slapos.recipe.template:jinja2
 template = ${make-rss-script:output}
@@ -370,7 +383,7 @@ certificate = $${ca-httpd:cert-file}
 key = $${ca-httpd:key-file}
 
 [httpd-environment]
-PYTHONPATH = ${log-tools:location}
+PYTHONPATH = ${log-tools:location}:${collect-tools:location}
 
 [monitor-httpd-configuration-file]
 recipe = slapos.recipe.template:jinja2

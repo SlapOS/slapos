@@ -1,0 +1,190 @@
+#!{{ python_executable }}
+
+import cgi
+import cgitb
+import json
+import os
+import pwd
+from time import strftime
+from datetime import datetime
+import collect
+
+cgitb.enable(display=0, logdir="/tmp/cgi.log")
+form = cgi.FieldStorage()
+db_path = "{{ db_path }}"
+action = form.getvalue("action", "")
+home = "{{ root_folder }}".strip()
+
+if action:
+  db = collect.Database(directory=db_path)
+  stat_info = os.stat(home)
+  partition_user = pwd.getpwuid(stat_info.st_uid)[0]
+  result_dict = {}
+  date_scope = datetime.now().strftime('%Y-%m-%d')
+  if action == "refresh":
+    result_dict['consumption'] = db.getPartitionConsumption(partition_user)
+    result_dict['status'] = db.getPartitionComsumptionStatus(partition_user)
+    result_dict['cpu-load'] = db.getPartitionCPULoadAverage(
+                                                    partition_user, date_scope)
+    result_dict['memory'] = db.getPartitionUsedMemoryAverage(
+                                                    partition_user, date_scope)
+  
+  print json.dumps(result_dict)
+else:
+  print """<html><head>
+<link rel="stylesheet" href="static/pure-min.css">
+<link rel="stylesheet" href="static/style.css">
+<script src="static/jquery-1.10.2.min.js"></script>
+<style type="text/css">
+.tg  {border-collapse:collapse;border-spacing:0;border-color:#fff;border-width:1px;border-style:solid; width:100%}
+.tg td{font-family:Arial, sans-serif;font-size:14px;padding:10px 5px;border-style:solid;border-width:0px;overflow:hidden;word-break:normal;border-color:#ccc;color:#333;background:transparent;}
+.tg th{font-family:Arial, sans-serif;font-size:14px;font-weight:normal;padding:10px 5px;border-style:solid;border-width:0px;overflow:hidden;word-break:normal;border-color:#ccc;color:#333;background-color:#f0f0f0;}
+.tg tr{background-color:#fff;}
+.tg .tg-0ord{text-align:right}
+.tg .tg-s6z2 td{text-align:center}
+.tg .tg-zapm{background-color:#f9f9f9;}
+.tg .tg-4eph{background-color:#f9f9f9}
+.head{
+	background-color:#0078e7;
+	border:0px solid #ffffff;
+	text-align:left;
+	border-width:0px 0px 1px 1px;
+	font-size:18px;
+	font-family:Helvetica;
+	font-weight:normal;
+	color:#ffffff;
+	display: block;
+	padding: 10px;
+	margin: 0;
+}
+.box{
+  border: 1px solid #e8eaed;
+  padding: 5px;
+}
+</style>
+<script language="javascript" type="text/javascript">
+$(document).ready(function () {
+  var send = false;
+  
+  autoRefresh();
+  
+  function autoRefresh() {
+    refresh();
+    setTimeout(function(){ autoRefresh(); }, 60000);
+  }
+  
+  function refresh() {
+    if (send) { return}
+    var dataPost = {'posting-script': "monitoring/ressources.cgi",
+            action: "refresh"};
+    send = true;
+    $("#msg").fadeIn();
+    $.ajax({
+      type: "POST",
+      url: '/index.cgi',
+      data: dataPost
+    })
+    .done(function(data) {
+      var result = JSON.parse(data);
+      var  consump = result['consumption'], line = "", line2 = "";
+      var table1 = "", table1="", table3="", klass="";
+      table2 = '<tr><th class="tg-s6z2">Total Process</th>';
+      table2 += '<th class="tg-s6z2">CPU %</th><th class="tg-s6z2">CPU Time</th>';
+      table2 += '<th class="tg-s6z2">Threads</th><th class="tg-s6z2">Memory Usage</th>';
+      table2 += '<th class="tg-s6z2">Memory %</th></tr>';
+      
+      table1 = '<tr><th class="tg-s6z2">Process PID</th>';
+      table1 += '<th class="tg-s6z2">CPU %</th><th class="tg-s6z2">CPU Time</th>';
+      table1 += '<th class="tg-s6z2">Threads</th><th class="tg-s6z2">Memory Usage</th>';
+      table1 += '<th class="tg-s6z2">Memory %</th></tr>';
+      
+      table3 = '<tr><th class="tg-s6z2">CPU Load Average</th>';
+      table3 += '<th class="tg-s6z2">Memory Consumption Average</th></tr>';
+      
+      line2 = "<tr class='tg-4eph tg-s6z2'>"
+      line2 += "<td>" + result['status']['total_process'] + "</td>";
+      line2 += "<td>" + result['status']['cpu_percent'] + "</td>";
+      line2 += "<td>" + result['status']['cpu_time'] + "</td>";
+      line2 += "<td>" + result['status']['cpu_num_threads'] + "</td>";
+      line2 += "<td>" + result['status']['memory_rss'] + "</td>";
+      line2 += "<td>" + result['status']['memory_percent'] + "</td>";
+      line2 += "</tr>";
+      for (var i=0; i<consump.length; i++) {
+        if (klass === "") {klass = 'tg-4eph ';}
+        else {klass = "";}
+        line += "<tr class='" + klass + "tg-s6z2'>"
+        line += "<td>" + consump[i][0] + "</td>";
+        line += "<td>" + consump[i][1] + "</td>";
+        line += "<td>" + consump[i][2] + "</td>";
+        line += "<td>" + consump[i][3] + "</td>";
+        line += "<td>" + consump[i][5] + "</td>";
+        line += "<td>" + consump[i][4] + "</td>";
+        line += "</tr>";
+      }
+      
+      table3 += "<tr class='tg-4eph tg-s6z2'>"
+      table3 += "<td>" + result['cpu-load'] + "</td>";
+      table3 += "<td>" + result['memory'] + "</td></tr></table>";
+      
+      $("#box3").html(table3);
+      $("#box2").html(table2 + line2 + '</table>');
+      $("#box1").html(table1 + line + '</table>');
+    })
+    .fail(function(jqXHR, exception) {
+      $("#error").html(jqXHR);
+    })
+    .always(function() {
+      send = false;
+      $("#msg").fadeOut();
+    });
+  }
+  
+  $("#refresh").click(function() {
+    refresh();
+  });
+  
+});
+</script>
+</head><body>
+<h1>Computer partition ressources monitoring</h1>
+<div style="width:850px; padding: 10px 0;">
+  <div style='float:left; width: 500px'>
+    <table class="tg" id="box3">
+      <tr>
+        <th class="tg-s6z2">CPU Load Average</th>
+        <th class="tg-s6z2">Memory Consumption Average</th>
+      </tr>
+    </table>
+  </div>
+  <div style='float:left; padding-left:50px;'>
+    <button type="button" class="pure-button pure-button-primary" id="refresh">Refresh data</button>
+    <span style="padding: 5px; color:rgb(217, 39, 39); display:none" id="msg">Loading data...</span>
+    <br/>
+    <p>Note: Data are refreshed every minutes.</p>
+  </div>
+</div>
+<div style='clear:both'></div>
+<h2>Total ressources consumption for partition (last minute)</h2>
+<table class="tg" id="box2">
+  <tr>
+    <th class="tg-s6z2">Total Process</th>
+    <th class="tg-s6z2">CPU %</th>
+    <th class="tg-s6z2">CPU Time</th>
+    <th class="tg-s6z2">Threads</th>
+    <th class="tg-s6z2">Memory Usage</th>
+    <th class="tg-s6z2">Memory %</th>
+  </tr>
+</table>
+<h2>ressources consumption for partition by process pid (last minute)</h2>
+<table class="tg" id="box1">
+  <tr>
+    <th class="tg-s6z2">Process PID</th>
+    <th class="tg-s6z2">CPU %</th>
+    <th class="tg-s6z2">CPU Time</th>
+    <th class="tg-s6z2">Threads</th>
+    <th class="tg-s6z2">Memory Usage</th>
+    <th class="tg-s6z2">Memory %</th>
+  </tr>
+</table>
+<p id="error"></p>
+</body></html>"""
