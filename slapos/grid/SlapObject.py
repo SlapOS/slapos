@@ -726,7 +726,16 @@ class Partition(object):
         self.logger.warning('Problem while stopping process %r, will try later' % gname)
       else:
         self.logger.info('Stopped %r' % gname)
-      supervisor.removeProcessGroup(gname)
+      for i in xrange(0, 10):
+        # Some process may be still running, be nice and wait for them to be stopped.
+        try:
+          supervisor.removeProcessGroup(gname)
+          break
+        except:
+          if i == 9:
+            raise
+          time.sleep(1)
+
       self.logger.info('Removed %r' % gname)
 
     for gname in changed:
