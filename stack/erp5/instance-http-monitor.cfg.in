@@ -8,6 +8,7 @@ parts =
   deploy-settings-cgi
   deploy-status-cgi
   deploy-status-history-cgi
+  deploy-ressource-monitoring-cgi
   setup-static-files
   certificate-authority
   zero-parameters
