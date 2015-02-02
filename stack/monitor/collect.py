@@ -34,13 +34,9 @@ from datetime import datetime, timedelta
 
 class Database:
 
-  database_name = "collector.db"
-  table_list = ["user", "computer", "system", "disk", \
-                 "temperature", "heating"]
-
-  def __init__(self, directory = None):
-    assert self.database_name is not None
-    self.uri = os.path.join(directory, self.database_name)
+  def __init__(self, db_path = None):
+    assert os.path.exists(db_path) and os.path.isfile(db_path)
+    self.uri = db_path
     self.connection = None
     self.cursor = None
 
@@ -109,7 +105,7 @@ class Database:
     self.close()
 
     if len(sample_amount) and len(memory_sum):
-      return round(memory_sum[0][0]/sample_amount[0][0], 2)
+      return round(memory_sum[0][0]/(sample_amount[0][0]*1024*1024.0), 2)
 
   def getPartitionConsumption(self, partition_id, where=""):
     self.connect()
@@ -132,7 +128,7 @@ group by pid order by cpu_result desc""" % (
       comsumption_list.append([result[6], round((result[1]/count), 2),
                     round((result[2]/count), 2),
                     round(result[3], 2), round((result[4]/count), 2),
-                    round((result[5]/count), 2)])
+                    round((result[5]/(count*1024*1024.0)), 2)])
     self.close()
     return comsumption_list
   
@@ -158,6 +154,6 @@ date='%s' and partition='%s' and (time between '%s' and '%s') %s""" % (
             'cpu_time': round(result[2][0], 2),
             'cpu_num_threads': round(result[3][0], 2),
             'memory_percent': round(result[4][0], 2),
-            'memory_rss': round(result[5][0], 2)}
+            'memory_rss': round(result[5][0]/(1024*1024.0), 2)}
             
     return None

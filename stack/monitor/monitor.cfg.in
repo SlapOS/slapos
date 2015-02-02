@@ -200,13 +200,12 @@ recipe = slapos.recipe.template:jinja2
 template = ${ressources-cgi:location}/${ressources-cgi:filename}
 rendered = $${monitor-directory:monitoring-cgi}/$${:filename}
 filename = ressources.cgi
-mode = 0744
-# XXX - We need to find a proper way to set db_path here, maybe by using zero-parameters ??
+mode = $${deploy-settings-cgi:mode}
 context =
   key monitor_bin monitor-parameters:executable
   raw python_executable ${buildout:directory}/bin/${extra-eggs:interpreter}
   key root_folder buildout:directory
-  raw db_path /srv/slapgrid/var/data-log/
+  raw config_cfg $${buildout:directory}/$${public:filename}
 
 [make-rss]
 recipe = slapos.recipe.template:jinja2
@@ -345,6 +344,7 @@ name = example.com
 recipe = slapos.cookbook:zero-knowledge.write
 filename = knowledge0.cfg
 status-history-length = 5
+collect-db-path = /srv/slapgrid/var/data-log/collector.db
 
 [zero-parameters]
 recipe = slapos.cookbook:zero-knowledge.read

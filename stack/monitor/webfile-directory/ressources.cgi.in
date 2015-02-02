@@ -7,16 +7,32 @@ import os
 import pwd
 from time import strftime
 from datetime import datetime
+import ConfigParser
 import collect
 
 cgitb.enable(display=0, logdir="/tmp/cgi.log")
 form = cgi.FieldStorage()
-db_path = "{{ db_path }}"
+config_file = "{{ config_cfg }}"
 action = form.getvalue("action", "")
 home = "{{ root_folder }}".strip()
+db_path = ""
+if not os.path.exists(config_file):
+  print """<html><head></head>
+  <body><h2>Could not find database path in configuration file.
+  the file %s might not exist.</h2></body></html>""" % config_file
+  exit(0)
+parser = ConfigParser.ConfigParser()
+parser.read(config_file)
+try:
+  db_path = parser.get('public', 'collect-db-path')
+except ConfigParser.NoOptionError, e:
+  print """<html><head></head>
+  <body><h2>Could not find database path in configuration file.
+  <br/>%s</h2></body></html>""" % str(e)
+  exit(0)
 
 if action:
-  db = collect.Database(directory=db_path)
+  db = collect.Database(db_path=db_path)
   stat_info = os.stat(home)
   partition_user = pwd.getpwuid(stat_info.st_uid)[0]
   result_dict = {}
@@ -44,6 +60,7 @@ else:
 .tg .tg-s6z2 td{text-align:center}
 .tg .tg-zapm{background-color:#f9f9f9;}
 .tg .tg-4eph{background-color:#f9f9f9}
+.tg tr:hover td{background-color: #FAFAFA}
 .head{
 	background-color:#0078e7;
 	border:0px solid #ffffff;
@@ -98,7 +115,7 @@ $(document).ready(function () {
       table1 += '<th class="tg-s6z2">Threads</th><th class="tg-s6z2">Memory Usage</th>';
       table1 += '<th class="tg-s6z2">Memory %</th></tr>';
       
-      table3 = '<tr><th class="tg-s6z2">CPU Load Average</th>';
+      table3 = '<tr><th class="tg-s6z2">CPU Load Average %</th>';
       table3 += '<th class="tg-s6z2">Memory Consumption Average</th></tr>';
       
       line2 = "<tr class='tg-4eph tg-s6z2'>"
@@ -106,7 +123,7 @@ $(document).ready(function () {
       line2 += "<td>" + result['status']['cpu_percent'] + "</td>";
       line2 += "<td>" + result['status']['cpu_time'] + "</td>";
       line2 += "<td>" + result['status']['cpu_num_threads'] + "</td>";
-      line2 += "<td>" + result['status']['memory_rss'] + "</td>";
+      line2 += "<td>" + result['status']['memory_rss'] + " Mb</td>";
       line2 += "<td>" + result['status']['memory_percent'] + "</td>";
       line2 += "</tr>";
       for (var i=0; i<consump.length; i++) {
@@ -117,14 +134,14 @@ $(document).ready(function () {
         line += "<td>" + consump[i][1] + "</td>";
         line += "<td>" + consump[i][2] + "</td>";
         line += "<td>" + consump[i][3] + "</td>";
-        line += "<td>" + consump[i][5] + "</td>";
+        line += "<td>" + consump[i][5] + " Mb</td>";
         line += "<td>" + consump[i][4] + "</td>";
         line += "</tr>";
       }
       
       table3 += "<tr class='tg-4eph tg-s6z2'>"
       table3 += "<td>" + result['cpu-load'] + "</td>";
-      table3 += "<td>" + result['memory'] + "</td></tr></table>";
+      table3 += "<td>" + result['memory'] + " Mb</td></tr></table>";
       
       $("#box3").html(table3);
       $("#box2").html(table2 + line2 + '</table>');
