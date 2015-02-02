@@ -30,6 +30,7 @@ wrapper-path = ${monitor-directory:monitor-custom-scripts}/check-web-page-http-c
 [public]
 recipe = slapos.cookbook:zero-knowledge.write
 filename = knowledge0.cfg
+collect-db-path = /srv/slapgrid/var/data-log/collector.db
 status-history-length = 5
 # Each one of the following 2 list keys should be defined in only one line
 # ex: resolve-list = www.example.com:80:127.0.0.1 www.perdu.com:80:10.0.0.1
