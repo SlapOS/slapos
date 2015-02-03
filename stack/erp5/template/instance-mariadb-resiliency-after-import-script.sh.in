@@ -40,6 +40,11 @@ echo "Starting mariadb..."
 # XXX hardcoded
 $instance_directory/etc/run/mariadb &
 mysqld_pid=$!
+sleep 15
+# If mysql has stopped, abort
+if ! $(kill -0 $mysql_pid 2>/dev/null); then
+  exit 1
+fi
 $instance_directory/etc/run/mariadb_update > /dev/null 2>&1
 
 echo "Importing data..."
