@@ -230,6 +230,14 @@ source = ${directory:log}
 < = monitor-directory-access
 source = ${logrotate-entry-mariadb:backup}
 
+[mysql-slowquery-report]
+extra-context =
+  raw slow_query_path ${logrotate:backup}/mariadb_slowquery.log-%(date)s.gz
+
+[{{ section('mysql-slowquery-report-access') }}]
+< = monitor-directory-access
+source = ${mysql-slowquery-report:output-folder}
+
 [monitor-parameters]
 port = {{ monitor_port }}
 
