@@ -1,0 +1,53 @@
+#!{{ python_executable }}
+# BEWARE: This file is operated by slapgrid
+# BEWARE: It will be overwritten automatically
+
+import os, errno
+import subprocess
+from datetime import date
+import gzip
+
+slow_query_path = "{{ slow_query_path }}".strip()
+output_folder = "{{ output_folder }}".strip()
+
+if not slow_query_path:
+  exit(0)
+
+#pt-query-digest --processlist h=host,user=user,password=pass --output=slow.log
+today = date.today().strftime("%Y-%m-%d")
+folder_month = os.path.join(output_folder, 'Mysql-SlowQuery-Digest-%s' % 
+                                date.today().strftime("%Y-%m"))
+out_file = os.path.join(folder_month, 'slow_query_report_%s.log' % today)
+slow_log = slow_query_path % {'date': date.today().strftime("%Y%m%d")}
+delete = False
+
+if not os.path.exists(slow_log) or not os.path.isfile(slow_log):
+  print "ERROR: cannot read mysql slow query log file '%s'. Exiting..." % slow_log
+  exit(1)
+  
+try:
+  os.makedirs(folder_month)
+except OSError as exc:
+  if exc.errno == errno.EEXIST and os.path.isdir(folder_month):
+    pass
+  else: raise
+
+if slow_log.endswith('.gz'):
+  slow_query_log = os.path.join(folder_month, 'slow_%s.log' % today)
+  delete = True
+  with open(slow_query_log, 'w') as slowfile:
+    f = gzip.open(slow_log, 'rb')
+    slowfile.write(f.read())
+    f.close()
+else:
+  slow_query_log = slow_log
+
+pt_query_digest = "{{ pt_query_executable }}".strip()
+argument_list = [pt_query_digest, slow_query_log]
+output = open(out_file, 'w')
+
+subprocess.check_call(argument_list, stdout=output)
+output.close()
+if delete:
+  os.unlink(slow_query_log)
+
