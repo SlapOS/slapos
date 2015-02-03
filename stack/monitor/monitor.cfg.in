@@ -55,6 +55,7 @@ apachedex-result = $${:srv}/apachedex
 
 private-directory = $${:srv}/monitor-private
 log-rss-directory = $${:srv}/ERRORLogAsRSS
+mysql-slowquery-report = $${:srv}/mysql-slowquery-report
 
 [public-symlink]
 recipe = cns.recipe.symlink
@@ -300,6 +301,28 @@ recipe = slapos.cookbook:cron.d
 name = $${apachedex-entries:script-name}
 frequency = 0 3 * * *
 command = $${apachedex-entries:rendered}
+
+# Generate Mysql slowqueries report with pt-querry-digest
+[mysql-slowquery-report]
+recipe = slapos.recipe.template:jinja2
+template = ${mysql-querydigest:location}/${mysql-querydigest:filename}
+rendered = $${cron-mysql-slowquery-report:command}
+mode = 0700
+extensions = jinja2.ext.do
+output-folder = $${monitor-directory:mysql-slowquery-report}
+extra-context =
+context = 
+  raw python_executable ${buildout:executable}
+  raw pt_query_executable ${perl:siteprefix}/bin/pt-query-digest
+  key output_folder :output-folder
+  $${:extra-context}
+
+[cron-mysql-slowquery-report]
+<= cron
+recipe = slapos.cookbook:cron.d
+name = mysql-slowquery-report
+frequency = 0 3 * * *
+command = $${monitor-directory:bin}/mysql_slowquery_report.py
 
 [monitor-instance-log-access]
 recipe = plone.recipe.command
