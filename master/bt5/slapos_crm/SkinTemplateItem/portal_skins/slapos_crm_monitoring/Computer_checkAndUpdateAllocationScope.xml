@@ -74,33 +74,21 @@ if not person.Person_isServiceProvider():\n
   }\n
 \n
   # Create a ticket (or re-open it) for this issue!\n
-  support_request = None\n
   request_title = \'We have changed allocation scope for %s\' % computer_reference\n
   request_description = \'Allocation scope has been changed to \' \\\n
                        \'%s for %s\' % (target_allocation_scope, computer_reference)\n
             \n
-  support_request_url = context.Base_generateSupportRequestForSlapOS(\n
+  support_request = context.Base_generateSupportRequestForSlapOS(\n
                  request_title,\n
                  request_description,\n
                  computer.getRelativeUrl()\n
                )\n
-  if support_request_url:\n
-    support_request = portal.restrictedTraverse(support_request_url)\n
-    support_request.suspend()\n
-  else:\n
-    # XXX - Base_generateSupportRequestForSlapOS return None if the \n
-    # support_request already exist, but we want to use it again so...\n
-    support_request = portal.portal_catalog.getResultValue(\n
-          portal_type = \'Support Request\',\n
-          title = request_title,\n
-          simulation_state = [\'suspended\', \'open\'],\n
-          source_project_uid = computer.getUid()\n
-    )\n
-  if support_request is None:\n
-    # Existing ticket not found, can not create event for the moment\n
-    return\n
+\n
+  if support_request.getSimulationState() != "validated":\n
+    support_request.validate()\n
   \n
   # Send notification message\n
+  message = request_description\n
   notification_message = portal.portal_notifications.getDocumentValue(\n
                  reference=notification_message_reference)\n
 \n
@@ -108,16 +96,17 @@ if not person.Person_isServiceProvider():\n
     mapping_dict = {\'computer_title\':computer.getTitle(),\n
                     \'computer_id\':computer_reference,\n
                     \'allocation_scope\':allocation_scope}\n
-    message = notification_message.asText(\n
-              substitution_method_parameter_dict={\'mapping_dict\':mapping_dict})\n
-  else:\n
-    message = request_description\n
 \n
-  event = support_request.SupportRequest_trySendNotificationMessage(request_title,\n
-              message, person.getRelativeUrl())\n
+    message = notification_message.asText(\n
+              substitution_method_parameter_dict={\'mapping_dict\': mapping_dict})\n
+\n
+  event = support_request.SupportRequest_trySendNotificationMessage(\n
+           request_title, message, person.getRelativeUrl())\n
 \n
   if event is not None:\n
     computer.edit(**edit_kw)\n
+\n
+  return support_request\n
 </string> </value>
         </item>
         <item>

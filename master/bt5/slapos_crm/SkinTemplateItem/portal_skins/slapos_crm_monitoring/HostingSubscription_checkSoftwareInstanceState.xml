@@ -53,73 +53,54 @@
             <value> <string encoding="cdata"><![CDATA[
 
 from DateTime import DateTime\n
-import json\n
+from Products.ERP5Type.DateUtils import addToDate\n
 \n
+hosting_subscription = context\n
 portal = context.getPortalObject()\n
 \n
 if portal.ERP5Site_isSupportRequestCreationClosed():\n
   # Stop ticket creation\n
   return\n
 \n
-if (DateTime() - context.getCreationDate()) < 2:\n
-  # Ignore recently created instances.\n
+date_check_limit = addToDate(DateTime(), to_add={\'hour\': -1})\n
+\n
+if (date_check_limit - hosting_subscription.getCreationDate()) < 0:\n
+  # Too early to check\n
   return\n
 \n
-reference = context.getReference()\n
-memcached_dict = context.getPortalObject().portal_memcached.getMemcachedDict(\n
-  key_prefix=\'slap_tool\',\n
-  plugin_path=\'portal_memcached/default_memcached_plugin\')\n
+#if not source_instance:\n
+#  return\n
 \n
-try:\n
-  d = memcached_dict[reference]\n
-except KeyError:\n
-  return\n
+software_instance_list = hosting_subscription.getSpecialiseRelatedValueList(\n
+                 portal_type=["Software Instance", "Slave Instance"])\n
 \n
-d = json.loads(d)\n
-result = d[\'text\']\n
-last_contact = DateTime(d.get(\'created_at\'))\n
+has_newest_allocated_instance = False\n
+has_unallocated_instance = False\n
+failing_instance = None\n
 \n
-# Optimise by checking memcache information first.\n
-if result.startswith(\'#error \'):\n
-  service = context.getSpecialiseValue(portal_type=\'Hosting Subscription\')\n
-  hosting_title = service.getTitle()\n
-  ticket_title = "Service %s in error state" % service.getReference()\n
-  description = "The instance %s of service %s has been in error state (last contact date: %s)" % (\n
-                  reference, hosting_title, last_contact)\n
-  support_request_url = context.Base_generateSupportRequestForSlapOS(\n
-    ticket_title, description, service.getRelativeUrl())\n
-    \n
-  if not support_request_url:\n
-    return\n
-  \n
-  support_request = portal.restrictedTraverse(support_request_url, None)\n
-  person_url = service.getDestinationSection()\n
-  \n
-  if support_request is None or not person_url:\n
-    return support_request_url\n
-  \n
-  notification_message = portal.portal_notifications.getDocumentValue(\n
-                 reference=\'slapos-crm-hosting_subscription_state.notification\')\n
-  if notification_message is None:\n
-    message = """Dear user,\n
-%s.\n
-Do not hesitate to visit the web forum (http://community.slapos.org/forum) in case of question.\n
+# Check if at least one software Instance is Allocated\n
+for instance in software_instance_list:\n
+  if instance.getSlapState() not in ["start_requested", "stop_requested"]:\n
+    continue\n
 \n
-Regards,\n
+  if (date_check_limit - instance.getCreationDate()) < 0:\n
+    continue\n
 \n
-The slapos team""" % description\n
+  if instance.getAggregateValue() is not None:\n
+    has_newest_allocated_instance = True\n
+    if instance.getPortalType() == "Software Instance" and \\\n
+        instance.SoftwareInstance_hasReportedError():\n
+      return context.HostingSubscription_createSupportRequestEvent(\n
+        instance, \'slapos-crm-hosting-subscription-instance-state.notification\')\n
   else:\n
-    mapping_dict = {\'hosting_title\':hosting_title,\n
-                    \'hosting_url\':service.getRelativeUrl(),\n
-                    \'instance_title\':context.getTitle(),\n
-                    \'last_contact\':last_contact}\n
-    message = notification_message.asText(\n
-              substitution_method_parameter_dict={\'mapping_dict\':mapping_dict})\n
-  \n
-  support_request.SupportRequest_trySendNotificationMessage(\n
-              ticket_title, message, person_url, 0)\n
-              \n
-  return support_request_url\n
+    has_unallocated_instance = True\n
+    failing_instance = instance\n
+\n
+  if has_unallocated_instance and has_newest_allocated_instance:\n
+    return context.HostingSubscription_createSupportRequestEvent(\n
+      failing_instance, \'slapos-crm-hosting-subscription-instance-allocation.notification\')\n
+\n
+return\n
 
 
 ]]></string> </value>
@@ -130,7 +111,7 @@ The slapos team""" % description\n
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>SoftwareInstance_checkState</string> </value>
+            <value> <string>HostingSubscription_checkSoftwareInstanceState</string> </value>
         </item>
       </dictionary>
     </pickle>

@@ -8,11 +8,11 @@
       <dictionary>
         <item>
             <key> <string>active_sense_method_id</string> </key>
-            <value> <string>Alarm_findAndNofitiyUnallocatedSoftwareInstance</string> </value>
+            <value> <string>Alarm_checkComputerState</string> </value>
         </item>
         <item>
             <key> <string>description</string> </key>
-            <value> <string>Check and create a Ticket when an instance is partially allocated for more them 4 hours.</string> </value>
+            <value> <string>Check if a public or a friend computer contacted master recently and create a ticket if the computer stops to contact master after some time.</string> </value>
         </item>
         <item>
             <key> <string>enabled</string> </key>
@@ -20,14 +20,12 @@
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>slapos_crm_check_partially_allocated_instance</string> </value>
+            <value> <string>slapos_crm_check_computer_state</string> </value>
         </item>
         <item>
             <key> <string>periodicity_hour</string> </key>
             <value>
-              <tuple>
-                <int>0</int>
-              </tuple>
+              <tuple/>
             </value>
         </item>
         <item>
@@ -39,9 +37,7 @@
         <item>
             <key> <string>periodicity_minute</string> </key>
             <value>
-              <tuple>
-                <int>0</int>
-              </tuple>
+              <tuple/>
             </value>
         </item>
         <item>
@@ -72,7 +68,7 @@
                 </tuple>
                 <state>
                   <tuple>
-                    <float>1406073600.0</float>
+                    <float>1288051200.0</float>
                     <string>GMT</string>
                   </tuple>
                 </state>
@@ -97,7 +93,7 @@
         </item>
         <item>
             <key> <string>title</string> </key>
-            <value> <string>Check partially allocated Instance for more them 4 hours</string> </value>
+            <value> <string>Check computer\'s state</string> </value>
         </item>
       </dictionary>
     </pickle>

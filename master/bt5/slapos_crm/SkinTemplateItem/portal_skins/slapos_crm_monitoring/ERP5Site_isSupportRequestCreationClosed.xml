@@ -50,7 +50,9 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string># HARDCODED LIMIT TO BE MOVED TO GLOBAL PREFERENCES\n
+            <value> <string encoding="cdata"><![CDATA[
+
+# HARDCODED LIMIT TO BE MOVED TO GLOBAL PREFERENCES\n
 limit = 5\n
 \n
 kw[\'limit\'] = limit\n
@@ -62,8 +64,10 @@ if destination_decision:\n
 \n
 support_request_list = context.portal_catalog(**kw)\n
 \n
-return len(support_request_list) == limit\n
-</string> </value>
+return len(support_request_list) >= limit\n
+
+
+]]></string> </value>
         </item>
         <item>
             <key> <string>_params</string> </key>

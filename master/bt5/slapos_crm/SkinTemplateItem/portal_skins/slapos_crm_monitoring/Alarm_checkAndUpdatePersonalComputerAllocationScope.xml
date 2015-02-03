@@ -50,21 +50,28 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string>portal = context.getPortalObject()\n
-category_uid = portal.restrictedTraverse(\n
-  "portal_categories/allocation_scope/open/public", None).getUid()\n
+            <value> <string encoding="cdata"><![CDATA[
+
+portal = context.getPortalObject()\n
 \n
-if category_uid is not None:\n
+category_personal = portal.restrictedTraverse("portal_categories/allocation_scope/open/personal", None)\n
+\n
+if category_personal is not None:\n
   portal.portal_catalog.searchAndActivate(\n
-    portal_type = \'Computer\',\n
-    validation_state = \'validated\',\n
-    default_allocation_scope_uid = category_uid,\n
-    method_id = \'Computer_checkSoftwareInstanceState\',\n
-    activate_kw = {\'tag\':tag}  \n
-  )\n
+    portal_type=\'Computer\', \n
+    validation_state=\'validated\', \n
+    modification_date=(DateTime() - 30).strftime(\'<=%Y/%m/%d\'), \n
+    order_by=((\'modification_date\', "ASC"), ), \n
+    default_allocation_scope_uid=category_personal.getUid(), \n
+    left_join_list=[\'aggregate_related_uid\'], \n
+    aggregate_related_uid=None,\n
+    method_id=\'Computer_checkAndUpdatePersonalAllocationScope\',\n
+    activate_kw={\'tag\': tag})\n
 \n
 context.activate(after_tag=tag).getId()\n
-</string> </value>
+
+
+]]></string> </value>
         </item>
         <item>
             <key> <string>_params</string> </key>
@@ -72,7 +79,7 @@ context.activate(after_tag=tag).getId()\n
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>Alarm_checkSoftwareInstanceState</string> </value>
+            <value> <string>Alarm_checkAndUpdatePersonalComputerAllocationScope</string> </value>
         </item>
       </dictionary>
     </pickle>

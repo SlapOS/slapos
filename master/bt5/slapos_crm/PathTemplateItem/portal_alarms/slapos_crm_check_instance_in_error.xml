@@ -8,13 +8,11 @@
       <dictionary>
         <item>
             <key> <string>active_sense_method_id</string> </key>
-            <value> <string>Alarm_checkComputerState</string> </value>
+            <value> <string>Alarm_checkHostingSubscriptionState</string> </value>
         </item>
         <item>
             <key> <string>description</string> </key>
-            <value>
-              <none/>
-            </value>
+            <value> <string>Check and create a Ticket when an instance is partially allocated for more them 4 hours.</string> </value>
         </item>
         <item>
             <key> <string>enabled</string> </key>
@@ -22,12 +20,14 @@
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>slapos_check_computer_state</string> </value>
+            <value> <string>slapos_crm_check_instance_in_error</string> </value>
         </item>
         <item>
             <key> <string>periodicity_hour</string> </key>
             <value>
-              <tuple/>
+              <tuple>
+                <int>0</int>
+              </tuple>
             </value>
         </item>
         <item>
@@ -39,7 +39,9 @@
         <item>
             <key> <string>periodicity_minute</string> </key>
             <value>
-              <tuple/>
+              <tuple>
+                <int>0</int>
+              </tuple>
             </value>
         </item>
         <item>
@@ -70,7 +72,7 @@
                 </tuple>
                 <state>
                   <tuple>
-                    <float>1288051200.0</float>
+                    <float>1406073600.0</float>
                     <string>GMT</string>
                   </tuple>
                 </state>
@@ -95,7 +97,7 @@
         </item>
         <item>
             <key> <string>title</string> </key>
-            <value> <string>Check computer\'s state</string> </value>
+            <value> <string>Check partially allocated Instance for more them 4 hours</string> </value>
         </item>
       </dictionary>
     </pickle>

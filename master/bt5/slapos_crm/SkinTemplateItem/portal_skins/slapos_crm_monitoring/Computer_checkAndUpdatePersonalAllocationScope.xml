@@ -50,7 +50,7 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string>context.Computer_checkAndUpdateAllocationScope(\n
+            <value> <string>return context.Computer_checkAndUpdateAllocationScope(\n
   target_allocation_scope = \'close/termination\',\n
   notification_message_reference=\'slapos-crm-computer_personal_allocation_scope.notification\')\n
 </string> </value>

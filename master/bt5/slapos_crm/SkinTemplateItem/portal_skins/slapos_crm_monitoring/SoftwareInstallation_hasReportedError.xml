@@ -50,53 +50,29 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string encoding="cdata"><![CDATA[
-
-from DateTime import DateTime\n
-from Products.ERP5Type.DateUtils import addToDate\n
+            <value> <string>from DateTime import DateTime\n
+import json\n
 \n
-hosting_subscription = context\n
-portal = context.getPortalObject()\n
+memcached_dict = context.getPortalObject().portal_memcached.getMemcachedDict(\n
+  key_prefix=\'slap_tool\',\n
+  plugin_path=\'portal_memcached/default_memcached_plugin\')\n
 \n
-if portal.ERP5Site_isSupportRequestCreationClosed():\n
-  # Stop ticket creation\n
-  return\n
+try:\n
+  d = memcached_dict[context.getReference()]\n
+except KeyError:\n
+  # Information not available\n
+  return None\n
 \n
-hs_title = hosting_subscription.getTitle()\n
-date_check_limit = addToDate(DateTime(), to_add={\'hour\': -4})\n
-has_newest_allocated_instance = False\n
-has_unallocated_instance = False\n
-source_instance = hosting_subscription.getPredecessorValue()\n
-failing_instance = None\n
+d = json.loads(d)\n
+result = d[\'text\']\n
+last_contact = DateTime(d.get(\'created_at\'))\n
 \n
-if not source_instance:\n
-  return\n
-software_instance_list = [source_instance]\n
-predecessors_instance = source_instance.getPredecessorValueList()\n
-if len(predecessors_instance) > 0:\n
-  software_instance_list.extend(predecessors_instance)\n
+# Optimise by checking memcache information first.\n
+if result.startswith(\'#error \'):\n
+  return last_contact\n
 \n
-# Check if at least one software Instance is Allocated\n
-for instance in software_instance_list:\n
-  if instance.getAggregate("") != "":\n
-    if (instance.getCreationDate() - date_check_limit) < 0:\n
-      # This instance is created for more than 4 hours\n
-      has_newest_allocated_instance = True\n
-  else:\n
-   has_unallocated_instance = True\n
-   failing_instance = instance\n
-\n
-if has_unallocated_instance and has_newest_allocated_instance:\n
-  return context.Base_generateSupportRequestForSlapOS(\n
-    "Hosting Subscription %s is partially allocated" % hs_title,\n
-    "%s has allocated instance(s) but, the instance %s (%s) has been unallocated for more than 4 hours." % (\n
-      hs_title, failing_instance.getTitle(), failing_instance.getAbsoluteUrl()),\n
-    hosting_subscription.getRelativeUrl())\n
-else:\n
-  return\n
-
-
-]]></string> </value>
+return None\n
+</string> </value>
         </item>
         <item>
             <key> <string>_params</string> </key>
@@ -104,7 +80,7 @@ else:\n
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>HostingSubscription_checkSofwareInstanceAllocationState</string> </value>
+            <value> <string>SoftwareInstallation_hasReportedError</string> </value>
         </item>
       </dictionary>
     </pickle>
