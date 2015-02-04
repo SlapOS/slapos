@@ -24,9 +24,11 @@ virtual_hard_drive_md5sum = '%(virtual-hard-drive-md5sum)s'.strip()
 virtual_hard_drive_gzipped = '%(virtual-hard-drive-gzipped)s'.strip()
 nat_rules = '%(nat-rules)s'.strip()
 use_tap = '%(use-tap)s'
+use_nat = '%(use-nat)s'
 tap_interface = '%(tap-interface)s'
 listen_ip = '%(ipv4)s'
 mac_address = '%(mac-address)s'
+tap_mac_address = '%(tap-mac-address)s'
 smp_count = '%(smp-count)s'
 ram_size = '%(ram-size)s'
 pid_file_path = '%(pid-file-path)s'
@@ -98,15 +100,17 @@ if not os.path.exists(disk_path):
 
 # Generate network parameters
 # XXX: use_tap should be a boolean
+tap_network_parameter = []
+nat_network_parameter = []
 if use_tap == 'True':
-  qemu_network_parameter = 'tap,ifname=%%s,script=no,downscript=no' %% tap_interface
-else:
-  qemu_network_parameter = 'user,' + ','.join('hostfwd=tcp:%%s:%%s-:%%s' %% (listen_ip, int(port) + 10000, port) for port in nat_rules.split())
+  tap_network_parameter = ['-net', 'nic,macaddr=%%s' %% tap_mac_address, '-net',
+                      'tap,ifname=%%s,script=no,downscript=no' %% tap_interface]
+if use_nat == 'True':
+  rules = 'user,' + ','.join('hostfwd=tcp:%%s:%%s-:%%s' %% (listen_ip, int(port) + 10000, port) for port in nat_rules.split())
+  nat_network_parameter = ['-net', 'nic,macaddr=%%s' %% mac_address, '-net', rules]
 
 kvm_argument_list = [qemu_path,
-  '-enable-kvm', '-net', 'nic,macaddr=%%s' %% mac_address,
-  '-net', qemu_network_parameter,
-  '-smp', smp_count,
+  '-enable-kvm', '-smp', smp_count,
   '-m', ram_size,
   '-drive', 'file=%%s,if=%%s' %% (disk_path, disk_type),
   '-vnc', '%%s:1,ipv4,password' %% listen_ip,
@@ -114,6 +118,10 @@ kvm_argument_list = [qemu_path,
   '-qmp', 'unix:%%s,server' %% socket_path,
   '-pidfile', pid_file_path,
 ]
+if tap_network_parameter == [] and nat_network_parameter == []:
+  print 'Warning : No network interface defined.'
+else:
+  kvm_argument_list += tap_network_parameter + nat_network_parameter
 
 # Try to connect to NBD server (and second nbd if defined).
 # If not available, don't even specify it in qemu command line parameters.

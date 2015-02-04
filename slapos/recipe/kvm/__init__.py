@@ -45,7 +45,7 @@ class Recipe(GenericBaseRecipe):
 
     path_list = []
 
-    if not self.isTrueValue(self.options.get('use-tap')):
+    if self.isTrueValue(self.options.get('use-nat')):
       # XXX This could be done using Jinja.
       for port in self.options['nat-rules'].split():
         tunnel_port = int(port) + 10000

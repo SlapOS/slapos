@@ -41,6 +41,10 @@ cronstamps = ${:etc}/cronstamps
 recipe = slapos.cookbook:generate.mac
 storage-path = ${directory:srv}/mac
 
+[create-tap-mac]
+recipe = slapos.cookbook:generate.mac
+storage-path = ${directory:srv}/tap_mac
+
 [gen-passwd]
 recipe = slapos.cookbook:generate.password
 storage-path = ${directory:srv}/passwd
@@ -79,12 +83,14 @@ pid-file-path = ${directory:run}/pid_file
 smp-count = ${slap-parameter:cpu-count}
 ram-size = ${slap-parameter:ram-size}
 mac-address = ${create-mac:mac-address}
+tap-mac-address = ${create-tap-mac:mac-address}
 
 # XXX-Cedric: should be named runner-wrapper-path and controller-wrapper-path
 runner-path = ${directory:services}/kvm
 controller-path = ${directory:scripts}/kvm_controller
 
 use-tap = ${slap-parameter:use-tap}
+use-nat = ${slap-parameter:use-nat}
 nat-rules = ${slap-parameter:nat-rules}
 6tunnel-wrapper-path = ${directory:services}/6tunnel
 
@@ -250,6 +256,7 @@ disk-type = virtio
 cpu-count = 1
 
 nat-rules = 22 80 443
+use-nat = True
 use-tap = False
 
 virtual-hard-drive-url =

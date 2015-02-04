@@ -35,6 +35,7 @@ config-cpu-count = {{ dumps(kvm_parameter_dict.get('cpu-count', 1)) }}
 
 {% set nat_rules_list = kvm_parameter_dict.get('nat-rules', [22, 80, 443]) -%}
 config-nat-rules = {{ nat_rules_list | join(' ') }}
+config-use-nat = {{ dumps(kvm_parameter_dict.get('use-nat', True)) }}
 config-use-tap = {{ dumps(kvm_parameter_dict.get('use-tap', False)) }}
 config-virtual-hard-drive-url = {{ dumps(kvm_parameter_dict.get('virtual-hard-drive-url', '')) }}
 config-virtual-hard-drive-md5sum = {{ dumps(kvm_parameter_dict.get('virtual-hard-drive-md5sum', '')) }}
