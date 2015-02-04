@@ -52,5 +52,7 @@ extra-context =
 recipe = slapos.cookbook:switch-softwaretype
 override = {{ dumps(override_switch_softwaretype |default) }}
 default = neo-cluster:rendered
+# BBB
+RootSoftwareInstance = ${:default}
 {{ admin_software_type }} = neo-admin:rendered
 {{ mysql_storage_software_type }} = neo-storage-mysql:rendered
