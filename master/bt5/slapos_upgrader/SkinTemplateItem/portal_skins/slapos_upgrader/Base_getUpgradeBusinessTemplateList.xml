@@ -57,22 +57,18 @@
    a old business template without updating it and without removing it\n
 """\n
 portal = context.getPortalObject()\n
-portal_templates = portal.portal_templates\n
 \n
-#installed_bt5_list = [bt5.getTitle() for bt5 in portal_templates.getInstalledBusinessTemplateList()]\n
-available_bt5_list = [bt5 for bt5 in \n
-                          portal_templates.getRepositoryBusinessTemplateList(newest_only=True)]\n
-signature = portal.ERP5Site_getUpgraderSignature()\n
-bt5_id_list = []\n
-for bt5_id in signature.get(\'required_bt5_id_list\', []):\n
-  available_bt5 = [bt5 for bt5 in available_bt5_list if bt5.title == bt5_id][0]\n
-  if available_bt5:\n
-    bt5_id_list.append(available_bt5.getTitle())\n
+bt5_update_catalog_list = (\'erp5_ingestion_mysql_innodb_catalog\',\n
+                           \'slapos_cloud\', \'erp5_accounting\',\n
+                           \'erp5_movement_table_catalog\')\n
+\n
+bt5_id_list = bt5_update_catalog_list + (\'slapos_erp5\',)\n
 \n
 keep_bt5_id_list = [\'erp5_ui_test\',\n
                    \'erp5_ui_test_core\',\n
                    \'slapos_category\',\n
                    \'erp5_secure_payment\']\n
+\n
 return bt5_id_list, keep_bt5_id_list\n
 </string> </value>
         </item>
