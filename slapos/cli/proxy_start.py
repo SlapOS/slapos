@@ -43,6 +43,10 @@ class ProxyStartCommand(ConfigCommand):
 
         ap.add_argument('-u', '--database-uri',
                         help='URI for sqlite database')
+        ap.add_argument('--port',
+                        help='Port to use')
+        ap.add_argument('--host',
+                        help='Host to use')
 
         return ap
 
