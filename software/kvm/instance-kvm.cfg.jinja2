@@ -202,7 +202,7 @@ key-file = ${slap-connection:key-file}
 cert-file = ${slap-connection:cert-file}
 computer-id = ${slap-connection:computer-id}
 partition-id = ${slap-connection:partition-id}
-name = VNC Frontend
+name = ${slap-parameter:frontend-instance-name}
 software-type = ${slap-parameter:frontend-software-type}
 slave = true
 config-host = ${novnc-instance:ip}
@@ -236,6 +236,7 @@ url = ${request-slave-frontend:connection-url}/vnc_auto.html?host=${request-slav
 frontend-software-type = frontend
 frontend-software-url = http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.92:/software/kvm/software.cfg
 frontend-instance-guid =
+frontend-instance-name = VNC Frontend
 nbd-port = 1024
 nbd-host =
 nbd2-port = 1024
