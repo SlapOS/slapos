@@ -72,6 +72,7 @@ mode = 700
 restore-exit-code-file=$${directory:srv}/importer-exit-code-file
 context =
   key backend_url slaprunner:access-url
+  key proxy_host slaprunner:ipv4
   section directory directory
   raw  shell_binary ${dash:location}/bin/dash
   raw  rsync_binary ${rsync:location}/bin/rsync

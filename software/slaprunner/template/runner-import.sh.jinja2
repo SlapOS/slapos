@@ -62,13 +62,25 @@ $SQLITE3 $DATABASE "update partition11 set software_release='$SOFTWARE_RELEASE' 
 $SQLITE3 $DATABASE "update software11 set url='$SOFTWARE_RELEASE' where url='$OLD_SOFTWARE_RELEASE';" || $SQLITE3 $DATABASE "delete from software11 where url='$OLD_SOFTWARE_RELEASE';"
 # Change slapproxy database to have all instances stopped
 $SQLITE3 $DATABASE "update partition11 set slap_state='stopped';"
+
+set -x
+# Run slapproxy on different port (in case of running inside of erp5testnode
+# with only one IP and port 50000 already taken by slapproxy of main instance)
+HOST="{{ proxy_host }}"
+PORT="50001"
+URL="http://$HOST:$PORT"
+$SLAPOS proxy start --cfg $HOME/etc/slapos.cfg --port $PORT >/dev/null 2>&1 &
+SLAPPROXY_PID=$!
+trap "kill $SLAPPROXY_PID" EXIT TERM INT
+sleep 5
+
 echo "Building newest software..."
-$SLAPOS node software --cfg $HOME/etc/slapos.cfg --pidfile $HOME/var/run/slapos-node-software.pid --all --pidfile $HOME/var/run/slapos-node-software.pid >/dev/null 2>&1 || true
+$SLAPOS node software --cfg $HOME/etc/slapos.cfg --pidfile $HOME/var/run/slapos-node-software.pid --all --master-url=$URL --pidfile $HOME/var/run/slapos-node-software.pid >/dev/null 2>&1 || true
 # Remove defined scripts to force buildout to recreate them to have updated paths
 rm $srv_directory/runner/instance/slappart*/srv/runner-import-restore || true
 echo "Running slapos node instance..."
 # XXX hardcoded
-$SLAPOS node instance --cfg $HOME/etc/slapos.cfg --pidfile $HOME/var/run/slapos-node-instance.pid >/dev/null 2>&1 || true
+$SLAPOS node instance --cfg $HOME/etc/slapos.cfg --master-url=$URL --pidfile $HOME/var/run/slapos-node-instance.pid >/dev/null 2>&1 || true
 
 # Invoke defined scripts for each partition inside of slaprunner
 for partition in $srv_directory/runner/instance/slappart*/
