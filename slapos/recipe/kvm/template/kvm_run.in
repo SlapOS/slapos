@@ -102,12 +102,19 @@ if not os.path.exists(disk_path):
 # XXX: use_tap should be a boolean
 tap_network_parameter = []
 nat_network_parameter = []
-if use_tap == 'True':
-  tap_network_parameter = ['-net', 'nic,macaddr=%%s' %% tap_mac_address, '-net',
-                      'tap,ifname=%%s,script=no,downscript=no' %% tap_interface]
+number = -1
 if use_nat == 'True':
-  rules = 'user,' + ','.join('hostfwd=tcp:%%s:%%s-:%%s' %% (listen_ip, int(port) + 10000, port) for port in nat_rules.split())
-  nat_network_parameter = ['-net', 'nic,macaddr=%%s' %% mac_address, '-net', rules]
+  number += 1
+  rules = 'user,id=lan%%s,' %% number + ','.join('hostfwd=tcp:%%s:%%s-:%%s' %% (listen_ip,
+                        int(port) + 10000, port) for port in nat_rules.split())
+  nat_network_parameter = ['-netdev', rules,
+          '-device', 'e1000,netdev=lan%%s,mac=%%s' %% (number, mac_address)]
+if use_tap == 'True':
+  number += 1
+  tap_network_parameter = ['-netdev',
+          'tap,id=lan%%s,ifname=%%s,script=no,downscript=no' %% (number,
+            tap_interface),
+          '-device', 'e1000,netdev=lan%%s,mac=%%s' %% (number, tap_mac_address)]
 
 kvm_argument_list = [qemu_path,
   '-enable-kvm', '-smp', smp_count,
@@ -121,7 +128,7 @@ kvm_argument_list = [qemu_path,
 if tap_network_parameter == [] and nat_network_parameter == []:
   print 'Warning : No network interface defined.'
 else:
-  kvm_argument_list += tap_network_parameter + nat_network_parameter
+  kvm_argument_list += nat_network_parameter + tap_network_parameter
 
 # Try to connect to NBD server (and second nbd if defined).
 # If not available, don't even specify it in qemu command line parameters.
