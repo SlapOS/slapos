@@ -12,7 +12,6 @@ from AccessControl.SecurityManagement import getSecurityManager, \
              setSecurityManager
 from DateTime import DateTime
 import json
-import re
 
 def changeSkin(skin_name):
   def decorator(func):
@@ -353,15 +352,93 @@ class TestSlapOSDefaultScenario(TestSlapOSSecurityMixin):
         if q.getTitle() == instance_title]
     self.assertEqual(0, len(hosting_subscription_list))
 
+  
+  def checkCloudContract(self, person_reference, instance_title,
+      software_release, software_type, server):
+
+    self.stepCallSlaposContractRequestValidationPaymentAlarm()
+    self.tic()
+
+    # stabilise aggregated invoices and expand them
+    self.stepCallSlaposManageBuildingCalculatingDeliveryAlarm()
+    self.tic()
+
+    # update invoices with their tax & discount
+    self.stepCallSlaposTriggerBuildAlarm()
+    self.tic()
+    self.stepCallSlaposManageBuildingCalculatingDeliveryAlarm()
+    self.tic()
+
+    # update invoices with their tax & discount transaction lines
+    self.stepCallSlaposTriggerBuildAlarm()
+    self.tic()
+    self.stepCallSlaposManageBuildingCalculatingDeliveryAlarm()
+    self.tic()
+
+    # stop the invoices and solve them again
+    self.stepCallSlaposStopConfirmedAggregatedSaleInvoiceTransactionAlarm()
+    self.tic()
+    self.stepCallSlaposManageBuildingCalculatingDeliveryAlarm()
+    self.tic()
+
+    # build the aggregated payment
+    self.stepCallSlaposTriggerPaymentTransactionOrderBuilderAlarm()
+    self.tic()
+
+    # start the payzen payment
+    self.stepCallSlaposPayzenUpdateConfirmedPaymentAlarm()
+    self.tic()
+
+    # stabilise the payment deliveries and expand them
+    self.stepCallSlaposManageBuildingCalculatingDeliveryAlarm()
+    self.tic()
+
+    # trigger the CRM interaction
+    self.stepCallSlaposCrmCreateRegularisationRequestAlarm()
+    self.tic()
+
+    # trigger the CRM interaction
+    self.stepCallSlaposCrmCreateRegularisationRequestAlarm()
+    self.tic()
+
+    self.usePayzenManually(self.web_site, person_reference)
+    self.tic()
+    
+    payment = self.portal.portal_catalog.getResultValue(
+      portal_type="Payment Transaction",
+      simulation_state="started")
+
+    self.logout()
+		
+    self.login()
+
+    data_kw = {
+        'errorCode': '0',
+        'transactionStatus': '6',
+        'authAmount': 200,
+        'authDevise': '978',
+      }
+    payment.PaymentTransaction_createPayzenEvent().PayzenEvent_processUpdate(data_kw, True)
+
+    self.login(person_reference)
+
+    self.stepCallSlaposContractRequestValidationPaymentAlarm()
+    self.tic()
+
+
   def checkInstanceAllocation(self, person_reference, instance_title,
       software_release, software_type, server):
 
     self.login(person_reference)
+
     self.personRequestInstanceNotReady(
       software_release=software_release,
       software_type=software_type,
       partition_reference=instance_title,
     )
+    
+    self.checkCloudContract(person_reference, instance_title,
+      software_release, software_type, server)
 
     self.stepCallSlaposAllocateInstanceAlarm()
     self.tic()
@@ -526,11 +603,11 @@ class TestSlapOSDefaultScenario(TestSlapOSSecurityMixin):
 				portal_type="Payment Transaction",
 				simulation_state="started",
 				).getId()
-    click_result = \
-      web_site.accounting_module[document_id].\
+
+    web_site.accounting_module[document_id].\
       PaymentTransaction_redirectToManualPayzenPayment()
 
-  def test(self):
+  def test_default_scenario(self):
     # some preparation
     self.logout()
     self.web_site = self.portal.web_site_module.hosting
