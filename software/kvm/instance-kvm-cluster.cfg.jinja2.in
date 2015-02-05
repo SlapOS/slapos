@@ -20,7 +20,7 @@ software-type = kvm
 name = {{ instance_name }}
 sla-computer_guid = {{ dumps(kvm_parameter_dict.get('computer-guid', computer_id)) }}
 
-config-fontend-instance-name = {{ instance_name ~ ' VNC Frontend' }}
+config-frontend-instance-name = {{ instance_name ~ ' VNC Frontend' }}
 config-frontend-software-type = {{ dumps(frontend_dict.get('software-type', 'frontend')) }}
 config-frontend-software-url = {{ dumps(frontend_dict.get('software-url', 'http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.92:/software/kvm/software.cfg')) }}
 config-frontend-instance-guid = {{ dumps(frontend_dict.get('instance-guid', '')) }}
