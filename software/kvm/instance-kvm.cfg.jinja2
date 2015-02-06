@@ -41,6 +41,10 @@ cronstamps = ${:etc}/cronstamps
 recipe = slapos.cookbook:generate.mac
 storage-path = ${directory:srv}/mac
 
+[create-tap-mac]
+recipe = slapos.cookbook:generate.mac
+storage-path = ${directory:srv}/tap_mac
+
 [gen-passwd]
 recipe = slapos.cookbook:generate.password
 storage-path = ${directory:srv}/passwd
@@ -79,17 +83,20 @@ pid-file-path = ${directory:run}/pid_file
 smp-count = ${slap-parameter:cpu-count}
 ram-size = ${slap-parameter:ram-size}
 mac-address = ${create-mac:mac-address}
+tap-mac-address = ${create-tap-mac:mac-address}
 
 # XXX-Cedric: should be named runner-wrapper-path and controller-wrapper-path
 runner-path = ${directory:services}/kvm
 controller-path = ${directory:scripts}/kvm_controller
 
 use-tap = ${slap-parameter:use-tap}
+use-nat = ${slap-parameter:use-nat}
 nat-rules = ${slap-parameter:nat-rules}
 6tunnel-wrapper-path = ${directory:services}/6tunnel
 
 virtual-hard-drive-url = ${slap-parameter:virtual-hard-drive-url}
 virtual-hard-drive-md5sum = ${slap-parameter:virtual-hard-drive-md5sum}
+virtual-hard-drive-gzipped = ${slap-parameter:virtual-hard-drive-gzipped}
 
 shell-path = {{ dash_executable_location }}
 qemu-path =  {{ qemu_executable_location }}
@@ -202,7 +209,7 @@ key-file = ${slap-connection:key-file}
 cert-file = ${slap-connection:cert-file}
 computer-id = ${slap-connection:computer-id}
 partition-id = ${slap-connection:partition-id}
-name = VNC Frontend
+name = ${slap-parameter:frontend-instance-name}
 software-type = ${slap-parameter:frontend-software-type}
 slave = true
 config-host = ${novnc-instance:ip}
@@ -236,6 +243,7 @@ url = ${request-slave-frontend:connection-url}/vnc_auto.html?host=${request-slav
 frontend-software-type = frontend
 frontend-software-url = http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.92:/software/kvm/software.cfg
 frontend-instance-guid =
+frontend-instance-name = VNC Frontend
 nbd-port = 1024
 nbd-host =
 nbd2-port = 1024
@@ -248,7 +256,9 @@ disk-type = virtio
 cpu-count = 1
 
 nat-rules = 22 80 443
+use-nat = True
 use-tap = False
 
 virtual-hard-drive-url =
 virtual-hard-drive-md5sum =
+virtual-hard-drive-gzipped = False
