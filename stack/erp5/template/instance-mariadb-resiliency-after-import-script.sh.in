@@ -1,4 +1,4 @@
-#!/bin/sh
+#!{{ dash_location }}
 
 # DO NOT RUN THIS SCRIPT ON PRODUCTION INSTANCE
 # OR MYSQL DATA WILL BE ERASED.
@@ -40,20 +40,19 @@ echo "Starting mariadb..."
 # XXX hardcoded
 $instance_directory/etc/run/mariadb &
 mysqld_pid=$!
-sleep 15
+trap "kill $mysqld_pid" EXIT TERM INT
+sleep 30
 # If mysql has stopped, abort
-if ! $(kill -0 $mysql_pid 2>/dev/null); then
+if ! [ -d /proc/$mysql_pid ]; then
   exit 1
 fi
-$instance_directory/etc/run/mariadb_update > /dev/null 2>&1
+$instance_directory/etc/run/mariadb_update
 
 echo "Importing data..."
 # Use latest dump XXX can contain funny characters
 dump=$(ls -r $mariadb_backup_directory | head -1)
 zcat "$mariadb_backup_directory/$dump" | $mysql_executable -u root --socket="$instance_directory/var/run/mariadb.sock"
 RESTORE_EXIT_CODE=$?
-
-kill "$mysqld_pid"
 
 if [ $RESTORE_EXIT_CODE -eq 0 ]; then
   echo 'Backup restoration successfully completed.'
