@@ -4,3 +4,4 @@ test.erp5.testSlapOSERP5SiteDump
 test.erp5.testSlapOSERP5GroupRoleSecurity
 test.erp5.testSlapOSERP5SkinSelection
 test.erp5.testSlapOSERP5DefaultScenario
+test.erp5.testSlapOSXHTML
