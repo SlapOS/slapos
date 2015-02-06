@@ -75,12 +75,16 @@ trap "kill $SLAPPROXY_PID" EXIT TERM INT
 sleep 5
 
 echo "Building newest software..."
-$SLAPOS node software --cfg $HOME/etc/slapos.cfg --pidfile $HOME/var/run/slapos-node-software.pid --all --master-url=$URL --pidfile $HOME/var/run/slapos-node-software.pid >/dev/null 2>&1 || true
+$SLAPOS node software --cfg $HOME/etc/slapos.cfg --all --master-url=$URL --logfile $HOME/srv/runner/software.log --pidfile $HOME/var/run/slapos-node-software.pid >/dev/null 2>&1 || true
+$SLAPOS node software --cfg $HOME/etc/slapos.cfg --all --master-url=$URL --logfile $HOME/srv/runner/software.log --pidfile $HOME/var/run/slapos-node-software.pid >/dev/null 2>&1 || true
+$SLAPOS node software --cfg $HOME/etc/slapos.cfg --all --master-url=$URL --logfile $HOME/srv/runner/software.log --pidfile $HOME/var/run/slapos-node-software.pid >/dev/null 2>&1 || true
 # Remove defined scripts to force buildout to recreate them to have updated paths
 rm $srv_directory/runner/instance/slappart*/srv/runner-import-restore || true
 echo "Running slapos node instance..."
 # XXX hardcoded
-$SLAPOS node instance --cfg $HOME/etc/slapos.cfg --master-url=$URL --pidfile $HOME/var/run/slapos-node-instance.pid >/dev/null 2>&1 || true
+$SLAPOS node instance --cfg $HOME/etc/slapos.cfg --master-url=$URL --logfile $HOME/srv/runner/instance.log --pidfile $HOME/var/run/slapos-node-instance.pid >/dev/null 2>&1 || true
+$SLAPOS node instance --cfg $HOME/etc/slapos.cfg --master-url=$URL --logfile $HOME/srv/runner/instance.log --pidfile $HOME/var/run/slapos-node-instance.pid >/dev/null 2>&1 || true
+$SLAPOS node instance --cfg $HOME/etc/slapos.cfg --master-url=$URL --logfile $HOME/srv/runner/instance.log --pidfile $HOME/var/run/slapos-node-instance.pid >/dev/null 2>&1 || true
 
 # Invoke defined scripts for each partition inside of slaprunner
 for partition in $srv_directory/runner/instance/slappart*/
