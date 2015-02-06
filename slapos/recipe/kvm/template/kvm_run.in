@@ -118,7 +118,7 @@ if use_tap == 'True':
 
 kvm_argument_list = [qemu_path,
   '-enable-kvm', '-smp', smp_count,
-  '-m', ram_size,
+  '-m', ram_size, '-vga', 'std',
   '-drive', 'file=%%s,if=%%s' %% (disk_path, disk_type),
   '-vnc', '%%s:1,ipv4,password' %% listen_ip,
   '-boot', 'order=cd,menu=on',
