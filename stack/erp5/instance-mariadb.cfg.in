@@ -209,7 +209,7 @@ recipe = collective.recipe.template
 input = {{ mariadb_resiliency_after_import_script }}
 output = ${rootdirectory:srv}/runner-import-restore
 mode = 755
-dash_location = {{ dash_location }}
+dash = {{ dash_location }}/bin/dash
 
 [rootdirectory]
 recipe = slapos.cookbook:mkdirectory

@@ -1,4 +1,4 @@
-#!{{ dash_location }}
+#!${:dash}
 
 # DO NOT RUN THIS SCRIPT ON PRODUCTION INSTANCE
 # OR MYSQL DATA WILL BE ERASED.
@@ -9,6 +9,8 @@
 
 # Depending on the output, it will create a file containing
 # the status of the restoration (success or failure)
+
+set -e
 
 mysql_executable="${mariadb-instance:mysql-binary}"
 mysqldump_executable="${binary-wrap-mysqldump:wrapper-path}"
@@ -28,7 +30,7 @@ if [ -e "$pid_file" ]; then
 fi
 
 echo "Deleting existing database..."
-rm -r $mariadb_data_directory/*
+rm -r $mariadb_data_directory/* >/dev/null 2>&1 || true
 
 echo "Adapting binlog database to new paths..."
 new_binlog_directory="$(dirname $binlog_path)"
