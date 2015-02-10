@@ -55,7 +55,7 @@
 if context.getSimulationState() != \'stopped\':\n
   return \n
 \n
-if context.UpgradeDecision_isUpgradeFinished():\n
+if not context.UpgradeDecision_isUpgradeFinished():\n
   return \n
 \n
 portal = context.getPortalObject()\n
@@ -109,6 +109,7 @@ event = context.SupportRequest_trySendNotificationMessage(title,\n
               message, person.getRelativeUrl())\n
 \n
 if event is not None:\n
+  context.setStopDate(DateTime())\n
   context.deliver()\n
 </string> </value>
         </item>
