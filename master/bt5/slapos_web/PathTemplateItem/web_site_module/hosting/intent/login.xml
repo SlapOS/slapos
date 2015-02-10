@@ -54,33 +54,94 @@
             </value>
         </item>
         <item>
-            <key> <string>_count</string> </key>
+            <key> <string>__before_publishing_traverse__</string> </key>
             <value>
-              <persistent> <string encoding="base64">AAAAAAAAAAI=</string> </persistent>
+              <object>
+                <klass>
+                  <global name="MultiHook" module="ZPublisher.BeforeTraverse"/>
+                </klass>
+                <tuple/>
+                <state>
+                  <dictionary>
+                    <item>
+                        <key> <string>_defined_in_class</string> </key>
+                        <value> <int>1</int> </value>
+                    </item>
+                    <item>
+                        <key> <string>_hookname</string> </key>
+                        <value> <string>__before_publishing_traverse__</string> </value>
+                    </item>
+                    <item>
+                        <key> <string>_list</string> </key>
+                        <value>
+                          <list>
+                            <persistent> <string encoding="base64">AAAAAAAAAAI=</string> </persistent>
+                          </list>
+                        </value>
+                    </item>
+                    <item>
+                        <key> <string>_prior</string> </key>
+                        <value>
+                          <none/>
+                        </value>
+                    </item>
+                  </dictionary>
+                </state>
+              </object>
             </value>
         </item>
         <item>
-            <key> <string>_identity_criterion</string> </key>
+            <key> <string>__before_traverse__</string> </key>
+            <value>
+              <dictionary>
+                <item>
+                    <key>
+                      <tuple>
+                        <int>99</int>
+                        <string>ERP5 Web Section/login</string>
+                      </tuple>
+                    </key>
+                    <value>
+                      <persistent> <string encoding="base64">AAAAAAAAAAI=</string> </persistent>
+                    </value>
+                </item>
+              </dictionary>
+            </value>
+        </item>
+        <item>
+            <key> <string>__translation_dict</string> </key>
+            <value>
+              <dictionary/>
+            </value>
+        </item>
+        <item>
+            <key> <string>_count</string> </key>
             <value>
               <persistent> <string encoding="base64">AAAAAAAAAAM=</string> </persistent>
             </value>
         </item>
         <item>
-            <key> <string>_mt_index</string> </key>
+            <key> <string>_identity_criterion</string> </key>
             <value>
               <persistent> <string encoding="base64">AAAAAAAAAAQ=</string> </persistent>
             </value>
         </item>
         <item>
-            <key> <string>_range_criterion</string> </key>
+            <key> <string>_mt_index</string> </key>
             <value>
               <persistent> <string encoding="base64">AAAAAAAAAAU=</string> </persistent>
             </value>
         </item>
         <item>
-            <key> <string>_tree</string> </key>
+            <key> <string>_range_criterion</string> </key>
             <value>
               <persistent> <string encoding="base64">AAAAAAAAAAY=</string> </persistent>
+            </value>
+        </item>
+        <item>
+            <key> <string>_tree</string> </key>
+            <value>
+              <persistent> <string encoding="base64">AAAAAAAAAAc=</string> </persistent>
             </value>
         </item>
         <item>
@@ -116,11 +177,19 @@
   </record>
   <record id="2" aka="AAAAAAAAAAI=">
     <pickle>
+      <global name="WebSectionTraversalHook" module="Products.ERP5.Document.WebSection"/>
+    </pickle>
+    <pickle>
+      <dictionary/>
+    </pickle>
+  </record>
+  <record id="3" aka="AAAAAAAAAAM=">
+    <pickle>
       <global name="Length" module="BTrees.Length"/>
     </pickle>
     <pickle> <int>0</int> </pickle>
   </record>
-  <record id="3" aka="AAAAAAAAAAM=">
+  <record id="4" aka="AAAAAAAAAAQ=">
     <pickle>
       <global name="PersistentMapping" module="Persistence.mapping"/>
     </pickle>
@@ -135,7 +204,7 @@
       </dictionary>
     </pickle>
   </record>
-  <record id="4" aka="AAAAAAAAAAQ=">
+  <record id="5" aka="AAAAAAAAAAU=">
     <pickle>
       <global name="OOBTree" module="BTrees.OOBTree"/>
     </pickle>
@@ -143,7 +212,7 @@
       <none/>
     </pickle>
   </record>
-  <record id="5" aka="AAAAAAAAAAU=">
+  <record id="6" aka="AAAAAAAAAAY=">
     <pickle>
       <global name="PersistentMapping" module="Persistence.mapping"/>
     </pickle>
@@ -158,7 +227,7 @@
       </dictionary>
     </pickle>
   </record>
-  <record id="6" aka="AAAAAAAAAAY=">
+  <record id="7" aka="AAAAAAAAAAc=">
     <pickle>
       <global name="OOBTree" module="BTrees.OOBTree"/>
     </pickle>
