@@ -98,6 +98,10 @@
                           <string>software_release_url</string>
                           <string>Software Release URL</string>
                         </tuple>
+                        <tuple>
+                          <string>translated_simulation_state_title</string>
+                          <string>State</string>
+                        </tuple>
                       </list>
                     </value>
                 </item>
