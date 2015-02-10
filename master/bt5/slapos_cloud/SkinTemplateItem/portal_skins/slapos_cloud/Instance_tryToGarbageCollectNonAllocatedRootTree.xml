@@ -70,8 +70,8 @@ if latest_comment != \'Allocation failed: no free Computer Partition\':\n
   return\n
 \n
 latest_edit_time = portal.portal_workflow.getInfoFor(instance, \'time\', wf_id=\'edit_workflow\')\n
-if (int(DateTime()) - int(latest_edit_time)) < 604800:\n
-  # Allow 1 week gap betweeb latest allocation try and deletion\n
+if (int(DateTime()) - int(latest_edit_time)) < 259200:\n
+  # Allow 3 days gap betweeb latest allocation try and deletion\n
   return\n
 \n
 # Only destroy if the instance is the only one in the tree\n
@@ -96,7 +96,7 @@ hosting_subscription.requestDestroy(\n
   sla_xml=hosting_subscription.getSlaXml(),\n
   shared=hosting_subscription.isRootSlave(),\n
   state=\'destroyed\',\n
-  comment="Garbage collect %s not allocated for more than 1 week" % instance.getRelativeUrl(),\n
+  comment="Garbage collect %s not allocated for more than 3 days" % instance.getRelativeUrl(),\n
 )\n
 hosting_subscription.archive()\n
 
