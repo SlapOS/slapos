@@ -255,7 +255,7 @@
       <dictionary>
         <item>
             <key> <string>_text</string> </key>
-            <value> <string>cell/getTotalPrice</string> </value>
+            <value> <string>python: round(cell.getTotalPrice(), 2)</string> </value>
         </item>
       </dictionary>
     </pickle>
