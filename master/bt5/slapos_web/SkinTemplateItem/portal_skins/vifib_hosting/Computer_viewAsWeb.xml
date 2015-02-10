@@ -92,6 +92,7 @@
                         <string>listbox_installation_state</string>
                         <string>listbox_usage</string>
                         <string>listbox_version</string>
+                        <string>listbox_monitoring_status</string>
                       </list>
                     </value>
                 </item>
