@@ -1,5 +1,6 @@
 USE mysql;
 DROP FUNCTION IF EXISTS last_insert_grn_id;
-%(last_insert_grn_id)s
+DROP FUNCTION IF EXISTS mroonga_snippet;
+DROP FUNCTION IF EXISTS mroonga_command;
 DROP FUNCTION IF EXISTS sphinx_snippets;
-#CREATE FUNCTION sphinx_snippets RETURNS STRING SONAME 'ha_sphinx.so';
+%(udf_registration)s
