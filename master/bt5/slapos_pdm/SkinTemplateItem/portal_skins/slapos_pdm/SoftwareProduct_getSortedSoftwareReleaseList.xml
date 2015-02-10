@@ -56,6 +56,9 @@ from DateTime import DateTime\n
 \n
 portal = context.getPortalObject()\n
 \n
+if context.getPortalType() == "Software Product":\n
+  software_product_reference = context.getReference()\n
+\n
 if software_product_reference is None:\n
   assert(software_release_url is not None)\n
   software_release = portal.portal_catalog.getResultValue(\n
@@ -64,6 +67,7 @@ if software_product_reference is None:\n
     )\n
   if not software_release:\n
     return []\n
+  \n
   software_product_reference = software_release.getAggregateReference()\n
   if not software_product_reference:\n
     return []\n
@@ -75,12 +79,14 @@ else:\n
 product_list = portal.portal_catalog(\n
            portal_type=\'Software Product\',\n
            reference=software_product_reference,\n
-           validation_state=\'published\')\n
+           validation_state=\'published\', \n
+           limit=2)\n
 \n
 if not product_list:\n
   return []\n
+  \n
 if len(product_list) > 1:\n
-  raise NotImplementedError(\'Several Software Product with the same title.\')\n
+  raise ValueError(\'Several Software Product with the same reference.\')\n
 \n
 software_release_list = product_list[0].getAggregateRelatedValueList()\n
 \n
@@ -99,7 +105,7 @@ software_release_list = sorted(\n
      \n
 return [software_release for software_release in software_release_list\n
           if software_release.getValidationState() in\n
-            ["published"]\n
+            ["published", "published_alive"]\n
         ]\n
 
 
