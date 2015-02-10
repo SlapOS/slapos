@@ -50,7 +50,8 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string>computer = context\n
+            <value> <string>from DateTime import DateTime\n
+computer = context\n
 portal = context.getPortalObject()\n
 \n
 full_software_release_list = [si.getUrlString() for si in\n
@@ -71,6 +72,9 @@ software_release_list = portal.portal_catalog(\n
 upgrade_decision_list = []\n
 for software_release in software_release_list:\n
   software_product_reference = software_release.getAggregateReference()\n
+  if software_product_reference in [None, ""]:\n
+    continue\n
+  \n
   sorted_list = portal.SoftwareProduct_getSortedSoftwareReleaseList(\n
     software_product_reference=software_product_reference)\n
   \n
@@ -97,7 +101,8 @@ for software_release in software_release_list:\n
       upgrade_decision.start()\n
     elif context.getAllocationScope() in ["open/personal"]:\n
       upgrade_decision.plan()\n
-      \n
+    \n
+    upgrade_decision.setStartDate(DateTime())\n
     upgrade_decision_list.append(upgrade_decision)\n
 \n
 return upgrade_decision_list\n
