@@ -40,6 +40,12 @@ port = 22220
 [notifier]
 port = 65533
 
+# Add path of file created by takeover script when takeover is triggered
+# Takeover script will create this file
+# equeue process will watch for file existence.
+[equeue]
+takeover-triggered-file-path = $${resiliency:takeover-triggered-file-path}
+
 [import-on-notification]
 # notifier.callback runs a script when a notification (sent by a parent PBS)
 # is received

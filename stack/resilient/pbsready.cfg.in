@@ -133,9 +133,8 @@ rotate-num = 30
 [resiliency]
 recipe = slapos.cookbook:addresiliency
 wrapper-takeover = takeover
-services = $${basedirectory:services}
+takeover-triggered-file-path = $${rootdirectory:srv}/takeover_triggered
 bin = $${rootdirectory:bin}
-etc = $${rootdirectory:etc}
 
 
 #----------------

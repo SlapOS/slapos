@@ -53,6 +53,7 @@ class Recipe(GenericSlapRecipe):
                 'partition_id': slap_connection['partition-id'],
                 'software': slap_connection['software-release-url'],
                 'namebase': self.parameter_dict['namebase'],
+                'takeover_triggered_file_path': self.options['takeover-triggered-file-path'],
             })
 
         path_list.append(takeover_wrapper)

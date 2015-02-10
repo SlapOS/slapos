@@ -36,6 +36,9 @@ class Recipe(GenericBaseRecipe):
       '--lockfile', self.options['lockfile']
     ]
 
+    if 'takeover-triggered-file-path' in self.options:
+      parameters.extend(['--takeover-triggered-file-path', self.options['takeover-triggered-file-path']])
+
     if 'loglevel' in self.options:
       parameters.extend(['--loglevel', self.options['loglevel']])
 
