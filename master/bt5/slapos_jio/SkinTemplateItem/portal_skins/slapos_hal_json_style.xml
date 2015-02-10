@@ -31,11 +31,11 @@
         </item>
         <item>
             <key> <string>business_template_skin_layer_priority</string> </key>
-            <value> <float>99.0</float> </value>
+            <value> <float>99.01</float> </value>
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>erp5_hal_json_style</string> </value>
+            <value> <string>slapos_hal_json_style</string> </value>
         </item>
         <item>
             <key> <string>title</string> </key>
