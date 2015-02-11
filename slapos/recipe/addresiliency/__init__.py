@@ -43,7 +43,7 @@ class Recipe(GenericSlapRecipe):
         slap_connection = self.buildout['slap-connection']
 
         takeover_wrapper = self.createPythonScript(
-            name=os.path.join(self.options['bin'], self.options['wrapper-takeover']),
+            name=self.options['wrapper-takeover'],
             absolute_function='slapos.recipe.addresiliency.takeover.run',
             arguments={
                 'server_url': slap_connection['server-url'],

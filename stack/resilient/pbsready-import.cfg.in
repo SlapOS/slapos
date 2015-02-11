@@ -5,7 +5,6 @@ extends = ${pbsready:output}
 # Explicitely define extended parts from pbsready
 # then add local parts
 parts =
-  resiliency
   logrotate
   logrotate-entry-cron
   logrotate-entry-equeue
@@ -18,6 +17,7 @@ parts =
   dropbear-server-pbs-authorized-key
   notifier
 
+  resiliency-takeover-script
   resilient-web-takeover-cgi-script
   resilient-web-takeover-httpd-wrapper
   resilient-web-takeover-httpd-promise
@@ -40,12 +40,6 @@ port = 22220
 [notifier]
 port = 65533
 
-# Add path of file created by takeover script when takeover is triggered
-# Takeover script will create this file
-# equeue process will watch for file existence.
-[equeue]
-takeover-triggered-file-path = $${resiliency:takeover-triggered-file-path}
-
 [import-on-notification]
 # notifier.callback runs a script when a notification (sent by a parent PBS)
 # is received
@@ -53,6 +47,20 @@ takeover-triggered-file-path = $${resiliency:takeover-triggered-file-path}
 recipe = slapos.cookbook:notifier.callback
 on-notification-id = $${slap-parameter:on-notification}
 callback = $${importer:wrapper}
+
+###########
+# Generate the takeover script
+###########
+[resiliency-takeover-script]
+recipe = slapos.cookbook:addresiliency
+wrapper-takeover = $${rootdirectory:bin}/takeover
+takeover-triggered-file-path = $${rootdirectory:srv}/takeover_triggered
+
+# Add path of file created by takeover script when takeover is triggered
+# Takeover script will create this file
+# equeue process will watch for file existence.
+[equeue]
+takeover-triggered-file-path = $${resiliency-takeover-script:takeover-triggered-file-path}
 
 ###########
 # Deploy a webserver allowing to do takeover from a web browser.

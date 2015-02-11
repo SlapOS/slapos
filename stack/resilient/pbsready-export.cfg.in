@@ -5,7 +5,6 @@ extends = ${pbsready:output}
 # Explicitely define extended parts from pbsready
 # then add local parts
 parts =
-  resiliency
   logrotate
   logrotate-entry-cron
   logrotate-entry-equeue

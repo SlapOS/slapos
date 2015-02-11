@@ -2,6 +2,7 @@
 
 equeue_database = '${equeue:database}'
 equeue_lockfile = '${equeue:lockfile}'
+takeover_script = '${resiliency-takeover-script:wrapper-takeover}'
 
 import cgi
 import cgitb
@@ -68,6 +69,6 @@ if form['password'].value != '${:password}':
   sys.exit(1)
 
 # XXX hardcoded location
-result = subprocess.check_output([os.path.expanduser("~/bin/takeover")], stderr=subprocess.STDOUT)
+result = subprocess.check_output([takeover_script], stderr=subprocess.STDOUT)
 print 'Success.'
 print '<pre>%s</pre>' % result
