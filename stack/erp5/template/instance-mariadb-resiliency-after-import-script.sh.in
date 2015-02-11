@@ -46,9 +46,17 @@ trap "kill $mysqld_pid" EXIT TERM INT
 sleep 30
 # If mysql has stopped, abort
 if ! [ -d /proc/$mysql_pid ]; then
+  echo "mysqld exited, aborting."
   exit 1
 fi
-$instance_directory/etc/run/mariadb_update
+$instance_directory/etc/run/mariadb_update &
+mariadb_update_pid=$!
+sleep 60
+# If mariadb_update is still running, abort
+if [ -d /proc/$mariadb_update_pid ]; then
+  echo "mariadb_update still running after timeout, aborting."
+  exit 1
+fi
 
 echo "Importing data..."
 # Use latest dump XXX can contain funny characters
