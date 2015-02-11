@@ -1,6 +1,11 @@
 Changes
 =======
 
+0.94 (2013-02-06)
+-----------------
+ * kvm: allow to configure tap and nat interface at the same time with use-nat and use-tap [d3d65916]
+ * kvm: use -netdev to configure network interface as -net is now obsolete [27baa9d4]
+
 0.85 (2013-12-03)
 -----------------
 

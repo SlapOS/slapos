@@ -134,6 +134,7 @@ filename = instance-mariadb.cfg
 extra-context =
     section parameter_dict dynamic-template-mariadb-parameters
     raw coreutils_location {{ coreutils_location }}
+    raw dash_location {{ dash_location }}
     raw dcron_location {{ dcron_location }}
     raw findutils_location {{ findutils_location }}
     raw gettext_location {{ gettext_location }}
