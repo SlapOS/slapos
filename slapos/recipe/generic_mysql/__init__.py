@@ -80,16 +80,19 @@ class Recipe(GenericBaseRecipe):
     mysql_script_list = []
 
     # user defined functions
+    udf_registration = ""
     mroonga = self.options.get('mroonga', 'ha_mroonga.so')
     if mroonga:
-      last_insert_grn_id = "CREATE FUNCTION last_insert_grn_id RETURNS " \
-        "INTEGER SONAME '" + mroonga + "';"
-    else:
-      last_insert_grn_id = ""
+      udf_registration += "CREATE FUNCTION last_insert_grn_id RETURNS " \
+        "INTEGER SONAME '" + mroonga + "';\n"
+      udf_registration += "CREATE FUNCTION mroonga_snippet RETURNS " \
+        "STRING SONAME '" + mroonga + "';\n"
+      udf_registration += "CREATE FUNCTION mroonga_command RETURNS " \
+        "STRING SONAME '" + mroonga + "';\n"
     mysql_script_list.append(self.substituteTemplate(
       self.getTemplateFilename('mysql-init-function.sql.in'),
       {
-        'last_insert_grn_id': last_insert_grn_id,
+        'udf_registration': udf_registration,
       }
     ))
     # real database
