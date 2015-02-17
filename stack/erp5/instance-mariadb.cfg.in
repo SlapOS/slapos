@@ -7,6 +7,7 @@
 {%   do test_database_list.append({'name': 'erp5_test_' ~ database_count, 'user': 'testuser_' ~ database_count, 'password': 'testpassword' ~ database_count}) -%}
 {% endfor -%}
 {% set catalog_backup = slapparameter_dict.get('catalog-backup', {}) -%}
+{% set backup_periodicity = slapparameter_dict.get('backup-periodicity', 'daily') -%}
 {% set full_backup_retention_days = catalog_backup.get('full-retention-days', 7) -%}
 {% set incremental_backup_retention_days = catalog_backup.get('incremental-retention-days', full_backup_retention_days) -%}
 {% set port = slapparameter_dict['tcpv4-port'] %}
@@ -74,7 +75,7 @@ about laxist file mode. -#}
 recipe = slapos.cookbook:cron.d
 cron-entries = ${cron:cron-entries}
 name = mariadb-backup
-frequency = 0 22 * * *
+time = {{ dumps(backup_periodicity) }}
 {# When binlogs are enabled:
 # flush-logs: used so no manipulation on binlogs is needed to restore from
 #   full + binlogs. The first binlog after a dump starts from dump snapshot and
@@ -91,7 +92,7 @@ file-glob = ??????????????.sql.gz
 recipe = slapos.cookbook:cron.d
 cron-entries = ${cron:cron-entries}
 name = mariadb-backup-expire
-frequency = 0 22 * * *
+time = {{ dumps(backup_periodicity) }}
 command = {{ parameter_dict['findutils-location'] }}/bin/find "${directory:mariadb-backup-full}" -maxdepth 1 -name "${cron-entry-mariadb-backup:file-glob}" -daystart -mtime +{{ full_backup_retention_days }} -delete
 {%- endif %}
 {%- endif %}
