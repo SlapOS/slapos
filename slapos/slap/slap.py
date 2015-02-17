@@ -51,6 +51,8 @@ from xml_marshaller import xml_marshaller
 from uritemplate import expand
 
 import requests
+# silence messages like 'Unverified HTTPS request is being made'
+requests.packages.urllib3.disable_warnings()
 # silence messages like 'Starting connection' that are logged with INFO
 urllib3_logger = logging.getLogger('requests.packages.urllib3')
 urllib3_logger.setLevel(logging.WARNING)
