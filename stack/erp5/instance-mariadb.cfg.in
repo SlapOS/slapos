@@ -218,6 +218,14 @@ recipe = collective.recipe.template
 input = inline: srv/mariadb/**
 output = ${directory:srv}/exporter.exclude
 
+[resiliency-after-import-script]
+# Generate after import script used by importer instance of webrunner
+recipe = collective.recipe.template
+input = {{ parameter_dict['mariadb-resiliency-after-import-script'] }}
+output = ${directory:srv}/runner-import-restore
+mode = 755
+dash = {{ parameter_dict['dash-location'] }}/bin/dash
+
 [promise]
 recipe = slapos.cookbook:wrapper
 command-line = "{{ parameter_dict['bin-directory'] }}/is-local-tcp-port-opened" "${my-cnf-parameters:ip}" "${my-cnf-parameters:port}"
@@ -233,5 +241,6 @@ parts +=
   update-mysql
   mysqld
   resiliency-exclude-file
+  resiliency-after-import-script
   promise
   {{ part_list | join('\n  ') }}
