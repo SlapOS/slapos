@@ -117,6 +117,14 @@ tidstorage-ip =
 tidstorage-port =
 {% endif -%}
 
+# Used for ERP5 resiliency or (more probably)
+# webrunner resiliency with erp5 inside.
+[{{ section("resiliency-exclude-file") }}]
+# Generate rdiff exclude file
+recipe = collective.recipe.template
+input = inline: {{ default_zodb_path }}/**
+output = ${directory:srv}/exporter.exclude
+
 [directory]
 recipe = slapos.cookbook:mkdirectory
 bin = ${buildout:directory}/bin
