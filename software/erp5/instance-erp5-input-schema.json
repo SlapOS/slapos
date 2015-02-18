@@ -50,8 +50,19 @@
       "uniqueItems": true,
       "type": "array"
     },
+    "hostalias-dict": {
+      "description": "Hostname-to-hostname mapping",
+      "default": {},
+      "patternProperties": {
+        ".*": {
+          "description": "A hostname to which current entry will resolve",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
     "hosts-dict": {
-      "description": "Host entries to be used in addition to and/or overriding auto-generated ones",
+      "description": "Hostname-to-IP mapping",
       "default": {
         "erp5-catalog-0": "some-ip",
         "erp5-catalog-...": "some-ip",

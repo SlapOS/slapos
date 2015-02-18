@@ -127,8 +127,28 @@ ipv6 = {{ ipv6 }}
      ) -%}
 {%- endfor %}
 {% do hosts_dict.update(slapparameter_dict['hosts-dict']) -%}
+[host-common]
+
 [hosts-parameter]
+# Used for both hosts and hostaliases sections.
 host-dict = {{ dumps(hosts_dict) }}
+hostalias-dict = {{ dumps(slapparameter_dict['hostalias-dict']) }}
+
+# Note: there is a subtle difference between hosts and hostaliases files:
+# - hosts files start with resolved, followed by alias(es) (only one alias per
+#   line in this case)
+# - hostaliases start with alias, followed by resolved
+# ...so it's not possible to merge these templates (not a big deal anyway).
+
+[hostaliases]
+recipe = slapos.recipe.template:jinja2
+template = inline: {{ '
+  {% for alias, aliased in host_dict.items() -%}
+  {{ alias }} {{ aliased }}
+  {% endfor %}
+' }}
+rendered = ${directory:etc}/hostaliases
+context = key host_dict hosts-parameter:hostalias-dict
 
 [hosts]
 recipe = slapos.recipe.template:jinja2
@@ -145,6 +165,7 @@ runzope-binary = {{ bin_directory }}/runzope
 userhosts = {{ parameter_dict['userhosts'] }}
 shell-path = {{ parameter_dict['dash'] }}/bin/dash
 hosts = ${hosts:rendered}
+hostaliases = ${hostaliases:rendered}
 
 [preload-userhosts-runzope]
 recipe = slapos.recipe.template:jinja2

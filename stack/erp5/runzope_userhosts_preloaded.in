@@ -1,2 +1,2 @@
 #!{{ parameter_dict['shell-path'] }}
-HOSTS='{{ parameter_dict['hosts'] }}' exec '{{ parameter_dict['userhosts'] }}' '{{ parameter_dict['runzope-binary'] }}' "$@"
+HOSTALIASES='{{ parameter_dict['hostaliases'] }}' HOSTS='{{ parameter_dict['hosts'] }}' exec '{{ parameter_dict['userhosts'] }}' '{{ parameter_dict['runzope-binary'] }}' "$@"

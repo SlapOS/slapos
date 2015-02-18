@@ -91,12 +91,14 @@ recipe = slapos.cookbook:generate.password
 return =
   zope-address-list
   hosts-dict
+  hostalias-dict
 config-bt5 = {{ dumps(slapparameter_dict.get('bt5', 'erp5_full_text_myisam_catalog erp5_configurator_standard erp5_configurator_maxma_demo erp5_configurator_ung erp5_configurator_run_my_doc')) }}
 config-bt5-repository-url = {{ dumps(slapparameter_dict.get('bt5-repository-url', local_bt5_repository)) }}
 config-cloudooo-url = ${request-cloudooo:connection-url}
 config-deadlock-debugger-password = ${deadlock-debugger-password:passwd}
 config-developer-list = {{ dumps(slapparameter_dict.get('developer-list', [inituser_login])) }}
 config-hosts-dict = {{ dumps(slapparameter_dict.get('hosts-dict', {})) }}
+config-hostalias-dict = {{ dumps(slapparameter_dict.get('hostalias-dict', {})) }}
 config-inituser-login = {{ dumps(inituser_login) }}
 config-inituser-password = ${inituser-password:passwd}
 config-kumofs-url = ${request-memcached-persistent:connection-url}
