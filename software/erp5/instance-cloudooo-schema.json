@@ -7,7 +7,7 @@
       "allOf": [{
         "$ref": "#/definitions/tcpv4port"
       }, {
-        "description": "Start allocating ports at this value, going upward",
+        "description": "Start allocating ports at this value, going upward"
       }]
     },
     "font-url-list": {

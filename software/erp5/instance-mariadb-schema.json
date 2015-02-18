@@ -65,7 +65,7 @@
     "backup-periodicity": {
       "description": "When to backup, specified in the same format as for systemd.time(7) calendar events (years & seconds not supported, DoW & DoM can not be combined).",
       "default": "daily",
-      "type": "string",
+      "type": "string"
     },
     "innodb-buffer-pool-size": {
       "description": "See MariaDB documentation on innodb_buffer_pool_size",
@@ -102,7 +102,7 @@
       "properties": {
         "ca-crt": {
           "description": "Certificate Authority's certificate, in PEM format",
-          "type": "string",
+          "type": "string"
         },
         "crt": {
           "description": "Server's certificate, in PEM format (mandatory to enable SSL support)",

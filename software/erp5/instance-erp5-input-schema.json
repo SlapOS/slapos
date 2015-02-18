@@ -84,7 +84,7 @@
           "description": "Request a front-end slave instance of this software type.",
           "default": "RootSoftwareInstance",
           "type": ""
-        },
+        }
       },
       "type": "object"
     },
@@ -136,7 +136,7 @@
                 "description": "Start allocating ports at this value. Useful if one needs to make several partitions share the same port range (ie, several partitions bound to a single address)",
                 "default": 2200
               }]
-            },
+            }
           },
           "type": "object"
         }
@@ -184,7 +184,7 @@
         "backup-periodicity": {
           "description": "When to backup, specified in the same format as for systemd.time(7) calendar events (years & seconds not supported, DoW & DoM can not be combined). Enter 'never' to disable backups.",
           "default": "daily",
-          "type": "string",
+          "type": "string"
         },
         "tidstorage-timestamp-path": {
           "description": "Path to backup timestamp file, occurrences of '%(backup)s' being replaced with the path to partition's srv/backup/tidstorage directory",
