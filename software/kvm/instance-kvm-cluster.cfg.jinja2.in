@@ -1,5 +1,10 @@
 {% set publish_dict = {} -%}
 {% set frontend_dict = slapparameter_dict.get('frontend', {}) -%}
+{% set slave_frontend_dict = slapparameter_dict.get('slave-frontend', {}) -%}
+{% set slave_frontend_sr = slave_frontend_dict.get('software-url', 'http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg') -%}
+{% set slave_frontend_stype = slave_frontend_dict.get('software-type', 'default') -%}
+{% set slave_frontend_iguid = slave_frontend_dict.get('instance-guid', '') -%}
+{% set kvm_instance_dict = {} -%}
 
 [request-common]
 recipe = slapos.cookbook:request
@@ -14,6 +19,7 @@ config-use-ipv6 = {{ dumps(slapparameter_dict.get('use-ipv6', False)) }}
 # Request kvm instances
 {% for instance_name, kvm_parameter_dict in slapparameter_dict.get('kvm-partition-dict', {'kvm-default': {}}).items() -%}
 {% set section = 'request-' ~ instance_name -%}
+{% set use_nat = kvm_parameter_dict.get('use-nat', True) -%}
 [{{ section }}]
 <= request-common
 software-type = kvm
@@ -35,7 +41,8 @@ config-cpu-count = {{ dumps(kvm_parameter_dict.get('cpu-count', 1)) }}
 
 {% set nat_rules_list = kvm_parameter_dict.get('nat-rules', [22, 80, 443]) -%}
 config-nat-rules = {{ nat_rules_list | join(' ') }}
-config-use-nat = {{ dumps(kvm_parameter_dict.get('use-nat', True)) }}
+config-publish-nat-url = True
+config-use-nat = {{ use_nat }}
 config-use-tap = {{ dumps(kvm_parameter_dict.get('use-tap', False)) }}
 config-virtual-hard-drive-url = {{ dumps(kvm_parameter_dict.get('virtual-hard-drive-url', '')) }}
 config-virtual-hard-drive-md5sum = {{ dumps(kvm_parameter_dict.get('virtual-hard-drive-md5sum', '')) }}
@@ -43,8 +50,59 @@ config-virtual-hard-drive-gzipped = {{ dumps(kvm_parameter_dict.get('virtual-har
 return = 
   backend-url
   url
+{% if use_nat -%}
+{%   for port in nat_rules_list -%}
+{{ '  ' }}nat-rule-url-{{ port }}
+{%   endfor -%}
+{% endif -%}
 {% do publish_dict.__setitem__(instance_name ~ '-backend-url', '${' ~ section ~ ':connection-backend-url}') -%}
 {% do publish_dict.__setitem__(instance_name ~ '-url', '${' ~ section ~ ':connection-url}') -%}
+{% do kvm_instance_dict.__setitem__(instance_name, (kvm_parameter_dict.get('use-nat', True), nat_rules_list)) -%}
+{% endfor %}
+
+
+#request custom kvm frontend
+{% for frontend_name, frontend_parameter_dict in slave_frontend_dict.get('slave-frontend-dict', {}).items() -%}
+{%   set name = frontend_name -%}
+{%   set url = frontend_parameter_dict.get('url', '') -%}
+{%   set error = '' -%}
+{%   if frontend_parameter_dict.get('kvm-partition-name', '') != '' -%}
+{%     set kvm_name = frontend_parameter_dict['kvm-partition-name'] -%}
+{%     set service_port = frontend_parameter_dict['service-port'] -%}
+{%     if kvm_name in kvm_instance_dict.keys()  and not kvm_instance_dict[kvm_name][0] -%}
+{%       set error = "You should set parameter use-nat to 'true' for '" ~ kvm_name ~ "', or provide url to use for frontend." -%}
+{%     elif kvm_name in kvm_instance_dict.keys() and service_port in kvm_instance_dict[kvm_name][1] -%}
+{%       set url = '${request-' ~ kvm_name ~ ':connection-nat-rule-url-' ~ service_port ~ '}' -%}
+{%       set url = frontend_parameter_dict.get('url-scheme', 'http') ~ '://' ~ url -%}
+{%     else -%}
+{%       set error = kvm_name ~ " and/or port " ~ service_port ~ " doesn't match any KVM name and/or related nat-rules in your request parameters." -%}
+{%     endif -%}
+{%   endif -%}
+{%   set section = 'request-' ~ name ~ '-slave-frontend' -%}
+[{{ section }}]
+<= request-common
+recipe = slapos.cookbook:request
+software-url = {{ slave_frontend_sr }}
+name = Frontend {{ name }}
+software-type = {{ slave_frontend_stype }}
+slave = true
+config-url = {{ url }}
+config-domain = {{ dumps(frontend_parameter_dict.get('domain', '')) }}
+config-enable_cache = {{ dumps(frontend_parameter_dict.get('enable-cache', False)) }}
+config-https-only = {{ dumps(frontend_parameter_dict.get('https-only', False)) }}
+{%  if frontend_parameter_dict.get('type', '') -%}
+config-type = {{ dumps(frontend_parameter_dict['type']) }}
+{%    if frontend_parameter_dict.get('path', '') -%}
+config-path = {{ dumps(frontend_parameter_dict['path']) }}
+{%    endif -%}
+{%  endif -%}
+return = 
+  site_url
+sla-instance_guid = {{ slave_frontend_iguid }}
+{%   do publish_dict.__setitem__(name ~ '-url', '${' ~ section ~ ':connection-site_url}') -%}
+{%   if error != '' -%}
+{%     do publish_dict.__setitem__('1_error', error) -%}
+{%   endif -%}
 {% endfor %}
 
 [publish]
