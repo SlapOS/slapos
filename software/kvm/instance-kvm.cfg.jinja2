@@ -227,6 +227,7 @@ curl_path = {{ curl_executable_location }}
 
 [publish-connection-information]
 recipe = slapos.cookbook:publish
+ipv6 = $${slap-network-information:global-ipv6}
 backend-url = https://[${novnc-instance:ip}]:${novnc-instance:port}/vnc_auto.html?host=[${novnc-instance:ip}]&port=${novnc-instance:port}&encrypt=1&password=${kvm-instance:vnc-passwd}
 url = ${request-slave-frontend:connection-url}/vnc_auto.html?host=${request-slave-frontend:connection-domainname}&port=${request-slave-frontend:connection-port}&encrypt=1&path=${request-slave-frontend:connection-resource}&password=${kvm-instance:vnc-passwd}
 {% if slapparameter_dict.get('use-nat', 'True') == 'True' -%}
