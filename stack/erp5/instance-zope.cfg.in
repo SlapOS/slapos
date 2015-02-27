@@ -410,6 +410,10 @@ parts +=
   cron-entry-monitor
   cron-entry-rss
   deploy-index
+  deploy-logfile-cgi
+  deploy-resource-consumption-monitoring-cgi
+  deploy-zodb-performance-cgi
+  deploy-thread-performance-cgi
   setup-static-files
   public-symlink
   cgi-httpd-wrapper

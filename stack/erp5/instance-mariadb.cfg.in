@@ -266,6 +266,8 @@ parts +=
   cron-entry-rss
   deploy-index
   deploy-logfile-cgi
+  deploy-resource-consumption-monitoring-cgi
+  deploy-mariadb-performance-cgi
   setup-static-files
   certificate-authority
   public-symlink
