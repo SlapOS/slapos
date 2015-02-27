@@ -92,7 +92,7 @@ $(document).ready(function () {
   
   function refresh() {
     if (send) { return}
-    var dataPost = {'posting-script': "monitoring/ressources.cgi",
+    var dataPost = {'posting-script': "monitoring/resources.cgi",
             action: "refresh"};
     send = true;
     $("#msg").fadeIn();
@@ -163,7 +163,7 @@ $(document).ready(function () {
 });
 </script>
 </head><body>
-<h1>Computer partition ressources monitoring</h1>
+<h1>Computer partition resources monitoring</h1>
 <div style="width:850px; padding: 10px 0;">
   <div style='float:left; width: 500px'>
     <table class="tg" id="box3">
@@ -181,7 +181,7 @@ $(document).ready(function () {
   </div>
 </div>
 <div style='clear:both'></div>
-<h2>Total ressources consumption for partition (last minute)</h2>
+<h2>Total resources consumption for partition (last minute)</h2>
 <table class="tg" id="box2">
   <tr>
     <th class="tg-s6z2">Total Process</th>
@@ -192,7 +192,7 @@ $(document).ready(function () {
     <th class="tg-s6z2">Memory %</th>
   </tr>
 </table>
-<h2>ressources consumption for partition by process pid (last minute)</h2>
+<h2>resources consumption for partition by process pid (last minute)</h2>
 <table class="tg" id="box1">
   <tr>
     <th class="tg-s6z2">Process PID</th>

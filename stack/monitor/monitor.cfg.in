@@ -196,11 +196,11 @@ context =
 [log-folder-cgi]
 log-folder = $${monitor-directory:log}
 
-[deploy-ressource-monitoring-cgi]
+[deploy-resource-monitoring-cgi]
 recipe = slapos.recipe.template:jinja2
-template = ${ressources-cgi:location}/${ressources-cgi:filename}
+template = ${resources-cgi:location}/${resources-cgi:filename}
 rendered = $${monitor-directory:monitoring-cgi}/$${:filename}
-filename = ressources.cgi
+filename = resources.cgi
 mode = $${deploy-settings-cgi:mode}
 context =
   key monitor_bin monitor-parameters:executable
