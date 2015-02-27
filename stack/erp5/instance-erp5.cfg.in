@@ -7,6 +7,7 @@
 {% set monitor_dict = slapparameter_dict.get('monitor', {}) %}
 {% set monitor_port = monitor_dict.get('port-base', 2600) %}
 {% set monitor_count = 1 -%}
+{% set mariadb_dict = slapparameter_dict.get('mariadb', {}) %}
 {% if mariadb_dict.get('monitor', False) -%}
 {%   do mariadb_request_dict.__setitem__('monitor-port', mariadb_dict.get('monitor-port', monitor_port)) -%}
 {% endif -%}
