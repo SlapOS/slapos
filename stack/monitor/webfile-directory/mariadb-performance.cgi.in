@@ -1,0 +1,35 @@
+#!{{ python_executable }}
+
+print """
+<h1>Mariadb performance</h1>
+<p>
+  MariaDB is a single point of congestion in ERP5 architecture. With multiple
+  catalog or "Spider" sharded mariadb storage, this single point of congestion
+  can be somehow changed into multiple points of congestion. Yet, each point
+  congestion can easily collapse under badly formed or badly optimized queries.
+</p>
+<p>
+  It is thus essential to keep track of SQL queries that take a long time to
+  execute. A SAL query that takes 100 ms to execute on an ERP5 site used by 100
+  users means for example response times of 10 s for each page.
+</p>
+<p>
+  Today slow queries are logged
+  <a href="/private/log/mariadb_slowquery.log">here</a>.
+</p>
+<p>
+  All you need to do is parse the logs and find out which are the 10 slowest
+  queries by taking into account also their frequency. A slow query that takes
+  10 seconds to execute but only once a day is much less harmful than a slow
+  query that takes 100 ms is executed every minute by 100 users.
+</p>
+<h2>10 most time consuming SQL queries</h2>
+<p>
+  The following queries are those who which have consumed the highest database
+  time today. (Last update: XXX.)
+</p>
+<p>(TODO)</p>
+"""
+
+# ~/srv/runner/instance/slappartX/software_release/parts/site_perl/bin/pt-query-digest mariadb_slowquery.log
+# echo 'show full processlist;' | ~/srv/runner/instance/slappartX/bin/mysql -u

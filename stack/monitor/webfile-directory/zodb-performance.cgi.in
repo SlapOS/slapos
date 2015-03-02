@@ -1,0 +1,29 @@
+#!{{ python_executable }}
+
+print """
+<h1>ZODB performance</h1>
+<p>
+  A healthy zope system based on ZEO server can easily handle up to XXX requests
+  per second on an SSD. A healthy zope client can easily handle up to XXX
+  requests per second.
+</p>
+<p>
+  If disk performance is too slow, then the performance on ZEO server side will
+  decrease (XXX/s) and instead of having a curve with high pikes, the IO curve
+  will show somehow steady shape with constant access at much lower ratio
+  (ex. XXX/s). In this situation, disk must probably be analysed and eventually
+  replaced.
+</p>
+<p>
+  If network performance between server and client is poor, then ZEO Client
+  takes much time to retrieve objects from ZEO server either because of high
+  latency or because of packet loss. A typical ZEO Client can easily retrieve
+  XXX objets / second.
+</p>
+<p>
+  The ZODB cache defaults to 5000 objects, the threshold is easily reached when
+  someone loads a web page with a lot of information. Increase this amount may
+  decrease web page loading time, but be careful of available RAM on your
+  machines.
+</p>
+"""

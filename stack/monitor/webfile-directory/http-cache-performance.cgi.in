@@ -1,0 +1,27 @@
+#!{{ python_executable }}
+
+print """
+<h1>HTTP cache performance</h1>
+<p>
+  Web pages rendered by a CDN speed up a web site significantly. It is
+  required to have a CDN mainly for frequented web sites in order to have a high
+  availability for internet users.
+</p>
+<p>
+  If a web site is not well served, the backend will then take care of the
+  client request by calculating the response, which takes calculation time
+  and may slow down all other asynchronous server operations.
+</p>
+<p>
+  However, if a web site needs to serve different data to authenticated users,
+  caching is difficult. As web pages loads components that can be cached, the
+  ones which are also loaded by anonymous user pages can easily be cached for
+  one hour for stylesheet, javascript and image files. Even better if they are
+  static files, so their cache duration can be increased to one year.
+</p>
+<h2>Wrongly cached web pages list</h2>
+<p>
+  This shows some web pages cache state by checking TrafficServer or Squid HTTP headers. (Last update: XXX.)
+</p>
+<p>(TODO)</p>
+"""
