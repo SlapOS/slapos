@@ -45,6 +45,7 @@ www = $${:var}/www
 
 cgi-bin = $${:var}/cgi-bin
 monitoring-cgi = $${:cgi-bin}/monitoring
+performance-cgi = $${:cgi-bin}/performance
 knowledge0-cgi = $${:cgi-bin}/zero-knowledge
 public-cgi = $${:cgi-bin}/monitor-public
 
@@ -207,6 +208,42 @@ context =
   raw python_executable ${buildout:directory}/bin/${extra-eggs:interpreter}
   key root_folder buildout:directory
   raw config_cfg $${buildout:directory}/$${public:filename}
+
+[deploy-mariadb-performance-cgi]
+recipe = slapos.recipe.template:jinja2
+template = ${mariadb-performance-cgi:location}/${mariadb-performance-cgi:filename}
+rendered = $${monitor-directory:performance-cgi}/$${:filename}
+filename = mariadb-performance.cgi
+mode = $${deploy-settings-cgi:mode}
+context =
+  raw python_executable ${buildout:directory}/bin/${extra-eggs:interpreter}
+
+[deploy-http-cache-performance-cgi]
+recipe = slapos.recipe.template:jinja2
+template = ${http-cache-performance-cgi:location}/${http-cache-performance-cgi:filename}
+rendered = $${monitor-directory:performance-cgi}/$${:filename}
+filename = http-cache-performance.cgi
+mode = $${deploy-settings-cgi:mode}
+context =
+  raw python_executable ${buildout:directory}/bin/${extra-eggs:interpreter}
+
+[deploy-zodb-performance-cgi]
+recipe = slapos.recipe.template:jinja2
+template = ${zodb-performance-cgi:location}/${zodb-performance-cgi:filename}
+rendered = $${monitor-directory:performance-cgi}/$${:filename}
+filename = zodb-performance.cgi
+mode = $${deploy-settings-cgi:mode}
+context =
+  raw python_executable ${buildout:directory}/bin/${extra-eggs:interpreter}
+
+[deploy-thread-performance-cgi]
+recipe = slapos.recipe.template:jinja2
+template = ${thread-performance-cgi:location}/${thread-performance-cgi:filename}
+rendered = $${monitor-directory:performance-cgi}/$${:filename}
+filename = thread-performance.cgi
+mode = $${deploy-settings-cgi:mode}
+context =
+  raw python_executable ${buildout:directory}/bin/${extra-eggs:interpreter}
 
 [make-rss]
 recipe = slapos.recipe.template:jinja2

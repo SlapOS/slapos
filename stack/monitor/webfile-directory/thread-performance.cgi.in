@@ -1,0 +1,17 @@
+#!{{ python_executable }}
+
+print """
+<h1>Thread performance</h1>
+<p>
+  All zope instances can handle only one client request per thread to manage
+  one transaction at a time. Transactions prevent from object modification
+  conflict made by several users at the same time. If a transaction is in
+  conflict with another one, the thread will retry it until success.
+</p>
+<p>
+  If the processed code during a transaction is too long, then it increases the
+  risk to get conflict and it increases the time to wait for client response.
+  One way to check for long code is to collect process stack traces with an
+  short interval and then analyze manually which function occurs several time.
+</p>
+"""
