@@ -54,6 +54,18 @@ class Recipe:
         return ip
     raise AttributeError
 
+  def _getTapIpAddressList(self, test_method):
+    """Internal helper method to fetch full ip address assigned for tap"""
+    if not 'full_ip_list' in self.parameter_dict:
+      return ()
+    for item in self.parameter_dict['full_ip_list']:
+      if len(item) == 5:
+        tap, ip, gw, mask, net = item
+        if tap.startswith('route_') and test_method(ip) and \
+                          test_method(gw) and test_method(mask):
+          return (ip, gw, mask, net)
+    return ()
+
   def getLocalIPv4Address(self):
     """Returns local IPv4 address available on partition"""
     # XXX: Lack checking for locality of address
@@ -63,6 +75,11 @@ class Recipe:
     """Returns global IPv6 address available on partition"""
     # XXX: Lack checking for globality of address
     return self._getIpAddress(netaddr.valid_ipv6)
+  
+  def getLocalTapIPv4AddressList(self):
+    """Returns global IPv6 address available for tap interface"""
+    # XXX: Lack checking for locality of address
+    return self._getTapIpAddressList(netaddr.valid_ipv4)
 
   def getNetworkInterface(self):
     """Returns the network interface available on partition"""
@@ -128,6 +145,14 @@ class Recipe:
                  self.getGlobalIPv6Address())
     buildout.set('slap-network-information', 'network-interface',
                  self.getNetworkInterface())
+    tap_ip_list = self.getLocalTapIPv4AddressList()
+    tap_ipv4 = tap_gateway = tap_netmask = tap_network = ''
+    if tap_ip_list:
+      tap_ipv4, tap_gateway, tap_netmask, tap_network= tap_ip_list
+    buildout.set('slap-network-information', 'tap-ipv4', tap_ipv4)
+    buildout.set('slap-network-information', 'tap-gateway', tap_gateway)
+    buildout.set('slap-network-information', 'tap-netmask', tap_netmask)
+    buildout.set('slap-network-information', 'tap-network', tap_network)
 
     # Copy/paste slap_connection
     buildout.add_section('slap-connection')

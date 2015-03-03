@@ -134,6 +134,14 @@ class Recipe(object):
       v6_add = ipv6_set.add
       tap_set = set()
       tap_add = tap_set.add
+      route_gw_set = set()
+      route_gw_add = route_gw_set.add
+      route_mask_set = set()
+      route_mask_add = route_mask_set.add
+      route_ipv4_set = set()
+      route_v4_add = route_ipv4_set.add
+      route_network_set = set()
+      route_net_add = route_network_set.add
       for tap, ip in parameter_dict.pop('ip_list'):
           tap_add(tap)
           if valid_ipv4(ip):
@@ -141,6 +149,21 @@ class Recipe(object):
           elif valid_ipv6(ip):
               v6_add(ip)
           # XXX: emit warning on unknown address type ?
+
+      if 'full_ip_list' in parameter_dict:
+        for item in parameter_dict.pop('full_ip_list'):
+          if len(item) == 5:
+            tap, ip, gw, netmask, network = item
+            if  tap.startswith('route_'):
+              if valid_ipv4(gw):
+                route_gw_add(gw)
+              if valid_ipv4(netmask):
+                route_mask_add(netmask)
+              if valid_ipv4(ip):
+                route_v4_add(ip)
+              if valid_ipv4(network):
+                route_net_add(network)
+
       options['ipv4'] = ipv4_set
       options['ipv6'] = ipv6_set
 
@@ -149,6 +172,20 @@ class Recipe(object):
           options['ipv4-random'] = list(ipv4_set)[0].encode('UTF-8')
       if ipv6_set:
           options['ipv6-random'] = list(ipv6_set)[0].encode('UTF-8')
+      if route_ipv4_set:
+        options['tap-ipv4'] = list(route_ipv4_set)[0].encode('UTF-8')
+        options['tap-network-information-dict'] = dict(ipv4=route_ipv4_set,
+                                    netmask=route_mask_set,
+                                    gateway=route_gw_set,
+                                    network=route_network_set)
+      else:
+        options['tap-network-information-dict'] = {}
+      if route_gw_set:
+        options['tap-gateway'] = list(route_gw_set)[0].encode('UTF-8')
+      if route_mask_set:
+        options['tap-netmask'] = list(route_mask_set)[0].encode('UTF-8')
+      if route_network_set:
+        options['tap-network'] = list(route_network_set)[0].encode('UTF-8')
 
       options['tap'] = tap_set
       return self._expandParameterDict(options, parameter_dict)
