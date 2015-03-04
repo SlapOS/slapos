@@ -184,8 +184,8 @@ context =
 recipe = slapos.recipe.template:jinja2
 template = ${logfile-cgi:location}/${logfile-cgi:filename}
 rendered = $${monitor-directory:monitoring-cgi}/$${:filename}
-filename = Files.cgi
-script-path= monitoring/Files.cgi
+filename = logfile-tool.cgi
+script-path= monitoring/logfile-tool.cgi
 mode = 0744
 context =
   key monitor_bin monitor-parameters:executable
