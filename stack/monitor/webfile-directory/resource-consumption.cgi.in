@@ -44,7 +44,7 @@ if action:
                                                     partition_user, date_scope)
     result_dict['memory'] = db.getPartitionUsedMemoryAverage(
                                                     partition_user, date_scope)
-  
+
   print json.dumps(result_dict)
 else:
   print """<html><head>
@@ -82,17 +82,17 @@ else:
 <script language="javascript" type="text/javascript">
 $(document).ready(function () {
   var send = false;
-  
+
   autoRefresh();
-  
+
   function autoRefresh() {
     refresh();
     setTimeout(function(){ autoRefresh(); }, 60000);
   }
-  
+
   function refresh() {
     if (send) { return}
-    var dataPost = {'posting-script': "monitoring/resources.cgi",
+    var dataPost = {'posting-script': "monitoring/resource-consumption.cgi",
             action: "refresh"};
     send = true;
     $("#msg").fadeIn();
@@ -109,15 +109,15 @@ $(document).ready(function () {
       table2 += '<th class="tg-s6z2">CPU %</th><th class="tg-s6z2">CPU Time</th>';
       table2 += '<th class="tg-s6z2">Threads</th><th class="tg-s6z2">Memory Usage</th>';
       table2 += '<th class="tg-s6z2">Memory %</th></tr>';
-      
+
       table1 = '<tr><th class="tg-s6z2">Process PID</th>';
       table1 += '<th class="tg-s6z2">CPU %</th><th class="tg-s6z2">CPU Time</th>';
       table1 += '<th class="tg-s6z2">Threads</th><th class="tg-s6z2">Memory Usage</th>';
       table1 += '<th class="tg-s6z2">Memory %</th></tr>';
-      
+
       table3 = '<tr><th class="tg-s6z2">CPU Load Average %</th>';
       table3 += '<th class="tg-s6z2">Memory Consumption Average</th></tr>';
-      
+
       line2 = "<tr class='tg-4eph tg-s6z2'>"
       line2 += "<td>" + result['status']['total_process'] + "</td>";
       line2 += "<td>" + result['status']['cpu_percent'] + "</td>";
@@ -138,11 +138,11 @@ $(document).ready(function () {
         line += "<td>" + consump[i][4] + "</td>";
         line += "</tr>";
       }
-      
+
       table3 += "<tr class='tg-4eph tg-s6z2'>"
       table3 += "<td>" + result['cpu-load'] + "</td>";
       table3 += "<td>" + result['memory'] + " Mb</td></tr></table>";
-      
+
       $("#box3").html(table3);
       $("#box2").html(table2 + line2 + '</table>');
       $("#box1").html(table1 + line + '</table>');
@@ -155,11 +155,11 @@ $(document).ready(function () {
       $("#msg").fadeOut();
     });
   }
-  
+
   $("#refresh").click(function() {
     refresh();
   });
-  
+
 });
 </script>
 </head><body>
