@@ -129,12 +129,12 @@ def runScripts(directory):
   return result
 
 
-def writeFiles(monitors):
+def writeFile(monitor_dict):
   timestamp = int(time.time())
   db = sqlite3.connect(db_path)
   init_db(db)
   status = SUCCESS
-  for key, value in monitors.iteritems():
+  for key, value in monitor_dict.iteritems():
     if value:
       element_status = status = FAILURE
     else:
@@ -143,12 +143,12 @@ def writeFiles(monitors):
   db.execute("insert into status(timestamp, status) values (?, ?)", (timestamp, status))
   db.commit()
   db.close()
-  monitors['datetime'] = time.ctime(timestamp)
-  json.dump(monitors, open(monitoring_file_json, "w+"))
+  monitor_dict['datetime'] = time.ctime(timestamp)
+  json.dump(monitor_dict, open(monitoring_file_json, "w+"))
 
 def main():
   parser = OptionParser(option_list=option_list)
-  monitors = {}
+  monitor_dict = {}
   (options, args) = parser.parse_args()
 
   if not (options.monitor or options.promise
@@ -156,16 +156,16 @@ def main():
     exit("Please provide at list one arg in : -a, -m, -p, -s")
 
   if options.monitor or options.all:
-    monitors.update(runScripts(monitor_dir))
+    monitor_dict.update(runScripts(monitor_dir))
   if options.promise or options.all:
-    monitors.update(runScripts(promise_dir))
+    monitor_dict.update(runScripts(promise_dir))
   if options.service or options.all:
-    monitors.update(runServices(pid_dir))
+    monitor_dict.update(runServices(pid_dir))
 
   if options.only_stdout:
-    print json.dumps(monitors)
+    print json.dumps(monitor_dict)
   else:
-    writeFiles(monitors)
+    writeFile(monitor_dict)
 
 
 if __name__ == "__main__":
