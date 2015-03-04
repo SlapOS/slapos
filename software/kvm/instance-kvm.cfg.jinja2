@@ -230,7 +230,9 @@ recipe = slapos.cookbook:publish
 ipv6 = ${slap-network-information:global-ipv6}
 backend-url = https://[${novnc-instance:ip}]:${novnc-instance:port}/vnc_auto.html?host=[${novnc-instance:ip}]&port=${novnc-instance:port}&encrypt=1&password=${kvm-instance:vnc-passwd}
 url = ${request-slave-frontend:connection-url}/vnc_auto.html?host=${request-slave-frontend:connection-domainname}&port=${request-slave-frontend:connection-port}&encrypt=1&path=${request-slave-frontend:connection-resource}&password=${kvm-instance:vnc-passwd}
+{% set iface = 'eth0' -%}
 {% if slapparameter_dict.get('use-nat', 'True') == 'True' -%}
+{%   set iface = 'eth1' -%}
 # Publish NAT port mapping status
 # XXX: hardcoded value from [slap-parameter]
 {%   set nat_rule_list = slapparameter_dict.get('nat-rules', '22 80 443') %}
@@ -241,6 +243,12 @@ nat-rule-port-{{port}} = ${slap-network-information:global-ipv6} : {{external_po
 nat-rule-url-{{port}} = [${slap-network-information:global-ipv6}]:{{external_port}}
 {%     endif -%}
 {%   endfor -%}
+{% endif -%}
+{% if slapparameter_dict.get('use-tap', 'False') == 'True' -%}
+1_info = If IPv4 address is provided for your VM, use this sample configuration to configure your VM interface.
+2_info = ifconfig {{ iface }} ${slap-network-information:tap-ipv4} netmask ${slap-network-information:tap-netmask}
+3_info = route add -host ${slap-network-information:tap-gateway} dev {{ iface }}
+4_info = route add -net ${slap-network-information:tap-network} netmask ${slap-network-information:tap-netmask} gw ${slap-network-information:tap-gateway}
 {% endif -%}
 
 
