@@ -152,6 +152,36 @@ def netmaskToPrefixIPv6(netmask):
   return netaddr.strategy.ipv6.netmask_to_prefix[
           netaddr.strategy.ipv6.str_to_int(netmask)]
 
+def getIfaceAddressIPv4(iface):
+  """return dict containing ipv4 address netmask, network and broadcast address 
+  of interface"""
+  if not iface in netifaces.interfaces():
+    raise ValueError('Could not find interface called %s to use as gateway ' \
+                      'for tap network' % iface)
+  try:
+    addresses_list = netifaces.ifaddresses(iface)[socket.AF_INET]
+    if len (addresses_list) > 0:
+      
+      addresses = addresses_list[0].copy()
+      addresses['network'] = str(netaddr.IPNetwork('%s/%s' % (addresses['addr'],
+                                          addresses['netmask'])).cidr.network)
+      return addresses
+    else:
+      return {}
+  except KeyError:
+    raise KeyError('Could not find IPv4 adress on interface %s.' % iface)
+
+def getIPv4SubnetAddressRange(ip_address, mask, size):
+  """Check if a given ipaddress can be used to create 'size' 
+  host ip address, then return list of ip address in the subnet"""
+  ip = netaddr.IPNetwork('%s/%s' % (ip_address, mask))
+  # Delete network and default ip_address from the list
+  ip_list = [x for x in list(ip) 
+              if str(x) != ip_address and x.value != ip.cidr.network.value]
+  if len(ip_list) < size:
+    raise ValueError('Could not create %s tap interfaces from address %s.' % (
+              size, ip_address))
+  return ip_list
 
 def _getDict(obj):
   """
@@ -190,7 +220,8 @@ class Computer(object):
   software_root = None
 
   def __init__(self, reference, interface=None, addr=None, netmask=None,
-               ipv6_interface=None, software_user='slapsoft'):
+               ipv6_interface=None, software_user='slapsoft',
+               tap_gateway_interface=None):
     """
     Attributes:
       reference: String, the reference of the computer.
@@ -203,6 +234,7 @@ class Computer(object):
     self.netmask = netmask
     self.ipv6_interface = ipv6_interface
     self.software_user = software_user
+    self.tap_gateway_interface = tap_gateway_interface
 
   def __getinitargs__(self):
     return (self.reference, self.interface)
@@ -317,7 +349,7 @@ class Computer(object):
       archive.writestr(saved_filename, xml_content, zipfile.ZIP_DEFLATED)
 
   @classmethod
-  def load(cls, path_to_xml, reference, ipv6_interface):
+  def load(cls, path_to_xml, reference, ipv6_interface, tap_gateway_interface):
     """
     Create a computer object from a valid xml file.
 
@@ -338,6 +370,7 @@ class Computer(object):
         netmask=dumped_dict['netmask'],
         ipv6_interface=ipv6_interface,
         software_user=dumped_dict.get('software_user', 'slapsoft'),
+        tap_gateway_interface=tap_gateway_interface,
     )
 
     for partition_dict in dumped_dict['partition_list']:
@@ -431,6 +464,14 @@ class Computer(object):
       os.chown(slapsoft.path, slapsoft_pw.pw_uid, slapsoft_pw.pw_gid)
     os.chmod(self.software_root, 0o755)
 
+    tap_address_list = []
+    if alter_network and self.tap_gateway_interface and create_tap:
+      gateway_addr_dict = getIfaceAddressIPv4(self.tap_gateway_interface)
+      tap_address_list = getIPv4SubnetAddressRange(gateway_addr_dict['addr'],
+                              gateway_addr_dict['netmask'],
+                              len(self.partition_list))
+      assert(len(self.partition_list) <= len(tap_address_list))
+
     if alter_network:
       self._speedHackAddAllOldIpsToInterface()
 
@@ -456,8 +497,16 @@ class Computer(object):
             partition.tap.createWithOwner(owner, attach_to_tap=True)
           else:
             partition.tap.createWithOwner(owner)
-
-          self.interface.addTap(partition.tap)
+          # If tap_gateway_interface is specified, we don't add tap to bridge
+          # but we create route for this tap
+          if not self.tap_gateway_interface:
+            self.interface.addTap(partition.tap)
+          else:
+            next_ipv4_addr = '%s' % tap_address_list.pop(0)
+            partition.tap.addRoutes(next_ipv4_addr,
+                                            gateway_addr_dict['netmask'],
+                                            gateway_addr_dict['addr'],
+                                            gateway_addr_dict['network'])
 
         # Reconstructing partition's directory
         partition.createPath(alter_user)
@@ -617,9 +666,16 @@ class Tap(object):
     """
     Attributes:
         tap_name: String, the name of the tap interface.
+        ipv4_address: String, local ipv4 to route to this tap
+        ipv4_network: String, netmask to use when configure route for this tap
+        gateway_ipv4: String, ipv4 of gateway to be used to reach local network
     """
 
     self.name = str(tap_name)
+    self.ipv4_addr = ""
+    self.ipv4_netmask = ""
+    self.ipv4_gateway = ""
+    self.ipv4_network = ""
 
   def __getinitargs__(self):
     return (self.name,)
@@ -698,6 +754,19 @@ class Tap(object):
     if attach_to_tap:
       threading.Thread(target=self.attach).start()
 
+  def addRoutes(self, ipv4, netmask, gateway, network):
+    """
+    Configure ipv4 route to reach this interface from local network
+    """
+    self.ipv4_addr = ipv4
+    self.ipv4_netmask = netmask
+    self.ipv4_gateway = gateway
+    self.ipv4_network = network
+    # Check if this route exits
+    code, result = callAndRead(['ip', 'route', 'show', ipv4])
+    if code == 0 and ipv4 in result and self.name in result:
+      return
+    callAndRead(['route', 'add', '-host', ipv4, 'dev', self.name])
 
 class Interface(object):
   """Represent a network interface on the system"""
@@ -980,6 +1049,7 @@ def parse_computer_definition(conf, definition_path):
       netmask=netmask,
       ipv6_interface=conf.ipv6_interface,
       software_user=computer_definition.get('computer', 'software_user'),
+      tap_gateway_interface=conf.tap_gateway_interface,
   )
   partition_list = []
   for partition_number in range(int(conf.partition_amount)):
@@ -1011,7 +1081,8 @@ def parse_computer_xml(conf, xml_path):
     conf.logger.debug('Loading previous computer data from %r' % xml_path)
     computer = Computer.load(xml_path,
                              reference=conf.computer_id,
-                             ipv6_interface=conf.ipv6_interface)
+                             ipv6_interface=conf.ipv6_interface,
+                             tap_gateway_interface=conf.tap_gateway_interface)
     # Connect to the interface defined by the configuration
     computer.interface = interface
   else:
@@ -1024,6 +1095,7 @@ def parse_computer_xml(conf, xml_path):
       netmask=None,
       ipv6_interface=conf.ipv6_interface,
       software_user=conf.software_user,
+      tap_gateway_interface=conf.tap_gateway_interface,
     )
 
   partition_amount = int(conf.partition_amount)
@@ -1102,7 +1174,7 @@ def do_format(conf):
 
   if conf.output_definition_file:
     write_computer_definition(conf, computer)
-
+  
   computer.construct(alter_user=conf.alter_user,
                      alter_network=conf.alter_network,
                      create_tap=conf.create_tap,
@@ -1134,6 +1206,7 @@ class FormatConfig(object):
   output_definition_file = None
   dry_run = None
   software_user = None
+  tap_gateway_interface = None
   use_unique_local_address_block = None
 
   def __init__(self, logger):
@@ -1202,6 +1275,8 @@ class FormatConfig(object):
       self.software_user = 'slapsoft'
     if self.create_tap is None:
       self.create_tap = True
+    if self.tap_gateway_interface is None:
+      self.tap_gateway_interface = ''
     if self.use_unique_local_address_block is None:
       self.use_unique_local_address_block = False
 
@@ -1225,6 +1300,8 @@ class FormatConfig(object):
         self.checkRequiredBinary(['groupadd', 'useradd', 'usermod'])
       if self.create_tap:
         self.checkRequiredBinary([['tunctl', '-d']])
+        if self.tap_gateway_interface:
+          self.checkRequiredBinary(['route'])
       if self.alter_network:
         self.checkRequiredBinary(['ip'])
 
@@ -1292,3 +1369,4 @@ def tracing_monkeypatch(conf):
     conf.logger.debug(' '.join(argument_list))
     return dry_callAndRead(argument_list, raise_on_error)
   callAndRead = logging_callAndRead
+
