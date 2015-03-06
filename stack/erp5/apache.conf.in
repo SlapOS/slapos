@@ -68,6 +68,6 @@ Listen {{ ip }}:{{ port }}
 {%   endfor -%}
 <VirtualHost *:{{ port }}>
   SSLEngine on
-  RewriteRule ^/(.*) {{ backend }}/$1 [L,P]
+  RewriteRule ^(/_user|/_anon)?/(.*) {{ backend }}/$2 [L,P]
 </VirtualHost>
 {% endfor -%}
