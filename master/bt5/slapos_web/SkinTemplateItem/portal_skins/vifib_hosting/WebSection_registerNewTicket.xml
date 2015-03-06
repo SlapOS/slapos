@@ -53,6 +53,7 @@
             <value> <string>portal = context.getPortalObject()\n
 web_site = context.getWebSiteValue()\n
 person = portal.ERP5Site_getAuthenticatedMemberPersonValue()\n
+context.REQUEST.set(\'new_support_request\', None)\n
 \n
 support_request_template = portal.restrictedTraverse(\n
   portal.portal_preferences.getPreferredSupportRequestTemplate())\n
@@ -83,7 +84,7 @@ web_message.edit(\n
 web_message.stop(comment="Submitted from the web site contact form")\n
 \n
 # Redirect to web site to hide the indexation process\n
-web_site.Base_redirect(\'view\', keep_items={\'editable_mode\': 0, \'portal_status_message\':context.Base_translateString(\'Ticket created.\')})\n
+web_site.myspace.help.Base_redirect(\'\', keep_items={\'editable_mode\': 0, \'new_support_request\': support_request.getRelativeUrl(), \'portal_status_message\':context.Base_translateString(\'Ticket created.\')})\n
 </string> </value>
         </item>
         <item>
