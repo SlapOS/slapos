@@ -56,7 +56,8 @@ from DateTime import DateTime\n
 \n
 portal = context.getPortalObject()\n
 \n
-if context.getPortalType() == "Software Product":\n
+if software_release_url is None and \\\n
+      context.getPortalType() == "Software Product":\n
   software_product_reference = context.getReference()\n
 \n
 if software_product_reference is None:\n
