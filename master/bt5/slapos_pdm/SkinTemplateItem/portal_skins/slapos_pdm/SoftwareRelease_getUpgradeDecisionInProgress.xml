@@ -57,7 +57,7 @@ product_reference = context.getAggregateReference()\n
 \n
 decision_line_in_progress_list = portal.portal_catalog(\n
                     portal_type=\'Upgrade Decision Line\',\n
-                    aggregate_uid=aggregate_uid)\n
+                    default_aggregate_uid=aggregate_uid)\n
 \n
 for decision_line in decision_line_in_progress_list:\n
   upgrade_decision = decision_line.getParentValue()\n
