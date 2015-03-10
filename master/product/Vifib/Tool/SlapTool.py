@@ -1429,9 +1429,17 @@ class SlapTool(BaseTool):
 
     ip_list = []
     for internet_protocol_address in computer_partition.contentValues(portal_type='Internet Protocol Address'):
-      ip_list.append((
-        internet_protocol_address.getNetworkInterface('').decode("UTF-8"),
-        internet_protocol_address.getIpAddress().decode("UTF-8")))
+      # XXX - There is new values, and we must keep compatibility
+      address_tuple = (
+          internet_protocol_address.getNetworkInterface('').decode("UTF-8"),
+          internet_protocol_address.getIpAddress().decode("UTF-8"))
+      if internet_protocol_address.getGatewayIpAddress('') and \
+        internet_protocol_address.getNetmask(''):
+        address_tuple = address_tuple + (
+              internet_protocol_address.getGatewayIpAddress().decode("UTF-8"),
+              internet_protocol_address.getNetmask().decode("UTF-8"),
+              internet_protocol_address.getNetworkAddress('').decode("UTF-8"))
+      ip_list.append(address_tuple)
 
     slave_instance_list = []
     if (software_instance.getPortalType() == "Software Instance"):
