@@ -197,9 +197,9 @@
           "default": "daily",
           "type": "string"
         },
-        "tidstorage-timestamp-path": {
-          "description": "Path to backup timestamp file, occurrences of '%(backup)s' being replaced with the path to partition's srv/backup/tidstorage directory",
-          "default": "%(backup)s/repozo_tidstorage_timestamp.log",
+        "tidstorage-repozo-path": {
+          "description": "Directory for backup timestamp and tidstorage status files.",
+          "default": "~/srv/backup/tidstorage",
           "type": "string"
         }
       },

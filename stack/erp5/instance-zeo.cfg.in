@@ -1,7 +1,6 @@
 {% set next_port = slapparameter_dict['tcpv4-port'] -%}
 {% set ipv4 = (ipv4_set | list)[0] -%}
 {% set backup_periodicity = slapparameter_dict.get('backup-periodicity', 'daily') -%}
-{% set default_tidstorage_timestamp_path = slapparameter_dict.get('tidstorage-timestamp-path', buildout_directory ~ '/srv/backup/tidstorage') -%}
 {% set part_list = [] -%}
 {% macro section(name) %}{% do part_list.append(name) %}{{ name }}{% endmacro -%}
 {% set storage_dict = {} -%}
@@ -69,6 +68,7 @@ path = ${directory:promises}/zeo-{{ family }}
 
 {% if backup_periodicity == 'never' -%}
 {%   set known_tid_storage_identifier_dict = () %}
+{%   set tidstorage_repozo_path = '' -%}
 {% else -%}
 [tidstorage]
 recipe = slapos.cookbook:tidstorage
@@ -76,11 +76,13 @@ known-tid-storage-identifier-dict = {{ dumps(known_tid_storage_identifier_dict) 
 configuration-path = ${directory:etc}/tidstorage.py
 ip = {{ ipv4 }}
 port = {{ tidstorage_port }}
-timestamp-file-path = {{ dumps(slapparameter_dict.get('tidstorage-timestamp-path', '%(backup)s/repozo_tidstorage_timestamp.log') % {'backup': default_tidstorage_timestamp_path}) }}
+{% set tidstorage_repozo_path = slapparameter_dict.get('tidstorage-repozo-path', buildout_directory ~ '/srv/backup/tidstorage') -%}
+timestamp-file-path = {{ tidstorage_repozo_path ~ '/repozo_tidstorage_timestamp.log' }}
 {# BBB: recipe requires logfile-name for nothing because tidstorage runs in foreground mode -#}
 logfile-name =
 pidfile-name = ${directory:run}/tidstorage.pid
-status-file = ${directory:tidstorage}/tidstorage.tid
+{# TODO: Add support for backup status file, so that the status file can be close to the ZODB (rather than close to the backup files). And do it efficiently, to not copy the whole status file every time. -#}
+status-file = {{ tidstorage_repozo_path ~ '/tidstorage.tid' }}
 tidstorage-repozo-binary = {{ bin_directory }}/tidstorage_repozo
 tidstoraged-binary = {{ bin_directory }}/tidstoraged
 repozo-binary = {{ bin_directory }}/repozo
@@ -181,7 +183,7 @@ log = ${:var}/log
 run = ${:var}/run
 backup-zodb = {{ default_backup_path }}
 zodb = {{ default_zodb_path }}
-tidstorage = {{ default_tidstorage_timestamp_path }}
+tidstorage = {{ tidstorage_repozo_path }}
 
 [buildout]
 extends = {{ logrotate_cfg }}
