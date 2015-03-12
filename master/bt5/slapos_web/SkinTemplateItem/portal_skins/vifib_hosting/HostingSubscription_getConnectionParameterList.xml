@@ -59,14 +59,14 @@ for instance in context.getPredecessorValueList():\n
     break\n
 \n
 if found:\n
-  result = instance.SoftwareInstance_getConnectionParameterList()\n
+  result = instance.SoftwareInstance_getConnectionParameterList(type)\n
 \n
 return result\n
 </string> </value>
         </item>
         <item>
             <key> <string>_params</string> </key>
-            <value> <string>*args, **kwargs</string> </value>
+            <value> <string>type=None, **kwargs</string> </value>
         </item>
         <item>
             <key> <string>id</string> </key>

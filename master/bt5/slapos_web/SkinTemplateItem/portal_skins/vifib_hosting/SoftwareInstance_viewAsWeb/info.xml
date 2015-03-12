@@ -289,7 +289,7 @@
       <dictionary>
         <item>
             <key> <string>_text</string> </key>
-            <value> <string>python: "\\n".join([i.connection_value for i in here.HostingSubscription_getConnectionParameterList(type=\'info\') if i.connection_key.endswith("_info")])</string> </value>
+            <value> <string>python: "\\n".join([i.connection_value for i in here.SoftwareInstance_getConnectionParameterList(type=\'info\') if i.connection_key.endswith("_info")])</string> </value>
         </item>
       </dictionary>
     </pickle>
@@ -302,7 +302,7 @@
       <dictionary>
         <item>
             <key> <string>_text</string> </key>
-            <value> <string>python: len(here.HostingSubscription_getConnectionParameterList(type=\'info\'))</string> </value>
+            <value> <string>python: len(here.SoftwareInstance_getConnectionParameterList(type=\'info\'))</string> </value>
         </item>
       </dictionary>
     </pickle>
