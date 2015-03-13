@@ -34,6 +34,7 @@ import subprocess
 import slapos.slap
 import netaddr
 import logging
+import errno
 
 import zc.buildout
 
@@ -89,6 +90,20 @@ class Recipe:
       if name:
         return name
     raise AttributeError, "Not network interface found"
+  
+  def mkdir_p(self, path, mode=0700):
+    """
+    Creates a directory and its parents, if needed.
+    NB: If the directory already exists, it does not change its permission.
+    """
+
+    try:
+        os.makedirs(path, mode)
+    except OSError as exc:
+        if exc.errno == errno.EEXIST and os.path.isdir(path):
+            pass
+        else:
+            raise
 
   def install(self):
     slap = slapos.slap.slap()
@@ -98,6 +113,8 @@ class Recipe:
     server_url = slap_connection['server_url']
     key_file = slap_connection.get('key_file')
     cert_file = slap_connection.get('cert_file')
+    storage_home = self.buildout['storage-configuration'].get('storage-home')
+    instance_root = self.buildout['buildout']['directory']
     slap.initializeConnection(server_url, key_file, cert_file)
     self.computer_partition = slap.registerComputerPartition(
       computer_id,
@@ -161,6 +178,27 @@ class Recipe:
       buildout.set('slap-connection', key.replace('_', '-'), value)
     # XXX: Needed for lxc. Use non standard API
     buildout.set('slap-connection', 'requested', self.computer_partition._requested_state)
+
+    # setup storage directory
+    buildout.add_section('storage-configuration')
+    buildout.set('storage-configuration', 'storage-home', storage_home)
+    if storage_home and os.path.exists(storage_home) and \
+                                  os.path.isdir(storage_home):
+      # Create folder instance_root/DATA/ if not exist
+      data_home = os.path.join(instance_root, 'DATA')
+      self.mkdir_p(data_home)
+      for filename in os.listdir(storage_home):
+        storage_path = os.path.join(storage_home, filename, computer_partition_id)
+        if os.path.exists(storage_path) and os.path.isdir(storage_path):
+          storage_link = os.path.join(data_home, filename)
+          if os.path.lexists(storage_link):
+            if not os.path.islink(storage_link):
+              raise zc.buildout.UserError(
+                  'Target %r already exists but is not a link' % storage_link)
+              #os.unlink(storage_link)
+          else:
+            os.symlink(storage_path, storage_link)
+          buildout.set('storage-configuration', filename, storage_link)
 
     work_directory = os.path.abspath(self.buildout['buildout'][
       'directory'])

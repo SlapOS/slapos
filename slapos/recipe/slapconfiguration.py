@@ -32,6 +32,7 @@ import slapos.slap
 from slapos.recipe.librecipe import unwrap
 from ConfigParser import RawConfigParser
 from netaddr import valid_ipv4, valid_ipv6
+from slapos.util import mkdir_p
 
 class Recipe(object):
   """
@@ -61,6 +62,10 @@ class Recipe(object):
       Partition identifier.
       Example:
         ${slap-connection:partition-id}
+    storage-home
+      Path of folder configured for data storage
+      Example:
+        ${storage-configuration:storage-home}
 
   Output:
     slap-software-type
@@ -75,8 +80,20 @@ class Recipe(object):
       One of the IPv6 addresses.
     tap
       Set of TAP interfaces.
+    tap-network-information-dict
+      Dict of set of all TAP network information
+    tap-ipv4
+      ipv4 allowed for this TAP
+    tap-gateway
+      ipv4 of gateway interface of this TAP
+    tap-netmask
+      ipv4 netmask address of this TAP
+    tap-network
+      ipv4 network address of this TAP
     configuration
       Dict of all parameters.
+    storage-dict
+      Dict of partition data path when it is configured
     configuration.<key>
       One key per partition parameter.
       Partition parameter whose name cannot be represented unambiguously in
@@ -91,7 +108,8 @@ class Recipe(object):
   OPTCRE_match = RawConfigParser.OPTCRE.match
 
   def __init__(self, buildout, name, options):
-      parameter_dict = self.fetch_parameter_dict(options)
+      parameter_dict = self.fetch_parameter_dict(options,
+                                      buildout['buildout']['directory'])
 
       match = self.OPTCRE_match
       for key, value in parameter_dict.iteritems():
@@ -99,7 +117,7 @@ class Recipe(object):
               continue
           options['configuration.' + key] = value
 
-  def fetch_parameter_dict(self, options):
+  def fetch_parameter_dict(self, options, instance_root):
       slap = slapos.slap.slap()
       slap.initializeConnection(
           options['url'],
@@ -186,6 +204,21 @@ class Recipe(object):
         options['tap-netmask'] = list(route_mask_set)[0].encode('UTF-8')
       if route_network_set:
         options['tap-network'] = list(route_network_set)[0].encode('UTF-8')
+
+      storage_home = options.get('storage-home')
+      storage_dict = {}
+      if storage_home and os.path.exists(storage_home) and \
+                                  os.path.isdir(storage_home):
+        for filename in os.listdir(storage_home):
+          storage_path = os.path.join(storage_home, filename, 
+                                    options['slap-computer-partition-id'])
+          if os.path.exists(storage_path) and os.path.isdir(storage_path):
+            storage_link = os.path.join(instance_root, 'DATA', filename)
+            mkdir_p(os.path.join(instance_root, 'DATA'))
+            if not os.path.lexists(storage_link):
+              os.symlink(storage_path, storage_link)
+            storage_dict[filename] = storage_link
+      options['storage-dict'] = storage_dict
 
       options['tap'] = tap_set
       return self._expandParameterDict(options, parameter_dict)
