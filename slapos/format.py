@@ -218,6 +218,7 @@ class Computer(object):
   "Object representing the computer"
   instance_root = None
   software_root = None
+  instance_storage_home = None
 
   def __init__(self, reference, interface=None, addr=None, netmask=None,
                ipv6_interface=None, software_user='slapsoft',
@@ -386,6 +387,7 @@ class Computer(object):
         tap = Tap(partition_dict['reference'])
 
       address_list = partition_dict['address_list']
+      external_storage_list = partition_dict.get('external_storage_list', [])
 
       partition = Partition(
           reference=partition_dict['reference'],
@@ -393,6 +395,7 @@ class Computer(object):
           user=user,
           address_list=address_list,
           tap=tap,
+          external_storage_list=external_storage_list,
       )
 
       computer.partition_list.append(partition)
@@ -464,6 +467,15 @@ class Computer(object):
       os.chown(slapsoft.path, slapsoft_pw.pw_uid, slapsoft_pw.pw_gid)
     os.chmod(self.software_root, 0o755)
 
+    # get list of instance external storage if exist
+    instance_external_list = []
+    if self.instance_storage_home:
+      # XXX - Hard limit for storage number to 4
+      for i in range(1, 5):
+        storage_path = os.path.join(self.instance_storage_home, 'data%s' % i)
+        if os.path.exists(storage_path):
+          instance_external_list.append(storage_path)
+
     tap_address_list = []
     if alter_network and self.tap_gateway_interface and create_tap:
       gateway_addr_dict = getIfaceAddressIPv4(self.tap_gateway_interface)
@@ -481,6 +493,8 @@ class Computer(object):
         partition.path = os.path.join(self.instance_root, partition.reference)
         partition.user.setPath(partition.path)
         partition.user.additional_group_list = [slapsoft.name]
+        partition.external_storage_list = ['%s/%s' % (path, partition.reference)
+                                            for path in instance_external_list]
         if alter_user:
           partition.user.create()
 
@@ -510,6 +524,7 @@ class Computer(object):
 
         # Reconstructing partition's directory
         partition.createPath(alter_user)
+        partition.createExternalPath(alter_user)
 
         # Reconstructing partition's address
         # There should be two addresses on each Computer Partition:
@@ -555,7 +570,7 @@ class Computer(object):
 class Partition(object):
   "Represent a computer partition"
 
-  def __init__(self, reference, path, user, address_list, tap):
+  def __init__(self, reference, path, user, address_list, tap, external_storage_list=[]):
     """
     Attributes:
       reference: String, the name of the partition.
@@ -563,6 +578,7 @@ class Partition(object):
       user: User, the user linked to this partition.
       address_list: List of associated IP addresses.
       tap: Tap, the tap interface linked to this partition.
+      external_storage_list: Base path list of folder to format for data storage
     """
 
     self.reference = str(reference)
@@ -570,6 +586,7 @@ class Partition(object):
     self.user = user
     self.address_list = address_list or []
     self.tap = tap
+    self.external_storage_list = []
 
   def __getinitargs__(self):
     return (self.reference, self.path, self.user, self.address_list, self.tap)
@@ -589,6 +606,21 @@ class Partition(object):
       os.chown(self.path, owner_pw.pw_uid, owner_pw.pw_gid)
     os.chmod(self.path, 0o750)
 
+  def createExternalPath(self, alter_user=True):
+    """
+    Create and external directory of the partition, assign to the partition user
+    and give it the 750 permission. In case if path exists just modifies it.
+    """
+
+    for path in self.external_storage_list:
+      storage_path = os.path.abspath(path)
+      owner = self.user if self.user else User('root')
+      if not os.path.exists(storage_path):
+        os.mkdir(storage_path, 0o750)
+      if alter_user:
+        owner_pw = pwd.getpwnam(owner.name)
+        os.chown(storage_path, owner_pw.pw_uid, owner_pw.pw_gid)
+      os.chmod(storage_path, 0o750)
 
 class User(object):
   """User: represent and manipulate a user on the system."""
@@ -1167,6 +1199,7 @@ def do_format(conf):
 
   computer.instance_root = conf.instance_root
   computer.software_root = conf.software_root
+  computer.instance_storage_home = conf.instance_storage_home
   conf.logger.info('Updating computer')
   address = computer.getAddress(conf.create_tap)
   computer.address = address['addr']
@@ -1208,6 +1241,7 @@ class FormatConfig(object):
   software_user = None
   tap_gateway_interface = None
   use_unique_local_address_block = None
+  instance_storage_home = None
 
   def __init__(self, logger):
     self.logger = logger
