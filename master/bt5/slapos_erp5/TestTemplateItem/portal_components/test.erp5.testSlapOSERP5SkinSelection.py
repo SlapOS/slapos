@@ -1194,14 +1194,12 @@ erp5_forge
 erp5_forge_release
 erp5_gadget
 erp5_glossary
-erp5_html_compatibility
 erp5_ingestion
 erp5_ingestion_test
 erp5_integration
 erp5_invoicing
 erp5_item
 erp5_item_trade
-erp5_jquery
 erp5_ods_core
 erp5_odt_core
 erp5_ooo_import
@@ -1226,7 +1224,6 @@ erp5_web_minimal_theme
 erp5_web_service
 erp5_web_widget_library
 erp5_workflow
-erp5_xhtml_style
 external_method
 Images
 activity
