@@ -211,6 +211,7 @@ extra-context =
   key name :script-name
   
 [apachedex-parameters]
+default_parameter = 
 # XXX - Sample log file with curent date: apache_access.log-%(date)s.gz
 # which will be equivalent to apache_access.log-20150112.gz if the date is 2015-01-12
 apache-log-list = 
