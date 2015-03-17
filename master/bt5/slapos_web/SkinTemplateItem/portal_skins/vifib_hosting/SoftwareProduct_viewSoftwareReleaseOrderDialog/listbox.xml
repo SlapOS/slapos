@@ -13,8 +13,9 @@
                 <string>columns</string>
                 <string>css_class</string>
                 <string>default_display_style</string>
-                <string>default_params</string>
                 <string>list_method</string>
+                <string>search</string>
+                <string>select</string>
                 <string>selection_name</string>
                 <string>title</string>
                 <string>url_columns</string>
@@ -94,6 +95,10 @@
                           <string>description</string>
                           <string>Description</string>
                         </tuple>
+                        <tuple>
+                          <string>orderLink</string>
+                          <string></string>
+                        </tuple>
                       </list>
                     </value>
                 </item>
@@ -104,17 +109,6 @@
                 <item>
                     <key> <string>default_display_style</string> </key>
                     <value> <string></string> </value>
-                </item>
-                <item>
-                    <key> <string>default_params</string> </key>
-                    <value>
-                      <list>
-                        <tuple>
-                          <string>portal_type</string>
-                          <string>Software Release</string>
-                        </tuple>
-                      </list>
-                    </value>
                 </item>
                 <item>
                     <key> <string>field_id</string> </key>
@@ -129,6 +123,14 @@
                     <value>
                       <persistent> <string encoding="base64">AAAAAAAAAAI=</string> </persistent>
                     </value>
+                </item>
+                <item>
+                    <key> <string>search</string> </key>
+                    <value> <int>1</int> </value>
+                </item>
+                <item>
+                    <key> <string>select</string> </key>
+                    <value> <int>0</int> </value>
                 </item>
                 <item>
                     <key> <string>selection_name</string> </key>
@@ -158,6 +160,10 @@
                           <string>description</string>
                           <string></string>
                         </tuple>
+                        <tuple>
+                          <string>orderLink</string>
+                          <string></string>
+                        </tuple>
                       </list>
                     </value>
                 </item>
@@ -175,7 +181,7 @@
       <dictionary>
         <item>
             <key> <string>method_name</string> </key>
-            <value> <string>WebSection_getSelectableSoftwareReleaseList</string> </value>
+            <value> <string>SoftwareProduct_getPublicSoftwareReleaseList</string> </value>
         </item>
       </dictionary>
     </pickle>

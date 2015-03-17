@@ -35,7 +35,7 @@
         </item>
         <item>
             <key> <string>action</string> </key>
-            <value> <string>WebSection_addSelectedSoftwareReleaseToShoppingCart</string> </value>
+            <value> <string></string> </value>
         </item>
         <item>
             <key> <string>description</string> </key>
@@ -88,7 +88,9 @@
                 <item>
                     <key> <string>hidden</string> </key>
                     <value>
-                      <list/>
+                      <list>
+                        <string>listbox_orderLink</string>
+                      </list>
                     </value>
                 </item>
                 <item>
@@ -110,7 +112,7 @@
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>WebSection_viewSoftwareReleaseChoiceDialog</string> </value>
+            <value> <string>SoftwareProduct_viewSoftwareReleaseOrderDialog</string> </value>
         </item>
         <item>
             <key> <string>method</string> </key>
@@ -118,11 +120,11 @@
         </item>
         <item>
             <key> <string>name</string> </key>
-            <value> <string>SaleOrder_viewSoftwareReleaseChoiceDialog</string> </value>
+            <value> <string>SoftwareProduct_viewSoftwareReleaseOrderDialog</string> </value>
         </item>
         <item>
             <key> <string>pt</string> </key>
-            <value> <string>form_dialog</string> </value>
+            <value> <string>form_list</string> </value>
         </item>
         <item>
             <key> <string>row_length</string> </key>

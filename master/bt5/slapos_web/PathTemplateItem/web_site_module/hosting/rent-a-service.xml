@@ -210,7 +210,7 @@
         </item>
         <item>
             <key> <string>custom_render_method_id</string> </key>
-            <value> <string>WebSection_viewNextStep</string> </value>
+            <value> <string>WebSection_viewServiceChoiceDialog</string> </value>
         </item>
         <item>
             <key> <string>description</string> </key>
