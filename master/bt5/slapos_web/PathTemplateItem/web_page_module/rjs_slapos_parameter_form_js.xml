@@ -246,7 +246,7 @@
       return g.validateJSON(json_url, json_dict)\n
         .push(function (validation) {\n
           var error_index,\n
-            parameter_textarea = g.props.element.querySelectorAll(\'.parameter_xml_output\')[0],\n
+            parameter_input = g.props.element.querySelectorAll(\'.parameter_xml_output\')[0],\n
             field_name,\n
             div,\n
             divm,\n
@@ -262,7 +262,7 @@
           });\n
 \n
           if (validation.valid) {\n
-            parameter_textarea.innerText = jsonDictToParameterXML(json_dict);\n
+            parameter_input.value = jsonDictToParameterXML(json_dict);\n
           } else {\n
             for (error_index in validation.errors) {\n
               if (validation.errors.hasOwnProperty(error_index)) {\n
@@ -281,7 +281,7 @@
                 divm.querySelector("span.error").textContent = validation.missing[missing_index].message;\n
               }\n
             }\n
-            parameter_textarea.innerText = "ERROR";\n
+            parameter_input.value = "ERROR";\n
           }\n
           console.log(jsonDictToParameterXML(json_dict));\n
           return false;\n
@@ -472,6 +472,7 @@
           );\n
         })\n
         .fail(function (error) {\n
+          console.error(error.stack);\n
           return g.renderFailoverTextArea(\'\', error.toString());\n
         });\n
     });\n
@@ -613,7 +614,7 @@
             </item>
             <item>
                 <key> <string>serial</string> </key>
-                <value> <string>941.45697.33456.18551</string> </value>
+                <value> <string>941.46904.21655.48418</string> </value>
             </item>
             <item>
                 <key> <string>state</string> </key>
@@ -631,7 +632,7 @@
                     </tuple>
                     <state>
                       <tuple>
-                        <float>1426523636.72</float>
+                        <float>1426596317.01</float>
                         <string>UTC</string>
                       </tuple>
                     </state>
