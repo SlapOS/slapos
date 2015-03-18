@@ -110,7 +110,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">\n
     <title>ERP5</title>\n
     <link rel="shortcut icon" href="favicon.ico">\n
-    <script src="../RSVP.js" type="text/javascript"></script>\n
+    <script src="RSVP.js" type="text/javascript"></script>\n
     <script src="../renderjs.js" type="text/javascript"></script>\n
     <script src="jquery.js" type="text/javascript"></script>\n
     <script src="slapos_request_form.js" type="text/javascript"></script>\n
@@ -118,9 +118,10 @@
   </head>\n
     <body>\n
       <div>\n
-        <div class="parameter" \n
-             data-gadget-url="gadget_slapos_parameter_form.html"\n
-             data-gadget-scope="parameter">\n
+        <div class="parameter">\n
+          <div class="loading-parameter-form">\n
+            <p><img src="ERP5VCS_imgs/wait.gif"></p>\n
+          </div>\n
         </div>\n
 \n
         <div class="debug"></div>\n
@@ -264,7 +265,7 @@
             </item>
             <item>
                 <key> <string>serial</string> </key>
-                <value> <string>941.38508.45475.9659</string> </value>
+                <value> <string>941.48619.34818.36147</string> </value>
             </item>
             <item>
                 <key> <string>state</string> </key>
@@ -282,7 +283,7 @@
                     </tuple>
                     <state>
                       <tuple>
-                        <float>1426092321.48</float>
+                        <float>1426699039.61</float>
                         <string>UTC</string>
                       </tuple>
                     </state>

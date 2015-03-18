@@ -197,18 +197,34 @@
   function validateForm(gadget, json_url) {\n
     return gadget.processValidation(json_url);\n
   }\n
-  \n
-  function submitForm(gadget, json_url) {\n
-    return gadget.processValidation(json_url);\n
-  }\n
 \n
-  //function getSoftwareTypeFromForm(element) {\n
-  //  var software_type;\n
-  //  $(element.querySelectorAll(".slapos-software-type")).each(function (key, input) {\n
-  //    software_type = input.value;\n
-  //  });\n
-  //  return software_type;\n
-  //}\n
+  function loadEventList(gadget) {\n
+      var g = gadget,\n
+        field_list = g.props.element.querySelectorAll(".slapos-parameter"), \n
+        input_index,\n
+        promise_list = [];\n
+\n
+      console.log("INITIATING A LOOP EVENT LISTENER");\n
+\n
+      for (input_index = 0; input_index < field_list.length; input_index++) {\n
+        console.log(input_index);\n
+        promise_list.push(loopEventListener(\n
+          field_list[input_index],\n
+          \'change\',\n
+          false,\n
+          validateForm.bind(g, g, g.options.json_url)\n
+          ));\n
+        }\n
+      return RSVP.all(promise_list);\n
+  }\n
+  \n
+  function getSoftwareTypeFromForm(element) {\n
+    var software_type;\n
+    $(element.querySelectorAll(".slapos-software-type")).each(function (key, input) {\n
+      software_type = input.value;\n
+    });\n
+    return software_type;\n
+  }\n
 \n
   gk.ready(function (g) {\n
     g.props = {};\n
@@ -218,7 +234,6 @@
       });\n
   })\n
 \n
-\n
     .declareMethod("loadJSONSchema", function (url) {\n
       return this.getDeclaredGadget(\'loadschema\')\n
         .push(function (gadget) {\n
@@ -226,10 +241,10 @@
         });\n
     })\n
 \n
-    .declareMethod("validateJSON", function (schema_url, generated_json) {\n
+    .declareMethod("validateJSONForSoftwareType", function (schema_url, softwaretype, generated_json) {\n
       return this.getDeclaredGadget(\'loadschema\')\n
         .push(function (gadget) {\n
-          return gadget.validateJSON(schema_url, generated_json);\n
+          return gadget.validateJSONForSoftwareType(schema_url, softwaretype, generated_json);\n
         });\n
     })\n
 \n
@@ -244,18 +259,19 @@
 \n
     .declareMethod(\'processValidation\', function (json_url) {\n
       var g = this,\n
-        // software_type = getSoftwareTypeFromForm(g.props.element),\n
+        software_type = getSoftwareTypeFromForm(g.props.element),\n
         json_dict = getFormValuesAsJSONDict(g.props.element);\n
 \n
-      return g.validateJSON(json_url, json_dict)\n
+      return g.validateJSONForSoftwareType(json_url, software_type, json_dict)\n
         .push(function (validation) {\n
           var error_index,\n
-            parameter_input = g.props.element.querySelectorAll(\'.parameter_xml_output\')[0],\n
+            parameter_hash_input = g.props.element.querySelectorAll(\'.parameter_hash_output\')[0],\n
             field_name,\n
             div,\n
             divm,\n
             missing_index,\n
-            missing_field_name;\n
+            missing_field_name,\n
+            xml_output;\n
 \n
           $(g.props.element.querySelectorAll("span.error")).each(function (i, span) {\n
             span.textContent = "";\n
@@ -265,8 +281,11 @@
             div.setAttribute("class", "");\n
           });\n
 \n
+          xml_output = jsonDictToParameterXML(json_dict);\n
+          parameter_hash_input.value = btoa(xml_output);\n
+          console.log(parameter_hash_input.value);\n
           if (validation.valid) {\n
-            parameter_input.value = jsonDictToParameterXML(json_dict);\n
+            return xml_output;\n
           } else {\n
             for (error_index in validation.errors) {\n
               if (validation.errors.hasOwnProperty(error_index)) {\n
@@ -285,10 +304,8 @@
                 divm.querySelector("span.error").textContent = validation.missing[missing_index].message;\n
               }\n
             }\n
-            parameter_input.value = "ERROR";\n
+            return "ERROR";\n
           }\n
-          console.log(jsonDictToParameterXML(json_dict));\n
-          return false;\n
         });\n
     })\n
 \n
@@ -303,7 +320,7 @@
             input,\n
             div_input,\n
             span_error,\n
-            promise_list = [],\n
+            field_list = [],\n
             span_info,\n
             fieldset_list = g.props.element.querySelectorAll(\'fieldset\'),\n
             fieldset = document.createElement("fieldset"),\n
@@ -329,7 +346,7 @@
                 span_info.textContent = \'(default = \' + json.properties[key].default + \')\';\n
                 div_input.appendChild(span_info);\n
               }\n
-\n
+              field_list.push(input);\n
               span_error = document.createElement("span");\n
               span_error.setAttribute("class", "error");\n
               div_input.appendChild(span_error);\n
@@ -339,25 +356,11 @@
               } else {\n
                 fieldset.appendChild(div);\n
               }\n
-              promise_list.push(loopEventListener(\n
-                input,\n
-                \'change\',\n
-                false,\n
-                validateForm.bind(g, g, json_url)\n
-              ));\n
-              promise_list.push(loopEventListener(\n
-                input,\n
-                \'submit\',\n
-                false,\n
-                submitForm.bind(g, g, json_url)\n
-              ));\n
             }\n
           }\n
           $(fieldset_list[1]).replaceWith(fieldset);\n
           $(fieldset_list[2]).replaceWith(fieldset_optional);\n
-          return RSVP.all(promise_list);\n
-        }).push(function () {\n
-          console.log("LOADED All Promises")\n
+          return field_list;\n
         });\n
     })\n
 \n
@@ -400,16 +403,18 @@
       if (options.json_url === undefined) {\n
         throw new Error("undefined json_url");\n
       }\n
-\n
+      console.log("CALLED RENDER");\n
       var g = this,\n
         softwaretype;\n
+\n
+      this.options = options;\n
 \n
       function updateParameterForm(evt) {\n
         options.parameter.softwaretype = evt.srcElement.value;\n
         return g.render(options);\n
       }\n
 \n
-      return g.loadSoftwareJSON(options.json_url).push(function (json) {\n
+      return g.loadSoftwareJSON(g.options.json_url).push(function (json) {\n
         var option_index,\n
           option,\n
           option_selected = options.parameter.softwaretype,\n
@@ -468,23 +473,49 @@
             prefix = options.json_url.split(json_url_uri.path())[0] + prefix.join("/");\n
             parameter_json_schema_url = prefix + "/" + parameter_json_schema_url;\n
           }\n
-\n
+          console.log("GOING TO RENDER FORM");\n
           return g.renderParameterForm(parameter_json_schema_url, parameter_dict);\n
         })\n
         .push(function () {\n
-          var element = g.props.element.getElementsByTagName(\'select\')[0];\n
-          console.log("INITIATING A LOOP EVENT LISTENER FOR OPTION CHANGE");\n
-          return loopEventListener(\n
+          console.log("FINISHED TO RENDER, RETURNING THE GADGET");\n
+          return g;\n
+        })\n
+\n
+        .fail(function (error) {\n
+          console.log("FAIL CALLED");\n
+          console.error(error.stack);\n
+          return g.renderFailoverTextArea(\'\', error.toString())\n
+            .push(function() {\n
+              return g;\n
+            });\n
+        });\n
+    })\n
+    .declareService(function () {\n
+      var g = this,\n
+       element = g.props.element.getElementsByTagName(\'select\')[0];\n
+\n
+      if (element === undefined) {\n
+        return true;\n
+      }\n
+\n
+      function updateParameterForm(evt) {\n
+        g.options.parameter.softwaretype = evt.srcElement.value;\n
+        return g.render(g.options)\n
+          .push(function () {\n
+            return loadEventList(g);\n
+          });\n
+      }\n
+\n
+      console.log("INITIATING A LOOP EVENT LISTENER FOR OPTION CHANGE");\n
+      return loopEventListener(\n
             element,\n
             \'change\',\n
             false,\n
             updateParameterForm.bind(g)\n
-          );\n
-        })\n
-        .fail(function (error) {\n
-          console.error(error.stack);\n
-          return g.renderFailoverTextArea(\'\', error.toString());\n
-        });\n
+        );\n
+    })\n
+    .declareService(function() {\n
+      return loadEventList(this);\n
     });\n
 \n
 }(window, document, rJS, loopEventListener, $, XMLSerializer, jQuery, vkbeautify));
@@ -624,7 +655,7 @@
             </item>
             <item>
                 <key> <string>serial</string> </key>
-                <value> <string>941.47120.44131.43212</string> </value>
+                <value> <string>941.48752.57599.9267</string> </value>
             </item>
             <item>
                 <key> <string>state</string> </key>
@@ -642,7 +673,7 @@
                     </tuple>
                     <state>
                       <tuple>
-                        <float>1426618698.56</float>
+                        <float>1426707039.92</float>
                         <string>UTC</string>
                       </tuple>
                     </state>

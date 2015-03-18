@@ -132,7 +132,7 @@
           <fieldset id="parameter-main"> </fieldset>\n
           <fieldset id="parameter-optional"> </fieldset>\n
           <fieldset id="parameter-xml"> \n
-            <input type=hidden name="field_your_instance_xml" class="parameter_xml_output"></input>\n
+            <input type=hidden name="parameter_hash" class="parameter_hash_output"></input>\n
           </fieldset>\n
           \n
       </div>\n
@@ -278,7 +278,7 @@
             </item>
             <item>
                 <key> <string>serial</string> </key>
-                <value> <string>941.46746.34379.16640</string> </value>
+                <value> <string>941.48617.25119.44288</string> </value>
             </item>
             <item>
                 <key> <string>state</string> </key>
@@ -296,7 +296,7 @@
                     </tuple>
                     <state>
                       <tuple>
-                        <float>1426586570.59</float>
+                        <float>1426700926.65</float>
                         <string>UTC</string>
                       </tuple>
                     </state>

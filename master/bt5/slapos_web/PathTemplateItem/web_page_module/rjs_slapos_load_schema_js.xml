@@ -103,17 +103,26 @@
 
 /*jslint nomen: true, maxlen: 200, indent: 2*/\n
 /*global window, rJS, console, RSVP, jQuery, jIO, tv4, URI, JSON, $ */\n
-(function (window, rJS, $, URI, RSVP) {\n
+(function (window, rJS, $, RSVP) {\n
   "use strict";\n
 \n
   var gk = rJS(window);\n
 \n
   function getJSON(url) {\n
-    return jIO.util.ajax({\n
-      url: url\n
-    })\n
-      .then(function (evt) {\n
-        return evt.target.responseText;\n
+    var protocol = URI(url).protocol(); \n
+    if ( protocol === "http" || protocol === "https" ) { \n
+      if (URI(window.location).protocol() !==  protocol) {\n
+        throw new Error("You cannot mixed http and https calls");\n
+      }\n
+    }\n
+    return RSVP.Queue()\n
+      .push(function () { \n
+        return jIO.util.ajax({\n
+          url: url\n
+        })\n
+        .then(function (evt) {\n
+          return evt.target.responseText;\n
+        });\n
       });\n
   }\n
 \n
@@ -278,13 +287,13 @@
 \n
   function validateJSONSchema(json, base_url) {\n
     return getMetaJSONSchema()\n
-      .then(function (meta_schema) {\n
+      .push(function (meta_schema) {\n
         if (!tv4.validate(json, meta_schema)) {\n
           throw new Error("Non valid JSON schema " + json);\n
         }\n
         return JSON.parse(json);\n
       })\n
-      .then(function (schema) {\n
+      .push(function (schema) {\n
         return expandSchema(schema, schema, base_url);\n
       });\n
   }\n
@@ -292,31 +301,36 @@
   gk\n
     .declareMethod("loadJSONSchema", function (url) {\n
       return getJSON(url)\n
-        .then(function (json) {\n
+        .push(function (json) {\n
           var base_url, url_uri;\n
 \n
           url_uri = URI(url);\n
           base_url = url_uri.path().split("/");\n
           base_url.pop();\n
           base_url = url.split(url_uri.path())[0] + base_url.join("/");\n
-\n
+          \n
           return validateJSONSchema(json, base_url);\n
         });\n
     })\n
 \n
     .declareMethod("loadSoftwareJSON", function (url) {\n
       return getJSON(url)\n
-        .then(function (json) {\n
+        .push(function (json) {\n
           return JSON.parse(json);\n
         });\n
     })\n
 \n
     .declareMethod("validateJSONForSoftwareType", function (schema_url, software_type, generated_json) {\n
       return getJSON(schema_url)\n
-        .then(function (json) {\n
+        .push(function (json) {\n
           return JSON.parse(json);\n
-        }).then(function (json_object) {\n
-          var parameter_schema_url, st;\n
+        })\n
+        .push(function (json_object) {\n
+          var parameter_schema_url,\n
+            st,\n
+            base_url,\n
+            url_uri = URI(schema_url);\n
+        \n
           for (st in json_object["software-type"]) {\n
             if (json_object["software-type"].hasOwnProperty(st)) {\n
               if (st === software_type) {\n
@@ -324,16 +338,31 @@
               }\n
             }\n
           }\n
+          \n
+          if (URI(parameter_schema_url).protocol() === "") {\n
+            base_url = url_uri.path().split("/");\n
+            base_url.pop();\n
+            base_url = schema_url.split(url_uri.path())[0] + base_url.join("/");\n
+            if (base_url !== undefined) {\n
+              parameter_schema_url = base_url + "/" + parameter_schema_url;\n
+            }\n
+          }\n
+          \n
           return getJSON(parameter_schema_url)\n
-            .then(function (json) {\n
-              return tv4.validateMultiple(generated_json, JSON.parse(json));\n
+            .push(function (json) {\n
+              var schema = JSON.parse(json);\n
+\n
+              return expandSchema(schema, schema, base_url)\n
+                .push(function (loaded_json) {\n
+                  return tv4.validateMultiple(generated_json, loaded_json);\n
+                });\n
             });\n
-        });\n
+         });\n
     })\n
 \n
     .declareMethod("validateJSON", function (schema_url, generated_json) {\n
       return getJSON(schema_url)\n
-        .then(function (json) {\n
+        .push(function (json) {\n
           var base_url,\n
             url_uri = URI(schema_url),\n
             schema = JSON.parse(json);\n
@@ -349,7 +378,7 @@
         });\n
     });\n
 \n
-}(window, rJS, $, RSVP, URI));
+}(window, rJS, $, RSVP));
 
 ]]></string> </value>
         </item>
@@ -486,7 +515,7 @@
             </item>
             <item>
                 <key> <string>serial</string> </key>
-                <value> <string>941.46927.41646.58504</string> </value>
+                <value> <string>941.48697.33489.29337</string> </value>
             </item>
             <item>
                 <key> <string>state</string> </key>
@@ -504,7 +533,7 @@
                     </tuple>
                     <state>
                       <tuple>
-                        <float>1426597461.76</float>
+                        <float>1426706745.9</float>
                         <string>UTC</string>
                       </tuple>
                     </state>
