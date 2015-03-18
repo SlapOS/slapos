@@ -104,7 +104,7 @@
 /*jslint nomen: true, maxlen: 200, indent: 2*/\n
 /*global rJS, console, window, document, loopEventListener, $, XMLSerializer, jQuery, URI, vkbeautify */\n
 \n
-(function (window, document, rJS, loopEventListener, $, XMLSerializer, jQuery, URI, vkbeautify) {\n
+(function (window, document, rJS, loopEventListener, $, XMLSerializer, jQuery, vkbeautify) {\n
   "use strict";\n
 \n
   var gk = rJS(window);\n
@@ -195,6 +195,10 @@
   }\n
 \n
   function validateForm(gadget, json_url) {\n
+    return gadget.processValidation(json_url);\n
+  }\n
+  \n
+  function submitForm(gadget, json_url) {\n
     return gadget.processValidation(json_url);\n
   }\n
 \n
@@ -299,7 +303,9 @@
             input,\n
             div_input,\n
             span_error,\n
+            promise_list = [],\n
             span_info,\n
+            fieldset_list = g.props.element.querySelectorAll(\'fieldset\'),\n
             fieldset = document.createElement("fieldset"),\n
             fieldset_optional = document.createElement("fieldset");\n
 \n
@@ -333,21 +339,25 @@
               } else {\n
                 fieldset.appendChild(div);\n
               }\n
-              loopEventListener(\n
+              promise_list.push(loopEventListener(\n
                 input,\n
                 \'change\',\n
                 false,\n
                 validateForm.bind(g, g, json_url)\n
-              );\n
+              ));\n
+              promise_list.push(loopEventListener(\n
+                input,\n
+                \'submit\',\n
+                false,\n
+                submitForm.bind(g, g, json_url)\n
+              ));\n
             }\n
           }\n
-          return [fieldset, fieldset_optional];\n
-        }).push(function (new_fieldset_list) {\n
-          var fieldset_list = g.props.element.querySelectorAll(\'fieldset\');\n
-\n
-          $(fieldset_list[1]).replaceWith(new_fieldset_list[0]);\n
-          $(fieldset_list[2]).replaceWith(new_fieldset_list[1]);\n
-          return fieldset_list;\n
+          $(fieldset_list[1]).replaceWith(fieldset);\n
+          $(fieldset_list[2]).replaceWith(fieldset_optional);\n
+          return RSVP.all(promise_list);\n
+        }).push(function () {\n
+          console.log("LOADED All Promises")\n
         });\n
     })\n
 \n
@@ -477,7 +487,7 @@
         });\n
     });\n
 \n
-}(window, document, rJS, loopEventListener, $, XMLSerializer, jQuery, URI, vkbeautify));
+}(window, document, rJS, loopEventListener, $, XMLSerializer, jQuery, vkbeautify));
 
 ]]></string> </value>
         </item>
@@ -614,7 +624,7 @@
             </item>
             <item>
                 <key> <string>serial</string> </key>
-                <value> <string>941.46904.21655.48418</string> </value>
+                <value> <string>941.47120.44131.43212</string> </value>
             </item>
             <item>
                 <key> <string>state</string> </key>
@@ -632,7 +642,7 @@
                     </tuple>
                     <state>
                       <tuple>
-                        <float>1426596317.01</float>
+                        <float>1426618698.56</float>
                         <string>UTC</string>
                       </tuple>
                     </state>

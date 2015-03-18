@@ -108,11 +108,8 @@
     json_url = "sample_schema.json";\n
 \n
   gk.declareMethod(\'render\', function (options) {\n
-    //if (options.parameter.software_release_url === undefined) {\n
-    //  throw new Error("undefined software_release_url");\n
-    //}\n
-    var g = this,\n
-      element = g.__element.getElementsByTagName(\'form\')[0];\n
+\n
+    var g = this;\n
 \n
     options.json_url = "../../renderjs/slapos_load_schema_software_type.json";\n
     options.parameter = {};\n
@@ -136,11 +133,11 @@
 \n
     return g.getDeclaredGadget(\'parameter\')\n
       .push(function (gadget) {\n
-        return gadget.render(options);\n
+        return gadget.render(options).push(function () {\n
+          console.log("FINISH TO LOADED");\n
+        });\n
       });\n
-\n
   });\n
-  console.log("LOADED");\n
 \n
 }(window, rJS, $, loopEventListener));</string> </value>
         </item>
@@ -277,7 +274,7 @@
             </item>
             <item>
                 <key> <string>serial</string> </key>
-                <value> <string>941.42676.28317.52480</string> </value>
+                <value> <string>941.47267.50185.4608</string> </value>
             </item>
             <item>
                 <key> <string>state</string> </key>
@@ -295,7 +292,7 @@
                     </tuple>
                     <state>
                       <tuple>
-                        <float>1426343134.63</float>
+                        <float>1426617885.75</float>
                         <string>UTC</string>
                       </tuple>
                     </state>
