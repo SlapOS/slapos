@@ -1,6 +1,6 @@
 {
   "$schema": "http://json-schema.org/draft-04/schema#",
-  "description": "Values returned by ERP5 instanciation",
+  "description": "Values returned by ERP5 instantiation",
   "properties": {
     "hosts-dict": {
       "description": "Hosts mapping, including auto-generated entries",
