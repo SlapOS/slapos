@@ -27,7 +27,6 @@
     },
     "deadlock-debugger-password": {
       "description": "Password for /manage_debug_threads",
-      "default": "random",
       "type": "string"
     },
     "inituser-login": {
@@ -37,12 +36,10 @@
     },
     "inituser-password": {
       "description": "Password of the initial/rescue user",
-      "default": "random",
       "type": "string"
     },
     "developer-list": {
-      "description": "List of logins which should get the Developper role (required to modify portal_components' content)",
-      "default": "inituser-login's value",
+      "description": "List of logins which should get the Developper role (required to modify portal_components' content), defaulting to inituser-login's value",
       "items": {
         "pattern": "/^\\S+$/",
         "type": "string"
@@ -62,17 +59,10 @@
       "type": "object"
     },
     "hosts-dict": {
-      "description": "Hostname-to-IP mapping",
-      "default": {
-        "erp5-catalog-0": "some-ip",
-        "erp5-catalog-...": "some-ip",
-        "erp5-cloudooo": "some-ip",
-        "erp5-memcached-persistent": "some-ip",
-        "erp5-memcached-volatile": "some-ip"
-      },
+      "description": "Host entries to be used in addition to and/or overriding auto-generated ones (erp5-catalog-0, erp5-cloudooo, erp5-memcached-persistent, erp5-memcached-volatile and erp5-smtpd)",
       "patternProperties": {
         ".*": {
-          "description": "An IP to which current entry will resolve",
+          "description": "An IP or domain name to which current entry will resolve",
           "type": "string"
         }
       },
