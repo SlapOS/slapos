@@ -202,12 +202,35 @@
                 "type": "boolean",
                 "default": false
               },
+
+              "external-disk-number": {
+                "title": "Number of additional disk to create for virtual machine",
+                "description": "Specify the number of additional disk to create for virtual machine in data folder of SlapOS Node. Requires instance_storage_home to be configured on SlapOS Node.",
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 4,
+                "default": 0
+              },
+              "external-disk-size": {
+                "title": "Number of additional disk to create for virtual machine, in Gigabytes",
+                "description": "Specify the number of additional disk to create for virtual machine in data folder of SlapOS Node. Requires instance_storage_home to be configured on SlapOS Node.",
+                "type": "integer",
+                "minimum": 10,
+                "maximum": 100,
+                "default": 20
+              },
           
               "use-tap": {
                 "title": "Use QEMU TAP network interface",
-                "description": "Use QEMU TAP network interface, requires a bridge on SlapOS Node. If false, use user-mode network stack (NAT).",
+                "description": "Use QEMU TAP network interface, might require a bridge on SlapOS Node.",
                 "type": "boolean",
                 "default": false
+              },
+              "use-nat": {
+                "title": "Use QEMU USER Mode networking",
+                "description": "Use QEMU user-mode network stack (NAT).",
+                "type": "boolean",
+                "default": true
               },
               "nat-rules": {
                 "title": "List of rules for NAT of QEMU user mode network stack.",
