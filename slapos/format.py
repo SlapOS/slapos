@@ -176,7 +176,7 @@ def getIPv4SubnetAddressRange(ip_address, mask, size):
   host ip address, then return list of ip address in the subnet"""
   ip = netaddr.IPNetwork('%s/%s' % (ip_address, mask))
   # Delete network and default ip_address from the list
-  ip_list = [x for x in list(ip) 
+  ip_list = [x for x in sorted(list(ip))
               if str(x) != ip_address and x.value != ip.cidr.network.value]
   if len(ip_list) < size:
     raise ValueError('Could not create %s tap interfaces from address %s.' % (
@@ -383,6 +383,10 @@ class Computer(object):
 
       if partition_dict['tap']:
         tap = Tap(partition_dict['tap']['name'])
+        tap.ipv4_addr = partition_dict['tap'].get('ipv4_addr', '')
+        tap.ipv4_netmask = partition_dict['tap'].get('ipv4_netmask', '')
+        tap.ipv4_gateway = partition_dict['tap'].get('ipv4_gateway', '')
+        tap.ipv4_network = partition_dict['tap'].get('ipv4_network', '')
       else:
         tap = Tap(partition_dict['reference'])
 
@@ -517,10 +521,13 @@ class Computer(object):
             self.interface.addTap(partition.tap)
           else:
             next_ipv4_addr = '%s' % tap_address_list.pop(0)
-            partition.tap.addRoutes(next_ipv4_addr,
-                                            gateway_addr_dict['netmask'],
-                                            gateway_addr_dict['addr'],
-                                            gateway_addr_dict['network'])
+            if not partition.tap.ipv4_addr:
+              # define new ipv4 address for this tap
+              partition.tap.ipv4_addr = next_ipv4_addr
+              partition.tap.ipv4_netmask = gateway_addr_dict['netmask']
+              partition.tap.ipv4_gateway = gateway_addr_dict['addr']
+              partition.tap.ipv4_network = gateway_addr_dict['network']
+            partition.tap.createRoutes()
 
         # Reconstructing partition's directory
         partition.createPath(alter_user)
@@ -786,19 +793,19 @@ class Tap(object):
     if attach_to_tap:
       threading.Thread(target=self.attach).start()
 
-  def addRoutes(self, ipv4, netmask, gateway, network):
+  def createRoutes(self):
     """
     Configure ipv4 route to reach this interface from local network
     """
-    self.ipv4_addr = ipv4
-    self.ipv4_netmask = netmask
-    self.ipv4_gateway = gateway
-    self.ipv4_network = network
-    # Check if this route exits
-    code, result = callAndRead(['ip', 'route', 'show', ipv4])
-    if code == 0 and ipv4 in result and self.name in result:
-      return
-    callAndRead(['route', 'add', '-host', ipv4, 'dev', self.name])
+    if self.ipv4_addr:
+      # Check if this route exits
+      code, result = callAndRead(['ip', 'route', 'show', self.ipv4_addr])
+      if code == 0 and self.ipv4_addr in result and self.name in result:
+        return
+      callAndRead(['route', 'add', '-host', self.ipv4_addr, 'dev', self.name])
+    else:
+      raise ValueError("%s should not be empty. No ipv4 address assigned to %s" %
+                         (self.ipv4_addr, self.name))
 
 class Interface(object):
   """Represent a network interface on the system"""
