@@ -232,7 +232,8 @@ def create_slapgrid_object(options, logger):
                   # Try to fetch from deprecated argument
                   computer_partition_filter_list=op.get('only-cp', op.get('only_cp')),
                   software_min_free_space=software_min_free_space,
-                  instance_min_free_space=instance_min_free_space)
+                  instance_min_free_space=instance_min_free_space,
+                  instance_storage_home=op.get('instance_storage_home'))
 
 
 def check_required_only_partitions(existing, required):
@@ -286,6 +287,7 @@ class Slapgrid(object):
                computer_partition_filter_list=None,
                software_min_free_space=None,
                instance_min_free_space=None,
+               instance_storage_home=None,
                ):
     """Makes easy initialisation of class parameters"""
     # Parses arguments
@@ -337,6 +339,10 @@ class Slapgrid(object):
     self.maximum_periodicity = maximum_periodicity
     self.software_min_free_space = software_min_free_space
     self.instance_min_free_space = instance_min_free_space
+    if instance_storage_home:
+      self.instance_storage_home = os.path.abspath(instance_storage_home)
+    else:
+      self.instance_storage_home = ""
 
   def _getWatchdogLine(self):
     invocation_list = [WATCHDOG_PATH]
@@ -644,6 +650,7 @@ class Slapgrid(object):
         logger=self.logger,
         retention_delay=retention_delay,
         instance_min_free_space=self.instance_min_free_space,
+        instance_storage_home=self.instance_storage_home,
       )
       computer_partition_state = computer_partition.getState()
 
@@ -1102,6 +1109,7 @@ class Slapgrid(object):
             certificate_repository_path=self.certificate_repository_path,
             buildout=self.buildout,
             logger=self.logger,
+            instance_storage_home=self.instance_storage_home,
           )
           local_partition.stop()
           try:

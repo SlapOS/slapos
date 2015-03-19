@@ -57,6 +57,8 @@ WATCHDOG_MARK = '-on-watch'
 
 REQUIRED_COMPUTER_PARTITION_PERMISSION = 0o750
 
+CP_STORAGE_FOLDER_NAME = 'DATA'
+
 # XXX not very clean. this is changed when testing
 PROGRAM_PARTITION_TEMPLATE = pkg_resources.resource_stream(__name__,
             'templates/program_partition_supervisord.conf.in').read()
@@ -341,7 +343,8 @@ class Partition(object):
                logger,
                certificate_repository_path=None,
                retention_delay='0',
-               instance_min_free_space=None
+               instance_min_free_space=None,
+               instance_storage_home=''
                ):
     """Initialisation of class parameters"""
     self.buildout = buildout
@@ -358,6 +361,7 @@ class Partition(object):
     self.partition_id = partition_id
     self.server_url = server_url
     self.software_release_url = software_release_url
+    self.instance_storage_home = instance_storage_home
 
     self.key_file = ''
     self.cert_file = ''
@@ -512,6 +516,7 @@ class Partition(object):
             'software_release_url': self.software_release_url,
             'key_file': self.key_file,
             'cert_file': self.cert_file,
+            'storage_home': self.instance_storage_home,
         }
     open(config_location, 'w').write(buildout_text)
     os.chmod(config_location, 0o640)
@@ -684,12 +689,22 @@ class Partition(object):
       sr_symlink = os.path.join(self.instance_path, 'software_release')
       if os.path.islink(sr_symlink):
         os.unlink(sr_symlink)
+      data_base_link = os.path.join(self.instance_path, CP_STORAGE_FOLDER_NAME)
+      if self.instance_storage_home and os.path.exists(data_base_link) and \
+                                os.path.isdir(data_base_link):
+        for filename in os.listdir(data_base_link):
+          data_symlink = os.path.join(data_base_link, filename)
+          partition_data_path = os.path.join(self.instance_storage_home,
+                                                    filename, self.partition_id)
+          if os.path.lexists(data_symlink):
+            os.unlink(data_symlink)
+          if os.path.exists(partition_data_path):
+            self.cleanupFolder(partition_data_path)
 
-      for root, dirs, file_list in os.walk(self.instance_path):
-        for directory in dirs:
-          shutil.rmtree(os.path.join(self.instance_path, directory))
-        for file in file_list:
-          os.remove(os.path.join(self.instance_path, file))
+      self.cleanupFolder(self.instance_path)
+      
+      # Cleanup all Data storage location of this partition
+      
 
       if os.path.exists(self.supervisord_partition_configuration_path):
         os.remove(self.supervisord_partition_configuration_path)
@@ -698,6 +713,15 @@ class Partition(object):
       raise IOError("I/O error while freeing partition (%s): %s" % (self.instance_path, exc))
 
     return True
+
+  def cleanupFolder(self, folder_path):
+    """Delete all files and folders in a specified directory
+    """
+    for root, dirs, file_list in os.walk(folder_path):
+      for directory in dirs:
+        shutil.rmtree(os.path.join(folder_path, directory))
+      for file in file_list:
+        os.remove(os.path.join(folder_path, file))
 
   def fetchInformations(self):
     """Fetch usage informations with buildout, returns it.

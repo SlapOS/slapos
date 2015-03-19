@@ -65,6 +65,10 @@
     if current_dict in to_add_ip_dict_list:\n
       to_add_ip_dict_list.remove(current_dict)\n
     else:\n
+      # XXX - Only delete if Network interface are supposed to be the same\n
+      if additional_dict.has_key(\'network_interface\'):\n
+        if address.getNetworkInterface(\'\') and additional_dict[\'network_interface\'] != address.getNetworkInterface():\n
+          continue\n
       to_delete_ip_id_list.append(address.getId())\n
 \n
   for address in to_add_ip_dict_list:\n
@@ -114,6 +118,16 @@ for send_partition in computer_dict[\'partition_list\']:\n
     partition.edit(reference=send_partition[\'reference\'])\n
   network_interface = send_partition[\'tap\'][\'name\']\n
   compareAndUpdateAddressList(partition, send_partition[\'address_list\'], {\'network_interface\': network_interface})\n
+  tap_addr_list = []\n
+  additional_dict = {\'network_interface\':  \'route_\' + network_interface}\n
+  if send_partition[\'tap\'].has_key(\'ipv4_addr\') and send_partition[\'tap\'][\'ipv4_addr\']:\n
+    tap_addr_list.append({\n
+            \'addr\': send_partition[\'tap\'][\'ipv4_addr\'],\n
+            \'netmask\': send_partition[\'tap\'][\'ipv4_netmask\']\n
+      })\n
+    additional_dict[\'gateway_ip_address\'] = send_partition[\'tap\'][\'ipv4_gateway\']\n
+    additional_dict[\'network_address\'] = send_partition[\'tap\'][\'ipv4_network\']\n
+  compareAndUpdateAddressList(partition, tap_addr_list, additional_dict)\n
 \n
 # Desactivate all other partitions\n
 for key, value in existing_partition_dict.items():\n

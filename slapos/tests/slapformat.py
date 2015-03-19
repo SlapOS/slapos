@@ -94,6 +94,10 @@ class FakeCallAndRead:
     elif argument_list[:3] == ['ip', 'addr', 'list'] or \
          argument_list[:4] == ['ip', '-6', 'addr', 'list']:
       retval = 0, str(INTERFACE_DICT)
+    elif argument_list[:3] == ['ip', 'route', 'show']:
+      retval = 0, 'OK'
+    elif argument_list[:3] == ['route', 'add', '-host']:
+      retval = 0, 'OK'
     self.external_command_list.append(' '.join(argument_list))
     return retval
 
@@ -440,6 +444,56 @@ class TestComputer(SlapformatMixin):
       'ip -6 addr list bridge',
     ],
       self.fakeCallAndRead.external_command_list)
+
+  def test_construct_prepared_tap_no_alter_user(self):
+    computer = slapos.format.Computer('computer',
+      interface=slapos.format.Interface(logger=self.test_result,
+                                        name='iface',
+                                        ipv4_local_network='127.0.0.1/16'),
+                                        tap_gateway_interface='eth1')
+    computer.instance_root = '/instance_root'
+    computer.software_root = '/software_root'
+    partition = slapos.format.Partition('partition', '/part_path',
+      slapos.format.User('testuser'), [], None)
+    global USER_LIST
+    USER_LIST = ['testuser']
+    partition.tap = slapos.format.Tap('tap')
+    computer.partition_list = [partition]
+    global INTERFACE_DICT
+    INTERFACE_DICT['iface'] = {
+      socket.AF_INET: [{'addr': '192.168.242.77', 'broadcast': '127.0.0.1',
+        'netmask': '255.255.255.0'}],
+      socket.AF_INET6: [{'addr': '2a01:e35:2e27::e59c', 'netmask': 'ffff:ffff:ffff:ffff::'}]
+    }
+    INTERFACE_DICT['eth1'] = {
+      socket.AF_INET: [{'addr': '10.8.0.1', 'broadcast': '10.8.0.254',
+        'netmask': '255.255.255.0'}]
+    }
+
+    computer.construct(alter_user=False)
+    self.assertEqual([
+      "makedirs('/instance_root', 493)",
+      "makedirs('/software_root', 493)",
+      "chmod('/software_root', 493)",
+      "mkdir('/instance_root/partition', 488)",
+      "chmod('/instance_root/partition', 488)"
+    ],
+      self.test_result.bucket)
+    self.assertEqual([
+        'ip addr list iface',
+        'tunctl -t tap -u testuser',
+        'ip link set tap up',
+        'ip route show 10.8.0.2',
+        'route add -host 10.8.0.2 dev tap',
+        'ip addr add ip/255.255.255.255 dev iface',
+        'ip addr add ip/ffff:ffff:ffff:ffff:: dev iface',
+        'ip -6 addr list iface'
+      ],
+      self.fakeCallAndRead.external_command_list)
+    self.assertEqual(partition.tap.ipv4_addr, '10.8.0.2')
+    self.assertEqual(partition.tap.ipv4_netmask, '255.255.255.0')
+    self.assertEqual(partition.tap.ipv4_gateway, '10.8.0.1')
+    self.assertEqual(partition.tap.ipv4_network, '10.8.0.0')
 
   @unittest.skip("Not implemented")
   def test_construct_prepared_no_alter_network(self):

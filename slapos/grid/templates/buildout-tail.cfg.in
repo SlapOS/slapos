@@ -22,4 +22,7 @@ server_url = %(server_url)s
 software_release_url = %(software_release_url)s
 key_file = %(key_file)s
 cert_file = %(cert_file)s
+
+[storage-configuration]
+storage-home = %(storage_home)s
 # This is end of zc.builodout profile's tail added by slapgrid
