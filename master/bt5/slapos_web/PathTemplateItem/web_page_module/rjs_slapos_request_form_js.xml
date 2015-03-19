@@ -118,6 +118,9 @@
       })\n
       .push(function (xml_result) {\n
         return {"field_your_instance_xml": xml_result};\n
+      })\n
+      .fail(function (e) {\n
+        return {};\n
       });\n
   });\n
 \n
@@ -151,7 +154,7 @@
         return gadget.render(options);\n
       }).push(function (gadget) {\n
         var div = g.__element.querySelector(".parameter");\n
-        $(div).replaceWith(gadget.__element)\n
+        $(div).replaceWith(gadget.__element);\n
         return gadget;\n
       });\n
   });\n
@@ -291,7 +294,7 @@
             </item>
             <item>
                 <key> <string>serial</string> </key>
-                <value> <string>941.48482.37552.4164</string> </value>
+                <value> <string>941.49054.39000.10274</string> </value>
             </item>
             <item>
                 <key> <string>state</string> </key>
@@ -309,7 +312,7 @@
                     </tuple>
                     <state>
                       <tuple>
-                        <float>1426698399.78</float>
+                        <float>1426725223.8</float>
                         <string>UTC</string>
                       </tuple>
                     </state>

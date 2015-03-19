@@ -483,9 +483,10 @@
 \n
         .fail(function (error) {\n
           console.log("FAIL CALLED");\n
-          console.error(error.stack);\n
+          console.log(error.stack);\n
           return g.renderFailoverTextArea(\'\', error.toString())\n
             .push(function() {\n
+              error = undefined;\n
               return g;\n
             });\n
         });\n
@@ -655,7 +656,7 @@
             </item>
             <item>
                 <key> <string>serial</string> </key>
-                <value> <string>941.48752.57599.9267</string> </value>
+                <value> <string>941.49037.51985.358</string> </value>
             </item>
             <item>
                 <key> <string>state</string> </key>
@@ -673,7 +674,7 @@
                     </tuple>
                     <state>
                       <tuple>
-                        <float>1426707039.92</float>
+                        <float>1426725080.91</float>
                         <string>UTC</string>
                       </tuple>
                     </state>
