@@ -1,7 +1,17 @@
 {
   "$schema": "http://json-schema.org/draft-04/schema#",
-  "description": "Values returned by ERP5 instanciation",
+  "description": "Values returned by ERP5 instantiation",
   "properties": {
+    "hosts-dict": {
+      "description": "Hosts mapping, including auto-generated entries",
+      "patternProperties": {
+        ".*": {
+          "description": "IP or domain names current entry resolves to",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
     "site-id": {
       "description": "Chosen ERP5Site object identifier",
       "type": "string"

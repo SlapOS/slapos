@@ -9,7 +9,7 @@
         "title": "Frontend Instance ID",
         "description": "Unique identifier of the frontend instance, like \"SOFTINST-11031\".",
         "type": "string",
-        "default": "SOFTINST-11031"
+        "default": ""
       },
       "frontend-software-type": {
         "title": "Frontend Software Type",
@@ -23,6 +23,97 @@
         "type": "string",
         "format": "uri",
         "default": "http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.92:/software/kvm/software.cfg"
+      },
+      "type": "object"
+    },
+    "slave-frontend": {
+      "instance-guid": {
+        "title": "Main Frontend Instance ID",
+        "description": "Unique identifier of the frontend instance, like \"SOFTINST-11031\".",
+        "type": "string",
+        "default": ""
+      },
+      "frontend-software-type": {
+        "title": "Frontend Software Type",
+        "description": "Type of the frontend instance, like \"frontend\".",
+        "type": "string",
+        "default": "default"
+      },
+      "frontend-software-url": {
+        "title": "Frontend Software URL",
+        "description": "Software Release URL of the frontend instance, like \"http://example.com/path/to/software.cfg\".",
+        "type": "string",
+        "format": "uri",
+        "default": "http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg"
+      },
+      "slave-frontend-dict": {
+        "description": "kvm instances definition",
+        "patternProperties": {
+          ".*": {
+              "properties": {
+                "domain": {
+                  "title": "Name of the domain to be used",
+                  "description": "Name of the domain to be used (example: mydomain.com). Subdomains of this domain will be used for the slave instances (example: instance12345.mydomain.com).",
+                  "type": "string",
+                  "format": "uri",
+                  "default": ""
+                },
+                "url": {
+                  "title": "URL of backend to use.",
+                  "description": "URL of backend to use. This URL will be used to request frontend if parameter 'kvm-partition-name' is not set.",
+                  "format": "uri",
+                  "type": "string",
+                  "default": ""
+                },
+                "enable-cache": {
+                  "title": "Specify if cached will be used for this slave frontend.",
+                  "description": "Specify if slave frontend should use a squid to connect to backend.",
+                  "type": "boolean",
+                  "default": false
+                },
+                "type": {
+                  "title": "Specify if slave frontend will redirect to a zope backend.",
+                  "description": "If specified, Apache RewriteRule will use Zope's Virtual Host Daemon. Possible values: 'zope', 'default'.",
+                  "type": "string",
+                  "default": "default"
+                },
+                "zope-path": {
+                  "title": "Specify path to the VirtualHostRoot of the zope.",
+                  "description": "Only used if type is 'zope'. Will append the specified path to the VirtualHostRoot of the zope's VirtualHostMonster.",
+                  "type": "string",
+                  "default": ""
+                },
+                "https-only": {
+                  "title": "Specify if website should be accessed using https only.",
+                  "description": "Specify if website should be accessed using https only. If so, the frontend will redirect the user to https if accessed from http.",
+                  "type": "boolean",
+                  "default": false
+                },
+                "kvm-partition-name": {
+                  "title": "Reference name in 'kvm-partition-dict' to get IPv6 for slave frontend from.",
+                  "description": "Only work if 'use-nat' is true and 'service-port' is set. This will allow to get URL from defined nat-rules. Play the same as url.",
+                  "type": "string",
+                  "default": ""
+                },
+                "service-port": {
+                  "allOf": [{
+                    "$ref": "#/definitions/tcpv4port"
+                  }, {
+                    "title": "Specify the port of service to run in VM.",
+                    "description": "This will allow to get URL from defined nat-rules. The port should exist in nat-rules of KVM referenced by 'kvm-partition-name'"
+                  }]
+                },
+                "url-scheme": {
+                  "title": "Say If HTTP service to run into the Virtual Machine will use http or https.",
+                  "description": "Say If HTTP service to run into the Virtual Machine will use http or https. Possible values: http, https",
+                  "type": "string",
+                  "default": "http"
+                }
+              },
+            "type": "object"
+          }
+        },
+        "type": "object"
       },
       "type": "object"
     },
@@ -121,7 +212,8 @@
               "nat-rules": {
                 "title": "List of rules for NAT of QEMU user mode network stack.",
                 "description": "List of rules for NAT of QEMU user mode network stack, as comma-separated list of ports. For each port specified, it will redirect port x of the VM (example: 80) to the port x + 10000 of the public IPv6 (example: 10080). Defaults to \"22 80 443\". Ignored if \"use-tap\" parameter is enabled.",
-                "type": "string"
+                "type": "array",
+                "default": [22, 80, 443]
               }
             },
           "type": "object"

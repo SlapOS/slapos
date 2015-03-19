@@ -59,9 +59,8 @@
           "type": "integer"
         },
         "incremental-retention-days": {
-          "description": "How many days incremental backups (binlogs) must be retained, -1 meaning incremental backups are disabled and 0 meaning no expiration",
+          "description": "How many days incremental backups (binlogs) must be retained, -1 meaning incremental backups are disabled and 0 meaning no expiration, defaulting to full-retention-days' value",
           "minimum": -1,
-          "default": "full-retention-days' value",
           "type": "integer"
         }
       },
@@ -75,19 +74,16 @@
     "innodb-buffer-pool-size": {
       "description": "See MariaDB documentation on innodb_buffer_pool_size",
       "minimum": 0,
-      "default": "MariaDB's default",
       "type": "integer"
     },
     "innodb-log-file-size": {
       "description": "See MariaDB documentation on innodb_log_file_size",
       "minimum": 0,
-      "default": "MariaDB's default",
       "type": "integer"
     },
     "innodb-log-buffer-size": {
       "description": "See MariaDB documentation on innodb_log_buffer_size",
       "minimum": 0,
-      "default": "MariaDB's default",
       "type": "integer"
     },
     "long-query-time": {
