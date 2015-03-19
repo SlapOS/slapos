@@ -53,7 +53,9 @@
             <value> <string>if instance_xml is None:\n
   instance_xml = context.getTextContent()\n
 if state is None:\n
-  state = {\'start_requested\': \'started\', \'destroy_requested\': \'destroyed\', \'stop_requested\': \'stopped\'}[context.getSlapState()]\n
+  state = {\'start_requested\': \'started\', \n
+           \'destroy_requested\': \'destroyed\', \n
+           \'stop_requested\': \'stopped\'}[context.getSlapState()]\n
 \n
 person = context.getDestinationSectionValue()\n
 person.requestSoftwareInstance(\n
