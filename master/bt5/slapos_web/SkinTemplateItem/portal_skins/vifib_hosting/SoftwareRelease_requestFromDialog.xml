@@ -55,7 +55,21 @@
 portal = context.getPortalObject()\n
 \n
 if not service_title:\n
-  service_title = "Vifib KVM %i" % portal.portal_ids.generateNewId(id_group=("vifib", "kvm"), default=1),\n
+  raise ValueError("Service Title is mandatory!")\n
+\n
+keep_item_dict = {}\n
+\n
+if software_type is not None:\n
+  keep_item_dict[\'software_type\'] = software_type\n
+\n
+if software_type is not None:\n
+  keep_item_dict[\'parameter_hash\'] = parameter_hash\n
+\n
+if instance_xml == "ERROR":\n
+  keep_item_dict.update({\'portal_status_message\':context.Base_translateString(\n
+                          "Your parameters are contains errors, please update it.")})\n
+  return context.Base_redirect(dialog_id,\n
+                        keep_items=keep_item_dict)\n
 \n
 hosting_subscription = portal.portal_catalog.getResultValue(\n
   portal_type=\'Hosting Subscription\',\n
@@ -73,6 +87,9 @@ if hosting_subscription is not None:\n
 url = context.getUrlString()\n
 \n
 person = portal.ERP5Site_getAuthenticatedMemberPersonValue()\n
+\n
+if person is None:\n
+  raise ValueError("You cannot request without been logged in as a user.")\n
 \n
 request_kw = {}\n
 request_kw.update(\n
@@ -120,7 +137,7 @@ return context.REQUEST.get(\'request_hosting_subscription\').Base_redirect(keep_
         </item>
         <item>
             <key> <string>_params</string> </key>
-            <value> <string>dialog_id, service_title, instance_xml, computer_guid=\'\', cpu_core=\'\', cpu_frequency=\'\', cpu_type=\'\', local_area_network_type=\'\', memory_size=\'\', memory_type=\'\', storage_capacity=\'\', storage_interface=\'\', storage_redundancy=\'\', group=\'\', region=\'\', **kw</string> </value>
+            <value> <string>dialog_id, service_title, instance_xml, parameter_hash=None, software_type=None, computer_guid=\'\', cpu_core=\'\', cpu_frequency=\'\', cpu_type=\'\', local_area_network_type=\'\', memory_size=\'\', memory_type=\'\', storage_capacity=\'\', storage_interface=\'\', storage_redundancy=\'\', group=\'\', region=\'\', **kw</string> </value>
         </item>
         <item>
             <key> <string>id</string> </key>
