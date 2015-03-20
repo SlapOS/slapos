@@ -1,0 +1,29 @@
+{
+    "name": "KVM",
+    "description": "KVM",
+    "serialisation": "xml",
+    "software-type": {
+        "default": {
+            "title": "Default",
+            "description": "Standalone KVM",
+            "request": "instance-kvm-input-schema.json",
+            "response": "instance-kvm-output-schema.json",
+            "index": 0
+        },
+        "resilient": {
+            "title": "Resilient",
+            "description": "Resilient KVM",
+            "request": "instance-kvm-resilient-input-schema.json",
+            "response": "instance-kvm-output-schema.json",
+            "index": 1
+        },
+        "cluster": {
+            "title": "Cluster",
+            "description": "Cluster KVM",
+            "serialisation": "json-in-xml",
+            "request": "instance-kvm-cluster-input-schema.json",
+            "response": "instance-kvm-output-schema.json",
+            "index": 2
+        }
+    }
+}
