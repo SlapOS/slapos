@@ -103,6 +103,7 @@ qemu-path =  {{ qemu_executable_location }}
 qemu-img-path = {{ qemu_img_executable_location }}
 6tunnel-path = {{ sixtunnel_executable_location }}
 
+etc-directory = ${directory:etc}
 disk-storage-list = 
 {% for key, path in storage_dict.items() -%}
 {{ '  ' ~ key ~ ' ' ~ path }}

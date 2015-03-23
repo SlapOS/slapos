@@ -36,11 +36,8 @@ external_disk_number = %(external-disk-number)s
 external_disk_size = '%(external-disk-size)s'
 disk_storage_dict = {}
 disk_storage_list = """%(disk-storage-list)s""".split('\n')
-for storage in disk_storage_list:
-  if storage:
-    key, val = storage.split(' ')
-    disk_storage_dict[key.strip()] = val.strip()
-map_storage_list = ['data%%r' %% (i + 1) for i in range(0, len(disk_storage_dict))]
+map_storage_list = []
+etc_directory = '%(etc-directory)s'.strip()
 
 def md5Checksum(file_path):
     with open(file_path, 'rb') as fh:
@@ -70,6 +67,22 @@ def getSocketStatus(host, port):
       continue
     break
   return s
+
+def getMapStorageList(disk_storage_dict):
+  map_disk_file = os.path.join(etc_directory, '.data-disk-ids')
+  id_list = []
+  if os.path.exists(map_disk_file):
+    with open(map_disk_file, 'r') as mf:
+      # ID are writen in one line: data1 data3 data2 ...
+      content = mf.readline()
+      if content:
+        id_list = [id for id in content.split(' ') if disk_storage_dict.has_key(id)]
+  for key in disk_storage_dict:
+    if not key in id_list:
+      id_list.append(key)
+  with open(map_disk_file, 'w') as mf:
+    mf.write(' '.join(id_list))
+  return id_list
 
 # Download existing hard drive if needed at first boot
 if not os.path.exists(disk_path) and virtual_hard_drive_url != '':
@@ -109,6 +122,13 @@ if not os.path.exists(disk_path):
 
 # Check and create external disk
 additional_disk_list = []
+for storage in sorted(disk_storage_list):
+  if storage:
+    key, val = storage.split(' ')
+    disk_storage_dict[key.strip()] = val.strip()
+
+map_storage_list = getMapStorageList(disk_storage_dict)
+
 if disk_storage_dict:
   if int(external_disk_number) > 0:
     index = 0
