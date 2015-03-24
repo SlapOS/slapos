@@ -113,8 +113,11 @@ class Recipe:
     server_url = slap_connection['server_url']
     key_file = slap_connection.get('key_file')
     cert_file = slap_connection.get('cert_file')
-    storage_home = self.buildout['storage-configuration'].get('storage-home')
     instance_root = self.buildout['buildout']['directory']
+    storage_configuration_dict = self.buildout.get('storage-configuration')
+    storage_home = ''
+    if storage_configuration_dict:
+      storage_home = storage_configuration_dict.get('storage-home')
     slap.initializeConnection(server_url, key_file, cert_file)
     self.computer_partition = slap.registerComputerPartition(
       computer_id,
