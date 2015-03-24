@@ -126,6 +126,12 @@
               <div class="input">\n
                 <select size="1" name="software_type" class="slapos-software-type">\n
                 </select>\n
+                \n
+              </div>\n
+            </div>\n
+            <div class="field" title="serialisation_type">\n
+              <div class="input">\n
+                <input type=hidden name="serialisation_type" class="slapos-serialisation-type"></input>\n
               </div>\n
             </div>\n
           </fieldset>\n
@@ -278,7 +284,7 @@
             </item>
             <item>
                 <key> <string>serial</string> </key>
-                <value> <string>941.48617.25119.44288</string> </value>
+                <value> <string>941.57184.6450.44356</string> </value>
             </item>
             <item>
                 <key> <string>state</string> </key>
@@ -296,7 +302,7 @@
                     </tuple>
                     <state>
                       <tuple>
-                        <float>1426700926.65</float>
+                        <float>1427212813.08</float>
                         <string>UTC</string>
                       </tuple>
                     </state>

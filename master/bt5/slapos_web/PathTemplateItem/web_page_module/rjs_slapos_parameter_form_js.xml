@@ -102,7 +102,7 @@
             <value> <string encoding="cdata"><![CDATA[
 
 /*jslint nomen: true, maxlen: 200, indent: 2*/\n
-/*global rJS, console, window, document, loopEventListener, $, XMLSerializer, jQuery, URI, vkbeautify */\n
+/*global rJS, console, window, document, RSVP, loopEventListener, btoa, atob, $, XMLSerializer, jQuery, URI, vkbeautify */\n
 \n
 (function (window, document, rJS, loopEventListener, $, XMLSerializer, jQuery, vkbeautify) {\n
   "use strict";\n
@@ -122,6 +122,19 @@
         );\n
       }\n
     }\n
+    return vkbeautify.xml(\n
+      (new XMLSerializer()).serializeToString(xml_output.context)\n
+    );\n
+  }\n
+\n
+  function jsonDictToParameterJSONInXML(json) {\n
+    var xml_output = $($.parseXML(\'<?xml version="1.0" encoding="utf-8" ?><instance />\'));\n
+      // Used by serialisation XML\n
+    $(\'instance\', xml_output).append(\n
+      $(\'<parameter />\', xml_output)\n
+          .text(vkbeautify.json(JSON.stringify(json)))\n
+            .attr({id: "_"})\n
+    );\n
     return vkbeautify.xml(\n
       (new XMLSerializer()).serializeToString(xml_output.context)\n
     );\n
@@ -175,8 +188,120 @@
     return input;\n
   }\n
 \n
+  function render_subform(json_field, default_dict, root, path) {\n
+    var div_input,\n
+      key,\n
+      div,\n
+      label,\n
+      input,\n
+      default_value,\n
+      default_div,\n
+      span_error,\n
+      span_info;\n
+\n
+    if (default_dict === undefined) {\n
+      default_dict = {};\n
+    }\n
+\n
+    if (path === undefined) {\n
+      path = "/";\n
+    }\n
+\n
+    if (json_field.patternProperties !== undefined) {\n
+      if (json_field.patternProperties[\'.*\'] !== undefined) {\n
+\n
+        div = document.createElement("div");\n
+        div.setAttribute("class", "subfield");\n
+        div.title = json_field.description;\n
+\n
+        /* console.log(key); */\n
+\n
+        div_input = document.createElement("div");\n
+\n
+        div_input = document.createElement("div");\n
+        div_input.setAttribute("class", "input");\n
+\n
+        input = document.createElement("input");\n
+        input.type = "text";\n
+        div_input.appendChild(input);\n
+\n
+        input = document.createElement("button");\n
+        input.value = btoa(JSON.stringify(json_field.patternProperties[\'.*\']));\n
+        input.setAttribute("class", "add-sub-form");\n
+        input.type = "button";\n
+        input.name = path;\n
+        input.textContent = "Add";\n
+        div_input.appendChild(input);\n
+\n
+        div.appendChild(div_input);\n
+\n
+        for (default_value in default_dict) {\n
+          if (default_dict.hasOwnProperty(default_value)) {\n
+            default_div = document.createElement("div");\n
+            label = document.createElement("label");\n
+            label.textContent = default_value;\n
+            default_div.appendChild(label);\n
+            default_div = render_subform(\n
+              json_field.patternProperties[\'.*\'],\n
+              default_dict[default_value],\n
+              default_div,\n
+              path + "/" + default_value);\n
+            div.appendChild(default_div);\n
+          }\n
+        }\n
+        root.appendChild(div);\n
+\n
+\n
+        return div;\n
+    \n
+        \n
+        \n
+        return root;\n
+      }\n
+    }\n
+\n
+    for (key in json_field.properties) {\n
+      if (json_field.properties.hasOwnProperty(key)) {\n
+        div = document.createElement("div");\n
+        div.setAttribute("class", "subfield");\n
+        div.title = json_field.properties[key].description;\n
+        /* console.log(key); */\n
+        label = document.createElement("label");\n
+        label.textContent = json_field.properties[key].title;\n
+        div.appendChild(label);\n
+        div_input = document.createElement("div");\n
+        div_input.setAttribute("class", "input");\n
+        if (json_field.properties[key].type === \'object\') {\n
+          div_input = render_subform(json_field.properties[key],\n
+            default_dict[key],\n
+            div_input,\n
+            path + "/" + key);\n
+        } else {\n
+          input = render_field(json_field.properties[key], default_dict[key]);\n
+          input.name = path + "/" + key;\n
+          input.setAttribute("class", "slapos-parameter");\n
+          div_input.appendChild(input);\n
+        }\n
+        if (json_field.properties[key].default !== undefined) {\n
+          span_info = document.createElement("span");\n
+          span_info.textContent = \'(default = \' + json_field.properties[key].default + \')\';\n
+          div_input.appendChild(span_info);\n
+        }\n
+        span_error = document.createElement("span");\n
+        span_error.setAttribute("class", "error");\n
+        div_input.appendChild(span_error);\n
+        div.appendChild(div_input);\n
+        root.appendChild(div);\n
+      }\n
+    }\n
+\n
+    return root;\n
+  }\n
+\n
   function getFormValuesAsJSONDict(element) {\n
-    var json_dict = {};\n
+    var json_dict = {},\n
+      entry,\n
+      multi_level_dict = {};\n
     $(element.querySelectorAll(".slapos-parameter")).each(function (key, input) {\n
       if (input.value !== "") {\n
         if (input.type === \'number\') {\n
@@ -191,39 +316,103 @@
       }\n
     });\n
     console.log(json_dict);\n
-    return json_dict;\n
+\n
+    function convertOnMultiLevel(key, value, d) {\n
+      var i,\n
+        kk,\n
+        key_list = key.split("/");\n
+      for (i = 2; i < key_list.length; i += 1) {\n
+        kk = key_list[i];\n
+        if (i === key_list.length - 1) {\n
+          d[kk] = value;\n
+        } else {\n
+          if (!d.hasOwnProperty(kk)) {\n
+            d[kk] = {};\n
+          }\n
+          d = d[kk];\n
+        }\n
+      }\n
+    }\n
+\n
+    for (entry in json_dict) {\n
+      if (json_dict.hasOwnProperty(entry)) {\n
+        convertOnMultiLevel(entry, json_dict[entry], multi_level_dict);\n
+      }\n
+    }\n
+\n
+    return multi_level_dict;\n
   }\n
 \n
   function validateForm(gadget, json_url) {\n
     return gadget.processValidation(json_url);\n
   }\n
 \n
-  function loadEventList(gadget) {\n
-      var g = gadget,\n
-        field_list = g.props.element.querySelectorAll(".slapos-parameter"), \n
-        input_index,\n
-        promise_list = [];\n
+  function addSubForm(element) {\n
+    var subform_json = JSON.parse(atob(element.value)),\n
+      input_text = element.parentNode.querySelector("input[type=\'text\']"),\n
+      div = document.createElement("div"),\n
+      label;\n
 \n
-      console.log("INITIATING A LOOP EVENT LISTENER");\n
+    if (input_text.value === "") {\n
+      return false;\n
+    }\n
 \n
-      for (input_index = 0; input_index < field_list.length; input_index++) {\n
-        console.log(input_index);\n
-        promise_list.push(loopEventListener(\n
-          field_list[input_index],\n
-          \'change\',\n
-          false,\n
-          validateForm.bind(g, g, g.options.json_url)\n
-          ));\n
-        }\n
-      return RSVP.all(promise_list);\n
+    label = document.createElement("label");\n
+    label.textContent = input_text.value;\n
+    div.appendChild(label);\n
+\n
+    div = render_subform(subform_json, {}, div, element.name + "/" + input_text.value);\n
+\n
+    element.parentNode.parentNode.appendChild(div);\n
+\n
+    return div;\n
   }\n
-  \n
+\n
+  function loadEventList(gadget) {\n
+    var g = gadget,\n
+      field_list = g.props.element.querySelectorAll(".slapos-parameter"),\n
+      button_list = g.props.element.querySelectorAll(\'button.add-sub-form\'),\n
+      i,\n
+      promise_list = [];\n
+\n
+    console.log("INITIATING A LOOP EVENT LISTENER");\n
+\n
+    for (i = 0; i < field_list.length; i = i + 1) {\n
+      promise_list.push(loopEventListener(\n
+        field_list[i],\n
+        \'change\',\n
+        false,\n
+        validateForm.bind(g, g, g.options.json_url)\n
+      ));\n
+    }\n
+\n
+    for (i = 0; i < button_list.length; i = i + 1) {\n
+      promise_list.push(loopEventListener(\n
+        button_list[i],\n
+        \'click\',\n
+        false,\n
+        addSubForm.bind(g, button_list[i])\n
+      ));\n
+    }\n
+    return RSVP.all(promise_list);\n
+  }\n
+\n
   function getSoftwareTypeFromForm(element) {\n
-    var software_type;\n
-    $(element.querySelectorAll(".slapos-software-type")).each(function (key, input) {\n
-      software_type = input.value;\n
-    });\n
-    return software_type;\n
+    var input = element.querySelector(".slapos-software-type");\n
+\n
+    if (input !== undefined) {\n
+      return input.value;\n
+    }\n
+    return "";\n
+  }\n
+\n
+  function getSerialisationTypeFromForm(element) {\n
+    var input = element.querySelector(".slapos-serialisation-type");\n
+\n
+    if (input !== undefined) {\n
+      return input.value;\n
+    }\n
+    return "";\n
   }\n
 \n
   gk.ready(function (g) {\n
@@ -260,7 +449,8 @@
     .declareMethod(\'processValidation\', function (json_url) {\n
       var g = this,\n
         software_type = getSoftwareTypeFromForm(g.props.element),\n
-        json_dict = getFormValuesAsJSONDict(g.props.element);\n
+        json_dict = getFormValuesAsJSONDict(g.props.element),\n
+        serialisation_type = getSerialisationTypeFromForm(g.props.element);\n
 \n
       return g.validateJSONForSoftwareType(json_url, software_type, json_dict)\n
         .push(function (validation) {\n
@@ -280,32 +470,34 @@
           $(g.props.element.querySelectorAll("div.error-input")).each(function (i, div) {\n
             div.setAttribute("class", "");\n
           });\n
-\n
-          xml_output = jsonDictToParameterXML(json_dict);\n
+          if (serialisation_type === "json-in-xml") {\n
+            xml_output = jsonDictToParameterJSONInXML(json_dict);\n
+          } else {\n
+            xml_output = jsonDictToParameterXML(json_dict);\n
+          }\n
           parameter_hash_input.value = btoa(xml_output);\n
           console.log(parameter_hash_input.value);\n
           if (validation.valid) {\n
             return xml_output;\n
-          } else {\n
-            for (error_index in validation.errors) {\n
-              if (validation.errors.hasOwnProperty(error_index)) {\n
-                field_name = validation.errors[error_index].dataPath.slice(1);\n
-                div = $(\'.slapos-parameter[name=\' + field_name  + "]")[0].parentNode;\n
-                div.setAttribute("class", "slapos-parameter error-input");\n
-                div.querySelector("span.error").textContent = validation.errors[error_index].message;\n
-              }\n
-            }\n
-\n
-            for (missing_index in validation.missing) {\n
-              if (validation.missing.hasOwnProperty(missing_index)) {\n
-                missing_field_name = validation.missing[missing_index].dataPath.slice(1);\n
-                divm = $(\'.slapos-parameter[name=\' + missing_field_name  + "]")[0].parentNode;\n
-                divm.setAttribute("class", "error-input");\n
-                divm.querySelector("span.error").textContent = validation.missing[missing_index].message;\n
-              }\n
-            }\n
-            return "ERROR";\n
           }\n
+          for (error_index in validation.errors) {\n
+            if (validation.errors.hasOwnProperty(error_index)) {\n
+              field_name = validation.errors[error_index].dataPath;\n
+              div = $(".slapos-parameter[name=\'/" + field_name  + "\']")[0].parentNode;\n
+              div.setAttribute("class", "slapos-parameter error-input");\n
+              div.querySelector("span.error").textContent = validation.errors[error_index].message;\n
+            }\n
+          }\n
+\n
+          for (missing_index in validation.missing) {\n
+            if (validation.missing.hasOwnProperty(missing_index)) {\n
+              missing_field_name = validation.missing[missing_index].dataPath;\n
+              divm = $(\'.slapos-parameter[name=/\' + missing_field_name  + "\']")[0].parentNode;\n
+              divm.setAttribute("class", "error-input");\n
+              divm.querySelector("span.error").textContent = validation.missing[missing_index].message;\n
+            }\n
+          }\n
+          return "ERROR";\n
         });\n
     })\n
 \n
@@ -314,53 +506,12 @@
       var g = this;\n
       return g.loadJSONSchema(json_url)\n
         .push(function (json) {\n
-          var key,\n
-            div,\n
-            label,\n
-            input,\n
-            div_input,\n
-            span_error,\n
-            field_list = [],\n
-            span_info,\n
-            fieldset_list = g.props.element.querySelectorAll(\'fieldset\'),\n
-            fieldset = document.createElement("fieldset"),\n
-            fieldset_optional = document.createElement("fieldset");\n
+          var fieldset_list = g.props.element.querySelectorAll(\'fieldset\'),\n
+            fieldset = document.createElement("fieldset");\n
 \n
-          for (key in json.properties) {\n
-            if (json.properties.hasOwnProperty(key)) {\n
-              div = document.createElement("div");\n
-              div.setAttribute("class", "field");\n
-              div.title = json.properties[key].description;\n
-              /* console.log(key); */\n
-              label = document.createElement("label");\n
-              label.textContent = json.properties[key].title;\n
-              div.appendChild(label);\n
-              div_input = document.createElement("div");\n
-              div.setAttribute("class", "input");\n
-              input = render_field(json.properties[key], default_dict[key]);\n
-              input.name = key;\n
-              input.setAttribute("class", "slapos-parameter");\n
-              div_input.appendChild(input);\n
-              if (json.properties[key].default !== undefined) {\n
-                span_info = document.createElement("span");\n
-                span_info.textContent = \'(default = \' + json.properties[key].default + \')\';\n
-                div_input.appendChild(span_info);\n
-              }\n
-              field_list.push(input);\n
-              span_error = document.createElement("span");\n
-              span_error.setAttribute("class", "error");\n
-              div_input.appendChild(span_error);\n
-              div.appendChild(div_input);\n
-              if (json.properties[key].optional === true) {\n
-                fieldset_optional.appendChild(div);\n
-              } else {\n
-                fieldset.appendChild(div);\n
-              }\n
-            }\n
-          }\n
+          fieldset = render_subform(json, default_dict, fieldset);\n
           $(fieldset_list[1]).replaceWith(fieldset);\n
-          $(fieldset_list[2]).replaceWith(fieldset_optional);\n
-          return field_list;\n
+          return fieldset_list;\n
         });\n
     })\n
 \n
@@ -395,7 +546,6 @@
       fieldset_list[0].innerHTML = \'\';\n
       $(fieldset_list[1]).replaceWith(fieldset);\n
       fieldset_list[2].innerHTML = \'\';\n
-      fieldset_list[3].innerHTML = \'\';\n
 \n
       return fieldset;\n
     })\n
@@ -418,11 +568,8 @@
         var option_index,\n
           option,\n
           option_selected = options.parameter.softwaretype,\n
-          input = g.props.element.querySelectorAll(\'select\')[0];\n
-\n
-        if (json.serialisation !== "xml") {\n
-          throw new Error("Unsuported serialisation");\n
-        }\n
+          input = g.props.element.querySelector(\'select.slapos-software-type\'),\n
+          s_input = g.props.element.querySelector(\'input.slapos-serialisation-type\');\n
 \n
         if (input.children.length === 0) {\n
           for (option_index in json[\'software-type\']) {\n
@@ -451,20 +598,38 @@
         if (softwaretype === undefined) {\n
           softwaretype = option_selected;\n
         }\n
-        if (json[\'software-type\'][softwaretype] === undefined ) {\n
+        if (json[\'software-type\'][softwaretype] === undefined) {\n
           throw new Error("The sotware type is not part of the json (" + softwaretype + ")");\n
         }\n
+\n
+        if (json[\'software-type\'][softwaretype].serialisation !== undefined) {\n
+          s_input.value = json[\'software-type\'][softwaretype].serialisation;\n
+          options.serialisation = json[\'software-type\'][softwaretype].serialisation;\n
+        } else {\n
+          s_input.value = json.serialisation;\n
+          options.serialisation = json.serialisation;\n
+        }\n
+\n
         return json[\'software-type\'][softwaretype].request;\n
       })\n
         .push(function (parameter_json_schema_url) {\n
-          var parameter_dict = {}, json_url_uri, prefix;\n
+          var parameter_dict = {}, json_url_uri, prefix, parameter_entry;\n
 \n
           if (options.parameter.parameter_xml !== undefined) {\n
-            $(jQuery.parseXML(options.parameter.parameter_xml)\n
-              .querySelectorAll("parameter"))\n
-                .each(function (key, p) {\n
-                parameter_dict[p.id] = p.textContent;\n
-              });\n
+            if (options.serialisation === "json-in-xml") {\n
+              parameter_entry = jQuery.parseXML(\n
+                options.parameter.parameter_xml\n
+              ).querySelector("parameter[id=\'_\']");\n
+              if (parameter_entry !== null) {\n
+                parameter_dict = JSON.parse(parameter_entry.textContent);\n
+              }\n
+            } else {\n
+              $(jQuery.parseXML(options.parameter.parameter_xml)\n
+                .querySelectorAll("parameter"))\n
+                  .each(function (key, p) {\n
+                  parameter_dict[p.id] = p.textContent;\n
+                });\n
+            }\n
           }\n
 \n
           if (URI(parameter_json_schema_url).protocol() === "") {\n
@@ -487,11 +652,11 @@
           var parameter_xml = \'\';\n
           console.log("FAIL CALLED");\n
           console.log(error.stack);\n
-          if ( g.options.parameter.parameter_hash !== undefined ) {\n
+          if (g.options.parameter.parameter_hash !== undefined) {\n
             parameter_xml = atob(g.options.parameter.parameter_hash);\n
           }\n
           return g.renderFailoverTextArea(parameter_xml, error.toString())\n
-            .push(function() {\n
+            .push(function () {\n
               error = undefined;\n
               return g;\n
             });\n
@@ -499,7 +664,7 @@
     })\n
     .declareService(function () {\n
       var g = this,\n
-       element = g.props.element.getElementsByTagName(\'select\')[0];\n
+        element = g.props.element.getElementsByTagName(\'select\')[0];\n
 \n
       if (element === undefined) {\n
         return true;\n
@@ -515,13 +680,13 @@
 \n
       console.log("INITIATING A LOOP EVENT LISTENER FOR OPTION CHANGE");\n
       return loopEventListener(\n
-            element,\n
-            \'change\',\n
-            false,\n
-            updateParameterForm.bind(g)\n
-        );\n
+        element,\n
+        \'change\',\n
+        false,\n
+        updateParameterForm.bind(g)\n
+      );\n
     })\n
-    .declareService(function() {\n
+    .declareService(function () {\n
       return loadEventList(this);\n
     });\n
 \n
@@ -662,7 +827,7 @@
             </item>
             <item>
                 <key> <string>serial</string> </key>
-                <value> <string>941.49869.11230.41728</string> </value>
+                <value> <string>941.57620.30931.17305</string> </value>
             </item>
             <item>
                 <key> <string>state</string> </key>
@@ -680,7 +845,7 @@
                     </tuple>
                     <state>
                       <tuple>
-                        <float>1426773992.58</float>
+                        <float>1427239101.19</float>
                         <string>UTC</string>
                       </tuple>
                     </state>
