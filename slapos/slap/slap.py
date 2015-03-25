@@ -604,6 +604,15 @@ class ComputerPartition(SlapRequester):
                 }
             )
     return xml_marshaller.loads(xml)
+  
+  def getFullHostingIpAddressList(self):
+    xml = self._connection_helper.GET('getHostingSubscriptionIpList',
+            params={
+                'computer_id': self._computer_id,
+                'computer_partition_id': self._partition_id,
+                }
+            )
+    return xml_marshaller.loads(xml)
 
 def _addIpv6Brackets(url):
   # if master_url contains an ipv6 without bracket, add it

@@ -59,6 +59,7 @@ from slapos.grid.svcbackend import (launchSupervisord,
 from slapos.grid.utils import (md5digest, dropPrivileges, SlapPopen)
 from slapos.human import human2bytes
 import slapos.slap
+from netaddr import valid_ipv4, valid_ipv6
 
 
 # XXX: should be moved to SLAP library
@@ -524,6 +525,137 @@ class Slapgrid(object):
 
     if not promise_present:
       self.logger.info("No promise.")
+  
+  def _checkAddFirewallRules(self, command_list, check_command_list, add=True):
+    """
+    """
+    size = len(command_list)
+    for i in range(0, size):
+      command = command_list.pop()
+      check_command = check_command_list.pop()
+      # Check if this rule exists in iptables
+      check_result = subprocess.call(check_command)
+      self.logger.info(check_command)
+      self.logger.info(' '.join(command))
+      if check_result and add:
+        # Add rule when it doesn't exist in iptables
+        subprocess.check_call(command)
+      elif not check_result and not add:
+        # Drop rule when it exists in iptables
+        subprocess.check_call(command)
+
+  def _addIPv4FirewallRules(self, ipv4, ipv4_list):
+    """
+    """
+    command_list = []
+    check_command_list = []
+    for ip in ipv4_list:
+      # Configure INPUT rules
+      check_command_list.append(['iptables', '-C', 'INPUT', '-s', '%s' % ip,
+                                  '-d', '%s' % ipv4, '-j', 'ACCEPT'])
+      command_list.append(['iptables', '-I', 'INPUT', '-s', '%s' % ip, '-d',
+                          '%s' % ipv4, '-j', 'ACCEPT'])
+      # Configure OUTPUT rules
+      check_command_list.append(['iptables', '-C', 'OUTPUT', '-s', '%s' % ipv4,
+                                  '-d', '%s' % ip, '-j', 'ACCEPT'])
+      command_list.append(['iptables', '-I', 'OUTPUT', '-s', '%s' % ipv4, '-d',
+                          '%s' % ip, '-j', 'ACCEPT'])
+      # Configure FORWARD rules
+      check_command_list.append(['iptables', '-C', 'FORWARD', '-s', '%s' % ip,
+                                  '-d', '%s' % ipv4, '-j', 'ACCEPT'])
+      command_list.append(['iptables', '-I', 'FORWARD', '-s', '%s' % ip, '-d',
+                          '%s' % ipv4, '-j', 'ACCEPT'])
+
+    # Cancel all other INPUT requests
+    check_command_list.append(['iptables', '-C', 'INPUT', '-d', '%s' % ipv4,
+                                                                '-j', 'DROP'])
+    command_list.append(['iptables', '-A', 'INPUT', '-d', '%s' % ipv4,
+                                                                '-j', 'DROP'])
+    # Cancel all other OUTPUT requests
+    check_command_list.append(['iptables', '-C', 'OUTPUT', '-s', '%s' % ipv4,
+                                                                  '-j', 'DROP'])
+    command_list.append(['iptables', '-A', 'OUTPUT', '-s', '%s' % ipv4,
+                                                              '-j', 'DROP'])
+    # Cancel all other FORWARD requests
+    check_command_list.append(['iptables', '-C', 'FORWARD', '-d', '%s' % ipv4,
+                                                                  '-j', 'DROP'])
+    command_list.append(['iptables', '-A', 'FORWARD', '-d', '%s' % ipv4,
+                                                              '-j', 'DROP'])
+    self._checkAddFirewallRules(command_list, check_command_list)
+
+  def _dropIPv4FirewallRules(self, ipv4, ipv4_list):
+    """
+    """
+    command_list = []
+    check_command_list = []
+    for ip in ipv4_list:
+      # Configure INPUT rules
+      check_command_list.append(['iptables', '-C', 'INPUT', '-s', '%s' % ip,
+                                  '-d', '%s' % ipv4, '-j', 'ACCEPT'])
+      command_list.append(['iptables', '-D', 'INPUT', '-s', '%s' % ip, '-d',
+                          '%s' % ipv4, '-j', 'ACCEPT'])
+      # Configure OUTPUT rules
+      check_command_list.append(['iptables', '-C', 'OUTPUT', '-s', '%s' % ipv4,
+                                  '-d', '%s' % ip, '-j', 'ACCEPT'])
+      command_list.append(['iptables', '-D', 'OUTPUT', '-s', '%s' % ipv4, '-d',
+                          '%s' % ip, '-j', 'ACCEPT'])
+      # Configure FORWARD rules
+      check_command_list.append(['iptables', '-C', 'FORWARD', '-s', '%s' % ip,
+                                  '-d', '%s' % ipv4, '-j', 'ACCEPT'])
+      command_list.append(['iptables', '-D', 'FORWARD', '-s', '%s' % ip, '-d',
+                          '%s' % ipv4, '-j', 'ACCEPT'])
+    
+    # Cancel all other INPUT requests
+    check_command_list.append(['iptables', '-C', 'INPUT', '-d', '%s' % ipv4,
+                                                                '-j', 'DROP'])
+    command_list.append(['iptables', '-D', 'INPUT', '-d', '%s' % ipv4,
+                                                                '-j', 'DROP'])
+    # Cancel all other OUTPUT requests
+    check_command_list.append(['iptables', '-C', 'OUTPUT', '-s', '%s' % ipv4,
+                                                                  '-j', 'DROP'])
+    command_list.append(['iptables', '-D', 'OUTPUT', '-s', '%s' % ipv4,
+                                                              '-j', 'DROP'])
+    # Cancel all other FORWARD requests
+    check_command_list.append(['iptables', '-C', 'FORWARD', '-d', '%s' % ipv4,
+                                                                  '-j', 'DROP'])
+    command_list.append(['iptables', '-D', 'FORWARD', '-d', '%s' % ipv4,
+                                                              '-j', 'DROP'])
+
+    self._checkAddFirewallRules(command_list, check_command_list, add=False)
+  
+  def _setupComputerPartitionFirewall(self, ip_list, hosting_ip_list, drop_entries=False):
+    """
+    Using linux iptables, limit access to IP of this partition to all 
+    others partitions of the same Hosting Subscription
+    """
+    ipv4_list = []
+    ipv6_list = []
+    hosting_ipv4_list = []
+    hosting_ipv6_list = []
+    for iface, ip in ip_list:
+      if valid_ipv4(ip):
+        ipv4_list.append(ip)
+      elif valid_ipv6(ip):
+        ipv6_list.append(ip)
+    
+    for iface, ip in hosting_ip_list:
+      if valid_ipv4(ip):
+        if not ip in ipv4_list:
+          hosting_ipv4_list.append(ip)
+      elif valid_ipv6(ip):
+        if not ip in ipv6_list:
+          hosting_ipv6_list.append(ip)
+
+    if not drop_entries:
+      # Add or updare firewall configuration
+      self.logger.info("Configuring firewall...")
+      for ip in ipv4_list:
+        self._addIPv4FirewallRules(ip, hosting_ipv4_list)
+    else:
+      # Remove firewall configuration
+      self.logger.info("Removing firewall configuration...")
+      for ip in ipv4_list:
+        self._dropIPv4FirewallRules(ip, hosting_ipv4_list)
 
   def processComputerPartition(self, computer_partition):
     """
@@ -657,11 +789,17 @@ class Slapgrid(object):
       # XXX this line breaks 37 tests
       # self.logger.info('  Instance type: %s' % computer_partition.getType())
       self.logger.info('  Instance status: %s' % computer_partition_state)
+      
+      partition_ip_list = parameter_dict['ip_list'] + parameter_dict.get(
+                                                            'full_ip_list', [])
+      full_hosting_ip_list = computer_partition.getFullHostingIpAddressList()
 
       if computer_partition_state == COMPUTER_PARTITION_STARTED_STATE:
         local_partition.install()
         computer_partition.available()
         local_partition.start()
+        self._setupComputerPartitionFirewall(partition_ip_list,
+                         full_hosting_ip_list)
         self._checkPromises(computer_partition)
         computer_partition.started()
       elif computer_partition_state == COMPUTER_PARTITION_STOPPED_STATE:
@@ -670,12 +808,16 @@ class Slapgrid(object):
           # propagate the state to children if any.
           local_partition.install()
           computer_partition.available()
+          self._setupComputerPartitionFirewall(partition_ip_list,
+                         full_hosting_ip_list)
         finally:
           # Instance has to be stopped even if buildout/reporting is wrong.
           local_partition.stop()
         computer_partition.stopped()
       elif computer_partition_state == COMPUTER_PARTITION_DESTROYED_STATE:
         local_partition.stop()
+        self._setupComputerPartitionFirewall(partition_ip_list,
+                         full_hosting_ip_list, drop_entries=True)
         try:
           computer_partition.stopped()
         except (SystemExit, KeyboardInterrupt):
