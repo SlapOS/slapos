@@ -95,11 +95,13 @@ def partitiondict2partition(partition):
     slap_partition._requested_state = partition['requested_state']
     slap_partition._parameter_dict = xml2dict(partition['xml'])
     address_list = []
+    full_address_list = []
     for address in execute_db('partition_network',
                               'SELECT * FROM %s WHERE partition_reference=? AND computer_reference=?',
                               [partition['reference'], partition['computer_reference']]):
       address_list.append((address['reference'], address['address']))
     slap_partition._parameter_dict['ip_list'] = address_list
+    slap_partition._parameter_dict['full_address_list'] = full_address_list
     slap_partition._parameter_dict['slap_software_type'] = \
         partition['software_type']
     if partition['slave_instance_list'] is not None:
