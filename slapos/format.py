@@ -383,10 +383,11 @@ class Computer(object):
 
       if partition_dict['tap']:
         tap = Tap(partition_dict['tap']['name'])
-        tap.ipv4_addr = partition_dict['tap'].get('ipv4_addr', '')
-        tap.ipv4_netmask = partition_dict['tap'].get('ipv4_netmask', '')
-        tap.ipv4_gateway = partition_dict['tap'].get('ipv4_gateway', '')
-        tap.ipv4_network = partition_dict['tap'].get('ipv4_network', '')
+        if tap_gateway_interface:
+          tap.ipv4_addr = partition_dict['tap'].get('ipv4_addr', '')
+          tap.ipv4_netmask = partition_dict['tap'].get('ipv4_netmask', '')
+          tap.ipv4_gateway = partition_dict['tap'].get('ipv4_gateway', '')
+          tap.ipv4_network = partition_dict['tap'].get('ipv4_network', '')
       else:
         tap = Tap(partition_dict['reference'])
 
