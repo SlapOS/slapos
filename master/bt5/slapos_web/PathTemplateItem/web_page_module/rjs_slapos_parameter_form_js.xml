@@ -688,6 +688,10 @@
     })\n
     .declareService(function () {\n
       return loadEventList(this);\n
+    })\n
+    .declareService(function () {\n
+      var g = this;\n
+      return g.processValidation(g.options.json_url);\n
     });\n
 \n
 }(window, document, rJS, loopEventListener, $, XMLSerializer, jQuery, vkbeautify));
@@ -827,7 +831,7 @@
             </item>
             <item>
                 <key> <string>serial</string> </key>
-                <value> <string>941.57620.30931.17305</string> </value>
+                <value> <string>941.57622.23194.30685</string> </value>
             </item>
             <item>
                 <key> <string>state</string> </key>
@@ -845,7 +849,7 @@
                     </tuple>
                     <state>
                       <tuple>
-                        <float>1427239101.19</float>
+                        <float>1427275105.86</float>
                         <string>UTC</string>
                       </tuple>
                     </state>
