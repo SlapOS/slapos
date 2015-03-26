@@ -90,12 +90,15 @@ person = portal.ERP5Site_getAuthenticatedMemberPersonValue()\n
 \n
 if person is None:\n
   raise ValueError("You cannot request without been logged in as a user.")\n
+  \n
+if software_type in [None, ""]:\n
+  software_type = "RootSoftwareInstance"\n
 \n
 request_kw = {}\n
 request_kw.update(\n
   software_release=url,\n
   software_title=service_title,\n
-  software_type="RootSoftwareInstance",\n
+  software_type=software_type,\n
   instance_xml=instance_xml,\n
   sla_xml="",\n
   shared=False,\n
