@@ -77,6 +77,9 @@
                       <list>
                         <string>listbox</string>
                         <string>my_destroy_button</string>
+                        <string>ticket_listbox</string>
+                        <string>new_ticket_button</string>
+                        <string>your_get_token</string>
                       </list>
                     </value>
                 </item>
@@ -101,6 +104,7 @@
                     <value>
                       <list>
                         <string>my_title</string>
+                        <string>my_restricted_access_token_generate_button</string>
                         <string>your_ad</string>
                         <string>my_url_string</string>
                         <string>my_source_reference</string>
