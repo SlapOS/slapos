@@ -282,7 +282,7 @@ parts +=
   cron-entry-rss
   deploy-index
   deploy-logfile-cgi
-  deploy-ressource-monitoring-cgi
+  deploy-resource-consumption-monitoring-cgi
   setup-static-files
   public-symlink
   cgi-httpd-wrapper
