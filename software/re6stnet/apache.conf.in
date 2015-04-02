@@ -1,0 +1,57 @@
+LoadModule unixd_module modules/mod_unixd.so
+LoadModule access_compat_module modules/mod_access_compat.so
+LoadModule authz_core_module modules/mod_authz_core.so
+LoadModule authz_host_module modules/mod_authz_host.so
+LoadModule log_config_module modules/mod_log_config.so
+LoadModule setenvif_module modules/mod_setenvif.so
+LoadModule version_module modules/mod_version.so
+LoadModule proxy_module modules/mod_proxy.so
+LoadModule proxy_http_module modules/mod_proxy_http.so
+LoadModule socache_shmcb_module modules/mod_socache_shmcb.so
+LoadModule ssl_module modules/mod_ssl.so
+LoadModule mime_module modules/mod_mime.so
+#LoadModule dav_module modules/mod_dav.so
+#LoadModule dav_fs_module modules/mod_dav_fs.so
+LoadModule negotiation_module modules/mod_negotiation.so
+LoadModule rewrite_module modules/mod_rewrite.so
+LoadModule headers_module modules/mod_headers.so
+
+PidFile "{{ pid_file }}"
+ServerAdmin admin@
+TypesConfig conf/mime.types
+AddType application/x-compress .Z
+AddType application/x-gzip .gz .tgz
+
+ServerTokens Prod
+ServerSignature Off
+TraceEnable Off
+
+ErrorLog "{{ error_log }}"
+# Default apache log format with request time in microsecond at the end
+LogFormat "%h %l %u %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\" %D" combined
+CustomLog "{{ access_log }}" combined
+
+{% if uri_scheme == 'https'  -%}
+# SSL Configuration
+SSLCertificateFile {{ certificate }}
+SSLCertificateKeyFile {{ key }}
+SSLRandomSeed startup builtin
+SSLRandomSeed connect builtin
+SSLProtocol ALL -SSLv2
+{% endif -%}
+
+<Directory />
+  Options FollowSymLinks
+  AllowOverride None
+  Allow from all
+</Directory>
+
+Listen {{ ipv6 }}:{{ apache_port }}
+<VirtualHost *:{{ apache_port }}>
+{% if uri_scheme == 'https'  -%}
+  SSLEngine On
+  SSLProxyEngine On
+{% endif -%}
+
+  ProxyPass / {{ uri_scheme }}://{{ re6st_ipv4 }}:{{ re6st_port }}/
+</VirtualHost>
