@@ -4,7 +4,7 @@ import shutil
 import sys
 import tempfile
 import unittest
-from slapos.slap.slap import NotFoundError
+from slapos.slap.slap import NotFoundError, ConnectionError
 
 from slapos.recipe import re6stnet
 
@@ -21,7 +21,7 @@ class Re6stnetTest(unittest.TestCase):
     with open(config_file, 'w') as f:
       f.write('port  9201')
     self.options = options = {
-                'openssl-bin': 'openssl',
+                'openssl-bin': '/usr/bin/openssl',
                 'key-file': os.path.join(self.ssl_dir, 'cert.key'),
                 'cert-file': os.path.join(self.ssl_dir, 'cert.crt'),
                 'key-size': '2048',
@@ -58,16 +58,44 @@ class Re6stnetTest(unittest.TestCase):
                    'executable': sys.executable,
                    },
                'slap-connection': {
-                   'computer-id': '',
-                   'partition-id': '',
-                   'server-url': '',
-                   'software-release-url': '',
+                   'computer-id': 'comp-test',
+                   'partition-id': 'slappart0',
+                   'server-url': 'http://server.com',
+                   'software-release-url': 'http://software.com',
+                   'key-file': '/path/to/key',
+                   'cert-file': '/path/to/cert'
                    }
               }
 
       options = self.options
 
       return re6stnet.Recipe(buildout=buildout, name='re6stnet', options=options)
+  
+  def checkWrapper(self, path):
+    self.assertTrue(os.path.exists(path))
+    content = ""
+    token_file = os.path.join(self.options['conf-dir'], 'token.json')
+    with open(path, 'r') as f:
+        content = f.read()
+    self.assertIn("'token_json': '%s'" % token_file, content)
+    self.assertIn("'partition_id': 'slappart0'", content)
+    self.assertIn("'computer_id': 'comp-test'", content)
+    self.assertIn("'key_file': '/path/to/key'", content)
+    self.assertIn("'cert_file': '/path/to/cert'", content)
+    self.assertIn("'server_url': 'http://server.com'", content)
+    self.assertIn("'db': '%s'" % self.options['db-path'], content)
+    self.assertIn("'token_base_path': '%s'" % self.token_dir, content)
+    self.assertIn("'registry_url': 'http://%s:%s/'" % (self.options['ipv4'],
+                                                self.options['port']), content)
+  
+  def checkRegistryWrapper(self):
+    path = os.path.join(self.base_dir, 'wrapper')
+    self.assertTrue(os.path.exists(path))
+    content = ""
+    config_file = os.path.join(self.base_dir, 'config')
+    with open(path, 'r') as f:
+        content = f.read()
+    self.assertIn("@%s" % config_file, content)
   
   def test_generateCertificates(self):
     
@@ -115,7 +143,7 @@ class Re6stnetTest(unittest.TestCase):
 
     try:
       recipe.install()
-    except NotFoundError:
+    except (NotFoundError, ConnectionError):
       # Recipe will raise not found error when trying to publish slave informations
       pass
     
@@ -144,13 +172,18 @@ class Re6stnetTest(unittest.TestCase):
     second_add = recipe.readFile(os.path.join(self.token_dir, 'SOFTINST-58778.add'))
     self.assertEqual(token_dict['SOFTINST-58778'], second_add)
     
+    self.checkWrapper(os.path.join(self.base_dir, 'manager_wrapper'))
+    self.checkWrapper(os.path.join(self.base_dir, 'drop_wrapper'))
+    self.checkWrapper(os.path.join(self.base_dir, 'check_wrapper'))
+    self.checkRegistryWrapper()
+    
     # Remove one element
     recipe.options.update({
         "slave-instance-list": """[{"slave_reference":"SOFTINST-58770"}]"""
         })
     try:
       recipe.install()
-    except NotFoundError:
+    except (NotFoundError, ConnectionError):
       # Recipe will raise not found error when trying to publish slave informations
       pass
     token_dict = recipe.loadJsonFile(token_file)
@@ -181,4 +214,9 @@ class Re6stnetTest(unittest.TestCase):
     token_content = recipe.readFile(token_file)
     self.assertEqual(token_content, '{}')
     self.assertItemsEqual(os.listdir(self.options['token-dir']), [])
+    
+    self.checkWrapper(os.path.join(self.base_dir, 'manager_wrapper'))
+    self.checkWrapper(os.path.join(self.base_dir, 'drop_wrapper'))
+    self.checkWrapper(os.path.join(self.base_dir, 'check_wrapper'))
+    self.checkRegistryWrapper()
 
