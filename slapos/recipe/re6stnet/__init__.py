@@ -156,6 +156,10 @@ class Recipe(GenericBaseRecipe):
       path = os.path.join(token_list_path, '%s.remove' % reference)
       if not os.path.exists(path):
         self.createFile(path, rm_token_dict[reference])
+        # remove request add file if exists
+        add_path = os.path.join(token_list_path, '%s.add' % reference)
+        if os.path.exists(add_path):
+          os.unlink(add_path)
 
     self.createFile(token_save_path, json.dumps(token_dict))
 
