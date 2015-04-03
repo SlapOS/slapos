@@ -1,0 +1,21 @@
+{
+    "name": "RE6STNET",
+    "description": "Master instance of re6st (Resilient, Scalable, IPv6 Network application)",
+    "serialisation": "xml",
+    "software-type": {
+        "default": {
+            "title": "Default",
+            "description": "Re6st registry",
+            "request": "instance-re6stnet-input-schema.json",
+            "response": "instance-re6stnet-output-schema.json",
+            "index": 0
+        },
+        "registry": {
+            "title": "registry",
+            "description": "Re6st registry",
+            "request": "instance-re6stnet-resilient-input-schema.json",
+            "response": "instance-re6stnet-output-schema.json",
+            "index": 1
+        }
+    }
+}

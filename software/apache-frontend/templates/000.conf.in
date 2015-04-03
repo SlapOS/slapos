@@ -2,7 +2,8 @@
   ServerName www.example.org
   SSLEngine on
   SSLProxyEngine on
-  SSLProtocol ALL -SSLv2
+  SSLProtocol ALL -SSLv2 -SSLv3
+  SSLCipherSuite HIGH:MEDIUM:!aNULL:!MD5:!RC4
 
   # Rewrite part
   ProxyVia On

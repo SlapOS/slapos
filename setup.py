@@ -28,7 +28,7 @@ from setuptools import setup, find_packages
 import glob
 import os
 
-version = '0.97.dev0'
+version = '0.97.dev'
 name = 'slapos.cookbook'
 long_description = open("README.txt").read() + "\n" + \
     open("CHANGES.txt").read() + "\n"
@@ -174,6 +174,7 @@ setup(name=name,
           'request.serialised = slapos.recipe.request:Serialised',
           'request.edge = slapos.recipe.request:RequestEdge',
           'requestoptional = slapos.recipe.request:RequestOptional',
+          're6stnet.registry = slapos.recipe.re6stnet:Recipe',
           'reverseproxy.nginx = slapos.recipe.reverse_proxy_nginx:Recipe',
           'seleniumrunner = slapos.recipe.seleniumrunner:Recipe',
           'sheepdogtestbed = slapos.recipe.sheepdogtestbed:SheepDogTestBed',

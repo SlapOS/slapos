@@ -6,9 +6,9 @@
 
   SSLEngine on
   SSLProxyEngine on
-  SSLProtocol -ALL +SSLv3 +TLSv1
-  SSLHonorCipherOrder On
-  SSLCipherSuite RC4-SHA:HIGH:!ADH
+  SSLProtocol all -SSLv2 -SSLv3
+  SSLCipherSuite HIGH:MEDIUM:!aNULL:!MD5:!RC4
+
 
 {% set ssl_configuration_list = [('SSLCertificateFile', 'path_to_ssl_crt'),
        			      	 ('SSLCertificateKeyFile', 'path_to_ssl_key'),
