@@ -238,24 +238,22 @@
         for (default_value in default_dict) {\n
           if (default_dict.hasOwnProperty(default_value)) {\n
             default_div = document.createElement("div");\n
+            default_div.setAttribute("class", "slapos-parameter-dict-key");\n
             label = document.createElement("label");\n
             label.textContent = default_value;\n
+            label.setAttribute("class", "slapos-parameter-dict-key");\n
             default_div.appendChild(label);\n
             default_div = render_subform(\n
               json_field.patternProperties[\'.*\'],\n
               default_dict[default_value],\n
               default_div,\n
-              path + "/" + default_value);\n
+              path + "/" + default_value\n
+            );\n
             div.appendChild(default_div);\n
           }\n
         }\n
         root.appendChild(div);\n
 \n
-\n
-        return div;\n
-    \n
-        \n
-        \n
         return root;\n
       }\n
     }\n
@@ -357,13 +355,16 @@
       return false;\n
     }\n
 \n
+    div.setAttribute("class", "slapos-parameter-dict-key");\n
     label = document.createElement("label");\n
     label.textContent = input_text.value;\n
+    label.setAttribute("class", "slapos-parameter-dict-key");\n
     div.appendChild(label);\n
 \n
     div = render_subform(subform_json, {}, div, element.name + "/" + input_text.value);\n
 \n
-    element.parentNode.parentNode.appendChild(div);\n
+    element.parentNode.parentNode.insertBefore(div, element.parentNode.parentNode.children[1]);\n
+    // element.parentNode.parentNode.appendChild(div);\n
 \n
     return div;\n
   }\n
@@ -559,11 +560,6 @@
 \n
       this.options = options;\n
 \n
-      function updateParameterForm(evt) {\n
-        options.parameter.softwaretype = evt.srcElement.value;\n
-        return g.render(options);\n
-      }\n
-\n
       return g.loadSoftwareJSON(g.options.json_url).push(function (json) {\n
         var option_index,\n
           option,\n
@@ -691,7 +687,20 @@
     })\n
     .declareService(function () {\n
       var g = this;\n
-      return g.processValidation(g.options.json_url);\n
+      return g.processValidation(g.options.json_url)\n
+        .fail(function (error) {\n
+          var parameter_xml = \'\';\n
+          console.log("FAIL CALLED");\n
+          console.log(error.stack);\n
+          if (g.options.parameter.parameter_hash !== undefined) {\n
+            parameter_xml = atob(g.options.parameter.parameter_hash);\n
+          }\n
+          return g.renderFailoverTextArea(parameter_xml, error.toString())\n
+            .push(function () {\n
+              error = undefined;\n
+              return g;\n
+            });\n
+        });\n
     });\n
 \n
 }(window, document, rJS, loopEventListener, $, XMLSerializer, jQuery, vkbeautify));
@@ -831,7 +840,7 @@
             </item>
             <item>
                 <key> <string>serial</string> </key>
-                <value> <string>941.58456.37859.54289</string> </value>
+                <value> <string>942.10806.29939.62481</string> </value>
             </item>
             <item>
                 <key> <string>state</string> </key>
@@ -849,7 +858,7 @@
                     </tuple>
                     <state>
                       <tuple>
-                        <float>1427289240.71</float>
+                        <float>1428362362.95</float>
                         <string>UTC</string>
                       </tuple>
                     </state>
