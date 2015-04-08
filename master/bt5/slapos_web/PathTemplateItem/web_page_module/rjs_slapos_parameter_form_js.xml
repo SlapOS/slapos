@@ -140,20 +140,25 @@
     );\n
   }\n
 \n
-  function render_selection(json_field) {\n
+  function render_selection(json_field, default_value) {\n
     var input = document.createElement("select"),\n
       option = document.createElement("option"),\n
       option_index,\n
       optionz;\n
     input.size = 1;\n
-    option.selected = "selected";\n
     option.value = "";\n
+    if (default_value === undefined) {\n
+      option.selected = "selected";\n
+    }\n
     input.appendChild(option);\n
     for (option_index in json_field.enum) {\n
       if (json_field.enum.hasOwnProperty(option_index)) {\n
         optionz = document.createElement("option");\n
         optionz.value = json_field.enum[option_index];\n
         optionz.textContent = json_field.enum[option_index];\n
+        if (json_field.enum[option_index] === default_value) {\n
+          optionz.selected = "selected";\n
+        }\n
         input.appendChild(optionz);\n
       }\n
     }\n
@@ -163,12 +168,12 @@
   function render_field(json_field, default_value) {\n
 \n
     if (json_field.enum !== undefined) {\n
-      return render_selection(json_field);\n
+      return render_selection(json_field, default_value);\n
     }\n
 \n
     if (json_field.type === "boolean") {\n
       json_field.enum = [true, false];\n
-      return render_selection(json_field);\n
+      return render_selection(json_field, default_value);\n
     }\n
 \n
     var input = document.createElement("input");\n
@@ -254,7 +259,8 @@
         }\n
         root.appendChild(div);\n
 \n
-        return root;\n
+\n
+        return div;\n
       }\n
     }\n
 \n
@@ -313,7 +319,7 @@
         }\n
       }\n
     });\n
-    console.log(json_dict);\n
+    // console.log(json_dict);\n
 \n
     function convertOnMultiLevel(key, value, d) {\n
       var i,\n
@@ -376,7 +382,7 @@
       i,\n
       promise_list = [];\n
 \n
-    console.log("INITIATING A LOOP EVENT LISTENER");\n
+    // console.log("INITIATING A LOOP EVENT LISTENER");\n
 \n
     for (i = 0; i < field_list.length; i = i + 1) {\n
       promise_list.push(loopEventListener(\n
@@ -477,7 +483,7 @@
             xml_output = jsonDictToParameterXML(json_dict);\n
           }\n
           parameter_hash_input.value = btoa(xml_output);\n
-          console.log(parameter_hash_input.value);\n
+          // console.log(parameter_hash_input.value);\n
           if (validation.valid) {\n
             return xml_output;\n
           }\n
@@ -554,11 +560,16 @@
       if (options.json_url === undefined) {\n
         throw new Error("undefined json_url");\n
       }\n
-      console.log("CALLED RENDER");\n
+      // console.log("CALLED RENDER");\n
       var g = this,\n
         softwaretype;\n
 \n
       this.options = options;\n
+\n
+      function updateParameterForm(evt) {\n
+        options.parameter.softwaretype = evt.srcElement.value;\n
+        return g.render(options);\n
+      }\n
 \n
       return g.loadSoftwareJSON(g.options.json_url).push(function (json) {\n
         var option_index,\n
@@ -636,17 +647,17 @@
             prefix = options.json_url.split(json_url_uri.path())[0] + prefix.join("/");\n
             parameter_json_schema_url = prefix + "/" + parameter_json_schema_url;\n
           }\n
-          console.log("GOING TO RENDER FORM");\n
+          // console.log("GOING TO RENDER FORM");\n
           return g.renderParameterForm(parameter_json_schema_url, parameter_dict);\n
         })\n
         .push(function () {\n
-          console.log("FINISHED TO RENDER, RETURNING THE GADGET");\n
+          // console.log("FINISHED TO RENDER, RETURNING THE GADGET");\n
           return g;\n
         })\n
 \n
         .fail(function (error) {\n
           var parameter_xml = \'\';\n
-          console.log("FAIL CALLED");\n
+          // console.log("FAIL CALLED");\n
           console.log(error.stack);\n
           if (g.options.parameter.parameter_hash !== undefined) {\n
             parameter_xml = atob(g.options.parameter.parameter_hash);\n
@@ -674,7 +685,7 @@
           });\n
       }\n
 \n
-      console.log("INITIATING A LOOP EVENT LISTENER FOR OPTION CHANGE");\n
+      // console.log("INITIATING A LOOP EVENT LISTENER FOR OPTION CHANGE");\n
       return loopEventListener(\n
         element,\n
         \'change\',\n
@@ -690,7 +701,7 @@
       return g.processValidation(g.options.json_url)\n
         .fail(function (error) {\n
           var parameter_xml = \'\';\n
-          console.log("FAIL CALLED");\n
+          // console.log("FAIL CALLED");\n
           console.log(error.stack);\n
           if (g.options.parameter.parameter_hash !== undefined) {\n
             parameter_xml = atob(g.options.parameter.parameter_hash);\n
@@ -840,7 +851,7 @@
             </item>
             <item>
                 <key> <string>serial</string> </key>
-                <value> <string>942.10806.29939.62481</string> </value>
+                <value> <string>942.12751.5721.43315</string> </value>
             </item>
             <item>
                 <key> <string>state</string> </key>
@@ -858,7 +869,7 @@
                     </tuple>
                     <state>
                       <tuple>
-                        <float>1428362362.95</float>
+                        <float>1428479010.83</float>
                         <string>UTC</string>
                       </tuple>
                     </state>
