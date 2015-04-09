@@ -192,6 +192,7 @@ hostname = ${apache-conf:ipv6}
 port = ${apache-conf:port}
 
 {% do publish_dict.__setitem__('re6stry-url', uri_scheme ~ '://[${apache-conf:ipv6}]:${apache-conf:port}') -%}
+{% do publish_dict.__setitem__('re6stry-local-url',  'http://${re6st-registry:ipv4}:${re6st-registry:port}/') -%}
 [publish]
 recipe = slapos.cookbook:publish
 {% for name, value in publish_dict.items() -%}
