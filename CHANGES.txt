@@ -1,6 +1,10 @@
 Changes
 =======
 
+0.98 (2015-04-09)
+-----------------
+ * shellinabox: do not run in debug mode, it is much slower !
+
 0.97 (2015-03-26)
 -----------------
  * switch softwaretype recipe: the recipe is backward compatible with old slapos node packages.
