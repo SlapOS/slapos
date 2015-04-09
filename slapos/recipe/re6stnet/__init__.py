@@ -71,8 +71,12 @@ class Recipe(GenericBaseRecipe):
   def generateCertificate(self):
     key_file = self.options['key-file'].strip()
     cert_file = self.options['cert-file'].strip()
+    dh_file = self.options['dh-file'].strip()
     if not os.path.exists(key_file):
       serial = self.getSerialFromIpv6(self.options['ipv6-prefix'].strip())
+
+      dh_command = [self.options['openssl-bin'], 'dhparam', '-out',
+                            '%s' % dh_file, self.options['key-size']]
 
       key_command = [self.options['openssl-bin'], 'genrsa', '-out',
                             '%s' % key_file, self.options['key-size']]
@@ -82,6 +86,7 @@ class Recipe(GenericBaseRecipe):
                   '-x509', '-batch', '-key', '%s' % key_file, '-set_serial',
                   '%s' % serial, '-days', '3650', '-out', '%s' % cert_file]
 
+      subprocess.check_call(dh_command)
       subprocess.check_call(key_command)
       subprocess.check_call(cert_command)
 

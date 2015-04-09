@@ -4,6 +4,7 @@ port  {{ parameter_dict['port'] }}
 db  {{ parameter_dict['db'] }}
 ca  {{ parameter_dict['ca'] }}
 key  {{ parameter_dict['key'] }}
+dh   {{ parameter_dict['dh'] }}
 mailhost {{ parameter_dict['mailhost'] }}
 prefix-length  {{ parameter_dict['prefix-length'] }}
 anonymous-prefix-length  {{ parameter_dict['anonymous-prefix-length'] }}

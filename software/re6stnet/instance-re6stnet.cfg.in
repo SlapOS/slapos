@@ -106,6 +106,7 @@ ipv6 = {{ ipv6 }}
 db = ${re6stnet-dirs:registry}/registry.db
 ca = ${re6stnet-dirs:ssl}/re6stnet.crt
 key = ${re6stnet-dirs:ssl}/re6stnet.key
+dh = ${re6stnet-dirs:ssl}/dh.pem
 mailhost = 127.0.0.1
 prefix-length = 16
 anonymous-prefix-length = 32
@@ -140,6 +141,7 @@ ipv4 = ${re6st-registry-conf-dict:ipv4}
 db-path = ${re6st-registry-conf-dict:db}
 key-file = ${re6st-registry-conf-dict:key}
 cert-file = ${re6st-registry-conf-dict:ca}
+dh-file = ${re6st-registry-conf-dict:dh}
 
 slave-instance-list = ${slap-parameter:slave_instance_list}
 
