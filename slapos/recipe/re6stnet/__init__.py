@@ -96,7 +96,7 @@ class Recipe(GenericBaseRecipe):
       if not reference in token_dict:
         # we generate new token
         number = reference.split('-')[1]
-        new_token = number + ''.join(random.sample(string.ascii_lowercase, 15))
+        new_token = number + ''.join(random.sample(string.ascii_lowercase, 20))
         token_dict[reference] = new_token
         to_add_dict[reference] = new_token
 
@@ -127,6 +127,17 @@ class Recipe(GenericBaseRecipe):
       return content
     return ''
 
+  def genHash(self, length):
+    hash_path = os.path.join(self.options['conf-dir'], '%s-hash' % length)
+    if not os.path.exists(hash_path):
+      pool = string.letters + string.digits
+      hash_string = ''.join(random.choice(pool) for i in xrange(length))
+      self.writeFile(hash_path, hash_string)
+    else:
+      hash_string = self.readFile(hash_path)
+
+    return hash_string
+
   def install(self):
     path_list = []
     token_save_path = os.path.join(self.options['conf-dir'], 'token.json')
@@ -156,7 +167,7 @@ class Recipe(GenericBaseRecipe):
       path = os.path.join(token_list_path, '%s.remove' % reference)
       if not os.path.exists(path):
         self.createFile(path, rm_token_dict[reference])
-        # remove request add file if exists
+        # remove request add token if exists
         add_path = os.path.join(token_list_path, '%s.add' % reference)
         if os.path.exists(add_path):
           os.unlink(add_path)
@@ -191,6 +202,12 @@ class Recipe(GenericBaseRecipe):
       )
     path_list.append(request_check)
 
+    revoke_check = self.createPythonScript(
+        self.options['revoke-service-wrapper'].strip(),
+        '%s.re6stnet.requestRevoqueCertificate' % __name__, service_dict
+      )
+    path_list.append(revoke_check)
+
     # Send connection parameters of slave instances
     if token_dict:
       self.slap.initializeConnection(self.server_url, self.key_file,
@@ -211,7 +228,7 @@ class Recipe(GenericBaseRecipe):
           computer_partition.setConnectionDict(
               {'token':token, '1_info':msg},
               slave_reference)
-        except:
+        except Exception:
           self.logger.fatal("Error while sending slave %s informations: %s",
              slave_reference, traceback.format_exc())
 

@@ -5,8 +5,10 @@ import os
 import time
 import sqlite3
 import slapos
+import traceback
 
-from re6st import registry
+from re6st import registry, x509
+from OpenSSL import crypto
 
 log = logging.getLogger('SLAPOS-RE6STNET')
 logging.basicConfig(level=logging.DEBUG)
@@ -50,6 +52,7 @@ def bang(args):
   partition.bang(message='Published parameters changed!')
   log.info("Bang with message 'parameters changed'...")
 
+
 def requestAddToken(args, can_bang=True):
 
   time.sleep(3)
@@ -69,12 +72,13 @@ def requestAddToken(args, can_bang=True):
     token = readFile(request_file)
     if token :
       reference = reference_key.split('.')[0]
+      # email is unique as reference is also unique
       email = '%s@slapos' % reference.lower()
       try:
         result = client.requestAddToken(token, email)
-      except Exception, e:
+      except Exception:
         log.debug('Request add token fail for %s... \n %s' % (request_file,
-                    str(e)))
+                    traceback.format_exc()))
         continue
       if result and result == token:
         # update information
@@ -97,7 +101,7 @@ def requestRemoveToken(args):
   if not path_list:
     log.info("No token to delete. Exiting...")
     return
-  
+
   client = registry.RegistryClient(args['registry_url'])
   for reference_key in path_list:
     request_file = os.path.join(base_token_path, reference_key)
@@ -106,22 +110,57 @@ def requestRemoveToken(args):
       reference = reference_key.split('.')[0]
       try:
         result = client.requestDeleteToken(token)
-      except Exception, e:
+      except Exception:
         log.debug('Request delete token fail for %s... \n %s' % (request_file,
-                    str(e)))
+                    traceback.format_exc()))
         continue
+      else:
+        # certificate is invalidated, it will be revoked
+        writeFile(os.path.join(base_token_path, '%s.revoke' % reference), '')
       if result == 'True':
         # update information
         log.info("Token deleted for slave instance %s. Clean up file status..." %
                             reference)
+      if result in ['True', 'False']:
         os.unlink(request_file)
         status_file = os.path.join(base_token_path, '%s.status' % reference)
         if os.path.exists(status_file):
           os.unlink(status_file)
-      else:
-        log.debug('Request delete token fail for %s...' % request_file)
     else:
       log.debug('Bad token. Request add token fail for %s...' % request_file)
+
+def requestRevoqueCertificate(args):
+
+  base_token_path = args['token_base_path']
+  db = getDb(args['db'])
+  path_list = [x for x in os.listdir(base_token_path) if x.endswith('.revoke')]
+  client = registry.RegistryClient(args['registry_url'])
+
+  for reference_key in path_list:
+    reference = reference_key.split('.')[0]
+    # XXX - email is always unique
+    email = '%s@slapos' % reference.lower()
+    cert_string = ''
+    try:
+      cert_string, = db.execute("SELECT cert FROM cert WHERE email = ?",
+          (email,)).next()
+    except StopIteration:
+      # Certificate was not generated yet !!!
+      pass
+
+    try:
+      if cert_string:
+        cert = crypto.load_certificate(crypto.FILETYPE_PEM, cert_string)
+        cn = x509.subnetFromCert(cert)
+        result = client.revoke(str(cn))
+        time.sleep(2)
+    except Exception:
+      log.debug('Request revoke certificate fail for %s... \n %s' % (reference,
+                  traceback.format_exc()))
+      continue
+    else:
+      os.unlink(os.path.join(base_token_path, reference_key))
+      log.info("Certificate revoked for slave instance %s." % reference)
 
 def checkService(args, can_bang=True):
   base_token_path = args['token_base_path']
@@ -164,7 +203,7 @@ def checkService(args, can_bang=True):
         time.sleep(1)
         writeFile(status_file, 'TOKEN_USED')
         log.info("Token status of %s updated to 'used'." % slave_reference)
-      except IOError, e:
+      except IOError:
         # XXX- this file should always exists
         log.debug('Error when writing in file %s. Clould not update status of %s...' %
                               (status_file, slave_reference))
@@ -181,3 +220,4 @@ def manage(args):
 
   # check status of all token
   checkService(args)
+

@@ -36,6 +36,7 @@ class Re6stnetTest(unittest.TestCase):
                 'manager-wrapper': os.path.join(self.base_dir, 'manager_wrapper'),
                 'drop-service-wrapper': os.path.join(self.base_dir, 'drop_wrapper'),
                 'check-service-wrapper': os.path.join(self.base_dir, 'check_wrapper'),
+                'revoke-service-wrapper': os.path.join(self.base_dir, 'revoke_wrapper'),
                 'slave-instance-list': '{}'
                 }
     
@@ -96,7 +97,7 @@ class Re6stnetTest(unittest.TestCase):
     with open(path, 'r') as f:
         content = f.read()
     self.assertIn("@%s" % config_file, content)
-  
+
   def test_generateCertificates(self):
     
     self.options['ipv6-prefix'] = '2001:db8:24::/48'
@@ -175,6 +176,7 @@ class Re6stnetTest(unittest.TestCase):
     self.checkWrapper(os.path.join(self.base_dir, 'manager_wrapper'))
     self.checkWrapper(os.path.join(self.base_dir, 'drop_wrapper'))
     self.checkWrapper(os.path.join(self.base_dir, 'check_wrapper'))
+    self.checkWrapper(os.path.join(self.base_dir, 'revoke_wrapper'))
     self.checkRegistryWrapper()
     
     # Remove one element
@@ -218,5 +220,6 @@ class Re6stnetTest(unittest.TestCase):
     self.checkWrapper(os.path.join(self.base_dir, 'manager_wrapper'))
     self.checkWrapper(os.path.join(self.base_dir, 'drop_wrapper'))
     self.checkWrapper(os.path.join(self.base_dir, 'check_wrapper'))
+    self.checkWrapper(os.path.join(self.base_dir, 'revoke_wrapper'))
     self.checkRegistryWrapper()
 
