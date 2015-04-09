@@ -1,6 +1,7 @@
 
 {% set python_bin = parameter_dict['python-executable'] -%}
 {% set re6st_registry = parameter_dict['re6st-registry'] -%}
+{% set re6stnet = parameter_dict['re6stnet'] -%}
 {% set publish_dict = {} -%}
 {% set part_list = [] -%}
 {% set ipv6 = (ipv6_set | list)[0] -%}
@@ -119,23 +120,26 @@ context = section parameter_dict re6st-registry-conf-dict
 
 [re6st-registry]
 recipe = slapos.cookbook:re6stnet.registry
-port = ${re6st-registry-conf-dict:port}
-ipv4 = ${re6st-registry-conf-dict:ipv4}
 command = {{ re6st_registry }}
-config-file = ${re6st-registry-conf:rendered}
-db-path = ${re6st-registry-conf-dict:db}
 wrapper = ${directory:services}/re6st-registry
 manager-wrapper = ${directory:bin}/re6stManageToken
 check-service-wrapper = ${directory:bin}/re6stCheckService
 drop-service-wrapper = ${directory:bin}/re6stManageDeleteToken
-key-file = ${re6st-registry-conf-dict:key}
-cert-file = ${re6st-registry-conf-dict:ca}
+revoke-service-wrapper = ${directory:bin}/re6stRevokeCertificate
 openssl-bin = {{ openssl_bin }}/openssl
 python-bin = {{ python_bin }}
 ipv6-prefix = {{ slapparameter_dict.get('ipv6-prefix', '2001:db8:24::/48') }}
 key-size = {{ slapparameter_dict.get('key-size', 2048) }}
 conf-dir = ${re6stnet-dirs:conf}
 token-dir = ${re6stnet-dirs:token}
+
+#Re6st config
+config-file = ${re6st-registry-conf:rendered}
+port = ${re6st-registry-conf-dict:port}
+ipv4 = ${re6st-registry-conf-dict:ipv4}
+db-path = ${re6st-registry-conf-dict:db}
+key-file = ${re6st-registry-conf-dict:key}
+cert-file = ${re6st-registry-conf-dict:ca}
 
 slave-instance-list = ${slap-parameter:slave_instance_list}
 
@@ -153,6 +157,13 @@ cron-entries = ${cron:cron-entries}
 name = re6stnet-check-token
 frequency = 0 */1 * * *
 command = {{ python_bin }} ${re6st-registry:check-service-wrapper}
+
+[cron-entry-re6st-revoke]
+recipe = slapos.cookbook:cron.d
+cron-entries = ${cron:cron-entries}
+name = re6stnet-revoke-cert
+frequency = */30 * * * *
+command = {{ python_bin }} ${re6st-registry:revoke-service-wrapper}
 
 [cron-entry-re6st-drop]
 recipe = slapos.cookbook:cron.d
@@ -197,6 +208,7 @@ parts =
   cron-entry-logrotate
   cron-entry-re6st-check
   cron-entry-re6st-drop
+  cron-entry-re6st-revoke
   apache-httpd
   publish
   
