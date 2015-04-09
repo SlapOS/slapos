@@ -47,6 +47,8 @@ config-use-tap = {{ dumps(kvm_parameter_dict.get('use-tap', False)) }}
 config-virtual-hard-drive-url = {{ dumps(kvm_parameter_dict.get('virtual-hard-drive-url', '')) }}
 config-virtual-hard-drive-md5sum = {{ dumps(kvm_parameter_dict.get('virtual-hard-drive-md5sum', '')) }}
 config-virtual-hard-drive-gzipped = {{ dumps(kvm_parameter_dict.get('virtual-hard-drive-gzipped', False)) }}
+config-external-disk-number = {{ dumps(kvm_parameter_dict.get('external-disk-number', 0)) }}
+config-external-disk-size = {{ dumps(kvm_parameter_dict.get('external-disk-size', 20)) }}
 return = 
   backend-url
   url
@@ -110,6 +112,8 @@ recipe = slapos.cookbook:publish
 {% for name, value in publish_dict.items() -%}
 {{   name }} = {{ value }}
 {% endfor %}
+{% set disk_number = len(storage_dict) -%}
+1_info = It is possible to mount up to {{ disk_number }} external disk to your virtual machine. See parameter 'external-disk-number'
 
 [buildout]
 parts = publish

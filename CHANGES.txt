@@ -1,6 +1,18 @@
 Changes
 =======
 
+0.97 (2015-03-26)
+-----------------
+ * switch softwaretype recipe: the recipe is backward compatible with old slapos node packages.
+ * kvm recipe: Avoid getting wrong storage path when creating kvm external disk
+
+0.96 (2015-03-20)
+-----------------
+ * slap configuration: recipe can read from master network information releated to a tap interface
+ * slap configuration: recipe will setup data folder in DATA directory of computer partition if disk is mounted
+ * switch softwaretype recipe: also generate tap network information when they exist
+ * switch softwaretype recipe: generate configuration for DATA directory when disk is mounted
+
 0.95 (2015-02-14)
 -----------------
 

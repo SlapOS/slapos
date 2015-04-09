@@ -1,0 +1,50 @@
+[buildout]
+parts = switch-softwaretype
+eggs-directory = {{ eggs_directory }}
+develop-eggs-directory = {{ develop_eggs_directory }}
+
+[slap-configuration]
+recipe = slapos.cookbook:slapconfiguration.serialised
+computer = ${slap-connection:computer-id}
+partition = ${slap-connection:partition-id}
+url = ${slap-connection:server-url}
+key = ${slap-connection:key-file}
+cert = ${slap-connection:cert-file}
+
+[jinja2-template-base]
+recipe = slapos.recipe.template:jinja2
+rendered = ${buildout:parts-directory}/${:_buildout_section_name_}/${:filename}
+extra-context =
+context =
+    key develop_eggs_directory buildout:develop-eggs-directory
+    key eggs_directory buildout:eggs-directory
+    key ipv6_set slap-configuration:ipv6
+    key ipv4_set slap-configuration:ipv4
+    key slapparameter_dict slap-configuration:configuration
+    key computer_id slap-configuration:computer
+    raw logrotate_cfg {{ template_logrotate_base }}
+    raw dash_binary {{ dash_location }}/bin/dash
+    raw openssl_bin {{ openssl_location}}/bin
+    ${:extra-context}
+
+[dynamic-template-re6stnet-parameters]
+bin-directory = {{ bin_directory }}
+python-executable  = {{ python_with_eggs }}
+re6st-registry = {{ re6stnet_registry }}
+template-apache-conf = {{ template_apache_conf }}
+apache-location = {{ apache_location }}
+template-re6st-registry-conf = {{ template_re6st_registry_conf }}
+
+[dynamic-template-re6stnet]
+< = jinja2-template-base
+template = {{ template_re6stnet }}
+filename = instance-re6stnet.cfg
+extensions = jinja2.ext.do
+extra-context =
+    section parameter_dict dynamic-template-re6stnet-parameters
+
+[switch-softwaretype]
+recipe = slapos.cookbook:softwaretype
+
+default = ${dynamic-template-re6stnet:rendered}
+registry = ${:default}

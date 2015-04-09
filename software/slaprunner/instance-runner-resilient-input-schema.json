@@ -3,7 +3,7 @@
     "$schema": "http://json-schema.org/draft-04/schema",
     "allOf": [
         {
-            "$ref": "instance-kvm-input-schema.json#/"
+            "$ref": "instance-runner-input-schema.json#/"
         },
         {
             "properties": {

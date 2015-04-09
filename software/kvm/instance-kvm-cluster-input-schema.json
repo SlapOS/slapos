@@ -1,61 +1,67 @@
 {
   "type": "object",
   "$schema": "http://json-schema.org/draft-04/schema",
-
   "title": "Input Parameters",
   "properties": {
     "frontend": {
-      "frontend-instance-guid": {
-        "title": "Frontend Instance ID",
-        "description": "Unique identifier of the frontend instance, like \"SOFTINST-11031\".",
-        "type": "string",
-        "default": ""
-      },
-      "frontend-software-type": {
-        "title": "Frontend Software Type",
-        "description": "Type of the frontend instance, like \"frontend\".",
-        "type": "string",
-        "default": "frontend"
-      },
-      "frontend-software-url": {
-        "title": "Frontend Software URL",
-        "description": "Software Release URL of the frontend instance, like \"http://example.com/path/to/software.cfg\".",
-        "type": "string",
-        "format": "uri",
-        "default": "http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.92:/software/kvm/software.cfg"
+      "title": "KVM frontend (web socket)",
+      "description": "Front end used to provide VNC.",
+      "properties": {
+        "frontend-instance-guid": {
+          "title": "Frontend Instance ID",
+          "description": "Unique identifier of the frontend instance, like \"SOFTINST-11031\".",
+          "type": "string",
+          "default": ""
+        },
+        "frontend-software-type": {
+          "title": "Frontend Software Type",
+          "description": "Type of the frontend instance, like \"frontend\".",
+          "type": "string",
+          "default": "frontend"
+        },
+        "frontend-software-url": {
+          "title": "Frontend Software URL",
+          "description": "Software Release URL of the frontend instance, like \"http://example.com/path/to/software.cfg\".",
+          "type": "string",
+          "format": "uri",
+          "default": "http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.92:/software/kvm/software.cfg"
+        }
       },
       "type": "object"
     },
     "slave-frontend": {
-      "instance-guid": {
-        "title": "Main Frontend Instance ID",
-        "description": "Unique identifier of the frontend instance, like \"SOFTINST-11031\".",
-        "type": "string",
-        "default": ""
-      },
-      "frontend-software-type": {
-        "title": "Frontend Software Type",
-        "description": "Type of the frontend instance, like \"frontend\".",
-        "type": "string",
-        "default": "default"
-      },
-      "frontend-software-url": {
-        "title": "Frontend Software URL",
-        "description": "Software Release URL of the frontend instance, like \"http://example.com/path/to/software.cfg\".",
-        "type": "string",
-        "format": "uri",
-        "default": "http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg"
-      },
-      "slave-frontend-dict": {
-        "description": "kvm instances definition",
-        "patternProperties": {
-          ".*": {
+      "title": "Web frontend",
+      "description": "Front end used to provide web access for internal services at the kvm.",
+      "properties": {
+        "instance-guid": {
+          "title": "Main Frontend Instance ID",
+          "description": "Unique identifier of the frontend instance, like \"SOFTINST-11031\".",
+          "type": "string",
+          "default": ""
+        },
+        "frontend-software-type": {
+          "title": "Frontend Software Type",
+          "description": "Type of the frontend instance, like \"frontend\".",
+          "type": "string",
+          "default": "default"
+        },
+        "frontend-software-url": {
+          "title": "Frontend Software URL",
+          "description": "Software Release URL of the frontend instance, like \"http://example.com/path/to/software.cfg\".",
+          "type": "string",
+          "format": "uri",
+          "default": "http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg"
+        },
+        "slave-frontend-dict": {
+          "title": "Slave Front end definition",
+          "description": "Slave Front end definition",
+          "patternProperties": {
+            ".*": {
               "properties": {
                 "domain": {
                   "title": "Name of the domain to be used",
                   "description": "Name of the domain to be used (example: mydomain.com). Subdomains of this domain will be used for the slave instances (example: instance12345.mydomain.com).",
                   "type": "string",
-                  "format": "uri",
                   "default": ""
                 },
                 "url": {
@@ -96,12 +102,9 @@
                   "default": ""
                 },
                 "service-port": {
-                  "allOf": [{
-                    "$ref": "#/definitions/tcpv4port"
-                  }, {
-                    "title": "Specify the port of service to run in VM.",
-                    "description": "This will allow to get URL from defined nat-rules. The port should exist in nat-rules of KVM referenced by 'kvm-partition-name'"
-                  }]
+                  "title": "Specify the port of service to run in VM.",
+                  "description": "This will allow to get URL from defined nat-rules. The port should exist in nat-rules of KVM referenced by 'kvm-partition-name'",
+                  "type": "number"
                 },
                 "url-scheme": {
                   "title": "Say If HTTP service to run into the Virtual Machine will use http or https.",
@@ -110,112 +113,151 @@
                   "default": "http"
                 }
               },
-            "type": "object"
-          }
-        },
-        "type": "object"
+              "type": "object"
+            }
+          },
+         "type": "object"
+        }
       },
       "type": "object"
     },
     "kvm-partition-dict": {
+      "title": "kvm instances definition",
       "description": "kvm instances definition",
       "patternProperties": {
         ".*": {
-            "properties": {
-              "ram-size": {
-                "title": "RAM size",
-                "description": "RAM size, in MB.",
-                "type": "integer",
-                "default": 1024,
-                "minimum": 128,
-                "multipleOf": 128,
-                "maximum": 16384
-              },
-              "disk-size": {
-                "title": "Disk size",
-                "description": "Disk size, in GB.",
-                "type": "integer",
-                "default": 10,
-                "minimum": 1,
-                "maximum": 80
-              },
-              "disk-type": {
-                "title": "Disk type",
-                "description": "Type of QEMU disk drive.",
-                "type": "string",
-                "default": "virtio",
-                "enum": ["ide", "scsi", "sd", "mtd", "floppy", "pflash", "virtio"]
-              },
-          
-              "cpu-count": {
-                "title": "CPU count",
-                "description": "Number of CPU cores.",
-                "type": "integer",
-                "minimum": 1,
-                "maximum": 8
-              },
-          
-              "nbd-host": {
-                "title": "NBD hostname",
-                "description": "hostname (or IP) of the NBD server containing the boot image.",
-                "type": "string",
-                "format": ["host-name", "ip-address", "ipv6"],
-                "default": "debian.nbd.vifib.net"
-              },
-              "nbd-port": {
-                "title": "NBD port",
-                "description": "Port of the NBD server containing the boot image.",
-                "type": "integer",
-                "default": 1024,
-                "minimum": 1,
-                "maximum": 65535
-              },
-          
-              "nbd2-host": {
-                "title": "Second NBD hostname",
-                "description": "hostname (or IP) of the second NBD server (containing drivers for example).",
-                "type": "string",
-                "format": ["host-name", "ip-address", "ipv6"]
-              },
-              "nbd2-port": {
-                "title": "Second NBD port",
-                "description": "Port of the second NBD server containing the boot image.",
-                "type": "integer",
-                "minimum": 1,
-                "maximum": 65535
-              },
-          
-              "virtual-hard-drive-url": {
-                "title": "Existing disk image URL",
-                "description": "If specified, will download an existing disk image (qcow2, raw, ...), and will use it as main virtual hard drive. Can be used to download and use an already installed and customized virtual hard drive.",
-                "format": "uri",
-                "type": "string"
-              },
-              "virtual-hard-drive-md5sum": {
-                "title": "Checksum of virtual hard drive",
-                "description": "MD5 checksum of virtual hard drive, used if virtual-hard-drive-url is specified.",
-                "type": "string"
-              },
-              "virtual-hard-drive-gzipped": {
-                "title": "Define if virtual hard drive to download is gzipped",
-                "description": "Define if virtual hard drive to download is gzipped using gzip. This help to reduce size of file to download.",
-                "type": "boolean",
-                "default": false
-              },
-          
-              "use-tap": {
-                "title": "Use QEMU TAP network interface",
-                "description": "Use QEMU TAP network interface, requires a bridge on SlapOS Node. If false, use user-mode network stack (NAT).",
-                "type": "boolean",
-                "default": false
-              },
-              "nat-rules": {
-                "title": "List of rules for NAT of QEMU user mode network stack.",
-                "description": "List of rules for NAT of QEMU user mode network stack, as comma-separated list of ports. For each port specified, it will redirect port x of the VM (example: 80) to the port x + 10000 of the public IPv6 (example: 10080). Defaults to \"22 80 443\". Ignored if \"use-tap\" parameter is enabled.",
-                "type": "array",
-                "default": [22, 80, 443]
-              }
+          "properties": {
+            "ram-size": {
+              "title": "RAM size",
+              "description": "RAM size, in MB.",
+              "type": "integer",
+              "default": 1024,
+              "minimum": 128,
+              "multipleOf": 128,
+              "maximum": 16384
             },
+            "disk-size": {
+              "title": "Disk size",
+              "description": "Disk size, in GB.",
+              "type": "integer",
+              "default": 10,
+              "minimum": 1,
+              "maximum": 80
+            },
+            "disk-type": {
+              "title": "Disk type",
+              "description": "Type of QEMU disk drive.",
+              "type": "string",
+              "default": "virtio",
+              "enum": [
+                "ide",
+                "scsi",
+                "sd",
+                "mtd",
+                "floppy",
+                "pflash",
+                "virtio"
+              ]
+            },
+            "cpu-count": {
+              "title": "CPU count",
+              "description": "Number of CPU cores.",
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 8
+            },
+            "nbd-host": {
+              "title": "NBD hostname",
+              "description": "hostname (or IP) of the NBD server containing the boot image.",
+              "type": "string",
+              "format": [
+                "host-name",
+                "ip-address",
+                "ipv6"
+              ],
+              "default": "debian.nbd.vifib.net"
+            },
+            "nbd-port": {
+              "title": "NBD port",
+              "description": "Port of the NBD server containing the boot image.",
+              "type": "integer",
+              "default": 1024,
+              "minimum": 1,
+              "maximum": 65535
+            },
+            "nbd2-host": {
+              "title": "Second NBD hostname",
+              "description": "hostname (or IP) of the second NBD server (containing drivers for example).",
+              "type": "string",
+              "format": [
+                "host-name",
+                "ip-address",
+                "ipv6"
+              ]
+            },
+            "nbd2-port": {
+              "title": "Second NBD port",
+              "description": "Port of the second NBD server containing the boot image.",
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 65535
+            },
+            "virtual-hard-drive-url": {
+              "title": "Existing disk image URL",
+              "description": "If specified, will download an existing disk image (qcow2, raw, ...), and will use it as main virtual hard drive. Can be used to download and use an already installed and customized virtual hard drive.",
+              "format": "uri",
+              "type": "string"
+            },
+            "virtual-hard-drive-md5sum": {
+              "title": "Checksum of virtual hard drive",
+              "description": "MD5 checksum of virtual hard drive, used if virtual-hard-drive-url is specified.",
+              "type": "string"
+            },
+            "virtual-hard-drive-gzipped": {
+              "title": "Define if virtual hard drive to download is gzipped",
+              "description": "Define if virtual hard drive to download is gzipped using gzip. This help to reduce size of file to download.",
+              "type": "boolean",
+              "default": false
+            },
+            "external-disk-number": {
+              "title": "Number of additional disk to create for virtual machine",
+              "description": "Specify the number of additional disk to create for virtual machine in data folder of SlapOS Node. Requires instance_storage_home to be configured on SlapOS Node.",
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 4,
+              "default": 0
+            },
+            "external-disk-size": {
+              "title": "Number of additional disk to create for virtual machine, in Gigabytes",
+              "description": "Specify the number of additional disk to create for virtual machine in data folder of SlapOS Node. Requires instance_storage_home to be configured on SlapOS Node.",
+              "type": "integer",
+              "minimum": 10,
+              "maximum": 100,
+              "default": 20
+            },
+            "use-tap": {
+              "title": "Use QEMU TAP network interface",
+              "description": "Use QEMU TAP network interface, might require a bridge on SlapOS Node.",
+              "type": "boolean",
+              "default": false
+            },
+            "use-nat": {
+              "title": "Use QEMU USER Mode networking",
+              "description": "Use QEMU user-mode network stack (NAT).",
+              "type": "boolean",
+              "default": true
+            },
+            "nat-rules": {
+              "title": "List of rules for NAT of QEMU user mode network stack.",
+              "description": "List of rules for NAT of QEMU user mode network stack, as comma-separated list of ports. For each port specified, it will redirect port x of the VM (example: 80) to the port x + 10000 of the public IPv6 (example: 10080). Defaults to \"22 80 443\". Ignored if \"use-tap\" parameter is enabled.",
+              "type": "array",
+              "default": [
+                22,
+                80,
+                443
+              ]
+            }
+          },
           "type": "object"
         }
       },

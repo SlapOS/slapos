@@ -69,7 +69,6 @@ def shellinabox(args):
 
   command_line = [
     args['shellinabox'],
-    '-d',
     '-c', certificate_dir,
     '-s', service,
     '--ipv6', args['ipv6'],
