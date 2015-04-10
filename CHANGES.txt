@@ -1,6 +1,10 @@
 Changes
 =======
 
+0.99 (2015-04-10)
+-----------------
+ * re6stnet: new recipe to deploy re6st registry (re6st master) with slapos.
+
 0.98 (2015-04-09)
 -----------------
  * shellinabox: do not run in debug mode, it is much slower !
