@@ -88,6 +88,15 @@ key-file = ${certificate-authority:ca-private}/apache.key
 cert-file = ${certificate-authority:ca-certs}/apache.crt
 {% endif %}
 
+[apache-httpd-graceful]
+recipe = slapos.recipe.template:jinja2
+template = {{ parameter_dict['template-wrapper'] }}
+rendered = ${directory:script}/httpd-graceful
+mode = 0700
+context =
+  raw content {{ parameter_dict['apache-location'] }}/bin/httpd -Sf ${apache-conf:rendered}; if [ $? -eq 0 ]; then kill -USR1 $(cat ${apache-conf:pid-file}); fi
+  raw dash {{ dash_binary }}
+
 [logrotate-apache]
 < = logrotate-entry-base
 name = apache
@@ -215,6 +224,7 @@ parts =
   cron-entry-re6st-drop
   cron-entry-re6st-revoke
   apache-httpd
+  apache-httpd-graceful
   publish
   
   re6st-registry-promise
