@@ -123,6 +123,7 @@ context = section parameter_dict re6st-registry-conf-dict
 recipe = slapos.cookbook:re6stnet.registry
 command = {{ re6st_registry }}
 wrapper = ${directory:services}/re6st-registry
+pid-file = ${directory:run}/registry.pid
 manager-wrapper = ${directory:bin}/re6stManageToken
 check-service-wrapper = ${directory:bin}/re6stCheckService
 drop-service-wrapper = ${directory:bin}/re6stManageDeleteToken
@@ -178,6 +179,7 @@ command = {{ python_bin }} ${re6st-registry:drop-service-wrapper}
 < = logrotate-entry-base
 name = re6stnet
 log = ${re6st-registry-conf-dict:logfile}
+post = {{ parameter_dict['bin-directory'] }}/slapos-kill --pidfile ${re6st-registry:pid-file} -s USR1
 
 [re6st-registry-promise]
 recipe = slapos.cookbook:check_port_listening

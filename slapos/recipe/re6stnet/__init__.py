@@ -29,7 +29,7 @@ import subprocess
 from slapos.recipe.librecipe import GenericBaseRecipe
 import socket
 import struct
-import os
+import os, stat
 import string, random
 import json
 import traceback
@@ -72,12 +72,18 @@ class Recipe(GenericBaseRecipe):
     key_file = self.options['key-file'].strip()
     cert_file = self.options['cert-file'].strip()
     dh_file = self.options['dh-file'].strip()
-    if not os.path.exists(key_file):
-      serial = self.getSerialFromIpv6(self.options['ipv6-prefix'].strip())
-
+    if not os.path.exists(dh_file):
       dh_command = [self.options['openssl-bin'], 'dhparam', '-out',
                             '%s' % dh_file, self.options['key-size']]
+      try:
+        subprocess.check_call(dh_command)
+      except Exception:
+        if os.path.exists(dh_file):
+          os.unlink(dh_file)
+        raise
 
+    if not os.path.exists(cert_file):
+      serial = self.getSerialFromIpv6(self.options['ipv6-prefix'].strip())
       key_command = [self.options['openssl-bin'], 'genrsa', '-out',
                             '%s' % key_file, self.options['key-size']]
 
@@ -86,9 +92,19 @@ class Recipe(GenericBaseRecipe):
                   '-x509', '-batch', '-key', '%s' % key_file, '-set_serial',
                   '%s' % serial, '-days', '3650', '-out', '%s' % cert_file]
 
-      subprocess.check_call(dh_command)
-      subprocess.check_call(key_command)
-      subprocess.check_call(cert_command)
+      try:
+        subprocess.check_call(key_command)
+      except Exception:
+        if os.path.exists(key_file):
+          os.unlink(key_file)
+        raise
+
+      try:
+        subprocess.check_call(cert_command)
+      except Exception:
+        if os.path.exists(cert_file):
+          os.unlink(cert_file)
+        raise
 
   def generateSlaveTokenList(self, slave_instance_list, token_file):
     to_remove_dict = {}
@@ -150,9 +166,15 @@ class Recipe(GenericBaseRecipe):
 
     self.generateCertificate()
 
-    wrapper = self.createWrapper(name=self.options['wrapper'],
-                            command=self.options['command'],
-                            parameters=['@%s' % self.options['config-file']])
+    wrapper = self.createFile(self.options['wrapper'], self.substituteTemplate(
+      self.getTemplateFilename('registry-run.in'), dict(
+          parameter='@%s' % self.options['config-file'],
+          pid_file=self.options['pid-file'],
+          command=self.options['command']
+        )
+      )
+    )
+    os.chmod(self.options['wrapper'], stat.S_IRWXU)
 
     path_list.append(wrapper)
 
