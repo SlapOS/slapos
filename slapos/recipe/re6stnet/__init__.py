@@ -49,7 +49,9 @@ class Recipe(GenericBaseRecipe):
     self.software_release_url = slap_connection['software-release-url']
     self.key_file = slap_connection.get('key-file')
     self.cert_file = slap_connection.get('cert-file')
-    
+    self.slave_list = json.loads(options['slave-instance-list'])
+
+    options['slave-amount'] = '%s' % len(self.slave_list)
     return GenericBaseRecipe.__init__(self, buildout, name, options)
 
   def getSerialFromIpv6(self, ipv6):
@@ -178,10 +180,9 @@ class Recipe(GenericBaseRecipe):
 
     path_list.append(wrapper)
 
-    slave_list = json.loads(self.options['slave-instance-list'])
     registry_url = 'http://%s:%s/' % (self.options['ipv4'], self.options['port'])
     token_dict, add_token_dict, rm_token_dict = self.generateSlaveTokenList(
-                                                    slave_list, token_save_path)
+                                              self.slave_list, token_save_path)
 
     # write request add token
     for reference in add_token_dict:
