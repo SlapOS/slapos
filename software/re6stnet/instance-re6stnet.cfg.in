@@ -88,6 +88,15 @@ key-file = ${certificate-authority:ca-private}/apache.key
 cert-file = ${certificate-authority:ca-certs}/apache.crt
 {% endif %}
 
+[apache-httpd-graceful]
+recipe = slapos.recipe.template:jinja2
+template = {{ parameter_dict['template-wrapper'] }}
+rendered = ${directory:script}/httpd-graceful
+mode = 0700
+context =
+  raw content {{ parameter_dict['apache-location'] }}/bin/httpd -Sf ${apache-conf:rendered}; if [ $? -eq 0 ]; then kill -USR1 $(cat ${apache-conf:pid-file}); fi
+  raw dash {{ dash_binary }}
+
 [logrotate-apache]
 < = logrotate-entry-base
 name = apache
@@ -108,7 +117,7 @@ ca = ${re6stnet-dirs:ssl}/re6stnet.crt
 key = ${re6stnet-dirs:ssl}/re6stnet.key
 dh = ${re6stnet-dirs:ssl}/dh.pem
 mailhost = 127.0.0.1
-prefix-length = 16
+prefix-length = {{ slapparameter_dict.get('prefix-length', 16) }}
 anonymous-prefix-length = 32
 logfile = ${re6stnet-dirs:log}/registry.log
 verbose = 2
@@ -123,6 +132,7 @@ context = section parameter_dict re6st-registry-conf-dict
 recipe = slapos.cookbook:re6stnet.registry
 command = {{ re6st_registry }}
 wrapper = ${directory:services}/re6st-registry
+pid-file = ${directory:run}/registry.pid
 manager-wrapper = ${directory:bin}/re6stManageToken
 check-service-wrapper = ${directory:bin}/re6stCheckService
 drop-service-wrapper = ${directory:bin}/re6stManageDeleteToken
@@ -178,6 +188,7 @@ command = {{ python_bin }} ${re6st-registry:drop-service-wrapper}
 < = logrotate-entry-base
 name = re6stnet
 log = ${re6st-registry-conf-dict:logfile}
+post = {{ parameter_dict['bin-directory'] }}/slapos-kill --pidfile ${re6st-registry:pid-file} -s USR1
 
 [re6st-registry-promise]
 recipe = slapos.cookbook:check_port_listening
@@ -193,6 +204,7 @@ port = ${apache-conf:port}
 
 {% do publish_dict.__setitem__('re6stry-url', uri_scheme ~ '://[${apache-conf:ipv6}]:${apache-conf:port}') -%}
 {% do publish_dict.__setitem__('re6stry-local-url',  'http://${re6st-registry:ipv4}:${re6st-registry:port}/') -%}
+{% do publish_dict.__setitem__('slave-amount',  '${re6st-registry:slave-amount}') -%}
 [publish]
 recipe = slapos.cookbook:publish
 {% for name, value in publish_dict.items() -%}
@@ -213,6 +225,7 @@ parts =
   cron-entry-re6st-drop
   cron-entry-re6st-revoke
   apache-httpd
+  apache-httpd-graceful
   publish
   
   re6st-registry-promise
