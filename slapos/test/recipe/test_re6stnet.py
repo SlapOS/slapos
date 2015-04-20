@@ -32,6 +32,7 @@ class Re6stnetTest(unittest.TestCase):
                 'config-file': config_file,
                 'ipv4': '127.0.0.1',
                 'port': '9201',
+                'pid-file': '/path/to/pid/file',
                 'db-path': '/path/to/db',
                 'command': '/path/to/command',
                 'manager-wrapper': os.path.join(self.base_dir, 'manager_wrapper'),
@@ -98,6 +99,8 @@ class Re6stnetTest(unittest.TestCase):
     with open(path, 'r') as f:
         content = f.read()
     self.assertIn("@%s" % config_file, content)
+    self.assertIn("/path/to/pid/file", content)
+    self.assertIn("/path/to/command", content)
 
   def fake_generateCertificates(self):
     return
@@ -138,10 +141,7 @@ class Re6stnetTest(unittest.TestCase):
     self.assertEqual(serial, '0x120010db80024')
 
   def test_install(self):
-    recipe = self.new_recipe()
-    recipe.generateCertificate = self.fake_generateCertificates
-
-    recipe.options.update({
+    self.options.update({
         'ipv6-prefix': '2001:db8:24::/48',
         'slave-instance-list': '''[
             {"slave_reference":"SOFTINST-58770"},
@@ -149,6 +149,9 @@ class Re6stnetTest(unittest.TestCase):
             ]
             '''
         })
+
+    recipe = self.new_recipe()
+    recipe.generateCertificate = self.fake_generateCertificates
 
     try:
       recipe.install()
@@ -185,9 +188,12 @@ class Re6stnetTest(unittest.TestCase):
     self.checkRegistryWrapper()
     
     # Remove one element
-    recipe.options.update({
+    self.options.update({
         "slave-instance-list": """[{"slave_reference":"SOFTINST-58770"}]"""
         })
+    recipe = self.new_recipe()
+    recipe.generateCertificate = self.fake_generateCertificates
+
     try:
       recipe.install()
     except (NotFoundError, ConnectionError):
@@ -204,12 +210,11 @@ class Re6stnetTest(unittest.TestCase):
     self.assertEqual(second_add, second_remove)
   
   def test_install_empty_slave(self):
-    recipe = self.new_recipe()
-    recipe.generateCertificate = self.fake_generateCertificates
-
-    recipe.options.update({
+    self.options.update({
         'ipv6-prefix': '2001:db8:24::/48'
         })
+    recipe = self.new_recipe()
+    recipe.generateCertificate = self.fake_generateCertificates
 
     recipe.install()
 
