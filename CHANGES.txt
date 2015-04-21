@@ -1,6 +1,11 @@
 Changes
 =======
 
+0.100 (2015-04-20)
+------------------
+ * re6stnet recipe: re6st-registry log can now be reopened with SIGUSR1
+ * re6stnet recipe: re6st certificate generation is improved.
+
 0.99 (2015-04-10)
 -----------------
  * re6stnet: new recipe to deploy re6st registry (re6st master) with slapos.
