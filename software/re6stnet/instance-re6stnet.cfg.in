@@ -35,6 +35,7 @@ log = ${directory:log}/re6stnet
 conf = ${directory:etc}/re6stnet
 ssl = ${:conf}/ssl
 token = ${:conf}/token
+run = ${directory:run}/re6stnet
 
 [certificate-authority]
 recipe = slapos.cookbook:certificate_authority
@@ -116,11 +117,19 @@ db = ${re6stnet-dirs:registry}/registry.db
 ca = ${re6stnet-dirs:ssl}/re6stnet.crt
 key = ${re6stnet-dirs:ssl}/re6stnet.key
 dh = ${re6stnet-dirs:ssl}/dh.pem
-mailhost = 127.0.0.1
-prefix-length = {{ slapparameter_dict.get('prefix-length', 16) }}
-anonymous-prefix-length = 32
-logfile = ${re6stnet-dirs:log}/registry.log
 verbose = 2
+mailhost = {{ slapparameter_dict.get('mailhost', '127.0.0.1') }}
+prefix-length = {{ slapparameter_dict.get('prefix-length', 16) }}
+anonymous-prefix-length = {{ slapparameter_dict.get('anonymous-prefix-length', 0) }}
+logfile = ${re6stnet-dirs:log}/registry.log
+run-dir = ${re6stnet-dirs:run}
+ipv4-net = {{ slapparameter_dict.get('ipv4-net', '') }}
+client-count = {{ slapparameter_dict.get('client-count', 10) }}
+tunnel-refresh = {{ slapparameter_dict.get('tunnel-refresh', 300) }}
+max-clients = {{ slapparameter_dict.get('max-clients', 0) }}
+hello = {{ slapparameter_dict.get('hello', 15) }}
+min-protocol = {{ slapparameter_dict.get('min-protocol', -1) }}
+encrypt = {{ slapparameter_dict.get('encrypt', 'False') }}
 
 [re6st-registry-conf]
 recipe = slapos.recipe.template:jinja2
