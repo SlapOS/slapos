@@ -37,6 +37,7 @@ import logging
 import netaddr
 import netifaces
 import os
+import glob
 import pwd
 import random
 import shutil
@@ -475,11 +476,13 @@ class Computer(object):
     # get list of instance external storage if exist
     instance_external_list = []
     if self.instance_storage_home:
-      # XXX - Hard limit for storage number to 4
-      for i in range(1, 5):
-        storage_path = os.path.join(self.instance_storage_home, 'data%s' % i)
-        if os.path.exists(storage_path):
-          instance_external_list.append(storage_path)
+      # get all /XXX/dataN where N is a digit
+      data_list = glob.glob(os.path.join(self.instance_storage_home, 'data*'))
+      for i in range(0, len(data_list)):
+        data_path = data_list.pop()
+        the_digit = os.path.basename(data_path).split('data')[-1]
+        if the_digit.isdigit():
+          instance_external_list.append(data_path)
 
     tap_address_list = []
     if alter_network and self.tap_gateway_interface and create_tap:
