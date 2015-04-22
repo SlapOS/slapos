@@ -107,7 +107,7 @@
             },
             "thread-amount": {
               "description": "Number of worker threads for each created Zope process",
-              "default": 1,
+              "default": 4,
               "type": "integer"
             },
             "timerserver-interval": {
