@@ -81,7 +81,9 @@ socket-path = ${directory:var}/qmp_socket
 pid-file-path = ${directory:run}/pid_file
 
 smp-count = ${slap-parameter:cpu-count}
+smp-options = ${slap-parameter:cpu-options}
 ram-size = ${slap-parameter:ram-size}
+numa = ${slap-parameter:numa}
 mac-address = ${create-mac:mac-address}
 tap-mac-address = ${create-tap-mac:mac-address}
 
@@ -110,6 +112,7 @@ disk-storage-list =
 {% endfor -%}
 external-disk-number = ${slap-parameter:external-disk-number}
 external-disk-size = ${slap-parameter:external-disk-size}
+external-disk-format = ${slap-parameter:external-disk-format}
 
 [kvm-vnc-promise]
 recipe = slapos.cookbook:check_port_listening
@@ -275,6 +278,10 @@ disk-size = 10
 disk-type = virtio
 
 cpu-count = 1
+# cpu-option is a string: [cores=cores][,threads=threads][,sockets=sockets][,maxcpus=maxcpus]
+cpu-options = 
+# list of numa options separate by space: node,nodeid=1,cpus=9-15 node,nodeid=2,cpus=1,3,7
+numa = 
 
 nat-rules = 22 80 443
 use-nat = True
@@ -286,3 +293,4 @@ virtual-hard-drive-gzipped = False
 
 external-disk-number = 0
 external-disk-size = 20
+external-disk-format = qcow2

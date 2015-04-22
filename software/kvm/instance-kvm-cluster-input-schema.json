@@ -166,6 +166,16 @@
               "minimum": 1,
               "maximum": 8
             },
+            "cpu-options": {
+              "title": "Additional options (cores, threads, sockets, maxcpus) to use with cpu-count.",
+              "description": "Additional options to use with cpu-count. Options are separated by coma: [cores=cores][,threads=threads][,sockets=sockets][,maxcpus=maxcpus]. Only set this option if you really know what you're doing.",
+              "type": "string"
+            },
+            "numa": {
+              "title": "Simulate a multi node NUMA system. If mem and cpus are omitted, resources are split equally.",
+              "description": "Simulate a multi node NUMA system. If mem and cpus are omitted, resources are split equally. Each numa option are separated by space: node,nodeid=4,cpus=40-49,mem=64g node,nodeid=1,cpus=10-19,mem=128g. Only set this option if you really know what you're doing.",
+              "type": "string"
+            },
             "nbd-host": {
               "title": "NBD hostname",
               "description": "hostname (or IP) of the NBD server containing the boot image.",
@@ -234,6 +244,13 @@
               "minimum": 10,
               "maximum": 100,
               "default": 20
+            },
+            "external-disk-format": {
+              "title": "Type of external disk drive to create by QEMU.",
+              "description": "Type of QEMU disk drive, to create.",
+              "type": "string",
+              "default": "qcow2",
+              "enum": ["qcow2", "raw", "vdi", "vmdk", "cloop"]
             },
             "use-tap": {
               "title": "Use QEMU TAP network interface",
