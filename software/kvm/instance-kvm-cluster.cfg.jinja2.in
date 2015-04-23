@@ -38,6 +38,8 @@ config-ram-size = {{ dumps(kvm_parameter_dict.get('ram-size', 1024)) }}
 config-disk-size = {{ dumps(kvm_parameter_dict.get('disk-size', 10)) }}
 config-disk-type = {{ dumps(kvm_parameter_dict.get('disk-type', 'virtio')) }}
 config-cpu-count = {{ dumps(kvm_parameter_dict.get('cpu-count', 1)) }}
+config-cpu-options = {{ dumps(kvm_parameter_dict.get('cpu-options', '')) }}
+config-numa = {{ dumps(kvm_parameter_dict.get('numa', '')) }}
 
 {% set nat_rules_list = kvm_parameter_dict.get('nat-rules', [22, 80, 443]) -%}
 config-nat-rules = {{ nat_rules_list | join(' ') }}
@@ -49,6 +51,7 @@ config-virtual-hard-drive-md5sum = {{ dumps(kvm_parameter_dict.get('virtual-hard
 config-virtual-hard-drive-gzipped = {{ dumps(kvm_parameter_dict.get('virtual-hard-drive-gzipped', False)) }}
 config-external-disk-number = {{ dumps(kvm_parameter_dict.get('external-disk-number', 0)) }}
 config-external-disk-size = {{ dumps(kvm_parameter_dict.get('external-disk-size', 20)) }}
+config-external-disk-format = {{ dumps(kvm_parameter_dict.get('external-disk-format', 'qcow2')) }}
 return = 
   backend-url
   url
