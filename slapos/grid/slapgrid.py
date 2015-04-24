@@ -233,7 +233,8 @@ def create_slapgrid_object(options, logger):
                   computer_partition_filter_list=op.get('only-cp', op.get('only_cp')),
                   software_min_free_space=software_min_free_space,
                   instance_min_free_space=instance_min_free_space,
-                  instance_storage_home=op.get('instance_storage_home'))
+                  instance_storage_home=op.get('instance_storage_home'),
+                  ipv4_global_network=op.get('ipv4_global_network'))
 
 
 def check_required_only_partitions(existing, required):
@@ -288,6 +289,7 @@ class Slapgrid(object):
                software_min_free_space=None,
                instance_min_free_space=None,
                instance_storage_home=None,
+               ipv4_global_network=None,
                ):
     """Makes easy initialisation of class parameters"""
     # Parses arguments
@@ -343,6 +345,10 @@ class Slapgrid(object):
       self.instance_storage_home = os.path.abspath(instance_storage_home)
     else:
       self.instance_storage_home = ""
+    if ipv4_global_network:
+      self.ipv4_global_network = ipv4_global_network
+    else:
+      self.ipv4_global_network= ""
 
   def _getWatchdogLine(self):
     invocation_list = [WATCHDOG_PATH]
@@ -651,6 +657,7 @@ class Slapgrid(object):
         retention_delay=retention_delay,
         instance_min_free_space=self.instance_min_free_space,
         instance_storage_home=self.instance_storage_home,
+        ipv4_global_network=self.ipv4_global_network,
       )
       computer_partition_state = computer_partition.getState()
 
@@ -1110,6 +1117,7 @@ class Slapgrid(object):
             buildout=self.buildout,
             logger=self.logger,
             instance_storage_home=self.instance_storage_home,
+            ipv4_global_network=self.ipv4_global_network,
           )
           local_partition.stop()
           try:
