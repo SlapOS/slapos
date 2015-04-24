@@ -91,6 +91,7 @@
     },
     "zope-partition-dict": {
       "description": "Zope layout definition",
+      "default": {"1": {}},
       "patternProperties": {
         ".*": {
           "additionalProperties": false,
