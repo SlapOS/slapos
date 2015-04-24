@@ -25,4 +25,7 @@ cert_file = %(cert_file)s
 
 [storage-configuration]
 storage-home = %(storage_home)s
+
+[network-information]
+global-ipv4-network = %(global_ipv4_network_prefix)s
 # This is end of zc.builodout profile's tail added by slapgrid

@@ -344,7 +344,8 @@ class Partition(object):
                certificate_repository_path=None,
                retention_delay='0',
                instance_min_free_space=None,
-               instance_storage_home=''
+               instance_storage_home='',
+               ipv4_global_network='',
                ):
     """Initialisation of class parameters"""
     self.buildout = buildout
@@ -362,6 +363,7 @@ class Partition(object):
     self.server_url = server_url
     self.software_release_url = software_release_url
     self.instance_storage_home = instance_storage_home
+    self.ipv4_global_network = ipv4_global_network
 
     self.key_file = ''
     self.cert_file = ''
@@ -517,6 +519,7 @@ class Partition(object):
             'key_file': self.key_file,
             'cert_file': self.cert_file,
             'storage_home': self.instance_storage_home,
+            'global_ipv4_network_prefix': self.ipv4_global_network,
         }
     open(config_location, 'w').write(buildout_text)
     os.chmod(config_location, 0o640)
