@@ -11,6 +11,7 @@ import gzip
 import shutil
 from random import shuffle
 import glob
+import re
 
 # XXX: give all of this through parameter, don't use this as template, but as module
 qemu_img_path = '%(qemu-img-path)s'
@@ -202,7 +203,10 @@ if use_tap == 'True':
 
 smp = smp_count
 if smp_options:
-  smp += ',%%s' %% smp_options
+  for option in smp_options.split(','):
+    key, val = option.split('=')
+    if key in ('cores', 'threads', 'sockets', 'maxcpus') and val.isdigit():
+      smp += ',%%s=%%s' %% (key, val)
 kvm_argument_list = [qemu_path,
   '-enable-kvm', '-smp', smp,
   '-m', ram_size, '-vga', 'std',
@@ -213,8 +217,10 @@ kvm_argument_list = [qemu_path,
   '-pidfile', pid_file_path,
 ]
 
+rgx = re.compile('^[\w*\,][\=\d+\-\,\w]*$')
 for numa in numa_list:
-  numa_parameter.extend(['-numa', numa])
+  if rgx.match(numa):
+    numa_parameter.extend(['-numa', numa])
 kvm_argument_list += numa_parameter
 
 if tap_network_parameter == [] and nat_network_parameter == []:
