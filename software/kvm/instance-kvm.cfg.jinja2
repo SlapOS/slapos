@@ -257,8 +257,13 @@ nat-rule-url-{{port}} = [${slap-network-information:global-ipv6}]:{{external_por
 {% if slapparameter_dict.get('use-tap', 'False') == 'True' and tap_network_dict.has_key('ipv4') -%}
 1_info = Use these configurations below to configure interface {{ iface }} in your VM.
 2_info = ifconfig {{ iface }} ${slap-network-information:tap-ipv4} netmask ${slap-network-information:tap-netmask}
-3_info = route add -host ${slap-network-information:tap-gateway} dev {{ iface }}
+3_info = route add ${slap-network-information:tap-gateway} dev {{ iface }}
 4_info = route add -net ${slap-network-information:tap-network} netmask ${slap-network-information:tap-netmask} gw ${slap-network-information:tap-gateway}
+{%   if iface == 'eth0' -%}
+5_info = route add default gw ${slap-network-information:tap-gateway}
+{%   elif global_ipv4_prefix -%}
+5_info = ip route add {{ global_ipv4_prefix }} via ${slap-network-information:tap-gateway} dev {{ iface }} src ${slap-network-information:tap-ipv4}
+{%   endif -%}
 {% endif -%}
 
 
