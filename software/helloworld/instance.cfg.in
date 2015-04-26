@@ -65,7 +65,7 @@ log = $${:var}/log
 # This recipe will try to "exec" the command-line after separating parameters.
 recipe = slapos.cookbook:wrapper
 # Notice that there is only one $ at ${dash:location}, it is because it comes from the Software Release buildout profile.
-command-line = ${dash:location}/bin/dash -c 'echo "Hello $${instance-parameter:configuration.name}, it is $(date). If I were a TCP server, I would be listening on [$${instance-parameter:ipv6-random}] or $${instance-parameter:ipv4-random}" > $${directory:log}/log.log; sleep 1000000;'
+command-line = ${dash:location}/bin/dash -c 'echo "Hello $${instance-parameter:configuration.name}, it is $(date). If I were a TCP server, I would be listening on [$${instance-parameter:ipv6-random}]" > $${directory:log}/log.log; sleep 1000000;'
 # Put this shell script in the "etc/service" directory. Each executable of this
 # repository will be started and monitored by supervisord. If a service
 # exits/crashes, it will trigger a "bang" and cause a re-run of the instance.
