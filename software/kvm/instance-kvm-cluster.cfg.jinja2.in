@@ -52,6 +52,9 @@ config-virtual-hard-drive-gzipped = {{ dumps(kvm_parameter_dict.get('virtual-har
 config-external-disk-number = {{ dumps(kvm_parameter_dict.get('external-disk-number', 0)) }}
 config-external-disk-size = {{ dumps(kvm_parameter_dict.get('external-disk-size', 20)) }}
 config-external-disk-format = {{ dumps(kvm_parameter_dict.get('external-disk-format', 'qcow2')) }}
+config-enable-http-server = {{ dumps(kvm_parameter_dict.get('enable-http-server', True)) }}
+config-httpd-port = {{ dumps(kvm_parameter_dict.get('httpd-port', 8081)) }}
+
 return = 
   backend-url
   url

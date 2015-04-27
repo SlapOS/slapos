@@ -15,6 +15,13 @@ parts =
   cron
 #  cron-entry-monitor
   frontend-promise
+{% if slapparameter_dict.get('enable-http-server', 'False') == 'True' %}
+  httpd
+  httpd-promise
+
+extends = 
+  {{ template_httpd_cfg }}
+{% endif -%}
 
 eggs-directory = {{ eggs_directory }}
 develop-eggs-directory = {{ develop_eggs_directory }}
@@ -113,6 +120,12 @@ disk-storage-list =
 external-disk-number = ${slap-parameter:external-disk-number}
 external-disk-size = ${slap-parameter:external-disk-size}
 external-disk-format = ${slap-parameter:external-disk-format}
+
+{% if slapparameter_dict.get('enable-http-server', 'False') == 'True' %}
+httpd-port = ${slap-parameter:httpd-port}
+{% else -%}
+httpd-port = 0
+{% endif -%}
 
 [kvm-vnc-promise]
 recipe = slapos.cookbook:check_port_listening
@@ -299,3 +312,6 @@ virtual-hard-drive-gzipped = False
 external-disk-number = 0
 external-disk-size = 20
 external-disk-format = qcow2
+
+enable-http-server = False
+httpd-port = 8081

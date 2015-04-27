@@ -44,6 +44,7 @@ disk_storage_dict = {}
 disk_storage_list = """%(disk-storage-list)s""".split('\n')
 map_storage_list = []
 etc_directory = '%(etc-directory)s'.strip()
+httpd_port = %(httpd-port)s
 
 def md5Checksum(file_path):
     with open(file_path, 'rb') as fh:
@@ -232,6 +233,11 @@ if tap_network_parameter == [] and nat_network_parameter == []:
   print 'Warning : No network interface defined.'
 else:
   kvm_argument_list += nat_network_parameter + tap_network_parameter
+
+if httpd_port > 1000:
+  kvm_argument_list.extend([
+  '-net', 'nic', '-net', 'user,guestfwd=tcp:10.0.2.100:80-cmd:netcat %%s %%s' %% (
+      listen_ip, httpd_port)])
 
 for disk in additional_disk_list:
   kvm_argument_list.extend([
