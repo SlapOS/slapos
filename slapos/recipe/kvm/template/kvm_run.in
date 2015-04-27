@@ -133,9 +133,14 @@ if not os.path.exists(disk_path) and virtual_hard_drive_url != '':
   else:
     print('Warning: not checksum specified.')
   if downloaded_disk.endswith('.gz'):
-    with open(disk_path, 'w') as disk:
-      with gzip.open(downloaded_disk, 'rb') as disk_gz:
-        shutil.copyfileobj(disk_gz, disk)
+    try:
+      with open(disk_path, 'w') as disk:
+        with gzip.open(downloaded_disk, 'rb') as disk_gz:
+          shutil.copyfileobj(disk_gz, disk)
+    except Exception:
+      if os.path.exists(disk_path):
+        os.remove(disk_path)
+      raise
     os.remove(downloaded_disk)
 
 # Create disk if doesn't exist
