@@ -238,7 +238,7 @@
               "default": 0
             },
             "external-disk-size": {
-              "title": "Number of additional disk to create for virtual machine, in Gigabytes",
+              "title": "Size of additional disk to create for virtual machine, in Gigabytes",
               "description": "Specify the number of additional disk to create for virtual machine in data folder of SlapOS Node. Requires instance_storage_home to be configured on SlapOS Node.",
               "type": "integer",
               "minimum": 10,
@@ -256,7 +256,7 @@
               "title": "Use QEMU TAP network interface",
               "description": "Use QEMU TAP network interface, might require a bridge on SlapOS Node.",
               "type": "boolean",
-              "default": false
+              "default": true
             },
             "use-nat": {
               "title": "Use QEMU USER Mode networking",
