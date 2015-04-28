@@ -83,6 +83,7 @@ context =
     raw dcron_executable_location ${dcron:location}/sbin/crond
     raw debian_amd64_netinst_location ${debian-amd64-netinst.iso:location}/${debian-amd64-netinst.iso:filename}
     raw novnc_location ${noVNC:location}
+    raw netcat_bin ${netcat:location}/bin/netcat
     raw openssl_executable_location ${openssl:location}/bin/openssl
     raw qemu_executable_location ${kvm:location}/bin/qemu-system-x86_64
     raw qemu_img_executable_location ${kvm:location}/bin/qemu-img

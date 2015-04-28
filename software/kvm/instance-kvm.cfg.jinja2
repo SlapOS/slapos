@@ -40,6 +40,7 @@ promises = ${:etc}/promise
 novnc-conf = ${:etc}/novnc
 run = ${:var}/run
 ca-dir = ${:srv}/ssl
+public = ${:srv}/public/
 cron-entries = ${:etc}/cron.d
 crontabs = ${:etc}/crontabs
 cronstamps = ${:etc}/cronstamps
@@ -121,11 +122,12 @@ external-disk-number = ${slap-parameter:external-disk-number}
 external-disk-size = ${slap-parameter:external-disk-size}
 external-disk-format = ${slap-parameter:external-disk-format}
 
-{% if slapparameter_dict.get('enable-http-server', 'False') == 'True' %}
+{% if slapparameter_dict.get('enable-http-server', 'False') == 'True' or ( slapparameter_dict.get('use-tap', 'False') == 'True' and tap_network_dict.has_key('ipv4') ) -%}
 httpd-port = ${slap-parameter:httpd-port}
 {% else -%}
 httpd-port = 0
 {% endif -%}
+netcat-binary = {{ netcat_bin }}
 
 [kvm-vnc-promise]
 recipe = slapos.cookbook:check_port_listening
@@ -269,14 +271,30 @@ nat-rule-url-{{port}} = [${slap-network-information:global-ipv6}]:{{external_por
 {% endif -%}
 {% if slapparameter_dict.get('use-tap', 'False') == 'True' and tap_network_dict.has_key('ipv4') -%}
 1_info = Use these configurations below to configure interface {{ iface }} in your VM.
-2_info = ifconfig {{ iface }} ${slap-network-information:tap-ipv4} netmask ${slap-network-information:tap-netmask}
-3_info = route add ${slap-network-information:tap-gateway} dev {{ iface }}
-4_info = route add -net ${slap-network-information:tap-network} netmask ${slap-network-information:tap-netmask} gw ${slap-network-information:tap-gateway}
+2_info = ${network-config:ifconfig}
+3_info = ${network-config:route-iface}
+4_info = ${network-config:route-network}
+5_info = ${network-config:route-default}
+6_info = In your VM you can run the command: wget -O- http://10.0.2.100/netconfig.sh | /bin/sh -
+
+[network-config]
+recipe = plone.recipe.command
+path = ${directory:public}/netconfig.sh
+ifconfig = ifconfig {{ iface }} ${slap-network-information:tap-ipv4} netmask ${slap-network-information:tap-netmask}
+route-iface = route add ${slap-network-information:tap-gateway} dev {{ iface }}
+route-network = route add -net ${slap-network-information:tap-network} netmask ${slap-network-information:tap-netmask} gw ${slap-network-information:tap-gateway}
 {%   if iface == 'eth0' -%}
-5_info = route add default gw ${slap-network-information:tap-gateway}
+route-default = route add default gw ${slap-network-information:tap-gateway}
 {%   elif global_ipv4_prefix -%}
-5_info = ip route add {{ global_ipv4_prefix }} via ${slap-network-information:tap-gateway} dev {{ iface }} src ${slap-network-information:tap-ipv4}
+route-default = ip route add {{ global_ipv4_prefix }} via ${slap-network-information:tap-gateway} dev {{ iface }} src ${slap-network-information:tap-ipv4}
 {%   endif -%}
+command = 
+  echo "#!/bin/sh" > ${:path}
+  echo "" >> ${:path}
+  echo "${:ifconfig}" >> ${:path}
+  echo "${:route-iface}" >> ${:path}
+  echo "${:route-network}" >> ${:path}
+  echo "${:route-default}" >> ${:path}
 {% endif -%}
 
 

@@ -31,6 +31,7 @@ ErrorLog "{{ error_log }}"
 # Default apache log format with request time in microsecond at the end
 LogFormat "%h %l %u %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\" %D" combined
 CustomLog "{{ access_log }}" combined
+SetEnvIf X-Forwarded-For "^.*\..*\..*\..*" forwarded
 
 # Directory protection
 <Directory />
@@ -42,6 +43,7 @@ CustomLog "{{ access_log }}" combined
 DocumentRoot {{ index_folder }}
 <Directory {{ index_folder }}>
   Options Indexes FollowSymLinks
-  AllowOverride All
-  Require all granted
+  Require ip {{ ip }}
+  # Require env forwarded '{{ ip }}'
+  Require all denied
 </Directory>
