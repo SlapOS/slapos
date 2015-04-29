@@ -1,6 +1,11 @@
 Changes
 =======
 
+0.101 (2015-04-29)
+------------------
+ * kvm recipe: new parameters: external-disk-format, numa and cpu-options.
+ * kvm recipe: allow guest VM to connect to host http service via a local predefined ipv4 address (guestfwd).
+
 0.100 (2015-04-20)
 ------------------
  * re6stnet recipe: re6st-registry log can now be reopened with SIGUSR1
