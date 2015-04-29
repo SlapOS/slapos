@@ -269,6 +269,9 @@ nat-rule-url-{{port}} = [${slap-network-information:global-ipv6}]:{{external_por
 {%     endif -%}
 {%   endfor -%}
 {% endif -%}
+{% if slapparameter_dict.get('use-tap', 'False') == 'True' -%}
+tap-ipv4 = ${slap-network-information:tap-ipv4}
+{% endif -%}
 {% if slapparameter_dict.get('use-tap', 'False') == 'True' and tap_network_dict.has_key('ipv4') -%}
 1_info = Use these configurations below to configure interface {{ iface }} in your VM.
 2_info = ${network-config:ifconfig}

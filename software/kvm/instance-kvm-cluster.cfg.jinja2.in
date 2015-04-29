@@ -24,7 +24,7 @@ config-use-ipv6 = {{ dumps(slapparameter_dict.get('use-ipv6', False)) }}
 <= request-common
 software-type = kvm
 name = {{ instance_name }}
-sla-computer_guid = {{ dumps(kvm_parameter_dict.get('computer-guid', computer_id)) }}
+sla-computer_guid = {{ dumps(kvm_parameter_dict.get('computer-guid', '')) }}
 
 config-frontend-instance-name = {{ instance_name ~ ' VNC Frontend' }}
 config-frontend-software-type = {{ dumps(frontend_dict.get('software-type', 'frontend')) }}
@@ -62,6 +62,11 @@ return =
 {%   for port in nat_rules_list -%}
 {{ '  ' }}nat-rule-url-{{ port }}
 {%   endfor -%}
+{% endif -%}
+{% if kvm_parameter_dict.get('use-tap', True) -%}
+{{ '  ' }}tap-ipv4
+
+{% do publish_dict.__setitem__('lan-' ~ instance_name, '${' ~ section ~ ':connection-tap-ipv4}') -%}
 {% endif -%}
 {% do publish_dict.__setitem__(instance_name ~ '-backend-url', '${' ~ section ~ ':connection-backend-url}') -%}
 {% do publish_dict.__setitem__(instance_name ~ '-url', '${' ~ section ~ ':connection-url}') -%}
@@ -119,8 +124,9 @@ recipe = slapos.cookbook:publish
 {{   name }} = {{ value }}
 {% endfor %}
 {% set disk_number = len(storage_dict) -%}
+{% if disk_number > 0 -%}
 1_info = It is possible to mount up to {{ disk_number }} external disk to your virtual machine. See parameter 'external-disk-number'
-
+{% endif %}
 [buildout]
 parts = publish
 
