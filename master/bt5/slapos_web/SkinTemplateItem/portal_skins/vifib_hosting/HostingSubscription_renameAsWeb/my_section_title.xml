@@ -10,13 +10,14 @@
             <key> <string>delegated_list</string> </key>
             <value>
               <list>
+                <string>css_class</string>
                 <string>default</string>
               </list>
             </value>
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>my_title</string> </value>
+            <value> <string>my_section_title</string> </value>
         </item>
         <item>
             <key> <string>message_values</string> </key>
@@ -53,6 +54,10 @@
             <value>
               <dictionary>
                 <item>
+                    <key> <string>css_class</string> </key>
+                    <value> <string></string> </value>
+                </item>
+                <item>
                     <key> <string>default</string> </key>
                     <value>
                       <persistent> <string encoding="base64">AAAAAAAAAAI=</string> </persistent>
@@ -77,6 +82,10 @@
             <key> <string>values</string> </key>
             <value>
               <dictionary>
+                <item>
+                    <key> <string>css_class</string> </key>
+                    <value> <string>nolabel sectionTitle my_services</string> </value>
+                </item>
                 <item>
                     <key> <string>default</string> </key>
                     <value> <string></string> </value>
@@ -109,7 +118,7 @@
             <key> <string>_text</string> </key>
             <value> <string encoding="cdata"><![CDATA[
 
-python:"<h1>Partitions installed for: %s</h1>" % (context.getTranslatedShortTitle() or context.getTranslatedTitle())
+python:"<h1>Rename: %s</h1>" % (context.getTranslatedTitle())
 
 ]]></string> </value>
         </item>

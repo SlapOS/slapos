@@ -35,7 +35,7 @@
         </item>
         <item>
             <key> <string>action</string> </key>
-            <value> <string>HostingSubscription_editWebMode</string> </value>
+            <value> <string></string> </value>
         </item>
         <item>
             <key> <string>description</string> </key>
@@ -60,9 +60,9 @@
             <value>
               <list>
                 <string>normal</string>
-                <string>right</string>
+                <string>right width100 alignr</string>
+                <string>normal bis</string>
                 <string>center</string>
-                <string>bottom</string>
                 <string>hidden</string>
               </list>
             </value>
@@ -72,18 +72,6 @@
             <value>
               <dictionary>
                 <item>
-                    <key> <string>bottom</string> </key>
-                    <value>
-                      <list>
-                        <string>listbox</string>
-                        <string>my_destroy_button</string>
-                        <string>ticket_listbox</string>
-                        <string>new_ticket_button</string>
-                        <string>your_get_token</string>
-                      </list>
-                    </value>
-                </item>
-                <item>
                     <key> <string>center</string> </key>
                     <value>
                       <list/>
@@ -92,37 +80,31 @@
                 <item>
                     <key> <string>hidden</string> </key>
                     <value>
-                      <list>
-                        <string>listbox_status</string>
-                        <string>listbox_image</string>
-                        <string>listbox_monitoring_status</string>
-                      </list>
+                      <list/>
                     </value>
                 </item>
                 <item>
                     <key> <string>normal</string> </key>
                     <value>
                       <list>
-                        <string>my_title</string>
-                        <string>your_ad</string>
+                        <string>my_section_title</string>
                         <string>my_url_string</string>
+                        <string>my_reference</string>
                         <string>my_source_reference</string>
-                        <string>your_status</string>
-                        <string>info</string>
-                        <string>my_description</string>
-                        <string>your_instance_xml</string>
-                        <string>my_update_button</string>
-                        <string>my_start_button</string>
-                        <string>my_stop_button</string>
+                        <string>your_new_title</string>
+                        <string>your_description</string>
                         <string>my_rename_button</string>
-                        <string>my_restricted_access_token_generate_button</string>
-                        <string>your_connection_listbox</string>
-                        <string>your_monitoring_status</string>
                       </list>
                     </value>
                 </item>
                 <item>
-                    <key> <string>right</string> </key>
+                    <key> <string>normal bis</string> </key>
+                    <value>
+                      <list/>
+                    </value>
+                </item>
+                <item>
+                    <key> <string>right width100 alignr</string> </key>
                     <value>
                       <list/>
                     </value>
@@ -132,7 +114,7 @@
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>HostingSubscription_viewAsWeb</string> </value>
+            <value> <string>HostingSubscription_renameAsWeb</string> </value>
         </item>
         <item>
             <key> <string>method</string> </key>
@@ -140,7 +122,7 @@
         </item>
         <item>
             <key> <string>name</string> </key>
-            <value> <string>HostingSubscription_viewAsWeb</string> </value>
+            <value> <string>SoftwareInstance_viewAsWeb</string> </value>
         </item>
         <item>
             <key> <string>pt</string> </key>
