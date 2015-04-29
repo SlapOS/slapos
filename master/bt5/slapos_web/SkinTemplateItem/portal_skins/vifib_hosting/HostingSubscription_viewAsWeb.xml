@@ -76,6 +76,7 @@
                     <value>
                       <list>
                         <string>listbox</string>
+                        <string>my_destroy_warn_message</string>
                         <string>my_destroy_button</string>
                         <string>ticket_listbox</string>
                         <string>new_ticket_button</string>
@@ -118,6 +119,7 @@
                         <string>my_restricted_access_token_generate_button</string>
                         <string>your_connection_listbox</string>
                         <string>your_monitoring_status</string>
+                        <string>your_destroy_hosting</string>
                       </list>
                     </value>
                 </item>
