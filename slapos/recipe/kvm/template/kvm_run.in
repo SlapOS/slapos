@@ -11,6 +11,7 @@ import gzip
 import shutil
 from random import shuffle
 import glob
+import re
 
 # XXX: give all of this through parameter, don't use this as template, but as module
 qemu_img_path = '%(qemu-img-path)s'
@@ -43,6 +44,8 @@ disk_storage_dict = {}
 disk_storage_list = """%(disk-storage-list)s""".split('\n')
 map_storage_list = []
 etc_directory = '%(etc-directory)s'.strip()
+httpd_port = %(httpd-port)s
+netcat_bin = '%(netcat-binary)s'.strip()
 
 def md5Checksum(file_path):
     with open(file_path, 'rb') as fh:
@@ -132,9 +135,14 @@ if not os.path.exists(disk_path) and virtual_hard_drive_url != '':
   else:
     print('Warning: not checksum specified.')
   if downloaded_disk.endswith('.gz'):
-    with open(disk_path, 'w') as disk:
-      with gzip.open(downloaded_disk, 'rb') as disk_gz:
-        shutil.copyfileobj(disk_gz, disk)
+    try:
+      with open(disk_path, 'w') as disk:
+        with gzip.open(downloaded_disk, 'rb') as disk_gz:
+          shutil.copyfileobj(disk_gz, disk)
+    except Exception:
+      if os.path.exists(disk_path):
+        os.remove(disk_path)
+      raise
     os.remove(downloaded_disk)
 
 # Create disk if doesn't exist
@@ -191,6 +199,9 @@ if use_nat == 'True':
   number += 1
   rules = 'user,id=lan%%s,' %% number + ','.join('hostfwd=tcp:%%s:%%s-:%%s' %% (listen_ip,
                         int(port) + 10000, port) for port in nat_rules.split())
+  if httpd_port > 0:
+    rules += ',guestfwd=tcp:10.0.2.100:80-cmd:%%s %%s %%s' %% (netcat_bin,
+                                                        listen_ip, httpd_port)
   nat_network_parameter = ['-netdev', rules,
           '-device', 'e1000,netdev=lan%%s,mac=%%s' %% (number, mac_address)]
 if use_tap == 'True':
@@ -202,7 +213,10 @@ if use_tap == 'True':
 
 smp = smp_count
 if smp_options:
-  smp += ',%%s' %% smp_options
+  for option in smp_options.split(','):
+    key, val = option.split('=')
+    if key in ('cores', 'threads', 'sockets', 'maxcpus') and val.isdigit():
+      smp += ',%%s=%%s' %% (key, val)
 kvm_argument_list = [qemu_path,
   '-enable-kvm', '-smp', smp,
   '-m', ram_size, '-vga', 'std',
@@ -213,8 +227,10 @@ kvm_argument_list = [qemu_path,
   '-pidfile', pid_file_path,
 ]
 
+rgx = re.compile('^[\w*\,][\=\d+\-\,\w]*$')
 for numa in numa_list:
-  numa_parameter.extend(['-numa', numa])
+  if rgx.match(numa):
+    numa_parameter.extend(['-numa', numa])
 kvm_argument_list += numa_parameter
 
 if tap_network_parameter == [] and nat_network_parameter == []:

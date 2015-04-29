@@ -24,7 +24,7 @@ config-use-ipv6 = {{ dumps(slapparameter_dict.get('use-ipv6', False)) }}
 <= request-common
 software-type = kvm
 name = {{ instance_name }}
-sla-computer_guid = {{ dumps(kvm_parameter_dict.get('computer-guid', computer_id)) }}
+sla-computer_guid = {{ dumps(kvm_parameter_dict.get('computer-guid', '')) }}
 
 config-frontend-instance-name = {{ instance_name ~ ' VNC Frontend' }}
 config-frontend-software-type = {{ dumps(frontend_dict.get('software-type', 'frontend')) }}
@@ -45,13 +45,16 @@ config-numa = {{ dumps(kvm_parameter_dict.get('numa', '')) }}
 config-nat-rules = {{ nat_rules_list | join(' ') }}
 config-publish-nat-url = True
 config-use-nat = {{ use_nat }}
-config-use-tap = {{ dumps(kvm_parameter_dict.get('use-tap', False)) }}
+config-use-tap = {{ dumps(kvm_parameter_dict.get('use-tap', True)) }}
 config-virtual-hard-drive-url = {{ dumps(kvm_parameter_dict.get('virtual-hard-drive-url', '')) }}
 config-virtual-hard-drive-md5sum = {{ dumps(kvm_parameter_dict.get('virtual-hard-drive-md5sum', '')) }}
 config-virtual-hard-drive-gzipped = {{ dumps(kvm_parameter_dict.get('virtual-hard-drive-gzipped', False)) }}
 config-external-disk-number = {{ dumps(kvm_parameter_dict.get('external-disk-number', 0)) }}
 config-external-disk-size = {{ dumps(kvm_parameter_dict.get('external-disk-size', 20)) }}
 config-external-disk-format = {{ dumps(kvm_parameter_dict.get('external-disk-format', 'qcow2')) }}
+config-enable-http-server = {{ dumps(kvm_parameter_dict.get('enable-http-server', True)) }}
+config-httpd-port = {{ dumps(kvm_parameter_dict.get('httpd-port', 8081)) }}
+
 return = 
   backend-url
   url
@@ -59,6 +62,11 @@ return =
 {%   for port in nat_rules_list -%}
 {{ '  ' }}nat-rule-url-{{ port }}
 {%   endfor -%}
+{% endif -%}
+{% if kvm_parameter_dict.get('use-tap', True) -%}
+{{ '  ' }}tap-ipv4
+
+{% do publish_dict.__setitem__('lan-' ~ instance_name, '${' ~ section ~ ':connection-tap-ipv4}') -%}
 {% endif -%}
 {% do publish_dict.__setitem__(instance_name ~ '-backend-url', '${' ~ section ~ ':connection-backend-url}') -%}
 {% do publish_dict.__setitem__(instance_name ~ '-url', '${' ~ section ~ ':connection-url}') -%}
@@ -116,8 +124,9 @@ recipe = slapos.cookbook:publish
 {{   name }} = {{ value }}
 {% endfor %}
 {% set disk_number = len(storage_dict) -%}
+{% if disk_number > 0 -%}
 1_info = It is possible to mount up to {{ disk_number }} external disk to your virtual machine. See parameter 'external-disk-number'
-
+{% endif %}
 [buildout]
 parts = publish
 

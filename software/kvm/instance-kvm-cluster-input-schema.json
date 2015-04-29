@@ -72,7 +72,7 @@
                   "default": ""
                 },
                 "enable-cache": {
-                  "title": "Specify if cached will be used for this slave frontend.",
+                  "title": "Use cache for this slave frontend.",
                   "description": "Specify if slave frontend should use a squid to connect to backend.",
                   "type": "boolean",
                   "default": false
@@ -84,32 +84,33 @@
                   "default": "default"
                 },
                 "zope-path": {
-                  "title": "Specify path to the VirtualHostRoot of the zope.",
+                  "title": "Path to the VirtualHostRoot of the zope.",
                   "description": "Only used if type is 'zope'. Will append the specified path to the VirtualHostRoot of the zope's VirtualHostMonster.",
                   "type": "string",
                   "default": ""
                 },
                 "https-only": {
-                  "title": "Specify if website should be accessed using https only.",
+                  "title": "Access website with https url only.",
                   "description": "Specify if website should be accessed using https only. If so, the frontend will redirect the user to https if accessed from http.",
                   "type": "boolean",
                   "default": false
                 },
-                "kvm-partition-name": {
-                  "title": "Reference name in 'kvm-partition-dict' to get IPv6 for slave frontend from.",
-                  "description": "Only work if 'use-nat' is true and 'service-port' is set. This will allow to get URL from defined nat-rules. Play the same as url.",
+                "kvm-name": {
+                  "title": "Reference name in kvm instance definition to get url from.",
+                  "description": "Compose url from kvm definition. Only work if 'use-nat' is true and 'service-port' is set. This will allow to get URL from defined nat-rules. Play the same as url, but help if you don't know kvm ipv6 yet.",
                   "type": "string",
                   "default": ""
                 },
                 "service-port": {
-                  "title": "Specify the port of service to run in VM.",
-                  "description": "This will allow to get URL from defined nat-rules. The port should exist in nat-rules of KVM referenced by 'kvm-partition-name'",
+                  "title": "Port of service into the VM (require: kvm-name).",
+                  "description": "This will allow to get URL from defined nat-rules. The port should exist in nat-rules of KVM you have referenced by 'kvm-partition-name'",
                   "type": "number"
                 },
                 "url-scheme": {
-                  "title": "Say If HTTP service to run into the Virtual Machine will use http or https.",
-                  "description": "Say If HTTP service to run into the Virtual Machine will use http or https. Possible values: http, https",
+                  "title": "Scheme of HTTP service into the VM (require: kvm-name).",
+                  "description": "Say If HTTP service to run/or running into the Virtual Machine will use http or https. Possible values: http, https.",
                   "type": "string",
+                  "enum": ["http", "https"],
                   "default": "http"
                 }
               },
@@ -127,6 +128,12 @@
       "patternProperties": {
         ".*": {
           "properties": {
+            "computer-guid": {
+              "title": "ID of the computer where to deploy this VM.",
+              "description": "Unique identifier of the computer, like \"COMP-1234\". By default, let Master choose a computer.",
+              "type": "string",
+              "default": ""
+            },
             "ram-size": {
               "title": "RAM size",
               "description": "RAM size, in MB.",
@@ -167,17 +174,17 @@
               "maximum": 8
             },
             "cpu-options": {
-              "title": "Additional options (cores, threads, sockets, maxcpus) to use with cpu-count.",
-              "description": "Additional options to use with cpu-count. Options are separated by coma: [cores=cores][,threads=threads][,sockets=sockets][,maxcpus=maxcpus]. Only set this option if you really know what you're doing.",
+              "title": "CPU Additional options: cores, threads, sockets, maxcpus.",
+              "description": "Additional options to use with cpu-count. Options are separated by coma: [cores=cores][,threads=threads][,sockets=sockets][,maxcpus=maxcpus]. Set this option if you know what you're doing.",
               "type": "string"
             },
             "numa": {
-              "title": "Simulate a multi node NUMA system. If mem and cpus are omitted, resources are split equally.",
-              "description": "Simulate a multi node NUMA system. If mem and cpus are omitted, resources are split equally. Each numa option are separated by space: node,nodeid=4,cpus=40-49,mem=64g node,nodeid=1,cpus=10-19,mem=128g. Only set this option if you really know what you're doing.",
+              "title": "Simulate a multi node NUMA system.",
+              "description": "Simulate a multi node NUMA system. If mem and cpus are omitted, resources are split equally. Each numa option are separated by space: node,nodeid=4,cpus=40-49,mem=64g node,nodeid=1,cpus=10-19,mem=128g. Set this option if you know what you're doing.",
               "type": "string"
             },
             "nbd-host": {
-              "title": "NBD hostname",
+              "title": "NBD hostname or IP",
               "description": "hostname (or IP) of the NBD server containing the boot image.",
               "type": "string",
               "format": [
@@ -196,7 +203,7 @@
               "maximum": 65535
             },
             "nbd2-host": {
-              "title": "Second NBD hostname",
+              "title": "Second NBD hostname or IP",
               "description": "hostname (or IP) of the second NBD server (containing drivers for example).",
               "type": "string",
               "format": [
@@ -224,7 +231,7 @@
               "type": "string"
             },
             "virtual-hard-drive-gzipped": {
-              "title": "Define if virtual hard drive to download is gzipped",
+              "title": "Virtual hard drive to download is gzipped",
               "description": "Define if virtual hard drive to download is gzipped using gzip. This help to reduce size of file to download.",
               "type": "boolean",
               "default": false
@@ -234,12 +241,11 @@
               "description": "Specify the number of additional disk to create for virtual machine in data folder of SlapOS Node. Requires instance_storage_home to be configured on SlapOS Node.",
               "type": "integer",
               "minimum": 0,
-              "maximum": 4,
               "default": 0
             },
             "external-disk-size": {
-              "title": "Number of additional disk to create for virtual machine, in Gigabytes",
-              "description": "Specify the number of additional disk to create for virtual machine in data folder of SlapOS Node. Requires instance_storage_home to be configured on SlapOS Node.",
+              "title": "Size of additional disk to create for virtual machine, in Gigabytes",
+              "description": "Specify the size of additional disk to create for virtual machine in data folder of SlapOS Node. Requires instance_storage_home to be configured on SlapOS Node.",
               "type": "integer",
               "minimum": 10,
               "maximum": 100,
@@ -256,7 +262,7 @@
               "title": "Use QEMU TAP network interface",
               "description": "Use QEMU TAP network interface, might require a bridge on SlapOS Node.",
               "type": "boolean",
-              "default": false
+              "default": true
             },
             "use-nat": {
               "title": "Use QEMU USER Mode networking",
@@ -266,7 +272,7 @@
             },
             "nat-rules": {
               "title": "List of rules for NAT of QEMU user mode network stack.",
-              "description": "List of rules for NAT of QEMU user mode network stack, as comma-separated list of ports. For each port specified, it will redirect port x of the VM (example: 80) to the port x + 10000 of the public IPv6 (example: 10080). Defaults to \"22 80 443\". Ignored if \"use-tap\" parameter is enabled.",
+              "description": "List of rules for NAT of QEMU user mode network stack, as comma-separated list of ports. For each port specified, it will redirect port x of the VM (example: 80) to the port x + 10000 of the public IPv6 (example: 10080). Defaults to \"22 80 443\".",
               "type": "array",
               "default": [
                 22,

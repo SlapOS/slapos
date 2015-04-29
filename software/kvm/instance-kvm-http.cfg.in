@@ -1,0 +1,46 @@
+[buildout]
+
+parts = 
+  httpd
+  httpd-promise
+
+[directory]
+recipe = slapos.cookbook:mkdirectory
+etc = ${buildout:directory}/etc
+bin = ${buildout:directory}/bin
+srv = ${buildout:directory}/srv
+public = ${:srv}/public/
+log = ${:var}/log
+services = ${:etc}/service
+promises = ${:etc}/promise
+run = ${:var}/run
+
+[apache-conf]
+recipe = slapos.recipe.template:jinja2
+template = {{ template_apache_conf }}
+rendered = ${directory:etc}/apache.conf
+#ipv6 = ${slap-network-information:global-ipv6}
+ipv4 = ${slap-network-information:local-ipv4}
+port = ${slap-parameter:httpd-port}
+error-log = ${directory:log}/apache-error.log
+access-log = ${directory:log}/apache-access.log
+pid-file = ${directory:run}/apache.pid
+index = ${directory:public}
+context = 
+  key port :port
+  key ip :ipv4
+  key access_log :access-log
+  key error_log :error-log
+  key pid_file :pid-file
+  key index_folder :index
+
+[httpd]
+recipe = slapos.cookbook:wrapper
+wrapper-path = ${directory:services}/httpd
+command-line = "{{ apache_location }}/bin/httpd" -f "${apache-conf:rendered}" -DFOREGROUND
+
+[httpd-promise]
+recipe = slapos.cookbook:check_port_listening
+path = ${directory:promises}/apache-httpd
+hostname = ${apache-conf:ipv4}
+port = ${apache-conf:port}
