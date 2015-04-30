@@ -10,14 +10,14 @@
             "response": "instance-kvm-output-schema.json",
             "index": 0
         },
-        "resilient": {
+        "kvm-resilient": {
             "title": "Resilient",
             "description": "Resilient KVM",
             "request": "instance-kvm-resilient-input-schema.json",
             "response": "instance-kvm-output-schema.json",
             "index": 1
         },
-        "cluster": {
+        "kvm-cluster": {
             "title": "Cluster",
             "description": "Cluster KVM",
             "serialisation": "json-in-xml",
