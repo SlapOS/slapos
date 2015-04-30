@@ -30,6 +30,7 @@ config-frontend-instance-name = {{ instance_name ~ ' VNC Frontend' }}
 config-frontend-software-type = {{ dumps(frontend_dict.get('software-type', 'frontend')) }}
 config-frontend-software-url = {{ dumps(frontend_dict.get('software-url', 'http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.92:/software/kvm/software.cfg')) }}
 config-frontend-instance-guid = {{ dumps(frontend_dict.get('instance-guid', '')) }}
+config-authorized-key = {{ dumps(slapparameter_dict.get('authorized-key', '')) }}
 config-nbd-port = {{ dumps(kvm_parameter_dict.get('nbd-port', 1024)) }}
 config-nbd-host = {{ dumps(kvm_parameter_dict.get('nbd-host', '')) }}
 config-nbd2-port = {{ dumps(kvm_parameter_dict.get('nbd-port2', 1024)) }}

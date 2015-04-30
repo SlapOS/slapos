@@ -1,3 +1,4 @@
+{% set enable_http = slapparameter_dict.get('enable-http-server', 'False') -%}
 #############################
 #
 # Instanciate kvm
@@ -18,6 +19,7 @@ parts =
 {% if slapparameter_dict.get('enable-http-server', 'False') == 'True' %}
   httpd
   httpd-promise
+  get-authorized-key
 
 extends = 
   {{ template_httpd_cfg }}
@@ -272,13 +274,26 @@ nat-rule-url-{{port}} = [${slap-network-information:global-ipv6}]:{{external_por
 {% if slapparameter_dict.get('use-tap', 'False') == 'True' -%}
 tap-ipv4 = ${slap-network-information:tap-ipv4}
 {% endif -%}
+
+{% set kvm_http = 'http://${slap-network-information:local-ipv4}:' ~ slapparameter_dict.get('httpd-port', 8081) -%}
+{% if enable_http == 'True' %}
+{%   if slapparameter_dict.get('use-nat', 'True') == 'True' -%}
+{%     set kvm_http = 'http://10.0.2.100' -%}
+{%   endif %}
+{%   if slapparameter_dict.get('authorized-key', '') -%}
+7_info = Get the publick key file in your VM with the command: wget {{ kvm_http }}/${get-authorized-key:filename}
+{%   endif %}
+{% endif %}
+
 {% if slapparameter_dict.get('use-tap', 'False') == 'True' and tap_network_dict.has_key('ipv4') -%}
 1_info = Use these configurations below to configure interface {{ iface }} in your VM.
 2_info = ${network-config:ifconfig}
 3_info = ${network-config:route-iface}
 4_info = ${network-config:route-network}
 5_info = ${network-config:route-default}
-6_info = In your VM you can run the command: wget -O- http://10.0.2.100/netconfig.sh | /bin/sh -
+{% if enable_http == 'True' %}
+6_info = Or run in your VM the command: wget -O- {{ kvm_http }}/netconfig.sh | /bin/sh -
+{% endif %}
 
 [network-config]
 recipe = plone.recipe.command
@@ -290,6 +305,8 @@ route-network = route add -net ${slap-network-information:tap-network} netmask $
 route-default = route add default gw ${slap-network-information:tap-gateway}
 {%   elif global_ipv4_prefix -%}
 route-default = ip route add {{ global_ipv4_prefix }} via ${slap-network-information:tap-gateway} dev {{ iface }} src ${slap-network-information:tap-ipv4}
+{% else -%}
+route-default =
 {%   endif -%}
 command = 
   echo "#!/bin/sh" > ${:path}
@@ -298,8 +315,19 @@ command =
   echo "${:route-iface}" >> ${:path}
   echo "${:route-network}" >> ${:path}
   echo "${:route-default}" >> ${:path}
+update-command = ${:command}
 {% endif -%}
 
+[get-authorized-key]
+recipe = plone.recipe.command
+filename = authorized_keys
+path = ${directory:public}/${:filename}
+public-key = {{ slapparameter_dict.get('authorized-key', '') }}
+command = 
+  rm -f ${:path}
+  authorizedkey="${:public-key}"
+  echo "$authorizedkey" > ${:path}
+update-command = ${:command}
 
 [slap-parameter]
 # Default values if not specified
@@ -334,5 +362,8 @@ external-disk-number = 0
 external-disk-size = 20
 external-disk-format = qcow2
 
+# Help to get some configuration files into the vm from http
 enable-http-server = False
 httpd-port = 8081
+# for auto config, the public key file will be available in the VM via url http://10.0.2.100/authorized_key if use-nat = True
+authorized-key = 
