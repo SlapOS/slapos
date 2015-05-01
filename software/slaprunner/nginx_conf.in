@@ -6,8 +6,8 @@ error_log {{ param_nginx_frontend['path_error_log'] }};
 daemon off;
 
 events {
-	worker_connections 1024;
-	accept_mutex off;
+  worker_connections 1024;
+  accept_mutex off;
 }
 
 http {
@@ -18,6 +18,7 @@ http {
         default upgrade;
         ''      close;
      }
+
      server {
         listen [{{ param_nginx_frontend['global-ip'] }}]:{{ param_nginx_frontend['global-port'] }} ssl;
         server_name _;
@@ -31,8 +32,12 @@ http {
         fastcgi_temp_path {{ param_tempdir['fastcgi_temp_path'] }};
         uwsgi_temp_path {{ param_tempdir['uwsgi_temp_path'] }};
         scgi_temp_path {{ param_tempdir['scgi_temp_path'] }};
-	error_page 401 /login;
+        
         location / {
+            # When no .htpasswd exist, redirect the user to account creation page
+            if ( !-f {{ param_nginx_frontend['etc_dir'] }}/.htpasswd ) {
+                return 301 /setAccount ;
+            }
             auth_basic "Restricted";
             auth_basic_user_file {{ param_nginx_frontend['etc_dir'] }}/.htpasswd;
             proxy_redirect off;
@@ -52,8 +57,9 @@ http {
 
             proxy_pass http://unix:{{ socket }};
         }
-	location /shellinabox {
-            proxy_pass  http://[{{ param_nginx_frontend['global-ip'] }}]:{{ shellinabox_port }}/;
+
+        location /shellinabox {
+            proxy_pass http://unix:{{ shellinabox_socket }}:/;
             proxy_next_upstream error timeout invalid_header http_500 http_502 http_503 http_504;
             auth_basic "Restricted";
             auth_basic_user_file {{ param_nginx_frontend['etc_dir'] }}/.htpasswd;
@@ -61,9 +67,9 @@ http {
             proxy_buffering off;
             proxy_set_header        Host              $host;
             proxy_set_header        X-Real-IP         $remote_addr;
-	    proxy_set_header        X-Forwarded-Proto $scheme;
+            proxy_set_header        X-Forwarded-Proto $scheme;
             proxy_set_header        X-Forwarded-For   $proxy_add_x_forwarded_for;
-	    proxy_set_header        X-Forwarded-Host  $http_host;
-	}
+            proxy_set_header        X-Forwarded-Host  $http_host;
+      }
     }
 }
