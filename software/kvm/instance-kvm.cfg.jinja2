@@ -20,7 +20,8 @@ parts =
   httpd
   httpd-promise
   get-authorized-key
-
+  publish-host-config
+  
 extends = 
   {{ template_httpd_cfg }}
 {% endif -%}
@@ -327,6 +328,23 @@ command =
   rm -f ${:path}
   authorizedkey="${:public-key}"
   echo "$authorizedkey" > ${:path}
+update-command = ${:command}
+
+[publish-host-config]
+recipe = plone.recipe.command
+name = {{ slapparameter_dict.get('name', 'localhost') }}
+{% if slapparameter_dict.get('use-tap', 'False') == 'True' and tap_network_dict.has_key('ipv4') -%}
+local-ipv4 = ${slap-network-information:tap-ipv4}
+{% else -%}
+local-ipv4 = 127.0.0.1
+{% endif -%}
+path-host = ${directory:public}/hostname
+path-ip = ${directory:public}/ipv4
+command = 
+  rm -f ${:path-host}
+  rm -f ${:path-ip}
+  echo "${:name}" > ${:path-host}
+  echo "${:local-ipv4}" > ${:path-ip}
 update-command = ${:command}
 
 [slap-parameter]
