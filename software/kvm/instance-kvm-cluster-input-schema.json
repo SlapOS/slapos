@@ -123,9 +123,9 @@
       "type": "object"
     },
     "authorized-key": {
-      "title": "Public key to put in all virtual machines.",
-      "description": "Set the public key to add in your virtual machine. The public key file will be available in the VM via url http://10.0.2.100/authorized_key if you keep the NAT interface enabled",
-      "type": "string"
+      "title": "Public keys for virtual machines.",
+      "description": "Set the list of public keys to add in your virtual machine. The public key file will be available in the VM via url http://10.0.2.100/authorized_keys if you keep the NAT interface enabled",
+      "type": "array"
     },
     "kvm-partition-dict": {
       "title": "kvm instances definition",

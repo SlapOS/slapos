@@ -19,7 +19,6 @@ parts =
 {% if slapparameter_dict.get('enable-http-server', 'False') == 'True' %}
   httpd
   httpd-promise
-  get-authorized-key
   publish-host-config
   
 extends = 
@@ -320,15 +319,14 @@ update-command = ${:command}
 {% endif -%}
 
 [get-authorized-key]
-recipe = plone.recipe.command
+recipe = slapos.recipe.template:jinja2
+template = {{ template_content }}
 filename = authorized_keys
-path = ${directory:public}/${:filename}
+rendered = ${directory:public}/${:filename}
 public-key = {{ slapparameter_dict.get('authorized-key', '') }}
-command = 
-  rm -f ${:path}
-  authorizedkey="${:public-key}"
-  echo "$authorizedkey" > ${:path}
-update-command = ${:command}
+context =
+    key content_list :public-key
+    raw sep ##
 
 [publish-host-config]
 recipe = plone.recipe.command
