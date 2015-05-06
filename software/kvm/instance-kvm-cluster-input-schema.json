@@ -104,7 +104,7 @@
                 "service-port": {
                   "title": "Port of service into the VM (require: kvm-name).",
                   "description": "This will allow to get URL from defined nat-rules. The port should exist in nat-rules of KVM you have referenced by 'kvm-partition-name'",
-                  "type": "number"
+                  "type": "integer"
                 },
                 "url-scheme": {
                   "title": "Scheme of HTTP service into the VM (require: kvm-name).",
@@ -121,6 +121,11 @@
         }
       },
       "type": "object"
+    },
+    "authorized-key": {
+      "title": "Public keys for virtual machines.",
+      "description": "Set the list of public keys to add in your virtual machine. The public key file will be available in the VM via url http://10.0.2.100/authorized_keys if you keep the NAT interface enabled",
+      "type": "array"
     },
     "kvm-partition-dict": {
       "title": "kvm instances definition",
@@ -149,7 +154,7 @@
               "type": "integer",
               "default": 10,
               "minimum": 1,
-              "maximum": 80
+              "maximum": 1000
             },
             "disk-type": {
               "title": "Disk type",
@@ -248,7 +253,7 @@
               "description": "Specify the size of additional disk to create for virtual machine in data folder of SlapOS Node. Requires instance_storage_home to be configured on SlapOS Node.",
               "type": "integer",
               "minimum": 10,
-              "maximum": 100,
+              "maximum": 1000,
               "default": 20
             },
             "external-disk-format": {
