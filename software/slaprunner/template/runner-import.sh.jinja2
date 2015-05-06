@@ -30,7 +30,6 @@ write_backup_proof
 restore_element {{ directory['backup'] }}/runner/ $srv_directory/runner  instance project  proxy.db
 restore_element  {{ directory['backup'] }}/etc/ {{ directory['etc'] }} config.json ssh
 cp -r {{ directory['backup'] }}/etc/.??* {{ directory['etc'] }};
-{{ curl_binary }} --insecure -g6L --max-time 5  {{ backend_url }}/isSRReady;
 
 
 # Invoke arbitrary script to perform specific restoration

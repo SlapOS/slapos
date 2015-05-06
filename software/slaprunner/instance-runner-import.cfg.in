@@ -76,7 +76,6 @@ context =
   section directory directory
   raw  shell_binary ${dash:location}/bin/dash
   raw  rsync_binary ${rsync:location}/bin/rsync
-  raw  curl_binary ${curl:location}/bin/curl
   raw  restore_exit_code_file $${:restore-exit-code-file}
 
 [importer-consistency-promise]
