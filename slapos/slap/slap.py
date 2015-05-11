@@ -183,7 +183,7 @@ class SoftwareProductCollection(object):
     self.get = self.__getattr__
 
   def __getattr__(self, software_product):
-      self.logger.info('Getting best Software Release corresponging to '
+      self.logger.info('Getting best Software Release corresponding to '
                        'this Software Product...')
       software_release_list = \
           self.slap.getSoftwareReleaseListFromSoftwareProduct(software_product)
