@@ -46,6 +46,8 @@ map_storage_list = []
 etc_directory = '%(etc-directory)s'.strip()
 httpd_port = %(httpd-port)s
 netcat_bin = '%(netcat-binary)s'.strip()
+cluster_doc_host = '%(cluster-doc-host)s'
+cluster_doc_port = %(cluster-doc-port)s
 
 def md5Checksum(file_path):
     with open(file_path, 'rb') as fh:
@@ -202,6 +204,9 @@ if use_nat == 'True':
   if httpd_port > 0:
     rules += ',guestfwd=tcp:10.0.2.100:80-cmd:%%s %%s %%s' %% (netcat_bin,
                                                         listen_ip, httpd_port)
+  if cluster_doc_host and cluster_doc_port > 0:
+    rules += ',guestfwd=tcp:10.0.2.101:443-cmd:%%s %%s %%s' %% (netcat_bin,
+                                           cluster_doc_host, cluster_doc_port)
   nat_network_parameter = ['-netdev', rules,
           '-device', 'e1000,netdev=lan%%s,mac=%%s' %% (number, mac_address)]
 if use_tap == 'True':

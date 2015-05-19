@@ -1,10 +1,13 @@
 {% set publish_dict = {} -%}
+{% set part_list = [] -%}
+{% set ipv6 = (ipv6 | list)[0] -%}
 {% set frontend_dict = slapparameter_dict.get('frontend', {}) -%}
 {% set slave_frontend_dict = slapparameter_dict.get('slave-frontend', {}) -%}
 {% set slave_frontend_sr = slave_frontend_dict.get('software-url', 'http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg') -%}
 {% set slave_frontend_stype = slave_frontend_dict.get('software-type', 'default') -%}
 {% set slave_frontend_iguid = slave_frontend_dict.get('instance-guid', '') -%}
 {% set kvm_instance_dict = {} -%}
+{% set kvm_hostname_list = [] -%}
 
 [request-common]
 recipe = slapos.cookbook:request
@@ -59,6 +62,11 @@ config-external-disk-format = {{ dumps(kvm_parameter_dict.get('external-disk-for
 config-enable-http-server = {{ dumps(kvm_parameter_dict.get('enable-http-server', True)) }}
 config-httpd-port = {{ dumps(kvm_parameter_dict.get('httpd-port', 8081)) }}
 
+# Enable simple http server on ipv6 so all VMs will access it
+config-document-host = ${http-server:host}
+config-document-port = ${http-server:port}
+config-document-path = ${http-server:path}
+
 return = 
   backend-url
   url
@@ -71,6 +79,7 @@ return =
 {{ '  ' }}tap-ipv4
 
 {% do publish_dict.__setitem__('lan-' ~ instance_name, '${' ~ section ~ ':connection-tap-ipv4}') -%}
+{% do kvm_hostname_list.append(instance_name ~ ' ' ~ '${' ~ section ~ ':connection-tap-ipv4}') -%}
 {% endif -%}
 {% do publish_dict.__setitem__(instance_name ~ '-backend-url', '${' ~ section ~ ':connection-backend-url}') -%}
 {% do publish_dict.__setitem__(instance_name ~ '-url', '${' ~ section ~ ':connection-url}') -%}
@@ -104,7 +113,7 @@ name = Frontend {{ name }}
 software-type = {{ slave_frontend_stype }}
 slave = true
 config-url = {{ url }}
-config-domain = {{ dumps(frontend_parameter_dict.get('domain', '')) }}
+config-custom_domain = {{ dumps(frontend_parameter_dict.get('domain', '')) }}
 config-enable_cache = {{ dumps(frontend_parameter_dict.get('enable-cache', False)) }}
 config-https-only = {{ dumps(frontend_parameter_dict.get('https-only', False)) }}
 {%  if frontend_parameter_dict.get('type', '') -%}
@@ -122,18 +131,59 @@ sla-instance_guid = {{ slave_frontend_iguid }}
 {%   endif -%}
 {% endfor %}
 
+# Enable simple http server on ipv6 so all VMs will access it
+[directory]
+recipe = slapos.cookbook:mkdirectory
+etc = ${buildout:directory}/etc
+bin = ${buildout:directory}/bin
+srv = ${buildout:directory}/srv
+var = ${buildout:directory}/var
+log = ${:var}/log
+scripts = ${:etc}/run
+services = ${:etc}/service
+document = ${:srv}/document
+ssl = ${:etc}/ssl
+
+[http-ssl]
+recipe = plone.recipe.command
+command = "{{ openssl_executable_location }}" req -newkey rsa -batch -new -x509 -days 3650 -nodes -keyout "${:key}" -out "${:cert}"
+key = ${directory:ssl}/key
+cert = ${directory:ssl}/cert
+update-command = 
+stop-on-error = true
+
+[http-server]
+recipe = slapos.cookbook:simplehttpserver
+host = {{ ipv6 }}
+port = 9002
+base-path = ${directory:document}
+wrapper = ${directory:services}/simple-http-server
+log-file = ${directory:log}/http.log
+cert-file = ${http-ssl:cert}
+key-file = ${http-ssl:key}
+
+[write-vm-hostname]
+recipe = slapos.recipe.template:jinja2
+template = {{ template_content }}
+filename = hosts
+rendered = ${http-server:root-dir}/${:filename}
+context =
+    raw content_list {{ kvm_hostname_list | join('#') }}
+    raw sep #
+
 [publish]
 recipe = slapos.cookbook:publish
 {% for name, value in publish_dict.items() -%}
 {{   name }} = {{ value }}
 {% endfor %}
-{% set disk_number = len(storage_dict) -%}
-{% if disk_number > 0 -%}
-1_info = It is possible to mount up to {{ disk_number }} external disk to your virtual machine. See parameter 'external-disk-number'
-{% endif %}
 [buildout]
-parts = publish
-
+parts = 
+  http-server
+  write-vm-hostname
+  publish
+# Complete parts with sections
+  {{ part_list | join('\n  ') }}
+ 
 eggs-directory = {{ eggs_directory }}
 develop-eggs-directory = {{ develop_eggs_directory }}
 offline = true

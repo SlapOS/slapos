@@ -55,6 +55,7 @@ context =
     key storage_dict slap-configuration:storage-dict
     key slapparameter_dict slap-configuration:configuration
     key computer_id slap-configuration:computer
+    raw openssl_executable_location ${openssl:location}/bin/openssl
     $${:extra-context}
 
 [dynamic-template-kvm-cluster-parameters]
@@ -65,6 +66,7 @@ template = ${template-kvm-cluster:location}/instance-kvm-cluster.cfg.jinja2.in
 filename = template-kvm-cluster.cfg
 extra-context =
   section parameter_dict dynamic-template-kvm-cluster-parameters
+  raw template_content ${template-content:location}/${template-content:filename}
 
 [dynamic-template-kvm]
 recipe = slapos.recipe.template:jinja2
