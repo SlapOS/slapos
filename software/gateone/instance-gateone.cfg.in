@@ -1,0 +1,157 @@
+
+{% set python_bin = parameter_dict['python-executable'] -%}
+{% set publish_dict = {} -%}
+{% set part_list = [] -%}
+{% set ipv6 = (ipv6_set | list)[0] -%}
+{% set ipv4 = (ipv4_set | list)[0] -%}
+{% macro section(name) %}{% do part_list.append(name) %}{{ name }}{% endmacro -%}
+
+[directory]
+recipe = slapos.cookbook:mkdirectory
+bin = ${buildout:directory}/bin
+etc = ${buildout:directory}/etc
+srv = ${buildout:directory}/srv
+var = ${buildout:directory}/var
+tmp = ${buildout:directory}/tmp
+log = ${:var}/log
+services = ${:etc}/service
+script = ${:etc}/run
+promises = ${:etc}/promise
+run = ${:var}/run
+ca-dir = ${:etc}/ssl
+requests = ${:ca-dir}/requests/
+private = ${:ca-dir}/private/
+certs = ${:ca-dir}/certs/
+newcerts = ${:ca-dir}/newcerts/
+crl = ${:ca-dir}/crl/
+
+[gateone-dir]
+gateone = ${directory:srv}/gateone
+log-prefix = ${directory:log}/gateone
+cache = ${:gateone}/cache
+sessions = ${:gateone}/sessions
+users = ${:gateone}/users
+conf = ${directory:etc}/gateone
+ssl = ${:conf}/ssl
+
+[gateone-configure]
+recipe = slapos.cookbook:wrapper
+port = 10443
+ipv6 = {{ ipv6 }}
+ipv4 = {{ ipv4 }}
+settings-dir = ${gateone-dir:conf}
+wrapper-path = ${directory:bin}/gateone-configure
+# XXX- issue with dtach=true, we set --dtach=false
+command = 
+    {{ parameter_dict['gateone-bin'] }} --address=${:ipv4} --port=${:port}  --certificate=${gateone-dir:ssl}/certificate.pem --keyfile=${gateone-dir:ssl}/keyfile.pem --cache_dir=${gateone-dir:cache} --pid_file=${directory:run}/gateone.pid --session_dir=${gateone-dir:sessions} --settings_dir=${:settings-dir} --user_dir=${gateone-dir:users} --log_file_prefix=${gateone-dir:log-prefix} --origins=${:ipv4} --logging=info --dtach=false
+#--gid=1012 --uid=987
+command-line = 
+  ${:command} --configure
+environment = 
+  PATH={{ bin_directory }}:{{ openssl_location }}/bin:{{ parameter_dict['dtach-location'] }}/bin:/usr/local/bin:/usr/bin:/bin
+  LD_LIBRARY_PATH={{ parameter_dict['readline-location'] }}/lib
+
+[gateone-run]
+recipe = slapos.cookbook:wrapper
+port = 10443
+ipv6 = {{ ipv6 }}
+ipv4 = {{ ipv4 }}
+wrapper-path = ${directory:services}/gateone
+command-line = ${gateone-configure:command}
+environment = 
+  PATH={{ bin_directory }}:{{ openssl_location }}/bin:{{ parameter_dict['dtach-location'] }}/bin:/usr/local/bin:/usr/bin:/bin
+  LD_LIBRARY_PATH={{ parameter_dict['readline-location'] }}/lib
+  HOME=${buildout:directory}
+  PWD=${gateone-dir:gateone}
+
+# --cookie_secret 45-characters
+# --uid needs to be set for slapos
+# --origins=${:ipv4};${:ipv6}
+
+[certificate-authority]
+recipe = slapos.cookbook:certificate_authority
+openssl-binary = {{ openssl_location }}/bin/openssl
+ca-dir = ${directory:ca-dir}
+requests-directory = ${directory:requests}
+wrapper = ${directory:services}/certificate_authority
+ca-private = ${directory:private}
+ca-certs = ${directory:certs}
+ca-newcerts = ${directory:newcerts}
+ca-crl = ${directory:crl}
+
+[ca-nginx]
+<= certificate-authority
+recipe = slapos.cookbook:certificate_authority.request
+key-file = ${directory:certs}/nginx.key
+cert-file = ${directory:certs}/nginx.crt
+executable = ${nginx-run:wrapper-path}
+wrapper = ${directory:services}/nginx-proxy
+
+[tempdirectory]
+recipe = slapos.cookbook:mkdirectory
+client_body_temp_path = ${directory:tmp}/client_body_temp_path
+proxy_temp_path = ${directory:tmp}/proxy_temp_path
+fastcgi_temp_path = ${directory:tmp}/fastcgi_temp_path
+uwsgi_temp_path = ${directory:tmp}/uwsgi_temp_path
+scgi_temp_path = ${directory:tmp}/scgi_temp_path
+
+[nginx-config-dict]
+nb_workers = 2
+ipv6 = {{ ipv6 }}
+ipv4 = {{ ipv4 }}
+port = 10443
+backend-url = https://${gateone-configure:ipv4}:${gateone-configure:port}
+ssl-certificate = ${ca-nginx:cert-file}
+ssl-key = ${ca-nginx:key-file}
+pid = ${directory:run}/nginx.pid
+log = ${directory:log}/nginx.log
+access-log = ${directory:log}/nginx.access.log
+error-log = ${directory:log}/nginx.error.log
+tmp = $${directory:tmp}/
+
+[nginx-conf]
+recipe = slapos.recipe.template:jinja2
+template = {{ parameter_dict['template-ngnix-conf'] }}
+rendered = ${directory:etc}/nginx.conf
+context =
+    section parameter_dict nginx-config-dict
+    section param_tempdir tempdirectory
+
+[nginx-run]
+recipe = slapos.cookbook:wrapper
+wrapper-path = ${directory:bin}/nginx_proxy
+command-line = {{ parameter_dict['nginx-location'] }}/sbin/nginx -p ${buildout:directory} -c ${nginx-conf:rendered}
+
+[logrotate-apache]
+< = logrotate-entry-base
+name = apache
+log = ${apache-conf:error-log} ${apache-conf:access-log}
+post = {{ parameter_dict['bin-directory'] }}/slapos-kill --pidfile ${apache-conf:pid-file} -s USR1
+
+[logrotate-entry-base]
+recipe = slapos.cookbook:logrotate.d
+logrotate-entries = ${logrotate:logrotate-entries}
+backup = ${logrotate:backup}
+
+[publish]
+recipe = slapos.cookbook:publish
+url = https://[${nginx-config-dict:ipv6}]:${gateone-run:port}
+
+[buildout]
+extends =
+  {{ logrotate_cfg }}
+
+parts = 
+  certificate-authority
+  ca-nginx
+  publish
+
+# Complete parts with sections
+  {{ part_list | join('\n  ') }}
+
+eggs-directory = {{ eggs_directory }}
+develop-eggs-directory = {{ develop_eggs_directory }}
+offline = true
+
+[slap-parameter]
+
