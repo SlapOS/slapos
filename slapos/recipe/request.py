@@ -29,9 +29,11 @@ from zc.buildout import UserError
 from slapos.recipe.librecipe import wrap, JSON_SERIALISED_MAGIC_KEY
 import json
 from slapos import slap as slapmodule
+from slapos.slap import SoftwareProductCollection
 import slapos.recipe.librecipe.generic as librecipe
 import traceback
 
+SOFTWARE_PRODUCT_NAMESPACE = "product."
 DEFAULT_SOFTWARE_TYPE = 'RootSoftwareInstance'
 
 class Recipe(object):
@@ -130,6 +132,19 @@ class Recipe(object):
       options['computer-id'],
       options['partition-id'],
     ).request
+
+    if software_url is not None and \
+      software_url.startswith(SOFTWARE_PRODUCT_NAMESPACE):
+    
+      product = SoftwareProductCollection(self.logger, slap)
+      
+      try:
+        software_url = product.__getattr__(
+          software_url[len(SOFTWARE_PRODUCT_NAMESPACE):])
+      except AttributeError as e:
+        self.logger.warning('Error on get software release : %s ' % e.message)
+        
+
     self._raise_request_exception = None
     self._raise_request_exception_formatted = None
     self.instance = None
