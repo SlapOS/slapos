@@ -43,7 +43,7 @@
           "title": "Frontend Software Type",
           "description": "Type of the frontend instance, like \"frontend\".",
           "type": "string",
-          "default": "default"
+          "default": "custom-personal"
         },
         "frontend-software-url": {
           "title": "Frontend Software URL",

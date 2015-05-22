@@ -4,7 +4,7 @@
 {% set frontend_dict = slapparameter_dict.get('frontend', {}) -%}
 {% set slave_frontend_dict = slapparameter_dict.get('slave-frontend', {}) -%}
 {% set slave_frontend_sr = slave_frontend_dict.get('software-url', 'http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg') -%}
-{% set slave_frontend_stype = slave_frontend_dict.get('software-type', 'default') -%}
+{% set slave_frontend_stype = slave_frontend_dict.get('software-type', 'custom-personal') -%}
 {% set slave_frontend_iguid = slave_frontend_dict.get('instance-guid', '') -%}
 {% set kvm_instance_dict = {} -%}
 {% set kvm_hostname_list = [] -%}
