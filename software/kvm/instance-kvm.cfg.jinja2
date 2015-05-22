@@ -16,6 +16,9 @@ parts =
   cron
 #  cron-entry-monitor
   frontend-promise
+{% if slapparameter_dict.get('document-host', '') %}
+  cluster-url-path
+{% endif -%}
 {% if slapparameter_dict.get('enable-http-server', 'False') == 'True' %}
   httpd
   httpd-promise
@@ -128,6 +131,15 @@ external-disk-format = ${slap-parameter:external-disk-format}
 httpd-port = ${slap-parameter:httpd-port}
 {% else -%}
 httpd-port = 0
+{% endif -%}
+
+# Main instance document server info
+{% if slapparameter_dict.get('document-host', '') and slapparameter_dict.get('document-port', '') -%}
+cluster-doc-host = ${tunnel-cluster-url:ipv4}
+cluster-doc-port = ${tunnel-cluster-url:ipv4-port}
+{% else -%}
+cluster-doc-host = 
+cluster-doc-port = 0
 {% endif -%}
 netcat-binary = {{ netcat_bin }}
 
@@ -257,6 +269,8 @@ recipe = slapos.cookbook:publish
 ipv6 = ${slap-network-information:global-ipv6}
 backend-url = https://[${novnc-instance:ip}]:${novnc-instance:port}/vnc_auto.html?host=[${novnc-instance:ip}]&port=${novnc-instance:port}&encrypt=1&password=${kvm-instance:vnc-passwd}
 url = ${request-slave-frontend:connection-url}/vnc_auto.html?host=${request-slave-frontend:connection-domainname}&port=${request-slave-frontend:connection-port}&encrypt=1&path=${request-slave-frontend:connection-resource}&password=${kvm-instance:vnc-passwd}
+{% set disk_number = len(storage_dict) -%}
+maximum-extra-disk-amount = {{ disk_number }}
 {% set iface = 'eth0' -%}
 {% if slapparameter_dict.get('use-nat', 'True') == 'True' -%}
 {%   set iface = 'eth1' -%}
@@ -344,6 +358,28 @@ command =
   echo "${:name}" > ${:path-host}
   echo "${:local-ipv4}" > ${:path-ip}
 update-command = ${:command}
+
+# To access documents of main instance (in case of kvm-cluster) through http
+[cluster-url-path]
+recipe = slapos.recipe.template:jinja2
+template = {{ template_content }}
+filename = cluster.hash
+rendered = ${directory:public}/${:filename}
+hash-url = https://10.0.2.101:443/{{ slapparameter_dict.get('document-path', '') }}
+context =
+    key content_list :hash-url
+    raw sep #
+
+# This 6to4 tunnel help to access document url in ipv4
+[tunnel-cluster-url]
+recipe = slapos.cookbook:ipv4toipv6
+ipv6 = {{ slapparameter_dict.get('document-host', '') }}
+ipv4 = ${slap-network-information:local-ipv4}
+ipv6-port = {{ slapparameter_dict.get('document-port', '') }}
+ipv4-port = 16936
+shell-path = {{ dash_executable_location }}
+6tunnel-path = {{ sixtunnel_executable_location }}
+runner-path = ${directory:services}/6tunnel-cluster
 
 [slap-parameter]
 # Default values if not specified

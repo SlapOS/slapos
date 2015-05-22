@@ -43,7 +43,7 @@
           "title": "Frontend Software Type",
           "description": "Type of the frontend instance, like \"frontend\".",
           "type": "string",
-          "default": "default"
+          "default": "custom-personal"
         },
         "frontend-software-url": {
           "title": "Frontend Software URL",
@@ -95,7 +95,7 @@
                   "type": "boolean",
                   "default": false
                 },
-                "kvm-name": {
+                "kvm-partition-name": {
                   "title": "Reference name in kvm instance definition to get url from.",
                   "description": "Compose url from kvm definition. Only work if 'use-nat' is true and 'service-port' is set. This will allow to get URL from defined nat-rules. Play the same as url, but help if you don't know kvm ipv6 yet.",
                   "type": "string",
