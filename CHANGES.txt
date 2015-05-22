@@ -1,5 +1,9 @@
 Changes
 =======
+0.102 (2015-05-22)
+------------------
+ * kvm-recipe: vm of kvm-cluster can get ipv4/hostname of all other vm in the same cluster
+ * simplehttpserver-recipe: simple http server to serve files
 
 0.101 (2015-04-29)
 ------------------
