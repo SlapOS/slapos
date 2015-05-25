@@ -1,0 +1,24 @@
+Taken from https://bugs.gentoo.org/show_bug.cgi?id=544610
+--- a/makedefs	2015-03-27 00:25:29.103726341 +0100
++++ a/makedefs	2015-03-27 00:32:14.657061042 +0100
+@@ -500,7 +500,8 @@ 
+ 		: ${SHLIB_ENV="LD_LIBRARY_PATH=`pwd`/lib"}
+ 		: ${PLUGIN_LD="${CC-gcc} -shared"}
+ 		;;
+-    Linux.3*)	SYSTYPE=LINUX3
++    Linux.*)
++		SYSTYPE=LINUX
+ 		case "$CCARGS" in
+ 		 *-DNO_DB*) ;;
+ 		 *-DHAS_DB*) ;;
+--- a/src/util/sys_defs.h	2015-03-27 00:36:21.203728543 +0100
++++ a/src/util/sys_defs.h	2015-03-27 00:36:09.657061839 +0100
+@@ -756,7 +756,7 @@ 
+  /*
+   * LINUX.
+   */
++#if defined(LINUX2) || defined(LINUX)
+-#if defined(LINUX2) || defined(LINUX3)
+ #define SUPPORTED
+ #include <sys/types.h>
+ #define UINT32_TYPE	unsigned int
