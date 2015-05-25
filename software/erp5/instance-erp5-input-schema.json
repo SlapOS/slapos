@@ -21,7 +21,7 @@
       "type": "string"
     },
     "timezone": {
-      "description": "Main site's timezone",
+      "description": "Zope's timezone. Possible values are determined by host's libc, and typically come from a separate package (tzdata, ...)",
       "default": "UTC",
       "type": "string"
     },
