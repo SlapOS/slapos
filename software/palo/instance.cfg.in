@@ -72,7 +72,7 @@ context = import json_module json
 
 [palo_olap]
 recipe = slapos.cookbook:wrapper
-command-line = ${palo:location}/bin/palo --init-file $${palo_ini:rendered} --chdir
+command-line = ${palo_olap:location}/bin/palo --init-file $${palo_ini:rendered} --chdir
 wrapper-path = $${directory:service}/palo_olap
 
 [palo_etl]
