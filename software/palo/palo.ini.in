@@ -1,4 +1,3 @@
-data-directory {{ directory_var }}
 template-directory {{ palo_olap_repository_location }}/Api
 http {{ palo_olap_parameter.ipv4 }} {{ palo_olap_parameter.palo_olap_port }}
 http {{ palo_olap_parameter.ipv6 }} {{ palo_olap_parameter.palo_olap_port }}

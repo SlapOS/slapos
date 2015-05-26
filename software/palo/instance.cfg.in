@@ -63,7 +63,6 @@ template = ${:_profile_base_location_}/palo.ini.in
 rendered = $${directory:etc}/palo.ini
 extensions = jinja2.ext.do
 context = import json_module json
-  key directory_var directory:var
   key directory_log directory:log
   raw palo_olap_repository_location ${palo_olap-repository.git:location}
   section parameter instance-parameter
@@ -73,7 +72,7 @@ context = import json_module json
 
 [palo_olap]
 recipe = slapos.cookbook:wrapper
-command-line = ${palo_olap:location}/usr/bin/palo --init-file $${palo_ini:rendered} --chdir
+command-line = ${palo_olap:location}/usr/bin/palo --data-direct $${directory:var}  --init-file $${palo_ini:rendered}
 wrapper-path = $${directory:service}/palo_olap
 
 [palo_etl]
