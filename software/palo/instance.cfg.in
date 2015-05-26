@@ -3,8 +3,9 @@ parts =
   instance-parameter
   directory
   palo_olap
-  palo_etl
   publish-connection-parameter
+todo=
+  palo_etl
 
 eggs-directory = ${buildout:eggs-directory}
 develop-eggs-directory = ${buildout:develop-eggs-directory}
