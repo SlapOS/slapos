@@ -11,7 +11,8 @@ defaults
   retries 1
   option redispatch
   maxconn 2000
-  cookie SERVERID insert nocache
+  cookie SERVERID rewrite
+  http-send-name-header X-Balancer-Current-Server
   balance roundrobin
   stats uri /haproxy
   stats realm Global\ statistics
@@ -37,6 +38,7 @@ defaults
 
 {% for name, (port, backend_list) in parameter_dict['backend-dict'].items() -%}
 listen {{ name }} {{ parameter_dict['ip'] }}:{{ port }}
+  http-request set-header X-Balancer-Current-Cookie SERVERID
 {%   set has_webdav = [] -%}
 {%   for address, connection_count, webdav in backend_list -%}
 {%     if webdav %}{% do has_webdav.append(None) %}{% endif -%}
