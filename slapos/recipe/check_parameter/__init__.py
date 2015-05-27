@@ -45,11 +45,9 @@ class Recipe(GenericBaseRecipe):
     elif self.options.get('expected-type') == "ipv4":
       template = self.getTemplateFilename('check_ipv4.py.in')
     else:
-      if self.options.get('expected-value'):
-        config["expected-value"] = self.options.get('expected-value')
+      config["expected-value"] = self.options.get('expected-value')
  
-     if self.options.get('expected-not-value'):
-        config["expected-not-value"] = self.options.get('expected-not-value')
+      config["expected-not-value"] = self.options.get('expected-not-value')
 
       template = self.getTemplateFilename('check_parameter.py.in')
 
