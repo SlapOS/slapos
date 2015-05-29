@@ -64,6 +64,12 @@
             </value>
         </item>
         <item>
+            <key> <string>categories</string> </key>
+            <value>
+              <tuple/>
+            </value>
+        </item>
+        <item>
             <key> <string>content_md5</string> </key>
             <value>
               <none/>
@@ -164,6 +170,18 @@
     }\n
     return input;\n
   }\n
+  \n
+  function render_textarea(json_field, default_value) {\n
+    var input = document.createElement("textarea");\n
+    if (default_value !== undefined) {\n
+      if (default_value instanceof Array) {\n
+        input.value = default_value.join("\\n");\n
+      } else {\n
+        input.value = default_value;\n
+      }\n
+    }\n
+    return input;\n
+  }\n
 \n
   function render_field(json_field, default_value) {\n
 \n
@@ -174,6 +192,10 @@
     if (json_field.type === "boolean") {\n
       json_field.enum = [true, false];\n
       return render_selection(json_field, default_value);\n
+    }\n
+\n
+    if (json_field.type === "array") {\n
+      return render_textarea(json_field, default_value);\n
     }\n
 \n
     var input = document.createElement("input");\n
@@ -252,13 +274,11 @@
               json_field.patternProperties[\'.*\'],\n
               default_dict[default_value],\n
               default_div,\n
-              path + "/" + default_value\n
-            );\n
+              path + "/" + default_value);\n
             div.appendChild(default_div);\n
           }\n
         }\n
         root.appendChild(div);\n
-\n
 \n
         return div;\n
       }\n
@@ -314,12 +334,13 @@
           json_dict[input.name] = true;\n
         } else if (input.value === "false") {\n
           json_dict[input.name] = false;\n
+        } else if (input.tagName === "TEXTAREA") {\n
+          json_dict[input.name] = input.value.split(\'\\n\');\n
         } else {\n
           json_dict[input.name] = input.value;\n
         }\n
       }\n
     });\n
-    // console.log(json_dict);\n
 \n
     function convertOnMultiLevel(key, value, d) {\n
       var i,\n
@@ -351,6 +372,17 @@
     return gadget.processValidation(json_url);\n
   }\n
 \n
+  function collapseParameter(element) {\n
+      $(element).parent().children("div").toggle(300);\n
+      if ($(element).hasClass("slapos-⁠parameter-⁠dict-⁠key-⁠colapse")) {\n
+        $(element).removeClass("slapos-⁠parameter-⁠dict-⁠key-⁠colapse");\n
+      }\n
+      else {\n
+         $(element).addClass("slapos-⁠parameter-⁠dict-⁠key-⁠colapse");\n
+      }\n
+     return element;\n
+  }\n
+\n
   function addSubForm(element) {\n
     var subform_json = JSON.parse(atob(element.value)),\n
       input_text = element.parentNode.querySelector("input[type=\'text\']"),\n
@@ -379,10 +411,9 @@
     var g = gadget,\n
       field_list = g.props.element.querySelectorAll(".slapos-parameter"),\n
       button_list = g.props.element.querySelectorAll(\'button.add-sub-form\'),\n
+      label_list = g.props.element.querySelectorAll(\'label.slapos-parameter-dict-key\'),\n
       i,\n
       promise_list = [];\n
-\n
-    // console.log("INITIATING A LOOP EVENT LISTENER");\n
 \n
     for (i = 0; i < field_list.length; i = i + 1) {\n
       promise_list.push(loopEventListener(\n
@@ -401,6 +432,16 @@
         addSubForm.bind(g, button_list[i])\n
       ));\n
     }\n
+\n
+    for (i = 0; i < label_list.length; i = i + 1) {\n
+      promise_list.push(loopEventListener(\n
+        label_list[i],\n
+        \'click\',\n
+        false,\n
+        collapseParameter.bind(g, label_list[i])\n
+      ));\n
+    }\n
+\n
     return RSVP.all(promise_list);\n
   }\n
 \n
@@ -560,7 +601,6 @@
       if (options.json_url === undefined) {\n
         throw new Error("undefined json_url");\n
       }\n
-      // console.log("CALLED RENDER");\n
       var g = this,\n
         softwaretype;\n
 \n
@@ -584,7 +624,7 @@
               option = document.createElement("option");\n
               option.value = option_index;\n
               option.textContent = json[\'software-type\'][option_index].title;\n
-              option.index = json[\'software-type\'][option_index].index;\n
+              // option.index = json[\'software-type\'][option_index].index;\n
 \n
               if (option_selected === undefined) {\n
                 option_selected = option_index;\n
@@ -647,17 +687,30 @@
             prefix = options.json_url.split(json_url_uri.path())[0] + prefix.join("/");\n
             parameter_json_schema_url = prefix + "/" + parameter_json_schema_url;\n
           }\n
-          // console.log("GOING TO RENDER FORM");\n
           return g.renderParameterForm(parameter_json_schema_url, parameter_dict);\n
         })\n
         .push(function () {\n
-          // console.log("FINISHED TO RENDER, RETURNING THE GADGET");\n
+          var i, div_list = g.props.element.querySelectorAll(\'.slapos-parameter-dict-key > div\'),\n
+            label_list = g.props.element.querySelectorAll(\'label.slapos-parameter-dict-key\');\n
+\n
+          console.log("Collapse paramaters");\n
+\n
+          for (i = 0; i < div_list.length; i = i + 1) {\n
+             $(div_list[i]).hide();\n
+         }\n
+\n
+          for (i = 0; i < label_list.length; i = i + 1) {\n
+             $(label_list[i]).addClass("slapos-parameter-dict-key-colapse");\n
+         }\n
+          return g;\n
+        })\n
+        .push(function () {\n
+          console.log("FINISHED TO RENDER, RETURNING THE GADGET");\n
           return g;\n
         })\n
 \n
         .fail(function (error) {\n
           var parameter_xml = \'\';\n
-          // console.log("FAIL CALLED");\n
           console.log(error.stack);\n
           if (g.options.parameter.parameter_hash !== undefined) {\n
             parameter_xml = atob(g.options.parameter.parameter_hash);\n
@@ -678,14 +731,19 @@
       }\n
 \n
       function updateParameterForm(evt) {\n
-        g.options.parameter.softwaretype = evt.srcElement.value;\n
+        var e = g.props.element.getElementsByTagName(\'select\')[0];\n
+\n
+        if (e === undefined) {\n
+          throw new Error("Select not found.");\n
+        }\n
+\n
+        g.options.parameter.softwaretype = e.value;\n
         return g.render(g.options)\n
           .push(function () {\n
             return loadEventList(g);\n
           });\n
       }\n
 \n
-      // console.log("INITIATING A LOOP EVENT LISTENER FOR OPTION CHANGE");\n
       return loopEventListener(\n
         element,\n
         \'change\',\n
@@ -701,7 +759,6 @@
       return g.processValidation(g.options.json_url)\n
         .fail(function (error) {\n
           var parameter_xml = \'\';\n
-          // console.log("FAIL CALLED");\n
           console.log(error.stack);\n
           if (g.options.parameter.parameter_hash !== undefined) {\n
             parameter_xml = atob(g.options.parameter.parameter_hash);\n
@@ -837,7 +894,7 @@
             </item>
             <item>
                 <key> <string>actor</string> </key>
-                <value> <string>zope</string> </value>
+                <value> <string>slapos-admin</string> </value>
             </item>
             <item>
                 <key> <string>comment</string> </key>
@@ -851,7 +908,7 @@
             </item>
             <item>
                 <key> <string>serial</string> </key>
-                <value> <string>942.12751.5721.43315</string> </value>
+                <value> <string>943.22522.16130.42513</string> </value>
             </item>
             <item>
                 <key> <string>state</string> </key>
@@ -869,7 +926,7 @@
                     </tuple>
                     <state>
                       <tuple>
-                        <float>1428479010.83</float>
+                        <float>1432912068.83</float>
                         <string>UTC</string>
                       </tuple>
                     </state>
