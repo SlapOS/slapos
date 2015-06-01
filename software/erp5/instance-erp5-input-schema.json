@@ -59,7 +59,7 @@
       "type": "object"
     },
     "hosts-dict": {
-      "description": "Host entries to be used in addition to and/or overriding auto-generated ones (erp5-catalog-0, erp5-cloudooo, erp5-memcached-persistent, erp5-memcached-volatile and erp5-smtpd)",
+      "description": "Host entries to be used in addition to and/or overriding auto-generated ones (erp5-catalog-0, erp5-cloudooo, erp5-memcached-persistent, erp5-memcached-volatile and erp5-smtp)",
       "patternProperties": {
         ".*": {
           "description": "An IP or domain name to which current entry will resolve",
