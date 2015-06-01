@@ -108,6 +108,7 @@ bin-directory = {{ bin_directory }}
 zope-conf-template = {{ template_zope_conf }}
 buildout-bin-directory = {{ buildout_bin_directory }}
 6tunnel = {{ sixtunnel_location }}
+coreutils = {{ coreutils_location }}
 dash = {{ dash_location }}
 jsl = {{ jsl_location }}
 link-binary = {{ dumps(zope_link_binary) }}
