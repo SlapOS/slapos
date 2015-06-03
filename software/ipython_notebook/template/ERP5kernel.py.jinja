@@ -1,0 +1,40 @@
+#!{{python_executable}}
+
+from IPython.kernel.zmq.kernelbase import Kernel
+from IPython.display import display_javascript
+from IPython.core.display import HTML
+
+class ERP5Kernel(Kernel):
+    implementation = 'ERP5'
+    implementation_version = '1.0'
+    language = 'ERP5'
+    language_version = '0.1'
+    language_info = {'mimetype': 'text/plain', 'name':'python'}
+    banner = "ERP5 integration with ipython notebook"
+
+    def do_execute(self, code, silent, store_history=True, user_expressions=None,
+            allow_stdin=False):
+        if not silent:
+
+            import requests
+            res = requests.get('https://zope:insecure@softinst60318.host.vifib.net/erp5/data_set_module/wendelin_1/Base_executePython', verify=False, params={'python_expression': code})
+            code_result = res.text
+
+            data = {
+                    'data': {'text/html': code_result},
+                    'metadata': {}
+                    }
+            self.send_response(self.iopub_socket, 'display_data', data)
+
+        return {'status': 'ok',
+                    # The base class increments the execution count
+                    'execution_count': self.execution_count,
+                    'payload': [],
+                    'user_expressions': {},
+                    }
+
+if __name__ == '__main__':
+    from IPython.kernel.zmq.kernelapp import IPKernelApp
+    IPKernelApp.launch_instance(kernel_class=ERP5Kernel)
+else:
+    from IPython.kernel.zmq.kernelapp import IPKernelApp
