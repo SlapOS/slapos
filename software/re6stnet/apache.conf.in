@@ -53,5 +53,5 @@ Listen {{ ipv6 }}:{{ apache_port }}
   SSLProxyEngine On
 {% endif -%}
 
-  ProxyPass / {{ uri_scheme }}://{{ re6st_ipv4 }}:{{ re6st_port }}/
+  ProxyPass / http://{{ re6st_ipv4 }}:{{ re6st_port }}/
 </VirtualHost>

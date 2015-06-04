@@ -7,6 +7,7 @@
 parts =
   directory
   hello-world
+  hello-world-promise
   publish-connection-parameter
 
 # Define egg directories to be the one from Software Release
@@ -58,18 +59,42 @@ promise = $${:etc}/promise/
 # Path of the log directory used by our service (see [hello-world])
 log = $${:var}/log
 
-# Create a simple shell script that will only output your name if you
-# specified it as instance parameter.
-# Usually, of course, we use more useful commands, like web servers.
+
+# Create a simple web server that says "hello <configuration.name>" to the web.
 [hello-world]
+# helloworld service is listening on:
+# - global IPv6 address, and
+# - fixed port
+#
+# NOTE because every computer partition is allocated its own global IPv6
+# address, it is ok to fix the port - different hello-world instances will have
+# different IPv6 addresses and they all will be accessible at the same time.
+ipv6 = $${instance-parameter:ipv6-random}
+port = 7777
+# full URL - for convenience
+url = http://[$${:ipv6}]:$${:port}
+
+# the service will log here
+logfile = $${directory:log}/hello-world.log
+
+# Actual script that starts the service:
 # This recipe will try to "exec" the command-line after separating parameters.
 recipe = slapos.cookbook:wrapper
-# Notice that there is only one $ at ${dash:location}, it is because it comes from the Software Release buildout profile.
-command-line = ${dash:location}/bin/dash -c 'echo "Hello $${instance-parameter:configuration.name}, it is $(date). If I were a server application, you would reach me at $${instance-parameter:global-ipv6}" > $${directory:log}/log.log; sleep 1000000;'
+command-line =
+    ${hello-web-bin:rendered} --logfile $${hello-world:logfile}
+        $${:ipv6} $${:port} $${instance-parameter:configuration.name}
 # Put this shell script in the "etc/service" directory. Each executable of this
 # repository will be started and monitored by supervisord. If a service
 # exits/crashes, it will trigger a "bang" and cause a re-run of the instance.
 wrapper-path = $${directory:service}/hello-world
+
+
+# promise, that checks that hello-world service is alive
+[hello-world-promise]
+recipe = slapos.cookbook:check_port_listening
+path = $${directory:promise}/hello-world
+hostname= $${hello-world:ipv6}
+port = $${hello-world:port}
 
 
 # Publish all the parameters needed for the user to connect to the instance.
@@ -78,3 +103,4 @@ wrapper-path = $${directory:service}/hello-world
 [publish-connection-parameter]
 recipe = slapos.cookbook:publish
 name = Hello $${instance-parameter:configuration.name}!
+url = $${hello-world:url}

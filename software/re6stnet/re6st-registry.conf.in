@@ -1,11 +1,28 @@
 port  {{ parameter_dict['port'] }}
 4  {{ parameter_dict['ipv4'] }}
-6  {{ parameter_dict['ipv6'] }}
+# 6  {{ parameter_dict['ipv6'] }}
 db  {{ parameter_dict['db'] }}
 ca  {{ parameter_dict['ca'] }}
 key  {{ parameter_dict['key'] }}
+dh   {{ parameter_dict['dh'] }}
+{% if parameter_dict.get('ipv4-net', '') -%}
+ipv4 {{ parameter_dict['ipv4-net'] }}
+{% endif -%}
+client-count {{ parameter_dict['client-count'] }}
+tunnel-refresh {{ parameter_dict['tunnel-refresh'] }}
+hello {{ parameter_dict['hello'] }}
 mailhost {{ parameter_dict['mailhost'] }}
 prefix-length  {{ parameter_dict['prefix-length'] }}
 anonymous-prefix-length  {{ parameter_dict['anonymous-prefix-length'] }}
 logfile  {{ parameter_dict['logfile'] }}
 verbose  {{ parameter_dict['verbose'] }}
+run {{ parameter_dict['run-dir'] }}
+{% if parameter_dict.get('min-protocol', '-1') != '-1' -%}
+min-protocol {{ parameter_dict['min-protocol'] }}
+{% endif -%}
+{% if parameter_dict.get('encrypt', 'False') in ('true', 'True', '1') -%}
+encrypt
+{% endif -%}
+{% if parameter_dict.get('max-clients') != '0' -%}
+max-clients {{ parameter_dict['max-clients'] }}
+{% endif -%}

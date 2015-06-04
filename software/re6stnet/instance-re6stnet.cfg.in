@@ -1,6 +1,7 @@
 
 {% set python_bin = parameter_dict['python-executable'] -%}
 {% set re6st_registry = parameter_dict['re6st-registry'] -%}
+{% set re6stnet = parameter_dict['re6stnet'] -%}
 {% set publish_dict = {} -%}
 {% set part_list = [] -%}
 {% set ipv6 = (ipv6_set | list)[0] -%}
@@ -34,6 +35,7 @@ log = ${directory:log}/re6stnet
 conf = ${directory:etc}/re6stnet
 ssl = ${:conf}/ssl
 token = ${:conf}/token
+run = ${directory:run}/re6stnet
 
 [certificate-authority]
 recipe = slapos.cookbook:certificate_authority
@@ -87,6 +89,15 @@ key-file = ${certificate-authority:ca-private}/apache.key
 cert-file = ${certificate-authority:ca-certs}/apache.crt
 {% endif %}
 
+[apache-httpd-graceful]
+recipe = slapos.recipe.template:jinja2
+template = {{ parameter_dict['template-wrapper'] }}
+rendered = ${directory:script}/httpd-graceful
+mode = 0700
+context =
+  raw content {{ parameter_dict['apache-location'] }}/bin/httpd -Sf ${apache-conf:rendered}; if [ $? -eq 0 ]; then kill -USR1 $(cat ${apache-conf:pid-file}); fi
+  raw dash {{ dash_binary }}
+
 [logrotate-apache]
 < = logrotate-entry-base
 name = apache
@@ -105,11 +116,20 @@ ipv6 = {{ ipv6 }}
 db = ${re6stnet-dirs:registry}/registry.db
 ca = ${re6stnet-dirs:ssl}/re6stnet.crt
 key = ${re6stnet-dirs:ssl}/re6stnet.key
-mailhost = 127.0.0.1
-prefix-length = 16
-anonymous-prefix-length = 32
-logfile = ${re6stnet-dirs:log}/registry.log
+dh = ${re6stnet-dirs:ssl}/dh.pem
 verbose = 2
+mailhost = {{ slapparameter_dict.get('mailhost', '127.0.0.1') }}
+prefix-length = {{ slapparameter_dict.get('prefix-length', 16) }}
+anonymous-prefix-length = {{ slapparameter_dict.get('anonymous-prefix-length', 0) }}
+logfile = ${re6stnet-dirs:log}/registry.log
+run-dir = ${re6stnet-dirs:run}
+ipv4-net = {{ slapparameter_dict.get('ipv4-net', '') }}
+client-count = {{ slapparameter_dict.get('client-count', 10) }}
+tunnel-refresh = {{ slapparameter_dict.get('tunnel-refresh', 300) }}
+max-clients = {{ slapparameter_dict.get('max-clients', 0) }}
+hello = {{ slapparameter_dict.get('hello', 15) }}
+min-protocol = {{ slapparameter_dict.get('min-protocol', -1) }}
+encrypt = {{ slapparameter_dict.get('encrypt', 'False') }}
 
 [re6st-registry-conf]
 recipe = slapos.recipe.template:jinja2
@@ -119,23 +139,28 @@ context = section parameter_dict re6st-registry-conf-dict
 
 [re6st-registry]
 recipe = slapos.cookbook:re6stnet.registry
-port = ${re6st-registry-conf-dict:port}
-ipv4 = ${re6st-registry-conf-dict:ipv4}
 command = {{ re6st_registry }}
-config-file = ${re6st-registry-conf:rendered}
-db-path = ${re6st-registry-conf-dict:db}
 wrapper = ${directory:services}/re6st-registry
+pid-file = ${directory:run}/registry.pid
 manager-wrapper = ${directory:bin}/re6stManageToken
 check-service-wrapper = ${directory:bin}/re6stCheckService
 drop-service-wrapper = ${directory:bin}/re6stManageDeleteToken
-key-file = ${re6st-registry-conf-dict:key}
-cert-file = ${re6st-registry-conf-dict:ca}
+revoke-service-wrapper = ${directory:bin}/re6stRevokeCertificate
 openssl-bin = {{ openssl_bin }}/openssl
 python-bin = {{ python_bin }}
 ipv6-prefix = {{ slapparameter_dict.get('ipv6-prefix', '2001:db8:24::/48') }}
 key-size = {{ slapparameter_dict.get('key-size', 2048) }}
 conf-dir = ${re6stnet-dirs:conf}
 token-dir = ${re6stnet-dirs:token}
+
+#Re6st config
+config-file = ${re6st-registry-conf:rendered}
+port = ${re6st-registry-conf-dict:port}
+ipv4 = ${re6st-registry-conf-dict:ipv4}
+db-path = ${re6st-registry-conf-dict:db}
+key-file = ${re6st-registry-conf-dict:key}
+cert-file = ${re6st-registry-conf-dict:ca}
+dh-file = ${re6st-registry-conf-dict:dh}
 
 slave-instance-list = ${slap-parameter:slave_instance_list}
 
@@ -154,6 +179,13 @@ name = re6stnet-check-token
 frequency = 0 */1 * * *
 command = {{ python_bin }} ${re6st-registry:check-service-wrapper}
 
+[cron-entry-re6st-revoke]
+recipe = slapos.cookbook:cron.d
+cron-entries = ${cron:cron-entries}
+name = re6stnet-revoke-cert
+frequency = */30 * * * *
+command = {{ python_bin }} ${re6st-registry:revoke-service-wrapper}
+
 [cron-entry-re6st-drop]
 recipe = slapos.cookbook:cron.d
 cron-entries = ${cron:cron-entries}
@@ -165,6 +197,7 @@ command = {{ python_bin }} ${re6st-registry:drop-service-wrapper}
 < = logrotate-entry-base
 name = re6stnet
 log = ${re6st-registry-conf-dict:logfile}
+post = {{ parameter_dict['bin-directory'] }}/slapos-kill --pidfile ${re6st-registry:pid-file} -s USR1
 
 [re6st-registry-promise]
 recipe = slapos.cookbook:check_port_listening
@@ -179,6 +212,8 @@ hostname = ${apache-conf:ipv6}
 port = ${apache-conf:port}
 
 {% do publish_dict.__setitem__('re6stry-url', uri_scheme ~ '://[${apache-conf:ipv6}]:${apache-conf:port}') -%}
+{% do publish_dict.__setitem__('re6stry-local-url',  'http://${re6st-registry:ipv4}:${re6st-registry:port}/') -%}
+{% do publish_dict.__setitem__('slave-amount',  '${re6st-registry:slave-amount}') -%}
 [publish]
 recipe = slapos.cookbook:publish
 {% for name, value in publish_dict.items() -%}
@@ -197,7 +232,9 @@ parts =
   cron-entry-logrotate
   cron-entry-re6st-check
   cron-entry-re6st-drop
+  cron-entry-re6st-revoke
   apache-httpd
+  apache-httpd-graceful
   publish
   
   re6st-registry-promise

@@ -50,6 +50,7 @@ parts +=
   bash-profile
 ## Monitor for runner
   monitor-current-log-access
+  monitor-deploy-cors-domain-cgi
   monitor-check-resilient-feed-file
   monitor-check-webrunner-internal-instance
 

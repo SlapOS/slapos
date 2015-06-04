@@ -30,8 +30,10 @@ context =
 [dynamic-template-re6stnet-parameters]
 bin-directory = {{ bin_directory }}
 python-executable  = {{ python_with_eggs }}
-re6st-registry = {{ re6stnet_registry }}
+re6st-registry = {{ bin_directory }}/re6st-registry
+re6stnet = {{ bin_directory }}/re6stnet
 template-apache-conf = {{ template_apache_conf }}
+template-wrapper = {{ template_wrapper }}
 apache-location = {{ apache_location }}
 template-re6st-registry-conf = {{ template_re6st_registry_conf }}
 

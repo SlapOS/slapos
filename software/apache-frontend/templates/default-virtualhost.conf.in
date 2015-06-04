@@ -1,8 +1,17 @@
 {% set TRUE_VALUES = ['y', 'yes', '1', 'true'] -%}
+{% set disable_no_cache_header = ('' ~ slave_parameter.get('disable-no-cache-request', '')).lower() in TRUE_VALUES -%}
+{%- set prefer_gzip = ('' ~ slave_parameter.get('prefer-gzip-encoding-to-backend', '')).lower() in TRUE_VALUES -%}
  
 <VirtualHost *:{{ https_port }}>
   ServerName {{ slave_parameter.get('custom_domain') }}
   ServerAlias {{ slave_parameter.get('custom_domain') }}
+
+{%- if 'server-alias' in slave_parameter -%}
+  {% set server_alias_list =  slave_parameter.get('server-alias', '').split() %}
+  {%- for server_alias in server_alias_list %}
+  ServerAlias {{ server_alias }}
+  {% endfor %}
+{%- endif %}
 
   SSLEngine on
   SSLProxyEngine on
@@ -34,6 +43,22 @@
   ProxyTimeout 600
   RewriteEngine On
 
+{% if disable_no_cache_header %}
+  RequestHeader unset Cache-Control
+  RequestHeader unset Pragma
+{% endif -%}
+
+{% if 'disabled-cookie-list' in slave_parameter -%}
+  {% set disabled_cookie_list =  slave_parameter.get('disabled-cookie-list', '').split() %}
+  {%- for disabled_cookie in disabled_cookie_list %}
+{{'  RequestHeader edit Cookie "(^%(disabled_cookie)s=[^;]*; |; %(disabled_cookie)s=[^;]*|^%(disabled_cookie)s=[^;]*$)" ""' % dict(disabled_cookie=disabled_cookie)  }}
+  {% endfor -%}
+{% endif %}
+
+{%- if prefer_gzip %}
+  RequestHeader edit Accept-Encoding "(^gzip,.*|.*, gzip,.*|.*, gzip$|^gzip$)" "gzip"
+{% endif %}
+
 {% if slave_parameter.get('type', '') ==  'zope' -%}
   {% if 'default-path' in slave_parameter %}
   RewriteRule ^/?$ {{ slave_parameter.get('default-path') }} [R=301,L]
@@ -42,6 +67,8 @@
   # If so, let's use Virtual Host Daemon rewrite
   # We suppose that Apache listens to 443 (even indirectly thanks to things like iptables)
   RewriteRule ^/(.*)$ {{ slave_parameter.get('url', '') }}/VirtualHostBase/https/{{ slave_parameter.get('custom_domain', '') }}:443/{{ slave_parameter.get('path', '') }}/VirtualHostRoot/$1 [L,P]
+{% elif slave_parameter.get('type', '') ==  'redirect' -%}
+  RewriteRule     (.*)  {{slave_parameter.get('url', '')}}$1 [R,L]
 {% else -%}
   {% if 'default-path' in slave_parameter %}
   RewriteRule ^/?$ {{ slave_parameter.get('default-path') }} [R=301,L]
@@ -53,6 +80,14 @@
 <VirtualHost *:{{ http_port }}>
   ServerName {{ slave_parameter.get('custom_domain') }}
   ServerAlias {{ slave_parameter.get('custom_domain') }}
+
+{%- if 'server-alias' in slave_parameter %}
+  {% set server_alias_list =  slave_parameter.get('server-alias', '').split() %}
+  {%- for server_alias in server_alias_list %}
+  ServerAlias {{ server_alias }}
+  {% endfor -%}
+{% endif %}
+
   SSLProxyEngine on
   # Rewrite part
   ProxyVia On
@@ -69,6 +104,22 @@
   # Remove "Secure" from cookies, as backend may be https
   Header edit Set-Cookie "(?i)^(.+);secure$" "$1"
 
+{% if disable_no_cache_header %}
+  RequestHeader unset Cache-Control
+  RequestHeader unset Pragma
+{% endif -%}
+
+{% if 'disabled-cookie-list' in slave_parameter -%}
+  {% set disabled_cookie_list =  slave_parameter.get('disabled-cookie-list', '').split() %}
+  {%- for disabled_cookie in disabled_cookie_list %}
+{{'  RequestHeader edit Cookie "(^%(disabled_cookie)s=[^;]*; |; %(disabled_cookie)s=[^;]*|^%(disabled_cookie)s=[^;]*$)" ""' % dict(disabled_cookie=disabled_cookie)  }}
+  {% endfor -%}
+{% endif %}
+
+{%- if prefer_gzip %}
+  RequestHeader edit Accept-Encoding "(^gzip,.*|.*, gzip,.*|.*, gzip$|^gzip$)" "gzip"
+{% endif %}
+
 # Next line is forbidden and people who copy it will be hanged short
 {% set https_only = ('' ~ slave_parameter.get('https-only', '')).lower() in TRUE_VALUES -%}
 {% if https_only -%}
@@ -77,6 +128,8 @@
   # on standard port (443).
   RewriteCond     %{SERVER_PORT}  !^{{ https_port }}$
   RewriteRule     ^/(.*)          https://%{SERVER_NAME}/$1 [NC,R,L]
+{% elif slave_parameter.get('type', '') ==  'redirect' -%}
+  RewriteRule     (.*)  {{slave_parameter.get('url', '')}}$1 [R,L]
 {% elif slave_parameter.get('type', '') ==  'zope' -%}
   {% if 'default-path' in slave_parameter %}
   RewriteRule ^/?$ {{ slave_parameter.get('default-path') }} [R=301,L]

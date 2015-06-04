@@ -12,6 +12,66 @@
             "type": "integer",
             "minimum": 1024,
             "default": 2048
+        },
+        "prefix-length": {
+            "title": "Default length of allocated prefixes.",
+            "description": "Default length of allocated prefixes.",
+            "type": "integer",
+            "default": 16
+        },
+        "anonymous-prefix-length": {
+            "title": "Length of allocated anonymous prefixes.",
+            "description": "Length of allocated anonymous prefixes. 0 is unset.",
+            "type": "integer",
+            "default": 0
+        },
+        "mailhost": {
+            "title": "SMTP host to send confirmation emails.",
+            "description": "SMTP host to send confirmation emails. Not needed if when token is requested from slave instances.",
+            "type": "string",
+            "default": "127.0.0.1"
+        },
+        "ipv4-net": {
+            "title": "Enable ipv4 (ip/NET P_LENGTH).",
+            "description": "Enable ipv4 (ip/NET P_LENGTH). Each node is assigned a subnet of length PLEN, inside network IP/N. Ex: 10.42.0.0/16 8",
+            "type": "string",
+            "default": ""
+        },
+        "client-count": {
+            "title": "Number of client tunnels to set up.",
+            "description": "Number of client tunnels to set up.",
+            "type": "integer",
+            "default": 10
+        },
+        "tunnel-refresh": {
+            "title": "Interval in seconds between two tunnel refresh.",
+            "description": "Interval in seconds between two tunnel refresh: the worst tunnel is closed if the number of client tunnels has reached its maximum number (client-count).",
+            "type": "integer",
+            "default": 300
+        },
+        "max-clients": {
+            "title": "Maximum number of accepted clients per OpenVPN server.",
+            "description": "Maximum number of accepted clients per OpenVPN server. (if unset or 0: client-count * 2, which actually represents the average number of tunnels to other peers)",
+            "type": "integer",
+            "default": 0
+        },
+        "hello": {
+            "title": "Hello interval in seconds, for both wired and wireless connections.",
+            "description": "Hello interval in seconds, for both wired and wireless connections. OpenVPN ping-exit option is set to 4 times the hello interval. It takes between 3 and 4 times the hello interval for Babel to re-establish connection with a node for which the direct connection has been cut.",
+            "type": "integer",
+            "default": 15
+        },
+        "min-protocol": {
+            "title": "Reject nodes that are too old.",
+            "description": "Reject nodes that are too old. Default is unset.",
+            "type": "integer",
+            "default": -1
+        },
+        "encrypt": {
+            "title": "Specify that tunnels should be encrypted.",
+            "description": "Specify that tunnels should be encrypted.",
+            "type": "boolean",
+            "default": false
         }
     }
 }

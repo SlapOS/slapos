@@ -163,7 +163,7 @@ apache_custom_https = {{ dumps(apache_custom_https) }}
 
 # The slave use cache
 # Next line is forbidden and people who copy it will be hanged short
-{%     set enable_cache = ('' ~ slave_instance.get('enable_cache', '')).lower() in TRUE_VALUES -%}
+{%   set enable_cache = (('' ~ slave_instance.get('enable_cache', '')).lower() in TRUE_VALUES and slave_instance.get('type', '') != 'redirect') -%}
 {%     if enable_cache -%}
 {%       do cached_server_dict.__setitem__(slave_instance.get('custom_domain'), slave_instance.get('url')) -%}
 {%       do slave_instance.__setitem__('url', cache_access) -%}

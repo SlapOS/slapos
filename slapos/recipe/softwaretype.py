@@ -115,9 +115,13 @@ class Recipe:
     cert_file = slap_connection.get('cert_file')
     instance_root = self.buildout['buildout']['directory']
     storage_configuration_dict = self.buildout.get('storage-configuration')
+    network_dict = self.buildout.get('network-information')
     storage_home = ''
+    global_ipv4_network = ''
     if storage_configuration_dict:
       storage_home = storage_configuration_dict.get('storage-home')
+    if network_dict:
+      global_ipv4_network = network_dict.get('global-ipv4-network')
     slap.initializeConnection(server_url, key_file, cert_file)
     self.computer_partition = slap.registerComputerPartition(
       computer_id,
@@ -173,6 +177,8 @@ class Recipe:
     buildout.set('slap-network-information', 'tap-gateway', tap_gateway)
     buildout.set('slap-network-information', 'tap-netmask', tap_netmask)
     buildout.set('slap-network-information', 'tap-network', tap_network)
+    buildout.set('slap-network-information', 'global-ipv4-network',
+                                                          global_ipv4_network)
 
     # Copy/paste slap_connection
     buildout.add_section('slap-connection')

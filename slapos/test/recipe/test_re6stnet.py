@@ -24,6 +24,7 @@ class Re6stnetTest(unittest.TestCase):
                 'openssl-bin': '/usr/bin/openssl',
                 'key-file': os.path.join(self.ssl_dir, 'cert.key'),
                 'cert-file': os.path.join(self.ssl_dir, 'cert.crt'),
+                'dh-file': os.path.join(self.ssl_dir, 'dh.pem'),
                 'key-size': '2048',
                 'conf-dir': self.conf_dir,
                 'token-dir': self.token_dir,
@@ -31,11 +32,13 @@ class Re6stnetTest(unittest.TestCase):
                 'config-file': config_file,
                 'ipv4': '127.0.0.1',
                 'port': '9201',
+                'pid-file': '/path/to/pid/file',
                 'db-path': '/path/to/db',
                 'command': '/path/to/command',
                 'manager-wrapper': os.path.join(self.base_dir, 'manager_wrapper'),
                 'drop-service-wrapper': os.path.join(self.base_dir, 'drop_wrapper'),
                 'check-service-wrapper': os.path.join(self.base_dir, 'check_wrapper'),
+                'revoke-service-wrapper': os.path.join(self.base_dir, 'revoke_wrapper'),
                 'slave-instance-list': '{}'
                 }
     
@@ -70,7 +73,7 @@ class Re6stnetTest(unittest.TestCase):
       options = self.options
 
       return re6stnet.Recipe(buildout=buildout, name='re6stnet', options=options)
-  
+
   def checkWrapper(self, path):
     self.assertTrue(os.path.exists(path))
     content = ""
@@ -96,7 +99,12 @@ class Re6stnetTest(unittest.TestCase):
     with open(path, 'r') as f:
         content = f.read()
     self.assertIn("@%s" % config_file, content)
-  
+    self.assertIn("/path/to/pid/file", content)
+    self.assertIn("/path/to/command", content)
+
+  def fake_generateCertificates(self):
+    return
+
   def test_generateCertificates(self):
     
     self.options['ipv6-prefix'] = '2001:db8:24::/48'
@@ -106,33 +114,34 @@ class Re6stnetTest(unittest.TestCase):
     
     recipe.generateCertificate()
     
-    self.assertTrue(os.path.exists(self.options['key-file']))
-    self.assertTrue(os.path.exists(self.options['cert-file']))
+    self.assertItemsEqual(os.listdir(self.ssl_dir),
+                          ['cert.key', 'cert.crt', 'dh.pem'])
     
     last_time = time.ctime(os.stat(self.options['key-file'])[7])
-    
+
     recipe.generateCertificate()
-    
+
     self.assertTrue(os.path.exists(self.options['key-file']))
     this_time = time.ctime(os.stat(self.options['key-file'])[7])
-    
+
     self.assertEqual(last_time, this_time)
   
-  def test_generateCertificates_other_ipv6(self):
-    
-    self.options['ipv6-prefix'] = 'be28:db8:fe6a:d85:4fe:54a:ae:aea/64'
-    
+  def test_getSerialFromIpv6(self):
+
+    ipv6 = 'be28:db8:fe6a:d85:4fe:54a:ae:aea/64'
+
     recipe = self.new_recipe()
-    
-    recipe.generateCertificate()
-    
-    self.assertTrue(os.path.exists(self.options['key-file']))
-    self.assertTrue(os.path.exists(self.options['cert-file']))
+    serial = recipe.getSerialFromIpv6(ipv6)
+
+    self.assertEqual(serial, '0x1be280db8fe6a0d8504fe054a00ae0aea')
+
+    ipv6 = '2001:db8:24::/48'
+    serial = recipe.getSerialFromIpv6(ipv6)
+
+    self.assertEqual(serial, '0x120010db80024')
 
   def test_install(self):
-    recipe = self.new_recipe()
-
-    recipe.options.update({
+    self.options.update({
         'ipv6-prefix': '2001:db8:24::/48',
         'slave-instance-list': '''[
             {"slave_reference":"SOFTINST-58770"},
@@ -141,14 +150,14 @@ class Re6stnetTest(unittest.TestCase):
             '''
         })
 
+    recipe = self.new_recipe()
+    recipe.generateCertificate = self.fake_generateCertificates
+
     try:
       recipe.install()
     except (NotFoundError, ConnectionError):
       # Recipe will raise not found error when trying to publish slave informations
       pass
-    
-    self.assertItemsEqual(os.listdir(self.ssl_dir),
-                          ['cert.key', 'cert.crt'])
     
     token_file = os.path.join(self.options['conf-dir'], 'token.json')
     self.assertTrue(os.path.exists(token_file))
@@ -175,12 +184,16 @@ class Re6stnetTest(unittest.TestCase):
     self.checkWrapper(os.path.join(self.base_dir, 'manager_wrapper'))
     self.checkWrapper(os.path.join(self.base_dir, 'drop_wrapper'))
     self.checkWrapper(os.path.join(self.base_dir, 'check_wrapper'))
+    self.checkWrapper(os.path.join(self.base_dir, 'revoke_wrapper'))
     self.checkRegistryWrapper()
     
     # Remove one element
-    recipe.options.update({
+    self.options.update({
         "slave-instance-list": """[{"slave_reference":"SOFTINST-58770"}]"""
         })
+    recipe = self.new_recipe()
+    recipe.generateCertificate = self.fake_generateCertificates
+
     try:
       recipe.install()
     except (NotFoundError, ConnectionError):
@@ -197,26 +210,24 @@ class Re6stnetTest(unittest.TestCase):
     self.assertEqual(second_add, second_remove)
   
   def test_install_empty_slave(self):
-    recipe = self.new_recipe()
-
-    recipe.options.update({
+    self.options.update({
         'ipv6-prefix': '2001:db8:24::/48'
         })
+    recipe = self.new_recipe()
+    recipe.generateCertificate = self.fake_generateCertificates
 
     recipe.install()
-    
-    self.assertItemsEqual(os.listdir(self.ssl_dir),
-                          ['cert.key', 'cert.crt'])
-    
+
     token_file = os.path.join(self.options['conf-dir'], 'token.json')
     self.assertTrue(os.path.exists(token_file))
     
     token_content = recipe.readFile(token_file)
     self.assertEqual(token_content, '{}')
     self.assertItemsEqual(os.listdir(self.options['token-dir']), [])
-    
+
     self.checkWrapper(os.path.join(self.base_dir, 'manager_wrapper'))
     self.checkWrapper(os.path.join(self.base_dir, 'drop_wrapper'))
     self.checkWrapper(os.path.join(self.base_dir, 'check_wrapper'))
+    self.checkWrapper(os.path.join(self.base_dir, 'revoke_wrapper'))
     self.checkRegistryWrapper()
 
