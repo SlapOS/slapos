@@ -58,8 +58,6 @@ service = $${:etc}/service
 promise = $${:etc}/promise/
 # Path of the log directory used by our service (see [hello-world])
 log = $${:var}/log
-# Path of IPython directory in which ERP5 kernel will be running
-ipython-directory = $${:home}/.ipython/kernels
 
 
 # Create a simple web server that says "hello <configuration.name>" to the web.
@@ -106,3 +104,4 @@ port = $${hello-world:port}
 recipe = slapos.cookbook:publish
 name = Hello $${instance-parameter:configuration.name}!
 url = $${hello-world:url}
+
