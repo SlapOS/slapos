@@ -4,7 +4,6 @@ parts =
   directory
   palo_olap
   publish-connection-parameter
-todo=
   palo_etl
 
 eggs-directory = ${buildout:eggs-directory}
@@ -20,7 +19,6 @@ url = $${slap_connection:server_url}
 key = $${slap_connection:key_file}
 cert = $${slap_connection:cert_file}
 
-configuration.name = John Doe
 configuration.erp5_url = 
 
 [palo_olap_parameter]
@@ -39,9 +37,13 @@ service = $${:etc}/service
 promise = $${:etc}/promise/
 log = $${:var}/log
 
+[directory_palo_etl]
+<= directory
+data_directory = $${:var}/palo_olap/
+
 [directory_tomcat]
 <= directory
-catalina_base = $${:home}/var/palo_etl
+catalina_base = $${:var}/palo_etl
 catalina_logs = $${:catalina_base}/logs
 catalina_temp = $${:catalina_base}/temp
 catalina_webapps = $${:catalina_base}/webapps
@@ -52,7 +54,6 @@ catalina_conf = $${:catalina_base}/conf
 [TODO]
 todo =
   tunnel
-  patch ipv6
   etl
   log_rotation
 
@@ -72,8 +73,12 @@ context = import json_module json
 
 [palo_olap]
 recipe = slapos.cookbook:wrapper
-command-line = ${palo_olap:location}/usr/bin/palo --data-direct $${directory:var}  --init-file $${palo_ini:rendered}
+command-line = ${palo_olap:location}/usr/bin/palo --data-directory $${directory_palo_etl:data_directory}  --init-file $${palo_ini:rendered}
 wrapper-path = $${directory:service}/palo_olap
+
+[tomcat_palo_etl]
+recipe = plone.recipe.command
+command = echo "needed ?"
 
 [palo_etl]
 recipe = slapos.cookbook:wrapper
@@ -81,27 +86,30 @@ command-line = ${tomcat:location}/bin/catalina.sh run
 wrapper-path = $${directory:service}/palo_etl
 environment = JAVA_HOME = ${java:location}
   CATALINA_BASE = $${directory_tomcat:catalina_base}
-dependencies = $${palo_etl_server_xml:rendered}
+dependencies = $${palo_etl_server_xml:rendered} $${tomcat_palo_etl:recipe}
 
 [palo_etl_server_xml]
 recipe = slapos.recipe.template:jinja2
-template = ${:_profile_base_location_}/server.xml.in
+# XXX  template = ${template_server_xml:location}/${template_server_xml:filename}
+template = ${template_server_xml:url}
 rendered = $${directory_tomcat:catalina_conf}/server.xml
 extensions = jinja2.ext.do
 context = import json_module json
   section palo_etl_parameter palo_etl_parameter
   raw palo_etl_server_war ${palo_etl_download:location}
-
+  
 [palo_etl_parameter]
 tomcat_port = 8888
-tomcat_host = $${:ipv4}
-tomcat_server_port = 8005
+tomcat_host = $${:ipv6}
+tomcat_server_port = 8006
 ipv4 = $${instance-parameter:ipv4-random}
 ipv6 = $${instance-parameter:ipv6-random}
+palo_etl_war = ${palo_etl_download:location}
 
 [publish-connection-parameter]
 recipe = slapos.cookbook:publish
 palo_olap_url = $${palo_olap_parameter:ipv4}:$${palo_olap_parameter:palo_olap_port}
 palo_olap_ipv6_url = [$${palo_olap_parameter:ipv6}]:$${palo_olap_parameter:palo_olap_port}
 palo_olap_admin_url = $${palo_olap_parameter:ipv4}:$${palo_olap_parameter:palo_olap_admin_port}
+palo_etl_url = http://[$${palo_etl_parameter:tomcat_host}]:$${palo_etl_parameter:tomcat_port}/etlserver/services/ETL-Server?wsdl
 
