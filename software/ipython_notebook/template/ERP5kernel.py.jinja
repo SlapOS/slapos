@@ -1,8 +1,10 @@
 #!{{python_executable}}
 
 from IPython.kernel.zmq.kernelbase import Kernel
-from IPython.display import display_javascript
 from IPython.core.display import HTML
+
+import requests
+import logging
 
 class ERP5Kernel(Kernel):
     implementation = 'ERP5'
@@ -12,19 +14,56 @@ class ERP5Kernel(Kernel):
     language_info = {'mimetype': 'text/plain', 'name':'python'}
     banner = "ERP5 integration with ipython notebook"
 
+    def __init__(self, user=None, pwd=None, url=None, status_code=None, *args, **kwargs):
+        super(ERP5Kernel, self).__init__(*args, **kwargs)
+        self.user = user
+        self.pwd = pwd
+        self.url = url
+        self.status_code = status_code
+
     def do_execute(self, code, silent, store_history=True, user_expressions=None,
             allow_stdin=False):
         if not silent:
 
-            import requests
-            res = requests.get('https://zope:insecure@softinst60318.host.vifib.net/erp5/data_set_module/wendelin_1/Base_executePython', verify=False, params={'python_expression': code})
-            code_result = res.text
+            if code.startswith('%erp5_user'):
+                self.user = code.split()[1]
+                resp = 'Your erp5 username is %s' %self.user
+                stream_content = {'name': 'stdout', 'text': resp}
+                self.send_response(self.iopub_socket, 'stream', stream_content)
 
-            data = {
-                    'data': {'text/html': code_result},
-                    'metadata': {}
-                    }
-            self.send_response(self.iopub_socket, 'display_data', data)
+            elif code.startswith('%erp5_password'):
+                self.pwd = code.split()[1]
+                self.url = 'softinst60318.host.vifib.net/erp5/manage_main'
+                if self.user:
+                    url = 'https://%s:%s@%s' %(self.user, self.pwd, self.url)
+                    try:
+                        res = requests.get(url, verify=False)
+                        self.status_code = res.status_code
+                        if self.status_code != 200:
+                            resp = 'Incorrect username or password'
+                        else:
+                            resp = 'Please proceed'
+                    except requests.exceptions.RequestException as e:
+                        resp = e
+                else:
+                     resp = 'Please enter your username in next cell'
+                stream_content = {'name': 'stdout', 'text': resp}
+                self.send_response(self.iopub_socket, 'stream', stream_content)
+
+            else:
+                if self.status_code == 200:
+                    url = 'https://%s:%s@softinst60318.host.vifib.net/erp5/data_set_module/wendelin_1/Base_executePython' %(self.user, self.pwd)
+                    res = requests.get(url, verify=False, params={'python_expression': code})
+                    code_result = res.text
+
+                else:
+                    code_result = 'Unauthorized access'
+
+                data = {
+                        'data': {'text/html': code_result},
+                        'metadata': {}
+                       }
+                self.send_response(self.iopub_socket, 'display_data', data)
 
         return {'status': 'ok',
                     # The base class increments the execution count
