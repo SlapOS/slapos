@@ -255,7 +255,7 @@ class Recipe(GenericBaseRecipe):
             msg = 'Token not available, it has been used to generate re6stnet certificate.'
 
           ipv6_file = os.path.join(token_list_path, '%s.ipv6' % slave_reference)
-          ipv6 = self.readFile(ipv6_file) or 'Not Ready'
+          ipv6 = self.readFile(ipv6_file) or '::'
 
           computer_partition.setConnectionDict(
               {'token':token, '1_info':msg, 'ipv6': ipv6},
