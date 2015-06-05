@@ -1,17 +1,22 @@
 [buildout]
 parts =
   instance-parameter
-  directory
   palo_olap
-  publish-connection-parameter
-todo=
   palo_etl
+  palo_web
+  publish-connection-parameter
 
 eggs-directory = ${buildout:eggs-directory}
 develop-eggs-directory = ${buildout:develop-eggs-directory}
 offline = true
 
+# TODO: review certificate generation, file permissions and passwords
+# TODO: log rotation
+# TODO: ipv4 TCP frontend for palo (http frontend does not seem to work)
+# TODO: palo_web does not work
 
+
+# common parts
 [instance-parameter]
 recipe = slapos.cookbook:slapconfiguration
 computer = $${slap_connection:computer_id}
@@ -20,88 +25,197 @@ url = $${slap_connection:server_url}
 key = $${slap_connection:key_file}
 cert = $${slap_connection:cert_file}
 
-configuration.name = John Doe
+# TODO: name these parameter palo_olap_ ?
+# erp5_url is the URL of an ERP5 instance, with erp5_palo business template installed
 configuration.erp5_url = 
+configuration.ssl = 
+# TODO: configuration of a simple password based authentication ? 
+# TODO: certificates as input parameters ?
 
-[palo_olap_parameter]
-ipv4 = $${instance-parameter:ipv4-random}
-ipv6 = $${instance-parameter:ipv6-random}
-palo_olap_port = 7777
-palo_olap_admin_port = 7778
+
+[publish-connection-parameter]
+recipe = slapos.cookbook:publish
+palo_olap = [$${palo_olap_parameter:ipv6}]:$${palo_olap_parameter:palo_olap_port}
+palo_olap_ssl = [$${palo_olap_parameter:ipv6}]:$${palo_olap_parameter:palo_olap_ssl_port}
+palo_etl_url = https://[$${palo_etl_parameter:tomcat_host}]:$${palo_etl_parameter:tomcat_port}/etlserver/services//ETL-Server?wsdl
+palo_web_url = https://[$${palo_web_parameter:tomcat_host}]:$${palo_web_parameter:tomcat_port}/web-palo/
+# palo_olap_admin_url = [$${palo_olap_parameter:ipv6}]:$${palo_olap_parameter:palo_olap_admin_port}
 
 [directory]
 recipe = slapos.cookbook:mkdirectory
 home = $${buildout:directory}
+bin = $${:home}/bin
 etc = $${:home}/etc
-var = $${:home}/var
-script = $${:etc}/run/
+script = $${:etc}/run
 service = $${:etc}/service
-promise = $${:etc}/promise/
+promise = $${:etc}/promise
+var = $${:home}/var
 log = $${:var}/log
+srv = $${:home}/srv
 
-[directory_tomcat]
+
+# Palo olap instance
+[palo_olap_parameter]
+ipv4 = $${instance-parameter:ipv4-random}
+ipv6 = $${instance-parameter:ipv6-random}
+palo_olap_host = $${:ipv6}
+palo_olap_port = 7777
+palo_olap_ssl_port = 7778
+palo_olap_admin_port = 7779
+key-file = $${certificate_palo_olap:key-file}
+dh1024-file = $${certificate_palo_olap:dh1024-file}
+
+# XXX this depends on architecture. Maybe we need to patch palo_olap for that
+extensions_dir = ${palo_olap:location}/usr/lib64
+
+[directory_palo_olap]
 <= directory
-catalina_base = $${:home}/var/palo_etl
-catalina_logs = $${:catalina_base}/logs
-catalina_temp = $${:catalina_base}/temp
-catalina_webapps = $${:catalina_base}/webapps
-catalina_work = $${:catalina_base}/work
-catalina_conf = $${:catalina_base}/conf
-
-
-[TODO]
-todo =
-  tunnel
-  patch ipv6
-  etl
-  log_rotation
-
+data_directory = $${:var}/palo_olap
 
 [palo_ini]
 recipe = slapos.recipe.template:jinja2
-template = ${:_profile_base_location_}/palo.ini.in
+template = ${template_palo_olap_palo_ini:target}
 rendered = $${directory:etc}/palo.ini
-extensions = jinja2.ext.do
-context = import json_module json
+context =
   key directory_log directory:log
   raw palo_olap_repository_location ${palo_olap-repository.git:location}
   section parameter instance-parameter
   section palo_olap_parameter palo_olap_parameter
   key erp5_url instance-parameter:configuration.erp5_url
   raw erp5_login_worker_path ${erp5_login_worker:output}
+  key ssl instance-parameter:configuration.ssl
+
+[certificate_palo_olap]
+recipe = plone.recipe.command
+# Manually generate certificates as documented in palo.ini.sample
+command =
+  ${openssl:location}/bin/openssl req -x509 -nodes -days 3650 \
+  -subj "/C=AA/ST=X/L=X/O=Dis/CN=$${palo_olap_parameter:ipv6}" \
+  -newkey rsa:1024 -keyout $${:key-file} -out $${:key-file} && \
+  ${openssl:location}/bin/openssl dhparam -2 -outform PEM -out $${:dh1024-file} 1024
+key-file = $${directory:etc}/palo_olap.pem
+dh1024-file = $${directory:etc}/dh1024.pem
 
 [palo_olap]
 recipe = slapos.cookbook:wrapper
-command-line = ${palo_olap:location}/usr/bin/palo --data-direct $${directory:var}  --init-file $${palo_ini:rendered}
+command-line = ${palo_olap:location}/usr/bin/palo --data-directory $${directory_palo_olap:data_directory}  --init-file $${palo_ini:rendered}
 wrapper-path = $${directory:service}/palo_olap
+
+
+# Palo etl instance
+[palo_etl_parameter]
+tomcat_port = 8443
+tomcat_host = $${:ipv6}
+ipv4 = $${instance-parameter:ipv4-random}
+ipv6 = $${instance-parameter:ipv6-random}
+palo_etl_war = ${palo_etl_download:location}
+keystore_file = $${keystore_import:keystore_file}
+keystore_pass = $${keystore_import:keystore_pass}
+
+[keystore_import]
+recipe = plone.recipe.command
+command =
+  ${java:location}/bin/keytool \
+    -genkeypair \
+    -alias "tomcat" \
+    -keyalg RSA \
+    -keypass "$${:keystore_pass}" \
+    -dname "CN=Web Server,OU=Unit,O=Organization,L=City,S=State,C=Country" \
+    -keystore "$${:keystore_file}" \
+    -storepass "$${:keystore_pass}"
+keystore_file = $${directory_palo_etl:catalina_base}/.keystore
+keystore_pass = insecure
+
+[directory_palo_etl]
+<= directory
+catalina_base = $${:var}/palo_etl
+catalina_logs = $${:catalina_base}/logs
+catalina_temp = $${:catalina_base}/temp
+catalina_webapps = $${:catalina_base}/webapps
+catalina_work = $${:catalina_base}/work
+catalina_conf = $${:catalina_base}/conf
+
+[palo_etl_server_xml]
+recipe = slapos.recipe.template:jinja2
+template = ${template_palo_etl_server_xml:target}
+rendered = $${directory_palo_etl:catalina_conf}/server.xml
+context =
+  section palo_etl_parameter palo_etl_parameter
+  raw palo_etl_server_war ${palo_etl_download:location}
 
 [palo_etl]
 recipe = slapos.cookbook:wrapper
 command-line = ${tomcat:location}/bin/catalina.sh run
 wrapper-path = $${directory:service}/palo_etl
-environment = JAVA_HOME = ${java:location}
-  CATALINA_BASE = $${directory_tomcat:catalina_base}
+environment =
+  JAVA_HOME = ${java:location}
+  CATALINA_BASE = $${directory_palo_etl:catalina_base}
 dependencies = $${palo_etl_server_xml:rendered}
 
-[palo_etl_server_xml]
-recipe = slapos.recipe.template:jinja2
-template = ${:_profile_base_location_}/server.xml.in
-rendered = $${directory_tomcat:catalina_conf}/server.xml
-extensions = jinja2.ext.do
-context = import json_module json
-  section palo_etl_parameter palo_etl_parameter
-  raw palo_etl_server_war ${palo_etl_download:location}
 
-[palo_etl_parameter]
-tomcat_port = 8888
-tomcat_host = $${:ipv4}
-tomcat_server_port = 8005
-ipv4 = $${instance-parameter:ipv4-random}
+# Palo web instance
+[palo_web_parameter]
+tomcat_port = 18443
+tomcat_host = $${:ipv6}
 ipv6 = $${instance-parameter:ipv6-random}
+palo_web_war = ${palo_web_download:location}
+# XXX this is same keystore as etl
+keystore_file = $${keystore_import:keystore_file}
+keystore_pass = $${keystore_import:keystore_pass}
 
-[publish-connection-parameter]
-recipe = slapos.cookbook:publish
-palo_olap_url = $${palo_olap_parameter:ipv4}:$${palo_olap_parameter:palo_olap_port}
-palo_olap_ipv6_url = [$${palo_olap_parameter:ipv6}]:$${palo_olap_parameter:palo_olap_port}
-palo_olap_admin_url = $${palo_olap_parameter:ipv4}:$${palo_olap_parameter:palo_olap_admin_port}
+[directory_palo_web]
+<= directory
+catalina_base = $${:var}/palo_web
+catalina_logs = $${:catalina_base}/logs
+catalina_temp = $${:catalina_base}/temp
+catalina_webapps = $${:catalina_base}/webapps
+catalina_work = $${:catalina_base}/work
+catalina_conf = $${:catalina_base}/conf
+
+[palo_web_server_xml]
+recipe = slapos.recipe.template:jinja2
+template = ${template_palo_web_server_xml:target}
+rendered = $${directory_palo_web:catalina_conf}/server.xml
+context =
+  section palo_web_parameter palo_web_parameter
+  raw palo_web_server_war ${palo_web_download:location}
+
+[palo_web_context_xml]
+recipe = slapos.recipe.template:jinja2
+rendered =  $${directory_palo_web:catalina_conf}/context.xml
+template = inline:
+  <Context>
+    <WatchedResource>WEB-INF/web.xml</WatchedResource>
+  </Context>
+
+[palo_web_web_xml]
+recipe = slapos.recipe.template:jinja2
+rendered =  $${directory_palo_web:catalina_conf}/web.xml
+template = ${tomcat:location}/conf/web.xml
+
+[palo_web]
+recipe = slapos.cookbook:wrapper
+command-line = ${tomcat:location}/bin/catalina.sh run
+wrapper-path = $${directory:service}/palo_web
+environment =
+  JAVA_HOME = ${java:location}
+  CATALINA_BASE = $${directory_palo_web:catalina_base}
+dependencies = 
+  $${palo_web_server_xml:rendered}
+  $${palo_web_context_xml:rendered}
+  $${palo_web_web_xml:rendered}
+  $${palo_web_palo_properties:rendered}
+
+[palo_web_war]
+recipe = hexagonit.recipe.download
+url = ${palo_web_download:location}/PaloWebClient_2.0.0.414_JPA_181/web-palo.war
+destination = $${directory_palo_web:catalina_webapps}/web-palo/
+
+[palo_web_palo_properties]
+; This "patches" the content of the war that was extracted by palo_web_war
+recipe = slapos.recipe.template:jinja2
+template = ${template_palo_web_palo_properties:target}
+rendered = $${palo_web_war:destination}/WEB-INF/classes/palo.properties
+context =
+  section palo_olap_parameter palo_olap_parameter
 

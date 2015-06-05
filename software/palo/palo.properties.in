@@ -1,0 +1,78 @@
+# Web client login and passwords, which allows access to Web Palo Server
+user=guest
+password=pass
+
+server1.dispname=Palo
+server1.url={{ palo_olap_parameter.ipv4 }}
+server1.service={{ palo_olap_parameter.palo_olap_port }}
+server1.login=admin
+server1.password=admin
+server1.provider=palo
+
+
+
+
+# the rest is the original configuration
+
+
+
+
+# This option defines maximal number of opened connections between Web Palo Server and Palo Server
+
+# (Server-to-Server connections), so it determines the number of request,
+
+# which can be handled by Web Palo Server simultaneously.
+
+connection.pool.max=6
+
+# This option defines if Server-to-Server connections should be reload on every client login.
+# If it is set to true, it ensures, that newly logged in client has actual structures.
+
+# The drawback: other working clients will suffer speed penalty every time somebody logs in.
+
+client.behavior.database.reload-on-login=true
+
+# This option defines visibility of dimension folder under cube node in Palo Database Explorer.
+client.ui.show.cube.dimensions=false
+
+# This option defines visibility of dimension folder under database node in Palo Database Explorer.
+client.ui.show.database.dimensions=false
+
+# This option defines initial visibility of Navigation Panel.
+client.ui.show.navigationpanel=true
+
+# This option defines visibility of the Favorite Views page.
+client.ui.show.favoriteviews=true
+
+# This option defines visibility of the Database Explorer
+client.ui.show.dbexplorer=true
+
+# This option defines initial width of the Navigation Panel
+client.ui.navigationpanel.width=240
+
+# This option defines the number of decimal places displayed in cube table after rounding.
+client.ui.format.fraction.number_of_digits=2
+
+# This option defines if the whole hierarchy down to selected element should be loaded and shown to user,
+
+# when he clicks on dim selection section (POV=Point-of-view) to select another element.
+
+client.ui.views.pov.loadselectedpath=false
+
+# These two options define the number of levels, which should be expanded by default on show cube,
+
+# but it is not relevant for views open.
+# The first of them defines the number in POV, the second in cube table view headers
+client.ui.views.pov.showlevels=1
+client.ui.views.td.showlevels=1
+
+# These two options define strings, which determine minimal and maximal width of column in cube view table.
+client.ui.views.table.columns.min_visible_string=9.999,99
+client.ui.views.table.columns.max_visible_string=999.999.999.999,99
+
+# This option defines mouse pointer idle time in milliseconds, after which cell tooltip will be displayed.
+
+client.ui.views.table.hint_time=1000
+
+# Internal option. Do not change it
+right.manager.class=com.tensegrity.palowebviewer.server.DefaultRightManager

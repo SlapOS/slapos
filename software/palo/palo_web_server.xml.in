@@ -1,0 +1,39 @@
+<?xml version='1.0' encoding='utf-8'?>
+<Server port="-1" shutdown="SHUTDOWN">
+  <Service name="Catalina">
+    <Connector
+      protocol="org.apache.coyote.http11.Http11Protocol"
+      address="{{ palo_web_parameter['tomcat_host'] }}" 
+      port="{{ palo_web_parameter['tomcat_port'] }}"
+      maxThreads="10"
+      scheme="https"
+      secure="true"
+      clientAuth="false"
+      sslProtocol="TLS"
+      SSLEnabled="true"
+      keypass="{{ palo_web_parameter['keystore_pass'] }}"
+      keystore="{{ palo_web_parameter['keystore_file'] }}"
+    />
+    
+    <Connector
+      protocol="org.apache.coyote.http11.Http11Protocol"
+      address="{{ palo_web_parameter['tomcat_host'] }}" 
+      port="8080"
+      maxThreads="10"
+    />
+    
+    
+<!--
+    <Context path="/" docBase="{{ palo_web_parameter['palo_web_war'] }}/palo-web.war" 
+       privileged="true">
+    </Context>
+    -->
+  
+    <Engine name="Catalina" defaultHost="localhost">
+      <Host name="localhost"  appBase="webapps"
+            unpackWARs="true" autoDeploy="true"
+            xmlValidation="false" xmlNamespaceAware="false">
+      </Host>
+    </Engine>
+  </Service>
+</Server>

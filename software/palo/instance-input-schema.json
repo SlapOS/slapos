@@ -1,0 +1,18 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "extends": "./schema-definitions.json#",
+  "description": "Parameters to instantiate PALO",
+  "additionalProperties": false,
+  "properties": {
+    "ssl": {
+      "description": "Use ssl for PALO OLAP",
+      "default": "false",
+      "type": "boolean"
+    },
+    "erp5_url": {
+      "description": "URL of an ERP5 instance to authenticate users",
+      "default": "",
+      "type": "string"
+    }
+  }
+}

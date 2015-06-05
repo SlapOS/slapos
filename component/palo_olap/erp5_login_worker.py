@@ -6,6 +6,18 @@ import csv
 import hashlib
 import socket
 
+# XXX This should at least be an option.
+import ssl
+
+try:
+  _create_unverified_https_context = ssl._create_unverified_context
+except AttributeError:
+  # Legacy Python that doesn't verify HTTPS certificates by default
+  pass
+else:
+  # Handle target environment that doesn't support HTTPS verification
+  ssl._create_default_https_context = _create_unverified_https_context
+
 
 def main():
   logfile = sys.argv[1]
@@ -42,6 +54,7 @@ def main():
         login, password = args
 
         if login == 'admin':
+          # XXX in Palo 5.1, admin is anyway authenticated internally.
           # XXX better way ?
   #        admin_pass = "admin"
   #        authentication_success = hashlib.md5(admin_pass).hexdigest() == password
