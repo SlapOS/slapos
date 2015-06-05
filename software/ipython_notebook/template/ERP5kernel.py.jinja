@@ -1,10 +1,12 @@
-#!{{python_executable}}
+#!{{ python_executable }}
 
 from IPython.kernel.zmq.kernelbase import Kernel
 from IPython.core.display import HTML
 
 import requests
 import logging
+
+global erp5_url  = "{{ erp5_url }}"
 
 class ERP5Kernel(Kernel):
     implementation = 'ERP5'
@@ -14,11 +16,12 @@ class ERP5Kernel(Kernel):
     language_info = {'mimetype': 'text/plain', 'name':'python'}
     banner = "ERP5 integration with ipython notebook"
 
-    def __init__(self, user=None, pwd=None, url=None, status_code=None, *args, **kwargs):
+    def __init__(self, user=None, pwd=None, url=None, status_code=None,
+                *args, **kwargs):
         super(ERP5Kernel, self).__init__(*args, **kwargs)
         self.user = user
         self.pwd = pwd
-        self.url = url
+        self.url = erp5_url
         self.status_code = status_code
 
     def do_execute(self, code, silent, store_history=True, user_expressions=None,
@@ -33,11 +36,10 @@ class ERP5Kernel(Kernel):
 
             elif code.startswith('%erp5_password'):
                 self.pwd = code.split()[1]
-                self.url = 'softinst60318.host.vifib.net/erp5/manage_main'
                 if self.user:
-                    url = 'https://%s:%s@%s' %(self.user, self.pwd, self.url)
                     try:
-                        res = requests.get(url, verify=False)
+                        res = requests.get(self.url, verify=False,
+                                          auth=(self.user, self.pwd))
                         self.status_code = res.status_code
                         if self.status_code != 200:
                             resp = 'Incorrect username or password'
@@ -52,8 +54,9 @@ class ERP5Kernel(Kernel):
 
             else:
                 if self.status_code == 200:
-                    url = 'https://%s:%s@softinst60318.host.vifib.net/erp5/data_set_module/wendelin_1/Base_executePython' %(self.user, self.pwd)
-                    res = requests.get(url, verify=False, params={'python_expression': code})
+                    res = requests.get(self.url, verify=False,
+                                      auth=(self.user, self.pwd),
+                                      params={'python_expression': code})
                     code_result = res.text
 
                 else:
