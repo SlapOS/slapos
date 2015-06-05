@@ -176,21 +176,21 @@ command-line = "{{ python_bin }}" ${re6st-registry:manager-wrapper}
 recipe = slapos.cookbook:cron.d
 cron-entries = ${cron:cron-entries}
 name = re6stnet-check-token
-frequency = 0 */1 * * *
+frequency = */5 * * * *
 command = {{ python_bin }} ${re6st-registry:check-service-wrapper}
 
 [cron-entry-re6st-revoke]
 recipe = slapos.cookbook:cron.d
 cron-entries = ${cron:cron-entries}
 name = re6stnet-revoke-cert
-frequency = */30 * * * *
+frequency = */5 * * * *
 command = {{ python_bin }} ${re6st-registry:revoke-service-wrapper}
 
 [cron-entry-re6st-drop]
 recipe = slapos.cookbook:cron.d
 cron-entries = ${cron:cron-entries}
 name = re6stnet-drop-token
-frequency = */30 * * * *
+frequency = */5 * * * *
 command = {{ python_bin }} ${re6st-registry:drop-service-wrapper}
 
 [logrotate-entry-re6stnet]

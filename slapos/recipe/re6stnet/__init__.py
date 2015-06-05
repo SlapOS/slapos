@@ -253,8 +253,12 @@ class Recipe(GenericBaseRecipe):
             msg = 'Token is ready for use'
           elif status == 'TOKEN_USED':
             msg = 'Token not available, it has been used to generate re6stnet certificate.'
+
+          ipv6_file = os.path.join(token_list_path, '%s.ipv6' % slave_reference)
+          ipv6 = self.readFile(ipv6_file) or '::'
+
           computer_partition.setConnectionDict(
-              {'token':token, '1_info':msg},
+              {'token':token, '1_info':msg, 'ipv6': ipv6},
               slave_reference)
         except Exception:
           self.logger.fatal("Error while sending slave %s informations: %s",
