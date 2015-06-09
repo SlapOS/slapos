@@ -1,4 +1,6 @@
+{% macro assert(x) %}{{ ("",)[not x] }}{% endmacro -%}
 {% set socket = parameter_dict['socket'] -%}
+{% set extra_dict = parameter_dict['extra-dict'] -%}
 [mysqld]
 skip_networking
 socket = {{ socket }}
@@ -7,7 +9,6 @@ pid_file = {{ parameter_dict['pid-file'] }}
 log_error = {{ parameter_dict['error-log'] }}
 slow_query_log
 slow_query_log_file = {{ parameter_dict['slow-query-log'] }}
-long_query_time = {{ parameter_dict['long-query-time'] }}
 
 init_file = {{ parameter_dict['init-file'] }}
 log_warnings = 1
@@ -17,16 +18,22 @@ disable-log-bin
 
 max_allowed_packet = 128M
 query_cache_size = 32M
-innodb_file_per_table = 0
 innodb_locks_unsafe_for_binlog = 1
 
 # Some dangerous settings you may want to uncomment temporarily
 # if you only want performance or less disk access.
-{% set x = '' if parameter_dict['relaxed-writes'] else '#' -%}
+{% set x = '' if extra_dict.pop('relaxed-writes', False) else '#' -%}
 {{x}}innodb_flush_log_at_trx_commit = 0
 {{x}}innodb_flush_method = nosync
 {{x}}innodb_doublewrite = 0
 {{x}}sync_frm = 0
+
+# Extra parameters.
+{%- do extra_dict.setdefault('innodb_file_per_table',  '0') %}
+{%- for k, v in extra_dict.iteritems() %}
+{%- do assert('-' not in k) %}
+{{ k }} = {{ v }}
+{%- endfor %}
 
 # Force utf8 usage
 collation_server = utf8_unicode_ci

@@ -1,9 +1,6 @@
-[buildout]
-extends = {{ master_cfg }}
-parts +=
-  neo-storage
-  logrotate-mysql
-  logrotate-storage
+{% macro section(name) %}{% do part_list.append(name) %}{{ name }}{% endmacro -%}
+{% set part_list = [] -%}
+{% set init_list = [] -%}
 
 [mysqld]
 recipe = slapos.cookbook:generic.mysql.wrap_mysqld
@@ -20,51 +17,87 @@ data-directory = ${mysqld:data-directory}
 pid-file = ${directory:var_run}/mariadb.pid
 error-log = ${directory:log}/mariadb_error.log
 slow-query-log = ${directory:log}/mariadb_slowquery.log
-long-query-time = {{ dumps(slapparameter_dict.get('long-query-time', 1)) }}
-relaxed-writes = {{ dumps(slapparameter_dict.get('relaxed-writes', False)) }}
+extra-dict = {{ dumps(slapparameter_dict.get('mysql', {})) }}
 init-file = ${init-script:rendered}
 
 [my-cnf]
 recipe = slapos.recipe.template:jinja2
+extensions = jinja2.ext.do
 rendered = ${directory:etc}/mariadb.cnf
 template = {{ template_my_cnf }}
 context = section parameter_dict my-cnf-parameters
 
-[init-script]
-recipe = slapos.recipe.template:jinja2
-# XXX: is there a better location ?
-rendered = ${directory:etc}/mariadb_initial_setup.sql
-database = neo
-template = inline:
-  CREATE DATABASE IF NOT EXISTS ${:database};
+{% set master_list = [] -%}
+{% set admin_list = [] -%}
+{% for k, v in slapparameter_dict.iteritems() -%}
+{%   if k.startswith('master-') -%}
+{%     do master_list.append(v) -%}
+{%   endif -%}
+{%   if k.startswith('admin-') -%}
+{%     do admin_list.append(v) -%}
+{%   endif -%}
+{% endfor -%}
+
+[publish]
+recipe = slapos.cookbook:publish.serialised
+# TODO: make port a partition parameter
+ip = {{ (ipv4_set | list)[0] }}
+port-master = 10000
+port-admin = 10002
+master = ${:ip}:${:port-master}
+admin = ${:ip}:${:port-admin}
+masters = {{ ' '.join(sorted(master_list)) }}
+{%- if admin_list %}
+admins = {{ ' '.join(sorted(admin_list)) }}
+{%- endif %}
 
 [neo-storage]
 recipe = slapos.cookbook:neoppod.storage
 binary = {{ bin_directory }}/neostorage
-wrapper = ${directory:etc_run}/neostorage
-logfile = ${directory:log}/neostorage.log
-ip = {{ (ipv4_set | list)[0] }}
+ip = ${publish:ip}
 cluster = {{ dumps(slapparameter_dict['cluster']) }}
-masters = {{ dumps(slapparameter_dict.get('masters', '')) }}
+masters = ${publish:masters}
 database-adapter = MySQL
-database-parameters = root@${init-script:database}${my-cnf-parameters:socket}
 wait-database = 60
 
+[logrotate-storage]
+recipe = slapos.cookbook:logrotate.d
+logrotate-entries = ${logrotate:logrotate-entries}
+backup = ${logrotate:backup}
+
+{% for i in range(slapparameter_dict.get('storage-count', 1)) -%}
+{%   set storage_id = 'neo-storage-' ~ i -%}
+[{{ section(storage_id) }}]
+< = neo-storage
+wrapper = ${directory:etc_run}/{{ 'neostorage-' ~ i }}
+logfile = ${directory:log}/{{ 'neostorage-' ~ i }}.log
+{%   do init_list.append('CREATE DATABASE IF NOT EXISTS neo' ~  i ~ ';') -%}
+database-parameters = root@neo{{ i }}${my-cnf-parameters:socket}
+
+[{{ section('logrotate-storage-' ~ i) }}]
+< = logrotate-storage
+name = {{ storage_id }}
+log = {{ '${' +  storage_id + ':logfile}' }}
+post = {{ bin_directory }}/slapos-kill -n neostorage -s RTMIN+1 ${:log}
+
+{% endfor -%}
+[init-script]
+recipe = slapos.recipe.template:jinja2
+# XXX: is there a better location ?
+rendered = ${directory:etc}/mariadb_initial_setup.sql
+template = inline:
+  {{ init_list | join('\n\t') }}
+
 [directory]
+recipe = slapos.cookbook:mkdirectory
+promises = ${buildout:directory}/etc/promises
 bin = ${buildout:directory}/bin
 etc = ${buildout:directory}/etc
 var = ${buildout:directory}/var
 etc_run =  ${:etc}/run
 var_run =  ${:var}/run
 srv_mariadb = ${buildout:directory}/srv/mariadb
-
-[logrotate-storage]
-recipe = slapos.cookbook:logrotate.d
-logrotate-entries = ${logrotate:logrotate-entries}
-backup = ${logrotate:backup}
-name = neo-storage
-log = ${neo-storage:logfile}
-post = {{ bin_directory }}/slapos-kill -n neostorage -s RTMIN+1 ${:log}
+log = ${buildout:directory}/var/log
 
 [logrotate-mysql]
 recipe = slapos.cookbook:logrotate.d
@@ -73,3 +106,12 @@ backup = ${logrotate:backup}
 name = mariadb
 log = ${my-cnf-parameters:error-log} ${my-cnf-parameters:slow-query-log}
 post = ${mysqld:mysql-base-directory}/bin/mysql --defaults-file="${my-cnf:rendered}" -e "FLUSH LOGS"
+
+[buildout]
+extends =
+  {{ logrotate_cfg }}
+  {{ master_cfg }}
+  {{ admin_cfg }}
+parts +=
+  {{ '\n  '.join(part_list) }}
+  logrotate-mysql

@@ -1,5 +1,3 @@
-{% set admin_software_type = 'neo-admin' -%}
-{% set mysql_storage_software_type = 'neo-storage-mysql' -%}
 [buildout]
 parts = switch-softwaretype
 eggs-directory = {{ eggs_directory }}
@@ -28,9 +26,6 @@ context =
 [neo-cluster]
 <= jinja2-template-base
 template = {{ cluster }}
-extra-context =
-    raw admin_software_type {{ admin_software_type }}
-    raw mysql_storage_software_type {{ mysql_storage_software_type }}
 
 [neo-admin]
 <= jinja2-template-base
@@ -45,6 +40,7 @@ template = {{ neo_master }}
 template = {{ neo_storage_mysql }}
 extra-context =
     key master_cfg neo-master:rendered
+    key admin_cfg neo-admin:rendered
     raw mariadb_location {{ mariadb_location }}
     raw template_my_cnf {{ template_my_cnf }}
 
@@ -54,5 +50,4 @@ override = {{ dumps(override_switch_softwaretype |default) }}
 default = neo-cluster:rendered
 # BBB
 RootSoftwareInstance = ${:default}
-{{ admin_software_type }} = neo-admin:rendered
-{{ mysql_storage_software_type }} = neo-storage-mysql:rendered
+neo = neo-storage-mysql:rendered

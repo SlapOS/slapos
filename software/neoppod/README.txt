@@ -30,20 +30,20 @@ cluster.
 'partitions' (int, optional)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Number of partitions. You cannot change this value once you created a cluster.
-Defautls to 12.
+Defaults to 12.
 
 'replicas' (int, optional)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 Number of replicates.
 Defaults to 0 (no resilience).
 
-'mysql-storage-count' (int, optional)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Number of MySQL-based storage nodes to deploy. One master node is deployed
-along with each storage.
-Defaults to 1.
+'node-list' (list, optional)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+List of dictionaries. Defaults to list containing one empty dictionary.
+One can specify following parameters in each of the dictionary.
 
-'admin-count' (int, optional)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Number of admin nodes to deploy.
-Defaults to 1.
+* 'storage-count': Number of storage nodes to deploy. Defaults to 1.
+  One master and one admin node is deployed with each storage.
+
+* 'mysql': Dictionary containing configuration options for MySQL.
+

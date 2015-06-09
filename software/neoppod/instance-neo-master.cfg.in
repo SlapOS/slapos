@@ -1,5 +1,4 @@
 [buildout]
-extends = {{ logrotate_cfg }}
 parts +=
   neo-master-promise
   logrotate-master
@@ -7,33 +6,20 @@ parts +=
 [neo-master]
 recipe = slapos.cookbook:neoppod.master
 binary = {{bin_directory}}/neomaster
-wrapper = ${directory:run}/neomaster
+wrapper = ${directory:etc_run}/neomaster
 logfile = ${directory:log}/neomaster.log
 ip = ${publish:ip}
-port = ${publish:port}
+port = ${publish:port-master}
 cluster = {{ dumps(slapparameter_dict['cluster']) }}
-partitions = {{ dumps(slapparameter_dict['partitions']) }}
-replicas = {{ dumps(slapparameter_dict['replicas']) }}
+partitions = {{ slapparameter_dict['partitions'] }}
+replicas = {{ slapparameter_dict['replicas'] }}
 upstream-cluster = {{ dumps(slapparameter_dict['upstream-cluster']) }}
 upstream-masters = {{ dumps(slapparameter_dict['upstream-masters']) }}
 # "masters" parameter is not provided when just requesting a partition.
-# No actuall installation takes place at that time
+# No actual installation takes place at that time
 # (slapos.cookbook:neoppod.master raises), but cfg expansion must succeed. So
 # this default value is required.
-masters = {{ dumps(slapparameter_dict.get('masters', '')) }}
-
-[publish]
-recipe = slapos.cookbook:publish
-# TODO: make port a partition parameter
-ip = {{ (ipv4_set | list)[0] }}
-port = 10000
-master = ${:ip}:${:port}
-
-[directory]
-recipe = slapos.cookbook:mkdirectory
-promises = ${buildout:directory}/etc/promises
-run = ${buildout:directory}/etc/run
-log = ${buildout:directory}/var/log
+masters = ${publish:masters}
 
 [neo-master-promise]
 recipe = slapos.cookbook:check_port_listening
