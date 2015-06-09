@@ -47,3 +47,5 @@ One can specify following parameters in each of the dictionary.
 
 * 'mysql': Dictionary containing configuration options for MySQL.
 
+* 'engine': Configures storage engine,
+  currently only InnoDB and TokuDB are supported.

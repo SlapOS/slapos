@@ -14,6 +14,9 @@ init_file = {{ parameter_dict['init-file'] }}
 log_warnings = 1
 disable-log-bin
 
+### Enables TokuDB
+plugin-load = ha_tokudb
+
 ## The following settings come from ERP5 configuration.
 
 max_allowed_packet = 128M

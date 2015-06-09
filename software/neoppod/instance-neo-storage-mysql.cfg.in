@@ -59,6 +59,7 @@ cluster = {{ dumps(slapparameter_dict['cluster']) }}
 masters = ${publish:masters}
 database-adapter = MySQL
 wait-database = 60
+engine = {{ slapparameter_dict.get('engine', '') }}
 
 [logrotate-storage]
 recipe = slapos.cookbook:logrotate.d
