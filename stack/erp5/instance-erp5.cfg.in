@@ -20,9 +20,11 @@ config-use-ipv6 = {{ dumps(slapparameter_dict.get('use-ipv6', False)) }}
 
 {% macro sla(name, required=False) -%}
 {% if required or name in sla_dict -%}
-{%  for k, (v,) in urlparse.parse_qs(slap_dict.pop(name), strict_parsing=1).iteritems() -%}
-sla-{{ k }} = {{ dumps(v) }}
+{%  for k, (v,) in urlparse.parse_qs(sla_dict.pop(name), strict_parsing=1).iteritems() -%}
+sla-{{ k }} = {{ v }}
 {%  endfor -%}
+{% else -%}
+sla-computer_guid = ${slap-connection:computer-id}
 {% endif -%}
 {% endmacro -%}
 

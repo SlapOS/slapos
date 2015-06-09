@@ -19,7 +19,6 @@ context =
     key ipv4_set slap-configuration:ipv4
     key ipv6_set slap-configuration:ipv6
     key slapparameter_dict slap-configuration:configuration
-    key computer_id slap-configuration:computer
     raw slapos_core_version {{ slapos_core_version }}
     raw logrotate_cfg {{ template_logrotate_base }}
     ${:extra-context}
