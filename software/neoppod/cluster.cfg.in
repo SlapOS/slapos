@@ -2,10 +2,14 @@
 {% macro section(name) %}{% do part_list.append(name) %}{{ name }}{% endmacro -%}
 {% set part_list = [] -%}
 {% set section_id_list = [] -%}
+{% set sla_dict = {} -%}
+{% for sla, ref_list in slapparameter_dict.get('sla-dict', {}).iteritems() -%}
+{%   do sla_dict.update(dict.fromkeys(ref_list, sla)) -%}
+{% endfor -%}
+
 [request-common]
 recipe = slapos.cookbook:request.serialised
 software-url = ${slap-connection:software-release-url}
-sla-computer_guid = ${slap-connection:computer-id}
 server-url = ${slap-connection:server-url}
 key-file = ${slap-connection:key-file}
 cert-file = ${slap-connection:cert-file}
@@ -18,6 +22,16 @@ config-replicas = {{ dumps(replicas) }}
 config-upstream-cluster = {{ dumps(slapparameter_dict.get('upstream-cluster', '')) }}
 config-upstream-masters = {{ dumps(slapparameter_dict.get('upstream-masters', '')) }}
 software-type = neo
+
+{% macro sla(name) -%}
+{% if name in sla_dict -%}
+{%   for k, (v,) in urlparse.parse_qs(sla_dict.pop(name), strict_parsing=1).iteritems() -%}
+sla-{{ k }} = {{ v }}
+{%   endfor -%}
+{% else -%}
+sla-computer_guid = ${slap-connection:computer-id}
+{% endif -%}
+{% endmacro -%}
 
 [publish]
 recipe = slapos.cookbook:publish.serialised
@@ -35,6 +49,7 @@ name = {{ section_id }}
 {%   for k, v in node.iteritems() -%}
 config-{{ k }} = {{ dumps(v) }}
 {%   endfor -%}
+{{ sla(section_id) }}
 
 [{{ section_id }}]
 <= request-common

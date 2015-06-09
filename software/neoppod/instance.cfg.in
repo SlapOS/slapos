@@ -26,6 +26,8 @@ context =
 [neo-cluster]
 <= jinja2-template-base
 template = {{ cluster }}
+extra-context =
+    import urlparse urlparse
 
 [neo-admin]
 <= jinja2-template-base
