@@ -1,8 +1,8 @@
 [buildout]
 extends = 
-    ${template-ipynb:output}
+    ${template-ipythonnotebook:output}
 
-[request-ipynb]
+[request-ipythonnotebook]
 <= slap-connection
 recipe = slapos.cookbook:request
 name = IPython Notebook
