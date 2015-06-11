@@ -1,0 +1,21 @@
+[buildout]
+parts =
+  request-ipythonnotebook
+  publish-connection-parameter
+
+eggs-directory = ${buildout:eggs-directory}
+develop-eggs-directory = ${buildout:develop-eggs-directory}
+offline = true
+
+[request-ipythonnotebook]
+<= slap-connection
+recipe = slapos.cookbook:request
+name = IPython Notebook
+software-url = $${slap-connection:software-release-url}
+software-type = notebook
+return = url
+sla-computer_guid = $${slap-connection:computer-id}
+
+[publish-connection-parameter]
+recipe = slapos.cookbook:publish
+notebook_url = $${request-ipythonnotebook:connection-url}

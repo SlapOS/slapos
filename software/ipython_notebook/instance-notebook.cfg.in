@@ -32,15 +32,6 @@ eggs-directory = ${buildout:eggs-directory}
 develop-eggs-directory = ${buildout:develop-eggs-directory}
 offline = true
 
-[slapconfiguration]
-recipe = slapos.cookbook:slapconfiguration
-computer = $${slap-connection:computer-id}
-partition = $${slap-connection:partition-id}
-url = $${slap-connection:server-url}
-key = $${slap-connection:key-file}
-cert = $${slap-connection:cert-file}
-configuration.erp5_url = https://softinst60318.host.vifib.net/erp5/Base_executePython
-
 [jinja2-template-base]
 recipe = slapos.recipe.template:jinja2
 rendered = $${buildout:directory}/$${:filename}
@@ -53,6 +44,15 @@ context =
     key slapparameter_dict slap-parameters:configuration
     key slave_instance_list slap-parameters:slave-instance-list
     $${:extra-context}
+
+[slapconfiguration]
+recipe = slapos.cookbook:slapconfiguration
+computer = $${slap-connection:computer-id}
+partition = $${slap-connection:partition-id}
+url = $${slap-connection:server-url}
+key = $${slap-connection:key-file}
+cert = $${slap-connection:cert-file}
+configuration.erp5_url = https://softinst60318.host.vifib.net/erp5/Base_executePython
 
 [instance-parameter]
 port = 8888
