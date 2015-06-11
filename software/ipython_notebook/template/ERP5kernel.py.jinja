@@ -38,8 +38,14 @@ class ERP5Kernel(Kernel):
                 self.pwd = code.split()[1]
                 if self.user:
                     try:
+                        # Dirty hack here just to send some random parameter
+                        # Should be removed with better way to get 200 status code
+                        # for correct credentials or yet better make 204 also accepatble
+
+                        test = 'return test'
                         res = requests.get(self.url, verify=False,
-                                          auth=(self.user, self.pwd))
+                                          auth=(self.user, self.pwd),
+                                          params={'python-expression': test})
                         self.status_code = res.status_code
                         if self.status_code != 200:
                             resp = 'Incorrect username or password'
