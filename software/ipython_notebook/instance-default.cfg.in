@@ -13,9 +13,12 @@ recipe = slapos.cookbook:request
 name = IPython Notebook
 software-url = $${slap-connection:software-release-url}
 software-type = notebook
-return = url
+return =
+  url
+  erp5_url
 sla-computer_guid = $${slap-connection:computer-id}
 
 [publish-connection-parameter]
 recipe = slapos.cookbook:publish
 notebook_url = $${request-ipythonnotebook:connection-url}
+erp5_url = $${request-ipythonnotebook:connection-erp5_url}

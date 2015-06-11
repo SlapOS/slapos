@@ -32,19 +32,6 @@ eggs-directory = ${buildout:eggs-directory}
 develop-eggs-directory = ${buildout:develop-eggs-directory}
 offline = true
 
-[jinja2-template-base]
-recipe = slapos.recipe.template:jinja2
-rendered = $${buildout:directory}/$${:filename}
-extra-context =
-context =
-    import json_module json
-    key eggs_directory buildout:eggs-directory
-    key develop_eggs_directory buildout:develop-eggs-directory
-    key slap_software_type slap-parameters:slap-software-type
-    key slapparameter_dict slap-parameters:configuration
-    key slave_instance_list slap-parameters:slave-instance-list
-    $${:extra-context}
-
 [slapconfiguration]
 recipe = slapos.cookbook:slapconfiguration
 computer = $${slap-connection:computer-id}
