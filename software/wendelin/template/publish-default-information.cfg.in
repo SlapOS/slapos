@@ -1,0 +1,45 @@
+[buildout]
+parts =
+  request-notebook
+  publish-default-connection-parameters
+
+eggs-directory = {{ eggs_directory }}
+develop-eggs-directory = {{ develop_eggs_directory }}
+offline = true
+
+{% set erp5_request_parameters = json_module.loads(erp5_published_values.get('erp5_request_parameters')) -%}
+
+{% set publish_dict = {} -%}
+{% for name, value in erp5_request_parameters.iteritems() -%}
+{%  do publish_dict.__setitem__(name, value) -%}
+{% endfor %}
+
+{% set jupyter_family_name = 'family-' ~ jupyter_family -%}
+{% set jupyter_family_url = publish_dict.get(jupyter_family_name) -%}
+
+[request-notebook]
+<= slap-connection
+recipe = slapos.cookbook:request.serialised
+name = IPython Notebook
+software-url = ${slap-connection:software-release-url}
+software-type = notebook
+sla-computer_guid = ${slap-connection:computer-id}
+return = url
+config-erp5_url = {{ jupyter_family_url }}
+
+[publish-default-connection-parameters]
+recipe = slapos.cookbook:publish.serialised
+{% for name, value in publish_dict.items() -%}
+{{ name }} = {{ value }} 
+{% endfor -%}
+notebook-url = ${request-notebook:connection-url}
+
+{% if jupyter_family=="None" -%}
+error-message = No jupyter-family defined in parameters
+# None here is an identifier, not a string
+{% elif jupyter_family_url==none -%}
+  {% set error_message = 'No family exist with the family name ' ~ jupyter_family -%}
+error-message = {{ error_message }}
+{% else -%}
+jupyter-family-url = {{ jupyter_family_url }} 
+{% endif -%}

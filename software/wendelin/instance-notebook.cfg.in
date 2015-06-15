@@ -1,0 +1,152 @@
+[buildout]
+parts =
+  instance
+  publish-connection-parameter
+## Monitoring part XXX whe should not have to specify all parts like this
+## Parts to add for monitoring
+  certificate-authority
+  cron
+  cron-entry-monitor
+  cron-entry-rss
+  deploy-index
+  deploy-settings-cgi
+  deploy-status-cgi
+  deploy-status-history-cgi
+  setup-static-files
+  certificate-authority
+  zero-parameters
+  public-symlink
+  cgi-httpd-wrapper
+  cgi-httpd-graceful-wrapper
+  monitor-promise
+  monitor-instance-log-access
+## Monitor for ipython
+  monitor-current-log-access
+  monitor-deploy-set-password-cgi
+  erp5-kernel
+  kernel-json
+
+extends = {{ parameter_dict['monitor-template'] }}
+
+eggs-directory = {{ parameter_dict['eggs_directory'] }}
+develop-eggs-directory = {{ parameter_dict['develop_eggs_directory'] }}
+offline = true
+
+[slapconfiguration]
+recipe = slapos.cookbook:slapconfiguration
+computer = ${slap-connection:computer-id}
+partition = ${slap-connection:partition-id}
+url = ${slap-connection:server-url}
+key = ${slap-connection:key-file}
+cert = ${slap-connection:cert-file}
+configuration.erp5_url = {{ dumps(slapparameter_dict['erp5_url']) }}
+
+[instance-parameter]
+port = 8888
+host = ${slapconfiguration:ipv6-random}
+cert_file = ${generate-certificate:cert_file}
+key_file = ${generate-certificate:key_file}
+logfile = ${directory:log}/ipython_notebook.log
+notebook_dir = ${directory:notebook_dir}
+
+[generate-certificate]
+; TODO: there is a slapos recipe to generate certificates. Use it instead
+recipe = plone.recipe.command
+command =
+  if [ ! -e ${instance-parameter:key_file} ]
+  then
+    {{ parameter_dict['openssl_output'] }} req -x509 -nodes -days 3650 \
+      -subj "/C=AA/ST=X/L=X/O=Dis/CN=${instance-parameter:host}" \
+      -newkey rsa:1024 -keyout ${instance-parameter:key_file} \
+      -out ${instance-parameter:cert_file}
+  fi
+update-command = ${:command}
+cert_file = ${directory:etc}/ipython_notebook_cert.crt
+key_file = ${directory:etc}/ipython_notebook_cert.key
+
+[instance]
+recipe = slapos.cookbook:wrapper
+command-line =
+  {{ parameter_dict['bin_directory'] }}/ipython notebook
+  --no-browser
+  --matplotlib=inline
+  --ip=${instance-parameter:host}
+  --port=${instance-parameter:port}
+  --port-retries=0
+  --certfile=${instance-parameter:cert_file}
+  --keyfile=${instance-parameter:key_file}
+  --notebook-dir=${instance-parameter:notebook_dir}
+  --logfile=${instance-parameter:logfile}
+  --config=${ipython_notebook_config:rendered}
+## Adding log-level as parameter helps in checking error from ipython-notebook
+## service.
+  --log-level="DEBUG"
+wrapper-path = ${directory:service}/ipython_notebook
+parameters-extra = true
+environment = IPYTHONDIR=${directory:ipython_dir}
+
+[ipython_notebook_config]
+recipe = slapos.recipe.template:jinja2
+template = {{ parameter_dict['ipython_notebook_config_location'] }}/{{ parameter_dict['ipython_notebook_config_filename'] }}
+rendered = ${directory:etc}/ipython_notebook_config.py
+mode = 0744
+context =
+  raw config_cfg ${buildout:directory}/knowledge0.cfg
+  raw ipython_dir ${directory:ipython_dir}
+
+[monitor-current-log-access]
+< = monitor-directory-access
+source = ${instance-parameter:logfile}
+
+[monitor-deploy-set-password-cgi]
+recipe = slapos.recipe.template:jinja2
+template = {{ parameter_dict['ipython_notebook_set_password_location'] }}/{{ parameter_dict['ipython_notebook_set_password_filename'] }}
+rendered = ${monitor-directory:knowledge0-cgi}/${:filename}
+filename = ipython-notebook-password.cgi
+mode = 0744
+context =
+  raw config_cfg ${buildout:directory}/knowledge0.cfg
+  raw python_executable {{ parameter_dict['bin_directory'] }}/ipython
+  key pwd monitor-directory:knowledge0-cgi
+  key this_file :filename
+  key httpd_graceful cgi-httpd-graceful-wrapper:rendered
+
+[directory]
+recipe = slapos.cookbook:mkdirectory
+home = ${buildout:directory}
+etc = ${:home}/etc
+var = ${:home}/var
+script = ${:etc}/run/
+service = ${:etc}/service
+promise = ${:etc}/promise/
+log = ${:var}/log
+notebook_dir = ${:var}/notebooks
+ipython_dir = ${:home}/ipython
+ipython_kernel_dir = ${:ipython_dir}/kernels
+erp5_kernel_dir = ${:ipython_kernel_dir}/ERP5
+
+[publish-connection-parameter]
+recipe = slapos.cookbook:publish.serialised
+url = https://[${instance-parameter:host}]:${instance-parameter:port}
+monitor_url = ${monitor-parameters:url}
+erp5_url = ${slapconfiguration:configuration.erp5_url}
+
+[erp5-kernel]
+recipe = slapos.recipe.template:jinja2
+template = {{ parameter_dict['erp5_kernel_location'] }}/{{ parameter_dict['erp5_kernel_filename'] }}
+rendered = ${directory:erp5_kernel_dir}/ERP5kernel.py
+mode = 0744
+context =
+  raw python_executable {{ parameter_dict['bin_directory'] }}/pythonwitheggs
+  key erp5_url slapconfiguration:configuration.erp5_url
+
+[kernel-json]
+recipe = slapos.recipe.template:jinja2
+template = {{ parameter_dict['kernel_json_location'] }}/{{ parameter_dict['kernel_json_filename'] }}
+rendered = ${directory:erp5_kernel_dir}/kernel.json
+mode = 0744
+context =
+  raw python_executable {{ parameter_dict['bin_directory'] }}/pythonwitheggs
+  key kernel_dir erp5-kernel:rendered
+  raw display_name ERP5
+  raw language_name python

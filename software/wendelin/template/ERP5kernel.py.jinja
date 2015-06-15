@@ -1,0 +1,172 @@
+#!{{ python_executable }}
+
+from IPython.kernel.zmq.kernelbase import Kernel
+from IPython.core.display import HTML
+
+import requests
+import logging
+import json
+
+erp5_url = "{{ erp5_url }}"
+erp5_url  = "%s/erp5/Base_executeJupyter"%erp5_url
+
+class ERP5Kernel(Kernel):
+  implementation = 'ERP5'
+  implementation_version = '1.0'
+  language = 'ERP5'
+  language_version = '0.1'
+  language_info = {'mimetype': 'text/plain', 'name':'python'}
+  banner = "ERP5 integration with ipython notebook"
+
+  def __init__(self, user=None, pwd=None, url=None, status_code=None,
+              *args, **kwargs):
+    super(ERP5Kernel, self).__init__(*args, **kwargs)
+    self.user = user
+    self.pwd = pwd
+    self.url = erp5_url
+    self.status_code = status_code
+    self.reference = None
+
+  def do_execute(self, code, silent, store_history=True, user_expressions=None,
+                  allow_stdin=False):
+    status = 'ok'
+    if not silent:
+
+      if code.startswith('%erp5_user'):
+        self.user = code.split()[1]
+        resp = 'Your erp5 username is %s' %self.user
+        stream_content = {'name': 'stdout', 'text': resp}
+        self.send_response(self.iopub_socket, 'stream', stream_content)
+
+      elif code.startswith('%erp5_password'):
+        self.pwd = code.split()[1]
+        if self.user:
+          try:
+            # Dirty hack here just to send some random parameter
+            # Should be removed with better way to get 200 status
+            # code for correct credentials, or yet better make 204
+            # also accepatble
+
+            res = requests.get(
+              self.url, verify=False,
+              auth=(self.user, self.pwd),
+              params={'python_expression': None},
+            )
+            self.status_code = res.status_code
+            if self.status_code != 200:
+              resp = '''Error code %s on request to ERP5, check
+                        credentials or ERP5 family URL'''%self.status_code
+            else:
+              resp = 'Please proceed'
+              if not self.reference:
+                resp = '''There is no reference or title set for
+                          this notebook. Please set one using
+                          %notebook_set_reference or use one already
+                          existing by %use_notebook magics'''
+          except requests.exceptions.RequestException as e:
+            resp = str(e)
+        else:
+          resp = 'Please enter your username in next cell'
+        stream_content = {'name': 'stdout', 'text': resp}
+        self.send_response(self.iopub_socket, 'stream', stream_content)
+
+      elif code.startswith('%erp5_url'):
+        self.url = code.split()[1]
+        resp = 'Your erp5-url username is %s' %self.url
+        stream_content = {'name': 'stdout', 'text': resp}
+        self.send_response(self.iopub_socket, 'stream', stream_content)
+
+      elif code.startswith('%notebook_set_reference'):
+        self.reference = code.split()[1]
+        resp = '''Your notebook reference is %s. Please use the magics
+                  %%use_notebook %s when you restart the
+                  notebook.'''%(self.reference, self.reference)
+        stream_content = {'name': 'stdout', 'text': resp}
+        self.send_response(self.iopub_socket, 'stream', stream_content)
+
+      elif code.startswith('%use_notebook'):
+        self.reference = code.split()[1]
+        resp = '''Your notebook reference is %s.'''%self.reference
+        stream_content = {'name': 'stdout', 'text': resp}
+        self.send_response(self.iopub_socket, 'stream', stream_content)
+
+      elif code.startswith('%notebook_set_title'):
+        self.reference = code.split()[1]
+        resp = '''Your notebook title is set to %s.'''%self.title
+        stream_content = {'name': 'stdout', 'text': resp}
+        self.send_response(self.iopub_socket, 'stream', stream_content)
+
+      elif code.startswith('%my_notebooks'):
+        if self.status_code==200:
+          res = requests.get(
+            self.url, verify=False,
+            auth=(self.user, self.pwd),
+            params={
+              'python_expression': None,
+              'request_reference': True,
+            }
+          )
+#          code_result = res.text
+#          mime_type = 'text/plain'
+#          data = {
+#                'data': {'': code_result},
+#                'metadata': {}
+#                }
+#          self.send_response(self.iopub_socket, 'display_data', data)
+          resp = res.text
+          stream_content = {'name': 'stdout', 'text': resp}
+          self.send_response(self.iopub_socket, 'stream', stream_content)
+
+      else:
+        if self.status_code == 200:
+          if not self.reference:
+            code_result = '''There is no reference set for this
+                              notebook. Please set one using
+                              %notebook_set_reference or use already existing
+                              one using %%use_notebook magics'''
+          else:
+            res = requests.get(
+              self.url, verify=False,
+              auth=(self.user, self.pwd),
+              params={
+                'python_expression': code,
+                'reference': self.reference,
+              }
+            )
+            content = json.loads(res.content)
+            if content['status']=='error':
+              reply_content = {
+                'status': 'error',
+                'execution_count': self.execution_count,
+                'ename': content['ename'],
+                'evalue': content['evalue'],
+                'traceback': content['traceback']}
+              self.send_response(self.iopub_socket, u'error', reply_content)
+              return reply_content
+            code_result = content['code_result']
+            mime_type = 'text/plain'
+
+        else:
+          code_result = 'Unauthorized access'
+          mime_type = 'text/plain'
+
+        data = {
+          'data': {mime_type: code_result},
+          'metadata': {}
+        }
+        self.send_response(self.iopub_socket, 'display_data', data)
+
+    reply_content = {
+      'status': status,
+      # The base class increments the execution count
+      'execution_count': self.execution_count,
+      'payload': [],
+      'user_expressions': {},
+    }
+    return reply_content
+
+if __name__ == '__main__':
+    from IPython.kernel.zmq.kernelapp import IPKernelApp
+    IPKernelApp.launch_instance(kernel_class=ERP5Kernel)
+else:
+    from IPython.kernel.zmq.kernelapp import IPKernelApp

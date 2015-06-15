@@ -1,0 +1,74 @@
+[buildout]
+parts =
+  request-erp5
+  dynamic-publish-default-information
+  publish-erp5-request-parameters
+
+eggs-directory = {{ parameter_dict['eggs_directory'] }}
+develop-eggs-directory = {{ parameter_dict['develop_eggs_directory'] }}
+offline = true
+
+[slap-configuration]
+recipe = slapos.cookbook:slapconfiguration.serialised
+computer = ${slap-connection:computer-id}
+partition = ${slap-connection:partition-id}
+url = ${slap-connection:server-url}
+key = ${slap-connection:key-file}
+cert = ${slap-connection:cert-file}
+
+[slap_connection]
+# Kept for backward compatiblity
+computer_id = ${slap-connection:computer-id}
+partition_id = ${slap-connection:partition-id}
+server_url = ${slap-connection:server-url}
+software_release_url = ${slap-connection:software-release-url}
+key_file = ${slap-connection:key-file}
+cert_file = ${slap-connection:cert-file}
+
+[request-erp5]
+<= slap-connection
+recipe = slapos.cookbook:request
+name = ERP5
+software-url = ${slap-connection:software-release-url}
+{% if slap_software_type=='default'-%}
+{%   set software_type='erp5-cluster-default'-%}
+{% elif slap_software_type=='create-erp5-site' -%}
+{%   set software_type='erp5-cluster-create-erp5-site'-%}
+{% else -%}
+{%   set software_type=slap_software_type -%}
+{% endif -%}
+software-type = {{ software_type }}
+sla-computer_guid = ${slap-connection:computer-id}
+# Dirty hack to show all connection and instance parameters
+# Must be changed after updating request recipe to show all the published 
+# parameters at once, something like exporter parameter in request recipe which
+# calls getConnectionParameterDict() 
+# Other option would be to give some parameter in slapconfiguration recipe from
+# where once can get ConnectionParameterDict, as for now we can get
+# InstanceParameterDict using configuration parameter in slapconfiguration recipe,
+# but there is no such param for connection parameters which is just unfortunate
+config-_ = {{ json_module.dumps(slapparameter_dict) }}
+return = _
+
+[publish-erp5-request-parameters]
+recipe = slapos.cookbook:switch-softwaretype
+profile = dynamic-publish-default-information:rendered
+
+[erp5-published-values]
+erp5_request_parameters = ${request-erp5:connection-_}
+
+{% set jupyter_family = slapparameter_dict.get('jupyter-family') -%}
+[dynamic-publish-default-information]
+recipe = slapos.recipe.template:jinja2
+rendered = ${buildout:directory}/${:filename}
+context =
+    key eggs_directory buildout:eggs-directory
+    key develop_eggs_directory buildout:develop-eggs-directory
+    ${:extra-context}
+template = {{ template_publish_information }}
+filename = dynamic-publish-default-information.cfg
+extensions = jinja2.ext.do
+extra-context =
+    import json_module json
+    raw jupyter_family {{ jupyter_family }}
+    section erp5_published_values erp5-published-values

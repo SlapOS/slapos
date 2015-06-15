@@ -1,0 +1,21 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "description": "Values returned by Wendelin instantiation",
+  "additionalProperties": {
+    "$ref": "../erp5/instance-erp5-output-schema.json#properties"
+  },
+  "properties": {
+    "notebook-url": {
+      "description": "IPython Notebook url",
+      "type": "string"
+    },
+    "jupyter-family-url": {
+      "description": "erp5v family url used in jupyter/ipython-notebook",
+      "type": "string"
+    },
+    "error-message": {
+      "description": "Error message in case of missing jupyter family or wrong family name",
+      "type": "string"
+    }
+  }
+}
