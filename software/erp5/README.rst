@@ -18,8 +18,8 @@ front-end instance which is expected to contains the RewriteRules_ (or
 equivalent) needed to relocate Zope's urls via its VirtualHostMonster_. See the
 ``frontend`` erp5 instance parameter.
 
-Included cloudooo partition is not recommended for intensive usage, and will
-eventually be dropped. See the ``cloudooo`` software type to setup a cloudooo
+Included cloudooo partition is **deprecated**. It is not recommended for
+intensive usage. See the ``cloudooo`` Software Release to setup a cloudooo
 cluster, more suitable for intensive usage.
 
 .. _RewriteRules: http://httpd.apache.org/docs/current/en/mod/mod_rewrite.html#rewriterule
