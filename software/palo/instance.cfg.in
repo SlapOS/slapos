@@ -3,9 +3,9 @@ parts =
   instance-parameter
   palo_olap
   palo_etl
-  palo_web
   publish-connection-parameter
 
+todo = palo_web
 eggs-directory = ${buildout:eggs-directory}
 develop-eggs-directory = ${buildout:develop-eggs-directory}
 offline = true
@@ -13,7 +13,7 @@ offline = true
 # TODO: review certificate generation, file permissions and passwords
 # TODO: log rotation
 # TODO: ipv4 TCP frontend for palo (http frontend does not seem to work)
-# TODO: palo_web does not work
+# TODO: palo_web does not work ( see https://code.google.com/p/google-web-toolkit-doc-1-5/wiki/FAQ_RPCContentTypeTextPlain )
 
 
 # common parts
@@ -38,7 +38,7 @@ recipe = slapos.cookbook:publish
 palo_olap = [$${palo_olap_parameter:ipv6}]:$${palo_olap_parameter:palo_olap_port}
 palo_olap_ssl = [$${palo_olap_parameter:ipv6}]:$${palo_olap_parameter:palo_olap_ssl_port}
 palo_etl_url = https://[$${palo_etl_parameter:tomcat_host}]:$${palo_etl_parameter:tomcat_port}/etlserver/services//ETL-Server?wsdl
-palo_web_url = https://[$${palo_web_parameter:tomcat_host}]:$${palo_web_parameter:tomcat_port}/web-palo/
+# palo_web_url = https://[$${palo_web_parameter:tomcat_host}]:$${palo_web_parameter:tomcat_port}/web-palo/
 # palo_olap_admin_url = [$${palo_olap_parameter:ipv6}]:$${palo_olap_parameter:palo_olap_admin_port}
 
 [directory]
