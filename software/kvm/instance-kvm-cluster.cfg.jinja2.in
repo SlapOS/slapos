@@ -94,7 +94,7 @@ return =
 {%   set error = '' -%}
 {%   if frontend_parameter_dict.get('kvm-partition-name', '') != '' -%}
 {%     set kvm_name = frontend_parameter_dict['kvm-partition-name'] -%}
-{%     set service_port = frontend_parameter_dict['service-port'] -%}
+{%     set service_port = str(frontend_parameter_dict['service-port']) -%}
 {%     if kvm_name in kvm_instance_dict.keys()  and not kvm_instance_dict[kvm_name][0] -%}
 {%       set error = "You should set parameter use-nat to 'true' for '" ~ kvm_name ~ "', or provide url to use for frontend." -%}
 {%     elif kvm_name in kvm_instance_dict.keys() and service_port in kvm_instance_dict[kvm_name][1] -%}
