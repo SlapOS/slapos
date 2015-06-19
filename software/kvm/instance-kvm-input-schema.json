@@ -37,13 +37,13 @@
       "maximum": 8
     },
     "cpu-options": {
-      "title": "Additional options (cores, threads, sockets, maxcpus) to use with cpu-count.",
-      "description": "Additional options to use with cpu-count. Options are separated by coma: [cores=cores][,threads=threads][,sockets=sockets][,maxcpus=maxcpus]. Only set this option if you really know what you're doing.",
+      "title": "CPU Additional options: cores, threads, sockets, maxcpus.",
+      "description": "Additional options to use with cpu-count. Options are separated by coma: [cores=cores][,threads=threads][,sockets=sockets][,maxcpus=maxcpus]. Set this option if you know what you're doing.",
       "type": "string"
     },
     "numa": {
-      "title": "Simulate a multi node NUMA system. If mem and cpus are omitted, resources are split equally.",
-      "description": "Simulate a multi node NUMA system. If mem and cpus are omitted, resources are split equally. Each numa option are separated by space: node,nodeid=4,cpus=40-49,mem=64g node,nodeid=1,cpus=10-19,mem=128g. Only set this option if you really know what you're doing.",
+      "title": "Simulate a multi node NUMA system.",
+      "description": "Simulate a multi node NUMA system. If mem and cpus are omitted, resources are split equally. Each numa option are separated by space: node,nodeid=4,cpus=40-49,mem=64g node,nodeid=1,cpus=10-19,mem=128g. Set this option if you know what you're doing.",
       "type": "string"
     },
 
@@ -103,10 +103,10 @@
       "default": 0
     },
     "external-disk-size": {
-      "title": "Number of additional disk to create for virtual machine, in Gigabytes",
-      "description": "Specify the number of additional disk to create for virtual machine in data folder of SlapOS Node. Requires instance_storage_home to be configured on SlapOS Node.",
+      "title": "Size of additional disk to create for virtual machine, in Gigabytes",
+      "description": "Specify the size of additional disk to create for virtual machine in data folder of SlapOS Node. Requires instance_storage_home to be configured on SlapOS Node.",
       "type": "integer",
-      "minimum": 5,
+      "minimum": 10,
       "maximum": 1000,
       "default": 20
     },
