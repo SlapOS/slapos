@@ -1,5 +1,50 @@
 Changes
 =======
+0.102 (2015-05-22)
+------------------
+ * kvm-recipe: vm of kvm-cluster can get ipv4/hostname of all other vm in the same cluster
+ * simplehttpserver-recipe: simple http server to serve files
+
+0.101 (2015-04-29)
+------------------
+ * kvm recipe: new parameters: external-disk-format, numa and cpu-options.
+ * kvm recipe: allow guest VM to connect to host http service via a local predefined ipv4 address (guestfwd).
+
+0.100 (2015-04-20)
+------------------
+ * re6stnet recipe: re6st-registry log can now be reopened with SIGUSR1
+ * re6stnet recipe: re6st certificate generation is improved.
+
+0.99 (2015-04-10)
+-----------------
+ * re6stnet: new recipe to deploy re6st registry (re6st master) with slapos.
+
+0.98 (2015-04-09)
+-----------------
+ * shellinabox: do not run in debug mode, it is much slower !
+
+0.97 (2015-03-26)
+-----------------
+ * switch softwaretype recipe: the recipe is backward compatible with old slapos node packages.
+ * kvm recipe: Avoid getting wrong storage path when creating kvm external disk
+
+0.96 (2015-03-20)
+-----------------
+ * slap configuration: recipe can read from master network information releated to a tap interface
+ * slap configuration: recipe will setup data folder in DATA directory of computer partition if disk is mounted
+ * switch softwaretype recipe: also generate tap network information when they exist
+ * switch softwaretype recipe: generate configuration for DATA directory when disk is mounted
+
+0.95 (2015-02-14)
+-----------------
+
+ * resiliency stack: allow web takeover to work inside of webrunner/erp5testnode.
+ * resiliency takeover script: create lock file stating that takeover has been done.
+
+0.94 (2015-02-06)
+-----------------
+ * kvm: allow to configure tap and nat interface at the same time with use-nat and use-tap [d3d65916]
+ * kvm: use -netdev to configure network interface as -net is now obsolete [27baa9d4]
 
 0.85 (2013-12-03)
 -----------------

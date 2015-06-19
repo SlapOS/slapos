@@ -41,6 +41,10 @@ CustomLog "{{ access_log }}" combined
 <Directory {{ document_root }}>
   Order Allow,Deny
   Allow from All
+  Options -Indexes
+  ErrorDocument 404 /notfound.html
+  RewriteEngine on
+  RewriteRule ^/?$ notfound.html [R=404,L]
 </Directory>
 
 # List of modules
@@ -115,7 +119,8 @@ SSLSessionCache shmcb:/{{ httpd_mod_ssl_cache_directory }}/ssl_scache(512000)
 SSLSessionCacheTimeout  300
 SSLRandomSeed startup /dev/urandom 256
 SSLRandomSeed connect builtin
-SSLProtocol ALL -SSLv2
+SSLProtocol all -SSLv2 -SSLv3
+SSLCipherSuite HIGH:MEDIUM:!aNULL:!MD5:!RC4
 <FilesMatch "\.(cgi|shtml|phtml|php)$">
       SSLOptions +StdEnvVars
 </FilesMatch>
@@ -128,3 +133,6 @@ include {{frontend_configuration.get('log-access-configuration')}}
 NameVirtualHost *:{{ http_port }}
 NameVirtualHost *:{{ https_port }}
 include {{ slave_configuration_directory }}/*.conf
+
+ErrorDocument 404 /notfound.html
+RewriteRule (.*) /notfound.html [R=404,L]

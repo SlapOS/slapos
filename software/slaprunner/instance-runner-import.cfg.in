@@ -14,18 +14,20 @@ parts +=
   dropbear-server-add-authorized-key
   sshkeys-authority
   slaprunner-promise
+  slaprunner-supervisord-wrapper
   dropbear-promise
   runtestsuite
   shellinabox-promise
   shellinabox
   symlinks
   slapos-cfg
-  slapos-repo-config
+  slapos-repo
   cron-entry-prepare-software
   deploy-instance-parameters
   instance-software-type
   bash-profile
   supervisord-wrapper
+  importer-consistency-promise
 # have to repeat the next one, as it's not inherited from pbsready-import
   import-on-notification
 ## Monitoring part
@@ -52,6 +54,14 @@ parts +=
 ## Monitor for import runner
   monitor-latest-restored-backup
 
+# For the needs of importer, we run the full slaprunner
+# In case both exporter and importer (aka main instance and clone instance)
+# run with the same IP (usually for testing purposes),
+# run slaprunner using different ports.
+[slaprunner]
+proxy_port = 50000
+runner_port = 50005
+
 [importer]
 recipe = slapos.recipe.template:jinja2
 template = ${template-runner-import-script:location}/${template-runner-import-script:filename}
@@ -59,12 +69,30 @@ rendered = $${directory:bin}/$${slap-parameter:namebase}-importer
 # backward compatibility for resilient stack
 wrapper = $${:rendered}
 mode = 700
+restore-exit-code-file=$${directory:srv}/importer-exit-code-file
 context =
   key backend_url slaprunner:access-url
+  key proxy_host slaprunner:ipv4
   section directory directory
   raw  shell_binary ${dash:location}/bin/dash
   raw  rsync_binary ${rsync:location}/bin/rsync
-  raw  curl_binary ${curl:location}/bin/curl
+  raw  restore_exit_code_file $${:restore-exit-code-file}
+
+[importer-consistency-promise]
+# Test that the importer script and "after-import" subscripts:
+# 1/ Have been run in the last 24 hours
+# 2/ Have succeeded
+recipe = collective.recipe.template
+input = inline: #!/bin/sh
+  EXIT_CODE_FILE=$(find "$${importer:restore-exit-code-file}" -mtime -1)
+  if [ -z "$EXIT_CODE_FILE" ]; then
+     echo "Consistency check is too old."
+     exit 1
+   fi
+  EXIT_CODE=$(cat $EXIT_CODE_FILE)
+  exit $EXIT_CODE
+output = $${directory:promises}/importer-consistency-promise
+mode = 755
 
 [slap-parameter]
 auto-deploy-instance = false

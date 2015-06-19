@@ -1,5 +1,5 @@
---- engines/ccgost/Makefile~	2010-08-24 23:46:34.000000000 +0200
-+++ engines/ccgost/Makefile	2012-03-14 10:11:46.826419864 +0100
+--- a/engines/ccgost/Makefile~	2010-08-24 23:46:34.000000000 +0200
++++ b/engines/ccgost/Makefile	2012-03-14 10:11:46.826419864 +0100
 @@ -7,6 +7,7 @@
  AR= ar r
  CFLAGS= $(INCLUDES) $(CFLAG)

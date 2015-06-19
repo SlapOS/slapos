@@ -1,13 +1,49 @@
 #!${buildout:executable}
+
+equeue_database = '${equeue:database}'
+equeue_lockfile = '${equeue:lockfile}'
+takeover_script = '${resiliency-takeover-script:wrapper-takeover}'
+
 import cgi
 import cgitb
+import datetime
+import gdbm
 import os
+import shutil
 import subprocess
 import sys
+import tempfile
 cgitb.enable()
 
+def getLatestBackupDate():
+  """
+  Get the date of the latest successful backup.
+  """
+  # Create a copy of the db (locked by equeue process)
+  temporary_directory = tempfile.mkdtemp()
+  equeue_database_copy = os.path.join(temporary_directory, 'equeue.db')
+  shutil.copyfile(equeue_database, equeue_database_copy)
+  db = gdbm.open(equeue_database_copy)
+  # Usually, there is only one callback (so only one key
+  # in the db), but if there are several:
+  # Take the "oldest" one (oldest value).
+  last_backup = db[db.keys()[0]]
+  for callback in db.keys():
+    timestamp = float(db[callback])
+    if timestamp < last_backup:
+      last_backup = timestamp
+  return datetime.datetime.fromtimestamp(last_backup)
+
+def isBackupInProgress():
+  """
+  Check if backup is in progress (importer script is running)
+  by checking if equeue lockfile exists.
+  """
+  # XXX: check if file is valid
+  return os.path.exists(equeue_lockfile)
+
 print "Content-Type: text/html"
-print    
+print
 
 form = cgi.FieldStorage()
 if "password" not in form:
@@ -17,12 +53,14 @@ if "password" not in form:
   <p>Calling takeover will stop and freeze the current main instance, and make this clone instance the new main instance, replacing the old one.</p>
   <p><b>Warning: submit the form only if you understand what you are doing.</b></p>
   <p>Note: the password asked here can be found within the parameters of your SlapOS instance page.</p>
+  <p>Last valid backup: %s</p>
+  <p>Importer script(s) of backup in progress: %s</p>
   <form action="/">
     Password: <input type="text" name="password">
     <input type="submit" value="Take over" style="background: red;">
   </form>
 </body>
-</html>"""
+</html>""" % (getLatestBackupDate().strftime('%Y-%m-%d %H:%M:%S'), isBackupInProgress())
   sys.exit(0)
 
 if form['password'].value != '${:password}':
@@ -31,6 +69,6 @@ if form['password'].value != '${:password}':
   sys.exit(1)
 
 # XXX hardcoded location
-result = subprocess.check_output([os.path.expanduser("~/bin/takeover")], stderr=subprocess.STDOUT)
+result = subprocess.check_output([takeover_script], stderr=subprocess.STDOUT)
 print 'Success.'
 print '<pre>%s</pre>' % result

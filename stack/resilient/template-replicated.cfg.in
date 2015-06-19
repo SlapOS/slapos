@@ -70,7 +70,7 @@ name = {{namebase}}{{id}}
 
 software-url = ${slap-connection:software-release-url}
 software-type = {{typeimport}}
-return = ssh-public-key ssh-url notification-url ip
+return = ssh-public-key ssh-url notification-url ip takeover-url takeover-password
 
 pbs-notification-id = ${slap-connection:computer-id}-${slap-connection:partition-id}-{{namebase}}-{{id}}-push
 
@@ -99,6 +99,8 @@ sla-{{ key }} = {{ value }}
 
 [publish-connection-informations]
 feed-url-{{namebase}}-{{id}}-push = ${request-pbs-{{namebase}}-{{id}}:connection-feeds-url}${request-{{namebase}}-pseudo-replicating-{{id}}:pbs-notification-id}
+takeover-{{namebase}}-{{id}}-url = ${request-{{namebase}}-pseudo-replicating-{{id}}:connection-takeover-url}
+takeover-{{namebase}}-{{id}}-password = ${request-{{namebase}}-pseudo-replicating-{{id}}:connection-takeover-password}
 
 {% endfor -%}
 

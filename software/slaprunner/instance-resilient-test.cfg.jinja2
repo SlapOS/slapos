@@ -54,7 +54,7 @@ name = Resilient Instance (Root Instance)
 {% for key, value in slapparameter_dict.get('cluster', {}).iteritems() -%}
 config-{{ key }} = {{ dumps(value) }}
 {% endfor -%}
-config-resiliency-backup-periodicity = */6 * * * *
+config-resiliency-backup-periodicity = */10 * * * *
 config-resilient-clone-number = 1
 config-ignore-known-hosts-file = true
 # XXX hardcoded

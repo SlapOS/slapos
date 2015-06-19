@@ -124,6 +124,33 @@ extra-context =
 # Must match the key id in [switch-softwaretype] which uses this section.
     raw software_type varnish
 
+[dynamic-template-mariadb-parameters]
+buildout-bin-directory = {{ buildout_bin_directory }}
+
+[dynamic-template-mariadb]
+< = jinja2-template-base
+template = {{ template_mariadb }}
+filename = instance-mariadb.cfg
+extra-context =
+    section parameter_dict dynamic-template-mariadb-parameters
+    raw coreutils_location {{ coreutils_location }}
+    raw dash_location {{ dash_location }}
+    raw dcron_location {{ dcron_location }}
+    raw findutils_location {{ findutils_location }}
+    raw gettext_location {{ gettext_location }}
+    raw grep_location {{ grep_location }}
+    raw gzip_location {{ gzip_location }}
+    raw logrotate_location {{ logrotate_location }}
+    raw mariadb_location {{ mariadb_location }}
+    raw mariadb_resiliency_after_import_script {{ mariadb_resiliency_after_import_script }}
+    raw perl_location {{ perl_location }}
+    raw perl_siteprefix {{ perl_siteprefix }}
+    raw sed_location {{ sed_location }}
+    raw xtrabackup_location {{ xtrabackup_location }}
+    import json_module json
+# Must match the key id in [switch-softwaretype] which uses this section.
+    raw software_type mariadb
+
 [dynamic-template-zope-parameters]
 apache = {{ apache_location }}
 aspell = {{ aspell_location }}
@@ -227,7 +254,7 @@ kumofs = {{ template_kumofs }}
 memcached = {{ template_memcached }}
 cloudooo = ${dynamic-template-cloudooo:rendered}
 zope = ${dynamic-template-zope:rendered}
-mariadb = {{ template_mariadb }}
+mariadb = ${dynamic-template-mariadb:rendered}
 tidstorage = ${dynamic-template-tidstorage:rendered}
 varnish = ${dynamic-template-varnish:rendered}
 

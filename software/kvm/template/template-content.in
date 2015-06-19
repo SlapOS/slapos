@@ -1,0 +1,3 @@
+{% for content in content_list.split(sep) -%}
+{{ content }}
+{% endfor -%}

@@ -65,6 +65,7 @@ class Part(GenericBaseRecipe):
       'dateext',
       'rotate 3650',
       'compress',
+      'delaycompress',
       'notifempty',
       'sharedscripts',
       'create',

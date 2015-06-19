@@ -1,3 +1,4 @@
+{% set enable_http = slapparameter_dict.get('enable-http-server', 'False') -%}
 #############################
 #
 # Instanciate kvm
@@ -15,6 +16,17 @@ parts =
   cron
 #  cron-entry-monitor
   frontend-promise
+{% if slapparameter_dict.get('document-host', '') %}
+  cluster-url-path
+{% endif -%}
+{% if slapparameter_dict.get('enable-http-server', 'False') == 'True' %}
+  httpd
+  httpd-promise
+  publish-host-config
+  
+extends = 
+  {{ template_httpd_cfg }}
+{% endif -%}
 
 eggs-directory = {{ eggs_directory }}
 develop-eggs-directory = {{ develop_eggs_directory }}
@@ -33,6 +45,7 @@ promises = ${:etc}/promise
 novnc-conf = ${:etc}/novnc
 run = ${:var}/run
 ca-dir = ${:srv}/ssl
+public = ${:srv}/public/
 cron-entries = ${:etc}/cron.d
 crontabs = ${:etc}/crontabs
 cronstamps = ${:etc}/cronstamps
@@ -40,6 +53,10 @@ cronstamps = ${:etc}/cronstamps
 [create-mac]
 recipe = slapos.cookbook:generate.mac
 storage-path = ${directory:srv}/mac
+
+[create-tap-mac]
+recipe = slapos.cookbook:generate.mac
+storage-path = ${directory:srv}/tap_mac
 
 [gen-passwd]
 recipe = slapos.cookbook:generate.password
@@ -77,25 +94,54 @@ socket-path = ${directory:var}/qmp_socket
 pid-file-path = ${directory:run}/pid_file
 
 smp-count = ${slap-parameter:cpu-count}
+smp-options = ${slap-parameter:cpu-options}
 ram-size = ${slap-parameter:ram-size}
+numa = ${slap-parameter:numa}
 mac-address = ${create-mac:mac-address}
+tap-mac-address = ${create-tap-mac:mac-address}
 
 # XXX-Cedric: should be named runner-wrapper-path and controller-wrapper-path
 runner-path = ${directory:services}/kvm
 controller-path = ${directory:scripts}/kvm_controller
 
 use-tap = ${slap-parameter:use-tap}
+use-nat = ${slap-parameter:use-nat}
 nat-rules = ${slap-parameter:nat-rules}
 6tunnel-wrapper-path = ${directory:services}/6tunnel
 
 virtual-hard-drive-url = ${slap-parameter:virtual-hard-drive-url}
 virtual-hard-drive-md5sum = ${slap-parameter:virtual-hard-drive-md5sum}
+virtual-hard-drive-gzipped = ${slap-parameter:virtual-hard-drive-gzipped}
 
 shell-path = {{ dash_executable_location }}
 qemu-path =  {{ qemu_executable_location }}
 qemu-img-path = {{ qemu_img_executable_location }}
 6tunnel-path = {{ sixtunnel_executable_location }}
 
+etc-directory = ${directory:etc}
+disk-storage-list = 
+{% for key, path in storage_dict.items() -%}
+{{ '  ' ~ key ~ ' ' ~ path }}
+{% endfor -%}
+external-disk-number = ${slap-parameter:external-disk-number}
+external-disk-size = ${slap-parameter:external-disk-size}
+external-disk-format = ${slap-parameter:external-disk-format}
+
+{% if slapparameter_dict.get('enable-http-server', 'False') == 'True' or ( slapparameter_dict.get('use-tap', 'False') == 'True' and tap_network_dict.has_key('ipv4') ) -%}
+httpd-port = ${slap-parameter:httpd-port}
+{% else -%}
+httpd-port = 0
+{% endif -%}
+
+# Main instance document server info
+{% if slapparameter_dict.get('document-host', '') and slapparameter_dict.get('document-port', '') -%}
+cluster-doc-host = ${tunnel-cluster-url:ipv4}
+cluster-doc-port = ${tunnel-cluster-url:ipv4-port}
+{% else -%}
+cluster-doc-host = 
+cluster-doc-port = 0
+{% endif -%}
+netcat-binary = {{ netcat_bin }}
 
 [kvm-vnc-promise]
 recipe = slapos.cookbook:check_port_listening
@@ -107,7 +153,16 @@ port = ${kvm-instance:vnc-port}
 # Check that disk image is not corrupted
 recipe = collective.recipe.template
 input = inline:#!/bin/sh
+  # Return code 0 is "OK"
+  # Return code 3 is "found leaks, but image is OK"
+  # http://git.qemu.org/?p=qemu.git;a=blob;f=qemu-img.c;h=4e9a7f5741c9cb863d978225829e68fefcae3947;hb=HEAD#l702
   ${kvm-instance:qemu-img-path} check ${kvm-instance:disk-path}
+  RETURN_CODE=$?
+  if [ $RETURN_CODE -eq 0 ] || [ $RETURN_CODE -eq 3 ]; then
+    exit 0
+  else
+    exit 1
+  fi
 output = ${directory:promises}/kvm-disk-image-corruption
 mode = 700
 
@@ -193,7 +248,7 @@ key-file = ${slap-connection:key-file}
 cert-file = ${slap-connection:cert-file}
 computer-id = ${slap-connection:computer-id}
 partition-id = ${slap-connection:partition-id}
-name = VNC Frontend
+name = ${slap-parameter:frontend-instance-name}
 software-type = ${slap-parameter:frontend-software-type}
 slave = true
 config-host = ${novnc-instance:ip}
@@ -211,22 +266,127 @@ curl_path = {{ curl_executable_location }}
 
 [publish-connection-information]
 recipe = slapos.cookbook:publish
+ipv6 = ${slap-network-information:global-ipv6}
 backend-url = https://[${novnc-instance:ip}]:${novnc-instance:port}/vnc_auto.html?host=[${novnc-instance:ip}]&port=${novnc-instance:port}&encrypt=1&password=${kvm-instance:vnc-passwd}
 url = ${request-slave-frontend:connection-url}/vnc_auto.html?host=${request-slave-frontend:connection-domainname}&port=${request-slave-frontend:connection-port}&encrypt=1&path=${request-slave-frontend:connection-resource}&password=${kvm-instance:vnc-passwd}
+{% set disk_number = len(storage_dict) -%}
+maximum-extra-disk-amount = {{ disk_number }}
+{% set iface = 'eth0' -%}
+{% if slapparameter_dict.get('use-nat', 'True') == 'True' -%}
+{%   set iface = 'eth1' -%}
 # Publish NAT port mapping status
 # XXX: hardcoded value from [slap-parameter]
-{% set nat_rule_list = slapparameter_dict.get('nat-rules', '22 80 443') %}
-{% for port in nat_rule_list.split(' ') -%}
-  {% set external_port = 10000 + port|int() -%}
-  nat-rule-port-{{port}} = ${slap-network-information:global-ipv6} : {{external_port}}
-{% endfor -%}
+{%   set nat_rule_list = slapparameter_dict.get('nat-rules', '22 80 443') %}
+{%   for port in nat_rule_list.split(' ') -%}
+{%     set external_port = 10000 + port|int() -%}
+nat-rule-port-{{port}} = ${slap-network-information:global-ipv6} : {{external_port}}
+{%     if slapparameter_dict.get('publish-nat-url', False) -%}
+nat-rule-url-{{port}} = [${slap-network-information:global-ipv6}]:{{external_port}}
+{%     endif -%}
+{%   endfor -%}
+{% endif -%}
+{% if slapparameter_dict.get('use-tap', 'False') == 'True' -%}
+tap-ipv4 = ${slap-network-information:tap-ipv4}
+{% endif -%}
 
+{% set kvm_http = 'http://${slap-network-information:local-ipv4}:' ~ slapparameter_dict.get('httpd-port', 8081) -%}
+{% if enable_http == 'True' %}
+{%   if slapparameter_dict.get('use-nat', 'True') == 'True' -%}
+{%     set kvm_http = 'http://10.0.2.100' -%}
+{%   endif %}
+{%   if slapparameter_dict.get('authorized-key', '') -%}
+7_info = Get the publick key file in your VM with the command: wget {{ kvm_http }}/${get-authorized-key:filename}
+{%   endif %}
+{% endif %}
+
+{% if slapparameter_dict.get('use-tap', 'False') == 'True' and tap_network_dict.has_key('ipv4') -%}
+1_info = Use these configurations below to configure interface {{ iface }} in your VM.
+2_info = ${network-config:ifconfig}
+3_info = ${network-config:route-iface}
+4_info = ${network-config:route-network}
+5_info = ${network-config:route-default}
+{% if enable_http == 'True' %}
+6_info = Or run in your VM the command: wget -O- {{ kvm_http }}/netconfig.sh | /bin/sh -
+{% endif %}
+
+[network-config]
+recipe = plone.recipe.command
+path = ${directory:public}/netconfig.sh
+ifconfig = ifconfig {{ iface }} ${slap-network-information:tap-ipv4} netmask ${slap-network-information:tap-netmask}
+route-iface = route add ${slap-network-information:tap-gateway} dev {{ iface }}
+route-network = route add -net ${slap-network-information:tap-network} netmask ${slap-network-information:tap-netmask} gw ${slap-network-information:tap-gateway}
+{%   if iface == 'eth0' -%}
+route-default = route add default gw ${slap-network-information:tap-gateway}
+{%   elif global_ipv4_prefix -%}
+route-default = ip route add {{ global_ipv4_prefix }} via ${slap-network-information:tap-gateway} dev {{ iface }} src ${slap-network-information:tap-ipv4}
+{% else -%}
+route-default =
+{%   endif -%}
+command = 
+  echo "#!/bin/sh" > ${:path}
+  echo "" >> ${:path}
+  echo "${:ifconfig}" >> ${:path}
+  echo "${:route-iface}" >> ${:path}
+  echo "${:route-network}" >> ${:path}
+  echo "${:route-default}" >> ${:path}
+update-command = ${:command}
+{% endif -%}
+
+[get-authorized-key]
+recipe = slapos.recipe.template:jinja2
+template = {{ template_content }}
+filename = authorized_keys
+rendered = ${directory:public}/${:filename}
+public-key = {{ slapparameter_dict.get('authorized-key', '') }}
+context =
+    key content_list :public-key
+    raw sep ##
+
+[publish-host-config]
+recipe = plone.recipe.command
+name = {{ slapparameter_dict.get('name', 'localhost') }}
+{% if slapparameter_dict.get('use-tap', 'False') == 'True' and tap_network_dict.has_key('ipv4') -%}
+local-ipv4 = ${slap-network-information:tap-ipv4}
+{% else -%}
+local-ipv4 = 127.0.0.1
+{% endif -%}
+path-host = ${directory:public}/hostname
+path-ip = ${directory:public}/ipv4
+command = 
+  rm -f ${:path-host}
+  rm -f ${:path-ip}
+  echo "${:name}" > ${:path-host}
+  echo "${:local-ipv4}" > ${:path-ip}
+update-command = ${:command}
+
+# To access documents of main instance (in case of kvm-cluster) through http
+[cluster-url-path]
+recipe = slapos.recipe.template:jinja2
+template = {{ template_content }}
+filename = cluster.hash
+rendered = ${directory:public}/${:filename}
+hash-url = https://10.0.2.101:443/{{ slapparameter_dict.get('document-path', '') }}
+context =
+    key content_list :hash-url
+    raw sep #
+
+# This 6to4 tunnel help to access document url in ipv4
+[tunnel-cluster-url]
+recipe = slapos.cookbook:ipv4toipv6
+ipv6 = {{ slapparameter_dict.get('document-host', '') }}
+ipv4 = ${slap-network-information:local-ipv4}
+ipv6-port = {{ slapparameter_dict.get('document-port', '') }}
+ipv4-port = 16936
+shell-path = {{ dash_executable_location }}
+6tunnel-path = {{ sixtunnel_executable_location }}
+runner-path = ${directory:services}/6tunnel-cluster
 
 [slap-parameter]
 # Default values if not specified
 frontend-software-type = frontend
 frontend-software-url = http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.92:/software/kvm/software.cfg
 frontend-instance-guid =
+frontend-instance-name = VNC Frontend
 nbd-port = 1024
 nbd-host =
 nbd2-port = 1024
@@ -237,9 +397,25 @@ disk-size = 10
 disk-type = virtio
 
 cpu-count = 1
+# cpu-option is a string: [cores=cores][,threads=threads][,sockets=sockets][,maxcpus=maxcpus]
+cpu-options = 
+# list of numa options separate by space: node,nodeid=1,cpus=9-15 node,nodeid=2,cpus=1,3,7
+numa = 
 
 nat-rules = 22 80 443
+use-nat = True
 use-tap = False
 
 virtual-hard-drive-url =
 virtual-hard-drive-md5sum =
+virtual-hard-drive-gzipped = False
+
+external-disk-number = 0
+external-disk-size = 20
+external-disk-format = qcow2
+
+# Help to get some configuration files into the vm from http
+enable-http-server = False
+httpd-port = 8081
+# for auto config, the public key file will be available in the VM via url http://10.0.2.100/authorized_key if use-nat = True
+authorized-key = 

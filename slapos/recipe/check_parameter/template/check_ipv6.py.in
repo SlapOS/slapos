@@ -1,0 +1,12 @@
+#!%(python_path)s
+# BEWARE: This file is operated by slapgrid
+# BEWARE: It will be overwritten automatically
+import socket
+import sys
+
+address = "%(value)s"
+
+try:
+  socket.inet_pton(socket.AF_INET6, address)
+except socket.error:  # not a valid address
+  sys.exit(127)

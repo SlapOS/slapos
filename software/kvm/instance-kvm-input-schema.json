@@ -19,7 +19,7 @@
       "type": "integer",
       "default": 10,
       "minimum": 1,
-      "maximum": 80
+      "maximum": 1000
     },
     "disk-type": {
       "title": "Disk type",
@@ -35,6 +35,16 @@
       "type": "integer",
       "minimum": 1,
       "maximum": 8
+    },
+    "cpu-options": {
+      "title": "Additional options (cores, threads, sockets, maxcpus) to use with cpu-count.",
+      "description": "Additional options to use with cpu-count. Options are separated by coma: [cores=cores][,threads=threads][,sockets=sockets][,maxcpus=maxcpus]. Only set this option if you really know what you're doing.",
+      "type": "string"
+    },
+    "numa": {
+      "title": "Simulate a multi node NUMA system. If mem and cpus are omitted, resources are split equally.",
+      "description": "Simulate a multi node NUMA system. If mem and cpus are omitted, resources are split equally. Each numa option are separated by space: node,nodeid=4,cpus=40-49,mem=64g node,nodeid=1,cpus=10-19,mem=128g. Only set this option if you really know what you're doing.",
+      "type": "string"
     },
 
     "nbd-host": {
@@ -78,16 +88,56 @@
       "description": "MD5 checksum of virtual hard drive, used if virtual-hard-drive-url is specified.",
       "type": "string"
     },
+    "virtual-hard-drive-gzipped": {
+      "title": "Define if virtual hard drive to download is gzipped",
+      "description": "Define if virtual hard drive to download is gzipped using gzip. This help to reduce size of file to download.",
+      "type": "boolean",
+      "default": false
+    },
+
+    "external-disk-number": {
+      "title": "Number of additional disk to create for virtual machine",
+      "description": "Specify the number of additional disk to create for virtual machine in data folder of SlapOS Node. Requires instance_storage_home to be configured on SlapOS Node.",
+      "type": "integer",
+      "minimum": 0,
+      "default": 0
+    },
+    "external-disk-size": {
+      "title": "Number of additional disk to create for virtual machine, in Gigabytes",
+      "description": "Specify the number of additional disk to create for virtual machine in data folder of SlapOS Node. Requires instance_storage_home to be configured on SlapOS Node.",
+      "type": "integer",
+      "minimum": 5,
+      "maximum": 1000,
+      "default": 20
+    },
+    "external-disk-format": {
+      "title": "Type of external disk drive to create by QEMU.",
+      "description": "Type of QEMU disk drive, to create.",
+      "type": "string",
+      "default": "qcow2",
+      "enum": ["qcow2", "raw", "vdi", "vmdk", "cloop"]
+    },
 
     "use-tap": {
       "title": "Use QEMU TAP network interface",
-      "description": "Use QEMU TAP network interface, requires a bridge on SlapOS Node. If false, use user-mode network stack (NAT).",
+      "description": "Use QEMU TAP network interface, might require a bridge on SlapOS Node.",
       "type": "boolean",
       "default": false
+    },
+    "use-nat": {
+      "title": "Use QEMU USER Mode networking",
+      "description": "Use QEMU user-mode network stack (NAT).",
+      "type": "boolean",
+      "default": true
     },
     "nat-rules": {
       "title": "List of rules for NAT of QEMU user mode network stack.",
       "description": "List of rules for NAT of QEMU user mode network stack, as comma-separated list of ports. For each port specified, it will redirect port x of the VM (example: 80) to the port x + 10000 of the public IPv6 (example: 10080). Defaults to \"22 80 443\". Ignored if \"use-tap\" parameter is enabled.",
+      "type": "string"
+    },
+    "authorized-key": {
+      "title": "Public keys to get from all virtual machines.",
+      "description": "Set the public keys to add in your virtual machine. Keys are separated with '##'. The public key file will be available in the VM via url http://10.0.2.100/authorized_keys if you keep the NAT interface enabled",
       "type": "string"
     },
     "frontend-instance-guid": {

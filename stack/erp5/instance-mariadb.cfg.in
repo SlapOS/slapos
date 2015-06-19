@@ -1,3 +1,8 @@
+{% if software_type == slap_software_type -%}
+{% set json = json_module.loads(slapparameter_dict.get('mariadb-json', '{}')) -%}
+{% set backup_periodicity = json.get('backup-periodicity', '0 22 * * *') -%}
+{% set bin_directory = parameter_dict['buildout-bin-directory'] -%}
+
 [buildout]
 parts =
   publish-mariadb-url
@@ -7,7 +12,10 @@ parts =
   cron
   cron-entry-logrotate
   cron-entry-mariadb-backup
+  cron-entry-mariadb-backup-expire
   binary-link
+  resiliency-exclude-file
+  resiliency-after-import-script
   promise
 
 eggs-directory = {{ eggs_directory }}
@@ -18,14 +26,44 @@ offline = true
 recipe = slapos.cookbook:publishurl
 url = mysql://${mariadb-instance:user}:${mariadb-instance:password}@${mariadb-instance:ip}:${mariadb-instance:port}/${mariadb-instance:database}
 
+[binary-wrap-base]
+recipe = slapos.cookbook:wrapper
+# Note: --defaults-file must be the first argument, otherwise wrapped binary
+# will reject it.
+command-line = "{{ mariadb_location }}/bin/${:command}" --defaults-file="${mariadb-instance:conf-file}"
+wrapper-path = ${rootdirectory:bin}/${:command}
+parameters-extra = true
+
+[binary-wrap-mysqldump]
+< = binary-wrap-base
+command = mysqldump
+
 [cron-entry-mariadb-backup]
-<= cron
 recipe = slapos.cookbook:cron.d
+cron-entries = ${cron:cron-entries}
 name = mariadb-backup
-frequency = 0 0 * * *
-command = ${mariadb-instance:backup-script}
+frequency = {{ backup_periodicity }}
+{# When binlogs are enabled:
+# flush-logs: used so no manipulation on binlogs is needed to restore from
+#   full + binlogs. The first binlog after a dump starts from dump snapshot and
+#   can be fully restored.
+# master-data: use value "2" as we are not in a replication case
+#}
+command = "${binary-wrap-mysqldump:wrapper-path}" -u root --all-databases --single-transaction --flush-logs --master-data=2 --socket=${mariadb-instance:socket} | {{ gzip_location }}/bin/gzip > "${directory:mariadb-backup-full}/$({{ coreutils_location }}/bin/date "+%Y%m%d%H%M%S").sql.gz"
+{# KEEP GLOB PATTERN IN SYNC with generated filenames above
+#           YYYYmmddHHMMSS -#}
+file-glob = ??????????????.sql.gz
+
+[cron-entry-mariadb-backup-expire]
+recipe = slapos.cookbook:cron.d
+cron-entries = ${cron:cron-entries}
+name = mariadb-backup-expire
+frequency = {{ backup_periodicity }}
+command = {{ findutils_location }}/bin/find "${directory:mariadb-backup-full}" -maxdepth 1 -name "${cron-entry-mariadb-backup:file-glob}" -daystart -mtime +7 -delete
 
 [mariadb-instance]
+# XXX: remove backup part of this recipe. Backup part is now done in previous sections.
+# Keeping it is harmless because it is supposed to be launched by cron entry, which has been removed.
 recipe = slapos.cookbook:generic.mysql
 
 # Options
@@ -38,6 +76,11 @@ test-user = erp5_test
 test-database = erp5_test
 mysql-test-database-base = testdb
 mysql-test-user-base = testuser
+
+# Backup
+binlog-path = ${directory:mariadb-backup-incremental}/binlog
+# XXX: binlog rotation happens along with other log's rotation
+binlog-expire-days = 7
 
 # Paths
 wrapper = ${basedirectory:services}/mariadb
@@ -153,6 +196,21 @@ link-binary =
   {{ sed_location }}/bin/sed
   {{ mariadb_location }}/bin/mysql
 
+
+[resiliency-exclude-file]
+# Generate rdiff exclude file in case of resiliency
+recipe = collective.recipe.template
+input = inline: srv/mariadb/**
+output = ${rootdirectory:srv}/exporter.exclude
+
+[resiliency-after-import-script]
+# Generate after import script used by importer instance of webrunner
+recipe = collective.recipe.template
+input = {{ mariadb_resiliency_after_import_script }}
+output = ${rootdirectory:srv}/runner-import-restore
+mode = 755
+dash = {{ dash_location }}/bin/dash
+
 [rootdirectory]
 recipe = slapos.cookbook:mkdirectory
 etc = ${buildout:directory}/etc
@@ -188,3 +246,4 @@ port = ${mariadb-instance:port}
 
 [slap-parameter]
 test-database-amount = 100
+{%- endif %}

@@ -15,12 +15,20 @@
       "type": "string",
       "pattern": "^([a-zA-Z0-9]([a-zA-Z0-9\\-]{0,61}[a-zA-Z0-9])?\\.)+[a-zA-Z]{2,6}$"
     },
+
+    "server-alias": {
+      "title": "Server Alias",
+      "description": "Server Alias List separated by space",
+      "type": "string",
+      "default": ""
+    },
+
     "type": {
       "title": "Backend Type",
-      "description": "Type of the backend",
+      "description": "Type of slave. If redirect, the slave will redirect to the given url. If zope, the rewrite rules will be compatible with Virtual Host Monster",
       "type": "string",
       "default": "",
-      "enum": ["", "zope"]
+      "enum": ["", "zope", "redirect"]
     },
 
     "path": {
@@ -71,6 +79,30 @@
       "default": "false",
       "enum": ["false", "true"]
     },
+
+    "disable-no-cache-request": {
+      "title": "Disable 'no-cache' requests",
+      "description": "If set to true, no-cache control headers will be disabled",
+      "type": "string",
+      "default": "false",
+      "enum": ["false", "true"]
+    },
+
+    "prefer-gzip-encoding-to-backend": {
+      "title": "Prefer gzip Encoding for Backend",
+      "description": "If set to true, if a request is made with accept encoding 'gzip', only that one will be transferred to the backend",
+      "type": "string",
+      "default": "false",
+      "enum": ["false", "true"]
+    },
+
+    "disabled-cookie-list": {
+      "title": "Disabled Cookies",
+      "description": "List of Cookies separated by space that will not be sent to the backend",
+      "type": "string",
+      "default": ""
+    },
+
     "apache_custom_http": {
       "title": "HTTP configuration",
       "description": "Raw http configuration in python template format. Your site will be rejected if you use it without notification and approval of the frontend adminastrator",

@@ -89,7 +89,12 @@ class Admin(NeoBaseRecipe):
 class Master(NeoBaseRecipe):
   def _getOptionList(self):
     options = self.options
-    return [
+    r = [
       '-p', options['partitions'],
       '-r', options['replicas'],
     ]
+    for x in (('-C', options['upstream-cluster']),
+              ('-M', options['upstream-masters'])):
+      if x[1]:
+        r += x
+    return r

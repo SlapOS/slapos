@@ -1,7 +1,6 @@
 [buildout]
 
 parts =
-  resiliency
   logrotate
   logrotate-entry-cron
   logrotate-entry-equeue
@@ -128,18 +127,6 @@ rotate-num = 30
 
 #----------------
 #--
-#-- Resiliency script for the node takeover
-
-[resiliency]
-recipe = slapos.cookbook:addresiliency
-wrapper-takeover = takeover
-services = $${basedirectory:services}
-bin = $${rootdirectory:bin}
-etc = $${rootdirectory:etc}
-
-
-#----------------
-#--
 #-- Sets up an rdiff-backup server (with a dropbear server for ssh)
 
 [rdiff-backup-server]
@@ -157,6 +144,7 @@ rdiffbackup-binary = ${buildout:bin-directory}/rdiff-backup
 [equeue]
 recipe = slapos.cookbook:equeue
 socket = $${basedirectory:run}/equeue.sock
+lockfile = $${basedirectory:run}/equeue.lock
 log = $${basedirectory:log}/equeue.log
 database = $${rootdirectory:srv}/equeue.db
 wrapper = $${basedirectory:services}/equeue

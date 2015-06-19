@@ -34,6 +34,7 @@ import subprocess
 import slapos.slap
 import netaddr
 import logging
+import errno
 
 import zc.buildout
 
@@ -54,6 +55,18 @@ class Recipe:
         return ip
     raise AttributeError
 
+  def _getTapIpAddressList(self, test_method):
+    """Internal helper method to fetch full ip address assigned for tap"""
+    if not 'full_ip_list' in self.parameter_dict:
+      return ()
+    for item in self.parameter_dict['full_ip_list']:
+      if len(item) == 5:
+        tap, ip, gw, mask, net = item
+        if tap.startswith('route_') and test_method(ip) and \
+                          test_method(gw) and test_method(mask):
+          return (ip, gw, mask, net)
+    return ()
+
   def getLocalIPv4Address(self):
     """Returns local IPv4 address available on partition"""
     # XXX: Lack checking for locality of address
@@ -63,6 +76,11 @@ class Recipe:
     """Returns global IPv6 address available on partition"""
     # XXX: Lack checking for globality of address
     return self._getIpAddress(netaddr.valid_ipv6)
+  
+  def getLocalTapIPv4AddressList(self):
+    """Returns global IPv6 address available for tap interface"""
+    # XXX: Lack checking for locality of address
+    return self._getTapIpAddressList(netaddr.valid_ipv4)
 
   def getNetworkInterface(self):
     """Returns the network interface available on partition"""
@@ -72,6 +90,20 @@ class Recipe:
       if name:
         return name
     raise AttributeError, "Not network interface found"
+  
+  def mkdir_p(self, path, mode=0700):
+    """
+    Creates a directory and its parents, if needed.
+    NB: If the directory already exists, it does not change its permission.
+    """
+
+    try:
+        os.makedirs(path, mode)
+    except OSError as exc:
+        if exc.errno == errno.EEXIST and os.path.isdir(path):
+            pass
+        else:
+            raise
 
   def install(self):
     slap = slapos.slap.slap()
@@ -81,6 +113,15 @@ class Recipe:
     server_url = slap_connection['server_url']
     key_file = slap_connection.get('key_file')
     cert_file = slap_connection.get('cert_file')
+    instance_root = self.buildout['buildout']['directory']
+    storage_configuration_dict = self.buildout.get('storage-configuration')
+    network_dict = self.buildout.get('network-information')
+    storage_home = ''
+    global_ipv4_network = ''
+    if storage_configuration_dict:
+      storage_home = storage_configuration_dict.get('storage-home')
+    if network_dict:
+      global_ipv4_network = network_dict.get('global-ipv4-network')
     slap.initializeConnection(server_url, key_file, cert_file)
     self.computer_partition = slap.registerComputerPartition(
       computer_id,
@@ -128,6 +169,16 @@ class Recipe:
                  self.getGlobalIPv6Address())
     buildout.set('slap-network-information', 'network-interface',
                  self.getNetworkInterface())
+    tap_ip_list = self.getLocalTapIPv4AddressList()
+    tap_ipv4 = tap_gateway = tap_netmask = tap_network = ''
+    if tap_ip_list:
+      tap_ipv4, tap_gateway, tap_netmask, tap_network= tap_ip_list
+    buildout.set('slap-network-information', 'tap-ipv4', tap_ipv4)
+    buildout.set('slap-network-information', 'tap-gateway', tap_gateway)
+    buildout.set('slap-network-information', 'tap-netmask', tap_netmask)
+    buildout.set('slap-network-information', 'tap-network', tap_network)
+    buildout.set('slap-network-information', 'global-ipv4-network',
+                                                          global_ipv4_network)
 
     # Copy/paste slap_connection
     buildout.add_section('slap-connection')
@@ -136,6 +187,27 @@ class Recipe:
       buildout.set('slap-connection', key.replace('_', '-'), value)
     # XXX: Needed for lxc. Use non standard API
     buildout.set('slap-connection', 'requested', self.computer_partition._requested_state)
+
+    # setup storage directory
+    buildout.add_section('storage-configuration')
+    buildout.set('storage-configuration', 'storage-home', storage_home)
+    if storage_home and os.path.exists(storage_home) and \
+                                  os.path.isdir(storage_home):
+      # Create folder instance_root/DATA/ if not exist
+      data_home = os.path.join(instance_root, 'DATA')
+      self.mkdir_p(data_home)
+      for filename in os.listdir(storage_home):
+        storage_path = os.path.join(storage_home, filename, computer_partition_id)
+        if os.path.exists(storage_path) and os.path.isdir(storage_path):
+          storage_link = os.path.join(data_home, filename)
+          if os.path.lexists(storage_link):
+            if not os.path.islink(storage_link):
+              raise zc.buildout.UserError(
+                  'Target %r already exists but is not a link' % storage_link)
+              #os.unlink(storage_link)
+          else:
+            os.symlink(storage_path, storage_link)
+          buildout.set('storage-configuration', filename, storage_link)
 
     work_directory = os.path.abspath(self.buildout['buildout'][
       'directory'])

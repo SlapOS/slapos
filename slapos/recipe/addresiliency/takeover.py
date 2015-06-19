@@ -11,7 +11,8 @@ logging.basicConfig(level=logging.DEBUG)
 
 def takeover(server_url, key_file, cert_file, computer_guid,
              partition_id, software_release, namebase,
-             winner_instance_suffix = None):
+             winner_instance_suffix = None,
+             takeover_triggered_file_path=None):
   """
   This function does
 
@@ -74,6 +75,10 @@ def takeover(server_url, key_file, cert_file, computer_guid,
   # Note: Root instance will reconfigure itself the winning instance (software_type
   # and parameters.)
 
+  # Create "lock" file preventing equeue to run import scripts
+  # XXX hardcoded
+  open(takeover_triggered_file_path, 'w').write('')
+
 def run(args):
   slapos.recipe.addresiliency.takeover.takeover(server_url = args.pop('server_url'),
                                                 key_file = args.pop('key_file'),
@@ -81,5 +86,6 @@ def run(args):
                                                 computer_guid = args.pop('computer_id'),
                                                 partition_id = args.pop('partition_id'),
                                                 software_release = args.pop('software'),
-                                                namebase = args.pop('namebase'))
+                                                namebase = args.pop('namebase'),
+                                                takeover_triggered_file_path = args.pop('takeover_triggered_file_path'))
 
