@@ -51,6 +51,7 @@ class Recipe(GenericBaseRecipe):
       CONFIG['instance_dict'] = value.getvalue()
 
     software_path_list = json.loads(self.options['software-path-list'])
+    CONFIG["software_path_list"] = ""
     if software_path_list:
       CONFIG["software_path_list"] = "[software_list]"
       CONFIG["software_path_list"] += \
