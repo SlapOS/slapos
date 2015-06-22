@@ -208,6 +208,7 @@ extra-context =
 bin-directory = {{ bin_directory }}
 openssl = {{ openssl_location }}
 local_bt5_repository = {{ local_bt5_repository  }}
+bt5_list = {{ bt5_list }}
 dash = {{ dash_location }}
 curl = {{ curl_location }}
 
@@ -225,9 +226,11 @@ extra-context =
     key dash_location template-erp5-single-parameters:dash
     key template_zope dynamic-template-zope:rendered
     key local_bt5_repository template-erp5-single-parameters:local_bt5_repository
+    key bt5_list template-erp5-single-parameters:bt5_list
 
 [dynamic-template-cluster-parameters]
 local-bt5-repository = {{ local_bt5_repository }}
+bt5_list = {{ bt5_list }}
 
 [dynamic-template-cluster]
 < = jinja2-template-base
@@ -235,6 +238,7 @@ template = {{ template_erp5_cluster }}
 filename = instance-erp5-cluster.cfg
 extra-context =
     key local_bt5_repository dynamic-template-cluster-parameters:local-bt5-repository
+    key bt5_list template-erp5-single-parameters:bt5_list
 # Must match the key id in [switch-softwaretype] which uses this section.
 # XXX: it is dangerous to use buildout-style expansion in jinja context declaration
     raw software_type ${:software-type}

@@ -84,12 +84,7 @@ kumofs-computer-guid = ${slap-connection:computer-id}
 tidstorage-computer-guid = ${slap-connection:computer-id}
 varnish-computer-guid = ${slap-connection:computer-id}
 cloudooo-json =
-bt5 = erp5_full_text_myisam_catalog
-  erp5_configurator_standard
-  erp5_configurator_maxma_demo
-  erp5_configurator_ung
-  erp5_configurator_run_my_doc
-  erp5_configurator_ebusiness_lotse
+bt5 = {{ bt5_list }}
 bt5-repository-url = {{ local_bt5_repository }}
 smtp-url = smtp://localhost:25/
 
