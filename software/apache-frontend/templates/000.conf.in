@@ -2,15 +2,14 @@
   ServerName www.example.org
   SSLEngine on
   SSLProxyEngine on
-  SSLProtocol ALL -SSLv2 -SSLv3
-  SSLCipherSuite HIGH:MEDIUM:!aNULL:!MD5:!RC4
+  SSLProtocol all -SSLv2 -SSLv3
+  SSLCipherSuite ECDH+AESGCM:DH+AESGCM:ECDH+AES256:DH+AES256:ECDH+AES128:DH+AES:ECDH+3DES:DH+3DES:RSA+AESGCM:RSA+AES:RSA+3DES:HIGH:!aNULL:!MD5
+  SSLHonorCipherOrder on
 
   # Rewrite part
-  ProxyVia On
   ProxyPreserveHost On
   ProxyTimeout 600
   RewriteEngine On
-
 
   ErrorDocument 404 /notfound.html
 

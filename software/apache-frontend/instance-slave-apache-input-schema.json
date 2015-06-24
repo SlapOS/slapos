@@ -72,6 +72,21 @@
       "enum": ["false", "true"]
     },
 
+    "ssl-proxy-verify": {
+      "title": "Verify Backend Certificates",
+      "description": "If set to true, Backend Certificates are checked",
+      "type": "string",
+      "default": "false",
+      "enum": ["false", "true"]
+    },
+
+    "ssl_proxy_ca_crt": {
+      "title": "SSL Backend Authority's Certificate",
+      "description": "SSL Certificate Authority of the backen (to be used with ssl-proxy-verify)",
+      "type": "string",
+      "default": ""
+    },
+
     "enable_cache": {
       "title": "Enable Cache",
       "description": "If set to true, the cache is used",
@@ -83,6 +98,14 @@
     "disable-no-cache-request": {
       "title": "Disable 'no-cache' requests",
       "description": "If set to true, no-cache control headers will be disabled",
+      "type": "string",
+      "default": "false",
+      "enum": ["false", "true"]
+    },
+
+    "disable-via-header": {
+      "title": "Disable 'Via' headers from cache",
+      "description": "If set to true, via headers will be disabled",
       "type": "string",
       "default": "false",
       "enum": ["false", "true"]

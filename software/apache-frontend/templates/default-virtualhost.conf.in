@@ -1,5 +1,6 @@
 {% set TRUE_VALUES = ['y', 'yes', '1', 'true'] -%}
 {% set disable_no_cache_header = ('' ~ slave_parameter.get('disable-no-cache-request', '')).lower() in TRUE_VALUES -%}
+{% set disable_via_header = ('' ~ slave_parameter.get('disable-via-header', '')).lower() in TRUE_VALUES -%}
 {%- set prefer_gzip = ('' ~ slave_parameter.get('prefer-gzip-encoding-to-backend', '')).lower() in TRUE_VALUES -%}
  
 <VirtualHost *:{{ https_port }}>
@@ -15,9 +16,18 @@
 
   SSLEngine on
   SSLProxyEngine on
+{% set ssl_proxy_verify = ('' ~ slave_parameter.get('ssl-proxy-verify', '')).lower() in TRUE_VALUES -%}
+{% if ssl_proxy_verify -%}
+{%   if 'ssl_proxy_ca_crt' in slave_parameter -%}
+  SSLProxyCACertificateFile {{ slave_parameter.get('path_to_ssl_proxy_ca_crt', '') }}
+{%   endif %}
+  SSLProxyVerify require
+  #SSLProxyCheckPeerCN on
+  SSLProxyCheckPeerExpire on
+{% endif %}
   SSLProtocol all -SSLv2 -SSLv3
-  SSLCipherSuite HIGH:MEDIUM:!aNULL:!MD5:!RC4
-
+  SSLCipherSuite ECDH+AESGCM:DH+AESGCM:ECDH+AES256:DH+AES256:ECDH+AES128:DH+AES:ECDH+3DES:DH+3DES:RSA+AESGCM:RSA+AES:RSA+3DES:HIGH:!aNULL:!MD5
+  SSLHonorCipherOrder on
 
 {% set ssl_configuration_list = [('SSLCertificateFile', 'path_to_ssl_crt'),
        			      	 ('SSLCertificateKeyFile', 'path_to_ssl_key'),
@@ -38,9 +48,11 @@
   CustomLog "{{ slave_parameter.get('access_log') }}" combined
 
   # Rewrite part
-  ProxyVia On
   ProxyPreserveHost On
   ProxyTimeout 600
+{% if disable_via_header %}
+  Header unset Via
+{% endif -%}
   RewriteEngine On
 
 {% if disable_no_cache_header %}
@@ -89,10 +101,21 @@
 {% endif %}
 
   SSLProxyEngine on
+{% set ssl_proxy_verify = ('' ~ slave_parameter.get('ssl-proxy-verify', '')).lower() in TRUE_VALUES -%}
+{% if ssl_proxy_verify -%}
+{%   if 'ssl_proxy_ca_crt' in slave_parameter -%}
+  SSLProxyCACertificateFile {{ slave_parameter.get('path_to_ssl_proxy_ca_crt', '') }}
+{%   endif %}
+  SSLProxyVerify require
+  #SSLProxyCheckPeerCN on
+  SSLProxyCheckPeerExpire on
+{% endif %}
   # Rewrite part
-  ProxyVia On
   ProxyPreserveHost On
   ProxyTimeout 600
+{% if disable_via_header %}
+  Header unset Via
+{% endif -%}
   RewriteEngine On
 
   # One Slave two logs

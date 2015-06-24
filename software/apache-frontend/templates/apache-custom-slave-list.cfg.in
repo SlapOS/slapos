@@ -12,7 +12,6 @@
 {% endif -%}
 [jinja2-template-base]
 recipe = slapos.recipe.template:jinja2
-rendered = {{ apache_configuration_directory }}/${:filename}
 extra-context =
 context =
     key eggs_directory buildout:eggs-directory
@@ -31,6 +30,7 @@ context =
 {%   set slave_section_title = 'dynamic-template-slave-instance-%s' % slave_reference -%}
 {%   set slave_parameter_dict = generic_instance_parameter_dict.copy() -%}
 {%   set slave_publish_dict = {} -%}
+{%   set slave_configuration_section_name = 'slave-instance-%s-configuration' % slave_reference %}
 {%   do part_list.append(slave_section_title) -%}
 
 ############################
@@ -98,7 +98,7 @@ command = {{frontend_configuration.get('apache-directory')}}/bin/htpasswd -cb ${
 #### Set Slave Certificates if needed
 
 # Set ssl certificates for each slave
-{%   for cert_name in ('ssl_key', 'ssl_crt', 'ssl_ca_crt', 'ssl_csr')-%}
+{%   for cert_name in ('ssl_key', 'ssl_crt', 'ssl_ca_crt', 'ssl_csr', 'ssl_proxy_ca_crt')-%}
 {%     if cert_name in slave_instance -%}
 {%       set cert_title = '%s-%s' % (slave_reference, cert_name.replace('ssl_', '')) -%}
 {%       set cert_file = '/'.join([custom_ssl_directory, cert_title.replace('-','.')]) -%}
@@ -136,19 +136,23 @@ extra-context =
     raw http_port {{ http_port }}
 {{ '\n' }}
 
-
-# Set apache configuration value for slave
-[{{ ('slave-instance-%s-configuration' % slave_reference) }}]
-{%   set apache_custom_http = ((slave_instance.get('apache_custom_http', '')) % slave_parameter_dict) -%}
-{%   set apache_custom_https = ((slave_instance.get('apache_custom_https', '')) % slave_parameter_dict) -%}
-apache_custom_http = {{ dumps(apache_custom_http) }}
-apache_custom_https = {{ dumps(apache_custom_https) }}
-{{ '\n' }}
-
 # The slave use cache
 {%     if 'enable_cache' in slave_instance and 'url' in slave_instance and 'domain' in slave_instance -%}
-{%       do cached_server_dict.__setitem__(slave_instance.get('domain'), slave_instance.get('url')) -%}
+{%       do slave_instance.__setitem__('custom_domain', slapparameter_dict.get('domain')) -%}
+{%       do slave_instance.__setitem__('backend_url', slave_instance.get('url')) -%}
+{%       do cached_server_dict.__setitem__(slave_reference, slave_configuration_section_name) -%}
 {%     endif -%}
+
+# Set apache configuration value for slave
+[{{ slave_configuration_section_name }}]
+{%   set apache_custom_http = ((slave_instance.pop('apache_custom_http', '')) % slave_parameter_dict) -%}
+{%   set apache_custom_https = ((slave_instance.pop('apache_custom_https', '')) % slave_parameter_dict) -%}
+apache_custom_http = {{ dumps(apache_custom_http) }}
+apache_custom_https = {{ dumps(apache_custom_https) }}
+{%     for key, value in slave_instance.iteritems() -%}
+{{ key }} = {{ dumps(value) }}
+{%     endfor %}
+{{ '\n' }}
 
 # Publish information
 {%     do slave_publish_dict.update(**{'slave-reference':slave_instance.get('slave_reference'), 'public-ipv4':public_ipv4, 'log-access': slave_log_access_url}) %}
@@ -163,15 +167,16 @@ apache_custom_https = {{ dumps(apache_custom_https) }}
 
 # The slave use cache
 # Next line is forbidden and people who copy it will be hanged short
-{%   set enable_cache = (('' ~ slave_instance.get('enable_cache', '')).lower() in TRUE_VALUES and slave_instance.get('type', '') != 'redirect') -%}
+{%     set enable_cache = (('' ~ slave_instance.get('enable_cache', '')).lower() in TRUE_VALUES and slave_instance.get('type', '') != 'redirect') -%}
 {%     if enable_cache -%}
-{%       do cached_server_dict.__setitem__(slave_instance.get('custom_domain'), slave_instance.get('url')) -%}
+{%       do slave_instance.__setitem__('backend_url', slave_instance.get('url')) -%}
 {%       do slave_instance.__setitem__('url', cache_access) -%}
+{%       do cached_server_dict.__setitem__(slave_reference, slave_configuration_section_name) -%}
 {%     endif -%}
 {%     do part_list.append(slave_section_title) -%}
 
 
-[{{ ('slave-instance-%s-configuration' % slave_reference) }}]
+[{{ slave_configuration_section_name }}]
 {%     for key, value in slave_instance.iteritems() -%}
 {{ key }} = {{ dumps(value) }}
 {%     endfor %}
@@ -181,10 +186,10 @@ apache_custom_https = {{ dumps(apache_custom_https) }}
 < = jinja2-template-base
 template = {{ template_default_slave_configuration }}
 filename = {{ '%s.conf' % slave_reference }}
-
+rendered = {{ apache_configuration_directory }}/${:filename}
 extensions = jinja2.ext.do
 extra-context =
-    section slave_parameter {{ 'slave-instance-%s-configuration' % slave_reference }}
+    section slave_parameter {{ slave_configuration_section_name }}
     raw https_port {{ https_port }}
     raw http_port {{ http_port }}
 {{ '\n' }}
@@ -192,6 +197,25 @@ extra-context =
 {%     do slave_publish_dict.update(**{'slave-reference':slave_instance.get('slave_reference'), 'public-ipv4':public_ipv4, 'domain':slave_instance.get('custom_domain'), 'url':"http://%s" % slave_instance.get('custom_domain'), 'site_url':"http://%s" % slave_instance.get('custom_domain'), 'secure_access': 'https://%s' % slave_instance.get('custom_domain')}) %}
 
 {%   endif -%}
+
+############################
+### Prepare virtualhost for slaves using cache
+
+{% for slave_reference, slave_configuration_section_name in cached_server_dict.iteritems() %}
+{%   set cached_slave_configuration_section_title = '%s-cached-virtualhost' % slave_reference %}
+{%   do part_list.append(cached_slave_configuration_section_title) -%}
+[{{ cached_slave_configuration_section_title }}]
+< = jinja2-template-base
+template = {{ template_cached_slave_configuration }}
+filename = {{ '%s.conf' % slave_reference }}
+rendered = {{ apache_cached_configuration_directory }}/${:filename}
+extensions = jinja2.ext.do
+extra-context =
+    section slave_parameter {{ slave_configuration_section_name }}
+    raw cached_port {{ cached_port }}
+{{ '\n' }}
+{% endfor %}
+
 
 ############################
 #### Publish Slave Information
@@ -238,18 +262,6 @@ private-ipv4 = {{ local_ipv4 }}
 slave-instance-information-list = {{ json_module.dumps(slave_instance_information_list) }}
 {% endif -%}
 monitor_url = {{ monitor_url }}
-
-{% do part_list.append('cached-rewrite-rules') -%}
-[cached-rewrite-rules]
-< = jinja2-template-base
-template = {{ template_rewrite_cached }}
-rendered = {{ rewrite_cached_configuration }}
-extra-context =
-    import json_module json
-    key server_dict rewrite-rules:rules
-
-[rewrite-rules]
-rules = {{ dumps(cached_server_dict) }}
 
 [buildout]
 parts +=
