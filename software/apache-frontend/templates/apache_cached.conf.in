@@ -116,18 +116,10 @@ SSLHonorCipherOrder on
 SSLProxyCheckPeerCN off
 SSLProxyCheckPeerExpire off
 
-# Only accept generic (i.e not Zope) backends on http
-<VirtualHost *:{{ cached_port }}>
-  SSLProxyEngine on
-  # Rewrite part
-  ProxyPreserveHost On
-  ProxyTimeout 600
-  RewriteEngine On
+NameVirtualHost *:{{ cached_port }}
 
-  RewriteMap apachemapcached txt:{{ apachecachedmap_path }}
-  RewriteCond ${apachemapcached:%{SERVER_NAME}} >""
-  RewriteRule ^/(.*)$ ${apachemapcached:%{SERVER_NAME}}/$1 [L,P]
+include {{ slave_with_cache_configuration_directory }}/*.conf
 
-  # If nothing exist : put a nice error
-  ErrorDocument 404 /notfound.html
-</VirtualHost>
+ErrorDocument 404 /notfound.html
+RewriteRule (.*) /notfound.html [R=404,L]
+
