@@ -34,8 +34,8 @@ config-frontend-software-type = {{ dumps(frontend_dict.get('software-type', 'fro
 config-frontend-software-url = {{ dumps(frontend_dict.get('software-url', 'http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.92:/software/kvm/software.cfg')) }}
 config-frontend-instance-guid = {{ dumps(frontend_dict.get('instance-guid', '')) }}
 config-name = {{ instance_name }}
-{% if slapparameter_dict.get('authorized-key', []) -%}
-config-authorized-key = {{ slapparameter_dict.get('authorized-key') | join('##') }}
+{% if slapparameter_dict.get('authorized-keys', []) -%}
+config-authorized-key = {{ dumps(slapparameter_dict.get('authorized-keys') | join('\n')) }}
 {% endif -%}
 config-nbd-port = {{ dumps(kvm_parameter_dict.get('nbd-port', 1024)) }}
 config-nbd-host = {{ dumps(kvm_parameter_dict.get('nbd-host', '')) }}
@@ -61,6 +61,9 @@ config-external-disk-size = {{ dumps(kvm_parameter_dict.get('external-disk-size'
 config-external-disk-format = {{ dumps(kvm_parameter_dict.get('external-disk-format', 'qcow2')) }}
 config-enable-http-server = {{ dumps(kvm_parameter_dict.get('enable-http-server', True)) }}
 config-httpd-port = {{ dumps(kvm_parameter_dict.get('httpd-port', 8081)) }}
+{% if kvm_parameter_dict.get('data-to-vm', '') -%}
+config-data-to-vm = {{ dumps(kvm_parameter_dict.get('data-to-vm', '')) }}
+{% endif -%}
 
 # Enable simple http server on ipv6 so all VMs will access it
 config-document-host = ${http-server:host}
@@ -161,6 +164,7 @@ wrapper = ${directory:services}/simple-http-server
 log-file = ${directory:log}/http.log
 cert-file = ${http-ssl:cert}
 key-file = ${http-ssl:key}
+{% do publish_dict.__setitem__('http-file-server', 'https://' ~ '[${http-server:host}]:' ~ '${http-server:port}/' ~ '${http-server:path}') -%}
 
 [write-vm-hostname]
 recipe = slapos.recipe.template:jinja2
@@ -170,6 +174,22 @@ rendered = ${http-server:root-dir}/${:filename}
 context =
     raw content_list {{ kvm_hostname_list | join('#') }}
     raw sep #
+
+{% macro writefile(section_name, file_path, content, mode='') -%}
+{% do part_list.append(section_name) -%}
+{% set data_list =  content.split('\n') -%}
+[{{ section_name }}]
+recipe = collective.recipe.template
+input = inline:
+  {{ data_list | join('\n  ') }}
+output = {{ file_path }}
+mode = {{ mode }}
+{% endmacro -%}
+
+# write cluster-data into file public/data
+{% if slapparameter_dict.get('cluster-data', '') -%}
+{{ writefile('cluster-data-content', '${http-server:root-dir}/data', slapparameter_dict.get('cluster-data', ''), '700') }}
+{% endif -%}
 
 [publish]
 recipe = slapos.cookbook:publish

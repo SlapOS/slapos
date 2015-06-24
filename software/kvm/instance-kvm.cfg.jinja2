@@ -23,6 +23,12 @@ parts =
   httpd
   httpd-promise
   publish-host-config
+{% if slapparameter_dict.get('data-to-vm', '') %}
+  vm-data-content
+{% endif -%}
+{% if slapparameter_dict.get('authorized-key', '') %}
+  get-authorized-key
+{%   endif -%}
   
 extends = 
   {{ template_httpd_cfg }}
@@ -295,7 +301,7 @@ tap-ipv4 = ${slap-network-information:tap-ipv4}
 {%     set kvm_http = 'http://10.0.2.100' -%}
 {%   endif %}
 {%   if slapparameter_dict.get('authorized-key', '') -%}
-7_info = Get the publick key file in your VM with the command: wget {{ kvm_http }}/${get-authorized-key:filename}
+7_info = Get the publick key file in your VM with the command: wget {{ kvm_http }}/authorized_keys
 {%   endif %}
 {% endif %}
 
@@ -332,15 +338,21 @@ command =
 update-command = ${:command}
 {% endif -%}
 
-[get-authorized-key]
-recipe = slapos.recipe.template:jinja2
-template = {{ template_content }}
-filename = authorized_keys
-rendered = ${directory:public}/${:filename}
-public-key = {{ slapparameter_dict.get('authorized-key', '') }}
-context =
-    key content_list :public-key
-    raw sep ##
+{% macro writefile(section_name, file_path, content, mode='') -%}
+{% set data_list =  content.split('\n') -%}
+[{{ section_name }}]
+recipe = collective.recipe.template
+input = inline:
+  {{ data_list | join('\n  ') }}
+output = {{ file_path }}
+mode = {{ mode }}
+{% endmacro -%}
+
+# write vm-data into file public/data
+{{ writefile('vm-data-content', '${directory:public}/data', slapparameter_dict.get('data-to-vm', ''), '700') }}
+
+# write public key for vms to public/authorized_keys
+{{ writefile('get-authorized-key', '${directory:public}/authorized_keys', slapparameter_dict.get('authorized-key', ''), '700') }}
 
 [publish-host-config]
 recipe = plone.recipe.command
@@ -419,3 +431,6 @@ enable-http-server = False
 httpd-port = 8081
 # for auto config, the public key file will be available in the VM via url http://10.0.2.100/authorized_key if use-nat = True
 authorized-key = 
+
+# send some content which will be accessible to the vm through static url: http://10.0.2.100/data
+data-to-vm =

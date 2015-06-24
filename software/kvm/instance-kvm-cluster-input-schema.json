@@ -122,10 +122,15 @@
       },
       "type": "object"
     },
-    "authorized-key": {
+    "authorized-keys": {
       "title": "Public keys for virtual machines.",
       "description": "Set the list of public keys to add in your virtual machine. The public key file will be available in the VM via url http://10.0.2.100/authorized_keys if you keep the NAT interface enabled",
       "type": "array"
+    },
+    "cluster-data": {
+      "title": "Text content to share with virtual machines.",
+      "description": "Text content which will be written in a file data of cluster http server. All VM will be able to download that file via the static URL of cluster HTTP server: https://10.0.2.101/FOLDER_HASH/data.",
+      "type": "string"
     },
     "kvm-partition-dict": {
       "title": "kvm instances definition",
@@ -284,6 +289,11 @@
                 80,
                 443
               ]
+            },
+            "data-to-vm": {
+              "title": "Text content to send to this virtual machine.",
+              "description": "Text content which will be written in a file 'data' of http server of this virtual machine instance. The file will be available via URL: http://10.0.2.100/data in the VM.",
+              "type": "string"
             }
           },
           "type": "object"
