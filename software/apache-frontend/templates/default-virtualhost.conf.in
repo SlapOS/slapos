@@ -16,8 +16,8 @@
   SSLEngine on
   SSLProxyEngine on
   SSLProtocol all -SSLv2 -SSLv3
-  SSLCipherSuite HIGH:MEDIUM:!aNULL:!MD5:!RC4
-
+  SSLCipherSuite ECDH+AESGCM:DH+AESGCM:ECDH+AES256:DH+AES256:ECDH+AES128:DH+AES:ECDH+3DES:DH+3DES:RSA+AESGCM:RSA+AES:RSA+3DES:HIGH:!aNULL:!MD5
+  SSLHonorCipherOrder on
 
 {% set ssl_configuration_list = [('SSLCertificateFile', 'path_to_ssl_crt'),
        			      	 ('SSLCertificateKeyFile', 'path_to_ssl_key'),
@@ -38,7 +38,6 @@
   CustomLog "{{ slave_parameter.get('access_log') }}" combined
 
   # Rewrite part
-  ProxyVia On
   ProxyPreserveHost On
   ProxyTimeout 600
   RewriteEngine On
@@ -90,7 +89,6 @@
 
   SSLProxyEngine on
   # Rewrite part
-  ProxyVia On
   ProxyPreserveHost On
   ProxyTimeout 600
   RewriteEngine On
