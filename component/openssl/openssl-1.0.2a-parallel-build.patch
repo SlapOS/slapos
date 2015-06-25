@@ -1,8 +1,8 @@
-https://sources.gentoo.org/cgi-bin/viewvc.cgi/gentoo-x86/dev-libs/openssl/files/
-http://rt.openssl.org/Ticket/Display.html?id=2084
+https://rt.openssl.org/Ticket/Display.html?id=2084&user=guest&pass=guest
+https://rt.openssl.org/Ticket/Display.html?id=3738&user=guest&pass=guest
 
---- openssl-1.0.1m/crypto/Makefile
-+++ openssl-1.0.1m/crypto/Makefile
+--- openssl-1.0.2a/crypto/Makefile
++++ openssl-1.0.2a/crypto/Makefile
 @@ -85,11 +85,11 @@
  	@if [ -z "$(THIS)" ]; then $(MAKE) -f $(TOP)/Makefile reflect THIS=$@; fi
  
@@ -11,7 +11,7 @@ http://rt.openssl.org/Ticket/Display.html?id=2084
 +	+@target=all; $(RECURSIVE_MAKE)
  
  files:
- 	$(PERL) $(TOP)/util/files.pl Makefile >> $(TOP)/MINFO
+ 	$(PERL) $(TOP)/util/files.pl "CPUID_OBJ=$(CPUID_OBJ)" Makefile >> $(TOP)/MINFO
 -	@target=files; $(RECURSIVE_MAKE)
 +	+@target=files; $(RECURSIVE_MAKE)
  
@@ -24,7 +24,7 @@ http://rt.openssl.org/Ticket/Display.html?id=2084
 -$(LIB):	$(LIBOBJ)
 +$(LIB):	$(LIBOBJ) | subdirs
  	$(AR) $(LIB) $(LIBOBJ)
- 	[ -z "$(FIPSLIBDIR)" ] || $(AR) $(LIB) $(FIPSLIBDIR)fipscanister.o
+ 	test -z "$(FIPSLIBDIR)" || $(AR) $(LIB) $(FIPSLIBDIR)fipscanister.o
  	$(RANLIB) $(LIB) || echo Never mind.
 @@ -111,7 +111,7 @@
  	fi
@@ -44,25 +44,8 @@ http://rt.openssl.org/Ticket/Display.html?id=2084
  
  lint:
  	@target=lint; $(RECURSIVE_MAKE)
---- openssl-1.0.1m/crypto/objects/Makefile
-+++ openssl-1.0.1m/crypto/objects/Makefile
-@@ -44,11 +44,11 @@
- # objects.pl both reads and writes obj_mac.num
- obj_mac.h: objects.pl objects.txt obj_mac.num
- 	$(PERL) objects.pl objects.txt obj_mac.num obj_mac.h
--	@sleep 1; touch obj_mac.h; sleep 1
- 
--obj_xref.h: objxref.pl obj_xref.txt obj_mac.num
-+# This doesn't really need obj_mac.h, but since that rule reads & writes
-+# obj_mac.num, we can't run in parallel with it.
-+obj_xref.h: objxref.pl obj_xref.txt obj_mac.num obj_mac.h
- 	$(PERL) objxref.pl obj_mac.num obj_xref.txt > obj_xref.h
--	@sleep 1; touch obj_xref.h; sleep 1
- 
- files:
- 	$(PERL) $(TOP)/util/files.pl Makefile >> $(TOP)/MINFO
---- openssl-1.0.1m/engines/Makefile
-+++ openssl-1.0.1m/engines/Makefile
+--- openssl-1.0.2a/engines/Makefile
++++ openssl-1.0.2a/engines/Makefile
 @@ -72,7 +72,7 @@
  
  all:	lib subdirs
@@ -90,62 +73,38 @@ http://rt.openssl.org/Ticket/Display.html?id=2084
  
  tags:
  	ctags $(SRC)
---- openssl-1.0.1m/Makefile.org
-+++ openssl-1.0.1m/Makefile.org
-@@ -273,17 +273,17 @@
+--- openssl-1.0.2a/Makefile.org
++++ openssl-1.0.2a/Makefile.org
+@@ -274,17 +274,17 @@
  build_libs: build_crypto build_ssl build_engines
  
  build_crypto:
 -	@dir=crypto; target=all; $(BUILD_ONE_CMD)
--build_ssl:
--	@dir=ssl; target=all; $(BUILD_ONE_CMD)
--build_engines:
--	@dir=engines; target=all; $(BUILD_ONE_CMD)
--build_apps:
--	@dir=apps; target=all; $(BUILD_ONE_CMD)
--build_tests:
--	@dir=test; target=all; $(BUILD_ONE_CMD)
--build_tools:
--	@dir=tools; target=all; $(BUILD_ONE_CMD)
 +	+@dir=crypto; target=all; $(BUILD_ONE_CMD)
+-build_ssl:
 +build_ssl: build_crypto
+-	@dir=ssl; target=all; $(BUILD_ONE_CMD)
 +	+@dir=ssl; target=all; $(BUILD_ONE_CMD)
+-build_engines:
 +build_engines: build_crypto
+-	@dir=engines; target=all; $(BUILD_ONE_CMD)
 +	+@dir=engines; target=all; $(BUILD_ONE_CMD)
+-build_apps:
 +build_apps: build_libs
+-	@dir=apps; target=all; $(BUILD_ONE_CMD)
 +	+@dir=apps; target=all; $(BUILD_ONE_CMD)
+-build_tests:
 +build_tests: build_libs
+-	@dir=test; target=all; $(BUILD_ONE_CMD)
 +	+@dir=test; target=all; $(BUILD_ONE_CMD)
+-build_tools:
 +build_tools: build_libs
+-	@dir=tools; target=all; $(BUILD_ONE_CMD)
 +	+@dir=tools; target=all; $(BUILD_ONE_CMD)
  
  all_testapps: build_libs build_testapps
  build_testapps:
-@@ -538,9 +538,9 @@
- dist_pem_h:
- 	(cd crypto/pem; $(MAKE) -e $(BUILDENV) pem.h; $(MAKE) clean)
- 
--install: all install_docs install_sw
-+install: install_docs install_sw
- 
--install_sw:
-+install_dirs:
- 	@$(PERL) $(TOP)/util/mkdir-p.pl $(INSTALL_PREFIX)$(INSTALLTOP)/bin \
- 		$(INSTALL_PREFIX)$(INSTALLTOP)/$(LIBDIR) \
- 		$(INSTALL_PREFIX)$(INSTALLTOP)/$(LIBDIR)/engines \
-@@ -549,12 +549,19 @@
- 		$(INSTALL_PREFIX)$(OPENSSLDIR)/misc \
- 		$(INSTALL_PREFIX)$(OPENSSLDIR)/certs \
- 		$(INSTALL_PREFIX)$(OPENSSLDIR)/private
-+	@$(PERL) $(TOP)/util/mkdir-p.pl \
-+		$(INSTALL_PREFIX)$(MANDIR)/man1 \
-+		$(INSTALL_PREFIX)$(MANDIR)/man3 \
-+		$(INSTALL_PREFIX)$(MANDIR)/man5 \
-+		$(INSTALL_PREFIX)$(MANDIR)/man7
-+
-+install_sw: install_dirs
- 	@set -e; headerlist="$(EXHEADER)"; for i in $$headerlist;\
- 	do \
+@@ -555,7 +555,7 @@
  	(cp $$i $(INSTALL_PREFIX)$(INSTALLTOP)/include/openssl/$$i; \
  	chmod 644 $(INSTALL_PREFIX)$(INSTALLTOP)/include/openssl/$$i ); \
  	done;
@@ -154,22 +113,8 @@ http://rt.openssl.org/Ticket/Display.html?id=2084
  	@set -e; liblist="$(LIBS)"; for i in $$liblist ;\
  	do \
  		if [ -f "$$i" ]; then \
-@@ -634,12 +641,7 @@
- 		done; \
- 	done
- 
--install_docs:
--	@$(PERL) $(TOP)/util/mkdir-p.pl \
--		$(INSTALL_PREFIX)$(MANDIR)/man1 \
--		$(INSTALL_PREFIX)$(MANDIR)/man3 \
--		$(INSTALL_PREFIX)$(MANDIR)/man5 \
--		$(INSTALL_PREFIX)$(MANDIR)/man7
-+install_docs: install_dirs
- 	@pod2man="`cd ./util; ./pod2mantest $(PERL)`"; \
- 	here="`pwd`"; \
- 	filecase=; \
---- openssl-1.0.1m/Makefile.shared
-+++ openssl-1.0.1m/Makefile.shared
+--- openssl-1.0.2a/Makefile.shared
++++ openssl-1.0.2a/Makefile.shared
 @@ -105,6 +105,7 @@
      SHAREDFLAGS="$${SHAREDFLAGS:-$(CFLAGS) $(SHARED_LDFLAGS)}"; \
      LIBPATH=`for x in $$LIBDEPS; do echo $$x; done | sed -e 's/^ *-L//;t' -e d | uniq`; \
@@ -186,9 +131,9 @@ http://rt.openssl.org/Ticket/Display.html?id=2084
  			( $(SET_X); rm -f $$SHLIB$$SHLIB_SUFFIX; \
  			  ln -s $$prev $$SHLIB$$SHLIB_SUFFIX ); \
  		fi; \
---- openssl-1.0.1m/test/Makefile
-+++ openssl-1.0.1m/test/Makefile
-@@ -130,7 +130,7 @@
+--- openssl-1.0.2a/test/Makefile
++++ openssl-1.0.2a/test/Makefile
+@@ -133,7 +133,7 @@
  tags:
  	ctags $(SRC)
  
@@ -197,7 +142,7 @@ http://rt.openssl.org/Ticket/Display.html?id=2084
  
  apps:
  	@(cd ..; $(MAKE) DIRS=apps all)
-@@ -388,118 +388,118 @@
+@@ -402,121 +402,121 @@
  		link_app.$${shlib_target}
  
  $(RSATEST)$(EXE_EXT): $(RSATEST).o $(DLIBCRYPTO)
@@ -344,6 +289,10 @@ http://rt.openssl.org/Ticket/Display.html?id=2084
 -	@target=$(SRPTEST); $(BUILD_CMD)
 +	+@target=$(SRPTEST); $(BUILD_CMD)
  
+ $(V3NAMETEST)$(EXE_EXT): $(V3NAMETEST).o $(DLIBCRYPTO)
+-	@target=$(V3NAMETEST); $(BUILD_CMD)
++	+@target=$(V3NAMETEST); $(BUILD_CMD)
+ 
  $(HEARTBEATTEST)$(EXE_EXT): $(HEARTBEATTEST).o $(DLIBCRYPTO)
 -	@target=$(HEARTBEATTEST); $(BUILD_CMD_STATIC)
 +	+@target=$(HEARTBEATTEST); $(BUILD_CMD_STATIC)
@@ -354,7 +303,7 @@ http://rt.openssl.org/Ticket/Display.html?id=2084
  
  #$(AESTEST).o: $(AESTEST).c
  #	$(CC) -c $(CFLAGS) -DINTERMEDIATE_VALUE_KAT -DTRACE_KAT_MCT $(AESTEST).c
-@@ -512,7 +512,7 @@
+@@ -529,7 +529,7 @@
  #	fi
  
  dummytest$(EXE_EXT): dummytest.o $(DLIBCRYPTO)
