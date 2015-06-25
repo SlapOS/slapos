@@ -1,4 +1,3 @@
-{% macro assert(x) %}{{ ("",)[not x] }}{% endmacro -%}
 {% set sla_dict = {} -%}
 {% for sla, ref_list in slapparameter_dict.get('sla-dict', {}).iteritems() -%}
 {%   do sla_dict.update(dict.fromkeys(ref_list, sla)) -%}
@@ -59,7 +58,7 @@ config-{{ k }} = {{ dumps(v) }}
 {% for zodb in slapparameter_dict.get('zodb') or ({'type': 'zeo', 'server': {}},) -%}
 {%   do mountpoints.add(zodb.setdefault('mount-point', '/')) -%}
 {%   set name = zodb.pop('name', 'root') -%}
-{%   do assert(name not in zodb_dict) -%}
+{%   do assert(name not in zodb_dict, name, zodb_dict) -%}
 {%   do zodb_dict.__setitem__(name, zodb) -%}
 {%   if 'server' in zodb -%}
 {%     do storage_dict.setdefault(zodb['type'], {}).__setitem__(name, zodb.pop('server')) -%}
@@ -67,7 +66,7 @@ config-{{ k }} = {{ dumps(v) }}
 {% endfor -%}
 {% do assert(len(mountpoints) == len(zodb_dict)) %}
 {% for server_type, server_dict in storage_dict.iteritems() -%}
-{%   do assert(server_type == 'zeo') -%}
+{%   do assert(server_type == 'zeo', server_type) -%}
 {# BBB: for compatibility, keep 'zodb' as partition_reference for ZEO -#}
 {{   request('zodb', 'zodb-' ~ server_type, 'zodb-' ~ server_type, {'tcpv4-port': 2100, 'zodb-dict': server_dict}, dict.fromkeys(('storage-dict', 'tidstorage-ip', 'tidstorage-port'))) }}
 {% endfor -%}
@@ -214,4 +213,4 @@ hosts-dict = {{ '${' ~ zope_address_list_id_dict.keys()[0] ~ ':connection-hosts-
 [buildout]
 parts = publish
 
-{{- assert(not sla_dict) }}
+{{- assert(not sla_dict, sla_dict) }}

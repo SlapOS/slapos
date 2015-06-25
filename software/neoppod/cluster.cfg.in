@@ -1,4 +1,3 @@
-{% macro assert(x) %}{{ ("",)[not x] }}{% endmacro -%}
 {% macro section(name) %}{% do part_list.append(name) %}{{ name }}{% endmacro -%}
 {% set part_list = [] -%}
 {% set section_id_list = [] -%}
