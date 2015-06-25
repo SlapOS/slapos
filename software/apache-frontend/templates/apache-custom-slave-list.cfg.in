@@ -129,6 +129,7 @@ value = {{ dumps(slave_instance.get(cert_name)) }}
 < = jinja2-template-base
 template = {{ template_custom_slave_configuration }}
 filename = {{ '%s.conf' % slave_reference }}
+rendered = {{ apache_configuration_directory }}/${:filename}
 extra-context =
     key apache_custom_https {{ 'slave-instance-%s-configuration:apache_custom_https' % slave_reference }}
     key apache_custom_http {{ 'slave-instance-%s-configuration:apache_custom_http' % slave_reference }}
@@ -138,7 +139,7 @@ extra-context =
 
 # The slave use cache
 {%     if 'enable_cache' in slave_instance and 'url' in slave_instance and 'domain' in slave_instance -%}
-{%       do slave_instance.__setitem__('custom_domain', slapparameter_dict.get('domain')) -%}
+{%       do slave_instance.__setitem__('custom_domain', slave_instance.get('domain')) -%}
 {%       do slave_instance.__setitem__('backend_url', slave_instance.get('url')) -%}
 {%       do cached_server_dict.__setitem__(slave_reference, slave_configuration_section_name) -%}
 {%     endif -%}
