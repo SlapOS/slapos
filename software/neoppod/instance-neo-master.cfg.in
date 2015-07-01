@@ -15,6 +15,7 @@ partitions = {{ slapparameter_dict['partitions'] }}
 replicas = {{ slapparameter_dict['replicas'] }}
 upstream-cluster = {{ dumps(slapparameter_dict['upstream-cluster']) }}
 upstream-masters = {{ dumps(slapparameter_dict['upstream-masters']) }}
+autostart = {{ slapparameter_dict['autostart'] }}
 # "masters" parameter is not provided when just requesting a partition.
 # No actual installation takes place at that time
 # (slapos.cookbook:neoppod.master raises), but cfg expansion must succeed. So

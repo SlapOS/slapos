@@ -96,6 +96,7 @@ class Master(NeoBaseRecipe):
     r = [
       '-p', options['partitions'],
       '-r', options['replicas'],
+      '-A', options['autostart'],
     ]
     for x in (('-C', options['upstream-cluster']),
               ('-M', options['upstream-masters'])):
