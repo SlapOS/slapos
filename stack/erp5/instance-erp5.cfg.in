@@ -1,37 +1,18 @@
-{% set sla_dict = {} -%}
-{% for sla, ref_list in slapparameter_dict.get('sla-dict', {}).iteritems() -%}
-{%   do sla_dict.update(dict.fromkeys(ref_list, sla)) -%}
-{% endfor -%}
+{% import "root_common" as root_common with context %}
 {% set frontend_dict = slapparameter_dict.get('frontend', {}) -%}
 {% set has_frontend = frontend_dict.get('software-url', '') != '' -%}
 {% set site_id = slapparameter_dict.get('site-id', 'erp5') -%}
 {% set inituser_login = slapparameter_dict.get('inituser-login', 'zope') -%}
 {% set publish_dict = {'site-id': site_id, 'inituser-login': inituser_login} -%}
 [request-common]
-recipe = slapos.cookbook:request.serialised
-software-url = ${slap-connection:software-release-url}
-server-url = ${slap-connection:server-url}
-key-file = ${slap-connection:key-file}
-cert-file = ${slap-connection:cert-file}
-computer-id = ${slap-connection:computer-id}
-partition-id = ${slap-connection:partition-id}
+<= request-common-base
 config-use-ipv6 = {{ dumps(slapparameter_dict.get('use-ipv6', False)) }}
-
-{% macro sla(name, required=False) -%}
-{% if required or name in sla_dict -%}
-{%  for k, (v,) in urlparse.parse_qs(sla_dict.pop(name), strict_parsing=1).iteritems() -%}
-sla-{{ k }} = {{ v }}
-{%  endfor -%}
-{% else -%}
-sla-computer_guid = ${slap-connection:computer-id}
-{% endif -%}
-{% endmacro -%}
 
 {% macro request(name, software_type, config_key, config, ret={'url': True}) -%}
 {% do config.update(slapparameter_dict.get(config_key, {})) -%}
 {% set section = 'request-' ~ name -%}
 [{{ section }}]
-< = request-common
+<= request-common
 name = {{ name }}
 software-type = {{ software_type }}
 return = {{ ' '.join(ret) }}
@@ -40,7 +21,7 @@ return = {{ ' '.join(ret) }}
 {%     do publish_dict.__setitem__(name ~ '-' ~ ret, '${' ~ section ~ ':connection-' ~ ret ~ '}')%}
 {%   endif -%}
 {% endfor -%}
-{{ sla(name) }}
+{{ root_common.sla(name) }}
 {% for k, v in config.iteritems() -%}
 config-{{ k }} = {{ dumps(v) }}
 {% endfor -%}
@@ -66,9 +47,15 @@ config-{{ k }} = {{ dumps(v) }}
 {% endfor -%}
 {% do assert(len(mountpoints) == len(zodb_dict)) %}
 {% for server_type, server_dict in storage_dict.iteritems() -%}
-{%   do assert(server_type == 'zeo', server_type) -%}
+{%   if server_type == 'neo' -%}
+{%     set ((name, server_dict),) = server_dict.items() -%}
+{%     do zodb_dict[name].setdefault('storage-dict', {}).__setitem__('name', server_dict['cluster']) -%}
+{{     root_common.request_neo(server_dict, 'zodb-neo', 'neo-') }}
+{%   else -%}
+{{     assert(server_type == 'zeo', server_type) -}}
 {# BBB: for compatibility, keep 'zodb' as partition_reference for ZEO -#}
-{{   request('zodb', 'zodb-' ~ server_type, 'zodb-' ~ server_type, {'tcpv4-port': 2100, 'zodb-dict': server_dict}, dict.fromkeys(('storage-dict', 'tidstorage-ip', 'tidstorage-port'))) }}
+{{     request('zodb', 'zodb-' ~ server_type, 'zodb-' ~ server_type, {'tcpv4-port': 2100, 'zodb-dict': server_dict}, dict.fromkeys(('storage-dict', 'tidstorage-ip', 'tidstorage-port'))) }}
+{%   endif -%}
 {% endfor -%}
 
 [inituser-password]
@@ -88,7 +75,7 @@ recipe = slapos.cookbook:generate.password
 {% endif -%}
 
 [request-zope-base]
-< = request-common
+<= request-common
 return =
   zope-address-list
   hosts-dict
@@ -109,11 +96,16 @@ config-site-id = {{ dumps(site_id) }}
 config-smtp-url = {{ dumps(slapparameter_dict.get('smtp-url', 'smtp://localhost:25/')) }}
 config-timezone = {{ dumps(slapparameter_dict.get('timezone', 'UTC')) }}
 config-zodb-dict = {{ dumps(zodb_dict) }}
-{% if storage_dict -%}
+{% for server_type, server_dict in storage_dict.iteritems() -%}
+{%   if server_type == 'neo' -%}
+config-neo-name = {{ server_dict.keys()[0] }}
+config-neo-masters = ${neo-0-final:connection-masters}
+{%   else -%}
 config-zodb-zeo = ${request-zodb:connection-storage-dict}
 config-tidstorage-ip = ${request-zodb:connection-tidstorage-ip}
 config-tidstorage-port = ${request-zodb:connection-tidstorage-port}
-{% endif -%}
+{%   endif -%}
+{% endfor -%}
 software-type = zope
 
 {% set zope_family_dict = {} -%}
@@ -122,9 +114,9 @@ software-type = zope
 {%   set section_name = 'request-' ~ partition_name -%}
 {%   do zope_family_dict.setdefault(zope_parameter_dict.get('family', 'default'), []).append(section_name) -%}
 [{{ section_name }}]
-< = request-zope-base
+<= request-zope-base
 name = {{ partition_name }}
-{{ sla(partition_name) }}
+{{ root_common.sla(partition_name) }}
 config-name = {{ dumps(custom_name) }}
 config-instance-count = {{ dumps(zope_parameter_dict.get('instance-count', 1)) }}
 config-thread-amount = {{ dumps(zope_parameter_dict.get('thread-amount', 4)) }}
@@ -148,7 +140,7 @@ config-webdav = {{ dumps(zope_parameter_dict.get('webdav', False)) }}
 {%     set frontend_name = 'frontend-' ~ family_name -%}
 {%     do publish_dict.__setitem__('family-' ~ family_name, '${' ~ frontend_name ~ ':connection-site_url}' ) -%}
 [{{ frontend_name }}]
-< = request-frontend-base
+<= request-frontend-base
 name = {{ frontend_name }}
 config-url = ${request-balancer:{{ family_name }}-v6}
 {%   else -%}
@@ -159,10 +151,10 @@ config-url = ${request-balancer:{{ family_name }}-v6}
 
 {% set balancer_dict = slapparameter_dict.get('balancer', {}) -%}
 [request-balancer]
-< = request-common
+<= request-common
 name = balancer
 software-type = balancer
-{{ sla('balancer') }}
+{{ root_common.sla('balancer') }}
 return =
 {%- for family in zope_family_dict %}
   {{ family }}
@@ -180,10 +172,10 @@ config-ssl = {{ dumps(balancer_dict.get('ssl', {})) }}
 
 [request-frontend-base]
 {% if has_frontend -%}
-< = request-common
+<= request-common
 software-url = {{ dumps(frontend_dict['software-url']) }}
 software-type = {{ dumps(frontend_dict.get('software-type', 'RootSoftwareInstance')) }}
-{{ sla('frontend', True) }}
+{{ root_common.sla('frontend', True) }}
 slave = true
 {% set config_dict = {
   'type': 'zope',
@@ -199,6 +191,10 @@ return = site_url
 
 [publish]
 recipe = slapos.cookbook:publish.serialised
+{% if 'neo' in storage_dict -%}
+neo-masters = ${neo-0-final:connection-masters}
+neo-admins = ${neo-0-final:connection-admins}
+{% endif  -%}
 deadlock-debugger-password = ${deadlock-debugger-password:passwd}
 inituser-password = ${inituser-password:passwd}
 {#
@@ -210,7 +206,4 @@ hosts-dict = {{ '${' ~ zope_address_list_id_dict.keys()[0] ~ ':connection-hosts-
 {{   name }} = {{ value }}
 {% endfor -%}
 
-[buildout]
-parts = publish
-
-{{- assert(not sla_dict, sla_dict) }}
+{{ root_common.common_section() }}

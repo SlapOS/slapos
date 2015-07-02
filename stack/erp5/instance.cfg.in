@@ -1,27 +1,9 @@
 [buildout]
-parts = switch-softwaretype
-eggs-directory = {{ eggs_directory }}
-develop-eggs-directory = {{ develop_eggs_directory }}
-
-[slap-configuration]
-recipe = slapos.cookbook:slapconfiguration.serialised
-computer = ${slap-connection:computer-id}
-partition = ${slap-connection:partition-id}
-url = ${slap-connection:server-url}
-key = ${slap-connection:key-file}
-cert = ${slap-connection:cert-file}
+extends = {{ instance_common_cfg }}
 
 [jinja2-template-base]
-recipe = slapos.recipe.template:jinja2
-rendered = ${buildout:parts-directory}/${:_buildout_section_name_}/${:filename}
-extra-context =
-context =
-    key ipv4_set slap-configuration:ipv4
-    key ipv6_set slap-configuration:ipv6
-    key slapparameter_dict slap-configuration:configuration
+context +=
     raw slapos_core_version {{ slapos_core_version }}
-    raw logrotate_cfg {{ template_logrotate_base }}
-    ${:extra-context}
 
 [dynamic-template-cloudooo-parameters]
 cups = {{ cups_location }}
@@ -54,7 +36,7 @@ buildout-bin-directory = {{ buildout_bin_directory }}
 dash = {{ dash_location }}
 
 [dynamic-template-cloudooo]
-< = jinja2-template-base
+<= jinja2-template-base
 template = {{ template_cloudooo }}
 filename = instance-cloudoo.cfg
 extra-context =
@@ -64,13 +46,14 @@ extra-context =
 local-bt5-repository = {{ local_bt5_repository }}
 
 [dynamic-template-erp5]
-< = jinja2-template-base
+<= jinja2-template-base
 template = {{ template_erp5 }}
 filename = instance-erp5.cfg
-extensions = jinja2.ext.do
 extra-context =
     key local_bt5_repository dynamic-template-erp5-parameters:local-bt5-repository
     import urlparse urlparse
+import-list =
+    rawfile root_common {{ root_common }}
 
 [dynamic-template-balancer-parameters]
 apache = {{ apache_location }}
@@ -83,9 +66,8 @@ template-haproxy-cfg = {{ template_haproxy_cfg }}
 template-apache-conf = {{ template_apache_conf }}
 
 [dynamic-template-balancer]
-< = jinja2-template-base
+<= jinja2-template-base
 template = {{ template_balancer }}
-extensions = jinja2.ext.do
 filename = instance-balancer.cfg
 extra-context =
     section parameter_dict dynamic-template-balancer-parameters
@@ -94,10 +76,9 @@ extra-context =
 buildout-bin-directory = {{ buildout_bin_directory }}
 
 [dynamic-template-zeo]
-< = jinja2-template-base
+<= jinja2-template-base
 template = {{ template_zeo }}
 filename = instance-zeo.cfg
-extensions = jinja2.ext.do
 extra-context =
     key buildout_directory buildout:directory
     section parameter_dict dynamic-template-zeo-parameters
@@ -116,10 +97,9 @@ userhosts = {{ userhosts_location }}
 runzope-userhosts-preloaded-template = {{ template_runzope_userhosts_preloaded }}
 
 [dynamic-template-zope]
-< = jinja2-template-base
+<= jinja2-template-base
 template = {{ template_zope }}
 filename = instance-zope.cfg
-extensions = jinja2.ext.do
 extra-context =
     key buildout_directory buildout:directory
     section parameter_dict dynamic-template-zope-parameters
@@ -133,7 +113,7 @@ kumo-location = {{ kumo_location }}
 logrotate-location = {{ logrotate_location }}
 
 [dynamic-template-kumofs]
-< = jinja2-template-base
+<= jinja2-template-base
 template = {{ template_kumofs }}
 filename = instance-kumofs.cfg
 extra-context =
@@ -152,10 +132,9 @@ bin-directory = {{ bin_directory }}
 mariadb-resiliency-after-import-script = {{ mariadb_resiliency_after_import_script }}
 
 [dynamic-template-mariadb]
-< = jinja2-template-base
+<= jinja2-template-base
 template = {{ template_mariadb }}
 filename = instance-mariadb.cfg
-extensions = jinja2.ext.do
 extra-context =
     section parameter_dict dynamic-template-mariadb-parameters
 
@@ -166,7 +145,7 @@ dash-location = {{ dash_location }}
 curl-location = {{ curl_location }}
 
 [dynamic-template-create-erp5-site]
-< = jinja2-template-base
+<= jinja2-template-base
 template = {{ template_create_erp5_site }}
 filename = instance-create-erp5-site.cfg
 extra-context =
@@ -187,4 +166,5 @@ cloudooo = dynamic-template-cloudooo:rendered
 mariadb = dynamic-template-mariadb:rendered
 balancer = dynamic-template-balancer:rendered
 zodb-zeo = dynamic-template-zeo:rendered
+zodb-neo = neo-storage-mysql:rendered
 zope = dynamic-template-zope:rendered

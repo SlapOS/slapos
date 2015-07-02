@@ -24,7 +24,7 @@ init-file = ${init-script:rendered}
 recipe = slapos.recipe.template:jinja2
 extensions = jinja2.ext.do
 rendered = ${directory:etc}/mariadb.cnf
-template = {{ template_my_cnf }}
+template = {{ template_neo_my_cnf }}
 context = section parameter_dict my-cnf-parameters
 
 {% set master_list = [] -%}

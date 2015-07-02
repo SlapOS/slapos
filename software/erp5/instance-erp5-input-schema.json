@@ -212,9 +212,10 @@
             "type": "string"
           },
           "server": {
-            "description": "Instantiate a server. If missing, 'storage-dict' must contain the necessary properties to mount the ZODB.",
+            "description": "Instantiate a server. If missing, 'storage-dict' must contain the necessary properties to mount the ZODB. For ZEO, the partition reference is 'zodb'. For NEO, they are 'neo-0', 'neo-1', ...",
             "anyOf": [
-              {"$ref": "./instance-zeo-schema.json"}
+              {"$ref": "./instance-zeo-schema.json"},
+              {"$ref": "../neoppod/instance-neo-input-schema.json"}
             ]
           },
           "storage-dict": {

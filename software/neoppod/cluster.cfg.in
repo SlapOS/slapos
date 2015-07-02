@@ -1,82 +1,11 @@
-{% macro section(name) %}{% do part_list.append(name) %}{{ name }}{% endmacro -%}
-{% set part_list = [] -%}
-{% set section_id_list = [] -%}
-{% set sla_dict = {} -%}
-{% for sla, ref_list in slapparameter_dict.get('sla-dict', {}).iteritems() -%}
-{%   do sla_dict.update(dict.fromkeys(ref_list, sla)) -%}
-{% endfor -%}
+{% import "root_common" as common_macro with context %}
 
 [request-common]
-recipe = slapos.cookbook:request.serialised
-software-url = ${slap-connection:software-release-url}
-server-url = ${slap-connection:server-url}
-key-file = ${slap-connection:key-file}
-cert-file = ${slap-connection:cert-file}
-computer-id = ${slap-connection:computer-id}
-partition-id = ${slap-connection:partition-id}
-config-cluster = {{ dumps(slapparameter_dict['cluster']) }}
-{% set replicas = slapparameter_dict.get('replicas', 0) -%}
-config-partitions = {{ dumps(slapparameter_dict.get('partitions', 12)) }}
-config-replicas = {{ dumps(replicas) }}
-config-upstream-cluster = {{ dumps(slapparameter_dict.get('upstream-cluster', '')) }}
-config-upstream-masters = {{ dumps(slapparameter_dict.get('upstream-masters', '')) }}
-software-type = neo
+<= request-common-base
 
-{% macro sla(name) -%}
-{% if name in sla_dict -%}
-{%   for k, (v,) in urlparse.parse_qs(sla_dict.pop(name), strict_parsing=1).iteritems() -%}
-sla-{{ k }} = {{ v }}
-{%   endfor -%}
-{% else -%}
-sla-computer_guid = ${slap-connection:computer-id}
-{% endif -%}
-{% endmacro -%}
-
+{{ common_macro.request_neo(slapparameter_dict, 'neo', 'node-') }}
 [publish]
 recipe = slapos.cookbook:publish.serialised
-masters = ${node-0-final:connection-masters}
-admins = ${node-0-final:connection-admins}
-
-{% set node_list = slapparameter_dict.get('node-list', ({},)) -%}
-{% do assert(replicas < len(node_list)) -%}
-{% for i, node in enumerate(node_list) -%}
-{%   set section_id = 'node-' ~ i -%}
-{%   do section_id_list.append(section_id) -%}
-
-[{{ section_id }}-base]
-name = {{ section_id }}
-{%   for k, v in node.iteritems() -%}
-config-{{ k }} = {{ dumps(v) }}
-{%   endfor -%}
-{{ sla(section_id) }}
-
-[{{ section_id }}]
-<= request-common
-  {{ section_id }}-base
-return =
-  master
-  admin
-{% endfor -%}
-
-[final-base]
-{% for i, section_id in enumerate(section_id_list) -%}
-config-master-{{i}} = {{ '${' + section_id + ':connection-master}' }}
-config-admin-{{i}} = {{ '${' + section_id + ':connection-admin}' }}
-{% endfor -%}
-
-{% for section_id in section_id_list -%}
-[{{ section(section_id + '-final') }}]
-<= request-common
-  final-base
-  {{ section_id }}-base
-{%   if loop.first -%}
-return =
-  masters
-  admins
-{%   endif -%}
-{% endfor -%}
-
-[buildout]
-parts =
-	{{ part_list | join('\n\t') }}
-	publish
+neo-masters = ${node-0-final:connection-masters}
+neo-admins = ${node-0-final:connection-admins}
+{{ common_macro.common_section() }}

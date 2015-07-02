@@ -1,50 +1,16 @@
 [buildout]
-parts = switch-softwaretype
-eggs-directory = {{ eggs_directory }}
-develop-eggs-directory = {{ develop_eggs_directory }}
-
-[slap-configuration]
-recipe = slapos.cookbook:slapconfiguration.serialised
-computer = ${slap-connection:computer-id}
-partition = ${slap-connection:partition-id}
-url = ${slap-connection:server-url}
-key = ${slap-connection:key-file}
-cert = ${slap-connection:cert-file}
+extends = {{ instance_common_cfg }}
 
 [jinja2-template-base]
-recipe = slapos.recipe.template:jinja2
 rendered = ${buildout:parts-directory}/${:_buildout_section_name_}.cfg
-extensions = jinja2.ext.do
-extra-context =
-context =
-    key ipv4_set slap-configuration:ipv4
-    raw bin_directory {{ bin_directory }}
-    key slapparameter_dict slap-configuration:configuration
-    raw logrotate_cfg {{ logrotate_base }}
-    ${:extra-context}
 
 [neo-cluster]
 <= jinja2-template-base
 template = {{ cluster }}
 extra-context =
     import urlparse urlparse
-
-[neo-admin]
-<= jinja2-template-base
-template = {{ neo_admin }}
-
-[neo-master]
-<= jinja2-template-base
-template = {{ neo_master }}
-
-[neo-storage-mysql]
-<= jinja2-template-base
-template = {{ neo_storage_mysql }}
-extra-context =
-    key master_cfg neo-master:rendered
-    key admin_cfg neo-admin:rendered
-    raw mariadb_location {{ mariadb_location }}
-    raw template_my_cnf {{ template_my_cnf }}
+import-list =
+    rawfile root_common {{ root_common }}
 
 [switch-softwaretype]
 recipe = slapos.cookbook:switch-softwaretype

@@ -27,7 +27,7 @@
       "type": "string"
     },
     "sla-dict": {
-      "description": "Where to request instances. Each key is a query string for criterions (e.g. \"computer_guid=foo\"), and each value is a list of partition references.",
+      "description": "[NEO SR only] Where to request instances. Each key is a query string for criterions (e.g. \"computer_guid=foo\"), and each value is a list of partition references ('node-0', 'node-1', ...).",
       "additionalProperties": {
         "type": "array",
         "items": { "type": "string" },

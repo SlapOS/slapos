@@ -1,0 +1,85 @@
+{% macro section(name) %}{% do part_list.append(name) %}{{ name }}{% endmacro -%}
+{% set part_list = [] -%}
+
+{% set sla_dict = {} -%}
+{% for sla, ref_list in slapparameter_dict.get('sla-dict', {}).iteritems() -%}
+{%   do sla_dict.update(dict.fromkeys(ref_list, sla)) -%}
+{% endfor -%}
+
+{% macro sla(name, required=False) -%}
+{% if required or name in sla_dict -%}
+{%  for k, (v,) in urlparse.parse_qs(sla_dict.pop(name), strict_parsing=1).iteritems() -%}
+sla-{{ k }} = {{ v }}
+{%  endfor -%}
+{% else -%}
+sla-computer_guid = ${slap-connection:computer-id}
+{% endif -%}
+{% endmacro -%}
+
+{% macro common_section() -%}
+[request-common-base]
+recipe = slapos.cookbook:request.serialised
+software-url = ${slap-connection:software-release-url}
+server-url = ${slap-connection:server-url}
+key-file = ${slap-connection:key-file}
+cert-file = ${slap-connection:cert-file}
+computer-id = ${slap-connection:computer-id}
+partition-id = ${slap-connection:partition-id}
+
+[buildout]
+parts =
+  publish
+  {{ part_list | join('\n\t') }}
+
+{{- assert(not sla_dict, sla_dict) }}
+{% endmacro -%}
+
+{% macro request_neo(parameter_dict, software_type, prefix='node-') -%}
+{% set section_id_list = [] -%}
+[{{ prefix }}request-common]
+<= request-common-base
+config-cluster = {{ dumps(parameter_dict['cluster']) }}
+{% set replicas = parameter_dict.get('replicas', 0) -%}
+config-partitions = {{ dumps(parameter_dict.get('partitions', 12)) }}
+config-replicas = {{ dumps(replicas) }}
+config-upstream-cluster = {{ dumps(parameter_dict.get('upstream-cluster', '')) }}
+config-upstream-masters = {{ dumps(parameter_dict.get('upstream-masters', '')) }}
+software-type = {{ software_type }}
+{% set node_list = parameter_dict.get('node-list', ({},)) -%}
+{% do assert(replicas < len(node_list)) -%}
+{% for i, node in enumerate(node_list) -%}
+{%   set section_id =  prefix ~ i -%}
+{%   do section_id_list.append(section_id) -%}
+
+[{{ section_id }}-base]
+name = {{ section_id }}
+{%   for k, v in node.iteritems() -%}
+config-{{ k }} = {{ dumps(v) }}
+{%   endfor -%}
+{{ sla(section_id) }}
+
+[{{ section_id }}]
+<= {{ prefix }}request-common
+  {{ section_id }}-base
+return =
+  master
+  admin
+{% endfor -%}
+[final-base]
+{% for i, section_id in enumerate(section_id_list) -%}
+config-master-{{i}} = {{ '${' + section_id + ':connection-master}' }}
+config-admin-{{i}} = {{ '${' + section_id + ':connection-admin}' }}
+{% endfor -%}
+
+{% for section_id in section_id_list -%}
+[{{ section(section_id + '-final') }}]
+<= {{ prefix }}request-common
+  final-base
+  {{ section_id }}-base
+{%   if loop.first -%}
+return =
+  masters
+  admins
+{%   endif -%}
+{% endfor -%}
+{% endmacro -%}
