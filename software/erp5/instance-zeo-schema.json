@@ -1,6 +1,6 @@
 {
   "$schema": "http://json-schema.org/draft-04/schema#",
-  "extends": "./schema-definitions.json#",
+  "additionalProperties": false,
   "properties": {
     "backup": {
       "description": "'%(backup)s' is expanded to partition's ZODB backup path (typically 'srv/backup/zodb'), and %(name)s with the export id",
@@ -18,5 +18,6 @@
       "default": "%(zodb)s/%(name)s.fs",
       "type": "string"
     }
-  }
+  },
+  "type": "object"
 }

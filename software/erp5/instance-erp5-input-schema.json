@@ -1,17 +1,14 @@
 {
   "$schema": "http://json-schema.org/draft-04/schema#",
-  "extends": "./schema-definitions.json#",
   "description": "Parameters to instantiate ERP5",
   "additionalProperties": false,
   "properties": {
     "sla-dict": {
       "description": "Where to request instances. Each key is a query string for criterions (e.g. \"computer_guid=foo\"), and each value is a list of partition references.",
-      "patternProperties": {
-        ".": {
-          "type": "array",
-          "items": { "type": "string" },
-          "uniqueItems": true
-        }
+      "additionalProperties": {
+        "type": "array",
+        "items": { "type": "string" },
+        "uniqueItems": true
       },
       "type": "object"
     },
@@ -50,11 +47,9 @@
     "hostalias-dict": {
       "description": "Hostname-to-hostname mapping",
       "default": {},
-      "patternProperties": {
-        ".*": {
-          "description": "A hostname to which current entry will resolve",
-          "type": "string"
-        }
+      "additionalProperties": {
+        "description": "A hostname to which current entry will resolve",
+        "type": "string"
       },
       "type": "object"
     },
@@ -218,25 +213,17 @@
           },
           "server": {
             "description": "Instantiate a server. If missing, 'storage-dict' must contain the necessary properties to mount the ZODB.",
-            "oneOf": [
-              {"$ref": "./instance-zeo-schema.json#properties"}
+            "anyOf": [
+              {"$ref": "./instance-zeo-schema.json"}
             ]
           },
           "storage-dict": {
             "description": "Storage configuration. For NEO, 'logfile' is automatically set (see http://git.erp5.org/gitweb/neoppod.git/blob/HEAD:/neo/client/component.xml for other settings).",
-            "patternProperties": {
-              ".": {
-                "type": "string"
-              }
-            },
+            "additionalProperties": {"type": "string"},
             "type": "object"
           }
         },
-        "patternProperties": {
-          ".": {
-            "type": "string"
-          }
-        },
+        "additionalProperties": {"type": "string"},
         "type": "object"
       },
       "type": "array"

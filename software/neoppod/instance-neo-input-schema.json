@@ -1,6 +1,5 @@
 {
   "$schema": "http://json-schema.org/draft-04/schema#",
-  "extends": "./schema-definitions.json#",
   "description": "Parameters to instantiate a NEO cluster. See https://git.erp5.org/gitweb/neoppod.git/blob/HEAD:/neo.conf?js=1 for more information.",
   "additionalProperties": false,
   "required": ["cluster"],
@@ -29,12 +28,10 @@
     },
     "sla-dict": {
       "description": "Where to request instances. Each key is a query string for criterions (e.g. \"computer_guid=foo\"), and each value is a list of partition references.",
-      "patternProperties": {
-        ".": {
-          "type": "array",
-          "items": { "type": "string" },
-          "uniqueItems": true
-        }
+      "additionalProperties": {
+        "type": "array",
+        "items": { "type": "string" },
+        "uniqueItems": true
       },
       "type": "object"
     },
@@ -59,11 +56,9 @@
                 "type": "boolean"
               }
             },
-            "patternProperties": {
-              ".": {
-                "description": "To configure important parameters like innodb_buffer_pool_size, tokudb_cache_size, etc.",
-                "type": "string"
-              }
+            "additionalProperties": {
+              "description": "To configure important parameters like innodb_buffer_pool_size, tokudb_cache_size, etc.",
+              "type": "string"
             },
             "type": "object"
           },
@@ -71,7 +66,8 @@
             "description": "Configures storage engine, currently only InnoDB and TokuDB are supported. Defaults to NEO's default.",
             "type": "string"
           }
-        }
+        },
+        "type": "object"
       },
       "type": "array"
     }

@@ -1,6 +1,5 @@
 {
   "$schema": "http://json-schema.org/draft-04/schema#",
-  "extends": "./schema-definitions.json#",
   "required": ["tcpv4-port"],
   "properties": {
     "tcpv4-port": {
