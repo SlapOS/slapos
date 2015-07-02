@@ -50,11 +50,7 @@ download-binary-dir-url = http://www.shacache.org/shadir
 #   Romain Courteaud
 #   Sebastien Robin
 #   Kazuhiko Shiozaki
-#   Cedric de Saint Martin
-#   Yingjie Xu
 #   Gabriel Monnerat
-#   Lukasz Nowak
-#   Marco Mariani
 #   Test Agent Signature
 signature-certificate-list =
   -----BEGIN CERTIFICATE-----
@@ -110,58 +106,6 @@ signature-certificate-list =
   If1a2ZoqHRxoNo2yTmm7TSYRORWVS+vvfjY=
   -----END CERTIFICATE-----
   -----BEGIN CERTIFICATE-----
-  MIIB9jCCAV+gAwIBAgIJAIlBksrZVkK8MA0GCSqGSIb3DQEBBQUAMBMxETAPBgNV
-  BAMMCENPTVAtMzU3MCAXDTEyMDEyNjEwNTUyOFoYDzIxMTIwMTAyMTA1NTI4WjAT
-  MREwDwYDVQQDDAhDT01QLTM1NzCBnzANBgkqhkiG9w0BAQEFAAOBjQAwgYkCgYEA
-  ts+iGUwi44vtIfwXR8DCnLtHV4ydl0YTK2joJflj0/Ws7mz5BYkxIU4fea/6+VF3
-  i11nwBgYgxQyjNztgc9u9O71k1W5tU95yO7U7bFdYd5uxYA9/22fjObaTQoC4Nc9
-  mTu6r/VHyJ1yRsunBZXvnk/XaKp7gGE9vNEyJvPn2bkCAwEAAaNQME4wHQYDVR0O
-  BBYEFKuGIYu8+6aEkTVg62BRYaD11PILMB8GA1UdIwQYMBaAFKuGIYu8+6aEkTVg
-  62BRYaD11PILMAwGA1UdEwQFMAMBAf8wDQYJKoZIhvcNAQEFBQADgYEAMoTRpBxK
-  YLEZJbofF7gSrRIcrlUJYXfTfw1QUBOKkGFFDsiJpEg4y5pUk1s5Jq9K3SDzNq/W
-  it1oYjOhuGg3al8OOeKFrU6nvNTF1BAvJCl0tr3POai5yXyN5jlK/zPfypmQYxE+
-  TaqQSGBJPVXYt6lrq/PRD9ciZgKLOwEqK8w=
-  -----END CERTIFICATE-----
-  -----BEGIN CERTIFICATE-----
-  MIIB9jCCAV+gAwIBAgIJAPHoWu90gbsgMA0GCSqGSIb3DQEBBQUAMBQxEjAQBgNV
-  BAMMCXZpZmlibm9kZTAeFw0xMjAzMTkyMzIwNTVaFw0xMzAzMTkyMzIwNTVaMBQx
-  EjAQBgNVBAMMCXZpZmlibm9kZTCBnzANBgkqhkiG9w0BAQEFAAOBjQAwgYkCgYEA
-  ozBijpO8PS5RTeKTzA90vi9ezvv4vVjNaguqT4UwP9+O1+i6yq1Y2W5zZxw/Klbn
-  oudyNzie3/wqs9VfPmcyU9ajFzBv/Tobm3obmOqBN0GSYs5fyGw+O9G3//6ZEhf0
-  NinwdKmrRX+d0P5bHewadZWIvlmOupcnVJmkks852BECAwEAAaNQME4wHQYDVR0O
-  BBYEFF9EtgfZZs8L2ZxBJxSiY6eTsTEwMB8GA1UdIwQYMBaAFF9EtgfZZs8L2ZxB
-  JxSiY6eTsTEwMAwGA1UdEwQFMAMBAf8wDQYJKoZIhvcNAQEFBQADgYEAc43YTfc6
-  baSemaMAc/jz8LNLhRE5dLfLOcRSoHda8y0lOrfe4lHT6yP5l8uyWAzLW+g6s3DA
-  Yme/bhX0g51BmI6gjKJo5DoPtiXk/Y9lxwD3p7PWi+RhN+AZQ5rpo8UfwnnN059n
-  yDuimQfvJjBFMVrdn9iP6SfMjxKaGk6gVmI=
-  -----END CERTIFICATE-----
-  -----BEGIN CERTIFICATE-----
-  MIIB9jCCAV+gAwIBAgIJAMNZBmoIOXPBMA0GCSqGSIb3DQEBBQUAMBMxETAPBgNV
-  BAMMCENPTVAtMTMyMCAXDTEyMDUwMjEyMDQyNloYDzIxMTIwNDA4MTIwNDI2WjAT
-  MREwDwYDVQQDDAhDT01QLTEzMjCBnzANBgkqhkiG9w0BAQEFAAOBjQAwgYkCgYEA
-  6peZQt1sAmMAmSG9BVxxcXm8x15kE9iAplmANYNQ7z2YO57c10jDtlYlwVfi/rct
-  xNUOKQtc8UQtV/fJWP0QT0GITdRz5X/TkWiojiFgkopza9/b1hXs5rltYByUGLhg
-  7JZ9dZGBihzPfn6U8ESAKiJzQP8Hyz/o81FPfuHCftsCAwEAAaNQME4wHQYDVR0O
-  BBYEFNuxsc77Z6/JSKPoyloHNm9zF9yqMB8GA1UdIwQYMBaAFNuxsc77Z6/JSKPo
-  yloHNm9zF9yqMAwGA1UdEwQFMAMBAf8wDQYJKoZIhvcNAQEFBQADgYEAl4hBaJy1
-  cgiNV2+Z5oNTrHgmzWvSY4duECOTBxeuIOnhql3vLlaQmo0p8Z4c13kTZq2s3nhd
-  Loe5mIHsjRVKvzB6SvIaFUYq/EzmHnqNdpIGkT/Mj7r/iUs61btTcGUCLsUiUeci
-  Vd0Ozh79JSRpkrdI8R/NRQ2XPHAo+29TT70=
-  -----END CERTIFICATE-----
-  -----BEGIN CERTIFICATE-----
-  MIIB9jCCAV+gAwIBAgIJAL9FOtBJZBqAMA0GCSqGSIb3DQEBBQUAMBMxETAPBgNV
-  BAMMCENPTVAtOTIyMCAXDTEyMDkyNjE2MDkwM1oYDzIxMTIwOTAyMTYwOTAzWjAT
-  MREwDwYDVQQDDAhDT01QLTkyMjCBnzANBgkqhkiG9w0BAQEFAAOBjQAwgYkCgYEA
-  wlGVd6qOsc2xrtAQ5/rpflzS14/84SE/joaujMw2GGk6EFVSOcqKLq1TnHxkcCkv
-  nv1NYRPK/hpQOIKcGC1f+DvXXpMJI29R/rt2b2/y1oolxXonSVigBtCQlSyDoOFN
-  6LBX84CI5aYMvy3mqJCvfGEFBaPqze/PVugq9IpgZg0CAwEAAaNQME4wHQYDVR0O
-  BBYEFJ7HWyzVKkeSYnSK4FIwcdyng/tRMB8GA1UdIwQYMBaAFJ7HWyzVKkeSYnSK
-  4FIwcdyng/tRMAwGA1UdEwQFMAMBAf8wDQYJKoZIhvcNAQEFBQADgYEAZQWob2ki
-  ie6h90FgSctozXrotb8NIis2MtLIj+WonE0wSqYefxwBmAGjB9cfWz/sNamhM4rn
-  BP1A2ojVhF6hOE1qvTP5YxcGXOoYTrEQSuDF1hn12WlA4vqIAz1f+4CiMJNlXPwh
-  7N+X2kvRpHdXAHkBOxX3j34AeCZrSpu/yDQ=
-  -----END CERTIFICATE-----
-  -----BEGIN CERTIFICATE-----
   MIIB9jCCAV+gAwIBAgIJAKRvzcy7OH0UMA0GCSqGSIb3DQEBBQUAMBMxETAPBgNV
   BAMMCENPTVAtNzcyMCAXDTEyMDgxMDE1NDI1MVoYDzIxMTIwNzE3MTU0MjUxWjAT
   MREwDwYDVQQDDAhDT01QLTc3MjCBnzANBgkqhkiG9w0BAQEFAAOBjQAwgYkCgYEA
@@ -177,12 +121,18 @@ signature-certificate-list =
 # List of URL(s) which shouldn't be downloaded from binary cache.
 # Any URL beginning by a blacklisted URL will be blacklisted as well.
 download-from-binary-cache-url-blacklist =
+  https://lab.nexedi.cn/nexedi/slapos/raw/master
+  https://lab.nexedi.cn/nexedi/slapos/raw/1.0/
+  https://lab.nexedi.cn/nexedi/slapos/raw/erp5
   http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD
   http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/heads
   /
 # List of URL(s) which shouldn't be uploaded into binary cache.
 # Any URL beginning by a blacklisted URL will be blacklisted as well.
 upload-to-binary-cache-url-blacklist =
+  https://lab.nexedi.cn/nexedi/slapos/raw/master
+  https://lab.nexedi.cn/nexedi/slapos/raw/1.0/
+  https://lab.nexedi.cn/nexedi/slapos/raw/erp5
   http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD
   http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/heads
   /
