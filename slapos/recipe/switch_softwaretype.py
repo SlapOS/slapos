@@ -40,7 +40,10 @@ class Recipe:
   def install(self):
     # XXX-Antoine: We gotta find a better way to do this. I tried to check
     # out how slapgrid-cp was running buildout. But it is worse than that.
-    args = sys.argv[:]
+
+    # Using first two arguments to prevent the conflict that might arise while
+    # calling recipe in succession. 
+    args = sys.argv[:2]
     for x in self.buildout["slap-connection"].iteritems():
       args.append("slap-connection:%s=%s" % x)
     for x in "directory", "eggs-directory", "develop-eggs-directory":
