@@ -33,8 +33,12 @@ class Recipe:
     self.buildout = buildout
     self.options = options
     self.name = name
-    self.software_type = buildout["slap-configuration"]["slap-software-type"]
-    section, key = self.options[self.software_type].split(":")
+    # Option profile can be used just to get a buildout on that profile template
+    profile = self.options.get("profile")
+    if not profile:
+        self.software_type = buildout["slap-configuration"]["slap-software-type"]
+        profile = self.options[self.software_type]
+    section, key = profile.split(":")
     self.base = self.buildout[section][key]
 
   def install(self):
