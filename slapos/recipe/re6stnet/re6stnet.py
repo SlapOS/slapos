@@ -7,8 +7,9 @@ import sqlite3
 import slapos
 import traceback
 
-from re6st import registry, x509
+from re6st import registry, utils, x509
 from OpenSSL import crypto
+
 
 log = logging.getLogger('SLAPOS-RE6STNET')
 logging.basicConfig(level=logging.DEBUG)
@@ -36,7 +37,7 @@ def getDb(db_path):
   db = sqlite3.connect(db_path, isolation_level=None,
                                                   check_same_thread=False)
   db.text_factory = str
-  
+
   return db.cursor()
 
 def bang(args):
@@ -90,14 +91,14 @@ def requestAddToken(args, can_bang=True):
         call_bang = True
     else:
       log.debug('Bad token. Request add token fail for %s...' % request_file)
-  
+
   if can_bang and call_bang:
     bang(args)
 
 def requestRemoveToken(args):
   base_token_path = args['token_base_path']
   path_list = [x for x in os.listdir(base_token_path) if x.endswith('.remove')]
-  
+
   if not path_list:
     log.info("No token to delete. Exiting...")
     return
@@ -126,6 +127,10 @@ def requestRemoveToken(args):
         status_file = os.path.join(base_token_path, '%s.status' % reference)
         if os.path.exists(status_file):
           os.unlink(status_file)
+        ipv6_file = os.path.join(base_token_path, '%s.ipv6' % reference)
+        if os.path.exists(ipv6_file):
+          os.unlink(ipv6_file)
+
     else:
       log.debug('Bad token. Request add token fail for %s...' % request_file)
 
@@ -162,6 +167,28 @@ def requestRevoqueCertificate(args):
       os.unlink(os.path.join(base_token_path, reference_key))
       log.info("Certificate revoked for slave instance %s." % reference)
 
+
+def dumpIPv6Network(slave_reference, db, network, ipv6_file):
+  email = '%s@slapos' % slave_reference.lower()
+
+  try:
+    cert_string, = db.execute("SELECT cert FROM cert WHERE email = ?",
+        (email,)).next()
+  except StopIteration:
+    # Certificate was not generated yet !!!
+    pass
+
+  try:
+    if cert_string:
+      cert = crypto.load_certificate(crypto.FILETYPE_PEM, cert_string)
+      cn = x509.subnetFromCert(cert)
+      subnet = network + utils.binFromSubnet(cn)
+      ipv6 = utils.ipFromBin(subnet)
+      writeFile(ipv6_file, ipv6)
+  except Exception:
+    log.debug('XXX for %s... \n %s' % (slave_reference,
+              traceback.format_exc()))
+
 def checkService(args, can_bang=True):
   base_token_path = args['token_base_path']
   token_dict = loadJsonFile(args['token_json'])
@@ -175,16 +202,21 @@ def checkService(args, can_bang=True):
   computer_guid = args['computer_id']
   partition_id = args['partition_id']
   slap = slapos.slap.slap()
+  client = registry.RegistryClient(args['registry_url'])
+  ca = client.getCa()
+  network = x509.networkFromCa(crypto.load_certificate(crypto.FILETYPE_PEM, ca))
 
   # Check token status
   for slave_reference, token in token_dict.iteritems():
     status_file = os.path.join(base_token_path, '%s.status' % slave_reference)
+    ipv6_file = os.path.join(base_token_path, '%s.ipv6' % slave_reference)
     if not os.path.exists(status_file):
       # This token is not added yet!
       continue
 
     msg = readFile(status_file)
     if msg == 'TOKEN_USED':
+      dumpIPv6Network(slave_reference, db, network, ipv6_file)
       continue
 
     # Check if token is not in the database
@@ -200,8 +232,8 @@ def checkService(args, can_bang=True):
       # Token is used to register client
       call_bang = True
       try:
-        time.sleep(1)
         writeFile(status_file, 'TOKEN_USED')
+        dumpIPv6Network(slave_reference, db, network, ipv6_file)
         log.info("Token status of %s updated to 'used'." % slave_reference)
       except IOError:
         # XXX- this file should always exists
