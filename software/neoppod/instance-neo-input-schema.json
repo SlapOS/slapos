@@ -41,6 +41,16 @@
         "description": "Dictionary containing parameters required to configure individual nodes.",
         "default": {},
         "properties": {
+          "admin": {
+            "description": "Port of admin node. 0 to disable.",
+            "default": 2050,
+            "type": "integer"
+          },
+          "master": {
+            "description": "Port of master node. 0 to disable.",
+            "default": 2051,
+            "type": "integer"
+          },
           "storage-count": {
             "description": "Number of storage nodes to deploy. One master and one admin node is deployed with each storage.",
             "default": 1,

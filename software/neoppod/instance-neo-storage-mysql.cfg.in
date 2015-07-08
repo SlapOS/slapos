@@ -30,10 +30,10 @@ context = section parameter_dict my-cnf-parameters
 {% set master_list = [] -%}
 {% set admin_list = [] -%}
 {% for k, v in slapparameter_dict.iteritems() -%}
-{%   if k.startswith('master-') -%}
+{%   if k.startswith('master-') and v -%}
 {%     do master_list.append(v) -%}
 {%   endif -%}
-{%   if k.startswith('admin-') -%}
+{%   if k.startswith('admin-') and v -%}
 {%     do admin_list.append(v) -%}
 {%   endif -%}
 {% endfor -%}
@@ -42,10 +42,20 @@ context = section parameter_dict my-cnf-parameters
 recipe = slapos.cookbook:publish.serialised
 # TODO: make port a partition parameter
 ip = {{ (ipv4_set | list)[0] }}
-port-master = 10000
-port-admin = 10002
+{% set admin = slapparameter_dict.get('admin', 2050) -%}
+{% set master = slapparameter_dict.get('master', 2051) -%}
+{% if master -%}
+port-master = {{ master }}
 master = ${:ip}:${:port-master}
+{% else -%}
+master =
+{% endif -%}
+{% if admin -%}
+port-admin = {{ admin }}
 admin = ${:ip}:${:port-admin}
+{% else -%}
+admin =
+{% endif -%}
 masters = {{ ' '.join(sorted(master_list)) }}
 {%- if admin_list %}
 admins = {{ ' '.join(sorted(admin_list)) }}
@@ -111,8 +121,12 @@ post = ${mysqld:mysql-base-directory}/bin/mysql --defaults-file="${my-cnf:render
 [buildout]
 extends =
   {{ logrotate_cfg }}
+{%- if master %}
   {{ master_cfg }}
+{%- endif %}
+{%- if admin %}
   {{ admin_cfg }}
+{%- endif %}
 parts +=
   {{ '\n  '.join(part_list) }}
   logrotate-mysql

@@ -34,8 +34,9 @@ This software release assigns the following port ranges by default:
   memcached-volatile    2010-2019
   cloudooo              2020-2024
   smtp                  2025-2029
+  neo (admin & master)  2050-2051
   mariadb               2099
-  zodb                  2100-2149
+  zeo                   2100-2149
   balancer              2150-2199
   zope                  2200-*
   ====================  ==========
