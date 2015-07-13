@@ -15,6 +15,10 @@ LoadModule dav_fs_module modules/mod_dav_fs.so
 LoadModule negotiation_module modules/mod_negotiation.so
 LoadModule rewrite_module modules/mod_rewrite.so
 LoadModule headers_module modules/mod_headers.so
+LoadModule deflate_module modules/mod_deflate.so
+LoadModule filter_module modules/mod_filter.so
+
+AddOutputFilterByType DEFLATE text/cache-manifest text/html text/plain text/css application/hal+json application/json application/x-javascript text/xml application/xml application/rss+xml text/javascript image/svg+xml
 
 PidFile "{{ parameter_dict['pid-file'] }}"
 ServerAdmin admin@
