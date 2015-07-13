@@ -45,11 +45,13 @@ config-{{ k }} = {{ dumps(v) }}
 {%     do storage_dict.setdefault(zodb['type'], {}).__setitem__(name, zodb.pop('server')) -%}
 {%   endif -%}
 {% endfor -%}
-{% do assert(len(mountpoints) == len(zodb_dict)) %}
+{% do assert(len(mountpoints) == len(zodb_dict)) -%}
+{% set neo = [] -%}
 {% for server_type, server_dict in storage_dict.iteritems() -%}
 {%   if server_type == 'neo' -%}
 {%     set ((name, server_dict),) = server_dict.items() -%}
-{%     do zodb_dict[name].setdefault('storage-dict', {}).__setitem__('name', server_dict['cluster']) -%}
+{%     do neo.append(server_dict.get('cluster')) -%}
+{%     do server_dict.__setitem__('cluster', '${publish-early:neo-cluster}') -%}
 {{     root_common.request_neo(server_dict, 'zodb-neo', 'neo-') }}
 {%   else -%}
 {{     assert(server_type == 'zeo', server_type) -}}
@@ -58,21 +60,38 @@ config-{{ k }} = {{ dumps(v) }}
 {%   endif -%}
 {% endfor -%}
 
-[inituser-password]
-{% set inituser_password = slapparameter_dict.get('inituser-password') -%}
-{% if inituser_password -%}
-passwd = {{ dumps(inituser_password) }}
-{% else -%}
-recipe = slapos.cookbook:generate.password
-{% endif -%}
+[publish-early]
+recipe = slapos.cookbook:publish-early
+-init =
+  inituser-password gen-password:passwd
+  deadlock-debugger-password gen-deadlock-debugger-password:passwd
+{%- if neo %}
+  neo-cluster gen-neo-cluster:name
+{%-  if neo[0] %}
+neo-cluster = {{ neo[0] }}
+{%-  endif %}
+{%- endif %}
+{%- set inituser_password = slapparameter_dict.get('inituser-password') %}
+{%- if inituser_password %}
+inituser-password = {{ inituser_password }}
+{%- endif %}
+{%- set deadlock_debugger_password = slapparameter_dict.get('deadlock-debugger-password') -%}
+{%- if deadlock_debugger_password %}
+deadlock-debugger-password = {{ deadlock_debugger_password }}
+{%- endif %}
 
-[deadlock-debugger-password]
-{% set deadlock_debugger_password = slapparameter_dict.get('deadlock-debugger-password') -%}
-{% if deadlock_debugger_password -%}
-passwd = {{ dumps(deadlock_debugger_password) }}
-{% else -%}
+[gen-password]
 recipe = slapos.cookbook:generate.password
-{% endif -%}
+storage-path =
+
+[gen-deadlock-debugger-password]
+<= gen-password
+
+[gen-neo-cluster-base]
+<= gen-password
+
+[gen-neo-cluster]
+name = neo-${gen-neo-cluster-base:passwd}
 
 [request-zope-base]
 <= request-common
@@ -82,12 +101,12 @@ return =
 config-bt5 = {{ dumps(slapparameter_dict.get('bt5', 'erp5_full_text_myisam_catalog erp5_configurator_standard erp5_configurator_maxma_demo erp5_configurator_ung erp5_configurator_run_my_doc')) }}
 config-bt5-repository-url = {{ dumps(slapparameter_dict.get('bt5-repository-url', local_bt5_repository)) }}
 config-cloudooo-url = ${request-cloudooo:connection-url}
-config-deadlock-debugger-password = ${deadlock-debugger-password:passwd}
+config-deadlock-debugger-password = ${publish-early:deadlock-debugger-password}
 config-developer-list = {{ dumps(slapparameter_dict.get('developer-list', [inituser_login])) }}
 config-hosts-dict = {{ dumps(slapparameter_dict.get('hosts-dict', {})) }}
 config-hostalias-dict = {{ dumps(slapparameter_dict.get('hostalias-dict', {})) }}
 config-inituser-login = {{ dumps(inituser_login) }}
-config-inituser-password = ${inituser-password:passwd}
+config-inituser-password = ${publish-early:inituser-password}
 config-kumofs-url = ${request-memcached-persistent:connection-url}
 config-memcached-url = ${request-memcached-volatile:connection-url}
 config-mysql-test-url-list = ${request-mariadb:connection-test-database-list}
@@ -98,6 +117,7 @@ config-timezone = {{ dumps(slapparameter_dict.get('timezone', 'UTC')) }}
 config-zodb-dict = {{ dumps(zodb_dict) }}
 {% for server_type, server_dict in storage_dict.iteritems() -%}
 {%   if server_type == 'neo' -%}
+config-neo-cluster = ${publish-early:neo-cluster}
 config-neo-name = {{ server_dict.keys()[0] }}
 config-neo-masters = ${neo-0-final:connection-masters}
 {%   else -%}
@@ -191,12 +211,11 @@ return = site_url
 
 [publish]
 recipe = slapos.cookbook:publish.serialised
+-extends = publish-early
 {% if 'neo' in storage_dict -%}
 neo-masters = ${neo-0-final:connection-masters}
 neo-admins = ${neo-0-final:connection-admins}
 {% endif  -%}
-deadlock-debugger-password = ${deadlock-debugger-password:passwd}
-inituser-password = ${inituser-password:passwd}
 {#
 Pick any published hosts-dict, they are expected to be identical - and there is
 no way to check here.

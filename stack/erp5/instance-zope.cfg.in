@@ -251,6 +251,7 @@ node-id = {{ dumps(node_id_base ~ '-' ~ index) }}
 {%     do log_list.append(log) -%}
 {%     do zodb['storage-dict'].__setitem__('logfile', log) -%}
 {%     if db_name == slapparameter_dict.get('neo-name') -%}
+{%       do zodb['storage-dict'].__setitem__('name', slapparameter_dict['neo-cluster']) -%}
 {%       do zodb['storage-dict'].__setitem__('master_nodes', slapparameter_dict['neo-masters']) -%}
 {%     endif -%}
 {%   endif -%}

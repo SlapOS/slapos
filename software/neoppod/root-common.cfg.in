@@ -38,7 +38,7 @@ parts =
 {% set section_id_list = [] -%}
 [{{ prefix }}request-common]
 <= request-common-base
-config-cluster = {{ dumps(parameter_dict['cluster']) }}
+config-cluster = {{ parameter_dict['cluster'] }}
 {% set replicas = parameter_dict.get('replicas', 0) -%}
 config-partitions = {{ dumps(parameter_dict.get('partitions', 12)) }}
 config-replicas = {{ dumps(replicas) }}
