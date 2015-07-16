@@ -45,7 +45,7 @@ class ProcessSnapshot(_Snapshot):
   """
   def __init__(self, process=None):
     assert type(process) is psutil.Process
-    ui_counter_list = process.get_io_counters()
+    ui_counter_list = process.io_counters()
     self.username = process.username()
     self.process_object = process
     self.pid = process.pid 
@@ -79,7 +79,7 @@ class SystemSnapshot(_Snapshot):
     cpu_idle_percentage = psutil.cpu_times_percent(interval=interval).idle
     load_percent = 100 - cpu_idle_percentage
 
-    memory = psutil.phymem_usage()
+    memory = psutil.virtual_memory()
     net_io = psutil.net_io_counters()
     
     self.memory_used = memory.used
@@ -155,10 +155,10 @@ class ComputerSnapshot(_Snapshot):
   """ Take a snapshot from computer informations
   """
   def __init__(self, model_id=None, sensor_id=None, test_heating=False):
-    self.cpu_num_core = psutil.NUM_CPUS
+    self.cpu_num_core = psutil.cpu_count()
     self.cpu_frequency = 0
     self.cpu_type = 0
-    self.memory_size = psutil.TOTAL_PHYMEM  
+    self.memory_size = psutil.virtual_memory().total
     self.memory_type = 0
 
     #
