@@ -79,7 +79,7 @@ class TestCollectDatabase(unittest.TestCase):
         database.connect()
         try:
           self.assertEquals(
-              [u'user', u'computer', u'system', u'disk'],
+              [u'user', u'computer', u'system', u'disk', u'temperature', u'heating'],
               database.getTableList())
         finally:
           database.close()
@@ -258,6 +258,8 @@ class TestCollectReport(unittest.TestCase):
         csv_path_list = ['%s/1983-01-10/dump_disk.csv' % self.instance_root,
                          '%s/1983-01-10/dump_computer.csv' % self.instance_root,
                          '%s/1983-01-10/dump_user.csv' % self.instance_root,
+                         '%s/1983-01-10/dump_heating.csv' % self.instance_root,
+                         '%s/1983-01-10/dump_temperature.csv' % self.instance_root,
                          '%s/1983-01-10/dump_system.csv' % self.instance_root]
 
         self.assertEquals(set(glob.glob("%s/1983-01-10/*.csv" % self.instance_root)),
