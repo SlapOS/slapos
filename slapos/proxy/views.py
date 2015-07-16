@@ -732,6 +732,10 @@ def softwareInstanceRename():
 def getComputerPartitionStatus():
   return xml_marshaller.xml_marshaller.dumps('Not implemented.')
 
+@app.route('/computerBang', methods=['POST'])
+def computerBang():
+  return xml_marshaller.xml_marshaller.dumps('')
+
 @app.route('/getComputerPartitionCertificate', methods=['GET'])
 def getComputerPartitionCertificate():
   # proxy does not use partition certificate, but client calls this.

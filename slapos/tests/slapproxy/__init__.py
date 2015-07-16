@@ -271,6 +271,14 @@ class TestInformation(BasicMixin, unittest.TestCase):
     response = xml_marshaller.xml_marshaller.loads(rv.data)
     self.assertEquals({'certificate': '', 'key': ''}, response)
 
+  def test_computerBang(self):
+    """
+    Tests that computerBang method is implemented in slapproxy.
+    """
+    rv = self.app.post( '/computerBang?computer_id=%s' % ( self.computer_id))
+    response = xml_marshaller.xml_marshaller.loads(rv.data)
+    self.assertEquals('', response)
+
 class MasterMixin(BasicMixin, unittest.TestCase):
   """
   Define advanced tool for test proxy simulating behavior slap library tools
