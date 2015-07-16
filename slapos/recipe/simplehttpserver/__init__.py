@@ -33,20 +33,24 @@ class Recipe(GenericBaseRecipe):
   def __init__(self, buildout, name, options):
 
     base_path = options['base-path']
-    pool = string.letters + string.digits
-    hash_string = ''.join(random.choice(pool) for i in xrange(64))
-    path = os.path.join(base_path, hash_string)
-
-    if os.path.exists(base_path):
-      path_list = os.listdir(base_path)
-      if len(path_list) == 1:
-        hash_string = path_list[0]
-        path = os.path.join(base_path, hash_string)
-      elif len(path_list) > 1:
-        raise ValueError("Folder %s should contain 0 or 1 element." % base_path)
-
-    options['root-dir'] = path
-    options['path'] = hash_string
+    if options.get('use-hash-url', 'True') in ['true', 'True']:
+      pool = string.letters + string.digits
+      hash_string = ''.join(random.choice(pool) for i in xrange(64))
+      path = os.path.join(base_path, hash_string)
+  
+      if os.path.exists(base_path):
+        path_list = os.listdir(base_path)
+        if len(path_list) == 1:
+          hash_string = path_list[0]
+          path = os.path.join(base_path, hash_string)
+        elif len(path_list) > 1:
+          raise ValueError("Folder %s should contain 0 or 1 element." % base_path)
+  
+      options['root-dir'] = path
+      options['path'] = hash_string
+    else:
+      options['root-dir'] = base_path
+      options['path'] = ''
     return GenericBaseRecipe.__init__(self, buildout, name, options)
 
 
@@ -59,8 +63,9 @@ class Recipe(GenericBaseRecipe):
       'port': int(self.options['port']),
       'cwd': self.options['base-path'],
       'log-file': self.options['log-file'],
-      'cert-file': self.options['cert-file'],
-      'key-file': self.options['key-file']
+      'cert-file': self.options.get('cert-file', ''),
+      'key-file': self.options.get('key-file', ''),
+      'root-dir': self.options['root-dir']
     }
 
     server = self.createPythonScript(
