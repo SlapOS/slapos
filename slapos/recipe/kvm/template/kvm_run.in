@@ -24,10 +24,10 @@ default_disk_image = '%(default-disk-image)s'
 disk_path = '%(disk-path)s'
 virtual_hard_drive_url = '%(virtual-hard-drive-url)s'.strip()
 virtual_hard_drive_md5sum = '%(virtual-hard-drive-md5sum)s'.strip()
-virtual_hard_drive_gzipped = '%(virtual-hard-drive-gzipped)s'.strip()
+virtual_hard_drive_gzipped = '%(virtual-hard-drive-gzipped)s'.strip().lower()
 nat_rules = '%(nat-rules)s'.strip()
-use_tap = '%(use-tap)s'
-use_nat = '%(use-nat)s'
+use_tap = '%(use-tap)s'.lower()
+use_nat = '%(use-nat)s'.lower()
 tap_interface = '%(tap-interface)s'
 listen_ip = '%(ipv4)s'
 mac_address = '%(mac-address)s'
@@ -119,7 +119,7 @@ if not os.path.exists(disk_path) and virtual_hard_drive_url != '':
   print('Downloading virtual hard drive...')
   try:
     downloaded_disk = disk_path
-    if virtual_hard_drive_gzipped == 'True':
+    if virtual_hard_drive_gzipped == 'true':
       downloaded_disk = '%%s.gz' %% disk_path
     urllib.urlretrieve(virtual_hard_drive_url, downloaded_disk)
   except:
@@ -162,7 +162,7 @@ for storage in disk_storage_list:
     key, val = storage.split(' ')
     disk_storage_dict[key.strip()] = val.strip()
 
-if not external_disk_format in ['qcow2', 'raw', 'vdi', 'vmdk', 'cloop']:
+if not external_disk_format in ['qcow2', 'raw', 'vdi', 'vmdk', 'cloop', 'qed']:
   external_disk_format = 'qcow2'
 
 map_storage_list, external_disk_number = getMapStorageList(disk_storage_dict,
@@ -197,7 +197,7 @@ tap_network_parameter = []
 nat_network_parameter = []
 numa_parameter = []
 number = -1
-if use_nat == 'True':
+if use_nat == 'true':
   number += 1
   rules = 'user,id=lan%%s,' %% number + ','.join('hostfwd=tcp:%%s:%%s-:%%s' %% (listen_ip,
                         int(port) + 10000, port) for port in nat_rules.split())
@@ -209,7 +209,7 @@ if use_nat == 'True':
                                            cluster_doc_host, cluster_doc_port)
   nat_network_parameter = ['-netdev', rules,
           '-device', 'e1000,netdev=lan%%s,mac=%%s' %% (number, mac_address)]
-if use_tap == 'True':
+if use_tap == 'true':
   number += 1
   tap_network_parameter = ['-netdev',
           'tap,id=lan%%s,ifname=%%s,script=no,downscript=no' %% (number,

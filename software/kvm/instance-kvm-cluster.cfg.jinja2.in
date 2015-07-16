@@ -22,7 +22,7 @@ config-use-ipv6 = {{ dumps(slapparameter_dict.get('use-ipv6', False)) }}
 # Request kvm instances
 {% for instance_name, kvm_parameter_dict in slapparameter_dict.get('kvm-partition-dict', {'kvm-default': {}}).items() -%}
 {% set section = 'request-' ~ instance_name -%}
-{% set use_nat = kvm_parameter_dict.get('use-nat', True) -%}
+{% set use_nat = kvm_parameter_dict.get('use-nat', 'True') -%}
 [{{ section }}]
 <= request-common
 software-type = kvm
@@ -73,12 +73,12 @@ config-document-path = ${http-server:path}
 return = 
   backend-url
   url
-{% if use_nat -%}
+{% if use_nat.lower() -%}
 {%   for port in nat_rules_list -%}
 {{ '  ' }}nat-rule-url-{{ port }}
 {%   endfor -%}
 {% endif -%}
-{% if kvm_parameter_dict.get('use-tap', True) -%}
+{% if kvm_parameter_dict.get('use-tap', 'True').lower() == 'true' -%}
 {{ '  ' }}tap-ipv4
 
 {% do publish_dict.__setitem__('lan-' ~ instance_name, '${' ~ section ~ ':connection-tap-ipv4}') -%}
@@ -86,7 +86,7 @@ return =
 {% endif -%}
 {% do publish_dict.__setitem__(instance_name ~ '-backend-url', '${' ~ section ~ ':connection-backend-url}') -%}
 {% do publish_dict.__setitem__(instance_name ~ '-url', '${' ~ section ~ ':connection-url}') -%}
-{% do kvm_instance_dict.__setitem__(instance_name, (kvm_parameter_dict.get('use-nat', True), nat_rules_list)) -%}
+{% do kvm_instance_dict.__setitem__(instance_name, (use_nat, nat_rules_list)) -%}
 {% endfor %}
 
 
@@ -145,6 +145,7 @@ log = ${:var}/log
 scripts = ${:etc}/run
 services = ${:etc}/service
 document = ${:srv}/document
+promises = ${:etc}/promise
 ssl = ${:etc}/ssl
 
 [http-ssl]
@@ -164,8 +165,16 @@ wrapper = ${directory:services}/simple-http-server
 log-file = ${directory:log}/http.log
 cert-file = ${http-ssl:cert}
 key-file = ${http-ssl:key}
-{% do publish_dict.__setitem__('http-file-server', 'https://' ~ '[${http-server:host}]:' ~ '${http-server:port}/' ~ '${http-server:path}') -%}
+use-hash-url = true
 
+[http-promise]
+recipe = slapos.cookbook:check_port_listening
+path = ${directory:promises}/http-server
+hostname = ${http-server:host}
+port = ${http-server:port}
+
+{% if len(kvm_hostname_list) -%}
+{%   do part_list.append('write-vm-hostname') -%}
 [write-vm-hostname]
 recipe = slapos.recipe.template:jinja2
 template = {{ template_content }}
@@ -174,6 +183,7 @@ rendered = ${http-server:root-dir}/${:filename}
 context =
     raw content_list {{ kvm_hostname_list | join('#') }}
     raw sep #
+{% endif -%}
 
 {% macro writefile(section_name, file_path, content, mode='') -%}
 {% do part_list.append(section_name) -%}
@@ -199,7 +209,7 @@ recipe = slapos.cookbook:publish
 [buildout]
 parts = 
   http-server
-  write-vm-hostname
+  http-promise
   publish
 # Complete parts with sections
   {{ part_list | join('\n  ') }}

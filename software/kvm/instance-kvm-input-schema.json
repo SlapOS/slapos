@@ -115,7 +115,7 @@
       "description": "Type of QEMU disk drive, to create.",
       "type": "string",
       "default": "qcow2",
-      "enum": ["qcow2", "raw", "vdi", "vmdk", "cloop"]
+      "enum": ["qcow2", "raw", "vdi", "vmdk", "cloop", "qed"]
     },
 
     "use-tap": {

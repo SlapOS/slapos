@@ -1,4 +1,6 @@
-{% set enable_http = slapparameter_dict.get('enable-http-server', 'False') -%}
+{% set enable_http = slapparameter_dict.get('enable-http-server', 'False').lower() -%}
+{% set use_tap = slapparameter_dict.get('use-tap', 'False').lower() -%}
+{% set use_nat = slapparameter_dict.get('use-nat', 'True').lower() -%}
 #############################
 #
 # Instanciate kvm
@@ -19,7 +21,7 @@ parts =
 {% if slapparameter_dict.get('document-host', '') %}
   cluster-url-path
 {% endif -%}
-{% if slapparameter_dict.get('enable-http-server', 'False') == 'True' %}
+{% if enable_http == 'true' %}
   httpd
   httpd-promise
   publish-host-config
@@ -30,8 +32,8 @@ parts =
   get-authorized-key
 {%   endif -%}
   
-extends = 
-  {{ template_httpd_cfg }}
+# extends = 
+#  {{ template_httpd_cfg }}
 {% endif -%}
 
 eggs-directory = {{ eggs_directory }}
@@ -133,7 +135,7 @@ external-disk-number = ${slap-parameter:external-disk-number}
 external-disk-size = ${slap-parameter:external-disk-size}
 external-disk-format = ${slap-parameter:external-disk-format}
 
-{% if slapparameter_dict.get('enable-http-server', 'False') == 'True' or ( slapparameter_dict.get('use-tap', 'False') == 'True' and tap_network_dict.has_key('ipv4') ) -%}
+{% if enable_http == 'tue' or ( use_tap == 'true' and tap_network_dict.has_key('ipv4') ) -%}
 httpd-port = ${slap-parameter:httpd-port}
 {% else -%}
 httpd-port = 0
@@ -270,6 +272,23 @@ dash_path = {{ dash_executable_location }}
 curl_path = {{ curl_executable_location }}
 
 
+{% if enable_http == 'true' %}
+[httpd]
+recipe = slapos.cookbook:simplehttpserver
+host = ${slap-network-information:local-ipv4}
+port = ${slap-parameter:httpd-port}
+base-path = ${directory:public}
+wrapper = ${directory:services}/http-server
+log-file = ${directory:log}/httpd.log
+use-hash-url = false
+
+[httpd-promise]
+recipe = slapos.cookbook:check_port_listening
+path = ${directory:promises}/httpd
+hostname = ${httpd:host}
+port = ${httpd:port}
+{% endif %}
+
 [publish-connection-information]
 recipe = slapos.cookbook:publish
 ipv6 = ${slap-network-information:global-ipv6}
@@ -278,7 +297,7 @@ url = ${request-slave-frontend:connection-url}/vnc_auto.html?host=${request-slav
 {% set disk_number = len(storage_dict) -%}
 maximum-extra-disk-amount = {{ disk_number }}
 {% set iface = 'eth0' -%}
-{% if slapparameter_dict.get('use-nat', 'True') == 'True' -%}
+{% if use_nat == 'true' -%}
 {%   set iface = 'eth1' -%}
 # Publish NAT port mapping status
 # XXX: hardcoded value from [slap-parameter]
@@ -291,13 +310,13 @@ nat-rule-url-{{port}} = [${slap-network-information:global-ipv6}]:{{external_por
 {%     endif -%}
 {%   endfor -%}
 {% endif -%}
-{% if slapparameter_dict.get('use-tap', 'False') == 'True' -%}
+{% if use_tap == 'true' -%}
 tap-ipv4 = ${slap-network-information:tap-ipv4}
 {% endif -%}
 
 {% set kvm_http = 'http://${slap-network-information:local-ipv4}:' ~ slapparameter_dict.get('httpd-port', 8081) -%}
 {% if enable_http == 'True' %}
-{%   if slapparameter_dict.get('use-nat', 'True') == 'True' -%}
+{%   if use_nat == 'true' -%}
 {%     set kvm_http = 'http://10.0.2.100' -%}
 {%   endif %}
 {%   if slapparameter_dict.get('authorized-key', '') -%}
@@ -305,13 +324,13 @@ tap-ipv4 = ${slap-network-information:tap-ipv4}
 {%   endif %}
 {% endif %}
 
-{% if slapparameter_dict.get('use-tap', 'False') == 'True' and tap_network_dict.has_key('ipv4') -%}
+{% if use_tap == 'true' and tap_network_dict.has_key('ipv4') -%}
 1_info = Use these configurations below to configure interface {{ iface }} in your VM.
 2_info = ${network-config:ifconfig}
 3_info = ${network-config:route-iface}
 4_info = ${network-config:route-network}
 5_info = ${network-config:route-default}
-{% if enable_http == 'True' %}
+{% if enable_http == 'true' %}
 6_info = Or run in your VM the command: wget -O- {{ kvm_http }}/netconfig.sh | /bin/sh -
 {% endif %}
 
@@ -357,7 +376,7 @@ mode = {{ mode }}
 [publish-host-config]
 recipe = plone.recipe.command
 name = {{ slapparameter_dict.get('name', 'localhost') }}
-{% if slapparameter_dict.get('use-tap', 'False') == 'True' and tap_network_dict.has_key('ipv4') -%}
+{% if use_tap == 'true' and tap_network_dict.has_key('ipv4') -%}
 local-ipv4 = ${slap-network-information:tap-ipv4}
 {% else -%}
 local-ipv4 = 127.0.0.1
