@@ -167,21 +167,21 @@ class BasicMixin(object):
     for i in range(tries):
       if expected in open(log_path).read():
         return
-      time.sleep(0.1)
+      time.sleep(0.01)
     self.fail('%r not found in %s' % (expected, log_path))
 
   def assertIsCreated(self, path, tries=50):
     for i in range(tries):
       if os.path.exists(path):
         return
-      time.sleep(0.1)
+      time.sleep(0.01)
     self.fail('%s should be created' % path)
 
   def assertIsNotCreated(self, path, tries=50):
     for i in range(tries):
       if os.path.exists(path):
         self.fail('%s should not be created' % path)
-      time.sleep(0.1)
+      time.sleep(0.01)
 
   def assertInstanceDirectoryListEqual(self, instance_list):
     instance_list.append('etc')
