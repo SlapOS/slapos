@@ -33,23 +33,6 @@ to be accessible from IPv4.
 See the instance-kvm-input-schema.json file for more instance parameters (cpu-count, ram-size, disk-size, etc).
 
 
-KVM instance (1GB of RAM, 10GB of SSD, one core)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Note that the KVM instance will try to request a frontend slave instance in order
-to be accessible from IPv4.
-
-::
-  myawesomekvm = request(
-      software_release=kvm,
-      partition_reference="My awesome KVM",
-      partition_parameter_kw={
-          "nbd-host":"ubuntu-1204.nbd.vifib.net",
-      }
-  )
-
-See the instance-kvm-input-schema.json file for more instance parameters (cpu-count, ram-size, disk-size, etc).
-
 Resilient KVM instance
 ~~~~~~~~~~~~~~~~~~~~~
 
