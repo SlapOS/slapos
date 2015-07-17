@@ -254,6 +254,7 @@ node-id = {{ dumps(node_id_base ~ '-' ~ index) }}
 {%       do zodb['storage-dict'].__setitem__('name', slapparameter_dict['neo-cluster']) -%}
 {%       do zodb['storage-dict'].__setitem__('master_nodes', slapparameter_dict['neo-masters']) -%}
 {%     endif -%}
+{{     assert(zodb['storage-dict']['master_nodes'], db_name) }}
 {%   endif -%}
 {% endfor -%}
 import-list = {{ dumps(list(import_set)) }}
