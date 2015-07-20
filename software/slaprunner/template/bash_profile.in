@@ -4,5 +4,38 @@
 
 cd {{ workdir }}
 export PATH={{- path }}
-export PS1="\w $ "
-export LANG="en_GB.UTF-8"
+export PS1="$ "
+
+if [ -f "$HOME/.bashrc" ] ; then
+  source $HOME/.bashrc
+fi
+
+# If not running interactively, don't do anything
+case $- in
+    *i*) ;;
+      *) return;;
+esac
+
+# enable color support
+if [ -x /usr/bin/dircolors ]; then
+    test -r ~/.dircolors && eval "$(dircolors -b ~/.dircolors)" || eval "$(dircolors -b)"
+    alias ls='ls --color=auto'
+fi
+
+# some more ls aliases
+alias ll='ls -l'
+alias la='ls -A'
+alias l='ls -CF'
+
+echo "Welcome to SlapOS slaprunner shell"
+echo 
+# TODO: how to run slapos ?
+#echo "You can use the following slapos CLI commands:"
+#echo "slapos node software"
+#echo "slapos node instance"
+#echo "slapos request"
+#echo ""
+# XXX for now we can use:
+#echo ~/bin/supervisorctl -c ~/etc/supervisorctl.conf
+#echo ~/bin/supervisorctl -c ~/srv/runner/instance/etc/supervisorctl.conf
+
