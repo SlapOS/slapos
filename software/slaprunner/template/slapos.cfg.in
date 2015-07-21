@@ -36,6 +36,7 @@ knowledge0_cfg = {{ slaprunner['knowledge0_file'] }}
 minishell_cwd_file = {{ slaprunner['minishell_cwd_file'] }}
 minishell_history_file = {{ slaprunner['minishell_history_file'] }}
 path = {{ slaprunner['path'] }}
+instance_name = {{ slaprunner['instance_name'] }}
 
 [slapproxy]
 host = {{ slaprunner['ipv4'] }}

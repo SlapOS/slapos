@@ -84,6 +84,13 @@
             "type": "string",
             "format": "uri"
         },
+        "check-custom-frontend-promise": {
+            "title": "Check Custom Frontend Promise",
+            "description": "Enable a promise to check that HTTP frontend created from custom-frontend-backend-url is available",
+            "type": "string",
+            "enum": ["true", "false"],
+            "default": "false"
+        },
         "monitor-port": {
             "title": "Monitor Port",
             "description": "Allow to manually change the port on wich the apache server running monitoring interface is listening. The default value for the webrunner is different from the default value of the standalone stack-monitor server (default 9684)",
@@ -102,6 +109,10 @@
             "description": "Number of clones to be deployed when a resilient runner, if missing a single clone is provided. Its value can be 1 or 2",
             "type": "integer",
             "enum": [1, 2]
-        }
+        },
+        "instance-name": {
+            "description": "Name of the instance, to show in the window title",
+            "type": "string"
+        },
     }
 }

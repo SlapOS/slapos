@@ -147,7 +147,6 @@ As you can see in instance-runner-*.cfg, the buildout section extends a hard-cod
 List of ports used by the webrunner:
 ------------------------------------
 8602 : slapproxy, while running tests
-8949 : shellinabox
 9684 : apache (monitoring of slaprunner, git access)
 22222 : dropbear
 39986 : supervisord
@@ -156,4 +155,4 @@ List of ports used by the webrunner:
 
 Tips:
 -----
-You can use shellinabox in fullscreen, by accessing : https://[IPV6]:8949
+You can use shellinabox in fullscreen, by accessing : https://[IPV6]:50005/shellinabox/
