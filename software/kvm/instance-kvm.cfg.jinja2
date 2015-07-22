@@ -135,7 +135,7 @@ external-disk-number = ${slap-parameter:external-disk-number}
 external-disk-size = ${slap-parameter:external-disk-size}
 external-disk-format = ${slap-parameter:external-disk-format}
 
-{% if enable_http == 'tue' or ( use_tap == 'true' and tap_network_dict.has_key('ipv4') ) -%}
+{% if enable_http == 'true' or ( use_tap == 'true' and tap_network_dict.has_key('ipv4') ) -%}
 httpd-port = ${slap-parameter:httpd-port}
 {% else -%}
 httpd-port = 0

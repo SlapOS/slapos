@@ -66,19 +66,19 @@ config-data-to-vm = {{ dumps(kvm_parameter_dict.get('data-to-vm', '')) }}
 {% endif -%}
 
 # Enable simple http server on ipv6 so all VMs will access it
-config-document-host = ${http-server:host}
-config-document-port = ${http-server:port}
-config-document-path = ${http-server:path}
+config-document-host = ${apache-conf:ip}
+config-document-port = ${apache-conf:port}
+config-document-path = ${hash-code:passwd}
 
 return = 
   backend-url
   url
-{% if use_nat.lower() -%}
+{% if str(use_nat).lower() -%}
 {%   for port in nat_rules_list -%}
 {{ '  ' }}nat-rule-url-{{ port }}
 {%   endfor -%}
 {% endif -%}
-{% if kvm_parameter_dict.get('use-tap', 'True').lower() == 'true' -%}
+{% if str(kvm_parameter_dict.get('use-tap', 'True')).lower() == 'true' -%}
 {{ '  ' }}tap-ipv4
 
 {% do publish_dict.__setitem__('lan-' ~ instance_name, '${' ~ section ~ ':connection-tap-ipv4}') -%}
@@ -135,6 +135,11 @@ sla-instance_guid = {{ slave_frontend_iguid }}
 {% endfor %}
 
 # Enable simple http server on ipv6 so all VMs will access it
+[hash-code]
+recipe = slapos.cookbook:generate.password
+storage-path = ${directory:etc}/code
+bytes = 24
+
 [directory]
 recipe = slapos.cookbook:mkdirectory
 etc = ${buildout:directory}/etc
@@ -144,34 +149,19 @@ var = ${buildout:directory}/var
 log = ${:var}/log
 scripts = ${:etc}/run
 services = ${:etc}/service
-document = ${:srv}/document
+webroot = ${:srv}/document
 promises = ${:etc}/promise
 ssl = ${:etc}/ssl
 
-[http-ssl]
-recipe = plone.recipe.command
-command = "{{ openssl_executable_location }}" req -newkey rsa -batch -new -x509 -days 3650 -nodes -keyout "${:key}" -out "${:cert}"
-key = ${directory:ssl}/key
-cert = ${directory:ssl}/cert
-update-command = 
-stop-on-error = true
+[directory-doc]
+recipe = slapos.cookbook:mkdirectory
+document = ${directory:webroot}/${hash-code:passwd}
 
-[http-server]
-recipe = slapos.cookbook:simplehttpserver
-host = {{ ipv6 }}
+[apache-conf]
+denied-root-access = true
+root = ${directory:webroot}/
+index = ${directory:webroot}/${hash-code:passwd}
 port = 9002
-base-path = ${directory:document}
-wrapper = ${directory:services}/simple-http-server
-log-file = ${directory:log}/http.log
-cert-file = ${http-ssl:cert}
-key-file = ${http-ssl:key}
-use-hash-url = true
-
-[http-promise]
-recipe = slapos.cookbook:check_port_listening
-path = ${directory:promises}/http-server
-hostname = ${http-server:host}
-port = ${http-server:port}
 
 {% if len(kvm_hostname_list) -%}
 {%   do part_list.append('write-vm-hostname') -%}
@@ -179,7 +169,7 @@ port = ${http-server:port}
 recipe = slapos.recipe.template:jinja2
 template = {{ template_content }}
 filename = hosts
-rendered = ${http-server:root-dir}/${:filename}
+rendered = ${directory:webroot}/${hash-code:passwd}/${:filename}
 context =
     raw content_list {{ kvm_hostname_list | join('#') }}
     raw sep #
@@ -207,10 +197,14 @@ recipe = slapos.cookbook:publish
 {{   name }} = {{ value }}
 {% endfor %}
 [buildout]
+extends = 
+  {{ template_httpd_cfg }}
+
 parts = 
-  http-server
-  http-promise
+  httpd
+  httpd-promise
   publish
+  directory-doc
 # Complete parts with sections
   {{ part_list | join('\n  ') }}
  
