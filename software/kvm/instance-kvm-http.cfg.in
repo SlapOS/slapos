@@ -14,33 +14,48 @@ log = ${:var}/log
 services = ${:etc}/service
 promises = ${:etc}/promise
 run = ${:var}/run
+document = ${:srv}/document
+ssl = ${:etc}/ssl
 
 [apache-conf]
 recipe = slapos.recipe.template:jinja2
 template = {{ template_apache_conf }}
 rendered = ${directory:etc}/apache.conf
-#ipv6 = ${slap-network-information:global-ipv6}
-ipv4 = ${slap-network-information:local-ipv4}
+ip = ${slap-network-information:global-ipv6}
+#ipv4 = ${slap-network-information:local-ipv4}
 port = ${slap-parameter:httpd-port}
 error-log = ${directory:log}/apache-error.log
 access-log = ${directory:log}/apache-access.log
 pid-file = ${directory:run}/apache.pid
 index = ${directory:public}
+root = {:index}
+denied-root-access = false
 context = 
   key port :port
-  key ip :ipv4
+  key ip :ip
   key access_log :access-log
   key error_log :error-log
   key pid_file :pid-file
   key index_folder :index
+  key cert httpd-ssl:cert
+  key key httpd-ssl:key
+  key document_root :root
 
 [httpd]
 recipe = slapos.cookbook:wrapper
 wrapper-path = ${directory:services}/httpd
 command-line = "{{ apache_location }}/bin/httpd" -f "${apache-conf:rendered}" -DFOREGROUND
 
+[httpd-ssl]
+recipe = plone.recipe.command
+command = "{{ openssl_executable_location }}" req -newkey rsa -batch -new -x509 -days 3650 -nodes -keyout "${:key}" -out "${:cert}"
+key = ${directory:ssl}/key
+cert = ${directory:ssl}/cert
+update-command = 
+stop-on-error = true
+
 [httpd-promise]
 recipe = slapos.cookbook:check_port_listening
 path = ${directory:promises}/apache-httpd
-hostname = ${apache-conf:ipv4}
+hostname = ${apache-conf:ip}
 port = ${apache-conf:port}

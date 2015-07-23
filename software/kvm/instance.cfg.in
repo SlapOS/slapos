@@ -67,6 +67,7 @@ filename = template-kvm-cluster.cfg
 extra-context =
   section parameter_dict dynamic-template-kvm-cluster-parameters
   raw template_content ${template-content:location}/${template-content:filename}
+  raw template_httpd_cfg ${template-httpd:rendered}
 
 [dynamic-template-kvm]
 recipe = slapos.recipe.template:jinja2

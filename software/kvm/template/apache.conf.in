@@ -27,6 +27,17 @@ ServerTokens Prod
 ServerSignature Off
 TraceEnable Off
 
+SSLEngine on  
+
+SSLCertificateFile {{ cert }}
+SSLCertificateKeyFile {{ key }}
+SSLRandomSeed startup builtin
+SSLRandomSeed connect builtin
+SSLProtocol All -SSLv2
+SSLProxyEngine On
+
+DocumentRoot {{ document_root }}
+
 ErrorLog "{{ error_log }}"
 # Default apache log format with request time in microsecond at the end
 LogFormat "%h %l %u %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\" %D" combined
@@ -40,10 +51,11 @@ SetEnvIf X-Forwarded-For "^.*\..*\..*\..*" forwarded
     Require all denied
 </Directory>
 
-DocumentRoot {{ index_folder }}
 <Directory {{ index_folder }}>
   Options Indexes FollowSymLinks
-  Require ip {{ ip }}
+  # Require ip {{ ip }}
   # Require env forwarded '{{ ip }}'
-  Require all denied
+  # Require all denied
+  AllowOverride None
+  Require all granted
 </Directory>
