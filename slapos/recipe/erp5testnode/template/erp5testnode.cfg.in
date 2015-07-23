@@ -24,6 +24,8 @@ software_link = %(software_link)s
 git_binary = %(git_binary)s
 slapos_binary = %(slapos_binary)s
 zip_binary = %(zip_binary)s
+firefox_binary = %(firefox_binary)s
+xvfb_binary = %(xvfb_binary)s
 
 [environment]
 PATH = %(PATH)s
