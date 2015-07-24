@@ -1,3 +1,7 @@
-{% for content in content_list.split(sep) -%}
+{% if not sep -%}
+{{ content_list }}
+{% else -%}
+{%   for content in content_list.split(sep) -%}
 {{ content }}
-{% endfor -%}
+{%   endfor -%}
+{% endif -%}

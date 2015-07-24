@@ -1,5 +1,11 @@
 Changes
 =======
+
+0.103 (2015-07-24)
+------------------
+  * kvm: fix issues with boolean parameters and add 'qed' in external disk format list.
+  * simplehttpserver-recipe: Add support for POST method which only get content and save into specified file.
+
 0.102 (2015-05-22)
 ------------------
  * kvm-recipe: vm of kvm-cluster can get ipv4/hostname of all other vm in the same cluster
