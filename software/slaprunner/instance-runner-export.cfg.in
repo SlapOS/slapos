@@ -7,7 +7,6 @@ parts +=
   nginx-launcher
   certificate-authority
   ca-nginx
-  ca-shellinabox
   gunicorn-launcher
   gunicorn-graceful
   sshkeys-dropbear-runner
@@ -19,7 +18,6 @@ parts +=
   slaprunner-supervisord-wrapper
   dropbear-promise
   runtestsuite
-  shellinabox-promise
   symlinks
   shellinabox
   slapos-cfg
