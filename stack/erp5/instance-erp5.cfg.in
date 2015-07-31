@@ -178,6 +178,7 @@ config-{{ name }} = {{ ' ${' ~ zope_section_id ~ ':connection-zope-address-list}
 config-haproxy-server-check-path = {{ dumps(balancer_dict.get('haproxy-server-check-path', '/') % {'site-id': site_id}) }}
 config-backend-path = {{ dumps(balancer_dict.get('apache-backend-path', '/') % {'site-id': site_id}) }}
 config-ssl = {{ dumps(balancer_dict.get('ssl', {})) }}
+config-custom-template-apache-conf = {{ dumps(balancer_dict.get('custom-template-apache-conf', None)) }}
 
 [request-frontend-base]
 {% if has_frontend -%}

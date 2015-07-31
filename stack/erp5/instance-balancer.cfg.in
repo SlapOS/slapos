@@ -16,6 +16,12 @@ per partition. No more (undefined result), no less (IndexError).
 {%   do apache_ip_list.append('[' ~ ipv6 ~ ']') -%}
 {% endif -%}
 
+{% if slapparameter_dict.get('custom-template-apache-conf', None) -%}
+{%   set apache_conf_template = slapparameter_dict['custom-template-apache-conf'] -%}
+{% else -%}
+{%   set apache_conf_template = parameter_dict['template-apache-conf'] -%}
+{% endif -%}
+
 [simplefile]
 recipe = slapos.recipe.template:jinja2
 template = inline:{{ '{{ content }}' }}
@@ -134,7 +140,7 @@ crl = ${apache-ssl-client:crl}
 
 [apache-conf]
 recipe = slapos.recipe.template:jinja2
-template = {{ parameter_dict['template-apache-conf'] }}
+template = {{ dumps(apache_conf_template) }}
 rendered = ${directory:apache-conf}/apache.conf
 context = section parameter_dict apache-conf-parameter-dict
 
