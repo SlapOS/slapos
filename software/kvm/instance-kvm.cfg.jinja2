@@ -1,6 +1,7 @@
 {% set enable_http = slapparameter_dict.get('enable-http-server', 'False').lower() -%}
 {% set use_tap = slapparameter_dict.get('use-tap', 'False').lower() -%}
 {% set use_nat = slapparameter_dict.get('use-nat', 'True').lower() -%}
+{% set name = slapparameter_dict.get('name', 'localhost') -%}
 #############################
 #
 # Instanciate kvm
@@ -28,11 +29,16 @@ parts =
 {% if slapparameter_dict.get('data-to-vm', '') %}
   vm-data-content
 {% endif -%}
+{% if use_tap == 'true' and tap_network_dict.has_key('ipv4') %}
+  ansible-vm-promise
+  logrotate-vm-bootstrap
+{% endif -%}
 {% if slapparameter_dict.get('authorized-key', '') %}
   get-authorized-key
 {%   endif -%}
   
-# extends = 
+extends = 
+  {{ logrotate_cfg }}
 #  {{ template_httpd_cfg }}
 {% endif -%}
 
@@ -411,6 +417,27 @@ ipv4-port = 16936
 shell-path = {{ dash_executable_location }}
 6tunnel-path = {{ sixtunnel_executable_location }}
 runner-path = ${directory:services}/6tunnel-cluster
+
+[ansible-vm-promise]
+recipe = slapos.recipe.template:jinja2
+template = {{ ansible_promise_tpl }}
+rendered = ${directory:promises}/ansible_{{ name }}
+extensions = jinja2.ext.do
+context =
+  key host slap-network-information:tap-ipv4
+  raw logs ${directory:public}/ansible
+  raw name {{ name }}
+
+
+[logrotate-vm-bootstrap]
+< = logrotate-entry-base
+name = vm-bootstrap
+log = ${directory:public}/ansible/vm-bootstrap.log
+
+[logrotate-entry-base]
+recipe = slapos.cookbook:logrotate.d
+logrotate-entries = ${logrotate:logrotate-entries}
+backup = ${logrotate:backup}
 
 [slap-parameter]
 # Default values if not specified

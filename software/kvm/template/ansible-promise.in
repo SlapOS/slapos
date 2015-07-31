@@ -1,0 +1,57 @@
+#!/usr/bin/env python
+
+# Parse Ansible result log file and define if execution succeed or not
+
+import os
+import json
+
+FIELDS = ['cmd', 'command', 'start', 'end', 'delta', 'msg', 'stdout', 'stderr',
+          'response', 'status_code', 'url', 'dest']
+
+ansible_log_dir = '{{ logs }}'
+vm_name = '{{ name }}'
+result_OK = '127.0.0.1_OK'
+result_failed = '127.0.0.1_FAILED'
+result_failed_ignore = '127.0.0.1_FAILED_IGNORED'
+
+def get_log(res):
+  log = ""
+  if type(res) == type(dict()):
+    log = '>> Running task: %s, args [%s]\n' % (res['invocation']['module_name'],
+                                      res['invocation']['module_args'])
+    for field in FIELDS:
+      if field in res.keys():
+      	# use default encoding, check out sys.setdefaultencoding
+        log += '\n{0}:\n{1}'.format(field, res[field])
+
+  return log
+
+def file_to_dict(filepath):
+  content = '{}'
+  with open(filepath, 'r') as f:
+    content = f.read()
+  return json.loads(content)
+
+def check_result():
+  success_file = os.path.join(ansible_log_dir, result_OK)
+  error_file = os.path.join(ansible_log_dir, result_failed)
+
+  if not len(os.listdir(ansible_log_dir)):
+    return (0, 'No Ansible promise uploaded!')
+  if os.path.exists(error_file):
+    result = file_to_dict(error_file)
+    if len(result) > 0:
+      #there is more that one failed task in the report
+      message = ''
+      for res in result:
+        message += '%s\n\n' % get_log(res)
+      return (0, message)
+  elif not os.path.exists(success_file):
+    return (0, 'All Ansible tasks failed to run')
+  return (1, '')
+
+if __name__ == "__main__":
+  result = check_result()
+  if not result[0]:
+    raise Exception('Failed to run Ansible in %s, result is: \n%s' % (vm_name,
+                          result[1]))
