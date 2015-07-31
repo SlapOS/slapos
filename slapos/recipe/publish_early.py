@@ -63,6 +63,7 @@ class Recipe(GenericSlapRecipe):
     GenericSlapRecipe.__init__(self, buildout, name, options)
     published_dict = None
     publish = False
+    publish_dict = {}
     for line in options['-init'].splitlines():
       if line:
         k, v = line.split()
@@ -74,7 +75,6 @@ class Recipe(GenericSlapRecipe):
               self.computer_id, self.computer_partition_id)
             published_dict = unwrap(
               computer_partition.getConnectionParameterDict())
-            publish_dict = {}
           try:
             publish_dict[k] = published_dict[k]
           except KeyError:
