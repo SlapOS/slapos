@@ -2,6 +2,13 @@
 {% set use_tap = slapparameter_dict.get('use-tap', 'False').lower() -%}
 {% set use_nat = slapparameter_dict.get('use-nat', 'True').lower() -%}
 {% set name = slapparameter_dict.get('name', 'localhost') -%}
+{% set monitor = slapparameter_dict.get('enable-monitor', 'True').lower()  -%}
+{% set extends_list = [] -%}
+
+{% if monitor -%}
+{% do extends_list.append(template_monitor) -%}
+{% endif -%}
+{% do extends_list.append(logrotate_cfg) -%}
 #############################
 #
 # Instanciate kvm
@@ -19,6 +26,24 @@ parts =
   cron
 #  cron-entry-monitor
   frontend-promise
+{% if monitor -%}
+# monitor parts
+  cron-entry-monitor
+  cron-entry-rss
+  deploy-index
+  deploy-status-history-cgi
+  deploy-status-cgi
+#  deploy-logfile-cgi
+#  deploy-resource-consumption-monitoring-cgi
+  setup-static-files
+  public-symlink
+  cgi-httpd-wrapper
+  cgi-httpd-graceful-wrapper
+  monitor-promise
+  monitor-instance-log-access
+  monitor-access-log
+  monitor-access-public
+{% endif -%}
 {% if slapparameter_dict.get('document-host', '') %}
   cluster-url-path
 {% endif -%}
@@ -36,11 +61,13 @@ parts =
 {% if slapparameter_dict.get('authorized-key', '') %}
   get-authorized-key
 {%   endif -%}
-  
-extends = 
-  {{ logrotate_cfg }}
-#  {{ template_httpd_cfg }}
+
 {% endif -%}
+
+extends = 
+#  Add extends list
+ {{ extends_list | join('\n  ') }}
+#  {{ template_httpd_cfg }}
 
 eggs-directory = {{ eggs_directory }}
 develop-eggs-directory = {{ develop_eggs_directory }}
@@ -295,6 +322,20 @@ hostname = ${httpd:host}
 port = ${httpd:port}
 {% endif %}
 
+{% if monitor == 'true' -%}
+[monitor-access-log]
+< = monitor-directory-access
+source = ${directory:log}
+
+[monitor-access-public]
+< = monitor-directory-access
+source = ${directory:public}
+
+[monitor-parameters]
+port = 8026
+
+{% endif -%}
+
 [publish-connection-information]
 recipe = slapos.cookbook:publish
 ipv6 = ${slap-network-information:global-ipv6}
@@ -329,6 +370,9 @@ tap-ipv4 = ${slap-network-information:tap-ipv4}
 7_info = Get the publick key file in your VM with the command: wget {{ kvm_http }}/authorized_keys
 {%   endif %}
 {% endif %}
+{% if monitor -%}
+monitor_url = ${monitor-parameters:url}
+{% endif -%}
 
 {% if use_tap == 'true' and tap_network_dict.has_key('ipv4') -%}
 1_info = Use these configurations below to configure interface {{ iface }} in your VM.

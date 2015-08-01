@@ -69,6 +69,7 @@ extra-context =
   raw logrotate_cfg ${template-logrotate-base:rendered}
   raw template_content ${template-content:location}/${template-content:filename}
   raw template_httpd_cfg ${template-httpd:rendered}
+  raw template_monitor ${monitor-template:output}
 
 [dynamic-template-kvm]
 recipe = slapos.recipe.template:jinja2
@@ -96,6 +97,7 @@ context =
     raw sixtunnel_executable_location ${6tunnel:location}/bin/6tunnel
     raw template_httpd_cfg ${template-httpd:rendered}
     raw template_content ${template-content:location}/${template-content:filename}
+    raw template_monitor ${monitor-template:output}
     raw websockify_executable_location ${buildout:directory}/bin/websockify
 template-parts-destination = ${template-parts:destination}
 template-replicated-destination = ${template-replicated:destination}
