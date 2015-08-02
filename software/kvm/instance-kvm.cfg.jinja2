@@ -3,6 +3,7 @@
 {% set use_nat = slapparameter_dict.get('use-nat', 'True').lower() -%}
 {% set name = slapparameter_dict.get('name', 'localhost') -%}
 {% set monitor = slapparameter_dict.get('enable-monitor', 'True').lower()  -%}
+{% set frontend_software_type = 'default' -%}
 {% set extends_list = [] -%}
 
 {% if monitor -%}
@@ -43,6 +44,7 @@ parts =
   monitor-instance-log-access
   monitor-access-log
   monitor-access-public
+  monitor-frontend-promise
 {% endif -%}
 {% if slapparameter_dict.get('document-host', '') %}
   cluster-url-path
@@ -334,6 +336,11 @@ source = ${directory:public}
 [monitor-parameters]
 port = 8026
 
+{% if slapparameter_dict.get('document-host', '') and slapparameter_dict.get('document-port', '') -%}
+# XXX - Set frontend software type to 'custom-personal' by default for cluster instance
+{% set frontend_software_type = 'custom-personal' -%}
+{% endif -%}
+
 [request-monitor-frontend]
 <= slap-connection
 recipe = slapos.cookbook:requestoptional
@@ -342,11 +349,12 @@ name = Monitor {{ slapparameter_dict.get('name', '') }} Frontend
 software-url = http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg
 slave = true
 config-url = ${monitor-parameters:url}
+software-type = {{ slapparameter_dict.get('monitor-frontend-software-type', frontend_software_type) }}
 return = site_url domain
 
 [monitor-frontend-promise]
 recipe = slapos.cookbook:check_url_available
-path = $${directory:promises}/monitor_frontend
+path = ${directory:promises}/monitor_frontend
 url = ${publish-connection-information:monitor_url}
 dash_path = {{ dash_executable_location }}
 curl_path = {{ curl_executable_location }}
