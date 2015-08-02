@@ -334,6 +334,23 @@ source = ${directory:public}
 [monitor-parameters]
 port = 8026
 
+[request-monitor-frontend]
+<= slap-connection
+recipe = slapos.cookbook:requestoptional
+name = Monitor {{ slapparameter_dict.get('name', '') }} Frontend
+# XXX We have hardcoded SR URL here.
+software-url = http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg
+slave = true
+config-url = ${monitor-parameters:url}
+return = site_url domain
+
+[monitor-frontend-promise]
+recipe = slapos.cookbook:check_url_available
+path = $${directory:promises}/monitor_frontend
+url = ${publish-connection-information:monitor_url}
+dash_path = {{ dash_executable_location }}
+curl_path = {{ curl_executable_location }}
+check-secure = 1
 {% endif -%}
 
 [publish-connection-information]
@@ -371,7 +388,8 @@ tap-ipv4 = ${slap-network-information:tap-ipv4}
 {%   endif %}
 {% endif %}
 {% if monitor -%}
-monitor_url = ${monitor-parameters:url}
+monitor_url = ${request-monitor-frontend:connection-site_url}
+monitor_v6_url = ${monitor-parameters:url}
 {% endif -%}
 
 {% if use_tap == 'true' and tap_network_dict.has_key('ipv4') -%}
