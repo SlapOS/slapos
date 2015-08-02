@@ -454,16 +454,31 @@ recipe = plone.recipe.command
 name = {{ slapparameter_dict.get('name', 'localhost') }}
 {% if use_tap == 'true' and tap_network_dict.has_key('ipv4') -%}
 local-ipv4 = ${slap-network-information:tap-ipv4}
+gateway = ${slap-network-information:tap-gateway}
+netmask = ${slap-network-information:tap-network}
+network = ${slap-network-information:tap-netmask}
 {% else -%}
 local-ipv4 = 127.0.0.1
+gateway =
+netmask =
+network =
 {% endif -%}
 path-host = ${directory:public}/hostname
 path-ip = ${directory:public}/ipv4
+path-gateway = ${directory:public}/gateway
+path-network = ${directory:public}/network
+path-netmask = ${directory:public}/netmask
 command = 
   rm -f ${:path-host}
   rm -f ${:path-ip}
+  rm -f ${:path-gateway}
+  rm -f ${:path-network}
+  rm -f ${:path-netmask}
   echo "${:name}" > ${:path-host}
   echo "${:local-ipv4}" > ${:path-ip}
+  echo "${:gateway}" > ${:path-gateway}
+  echo "${:network}" > ${:path-network}
+  echo "${:netmask}" > ${:path-netmask}
 update-command = ${:command}
 
 # To access documents of main instance (in case of kvm-cluster) through http
