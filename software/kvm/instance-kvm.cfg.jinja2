@@ -1,6 +1,15 @@
 {% set enable_http = slapparameter_dict.get('enable-http-server', 'False').lower() -%}
 {% set use_tap = slapparameter_dict.get('use-tap', 'False').lower() -%}
 {% set use_nat = slapparameter_dict.get('use-nat', 'True').lower() -%}
+{% set name = slapparameter_dict.get('name', 'localhost') -%}
+{% set monitor = slapparameter_dict.get('enable-monitor', 'True').lower()  -%}
+{% set frontend_software_type = 'default' -%}
+{% set extends_list = [] -%}
+
+{% if monitor -%}
+{% do extends_list.append(template_monitor) -%}
+{% endif -%}
+{% do extends_list.append(logrotate_cfg) -%}
 #############################
 #
 # Instanciate kvm
@@ -18,6 +27,25 @@ parts =
   cron
 #  cron-entry-monitor
   frontend-promise
+{% if monitor -%}
+# monitor parts
+  cron-entry-monitor
+  cron-entry-rss
+  deploy-index
+  deploy-status-history-cgi
+  deploy-status-cgi
+#  deploy-logfile-cgi
+#  deploy-resource-consumption-monitoring-cgi
+  setup-static-files
+  public-symlink
+  cgi-httpd-wrapper
+  cgi-httpd-graceful-wrapper
+  monitor-promise
+  monitor-instance-log-access
+  monitor-access-log
+  monitor-access-public
+#  monitor-frontend-promise
+{% endif -%}
 {% if slapparameter_dict.get('document-host', '') %}
   cluster-url-path
 {% endif -%}
@@ -28,13 +56,20 @@ parts =
 {% if slapparameter_dict.get('data-to-vm', '') %}
   vm-data-content
 {% endif -%}
+{% if use_tap == 'true' and tap_network_dict.has_key('ipv4') %}
+  ansible-vm-promise
+  logrotate-vm-bootstrap
+{% endif -%}
 {% if slapparameter_dict.get('authorized-key', '') %}
   get-authorized-key
 {%   endif -%}
-  
-# extends = 
-#  {{ template_httpd_cfg }}
+
 {% endif -%}
+
+extends = 
+#  Add extends list
+ {{ extends_list | join('\n  ') }}
+#  {{ template_httpd_cfg }}
 
 eggs-directory = {{ eggs_directory }}
 develop-eggs-directory = {{ develop_eggs_directory }}
@@ -289,6 +324,43 @@ hostname = ${httpd:host}
 port = ${httpd:port}
 {% endif %}
 
+{% if monitor == 'true' -%}
+[monitor-access-log]
+< = monitor-directory-access
+source = ${directory:log}
+
+[monitor-access-public]
+< = monitor-directory-access
+source = ${directory:public}
+
+[monitor-parameters]
+port = 8026
+
+{% if slapparameter_dict.get('document-host', '') and slapparameter_dict.get('document-port', '') -%}
+# XXX - Set frontend software type to 'custom-personal' by default for cluster instance
+{% set frontend_software_type = 'custom-personal' -%}
+{% endif -%}
+
+[request-monitor-frontend]
+<= slap-connection
+recipe = slapos.cookbook:requestoptional
+name = Monitor {{ slapparameter_dict.get('name', '') }} Frontend
+# XXX We have hardcoded SR URL here.
+software-url = http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg
+slave = true
+config-url = ${monitor-parameters:url}
+software-type = {{ slapparameter_dict.get('monitor-frontend-software-type', frontend_software_type) }}
+return = site_url domain
+
+[monitor-frontend-promise]
+recipe = slapos.cookbook:check_url_available
+path = ${directory:promises}/monitor_frontend
+url = ${publish-connection-information:monitor_url}
+dash_path = {{ dash_executable_location }}
+curl_path = {{ curl_executable_location }}
+check-secure = 1
+{% endif -%}
+
 [publish-connection-information]
 recipe = slapos.cookbook:publish
 ipv6 = ${slap-network-information:global-ipv6}
@@ -323,6 +395,10 @@ tap-ipv4 = ${slap-network-information:tap-ipv4}
 7_info = Get the publick key file in your VM with the command: wget {{ kvm_http }}/authorized_keys
 {%   endif %}
 {% endif %}
+{% if monitor -%}
+monitor_url = ${request-monitor-frontend:connection-site_url}
+monitor_v6_url = ${monitor-parameters:url}
+{% endif -%}
 
 {% if use_tap == 'true' and tap_network_dict.has_key('ipv4') -%}
 1_info = Use these configurations below to configure interface {{ iface }} in your VM.
@@ -378,16 +454,31 @@ recipe = plone.recipe.command
 name = {{ slapparameter_dict.get('name', 'localhost') }}
 {% if use_tap == 'true' and tap_network_dict.has_key('ipv4') -%}
 local-ipv4 = ${slap-network-information:tap-ipv4}
+gateway = ${slap-network-information:tap-gateway}
+netmask = ${slap-network-information:tap-network}
+network = ${slap-network-information:tap-netmask}
 {% else -%}
 local-ipv4 = 127.0.0.1
+gateway =
+netmask =
+network =
 {% endif -%}
 path-host = ${directory:public}/hostname
 path-ip = ${directory:public}/ipv4
+path-gateway = ${directory:public}/gateway
+path-network = ${directory:public}/network
+path-netmask = ${directory:public}/netmask
 command = 
   rm -f ${:path-host}
   rm -f ${:path-ip}
+  rm -f ${:path-gateway}
+  rm -f ${:path-network}
+  rm -f ${:path-netmask}
   echo "${:name}" > ${:path-host}
   echo "${:local-ipv4}" > ${:path-ip}
+  echo "${:gateway}" > ${:path-gateway}
+  echo "${:network}" > ${:path-network}
+  echo "${:netmask}" > ${:path-netmask}
 update-command = ${:command}
 
 # To access documents of main instance (in case of kvm-cluster) through http
@@ -411,6 +502,27 @@ ipv4-port = 16936
 shell-path = {{ dash_executable_location }}
 6tunnel-path = {{ sixtunnel_executable_location }}
 runner-path = ${directory:services}/6tunnel-cluster
+
+[ansible-vm-promise]
+recipe = slapos.recipe.template:jinja2
+template = {{ ansible_promise_tpl }}
+rendered = ${directory:promises}/ansible_{{ name }}
+extensions = jinja2.ext.do
+context =
+  key host slap-network-information:tap-ipv4
+  raw logs ${directory:public}/ansible
+  raw name {{ name }}
+
+
+[logrotate-vm-bootstrap]
+< = logrotate-entry-base
+name = vm-bootstrap
+log = ${directory:public}/ansible/vm-bootstrap.log
+
+[logrotate-entry-base]
+recipe = slapos.cookbook:logrotate.d
+logrotate-entries = ${logrotate:logrotate-entries}
+backup = ${logrotate:backup}
 
 [slap-parameter]
 # Default values if not specified

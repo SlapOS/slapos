@@ -64,6 +64,7 @@ config-httpd-port = {{ dumps(kvm_parameter_dict.get('httpd-port', 8081)) }}
 {% if kvm_parameter_dict.get('data-to-vm', '') -%}
 config-data-to-vm = {{ dumps(kvm_parameter_dict.get('data-to-vm', '')) }}
 {% endif -%}
+config-enable-monitor = True
 
 # Enable simple http server on ipv6 so all VMs will access it
 config-document-host = ${apache-conf:ip}

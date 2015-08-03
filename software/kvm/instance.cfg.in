@@ -66,8 +66,10 @@ template = ${template-kvm-cluster:location}/instance-kvm-cluster.cfg.jinja2.in
 filename = template-kvm-cluster.cfg
 extra-context =
   section parameter_dict dynamic-template-kvm-cluster-parameters
+  raw logrotate_cfg ${template-logrotate-base:rendered}
   raw template_content ${template-content:location}/${template-content:filename}
   raw template_httpd_cfg ${template-httpd:rendered}
+  raw template_monitor ${monitor-template:output}
 
 [dynamic-template-kvm]
 recipe = slapos.recipe.template:jinja2
@@ -81,10 +83,12 @@ context =
     key slapparameter_dict slap-configuration:configuration
     key storage_dict slap-configuration:storage-dict
     key tap_network_dict slap-configuration:tap-network-information-dict
+    raw ansible_promise_tpl ${template-ansible-promise:location}/${template-ansible-promise:filename}
     raw curl_executable_location ${curl:location}/bin/curl
     raw dash_executable_location ${dash:location}/bin/dash
     raw dcron_executable_location ${dcron:location}/sbin/crond
     raw debian_amd64_netinst_location ${debian-amd64-netinst.iso:location}/${debian-amd64-netinst.iso:filename}
+    raw logrotate_cfg ${template-logrotate-base:rendered}
     raw novnc_location ${noVNC:location}
     raw netcat_bin ${netcat:location}/bin/netcat
     raw openssl_executable_location ${openssl:location}/bin/openssl
@@ -93,6 +97,7 @@ context =
     raw sixtunnel_executable_location ${6tunnel:location}/bin/6tunnel
     raw template_httpd_cfg ${template-httpd:rendered}
     raw template_content ${template-content:location}/${template-content:filename}
+    raw template_monitor ${monitor-template:output}
     raw websockify_executable_location ${buildout:directory}/bin/websockify
 template-parts-destination = ${template-parts:destination}
 template-replicated-destination = ${template-replicated:destination}

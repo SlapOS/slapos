@@ -1,6 +1,6 @@
-ServerLimit 2
+ServerLimit 16
 StartServers 1
-MaxClients 2
+MaxClients 7
 
 LoadModule unixd_module modules/mod_unixd.so
 LoadModule access_compat_module modules/mod_access_compat.so
