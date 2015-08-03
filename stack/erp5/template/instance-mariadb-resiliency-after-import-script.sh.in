@@ -12,13 +12,13 @@
 
 set -e
 
-mysql_executable="${mariadb-instance:mysql-binary}"
+mysql_executable="${binary-wrap-mysql:wrapper-path}"
 mysqldump_executable="${binary-wrap-mysqldump:wrapper-path}"
 mariadb_data_directory="${directory:mariadb-data}"
 mariadb_backup_directory="${directory:mariadb-backup-full}"
 instance_directory="${buildout:directory}"
-pid_file="${mariadb-instance:pid-file}"
-binlog_path="${mariadb-instance:binlog-path}"
+pid_file="${my-cnf-parameters:pid-file}"
+binlog_path="${my-cnf-parameters:binlog-path}"
 
 # Make sure mariadb is not already running
 if [ -e "$pid_file" ]; then

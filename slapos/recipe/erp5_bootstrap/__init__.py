@@ -1,6 +1,6 @@
 ##############################################################################
 #
-# Copyright (c) 2012 Vifib SARL and Contributors. All Rights Reserved.
+# Copyright (c) 2012-2014 Vifib SARL and Contributors. All Rights Reserved.
 #
 # WARNING: This program as such is intended to be used by professional
 # programmers who take the whole responsibility of assessing all potential
@@ -26,7 +26,6 @@
 ##############################################################################
 
 from slapos.recipe.librecipe import GenericBaseRecipe
-import os
 import sys
 import urlparse
 
@@ -36,31 +35,25 @@ class Recipe(GenericBaseRecipe):
   """
 
   def install(self):
-    parsed = urlparse.urlparse(self.options['mysql-url'])
-    mysql_connection_string = "%(database)s@%(hostname)s:%(port)s "\
-        "%(username)s %(password)s" % dict(
-      database=parsed.path.split('/')[1],
-      hostname=parsed.hostname,
-      port=parsed.port,
-      username=parsed.username,
-      password=parsed.password
-    )
-
-    zope_parsed = urlparse.urlparse(self.options['zope-url'])
-
-    config = dict(
-      python_path=sys.executable,
-      user=zope_parsed.username,
-      password=zope_parsed.password,
-      site_id=zope_parsed.path.split('/')[1],
-      host="%s:%s" % (zope_parsed.hostname, zope_parsed.port),
-      sql_connection_string=mysql_connection_string,
-    )
-
-    # Runners
-    runner_path = self.createExecutable(
+    mysql = urlparse.urlsplit(self.options['mysql-url'])
+    zope = urlparse.urlsplit(self.options['zope-url'])
+    # Note: raises when there is more than a single element in path, as it's
+    # not supported by manage_addERP5Site anyway.
+    _, zope_path = zope.path.split('/')
+    return [self.createExecutable(
       self.options['runner-path'],
-      self.substituteTemplate(self.getTemplateFilename('erp5_bootstrap.in'),
-                              config))
-
-    return [runner_path]
+      self.substituteTemplate(
+        self.getTemplateFilename('erp5_bootstrap.in'),
+        {
+          'python_path': sys.executable,
+          'base_url': urlparse.urlunsplit((zope.scheme, zope.netloc, '', '', '')),
+          'site_id': zope_path,
+          'sql_connection_string': '%(database)s@%(hostname)s:%(port)s %(username)s %(password)s' % {
+            'database': mysql.path.split('/')[1],
+            'hostname': mysql.hostname,
+            'port': mysql.port,
+            'username': mysql.username,
+            'password': mysql.password
+          },
+        },
+    ))]

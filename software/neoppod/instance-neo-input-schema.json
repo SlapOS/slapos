@@ -1,0 +1,86 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "description": "Parameters to instantiate a NEO cluster. See https://git.erp5.org/gitweb/neoppod.git/blob/HEAD:/neo.conf?js=1 for more information.",
+  "additionalProperties": false,
+  "required": ["cluster"],
+  "properties": {
+    "cluster": {
+      "description": "Cluster unique identifier. Your last line of defense against mixing up NEO clusters and corrupting your data. Choose a unique value for each of your cluster.",
+      "type": "string"
+    },
+    "partitions": {
+      "description": "Number of partitions. You cannot change this value once you created a cluster.",
+      "default": 12,
+      "type": "integer"
+    },
+    "replicas": {
+      "description": "Number of replicates.",
+      "default": 0,
+      "type": "integer"
+    },
+    "upstream-cluster": {
+      "description": "Identifier of the cluster to backup.",
+      "type": "string"
+    },
+    "upstream-masters": {
+      "description": "Master nodes in the cluster to backup.",
+      "type": "string"
+    },
+    "sla-dict": {
+      "description": "[NEO SR only] Where to request instances. Each key is a query string for criterions (e.g. \"computer_guid=foo\"), and each value is a list of partition references ('node-0', 'node-1', ...).",
+      "additionalProperties": {
+        "type": "array",
+        "items": { "type": "string" },
+        "uniqueItems": true
+      },
+      "type": "object"
+    },
+    "node-list": {
+      "description": "List of dictionaries containing parameters for each node.",
+      "items": {
+        "description": "Dictionary containing parameters required to configure individual nodes.",
+        "default": {},
+        "properties": {
+          "admin": {
+            "description": "Port of admin node. 0 to disable.",
+            "default": 2050,
+            "type": "integer"
+          },
+          "master": {
+            "description": "Port of master node. 0 to disable.",
+            "default": 2051,
+            "type": "integer"
+          },
+          "storage-count": {
+            "description": "Number of storage nodes to deploy. One master and one admin node is deployed with each storage.",
+            "default": 1,
+            "type": "integer"
+          },
+          "mysql": {
+            "description": "Dictionary containing parameters for MySQL.",
+            "default": {},
+            "properties": {
+              "relaxed-writes": {
+                "description": "When enabled, sets innodb_flush_log_at_trx_commit = 0, innodb_flush_method = nosync, innodb_doublewrite = 0 and sync_frm = 0 - RTFM, those options are dangerous",
+                "default": false,
+                "type": "boolean"
+              }
+            },
+            "additionalProperties": {
+              "description": "To configure important parameters like innodb_buffer_pool_size, tokudb_cache_size, etc.",
+              "type": "string"
+            },
+            "type": "object"
+          },
+          "engine": {
+            "description": "Configures storage engine, currently only InnoDB and TokuDB are supported. Defaults to NEO's default.",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "type": "array"
+    }
+  },
+  "type": "object"
+}

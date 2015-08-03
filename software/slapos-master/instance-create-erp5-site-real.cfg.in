@@ -1,0 +1,38 @@
+[directory]
+recipe = slapos.cookbook:mkdirectory
+etc = ${buildout:directory}/etc
+services = ${:etc}/run
+promise = ${:etc}/promise
+
+[erp5-bootstrap]
+recipe = slapos.cookbook:erp5.bootstrap
+runner-path = ${directory:services}/erp5-bootstrap
+{# Note: a random domain name will be picked if several point to the same IP -#}
+{% set reverse_hosts = {} -%}
+{% for x, y in publish['hosts-dict'].iteritems() -%}
+{%   do reverse_hosts.__setitem__(y, x) -%}
+{% endfor -%}
+{# XXX: Expect the first database to be the one to use for catalog. -#}
+{% set mysql_parsed = urlparse.urlparse(publish['mariadb-database-list'][0]) -%}
+mysql-url = {{ dumps(urlparse.urlunparse(mysql_parsed[:1] + (mysql_parsed.username + ":" + mysql_parsed.password + "@" + reverse_hosts.get(mysql_parsed.hostname, mysql_parsed.hostname) + ':' ~ mysql_parsed.port, ) + mysql_parsed[2:])) }}
+{# Pick the first http[s] family found, they should be all equivalent anyway. -#}
+{# Don't pick the https[s] configurated with ssl-authenticat=true. By convention, this family name contain 'service'. -#}
+{% set family_list = [] -%}
+{% for key, value in publish.items() -%}
+{%   if key.startswith('family-') and not 'service' in key and value.startswith('http') -%}
+{%     do family_list.append(value.split('://', 1)) -%}
+{%   endif -%}
+{%  endfor -%}
+zope-url = {{ dumps(family_list[0][0] + '://' + publish['inituser-login'] + ':' + publish['inituser-password'] + '@' + family_list[0][1] + '/' + publish['site-id']) }}
+
+[promise-erp5-site]
+recipe = slapos.cookbook:check_url_available
+url = ${erp5-bootstrap:zope-url}
+path = ${directory:promise}/erp5-site
+dash_path = {{ parameter_dict['dash-location'] }}/bin/dash
+curl_path = {{ parameter_dict['curl-location'] }}/bin/curl
+
+[buildout]
+parts = promise-erp5-site
+eggs-directory = {{ eggs_directory }}
+develop-eggs-directory = {{ develop_eggs_directory }}

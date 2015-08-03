@@ -76,11 +76,15 @@ class Storage(NeoBaseRecipe):
   _binding_port_mandatory = False
 
   def _getOptionList(self):
-    return [
+    r = [
       '-d', self.options['database-parameters'],
       '-a', self.options['database-adapter'],
       '-w', self.options['wait-database'],
     ]
+    engine = self.options.get('engine')
+    if engine: # old versions of NEO don't support -e
+      r  += '-e', engine
+    return r
 
 class Admin(NeoBaseRecipe):
   def _getOptionList(self):
@@ -92,6 +96,7 @@ class Master(NeoBaseRecipe):
     r = [
       '-p', options['partitions'],
       '-r', options['replicas'],
+      '-A', options['autostart'],
     ]
     for x in (('-C', options['upstream-cluster']),
               ('-M', options['upstream-masters'])):

@@ -1,0 +1,233 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "description": "Parameters to instantiate ERP5",
+  "additionalProperties": false,
+  "properties": {
+    "sla-dict": {
+      "description": "Where to request instances. Each key is a query string for criterions (e.g. \"computer_guid=foo\"), and each value is a list of partition references.",
+      "additionalProperties": {
+        "type": "array",
+        "items": { "type": "string" },
+        "uniqueItems": true
+      },
+      "type": "object"
+    },
+    "site-id": {
+      "description": "ERP5Site object's id",
+      "default": "erp5",
+      "type": "string"
+    },
+    "timezone": {
+      "description": "Zope's timezone. Possible values are determined by host's libc, and typically come from a separate package (tzdata, ...)",
+      "default": "UTC",
+      "type": "string"
+    },
+    "deadlock-debugger-password": {
+      "description": "Password for /manage_debug_threads",
+      "type": "string"
+    },
+    "inituser-login": {
+      "description": "Login of the initial/rescue user",
+      "default": "zope",
+      "type": "string"
+    },
+    "inituser-password": {
+      "description": "Password of the initial/rescue user",
+      "type": "string"
+    },
+    "developer-list": {
+      "description": "List of logins which should get the Developper role (required to modify portal_components' content), defaulting to inituser-login's value",
+      "items": {
+        "pattern": "/^\\S+$/",
+        "type": "string"
+      },
+      "uniqueItems": true,
+      "type": "array"
+    },
+    "hostalias-dict": {
+      "description": "Hostname-to-hostname mapping",
+      "default": {},
+      "additionalProperties": {
+        "description": "A hostname to which current entry will resolve",
+        "type": "string"
+      },
+      "type": "object"
+    },
+    "hosts-dict": {
+      "description": "Host entries to be used in addition to and/or overriding auto-generated ones (erp5-catalog-0, erp5-cloudooo, erp5-memcached-persistent, erp5-memcached-volatile and erp5-smtp)",
+      "patternProperties": {
+        ".*": {
+          "description": "An IP or domain name to which current entry will resolve",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "frontend": {
+      "description": "Front-end slave instance request parameters",
+      "properties": {
+        "software-url": {
+          "description": "Front-end's software type. If this parameter is empty, no front-end instance is requested. Else, sla-dict must specify 'frontend' which is a special value matching all frontends (e.g. {\"instance_guid=bar\": [\"frontend\"]}).",
+          "default": "",
+          "type": "string"
+        },
+        "domain": {
+          "description": "The domain name to request front-end to respond as.",
+          "default": "",
+          "type": "string"
+        },
+        "software-type": {
+          "description": "Request a front-end slave instance of this software type.",
+          "default": "RootSoftwareInstance",
+          "type": ""
+        }
+      },
+      "type": "object"
+    },
+    "zope-partition-dict": {
+      "description": "Zope layout definition",
+      "default": {"1": {}},
+      "patternProperties": {
+        ".*": {
+          "additionalProperties": false,
+          "properties": {
+            "family": {
+              "description": "The family this partition is part of. For example: 'public', 'admin', 'backoffice', 'web-service'... Each family gets its own balancer entry. It has no special meaning for the system.",
+              "default": "default",
+              "type": "string"
+            },
+            "instance-count": {
+              "description": "Number of Zopes to setup on this partition",
+              "default": 1,
+              "type": "integer"
+            },
+            "thread-amount": {
+              "description": "Number of worker threads for each created Zope process",
+              "default": 4,
+              "type": "integer"
+            },
+            "timerserver-interval": {
+              "description": "Timerserver tick perdiod, in seconds, or 0 to disable",
+              "default": 5,
+              "type": "integer"
+            },
+            "webdav": {
+              "description": "Serve webdav queries, implies timerserver-interval=0 (disabled). Mixing webdav and non-webdav nodes in a single family will give unspecified results.",
+              "default": false,
+              "type": "boolean"
+            },
+            "longrequest-logger-interval": {
+              "description": "Period, in seconds, with which LongRequestLogger polls worker thread stack traces, or -1 to disable",
+              "default": -1,
+              "type": "integer"
+            },
+            "longrequest-logger-timeout": {
+              "description": "Transaction duration after which LongRequestLogger will start logging its stack trace, in seconds",
+              "default": 1,
+              "type": "integer"
+            },
+            "port-base": {
+              "allOf": [{
+                "$ref": "#/definitions/tcpv4port"
+              }, {
+                "description": "Start allocating ports at this value. Useful if one needs to make several partitions share the same port range (ie, several partitions bound to a single address)",
+                "default": 2200
+              }]
+            }
+          },
+          "type": "object"
+        }
+      },
+      "type": "object"
+    },
+    "kumofs": {
+      "description": "Persistent memcached service",
+      "additionalProperties": {
+        "$ref": "./instance-kumofs-schema.json#properties"
+      },
+      "type": "object"
+    },
+    "memcached": {
+      "description": "Volatile memcached service",
+      "additionalProperties": {
+        "$ref": "./instance-kumofs-schema.json#properties"
+      },
+      "type": "object"
+    },
+    "cloudooo": {
+      "description": "Format conversion service",
+      "additionalProperties": {
+        "$ref": "./instance-cloudooo-schema.json#properties"
+      },
+      "type": "object"
+    },
+    "mariadb": {
+      "description": "Relational database service",
+      "additionalProperties": {
+        "$ref": "./instance-mariadb-schema.json#properties"
+      },
+      "type": "object"
+    },
+    "zodb-zeo": {
+      "description": "Common settings ZEO servers",
+      "properties": {
+        "tcpv4-port": {
+          "allOf": [{
+            "$ref": "#/definitions/tcpv4port"
+          }, {
+            "description": "Start allocating ports at this value, going upward"
+          }]
+        },
+        "backup-periodicity": {
+          "description": "When to backup, specified in the same format as for systemd.time(7) calendar events (years & seconds not supported, DoW & DoM can not be combined). Enter 'never' to disable backups.",
+          "default": "daily",
+          "type": "string"
+        },
+        "tidstorage-repozo-path": {
+          "description": "Directory for backup timestamp and tidstorage status files.",
+          "default": "~/srv/backup/tidstorage",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "zodb": {
+      "description": "Zope Object DataBase mountpoints. See https://github.com/zopefoundation/ZODB/blob/3.10/src/ZODB/component.xml for extra options.",
+      "items": {
+        "required": ["type"],
+        "properties": {
+          "name": {
+            "description": "Database name",
+            "default": "main",
+            "type": "string"
+          },
+          "mount-point": {
+            "description": "Mount point",
+            "default": "/",
+            "type": "string"
+          },
+          "type": {
+            "description": "Storage type",
+            "enum": ["zeo", "neo"],
+            "type": "string"
+          },
+          "server": {
+            "description": "Instantiate a server. If missing, 'storage-dict' must contain the necessary properties to mount the ZODB. For ZEO, the partition reference is 'zodb'. For NEO, they are 'neo-0', 'neo-1', ...",
+            "anyOf": [
+              {"$ref": "./instance-zeo-schema.json"},
+              {"$ref": "../neoppod/instance-neo-input-schema.json"}
+            ]
+          },
+          "storage-dict": {
+            "description": "Storage configuration. For NEO, 'logfile' is automatically set (see http://git.erp5.org/gitweb/neoppod.git/blob/HEAD:/neo/client/component.xml for other settings).",
+            "additionalProperties": {"type": "string"},
+            "type": "object"
+          }
+        },
+        "additionalProperties": {"type": "string"},
+        "type": "object"
+      },
+      "type": "array"
+    }
+  }
+}
