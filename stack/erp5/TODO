@@ -1,15 +1,17 @@
-Release critical:
-- update or drop frontend integration
+(in no special order)
 
 General:
-- varnish/squid
 - ipv6 support (besides frontend-backend apache connection)
   requires important changes at ERP5 level
 - resilience
+- make mariadb user accounts accept connections only from relevant IPs
+  or make x509 mandatory (needs ZMySQLD*A support)
+- postfix
+
+Monitoring:
 - daily slow-query digest
   make percona toolkit available in mysql instance and decide how to send digest
-- make mariadb user accounts accept connections only from relevant IPs
-  or make x509 mandatory on all non-localhost accounts (needs ZMySQLD*A support)
+- daily apachedex
 
 Backups:
 - flush binlogs independently from full backups (in addition to anyway flushing them on full backup creation)
