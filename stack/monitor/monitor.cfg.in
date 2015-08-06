@@ -263,6 +263,9 @@ recipe = slapos.cookbook:wrapper
 apache-executable = ${apache:location}/bin/httpd
 command-line = $${:apache-executable} -f $${monitor-httpd-configuration-file:rendered} -DFOREGROUND
 wrapper-path = $${ca-httpd:executable}
+wait-for-files =
+  $${cadirectory:certs}/httpd.key
+  $${cadirectory:certs}/httpd.crt
 
 [cgi-httpd-graceful-wrapper]
 recipe = slapos.recipe.template:jinja2
