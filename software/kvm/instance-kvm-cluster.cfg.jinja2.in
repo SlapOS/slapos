@@ -74,7 +74,7 @@ config-document-path = ${hash-code:passwd}
 return = 
   backend-url
   url
-{% if str(use_nat).lower() -%}
+{% if str(use_nat).lower() == 'true' -%}
 {%   for port in nat_rules_list -%}
 {{ '  ' }}nat-rule-url-{{ port }}
 {%   endfor -%}
