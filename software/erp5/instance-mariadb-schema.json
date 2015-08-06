@@ -1,0 +1,122 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "required": ["tcpv4-port"],
+  "properties": {
+    "tcpv4-port": {
+      "allOf": [{
+        "$ref": "#/definitions/tcpv4port"
+      }, {
+        "description": "Start allocating ports at this value, going downward"
+      }]
+    },
+    "database-list": {
+      "description": "Databases to create and respective user credentials getting all privileges on it",
+      "default": [{
+        "name": "erp5",
+        "user": "user",
+        "password": "insecure"
+      }],
+      "minItems": 1,
+      "items": {
+        "required": ["name", "user", "password"],
+        "properties": {
+          "name": {
+            "description": "Database name",
+            "type": "string"
+          },
+          "user": {
+            "description": "User name",
+            "type": "string"
+          },
+          "password": {
+            "description": "User password",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "type": "array"
+    },
+    "test-database-amount": {
+      "description": "The number of test databases to create, adding auto-generated entries to database-list",
+      "default": 1,
+      "minimum": 0,
+      "type": "integer"
+    },
+    "catalog-backup": {
+      "description": "Backup control knobs",
+      "properties": {
+        "full-retention-days": {
+          "description": "How many days full backups must be retained, -1 meaning full backups are disabled and 0 meaning no expiration",
+          "default": 7,
+          "minimum": -1,
+          "type": "integer"
+        },
+        "incremental-retention-days": {
+          "description": "How many days incremental backups (binlogs) must be retained, -1 meaning incremental backups are disabled and 0 meaning no expiration, defaulting to full-retention-days' value",
+          "minimum": -1,
+          "type": "integer"
+        }
+      },
+      "type": "object"
+    },
+    "backup-periodicity": {
+      "description": "When to backup, specified in the same format as for systemd.time(7) calendar events (years & seconds not supported, DoW & DoM can not be combined).",
+      "default": "daily",
+      "type": "string"
+    },
+    "innodb-buffer-pool-size": {
+      "description": "See MariaDB documentation on innodb_buffer_pool_size",
+      "minimum": 0,
+      "type": "integer"
+    },
+    "innodb-log-file-size": {
+      "description": "See MariaDB documentation on innodb_log_file_size",
+      "minimum": 0,
+      "type": "integer"
+    },
+    "innodb-log-buffer-size": {
+      "description": "See MariaDB documentation on innodb_log_buffer_size",
+      "minimum": 0,
+      "type": "integer"
+    },
+    "long-query-time": {
+      "description": "Number of seconds above which long queries are logged",
+      "minimum": 0,
+      "default": 1,
+      "type": "number"
+    },
+    "relaxed-writes": {
+      "description": "When enabled, sets innodb_flush_log_at_trx_commit = 0, innodb_flush_method = nosync, innodb_doublewrite = 0 and sync_frm = 0 - RTFM, those options are dangerous",
+      "default": false,
+      "type": "boolean"
+    },
+    "ssl": {
+      "description": "Enable and define SSL support for network connections",
+      "default": {},
+      "properties": {
+        "ca-crt": {
+          "description": "Certificate Authority's certificate, in PEM format",
+          "type": "string"
+        },
+        "crt": {
+          "description": "Server's certificate, in PEM format (mandatory to enable SSL support)",
+          "type": "string"
+        },
+        "key": {
+          "description": "Server's key, in PEM format (mandatory to enable SSL support)",
+          "type": "string"
+        },
+        "crl": {
+          "description": "Server's certificate revocation list, in PEM format",
+          "type": "string"
+        },
+        "cipher": {
+          "description": "Permissible cipher specifications, separated by colons",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    }
+  }
+}

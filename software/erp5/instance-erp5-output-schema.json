@@ -1,0 +1,51 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "description": "Values returned by ERP5 instantiation",
+  "properties": {
+    "hosts-dict": {
+      "description": "Hosts mapping, including auto-generated entries",
+      "patternProperties": {
+        ".*": {
+          "description": "IP or domain names current entry resolves to",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "site-id": {
+      "description": "Chosen ERP5Site object identifier",
+      "type": "string"
+    },
+    "inituser-login": {
+      "description": "Initial user login",
+      "type": "string"
+    },
+    "inituser-password": {
+      "description": "Initial user password",
+      "type": "string"
+    },
+    "kumofs-url": {
+      "description": "Persistent memcached access information",
+      "type": "string"
+    },
+    "memcached-url": {
+      "description": "Volatile memcached access information",
+      "type": "string"
+    },
+    "cloudooo-url": {
+      "description": "Conversion service access information",
+      "type": "string"
+    },
+    "mariadb-url": {
+      "description": "Relational database access information",
+      "type": "string"
+    }
+  },
+  "patternProperties": {
+    "family-.*": {
+      "description": "Zope family access information",
+      "type": "string"
+    }
+  },
+  "type": "object"
+}

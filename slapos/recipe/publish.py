@@ -32,15 +32,19 @@ CONNECTION_PARAMETER_STRING = 'connection-'
 
 class Recipe(GenericSlapRecipe):
   def _install(self):
-    publish_dict = dict()
-    options = self.options.copy()
-    del options['recipe']
-    slave_reference = options.pop('-slave-reference', None)
-    for k, v in options.iteritems():
-      if k[:1] == '-':
-        continue
-      publish_dict[k] = v
-    self._setConnectionDict(publish_dict, slave_reference)
+    publish_dict = {}
+    done = set()
+    extends = [self.name]
+    while extends:
+        name = extends.pop()
+        done.add(name)
+        for k, v in self.buildout[name].iteritems():
+          if k[:1] == '-':
+            if k == '-extends':
+              extends += set(v.split()) - done
+          elif k != 'recipe':
+            publish_dict[k] = v
+    self._setConnectionDict(publish_dict, self.options.get('-slave-reference'))
     return []
 
   def _setConnectionDict(self, publish_dict, slave_reference=None):

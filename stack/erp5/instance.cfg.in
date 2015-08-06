@@ -1,71 +1,9 @@
 [buildout]
-parts =
-  switch-softwaretype
-
-eggs-directory = {{ eggs_directory }}
-develop-eggs-directory = {{ develop_eggs_directory }}
-offline = true
-
-[slap-parameters]
-recipe = slapos.cookbook:slapconfiguration
-computer = ${slap-connection:computer-id}
-partition = ${slap-connection:partition-id}
-url = ${slap-connection:server-url}
-key = ${slap-connection:key-file}
-cert = ${slap-connection:cert-file}
+extends = {{ instance_common_cfg }}
 
 [jinja2-template-base]
-recipe = slapos.recipe.template:jinja2
-rendered = ${buildout:parts-directory}/${:_buildout_section_name_}/${:filename}
-extra-context =
-context =
-    key eggs_directory buildout:eggs-directory
-    key develop_eggs_directory buildout:develop-eggs-directory
-    key slap_software_type slap-parameters:slap-software-type
-    key slapparameter_dict slap-parameters:configuration
+context +=
     raw slapos_core_version {{ slapos_core_version }}
-    ${:extra-context}
-
-[dynamic-template-tidstorage-parameters]
-apache = {{ apache_location }}
-haproxy = {{ haproxy_location }}
-dcron = {{ dcron_location }}
-logrotate = {{ logrotate_location }}
-gzip = {{ gzip_location }}
-openssl = {{ openssl_location }}
-coreutils = {{ coreutils_location }}
-git = {{ git_location }}
-graphviz = {{ graphviz_location }}
-grep = {{ grep_location }}
-imagemagick = {{ imagemagick_location }}
-librsvg = {{ librsvg_location }}
-mariadb = {{ mariadb_location }}
-sed = {{ sed_location }}
-tesseract = {{ tesseract_location }}
-w3m = {{ w3m_location }}
-aspell = {{ aspell_location }}
-poppler = {{ poppler_location }}
-dmtx-utils = {{ dmtx_utils_location }}
-buildout-bin-directory = {{ buildout_bin_directory }}
-zope-conf-template = {{ template_zope_conf }}
-jsl = {{ jsl_location }}
-
-[dynamic-template-tidstorage]
-< = jinja2-template-base
-template = {{ template_tidstorage }}
-filename = instance-tidstorage.cfg
-extensions = jinja2.ext.do
-extra-context =
-    section parameter_dict dynamic-template-tidstorage-parameters
-    import json_module json
-    raw zope_port_base 12000
-    raw zeo_port_base 15000
-    raw haproxy_port_base 11000
-    raw apache_port_base 10000
-    key ipv4_set slap-parameters:ipv4
-    key ipv6_set slap-parameters:ipv6
-# Must match the key id in [switch-softwaretype] which uses this section.
-    raw software_type tidstorage
 
 [dynamic-template-cloudooo-parameters]
 cups = {{ cups_location }}
@@ -94,179 +32,139 @@ zlib = {{ zlib_location }}
 libreoffice-bin = {{ libreoffice_bin_location }}
 fonts = {{ fonts_location }}
 buildout-bin-directory = {{ buildout_bin_directory }}
+6tunnel = {{ sixtunnel_location }}
+dash = {{ dash_location }}
 
 [dynamic-template-cloudooo]
-< = jinja2-template-base
+<= jinja2-template-base
 template = {{ template_cloudooo }}
 filename = instance-cloudoo.cfg
 extra-context =
     section parameter_dict dynamic-template-cloudooo-parameters
-    import json_module json
-# Must match the key id in [switch-softwaretype] which uses this section.
-    raw software_type cloudooo
 
-[dynamic-template-varnish-parameters]
+[dynamic-template-erp5-parameters]
+local-bt5-repository = {{ local_bt5_repository }}
+
+[dynamic-template-erp5]
+<= jinja2-template-base
+template = {{ template_erp5 }}
+filename = instance-erp5.cfg
+extra-context =
+    key local_bt5_repository dynamic-template-erp5-parameters:local-bt5-repository
+    import urlparse urlparse
+import-list =
+    rawfile root_common {{ root_common }}
+
+[dynamic-template-balancer-parameters]
+apache = {{ apache_location }}
+openssl = {{ openssl_location }}
+haproxy = {{ haproxy_location }}
+bin-directory = {{ bin_directory }}
+6tunnel = {{ sixtunnel_location }}
 dash = {{ dash_location }}
-dcron = {{ dcron_location }}
-gzip =  {{ gzip_location }}
-logrotate = {{ logrotate_location }}
-stunnel = {{ stunnel_location }}
-varnish = {{ varnish_location }}
-wget = {{ wget_location }}
+template-haproxy-cfg = {{ template_haproxy_cfg }}
+template-apache-conf = {{ template_apache_conf }}
+
+[dynamic-template-balancer]
+<= jinja2-template-base
+template = {{ template_balancer }}
+filename = instance-balancer.cfg
+extra-context =
+    section parameter_dict dynamic-template-balancer-parameters
+
+[dynamic-template-zeo-parameters]
 buildout-bin-directory = {{ buildout_bin_directory }}
 
-[dynamic-template-varnish]
-< = jinja2-template-base
-template = {{ template_varnish }}
-filename = instance-varnish.cfg
+[dynamic-template-zeo]
+<= jinja2-template-base
+template = {{ template_zeo }}
+filename = instance-zeo.cfg
 extra-context =
-    section parameter_dict dynamic-template-varnish-parameters
-# Must match the key id in [switch-softwaretype] which uses this section.
-    raw software_type varnish
+    key buildout_directory buildout:directory
+    section parameter_dict dynamic-template-zeo-parameters
+    import json_module json
+
+[dynamic-template-zope-parameters]
+bin-directory = {{ bin_directory }}
+zope-conf-template = {{ template_zope_conf }}
+buildout-bin-directory = {{ buildout_bin_directory }}
+6tunnel = {{ sixtunnel_location }}
+coreutils = {{ coreutils_location }}
+dash = {{ dash_location }}
+jsl = {{ jsl_location }}
+link-binary = {{ dumps(zope_link_binary) }}
+userhosts = {{ userhosts_location }}
+runzope-userhosts-preloaded-template = {{ template_runzope_userhosts_preloaded }}
+
+[dynamic-template-zope]
+<= jinja2-template-base
+template = {{ template_zope }}
+filename = instance-zope.cfg
+extra-context =
+    key buildout_directory buildout:directory
+    section parameter_dict dynamic-template-zope-parameters
+    import urlparse urlparse
+
+[dynamic-template-kumofs-parameters]
+dash-location = {{ dash_location }}
+dcron-location = {{ dcron_location }}
+gzip-location = {{ gzip_location }}
+kumo-location = {{ kumo_location }}
+logrotate-location = {{ logrotate_location }}
+
+[dynamic-template-kumofs]
+<= jinja2-template-base
+template = {{ template_kumofs }}
+filename = instance-kumofs.cfg
+extra-context =
+    section parameter_dict dynamic-template-kumofs-parameters
 
 [dynamic-template-mariadb-parameters]
-buildout-bin-directory = {{ buildout_bin_directory }}
+coreutils-location = {{ coreutils_location }}
+dash-location = {{ dash_location }}
+findutils-location = {{ findutils_location }}
+gzip-location = {{ gzip_location }}
+mariadb-location = {{ mariadb_location }}
+template-my-cnf = {{ template_my_cnf }}
+template-mariadb-initial-setup = {{ template_mariadb_initial_setup }}
+link-binary = {{ dumps(mariadb_link_binary) }}
+bin-directory = {{ bin_directory }}
+mariadb-resiliency-after-import-script = {{ mariadb_resiliency_after_import_script }}
 
 [dynamic-template-mariadb]
-< = jinja2-template-base
+<= jinja2-template-base
 template = {{ template_mariadb }}
 filename = instance-mariadb.cfg
 extra-context =
     section parameter_dict dynamic-template-mariadb-parameters
-    raw coreutils_location {{ coreutils_location }}
-    raw dash_location {{ dash_location }}
-    raw dcron_location {{ dcron_location }}
-    raw findutils_location {{ findutils_location }}
-    raw gettext_location {{ gettext_location }}
-    raw grep_location {{ grep_location }}
-    raw gzip_location {{ gzip_location }}
-    raw logrotate_location {{ logrotate_location }}
-    raw mariadb_location {{ mariadb_location }}
-    raw mariadb_resiliency_after_import_script {{ mariadb_resiliency_after_import_script }}
-    raw perl_location {{ perl_location }}
-    raw perl_siteprefix {{ perl_siteprefix }}
-    raw sed_location {{ sed_location }}
-    raw xtrabackup_location {{ xtrabackup_location }}
-    import json_module json
-# Must match the key id in [switch-softwaretype] which uses this section.
-    raw software_type mariadb
 
-[dynamic-template-zope-parameters]
-apache = {{ apache_location }}
-aspell = {{ aspell_location }}
-bin-directory = {{ bin_directory }}
-coreutils = {{ coreutils_location }}
-dcron = {{ dcron_location }}
-dmtx-utils = {{ dmtx_utils_location }}
-erp5 = {{ erp5_location }}
-git = {{ git_location }}
-graphviz = {{ graphviz_location }}
-grep = {{ grep_location }}
-gzip = {{ gzip_location }}
-imagemagick = {{ imagemagick_location }}
-librsvg = {{ librsvg_location }}
-logrotate = {{ logrotate_location }}
-mariadb = {{ mariadb_location }}
-openssl = {{ openssl_location }}
-poppler = {{ poppler_location }}
-sed = {{ sed_location }}
-tesseract = {{ tesseract_location }}
-w3m = {{ w3m_location }}
-jsl = {{ jsl_location }}
+[dynamic-template-create-erp5-site-parameters]
+instance-erp5 = ${dynamic-template-erp5:rendered}
+template-create-erp5-site-real = {{ template_create_erp5_site_real }}
+dash-location = {{ dash_location }}
+curl-location = {{ curl_location }}
 
-[dynamic-template-zope]
-< = jinja2-template-base
-template = {{ template_zope }}
-filename = instance-zope.cfg
-extensions = jinja2.ext.do
-# XXX: duplicates above section, so less is modified in template in this
-# commit. Should be replaced by a single "section" line.
+[dynamic-template-create-erp5-site]
+<= jinja2-template-base
+template = {{ template_create_erp5_site }}
+filename = instance-create-erp5-site.cfg
 extra-context =
-    key apache_location dynamic-template-zope-parameters:apache
-    key aspell_location dynamic-template-zope-parameters:aspell
-    key bin_directory dynamic-template-zope-parameters:bin-directory
-    key coreutils_location dynamic-template-zope-parameters:coreutils
-    key dcron_location dynamic-template-zope-parameters:dcron
-    key dmtx_utils_location dynamic-template-zope-parameters:dmtx-utils
-    key erp5_location dynamic-template-zope-parameters:erp5
-    key git_location dynamic-template-zope-parameters:git
-    key graphviz_location dynamic-template-zope-parameters:graphviz
-    key grep_location dynamic-template-zope-parameters:grep
-    key gzip_location dynamic-template-zope-parameters:gzip
-    key imagemagick_location dynamic-template-zope-parameters:imagemagick
-    key librsvg_location dynamic-template-zope-parameters:librsvg
-    key logrotate_location dynamic-template-zope-parameters:logrotate
-    key mariadb_location dynamic-template-zope-parameters:mariadb
-    key openssl_location dynamic-template-zope-parameters:openssl
-    key poppler_location dynamic-template-zope-parameters:poppler
-    key sed_location dynamic-template-zope-parameters:sed
-    key tesseract_location dynamic-template-zope-parameters:tesseract
-    key w3m_location dynamic-template-zope-parameters:w3m
-    key jsl_location dynamic-template-zope-parameters:jsl
-
-[template-erp5-single-parameters]
-bin-directory = {{ bin_directory }}
-openssl = {{ openssl_location }}
-local_bt5_repository = {{ local_bt5_repository  }}
-bt5_list = {{ bt5_list }}
-dash = {{ dash_location }}
-curl = {{ curl_location }}
-
-[template-erp5-single]
-< = jinja2-template-base
-template = {{ template_erp5_single }}
-filename = instance-erp5-single.cfg
-# XXX: duplicates above section, so less is modified in template in this
-# commit. Should be replaced by a "section" line (preserving template_zope
-# definition).
-extra-context =
-    key bin_directory template-erp5-single-parameters:bin-directory
-    key openssl_location template-erp5-single-parameters:openssl
-    key curl_location template-erp5-single-parameters:curl
-    key dash_location template-erp5-single-parameters:dash
-    key template_zope dynamic-template-zope:rendered
-    key local_bt5_repository template-erp5-single-parameters:local_bt5_repository
-    key bt5_list template-erp5-single-parameters:bt5_list
-
-[dynamic-template-cluster-parameters]
-local-bt5-repository = {{ local_bt5_repository }}
-bt5_list = {{ bt5_list }}
-
-[dynamic-template-cluster]
-< = jinja2-template-base
-template = {{ template_erp5_cluster }}
-filename = instance-erp5-cluster.cfg
-extra-context =
-    key local_bt5_repository dynamic-template-cluster-parameters:local-bt5-repository
-    key bt5_list template-erp5-single-parameters:bt5_list
-# Must match the key id in [switch-softwaretype] which uses this section.
-# XXX: it is dangerous to use buildout-style expansion in jinja context declaration
-    raw software_type ${:software-type}
-software-type = cluster
-
-# BBB: use "cluster" software type instead
-[dynamic-template-production]
-< = dynamic-template-cluster
-software-type = production
+    section parameter_dict dynamic-template-create-erp5-site-parameters
 
 [switch-softwaretype]
-recipe = slapos.cookbook:softwaretype
-default = ${template-erp5-single:rendered}
-production = ${dynamic-template-production:rendered}
-cluster = ${dynamic-template-cluster:rendered}
-kumofs = {{ template_kumofs }}
-memcached = {{ template_memcached }}
-cloudooo = ${dynamic-template-cloudooo:rendered}
-zope = ${dynamic-template-zope:rendered}
-mariadb = ${dynamic-template-mariadb:rendered}
-tidstorage = ${dynamic-template-tidstorage:rendered}
-varnish = ${dynamic-template-varnish:rendered}
+recipe = slapos.cookbook:switch-softwaretype
+override = {{ dumps(override_switch_softwaretype |default) }}
 
-[slap-connection]
-# part to migrate to new - separated words
-computer-id = ${slap_connection:computer_id}
-partition-id = ${slap_connection:partition_id}
-server-url = ${slap_connection:server_url}
-software-release-url = ${slap_connection:software_release_url}
-key-file = ${slap_connection:key_file}
-cert-file = ${slap_connection:cert_file}
+# Public software types
+default = dynamic-template-erp5:rendered
+create-erp5-site = dynamic-template-create-erp5-site:rendered
+# BBB
+RootSoftwareInstance = ${:default}
+# Internal software types
+kumofs = dynamic-template-kumofs:rendered
+cloudooo = dynamic-template-cloudooo:rendered
+mariadb = dynamic-template-mariadb:rendered
+balancer = dynamic-template-balancer:rendered
+zodb-zeo = dynamic-template-zeo:rendered
+zodb-neo = neo-storage-mysql:rendered
+zope = dynamic-template-zope:rendered

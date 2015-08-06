@@ -1,0 +1,43 @@
+[buildout]
+parts = switch-softwaretype
+eggs-directory = {{ eggs_directory }}
+develop-eggs-directory = {{ develop_eggs_directory }}
+
+[slap-configuration]
+recipe = slapos.cookbook:slapconfiguration.serialised
+computer = ${slap-connection:computer-id}
+partition = ${slap-connection:partition-id}
+url = ${slap-connection:server-url}
+key = ${slap-connection:key-file}
+cert = ${slap-connection:cert-file}
+
+[jinja2-template-base]
+recipe = slapos.recipe.template:jinja2
+filename = ${:_buildout_section_name_}.cfg
+rendered = ${buildout:parts-directory}/${:_buildout_section_name_}/${:filename}
+extensions = jinja2.ext.do
+extra-context =
+context =
+    key ipv4_set slap-configuration:ipv4
+    key ipv6_set slap-configuration:ipv6
+    key slapparameter_dict slap-configuration:configuration
+    raw logrotate_cfg {{ template_logrotate_base }}
+    raw bin_directory {{ bin_directory }}
+    ${:extra-context}
+
+[neo-admin]
+<= jinja2-template-base
+template = {{ neo_admin }}
+
+[neo-master]
+<= jinja2-template-base
+template = {{ neo_master }}
+
+[neo-storage-mysql]
+<= jinja2-template-base
+template = {{ neo_storage_mysql }}
+extra-context =
+    key master_cfg neo-master:rendered
+    key admin_cfg neo-admin:rendered
+    raw mariadb_location {{ mariadb_location }}
+    raw template_neo_my_cnf {{ template_neo_my_cnf }}
