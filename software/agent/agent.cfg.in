@@ -1,0 +1,8 @@
+[agent]
+timeout = ${slap-parameter:timeout} 
+node_title = ${slap-parameter:node_title} 
+project_title = ${slap-parameter:project_title} 
+task_count = ${slap-parameter:task_count} 
+report_url = ${slap-parameter:report_url} 
+
+working_directory = $${directory:testnode}
