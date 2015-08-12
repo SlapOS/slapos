@@ -60,8 +60,13 @@ person = portal.ERP5Site_getAuthenticatedMemberPersonValue()\n
 if person is None:\n
   raise ValueError("User Not Found")\n
 \n
+document_path = ""\n
+\n
+if context.getPortalType() in ["Hosting Subscription", "Computer"]:\n
+  document_path = "/%s" % context.getRelativeUrl()\n
+\n
 web_site = context.getWebSiteValue()\n
-request_url = "%s/%s" % (web_site.absolute_url(), "feed")\n
+request_url = "%s/feed%s" % (web_site.absolute_url(), document_path)\n
 \n
 # XXX - Cannot search in catalog with parameter url_string\n
 access_token = None\n
@@ -73,7 +78,7 @@ for token_item in portal.portal_catalog(\n
   if token_item.getUrlString() == request_url:\n
     access_token = token_item\n
     reference = access_token.getReference()\n
-    break;\n
+    break\n
 \n
 if access_token is None:\n
   access_token = portal.access_token_module.newContent(\n
@@ -85,9 +90,9 @@ if access_token is None:\n
   reference = access_token.getReference()  \n
   access_token.validate()\n
 \n
-url = "%s/%s?portal_skin=RSS&access_token=%s&access_token_secret=%s" % (\n
+url = "%s/feed%s?portal_skin=RSS&access_token=%s&access_token_secret=%s" % (\n
         web_site.absolute_url(),\n
-        "feed",\n
+        document_path,\n
         access_token.getId(),\n
         reference)\n
 \n

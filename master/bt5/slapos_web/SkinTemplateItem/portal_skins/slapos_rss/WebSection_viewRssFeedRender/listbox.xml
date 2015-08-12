@@ -65,6 +65,10 @@
                     <value> <string></string> </value>
                 </item>
                 <item>
+                    <key> <string>count_method</string> </key>
+                    <value> <string></string> </value>
+                </item>
+                <item>
                     <key> <string>default_params</string> </key>
                     <value> <string></string> </value>
                 </item>

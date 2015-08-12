@@ -57,18 +57,24 @@ product_reference = context.getAggregateReference()\n
 \n
 decision_line_in_progress_list = portal.portal_catalog(\n
                     portal_type=\'Upgrade Decision Line\',\n
-                    aggregate_uid=aggregate_uid)\n
+                    default_aggregate_uid=aggregate_uid)\n
 \n
 for decision_line in decision_line_in_progress_list:\n
   upgrade_decision = decision_line.getParentValue()\n
-  if upgrade_decision.getSimulationState() not in [\'planned\',\n
-      \'confirmed\', \'started\', \'stopped\']:\n
+  simulation_state = upgrade_decision.getSimulationState()\n
+  if simulation_state not in [\'planned\', \'confirmed\',\n
+      \'started\', \'stopped\', \'rejected\']:\n
     continue\n
   release_list = decision_line.getAggregateValueList(portal_type="Software Release")\n
   if len(release_list) > 1:\n
     continue\n
   if not release_list[0]:\n
     continue\n
+  # If the current sr in rejected we must prevent creation of new upgrade decision for this sr\n
+  if simulation_state == \'rejected\' and \\\n
+        release_list[0].getUrlString() != context.getUrlString():\n
+    continue\n
+    \n
   # If both software release belong to the same software product, there is an upgrade decision in progress \n
   if product_reference == release_list[0].getAggregateReference():\n
     return upgrade_decision\n

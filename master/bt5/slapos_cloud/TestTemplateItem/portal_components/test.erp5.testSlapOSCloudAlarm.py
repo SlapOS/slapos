@@ -703,8 +703,8 @@ portal_workflow.doActionFor(context, action='edit_action', comment='Visited by S
         <parameter id='mode'>unique_by_network</parameter>
         </instance>"""
     self._makeTree()
-    computer1, partition1 = self._makeComputer()
-    computer2, partition2 = self._makeComputer()
+    computer1 = self._makeComputer()[0]
+    computer2 = self._makeComputer()[0]
     self._installSoftware(computer1, self.software_instance.getUrlString())
     self._installSoftware(computer2, self.software_instance.getUrlString())
 
@@ -735,8 +735,11 @@ portal_workflow.doActionFor(context, action='edit_action', comment='Visited by S
     software_instance2.validate()
     self.tic()
     
+
     self.software_instance.setSlaXml(sla_xml)
     self.software_instance.SoftwareInstance_tryToAllocatePartition()
+    
+    self.tic()
     self.assertEqual(
         computer_network.getReference(),
         self.software_instance.getAggregateValue(portal_type='Computer Partition')\
@@ -767,7 +770,7 @@ portal_workflow.doActionFor(context, action='edit_action', comment='Visited by S
         </instance>"""
     self._makeTree()
     computer1, partition1 = self._makeComputer()
-    computer2, partition2 = self._makeComputer()
+    computer2 = self._makeComputer()[0]
     computer3, partition3 = self._makeComputer()
     computer_network1 = self._makeComputerNetwork()
     computer_network2 = self._makeComputerNetwork()
@@ -905,8 +908,8 @@ portal_workflow.doActionFor(context, action='edit_action', comment='Visited by S
         <parameter id='mode'>unique_by_network</parameter>
         </instance>"""
     self._makeTree()
-    computer1, partition1 = self._makeComputer()
-    computer2, partition2 = self._makeComputer()
+    computer1 = self._makeComputer()[0]
+    computer2 = self._makeComputer()[0]
     self._installSoftware(computer1, self.software_instance.getUrlString())
     self._installSoftware(computer2, self.software_instance.getUrlString())
 
@@ -1843,7 +1846,7 @@ class TestSlapOSGarbageCollectNonAllocatedRootTreeAlarm(testSlapOSMixin):
         'error_message': '',
         'actor': 'ERP5TypeTestCase',
         'slap_state': '',
-        'time': addToDate(DateTime(), to_add={'day': -6}),
+        'time': addToDate(DateTime(), to_add={'day': -2}),
         'action': 'edit'
     })
 
@@ -1873,7 +1876,7 @@ class TestSlapOSGarbageCollectNonAllocatedRootTreeAlarm(testSlapOSMixin):
         'error_message': '',
         'actor': 'ERP5TypeTestCase',
         'slap_state': '',
-        'time': addToDate(DateTime(), to_add={'day': -8}),
+        'time': addToDate(DateTime(), to_add={'day': -4}),
         'action': 'edit'
     })
 
@@ -2065,7 +2068,7 @@ portal_workflow.doActionFor(context, action='edit_action', comment='Visited by S
 
   def test_alarm_software_instance_invalidated(self):
     instance = self.createSoftwareInstance()
-    partition = self.createComputerPartition()
+    self.createComputerPartition()
     self.portal.portal_workflow._jumpToStateFor(instance, 'invalidated')
     self.portal.portal_workflow._jumpToStateFor(instance, 'destroy_requested')
     self.tic()
@@ -2083,7 +2086,7 @@ portal_workflow.doActionFor(context, action='edit_action', comment='Visited by S
 
   def test_alarm_software_instance_matching(self):
     instance = self.createSoftwareInstance()
-    partition = self.createComputerPartition()
+    self.createComputerPartition()
     self.portal.portal_workflow._jumpToStateFor(instance, 'validated')
     self.portal.portal_workflow._jumpToStateFor(instance, 'destroy_requested')
     self.tic()

@@ -89,9 +89,7 @@
                       <list>
                         <string>my_section_title</string>
                         <string>my_reference</string>
-                        <string>my_title</string>
                         <string>your_new_title</string>
-                        <string>my_update_button</string>
                         <string>my_url_string</string>
                         <string>my_source_reference</string>
                         <string>your_status</string>
@@ -103,6 +101,7 @@
                     <key> <string>normal bis</string> </key>
                     <value>
                       <list>
+                        <string>info</string>
                         <string>your_connection_listbox</string>
                         <string>my_text_content</string>
                       </list>

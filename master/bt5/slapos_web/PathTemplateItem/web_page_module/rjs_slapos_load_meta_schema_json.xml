@@ -1,0 +1,479 @@
+<?xml version="1.0"?>
+<ZopeData>
+  <record id="1" aka="AAAAAAAAAAE=">
+    <pickle>
+      <global name="Web Page" module="erp5.portal_type"/>
+    </pickle>
+    <pickle>
+      <dictionary>
+        <item>
+            <key> <string>_Access_contents_information_Permission</string> </key>
+            <value>
+              <tuple>
+                <string>Anonymous</string>
+                <string>Assignee</string>
+                <string>Assignor</string>
+                <string>Associate</string>
+                <string>Auditor</string>
+                <string>Manager</string>
+                <string>Owner</string>
+              </tuple>
+            </value>
+        </item>
+        <item>
+            <key> <string>_Add_portal_content_Permission</string> </key>
+            <value>
+              <tuple>
+                <string>Assignee</string>
+                <string>Assignor</string>
+                <string>Manager</string>
+              </tuple>
+            </value>
+        </item>
+        <item>
+            <key> <string>_Change_local_roles_Permission</string> </key>
+            <value>
+              <tuple>
+                <string>Assignor</string>
+                <string>Manager</string>
+              </tuple>
+            </value>
+        </item>
+        <item>
+            <key> <string>_Modify_portal_content_Permission</string> </key>
+            <value>
+              <tuple>
+                <string>Assignee</string>
+                <string>Assignor</string>
+                <string>Manager</string>
+              </tuple>
+            </value>
+        </item>
+        <item>
+            <key> <string>_View_Permission</string> </key>
+            <value>
+              <tuple>
+                <string>Anonymous</string>
+                <string>Assignee</string>
+                <string>Assignor</string>
+                <string>Associate</string>
+                <string>Auditor</string>
+                <string>Manager</string>
+                <string>Owner</string>
+              </tuple>
+            </value>
+        </item>
+        <item>
+            <key> <string>content_md5</string> </key>
+            <value>
+              <none/>
+            </value>
+        </item>
+        <item>
+            <key> <string>content_type</string> </key>
+            <value> <string>text/plain</string> </value>
+        </item>
+        <item>
+            <key> <string>default_reference</string> </key>
+            <value> <string>slapos_load_meta_schema.json</string> </value>
+        </item>
+        <item>
+            <key> <string>description</string> </key>
+            <value>
+              <none/>
+            </value>
+        </item>
+        <item>
+            <key> <string>id</string> </key>
+            <value> <string>rjs_slapos_load_meta_schema_json</string> </value>
+        </item>
+        <item>
+            <key> <string>language</string> </key>
+            <value> <string>en</string> </value>
+        </item>
+        <item>
+            <key> <string>portal_type</string> </key>
+            <value> <string>Web Page</string> </value>
+        </item>
+        <item>
+            <key> <string>short_title</string> </key>
+            <value>
+              <none/>
+            </value>
+        </item>
+        <item>
+            <key> <string>text_content</string> </key>
+            <value> <string>{\n
+    "id": "http://json-schema.org/draft-04/schema#",\n
+    "$schema": "http://json-schema.org/draft-04/schema#",\n
+    "description": "Core schema meta-schema",\n
+    "definitions": {\n
+        "schemaArray": {\n
+            "type": "array",\n
+            "minItems": 1,\n
+            "items": { "$ref": "#" }\n
+        },\n
+        "positiveInteger": {\n
+            "type": "integer",\n
+            "minimum": 0\n
+        },\n
+        "positiveIntegerDefault0": {\n
+            "allOf": [ { "$ref": "#/definitions/positiveInteger" }, { "default": 0 } ]\n
+        },\n
+        "simpleTypes": {\n
+            "enum": [ "array", "boolean", "integer", "null", "number", "object", "string" ]\n
+        },\n
+        "stringArray": {\n
+            "type": "array",\n
+            "items": { "type": "string" },\n
+            "minItems": 1,\n
+            "uniqueItems": true\n
+        }\n
+    },\n
+    "type": "object",\n
+    "properties": {\n
+        "id": {\n
+            "type": "string",\n
+            "format": "uri"\n
+        },\n
+        "$schema": {\n
+            "type": "string",\n
+            "format": "uri"\n
+        },\n
+        "title": {\n
+            "type": "string"\n
+        },\n
+        "description": {\n
+            "type": "string"\n
+        },\n
+        "default": {},\n
+        "multipleOf": {\n
+            "type": "number",\n
+            "minimum": 0,\n
+            "exclusiveMinimum": true\n
+        },\n
+        "maximum": {\n
+            "type": "number"\n
+        },\n
+        "exclusiveMaximum": {\n
+            "type": "boolean",\n
+            "default": false\n
+        },\n
+        "minimum": {\n
+            "type": "number"\n
+        },\n
+        "exclusiveMinimum": {\n
+            "type": "boolean",\n
+            "default": false\n
+        },\n
+        "maxLength": { "$ref": "#/definitions/positiveInteger" },\n
+        "minLength": { "$ref": "#/definitions/positiveIntegerDefault0" },\n
+        "pattern": {\n
+            "type": "string",\n
+            "format": "regex"\n
+        },\n
+        "additionalItems": {\n
+            "anyOf": [\n
+                { "type": "boolean" },\n
+                { "$ref": "#" }\n
+            ],\n
+            "default": {}\n
+        },\n
+        "items": {\n
+            "anyOf": [\n
+                { "$ref": "#" },\n
+                { "$ref": "#/definitions/schemaArray" }\n
+            ],\n
+            "default": {}\n
+        },\n
+        "maxItems": { "$ref": "#/definitions/positiveInteger" },\n
+        "minItems": { "$ref": "#/definitions/positiveIntegerDefault0" },\n
+        "uniqueItems": {\n
+            "type": "boolean",\n
+            "default": false\n
+        },\n
+        "maxProperties": { "$ref": "#/definitions/positiveInteger" },\n
+        "minProperties": { "$ref": "#/definitions/positiveIntegerDefault0" },\n
+        "required": { "$ref": "#/definitions/stringArray" },\n
+        "additionalProperties": {\n
+            "anyOf": [\n
+                { "type": "boolean" },\n
+                { "$ref": "#" }\n
+            ],\n
+            "default": {}\n
+        },\n
+        "definitions": {\n
+            "type": "object",\n
+            "additionalProperties": { "$ref": "#" },\n
+            "default": {}\n
+        },\n
+        "properties": {\n
+            "type": "object",\n
+            "additionalProperties": { "$ref": "#" },\n
+            "default": {}\n
+        },\n
+        "patternProperties": {\n
+            "type": "object",\n
+            "additionalProperties": { "$ref": "#" },\n
+            "default": {}\n
+        },\n
+        "dependencies": {\n
+            "type": "object",\n
+            "additionalProperties": {\n
+                "anyOf": [\n
+                    { "$ref": "#" },\n
+                    { "$ref": "#/definitions/stringArray" }\n
+                ]\n
+            }\n
+        },\n
+        "enum": {\n
+            "type": "array",\n
+            "minItems": 1,\n
+            "uniqueItems": true\n
+        },\n
+        "type": {\n
+            "anyOf": [\n
+                { "$ref": "#/definitions/simpleTypes" },\n
+                {\n
+                    "type": "array",\n
+                    "items": { "$ref": "#/definitions/simpleTypes" },\n
+                    "minItems": 1,\n
+                    "uniqueItems": true\n
+                }\n
+            ]\n
+        },\n
+        "allOf": { "$ref": "#/definitions/schemaArray" },\n
+        "anyOf": { "$ref": "#/definitions/schemaArray" },\n
+        "oneOf": { "$ref": "#/definitions/schemaArray" },\n
+        "not": { "$ref": "#" }\n
+    },\n
+    "dependencies": {\n
+        "exclusiveMaximum": [ "maximum" ],\n
+        "exclusiveMinimum": [ "minimum" ]\n
+    },\n
+    "default": {}\n
+}</string> </value>
+        </item>
+        <item>
+            <key> <string>title</string> </key>
+            <value>
+              <none/>
+            </value>
+        </item>
+        <item>
+            <key> <string>version</string> </key>
+            <value> <string>001</string> </value>
+        </item>
+        <item>
+            <key> <string>workflow_history</string> </key>
+            <value>
+              <persistent> <string encoding="base64">AAAAAAAAAAI=</string> </persistent>
+            </value>
+        </item>
+      </dictionary>
+    </pickle>
+  </record>
+  <record id="2" aka="AAAAAAAAAAI=">
+    <pickle>
+      <global name="PersistentMapping" module="Persistence.mapping"/>
+    </pickle>
+    <pickle>
+      <dictionary>
+        <item>
+            <key> <string>data</string> </key>
+            <value>
+              <dictionary>
+                <item>
+                    <key> <string>document_publication_workflow</string> </key>
+                    <value>
+                      <persistent> <string encoding="base64">AAAAAAAAAAM=</string> </persistent>
+                    </value>
+                </item>
+                <item>
+                    <key> <string>edit_workflow</string> </key>
+                    <value>
+                      <persistent> <string encoding="base64">AAAAAAAAAAQ=</string> </persistent>
+                    </value>
+                </item>
+                <item>
+                    <key> <string>processing_status_workflow</string> </key>
+                    <value>
+                      <persistent> <string encoding="base64">AAAAAAAAAAU=</string> </persistent>
+                    </value>
+                </item>
+              </dictionary>
+            </value>
+        </item>
+      </dictionary>
+    </pickle>
+  </record>
+  <record id="3" aka="AAAAAAAAAAM=">
+    <pickle>
+      <global name="WorkflowHistoryList" module="Products.ERP5Type.patches.WorkflowTool"/>
+    </pickle>
+    <pickle>
+      <tuple>
+        <none/>
+        <list>
+          <dictionary>
+            <item>
+                <key> <string>action</string> </key>
+                <value> <string>publish_alive</string> </value>
+            </item>
+            <item>
+                <key> <string>actor</string> </key>
+                <value> <string>zope</string> </value>
+            </item>
+            <item>
+                <key> <string>comment</string> </key>
+                <value> <string></string> </value>
+            </item>
+            <item>
+                <key> <string>error_message</string> </key>
+                <value> <string></string> </value>
+            </item>
+            <item>
+                <key> <string>time</string> </key>
+                <value>
+                  <object>
+                    <klass>
+                      <global name="DateTime" module="DateTime.DateTime"/>
+                    </klass>
+                    <tuple>
+                      <none/>
+                    </tuple>
+                    <state>
+                      <tuple>
+                        <float>1420558750.41</float>
+                        <string>UTC</string>
+                      </tuple>
+                    </state>
+                  </object>
+                </value>
+            </item>
+            <item>
+                <key> <string>validation_state</string> </key>
+                <value> <string>published_alive</string> </value>
+            </item>
+          </dictionary>
+        </list>
+      </tuple>
+    </pickle>
+  </record>
+  <record id="4" aka="AAAAAAAAAAQ=">
+    <pickle>
+      <global name="WorkflowHistoryList" module="Products.ERP5Type.patches.WorkflowTool"/>
+    </pickle>
+    <pickle>
+      <tuple>
+        <none/>
+        <list>
+          <dictionary>
+            <item>
+                <key> <string>action</string> </key>
+                <value> <string>edit</string> </value>
+            </item>
+            <item>
+                <key> <string>actor</string> </key>
+                <value> <string>zope</string> </value>
+            </item>
+            <item>
+                <key> <string>comment</string> </key>
+                <value>
+                  <none/>
+                </value>
+            </item>
+            <item>
+                <key> <string>error_message</string> </key>
+                <value> <string></string> </value>
+            </item>
+            <item>
+                <key> <string>serial</string> </key>
+                <value> <string>940.7498.47076.23671</string> </value>
+            </item>
+            <item>
+                <key> <string>state</string> </key>
+                <value> <string>current</string> </value>
+            </item>
+            <item>
+                <key> <string>time</string> </key>
+                <value>
+                  <object>
+                    <klass>
+                      <global name="DateTime" module="DateTime.DateTime"/>
+                    </klass>
+                    <tuple>
+                      <none/>
+                    </tuple>
+                    <state>
+                      <tuple>
+                        <float>1420558741.68</float>
+                        <string>UTC</string>
+                      </tuple>
+                    </state>
+                  </object>
+                </value>
+            </item>
+          </dictionary>
+        </list>
+      </tuple>
+    </pickle>
+  </record>
+  <record id="5" aka="AAAAAAAAAAU=">
+    <pickle>
+      <global name="WorkflowHistoryList" module="Products.ERP5Type.patches.WorkflowTool"/>
+    </pickle>
+    <pickle>
+      <tuple>
+        <none/>
+        <list>
+          <dictionary>
+            <item>
+                <key> <string>action</string> </key>
+                <value> <string>detect_converted_file</string> </value>
+            </item>
+            <item>
+                <key> <string>actor</string> </key>
+                <value> <string>zope</string> </value>
+            </item>
+            <item>
+                <key> <string>comment</string> </key>
+                <value> <string></string> </value>
+            </item>
+            <item>
+                <key> <string>error_message</string> </key>
+                <value> <string></string> </value>
+            </item>
+            <item>
+                <key> <string>external_processing_state</string> </key>
+                <value> <string>converted</string> </value>
+            </item>
+            <item>
+                <key> <string>serial</string> </key>
+                <value> <string>0.0.0.0</string> </value>
+            </item>
+            <item>
+                <key> <string>time</string> </key>
+                <value>
+                  <object>
+                    <klass>
+                      <global name="DateTime" module="DateTime.DateTime"/>
+                    </klass>
+                    <tuple>
+                      <none/>
+                    </tuple>
+                    <state>
+                      <tuple>
+                        <float>1420558707.29</float>
+                        <string>UTC</string>
+                      </tuple>
+                    </state>
+                  </object>
+                </value>
+            </item>
+          </dictionary>
+        </list>
+      </tuple>
+    </pickle>
+  </record>
+</ZopeData>

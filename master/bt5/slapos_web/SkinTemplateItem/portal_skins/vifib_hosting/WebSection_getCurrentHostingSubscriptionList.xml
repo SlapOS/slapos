@@ -50,17 +50,18 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string>from Products.ZSQLCatalog.SQLCatalog import NegatedQuery, Query\n
+            <value> <string>portal = context.getPortalObject()\n
+person = portal.ERP5Site_getAuthenticatedMemberPersonValue()\n
 \n
-portal = context.getPortalObject()\n
-person_uid = portal.ERP5Site_getPropertyFromAuthenticatedMemberPersonValue(\'uid\')\n
-\n
-return portal.portal_catalog(\n
-  portal_type="Hosting Subscription",\n
-  default_destination_section_uid=person_uid,\n
-  validation_state=\'validated\',\n
-  sort_on=((\'title\', ),)\n
-  )\n
+if person is not None:\n
+  return portal.portal_catalog(\n
+    portal_type="Hosting Subscription",\n
+    default_destination_section_uid=person.getUid(),\n
+    validation_state=\'validated\',\n
+    sort_on=((\'title\', ),)\n
+    )\n
+    \n
+return []\n
 </string> </value>
         </item>
         <item>

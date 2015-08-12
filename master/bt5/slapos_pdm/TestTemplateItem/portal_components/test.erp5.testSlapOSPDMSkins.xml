@@ -7,8 +7,20 @@
     <pickle>
       <dictionary>
         <item>
+            <key> <string>_recorded_property_dict</string> </key>
+            <value>
+              <persistent> <string encoding="base64">AAAAAAAAAAI=</string> </persistent>
+            </value>
+        </item>
+        <item>
             <key> <string>default_reference</string> </key>
             <value> <string>testSlapOSPDMSkins</string> </value>
+        </item>
+        <item>
+            <key> <string>description</string> </key>
+            <value>
+              <none/>
+            </value>
         </item>
         <item>
             <key> <string>id</string> </key>
@@ -34,25 +46,8 @@
             <key> <string>text_content_warning_message</string> </key>
             <value>
               <tuple>
-                <string>W: 75,  0: Bad indentation. Found 5 spaces, expected 4 (bad-indentation)</string>
-                <string>W:125,  0: Unnecessary semicolon (unnecessary-semicolon)</string>
-                <string>W:163,  0: Bad indentation. Found 6 spaces, expected 4 (bad-indentation)</string>
-                <string>W:164,  0: Bad indentation. Found 6 spaces, expected 4 (bad-indentation)</string>
-                <string>W:168,  0: Bad indentation. Found 6 spaces, expected 4 (bad-indentation)</string>
-                <string>W:169,  0: Bad indentation. Found 6 spaces, expected 4 (bad-indentation)</string>
-                <string>W:172,  0: Bad indentation. Found 5 spaces, expected 4 (bad-indentation)</string>
-                <string>W:175,  0: Bad indentation. Found 5 spaces, expected 4 (bad-indentation)</string>
-                <string>W:181,  0: Bad indentation. Found 5 spaces, expected 4 (bad-indentation)</string>
-                <string>W:182,  0: Bad indentation. Found 5 spaces, expected 4 (bad-indentation)</string>
-                <string>W:184,  0: Bad indentation. Found 5 spaces, expected 4 (bad-indentation)</string>
-                <string>W: 96,  2: Arguments number differs from overridden method (arguments-differ)</string>
-                <string>W:461,  4: Unused variable \'upgrade_decision_line\' (unused-variable)</string>
-                <string>W:507,  4: Unused variable \'upgrade_decision_line\' (unused-variable)</string>
-                <string>W:551,  4: Unused variable \'upgrade_decision_line\' (unused-variable)</string>
-                <string>W:699,  4: Unused variable \'person\' (unused-variable)</string>
-                <string>W:726,  4: Unused variable \'person\' (unused-variable)</string>
-                <string>W:1189,  4: Unused variable \'upgrade_decision\' (unused-variable)</string>
-                <string>W:1291,  4: Unused variable \'upgrade_decision\' (unused-variable)</string>
+                <string>W:127,  2: Arguments number differs from overridden method (arguments-differ)</string>
+                <string>W:140,  2: Arguments number differs from overridden method (arguments-differ)</string>
               </tuple>
             </value>
         </item>
@@ -63,7 +58,7 @@
         <item>
             <key> <string>workflow_history</string> </key>
             <value>
-              <persistent> <string encoding="base64">AAAAAAAAAAI=</string> </persistent>
+              <persistent> <string encoding="base64">AAAAAAAAAAM=</string> </persistent>
             </value>
         </item>
       </dictionary>
@@ -78,11 +73,26 @@
         <item>
             <key> <string>data</string> </key>
             <value>
+              <dictionary/>
+            </value>
+        </item>
+      </dictionary>
+    </pickle>
+  </record>
+  <record id="3" aka="AAAAAAAAAAM=">
+    <pickle>
+      <global name="PersistentMapping" module="Persistence.mapping"/>
+    </pickle>
+    <pickle>
+      <dictionary>
+        <item>
+            <key> <string>data</string> </key>
+            <value>
               <dictionary>
                 <item>
                     <key> <string>component_validation_workflow</string> </key>
                     <value>
-                      <persistent> <string encoding="base64">AAAAAAAAAAM=</string> </persistent>
+                      <persistent> <string encoding="base64">AAAAAAAAAAQ=</string> </persistent>
                     </value>
                 </item>
               </dictionary>
@@ -91,7 +101,7 @@
       </dictionary>
     </pickle>
   </record>
-  <record id="3" aka="AAAAAAAAAAM=">
+  <record id="4" aka="AAAAAAAAAAQ=">
     <pickle>
       <global name="WorkflowHistoryList" module="Products.ERP5Type.patches.WorkflowTool"/>
     </pickle>

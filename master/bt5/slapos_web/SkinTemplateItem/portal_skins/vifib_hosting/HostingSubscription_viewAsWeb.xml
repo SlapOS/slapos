@@ -35,7 +35,7 @@
         </item>
         <item>
             <key> <string>action</string> </key>
-            <value> <string></string> </value>
+            <value> <string>HostingSubscription_editWebMode</string> </value>
         </item>
         <item>
             <key> <string>description</string> </key>
@@ -77,6 +77,9 @@
                       <list>
                         <string>listbox</string>
                         <string>my_destroy_button</string>
+                        <string>ticket_listbox</string>
+                        <string>new_ticket_button</string>
+                        <string>your_get_token</string>
                       </list>
                     </value>
                 </item>
@@ -101,11 +104,11 @@
                     <value>
                       <list>
                         <string>my_title</string>
+                        <string>my_restricted_access_token_generate_button</string>
                         <string>your_ad</string>
                         <string>my_url_string</string>
                         <string>my_source_reference</string>
                         <string>info</string>
-                        <string>last_event_listbox</string>
                         <string>your_status</string>
                         <string>your_instance_xml</string>
                         <string>my_update_button</string>

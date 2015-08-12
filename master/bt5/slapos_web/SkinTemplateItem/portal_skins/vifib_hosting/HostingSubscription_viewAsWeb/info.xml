@@ -233,7 +233,7 @@
                 </item>
                 <item>
                     <key> <string>extra</string> </key>
-                    <value> <string>style=\'background:white; margin:6px; color:red\'</string> </value>
+                    <value> <string>style=\'background-color: #E1FFF5; padding: 6px; color: #4F9073; border: 1px solid #D5E5FB; text-shadow: 0 1px 0 rgba(255, 255, 255, 0.5); line-height: 25px; margin: 10px 0;\'</string> </value>
                 </item>
                 <item>
                     <key> <string>height</string> </key>
@@ -289,7 +289,7 @@
       <dictionary>
         <item>
             <key> <string>_text</string> </key>
-            <value> <string>python: "\\n".join([i.connection_value for i in here.HostingSubscription_getConnectionParameterList() if i.connection_key.endswith("_info")])</string> </value>
+            <value> <string>python: "\\n".join([i.connection_value for i in here.HostingSubscription_getConnectionParameterList(type=\'info\') if i.connection_key.endswith("_info")])</string> </value>
         </item>
       </dictionary>
     </pickle>
@@ -302,7 +302,7 @@
       <dictionary>
         <item>
             <key> <string>_text</string> </key>
-            <value> <string>python: len(here.HostingSubscription_getConnectionParameterList())</string> </value>
+            <value> <string>python: len(here.HostingSubscription_getConnectionParameterList(type=\'info\'))</string> </value>
         </item>
       </dictionary>
     </pickle>

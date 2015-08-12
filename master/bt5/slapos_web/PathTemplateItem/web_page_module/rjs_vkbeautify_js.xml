@@ -1,0 +1,681 @@
+<?xml version="1.0"?>
+<ZopeData>
+  <record id="1" aka="AAAAAAAAAAE=">
+    <pickle>
+      <global name="Web Script" module="erp5.portal_type"/>
+    </pickle>
+    <pickle>
+      <dictionary>
+        <item>
+            <key> <string>_Access_contents_information_Permission</string> </key>
+            <value>
+              <tuple>
+                <string>Anonymous</string>
+                <string>Assignee</string>
+                <string>Assignor</string>
+                <string>Associate</string>
+                <string>Auditor</string>
+                <string>Manager</string>
+                <string>Owner</string>
+              </tuple>
+            </value>
+        </item>
+        <item>
+            <key> <string>_Add_portal_content_Permission</string> </key>
+            <value>
+              <tuple>
+                <string>Assignee</string>
+                <string>Assignor</string>
+                <string>Manager</string>
+              </tuple>
+            </value>
+        </item>
+        <item>
+            <key> <string>_Change_local_roles_Permission</string> </key>
+            <value>
+              <tuple>
+                <string>Assignor</string>
+                <string>Manager</string>
+              </tuple>
+            </value>
+        </item>
+        <item>
+            <key> <string>_Modify_portal_content_Permission</string> </key>
+            <value>
+              <tuple>
+                <string>Assignee</string>
+                <string>Assignor</string>
+                <string>Manager</string>
+              </tuple>
+            </value>
+        </item>
+        <item>
+            <key> <string>_View_Permission</string> </key>
+            <value>
+              <tuple>
+                <string>Anonymous</string>
+                <string>Assignee</string>
+                <string>Assignor</string>
+                <string>Associate</string>
+                <string>Auditor</string>
+                <string>Manager</string>
+                <string>Owner</string>
+              </tuple>
+            </value>
+        </item>
+        <item>
+            <key> <string>content_md5</string> </key>
+            <value>
+              <none/>
+            </value>
+        </item>
+        <item>
+            <key> <string>default_reference</string> </key>
+            <value> <string>vkbeautify.js</string> </value>
+        </item>
+        <item>
+            <key> <string>description</string> </key>
+            <value>
+              <none/>
+            </value>
+        </item>
+        <item>
+            <key> <string>id</string> </key>
+            <value> <string>rjs_vkbeautify_js</string> </value>
+        </item>
+        <item>
+            <key> <string>language</string> </key>
+            <value> <string>en</string> </value>
+        </item>
+        <item>
+            <key> <string>portal_type</string> </key>
+            <value> <string>Web Script</string> </value>
+        </item>
+        <item>
+            <key> <string>short_title</string> </key>
+            <value>
+              <none/>
+            </value>
+        </item>
+        <item>
+            <key> <string>text_content</string> </key>
+            <value> <string>/**\n
+* vkBeautify - javascript plugin to pretty-print or minify text in XML, JSON, CSS and SQL formats.\n
+*  \n
+* Version - 0.99.00.beta \n
+* Copyright (c) 2012 Vadim Kiryukhin\n
+* vkiryukhin @ gmail.com\n
+* http://www.eslinstructor.net/vkbeautify/\n
+* \n
+* Dual licensed under the MIT and GPL licenses:\n
+*   http://www.opensource.org/licenses/mit-license.php\n
+*   http://www.gnu.org/licenses/gpl.html\n
+*\n
+*   Pretty print\n
+*\n
+*        vkbeautify.xml(text [,indent_pattern]);\n
+*        vkbeautify.json(text [,indent_pattern]);\n
+*        vkbeautify.css(text [,indent_pattern]);\n
+*        vkbeautify.sql(text [,indent_pattern]);\n
+*\n
+*        @text - String; text to beatufy;\n
+*        @indent_pattern - Integer | String;\n
+*                Integer:  number of white spaces;\n
+*                String:   character string to visualize indentation ( can also be a set of white spaces )\n
+*   Minify\n
+*\n
+*        vkbeautify.xmlmin(text [,preserve_comments]);\n
+*        vkbeautify.jsonmin(text);\n
+*        vkbeautify.cssmin(text [,preserve_comments]);\n
+*        vkbeautify.sqlmin(text);\n
+*\n
+*        @text - String; text to minify;\n
+*        @preserve_comments - Bool; [optional];\n
+*                Set this flag to true to prevent removing comments from @text ( minxml and mincss functions only. )\n
+*\n
+*   Examples:\n
+*        vkbeautify.xml(text); // pretty print XML\n
+*        vkbeautify.json(text, 4 ); // pretty print JSON\n
+*        vkbeautify.css(text, \'. . . .\'); // pretty print CSS\n
+*        vkbeautify.sql(text, \'----\'); // pretty print SQL\n
+*\n
+*        vkbeautify.xmlmin(text, true);// minify XML, preserve comments\n
+*        vkbeautify.jsonmin(text);// minify JSON\n
+*        vkbeautify.cssmin(text);// minify CSS, remove comments ( default )\n
+*        vkbeautify.sqlmin(text);// minify SQL\n
+*\n
+*/\n
+\n
+(function() {\n
+\n
+function createShiftArr(step) {\n
+\n
+\tvar space = \'    \';\n
+\t\n
+\tif ( isNaN(parseInt(step)) ) {  // argument is string\n
+\t\tspace = step;\n
+\t} else { // argument is integer\n
+\t\tswitch(step) {\n
+\t\t\tcase 1: space = \' \'; break;\n
+\t\t\tcase 2: space = \'  \'; break;\n
+\t\t\tcase 3: space = \'   \'; break;\n
+\t\t\tcase 4: space = \'    \'; break;\n
+\t\t\tcase 5: space = \'     \'; break;\n
+\t\t\tcase 6: space = \'      \'; break;\n
+\t\t\tcase 7: space = \'       \'; break;\n
+\t\t\tcase 8: space = \'        \'; break;\n
+\t\t\tcase 9: space = \'         \'; break;\n
+\t\t\tcase 10: space = \'          \'; break;\n
+\t\t\tcase 11: space = \'           \'; break;\n
+\t\t\tcase 12: space = \'            \'; break;\n
+\t\t}\n
+\t}\n
+\n
+\tvar shift = [\'\\n\']; // array of shifts\n
+\tfor(ix=0;ix\074100;ix++){\n
+\t\tshift.push(shift[ix]+space); \n
+\t}\n
+\treturn shift;\n
+}\n
+\n
+function vkbeautify(){\n
+\tthis.step = \'    \'; // 4 spaces\n
+\tthis.shift = createShiftArr(this.step);\n
+};\n
+\n
+vkbeautify.prototype.xml = function(text,step) {\n
+\n
+\tvar ar = text.replace(/\076\\s{0,}\074/g,"\076\074")\n
+\t\t\t\t .replace(/\074/g,"~::~\074")\n
+\t\t\t\t .replace(/\\s*xmlns\\:/g,"~::~xmlns:")\n
+\t\t\t\t .replace(/\\s*xmlns\\=/g,"~::~xmlns=")\n
+\t\t\t\t .split(\'~::~\'),\n
+\t\tlen = ar.length,\n
+\t\tinComment = false,\n
+\t\tdeep = 0,\n
+\t\tstr = \'\',\n
+\t\tix = 0,\n
+\t\tshift = step ? createShiftArr(step) : this.shift;\n
+\n
+\t\tfor(ix=0;ix\074len;ix++) {\n
+\t\t\t// start comment or \074![CDATA[...]]\076 or \074!DOCTYPE //\n
+\t\t\tif(ar[ix].search(/\074!/) \076 -1) { \n
+\t\t\t\tstr += shift[deep]+ar[ix];\n
+\t\t\t\tinComment = true; \n
+\t\t\t\t// end comment  or \074![CDATA[...]]\076 //\n
+\t\t\t\tif(ar[ix].search(/--\076/) \076 -1 || ar[ix].search(/\\]\076/) \076 -1 || ar[ix].search(/!DOCTYPE/) \076 -1 ) { \n
+\t\t\t\t\tinComment = false; \n
+\t\t\t\t}\n
+\t\t\t} else \n
+\t\t\t// end comment  or \074![CDATA[...]]\076 //\n
+\t\t\tif(ar[ix].search(/--\076/) \076 -1 || ar[ix].search(/\\]\076/) \076 -1) { \n
+\t\t\t\tstr += ar[ix];\n
+\t\t\t\tinComment = false; \n
+\t\t\t} else \n
+\t\t\t// \074elm\076\074/elm\076 //\n
+\t\t\tif( /^\074\\w/.exec(ar[ix-1]) \046\046 /^\074\\/\\w/.exec(ar[ix]) \046\046\n
+\t\t\t\t/^\074[\\w:\\-\\.\\,]+/.exec(ar[ix-1]) == /^\074\\/[\\w:\\-\\.\\,]+/.exec(ar[ix])[0].replace(\'/\',\'\')) { \n
+\t\t\t\tstr += ar[ix];\n
+\t\t\t\tif(!inComment) deep--;\n
+\t\t\t} else\n
+\t\t\t // \074elm\076 //\n
+\t\t\tif(ar[ix].search(/\074\\w/) \076 -1 \046\046 ar[ix].search(/\074\\//) == -1 \046\046 ar[ix].search(/\\/\076/) == -1 ) {\n
+\t\t\t\tstr = !inComment ? str += shift[deep++]+ar[ix] : str += ar[ix];\n
+\t\t\t} else \n
+\t\t\t // \074elm\076...\074/elm\076 //\n
+\t\t\tif(ar[ix].search(/\074\\w/) \076 -1 \046\046 ar[ix].search(/\074\\//) \076 -1) {\n
+\t\t\t\tstr = !inComment ? str += shift[deep]+ar[ix] : str += ar[ix];\n
+\t\t\t} else \n
+\t\t\t// \074/elm\076 //\n
+\t\t\tif(ar[ix].search(/\074\\//) \076 -1) { \n
+\t\t\t\tstr = !inComment ? str += shift[--deep]+ar[ix] : str += ar[ix];\n
+\t\t\t} else \n
+\t\t\t// \074elm/\076 //\n
+\t\t\tif(ar[ix].search(/\\/\076/) \076 -1 ) { \n
+\t\t\t\tstr = !inComment ? str += shift[deep]+ar[ix] : str += ar[ix];\n
+\t\t\t} else \n
+\t\t\t// \074? xml ... ?\076 //\n
+\t\t\tif(ar[ix].search(/\074\\?/) \076 -1) { \n
+\t\t\t\tstr += shift[deep]+ar[ix];\n
+\t\t\t} else \n
+\t\t\t// xmlns //\n
+\t\t\tif( ar[ix].search(/xmlns\\:/) \076 -1  || ar[ix].search(/xmlns\\=/) \076 -1) { \n
+\t\t\t\tstr += shift[deep]+ar[ix];\n
+\t\t\t} \n
+\t\t\t\n
+\t\t\telse {\n
+\t\t\t\tstr += ar[ix];\n
+\t\t\t}\n
+\t\t}\n
+\t\t\n
+\treturn  (str[0] == \'\\n\') ? str.slice(1) : str;\n
+}\n
+\n
+vkbeautify.prototype.json = function(text,step) {\n
+\n
+\tvar step = step ? step : this.step;\n
+\t\n
+\tif (typeof JSON === \'undefined\' ) return text; \n
+\t\n
+\tif ( typeof text === "string" ) return JSON.stringify(JSON.parse(text), null, step);\n
+\tif ( typeof text === "object" ) return JSON.stringify(text, null, step);\n
+\t\t\n
+\treturn text; // text is not string nor object\n
+}\n
+\n
+vkbeautify.prototype.css = function(text, step) {\n
+\n
+\tvar ar = text.replace(/\\s{1,}/g,\' \')\n
+\t\t\t\t.replace(/\\{/g,"{~::~")\n
+\t\t\t\t.replace(/\\}/g,"~::~}~::~")\n
+\t\t\t\t.replace(/\\;/g,";~::~")\n
+\t\t\t\t.replace(/\\/\\*/g,"~::~/*")\n
+\t\t\t\t.replace(/\\*\\//g,"*/~::~")\n
+\t\t\t\t.replace(/~::~\\s{0,}~::~/g,"~::~")\n
+\t\t\t\t.split(\'~::~\'),\n
+\t\tlen = ar.length,\n
+\t\tdeep = 0,\n
+\t\tstr = \'\',\n
+\t\tix = 0,\n
+\t\tshift = step ? createShiftArr(step) : this.shift;\n
+\t\t\n
+\t\tfor(ix=0;ix\074len;ix++) {\n
+\n
+\t\t\tif( /\\{/.exec(ar[ix]))  { \n
+\t\t\t\tstr += shift[deep++]+ar[ix];\n
+\t\t\t} else \n
+\t\t\tif( /\\}/.exec(ar[ix]))  { \n
+\t\t\t\tstr += shift[--deep]+ar[ix];\n
+\t\t\t} else\n
+\t\t\tif( /\\*\\\\/.exec(ar[ix]))  { \n
+\t\t\t\tstr += shift[deep]+ar[ix];\n
+\t\t\t}\n
+\t\t\telse {\n
+\t\t\t\tstr += shift[deep]+ar[ix];\n
+\t\t\t}\n
+\t\t}\n
+\t\treturn str.replace(/^\\n{1,}/,\'\');\n
+}\n
+\n
+//----------------------------------------------------------------------------\n
+\n
+function isSubquery(str, parenthesisLevel) {\n
+\treturn  parenthesisLevel - (str.replace(/\\(/g,\'\').length - str.replace(/\\)/g,\'\').length )\n
+}\n
+\n
+function split_sql(str, tab) {\n
+\n
+\treturn str.replace(/\\s{1,}/g," ")\n
+\n
+\t\t\t\t.replace(/ AND /ig,"~::~"+tab+tab+"AND ")\n
+\t\t\t\t.replace(/ BETWEEN /ig,"~::~"+tab+"BETWEEN ")\n
+\t\t\t\t.replace(/ CASE /ig,"~::~"+tab+"CASE ")\n
+\t\t\t\t.replace(/ ELSE /ig,"~::~"+tab+"ELSE ")\n
+\t\t\t\t.replace(/ END /ig,"~::~"+tab+"END ")\n
+\t\t\t\t.replace(/ FROM /ig,"~::~FROM ")\n
+\t\t\t\t.replace(/ GROUP\\s{1,}BY/ig,"~::~GROUP BY ")\n
+\t\t\t\t.replace(/ HAVING /ig,"~::~HAVING ")\n
+\t\t\t\t//.replace(/ SET /ig," SET~::~")\n
+\t\t\t\t.replace(/ IN /ig," IN ")\n
+\t\t\t\t\n
+\t\t\t\t.replace(/ JOIN /ig,"~::~JOIN ")\n
+\t\t\t\t.replace(/ CROSS~::~{1,}JOIN /ig,"~::~CROSS JOIN ")\n
+\t\t\t\t.replace(/ INNER~::~{1,}JOIN /ig,"~::~INNER JOIN ")\n
+\t\t\t\t.replace(/ LEFT~::~{1,}JOIN /ig,"~::~LEFT JOIN ")\n
+\t\t\t\t.replace(/ RIGHT~::~{1,}JOIN /ig,"~::~RIGHT JOIN ")\n
+\t\t\t\t\n
+\t\t\t\t.replace(/ ON /ig,"~::~"+tab+"ON ")\n
+\t\t\t\t.replace(/ OR /ig,"~::~"+tab+tab+"OR ")\n
+\t\t\t\t.replace(/ ORDER\\s{1,}BY/ig,"~::~ORDER BY ")\n
+\t\t\t\t.replace(/ OVER /ig,"~::~"+tab+"OVER ")\n
+\n
+\t\t\t\t.replace(/\\(\\s{0,}SELECT /ig,"~::~(SELECT ")\n
+\t\t\t\t.replace(/\\)\\s{0,}SELECT /ig,")~::~SELECT ")\n
+\t\t\t\t\n
+\t\t\t\t.replace(/ THEN /ig," THEN~::~"+tab+"")\n
+\t\t\t\t.replace(/ UNION /ig,"~::~UNION~::~")\n
+\t\t\t\t.replace(/ USING /ig,"~::~USING ")\n
+\t\t\t\t.replace(/ WHEN /ig,"~::~"+tab+"WHEN ")\n
+\t\t\t\t.replace(/ WHERE /ig,"~::~WHERE ")\n
+\t\t\t\t.replace(/ WITH /ig,"~::~WITH ")\n
+\t\t\t\t\n
+\t\t\t\t//.replace(/\\,\\s{0,}\\(/ig,",~::~( ")\n
+\t\t\t\t//.replace(/\\,/ig,",~::~"+tab+tab+"")\n
+\n
+\t\t\t\t.replace(/ ALL /ig," ALL ")\n
+\t\t\t\t.replace(/ AS /ig," AS ")\n
+\t\t\t\t.replace(/ ASC /ig," ASC ")\t\n
+\t\t\t\t.replace(/ DESC /ig," DESC ")\t\n
+\t\t\t\t.replace(/ DISTINCT /ig," DISTINCT ")\n
+\t\t\t\t.replace(/ EXISTS /ig," EXISTS ")\n
+\t\t\t\t.replace(/ NOT /ig," NOT ")\n
+\t\t\t\t.replace(/ NULL /ig," NULL ")\n
+\t\t\t\t.replace(/ LIKE /ig," LIKE ")\n
+\t\t\t\t.replace(/\\s{0,}SELECT /ig,"SELECT ")\n
+\t\t\t\t.replace(/\\s{0,}UPDATE /ig,"UPDATE ")\n
+\t\t\t\t.replace(/ SET /ig," SET ")\n
+\t\t\t\t\t\t\t\n
+\t\t\t\t.replace(/~::~{1,}/g,"~::~")\n
+\t\t\t\t.split(\'~::~\');\n
+}\n
+\n
+vkbeautify.prototype.sql = function(text,step) {\n
+\n
+\tvar ar_by_quote = text.replace(/\\s{1,}/g," ")\n
+\t\t\t\t\t\t\t.replace(/\\\'/ig,"~::~\\\'")\n
+\t\t\t\t\t\t\t.split(\'~::~\'),\n
+\t\tlen = ar_by_quote.length,\n
+\t\tar = [],\n
+\t\tdeep = 0,\n
+\t\ttab = this.step,//+this.step,\n
+\t\tinComment = true,\n
+\t\tinQuote = false,\n
+\t\tparenthesisLevel = 0,\n
+\t\tstr = \'\',\n
+\t\tix = 0,\n
+\t\tshift = step ? createShiftArr(step) : this.shift;;\n
+\n
+\t\tfor(ix=0;ix\074len;ix++) {\n
+\t\t\tif(ix%2) {\n
+\t\t\t\tar = ar.concat(ar_by_quote[ix]);\n
+\t\t\t} else {\n
+\t\t\t\tar = ar.concat(split_sql(ar_by_quote[ix], tab) );\n
+\t\t\t}\n
+\t\t}\n
+\t\t\n
+\t\tlen = ar.length;\n
+\t\tfor(ix=0;ix\074len;ix++) {\n
+\t\t\t\n
+\t\t\tparenthesisLevel = isSubquery(ar[ix], parenthesisLevel);\n
+\t\t\t\n
+\t\t\tif( /\\s{0,}\\s{0,}SELECT\\s{0,}/.exec(ar[ix]))  { \n
+\t\t\t\tar[ix] = ar[ix].replace(/\\,/g,",\\n"+tab+tab+"")\n
+\t\t\t} \n
+\t\t\t\n
+\t\t\tif( /\\s{0,}\\s{0,}SET\\s{0,}/.exec(ar[ix]))  { \n
+\t\t\t\tar[ix] = ar[ix].replace(/\\,/g,",\\n"+tab+tab+"")\n
+\t\t\t} \n
+\t\t\t\n
+\t\t\tif( /\\s{0,}\\(\\s{0,}SELECT\\s{0,}/.exec(ar[ix]))  { \n
+\t\t\t\tdeep++;\n
+\t\t\t\tstr += shift[deep]+ar[ix];\n
+\t\t\t} else \n
+\t\t\tif( /\\\'/.exec(ar[ix]) )  { \n
+\t\t\t\tif(parenthesisLevel\0741 \046\046 deep) {\n
+\t\t\t\t\tdeep--;\n
+\t\t\t\t}\n
+\t\t\t\tstr += ar[ix];\n
+\t\t\t}\n
+\t\t\telse  { \n
+\t\t\t\tstr += shift[deep]+ar[ix];\n
+\t\t\t\tif(parenthesisLevel\0741 \046\046 deep) {\n
+\t\t\t\t\tdeep--;\n
+\t\t\t\t}\n
+\t\t\t} \n
+\t\t\tvar junk = 0;\n
+\t\t}\n
+\n
+\t\tstr = str.replace(/^\\n{1,}/,\'\').replace(/\\n{1,}/g,"\\n");\n
+\t\treturn str;\n
+}\n
+\n
+\n
+vkbeautify.prototype.xmlmin = function(text, preserveComments) {\n
+\n
+\tvar str = preserveComments ? text\n
+\t\t\t\t\t\t\t   : text.replace(/\\\074![ \\r\\n\\t]*(--([^\\-]|[\\r\\n]|-[^\\-])*--[ \\r\\n\\t]*)\\\076/g,"")\n
+\t\t\t\t\t\t\t\t\t .replace(/[ \\r\\n\\t]{1,}xmlns/g, \' xmlns\');\n
+\treturn  str.replace(/\076\\s{0,}\074/g,"\076\074"); \n
+}\n
+\n
+vkbeautify.prototype.jsonmin = function(text) {\n
+\n
+\tif (typeof JSON === \'undefined\' ) return text; \n
+\t\n
+\treturn JSON.stringify(JSON.parse(text), null, 0); \n
+\t\t\t\t\n
+}\n
+\n
+vkbeautify.prototype.cssmin = function(text, preserveComments) {\n
+\t\n
+\tvar str = preserveComments ? text\n
+\t\t\t\t\t\t\t   : text.replace(/\\/\\*([^*]|[\\r\\n]|(\\*+([^*/]|[\\r\\n])))*\\*+\\//g,"") ;\n
+\n
+\treturn str.replace(/\\s{1,}/g,\' \')\n
+\t\t\t  .replace(/\\{\\s{1,}/g,"{")\n
+\t\t\t  .replace(/\\}\\s{1,}/g,"}")\n
+\t\t\t  .replace(/\\;\\s{1,}/g,";")\n
+\t\t\t  .replace(/\\/\\*\\s{1,}/g,"/*")\n
+\t\t\t  .replace(/\\*\\/\\s{1,}/g,"*/");\n
+}\n
+\n
+vkbeautify.prototype.sqlmin = function(text) {\n
+\treturn text.replace(/\\s{1,}/g," ").replace(/\\s{1,}\\(/,"(").replace(/\\s{1,}\\)/,")");\n
+}\n
+\n
+window.vkbeautify = new vkbeautify();\n
+\n
+})();\n
+</string> </value>
+        </item>
+        <item>
+            <key> <string>title</string> </key>
+            <value> <string>vkbeautify.js</string> </value>
+        </item>
+        <item>
+            <key> <string>version</string> </key>
+            <value> <string>001</string> </value>
+        </item>
+        <item>
+            <key> <string>workflow_history</string> </key>
+            <value>
+              <persistent> <string encoding="base64">AAAAAAAAAAI=</string> </persistent>
+            </value>
+        </item>
+      </dictionary>
+    </pickle>
+  </record>
+  <record id="2" aka="AAAAAAAAAAI=">
+    <pickle>
+      <global name="PersistentMapping" module="Persistence.mapping"/>
+    </pickle>
+    <pickle>
+      <dictionary>
+        <item>
+            <key> <string>data</string> </key>
+            <value>
+              <dictionary>
+                <item>
+                    <key> <string>document_publication_workflow</string> </key>
+                    <value>
+                      <persistent> <string encoding="base64">AAAAAAAAAAM=</string> </persistent>
+                    </value>
+                </item>
+                <item>
+                    <key> <string>edit_workflow</string> </key>
+                    <value>
+                      <persistent> <string encoding="base64">AAAAAAAAAAQ=</string> </persistent>
+                    </value>
+                </item>
+                <item>
+                    <key> <string>processing_status_workflow</string> </key>
+                    <value>
+                      <persistent> <string encoding="base64">AAAAAAAAAAU=</string> </persistent>
+                    </value>
+                </item>
+              </dictionary>
+            </value>
+        </item>
+      </dictionary>
+    </pickle>
+  </record>
+  <record id="3" aka="AAAAAAAAAAM=">
+    <pickle>
+      <global name="WorkflowHistoryList" module="Products.ERP5Type.patches.WorkflowTool"/>
+    </pickle>
+    <pickle>
+      <tuple>
+        <none/>
+        <list>
+          <dictionary>
+            <item>
+                <key> <string>action</string> </key>
+                <value> <string>publish_alive</string> </value>
+            </item>
+            <item>
+                <key> <string>actor</string> </key>
+                <value> <string>zope</string> </value>
+            </item>
+            <item>
+                <key> <string>comment</string> </key>
+                <value> <string></string> </value>
+            </item>
+            <item>
+                <key> <string>error_message</string> </key>
+                <value> <string></string> </value>
+            </item>
+            <item>
+                <key> <string>time</string> </key>
+                <value>
+                  <object>
+                    <klass>
+                      <global name="DateTime" module="DateTime.DateTime"/>
+                    </klass>
+                    <tuple>
+                      <none/>
+                    </tuple>
+                    <state>
+                      <tuple>
+                        <float>1425996208.65</float>
+                        <string>UTC</string>
+                      </tuple>
+                    </state>
+                  </object>
+                </value>
+            </item>
+            <item>
+                <key> <string>validation_state</string> </key>
+                <value> <string>published_alive</string> </value>
+            </item>
+          </dictionary>
+        </list>
+      </tuple>
+    </pickle>
+  </record>
+  <record id="4" aka="AAAAAAAAAAQ=">
+    <pickle>
+      <global name="WorkflowHistoryList" module="Products.ERP5Type.patches.WorkflowTool"/>
+    </pickle>
+    <pickle>
+      <tuple>
+        <none/>
+        <list>
+          <dictionary>
+            <item>
+                <key> <string>action</string> </key>
+                <value> <string>edit</string> </value>
+            </item>
+            <item>
+                <key> <string>actor</string> </key>
+                <value> <string>zope</string> </value>
+            </item>
+            <item>
+                <key> <string>comment</string> </key>
+                <value>
+                  <none/>
+                </value>
+            </item>
+            <item>
+                <key> <string>error_message</string> </key>
+                <value> <string></string> </value>
+            </item>
+            <item>
+                <key> <string>serial</string> </key>
+                <value> <string>941.37251.13689.47206</string> </value>
+            </item>
+            <item>
+                <key> <string>state</string> </key>
+                <value> <string>current</string> </value>
+            </item>
+            <item>
+                <key> <string>time</string> </key>
+                <value>
+                  <object>
+                    <klass>
+                      <global name="DateTime" module="DateTime.DateTime"/>
+                    </klass>
+                    <tuple>
+                      <none/>
+                    </tuple>
+                    <state>
+                      <tuple>
+                        <float>1425996152.24</float>
+                        <string>UTC</string>
+                      </tuple>
+                    </state>
+                  </object>
+                </value>
+            </item>
+          </dictionary>
+        </list>
+      </tuple>
+    </pickle>
+  </record>
+  <record id="5" aka="AAAAAAAAAAU=">
+    <pickle>
+      <global name="WorkflowHistoryList" module="Products.ERP5Type.patches.WorkflowTool"/>
+    </pickle>
+    <pickle>
+      <tuple>
+        <none/>
+        <list>
+          <dictionary>
+            <item>
+                <key> <string>action</string> </key>
+                <value> <string>detect_converted_file</string> </value>
+            </item>
+            <item>
+                <key> <string>actor</string> </key>
+                <value> <string>zope</string> </value>
+            </item>
+            <item>
+                <key> <string>comment</string> </key>
+                <value> <string></string> </value>
+            </item>
+            <item>
+                <key> <string>error_message</string> </key>
+                <value> <string></string> </value>
+            </item>
+            <item>
+                <key> <string>external_processing_state</string> </key>
+                <value> <string>converted</string> </value>
+            </item>
+            <item>
+                <key> <string>serial</string> </key>
+                <value> <string>0.0.0.0</string> </value>
+            </item>
+            <item>
+                <key> <string>time</string> </key>
+                <value>
+                  <object>
+                    <klass>
+                      <global name="DateTime" module="DateTime.DateTime"/>
+                    </klass>
+                    <tuple>
+                      <none/>
+                    </tuple>
+                    <state>
+                      <tuple>
+                        <float>1425996080.87</float>
+                        <string>UTC</string>
+                      </tuple>
+                    </state>
+                  </object>
+                </value>
+            </item>
+          </dictionary>
+        </list>
+      </tuple>
+    </pickle>
+  </record>
+</ZopeData>

@@ -46,7 +46,6 @@
                        logo_reference python:here.aq_parent.getWebSiteValue().getLayoutProperty(\'layout_logo_reference\', \'vifib_hosting_image/logo.png\');\n
                        subscribe_button python:here.aq_parent.getWebSiteValue().getLayoutProperty(\'layout_subscribe_button_reference\', \'tiolive-Subscribe.For.Free.Button\');">\n
 \n
-\n
 /**********************/\n
 /* Global definitions */\n
 /**********************/\n
@@ -242,6 +241,60 @@ div#WebPage_viewAsWeb ul {\n
 div#WebPage_viewAsWeb .section {\n
   border: 0;\n
 }\n
+\n
+div.subfield {\n
+  margin-left: 15px;\n
+}\n
+\n
+\n
+.subfield {\n
+  padding-left: 20px;\n
+} \n
+\n
+label.slapos-parameter-dict-key::before {\n
+  content: "Parameter Entry: ";\n
+}\n
+\n
+label.slapos-parameter-dict-key {\n
+  font-color: "red";\n
+}\n
+\n
+div.slapos-parameter-dict-key {\n
+  margin-top: 10px;\n
+  margin-left: 6px;\n
+}\n
+\n
+.subfield {\n
+  padding-top: 3px;\n
+}\n
+\n
+.add-sub-form {\n
+  background: #3498db;\n
+  background-image: -webkit-linear-gradient(top, #3498db, #2980b9);\n
+  background-image: -moz-linear-gradient(top, #3498db, #2980b9);\n
+  background-image: -ms-linear-gradient(top, #3498db, #2980b9);\n
+  background-image: -o-linear-gradient(top, #3498db, #2980b9);\n
+  background-image: linear-gradient(to bottom, #3498db, #2980b9);\n
+  -webkit-border-radius: 28;\n
+  -moz-border-radius: 28;\n
+  border-radius: 28px;\n
+  font-family: Arial;\n
+  color: #ffffff;\n
+  font-size: 12px;\n
+  padding: 5px 20px 5px 20px;\n
+  text-decoration: none;\n
+}\n
+\n
+.add-sub-form:hover {\n
+  background: #3cb0fd;\n
+  background-image: -webkit-linear-gradient(top, #3cb0fd, #3498db);\n
+  background-image: -moz-linear-gradient(top, #3cb0fd, #3498db);\n
+  background-image: -ms-linear-gradient(top, #3cb0fd, #3498db);\n
+  background-image: -o-linear-gradient(top, #3cb0fd, #3498db);\n
+  background-image: linear-gradient(to bottom, #3cb0fd, #3498db);\n
+  text-decoration: none;\n
+}\n
+\n
 </tal:block>
 
 ]]></unicode> </value>

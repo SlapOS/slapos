@@ -35,7 +35,7 @@
         </item>
         <item>
             <key> <string>action</string> </key>
-            <value> <string>WebSection_addSelectedSoftwareProductToShoppingCart</string> </value>
+            <value> <string></string> </value>
         </item>
         <item>
             <key> <string>description</string> </key>
@@ -89,7 +89,7 @@
                     <key> <string>hidden</string> </key>
                     <value>
                       <list>
-                        <string>listbox_getSummaryAsHTML</string>
+                        <string>listbox_orderLink</string>
                         <string>listbox_getDefaultImageAbsoluteUrl</string>
                       </list>
                     </value>
@@ -125,7 +125,7 @@
         </item>
         <item>
             <key> <string>pt</string> </key>
-            <value> <string>form_dialog</string> </value>
+            <value> <string>form_list</string> </value>
         </item>
         <item>
             <key> <string>row_length</string> </key>

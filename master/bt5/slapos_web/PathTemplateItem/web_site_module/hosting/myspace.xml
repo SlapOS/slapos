@@ -156,11 +156,15 @@
         </item>
         <item>
             <key> <string>custom_render_method_id</string> </key>
-            <value> <string>WebSection_viewMySpaceRender</string> </value>
+            <value> <string>WebSection_viewHelpRender</string> </value>
         </item>
         <item>
             <key> <string>description</string> </key>
-            <value> <string>This is your personal area. You can manage your services, your account, your information. A Help section is available to lead you if needed.</string> </value>
+            <value> <string encoding="cdata"><![CDATA[
+
+<p> You can access our <a href="http://www.vifib.com/vifib-FAQ" target="_blank"> Frequently Asked Questions </a> to know more about our products usage.</p>
+
+]]></string> </value>
         </item>
         <item>
             <key> <string>id</string> </key>

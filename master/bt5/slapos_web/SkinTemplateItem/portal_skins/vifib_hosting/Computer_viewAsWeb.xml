@@ -110,6 +110,10 @@
                         <string>your_category_update</string>
                         <string>your_certificate_request_button</string>
                         <string>your_certificate_revoke_button</string>
+                        <string>my_restricted_access_token_generate_button</string>
+                        <string>new_ticket_button</string>
+                        <string>your_get_token</string>
+                        <string>ticket_listbox</string>
                         <string>listbox</string>
                       </list>
                     </value>

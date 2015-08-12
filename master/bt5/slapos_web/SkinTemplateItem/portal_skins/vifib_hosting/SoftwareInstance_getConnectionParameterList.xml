@@ -62,16 +62,20 @@ if connection_dict is None:\n
   return return_list\n
 \n
 portal = context.getPortalObject()\n
-for k, v in connection_dict.iteritems():\n
+for k in sorted(connection_dict):\n
+  if type == \'info\' and not k.endswith(\'_info\'):\n
+    continue\n
+  elif not type and k.endswith(\'_info\'):\n
+    continue\n
   d = newTempDocument(portal, \'temp\')\n
-  d.edit(connection_key=k, connection_value=v)\n
+  d.edit(connection_key=k, connection_value=connection_dict[k])\n
   return_list.append(d)\n
 return return_list\n
 </string> </value>
         </item>
         <item>
             <key> <string>_params</string> </key>
-            <value> <string>*args, **kwargs</string> </value>
+            <value> <string>type=None, **kwargs</string> </value>
         </item>
         <item>
             <key> <string>id</string> </key>
