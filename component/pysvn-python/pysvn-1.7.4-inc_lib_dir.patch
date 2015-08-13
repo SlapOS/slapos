@@ -1,0 +1,250 @@
+diff -ur pysvn-1.7.4.orig/setup.py pysvn-1.7.4nxd006/setup.py
+--- pysvn-1.7.4.orig/setup.py	2010-06-26 12:22:02.000000000 +0200
++++ pysvn-1.7.4nxd006/setup.py	2015-08-13 17:42:33.286380991 +0200
+@@ -19,6 +19,7 @@
+ import os
+ import os.path
+ import setuptools.command.bdist_egg
++from ConfigParser import ConfigParser, NoOptionError, NoSectionError
+ 
+ pysvn_version_info = {}
+ f = open( 'Builder/version.info', 'r' )
+@@ -27,13 +28,23 @@
+     pysvn_version_info[ key ] = value
+ 
+ def run(self):
++    cfg = ConfigParser()
++    cfg.read('setup.cfg')
++    kw = {}
++    for key in ('include-dirs', 'library-dirs'):
++        try:
++            kw[key] = cfg.get('build_ext', key)
++        except (NoOptionError, NoSectionError):
++            kw[key] = ''
++
+     # Generate metadata first
+     self.run_command("egg_info")
+     os.chdir('Source')
+-    os.system(sys.executable + ' setup.py configure')
++    os.system(sys.executable + ' setup.py configure --include-dirs=%(include-dirs)s --library-dirs=%(library-dirs)s' % kw)
+     os.system('make clean')
+-    os.system('make')
+-    os.system('make egg')
++    os.system('make dist')
++    setuptools.command.bdist_egg.make_zipfile(self.egg_output, 'dist', verbose=self.verbose,
++                       dry_run=self.dry_run, mode=self.gen_header())
+     os.chdir('..')              # Go back in parent directory
+     # Add to 'Distribution.dist_files' so that the "upload" command works
+     getattr( self.distribution, 'dist_files', [] ).append(
+diff -ur pysvn-1.7.4.orig/Source/pysvn_common.mak pysvn-1.7.4nxd006/Source/pysvn_common.mak
+--- pysvn-1.7.4.orig/Source/pysvn_common.mak	2010-06-26 12:22:02.000000000 +0200
++++ pysvn-1.7.4nxd006/Source/pysvn_common.mak	2010-12-03 22:40:57.000000000 +0100
+@@ -181,13 +181,16 @@
+ test: pysvn/__init__.py pysvn/%(pysvn_module_name)s
+ 	PYTHONPATH=. $(PYTHON) -c "import pysvn;print( pysvn );print( pysvn.version );print( pysvn.svn_version );print( pysvn.Client() )"
+ 
+-egg: pysvn/%(pysvn_module_name)s
+-	mkdir -p dist
++DISTDIR=$(shell $(PYTHON) -c "import os; print os.path.abspath(os.path.join(os.curdir, '..', 'dist'))")
++dist: all
++	rm -rf dist
+ 	mkdir -p dist/EGG-INFO
+-	mkdir -p ../dist
+ 	cp -rvf pysvn dist
+ 	cp -rvf ../pysvn.egg-info/* dist/EGG-INFO
+ 	find dist/ | sed 's:dist/::' > dist/EGG-INFO/SOURCES.txt
+-	rm -f ../../dist/pysvn-%(pysvn_version)s-py%(python_version)s-%(python_platform)s.egg
+-	(cd dist ; zip -r ../../dist/pysvn-%(pysvn_version)s-py%(python_version)s-%(python_platform)s.egg *)
++
++egg: dist
++	mkdir -p $(DISTDIR)
++	rm -f $(DISTDIR)/pysvn-%(pysvn_version)s-py%(python_version)s-%(python_platform)s.egg
++	(cd dist ; zip -r $(DISTDIR)/pysvn-%(pysvn_version)s-py%(python_version)s-%(python_platform)s.egg *)
+ 	rm -rf dist
+diff -ur pysvn-1.7.4.orig/Source/setup_configure.py pysvn-1.7.4nxd006/Source/setup_configure.py
+--- pysvn-1.7.4.orig/Source/setup_configure.py	2010-08-01 17:46:35.000000000 +0200
++++ pysvn-1.7.4nxd006/Source/setup_configure.py	2015-08-13 17:42:37.814405597 +0200
+@@ -27,8 +27,10 @@
+ 
+ all_options_info = {
+     '--arch':               (2, '<arch>'),
+-    '--apr-inc-dir':        (1, '<dir>'),
+-    '--apr-lib-dir':        (1, '<dir>'),
++    '--library-dirs':       (1, '<dir>:<dir>:...'),
++    '--include-dirs':       (1, '<dir>:<dir>:...'),
++    '--apr-inc-dir':        (1, '(deprecated) <dir>'),
++    '--apr-lib-dir':        (1, '(deprecated) <dir>'),
+     '--define':             (2, '<define-string>'),
+     '--enable-debug':       (0, None),
+     '--fixed-module-name':  (0, None),
+@@ -36,8 +38,8 @@
+     '--platform':           (1, '<platform-name>'),
+     '--pycxx-dir':          (1, '<dir>'),
+     '--pycxx-src-dir':      (1, '<dir>'),
+-    '--svn-inc-dir':        (1, '<dir>'),
+-    '--svn-lib-dir':        (1, '<dir>'),
++    '--svn-inc-dir':        (1, '(deprecated) <dir>'),
++    '--svn-lib-dir':        (1, '(deprecated) <dir>'),
+     '--svn-bin-dir':        (1, '<dir>'),
+     '--svn-root-dir':       (1, '<dir>'),
+     '--verbose':            (0, None),
+@@ -459,7 +461,7 @@
+ -lsvn_client-1 \
+ -lsvn_diff-1 \
+ -lsvn_repos-1 \
+- -lcom_err -lresolv -lexpat -lneon
++-lresolv
+ 
+ #include pysvn_common.mak
+ '''
+@@ -481,7 +483,7 @@
+ -lsvn_client-1 \
+ -lsvn_diff-1 \
+ -lsvn_repos-1 \
+- -lresolv -lexpat -lneon
++-lresolv
+ 
+ #include pysvn_common.mak
+ '''
+@@ -503,7 +505,7 @@
+ -lsvn_client-1 \
+ -lsvn_diff-1 \
+ -lsvn_repos-1 \
+--lcom_err -lresolv -lexpat -lneon -lssl
++-lresolv
+ PYSVN_CREATE_INIT_OPTION=%(pysvn_module_name)s
+ 
+ #include pysvn_common.mak
+@@ -526,7 +528,7 @@
+ -lsvn_client-1 \
+ -lsvn_diff-1 \
+ -lsvn_repos-1 \
+--lcom_err -lresolv -lexpat -lneon -lssl
++-lresolv
+ PYSVN_CREATE_INIT_OPTION=%(pysvn_module_name)s
+ 
+ #include pysvn_common.mak
+@@ -553,7 +555,6 @@
+ .if exists(/usr/lib/libkrb5.so)
+ LDLIBS+=-lkrb5
+ .endif
+-LDLIBS+=-lcom_err -lexpat -lneon
+ 
+ #include pysvn_common.mak
+ '''
+@@ -588,7 +589,6 @@
+ -lapr-1          \
+ -laprutil-1      \
+ -liconv          \
+--lexpat          \
+ -lpthread        \
+ -lz              \
+ 
+@@ -625,10 +625,8 @@
+ -lsvn_fs_util-1  \
+ -lsvn_ra_neon-1  \
+ -lapr-1          \
+--lneon           \
+ -laprutil-1      \
+ -liconv          \
+--lexpat          \
+ -lintl           \
+ -lpthread        \
+ -lz              \
+@@ -814,6 +812,7 @@
+                     'SVN include',
+                     '--svn-inc-dir',
+                     'include/subversion-1',
++                    self._include_dirs() +
+                     [
+                         '/opt/local/include/subversion-1',      # Darwin - darwin ports
+                         '/sw/include/subversion-1',             # Darwin - Fink
+@@ -824,7 +823,8 @@
+                     'svn_client.h' )
+ 
+     def find_svn_bin( self ):
+-        return self.find_dir(
++        try:
++            return self.find_dir(
+                     'SVN bin',
+                     '--svn-bin-dir',
+                     'bin',
+@@ -836,12 +836,16 @@
+                         '/usr/pkg/bin',        # netbsd
+                     ],
+                     'svnadmin' )
++        except SetupError:
++            # svnadmin is only required for test
++            return ''
+ 
+     def find_svn_lib( self ):
+         dir = self.find_dir(
+                     'SVN library',
+                     '--svn-lib-dir',
+                     'lib',
++                    self._library_dirs() +
+                     [
+                         '/opt/local/lib',                       # Darwin - darwin ports
+                         '/sw/lib',                              # Darwin - Fink
+@@ -865,6 +869,7 @@
+                     'APR include',
+                     '--apr-inc-dir',
+                     'include/%s' % apr_ver,
++                    self._include_dirs() +
+                     [
+                     ],
+                     'apr.h' )
+@@ -877,6 +882,7 @@
+                     'APR include',
+                     '--apr-inc-dir',
+                     None,
++                    self._include_dirs() +
+                     [
+                         '/opt/local/include/%s' % apr_ver,      # Darwin - darwin ports
+                         '/sw/include/%s' % apr_ver,             # Darwin - fink
+@@ -915,6 +921,7 @@
+                     'APR library',
+                     '--apr-lib-dir',
+                     None,
++                    self._library_dirs() +
+                     [
+                         '/opt/local/lib',                       # Darwin - darwin ports
+                         '/sw/lib',                              # Darwin - fink
+@@ -930,6 +937,17 @@
+                 last_exception = e
+         raise last_exception
+ 
++    def _library_dirs( self ):
++        if self.hasOption( '--library-dirs' ):
++            return self.getOption( '--library-dirs' ).split(':')
++        else:
++            return []
++
++    def _include_dirs( self ):
++        if self.hasOption( '--include-dirs' ):
++            return self.getOption( '--include-dirs' ).split(':')
++        else:
++            return []
+ 
+     def get_lib_name_for_platform( self, libname ):
+         if self.is_mac_os_x:
+@@ -948,8 +966,8 @@
+         # override the base_dir_list from the command line kw
+         svn_root_dir = None
+ 
+-        if self.hasOption( kw ):
+-            base_dir_list = [self.getOption( kw )]
++        if kw and self.hasOption( kw ):
++            base_dir_list = self.getOption( kw ) + base_dir_list
+ 
+         elif( self.hasOption( '--svn-root-dir' )
+         and svn_root_suffix is not None ):
+@@ -961,7 +979,7 @@
+             if self.verbose:
+                 print( 'Info: Checking for %s in %s' % (name, full_check_file) )
+             if os.path.exists( full_check_file ):
+-                return os.path.abspath( dirname )
++                return dirname
+ 
+         raise SetupError( 'cannot find %s %s - use %s' % (name, check_file, kw) )
+ 
