@@ -18,9 +18,10 @@ parts =
   cgi-httpd-graceful-wrapper
   monitor-promise
   monitor-instance-log-access
-  cron-rsync-logs
   cron-smart-monitor-logs
   cron-network-bench
+  symlink-re6st-logs
+  symlink-collected-logs
   
 extends = ${monitor-template:output}
 
@@ -28,13 +29,6 @@ extends = ${monitor-template:output}
 eggs-directory = ${buildout:eggs-directory}
 develop-eggs-directory = ${buildout:develop-eggs-directory}
 offline = true
-
-[cron-rsync-logs]
-<= cron
-recipe = slapos.cookbook:cron.d
-name = rsync-logs
-frequency = * * * * *
-command = $${rsync-logs:rendered}
 
 [cron-smart-monitor-logs]
 <= cron
@@ -47,20 +41,19 @@ command = $${smartmon-logs:rendered}
 <= cron
 recipe = slapos.cookbook:cron.d
 name = network-bench-test
-frequency = */3 * * * *
+frequency = */10 * * * *
 command = ${buildout:bin-directory}/networkbench $${network-bench-configuration:rendered} $${monitor-directory:monitor-log}
 
-[rsync-logs]
-recipe = slapos.recipe.template:jinja2
-template = ${rsync-logs-script:output}
-rendered = $${monitor-directory:bin}/rsync-logs.sh
-mode = 0744
-context =
-  key buildout_directory buildout:directory
-  raw rsync_binary ${rsync:location}/bin/rsync
-  key server_log_directory monitor-directory:server-log 
-  raw re6st_log_directory /var/log/re6stnet
-  key system_log_directory monitor-directory:system-log 
+
+[symlink-re6st-logs]
+recipe = cns.recipe.symlink
+symlink = /var/log/re6stnet = $${monitor-directory:system-log}/re6stnet
+autocreate = true
+
+[symlink-collected-logs]
+recipe = cns.recipe.symlink
+symlink = /srv/slapgrid/var/data-log = $${monitor-directory:server-log}/data-log
+autocreate = true
 
 [smartmon-logs]
 recipe = slapos.recipe.template:jinja2
@@ -79,6 +72,7 @@ template = ${network-bench-cfg:output}
 rendered = $${monitor-directory:etc}/network_bench.cfg
 mode = 0744
 context =
+  key slapparameter_dict slap-parameters:configuration
   
 
 [pwgen]
@@ -103,16 +97,20 @@ private-hash = $${pwgen:passwd}$${pwgen32:passwd}
 frontend-domain = 
 
 [monitor-frontend]
-<= slap-connection
 recipe = slapos.cookbook:requestoptional
 name = Monitor Frontend
 # XXX We have hardcoded SR URL here.
 software-url = http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg
 slave = true
-config = url domain
 config-url = $${monitor-parameters:url}
 config-domain = $${slap-parameter:frontend-domain}
 return = site_url domain
+
+server-url = $${slap-connection:server-url}
+key-file = $${slap-connection:key-file}
+cert-file = $${slap-connection:cert-file}
+computer-id = $${slap-connection:computer-id}
+partition-id = $${slap-connection:partition-id}
 
 [publish-connection-informations]
 recipe = slapos.cookbook:publish
