@@ -107,6 +107,7 @@
                         <string>my_title</string>
                         <string>your_ad</string>
                         <string>my_url_string</string>
+                        <string>my_short_title</string>
                         <string>my_source_reference</string>
                         <string>your_status</string>
                         <string>info</string>
@@ -115,8 +116,8 @@
                         <string>my_update_button</string>
                         <string>my_start_button</string>
                         <string>my_stop_button</string>
-                        <string>my_rename_button</string>
                         <string>my_restricted_access_token_generate_button</string>
+                        <string>my_rename_button</string>
                         <string>your_connection_listbox</string>
                         <string>your_monitoring_status</string>
                         <string>your_destroy_hosting</string>

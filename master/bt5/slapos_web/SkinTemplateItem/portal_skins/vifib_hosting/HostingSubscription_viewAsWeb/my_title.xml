@@ -109,7 +109,7 @@
             <key> <string>_text</string> </key>
             <value> <string encoding="cdata"><![CDATA[
 
-python:"<h1>Partitions installed for: %s</h1>" % (context.getTranslatedShortTitle() or context.getTranslatedTitle())
+python:"<h1>Partitions installed for: %s</h1>" % context.getTranslatedTitle()
 
 ]]></string> </value>
         </item>

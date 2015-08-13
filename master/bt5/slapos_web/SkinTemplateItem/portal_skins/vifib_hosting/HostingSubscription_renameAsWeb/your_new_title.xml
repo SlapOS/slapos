@@ -118,7 +118,7 @@
                 </item>
                 <item>
                     <key> <string>title</string> </key>
-                    <value> <string>Name</string> </value>
+                    <value> <string>Short title</string> </value>
                 </item>
               </dictionary>
             </value>

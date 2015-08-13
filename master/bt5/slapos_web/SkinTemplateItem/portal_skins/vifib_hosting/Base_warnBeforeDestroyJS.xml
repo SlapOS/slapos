@@ -66,6 +66,11 @@ $(document).ready(function(){\n
           return false;\n
         }\n
     });\n
+    $("#alert_destroy_hs").click(function(){\n
+       $("#destroy_hs").attr("rel", "");\n
+       $("#destroy_hs").val("Destroy");\n
+       $(this).fadeOut(500);\n
+    });\n
 });\n
 </script>\n
 """\n
