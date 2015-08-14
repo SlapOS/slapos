@@ -1,0 +1,143 @@
+diff -ur pysvn-1.7.10.orig/setup.py pysvn-1.7.10/setup.py
+--- pysvn-1.7.10.orig/setup.py	2010-12-30 13:26:51.000000000 +0100
++++ pysvn-1.7.10/setup.py	2015-08-14 10:29:25.562686564 +0200
+@@ -19,6 +19,7 @@
+ import os
+ import os.path
+ import setuptools.command.bdist_egg
++from ConfigParser import ConfigParser
+ 
+ pysvn_version_info = {}
+ f = open( 'Builder/version.info', 'r' )
+@@ -27,13 +28,26 @@
+     pysvn_version_info[ key ] = value
+ 
+ def run(self):
++    cfg = ConfigParser()
++    cfg.read('setup.cfg')
++    kw = {}
++    for key in ('include-dirs', 'library-dirs'):
++        if cfg.has_option('build_ext', key):
++            kw[key] = cfg.get('build_ext', key)
++
+     # Generate metadata first
+     self.run_command("egg_info")
+     os.chdir('Source')
+-    os.system(sys.executable + ' setup.py configure')
++    os.system(sys.executable + ' setup.py configure --include-dirs=%(include-dirs)s --library-dirs=%(library-dirs)s' % kw)
+     os.system('make clean')
+     os.system('make')
+-    os.system('make egg DISTDIR="%s"' % os.path.abspath(os.path.join('..', self.dist_dir)))
++    os.system('rm -rf dist; mkdir -p dist/EGG-INFO')
++    os.system('cp -rvf pysvn dist')
++    os.system('cp -rvf ../pysvn.egg-info/* dist/EGG-INFO')
++    os.system('find dist/pysvn -type f | sed s:dist/:: > dist/EGG-INFO/SOURCES.txt')
++    setuptools.command.bdist_egg.make_zipfile(
++        self.egg_output, 'dist', verbose=self.verbose,
++        dry_run=self.dry_run, mode=self.gen_header())
+     os.chdir('..')              # Go back in parent directory
+     # Add to 'Distribution.dist_files' so that the "upload" command works
+     getattr( self.distribution, 'dist_files', [] ).append(
+diff -ur pysvn-1.7.10.orig/Source/setup_configure.py pysvn-1.7.10/Source/setup_configure.py
+--- pysvn-1.7.10.orig/Source/setup_configure.py	2014-11-09 11:55:47.000000000 +0100
++++ pysvn-1.7.10/Source/setup_configure.py	2015-08-14 10:08:31.747872809 +0200
+@@ -54,6 +54,8 @@
+ class Options:
+     all_options_info = {
+         '--arch':               (2, '<arch>'),
++        '--library-dirs':       (1, '<dir>:<dir>:...'),
++        '--include-dirs':       (1, '<dir>:<dir>:...'),
+         '--apr-inc-dir':        (1, '<dir>'),
+         '--apu-inc-dir':        (1, '<dir>'),
+         '--apr-lib-dir':        (1, '<dir>'),
+@@ -511,12 +513,16 @@
+         raise last_exception
+ 
+     def find_svn_bin( self ):
+-        return self.find_dir(
++        try:
++            return self.find_dir(
+                     'SVN bin',
+                     '--svn-bin-dir',
+                     'bin',
+                     self._find_paths_svn_bin,
+                     'svnadmin%s' % (self.getProgramExt(),) )
++        except SetupError:
++            # svnadmin is only required for test
++            return ''
+ 
+     def find_svn_lib( self ):
+         folder = self.find_dir(
+@@ -589,8 +595,8 @@
+         # override the base_dir_list from the command line kw
+         svn_root_dir = None
+ 
+-        if self.options.hasOption( kw ):
+-            base_dir_list = [self.options.getOption( kw )]
++        if kw and self.options.hasOption( kw ):
++            base_dir_list = self.options.getOption( kw ) + base_dir_list
+ 
+         elif( self.options.hasOption( '--svn-root-dir' )
+         and svn_root_suffix is not None ):
+@@ -604,7 +610,7 @@
+             if self.verbose:
+                 print( 'Info: Checking for %s in %s' % (name, full_check_file) )
+             if os.path.exists( full_check_file ):
+-                return os.path.abspath( dirname )
++                return dirname
+ 
+         raise SetupError( 'cannot find %s %s - use %s' % (name, check_file, kw) )
+ 
+@@ -629,6 +635,17 @@
+     def getSvnVersion( self ):
+         return self.__svn_version_tuple
+ 
++    def _library_dirs( self ):
++        if self.options.hasOption( '--library-dirs' ):
++            return self.options.getOption( '--library-dirs' ).split(':')
++        else:
++            return []
++
++    def _include_dirs( self ):
++        if self.options.hasOption( '--include-dirs' ):
++            return self.options.getOption( '--include-dirs' ).split(':')
++        else:
++            return []
+ 
+ class Win32CompilerMSVC90(Compiler):
+     def __init__( self, setup ):
+@@ -1093,7 +1110,7 @@
+                         '%(PYCXX)s/Src',
+                         '/usr/share/python%s/CXX' % distutils.sysconfig.get_python_version() # typical Linux
+                         ]
+-        self._find_paths_svn_inc = [
++        self._find_paths_svn_inc = self._include_dirs() + [
+                         '/usr/include/subversion-1',            # typical Linux
+                         '/usr/local/include/subversion-1',      # typical *BSD
+                         '/usr/pkg/include/subversion-1',        # netbsd
+@@ -1103,14 +1120,14 @@
+                         '/usr/local/bin',                        # typical *BSD
+                         '/usr/pkg/bin',                                # netbsd
+                         ]
+-        self._find_paths_svn_lib = [
++        self._find_paths_svn_lib = self._library_dirs() + [
+                         '/usr/lib64',                           # typical 64bit Linux
+                         '/usr/lib',                             # typical Linux
+                         '/usr/local/lib64',                     # typical 64bit Linux
+                         '/usr/local/lib',                       # typical *BSD
+                         '/usr/pkg/lib',                         # netbsd
+                         ]
+-        self._find_paths_apr_inc = [
++        self._find_paths_apr_inc = self._include_dirs() + [
+                         '/usr/include/apr-1',                   # typical Linux
+                         '/usr/local/apr/include/apr-1',         # Mac OS X www.metissian.com
+                         '/usr/pkg/include/apr-1',               # netbsd
+@@ -1120,7 +1137,7 @@
+                         '/usr/local/include/apache2',           # alternate *BSD
+                         ]
+         self._find_paths_apr_util_inc = self._find_paths_apr_inc
+-        self._find_paths_apr_lib = [
++        self._find_paths_apr_lib = self._library_dirs() + [
+                         '/usr/lib64',                           # typical 64bit Linux
+                         '/usr/lib',                             # typical Linux
+                         '/usr/local/lib64',                     # typical 64bit Linux
