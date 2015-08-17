@@ -20,7 +20,7 @@
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>my_rename_button</string> </value>
+            <value> <string>my_edit_button</string> </value>
         </item>
         <item>
             <key> <string>message_values</string> </key>
@@ -101,7 +101,7 @@
                 </item>
                 <item>
                     <key> <string>default</string> </key>
-                    <value> <string>Rename</string> </value>
+                    <value> <string>Edit</string> </value>
                 </item>
                 <item>
                     <key> <string>enabled</string> </key>
@@ -125,7 +125,7 @@
                 </item>
                 <item>
                     <key> <string>title</string> </key>
-                    <value> <string>Rename</string> </value>
+                    <value> <string>Edit</string> </value>
                 </item>
               </dictionary>
             </value>

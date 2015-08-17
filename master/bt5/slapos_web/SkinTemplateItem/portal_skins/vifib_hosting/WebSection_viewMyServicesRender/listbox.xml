@@ -11,6 +11,7 @@
             <value>
               <list>
                 <string>columns</string>
+                <string>default_params</string>
                 <string>editable_columns</string>
                 <string>list_method</string>
                 <string>search</string>
@@ -59,6 +60,14 @@
             <value>
               <dictionary>
                 <item>
+                    <key> <string>columns</string> </key>
+                    <value> <string></string> </value>
+                </item>
+                <item>
+                    <key> <string>editable_columns</string> </key>
+                    <value> <string></string> </value>
+                </item>
+                <item>
                     <key> <string>field_id</string> </key>
                     <value> <string></string> </value>
                 </item>
@@ -68,6 +77,14 @@
                 </item>
                 <item>
                     <key> <string>list_method</string> </key>
+                    <value> <string></string> </value>
+                </item>
+                <item>
+                    <key> <string>search</string> </key>
+                    <value> <string></string> </value>
+                </item>
+                <item>
+                    <key> <string>select</string> </key>
                     <value> <string></string> </value>
                 </item>
                 <item>
@@ -105,12 +122,27 @@
                     </value>
                 </item>
                 <item>
+                    <key> <string>default_params</string> </key>
+                    <value>
+                      <list>
+                        <tuple>
+                          <string>checked_permission</string>
+                          <string>View</string>
+                        </tuple>
+                        <tuple>
+                          <string>sort_on</string>
+                          <string>((\'title\', ),)</string>
+                        </tuple>
+                      </list>
+                    </value>
+                </item>
+                <item>
                     <key> <string>editable_columns</string> </key>
                     <value>
                       <list>
                         <tuple>
-                          <string>image</string>
-                          <string>image</string>
+                          <string>title</string>
+                          <string>Title</string>
                         </tuple>
                       </list>
                     </value>
@@ -131,7 +163,7 @@
                 </item>
                 <item>
                     <key> <string>search</string> </key>
-                    <value> <int>0</int> </value>
+                    <value> <int>1</int> </value>
                 </item>
                 <item>
                     <key> <string>select</string> </key>

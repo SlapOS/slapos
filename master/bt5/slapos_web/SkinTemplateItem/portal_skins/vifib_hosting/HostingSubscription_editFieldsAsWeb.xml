@@ -89,11 +89,12 @@
                       <list>
                         <string>my_section_title</string>
                         <string>my_url_string</string>
+                        <string>my_title</string>
                         <string>my_reference</string>
                         <string>my_source_reference</string>
                         <string>your_new_title</string>
                         <string>your_description</string>
-                        <string>my_rename_button</string>
+                        <string>my_edit_button</string>
                       </list>
                     </value>
                 </item>
@@ -114,7 +115,7 @@
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>HostingSubscription_renameAsWeb</string> </value>
+            <value> <string>HostingSubscription_editFieldsAsWeb</string> </value>
         </item>
         <item>
             <key> <string>method</string> </key>

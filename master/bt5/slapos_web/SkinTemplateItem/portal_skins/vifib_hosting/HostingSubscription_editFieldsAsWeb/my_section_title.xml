@@ -12,15 +12,12 @@
               <list>
                 <string>css_class</string>
                 <string>default</string>
-                <string>enabled</string>
-                <string>name</string>
-                <string>title</string>
               </list>
             </value>
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>my_rename_button</string> </value>
+            <value> <string>my_section_title</string> </value>
         </item>
         <item>
             <key> <string>message_values</string> </key>
@@ -62,7 +59,9 @@
                 </item>
                 <item>
                     <key> <string>default</string> </key>
-                    <value> <string></string> </value>
+                    <value>
+                      <persistent> <string encoding="base64">AAAAAAAAAAI=</string> </persistent>
+                    </value>
                 </item>
                 <item>
                     <key> <string>field_id</string> </key>
@@ -73,15 +72,7 @@
                     <value> <string></string> </value>
                 </item>
                 <item>
-                    <key> <string>name</string> </key>
-                    <value> <string></string> </value>
-                </item>
-                <item>
                     <key> <string>target</string> </key>
-                    <value> <string></string> </value>
-                </item>
-                <item>
-                    <key> <string>title</string> </key>
                     <value> <string></string> </value>
                 </item>
               </dictionary>
@@ -93,38 +84,43 @@
               <dictionary>
                 <item>
                     <key> <string>css_class</string> </key>
-                    <value> <string>alignr nolabel validate</string> </value>
+                    <value> <string>nolabel sectionTitle my_services</string> </value>
                 </item>
                 <item>
                     <key> <string>default</string> </key>
-                    <value> <string>Edit short title and description</string> </value>
-                </item>
-                <item>
-                    <key> <string>enabled</string> </key>
-                    <value> <int>1</int> </value>
+                    <value> <string></string> </value>
                 </item>
                 <item>
                     <key> <string>field_id</string> </key>
-                    <value> <string>my_input_button_field</string> </value>
+                    <value> <string>my_section_title</string> </value>
                 </item>
                 <item>
                     <key> <string>form_id</string> </key>
                     <value> <string>Base_viewWebFieldLibrary</string> </value>
                 </item>
                 <item>
-                    <key> <string>name</string> </key>
-                    <value> <string>HostingSubscription_renameWebMode:method</string> </value>
-                </item>
-                <item>
                     <key> <string>target</string> </key>
                     <value> <string>Click to edit the target</string> </value>
                 </item>
-                <item>
-                    <key> <string>title</string> </key>
-                    <value> <string>Edit short title and description</string> </value>
-                </item>
               </dictionary>
             </value>
+        </item>
+      </dictionary>
+    </pickle>
+  </record>
+  <record id="2" aka="AAAAAAAAAAI=">
+    <pickle>
+      <global name="TALESMethod" module="Products.Formulator.TALESField"/>
+    </pickle>
+    <pickle>
+      <dictionary>
+        <item>
+            <key> <string>_text</string> </key>
+            <value> <string encoding="cdata"><![CDATA[
+
+python:"<h1>Edit: %s</h1>" % (context.getTranslatedTitle())
+
+]]></string> </value>
         </item>
       </dictionary>
     </pickle>

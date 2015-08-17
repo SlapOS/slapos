@@ -65,6 +65,7 @@ input{height:26px;}\n
 /* textarea{height:77px;width:247px;} */\n
 fieldset{border:none;}\n
 a img{border : 0 none;cursor : pointer;}\n
+a {text-decoration: none}\n
 \n
 /**********************/\n
 /*    Global Class    */\n
@@ -91,7 +92,7 @@ a img{border : 0 none;cursor : pointer;}\n
 .sectionTitle {line-height:90px;}\n
 .inline label {display: inline-block;width: 150px;float:left;}\n
 .inline div {display:inline;}\n
-.field {padding-bottom: 3px;}\n
+.field {padding-bottom: 7px;}\n
 \n
 \n
 /**********************/\n
@@ -293,6 +294,14 @@ div.slapos-parameter-dict-key {\n
   background-image: -o-linear-gradient(top, #3cb0fd, #3498db);\n
   background-image: linear-gradient(to bottom, #3cb0fd, #3498db);\n
   text-decoration: none;\n
+}\n
+\n
+.hs-short-title{\n
+  margin-left:6px;\n
+  padding-bottom: 10px;\n
+  font-size:12px;\n
+  font-weight: normal;\n
+  display: inline-block;\n
 }\n
 \n
 </tal:block>
