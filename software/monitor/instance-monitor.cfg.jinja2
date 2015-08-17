@@ -18,7 +18,6 @@ parts =
   cgi-httpd-graceful-wrapper
   monitor-promise
   monitor-instance-log-access
-  cron-smart-monitor-logs
   cron-network-bench
   symlink-re6st-logs
   symlink-collected-logs
@@ -30,20 +29,12 @@ eggs-directory = ${buildout:eggs-directory}
 develop-eggs-directory = ${buildout:develop-eggs-directory}
 offline = true
 
-[cron-smart-monitor-logs]
-<= cron
-recipe = slapos.cookbook:cron.d
-name = smartctl-mon
-frequency = 11 * * * *
-command = $${smartmon-logs:rendered}
-
 [cron-network-bench]
 <= cron
 recipe = slapos.cookbook:cron.d
 name = network-bench-test
 frequency = */10 * * * *
 command = ${buildout:bin-directory}/networkbench $${network-bench-configuration:rendered} $${monitor-directory:monitor-log}
-
 
 [symlink-re6st-logs]
 recipe = cns.recipe.symlink
@@ -54,17 +45,6 @@ autocreate = true
 recipe = cns.recipe.symlink
 symlink = /srv/slapgrid/var/data-log = $${monitor-directory:server-log}/data-log
 autocreate = true
-
-[smartmon-logs]
-recipe = slapos.recipe.template:jinja2
-template = ${smartmon-logs-script:output}
-rendered = $${monitor-directory:bin}/smartmon-logs.py
-mode = 0744
-context =
-  key buildout_directory buildout:directory
-  raw smartctl_binary ${smartmontools:location}/sbin/smartctl
-  key monitor_log_directory monitor-directory:monitor-log 
-  raw python_executable ${buildout:executable}
 
 [network-bench-configuration]
 recipe = slapos.recipe.template:jinja2
