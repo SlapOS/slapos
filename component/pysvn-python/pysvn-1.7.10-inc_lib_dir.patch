@@ -40,7 +40,7 @@ diff -ur pysvn-1.7.10.orig/setup.py pysvn-1.7.10/setup.py
      getattr( self.distribution, 'dist_files', [] ).append(
 diff -ur pysvn-1.7.10.orig/Source/setup_configure.py pysvn-1.7.10/Source/setup_configure.py
 --- pysvn-1.7.10.orig/Source/setup_configure.py	2014-11-09 11:55:47.000000000 +0100
-+++ pysvn-1.7.10/Source/setup_configure.py	2015-08-14 10:08:31.747872809 +0200
++++ pysvn-1.7.10/Source/setup_configure.py	2015-08-17 10:41:05.781767086 +0200
 @@ -54,6 +54,8 @@
  class Options:
      all_options_info = {
@@ -141,3 +141,12 @@ diff -ur pysvn-1.7.10.orig/Source/setup_configure.py pysvn-1.7.10/Source/setup_c
                          '/usr/lib64',                           # typical 64bit Linux
                          '/usr/lib',                             # typical Linux
                          '/usr/local/lib64',                     # typical 64bit Linux
+@@ -1186,6 +1203,8 @@
+         if not self.setup.options.hasOption( '--norpath' ):
+             py_ld_libs.extend( [
+                     '-Wl,--rpath',
++                    '-Wl,%(APR_LIB)s',
++                    '-Wl,--rpath',
+                     '-Wl,%(SVN_LIB)s'
+                     ] )
+         py_ld_libs.extend( [
