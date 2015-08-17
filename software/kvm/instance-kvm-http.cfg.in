@@ -2,6 +2,7 @@
 
 parts = 
   httpd
+  httpd-graceful
   httpd-promise
 
 [directory]
@@ -12,6 +13,7 @@ srv = ${buildout:directory}/srv
 public = ${:srv}/public/
 log = ${:var}/log
 services = ${:etc}/service
+scripts = ${:etc}/run
 promises = ${:etc}/promise
 run = ${:var}/run
 document = ${:srv}/document
@@ -45,6 +47,14 @@ context =
 recipe = slapos.cookbook:wrapper
 wrapper-path = ${directory:services}/httpd
 command-line = "{{ apache_location }}/bin/httpd" -f "${apache-conf:rendered}" -DFOREGROUND
+
+[httpd-graceful]
+recipe = collective.recipe.template
+input = inline:
+  #!/bin/sh
+  exec kill -USR1 $(cat ${apache-conf:pid-file})
+output = ${directory:scripts}/httpd-graceful
+mode = 700
 
 [httpd-ssl]
 recipe = plone.recipe.command
