@@ -28,6 +28,7 @@ virtual_hard_drive_gzipped = '%(virtual-hard-drive-gzipped)s'.strip().lower()
 nat_rules = '%(nat-rules)s'.strip()
 use_tap = '%(use-tap)s'.lower()
 use_nat = '%(use-nat)s'.lower()
+enable_vhost = '%(enable-vhost)s'.lower()
 tap_interface = '%(tap-interface)s'
 listen_ip = '%(ipv4)s'
 mac_address = '%(mac-address)s'
@@ -208,13 +209,16 @@ if use_nat == 'true':
     rules += ',guestfwd=tcp:10.0.2.101:443-cmd:%%s %%s %%s' %% (netcat_bin,
                                            cluster_doc_host, cluster_doc_port)
   nat_network_parameter = ['-netdev', rules,
-          '-device', 'e1000,netdev=lan%%s,mac=%%s' %% (number, mac_address)]
+          '-device', 'virtio-net-pci,netdev=lan%%s,mac=%%s' %% (number, mac_address)]
 if use_tap == 'true':
   number += 1
+  vhost = ''
+  if enable_vhost == 'true':
+    vhost = ',vhost=on'
   tap_network_parameter = ['-netdev',
-          'tap,id=lan%%s,ifname=%%s,script=no,downscript=no' %% (number,
-            tap_interface),
-          '-device', 'e1000,netdev=lan%%s,mac=%%s' %% (number, tap_mac_address)]
+          'tap,id=lan%%s,ifname=%%s,script=no,downscript=no%%s' %% (number,
+            tap_interface, vhost),
+          '-device', 'virtio-net-pci,netdev=lan%%s,mac=%%s' %% (number, tap_mac_address)]
 
 smp = smp_count
 if smp_options:

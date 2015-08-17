@@ -1,0 +1,13 @@
+[network_bench]
+
+url =
+  {{ slapparameter_dict.get('test_http_url_list', '').split('\n') | join('\n  ') }}
+
+dns =
+  {{ slapparameter_dict.get('test_name_list', '').split('\n') | join('\n  ') }}
+
+ping =
+  {{ slapparameter_dict.get('ping_ip_list', '').split('\n') | join('\n  ') }}
+
+ping6 =
+  {{ slapparameter_dict.get('ping6_ip_list', '').split('\n') | join('\n  ') }}

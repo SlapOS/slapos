@@ -144,6 +144,13 @@
               "type": "string",
               "default": ""
             },
+            "state": {
+              "title": "State of this Virtual Machine",
+              "description": "Define if SlapOS should start or stop this VM.",
+              "type": "string",
+              "default": "started",
+              "enum": ["started", "stopped"]
+            },
             "ram-size": {
               "title": "RAM size",
               "description": "RAM size, in MB.",
@@ -151,7 +158,7 @@
               "default": 1024,
               "minimum": 128,
               "multipleOf": 128,
-              "maximum": 16384
+              "maximum": 92160
             },
             "disk-size": {
               "title": "Disk size",
@@ -289,6 +296,12 @@
                 80,
                 443
               ]
+            },
+            "enable-vhost": {
+              "title": "Use vhost-net to improve network performance of tap interface",
+              "description": "The vhost-net provides much improved network performance for your VM. Only work if the vhost-net kernel module is loaded and available on host machine, please keep this option off if you're not shure.",
+              "type": "boolean",
+              "default": false
             },
             "data-to-vm": {
               "title": "Text content to send to this virtual machine.",
