@@ -28,7 +28,7 @@ from setuptools import setup, find_packages
 import glob
 import os
 
-version = '0.104.dev0'
+version = '1.0.9.dev0'
 name = 'slapos.cookbook'
 long_description = open("README.txt").read() + "\n" + \
     open("CHANGES.txt").read() + "\n"
@@ -225,4 +225,3 @@ setup(name=name,
       test_suite='slapos.test',
       tests_require=[ 'jsonschema' ],
     )
-
