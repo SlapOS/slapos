@@ -119,6 +119,7 @@ tidstorage-ip =
 tidstorage-port =
 {% endif -%}
 
+{% if len(known_tid_storage_identifier_dict) > 1 -%}
 # Used for ERP5 resiliency or (more probably)
 # webrunner resiliency with erp5 inside.
 [{{ section("resiliency-exclude-file") }}]
@@ -170,6 +171,7 @@ input = inline: #!/bin/sh
   exit $EXIT_CODE
 output = ${directory:srv}/runner-import-restore
 mode = 755
+{% endif -%}
 
 [directory]
 recipe = slapos.cookbook:mkdirectory
