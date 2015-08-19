@@ -274,28 +274,19 @@ class SlapTool(BaseTool):
 
   @UnrestrictedMethod
   def _getHostingSubscriptionIpList(self, computer_id, computer_partition_id):
-    def getHostingSubscriptionInstanceList(software_instance):
-      pred_list = []
-      if software_instance is None or software_instance.getSlapState() == 'destroy_requested':
-        return pred_list
-      else:
-        if software_instance.getPortalType() == 'Software Instance':
-          pred_list.append(software_instance)
-        predecessor_list = software_instance.getPredecessorValueList(
-                                              portal_type="Software Instance")
-        for instance in predecessor_list:
-          pred_list.extend(getHostingSubscriptionInstanceList(instance))
-      return pred_list
-    
     software_instance = self._getSoftwareInstanceForComputerPartition(
-                                            computer_id, computer_partition_id)
+                                          computer_id, computer_partition_id)
     
+    if software_instance is None or \
+                        software_instance.getSlapState() == 'destroy_requested':
+        return xml_marshaller.xml_marshaller.dumps([])
     # Search hosting subscription
     hosting = software_instance.getSpecialiseValue()
     while hosting and hosting.getPortalType() != "Hosting Subscription":
       hosting = hosting.getSpecialiseValue()
     ip_address_list = []
-    for instance in getHostingSubscriptionInstanceList(hosting):
+    for instance in hosting.getSpecialiseRelatedValueList(
+                                              portal_type="Software Instance"):
       computer_partition = instance.getAggregateValue(portal_type="Computer Partition")
       if not computer_partition:
         continue
