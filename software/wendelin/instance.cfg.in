@@ -21,6 +21,8 @@ erp5_kernel_filename = {{ erp5_kernel_filename }}
 kernel_json_location = {{ kernel_json_location }}
 kernel_json_filename = {{ kernel_json_filename }}
 monitor-template = {{ monitor_template }}
+custom_js_location = {{ custom_js_location }}
+custom_js_filename = {{ custom_js_filename }}
 
 [dynamic-template-notebook]
 < = jinja2-template-base
