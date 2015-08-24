@@ -4,11 +4,12 @@
 {% set site_id = slapparameter_dict.get('site-id', 'erp5') -%}
 {% set inituser_login = slapparameter_dict.get('inituser-login', 'zope') -%}
 {% set publish_dict = {'site-id': site_id, 'inituser-login': inituser_login} -%}
+{% set has_posftix = slapparameter_dict.get('smtp', {}).get('postmaster') -%}
 [request-common]
 <= request-common-base
 config-use-ipv6 = {{ dumps(slapparameter_dict.get('use-ipv6', False)) }}
 
-{% macro request(name, software_type, config_key, config, ret={'url': True}) -%}
+{% macro request(name, software_type, config_key, config, ret={'url': True}, key_config={}) -%}
 {% do config.update(slapparameter_dict.get(config_key, {})) -%}
 {% set section = 'request-' ~ name -%}
 [{{ section }}]
@@ -25,13 +26,22 @@ return = {{ ' '.join(ret) }}
 {% for k, v in config.iteritems() -%}
 config-{{ k }} = {{ dumps(v) }}
 {% endfor -%}
+{% for k, v in key_config.iteritems() -%}
+config-{{ k }} = {{ '${' ~ v ~ '}' }}
+{% endfor -%}
 {% endmacro -%}
 
 {{ request('memcached-persistent', 'kumofs', 'kumofs', {'tcpv4-port': 2000}) }}
 {{ request('memcached-volatile', 'kumofs', 'memcached', {'tcpv4-port': 2010, 'ram-storage-size': 64}) }}
 {{ request('cloudooo', 'cloudooo', 'cloudooo', {'tcpv4-port': 2020}) }}
 {{ request('mariadb', 'mariadb', 'mariadb', {'tcpv4-port': 2099}, {'database-list': True, 'test-database-list': True}) }}
-{{ request('postfix', 'postfix', 'postfix', {'tcpv4-port': 2025}) }}
+{% if has_posftix -%}
+{{   request('smtp', 'postfix', 'smtp', {'tcpv4-port': 2025, 'smtpd-sasl-user': 'erp5@nowhere'}, key_config={'smtpd-sasl-password': 'publish-early:smtpd-sasl-password'}) }}
+{%- else %}
+[request-smtp]
+# Placeholder smtp service URL
+connection-url = smtp://127.0.0.2:0/
+{%- endif %}
 
 {# ZODB -#}
 {% set zodb_dict = {} -%}
@@ -66,6 +76,9 @@ recipe = slapos.cookbook:publish-early
 -init =
   inituser-password gen-password:passwd
   deadlock-debugger-password gen-deadlock-debugger-password:passwd
+{%- if has_posftix %}
+  smtpd-sasl-password gen-smtpd-sasl-password:passwd
+{%- endif %}
 {%- if neo %}
   neo-cluster gen-neo-cluster:name
 {%-  if neo[0] %}
@@ -94,6 +107,9 @@ storage-path =
 [gen-neo-cluster]
 name = neo-${gen-neo-cluster-base:passwd}
 
+[gen-smtpd-sasl-password]
+< = gen-password
+
 [request-zope-base]
 <= request-common
 return =
@@ -113,7 +129,7 @@ config-memcached-url = ${request-memcached-volatile:connection-url}
 config-mysql-test-url-list = ${request-mariadb:connection-test-database-list}
 config-mysql-url-list = ${request-mariadb:connection-database-list}
 config-site-id = {{ dumps(site_id) }}
-config-smtp-url = {{ dumps(slapparameter_dict.get('smtp-url', 'smtp://localhost:25/')) }}
+config-smtp-url = ${request-smtp:connection-url}
 config-timezone = {{ dumps(slapparameter_dict.get('timezone', 'UTC')) }}
 config-zodb-dict = {{ dumps(zodb_dict) }}
 {% for server_type, server_dict in storage_dict.iteritems() -%}

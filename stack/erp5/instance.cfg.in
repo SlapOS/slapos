@@ -45,7 +45,11 @@ extra-context =
     section parameter_dict dynamic-template-cloudooo-parameters
 
 [dynamic-template-postfix-parameters]
+bin-directory = {{ bin_directory }}
+cyrus-sasl-location = {{ cyrus_sasl_location }}
+openssl = {{ openssl_location }}
 postfix-location = {{ postfix_location }}
+template-postfix-aliases = {{ template_postfix_aliases }}
 template-postfix-main-cf = {{ template_postfix_main_cf }}
 template-postfix-master-cf = {{ template_postfix_master_cf }}
 
@@ -56,6 +60,7 @@ filename = instance-postfix.cfg
 extensions = jinja2.ext.do
 extra-context =
     section parameter_dict dynamic-template-postfix-parameters
+    import urllib urllib
 
 [dynamic-template-erp5-parameters]
 local-bt5-repository = {{ local_bt5_repository }}

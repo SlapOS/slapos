@@ -6,7 +6,8 @@ General:
 - resilience
 - make mariadb user accounts accept connections only from relevant IPs
   or make x509 mandatory (needs ZMySQLD*A support)
-- postfix
+- make postfix log inside partition
+- document postfix parameters (only once it actually works)
 
 Monitoring:
 - daily slow-query digest

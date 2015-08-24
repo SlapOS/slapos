@@ -114,6 +114,7 @@ ipv6 = {{ ipv6 }}
     ('erp5-memcached-volatile', slapparameter_dict['memcached-url']),
     ('erp5-memcached-persistent', slapparameter_dict['kumofs-url']),
     ('erp5-cloudooo', slapparameter_dict['cloudooo-url']),
+    ('erp5-smtp', slapparameter_dict['smtp-url']),
   ) -%}
 {%   do hosts_dict.__setitem__(
        alias,
