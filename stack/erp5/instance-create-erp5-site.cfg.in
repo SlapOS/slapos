@@ -17,6 +17,7 @@ extensions = jinja2.ext.do
 context =
   import urlparse urlparse
   section publish publish
+  section publish_early publish-early
   section parameter_dict instance-create-erp5-site-real-parameters
   key eggs_directory buildout:eggs-directory
   key develop_eggs_directory buildout:develop-eggs-directory

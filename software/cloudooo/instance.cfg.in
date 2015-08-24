@@ -26,6 +26,7 @@ context =
 
 [dynamic-template-cloudooo-parameters]
 buildout-bin-directory = {{ buildout_bin_directory }}
+cairo = {{ cairo_location }}
 coreutils = {{ coreutils_location }}
 cups = {{ cups_location }}
 dbus = {{ dbus_location }}
@@ -52,6 +53,7 @@ libreoffice-bin = {{ libreoffice_bin_location }}
 libxcb = {{ libxcb_location }}
 mesa = {{ mesa_location }}
 poppler = {{ poppler_location }}
+pixman = {{ pixman_location }}
 xdamage = {{ xdamage_location }}
 xfixes = {{ xfixes_location }}
 zlib = {{ zlib_location }}

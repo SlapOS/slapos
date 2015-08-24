@@ -6,6 +6,7 @@ context +=
     raw slapos_core_version {{ slapos_core_version }}
 
 [dynamic-template-cloudooo-parameters]
+cairo = {{ cairo_location }}
 cups = {{ cups_location }}
 dbus = {{ dbus_location }}
 dbus-glib = {{ dbus_glib_location }}
@@ -26,6 +27,7 @@ libffi = {{ libffi_location }}
 libpng12 = {{ libpng12_location }}
 libxcb = {{ libxcb_location }}
 mesa = {{ mesa_location }}
+pixman = {{ pixman_location }}
 xdamage = {{ xdamage_location }}
 xfixes = {{ xfixes_location }}
 zlib = {{ zlib_location }}
@@ -41,6 +43,24 @@ template = {{ template_cloudooo }}
 filename = instance-cloudoo.cfg
 extra-context =
     section parameter_dict dynamic-template-cloudooo-parameters
+
+[dynamic-template-postfix-parameters]
+bin-directory = {{ bin_directory }}
+cyrus-sasl-location = {{ cyrus_sasl_location }}
+openssl = {{ openssl_location }}
+postfix-location = {{ postfix_location }}
+template-postfix-aliases = {{ template_postfix_aliases }}
+template-postfix-main-cf = {{ template_postfix_main_cf }}
+template-postfix-master-cf = {{ template_postfix_master_cf }}
+
+[dynamic-template-postfix]
+< = jinja2-template-base
+template = {{ template_postfix }}
+filename = instance-postfix.cfg
+extensions = jinja2.ext.do
+extra-context =
+    section parameter_dict dynamic-template-postfix-parameters
+    import urllib urllib
 
 [dynamic-template-erp5-parameters]
 local-bt5-repository = {{ local_bt5_repository }}
@@ -165,6 +185,7 @@ kumofs = dynamic-template-kumofs:rendered
 cloudooo = dynamic-template-cloudooo:rendered
 mariadb = dynamic-template-mariadb:rendered
 balancer = dynamic-template-balancer:rendered
+postfix = dynamic-template-postfix:rendered
 zodb-zeo = dynamic-template-zeo:rendered
 zodb-neo = neo-storage-mysql:rendered
 zope = dynamic-template-zope:rendered

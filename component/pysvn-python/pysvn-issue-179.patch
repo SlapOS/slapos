@@ -1,0 +1,15 @@
+http://pysvn.tigris.org/ds/viewMessage.do?dsForumId=1334&dsMessageId=3094617
+
+diff -ur pysvn-1.7.10.orig/Source/pysvn_svnenv.cpp pysvn-1.7.10/Source/pysvn_svnenv.cpp
+--- pysvn-1.7.10.orig/Source/pysvn_svnenv.cpp	2010-11-20 13:02:37.000000000 +0100
++++ pysvn-1.7.10/Source/pysvn_svnenv.cpp	2015-08-17 17:39:50.491209720 +0200
+@@ -292,8 +292,8 @@
+     if( accept_permanently )
+     {
+         new_cred->may_save = 1;
+-        new_cred->accepted_failures = accepted_failures;
+     }
++    new_cred->accepted_failures = accepted_failures;
+ 
+     *cred = new_cred;
+ 

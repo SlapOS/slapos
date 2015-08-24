@@ -22,7 +22,7 @@ mysql-url = {{ dumps(urlparse.urlunparse(mysql_parsed[:1] + (mysql_parsed.userna
 {%     do family_list.append(value.split('://', 1)) -%}
 {%   endif -%}
 {%  endfor -%}
-zope-url = {{ dumps(family_list[0][0] + '://' + publish['inituser-login'] + ':' + publish['inituser-password'] + '@' + family_list[0][1] + '/' + publish['site-id']) }}
+zope-url = {{ dumps(family_list[0][0] + '://' + publish['inituser-login'] + ':' + publish_early['inituser-password'] + '@' + family_list[0][1] + '/' + publish['site-id']) }}
 
 [promise-erp5-site]
 recipe = slapos.cookbook:check_url_available

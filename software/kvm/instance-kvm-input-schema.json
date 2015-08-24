@@ -10,8 +10,7 @@
       "type": "integer",
       "default": 1024,
       "minimum": 128,
-      "multipleOf": 128,
-      "maximum": 92160
+      "multipleOf": 128
     },
     "disk-size": {
       "title": "Disk size",
@@ -33,8 +32,7 @@
       "title": "CPU count",
       "description": "Number of CPU cores.",
       "type": "integer",
-      "minimum": 1,
-      "maximum": 8
+      "minimum": 1
     },
     "cpu-options": {
       "title": "CPU Additional options: cores, threads, sockets, maxcpus.",

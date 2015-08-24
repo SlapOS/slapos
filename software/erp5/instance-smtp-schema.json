@@ -1,0 +1,56 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "extends": "./schema-definitions.json#",
+  "required": ["tcpv4-port"],
+  "properties": {
+    "tcpv4-port": {
+      "allOf": [{
+        "$ref": "#/definitions/tcpv4port"
+      }, {
+        "description": "Start allocating ports at this value, going upward"
+      }]
+    },
+    "postmaster": {
+      "description": "Mail address to send technical mails to. Non-empty value required for smptd relay service to be deployed. Values will be put in alias-dict as 'postmaster' key (alias-dict takes precedence)",
+      "default": "",
+      "type": "string"
+    },
+    "alias-dict": {
+      "description": "Mail alias support",
+      "default": {},
+      "patternProperties": {
+        ".*": {
+          "description": "List of addresses alias expands to",
+          "type": "array"
+        }
+      },
+      "type": "object"
+    },
+    "relay": {
+      "description": "Forward outgoing mails to a specific relay. If enabled, relay must support TLS-encrypted SASL authentication.",
+      "dependencies": {
+        "host": ["sasl-credential"]
+      },
+      "properties": {
+        "host": {
+          "description": "Host name or address of relay, with optional port (ex: '[example.com]:submissionu'). Enclosing hostname with [] prevents MX lookup.",
+          "type": "string"
+        },
+        "sasl-credential": {
+          "description": "SASL credential, in the login:password form",
+          "type": "string"
+        }
+      },
+      "default": {},
+      "type": "object"
+    },
+    "divert": {
+      "description": "Intercept all mails and send them to given addresses instead of original recipient",
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "uniqueItems": true
+    }
+  }
+}

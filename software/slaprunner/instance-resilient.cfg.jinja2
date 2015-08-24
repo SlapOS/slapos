@@ -22,7 +22,7 @@ offline = true
 # += because we need to take up parts (like instance-custom, slapmonitor etc) from the profile we extended
 parts +=
   {{ parts.replicate("runner", number_of_instances + 1) }}
-  publish-connection-informations
+  publish-connection-information
 
 {{ replicated.replicate("runner", number_of_instances + 1, "runner-export", "runner-import", slapparameter_dict=slapparameter_dict) }}
 
@@ -30,7 +30,7 @@ parts +=
 [request-runner]
 return = url ssh-public-key ssh-url notification-id ip backend_url url ssh_command access_url 1_info 2_info monitor_url monitor_backend_url webdav_url public_url git_public_url git_private_url
 
-[publish-connection-informations]
+[publish-connection-information]
 recipe = slapos.cookbook:publish
 1_info = ${request-runner:connection-1_info}
 2_info = ${request-runner:connection-2_info}
