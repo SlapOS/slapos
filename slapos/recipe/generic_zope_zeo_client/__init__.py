@@ -105,10 +105,13 @@ class Recipe(GenericBaseRecipe):
     zope_environment = {
       'TMP': self.options['tmp-path'],
       'TMPDIR': self.options['tmp-path'],
-      'HOME': self.options['tmp-path'],
+      'HOME': self.options.get('home-path', self.options.get('tmp-path')),
       'PATH': self.options['bin-path'],
       'TZ': self.options['timezone'],
     }
+    instance_home = self.options.get("instancehome-path", None)
+    if instance_home:
+      zope_environment["INSTANCE_HOME"] = instance_home
 
     # longrequestlogger product which requires environment settings
     longrequest_logger_file = self.options.get('longrequest-logger-file', None)
