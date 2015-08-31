@@ -1,0 +1,20 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "extends": "./schema-definitions.json#",
+  "description": "Parameters to instantiate wendelin release with jupyter",
+  "additionalProperties": {
+    "$ref": "../erp5/instance-erp5-input-schema.json#properties"
+  },
+  "properties": {
+    "jupyter-family": {
+      "description": "Family name to be used in jupyter(ipython-notebook) erp5-url",
+      "default": "default",
+      "type": "string"
+    }
+    "disable-jupyter": {
+      "desciption": "Parameter to disable request to jupyter or to instantiate standalone wendelin",
+      "default": "false",
+      "type": "string"
+    }
+  }
+}

@@ -1,0 +1,53 @@
+[buildout]
+extends = {{ template_erp5_cluster }}
+parts =
+  switch-softwaretype
+
+eggs-directory = {{ eggs_directory }}
+develop-eggs-directory ={{  develop_eggs_directory }}
+offline = true
+
+[slap-configuration]
+recipe = slapos.cookbook:slapconfiguration.serialised
+computer = ${slap-connection:computer-id}
+partition = ${slap-connection:partition-id}
+url = ${slap-connection:server-url}
+key = ${slap-connection:key-file}
+cert = ${slap-connection:cert-file}
+
+[slap_connection]
+# Kept for backward compatiblity
+computer_id = ${slap-connection:computer-id}
+partition_id = ${slap-connection:partition-id}
+server_url = ${slap-connection:server-url}
+software_release_url = ${slap-connection:software-release-url}
+key_file = ${slap-connection:key-file}
+cert_file = ${slap-connection:cert-file}
+
+[dynamic-template-default-parameters]
+instance-erp5-site = ${dynamic-template-create-erp5-site:rendered}
+eggs_directory = {{ eggs_directory }}
+develop_eggs_directory = {{ develop_eggs_directory }}
+
+[dynamic-template-default]
+< = jinja2-template-base
+template = {{template_default}}
+filename = instance-default.cfg
+extensions = jinja2.ext.do
+extra-context =
+  import json_module json
+  raw template_publish_information {{ template_publish_information }}
+  key slap_software_type slap-configuration:slap-software-type
+  section parameter_dict dynamic-template-default-parameters
+
+[dynamic-template-jupyter]
+rendered = {{ template_jupyter }}
+
+[switch-softwaretype]
+recipe = slapos.cookbook:switch-softwaretype
+default = dynamic-template-default:rendered
+create-erp5-site = dynamic-template-default:rendered
+jupyter = dynamic-template-jupyter:rendered
+erp5-cluster-create-erp5-site = dynamic-template-create-erp5-site:rendered
+erp5-cluster-default = dynamic-template-erp5:rendered
+  
