@@ -191,7 +191,7 @@ class ConsumptionReport(object):
                            reference=self.computer_id, 
                            category="")
 
-     core_amount = psutil.NUM_CPUS
+     core_amount = psutil.cpu_count()
      for user in self.user_list:
        partition_cpu_load_percent = self._getPartitionCPULoadAverage(user, date_scope)
        if partition_cpu_load_percent is not None:

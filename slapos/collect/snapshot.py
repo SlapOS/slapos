@@ -52,15 +52,15 @@ class ProcessSnapshot(_Snapshot):
     # Save full command line from the process.
     self.process = "%s-%s" % (process.pid, process.create_time())
     # CPU percentage, we will have to get actual absolute value
-    self.cpu_percent = self.process_object.get_cpu_percent(None)
+    self.cpu_percent = self.process_object.cpu_percent(None)
     # CPU Time
-    self.cpu_time = sum(process.get_cpu_times())
+    self.cpu_time = sum(process.cpu_times())
     # Thread number, might not be really relevant
-    self.cpu_num_threads = process.get_num_threads()      
+    self.cpu_num_threads = process.num_threads()
     # Memory percentage
-    self.memory_percent = process.get_memory_percent()
+    self.memory_percent = process.memory_percent()
     # Resident Set Size, virtual memory size is not accouned for
-    self.memory_rss = process.get_memory_info()[0]
+    self.memory_rss = process.memory_info()[0]
     # Byte count, Read and write. OSX NOT SUPPORTED
     self.io_rw_counter = ui_counter_list[2] + ui_counter_list[3]
     # Read + write IO cycles
@@ -69,7 +69,7 @@ class ProcessSnapshot(_Snapshot):
   def update_cpu_percent(self):
     if self.process_object.is_running():
       # CPU percentage, we will have to get actual absolute value
-      self.cpu_percent = self.process_object.get_cpu_percent()
+      self.cpu_percent = self.process_object.cpu_percent()
 
 class SystemSnapshot(_Snapshot):
   """ Take a snapshot from current system usage
