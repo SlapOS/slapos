@@ -6,13 +6,37 @@ import time
 import sqlite3
 import slapos
 import traceback
-
-from re6st import registry, utils, x509
+import logging
+import socket
+import select
+from re6st import tunnel, ctl, registry, utils, x509
 from OpenSSL import crypto
 
 
 log = logging.getLogger('SLAPOS-RE6STNET')
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.INFO)
+
+logging.trace = logging.debug 
+
+class iterRoutes(object):
+
+    _waiting = True
+
+    def __new__(cls, control_socket, network):
+        self = object.__new__(cls)
+        c = ctl.Babel(control_socket, self, network)
+        c.request_dump()
+        while self._waiting:
+            args = {}, {}, ()
+            c.select(*args)
+            utils.select(*args)
+        return (prefix
+            for neigh_routes in c.neighbours.itervalues()
+            for prefix in neigh_routes[1]
+            if prefix)
+
+    def babel_dump(self):
+        self._waiting = False
 
 def loadJsonFile(path):
   if os.path.exists(path):
@@ -185,8 +209,65 @@ def dumpIPv6Network(slave_reference, db, network, ipv6_file):
       subnet = network + utils.binFromSubnet(cn)
       ipv6 = utils.ipFromBin(subnet)
       writeFile(ipv6_file, ipv6)
+      return ipv6, utils.binFromSubnet(cn)
   except Exception:
     log.debug('XXX for %s... \n %s' % (slave_reference,
+              traceback.format_exc()))
+
+def sendto(sock, prefix, code):
+  return sock.sendto("%s\0%c" % (prefix, code), ('::1', tunnel.PORT))      
+
+def recv(sock, code):
+  try:
+    prefix, msg = sock.recv(1<<16).split('\0', 1)
+    int(prefix, 2)
+  except ValueError:
+    pass
+  else:
+    if msg and ord(msg[0]) == code:
+      return prefix, msg[1:]
+  return None, None
+
+def dumpIPv4Network(ipv6_prefix, network, ipv4_file, sock, peer_prefix_list):
+  try:
+
+    if ipv6_prefix == "00000000000000000000000000000000":
+      # workarround to ignore the first node
+      ipv4 = "0.0.0.0"
+      writeFile(ipv4_file, ipv4)
+      return
+
+    peers = []
+
+    peer_list = [prefix for prefix in peer_prefix_list if prefix == ipv6_prefix ]
+
+    if len(peer_list) == 0:
+      raise ValueError("Unable to find such prefix on database")
+
+    peer = peer_list[0]
+
+    sendto(sock, peer, 1)
+    s = sock,
+    timeout = 15 
+    end = timeout + time.time()
+
+    while select.select(s, (), (), timeout)[0]:
+      prefix, msg = recv(sock, 1)
+      if prefix == peer:
+        break
+
+      timeout = max(0, end - time.time())
+    else:
+     logging.info("Timeout while querying address for %s/%s", int(peer, 2), len(peer))
+     msg = ""
+
+    if "," in msg:
+      ipv4 = msg.split(',')[0]
+    else:
+      ipv4 = "0.0.0.0"
+    writeFile(ipv4_file, ipv4)
+  except Exception:
+    log.debug('XXX for %s... \n %s' % (ipv6_prefix,
               traceback.format_exc()))
 
 def checkService(args, can_bang=True):
@@ -206,17 +287,25 @@ def checkService(args, can_bang=True):
   ca = client.getCa()
   network = x509.networkFromCa(crypto.load_certificate(crypto.FILETYPE_PEM, ca))
 
+  sock = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM)
+
+  peer_prefix_list = [prefix for prefix in
+    iterRoutes("/var/run/re6stnet/babeld.sock", network)]
+
+
   # Check token status
   for slave_reference, token in token_dict.iteritems():
     status_file = os.path.join(base_token_path, '%s.status' % slave_reference)
     ipv6_file = os.path.join(base_token_path, '%s.ipv6' % slave_reference)
+    ipv4_file = os.path.join(base_token_path, '%s.ipv4' % slave_reference)
     if not os.path.exists(status_file):
       # This token is not added yet!
       continue
 
     msg = readFile(status_file)
     if msg == 'TOKEN_USED':
-      dumpIPv6Network(slave_reference, db, network, ipv6_file)
+      ipv6, ipv6_prefix = dumpIPv6Network(slave_reference, db, network, ipv6_file)
+      dumpIPv4Network(ipv6_prefix, network, ipv4_file, sock, peer_prefix_list)
       continue
 
     # Check if token is not in the database
