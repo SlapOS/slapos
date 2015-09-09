@@ -1,0 +1,46 @@
+[buildout]
+
+extends = {{ instance_base_monitor }}
+parts += 
+  slave-test-configuration
+
+[jinja2-template-base]
+recipe = slapos.recipe.template:jinja2
+rendered = ${buildout:directory}/${:filename}
+extra-context =
+context =
+    import json_module json
+    ${:extra-context}
+
+[slave-test-configuration]
+<=jinja2-template-base
+template = {{ template_json_distributor_test }}
+filename = srv/monitor-private/test.json
+extensions = jinja2.ext.do 
+extra-context = 
+  section slave_information slap-parameter
+
+[monitor-directory]
+network-user-logs = ${:private-directory}/network-user-logs/
+{% for slave_instance in slave_instance_list -%}
+user-log-{{ slave_instance.get('slave_reference') }}-folder = ${:private-directory}/network-user-logs/{{ slave_instance.get('slave_reference') }} 
+{% endfor -%}
+
+{% set part_list = [] -%}
+# Publish information for each slave
+
+{% for slave_instance in slave_instance_list -%}
+{%   set publish_section_title = 'publish-%s' % slave_instance.get('slave_reference')  -%}
+{%   do part_list.append(publish_section_title) -%}
+[{{ publish_section_title }}]
+recipe = slapos.cookbook:publish
+-slave-reference = {{ slave_instance.get('slave_reference') }}
+log-access-url = ${monitor-frontend:connection-site_url}/{{ slave_instance.get('slave_reference') }}
+log-access-url-v6 = ${monitor-parameters:url}/{{ slave_instance.get('slave_reference') }}
+{% endfor %}
+
+[buildout]
+parts +=
+{% for part in part_list %}
+{{ '  %s' % part }}
+{% endfor %}
