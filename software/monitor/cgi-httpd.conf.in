@@ -78,6 +78,26 @@ Alias /{{ monitor_private_hash }} {{ directory.get('private-directory') }}/
     </Files>
 </Directory>
 
+{% set slave_list = json_module.loads(slave_information.get('slave_instance_list')) -%}
+{% for slave_instance in slave_list -%}
+
+alias /{{ slave_instance.get('slave_reference') }} {{ directory.get('private-directory') }}/network-user-logs/{{ slave_instance.get('slave_reference') }}
+<Directory {{ directory.get('private-directory') }}/network-user-logs/{{ slave_instance.get('slave_reference') }}>
+    Order Allow,Deny
+    Allow from all
+    AllowOverride All
+    Satisfy Any
+    Options Indexes FollowSymLinks
+    DirectoryIndex index.html
+    <Files .htaccess>
+        order allow,deny
+        deny from all
+    </Files>
+</Directory>
+
+{% endfor -%}
+
+
 <Location /rewrite>
 AuthType Basic
 AuthName "Private access"

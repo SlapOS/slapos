@@ -1,0 +1,68 @@
+{% set slave_list = json_module.loads(slave_information.get('slave_instance_list')) -%}
+{
+    "id" :
+        [
+{% for slave_instance in slave_list -%}
+{% if slave_instance != slave_list[-1] -%}
+            "{{ slave_instance.get('slave_reference') }}",
+{% endif -%}
+{% if slave_instance == slave_list[-1] -%}
+            "{{ slave_instance.get('slave_reference') }}"
+{% endif -%}
+{% endfor -%}
+        ],
+  "ipv4" :
+        [
+{% for slave_instance in slave_list -%}
+{% if slave_instance.get('ping_ip_list') not in [None, "", "0.0.0.0"] -%}
+{% if slave_instance != slave_list[-1] -%}
+            "{{ slave_instance.get('ping_ip_list') }}",
+{% endif %}
+{% if slave_instance == slave_list[-1] -%}
+            "{{ slave_instance.get('ping_ip_list') }}"
+{% endif -%}
+{% endif -%}
+{% endfor -%}
+        ],
+  "ipv6" :
+        [
+{% for slave_instance in slave_list -%}
+{% if slave_instance.get('ping6_ip_list') not in [None, "", "0.0.0.0"] -%}
+{% if slave_instance != slave_list[-1] -%}
+            "{{ slave_instance.get('ping6_ip_list') }}",
+{% endif -%}
+{% if slave_instance == slave_list[-1] -%}
+            "{{ slave_instance.get('ping6_ip_list') }}"
+{% endif -%}
+{% endif -%}
+{% endfor -%}
+        ],
+
+  "url" :
+        [
+{% for slave_instance in slave_list -%}
+{% if slave_instance.get('test_http_url_list') not in [None, ""] -%}
+{% if slave_instance != slave_list[-1] -%}
+            "{{ slave_instance.get('test_http_url_list') }}",
+{% endif -%}
+{% if slave_instance == slave_list[-1] -%}
+            "{{ slave_instance.get('test_http_url_list') }}"
+{% endif -%}
+{% endif -%}
+{% endfor -%}
+        ],
+
+  "dns" :
+        [
+{% for slave_instance in slave_list -%}
+{% if slave_instance.get('test_name_list') not in [None, ""] -%}
+{% if slave_instance != slave_list[-1] -%}
+            "{{ slave_instance.get('test_name_list') }}",
+{% endif -%}
+{% if slave_instance == slave_list[-1] -%}
+            "{{ slave_instance.get('test_name_list') }}"
+{% endif -%}
+{% endif -%}
+{% endfor -%}
+        ]
+} 

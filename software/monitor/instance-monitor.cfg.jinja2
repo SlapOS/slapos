@@ -87,22 +87,25 @@ config-url = ${monitor-parameters:url}
 config-domain = ${slap-parameter:frontend-domain}
 return = site_url domain
 
-server-url = $${slap-connection:server-url}
-key-file = $${slap-connection:key-file}
-cert-file = $${slap-connection:cert-file}
-computer-id = $${slap-connection:computer-id}
-partition-id = $${slap-connection:partition-id}
+server-url = ${slap-connection:server-url}
+key-file = ${slap-connection:key-file}
+cert-file = ${slap-connection:cert-file}
+computer-id = ${slap-connection:computer-id}
+partition-id = ${slap-connection:partition-id}
 
 [publish-connection-informations]
 recipe = slapos.cookbook:publish
-monitor_url = $${monitor-parameters:url}
-server_log_url = $${:url}$${slap-parameter:private-hash}/ 
-url = $${monitor-frontend:connection-site_url}
+monitor_url = ${monitor-parameters:url}
+server_log_url = ${:url}${slap-parameter:private-hash}/ 
+url = ${monitor-frontend:connection-site_url}
 
 [monitor-httpd-configuration-file]
 context =
+  import json_module json
   section directory monitor-directory
   section monitor_parameters monitor-parameters
   section httpd_configuration monitor-httpd-configuration
   section monitor_rewrite_rule monitor-rewrite-rule
+  section slave_information slap-parameter
   key monitor_private_hash slap-parameter:private-hash  
+
