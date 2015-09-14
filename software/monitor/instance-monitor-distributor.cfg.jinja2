@@ -21,6 +21,7 @@ extra-context =
   section slave_information slap-parameter
 
 [monitor-directory]
+fluentd-log = ${:log}/fluentd
 network-user-logs = ${:private-directory}/network-user-logs/
 {% for slave_instance in slave_instance_list -%}
 user-log-{{ slave_instance.get('slave_reference') }}-folder = ${:private-directory}/network-user-logs/{{ slave_instance.get('slave_reference') }} 
@@ -41,6 +42,23 @@ log-access-url-v6 = ${monitor-parameters:url}/{{ slave_instance.get('slave_refer
 
 [buildout]
 parts +=
+  fluentd-wrapper
 {% for part in part_list %}
 {{ '  %s' % part }}
 {% endfor %}
+
+[fluentd-wrapper]
+recipe = slapos.cookbook:wrapper
+command-line = {{ fluentd_location }}/bin/fluentd -l ${monitor-directory:log}/fluend.log -c ${fluentd-conf-configuration:rendered}
+wrapper-path = ${monitor-directory:service}/fluentd
+environment = 
+  GEM_PATH={{ fluentd_location }}/lib/ruby/gems/1.8/
+
+[fluentd-conf-configuration]
+recipe = slapos.recipe.template:jinja2
+template = {{ fluent_conf_output }}
+rendered = ${monitor-directory:etc}/fluentd.cfg
+mode = 0744
+context =
+  key slapparameter_dict slap-parameters:configuration
+  key fluentd_log_directory monitor-directory:fluentd-log
