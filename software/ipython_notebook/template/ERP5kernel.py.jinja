@@ -1,21 +1,43 @@
 #!{{ python_executable }}
 
-# Try to import ipykernrl as IPython.kernel may be deprecated in future
-try:
-  from ipykernel.kernelbase import Kernel
-except ImportError:
-  from IPython.kernel.zmq.kernelbase import Kernel
+from IPython.kernel.zmq.kernelbase import Kernel
+from IPython.kernel.zmq.kernelapp import IPKernelApp
 
 from IPython.core.display import HTML
 
 import requests
-import logging
 import json
 
-erp5_url = "{{ erp5_url }}"
-erp5_url  = "%s/erp5/Base_executeJupyter"%erp5_url
+# erp5_url from buildout
+# TODO: Uncomment after adding automated installation of erp5-data-notebook bt5
+# url = "{{ erp5_url }}"
+# url  = "%s/erp5/Base_executeJupyter"%url
+
+# XXX: New magics to be added here.
+# New magics added shoule have the format :-
+# ('magics_name', 'variable_name', 'send_request')
+# Here,
+# magics_name(str) = Name which would be used on jupyter frontend
+# variable_name(str) = Name of variable on which magic would be set in kernel
+# send_request(boolean) = Magics for which requests to erp5 backend need to be made
+MAGICS = (
+  ('erp5_user', 'user', True),
+  ('erp5_password', 'password', True),
+  ('erp5_url', 'url', True),
+  ('notebook_set_reference', 'reference', True),
+  ('notebook_set_title', 'title', False),
+)
 
 class ERP5Kernel(Kernel):
+  """
+  Jupyter Kernel class to interact with erp5 backend for code from frontend.
+  To use this kernel with erp5, user need to install 'erp5_data_notebook' bt5 
+  Also, handlers(aka magics) starting with '%' are predefined.
+
+  Each request to erp5 for code execution requires erp5_user, erp5_password
+  and reference of the notebook.
+  """
+
   implementation = 'ERP5'
   implementation_version = '1.0'
   language = 'ERP5'
@@ -23,145 +45,157 @@ class ERP5Kernel(Kernel):
   language_info = {'mimetype': 'text/plain', 'name':'python'}
   banner = "ERP5 integration with ipython notebook"
 
-  def __init__(self, user=None, pwd=None, url=None, status_code=None,
+  def __init__(self, user=None, password=None, url=None, status_code=None,
               *args, **kwargs):
     super(ERP5Kernel, self).__init__(*args, **kwargs)
     self.user = user
-    self.pwd = pwd
-    self.url = erp5_url
+    self.password = password
+    # Use url provided by buildout during initiation
+    # It can later be overridden
+    self.url = url
     self.status_code = status_code
     self.reference = None
+    self.title = None
+
+  def check_required_attributes(self):
+    """
+      Check if the required magics are already set or not. Display message to
+      frontend in case they aren't.
+    """
+    result = []
+    # Display message in case the required attributes are not set
+    required_attributes  = ['url', 'password', 'user', 'reference']
+    for attr in required_attributes:
+      if getattr(self, attr):
+        result.append(True)
+      else:
+        self.response = '\nPlease enter %s in next cell. '%attr
+        result.append(False)
+    check_attributes = all(result)
+    if check_attributes:
+      self.response=''
+    self.display_response(response=self.response)
+    return check_attributes
+
+  def display_response(self, response=None):
+    """
+      Dispays the stream message response to jupyter frontend.
+    """
+    stream_content = {'name': 'stdout', 'text': response}
+    self.send_response(self.iopub_socket, 'stream', stream_content)
+
+  def set_magics_attribute(self, magics_property=None, code=None):
+    """
+      Set attribute for magics which are necessary for making requests to erp5.
+      For a making a request to erp5, we need -
+      erp5_url, erp5_user, erp5_password, notebook_set_reference
+    """
+    
+    try:
+      # Set attribute for magics
+      setattr(self, magics_property[1] , code.split()[1])
+      self.response = 'Your %s is %s. '%(magics_property[0], code.split()[1])
+    except AttributeError, KeyError:
+      self.response = 'Please enter %s magics value'%magics_property[1]
+    self.display_response(response=self.response)
+
+  def make_erp5_request(self, request_reference=False, code=None, response=None,
+                        title=None, *args, **kwargs):
+    """
+      Function to make request to erp5 as per the magics.
+      Should return the response json object.
+    """
+
+    try:
+      erp5_request = requests.get(
+        self.url,
+        verify=False,
+        auth=(self.user, self.password),
+        params={
+          'python_expression': code,
+          'reference': self.reference,
+          'title': self.title,
+          'request_reference': request_reference,
+          },
+      )
+
+      # Set value for status_code for self object which would later be used to
+      # dispaly response after statement check
+      self.status_code = erp5_request.status_code
+
+      # Dispaly error response in case the request give any other status
+      # except 200
+      if self.status_code != 200:
+        self.response = '''Error code %s on request to ERP5,\n
+        check credentials or ERP5 family URL'''%self.status_code
+      else:
+        # Set value of self.response to the given value in case response from function
+        # call. In all other case, response should be the content from request
+        if response:
+          self.response = response
+        else:
+          self.response = erp5_request.content
+
+    except requests.exceptions.RequestException as e:
+      self.response = str(e)
 
   def do_execute(self, code, silent, store_history=True, user_expressions=None,
                   allow_stdin=False):
+    """
+      Execute the data, send request to erp5 backend where code would be
+      executed.
+    """
+    # By default, take the status of response as 'ok' so as show the responses
+    # for erp5_url and erp5_user on notebook frontend as successful response.
     status = 'ok'
+
     if not silent:
+      # Remove spaces and newlines from both ends of code
+      code = code.strip()
 
-      if code.startswith('%erp5_user'):
-        self.user = code.split()[1]
-        if self.pwd:
-          try:
-            res = requests.get(
-              self.url, verify=False,
-              auth=(self.user, self.pwd),
-              params={'python_expression': None},
-            )
-            self.status_code = res.status_code
-            if self.status_code != 200:
-              resp = '''Error code %s on request to ERP5, check
-                        credentials or ERP5 family URL'''%self.status_code
-            else:
-              resp = 'Your erp5 username is %s.Please proceed'%self.user
-              if not self.reference:
-                resp = '''There is no reference or title set for
-                          this notebook. Please set one using
-                          %notebook_set_reference or use one already
-                          existing by %use_notebook magics'''
-          except requests.exceptions.RequestException as e:
-            resp = str(e)
-        else:
-          resp = 'Your erp5 username is %s' %self.user
-        stream_content = {'name': 'stdout', 'text': resp}
-        self.send_response(self.iopub_socket, 'stream', stream_content)
+      if code.startswith('%'):
+        try:
+          # Try catch to find error for magics
+          magics_name = code.split()[0][1:]
+          magics_name_list = [magic[0] for magic in MAGICS]
 
-      elif code.startswith('%erp5_password'):
-        self.pwd = code.split()[1]
-        if self.user:
-          try:
-            # Dirty hack here just to send some random parameter
-            # Should be removed with better way to get 200 status
-            # code for correct credentials, or yet better make 204
-            # also accepatble
+          # Check if the magic is one of MAGICS and set its value
+          if magics_name and magics_name in magics_name_list:
+            # Getting the properties tuple of magic which matches magics_name  
+            magics_property = [magic for magic in MAGICS if magic[0]==magics_name][0]
 
-            res = requests.get(
-              self.url, verify=False,
-              auth=(self.user, self.pwd),
-              params={'python_expression': None},
-            )
-            self.status_code = res.status_code
-            if self.status_code != 200:
-              resp = '''Error code %s on request to ERP5, check
-                        credentials or ERP5 family URL'''%self.status_code
-            else:
-              resp = 'Please proceed'
-              if not self.reference:
-                resp = '''There is no reference or title set for
-                          this notebook. Please set one using
-                          %notebook_set_reference or use one already
-                          existing by %use_notebook magics'''
-          except requests.exceptions.RequestException as e:
-            resp = str(e)
-        else:
-          resp = 'Please enter your username in next cell'
-        stream_content = {'name': 'stdout', 'text': resp}
-        self.send_response(self.iopub_socket, 'stream', stream_content)
+            # Function call to set the required magics
+            self.set_magics_attribute(magics_property=magics_property,
+                                      code=code)
+            # Call to check if the required_attributes are set
+            checked_attribute = self.check_required_attributes()
+            if checked_attribute and magics_property[2]:
+              # Call the function to send request to erp5 with the arguments given
+              self.make_erp5_request(response='\nPlease proceed')
+              self.display_response(response=self.response)
 
-      elif code.startswith('%erp5_url'):
-        self.url = code.split()[1]
-        resp = 'Your erp5-url is %s' %self.url
-        stream_content = {'name': 'stdout', 'text': resp}
-        self.send_response(self.iopub_socket, 'stream', stream_content)
+          elif magics_name=='my_notebooks':
+            checked_attribute = self.check_required_attributes()
+            if checked_attribute:
+              self.make_erp5_request(request_reference=True)
+              self.display_response(response=self.response)
 
-      elif code.startswith('%notebook_set_reference'):
-        self.reference = code.split()[1]
-        resp = '''Your notebook reference is %s. Please use the magics
-                  %%use_notebook %s when you restart the
-                  notebook.'''%(self.reference, self.reference)
-        stream_content = {'name': 'stdout', 'text': resp}
-        self.send_response(self.iopub_socket, 'stream', stream_content)
+          else:
+            self.response = 'Invalid Magics'
+            self.display_response(response=self.response)
 
-      elif code.startswith('%use_notebook'):
-        self.reference = code.split()[1]
-        resp = '''Your notebook reference is %s.'''%self.reference
-        stream_content = {'name': 'stdout', 'text': resp}
-        self.send_response(self.iopub_socket, 'stream', stream_content)
-
-      elif code.startswith('%notebook_set_title'):
-        self.reference = code.split()[1]
-        resp = '''Your notebook title is set to %s.'''%self.title
-        stream_content = {'name': 'stdout', 'text': resp}
-        self.send_response(self.iopub_socket, 'stream', stream_content)
-
-      elif code.startswith('%my_notebooks'):
-        if self.status_code==200:
-          res = requests.get(
-            self.url, verify=False,
-            auth=(self.user, self.pwd),
-            params={
-              'python_expression': None,
-              'request_reference': True,
-            }
-          )
-#          code_result = res.text
-#          mime_type = 'text/plain'
-#          data = {
-#                'data': {'': code_result},
-#                'metadata': {}
-#                }
-#          self.send_response(self.iopub_socket, 'display_data', data)
-          resp = res.text
-          stream_content = {'name': 'stdout', 'text': resp}
-          self.send_response(self.iopub_socket, 'stream', stream_content)
+        except IndexError:
+          self.response = "Invalid value for %s"%magics_name
+          self.display_response(response=self.response)
 
       else:
         if self.status_code == 200:
-          if not self.reference:
-            code_result = '''There is no reference set for this
-                              notebook. Please set one using
-                              %notebook_set_reference or use already existing
-                              one using %%use_notebook magics'''
-          else:
-            res = requests.get(
-              self.url, verify=False,
-              auth=(self.user, self.pwd),
-              params={
-                'python_expression': code,
-                'reference': self.reference,
-              }
-            )
-            content = json.loads(res.content)
+          self.make_erp5_request(code=code)
+          mime_type = 'text/plain'
+          try:
+            content = json.loads(self.response)
             code_result = content['code_result']
-            mime_type = 'text/plain'
+          # Display to frontend the error message for content status as 'error'
             if content['status']=='error':
               reply_content = {
                 'status': 'error',
@@ -171,6 +205,9 @@ class ERP5Kernel(Kernel):
                 'traceback': content['traceback']}
               self.send_response(self.iopub_socket, u'error', reply_content)
               return reply_content
+          except ValueError:
+            content = self.response
+            code_result = content
 
         else:
           code_result = 'Unauthorized access'
@@ -192,8 +229,4 @@ class ERP5Kernel(Kernel):
     return reply_content
 
 if __name__ == '__main__':
-  try:
-    from ipykernrl.kernelapp import IPKernrlApp
-  except ImportError:
-    from IPython.kernel.zmq.kernelapp import IPKernelApp
   IPKernelApp.launch_instance(kernel_class=ERP5Kernel)
