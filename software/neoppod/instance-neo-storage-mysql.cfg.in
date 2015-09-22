@@ -41,7 +41,7 @@ context = section parameter_dict my-cnf-parameters
 [publish]
 recipe = slapos.cookbook:publish.serialised
 # TODO: make port a partition parameter
-ip = {{ (ipv4_set | list)[0] }}
+ip = {{ "[%s]" % list(ipv6_set)[0] if ipv6_set else list(ipv4_set)[0] }}
 {% set admin = slapparameter_dict.get('admin', 2050) -%}
 {% set master = slapparameter_dict.get('master', 2051) -%}
 {% if master -%}
