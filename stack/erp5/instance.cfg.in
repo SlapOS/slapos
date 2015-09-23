@@ -150,6 +150,7 @@ template-mariadb-initial-setup = {{ template_mariadb_initial_setup }}
 link-binary = {{ dumps(mariadb_link_binary) }}
 bin-directory = {{ bin_directory }}
 mariadb-resiliency-after-import-script = {{ mariadb_resiliency_after_import_script }}
+template-monitor = {{ template_monitor }}
 
 [dynamic-template-mariadb]
 <= jinja2-template-base
