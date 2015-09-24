@@ -240,7 +240,7 @@ monitor-title = Mariadb monitor
 [buildout]
 extends =
   {{ logrotate_cfg }}
-  {{ paremeter_dict['template-monitor'] }}
+  {{ parameter_dict['template-monitor'] }}
 parts +=
   publish
   logrotate-entry-mariadb
