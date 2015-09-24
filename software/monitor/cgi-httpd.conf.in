@@ -34,7 +34,7 @@ Header always set Access-Control-Allow-Origin %{AccessControlAllowOrigin}e env=A
 Header set Access-Control-Allow-Credentials "true"
 Header set Access-Control-Allow-Methods "PROPFIND, PROPPATCH, COPY, MOVE, DELETE, MKCOL, LOCK, UNLOCK, PUT, GETLIB, VERSION-CONTROL, CHECKIN, CHECKOUT, UNCHECKOUT, REPORT, UPDATE, CANCELUPLOAD, HEAD, OPTIONS, GET, POST"
 Header set Access-Control-Allow-Headers "Overwrite, Destination, Content-Type, Depth, User-Agent, X-File-Size, X-Requested-With, If-Modified-Since, X-File-Name, Cache-Control, Authorization"
-
+Header set Access-Control-Expose-Headers "Content-Disposition, Content-Type, Content-Length, WWW-Authenticate, WWW-Logout, Location, Date, Last-Modified, ETag, Accept-Ranges, Content-Range"
 
 
 # SSL Configuration
