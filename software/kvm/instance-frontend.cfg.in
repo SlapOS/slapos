@@ -76,7 +76,7 @@ port = $${frontend-instance:port}
 
 [certificate-authority]
 recipe = slapos.cookbook:certificate_authority
-openssl-binary = ${openssl:location}/bin/openssl
+openssl-binary = ${libressl:location}/bin/openssl
 ca-dir = $${basedirectory:ca-dir}
 requests-directory = $${cadirectory:requests}
 wrapper = $${basedirectory:services}/certificate_authority
