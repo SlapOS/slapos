@@ -1,6 +1,13 @@
 Changes
 =======
 
+1.3.11 (2015-09-25)
+-------------------
+ * slapos.grid: support shacache-ca-file and shadir-ca-file options.
+
+1.3.10 (2015-04-28)
+-------------------
+
 1.3.9 (2015-02-20)
 ------------------
  * slapos.format: allow to format additional list of folder for each partition to use as data storage location.
