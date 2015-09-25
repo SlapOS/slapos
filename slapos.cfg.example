@@ -38,11 +38,13 @@ download-binary-dir-url = http://www.shacache.org/shadir
 #signature_private_key_file = /etc/opt/slapos/shacache/signature.key
 #signature_certificate_file = /etc/opt/slapos/shacache/signature.cert
 #upload-cache-url = https://www.shacache.org/shacache
+#shacache-ca-file = /etc/opt/slapos/shacache/ca.cert
 #shacache-cert-file = /etc/opt/slapos/shacache/shacache.cert
 #shacache-key-file = /etc/opt/slapos/shacache/shacache.key
 #upload-binary-dir-url = https://www.shacache.org/shadir
 #upload-binary-cache-url = https://www.shacache.org/shacache
 #upload-dir-url = https://www.shacache.org/shadir
+#shadir-ca-file = /etc/opt/slapos/shacache/ca.cert
 #shadir-cert-file = /etc/opt/slapos/shacache/shacache.cert
 #shadir-key-file = /etc/opt/slapos/shacache/shacache.key
 

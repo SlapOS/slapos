@@ -118,8 +118,10 @@ def check_missing_files(options):
       options.get('key_file'),
       options.get('cert_file'),
       options.get('master_ca_file'),
+      options.get('shacache-ca-file'),
       options.get('shacache-cert-file'),
       options.get('shacache-key-file'),
+      options.get('shadir-ca-file'),
       options.get('shadir-cert-file'),
       options.get('shadir-key-file'),
       options.get('signature_private_key_file')
@@ -221,8 +223,10 @@ def create_slapgrid_object(options, logger):
                   master_ca_file=op.get('master_ca_file'),
                   certificate_repository_path=op.get('certificate_repository_path'),
                   promise_timeout=op.get('promise_timeout', PROMISE_TIMEOUT),
+                  shacache_ca_file=op.get('shacache-ca-file'),
                   shacache_cert_file=op.get('shacache-cert-file'),
                   shacache_key_file=op.get('shacache-key-file'),
+                  shadir_ca_file=op.get('shadir-ca-file'),
                   shadir_cert_file=op.get('shadir-cert-file'),
                   shadir_key_file=op.get('shadir-key-file'),
                   forbid_supervisord_automatic_launch=string_to_boolean(op.get('forbid_supervisord_automatic_launch', 'false')),
@@ -278,8 +282,10 @@ class Slapgrid(object):
                master_ca_file=None,
                certificate_repository_path=None,
                promise_timeout=3,
+               shacache_ca_file=None,
                shacache_cert_file=None,
                shacache_key_file=None,
+               shadir_ca_file=None,
                shadir_cert_file=None,
                shadir_key_file=None,
                forbid_supervisord_automatic_launch=False,
@@ -314,8 +320,10 @@ class Slapgrid(object):
     self.download_binary_dir_url = download_binary_dir_url
     self.upload_binary_dir_url = upload_binary_dir_url
     self.upload_dir_url = upload_dir_url
+    self.shacache_ca_file = shacache_ca_file
     self.shacache_cert_file = shacache_cert_file
     self.shacache_key_file = shacache_key_file
+    self.shadir_ca_file = shadir_ca_file
     self.shadir_cert_file = shadir_cert_file
     self.shadir_key_file = shadir_key_file
     self.forbid_supervisord_automatic_launch = forbid_supervisord_automatic_launch
@@ -410,8 +418,10 @@ class Slapgrid(object):
             download_binary_dir_url=self.download_binary_dir_url,
             upload_binary_dir_url=self.upload_binary_dir_url,
             upload_dir_url=self.upload_dir_url,
+            shacache_ca_file=self.shacache_ca_file,
             shacache_cert_file=self.shacache_cert_file,
             shacache_key_file=self.shacache_key_file,
+            shadir_ca_file=self.shadir_ca_file,
             shadir_cert_file=self.shadir_cert_file,
             shadir_key_file=self.shadir_key_file,
             software_min_free_space=self.software_min_free_space)

@@ -190,8 +190,10 @@ class TestSoftwareNetworkCacheSlapObject(MasterMixin, unittest.TestCase):
     self.signature_private_key_file = '/signature/private/key_file'
     self.upload_cache_url = 'http://example.com/uploadcache'
     self.upload_dir_url = 'http://example.com/uploaddir'
+    self.shacache_ca_file = '/path/to/shacache/ca/file'
     self.shacache_cert_file = '/path/to/shacache/cert/file'
     self.shacache_key_file = '/path/to/shacache/key/file'
+    self.shadir_ca_file = '/path/to/shadir/ca/file'
     self.shadir_cert_file = '/path/to/shadir/cert/file'
     self.shadir_key_file = '/path/to/shadir/key/file'
 
@@ -215,8 +217,10 @@ class TestSoftwareNetworkCacheSlapObject(MasterMixin, unittest.TestCase):
         signature_private_key_file='/signature/private/key_file',
         upload_cache_url='http://example.com/uploadcache',
         upload_dir_url='http://example.com/uploaddir',
+        shacache_ca_file=self.shacache_ca_file,
         shacache_cert_file=self.shacache_cert_file,
         shacache_key_file=self.shacache_key_file,
+        shadir_ca_file=self.shadir_ca_file,
         shadir_cert_file=self.shadir_cert_file,
         shadir_key_file=self.shadir_key_file)
 
@@ -227,8 +231,10 @@ class TestSoftwareNetworkCacheSlapObject(MasterMixin, unittest.TestCase):
     self.assertIn('networkcache:signature-private-key-file=%s' % self.signature_private_key_file, command_list)
     self.assertIn('networkcache:upload-cache-url=%s' % self.upload_cache_url, command_list)
     self.assertIn('networkcache:upload-dir-url=%s' % self.upload_dir_url, command_list)
+    self.assertIn('networkcache:shacache-ca-file=%s' % self.shacache_ca_file, command_list)
     self.assertIn('networkcache:shacache-cert-file=%s' % self.shacache_cert_file, command_list)
     self.assertIn('networkcache:shacache-key-file=%s' % self.shacache_key_file, command_list)
+    self.assertIn('networkcache:shadir-ca-file=%s' % self.shadir_ca_file, command_list)
     self.assertIn('networkcache:shadir-cert-file=%s' % self.shadir_cert_file, command_list)
     self.assertIn('networkcache:shadir-key-file=%s' % self.shadir_key_file, command_list)
 
@@ -278,8 +284,10 @@ class TestSoftwareNetworkCacheSlapObject(MasterMixin, unittest.TestCase):
         signature_private_key_file='/signature/private/key_file',
         upload_cache_url='http://example.com/uploadcache',
         upload_dir_url='http://example.com/uploaddir',
+        shacache_ca_file=self.shacache_ca_file,
         shacache_cert_file=self.shacache_cert_file,
         shacache_key_file=self.shacache_key_file,
+        shadir_ca_file=self.shadir_ca_file,
         shadir_cert_file=self.shadir_cert_file,
         shadir_key_file=self.shadir_key_file,
         upload_to_binary_cache_url_blacklist=
@@ -313,8 +321,10 @@ class TestSoftwareNetworkCacheSlapObject(MasterMixin, unittest.TestCase):
         upload_dir_url='http://example.com/uploaddir',
         upload_binary_cache_url='http://example.com/uploadcache',
         upload_binary_dir_url='http://example.com/uploaddir',
+        shacache_ca_file=self.shacache_ca_file,
         shacache_cert_file=self.shacache_cert_file,
         shacache_key_file=self.shacache_key_file,
+        shadir_ca_file=self.shadir_ca_file,
         shadir_cert_file=self.shadir_cert_file,
         shadir_key_file=self.shadir_key_file,
         upload_to_binary_cache_url_blacklist=

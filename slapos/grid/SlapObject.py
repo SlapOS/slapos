@@ -103,8 +103,9 @@ class Software(object):
   #      The key is an url in the case of Buildout.
   def __init__(self, url, software_root, buildout, logger,
                signature_private_key_file=None, signature_certificate_list=None,
-               upload_cache_url=None, upload_dir_url=None, shacache_cert_file=None,
-               shacache_key_file=None, shadir_cert_file=None, shadir_key_file=None,
+               upload_cache_url=None, upload_dir_url=None,
+               shacache_ca_file=None, shacache_cert_file=None, shacache_key_file=None,
+               shadir_ca_file=None, shadir_cert_file=None, shadir_key_file=None,
                download_binary_cache_url=None, upload_binary_cache_url=None,
                download_binary_dir_url=None, upload_binary_dir_url=None,
                download_from_binary_cache_url_blacklist=None,
@@ -130,8 +131,10 @@ class Software(object):
     self.signature_certificate_list = signature_certificate_list
     self.upload_cache_url = upload_cache_url
     self.upload_dir_url = upload_dir_url
+    self.shacache_ca_file = shacache_ca_file
     self.shacache_cert_file = shacache_cert_file
     self.shacache_key_file = shacache_key_file
+    self.shadir_ca_file = shadir_ca_file
     self.shadir_cert_file = shadir_cert_file
     self.shadir_key_file = shadir_key_file
     self.download_binary_cache_url = download_binary_cache_url
@@ -224,8 +227,10 @@ class Software(object):
         ('signature-private-key-file', self.signature_private_key_file),
         ('upload-cache-url', self.upload_cache_url),
         ('upload-dir-url', self.upload_dir_url),
+        ('shacache-ca-file', self.shacache_ca_file),
         ('shacache-cert-file', self.shacache_cert_file),
         ('shacache-key-file', self.shacache_key_file),
+        ('shadir-ca-file', self.shadir_ca_file),
         ('shadir-cert-file', self.shadir_cert_file),
         ('shadir-key-file', self.shadir_key_file)
     ]:
@@ -296,8 +301,10 @@ class Software(object):
         self.upload_binary_dir_url,
         tarpath, self.logger,
         self.signature_private_key_file,
+        self.shacache_ca_file,
         self.shacache_cert_file,
         self.shacache_key_file,
+        self.shadir_ca_file,
         self.shadir_cert_file,
         self.shadir_key_file)
 
