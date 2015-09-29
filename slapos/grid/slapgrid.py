@@ -124,7 +124,8 @@ def check_missing_files(options):
       options.get('shadir-ca-file'),
       options.get('shadir-cert-file'),
       options.get('shadir-key-file'),
-      options.get('signature_private_key_file')
+      options.get('signature-private-key-file',
+        options.get('signature_private_key_file')),
   ]
 
   req_dirs = [
@@ -208,7 +209,8 @@ def create_slapgrid_object(options, logger):
                   maximum_periodicity = op.get('maximum_periodicity', 86400),
                   key_file=op.get('key_file'),
                   cert_file=op.get('cert_file'),
-                  signature_private_key_file=op.get('signature_private_key_file'),
+                  signature_private_key_file=op.get(
+                    'signature-private-key-file', op.get('signature_private_key_file')),
                   signature_certificate_list=signature_certificate_list,
                   download_binary_cache_url=op.get('download-binary-cache-url'),
                   upload_binary_cache_url=op.get('upload-binary-cache-url'),
