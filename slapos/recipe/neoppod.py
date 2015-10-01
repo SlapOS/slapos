@@ -50,6 +50,12 @@ class NeoBaseRecipe(GenericBaseRecipe):
       #'-n', options['name'],
       '-c', options['cluster'],
     ]
+    if options['ssl']:
+      option_list += (
+        '--ca', '~/etc/ca.crt',
+        '--cert', '~/etc/neo.crt',
+        '--key', '~/etc/neo.key',
+        )
     option_list.extend(self._getOptionList())
     return [self.createPythonScript(
       options['wrapper'],

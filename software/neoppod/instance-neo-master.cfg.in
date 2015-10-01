@@ -10,6 +10,7 @@ wrapper = ${directory:etc_run}/neomaster
 logfile = ${directory:log}/neomaster.log
 ip = ${publish:ip}
 port = ${publish:port-master}
+ssl = {{ dumps(slapparameter_dict['ssl']) }}
 cluster = {{ dumps(slapparameter_dict['cluster']) }}
 partitions = {{ slapparameter_dict['partitions'] }}
 replicas = {{ slapparameter_dict['replicas'] }}

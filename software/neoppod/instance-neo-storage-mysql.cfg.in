@@ -65,6 +65,7 @@ admins = {{ ' '.join(sorted(admin_list)) }}
 recipe = slapos.cookbook:neoppod.storage
 binary = {{ bin_directory }}/neostorage
 ip = ${publish:ip}
+ssl = {{ dumps(slapparameter_dict['ssl']) }}
 cluster = {{ dumps(slapparameter_dict['cluster']) }}
 masters = ${publish:masters}
 database-adapter = MySQL

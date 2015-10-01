@@ -10,6 +10,7 @@ wrapper = ${directory:etc_run}/neoadmin
 logfile = ${directory:log}/neoadmin.log
 ip = ${publish:ip}
 port = ${publish:port-admin}
+ssl = {{ dumps(slapparameter_dict['ssl']) }}
 cluster = {{ dumps(slapparameter_dict['cluster']) }}
 masters = ${publish:masters}
 
