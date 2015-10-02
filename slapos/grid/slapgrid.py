@@ -171,6 +171,15 @@ def merged_options(args, configp):
     options['firewall']["authorized_sources"] = [
         source.strip() for source in options['firewall'].get(
             "authorized_sources", "").split('\n') if source]
+    options['firewall']['firewall_cmd'] = options['firewall'].get(
+            "firewall_cmd", "firewall-cmd")
+    options['firewall']['firewall_executable'] = options['firewall'].get(
+            "firewall_executable", "firewalld --nofork")
+    options['firewall']['firewall_executable'] = options['firewall'].get(
+            "firewall_executable", "firewalld --nofork")
+    options['firewall']['reload_config_cmd'] = options['firewall'].get(
+            "reload_config_cmd",
+            "slapos node restart firewall").split(' ')
 
   return options
 
@@ -381,7 +390,7 @@ class Slapgrid(object):
                                                'etc', 'supervisord.conf.d')
     supervisord_firewall_conf = os.path.join(supervisord_conf_folder_path,
                                               'firewall.conf')
-    if not self.firewall_conf:
+    if not self.firewall_conf or self.firewall_conf.get('testing', False):
       if os.path.exists(supervisord_firewall_conf):
         os.unlink(supervisord_firewall_conf)
       return
@@ -649,21 +658,23 @@ stderr_logfile_backups=1
     # Apply changes: reload configuration
     # XXX - need to check firewalld reload instead of restart
     self.logger.info("Reloading firewall configuration...")
-    reload_cmd = ['slapos', 'node', 'restart', 'firewall']
+    reload_cmd = self.firewall_conf['reload_config_cmd']
     reload_process = subprocess.Popen(reload_cmd,
                                   stdout=subprocess.PIPE,
-                                  stderr=subprocess.PIPE)
+                                  stderr=subprocess.PIPE,
+                                  shell=True)
     result = reload_process.communicate()[0]
     if reload_process.returncode == 1:
       self.logger.warning('FirewallD: %s' % result)
 
-  def _addFirewallRules(self, partition_id, ip, ip_list, ip_type='ipv4', add_rules=True):
+  def _getFirewallRules(self, ip, ip_list, ip_type='ipv4'):
     """
     """
     if ip_type not in ['ipv4', 'ipv6', 'eb']:
       raise NotImplementedError("firewall-cmd has not rules with tables %s." % ip_type)
 
-    command = 'firewall-cmd --permanent --direct --add-rule %s filter' % ip_type
+    fw_cmd = self.firewall_conf['firewall_cmd']
+    command = '%s --permanent --direct --add-rule %s filter' % (fw_cmd, ip_type)
 
     cmd_list = []
 
@@ -674,12 +685,6 @@ stderr_logfile_backups=1
       # Configure FORWARD rules
       cmd_list.append('%s FORWARD 0 -s %s -d %s -j ACCEPT' % (command,
                                                               other_ip, ip))
-      # configure ESTABLISHED,RELATED rules
-      cmd_list.append('%s INPUT 0 -s %s -d %s -m state --state ESTABLISHED,RELATED -j ACCEPT' % (
-                      command, other_ip, ip))
-      # Configure FORWARD rules
-      cmd_list.append('%s FORWARD 0 -s %s -d %s -m state --state ESTABLISHED,RELATED -j ACCEPT' % (
-                      command, other_ip, ip))
 
     # Drop all other requests
     cmd_list.append('%s INPUT 1000 -d %s -j DROP' % (command, ip))
@@ -689,7 +694,7 @@ stderr_logfile_backups=1
     cmd_list.append('%s FORWARD 900 -d %s -m state --state ESTABLISHED,RELATED -j DROP' % (
                     command, ip))
 
-    self._checkAddFirewallRules(partition_id, cmd_list, add=add_rules)
+    return cmd_list
 
   def _setupComputerPartitionFirewall(self, computer_partition, ip_list, authorized_ip_list, drop_entries=False):
     """
@@ -719,7 +724,9 @@ stderr_logfile_backups=1
           authorized_ipv6_list.append(ip)
 
     filter_dict = getattr(computer_partition, '_filter_dict', None)
-    extra_list = filter_dict.get('authorized_sources', '').split(' ')
+    extra_list = []
+    if filter_dict is not None:
+      extra_list = filter_dict.get('authorized_sources', '').split(' ')
     extra_list.extend(self.firewall_conf.get('authorized_sources', []))
     for ip in extra_list:
       if not ip:
@@ -738,11 +745,11 @@ stderr_logfile_backups=1
       self.logger.info("Removing firewall configuration...")
 
     for ip in ipv4_list:
-      self._addFirewallRules(computer_partition.getId(),
-                            ip,
-                            authorized_ipv4_list,
-                            ip_type='ipv4',
-                            add_rules=add_rules)
+      cmd_list = self._getFirewallRules(ip,
+                                        authorized_ipv4_list,
+                                        ip_type='ipv4')
+      self._checkAddFirewallRules(computer_partition.getId(), cmd_list,
+                                  add=add_rules)
 
   def processComputerPartition(self, computer_partition):
     """
