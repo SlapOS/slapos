@@ -64,9 +64,10 @@ connection-url = smtp://127.0.0.2:0/
 {%     do neo.append(server_dict.get('cluster')) -%}
 {%     do server_dict.update(cluster='${publish-early:neo-cluster}') -%}
 {{     root_common.request_neo(server_dict, 'zodb-neo', 'neo-') }}
-{%     if not server_dict.get('ssl', 1) -%}
-{%       do zodb_dict[name].setdefault('storage-dict', {}).update(ssl=0) -%}
-{%     endif -%}
+{%     set client_dict = zodb_dict[name].setdefault('storage-dict', {}) -%}
+{%     for k in 'ssl', '_ca', '_cert', '_key' -%}
+{%       do k in server_dict and client_dict.setdefault(k, server_dict[k]) -%}
+{%     endfor -%}
 {%   else -%}
 {{     assert(server_type == 'zeo', server_type) -}}
 {# BBB: for compatibility, keep 'zodb' as partition_reference for ZEO -#}
