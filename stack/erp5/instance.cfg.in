@@ -36,6 +36,7 @@ fonts = {{ fonts_location }}
 buildout-bin-directory = {{ buildout_bin_directory }}
 6tunnel = {{ sixtunnel_location }}
 dash = {{ dash_location }}
+template-monitor = {{ dumps(template_monitor) }}
 
 [dynamic-template-cloudooo]
 <= jinja2-template-base
@@ -84,6 +85,7 @@ bin-directory = {{ bin_directory }}
 dash = {{ dash_location }}
 template-haproxy-cfg = {{ template_haproxy_cfg }}
 template-apache-conf = {{ template_apache_conf }}
+template-monitor = {{ dumps(template_monitor) }}
 
 [dynamic-template-balancer]
 <= jinja2-template-base
@@ -94,6 +96,7 @@ extra-context =
 
 [dynamic-template-zeo-parameters]
 buildout-bin-directory = {{ buildout_bin_directory }}
+template-monitor = {{ dumps(template_monitor) }}
 
 [dynamic-template-zeo]
 <= jinja2-template-base
@@ -115,6 +118,7 @@ jsl = {{ jsl_location }}
 link-binary = {{ dumps(zope_link_binary) }}
 userhosts = {{ userhosts_location }}
 runzope-userhosts-preloaded-template = {{ template_runzope_userhosts_preloaded }}
+template-monitor = {{ dumps(template_monitor) }}
 
 [dynamic-template-zope]
 <= jinja2-template-base
@@ -131,6 +135,7 @@ dcron-location = {{ dcron_location }}
 gzip-location = {{ gzip_location }}
 kumo-location = {{ kumo_location }}
 logrotate-location = {{ logrotate_location }}
+template-monitor = {{ dumps(template_monitor) }}
 
 [dynamic-template-kumofs]
 <= jinja2-template-base
