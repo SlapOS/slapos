@@ -94,6 +94,8 @@ $([IPython.events]).on('notebook_loaded.Notebook', function(){
   5. As soon as you see 'Please Proceed' message you can now access your erp5 using notebook.</br>\
   <p><u>OTHER USEFUL MAGICS</u> -</br>\
   <b>%my_notebooks</b> -This is used to display all the notebooks created by the specific user.</br>\
+  NOTE: Do not dynamically alter imported module objects as they are not being saved in DB, </br>\
+  so changes to them would be disregarded and would throw an error.</br>\
   </pre></div>";
   if (kernelname=="erp5"){
   $('div#notebook-container').prepend(display_text);
