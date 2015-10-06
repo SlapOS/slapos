@@ -13,7 +13,6 @@ parts =
   deploy-status-cgi
   deploy-status-history-cgi
   setup-static-files
-  certificate-authority
   zero-parameters
   public-symlink
   cgi-httpd-wrapper
@@ -45,8 +44,8 @@ configuration.erp5_url =
 [instance-parameter]
 port = 8888
 host = ${slapconfiguration:ipv6-random}
-cert_file = ${generate-certificate:cert_file}
-key_file = ${generate-certificate:key_file}
+cert_file = ${certificate-authority-jupyter:cert-file}
+key_file = ${certificate-authority-jupyter:key-file}
 logfile = ${directory:log}/ipython_notebook.log
 notebook_dir = ${directory:notebook_dir}
 
@@ -54,20 +53,13 @@ notebook_dir = ${directory:notebook_dir}
 recipe = slapos.recipe.template:jinja2
 mode = 0644
 
-[generate-certificate]
-; TODO: there is a slapos recipe to generate certificates. Use it instead
-recipe = plone.recipe.command
-command =
-  if [ ! -e ${instance-parameter:key_file} ]
-  then
-    {{ openssl_output }} req -x509 -nodes -days 3650 \
-      -subj "/C=AA/ST=X/L=X/O=Dis/CN=${instance-parameter:host}" \
-      -newkey rsa:1024 -keyout ${instance-parameter:key_file} \
-      -out ${instance-parameter:cert_file}
-  fi
-update-command = ${:command}
-cert_file = ${directory:etc}/ipython_notebook_cert.crt
-key_file = ${directory:etc}/ipython_notebook_cert.key
+[certificate-authority-jupyter]
+<= certificate-authority
+recipe = slapos.cookbook:certificate_authority.request
+openssl-binary = {{ openssl_output }}
+cert-file = ${directory:etc}/ipython_notebook_cert.crt
+key-file = ${directory:etc}/ipython_notebook_cert.key
+executable = ${instance:wrapper-path}
 
 [instance]
 recipe = slapos.cookbook:wrapper
