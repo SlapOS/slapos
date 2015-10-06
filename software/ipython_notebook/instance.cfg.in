@@ -52,7 +52,7 @@ notebook_dir = ${directory:notebook_dir}
 
 [dynamic-jinja2-template-base]
 recipe = slapos.recipe.template:jinja2
-mode = 0744
+mode = 0644
 
 [generate-certificate]
 ; TODO: there is a slapos recipe to generate certificates. Use it instead
@@ -146,7 +146,6 @@ context =
 <= dynamic-jinja2-template-base
 template = {{ kernel_json_location }}/{{ kernel_json_filename }}
 rendered = ${directory:erp5_kernel_dir}/kernel.json
-mode = 0644
 context =
   raw python_executable {{ bin_directory }}/python2.7
   key kernel_dir erp5-kernel:rendered
