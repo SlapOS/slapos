@@ -1,0 +1,105 @@
+PidFile "{{ parameter_dict.get('pid-file') }}"
+
+StartServers 1
+ServerLimit 1
+ThreadLimit 4
+ThreadsPerChild 4
+
+ServerName example.com
+ServerAdmin someone@email
+<IfDefine !MonitorPort>
+Listen [{{ parameter_dict.get('listening-ip') }}]:{{ parameter_dict.get('port') }}
+Define MonitorPort
+</IfDefine>
+DocumentRoot "{{ directory.get('www') }}"
+ErrorLog "{{ parameter_dict.get('error-log') }}"
+LoadModule unixd_module modules/mod_unixd.so
+LoadModule access_compat_module modules/mod_access_compat.so
+LoadModule authz_core_module modules/mod_authz_core.so
+LoadModule authn_core_module modules/mod_authn_core.so
+LoadModule authz_host_module modules/mod_authz_host.so
+LoadModule mime_module modules/mod_mime.so
+LoadModule cgid_module modules/mod_cgid.so
+LoadModule dir_module modules/mod_dir.so
+LoadModule ssl_module modules/mod_ssl.so
+LoadModule alias_module modules/mod_alias.so
+LoadModule autoindex_module modules/mod_autoindex.so
+LoadModule auth_basic_module modules/mod_auth_basic.so
+LoadModule authz_user_module modules/mod_authz_user.so
+LoadModule authn_file_module modules/mod_authn_file.so
+LoadModule proxy_module      modules/mod_proxy.so
+LoadModule proxy_http_module modules/mod_proxy_http.so
+LoadModule rewrite_module modules/mod_rewrite.so
+
+# SSL Configuration
+<IfDefine !SSLConfigured>
+Define SSLConfigured
+SSLCertificateFile {{ parameter_dict.get('cert-file') }}
+SSLCertificateKeyFile {{ parameter_dict.get('key-file') }}
+SSLRandomSeed startup builtin
+SSLRandomSeed connect builtin
+SSLRandomSeed startup /dev/urandom 256
+SSLRandomSeed connect builtin
+SSLProtocol -ALL +SSLv3 +TLSv1
+SSLHonorCipherOrder On
+SSLCipherSuite RC4-SHA:HIGH:!ADH
+</IfDefine>
+
+AddType application/hal+json .haljson
+SSLEngine   On
+ScriptSock {{ parameter_dict.get('cgid-pid-file') }}
+<Directory {{ directory.get('www') }}>
+  SSLVerifyDepth    1
+  SSLRequireSSL
+  SSLOptions        +StrictRequire
+  # XXX: security????
+  DirectoryIndex index.html
+  Options FollowSymLinks
+  Order Deny,Allow
+  AuthType Basic
+  AuthName "Private access"
+  AuthUserFile "{{ parameter_dict.get('htpasswd-file') }}"
+  Require valid-user
+</Directory>
+
+Alias /private {{ directory.get('private') }}/
+<Directory {{ directory.get('private') }}>
+  Order Deny,Allow
+  Deny from env=AUTHREQUIRED
+  <Files ".??*">
+    Order Allow,Deny
+    Deny from all
+  </Files>
+  AuthType Basic
+  AuthName "Private access"
+  AuthUserFile "{{ parameter_dict.get('htpasswd-file') }}"
+  Require valid-user
+  Options Indexes FollowSymLinks
+  Satisfy all
+</Directory>
+
+Alias /public {{ directory.get('public') }}/
+<Directory {{ directory.get('public') }}>
+  Options Indexes FollowSymLinks
+  Order Allow,Deny
+  Allow from all
+</Directory>
+
+Alias /cgi-bin {{ directory.get('cgi-bin') }}
+<Directory {{ directory.get('cgi-bin') }}>
+  # XXX security ???
+  Order Deny,Allow
+  Deny from all
+  <Files "*.cgi">
+    Order Deny,Allow
+    Deny from env=AUTHREQUIRED
+    AuthType Basic
+    AuthName "Private access"
+    AuthUserFile "{{ parameter_dict.get('htpasswd-file') }}"
+    Require valid-user
+  </Files>
+  Options +ExecCGI
+  AddHandler cgi-script .cgi
+  Options Indexes FollowSymLinks
+  Satisfy all
+</Directory>
