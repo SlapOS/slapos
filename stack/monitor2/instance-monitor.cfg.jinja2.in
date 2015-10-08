@@ -260,7 +260,7 @@ curl_path = {{ curl_executable_location }}
 [monitor-httpd-promise-conf]
 recipe = slapos.recipe.template:jinja2
 rendered = ${directory:monitor-promise}/${monitor-httpd-promise:filename}.cfg
-template = {{ monitor_httpd_promise_conf }}
+template = {{ monitor_service_conf_template }}
 mode = 0644
 context = section parameter_dict monitor-httpd-promise-conf-parameter
 
@@ -280,6 +280,17 @@ mode = 0755
 context =
   raw python_executable {{ python_executable }}
   raw password_changed_once_path ${directory:var}/monitor-password-changed-once
+
+[monitor-password-promise-conf-parameter]
+title = Monitor password
+frequency = */5 * * * *
+
+[monitor-password-promise-conf]
+recipe = slapos.recipe.template:jinja2
+template = {{ monitor_service_conf_template }}
+rendered = ${directory:monitor-promise}/${monitor-password-promise:filename}.cfg
+mode = 0644
+context = section parameter_dict monitor-password-promise-conf-parameter
 
 [publish]
 recipe = slapos.cookbook:publish
@@ -305,4 +316,5 @@ parts =
   monitor-httpd-promise
   monitor-httpd-promise-conf
   monitor-password-promise
+  monitor-password-promise-conf
   publish
