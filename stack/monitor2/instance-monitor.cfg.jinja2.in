@@ -271,6 +271,16 @@ frequency = * * * * *
 public-path-list = ${monitor-httpd-conf-parameter:access-log} ${monitor-httpd-conf-parameter:error-log}
 #private-path-list =
 
+[monitor-password-promise]
+recipe = slapos.recipe.template:jinja2
+template = {{ monitor_password_promise_template }}
+rendered = ${directory:monitor-promise}/${:filename}
+filename = monitor-password
+mode = 0755
+context =
+  raw python_executable {{ python_executable }}
+  raw password_changed_once_path ${directory:var}/monitor-password-changed-once
+
 [publish]
 recipe = slapos.cookbook:publish
 monitor-url = ${monitor-httpd-conf-parameter:url}
@@ -294,4 +304,5 @@ parts =
   ca-httpd
   monitor-httpd-promise
   monitor-httpd-promise-conf
+  monitor-password-promise
   publish
