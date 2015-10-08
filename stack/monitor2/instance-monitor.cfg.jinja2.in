@@ -66,6 +66,9 @@ www = ${directory:monitor}/web
 web-dir = ${directory:monitor}/web
 log = ${directory:log}/monitor
 promise-wrapper = ${directory:var}/monitor-promise-wrapper
+monitor-var = ${directory:var}/monitor
+monitor-password-var = ${monitor-directory:monitor-var}/password
+monitor-password-interface = ${monitor-directory:monitor-password-var}/password/interface
 
 [logrotate-directory]
 recipe = slapos.cookbook:mkdirectory
@@ -287,6 +290,7 @@ context =
 [monitor-password-promise-conf-parameter]
 title = Monitor password
 frequency = */5 * * * *
+private-path-list = ${monitor-directory:monitor-password-interface}
 
 [monitor-password-promise-conf]
 recipe = slapos.recipe.template:jinja2
@@ -304,6 +308,12 @@ context =
   key password_changed_once_path monitor-password-parameter:password-changed-once-path
   raw htpasswd_executable {{ apache_location }}/bin/htpasswd
   key htpasswd_path httpd-monitor-htpasswd:htpasswd-path
+
+[monitor-password-promise-interface]
+recipe = slapos.recipe.template:jinja2
+template = {{ monitor_password_promise_interface_template }}
+rendered = ${monitor-directory:monitor-password-interface}/index.html
+context =
 
 [publish]
 recipe = slapos.cookbook:publish
@@ -331,4 +341,5 @@ parts =
   monitor-password-promise
   monitor-password-promise-conf
   monitor-password-cgi
+  monitor-password-promise-interface
   publish
