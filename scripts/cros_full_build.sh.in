@@ -26,10 +26,12 @@ for board in ${BOARDS}; do
   BUILD_LOG={{ instance_log_dir }}/cros_build.log
   
   # preparing packages (for chroot and image)
+  date >> $BUILD_LOG
   echo "building packages for a ${board}-flavoured Chromium OS..." >> $BUILD_LOG
   cros_sdk -- ./build_packages --board=${board} >> $BUILD_LOG
   
   # Chromium original dev image
+  date >> $BUILD_LOG
   echo "building image for a ${board}-flavoured Chromium OS..." >> $BUILD_LOG
   cros_sdk -- ./build_image --board=${board} >> $BUILD_LOG \
     && echo "removing old image if any and creating image file $IMAGE_LOCATION..." >> $BUILD_LOG \
@@ -37,10 +39,11 @@ for board in ${BOARDS}; do
     && cros_sdk -- cros flash --board=${board} file://$IMAGE_LOCATION >> $BUILD_LOG
   
   # NayuOS
+  date >> $BUILD_LOG
   echo "rebuilding image with noenable_rootfs_verification and modifying image" >> $BUILD_LOG
-  cros_sdk -- ./build_image --board=${board} --noenable_rootfs_verification >> $BUILD_LOG \
-    && cros_sdk -- ./modify_image.sh ${board} \
+  cros_sdk -- ./build_image --noenable_rootfs_verification --board=${board} >> $BUILD_LOG \
     && echo "modifying image, removing old image if any and creating image file $NAYU_IMAGE_LOCATION..." >> $BUILD_LOG \
+    && cros_sdk -- ./modify_image.sh ${board} \
     && cros_sdk -- rm -f $NAYU_IMAGE_LOCATION && cros_sdk -- touch $NAYU_IMAGE_LOCATION \
     && cros_sdk -- cros flash --board=${board} file://$NAYU_IMAGE_LOCATION >> $BUILD_LOG
   
