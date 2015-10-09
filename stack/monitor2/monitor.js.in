@@ -152,8 +152,11 @@
       "<p>Red square means the feature has a problem, green square means it is ok.</p>",
       "<p>You can click on a feature below to get more precise information.</p>"
     ].join("\n")), div = document.createElement("div"), tmp;
-    [].forEach.call(element_list, function (element) {
-      if (element.parentNode.parentNode) { return; }
+    [].reduce.call(element_list, function (array, element) {
+      if (element.parentNode.parentNode) { return array; }
+      array.push(element);
+      return array;
+    }, []).forEach(function (element) {
       root.appendChild(element);
     });
     document.title = monitor_title;
