@@ -10,7 +10,7 @@ import json
 
 # erp5_url from buildout
 # TODO: Uncomment after adding automated installation of erp5-data-notebook bt5
-# url = "{{ erp5_url }}"
+# url = ""
 # url  = "%s/erp5/Base_executeJupyter"%url
 
 class MagicInfo:
@@ -71,6 +71,11 @@ class ERP5Kernel(Kernel):
     self.status_code = status_code
     self.reference = None
     self.title = None
+    # Allowed HTTP request code list for making request to erp5 from Kernel
+    # This list should be to used check status_code before making requests to erp5
+    self.allowed_HTTP_request_code_list = range(500, 511)
+    # Append request code 200 in the allowed HTTP status code list
+    self.allowed_HTTP_request_code_list.append(200)
 
   def display_response(self, response=None):
     """
@@ -154,8 +159,7 @@ class ERP5Kernel(Kernel):
                         title=None, *args, **kwargs):
     """
       Function to make request to erp5 as per the magics.
-      Should return the response json object or the response message been sent
-      as parameter for this function.
+      Should return the response json object.
     """
 
     try:
@@ -176,8 +180,8 @@ class ERP5Kernel(Kernel):
       self.status_code = erp5_request.status_code
 
       # Dispaly error response in case the request give any other status
-      # except 200
-      if self.status_code != 200:
+      # except 200 and 5xx(which is for errors on server side)
+      if self.status_code not in self.allowed_HTTP_request_code_list:
         self.response = '''Error code %s on request to ERP5,\n
         check credentials or ERP5 family URL'''%self.status_code
       else:
@@ -240,38 +244,19 @@ class ERP5Kernel(Kernel):
             self.display_response(response=self.response)
 
       else:
-        if self.status_code == 200:
+        # Check for status_code before making request to erp5 and make request in
+        # only if the status_code is in the allowed_HTTP_request_code_list
+        if self.status_code in self.allowed_HTTP_request_code_list:
           self.make_erp5_request(code=code)
-          mime_type = 'text/plain'
-          try:
-            content = json.loads(self.response)
-            code_result = content['code_result']
-          # Display to frontend the error message for content status as 'error'
-            if content['status']=='error':
-              reply_content = {
-                'status': 'error',
-                'execution_count': self.execution_count,
-                'ename': content['ename'],
-                'evalue': content['evalue'],
-                'traceback': content['traceback']}
-              self.send_response(self.iopub_socket, u'error', reply_content)
-              return reply_content
-          # Catch exception for content which isn't json
-          except ValueError:
-            content = self.response
-            code_result = content
 
           # For 200 status_code, Kernel will receive predefined format for data
-          # from erp5 which is either json of result or simple result string
+          # from erp5 which is either json of result or simple result string 
           if self.status_code == 200:
             mime_type = 'text/plain'
             try:
               content = json.loads(self.response)
               code_result = content['code_result']
-              # Get mime_type from server itself
-              mime_type = content['mime_type']
-
-              # Display to frontend the error message for content status as 'error'
+            # Display to frontend the error message for content status as 'error'
               if content['status']=='error':
                 reply_content = {
                   'status': 'error',
@@ -281,12 +266,10 @@ class ERP5Kernel(Kernel):
                   'traceback': content['traceback']}
                 self.send_response(self.iopub_socket, u'error', reply_content)
                 return reply_content
-
             # Catch exception for content which isn't json
             except ValueError:
               content = self.response
               code_result = content
-
           # Display basic error message to frontend in case of error on server side
           else:
             self.make_erp5_request(code=code)
