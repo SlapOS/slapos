@@ -1,59 +1,107 @@
-import datetime
-import PyRSS2Gen
 import sys
-import sqlite3
-import time
+import os
+import json
+import datetime
 import base64
+import hashlib
 
-# Based on http://thehelpfulhacker.net/2011/03/27/a-rss-feed-for-your-crontabs/
-
-# ### Defaults
-TITLE = sys.argv[1]
-LINK = sys.argv[2]
-db_path = sys.argv[3]
-DESCRIPTION = TITLE
-SUCCESS = "SUCCESS"
-FAILURE = "FAILURE"
-
-items = []
-status = ""
-
-current_timestamp = int(time.time())
-# We only build the RSS for the last ten days
-period = 3600 * 24 * 10
-db = sqlite3.connect(db_path)
-rows = db.execute("select timestamp, status from status where timestamp>? order by timestamp", (current_timestamp - period,))
-for row in rows:
-  line_timestamp, line_status = row
-  line_status = line_status.encode()
-
-  if line_status == status:
-    continue
-
-  status = line_status
-
-  event_time = datetime.datetime.fromtimestamp(line_timestamp).strftime('%Y-%m-%d %H:%M:%S')
-
-  individual_rows = db.execute("select status, element, output from individual_status where timestamp=?", (line_timestamp,))
-  description = '\n'.join(['%s: %s %s' % row for row in individual_rows])
-
-  rss_item = PyRSS2Gen.RSSItem(
-    title = status,
-    description = "%s: %s\n%s" % (event_time, status, description),
-    link = LINK,
-    pubDate = event_time,
-    guid = PyRSS2Gen.Guid(base64.b64encode("%s, %s" % (event_time, status)))
+def main():
+  _, title, link, public_folder, previous_status_path, output_path = sys.argv
+  final_status = "OK";
+  # getting status
+  for filename in os.listdir(public_folder):
+    if filename.endswith(".status.json"):
+      filepath = os.path.join(public_folder, filename)
+      status = None
+      try:
+        status = json.load(open(filepath, "r"))
+      except ValueError:
+        continue
+      try:
+        if status["status"] != "OK":
+          final_status = "BAD"
+          break
+      except KeyError:
+        final_status = "BAD"
+        break
+  # checking previous status
+  try:
+    status = open(previous_status_path, "r").readline(4)
+    if status == final_status:
+      return 0
+  except IOError:
+    pass
+  # update status
+  open(previous_status_path, "w").write(final_status)
+  # generating RSS
+  utcnow = datetime.datetime.utcnow()
+  open(output_path, "w").write(
+    newRssString(
+      title,
+      title,
+      link,
+      utcnow,
+      utcnow,
+      "60",
+      [
+        newRssItemString(
+          "Status is %s" % final_status,
+          "Status is %s" % final_status,
+          link,
+          newGuid("%s, %s" % (utcnow, final_status)),
+          utcnow,
+        )
+      ],
     )
-  items.append(rss_item)
-
-### Build the rss feed
-items.reverse()
-rss_feed = PyRSS2Gen.RSS2 (
-  title = TITLE,
-  link = LINK,
-  description = DESCRIPTION,
-  lastBuildDate = datetime.datetime.utcnow(),
-  items = items
   )
 
-print rss_feed.to_xml()
+
+def escapeHtml(string):
+  return string.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("\"", "&quot;")
+
+def newGuid(string):
+  sha256 = hashlib.sha256()
+  sha256.update(string)
+  return sha256.hexdigest()
+
+def newRssItemString(title, description, link, guid, pub_date, guid_is_perma_link=True):
+  return """<item>
+ <title>%(title)s</title>
+ <description>%(description)s</description>
+ <link>%(link)s</link>
+ <guid isPermaLink="%(guid_is_perma_link)s">%(guid)s</guid>
+ <pubDate>%(pub_date)s</pubDate>
+</item>""" % {
+    "title": escapeHtml(title),
+    "description": escapeHtml(description),
+    "link": escapeHtml(link),
+    "guid": escapeHtml(guid),
+    "pub_date": escapeHtml(pub_date.strftime("%a, %d %b %Y %H:%M:%S +0000")),
+    "guid_is_perma_link": escapeHtml(repr(guid_is_perma_link).lower()),
+  }
+
+def newRssString(title, description, link, last_build_date, pub_date, ttl, rss_item_string_list):
+  return """<?xml version="1.0" encoding="UTF-8" ?>
+<rss version="2.0">
+<channel>
+ <title>%(title)s</title>
+ <description>%(description)s</description>
+ <link>%(link)s</link>
+ <lastBuildDate>%(last_build_date)s</lastBuildDate>
+ <pubDate>%(pub_date)s</pubDate>
+ <ttl>%(ttl)s</ttl>
+%(items)s
+</channel>
+</rss>
+""" % {
+    "title": escapeHtml(title),
+    "description": escapeHtml(description),
+    "link": escapeHtml(link),
+    "last_build_date": escapeHtml(last_build_date.strftime("%a, %d %b %Y %H:%M:%S +0000")),
+    "pub_date": escapeHtml(pub_date.strftime("%a, %d %b %Y %H:%M:%S +0000")),
+    "ttl": escapeHtml(str(ttl)),
+    "items": "\n\n".join([" " + item.replace("\n", "\n ") for item in rss_item_string_list]),
+  }
+
+if __name__ == "__main__":
+  exit(main())

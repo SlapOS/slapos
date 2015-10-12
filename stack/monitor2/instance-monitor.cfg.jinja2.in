@@ -69,6 +69,7 @@ promise-wrapper = ${directory:var}/monitor-promise-wrapper
 monitor-var = ${directory:var}/monitor
 monitor-password-var = ${monitor-directory:monitor-var}/password
 monitor-password-interface = ${monitor-directory:monitor-password-var}/password/interface
+monitor-status2rss-var = ${monitor-directory:monitor-var}/status2rss
 
 [logrotate-directory]
 recipe = slapos.cookbook:mkdirectory
@@ -181,6 +182,18 @@ mode = 0700
 context =
     key content :command
 command = kill -USR1 $(cat ${monitor-httpd-conf-parameter:pid-file})
+
+[monitor-status2rss-wrapper]
+recipe = slapos.cookbook:wrapper
+command-line = {{ python_executable }} {{ status2rss_executable_path }} '${monitor-instance-parameter:monitor-title}' '${monitor-httpd-conf-parameter:url}feed' ${monitor-directory:public} ${monitor-directory:monitor-status2rss-var}/previous_status ${monitor-directory:web-dir}/feed
+wrapper-path = ${directory:bin}/monitor-status2rss.py
+
+[monitor-status2rss-cron-entry]
+recipe = slapos.cookbook:cron.d
+cron-entries = ${cron:cron-entries}
+name = monitor-status2rss
+frequency = * * * * *
+command = ${monitor-status2rss-wrapper:wrapper-path}
 
 [monitor-web-default-promise-interface]
 recipe = slapos.recipe.template:jinja2
@@ -342,4 +355,5 @@ parts =
   monitor-password-promise-conf
   monitor-password-cgi
   monitor-password-promise-interface
+  monitor-status2rss-cron-entry
   publish
