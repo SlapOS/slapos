@@ -185,7 +185,7 @@ command = kill -USR1 $(cat ${monitor-httpd-conf-parameter:pid-file})
 
 [monitor-status2rss-wrapper]
 recipe = slapos.cookbook:wrapper
-command-line = {{ python_executable }} {{ status2rss_executable_path }} '${monitor-instance-parameter:monitor-title}' '${monitor-httpd-conf-parameter:url}feed' ${monitor-directory:public} ${monitor-directory:monitor-status2rss-var}/previous_status ${monitor-directory:web-dir}/feed
+command-line = {{ python_executable }} {{ status2rss_executable_path }} '${monitor-instance-parameter:monitor-title}' '${monitor-httpd-conf-parameter:url}' ${monitor-directory:public} ${monitor-directory:monitor-status2rss-var}/previous_status ${monitor-directory:web-dir}/feed
 wrapper-path = ${directory:bin}/monitor-status2rss.py
 
 [monitor-status2rss-cron-entry]
