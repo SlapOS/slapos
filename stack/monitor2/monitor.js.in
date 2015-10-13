@@ -2,7 +2,20 @@
 (function () {
   "use strict";
 
-  var monitor_title = '{{ dumps(monitor_title)[5:-1] }}';
+  var monitor_title = '{{ dumps(monitor_title)[5:-1] }}',
+    RSS_ICON_DATA_URI = [
+      "data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIj8+CjwhRE9DVFlQR",
+      "SBzdmcgUFVCTElDICItLy9XM0MvL0RURCBTVkcgMS4xLy9FTiIgImh0dHA6Ly93d3cu",
+      "dzMub3JnL0dyYXBoaWNzL1NWRy8xLjEvRFREL3N2ZzExLmR0ZCI+CjxzdmcgeG1sbnM",
+      "9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB2ZXJzaW9uPSIxLjEiIHdpZHRoPS",
+      "IxMjhweCIgaGVpZ2h0PSIxMjhweCIgdmlld0JveD0iMCAwIDI1NiAyNTYiPgo8cmVjd",
+      "CB3aWR0aD0iMjU2IiBoZWlnaHQ9IjI1NiIgeD0iMCIgIHk9IjAiICBmaWxsPSIjRjQ5",
+      "QzUyIi8+CjxjaXJjbGUgY3g9IjY4IiBjeT0iMTg5IiByPSIyNCIgZmlsbD0iI0ZGRiI",
+      "vPgo8cGF0aCBkPSJNMTYwIDIxM2gtMzRhODIgODIgMCAwIDAgLTgyIC04MnYtMzRhMT",
+      "E2IDExNiAwIDAgMSAxMTYgMTE2eiIgZmlsbD0iI0ZGRiIvPgo8cGF0aCBkPSJNMTg0I",
+      "DIxM0ExNDAgMTQwIDAgMCAwIDQ0IDczIFYgMzhhMTc1IDE3NSAwIDAgMSAxNzUgMTc1",
+      "eiIgZmlsbD0iI0ZGRiIvPgo8L3N2Zz4K"
+    ].join("");
 
   function loadJson(url) {
     /*global XMLHttpRequest */
@@ -145,7 +158,11 @@
 
   function bootstrap(root) {
     var element_list = htmlToElementList([
-      "<header><a href=\"\" class=\"as-button\">Refresh</a> <a href=\"/logout\" class=\"as-button\">Logout</a></header>",
+      "<header>",
+      "  <a href=\"\" class=\"as-button\">Refresh</a>",
+      "  <a href=\"/logout\" class=\"as-button\">Logout</a>",
+      "  <a href=\"/feed\"><img src=\"" + RSS_ICON_DATA_URI + "\" style=\"width: 10mm; height: 10mm; vertical-align: middle;\" alt=\"[RSS Feed]\" /></a>",
+      "</header>",
       "<h1>" + monitor_title + "</h1>",
       "<h2>System health status</h2>",
       "<p>This interface allow to see the status of several features, it may show problems and sometimes provides a way to fix them.</p>",
