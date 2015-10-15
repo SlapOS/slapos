@@ -130,8 +130,10 @@ erp5_url = ${slapconfiguration:configuration.erp5_url}
 <= dynamic-jinja2-template-base
 template = {{ erp5_kernel_location }}/{{ erp5_kernel_filename }}
 rendered = ${directory:erp5_kernel_dir}/ERP5kernel.py
+# Executable python used for erp5-kernel should always be ipython so as to use
+# requests library for ERP5Kernel.py
 context =
-  raw python_executable {{ bin_directory }}/python2.7
+  raw python_executable {{ bin_directory }}/ipython
   key erp5_url slapconfiguration:configuration.erp5_url
 
 [kernel-json]
