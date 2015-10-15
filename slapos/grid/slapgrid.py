@@ -174,12 +174,10 @@ def merged_options(args, configp):
     options['firewall']['firewall_cmd'] = options['firewall'].get(
             "firewall_cmd", "firewall-cmd")
     options['firewall']['firewall_executable'] = options['firewall'].get(
-            "firewall_executable", "firewalld --nofork")
-    options['firewall']['firewall_executable'] = options['firewall'].get(
-            "firewall_executable", "firewalld --nofork")
+            "firewall_executable", "")
     options['firewall']['reload_config_cmd'] = options['firewall'].get(
             "reload_config_cmd",
-            "slapos node restart firewall").split(' ')
+            "slapos node restart firewall")
 
   return options
 
@@ -390,7 +388,8 @@ class Slapgrid(object):
                                                'etc', 'supervisord.conf.d')
     supervisord_firewall_conf = os.path.join(supervisord_conf_folder_path,
                                               'firewall.conf')
-    if not self.firewall_conf or self.firewall_conf.get('testing', False):
+    if not self.firewall_conf or not self.firewall_conf.get('firewall_executable') \
+      or self.firewall_conf.get('testing', False):
       if os.path.exists(supervisord_firewall_conf):
         os.unlink(supervisord_firewall_conf)
       return
@@ -602,6 +601,7 @@ stderr_logfile_backups=1
     instance_path = os.path.join(self.instance_root, partition_id)
     firewall_rules = os.path.join(instance_path, '.slapos-firewalld-rules')
     json_list = []
+    reload_rules = False
 
     if os.path.exists(firewall_rules):
       with open(firewall_rules, 'r') as frules:
@@ -616,7 +616,7 @@ stderr_logfile_backups=1
               json_list.append(command_list.pop(i))
               skip_check = True
               break
-
+        # Only if add==True, do not try to remove the rule
         if skip_check:
           continue
         # Check if this rule exists in iptables
@@ -629,6 +629,7 @@ stderr_logfile_backups=1
         self.logger.debug('%s: %s' % (check_cmd, check_result))
 
         if check_result.strip() == 'yes':
+          reload_rules = True
           command = command.replace('--add-rule', '--remove-rule')
           self.logger.debug(command)
           cmd_process = subprocess.Popen(command,
@@ -637,10 +638,12 @@ stderr_logfile_backups=1
                                     shell=True)
           result = cmd_process.communicate()[0]
           if cmd_process.returncode == 1:
-            self.logger.warning('FirewallD: %s' % result)
+            raise Exception("Failed to remove firewalld rule %s. \n%s" % (
+                            command, result))
 
     if add:
       for i in range(0, len(command_list)):
+        reload_rules = True
         command = command_list.pop()
         self.logger.debug(command)
         cmd_process = subprocess.Popen(command,
@@ -649,23 +652,26 @@ stderr_logfile_backups=1
                                   shell=True)
         result = cmd_process.communicate()[0]
         if cmd_process.returncode == 1:
-          self.logger.warning('FirewallD: %s' % result)
+            raise Exception("Failed to add firewalld rule %s. \n%s" % (
+                            command, result))
         json_list.append(command)
 
-    with open(firewall_rules, 'w') as frules:
-      frules.write(json.dumps(json_list))
-
-    # Apply changes: reload configuration
-    # XXX - need to check firewalld reload instead of restart
-    self.logger.info("Reloading firewall configuration...")
-    reload_cmd = self.firewall_conf['reload_config_cmd']
-    reload_process = subprocess.Popen(reload_cmd,
-                                  stdout=subprocess.PIPE,
-                                  stderr=subprocess.PIPE,
-                                  shell=True)
-    result = reload_process.communicate()[0]
-    if reload_process.returncode == 1:
-      self.logger.warning('FirewallD: %s' % result)
+    if reload_rules:
+      # Apply changes: reload configuration
+      # XXX - need to check firewalld reload instead of restart
+      self.logger.info("Reloading firewall configuration...")
+      reload_cmd = self.firewall_conf['reload_config_cmd']
+      reload_process = subprocess.Popen(reload_cmd,
+                                    stdout=subprocess.PIPE,
+                                    stderr=subprocess.PIPE,
+                                    shell=True)
+      result = reload_process.communicate()[0]
+      if reload_process.returncode == 1:
+        self.logger.error('FirewallD Reload: %s' % result)
+        raise Exception("Failed to load firewalld rules with command %s" % reload_cmd)
+      
+      with open(firewall_rules, 'w') as frules:
+        frules.write(json.dumps(json_list))
 
   def _getFirewallRules(self, ip, ip_list, ip_type='ipv4'):
     """
