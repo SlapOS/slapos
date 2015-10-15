@@ -101,7 +101,7 @@ rendered = ${monitor-directory:knowledge0-cgi}/${:filename}
 filename = ipython-notebook-password.cgi
 context =
   raw config_cfg ${buildout:directory}/knowledge0.cfg
-  raw python_executable {{ bin_directory }}/ipython
+  raw python_executable {{ python_executable }}
   key pwd monitor-directory:knowledge0-cgi
   key this_file :filename
   key httpd_graceful cgi-httpd-graceful-wrapper:rendered
@@ -139,7 +139,7 @@ context =
 template = {{ kernel_json_location }}/{{ kernel_json_filename }}
 rendered = ${directory:erp5_kernel_dir}/kernel.json
 context =
-  raw python_executable {{ bin_directory }}/python2.7
+  raw python_executable {{ python_executable }}
   key kernel_dir erp5-kernel:rendered
   raw display_name ERP5
   raw language_name python
