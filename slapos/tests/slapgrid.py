@@ -1977,9 +1977,9 @@ class TestSlapgridCPWithFirewall(MasterMixin, unittest.TestCase):
   def setFirewallConfig(self, source_ip=""):
     firewall_conf= dict(
       authorized_sources=source_ip,
-      firewall_cmd='/bin/sh echo',
-      firewall_executable='/bin/sh echo "service firewall started"',
-      reload_config_cmd='/bin/sh echo "Config reloaded."',
+      firewall_cmd='/bin/echo',
+      firewall_executable='/bin/echo "service firewall started"',
+      reload_config_cmd='/bin/echo "Config reloaded."',
       log_file='fw-log.log',
       testing=True,
     )
@@ -2032,6 +2032,7 @@ class TestSlapgridCPWithFirewall(MasterMixin, unittest.TestCase):
   def test_checkAddFirewallRules(self):
     computer = ComputerForTest(self.software_root, self.instance_root)
     self.setFirewallConfig()
+    self.grid.firewall_conf['firewall_cmd'] = '/bin/echo "yes" #'
     self.ip_address_list = computer.ip_address_list
     instance = computer.instance_list[0]
     ip = instance.full_ip_list[0][1]
