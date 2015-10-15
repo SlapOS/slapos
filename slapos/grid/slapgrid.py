@@ -175,6 +175,8 @@ def merged_options(args, configp):
             "firewall_cmd", "firewall-cmd")
     options['firewall']['firewall_executable'] = options['firewall'].get(
             "firewall_executable", "")
+    options['firewall']['dbus_executable'] = options['firewall'].get(
+            "dbus_executable", "")
     options['firewall']['reload_config_cmd'] = options['firewall'].get(
             "reload_config_cmd",
             "slapos node restart firewall")
@@ -398,6 +400,7 @@ class Slapgrid(object):
 directory=/opt/slapos
 command=%(firewall_executable)s
 process_name=firewall
+priority=5
 autostart=true
 autorestart=true
 startsecs=0
@@ -419,9 +422,52 @@ stderr_logfile_backups=1
         'log_file': self.firewall_conf.get('log_file', '/var/log/firewall.log')}
 
     if not os.path.exists(supervisord_conf_folder_path):
-                          os.makedirs(supervisord_conf_folder_path)
-    updateFile(
-      supervisord_firewall_conf, supervisord_firewall_program_conf)
+      os.makedirs(supervisord_conf_folder_path)
+    updateFile(supervisord_firewall_conf, supervisord_firewall_program_conf)
+
+
+  def _generateDbusSupervisorConf(self):
+    """If dbus command is defined in slapos configuration, generate
+      supervisor configuration entry for dbus daemon.
+    """
+    supervisord_conf_folder_path = os.path.join(self.instance_root,
+                                               'etc', 'supervisord.conf.d')
+    supervisord_dbus_conf = os.path.join(supervisord_conf_folder_path,
+                                              'dbus.conf')
+    if not self.firewall_conf or not self.firewall_conf.get('dbus_executable') \
+      or self.firewall_conf.get('testing', False):
+      if os.path.exists(supervisord_dbus_conf):
+        os.unlink(supervisord_dbus_conf)
+      return
+    supervisord_dbus_program_conf = """\
+[program:dbus]
+directory=/opt/slapos
+command=%(dbus_executable)s
+process_name=dbus
+priority=1
+autostart=true
+autorestart=true
+startsecs=0
+startretries=0
+exitcodes=0
+stopsignal=TERM
+stopwaitsecs=60
+user=0
+group=0
+serverurl=AUTO
+redirect_stderr=true
+stdout_logfile=%(dbus_log_file)s
+stdout_logfile_maxbytes=100KB
+stdout_logfile_backups=1
+stderr_logfile=%(dbus_log_file)s
+stderr_logfile_maxbytes=100KB
+stderr_logfile_backups=1
+""" %  {'dbus_executable': self.firewall_conf['dbus_executable'],
+        'dbus_log_file': self.firewall_conf.get('dbus_log_file', '/var/log/dbus.log')}
+
+    if not os.path.exists(supervisord_conf_folder_path):
+      os.makedirs(supervisord_conf_folder_path)
+    updateFile(supervisord_dbus_conf, supervisord_dbus_program_conf)
 
   def checkEnvironmentAndCreateStructure(self):
     """Checks for software_root and instance_root existence, then creates
@@ -433,6 +479,7 @@ stderr_logfile_backups=1
 
     createSupervisordConfiguration(self.instance_root, self._getWatchdogLine())
     self._generateFirewallSupervisorConf()
+    self._generateDbusSupervisorConf()
 
   def _launchSupervisord(self):
     if not self.forbid_supervisord_automatic_launch:
