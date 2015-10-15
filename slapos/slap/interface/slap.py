@@ -331,6 +331,12 @@ class IComputerPartition(IBuildoutController, IRequester):
       text -- message log of the status
     """
 
+  def getFullHostingIpAddressList():
+    """
+    Returns a dictionnary containing the latest status of the
+    computer partition.
+    """
+
 class IComputer(Interface):
   """
   Computer interface specification

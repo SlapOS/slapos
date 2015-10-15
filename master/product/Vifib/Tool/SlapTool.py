@@ -272,6 +272,33 @@ class SlapTool(BaseTool):
           self._getSlapPartitionByPackingList(_assertACI(computer_partition.getObject())))
     return xml_marshaller.xml_marshaller.dumps(slap_computer)
 
+  @UnrestrictedMethod
+  def _getHostingSubscriptionIpList(self, computer_id, computer_partition_id):
+    software_instance = self._getSoftwareInstanceForComputerPartition(
+                                          computer_id, computer_partition_id)
+    
+    if software_instance is None or \
+                        software_instance.getSlapState() == 'destroy_requested':
+        return xml_marshaller.xml_marshaller.dumps([])
+    # Search hosting subscription
+    hosting = software_instance.getSpecialiseValue()
+    while hosting and hosting.getPortalType() != "Hosting Subscription":
+      hosting = hosting.getSpecialiseValue()
+    ip_address_list = []
+    for instance in hosting.getSpecialiseRelatedValueList(
+                                              portal_type="Software Instance"):
+      computer_partition = instance.getAggregateValue(portal_type="Computer Partition")
+      if not computer_partition:
+        continue
+      for internet_protocol_address in computer_partition.contentValues(
+                                      portal_type='Internet Protocol Address'):
+        ip_address_list.append(
+              (internet_protocol_address.getNetworkInterface('').decode("UTF-8"),
+              internet_protocol_address.getIpAddress().decode("UTF-8"))
+        )
+    
+    return xml_marshaller.xml_marshaller.dumps(ip_address_list)
+
   security.declareProtected(Permissions.AccessContentsInformation,
     'getFullComputerInformation')
   def getFullComputerInformation(self, computer_id):
@@ -286,6 +313,28 @@ class SlapTool(BaseTool):
       self._logAccess(user, user, '#access %s' % computer_id)
     result = self._getComputerInformation(computer_id, user)
 
+    if self.REQUEST.response.getStatus() == 200:
+      # Keep in cache server for 7 days
+      self.REQUEST.response.setHeader('Cache-Control',
+                                      'public, max-age=1, stale-if-error=604800')
+      self.REQUEST.response.setHeader('Vary',
+                                      'REMOTE_USER')
+      self.REQUEST.response.setHeader('Last-Modified', rfc1123_date(DateTime()))
+      self.REQUEST.response.setBody(result)
+      return self.REQUEST.response
+    else:
+      return result
+
+  security.declareProtected(Permissions.AccessContentsInformation,
+    'getHostingSubscriptionIpList')
+  def getHostingSubscriptionIpList(self, computer_id, computer_partition_id):
+    """
+    Search and return all Computer Partition IP address related to one 
+    Hosting Subscription
+    """
+    result =  self._getHostingSubscriptionIpList(computer_id,
+                                                      computer_partition_id)
+    
     if self.REQUEST.response.getStatus() == 200:
       # Keep in cache server for 7 days
       self.REQUEST.response.setHeader('Cache-Control',
