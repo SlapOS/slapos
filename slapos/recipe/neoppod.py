@@ -24,6 +24,7 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #
 ##############################################################################
+import os
 from slapos.recipe.librecipe import GenericBaseRecipe
 from zc.buildout import UserError
 
@@ -51,10 +52,11 @@ class NeoBaseRecipe(GenericBaseRecipe):
       '-c', options['cluster'],
     ]
     if options['ssl']:
+      etc = os.path.join(self.buildout['buildout']['directory'], 'etc', '')
       option_list += (
-        '--ca', '~/etc/ca.crt',
-        '--cert', '~/etc/neo.crt',
-        '--key', '~/etc/neo.key',
+        '--ca', etc + 'ca.crt',
+        '--cert', etc + 'neo.crt',
+        '--key', etc + 'neo.key',
         )
     option_list.extend(self._getOptionList())
     return [self.createPythonScript(
