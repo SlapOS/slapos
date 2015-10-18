@@ -6,7 +6,14 @@ eggs-directory = {{ eggs_directory }}
 develop-eggs-directory = {{ develop_eggs_directory }}
 offline = true
 
-{% set erp5_request_parameters = json_module.loads(erp5_published_values.get('erp5_request_parameters')) -%}
+{% set erp5_request_parameters = erp5_published_values.get('erp5_request_parameters', '{}') -%}
+# The previous line might not give valid json for 'None', for that we have to
+# explicitly set 'erp5_request_parameters' value for empty json
+{% if erp5_request_parameters=='' -%}
+{%   set erp5_request_parameters = '{}' -%}
+{% endif -%}
+# Now, we'll load the required json for erp5_request_parameters
+{% set erp5_request_parameters = json_module.loads(erp5_request_parameters) -%}
 
 {% set publish_dict = {} -%}
 {% for name, value in erp5_request_parameters.iteritems() -%}
