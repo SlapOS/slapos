@@ -45,9 +45,14 @@ rendered = {{ template_jupyter }}
 
 [switch-softwaretype]
 recipe = slapos.cookbook:switch-softwaretype
+# For both software type 'default' and 'create-erp5-site', we want buildout for
+# instance-default.cfg.in to run, so, we use same sections for them
 default = dynamic-template-default:rendered
 create-erp5-site = dynamic-template-default:rendered
 jupyter = dynamic-template-jupyter:rendered
-erp5-cluster-create-erp5-site = dynamic-template-create-erp5-site:rendered
-erp5-cluster-default = dynamic-template-erp5:rendered
+# Following 2 software-types imitate the instance for 'create-erp5-site' and 'default'
+# The request for them is being sent by the instance-default file which is being
+# in the 'default' and 'create-erp5-site' above
+wendelin-create-erp5-site = dynamic-template-create-erp5-site:rendered
+wendelin-default = dynamic-template-erp5:rendered
   

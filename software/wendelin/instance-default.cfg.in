@@ -27,13 +27,17 @@ cert_file = ${slap-connection:cert-file}
 
 [request-erp5]
 <= slap-connection
-recipe = slapos.cookbook:request
+recipe = slapos.cookbook:requestoptional
 name = ERP5
 software-url = ${slap-connection:software-release-url}
+# For software-type 'default', we'll use 'wendelin-default' ST which has been
+# defined in instance.cfg.in and is imitating the 'default' of erp5 stack
+# That way we would request erp5 from wendelin almost similar to that we would 
+# be getting from erp5 stack. Same is for create-erp5-site ST
 {% if slap_software_type=='default'-%}
-{%   set software_type='erp5-cluster-default'-%}
+{%   set software_type='wendelin-default'-%}
 {% elif slap_software_type=='create-erp5-site' -%}
-{%   set software_type='erp5-cluster-create-erp5-site'-%}
+{%   set software_type='wendelin-create-erp5-site'-%}
 {% else -%}
 {%   set software_type=slap_software_type -%}
 {% endif -%}
