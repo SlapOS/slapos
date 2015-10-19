@@ -1,7 +1,0 @@
-#! /bin/bash
-
-# will modify all the images produced after running the script for the given board
-BOARD=$1
-./mount_gpt_image.sh -f $( ./get_latest_image.sh --board=${BOARD} )
-{{ commands }}
-./mount_gpt_image.sh -f $( ./get_latest_image.sh --board=${BOARD} ) -u

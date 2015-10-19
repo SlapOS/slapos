@@ -1,16 +1,36 @@
 #!/bin/bash
 #XXX: should not depend on the host's bash ^
 
-#################mo####### Download of sources using the "repo" command ########################
+######################## Download of sources using the "repo" command ########################
 DL_LOG={{ instance_log_dir }}/cros_sources_dl.log
+BRANCH={{ branch }}
 echo "getting Chromium OS sources..." >> $DL_LOG
 {{ depot_tools_export_path_cmd }}
 cd {{ cros_location }}
-repo init -u https://chromium.googlesource.com/chromiumos/manifest.git -b {{ branch }} >> $DL_LOG
+repo init -u https://chromium.googlesource.com/chromiumos/manifest.git -b ${BRANCH} >> $DL_LOG
 repo sync >> $DL_LOG
+
+############################## Prepare chroot environment ###################################
+{{ depot_tools_export_path_cmd }}
+cd {{ cros_location }}
+
+# create chroot environment (exit on failure)
+cros_sdk --download || exit 1
+
+# add custom script for modifying the final image after building
+# that is useful for custumizing Chromium OS and produce Nayu images for now
+cp {{ scripts_dir }}/modify_image.sh {{ cros_location }}/src/scripts/modify_image.sh \
+  && chmod 770 {{ cros_location }}/src/scripts/modify_image.sh || exit 1
+
+# add custom ebuilds
+for category in $( ls {{ ebuilds_dir }} ); do
+  echo ${category}
+  cp -R {{ ebuilds_dir }}/${category}/* {{ cros_location}}/src/third_party/chromiumos-overlay/${category}/
+done
 
 ######################################## Build ##############################################
 BOARDS="{{ boards_list }}"
+
 for board in ${BOARDS}; do
   echo ${board}
   if [ ${board} == daisy ]; then
@@ -18,18 +38,16 @@ for board in ${BOARDS}; do
     cros_sdk -- sudo sh -c "cp /etc/make.conf.user /etc/make.conf.user.save"
     cros_sdk -- sudo sh -c "echo 'ACCEPT_LICENSE=\"*\"' >> /etc/make.conf.user"
   fi
-  
-  {{ depot_tools_export_path_cmd }}
-  cd {{ cros_location }}
+
   IMAGE_LOCATION=${board}.chromiumos.img
   NAYU_IMAGE_LOCATION=${board}.nayuos.img
   BUILD_LOG={{ instance_log_dir }}/cros_build.log
-  
+
   # preparing packages (for chroot and image)
   date >> $BUILD_LOG
   echo "building packages for a ${board}-flavoured Chromium OS..." >> $BUILD_LOG
   cros_sdk -- ./build_packages --board=${board} >> $BUILD_LOG
-  
+
   # Chromium original dev image
   date >> $BUILD_LOG
   echo "building image for a ${board}-flavoured Chromium OS..." >> $BUILD_LOG
@@ -37,19 +55,41 @@ for board in ${BOARDS}; do
     && echo "removing old image if any and creating image file $IMAGE_LOCATION..." >> $BUILD_LOG \
     && cros_sdk -- rm -f $IMAGE_LOCATION && cros_sdk -- touch $IMAGE_LOCATION \
     && cros_sdk -- cros flash --board=${board} file://$IMAGE_LOCATION >> $BUILD_LOG
-  
+
   # NayuOS
   date >> $BUILD_LOG
   echo "rebuilding image with noenable_rootfs_verification and modifying image" >> $BUILD_LOG
   cros_sdk -- ./build_image --noenable_rootfs_verification --board=${board} >> $BUILD_LOG \
     && echo "modifying image, removing old image if any and creating image file $NAYU_IMAGE_LOCATION..." >> $BUILD_LOG \
+    && cros_sdk -- sudo install -d /usr/local/usr/lib/debug \
+    && cros_sdk -- sudo emerge-${board} net-misc/babeld-re6stnet net-libs/miniupnpc net-misc/re6stnet >> $BUILD_LOG \
     && cros_sdk -- ./modify_image.sh ${board} \
     && cros_sdk -- rm -f $NAYU_IMAGE_LOCATION && cros_sdk -- touch $NAYU_IMAGE_LOCATION \
-    && cros_sdk -- cros flash --board=${board} file://$NAYU_IMAGE_LOCATION >> $BUILD_LOG
-  
+    && cros_sdk -- cros flash --board=${board} file://$NAYU_IMAGE_LOCATION >> $BUILD_LOG \
+    || exit 1
+
+  # add some packages to the board's packages
+  echo "adding re6st and its dependencies to the chroot/build/${board}/packages..." >> $BUILD_LOG
   if [ ${board} == daisy ]; then
     echo "daisy board: removing accepted license for the next builds..."
-    cros_sdk -- sudo sh -c "cp /etc/make.conf.user.save /etc/make.conf.user"
+    cros_sdk -- sudo sh -c "mv /etc/make.conf.user.save /etc/make.conf.user"
   fi
 done
+
+####################################### Post build ##########################################
+# keep only the substring between - as current release
+RELEASE=$(sed 's/.*-\(.*\)-.*//' <<< "$BRANCH")
+DIR_IMAGE_LOCATION={{ cros_location }}/images/${RELEASE}/$(date +'%F')
+install ${DIR_IMAGE_LOCATION} -d
+mv {{ cros_location }}/src/scripts/*.img ${DIR_IMAGE_LOCATION}
+
+cd ${DIR_IMAGE_LOCATION}
+for hashfunction in md5sum sha1 sha256 sh512; do
+  ${hashfunction} *.img >> hashes.txt
+done
+
+for file in $(ls *.img); do
+  tar cfz ${file}.tar ${file}
+done
+
 exit 0
