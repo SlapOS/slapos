@@ -15,7 +15,7 @@ parts =
 
   frontend-promise
   content-promise
-  publish-connection-informations
+  publish-connection-information
   ${custom-application-deployment:part-list}
 
 eggs-directory = ${buildout:eggs-directory}
@@ -261,7 +261,7 @@ path = $${directory:report}/slapmonitor-xml
 #--
 #-- Publish instance parameters.
 
-[publish-connection-informations]
+[publish-connection-information]
 recipe = slapos.cookbook:publish
 backend_url = $${apache-php:url}
 url = $${request-frontend:connection-site_url}

@@ -34,7 +34,7 @@ return =
 # XXX: return ALL parameters (like nat rules), through jinja
   backend-url url ip
 
-[publish-connection-informations]
+[publish-connection-information]
 recipe = slapos.cookbook:publish
 backend-url = ${request-kvm:connection-backend-url}
 url = ${request-kvm:connection-url}

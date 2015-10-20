@@ -1,7 +1,7 @@
 [buildout]
 
 parts =
-  publish-connection-informations
+  publish-connection-information
   pbs
   logrotate
   cron
@@ -245,7 +245,7 @@ ignore-known-hosts-file = false
 #--
 #-- Publish instance parameters.
 
-[publish-connection-informations]
+[publish-connection-information]
 recipe = slapos.cookbook:publish
 ssh-key = $${sshkeys-dropbear:public-key-value}
 notification-url = http://[$${notifier:host}]:$${notifier:port}/notify
@@ -272,5 +272,5 @@ mode = 700
 context =
   key input_feed_directory directory:notifier-feeds
   key monitor_feed_directory monitor-directory:public-cgi
-  key base_url publish-connection-informations:feeds-url
+  key base_url publish-connection-information:feeds-url
   raw python_executable ${buildout:executable}
