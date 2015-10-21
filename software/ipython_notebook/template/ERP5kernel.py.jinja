@@ -18,11 +18,12 @@ class MagicInfo:
   Magics definition structure.
   Initializes a new MagicInfo class with specific paramters to identify a magic.
   """
-  def __init__(self, magic_name, variable_name, send_request, request_reference):
+  def __init__(self, magic_name, variable_name, send_request, request_reference, display_message):
     self.magic_name = magic_name
     self.variable_name = variable_name
     self.send_request = send_request
     self.request_reference = request_reference
+    self.display_message = display_message
 
 # XXX: New magics to be added here in the dictionary.
 # In this dictionary,
@@ -33,14 +34,17 @@ class MagicInfo:
 # variable_name(str) = Name of variable on which magic would be set in kernel
 # send_request(boolean) = Magics for which requests to erp5 backend need to be made
 # request_reference(boolean) = Request for notebook references(and titles) from erp5
+# display_message(boolean) = If the magics need to display message after
+#                             making request. Useful for magics which do get some
+#                             useful content from erp5 backend and need to display
 
 MAGICS = {
-  'erp5_user': MagicInfo('erp5_user', 'user', True, False),
-  'erp5_password': MagicInfo('erp5_password', 'password', True, False),
-  'erp5_url': MagicInfo('erp5_url', 'url', True, False),
-  'notebook_set_reference': MagicInfo('notebook_set_reference', 'reference', True, False),
-  'notebook_set_title': MagicInfo('notebook_set_title', 'title', False, False),
-  'my_notebooks': MagicInfo('my_notebooks', '', True, True)
+  'erp5_user': MagicInfo('erp5_user', 'user', True, False, True),
+  'erp5_password': MagicInfo('erp5_password', 'password', True, False, True),
+  'erp5_url': MagicInfo('erp5_url', 'url', True, False, True),
+  'notebook_set_reference': MagicInfo('notebook_set_reference', 'reference', True, False, True),
+  'notebook_set_title': MagicInfo('notebook_set_title', 'title', False, False, True),
+  'my_notebooks': MagicInfo('my_notebooks', '', True, True, False)
 }
 
 class ERP5Kernel(Kernel):
@@ -155,8 +159,8 @@ class ERP5Kernel(Kernel):
 
     return check_attributes
 
-  def make_erp5_request(self, request_reference=False, code=None, response=None,
-                        title=None, *args, **kwargs):
+  def make_erp5_request(self, request_reference=False, display_message=True,
+                        code=None, message=None, title=None, *args, **kwargs):
     """
       Function to make request to erp5 as per the magics.
       Should return the response json object.
@@ -187,8 +191,8 @@ class ERP5Kernel(Kernel):
       else:
         # Set value of self.response to the given value in case response from function
         # call. In all other case, response should be the content from request
-        if response:
-          self.response = response
+        if display_message and message:
+          self.response = message
         else:
           self.response = erp5_request.content
 
@@ -229,11 +233,12 @@ class ERP5Kernel(Kernel):
             checked_attribute = self.check_required_attributes()
             if checked_attribute and magic_info.send_request:
               # Call the function to send request to erp5 with the arguments given
-              self.make_erp5_request(response='\nPlease proceed',
-              request_reference=magic_info.request_reference)
+              self.make_erp5_request(message='\nPlease proceed',
+              request_reference=magic_info.request_reference,
+              display_message=magic_info.display_message)
 
               # Display response from erp5 request for magic
-              # Since this response would be either success messgae or failure
+              # Since this response would be either success message or failure
               # error message, both of which are string type, so, we can simply
               # display the stream response.
               self.display_response(response=self.response)
@@ -250,7 +255,7 @@ class ERP5Kernel(Kernel):
           self.make_erp5_request(code=code)
 
           # For 200 status_code, Kernel will receive predefined format for data
-          # from erp5 which is either json of result or simple result string 
+          # from erp5 which is either json of result or simple result string
           if self.status_code == 200:
             mime_type = 'text/plain'
             try:
