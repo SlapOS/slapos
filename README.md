@@ -1,6 +1,10 @@
 # NayuOS
 
-This is a SlapOS recipe to build Chromium OS. It needs to be put in the <code>/srv/slapgrid/\<part\>/srv/runner/project/slapos/software/</code> directory.
+This is a SlapOS recipe to build NayuOS. It needs to be put in the <code>/srv/slapgrid/\<part\>/srv/runner/project/slapos/software/</code> directory.
+
+## License
+
+GPL v2 or later
 
 ## Requirements
 
