@@ -1,0 +1,111 @@
+[buildout]
+
+parts =
+  publish-connection-informations
+  cron
+  certificate-authority
+  cron-entry-monitor
+  cron-entry-rss
+  deploy-index
+  deploy-settings-cgi
+  deploy-status-cgi
+  deploy-status-history-cgi
+  setup-static-files
+  certificate-authority
+  zero-parameters
+  public-symlink
+  cgi-httpd-wrapper
+  cgi-httpd-graceful-wrapper
+  monitor-promise
+  monitor-instance-log-access
+  cron-network-bench
+  symlink-re6st-logs
+  symlink-collected-logs
+  
+extends = {{ monitor_template_output }}
+
+
+eggs-directory = {{ eggs_directory }}
+develop-eggs-directory = {{ develop_eggs_directory }}
+offline = true
+
+[cron-network-bench]
+<= cron
+recipe = slapos.cookbook:cron.d
+name = network-bench-test
+frequency = */10 * * * *
+command = {{ buildout }}/networkbench ${network-bench-configuration:rendered} ${monitor-directory:monitor-log}
+
+[symlink-re6st-logs]
+recipe = cns.recipe.symlink
+symlink = /var/log/re6stnet = ${monitor-directory:system-log}/re6stnet
+autocreate = true
+
+[symlink-collected-logs]
+recipe = cns.recipe.symlink
+symlink = /srv/slapgrid/var/data-log = ${monitor-directory:server-log}/data-log
+autocreate = true
+
+[network-bench-configuration]
+recipe = slapos.recipe.template:jinja2
+template = {{ network_benck_cfg_output }}
+rendered = ${monitor-directory:etc}/network_bench.cfg
+mode = 0744
+context =
+  key slapparameter_dict slap-parameters:configuration
+
+
+[pwgen]
+recipe = slapos.cookbook:generate.password
+user = admin
+bytes = 16
+
+[pwgen32]
+recipe = slapos.cookbook:generate.password
+user = admin
+bytes = 16
+
+[monitor-directory]
+server-log = ${:private-directory}/server-log
+monitor-log = ${:private-directory}/monitor-log
+cache = ${:var}/cache
+mod-ssl = ${:cache}/httpd_mod_ssl
+system-log = ${:private-directory}/system-log 
+
+[slap-parameter]
+private-hash = ${pwgen:passwd}${pwgen32:passwd}
+frontend-domain = 
+
+[monitor-frontend]
+recipe = slapos.cookbook:requestoptional
+name = Monitor Frontend
+# XXX We have hardcoded SR URL here.
+software-url = product.frontend
+software-type = custom-personal
+slave = true
+config-url = ${monitor-parameters:url}
+config-domain = ${slap-parameter:frontend-domain}
+return = site_url domain
+
+server-url = ${slap-connection:server-url}
+key-file = ${slap-connection:key-file}
+cert-file = ${slap-connection:cert-file}
+computer-id = ${slap-connection:computer-id}
+partition-id = ${slap-connection:partition-id}
+
+[publish-connection-informations]
+recipe = slapos.cookbook:publish
+monitor_url = ${monitor-parameters:url}
+server_log_url = ${:url}${slap-parameter:private-hash}/ 
+url = ${monitor-frontend:connection-site_url}
+
+[monitor-httpd-configuration-file]
+context =
+  import json_module json
+  section directory monitor-directory
+  section monitor_parameters monitor-parameters
+  section httpd_configuration monitor-httpd-configuration
+  section monitor_rewrite_rule monitor-rewrite-rule
+  section slave_information slap-parameter
+  key monitor_private_hash slap-parameter:private-hash  
+

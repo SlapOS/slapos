@@ -48,6 +48,9 @@ class Recipe(object):
     - storage-path: plain-text persistent storage for password,
                     that can only be accessed by the user
       (default: ${buildout:parts-directory}/${:_buildout_section_name_})
+
+    If storage-path is empty, the recipe does not save the password, which is
+    fine it is saved by other means, e.g. using the publish-early recipe.
   """
 
   def __init__(self, buildout, name, options):
@@ -57,16 +60,17 @@ class Recipe(object):
     except KeyError:
       self.storage_path = options['storage-path'] = os.path.join(
         buildout['buildout']['parts-directory'], name)
-    try:
-      with open(self.storage_path) as f:
-        passwd = f.read()
-    except IOError as e:
-      if e.errno != errno.ENOENT:
-        raise
-      passwd = None
+    passwd = None
+    if self.storage_path:
+      try:
+        with open(self.storage_path) as f:
+          passwd = f.read()
+      except IOError as e:
+        if e.errno != errno.ENOENT:
+          raise
+        self.update = self.install
     if not passwd:
       passwd = self.generatePassword(int(options_get('bytes', '8')))
-      self.update = self.install
     self.passwd = passwd
     # Password must not go into .installed file, for 2 reasons:
     # security of course but also to prevent buildout to always reinstall.
@@ -88,7 +92,7 @@ class Recipe(object):
         os.write(fd, self.passwd)
       finally:
         os.close(fd)
-    return self.storage_path
+      return self.storage_path
 
   def update(self):
     return ()

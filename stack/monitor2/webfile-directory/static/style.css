@@ -1,0 +1,31 @@
+body {
+  padding: 15px;
+}
+
+.pure-menu .pure-menu-heading {
+  font-size: 120%;
+}
+
+#content {
+  display: inline-block;
+  min-width: 72%;
+  height: 97%;
+  margin-left: 30px;
+}
+
+#div-menu {
+  display: inline-block;
+  vertical-align: top;
+}
+
+#div-menu h1 {
+  text-align: center;
+}
+
+iframe {
+  width: 100%;
+  height: 100%;
+  margin: 0px;
+  padding: 0px;
+  border-style: none;
+}

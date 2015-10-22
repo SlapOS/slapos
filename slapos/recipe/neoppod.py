@@ -24,6 +24,7 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #
 ##############################################################################
+import os
 from slapos.recipe.librecipe import GenericBaseRecipe
 from zc.buildout import UserError
 
@@ -50,6 +51,13 @@ class NeoBaseRecipe(GenericBaseRecipe):
       #'-n', options['name'],
       '-c', options['cluster'],
     ]
+    if options['ssl']:
+      etc = os.path.join(self.buildout['buildout']['directory'], 'etc', '')
+      option_list += (
+        '--ca', etc + 'ca.crt',
+        '--cert', etc + 'neo.crt',
+        '--key', etc + 'neo.key',
+        )
     option_list.extend(self._getOptionList())
     return [self.createPythonScript(
       options['wrapper'],
@@ -76,11 +84,15 @@ class Storage(NeoBaseRecipe):
   _binding_port_mandatory = False
 
   def _getOptionList(self):
-    return [
+    r = [
       '-d', self.options['database-parameters'],
       '-a', self.options['database-adapter'],
       '-w', self.options['wait-database'],
     ]
+    engine = self.options.get('engine')
+    if engine: # old versions of NEO don't support -e
+      r  += '-e', engine
+    return r
 
 class Admin(NeoBaseRecipe):
   def _getOptionList(self):
@@ -92,6 +104,7 @@ class Master(NeoBaseRecipe):
     r = [
       '-p', options['partitions'],
       '-r', options['replicas'],
+      '-A', options['autostart'],
     ]
     for x in (('-C', options['upstream-cluster']),
               ('-M', options['upstream-masters'])):

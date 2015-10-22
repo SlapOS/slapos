@@ -1,0 +1,44 @@
+#!{{ python_executable }}
+
+import cgi
+import datetime
+import os
+import sqlite3
+
+db_path = '{{ monitor_db_path }}'
+
+status_history_length = '{{ status_history_length }}'
+
+db = sqlite3.connect(db_path)
+
+print """<html><head>
+  <link rel="stylesheet" href="static/pure-min.css">
+  <link rel="stylesheet" href="static/style.css">
+  </head><body>
+  <h1>Monitor Status History :</h1>"""
+
+
+def get_date_from_timestamp(timestamp):
+  return datetime.datetime.fromtimestamp(timestamp).strftime('%Y-%m-%d %H:%M:%S')
+
+def print_individual_status(timestamp):
+  print "<div><h3>Failure on %s</h3><ul>" % get_date_from_timestamp(timestamp)
+  rows = db.execute("select status, element, output from individual_status where timestamp=?", (timestamp,))
+  for row in rows:
+    status, element, output = row
+    print "<li>%s , %s :</br><pre>%s</pre></li>" % (status, cgi.escape(element), cgi.escape(output))
+  print "</ul></div>"
+
+
+
+if not os.path.exists(db_path):
+  print """No status history found</p></body></html>"""
+  exit(0)
+
+failure_row_list = db.execute("select timestamp from status where status='FAILURE' order by timestamp desc limit ?", status_history_length )
+
+for failure_row in failure_row_list:
+  timestamp, = failure_row
+  print_individual_status(timestamp)
+
+print "</body></html>"

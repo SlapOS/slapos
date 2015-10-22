@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Promise status</title>
+    <style>
+      input, button {
+        min-height: 10mm;
+        min-width: 10mm;
+      }
+    </style>
+    <script>
+
+      function getServiceName() {
+        var match = /(?:&|\?)service_name=([^&]*)/.exec(location.search);
+        if (match) {
+          return match[1];
+        }
+        throw new Error("no service name found");
+      }
+
+      var service_name = getServiceName(),
+        monitor_json_url = "/monitor.haljson",
+        status_json_url = "/public/" + service_name + ".status.json",
+        rerun_cgi_url = "/cgi-bin/monitor-run-promise.cgi?service=" + service_name;
+
+      function newDeferred() {
+        var d = {
+          "promise": undefined,
+          "resolve": undefined,
+          "reject": undefined
+        };
+        d.promise = new Promise(function (resolve, reject) {
+          d.resolve = resolve;
+          d.reject = reject;
+        });
+        return d;
+      }
+
+      function xhr(param) {
+        /*global XMLHttpRequest */
+        var d = newDeferred(), xhr = new XMLHttpRequest(), k, i, l, a;
+        d.promise.cancel = function () { xhr.abort(); };
+        xhr.open((param.method || "GET").toUpperCase(), param.url, true);
+        xhr.responseType = param.responseType || "";
+        if (param.withCredentials !== undefined) {
+          xhr.withCredentials = param.withCredentials;
+        }
+        if (param.headers) {
+          a = Object.keys(param.headers);
+          l = a.length;
+          for (i = 0; i < l; i += 1) {
+            k = a[i];
+            xhr.setRequestHeader(k, param.headers[k]);
+          }
+        }
+        xhr.addEventListener("load", function (e) {
+          var r, t = e.target, callback;
+          if (param.noStatusCheck) {
+            d.resolve(t);
+          } else if (t.status < 400) {
+            d.resolve(t);
+          } else {
+            d.reject(new Error("HTTP: " + (t.status ? t.status + " " : "") + (t.statusText || "Unknown")));
+          }
+        }, false);
+        xhr.addEventListener("error", function (e) {
+          return d.reject(new Error("HTTP: Error"));
+        }, false);
+        xhr.addEventListener("abort", function (e) {
+          return d.reject(new Error("HTTP: Aborted"));
+        }, false);
+        xhr.send(param.data);
+        return d.promise;
+      }
+
+      function unexpectedError(reason) {
+        console.error(reason);
+        alert(reason);
+      }
+
+      function PromiseStatusInterface(config) {
+        var it = this,
+          statusP = document.createElement("p"),
+          descriptionH2 = document.createElement("h2"),
+          descriptionP = document.createElement("p"),
+          errorH2 = document.createElement("h2"),
+          errorPre = document.createElement("pre"),
+          header = document.createElement("header"),
+          h1 = document.createElement("h1"),
+          h2 = document.createElement("h2"),
+          a = document.createElement("a"),
+          button = document.createElement("button");
+
+        this.element = config.rootElement || document.createElement("div");
+        this.statusP = statusP;
+        this.descriptionP = descriptionP;
+        this.errorH2 = errorH2;
+        this.errorPre = errorPre;
+
+        this.element.appendChild(header);
+        header.appendChild(a);
+        a.setAttribute("tabindex", "-1");
+        a.setAttribute("href", "/");
+        a.appendChild(button);
+        button.textContent = "Home";
+
+        a = document.createElement("a");
+        button = document.createElement("button");
+        header.appendChild(a);
+        a.setAttribute("tabindex", "-1");
+        a.setAttribute("href", "");
+        a.appendChild(button);
+        button.textContent = "Refresh";
+
+        button = document.createElement("button");
+        header.appendChild(button);
+        button.textContent = "Run promise now";
+        button.onclick = function () {
+          this.runPromiseNow();
+        }.bind(this);
+        this.runPromiseNowButton = button;
+
+        this.element.appendChild(h1);
+        h1.textContent = "Promise status";
+
+        this.element.appendChild(statusP);
+        this.element.appendChild(descriptionH2);
+        descriptionH2.textContent = "Description";
+        this.element.appendChild(descriptionP);
+        this.element.appendChild(errorH2);
+        errorH2.textContent = "Error output";
+        errorH2.style.display = "none";
+        this.element.appendChild(errorPre);
+        errorPre.style.display = "none";
+
+        this.loadStatusUi();
+        this.loadDescriptionUi();
+        this.loadErrorUi();
+      }
+      PromiseStatusInterface.prototype.loadStatusJson = function () {
+        if (this.status_json_promise) { return; }
+        this.status_json_promise = Promise.resolve().then(function () {
+          return xhr({url: status_json_url, withCredentials: true, responseType: "json"});
+        }).then(function (xhr) {
+          return xhr.response;
+        });
+        this.status_json_promise.catch(function () { return; }).then(function () {
+          setTimeout(function () {
+            delete this.status_json_promise;
+          }.bind(this), 1000);
+        }.bind(this));
+        return this.status_json_promise;
+      };
+      PromiseStatusInterface.prototype.loadStatusUi = function () {
+        this.loadStatusJson();
+        this.statusP.textContent = "Loading status...";
+        return this.status_json_promise.then(function (status_json) {
+          if (status_json.status === "OK") {
+            this.statusP.textContent = "Status: OK.";
+          } else {
+            this.statusP.textContent = "Status: BAD (" + status_json.status + ").";
+          }
+          if (status_json.message) {
+            this.statusP.appendChild(document.createTextNode(" " + status_json.message));
+          }
+        }.bind(this), function (reason) {
+          var message = reason && (reason.target && (reason.target.statusText || "Unknown") || reason.message);
+          this.statusP.textContent = "Status Json Error: " + (message || "Unknown error");
+        }.bind(this)).catch(unexpectedError);
+      };
+      PromiseStatusInterface.prototype.loadDescriptionUi = function () {
+        this.loadStatusJson();
+        this.descriptionP.textContent = "Loading description...";
+        return this.status_json_promise.then(function (status_json) {
+          if (status_json.description) {
+            this.descriptionP.textContent = status_json.description;
+          } else {
+            this.descriptionP.textContent = "No description";
+          }
+        }.bind(this), function (reason) {
+          var message = reason && (reason.target && (reason.target.statusText || "Unknown") || reason.message);
+          this.descriptionP.textContent = "Status Json Error: " + (message || "Unknown error");
+        }.bind(this)).catch(unexpectedError);
+      };
+      PromiseStatusInterface.prototype.loadErrorUi = function () {
+        this.loadStatusJson();
+        this.errorPre.textContent = "Loading error output...";
+        return this.status_json_promise.then(function (status_json) {
+          if (status_json.error) {
+            this.errorH2.style.display = "";
+            this.errorPre.style.display = "";
+            this.errorPre.textContent = status_json.error;
+          } else {
+            this.errorH2.style.display = "none";
+            this.errorPre.style.display = "none";
+            this.errorPre.textContent = "";
+          }
+        }.bind(this), function (reason) {
+          var message = reason && (reason.target && (reason.target.statusText || "Unknown") || reason.message);
+          this.errorPre.textContent = "Status Json Error: " + (message || "Unknown error");
+        }.bind(this)).catch(unexpectedError);
+      };
+      PromiseStatusInterface.prototype.runPromiseNow = function () {
+        this.runPromiseNowButton.disabled = true;
+        var original_text = this.runPromiseNowButton.textContent;
+        this.runPromiseNowButton.textContent = "Sending message...";
+        return Promise.resolve().then(function () {
+          return xhr({url: rerun_cgi_url, method: "POST", withCredentials: true});
+        }).catch(unexpectedError).then(function () {
+          this.runPromiseNowButton.textContent = original_text;
+        }.bind(this));
+      };
+
+      /*global setTimeout */
+      setTimeout(function () {
+        /*global document */
+        document.body.innerHTML = "";
+        return new PromiseStatusInterface({rootElement: document.body});
+      });
+
+    </script>
+  </head>
+  <body>
+    <h1>Promise status</h1>
+    <noscript>Javascript should be enabled</noscript>
+  </body>
+</html>

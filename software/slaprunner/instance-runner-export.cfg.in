@@ -7,19 +7,17 @@ parts +=
   nginx-launcher
   certificate-authority
   ca-nginx
-  ca-shellinabox
   gunicorn-launcher
   gunicorn-graceful
   sshkeys-dropbear-runner
   dropbear-server-add-authorized-key
   sshkeys-authority
-  publish-connection-informations
+  publish-connection-information
   slaprunner-promise
   slaprunner-frontend-promise
   slaprunner-supervisord-wrapper
   dropbear-promise
   runtestsuite
-  shellinabox-promise
   symlinks
   shellinabox
   slapos-cfg
@@ -71,7 +69,7 @@ context =
 url = $${monitor-frontend:config-url}/$${deploy-index-template:filename}
 
 # Extends publish section with resilient parameters
-[publish-connection-informations]
+[publish-connection-information]
 <= resilient-publish-connection-parameter
 
 [monitor-check-resilient-feed-file]

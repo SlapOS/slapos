@@ -1,42 +1,27 @@
 [buildout]
-parts =
-  neo-master-run-wrapper
+parts +=
   neo-master-promise
-eggs-directory = {{eggs_directory}}
-develop-eggs-directory = {{develop_eggs_directory}}
-offline = true
+  logrotate-master
 
 [neo-master]
 recipe = slapos.cookbook:neoppod.master
 binary = {{bin_directory}}/neomaster
-wrapper = ${directory:bin}/neomaster
+wrapper = ${directory:etc_run}/neomaster
 logfile = ${directory:log}/neomaster.log
 ip = ${publish:ip}
-port = ${publish:port}
-cluster = ${slap-parameter:cluster}
-partitions = ${slap-parameter:partitions}
-replicas = ${slap-parameter:replicas}
-masters = ${slap-parameter:masters}
-
-[publish]
-recipe = slapos.cookbook:publish
-# TODO: make port a partition parameter
-# TODO: stop using slap-network-information
-ip = [${slap-network-information:global-ipv6}]
-port = 10000
-master = ${:ip}:${:port}
-
-[neo-master-run-wrapper]
-recipe = slapos.cookbook:symbolic.link
-target-directory = ${directory:run}
-link-binary = ${neo-master:wrapper}
-
-[directory]
-recipe = slapos.cookbook:mkdirectory
-promises = ${buildout:directory}/etc/promises
-run = ${buildout:directory}/etc/run
-log = ${buildout:directory}/var/log
-bin = ${buildout:directory}/bin
+port = ${publish:port-master}
+ssl = {{ dumps(bool(slapparameter_dict['ssl'])) }}
+cluster = {{ dumps(slapparameter_dict['cluster']) }}
+partitions = {{ slapparameter_dict['partitions'] }}
+replicas = {{ slapparameter_dict['replicas'] }}
+upstream-cluster = {{ dumps(slapparameter_dict['upstream-cluster']) }}
+upstream-masters = {{ dumps(slapparameter_dict['upstream-masters']) }}
+autostart = {{ slapparameter_dict['autostart'] }}
+# "masters" parameter is not provided when just requesting a partition.
+# No actual installation takes place at that time
+# (slapos.cookbook:neoppod.master raises), but cfg expansion must succeed. So
+# this default value is required.
+masters = ${publish:masters}
 
 [neo-master-promise]
 recipe = slapos.cookbook:check_port_listening
@@ -44,9 +29,10 @@ hostname = ${neo-master:ip}
 port = ${neo-master:port}
 path = ${directory:promises}/neo-master-promise
 
-[slap-parameter]
-# "masters" parameter is not provided when just requesting a partition.
-# No actuall installation takes place at that time
-# (slapos.cookbook:neoppod.master raises), but cfg expansion must succeed. So
-# this default value is required.
-masters =
+[logrotate-master]
+recipe = slapos.cookbook:logrotate.d
+logrotate-entries = ${logrotate:logrotate-entries}
+backup = ${logrotate:backup}
+name = neo-master
+log = ${neo-master:logfile}
+post = {{ bin_directory }}/slapos-kill -n neomaster -s RTMIN+1 ${:log}

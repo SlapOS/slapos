@@ -1,0 +1,50 @@
+body { width: 80vw; margin: auto; padding-top: 1%; }
+/* h1 { align-text: center; margin: auto; } */
+/*td { padding: 0 2%; }/**/
+td { padding: 0 1em; }/**/
+table { border: 1px solid black; }
+table > table { margin-top: 1em; }
+
+input {
+  box-sizing: border-box;
+  min-height: 10mm;
+  min-width: 10mm;
+}
+
+button {
+  box-sizing: border-box;
+  min-height: 10mm;
+  min-width: 10mm;
+  background-color: lightgray;
+  background: linear-gradient(180deg, #F6F6F6 0%, #DDDDDD 100%);
+  border-radius: 2px;
+  border-style: solid;
+  border-width: 1px;
+  border-color: #A4A4A4;
+}
+
+a.as-button {
+  display: inline-block;
+  box-sizing: border-box;
+  min-height: 10mm;
+  min-width: 10mm;
+  padding: 0.5em 0.5em;
+  text-align: center;
+  text-decoration: initial;
+}
+a.as-button {
+  color: black;
+  background-color: lightgray;
+  background: linear-gradient(180deg, #F6F6F6 0%, #DDDDDD 100%);
+  border-radius: 2px;
+  border-style: solid;
+  border-width: 1px;
+  border-color: #A4A4A4;
+}
+a.as-button:active, button:active {
+  background-color: white;
+  background: linear-gradient(0deg, #F6F6F6 0%, #DDDDDD 100%);
+}
+a.as-button:hover, button:hover {
+  border-color: #777777;
+}

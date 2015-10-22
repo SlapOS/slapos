@@ -1,0 +1,118 @@
+[buildout]
+parts =
+  request-re6stnet-token-slave
+  request-frontend-token-slave
+
+eggs-directory = ${buildout:eggs-directory}
+develop-eggs-directory = ${buildout:develop-eggs-directory}
+offline = true
+
+# Create all needed directories
+[directory]
+recipe = slapos.cookbook:mkdirectory
+home = $${buildout:directory}
+etc = $${:home}/etc/
+var = $${:home}/var/
+srv = $${:home}/srv/
+bin = $${:home}/bin/
+tmp = $${:home}/tmp/
+
+[request-frontend-token-slave]
+<= slap-connection
+recipe = slapos.cookbook:requestoptional
+name = WebSite Frontend
+# XXX We have hardcoded SR URL here.
+software-url = product.frontend
+slave = true
+{% if slapparameter_dict.get('frontend-custom_domain', '80') != '443' %}
+config-url = https://[$${request-re6stnet-token-slave:connection-ipv6}1]:{{ slapparameter_dict.get('port', '80') }}/
+{% endif -%}
+
+{% if slapparameter_dict.get('frontend-custom_domain', '80') == '443' %}
+config-url = https://[$${request-re6stnet-token-slave:connection-ipv6}1]:{{ slapparameter_dict.get('port', '443') }}/
+{% endif -%}
+
+{% if slapparameter_dict.get('frontend-custom_domain', '') %}
+config-custom_domain = {{ slapparameter_dict.get('frontend-custom_domain', '') }}
+{% endif -%}
+
+{% if slapparameter_dict.get('frontend-server-alias', '') %}
+config-server-alias = {{ slapparameter_dict.get('frontend-server-alias', '') }}
+{% endif -%}
+
+{% if slapparameter_dict.get('frontend-type', '') %}
+config-type = {{ slapparameter_dict.get('frontend-type', '') }}
+{% endif -%}
+
+{% if slapparameter_dict.get('frontend-path', '') %}
+config-path = {{ slapparameter_dict.get('frontend-path', '') }}
+{% endif -%}
+
+{% if slapparameter_dict.get('frontend-default-path', '') %}
+config-default-path = {{ slapparameter_dict.get('frontend-default-path', '') }}
+{% endif -%}
+
+{% if slapparameter_dict.get('frontend-ssl_crt', '') %}
+config-ssl_crt = {{ slapparameter_dict.get('frontend-ssl_crt', '').split('\n') | join('\n  ') }}
+{% endif -%}
+
+{% if slapparameter_dict.get('frontend-ssl_key', '') %}
+config-ssl_key = {{ slapparameter_dict.get('frontend-ssl_key', '').split('\n') | join('\n  ') }}
+{% endif -%}
+
+{% if slapparameter_dict.get('frontend-ssl_ca_crt', '') %}
+config-ssl_ca_crt = {{ slapparameter_dict.get('frontend-ssl_ca_crt', '').split('\n') | join('\n  ') }}
+{% endif -%}
+
+{% if slapparameter_dict.get('frontend-https-only', '') %}
+config-https-only = {{ slapparameter_dict.get('frontend-https-only', '') }}
+{% endif -%}
+
+{% if slapparameter_dict.get('frontend-ssl-proxy-verify', '') %}
+config-ssl-proxy-verify = {{ slapparameter_dict.get('frontend-ssl-proxy-verify', '') }}
+{% endif -%}
+
+{% if slapparameter_dict.get('frontend-ssl_proxy_ca_crt', '') %}
+config-ssl_proxy_ca_crt = {{ slapparameter_dict.get('frontend-ssl_proxy_ca_crt', '').split('\n') | join('\n  ') }}
+{% endif -%}
+
+{% if slapparameter_dict.get('frontend-enable_cache', '') %}
+config-enable_cache = {{ slapparameter_dict.get('frontend-enable_cache', '') }}
+{% endif -%}
+
+{% if slapparameter_dict.get('frontend-disable-no-cache-request', '') %}
+config-disable-no-cache-request = {{ slapparameter_dict.get('frontend-disable-no-cache-request', '') }}
+{% endif -%}
+
+{% if slapparameter_dict.get('frontend-disable-via-header', '') %}
+config-disable-via-header = {{ slapparameter_dict.get('frontend-disable-via-header', '') }}
+{% endif -%}
+
+{% if slapparameter_dict.get('frontend-prefer-gzip-encoding-to-backend', '') %}
+config-prefer-gzip-encoding-to-backend = {{ slapparameter_dict.get('frontend-prefer-gzip-encoding-to-backend', '') }}
+{% endif -%}
+
+{% if slapparameter_dict.get('frontend-disabled-cookie-list', '') %}
+config-disabled-cookie-list = {{ slapparameter_dict.get('frontend-disabled-cookie-list', '') }}
+{% endif -%}
+
+
+return = site_url domain
+
+[request-re6stnet-token-slave]
+<= slap-connection
+recipe = slapos.cookbook:requestoptional
+name = Re6st token Frontend
+# XXX We have hardcoded SR URL here.
+software-url = product.re6st
+slave = true
+return = token info_1 ipv6
+
+[publish-connection-informations]
+recipe = slapos.cookbook:publish
+url =  https://$${request-frontend-token-slave:connection-domain}
+token = $${request-re6stnet-token-slave:connection-token}
+ipv6 = $${request-re6stnet-token-slave:connection-ipv6}
+info_1 = $${request-re6stnet-token-slave:info_1}
+
+

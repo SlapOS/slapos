@@ -28,7 +28,7 @@ from setuptools import setup, find_packages
 import glob
 import os
 
-version = '0.104.dev0'
+version = '1.0.9.dev0'
 name = 'slapos.cookbook'
 long_description = open("README.txt").read() + "\n" + \
     open("CHANGES.txt").read() + "\n"
@@ -167,6 +167,7 @@ setup(name=name,
           'proactive = slapos.recipe.proactive:Recipe',
           'publish = slapos.recipe.publish:Recipe',
           'publish.serialised = slapos.recipe.publish:Serialised',
+          'publish-early = slapos.recipe.publish_early:Recipe',
           'publishsection = slapos.recipe.publish:PublishSection',
           'publishurl = slapos.recipe.publishurl:Recipe',
           'readline = slapos.recipe.readline:Recipe',
@@ -192,17 +193,19 @@ setup(name=name,
           'slapmonitor = slapos.recipe.slapmonitor:MonitorRecipe',
           'slapmonitor-xml = slapos.recipe.slapmonitor:MonitorXMLRecipe',
           'slapreport = slapos.recipe.slapreport:Recipe',
-          'softwaretype = slapos.recipe.softwaretype:Recipe',
+          'softwaretype = slapos.recipe.softwaretype:Recipe', # BBB
           'sphinx= slapos.recipe.sphinx:Recipe',
           'squid = slapos.recipe.squid:Recipe',
           'sshkeys_authority = slapos.recipe.sshkeys_authority:Recipe',
           'sshkeys_authority.request = slapos.recipe.sshkeys_authority:Request',
           'stunnel = slapos.recipe.stunnel:Recipe',
+          'switch-softwaretype = slapos.recipe.switch_softwaretype:Recipe',
           'symbolic.link = slapos.recipe.symbolic_link:Recipe',
           'tidstorage = slapos.recipe.tidstorage:Recipe',
           'trac = slapos.recipe.trac:Recipe',
           'urlparse = slapos.recipe._urlparse:Recipe',
           'uuid = slapos.recipe._uuid:Recipe',
+          'userinfo = slapos.recipe.userinfo:Recipe',
           'vifib = slapos.recipe.vifib:Recipe',
           'waitfor = slapos.recipe.waitfor:Recipe',
           'webchecker = slapos.recipe.web_checker:Recipe',
@@ -222,4 +225,3 @@ setup(name=name,
       test_suite='slapos.test',
       tests_require=[ 'jsonschema' ],
     )
-

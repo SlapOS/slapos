@@ -1,8 +1,16 @@
 # Note: Environment is setup in running wrapper script, as zope.conf is read
 # too late for some components.
-%define INSTANCE {{ instance }}
+%define INSTANCE {{ parameter_dict['instance'] }}
 instancehome $INSTANCE
 zserver-threads {{ parameter_dict['thread-amount'] }}
+# When ownership checking is enabled, the roles a script runs as are the
+# intersection between user's roles and script owner's roles. This means
+# that revoking a code author's access to the system prevent all scripts
+# owned by that user from being of much use.
+# This is not how ERP5 approaches development: Managers write code,
+# Managers must be trustable and trusted, and their past work should not be
+# revoked when their account is terminated.
+skip-ownership-checking true
 
 lock-filename {{ parameter_dict['lock-file'] }}
 pid-filename {{ parameter_dict['pid-file'] }}
@@ -12,38 +20,40 @@ rest-input-encoding utf-8
 rest-output-encoding utf-8
 
 # XXX: isn't this entry implicit ?
-products {{ instance_products }}
+products {{ parameter_dict['instance-products'] }}
 
+{% if parameter_dict['webdav'] -%}
+<webdav-source-server>
+  address {{ parameter_dict['ip'] }}:{{ parameter_dict['port'] }}
+  force-connection-close off
+</webdav-source-server>
+{% else %}
 <http-server>
   address {{ parameter_dict['ip'] }}:{{ parameter_dict['port'] }}
 </http-server>
+{%- endif %}
 
-{# TODO: enable
-{% if webdav_port -%}
-<webdav-source-server>
-  address {{ parameter_dict['ip'] }}:{{ parameter_dict['webdav_port'] }}
-  force-connection-close off
-</webdav-source-server>
-
-{% endif -%}
--#}
 <zoperunner>
     program $INSTANCE/bin/runzope
 </zoperunner>
 
 <product-config DeadlockDebugger>
-  dump_url /manage_debug_threads
-  secret {{ deadlock_debugger_password }}
+  dump_url {{ parameter_dict['deadlock-path'] }}
+  secret {{ parameter_dict['deadlock-debugger-password'] }}
 </product-config>
 
-{% if tidstorage_ip -%}
+{% if 'tidstorage-ip' in parameter_dict -%}
 <product-config TIDStorage>
-  backend-ip {{ tidstorage_ip }}
-  backend-port {{ tidstorage_port }}
+  backend-ip {{ parameter_dict['tidstorage-ip'] }}
+  backend-port {{ parameter_dict['tidstorage-port'] }}
 </product-config>
 
 {% endif -%}
-{% set timerserver_interval = parameter_dict.get('timerserver-interval', '0') | int -%}
+<product-config CMFActivity>
+  node-id {{ parameter_dict['node-id'] }}
+</product-config>
+
+{% set timerserver_interval = parameter_dict['timerserver-interval'] -%}
 {% if timerserver_interval -%}
 %import timerserver
 <timer-server>
@@ -51,6 +61,7 @@ products {{ instance_products }}
 </timer-server>
 
 {% endif -%}
+{% set promise_path = parameter_dict['promise-path'] -%}
 {% if promise_path -%}
 <product-config /{{ parameter_dict['site-id'] }}>
   promise_path {{ promise_path }}
@@ -81,12 +92,25 @@ products {{ instance_products }}
   container-class Products.TemporaryFolder.TemporaryContainer
 </zodb_db>
 
-{% for db_name, mount_point, cache_size, storage_type, storage_dict in parameter_dict['zodb-list'] -%}
-<zodb_db {{ db_name }}>
-{%-   if cache_size %}
-  cache-size {{ cache_size }}
-{%-   endif %}
-  mount-point {{ mount_point }}
+{% set developer_list = parameter_dict['developer-list'] -%}
+{% if developer_list -%}
+%import Products.ERP5Type
+<ERP5Type erp5>
+  developers {{ developer_list | join(' ') }}
+</ERP5Type>
+
+{% endif -%}
+{% for m in parameter_dict['import-list'] -%}
+%import {{ m }}
+{% endfor -%}
+{% set type_dict = {'neo': 'NEOStorage', 'zeo': 'zeoclient'} %}
+{% for name, zodb_dict in parameter_dict['zodb-dict'].iteritems() %}
+<zodb_db {{ name }}>
+{%- set storage_type = type_dict[zodb_dict.pop('type')] %}
+{%- set storage_dict = zodb_dict.pop('storage-dict') %}
+{%- for key, value in zodb_dict.iteritems() %}
+  {{ key }} {{ value }}
+{%-   endfor %}
   <{{ storage_type }}>
 {%-   for key, value in storage_dict.iteritems() %}
     {{ key }} {{ value }}

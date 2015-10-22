@@ -24,6 +24,9 @@ RequestHeader unset REMOTE_USER
 
 ServerTokens Prod
 
+# Disable TRACE Method
+TraceEnable off
+
 # Log configuration
 ErrorLog "{{ error_log }}"
 LogLevel info

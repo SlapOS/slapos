@@ -1,0 +1,251 @@
+{% set part_list = [] -%}
+{% macro section(name) %}{% do part_list.append(name) %}{{ name }}{% endmacro -%}
+{% if slapparameter_dict['use-ipv6'] -%}
+{%   set ip = '[' ~ (ipv6_set | list)[0] ~ ']' -%}
+{% else -%}
+{%   set ip = (ipv4_set | list)[0] -%}
+{% endif -%}
+{% set tcpv4_port = slapparameter_dict['tcpv4-port'] -%}
+{% set relay = slapparameter_dict.get('relay', {}) -%}
+{% set divert = slapparameter_dict.get('divert', []) -%}
+{% set alias_dict = slapparameter_dict.get('alias-dict', {}) -%}
+{% do alias_dict.setdefault('postmaster', [slapparameter_dict['postmaster']]) -%}
+{% set smtpd_sasl_user = slapparameter_dict['smtpd-sasl-user'] -%}
+{% set smtpd_sasl_password = slapparameter_dict['smtpd-sasl-password'] -%}
+
+[smtpd-password]
+recipe = slapos.cookbook:generate.password
+storage-path =
+
+[{{ section('publish') }}]
+recipe = slapos.cookbook:publish.serialised
+url = {{ dumps('smtp://' ~ urllib.quote_plus(smtpd_sasl_user) ~ ':' ~ urllib.quote_plus(smtpd_sasl_password) ~ '@' ~ ip ~ ':' ~ tcpv4_port) }}
+
+[directory]
+recipe = slapos.cookbook:mkdirectory
+etc = ${buildout:directory}/etc
+promise = ${:etc}/promise
+etc-postfix = ${:etc}/postfix
+etc-cyrus = ${:etc}/cyrus
+run = ${:etc}/run
+bin = ${buildout:directory}/bin
+usr = ${buildout:directory}/usr
+var = ${buildout:directory}/var
+var-lib = ${:var}/lib
+var-lib-postfix = ${:var-lib}/postfix
+var-spool = ${:var}/spool
+var-spool-postfix = ${:var-spool}/postfix
+# Not used at buildout level, presence needed by postfix.
+var-spool-postfix-active = ${:var-spool-postfix}/active
+var-spool-postfix-bounce = ${:var-spool-postfix}/bounce
+var-spool-postfix-corrupt = ${:var-spool-postfix}/corrupt
+var-spool-postfix-defer = ${:var-spool-postfix}/defer
+var-spool-postfix-deferred = ${:var-spool-postfix}/deferred
+var-spool-postfix-flush = ${:var-spool-postfix}/flush
+var-spool-postfix-hold = ${:var-spool-postfix}/hold
+var-spool-postfix-incoming = ${:var-spool-postfix}/incoming
+var-spool-postfix-maildrop = ${:var-spool-postfix}/maildrop
+var-spool-postfix-pid = ${:var-spool-postfix}/pid
+var-spool-postfix-private = ${:var-spool-postfix}/private
+var-spool-postfix-public = ${:var-spool-postfix}/public
+var-spool-postfix-saved = ${:var-spool-postfix}/saved
+var-spool-postfix-trace = ${:var-spool-postfix}/trace
+
+[configuration]
+smtp = {{ dumps(tcpv4_port) }}
+inet-interfaces = {{ dumps(ip) }}
+alias-dict = {{ dumps(alias_dict) }}
+relayhost = {{ dumps(relay.get('host')) }}
+relay-sasl-credential = {{ dumps(relay.get('sasl-credential')) }}
+divert = {{ dumps(divert) }}
+cyrus-sasldb = ${directory:etc-cyrus}/postfix.gdbm
+
+[userinfo]
+recipe = slapos.cookbook:userinfo
+
+[smtp-sasl-passwd]
+recipe = slapos.recipe.template:jinja2
+rendered = ${directory:etc-postfix}/sasl_passwd
+{% if relay -%}
+template = inline:{{ "{{ host }} {{ sasl_credential }}" }}
+{%- else -%}
+template = inline:
+{%- endif %}
+context =
+    key host configuration:relayhost
+    key sasl_credential configuration:relay-sasl-credential
+mode = 600
+
+[{{ section('cyrus-smtpd-conf') }}]
+recipe = slapos.recipe.template:jinja2
+rendered = ${directory:etc-cyrus}/smtpd.conf
+template = inline:
+    pwcheck_method: auxprop
+    mech_list: PLAIN LOGIN
+    sasldb_path: {{ '{{ sasldb }}' }}
+context =
+    key sasldb configuration:cyrus-sasldb
+
+[{{ section('cyrus-smtpd-password') }}]
+recipe = plone.recipe.command
+stop-on-error = true
+command =
+  rm -f '${configuration:cyrus-sasldb}' &&
+  echo '{{ smtpd_sasl_password }}' | '${wrapper-postfix-saslpasswd2:wrapper-path}' -pc '{{ smtpd_sasl_user }}'
+update-command = ${:command}
+
+[divert]
+recipe = slapos.recipe.template:jinja2
+rendered = ${directory:etc-postfix}/divert
+{% if divert -%}
+template = inline:{{ "/.*/ {{ ', '.join(divert) }}" }}
+{%- else -%}
+template = inline:
+{%- endif %}
+context =
+    key divert configuration:divert
+
+[smtpd-ssl]
+recipe = plone.recipe.command
+stop-on-error = true
+openssl = '{{ parameter_dict['openssl'] }}/bin/openssl'
+cert = ${directory:etc-postfix}/smtpd.crt
+key = ${directory:etc-postfix}/smtpd.pem
+dh-512 = ${directory:etc-postfix}/dh512.pem
+dh-2048 = ${directory:etc-postfix}/dh2048.pem
+command =
+  ${:openssl} dhparam -out '${:dh-512}' 512 &&
+  ${:openssl} dhparam -out '${:dh-2048}' 2048 &&
+  ${:update}
+update =
+  ${:openssl} req -newkey rsa -batch -new -x509 -days 3650 -nodes -keyout '${:key}' -out '${:cert}'
+
+[{{ section('postfix-main-cf') }}]
+recipe = slapos.recipe.template:jinja2
+rendered = ${directory:etc-postfix}/main.cf
+template = {{ parameter_dict['template-postfix-main-cf'] }}
+context =
+    key bin_directory directory:bin
+    key usr_directory directory:usr
+    key queue_directory directory:var-spool-postfix
+    key data_directory directory:var-lib-postfix
+    key spool_directory directory:var-spool
+    key mail_owner userinfo:pw-name
+    key setgid_group userinfo:gr-name
+    key inet_interfaces configuration:inet-interfaces
+    key relayhost configuration:relayhost
+    key sasl_passwd typed-paths:smtp-sasl-passwd
+    key aliases typed-paths:aliases
+    key divert typed-paths:divert
+    key cyrus_directory directory:etc-cyrus
+    key cert smtpd-ssl:cert
+    key key smtpd-ssl:key
+    key dh_512 smtpd-ssl:dh-512
+    key dh_2048 smtpd-ssl:dh-2048
+
+[{{ section('postfix-master-cf') }}]
+recipe = slapos.recipe.template:jinja2
+rendered = ${directory:etc-postfix}/master.cf
+template = {{ parameter_dict['template-postfix-master-cf'] }}
+context = key smtp configuration:smtp
+
+[aliases]
+recipe = slapos.recipe.template:jinja2
+template = {{ parameter_dict['template-postfix-aliases'] }}
+rendered = ${directory:etc-postfix}/aliases
+context =
+    key alias_dict configuration:alias-dict
+
+[typed-paths]
+# Postfix-friendly rendering of file paths, prefixed with database type.
+aliases = hash:${aliases:rendered}
+smtp-sasl-passwd = hash:${smtp-sasl-passwd:rendered}
+divert = pcre:${divert:rendered}
+
+[{{ section('postalias-db') }}]
+recipe = plone.recipe.command
+stop-on-error = true
+command = '${wrapper-postalias:wrapper-path}' '${typed-paths:aliases}' '${typed-paths:smtp-sasl-passwd}'
+update-command = ${:command}
+
+[wrapper-postfix-saslpasswd2]
+recipe = slapos.cookbook:wrapper
+parameters-extra = true
+command-line = '{{ parameter_dict['cyrus-sasl-location'] }}/sbin/saslpasswd2' -f '${configuration:cyrus-sasldb}'
+wrapper-path = ${directory:bin}/saslpasswd2
+
+[base-wrapper]
+recipe = slapos.cookbook:wrapper
+environment =
+  MAIL_CONFIG=${directory:etc-postfix}
+  SASL_CONF_PATH=${directory:etc-cyrus}
+parameters-extra = true
+
+[base-bin-wrapper]
+< = base-wrapper
+command-line = ${:path}/${:basename}
+wrapper-path = ${directory:bin}/${:basename}
+
+[base-bin-bin-wrapper]
+< = base-bin-wrapper
+path = {{ parameter_dict['postfix-location'] }}/usr/bin
+
+[base-sbin-bin-wrapper]
+< = base-bin-wrapper
+path = {{ parameter_dict['postfix-location'] }}/usr/sbin
+
+{% for extend, basename_list in (
+  (
+    'base-bin-bin-wrapper',
+    (
+      'mailq',
+      'newaliases',
+    ),
+  ),
+  (
+    'base-sbin-bin-wrapper',
+    (
+      'postalias',
+      'postcat',
+      'postconf',
+      'postdrop',
+      'postfix',
+      'postkick',
+      'postlock',
+      'postlog',
+      'postmap',
+      'postmulti',
+      'postqueue',
+      'postsuper',
+      'sendmail',
+    ),
+  ),
+) %}
+{%   for basename in basename_list -%}
+[{{ section('wrapper-' ~ basename) }}]
+< = {{ extend }}
+basename = {{ basename }}
+{%   endfor %}
+{% endfor %}
+
+[{{ section('postfix-symlinks-libexec') }}]
+recipe = slapos.cookbook:symbolic.link
+target-directory = ${directory:usr}
+link-binary =
+    {{ parameter_dict['postfix-location'] }}/usr/libexec
+
+[{{ section('service-postfix-master') }}]
+< = base-wrapper
+command-line = ${directory:usr}/libexec/postfix/master
+wrapper-path = ${directory:run}/postfix-master
+
+[{{ section('postfix-promise') }}]
+recipe = slapos.cookbook:check_port_listening
+path = ${directory:promise}/postfix
+hostname = {{ ip }}
+port = {{ tcpv4_port }}
+
+[buildout]
+extends = {{ logrotate_cfg }}
+parts =
+    {{ part_list | join('\n  ') }}

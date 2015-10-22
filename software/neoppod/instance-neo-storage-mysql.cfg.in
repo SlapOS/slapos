@@ -1,51 +1,148 @@
-[buildout]
-extends = {{ master_cfg }}
-parts += neo-storage-run-wrapper
+{% macro section(name) %}{% do part_list.append(name) %}{{ name }}{% endmacro -%}
+{% set part_list = [] -%}
+{% set init_list = [] -%}
 
-[mariadb-instance]
-recipe = slapos.cookbook:generic.mysql
-user = user
-database = neo
-
-conf-file = ${directory:etc}/mariadb.cnf
-# No networking (ip & port options)
+[mysqld]
+recipe = slapos.cookbook:generic.mysql.wrap_mysqld
+output = ${directory:etc_run}/mariadb
+binary = ${:mysql-base-directory}/bin/mysqld
+configuration-file = ${my-cnf:rendered}
 data-directory = ${directory:srv_mariadb}
-bin-directory = ${directory:bin}
-pid-file = ${directory:var_run}/mariadb.pid
+mysql-install-binary = ${:mysql-base-directory}/scripts/mysql_install_db
+mysql-base-directory = {{ mariadb_location }}
+
+[my-cnf-parameters]
 socket = ${directory:var_run}/mariadb.sock
+data-directory = ${mysqld:data-directory}
+pid-file = ${directory:var_run}/mariadb.pid
 error-log = ${directory:log}/mariadb_error.log
 slow-query-log = ${directory:log}/mariadb_slowquery.log
+extra-dict = {{ dumps(slapparameter_dict.get('mysql', {})) }}
+init-file = ${init-script:rendered}
 
-wrapper = ${directory:etc_run}/mariadb
-update-wrapper = ${directory:etc_run}/mariadb_update
-mysql-base-directory = {{ mariadb_location }}
-mysql-binary = {{ mariadb_location }}/bin/mysql
-mysql-install-binary = {{ mariadb_location }}/scripts/mysql_install_db
-mysql-upgrade-binary = {{ mariadb_location }}/bin/mysql_upgrade
-mysqld-binary = {{ mariadb_location }}/bin/mysqld
+[my-cnf]
+recipe = slapos.recipe.template:jinja2
+extensions = jinja2.ext.do
+rendered = ${directory:etc}/mariadb.cnf
+template = {{ template_neo_my_cnf }}
+context = section parameter_dict my-cnf-parameters
 
-mroonga =
+{% set master_list = [] -%}
+{% set admin_list = [] -%}
+{% for k, v in slapparameter_dict.iteritems() -%}
+{%   if k.startswith('master-') and v -%}
+{%     do master_list.append(v) -%}
+{%   endif -%}
+{%   if k.startswith('admin-') and v -%}
+{%     do admin_list.append(v) -%}
+{%   endif -%}
+{% endfor -%}
+
+[publish]
+recipe = slapos.cookbook:publish.serialised
+# TODO: make port a partition parameter
+ip = {{ "[%s]" % list(ipv6_set)[0] if ipv6_set else list(ipv4_set)[0] }}
+{% set admin = slapparameter_dict.get('admin', 2050) -%}
+{% set master = slapparameter_dict.get('master', 2051) -%}
+{% if master -%}
+port-master = {{ master }}
+master = ${:ip}:${:port-master}
+{% else -%}
+master =
+{% endif -%}
+{% if admin -%}
+port-admin = {{ admin }}
+admin = ${:ip}:${:port-admin}
+{% else -%}
+admin =
+{% endif -%}
+masters = {{ ' '.join(sorted(master_list)) }}
+{%- if admin_list %}
+admins = {{ ' '.join(sorted(admin_list)) }}
+{%- endif %}
+
+{#- Hack to deploy SSL certs via instance parameters #}
+{%- for name, pem in zip(('ca.crt', 'neo.crt', 'neo.key'),
+                        slapparameter_dict['ssl']) %}
+{%-   if pem %}
+
+[{{ section(name) }}]
+recipe = slapos.recipe.template:jinja2
+rendered = ${directory:etc}/{{name}}
+template = inline:{{'{{'}}pem}}
+context = key pem :pem
+pem = {{dumps(pem)}}
+{%-   endif %}
+{%- endfor %}
+{#- endhack #}
 
 [neo-storage]
 recipe = slapos.cookbook:neoppod.storage
 binary = {{ bin_directory }}/neostorage
-wrapper = ${directory:bin}/neostorage
-logfile = ${directory:log}/neostorage.log
-ip = [${slap-network-information:global-ipv6}]
-cluster = ${slap-parameter:cluster}
-masters = ${slap-parameter:masters}
+ip = ${publish:ip}
+ssl = {{ dumps(bool(slapparameter_dict['ssl'])) }}
+cluster = {{ dumps(slapparameter_dict['cluster']) }}
+masters = ${publish:masters}
 database-adapter = MySQL
-database-parameters = ${mariadb-instance:user}:${mariadb-instance:password}@${mariadb-instance:database}${mariadb-instance:socket}
 wait-database = 60
+engine = {{ slapparameter_dict.get('engine', '') }}
 
-[neo-storage-run-wrapper]
-recipe = slapos.cookbook:symbolic.link
-target-directory = ${directory:etc_run}
-link-binary = ${neo-storage:wrapper}
+[logrotate-storage]
+recipe = slapos.cookbook:logrotate.d
+logrotate-entries = ${logrotate:logrotate-entries}
+backup = ${logrotate:backup}
+
+{% for i in range(slapparameter_dict.get('storage-count', 1)) -%}
+{%   set storage_id = 'neo-storage-' ~ i -%}
+[{{ section(storage_id) }}]
+< = neo-storage
+wrapper = ${directory:etc_run}/{{ 'neostorage-' ~ i }}
+logfile = ${directory:log}/{{ 'neostorage-' ~ i }}.log
+{%   do init_list.append('CREATE DATABASE IF NOT EXISTS neo' ~  i ~ ';') -%}
+database-parameters = root@neo{{ i }}${my-cnf-parameters:socket}
+
+[{{ section('logrotate-storage-' ~ i) }}]
+< = logrotate-storage
+name = {{ storage_id }}
+log = {{ '${' +  storage_id + ':logfile}' }}
+post = {{ bin_directory }}/slapos-kill -n neostorage -s RTMIN+1 ${:log}
+
+{% endfor -%}
+[init-script]
+recipe = slapos.recipe.template:jinja2
+# XXX: is there a better location ?
+rendered = ${directory:etc}/mariadb_initial_setup.sql
+template = inline:
+  {{ init_list | join('\n\t') }}
 
 [directory]
+recipe = slapos.cookbook:mkdirectory
+promises = ${buildout:directory}/etc/promises
+bin = ${buildout:directory}/bin
 etc = ${buildout:directory}/etc
 var = ${buildout:directory}/var
 etc_run =  ${:etc}/run
 var_run =  ${:var}/run
 srv_mariadb = ${buildout:directory}/srv/mariadb
+log = ${buildout:directory}/var/log
+
+[logrotate-mysql]
+recipe = slapos.cookbook:logrotate.d
+logrotate-entries = ${logrotate:logrotate-entries}
+backup = ${logrotate:backup}
+name = mariadb
+log = ${my-cnf-parameters:error-log} ${my-cnf-parameters:slow-query-log}
+post = ${mysqld:mysql-base-directory}/bin/mysql --defaults-file="${my-cnf:rendered}" -e "FLUSH LOGS"
+
+[buildout]
+extends =
+  {{ logrotate_cfg }}
+{%- if master %}
+  {{ master_cfg }}
+{%- endif %}
+{%- if admin %}
+  {{ admin_cfg }}
+{%- endif %}
+parts +=
+  {{ '\n  '.join(part_list) }}
+  logrotate-mysql

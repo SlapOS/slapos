@@ -1,126 +1,87 @@
+{% set use_ipv6 = slapparameter_dict.get('use-ipv6', False) -%}
 [buildout]
-parts =
-  publish-kumofs-connection-information
+extends =
+  {{ logrotate_cfg }}
+  {{ parameter_dict['template-monitor'] }}
+parts +=
+  publish
   kumofs-instance
-  logrotate
   logrotate-entry-kumofs
-  cron
-  cron-entry-logrotate
   resiliency-exclude-file
   promise-kumofs-server
   promise-kumofs-server-listen
   promise-kumofs-gateway
   promise-kumofs-manager
 
-eggs-directory = {{ eggs_directory }}
-develop-eggs-directory = {{ develop_eggs_directory }}
-offline = true
-
-[publish-kumofs-connection-information]
-recipe = slapos.cookbook:publishurl
+[publish]
+recipe = slapos.cookbook:publish.serialised
+{% if use_ipv6 -%}
+url = memcached://[${kumofs-instance:ip}]:${kumofs-instance:gateway-port}/
+{% else -%}
 url = memcached://${kumofs-instance:ip}:${kumofs-instance:gateway-port}/
+{% endif -%}
 
 [kumofs-instance]
 recipe = slapos.cookbook:generic.kumofs
 
 # Network options
-ip = ${slap-network-information:local-ipv4}
-manager-port = 13101
-server-port = 13201
-server-listen-port = 13202
-gateway-port = 13301
+{% if use_ipv6 -%}
+ip = {{ (ipv6_set | list)[0] }}
+address-family = inet6
+{% else -%}
+ip = {{ (ipv4_set | list)[0] }}
+address-family = inet4
+{% endif -%}
+{% set tcpv4_port = slapparameter_dict['tcpv4-port'] -%}
+manager-port = {{ tcpv4_port }}
+server-port = {{ tcpv4_port + 1 }}
+server-listen-port = {{ tcpv4_port + 2 }}
+gateway-port = {{ tcpv4_port + 3 }}
+# Paths: Data
+{% set ram_storage_size = slapparameter_dict.get('ram-storage-size') -%}
+{% if ram_storage_size -%}
+data-path = *#capsiz={{ ram_storage_size }}m
+{% else -%}
+# (with 10M buckets and HDBTLARGE option)
+data-path = ${directory:kumofs-data}/kumodb.tch#bnum=10485760#opts=l
+{% endif -%}
 
 # Paths: Running wrappers
-gateway-wrapper = ${basedirectory:services}/kumofs_gateway
-manager-wrapper = ${basedirectory:services}/kumofs_manager
-server-wrapper = ${basedirectory:services}/kumofs_server
-
-# Paths: Data (with 10M buckets and HDBTLARGE option)
-data-path = ${directory:kumofs-data}/kumodb.tch#bnum=10485760#opts=l
+gateway-wrapper = ${directory:services}/kumofs_gateway
+manager-wrapper = ${directory:services}/kumofs_manager
+server-wrapper = ${directory:services}/kumofs_server
 
 # Paths: Logs
-kumo-gateway-log = ${basedirectory:log}/kumo-gateway.log
-kumo-manager-log = ${basedirectory:log}/kumo-manager.log
-kumo-server-log = ${basedirectory:log}/kumo-server.log
+kumo-gateway-log = ${directory:log}/kumo-gateway.log
+kumo-manager-log = ${directory:log}/kumo-manager.log
+kumo-server-log = ${directory:log}/kumo-server.log
 
 # Binary information
-kumo-gateway-binary = {{ kumo_location }}/bin/kumo-gateway
-kumo-manager-binary = {{ kumo_location }}/bin/kumo-manager
-kumo-server-binary = {{ kumo_location }}/bin/kumo-server
-shell-path = {{ dash_location }}/bin/dash
+kumo-gateway-binary = {{ parameter_dict['kumo-location'] }}/bin/kumo-gateway
+kumo-manager-binary = {{ parameter_dict['kumo-location'] }}/bin/kumo-manager
+kumo-server-binary = {{ parameter_dict['kumo-location'] }}/bin/kumo-server
+shell-path = {{ parameter_dict['dash-location'] }}/bin/dash
 
 [logrotate-entry-kumofs]
-<= logrotate
 recipe = slapos.cookbook:logrotate.d
+logrotate-entries = ${logrotate:logrotate-entries}
+backup = ${logrotate:backup}
 name = kumofs
-log = ${kumofs-instance:kumo-gateway-log} ${kumofs-instance:kumo-manager-log}
-  ${kumofs-instance:kumo-server-log}
-
-# rest of parts are candidates for some generic stuff
-
-[logrotate]
-recipe = slapos.cookbook:logrotate
-# Binaries
-logrotate-binary = {{ logrotate_location }}/usr/sbin/logrotate
-gzip-binary = {{ gzip_location }}/bin/gzip
-gunzip-binary = {{ gzip_location }}/bin/gunzip
-# Directories
-wrapper = ${rootdirectory:bin}/logrotate
-conf = ${rootdirectory:etc}/logrotate.conf
-logrotate-entries = ${directory:logrotate-entries}
-backup = ${directory:logrotate-backup}
-state-file = ${rootdirectory:srv}/logrotate.status
-
-[basedirectory]
-recipe = slapos.cookbook:mkdirectory
-log = ${rootdirectory:var}/log
-services = ${rootdirectory:etc}/run
-promise = ${rootdirectory:etc}/promise
-run = ${rootdirectory:var}/run
-backup = ${rootdirectory:srv}/backup
+log = ${kumofs-instance:kumo-gateway-log} ${kumofs-instance:kumo-manager-log} ${kumofs-instance:kumo-server-log}
 
 [directory]
 recipe = slapos.cookbook:mkdirectory
-cron-entries = ${rootdirectory:etc}/cron.d
-crontabs = ${rootdirectory:etc}/crontabs
-cronstamps = ${rootdirectory:etc}/cronstamps
-logrotate-backup = ${basedirectory:backup}/logrotate
-logrotate-entries = ${rootdirectory:etc}/logrotate.d
-kumofs-data = ${rootdirectory:srv}/kumofs
-
-[rootdirectory]
-recipe = slapos.cookbook:mkdirectory
-etc = ${buildout:directory}/etc
-var = ${buildout:directory}/var
+log = ${buildout:directory}/var/log
+services = ${buildout:directory}/etc/run
+promise = ${buildout:directory}/etc/promise
 srv = ${buildout:directory}/srv
-bin = ${buildout:directory}/bin
-
-[cron]
-recipe = slapos.cookbook:cron
-dcrond-binary = {{ dcron_location }}/sbin/crond
-cron-entries = ${directory:cron-entries}
-crontabs = ${directory:crontabs}
-cronstamps = ${directory:cronstamps}
-catcher = ${cron-simplelogger:wrapper}
-binary = ${basedirectory:services}/crond
-
-[cron-simplelogger]
-recipe = slapos.cookbook:simplelogger
-wrapper = ${rootdirectory:bin}/cron_simplelogger
-log = ${basedirectory:log}/cron.log
-
-[cron-entry-logrotate]
-<= cron
-recipe = slapos.cookbook:cron.d
-name = logrotate
-frequency = 0 0 * * *
-command = ${logrotate:wrapper}
+kumofs-data = ${:srv}/kumofs
 
 [resiliency-exclude-file]
 # Generate rdiff exclude file in case of resiliency
 recipe = collective.recipe.template
 input = inline: **
-output = ${rootdirectory:srv}/exporter.exclude
+output = ${directory:srv}/exporter.exclude
 
 # Deploy zope promises scripts
 [promise-template]
@@ -130,20 +91,25 @@ port = ${kumofs-instance:server-listen-port}
 
 [promise-kumofs-server]
 <= promise-template
-path = ${basedirectory:promise}/kumofs-server
+path = ${directory:promise}/kumofs-server
 port = ${kumofs-instance:server-port}
 
 [promise-kumofs-server-listen]
 <= promise-template
-path = ${basedirectory:promise}/kumofs-server-listen
+path = ${directory:promise}/kumofs-server-listen
 port = ${kumofs-instance:server-listen-port}
 
 [promise-kumofs-gateway]
 <= promise-template
-path = ${basedirectory:promise}/kumofs-gateway
+path = ${directory:promise}/kumofs-gateway
 port = ${kumofs-instance:gateway-port}
 
 [promise-kumofs-manager]
 <= promise-template
-path = ${basedirectory:promise}/kumofs-manager
+path = ${directory:promise}/kumofs-manager
 port = ${kumofs-instance:manager-port}
+
+[monitor-instance-parameter]
+monitor-httpd-ipv6 = {{ (ipv6_set | list)[0] }}
+monitor-httpd-port = {{ tcpv4_port + 4 }}
+monitor-title = Kumofs monitor
