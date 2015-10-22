@@ -33,7 +33,7 @@ class Recipe(GenericBaseRecipe):
   def _options(self, options):
     self.directory = options.copy()
     del self.directory['recipe']
-    self.mode = int(self.directory.pop('mode', '700'), 8)
+    self.mode = int(self.directory.pop('mode', '0777'), 8)
 
   def install(self):
     for path in sorted(self.directory.itervalues()):
