@@ -285,9 +285,9 @@ node-id = {{ dumps(node_id_base ~ '-' ~ index) }}
 {% for db_name, zodb in zodb_dict.iteritems() -%}
 {%   if zodb['type'] == 'neo' -%}
 {%     do import_set.add('neo.client') -%}
-{%     set log = '${directory:log}/' ~ name ~ '-neo-' ~ db_name ~ '.log' -%}
-{%     do log_list.append(log) -%}
-{%     do zodb['storage-dict'].update(logfile=log) -%}
+{%     set log = name ~ '-neo-' ~ db_name ~ '.log' -%}
+{%     do log_list.append('${directory:log}/' + log) -%}
+{%     do zodb['storage-dict'].update(logfile='~/var/log/'+log) -%}
 {%   endif -%}
 {% endfor -%}
 import-list = {{ dumps(list(import_set)) }}
