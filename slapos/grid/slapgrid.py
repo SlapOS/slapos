@@ -85,6 +85,18 @@ class _formatXMLError(Exception):
   pass
 
 
+class FPopen(subprocess.Popen):
+  def __init__(self, *args, **kwargs):
+    kwargs['stdin'] = subprocess.PIPE
+    kwargs['stderr'] = subprocess.STDOUT
+    kwargs.setdefault('stdout', subprocess.PIPE)
+    kwargs.setdefault('close_fds', True)
+    kwargs.setdefault('shell', True)
+    subprocess.Popen.__init__(self, *args, **kwargs)
+    self.stdin.flush()
+    self.stdin.close()
+    self.stdin = None
+
 def check_missing_parameters(options):
   required = set([
       'computer_id',
@@ -644,14 +656,17 @@ stderr_logfile_backups=1
 
   def _checkAddFirewallRules(self, partition_id, command_list, add=True):
     """
+    Process Firewall rules from and save rules to firewall_rules_path
     """
+    
     instance_path = os.path.join(self.instance_root, partition_id)
-    firewall_rules = os.path.join(instance_path, '.slapos-firewalld-rules')
+    firewall_rules_path = os.path.join(instance_path,
+                                Partition.partition_firewall_rules_name)
     json_list = []
     reload_rules = False
 
-    if os.path.exists(firewall_rules):
-      with open(firewall_rules, 'r') as frules:
+    if os.path.exists(firewall_rules_path):
+      with open(firewall_rules_path, 'r') as frules:
         rules_list = json.loads(frules.read())
 
       for command in rules_list:
@@ -667,40 +682,29 @@ stderr_logfile_backups=1
         if skip_check:
           continue
         # Check if this rule exists in iptables
-        check_cmd = command.replace('--add-rule', '--query-rule')
-        process = subprocess.Popen(check_cmd,
-                                    stdout=subprocess.PIPE,
-                                    stderr=subprocess.PIPE,
-                                    shell=True)
-        check_result = process.communicate()[0]
-        self.logger.debug('%s: %s' % (check_cmd, check_result))
+        current_cmd = command.replace('--add-rule', '--query-rule')
+        cmd_process = FPopen(current_cmd)
+        result = cmd_process.communicate()[0]
+        self.logger.debug('%s: %s' % (current_cmd, result))
 
-        if check_result.strip() == 'yes':
+        if result.strip() == 'yes':
           reload_rules = True
-          command = command.replace('--add-rule', '--remove-rule')
-          self.logger.debug(command)
-          cmd_process = subprocess.Popen(command,
-                                    stdout=subprocess.PIPE,
-                                    stderr=subprocess.PIPE,
-                                    shell=True)
+          current_cmd = command.replace('--add-rule', '--remove-rule')
+          self.logger.debug(current_cmd)
+          cmd_process = FPopen(current_cmd)
           result = cmd_process.communicate()[0]
-          if cmd_process.returncode == 1:
-            raise Exception("Failed to remove firewalld rule %s. \n%s" % (
-                            command, result))
+        if cmd_process.returncode == 1:
+          raise Exception("Failed to execute firewalld rule %s." % current_cmd)
 
     if add:
       for i in range(0, len(command_list)):
         reload_rules = True
         command = command_list.pop()
         self.logger.debug(command)
-        cmd_process = subprocess.Popen(command,
-                                  stdout=subprocess.PIPE,
-                                  stderr=subprocess.PIPE,
-                                  shell=True)
-        result = cmd_process.communicate()[0]
+        cmd_process = FPopen(command)
+        cmd_process.communicate()[0]
         if cmd_process.returncode == 1:
-            raise Exception("Failed to add firewalld rule %s. \n%s" % (
-                            command, result))
+            raise Exception("Failed to add firewalld rule %s." % command)
         json_list.append(command)
 
     if reload_rules:
@@ -708,20 +712,18 @@ stderr_logfile_backups=1
       # XXX - need to check firewalld reload instead of restart
       self.logger.info("Reloading firewall configuration...")
       reload_cmd = self.firewall_conf['reload_config_cmd']
-      reload_process = subprocess.Popen(reload_cmd,
-                                    stdout=subprocess.PIPE,
-                                    stderr=subprocess.PIPE,
-                                    shell=True)
+      reload_process = FPopen(reload_cmd)
       result = reload_process.communicate()[0]
       if reload_process.returncode == 1:
         self.logger.error('FirewallD Reload: %s' % result)
         raise Exception("Failed to load firewalld rules with command %s" % reload_cmd)
       
-      with open(firewall_rules, 'w') as frules:
+      with open(firewall_rules_path, 'w') as frules:
         frules.write(json.dumps(json_list))
 
-  def _getFirewallRules(self, ip, ip_list, ip_type='ipv4'):
+  def _getFirewallAcceptRules(self, ip, hosting_ip_list, source_ip_list, ip_type='ipv4'):
     """
+    Generate rules for firewall based on list of IP that should have access to `ip`
     """
     if ip_type not in ['ipv4', 'ipv6', 'eb']:
       raise NotImplementedError("firewall-cmd has not rules with tables %s." % ip_type)
@@ -730,6 +732,7 @@ stderr_logfile_backups=1
     command = '%s --permanent --direct --add-rule %s filter' % (fw_cmd, ip_type)
 
     cmd_list = []
+    ip_list = hosting_ip_list + source_ip_list
 
     for other_ip in ip_list:
       # Configure INPUT rules
@@ -739,25 +742,85 @@ stderr_logfile_backups=1
       cmd_list.append('%s FORWARD 0 -s %s -d %s -j ACCEPT' % (command,
                                                               other_ip, ip))
 
-    # Drop all other requests
-    cmd_list.append('%s INPUT 1000 -d %s -j DROP' % (command, ip))
-    cmd_list.append('%s FORWARD 1000 -d %s -j DROP' % (command, ip))
-    cmd_list.append('%s INPUT 900 -d %s -m state --state ESTABLISHED,RELATED -j DROP' % (
+    # Reject all other requests
+    cmd_list.append('%s INPUT 1000 -d %s -j REJECT' % (command, ip))
+    cmd_list.append('%s FORWARD 1000 -d %s -j REJECT' % (command, ip))
+    cmd_list.append('%s INPUT 900 -d %s -m state --state ESTABLISHED,RELATED -j REJECT' % (
                     command, ip))
-    cmd_list.append('%s FORWARD 900 -d %s -m state --state ESTABLISHED,RELATED -j DROP' % (
+    cmd_list.append('%s FORWARD 900 -d %s -m state --state ESTABLISHED,RELATED -j REJECT' % (
                     command, ip))
 
     return cmd_list
+  
+  def _getFirewallRejectRules(self, ip, hosting_ip_list, source_ip_list, ip_type='ipv4'):
+    """
+    Generate rules for firewall based on list of IP that should not have access to `ip`
+    """
+    if ip_type not in ['ipv4', 'ipv6', 'eb']:
+      raise NotImplementedError("firewall-cmd has not rules with tables %s." % ip_type)
 
-  def _setupComputerPartitionFirewall(self, computer_partition, ip_list, authorized_ip_list, drop_entries=False):
+    fw_cmd = self.firewall_conf['firewall_cmd']
+    command = '%s --permanent --direct --add-rule %s filter' % (fw_cmd, ip_type)
+
+    cmd_list = []
+
+    # Accept all other requests
+    cmd_list.append('%s INPUT 0 -d %s -j ACCEPT' % (command, ip))
+    cmd_list.append('%s FORWARD 0 -d %s -j ACCEPT' % (command, ip))
+
+    # Reject all other requests from the list
+    for other_ip in source_ip_list:
+      cmd_list.append('%s INPUT 800 -s %s -d %s -m state --state ESTABLISHED,RELATED -j REJECT' % (
+                    command, other_ip, ip))
+      cmd_list.append('%s FORWARD 800 -s %s -d %s -m state --state ESTABLISHED,RELATED -j REJECT' % (
+                    command, other_ip, ip))
+      cmd_list.append('%s INPUT 900 -s %s -d %s -j REJECT' % (command,
+                                                            other_ip, ip))
+      cmd_list.append('%s FORWARD 900 -s %s -d %s -j REJECT' % (command,
+                                                              other_ip, ip))
+    # Accept on this hosting subscription
+    for other_ip in hosting_ip_list:
+      cmd_list.append('%s INPUT 1000 -s %s -d %s -j ACCEPT' % (command,
+                                                            other_ip, ip))
+      cmd_list.append('%s FORWARD 1000 -s %s -d %s -j ACCEPT' % (command,
+                                                              other_ip, ip))
+
+    return cmd_list
+
+  def _getValidIpv4FromList(self, ipv4_list, warn=False):
+    """
+    Return the list containing only valid ipv4 or network address.
+    """
+    valid_list = []
+    for ip in ipv4_list:
+      if not ip:
+        continue
+      the_ip = ip.split('/')[0]
+      if valid_ipv4(the_ip):
+        valid_list.append(ip)
+      elif warn:
+        self.logger.warn("IP/Network address %s is not valid. ignored.." % ip)
+    return valid_list
+
+  def _setupComputerPartitionFirewall(self, computer_partition, ip_list, drop_entries=False):
     """
     Using linux iptables, limit access to IP of this partition to all 
     others partitions of the same Hosting Subscription
     """
     ipv4_list = []
     ipv6_list = []
-    authorized_ipv4_list = []
-    authorized_ipv6_list = []
+    source_ipv4_list = []
+    source_ipv6_list = []
+    hosting_ipv4_list = []
+    hosting_ipv6_list = []
+    getFirewallRules = getattr(self, '_getFirewallAcceptRules')
+
+    if not drop_entries:
+      self.logger.info("Configuring firewall...")
+      add_rules = True
+    else:
+      add_rules = False
+      self.logger.info("Removing firewall configuration...")
 
     for net_ip in ip_list:
       iface, ip = (net_ip[0], net_ip[1])
@@ -768,41 +831,37 @@ stderr_logfile_backups=1
       elif valid_ipv6(ip):
         ipv6_list.append(ip)
 
-    for iface, ip in authorized_ip_list:
+    hosting_ip_list = computer_partition.getFullHostingIpAddressList()
+    for iface, ip in hosting_ip_list:
       if valid_ipv4(ip):
         if not ip in ipv4_list:
-          authorized_ipv4_list.append(ip)
+          hosting_ipv4_list.append(ip)
       elif valid_ipv6(ip):
         if not ip in ipv6_list:
-          authorized_ipv6_list.append(ip)
+          hosting_ipv6_list.append(ip)
 
     filter_dict = getattr(computer_partition, '_filter_dict', None)
     extra_list = []
+    accept_ip_list = []
     if filter_dict is not None:
-      extra_list = filter_dict.get('authorized_sources', '').split(' ')
-    extra_list.extend(self.firewall_conf.get('authorized_sources', []))
-    for ip in extra_list:
-      if not ip:
-        continue
-      the_ip = ip.split('/')[0]
-      if valid_ipv4(the_ip):
-        authorized_ipv4_list.append(ip)
-      elif valid_ipv6(the_ip):
-        authorized_ipv6_list.append(ip)
+      if filter_dict.get('fw_restricted_access', 'on') == 'off':
+        extra_list = filter_dict.get('fw_rejected_sources', '').split(' ')
+        getFirewallRules = getattr(self, '_getFirewallRejectRules')
+        accept_ip_list.extend(self.firewall_conf.get('authorized_sources', []))
+        accept_ip_list.extend(filter_dict.get('fw_authorized_sources', '').split(' '))
+      else:
+        extra_list = filter_dict.get('fw_authorized_sources', '').split(' ')
+        extra_list.extend(self.firewall_conf.get('authorized_sources', []))
 
-    if not drop_entries:
-      self.logger.info("Configuring firewall...")
-      add_rules = True
-    else:
-      add_rules = False
-      self.logger.info("Removing firewall configuration...")
+    source_ipv4_list = self._getValidIpv4FromList(extra_list, True)
+    hosting_ipv4_list.extend(self._getValidIpv4FromList(accept_ip_list, True))
 
+    # XXX - ipv6_list and source_ipv6_list ignored for the moment
     for ip in ipv4_list:
-      cmd_list = self._getFirewallRules(ip,
-                                        authorized_ipv4_list,
-                                        ip_type='ipv4')
-      self._checkAddFirewallRules(computer_partition.getId(), cmd_list,
-                                  add=add_rules)
+      cmd_list = getFirewallRules(ip, hosting_ipv4_list,
+                                  source_ipv4_list, ip_type='ipv4')
+      self._checkAddFirewallRules(computer_partition.getId(),
+                                  cmd_list, add=add_rules)
 
   def processComputerPartition(self, computer_partition):
     """
@@ -942,7 +1001,6 @@ stderr_logfile_backups=1
       if self.firewall_conf:
         partition_ip_list = parameter_dict['ip_list'] + parameter_dict.get(
                                                             'full_ip_list', [])
-        full_hosting_ip_list = computer_partition.getFullHostingIpAddressList()
 
       if computer_partition_state == COMPUTER_PARTITION_STARTED_STATE:
         local_partition.install()
@@ -950,8 +1008,7 @@ stderr_logfile_backups=1
         local_partition.start()
         if self.firewall_conf:
           self._setupComputerPartitionFirewall(computer_partition,
-                                              partition_ip_list,
-                                              full_hosting_ip_list)
+                                              partition_ip_list)
         self._checkPromises(computer_partition)
         computer_partition.started()
       elif computer_partition_state == COMPUTER_PARTITION_STOPPED_STATE:
@@ -962,8 +1019,7 @@ stderr_logfile_backups=1
           computer_partition.available()
           if self.firewall_conf:
             self._setupComputerPartitionFirewall(computer_partition,
-                                                partition_ip_list,
-                                                full_hosting_ip_list)
+                                                partition_ip_list)
         finally:
           # Instance has to be stopped even if buildout/reporting is wrong.
           local_partition.stop()
@@ -973,7 +1029,6 @@ stderr_logfile_backups=1
         if self.firewall_conf:
           self._setupComputerPartitionFirewall(computer_partition,
                                               partition_ip_list,
-                                              full_hosting_ip_list,
                                               drop_entries=True)
         try:
           computer_partition.stopped()
