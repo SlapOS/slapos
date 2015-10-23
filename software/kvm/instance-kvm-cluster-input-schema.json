@@ -122,6 +122,25 @@
       },
       "type": "object"
     },
+    "fw-restricted-access": {
+      "title": "Restrict all access to VM with firewall.",
+      "description": "When Firewall is enabled, this parameter define if only vm of this cluster and authorized sources ip should have access to cluster.",
+      "type": "string",
+      "enum": ["on", "off"],
+      "default": "off"
+    },
+    "fw-authorized-sources": {
+        "title": "List of IP/Network address authorized to cluster, if 'Restrict all access' is on.",
+        "description": "When Firewall is enabled, this contain the list of IP address to authorize for access to all VM of this cluster.",
+        "type": "array",
+        "optional": true
+    },
+    "fw-reject-sources": {
+        "title": "List of IP/Network address rejected, if 'Restrict all access' is off.",
+        "description": "When Firewall is enabled, this contain the list of IP address which should not access to all VM of this cluster.",
+        "type": "array",
+        "optional": true
+    },
     "authorized-keys": {
       "title": "Public keys for virtual machines.",
       "description": "Set the list of public keys to add in your virtual machine. The public key file will be available in the VM via url http://10.0.2.100/authorized_keys if you keep the NAT interface enabled",
@@ -197,6 +216,12 @@
               "title": "Simulate a multi node NUMA system.",
               "description": "Simulate a multi node NUMA system. If mem and cpus are omitted, resources are split equally. Each numa option are separated by space: node,nodeid=4,cpus=40-49,mem=64g node,nodeid=1,cpus=10-19,mem=128g. Set this option if you know what you're doing.",
               "type": "string"
+            },
+            "keyboard-layout-language": {
+              "title": "Use keyboard layout language",
+              "description": "Use keyboard layout language (for example fr for French). Can be usefull with VNC display",
+              "type": "string",
+              "enum": ["ar", "da", "de", "de-ch", "en-gb", "en-us", "es", "et", "fi", "fo", "fr", "fr-be", "fr-ca", "fr-ch", "hr", "hu", "is", "it", "ja", "lt", "lv", "mk", "nl", "nl-be", "no", "pl", "pt", "pt-br", "ru", "sl", "sv", "th", "tr"]
             },
             "nbd-host": {
               "title": "NBD hostname or IP",

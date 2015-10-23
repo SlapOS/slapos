@@ -186,6 +186,7 @@ cluster-doc-host =
 cluster-doc-port = 0
 {% endif -%}
 netcat-binary = {{ netcat_bin }}
+language = ${slap-parameter:keyboard-layout-language}
 
 [kvm-vnc-promise]
 recipe = slapos.cookbook:check_port_listening
@@ -567,3 +568,6 @@ authorized-key =
 
 # send some content which will be accessible to the vm through static url: http://10.0.2.100/data
 data-to-vm =
+
+# Change keyboard layout language
+keyboard-layout-language = 
