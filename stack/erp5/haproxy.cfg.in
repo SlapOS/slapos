@@ -37,7 +37,8 @@ defaults
   option forceclose
 
 {% for name, (port, backend_list) in parameter_dict['backend-dict'].items() -%}
-listen {{ name }} {{ parameter_dict['ip'] }}:{{ port }}
+listen {{ name }}
+  bind {{ parameter_dict['ip'] }}:{{ port }}
   http-request set-header X-Balancer-Current-Cookie SERVERID
 {%   set has_webdav = [] -%}
 {%   for address, connection_count, webdav in backend_list -%}
