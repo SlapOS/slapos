@@ -1,6 +1,11 @@
 Changes
 =======
 
+1.0.14 (2015-10.26)
+-------------------
+ * kvm recipe: Allow to set keyboard layout language used by qemu and VNC
+ * simplehttpserver-recipe: fix encoding error
+
 0.103 (2015-07-24)
 ------------------
   * kvm: fix issues with boolean parameters and add 'qed' in external disk format list.
