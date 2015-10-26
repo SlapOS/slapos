@@ -130,7 +130,7 @@
       "default": "off"
     },
     "fw-authorized-sources": {
-        "title": "List of IP/Network address authorized to cluster, if 'Restrict all access' is on.",
+        "title": "List of IP/Network address authorized to cluster.",
         "description": "When Firewall is enabled, this contain the list of IP address to authorize for access to all VM of this cluster.",
         "type": "array",
         "optional": true
