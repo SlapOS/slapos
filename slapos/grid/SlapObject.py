@@ -333,6 +333,7 @@ class Partition(object):
   """
   retention_lock_delay_filename = '.slapos-retention-lock-delay'
   retention_lock_date_filename = '.slapos-retention-lock-date'
+  partition_firewall_rules_name = '.slapos-firewalld-rules'
 
   # XXX: we should give the url (or the "key") instead of the software_path
   #      then compute the path from it, like in Software.
@@ -393,6 +394,9 @@ class Partition(object):
     )
     self.retention_lock_date_file_path = os.path.join(
         self.instance_path, self.retention_lock_date_filename
+    )
+    self.firewall_rules_path = os.path.join(
+        self.instance_path, self.partition_firewall_rules_name
     )
 
     self.instance_min_free_space = instance_min_free_space
