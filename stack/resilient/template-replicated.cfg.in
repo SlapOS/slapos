@@ -97,7 +97,7 @@ sla-{{ key }} = {{ value }}
 {%   endfor -%}
 {% endif %}
 
-[publish-connection-informations]
+[publish-connection-information]
 feed-url-{{namebase}}-{{id}}-push = ${request-pbs-{{namebase}}-{{id}}:connection-feeds-url}${request-{{namebase}}-pseudo-replicating-{{id}}:pbs-notification-id}
 takeover-{{namebase}}-{{id}}-url = ${request-{{namebase}}-pseudo-replicating-{{id}}:connection-takeover-url}
 takeover-{{namebase}}-{{id}}-password = ${request-{{namebase}}-pseudo-replicating-{{id}}:connection-takeover-password}
@@ -208,7 +208,7 @@ config-remove-backup-older-than = {{ slapparameter_dict.get('remove-backup-older
 slave = true
 sla-instance_guid = ${request-pbs-{{namebase}}-{{id}}:instance_guid}
 
-[publish-connection-informations]
+[publish-connection-information]
 feed-url-{{namebase}}-{{id}}-pull = ${request-pbs-{{namebase}}-{{id}}:connection-feeds-url}${request-pull-backup-server-{{namebase}}-{{id}}:config-notification-id}
 
 

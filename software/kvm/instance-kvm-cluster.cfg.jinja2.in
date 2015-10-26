@@ -74,6 +74,13 @@ config-enable-monitor = True
 config-document-host = ${apache-conf:ip}
 config-document-port = ${apache-conf:port}
 config-document-path = ${hash-code:passwd}
+config-keyboard-layout-language = {{ dumps(kvm_parameter_dict.get('keyboard-layout-language', '')) }}
+
+{% set authorized_source_list = slapparameter_dict.get('fw-authorized-sources', []) -%}
+{% set rejected_source_list = slapparameter_dict.get('fw-reject-sources', []) -%}
+sla-fw_authorized_sources = {{ authorized_source_list | join(' ') }}
+sla-fw_rejected_sources = {{ rejected_source_list | join(' ') }}
+sla-fw_restricted_access = {{ dumps(slapparameter_dict.get('fw-restricted-access', 'off')) }}
 
 return = 
   backend-url

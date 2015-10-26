@@ -65,7 +65,7 @@ class ServerHandler(SimpleHTTPRequestHandler):
     logging.info('Writing recieved content to file %s' % file_path)
     try:
       with open(file_path, method) as myfile:
-        myfile.write(content.decode('utf-8'))
+        myfile.write(content)
         logging.info('Done.')
     except IOError as e:
       logging.error('Something happened while processing \'writeFile\'. The message is %s' %

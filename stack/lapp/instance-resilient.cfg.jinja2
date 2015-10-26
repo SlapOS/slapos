@@ -11,7 +11,7 @@ offline = true
 # += because we need to take up parts (like instance-custom, slapmonitor etc) from the profile we extended
 parts +=
   {{ parts.replicate("apache", "3") }}
-  publish-connection-informations
+  publish-connection-information
 
 {{ replicated.replicate("apache", "3", "apache-export", "apache-import") }}
 
@@ -28,7 +28,7 @@ config-pbs-postgres3-computer-guid = ${slap-parameter:pbs-postgres3-computer-gui
 config-domain = ${slap-parameter:domain}
 config-maarch-sql-data-file = ${slap-parameter:maarch-sql-data-file}
 
-[publish-connection-informations]
+[publish-connection-information]
 recipe = slapos.cookbook:publish
 backend_url = ${request-apache:connection-backend_url}
 url = ${request-apache:connection-url}

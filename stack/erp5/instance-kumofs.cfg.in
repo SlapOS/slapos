@@ -1,8 +1,10 @@
 {% set use_ipv6 = slapparameter_dict.get('use-ipv6', False) -%}
 [buildout]
-extends = {{ logrotate_cfg }}
+extends =
+  {{ logrotate_cfg }}
+  {{ parameter_dict['template-monitor'] }}
 parts +=
-  publish-kumofs-connection-information
+  publish
   kumofs-instance
   logrotate-entry-kumofs
   resiliency-exclude-file
@@ -11,7 +13,7 @@ parts +=
   promise-kumofs-gateway
   promise-kumofs-manager
 
-[publish-kumofs-connection-information]
+[publish]
 recipe = slapos.cookbook:publish.serialised
 {% if use_ipv6 -%}
 url = memcached://[${kumofs-instance:ip}]:${kumofs-instance:gateway-port}/
@@ -106,3 +108,8 @@ port = ${kumofs-instance:gateway-port}
 <= promise-template
 path = ${directory:promise}/kumofs-manager
 port = ${kumofs-instance:manager-port}
+
+[monitor-instance-parameter]
+monitor-httpd-ipv6 = {{ (ipv6_set | list)[0] }}
+monitor-httpd-port = {{ tcpv4_port + 4 }}
+monitor-title = Kumofs monitor

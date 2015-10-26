@@ -25,7 +25,7 @@ parts +=
     promise
     frontend-promise
     content-promise
-    publish-connection-informations
+    publish-connection-information
 
 {{ replicated.replicate("postgres", "3", "postgres-export", "postgres-import") }}
 
@@ -45,7 +45,7 @@ wrapper = /bin/true
 path = ${directory:www}
 
 # Add "exporter" parameters to list of published connection parameters
-[publish-connection-informations]
+[publish-connection-information]
 # XXX-Cedric: Long term goal: could be a recipe that requests an instance and
 # bubbles ALL
 # parameters of the requested instance. Requirement: aggregated publish.

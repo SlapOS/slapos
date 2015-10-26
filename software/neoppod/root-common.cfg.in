@@ -42,6 +42,11 @@ config-cluster = {{ parameter_dict['cluster'] }}
 {% set replicas = parameter_dict.get('replicas', 0) -%}
 config-partitions = {{ dumps(parameter_dict.get('partitions', 12)) }}
 config-replicas = {{ dumps(replicas) }}
+config-ssl = {{ dumps((
+  parameter_dict.get('_ca'),
+  parameter_dict.get('_cert'),
+  parameter_dict.get('_key'),
+  ) if parameter_dict.get('ssl', 1) else ()) }}
 config-upstream-cluster = {{ dumps(parameter_dict.get('upstream-cluster', '')) }}
 config-upstream-masters = {{ dumps(parameter_dict.get('upstream-masters', '')) }}
 software-type = {{ software_type }}

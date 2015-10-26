@@ -41,7 +41,7 @@ context = section parameter_dict my-cnf-parameters
 [publish]
 recipe = slapos.cookbook:publish.serialised
 # TODO: make port a partition parameter
-ip = {{ (ipv4_set | list)[0] }}
+ip = {{ "[%s]" % list(ipv6_set)[0] if ipv6_set else list(ipv4_set)[0] }}
 {% set admin = slapparameter_dict.get('admin', 2050) -%}
 {% set master = slapparameter_dict.get('master', 2051) -%}
 {% if master -%}
@@ -61,10 +61,26 @@ masters = {{ ' '.join(sorted(master_list)) }}
 admins = {{ ' '.join(sorted(admin_list)) }}
 {%- endif %}
 
+{#- Hack to deploy SSL certs via instance parameters #}
+{%- for name, pem in zip(('ca.crt', 'neo.crt', 'neo.key'),
+                        slapparameter_dict['ssl']) %}
+{%-   if pem %}
+
+[{{ section(name) }}]
+recipe = slapos.recipe.template:jinja2
+rendered = ${directory:etc}/{{name}}
+template = inline:{{'{{'}}pem}}
+context = key pem :pem
+pem = {{dumps(pem)}}
+{%-   endif %}
+{%- endfor %}
+{#- endhack #}
+
 [neo-storage]
 recipe = slapos.cookbook:neoppod.storage
 binary = {{ bin_directory }}/neostorage
 ip = ${publish:ip}
+ssl = {{ dumps(bool(slapparameter_dict['ssl'])) }}
 cluster = {{ dumps(slapparameter_dict['cluster']) }}
 masters = ${publish:masters}
 database-adapter = MySQL

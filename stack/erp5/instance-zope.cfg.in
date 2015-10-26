@@ -175,6 +175,27 @@ context = section parameter_dict preload-userhosts-runzope-parameter
 template = {{ parameter_dict['runzope-userhosts-preloaded-template'] }}
 mode = 755
 
+{# Hack to deploy SSL certs via instance parameters -#}
+{% for zodb in zodb_dict.itervalues() -%}
+{%   set storage_dict = zodb.setdefault('storage-dict', {}) -%}
+{%   if zodb['type'] == 'neo' and storage_dict.get('ssl', 1) -%}
+{%     for k, v in (('_ca', 'ca.crt'),
+                    ('_cert', 'neo.crt'),
+                    ('_key', 'neo.key')) -%}
+{%       if k in storage_dict -%}
+[{{ section('neo-ssl-' + k[1:]) }}]
+recipe = slapos.recipe.template:jinja2
+rendered = ${directory:etc}/{{v}}
+template = inline:{{'{{'}}pem}}
+context = key pem :pem
+pem = {{dumps(storage_dict.pop(k))}}
+
+{%       endif -%}
+{%     endfor -%}
+{%   endif -%}
+{% endfor -%}
+{# endhack -#}
+
 [zope-base]
 recipe = slapos.cookbook:generic.zope.zeo.client
 inituser = ${directory:instance}/inituser
@@ -192,9 +213,23 @@ bt5-repository =
 [zope-conf-parameter-base]
 ip = {{ ipv4 }}
 site-id = {{ site_id }}
-{% set storage_dict = {'neo': {}, 'zeo': slapparameter_dict.get('zodb-zeo', {})} -%}
+{% set zeo_dict = slapparameter_dict.get('zodb-zeo', {}) -%}
 {% for name, zodb in zodb_dict.iteritems() -%}
-{%   do zodb.setdefault('storage-dict', {}).update(storage_dict[zodb['type']].get(name, {})) -%}
+{%   set storage_dict = zodb.setdefault('storage-dict', {}) -%}
+{%   if zodb['type'] == 'zeo' -%}
+{%     do storage_dict.update(zeo_dict.get(name, ())) -%}
+{%   else -%}
+{%     if name == slapparameter_dict.get('neo-name') -%}
+{%       do storage_dict.update(master_nodes=slapparameter_dict['neo-masters'],
+                                name=slapparameter_dict['neo-cluster']) -%}
+{%     endif -%}
+{{     assert(storage_dict['master_nodes'], name) }}
+{%     if storage_dict.pop('ssl', 1) -%}
+{%       do storage_dict.update(ca='~/etc/ca.crt',
+                                cert='~/etc/neo.crt',
+                                key='~/etc/neo.key') -%}
+{%     endif -%}
+{%   endif -%}
 {% endfor -%}
 developer-list = {{ dumps(slapparameter_dict['developer-list']) }}
 instance = ${directory:instance}
@@ -250,14 +285,9 @@ node-id = {{ dumps(node_id_base ~ '-' ~ index) }}
 {% for db_name, zodb in zodb_dict.iteritems() -%}
 {%   if zodb['type'] == 'neo' -%}
 {%     do import_set.add('neo.client') -%}
-{%     set log = buildout_directory ~ '/var/log/' ~ name ~ '-neo-' ~ db_name ~ '.log' -%}
-{%     do log_list.append(log) -%}
-{%     do zodb['storage-dict'].__setitem__('logfile', log) -%}
-{%     if db_name == slapparameter_dict.get('neo-name') -%}
-{%       do zodb['storage-dict'].__setitem__('name', slapparameter_dict['neo-cluster']) -%}
-{%       do zodb['storage-dict'].__setitem__('master_nodes', slapparameter_dict['neo-masters']) -%}
-{%     endif -%}
-{{     assert(zodb['storage-dict']['master_nodes'], db_name) }}
+{%     set log = name ~ '-neo-' ~ db_name ~ '.log' -%}
+{%     do log_list.append('${directory:log}/' + log) -%}
+{%     do zodb['storage-dict'].update(logfile='~/var/log/'+log) -%}
 {%   endif -%}
 {% endfor -%}
 import-list = {{ dumps(list(import_set)) }}
@@ -323,7 +353,7 @@ post = {{ bin_directory }}/slapos-kill --pidfile {{ '${' ~ conf_parameter_name ~
 {%   set next_port = next_port + 1 -%}
 {% endfor -%}
 
-[publish-zope]
+[publish]
 recipe = slapos.cookbook:publish.serialised
 zope-address-list = {{ dumps(publish_list) }}
 {#
@@ -345,12 +375,19 @@ smtp-url = {{ dumps(slapparameter_dict['smtp-url']) }}
 bt5 = {{ dumps(slapparameter_dict['bt5']) }}
 bt5-repository-url = {{ dumps(slapparameter_dict['bt5-repository-url']) }}
 
+[monitor-instance-parameter]
+monitor-httpd-ipv6 = {{ (ipv6_set | list)[0] }}
+monitor-httpd-port = {{ next_port }}
+monitor-title = Zope monitor
+
 [buildout]
-extends = {{ logrotate_cfg }}
+extends =
+  {{ logrotate_cfg }}
+  {{ parameter_dict['template-monitor'] }}
 parts +=
   erp5-promise
   {{ part_list | join('\n  ') }}
-  publish-zope
+  publish
 versions = versions
 
 [versions]

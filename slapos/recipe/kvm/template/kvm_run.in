@@ -49,6 +49,11 @@ httpd_port = %(httpd-port)s
 netcat_bin = '%(netcat-binary)s'.strip()
 cluster_doc_host = '%(cluster-doc-host)s'
 cluster_doc_port = %(cluster-doc-port)s
+language = '%(language)s'
+language_list = ['ar', 'da', 'de', 'de-ch', 'en-gb', 'en-us', 'es', 'et', 'fi',
+    'fo', 'fr', 'fr-be', 'fr-ca', 'fr-ch', 'hr', 'hu', 'is', 'it', 'ja', 'lt',
+    'lv', 'mk', 'nl', 'nl-be', 'no', 'pl', 'pt', 'pt-br', 'ru', 'sl', 'sv',
+    'th', 'tr']
 
 def md5Checksum(file_path):
     with open(file_path, 'rb') as fh:
@@ -246,6 +251,8 @@ if tap_network_parameter == [] and nat_network_parameter == []:
   print 'Warning : No network interface defined.'
 else:
   kvm_argument_list += nat_network_parameter + tap_network_parameter
+if language in language_list:
+  kvm_argument_list.extend(['-k', language])
 
 for disk in additional_disk_list:
   kvm_argument_list.extend([

@@ -120,7 +120,7 @@ create = true
 <= logrotate
 recipe = slapos.cookbook:logrotate.d
 name = equeue
-log = $${equeue:log}
+log = $${equeue:log} $${dropbear-sshd:log}
 frequency = daily
 rotate-num = 30
 
@@ -188,6 +188,14 @@ dropbear-binary = ${dropbear:location}/sbin/dropbear
 recipe = slapos.cookbook:dropbear.add_authorized_key
 key = $${slap-parameter:authorized-key}
 
+[dropbear-sshd]
+recipe = collective.recipe.template
+log = $${basedirectory:log}/sshd.log
+input = inline:#!/bin/sh
+    exec $${dropbear-server:wrapper} >> $${:log}/sshd.log 2>&1
+
+output = $${rootdirectory:bin}/raw_sshd_log
+mode = 700
 
 #----------------
 #--
@@ -210,7 +218,7 @@ keygen-binary = ${dropbear:location}/bin/dropbearkey
 recipe = slapos.cookbook:sshkeys_authority.request
 name = dropbear
 type = rsa
-executable = $${dropbear-server:wrapper}
+executable = $${dropbear-sshd:output}
 public-key = $${dropbear-server:rsa-keyfile}.pub
 private-key = $${dropbear-server:rsa-keyfile}
 wrapper = $${basedirectory:services}/sshd

@@ -185,8 +185,16 @@ backup-zodb = {{ default_backup_path }}
 zodb = {{ default_zodb_path }}
 tidstorage = {{ tidstorage_repozo_path }}
 
+{% set next_port = next_port + 1 -%}
+[monitor-instance-parameter]
+monitor-httpd-ipv6 = {{ (ipv6_set | list)[0] }}
+monitor-httpd-port = {{ next_port }}
+monitor-title = ZODB monitor
+
 [buildout]
-extends = {{ logrotate_cfg }}
+extends =
+  {{ logrotate_cfg }}
+  {{ parameter_dict['template-monitor'] }}
 parts +=
   {{ part_list | join('\n  ') }}
   publish

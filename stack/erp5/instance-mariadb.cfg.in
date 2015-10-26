@@ -17,7 +17,7 @@
 {%   set ip = (ipv4_set | list)[0] -%}
 {% endif -%}
 
-[publish-mariadb-url]
+[publish]
 recipe = slapos.cookbook:publish.serialised
 {% macro render_database_list(database_list) -%}
 {% set publish_database_list = [] -%}
@@ -232,10 +232,17 @@ command-line = "{{ parameter_dict['bin-directory'] }}/is-local-tcp-port-opened" 
 wrapper-path = ${directory:promise}/mariadb
 parameters-extra = true
 
+[monitor-instance-parameter]
+monitor-httpd-ipv6 = {{ (ipv6_set | list)[0] }}
+monitor-httpd-port = {{ port + 1 }}
+monitor-title = Mariadb monitor
+
 [buildout]
-extends = {{ logrotate_cfg }}
+extends =
+  {{ logrotate_cfg }}
+  {{ parameter_dict['template-monitor'] }}
 parts +=
-  publish-mariadb-url
+  publish
   logrotate-entry-mariadb
   binary-link
   update-mysql

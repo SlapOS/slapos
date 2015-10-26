@@ -35,6 +35,20 @@
       },
       "type": "object"
     },
+    "ssl": {
+      "description": "Enable SSL. All nodes look for 3 files in ~/etc: ca.crt, neo.crt, neo.key. Waiting that SlapOS provides a way to manage certificates, the user must deploy them manually, or use the temporary _ca/_cert/_key parameters.",
+      "default": true,
+      "type": "boolean"
+    },
+    "_ca": {
+      "type": "string"
+    },
+    "_cert": {
+      "type": "string"
+    },
+    "_key": {
+      "type": "string"
+    },
     "node-list": {
       "description": "List of dictionaries containing parameters for each node.",
       "items": {

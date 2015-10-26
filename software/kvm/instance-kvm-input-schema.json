@@ -44,6 +44,12 @@
       "description": "Simulate a multi node NUMA system. If mem and cpus are omitted, resources are split equally. Each numa option are separated by space: node,nodeid=4,cpus=40-49,mem=64g node,nodeid=1,cpus=10-19,mem=128g. Set this option if you know what you're doing.",
       "type": "string"
     },
+    "keyboard-layout-language": {
+      "title": "Use keyboard layout language",
+      "description": "Use keyboard layout language (for example fr for French). Can be usefull with VNC display",
+      "type": "string",
+      "enum": ["ar", "da", "de", "de-ch", "en-gb", "en-us", "es", "et", "fi", "fo", "fr", "fr-be", "fr-ca", "fr-ch", "hr", "hu", "is", "it", "ja", "lt", "lv", "mk", "nl", "nl-be", "no", "pl", "pt", "pt-br", "ru", "sl", "sv", "th", "tr"]
+    },
 
     "nbd-host": {
       "title": "NBD hostname",

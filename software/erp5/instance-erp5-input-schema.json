@@ -220,6 +220,13 @@
           },
           "storage-dict": {
             "description": "Storage configuration. For NEO, 'logfile' is automatically set (see http://git.erp5.org/gitweb/neoppod.git/blob/HEAD:/neo/client/component.xml for other settings).",
+            "properties": {
+              "ssl": {
+                "description": "For external NEO. Pass false if you want to disable SSL or pass custom values for ca/cert/key.",
+                "default": true,
+                "type": "boolean"
+              }
+            },
             "additionalProperties": {"type": "string"},
             "type": "object"
           }

@@ -288,3 +288,6 @@ curl_path = ${curl:location}/bin/curl
 [publish-connection-informations]
 recipe = slapos.cookbook:publish
 monitor_url = $${monitor-parameters:url}
+
+[publish-connection-information]
+<= publish-connection-informations
