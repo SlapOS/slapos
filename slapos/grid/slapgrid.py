@@ -666,6 +666,37 @@ stderr_logfile_backups=1
     if not promise_present:
       self.logger.info("No promise.")
 
+  def _addFirewallRule(self, rule_command):
+    """
+    """
+    query_cmd = rule_command.replace('--add-rule', '--query-rule')
+    process = FPopen(query_cmd)
+    result = process.communicate()[0]
+    if result.strip() == 'no':
+      self.logger.debug(rule_command)
+      process = FPopen(rule_command)
+      process.communicate()[0]
+    if process.returncode == 1 and result.strip() != 'no':
+      raise Exception("Failed to add firewalld rule %s." % rule_command)
+
+    return result.strip() == 'no'
+
+  def _removeFirewallRule(self, rule_command):
+    """
+    """
+    query_cmd = rule_command.replace('--add-rule', '--query-rule')
+    process = FPopen(query_cmd)
+    result = process.communicate()[0]
+    if result.strip() == 'yes':
+      remove_command = rule_command.replace('--add-rule', '--remove-rule')
+      self.logger.debug(remove_command)
+      process = FPopen(remove_command)
+      process.communicate()[0]
+    if process.returncode == 1 and result.strip() != 'no':
+      raise Exception("Failed to remove firewalld rule %s." % remove_command)
+
+    return result.strip() == 'yes'
+
   def _checkAddFirewallRules(self, partition_id, command_list, add=True):
     """
     Process Firewall rules from and save rules to firewall_rules_path
@@ -674,50 +705,31 @@ stderr_logfile_backups=1
     instance_path = os.path.join(self.instance_root, partition_id)
     firewall_rules_path = os.path.join(instance_path,
                                 Partition.partition_firewall_rules_name)
-    json_list = []
     reload_rules = False
+    fw_base_cmd = self.firewall_conf['firewall_cmd']
+    json_list = []
 
     if os.path.exists(firewall_rules_path):
       with open(firewall_rules_path, 'r') as frules:
         rules_list = json.loads(frules.read())
 
       for command in rules_list:
-        skip_check = False
+        skip_remove = False
         if add:
-          for i in range(0, len(command_list)):
-            new_cmd = command_list[i]
+          for new_cmd in command_list:
             if command == new_cmd:
-              json_list.append(command_list.pop(i))
-              skip_check = True
+              skip_remove = True
               break
-        # Only if add==True, do not try to remove the rule
-        if skip_check:
-          continue
-        # Check if this rule exists in iptables
-        current_cmd = command.replace('--add-rule', '--query-rule')
-        cmd_process = FPopen(current_cmd)
-        result = cmd_process.communicate()[0]
-        self.logger.debug('%s: %s' % (current_cmd, result))
 
-        if result.strip() == 'yes':
-          reload_rules = True
-          current_cmd = command.replace('--add-rule', '--remove-rule')
-          self.logger.debug(current_cmd)
-          cmd_process = FPopen(current_cmd)
-          result = cmd_process.communicate()[0]
-        if cmd_process.returncode == 1:
-          raise Exception("Failed to execute firewalld rule %s." % current_cmd)
+        if not skip_remove:
+          state = self._removeFirewallRule('%s %s' % (fw_base_cmd, command))
+          reload_rules = reload_rules or state
 
     if add:
-      for i in range(0, len(command_list)):
-        reload_rules = True
-        command = command_list.pop()
-        self.logger.debug(command)
-        cmd_process = FPopen(command)
-        cmd_process.communicate()[0]
-        if cmd_process.returncode == 1:
-            raise Exception("Failed to add firewalld rule %s." % command)
-        json_list.append(command)
+      json_list = command_list
+      for command in command_list:
+        state = self._addFirewallRule('%s %s' % (fw_base_cmd, command))
+        reload_rules = reload_rules or state
 
     if reload_rules:
       # Apply changes: reload configuration
@@ -727,9 +739,8 @@ stderr_logfile_backups=1
       reload_process = FPopen(reload_cmd)
       result = reload_process.communicate()[0]
       if reload_process.returncode == 1:
-        self.logger.error('FirewallD Reload: %s' % result)
         raise Exception("Failed to load firewalld rules with command %s" % reload_cmd)
-      
+
       with open(firewall_rules_path, 'w') as frules:
         frules.write(json.dumps(json_list))
 
@@ -740,8 +751,7 @@ stderr_logfile_backups=1
     if ip_type not in ['ipv4', 'ipv6', 'eb']:
       raise NotImplementedError("firewall-cmd has not rules with tables %s." % ip_type)
 
-    fw_cmd = self.firewall_conf['firewall_cmd']
-    command = '%s --permanent --direct --add-rule %s filter' % (fw_cmd, ip_type)
+    command = '--permanent --direct --add-rule %s filter' % ip_type
 
     cmd_list = []
     ip_list = hosting_ip_list + source_ip_list
@@ -771,14 +781,13 @@ stderr_logfile_backups=1
     if ip_type not in ['ipv4', 'ipv6', 'eb']:
       raise NotImplementedError("firewall-cmd has not rules with tables %s." % ip_type)
 
-    fw_cmd = self.firewall_conf['firewall_cmd']
-    command = '%s --permanent --direct --add-rule %s filter' % (fw_cmd, ip_type)
+    command = '--permanent --direct --add-rule %s filter' % ip_type
 
     cmd_list = []
 
     # Accept all other requests
-    cmd_list.append('%s INPUT 0 -d %s -j ACCEPT' % (command, ip))
-    cmd_list.append('%s FORWARD 0 -d %s -j ACCEPT' % (command, ip))
+    #cmd_list.append('%s INPUT 1000 -d %s -j ACCEPT' % (command, ip))
+    #cmd_list.append('%s FORWARD 1000 -d %s -j ACCEPT' % (command, ip))
 
     # Reject all other requests from the list
     for other_ip in source_ip_list:
@@ -792,9 +801,9 @@ stderr_logfile_backups=1
                                                               other_ip, ip))
     # Accept on this hosting subscription
     for other_ip in hosting_ip_list:
-      cmd_list.append('%s INPUT 1000 -s %s -d %s -j ACCEPT' % (command,
+      cmd_list.append('%s INPUT 0 -s %s -d %s -j ACCEPT' % (command,
                                                             other_ip, ip))
-      cmd_list.append('%s FORWARD 1000 -s %s -d %s -j ACCEPT' % (command,
+      cmd_list.append('%s FORWARD 0 -s %s -d %s -j ACCEPT' % (command,
                                                               other_ip, ip))
 
     return cmd_list

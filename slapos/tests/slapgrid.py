@@ -1978,7 +1978,7 @@ class TestSlapgridCPWithFirewall(MasterMixin, unittest.TestCase):
   def setFirewallConfig(self, source_ip=""):
     firewall_conf= dict(
       authorized_sources=source_ip,
-      firewall_cmd='/bin/echo',
+      firewall_cmd='/bin/echo "no" #',
       firewall_executable='/bin/echo "service firewall started"',
       reload_config_cmd='/bin/echo "Config reloaded."',
       log_file='fw-log.log',
@@ -1990,7 +1990,7 @@ class TestSlapgridCPWithFirewall(MasterMixin, unittest.TestCase):
     # XXX - rules for one ip contain 2*len(ip_address_list + accept_ip_list) rules ACCEPT and 4 rules REJECT
     num_rules = len(self.ip_address_list) * 2 + len(accept_ip_list) * 2 + 4
     self.assertEqual(len(cmd_list), num_rules)
-    base_cmd = '%s --permanent --direct --add-rule ipv4 filter' % self.grid.firewall_conf['firewall_cmd']
+    base_cmd = '--permanent --direct --add-rule ipv4 filter'
 
     # Check that there is REJECT rule on INPUT
     rule = '%s INPUT 1000 -d %s -j REJECT' % (base_cmd, ip)
@@ -2024,23 +2024,23 @@ class TestSlapgridCPWithFirewall(MasterMixin, unittest.TestCase):
   
   def checkRuleFromIpSourceReject(self, ip, reject_ip_list, cmd_list):
     # XXX - rules for one ip contain 2 + 2*len(ip_address_list) rules ACCEPT and 4*len(reject_ip_list) rules REJECT
-    num_rules = 2 + (len(self.ip_address_list) * 2) + (len(reject_ip_list) * 4)
+    num_rules = (len(self.ip_address_list) * 2) + (len(reject_ip_list) * 4)
     self.assertEqual(len(cmd_list), num_rules)
-    base_cmd = '%s --permanent --direct --add-rule ipv4 filter' % self.grid.firewall_conf['firewall_cmd']
+    base_cmd = '--permanent --direct --add-rule ipv4 filter'
 
     # Check that there is ACCEPT rule on INPUT
-    rule = '%s INPUT 0 -d %s -j ACCEPT' % (base_cmd, ip)
-    self.assertIn(rule, cmd_list)
+    #rule = '%s INPUT 0 -d %s -j ACCEPT' % (base_cmd, ip)
+    #self.assertIn(rule, cmd_list)
 
     # Check that there is ACCEPT rule on FORWARD
-    rule = '%s FORWARD 0 -d %s -j ACCEPT' % (base_cmd, ip)
-    self.assertIn(rule, cmd_list)
+    #rule = '%s FORWARD 0 -d %s -j ACCEPT' % (base_cmd, ip)
+    #self.assertIn(rule, cmd_list)
     
     # Check that there is INPUT/FORWARD ACCEPT on ip_list
     for _, other_ip in self.ip_address_list:
-      rule = '%s INPUT 1000 -s %s -d %s -j ACCEPT' % (base_cmd, other_ip, ip)
+      rule = '%s INPUT 0 -s %s -d %s -j ACCEPT' % (base_cmd, other_ip, ip)
       self.assertIn(rule, cmd_list)
-      rule = '%s FORWARD 1000 -s %s -d %s -j ACCEPT' % (base_cmd, other_ip, ip)
+      rule = '%s FORWARD 0 -s %s -d %s -j ACCEPT' % (base_cmd, other_ip, ip)
       self.assertIn(rule, cmd_list)
 
     # Check that there is INPUT/FORWARD REJECT on ip_list
@@ -2078,7 +2078,7 @@ class TestSlapgridCPWithFirewall(MasterMixin, unittest.TestCase):
     computer = ComputerForTest(self.software_root, self.instance_root)
     self.setFirewallConfig()
     # For simulate query rule success
-    self.grid.firewall_conf['firewall_cmd'] = '/bin/echo "yes" #'
+    self.grid.firewall_conf['firewall_cmd'] = '/bin/echo "no" #'
     self.ip_address_list = computer.ip_address_list
     instance = computer.instance_list[0]
     ip = instance.full_ip_list[0][1]
@@ -2099,12 +2099,14 @@ class TestSlapgridCPWithFirewall(MasterMixin, unittest.TestCase):
       self.checkRuleFromIpSource(ip, [], rules_list)
 
     # Remove all rules
+    self.grid.firewall_conf['firewall_cmd'] = '/bin/echo "yes" #'
     self.grid._checkAddFirewallRules(name, cmd_list, add=False)
     with open(rules_path, 'r') as frules:
       rules_list = json.loads(frules.read())
       self.assertEqual(rules_list, [])
 
     # Add one more ip in the authorized list
+    self.grid.firewall_conf['firewall_cmd'] = '/bin/echo "no" #'
     self.ip_address_list.append(('interface1', '10.0.8.7'))
     cmd_list = self.grid._getFirewallAcceptRules(ip,
                                 [elt[1] for elt in self.ip_address_list],
@@ -2124,7 +2126,7 @@ class TestSlapgridCPWithFirewall(MasterMixin, unittest.TestCase):
                         slapgrid.SLAPGRID_SUCCESS)
       self.assertFalse(os.path.exists(os.path.join(
           instance.partition_path,
-          '.slapos-firewalld-rules'
+          slapos.grid.SlapObject.Partition.partition_firewall_rules_name
       )))
 
   def test_partition_firewall_restrict(self):
@@ -2135,7 +2137,7 @@ class TestSlapgridCPWithFirewall(MasterMixin, unittest.TestCase):
       self.assertEqual(self.grid.processComputerPartitionList(), slapgrid.SLAPGRID_SUCCESS)
       self.assertTrue(os.path.exists(os.path.join(
           instance.partition_path,
-          '.slapos-firewalld-rules'
+          slapos.grid.SlapObject.Partition.partition_firewall_rules_name
       )))
       rules_path = os.path.join(
           instance.partition_path,
@@ -2157,7 +2159,7 @@ class TestSlapgridCPWithFirewall(MasterMixin, unittest.TestCase):
       self.assertEqual(self.grid.processComputerPartitionList(), slapgrid.SLAPGRID_SUCCESS)
       self.assertTrue(os.path.exists(os.path.join(
           instance.partition_path,
-          '.slapos-firewalld-rules'
+          slapos.grid.SlapObject.Partition.partition_firewall_rules_name
       )))
       rules_path = os.path.join(
           instance.partition_path,
@@ -2174,8 +2176,6 @@ class TestSlapgridCPWithFirewall(MasterMixin, unittest.TestCase):
   def test_partition_firewall_restricted_access_change(self):
     computer = ComputerForTest(self.software_root, self.instance_root)
     self.setFirewallConfig()
-    # For simulate query rule success
-    self.grid.firewall_conf['firewall_cmd'] = '/bin/echo "yes" #'
     with httmock.HTTMock(computer.request_handler):
       instance = computer.instance_list[0]
       instance.filter_dict = {'fw_restricted_access': 'off',
@@ -2183,7 +2183,7 @@ class TestSlapgridCPWithFirewall(MasterMixin, unittest.TestCase):
       self.assertEqual(self.grid.processComputerPartitionList(), slapgrid.SLAPGRID_SUCCESS)
       self.assertTrue(os.path.exists(os.path.join(
           instance.partition_path,
-          '.slapos-firewalld-rules'
+          slapos.grid.SlapObject.Partition.partition_firewall_rules_name
       )))
       rules_path = os.path.join(
           instance.partition_path,
@@ -2196,6 +2196,8 @@ class TestSlapgridCPWithFirewall(MasterMixin, unittest.TestCase):
       ip = instance.full_ip_list[0][1]
       self.checkRuleFromIpSourceReject(ip, ['10.0.8.11'], rules_list)
 
+      # For remove rules
+      self.grid.firewall_conf['firewall_cmd'] = '/bin/echo "yes" #'
       instance.setFilterParameter({'fw_restricted_access': 'on',
                               'fw_authorized_sources': ''})
       self.assertEqual(self.grid.processComputerPartitionList(), slapgrid.SLAPGRID_SUCCESS)
@@ -2217,7 +2219,7 @@ class TestSlapgridCPWithFirewall(MasterMixin, unittest.TestCase):
       self.assertEqual(self.grid.processComputerPartitionList(), slapgrid.SLAPGRID_SUCCESS)
       self.assertTrue(os.path.exists(os.path.join(
           instance.partition_path,
-          '.slapos-firewalld-rules'
+          slapos.grid.SlapObject.Partition.partition_firewall_rules_name
       )))
       rules_path = os.path.join(
           instance.partition_path,
@@ -2226,7 +2228,7 @@ class TestSlapgridCPWithFirewall(MasterMixin, unittest.TestCase):
       rules_list= []
       self.ip_address_list = computer.ip_address_list
       ip = instance.full_ip_list[0][1]
-      base_cmd = '%s --permanent --direct --add-rule ipv4 filter' % self.grid.firewall_conf['firewall_cmd']
+      base_cmd = '--permanent --direct --add-rule ipv4 filter'
       with open(rules_path, 'r') as frules:
         rules_list = json.loads(frules.read())
 
@@ -2252,7 +2254,7 @@ class TestSlapgridCPWithFirewall(MasterMixin, unittest.TestCase):
       self.assertEqual(self.grid.processComputerPartitionList(), slapgrid.SLAPGRID_SUCCESS)
       self.assertTrue(os.path.exists(os.path.join(
           instance.partition_path,
-          '.slapos-firewalld-rules'
+          slapos.grid.SlapObject.Partition.partition_firewall_rules_name
       )))
       rules_path = os.path.join(
           instance.partition_path,
@@ -2262,7 +2264,7 @@ class TestSlapgridCPWithFirewall(MasterMixin, unittest.TestCase):
       self.ip_address_list = computer.ip_address_list
       self.ip_address_list.append(('iface', '10.0.8.15'))
       ip = instance.full_ip_list[0][1]
-      base_cmd = '%s --permanent --direct --add-rule ipv4 filter' % self.grid.firewall_conf['firewall_cmd']
+      base_cmd = '--permanent --direct --add-rule ipv4 filter'
       with open(rules_path, 'r') as frules:
         rules_list = json.loads(frules.read())
 
@@ -2271,8 +2273,6 @@ class TestSlapgridCPWithFirewall(MasterMixin, unittest.TestCase):
   def test_partition_firewall_ip_change(self):
     computer = ComputerForTest(self.software_root, self.instance_root)
     self.setFirewallConfig()
-    # For simulate query rule success
-    self.grid.firewall_conf['firewall_cmd'] = '/bin/echo "yes" #'
     source_ip = ['10.0.8.10', '10.0.8.11']
     self.grid.firewall_conf['authorized_sources'] = [source_ip[0]]
     with httmock.HTTMock(computer.request_handler):
@@ -2282,7 +2282,7 @@ class TestSlapgridCPWithFirewall(MasterMixin, unittest.TestCase):
       self.assertEqual(self.grid.processComputerPartitionList(), slapgrid.SLAPGRID_SUCCESS)
       self.assertTrue(os.path.exists(os.path.join(
           instance.partition_path,
-          '.slapos-firewalld-rules'
+          slapos.grid.SlapObject.Partition.partition_firewall_rules_name
       )))
       rules_path = os.path.join(
           instance.partition_path,
@@ -2300,6 +2300,8 @@ class TestSlapgridCPWithFirewall(MasterMixin, unittest.TestCase):
       #instance.filter_dict = {'fw_restricted_access': 'on',
       #                        'fw_authorized_sources': source_ip[0]}
 
+      # For simulate query rule exist
+      self.grid.firewall_conf['firewall_cmd'] = '/bin/echo "yes" #'
       self.grid.firewall_conf['authorized_sources'] = []
       computer.ip_address_list.append(('route_interface1', '10.10.8.4'))
       self.assertEqual(self.grid.processComputerPartitionList(), slapgrid.SLAPGRID_SUCCESS)
