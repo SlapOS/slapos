@@ -13,6 +13,10 @@ from random import shuffle
 import glob
 import re
 
+import ssl
+
+opener = urllib.FancyURLopener(context=ssl._create_unverified_context())
+
 # XXX: give all of this through parameter, don't use this as template, but as module
 qemu_img_path = '%(qemu-img-path)s'
 qemu_path = '%(qemu-path)s'
@@ -127,9 +131,10 @@ if not os.path.exists(disk_path) and virtual_hard_drive_url != '':
     downloaded_disk = disk_path
     if virtual_hard_drive_gzipped == 'true':
       downloaded_disk = '%%s.gz' %% disk_path
-    urllib.urlretrieve(virtual_hard_drive_url, downloaded_disk)
+    opener.retrieve(virtual_hard_drive_url, downloaded_disk)
   except:
-    os.remove(downloaded_disk)
+    if os.path.exists(downloaded_disk):
+      os.remove(downloaded_disk)
     raise
   md5sum = virtual_hard_drive_md5sum.strip()
   if md5sum:
@@ -157,7 +162,7 @@ if not os.path.exists(disk_path) and virtual_hard_drive_url != '':
 # XXX: move to Buildout profile
 if not os.path.exists(disk_path):
   print('Creating virtual hard drive...')
-  subprocess.Popen([qemu_img_path, 'create' ,'-f', 'qcow2',
+  subprocess.check_call([qemu_img_path, 'create' ,'-f', 'qcow2',
       disk_path, '%%sG' %% disk_size])
   print('Done.')
 
@@ -186,7 +191,7 @@ if disk_storage_dict:
         disk_list = glob.glob('%%s.*' %% os.path.join(path, 'kvm_virtual_disk'))
         if disk_list == []:
           print('Creating one additional virtual hard drive...')
-          subprocess.Popen([qemu_img_path, 'create' ,'-f', '%%s' %% external_disk_format,
+          process = subprocess.check_call([qemu_img_path, 'create' ,'-f', '%%s' %% external_disk_format,
               disk_filepath, '%%sG' %% external_disk_size])
         else:
           # Cannot change or recreate if disk is exists
