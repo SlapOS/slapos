@@ -17,10 +17,19 @@ cd {{ cros_location }}
 # create chroot environment (exit on failure)
 cros_sdk --download || exit 1
 
+# compile Python with sqlite support (-> change USE flag) for dev-lang/python
+# it is needed by re6st
+# just need to change -sqlite by sqlite on the right line
+PACKAGE_USE_FILE={{ cros_location }}/src/third_party/chromiumos-overlay/profiles/targets/chromeos/package.use
+line_number=$(sed -n '/dev-lang\/python/=' ${PACKAGE_USE_FILE})
+if [ $line ] ; then
+        sed -i "${line_number}s/-sqlite/sqlite/" ${PACKAGE_USE_FILE}
+fi
+
 # add custom script for modifying the final image after building
-# that is useful for custumizing Chromium OS and produce Nayu images for now
-cp {{ scripts_dir }}/modify_image.sh {{ cros_location }}/src/scripts/modify_image.sh \
-  && chmod 770 {{ cros_location }}/src/scripts/modify_image.sh || exit 1
+# that is useful for custumizing Chromium OS and producing Nayu images for now
+#cp {{ scripts_dir }}/modify_image.sh {{ cros_location }}/src/scripts/modify_image.sh \
+#  && chmod 770 {{ cros_location }}/src/scripts/modify_image.sh || exit 1
 
 # add custom ebuilds
 for category in $( ls {{ ebuilds_dir }} ); do
@@ -78,18 +87,19 @@ done
 
 ####################################### Post build ##########################################
 # keep only the substring between - as current release
-RELEASE=$(sed 's/.*-\(.*\)-.*//' <<< "$BRANCH")
+RELEASE=$(echo ${BRANCH} | cut -d- -f2)
 DIR_IMAGE_LOCATION={{ cros_location }}/images/${RELEASE}/$(date +'%F')
 install ${DIR_IMAGE_LOCATION} -d
 mv {{ cros_location }}/src/scripts/*.img ${DIR_IMAGE_LOCATION}
 
 cd ${DIR_IMAGE_LOCATION}
-for hashfunction in md5sum sha1 sha256 sh512; do
+for hashfunction in md5sum sha1sum sha256sum sha512sum; do
   ${hashfunction} *.img >> hashes.txt
 done
 
 for file in $(ls *.img); do
   tar cfz ${file}.tar ${file}
+  rm ${file}
 done
 
 exit 0
