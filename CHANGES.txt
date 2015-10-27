@@ -1,6 +1,10 @@
 Changes
 =======
 
+1.0.16 (2015-10.27)
+-------------------
+ * kvm recipe: fix bugs dowload image and disk creation
+
 1.0.14 (2015-10.26)
 -------------------
  * kvm recipe: Allow to set keyboard layout language used by qemu and VNC
