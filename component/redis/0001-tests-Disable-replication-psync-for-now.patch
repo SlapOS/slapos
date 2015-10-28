@@ -1,0 +1,49 @@
+From 4e23f7038ae9bdffeab84f1abb5aaf9552ab580e Mon Sep 17 00:00:00 2001
+From: Kirill Smelkov <kirr@nexedi.com>
+Date: Mon, 2 Nov 2015 20:22:33 +0300
+Subject: [PATCH] tests: Disable replication-psync for now
+
+This tests fails on multi-cpu machine for almost all know Redis version.
+A lot of people reported to upstream author and I too provided detailed
+feedback about how it fails and on which hardware and offered ssh access
+to debug:
+
+https://github.com/antirez/redis/issues/2715#issuecomment-151608948
+
+The issue there is already known for ~ 3 months with several people
+allowing to help, but so far it remains broken.
+
+Since we don't use Redis replication, for us it is ok to disable the
+test and move on.
+
+NOTE comments in tcl don't work inside lists (consruct inside { ... } )-
+that's why the entry was moved out.
+---
+ tests/test_helper.tcl | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/tests/test_helper.tcl b/tests/test_helper.tcl
+index d1ebde1..72e7022 100644
+--- a/tests/test_helper.tcl
++++ b/tests/test_helper.tcl
+@@ -11,6 +11,9 @@ source tests/support/tmpfile.tcl
+ source tests/support/test.tcl
+ source tests/support/util.tcl
+ 
++# fails on multi-cpu machines
++# https://github.com/antirez/redis/issues/2715#issuecomment-151608948
++#   integration/replication-psync
+ set ::all_tests {
+     unit/printver
+     unit/auth
+@@ -33,7 +36,6 @@ set ::all_tests {
+     integration/replication-2
+     integration/replication-3
+     integration/replication-4
+-    integration/replication-psync
+     integration/aof
+     integration/rdb
+     integration/convert-zipmap-hash-on-load
+-- 
+2.6.2.521.g3f87150
+
