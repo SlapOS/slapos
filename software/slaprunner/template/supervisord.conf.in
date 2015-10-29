@@ -26,7 +26,9 @@ autorestart = {{ supervisord['autorestart'] }}
 stdout_logfile = {{ supervisord['no_logfile'] }}
 stderr_logfile = {{ supervisord['no_logfile'] }}
 directory = {{ supervisord['directory'] }}
-environment = PATH="{{- supervisord['path'] -}}",MAKEFLAGS="-j{{- '%d' % builtin.max(1, (multiprocessing.cpu_count() / builtin.int(slapparameter_dict.get('cpu-usage-ratio', 4)))) -}}"
+{# how many parallel build jobs to spawn when compiling software -#}
+{% set njobs = builtin.max(1, (multiprocessing.cpu_count() // builtin.int(slapparameter_dict.get('cpu-usage-ratio', 4)))) -%}
+environment = PATH="{{- supervisord['path'] -}}",MAKEFLAGS="-j{{ njobs }}",NPY_NUM_BUILD_JOBS="{{ njobs }}",BUNDLE_JOBS="{{ njobs }}"
 
 [program:{{- supervisord['slapgrid-cp'] -}}]
 command = {{ supervisord['slapgrid-cp-command'] }}
