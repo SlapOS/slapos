@@ -114,6 +114,7 @@ port    = {{ port }}
 # services instantiation
 {{ hellowebsrv('python', 7777) }}
 {{ hellowebsrv('ruby',   7778) }}
+{{ hellowebsrv('go',     7779) }}
 
 
 # Publish all the parameters needed for the user to connect to the instance.
