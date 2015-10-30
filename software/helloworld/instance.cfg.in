@@ -6,10 +6,6 @@
 [buildout]
 parts =
   directory
-  helloweb-python
-  helloweb-python-promise
-  helloweb-ruby
-  helloweb-ruby-promise
   publish-connection-parameter
 
 # Define egg directories to be the one from Software Release
@@ -117,12 +113,21 @@ port    = {{ port }}
 {{ hellowebsrv('go',     7779) }}
 
 
+# register all services/promises to buildout parts
+[buildout]
+parts +=
+{%- for kind in service_list %}
+  helloweb-{{ kind }}
+  helloweb-{{ kind }}-promise
+{%- endfor %}
+
+
 # Publish all the parameters needed for the user to connect to the instance.
 # It can be anything: URL(s), password(s), or arbitrary parameters.
 # Here we'll just echo back the entered name as instance parameter
 [publish-connection-parameter]
 recipe = slapos.cookbook:publish
 name = Hello ${instance-parameter:configuration.name}!
-{% for kind in service_list -%}
+{%- for kind in service_list %}
 url.{{ kind }} = ${helloweb-{{ kind }}:url}
-{% endfor %}
+{%- endfor %}
