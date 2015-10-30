@@ -13,8 +13,8 @@ parts =
 # Define egg directories to be the one from Software Release
 # (/opt/slapgrid/...)
 # Always the same.
-eggs-directory = ${buildout:eggs-directory}
-develop-eggs-directory = ${buildout:develop-eggs-directory}
+eggs-directory = {{ buildout['eggs-directory'] }}
+develop-eggs-directory = {{ buildout['develop-eggs-directory'] }}
 offline = true
 
 
@@ -23,15 +23,15 @@ offline = true
 # We use the slapconfiguration recipe with a few parameters (partition id,
 # computer id, certificate, etc).
 # It will then authenticate to SlapOS Master and fetch the instance parameters.
-# The parameters are accessible from $${instance-parameter:configuration.name-of-parameter}
+# The parameters are accessible from ${instance-parameter:configuration.name-of-parameter}
 # Always the same. Just copy/paste.
 # See docstring of slapos.cookbook:slapconfiguration for more information.
 recipe = slapos.cookbook:slapconfiguration
-computer = $${slap_connection:computer_id}
-partition = $${slap_connection:partition_id}
-url = $${slap_connection:server_url}
-key = $${slap_connection:key_file}
-cert = $${slap_connection:cert_file}
+computer = ${slap_connection:computer_id}
+partition = ${slap_connection:partition_id}
+url = ${slap_connection:server_url}
+key = ${slap_connection:key_file}
+cert = ${slap_connection:cert_file}
 
 # Define default parameter(s) that will be used later, in case user didn't
 # specify it.
@@ -46,18 +46,18 @@ configuration.name = John Doe
 # Create all needed directories, depending on your needs
 [directory]
 recipe = slapos.cookbook:mkdirectory
-home = $${buildout:directory}
-etc = $${:home}/etc
-var = $${:home}/var
+home = ${buildout:directory}
+etc = ${:home}/etc
+var = ${:home}/var
 # Executables put here will be started but not monitored (for startup scripts)
-script = $${:etc}/run/
+script = ${:etc}/run/
 # Executables put here will be started and monitored (for daemons)
-service = $${:etc}/service
+service = ${:etc}/service
 # Executables put here will be launched after buildout has completed to see
 # if instance is running
-promise = $${:etc}/promise/
+promise = ${:etc}/promise/
 # Path of the log directory used by our service (see [helloweb])
-log = $${:var}/log
+log = ${:var}/log
 
 
 # Create a simple web server that says "hello <configuration.name>" to the web.
@@ -69,32 +69,32 @@ log = $${:var}/log
 # NOTE because every computer partition is allocated its own global IPv6
 # address, it is ok to fix the port - different hello-world instances will have
 # different IPv6 addresses and they all will be accessible at the same time.
-ipv6 = $${instance-parameter:ipv6-random}
+ipv6 = ${instance-parameter:ipv6-random}
 port = 7777
 # full URL - for convenience
-url = http://[$${:ipv6}]:$${:port}
+url = http://[${:ipv6}]:${:port}
 
 # the service will log here
-logfile = $${directory:log}/helloweb.log
+logfile = ${directory:log}/helloweb.log
 
 # Actual script that starts the service:
 # This recipe will try to "exec" the command-line after separating parameters.
 recipe = slapos.cookbook:wrapper
 command-line =
-    ${buildout:bin-directory}/helloweb --logfile $${helloweb:logfile}
-        $${:ipv6} $${:port} $${instance-parameter:configuration.name}
+    {{ buildout['bin-directory'] }}/helloweb --logfile ${helloweb:logfile}
+        ${:ipv6} ${:port} ${instance-parameter:configuration.name}
 # Put this shell script in the "etc/service" directory. Each executable of this
 # repository will be started and monitored by supervisord. If a service
 # exits/crashes, it will trigger a "bang" and cause a re-run of the instance.
-wrapper-path = $${directory:service}/helloweb
+wrapper-path = ${directory:service}/helloweb
 
 
 # promise, that checks that helloweb service is alive
 [helloweb-promise]
 recipe = slapos.cookbook:check_port_listening
-path = $${directory:promise}/helloweb
-hostname= $${helloweb:ipv6}
-port = $${helloweb:port}
+path = ${directory:promise}/helloweb
+hostname= ${helloweb:ipv6}
+port = ${helloweb:port}
 
 
 # Publish all the parameters needed for the user to connect to the instance.
@@ -102,5 +102,5 @@ port = $${helloweb:port}
 # Here we'll just echo back the entered name as instance parameter
 [publish-connection-parameter]
 recipe = slapos.cookbook:publish
-name = Hello $${instance-parameter:configuration.name}!
-url = $${helloweb:url}
+name = Hello ${instance-parameter:configuration.name}!
+url = ${helloweb:url}
