@@ -6,8 +6,6 @@
 [buildout]
 parts =
   directory
-  helloweb
-  helloweb-promise
   publish-connection-parameter
 
 # Define egg directories to be the one from Software Release
@@ -70,31 +68,56 @@ log = ${:var}/log
 # address, it is ok to fix the port - different hello-world instances will have
 # different IPv6 addresses and they all will be accessible at the same time.
 ipv6 = ${instance-parameter:ipv6-random}
-port = 7777
 # full URL - for convenience
 url = http://[${:ipv6}]:${:port}
 
 # the service will log here
-logfile = ${directory:log}/helloweb.log
+logfile = ${directory:log}/helloweb-${:kind}.log
 
 # Actual script that starts the service:
 # This recipe will try to "exec" the command-line after separating parameters.
 recipe = slapos.cookbook:wrapper
 command-line =
-    {{ buildout['bin-directory'] }}/helloweb --logfile ${helloweb:logfile}
+    {{ buildout['bin-directory'] }}/helloweb-${:kind} --logfile ${:logfile}
         ${:ipv6} ${:port} ${instance-parameter:configuration.name}
 # Put this shell script in the "etc/service" directory. Each executable of this
 # repository will be started and monitored by supervisord. If a service
 # exits/crashes, it will trigger a "bang" and cause a re-run of the instance.
-wrapper-path = ${directory:service}/helloweb
+wrapper-path = ${directory:service}/helloweb-${:kind}
 
 
 # promise, that checks that helloweb service is alive
 [helloweb-promise]
 recipe = slapos.cookbook:check_port_listening
-path = ${directory:promise}/helloweb
-hostname= ${helloweb:ipv6}
-port = ${helloweb:port}
+path = ${directory:promise}/helloweb-${:kind}
+
+{# macro to instantiate service of `kind` to listen on `port` #}
+{% set service_list = [] %}
+{% macro hellowebsrv(kind, port) %}
+{% do service_list.append(kind) %}
+[helloweb-{{ kind }}]
+<= helloweb
+kind    = {{ kind }}
+port    = {{ port }}
+
+[helloweb-{{ kind }}-promise]
+<= helloweb-promise
+kind    = {{ kind }}
+hostname= ${helloweb-{{ kind }}:ipv6}
+port    = {{ port }}
+{% endmacro %}
+
+# services instantiation
+{{ hellowebsrv('python', 7777) }}
+
+
+# register all services/promises to buildout parts
+[buildout]
+parts +=
+{%- for kind in service_list %}
+  helloweb-{{ kind }}
+  helloweb-{{ kind }}-promise
+{%- endfor %}
 
 
 # Publish all the parameters needed for the user to connect to the instance.
@@ -103,4 +126,6 @@ port = ${helloweb:port}
 [publish-connection-parameter]
 recipe = slapos.cookbook:publish
 name = Hello ${instance-parameter:configuration.name}!
-url = ${helloweb:url}
+{%- for kind in service_list %}
+url.{{ kind }} = ${helloweb-{{ kind }}:url}
+{%- endfor %}
