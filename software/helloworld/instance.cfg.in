@@ -110,6 +110,7 @@ port    = {{ port }}
 # services instantiation
 {{ hellowebsrv('python', 7777) }}
 {{ hellowebsrv('ruby',   7778) }}
+{{ hellowebsrv('go',     7779) }}
 
 
 # register all services/promises to buildout parts
