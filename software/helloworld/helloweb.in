@@ -1,7 +1,7 @@
 #!{{ python_executable }}
 """Simple web-server that says "Hello World" for every path
 
-hello-web [--logfile <logfile>] <bind-ip> <bind-port> ...
+helloweb [--logfile <logfile>] <bind-ip> <bind-port> ...
 """
 
 import sys
@@ -41,7 +41,7 @@ def main():
         f = open(args.logfile, 'a', buffering=1)
         sys.stderr = f
 
-    print >>sys.stderr, '* %s Hello-Web starting at %s' % (
+    print >>sys.stderr, '* %s helloweb starting at %s' % (
         time.asctime(), (args.bind_ip, args.bind_port))
 
     # TODO autodetect ipv6/ipv4
