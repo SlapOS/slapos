@@ -81,7 +81,7 @@ logfile = $${directory:log}/hello-world.log
 # This recipe will try to "exec" the command-line after separating parameters.
 recipe = slapos.cookbook:wrapper
 command-line =
-    ${buildout:bin-directory}/helloweb --logfile $${hello-world:logfile}
+    ${buildout:bin-directory}/helloweb-python --logfile $${hello-world:logfile}
         $${:ipv6} $${:port} $${instance-parameter:configuration.name}
 # Put this shell script in the "etc/service" directory. Each executable of this
 # repository will be started and monitored by supervisord. If a service
