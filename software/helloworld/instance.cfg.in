@@ -82,7 +82,7 @@ logfile = ${directory:log}/helloweb-${:kind}.log
 # This recipe will try to "exec" the command-line after separating parameters.
 recipe = slapos.cookbook:wrapper
 command-line =
-    ${buildout:bin-directory}/helloweb-${:kind} --logfile ${:logfile}
+    {{ buildout['bin-directory'] }}/helloweb-${:kind} --logfile ${:logfile}
         ${:ipv6} ${:port} ${instance-parameter:configuration.name}
 # Put this shell script in the "etc/service" directory. Each executable of this
 # repository will be started and monitored by supervisord. If a service
@@ -94,7 +94,6 @@ wrapper-path = ${directory:service}/helloweb-${:kind}
 [helloweb-promise]
 recipe = slapos.cookbook:check_port_listening
 path = ${directory:promise}/helloweb-${:kind}
-hostname= ${helloweb:ipv6}
 
 {# macro to instantiate service of `kind` to listen on `port` #}
 {% set service_list = [] %}
@@ -105,14 +104,16 @@ hostname= ${helloweb:ipv6}
 kind    = {{ kind }}
 port    = {{ port }}
 
-[helloweb-{{ kind }} -promise]
+[helloweb-{{ kind }}-promise]
 <= helloweb-promise
+kind    = {{ kind }}
+hostname= ${helloweb-{{ kind }}:ipv6}
 port    = {{ port }}
 {% endmacro %}
 
 # services instantiation
-{{ hellowebsrv(python, 7777) }}
-{{ hellowebsrv(ruby,   7778) }}
+{{ hellowebsrv('python', 7777) }}
+{{ hellowebsrv('ruby',   7778) }}
 
 
 # Publish all the parameters needed for the user to connect to the instance.
@@ -121,6 +122,6 @@ port    = {{ port }}
 [publish-connection-parameter]
 recipe = slapos.cookbook:publish
 name = Hello ${instance-parameter:configuration.name}!
-{% for kind in service_list %}
+{% for kind in service_list -%}
 url.{{ kind }} = ${helloweb-{{ kind }}:url}
 {% endfor %}
