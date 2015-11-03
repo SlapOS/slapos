@@ -11,6 +11,7 @@ repo init -u https://chromium.googlesource.com/chromiumos/manifest.git -b ${BRAN
 repo sync >> $DL_LOG
 
 ############################## Prepare chroot environment ###################################
+BUILD_LOG={{ instance_log_dir }}/cros_build.log
 {{ depot_tools_export_path_cmd }}
 cd {{ cros_location }}
 
@@ -22,20 +23,37 @@ cros_sdk --download || exit 1
 # just need to change -sqlite by sqlite on the right line
 PACKAGE_USE_FILE={{ cros_location }}/src/third_party/chromiumos-overlay/profiles/targets/chromeos/package.use
 line_number=$(sed -n '/dev-lang\/python/=' ${PACKAGE_USE_FILE})
-if [ $line ] ; then
-        sed -i "${line_number}s/-sqlite/sqlite/" ${PACKAGE_USE_FILE}
+if [ $line_number ] ; then
+    echo $line_number
+    sed -i "${line_number}s/-sqlite/sqlite/" ${PACKAGE_USE_FILE}
+    if [[ ! $(sed -n ${line_number}p ${PACKAGE_USE_FILE} | grep ipv6) ]]; then
+        sed -i "${line_number}s/$/ ipv6/" ${PACKAGE_USE_FILE}
+    fi
 fi
-
-# add custom script for modifying the final image after building
-# that is useful for custumizing Chromium OS and producing Nayu images for now
-#cp {{ scripts_dir }}/modify_image.sh {{ cros_location }}/src/scripts/modify_image.sh \
-#  && chmod 770 {{ cros_location }}/src/scripts/modify_image.sh || exit 1
 
 # add custom ebuilds
 for category in $( ls {{ ebuilds_dir }} ); do
   echo ${category}
   cp -R {{ ebuilds_dir }}/${category}/* {{ cros_location}}/src/third_party/chromiumos-overlay/${category}/
 done
+
+### packages management ###
+
+BASE_CHROMEOS_DEV_ROOT_EBUILD={{ cros_location}}/src/third_party/chromiumos-overlay/chromeos-base/chromeos-dev-root/chromeos-dev-root-0.0.1.ebuild
+VIRTUAL_CHROMEOS_OS_DEV_EBUILD={{ cros_location}}/src/third_party/chromiumos-overlay/virtual/target-chromium-os-dev/target-chromium-os-dev-1.ebuild
+
+# change the virtual ebuild responsible for installing all packages to add the ones 
+# needed for NayuOS
+for package in {{ nayu_packages }} ; do
+  if cat ${VIRTUAL_CHROMEOS_OS_DEV_EBUILD} | grep ${package} ; then
+    echo "no need to change ${VIRTUAL_CHROMEOS_OS_DEV_EBUILD} file to add ${package}..." >> "${BUILD_LOG}"
+  else
+    printf "\n\nRDEPEND=\"\${RDEPEND}\n          ${package}\"\n">> ${VIRTUAL_CHROMEOS_OS_DEV_EBUILD}
+  fi
+done
+
+# do not install the Upstart init script that starts ssh daemon at boot time
+sed -i '/openssh-server-init/ d' ${BASE_CHROMEOS_DEV_ROOT_EBUILD}
 
 ######################################## Build ##############################################
 BOARDS="{{ boards_list }}"
@@ -50,35 +68,33 @@ for board in ${BOARDS}; do
 
   IMAGE_LOCATION=${board}.chromiumos.img
   NAYU_IMAGE_LOCATION=${board}.nayuos.img
-  BUILD_LOG={{ instance_log_dir }}/cros_build.log
 
   # preparing packages (for chroot and image)
-  date >> $BUILD_LOG
-  echo "building packages for a ${board}-flavoured Chromium OS..." >> $BUILD_LOG
-  cros_sdk -- ./build_packages --board=${board} >> $BUILD_LOG
+  date >> "${BUILD_LOG}"
+  echo "building packages for a ${board}-flavoured Chromium OS..." >> "${BUILD_LOG}"
+  cros_sdk -- ./build_packages --board=${board} >> "${BUILD_LOG}"
 
   # Chromium original dev image
-  date >> $BUILD_LOG
-  echo "building image for a ${board}-flavoured Chromium OS..." >> $BUILD_LOG
-  cros_sdk -- ./build_image --board=${board} >> $BUILD_LOG \
-    && echo "removing old image if any and creating image file $IMAGE_LOCATION..." >> $BUILD_LOG \
+  date >> "${BUILD_LOG}"
+  echo "building image for a ${board}-flavoured Chromium OS..." >> "${BUILD_LOG}"
+  cros_sdk -- ./build_image --board=${board} >> "${BUILD_LOG}" \
+    && echo "removing old image if any and creating image file $IMAGE_LOCATION..." >> "${BUILD_LOG}" \
     && cros_sdk -- rm -f $IMAGE_LOCATION && cros_sdk -- touch $IMAGE_LOCATION \
-    && cros_sdk -- cros flash --board=${board} file://$IMAGE_LOCATION >> $BUILD_LOG
+    && cros_sdk -- cros flash --board=${board} file://$IMAGE_LOCATION >> "${BUILD_LOG}"
 
   # NayuOS
-  date >> $BUILD_LOG
-  echo "rebuilding image with noenable_rootfs_verification and modifying image" >> $BUILD_LOG
-  cros_sdk -- ./build_image --noenable_rootfs_verification --board=${board} >> $BUILD_LOG \
-    && echo "modifying image, removing old image if any and creating image file $NAYU_IMAGE_LOCATION..." >> $BUILD_LOG \
+    # /usr/local/usr/lib/debug is needed because of symbolic links that leads 
+    # to this directory when installing some packages (babeld-re6stnet in particular)
+    # because installation will fail if the symbolic link is broken
+  date >> "${BUILD_LOG}"
+  echo "rebuilding image with noenable_rootfs_verification" >> "${BUILD_LOG}"
+  cros_sdk -- ./build_image --noenable_rootfs_verification --board=${board} >> "${BUILD_LOG}" \
+    && echo "adding packages image, removing old image if any and creating image file $NAYU_IMAGE_LOCATION..." >> "${BUILD_LOG}" \
     && cros_sdk -- sudo install -d /usr/local/usr/lib/debug \
-    && cros_sdk -- sudo emerge-${board} net-misc/babeld-re6stnet net-libs/miniupnpc net-misc/re6stnet >> $BUILD_LOG \
-    && cros_sdk -- ./modify_image.sh ${board} \
     && cros_sdk -- rm -f $NAYU_IMAGE_LOCATION && cros_sdk -- touch $NAYU_IMAGE_LOCATION \
-    && cros_sdk -- cros flash --board=${board} file://$NAYU_IMAGE_LOCATION >> $BUILD_LOG \
+    && cros_sdk -- cros flash --board=${board} file://$NAYU_IMAGE_LOCATION >> "${BUILD_LOG}" \
     || exit 1
 
-  # add some packages to the board's packages
-  echo "adding re6st and its dependencies to the chroot/build/${board}/packages..." >> $BUILD_LOG
   if [ ${board} == daisy ]; then
     echo "daisy board: removing accepted license for the next builds..."
     cros_sdk -- sudo sh -c "mv /etc/make.conf.user.save /etc/make.conf.user"
