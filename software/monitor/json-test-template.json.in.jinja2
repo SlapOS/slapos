@@ -11,7 +11,7 @@
 {% endif -%}
 {% endfor -%}
         ],
-  "ipv4" :
+  "ping" :
         [
 {% for slave_instance in slave_list -%}
 {% if slave_instance.get('ping_ip_list') not in [None, "", "0.0.0.0"] -%}
@@ -24,7 +24,7 @@
 {% endif -%}
 {% endfor -%}
         ],
-  "ipv6" :
+  "ping6" :
         [
 {% for slave_instance in slave_list -%}
 {% if slave_instance.get('ping6_ip_list') not in [None, "", "0.0.0.0"] -%}
