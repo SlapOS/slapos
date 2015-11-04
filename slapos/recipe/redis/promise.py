@@ -7,8 +7,9 @@ import sys
 def main(args):
   host = args['host']
   port = int(args['port'])
+  unixsocket = args['unixsocket']
   try:
-    r = redis.Redis(host=host, port=port, db=0)
+    r = redis.Redis(host=host, port=port, unix_socket_path=unixsocket, db=0)
     r.publish("Promise-Service","SlapOS Promise")
     r.connection_pool.disconnect()
     sys.exit(0)
