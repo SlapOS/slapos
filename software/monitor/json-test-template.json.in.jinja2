@@ -1,4 +1,4 @@
-{% set slave_list = json_module.loads(slave_information.get('slave_instance_list')) -%}
+{% set slave_list = json_module.loads(slave_information.get('slave_instance_list', '{}')) -%}
 {
     "id" :
         [

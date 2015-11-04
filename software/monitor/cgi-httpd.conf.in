@@ -78,7 +78,7 @@ Alias /{{ monitor_private_hash }} {{ directory.get('private-directory') }}/
     </Files>
 </Directory>
 
-{% set slave_list = json_module.loads(slave_information.get('slave_instance_list')) -%}
+{% set slave_list = json_module.loads(slave_information.get('slave_instance_list', '{}')) -%}
 {% for slave_instance in slave_list -%}
 
 alias /{{ slave_instance.get('slave_reference') }} {{ directory.get('private-directory') }}/network-user-logs/{{ slave_instance.get('slave_reference') }}
