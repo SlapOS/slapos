@@ -29,6 +29,7 @@ import md5
 import os
 import subprocess
 import textwrap
+import shutil
 from zc.buildout import UserError
 
 from slapos.recipe.librecipe import GenericBaseRecipe
@@ -79,11 +80,19 @@ class Recipe(GenericBaseRecipe):
         # if the pgdata already exists, skip all steps, we don't need to do anything.
 
         if not os.path.exists(pgdata):
-            self.createCluster()
-            self.createConfig()
-            self.createDatabase()
-            self.updateSuperuser()
-            self.createRunScript()
+            try:
+                self.createCluster()
+                self.createConfig()
+                self.createDatabase()
+                self.updateSuperuser()
+                self.createRunScript()
+            except:
+                # do not leave half-installed postgresql - else next time we
+                # run we won't update it.
+                shutil.rmtree(pgdata)
+                raise
+
+
 
         # install() methods usually return the pathnames of managed files.
         # If they are missing, they will be rebuilt.
