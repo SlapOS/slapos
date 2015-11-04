@@ -45,6 +45,11 @@ class Recipe(GenericBaseRecipe):
                         log_file=self.options['log_file'],
                         master_passwd=master_passwd
     )
+    if self.options.get('unixsocket'):
+        unixsocket = "unixsocket %s\nunixsocketperm 700" % self.options['unixsocket']
+    else:
+        unixsocket = ""
+    configuration['unixsocket'] = unixsocket
 
     config = self.createFile(config_file,
       self.substituteTemplate(self.getTemplateFilename('redis.conf.in'),
@@ -63,7 +68,8 @@ class Recipe(GenericBaseRecipe):
       promise = self.createPythonScript(
         promise_script,
         '%s.promise.main' % __name__,
-        dict(host=self.options['ipv6'], port=self.options['port'])
+        dict(host=self.options['ipv6'], port=self.options['port'],
+             unixsocket = self.options.get('unixsocket') )
       )
       path_list.append(promise)
 
