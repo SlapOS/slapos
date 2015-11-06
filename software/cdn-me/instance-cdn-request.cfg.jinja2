@@ -13,6 +13,7 @@ offline = true
 [directory]
 recipe = slapos.cookbook:mkdirectory
 home = $${buildout:directory}
+promise = $${:home}/etc/promise
 etc = $${:home}/etc/
 var = $${:home}/var/
 srv = $${:home}/srv/
@@ -28,7 +29,7 @@ software-type = custom-personal
 slave = true
 
 {% if slapparameter_dict.get('port', '80') != '443' %}
-config-url = https://[$${request-re6stnet-token-slave:connection-ipv6}1]:{{ slapparameter_dict.get('port', '80') }}/
+config-url = http://[$${request-re6stnet-token-slave:connection-ipv6}1]:{{ slapparameter_dict.get('port', '80') }}/
 {% endif -%}
 
 {% if slapparameter_dict.get('port', '80') == '443' %}
@@ -131,8 +132,7 @@ name = Monitor Frontend
 software-url = product.frontend
 software-type = custom-personal
 slave = true
-config-url = $${request-monitor-slave:connection-site_url}
-config-domain = $${slap-parameter:frontend-domain}
+config-url = $${request-monitor-test-distributor-slave:connection-site_url}
 return = site_url domain
 
 [publish-connection-informations]
@@ -142,19 +142,20 @@ url = http://$${request-frontend-token-slave:connection-domain}
 token = $${request-re6stnet-token-slave:connection-token}
 ipv6 = $${request-re6stnet-token-slave:connection-ipv6}
 ipv4 = $${request-re6stnet-token-slave:connection-ipv4}
-monitor_v6_url = $${request-monitor-slave:connection-site_url}
+monitor_v6_url = $${request-monitor-test-distributor-slave:connection-site_url}
 monitor_url = https://$${monitor-frontend:connection-domain}
-info_1 = $${request-re6stnet-token-slave:info_1}
+info_1 = $${request-re6stnet-token-slave:connection-info_1}
 
 [connection-parameter-checker]
 recipe = slapos.cookbook:check_parameter
 path = $${directory:promise}/check_re6stnet_ipv6
 value = $${request-re6stnet-token-slave:connection-ipv6}
-not-expected = ::
+expected-not-value = ::
+expected-value =
 
 [connection-parameter-http-checker]
 recipe = slapos.cookbook:check_parameter
 path = $${directory:promise}/check_re6stnet_http
 value = $${publish-connection-informations:url}
-not-expected = http://
-
+expected-not-value = http://
+expected-value =
