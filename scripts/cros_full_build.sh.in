@@ -34,17 +34,17 @@ fi
 # add custom ebuilds
 for category in $( ls {{ ebuilds_dir }} ); do
   echo ${category}
-  cp -R {{ ebuilds_dir }}/${category}/* {{ cros_location}}/src/third_party/chromiumos-overlay/${category}/
+  cp -R {{ ebuilds_dir }}/${category}/* {{ cros_location }}/src/third_party/chromiumos-overlay/${category}/
 done
 
 ### packages management ###
 
-BASE_CHROMEOS_DEV_ROOT_EBUILD={{ cros_location}}/src/third_party/chromiumos-overlay/chromeos-base/chromeos-dev-root/chromeos-dev-root-0.0.1.ebuild
-VIRTUAL_CHROMEOS_OS_DEV_EBUILD={{ cros_location}}/src/third_party/chromiumos-overlay/virtual/target-chromium-os-dev/target-chromium-os-dev-1.ebuild
+BASE_CHROMEOS_DEV_ROOT_EBUILD={{ cros_location }}/src/third_party/chromiumos-overlay/chromeos-base/chromeos-dev-root/chromeos-dev-root-0.0.1.ebuild
+VIRTUAL_CHROMEOS_OS_DEV_EBUILD={{ cros_location }}/src/third_party/chromiumos-overlay/virtual/target-chromium-os-dev/target-chromium-os-dev-1.ebuild
 
 # change the virtual ebuild responsible for installing all packages to add the ones 
 # needed for NayuOS
-for package in {{ nayu_packages }} ; do
+for package in {{ nayu_dev_packages }} ; do
   if cat ${VIRTUAL_CHROMEOS_OS_DEV_EBUILD} | grep ${package} ; then
     echo "no need to change ${VIRTUAL_CHROMEOS_OS_DEV_EBUILD} file to add ${package}..." >> "${BUILD_LOG}"
   else
@@ -54,6 +54,14 @@ done
 
 # do not install the Upstart init script that starts ssh daemon at boot time
 sed -i '/openssh-server-init/ d' ${BASE_CHROMEOS_DEV_ROOT_EBUILD}
+
+for package in {{ nayu_dev_root }} ; do
+  if cat ${BASE_CHROMEOS_DEV_ROOT_EBUILD} | grep ${package} ; then
+    echo "no need to change ${BASE_CHROMEOS_DEV_ROOT_EBUILD} file to add ${package}..." >> "${BUILD_LOG}"
+  else
+    printf "\n\nRDEPEND=\"\${RDEPEND}\n          ${package}\"\n">> ${BASE_CHROMEOS_DEV_ROOT_EBUILD}
+  fi
+done
 
 ######################################## Build ##############################################
 BOARDS="{{ boards_list }}"
