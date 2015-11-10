@@ -19,7 +19,7 @@ in /etc/sudoers:
 ## Input
 In the vifib parameters (softinst\<nb\>.host.vifib.net \> Services \> Parameters):
 
-    * board / ex: peppy, swanky, ... (daisy won't work because of Mali drivers license)
+    * board / ex: peppy, swanky, ... (choosing daisy will accept all licenses for the daisy board build only, in order to use Mali drivers, see [chromium mailing list](https://groups.google.com/a/chromium.org/forum/#!topic/chromium-os-dev/Pf9ZG2itxWM))
     * branch / ex: release-R46-7390.B
 
 
