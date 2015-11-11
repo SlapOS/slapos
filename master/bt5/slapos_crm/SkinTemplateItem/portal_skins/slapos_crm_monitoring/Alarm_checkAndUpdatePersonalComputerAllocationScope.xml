@@ -61,7 +61,7 @@ if category_personal is not None:\n
     portal_type=\'Computer\', \n
     validation_state=\'validated\', \n
     modification_date=(DateTime() - 30).strftime(\'<=%Y/%m/%d\'), \n
-    order_by=((\'modification_date\', "ASC"), ), \n
+    sort_on=((\'modification_date\', "ASC"), ), \n
     default_allocation_scope_uid=category_personal.getUid(), \n
     left_join_list=[\'aggregate_related_uid\'], \n
     aggregate_related_uid=None,\n
