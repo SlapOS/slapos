@@ -149,6 +149,7 @@ erp5_access_tab
 erp5_access_token
 erp5_accounting
 erp5_administration
+erp5_auto_logout
 erp5_base
 erp5_bearer_token
 erp5_commerce
@@ -198,6 +199,7 @@ erp5_vcs
 erp5_web
 erp5_web_crm
 erp5_web_minimal_theme
+erp5_web_renderjs
 erp5_web_service
 erp5_web_widget_library
 erp5_workflow
@@ -252,6 +254,7 @@ erp5_access_tab
 erp5_access_token
 erp5_accounting
 erp5_administration
+erp5_auto_logout
 erp5_base
 erp5_bearer_token
 erp5_commerce
@@ -302,6 +305,7 @@ erp5_vcs
 erp5_web
 erp5_web_crm
 erp5_web_minimal_theme
+erp5_web_renderjs
 erp5_web_service
 erp5_web_widget_library
 erp5_workflow
@@ -356,6 +360,7 @@ erp5_access_tab
 erp5_access_token
 erp5_accounting
 erp5_administration
+erp5_auto_logout
 erp5_base
 erp5_bearer_token
 erp5_commerce
@@ -406,6 +411,7 @@ erp5_vcs
 erp5_web
 erp5_web_crm
 erp5_web_minimal_theme
+erp5_web_renderjs
 erp5_web_service
 erp5_web_widget_library
 erp5_workflow
@@ -460,6 +466,7 @@ erp5_access_tab
 erp5_access_token
 erp5_accounting
 erp5_administration
+erp5_auto_logout
 erp5_base
 erp5_bearer_token
 erp5_commerce
@@ -508,6 +515,7 @@ erp5_vcs
 erp5_web
 erp5_web_crm
 erp5_web_minimal_theme
+erp5_web_renderjs
 erp5_web_service
 erp5_web_widget_library
 erp5_workflow
@@ -561,6 +569,7 @@ erp5_access_tab
 erp5_access_token
 erp5_accounting
 erp5_administration
+erp5_auto_logout
 erp5_base
 erp5_bearer_token
 erp5_commerce
@@ -609,6 +618,7 @@ erp5_vcs
 erp5_web
 erp5_web_crm
 erp5_web_minimal_theme
+erp5_web_renderjs
 erp5_web_service
 erp5_web_widget_library
 erp5_workflow
@@ -663,6 +673,7 @@ erp5_access_tab
 erp5_access_token
 erp5_accounting
 erp5_administration
+erp5_auto_logout
 erp5_base
 erp5_bearer_token
 erp5_commerce
@@ -711,6 +722,7 @@ erp5_vcs
 erp5_web
 erp5_web_crm
 erp5_web_minimal_theme
+erp5_web_renderjs
 erp5_web_service
 erp5_web_widget_library
 erp5_workflow
@@ -764,6 +776,7 @@ erp5_access_tab
 erp5_access_token
 erp5_accounting
 erp5_administration
+erp5_auto_logout
 erp5_base
 erp5_bearer_token
 erp5_commerce
@@ -812,6 +825,7 @@ erp5_vcs
 erp5_web
 erp5_web_crm
 erp5_web_minimal_theme
+erp5_web_renderjs
 erp5_web_service
 erp5_web_widget_library
 erp5_workflow
@@ -866,6 +880,7 @@ erp5_access_tab
 erp5_access_token
 erp5_accounting
 erp5_administration
+erp5_auto_logout
 erp5_base
 erp5_bearer_token
 erp5_commerce
@@ -914,6 +929,7 @@ erp5_vcs
 erp5_web
 erp5_web_crm
 erp5_web_minimal_theme
+erp5_web_renderjs
 erp5_web_service
 erp5_web_widget_library
 erp5_workflow
@@ -968,6 +984,7 @@ erp5_access_tab
 erp5_access_token
 erp5_accounting
 erp5_administration
+erp5_auto_logout
 erp5_base
 erp5_bearer_token
 erp5_commerce
@@ -1016,6 +1033,7 @@ erp5_vcs
 erp5_web
 erp5_web_crm
 erp5_web_minimal_theme
+erp5_web_renderjs
 erp5_web_service
 erp5_web_widget_library
 erp5_workflow
@@ -1071,6 +1089,7 @@ erp5_access_tab
 erp5_access_token
 erp5_accounting
 erp5_administration
+erp5_auto_logout
 erp5_base
 erp5_bearer_token
 erp5_commerce
@@ -1119,6 +1138,7 @@ erp5_vcs
 erp5_web
 erp5_web_crm
 erp5_web_minimal_theme
+erp5_web_renderjs
 erp5_web_service
 erp5_web_widget_library
 erp5_workflow
@@ -1173,6 +1193,7 @@ erp5_access_tab
 erp5_access_token
 erp5_accounting
 erp5_administration
+erp5_auto_logout
 erp5_base
 erp5_bearer_token
 erp5_commerce
@@ -1221,6 +1242,7 @@ erp5_vcs
 erp5_web
 erp5_web_crm
 erp5_web_minimal_theme
+erp5_web_renderjs
 erp5_web_service
 erp5_web_widget_library
 erp5_workflow
