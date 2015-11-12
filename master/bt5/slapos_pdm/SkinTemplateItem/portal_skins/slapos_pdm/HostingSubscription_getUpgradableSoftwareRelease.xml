@@ -81,8 +81,6 @@ software_installation_list = portal.portal_catalog(\n
     validation_state="validated",\n
     url_string=software_release.getUrlString(),\n
     default_aggregate_uid=computer.getUid(),\n
-    #XXX - don\'t select destroyed Software Installation\n
-    slap_state=\'start_requested\'\n
   )\n
 # check again slap_state because it might be ignored in previous request!\n
 if \'start_requested\' in [software_installation.getSlapState() \\\n
