@@ -113,14 +113,6 @@ class Recipe(GenericBaseRecipe):
     if instance_home:
       zope_environment["INSTANCE_HOME"] = instance_home
 
-    # longrequestlogger product which requires environment settings
-    longrequest_logger_file = self.options.get('longrequest-logger-file', None)
-    if longrequest_logger_file:
-      # add needed zope configuration
-      zope_environment['longrequestlogger_file'] = longrequest_logger_file
-      zope_environment['longrequestlogger_timeout'] = self.options.get('longrequest-logger-timeout', None)
-      zope_environment['longrequestlogger_interval'] = self.options.get('longrequest-logger-interval', None)
-
     # configure default Zope2 zcml
     open(self.options['site-zcml'], 'w').write(open(self.getTemplateFilename(
         'site.zcml')).read())
