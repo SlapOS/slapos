@@ -29,6 +29,7 @@
 
 import psutil
 import os
+import subprocess
 from temperature import collectComputerTemperature, \
                         launchTemperatureTest
 
@@ -70,6 +71,53 @@ class ProcessSnapshot(_Snapshot):
     if self.process_object.is_running():
       # CPU percentage, we will have to get actual absolute value
       self.cpu_percent = self.process_object.cpu_percent()
+
+class FolderSizeSnapshot(_Snapshot):
+  """Calculate partition folder size. 
+  """
+  def __init__(self, folder_path, pid_file=None, use_quota=False):
+    # slapos computer partition size
+    self.folder_path = folder_path
+    self.pid_file = pid_file
+    self.disk_usage = 0
+    self.use_quota = use_quota
+
+  def update_folder_size(self):
+    """Return 0 if the process du is still running
+    """
+    if self.pid_file and os.path.exists(self.pid_file):
+      with open(self.pid_file, 'r') as fpid:
+        pid_str = fpid.read()
+        if pid_str:
+          pid = int(pid_str)
+          try:
+            os.kill(pid, 0)
+          except OSError:
+            pass
+          else:
+            return
+
+    self.disk_usage = self._getSize(self.folder_path)
+    # If extra disk added to partition
+    data_dir = os.path.join(self.folder_path, 'DATA')
+    if os.path.exists(data_dir):
+      for filename in os.listdir(data_dir):
+        extra_path = os.path.join(data_dir, filename)
+        if os.path.islink(extra_path) and os.path.isdir('%s/' % extra_path):
+          self.disk_usage += self._getSize('%s/' % extra_path)
+
+  def _getSize(self, file_path):
+    size = 0
+    command = 'du -sm %s' % file_path
+    process = subprocess.Popen(command, stdout=subprocess.PIPE, 
+                              stderr=subprocess.PIPE, shell=True)
+    if self.pid_file:
+      with open(self.pid_file, 'w') as fpid:
+        pid = fpid.write(str(process.pid))
+    result = process.communicate()[0]
+    if process.returncode == 0:
+      size, _  = result.strip().split()
+    return float(size)
 
 class SystemSnapshot(_Snapshot):
   """ Take a snapshot from current system usage
@@ -195,3 +243,4 @@ class ComputerSnapshot(_Snapshot):
 
     return [(k, v) for k, v in partition_dict.iteritems()]
 
+  

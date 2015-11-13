@@ -54,6 +54,9 @@ class FakeDatabase(object):
     def insertUserSnapshot(self, *args, **kw):
       self.invoked_method_list.append(("insertUserSnapshot", (args, kw)))
 
+    def inserFolderSnapshot(self, *args, **kw):
+      self.invoked_method_list.append(("inserFolderSnapshot", (args, kw)))
+
     def insertSystemSnapshot(self, *args, **kw):
       self.invoked_method_list.append(("insertSystemSnapshot", (args, kw)))
 
@@ -62,6 +65,17 @@ class FakeDatabase(object):
 
     def insertDiskPartitionSnapshot(self, *args, **kw):
       self.invoked_method_list.append(("insertDiskPartitionSnapshot", (args, kw)))
+
+    def insertTemperatureSnapshot(self, *args, **kw):
+      self.invoked_method_list.append(("insertTemperatureSnapshot", (args, kw)))
+
+    def insertHeatingSnapshot(self, *args, **kw):
+      self.invoked_method_list.append(("insertHeatingSnapshot", (args, kw)))
+
+class FakeDatabase2(FakeDatabase):
+    def select(self, *args, **kw):
+      self.invoked_method_list.append(("select", (args, kw)))
+      return []
 
 class TestCollectDatabase(unittest.TestCase):
 
@@ -79,7 +93,7 @@ class TestCollectDatabase(unittest.TestCase):
         database.connect()
         try:
           self.assertEquals(
-              [u'user', u'computer', u'system', u'disk', u'temperature', u'heating'],
+              [u'user', u'folder', u'computer', u'system', u'disk', u'temperature', u'heating'],
               database.getTableList())
         finally:
           database.close()
@@ -97,8 +111,21 @@ class TestCollectDatabase(unittest.TestCase):
              '10.0', '10.0', '0.1', '0.1', 'DATE', 'TIME')
             database.commit()
             self.assertEquals([i for i in database.select('user')], 
-                            [(u'fakeuser0', 10.0, u'10-12345', 0.1, 10.0, 
-                             1.0, 10.0, 10.0, 0.1, 0.1, u'DATE', u'TIME', 0)])
+                          [(u'fakeuser0', 10.0, u'10-12345', 0.1, 10.0, 
+                          1.0, 10.0, 10.0, 0.1, 0.1, u'DATE', u'TIME', 0)])
+        finally:
+            database.close()
+
+    def test_insert_folder_snapshot(self):
+
+        database = db.Database(self.instance_root)
+        database.connect()
+        try:
+            database.inserFolderSnapshot(
+             'fakeuser0', '0.1', 'DATE', 'TIME')
+            database.commit()
+            self.assertEquals([i for i in database.select('folder')], 
+                          [(u'fakeuser0', 0.1, u'DATE', u'TIME', 0)])
         finally:
             database.close()
 
@@ -258,6 +285,7 @@ class TestCollectReport(unittest.TestCase):
         csv_path_list = ['%s/1983-01-10/dump_disk.csv' % self.instance_root,
                          '%s/1983-01-10/dump_computer.csv' % self.instance_root,
                          '%s/1983-01-10/dump_user.csv' % self.instance_root,
+                         '%s/1983-01-10/dump_folder.csv' % self.instance_root,
                          '%s/1983-01-10/dump_heating.csv' % self.instance_root,
                          '%s/1983-01-10/dump_temperature.csv' % self.instance_root,
                          '%s/1983-01-10/dump_system.csv' % self.instance_root]
@@ -337,7 +365,7 @@ class TestCollectSnapshot(unittest.TestCase):
 
         self.assertNotEquals(process_snapshot.username, None)  
         self.assertEquals(int(process_snapshot.pid), os.getpid())
-        self.assertEquals(int(process_snapshot.name.split("-")[0]),
+        self.assertEquals(int(process_snapshot.process.split("-")[0]),
                           os.getpid())
 
         self.assertNotEquals(process_snapshot.cpu_percent , None)
@@ -347,6 +375,30 @@ class TestCollectSnapshot(unittest.TestCase):
         self.assertNotEquals(process_snapshot.memory_rss, None)
         self.assertNotEquals(process_snapshot.io_rw_counter, None)
         self.assertNotEquals(process_snapshot.io_cycles_counter, None)
+
+    def test_folder_size_snapshot(self):
+        disk_snapshot = snapshot.FolderSizeSnapshot(self.instance_root)
+        self.assertEqual(disk_snapshot.disk_usage, 0)
+        for i in range(0, 10):
+          folder = 'folder%s' % i
+          os.mkdir(os.path.join(self.instance_root, folder))
+          with open(os.path.join(self.instance_root, folder, 'toto'), 'w') as f:
+            f.write('toto text')
+
+        disk_snapshot.update_folder_size()
+        self.assertNotEquals(disk_snapshot.disk_usage, 0)
+
+        pid_file = os.path.join(self.instance_root, 'disk_snap.pid')
+        disk_snapshot = snapshot.FolderSizeSnapshot(self.instance_root, pid_file)
+        disk_snapshot.update_folder_size()
+        self.assertNotEquals(disk_snapshot.disk_usage, 0)
+
+        pid_file = os.path.join(self.instance_root, 'disk_snap.pid')
+        disk_snapshot = snapshot.FolderSizeSnapshot(self.instance_root, pid_file,
+                                           use_quota=True)
+        disk_snapshot.update_folder_size()
+        self.assertNotEquals(disk_snapshot.disk_usage, 0)
+        
 
     def test_process_snapshot_broken_process(self):
         self.assertRaises(AssertionError, 
@@ -396,9 +448,10 @@ class TestCollectEntity(unittest.TestCase):
     def tearDown(self):
         pass
 
-    def getFakeUser(self):
+    def getFakeUser(self, disk_snapshot_params={}):
+       os.mkdir("%s/fakeuser0" % self.instance_root)
        return entity.User("fakeuser0", 
-                    "%s/fakeuser0" % self.instance_root ) 
+                    "%s/fakeuser0" % self.instance_root, disk_snapshot_params ) 
 
     def test_get_user_list(self):
         config = ConfigParser()
@@ -426,7 +479,8 @@ class TestCollectEntity(unittest.TestCase):
         self.assertEquals(user.snapshot_list, ["SNAPSHOT"])
 
     def test_user_save(self):
-        user = self.getFakeUser()
+        disk_snapshot_params = {'enable': False}
+        user = self.getFakeUser(disk_snapshot_params)
         process = psutil.Process(os.getpid())
         user.append(snapshot.ProcessSnapshot(process))
         database = FakeDatabase()
@@ -442,6 +496,64 @@ class TestCollectEntity(unittest.TestCase):
                     'io_cycles_counter', 'cpu_num_threads'])
         self.assertEquals(database.invoked_method_list[2], ("commit", ""))
         self.assertEquals(database.invoked_method_list[3], ("close", ""))
+
+    def test_user_save_disk_snapshot(self):
+        disk_snapshot_params = {'enable': True, 'testing': True}
+        user = self.getFakeUser(disk_snapshot_params)
+        process = psutil.Process(os.getpid())
+        user.append(snapshot.ProcessSnapshot(process))
+        database = FakeDatabase2()
+        user.save(database, "DATE", "TIME")
+        self.assertEquals(database.invoked_method_list[0], ("connect", ""))
+
+        self.assertEquals(database.invoked_method_list[1][0], "insertUserSnapshot")
+        self.assertEquals(database.invoked_method_list[1][1][0], ("fakeuser0",))
+        self.assertEquals(database.invoked_method_list[1][1][1].keys(), 
+                   ['cpu_time', 'cpu_percent', 'process',
+                    'memory_rss', 'pid', 'memory_percent',
+                    'io_rw_counter', 'insertion_date', 'insertion_time',
+                    'io_cycles_counter', 'cpu_num_threads'])
+        self.assertEquals(database.invoked_method_list[2], ("commit", ""))
+        self.assertEquals(database.invoked_method_list[3], ("close", ""))
+
+        self.assertEquals(database.invoked_method_list[4], ("connect", ""))
+        self.assertEquals(database.invoked_method_list[5][0], "inserFolderSnapshot")
+        self.assertEquals(database.invoked_method_list[5][1][0], ("fakeuser0",))
+        self.assertEquals(database.invoked_method_list[5][1][1].keys(), 
+                   ['insertion_date', 'disk_usage', 'insertion_time'])
+        self.assertEquals(database.invoked_method_list[6], ("commit", ""))
+        self.assertEquals(database.invoked_method_list[7], ("close", ""))
+
+    def test_user_save_disk_snapshot_cycle(self):
+        disk_snapshot_params = {'enable': True, 'time_cycle': 3600, 'testing': True}
+        user = self.getFakeUser(disk_snapshot_params)
+        process = psutil.Process(os.getpid())
+        user.append(snapshot.ProcessSnapshot(process))
+        database = FakeDatabase2()
+        user.save(database, "DATE", "TIME")
+        self.assertEquals(database.invoked_method_list[0], ("connect", ""))
+
+        self.assertEquals(database.invoked_method_list[1][0], "insertUserSnapshot")
+        self.assertEquals(database.invoked_method_list[1][1][0], ("fakeuser0",))
+        self.assertEquals(database.invoked_method_list[1][1][1].keys(), 
+                   ['cpu_time', 'cpu_percent', 'process',
+                    'memory_rss', 'pid', 'memory_percent',
+                    'io_rw_counter', 'insertion_date', 'insertion_time',
+                    'io_cycles_counter', 'cpu_num_threads'])
+        self.assertEquals(database.invoked_method_list[2], ("commit", ""))
+        self.assertEquals(database.invoked_method_list[3], ("close", ""))
+
+        self.assertEquals(database.invoked_method_list[4], ("connect", ""))
+        self.assertEquals(database.invoked_method_list[5][0], "select")
+        self.assertEquals(database.invoked_method_list[5][1][0], ())
+        self.assertEquals(database.invoked_method_list[5][1][1].keys(),
+                                ['table', 'where', 'limit', 'order', 'columns'])
+        self.assertEquals(database.invoked_method_list[6][0], "inserFolderSnapshot")
+        self.assertEquals(database.invoked_method_list[6][1][0], ("fakeuser0",))
+        self.assertEquals(database.invoked_method_list[6][1][1].keys(), 
+                   ['insertion_date', 'disk_usage', 'insertion_time'])
+        self.assertEquals(database.invoked_method_list[7], ("commit", ""))
+        self.assertEquals(database.invoked_method_list[8], ("close", ""))
 
     def test_computer_entity(self):
         computer = entity.Computer(snapshot.ComputerSnapshot())

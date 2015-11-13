@@ -213,6 +213,16 @@ class ConsumptionReport(object):
                              reference=user,
                              category="")
 
+     for user in self.user_list:
+       partition_disk_used = self._getPartitionDiskUsedAverage(user, date_scope)
+       if partition_disk_used is not None:
+         journal.newMovement(transaction,
+                           resource="service_module/disk_used",
+                           title="Partition Disk Used Average for %s" % (user),
+                           quantity=str(partition_disk_used),
+                           reference=user,
+                           category="")
+
      with open(xml_report_path, 'w') as f:
        f.write(journal.getXML())
        f.close()
@@ -288,6 +298,24 @@ class ConsumptionReport(object):
     if len(sample_amount) and len(memory_sum):
       return memory_sum[0][0]/sample_amount[0][0]
 
+  def _getPartitionDiskUsedAverage(self, partition_id, date_scope):
+    self.db.connect()
+    query_result_cursor = self.db.select("folder", date_scope,
+                       columns="SUM(disk_used)", 
+                       where="partition = '%s'" % partition_id)
+
+    disk_used_sum = zip(*query_result_cursor)
+    if len(disk_used_sum) and disk_used_sum[0][0] == 0:
+      return
+    query_result_cursor = self.db.select("user", date_scope,
+                       columns="COUNT(DISTINCT time)", 
+                       where="partition = '%s'" % partition_id)
+  
+    collect_amount = zip(*query_result_cursor)
+    self.db.close()
+  
+    if len(collect_amount) and len(disk_used_sum):
+      return disk_used_sum[0][0]/collect_amount[0][0]
 
 class Journal(object):
 

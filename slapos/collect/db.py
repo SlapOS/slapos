@@ -47,6 +47,10 @@ class Database:
                         " io_cycles_counter real, date text, time text, " \
                         " reported integer NULL DEFAULT 0)"
 
+  CREATE_FOLDER_TABLE = "create table if not exists folder "\
+                          "(partition text, disk_used real, date text, " \
+                          " time text, reported integer NULL DEFAULT 0)" 
+
   CREATE_COMPUTER_TABLE = "create table if not exists computer "\
                           "(cpu_num_core real, cpu_frequency real, cpu_type text," \
                           " memory_size real, memory_type text, partition_list text," \
@@ -79,6 +83,10 @@ class Database:
              "memory_rss, io_rw_counter, io_cycles_counter, " \
              "date, time) values " \
              "('%s', %s, '%s', %s, %s, %s, %s, %s, %s, %s, '%s', '%s' )" 
+
+  INSERT_FOLDER_TEMPLATE = "insert into folder(" \
+            "partition, disk_used, date, time) values " \
+             "('%s', %s, '%s', '%s' )" 
 
   INSERT_COMPUTER_TEMPLATE = "insert into computer("\
             " cpu_num_core, cpu_frequency, cpu_type," \
@@ -137,6 +145,7 @@ class Database:
     assert self.CREATE_USER_TABLE is not None
     self.connect()
     self._execute(self.CREATE_USER_TABLE)
+    self._execute(self.CREATE_FOLDER_TABLE)
     self._execute(self.CREATE_COMPUTER_TABLE)
     self._execute(self.CREATE_SYSTEM_TABLE)
     self._execute(self.CREATE_DISK_PARTITION)
@@ -160,6 +169,13 @@ class Database:
                 cpu_num_threads, memory_percent,
                 memory_rss, io_rw_counter, io_cycles_counter,
                 insertion_date, insertion_time)
+    self._execute(insertion_sql)
+    return insertion_sql
+
+  def inserFolderSnapshot(self, partition, disk_usage, insertion_date, insertion_time):
+    """ Insert folder disk usage snapshots information on a database """
+    insertion_sql = self.INSERT_FOLDER_TEMPLATE % \
+              ( partition, disk_usage, insertion_date, insertion_time)
     self._execute(insertion_sql)
     return insertion_sql
 
@@ -274,7 +290,7 @@ class Database:
     for table in table_list:
       self._execute(update_sql % (table, date_scope))
 
-  def select(self, table, date=None, columns="*", where=None):
+  def select(self, table, date=None, columns="*", where=None, order=None, limit=0):
     """ Query database for a full table information """
     if date is not None:
       where_clause = " WHERE date = '%s' " % date
@@ -284,8 +300,12 @@ class Database:
     if where is not None:
       if where_clause == "":
         where_clause += " WHERE 1 = 1 "
-      where_clause += " AND %s " % where 
+      where_clause += " AND %s " % where
     select_sql = "SELECT %s FROM %s %s " % (columns, table, where_clause)
+    if order is not None:
+      select_sql += " ORDER BY %s" % order
+    if limit:
+      select_sql += " limit %s" % limit
     return self._execute(select_sql)
 
 
