@@ -78,7 +78,7 @@ class User(object):
         limit = 1
         query = database.select(table="folder", columns="date, time",
                                     order=order, limit=limit,
-                                    where="partition=%s" % self.name)
+                                    where="partition='%s'" % self.name)
         query_result = zip(*query)
         if len(query_result):
           date, time = (query_result[0][0], query_result[1][0])
@@ -93,7 +93,7 @@ class User(object):
       disk_snapshot = FolderSizeSnapshot(self.path, pid_file)
       disk_snapshot.update_folder_size()
       # Skeep insert empty partition: size <= 1Mb
-      if disk_snapshot.disk_usage <= 1.0 and \
+      if disk_snapshot.disk_usage <= 1024.0 and \
                       not self.disk_snapshot_params.get('testing', False):
         return
       database.inserFolderSnapshot(self.name,

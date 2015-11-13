@@ -108,7 +108,7 @@ class FolderSizeSnapshot(_Snapshot):
 
   def _getSize(self, file_path):
     size = 0
-    command = 'du -sm %s' % file_path
+    command = 'du -s %s' % file_path
     process = subprocess.Popen(command, stdout=subprocess.PIPE, 
                               stderr=subprocess.PIPE, shell=True)
     if self.pid_file:

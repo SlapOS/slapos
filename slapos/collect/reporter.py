@@ -219,7 +219,7 @@ class ConsumptionReport(object):
          journal.newMovement(transaction,
                            resource="service_module/disk_used",
                            title="Partition Disk Used Average for %s" % (user),
-                           quantity=str(partition_disk_used),
+                           quantity=str(partition_disk_used/1024.0),
                            reference=user,
                            category="")
 
