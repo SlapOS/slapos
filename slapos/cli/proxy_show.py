@@ -37,6 +37,7 @@ import sqlite3
 from slapos.cli.config import ConfigCommand
 from slapos.proxy import ProxyConfig
 from slapos.proxy.db_version import DB_VERSION
+from slapos.util import sqlite_connect
 
 
 class ProxyShowCommand(ConfigCommand):
@@ -191,7 +192,7 @@ def log_network(logger, conn):
 
 def do_show(conf):
     conf.logger.debug('Using database: %s', conf.database_uri)
-    conn = sqlite3.connect(conf.database_uri)
+    conn = sqlite_connect(conf.database_uri)
     conn.row_factory = sqlite3.Row
 
     conn.create_function('md5', 1, lambda s: hashlib.md5(s).hexdigest())

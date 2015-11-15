@@ -45,6 +45,7 @@ import slapos.proxy
 import slapos.proxy.views as views
 import slapos.slap
 import slapos.slap.slap
+from slapos.util import sqlite_connect
 
 import sqlite3
 import pkg_resources
@@ -904,7 +905,7 @@ class TestMultiMasterSupport(MasterMixin):
 
     super(TestMultiMasterSupport, self).setUp()
 
-    self.db = sqlite3.connect(self.proxy_db)
+    self.db = sqlite_connect(self.proxy_db)
     self.external_slapproxy_configuration_file_location = os.path.join(
         self._tempdir, 'external_slapos.cfg')
     self.createExternalProxyConfigurationFile()
@@ -1181,7 +1182,7 @@ class TestMigrateVersion10To11(TestInformation, TestRequest, TestSlaveRequest, T
     super(TestMigrateVersion10To11, self).setUp()
     schema = pkg_resources.resource_stream('slapos.tests.slapproxy', 'database_dump_version_10.sql')
     schema = schema.read() % dict(version='11')
-    self.db = sqlite3.connect(self.proxy_db)
+    self.db = sqlite_connect(self.proxy_db)
     self.db.cursor().executescript(schema)
     self.db.commit()
 

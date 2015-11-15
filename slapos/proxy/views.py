@@ -30,12 +30,12 @@
 
 from lxml import etree
 import random
-import sqlite3
 import string
 from slapos.slap.slap import Computer, ComputerPartition, \
     SoftwareRelease, SoftwareInstance, NotFoundError
 from slapos.proxy.db_version import DB_VERSION
 import slapos.slap
+from slapos.util import sqlite_connect
 
 from flask import g, Flask, request, abort
 import xml_marshaller
@@ -136,7 +136,7 @@ def execute_db(table, query, args=(), one=False, db_version=None, log=False, db=
 
 
 def connect_db():
-  return sqlite3.connect(app.config['DATABASE_URI'])
+  return sqlite_connect(app.config['DATABASE_URI'])
 
 def _getTableList():
   return g.db.execute("SELECT name FROM sqlite_master WHERE type='table' ORDER BY Name").fetchall()

@@ -30,6 +30,7 @@
 import errno
 import os
 import subprocess
+import sqlite3
 
 
 def mkdir_p(path, mode=0o700):
@@ -94,3 +95,8 @@ def string_to_boolean(string):
     return False
   else:
     raise ValueError('%s is neither True nor False.' % string)
+
+
+def sqlite_connect(dburi):
+  conn = sqlite3.connect(dburi)
+  return conn
