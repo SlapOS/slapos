@@ -463,6 +463,15 @@ class TestRequest(MasterMixin):
         self.request('http://sr//', None, 'MyFirstInstance', 'slappart2').__dict__,
         self.request('http://sr//', None, 'frontend', 'slappart2').__dict__)
 
+  def test_request_with_nonascii_parameters(self):
+    """
+    Verify that request with non-ascii parameters is correctly accepted
+    """
+    self.add_free_partition(1)
+    request = self.request('http://sr//', None, 'myinstance', 'slappart0',
+                           partition_parameter_kw={'text': u'Привет Мир!'})
+    self.assertIsInstance(request, slapos.slap.ComputerPartition)
+
 
 class TestSlaveRequest(MasterMixin):
   """

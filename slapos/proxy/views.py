@@ -50,10 +50,19 @@ class UnauthorizedError(Exception):
   pass
 
 
+# cast everything to string, utf-8 encoded
+def to_str(v):
+  if isinstance(v, str):
+    return v
+  if not isinstance(v, unicode):
+    v = unicode(v)
+  return v.encode('utf-8')
+
+
 def xml2dict(xml):
   result_dict = {}
   if xml is not None and xml != '':
-    tree = etree.fromstring(xml.encode('utf-8'))
+    tree = etree.fromstring(to_str(xml))
     for element in tree.iter(tag=etree.Element):
       if element.tag == 'parameter':
         key = element.get('id')
@@ -70,7 +79,7 @@ def dict2xml(dictionary):
   instance = etree.Element('instance')
   for parameter_id, parameter_value in dictionary.iteritems():
     # cast everything to string
-    parameter_value = str(parameter_value)
+    parameter_value = unicode(parameter_value)
     etree.SubElement(instance, "parameter",
                      attrib={'id': parameter_id}).text = parameter_value
   return etree.tostring(instance,
