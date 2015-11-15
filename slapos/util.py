@@ -99,4 +99,5 @@ def string_to_boolean(string):
 
 def sqlite_connect(dburi):
   conn = sqlite3.connect(dburi)
+  conn.text_factory = str       # allow 8-bit strings
   return conn
