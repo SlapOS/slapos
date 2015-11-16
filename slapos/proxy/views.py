@@ -30,12 +30,12 @@
 
 from lxml import etree
 import random
-import sqlite3
 import string
 from slapos.slap.slap import Computer, ComputerPartition, \
     SoftwareRelease, SoftwareInstance, NotFoundError
 from slapos.proxy.db_version import DB_VERSION
 import slapos.slap
+from slapos.util import sqlite_connect
 
 from flask import g, Flask, request, abort
 import xml_marshaller
@@ -50,10 +50,19 @@ class UnauthorizedError(Exception):
   pass
 
 
+# cast everything to string, utf-8 encoded
+def to_str(v):
+  if isinstance(v, str):
+    return v
+  if not isinstance(v, unicode):
+    v = unicode(v)
+  return v.encode('utf-8')
+
+
 def xml2dict(xml):
   result_dict = {}
   if xml is not None and xml != '':
-    tree = etree.fromstring(xml.encode('utf-8'))
+    tree = etree.fromstring(to_str(xml))
     for element in tree.iter(tag=etree.Element):
       if element.tag == 'parameter':
         key = element.get('id')
@@ -70,7 +79,7 @@ def dict2xml(dictionary):
   instance = etree.Element('instance')
   for parameter_id, parameter_value in dictionary.iteritems():
     # cast everything to string
-    parameter_value = str(parameter_value)
+    parameter_value = unicode(parameter_value)
     etree.SubElement(instance, "parameter",
                      attrib={'id': parameter_id}).text = parameter_value
   return etree.tostring(instance,
@@ -136,7 +145,7 @@ def execute_db(table, query, args=(), one=False, db_version=None, log=False, db=
 
 
 def connect_db():
-  return sqlite3.connect(app.config['DATABASE_URI'])
+  return sqlite_connect(app.config['DATABASE_URI'])
 
 def _getTableList():
   return g.db.execute("SELECT name FROM sqlite_master WHERE type='table' ORDER BY Name").fetchall()

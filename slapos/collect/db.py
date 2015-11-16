@@ -27,10 +27,11 @@
 #
 ##############################################################################
 
-import sqlite3
 import os
 from time import strftime
 import datetime
+
+from slapos.util import sqlite_connect
 
 class Database:
 
@@ -125,7 +126,7 @@ class Database:
     self._bootstrap()
 
   def connect(self):
-    self.connection = sqlite3.connect(self.uri)
+    self.connection = sqlite_connect(self.uri)
     self.cursor = self.connection.cursor()
 
   def commit(self):
