@@ -242,23 +242,6 @@
               "minimum": 1,
               "maximum": 65535
             },
-            "nbd2-host": {
-              "title": "Second NBD hostname or IP",
-              "description": "hostname (or IP) of the second NBD server (containing drivers for example).",
-              "type": "string",
-              "format": [
-                "host-name",
-                "ip-address",
-                "ipv6"
-              ]
-            },
-            "nbd2-port": {
-              "title": "Second NBD port",
-              "description": "Port of the second NBD server containing the boot image.",
-              "type": "integer",
-              "minimum": 1,
-              "maximum": 65535
-            },
             "virtual-hard-drive-url": {
               "title": "Existing disk image URL",
               "description": "If specified, will download an existing disk image (qcow2, raw, ...), and will use it as main virtual hard drive. Can be used to download and use an already installed and customized virtual hard drive.",
@@ -275,6 +258,12 @@
               "description": "Define if virtual hard drive to download is gzipped using gzip. This help to reduce size of file to download.",
               "type": "boolean",
               "default": false
+            },
+            "hard-drive-url-check-certificate": {
+              "title": "Check certificate when downloading virtual hard drive from https.",
+              "description": "Define if certificate should be checked when downloading virtual hard drive from https url.",
+              "type": "boolean",
+              "default": true
             },
             "external-disk-number": {
               "title": "Number of additional disk to create for virtual machine",
