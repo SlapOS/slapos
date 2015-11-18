@@ -3,77 +3,15 @@
 {% set use_nat = slapparameter_dict.get('use-nat', 'True').lower() -%}
 {% set name = slapparameter_dict.get('name', 'localhost') -%}
 {% set monitor = slapparameter_dict.get('enable-monitor', 'True').lower()  -%}
+{% set disable_ansible_promise = slapparameter_dict.get('disable-ansible-promise', 'False').lower() -%}
 {% set frontend_software_type = 'default' -%}
 {% set extends_list = [] -%}
+{% set part_list = [] -%}
 
 {% if monitor -%}
 {% do extends_list.append(template_monitor) -%}
 {% endif -%}
 {% do extends_list.append(logrotate_cfg) -%}
-#############################
-#
-# Instanciate kvm
-#
-#############################
-[buildout]
-parts =
-  certificate-authority
-  publish-connection-information
-  kvm-vnc-promise
-  kvm-disk-image-corruption-promise
-  websockify-sighandler
-  novnc-promise
-#  kvm-monitor
-  cron
-#  cron-entry-monitor
-  frontend-promise
-{% if monitor -%}
-# monitor parts
-  cron-entry-monitor
-  cron-entry-rss
-  deploy-index
-  deploy-status-history-cgi
-  deploy-status-cgi
-#  deploy-logfile-cgi
-#  deploy-resource-consumption-monitoring-cgi
-  setup-static-files
-  public-symlink
-  cgi-httpd-wrapper
-  cgi-httpd-graceful-wrapper
-  monitor-promise
-  monitor-instance-log-access
-  monitor-access-log
-  monitor-access-public
-#  monitor-frontend-promise
-{% endif -%}
-{% if slapparameter_dict.get('document-host', '') %}
-  cluster-url-path
-{% endif -%}
-{% if enable_http == 'true' %}
-  httpd
-  httpd-promise
-  publish-host-config
-{% if slapparameter_dict.get('data-to-vm', '') %}
-  vm-data-content
-{% endif -%}
-{% if use_tap == 'true' and tap_network_dict.has_key('ipv4') %}
-  ansible-vm-promise
-  logrotate-vm-bootstrap
-{% endif -%}
-{% if slapparameter_dict.get('authorized-key', '') %}
-  get-authorized-key
-{%   endif -%}
-
-{% endif -%}
-
-extends = 
-#  Add extends list
- {{ extends_list | join('\n  ') }}
-#  {{ template_httpd_cfg }}
-
-eggs-directory = {{ eggs_directory }}
-develop-eggs-directory = {{ develop_eggs_directory }}
-offline = true
 
 [directory]
 recipe = slapos.cookbook:mkdirectory
@@ -106,22 +44,19 @@ recipe = slapos.cookbook:generate.password
 storage-path = ${directory:srv}/passwd
 bytes = 8
 
-
-[kvm-instance]
-# XXX-Cedric: change "KVM" recipe to simple "create wrappers". No need for this
-# Specific code. It needs Jinja.
-recipe = slapos.cookbook:kvm
-
+[kvm-controller-parameter-dict]
+python-path = {{ python_executable }}
 vnc-passwd = ${gen-passwd:passwd}
+socket-path = ${directory:var}/qmp_socket
 
+[kvm-parameter-dict]
+python-path = {{ python_executable }}
 ipv4 = ${slap-network-information:local-ipv4}
 ipv6 = ${slap-network-information:global-ipv6}
 vnc-ip = ${:ipv4}
-
 vnc-port = 5901
 
-# XXX-Cedric: should be named "default-cdrom-iso"
-default-disk-image = {{ debian_amd64_netinst_location }}
+default-cdrom-iso = {{ debian_amd64_netinst_location }}
 nbd-host = ${slap-parameter:nbd-host}
 nbd-port = ${slap-parameter:nbd-port}
 nbd2-host = ${slap-parameter:nbd2-host}
@@ -133,8 +68,9 @@ disk-path = ${directory:srv}/virtual.qcow2
 disk-size = ${slap-parameter:disk-size}
 disk-type = ${slap-parameter:disk-type}
 
-socket-path = ${directory:var}/qmp_socket
+
 pid-file-path = ${directory:run}/pid_file
+socket-path = ${kvm-controller-parameter-dict:socket-path}
 
 smp-count = ${slap-parameter:cpu-count}
 smp-options = ${slap-parameter:cpu-options}
@@ -143,24 +79,19 @@ numa = ${slap-parameter:numa}
 mac-address = ${create-mac:mac-address}
 tap-mac-address = ${create-tap-mac:mac-address}
 
-# XXX-Cedric: should be named runner-wrapper-path and controller-wrapper-path
-runner-path = ${directory:services}/kvm
-controller-path = ${directory:scripts}/kvm_controller
-
 use-tap = ${slap-parameter:use-tap}
 use-nat = ${slap-parameter:use-nat}
 nat-rules = ${slap-parameter:nat-rules}
 enable-vhost = ${slap-parameter:enable-vhost}
-6tunnel-wrapper-path = ${directory:services}/6tunnel
 
 virtual-hard-drive-url = ${slap-parameter:virtual-hard-drive-url}
 virtual-hard-drive-md5sum = ${slap-parameter:virtual-hard-drive-md5sum}
 virtual-hard-drive-gzipped = ${slap-parameter:virtual-hard-drive-gzipped}
+hard-drive-url-check-certificate = ${slap-parameter:hard-drive-url-check-certificate}
 
 shell-path = {{ dash_executable_location }}
 qemu-path =  {{ qemu_executable_location }}
 qemu-img-path = {{ qemu_img_executable_location }}
-6tunnel-path = {{ sixtunnel_executable_location }}
 
 etc-directory = ${directory:etc}
 disk-storage-list = 
@@ -188,11 +119,55 @@ cluster-doc-port = 0
 netcat-binary = {{ netcat_bin }}
 language = ${slap-parameter:keyboard-layout-language}
 
+[kvm-run]
+recipe = slapos.recipe.template:jinja2
+template = {{ template_kvm_run }}
+rendered = ${directory:bin}/kvm_raw
+mode = 700
+context = 
+  section parameter_dict kvm-parameter-dict
+
+[kvm-contoller]
+recipe = slapos.recipe.template:jinja2
+template = {{ template_kvm_controller_run }}
+rendered = ${directory:scripts}/kvm_controller
+mode = 700
+context = 
+  section parameter_dict kvm-controller-parameter-dict
+
+[tunnel-6to4-base]
+recipe = slapos.cookbook:wrapper
+ipv4 = ${slap-network-information:local-ipv4}
+ipv6 = ${slap-network-information:global-ipv6}
+wrapper-path = ${directory:services}/6tunnel-${:ipv6-port}
+command-line = {{ sixtunnel_executable_location }} -6 -4 -d -l ${:ipv6} ${:ipv6-port} ${:ipv4} ${:ipv4-port}
+
+{% if use_nat == 'true' -%}
+{%   set nat_rule_list = slapparameter_dict.get('nat-rules', '22 80 443') %}
+{%   for port in nat_rule_list.split(' ') -%}
+{%     set external_port = 10000 + port|int() -%}
+{%     set section_name = '6tunnel-' ~ external_port -%}
+[{{ section_name }}]
+<= tunnel-6to4-base
+ipv4-port = {{ external_port }}
+ipv6-port = {{ external_port }}
+{%     do part_list.append(section_name) -%}
+{%   endfor -%}
+{% endif -%}
+
+[kvm-instance]
+recipe = slapos.cookbook:wrapper
+socket-path = ${kvm-controller-parameter-dict:socket-path}
+wrapper-path = ${directory:services}/kvm
+command-line = ${kvm-run:rendered}
+kvm-controller = ${kvm-contoller:rendered}
+
+
 [kvm-vnc-promise]
 recipe = slapos.cookbook:check_port_listening
 path = ${directory:promises}/vnc_promise
-hostname = ${kvm-instance:vnc-ip}
-port = ${kvm-instance:vnc-port}
+hostname = ${kvm-parameter-dict:vnc-ip}
+port = ${kvm-parameter-dict:vnc-port}
 
 [kvm-disk-image-corruption-promise]
 # Check that disk image is not corrupted
@@ -201,7 +176,7 @@ input = inline:#!/bin/sh
   # Return code 0 is "OK"
   # Return code 3 is "found leaks, but image is OK"
   # http://git.qemu.org/?p=qemu.git;a=blob;f=qemu-img.c;h=4e9a7f5741c9cb863d978225829e68fefcae3947;hb=HEAD#l702
-  ${kvm-instance:qemu-img-path} check ${kvm-instance:disk-path}
+  ${kvm-parameter-dict:qemu-img-path} check ${kvm-parameter-dict:disk-path}
   RETURN_CODE=$?
   if [ $RETURN_CODE -eq 0 ] || [ $RETURN_CODE -eq 3 ]; then
     exit 0
@@ -217,8 +192,8 @@ recipe = slapos.cookbook:novnc
 path = ${ca-novnc:executable}
 ip = ${slap-network-information:global-ipv6}
 port = 6080
-vnc-ip = ${kvm-instance:vnc-ip}
-vnc-port = ${kvm-instance:vnc-port}
+vnc-ip = ${kvm-parameter-dict:vnc-ip}
+vnc-port = ${kvm-parameter-dict:vnc-port}
 novnc-location = {{ novnc_location }}
 websockify-path = {{ websockify_executable_location }}
 ssl-key-path = ${ca-novnc:key-file}
@@ -366,8 +341,8 @@ check-secure = 1
 [publish-connection-information]
 recipe = slapos.cookbook:publish
 ipv6 = ${slap-network-information:global-ipv6}
-backend-url = https://[${novnc-instance:ip}]:${novnc-instance:port}/vnc_auto.html?host=[${novnc-instance:ip}]&port=${novnc-instance:port}&encrypt=1&password=${kvm-instance:vnc-passwd}
-url = ${request-slave-frontend:connection-url}/vnc_auto.html?host=${request-slave-frontend:connection-domainname}&port=${request-slave-frontend:connection-port}&encrypt=1&path=${request-slave-frontend:connection-resource}&password=${kvm-instance:vnc-passwd}
+backend-url = https://[${novnc-instance:ip}]:${novnc-instance:port}/vnc_auto.html?host=[${novnc-instance:ip}]&port=${novnc-instance:port}&encrypt=1&password=${kvm-controller-parameter-dict:vnc-passwd}
+url = ${request-slave-frontend:connection-url}/vnc_auto.html?host=${request-slave-frontend:connection-domainname}&port=${request-slave-frontend:connection-port}&encrypt=1&path=${request-slave-frontend:connection-resource}&password=${kvm-controller-parameter-dict:vnc-passwd}
 {% set disk_number = len(storage_dict) -%}
 maximum-extra-disk-amount = {{ disk_number }}
 {% set iface = 'eth0' -%}
@@ -378,9 +353,9 @@ maximum-extra-disk-amount = {{ disk_number }}
 {%   set nat_rule_list = slapparameter_dict.get('nat-rules', '22 80 443') %}
 {%   for port in nat_rule_list.split(' ') -%}
 {%     set external_port = 10000 + port|int() -%}
-nat-rule-port-{{port}} = ${slap-network-information:global-ipv6} : {{external_port}}
+nat-rule-port-{{port}} = ${slap-network-information:global-ipv6} : ${6tunnel-{{external_port}}:ipv6-port}
 {%     if slapparameter_dict.get('publish-nat-url', False) -%}
-nat-rule-url-{{port}} = [${slap-network-information:global-ipv6}]:{{external_port}}
+nat-rule-url-{{port}} = [${slap-network-information:global-ipv6}]:${6tunnel-{{external_port}}:ipv6-port}
 {%     endif -%}
 {%   endfor -%}
 {% endif -%}
@@ -555,6 +530,8 @@ enable-vhost = False
 virtual-hard-drive-url =
 virtual-hard-drive-md5sum =
 virtual-hard-drive-gzipped = False
+# if virtual-hard-drive-url use https, then specify if https certificate should be checked or not
+hard-drive-url-check-certificate = True
 
 external-disk-number = 0
 external-disk-size = 20
@@ -571,3 +548,75 @@ data-to-vm =
 
 # Change keyboard layout language
 keyboard-layout-language = 
+
+#############################
+#
+# Instanciate kvm (Buildout Section)
+#
+#############################
+
+# Set Additionals parts
+
+{% if slapparameter_dict.get('document-host', '') %}
+
+{%   do part_list.append('cluster-url-path') -%}
+{% endif -%}
+{% if enable_http == 'true' %}
+{%   do part_list.extend(['httpd', 'httpd-promise', 'publish-host-config']) -%}
+{% if slapparameter_dict.get('data-to-vm', '') %}
+{%   do part_list.append('vm-data-content') -%}
+{% endif -%}
+{% if use_tap == 'true' and tap_network_dict.has_key('ipv4') and disable_ansible_promise == 'false' %}
+{%   do part_list.extend(['ansible-vm-promise', 'logrotate-vm-bootstrap']) -%}
+{% endif -%}
+{% if slapparameter_dict.get('authorized-key', '') %}
+{%   do part_list.append('get-authorized-key') -%}
+{%   endif -%}
+
+{% endif -%}
+
+
+[buildout]
+parts =
+  certificate-authority
+  publish-connection-information
+  kvm-instance
+  kvm-contoller
+  kvm-vnc-promise
+  kvm-disk-image-corruption-promise
+  websockify-sighandler
+  novnc-promise
+#  kvm-monitor
+  cron
+#  cron-entry-monitor
+  frontend-promise
+{% if monitor -%}
+# monitor parts
+  cron-entry-monitor
+  cron-entry-rss
+  deploy-index
+  deploy-status-history-cgi
+  deploy-status-cgi
+#  deploy-logfile-cgi
+#  deploy-resource-consumption-monitoring-cgi
+  setup-static-files
+  public-symlink
+  cgi-httpd-wrapper
+  cgi-httpd-graceful-wrapper
+  monitor-promise
+  monitor-instance-log-access
+  monitor-access-log
+  monitor-access-public
+#  monitor-frontend-promise
+{% endif -%}
+# Complete parts with sections
+  {{ part_list | join('\n  ') }}
+
+extends = 
+#  Add extends list
+ {{ extends_list | join('\n  ') }}
+#  {{ template_httpd_cfg }}
+
+eggs-directory = {{ eggs_directory }}
+develop-eggs-directory = {{ develop_eggs_directory }}
+offline = true

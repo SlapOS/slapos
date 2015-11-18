@@ -98,6 +98,12 @@
       "type": "boolean",
       "default": false
     },
+    "hard-drive-url-check-certificate": {
+      "title": "Check certificate when downloading virtual hard drive from https.",
+      "description": "Define if certificate should be checked when downloading virtual hard drive from https url.",
+      "type": "boolean",
+      "default": true
+    },
 
     "external-disk-number": {
       "title": "Number of additional disk to create for virtual machine",

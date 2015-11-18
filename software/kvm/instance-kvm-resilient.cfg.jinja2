@@ -13,7 +13,7 @@ offline = true
 # += because we need to take up parts (like instance-custom, slapmonitor etc) from the profile we extended
 parts +=
   {{ parts.replicate("kvm", backup_amount) }}
-  publish-connection-informations
+  publish-connection-information
   kvm-frontend-url-promise
   kvm-backend-url-promise
 
@@ -55,6 +55,6 @@ mode = 700
 # Check that backend url is reachable
 recipe = slapos.cookbook:check_url_available
 path = ${directory:promises}/frontend_promise
-url = ${publish-connection-informations:url}
+url = ${publish-connection-information:url}
 dash_path = /bin/sh
 curl_path = {{ curl_executable_location }}
