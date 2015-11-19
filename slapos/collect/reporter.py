@@ -305,9 +305,9 @@ class ConsumptionReport(object):
                        where="partition = '%s'" % partition_id)
 
     disk_used_sum = zip(*query_result_cursor)
-    if len(disk_used_sum) and disk_used_sum[0][0] == 0:
+    if len(disk_used_sum) and disk_used_sum[0][0] is None:
       return
-    query_result_cursor = self.db.select("user", date_scope,
+    query_result_cursor = self.db.select("folder", date_scope,
                        columns="COUNT(DISTINCT time)", 
                        where="partition = '%s'" % partition_id)
   
