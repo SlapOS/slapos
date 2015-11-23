@@ -1,4 +1,23 @@
 {% set slave_list = json_module.loads(slave_information.get('slave_instance_list', '{}')) -%}
+{% set ipv4_list = [] -%} 
+{% set ipv6_list = [] -%} 
+{% set url_list = [] -%} 
+{% set name_list = [] -%} 
+{% for slave_instance in slave_list -%}
+{% if slave_instance.get('ping_ip_list') not in [None, "", "0.0.0.0"] -%}
+{% do ipv4_list.append(slave_instance.get('ping_ip_list')) -%}
+{% endif -%}
+{% if slave_instance.get('ping6_ip_list') not in [None, "", "::"] -%}
+{% do ipv6_list.append(slave_instance.get('ping6_ip_list')) -%}
+{% endif -%}
+{% if slave_instance.get('test_http_url_list') not in [None, ""] -%}
+{% do url_list.append(slave_instance.get('test_http_url_list')) -%}
+{% endif -%}
+{% if slave_instance.get('test_name_list') not in [None, ""] -%}
+{% do name_list.append(slave_instance.get('test_name_list')) -%}
+{% endif -%}
+{% endfor -%}
+
 {
     "id" :
         [
@@ -13,55 +32,47 @@
         ],
   "ping" :
         [
-{% for slave_instance in slave_list -%}
-{% if slave_instance.get('ping_ip_list') not in [None, "", "0.0.0.0"] -%}
-{% if slave_instance != slave_list[-1] -%}
-            "{{ slave_instance.get('ping_ip_list') }}",
+{% for ipv4 in ipv4_list -%}
+{% if ipv4 != ipv4_list[-1] -%}
+            "{{ ipv4 }}",
 {% endif %}
-{% if slave_instance == slave_list[-1] -%}
-            "{{ slave_instance.get('ping_ip_list') }}"
-{% endif -%}
+{% if ipv4 == ipv4_list[-1] -%}
+            "{{ ipv4 }}"
 {% endif -%}
 {% endfor -%}
         ],
   "ping6" :
         [
-{% for slave_instance in slave_list -%}
-{% if slave_instance.get('ping6_ip_list') not in [None, "", "0.0.0.0"] -%}
-{% if slave_instance != slave_list[-1] -%}
-            "{{ slave_instance.get('ping6_ip_list') }}",
-{% endif -%}
-{% if slave_instance == slave_list[-1] -%}
-            "{{ slave_instance.get('ping6_ip_list') }}"
-{% endif -%}
+{% for ipv6 in ipv6_list -%}
+{% if ipv6 != ipv6_list[-1] -%}
+            "{{ ipv6 }}",
+{% endif %}
+{% if ipv6 == ipv6_list[-1] -%}
+            "{{ ipv6 }}"
 {% endif -%}
 {% endfor -%}
         ],
 
   "url" :
         [
-{% for slave_instance in slave_list -%}
-{% if slave_instance.get('test_http_url_list') not in [None, ""] -%}
-{% if slave_instance != slave_list[-1] -%}
-            "{{ slave_instance.get('test_http_url_list') }}",
-{% endif -%}
-{% if slave_instance == slave_list[-1] -%}
-            "{{ slave_instance.get('test_http_url_list') }}"
-{% endif -%}
+{% for url in url_list -%}
+{% if url != url_list[-1] -%}
+            "{{ url }}",
+{% endif %} 
+{% if url == url_list[-1] -%}
+            "{{ url }}"
 {% endif -%}
 {% endfor -%}
         ],
 
   "dns" :
         [
-{% for slave_instance in slave_list -%}
-{% if slave_instance.get('test_name_list') not in [None, ""] -%}
-{% if slave_instance != slave_list[-1] -%}
-            "{{ slave_instance.get('test_name_list') }}",
-{% endif -%}
-{% if slave_instance == slave_list[-1] -%}
-            "{{ slave_instance.get('test_name_list') }}"
-{% endif -%}
+{% for name in name_list -%}
+{% if name != name_list[-1] -%}
+            "{{ name }}",
+{% endif %} 
+{% if name == name_list[-1] -%}
+            "{{ name }}"
 {% endif -%}
 {% endfor -%}
         ]
