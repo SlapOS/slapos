@@ -74,7 +74,6 @@ def updateMysql(args):
         mysql_upgrade_list.append('--socket=' + conf['socket'])
       mysql_upgrade = subprocess.Popen(mysql_upgrade_list, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
       result = mysql_upgrade.communicate()[0]
-      import pdb; pdb.set_trace()
       if mysql_upgrade.returncode is None:
         mysql_upgrade.kill()
       if mysql_upgrade.returncode == 0:
