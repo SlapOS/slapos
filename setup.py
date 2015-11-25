@@ -71,7 +71,6 @@ setup(name=name,
         'zc.buildout': [
           'addresiliency = slapos.recipe.addresiliency:Recipe',
           'accords = slapos.recipe.accords:Recipe',
-          'agent = slapos.recipe.agent:Recipe',
           'apache.zope.backend = slapos.recipe.apache_zope_backend:Recipe',
           'apacheperl = slapos.recipe.apacheperl:Recipe',
           'apachephp = slapos.recipe.apachephp:Recipe',
