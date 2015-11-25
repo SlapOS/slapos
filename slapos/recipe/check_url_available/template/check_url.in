@@ -38,7 +38,7 @@ if [ %(check_secure)s -eq 1 ]; then
   fi
 fi
 
-if ! [ $CODE -eq 200 ]; then
+if ! [ $CODE -eq %(http_code)s ]; then
   echo "$URL is not available (returned $CODE)." >&2
   exit 2
 fi
