@@ -4,7 +4,7 @@
 
 URL="%(url)s"
 
-if [ -z $URL ]; then
+if [ -z "$URL" ]; then
   echo "No URL specified." >&2
   exit 3
 fi
@@ -38,7 +38,7 @@ if [ %(check_secure)s -eq 1 ]; then
   fi
 fi
 
-if ! [ $CODE -eq 200 ]; then
-  echo "$URL is not available (returned $CODE)." >&2
+if ! [ $CODE -eq %(http_code)s ]; then
+  echo "$URL is not available (returned $CODE, expected %(http_code)s)." >&2
   exit 2
 fi

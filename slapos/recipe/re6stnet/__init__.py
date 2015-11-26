@@ -257,8 +257,11 @@ class Recipe(GenericBaseRecipe):
           ipv6_file = os.path.join(token_list_path, '%s.ipv6' % slave_reference)
           ipv6 = self.readFile(ipv6_file) or '::'
 
+          ipv4_file = os.path.join(token_list_path, '%s.ipv4' % slave_reference)
+          node_ipv4 = self.readFile(ipv4_file) or '0.0.0.0'
+
           computer_partition.setConnectionDict(
-              {'token':token, '1_info':msg, 'ipv6': ipv6},
+              {'token':token, '1_info':msg, 'ipv6': ipv6, 'ipv4': node_ipv4},
               slave_reference)
         except Exception:
           self.logger.fatal("Error while sending slave %s informations: %s",

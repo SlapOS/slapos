@@ -23,7 +23,7 @@
   path {{ crawl_log_directory }}/*/*ping.log.20*
   pos_file {{ crawl_log_directory }}/tail_in_ping.pos
   tag slapos.monitor.networktest.ping.ipv4
-  format /^(?<time>[^;]*);(?<logtype>[^;]*);(?<computer_name>[^;]*);(?<type>[^;]*);(?<name_or_ip>[^;]*);(?<code>[^;]*);(?<average>[^;]*);(?<packet_lost>[^;]*);(?<extra>[^;]*)$/
+  format /^(?<time>[^;]*);(?<computer_name>[^;]*);(?<type>[^;]*);(?<name_or_ip>[^;]*);(?<code>[^;]*);(?<average>[^;]*);(?<packet_lost>[^;]*);(?<extra>[^;]*)$/
   read_from_head true
 </source>
 
@@ -32,7 +32,7 @@
   path {{ crawl_log_directory }}/*/*ping6.log.20*
   pos_file {{ crawl_log_directory }}/tail_in_ping6.pos
   tag slapos.monitor.networktest.ping.ipv6
-  format /^(?<time>[^;]*);(?<logtype>[^;]*);(?<computer_name>[^;]*);(?<type>[^;]*);(?<name_or_ip>[^;]*);(?<code>[^;]*);(?<average>[^;]*);(?<packet_lost>[^;]*);(?<extra>[^;]*)$/
+  format /^(?<time>[^;]*);(?<computer_name>[^;]*);(?<type>[^;]*);(?<name_or_ip>[^;]*);(?<code>[^;]*);(?<average>[^;]*);(?<packet_lost>[^;]*);(?<extra>[^;]*)$/
   read_from_head true
 </source>
 

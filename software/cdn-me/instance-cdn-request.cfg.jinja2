@@ -1,7 +1,9 @@
 [buildout]
 parts =
-  request-re6stnet-token-slave
-  request-frontend-token-slave
+  request-monitor-test-distributor-slave 
+  publish-connection-informations
+  connection-parameter-http-checker
+  connection-parameter-checker
 
 eggs-directory = ${buildout:eggs-directory}
 develop-eggs-directory = ${buildout:develop-eggs-directory}
@@ -11,6 +13,7 @@ offline = true
 [directory]
 recipe = slapos.cookbook:mkdirectory
 home = $${buildout:directory}
+promise = $${:home}/etc/promise
 etc = $${:home}/etc/
 var = $${:home}/var/
 srv = $${:home}/srv/
@@ -21,14 +24,15 @@ tmp = $${:home}/tmp/
 <= slap-connection
 recipe = slapos.cookbook:requestoptional
 name = WebSite Frontend
-# XXX We have hardcoded SR URL here.
 software-url = product.frontend
+software-type = custom-personal
 slave = true
-{% if slapparameter_dict.get('frontend-custom_domain', '80') != '443' %}
-config-url = https://[$${request-re6stnet-token-slave:connection-ipv6}1]:{{ slapparameter_dict.get('port', '80') }}/
+
+{% if slapparameter_dict.get('port', '80') != '443' %}
+config-url = http://[$${request-re6stnet-token-slave:connection-ipv6}1]:{{ slapparameter_dict.get('port', '80') }}/
 {% endif -%}
 
-{% if slapparameter_dict.get('frontend-custom_domain', '80') == '443' %}
+{% if slapparameter_dict.get('port', '80') == '443' %}
 config-url = https://[$${request-re6stnet-token-slave:connection-ipv6}1]:{{ slapparameter_dict.get('port', '443') }}/
 {% endif -%}
 
@@ -96,7 +100,6 @@ config-prefer-gzip-encoding-to-backend = {{ slapparameter_dict.get('frontend-pre
 config-disabled-cookie-list = {{ slapparameter_dict.get('frontend-disabled-cookie-list', '') }}
 {% endif -%}
 
-
 return = site_url domain
 
 [request-re6stnet-token-slave]
@@ -106,13 +109,53 @@ name = Re6st token Frontend
 # XXX We have hardcoded SR URL here.
 software-url = product.re6st
 slave = true
-return = token info_1 ipv6
+return = token info_1 ipv6 ipv4
+
+[request-monitor-test-distributor-slave]
+<= slap-connection
+recipe = slapos.cookbook:requestoptional
+name = Monitor Test
+# XXX We have hardcoded SR URL here.
+software-url = product.monitor
+software-type = distributor
+slave = true
+config-ping6_ip_list = $${request-re6stnet-token-slave:connection-ipv6}
+config-ping_ip_list = $${request-re6stnet-token-slave:connection-ipv4}
+
+return = site_url
+
+[monitor-frontend]
+<= slap-connection
+recipe = slapos.cookbook:requestoptional
+name = Monitor Frontend
+# XXX We have hardcoded SR URL here.
+software-url = product.frontend
+software-type = custom-personal
+slave = true
+config-url = $${request-monitor-test-distributor-slave:connection-site_url}
+return = site_url domain
 
 [publish-connection-informations]
 recipe = slapos.cookbook:publish
-url =  https://$${request-frontend-token-slave:connection-domain}
+url-https =  https://$${request-frontend-token-slave:connection-domain}
+url = http://$${request-frontend-token-slave:connection-domain}
 token = $${request-re6stnet-token-slave:connection-token}
 ipv6 = $${request-re6stnet-token-slave:connection-ipv6}
-info_1 = $${request-re6stnet-token-slave:info_1}
+ipv4 = $${request-re6stnet-token-slave:connection-ipv4}
+monitor_v6_url = $${request-monitor-test-distributor-slave:connection-site_url}
+monitor_url = https://$${monitor-frontend:connection-domain}
+info_1 = $${request-re6stnet-token-slave:connection-info_1}
 
+[connection-parameter-checker]
+recipe = slapos.cookbook:check_parameter
+path = $${directory:promise}/check_re6stnet_ipv6
+value = $${request-re6stnet-token-slave:connection-ipv6}
+expected-not-value = ::
+expected-value =
 
+[connection-parameter-http-checker]
+recipe = slapos.cookbook:check_parameter
+path = $${directory:promise}/check_re6stnet_http
+value = $${publish-connection-informations:url}
+expected-not-value = http://
+expected-value =
