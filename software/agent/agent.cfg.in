@@ -5,4 +5,4 @@ project_title = ${slap-parameter:project_title}
 task_count = ${slap-parameter:task_count} 
 report_url = ${slap-parameter:report_url} 
 
-working_directory = $${directory:testnode}
+working_directory = ${directory:testnode}
