@@ -208,8 +208,9 @@ def dumpIPv6Network(slave_reference, db, network, ipv6_file):
       cn = x509.subnetFromCert(cert)
       subnet = network + utils.binFromSubnet(cn)
       ipv6 = utils.ipFromBin(subnet)
+      changed = readFile(ipv6_file) != ipv6
       writeFile(ipv6_file, ipv6)
-      return ipv6, utils.binFromSubnet(cn)
+      return ipv6, utils.binFromSubnet(cn), changed
   except Exception:
     log.debug('XXX for %s... \n %s' % (slave_reference,
               traceback.format_exc()))
@@ -234,8 +235,9 @@ def dumpIPv4Network(ipv6_prefix, network, ipv4_file, sock, peer_prefix_list):
     if ipv6_prefix == "00000000000000000000000000000000":
       # workarround to ignore the first node
       ipv4 = "0.0.0.0"
+      changed = readFile(ipv4_file) != ipv4
       writeFile(ipv4_file, ipv4)
-      return
+      return ipv4, changed
 
     peers = []
 
@@ -265,10 +267,13 @@ def dumpIPv4Network(ipv6_prefix, network, ipv4_file, sock, peer_prefix_list):
       ipv4 = msg.split(',')[0]
     else:
       ipv4 = "0.0.0.0"
+    changed = readFile(ipv4_file) != ipv4
     writeFile(ipv4_file, ipv4)
+    return ipv4, changed
   except Exception:
-    log.debug('XXX for %s... \n %s' % (ipv6_prefix,
+    log.info('XXX for %s... \n %s' % (ipv6_prefix,
               traceback.format_exc()))
+    return "0.0.0.0", False
 
 def checkService(args, can_bang=True):
   base_token_path = args['token_base_path']
@@ -300,12 +305,18 @@ def checkService(args, can_bang=True):
     ipv4_file = os.path.join(base_token_path, '%s.ipv4' % slave_reference)
     if not os.path.exists(status_file):
       # This token is not added yet!
+      log.info("Token %s dont exist yet." % status_file)
       continue
 
     msg = readFile(status_file)
+    log.info("Token %s has %s State." % (status_file, msg))
     if msg == 'TOKEN_USED':
-      ipv6, ipv6_prefix = dumpIPv6Network(slave_reference, db, network, ipv6_file)
-      dumpIPv4Network(ipv6_prefix, network, ipv4_file, sock, peer_prefix_list)
+      log.info("Dumping ipv6...")
+      ipv6, ipv6_prefix, ipv6_changed = dumpIPv6Network(slave_reference, db, network, ipv6_file)
+      log.info("%s, IPV6 = %s, IPV6_PREFIX = %s" % (slave_reference, ipv6, ipv6_prefix))
+      _, ipv4_changed = dumpIPv4Network(ipv6_prefix, network, ipv4_file, sock, peer_prefix_list)
+      if ipv4_changed or ipv6_changed:
+        call_bang = True
       continue
 
     # Check if token is not in the database
@@ -323,6 +334,7 @@ def checkService(args, can_bang=True):
       try:
         writeFile(status_file, 'TOKEN_USED')
         dumpIPv6Network(slave_reference, db, network, ipv6_file)
+        dumpIPv4Network(ipv6_prefix, network, ipv4_file, sock, peer_prefix_list)
         log.info("Token status of %s updated to 'used'." % slave_reference)
       except IOError:
         # XXX- this file should always exists
