@@ -191,14 +191,13 @@ class ConsumptionReport(object):
                            reference=self.computer_id, 
                            category="")
 
-     core_amount = psutil.cpu_count()
      for user in self.user_list:
        partition_cpu_load_percent = self._getPartitionCPULoadAverage(user, date_scope)
        if partition_cpu_load_percent is not None:
          journal.newMovement(transaction,
                              resource="service_module/cpu_load_percent",
                              title="CPU Load Percent Average for %s" % (user),
-                             quantity=str(partition_cpu_load_percent/core_amount),
+                             quantity=str(partition_cpu_load_percent),
                              reference=user,
                              category="")
 
