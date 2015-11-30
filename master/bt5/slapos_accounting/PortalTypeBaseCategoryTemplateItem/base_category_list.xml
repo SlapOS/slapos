@@ -18,4 +18,8 @@
  <portal_type id="Software Instance">
   <item>causality</item>
  </portal_type>
+ <portal_type id="User Consumption HTML File">
+  <item>contributor</item>
+  <item>follow_up</item>
+ </portal_type>
 </base_category_list>

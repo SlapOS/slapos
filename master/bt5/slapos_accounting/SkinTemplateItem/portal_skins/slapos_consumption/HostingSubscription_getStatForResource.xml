@@ -1,0 +1,118 @@
+<?xml version="1.0"?>
+<ZopeData>
+  <record id="1" aka="AAAAAAAAAAE=">
+    <pickle>
+      <global name="PythonScript" module="Products.PythonScripts.PythonScript"/>
+    </pickle>
+    <pickle>
+      <dictionary>
+        <item>
+            <key> <string>Script_magic</string> </key>
+            <value> <int>3</int> </value>
+        </item>
+        <item>
+            <key> <string>_bind_names</string> </key>
+            <value>
+              <object>
+                <klass>
+                  <global name="NameAssignments" module="Shared.DC.Scripts.Bindings"/>
+                </klass>
+                <tuple/>
+                <state>
+                  <dictionary>
+                    <item>
+                        <key> <string>_asgns</string> </key>
+                        <value>
+                          <dictionary>
+                            <item>
+                                <key> <string>name_container</string> </key>
+                                <value> <string>container</string> </value>
+                            </item>
+                            <item>
+                                <key> <string>name_context</string> </key>
+                                <value> <string>context</string> </value>
+                            </item>
+                            <item>
+                                <key> <string>name_m_self</string> </key>
+                                <value> <string>script</string> </value>
+                            </item>
+                            <item>
+                                <key> <string>name_subpath</string> </key>
+                                <value> <string>traverse_subpath</string> </value>
+                            </item>
+                          </dictionary>
+                        </value>
+                    </item>
+                  </dictionary>
+                </state>
+              </object>
+            </value>
+        </item>
+        <item>
+            <key> <string>_body</string> </key>
+            <value> <string>from Products.ZSQLCatalog.SQLCatalog import Query\n
+portal = context.getPortalObject()\n
+\n
+query_kw.update(query_kw[\'selection\'].getParams())\n
+start_date = query_kw.pop(\'start_date\', None)\n
+stop_date = query_kw.pop(\'stop_date\', None)\n
+software_instance_uid = query_kw.pop(\'software_instance\', None)\n
+hosting_subscription_uid = query_kw.pop(\'hosting_subscription_uid\', None)\n
+\n
+if not software_instance_uid and not hosting_subscription_uid:\n
+  return \'\'\n
+\n
+if start_date:\n
+  query_kw[\'movement.start_date\'] = dict(range=\'min\', query=start_date)\n
+if stop_date:\n
+  query_kw[\'movement.stop_date\'] = dict(range=\'ngt\', \n
+                                     query=stop_date.latestTime())\n
+\n
+if software_instance_uid and software_instance_uid != \'all\':\n
+  query_kw[\'aggregate_uid\'] = software_instance_uid\n
+elif hosting_subscription_uid and hosting_subscription_uid != \'all\':\n
+  query_kw[\'aggregate_uid\'] = hosting_subscription_uid\n
+elif context.getPortalType() == \'Person\':\n
+  validation_state = query_kw.pop(\'hosting_validation_state\', \'validated\')\n
+  hosting_uid_list = []\n
+  for subscription in portal.portal_catalog(\n
+                          portal_type=\'Hosting Subscription\',\n
+                          validation_state=validation_state,\n
+                          default_destination_section_uid=context.getUid()):\n
+    if validation_state == \'validated\' and subscription.getSlapState() == \'destroy_requested\':\n
+      continue\n
+    if validation_state == \'archived\' and subscription.getSlapState() != \'destroy_requested\':\n
+      continue\n
+    hosting_uid_list.append(subscription.getUid())\n
+  if hosting_uid_list:\n
+    query_kw[\'aggregate_uid\'] = hosting_uid_list\n
+  else:\n
+    return \'\'\n
+elif context.getPortalType() in [\'Software Instance\', \'Hosting Subscription\']:\n
+  query_kw[\'aggregate_uid\'] = context.getUid()\n
+else:\n
+  return \'\'\n
+\n
+total_quantity = 0\n
+for packing_list_line in portal.portal_catalog(\n
+                    portal_type="Sale Packing List Line",\n
+                    default_resource_uid = resource_uid,\n
+                    **query_kw\n
+                  ):\n
+  total_quantity += float(packing_list_line.getQuantity())\n
+\n
+return round(total_quantity, 3)\n
+</string> </value>
+        </item>
+        <item>
+            <key> <string>_params</string> </key>
+            <value> <string>resource_uid, **query_kw</string> </value>
+        </item>
+        <item>
+            <key> <string>id</string> </key>
+            <value> <string>HostingSubscription_getStatForResource</string> </value>
+        </item>
+      </dictionary>
+    </pickle>
+  </record>
+</ZopeData>

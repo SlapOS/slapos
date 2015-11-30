@@ -20,4 +20,7 @@
  <portal_type id="Software Instance">
   <item>InstanceAccountingSynchronisation</item>
  </portal_type>
+ <portal_type id="User Consumption HTML File">
+  <item>SortIndex</item>
+ </portal_type>
 </property_sheet_list>

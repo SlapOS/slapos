@@ -58,70 +58,109 @@ document = context\n
 portal = document.getPortalObject()\n
 result = []\n
 \n
-tioxml_dict = document.ComputerConsumptionTioXMLFile_parseXml()\n
+if context.getValidationState() in ["cancelled", "shared"]:\n
+  return\n
+\n
+try:\n
+  tioxml_dict = document.ComputerConsumptionTioXMLFile_parseXml()\n
+except KeyError:\n
+  document.reject(comment="Fail")\n
+  return \n
+\n
 if tioxml_dict is None:\n
   document.reject(comment="Not usable TioXML data")\n
 else:\n
-  packing_list_dict = {}\n
-  for movement_dict in tioxml_dict["movement"]:\n
-    reference = movement_dict[\'reference\']\n
-    if reference in packing_list_dict:\n
-      packing_list_dict[reference].append(movement_dict)\n
-    else:\n
-      packing_list_dict[reference] = [movement_dict]\n
 \n
   computer = context.getContributorValue(portal_type="Computer")\n
-  for reference, movement_list in packing_list_dict.items():\n
+  delivery_title = tioxml_dict[\'title\']\n
 \n
-    # Time to create the PL\n
-    delivery_template = portal.restrictedTraverse(\n
-        portal.portal_preferences.getPreferredInstanceDeliveryTemplate())\n
-    delivery = delivery_template.Base_createCloneDocument(batch_mode=1)\n
+  movement_list = []\n
+  for movement in tioxml_dict["movement"]:\n
+    reference = movement[\'reference\']\n
 \n
-    # Find the partition / software instance / user\n
-    partition = portal.portal_catalog.getResultValue(\n
-      parent_uid=computer.getUid(),\n
-      reference=reference,\n
-      portal_type="Computer Partition",\n
-      validation_state="validated")\n
-    assert partition.getSlapState() == \'busy\'\n
+    # It had been reported for the computer itself so it is pure\n
+    # informative.\n
+    if computer.getReference() == reference:\n
+      aggregate_value_list = [computer]\n
+      person = computer.getSourceAdministrationValue(portal_type="Person")\n
+    else:\n
+      if reference.startswith("slapuser"):\n
+        reference = reference.replace("slapuser", "slappart") \n
+      # Find the partition / software instance / user\n
+      partition = portal.portal_catalog.getResultValue(\n
+        parent_uid=computer.getUid(),\n
+        reference=reference,\n
+        portal_type="Computer Partition",\n
+        validation_state="validated")\n
 \n
-    instance = portal.portal_catalog.getResultValue(\n
-      default_aggregate_uid=partition.getUid(),\n
-      portal_type="Software Instance",\n
-      validation_state="validated")\n
+      if partition.getSlapState() != \'busy\':\n
+        continue\n
 \n
-    subscription = instance.getSpecialiseValue(\n
-      portal_type="Hosting Subscription")\n
+      assert partition.getSlapState() == \'busy\', "partition %s is not busy" % reference\n
 \n
-    person = subscription.getDestinationSectionValue(\n
-      portal_type="Person")\n
+      instance = portal.portal_catalog.getResultValue(\n
+        default_aggregate_uid=partition.getUid(),\n
+        portal_type="Software Instance",\n
+        validation_state="validated")\n
 \n
-    delivery.edit(\n
-      title="%s Consumption Usage" % instance.getReference(),\n
-      destination=person.getRelativeUrl(),\n
-      destination_decision=person.getRelativeUrl(),\n
-      start_date=context.getCreationDate(),\n
+      if instance is None:\n
+        # There is no software instance for this partition anymore\n
+        # so we just skip this partial consumption.\n
+        continue\n
+\n
+      subscription = instance.getSpecialiseValue(\n
+        portal_type="Hosting Subscription")\n
+\n
+      try:\n
+        person = subscription.getDestinationSectionValue(\n
+          portal_type="Person")\n
+      except:\n
+        raise ValueError(instance.getRelativeUrl())\n
+\n
+      aggregate_value_list = [partition, instance, subscription]\n
+\n
+    movement_list.append(dict(\n
+                        title=movement[\'title\'],\n
+                        quantity=movement[\'quantity\'],\n
+                        aggregate_value_list=aggregate_value_list,\n
+                        resource=movement[\'resource\'],\n
+                        person=person.getRelativeUrl()\n
+                    )\n
+        )\n
+\n
+  # Time to create the PL\n
+  person = computer.getSourceAdministrationValue(portal_type="Person")\n
+  delivery_template = portal.restrictedTraverse(\n
+      portal.portal_preferences.getPreferredInstanceDeliveryTemplate())\n
+  delivery = delivery_template.Base_createCloneDocument(batch_mode=1)\n
+\n
+  delivery.edit(\n
+    title=delivery_title,\n
+    destination=person.getRelativeUrl(),\n
+    destination_decision=person.getRelativeUrl(),\n
+    start_date=context.getCreationDate(),\n
+  )\n
+\n
+  for movement in movement_list:\n
+    service = portal.restrictedTraverse(movement[\'resource\'])\n
+    delivery.newContent(\n
+      portal_type="Sale Packing List Line",\n
+      title=movement[\'title\'],\n
+      quantity=movement[\'quantity\'],\n
+      aggregate_value_list=movement[\'aggregate_value_list\'],\n
+      destination=movement[\'person\'],\n
+      destination_decision=movement[\'person\'],\n
+      destination_section=movement[\'person\'],\n
+      resource_value=service,\n
+      quantity_unit=service.getQuantityUnit(),\n
     )\n
+  delivery.confirm(comment="Created from %s" % context.getRelativeUrl())\n
+  delivery.start()\n
+  delivery.stop()\n
+  delivery.deliver()\n
+  delivery.startBuilding()\n
 \n
-    result.append(delivery.getRelativeUrl())\n
-\n
-    for movement in movement_list:\n
-      service = portal.restrictedTraverse(movement[\'resource\'])\n
-      delivery.newContent(\n
-        portal_type="Sale Packing List Line",\n
-        title=movement[\'title\'],\n
-        quantity=movement[\'quantity\'],\n
-        aggregate_value_list=[partition, instance, subscription],\n
-        resource_value=service,\n
-        quantity_unit=service.getQuantityUnit(),\n
-      )\n
-    delivery.confirm(comment="Created from %s" % context.getRelativeUrl())\n
-    delivery.start()\n
-    delivery.stop()\n
-    delivery.deliver()\n
-    delivery.startBuilding()\n
-\n
+  result.append(delivery.getRelativeUrl())\n
   document.share(comment="Created packing list: %s" % result)\n
 \n
 return result\n

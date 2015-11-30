@@ -13,3 +13,7 @@ Software Instance | slapos_accounting_interaction_workflow
 Software Instance | slapos_api_invoicing_workflow
 Subscription Item Root Simulation Rule | edit_workflow
 Subscription Item Root Simulation Rule | rule_validation_workflow
+User Consumption HTML File | document_conversion_interaction_workflow
+User Consumption HTML File | document_publication_workflow
+User Consumption HTML File | document_security_interaction_workflow
+User Consumption HTML File | edit_workflow

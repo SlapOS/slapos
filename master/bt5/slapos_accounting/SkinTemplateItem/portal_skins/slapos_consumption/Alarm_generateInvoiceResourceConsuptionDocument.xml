@@ -50,18 +50,22 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string>portal = context.getPortalObject()\n
+            <value> <string>from Products.ERP5Type.DateUtils import addToDate\n
+from Products.ZSQLCatalog.SQLCatalog import Query\n
+from DateTime import DateTime\n
 \n
+portal = context.getPortalObject()\n
 portal.portal_catalog.searchAndActivate(\n
-  portal_type="Computer Consumption TioXML File",\n
-  validation_state="submitted",\n
-  method_id=\'ComputerConsumptionTioXMLFile_solveInvoicingGeneration\',\n
+  portal_type=\'Sale Invoice Transaction\',\n
+  simulation_state=\'confirmed\',\n
+  causality_state=\'solved\',\n
+  creation_date=Query(creation_date=addToDate(DateTime(), to_add={\'day\': -20}), range="min"),\n
+  method_id=\'SaleInvoiceTransaction_generateResourceConsumptionDocument\',\n
   activity_count=1,\n
   packet_size=1,\n
-  activate_kw={\'tag\': tag, \'priority\': 5}\n
+  activate_kw={\'tag\': tag}\n
 )\n
-\n
-context.activate(after_tag=tag).getId()\n
+context.activate(after_tag=tag, priority=5).getId()\n
 </string> </value>
         </item>
         <item>
@@ -70,7 +74,7 @@ context.activate(after_tag=tag).getId()\n
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>Alarm_searchSubmittedConsumptionTioXMLFileList</string> </value>
+            <value> <string>Alarm_generateInvoiceResourceConsuptionDocument</string> </value>
         </item>
       </dictionary>
     </pickle>

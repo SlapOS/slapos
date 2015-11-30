@@ -54,6 +54,7 @@
 select_kw.pop(\'portal_type\', None)\n
 select_kw.pop(\'delivery_relative_url_list\', None)\n
 from Products.ERP5Type.Document import newTempSimulationMovement\n
+from Products.ZSQLCatalog.SQLCatalog import Query, NegatedQuery\n
 portal = context.getPortalObject()\n
 \n
 business_process_uid_list = [\n
@@ -68,6 +69,7 @@ select_kw.update(\n
   simulation_state=\'delivered\',\n
   parent_specialise_reference=specialise_reference_list,\n
   parent_specialise_portal_type=\'Sale Trade Condition\',\n
+  aggregate_portal_type=NegatedQuery(Query(aggregate_portal_type=\'Computer\')), # Don\'t take SPL for computer\n
   grouping_reference=None,\n
   sort_on=((\'modification_date\', \'ASC\'),) # the highest chance to find movement which can be delivered\n
 )\n
@@ -92,9 +94,9 @@ for movement in movement_list:\n
     price_currency=movement.getPriceCurrency()\n
   )\n
   if movement.getResource() == \'service_module/slapos_instance_subscription\':\n
-     temp_movement.edit(price=0.83612040133800003)\n
+    temp_movement.edit(price=0.83612040133800003)\n
   else:\n
-     temp_movement.edit(price=0.0)\n
+    temp_movement.edit(price=0.0)\n
   temp_movement_list.append(temp_movement)\n
   id += 1\n
 \n

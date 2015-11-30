@@ -31,4 +31,8 @@
   <type>Subscription Item Root Simulation Rule</type>
   <workflow>edit_workflow, rule_validation_workflow</workflow>
  </chain>
+ <chain>
+  <type>User Consumption HTML File</type>
+  <workflow>document_conversion_interaction_workflow, document_publication_workflow, document_security_interaction_workflow, edit_workflow</workflow>
+ </chain>
 </workflow_chain>

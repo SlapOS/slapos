@@ -50,27 +50,39 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string>portal = context.getPortalObject()\n
+            <value> <string encoding="cdata"><![CDATA[
+
+portal = context.getPortalObject()\n
 \n
-portal.portal_catalog.searchAndActivate(\n
-  portal_type="Computer Consumption TioXML File",\n
-  validation_state="submitted",\n
-  method_id=\'ComputerConsumptionTioXMLFile_solveInvoicingGeneration\',\n
-  activity_count=1,\n
-  packet_size=1,\n
-  activate_kw={\'tag\': tag, \'priority\': 5}\n
-)\n
+if context.getPortalType() == "Computer":\n
 \n
-context.activate(after_tag=tag).getId()\n
-</string> </value>
+  # Get the Latest Sale Packing List\n
+  sale_packing_list_line = portal.portal_catalog.getResultValue(\n
+                        portal_type=\'Sale Packing List Line\',\n
+                        simulation_state=\'delivered\',\n
+                        sort_on=[(\'movement.start_date\', \'DESC\')],\n
+                        aggregate_uid=context.getUid(),\n
+                        limit=1)\n
+  \n
+  if sale_packing_list_line is not None:\n
+    sale_packing_list = sale_packing_list_line.getParent()\n
+  \n
+    #request = context.getPortalObject().REQUEST\n
+    return sale_packing_list.Base_redirect(\'Base_viewListMode?proxy_form_id=SalePackingList_view&proxy_field_id=listbox\')\n
+\n
+# Redirect to web site to hide the indexation process\n
+context.Base_redirect(\'view\', keep_items={\'portal_status_message\':context.Base_translateString(\'No Consumption Report for this computer.\')})\n
+
+
+]]></string> </value>
         </item>
         <item>
             <key> <string>_params</string> </key>
-            <value> <string>tag, fixit, params</string> </value>
+            <value> <string></string> </value>
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>Alarm_searchSubmittedConsumptionTioXMLFileList</string> </value>
+            <value> <string>Base_jumpToViewLatestDayConsumption</string> </value>
         </item>
       </dictionary>
     </pickle>

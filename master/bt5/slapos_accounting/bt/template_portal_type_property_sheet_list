@@ -5,3 +5,4 @@ Sale Packing List Line | SlapOSAccountingSalePackingListLineConstraint
 Sale Packing List | SlapOSAccountingSalePackingListConstraint
 Slave Instance | InstanceAccountingSynchronisation
 Software Instance | InstanceAccountingSynchronisation
+User Consumption HTML File | SortIndex

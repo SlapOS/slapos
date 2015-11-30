@@ -1,0 +1,163 @@
+<?xml version="1.0"?>
+<ZopeData>
+  <record id="1" aka="AAAAAAAAAAE=">
+    <pickle>
+      <global name="PythonScript" module="Products.PythonScripts.PythonScript"/>
+    </pickle>
+    <pickle>
+      <dictionary>
+        <item>
+            <key> <string>Script_magic</string> </key>
+            <value> <int>3</int> </value>
+        </item>
+        <item>
+            <key> <string>_bind_names</string> </key>
+            <value>
+              <object>
+                <klass>
+                  <global name="NameAssignments" module="Shared.DC.Scripts.Bindings"/>
+                </klass>
+                <tuple/>
+                <state>
+                  <dictionary>
+                    <item>
+                        <key> <string>_asgns</string> </key>
+                        <value>
+                          <dictionary>
+                            <item>
+                                <key> <string>name_container</string> </key>
+                                <value> <string>container</string> </value>
+                            </item>
+                            <item>
+                                <key> <string>name_context</string> </key>
+                                <value> <string>context</string> </value>
+                            </item>
+                            <item>
+                                <key> <string>name_m_self</string> </key>
+                                <value> <string>script</string> </value>
+                            </item>
+                            <item>
+                                <key> <string>name_subpath</string> </key>
+                                <value> <string>traverse_subpath</string> </value>
+                            </item>
+                          </dictionary>
+                        </value>
+                    </item>
+                  </dictionary>
+                </state>
+              </object>
+            </value>
+        </item>
+        <item>
+            <key> <string>_body</string> </key>
+            <value> <string>from Products.ERP5Type.DateUtils import addToDate\n
+from DateTime import DateTime\n
+from Products.ZSQLCatalog.SQLCatalog import Query\n
+\n
+portal = context.getPortalObject()\n
+\n
+for key in [\'portal_type\', \'sort_on\']:\n
+  if key in query_kw:\n
+    query_kw.pop(key)\n
+#if not \'limit\' in query_kw:\n
+#  query_kw[\'limit\'] = 31 # limit is for one month by default\n
+if grouping_reference is not None:\n
+  query_kw[\'grouping_reference\'] = grouping_reference\n
+\n
+  sale_packing_list = portal.portal_catalog.getResultValue(\n
+    portal_type=\'Sale Packing List\',\n
+    reference=grouping_reference,\n
+    )\n
+  if not sale_packing_list: # Strange cannot find this packing list ?\n
+    return []\n
+  min_date = sale_packing_list.getStopDate()\n
+  min_date = addToDate(min_date, dict(day=-31)) # Get max 31 (one accounting period) latest published consumption lines\n
+  \n
+  query_kw[\'movement.start_date\'] = Query(range="min",\n
+      **{\'movement.start_date\': min_date})\n
+\n
+cpu_resource_uid = context.service_module.cpu_load_percent.getUid()\n
+memory_resource_uid = context.service_module.memory_used.getUid()\n
+consumption_dict = {}\n
+\n
+def getPackingListLineForResource(resource_uid_list):\n
+  return portal.portal_catalog(\n
+    portal_type="Sale Packing List Line",\n
+    default_resource_uid = resource_uid_list,\n
+    **query_kw\n
+  )\n
+\n
+def setDetailLine(packing_list_line):\n
+  start_date = DateTime(packing_list_line.getStartDate()).strftime(\'%Y/%m/%d\')\n
+  hosting_reference = packing_list_line.getAggregateReference(\n
+                                            portal_type=\'Hosting Subscription\')\n
+  hosting_title = packing_list_line.getAggregateTitle(\n
+                                            portal_type=\'Hosting Subscription\')\n
+  software_instance = packing_list_line.getAggregateValue(\n
+                                            portal_type=\'Software Instance\')\n
+  if software_instance is None:\n
+    # In case we found SPL line not aggregated to instance and hosting\n
+    return\n
+  instance_reference = software_instance.getReference()\n
+  #default_line = {\'date\': {\'hosting_ref\': [\'hs_title\', {\'instance_ref\': [\'inst_title\', [\'res1\', \'res2\', \'resN\'] ] } ] } }\n
+  if not start_date in consumption_dict:\n
+    # Add new date line\n
+    consumption_dict[start_date] = {hosting_reference: \n
+                                      [hosting_title, \n
+                                        {instance_reference: \n
+                                          [software_instance.getTitle(), \n
+                                            [0.0, 0.0]\n
+                                          ]\n
+                                        }\n
+                                      ]\n
+                                    }\n
+  # Add new Hosting line\n
+  if not hosting_reference in consumption_dict[start_date]:\n
+    consumption_dict[start_date][hosting_reference] = [hosting_title, \n
+                                                        {instance_reference: \n
+                                                          [software_instance.getTitle(), \n
+                                                            [0.0, 0.0]\n
+                                                          ]\n
+                                                        }\n
+                                                      ]\n
+  # Add new instance line\n
+  if not instance_reference in consumption_dict[start_date][hosting_reference][1]:\n
+    consumption_dict[start_date][hosting_reference][1][instance_reference] = [\n
+        software_instance.getTitle(),  [0.0, 0.0]\n
+      ]\n
+  if packing_list_line.getResourceUid() == cpu_resource_uid:\n
+    quantity = round(float(packing_list_line.getQuantity()), 3)\n
+    consumption_dict[start_date][hosting_reference][1][instance_reference][1][0] = quantity\n
+  elif packing_list_line.getResourceUid() == memory_resource_uid:\n
+    quantity = round( (float(packing_list_line.getQuantity())/1024.0), 3)\n
+    consumption_dict[start_date][hosting_reference][1][instance_reference][1][1] = quantity\n
+\n
+\n
+# Add CPU_LOAD consumption details\n
+for packing_list_line in getPackingListLineForResource([cpu_resource_uid,\n
+                                                        memory_resource_uid]):\n
+  setDetailLine(packing_list_line)\n
+\n
+consumption_list = []\n
+for date in sorted(consumption_dict):\n
+  for hosting_key in sorted(consumption_dict[date]):\n
+    hosting_title, instance_dict = consumption_dict[date][hosting_key]\n
+    for instance_value_list in instance_dict.values():\n
+      instance_title, values = instance_value_list\n
+      consumption_list.append([date, hosting_title, instance_title, values[0], values[1]])\n
+\n
+return consumption_list\n
+</string> </value>
+        </item>
+        <item>
+            <key> <string>_params</string> </key>
+            <value> <string>grouping_reference=None, **query_kw</string> </value>
+        </item>
+        <item>
+            <key> <string>id</string> </key>
+            <value> <string>Base_getUserConsumptionDetailList</string> </value>
+        </item>
+      </dictionary>
+    </pickle>
+  </record>
+</ZopeData>
