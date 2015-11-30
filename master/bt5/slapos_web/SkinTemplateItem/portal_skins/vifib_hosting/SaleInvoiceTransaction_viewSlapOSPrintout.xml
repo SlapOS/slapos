@@ -45,7 +45,12 @@
 <!doctype html>\n
 <html tal:define="quantity_renderer nocall:here/portal_skins/erp5_trade/Base_viewTradeFieldLibrary/my_view_mode_quantity/render_pdf;\n
                   price_renderer nocall:here/portal_skins/erp5_trade/Base_viewTradeFieldLibrary/my_view_mode_total_price/render_pdf;\n
-                  total_not_tax_price_list python: [];">\n
+                  total_not_tax_price_list python: [];\n
+                  invoice_resource_document python: context.portal_catalog.getResultValue(\n
+                                                      portal_type=\'User Consumption HTML File\',\n
+                                                      validation_state=\'shared\',\n
+                                                      follow_up_uid=context.getUid()\n
+                                                    )">\n
   <head>\n
     <meta charset="utf-8">\n
     <title>Invoice</title>\n
@@ -54,18 +59,18 @@
   </head>\n
   <body>\n
     <header>\n
-      <h1>Invoice</h1>\n
-      <address>\n
-        <p tal:content="python: context.getSourceSectionTitle(\'SlapOS Company\')"></p>\n
+      <address class="left">\n
+        <img alt="" src="http://www.vifib.com/legal/VIFIB-Legal/vifib_image/LogoVifib-H100.png" style="max-height: 25%; max-width: 70%;"/>\n
+        <h1 class="company" tal:content="python: context.getSourceSectionTitle(\'SlapOS Company\')"></h1>\n
         <tal:block tal:define="source_section_organisation python: context.getSourceSectionValue()">\n
           <p tal:condition="python: source_section_organisation is not None">\n
             <tal:block tal:repeat="line python: source_section_organisation.getDescription(\'\').split(\'\\n\')">\n
-              <tal:block tal:content="line"></tal:block><br/>\n
+              <span style="display:block" tal:content="line"></span>\n
             </tal:block>\n
           </p>\n
           <p tal:condition="python: source_section_organisation is not None">\n
             <tal:block tal:repeat="line python: source_section_organisation.getDefaultAddressText(\'\').split(\'\\n\')">\n
-              <tal:block tal:content="line"></tal:block><br/>\n
+              <span style="display:block" tal:content="line"></span>\n
             </tal:block>\n
             <tal:block tal:content="python: source_section_organisation.getDefaultRegionTitle()"></tal:block>\n
           </p>\n
@@ -73,10 +78,13 @@
           <p tal:content="python: \'VAT Code: %s\' % source_section_organisation.getVatCode()"></p>\n
         </tal:block>\n
       </address>\n
-      <span><img alt="" src="http://www.vifib.com/legal/VIFIB-Legal/vifib_image/LogoVifib-H100.png"></span>\n
+      <address class="right">\n
+        <h1 class="invoice">Invoice</h1>\n
+      </address>\n
+      <div style="clear:both"></div>\n
     </header>\n
     <article>\n
-      <h2>Client</h2>\n
+      <h2>To</h2>\n
       <address>\n
         <p tal:content="python: context.getDestinationSectionTitle(\'\')"></p>\n
         <tal:block tal:define="destination_section_organisation python: context.getDestinationSectionValue()">\n
@@ -87,7 +95,7 @@
       </address>\n
       <table class="meta">\n
         <tr>\n
-          <th><span>Invoice #</span></th>\n
+          <th><span>Invoice No</span></th>\n
           <td><span tal:content="python: context.getReference()"></span></td>\n
         </tr>\n
         <tr>\n
@@ -102,7 +110,7 @@
       <table class="inventory">\n
         <thead>\n
           <tr>\n
-            <th><span>Line</span></th>\n
+            <th><span></span></th>\n
             <th><span>Item</span></th>\n
             <th><span>Description</span></th>\n
             <th><span>Quantity</span></th>\n
@@ -118,7 +126,7 @@
               <td><span tal:content="python: line.getReference() or line.getIntIndex()"></span></td>\n
               <td><span tal:content="python: line.getResourceReference(\'\')"></span></td>\n
               <td><span tal:content="python: line.getResourceTitle(\'\')"></span></td>\n
-              <td><span tal:content="python: quantity_renderer(line.getQuantity())"></span></td>\n
+              <td><span tal:content="python: quantity_renderer(round(line.getQuantity(), 3))"></span></td>\n
               <td><span tal:content="python: line.getQuantityUnitTitle()"></span></td>\n
               <td><span tal:content="python: price_renderer(line.getPrice())"></span></td>\n
               <td><span tal:content="python: price_renderer(line.getTotalPrice())"></span></td>\n
@@ -132,29 +140,21 @@
           <th><span>Total Excluding Tax</span></th>\n
           <td><span tal:content="python: price_renderer(sum(total_not_tax_price_list))"></span></td>\n
         </tr>\n
-      </table>\n
-      <table class="tax">\n
-        <thead>\n
-          <tr>\n
-            <th><span>Amount</span></th>\n
-            <th><span>Rate</span></th>\n
-            <th><span>Tax Price</span></th>\n
-          </tr>\n
-        </thead>\n
-        <tbody>\n
-          <tal:block tal:repeat="line python: context.contentValues(portal_type=context.getPortalInvoiceMovementTypeList(),\n
-                                                                    sort_on=[(\'int_index\', \'ascending\'), (\'reference\', \'ascending\')])">\n
-            <tr tal:condition="python: line.getUse(\'\') == \'trade/tax\'">\n
-              <td><span tal:content="python: price_renderer(line.getQuantity())"></span></td>\n
+        <tal:block tal:repeat="line python: context.contentValues(portal_type=context.getPortalInvoiceMovementTypeList(),\n
+                                                                  sort_on=[(\'int_index\', \'ascending\'), (\'reference\', \'ascending\')])">\n
+          <tal:block tal:condition="python: line.getUse(\'\') == \'trade/tax\'">\n
+            <tr>\n
+              <th><span>Tax Rate</span></th>\n
               <td><span tal:content="python: \'%s%%\' % quantity_renderer(quantity_renderer(line.getPrice()*100))"></span></td>\n
+            </tr>\n
+            <tr>\n
+              <th><span>Tax Price</span></th>\n
               <td><span tal:content="python: price_renderer(line.getTotalPrice())"></span></td>\n
             </tr>\n
           </tal:block>\n
-        </tbody>\n
-      </table>\n
-      <table class="balance">\n
+        </tal:block>\n
         <tr>\n
-          <th><span>Total Including Tax</span></th>\n
+          <th><span style="font-weight: bold">Total Including Tax</span></th>\n
           <td><span tal:content="python: price_renderer(here.getTotalPrice())"></span></td>\n
         </tr>\n
       </table>\n
@@ -168,6 +168,7 @@
 \n
     <tal:block tal:define="aggregated_reference python: context.getCausalityReference(portal_type=\'Sale Packing List\', checked_permission=\'View\');\n
                            item_dict python: {}">\n
+      <p class=\'line\' tal:condition="python: aggregated_reference">&nbsp;</p>\n
       <aside tal:condition="python: aggregated_reference">\n
         <h1><span>Subscription Details</span></h1>\n
         <tal:block tal:repeat="line python: context.portal_catalog(\n
@@ -206,8 +207,10 @@
           </tbody>\n
         </table>\n
       </aside>\n
+      <p class=\'line page-break\'>&nbsp;</p>\n
+      <tal:block tal:condition="python: invoice_resource_document is not None" tal:content="structure python: invoice_resource_document.getData()">\n
+      </tal:block>\n
     </tal:block>\n
-\n
     <footer>Generated with ERP5 - Open Source ERP suite (www.erp5.org)</footer>\n
   </body>\n
 </html>

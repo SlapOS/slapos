@@ -66,13 +66,17 @@
 h1 { font: bold 100% sans-serif; letter-spacing: 0.5em; text-align: center; text-transform: uppercase; }\n
 \n
 /* table */\n
-\n
-table { font-size: 75%; table-layout: fixed; width: 100%; }\n
-table { border-collapse: separate; border-spacing: 2px; }\n
-th, td { border-width: 1px; padding: 0.5em; position: relative; text-align: left; }\n
-th, td { border-radius: 0.25em; border-style: solid; }\n
-th { background: #EEE; border-color: #BBB; }\n
-td { border-color: #DDD; }\n
+/*table { page-break-inside: avoid}*/\n
+/*tr { page-break-inside:avoid ,page-break-after: avoid,page-break-before:avoid}*/\n
+table { font-size: 75%; table-layout: auto; width: 100%; }\n
+table { border-collapse: separate; border-spacing: 0; }\n
+th, td { padding: 0.7em; position: relative; text-align: left; }\n
+th, td { border-style: solid; }\n
+th { background: #EEE; border: 1px solid #DDD; border-bottom: none; border-right: none;}\n
+td { border-left: 1px solid #DDD; border-bottom: 1px solid #DDD}\n
+tr td:last-child {border-right: 1px solid #DDD}\n
+tr th:last-child {border-right: 1px solid #DDD}\n
+table tr:first-child td {border-top: 1px solid #DDD}\n
 \n
 /* page */\n
 \n
@@ -87,14 +91,17 @@ body { background: #FFF; border-radius: 1px; box-shadow: 0 0 1in -0.25in rgba(0,
 header { margin: 0 0 3em; }\n
 header:after { clear: both; content: ""; display: table; }\n
 \n
-header h1 { background: #000; border-radius: 0.25em; color: #FFF; margin: 0 0 1em; padding: 0.5em 0; }\n
-header address { float: left; font-size: 75%; font-style: normal; line-height: 1.25; margin: 0 1em 1em 0; }\n
+header h1 { background: #000; border-radius: 0; color: #FFF; margin: 0 0 1em; padding: 0.5em 0; }\n
+header h1.company { background: none; color: #000; text-align: left; padding: 0.5em 0; margin: 0;}\n
+header h1.invoice { background: none; color: #000; text-align: left; padding: 0.5em 0; margin: 0; font-size: 35px; font-weight: bold; letter-spacing: inherit;}\n
+header address { font-size: 75%; font-style: normal; line-height: 1.25; margin: 0 1em 1em 0; }\n
 header address p { margin: 0 0 0.25em; }\n
-header span, header img { display: block; float: right; }\n
+header span { display: block; float: right; }\n
 header span { margin: 0 0 1em 1em; max-height: 25%; max-width: 60%; position: relative; }\n
-header img { max-height: 100%; max-width: 100%; }\n
+header img { max-height: 100%; max-width: 100%; display: block;}\n
 header input { cursor: pointer; -ms-filter:"progid:DXImageTransform.Microsoft.Alpha(Opacity=0)"; height: 100%; left: 0; opacity: 0; position: absolute; top: 0; width: 100%; }\n
-\n
+header address.left {float: left; }\n
+header address.right {float: right; max-width: 30%;}\n
 /* article */\n
 \n
 article, article address, table.meta { margin: 0 0 3em; }\n
@@ -105,11 +112,13 @@ article h2:after { \n
   font-size: 1em;\n
 }\n
 \n
-article address { float: left; font-size: 125%; font-weight: bold; }\n
+article address { float: left; font-size: 120%; }\n
+article h2 { margin-bottom: 10px; }\n
+article address p { margin-bottom: 5px; letter-spacing: 1px;}\n
 \n
 /* table meta & balance */\n
 \n
-table.meta, table.balance { float: right; width: 46%; }\n
+table.meta, table.balance { float: right; width: 40.9%; }\n
 \n
 /* table meta */\n
 \n
@@ -121,18 +130,26 @@ table.meta:after, { clear: both; content: ""; display: table; }\n
 \n
 table.inventory { clear: both; width: 100%; margin: 0 0 2em; }\n
 table.inventory th { font-weight: bold; text-align: center; }\n
-\n
-table.inventory td:nth-child(1) { text-align: left; width: 26%; }\n
-table.inventory td:nth-child(2) { text-align: right; width: 38%; }\n
-table.inventory td:nth-child(3) { text-align: left; width: 12%; }\n
-table.inventory td:nth-child(4) { text-align: right; width: 12%; }\n
-table.inventory td:nth-child(5) { text-align: left; width: 12%; }\n
-table.inventory td:nth-child(6) { text-align: right; width: 12%; }\n
-table.inventory td:nth-child(7) { text-align: right; width: 12%; }\n
+table.inventory td {padding: 0.97em .7em;}\n
+table.inventory td:nth-child(1) { text-align: left; width: 6%;  border-bottom: none}\n
+table.inventory td:nth-child(2) { text-align: left; width: 15%; border-bottom: none}\n
+table.inventory td:nth-child(3) { text-align: left; width: 22%; border-bottom: none }\n
+table.inventory td:nth-child(4) { text-align: right; width: 16%; border-bottom: none }\n
+table.inventory td:nth-child(5) { text-align: left; width: 12%; border-bottom: none }\n
+table.inventory td:nth-child(6) { text-align: right; width: 12%; border-bottom: none}\n
+table.inventory td:nth-child(7) { text-align: right; width: 17%; border-bottom: none}\n
+table.inventory tr:last-child td { border-bottom: 2px solid #DDD}\n
+table.inventory th { border: 2px solid #DDD; border-bottom: none; border-right: none;}\n
+table.inventory td { border-left: 2px solid #DDD; border-bottom: 2px solid #DDD}\n
+table.inventory tr td:last-child {border-right: 2px solid #DDD}\n
+table.inventory tr th:last-child {border-right: 2px solid #DDD}\n
+table.inventory tr:first-child td {border-top: 2px solid #DDD}\n
 \n
 /* table balance */\n
 \n
-table.balance th, table.balance td { width: 50%; }\n
+table.balance th { width: 57%; }\n
+table.balance td { width: 40%; }\n
+/*table.balance tr:first-child th, table.balance tr:first-child td { border-top: none; }*/\n
 table.balance td { text-align: right; }\n
 table.balance{ clear: both; }\n
 \n
@@ -143,10 +160,14 @@ table.tax th { font-weight: bold; text-align: center; }\n
 table.tax td { text-align: right; }\n
 table.tax { margin: 2em 0 2em 0; }\n
 \n
+/* table resource */\n
+table.resource td { font-size: 90% }\n
+\n
 /* aside */\n
 \n
-aside h1 { border: none; border-width: 0 0 1px; margin: 0 0 1em; }\n
-aside h1 { border-color: #999; border-bottom-style: solid; }\n
+/* aside h1 { border: none; border-width: 0 0 1px; margin: 0 0 1em; }*/\n
+aside h1 { text-align: left; padding-bottom: 10px;}\n
+aside {margin-top: 20px;}\n
 \n
 /* bottom */\n
 \n
@@ -158,11 +179,33 @@ footer {\n
   margin-top: 3em;\n
 }\n
 \n
+.line {margin-top: 30px;}\n
+\n
 @media print {\n
   * { -webkit-print-color-adjust: exact; }\n
   html { background: none; padding: 0; }\n
   body { box-shadow: none; margin: 0; }\n
   span:empty { display: none; }\n
+  .page-break { page-break-before: always; padding-top: 80px; }\n
+  tr.page-break td {border-top: 1px solid #DDD}\n
+  table.resource tr    { page-break-inside:avoid; display:block; position: relative; width: 100%; height: 26px;}\n
+  table.resource tr:after { content:\'\'; display:block; clear: both; }\n
+  table.resource td, table.resource th    { page-break-inside:avoid; overflow: hidden; text-overflow: ellipsis; display: block; float: left; white-space: nowrap;}\n
+  table.resource td:nth-child(1) { width: 30px; /* 5% */ }\n
+  table.resource td:nth-child(2) { width: 70px; /* 9% */ }\n
+  table.resource td:nth-child(3) { width: 178px; /* 25% */ }\n
+  table.resource td:nth-child(4) { width: 184px; /* 25% */ }\n
+  table.resource td:nth-child(5) { width: 60px; /* 10% */ }\n
+  table.resource td:nth-child(6) { width: 99px; /* 12%; */ }\n
+  table.resource th:nth-child(1) { width: 29px; }\n
+  table.resource th:nth-child(2) { width: 68px; }\n
+  table.resource th:nth-child(3) { width: 176px; }\n
+  table.resource th:nth-child(4) { width: 182px; }\n
+  table.resource th:nth-child(5) { width: 59px; }\n
+  table.resource th:nth-child(6) { width: 97px; }\n
+  aside h1, table tr th {page-break-inside:avoid; page-break-after: avoid,page-break-before:avoid}\n
+  aside.resource {margin-top: 0px;}\n
+  .line {margin-top: 0px;}\n
 }\n
 \n
 @page { margin: 0; }

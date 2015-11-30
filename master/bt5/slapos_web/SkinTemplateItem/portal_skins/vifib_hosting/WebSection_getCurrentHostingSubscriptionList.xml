@@ -58,7 +58,7 @@ if person is not None:\n
     portal_type="Hosting Subscription",\n
     default_destination_section_uid=person.getUid(),\n
     validation_state=\'validated\',\n
-    **kw\n
+    sort_on=((\'title\', ),)\n
     )\n
     \n
 return []\n
