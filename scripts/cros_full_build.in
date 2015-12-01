@@ -45,7 +45,8 @@ VIRTUAL_CHROMEOS_OS_DEV_EBUILD={{ cros_location }}/src/third_party/chromiumos-ov
 # change the virtual ebuild responsible for installing all packages to add the ones 
 # needed for NayuOS
 for package in {{ nayu_dev_packages }} ; do
-  if cat ${VIRTUAL_CHROMEOS_OS_DEV_EBUILD} | grep ${package} ; then
+  echo $package
+  if [[ $( cat "${VIRTUAL_CHROMEOS_OS_DEV_EBUILD}" | grep "${package}" ) ]] ; then
     echo "no need to change ${VIRTUAL_CHROMEOS_OS_DEV_EBUILD} file to add ${package}..." >> "${BUILD_LOG}"
   else
     printf "\n\nRDEPEND=\"\${RDEPEND}\n          ${package}\"\n">> ${VIRTUAL_CHROMEOS_OS_DEV_EBUILD}
@@ -54,14 +55,6 @@ done
 
 # do not install the Upstart init script that starts ssh daemon at boot time
 sed -i '/openssh-server-init/ d' ${BASE_CHROMEOS_DEV_ROOT_EBUILD}
-
-for package in {{ nayu_dev_root }} ; do
-  if cat ${BASE_CHROMEOS_DEV_ROOT_EBUILD} | grep ${package} ; then
-    echo "no need to change ${BASE_CHROMEOS_DEV_ROOT_EBUILD} file to add ${package}..." >> "${BUILD_LOG}"
-  else
-    printf "\n\nRDEPEND=\"\${RDEPEND}\n          ${package}\"\n">> ${BASE_CHROMEOS_DEV_ROOT_EBUILD}
-  fi
-done
 
 ######################################## Build ##############################################
 BOARDS="{{ boards_list }}"
@@ -82,13 +75,13 @@ for board in ${BOARDS}; do
   echo "building packages for a ${board}-flavoured Chromium OS..." >> "${BUILD_LOG}"
   cros_sdk -- ./build_packages --board=${board} >> "${BUILD_LOG}"
 
-  # Chromium original dev image
-  date >> "${BUILD_LOG}"
-  echo "building image for a ${board}-flavoured Chromium OS..." >> "${BUILD_LOG}"
-  cros_sdk -- ./build_image --board=${board} >> "${BUILD_LOG}" \
-    && echo "removing old image if any and creating image file $IMAGE_LOCATION..." >> "${BUILD_LOG}" \
-    && cros_sdk -- rm -f $IMAGE_LOCATION && cros_sdk -- touch $IMAGE_LOCATION \
-    && cros_sdk -- cros flash --board=${board} file://$IMAGE_LOCATION >> "${BUILD_LOG}"
+  ## Chromium original base image
+  #date >> "${BUILD_LOG}"
+  #echo "building image for a ${board}-flavoured Chromium OS..." >> "${BUILD_LOG}"
+  #cros_sdk -- ./build_image --board=${board} base >> "${BUILD_LOG}" \
+  #  && echo "removing old image if any and creating image file $IMAGE_LOCATION..." >> "${BUILD_LOG}" \
+  #  && cros_sdk -- rm -f $IMAGE_LOCATION && cros_sdk -- touch $IMAGE_LOCATION \
+  #  && cros_sdk -- cros flash --board=${board} file://$IMAGE_LOCATION >> "${BUILD_LOG}"
 
   # NayuOS
     # /usr/local/usr/lib/debug is needed because of symbolic links that leads 
