@@ -73,7 +73,6 @@ recipe = slapos.cookbook:wrapper
 command-line =
   {{ bin_directory }}/ipython notebook
   --no-browser
-  --matplotlib=inline
   --ip=${instance-parameter:host}
   --port=${instance-parameter:port}
   --port-retries=0
