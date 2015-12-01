@@ -54,7 +54,7 @@
 select_kw.pop(\'portal_type\', None)\n
 select_kw.pop(\'delivery_relative_url_list\', None)\n
 from Products.ERP5Type.Document import newTempSimulationMovement\n
-from Products.ZSQLCatalog.SQLCatalog import Query, NegatedQuery\n
+from Products.ZSQLCatalog.SQLCatalog import Query, NegatedQuery, ComplexQuery\n
 portal = context.getPortalObject()\n
 \n
 business_process_uid_list = [\n
@@ -62,6 +62,7 @@ business_process_uid_list = [\n
   portal.business_process_module.slapos_subscription_business_process.getUid()]\n
 specialise_reference_list = [q.getReference() for q in portal.portal_catalog(specialise_uid=business_process_uid_list,\n
   portal_type=\'Sale Trade Condition\')]\n
+select_dict= {\'default_aggregate_portal_type\': None}\n
 \n
 select_kw.update(\n
   limit=50, # just take a bit\n
@@ -69,7 +70,10 @@ select_kw.update(\n
   simulation_state=\'delivered\',\n
   parent_specialise_reference=specialise_reference_list,\n
   parent_specialise_portal_type=\'Sale Trade Condition\',\n
-  aggregate_portal_type=NegatedQuery(Query(aggregate_portal_type=\'Computer\')), # Don\'t take SPL for computer\n
+  select_dict=select_dict,\n
+  left_join_list=select_dict.keys(),\n
+  default_aggregate_portal_type=ComplexQuery(NegatedQuery(Query(default_aggregate_portal_type=\'Computer\')),\n
+    Query(default_aggregate_portal_type=None), operator="OR"),\n
   grouping_reference=None,\n
   sort_on=((\'modification_date\', \'ASC\'),) # the highest chance to find movement which can be delivered\n
 )\n
