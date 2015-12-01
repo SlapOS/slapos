@@ -183,7 +183,7 @@ config-webdav = {{ dumps(zope_parameter_dict.get('webdav', False)) }}
 [{{ frontend_name }}]
 <= request-frontend-base
 name = {{ frontend_name }}
-config-url = ${request-balancer:{{ family_name }}-v6}
+config-url = ${request-balancer:connection-{{ family_name }}-v6}
 {%   else -%}
 {%     do publish_dict.__setitem__('family-' ~ family_name, '${request-balancer:connection-' ~ family_name ~ '}' ) -%}
 {%     do publish_dict.__setitem__('family-' ~ family_name ~ '-v6', '${request-balancer:connection-' ~ family_name ~ '-v6}' ) -%}
