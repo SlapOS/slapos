@@ -2016,8 +2016,9 @@ class TestConsumptionDocumentModule(TestSlapOSGroupRoleSecurityMixin):
   def test(self):
     module = self.portal.consumption_document_module
     self.assertSecurityGroup(module,
-        ['R-COMPUTER', 'zope', 'G-COMPANY'], False)
+        ['R-COMPUTER', 'R-MEMBER', 'zope', 'G-COMPANY'], False)
     self.assertRoles(module, 'R-COMPUTER', ['Author'])
+    self.assertRoles(module, 'R-MEMBER', ['Auditor', 'Author'])
     self.assertRoles(module, 'G-COMPANY', ['Author', 'Auditor'])
     self.assertRoles(module, 'zope', ['Owner'])
 
@@ -2031,6 +2032,33 @@ class TestComputerConsumptionTioXMLFile(TestSlapOSGroupRoleSecurityMixin):
         False)
     self.assertRoles(text, 'G-COMPANY', ['Assignor'])
     self.assertRoles(text, self.user_id, ['Owner'])
+
+class TestUserConsumptionHTMLFile(TestSlapOSGroupRoleSecurityMixin):
+  def test_GroupCompany(self):
+    text = self.portal.consumption_document_module.newContent(
+        portal_type='User Consumption HTML File')
+
+    self.assertSecurityGroup(text,
+        ['G-COMPANY', self.user_id],
+        False)
+    self.assertRoles(text, 'G-COMPANY', ['Assignor'])
+    self.assertRoles(text, self.user_id, ['Owner'])
+
+  def test_CustomerAssignee(self):
+    customer_reference = 'TESTPERSON-%s' % self.generateNewId()
+    customer = self.portal.person_module.newContent(
+        portal_type='Person', reference=customer_reference)
+    reference = 'TESTRC-%s' % self.generateNewId()
+    html_document = self.portal.consumption_document_module.newContent(
+        portal_type='User Consumption HTML File', reference=reference,
+        contributor=customer.getRelativeUrl())
+    html_document.updateLocalRolesOnSecurityGroups()
+
+    self.assertSecurityGroup(html_document,
+        ['G-COMPANY', customer_reference, self.user_id], False)
+    self.assertRoles(html_document, 'G-COMPANY', ['Assignor'])
+    self.assertRoles(html_document, customer_reference, ['Assignee'])
+    self.assertRoles(html_document, self.user_id, ['Owner'])
 
 class TestCloudContractModule(TestSlapOSGroupRoleSecurityMixin):
   def test(self):
