@@ -51,7 +51,7 @@ config-cpu-count = {{ dumps(kvm_parameter_dict.get('cpu-count', 1)) }}
 config-cpu-options = {{ dumps(kvm_parameter_dict.get('cpu-options', '')) }}
 config-numa = {{ dumps(kvm_parameter_dict.get('numa', '')) }}
 
-{% set nat_rules_list = kvm_parameter_dict.get('nat-rules', [22, 80, 443]) -%}
+{% set nat_rules_list = kvm_parameter_dict.get('nat-rules', []) -%}
 config-nat-rules = {{ nat_rules_list | join(' ') }}
 config-publish-nat-url = True
 config-use-nat = {{ use_nat }}
@@ -76,6 +76,7 @@ config-document-host = ${apache-conf:ip}
 config-document-port = ${apache-conf:port}
 config-document-path = ${hash-code:passwd}
 config-keyboard-layout-language = {{ dumps(kvm_parameter_dict.get('keyboard-layout-language', '')) }}
+config-type = cluster
 
 {% set authorized_source_list = slapparameter_dict.get('fw-authorized-sources', []) -%}
 {% set rejected_source_list = slapparameter_dict.get('fw-reject-sources', []) -%}
