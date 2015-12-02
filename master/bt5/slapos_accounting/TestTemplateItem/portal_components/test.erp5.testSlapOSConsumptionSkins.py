@@ -300,10 +300,20 @@ class TestSlapOSComputerConsumptionTioXMLFile_solveInvoicingGeneration(
       reference=reference, password=password)
     person.newContent(portal_type='Assignment', role='member').open()
 
+    # Create second person
+    password = self.generateNewId()
+    reference = 'test_%s' % self.generateNewId()
+    second_person = self.portal.person_module.newContent(portal_type='Person',
+      title=reference,
+      reference=reference, password=password)
+    second_person.newContent(portal_type='Assignment', role='member').open()
+
     transaction.commit()
     person.recursiveImmediateReindexObject()
     self.person = person
     self.person_reference = person.getReference()
+    self.second_person = second_person
+    self.second_person_reference = second_person.getReference()
 
     new_id = self.generateNewId()
 
@@ -312,7 +322,8 @@ class TestSlapOSComputerConsumptionTioXMLFile_solveInvoicingGeneration(
         .Base_createCloneDocument(batch_mode=1)
     self.computer.edit(
       title="Computer %s" % new_id,
-      reference="TESTCOMP-%s" % new_id
+      reference="TESTCOMP-%s" % new_id,
+      source_administration_value=person
     )
 
     self.computer.validate()
@@ -327,7 +338,7 @@ class TestSlapOSComputerConsumptionTioXMLFile_solveInvoicingGeneration(
     )
 
     self.stop_requested_software_instance.getSpecialiseValue().edit(
-      destination_section_value=person
+      destination_section_value=second_person
     )
     
     return self.computer
@@ -385,9 +396,7 @@ class TestSlapOSComputerConsumptionTioXMLFile_solveInvoicingGeneration(
                      self.person.getRelativeUrl())
     self.assertEqual(delivery.getStartDate(),
                      document.getCreationDate())
-    self.assertEqual(delivery.getTitle(),
-      "%s Consumption Usage" % \
-        self.start_requested_software_instance.getReference())
+    self.assertEqual(delivery.getTitle(), 'Resource consumptionsé')
     self.assertEqual(delivery.getSimulationState(), "delivered")
     self.assertEqual(delivery.getCausalityState(), "building")
     self.assertEqual(delivery.getSpecialise(),
@@ -404,6 +413,65 @@ class TestSlapOSComputerConsumptionTioXMLFile_solveInvoicingGeneration(
       self.start_requested_software_instance.getRelativeUrl(),
       self.start_requested_software_instance.getSpecialise()
     ])
+    self.assertEqual(line.getResource(),
+                     "service_module/slapos_netdrive_consumption")
+    self.assertEqual(line.getQuantityUnit(),
+                     "unit/piece")
+
+  tio_dict = {
+    'title': 'Resource consumptionsé',
+    'movement': [{
+      'title': 'fooà',
+      'resource': 'service_module/slapos_netdrive_consumption',
+      'reference': 'partition2',
+      'quantity': 42.42,
+      'category': "caté",
+    }],
+  }
+  @simulate('ComputerConsumptionTioXMLFile_parseXml', 
+            '*args, **kwargs',
+            "return %s" % tio_dict)
+  def test_solveInvoicingGeneration_valid_xml_one_movement_partition2(self):
+    document = self.createTioXMLFile()
+    computer = self.createAllocatedComputer()
+    document.edit(
+      contributor_value=computer,
+    )
+    self.tic()
+    self.assertEqual(document.getValidationState(), "submitted")
+    result = document.ComputerConsumptionTioXMLFile_solveInvoicingGeneration()
+    self.assertEqual(document.getValidationState(), "shared")
+    self.assertEqual("Created packing list: %s" % result,
+        document.workflow_history['document_publication_workflow'][-1]['comment'])
+    self.assertEqual(len(result), 1)
+    delivery = self.portal.restrictedTraverse(result[0])
+
+    self.assertEqual(delivery.getPortalType(), "Sale Packing List")
+    self.assertEqual(delivery.getDestination(), self.person.getRelativeUrl())
+    self.assertEqual(delivery.getDestinationDecision(),
+                     self.person.getRelativeUrl())
+    self.assertEqual(delivery.getStartDate(),
+                     document.getCreationDate())
+    self.assertEqual(delivery.getTitle(), 'Resource consumptionsé')
+    self.assertEqual(delivery.getSimulationState(), "delivered")
+    self.assertEqual(delivery.getCausalityState(), "building")
+    self.assertEqual(delivery.getSpecialise(),
+      "sale_trade_condition_module/slapos_consumption_trade_condition")
+
+    self.assertEqual(
+      len(delivery.contentValues(portal_type="Sale Packing List Line")), 1)
+    line = delivery.contentValues(portal_type="Sale Packing List Line")[0]
+    
+    self.assertEqual(line.getTitle(), "fooà")
+    self.assertEqual(line.getQuantity(), 42.42)
+    self.assertEqual(line.getAggregateList(), [
+      self.computer.partition2.getRelativeUrl(),
+      self.stop_requested_software_instance.getRelativeUrl(),
+      self.stop_requested_software_instance.getSpecialise()
+    ])
+    self.assertEqual(line.getDestination(), self.second_person.getRelativeUrl())
+    self.assertEqual(line.getDestinationDecision(),
+                     self.second_person.getRelativeUrl())
     self.assertEqual(line.getResource(),
                      "service_module/slapos_netdrive_consumption")
     self.assertEqual(line.getQuantityUnit(),
@@ -449,12 +517,10 @@ class TestSlapOSComputerConsumptionTioXMLFile_solveInvoicingGeneration(
                      self.person.getRelativeUrl())
     self.assertEqual(delivery.getStartDate(),
                      document.getCreationDate())
-    self.assertEqual(delivery.getTitle(),
-      "%s Consumption Usage" % \
-        self.start_requested_software_instance.getReference())
+    self.assertEqual(delivery.getTitle(), 'Resource consumptionsé')
     self.assertEqual(delivery.getSimulationState(), "delivered")
     self.assertEqual(delivery.getCausalityState(), "building")
-    self.assertEqual(delivery.getSpecialise(),
+    self.assertEqual(delivery.getSpecialise(), 
       "sale_trade_condition_module/slapos_consumption_trade_condition")
 
     self.assertEqual(
@@ -468,6 +534,9 @@ class TestSlapOSComputerConsumptionTioXMLFile_solveInvoicingGeneration(
       self.start_requested_software_instance.getRelativeUrl(),
       self.start_requested_software_instance.getSpecialise()
     ])
+    self.assertEqual(line.getDestination(), self.person.getRelativeUrl())
+    self.assertEqual(line.getDestinationDecision(),
+                     self.person.getRelativeUrl())
     self.assertEqual(line.getResource(),
                      "service_module/slapos_netdrive_consumption")
     self.assertEqual(line.getQuantityUnit(),
@@ -481,6 +550,9 @@ class TestSlapOSComputerConsumptionTioXMLFile_solveInvoicingGeneration(
       self.start_requested_software_instance.getRelativeUrl(),
       self.start_requested_software_instance.getSpecialise()
     ])
+    self.assertEqual(line.getDestination(), self.person.getRelativeUrl())
+    self.assertEqual(line.getDestinationDecision(),
+                     self.person.getRelativeUrl())
     self.assertEqual(line.getResource(),
                      "service_module/slapos_netdrive_consumption")
     self.assertEqual(line.getQuantityUnit(),
@@ -517,9 +589,9 @@ class TestSlapOSComputerConsumptionTioXMLFile_solveInvoicingGeneration(
     self.assertEqual(document.getValidationState(), "shared")
     self.assertEqual("Created packing list: %s" % result,
         document.workflow_history['document_publication_workflow'][-1]['comment'])
-    self.assertEqual(len(result), 2)
+    self.assertEqual(len(result), 1)
 
-    # Delivery 1
+    # One Delivery
     delivery = self.portal.restrictedTraverse(result[0])
 
     self.assertEqual(delivery.getPortalType(), "Sale Packing List")
@@ -528,59 +600,46 @@ class TestSlapOSComputerConsumptionTioXMLFile_solveInvoicingGeneration(
                      self.person.getRelativeUrl())
     self.assertEqual(delivery.getStartDate(),
                      document.getCreationDate())
-    self.assertEqual(delivery.getTitle(),
-      "%s Consumption Usage" % \
-        self.start_requested_software_instance.getReference())
+    self.assertEqual(delivery.getTitle(), 'Resource consumptionsé')
     self.assertEqual(delivery.getSimulationState(), "delivered")
     self.assertEqual(delivery.getCausalityState(), "building")
     self.assertEqual(delivery.getSpecialise(),
       "sale_trade_condition_module/slapos_consumption_trade_condition")
 
     self.assertEqual(
-      len(delivery.contentValues(portal_type="Sale Packing List Line")), 1)
+      len(delivery.contentValues(portal_type="Sale Packing List Line")), 2)
 
-    line = delivery.contentValues(portal_type="Sale Packing List Line")[0]
-    self.assertEqual(line.getTitle(), "fooà")
-    self.assertEqual(line.getQuantity(), 42.42)
-    self.assertEqual(line.getAggregateList(), [
+    # Sale Packing List Line 1
+    line1 = delivery.contentValues(portal_type="Sale Packing List Line")[0]
+    self.assertEqual(line1.getTitle(), "fooà")
+    self.assertEqual(line1.getQuantity(), 42.42)
+    self.assertEqual(line1.getAggregateList(), [
       self.computer.partition1.getRelativeUrl(),
       self.start_requested_software_instance.getRelativeUrl(),
       self.start_requested_software_instance.getSpecialise()
     ])
-    self.assertEqual(line.getResource(),
+    self.assertEqual(line1.getDestination(), self.person.getRelativeUrl())
+    self.assertEqual(line1.getDestinationDecision(),
+                     self.person.getRelativeUrl())
+    self.assertEqual(line1.getResource(),
                      "service_module/slapos_netdrive_consumption")
-    self.assertEqual(line.getQuantityUnit(),
+    self.assertEqual(line1.getQuantityUnit(),
                      "unit/piece")
 
-    # Delivery 2
-    delivery = self.portal.restrictedTraverse(result[1])
-
-    self.assertEqual(delivery.getPortalType(), "Sale Packing List")
-    self.assertEqual(delivery.getDestination(), self.person.getRelativeUrl())
-    self.assertEqual(delivery.getDestinationDecision(),
-                     self.person.getRelativeUrl())
-    self.assertEqual(delivery.getStartDate(),
-                     document.getCreationDate())
-    self.assertEqual(delivery.getTitle(),
-      "%s Consumption Usage" % \
-        self.stop_requested_software_instance.getReference())
-    self.assertEqual(delivery.getSimulationState(), "delivered")
-    self.assertEqual(delivery.getCausalityState(), "building")
-    self.assertEqual(delivery.getSpecialise(),
-      "sale_trade_condition_module/slapos_consumption_trade_condition")
-
-    self.assertEqual(
-      len(delivery.contentValues(portal_type="Sale Packing List Line")), 1)
-
-    line = delivery.contentValues(portal_type="Sale Packing List Line")[0]
-    self.assertEqual(line.getTitle(), "foob")
-    self.assertEqual(line.getQuantity(), 24.24)
-    self.assertEqual(line.getAggregateList(), [
+    # Sale Packing List Line 2
+    line2 = delivery.contentValues(portal_type="Sale Packing List Line")[1]
+    
+    self.assertEqual(line2.getTitle(), "foob")
+    self.assertEqual(line2.getQuantity(), 24.24)
+    self.assertEqual(line2.getAggregateList(), [
       self.computer.partition2.getRelativeUrl(),
       self.stop_requested_software_instance.getRelativeUrl(),
       self.stop_requested_software_instance.getSpecialise()
     ])
-    self.assertEqual(line.getResource(),
+    self.assertEqual(line2.getDestination(), self.second_person.getRelativeUrl())
+    self.assertEqual(line2.getDestinationDecision(),
+                     self.second_person.getRelativeUrl())
+    self.assertEqual(line2.getResource(),
                      "service_module/slapos_netdrive_consumption")
-    self.assertEqual(line.getQuantityUnit(),
+    self.assertEqual(line2.getQuantityUnit(),
                      "unit/piece")
