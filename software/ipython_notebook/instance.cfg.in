@@ -82,6 +82,9 @@ command-line =
   --notebook-dir=${instance-parameter:notebook_dir}
   --logfile=${instance-parameter:logfile}
   --config=${ipython-notebook-config:rendered}
+# Add 'log-level' alias to 'DEBUG' so as to log requests being done while running
+# of service ipython_notebook.
+  --log-level="DEBUG"
 wrapper-path = ${directory:service}/ipython_notebook
 parameters-extra = true
 # Explicitly define IPython Directory to be used while starting ipython notebook
