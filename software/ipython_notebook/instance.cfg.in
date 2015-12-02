@@ -131,7 +131,7 @@ ipython_kernel_dir = ${:ipython_dir}/kernels
 erp5_kernel_dir = ${:ipython_kernel_dir}/ERP5
 
 [publish-connection-parameter]
-recipe = slapos.cookbook:publish
+recipe = slapos.cookbook:publish.serialised
 url = https://[${instance-parameter:host}]:${instance-parameter:port}
 monitor_url = ${monitor-parameters:url}
 
