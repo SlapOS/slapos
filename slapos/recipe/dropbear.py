@@ -102,7 +102,8 @@ class Recipe(GenericBaseRecipe):
     # Disable password login
     dropbear_cmd.extend(['-s', '-g'])
     # Disable port forwarding
-    dropbear_cmd.extend(['-j', '-k'])
+    if not self.optionIsTrue('allow-port-forwarding', default=False):
+      dropbear_cmd.extend(['-j', '-k'])
 
     host = self.options['host']
     if ':' in host:
