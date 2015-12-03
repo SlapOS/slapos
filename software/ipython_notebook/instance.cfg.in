@@ -46,6 +46,10 @@ key_file = ${generate-certificate:key_file}
 logfile = ${directory:log}/ipython_notebook.log
 notebook_dir = ${directory:notebook_dir}
 
+[dynamic-jinja2-template-base]
+recipe = slapos.recipe.template:jinja2
+mode = 0644
+
 [generate-certificate]
 ; TODO: there is a slapos recipe to generate certificates. Use it instead
 recipe = plone.recipe.command
@@ -79,7 +83,7 @@ wrapper-path = ${directory:service}/ipython_notebook
 parameters-extra = true
 
 [ipython-notebook-config]
-recipe = slapos.recipe.template:jinja2
+<= dynamic-jinja2-template-base
 template = {{ ipython_notebook_config_location }}/{{ ipython_notebook_config_filename }}
 rendered = ${directory:etc}/ipython_notebook_config.py
 mode = 0744
@@ -91,7 +95,7 @@ context =
 source = ${instance-parameter:logfile}
 
 [monitor-deploy-set-password-cgi]
-recipe = slapos.recipe.template:jinja2
+<= dynamic-jinja2-template-base
 template = {{ ipython_notebook_set_password_location }}/{{ ipython_notebook_set_password_filename }}
 rendered = ${monitor-directory:knowledge0-cgi}/${:filename}
 filename = ipython-notebook-password.cgi
