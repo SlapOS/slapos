@@ -81,6 +81,8 @@ command-line =
   --config=${ipython-notebook-config:rendered}
 wrapper-path = ${directory:service}/ipython_notebook
 parameters-extra = true
+# Explicitly define IPython Directory to be used while starting ipython notebook
+environment = IPYTHONDIR=${directory:ipython_dir}
 
 [ipython-notebook-config]
 <= dynamic-jinja2-template-base
@@ -117,6 +119,9 @@ service = ${:etc}/service
 promise = ${:etc}/promise/
 log = ${:var}/log
 notebook_dir = ${:var}/notebooks
+# Add folders to explicitly define ipython directory
+ipython_dir = ${:home}/ipython
+ipython_kernel_dir = ${:ipython_dir}/kernels
 
 [publish-connection-parameter]
 recipe = slapos.cookbook:publish
