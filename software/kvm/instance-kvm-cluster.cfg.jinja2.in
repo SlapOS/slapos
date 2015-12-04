@@ -69,13 +69,13 @@ config-httpd-port = {{ dumps(kvm_parameter_dict.get('httpd-port', 8081)) }}
 {% if kvm_parameter_dict.get('data-to-vm', '') -%}
 config-data-to-vm = {{ dumps(kvm_parameter_dict.get('data-to-vm', '')) }}
 {% endif -%}
-config-enable-monitor = True
+config-enable-monitor = {{ dumps(kvm_parameter_dict.get('enable-monitor', True)) }}
 
 # Enable simple http server on ipv6 so all VMs will access it
 config-document-host = ${apache-conf:ip}
 config-document-port = ${apache-conf:port}
 config-document-path = ${hash-code:passwd}
-config-keyboard-layout-language = {{ dumps(kvm_parameter_dict.get('keyboard-layout-language', '')) }}
+config-keyboard-layout-language = {{ dumps(kvm_parameter_dict.get('keyboard-layout-language', 'fr')) }}
 config-type = cluster
 
 {% set authorized_source_list = slapparameter_dict.get('fw-authorized-sources', []) -%}
