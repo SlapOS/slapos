@@ -50,6 +50,7 @@ from lxml import etree
 
 from slapos.slap.slap import NotFoundError
 from slapos.slap.slap import ServerError
+from slapos.slap.slap import COMPUTER_PARTITION_REQUEST_LIST_TEMPLATE_FILENAME
 from slapos.util import mkdir_p, chownDirectory, string_to_boolean
 from slapos.grid.exception import BuildoutFailedError
 from slapos.grid.SlapObject import Software, Partition
@@ -666,6 +667,19 @@ stderr_logfile_backups=1
     if not promise_present:
       self.logger.info("No promise.")
 
+  def _endInstallationTransaction(self, computer_partition):
+    partition_id = computer_partition.getId()
+    transaction_file_name = COMPUTER_PARTITION_REQUEST_LIST_TEMPLATE_FILENAME % partition_id
+    transaction_file_path = os.path.join(self.instance_root,
+                                      partition_id,
+                                      transaction_file_name)
+
+    if os.path.exists(transaction_file_path):
+      with open(transaction_file_path, 'r') as tf:
+        computer_partition.setComputerPartitionRelatedInstanceList(
+          [reference for reference in tf.read().split('\n') if reference]
+        )
+
   def _addFirewallRule(self, rule_command):
     """
     """
@@ -904,6 +918,14 @@ stderr_logfile_backups=1
     self.logger.debug('Check if %s requires processing...' % computer_partition_id)
 
     instance_path = os.path.join(self.instance_root, computer_partition_id)
+    os.environ['SLAPGRID_INSTANCE_ROOT'] = self.instance_root
+
+    # Check if transaction file of this partition exists, if the file was created,
+    # remove it so it will be generate with this new transaction
+    transaction_file_name = COMPUTER_PARTITION_REQUEST_LIST_TEMPLATE_FILENAME % computer_partition_id
+    transaction_file_path = os.path.join(instance_path, transaction_file_name)
+    if os.path.exists(transaction_file_path):
+      os.unlink(transaction_file_path)
 
     # Try to get partition timestamp (last modification date)
     timestamp_path = os.path.join(
@@ -1027,6 +1049,7 @@ stderr_logfile_backups=1
         local_partition.install()
         computer_partition.available()
         local_partition.start()
+        self._endInstallationTransaction(computer_partition)
         if self.firewall_conf:
           self._setupComputerPartitionFirewall(computer_partition,
                                               partition_ip_list)

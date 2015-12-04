@@ -51,6 +51,7 @@ from slapos.grid.utils import md5digest
 from slapos.grid.watchdog import Watchdog
 from slapos.grid import SlapObject
 from slapos.grid.SlapObject import WATCHDOG_MARK
+from slapos.slap.slap import COMPUTER_PARTITION_REQUEST_LIST_TEMPLATE_FILENAME
 import slapos.grid.SlapObject
 
 import httmock
@@ -107,6 +108,8 @@ class BasicMixin(object):
     self._tempdir = tempfile.mkdtemp()
     self.software_root = os.path.join(self._tempdir, 'software')
     self.instance_root = os.path.join(self._tempdir, 'instance')
+    if os.environ.has_key('SLAPGRID_INSTANCE_ROOT'):
+      del os.environ['SLAPGRID_INSTANCE_ROOT']
     logging.basicConfig(level=logging.DEBUG)
     self.setSlapgrid()
 
@@ -337,6 +340,8 @@ class ComputerForTest(object):
         instance.state = 'destroyed'
         return {'status_code': 200}
       if url.path == '/softwareInstanceBang':
+        return {'status_code': 200}
+      if url.path == "/updateComputerPartitionRelatedInstanceList":
         return {'status_code': 200}
       if url.path == '/softwareInstanceError':
         instance.error_log = '\n'.join(
@@ -1647,16 +1652,21 @@ class TestSlapgridUsageReport(MasterMixin, unittest.TestCase):
       # Then run usage report and see if it is still working
       computer.sequence = []
       self.assertEqual(self.grid.agregateAndSendUsage(), slapgrid.SLAPGRID_SUCCESS)
+      # registerComputerPartition will create one more file: 
+      from slapos.slap.slap import COMPUTER_PARTITION_REQUEST_LIST_TEMPLATE_FILENAME
+      request_list_file = COMPUTER_PARTITION_REQUEST_LIST_TEMPLATE_FILENAME % instance.name
       self.assertInstanceDirectoryListEqual(['0'])
       self.assertItemsEqual(os.listdir(instance.partition_path),
                             ['.slapgrid', '.0_wrapper.log', 'buildout.cfg',
-                             'etc', 'software_release', 'worked', '.slapos-retention-lock-delay'])
+                             'etc', 'software_release', 'worked',
+                             '.slapos-retention-lock-delay', request_list_file])
       wrapper_log = os.path.join(instance.partition_path, '.0_wrapper.log')
       self.assertLogContent(wrapper_log, 'Working')
       self.assertInstanceDirectoryListEqual(['0'])
       self.assertItemsEqual(os.listdir(instance.partition_path),
                             ['.slapgrid', '.0_wrapper.log', 'buildout.cfg',
-                             'etc', 'software_release', 'worked', '.slapos-retention-lock-delay'])
+                             'etc', 'software_release', 'worked',
+                             '.slapos-retention-lock-delay', request_list_file])
       wrapper_log = os.path.join(instance.partition_path, '.0_wrapper.log')
       self.assertLogContent(wrapper_log, 'Working')
       self.assertEqual(computer.sequence,
@@ -2312,4 +2322,19 @@ class TestSlapgridCPWithFirewall(MasterMixin, unittest.TestCase):
       with open(rules_path, 'r') as frules:
         rules_list = json.loads(frules.read())
       self.checkRuleFromIpSource(ip, [source_ip[1]], rules_list)
-      
+
+class TestSlapgridCPWithTransaction(MasterMixin, unittest.TestCase):
+
+  def test_one_partition(self):
+    computer = ComputerForTest(self.software_root, self.instance_root)
+    with httmock.HTTMock(computer.request_handler):
+      instance = computer.instance_list[0]
+      partition = os.path.join(self.instance_root, '0')
+      request_list_file = os.path.join(partition,
+          COMPUTER_PARTITION_REQUEST_LIST_TEMPLATE_FILENAME % instance.name)
+      with open(request_list_file, 'w') as f:
+        f.write('some partition')
+      self.assertEqual(self.grid.processComputerPartitionList(), slapgrid.SLAPGRID_SUCCESS)
+      self.assertInstanceDirectoryListEqual(['0'])
+
+      self.assertFalse(os.path.exists(request_list_file))

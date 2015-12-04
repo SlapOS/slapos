@@ -1681,6 +1681,123 @@ class TestSlapOSSlapToolInstanceAccess(TestSlapOSSlapToolMixin):
       if os.path.exists(self.instance_request_simulator):
         os.unlink(self.instance_request_simulator)
 
+  def test_updateInstancePredecessorList(self):
+    self._makeComplexComputer()
+
+    partition_id = self.start_requested_software_instance.getAggregateValue(
+        portal_type='Computer Partition').getReference()
+    self.login(self.start_requested_software_instance.getReference())
+
+    # Atach two software instances
+    instance_kw = dict(
+      software_release='http://a.release',
+      software_type='type',
+      instance_xml=self.generateSafeXml(),
+      sla_xml=self.generateSafeXml(),
+      shared=False,
+      software_title='Instance0',
+      state='started'
+    )
+    self.start_requested_software_instance.requestInstance(**instance_kw)
+    instance_kw['software_title'] = 'Instance1'
+    self.start_requested_software_instance.requestInstance(**instance_kw)
+    self.tic()
+
+    self.assertEqual(len(self.start_requested_software_instance.getPredecessorList()), 2)
+    self.assertSameSet(['Instance0', 'Instance1'],
+            self.start_requested_software_instance.getPredecessorTitleList())
+
+    # Update with no changes
+    instance_list_xml = """
+<marshal>
+  <list id="i2"><string>Instance0</string><string>Instance1</string></list>
+</marshal>"""
+    self.portal_slap.updateComputerPartitionRelatedInstanceList(
+        computer_id=self.computer_id,
+        computer_partition_id=partition_id,
+        instance_reference_xml=instance_list_xml)
+    self.tic()
+    self.assertSameSet(['Instance0', 'Instance1'],
+            self.start_requested_software_instance.getPredecessorTitleList())
+
+    # Update Instance0 was not requested
+    instance_list_xml = """
+<marshal>
+  <list id="i2"><string>Instance1</string></list>
+</marshal>"""
+    self.portal_slap.updateComputerPartitionRelatedInstanceList(
+        computer_id=self.computer_id,
+        computer_partition_id=partition_id,
+        instance_reference_xml=instance_list_xml)
+    self.tic()
+    self.assertSameSet(['Instance1'],
+            self.start_requested_software_instance.getPredecessorTitleList())
+
+  def test_updateInstancePredecessorList_one_child(self):
+    self._makeComplexComputer()
+
+    partition_id = self.start_requested_software_instance.getAggregateValue(
+        portal_type='Computer Partition').getReference()
+    self.login(self.start_requested_software_instance.getReference())
+
+    # Atach one software instance
+    instance_kw = dict(
+      software_release='http://a.release',
+      software_type='type',
+      instance_xml=self.generateSafeXml(),
+      sla_xml=self.generateSafeXml(),
+      shared=False,
+      software_title='Instance0',
+      state='started'
+    )
+    self.start_requested_software_instance.requestInstance(**instance_kw)
+    self.tic()
+
+    self.assertEqual(len(self.start_requested_software_instance.getPredecessorList()), 1)
+    self.assertSameSet(['Instance0'],
+            self.start_requested_software_instance.getPredecessorTitleList())
+
+    instance_list_xml = '<marshal><list id="i2" /></marshal>'
+    self.portal_slap.updateComputerPartitionRelatedInstanceList(
+        computer_id=self.computer_id,
+        computer_partition_id=partition_id,
+        instance_reference_xml=instance_list_xml)
+    self.tic()
+    self.assertEqual([],
+              self.start_requested_software_instance.getPredecessorTitleList())
+
+  def test_updateInstancePredecessorList_no_child(self):
+    self._makeComplexComputer()
+
+    partition_id = self.start_requested_software_instance.getAggregateValue(
+        portal_type='Computer Partition').getReference()
+    self.login(self.start_requested_software_instance.getReference())
+
+    self.assertEqual([],
+            self.start_requested_software_instance.getPredecessorTitleList())
+
+    instance_list_xml = '<marshal><list id="i2" /></marshal>'
+    self.portal_slap.updateComputerPartitionRelatedInstanceList(
+        computer_id=self.computer_id,
+        computer_partition_id=partition_id,
+        instance_reference_xml=instance_list_xml)
+    self.tic()
+    self.assertEqual([],
+              self.start_requested_software_instance.getPredecessorTitleList())
+
+    # Try with something that doesn't exist
+    instance_list_xml = """
+<marshal>
+<list id="i2"><string>instance0</string></list>
+</marshal>"""
+    self.portal_slap.updateComputerPartitionRelatedInstanceList(
+        computer_id=self.computer_id,
+        computer_partition_id=partition_id,
+        instance_reference_xml=instance_list_xml)
+    self.tic()
+    self.assertEqual([],
+              self.start_requested_software_instance.getPredecessorTitleList())
+
   def test_availableComputerPartition(self):
     self._makeComplexComputer()
     partition_id = self.start_requested_software_instance.getAggregateValue(
