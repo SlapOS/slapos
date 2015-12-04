@@ -2,13 +2,17 @@
 {% set use_tap = slapparameter_dict.get('use-tap', 'False').lower() -%}
 {% set use_nat = slapparameter_dict.get('use-nat', 'True').lower() -%}
 {% set name = slapparameter_dict.get('name', 'localhost') -%}
-{% set monitor = slapparameter_dict.get('enable-monitor', 'True').lower()  -%}
 {% set disable_ansible_promise = slapparameter_dict.get('disable-ansible-promise', 'False').lower() -%}
 {% set instance_type = slapparameter_dict.get('type', 'standalone') -%}
 {% set nat_rule_list = slapparameter_dict.get('nat-rules', '22 80 443') -%}
 {% set frontend_software_type = 'default' -%}
 {% set extends_list = [] -%}
 {% set part_list = [] -%}
+{% set monitor = True  -%}
+
+{% if slapparameter_dict.get('enable-monitor', 'True').lower() == 'false' -%}
+{%   set monitor = False  -%}
+{% endif -%}
 
 {% if instance_type == 'cluster' -%}
 {% set nat_rule_list = slapparameter_dict.get('nat-rules', '') %}
@@ -309,7 +313,7 @@ hostname = ${httpd:host}
 port = ${httpd:port}
 {% endif %}
 
-{% if monitor == 'true' -%}
+{% if monitor -%}
 [monitor-access-log]
 < = monitor-directory-access
 source = ${directory:log}
@@ -356,15 +360,16 @@ maximum-extra-disk-amount = {{ disk_number }}
 {% set iface = 'eth0' -%}
 {% if use_nat == 'true' -%}
 {%   set iface = 'eth1' -%}
+{%   if nat_rule_list -%}
 # Publish NAT port mapping status
-# XXX: hardcoded value from [slap-parameter]
-{%   for port in nat_rule_list.split(' ') -%}
-{%     set external_port = 10000 + port|int() -%}
+{%     for port in nat_rule_list.split(' ') -%}
+{%       set external_port = 10000 + port|int() -%}
 nat-rule-port-{{port}} = ${slap-network-information:global-ipv6} : ${6tunnel-{{external_port}}:ipv6-port}
-{%     if slapparameter_dict.get('publish-nat-url', False) -%}
+{%       if slapparameter_dict.get('publish-nat-url', False) -%}
 nat-rule-url-{{port}} = [${slap-network-information:global-ipv6}]:${6tunnel-{{external_port}}:ipv6-port}
-{%     endif -%}
-{%   endfor -%}
+{%       endif -%}
+{%     endfor -%}
+{%   endif -%}
 {% endif -%}
 {% if use_tap == 'true' -%}
 tap-ipv4 = ${slap-network-information:tap-ipv4}
@@ -553,8 +558,8 @@ authorized-key =
 # send some content which will be accessible to the vm through static url: http://10.0.2.100/data
 data-to-vm =
 
-# Change keyboard layout language
-keyboard-layout-language = 
+# Change keyboard layout language (Change to en-us if you face some bad bihaviors)
+keyboard-layout-language = fr
 
 #############################
 #
@@ -562,10 +567,8 @@ keyboard-layout-language =
 #
 #############################
 
-# Set Additionals parts
-
 {% if slapparameter_dict.get('document-host', '') %}
-
+# Set Additionals parts
 {%   do part_list.append('cluster-url-path') -%}
 {% endif -%}
 {% if enable_http == 'true' %}
