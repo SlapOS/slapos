@@ -1,7 +1,11 @@
 Changes
 =======
 
-1.3.13 (2015-10-27)
+1.3.15 (2015-12-08)
+-------------------
+ * slapos.collect: Include disk usage report. Do not divide cpu_load by number of cpu cores.
+
+1.3.14 (2015-10-27)
 -------------------
  * slapos.grid: firewall fix bugs
 
