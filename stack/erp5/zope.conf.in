@@ -42,6 +42,14 @@ products {{ parameter_dict['instance-products'] }}
   secret {{ parameter_dict['deadlock-debugger-password'] }}
 </product-config>
 
+{% if 'longrequest-logger-interval' in parameter_dict -%}
+<product-config LongRequestLogger>
+  logfile {{ parameter_dict['longrequest-logger-file'] }}
+  timeout {{ parameter_dict['longrequest-logger-timeout'] }}
+  interval {{ parameter_dict['longrequest-logger-interval'] }}
+</product-config>
+
+{% endif -%}
 {% if 'tidstorage-ip' in parameter_dict -%}
 <product-config TIDStorage>
   backend-ip {{ parameter_dict['tidstorage-ip'] }}

@@ -292,6 +292,13 @@ node-id = {{ dumps(node_id_base ~ '-' ~ index) }}
 {% endfor -%}
 import-list = {{ dumps(list(import_set)) }}
 zodb-dict = {{ dumps(zodb_dict) }}
+{% if longrequest_logger_interval > 0 -%}
+longrequest-logger-file = {{ longrequest_logger_base_path ~ name ~ ".log" }}
+longrequest-logger-timeout = {{ longrequest_logger_timeout }}
+longrequest-logger-interval = {{ longrequest_logger_interval }}
+{% else -%}
+longrequest-logger-file =
+{% endif -%}
 
 [{{ conf_name }}]
 < = zope-conf-base
@@ -301,15 +308,6 @@ context =
 
 [{{ section(name) }}]
 < = zope-base
-{% if longrequest_logger_interval < 0 -%}
-longrequest-logger-file =
-longrequest-logger-timeout =
-longrequest-logger-interval =
-{% else -%}
-longrequest-logger-file = {{ longrequest_logger_base_path ~ name ~ ".log" }}
-longrequest-logger-timeout = {{ longrequest_logger_timeout }}
-longrequest-logger-interval = {{ longrequest_logger_interval }}
-{% endif -%}
 wrapper = ${directory:services}/{{ name }}
 configuration-file = {{ '${' ~ conf_name ~ ':rendered}' }}
 
@@ -339,7 +337,7 @@ path = ${directory:promises}/{{ zope_tunnel_base_name }}
 [{{ section('logrotate-entry-' ~ name) }}]
 < = logrotate-entry-base
 name = {{ name }}
-log = {{ '${' ~ conf_parameter_name ~ ':event-log}' }} {{ '${' ~ conf_parameter_name ~ ':z2-log}' }} {{ '${' ~ name ~ ':longrequest-logger-file}' }} {{ ' '.join(log_list) }}
+log = {{ '${' ~ conf_parameter_name ~ ':event-log}' }} {{ '${' ~ conf_parameter_name ~ ':z2-log}' }} {{ '${' ~ conf_parameter_name ~ ':longrequest-logger-file}' }} {{ ' '.join(log_list) }}
 post = {{ bin_directory }}/slapos-kill --pidfile {{ '${' ~ conf_parameter_name ~ ':pid-file}' }} -s USR2
 {% endmacro -%}
 

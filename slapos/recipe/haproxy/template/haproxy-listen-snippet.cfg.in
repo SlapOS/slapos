@@ -1,4 +1,5 @@
-listen %(name)s %(ip)s:%(port)s
+listen %(name)s
+  bind %(ip)s:%(port)s
   cookie  SERVERID insert
   balance roundrobin
   %(httpchk)s

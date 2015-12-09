@@ -36,8 +36,9 @@ defaults
   # to render a page
   option forceclose
 
-{% for name, (port, backend_list) in parameter_dict['backend-dict'].items() -%}
-listen {{ name }} {{ parameter_dict['ip'] }}:{{ port }}
+{% for name, (port, backend_list) in sorted(parameter_dict['backend-dict'].iteritems()) -%}
+listen {{ name }}
+  bind {{ parameter_dict['ip'] }}:{{ port }}
   http-request set-header X-Balancer-Current-Cookie SERVERID
 {%   set has_webdav = [] -%}
 {%   for address, connection_count, webdav in backend_list -%}

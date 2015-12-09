@@ -57,6 +57,7 @@ context =
     raw novnc_location ${noVNC:location}
     raw netcat_bin ${netcat:location}/bin/netcat
     raw openssl_executable_location ${openssl:location}/bin/openssl
+    raw python_executable ${buildout:executable}
     raw qemu_executable_location ${kvm:location}/bin/qemu-system-x86_64
     raw qemu_img_executable_location ${kvm:location}/bin/qemu-img
     raw sixtunnel_executable_location ${6tunnel:location}/bin/6tunnel

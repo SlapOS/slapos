@@ -217,8 +217,11 @@ numa_parameter = []
 number = -1
 if use_nat == 'true':
   number += 1
-  rules = 'user,id=lan%s,' % number + ','.join('hostfwd=tcp:%s:%s-:%s' % (listen_ip,
+  rules = 'user,id=lan%s' % number
+  if nat_rules:
+    rules += ',' + ','.join('hostfwd=tcp:%s:%s-:%s' % (listen_ip,
                         int(port) + 10000, port) for port in nat_rules.split())
+
   if httpd_port > 0:
     rules += ',guestfwd=tcp:10.0.2.100:80-cmd:%s %s %s' % (netcat_bin,
                                                         listen_ip, httpd_port)

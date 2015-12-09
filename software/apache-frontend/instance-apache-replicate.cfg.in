@@ -15,7 +15,9 @@ context =
 {% set part_list = [] -%}
 {% set single_type_key = 'single-' %}
 {% if slap_software_type in ("replicate", "RootSoftwareInstance") %}
-{%   set frontend_type = slapparameter_dict.pop('-frontend-type', 'single-default') -%}
+{%   set frontend_type = slapparameter_dict.pop('-frontend-type', 'custom-personal') -%}
+{% elif slap_software_type == 'default' -%}
+{%   set frontend_type = "%s%s" % (single_type_key, 'custom-personal') -%}
 {% else -%}
 {%   set frontend_type = "%s%s" % (single_type_key, slap_software_type) -%}
 {% endif -%}
