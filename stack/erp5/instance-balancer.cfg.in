@@ -44,7 +44,8 @@ ipv4 = {{ ipv4 }}
 {% set haproxy_dict = {} -%}
 {% set apache_dict = {} -%}
 {% set next_port = slapparameter_dict['tcpv4-port'] -%}
-{% for family_name, parameter_id_list in slapparameter_dict['zope-family-dict'].items() -%}
+{% for family_name, parameter_id_list in sorted(
+  slapparameter_dict['zope-family-dict'].iteritems()) -%}
 {%   set zope_family_address_list = [] -%}
 {%   set has_webdav = [] -%}
 {%   for parameter_id in parameter_id_list -%}
