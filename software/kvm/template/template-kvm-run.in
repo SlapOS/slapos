@@ -33,6 +33,7 @@ virtual_hard_drive_gzipped = '{{ parameter_dict.get("virtual-hard-drive-gzipped"
 nat_rules = '{{ parameter_dict.get("nat-rules") }}'.strip()
 use_tap = '{{ parameter_dict.get("use-tap") }}'.lower()
 use_nat = '{{ parameter_dict.get("use-nat") }}'.lower()
+set_nat_restrict = '{{ parameter_dict.get("nat-restrict") }}'.lower()
 enable_vhost = '{{ parameter_dict.get("enable-vhost") }}'.lower()
 tap_interface = '{{ parameter_dict.get("tap-interface") }}'
 listen_ip = '{{ parameter_dict.get("ipv4") }}'
@@ -228,6 +229,8 @@ if use_nat == 'true':
   if cluster_doc_host and cluster_doc_port > 0:
     rules += ',guestfwd=tcp:10.0.2.101:443-cmd:%s %s %s' % (netcat_bin,
                                            cluster_doc_host, cluster_doc_port)
+  if set_nat_restrict == 'true':
+    rules += ',restrict=on'
   nat_network_parameter = ['-netdev', rules,
           '-device', 'virtio-net-pci,netdev=lan%s,mac=%s' % (number, mac_address)]
 if use_tap == 'true':
