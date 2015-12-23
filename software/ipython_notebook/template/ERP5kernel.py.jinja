@@ -172,11 +172,11 @@ class ERP5Kernel(Kernel):
     """
 
     try:
-      erp5_request = requests.get(
+      erp5_request = requests.post(
         self.url,
         verify=False,
         auth=(self.user, self.password),
-        params={
+        data={
           'python_expression': code,
           'reference': self.reference,
           'title': self.title,
