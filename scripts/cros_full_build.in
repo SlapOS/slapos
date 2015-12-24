@@ -4,16 +4,26 @@
 ######################## Download of sources using the "repo" command ########################
 DL_LOG={{ instance_log_dir }}/cros_sources_dl.log
 BRANCH={{ branch }}
+CHROMIUM_OVERLAY={{ cros_location }}/{{ branch }}/src/third_party/chromiumos-overlay
+
 echo "getting Chromium OS sources..." >> $DL_LOG
 {{ depot_tools_export_path_cmd }}
-cd {{ cros_location }}
-repo init -u https://chromium.googlesource.com/chromiumos/manifest.git -b ${BRANCH} >> $DL_LOG
+echo "{{ cros_location }}/{{ branch }}"
+install -d "{{ cros_location }}/{{ branch }}"
+cd "{{ cros_location }}/{{ branch }}"
+
+repo init -u https://chromium.googlesource.com/chromiumos/manifest.git -b {{ branch }} >> $DL_LOG
+
+# in case code was already there, stash changes to be able to pull
+cd ${CHROMIUM_OVERLAY}
+git stash
+
 repo sync >> $DL_LOG
 
 ############################## Prepare chroot environment ###################################
 BUILD_LOG={{ instance_log_dir }}/cros_build.log
 {{ depot_tools_export_path_cmd }}
-cd {{ cros_location }}
+cd {{ cros_location }}/{{ branch }}
 
 # create chroot environment (exit on failure)
 cros_sdk --download || exit 1
@@ -21,7 +31,7 @@ cros_sdk --download || exit 1
 # compile Python with sqlite support (-> change USE flag) for dev-lang/python
 # it is needed by re6st
 # just need to change -sqlite by sqlite on the right line
-PACKAGE_USE_FILE={{ cros_location }}/src/third_party/chromiumos-overlay/profiles/targets/chromeos/package.use
+PACKAGE_USE_FILE=${CHROMIUM_OVERLAY}/profiles/targets/chromeos/package.use
 line_number=$(sed -n '/dev-lang\/python/=' ${PACKAGE_USE_FILE})
 if [ $line_number ] ; then
     echo $line_number
@@ -34,15 +44,15 @@ fi
 # add custom ebuilds
 for category in $( ls {{ ebuilds_dir }} ); do
   echo ${category}
-  cp -R {{ ebuilds_dir }}/${category}/* {{ cros_location }}/src/third_party/chromiumos-overlay/${category}/
+  cp -R {{ ebuilds_dir }}/${category}/* ${CHROMIUM_OVERLAY}/${category}/
 done
 
 ### packages management ###
 
-BASE_CHROMEOS_DEV_ROOT_EBUILD={{ cros_location }}/src/third_party/chromiumos-overlay/chromeos-base/chromeos-dev-root/chromeos-dev-root-0.0.1.ebuild
-VIRTUAL_CHROMEOS_OS_DEV_EBUILD={{ cros_location }}/src/third_party/chromiumos-overlay/virtual/target-chromium-os-dev/target-chromium-os-dev-1.ebuild
+BASE_CHROMEOS_DEV_ROOT_EBUILD=${CHROMIUM_OVERLAY}/chromeos-base/chromeos-dev-root/chromeos-dev-root-0.0.1.ebuild
+VIRTUAL_CHROMEOS_OS_DEV_EBUILD=${CHROMIUM_OVERLAY}/virtual/target-chromium-os-dev/target-chromium-os-dev-1.ebuild
 
-# change the virtual ebuild responsible for installing all packages to add the ones 
+# change the virtual ebuild responsible for installing all packages to add the ones
 # needed for NayuOS
 for package in {{ nayu_dev_packages }} ; do
   echo $package
@@ -58,7 +68,7 @@ sed -i '/openssh-server-init/ d' ${BASE_CHROMEOS_DEV_ROOT_EBUILD}
 
 ######################################## Build ##############################################
 BOARDS="{{ boards_list }}"
-
+KEEP_CACHE = "{{ keep_cache }}"
 for board in ${BOARDS}; do
   echo ${board}
   if [ ${board} == daisy ]; then
@@ -67,34 +77,43 @@ for board in ${BOARDS}; do
     cros_sdk -- sudo sh -c "echo 'ACCEPT_LICENSE=\"*\"' >> /etc/make.conf.user"
   fi
 
-  IMAGE_LOCATION=${board}.chromiumos.img
-  NAYU_IMAGE_LOCATION=${board}.nayuos.img
-
   # preparing packages (for chroot and image)
   date >> "${BUILD_LOG}"
   echo "building packages for a ${board}-flavoured Chromium OS..." >> "${BUILD_LOG}"
   cros_sdk -- ./build_packages --board=${board} >> "${BUILD_LOG}"
 
-  ## Chromium original base image
-  #date >> "${BUILD_LOG}"
-  #echo "building image for a ${board}-flavoured Chromium OS..." >> "${BUILD_LOG}"
-  #cros_sdk -- ./build_image --board=${board} base >> "${BUILD_LOG}" \
-  #  && echo "removing old image if any and creating image file $IMAGE_LOCATION..." >> "${BUILD_LOG}" \
-  #  && cros_sdk -- rm -f $IMAGE_LOCATION && cros_sdk -- touch $IMAGE_LOCATION \
-  #  && cros_sdk -- cros flash --board=${board} file://$IMAGE_LOCATION >> "${BUILD_LOG}"
+  # change boot pictures
+  cros_sdk -- cros_workon --board=${board} start chromiumos-assets
+  cros_sdk -- cros_workon_make --board=${board} chromiumos-assets
+  cros_sdk -- cros_workon_make --board=${board} chromiumos-assets --test
+  cros_sdk -- cros_workon_make --board=${board} chromiumos-assets --install
+  cp {{ logo_dir }}/* {{ cros_location }}/{{ branch }}/src/platform/chromiumos-assets/images_100_percent/
+  cp {{ logo_dir }}/* {{ cros_location }}/{{ branch }}/src/platform/chromiumos-assets/images_200_percent/
+  #cros_sdk -- git commit -a -m "Changing boot pictures." # TODO: should not be necessary
+
+  IMAGE_LOCATION=${board}.chromiumos.img
+  NAYU_IMAGE_LOCATION=${board}.nayuos.img
+
+  # rebuild packages with boot pictures
+  cros_sdk -- ./build_packages --board=${board} >> "${BUILD_LOG}"
 
   # NayuOS
-    # /usr/local/usr/lib/debug is needed because of symbolic links that leads 
+    # /usr/local/usr/lib/debug is needed because of symbolic links that leads
     # to this directory when installing some packages (babeld-re6stnet in particular)
     # because installation will fail if the symbolic link is broken
   date >> "${BUILD_LOG}"
   echo "rebuilding image with noenable_rootfs_verification" >> "${BUILD_LOG}"
-  cros_sdk -- ./build_image --noenable_rootfs_verification --board=${board} >> "${BUILD_LOG}" \
+  cros_sdk -- ./build_image --noenable_rootfs_verification --board=${board} dev >> "${BUILD_LOG}" \
     && echo "adding packages image, removing old image if any and creating image file $NAYU_IMAGE_LOCATION..." >> "${BUILD_LOG}" \
     && cros_sdk -- sudo install -d /usr/local/usr/lib/debug \
     && cros_sdk -- rm -f $NAYU_IMAGE_LOCATION && cros_sdk -- touch $NAYU_IMAGE_LOCATION \
     && cros_sdk -- cros flash --board=${board} file://$NAYU_IMAGE_LOCATION >> "${BUILD_LOG}" \
     || exit 1
+
+  # save ~15Go/device but delete cache (next build will be as long)
+  if [ !${KEEP_CACHE} -o ${KEEP_CACHE,,} == "no" ] ; then
+    cros_sdk -- sudo rm -R /var/cache/chromeos-chrome/chrome-src/src/out_${board}
+  fi
 
   if [ ${board} == daisy ]; then
     echo "daisy board: removing accepted license for the next builds..."
@@ -105,18 +124,19 @@ done
 ####################################### Post build ##########################################
 # keep only the substring between - as current release
 RELEASE=$(echo ${BRANCH} | cut -d- -f2)
-DIR_IMAGE_LOCATION={{ cros_location }}/images/${RELEASE}/$(date +'%F')
+DIR_IMAGE_LOCATION={{ cros_location }}/{{ branch }}/images/${RELEASE}/$(date +'%F')
 install ${DIR_IMAGE_LOCATION} -d
-mv {{ cros_location }}/src/scripts/*.img ${DIR_IMAGE_LOCATION}
+mv {{ cros_location }}/{{ branch }}/src/scripts/*.img ${DIR_IMAGE_LOCATION}
 
 cd ${DIR_IMAGE_LOCATION}
 for hashfunction in md5sum sha1sum sha256sum sha512sum; do
+  echo ${hashfunction} >> hashes.txt
   ${hashfunction} *.img >> hashes.txt
+  printf "\n\n" >> hashes.txt
 done
 
 for file in $(ls *.img); do
-  tar cfz ${file}.tar ${file}
-  rm ${file}
+  gzip -9 ${file}
 done
 
 exit 0

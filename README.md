@@ -31,3 +31,8 @@ and the logs are in:
 
 The script that download the sources and build is located in
 <code>/srv/slapgrid/\<part\>/srv/runner/instance/\<inst_part\>/etc/run</code>
+
+## External documents
+
+*   [[ <code>repo</code> command reference ]](https://source.android.com/source/using-repo.html)
+*   [[ NayuOS official website ]](https://www.nayuos.org)
