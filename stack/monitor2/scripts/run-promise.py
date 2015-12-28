@@ -1,11 +1,10 @@
-#!{{ python_executable }}
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 import sys
 import os
 import subprocess
 import json
-from cStringIO import StringIO
 
 def main():
   if len(sys.argv) < 4:
