@@ -1,8 +1,8 @@
-/*jslint indent: 2 */
+/*jslint indent:2 */
 (function () {
   "use strict";
 
-  var monitor_title = '{{ dumps(monitor_title)[5:-1] }}',
+  var monitor_title = 'Monitoring interface',
     RSS_ICON_DATA_URI = [
       "data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIj8+CjwhRE9DVFlQR",
       "SBzdmcgUFVCTElDICItLy9XM0MvL0RURCBTVkcgMS4xLy9FTiIgImh0dHA6Ly93d3cu",
@@ -25,7 +25,8 @@
         var response = event.target;
         if (response.status < 400) {
           try {
-            resolve(JSON.parse(response.responseText));
+            var data = ( response.responseType === 'text' || response.responseType === '') ? JSON.parse(response.responseText) : response.response;
+            resolve(data);
           } catch (e) {
             reject(e);
           }
@@ -95,6 +96,16 @@
     return url.href;
   }
 
+  function joinUrl(url, path) {
+    if (path && path[0] === '/') {
+      path = path.slice(1);
+    }
+    if (url.indexOf('/', url.length - 1) === -1) {
+      return url + '/' + path;
+    }
+    return url + escapeHtml(path);
+  }
+
   function escapeHtml(html) {
     return html.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&apos;");
   }
@@ -106,6 +117,7 @@
       return;
     }
     table = document.createElement("table");
+    table.className = "monitor-section";
     root.appendChild(table);
     return Promise.all(service_list.map(function (service_dict) {
       var interface_url = softGetProperty(service_dict, ["_links", "interface", "href"]),
@@ -118,7 +130,8 @@
         row[5].textContent = "No status";
         return;
       }
-      return loadJson(resolveUrl(monitor_url, status_url)).then(function (status_dict) {
+      var full_status_url = (monitor_url === undefined) ? resolveUrl(monitor_url, status_url): joinUrl(monitor_url, status_url);
+      return loadJson(full_status_url).then(function (status_dict) {
         if (status_dict.description) {
           row[2].title = status_dict.description;
         }
@@ -144,8 +157,8 @@
         if (link.href[link.href.length - 1] !== "/") {
           link.href += "/";
         }
-        link.href = resolveUrl(link.href, "monitor.haljson");
-        return loadJson(link.href).catch(function (reason) {
+        var haljson_link = resolveUrl(link.href, "monitor.haljson");
+        return loadJson(haljson_link).catch(function (reason) {
           div.textContent = (reason && (reason.name + ": " + reason.message));
         }).then(function (monitor_dict) {
           //monitor_json_list.push(monitor_dict);
@@ -160,7 +173,7 @@
     var element_list = htmlToElementList([
       "<header>",
       "  <a href=\"\" class=\"as-button\">Refresh</a>",
-      "  <a href=\"/logout\" class=\"as-button\">Logout</a>",
+      "  <a href=\"/logout.html\" class=\"as-button\">Logout</a>",
       "  <a href=\"/feed\"><img src=\"" + RSS_ICON_DATA_URI + "\" style=\"width: 10mm; height: 10mm; vertical-align: middle;\" alt=\"[RSS Feed]\" /></a>",
       "</header>",
       "<h1>" + monitor_title + "</h1>",
