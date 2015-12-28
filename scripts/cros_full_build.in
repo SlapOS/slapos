@@ -68,7 +68,7 @@ sed -i '/openssh-server-init/ d' ${BASE_CHROMEOS_DEV_ROOT_EBUILD}
 
 ######################################## Build ##############################################
 BOARDS="{{ boards_list }}"
-KEEP_CACHE = "{{ keep_cache }}"
+KEEP_CACHE="{{ keep_cache }}"
 for board in ${BOARDS}; do
   echo ${board}
   if [ ${board} == daisy ]; then
@@ -127,7 +127,7 @@ done
 ####################################### Post build ##########################################
 # keep only the substring between - as current release
 RELEASE=$(echo ${BRANCH} | cut -d- -f2)
-DIR_IMAGE_LOCATION={{ cros_location }}/{{ branch }}/images/${RELEASE}/$(date +'%F')
+DIR_IMAGE_LOCATION={{ cros_location }}/images/${RELEASE}/$(date +'%F')
 install ${DIR_IMAGE_LOCATION} -d
 mv {{ cros_location }}/{{ branch }}/src/scripts/*.img ${DIR_IMAGE_LOCATION}
 
