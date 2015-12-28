@@ -1,6 +1,6 @@
 # NayuOS
 
-This is a SlapOS recipe to build NayuOS. It needs to be put in the <code>/srv/slapgrid/\<part\>/srv/runner/project/slapos/software/</code> directory.
+This is a SlapOS recipe to build NayuOS. It needs to be put in the <code>/srv/slapgrid/\<part\>/srv/runner/project/slapos/software/</code> directory. The created directory is called <code>\<nayuos_build_dirname\></code> in this documentation.
 
 ## License
 
@@ -12,9 +12,9 @@ GPL v2 or later
 *   slapuser with sudo rights to execute the cros_sdk scripts (needed to access the chroot environment provided by Chromium OS)
 in /etc/sudoers:
 <pre><code>
-\<slapuser\>       ALL= NOPASSWD: /srv/slapgrid/\<part\>/srv/runner/instance/\<inst_part\>/parts/clone-depot-tools/cros_sdk, /srv/slapgrid/\<part\>/srv/runner/instance/\<inst_part\>/parts/chromiumos/chromite/bin/cros_sdk, /srv/slapgrid/\<part\>/srv/runner/instance/\<inst_part\>/parts/chromiumos/chromite/bootstrap/cros_sdk, /srv/slapgrid/\<part\>/srv/runner/instance/\<inst_part\>/parts/chromiumos/chromite/scripts/cros_sdk.py, /srv/slapgrid/\<part\>/srv/runner/instance/\<inst_part\>/parts/chromiumos/chromite/scripts/cros_sdk.pyc, /srv/slapgrid/\<part\>/srv/runner/instance/\<inst_part\>/parts/chromiumos/chromium/tools/depot_tools/cros_sdk
+\<slapuser\>       ALL= NOPASSWD: /srv/slapgrid/\<part\>/srv/runner/instance/\<inst_part\>/parts/clone-depot-tools/cros_sdk, /srv/slapgrid/\<part\>/srv/runner/instance/\<inst_part\>/parts/chromiumos/\<release\>/chromite/bin/cros_sdk, /srv/slapgrid/\<part\>/srv/runner/instance/\<inst_part\>/parts/chromiumos/\<release\>/chromite/bootstrap/cros_sdk, /srv/slapgrid/\<part\>/srv/runner/instance/\<inst_part\>/parts/chromiumos/\<release\>/chromite/scripts/cros_sdk.py, /srv/slapgrid/\<part\>/srv/runner/instance/\<inst_part\>/parts/chromiumos/\<release\>/chromite/scripts/cros_sdk.pyc, /srv/slapgrid/\<part\>/srv/runner/instance/\<inst_part\>/parts/chromiumos/\<release\>/chromium/tools/depot_tools/cros_sdk
 </code></pre>
-*   the custom ebuilds of net-libs/miniupnpc, net-misc/babeld-re6stnet and net-misc/re6stnet in the custom_ebuilds directory
+*   the custom ebuilds (such as net-libs/miniupnpc, net-misc/babeld-re6stnet, net-misc/re6stnet) in the custom_ebuilds directory. There is a [repo](https://lab.nexedi.com/isabelle/custom_ebuilds) for this purpose. It should be located into: <code>/srv/slapgrid/\<part\>/ srv/runner/project/slapos/software/\<nayuos_build_dirname\>/</code>.
 
 ## Input
 In the vifib parameters (softinst\<nb\>.host.vifib.net \> Services \> Parameters):

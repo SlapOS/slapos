@@ -110,6 +110,9 @@ for board in ${BOARDS}; do
     && cros_sdk -- cros flash --board=${board} file://$NAYU_IMAGE_LOCATION >> "${BUILD_LOG}" \
     || exit 1
 
+  # TODO: test produced image (ex: make a diff of grandenet script from ebuild dir,
+  # check that <mountpoint>/usr/local is not empty, ...)
+
   # save ~15Go/device but delete cache (next build will be as long)
   if [ !${KEEP_CACHE} -o ${KEEP_CACHE,,} == "no" ] ; then
     cros_sdk -- sudo rm -R /var/cache/chromeos-chrome/chrome-src/src/out_${board}
