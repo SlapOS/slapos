@@ -30,6 +30,7 @@ LoadModule authn_file_module modules/mod_authn_file.so
 LoadModule proxy_module      modules/mod_proxy.so
 LoadModule proxy_http_module modules/mod_proxy_http.so
 LoadModule rewrite_module modules/mod_rewrite.so
+LoadModule headers_module modules/mod_headers.so
 
 # SSL Configuration
 <IfDefine !SSLConfigured>
@@ -47,6 +48,24 @@ SSLCipherSuite RC4-SHA:HIGH:!ADH
 
 AddType application/hal+json .haljson
 SSLEngine   On
+
+{% if parameter_dict.has_key('monitor-url-list') -%}
+RewriteEngine on
+SSLProxyEngine on
+ProxyPreserveHost On
+SSLProxyVerify none
+SSLProxyCheckPeerCN off
+SSLProxyCheckPeerName off
+{% set index=1 -%}
+{% set monitor_url_list = parameter_dict.get('monitor-url-list').split('\n') -%}
+{% for url in monitor_url_list -%}
+{%   if url.strip() -%}
+RewriteRule /monitor{{ index }}/(.*)  {{ url }}/$1 [L,P]
+{%     set index = index + 1 -%}
+{%   endif -%}
+{% endfor -%}
+{% endif -%}
+
 ScriptSock {{ parameter_dict.get('cgid-pid-file') }}
 <Directory {{ directory.get('www') }}>
   SSLVerifyDepth    1
@@ -55,6 +74,7 @@ ScriptSock {{ parameter_dict.get('cgid-pid-file') }}
   # XXX: security????
   DirectoryIndex index.html
   Options FollowSymLinks
+  AllowOverride All
   Order Deny,Allow
   AuthType Basic
   AuthName "Private access"

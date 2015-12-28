@@ -115,14 +115,18 @@ wrapper = ${directory:services}/monitor-httpd
 
 [monitor-conf-parameters]
 title = ${monitor-instance-parameter:monitor-title}
-service-executable-dir = ${monitor-directory:run}
-template-service-run = {{ monitor_service_run }}
 public-folder = ${monitor-directory:public}
 private-folder = ${monitor-directory:private}
 web-folder = ${monitor-directory:web-dir}
 monitor-hal-json = ${monitor-directory:web-dir}/monitor.haljson
 service-pid-folder = ${monitor-directory:pids}
 crond-folder = ${logrotate-directory:cron-entries}
+wraper-folder = ${monitor-directory:promise-wrapper}
+promise-runner = {{ promise_executor_py }}
+promise-folder-list = 
+  ${directory:promises}
+  ${directory:monitor-promise}
+
 public-path-list = 
   ${directory:log}
 private-path-list = 
@@ -135,6 +139,19 @@ template = {{ monitor_conf_template }}
 rendered = ${directory:etc}/${:filename}
 filename = monitor.conf
 context = section parameter_dict monitor-conf-parameters
+
+[python-symlink]
+recipe = plone.recipe.command
+target = ${directory:bin}
+command = ln -sf {{ python_executable }} ${:target}/python
+update-command = ${:command}
+
+[start-monitor]
+recipe = slapos.cookbook:wrapper
+command-line = {{ python_executable }} {{ monitor_bin }} --config_file ${monitor-conf:rendered}
+wrapper-path = ${directory:scripts}/bootstrap-monitor
+environment = 
+  PATH=${python-symlink:target}:/usr/local/bin:/usr/bin:/bin
 
 [httpd-monitor-htpasswd]
 recipe = plone.recipe.command
@@ -195,42 +212,17 @@ name = monitor-status2rss
 frequency = * * * * *
 command = ${monitor-status2rss-wrapper:wrapper-path}
 
-[monitor-web-default-promise-interface]
-recipe = slapos.recipe.template:jinja2
-template = {{ monitor_web_default_promise_interface }}
-rendered = ${monitor-directory:web-dir}/default-promise-interface.html
-context =
+[monitor-web-directory]
+recipe = plone.recipe.command
+command = cp -f {{ monitor_web_directory }}/* ${monitor-directory:web-dir}
+update-command = ${:command}
 
-[monitor-web-index-html]
-recipe = slapos.recipe.template:jinja2
-template = {{ monitor_web_index_html }}
-rendered = ${monitor-directory:web-dir}/index.html
-context =
-
-[monitor-web-monitor-css]
-recipe = slapos.recipe.template:jinja2
-template = {{ monitor_web_monitor_css }}
-rendered = ${monitor-directory:web-dir}/monitor.css
-context =
-
-[monitor-web-monitor-js]
-recipe = slapos.recipe.template:jinja2
-template = {{ monitor_web_monitor_js }}
-rendered = ${monitor-directory:web-dir}/monitor.js
-context =
-  key monitor_title monitor-instance-parameter:monitor-title
 
 [monitor-web-monitor-logout-cgi]
 recipe = slapos.recipe.template:jinja2
 template = {{ monitor_web_monitor_logout_cgi }}
 rendered = ${monitor-directory:cgi-bin}/monitor-logout.cgi
 mode = 0755
-context =
-
-[monitor-web-monitor-logout-page]
-recipe = slapos.recipe.template:jinja2
-template = {{ monitor_web_monitor_logout_page }}
-rendered = ${monitor-directory:web-dir}/logout
 context =
 
 [monitor-web-monitor-promise-runner-cgi]
@@ -241,28 +233,6 @@ mode = 0755
 context =
   raw python_executable {{ python_executable }}
   key promise_wrapper_folder monitor-directory:promise-wrapper
-
-[start-monitor]
-recipe = slapos.recipe.template:jinja2
-template = {{ monitor_bin }}
-rendered = ${directory:scripts}/bootstrap-monitor
-context = 
-  raw python_executable {{ python_executable }}
-  key public_folder monitor-directory:public
-  key private_folder monitor-directory:private
-  key monitor_configuration_path monitor-conf:rendered
-  key promise_runner_path monitor-run-promise:rendered
-  key promise_folder directory:promises
-  key monitor_promise_folder directory:monitor-promise
-  key promise_wrapper_folder monitor-directory:promise-wrapper
-
-[monitor-run-promise]
-recipe = slapos.recipe.template:jinja2
-template = {{ promise_executor_py }}
-rendered = ${directory:bin}/monitor-run-promise
-mode = 700
-context = 
-  raw python_executable {{ python_executable }}
 
 [monitor-httpd-promise]
 recipe = slapos.cookbook:check_url_available
@@ -337,12 +307,8 @@ monitor-title = Monitoring interface
 
 [buildout]
 parts =
-  monitor-web-default-promise-interface
-  monitor-web-index-html
-  monitor-web-monitor-css
-  monitor-web-monitor-js
+  monitor-web-directory
   monitor-web-monitor-logout-cgi
-  monitor-web-monitor-logout-page
   monitor-web-monitor-promise-runner-cgi
   cron-entry-logrotate
   certificate-authority
