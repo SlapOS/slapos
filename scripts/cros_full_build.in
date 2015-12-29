@@ -98,14 +98,9 @@ for board in ${BOARDS}; do
   cros_sdk -- ./build_packages --board=${board} >> "${BUILD_LOG}"
 
   # NayuOS
-    # /usr/local/usr/lib/debug is needed because of symbolic links that leads
-    # to this directory when installing some packages (babeld-re6stnet in particular)
-    # because installation will fail if the symbolic link is broken
   date >> "${BUILD_LOG}"
   echo "rebuilding image with noenable_rootfs_verification" >> "${BUILD_LOG}"
   cros_sdk -- ./build_image --noenable_rootfs_verification --board=${board} dev >> "${BUILD_LOG}" \
-    && echo "adding packages image, removing old image if any and creating image file $NAYU_IMAGE_LOCATION..." >> "${BUILD_LOG}" \
-    && cros_sdk -- sudo install -d /usr/local/usr/lib/debug \
     && cros_sdk -- rm -f $NAYU_IMAGE_LOCATION && cros_sdk -- touch $NAYU_IMAGE_LOCATION \
     && cros_sdk -- cros flash --board=${board} file://$NAYU_IMAGE_LOCATION >> "${BUILD_LOG}" \
     || exit 1
