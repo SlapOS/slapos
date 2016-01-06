@@ -1,0 +1,30 @@
+# GitLab "switch-softwaretype" instance
+[buildout]
+parts = switch-softwaretype
+
+# std stuff for slapos instance
+eggs-directory = ${buildout:eggs-directory}
+develop-eggs-directory = ${buildout:develop-eggs-directory}
+offline = true
+
+
+[switch-softwaretype]
+recipe = slapos.cookbook:softwaretype
+default = $${instance-gitlab.cfg:rendered}
+# TODO -export, -import, -pull-backup
+
+
+[instance-gitlab.cfg]
+recipe  = slapos.recipe.template:jinja2
+mode    = 0644
+template= ${instance-gitlab.cfg.in:target}
+rendered= $${buildout:directory}/instance-gitlab.cfg
+context =
+    key eggs_directory          buildout:eggs-directory
+    key develop_eggs_directory  buildout:develop-eggs-directory
+
+# program binaries
+    raw dcron_bin                   ${dcron-output:crond}
+    raw gunzip_bin                  ${gzip:location}/bin/gunzip
+    raw gzip_bin                    ${gzip:location}/bin/gzip
+    raw logrotate_bin               ${logrotate:location}/usr/sbin/logrotate

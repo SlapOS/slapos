@@ -1,0 +1,146 @@
+# GitLab instance
+[buildout]
+parts =
+    directory
+
+    service-cron
+
+# std stuff for slapos instance
+eggs-directory = {{ eggs_directory }}
+develop-eggs-directory = {{ develop_eggs_directory }}
+offline = true
+
+
+##################################
+#   GitLab instance parameters   #
+##################################
+
+[instance-parameter]
+# std stuff to fetch slapos instance parameters
+recipe  = slapos.cookbook:slapconfiguration
+computer= ${slap-connection:computer-id}
+partition=${slap-connection:partition-id}
+url     = ${slap-connection:server-url}
+key     = ${slap-connection:key-file}
+cert    = ${slap-connection:cert-file}
+
+
+
+#############################
+#   GitLab instance setup   #
+#############################
+
+# 1. directories
+[directory]
+recipe  = slapos.cookbook:mkdirectory
+home    = ${buildout:directory}
+bin     = ${:home}/bin
+etc     = ${:home}/etc
+var     = ${:home}/var
+log     = ${:var}/log
+run     = ${:var}/run
+srv     = ${:home}/srv
+# slapos startup/service/promise scripts live here:
+startup = ${:etc}/run
+service = ${:etc}/service
+promise = ${:etc}/promise
+
+
+
+
+# 2. services
+
+#############
+#   cron    #
+#############
+[cron-dir]
+recipe  = slapos.cookbook:mkdirectory
+cron.d  = ${directory:etc}/cron.d
+crontabs= ${directory:srv}/cron/crontabs
+cronstamps = ${directory:var}/cron/cronstamps
+log     = ${directory:log}/cron
+
+[service-cron]
+recipe  = slapos.cookbook:cron
+binary  = ${directory:service}/crond
+cron-entries    = ${cron-dir:cron.d}
+crontabs        = ${cron-dir:crontabs}
+cronstamps      = ${cron-dir:cronstamps}
+catcher         = ${cron-simplelogger:wrapper}
+
+dcrond-binary   = {{ dcron_bin }}
+
+depends =
+    ${logrotate-entry-cron:recipe}
+
+# "mailer" that cron uses to emit messages to logfile
+[cron-simplelogger]
+recipe  = slapos.cookbook:simplelogger
+wrapper = ${directory:bin}/${:_buildout_section_name_}
+log     = ${cron-dir:log}/cron.log
+
+
+# base entry for clients who registers to cron
+[cron-entry]
+recipe  = slapos.cookbook:cron.d
+# name  = <section-name>.strip_prefix('cron-entry-')
+# XXX len() is not available in !py! - 11 hardcoded
+name    = !py!'${:_buildout_section_name_}' [11:]
+# NOTE _not_ ${service-cron:cron-entries}  - though the value is the same we do
+# not want service-cron to be instantiated just if a cron-entry is registered.
+cron-entries = ${cron-dir:cron.d}
+
+# cron logs are also rotated
+[logrotate-entry-cron]
+<= logrotate-entry
+log     = ${cron-dir:log}/*.log
+
+
+#######################################
+#   logrotate base for all services   #
+#######################################
+[logrotate-dir]
+recipe  = slapos.cookbook:mkdirectory
+srv     = ${directory:srv}/logrotate
+entries = ${directory:etc}/logrotate.d
+
+[logrotate]
+recipe  = slapos.cookbook:logrotate
+wrapper = ${directory:bin}/${:_buildout_section_name_}
+conf    = ${directory:etc}/logrotate.conf
+logrotate-entries   = ${logrotate-dir:entries}
+state-file  = ${logrotate-dir:srv}/logrotate.status
+
+logrotate-binary    = {{ logrotate_bin }}
+gzip-binary     = {{ gzip_bin }}
+gunzip-binary   = {{ gunzip_bin }}
+
+depend  = ${cron-entry-logrotate:recipe}
+
+
+# base entry for clients who registers to logrotate
+[logrotate-entry]
+recipe  = slapos.cookbook:logrotate.d
+logrotate-entries   = ${logrotate:logrotate-entries}
+# name  = <section-name>.strip_prefix('logrotate-entry-')
+# XXX len is not available in !py! - 16 hardcoded
+name    = !py!'${:_buildout_section_name_}'[16:]
+# NOTE frequency is hardcoded to `daily` in slapos.cookbook:logrotate.d
+# NOTE backup is also used to add custom logrotate options (hack)
+backup  = ...
+# TODO settle whether we need/want olddir or not
+    noolddir
+# override create emitted by slapos.cookbook:logrotate.d
+    nocreate
+# do not move log file and this way we do not need to signal its program to
+# reopen the log. There are a lot of bugs when on such reopen / restart /
+# graceful-restart something bad happens. Even if copytruncate is a bit racy
+# and can loose some data, it is better to keep the system the stable way.
+    copytruncate
+
+
+# hook logrotate into cron
+[cron-entry-logrotate]
+<= cron-entry
+time    = daily
+command = ${logrotate:wrapper}
