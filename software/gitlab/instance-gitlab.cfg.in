@@ -1,4 +1,8 @@
 # GitLab instance
+# NOTE instance/software layout is inspired by gitlab omnibus
+# NOTE all services are interconnected via unix sockets - because of easier
+#      security and performance reasons (unix has 2x less latency and more
+#      throughput compared to tcp over loopback).
 [buildout]
 parts =
     directory
