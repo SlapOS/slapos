@@ -7,6 +7,16 @@
 parts =
     directory
 
+#   gitlab-<prog>
+# ? mailroom
+{% set gitlab_progv = 'rails rake unicorn sidekiq' .split() %}
+{% for prog in gitlab_progv %}
+    gitlab-{{ prog }}
+{% endfor %}
+
+    gitlab-work
+    gitlab-shell-work
+
     service-postgresql
     service-redis
 
@@ -52,10 +62,161 @@ startup = ${:etc}/run
 service = ${:etc}/service
 promise = ${:etc}/promise
 
+# gitlab: etc/ log/ ...
+[gitlab-dir]
+recipe  = slapos.cookbook:mkdirectory
+etc     = ${directory:etc}/gitlab
+log     = ${directory:log}/gitlab
+
+var     = ${directory:var}/gitlab
+tmp     = ${:var}/tmp
+uploads = ${:var}/uploads
+assets  = ${:var}/assets
+backup  = ${directory:var}/backup
+
+[gitlab-repo-dir]
+recipe  = slapos.cookbook:mkdirectory
+repositories    = ${directory:var}/repositories
+# gitlab wants it to be drwxrws---
+# FIXME setting such mode with :mkdirectory is not possible, because mkdir(2)
+# does & 0777 and also there is umask. So we workaround:
+[gitlab-repo-xdir]
+recipe  = plone.recipe.command
+stop-on-error = yes
+repositories = ${gitlab-repo-dir:repositories}
+command = chmod 02770 ${:repositories}
+
+[gitlab]
+etc     = ${gitlab-dir:etc}
+log     = ${gitlab-dir:log}
+var     = ${gitlab-dir:var}
+tmp     = ${gitlab-dir:tmp}
+uploads = ${gitlab-dir:uploads}
+assets  = ${gitlab-dir:assets}
+backup  = ${gitlab-dir:backup}
+repositories = ${gitlab-repo-xdir:repositories}
+
+
+# gitlab-shell: etc/ log/ gitlab_shell_secret ...
+[gitlab-shell-dir]
+recipe  = slapos.cookbook:mkdirectory
+etc     = ${directory:etc}/gitlab-shell
+log     = ${directory:log}/gitlab-shell
+
+[gitlab-shell]
+etc     = ${gitlab-shell-dir:etc}
+log     = ${gitlab-shell-dir:log}
+secret  = ${secrets:secrets}/gitlab_shell_secret
+
+
+# place to keep all secrets
+[secrets]
+recipe  = slapos.cookbook:mkdirectory
+secrets = ${directory:var}/secrets
+mode    = 0700
 
 
 
-# 2. services
+
+# 2. bin/
+#   gitlab-<prog>
+[gitlab-bin]
+recipe  = slapos.cookbook:wrapper
+wrapper-path = ${directory:bin}/${:_buildout_section_name_}
+environment  =
+    BUNDLE_GEMFILE = {{ gitlab_repository_location }}/Gemfile
+    RAILS_ENV = production
+
+# NOTE sys.argv[1:] implicitly appended
+# (by slapos.recipe.librecipe.execute.generic_exec() at runtime)
+command-line =
+    {{ bundler_4gitlab }} exec sh -c
+    'cd ${gitlab-work:location} && ${:prog} "$@"' ${:prog}
+
+{% for prog in gitlab_progv %}
+[gitlab-{{ prog }}]
+<= gitlab-bin
+prog    = {{ prog }}
+{% endfor %}
+
+
+# 3. gitlab- & gitlab-shell- work directories
+#
+# Gitlab/Rails operation is tightened that config/ lives inside code, which goes
+# against having ability to create several instances configured differently
+# from 1 SR.
+#
+# One possibility to overcome this could be to make another Gitlab root
+# symbolically linked to original SR _and_ several configuration files
+# symbolically linked to instance place. Unfortunately this does not work -
+# Ruby determines realpath on module import and Gitlab and Rails lookup config
+# files relative to imported modules.
+#
+# we clone cloned gitlab and add proper links to vendor/bundle and instance
+# config files.
+# XXX there is no need for full clone - we only need worktree checkout (a-la `git
+# worktree add`, but without creating files in original clone)
+#
+# This way Gitlab/Rails still think they work in 1 code / 1 instance way,
+# and we can reuse SR.
+# XXX better do such tricks with bind mounting, but that requires user namespaces
+
+[work-base]
+recipe  = plone.recipe.command
+stop-on-error = yes
+location = ${directory:home}/${:_buildout_section_name_}
+command =
+# make sure we start from well-defined empty state
+# (needed e.g. if previous install failed in the middle)
+    rm -rf ${:location}  &&
+# init work repository and add `software` remote pointing to main repo in SR software/...
+    {{ git }} init ${:location}  &&
+    cd ${:location}  &&
+    {{ git }} remote add software ${:software}  &&
+    ${:update-command}
+
+update-command =
+    cd ${:location}  &&
+    {{ git }} fetch software  &&
+    {{ git }} reset --hard `cd ${:software} && {{ git }} rev-parse HEAD`  &&
+    ${:tune-command}
+
+
+# NOTE there is no need to link/create .gitlab_shell_secret - we will set path to it
+# in gitlab & gitlab-shell configs, and gitlab creates it on its first start
+[gitlab-work]
+<= work-base
+software = {{ gitlab_repository_location }}
+tune-command =
+# secret* tmp/ log/
+    rm -f .secret  &&
+    rm -rf log tmp  &&
+    ln -sf ${secrets:secrets}/gitlab_rails_secret .secret  &&
+    ln -sf ${gitlab:log} log  &&
+    ln -sf ${gitlab:tmp} tmp  &&
+# config/
+    cd config  &&
+    ln -sf ${secrets:secrets}/gitlab_secrets.yml secrets.yml  &&
+# public/
+    cd ../public  &&
+    rm -rf uploads assets  &&
+    ln -sf ${gitlab:uploads} uploads  &&
+    ln -sf ${gitlab:assets} assets  &&
+    true
+
+
+# ----//---- for gitlab-shell
+[gitlab-shell-work]
+<= work-base
+software = {{ gitlab_shell_repository_location }}
+
+tune-command =
+    true
+
+
+
+
+# 4. services
 
 # [promise-<something>] to generate promise wrapper <something>
 [promise-wrapper]
