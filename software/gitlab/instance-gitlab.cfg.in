@@ -54,6 +54,12 @@ promise = ${:etc}/promise
 
 # 2. services
 
+# [promise-<something>] to generate promise wrapper <something>
+[promise-wrapper]
+recipe  = slapos.cookbook:wrapper
+wrapper-path = !py! '${directory:promise}/' + '${:_buildout_section_name_}'[8:]
+
+
 #############
 #   cron    #
 #############
