@@ -22,9 +22,13 @@ rendered= $${buildout:directory}/instance-gitlab.cfg
 context =
     key eggs_directory          buildout:eggs-directory
     key develop_eggs_directory  buildout:develop-eggs-directory
+    raw gitlab_repository_location          ${gitlab-repository:location}
+    raw gitlab_shell_repository_location    ${gitlab-shell-repository:location}
 
 # program binaries
+    raw bundler_4gitlab             ${bundler-4gitlab:bundle}
     raw dcron_bin                   ${dcron-output:crond}
+    raw git                         ${git:location}/bin/git
     raw gunzip_bin                  ${gzip:location}/bin/gunzip
     raw gzip_bin                    ${gzip:location}/bin/gzip
     raw logrotate_bin               ${logrotate:location}/usr/sbin/logrotate
