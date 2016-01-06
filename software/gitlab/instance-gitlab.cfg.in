@@ -8,6 +8,7 @@ parts =
     directory
 
     service-postgresql
+    service-redis
 
     service-cron
 
@@ -110,6 +111,42 @@ command-line =
 
 # postgresql logs to stdout/stderr - logs are handled by slapos not us
 # [logrotate-entry-postgresql]
+
+
+#############
+#   Redis   #
+#############
+[redis]
+recipe  = slapos.cookbook:mkdirectory
+srv     = ${directory:srv}/redis
+log     = ${directory:log}/redis
+
+
+[service-redis]
+recipe  = slapos.cookbook:redis.server
+wrapper = ${directory:service}/redis
+promise_wrapper = ${directory:promise}/redis
+
+server_dir  = ${redis:srv}
+config_file = ${directory:etc}/redis.conf
+log_file    = ${redis:log}/redis.log
+pid_file    = ${directory:run}/redis.pid
+use_passwd  = false
+unixsocket  = ${:server_dir}/redis.socket
+# port = 0 means "don't listen on TCP at all" - listen only on unix socket
+ipv6    = ::1
+port    = 0
+
+server_bin  = {{ redis_binprefix }}/redis-server
+depend  =
+    ${logrotate-entry-redis:recipe}
+
+
+# NOTE slapos.cookbook:redis.server setups promise automatically
+
+[logrotate-entry-redis]
+<= logrotate-entry
+log     = ${redis:log}/*.log
 
 
 
