@@ -28,3 +28,4 @@ context =
     raw gunzip_bin                  ${gzip:location}/bin/gunzip
     raw gzip_bin                    ${gzip:location}/bin/gzip
     raw logrotate_bin               ${logrotate:location}/usr/sbin/logrotate
+    raw postgresql_location         ${postgresql92:location}

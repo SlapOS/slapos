@@ -7,6 +7,8 @@
 parts =
     directory
 
+    service-postgresql
+
     service-cron
 
 # std stuff for slapos instance
@@ -58,6 +60,57 @@ promise = ${:etc}/promise
 [promise-wrapper]
 recipe  = slapos.cookbook:wrapper
 wrapper-path = !py! '${directory:promise}/' + '${:_buildout_section_name_}'[8:]
+
+
+
+
+#####################
+#   Postgresql db   #
+#####################
+
+# XXX gitlab-omnibus also tunes:
+# - shared_buffers
+# - work_mem
+# - checkpoint_*
+# - effective_check_size
+# - lc_* en_US.UTF-8 -> C  (?)
+[service-postgresql]
+recipe  = slapos.cookbook:postgres
+bin     = {{ postgresql_location }}/bin
+services= ${directory:service}
+
+dbname  = gitlabhq_production
+# NOTE db name must match to what was used in KVM on lab.nexedi.com (restore script grants access to this user)
+superuser = gitlab-psql
+# no password - pgsql will listen only on unix sockets (see below) thus access
+# is protected with filesystem-level permissions.
+# ( besides, if we use slapos.cookbook:generate.password and do `password = ...`
+#   the password is stored in plain text in .installed and thus becomes insecure )
+password=
+
+pgdata-directory = ${directory:srv}/postgresql
+
+# empty addresses - listen only on unix socket
+ipv4    = !py!set([])
+ipv6    = !py!set([])
+ipv6-random =
+port    =
+
+depend  =
+    ${promise-postgresql:recipe}
+
+[promise-postgresql]
+<= promise-wrapper
+command-line =
+    {{ postgresql_location }}/bin/psql
+        -h ${service-postgresql:pgdata-directory}
+        -U ${service-postgresql:superuser}
+        -d ${service-postgresql:dbname}
+        -c '\q'
+
+# postgresql logs to stdout/stderr - logs are handled by slapos not us
+# [logrotate-entry-postgresql]
+
 
 
 #############
