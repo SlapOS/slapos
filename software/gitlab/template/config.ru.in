@@ -6,6 +6,8 @@
 
 # This file is used by Rack-based servers to start the application.
 
+{% from 'macrolib.cfg.in' import cfg  with context %}
+
 if defined?(Unicorn)
   require 'unicorn'
 
@@ -14,7 +16,7 @@ if defined?(Unicorn)
     require 'unicorn/worker_killer'
 
     # Max memory size (RSS) per worker
-    use Unicorn::WorkerKiller::Oom, (<%= @worker_memory_limit_min %>), (<%= @worker_memory_limit_max %>)
+    use Unicorn::WorkerKiller::Oom, ({{ cfg('unicorn_worker_memory_limit_min') }}), ({{ cfg('unicorn_worker_memory_limit_max') }})
   end
 end
 
