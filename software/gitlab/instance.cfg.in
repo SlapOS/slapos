@@ -35,11 +35,14 @@ context =
     raw curl_bin                    ${curl:location}/bin/curl
     raw dcron_bin                   ${dcron-output:crond}
     raw git                         ${git:location}/bin/git
+    raw git_location                ${git:location}
+    raw gitlab_workhorse            ${gitlab-workhorse:location}/gitlab-workhorse
     raw gunzip_bin                  ${gzip:location}/bin/gunzip
     raw gzip_bin                    ${gzip:location}/bin/gzip
     raw logrotate_bin               ${logrotate:location}/usr/sbin/logrotate
     raw postgresql_location         ${postgresql92:location}
     raw redis_binprefix             ${redis28:location}/bin
+    raw ruby_location               ${bundler-4gitlab:ruby-location}
 
 # config files
     raw config_ru_in                ${config.ru.in:target}
