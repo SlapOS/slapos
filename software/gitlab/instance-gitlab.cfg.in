@@ -172,6 +172,8 @@ context-extra =
 [smtp_settings.rb]
 <= gitlab-etc-template
 template= {{ smtp_settings_rb_in }}
+# contains smtp password
+mode    = 0600
 
 [unicorn.rb]
 <= gitlab-etc-template
