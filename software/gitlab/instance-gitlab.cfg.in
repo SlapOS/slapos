@@ -270,7 +270,7 @@ update-command =
     ${:tune-command}
 
 
-# NOTE there is no need to link/create .gitlab_shell_secret - we will set path to it
+# NOTE there is no need to link/create .gitlab_shell_secret - we set path to it
 # in gitlab & gitlab-shell configs, and gitlab creates it on its first start
 [gitlab-work]
 <= work-base

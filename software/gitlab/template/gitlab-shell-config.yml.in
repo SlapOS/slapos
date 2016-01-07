@@ -30,6 +30,11 @@ repos_path: "{{ gitlab.repositories }}"
 # NOTE not used in slapos version (all access via https only)
 auth_file: "{{ gitlab.var }}/sshkeys-notused"
 
+# File that contains the secret key for verifying access to GitLab.
+# Default is .gitlab_shell_secret in the root directory.
+secret_file: "{{ gitlab_shell.secret }}"
+
+
 # Redis settings used for pushing commit notices to gitlab
 redis:
   bin: {{ redis_binprefix }}/redis-cli
