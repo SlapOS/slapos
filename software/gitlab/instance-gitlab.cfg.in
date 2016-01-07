@@ -147,6 +147,8 @@ template = {{ config_ru_in }}
 [database.yml]
 <= gitlab-etc-template
 template= {{ database_yml_in }}
+context-extra =
+    section pgsql                   service-postgresql
 
 [gitlab-shell-config.yml]
 <= etc-template
