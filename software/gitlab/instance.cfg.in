@@ -20,6 +20,9 @@ mode    = 0644
 template= ${instance-gitlab.cfg.in:target}
 rendered= $${buildout:directory}/instance-gitlab.cfg
 context =
+    import os os
+    import pwd pwd
+
     key eggs_directory          buildout:eggs-directory
     key develop_eggs_directory  buildout:develop-eggs-directory
     raw gitlab_repository_location          ${gitlab-repository:location}
