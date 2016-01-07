@@ -34,3 +34,13 @@ context =
     raw logrotate_bin               ${logrotate:location}/usr/sbin/logrotate
     raw postgresql_location         ${postgresql92:location}
     raw redis_binprefix             ${redis28:location}/bin
+
+# config files
+    raw config_ru_in                ${config.ru.in:target}
+    raw database_yml_in             ${database.yml.in:target}
+    raw gitlab_shell_config_yml_in  ${gitlab-shell-config.yml.in:target}
+    raw gitlab_yml_in               ${gitlab.yml.in:target}
+    raw rack_attack_rb_in           ${rack_attack.rb.in:target}
+    raw resque_yml_in               ${resque.yml.in:target}
+    raw smtp_settings_rb_in         ${smtp_settings.rb.in:target}
+    raw unicorn_rb_in               ${unicorn.rb.in:target}
