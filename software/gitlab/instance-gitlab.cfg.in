@@ -192,6 +192,10 @@ mode    = 0600
 [unicorn.rb]
 <= gitlab-etc-template
 template = {{ unicorn_rb_in }}
+context-extra =
+    section unicorn                 unicorn
+    section directory               directory
+    section gitlab_work             gitlab-work
 
 
 
@@ -395,6 +399,20 @@ depend  =
 [logrotate-entry-redis]
 <= logrotate-entry
 log     = ${redis:log}/*.log
+
+
+######################
+#   unicorn worker   #
+######################
+[unicorn-dir]
+recipe  = slapos.cookbook:mkdirectory
+srv     = ${directory:srv}/unicorn
+log     = ${directory:log}/unicorn
+
+[unicorn]
+srv     = ${unicorn-dir:srv}
+log     = ${unicorn-dir:log}
+socket  = ${:srv}/unicorn.socket
 
 
 
