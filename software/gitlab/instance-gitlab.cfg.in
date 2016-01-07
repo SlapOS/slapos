@@ -15,6 +15,8 @@ parts =
     gitlab-{{ prog }}
 {% endfor %}
 
+    gitconfig
+
     gitlab-work
     gitlab-shell-work
 
@@ -171,6 +173,12 @@ template= {{ database_yml_in }}
 context-extra =
     section pgsql                   service-postgresql
 
+[gitconfig]
+<= etc-template
+template= {{ gitconfig_in }}
+# NOTE put directly into $HOME/ - this way git will pick it up
+rendered= ${directory:home}/.${:_buildout_section_name_}
+
 [gitlab-shell-config.yml]
 <= etc-template
 template= {{ gitlab_shell_config_yml_in }}
@@ -222,8 +230,10 @@ context-extra =
 [gitlab-bin]
 recipe  = slapos.cookbook:wrapper
 wrapper-path = ${directory:bin}/${:_buildout_section_name_}
+# NOTE $HOME needed to pick gitconfig
 environment  =
     BUNDLE_GEMFILE = {{ gitlab_repository_location }}/Gemfile
+    HOME = ${directory:home}
     RAILS_ENV = production
 
 # NOTE sys.argv[1:] implicitly appended
@@ -466,8 +476,10 @@ command-line    = {{ gitlab_workhorse }}
 # NOTE environment for:
 #   - git to be available on path
 #   - ruby to be available on path  (gitlab-workhorse -> gitlab-shell -> hooks  on push)
+#   - gitconfig be found from ~/.gitconfig
 environment =
     PATH={{ git_location }}/bin:{{ ruby_location }}/bin:%(PATH)s
+    HOME=${directory:home}
 
 depend  =
     ${promise-gitlab-workhorse:recipe}
