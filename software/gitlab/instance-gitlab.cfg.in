@@ -141,6 +141,7 @@ context =
     section instance_parameter  instance-parameter
     section backend_info        backend-info
     import  urlparse            urlparse
+    raw     git                 {{ git }}
     ${:context-extra}
 context-extra =
 
@@ -167,6 +168,10 @@ rendered= ${gitlab-shell:etc}/config.yml
 [gitlab.yml]
 <= gitlab-etc-template
 template= {{ gitlab_yml_in }}
+context-extra =
+    section gitlab                  gitlab
+    section gitlab_shell            gitlab-shell
+    section gitlab_shell_work       gitlab-shell-work
 
 [rack_attack.rb]
 <= gitlab-etc-template

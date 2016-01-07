@@ -4,7 +4,7 @@
 # https://gitlab.com/gitlab-org/omnibus-gitlab/blob/master/files/gitlab-cookbooks/gitlab/templates/default/gitlab.yml.erb
 # (last updated for omnibus-gitlab 8.2.3+ce.0-0-g8eda093)
 
-{% from 'macrolib.cfg.in' import cfg_https, external_url  with context %}
+{% from 'macrolib.cfg.in' import cfg, cfg_https, external_url  with context %}
 
 production: &base
   #
@@ -19,71 +19,80 @@ production: &base
     port: {{ external_url.port or default_port[external_url.scheme] }}
     https: {{ cfg_https }}
 
+    {# ssh is disabled completely in slapos version
     # Uncommment this line below if your ssh host is different from HTTP/HTTPS one
     # (you'd obviously need to replace ssh.host_example.com with your own host).
     # Otherwise, ssh host will be set to the `host:` value above
     ssh_host: <%= @gitlab_ssh_host %>
+    #}
 
     # WARNING: See config/application.rb under "Relative url support" for the list of
     # other files that need to be changed for relative url support
     # relative_url_root: /gitlab
 
     # Uncomment and customize if you can't use the default user to run GitLab (default: 'git')
-    user: <%= node['gitlab']['user']['username'] %>
+    user: {{ backend_info.user }}
 
     ## Date & Time settings
-    time_zone: <%= single_quote(@time_zone) %>
+    time_zone: '{{ cfg("time_zone") }}'
 
     ## Email settings
     # Uncomment and set to false if you need to disable email sending from GitLab (default: true)
-    email_enabled: <%= @gitlab_email_enabled %>
+    email_enabled:      {{ cfg('email_enabled') }}
     # Email address used in the "From" field in mails sent by GitLab
-    email_from: <%= @gitlab_email_from %>
-    email_display_name: <%= @gitlab_email_display_name %>
-    email_reply_to: <%= @gitlab_email_reply_to %>
+    email_from:         {{ cfg('email_from') }}
+    email_display_name: {{ cfg('email_display_name') }}
+    email_reply_to:     {{ cfg('email_reply_to') }}
 
     # Email server smtp settings are in [a separate file](initializers/smtp_settings.rb.sample).
 
     ## User settings
-    default_can_create_group: <%= @gitlab_default_can_create_group %>  # default: true
-    username_changing_enabled: <%= @gitlab_username_changing_enabled %> # default: true - User can change her username/namespace
+    default_can_create_group: {{ cfg('default_can_create_group') }}  # default: true
+    username_changing_enabled: {{ cfg('username_changing_enabled') }} # default: true - User can change her username/namespace
     ## Default theme
     ##   BASIC  = 1
     ##   MARS   = 2
     ##   MODERN = 3
     ##   GRAY   = 4
     ##   COLOR  = 5
-    default_theme: <%= @gitlab_default_theme %> # default: 2
+    default_theme: {{ cfg('default_theme') }} # default: 2
 
+    {# we do not need to restrict visibility levels
     # Restrict setting visibility levels for non-admin users.
     # The default is to allow all levels.
     restricted_visibility_levels: <%= @gitlab_restricted_visibility_levels unless @gitlab_restricted_visibility_levels.nil? %>
+    #}
 
+    {# for now we are ok with default issue-closing pattern
     ## Automatic issue closing
     # If a commit message matches this regular expression, all issues referenced from the matched text will be closed.
     # This happens when the commit is pushed or merged into the default branch of a project.
     # When not specified the default issue_closing_pattern as specified below will be used.
     # Tip: you can test your closing pattern at http://rubular.com
     issue_closing_pattern: <%= single_quote(@gitlab_issue_closing_pattern) %>
+    #}
 
     ## Default project features settings
     default_projects_features:
-      issues: <%= @gitlab_default_projects_features_issues %>
-      merge_requests: <%= @gitlab_default_projects_features_merge_requests %>
-      wiki: <%= @gitlab_default_projects_features_wiki %>
-      snippets: <%= @gitlab_default_projects_features_snippets %>
-      visibility_level: <%= single_quote(@gitlab_default_projects_features_visibility_level) %>  # can be "private" | "internal" | "public"
-      builds: <%= @gitlab_default_projects_features_builds %>
+      issues:           {{ cfg('default_projects_features.issues') }}
+      merge_requests:   {{ cfg('default_projects_features.merge_requests') }}
+      wiki:             {{ cfg('default_projects_features.wiki') }}
+      snippets:         {{ cfg('default_projects_features.snippets') }}
+      visibility_level: '{{ cfg("default_projects_features.visibility_level") }}'  # can be "private" | "internal" | "public"
+      builds: false {# builds not supported yet <%= @gitlab_default_projects_features_builds %> #}
 
     ## Webhook settings
     # Number of seconds to wait for HTTP response after sending webhook HTTP POST request (default: 10)
-    webhook_timeout: <%= @webhook_timeout %>
+    webhook_timeout: {{ cfg('webhook_timeout') }}
 
+    {# default is just ok
     ## Repository downloads directory
     # When a user clicks e.g. 'Download zip' on a project, a temporary zip file is created in the following directory.
     # The default is 'tmp/repositories' relative to the root of the Rails app.
     repository_downloads_path: <%= @gitlab_repository_downloads_path %>
+    #}
 
+  {# we do not support reply by email
   ## Reply by email
   # Allow users to comment on issues and merge requests by replying to notification emails.
   # For documentation on how to set this up, see http://doc.gitlab.com/ce/incoming_email/README.html
@@ -112,30 +121,39 @@ production: &base
 
     # The mailbox where incoming mail will end up. Usually "inbox".
     mailbox: <%= single_quote(@incoming_email_mailbox_name) %>
+  #}
 
+  {# we do not support build artifacts
   ## Build Artifacts
   artifacts:
     enabled: <%= @artifacts_enabled %>
     # The location where Build Artifacts are stored (default: shared/artifacts).
     storage_path: <%= @artifacts_path %>
+  #}
 
+  {# we do not support LFS
   ## Git LFS
   lfs:
     enabled: <%= @lfs_enabled %>
     # The location where LFS objects are stored (default: shared/lfs-objects).
     storage_path: <%= @lfs_storage_path %>
+  #}
 
   ## Gravatar
   ## For Libravatar see: http://doc.gitlab.com/ce/customization/libravatar.html
   gravatar:
+    {# default is just ok
     # gravatar urls: possible placeholders: %{hash} %{size} %{email}
     plain_url: <%= single_quote(@gravatar_plain_url) %>     # default: http://www.gravatar.com/avatar/%{hash}?s=%{size}&d=identicon
     ssl_url:   <%= single_quote(@gravatar_ssl_url) %>    # default: https://secure.gravatar.com/avatar/%{hash}?s=%{size}&d=identicon
+    #}
+
 
   #
   # 2. GitLab CI settings
   # ==========================
 
+  {# we do not support CI
   gitlab_ci:
     # Default project notifications settings:
     #
@@ -147,6 +165,7 @@ production: &base
 
     # The location where build traces are stored (default: builds/). Relative paths are relative to Rails.root
     builds_path: <%= @builds_directory %>
+  #}
 
   #
   # 3. Auth settings
@@ -156,6 +175,8 @@ production: &base
   # You can inspect a sample of the LDAP users with login access by running:
   #   bundle exec rake gitlab:ldap:check RAILS_ENV=production
   ldap:
+    enabled: false
+    {# just disabled
     enabled: <%= @ldap_enabled %>
   <% if @ldap_servers.any? %>
     servers:
@@ -180,9 +201,12 @@ production: &base
     sync_ssh_keys: <%= single_quote(@ldap_sync_ssh_keys) %>
     sync_time: <%= @ldap_sync_time %>
   <% end %>
+  #}
 
   ## Kerberos settings
   kerberos:
+    enabled: false
+    {# just disabled
     # Allow the HTTP Negotiate authentication method for Git clients
     enabled: <%= @kerberos_enabled %>
 
@@ -202,10 +226,13 @@ production: &base
     use_dedicated_port: <%= @kerberos_use_dedicated_port %>
     port: <%= @kerberos_port %>
     https: <%= @kerberos_https %>
+    #}
 
 
   ## OmniAuth settings
   omniauth:
+    enabled: false
+    {# just disabled
     # Allow login via Twitter, Google, etc. using OmniAuth providers
     enabled: <%= @omniauth_enabled %>
 
@@ -243,11 +270,13 @@ production: &base
 <% @omniauth_providers.each do |provider| %>
       - <%= provider.to_json %>
 <% end %>
+    #}
 
+  {# default ($RAILS_ROOT/shared/) is just ok
   # Shared file storage settings
   shared:
     path: <%= @shared_path %>
-
+  #}
 
   #
   # 4. Advanced settings
@@ -259,68 +288,86 @@ production: &base
   # db/migrate/20151023144219_remove_satellites.rb
   satellites:
     # Relative paths are relative to Rails.root (default: tmp/repo_satellites/)
-    path: <%= @satellites_path %>
-    timeout: <%= @satellites_timeout %>
+    path: /dev/null
+    timeout: 0
 
   ## Backup settings
   backup:
-    path: "<%= @backup_path %>"   # Relative paths are relative to Rails.root (default: tmp/backups/)
+    path: "{{ gitlab.backup }}"   # Relative paths are relative to Rails.root (default: tmp/backups/)
+    {# default permission is ok
     archive_permissions: <%= @backup_archive_permissions %> # Permissions for the resulting backup.tar file (default: 0600)
-    keep_time: <%= @backup_keep_time %>   # default: 0 (forever) (in seconds)
+    #}
+    keep_time: {{ cfg('backup_keep_time') }}   # default: 0 (forever) (in seconds)
+    {# default to backup all schemas is just ok
     pg_schema: <%= @backup_pg_schema %>   # default: nil, it means that all schemas will be backed up
+    #}
     upload:
+      {# we don't want to upload backup anywhere by gitlab builtin mechanisms
       # Fog storage connection settings, see http://fog.io/storage/ .
       connection: <%= @backup_upload_connection.to_json if @backup_upload_connection %>
       # The remote 'directory' to store your backups. For S3, this would be the bucket name.
       remote_directory: <%= single_quote(@backup_upload_remote_directory) %>
       multipart_chunk_size: <%= @backup_multipart_chunk_size %>
       encryption: <%= @backup_encryption %>
+      #}
+
 
   ## GitLab Shell settings
   gitlab_shell:
-    path: <%= @gitlab_shell_path %>
+    path: {{ gitlab_shell_work.location }}
 
     # REPOS_PATH MUST NOT BE A SYMLINK!!!
-    repos_path: <%= @gitlab_shell_repos_path %>
-    hooks_path: <%= @gitlab_shell_hooks_path %>
+    repos_path: {{ gitlab.repositories }}
+    hooks_path: {{ gitlab_shell_work.location }}/hooks/
+    secret_file: {{ gitlab_shell.secret }}
 
     # Git over HTTP
-    upload_pack: <%= @gitlab_shell_upload_pack %>
-    receive_pack: <%= @gitlab_shell_receive_pack %>
+    upload_pack: true
+    receive_pack: true
 
+    {# Git over SSH is disabled elsewhere (so we don't care about ssh_port)
     # If you use non-standard ssh port you need to specify it
     ssh_port: <%= @gitlab_shell_ssh_port %>
+    #}
+
 
   ## Git settings
   # CAUTION!
   # Use the default values unless you really know what you are doing
   git:
-    bin_path: <%= @git_bin_path %>
+    bin_path: {{ git }}
     # The next value is the maximum memory size grit can use
     # Given in number of bytes per git object (e.g. a commit)
     # This value can be increased if you have very large commits
-    max_size: <%= @git_max_size %>
+    max_size: {{ cfg('git_max_size') }}
     # Git timeout to read a commit, in seconds
-    timeout: <%= @git_timeout %>
+    timeout: {{ cfg('git_timeout') }}
+
 
   #
   # 5. Extra customization
   # ==========================
 
   extra:
+    {# we do not use google analytics
     <% if @extra_google_analytics_id %>
     ## Google analytics. Uncomment if you want it
     google_analytics_id: <%= single_quote(@extra_google_analytics_id) %>
     <% end %>
+    #}
 
+    {# we do not use piwik
     <% if @extra_piwik_url %>
     ## Piwik analytics.
     piwik_url: <%= single_quote(@extra_piwik_url) %>
     piwik_site_id: <%= single_quote(@extra_piwik_site_id) %>
     <% end %>
+    #}
 
+    {# we are ok (for now) with default rack-attack git settings
     rack_attack:
       git_basic_auth: <%= @rack_attack_git_basic_auth.to_json if @rack_attack_git_basic_auth %>
+    #}
 
 
 development:
