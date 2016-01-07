@@ -4,16 +4,24 @@
 # https://gitlab.com/gitlab-org/omnibus-gitlab/blob/master/files/gitlab-cookbooks/gitlab/templates/default/database.yml.erb
 # (last updated for 8.2.3+ce.0-0-g8eda093)
 
+{% from 'macrolib.cfg.in' import cfg  with context %}
+
 production:
-  adapter: <%= @db_adapter %>
-  encoding: <%= @db_encoding %>
+  adapter: postgresql
+  encoding: unicode
+  {# collation is mainly for mysql
   collation: <%= @db_collation %>
-  database: <%= @db_database %>
-  pool: <%= @db_pool %>
-  username: <%= single_quote(@db_username) %>
-  password: <%= single_quote(@db_password) %>
-  host: <%= single_quote(@db_host) %>
-  port: <%= @db_port %>
-  socket: <%= single_quote(@db_socket) %>
+  #}
+  database: {{ pgsql.dbname }}
+  pool: {{ cfg('db_pool') }}
+  {# XXX is it ok to use superuser, even if the whole database is only for gitlab? #}
+  username: '{{ pgsql.superuser }}'
+  {# we have no password - access is via unix socket #}
+  password:
+  host:     '{{ pgsql["pgdata-directory"] }}'
+  port:
+  socket:
+  {# not needed for unix socket
   sslmode: <%= single_quote(@db_sslmode) %>
   sslrootcert: <%= single_quote(@db_sslrootcert) %>
+  #}
