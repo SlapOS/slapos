@@ -5,24 +5,23 @@
 # https://gitlab.com/gitlab-org/omnibus-gitlab/blob/master/files/gitlab-cookbooks/gitlab/templates/default/unicorn.rb.erb
 # (last updated for omnibus-gitlab 8.2.3+ce.0-0-g8eda093)
 
+{% from 'macrolib.cfg.in' import cfg  with context %}
 
 # What ports/sockets to listen on, and what options for them.
-<%- @listen.each do |port, options| %>
-listen "<%= port %>", <%= options %>
-<%- end %>
+# we listen only on unix socket
+listen "{{ unicorn.socket }}", :backlog => {{ cfg('unicorn_backlog_socket') }}
+#listen "127.0.0.1:8888", :tcp_nopush => true
 
-<%- if @working_directory %>
-working_directory '<%= @working_directory %>'
-<%- end %>
+working_directory '{{ gitlab_work.location }}'
 
 # What the timeout for killing busy workers is, in seconds
-timeout <%= @worker_timeout %>
+timeout {{ cfg('unicorn_worker_timeout') }}
 
 # Whether the app should be pre-loaded
 preload_app <%= @preload_app %>
 
 # How many worker processes
-worker_processes <%= @worker_processes %>
+worker_processes {{ cfg('unicorn_worker_processes') }}
 
 <%- if @before_fork %>
 # What to do before we fork a worker
@@ -38,18 +37,12 @@ after_fork do |server, worker|
 end
 
 <%- end %>
-<%- if @pid %>
+
 # Where to drop a pidfile
-pid '<%= @pid %>'
+pid '{{ directory.run }}/unicorn.pid'
 
-<%- end %>
-<%- if @stderr_path %>
 # Where stderr gets logged
-stderr_path '<%= @stderr_path %>'
+stderr_path '{{ unicorn.log }}/unicorn_stderr.log'
 
-<%- end %>
-<%- if @stdout_path %>
 # Where stdout gets logged
-stdout_path '<%= @stdout_path %>'
-
-<%- end %>
+stdout_path '{{ unicorn.log }}/unicorn_stdout.log'
