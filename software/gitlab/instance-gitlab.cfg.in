@@ -166,6 +166,8 @@ template = {{ rack_attack_rb_in }}
 [resque.yml]
 <= gitlab-etc-template
 template= {{ resque_yml_in }}
+context-extra =
+    section redis                   service-redis
 
 [smtp_settings.rb]
 <= gitlab-etc-template
