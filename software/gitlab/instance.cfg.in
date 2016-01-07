@@ -30,7 +30,9 @@ context =
     raw gitlab_shell_repository_location    ${gitlab-shell-repository:location}
 
 # program binaries
+    raw bash_bin                    ${bash:location}/bin/bash
     raw bundler_4gitlab             ${bundler-4gitlab:bundle}
+    raw curl_bin                    ${curl:location}/bin/curl
     raw dcron_bin                   ${dcron-output:crond}
     raw git                         ${git:location}/bin/git
     raw gunzip_bin                  ${gzip:location}/bin/gunzip

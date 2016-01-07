@@ -326,6 +326,13 @@ tune-command =
 recipe  = slapos.cookbook:wrapper
 wrapper-path = !py! '${directory:promise}/' + '${:_buildout_section_name_}'[8:]
 
+# [promise-<something>] to check <something> by url
+[promise-byurl]
+recipe  = slapos.cookbook:check_url_available
+path    = !py! '${directory:promise}/' + '${:_buildout_section_name_}'[8:]
+dash_path   = {{ bash_bin }}
+curl_path   = {{ curl_bin }}
+http_code   = 200
 
 
 
