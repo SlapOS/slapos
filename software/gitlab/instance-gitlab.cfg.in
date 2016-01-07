@@ -18,6 +18,8 @@ parts =
     gitlab-work
     gitlab-shell-work
 
+    service-unicorn
+
     service-postgresql
     service-redis
 
@@ -77,6 +79,7 @@ srv     = ${:home}/srv
 startup = ${:etc}/run
 service = ${:etc}/service
 promise = ${:etc}/promise
+promise.slow = ${:promise}.slow
 
 # gitlab: etc/ log/ ...
 [gitlab-dir]
@@ -431,6 +434,63 @@ log     = ${directory:log}/unicorn
 srv     = ${unicorn-dir:srv}
 log     = ${unicorn-dir:log}
 socket  = ${:srv}/unicorn.socket
+
+[service-unicorn]
+recipe  = slapos.cookbook:wrapper
+wrapper-path    = ${directory:service}/unicorn
+command-line    = ${gitlab-unicorn:wrapper-path}
+    -E production
+    -c ${unicorn.rb:rendered}
+    ${gitlab-work:location}/config.ru
+
+
+depend  =
+    ${promise-unicorn:recipe}
+    ${promise-gitlab-app:recipe}
+    ${promise-gitlab-shell:recipe}
+
+    ${logrotate-entry-unicorn:recipe}
+# gitlab is a service "run" under unicorn
+# gitlab-shell is called by gitlab
+# -> associate their logs rotation to here
+    ${logrotate-entry-gitlab:recipe}
+
+
+[promise-unicorn]
+<= promise-byurl
+url     = --unix-socket ${unicorn:socket}  http:/
+
+[promise-rakebase]
+recipe  = slapos.cookbook:wrapper
+# FIXME gitlab-rake is too slow to load and promise timeouts
+# that's why we instantiate to <promise>.slow/ (and this way promises are not run)
+wrapper-path    = !py!'${directory:promise.slow}/' + '${:_buildout_section_name_}'[8:]
+rake    = ${gitlab-rake:wrapper-path}
+
+
+[promise-gitlab-app]
+<= promise-rakebase
+command-line    = ${:rake} gitlab:app:check
+
+[promise-gitlab-shell]
+<= promise-rakebase
+command-line    = ${:rake} gitlab:gitlab_shell:check
+
+# very slow
+# rake gitlab:repo:check        (fsck all repos)
+
+
+[logrotate-entry-unicorn]
+<= logrotate-entry
+log     = ${unicorn:log}/*.log
+
+[logrotate-entry-gitlab]
+<= logrotate-entry
+log     = ${gitlab:log}/*.log
+
+[logrotate-entry-gitlab-shell]
+<= logrotate-entry
+log     = ${gitlab-shell:log}/*.log
 
 
 
