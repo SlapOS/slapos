@@ -38,6 +38,7 @@ context =
 # config files
     raw config_ru_in                ${config.ru.in:target}
     raw database_yml_in             ${database.yml.in:target}
+    raw gitlab_parameters_cfg       ${gitlab-parameters.cfg:target}
     raw gitlab_shell_config_yml_in  ${gitlab-shell-config.yml.in:target}
     raw gitlab_yml_in               ${gitlab.yml.in:target}
     raw rack_attack_rb_in           ${rack_attack.rb.in:target}
