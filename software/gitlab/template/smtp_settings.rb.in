@@ -4,17 +4,26 @@
 # https://gitlab.com/gitlab-org/omnibus-gitlab/blob/master/files/gitlab-cookbooks/gitlab/templates/default/smtp_settings.rb.erb
 # (last updated for omnibus-gitlab 8.2.3+ce.0-0-g8eda093)
 
-<% rails_app = @app == 'gitlab' ? 'Gitlab' : 'GitlabCi' %>
-<% container = @app == 'gitlab' ? 'gitlab-rails' : 'gitlab-ci' %>
+{% from 'macrolib.cfg.in' import cfg, cfg_bool  with context %}
 
+{% if cfg_bool('smtp_enable') %}
 if Rails.env.production?
-  <%= rails_app %>::Application.config.action_mailer.delivery_method = :smtp
+  Gitlab::Application.config.action_mailer.delivery_method = :smtp
 
   ActionMailer::Base.smtp_settings = {
-    authentication: <%= @smtp_authentication.to_s.to_sym.inspect %>,
-<% %w{ address port user_name password domain enable_starttls_auto tls openssl_verify_mode ca_path ca_file }.each do |key| %>
-  <% value = node['gitlab'][container]["smtp_#{key}"] %>
-    <%= "#{key}: #{value.inspect}," unless value.nil? %>
-<% end %>
+    address:                "{{ cfg('smtp_address') }}",
+    port:                   {{ cfg('smtp_port') }},
+    user_name:              "{{ cfg('smtp_user_name') }}",
+    password:               "{{ cfg('smtp_password') }}",
+    domain:                 "{{ cfg('smtp_domain') }}",
+    authentication:         :{{ cfg('smtp_authentication') }},
+    enable_starttls_auto:   {{ cfg('smtp_enable_starttls_auto') }},
+    openssl_verify_mode:    '{{ cfg("smtp_openssl_verify_mode") }}'
+    # ca_path:
+    # ca_file:
   }
 end
+{% else %}
+# SMTP disabled in instance configuration (see `smtp_enable` parameter).
+# Mail sending, if enabled (see `email_enabled`), will be done via sendmail.
+{% endif %}
