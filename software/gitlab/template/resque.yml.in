@@ -4,4 +4,4 @@
 # https://gitlab.com/gitlab-org/omnibus-gitlab/blob/master/files/gitlab-cookbooks/gitlab/templates/default/resque.yml.erb
 # (last udpdated for omnibus-gitlab 8.2.3+ce.0-0-g8eda093)
 
-production: <%= @redis_url %>
+production: unix://{{ redis.unixsocket }}
