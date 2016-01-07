@@ -164,6 +164,13 @@ context-extra =
 <= etc-template
 template= {{ gitlab_shell_config_yml_in }}
 rendered= ${gitlab-shell:etc}/config.yml
+context-extra =
+    import  urllib                  urllib
+    section gitlab                  gitlab
+    section gitlab_shell            gitlab-shell
+    section unicorn                 unicorn
+    section service_redis           service-redis
+    raw     redis_binprefix         {{ redis_binprefix }}
 
 [gitlab.yml]
 <= gitlab-etc-template

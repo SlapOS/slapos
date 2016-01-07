@@ -5,13 +5,15 @@
 # (last updated for omnibus-gitlab 8.2.3+ce.0-0-g8eda093)
 
 # GitLab user. git by default
-user: <%= @user %>
+user: {{ backend_info.user }}
 
 # Url to gitlab instance. Used for api calls. Should end with a slash.
-gitlab_url: "<%= @api_url %>"
+gitlab_url: "http+unix://{{ urllib.quote_plus(unicorn.socket) }}/"
 
 http_settings:
+{# we don't need any
   <%= @http_settings.to_json if @http_settings %>
+#}
 #  user: someone
 #  password: somepass
 #  ca_file: /etc/ssl/cert.pem
@@ -22,36 +24,37 @@ http_settings:
 # Give the canonicalized absolute pathname,
 # REPOS_PATH MUST NOT CONTAIN ANY SYMLINK!!!
 # Check twice that none of the components is a symlink, including "/home".
-repos_path: "<%= @repositories_path %>"
+repos_path: "{{ gitlab.repositories }}"
 
 # File used as authorized_keys for gitlab user
-auth_file: "<%= @authorized_keys %>"
+# NOTE not used in slapos version (all access via https only)
+auth_file: "{{ gitlab.var }}/sshkeys-notused"
 
 # Redis settings used for pushing commit notices to gitlab
 redis:
-  bin: /opt/gitlab/embedded/bin/redis-cli
-  host: <%= @redis_host %>
-  port: <%= @redis_port %>
-<% if @redis_socket %>
-  socket: <%= @redis_socket %>
-<% end %>
+  bin: {{ redis_binprefix }}/redis-cli
+  host: {# <%= @redis_host %> #}
+  port: {# <%= @redis_port %> #}
+  socket: {{ service_redis.unixsocket }}
+{# we don't use password for redis
 <% if @redis_password %>
   pass: <%= @redis_password %>
 <% end %>
-  database: <%= @redis_database %>
+#}
+  database: {# <%= @redis_database %> #}
   namespace: resque:gitlab
 
 # Log file.
 # Default is gitlab-shell.log in the root directory.
-log_file: "<%= @log_file %>"
+log_file: "{{ gitlab_shell.log }}/gitlab-shell.log"
 
 # Log level. INFO by default
-log_level: <%= @log_level %>
+log_level:
 
 # Audit usernames.
 # Set to true to see real usernames in the logs instead of key ids, which is easier to follow, but
 # incurs an extra API call on every gitlab-shell command.
-audit_usernames: <%= @audit_usernames %>
+audit_usernames:
 
 # Enable git-annex support
 # git-annex allows managing files with git, without checking the file contents into git
@@ -59,4 +62,4 @@ audit_usernames: <%= @audit_usernames %>
 # If enabled, git-annex needs to be installed on the server where gitlab-shell is setup
 # For Debian and Ubuntu systems this can be done with: sudo apt-get install git-annex
 # For CentOS: sudo yum install epel-release && sudo yum install git-annex
-git_annex_enabled: <%= @git_annex_enabled %>
+git_annex_enabled:
