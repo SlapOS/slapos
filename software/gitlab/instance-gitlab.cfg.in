@@ -10,7 +10,7 @@ parts =
 
 #   gitlab-<prog>
 # ? mailroom
-{% set gitlab_progv = 'rails rake unicorn sidekiq' .split() %}
+{% set gitlab_progv = 'rails rake unicorn sidekiq unicorn-startup' .split() %}
 {% for prog in gitlab_progv %}
     gitlab-{{ prog }}
 {% endfor %}
@@ -24,6 +24,8 @@ parts =
     service-redis
 
     service-cron
+
+    on-reinstantiate
 
 # std stuff for slapos instance
 eggs-directory = {{ eggs_directory }}
@@ -236,6 +238,22 @@ prog    = {{ prog }}
 {% endfor %}
 
 
+[gitlab-unicorn-startup]
+recipe  = slapos.recipe.template:jinja2
+mode    = 0755
+template= {{ gitlab_unicorn_startup_in }}
+rendered= ${directory:bin}/${:_buildout_section_name_}
+context =
+    raw     bash_bin                {{ bash_bin }}
+    raw     gitlab_rake             ${gitlab-rake:wrapper-path}
+    raw     gitlab_unicorn          ${gitlab-unicorn:wrapper-path}
+    raw     psql_bin                {{ postgresql_location }}/bin/psql
+    section pgsql                   service-postgresql
+    raw     log_dir                 ${gitlab:log}
+    section unicorn_rb              unicorn.rb
+    section gitlab_work             gitlab-work
+
+
 # 4. gitlab- & gitlab-shell- work directories
 #
 # Gitlab/Rails operation is tightened that config/ lives inside code, which goes
@@ -439,11 +457,10 @@ socket  = ${:srv}/unicorn.socket
 [service-unicorn]
 recipe  = slapos.cookbook:wrapper
 wrapper-path    = ${directory:service}/unicorn
-command-line    = ${gitlab-unicorn:wrapper-path}
-    -E production
-    -c ${unicorn.rb:rendered}
-    ${gitlab-work:location}/config.ru
-
+# NOTE we perform db setup / migrations as part of unicorn startup.
+# Those operations require PG and Redis to be up and running already, that's
+# why we do it here. See gitlab-unicorn-startup for details.
+command-line    = ${gitlab-unicorn-startup:rendered}
 
 depend  =
     ${promise-unicorn:recipe}
@@ -589,3 +606,22 @@ backup  = ...
 <= cron-entry
 time    = daily
 command = ${logrotate:wrapper}
+
+
+
+# 6. on-reinstantiate actions
+
+# NOTE here we only recompile assets. Other on-reinstantiate actions, which
+# require pg and redis running, are performed as part of unicorn service -
+# right before its startup (see gitlab-unicorn-startup).
+[on-reinstantiate]
+recipe  = plone.recipe.command
+stop-on-error   = true
+rake    = ${gitlab-rake:wrapper-path}
+# run command on every reinstantiation
+update-command = ${:command}
+
+command =
+    ${:rake} assets:clean  &&
+    ${:rake} assets:precompile  &&
+    true

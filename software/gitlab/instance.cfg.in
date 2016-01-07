@@ -46,6 +46,7 @@ context =
     raw database_yml_in             ${database.yml.in:target}
     raw gitlab_parameters_cfg       ${gitlab-parameters.cfg:target}
     raw gitlab_shell_config_yml_in  ${gitlab-shell-config.yml.in:target}
+    raw gitlab_unicorn_startup_in   ${gitlab-unicorn-startup.in:target}
     raw gitlab_yml_in               ${gitlab.yml.in:target}
     raw macrolib_cfg_in             ${macrolib.cfg.in:target}
     raw rack_attack_rb_in           ${rack_attack.rb.in:target}
