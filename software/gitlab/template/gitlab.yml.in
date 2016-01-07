@@ -4,6 +4,8 @@
 # https://gitlab.com/gitlab-org/omnibus-gitlab/blob/master/files/gitlab-cookbooks/gitlab/templates/default/gitlab.yml.erb
 # (last updated for omnibus-gitlab 8.2.3+ce.0-0-g8eda093)
 
+{% from 'macrolib.cfg.in' import cfg_https, external_url  with context %}
+
 production: &base
   #
   # 1. GitLab app settings
@@ -12,9 +14,10 @@ production: &base
   ## GitLab settings
   gitlab:
     ## Web server settings (note: host is the FQDN, do not include http://)
-    host: <%= @gitlab_host %>
-    port: <%= @gitlab_port %>
-    https: <%= @gitlab_https %>
+    {% set default_port = {'http': 80, 'https': 443} %}
+    host: {{ external_url.hostname }}
+    port: {{ external_url.port or default_port[external_url.scheme] }}
+    https: {{ cfg_https }}
 
     # Uncommment this line below if your ssh host is different from HTTP/HTTPS one
     # (you'd obviously need to replace ssh.host_example.com with your own host).
