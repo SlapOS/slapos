@@ -18,6 +18,7 @@ parts =
     gitlab-work
     gitlab-shell-work
 
+    service-gitlab-workhorse
     service-unicorn
 
     service-postgresql
@@ -439,6 +440,49 @@ depend  =
 [logrotate-entry-redis]
 <= logrotate-entry
 log     = ${redis:log}/*.log
+
+
+########################
+#   gitlab-workhorse   #
+########################
+[gitlab-workhorse-dir]
+recipe  = slapos.cookbook:mkdirectory
+srv     = ${directory:srv}/gitlab-workhorse
+
+[gitlab-workhorse]
+srv     = ${gitlab-workhorse-dir:srv}
+socket  = ${gitlab-workhorse:srv}/gitlab-workhorse.socket
+
+[service-gitlab-workhorse]
+recipe  = slapos.cookbook:wrapper
+wrapper-path    = ${directory:service}/gitlab-workhorse
+command-line    = {{ gitlab_workhorse }}
+    -listenNetwork unix
+    -listenAddr ${gitlab-workhorse:socket}
+    -authSocket ${unicorn:socket}
+# NOTE for profiling
+#   -pprofListenAddr ...
+
+# NOTE environment for:
+#   - git to be available on path
+#   - ruby to be available on path  (gitlab-workhorse -> gitlab-shell -> hooks  on push)
+environment =
+    PATH={{ git_location }}/bin:{{ ruby_location }}/bin:%(PATH)s
+
+depend  =
+    ${promise-gitlab-workhorse:recipe}
+
+
+[promise-gitlab-workhorse]
+<= promise-byurl
+# gitlab-workhorse works on repositories. Here we only check it accepts an
+# serves requests, so request is non-existent URL and expected code is 403
+url     = --unix-socket ${gitlab-workhorse:socket}  http:/non-existent
+http_code   = 403
+
+
+# gitlab-workhorse logs to stdout/stderr - logs are handled by slapos not us
+# [logrotate-entry-gitlab-workhorse]
 
 
 ######################
