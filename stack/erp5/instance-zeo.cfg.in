@@ -124,7 +124,7 @@ tidstorage-port =
 [{{ section("resiliency-exclude-file") }}]
 # Generate rdiff exclude file
 recipe = collective.recipe.template
-input = inline: {{ default_zodb_path }}/**
+input = inline: srv/zodb/**
 output = ${directory:srv}/exporter.exclude
 
 [{{ section("resiliency-after-import-script") }}]
