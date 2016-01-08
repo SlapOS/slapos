@@ -40,6 +40,9 @@ context =
     raw gunzip_bin                  ${gzip:location}/bin/gunzip
     raw gzip_bin                    ${gzip:location}/bin/gzip
     raw logrotate_bin               ${logrotate:location}/usr/sbin/logrotate
+    raw nginx_bin                   ${nginx-output:nginx}
+    raw nginx_mime_types            ${nginx-output:mime}
+    raw openssl_bin                 ${openssl-output:openssl}
     raw postgresql_location         ${postgresql92:location}
     raw redis_binprefix             ${redis28:location}/bin
     raw ruby_location               ${bundler-4gitlab:ruby-location}

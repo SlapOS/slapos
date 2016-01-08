@@ -24,6 +24,7 @@ parts =
     service-unicorn
     service-sidekiq
 
+    service-nginx
     service-postgresql
     service-redis
 
@@ -57,11 +58,21 @@ cert    = ${slap-connection:cert-file}
 
 # automatically load all available CPUs
 configuration.unicorn_worker_processes  = {{ multiprocessing.cpu_count() + 1 }}
+configuration.nginx_worker_processes    = {{ multiprocessing.cpu_count() }}
 
 
 
 # for convenience
+[external-url]
+recipe  = slapos.cookbook:urlparse
+url     = ${instance-parameter:configuration.external_url}
+
 [backend-info]
+host    = ${instance-parameter:ipv6-random}
+port    = 7777
+# whether to use http or https - determined by external url
+url     = ${external-url:scheme}://[${:host}]:${:port}
+
 # current slapuserX
 user    = {{ pwd.getpwuid(os.getuid())[0] }}
 
@@ -207,10 +218,19 @@ context-extra =
 [nginx.conf]
 <= nginx-etc-template
 template= {{ nginx_conf_in }}
+context-extra =
+    section directory               directory
+    raw     nginx_mime_types        {{ nginx_mime_types }}
+    raw     nginx_gitlab_http_conf  ${nginx-gitlab-http.conf:rendered}
 
 [nginx-gitlab-http.conf]
 <= nginx-etc-template
 template= {{ nginx_gitlab_http_conf_in }}
+context-extra =
+    section nginx                   nginx
+    section gitlab_work             gitlab-work
+    section gitlab_workhorse        gitlab-workhorse
+    section unicorn                 unicorn
 
 [rack_attack.rb]
 <= gitlab-etc-template
@@ -634,6 +654,74 @@ command-line    = ${:rake} gitlab:sidekiq:check
 [logrotate-entry-sidekiq]
 <= logrotate-entry
 log     = ${sidekiq:log}/*.log
+
+
+######################
+#   Nginx frontend   #
+######################
+
+# srv/nginx/ prefix  +  etc/ log/ ...
+[nginx-dir]
+recipe  = slapos.cookbook:mkdirectory
+srv     = ${directory:srv}/nginx
+etc     = ${directory:etc}/nginx
+log     = ${directory:log}/nginx
+
+[nginx-ssl-dir]
+recipe  = slapos.cookbook:mkdirectory
+ssl     = ${nginx-dir:etc}/ssl
+# contains https key
+mode    = 0700
+
+# self-signed certificate for https
+[nginx-generate-certificate]
+# NOTE there is slapos.cookbook:certificate_authority.request but it requires
+# to start whole service and has up to 60 seconds latency to generate
+# certificate. We only need to run 1 command to do it...
+recipe  = plone.recipe.command
+stop-on-error   = true
+cert_file   = ${nginx-ssl-dir:ssl}/gitlab_backend.crt
+key_file    = ${nginx-ssl-dir:ssl}/gitlab_backend.key
+
+command =
+    test -e ${:key_file} || \
+        {{ openssl_bin }} req -newkey rsa -batch -new -x509 -days 3650 -nodes   \
+        -keyout ${:key_file} -out ${:cert_file}
+update-command = ${:command}
+
+
+[nginx]
+srv     = ${nginx-dir:srv}
+etc     = ${nginx-dir:etc}
+log     = ${nginx-dir:log}
+ssl     = ${nginx-ssl-dir:ssl}
+
+cert_file   = ${nginx-generate-certificate:cert_file}
+key_file    = ${nginx-generate-certificate:key_file}
+
+
+[nginx-symlinks]
+# (nginx wants <prefix>/logs to be there from start - else it issues alarm to the log)
+recipe  = cns.recipe.symlink
+symlink = ${nginx:log}  = ${nginx:srv}/logs
+
+[service-nginx]
+recipe  = slapos.cookbook:wrapper
+wrapper-path    = ${directory:service}/nginx
+command-line    = {{ nginx_bin }} -p ${nginx:srv} -c ${nginx.conf:rendered}
+depend  =
+    ${nginx-symlinks:recipe}
+    ${promise-nginx:recipe}
+    ${logrotate-entry-nginx:recipe}
+
+
+[promise-nginx]
+<= promise-byurl
+url     = ${backend-info:url}/static.css
+
+[logrotate-entry-nginx]
+<= logrotate-entry
+log     = ${nginx:log}/*.log
 
 
 

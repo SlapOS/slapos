@@ -13,3 +13,6 @@
      process instance parameters ) #}
 {% set external_url = urlparse.urlparse(cfg('external_url')) %}
 {% set cfg_https = (true if external_url.scheme == 'https' else false) %}
+
+{# for convenience #}
+{% set fqdn = external_url.hostname %}

@@ -3,6 +3,8 @@
 # https://gitlab.com/gitlab-org/omnibus-gitlab/blob/master/files/gitlab-cookbooks/gitlab/templates/default/nginx-gitlab-http.conf.erb
 # (last updated for omnibus-gitlab 8.2.3+ce.0-0-g8eda093)
 
+{% from 'macrolib.cfg.in' import cfg, cfg_bool, cfg_https, fqdn  with context %}
+
 ## GitLab
 ## Modified from https://gitlab.com/gitlab-org/gitlab-ce/blob/master/lib/support/nginx/gitlab-ssl & https://gitlab.com/gitlab-org/gitlab-ce/blob/master/lib/support/nginx/gitlab
 ##
@@ -32,13 +34,16 @@
 ###################################
 
 upstream gitlab {
-  server unix:<%= @socket %> fail_timeout=0;
+  server unix:{{ unicorn.socket }} fail_timeout=0;
 }
 
 upstream gitlab-workhorse {
-  server unix:<%= node['gitlab']['gitlab-workhorse']['listen_addr'] %>;
+  server unix:{{ gitlab_workhorse.socket }};
 }
 
+{# not needed for us - the frontend can do the redirection and also
+   gitlab/nginx speaks HSTS on https port so when we access https port via http
+   protocol, it gets redirected to https
 <% if @https && @redirect_http_to_https %>
 ## Redirects all HTTP traffic to the HTTPS host
 server {
@@ -52,49 +57,56 @@ server {
   error_log   <%= @log_directory %>/gitlab_error.log;
 }
 <% end %>
+#}
 
 server {
-<% @listen_addresses.each do |listen_address| %>
-  listen <%= listen_address %>:<%= @listen_port %><% if @https %> ssl spdy<% end %>;
+  listen [{{ backend_info.host }}]:{{ backend_info.port }}{% if cfg_https %} ssl spdy{% endif %};
 
+  {# we don't use: kerbeeros
   <% if @kerberos_enabled && @kerberos_use_dedicated_port %>
   listen <%= listen_address %>:<%= @kerberos_port %><% if @kerberos_https %> ssl<% end %>;
   <% end %>
+  #}
 
-<% end %>
-  server_name <%= @fqdn %>;
+  server_name {{ fqdn }};
   server_tokens off; ## Don't show the nginx version number, a security best practice
-  root /opt/gitlab/embedded/service/gitlab-rails/public;
+  root {{ gitlab_work.location }}/public;
 
   ## Increase this if you want to upload large attachments
   ## Or if you want to accept large git objects over http
-  client_max_body_size <%= @client_max_body_size %>;
+  client_max_body_size {{ cfg('nginx_client_max_body_size') }};
 
-  <% if @https %>
+  {% if cfg_https %}
   ## Strong SSL Security
   ## https://raymii.org/s/tutorials/Strong_SSL_Security_On_nginx.html & https://cipherli.st/
   ssl on;
-  ssl_certificate <%= @ssl_certificate %>;
-  ssl_certificate_key <%= @ssl_certificate_key %>;
+  ssl_certificate {{ nginx.cert_file }};
+  ssl_certificate_key {{ nginx.key_file }};
+  {# we don't need - most root CA will be included by default
   <% if @ssl_client_certificate %>
   ssl_client_certificate <%= @ssl_client_certificate%>;
  	<% end %>
+  #}
 
   # GitLab needs backwards compatible ciphers to retain compatibility with Java IDEs
-  ssl_ciphers '<%= @ssl_ciphers %>';
-  ssl_protocols  <%= @ssl_protocols %>;
-  ssl_prefer_server_ciphers <%= @ssl_prefer_server_ciphers %>;
-  ssl_session_cache  <%= @ssl_session_cache %>;
-  ssl_session_timeout  <%= @ssl_session_timeout %>;
+  # NOTE(slapos) ^^^ is not relevant for us - we are behind frontend and clients
+  #     directly connects to frontend
+  ssl_ciphers '{{ cfg("nginx_ssl_ciphers") }}';
+  ssl_protocols  {{ cfg('nginx_ssl_protocols') }};
+  ssl_prefer_server_ciphers {{ cfg('nginx_ssl_prefer_server_ciphers') }};
+  ssl_session_cache  {{ cfg('nginx_ssl_session_cache') }};
+  ssl_session_timeout  {{ cfg('nginx_ssl_session_timeout') }};
 
+  {# we do not use: ssl_dhparam
   <% if @ssl_dhparam %>
   ssl_dhparam <%= @ssl_dhparam %>;
   <% end %>
-  <% end %>
+  #}
+  {% endif %}
 
   ## Individual nginx logs for this GitLab vhost
-  access_log  <%= @log_directory %>/gitlab_access.log gitlab_access;
-  error_log   <%= @log_directory %>/gitlab_error.log;
+  access_log  {{ nginx.log }}/gitlab_access.log gitlab_access;
+  error_log   {{ nginx.log }}/gitlab_error.log;
 
   location / {
     ## Serve static files from defined root folder.
@@ -105,21 +117,21 @@ server {
   location /uploads/ {
     ## If you use HTTPS make sure you disable gzip compression
     ## to be safe against BREACH attack.
-    <%= 'gzip off;' if @https %>
+    {{ 'gzip off;' if cfg_https else ''}}
 
     ## https://github.com/gitlabhq/gitlabhq/issues/694
     ## Some requests take more than 30 seconds.
-    proxy_read_timeout      <%= @proxy_read_timeout %>;
-    proxy_connect_timeout   <%= @proxy_connect_timeout %>;
+    proxy_read_timeout      {{ cfg('nginx_proxy_read_timeout') }};
+    proxy_connect_timeout   {{ cfg('nginx_proxy_connect_timeout') }};
     proxy_redirect          off;
 
     proxy_set_header    Host                $http_host;
     proxy_set_header    X-Real-IP           $remote_addr;
-    <% if @https %>
+    {% if cfg_https %}
     proxy_set_header    X-Forwarded-Ssl     on;
-    <% end %>
+    {% endif %}
     proxy_set_header    X-Forwarded-For     $proxy_add_x_forwarded_for;
-    proxy_set_header    X-Forwarded-Proto   <%= @https ? "https" : "http" %>;
+    proxy_set_header    X-Forwarded-Proto   {{ "https" if cfg_https else "http" }};
     proxy_set_header    X-Frame-Options     SAMEORIGIN;
 
     proxy_pass http://gitlab;
@@ -130,21 +142,21 @@ server {
   location @gitlab {
     ## If you use HTTPS make sure you disable gzip compression
     ## to be safe against BREACH attack.
-    <%= 'gzip off;' if @https %>
+    {{ 'gzip off;' if cfg_https else ''}}
 
     ## https://github.com/gitlabhq/gitlabhq/issues/694
     ## Some requests take more than 30 seconds.
-    proxy_read_timeout      <%= @proxy_read_timeout %>;
-    proxy_connect_timeout   <%= @proxy_connect_timeout %>;
+    proxy_read_timeout      {{ cfg('nginx_proxy_read_timeout') }};
+    proxy_connect_timeout   {{ cfg('nginx_proxy_connect_timeout') }};
     proxy_redirect          off;
 
     proxy_set_header    Host                $http_host;
     proxy_set_header    X-Real-IP           $remote_addr;
-    <% if @https %>
+    {% if cfg_https %}
     proxy_set_header    X-Forwarded-Ssl     on;
-    <% end %>
+    {% endif %}
     proxy_set_header    X-Forwarded-For     $proxy_add_x_forwarded_for;
-    proxy_set_header    X-Forwarded-Proto   <%= @https ? "https" : "http" %>;
+    proxy_set_header    X-Forwarded-Proto   {{ "https" if cfg_https else "http" }};
     proxy_set_header    X-Frame-Options     SAMEORIGIN;
 
     proxy_pass http://gitlab;
@@ -198,21 +210,21 @@ server {
     client_max_body_size 0;
     ## If you use HTTPS make sure you disable gzip compression
     ## to be safe against BREACH attack.
-    <%= 'gzip off;' if @https %>
+    {{ 'gzip off;' if cfg_https else ''}}
 
     ## https://github.com/gitlabhq/gitlabhq/issues/694
     ## Some requests take more than 30 seconds.
-    proxy_read_timeout      <%= @proxy_read_timeout %>;
-    proxy_connect_timeout   <%= @proxy_connect_timeout %>;
+    proxy_read_timeout      {{ cfg('nginx_proxy_read_timeout') }};
+    proxy_connect_timeout   {{ cfg('nginx_proxy_connect_timeout') }};
     proxy_redirect          off;
 
     proxy_set_header    Host                $http_host;
     proxy_set_header    X-Real-IP           $remote_addr;
-    <% if @https %>
+    {% if cfg_https %}
     proxy_set_header    X-Forwarded-Ssl     on;
-    <% end %>
+    {% endif %}
     proxy_set_header    X-Forwarded-For     $proxy_add_x_forwarded_for;
-    proxy_set_header    X-Forwarded-Proto   <%= @https ? "https" : "http" %>;
+    proxy_set_header    X-Forwarded-Proto   {{ "https" if cfg_https else "http" }};
 
     proxy_pass http://gitlab-workhorse;
   }
@@ -223,7 +235,7 @@ server {
   ## See config/application.rb under "Relative url support" for the list of
   ## other files that need to be changed for relative url support
   location ~ ^/(assets)/ {
-    root /opt/gitlab/embedded/service/gitlab-rails/public;
+    root {{ gitlab_work.location }}/public;
     gzip_static on; # to serve pre-gzipped version
     expires max;
     add_header Cache-Control public;
@@ -232,5 +244,7 @@ server {
 
   error_page 502 /502.html;
 
+  {# we don't support custom nginx configs
   <%= @custom_gitlab_server_config %>
+  #}
 }
