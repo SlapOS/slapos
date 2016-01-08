@@ -370,6 +370,16 @@ production: &base
     #}
 
 
+    ## Site ICP License
+    # XXX unquote needed only for slapos.core earlier than
+    #   https://lab.nexedi.com/nexedi/slapos.core/commit/347d33d6
+    # for now we have a lot of old slapos.core deployed...
+    {% if cfg('icp_license') != '' -%}
+    ICP: {{ urllib.unquote_plus( str(cfg('icp_license')) ).decode('utf-8') }}
+    {# ICP: '{{ cfg("icp_license") }}' #}
+    {% endif %}
+
+
 development:
   <<: *base
 
