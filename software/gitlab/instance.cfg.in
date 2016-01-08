@@ -43,6 +43,7 @@ context =
     raw postgresql_location         ${postgresql92:location}
     raw redis_binprefix             ${redis28:location}/bin
     raw ruby_location               ${bundler-4gitlab:ruby-location}
+    raw watcher_sigkill             ${watcher-sigkill:rendered}
 
 # config files
     raw config_ru_in                ${config.ru.in:target}

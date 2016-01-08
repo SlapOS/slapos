@@ -22,6 +22,7 @@ parts =
 
     service-gitlab-workhorse
     service-unicorn
+    service-sidekiq
 
     service-postgresql
     service-redis
@@ -235,6 +236,7 @@ environment  =
     BUNDLE_GEMFILE = {{ gitlab_repository_location }}/Gemfile
     HOME = ${directory:home}
     RAILS_ENV = production
+    SIDEKIQ_MEMORY_KILLER_MAX_RSS = ${instance-parameter:configuration.sidekiq_memory_killer_max_rss}
 
 # NOTE sys.argv[1:] implicitly appended
 # (by slapos.recipe.librecipe.execute.generic_exec() at runtime)
@@ -564,6 +566,62 @@ log     = ${gitlab:log}/*.log
 [logrotate-entry-gitlab-shell]
 <= logrotate-entry
 log     = ${gitlab-shell:log}/*.log
+
+
+#######################################
+#   sidekiq background jobs manager   #
+#######################################
+[sidekiq-dir]
+recipe  = slapos.cookbook:mkdirectory
+log     = ${directory:log}/sidekiq
+
+[sidekiq]
+log     = ${sidekiq-dir:log}
+
+# NOTE see queue list here:
+# https://gitlab.com/gitlab-org/gitlab-ce/blob/master/Procfile
+# https://gitlab.com/gitlab-org/omnibus-gitlab/blob/master/files/gitlab-cookbooks/gitlab/templates/default/sv-sidekiq-run.erb
+# (last updated for ominbus-gitlab 8.2.3+ce.0-0-g8eda093)
+[service-sidekiq]
+recipe  = slapos.cookbook:wrapper
+wrapper-path    = ${directory:service}/sidekiq
+command-line    =
+# NOTE Sidekiq memory killer just makes sidekiq processes to be SIGKILL
+# terminated and relies on managing service to restart it. In slapos we don't
+# have mechanism to set autorestart=true, nor bang/watchdog currently work with
+# slapproxy, so we do the monitoring ourselves.
+    {{ watcher_sigkill }}
+
+    ${gitlab-sidekiq:wrapper-path}
+# XXX -q runner ?  (present in gitlab-ce/Procfile  but not in omnibus)
+# XXX -P ?  (pidfile)
+    -e production
+    -r ${gitlab-work:location}
+    -t ${instance-parameter:configuration.sidekiq_shutdown_timeout}
+    -c ${instance-parameter:configuration.sidekiq_concurrency}
+    -L ${sidekiq:log}/sidekiq.log
+
+    -q post_receive
+    -q mailer
+    -q archive_repo
+    -q system_hook
+    -q project_web_hook
+    -q gitlab_shell
+    -q incoming_email
+    -q common
+    -q default
+
+depend  =
+    ${promise-sidekiq:recipe}
+    ${logrotate-entry-sidekiq:recipe}
+
+[promise-sidekiq]
+<= promise-rakebase
+command-line    = ${:rake} gitlab:sidekiq:check
+
+[logrotate-entry-sidekiq]
+<= logrotate-entry
+log     = ${sidekiq:log}/*.log
 
 
 
