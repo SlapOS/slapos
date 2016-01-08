@@ -7,6 +7,7 @@
 extends = {{ gitlab_parameters_cfg }}
 parts =
     directory
+    publish-instance-info
 
 #   gitlab-<prog>
 # ? mailroom
@@ -75,6 +76,11 @@ url     = ${external-url:scheme}://[${:host}]:${:port}
 
 # current slapuserX
 user    = {{ pwd.getpwuid(os.getuid())[0] }}
+
+
+[publish-instance-info]
+recipe  = slapos.cookbook:publish
+backend_url = ${backend-info:url}
 
 
 
