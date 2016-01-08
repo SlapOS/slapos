@@ -1,0 +1,52 @@
+# This file is managed by gitlab-ctl. Manual changes will be
+# erased! To change the contents below, edit /etc/gitlab/gitlab.rb
+# and run `sudo gitlab-ctl reconfigure`.
+
+user <%= node['gitlab']['web-server']['username'] %> <%= node['gitlab']['web-server']['group']%>;
+worker_processes <%= @worker_processes %>;
+error_log stderr;
+pid nginx.pid;
+
+daemon off;
+
+events {
+  worker_connections <%= @worker_connections %>;
+}
+
+http {
+  log_format gitlab_access '<%= @gitlab_access_log_format %>';
+  log_format gitlab_ci_access '<%= @gitlab_ci_access_log_format %>';
+  log_format gitlab_mattermost_access '<%= @gitlab_mattermost_access_log_format %>';
+
+  sendfile <%= @sendfile %>;
+  tcp_nopush <%= @tcp_nopush %>;
+  tcp_nodelay <%= @tcp_nodelay %>;
+
+  keepalive_timeout <%= @keepalive_timeout %>;
+
+  gzip <%= @gzip %>;
+  gzip_http_version <%= @gzip_http_version %>;
+  gzip_comp_level <%= @gzip_comp_level %>;
+  gzip_proxied <%= @gzip_proxied %>;
+  gzip_types <%= @gzip_types.join(' ') %>;
+
+  include /opt/gitlab/embedded/conf/mime.types;
+
+  <% if @gitlab_http_config %>
+  include <%= @gitlab_http_config %>;
+  <% end %>
+
+  <% if @gitlab_ci_http_config %>
+  include <%= @gitlab_ci_http_config %>;
+  <% end %>
+
+  <% if @gitlab_pages_http_config %>
+  include <%= @gitlab_pages_http_config %>;
+  <% end %>
+
+  <% if @gitlab_mattermost_http_config %>
+  include <%= @gitlab_mattermost_http_config %>;
+  <% end %>
+
+  <%= @custom_nginx_config %>
+}
