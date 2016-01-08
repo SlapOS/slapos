@@ -163,6 +163,10 @@ context-extra =
 <= etc-template
 rendered= ${gitlab:etc}/${:_buildout_section_name_}
 
+[nginx-etc-template]
+<= etc-template
+rendered= ${nginx:etc}/${:_buildout_section_name_}
+
 
 [config.ru]
 <= gitlab-etc-template
@@ -199,6 +203,14 @@ context-extra =
     section gitlab                  gitlab
     section gitlab_shell            gitlab-shell
     section gitlab_shell_work       gitlab-shell-work
+
+[nginx.conf]
+<= nginx-etc-template
+template= {{ nginx_conf_in }}
+
+[nginx-gitlab-http.conf]
+<= nginx-etc-template
+template= {{ nginx_gitlab_http_conf_in }}
 
 [rack_attack.rb]
 <= gitlab-etc-template
