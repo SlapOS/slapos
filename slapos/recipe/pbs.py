@@ -159,9 +159,11 @@ class Recipe(GenericSlapRecipe, Notify, Callback):
                     %(remote_dir)s \\
                     $BACKUP_DIR
 
+            RDIFF_BACKUP_STATUS=$?
+
             [ "$CORRUPTED_ARGS" ] && rm -f "$CORRUPTED_FILE" "$CANTFIND_FILE"
 
-            if [ ! $? -eq 0 ]; then
+            if [ ! $RDIFF_BACKUP_STATUS -eq 0 ]; then
                 # Check the backup, go to the last consistent backup, so that next
                 # run will be okay.
                 echo "Checking backup directory..."
