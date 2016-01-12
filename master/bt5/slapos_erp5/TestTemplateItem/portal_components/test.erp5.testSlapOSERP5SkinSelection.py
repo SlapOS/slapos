@@ -113,6 +113,7 @@ class TestSlaposSkinSelection(testSlapOSMixin):
     selection_string_list = \
 """
 custom
+erp5_web_hal_json
 slapos_upgrader
 vifib_hosting
 slapos_contract
@@ -144,6 +145,8 @@ erp5_simulation
 erp5_dms_base
 erp5_dms_web
 erp5_accounting_l10n_fr
+erp5_item
+erp5_item_trade
 erp5_upgrader
 erp5_access_tab
 erp5_access_token
@@ -175,8 +178,6 @@ erp5_ingestion
 erp5_ingestion_test
 erp5_integration
 erp5_invoicing
-erp5_item
-erp5_item_trade
 erp5_jquery
 erp5_ods_core
 erp5_odt_core
@@ -329,6 +330,7 @@ zpt_generic
     selection_string_list = \
 """
 custom
+erp5_web_hal_json
 slapos_upgrader
 slapos_contract
 slapos_crm_monitoring
@@ -355,6 +357,8 @@ erp5_simulation
 erp5_dms_base
 erp5_dms_web
 erp5_accounting_l10n_fr
+erp5_item
+erp5_item_trade
 erp5_upgrader
 erp5_access_tab
 erp5_access_token
@@ -386,8 +390,6 @@ erp5_ingestion
 erp5_ingestion_test
 erp5_integration
 erp5_invoicing
-erp5_item
-erp5_item_trade
 erp5_jquery
 erp5_km_widget_library
 erp5_ods_core
@@ -435,6 +437,7 @@ zpt_generic
     selection_string_list = \
 """
 custom
+erp5_web_hal_json
 slapos_upgrader
 slapos_contract
 slapos_crm_monitoring
@@ -461,6 +464,8 @@ erp5_simulation
 erp5_dms_base
 erp5_dms_web
 erp5_accounting_l10n_fr
+erp5_item
+erp5_item_trade
 erp5_upgrader
 erp5_access_tab
 erp5_access_token
@@ -492,8 +497,6 @@ erp5_ingestion
 erp5_ingestion_test
 erp5_integration
 erp5_invoicing
-erp5_item
-erp5_item_trade
 erp5_ods_core
 erp5_odt_core
 erp5_ooo_import
@@ -538,6 +541,7 @@ zpt_generic
     selection_string_list = \
 """
 custom
+erp5_web_hal_json
 slapos_upgrader
 slapos_contract
 slapos_crm_monitoring
@@ -564,6 +568,8 @@ erp5_simulation
 erp5_dms_base
 erp5_dms_web
 erp5_accounting_l10n_fr
+erp5_item
+erp5_item_trade
 erp5_upgrader
 erp5_access_tab
 erp5_access_token
@@ -642,6 +648,7 @@ zpt_generic
     selection_string_list = \
 """
 custom
+erp5_web_hal_json
 slapos_upgrader
 slapos_contract
 slapos_crm_monitoring
@@ -668,6 +675,8 @@ erp5_dms_base
 erp5_dms_web
 erp5_ods_style
 erp5_accounting_l10n_fr
+erp5_item
+erp5_item_trade
 erp5_upgrader
 erp5_access_tab
 erp5_access_token
@@ -699,8 +708,6 @@ erp5_ingestion
 erp5_ingestion_test
 erp5_integration
 erp5_invoicing
-erp5_item
-erp5_item_trade
 erp5_ods_core
 erp5_odt_core
 erp5_ooo_import
@@ -745,6 +752,7 @@ zpt_generic
     selection_string_list = \
 """
 custom
+erp5_web_hal_json
 slapos_upgrader
 slapos_contract
 slapos_crm_monitoring
@@ -771,6 +779,8 @@ erp5_dms_base
 erp5_dms_web
 erp5_odt_style
 erp5_accounting_l10n_fr
+erp5_item
+erp5_item_trade
 erp5_upgrader
 erp5_access_tab
 erp5_access_token
@@ -802,8 +812,6 @@ erp5_ingestion
 erp5_ingestion_test
 erp5_integration
 erp5_invoicing
-erp5_item
-erp5_item_trade
 erp5_ods_core
 erp5_odt_core
 erp5_ooo_import
@@ -848,6 +856,7 @@ zpt_generic
     selection_string_list = \
 """
 custom
+erp5_web_hal_json
 slapos_upgrader
 slapos_rss
 slapos_contract
@@ -875,6 +884,8 @@ erp5_simulation
 erp5_dms_base
 erp5_dms_web
 erp5_accounting_l10n_fr
+erp5_item
+erp5_item_trade
 erp5_upgrader
 erp5_access_tab
 erp5_access_token
@@ -906,8 +917,6 @@ erp5_ingestion
 erp5_ingestion_test
 erp5_integration
 erp5_invoicing
-erp5_item
-erp5_item_trade
 erp5_ods_core
 erp5_odt_core
 erp5_ooo_import
@@ -1057,6 +1066,7 @@ zpt_generic
     selection_string_list = \
 """
 custom
+erp5_web_hal_json
 slapos_upgrader
 slapos_contract
 slapos_crm_monitoring
@@ -1084,6 +1094,8 @@ erp5_simulation
 erp5_dms_base
 erp5_dms_web
 erp5_accounting_l10n_fr
+erp5_item
+erp5_item_trade
 erp5_upgrader
 erp5_access_tab
 erp5_access_token
@@ -1115,8 +1127,6 @@ erp5_ingestion
 erp5_ingestion_test
 erp5_integration
 erp5_invoicing
-erp5_item
-erp5_item_trade
 erp5_ods_core
 erp5_odt_core
 erp5_ooo_import
@@ -1162,6 +1172,7 @@ zpt_generic
     selection_string_list = \
 """
 custom
+erp5_web_hal_json
 erp5_web_renderjs_ui
 slapos_upgrader
 slapos_contract
@@ -1188,6 +1199,8 @@ erp5_simulation
 erp5_dms_base
 erp5_dms_web
 erp5_accounting_l10n_fr
+erp5_item
+erp5_item_trade
 erp5_upgrader
 erp5_access_tab
 erp5_access_token
