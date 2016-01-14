@@ -53,8 +53,8 @@ CONFIG proxy.config.admin.user_id STRING {{ '#%s' % os_module.geteuid() }}
 # Process Manager
 #
 ##############################################################################
-CONFIG proxy.config.admin.autoconf_port INT 8083
-CONFIG proxy.config.process_manager.mgmt_port INT 8084
+CONFIG proxy.config.admin.autoconf_port INT {{ ats_configuration.get('autoconf-port', '8083') }}
+CONFIG proxy.config.process_manager.mgmt_port INT {{ ats_configuration.get('mgmt-port', '8084') }}
 ##############################################################################
 #
 # In order to only bind a specific IP, use the following config, as in
