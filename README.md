@@ -41,3 +41,5 @@ The script that download the sources and build is located in
 
 ## Notes for possible improvements
 *   [ Running virtual machines on your chromebook ](https://www.chromium.org/chromium-os/developer-information-for-chrome-os-devices/running-virtual-machines-on-your-chromebook)
+
+*   to have a more common User Agent (the one of ChromiumOS/NayuOS is quite rare and identifies the user, see [studies of the EFF](https://panopticlick.eff.org/static/browser-uniqueness.pdf)), it seems possible to change the User-Agent flag for guest mode in the getOffTheRecord function, and adding a line (key "kUserAgent" , value "some common user agent" string). Then rebuild Chromium and [add it to NayuOS](https://www.chromium.org/chromium-os/developer-guide#TOC-Making-changes-to-the-Chromium-web-).

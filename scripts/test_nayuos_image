@@ -1,0 +1,82 @@
+#!/bin/bash
+
+FAILURE="FAILURE"
+SUCCESS="SUCCESS"
+
+if [ -z "$1" ] ; then
+  echo "Missing board argument. Exiting."
+  exit 1
+fi
+
+BOARD=$1
+MOUNTPOINT="/tmp/${BOARD}"
+ORIGINAL_GRANDENET_SCRIPT=~/trunk/src/third_party/chromiumos-overlay/net-misc/re6stnet/files/grandenet
+GRANDENET_SCRIPT="usr/local/bin/grandenet"
+INIT_SSH_SERVER="etc/init/openssh-server.conf"
+BASHRC="etc/skel/.bashrc"
+EXPECTED_ALIAS="alias git='git --exec-path=/usr/local/libexec/git-core/'"
+
+HAS_FAILED=0
+
+function print_result() {
+  test_result=$1
+  message=$2
+
+  printf "\t${test_result}: "
+  printf "${message}\n"
+  if [[ ${test_result} == ${FAILURE} ]] ; then
+      HAS_FAILED=1
+  fi
+}
+
+# MOUNT IMAGE AND GET INFO
+
+install -d ${MOUNTPOINT}
+./mount_gpt_image.sh --safe -f $( ./get_latest_image.sh --board=${BOARD} ) -r ${MOUNTPOINT}
+echo $(ls "${MOUNTPOINT}/usr/local")
+if [[ $(ls "${MOUNTPOINT}/usr/local") ]] ; then
+  my_diff=$(diff ${ORIGINAL_GRANDENET_SCRIPT} "${MOUNTPOINT}/${GRANDENET_SCRIPT}")
+  opensshd_config=$(ls "${MOUNTPOINT}/${INIT_SSH_SERVER}")
+  gitalias=$(grep "${EXPECTED_ALIAS}" "${MOUNTPOINT}/${BASHRC}")
+
+else
+  is_empty=1
+fi
+./mount_gpt_image.sh --safe -f $( ./get_latest_image.sh --board=${BOARD} ) -r ${MOUNTPOINT} -u
+rmdir ${MOUNTPOINT}
+
+
+# PRINT RESULTS
+
+echo "* test if /usr/local exists"
+if [[ ${is_empty} == 1 ]] ; then
+  print_result ${FAILURE} "/usr/local is empty."
+else
+  print_result ${SUCCESS} "/usr/local is not empty."
+
+  echo "* test grandenet script existence and content"
+  if [[ ${no_grandenet_script} == 1 ]] ; then
+    print_result ${FAILURE} "grandenet script is missing (no file at ${GRANDENET_SCRIPT})."
+  elif [[ ${my_diff} != "" ]] ; then
+    print_result ${FAILURE} "grandenet scripts differs:\n${my_diff}"
+  else
+    print_result ${SUCCESS} "${GRANDENET_SCRIPT} exists and contains what is expected."
+  fi
+
+  echo "* test openssh server init script absence"
+  if [[ ${opensshd_config} ]] ; then
+    print_result ${FAILURE} "opensshd config exists: ${opensshd_config}"
+  else
+    print_result ${SUCCESS} "opensshd config removed."
+  fi
+
+  echo "* test git quick fix for option --exec-path"
+
+  if [[ ${gitalias} == ""  ]] ; then
+    print_result ${FAILURE} "Expected alias for git command not present in ${MOUNTPOINT}/${BASHRC}. Should be: ${EXPECTED_ALIAS}"
+  else
+    print_result ${SUCCESS} "git alias is correct."
+  fi
+fi
+
+exit ${HAS_FAILED}

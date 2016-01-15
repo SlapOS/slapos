@@ -22,6 +22,7 @@ repo sync >> $DL_LOG
 
 ############################## Prepare chroot environment ###################################
 BUILD_LOG={{ instance_log_dir }}/cros_build.log
+TEST_LOG={{ instance_log_dir }}/tests_nayuos_image.log
 {{ depot_tools_export_path_cmd }}
 cd {{ cros_location }}/{{ branch }}
 
@@ -47,6 +48,8 @@ for category in $( ls {{ ebuilds_dir }} ); do
   cp -R {{ ebuilds_dir }}/${category}/* ${CHROMIUM_OVERLAY}/${category}/
 done
 
+install -m 770 "{{ scripts_dir }}/test_nayuos_image" "{{ cros_location }}/{{ branch }}/src/scripts/test_nayuos_image"
+
 ### packages management ###
 
 BASE_CHROMEOS_DEV_ROOT_EBUILD=${CHROMIUM_OVERLAY}/chromeos-base/chromeos-dev-root/chromeos-dev-root-0.0.1.ebuild
@@ -56,7 +59,7 @@ VIRTUAL_CHROMEOS_OS_DEV_EBUILD=${CHROMIUM_OVERLAY}/virtual/target-chromium-os-de
 # needed for NayuOS
 for package in {{ nayu_dev_packages }} ; do
   echo $package
-  if [[ $( cat "${VIRTUAL_CHROMEOS_OS_DEV_EBUILD}" | grep "${package}" ) ]] ; then
+  if [[ $( grep "${package}" "${VIRTUAL_CHROMEOS_OS_DEV_EBUILD}" ) ]] ; then
     echo "no need to change ${VIRTUAL_CHROMEOS_OS_DEV_EBUILD} file to add ${package}..." >> "${BUILD_LOG}"
   else
     printf "\n\nRDEPEND=\"\${RDEPEND}\n          ${package}\"\n">> ${VIRTUAL_CHROMEOS_OS_DEV_EBUILD}
@@ -64,14 +67,41 @@ for package in {{ nayu_dev_packages }} ; do
 done
 
 # do not install the Upstart init script that starts ssh daemon at boot time
-sed -i '/openssh-server-init/ d' ${BASE_CHROMEOS_DEV_ROOT_EBUILD}
+rm ${CHROMIUM_OVERLAY}/chromeos-base/chromeos-sshd-init/files/openssh-server.conf
+sed -i -n '/src_install/q;p' ${CHROMIUM_OVERLAY}/chromeos-base/openssh-server-init/openssh-server-init-0.0.1.ebuild
+sed -i -n '/src_install/q;p' ${CHROMIUM_OVERLAY}/chromeos-base/chromeos-sshd-init/chromeos-sshd-init-0.0.1.ebuild
+
+# increase the revision number (XXX: is there a problem with md5-cache otherwise?)
+# XXX: remove hardcoded revision numbers
+cd ${CHROMIUM_OVERLAY}/chromeos-base/openssh-server-init/
+mv openssh-server-init-0.0.1-r24.ebuild openssh-server-init-0.0.1-r25.ebuild
+cd ${CHROMIUM_OVERLAY}/chromeos-base/chromeos-sshd-init/
+mv chromeos-sshd-init-0.0.1-r5.ebuild chromeos-sshd-init-0.0.1-r6.ebuild
+
+# bashrc modifications
+BASH_EBUILD={{ cros_location }}/{{ branch }}/src/third_party/portage-stable/app-shells/bash
+if [[ $(grep "git --exec-path" "${BASH_EBUILD}/files/dot-bashrc") ]] ; then
+  echo "git alias already set"
+else
+  echo "# git quickfix for finding right git executables
+if [ -d /usr/local/libexec/git-core/ ] ; then
+    alias git='git --exec-path=/usr/local/libexec/git-core/'
+fi
+
+# git quickfix for finding 'less' and using it as pager
+if [ $(which less) ] ; then
+    git config --global core.pager $(which less)
+fi
+" >> ${BASH_EBUILD}/files/dot-bashrc
+fi
+#XXX: change bash ebuild revision number (as it is made for sshd removal)
 
 ######################################## Build ##############################################
 BOARDS="{{ boards_list }}"
 KEEP_CACHE="{{ keep_cache }}"
-for board in ${BOARDS}; do
+for board in ${BOARDS} ; do
   echo ${board}
-  if [ ${board} == daisy ]; then
+  if [ ${board} == daisy ] ; then
     echo "daisy board: accepting license for Mali drivers..."
     cros_sdk -- sudo sh -c "cp /etc/make.conf.user /etc/make.conf.user.save"
     cros_sdk -- sudo sh -c "echo 'ACCEPT_LICENSE=\"*\"' >> /etc/make.conf.user"
@@ -91,7 +121,6 @@ for board in ${BOARDS}; do
   cp {{ logo_dir }}/* {{ cros_location }}/{{ branch }}/src/platform/chromiumos-assets/images_200_percent/
   #cros_sdk -- git commit -a -m "Changing boot pictures." # TODO: should not be necessary
 
-  IMAGE_LOCATION=${board}.chromiumos.img
   NAYU_IMAGE_LOCATION=${board}.nayuos.img
 
   # rebuild packages with boot pictures
@@ -99,17 +128,18 @@ for board in ${BOARDS}; do
 
   # NayuOS
   date >> "${BUILD_LOG}"
-  echo "rebuilding image with noenable_rootfs_verification" >> "${BUILD_LOG}"
-  cros_sdk -- ./build_image --noenable_rootfs_verification --board=${board} dev >> "${BUILD_LOG}" \
+  echo "building image" >> "${BUILD_LOG}"
+  cros_sdk -- ./build_image --board=${board} dev >> "${BUILD_LOG}" \
     && cros_sdk -- rm -f $NAYU_IMAGE_LOCATION && cros_sdk -- touch $NAYU_IMAGE_LOCATION \
     && cros_sdk -- cros flash --board=${board} file://$NAYU_IMAGE_LOCATION >> "${BUILD_LOG}" \
+    && cros_sdk -- ./test_nayuos_image ${board} > "${TEST_LOG}" \
     || exit 1
 
   # TODO: test produced image (ex: make a diff of grandenet script from ebuild dir,
   # check that <mountpoint>/usr/local is not empty, ...)
 
   # save ~15Go/device but delete cache (next build will be as long)
-  if [ !${KEEP_CACHE} -o ${KEEP_CACHE,,} == "no" ] ; then
+  if [ ${KEEP_CACHE,,} == "no" ] ; then
     cros_sdk -- sudo rm -R /var/cache/chromeos-chrome/chrome-src/src/out_${board}
   fi
 
