@@ -1,0 +1,23 @@
+--- mozilla/certdata2pem.py	2016-01-04 18:31:05.000000000 +0100
++++ mozilla/certdata2pem.py	2016-01-05 20:05:53.595360495 +0100
+@@ -63,7 +63,7 @@
+             else:
+                 value += line
+             continue
+-        obj[field] = value
++        obj[field] = bytes(value)
+         in_multiline = False
+         continue
+     if line.startswith('CKA_CLASS'):
+--- mozilla/Makefile	2015-12-20 10:49:23.000000000 +0100
++++ mozilla/Makefile	2016-01-05 20:19:11.006874271 +0100
+@@ -3,7 +3,8 @@
+ #
+ 
+ all:
+-	python certdata2pem.py
++	for x in '' 2 3; do type python$$x && break; done >/dev/null \
++	&& python$$x certdata2pem.py
+ 
+ clean:
+ 	-rm -f *.crt

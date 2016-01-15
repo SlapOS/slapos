@@ -8,10 +8,6 @@
 # Loud fail is really required in such case.
 sql-mode="NO_ENGINE_SUBSTITUTION"
 
-# Workaround for https://bugs.launchpad.net/maria/+bug/985828
-# that causes wrong result in Resource_zGetInventoryList etc.
-optimizer_switch = derived_merge=off
-
 skip-show-database
 %(networking)s
 socket = %(socket)s

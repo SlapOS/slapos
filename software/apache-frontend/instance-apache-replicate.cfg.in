@@ -14,9 +14,9 @@ context =
 
 {% set part_list = [] -%}
 {% set single_type_key = 'single-' %}
-{% if slap_software_type in ("replicate", "RootSoftwareInstance") %}
-{%   set frontend_type = slapparameter_dict.pop('-frontend-type', 'custom-personal') -%}
-{% elif slap_software_type == 'default' -%}
+{% if slap_software_type == "replicate" %}
+{%   set frontend_type = slapparameter_dict.pop('-frontend-type', 'single-default') -%}
+{% elif slap_software_type in ['default', 'RootSoftwareInstance'] -%}
 {%   set frontend_type = "%s%s" % (single_type_key, 'custom-personal') -%}
 {% else -%}
 {%   set frontend_type = "%s%s" % (single_type_key, slap_software_type) -%}
@@ -131,6 +131,7 @@ rejected-slave-list = {{ json_module.dumps(rejected_slave_list) }}
 [publish-slave-information]
 recipe = slapos.cookbook:softwaretype
 default = ${dynamic-publish-slave-information:rendered}
+RootSoftwareInstance = ${dynamic-publish-slave-information:rendered}
 replicate = ${dynamic-publish-slave-information:rendered}
 custom-personal = ${dynamic-publish-slave-information:rendered}
 custom-group = ${dynamic-publish-slave-information:rendered}

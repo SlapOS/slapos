@@ -1,6 +1,7 @@
 {% set enable_http = slapparameter_dict.get('enable-http-server', 'False').lower() -%}
 {% set use_tap = slapparameter_dict.get('use-tap', 'False').lower() -%}
 {% set use_nat = slapparameter_dict.get('use-nat', 'True').lower() -%}
+{% set nat_restrict = slapparameter_dict.get('nat-restrict-mode', 'False').lower() -%}
 {% set name = slapparameter_dict.get('name', 'localhost') -%}
 {% set disable_ansible_promise = slapparameter_dict.get('disable-ansible-promise', 'False').lower() -%}
 {% set instance_type = slapparameter_dict.get('type', 'standalone') -%}
@@ -95,6 +96,7 @@ tap-mac-address = ${create-tap-mac:mac-address}
 use-tap = ${slap-parameter:use-tap}
 use-nat = ${slap-parameter:use-nat}
 nat-rules = {{ nat_rule_list }}
+nat-restrict= {{ nat_restrict }}
 enable-vhost = ${slap-parameter:enable-vhost}
 
 virtual-hard-drive-url = ${slap-parameter:virtual-hard-drive-url}
@@ -407,6 +409,8 @@ route-iface = route add ${slap-network-information:tap-gateway} dev {{ iface }}
 route-network = route add -net ${slap-network-information:tap-network} netmask ${slap-network-information:tap-netmask} gw ${slap-network-information:tap-gateway}
 {%   if iface == 'eth0' -%}
 route-default = route add default gw ${slap-network-information:tap-gateway}
+{%   elif nat_restrict == 'true' -%}
+route-default = route add default gw ${slap-network-information:tap-gateway} dev {{ iface }}
 {%   elif global_ipv4_prefix -%}
 route-default = ip route add {{ global_ipv4_prefix }} via ${slap-network-information:tap-gateway} dev {{ iface }} src ${slap-network-information:tap-ipv4}
 {% else -%}
@@ -437,6 +441,12 @@ mode = {{ mode }}
 
 # write public key for vms to public/authorized_keys
 {{ writefile('get-authorized-key', '${directory:public}/authorized_keys', slapparameter_dict.get('authorized-key', ''), '700') }}
+
+{% if use_tap == 'true' and nat_restrict == 'true' -%}
+# Ask to set default to tap interface in the vm
+{{ writefile('set-default-interface', '${directory:public}/delDefaultIface', iface, '600') }}
+{% do part_list.append('set-default-interface') -%}
+{% endif -%}
 
 [publish-host-config]
 recipe = plone.recipe.command
@@ -502,6 +512,13 @@ context =
   raw logs ${directory:public}/ansible
   raw name {{ name }}
 
+[cron-entry-logrotate]
+<= cron
+recipe = slapos.cookbook:cron.d
+name = logrotate
+# One time per week
+frequency = 0 0 * * * 0
+command = ${logrotate:wrapper}
 
 [logrotate-vm-bootstrap]
 < = logrotate-entry-base
@@ -537,6 +554,7 @@ numa =
 nat-rules = 22 80 443
 use-nat = True
 use-tap = False
+nat-restrict-mode = False
 enable-vhost = False
 
 virtual-hard-drive-url =
@@ -598,6 +616,7 @@ parts =
   novnc-promise
 #  kvm-monitor
   cron
+  cron-entry-logrotate
 #  cron-entry-monitor
   frontend-promise
 {% if monitor -%}
