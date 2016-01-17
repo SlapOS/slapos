@@ -1,0 +1,59 @@
+#!{{ bash_bin }}
+# start up gitlab's unicorn with first making sure db is properly setup and all
+# migrations are up as pre-condition.
+
+RAKE={{ gitlab_rake }}
+
+die() {
+    echo "$*" 1>&2
+    exit 1
+}
+
+# 1. what to do when instance is initially setup
+# see
+#   https://gitlab.com/gitlab-org/omnibus-gitlab/blob/master/files/gitlab-cookbooks/gitlab/recipes/database_migrations.rb
+#   https://gitlab.com/gitlab-org/omnibus-gitlab/blob/master/files/gitlab-cookbooks/gitlab/recipes/postgresql.rb
+
+# initial db setup
+pgtables="$({{ psql_bin }}   \
+    -h {{ pgsql['pgdata-directory'] }}  \
+    -U {{ pgsql.superuser }}            \
+    -d {{ pgsql.dbname }}               \
+    -c '\d')" || die "pg query problem"
+
+if echo "$pgtables" | grep -q '^No relations found' ; then
+    $RAKE db:schema:load db:seed_fu  || die "initial db setup failed"
+fi
+
+# re-build ssh keys
+# (we do not use them - just for cleannes)
+force=yes $RAKE gitlab:shell:setup   || die "gitlab:shell:setup failed"
+
+
+# 2. what to do when instance is upgraded
+# see
+#   https://gitlab.com/gitlab-org/gitlab-ce/blob/master/lib/support/deploy/deploy.sh
+#   https://gitlab.com/gitlab-org/gitlab-ce/blob/master/lib/gitlab/upgrader.rb
+#   https://gitlab.com/gitlab-org/omnibus-gitlab/blob/master/files/gitlab-cookbooks/gitlab/recipes/gitlab-rails.rb
+#   https://gitlab.com/gitlab-org/omnibus-gitlab/blob/master/files/gitlab-ctl-commands/upgrade.rb
+#
+# Assets compilation is handled at instance deployment time. We do everything else here.
+
+# make sure all migrations are up
+migrate_log="{{ log_dir }}/db-migrate-`date +%s`.log"
+$RAKE db:migrate >$migrate_log 2>&1  || die "db:migrate failed"
+# if it was a no-op "migration" - we don't need info about that - only keep
+# logs of actual migration run.
+test -s $migrate_log || rm $migrate_log
+
+
+# clear cache
+$RAKE cache:clear   || die "cache:clear failed"
+
+
+
+# 3. finally exec to unicorn
+exec {{ gitlab_unicorn }}   \
+    -E production   \
+    -c {{ unicorn_rb.rendered }}    \
+    {{ gitlab_work.location }}/config.ru

@@ -1,0 +1,18 @@
+{# common macros for gitlab instance #}
+
+{# cfg(name) -> instance_parameter:configuration.<name> #}
+{% macro cfg(name) %}{{ instance_parameter[str("configuration." + name)] }}{% endmacro %}
+
+{# cfg_bool(name) - like cfg(name), but returns 'true'/''
+   NOTE macros can return only strings - that's why '' is used for false #}
+{% macro cfg_bool(name) %}{{ 'true' if (cfg(name).lower() in ('true', 'yes')) else '' }}{% endmacro %}
+
+
+{# deduce whether to use https from external url
+   ( here - becasue we cannot use jinja2 logic in instance-gitlab.cfg.in to
+     process instance parameters ) #}
+{% set external_url = urlparse.urlparse(cfg('external_url')) %}
+{% set cfg_https = (true if external_url.scheme == 'https' else false) %}
+
+{# for convenience #}
+{% set fqdn = external_url.hostname %}

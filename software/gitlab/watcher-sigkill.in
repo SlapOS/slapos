@@ -1,0 +1,43 @@
+#!{{ bash.location }}/bin/bash
+# run program under SIGKILL watchdog
+# watcher-sigkill <prog> [<progargs> ...]
+#
+# if the program terminates with SIGKILL - it is restarted after grace period.
+# if the program terminates otherwise - whole process terminates.
+
+if [ "$#" -lt 1 ]; then
+    echo "Usage: watcher-sigkill <prog> [<progargs> ...]" 1>&2
+    exit 1
+fi
+prog="$@"
+
+progpid=""
+killexit="137"  # = 128 + 9  (exit code of process terminated by SIGKILL)
+
+# make sure to terminate children, when we exit.
+# needed for e.g. when `slapos node stop ...` kills us.
+trap 'atexit' EXIT
+atexit() {
+    jobs="$(jobs -p)"
+    test -n "$jobs" && kill $jobs
+}
+
+# run prog under monitoring
+while true; do
+    echo "run $prog"
+    $prog &
+    progpid=$!
+    echo "wait $progpid"
+    wait $progpid
+    status=$?
+    echo "-> $status"
+
+    # if program terminated not by SIGKILL - exit
+    if [ "$status" != "$killexit" ] ; then
+        echo "exit $status"
+        exit "$status"
+    fi
+
+    # otherwise sleep a bit and restart
+    sleep 1
+done
