@@ -41,6 +41,10 @@ url = ${slap-connection:server-url}
 key = ${slap-connection:key-file}
 cert = ${slap-connection:cert-file}
 
+# ERP5 URL to use in Jupyter by default
+# default value is empty - which means no default ERP5 URL
+configuration.erp5-url =
+
 [instance-parameter]
 port = 8888
 host = ${slapconfiguration:ipv6-random}
@@ -141,6 +145,7 @@ rendered = ${directory:erp5_kernel_dir}/ERP5kernel.py
 # Use ipython as executable python as we'll be needing requests library in kernel
 context =
   raw python_executable {{ bin_directory }}/ipython
+  key erp5_url slapconfiguration:configuration.erp5-url
 
 [kernel-json]
 <= dynamic-jinja2-template-base

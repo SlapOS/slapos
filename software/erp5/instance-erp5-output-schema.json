@@ -40,6 +40,11 @@
       "description": "Relational database access information",
       "type": "string"
     }
+    "jupyter-url": {
+      "description": "Jupyter notebook web UI access information",
+      "type": "string",
+      "optional": true
+    }
   },
   "patternProperties": {
     "family-.*": {

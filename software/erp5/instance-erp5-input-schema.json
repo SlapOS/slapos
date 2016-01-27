@@ -235,6 +235,22 @@
         "type": "object"
       },
       "type": "array"
+    },
+    "jupyter": {
+      "description": "Jupyter slave instance parameters",
+      "properties": {
+        "enable": {
+          "description": "Whether to enable creation of associated slave Jupyter instance",
+          "default": false,
+          "type": "boolean"
+        },
+        "zope-family": {
+          "description": "Zope family to connect Jupyter to by default",
+          "default": "<first instantiated Zope family>",
+          "type": "string"
+        }
+      },
+      "type": "object"
     }
   }
 }
