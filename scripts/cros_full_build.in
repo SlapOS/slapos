@@ -79,8 +79,8 @@ cd ${CHROMIUM_OVERLAY}/chromeos-base/chromeos-sshd-init/
 mv chromeos-sshd-init-0.0.1-r5.ebuild chromeos-sshd-init-0.0.1-r6.ebuild
 
 # bashrc modifications
-BASH_EBUILD={{ cros_location }}/{{ branch }}/src/third_party/portage-stable/app-shells/bash
-if [[ $(grep "git --exec-path" "${BASH_EBUILD}/files/dot-bashrc") ]] ; then
+BASH_EBUILD_DIR={{ cros_location }}/{{ branch }}/src/third_party/portage-stable/app-shells/bash
+if [[ $(grep "git --exec-path" "${BASH_EBUILD_DIR}/files/dot-bashrc") ]] ; then
   echo "git alias already set"
 else
   echo "# git quickfix for finding right git executables
@@ -89,12 +89,15 @@ if [ -d /usr/local/libexec/git-core/ ] ; then
 fi
 
 # git quickfix for finding 'less' and using it as pager
-if [ $(which less) ] ; then
-    git config --global core.pager $(which less)
+less_path=\$(which less 2>/dev/null)
+if [ "\${less_path}" ] ; then
+    git config --global core.pager \${less_path}
+fi" >> ${BASH_EBUILD_DIR}/files/dot-bashrc
 fi
-" >> ${BASH_EBUILD}/files/dot-bashrc
-fi
-#XXX: change bash ebuild revision number (as it is made for sshd removal)
+
+# XXX: hardcoded
+cd ${BASH_EBUILD_DIR}
+ln -s bash-4.2_p48-r1.ebuild bash-4.2_p48-r2.ebuild
 
 ######################################## Build ##############################################
 BOARDS="{{ boards_list }}"
@@ -119,7 +122,6 @@ for board in ${BOARDS} ; do
   cros_sdk -- cros_workon_make --board=${board} chromiumos-assets --install
   cp {{ logo_dir }}/* {{ cros_location }}/{{ branch }}/src/platform/chromiumos-assets/images_100_percent/
   cp {{ logo_dir }}/* {{ cros_location }}/{{ branch }}/src/platform/chromiumos-assets/images_200_percent/
-  #cros_sdk -- git commit -a -m "Changing boot pictures." # TODO: should not be necessary
 
   NAYU_IMAGE_LOCATION=${board}.nayuos.img
 
@@ -134,9 +136,6 @@ for board in ${BOARDS} ; do
     && cros_sdk -- cros flash --board=${board} file://$NAYU_IMAGE_LOCATION >> "${BUILD_LOG}" \
     && cros_sdk -- ./test_nayuos_image ${board} > "${TEST_LOG}" \
     || exit 1
-
-  # TODO: test produced image (ex: make a diff of grandenet script from ebuild dir,
-  # check that <mountpoint>/usr/local is not empty, ...)
 
   # save ~15Go/device but delete cache (next build will be as long)
   if [ ${KEEP_CACHE,,} == "no" ] ; then
