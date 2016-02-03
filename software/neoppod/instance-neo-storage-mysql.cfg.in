@@ -125,6 +125,7 @@ etc_run =  ${:etc}/run
 var_run =  ${:var}/run
 srv_mariadb = ${buildout:directory}/srv/mariadb
 log = ${buildout:directory}/var/log
+tmp = ${buildout:directory}/tmp
 
 [logrotate-mysql]
 recipe = slapos.cookbook:logrotate.d
@@ -133,6 +134,19 @@ backup = ${logrotate:backup}
 name = mariadb
 log = ${my-cnf-parameters:error-log} ${my-cnf-parameters:slow-query-log}
 post = ${mysqld:mysql-base-directory}/bin/mysql --defaults-file="${my-cnf:rendered}" -e "FLUSH LOGS"
+
+{% if runTestSuite_in is defined -%}
+# bin/runTestSuite to run NEO tests
+[{{ section('runTestSuite') }}]
+recipe = slapos.recipe.template:jinja2
+rendered = ${directory:bin}/${:_buildout_section_name_}
+template = {{ runTestSuite_in }}
+mode = 0755
+context =
+    section directory         directory
+    section my_cnf_parameters my-cnf-parameters
+    raw     bin_directory     {{ bin_directory }}
+{% endif -%}
 
 [buildout]
 extends =

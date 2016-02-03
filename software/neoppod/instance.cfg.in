@@ -12,6 +12,10 @@ extra-context =
 import-list =
     rawfile root_common {{ root_common }}
 
+[neo-storage-mysql]
+extra-context +=
+    raw runTestSuite_in {{ runTestSuite_in }}
+
 [switch-softwaretype]
 recipe = slapos.cookbook:switch-softwaretype
 override = {{ dumps(override_switch_softwaretype |default) }}
