@@ -11,7 +11,7 @@ ServerAdmin someone@email
 Listen [{{ parameter_dict.get('listening-ip') }}]:{{ parameter_dict.get('port') }}
 Define MonitorPort
 </IfDefine>
-DocumentRoot "{{ directory.get('www') }}"
+DocumentRoot "{{ directory.get('webdav') }}"
 ErrorLog "{{ parameter_dict.get('error-log') }}"
 LoadModule unixd_module modules/mod_unixd.so
 LoadModule access_compat_module modules/mod_access_compat.so
@@ -31,6 +31,8 @@ LoadModule proxy_module      modules/mod_proxy.so
 LoadModule proxy_http_module modules/mod_proxy_http.so
 LoadModule rewrite_module modules/mod_rewrite.so
 LoadModule headers_module modules/mod_headers.so
+LoadModule dav_module modules/mod_dav.so
+LoadModule dav_fs_module modules/mod_dav_fs.so
 
 # SSL Configuration
 <IfDefine !SSLConfigured>
@@ -49,6 +51,11 @@ SSLCipherSuite RC4-SHA:HIGH:!ADH
 AddType application/hal+json .haljson
 SSLEngine   On
 
+Include {{ parameter_dict.get('httpd-cors-config-file') }}
+Header set Access-Control-Allow-Credentials "true"
+Header set Access-Control-Allow-Methods "PROPFIND, PROPPATCH, COPY, MOVE, DELETE, MKCOL, LOCK, UNLOCK, PUT, GETLIB, VERSION-CONTROL, CHECKIN, CHECKOUT, UNCHECKOUT, REPORT, UPDATE, CANCELUPLOAD, HEAD, OPTIONS, GET, POST"
+Header set Access-Control-Allow-Headers "Overwrite, Destination, Content-Type, Depth, User-Agent, X-File-Size, X-Requested-With, If-Modified-Since, X-File-Name, Cache-Control, Authorization"
+
 {% if parameter_dict.has_key('monitor-url-list') -%}
 RewriteEngine on
 SSLProxyEngine on
@@ -65,6 +72,27 @@ RewriteRule /monitor{{ index }}/(.*)  {{ url }}/$1 [L,P]
 {%   endif -%}
 {% endfor -%}
 {% endif -%}
+
+DavLockDB {{ directory.get('monitor-var') }}/DavLock
+Alias /share {{ directory.get('webdav') }}
+<Directory {{ directory.get('webdav') }}>
+    DirectoryIndex disabled
+    DAV On
+    Options Indexes FollowSymLinks
+    AuthType Basic
+    AuthName "webdav"
+    AuthUserFile "{{ parameter_dict.get('htpasswd-file') }}"
+    <LimitExcept OPTIONS>
+        Require valid-user
+    </LimitExcept>
+</Directory>
+
+<LocationMatch "/share/(jio_)?public">
+    <Limit GET HEAD OPTIONS REPORT PROPFIND>
+        Allow from all
+        Satisfy any
+    </Limit>
+</LocationMatch>
 
 ScriptSock {{ parameter_dict.get('cgid-pid-file') }}
 <Directory {{ directory.get('www') }}>
