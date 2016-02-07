@@ -1,0 +1,65 @@
+# GitLab "switch-softwaretype" instance
+[buildout]
+parts = switch-softwaretype
+
+# std stuff for slapos instance
+eggs-directory = ${buildout:eggs-directory}
+develop-eggs-directory = ${buildout:develop-eggs-directory}
+offline = true
+
+
+[switch-softwaretype]
+recipe = slapos.cookbook:softwaretype
+default = $${instance-gitlab.cfg:rendered}
+# TODO -export, -import, -pull-backup
+
+
+[instance-gitlab.cfg]
+recipe  = slapos.recipe.template:jinja2
+mode    = 0644
+template= ${instance-gitlab.cfg.in:target}
+rendered= $${buildout:directory}/instance-gitlab.cfg
+context =
+    import os os
+    import pwd pwd
+    import multiprocessing multiprocessing
+
+    key eggs_directory          buildout:eggs-directory
+    key develop_eggs_directory  buildout:develop-eggs-directory
+    raw gitlab_repository_location          ${gitlab-repository:location}
+    raw gitlab_shell_repository_location    ${gitlab-shell-repository:location}
+
+# program binaries
+    raw bash_bin                    ${bash:location}/bin/bash
+    raw bundler_4gitlab             ${bundler-4gitlab:bundle}
+    raw curl_bin                    ${curl:location}/bin/curl
+    raw dcron_bin                   ${dcron-output:crond}
+    raw git                         ${git:location}/bin/git
+    raw git_location                ${git:location}
+    raw gitlab_workhorse            ${gitlab-workhorse:location}/gitlab-workhorse
+    raw gunzip_bin                  ${gzip:location}/bin/gunzip
+    raw gzip_bin                    ${gzip:location}/bin/gzip
+    raw logrotate_bin               ${logrotate:location}/usr/sbin/logrotate
+    raw nginx_bin                   ${nginx-output:nginx}
+    raw nginx_mime_types            ${nginx-output:mime}
+    raw openssl_bin                 ${openssl-output:openssl}
+    raw postgresql_location         ${postgresql92:location}
+    raw redis_binprefix             ${redis28:location}/bin
+    raw ruby_location               ${bundler-4gitlab:ruby-location}
+    raw watcher_sigkill             ${watcher-sigkill:rendered}
+
+# config files
+    raw config_ru_in                ${config.ru.in:target}
+    raw database_yml_in             ${database.yml.in:target}
+    raw gitconfig_in                ${gitconfig.in:target}
+    raw gitlab_parameters_cfg       ${gitlab-parameters.cfg:target}
+    raw gitlab_shell_config_yml_in  ${gitlab-shell-config.yml.in:target}
+    raw gitlab_unicorn_startup_in   ${gitlab-unicorn-startup.in:target}
+    raw gitlab_yml_in               ${gitlab.yml.in:target}
+    raw macrolib_cfg_in             ${macrolib.cfg.in:target}
+    raw nginx_conf_in               ${nginx.conf.in:target}
+    raw nginx_gitlab_http_conf_in   ${nginx-gitlab-http.conf.in:target}
+    raw rack_attack_rb_in           ${rack_attack.rb.in:target}
+    raw resque_yml_in               ${resque.yml.in:target}
+    raw smtp_settings_rb_in         ${smtp_settings.rb.in:target}
+    raw unicorn_rb_in               ${unicorn.rb.in:target}

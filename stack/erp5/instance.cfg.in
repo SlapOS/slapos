@@ -64,6 +64,7 @@ extra-context =
     import urllib urllib
 
 [dynamic-template-erp5-parameters]
+jupyter-enable-default = {{ jupyter_enable_default }}
 local-bt5-repository = {{ local_bt5_repository }}
 
 [dynamic-template-erp5]
@@ -71,6 +72,7 @@ local-bt5-repository = {{ local_bt5_repository }}
 template = {{ template_erp5 }}
 filename = instance-erp5.cfg
 extra-context =
+    key jupyter_enable_default dynamic-template-erp5-parameters:jupyter-enable-default
     key local_bt5_repository dynamic-template-erp5-parameters:local-bt5-repository
     import urlparse urlparse
 import-list =
@@ -177,6 +179,11 @@ filename = instance-create-erp5-site.cfg
 extra-context =
     section parameter_dict dynamic-template-create-erp5-site-parameters
 
+# we need this value to be present in a section,
+# for slapos.cookbook:switch-softwaretype to work
+[dynamic-template-jupyter]
+rendered = {{ template_jupyter_cfg }}
+
 [switch-softwaretype]
 recipe = slapos.cookbook:switch-softwaretype
 override = {{ dumps(override_switch_softwaretype |default) }}
@@ -195,3 +202,4 @@ postfix = dynamic-template-postfix:rendered
 zodb-zeo = dynamic-template-zeo:rendered
 zodb-neo = neo-storage-mysql:rendered
 zope = dynamic-template-zope:rendered
+jupyter = dynamic-template-jupyter:rendered

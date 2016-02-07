@@ -9,9 +9,11 @@ import requests
 import json
 
 # erp5_url from buildout
-# TODO: Uncomment after adding automated installation of erp5-data-notebook bt5
-# url = ""
-# url  = "%s/erp5/Base_executeJupyter"%url
+erp5_url = "{{ erp5_url }}"
+if not erp5_url:
+    erp5_url = None
+else:
+    erp5_url = "%s/erp5/Base_executeJupyter" % erp5_url
 
 class MagicInfo:
   """
@@ -69,9 +71,12 @@ class ERP5Kernel(Kernel):
     super(ERP5Kernel, self).__init__(*args, **kwargs)
     self.user = user
     self.password = password
-    # Use URL provided by buildout during initiation
+    # By default use URL provided by buildout during initiation
     # It can later be overridden
-    self.url = url
+    if url is None:
+        self.url = erp5_url
+    else:
+        self.url = url
     self.status_code = status_code
     self.reference = None
     self.title = None
@@ -167,11 +172,11 @@ class ERP5Kernel(Kernel):
     """
 
     try:
-      erp5_request = requests.get(
+      erp5_request = requests.post(
         self.url,
         verify=False,
         auth=(self.user, self.password),
-        params={
+        data={
           'python_expression': code,
           'reference': self.reference,
           'title': self.title,

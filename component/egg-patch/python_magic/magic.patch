@@ -1,0 +1,11 @@
+--- python-magic-0.4.10/magic.py.orig	2016-01-14 23:41:31.867145173 +0100
++++ python-magic-0.4.10/magic.py	2016-01-14 23:41:54.563401069 +0100
+@@ -143,7 +143,7 @@
+ 
+ libmagic = None
+ # Let's try to find magic or magic1
+-dll = ctypes.util.find_library('magic') or ctypes.util.find_library('magic1') or ctypes.util.find_library('cygmagic-1')
++dll = ctypes.util.find_library('magic') or ctypes.util.find_library('magic1') or ctypes.util.find_library('cygmagic-1') or 'libmagic.so'
+ 
+ # This is necessary because find_library returns None if it doesn't find the library
+ if dll:

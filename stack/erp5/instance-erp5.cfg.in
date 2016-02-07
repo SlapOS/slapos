@@ -5,6 +5,9 @@
 {% set inituser_login = slapparameter_dict.get('inituser-login', 'zope') -%}
 {% set publish_dict = {'site-id': site_id, 'inituser-login': inituser_login} -%}
 {% set has_posftix = slapparameter_dict.get('smtp', {}).get('postmaster') -%}
+{% set jupyter_dict = slapparameter_dict.get('jupyter', {}) -%}
+{% set has_jupyter = jupyter_dict.get('enable', jupyter_enable_default).lower() in ('true', 'yes') -%}
+{% set jupyter_zope_family = jupyter_dict.get('zope-family', '') -%}
 [request-common]
 <= request-common-base
 config-use-ipv6 = {{ dumps(slapparameter_dict.get('use-ipv6', False)) }}
@@ -119,7 +122,11 @@ name = neo-${gen-neo-cluster-base:passwd}
 return =
   zope-address-list
   hosts-dict
-config-bt5 = {{ dumps(slapparameter_dict.get('bt5', 'erp5_full_text_myisam_catalog erp5_configurator_standard erp5_configurator_maxma_demo erp5_configurator_ung erp5_configurator_run_my_doc')) }}
+{% set bt5_default_list = 'erp5_full_text_myisam_catalog erp5_configurator_standard erp5_configurator_maxma_demo erp5_configurator_ung erp5_configurator_run_my_doc' -%}
+{% if has_jupyter -%}
+{%   set bt5_default_list = bt5_default_list + ' erp5_data_notebook' -%}
+{% endif -%}
+config-bt5 = {{ dumps(slapparameter_dict.get('bt5', bt5_default_list)) }}
 config-bt5-repository-url = {{ dumps(slapparameter_dict.get('bt5-repository-url', local_bt5_repository)) }}
 config-cloudooo-url = ${request-cloudooo:connection-url}
 config-deadlock-debugger-password = ${publish-early:deadlock-debugger-password}
@@ -150,10 +157,17 @@ config-tidstorage-port = ${request-zodb:connection-tidstorage-port}
 software-type = zope
 
 {% set zope_family_dict = {} -%}
+{% set jupyter_zope_family_default = [] -%}
 {% for custom_name, zope_parameter_dict in slapparameter_dict.get('zope-partition-dict', {'1': {}}).items() -%}
 {%   set partition_name = 'zope-' ~ custom_name -%}
 {%   set section_name = 'request-' ~ partition_name -%}
-{%   do zope_family_dict.setdefault(zope_parameter_dict.get('family', 'default'), []).append(section_name) -%}
+{%   set zope_family = zope_parameter_dict.get('family', 'default') -%}
+{#   # default jupyter zope family is first zope family. -#}
+{#   # use list.append() to update it, because in jinja2 set changes only local scope. -#}
+{%   if not jupyter_zope_family_default -%}
+{%     do jupyter_zope_family_default.append(zope_family) -%}
+{%   endif -%}
+{%   do zope_family_dict.setdefault(zope_family, []).append(section_name) -%}
 [{{ section_name }}]
 <= request-zope-base
 name = {{ partition_name }}
@@ -167,6 +181,12 @@ config-longrequest-logger-timeout = {{ dumps(zope_parameter_dict.get('longreques
 config-port-base = {{ dumps(zope_parameter_dict.get('port-base', 2200)) }}
 config-webdav = {{ dumps(zope_parameter_dict.get('webdav', False)) }}
 {% endfor -%}
+
+{# if not explicitly configured, connect jupyter to first zope family, which  -#}
+{# will be 'default' if zope families are not configured also -#}
+{% if not jupyter_zope_family and jupyter_zope_family_default -%}
+{%   set jupyter_zope_family = jupyter_zope_family_default[0] -%}
+{% endif -%}
 
 {# We need to concatenate lists that we cannot read as lists, so this gets hairy. -#}
 {% set zope_address_list_id_dict = {} -%}
@@ -189,6 +209,20 @@ config-url = ${request-balancer:connection-{{ family_name }}-v6}
 {%     do publish_dict.__setitem__('family-' ~ family_name ~ '-v6', '${request-balancer:connection-' ~ family_name ~ '-v6}' ) -%}
 {%   endif -%}
 {% endfor -%}
+
+{% if has_jupyter -%}
+{# request jupyter connected to balancer of proper zope family -#}
+{{   request('jupyter', 'jupyter', 'jupyter', {}, key_config={'erp5-url': 'request-balancer:connection-' ~ jupyter_zope_family}) }}
+
+{%   if has_frontend -%}
+[frontend-jupyter]
+<= request-frontend-base
+name = frontend-jupyter
+config-url = ${request-jupyter:connection-url}
+{#     # override jupyter-url in publish_dict with frontend address -#}
+{%     do publish_dict.__setitem__('jupyter-url', '${frontend-jupyter:connection-site_url}') -%}
+{%   endif -%}
+{%- endif %}
 
 {% set balancer_dict = slapparameter_dict.get('balancer', {}) -%}
 [request-balancer]

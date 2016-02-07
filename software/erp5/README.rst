@@ -39,6 +39,7 @@ This software release assigns the following port ranges by default:
   zeo                   2100-2149
   balancer              2150-2199
   zope                  2200-*
+  jupyter               8888
   ====================  ==========
 
 Non-zope partitions are unique in an ERP5 cluster, so you shouldn't have to
