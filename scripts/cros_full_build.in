@@ -14,7 +14,7 @@ cd "{{ cros_location }}/{{ branch }}"
 
 repo init -u https://chromium.googlesource.com/chromiumos/manifest.git -b {{ branch }} >> $DL_LOG
 
-# in case code was already there, stash changes to be able to pull
+# in case changes were already made, stash changes to be able to pull
 cd ${CHROMIUM_OVERLAY}
 git stash
 
@@ -32,6 +32,7 @@ cros_sdk --download || exit 1
 # compile Python with sqlite support (-> change USE flag) for dev-lang/python
 # it is needed by re6st
 # just need to change -sqlite by sqlite on the right line
+# same for IPv6 support
 PACKAGE_USE_FILE=${CHROMIUM_OVERLAY}/profiles/targets/chromeos/package.use
 line_number=$(sed -n '/dev-lang\/python/=' ${PACKAGE_USE_FILE})
 if [ $line_number ] ; then
@@ -42,7 +43,7 @@ if [ $line_number ] ; then
     fi
 fi
 
-# add custom ebuilds
+# add some ebuilds, specific to NayuOS
 for category in $( ls {{ ebuilds_dir }} ); do
   echo ${category}
   cp -R {{ ebuilds_dir }}/${category}/* ${CHROMIUM_OVERLAY}/${category}/
@@ -71,13 +72,6 @@ rm ${CHROMIUM_OVERLAY}/chromeos-base/chromeos-sshd-init/files/openssh-server.con
 sed -i -n '/src_install/q;p' ${CHROMIUM_OVERLAY}/chromeos-base/openssh-server-init/openssh-server-init-0.0.1.ebuild
 sed -i -n '/src_install/q;p' ${CHROMIUM_OVERLAY}/chromeos-base/chromeos-sshd-init/chromeos-sshd-init-0.0.1.ebuild
 
-# increase the revision number (XXX: is there a problem with md5-cache otherwise?)
-# XXX: remove hardcoded revision numbers
-cd ${CHROMIUM_OVERLAY}/chromeos-base/openssh-server-init/
-mv openssh-server-init-0.0.1-r24.ebuild openssh-server-init-0.0.1-r25.ebuild
-cd ${CHROMIUM_OVERLAY}/chromeos-base/chromeos-sshd-init/
-mv chromeos-sshd-init-0.0.1-r5.ebuild chromeos-sshd-init-0.0.1-r6.ebuild
-
 # bashrc modifications
 BASH_EBUILD_DIR={{ cros_location }}/{{ branch }}/src/third_party/portage-stable/app-shells/bash
 if [[ $(grep "git --exec-path" "${BASH_EBUILD_DIR}/files/dot-bashrc") ]] ; then
@@ -95,7 +89,12 @@ if [ "\${less_path}" ] ; then
 fi" >> ${BASH_EBUILD_DIR}/files/dot-bashrc
 fi
 
-# XXX: hardcoded
+# increase the revision number
+# XXX: remove hardcoded revision numbers
+cd ${CHROMIUM_OVERLAY}/chromeos-base/openssh-server-init/
+ln -s openssh-server-init-0.0.1-r24.ebuild openssh-server-init-0.0.1-r25.ebuild
+cd ${CHROMIUM_OVERLAY}/chromeos-base/chromeos-sshd-init/
+ln -s chromeos-sshd-init-0.0.1-r5.ebuild chromeos-sshd-init-0.0.1-r6.ebuild
 cd ${BASH_EBUILD_DIR}
 ln -s bash-4.2_p48-r1.ebuild bash-4.2_p48-r2.ebuild
 
@@ -128,7 +127,7 @@ for board in ${BOARDS} ; do
   # rebuild packages with boot pictures
   cros_sdk -- ./build_packages --board=${board} >> "${BUILD_LOG}"
 
-  # NayuOS
+  # NayuOS images
   date >> "${BUILD_LOG}"
   echo "building image" >> "${BUILD_LOG}"
   cros_sdk -- ./build_image --board=${board} dev >> "${BUILD_LOG}" \
@@ -149,7 +148,7 @@ for board in ${BOARDS} ; do
 done
 
 ####################################### Post build ##########################################
-# keep only the substring between - as current release
+# keep only the substring between - as current release number
 RELEASE=$(echo ${BRANCH} | cut -d- -f2)
 DIR_IMAGE_LOCATION={{ cros_location }}/images/${RELEASE}/$(date +'%F')
 install ${DIR_IMAGE_LOCATION} -d

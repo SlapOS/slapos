@@ -14,7 +14,6 @@ in /etc/sudoers:
 <pre><code>
 \<slapuser\>       ALL= NOPASSWD: /srv/slapgrid/\<part\>/srv/runner/instance/\<inst_part\>/parts/clone-depot-tools/cros_sdk, /srv/slapgrid/\<part\>/srv/runner/instance/\<inst_part\>/parts/chromiumos/\<release\>/chromite/bin/cros_sdk, /srv/slapgrid/\<part\>/srv/runner/instance/\<inst_part\>/parts/chromiumos/\<release\>/chromite/bootstrap/cros_sdk, /srv/slapgrid/\<part\>/srv/runner/instance/\<inst_part\>/parts/chromiumos/\<release\>/chromite/scripts/cros_sdk.py, /srv/slapgrid/\<part\>/srv/runner/instance/\<inst_part\>/parts/chromiumos/\<release\>/chromite/scripts/cros_sdk.pyc, /srv/slapgrid/\<part\>/srv/runner/instance/\<inst_part\>/parts/chromiumos/\<release\>/chromium/tools/depot_tools/cros_sdk
 </code></pre>
-*   the custom ebuilds (such as net-libs/miniupnpc, net-misc/babeld-re6stnet, net-misc/re6stnet) in the nayuos-ebuilds directory. There is a [repo](https://lab.nexedi.com/nexedi/nayuos-ebuilds) for this purpose. It should be located into: <code>/srv/slapgrid/\<part\>/ srv/runner/project/slapos/software/\<nayuos_build_dirname\>/</code>.
 
 ## Input
 In the vifib parameters (softinst\<nb\>.host.vifib.net \> Services \> Parameters):
