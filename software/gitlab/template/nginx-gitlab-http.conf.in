@@ -33,10 +33,6 @@
 ##         configuration         ##
 ###################################
 
-upstream gitlab {
-  server unix:{{ unicorn.socket }} fail_timeout=0;
-}
-
 upstream gitlab-workhorse {
   server unix:{{ gitlab_workhorse.socket }};
 }
@@ -109,12 +105,6 @@ server {
   error_log   {{ nginx.log }}/gitlab_error.log;
 
   location / {
-    ## Serve static files from defined root folder.
-    ## @gitlab is a named location for the upstream fallback, see below.
-    try_files $uri /index.html $uri.html @gitlab;
-  }
-
-  location /uploads/ {
     ## If you use HTTPS make sure you disable gzip compression
     ## to be safe against BREACH attack.
     {{ 'gzip off;' if cfg_https else ''}}
@@ -125,105 +115,7 @@ server {
     proxy_connect_timeout   {{ cfg('nginx_proxy_connect_timeout') }};
     proxy_redirect          off;
 
-    proxy_set_header    Host                $http_host;
-    proxy_set_header    X-Real-IP           $remote_addr;
-    {% if cfg_https %}
-    proxy_set_header    X-Forwarded-Ssl     on;
-    {% endif %}
-    proxy_set_header    X-Forwarded-For     $proxy_add_x_forwarded_for;
-    proxy_set_header    X-Forwarded-Proto   {{ "https" if cfg_https else "http" }};
-    proxy_set_header    X-Frame-Options     SAMEORIGIN;
-
-    proxy_pass http://gitlab;
-  }
-
-  ## If a file, which is not found in the root folder is requested,
-  ## then the proxy passes the request to the upsteam (gitlab unicorn).
-  location @gitlab {
-    ## If you use HTTPS make sure you disable gzip compression
-    ## to be safe against BREACH attack.
-    {{ 'gzip off;' if cfg_https else ''}}
-
-    ## https://github.com/gitlabhq/gitlabhq/issues/694
-    ## Some requests take more than 30 seconds.
-    proxy_read_timeout      {{ cfg('nginx_proxy_read_timeout') }};
-    proxy_connect_timeout   {{ cfg('nginx_proxy_connect_timeout') }};
-    proxy_redirect          off;
-
-    proxy_set_header    Host                $http_host;
-    proxy_set_header    X-Real-IP           $remote_addr;
-    {% if cfg_https %}
-    proxy_set_header    X-Forwarded-Ssl     on;
-    {% endif %}
-    proxy_set_header    X-Forwarded-For     $proxy_add_x_forwarded_for;
-    proxy_set_header    X-Forwarded-Proto   {{ "https" if cfg_https else "http" }};
-    proxy_set_header    X-Frame-Options     SAMEORIGIN;
-
-    proxy_pass http://gitlab;
-  }
-
-  location ~ ^/[\w\.-]+/[\w\.-]+/gitlab-lfs/objects {
-    client_max_body_size 0;
-    # 'Error' 418 is a hack to re-use the @gitlab-workhorse block
-    error_page 418 = @gitlab-workhorse;
-    return 418;
-  }
-
-  location ~ ^/[\w\.-]+/[\w\.-]+/(info/refs|git-upload-pack|git-receive-pack)$ {
-    client_max_body_size 0;
-    # 'Error' 418 is a hack to re-use the @gitlab-workhorse block
-    error_page 418 = @gitlab-workhorse;
-    return 418;
-  }
-
-  location ~ ^/[\w\.-]+/[\w\.-]+/repository/archive {
-    client_max_body_size 0;
-    # 'Error' 418 is a hack to re-use the @gitlab-workhorse block
-    error_page 418 = @gitlab-workhorse;
-    return 418;
-  }
-
-  location ~ ^/api/v3/projects/.*/repository/archive {
-    client_max_body_size 0;
-    # 'Error' 418 is a hack to re-use the @gitlab-workhorse block
-    error_page 418 = @gitlab-workhorse;
-    return 418;
-  }
-
-  # Build artifacts should be submitted to this location
-  location ~ ^/[\w\.-]+/[\w\.-]+/builds/download {
-    client_max_body_size 0;
-    # 'Error' 418 is a hack to re-use the @gitlab-workhorse block
-    error_page 418 = @gitlab-workhorse;
-    return 418;
-  }
-
-  # Build artifacts should be submitted to this location
-  location ~ /ci/api/v1/builds/[0-9]+/artifacts {
-    client_max_body_size 0;
-    # 'Error' 418 is a hack to re-use the @gitlab-workhorse block
-    error_page 418 = @gitlab-workhorse;
-    return 418;
-  }
-
-  # access to raw blobs -> @gitlab-workhorse
-  location ~ ^/[\w\.-]+/[\w\.-]+/raw/ {
-    client_max_body_size 0;
-    error_page 418 = @gitlab-workhorse;
-    return 418;
-  }
-
-  location @gitlab-workhorse {
-    client_max_body_size 0;
-    ## If you use HTTPS make sure you disable gzip compression
-    ## to be safe against BREACH attack.
-    {{ 'gzip off;' if cfg_https else ''}}
-
-    ## https://github.com/gitlabhq/gitlabhq/issues/694
-    ## Some requests take more than 30 seconds.
-    proxy_read_timeout      {{ cfg('nginx_proxy_read_timeout') }};
-    proxy_connect_timeout   {{ cfg('nginx_proxy_connect_timeout') }};
-    proxy_redirect          off;
+    proxy_http_version 1.1;
 
     proxy_set_header    Host                $http_host;
     proxy_set_header    X-Real-IP           $remote_addr;
@@ -236,20 +128,12 @@ server {
     proxy_pass http://gitlab-workhorse;
   }
 
-  ## Enable gzip compression as per rails guide:
-  ## http://guides.rubyonrails.org/asset_pipeline.html#gzip-compression
-  ## WARNING: If you are using relative urls remove the block below
-  ## See config/application.rb under "Relative url support" for the list of
-  ## other files that need to be changed for relative url support
-  location ~ ^/(assets)/ {
-    root {{ gitlab_work.location }}/public;
-    gzip_static on; # to serve pre-gzipped version
-    expires max;
-    add_header Cache-Control public;
+  # access to raw blobs -> @gitlab-workhorse
+  location ~ ^/[\w\.-]+/[\w\.-]+/raw/ {
+    client_max_body_size 0;
+    error_page 418 = @gitlab-workhorse;
+    return 418;
   }
-
-
-  error_page 502 /502.html;
 
   {# we don't support custom nginx configs
   <%= @custom_gitlab_server_config %>

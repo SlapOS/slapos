@@ -45,6 +45,11 @@ http {
 
   {# we don't need: ci, mattermost
   include <%= @gitlab_ci_http_config %>
+
+  <% if @gitlab_pages_http_config %>
+  include <%= @gitlab_pages_http_config %>;
+  <% end %>
+
   include <%= @gitlab_mattermost_http_config %>
   #}
 }
