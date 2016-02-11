@@ -622,7 +622,7 @@ log     = ${sidekiq-dir:log}
 # NOTE see queue list here:
 # https://gitlab.com/gitlab-org/gitlab-ce/blob/master/Procfile
 # https://gitlab.com/gitlab-org/omnibus-gitlab/blob/master/files/gitlab-cookbooks/gitlab/templates/default/sv-sidekiq-run.erb
-# (last updated for ominbus-gitlab 8.2.3+ce.0-0-g8eda093)
+# (last updated for omnibus-gitlab 8.4.2+ce.0-3-g68d5ee8)
 [service-sidekiq]
 recipe  = slapos.cookbook:wrapper
 wrapper-path    = ${directory:service}/sidekiq
@@ -635,6 +635,7 @@ command-line    =
 
     ${gitlab-sidekiq:wrapper-path}
 # XXX -q runner ?  (present in gitlab-ce/Procfile  but not in omnibus)
+# XXX -q pages -q elasticsearch ?  (present in omnibus but not in gitlab-ce -- those features are gitlab-ee only)
 # XXX -P ?  (pidfile)
     -e production
     -r ${gitlab-work:location}
