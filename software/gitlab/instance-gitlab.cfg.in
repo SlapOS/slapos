@@ -532,10 +532,7 @@ depend  =
 
 [promise-gitlab-workhorse]
 <= promise-byurl
-# gitlab-workhorse works on repositories. Here we only check it accepts an
-# serves requests, so request is non-existent URL and expected code is 403
-url     = --unix-socket ${gitlab-workhorse:socket}  http:/non-existent
-http_code   = 403
+url     = --unix-socket ${gitlab-workhorse:socket}  http:/static.css
 
 
 # gitlab-workhorse logs to stdout/stderr - logs are handled by slapos not us
@@ -729,6 +726,8 @@ depend  =
 
 [promise-nginx]
 <= promise-byurl
+# XXX this depends on gitlab-workhorse being up
+#     (nginx is configured to proxy all requests to gitlab-workhorse)
 url     = ${backend-info:url}/static.css
 
 [logrotate-entry-nginx]
