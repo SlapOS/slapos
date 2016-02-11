@@ -3,7 +3,7 @@
 # https://gitlab.com/gitlab-org/gitlab-ce/blob/master/config/unicorn.rb.example
 # https://gitlab.com/gitlab-org/gitlab-ce/blob/master/config/unicorn.rb.example.development
 # https://gitlab.com/gitlab-org/omnibus-gitlab/blob/master/files/gitlab-cookbooks/gitlab/templates/default/unicorn.rb.erb
-# (last updated for omnibus-gitlab 8.2.3+ce.0-0-g8eda093)
+# (last updated for omnibus-gitlab 8.4.4+ce.0-0-g1680742)
 
 {% from 'macrolib.cfg.in' import cfg  with context %}
 

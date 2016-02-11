@@ -2,7 +2,7 @@
 # see:
 # https://gitlab.com/gitlab-org/gitlab-ce/blob/master/config/gitlab.yml.example
 # https://gitlab.com/gitlab-org/omnibus-gitlab/blob/master/files/gitlab-cookbooks/gitlab/templates/default/gitlab.yml.erb
-# (last updated for omnibus-gitlab 8.2.3+ce.0-0-g8eda093)
+# (last updated for omnibus-gitlab 8.4.4+ce.0-0-g1680742)
 
 {% from 'macrolib.cfg.in' import cfg, cfg_https, external_url  with context %}
 
@@ -58,8 +58,6 @@ production: &base
     ##   6 - Blue
     default_theme: {{ cfg('default_theme') }} # default: 2
 
-    {# we do not need to restrict visibility levels
-    #}
     {# for now we are ok with default issue-closing pattern
     ## Automatic issue closing
     # If a commit message matches this regular expression, all issues referenced from the matched text will be closed.
@@ -135,6 +133,7 @@ production: &base
     storage_path: <%= @lfs_storage_path %>
   #}
 
+  {# we do not support Pages
   ## GitLab Pages (EE only)
   pages:
     enabled: <%= @pages_enabled %>
@@ -142,7 +141,9 @@ production: &base
     host: <%= @pages_host %>
     port: <%= @pages_port %>
     https: <%= @pages_https %>
+  #}
 
+  {# we do not support Elasticsearch
   ## Elasticsearch (EE only)
   # Enable it if you are going to use elasticsearch instead of
   # regular database search
@@ -150,6 +151,7 @@ production: &base
     enabled: <%= @elasticsearch_enabled %>
     host: <%= @elasticsearch_host %>
     port: <%= @elasticsearch_port %>
+  #}
 
   ## Gravatar
   ## For Libravatar see: http://doc.gitlab.com/ce/customization/libravatar.html
@@ -161,6 +163,7 @@ production: &base
     #}
 
 
+  {# XXX cron jobs are disabled for now - we do not support CI and EE features
   ## Auxiliary jobs
   # Periodically executed jobs, to self-heal GitLab, do external synchronizations, etc.
   # Please read here for more information: https://github.com/ondrejbartas/sidekiq-cron#adding-cron-job
@@ -185,6 +188,7 @@ production: &base
     # NOTE: This will only take effect if LDAP is enabled
     ldap_sync_worker:
       cron: <%= @ldap_sync_worker_cron %>
+  #}
 
   #
   # 2. GitLab CI settings
