@@ -2,7 +2,7 @@
 # see:
 # https://gitlab.com/gitlab-org/gitlab-ce/blob/master/lib/support/nginx/gitlab-ssl
 # https://gitlab.com/gitlab-org/omnibus-gitlab/blob/master/files/gitlab-cookbooks/gitlab/templates/default/nginx.conf.erb
-# (last updated for omnibus-gitlab 8.2.3+ce.0-0-g8eda093)
+# (last updated for omnibus-gitlab 8.4.4+ce.0-0-g1680742)
 
 {% from 'macrolib.cfg.in' import cfg  with context %}
 
@@ -43,13 +43,9 @@ http {
 
   include {{ nginx_gitlab_http_conf }};
 
-  {# we don't need: ci, mattermost
+  {# we don't need: ci, pages, mattermost
   include <%= @gitlab_ci_http_config %>
-
-  <% if @gitlab_pages_http_config %>
   include <%= @gitlab_pages_http_config %>;
-  <% end %>
-
   include <%= @gitlab_mattermost_http_config %>
   #}
 }

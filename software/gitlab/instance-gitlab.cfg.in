@@ -241,7 +241,6 @@ context-extra =
     section nginx                   nginx
     section gitlab_work             gitlab-work
     section gitlab_workhorse        gitlab-workhorse
-    section unicorn                 unicorn
 
 [rack_attack.rb]
 <= gitlab-etc-template
