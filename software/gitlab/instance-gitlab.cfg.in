@@ -514,6 +514,7 @@ command-line    = {{ gitlab_workhorse }}
     -listenNetwork unix
     -listenAddr ${gitlab-workhorse:socket}
     -authSocket ${unicorn:socket}
+    -documentRoot ${gitlab-work:location}/public
 # NOTE for profiling
 #   -pprofListenAddr ...
 
