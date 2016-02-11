@@ -313,7 +313,7 @@ production: &base
 <% end %>
     #}
 
-  {# default ($RAILS_ROOT/shared/) is just ok
+  {# default ($RAILS_ROOT/shared/) is ok - we symlinked it to proper place
   # Shared file storage settings
   shared:
     path: <%= @shared_path %>

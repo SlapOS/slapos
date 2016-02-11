@@ -118,6 +118,10 @@ var     = ${directory:var}/gitlab
 tmp     = ${:var}/tmp
 uploads = ${:var}/uploads
 assets  = ${:var}/assets
+shared  = ${:var}/shared
+artifacts = ${:shared}/artifacts
+lfs-objects = ${:shared}/lfs-objects
+builds  = ${:var}/builds
 backup  = ${directory:var}/backup
 
 [gitlab-repo-dir]
@@ -139,6 +143,10 @@ var     = ${gitlab-dir:var}
 tmp     = ${gitlab-dir:tmp}
 uploads = ${gitlab-dir:uploads}
 assets  = ${gitlab-dir:assets}
+shared  = ${gitlab-dir:shared}
+artifacts = ${gitlab-dir:artifacts}
+lfs-objects = ${gitlab-dir:lfs-objects}
+builds  = ${gitlab-dir:builds}
 backup  = ${gitlab-dir:backup}
 repositories = ${gitlab-repo-xdir:repositories}
 
@@ -357,14 +365,16 @@ update-command =
 <= work-base
 software = {{ gitlab_repository_location }}
 tune-command =
-# secret* config.ru tmp/ log/
+# secret* config.ru tmp/ log/ shared/ builds/
     rm -f .secret  &&
     rm -f config.ru  &&
-    rm -rf log tmp  &&
+    rm -rf log tmp shared builds  &&
     ln -sf ${secrets:secrets}/gitlab_rails_secret .secret  &&
     ln -sf ${config.ru:rendered} config.ru  &&
     ln -sf ${gitlab:log} log  &&
     ln -sf ${gitlab:tmp} tmp  &&
+    ln -sf ${gitlab:shared} shared  &&
+    ln -sf ${gitlab:builds} builds  &&
 # config/
     cd config  &&
     ln -sf ${unicorn.rb:rendered} unicorn.rb  &&
