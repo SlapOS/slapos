@@ -3,7 +3,7 @@
 # see:
 # https://gitlab.com/gitlab-org/omnibus-gitlab/blob/master/files/gitlab-cookbooks/gitlab/attributes/default.rb
 # https://gitlab.com/gitlab-org/omnibus-gitlab/blob/master/files/gitlab-cookbooks/gitlab/templates/default/gitconfig.erb
-# (last updated for omnibus-gitlab 8.2.3+ce.0-0-g8eda093)
+# (last updated for omnibus-gitlab 8.4.4+ce.0-0-g1680742)
 #
 {% from 'macrolib.cfg.in' import cfg  with context %}
 
