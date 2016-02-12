@@ -1,3 +1,8 @@
+# Put here default Name for instance and Hosting Subscription
+[slap-configuration]
+root-title = UNKNOW
+title = UNKNOW Instance
+
 [slap-configuration]
 recipe = slapos.cookbook:slapconfiguration.serialised
 computer = ${slap-connection:computer-id}
@@ -74,7 +79,6 @@ services-conf = ${directory:etc}/monitor.conf.d
 www = ${directory:monitor}/web
 web-dir = ${directory:monitor}/web
 log = ${directory:log}/monitor
-promise-wrapper = ${directory:var}/monitor-promise-wrapper
 monitor-var = ${directory:var}/monitor
 monitor-password-var = ${monitor-directory:monitor-var}/password
 monitor-password-interface = ${monitor-directory:monitor-password-var}/password/interface
@@ -124,6 +128,7 @@ wrapper = ${directory:services}/monitor-httpd
 
 [monitor-conf-parameters]
 title = ${monitor-instance-parameter:monitor-title}
+root-title = ${monitor-instance-parameter:root-instance-title}
 public-folder = ${monitor-directory:public}
 private-folder = ${monitor-directory:private}
 webdav-folder = ${monitor-directory:webdav}
@@ -133,7 +138,6 @@ monitor-hal-json = ${monitor-directory:public}/monitor.hal.json
 service-pid-folder = ${monitor-directory:pids}
 crond-folder = ${logrotate-directory:cron-entries}
 logrotate-folder = ${logrotate:logrotate-entries}
-wraper-folder = ${monitor-directory:promise-wrapper}
 promise-runner = {{ promise_executor_py }}
 promise-folder-list = 
   ${directory:promises}
@@ -158,6 +162,7 @@ context = section parameter_dict monitor-conf-parameters
 
 [instance-info-parameters]
 name = ${monitor-instance-parameter:monitor-title}
+root-name = ${monitor-instance-parameter:root-instance-title}
 computer-id = ${slap-connection:computer-id}
 ipv4 = ${slap-configuration:ipv4-random}
 ipv6 = ${slap-configuration:ipv6-random}
@@ -185,13 +190,18 @@ wrapper-path = ${directory:scripts}/bootstrap-monitor
 environment = 
   PATH=${python-symlink:target}:/usr/local/bin:/usr/bin:/bin
 
+[monitor-htpasswd]
+recipe = slapos.cookbook:generate.password
+storage-path = ${directory:etc}/.monitor_user
+bytes = 8
+
 [httpd-monitor-htpasswd]
 recipe = plone.recipe.command
 stop-on-error = true
 htpasswd-path = ${monitor-directory:etc}/monitor-htpasswd
 command = {{ apache_location }}/bin/htpasswd -cb ${:htpasswd-path} ${:user} ${:password}
 user = admin
-password = admin
+password = ${monitor-htpasswd:passwd}
 
 [monitor-httpd-conf-parameter]
 listening-ip = ${monitor-instance-parameter:monitor-httpd-ipv6}
@@ -204,7 +214,7 @@ cert-file = ${ca-directory:certs}/httpd.crt
 key-file = ${ca-directory:certs}/httpd.key
 htpasswd-file = ${httpd-monitor-htpasswd:htpasswd-path}
 url = https://[${monitor-instance-parameter:monitor-httpd-ipv6}]:${:port}
-httpd-cors-config-file = ${monitor-httpd-cors:location}
+httpd-cors-config-file = ${monitor-httpd-cors:rendered}
 
 [monitor-httpd-conf]
 recipe = slapos.recipe.template:jinja2
@@ -216,11 +226,12 @@ context =
   section parameter_dict monitor-httpd-conf-parameter
 
 [monitor-httpd-cors]
-recipe = plone.recipe.command
-command = if [ ! -f ${:location} ]; then echo 'Header set Access-Control-Allow-Origin "*"' > ${:location}; fi
-location = ${directory:etc}/${:filename}
-filename = httpd-cors.cfg
-stop-on-error = true
+recipe = slapos.recipe.template:jinja2
+template = {{ monitor_https_cors }}
+rendered = ${directory:etc}/httpd-cors.cfg
+mode = 0600
+context =
+  key domain monitor-instance-parameter:cors-domains
 
 [httpd-wrapper]
 recipe = slapos.cookbook:wrapper
@@ -352,13 +363,37 @@ context =
 
 [publish]
 recipe = slapos.cookbook:publish
-monitor-url = ${monitor-httpd-conf-parameter:url}
-monitor-config-url = ${monitor-httpd-conf-parameter:url}/share/jio_public
+#monitor-base-url = ${monitor-httpd-conf-parameter:url}
+monitor-base-url = ${monitor-frontend-promise:url}
+monitor-url = ${:monitor-base-url}/share/jio_public
+monitor-user = ${httpd-monitor-htpasswd:user}
+monitor-password = ${httpd-monitor-htpasswd:password}
 
 [monitor-instance-parameter]
-monitor-title = Monitoring interface
+monitor-title = ${slap-configuration:title}
+root-instance-title = ${slap-configuration:root-title}
+cors-domains = 
 # XXX Hard coded parameter
 collector-db = /srv/slapgrid/var/data-log/collector.db
+
+[monitor-frontend]
+<= slap-connection
+recipe = slapos.cookbook:requestoptional
+name = Monitor Frontend ${monitor-instance-parameter:monitor-title}
+# XXX We have hardcoded SR URL here.
+software-url = http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg
+slave = true
+config-url = ${monitor-httpd-conf-parameter:url}
+software-type = custom-personal
+return = site_url domain
+
+[monitor-frontend-promise]
+recipe = slapos.cookbook:check_url_available
+path = ${directory:promises}/monitor-http-frontend
+url = ${monitor-frontend:connection-site_url}
+dash_path = {{ dash_executable_location }}
+curl_path = {{ curl_executable_location }}
+check-secure = 1
 
 [monitor-base]
 # create dependencies between required monitor parts

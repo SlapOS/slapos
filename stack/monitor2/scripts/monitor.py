@@ -80,10 +80,10 @@ class Monitoring(object):
     # Set Monitor variables
     self.monitor_hal_json = config.get("monitor", "monitor-hal-json")
     self.title = config.get("monitor", "title")
+    self.root_title = config.get("monitor", "root-title")
     self.service_pid_folder = config.get("monitor", "service-pid-folder")
     self.crond_folder = config.get("monitor", "crond-folder")
     self.logrotate_d = config.get("monitor", "logrotate-folder")
-    self.wraper_folder = config.get("monitor", "wraper-folder")
     self.promise_runner = config.get("monitor", "promise-runner")
     self.promise_folder_list = config.get("monitor", "promise-folder-list").split()
     self.public_folder = config.get("monitor", "public-folder")
@@ -147,7 +147,7 @@ class Monitoring(object):
 
     #configure jio_documents folder
     jio_public = os.path.join(self.webdav_folder, 'jio_public')
-    jio_private = os.path.join(self.webdav_folder, 'jio_private', '.jio_documents')
+    jio_private = os.path.join(self.webdav_folder, 'jio_private')
     mkdirAll(jio_public)
     mkdirAll(jio_private)
     mkdirAll(self.status_history_folder)
@@ -158,6 +158,15 @@ class Monitoring(object):
         raise
     try:
       os.symlink(self.private_folder, os.path.join(jio_private, '.jio_documents'))
+    except OSError, e:
+      if e.errno != os.errno.EEXIST:
+        raise
+
+    self.data_folder = os.path.join(self.private_folder, 'data', '.jio_documents')
+    mkdirAll(self.data_folder)
+    try:
+      os.symlink(os.path.join(self.private_folder, 'data'),
+                  os.path.join(jio_private, 'data'))
     except OSError, e:
       if e.errno != os.errno.EEXIST:
         raise
@@ -206,13 +215,13 @@ class Monitoring(object):
                           "public": {"href": "%s/public" % self.webdav_url},
                           "private": {"href": "%s/private" % self.webdav_url},
                           "rss": {"href": "%s/feed" % self.public_url},
-                          "jio_public": {"href": "%s/jio_public" % self.webdav_url},
-                          "jio_private": {"href": "%s/jio_private" % self.webdav_url}
+                          "jio_public": {"href": "%s/jio_public/" % self.webdav_url},
+                          "jio_private": {"href": "%s/jio_private/" % self.webdav_url}
                         }
     if self.title:
       self.monitor_dict["title"] = self.title
     if self.monitor_url_list:
-      monitor_link_dict["related_monitor"] = [{"href": "%s/share/jio_public" % url}
+      monitor_link_dict["related_monitor"] = [{"href": url}
                                   for url in self.monitor_url_list]
       self.generateOpmlFile(self.monitor_url_list,
         os.path.join(self.public_folder, 'feeds'))
@@ -245,28 +254,29 @@ class Monitoring(object):
       service_config = promise["configuration"]
       service_status_path = "%s/%s.status.json" % (self.public_folder, service_name)  # hardcoded
       mkdirAll(os.path.dirname(service_status_path))
-      command = "%s %s %s %s %s %s %s" % (
-          self.promise_runner,
-          os.path.join(self.service_pid_folder, "%s.pid" % service_name),
-          service_status_path,
-          promise["path"],
-          service_name,
-          "%s/jio_public" % self.webdav_url, # XXX hardcoded
-          self.status_history_folder
-        )
 
-      cron_line_list.append("%s %s" % (
-          softConfigGet(service_config, "service", "frequency") or "* * * * *",
-          command.replace("%", "\\%"),
-        ))
+      promise_cmd_line = [
+        softConfigGet(service_config, "service", "frequency") or "* * * * *",
+        self.promise_runner,
+        '--pid_path %s' % os.path.join(self.service_pid_folder,
+          "%s.pid" % service_name),
+        '--output %s' % service_status_path,
+        '--promise_script %s' % promise["path"],
+        '--promise_name "%s"' % service_name,
+        '--monitor_url "%s/jio_private/"' % self.webdav_url, # XXX hardcoded,
+        '--history_folder %s' % self.status_history_folder,
+        '--instance_name "%s"' % self.title,
+        '--hosting_name "%s"' % self.root_title]
+
+      cron_line_list.append(' '.join(promise_cmd_line))
 
       if service_name in service_name_list:
         service_name_list.pop(service_name_list.index(service_name))
 
-      wrapper_path = os.path.join(self.wraper_folder, service_name)
+      """wrapper_path = os.path.join(self.wraper_folder, service_name)
       with open(wrapper_path, "w") as fp:
         fp.write("#!/bin/sh\n%s" % command)  # XXX hardcoded, use dash, sh or bash binary!
-      os.chmod(wrapper_path, stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR | stat.S_IRGRP | stat.S_IROTH )
+      os.chmod(wrapper_path, stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR | stat.S_IRGRP | stat.S_IROTH )"""
 
     if service_name_list != []:
       # XXX Some service was removed, delete his status file so monitor will not consider his status anymore
@@ -318,8 +328,6 @@ class Monitoring(object):
     self.generateServiceCronEntries()
 
     # Rotate monitor data files
-    self.data_folder = os.path.join(self.public_folder, 'data', '.jio_documents')
-    mkdirAll(self.data_folder)
     option_list = [
       'daily', 'nocreate', 'noolddir', 'rotate 30',
       'nocompress', 'extension .json', 'dateext',

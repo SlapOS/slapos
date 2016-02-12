@@ -1,5 +1,6 @@
 [instance]
 name = {{ instance_dict['name'] }}
+root-name = {{ instance_dict['root-name'] }}
 computer = {{ instance_dict['computer-id'] }}
 ipv4 = {{ instance_dict['ipv4'] }}
 ipv6 = {{ instance_dict['ipv6'] }}

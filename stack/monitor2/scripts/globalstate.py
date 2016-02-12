@@ -6,6 +6,7 @@ import glob
 import json
 import ConfigParser
 import time
+from datetime import datetime
 
 def softConfigGet(config, *args, **kwargs):
   try:
@@ -45,7 +46,8 @@ def main(args_list):
   monitor_config = ConfigParser.ConfigParser()
   monitor_config.read(monitor_file)
 
-  base_folder = monitor_config.get('monitor', 'public-folder')
+  base_folder = monitor_config.get('monitor', 'private-folder')
+  status_folder = monitor_config.get('monitor', 'public-folder')
   base_url = monitor_config.get('monitor', 'base-url')
   related_monitor_list = monitor_config.get("monitor", "monitor-url-list").split()
   statistic_folder = os.path.join(base_folder, 'data', '.jio_documents')
@@ -60,13 +62,14 @@ def main(args_list):
 
   # search for all status files
   file_list = filter(os.path.isfile,
-      glob.glob("%s/*.status.json" % base_folder)
+      glob.glob("%s/*.status.json" % status_folder)
     )
   error = warning = success = 0
   latest_date = ''
   status = 'OK'
   promise_list = []
   global_state_file = os.path.join(base_folder, 'monitor.global.json')
+  public_state_file = os.path.join(status_folder, 'monitor.global.json')
   for file in file_list:
     try:
       with open(file, 'r') as temp_file:
@@ -100,9 +103,8 @@ def main(args_list):
       },
       date=latest_date,
       _links={"rss_url": {"href": "%s/public/feed" % base_url},
-              "public_url": {"href": "%s/share/jio_public" % base_url},
-              "private_url": {"href": "%s/share/jio_private" % base_url},
-              "data_url": {"href": '%s/public/data' % base_url}
+              "public_url": {"href": "%s/share/jio_public/" % base_url},
+              "private_url": {"href": "%s/share/jio_private/" % base_url}
             },
       data={'state': 'monitor_state.data',
             'process_state': 'monitor_process_resource.status',
@@ -120,6 +122,7 @@ def main(args_list):
     if 'instance' in config.sections():
       instance_dict = {}
       global_state_dict['title'] = config.get('instance', 'name')
+      global_state_dict['hosting-title'] = config.get('instance', 'root-name')
       if not global_state_dict['title']:
         global_state_dict['title'] = 'Instance Monitoring'
       
@@ -136,8 +139,21 @@ def main(args_list):
     global_state_dict['_links']['related_monitor'] = [{'href': "%s/share/jio_public" % url}
                           for url in related_monitor_list]
 
+  # Public information with the link to private folder
+  public_state_dict = dict(
+    status=status,
+    date=latest_date,
+    _links={'monitor': {'href': '%s/share/jio_private/' % base_url}},
+    title=global_state_dict.get('title', '')
+  )
+  public_state_dict['hosting-title'] = global_state_dict.get('hosting-title', '')
+  public_state_dict['_links']['related_monitor'] = global_state_dict['_links'].get('related_monitor', [])
+
   with open(global_state_file, 'w') as fglobal:
     fglobal.write(json.dumps(global_state_dict))
+
+  with open(public_state_file, 'w') as fpglobal:
+    fpglobal.write(json.dumps(public_state_dict))
 
   generateStatisticsData(
     os.path.join(statistic_folder, 'monitor_state.data.json'),

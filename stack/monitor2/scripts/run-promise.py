@@ -9,22 +9,39 @@ import psutil
 import time
 from shutil import copyfile
 import glob
+import argparse
+
+def parseArguments():
+  """
+  Parse arguments for monitor collector instance.
+  """
+  parser = argparse.ArgumentParser()
+  parser.add_argument('--pid_path',
+                      help='Path where the pid of this process will be writen.')
+  parser.add_argument('--output',
+                      help='The Path of file where Json result of this promise will be saved.')
+  parser.add_argument('--promise_script',
+                      help='Promise script to execute.')
+  parser.add_argument('--promise_name',
+                      help='Title to give to this promise.')
+  parser.add_argument('--monitor_url',
+                      help='Monitor Instance website URL.')
+  parser.add_argument('--history_folder',
+                      help='Path where old result file will be placed before generate a new json result file.')
+  parser.add_argument('--instance_name',
+                      default='UNKNOW Software Instance',
+                      help='Software Instance name.')
+  parser.add_argument('--hosting_name',
+                      default='UNKNOW Hosting Subscription',
+                      help='Hosting Subscription name.')
+
+  return parser.parse_args()
 
 def main():
-  if len(sys.argv) < 4:
-    print("Usage: %s <pid_path> <output_path> <command> [<name>] [...]" % sys.argv[0])
-    return 2
-  pid_path=sys.argv[1]
-  output_path=sys.argv[2]
-  promise_name = history_folder = related_url = ""
-  if len(sys.argv) >= 5:
-    promise_name = sys.argv[4]
-  if len(sys.argv) >= 6:
-    related_url = sys.argv[5]
-  if len(sys.argv) >= 7:
-    history_folder = sys.argv[6]
-  if os.path.exists(pid_path):
-    with open(pid_path, "r") as pidfile:
+  parser = parseArguments()
+
+  if os.path.exists(parser.pid_path):
+    with open(parser.pid_path, "r") as pidfile:
       try:
         pid = int(pidfile.read(6))
       except ValueError:
@@ -33,29 +50,35 @@ def main():
         print("A process is already running with pid " + str(pid))
         return 1
   start_date = ""
-  with open(pid_path, "w") as pidfile:
-    process = executeCommand(sys.argv[3:])
+  with open(parser.pid_path, "w") as pidfile:
+    process = executeCommand(parser.promise_script)
     ps_process = psutil.Process(process.pid)
     start_date = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(ps_process.create_time()))
     pidfile.write(str(process.pid))
-  
-  status_json = generateStatusJsonFromProcess(process, start_date=start_date, title=promise_name)
+
+  status_json = generateStatusJsonFromProcess(process, start_date=start_date)
+
+  status_json['_links'] = {"monitor": {"href": parser.monitor_url}}
+  status_json['title'] = parser.promise_name
+  status_json['instance'] = parser.instance_name
+  status_json['hosting_subscription'] = parser.hosting_name
 
   # Save the lastest status change date (needed for rss)
-  if related_url:
-    status_json['_links'] = {"monitor": {"href": related_url}}
   status_json['change-time'] = ps_process.create_time()
-  if os.path.exists(output_path):
-    with open(output_path) as f:
+  if os.path.exists(parser.output):
+    with open(parser.output) as f:
       last_result = json.loads(f.read())
       if status_json['status'] == last_result['status'] and last_result.has_key('change-time'):
         status_json['change-time'] = last_result['change-time']
 
-  if history_folder:
-    updateStatusHistoryFolder(promise_name, output_path, history_folder)
-  with open(output_path, "w") as outputfile:
+  updateStatusHistoryFolder(
+    parser.promise_name,
+    parser.output,
+    parser.history_folder
+  )
+  with open(parser.output, "w") as outputfile:
     json.dump(status_json, outputfile)
-  os.remove(pid_path)
+  os.remove(parser.pid_path)
 
 def updateStatusHistoryFolder(name, status_file, history_folder):
   old_history_list = []
