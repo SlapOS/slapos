@@ -1,0 +1,391 @@
+<?xml version="1.0"?>
+<ZopeData>
+  <record id="1" aka="AAAAAAAAAAE=">
+    <pickle>
+      <global name="Web Page" module="erp5.portal_type"/>
+    </pickle>
+    <pickle>
+      <dictionary>
+        <item>
+            <key> <string>_Access_contents_information_Permission</string> </key>
+            <value>
+              <tuple>
+                <string>Anonymous</string>
+                <string>Assignee</string>
+                <string>Assignor</string>
+                <string>Associate</string>
+                <string>Auditor</string>
+                <string>Manager</string>
+                <string>Owner</string>
+              </tuple>
+            </value>
+        </item>
+        <item>
+            <key> <string>_Add_portal_content_Permission</string> </key>
+            <value>
+              <tuple>
+                <string>Assignor</string>
+                <string>Manager</string>
+              </tuple>
+            </value>
+        </item>
+        <item>
+            <key> <string>_Change_local_roles_Permission</string> </key>
+            <value>
+              <tuple>
+                <string>Assignor</string>
+                <string>Manager</string>
+              </tuple>
+            </value>
+        </item>
+        <item>
+            <key> <string>_Modify_portal_content_Permission</string> </key>
+            <value>
+              <tuple>
+                <string>Manager</string>
+              </tuple>
+            </value>
+        </item>
+        <item>
+            <key> <string>_View_Permission</string> </key>
+            <value>
+              <tuple>
+                <string>Anonymous</string>
+                <string>Assignee</string>
+                <string>Assignor</string>
+                <string>Associate</string>
+                <string>Auditor</string>
+                <string>Manager</string>
+                <string>Owner</string>
+              </tuple>
+            </value>
+        </item>
+        <item>
+            <key> <string>categories</string> </key>
+            <value>
+              <tuple>
+                <string>classification/collaborative/team</string>
+              </tuple>
+            </value>
+        </item>
+        <item>
+            <key> <string>content_md5</string> </key>
+            <value>
+              <none/>
+            </value>
+        </item>
+        <item>
+            <key> <string>content_type</string> </key>
+            <value> <string>text/html</string> </value>
+        </item>
+        <item>
+            <key> <string>default_reference</string> </key>
+            <value> <string>gadget_monitoring_application_panel.html</string> </value>
+        </item>
+        <item>
+            <key> <string>description</string> </key>
+            <value> <string>Monitoring access</string> </value>
+        </item>
+        <item>
+            <key> <string>id</string> </key>
+            <value> <string>gadget_monitoring_application_panel_html</string> </value>
+        </item>
+        <item>
+            <key> <string>language</string> </key>
+            <value> <string>en</string> </value>
+        </item>
+        <item>
+            <key> <string>portal_type</string> </key>
+            <value> <string>Web Page</string> </value>
+        </item>
+        <item>
+            <key> <string>short_title</string> </key>
+            <value>
+              <none/>
+            </value>
+        </item>
+        <item>
+            <key> <string>text_content</string> </key>
+            <value> <string encoding="cdata"><![CDATA[
+
+<!DOCTYPE html>\n
+<html>\n
+  <head>\n
+    <meta http-equiv="Content-type" content="text/html; charset=utf-8" />\n
+    <meta name="viewport" content="width=device-width, user-scalable=no" />\n
+    <title>Monitoring Panel Gadget</title>\n
+\n
+    <link rel="stylesheet" href="magnific-popup.css">\n
+    <link rel="stylesheet" href="gadget_monitoring_tooltipster.css">\n
+    <!-- renderjs -->\n
+    <script src="rsvp.js" type="text/javascript"></script>\n
+    <script src="renderjs.js" type="text/javascript"></script>\n
+    <script src="handlebars.js" type="text/javascript"></script>\n
+    <script src="gadget_global.js" type="text/javascript"></script>\n
+    <script src="jquery.js" type="text/javascript"></script>\n
+    <script src="jquerymobile.js" type="text/javascript"></script>\n
+    <!-- magnific-popup -->\n
+    <script src="jquery.magnific-popup.min.js" type="text/javascript"></script>\n
+    <script src="gadget_monitoring_tooltipster.min.js" type="text/javascript"></script>\n
+\n
+    <script id="panel-template-header" type="text/x-handlebars-template">\n
+      <div data-role="header" class="ui-bar-inherit">\n
+        <div class="ui-controlgroup ui-controlgroup-horizontal ui-btn-left">\n
+          <div class="ui-controlgroup-controls">\n
+            <form action="#" method="post">\n
+              <input type="submit" data-i18n="[value]Close" data-icon="delete" data-iconpos="notext" value="Close" />\n
+            </form>\n
+          </div>\n
+        </div>\n
+        <img class="ui-title" alt="SlapOS Monitoring" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAB2klEQVRIS62V8TkDURDEZyughKhAVEAqQAXoICoQFaACOkAFkgpEB1EBKhjf7+zL90SORG7/SXLZN7M7s/su1BK2tyUdSupVKTNJk4jgc6WIxSzbAF5JOvoF4UHSZURM/2L5RmD7VNJtHvqQtAWQpAtJj9lReU7aWUTc/UYyJ7A9zMpfJEH0JOkmIka2LWkgqZ9kfAd4NzsZtZE0BLaR414S4AeSIDuNiJ5tQJ9LtbbR/y6Jx5L2JR1HBLL9iELAIUwFjANUVJu7eJB8ciaS8OEtInaWElS6kwgoRATaU+F7dnCeYBTBEBD8BxnPlvoRttHyRBLmIQ0HniKi9geiYZka283vBMYvYoxsi11AUCrvM9+2SWr0/2sEV/kfAiaEVstMA8xIXqc0RbJV8EoOeHsUXAiQpyagbaaJ+ceLdYICkZxFHEGA5ixUw5gSoXFDUHuxCottzrFDc4JiMm1h3GsCdUZQlgxg9KYbNrUbgtzkspEAoyG/8WFziZKgXAcYzcJM04tuCJKk3KTNiHXaQZmOnAAuLXzpzoN6/PJNxiMmij2AaJ1Abpb0a0zbTlbzvA54nTuIiHErQWX+f66KWXlvLyWwTYu8rTaNSRsBF2An0UbAFGHWpjH9BL0Y7d/fY0bVAAAAAElFTkSuQmCC"/>\n
+        <div class="ui-controlgroup ui-controlgroup-horizontal ui-btn-right">\n
+          <div class="ui-controlgroup-controls">\n
+            <a href="#" class="ui-btn ui-btn-icon-notext ui-icon-home" data-i18n="Home">Home</a>\n
+          </div>\n
+        </div>\n
+      </div>\n
+    </script>\n
+\n
+\n
+    <script id="panel-template-body" type="text/x-handlebars-template">\n
+      <div class="ui-content">\n
+        <ul data-role="listview" class="ui-listview">\n
+          <li><a href="#page=status_list" data-i18n="Promises Overview">Promises Overview</a></li>\n
+          <li><a href="#page=overview" data-i18n="Instances Overview">Instances Overview</a></li>\n
+          <li><a href="#page=settings_configurator" data-i18n="Monitoring Configuration">Monitoring Configuration</a></li>\n
+        </ul>\n
+      </div>\n
+    </script>\n
+\n
+    <!-- custom script -->\n
+    <script src="gadget_officejs_text_editor_application_panel.js" type="text/javascript"></script>\n
+\n
+  </head>\n
+  <body>\n
+  <div class="jqm-navmenu-panel"></div>\n
+  </body>\n
+</html>
+
+]]></string> </value>
+        </item>
+        <item>
+            <key> <string>title</string> </key>
+            <value> <string>Monitoring Application Panel Gadget</string> </value>
+        </item>
+        <item>
+            <key> <string>version</string> </key>
+            <value> <string>001</string> </value>
+        </item>
+        <item>
+            <key> <string>workflow_history</string> </key>
+            <value>
+              <persistent> <string encoding="base64">AAAAAAAAAAI=</string> </persistent>
+            </value>
+        </item>
+      </dictionary>
+    </pickle>
+  </record>
+  <record id="2" aka="AAAAAAAAAAI=">
+    <pickle>
+      <global name="PersistentMapping" module="Persistence.mapping"/>
+    </pickle>
+    <pickle>
+      <dictionary>
+        <item>
+            <key> <string>data</string> </key>
+            <value>
+              <dictionary>
+                <item>
+                    <key> <string>document_publication_workflow</string> </key>
+                    <value>
+                      <persistent> <string encoding="base64">AAAAAAAAAAM=</string> </persistent>
+                    </value>
+                </item>
+                <item>
+                    <key> <string>edit_workflow</string> </key>
+                    <value>
+                      <persistent> <string encoding="base64">AAAAAAAAAAQ=</string> </persistent>
+                    </value>
+                </item>
+                <item>
+                    <key> <string>processing_status_workflow</string> </key>
+                    <value>
+                      <persistent> <string encoding="base64">AAAAAAAAAAU=</string> </persistent>
+                    </value>
+                </item>
+              </dictionary>
+            </value>
+        </item>
+      </dictionary>
+    </pickle>
+  </record>
+  <record id="3" aka="AAAAAAAAAAM=">
+    <pickle>
+      <global name="WorkflowHistoryList" module="Products.ERP5Type.patches.WorkflowTool"/>
+    </pickle>
+    <pickle>
+      <tuple>
+        <none/>
+        <list>
+          <dictionary>
+            <item>
+                <key> <string>action</string> </key>
+                <value> <string>publish</string> </value>
+            </item>
+            <item>
+                <key> <string>actor</string> </key>
+                <value> <string>zope</string> </value>
+            </item>
+            <item>
+                <key> <string>comment</string> </key>
+                <value> <string></string> </value>
+            </item>
+            <item>
+                <key> <string>error_message</string> </key>
+                <value> <string></string> </value>
+            </item>
+            <item>
+                <key> <string>time</string> </key>
+                <value>
+                  <object>
+                    <klass>
+                      <global name="DateTime" module="DateTime.DateTime"/>
+                    </klass>
+                    <tuple>
+                      <none/>
+                    </tuple>
+                    <state>
+                      <tuple>
+                        <float>1452070905.39</float>
+                        <string>UTC</string>
+                      </tuple>
+                    </state>
+                  </object>
+                </value>
+            </item>
+            <item>
+                <key> <string>validation_state</string> </key>
+                <value> <string>published</string> </value>
+            </item>
+          </dictionary>
+        </list>
+      </tuple>
+    </pickle>
+  </record>
+  <record id="4" aka="AAAAAAAAAAQ=">
+    <pickle>
+      <global name="WorkflowHistoryList" module="Products.ERP5Type.patches.WorkflowTool"/>
+    </pickle>
+    <pickle>
+      <tuple>
+        <none/>
+        <list>
+          <dictionary>
+            <item>
+                <key> <string>action</string> </key>
+                <value> <string>edit</string> </value>
+            </item>
+            <item>
+                <key> <string>actor</string> </key>
+                <value> <string>zope</string> </value>
+            </item>
+            <item>
+                <key> <string>comment</string> </key>
+                <value>
+                  <none/>
+                </value>
+            </item>
+            <item>
+                <key> <string>error_message</string> </key>
+                <value> <string></string> </value>
+            </item>
+            <item>
+                <key> <string>serial</string> </key>
+                <value> <string>949.3550.20058.13789</string> </value>
+            </item>
+            <item>
+                <key> <string>state</string> </key>
+                <value> <string>current</string> </value>
+            </item>
+            <item>
+                <key> <string>time</string> </key>
+                <value>
+                  <object>
+                    <klass>
+                      <global name="DateTime" module="DateTime.DateTime"/>
+                    </klass>
+                    <tuple>
+                      <none/>
+                    </tuple>
+                    <state>
+                      <tuple>
+                        <float>1455194311.05</float>
+                        <string>UTC</string>
+                      </tuple>
+                    </state>
+                  </object>
+                </value>
+            </item>
+          </dictionary>
+        </list>
+      </tuple>
+    </pickle>
+  </record>
+  <record id="5" aka="AAAAAAAAAAU=">
+    <pickle>
+      <global name="WorkflowHistoryList" module="Products.ERP5Type.patches.WorkflowTool"/>
+    </pickle>
+    <pickle>
+      <tuple>
+        <none/>
+        <list>
+          <dictionary>
+            <item>
+                <key> <string>action</string> </key>
+                <value> <string>detect_converted_file</string> </value>
+            </item>
+            <item>
+                <key> <string>actor</string> </key>
+                <value> <string>zope</string> </value>
+            </item>
+            <item>
+                <key> <string>comment</string> </key>
+                <value> <string></string> </value>
+            </item>
+            <item>
+                <key> <string>error_message</string> </key>
+                <value> <string></string> </value>
+            </item>
+            <item>
+                <key> <string>external_processing_state</string> </key>
+                <value> <string>converted</string> </value>
+            </item>
+            <item>
+                <key> <string>serial</string> </key>
+                <value> <string>0.0.0.0</string> </value>
+            </item>
+            <item>
+                <key> <string>time</string> </key>
+                <value>
+                  <object>
+                    <klass>
+                      <global name="DateTime" module="DateTime.DateTime"/>
+                    </klass>
+                    <tuple>
+                      <none/>
+                    </tuple>
+                    <state>
+                      <tuple>
+                        <float>1452070813.26</float>
+                        <string>UTC</string>
+                      </tuple>
+                    </state>
+                  </object>
+                </value>
+            </item>
+          </dictionary>
+        </list>
+      </tuple>
+    </pickle>
+  </record>
+</ZopeData>

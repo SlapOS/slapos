@@ -1,0 +1,678 @@
+<?xml version="1.0"?>
+<ZopeData>
+  <record id="1" aka="AAAAAAAAAAE=">
+    <pickle>
+      <global name="Web Script" module="erp5.portal_type"/>
+    </pickle>
+    <pickle>
+      <dictionary>
+        <item>
+            <key> <string>_Access_contents_information_Permission</string> </key>
+            <value>
+              <tuple>
+                <string>Anonymous</string>
+                <string>Assignee</string>
+                <string>Assignor</string>
+                <string>Associate</string>
+                <string>Auditor</string>
+                <string>Manager</string>
+                <string>Owner</string>
+              </tuple>
+            </value>
+        </item>
+        <item>
+            <key> <string>_Add_portal_content_Permission</string> </key>
+            <value>
+              <tuple>
+                <string>Assignor</string>
+                <string>Manager</string>
+              </tuple>
+            </value>
+        </item>
+        <item>
+            <key> <string>_Change_local_roles_Permission</string> </key>
+            <value>
+              <tuple>
+                <string>Assignor</string>
+                <string>Manager</string>
+              </tuple>
+            </value>
+        </item>
+        <item>
+            <key> <string>_Modify_portal_content_Permission</string> </key>
+            <value>
+              <tuple>
+                <string>Manager</string>
+              </tuple>
+            </value>
+        </item>
+        <item>
+            <key> <string>_View_Permission</string> </key>
+            <value>
+              <tuple>
+                <string>Anonymous</string>
+                <string>Assignee</string>
+                <string>Assignor</string>
+                <string>Associate</string>
+                <string>Auditor</string>
+                <string>Manager</string>
+                <string>Owner</string>
+              </tuple>
+            </value>
+        </item>
+        <item>
+            <key> <string>categories</string> </key>
+            <value>
+              <tuple>
+                <string>classification/collaborative/team</string>
+              </tuple>
+            </value>
+        </item>
+        <item>
+            <key> <string>content_md5</string> </key>
+            <value>
+              <none/>
+            </value>
+        </item>
+        <item>
+            <key> <string>default_reference</string> </key>
+            <value> <string>gadget_monitoring_widget_listview.js</string> </value>
+        </item>
+        <item>
+            <key> <string>description</string> </key>
+            <value>
+              <none/>
+            </value>
+        </item>
+        <item>
+            <key> <string>id</string> </key>
+            <value> <string>gadget_monitoring_widget_listview_js</string> </value>
+        </item>
+        <item>
+            <key> <string>language</string> </key>
+            <value>
+              <none/>
+            </value>
+        </item>
+        <item>
+            <key> <string>portal_type</string> </key>
+            <value> <string>Web Script</string> </value>
+        </item>
+        <item>
+            <key> <string>short_title</string> </key>
+            <value>
+              <none/>
+            </value>
+        </item>
+        <item>
+            <key> <string>text_content</string> </key>
+            <value> <string encoding="cdata"><![CDATA[
+
+/*global window, rJS, RSVP, Handlebars, loopEventListener, $ */\n
+/*jslint nomen: true, indent: 2 */\n
+(function (window, rJS, RSVP, Handlebars, loopEventListener, $) {\n
+  "use strict";\n
+\n
+  /////////////////////////////////////////////////////////////////\n
+  // templates\n
+  /////////////////////////////////////////////////////////////////\n
+  var gadget_klass = rJS(window),\n
+    templater = gadget_klass.__template_element,\n
+\n
+    listbox_widget_table = Handlebars.compile(\n
+      templater.getElementById("promise-widget-listbox").innerHTML\n
+    ),\n
+    listbox_header_widget = Handlebars.compile(\n
+      templater.getElementById("header-widget-listbox").innerHTML\n
+    );\n
+  /*Handlebars.registerPartial(\n
+    "listbox-widget-table-partial",\n
+    templater.getElementById("listbox-widget-table-partial").innerHTML\n
+  );*/\n
+\n
+  /////////////////////////////////////////////////////////////////\n
+  // some methods\n
+  /////////////////////////////////////////////////////////////////\n
+  function bindOnClick(element) {\n
+    var fieldset = $(element.parentNode.querySelector(\'.ui-collapse-content\')),\n
+        line = $(element);\n
+    if (line.hasClass(\'ui-icon-plus\')) {\n
+      line.removeClass(\'ui-icon-plus\');\n
+      line.addClass(\'ui-icon-minus\');\n
+    } else {\n
+      line.removeClass(\'ui-icon-minus\');\n
+      line.addClass(\'ui-icon-plus\');\n
+    }\n
+    if (fieldset !== undefined) {\n
+      fieldset.toggleClass(\'ui-content-hidden\');\n
+    }\n
+    return false;\n
+  }\n
+\n
+  gadget_klass\n
+\n
+    /////////////////////////////////////////////////////////////////\n
+    // ready\n
+    /////////////////////////////////////////////////////////////////\n
+    .ready(function (gadget) {\n
+      gadget.property_dict = {\n
+        render_deferred: RSVP.defer()\n
+      };\n
+    })\n
+\n
+    .ready(function (gadget) {\n
+      return gadget.getElement()\n
+        .push(function (element) {\n
+          gadget.property_dict.element = element;\n
+          gadget.property_dict.block_index = 0;\n
+          gadget.property_dict.filter_panel = $(gadget.property_dict.element.querySelector(".listbox-filter-panel"));\n
+        });\n
+    })\n
+    .ready(function (gadget) {\n
+      return gadget.getDeclaredGadget("jio_gadget")\n
+        .push(function (jio_gadget) {\n
+          gadget.property_dict.jio_gadget = jio_gadget;\n
+        });\n
+    })\n
+    .ready(function (gadget) {\n
+      gadget.property_dict.filter_panel.panel({\n
+        "position-fixed": true,\n
+        "display": "overlay",\n
+        "position": "right",\n
+        "theme": "b"\n
+      });\n
+    })\n
+    .ready(function (gadget) {\n
+      return gadget.property_dict.filter_panel.trigger("create");\n
+    })\n
+\n
+    /////////////////////////////////////////////////////////////////\n
+    // published methods\n
+    /////////////////////////////////////////////////////////////////\n
+\n
+    /////////////////////////////////////////////////////////////////\n
+    // acquired methods\n
+    /////////////////////////////////////////////////////////////////\n
+    .declareAcquiredMethod("jio_get", "jio_get")\n
+    .declareAcquiredMethod("jio_allDocs", "jio_allDocs")\n
+    .declareAcquiredMethod("getUrlFor", "getUrlFor")\n
+    .declareAcquiredMethod("translate", "translate")\n
+    .declareAcquiredMethod("redirect", "redirect")\n
+\n
+    /////////////////////////////////////////////////////////////////\n
+    // declared methods\n
+    /////////////////////////////////////////////////////////////////\n
+    .declareMethod(\'render\', function (option_dict) {\n
+      var gadget = this,\n
+        content = \'\',\n
+        k,\n
+        k_len,\n
+        search_string = \'\',\n
+        translated_column_list = [],\n
+        all_document_list = [],\n
+        all_docs_result,\n
+        render_listview,\n
+        render_bloc_list = [\n
+          ".custom-listbox .ui-block-a",\n
+          ".custom-listbox .ui-block-b"];\n
+          //".custom-listbox .ui-block-c"];\n
+\n
+      // Create the search query\n
+      if (option_dict.search) {\n
+        search_string = \'(\' + option_dict.column.select + \':"%\' + option_dict.search + \'%"\' + \')\';\n
+        for (k = 0, k_len = option_dict.collapsed_list.length; k < k_len; k += 1) {\n
+          search_string  += \' OR (\' + option_dict.collapsed_list[k].select +\n
+            \':"%\' + option_dict.search + \'%"\' + \')\';\n
+        }\n
+        option_dict.query.query = search_string + \' AND \' + option_dict.query.query;\n
+      }\n
+\n
+      render_listview = function () {\n
+        var jio_options,\n
+          render_promise = [];\n
+        if (option_dict.data_url !== undefined && option_dict.data_url !== \'\') {\n
+          jio_options = {\n
+            type: "query",\n
+            sub_storage: {\n
+              type: "drivetojiomapping",\n
+              sub_storage: {\n
+                type: "dav",\n
+                url: option_dict.data_url\n
+              }\n
+            }\n
+          };\n
+          gadget.property_dict.jio_gadget.createJio(jio_options);\n
+          render_promise.push(\n
+              gadget.property_dict.jio_gadget.allDocs(option_dict.query));\n
+        } else {\n
+          render_promise.push(gadget.jio_allDocs(option_dict.query));\n
+        }\n
+        return new RSVP.Queue()\n
+          .push(function () {\n
+            return RSVP.all(render_promise);\n
+          });\n
+      };\n
+\n
+      // store initial configuration\n
+      gadget.property_dict.option_dict = option_dict;\n
+\n
+      return render_listview()\n
+        .push(function (result_list) {\n
+        var promise_list = [],\n
+          i_len,\n
+          i,\n
+          result = result_list[0];\n
+        all_docs_result = result_list[0];\n
+        for (i = 0, i_len = result.data.total_rows; i < i_len; i += 1) {\n
+          promise_list.push(gadget.getUrlFor({\n
+            jio_key: result.data.rows[i].id,\n
+            jio_for: option_dict.data_url || \'\',\n
+            page: \'view\'\n
+          }));\n
+        }\n
+  \n
+        return RSVP.all(promise_list);\n
+      })\n
+      .push(function (link_list) {\n
+        var row_list = [],\n
+          cell_list,\n
+          datarow_list = all_docs_result.data.rows,\n
+          i_len,\n
+          i,\n
+          j_len,\n
+          j;\n
+  \n
+        // build handlebars object\n
+  \n
+        for (j = 0, j_len = all_docs_result.data.total_rows; j < j_len; j += 1) {\n
+          var data_list=[];\n
+          for (i = 0; i < option_dict.collapsed_list.length; i += 1) {\n
+            data_list.push({\n
+              "icon_class": option_dict.collapsed_list[i].icon_class,\n
+              "text_value": datarow_list[j].value.hasOwnProperty(option_dict.collapsed_list[i].select) ? datarow_list[j].value[option_dict.collapsed_list[i].select]: \'\',\n
+              "inline": option_dict.collapsed_list[i].inline,\n
+              "class": option_dict.collapsed_list[i].css_class\n
+            });\n
+          }\n
+          row_list.push({\n
+            "href": link_list[j],\n
+            "value": datarow_list[j].value[option_dict.column.select],\n
+            "status": datarow_list[j].value.hasOwnProperty(\'status\') ? datarow_list[j].value.status.toLowerCase() : \'\',\n
+            "data_list": data_list\n
+          });\n
+        }\n
+  \n
+        /*for (i = 0; i < option_dict.column_list.length; i += 1) {\n
+          translated_column_list.push(gadget.translate(option_dict.column_list[i].title));\n
+        }*/\n
+        return RSVP.all([\n
+          row_list\n
+        ]);\n
+      })\n
+      .push(function (result_list) {\n
+        var header_content = \'\',\n
+          render_header = option_dict.render_header || true,\n
+          index = gadget.property_dict.block_index % 2,\n
+          sort_element;\n
+        if (render_header) {\n
+          header_content += listbox_header_widget({\n
+            widget_theme : option_dict.widget_theme,\n
+            search: option_dict.search\n
+          });\n
+          gadget.property_dict.element.querySelector(".center")\n
+            .innerHTML = header_content;\n
+          if (option_dict.query.sort_on && option_dict.query.sort_on[0]) {\n
+            sort_element = gadget.property_dict.element.querySelector(\'#listview-sort-\' + option_dict.query.sort_on[0][0]);\n
+            if (sort_element) {\n
+              sort_element.checked = true;\n
+            }\n
+          }\n
+          \n
+        }\n
+        if (result_list[0].length > 0) {\n
+          content += listbox_widget_table({\n
+            row_list: result_list[0],\n
+            header: option_dict.header || {}\n
+          });\n
+          gadget.property_dict.element.querySelector(render_bloc_list[index])\n
+            .innerHTML += content;\n
+        }\n
+        gadget.property_dict.render_deferred.resolve();\n
+      })\n
+      .push(function () {\n
+        gadget.property_dict.block_index += 1;\n
+      });\n
+    })\n
+\n
+    /////////////////////////////////////////////////////////////////\n
+    // declared service\n
+    /////////////////////////////////////////////////////////////////\n
+    .declareService(function () {\n
+      var gadget = this;\n
+      return new RSVP.Queue()\n
+        .push(function () {\n
+          return gadget.property_dict.render_deferred.promise;\n
+        })\n
+        .push(function () {\n
+          var promise_list = [],\n
+            element_list = gadget.property_dict.element.querySelectorAll(\'.ui-listview li > a\'),\n
+            i;\n
+          for (i = 0; i < element_list.length; i += 1) {\n
+            promise_list.push(loopEventListener(\n
+              element_list[i],\n
+              \'click\',\n
+              false,\n
+              bindOnClick.bind(gadget, element_list[i])\n
+            ));\n
+          }\n
+          promise_list.push($(".ui-field-contain input[type=\'radio\']").change(function () {\n
+            var sort_on = \'status\';\n
+            if (!$("#listview-sort-status").is(\':checked\')) {\n
+              sort_on = \'title\';\n
+            }\n
+            return gadget.redirect({\n
+              page: gadget.property_dict.option_dict.search_page || \'\',\n
+              search: gadget.property_dict.option_dict.search || \'\',\n
+              sort_on: sort_on\n
+            });\n
+          }));\n
+          /*element_list = gadget.property_dict.element.querySelectorAll(".ui-field-contain input[type=\'radio\']");\n
+          for (i = 0; i < element_list.length; i += 1) {\n
+            promise_list.push(\n
+              loopEventListener(\n
+              element_list[i],\n
+              \'change\',\n
+              true,\n
+              bindRadioClick.bind(gadget, element_list[i])\n
+            ));\n
+          }*/\n
+          promise_list.push(loopEventListener(\n
+            gadget.property_dict.element.querySelector(\'form.search\'),\n
+            \'submit\',\n
+            false,\n
+            function (evt) {\n
+              return gadget.redirect({\n
+                jio_key: gadget.property_dict.option_dict.jio_key || \'\',\n
+                page: gadget.property_dict.option_dict.search_page || \'\',\n
+                sort_on: gadget.property_dict.option_dict.sort_on || \'\',\n
+                search: evt.target[0].value\n
+              });\n
+            })\n
+          );\n
+          promise_list.push(loopEventListener(\n
+            gadget.property_dict.element.querySelector(\'.listview-refresh\'),\n
+            \'click\',\n
+            false,\n
+            function (evt) {\n
+              return gadget.redirect({\n
+                page: gadget.property_dict.option_dict.search_page || \'\',\n
+                sort_on: gadget.property_dict.option_dict.sort_on || \'\',\n
+                search: gadget.property_dict.option_dict.search || \'\',\n
+                t: Date.now() / 1000 | 0\n
+              });\n
+            })\n
+          );\n
+          promise_list.push(loopEventListener(\n
+            gadget.property_dict.element.querySelector(\'.listview-filter\'),\n
+            \'click\',\n
+            false,\n
+            function (evt) {\n
+              gadget.property_dict.filter_panel.panel("toggle");\n
+            })\n
+          );\n
+          promise_list.push(loopEventListener(\n
+            gadget.property_dict.element.querySelector(\'form.filter\'),\n
+            \'submit\',\n
+            false,\n
+            function (evt) {\n
+              var filter_status = [],\n
+                element = gadget.property_dict.element;\n
+              if (element.querySelector(\'#monitor-promise-error\').checked) {\n
+                filter_status.push(\'error\');\n
+              }\n
+              if (element.querySelector(\'#monitor-promise-success\').checked) {\n
+                filter_status.push(\'ok\');\n
+              }\n
+              if (element.querySelector(\'#monitor-promise-warning\').checked) {\n
+                filter_status.push(\'warning\');\n
+              }\n
+              return gadget.redirect({\n
+                page: gadget.property_dict.option_dict.search_page || \'\',\n
+                sort_on: gadget.property_dict.option_dict.sort_on || \'\',\n
+                search: gadget.property_dict.option_dict.search || \'\',\n
+                status: filter_status.join(\'+\')\n
+              });\n
+            })\n
+          );\n
+          return RSVP.all(promise_list);\n
+        });\n
+    });\n
+\n
+}(window, rJS, RSVP, Handlebars, loopEventListener, $));\n
+
+
+]]></string> </value>
+        </item>
+        <item>
+            <key> <string>title</string> </key>
+            <value> <string>Monitoring Widget Listview JS</string> </value>
+        </item>
+        <item>
+            <key> <string>version</string> </key>
+            <value>
+              <none/>
+            </value>
+        </item>
+        <item>
+            <key> <string>workflow_history</string> </key>
+            <value>
+              <persistent> <string encoding="base64">AAAAAAAAAAI=</string> </persistent>
+            </value>
+        </item>
+      </dictionary>
+    </pickle>
+  </record>
+  <record id="2" aka="AAAAAAAAAAI=">
+    <pickle>
+      <global name="PersistentMapping" module="Persistence.mapping"/>
+    </pickle>
+    <pickle>
+      <dictionary>
+        <item>
+            <key> <string>data</string> </key>
+            <value>
+              <dictionary>
+                <item>
+                    <key> <string>document_publication_workflow</string> </key>
+                    <value>
+                      <persistent> <string encoding="base64">AAAAAAAAAAM=</string> </persistent>
+                    </value>
+                </item>
+                <item>
+                    <key> <string>edit_workflow</string> </key>
+                    <value>
+                      <persistent> <string encoding="base64">AAAAAAAAAAQ=</string> </persistent>
+                    </value>
+                </item>
+                <item>
+                    <key> <string>processing_status_workflow</string> </key>
+                    <value>
+                      <persistent> <string encoding="base64">AAAAAAAAAAU=</string> </persistent>
+                    </value>
+                </item>
+              </dictionary>
+            </value>
+        </item>
+      </dictionary>
+    </pickle>
+  </record>
+  <record id="3" aka="AAAAAAAAAAM=">
+    <pickle>
+      <global name="WorkflowHistoryList" module="Products.ERP5Type.patches.WorkflowTool"/>
+    </pickle>
+    <pickle>
+      <tuple>
+        <none/>
+        <list>
+          <dictionary>
+            <item>
+                <key> <string>action</string> </key>
+                <value> <string>publish</string> </value>
+            </item>
+            <item>
+                <key> <string>actor</string> </key>
+                <value> <string>zope</string> </value>
+            </item>
+            <item>
+                <key> <string>comment</string> </key>
+                <value> <string></string> </value>
+            </item>
+            <item>
+                <key> <string>error_message</string> </key>
+                <value> <string></string> </value>
+            </item>
+            <item>
+                <key> <string>time</string> </key>
+                <value>
+                  <object>
+                    <klass>
+                      <global name="DateTime" module="DateTime.DateTime"/>
+                    </klass>
+                    <tuple>
+                      <none/>
+                    </tuple>
+                    <state>
+                      <tuple>
+                        <float>1451570177.05</float>
+                        <string>UTC</string>
+                      </tuple>
+                    </state>
+                  </object>
+                </value>
+            </item>
+            <item>
+                <key> <string>validation_state</string> </key>
+                <value> <string>published</string> </value>
+            </item>
+          </dictionary>
+        </list>
+      </tuple>
+    </pickle>
+  </record>
+  <record id="4" aka="AAAAAAAAAAQ=">
+    <pickle>
+      <global name="WorkflowHistoryList" module="Products.ERP5Type.patches.WorkflowTool"/>
+    </pickle>
+    <pickle>
+      <tuple>
+        <none/>
+        <list>
+          <dictionary>
+            <item>
+                <key> <string>action</string> </key>
+                <value> <string>edit</string> </value>
+            </item>
+            <item>
+                <key> <string>actor</string> </key>
+                <value> <string>zope</string> </value>
+            </item>
+            <item>
+                <key> <string>comment</string> </key>
+                <value>
+                  <none/>
+                </value>
+            </item>
+            <item>
+                <key> <string>error_message</string> </key>
+                <value> <string></string> </value>
+            </item>
+            <item>
+                <key> <string>serial</string> </key>
+                <value> <string>948.36422.1075.25275</string> </value>
+            </item>
+            <item>
+                <key> <string>state</string> </key>
+                <value> <string>current</string> </value>
+            </item>
+            <item>
+                <key> <string>time</string> </key>
+                <value>
+                  <object>
+                    <klass>
+                      <global name="DateTime" module="DateTime.DateTime"/>
+                    </klass>
+                    <tuple>
+                      <none/>
+                    </tuple>
+                    <state>
+                      <tuple>
+                        <float>1453286072.67</float>
+                        <string>UTC</string>
+                      </tuple>
+                    </state>
+                  </object>
+                </value>
+            </item>
+          </dictionary>
+        </list>
+      </tuple>
+    </pickle>
+  </record>
+  <record id="5" aka="AAAAAAAAAAU=">
+    <pickle>
+      <global name="WorkflowHistoryList" module="Products.ERP5Type.patches.WorkflowTool"/>
+    </pickle>
+    <pickle>
+      <tuple>
+        <none/>
+        <list>
+          <dictionary>
+            <item>
+                <key> <string>action</string> </key>
+                <value> <string>detect_converted_file</string> </value>
+            </item>
+            <item>
+                <key> <string>actor</string> </key>
+                <value> <string>zope</string> </value>
+            </item>
+            <item>
+                <key> <string>comment</string> </key>
+                <value> <string></string> </value>
+            </item>
+            <item>
+                <key> <string>error_message</string> </key>
+                <value> <string></string> </value>
+            </item>
+            <item>
+                <key> <string>external_processing_state</string> </key>
+                <value> <string>converted</string> </value>
+            </item>
+            <item>
+                <key> <string>serial</string> </key>
+                <value> <string>0.0.0.0</string> </value>
+            </item>
+            <item>
+                <key> <string>time</string> </key>
+                <value>
+                  <object>
+                    <klass>
+                      <global name="DateTime" module="DateTime.DateTime"/>
+                    </klass>
+                    <tuple>
+                      <none/>
+                    </tuple>
+                    <state>
+                      <tuple>
+                        <float>1451570115.25</float>
+                        <string>UTC</string>
+                      </tuple>
+                    </state>
+                  </object>
+                </value>
+            </item>
+          </dictionary>
+        </list>
+      </tuple>
+    </pickle>
+  </record>
+</ZopeData>

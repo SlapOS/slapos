@@ -1,0 +1,499 @@
+<?xml version="1.0"?>
+<ZopeData>
+  <record id="1" aka="AAAAAAAAAAE=">
+    <pickle>
+      <global name="Web Script" module="erp5.portal_type"/>
+    </pickle>
+    <pickle>
+      <dictionary>
+        <item>
+            <key> <string>_Access_contents_information_Permission</string> </key>
+            <value>
+              <tuple>
+                <string>Anonymous</string>
+                <string>Assignee</string>
+                <string>Assignor</string>
+                <string>Associate</string>
+                <string>Auditor</string>
+                <string>Manager</string>
+                <string>Owner</string>
+              </tuple>
+            </value>
+        </item>
+        <item>
+            <key> <string>_Add_portal_content_Permission</string> </key>
+            <value>
+              <tuple>
+                <string>Assignor</string>
+                <string>Manager</string>
+              </tuple>
+            </value>
+        </item>
+        <item>
+            <key> <string>_Change_local_roles_Permission</string> </key>
+            <value>
+              <tuple>
+                <string>Assignor</string>
+                <string>Manager</string>
+              </tuple>
+            </value>
+        </item>
+        <item>
+            <key> <string>_Modify_portal_content_Permission</string> </key>
+            <value>
+              <tuple>
+                <string>Manager</string>
+              </tuple>
+            </value>
+        </item>
+        <item>
+            <key> <string>_View_Permission</string> </key>
+            <value>
+              <tuple>
+                <string>Anonymous</string>
+                <string>Assignee</string>
+                <string>Assignor</string>
+                <string>Associate</string>
+                <string>Auditor</string>
+                <string>Manager</string>
+                <string>Owner</string>
+              </tuple>
+            </value>
+        </item>
+        <item>
+            <key> <string>categories</string> </key>
+            <value>
+              <tuple>
+                <string>classification/collaborative/public</string>
+              </tuple>
+            </value>
+        </item>
+        <item>
+            <key> <string>content_md5</string> </key>
+            <value>
+              <none/>
+            </value>
+        </item>
+        <item>
+            <key> <string>content_type</string> </key>
+            <value> <string>text/html</string> </value>
+        </item>
+        <item>
+            <key> <string>default_reference</string> </key>
+            <value> <string>gadget_monitoring_status_grid.js</string> </value>
+        </item>
+        <item>
+            <key> <string>description</string> </key>
+            <value>
+              <none/>
+            </value>
+        </item>
+        <item>
+            <key> <string>id</string> </key>
+            <value> <string>gadget_monitoring_status_grid_js</string> </value>
+        </item>
+        <item>
+            <key> <string>language</string> </key>
+            <value> <string>en</string> </value>
+        </item>
+        <item>
+            <key> <string>portal_type</string> </key>
+            <value> <string>Web Script</string> </value>
+        </item>
+        <item>
+            <key> <string>short_title</string> </key>
+            <value>
+              <none/>
+            </value>
+        </item>
+        <item>
+            <key> <string>text_content</string> </key>
+            <value> <string encoding="cdata"><![CDATA[
+
+/*global window, rJS, RSVP, URI, location, $,\n
+    loopEventListener, btoa */\n
+/*jslint nomen: true, indent: 2, maxerr: 3*/\n
+(function (window, rJS, $) {\n
+  "use strict";\n
+\n
+  rJS(window)\n
+    .ready(function (gadget) {\n
+      gadget.property_dict = {\n
+        render_deferred: RSVP.defer()\n
+      };\n
+    })\n
+    .ready(function (gadget) {\n
+      return gadget.getDeclaredGadget("jio_gadget")\n
+        .push(function (jio_gadget) {\n
+          gadget.property_dict.jio_gadget = jio_gadget;\n
+        });\n
+    })\n
+    .ready(function (gadget) {\n
+      return gadget.getDeclaredGadget("listview")\n
+        .push(function (listbox_gadget) {\n
+          gadget.property_dict.listbox = listbox_gadget;\n
+          return gadget.getSetting(\'monitoring_display_style\');\n
+        })\n
+        .push(function (display_option) {\n
+          gadget.property_dict.display_option = display_option || \'grid\';\n
+        });\n
+    })\n
+    .declareMethod(\'render\', function (options) {\n
+      var gadget = this,\n
+        jio_gadget,\n
+        listbox,\n
+        monitor_id = \'monitor.hal\',\n
+        header = {\n
+          "title": \'Monitoring Promise Status\'\n
+        },\n
+        listview_configuration = {\n
+          search_page: \'status_grid\',\n
+          search: options.search,\n
+          column: {\n
+            select: \'title\',\n
+            title: \'Title\'\n
+          },\n
+          collapsed_list: [{\n
+            select: \'start-date\',\n
+            icon_class: \'fa fa-calendar\',\n
+            css_class: \'\',\n
+            inline: false\n
+          }, {\n
+            select: \'message\',\n
+            css_class: \'ui-content-customtext\',\n
+            icon_class: \'fa fa-list-alt\',\n
+            inline: false\n
+          }],\n
+          \'collection_id\': \'monitor.hal\',\n
+          \'render_header\': true,\n
+          \'sort_column_list\': [\n
+            {select: \'Status\', title: \'Status\'},\n
+            {select: \'title\', title: \'Title\'}\n
+          ],\n
+          query: {\n
+            select_list: [\'title\', \'status\', \'start-date\', \'message\'],\n
+            query: \'_id:(NOT "monitor.hal") AND _id:(NOT "monitor.global")\',\n
+            sort_on: [["status", "ascending"]]\n
+          }\n
+        },\n
+        jio_options = {\n
+          type: "query",\n
+          sub_storage: {\n
+            type: "drivetojiomapping",\n
+            sub_storage: {\n
+              type: "dav"\n
+            }\n
+          }\n
+        };\n
+\n
+      if (gadget.property_dict.display_option == \'list\') {\n
+        header.display_grid = \'#page=main&display=grid\';\n
+      } else {\n
+        header.display_list = \'#page=main&display=list\';\n
+      }\n
+      return gadget.updateHeader(header)\n
+        .push(function () {\n
+          return gadget.jio_get(monitor_id);\n
+        })\n
+        .push(function (collection_dict) {\n
+          var render_promise_list = [],\n
+            listbox_url_list = [],\n
+            listbox_options,\n
+            render_related_monitor,\n
+            filter_part_list = [],\n
+            i,\n
+            j;\n
+\n
+          render_related_monitor = function (storage_url) {\n
+            var jio_config = $.extend(true, {}, jio_options);\n
+            jio_config.sub_storage.sub_storage.url = storage_url;\n
+            gadget.property_dict.jio_gadget.createJio(jio_config);\n
+            return gadget.property_dict.jio_gadget.get(monitor_id)\n
+              .push(function (collection_dict) {\n
+                // XX Using public URL here!!\n
+                var public_storage_url = collection_dict._links.jio_public.href,\n
+                  listbox_options = $.extend(true, {}, listview_configuration);\n
+\n
+                  listbox_options.data_url = public_storage_url;\n
+                  listbox_options.render_header = false;\n
+                  listbox_options.header = {\n
+                    title: collection_dict.title,\n
+                    public_url: collection_dict._links.public.href || \'\',\n
+                    private_url: collection_dict._links.private.href || \'\',\n
+                    rss_url: collection_dict._links.rss.href || \'\'\n
+                  };\n
+                  render_promise_list.push(\n
+                    gadget.property_dict.listbox.render(listbox_options)\n
+                  );\n
+                  return render_promise_list;\n
+              });\n
+          };\n
+\n
+          if (options.sort_on && options.sort_on !== \'status\') {\n
+            listview_configuration.query.sort_on = [[\'title\', \'ascending\']];\n
+          }\n
+          if (options.status && options.status !== \'\') {\n
+            for (j = 0; j < options.status.split(\'+\').length; j += 1) {\n
+              filter_part_list.push(\'(status:"\' + options.status.split(\'+\')[j].toUpperCase() + \'")\');\n
+            }\n
+            listview_configuration.query.query += \' AND (\' + filter_part_list.join(\' OR \') + \')\';\n
+          }\n
+\n
+          listbox_options = $.extend(true, {}, listview_configuration);\n
+          listbox_options.data_url = collection_dict._links.jio_public.href;\n
+          listbox_options.header = {\n
+            title: collection_dict.title,\n
+            public_url: collection_dict._links.public.href || \'\',\n
+            private_url: collection_dict._links.private.href || \'\',\n
+            rss_url: collection_dict._links.rss.href || \'\'\n
+          };\n
+\n
+          if (collection_dict._links.related_monitor !== undefined &&\n
+                  collection_dict._links.related_monitor !== []) {\n
+            for (i = 0; i< collection_dict._links.related_monitor.length; i += 1) {\n
+              render_promise_list.push(\n
+                render_related_monitor(collection_dict._links.related_monitor[i].href)\n
+              );\n
+            }\n
+          }\n
+          return new RSVP.Queue()\n
+            .push(function () {\n
+              return RSVP.all([gadget.property_dict.listbox.render(listbox_options)]);\n
+            })\n
+            .push(function () {\n
+              return RSVP.all(render_promise_list);\n
+            });\n
+          \n
+        });\n
+    })\n
+    .declareAcquiredMethod("getSetting", "getSetting")\n
+    .declareAcquiredMethod("updateHeader", "updateHeader")\n
+    .declareAcquiredMethod("jio_get", "jio_get")\n
+    .declareAcquiredMethod("jio_allDocs", "jio_allDocs");\n
+\n
+\n
+}(window, rJS, $));
+
+]]></string> </value>
+        </item>
+        <item>
+            <key> <string>title</string> </key>
+            <value> <string>Monitoring Status Grid Gadget JS</string> </value>
+        </item>
+        <item>
+            <key> <string>version</string> </key>
+            <value> <string>001</string> </value>
+        </item>
+        <item>
+            <key> <string>workflow_history</string> </key>
+            <value>
+              <persistent> <string encoding="base64">AAAAAAAAAAI=</string> </persistent>
+            </value>
+        </item>
+      </dictionary>
+    </pickle>
+  </record>
+  <record id="2" aka="AAAAAAAAAAI=">
+    <pickle>
+      <global name="PersistentMapping" module="Persistence.mapping"/>
+    </pickle>
+    <pickle>
+      <dictionary>
+        <item>
+            <key> <string>data</string> </key>
+            <value>
+              <dictionary>
+                <item>
+                    <key> <string>document_publication_workflow</string> </key>
+                    <value>
+                      <persistent> <string encoding="base64">AAAAAAAAAAM=</string> </persistent>
+                    </value>
+                </item>
+                <item>
+                    <key> <string>edit_workflow</string> </key>
+                    <value>
+                      <persistent> <string encoding="base64">AAAAAAAAAAQ=</string> </persistent>
+                    </value>
+                </item>
+                <item>
+                    <key> <string>processing_status_workflow</string> </key>
+                    <value>
+                      <persistent> <string encoding="base64">AAAAAAAAAAU=</string> </persistent>
+                    </value>
+                </item>
+              </dictionary>
+            </value>
+        </item>
+      </dictionary>
+    </pickle>
+  </record>
+  <record id="3" aka="AAAAAAAAAAM=">
+    <pickle>
+      <global name="WorkflowHistoryList" module="Products.ERP5Type.patches.WorkflowTool"/>
+    </pickle>
+    <pickle>
+      <tuple>
+        <none/>
+        <list>
+          <dictionary>
+            <item>
+                <key> <string>action</string> </key>
+                <value> <string>publish</string> </value>
+            </item>
+            <item>
+                <key> <string>actor</string> </key>
+                <value> <string>zope</string> </value>
+            </item>
+            <item>
+                <key> <string>comment</string> </key>
+                <value> <string></string> </value>
+            </item>
+            <item>
+                <key> <string>error_message</string> </key>
+                <value> <string></string> </value>
+            </item>
+            <item>
+                <key> <string>time</string> </key>
+                <value>
+                  <object>
+                    <klass>
+                      <global name="DateTime" module="DateTime.DateTime"/>
+                    </klass>
+                    <tuple>
+                      <none/>
+                    </tuple>
+                    <state>
+                      <tuple>
+                        <float>1451486479.02</float>
+                        <string>UTC</string>
+                      </tuple>
+                    </state>
+                  </object>
+                </value>
+            </item>
+            <item>
+                <key> <string>validation_state</string> </key>
+                <value> <string>published</string> </value>
+            </item>
+          </dictionary>
+        </list>
+      </tuple>
+    </pickle>
+  </record>
+  <record id="4" aka="AAAAAAAAAAQ=">
+    <pickle>
+      <global name="WorkflowHistoryList" module="Products.ERP5Type.patches.WorkflowTool"/>
+    </pickle>
+    <pickle>
+      <tuple>
+        <none/>
+        <list>
+          <dictionary>
+            <item>
+                <key> <string>action</string> </key>
+                <value> <string>edit</string> </value>
+            </item>
+            <item>
+                <key> <string>actor</string> </key>
+                <value> <string>zope</string> </value>
+            </item>
+            <item>
+                <key> <string>comment</string> </key>
+                <value>
+                  <none/>
+                </value>
+            </item>
+            <item>
+                <key> <string>error_message</string> </key>
+                <value> <string></string> </value>
+            </item>
+            <item>
+                <key> <string>serial</string> </key>
+                <value> <string>948.36427.28181.36864</string> </value>
+            </item>
+            <item>
+                <key> <string>state</string> </key>
+                <value> <string>current</string> </value>
+            </item>
+            <item>
+                <key> <string>time</string> </key>
+                <value>
+                  <object>
+                    <klass>
+                      <global name="DateTime" module="DateTime.DateTime"/>
+                    </klass>
+                    <tuple>
+                      <none/>
+                    </tuple>
+                    <state>
+                      <tuple>
+                        <float>1453969404.37</float>
+                        <string>UTC</string>
+                      </tuple>
+                    </state>
+                  </object>
+                </value>
+            </item>
+          </dictionary>
+        </list>
+      </tuple>
+    </pickle>
+  </record>
+  <record id="5" aka="AAAAAAAAAAU=">
+    <pickle>
+      <global name="WorkflowHistoryList" module="Products.ERP5Type.patches.WorkflowTool"/>
+    </pickle>
+    <pickle>
+      <tuple>
+        <none/>
+        <list>
+          <dictionary>
+            <item>
+                <key> <string>action</string> </key>
+                <value> <string>detect_converted_file</string> </value>
+            </item>
+            <item>
+                <key> <string>actor</string> </key>
+                <value> <string>zope</string> </value>
+            </item>
+            <item>
+                <key> <string>comment</string> </key>
+                <value> <string></string> </value>
+            </item>
+            <item>
+                <key> <string>error_message</string> </key>
+                <value> <string></string> </value>
+            </item>
+            <item>
+                <key> <string>external_processing_state</string> </key>
+                <value> <string>converted</string> </value>
+            </item>
+            <item>
+                <key> <string>serial</string> </key>
+                <value> <string>0.0.0.0</string> </value>
+            </item>
+            <item>
+                <key> <string>time</string> </key>
+                <value>
+                  <object>
+                    <klass>
+                      <global name="DateTime" module="DateTime.DateTime"/>
+                    </klass>
+                    <tuple>
+                      <none/>
+                    </tuple>
+                    <state>
+                      <tuple>
+                        <float>1451486324.28</float>
+                        <string>UTC</string>
+                      </tuple>
+                    </state>
+                  </object>
+                </value>
+            </item>
+          </dictionary>
+        </list>
+      </tuple>
+    </pickle>
+  </record>
+</ZopeData>

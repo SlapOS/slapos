@@ -1,0 +1,708 @@
+<?xml version="1.0"?>
+<ZopeData>
+  <record id="1" aka="AAAAAAAAAAE=">
+    <pickle>
+      <global name="Web Script" module="erp5.portal_type"/>
+    </pickle>
+    <pickle>
+      <dictionary>
+        <item>
+            <key> <string>_Access_contents_information_Permission</string> </key>
+            <value>
+              <tuple>
+                <string>Anonymous</string>
+                <string>Assignee</string>
+                <string>Assignor</string>
+                <string>Associate</string>
+                <string>Auditor</string>
+                <string>Manager</string>
+                <string>Owner</string>
+              </tuple>
+            </value>
+        </item>
+        <item>
+            <key> <string>_Add_portal_content_Permission</string> </key>
+            <value>
+              <tuple>
+                <string>Assignor</string>
+                <string>Manager</string>
+              </tuple>
+            </value>
+        </item>
+        <item>
+            <key> <string>_Change_local_roles_Permission</string> </key>
+            <value>
+              <tuple>
+                <string>Assignor</string>
+                <string>Manager</string>
+              </tuple>
+            </value>
+        </item>
+        <item>
+            <key> <string>_Modify_portal_content_Permission</string> </key>
+            <value>
+              <tuple>
+                <string>Manager</string>
+              </tuple>
+            </value>
+        </item>
+        <item>
+            <key> <string>_View_Permission</string> </key>
+            <value>
+              <tuple>
+                <string>Anonymous</string>
+                <string>Assignee</string>
+                <string>Assignor</string>
+                <string>Associate</string>
+                <string>Auditor</string>
+                <string>Manager</string>
+                <string>Owner</string>
+              </tuple>
+            </value>
+        </item>
+        <item>
+            <key> <string>categories</string> </key>
+            <value>
+              <tuple>
+                <string>classification/collaborative/public</string>
+              </tuple>
+            </value>
+        </item>
+        <item>
+            <key> <string>content_md5</string> </key>
+            <value>
+              <none/>
+            </value>
+        </item>
+        <item>
+            <key> <string>default_reference</string> </key>
+            <value> <string>gadget_monitoring_promise_interface.js</string> </value>
+        </item>
+        <item>
+            <key> <string>description</string> </key>
+            <value>
+              <none/>
+            </value>
+        </item>
+        <item>
+            <key> <string>id</string> </key>
+            <value> <string>gadget_monitoring_promise_interface_js</string> </value>
+        </item>
+        <item>
+            <key> <string>language</string> </key>
+            <value>
+              <none/>
+            </value>
+        </item>
+        <item>
+            <key> <string>portal_type</string> </key>
+            <value> <string>Web Script</string> </value>
+        </item>
+        <item>
+            <key> <string>short_title</string> </key>
+            <value>
+              <none/>
+            </value>
+        </item>
+        <item>
+            <key> <string>text_content</string> </key>
+            <value> <string encoding="cdata"><![CDATA[
+
+/*global window, rJS, RSVP, Handlebars, $\n
+    loopEventListener, btoa */\n
+/*jslint nomen: true, indent: 2, maxerr: 3*/\n
+(function (window, rJS, Handlebars, RSVP, $) {\n
+  "use strict";\n
+\n
+  var gadget_klass = rJS(window),\n
+    templater = gadget_klass.__template_element,\n
+    promise_widget_template = Handlebars.compile(\n
+      templater.getElementById("promise-widget-template").innerHTML\n
+    ),\n
+    instance_widget_template = Handlebars.compile(\n
+      templater.getElementById("pinstance-widget-template").innerHTML\n
+    ),\n
+    links_widget_template = Handlebars.compile(\n
+      templater.getElementById("plinks-widget-template").innerHTML\n
+    ),\n
+    history_widget_template = Handlebars.compile(\n
+      templater.getElementById("phistory-widget-template").innerHTML\n
+    );\n
+\n
+  function formatDate(d){\n
+    function addZero(n){\n
+      return n < 10 ? \'0\' + n : \'\' + n;\n
+    }\n
+\n
+    return d.getFullYear() + "-" + addZero(d.getMonth()+1)\n
+      + "-" + addZero(d.getDate()) + " " + addZero(d.getHours())\n
+      + ":" + addZero(d.getMinutes()) + ":" + addZero(d.getMinutes());\n
+  }\n
+\n
+  gadget_klass\n
+    .ready(function (gadget) {\n
+      return gadget.getElement()\n
+        .push(function (element) {\n
+          gadget.property_dict = {\n
+            element: element,\n
+            render_deferred: RSVP.defer()\n
+          };\n
+        });\n
+    })\n
+    .ready(function (gadget) {\n
+      return gadget.getDeclaredGadget("jio_gadget")\n
+        .push(function (jio_gadget) {\n
+          gadget.property_dict.jio_gadget = jio_gadget;\n
+        });\n
+    })\n
+    .ready(function (gadget) {\n
+      return gadget.getDeclaredGadget(\'login_gadget\')\n
+        .push(function (login_gadget) {\n
+          gadget.property_dict.login_gadget = login_gadget;\n
+        });\n
+    })\n
+    .ready(function (gadget) {\n
+      return gadget.getDeclaredGadget("chart0")\n
+        .push(function (chart0) {\n
+          gadget.property_dict.chart0 = chart0;\n
+        });\n
+    })\n
+    .ready(function (gadget) {\n
+      return gadget.getDeclaredGadget("chart1")\n
+        .push(function (chart1) {\n
+          gadget.property_dict.chart1 = chart1;\n
+        });\n
+    })\n
+    .declareMethod(\'render\', function (options) {\n
+      var gadget = this,\n
+        global_state,\n
+        url_options = $.extend(true, {}, options);\n
+        url_options.t = Date.now() / 1000 | 0;\n
+      return gadget.getUrlFor(url_options)\n
+        .push(function (refresh_url) {\n
+          var back_url = \'#page=main&t=\' + (Date.now() / 1000 | 0);\n
+          return RSVP.all([\n
+            gadget.updateHeader({\n
+              title: options.jio_key,\n
+              //back_url: back_url,\n
+              //panel_action: false,\n
+              refresh_url: refresh_url\n
+            })\n
+          ]);\n
+        })\n
+        .push(function () {\n
+          if (options.jio_for !== undefined && options.jio_for !== \'\') {\n
+            // Load from defined url\n
+            var jio_options = {\n
+              type: "query",\n
+              sub_storage: {\n
+                type: "drivetojiomapping",\n
+                sub_storage: {\n
+                  type: "dav",\n
+                  url: options.jio_for\n
+                }\n
+              }\n
+            };\n
+            gadget.property_dict.jio_gadget.createJio(jio_options);\n
+            return gadget.property_dict.jio_gadget.get(options.jio_key);\n
+          } else {\n
+            return gadget.jio_get(options.jio_key);\n
+          }\n
+        })\n
+        .push(function (element) {\n
+          var content,\n
+            status,\n
+            jio_options,\n
+            promise_list = [];\n
+\n
+          return new RSVP.Queue()\n
+            .push(function () {\n
+              return gadget.property_dict.login_gadget.loginRedirect(\n
+                element._links.monitor.href,\n
+                options,\n
+                element.instance,\n
+                element.hosting_subscription\n
+              );\n
+            })\n
+            .push(function (cred) {\n
+              status = (element.status.toLowerCase() === \'error\') ? \n
+                \'red\' : (element.status.toLowerCase() === \'warning\') ? \'warning\' : \'ok\';\n
+              element.state = status;\n
+              if (element[\'change-time\']) {\n
+                element.status_date = formatDate(new Date(element[\'change-time\']*1000));\n
+              }\n
+              content = promise_widget_template({\n
+                  element: element\n
+                });\n
+              gadget.property_dict.element.querySelector(".ui-promise-content .ui-promise-title h2")\n
+                .innerHTML += element.title;\n
+              gadget.property_dict.element.querySelector("#promise-overview .ui-block-a")\n
+                .innerHTML += content;\n
+              if (element.hasOwnProperty(\'_links\') && element._links.hasOwnProperty(\'monitor\') && element._links.monitor.href) {\n
+                jio_options = {\n
+                  type: "query",\n
+                  sub_storage: {\n
+                    type: "drivetojiomapping",\n
+                    sub_storage: {\n
+                      type: "dav",\n
+                      url: element._links.monitor.href,\n
+                      basic_login: cred.hash\n
+                    }\n
+                  }\n
+                };\n
+                gadget.property_dict.jio_gadget.createJio(jio_options);\n
+                promise_list.push(gadget.property_dict.jio_gadget.get(\'monitor.global\'));\n
+              }\n
+              return RSVP.all(promise_list);\n
+            })\n
+            .push(function (result) {\n
+              var global_content,\n
+                links_content,\n
+                amount = 0,\n
+                warn = result[0].state.warning*100,\n
+                fail = result[0].state.error*100,\n
+                success = result[0].state.success*100,\n
+                tmp_process_url,\n
+                tmp_url;\n
+\n
+              global_state = result[0];\n
+\n
+              // Ressource view Urls\n
+              tmp_url = "#page=resource_view&title=" + global_state.title +\n
+                "&root=" + global_state[\'hosting-title\'] +\n
+                "&jio_for=" + global_state._links.private_url.href;\n
+\n
+              tmp_process_url = "#page=process_view&title=" + global_state.title +\n
+                "&root=" + global_state[\'hosting-title\'] +\n
+                "&jio_for=" + global_state._links.private_url.href;\n
+\n
+              amount = result[0].state.warning + result[0].state.error + result[0].state.success;\n
+              global_content = instance_widget_template({\n
+                title: result[0].title,\n
+                root_title: result[0][\'hosting-title\'],\n
+                status: result[0].status,\n
+                date: result[0].date,\n
+                errors: (fail/amount).toFixed(2),\n
+                warning: (warn/amount).toFixed(2),\n
+                success: (success/amount).toFixed(2),\n
+                instance: result[0]._embedded.instance,\n
+                resource_url: tmp_url,\n
+                process_url: tmp_process_url\n
+              });\n
+              links_content = links_widget_template({\n
+                public_url: result[0]._links.public_url.href,\n
+                private_url: result[0]._links.private_url.href,\n
+                rss_url: result[0]._links.rss_url.href\n
+              });\n
+              gadget.property_dict.element.querySelector("#promise-overview .ui-block-b")\n
+                .innerHTML += global_content;\n
+              gadget.property_dict.element.querySelector("#promise-overview .ui-block-a .promise-links")\n
+                .innerHTML += links_content;\n
+            })\n
+            .push(function () {\n
+              return gadget.property_dict.render_deferred.resolve();\n
+            });\n
+        })\n
+        .push(function () {\n
+          var title = options.jio_key.slice(0, -7),\n
+            jio_options,\n
+            history_content,\n
+            jio_url = options.jio_for + \'/.jio_documents/history/\' + title; // XXX hardcoded URL\n
+\n
+          jio_options = {\n
+            type: "query",\n
+            sub_storage: {\n
+              type: "drivetojiomapping",\n
+              sub_storage: {\n
+                type: "dav",\n
+                url: jio_url\n
+              }\n
+            }\n
+          };\n
+          gadget.property_dict.jio_gadget.createJio(jio_options);\n
+          return gadget.property_dict.jio_gadget.allDocs({\n
+              select_list: [\'title\', \'message\', \'start-date\', \'status\'],\n
+              limit: [0, 30],\n
+              sort_on: [["start-date", "descending"]]\n
+            })\n
+          .push(function (result_list) {\n
+            var i,\n
+              history_list = [];\n
+\n
+            for (i = 0; i < result_list.data.rows.length; i += 1) {\n
+              history_list.push(result_list.data.rows[i].value);\n
+            }\n
+            history_content = history_widget_template({history_list: history_list});\n
+            gadget.property_dict.element.querySelector("#promise-overview .ui-block-a")\n
+                  .innerHTML += history_content;\n
+          })\n
+          .push(function () {\n
+            return gadget.property_dict.login_gadget.loginRedirect(\n
+              global_state._links.private_url.href,\n
+              options,\n
+              global_state.title,\n
+              global_state[\'hosting-title\']);\n
+          })\n
+          .push(function (cred) {\n
+            var jio_options,\n
+              jio_key = "monitor_state.data",\n
+              data_url = global_state._links.private_url.href + \'data/\';\n
+\n
+            jio_options = {\n
+              type: "query",\n
+              sub_storage: {\n
+                type: "drivetojiomapping",\n
+                sub_storage: {\n
+                  type: "dav",\n
+                  url: data_url,\n
+                  basic_login: cred.hash\n
+                }\n
+              }\n
+            };\n
+            gadget.property_dict.jio_gadget.createJio(jio_options);\n
+            return gadget.property_dict.jio_gadget.get(jio_key);\n
+          })\n
+          .push(function (monitor_state) {\n
+            var data = {\n
+                labels: [],\n
+                datasets: [\n
+                  {\n
+                    label: "SUCCESS",\n
+                    fillColor: "rgba(21, 246, 21, 0)",\n
+                    strokeColor: "rgba(21, 246, 21,1)",\n
+                    pointColor: "rgba(21, 246, 21,1)",\n
+                    pointStrokeColor: "#fff",\n
+                    pointHighlightFill: "#fff",\n
+                    pointHighlightStroke: "rgba(21, 246, 21,1)",\n
+                    data: []\n
+                  },\n
+                  {\n
+                    label: "ERROR",\n
+                    fillColor: "rgba(255, 14, 44, 0)",\n
+                    strokeColor: "rgba(255, 14, 44, 1)",\n
+                    pointColor: "rgba(255, 14, 44, 1)",\n
+                    pointStrokeColor: "#fff",\n
+                    pointHighlightFill: "#fff",\n
+                    pointHighlightStroke: "rgba(255, 14, 44, 1)",\n
+                    data: []\n
+                  },\n
+                  {\n
+                    label: "WARNING",\n
+                    fillColor: "rgba(239, 196, 56,0)",\n
+                    strokeColor: "rgba(239, 196, 56,1)",\n
+                    pointColor: "rgba(239, 196, 56,1)",\n
+                    pointStrokeColor: "#fff",\n
+                    pointHighlightFill: "#fff",\n
+                    pointHighlightStroke: "rgba(239, 196, 56,1)",\n
+                    data: []\n
+                  }\n
+                ]\n
+              },\n
+              i,\n
+              tmp,\n
+              start = 0;\n
+              \n
+            if (monitor_state.hasOwnProperty(\'data\')) {\n
+              if (monitor_state.data.length > 20) {\n
+                start = monitor_state.data.length - 20;\n
+              }\n
+              for (i = start; i < monitor_state.data.length; i += 1) {\n
+                tmp = monitor_state.data[i].split(\',\');\n
+                data.labels.push(tmp[0]);\n
+                data.datasets[0].data.push(tmp[1]);\n
+                data.datasets[1].data.push(tmp[2]);\n
+                data.datasets[2].data.push(tmp[3]);\n
+              }\n
+            }\n
+            return gadget.property_dict.chart1.render({\n
+              type: \'line\',\n
+              config: {\n
+                bezierCurve: false,\n
+                responsive: true\n
+              },\n
+              data: data\n
+            });\n
+          })\n
+          .push(function () {\n
+            var data = {\n
+              labels: [global_state.date],\n
+              datasets: [\n
+                {\n
+                  label: "SUCCESS",\n
+                  fillColor: "rgba(21, 246, 21, 0.7)",\n
+                  strokeColor: "rgba(21, 246, 21,1)",\n
+                  pointColor: "rgba(21, 246, 21,1)",\n
+                  pointStrokeColor: "#fff",\n
+                  pointHighlightFill: "#fff",\n
+                  pointHighlightStroke: "rgba(21, 246, 21,1)",\n
+                  data: [global_state.state.success],\n
+                  name: "success"\n
+                },\n
+                {\n
+                  label: "ERROR",\n
+                  fillColor: "rgba(255, 14, 44, 0.7)",\n
+                  strokeColor: "rgba(255, 14, 44, 1)",\n
+                  pointColor: "rgba(255, 14, 44, 1)",\n
+                  pointStrokeColor: "#fff",\n
+                  pointHighlightFill: "#fff",\n
+                  pointHighlightStroke: "rgba(255, 14, 44, 1)",\n
+                  data: [global_state.state.error],\n
+                  name: "error"\n
+                },\n
+                {\n
+                  label: "WARNING",\n
+                  fillColor: "rgba(239, 196, 56,0.7)",\n
+                  strokeColor: "rgba(239, 196, 56,1)",\n
+                  pointColor: "rgba(239, 196, 56,1)",\n
+                  pointStrokeColor: "#fff",\n
+                  pointHighlightFill: "#fff",\n
+                  pointHighlightStroke: "rgba(239, 196, 56,1)",\n
+                  data: [global_state.state.warning],\n
+                  name: "warning"\n
+                }\n
+              ]\n
+            };\n
+            return gadget.property_dict.chart0.render({\n
+              type: \'bar\',\n
+              config: {\n
+                bezierCurve: false,\n
+                responsive: true\n
+              },\n
+              data: data\n
+            });\n
+          });\n
+        });\n
+    })\n
+    .declareAcquiredMethod("updateHeader", "updateHeader")\n
+    .declareAcquiredMethod(\'getUrlFor\', \'getUrlFor\')\n
+    //.declareAcquiredMethod(\'loginRedirect\', \'loginRedirect\')\n
+    .declareAcquiredMethod("jio_get", "jio_get");\n
+\n
+\n
+}(window, rJS, Handlebars, RSVP, $));
+
+]]></string> </value>
+        </item>
+        <item>
+            <key> <string>title</string> </key>
+            <value> <string>Monitoring Promise Interface Gadget JS</string> </value>
+        </item>
+        <item>
+            <key> <string>version</string> </key>
+            <value>
+              <none/>
+            </value>
+        </item>
+        <item>
+            <key> <string>workflow_history</string> </key>
+            <value>
+              <persistent> <string encoding="base64">AAAAAAAAAAI=</string> </persistent>
+            </value>
+        </item>
+      </dictionary>
+    </pickle>
+  </record>
+  <record id="2" aka="AAAAAAAAAAI=">
+    <pickle>
+      <global name="PersistentMapping" module="Persistence.mapping"/>
+    </pickle>
+    <pickle>
+      <dictionary>
+        <item>
+            <key> <string>data</string> </key>
+            <value>
+              <dictionary>
+                <item>
+                    <key> <string>document_publication_workflow</string> </key>
+                    <value>
+                      <persistent> <string encoding="base64">AAAAAAAAAAM=</string> </persistent>
+                    </value>
+                </item>
+                <item>
+                    <key> <string>edit_workflow</string> </key>
+                    <value>
+                      <persistent> <string encoding="base64">AAAAAAAAAAQ=</string> </persistent>
+                    </value>
+                </item>
+                <item>
+                    <key> <string>processing_status_workflow</string> </key>
+                    <value>
+                      <persistent> <string encoding="base64">AAAAAAAAAAU=</string> </persistent>
+                    </value>
+                </item>
+              </dictionary>
+            </value>
+        </item>
+      </dictionary>
+    </pickle>
+  </record>
+  <record id="3" aka="AAAAAAAAAAM=">
+    <pickle>
+      <global name="WorkflowHistoryList" module="Products.ERP5Type.patches.WorkflowTool"/>
+    </pickle>
+    <pickle>
+      <tuple>
+        <none/>
+        <list>
+          <dictionary>
+            <item>
+                <key> <string>action</string> </key>
+                <value> <string>publish</string> </value>
+            </item>
+            <item>
+                <key> <string>actor</string> </key>
+                <value> <string>zope</string> </value>
+            </item>
+            <item>
+                <key> <string>comment</string> </key>
+                <value> <string></string> </value>
+            </item>
+            <item>
+                <key> <string>error_message</string> </key>
+                <value> <string></string> </value>
+            </item>
+            <item>
+                <key> <string>time</string> </key>
+                <value>
+                  <object>
+                    <klass>
+                      <global name="DateTime" module="DateTime.DateTime"/>
+                    </klass>
+                    <tuple>
+                      <none/>
+                    </tuple>
+                    <state>
+                      <tuple>
+                        <float>1451404822.04</float>
+                        <string>UTC</string>
+                      </tuple>
+                    </state>
+                  </object>
+                </value>
+            </item>
+            <item>
+                <key> <string>validation_state</string> </key>
+                <value> <string>published</string> </value>
+            </item>
+          </dictionary>
+        </list>
+      </tuple>
+    </pickle>
+  </record>
+  <record id="4" aka="AAAAAAAAAAQ=">
+    <pickle>
+      <global name="WorkflowHistoryList" module="Products.ERP5Type.patches.WorkflowTool"/>
+    </pickle>
+    <pickle>
+      <tuple>
+        <none/>
+        <list>
+          <dictionary>
+            <item>
+                <key> <string>action</string> </key>
+                <value> <string>edit</string> </value>
+            </item>
+            <item>
+                <key> <string>actor</string> </key>
+                <value> <string>zope</string> </value>
+            </item>
+            <item>
+                <key> <string>comment</string> </key>
+                <value>
+                  <none/>
+                </value>
+            </item>
+            <item>
+                <key> <string>error_message</string> </key>
+                <value> <string></string> </value>
+            </item>
+            <item>
+                <key> <string>serial</string> </key>
+                <value> <string>949.5265.63409.53947</string> </value>
+            </item>
+            <item>
+                <key> <string>state</string> </key>
+                <value> <string>current</string> </value>
+            </item>
+            <item>
+                <key> <string>time</string> </key>
+                <value>
+                  <object>
+                    <klass>
+                      <global name="DateTime" module="DateTime.DateTime"/>
+                    </klass>
+                    <tuple>
+                      <none/>
+                    </tuple>
+                    <state>
+                      <tuple>
+                        <float>1455209893.65</float>
+                        <string>UTC</string>
+                      </tuple>
+                    </state>
+                  </object>
+                </value>
+            </item>
+          </dictionary>
+        </list>
+      </tuple>
+    </pickle>
+  </record>
+  <record id="5" aka="AAAAAAAAAAU=">
+    <pickle>
+      <global name="WorkflowHistoryList" module="Products.ERP5Type.patches.WorkflowTool"/>
+    </pickle>
+    <pickle>
+      <tuple>
+        <none/>
+        <list>
+          <dictionary>
+            <item>
+                <key> <string>action</string> </key>
+                <value> <string>detect_converted_file</string> </value>
+            </item>
+            <item>
+                <key> <string>actor</string> </key>
+                <value> <string>zope</string> </value>
+            </item>
+            <item>
+                <key> <string>comment</string> </key>
+                <value> <string></string> </value>
+            </item>
+            <item>
+                <key> <string>error_message</string> </key>
+                <value> <string></string> </value>
+            </item>
+            <item>
+                <key> <string>external_processing_state</string> </key>
+                <value> <string>converted</string> </value>
+            </item>
+            <item>
+                <key> <string>serial</string> </key>
+                <value> <string>0.0.0.0</string> </value>
+            </item>
+            <item>
+                <key> <string>time</string> </key>
+                <value>
+                  <object>
+                    <klass>
+                      <global name="DateTime" module="DateTime.DateTime"/>
+                    </klass>
+                    <tuple>
+                      <none/>
+                    </tuple>
+                    <state>
+                      <tuple>
+                        <float>1451404453.83</float>
+                        <string>UTC</string>
+                      </tuple>
+                    </state>
+                  </object>
+                </value>
+            </item>
+          </dictionary>
+        </list>
+      </tuple>
+    </pickle>
+  </record>
+</ZopeData>

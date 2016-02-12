@@ -1,0 +1,723 @@
+<?xml version="1.0"?>
+<ZopeData>
+  <record id="1" aka="AAAAAAAAAAE=">
+    <pickle>
+      <global name="Web Style" module="erp5.portal_type"/>
+    </pickle>
+    <pickle>
+      <dictionary>
+        <item>
+            <key> <string>_Access_contents_information_Permission</string> </key>
+            <value>
+              <tuple>
+                <string>Anonymous</string>
+                <string>Assignee</string>
+                <string>Assignor</string>
+                <string>Associate</string>
+                <string>Auditor</string>
+                <string>Manager</string>
+                <string>Owner</string>
+              </tuple>
+            </value>
+        </item>
+        <item>
+            <key> <string>_Add_portal_content_Permission</string> </key>
+            <value>
+              <tuple>
+                <string>Assignor</string>
+                <string>Manager</string>
+              </tuple>
+            </value>
+        </item>
+        <item>
+            <key> <string>_Change_local_roles_Permission</string> </key>
+            <value>
+              <tuple>
+                <string>Assignor</string>
+                <string>Manager</string>
+              </tuple>
+            </value>
+        </item>
+        <item>
+            <key> <string>_Modify_portal_content_Permission</string> </key>
+            <value>
+              <tuple>
+                <string>Manager</string>
+              </tuple>
+            </value>
+        </item>
+        <item>
+            <key> <string>_View_Permission</string> </key>
+            <value>
+              <tuple>
+                <string>Anonymous</string>
+                <string>Assignee</string>
+                <string>Assignor</string>
+                <string>Associate</string>
+                <string>Auditor</string>
+                <string>Manager</string>
+                <string>Owner</string>
+              </tuple>
+            </value>
+        </item>
+        <item>
+            <key> <string>categories</string> </key>
+            <value>
+              <tuple>
+                <string>classification/collaborative/team</string>
+              </tuple>
+            </value>
+        </item>
+        <item>
+            <key> <string>content_md5</string> </key>
+            <value>
+              <none/>
+            </value>
+        </item>
+        <item>
+            <key> <string>default_reference</string> </key>
+            <value> <string>magnific-popup.css</string> </value>
+        </item>
+        <item>
+            <key> <string>description</string> </key>
+            <value>
+              <none/>
+            </value>
+        </item>
+        <item>
+            <key> <string>id</string> </key>
+            <value> <string>magnific-popup.css</string> </value>
+        </item>
+        <item>
+            <key> <string>language</string> </key>
+            <value>
+              <none/>
+            </value>
+        </item>
+        <item>
+            <key> <string>portal_type</string> </key>
+            <value> <string>Web Style</string> </value>
+        </item>
+        <item>
+            <key> <string>short_title</string> </key>
+            <value>
+              <none/>
+            </value>
+        </item>
+        <item>
+            <key> <string>text_content</string> </key>
+            <value> <string>/* Magnific Popup CSS */\n
+.mfp-bg {\n
+  top: 0;\n
+  left: 0;\n
+  width: 100%;\n
+  height: 100%;\n
+  z-index: 1042;\n
+  overflow: hidden;\n
+  position: fixed;\n
+  background: #0b0b0b;\n
+  opacity: 0.8;\n
+  filter: alpha(opacity=80); }\n
+\n
+.mfp-wrap {\n
+  top: 0;\n
+  left: 0;\n
+  width: 100%;\n
+  height: 100%;\n
+  z-index: 1043;\n
+  position: fixed;\n
+  outline: none !important;\n
+  -webkit-backface-visibility: hidden; }\n
+\n
+.mfp-container {\n
+  text-align: center;\n
+  position: absolute;\n
+  width: 100%;\n
+  height: 100%;\n
+  left: 0;\n
+  top: 0;\n
+  padding: 0 8px;\n
+  -webkit-box-sizing: border-box;\n
+  -moz-box-sizing: border-box;\n
+  box-sizing: border-box; }\n
+\n
+.mfp-container:before {\n
+  content: \'\';\n
+  display: inline-block;\n
+  height: 100%;\n
+  vertical-align: middle; }\n
+\n
+.mfp-align-top .mfp-container:before {\n
+  display: none; }\n
+\n
+.mfp-content {\n
+  position: relative;\n
+  display: inline-block;\n
+  vertical-align: middle;\n
+  margin: 0 auto;\n
+  text-align: left;\n
+  z-index: 1045; }\n
+\n
+.mfp-inline-holder .mfp-content,\n
+.mfp-ajax-holder .mfp-content {\n
+  width: 100%;\n
+  cursor: auto; }\n
+\n
+.mfp-ajax-cur {\n
+  cursor: progress; }\n
+\n
+.mfp-zoom-out-cur, .mfp-zoom-out-cur .mfp-image-holder .mfp-close {\n
+  cursor: -moz-zoom-out;\n
+  cursor: -webkit-zoom-out;\n
+  cursor: zoom-out; }\n
+\n
+.mfp-zoom {\n
+  cursor: pointer;\n
+  cursor: -webkit-zoom-in;\n
+  cursor: -moz-zoom-in;\n
+  cursor: zoom-in; }\n
+\n
+.mfp-auto-cursor .mfp-content {\n
+  cursor: auto; }\n
+\n
+.mfp-close,\n
+.mfp-arrow,\n
+.mfp-preloader,\n
+.mfp-counter {\n
+  -webkit-user-select: none;\n
+  -moz-user-select: none;\n
+  user-select: none; }\n
+\n
+.mfp-loading.mfp-figure {\n
+  display: none; }\n
+\n
+.mfp-hide {\n
+  display: none !important; }\n
+\n
+.mfp-preloader {\n
+  color: #CCC;\n
+  position: absolute;\n
+  top: 50%;\n
+  width: auto;\n
+  text-align: center;\n
+  margin-top: -0.8em;\n
+  left: 8px;\n
+  right: 8px;\n
+  z-index: 1044; }\n
+  .mfp-preloader a {\n
+    color: #CCC; }\n
+    .mfp-preloader a:hover {\n
+      color: #FFF; }\n
+\n
+.mfp-s-ready .mfp-preloader {\n
+  display: none; }\n
+\n
+.mfp-s-error .mfp-content {\n
+  display: none; }\n
+\n
+button.mfp-close,\n
+button.mfp-arrow {\n
+  overflow: visible;\n
+  cursor: pointer;\n
+  background: transparent;\n
+  border: 0;\n
+  -webkit-appearance: none;\n
+  display: block;\n
+  outline: none;\n
+  padding: 0;\n
+  z-index: 1046;\n
+  -webkit-box-shadow: none;\n
+  box-shadow: none; }\n
+\n
+button::-moz-focus-inner {\n
+  padding: 0;\n
+  border: 0; }\n
+\n
+.mfp-close {\n
+  width: 44px;\n
+  height: 44px;\n
+  line-height: 44px;\n
+  position: absolute;\n
+  right: 0;\n
+  top: 0;\n
+  text-decoration: none;\n
+  text-align: center;\n
+  opacity: 0.65;\n
+  filter: alpha(opacity=65);\n
+  padding: 0 0 18px 10px;\n
+  color: #FFF;\n
+  font-style: normal;\n
+  font-size: 28px;\n
+  font-family: Arial, Baskerville, monospace; }\n
+  .mfp-close:hover,\n
+  .mfp-close:focus {\n
+    opacity: 1;\n
+    filter: alpha(opacity=100); }\n
+  .mfp-close:active {\n
+    top: 1px; }\n
+\n
+.mfp-close-btn-in .mfp-close {\n
+  color: #333; }\n
+\n
+.mfp-image-holder .mfp-close,\n
+.mfp-iframe-holder .mfp-close {\n
+  color: #FFF;\n
+  right: -6px;\n
+  text-align: right;\n
+  padding-right: 6px;\n
+  width: 100%; }\n
+\n
+.mfp-counter {\n
+  position: absolute;\n
+  top: 0;\n
+  right: 0;\n
+  color: #CCC;\n
+  font-size: 12px;\n
+  line-height: 18px;\n
+  white-space: nowrap; }\n
+\n
+.mfp-arrow {\n
+  position: absolute;\n
+  opacity: 0.65;\n
+  filter: alpha(opacity=65);\n
+  margin: 0;\n
+  top: 50%;\n
+  margin-top: -55px;\n
+  padding: 0;\n
+  width: 90px;\n
+  height: 110px;\n
+  -webkit-tap-highlight-color: transparent; }\n
+  .mfp-arrow:active {\n
+    margin-top: -54px; }\n
+  .mfp-arrow:hover,\n
+  .mfp-arrow:focus {\n
+    opacity: 1;\n
+    filter: alpha(opacity=100); }\n
+  .mfp-arrow:before,\n
+  .mfp-arrow:after,\n
+  .mfp-arrow .mfp-b,\n
+  .mfp-arrow .mfp-a {\n
+    content: \'\';\n
+    display: block;\n
+    width: 0;\n
+    height: 0;\n
+    position: absolute;\n
+    left: 0;\n
+    top: 0;\n
+    margin-top: 35px;\n
+    margin-left: 35px;\n
+    border: medium inset transparent; }\n
+  .mfp-arrow:after,\n
+  .mfp-arrow .mfp-a {\n
+    border-top-width: 13px;\n
+    border-bottom-width: 13px;\n
+    top: 8px; }\n
+  .mfp-arrow:before,\n
+  .mfp-arrow .mfp-b {\n
+    border-top-width: 21px;\n
+    border-bottom-width: 21px;\n
+    opacity: 0.7; }\n
+\n
+.mfp-arrow-left {\n
+  left: 0; }\n
+  .mfp-arrow-left:after,\n
+  .mfp-arrow-left .mfp-a {\n
+    border-right: 17px solid #FFF;\n
+    margin-left: 31px; }\n
+  .mfp-arrow-left:before,\n
+  .mfp-arrow-left .mfp-b {\n
+    margin-left: 25px;\n
+    border-right: 27px solid #3F3F3F; }\n
+\n
+.mfp-arrow-right {\n
+  right: 0; }\n
+  .mfp-arrow-right:after,\n
+  .mfp-arrow-right .mfp-a {\n
+    border-left: 17px solid #FFF;\n
+    margin-left: 39px; }\n
+  .mfp-arrow-right:before,\n
+  .mfp-arrow-right .mfp-b {\n
+    border-left: 27px solid #3F3F3F; }\n
+\n
+.mfp-iframe-holder {\n
+  padding-top: 40px;\n
+  padding-bottom: 40px; }\n
+  .mfp-iframe-holder .mfp-content {\n
+    line-height: 0;\n
+    width: 100%;\n
+    max-width: 900px; }\n
+  .mfp-iframe-holder .mfp-close {\n
+    top: -40px; }\n
+\n
+.mfp-iframe-scaler {\n
+  width: 100%;\n
+  height: 0;\n
+  overflow: hidden;\n
+  padding-top: 56.25%; }\n
+  .mfp-iframe-scaler iframe {\n
+    position: absolute;\n
+    display: block;\n
+    top: 0;\n
+    left: 0;\n
+    width: 100%;\n
+    height: 100%;\n
+    box-shadow: 0 0 8px rgba(0, 0, 0, 0.6);\n
+    background: #000; }\n
+\n
+/* Main image in popup */\n
+img.mfp-img {\n
+  width: auto;\n
+  max-width: 100%;\n
+  height: auto;\n
+  display: block;\n
+  line-height: 0;\n
+  -webkit-box-sizing: border-box;\n
+  -moz-box-sizing: border-box;\n
+  box-sizing: border-box;\n
+  padding: 40px 0 40px;\n
+  margin: 0 auto; }\n
+\n
+/* The shadow behind the image */\n
+.mfp-figure {\n
+  line-height: 0; }\n
+  .mfp-figure:after {\n
+    content: \'\';\n
+    position: absolute;\n
+    left: 0;\n
+    top: 40px;\n
+    bottom: 40px;\n
+    display: block;\n
+    right: 0;\n
+    width: auto;\n
+    height: auto;\n
+    z-index: -1;\n
+    box-shadow: 0 0 8px rgba(0, 0, 0, 0.6);\n
+    background: #444; }\n
+  .mfp-figure small {\n
+    color: #BDBDBD;\n
+    display: block;\n
+    font-size: 12px;\n
+    line-height: 14px; }\n
+  .mfp-figure figure {\n
+    margin: 0; }\n
+\n
+.mfp-bottom-bar {\n
+  margin-top: -36px;\n
+  position: absolute;\n
+  top: 100%;\n
+  left: 0;\n
+  width: 100%;\n
+  cursor: auto; }\n
+\n
+.mfp-title {\n
+  text-align: left;\n
+  line-height: 18px;\n
+  color: #F3F3F3;\n
+  word-wrap: break-word;\n
+  padding-right: 36px; }\n
+\n
+.mfp-image-holder .mfp-content {\n
+  max-width: 100%; }\n
+\n
+.mfp-gallery .mfp-image-holder .mfp-figure {\n
+  cursor: pointer; }\n
+\n
+@media screen and (max-width: 800px) and (orientation: landscape), screen and (max-height: 300px) {\n
+  /**\n
+       * Remove all paddings around the image on small screen\n
+       */\n
+  .mfp-img-mobile .mfp-image-holder {\n
+    padding-left: 0;\n
+    padding-right: 0; }\n
+  .mfp-img-mobile img.mfp-img {\n
+    padding: 0; }\n
+  .mfp-img-mobile .mfp-figure:after {\n
+    top: 0;\n
+    bottom: 0; }\n
+  .mfp-img-mobile .mfp-figure small {\n
+    display: inline;\n
+    margin-left: 5px; }\n
+  .mfp-img-mobile .mfp-bottom-bar {\n
+    background: rgba(0, 0, 0, 0.6);\n
+    bottom: 0;\n
+    margin: 0;\n
+    top: auto;\n
+    padding: 3px 5px;\n
+    position: fixed;\n
+    -webkit-box-sizing: border-box;\n
+    -moz-box-sizing: border-box;\n
+    box-sizing: border-box; }\n
+    .mfp-img-mobile .mfp-bottom-bar:empty {\n
+      padding: 0; }\n
+  .mfp-img-mobile .mfp-counter {\n
+    right: 5px;\n
+    top: 3px; }\n
+  .mfp-img-mobile .mfp-close {\n
+    top: 0;\n
+    right: 0;\n
+    width: 35px;\n
+    height: 35px;\n
+    line-height: 35px;\n
+    background: rgba(0, 0, 0, 0.6);\n
+    position: fixed;\n
+    text-align: center;\n
+    padding: 0; } }\n
+\n
+@media all and (max-width: 900px) {\n
+  .mfp-arrow {\n
+    -webkit-transform: scale(0.75);\n
+    transform: scale(0.75); }\n
+  .mfp-arrow-left {\n
+    -webkit-transform-origin: 0;\n
+    transform-origin: 0; }\n
+  .mfp-arrow-right {\n
+    -webkit-transform-origin: 100%;\n
+    transform-origin: 100%; }\n
+  .mfp-container {\n
+    padding-left: 6px;\n
+    padding-right: 6px; } }\n
+\n
+.mfp-ie7 .mfp-img {\n
+  padding: 0; }\n
+\n
+.mfp-ie7 .mfp-bottom-bar {\n
+  width: 600px;\n
+  left: 50%;\n
+  margin-left: -300px;\n
+  margin-top: 5px;\n
+  padding-bottom: 5px; }\n
+\n
+.mfp-ie7 .mfp-container {\n
+  padding: 0; }\n
+\n
+.mfp-ie7 .mfp-content {\n
+  padding-top: 44px; }\n
+\n
+.mfp-ie7 .mfp-close {\n
+  top: 0;\n
+  right: 0;\n
+  padding-top: 0; }</string> </value>
+        </item>
+        <item>
+            <key> <string>title</string> </key>
+            <value> <string>magnific-popup.css</string> </value>
+        </item>
+        <item>
+            <key> <string>version</string> </key>
+            <value>
+              <none/>
+            </value>
+        </item>
+        <item>
+            <key> <string>workflow_history</string> </key>
+            <value>
+              <persistent> <string encoding="base64">AAAAAAAAAAI=</string> </persistent>
+            </value>
+        </item>
+      </dictionary>
+    </pickle>
+  </record>
+  <record id="2" aka="AAAAAAAAAAI=">
+    <pickle>
+      <global name="PersistentMapping" module="Persistence.mapping"/>
+    </pickle>
+    <pickle>
+      <dictionary>
+        <item>
+            <key> <string>data</string> </key>
+            <value>
+              <dictionary>
+                <item>
+                    <key> <string>document_publication_workflow</string> </key>
+                    <value>
+                      <persistent> <string encoding="base64">AAAAAAAAAAM=</string> </persistent>
+                    </value>
+                </item>
+                <item>
+                    <key> <string>edit_workflow</string> </key>
+                    <value>
+                      <persistent> <string encoding="base64">AAAAAAAAAAQ=</string> </persistent>
+                    </value>
+                </item>
+                <item>
+                    <key> <string>processing_status_workflow</string> </key>
+                    <value>
+                      <persistent> <string encoding="base64">AAAAAAAAAAU=</string> </persistent>
+                    </value>
+                </item>
+              </dictionary>
+            </value>
+        </item>
+      </dictionary>
+    </pickle>
+  </record>
+  <record id="3" aka="AAAAAAAAAAM=">
+    <pickle>
+      <global name="WorkflowHistoryList" module="Products.ERP5Type.patches.WorkflowTool"/>
+    </pickle>
+    <pickle>
+      <tuple>
+        <none/>
+        <list>
+          <dictionary>
+            <item>
+                <key> <string>action</string> </key>
+                <value> <string>publish</string> </value>
+            </item>
+            <item>
+                <key> <string>actor</string> </key>
+                <value> <string>zope</string> </value>
+            </item>
+            <item>
+                <key> <string>comment</string> </key>
+                <value> <string></string> </value>
+            </item>
+            <item>
+                <key> <string>error_message</string> </key>
+                <value> <string></string> </value>
+            </item>
+            <item>
+                <key> <string>time</string> </key>
+                <value>
+                  <object>
+                    <klass>
+                      <global name="DateTime" module="DateTime.DateTime"/>
+                    </klass>
+                    <tuple>
+                      <none/>
+                    </tuple>
+                    <state>
+                      <tuple>
+                        <float>1455014096.47</float>
+                        <string>UTC</string>
+                      </tuple>
+                    </state>
+                  </object>
+                </value>
+            </item>
+            <item>
+                <key> <string>validation_state</string> </key>
+                <value> <string>published</string> </value>
+            </item>
+          </dictionary>
+        </list>
+      </tuple>
+    </pickle>
+  </record>
+  <record id="4" aka="AAAAAAAAAAQ=">
+    <pickle>
+      <global name="WorkflowHistoryList" module="Products.ERP5Type.patches.WorkflowTool"/>
+    </pickle>
+    <pickle>
+      <tuple>
+        <none/>
+        <list>
+          <dictionary>
+            <item>
+                <key> <string>action</string> </key>
+                <value> <string>edit</string> </value>
+            </item>
+            <item>
+                <key> <string>actor</string> </key>
+                <value> <string>zope</string> </value>
+            </item>
+            <item>
+                <key> <string>comment</string> </key>
+                <value>
+                  <none/>
+                </value>
+            </item>
+            <item>
+                <key> <string>error_message</string> </key>
+                <value> <string></string> </value>
+            </item>
+            <item>
+                <key> <string>serial</string> </key>
+                <value> <string>949.2010.26884.10154</string> </value>
+            </item>
+            <item>
+                <key> <string>state</string> </key>
+                <value> <string>current</string> </value>
+            </item>
+            <item>
+                <key> <string>time</string> </key>
+                <value>
+                  <object>
+                    <klass>
+                      <global name="DateTime" module="DateTime.DateTime"/>
+                    </klass>
+                    <tuple>
+                      <none/>
+                    </tuple>
+                    <state>
+                      <tuple>
+                        <float>1455014089.99</float>
+                        <string>UTC</string>
+                      </tuple>
+                    </state>
+                  </object>
+                </value>
+            </item>
+          </dictionary>
+        </list>
+      </tuple>
+    </pickle>
+  </record>
+  <record id="5" aka="AAAAAAAAAAU=">
+    <pickle>
+      <global name="WorkflowHistoryList" module="Products.ERP5Type.patches.WorkflowTool"/>
+    </pickle>
+    <pickle>
+      <tuple>
+        <none/>
+        <list>
+          <dictionary>
+            <item>
+                <key> <string>action</string> </key>
+                <value> <string>detect_converted_file</string> </value>
+            </item>
+            <item>
+                <key> <string>actor</string> </key>
+                <value> <string>zope</string> </value>
+            </item>
+            <item>
+                <key> <string>comment</string> </key>
+                <value> <string></string> </value>
+            </item>
+            <item>
+                <key> <string>error_message</string> </key>
+                <value> <string></string> </value>
+            </item>
+            <item>
+                <key> <string>external_processing_state</string> </key>
+                <value> <string>converted</string> </value>
+            </item>
+            <item>
+                <key> <string>serial</string> </key>
+                <value> <string>0.0.0.0</string> </value>
+            </item>
+            <item>
+                <key> <string>time</string> </key>
+                <value>
+                  <object>
+                    <klass>
+                      <global name="DateTime" module="DateTime.DateTime"/>
+                    </klass>
+                    <tuple>
+                      <none/>
+                    </tuple>
+                    <state>
+                      <tuple>
+                        <float>1455014042.1</float>
+                        <string>UTC</string>
+                      </tuple>
+                    </state>
+                  </object>
+                </value>
+            </item>
+          </dictionary>
+        </list>
+      </tuple>
+    </pickle>
+  </record>
+</ZopeData>

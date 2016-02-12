@@ -1,0 +1,447 @@
+<?xml version="1.0"?>
+<ZopeData>
+  <record id="1" aka="AAAAAAAAAAE=">
+    <pickle>
+      <global name="Web Page" module="erp5.portal_type"/>
+    </pickle>
+    <pickle>
+      <dictionary>
+        <item>
+            <key> <string>_Access_contents_information_Permission</string> </key>
+            <value>
+              <tuple>
+                <string>Anonymous</string>
+                <string>Assignee</string>
+                <string>Assignor</string>
+                <string>Associate</string>
+                <string>Auditor</string>
+                <string>Manager</string>
+                <string>Owner</string>
+              </tuple>
+            </value>
+        </item>
+        <item>
+            <key> <string>_Add_portal_content_Permission</string> </key>
+            <value>
+              <tuple>
+                <string>Assignor</string>
+                <string>Manager</string>
+              </tuple>
+            </value>
+        </item>
+        <item>
+            <key> <string>_Change_local_roles_Permission</string> </key>
+            <value>
+              <tuple>
+                <string>Assignor</string>
+                <string>Manager</string>
+              </tuple>
+            </value>
+        </item>
+        <item>
+            <key> <string>_Modify_portal_content_Permission</string> </key>
+            <value>
+              <tuple>
+                <string>Manager</string>
+              </tuple>
+            </value>
+        </item>
+        <item>
+            <key> <string>_View_Permission</string> </key>
+            <value>
+              <tuple>
+                <string>Anonymous</string>
+                <string>Assignee</string>
+                <string>Assignor</string>
+                <string>Associate</string>
+                <string>Auditor</string>
+                <string>Manager</string>
+                <string>Owner</string>
+              </tuple>
+            </value>
+        </item>
+        <item>
+            <key> <string>categories</string> </key>
+            <value>
+              <tuple>
+                <string>classification/collaborative/team</string>
+              </tuple>
+            </value>
+        </item>
+        <item>
+            <key> <string>content_md5</string> </key>
+            <value>
+              <none/>
+            </value>
+        </item>
+        <item>
+            <key> <string>content_type</string> </key>
+            <value> <string>text/html</string> </value>
+        </item>
+        <item>
+            <key> <string>default_reference</string> </key>
+            <value> <string>gadget_monitoring_widget_listbox.html</string> </value>
+        </item>
+        <item>
+            <key> <string>description</string> </key>
+            <value>
+              <none/>
+            </value>
+        </item>
+        <item>
+            <key> <string>id</string> </key>
+            <value> <string>gadget_monitoring_widget_listbox_html</string> </value>
+        </item>
+        <item>
+            <key> <string>language</string> </key>
+            <value>
+              <none/>
+            </value>
+        </item>
+        <item>
+            <key> <string>portal_type</string> </key>
+            <value> <string>Web Page</string> </value>
+        </item>
+        <item>
+            <key> <string>short_title</string> </key>
+            <value>
+              <none/>
+            </value>
+        </item>
+        <item>
+            <key> <string>text_content</string> </key>
+            <value> <string encoding="cdata"><![CDATA[
+
+<!DOCTYPE html>\n
+<html>\n
+  <head>\n
+    <meta charset="utf-8" />\n
+    <meta name="viewport" content="width=device-width, user-scalable=no" />\n
+    <title>Monitoring Widget Listbox</title>\n
+\n
+    <!-- renderjs -->\n
+    <script src="rsvp.js" type="text/javascript"></script>\n
+    <script src="renderjs.js" type="text/javascript"></script>\n
+    <script src="handlebars.js"></script>\n
+\n
+    <script id="listbox-widget-table" type="text/x-handlebars-template">\n
+      {{#if enable_search}}\n
+      <div class="listbox-header">\n
+        <form class=\'search\'>\n
+            <div class="ui-grid-a ui-responsive">\n
+              <div class="ui-block-a">\n
+                <div class="ui-field-contain">\n
+                  <div class="ui-input-text ui-body-{{widget_theme}} ui-corner-all ui-shadow-inset ui-input-has-clear {{widget_status_class}}" style="border-color: #D6D8E0;">\n
+                    <input type="text" data-enhanced="true" value="{{search}}" name="search" {{widget_status_attribute}} />\n
+                    <div class="ui-btn ui-input-clear ui-input-btn ui-corner-all ui-icon-search ui-btn-icon-notext" data-i18n="[node]header-submit">\n
+                      Submit<input data-enhanced="true" type="submit" data-i18n="[value]header-submit" value="Submit" {{widget_status_attribute}} />\n
+                    </div>\n
+                  </div>\n
+                </div>\n
+              </div>\n
+              <div class="ui-block-b">\n
+                <div class="ui-field-contain">\n
+                  <div data-role="controlgroup" data-type="horizontal">\n
+                    <a href="#" class="ui-shadow ui-btn ui-corner-all listbox-refresh"><i class="fa fa-refresh"></i></a>\n
+                    <a href="#" class="ui-shadow ui-btn ui-corner-all listbox-filter"><i class="fa fa-filter"></i></i></a>\n
+                  </div>\n
+                </div>\n
+              </div>\n
+            </div>\n
+        </form>\n
+      </div>\n
+      {{/if}}\n
+      <table class="ui-responsive ui-body-c ui-table-inset custom-force-list">\n
+        <thead class="ui-bar-inherit">\n
+          <tr>\n
+            {{#each column_list}}\n
+              <th>{{this}}</th>\n
+            {{/each}}\n
+          </tr>\n
+        </thead>\n
+        {{> listbox-widget-table-partial}}\n
+        <tfoot class="ui-bar-inherit"></tfoot>\n
+      </table>\n
+    </script>\n
+\n
+    <script id="listbox-widget-table-partial" type="text/x-handlebars-template">\n
+      <tbody>\n
+      {{#each row_list}}\n
+        <tr>\n
+        {{#each cell_list}}\n
+          {{#if href}}\n
+            {{#if html_value}}\n
+              <td class=\'{{class}}\'><a class="ui-link" href="{{href}}">{{{html_value}}}</a></td>\n
+            {{else}}\n
+              <td class=\'{{class}}\'><a class="ui-link" title=\'{{value}}\' href="{{href}}">{{value}}</a></td>\n
+            {{/if}}\n
+          {{else}}\n
+            {{#if html_value}}\n
+              <td class=\'{{class}}\'><a class="ui-link">{{{html_value}}}</a></td>\n
+            {{else}}\n
+              <td class=\'{{class}}\'><a class="ui-link" title=\'{{value}}\'>{{value}}</a></td>\n
+            {{/if}}\n
+          {{/if}}\n
+        {{/each}}\n
+        </tr>\n
+      {{/each}}\n
+      </tbody>\n
+    </script>\n
+\n
+    <!-- custom script -->\n
+    <script src="gadget_monitoring_widget_listbox.js" type="text/javascript"></script>\n
+\n
+    </head>\n
+  <body>\n
+    <div data-gadget-url="gadget_monitoring_jio.html" data-gadget-scope="jio_gadget" data-gadget-sandbox="public"></div>\n
+    <div class="listbox-filter-panel">\n
+      <form class=\'filter\'>\n
+      \t<h2>Filter Result</h2>\n
+      \t<fieldset data-role="controlgroup">\n
+          <h3>Status contain:</h3>\n
+          <input type="checkbox" id="monitor-promise-success" name="monitor-filter-status" value="success" checked="checked">\n
+          <label for="monitor-promise-success">Success</label>\n
+          <input type="checkbox" id="monitor-promise-error" name="monitor-filter-status" value="error" checked="checked">\n
+          <label for="monitor-promise-error">Error</label>\n
+          <input type="checkbox" id="monitor-promise-warning" name="monitor-filter-status" value="warning" checked="checked">\n
+          <label for="monitor-promise-warning">Warning</label>\n
+        </fieldset>\n
+        <div class="ui-grid-a">\n
+          <input data-enhanced="true" type="submit" data-rel="close" class="ui-btn ui-shadow ui-corner-all ui-btn-inline ui-mini pvalidate" value="Validate" />\n
+\t      </div>\n
+      </form>\n
+    </div>\n
+    <div class="custom-grid-wrap">\n
+      <div class="custom-grid ui-corner-all ui-body-inherit ui-shadow ui-corner-all" style="padding: 10px;">\n
+        <div class="ui-body-c ui-corner-all"></div>\n
+      </div>\n
+    </div>\n
+  </body>\n
+</html>\n
+
+
+]]></string> </value>
+        </item>
+        <item>
+            <key> <string>title</string> </key>
+            <value> <string>Monitoring Widget Listbox</string> </value>
+        </item>
+        <item>
+            <key> <string>version</string> </key>
+            <value>
+              <none/>
+            </value>
+        </item>
+        <item>
+            <key> <string>workflow_history</string> </key>
+            <value>
+              <persistent> <string encoding="base64">AAAAAAAAAAI=</string> </persistent>
+            </value>
+        </item>
+      </dictionary>
+    </pickle>
+  </record>
+  <record id="2" aka="AAAAAAAAAAI=">
+    <pickle>
+      <global name="PersistentMapping" module="Persistence.mapping"/>
+    </pickle>
+    <pickle>
+      <dictionary>
+        <item>
+            <key> <string>data</string> </key>
+            <value>
+              <dictionary>
+                <item>
+                    <key> <string>document_publication_workflow</string> </key>
+                    <value>
+                      <persistent> <string encoding="base64">AAAAAAAAAAM=</string> </persistent>
+                    </value>
+                </item>
+                <item>
+                    <key> <string>edit_workflow</string> </key>
+                    <value>
+                      <persistent> <string encoding="base64">AAAAAAAAAAQ=</string> </persistent>
+                    </value>
+                </item>
+                <item>
+                    <key> <string>processing_status_workflow</string> </key>
+                    <value>
+                      <persistent> <string encoding="base64">AAAAAAAAAAU=</string> </persistent>
+                    </value>
+                </item>
+              </dictionary>
+            </value>
+        </item>
+      </dictionary>
+    </pickle>
+  </record>
+  <record id="3" aka="AAAAAAAAAAM=">
+    <pickle>
+      <global name="WorkflowHistoryList" module="Products.ERP5Type.patches.WorkflowTool"/>
+    </pickle>
+    <pickle>
+      <tuple>
+        <none/>
+        <list>
+          <dictionary>
+            <item>
+                <key> <string>action</string> </key>
+                <value> <string>publish</string> </value>
+            </item>
+            <item>
+                <key> <string>actor</string> </key>
+                <value> <string>zope</string> </value>
+            </item>
+            <item>
+                <key> <string>comment</string> </key>
+                <value> <string></string> </value>
+            </item>
+            <item>
+                <key> <string>error_message</string> </key>
+                <value> <string></string> </value>
+            </item>
+            <item>
+                <key> <string>time</string> </key>
+                <value>
+                  <object>
+                    <klass>
+                      <global name="DateTime" module="DateTime.DateTime"/>
+                    </klass>
+                    <tuple>
+                      <none/>
+                    </tuple>
+                    <state>
+                      <tuple>
+                        <float>1452874797.17</float>
+                        <string>UTC</string>
+                      </tuple>
+                    </state>
+                  </object>
+                </value>
+            </item>
+            <item>
+                <key> <string>validation_state</string> </key>
+                <value> <string>published</string> </value>
+            </item>
+          </dictionary>
+        </list>
+      </tuple>
+    </pickle>
+  </record>
+  <record id="4" aka="AAAAAAAAAAQ=">
+    <pickle>
+      <global name="WorkflowHistoryList" module="Products.ERP5Type.patches.WorkflowTool"/>
+    </pickle>
+    <pickle>
+      <tuple>
+        <none/>
+        <list>
+          <dictionary>
+            <item>
+                <key> <string>action</string> </key>
+                <value> <string>edit</string> </value>
+            </item>
+            <item>
+                <key> <string>actor</string> </key>
+                <value> <string>zope</string> </value>
+            </item>
+            <item>
+                <key> <string>comment</string> </key>
+                <value>
+                  <none/>
+                </value>
+            </item>
+            <item>
+                <key> <string>error_message</string> </key>
+                <value> <string></string> </value>
+            </item>
+            <item>
+                <key> <string>serial</string> </key>
+                <value> <string>948.47458.38099.21964</string> </value>
+            </item>
+            <item>
+                <key> <string>state</string> </key>
+                <value> <string>current</string> </value>
+            </item>
+            <item>
+                <key> <string>time</string> </key>
+                <value>
+                  <object>
+                    <klass>
+                      <global name="DateTime" module="DateTime.DateTime"/>
+                    </klass>
+                    <tuple>
+                      <none/>
+                    </tuple>
+                    <state>
+                      <tuple>
+                        <float>1453808948.37</float>
+                        <string>UTC</string>
+                      </tuple>
+                    </state>
+                  </object>
+                </value>
+            </item>
+          </dictionary>
+        </list>
+      </tuple>
+    </pickle>
+  </record>
+  <record id="5" aka="AAAAAAAAAAU=">
+    <pickle>
+      <global name="WorkflowHistoryList" module="Products.ERP5Type.patches.WorkflowTool"/>
+    </pickle>
+    <pickle>
+      <tuple>
+        <none/>
+        <list>
+          <dictionary>
+            <item>
+                <key> <string>action</string> </key>
+                <value> <string>detect_converted_file</string> </value>
+            </item>
+            <item>
+                <key> <string>actor</string> </key>
+                <value> <string>zope</string> </value>
+            </item>
+            <item>
+                <key> <string>comment</string> </key>
+                <value> <string></string> </value>
+            </item>
+            <item>
+                <key> <string>error_message</string> </key>
+                <value> <string></string> </value>
+            </item>
+            <item>
+                <key> <string>external_processing_state</string> </key>
+                <value> <string>converted</string> </value>
+            </item>
+            <item>
+                <key> <string>serial</string> </key>
+                <value> <string>0.0.0.0</string> </value>
+            </item>
+            <item>
+                <key> <string>time</string> </key>
+                <value>
+                  <object>
+                    <klass>
+                      <global name="DateTime" module="DateTime.DateTime"/>
+                    </klass>
+                    <tuple>
+                      <none/>
+                    </tuple>
+                    <state>
+                      <tuple>
+                        <float>1452874752.87</float>
+                        <string>UTC</string>
+                      </tuple>
+                    </state>
+                  </object>
+                </value>
+            </item>
+          </dictionary>
+        </list>
+      </tuple>
+    </pickle>
+  </record>
+</ZopeData>

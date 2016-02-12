@@ -1,0 +1,827 @@
+<?xml version="1.0"?>
+<ZopeData>
+  <record id="1" aka="AAAAAAAAAAE=">
+    <pickle>
+      <global name="Web Script" module="erp5.portal_type"/>
+    </pickle>
+    <pickle>
+      <dictionary>
+        <item>
+            <key> <string>_Access_contents_information_Permission</string> </key>
+            <value>
+              <tuple>
+                <string>Anonymous</string>
+                <string>Assignee</string>
+                <string>Assignor</string>
+                <string>Associate</string>
+                <string>Auditor</string>
+                <string>Manager</string>
+                <string>Owner</string>
+              </tuple>
+            </value>
+        </item>
+        <item>
+            <key> <string>_Add_portal_content_Permission</string> </key>
+            <value>
+              <tuple>
+                <string>Assignor</string>
+                <string>Manager</string>
+              </tuple>
+            </value>
+        </item>
+        <item>
+            <key> <string>_Change_local_roles_Permission</string> </key>
+            <value>
+              <tuple>
+                <string>Assignor</string>
+                <string>Manager</string>
+              </tuple>
+            </value>
+        </item>
+        <item>
+            <key> <string>_Modify_portal_content_Permission</string> </key>
+            <value>
+              <tuple>
+                <string>Manager</string>
+              </tuple>
+            </value>
+        </item>
+        <item>
+            <key> <string>_View_Permission</string> </key>
+            <value>
+              <tuple>
+                <string>Anonymous</string>
+                <string>Assignee</string>
+                <string>Assignor</string>
+                <string>Associate</string>
+                <string>Auditor</string>
+                <string>Manager</string>
+                <string>Owner</string>
+              </tuple>
+            </value>
+        </item>
+        <item>
+            <key> <string>categories</string> </key>
+            <value>
+              <tuple>
+                <string>classification/collaborative/team</string>
+              </tuple>
+            </value>
+        </item>
+        <item>
+            <key> <string>content_md5</string> </key>
+            <value>
+              <none/>
+            </value>
+        </item>
+        <item>
+            <key> <string>default_reference</string> </key>
+            <value> <string>gadget_monitoring_widget_overview.js</string> </value>
+        </item>
+        <item>
+            <key> <string>description</string> </key>
+            <value>
+              <none/>
+            </value>
+        </item>
+        <item>
+            <key> <string>id</string> </key>
+            <value> <string>gadget_monitoring_widget_overview_js</string> </value>
+        </item>
+        <item>
+            <key> <string>language</string> </key>
+            <value>
+              <none/>
+            </value>
+        </item>
+        <item>
+            <key> <string>portal_type</string> </key>
+            <value> <string>Web Script</string> </value>
+        </item>
+        <item>
+            <key> <string>short_title</string> </key>
+            <value>
+              <none/>
+            </value>
+        </item>
+        <item>
+            <key> <string>text_content</string> </key>
+            <value> <string encoding="cdata"><![CDATA[
+
+/*global window, rJS, RSVP, Handlebars, loopEventListener, $ */\n
+/*jslint nomen: true, indent: 2 */\n
+(function (window, rJS, RSVP, Handlebars, loopEventListener, $) {\n
+  "use strict";\n
+\n
+  /////////////////////////////////////////////////////////////////\n
+  // templates\n
+  /////////////////////////////////////////////////////////////////\n
+  var gadget_klass = rJS(window),\n
+    templater = gadget_klass.__template_element,\n
+\n
+    listbox_widget_template = Handlebars.compile(\n
+      templater.getElementById("overview-widget-listview").innerHTML\n
+    ),\n
+    header_listbox_widget = Handlebars.compile(\n
+      templater.getElementById("header-widget-overview").innerHTML\n
+    );\n
+\n
+  /////////////////////////////////////////////////////////////////\n
+  // some methods\n
+  /////////////////////////////////////////////////////////////////\n
+\n
+  gadget_klass\n
+\n
+    /////////////////////////////////////////////////////////////////\n
+    // ready\n
+    /////////////////////////////////////////////////////////////////\n
+    .ready(function (gadget) {\n
+      gadget.property_dict = {\n
+        render_deferred: RSVP.defer()\n
+      };\n
+    })\n
+\n
+    .ready(function (gadget) {\n
+      return gadget.getElement()\n
+        .push(function (element) {\n
+          gadget.property_dict.element = element;\n
+          gadget.property_dict.block_index = 0;\n
+          gadget.property_dict.filter_panel = $(gadget.property_dict.element.querySelector(".overview-filter-panel"));\n
+        });\n
+    })\n
+    .ready(function (gadget) {\n
+      return gadget.getDeclaredGadget("jio_gadget")\n
+        .push(function (jio_gadget) {\n
+          gadget.property_dict.jio_gadget = jio_gadget;\n
+        });\n
+    })\n
+    .ready(function (gadget) {\n
+      return gadget.getDeclaredGadget("graph_gadget")\n
+        .push(function (graph_gadget) {\n
+          gadget.property_dict.graph = graph_gadget;\n
+        });\n
+    })\n
+    .ready(function (gadget) {\n
+      return gadget.getDeclaredGadget("login_gadget")\n
+        .push(function (login_gadget) {\n
+          gadget.property_dict.login_gadget = login_gadget;\n
+        });\n
+    })\n
+    .ready(function (gadget) {\n
+      gadget.property_dict.filter_panel.panel({\n
+        "position-fixed": true,\n
+        "display": "overlay",\n
+        "position": "right",\n
+        "theme": "b"\n
+      });\n
+    })\n
+    .ready(function (gadget) {\n
+      return gadget.property_dict.filter_panel.trigger("create");\n
+    })\n
+    .ready(function (gadget) {\n
+      return gadget.getSetting(\'instance_overview_selection\')\n
+        .push(function (selection) {\n
+          gadget.property_dict.selection = selection || \'\';\n
+        });\n
+    })\n
+\n
+    /////////////////////////////////////////////////////////////////\n
+    // published methods\n
+    /////////////////////////////////////////////////////////////////\n
+\n
+    /////////////////////////////////////////////////////////////////\n
+    // acquired methods\n
+    /////////////////////////////////////////////////////////////////\n
+    .declareAcquiredMethod("jio_get", "jio_get")\n
+    .declareAcquiredMethod("jio_allDocs", "jio_allDocs")\n
+    .declareAcquiredMethod("getUrlFor", "getUrlFor")\n
+    .declareAcquiredMethod("translate", "translate")\n
+    .declareAcquiredMethod("redirect", "redirect")\n
+    .declareAcquiredMethod("getSetting", "getSetting")\n
+    .declareAcquiredMethod("setSetting", "setSetting")\n
+\n
+    /////////////////////////////////////////////////////////////////\n
+    // declared methods\n
+    /////////////////////////////////////////////////////////////////\n
+    .declareMethod(\'render\', function (option_dict) {\n
+      var gadget = this,\n
+        content = \'\',\n
+        k,\n
+        k_len,\n
+        search_string = \'\',\n
+        translated_column_list = [],\n
+        all_document_list = [],\n
+        monitor_url_list = [],\n
+        getPartialData;\n
+\n
+      // Create the search query\n
+      if (option_dict.search) {\n
+        search_string = \'(\' + option_dict.column.select + \':"%\' + option_dict.search + \'%"\' + \')\';\n
+        for (k = 0, k_len = option_dict.search_column_list.length; k < k_len; k += 1) {\n
+          search_string  += \' OR (\' + option_dict.search_column_list[k].select +\n
+            \':"%\' + option_dict.search + \'%"\' + \')\';\n
+        }\n
+        option_dict.query.query = search_string + \' AND \' + option_dict.query.query;\n
+      }\n
+\n
+      getPartialData = function(dav_url, key) {\n
+        var jio_options = {\n
+            type: "query",\n
+            sub_storage: {\n
+              type: "drivetojiomapping",\n
+              sub_storage: {\n
+                type: "dav",\n
+                url: dav_url\n
+              }\n
+            }\n
+          };\n
+        gadget.property_dict.jio_gadget.createJio(jio_options);\n
+        return gadget.property_dict.jio_gadget.get(key)\n
+          .push(function (monitor_dict) {\n
+            if (monitor_dict.title && monitor_dict._links.monitor && monitor_dict._links.monitor.href) {\n
+              all_document_list.push(monitor_dict);\n
+              monitor_url_list.push(monitor_dict._links.monitor.href);\n
+            }\n
+            return;\n
+          });\n
+      };\n
+\n
+      // store initial configuration\n
+      gadget.property_dict.option_dict = option_dict;\n
+\n
+      return new RSVP.Queue()\n
+      .push(function () {\n
+        var jio_options;\n
+        if (option_dict.data_url !== undefined && option_dict.data_url !== \'\') {\n
+          jio_options = {\n
+            type: "query",\n
+            sub_storage: {\n
+              type: "drivetojiomapping",\n
+              sub_storage: {\n
+                type: "dav",\n
+                url: option_dict.data_url\n
+              }\n
+            }\n
+          };\n
+          gadget.property_dict.jio_gadget.createJio(jio_options);\n
+          //jio_getdocs = gadget.property_dict.jio_gadget.allDocs;\n
+        } else {\n
+          jio_getdocs = gadget.jio_allDocs;\n
+        }\n
+        return gadget.property_dict.jio_gadget.get(option_dict.data_id)\n
+          .push(function (monitor_dict) {\n
+            var promise_list = [],\n
+              j;\n
+\n
+            /* Filter this result here !! */\n
+\n
+            if (monitor_dict.title && monitor_dict._links.monitor && monitor_dict._links.monitor.href) {\n
+              all_document_list.push(monitor_dict);\n
+              monitor_url_list.push(monitor_dict._links.monitor.href);\n
+            }\n
+            if (monitor_dict._links.related_monitor !== undefined &&\n
+                monitor_dict._links.related_monitor !== []) {\n
+              for (j = 0; j < monitor_dict._links.related_monitor.length; j += 1) {\n
+                promise_list.push(\n
+                  getPartialData(\n
+                    monitor_dict._links.related_monitor[j].href,\n
+                    option_dict.data_id\n
+                  )\n
+                );\n
+              }\n
+            }\n
+            return new RSVP.Queue()\n
+              .push(function () {\n
+                return RSVP.all(promise_list);\n
+              });\n
+          });\n
+      })\n
+      .push(function () {\n
+        var promise_list = [],\n
+          i_len,\n
+          i;\n
+        gadget.property_dict.document_list = all_document_list;\n
+        for (i = 0, i_len = all_document_list.length; i < i_len; i += 1) {\n
+          promise_list.push(gadget.getUrlFor({\n
+            jio_key: all_document_list[i].id,\n
+            jio_for: monitor_url_list[i],\n
+            page: \'overview_details\'\n
+          }));\n
+        }\n
+  \n
+        return RSVP.all(promise_list);\n
+      })\n
+      .push(function (link_list) {\n
+        var row_list = [],\n
+          i_len,\n
+          i,\n
+          j_len,\n
+          j;\n
+\n
+        // build handlebars object\n
+        for (j = 0, j_len = all_document_list.length; j < j_len; j += 1) {\n
+          row_list.push({\n
+            "href": link_list[j],\n
+            "search": option_dict.search,\n
+            "index": j,\n
+            "value": all_document_list[j].title,\n
+            "hosting_value": all_document_list[j][\'hosting-title\'] || \'\',\n
+            "status": all_document_list[j].hasOwnProperty(\'status\') ? all_document_list[j].status.toLowerCase() : \'\'\n
+          });\n
+        }\n
+\n
+        /*for (i = 0; i < option_dict.column_list.length; i += 1) {\n
+          translated_column_list.push(gadget.translate(option_dict.column_list[i].title));\n
+        }*/\n
+        return RSVP.all([\n
+          row_list,\n
+          [{title: \'Status\'}, {title: \'Instance\'}, {title: \'Root Instance\'}]\n
+        ]);\n
+      })\n
+      .push(function (result_list) {\n
+        var header_content,\n
+          sort_element,\n
+          content = listbox_widget_template({\n
+          row_list: result_list[0],\n
+          column_list: result_list[1]\n
+        });\n
+        gadget.property_dict.element.querySelector(".ui-panel-overview .overview-content")\n
+          .innerHTML += content;\n
+        header_content = header_listbox_widget({\n
+            widget_theme : option_dict.widget_theme,\n
+            search: option_dict.search\n
+          });\n
+          gadget.property_dict.element.querySelector(".ui-panel-overview .overview-header")\n
+            .innerHTML += header_content;\n
+          if (option_dict.query.sort_on && option_dict.query.sort_on[0]) {\n
+            sort_element = gadget.property_dict.element.querySelector(\'#listview-sort-\' + option_dict.query.sort_on[0][0]);\n
+            if (sort_element) {\n
+              sort_element.checked = true;\n
+            }\n
+          }\n
+      })\n
+      .push(function () {\n
+        return $(gadget.property_dict.element.querySelector(".ui-block-b .ui-panel-overview")).hide();\n
+      })\n
+      .push(function () {\n
+        return gadget.property_dict.render_deferred.resolve();\n
+      });\n
+    })\n
+\n
+    /////////////////////////////////////////////////////////////////\n
+    // declared service\n
+    /////////////////////////////////////////////////////////////////\n
+    .declareService(function () {\n
+      var gadget = this;\n
+      \n
+      function showInstanceDetails(element) {\n
+        var jio_options = {\n
+            type: "query",\n
+            sub_storage: {\n
+              type: "drivetojiomapping",\n
+              sub_storage: {\n
+                type: "dav"\n
+              }\n
+            }\n
+          },\n
+          index = parseInt($(element).attr(\'rel\'), 10),\n
+          private_link;\n
+\n
+        if (index !== isNaN && (gadget.property_dict.document_list.length > index)) {\n
+          private_link = gadget.property_dict.document_list[index]._links.monitor.href;\n
+        } else {\n
+          return;\n
+        }\n
+        return new RSVP.Queue()\n
+        .push(function () {\n
+          return gadget.setSetting(\'instance_overview_selection\', private_link);\n
+        })\n
+        .push(function () {\n
+          return gadget.property_dict.login_gadget.loginRedirect(\n
+            private_link,\n
+            {\n
+              page: gadget.property_dict.option_dict.search_page || \'\',\n
+              sort_on: gadget.property_dict.option_dict.sort_on || \'\',\n
+              search: gadget.property_dict.option_dict.search || \'\',\n
+              select: private_link\n
+            },\n
+            gadget.property_dict.document_list[index].title,\n
+            gadget.property_dict.document_list[index][\'hosting-title\']\n
+          );\n
+        })\n
+        .push(function (cred) {\n
+          jio_options.sub_storage.sub_storage.url = cred.url;\n
+          jio_options.sub_storage.sub_storage.basic_login = cred.hash;\n
+          gadget.property_dict.jio_gadget.createJio(jio_options);\n
+          return gadget.property_dict.jio_gadget.get(\n
+            gadget.property_dict.option_dict.data_id\n
+          );\n
+        })\n
+        .push(function (current_document) {\n
+          var instance_content,\n
+            promise_list_template;\n
+\n
+          if (current_document.hasOwnProperty(\'data\') &&\n
+              current_document.data.hasOwnProperty(\'state\')) {\n
+\n
+            jio_options.sub_storage.sub_storage.url = current_document._links.private_url.href + \'data/\';\n
+            instance_content = Handlebars.compile(\n
+              templater.getElementById("details-widget-overview").innerHTML\n
+            ),\n
+            promise_list_template = Handlebars.compile(\n
+              templater.getElementById("promiselist-widget-template").innerHTML\n
+            );\n
+            gadget.property_dict.jio_gadget.createJio(jio_options);\n
+            return gadget.property_dict.jio_gadget.get(\n
+                current_document.data.state\n
+              )\n
+              .push(function (element_dict) {\n
+                $(gadget.property_dict.element.querySelector(".ui-block-b .ui-panel-overview")).show();\n
+                return element_dict;\n
+              })\n
+              .push(function (element_dict) {\n
+                var data = element_dict.data.join(\'\\n\'),\n
+                  old_element = $(gadget.property_dict.element.querySelector(\'.ui-listview-container table td > a.selected\'));\n
+\n
+                if (old_element) {\n
+                  old_element.removeClass(\'selected\');\n
+                }\n
+                return gadget.property_dict.graph.render(\n
+                  data,\n
+                  {\n
+                    ylabel: \'<span class="graph-label"><i class="fa fa-bar-chart"></i> Promises Result</span>\',\n
+                    legend: \'always\',\n
+                    labelsDivStyles: { \'textAlign\': \'right\' }\n
+                  },\n
+                  "customInteractionModel"\n
+                );\n
+              })\n
+              .push(function () {\n
+                var content,\n
+                  promise_content,\n
+                  promise_list = [],\n
+                  i,\n
+                  tmp_url,\n
+                  tmp_process_url;\n
+\n
+                // Resource view URLs\n
+                tmp_url = "#page=resource_view&title=" + current_document.title +\n
+                  "&root=" + current_document[\'hosting-title\'] +\n
+                  "&jio_for=" + current_document._links.private_url.href;\n
+\n
+                tmp_process_url = "#page=process_view&title=" + current_document.title +\n
+                  "&root=" + current_document[\'hosting-title\'] +\n
+                  "&jio_for=" + current_document._links.private_url.href;\n
+\n
+                content = instance_content({\n
+                    title: current_document.title,\n
+                    root_title: current_document[\'hosting-title\'],\n
+                    date: current_document.date,\n
+                    status: current_document.status,\n
+                    instance: current_document._embedded.instance || \'\',\n
+                    public_url: current_document._links.hasOwnProperty(\'public_url\') ? current_document._links.public_url.href : \'\',\n
+                    private_url: current_document._links.hasOwnProperty(\'private_url\') ? current_document._links.private_url.href : \'\',\n
+                    rss_url: current_document._links.hasOwnProperty(\'rss_url\') ? current_document._links.rss_url.href : \'\',\n
+                    resource_url: tmp_url,\n
+                    process_url: tmp_process_url\n
+                  });\n
+\n
+                  if (current_document._embedded.promises !== undefined) {\n
+                    for (i = 0; i < current_document._embedded.promises.length; i += 1) {\n
+                      promise_list.push(current_document._embedded.promises[i]);\n
+                      promise_list[i].href = "#page=view&jio_key=" + \n
+                        promise_list[i].title + \'.status\' + "&jio_for=" +\n
+                        current_document._links.public_url.href;\n
+                    }\n
+                  }\n
+                  promise_content = promise_list_template({\n
+                    promise_list: promise_list\n
+                  });\n
+                $(element.querySelector(\'td:first-child > a\')).addClass(\'selected\');\n
+                gadget.property_dict.element.querySelector(".overview-details")\n
+                  .innerHTML = content;\n
+                gadget.property_dict.element.querySelector(".promise-list")\n
+                  .innerHTML = promise_content;\n
+              });\n
+          }\n
+          return false;\n
+          \n
+        });\n
+      }\n
+      \n
+      return new RSVP.Queue()\n
+        .push(function () {\n
+          return gadget.property_dict.render_deferred.promise;\n
+        })\n
+        .push(function () {\n
+          var promise_list = [],\n
+            element_list = gadget.property_dict.element.querySelectorAll(\'.ui-listview-container table tr\'),\n
+            i;\n
+          for (i = 0; i < element_list.length; i += 1) {\n
+            promise_list.push(loopEventListener(\n
+              element_list[i],\n
+              \'click\',\n
+              false,\n
+              showInstanceDetails.bind(gadget, element_list[i])\n
+            ));\n
+          }\n
+          promise_list.push(loopEventListener(\n
+            gadget.property_dict.element.querySelector(\'form.search\'),\n
+            \'submit\',\n
+            false,\n
+            function (evt) {\n
+              return gadget.redirect({\n
+                jio_key: gadget.property_dict.option_dict.jio_key || \'\',\n
+                page: gadget.property_dict.option_dict.search_page || \'\',\n
+                sort_on: gadget.property_dict.option_dict.sort_on || \'\',\n
+                search: evt.target[0].value\n
+              });\n
+            })\n
+          );\n
+          promise_list.push(loopEventListener(\n
+            gadget.property_dict.element.querySelector(\'.listview-filter\'),\n
+            \'click\',\n
+            false,\n
+            function (evt) {\n
+              gadget.property_dict.filter_panel.panel("toggle");\n
+            })\n
+          );\n
+          promise_list.push(loopEventListener(\n
+            gadget.property_dict.element.querySelector(\'.listview-refresh\'),\n
+            \'click\',\n
+            false,\n
+            function (evt) {\n
+              return gadget.redirect({\n
+                page: gadget.property_dict.option_dict.search_page || \'\',\n
+                sort_on: gadget.property_dict.option_dict.sort_on || \'\',\n
+                search: gadget.property_dict.option_dict.search || \'\',\n
+                t: Date.now() / 1000 | 0\n
+              });\n
+            })\n
+          );\n
+          promise_list.push(loopEventListener(\n
+            gadget.property_dict.element.querySelector(\'form.filter\'),\n
+            \'submit\',\n
+            false,\n
+            function (evt) {\n
+              var filter_status = [],\n
+                element = gadget.property_dict.element;\n
+              if (element.querySelector(\'#monitor-promise-error\').checked) {\n
+                filter_status.push(\'error\');\n
+              }\n
+              if (element.querySelector(\'#monitor-promise-success\').checked) {\n
+                filter_status.push(\'ok\');\n
+              }\n
+              if (element.querySelector(\'#monitor-promise-warning\').checked) {\n
+                filter_status.push(\'warning\');\n
+              }\n
+              return gadget.redirect({\n
+                page: gadget.property_dict.option_dict.search_page || \'\',\n
+                sort_on: gadget.property_dict.option_dict.sort_on || \'\',\n
+                search: gadget.property_dict.option_dict.search || \'\',\n
+                status: filter_status.join(\'+\')\n
+              });\n
+            })\n
+          );\n
+          if ( gadget.property_dict.selection) {\n
+            for (i = 0; i < gadget.property_dict.document_list.length; i += 1) {\n
+              if (gadget.property_dict.document_list[i]._links.monitor.href === gadget.property_dict.selection) {\n
+                promise_list.push($(gadget.property_dict.element.querySelector(\n
+                    \'.ui-listview-container table tr[rel="\' + i + \'"]\')\n
+                  ).click());\n
+                break;\n
+              }\n
+            }\n
+          }\n
+          return RSVP.all(promise_list);\n
+        });\n
+    });\n
+\n
+}(window, rJS, RSVP, Handlebars, loopEventListener, $));\n
+
+
+]]></string> </value>
+        </item>
+        <item>
+            <key> <string>title</string> </key>
+            <value> <string>Monitoring Widget Overview JS</string> </value>
+        </item>
+        <item>
+            <key> <string>version</string> </key>
+            <value>
+              <none/>
+            </value>
+        </item>
+        <item>
+            <key> <string>workflow_history</string> </key>
+            <value>
+              <persistent> <string encoding="base64">AAAAAAAAAAI=</string> </persistent>
+            </value>
+        </item>
+      </dictionary>
+    </pickle>
+  </record>
+  <record id="2" aka="AAAAAAAAAAI=">
+    <pickle>
+      <global name="PersistentMapping" module="Persistence.mapping"/>
+    </pickle>
+    <pickle>
+      <dictionary>
+        <item>
+            <key> <string>data</string> </key>
+            <value>
+              <dictionary>
+                <item>
+                    <key> <string>document_publication_workflow</string> </key>
+                    <value>
+                      <persistent> <string encoding="base64">AAAAAAAAAAM=</string> </persistent>
+                    </value>
+                </item>
+                <item>
+                    <key> <string>edit_workflow</string> </key>
+                    <value>
+                      <persistent> <string encoding="base64">AAAAAAAAAAQ=</string> </persistent>
+                    </value>
+                </item>
+                <item>
+                    <key> <string>processing_status_workflow</string> </key>
+                    <value>
+                      <persistent> <string encoding="base64">AAAAAAAAAAU=</string> </persistent>
+                    </value>
+                </item>
+              </dictionary>
+            </value>
+        </item>
+      </dictionary>
+    </pickle>
+  </record>
+  <record id="3" aka="AAAAAAAAAAM=">
+    <pickle>
+      <global name="WorkflowHistoryList" module="Products.ERP5Type.patches.WorkflowTool"/>
+    </pickle>
+    <pickle>
+      <tuple>
+        <none/>
+        <list>
+          <dictionary>
+            <item>
+                <key> <string>action</string> </key>
+                <value> <string>publish</string> </value>
+            </item>
+            <item>
+                <key> <string>actor</string> </key>
+                <value> <string>zope</string> </value>
+            </item>
+            <item>
+                <key> <string>comment</string> </key>
+                <value> <string></string> </value>
+            </item>
+            <item>
+                <key> <string>error_message</string> </key>
+                <value> <string></string> </value>
+            </item>
+            <item>
+                <key> <string>time</string> </key>
+                <value>
+                  <object>
+                    <klass>
+                      <global name="DateTime" module="DateTime.DateTime"/>
+                    </klass>
+                    <tuple>
+                      <none/>
+                    </tuple>
+                    <state>
+                      <tuple>
+                        <float>1453287699.01</float>
+                        <string>UTC</string>
+                      </tuple>
+                    </state>
+                  </object>
+                </value>
+            </item>
+            <item>
+                <key> <string>validation_state</string> </key>
+                <value> <string>published</string> </value>
+            </item>
+          </dictionary>
+        </list>
+      </tuple>
+    </pickle>
+  </record>
+  <record id="4" aka="AAAAAAAAAAQ=">
+    <pickle>
+      <global name="WorkflowHistoryList" module="Products.ERP5Type.patches.WorkflowTool"/>
+    </pickle>
+    <pickle>
+      <tuple>
+        <none/>
+        <list>
+          <dictionary>
+            <item>
+                <key> <string>action</string> </key>
+                <value> <string>edit</string> </value>
+            </item>
+            <item>
+                <key> <string>actor</string> </key>
+                <value> <string>zope</string> </value>
+            </item>
+            <item>
+                <key> <string>comment</string> </key>
+                <value>
+                  <none/>
+                </value>
+            </item>
+            <item>
+                <key> <string>error_message</string> </key>
+                <value> <string></string> </value>
+            </item>
+            <item>
+                <key> <string>serial</string> </key>
+                <value> <string>949.6359.56330.33331</string> </value>
+            </item>
+            <item>
+                <key> <string>state</string> </key>
+                <value> <string>current</string> </value>
+            </item>
+            <item>
+                <key> <string>time</string> </key>
+                <value>
+                  <object>
+                    <klass>
+                      <global name="DateTime" module="DateTime.DateTime"/>
+                    </klass>
+                    <tuple>
+                      <none/>
+                    </tuple>
+                    <state>
+                      <tuple>
+                        <float>1455275625.09</float>
+                        <string>UTC</string>
+                      </tuple>
+                    </state>
+                  </object>
+                </value>
+            </item>
+          </dictionary>
+        </list>
+      </tuple>
+    </pickle>
+  </record>
+  <record id="5" aka="AAAAAAAAAAU=">
+    <pickle>
+      <global name="WorkflowHistoryList" module="Products.ERP5Type.patches.WorkflowTool"/>
+    </pickle>
+    <pickle>
+      <tuple>
+        <none/>
+        <list>
+          <dictionary>
+            <item>
+                <key> <string>action</string> </key>
+                <value> <string>detect_converted_file</string> </value>
+            </item>
+            <item>
+                <key> <string>actor</string> </key>
+                <value> <string>zope</string> </value>
+            </item>
+            <item>
+                <key> <string>comment</string> </key>
+                <value> <string></string> </value>
+            </item>
+            <item>
+                <key> <string>error_message</string> </key>
+                <value> <string></string> </value>
+            </item>
+            <item>
+                <key> <string>external_processing_state</string> </key>
+                <value> <string>converted</string> </value>
+            </item>
+            <item>
+                <key> <string>serial</string> </key>
+                <value> <string>0.0.0.0</string> </value>
+            </item>
+            <item>
+                <key> <string>time</string> </key>
+                <value>
+                  <object>
+                    <klass>
+                      <global name="DateTime" module="DateTime.DateTime"/>
+                    </klass>
+                    <tuple>
+                      <none/>
+                    </tuple>
+                    <state>
+                      <tuple>
+                        <float>1453287044.24</float>
+                        <string>UTC</string>
+                      </tuple>
+                    </state>
+                  </object>
+                </value>
+            </item>
+          </dictionary>
+        </list>
+      </tuple>
+    </pickle>
+  </record>
+</ZopeData>

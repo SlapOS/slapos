@@ -1,0 +1,856 @@
+<?xml version="1.0"?>
+<ZopeData>
+  <record id="1" aka="AAAAAAAAAAE=">
+    <pickle>
+      <global name="Web Style" module="erp5.portal_type"/>
+    </pickle>
+    <pickle>
+      <dictionary>
+        <item>
+            <key> <string>_Access_contents_information_Permission</string> </key>
+            <value>
+              <tuple>
+                <string>Anonymous</string>
+                <string>Assignee</string>
+                <string>Assignor</string>
+                <string>Associate</string>
+                <string>Auditor</string>
+                <string>Manager</string>
+                <string>Owner</string>
+              </tuple>
+            </value>
+        </item>
+        <item>
+            <key> <string>_Add_portal_content_Permission</string> </key>
+            <value>
+              <tuple>
+                <string>Assignor</string>
+                <string>Manager</string>
+              </tuple>
+            </value>
+        </item>
+        <item>
+            <key> <string>_Change_local_roles_Permission</string> </key>
+            <value>
+              <tuple>
+                <string>Assignor</string>
+                <string>Manager</string>
+              </tuple>
+            </value>
+        </item>
+        <item>
+            <key> <string>_Modify_portal_content_Permission</string> </key>
+            <value>
+              <tuple>
+                <string>Manager</string>
+              </tuple>
+            </value>
+        </item>
+        <item>
+            <key> <string>_View_Permission</string> </key>
+            <value>
+              <tuple>
+                <string>Anonymous</string>
+                <string>Assignee</string>
+                <string>Assignor</string>
+                <string>Associate</string>
+                <string>Auditor</string>
+                <string>Manager</string>
+                <string>Owner</string>
+              </tuple>
+            </value>
+        </item>
+        <item>
+            <key> <string>categories</string> </key>
+            <value>
+              <tuple>
+                <string>classification/collaborative/team</string>
+              </tuple>
+            </value>
+        </item>
+        <item>
+            <key> <string>content_md5</string> </key>
+            <value>
+              <none/>
+            </value>
+        </item>
+        <item>
+            <key> <string>default_reference</string> </key>
+            <value> <string>gadget_monitoring_custom.css</string> </value>
+        </item>
+        <item>
+            <key> <string>description</string> </key>
+            <value>
+              <none/>
+            </value>
+        </item>
+        <item>
+            <key> <string>id</string> </key>
+            <value> <string>gadget_monitoring_custom_css</string> </value>
+        </item>
+        <item>
+            <key> <string>language</string> </key>
+            <value>
+              <none/>
+            </value>
+        </item>
+        <item>
+            <key> <string>portal_type</string> </key>
+            <value> <string>Web Style</string> </value>
+        </item>
+        <item>
+            <key> <string>short_title</string> </key>
+            <value>
+              <none/>
+            </value>
+        </item>
+        <item>
+            <key> <string>text_content</string> </key>
+            <value> <string encoding="cdata"><![CDATA[
+
+html head + body.ui-overlay-a, html head + body.ui-overlay-a .ui-page, html head + body.ui-overlay-a .ui-page .ui-panel-wrapper {\n
+  background: #FBFBFB; \n
+}\n
+.ui-grid-container > ul, .ui-grid-container > ul li {\n
+  list-style: none outside none;\n
+  margin-left: 0;\n
+  margin-right: 0;\n
+  padding: 0;\n
+}\n
+html .ui-grid-container > ul.ui-grid-column-5 > li:nth-child(-n+2).ui-grid-span-4 {\n
+  width: 80%;\n
+}\n
+html .ui-grid-container > ul.ui-grid-column-5 > .ui-grid-span-1 {\n
+  width: 20%;\n
+}\n
+\n
+.ui-grid-container > ul > li:first-child {\n
+  clear: left;\n
+}\n
+.ui-grid-container > ul > li {\n
+  float: left;\n
+  -webkit-box-sizing: border-box;\n
+  -moz-box-sizing: border-box;\n
+  -ms-box-sizing: border-box;\n
+  box-sizing: border-box;\n
+}\n
+.ui-grid-container .ui-grid-a .ui-block-a, .ui-grid-container .ui-grid-a .ui-block-a {\n
+  padding: 10px 15px;\n
+}\n
+.ui-grid-container .ui-grid-b .ui-block-a, .ui-grid-container .ui-grid-b .ui-block-b {\n
+  padding: 10px 15px;\n
+}\n
+/*\n
+@media (max-width: 32em)\n
+html.ui-mobile .ui-grid-container.ui-responsive > ul > li, html.ui-mobile .ui-grid-container.ui-responsive > ul[class*="ui-grid-column"] > li {\n
+  width: 100%;\n
+}*/\n
+\n
+.padding-5 {padding: 5px;}\n
+.padding-10 {padding: 10px;}\n
+.padding-15 {padding: 15px;}\n
+.padding-20 {padding: 20px;}\n
+.padding-tb-10 {padding: 10px 0;}\n
+.padding-tb-20 {padding: 20px 0;}\n
+.padding-lr-10 {padding: 0 10px;}\n
+.padding-lr-20 {padding: 0 20px;}\n
+.padding-lrb-20 {padding: 0 20px 20px;}\n
+.ui-text{\n
+  padding: 0 10px;\n
+}\n
+.ui-text-left {text-align: left;}\n
+.ui-text-right {text-align: right;}\n
+.ui-text-center {\n
+  text-align: center;\n
+}\n
+.ui-text-ERROR, .ui-text-error {\n
+  color: #DC4343;\n
+}\n
+.ui-text-OK, .ui-text-ok {\n
+  color: green;\n
+}\n
+\n
+.text-overview {\n
+  max-width: 200px;\n
+  white-space: nowrap;\n
+  text-overflow: ellipsis;\n
+  overflow: hidden;\n
+}\n
+\n
+.ui-content .ui-table {\n
+  border: 1px solid rgba(0,0,0,.05);\n
+}\n
+\n
+.ui-panel-overview {\n
+  background: #fff;\n
+  margin: 15px 10px 20px 10px;\n
+  border: 1px solid #f1f5fc;\n
+  border-radius: 4px;\n
+}\n
+\n
+.overview-content {\n
+  padding: 0 20px 20px;\n
+}\n
+.overview-header {\n
+  padding: 5px;\n
+}\n
+\n
+.overview-header > .content-title {\n
+  color: #535354;\n
+  background-color: transparent;\n
+  padding: 10px 15px 5px 15px;\n
+}\n
+\n
+.overview-header > .content-title:after {\n
+  content: "";\n
+  display: block;\n
+  clear: both;\n
+  border-bottom: 1px solid #ddd;\n
+  padding-top: 10px;\n
+}\n
+\n
+.content-title > .overview-title {\n
+  float: left;\n
+  display: block;\n
+  font-size: 18px;\n
+  line-height: 18px;\n
+}\n
+\n
+.content-title > .commands {\n
+  display: block;\n
+  padding: 0;\n
+  margin: 0;\n
+  margin-top: 3px;\n
+  float: right;\n
+}\n
+\n
+.content-details {\n
+  padding: 20px;\n
+}\n
+.content-details h2:first-child {\n
+  margin-top: 0;\n
+}\n
+\n
+.content-details .ui-block-a {\n
+  font-weight: bold;\n
+  padding: 5px;\n
+}\n
+.content-details .ui-block-b {\n
+  font-weight: normal;\n
+  padding: 5px;\n
+  white-space: nowrap;\n
+  text-align: center;\n
+}\n
+\n
+html .ui-panel-overview table {\n
+  border: 1px solid rgba(0,0,0,.05);\n
+  border-bottom: none;\n
+}\n
+\n
+html .content-details table tr th, html .content-details table tr td {\n
+  padding: 5px;\n
+}\n
+html .promise-list table tr {\n
+  cursor: pointer;\n
+}\n
+.promise-list {\n
+  padding: 10px 20px;\n
+}\n
+\n
+.header-form-overview {\n
+  padding: 0 10px;\n
+}\n
+\n
+.ui-panel-overview .panel-body {\n
+  padding: 15px;\n
+  padding-top: 0;\n
+  line-height: 26px;\n
+}\n
+.overview-header .ui-field-contain, .listbox-header .ui-field-contain {\n
+  padding-left: 5px;\n
+}\n
+.ui-content .ui-panel-overview .ui-listview-inset {\n
+    margin: 1em 0;\n
+    margin-top: 0.1em;\n
+}\n
+\n
+html head + body .ui-panel-overview > h2 {\n
+  font-weight: bold;\n
+  font-size: 105%;\n
+  padding: 0 15px;\n
+}\n
+\n
+.ui-status-icon {\n
+  display: inline-block;\n
+}\n
+.ui-status-icon:before {\n
+  display: inline-block;\n
+  content: "";\n
+  vertical-align: middle;\n
+  height: 2.5em;\n
+  width: 2.5em;\n
+  cursor: pointer;\n
+  background: #DC4343;\n
+}\n
+\n
+.ui-status-icon-fx:before {\n
+  height: 3.5em;\n
+  width: 3.5em;\n
+}\n
+\n
+.ui-status-text, a span.ui-status-text {\n
+  font-weight: bold;\n
+  padding-left: 7px;\n
+  font-size: 1.09em;\n
+  /*top: 13px;\n
+  left: 40px;\n
+  position: absolute;*/\n
+}\n
+\n
+.ui-status-ok:before, .ui-status-OK:before {\n
+  background: green;\n
+}\n
+.ui-status-error:before, .ui-status-ERROR:before {\n
+  background: #DC4343;\n
+}\n
+.ui-status-warning:before, .ui-status-WARNING:before {\n
+  background: #faebcc;\n
+}\n
+.status-text-ok:before, .status-text-OK:before {\n
+  color: green;\n
+}\n
+.status-text-error:before, .status-text-ERROR:before {\n
+  color: #DC4343;\n
+}\n
+.status-text-warning:before, .status-text-WARNING:before {\n
+  color: #faebcc;\n
+}\n
+\n
+.label-warning, .label-WARNING {\n
+  background-color: #f0ad4e;\n
+}\n
+.label-error, .label-ERROR {\n
+  background-color: #DC4343;\n
+}\n
+.label-ok, .label-OK {\n
+  background-color: green;\n
+}\n
+.label {\n
+  display: inline;\n
+  padding: .2em .6em .3em;\n
+  font-weight: 700;\n
+  line-height: 1;\n
+  color: #fff;\n
+  text-align: center;\n
+  white-space: nowrap;\n
+  vertical-align: baseline;\n
+  border-radius: .25em;\n
+}\n
+\n
+.ui-content-hidden {\n
+  display: none;\n
+}\n
+\n
+.ui-listview-container {\n
+  padding: 10px;\n
+}\n
+.ui-block-a .ui-listview-container:first-child, .ui-block-b .ui-listview-container:first-child, .ui-block-c .ui-listview-container:first-child {\n
+  padding-top: 0;\n
+}\n
+.ui-panel-overview .ui-listview-container {\n
+  padding: 0;\n
+}\n
+ul li .ui-collapse-content {\n
+  background-color: #fff;\n
+  border-color: #ddd;\n
+  color: #333;\n
+  text-shadow: 0 1px 0 #f3f3f3;\n
+  margin: 0;\n
+  padding: .5em 1em;\n
+  border-right-width: 1px;\n
+  border-left-width: 1px;\n
+  border-top-width: 1px;\n
+  border-bottom-width: 0;\n
+  border-style: solid;\n
+}\n
+ul li:last-child .ui-collapse-content {\n
+  border-top-width: 0;\n
+  -webkit-border-bottom-right-radius: inherit;\n
+  border-bottom-right-radius: inherit;\n
+  -webkit-border-bottom-left-radius: inherit;\n
+  border-bottom-left-radius: inherit;\n
+}\n
+\n
+ul li .ui-collapse-content fieldset > div, ul li .ui-collapse-content fieldset > span {\n
+  padding: 5px 0;\n
+}\n
+\n
+.controlgroup-textinput{\n
+  padding-top:.22em;\n
+  padding-bottom:.22em;\n
+}\n
+\n
+.ui-promise-title > h2 {\n
+    color: #3eb249;\n
+    background-color: transparent;\n
+    border-bottom: 1px solid #ddd;\n
+    font-size: 1.1em;\n
+    padding-bottom: .2em;\n
+    margin: 0 0 .7375em;\n
+}\n
+\n
+.ui-instance-title > h2 {\n
+  color: #194173;\n
+}\n
+.ui-instance-title span {\n
+  padding-left: 10px;\n
+}\n
+.ui-content .ui-promise-content .ui-promise-title > h2, .ui-content .ui-responsive .ui-instance-title > h2 {\n
+  font-size: 1.1em;\n
+}\n
+\n
+.overview-header .ui-input-text input, .listbox-header .ui-input-text input {\n
+  padding: .6em;\n
+}\n
+\n
+#promise-overview .ui-block-b, #promise-overview .ui-block-a, #promise-overview .ui-block-c {\n
+  padding: 10px;\n
+}\n
+\n
+.ui-table-columntoggle-btn {display: none;}\n
+\n
+.ui-icon-grid:after {\n
+  content: "\\f00b";\n
+}\n
+.ui-icon-bullets:after {\n
+  content: "\\f009";\n
+}\n
+\n
+.listbox-filter-panel, .overview-filter-panel {\n
+  padding: 1em;\n
+  padding-top: .1em;\n
+}\n
+html.ui-mobile body .listbox-filter-panel h2, html.ui-mobile body .listbox-filter-panel h3 {\n
+  font-weight: bold;\n
+}\n
+body .listbox-filter-panel h2{\n
+  text-align: center;\n
+  font-size: 110%;\n
+}\n
+body .listbox-filter-panel h3{\n
+  text-align: left;\n
+  font-size: 105%;\n
+}\n
+\n
+html table tbody td a, html table tbody th a {\n
+  padding: .4em .75em;\n
+}\n
+html .custom-grid-wrap table thead tr th {\n
+  font-weight: 800;\n
+}\n
+\n
+/* LEGEND CHART */\n
+.legend {\n
+  list-style: none;\n
+  font-size: 12px;\n
+}\n
+.legend:before {\n
+  display: block;\n
+  content: "";\n
+  clear: both;\n
+}\n
+.legend li {\n
+  float: left;\n
+  font-size: 12px;\n
+  padding-right: 10px;\n
+}\n
+.legend li span {\n
+  display: inline-block;\n
+  height: 10px;\n
+  width: 10px;\n
+  margin-right: 5px;\n
+}\n
+\n
+/* Graph */\n
+.graph {\n
+  margin: 20px 0;\n
+  position: relative;\n
+}\n
+.graph-label {\n
+  font-size: 75%;\n
+}\n
+.graph-medium {\n
+  height: 200px;\n
+  width: 100%;\n
+}\n
+.ui-grid-column .graph-state-labels {\n
+  margin: 10px;\n
+}\n
+.ui-grid-column .graph-state-labels label{\n
+  font-weight: normal;\n
+}\n
+\n
+/*  INfo Box */\n
+.infobox {\n
+  display: inline-block;\n
+  height: 54px;\n
+  color: #555;\n
+  background-color: #FFF;\n
+  box-shadow: none;\n
+  margin: -1px 0 0 -1px;\n
+  margin: 5px 0;\n
+  padding: 8px 3px 6px 9px;\n
+  border: 1px solid;\n
+  border-color: #D8D8D8;\n
+  vertical-align: middle;\n
+  text-align: left;\n
+  position: relative;\n
+  cursor: pointer;\n
+}\n
+.infobox:hover {\n
+    background: rgba(128, 128, 128, .1);\n
+}\n
+\n
+.infobox>.infobox-icon {\n
+  display: inline-block;\n
+  vertical-align: top;\n
+  padding-top: 10px;\n
+  width: 44px;\n
+}\n
+\n
+.infobox>.infobox-data {\n
+  display: inline-block;\n
+  border-width: 0;\n
+  font-size: 13px;\n
+  text-align: left;\n
+  line-height: 21px;\n
+  min-width: 130px;\n
+  padding-left: 8px;\n
+  position: relative;\n
+  top: 0;\n
+}\n
+\n
+.infobox>.infobox-data>.infobox-data-number {\n
+  display: block;\n
+  font-size: 22px;\n
+  margin: 2px 0 4px;\n
+  position: relative;\n
+  text-shadow: 1px 1px 0 rgba(0,0,0,.15);\n
+}\n
+\n
+.infobox .infobox-content {\n
+    color: #555;\n
+    max-width: 140px;\n
+}\n
+\n
+.tooltipster-shadow {\n
+\tborder-radius: 5px;\n
+\tbackground: #fff;\n
+\tbox-shadow: 0px 0px 14px rgba(0,0,0,0.3);\n
+\tcolor: #2c2c2c;\n
+}\n
+.tooltipster-shadow .tooltipster-content {\n
+\tfont-family: \'Arial\', sans-serif;\n
+\tfont-size: 14px;\n
+\tline-height: 16px;\n
+\tpadding: 8px 10px;\n
+}\n
+\n
+span.tooltipster-icon {\n
+  display: block;\n
+  cursor: help;\n
+  margin-left: 4px;\n
+  background: #0078c9;\n
+  border: 3px solid #0078c9;\n
+  width: 2.3em;\n
+  height: 2.3em;\n
+  padding: 0.4em 0 0;\n
+  border-radius: 100%;\n
+  box-sizing: border-box;\n
+  color: #fff;\n
+  font-size: 0.6em;\n
+  line-height: 1em;\n
+  font-weight: 700;\n
+  text-align: center;\n
+  margin: -0.3em 0 0 0;\n
+  float: right;\n
+  clear: right;\n
+}\n
+\n
+span.tooltipster-icon:hover {\n
+  background: #fff;\n
+  color: #5d6365;\n
+  border: 3px solid #5d6365;\n
+  cursor: pointer;\n
+}\n
+\n
+.tooltipster-light {\n
+\tborder-radius: 5px; \n
+\tborder: 1px solid #cccccc;\n
+\tbackground: #ededed;\n
+\tcolor: #666666;\n
+}\n
+.tooltipster-light .tooltipster-content {\n
+\tfont-family: Arial, sans-serif;\n
+\tfont-size: 14px;\n
+\tline-height: 16px;\n
+\tpadding: 8px 10px;\n
+}\n
+.tooltipster-light .tooltipster-content p, .tooltipster-shadow .tooltipster-content p {\n
+  margin: 5px;\n
+  font-size: 12px;\n
+}\n
+\n
+html .tooltipster-base table{\n
+  border: 1px solid rgba(0,0,0,.05);\n
+}\n
+\n
+html .tooltipster-base table td, html .tooltipster-base table th {\n
+  padding: 5px;\n
+}\n
+\n
+html table.instance-overview tr td > a.selected {\n
+  border-left: 4px solid #93D2B8;\n
+}\n
+\n
+html table.instance-overview td:first-child > a, html table.instance-overview td:first-child > a:hover {\n
+  border-left: 4px solid transparent;\n
+}\n
+\n
+.login-box {\n
+  position: fixed;\n
+  top: 35%;\n
+  left: 50%;\n
+  margin-top: -50px;\n
+  margin-left: -150px;\n
+  width: 320px;\n
+}\n
+
+
+]]></string> </value>
+        </item>
+        <item>
+            <key> <string>title</string> </key>
+            <value> <string>Monitoring Custom css</string> </value>
+        </item>
+        <item>
+            <key> <string>version</string> </key>
+            <value>
+              <none/>
+            </value>
+        </item>
+        <item>
+            <key> <string>workflow_history</string> </key>
+            <value>
+              <persistent> <string encoding="base64">AAAAAAAAAAI=</string> </persistent>
+            </value>
+        </item>
+      </dictionary>
+    </pickle>
+  </record>
+  <record id="2" aka="AAAAAAAAAAI=">
+    <pickle>
+      <global name="PersistentMapping" module="Persistence.mapping"/>
+    </pickle>
+    <pickle>
+      <dictionary>
+        <item>
+            <key> <string>data</string> </key>
+            <value>
+              <dictionary>
+                <item>
+                    <key> <string>document_publication_workflow</string> </key>
+                    <value>
+                      <persistent> <string encoding="base64">AAAAAAAAAAM=</string> </persistent>
+                    </value>
+                </item>
+                <item>
+                    <key> <string>edit_workflow</string> </key>
+                    <value>
+                      <persistent> <string encoding="base64">AAAAAAAAAAQ=</string> </persistent>
+                    </value>
+                </item>
+                <item>
+                    <key> <string>processing_status_workflow</string> </key>
+                    <value>
+                      <persistent> <string encoding="base64">AAAAAAAAAAU=</string> </persistent>
+                    </value>
+                </item>
+              </dictionary>
+            </value>
+        </item>
+      </dictionary>
+    </pickle>
+  </record>
+  <record id="3" aka="AAAAAAAAAAM=">
+    <pickle>
+      <global name="WorkflowHistoryList" module="Products.ERP5Type.patches.WorkflowTool"/>
+    </pickle>
+    <pickle>
+      <tuple>
+        <none/>
+        <list>
+          <dictionary>
+            <item>
+                <key> <string>action</string> </key>
+                <value> <string>publish</string> </value>
+            </item>
+            <item>
+                <key> <string>actor</string> </key>
+                <value> <string>zope</string> </value>
+            </item>
+            <item>
+                <key> <string>comment</string> </key>
+                <value> <string></string> </value>
+            </item>
+            <item>
+                <key> <string>error_message</string> </key>
+                <value> <string></string> </value>
+            </item>
+            <item>
+                <key> <string>time</string> </key>
+                <value>
+                  <object>
+                    <klass>
+                      <global name="DateTime" module="DateTime.DateTime"/>
+                    </klass>
+                    <tuple>
+                      <none/>
+                    </tuple>
+                    <state>
+                      <tuple>
+                        <float>1451915043.24</float>
+                        <string>UTC</string>
+                      </tuple>
+                    </state>
+                  </object>
+                </value>
+            </item>
+            <item>
+                <key> <string>validation_state</string> </key>
+                <value> <string>published</string> </value>
+            </item>
+          </dictionary>
+        </list>
+      </tuple>
+    </pickle>
+  </record>
+  <record id="4" aka="AAAAAAAAAAQ=">
+    <pickle>
+      <global name="WorkflowHistoryList" module="Products.ERP5Type.patches.WorkflowTool"/>
+    </pickle>
+    <pickle>
+      <tuple>
+        <none/>
+        <list>
+          <dictionary>
+            <item>
+                <key> <string>action</string> </key>
+                <value> <string>edit</string> </value>
+            </item>
+            <item>
+                <key> <string>actor</string> </key>
+                <value> <string>zope</string> </value>
+            </item>
+            <item>
+                <key> <string>comment</string> </key>
+                <value>
+                  <none/>
+                </value>
+            </item>
+            <item>
+                <key> <string>error_message</string> </key>
+                <value> <string></string> </value>
+            </item>
+            <item>
+                <key> <string>serial</string> </key>
+                <value> <string>949.6362.31366.44049</string> </value>
+            </item>
+            <item>
+                <key> <string>state</string> </key>
+                <value> <string>current</string> </value>
+            </item>
+            <item>
+                <key> <string>time</string> </key>
+                <value>
+                  <object>
+                    <klass>
+                      <global name="DateTime" module="DateTime.DateTime"/>
+                    </klass>
+                    <tuple>
+                      <none/>
+                    </tuple>
+                    <state>
+                      <tuple>
+                        <float>1455275197.77</float>
+                        <string>UTC</string>
+                      </tuple>
+                    </state>
+                  </object>
+                </value>
+            </item>
+          </dictionary>
+        </list>
+      </tuple>
+    </pickle>
+  </record>
+  <record id="5" aka="AAAAAAAAAAU=">
+    <pickle>
+      <global name="WorkflowHistoryList" module="Products.ERP5Type.patches.WorkflowTool"/>
+    </pickle>
+    <pickle>
+      <tuple>
+        <none/>
+        <list>
+          <dictionary>
+            <item>
+                <key> <string>action</string> </key>
+                <value>
+                  <none/>
+                </value>
+            </item>
+            <item>
+                <key> <string>actor</string> </key>
+                <value> <string>zope</string> </value>
+            </item>
+            <item>
+                <key> <string>comment</string> </key>
+                <value> <string></string> </value>
+            </item>
+            <item>
+                <key> <string>error_message</string> </key>
+                <value> <string></string> </value>
+            </item>
+            <item>
+                <key> <string>external_processing_state</string> </key>
+                <value> <string>empty</string> </value>
+            </item>
+            <item>
+                <key> <string>serial</string> </key>
+                <value> <string>0.0.0.0</string> </value>
+            </item>
+            <item>
+                <key> <string>time</string> </key>
+                <value>
+                  <object>
+                    <klass>
+                      <global name="DateTime" module="DateTime.DateTime"/>
+                    </klass>
+                    <tuple>
+                      <none/>
+                    </tuple>
+                    <state>
+                      <tuple>
+                        <float>1451914920.23</float>
+                        <string>UTC</string>
+                      </tuple>
+                    </state>
+                  </object>
+                </value>
+            </item>
+          </dictionary>
+        </list>
+      </tuple>
+    </pickle>
+  </record>
+</ZopeData>

@@ -1,0 +1,536 @@
+<?xml version="1.0"?>
+<ZopeData>
+  <record id="1" aka="AAAAAAAAAAE=">
+    <pickle>
+      <global name="Web Page" module="erp5.portal_type"/>
+    </pickle>
+    <pickle>
+      <dictionary>
+        <item>
+            <key> <string>_Access_contents_information_Permission</string> </key>
+            <value>
+              <tuple>
+                <string>Anonymous</string>
+                <string>Assignee</string>
+                <string>Assignor</string>
+                <string>Associate</string>
+                <string>Auditor</string>
+                <string>Manager</string>
+                <string>Owner</string>
+              </tuple>
+            </value>
+        </item>
+        <item>
+            <key> <string>_Add_portal_content_Permission</string> </key>
+            <value>
+              <tuple>
+                <string>Assignor</string>
+                <string>Manager</string>
+              </tuple>
+            </value>
+        </item>
+        <item>
+            <key> <string>_Change_local_roles_Permission</string> </key>
+            <value>
+              <tuple>
+                <string>Assignor</string>
+                <string>Manager</string>
+              </tuple>
+            </value>
+        </item>
+        <item>
+            <key> <string>_Modify_portal_content_Permission</string> </key>
+            <value>
+              <tuple>
+                <string>Manager</string>
+              </tuple>
+            </value>
+        </item>
+        <item>
+            <key> <string>_View_Permission</string> </key>
+            <value>
+              <tuple>
+                <string>Anonymous</string>
+                <string>Assignee</string>
+                <string>Assignor</string>
+                <string>Associate</string>
+                <string>Auditor</string>
+                <string>Manager</string>
+                <string>Owner</string>
+              </tuple>
+            </value>
+        </item>
+        <item>
+            <key> <string>categories</string> </key>
+            <value>
+              <tuple>
+                <string>classification/collaborative/team</string>
+              </tuple>
+            </value>
+        </item>
+        <item>
+            <key> <string>content_md5</string> </key>
+            <value>
+              <none/>
+            </value>
+        </item>
+        <item>
+            <key> <string>content_type</string> </key>
+            <value> <string>text/html</string> </value>
+        </item>
+        <item>
+            <key> <string>default_reference</string> </key>
+            <value> <string>gadget_monitoring_widget_overview.html</string> </value>
+        </item>
+        <item>
+            <key> <string>description</string> </key>
+            <value>
+              <none/>
+            </value>
+        </item>
+        <item>
+            <key> <string>id</string> </key>
+            <value> <string>gadget_monitoring_widget_overview_html</string> </value>
+        </item>
+        <item>
+            <key> <string>language</string> </key>
+            <value>
+              <none/>
+            </value>
+        </item>
+        <item>
+            <key> <string>portal_type</string> </key>
+            <value> <string>Web Page</string> </value>
+        </item>
+        <item>
+            <key> <string>short_title</string> </key>
+            <value>
+              <none/>
+            </value>
+        </item>
+        <item>
+            <key> <string>text_content</string> </key>
+            <value> <string encoding="cdata"><![CDATA[
+
+<!DOCTYPE html>\n
+<html>\n
+  <head>\n
+    <meta charset="utf-8" />\n
+    <meta name="viewport" content="width=device-width, user-scalable=no" />\n
+    <title>Monitoring Widget Listbox</title>\n
+\n
+    <!-- renderjs -->\n
+    <script src="rsvp.js" type="text/javascript"></script>\n
+    <script src="renderjs.js" type="text/javascript"></script>\n
+    <script src="handlebars.js"></script>\n
+\n
+    <script id="overview-widget-listview" type="text/x-handlebars-template">\n
+      <div class="ui-listview-container">\n
+        <table class="ui-responsive ui-body-c ui-table-inset instance-overview">\n
+          <thead class="ui-bar-inherit">\n
+            <tr>\n
+              {{#each column_list}}\n
+                <th>{{title}}</th>\n
+              {{/each}}\n
+            </tr>\n
+          </thead>\n
+          <tbody>\n
+          {{#each row_list}}\n
+            <tr rel="{{index}}">\n
+              <td class="ui-text-center"><a class="ui-link" href="{{href}}">\n
+                <span class="ui-status-icon ui-status-{{status}}"></span></a></td>\n
+              <td><a class="ui-link" href="{{href}}">{{value}}</a></td>\n
+              <td><a class="ui-link" href="{{href}}">{{hosting_value}}</a></td>\n
+            </tr>\n
+          {{/each}}\n
+          </tbody>\n
+          <tfoot class="ui-bar-inherit"></tfoot>\n
+        </table>\n
+      </div>\n
+    </script>\n
+\n
+    <script id="header-widget-overview" type="text/x-handlebars-template">\n
+      <div class="header-form-overview">\n
+        <form class=\'search\'>\n
+          <div class="ui-grid-a ui-responsive">\n
+            <div class="ui-block-a">\n
+              <div class="ui-field-contain">\n
+                <div class="ui-input-text ui-body-{{widget_theme}} ui-corner-all ui-shadow-inset ui-input-has-clear {{widget_status_class}}" style="border-color: #D6D8E0;">\n
+                  <input type="text" data-enhanced="true" value="{{search}}" name="search" {{widget_status_attribute}} />\n
+                  <div class="ui-btn ui-input-clear ui-input-btn ui-corner-all ui-icon-search ui-btn-icon-notext" data-i18n="[node]header-submit">\n
+                    Submit<input data-enhanced="true" type="submit" data-i18n="[value]header-submit" value="Submit" {{widget_status_attribute}} />\n
+                  </div>\n
+                </div>\n
+              </div>\n
+            </div>\n
+            <div class="ui-block-b">\n
+              <div class="ui-field-contain">\n
+                <div data-role="controlgroup" data-type="horizontal">\n
+                  <a href="#" class="ui-shadow ui-btn ui-corner-all listview-refresh"><i class="fa fa-refresh"></i></a>\n
+                  <a href="#" class="ui-shadow ui-btn ui-corner-all listview-filter"><i class="fa fa-cog"></i></a>\n
+                </div>\n
+              </div>\n
+            </div>\n
+          </div>\n
+        </form>\n
+      </div>\n
+    </script>\n
+\n
+    <script id="details-widget-overview" type="text/x-handlebars-template">\n
+      <div class="overview-header">\n
+        <div class=\'content-title ui-instance-title\'>\n
+          <div class="overview-title">\n
+            <i class="fa fa-cubes"></i><span>{{title}}</span>\n
+          </div>\n
+          <div class="commands">\n
+            \n
+          </div>\n
+        </div>\n
+      </div>\n
+      <div class="content-details">\n
+        <div class="ui-text-left" style="padding-bottom: 15px;">\n
+          <h2><i class="fa fa-info-circle"></i> <strong>Instance Current State</strong></h2>\n
+          <div class="padding-lr-10">\n
+            <div class="ui-field-contain">\n
+              <fieldset data-role="controlgroup" data-type="horizontal">\n
+                {{#if resource_url }}\n
+                <a href="{{resource_url}}" class="ui-btn ui-corner-all ui-btn-inline ui-mini"><i class="fa fa-pie-chart"></i> Resources</a>\n
+                {{/if}}\n
+                {{#if process_url }}\n
+                <a href="{{process_url}}" class="ui-btn ui-corner-all ui-btn-inline ui-mini"><i class="fa fa-list-alt"></i> Processes</a>\n
+                {{/if}}\n
+                {{#if public_url}}\n
+                <!--<a class="ui-btn ui-corner-all ui-btn-inline ui-mini" target=\'_blank\' href="{{public_url}}" title="Public"><i class="fa fa-folder-open-o"></i> Public</a>-->\n
+                {{/if}}\n
+                {{#if private_url}}\n
+                <a class="ui-btn ui-corner-all ui-btn-inline ui-mini" target=\'_blank\' href="{{private_url}}" title="Private"><i class="fa fa-lock"></i> Private</a>\n
+                {{/if}}\n
+                {{#if rss_url}}\n
+                <a class="ui-btn ui-corner-all ui-btn-inline ui-mini" target=\'_blank\' href="{{rss_url}}" title="RSS"><i class="fa fa-rss-square"></i> RSS</a>\n
+                {{/if}}\n
+              </fieldset>\n
+            </div>\n
+            <table data-role="table" data-mode="columntoggle" class="ui-responsive table-stroke">\n
+              <tr>\n
+                <th><i class="fa fa-tachometer"></i> <strong>Status</strong></th>\n
+                <td><span class="label label-{{status}}">{{status}}</span></td>\n
+                <td>{{date}}</td>\n
+              </tr>\n
+              \n
+              {{#with instance}}\n
+              <tr>\n
+                <th><i class="fa fa-desktop"></i> <strong>Computer</strong></th>\n
+                <td>{{computer}}</td>\n
+                <td>{{partition}}</td>\n
+              </tr>\n
+              <tr>\n
+                <th><i class="fa fa-globe"></i> <strong>IP Address</strong></th>\n
+                <td>{{ipv4}}</td>\n
+                <td>{{ipv6}}</td>\n
+              </tr>\n
+              {{/with}}\n
+            </table>\n
+          </div>\n
+        </div>\n
+      </div>\n
+    </script>\n
+\n
+    <script id="promiselist-widget-template" type="text/x-handlebars-template">\n
+      {{#if promise_list}}\n
+      <h2><i class="fa fa-th-list"></i> <strong>Instance Promise List</strong></h2>\n
+      <div style="overflow: auto;" class="padding-lr-10">\n
+        <table data-role="table" data-mode="columntoggle" class="table-stroke">\n
+          {{#each promise_list}}\n
+          <tr title="{{message}}">\n
+            <td><a href="{{href}}">{{title}}</a></td>\n
+            <td style="text-align: center;">{{time}}</td>\n
+            <td style="text-align: center;"><span class="label label-{{status}}">{{status}}</span></td>\n
+          </tr>\n
+          {{/each}}\n
+        </table>\n
+      </div>\n
+      {{/if}}\n
+    </script>\n
+\n
+    <!-- custom script -->\n
+    <script src="gadget_monitoring_widget_overview.js" type="text/javascript"></script>\n
+\n
+    </head>\n
+  <body>\n
+    <div data-gadget-url="gadget_monitoring_jio.html" data-gadget-scope="jio_gadget" data-gadget-sandbox="public"></div>\n
+    <div data-gadget-url="gadget_monitoring_login_widget.html" data-gadget-scope="login_gadget" data-gadget-sandbox="public"></div>\n
+    <div class="overview-filter-panel">\n
+      <form class=\'filter\'>\n
+      \t<h2>Configure Displayed Result</h2>\n
+      \t<fieldset data-role="controlgroup">\n
+          <h3>Status contain:</h3>\n
+          <input type="checkbox" id="monitor-promise-success" name="monitor-filter-status" value="success" checked="checked">\n
+          <label for="monitor-promise-success">Success</label>\n
+          <input type="checkbox" id="monitor-promise-error" name="monitor-filter-status" value="error" checked="checked">\n
+          <label for="monitor-promise-error">Error</label>\n
+          <input type="checkbox" id="monitor-promise-warning" name="monitor-filter-status" value="warning" checked="checked">\n
+          <label for="monitor-promise-warning">Warning</label>\n
+        </fieldset>\n
+        <div class="ui-grid-a">\n
+          <input data-enhanced="true" type="submit" data-rel="close" class="ui-btn ui-shadow ui-corner-all ui-btn-inline ui-mini pvalidate" value="Validate" />\n
+\t      </div>\n
+      </form>\n
+    </div>\n
+    \n
+    <div class="ui-grid-a ui-responsive custom-listbox">\n
+      <div class="ui-block-a">\n
+        <div class="ui-panel-overview" style="min-height: 450px;">\n
+          <div class="overview-header">\n
+            <div class=\'content-title ui-instance-title\'>\n
+              <div class="overview-title">\n
+                <i class="fa fa-desktop"></i><span>Instances Status Overview</span>\n
+              </div>\n
+              <div class="commands">\n
+              </div>\n
+            </div>\n
+          </div>\n
+          <div class="overview-content">\n
+          </div>\n
+        </div>\n
+      </div>\n
+      <div class="ui-block-b">\n
+        <div class="ui-panel-overview">\n
+          <div class="overview-details">\n
+          </div>\n
+          <div style="margin: 0 20px;">\n
+            <div data-gadget-url="gadget_erp5_graph.html" data-gadget-scope="graph_gadget" class="graph graph-medium "></div>\n
+          </div>\n
+          <div class="promise-list">\n
+          </div>\n
+        </div>\n
+      </div>\n
+    </div>\n
+  </body>\n
+</html>\n
+
+
+]]></string> </value>
+        </item>
+        <item>
+            <key> <string>title</string> </key>
+            <value> <string>Monitoring Widget Overview</string> </value>
+        </item>
+        <item>
+            <key> <string>version</string> </key>
+            <value>
+              <none/>
+            </value>
+        </item>
+        <item>
+            <key> <string>workflow_history</string> </key>
+            <value>
+              <persistent> <string encoding="base64">AAAAAAAAAAI=</string> </persistent>
+            </value>
+        </item>
+      </dictionary>
+    </pickle>
+  </record>
+  <record id="2" aka="AAAAAAAAAAI=">
+    <pickle>
+      <global name="PersistentMapping" module="Persistence.mapping"/>
+    </pickle>
+    <pickle>
+      <dictionary>
+        <item>
+            <key> <string>data</string> </key>
+            <value>
+              <dictionary>
+                <item>
+                    <key> <string>document_publication_workflow</string> </key>
+                    <value>
+                      <persistent> <string encoding="base64">AAAAAAAAAAM=</string> </persistent>
+                    </value>
+                </item>
+                <item>
+                    <key> <string>edit_workflow</string> </key>
+                    <value>
+                      <persistent> <string encoding="base64">AAAAAAAAAAQ=</string> </persistent>
+                    </value>
+                </item>
+                <item>
+                    <key> <string>processing_status_workflow</string> </key>
+                    <value>
+                      <persistent> <string encoding="base64">AAAAAAAAAAU=</string> </persistent>
+                    </value>
+                </item>
+              </dictionary>
+            </value>
+        </item>
+      </dictionary>
+    </pickle>
+  </record>
+  <record id="3" aka="AAAAAAAAAAM=">
+    <pickle>
+      <global name="WorkflowHistoryList" module="Products.ERP5Type.patches.WorkflowTool"/>
+    </pickle>
+    <pickle>
+      <tuple>
+        <none/>
+        <list>
+          <dictionary>
+            <item>
+                <key> <string>action</string> </key>
+                <value> <string>publish</string> </value>
+            </item>
+            <item>
+                <key> <string>actor</string> </key>
+                <value> <string>zope</string> </value>
+            </item>
+            <item>
+                <key> <string>comment</string> </key>
+                <value> <string></string> </value>
+            </item>
+            <item>
+                <key> <string>error_message</string> </key>
+                <value> <string></string> </value>
+            </item>
+            <item>
+                <key> <string>time</string> </key>
+                <value>
+                  <object>
+                    <klass>
+                      <global name="DateTime" module="DateTime.DateTime"/>
+                    </klass>
+                    <tuple>
+                      <none/>
+                    </tuple>
+                    <state>
+                      <tuple>
+                        <float>1453287684.43</float>
+                        <string>UTC</string>
+                      </tuple>
+                    </state>
+                  </object>
+                </value>
+            </item>
+            <item>
+                <key> <string>validation_state</string> </key>
+                <value> <string>published</string> </value>
+            </item>
+          </dictionary>
+        </list>
+      </tuple>
+    </pickle>
+  </record>
+  <record id="4" aka="AAAAAAAAAAQ=">
+    <pickle>
+      <global name="WorkflowHistoryList" module="Products.ERP5Type.patches.WorkflowTool"/>
+    </pickle>
+    <pickle>
+      <tuple>
+        <none/>
+        <list>
+          <dictionary>
+            <item>
+                <key> <string>action</string> </key>
+                <value> <string>edit</string> </value>
+            </item>
+            <item>
+                <key> <string>actor</string> </key>
+                <value> <string>zope</string> </value>
+            </item>
+            <item>
+                <key> <string>comment</string> </key>
+                <value>
+                  <none/>
+                </value>
+            </item>
+            <item>
+                <key> <string>error_message</string> </key>
+                <value> <string></string> </value>
+            </item>
+            <item>
+                <key> <string>serial</string> </key>
+                <value> <string>949.6292.13164.54971</string> </value>
+            </item>
+            <item>
+                <key> <string>state</string> </key>
+                <value> <string>current</string> </value>
+            </item>
+            <item>
+                <key> <string>time</string> </key>
+                <value>
+                  <object>
+                    <klass>
+                      <global name="DateTime" module="DateTime.DateTime"/>
+                    </klass>
+                    <tuple>
+                      <none/>
+                    </tuple>
+                    <state>
+                      <tuple>
+                        <float>1455272629.34</float>
+                        <string>UTC</string>
+                      </tuple>
+                    </state>
+                  </object>
+                </value>
+            </item>
+          </dictionary>
+        </list>
+      </tuple>
+    </pickle>
+  </record>
+  <record id="5" aka="AAAAAAAAAAU=">
+    <pickle>
+      <global name="WorkflowHistoryList" module="Products.ERP5Type.patches.WorkflowTool"/>
+    </pickle>
+    <pickle>
+      <tuple>
+        <none/>
+        <list>
+          <dictionary>
+            <item>
+                <key> <string>action</string> </key>
+                <value> <string>detect_converted_file</string> </value>
+            </item>
+            <item>
+                <key> <string>actor</string> </key>
+                <value> <string>zope</string> </value>
+            </item>
+            <item>
+                <key> <string>comment</string> </key>
+                <value> <string></string> </value>
+            </item>
+            <item>
+                <key> <string>error_message</string> </key>
+                <value> <string></string> </value>
+            </item>
+            <item>
+                <key> <string>external_processing_state</string> </key>
+                <value> <string>converted</string> </value>
+            </item>
+            <item>
+                <key> <string>serial</string> </key>
+                <value> <string>0.0.0.0</string> </value>
+            </item>
+            <item>
+                <key> <string>time</string> </key>
+                <value>
+                  <object>
+                    <klass>
+                      <global name="DateTime" module="DateTime.DateTime"/>
+                    </klass>
+                    <tuple>
+                      <none/>
+                    </tuple>
+                    <state>
+                      <tuple>
+                        <float>1453286474.68</float>
+                        <string>UTC</string>
+                      </tuple>
+                    </state>
+                  </object>
+                </value>
+            </item>
+          </dictionary>
+        </list>
+      </tuple>
+    </pickle>
+  </record>
+</ZopeData>
