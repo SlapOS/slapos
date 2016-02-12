@@ -27,7 +27,7 @@ TEST_LOG={{ instance_log_dir }}/tests_nayuos_image.log
 cd {{ cros_location }}/{{ branch }}
 
 # create chroot environment (exit on failure)
-cros_sdk --download || exit 1
+cros_sdk --download || { echo "Problem entering chroot or downloading chroot environment. Exiting." ; exit 1 ; }
 
 # compile Python with sqlite support (-> change USE flag) for dev-lang/python
 # it is needed by re6st
@@ -134,7 +134,7 @@ for board in ${BOARDS} ; do
     && cros_sdk -- rm -f $NAYU_IMAGE_LOCATION && cros_sdk -- touch $NAYU_IMAGE_LOCATION \
     && cros_sdk -- cros flash --board=${board} file://$NAYU_IMAGE_LOCATION >> "${BUILD_LOG}" \
     && cros_sdk -- ./test_nayuos_image ${board} > "${TEST_LOG}" \
-    || exit 1
+    || { echo "An error occured while building ${board} NayuOS image. Exiting." ; exit 1 ;}
 
   # save ~15Go/device but delete cache (next build will be as long)
   if [ ${KEEP_CACHE,,} == "no" ] ; then
