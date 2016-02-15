@@ -108,6 +108,12 @@ class Recipe(object):
   OPTCRE_match = RawConfigParser.OPTCRE.match
 
   def __init__(self, buildout, name, options):
+      # propagate configuration.<key>  ->  default configuration {}
+      parameter_default_dict = {}
+      for key, value in options.iteritems():
+        if key.startswith('configuration.'):
+          parameter_default_dict[key[len('configuration.'):]] = value
+
       parameter_dict = self.fetch_parameter_dict(options,
                                       buildout['buildout']['directory'])
 
@@ -116,6 +122,12 @@ class Recipe(object):
       # If it is non-dict - we just store it as is;
       # if it is     dict - we process it further.
       if isinstance(parameter_dict, dict):
+        # apply default parameters to parameter_dict
+        for key, value in parameter_default_dict.iteritems():
+          if key not in parameter_dict:
+            parameter_dict[key] = value
+
+        # propagate configuration {} -> configuration.<key>
         match = self.OPTCRE_match
         for key, value in parameter_dict.iteritems():
             if match(key) is not None:
