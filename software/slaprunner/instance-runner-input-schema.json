@@ -113,6 +113,6 @@
         "instance-name": {
             "description": "Name of the instance, to show in the window title",
             "type": "string"
-        },
+        }
     }
 }
