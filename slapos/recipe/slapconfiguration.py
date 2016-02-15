@@ -111,11 +111,18 @@ class Recipe(object):
       parameter_dict = self.fetch_parameter_dict(options,
                                       buildout['buildout']['directory'])
 
-      match = self.OPTCRE_match
-      for key, value in parameter_dict.iteritems():
-          if match(key) is not None:
-              continue
-          options['configuration.' + key] = value
+      # parameter_dict is usually {}, but potentially could be of any type,
+      # e.g. after deserialising { _ -> non-dict json } in Serialised.
+      # If it is non-dict - we just store it as is;
+      # if it is     dict - we process it further.
+      if isinstance(parameter_dict, dict):
+        match = self.OPTCRE_match
+        for key, value in parameter_dict.iteritems():
+            if match(key) is not None:
+                continue
+            options['configuration.' + key] = value
+
+      options['configuration'] = parameter_dict
 
   def fetch_parameter_dict(self, options, instance_root):
       slap = slapos.slap.slap()
@@ -224,18 +231,13 @@ class Recipe(object):
       return self._expandParameterDict(options, parameter_dict)
 
   def _expandParameterDict(self, options, parameter_dict):
-      options['configuration'] = parameter_dict
       return parameter_dict
 
   install = update = lambda self: []
 
 class Serialised(Recipe):
   def _expandParameterDict(self, options, parameter_dict):
-      options['configuration'] = parameter_dict = unwrap(parameter_dict)
-      if isinstance(parameter_dict, dict):
-          return parameter_dict
-      else:
-          return {}
+      return unwrap(parameter_dict)
 
 class JsonDump(Recipe):
   def __init__(self, buildout, name, options):
