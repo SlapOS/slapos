@@ -16,9 +16,10 @@ runner-path = ${directory:services}/erp5-bootstrap
 {% set mysql_parsed = urlparse.urlparse(publish['mariadb-database-list'][0]) -%}
 mysql-url = {{ dumps(urlparse.urlunparse(mysql_parsed[:1] + (mysql_parsed.username + ":" + mysql_parsed.password + "@" + reverse_hosts.get(mysql_parsed.hostname, mysql_parsed.hostname) + ':' ~ mysql_parsed.port, ) + mysql_parsed[2:])) }}
 {# Pick the first http[s] family found, they should be all equivalent anyway. -#}
+{# Don't pick the https[s] configurated with ssl-authenticat=true. By convention, this family name contain 'service'. -#}
 {% set family_list = [] -%}
 {% for key, value in publish.items() -%}
-{%   if key.startswith('family-') and value.startswith('http') -%}
+{%   if key.startswith('family-') and value.startswith('http') and not 'service' in key -%}
 {%     do family_list.append(value.split('://', 1)) -%}
 {%   endif -%}
 {%  endfor -%}

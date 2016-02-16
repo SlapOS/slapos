@@ -2,6 +2,7 @@
 {% set ssl_parameter_dict = slapparameter_dict.get('ssl', {}) %}
 {% macro section(name) %}{% do part_list.append(name) %}{{ name }}{% endmacro -%}
 {% set use_ipv6 = slapparameter_dict.get('use-ipv6', False) -%}
+{% set shared_ca_path = slapparameter_dict['shared-certificate-authority-path'] -%}
 {#
 XXX: This template only supports exactly one IPv4 and (if ipv6 is used) one IPv6
 per partition. No more (undefined result), no less (IndexError).
@@ -86,7 +87,9 @@ ipv6 = {{ zope_address.split(']:')[0][1:] }}
 {%     set internal_scheme = 'http' -%}
 {%     set external_scheme = 'https' -%}
 {%   endif -%}
-{%   do apache_dict.__setitem__(family_name, (next_port, external_scheme, internal_scheme ~ '://' ~ ipv4 ~ ':' ~ haproxy_port ~ slapparameter_dict['backend-path'])) -%}
+{%   set backend_path = slapparameter_dict['backend-path-dict'][family_name] -%}
+{%   set ssl_authentication = slapparameter_dict['ssl-authentication-dict'][family_name] -%}
+{%   do apache_dict.__setitem__(family_name, (next_port, external_scheme, internal_scheme ~ '://' ~ ipv4 ~ ':' ~ haproxy_port ~ backend_path, ssl_authentication)) -%}
 {%   set next_port = next_port + 1 -%}
 {% endfor -%}
 
@@ -117,11 +120,12 @@ ca-cert =  ${directory:apache-conf}/ca.crt
 crl = ${directory:apache-conf}/crl.pem
 
 [apache-conf-parameter-dict]
-backend-list = {{ dumps(apache_dict.values()) }}
+backend-list = {{ dumps(apache_dict) }}
 ip-list = {{ dumps(apache_ip_list) }}
 pid-file = ${directory:run}/apache.pid
 error-log = ${directory:log}/apache-error.log
 access-log = ${directory:log}/apache-access.log
+log-dir = ${directory:log} 
 # Apache 2.4's default value (60 seconds) can be a bit too short
 timeout = 300
 # Basic SSL server configuration
@@ -132,6 +136,11 @@ ssl-session-cache = ${directory:log}/apache-ssl-session-cache
 # Client x509 auth
 ca-cert = ${apache-ssl-client:cert}
 crl = ${apache-ssl-client:crl}
+{% if ssl_parameter_dict.get('single-ca-cert') and ssl_parameter_dict.get('single-ca-crl') -%}
+single-ca-cert = {{ dumps(ssl_parameter_dict.get('single-ca-cert')) }}
+single-crl = {{ dumps(ssl_parameter_dict.get('single-ca-crl')) }}
+{% endif -%}
+
 
 [apache-conf]
 recipe = slapos.recipe.template:jinja2
@@ -153,7 +162,7 @@ port = {{ apache_dict.values()[0][0] }}
 
 [publish]
 recipe = slapos.cookbook:publish.serialised
-{% for family_name, (apache_port, scheme, _) in apache_dict.items() -%}
+{% for family_name, (apache_port, scheme, _, _) in apache_dict.items() -%}
 {{   family_name ~ '-v6' }} = {% if ipv6_set %}{{ scheme ~ '://[' ~ ipv6 ~ ']:' ~ apache_port }}{% endif %}
 {{   family_name }} = {{ scheme ~ '://' ~ ipv4 ~ ':' ~ apache_port }}
 {% endfor -%}
@@ -181,6 +190,23 @@ crl = ${apache-ssl-crl:rendered}
 cert =
 crl =
 {%- endif %}
+
+
+{% set apache_service_log_list = {} -%}
+{% for family_name, (_, _, _, authentication) in apache_dict.items() -%}
+{%   if authentication -%}
+{%     set base_name = 'apache-' ~ family_name -%}
+{%     do part_list.append('logrotate-' ~ base_name) -%}
+{%     do apache_service_log_list.__setitem__(family_name, base_name) -%}
+[logrotate-{{ base_name }}]
+recipe = slapos.cookbook:logrotate.d
+logrotate-entries = ${logrotate:logrotate-entries}
+backup = ${logrotate:backup}
+name = {{ base_name }}
+log = ${apache-conf-parameter-dict:log-dir}/{{ base_name }}-error.log ${apache-conf-parameter-dict:log-dir}/{{ base_name }}-access.log
+post = {{ parameter_dict['bin-directory'] }}/slapos-kill --pidfile ${apache-conf-parameter-dict:pid-file} -s USR1
+{%   endif -%}
+{% endfor -%}
 
 [logrotate-apache]
 recipe = slapos.cookbook:logrotate.d

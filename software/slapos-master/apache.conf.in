@@ -66,12 +66,25 @@ CustomLog "{{ parameter_dict['access-log'] }}" combined
 </Directory>
 
 RewriteEngine On
-{% for port, _, backend in parameter_dict['backend-list'] -%}
+{% for family_name, (port, _, backend, enable_authentication) in parameter_dict['backend-list'].items() -%}
 {%   for ip in parameter_dict['ip-list'] -%}
 Listen {{ ip }}:{{ port }}
 {%   endfor -%}
 <VirtualHost *:{{ port }}>
+{% if enable_authentication -%}
+  SSLVerifyClient require
+  RequestHeader set REMOTE_USER %{SSL_CLIENT_S_DN_CN}s
+  SSLCACertificateFile {{ parameter_dict['single-ca-cert'] }}
+  SSLCARevocationPath {{ parameter_dict['single-crl'] }}
+  
+  LogFormat "%h %l %{REMOTE_USER}i %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\" %D" combined
+  
+  # We would like to separate the the authentificated logs.
+  ErrorLog "{{ parameter_dict['log-dir'] }}/apache-{{ family_name }}-error.log"
+  CustomLog "{{ parameter_dict['log-dir'] }}/apache-{{ family_name }}-access.log" combined
+{% endif -%}
   SSLEngine on
   RewriteRule ^/(.*) {{ backend }}/$1 [L,P]
 </VirtualHost>
 {% endfor -%}
+
