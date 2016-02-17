@@ -2,7 +2,7 @@
 # see:
 # https://gitlab.com/gitlab-org/gitlab-ce/blob/master/config/gitlab.yml.example
 # https://gitlab.com/gitlab-org/omnibus-gitlab/blob/master/files/gitlab-cookbooks/gitlab/templates/default/gitlab.yml.erb
-# (last updated for omnibus-gitlab 8.2.3+ce.0-0-g8eda093)
+# (last updated for omnibus-gitlab 8.4.4+ce.0-0-g1680742)
 
 {% from 'macrolib.cfg.in' import cfg, cfg_https, external_url  with context %}
 
@@ -50,18 +50,13 @@ production: &base
     default_can_create_group: {{ cfg('default_can_create_group') }}  # default: true
     username_changing_enabled: {{ cfg('username_changing_enabled') }} # default: true - User can change her username/namespace
     ## Default theme
-    ##   BASIC  = 1
-    ##   MARS   = 2
-    ##   MODERN = 3
-    ##   GRAY   = 4
-    ##   COLOR  = 5
+    ##   1 - Graphite
+    ##   2 - Charcoal
+    ##   3 - Green
+    ##   4 - Gray
+    ##   5 - Violet
+    ##   6 - Blue
     default_theme: {{ cfg('default_theme') }} # default: 2
-
-    {# we do not need to restrict visibility levels
-    # Restrict setting visibility levels for non-admin users.
-    # The default is to allow all levels.
-    restricted_visibility_levels: <%= @gitlab_restricted_visibility_levels unless @gitlab_restricted_visibility_levels.nil? %>
-    #}
 
     {# for now we are ok with default issue-closing pattern
     ## Automatic issue closing
@@ -78,7 +73,6 @@ production: &base
       merge_requests:   {{ cfg('default_projects_features.merge_requests') }}
       wiki:             {{ cfg('default_projects_features.wiki') }}
       snippets:         {{ cfg('default_projects_features.snippets') }}
-      visibility_level: '{{ cfg("default_projects_features.visibility_level") }}'  # can be "private" | "internal" | "public"
       builds: false {# builds not supported yet <%= @gitlab_default_projects_features_builds %> #}
 
     ## Webhook settings
@@ -139,6 +133,26 @@ production: &base
     storage_path: <%= @lfs_storage_path %>
   #}
 
+  {# we do not support Pages
+  ## GitLab Pages (EE only)
+  pages:
+    enabled: <%= @pages_enabled %>
+    path: <%= @pages_path %>
+    host: <%= @pages_host %>
+    port: <%= @pages_port %>
+    https: <%= @pages_https %>
+  #}
+
+  {# we do not support Elasticsearch
+  ## Elasticsearch (EE only)
+  # Enable it if you are going to use elasticsearch instead of
+  # regular database search
+  elasticsearch:
+    enabled: <%= @elasticsearch_enabled %>
+    host: <%= @elasticsearch_host %>
+    port: <%= @elasticsearch_port %>
+  #}
+
   ## Gravatar
   ## For Libravatar see: http://doc.gitlab.com/ce/customization/libravatar.html
   gravatar:
@@ -148,6 +162,33 @@ production: &base
     ssl_url:   <%= single_quote(@gravatar_ssl_url) %>    # default: https://secure.gravatar.com/avatar/%{hash}?s=%{size}&d=identicon
     #}
 
+
+  {# XXX cron jobs are disabled for now - we do not support CI and EE features
+  ## Auxiliary jobs
+  # Periodically executed jobs, to self-heal GitLab, do external synchronizations, etc.
+  # Please read here for more information: https://github.com/ondrejbartas/sidekiq-cron#adding-cron-job
+  cron_jobs:
+    # Flag stuck CI builds as failed
+    stuck_ci_builds_worker:
+      cron: <%= @stuck_ci_builds_worker_cron %>
+
+    ##
+    # GitLab EE only jobs:
+
+    # Snapshot active users statistics
+    historical_data_worker:
+      cron: <%= @historical_data_worker_cron %>
+
+    # Update mirrored repositories
+    update_all_mirrors_worker:
+      cron: <%= @update_all_mirrors_worker_cron %>
+
+    # In addition to refreshing users when they log in,
+    # periodically refresh LDAP users membership.
+    # NOTE: This will only take effect if LDAP is enabled
+    ldap_sync_worker:
+      cron: <%= @ldap_sync_worker_cron %>
+  #}
 
   #
   # 2. GitLab CI settings
@@ -272,7 +313,7 @@ production: &base
 <% end %>
     #}
 
-  {# default ($RAILS_ROOT/shared/) is just ok
+  {# default ($RAILS_ROOT/shared/) is ok - we symlinked it to proper place
   # Shared file storage settings
   shared:
     path: <%= @shared_path %>
@@ -330,6 +371,10 @@ production: &base
     ssh_port: <%= @gitlab_shell_ssh_port %>
     #}
 
+    # git-annex support (EE only)
+    # If this setting is set to true, the same setting in config.yml of
+    # gitlab-shell needs to be set to true
+    git_annex_enabled: <%= @git_annex_enabled %>
 
   ## Git settings
   # CAUTION!

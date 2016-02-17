@@ -118,6 +118,10 @@ var     = ${directory:var}/gitlab
 tmp     = ${:var}/tmp
 uploads = ${:var}/uploads
 assets  = ${:var}/assets
+shared  = ${:var}/shared
+artifacts = ${:shared}/artifacts
+lfs-objects = ${:shared}/lfs-objects
+builds  = ${:var}/builds
 backup  = ${directory:var}/backup
 
 [gitlab-repo-dir]
@@ -139,6 +143,10 @@ var     = ${gitlab-dir:var}
 tmp     = ${gitlab-dir:tmp}
 uploads = ${gitlab-dir:uploads}
 assets  = ${gitlab-dir:assets}
+shared  = ${gitlab-dir:shared}
+artifacts = ${gitlab-dir:artifacts}
+lfs-objects = ${gitlab-dir:lfs-objects}
+builds  = ${gitlab-dir:builds}
 backup  = ${gitlab-dir:backup}
 repositories = ${gitlab-repo-xdir:repositories}
 
@@ -241,7 +249,6 @@ context-extra =
     section nginx                   nginx
     section gitlab_work             gitlab-work
     section gitlab_workhorse        gitlab-workhorse
-    section unicorn                 unicorn
 
 [rack_attack.rb]
 <= gitlab-etc-template
@@ -358,14 +365,16 @@ update-command =
 <= work-base
 software = {{ gitlab_repository_location }}
 tune-command =
-# secret* config.ru tmp/ log/
+# secret* config.ru tmp/ log/ shared/ builds/
     rm -f .secret  &&
     rm -f config.ru  &&
-    rm -rf log tmp  &&
+    rm -rf log tmp shared builds  &&
     ln -sf ${secrets:secrets}/gitlab_rails_secret .secret  &&
     ln -sf ${config.ru:rendered} config.ru  &&
     ln -sf ${gitlab:log} log  &&
     ln -sf ${gitlab:tmp} tmp  &&
+    ln -sf ${gitlab:shared} shared  &&
+    ln -sf ${gitlab:builds} builds  &&
 # config/
     cd config  &&
     ln -sf ${unicorn.rb:rendered} unicorn.rb  &&
@@ -515,6 +524,7 @@ command-line    = {{ gitlab_workhorse }}
     -listenNetwork unix
     -listenAddr ${gitlab-workhorse:socket}
     -authSocket ${unicorn:socket}
+    -documentRoot ${gitlab-work:location}/public
 # NOTE for profiling
 #   -pprofListenAddr ...
 
@@ -532,10 +542,7 @@ depend  =
 
 [promise-gitlab-workhorse]
 <= promise-byurl
-# gitlab-workhorse works on repositories. Here we only check it accepts an
-# serves requests, so request is non-existent URL and expected code is 403
-url     = --unix-socket ${gitlab-workhorse:socket}  http:/non-existent
-http_code   = 403
+url     = --unix-socket ${gitlab-workhorse:socket}  http:/static.css
 
 
 # gitlab-workhorse logs to stdout/stderr - logs are handled by slapos not us
@@ -625,7 +632,7 @@ log     = ${sidekiq-dir:log}
 # NOTE see queue list here:
 # https://gitlab.com/gitlab-org/gitlab-ce/blob/master/Procfile
 # https://gitlab.com/gitlab-org/omnibus-gitlab/blob/master/files/gitlab-cookbooks/gitlab/templates/default/sv-sidekiq-run.erb
-# (last updated for ominbus-gitlab 8.2.3+ce.0-0-g8eda093)
+# (last updated for omnibus-gitlab 8.4.2+ce.0-3-g68d5ee8)
 [service-sidekiq]
 recipe  = slapos.cookbook:wrapper
 wrapper-path    = ${directory:service}/sidekiq
@@ -638,6 +645,7 @@ command-line    =
 
     ${gitlab-sidekiq:wrapper-path}
 # XXX -q runner ?  (present in gitlab-ce/Procfile  but not in omnibus)
+# XXX -q pages -q elasticsearch ?  (present in omnibus but not in gitlab-ce -- those features are gitlab-ee only)
 # XXX -P ?  (pidfile)
     -e production
     -r ${gitlab-work:location}
@@ -729,6 +737,8 @@ depend  =
 
 [promise-nginx]
 <= promise-byurl
+# XXX this depends on gitlab-workhorse being up
+#     (nginx is configured to proxy all requests to gitlab-workhorse)
 url     = ${backend-info:url}/static.css
 
 [logrotate-entry-nginx]
