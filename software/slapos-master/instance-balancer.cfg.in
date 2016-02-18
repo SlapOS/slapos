@@ -136,10 +136,12 @@ ssl-session-cache = ${directory:log}/apache-ssl-session-cache
 # Client x509 auth
 ca-cert = ${apache-ssl-client:cert}
 crl = ${apache-ssl-client:crl}
-{% if ssl_parameter_dict.get('single-ca-cert') and ssl_parameter_dict.get('single-ca-crl') -%}
-single-ca-cert = {{ dumps(ssl_parameter_dict.get('single-ca-cert')) }}
-single-crl = {{ dumps(ssl_parameter_dict.get('single-ca-crl')) }}
-{% endif -%}
+
+{% if shared_ca_path -%}
+shared-ca-cert = {{ shared_ca_path }}/cacert.pem 
+shared-crl = {{ shared_ca_path }}/crl
+{%- endif %}
+
 
 
 [apache-conf]

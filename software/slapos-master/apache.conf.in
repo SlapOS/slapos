@@ -74,8 +74,8 @@ Listen {{ ip }}:{{ port }}
 {% if enable_authentication -%}
   SSLVerifyClient require
   RequestHeader set REMOTE_USER %{SSL_CLIENT_S_DN_CN}s
-  SSLCACertificateFile {{ parameter_dict['single-ca-cert'] }}
-  SSLCARevocationPath {{ parameter_dict['single-crl'] }}
+  SSLCACertificateFile {{ parameter_dict['shared-ca-cert'] }}
+  SSLCARevocationPath {{ parameter_dict['shared-crl'] }}
   
   LogFormat "%h %l %{REMOTE_USER}i %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\" %D" combined
   
