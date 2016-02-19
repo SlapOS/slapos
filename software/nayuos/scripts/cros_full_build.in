@@ -1,33 +1,38 @@
-#!/bin/bash
-#XXX: should not depend on the host's bash ^
+#! {{ bash_path }}
 
 ######################## Download of sources using the "repo" command ########################
-DL_LOG={{ instance_log_dir }}/cros_sources_dl.log
-BRANCH={{ branch }}
-CHROMIUM_OVERLAY={{ cros_location }}/{{ branch }}/src/third_party/chromiumos-overlay
+DL_LOG="{{ instance_log_dir }}/cros_sources_dl.log"
+BRANCH="{{ branch }}"
+CHROMIUM_OVERLAY="{{ cros_location }}/{{ branch }}/src/third_party/chromiumos-overlay"
 
+{{ export_path_cmd }}
 echo "getting Chromium OS sources..." >> $DL_LOG
-{{ depot_tools_export_path_cmd }}
 echo "{{ cros_location }}/{{ branch }}"
 install -d "{{ cros_location }}/{{ branch }}"
 cd "{{ cros_location }}/{{ branch }}"
 
-repo init -u https://chromium.googlesource.com/chromiumos/manifest.git -b {{ branch }} >> $DL_LOG
+# git setup
+if ! git config user.name || ! git config user.email ; then
+  git config --global user.name "Your Name"
+  git config --global user.email "you@example.com" 
+fi
+
+repo init -u https://chromium.googlesource.com/chromiumos/manifest.git -b {{ branch }} >> $DL_LOG || { echo "Problem while initiating Chromium OS repo (repo init). PATH is: '${PATH}'. Exiting." ; exit 1 ; }
 
 # in case changes were already made, stash changes to be able to pull
 cd ${CHROMIUM_OVERLAY}
 git stash
 
-repo sync >> $DL_LOG
+repo sync >> $DL_LOG || { echo "Problem while downloading Chromium OS sources (repo sync). Exiting." ; exit 1 ; }
+
 
 ############################## Prepare chroot environment ###################################
 BUILD_LOG={{ instance_log_dir }}/cros_build.log
 TEST_LOG={{ instance_log_dir }}/tests_nayuos_image.log
-{{ depot_tools_export_path_cmd }}
 cd {{ cros_location }}/{{ branch }}
 
 # create chroot environment (exit on failure)
-cros_sdk --download || { echo "Problem entering chroot or downloading chroot environment. Exiting." ; exit 1 ; }
+cros_sdk --download || { echo "Problem while entering chroot or downloading chroot environment. PATH is: '${PATH}' Exiting." ; exit 1 ; }
 
 # compile Python with sqlite support (-> change USE flag) for dev-lang/python
 # it is needed by re6st
@@ -104,9 +109,10 @@ KEEP_CACHE="{{ keep_cache }}"
 for board in ${BOARDS} ; do
   echo ${board}
   if [ ${board} == daisy ] ; then
+    # XXX: broken by sucessive wrapping
     echo "daisy board: accepting license for Mali drivers..."
-    cros_sdk -- sudo sh -c "cp /etc/make.conf.user /etc/make.conf.user.save"
-    cros_sdk -- sudo sh -c "echo 'ACCEPT_LICENSE=\"*\"' >> /etc/make.conf.user"
+    cros_sdk -- "sudo cp /etc/make.conf.user /etc/make.conf.user.save"
+    cros_sdk -- "echo 'ACCEPT_LICENSE=\"*\"' | sudo tee --append /etc/make.conf.user"
   fi
 
   # preparing packages (for chroot and image)
@@ -142,8 +148,9 @@ for board in ${BOARDS} ; do
   fi
 
   if [ ${board} == daisy ]; then
+    # XXX: broken by sucessive wrapping
     echo "daisy board: removing accepted license for the next builds..."
-    cros_sdk -- sudo sh -c "mv /etc/make.conf.user.save /etc/make.conf.user"
+    cros_sdk -- "sudo mv /etc/make.conf.user.save /etc/make.conf.user"
   fi
 done
 
