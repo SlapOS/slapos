@@ -1,0 +1,168 @@
+#!/bin/bash
+#XXX: should not depend on the host's bash ^
+
+######################## Download of sources using the "repo" command ########################
+DL_LOG={{ instance_log_dir }}/cros_sources_dl.log
+BRANCH={{ branch }}
+CHROMIUM_OVERLAY={{ cros_location }}/{{ branch }}/src/third_party/chromiumos-overlay
+
+echo "getting Chromium OS sources..." >> $DL_LOG
+{{ depot_tools_export_path_cmd }}
+echo "{{ cros_location }}/{{ branch }}"
+install -d "{{ cros_location }}/{{ branch }}"
+cd "{{ cros_location }}/{{ branch }}"
+
+repo init -u https://chromium.googlesource.com/chromiumos/manifest.git -b {{ branch }} >> $DL_LOG
+
+# in case changes were already made, stash changes to be able to pull
+cd ${CHROMIUM_OVERLAY}
+git stash
+
+repo sync >> $DL_LOG
+
+############################## Prepare chroot environment ###################################
+BUILD_LOG={{ instance_log_dir }}/cros_build.log
+TEST_LOG={{ instance_log_dir }}/tests_nayuos_image.log
+{{ depot_tools_export_path_cmd }}
+cd {{ cros_location }}/{{ branch }}
+
+# create chroot environment (exit on failure)
+cros_sdk --download || { echo "Problem entering chroot or downloading chroot environment. Exiting." ; exit 1 ; }
+
+# compile Python with sqlite support (-> change USE flag) for dev-lang/python
+# it is needed by re6st
+# just need to change -sqlite by sqlite on the right line
+# same for IPv6 support
+PACKAGE_USE_FILE=${CHROMIUM_OVERLAY}/profiles/targets/chromeos/package.use
+line_number=$(sed -n '/dev-lang\/python/=' ${PACKAGE_USE_FILE})
+if [ $line_number ] ; then
+    echo $line_number
+    sed -i "${line_number}s/-sqlite/sqlite/" ${PACKAGE_USE_FILE}
+    if [[ ! $(sed -n ${line_number}p ${PACKAGE_USE_FILE} | grep ipv6) ]]; then
+        sed -i "${line_number}s/$/ ipv6/" ${PACKAGE_USE_FILE}
+    fi
+fi
+
+# add some ebuilds, specific to NayuOS
+for category in $( ls {{ ebuilds_dir }} ); do
+  echo ${category}
+  cp -R {{ ebuilds_dir }}/${category}/* ${CHROMIUM_OVERLAY}/${category}/
+done
+
+install -m 770 "{{ scripts_dir }}/test_nayuos_image" "{{ cros_location }}/{{ branch }}/src/scripts/test_nayuos_image"
+
+### packages management ###
+
+BASE_CHROMEOS_DEV_ROOT_EBUILD=${CHROMIUM_OVERLAY}/chromeos-base/chromeos-dev-root/chromeos-dev-root-0.0.1.ebuild
+VIRTUAL_CHROMEOS_OS_DEV_EBUILD=${CHROMIUM_OVERLAY}/virtual/target-chromium-os-dev/target-chromium-os-dev-1.ebuild
+
+# change the virtual ebuild responsible for installing all packages to add the ones
+# needed for NayuOS
+for package in {{ nayu_dev_packages }} ; do
+  echo $package
+  if [[ $( grep "${package}" "${VIRTUAL_CHROMEOS_OS_DEV_EBUILD}" ) ]] ; then
+    echo "no need to change ${VIRTUAL_CHROMEOS_OS_DEV_EBUILD} file to add ${package}..." >> "${BUILD_LOG}"
+  else
+    printf "\n\nRDEPEND=\"\${RDEPEND}\n          ${package}\"\n">> ${VIRTUAL_CHROMEOS_OS_DEV_EBUILD}
+  fi
+done
+
+# do not install the Upstart init script that starts ssh daemon at boot time
+rm ${CHROMIUM_OVERLAY}/chromeos-base/chromeos-sshd-init/files/openssh-server.conf
+sed -i -n '/src_install/q;p' ${CHROMIUM_OVERLAY}/chromeos-base/openssh-server-init/openssh-server-init-0.0.1.ebuild
+sed -i -n '/src_install/q;p' ${CHROMIUM_OVERLAY}/chromeos-base/chromeos-sshd-init/chromeos-sshd-init-0.0.1.ebuild
+
+# bashrc modifications
+BASH_EBUILD_DIR={{ cros_location }}/{{ branch }}/src/third_party/portage-stable/app-shells/bash
+if [[ $(grep "git --exec-path" "${BASH_EBUILD_DIR}/files/dot-bashrc") ]] ; then
+  echo "git alias already set"
+else
+  echo "# git quickfix for finding right git executables
+if [ -d /usr/local/libexec/git-core/ ] ; then
+    alias git='git --exec-path=/usr/local/libexec/git-core/'
+fi
+
+# git quickfix for finding 'less' and using it as pager
+less_path=\$(which less 2>/dev/null)
+if [ "\${less_path}" ] ; then
+    git config --global core.pager \${less_path}
+fi" >> ${BASH_EBUILD_DIR}/files/dot-bashrc
+fi
+
+# increase the revision number
+# XXX: remove hardcoded revision numbers
+cd ${CHROMIUM_OVERLAY}/chromeos-base/openssh-server-init/
+ln -s openssh-server-init-0.0.1-r24.ebuild openssh-server-init-0.0.1-r25.ebuild
+cd ${CHROMIUM_OVERLAY}/chromeos-base/chromeos-sshd-init/
+ln -s chromeos-sshd-init-0.0.1-r5.ebuild chromeos-sshd-init-0.0.1-r6.ebuild
+cd ${BASH_EBUILD_DIR}
+ln -s bash-4.2_p48-r1.ebuild bash-4.2_p48-r2.ebuild
+
+######################################## Build ##############################################
+BOARDS="{{ boards_list }}"
+KEEP_CACHE="{{ keep_cache }}"
+for board in ${BOARDS} ; do
+  echo ${board}
+  if [ ${board} == daisy ] ; then
+    echo "daisy board: accepting license for Mali drivers..."
+    cros_sdk -- sudo sh -c "cp /etc/make.conf.user /etc/make.conf.user.save"
+    cros_sdk -- sudo sh -c "echo 'ACCEPT_LICENSE=\"*\"' >> /etc/make.conf.user"
+  fi
+
+  # preparing packages (for chroot and image)
+  date >> "${BUILD_LOG}"
+  echo "building packages for a ${board}-flavoured Chromium OS..." >> "${BUILD_LOG}"
+  cros_sdk -- ./build_packages --board=${board} >> "${BUILD_LOG}"
+
+  # change boot pictures
+  cros_sdk -- cros_workon --board=${board} start chromiumos-assets
+  cros_sdk -- cros_workon_make --board=${board} chromiumos-assets
+  cros_sdk -- cros_workon_make --board=${board} chromiumos-assets --test
+  cros_sdk -- cros_workon_make --board=${board} chromiumos-assets --install
+  cp {{ logo_dir }}/* {{ cros_location }}/{{ branch }}/src/platform/chromiumos-assets/images_100_percent/
+  cp {{ logo_dir }}/* {{ cros_location }}/{{ branch }}/src/platform/chromiumos-assets/images_200_percent/
+
+  NAYU_IMAGE_LOCATION=${board}.nayuos.img
+
+  # rebuild packages with boot pictures
+  cros_sdk -- ./build_packages --board=${board} >> "${BUILD_LOG}"
+
+  # NayuOS images
+  date >> "${BUILD_LOG}"
+  echo "building image" >> "${BUILD_LOG}"
+  cros_sdk -- ./build_image --board=${board} dev >> "${BUILD_LOG}" \
+    && cros_sdk -- rm -f $NAYU_IMAGE_LOCATION && cros_sdk -- touch $NAYU_IMAGE_LOCATION \
+    && cros_sdk -- cros flash --board=${board} file://$NAYU_IMAGE_LOCATION >> "${BUILD_LOG}" \
+    && cros_sdk -- ./test_nayuos_image ${board} > "${TEST_LOG}" \
+    || { echo "An error occured while building ${board} NayuOS image. Exiting." ; exit 1 ;}
+
+  # save ~15Go/device but delete cache (next build will be as long)
+  if [ ${KEEP_CACHE,,} == "no" ] ; then
+    cros_sdk -- sudo rm -R /var/cache/chromeos-chrome/chrome-src/src/out_${board}
+  fi
+
+  if [ ${board} == daisy ]; then
+    echo "daisy board: removing accepted license for the next builds..."
+    cros_sdk -- sudo sh -c "mv /etc/make.conf.user.save /etc/make.conf.user"
+  fi
+done
+
+####################################### Post build ##########################################
+# keep only the substring between - as current release number
+RELEASE=$(echo ${BRANCH} | cut -d- -f2)
+DIR_IMAGE_LOCATION={{ cros_location }}/images/${RELEASE}/$(date +'%F')
+install ${DIR_IMAGE_LOCATION} -d
+mv {{ cros_location }}/{{ branch }}/src/scripts/*.img ${DIR_IMAGE_LOCATION}
+
+cd ${DIR_IMAGE_LOCATION}
+for hashfunction in md5sum sha1sum sha256sum sha512sum; do
+  echo ${hashfunction} >> hashes.txt
+  ${hashfunction} *.img >> hashes.txt
+  printf "\n\n" >> hashes.txt
+done
+
+for file in $(ls *.img); do
+  gzip -9 ${file}
+done
+
+exit 0

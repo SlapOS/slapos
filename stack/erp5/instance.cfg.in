@@ -74,9 +74,12 @@ filename = instance-erp5.cfg
 extra-context =
     key jupyter_enable_default dynamic-template-erp5-parameters:jupyter-enable-default
     key local_bt5_repository dynamic-template-erp5-parameters:local-bt5-repository
+    key openssl_location :openssl-location
     import urlparse urlparse
 import-list =
     rawfile root_common {{ root_common }}
+
+openssl-location = {{ openssl_location }}
 
 [dynamic-template-balancer-parameters]
 apache = {{ apache_location }}

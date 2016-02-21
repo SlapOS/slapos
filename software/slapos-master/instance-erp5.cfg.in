@@ -1,0 +1,340 @@
+{% import "root_common" as root_common with context %}
+{% set frontend_dict = slapparameter_dict.get('frontend', {}) -%}
+{% set has_frontend = frontend_dict.get('software-url', '') != '' -%}
+{% set site_id = slapparameter_dict.get('site-id', 'erp5') -%}
+{% set inituser_login = slapparameter_dict.get('inituser-login', 'zope') -%}
+{% set publish_dict = {'site-id': site_id, 'inituser-login': inituser_login} -%}
+{% set has_posftix = slapparameter_dict.get('smtp', {}).get('postmaster') -%}
+{% set jupyter_dict = slapparameter_dict.get('jupyter', {}) -%}
+{% set has_jupyter = jupyter_dict.get('enable', jupyter_enable_default).lower() in ('true', 'yes') -%}
+{% set jupyter_zope_family = jupyter_dict.get('zope-family', '') -%}
+[request-common]
+<= request-common-base
+config-use-ipv6 = {{ dumps(slapparameter_dict.get('use-ipv6', False)) }}
+
+{% macro request(name, software_type, config_key, config, ret={'url': True}, key_config={}) -%}
+{% do config.update(slapparameter_dict.get(config_key, {})) -%}
+{% set section = 'request-' ~ name -%}
+[{{ section }}]
+<= request-common
+name = {{ name }}
+software-type = {{ software_type }}
+return = {{ ' '.join(ret) }}
+{% for ret, publish in ret.iteritems() -%}
+{%   if publish -%}
+{%     do publish_dict.__setitem__(name ~ '-' ~ ret, '${' ~ section ~ ':connection-' ~ ret ~ '}')%}
+{%   endif -%}
+{% endfor -%}
+{{ root_common.sla(name) }}
+{% for k, v in config.iteritems() -%}
+config-{{ k }} = {{ dumps(v) }}
+{% endfor -%}
+{% for k, v in key_config.iteritems() -%}
+config-{{ k }} = {{ '${' ~ v ~ '}' }}
+{% endfor -%}
+{% endmacro -%}
+
+{{ request('memcached-persistent', 'kumofs', 'kumofs', {'tcpv4-port': 2000}) }}
+{{ request('memcached-volatile', 'kumofs', 'memcached', {'tcpv4-port': 2010, 'ram-storage-size': 64}) }}
+{{ request('cloudooo', 'cloudooo', 'cloudooo', {'tcpv4-port': 2020}) }}
+{{ request('mariadb', 'mariadb', 'mariadb', {'tcpv4-port': 2099}, {'database-list': True, 'test-database-list': True}) }}
+{% if has_posftix -%}
+{{   request('smtp', 'postfix', 'smtp', {'tcpv4-port': 2025, 'smtpd-sasl-user': 'erp5@nowhere'}, key_config={'smtpd-sasl-password': 'publish-early:smtpd-sasl-password'}) }}
+{%- else %}
+[request-smtp]
+# Placeholder smtp service URL
+connection-url = smtp://127.0.0.2:0/
+{%- endif %}
+
+{# ZODB -#}
+{% set zodb_dict = {} -%}
+{% set storage_dict = {} -%}
+{% set mountpoints = set() -%}
+{% for zodb in slapparameter_dict.get('zodb') or ({'type': 'zeo', 'server': {}},) -%}
+{%   do mountpoints.add(zodb.setdefault('mount-point', '/')) -%}
+{%   set name = zodb.pop('name', 'root') -%}
+{%   do assert(name not in zodb_dict, name, zodb_dict) -%}
+{%   do zodb_dict.__setitem__(name, zodb) -%}
+{%   if 'server' in zodb -%}
+{%     do storage_dict.setdefault(zodb['type'], {}).__setitem__(name, zodb.pop('server')) -%}
+{%   endif -%}
+{% endfor -%}
+{% do assert(len(mountpoints) == len(zodb_dict)) -%}
+{% set neo = [] -%}
+{% for server_type, server_dict in storage_dict.iteritems() -%}
+{%   if server_type == 'neo' -%}
+{%     set ((name, server_dict),) = server_dict.items() -%}
+{%     do neo.append(server_dict.get('cluster')) -%}
+{%     do server_dict.update(cluster='${publish-early:neo-cluster}') -%}
+{{     root_common.request_neo(server_dict, 'zodb-neo', 'neo-') }}
+{%     set client_dict = zodb_dict[name].setdefault('storage-dict', {}) -%}
+{%     for k in 'ssl', '_ca', '_cert', '_key' -%}
+{%       do k in server_dict and client_dict.setdefault(k, server_dict[k]) -%}
+{%     endfor -%}
+{%   else -%}
+{{     assert(server_type == 'zeo', server_type) -}}
+{# BBB: for compatibility, keep 'zodb' as partition_reference for ZEO -#}
+{{     request('zodb', 'zodb-' ~ server_type, 'zodb-' ~ server_type, {'tcpv4-port': 2100, 'zodb-dict': server_dict}, dict.fromkeys(('storage-dict', 'tidstorage-ip', 'tidstorage-port'))) }}
+{%   endif -%}
+{% endfor -%}
+
+[publish-early]
+recipe = slapos.cookbook:publish-early
+-init =
+  inituser-password gen-password:passwd
+  deadlock-debugger-password gen-deadlock-debugger-password:passwd
+{%- if has_posftix %}
+  smtpd-sasl-password gen-smtpd-sasl-password:passwd
+{%- endif %}
+{%- if neo %}
+  neo-cluster gen-neo-cluster:name
+{%-  if neo[0] %}
+neo-cluster = {{ neo[0] }}
+{%-  endif %}
+{%- endif %}
+{%- set inituser_password = slapparameter_dict.get('inituser-password') %}
+{%- if inituser_password %}
+inituser-password = {{ inituser_password }}
+{%- endif %}
+{%- set deadlock_debugger_password = slapparameter_dict.get('deadlock-debugger-password') -%}
+{%- if deadlock_debugger_password %}
+deadlock-debugger-password = {{ deadlock_debugger_password }}
+{%- endif %}
+
+[gen-password]
+recipe = slapos.cookbook:generate.password
+storage-path =
+
+[gen-deadlock-debugger-password]
+<= gen-password
+
+[gen-neo-cluster-base]
+<= gen-password
+
+[gen-neo-cluster]
+name = neo-${gen-neo-cluster-base:passwd}
+
+[gen-smtpd-sasl-password]
+< = gen-password
+
+[request-zope-base]
+<= request-common
+return =
+  zope-address-list
+  hosts-dict
+{% set bt5_default_list = 'erp5_full_text_myisam_catalog erp5_configurator_standard erp5_configurator_maxma_demo erp5_configurator_ung erp5_configurator_run_my_doc slapos_configurator' -%}
+{% if has_jupyter -%}
+{%   set bt5_default_list = bt5_default_list + ' erp5_data_notebook' -%}
+{% endif -%}
+config-bt5 = {{ dumps(slapparameter_dict.get('bt5', bt5_default_list)) }}
+config-bt5-repository-url = {{ dumps(slapparameter_dict.get('bt5-repository-url', local_bt5_repository)) }}
+config-cloudooo-url = ${request-cloudooo:connection-url}
+config-deadlock-debugger-password = ${publish-early:deadlock-debugger-password}
+config-developer-list = {{ dumps(slapparameter_dict.get('developer-list', [inituser_login])) }}
+config-hosts-dict = {{ dumps(slapparameter_dict.get('hosts-dict', {})) }}
+config-hostalias-dict = {{ dumps(slapparameter_dict.get('hostalias-dict', {})) }}
+config-inituser-login = {{ dumps(inituser_login) }}
+config-inituser-password = ${publish-early:inituser-password}
+config-kumofs-url = ${request-memcached-persistent:connection-url}
+config-memcached-url = ${request-memcached-volatile:connection-url}
+config-mysql-test-url-list = ${request-mariadb:connection-test-database-list}
+config-mysql-url-list = ${request-mariadb:connection-database-list}
+config-site-id = {{ dumps(site_id) }}
+config-smtp-url = ${request-smtp:connection-url}
+config-timezone = {{ dumps(slapparameter_dict.get('timezone', 'UTC')) }}
+config-ca-path = ${directory:ca-dir}
+config-zodb-dict = {{ dumps(zodb_dict) }}
+{% for server_type, server_dict in storage_dict.iteritems() -%}
+{%   if server_type == 'neo' -%}
+config-neo-cluster = ${publish-early:neo-cluster}
+config-neo-name = {{ server_dict.keys()[0] }}
+config-neo-masters = ${neo-0-final:connection-masters}
+{%   else -%}
+config-zodb-zeo = ${request-zodb:connection-storage-dict}
+config-tidstorage-ip = ${request-zodb:connection-tidstorage-ip}
+config-tidstorage-port = ${request-zodb:connection-tidstorage-port}
+{%   endif -%}
+{% endfor -%}
+software-type = zope
+
+{% set zope_family_dict = {} -%}
+{% set jupyter_zope_family_default = [] -%}
+{% set zope_backend_path_dict = {} -%}
+{% set ssl_authentication_dict = {} -%}
+{% for custom_name, zope_parameter_dict in slapparameter_dict.get('zope-partition-dict', {'1': {}}).items() -%}
+{%   set partition_name = 'zope-' ~ custom_name -%}
+{%   set section_name = 'request-' ~ partition_name -%}
+{%   set backend_path = zope_parameter_dict.get('backend-path', '/') % {'site-id': site_id} %}
+{%   set zope_family = zope_parameter_dict.get('family', 'default') -%}
+{#   # default jupyter zope family is first zope family. -#}
+{#   # use list.append() to update it, because in jinja2 set changes only local scope. -#}
+{%   if not jupyter_zope_family_default -%}
+{%     do jupyter_zope_family_default.append(zope_family) -%}
+{%   endif -%}
+{%   do zope_family_dict.setdefault(zope_family, []).append(section_name) -%}
+{%   do zope_backend_path_dict.setdefault(zope_parameter_dict.get('family', 'default'), backend_path) -%}
+{%   do ssl_authentication_dict.setdefault(zope_parameter_dict.get('family', 'default'), zope_parameter_dict.get('ssl-authentication', False)) -%}
+[{{ section_name }}]
+<= request-zope-base
+name = {{ partition_name }}
+{{ root_common.sla(partition_name) }}
+config-name = {{ dumps(custom_name) }}
+config-instance-count = {{ dumps(zope_parameter_dict.get('instance-count', 1)) }}
+config-thread-amount = {{ dumps(zope_parameter_dict.get('thread-amount', 4)) }}
+config-timerserver-interval = {{ dumps(zope_parameter_dict.get('timerserver-interval', 5)) }}
+config-longrequest-logger-interval = {{ dumps(zope_parameter_dict.get('longrequest-logger-interval', -1)) }}
+config-longrequest-logger-timeout = {{ dumps(zope_parameter_dict.get('longrequest-logger-timeout', 1)) }}
+config-port-base = {{ dumps(zope_parameter_dict.get('port-base', 2200)) }}
+config-webdav = {{ dumps(zope_parameter_dict.get('webdav', False)) }}
+{% endfor -%}
+
+{# if not explicitly configured, connect jupyter to first zope family, which  -#}
+{# will be 'default' if zope families are not configured also -#}
+{% if not jupyter_zope_family and jupyter_zope_family_default -%}
+{%   set jupyter_zope_family = jupyter_zope_family_default[0] -%}
+{% endif -%}
+
+{# We need to concatenate lists that we cannot read as lists, so this gets hairy. -#}
+{% set zope_address_list_id_dict = {} -%}
+{% set zope_family_parameter_dict = {} -%}
+{% for family_name, zope_section_id_list in zope_family_dict.items() -%}
+{%   for zope_section_id in zope_section_id_list -%}
+{%     set parameter_name = 'zope-family-entry-' ~ zope_section_id -%}
+{%     do zope_address_list_id_dict.__setitem__(zope_section_id, parameter_name) -%}
+{%     do zope_family_parameter_dict.setdefault(family_name, []).append(parameter_name) -%}
+{%   endfor -%}
+{%   if has_frontend -%}
+{%     set frontend_name = 'frontend-' ~ family_name -%}
+{%     do publish_dict.__setitem__('family-' ~ family_name, '${' ~ frontend_name ~ ':connection-site_url}' ) -%}
+[{{ frontend_name }}]
+<= request-frontend-base
+name = {{ frontend_name }}
+config-url = ${request-balancer:connection-{{ family_name }}-v6}
+{%   else -%}
+{%     do publish_dict.__setitem__('family-' ~ family_name, '${request-balancer:connection-' ~ family_name ~ '}' ) -%}
+{%     do publish_dict.__setitem__('family-' ~ family_name ~ '-v6', '${request-balancer:connection-' ~ family_name ~ '-v6}' ) -%}
+{%   endif -%}
+{% endfor -%}
+
+{% if has_jupyter -%}
+{# request jupyter connected to balancer of proper zope family -#}
+{{   request('jupyter', 'jupyter', 'jupyter', {}, key_config={'erp5-url': 'request-balancer:connection-' ~ jupyter_zope_family}) }}
+
+{%   if has_frontend -%}
+[frontend-jupyter]
+<= request-frontend-base
+name = frontend-jupyter
+config-url = ${request-jupyter:connection-url}
+{#     # override jupyter-url in publish_dict with frontend address -#}
+{%     do publish_dict.__setitem__('jupyter-url', '${frontend-jupyter:connection-site_url}') -%}
+{%   endif -%}
+{%- endif %}
+
+[directory]
+recipe = slapos.cookbook:mkdirectory
+{% if slapparameter_dict.get('shared-certificate-authority-path', '') -%}
+ca-dir = {{ slapparameter_dict.get('shared-certificate-authority-path') }}
+{% else -%}
+ca-dir = ${buildout:directory}/srv/ssl
+{% endif -%}
+bin = ${buildout:directory}/bin
+etc = ${buildout:directory}/etc
+services = ${:etc}/run
+requests = ${:ca-dir}/requests
+private = ${:ca-dir}/private
+certs = ${:ca-dir}/certs
+newcerts = ${:ca-dir}/newcerts
+crl = ${:ca-dir}/crl
+
+[apache-certificate-authority]
+recipe = slapos.cookbook:certificate_authority
+openssl-binary = {{ openssl_location }}/bin/openssl
+ca-dir = ${directory:ca-dir}
+requests-directory = ${directory:requests}
+wrapper = ${directory:services}/service-ca
+ca-private = ${directory:private}
+ca-certs = ${directory:certs}
+ca-newcerts = ${directory:newcerts}
+ca-crl = ${directory:crl}
+country-code = {{ dumps(slapparameter_dict.get('country-code', 'ZZ')) }}
+email = {{ dumps(slapparameter_dict.get('email', 'nobody@example.com')) }}
+state = {{ dumps(slapparameter_dict.get('state', "('State',)")) }}
+city = {{ dumps(slapparameter_dict.get('city', 'City')) }}
+company = {{ dumps(slapparameter_dict.get('company', 'Compagny')) }}
+
+# XXX - Big hack: Change access for certificate authority configuration
+#       To allow apache to read openssl.cnf in this folder
+[fix-ca-folder]
+recipe = plone.recipe.command
+stop-on-error = true
+command =
+  chmod 644 ${apache-certificate-authority:ca-dir}/openssl.cnf
+update-command = ${:command}
+
+{% set balancer_dict = slapparameter_dict.get('balancer', {}) -%}
+[request-balancer]
+<= request-common
+name = balancer
+software-type = balancer
+{{ root_common.sla('balancer') }}
+return =
+{%- for family in zope_family_dict %}
+  {{ family }}
+  {{ family }}-v6
+{% endfor -%}
+config-zope-family-dict = {{ dumps(zope_family_parameter_dict) }}
+config-tcpv4-port = {{ dumps(balancer_dict.get('tcpv4-port', 2150)) }}
+{% for zope_section_id, name in zope_address_list_id_dict.items() -%}
+config-{{ name }} = {{ ' ${' ~ zope_section_id ~ ':connection-zope-address-list}' }}
+{% endfor -%}
+# XXX: should those really be same for all families ?
+config-haproxy-server-check-path = {{ dumps(balancer_dict.get('haproxy-server-check-path', '/') % {'site-id': site_id}) }}
+config-backend-path = {{ dumps(balancer_dict.get('apache-backend-path', '/') % {'site-id': site_id}) }}
+config-ssl = {{ dumps(balancer_dict.get('ssl', {})) }}
+config-backend-path-dict = {{ dumps(zope_backend_path_dict) }}
+config-ssl-authentication-dict = {{ dumps(ssl_authentication_dict) }}
+config-shared-certificate-authority-path = ${directory:ca-dir} 
+
+[request-frontend-base]
+{% if has_frontend -%}
+<= request-common
+software-url = {{ dumps(frontend_dict['software-url']) }}
+software-type = {{ dumps(frontend_dict.get('software-type', 'RootSoftwareInstance')) }}
+{{ root_common.sla('frontend', True) }}
+slave = true
+{% set config_dict = {
+  'type': 'zope',
+} -%}
+{%   if frontend_dict.get('domain') -%}
+{%     do config_dict.__setitem__('custom_domain', frontend_dict['domain']) -%}
+{%   endif -%}
+{%   for name, value in config_dict.items() -%}
+config-{{ name }} = {{ value }}
+{%   endfor -%}
+return = site_url
+{% endif -%}
+
+[publish]
+recipe = slapos.cookbook:publish.serialised
+-extends = publish-early
+{% if 'neo' in storage_dict -%}
+neo-masters = ${neo-0-final:connection-masters}
+neo-admins = ${neo-0-final:connection-admins}
+{% endif  -%}
+{#
+Pick any published hosts-dict, they are expected to be identical - and there is
+no way to check here.
+-#}
+hosts-dict = {{ '${' ~ zope_address_list_id_dict.keys()[0] ~ ':connection-hosts-dict}' }}
+{% for name, value in publish_dict.items() -%}
+{{   name }} = {{ value }}
+{% endfor -%}
+
+{{ root_common.common_section() }}
+
+
+[buildout]
+parts += 
+  apache-certificate-authority
+  fix-ca-folder
+  publish

@@ -265,7 +265,25 @@ class ERP5Kernel(Kernel):
             mime_type = 'text/plain'
             try:
               content = json.loads(self.response)
+
+              # Example format for the json result we are expecting is :
+              # content = {
+              #            "status": "ok",
+              #            "ename": null,
+              #            "evalue": null,
+              #            "traceback": null,
+              #            "code_result": "",
+              #            "mime_type": "text/plain"
+              #            }
+              # So, we can easily use any of the key to update values as such.
+
+              # Getting code_result for succesfull execution of code
               code_result = content['code_result']
+
+              # Update mime_type with the mime_type from the http response result
+              # Required in case the mime_type is anything other than 'text/plain'
+              mime_type = content['mime_type']
+
             # Display to frontend the error message for content status as 'error'
               if content['status']=='error':
                 reply_content = {

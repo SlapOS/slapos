@@ -15,11 +15,21 @@ die() {
 #   https://gitlab.com/gitlab-org/omnibus-gitlab/blob/master/files/gitlab-cookbooks/gitlab/recipes/postgresql.rb
 
 # initial db setup
-pgtables="$({{ psql_bin }}   \
-    -h {{ pgsql['pgdata-directory'] }}  \
-    -U {{ pgsql.superuser }}            \
-    -d {{ pgsql.dbname }}               \
-    -c '\d')" || die "pg query problem"
+# ( first quering PG several times waiting a bit till postgresql is started and ready )
+tpgwait=5
+while true; do
+    pgtables="$({{ psql_bin }}   \
+        -h {{ pgsql['pgdata-directory'] }}  \
+        -U {{ pgsql.superuser }}            \
+        -d {{ pgsql.dbname }}               \
+        -c '\d')" && break
+
+    tpgwait=$(( $tpgwait - 1 ))
+    test $tpgwait = 0 && die "pg query problem"
+    echo "I: PostgreSQL is not ready (yet ?); will retry $tpgwait times..." 1>&2
+    sleep 1
+done
+echo "I: PostgreSQL ready." 1>&2
 
 if echo "$pgtables" | grep -q '^No relations found' ; then
     $RAKE db:schema:load db:seed_fu  || die "initial db setup failed"
