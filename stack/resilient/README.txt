@@ -22,7 +22,7 @@ pull-backup
 
 This software type is defined in
 
-    http://git.erp5.org/gitweb/slapos.git/blob/HEAD:/stack/resilient/instance-pull-backup.cfg.in?js=1
+    https://lab.nexedi.com/nexedi/slapos/blob/HEAD/stack/resilient/instance-pull-backup.cfg.in
 
 and there should be no reason to modify or extend it.
 
@@ -34,7 +34,7 @@ export
 ------
 
 example:
-    http://git.erp5.org/gitweb/slapos.git/blob/HEAD:/stack/lapp/postgres/instance-postgres-export.cfg.in?js=1
+    https://lab.nexedi.com/nexedi/slapos/blob/HEAD/stack/lapp/postgres/instance-postgres-export.cfg.in
 
 This is the *active* instance - the one providing live data to the application.
 
@@ -45,11 +45,11 @@ A backup is run via the bin/exporter script: it will
 The pull-backup, upon receiving the notification, will make a copy of the data and transmit it to the 'import' instances.
 
 You should provide the bin/{mysoftware}-exporter script, see for instance
-  http://git.erp5.org/gitweb/slapos.git/blob/HEAD:/slapos/recipe/postgres/__init__.py?js=1#l207
-  http://git.erp5.org/gitweb/slapos.git/blob/HEAD:/slapos/recipe/mydumper.py?js=1#l71
+  https://lab.nexedi.com/nexedi/slapos/blob/HEAD/slapos/recipe/postgres/__init__.py#L207
+  https://lab.nexedi.com/nexedi/slapos/blob/HEAD/slapos/recipe/mydumper.py#L71
 
 By default, as defined in
-  http://git.erp5.org/gitweb/slapos.git/blob/HEAD:/stack/resilient/pbsready-export.cfg.in?js=1#l27
+  https://lab.nexedi.com/nexedi/slapos/blob/HEAD/stack/resilient/pbsready-export.cfg.in#L27
 the bin/exporter script is run every 60 minutes.
 
 
@@ -58,7 +58,7 @@ import
 ------
 
 example:
-    http://git.erp5.org/gitweb/slapos.git/blob/HEAD:/stack/lapp/postgres/instance-postgres-import.cfg.in?js=1
+    https://lab.nexedi.com/nexedi/slapos/blob/HEAD/stack/lapp/postgres/instance-postgres-import.cfg.in
 
 This is the *fallback* instance - the one that can be activated and thus become active.
 Any number of import instances can be used. Deciding which one should take over can be done manually
@@ -67,8 +67,8 @@ or through a monitoring + election script.
 
 You should provide the bin/{mysoftware}-importer script, see for instance
 
-  http://git.erp5.org/gitweb/slapos.git/blob/HEAD:/slapos/recipe/postgres/__init__.py?js=1#l233
-  http://git.erp5.org/gitweb/slapos.git/blob/HEAD:/slapos/recipe/mydumper.py?js=1#l71
+  https://lab.nexedi.com/nexedi/slapos/blob/HEAD/slapos/recipe/postgres/__init__.py#L233
+  https://lab.nexedi.com/nexedi/slapos/blob/HEAD/slapos/recipe/mydumper.py#L71
 
 
 

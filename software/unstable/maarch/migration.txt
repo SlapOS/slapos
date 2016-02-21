@@ -25,7 +25,7 @@ Hot to install Maarch with SlapOS
      The command line to request a partition is:
 
      slapos request /etc/opt/slapos/slapos-client.cfg maarch-instance-name \
-            http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.159:/software/maarch/software.cfg \
+            https://lab.nexedi.com/nexedi/slapos/raw/slapos-0.159/software/maarch/software.cfg \
             --type=resilient --configuration maarch-sql-data-file=/tmp/data.sql
 
      If you are not migrating data, don't provide the maarch-sql-data-file parameter.

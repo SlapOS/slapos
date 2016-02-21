@@ -33,7 +33,7 @@ ex:
 <parameter id="-frontend-type">custom-personal</parameter>
 <parameter id="-frontend-2-state">stopped</parameter>
 <parameter id="-sla-3-computer_guid">COMP-1234</parameter>
-<parameter id="-frontend-software-release-url">http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.183:/software/apache-frontend/software.cfg</parameter>
+<parameter id="-frontend-software-release-url">https://lab.nexedi.com/nexedi/slapos/raw/slapos-0.183/software/apache-frontend/software.cfg</parameter>
 will request the third frontend on COMP-1234. All frontends will be of software type "custom-personal". The second frontend will be requested with the state stopped
 
 Note: the way slaves are transformed to a parameter avoid modifying more than 3 lines in the frontend logic.
