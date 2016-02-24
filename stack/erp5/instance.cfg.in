@@ -124,6 +124,7 @@ link-binary = {{ dumps(zope_link_binary) }}
 userhosts = {{ userhosts_location }}
 runzope-userhosts-preloaded-template = {{ template_runzope_userhosts_preloaded }}
 template-monitor = {{ dumps(template_monitor) }}
+extra-path-list = {{ dumps(extra_path_list) }}
 
 [dynamic-template-zope]
 <= jinja2-template-base
