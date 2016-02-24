@@ -317,6 +317,19 @@ hostname = {{ ipv4 }}
 port = {{ port }}
 path = ${directory:promises}/{{ name }}
 
+{% set extra_path_list = [] -%}
+{% set shell_escaped_extra_path_list = [] -%}
+{% for line in parameter_dict['extra-path-list'].splitlines() -%}
+{%   set line = line.strip() -%}
+{%   do extra_path_list.append(line) -%}
+{%   do shell_escaped_extra_path_list.append(line.replace("\x27", "\x27\\\x27\x27")) -%}
+{% endfor -%}
+[{{ section("promise-" ~ name ~ "-is-running-actual-product") }}]
+recipe = slapos.cookbook:wrapper
+command-line = '{{ parameter_dict['bin-directory'] }}/is-process-older-than-dependency-set' -k '{{ "${" ~ conf_parameter_name ~ ":pid-file}" }}' {{ " ".join(shell_escaped_extra_path_list) }}
+wrapper-path = ${directory:promises}/{{ name }}-is-running-actual-product
+parameters-extra = true
+
 {% if use_ipv6 -%}
 [{{ zope_tunnel_section_name }}]
 < = ipv6toipv4-base
