@@ -18,7 +18,7 @@ module = lamp.simple
 you also need to extend lamp.cfg
 
 extends =
-  http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.50:/stack/lamp.cfg
+  https://lab.nexedi.com/nexedi/slapos/raw/slapos-0.50/stack/lamp.cfg
 
 
 lamp.runner

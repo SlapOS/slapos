@@ -217,7 +217,7 @@ config-custom_domain = $${slap-parameter:domain}
 recipe = slapos.cookbook:requestoptional
 name = SMTP Frontend
 # XXX We have hardcoded SR URL here.
-#software-url = http://git.erp5.org/gitweb/slapos.git/blob_plain/zimbra-kvm:/software/reverse-proxy-nginx/development.cfg
+#software-url = https://lab.nexedi.com/nexedi/slapos/raw/zimbra-kvm/software/reverse-proxy-nginx/development.cfg
 software-url = /opt/slapdev/software/reverse-proxy-nginx/development.cfg
 slave = true
 config-smtp-upstream-host = $${tunnel-ipv6-kvm-smtp:ipv6}
@@ -238,7 +238,7 @@ smtp-listening-ipv4 = $${request-smtp-frontend:connection-listening-ipv4}
 # Default values if not specified
 frontend-instance-guid =
 frontend-software-type = frontend
-frontend-software-url = http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.92:/software/kvm/software.cfg
+frontend-software-url = https://lab.nexedi.com/nexedi/slapos/raw/slapos-0.92/software/kvm/software.cfg
 
 ram-size = 4096
 disk-size = 50

@@ -36,7 +36,7 @@ KVM instance parameters:
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
 - frontend-software-type (default: frontend)
-- frontend-software-url (default: http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.92:/software/kvm/software.cfg)
+- frontend-software-url (default: https://lab.nexedi.com/nexedi/slapos/raw/slapos-0.92/software/kvm/software.cfg)
 - frontend-instance-guid
 - frontend-instance-name (default: VNC Frontend)
 - nbd-port (default: 1024)
@@ -102,7 +102,7 @@ Resilient KVM instance
 Like KVM instance, but backed-up (with history) in two places.
 
 ::
-  kvm = 'http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.188:/software/kvm/software.cfg'
+  kvm = 'https://lab.nexedi.com/nexedi/slapos/raw/slapos-0.188/software/kvm/software.cfg'
   myresilientkvm = request(
       software_release=kvm,
       partition_reference="My resilient KVM",

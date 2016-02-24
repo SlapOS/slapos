@@ -24,7 +24,7 @@
           "description": "Software Release URL of the frontend instance, like \"http://example.com/path/to/software.cfg\".",
           "type": "string",
           "format": "uri",
-          "default": "http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.92:/software/kvm/software.cfg"
+          "default": "https://lab.nexedi.com/nexedi/slapos/raw/slapos-0.92/software/kvm/software.cfg"
         }
       },
       "type": "object"

@@ -25,7 +25,7 @@
         },
         "slapos-repository": {
             "title": "SlapOS Git Repository URL",
-            "description": "url of the default git repository that will be download by the runner while its instanciation. Will be cloned in a directory named 'slapos' (default is http://git.erp5.org/repos/slapos.git)",
+            "description": "url of the default git repository that will be download by the runner while its instanciation. Will be cloned in a directory named 'slapos' (default is https://lab.nexedi.com/nexedi/slapos.git)",
             "type": "string",
             "format": "uri",
             "pattern": "^(http|https|ftp)://"
