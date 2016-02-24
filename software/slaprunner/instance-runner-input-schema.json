@@ -80,7 +80,7 @@
         },
         "custom-frontend-software-url": {
             "title": "Custom Frontend Software URL",
-            "description": "Software Url of the frontend you request (ie.: https://lab.nexedi.com/nexedi/slapos/raw/HEAD/software/apache-frontend/software.cfg)",
+            "description": "Software Url of the frontend you request (ie.: http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg)",
             "type": "string",
             "format": "uri"
         },
