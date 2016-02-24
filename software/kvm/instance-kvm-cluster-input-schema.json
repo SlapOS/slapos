@@ -50,7 +50,7 @@
           "description": "Software Release URL of the frontend instance, like \"http://example.com/path/to/software.cfg\".",
           "type": "string",
           "format": "uri",
-          "default": "https://lab.nexedi.com/nexedi/slapos/raw/HEAD/software/apache-frontend/software.cfg"
+          "default": "http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg"
         },
         "slave-frontend-dict": {
           "title": "Slave Front end definition",

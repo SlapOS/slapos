@@ -206,7 +206,7 @@ sla-instance_guid = $${slap-parameter:frontend-instance-guid}
 recipe = slapos.cookbook:requestoptional
 name = Web Frontend
 # XXX We have hardcoded SR URL here.
-software-url = https://lab.nexedi.com/nexedi/slapos/raw/HEAD/software/apache-frontend/software.cfg
+software-url = http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg
 slave = true
 config-url = https://[$${tunnel-ipv6-kvm-https:ipv6}]:$${tunnel-ipv6-kvm-https:ipv6-port}/
 return = site_url
