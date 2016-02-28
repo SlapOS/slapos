@@ -56,7 +56,7 @@ server {
 #}
 
 server {
-  listen [{{ backend_info.host }}]:{{ backend_info.port }}{% if cfg_https %} ssl spdy{% endif %};
+  listen [{{ backend_info.host }}]:{{ backend_info.port }}{% if cfg_https %} ssl http2{% endif %};
 
   {# we don't use: kerbeeros
   <% if @kerberos_enabled && @kerberos_use_dedicated_port %>
@@ -104,7 +104,8 @@ server {
   access_log  {{ nginx.log }}/gitlab_access.log gitlab_access;
   error_log   {{ nginx.log }}/gitlab_error.log;
 
-  location / {
+  <% path = @relative_url ? @relative_url : "/" %>
+  location <%= path %> {
     ## If you use HTTPS make sure you disable gzip compression
     ## to be safe against BREACH attack.
     {{ 'gzip off;' if cfg_https else ''}}
@@ -117,13 +118,10 @@ server {
 
     proxy_http_version 1.1;
 
-    proxy_set_header    Host                $http_host;
-    proxy_set_header    X-Real-IP           $remote_addr;
-    {% if cfg_https %}
-    proxy_set_header    X-Forwarded-Ssl     on;
-    {% endif %}
-    proxy_set_header    X-Forwarded-For     $proxy_add_x_forwarded_for;
-    proxy_set_header    X-Forwarded-Proto   {{ "https" if cfg_https else "http" }};
+    <% @proxy_set_headers.each do |header| %>
+    <% next if header[1].nil? %>
+    proxy_set_header <%= header[0] %> <%= header[1] %>;
+    <% end %>
 
     proxy_pass http://gitlab-workhorse;
   }
