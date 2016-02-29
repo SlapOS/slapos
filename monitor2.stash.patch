@@ -1,0 +1,109 @@
+diff --git a/stack/monitor2/monitor.py.in b/stack/monitor2/monitor.py.in
+index 4e29527..ac9474a 100644
+--- a/stack/monitor2/monitor.py.in
++++ b/stack/monitor2/monitor.py.in
+@@ -7,6 +7,7 @@ monitor_configuration_path = "{{ monitor_configuration_path }}"
+ promise_folder = "{{ promise_folder }}"
+ monitor_promise_folder = "{{ monitor_promise_folder }}"
+ promise_wrapper_folder = "{{ promise_wrapper_folder }}"
++various_folder = "{{ various_folder }}"
+ 
+ import sys
+ import os
+@@ -16,7 +17,9 @@ import threading
+ import json
+ import ConfigParser
+ import traceback
++import hashlib
+ 
++configuration_sha256sum_path = os.path.join(various_folder, "configuration-sha256sum.txt")
+ 
+ def main():
+   # initialisation
+@@ -33,6 +36,7 @@ def main():
+       promise_name = filename[:-4]
+       if promise_name in promise_dict:
+         loadConfig([path], promise_dict[promise_name]["configuration"])
++        promise_dict[promise_name]["configuration_hash"] = sha256sumFile(path)
+   promise_items = promise_dict.items()
+   # create symlinks from service configurations
+   for service_name, promise in promise_items:
+@@ -69,12 +73,18 @@ def main():
+         service_dict["_links"]["interface"] = {"href": "/default-promise-interface.html?service_name=%s" % service_name}  # XXX hardcoded
+   with open(config.get("monitor", "monitor-hal-json"), "w") as fp:
+     json.dump(monitor_dict, fp)
+-  # put promises to a cron file
+-  # XXX only if at least one configuration file is modified, then write in the cron
++  # put promises to a cron file if necessary
++  # XXX if the someone changes the monitor crond-folder location, two cron files may be executed at once!
+   service_pid_folder = config.get("monitor", "service-pid-folder")
+   crond_folder = config.get("monitor", "crond-folder")
+   cron_line_list = []
++  update_cron = False
+   for service_name, promise in promise_items:
++    sha256sumFile(configuration_sha256sum_path)
++    # XXX modified = configuration hash is different # XXXXXXXXXXXX TODO
++    if not modified:
++      continue
++    update_cron = True
+     service_status_path = "%s/%s.status.json" % (public_folder, service_name)  # hardcoded
+     mkdirAll(os.path.dirname(service_status_path))
+     command = ("%s %s %s " % (
+@@ -90,10 +100,42 @@ def main():
+     with open(wrapper_path, "w") as fp:
+       fp.write("#!/bin/sh\n%s" % command)  # XXX hardcoded, use dash, sh or bash binary!
+     os.chmod(wrapper_path, stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR | stat.S_IRGRP | stat.S_IROTH )
+-  with open(crond_folder + "/monitor-promises", "w") as fp:
+-    fp.write("\n".join(cron_line_list))
++  if update_cron:
++    with open(crond_folder + "/monitor-promises", "w") as fp:
++      fp.write("\n".join(cron_line_list))
+   return 0
+ 
++
++def parseSha256sumFile(path):
++  """
++    Parses sum file of this format:
++
++    e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855  /my/file/path
++    01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b  /my/second/file/path
++  """
++  hashlist = []
++  for line in open(path, "r"):
++    hexhash = line[:32]
++    
++    split = line.split()
++    hexhash = split[0]
++    if len(hexhash) != 32:
++      continue
++    path = split
++
++def sha256sumFile(path):
++  sha256 = hashlib.sha256()
++  updateHashFromFile(sha256, path)
++  return sha256
++
++def updateHashFromFile(hash, path):
++  bs = hash.block_size
++  with open(path, "rb") as fp:
++    ck = fp.read(bs)
++    while ck:
++      hash.update(ck)
++      ck = fp.read(bs)
++
+ def loadConfig(pathes, config=None):
+   if config is None:
+     config = ConfigParser.ConfigParser()
+@@ -107,7 +149,11 @@ def fillPromiseDictFromFolder(promise_dict, folder):
+   for filename in os.listdir(folder):
+     path = os.path.join(folder, filename)
+     if os.path.isfile(path) and os.access(path, os.X_OK):
+-      promise_dict[filename] = {"path": path, "configuration": ConfigParser.ConfigParser()}
++      promise_dict[filename] = {
++        "path": path,
++        "configuration": ConfigParser.ConfigParser(),
++        "configuration_hash": hashlib.sha256(),
++      }
+ 
+ def softConfigGet(config, *args, **kwargs):
+   try:
