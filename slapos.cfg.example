@@ -28,9 +28,9 @@ use_unique_local_address = False
 
 [networkcache]
 # Define options for binary cache, used to download already compiled software.
-download-binary-cache-url = http://www.shacache.org/shacache
+download-binary-cache-url = http://download.shacache.org/
 download-cache-url = https://www.shacache.org/shacache
-download-binary-dir-url = http://www.shacache.org/shadir
+download-binary-dir-url = http://dir.shacache.org/
 
 # Configuration to Upload Configuration for Binary cache
 #upload-binary-dir-url = https://www.shacache.org/shadir
@@ -126,6 +126,9 @@ download-from-binary-cache-url-blacklist =
   https://lab.nexedi.cn/nexedi/slapos/raw/master
   https://lab.nexedi.cn/nexedi/slapos/raw/1.0/
   https://lab.nexedi.cn/nexedi/slapos/raw/erp5
+  https://lab.nexedi.com/nexedi/slapos/raw/master
+  https://lab.nexedi.com/nexedi/slapos/raw/1.0/
+  https://lab.nexedi.com/nexedi/slapos/raw/erp5
   http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD
   http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/heads
   /
@@ -135,6 +138,9 @@ upload-to-binary-cache-url-blacklist =
   https://lab.nexedi.cn/nexedi/slapos/raw/master
   https://lab.nexedi.cn/nexedi/slapos/raw/1.0/
   https://lab.nexedi.cn/nexedi/slapos/raw/erp5
+  https://lab.nexedi.com/nexedi/slapos/raw/master
+  https://lab.nexedi.com/nexedi/slapos/raw/1.0/
+  https://lab.nexedi.com/nexedi/slapos/raw/erp5
   http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD
   http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/heads
   /
