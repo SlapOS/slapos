@@ -2,7 +2,7 @@
 # see:
 # https://gitlab.com/gitlab-org/gitlab-ce/blob/master/config/initializers/rack_attack.rb.example
 # https://gitlab.com/gitlab-org/omnibus-gitlab/blob/master/files/gitlab-cookbooks/gitlab/templates/default/rack_attack.rb.erb
-# (last updated for omnibus-gitlab 8.4.4+ce.0-0-g1680742)
+# (last updated for omnibus-gitlab 8.5.1+ce.0-1-ge732b39)
 
 {% from 'macrolib.cfg.in' import cfg  with context %}
 
