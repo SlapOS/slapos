@@ -139,7 +139,7 @@ context = section parameter_dict init-script-parameters
 
 [update-mysql]
 recipe = slapos.cookbook:generic.mysql.wrap_update_mysql
-output = ${directory:services}/mariadb_update
+output = ${directory:unwatch_service}/mariadb_update
 binary = ${binary-wrap-mysql_upgrade:wrapper-path}
 mysql = ${binary-wrap-mysql:wrapper-path}
 init-script = ${init-script:rendered}
@@ -200,7 +200,8 @@ command = mysql_tzinfo_to_sql
 recipe = slapos.cookbook:mkdirectory
 bin = ${buildout:directory}/bin
 etc = ${buildout:directory}/etc
-services = ${:etc}/run
+unwatch_service = ${:etc}/run
+services = ${:etc}/service
 promise = ${:etc}/promise
 srv = ${buildout:directory}/srv
 backup = ${:srv}/backup
