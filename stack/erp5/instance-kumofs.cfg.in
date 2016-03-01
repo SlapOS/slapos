@@ -72,7 +72,7 @@ log = ${kumofs-instance:kumo-gateway-log} ${kumofs-instance:kumo-manager-log} ${
 [directory]
 recipe = slapos.cookbook:mkdirectory
 log = ${buildout:directory}/var/log
-services = ${buildout:directory}/etc/service
+services = ${buildout:directory}/etc/run
 promise = ${buildout:directory}/etc/promise
 srv = ${buildout:directory}/srv
 kumofs-data = ${:srv}/kumofs
