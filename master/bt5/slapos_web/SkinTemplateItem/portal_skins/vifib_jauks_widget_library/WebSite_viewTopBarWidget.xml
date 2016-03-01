@@ -49,9 +49,20 @@
 <tal:block tal:define="current_web_site_url python:request.get(\'current_web_site_url\', \'\');\n
                        current_web_site python:request.get(\'current_web_site\', here);\n
                        logout_form_id python:current_web_site.getLayoutProperty(\'layout_logout_form_id\',\'WebSite_logout\');\n
-                       login_form_id python:current_web_site.getLayoutProperty(\'layout_login_form_id\',\'login_form\')">\n
+                       login_form_id python:current_web_site.getLayoutProperty(\'layout_login_form_id\',\'login_form\');\n
+                       language_list current_web_site/Localizer/get_languages_map;\n
+                       dummy python: language_list.sort(key=lambda x: x[\'selected\'], reverse=True);\n
+                       available_language_list website/getAvailableLanguageList;">\n
 \n
 <div id="acknowledgement_zone"></div>\n
+<div id="language">\n
+ <tal:block tal:repeat="language language_list">\n
+    <a tal:define="language_id language/id;"\n
+       tal:condition="python:language_id in available_language_list"\n
+       tal:attributes="href python: current_web_site_url + \'/Base_doLanguage?select_language=%s\' % language_id"\n
+       tal:content="language/title">English</a>\n
+  </tal:block>\n
+</div>\n
 <a tal:attributes="href current_web_site_url"><div id="vifib_logo"></div></a>\n
 \n
 <div id="login_menu">\n
