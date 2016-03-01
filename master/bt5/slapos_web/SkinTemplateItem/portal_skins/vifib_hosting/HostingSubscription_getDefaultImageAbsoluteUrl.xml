@@ -50,18 +50,26 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string>subscription_item = context\n
+            <value> <string>from Products.ERP5Type.Cache import CachingMethod\n
+\n
+subscription_item = context\n
 portal = context.getPortalObject()\n
 \n
-release = portal.portal_catalog.getResultValue(\n
-  portal_type="Software Release",\n
-  url_string=subscription_item.getUrlString(),\n
-)\n
-if release is not None:\n
-  software_product = release.getAggregateValue()\n
-  return \'%s/index_html\' % software_product.getDefaultImageAbsoluteUrl()\n
 \n
-return \'\'\n
+def getCachedDefaultImage(url_string):\n
+  release = portal.portal_catalog.getResultValue(\n
+    portal_type="Software Release",\n
+    url_string=url_string,\n
+  )\n
+  if release is not None:\n
+    software_product = release.getAggregateValue()\n
+    return \'%s/index_html\' % software_product.getDefaultImageAbsoluteUrl()\n
+\n
+  return \'\'\n
+\n
+return CachingMethod(getCachedDefaultImage, \n
+     (\'HostingSubscription_getDefaultImageAbsoluteUrl_cached\',),\n
+     cache_factory=\'erp5_ui_long\')(subscription_item.getUrlString())\n
 </string> </value>
         </item>
         <item>
