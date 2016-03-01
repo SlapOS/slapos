@@ -46,12 +46,12 @@
                       current_web_section python:request.get(\'current_web_section\', here);"\n
                      i18n:domain="ui">\n
     <ul tal:define="main_section python: context.WebSite_getMainSection();\n
-                    subsection_list python: (main_section or current_web_section ).WebSection_getSiteMapTree(property_mapping=(\'translated_title\',\'id\',),depth=1)"\n
+                    subsection_list python: (main_section or current_web_section ).WebSection_getSiteMapTree(property_mapping=(\'translated_title\',\'id\',\'layout_required_role\'),depth=1)"\n
   tal:condition="python:current_web_site != current_web_section and subsection_list" \n
   tal:attributes="class python:\'subsection_navigation\';" >\n
   <!-- Link to main section -->\n
   <li tal:define="is_active python: current_web_section == main_section;">     \n
-         <img tal:attributes="src python: \'%s/vifib_%s_image/%s%s.png\' % (web_site_url,current_web_site.getId(),main_section.getId(),is_active and \'_active\' or \'\');\n
+         <img tal:attributes="src python: \'%s/vifib_hosting_image/%s%s.png\' % (web_site_url,main_section.getId(),is_active and \'_active\' or \'\');\n
                              alt main_section/getId;" />\n
           <a tal:attributes="href python: main_section.WebSection_getPermanentURL(document=main_section, view=False);\n
                              class python:is_active and \'active\' or \'\';" \n
@@ -60,12 +60,15 @@
   <!-- Link to sub section -->\n
   <li tal:repeat="sub_item subsection_list" >\n
     <tal:block tal:define="is_active python: current_web_section.getTranslatedTitle()==sub_item[\'translated_title\']">\n
-    <img tal:attributes="src python: \'%s/vifib_%s_image/%s%s.png\' % (web_site_url,current_web_site.getId(),sub_item[\'id\'],is_active and \'_active\' or \'\');\n
-                         alt sub_item/id;" />\n
-    <a i18n:translate="" \n
-       tal:attributes="href sub_item/url ;\n
-                       class python: is_active and \'active\' or \'\';" \n
-       tal:content="sub_item/translated_title">Menu subitem 1</a>\n
+      <tal:block tal:condition="python: current_web_section.WebSection_isSectionAllowed(sub_item[\'layout_required_role\'])">\n
+     \n
+        <img tal:attributes="src python: \'%s/vifib_hosting_image/%s%s.png\' % (web_site_url,sub_item[\'id\'],is_active and \'_active\' or \'\');\n
+                           alt sub_item/id;" />\n
+        <a i18n:translate="" \n
+           tal:attributes="href sub_item/url ;\n
+                         class python: is_active and \'active\' or \'\';" \n
+           tal:content="sub_item/translated_title">Menu subitem 1</a>\n
+       </tal:block>\n
     </tal:block>\n
   </li>\n
     </ul>\n
