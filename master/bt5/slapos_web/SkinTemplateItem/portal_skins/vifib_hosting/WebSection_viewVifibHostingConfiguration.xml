@@ -102,6 +102,7 @@
                         <string>my_layout_footer_reference</string>
                         <string>my_layout_subscription_contract_reference</string>
                         <string>my_layout_terms_of_service_reference</string>
+                        <string>my_layout_required_role</string>
                       </list>
                     </value>
                 </item>
