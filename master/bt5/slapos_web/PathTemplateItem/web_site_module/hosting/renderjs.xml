@@ -127,6 +127,14 @@
             </value>
         </item>
         <item>
+            <key> <string>categories</string> </key>
+            <value>
+              <tuple>
+                <string>caching_policy/authenticated-one-day-max-modification-date</string>
+              </tuple>
+            </value>
+        </item>
+        <item>
             <key> <string>container_layout</string> </key>
             <value> <string>WebSection_renderDefaultPageAsGadget</string> </value>
         </item>
@@ -151,6 +159,12 @@
         <item>
             <key> <string>id</string> </key>
             <value> <string>renderjs</string> </value>
+        </item>
+        <item>
+            <key> <string>language</string> </key>
+            <value>
+              <none/>
+            </value>
         </item>
         <item>
             <key> <string>layout_configuration_form_id</string> </key>
