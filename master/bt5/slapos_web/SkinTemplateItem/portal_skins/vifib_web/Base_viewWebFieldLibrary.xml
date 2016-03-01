@@ -110,6 +110,7 @@
                         <string>my_lines_field</string>
                         <string>my_thumbnail</string>
                         <string>my_text_area_field</string>
+                        <string>my_default_text_content</string>
                       </list>
                     </value>
                 </item>
