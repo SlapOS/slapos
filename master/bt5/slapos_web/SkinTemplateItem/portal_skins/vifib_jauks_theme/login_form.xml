@@ -7,6 +7,10 @@
     <pickle>
       <dictionary>
         <item>
+            <key> <string>_Cacheable__manager_id</string> </key>
+            <value> <string>anonymous_http_cache</string> </value>
+        </item>
+        <item>
             <key> <string>_bind_names</string> </key>
             <value>
               <object>
@@ -92,11 +96,11 @@
               <label>&nbsp;</label>\n
 <div class="field nolabel validate widthAuto" title="">\n
 <label>Join</label>\n
-<a href="ERP5Site_viewCredentialRequestForm">Join</a>\n
+<a href="./join">Join</a>\n
 </div>\n
 <div class="field nolabel cancel widthAuto" title="">\n
 <label>Lost password?</label>\n
-            <a href="ERP5Site_viewCredentialRecoveryLoginDialog">Lost password?</a>\n
+            <a href="./reset-password">Lost password?</a>\n
       </div>\n
 </div>\n
           </fieldset>\n
