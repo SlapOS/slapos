@@ -7,7 +7,7 @@
 parts =
   directory
   publish-connection-parameter
-
+# 
 # Define egg directories to be the one from Software Release
 # (/opt/slapgrid/...)
 # Always the same.
@@ -62,6 +62,17 @@ log = ${:var}/log
 # Create a simple web server that says "hello <configuration.name>" to the web.
 [helloweb]
 # helloworld service is listening on:
+# Create a simple shell script that will output whatever string specified as an instance param.
+[hello-world]
+# Recipe will try to "exec" the command line after separating parameters
+recipe = slapos.cookbook:wrapper
+# notice there is only one $ at ${dash:location}, because comes from the SR buildout profile
+command-line = ${dash:location}/bin/bash -c 'echo "Welcome to the $${instance-parameter:configuration.title}" < $${directory:log}/log.log; sleep 10000000;'
+# place shell script in /etc/service directory. each executable in this repo will be started
+# and monitored by supervisord. if program crashes it will trigger a "bang" & case run of slapgrid
+# for the instance
+wrapper-path = $${directory:service}/hello-world
+
 # - global IPv6 address, and
 # - fixed port
 #
@@ -85,17 +96,6 @@ command-line =
 # repository will be started and monitored by supervisord. If a service
 # exits/crashes, it will trigger a "bang" and cause a re-run of the instance.
 wrapper-path = ${directory:service}/helloweb-${:kind}
-
-# Create a simple shell script that will output whatever string specified as an instance param.
-[hello-world]
-# Recipe will try to "exec" the command line after separating parameters
-recipe = slapos.cookbook:wrapper
-# notice there is only one $ at ${dash:location}, because comes from the SR buildout profile
-command-line = ${dash:location}/bin/bash -c 'echo "Welcome to the $${instance-parameter:configuration.title}" < $${directory:log}/log.log; sleep 10000000;'
-# place shell script in /etc/service directory. each executable in this repo will be started
-# and monitored by supervisord. if program crashes it will trigger a "bang" & case run of slapgrid
-# for the instance
-wrapper-path = $${directory:service}/hello-world
 
 # promise, that checks that helloweb service is alive
 [helloweb-promise]
