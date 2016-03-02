@@ -68,6 +68,10 @@
                     </value>
                 </item>
                 <item>
+                    <key> <string>editable</string> </key>
+                    <value> <string></string> </value>
+                </item>
+                <item>
                     <key> <string>field_id</string> </key>
                     <value> <string></string> </value>
                 </item>
@@ -134,7 +138,7 @@
       <dictionary>
         <item>
             <key> <string>_text</string> </key>
-            <value> <string>python:"nolabel sectionTitle %s" % context.getId()</string> </value>
+            <value> <string>python:"nolabel sectionTitle %s" % here.getWebSectionValue().getId()</string> </value>
         </item>
       </dictionary>
     </pickle>
