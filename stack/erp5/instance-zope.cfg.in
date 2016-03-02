@@ -60,6 +60,7 @@ instance-tests = ${:instance}/tests
 log = ${:var}/log
 run = ${:var}/run
 services = ${:etc}/run
+service-on-watch = ${:etc}/service
 srv = ${buildout:directory}/srv
 tmp = ${buildout:directory}/tmp
 var = ${buildout:directory}/var
@@ -308,7 +309,7 @@ context =
 
 [{{ section(name) }}]
 < = zope-base
-wrapper = ${directory:services}/{{ name }}
+wrapper = ${directory:service-on-watch}/{{ name }}
 configuration-file = {{ '${' ~ conf_name ~ ':rendered}' }}
 
 [{{ section("promise-" ~ name) }}]
