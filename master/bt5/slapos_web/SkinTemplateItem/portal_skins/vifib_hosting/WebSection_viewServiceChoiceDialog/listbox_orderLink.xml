@@ -111,11 +111,7 @@ Order Now >
       <dictionary>
         <item>
             <key> <string>_text</string> </key>
-            <value> <string encoding="cdata"><![CDATA[
-
-python: "<a href=%s/SoftwareProduct_viewSoftwareReleaseOrderDialog> Order Now </a>" % cell.absolute_url()
-
-]]></string> </value>
+            <value> <string>python: cell.SoftwareProduct_getSoftwareReleaseOrderLink(cell)</string> </value>
         </item>
       </dictionary>
     </pickle>

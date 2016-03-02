@@ -12,7 +12,6 @@
               <list>
                 <string>columns</string>
                 <string>css_class</string>
-                <string>default_params</string>
                 <string>list_method</string>
                 <string>select</string>
                 <string>selection_name</string>
@@ -102,21 +101,6 @@
                     <value> <string>nolabel</string> </value>
                 </item>
                 <item>
-                    <key> <string>default_params</string> </key>
-                    <value>
-                      <list>
-                        <tuple>
-                          <string>portal_type</string>
-                          <string>Software Product</string>
-                        </tuple>
-                        <tuple>
-                          <string>validation_state</string>
-                          <string>published</string>
-                        </tuple>
-                      </list>
-                    </value>
-                </item>
-                <item>
                     <key> <string>field_id</string> </key>
                     <value> <string>my_list_mode_listbox</string> </value>
                 </item>
@@ -179,7 +163,7 @@
       <dictionary>
         <item>
             <key> <string>method_name</string> </key>
-            <value> <string>portal_catalog</string> </value>
+            <value> <string>WebSection_getPublishedSoftwareProductValueList</string> </value>
         </item>
       </dictionary>
     </pickle>
