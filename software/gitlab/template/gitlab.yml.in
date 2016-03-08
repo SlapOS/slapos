@@ -2,7 +2,7 @@
 # see:
 # https://gitlab.com/gitlab-org/gitlab-ce/blob/master/config/gitlab.yml.example
 # https://gitlab.com/gitlab-org/omnibus-gitlab/blob/master/files/gitlab-cookbooks/gitlab/templates/default/gitlab.yml.erb
-# (last updated for omnibus-gitlab 8.4.4+ce.0-0-g1680742)
+# (last updated for omnibus-gitlab 8.5.1+ce.0-1-ge732b39)
 
 {% from 'macrolib.cfg.in' import cfg, cfg_https, external_url  with context %}
 
@@ -28,7 +28,9 @@ production: &base
 
     # WARNING: See config/application.rb under "Relative url support" for the list of
     # other files that need to be changed for relative url support
-    # relative_url_root: /gitlab
+    {# we do not support relative URL
+    relative_url_root: <%= @gitlab_relative_url %>
+    #}
 
     # Uncomment and customize if you can't use the default user to run GitLab (default: 'git')
     user: {{ backend_info.user }}
@@ -141,6 +143,8 @@ production: &base
     host: <%= @pages_host %>
     port: <%= @pages_port %>
     https: <%= @pages_https %>
+    external_http: <%= @pages_external_http %>
+    external_https: <%= @pages_external_https %>
   #}
 
   {# we do not support Elasticsearch
@@ -282,14 +286,21 @@ production: &base
     auto_sign_in_with_provider: <%= @omniauth_auto_sign_in_with_provider %>
 
     # CAUTION!
-    # This allows users to login without having a user account first (default: false).
+    # This allows users to login without having a user account first. Define the allowed
+    # providers using an array, e.g. ["saml", "twitter"]
     # User accounts will be created automatically when authentication was successful.
-    allow_single_sign_on: <%= @omniauth_allow_single_sign_on %>
+    allow_single_sign_on: <%= @omniauth_allow_single_sign_on.to_json %>
+
     # Locks down those users until they have been cleared by the admin (default: true).
     block_auto_created_users: <%= @omniauth_block_auto_created_users %>
     # Look up new users in LDAP servers. If a match is found (same uid), automatically
     # link the omniauth identity with the LDAP account. (default: false)
     auto_link_ldap_user: <%= @omniauth_auto_link_ldap_user %>
+
+    # Allow users with existing accounts to login and auto link their account via SAML
+    # login, without having to do a manual login first and manually add SAML
+    # (default: false)
+    auto_link_saml_user: <%= @omniauth_auto_link_saml_user.to_json %>
 
 
     ## Auth providers

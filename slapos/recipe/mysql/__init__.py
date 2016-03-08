@@ -177,7 +177,7 @@ def import_dump(args):
 
 def promise(args):
   # This is not a dependency of slapos.cookbook, because it shall be runned
-  # in a python environment having mysql-python
+  # in a python environment having mysqlclient
   import MySQLdb
 
   user = args['user']

@@ -1,13 +1,13 @@
 diff --git a/ha_mroonga.cpp b/ha_mroonga.cpp
-index dd9967d..c105a62 100644
+index 06691fb..b59e685 100644
 --- a/ha_mroonga.cpp
 +++ b/ha_mroonga.cpp
-@@ -7678,7 +7678,7 @@ grn_rc ha_mroonga::generic_ft_init_ext_prepare_expression_in_boolean_mode(
+@@ -8283,7 +8283,7 @@ grn_rc ha_mroonga::generic_ft_init_ext_prepare_expression_in_boolean_mode(
  
-   const char *keyword, *keyword_original;
-   uint keyword_length, keyword_length_original;
+   const char *keyword = NULL;
+   uint keyword_length = 0;
 -  grn_operator default_operator = GRN_OP_OR;
 +  grn_operator default_operator = GRN_OP_ADJUST;
-   grn_bool weight_specified = false;
-   keyword = keyword_original = key->ptr();
-   keyword_length = keyword_length_original = key->length();
+   grn_expr_flags expression_flags = 0;
+   generic_ft_init_ext_parse_pragma(info,
+                                    key,

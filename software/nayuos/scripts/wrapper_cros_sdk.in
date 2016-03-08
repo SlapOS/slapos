@@ -1,0 +1,8 @@
+#! {{ bash_path }}
+
+# XXX: not secure: normal users need this script to have root priviledge
+# but have write permission on it
+
+# add curl/git to the path, required by cros_sdk, but not available after sudo                                                                   
+export PATH="{{ git_path }}:{{ curl_path }}:$PATH"
+exec "${@:1}"

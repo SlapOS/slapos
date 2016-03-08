@@ -30,7 +30,10 @@ if not parser.has_option("cors", "cors-domain"):
 
 if "cors-domain" in form:
   parser.set("cors", "cors-domain", form["cors-domain"].value)
-  cors_domain_list = form["cors-domain"].value.split()
+
+cors_domain_parameter = parser.get("cors", "cors-domain")
+if cors_domain_parameter:
+  cors_domain_list = cors_domain_parameter.split()
   cors_string = ""
   for domain in cors_domain_list:
     if cors_string:
@@ -40,8 +43,6 @@ if "cors-domain" in form:
     file.write('SetEnvIf Origin "^http(s)?://(.+\.)?(%s)$" origin_is=$0\n' % cors_string)
     file.write('Header always set Access-Control-Allow-Origin %{origin_is}e env=origin_is')
   subprocess.call('{{ httpd_graceful }}')
-
-cors_domain_parameter = parser.get("cors", "cors-domain")
 
 with open(config_file, 'w') as file:
   parser.write(file)

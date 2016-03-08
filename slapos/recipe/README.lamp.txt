@@ -40,7 +40,7 @@ in software.cfg, replace instance-recipe-egg part by
 [instance-recipe-egg]
 recipe = zc.recipe.egg
 eggs =
-    ${mysql-python:egg}
+    ${python-mysqlclient:egg}
     ${instance-recipe:egg}
     slapos.toolbox[lampconfigure]
 
