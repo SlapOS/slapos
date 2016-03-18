@@ -68,6 +68,10 @@ class Recipe(object):
         ${storage-configuration:storage-home}
 
   Output:
+    root-instance-title
+      Hosting subscription or root instance title
+    instance-title
+      Title of instance running into this partition
     slap-software-type
       Current partition's software type.
     ipv4
@@ -146,6 +150,12 @@ class Recipe(object):
               pass
           else:
               options[his_key.replace('_', '-')] = value
+      # Get Instance and root instance title or return UNKNOW if not set
+      options['instance-title'] = parameter_dict.pop('instance_title',
+                                                      'UNKNOW Instance')
+      options['root-instance-title'] = parameter_dict.pop('root_instance_title',
+                                                      'UNKNOW')
+
       ipv4_set = set()
       v4_add = ipv4_set.add
       ipv6_set = set()
