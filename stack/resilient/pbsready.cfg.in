@@ -192,7 +192,7 @@ key = $${slap-parameter:authorized-key}
 recipe = collective.recipe.template
 log = $${basedirectory:log}/sshd.log
 input = inline:#!/bin/sh
-    exec $${dropbear-server:wrapper} >> $${:log}/sshd.log 2>&1
+    exec $${dropbear-server:wrapper} >> $${:log} 2>&1
 
 output = $${rootdirectory:bin}/raw_sshd_log
 mode = 700
