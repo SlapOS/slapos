@@ -8,29 +8,12 @@ parts =
   cron-entry-logrotate
   sshkeys-authority
   sshkeys-dropbear
-## Monitoring part
-###Parts to add for monitoring
-  certificate-authority
-  cron-entry-monitor
-  cron-entry-rss
-  deploy-index
-  deploy-settings-cgi
-  deploy-status-cgi
-  deploy-status-history-cgi
-  setup-static-files
-  certificate-authority
-  zero-parameters
-  public-symlink
-  cgi-httpd-wrapper
-  cgi-httpd-graceful-wrapper
-  monitor-promise
-  monitor-instance-log-access
+
+
 ## Monitor for pbs
-  monitor-current-log-access
-  monitor-backup-log-access
   monitor-check-resilient-feed-file
 
-extends = ${monitor-template:output}
+extends = ${monitor2-template:rendered}
 eggs-directory = ${buildout:eggs-directory}
 develop-eggs-directory = ${buildout:develop-eggs-directory}
 offline = true
@@ -234,11 +217,20 @@ identity-file = $${basedirectory:ssh-home}/id_rsa
 #----------------
 #--
 #-- Slave instance list (empty default).
+[htpasswd]
+recipe = slapos.cookbook:generate.password
+storage-path = $${directory:etc}/.monitor_user
+bytes = 8
+username = admin
 
 [slap-parameter]
 slave_instance_list = []
 ignore-known-hosts-file = false
-
+monitor-cors-domains = 
+monitor-httpd-port = 8070
+monitor-title = PBS Instance
+monitor-password = $${htpasswd:passwd}
+monitor-username = $${htpasswd:username}
 
 
 #----------------
@@ -250,27 +242,34 @@ recipe = slapos.cookbook:publish
 ssh-key = $${sshkeys-dropbear:public-key-value}
 notification-url = http://[$${notifier:host}]:$${notifier:port}/notify
 feeds-url = http://[$${notifier:host}]:$${notifier:port}/get/
-
+monitor-base-url = $${publish:monitor-base-url}
+monitor-url = $${publish:monitor-url}
+monitor-user = $${publish:monitor-user}
+monitor-password = $${publish:monitor-password}
 
 #----------------
 #--
 #-- Monitor
 
-[monitor-backup-log-access]
-< = monitor-directory-access
-source = $${directory:logrotate-backup}
+[monitor-instance-parameter]
+monitor-httpd-port = $${slap-parameter:monitor-httpd-port}
+monitor-title = $${slap-parameter:monitor-title}
+cors-domains = $${slap-parameter:monitor-cors-domains}
+username = $${slap-parameter:monitor-username}
+password = $${slap-parameter:monitor-password}
 
-[monitor-current-log-access]
-< = monitor-directory-access
-source = $${basedirectory:log}
+[monitor-conf-parameters]
+private-path-list += 
+  $${directory:logrotate-backup}
+  $${basedirectory:log}
 
 [monitor-check-resilient-feed-file]
 recipe = slapos.recipe.template:jinja2
 template = ${template-monitor-check-resilient-feed:location}/${template-monitor-check-resilient-feed:filename}
-rendered = $${monitor-directory:monitor-custom-scripts}/check-create-resilient-feed-files.py
+rendered = $${monitor-directory:promises}/check-create-resilient-feed-files
 mode = 700
 context =
   key input_feed_directory directory:notifier-feeds
-  key monitor_feed_directory monitor-directory:public-cgi
+  key monitor_feed_directory monitor-directory:public
   key base_url publish-connection-information:feeds-url
   raw python_executable ${buildout:executable}
