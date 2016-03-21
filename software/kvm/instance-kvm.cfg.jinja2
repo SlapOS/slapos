@@ -316,40 +316,18 @@ port = ${httpd:port}
 {% endif %}
 
 {% if monitor -%}
-[monitor-access-log]
-< = monitor-directory-access
-source = ${directory:log}
 
-[monitor-access-public]
-< = monitor-directory-access
-source = ${directory:public}
+[monitor-instance-parameter]
+monitor-httpd-port = 8026
+monitor-title = {{ slapparameter_dict.get('name', 'KVM Standalone') }}
+cors-domains = {{ slapparameter_dict.get('monitor-cors-domains', '') }}
+{%   if slapparameter_dict.get('monitor-username', '') -%}
+username = {{ slapparameter_dict['monitor-username'] }}
+{%   endif -%}
+{%   if slapparameter_dict.get('monitor-password', '') -%}
+password = {{ slapparameter_dict['monitor-password'] }}
+{%   endif -%}
 
-[monitor-parameters]
-port = 8026
-
-{% if instance_type == 'cluster' -%}
-# XXX - Set frontend software type to 'custom-personal' by default for cluster instance
-{% set frontend_software_type = 'custom-personal' -%}
-{% endif -%}
-
-[request-monitor-frontend]
-<= slap-connection
-recipe = slapos.cookbook:requestoptional
-name = Monitor {{ slapparameter_dict.get('name', '') }} Frontend
-# XXX We have hardcoded SR URL here.
-software-url = http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg
-slave = true
-config-url = ${monitor-parameters:url}
-software-type = {{ slapparameter_dict.get('monitor-frontend-software-type', frontend_software_type) }}
-return = site_url domain
-
-[monitor-frontend-promise]
-recipe = slapos.cookbook:check_url_available
-path = ${directory:promises}/monitor_frontend
-url = ${publish-connection-information:monitor_url}
-dash_path = {{ dash_executable_location }}
-curl_path = {{ curl_executable_location }}
-check-secure = 1
 {% endif -%}
 
 [publish-connection-information]
@@ -387,8 +365,14 @@ tap-ipv4 = ${slap-network-information:tap-ipv4}
 {%   endif %}
 {% endif %}
 {% if monitor -%}
-monitor_url = ${request-monitor-frontend:connection-site_url}
-monitor_v6_url = ${monitor-parameters:url}
+monitor-base-url = ${publish:monitor-base-url}
+monitor-url = ${publish:monitor-url}
+monitor-user = ${publish:monitor-user}
+monitor-password = ${publish:monitor-password}
+{%   set monitor_interface_url = slapparameter_dict.get('monitor-interface-url', '') -%}
+{%   if monitor_interface_url -%}
+monitor-setup-url = {{ monitor_interface_url }}/#page=settings_configurator&url=${publish:monitor-url}
+{%   endif -%}
 {% endif -%}
 
 {% if use_tap == 'true' and tap_network_dict.has_key('ipv4') -%}
@@ -533,7 +517,7 @@ backup = ${logrotate:backup}
 [slap-parameter]
 # Default values if not specified
 frontend-software-type = frontend
-frontend-software-url = https://lab.nexedi.com/nexedi/slapos/raw/slapos-0.92/software/kvm/software.cfg
+frontend-software-url = http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.92:/software/kvm/software.cfg
 frontend-instance-guid =
 frontend-instance-name = VNC Frontend
 nbd-port = 1024
@@ -617,26 +601,18 @@ parts =
 #  kvm-monitor
   cron
   cron-entry-logrotate
-#  cron-entry-monitor
   frontend-promise
 {% if monitor -%}
 # monitor parts
-  cron-entry-monitor
-  cron-entry-rss
-  deploy-index
-  deploy-status-history-cgi
-  deploy-status-cgi
-#  deploy-logfile-cgi
-#  deploy-resource-consumption-monitoring-cgi
-  setup-static-files
-  public-symlink
-  cgi-httpd-wrapper
-  cgi-httpd-graceful-wrapper
-  monitor-promise
-  monitor-instance-log-access
-  monitor-access-log
-  monitor-access-public
-#  monitor-frontend-promise
+  monitor-base
+  cron-entry-logrotate
+  certificate-authority
+  monitor-conf
+  start-monitor
+  ca-httpd
+  monitor-httpd-promise
+  monitor-httpd-promise-conf
+  monitor-status2rss-cron-entry
 {% endif -%}
 # Complete parts with sections
   {{ part_list | join('\n  ') }}

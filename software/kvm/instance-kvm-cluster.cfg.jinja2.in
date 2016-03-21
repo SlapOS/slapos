@@ -8,6 +8,7 @@
 {% set slave_frontend_iguid = slave_frontend_dict.get('instance-guid', '') -%}
 {% set kvm_instance_dict = {} -%}
 {% set kvm_hostname_list = [] -%}
+{% set monitor_url_list = [] -%}
 
 [request-common]
 recipe = slapos.cookbook:request
@@ -34,7 +35,7 @@ state = stopped
 
 config-frontend-instance-name = {{ instance_name ~ ' VNC Frontend' }}
 config-frontend-software-type = {{ dumps(frontend_dict.get('software-type', 'frontend')) }}
-config-frontend-software-url = {{ dumps(frontend_dict.get('software-url', 'https://lab.nexedi.com/nexedi/slapos/raw/slapos-0.92/software/kvm/software.cfg')) }}
+config-frontend-software-url = {{ dumps(frontend_dict.get('software-url', 'http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.92:/software/kvm/software.cfg')) }}
 config-frontend-instance-guid = {{ dumps(frontend_dict.get('instance-guid', '')) }}
 config-name = {{ instance_name }}
 {% if slapparameter_dict.get('authorized-keys', []) -%}
@@ -71,6 +72,9 @@ config-httpd-port = {{ dumps(kvm_parameter_dict.get('httpd-port', 8081)) }}
 config-data-to-vm = {{ dumps(kvm_parameter_dict.get('data-to-vm', '')) }}
 {% endif -%}
 config-enable-monitor = {{ dumps(kvm_parameter_dict.get('enable-monitor', True)) }}
+config-monitor-cors-domains = {{ slapparameter_dict.get('monitor-cors-domains', '') }}
+config-monitor-username = ${monitor-htpasswd:username}
+config-monitor-password = ${monitor-htpasswd:passwd}
 
 # Enable simple http server on ipv6 so all VMs will access it
 config-document-host = ${apache-conf:ip}
@@ -86,8 +90,9 @@ sla-fw_rejected_sources = {{ rejected_source_list | join(' ') }}
 sla-fw_restricted_access = {{ dumps(slapparameter_dict.get('fw-restricted-access', 'off')) }}
 
 return = 
-  backend-url
   url
+  backend-url
+  monitor-base-url
 {% if str(use_nat).lower() == 'true' -%}
 {%   for port in nat_rules_list -%}
 {{ '  ' }}nat-rule-url-{{ port }}
@@ -98,6 +103,9 @@ return =
 
 {% do publish_dict.__setitem__('lan-' ~ instance_name, '${' ~ section ~ ':connection-tap-ipv4}') -%}
 {% do kvm_hostname_list.append(instance_name ~ ' ' ~ '${' ~ section ~ ':connection-tap-ipv4}') -%}
+{% endif -%}
+{% if str(kvm_parameter_dict.get('enable-monitor', 'True')).lower() == 'true' -%}
+{%  do monitor_url_list.append('${' ~ section ~ ':connection-monitor-base-url}') -%}
 {% endif -%}
 {% do publish_dict.__setitem__(instance_name ~ '-backend-url', '${' ~ section ~ ':connection-backend-url}') -%}
 {% do publish_dict.__setitem__(instance_name ~ '-url', '${' ~ section ~ ':connection-url}') -%}
@@ -206,14 +214,41 @@ mode = {{ mode }}
 {{ writefile('cluster-data-content', '${directory:webroot}/${hash-code:passwd}/data', slapparameter_dict.get('cluster-data', ''), '700') }}
 {% endif -%}
 
+[monitor-htpasswd]
+recipe = slapos.cookbook:generate.password
+storage-path = ${directory:etc}/.monitor_user
+bytes = 8
+username = admin
+
+[monitor-instance-parameter]
+monitor-httpd-port = 8060
+monitor-title = KVM Cluster Main Instance
+cors-domains = {{ slapparameter_dict.get('monitor-cors-domains', '') }}
+username = ${monitor-htpasswd:username}
+password = ${monitor-htpasswd:passwd}
+
+[monitor-conf-parameters]
+monitor-url-list +=
+{% for url in monitor_url_list -%}
+{{ '  ' ~ url }}
+{% endfor %}
+private-path-list += 
+  ${directory:webroot}/
+
 [publish]
 recipe = slapos.cookbook:publish
 {% for name, value in publish_dict.items() -%}
 {{   name }} = {{ value }}
 {% endfor %}
+{% set monitor_interface_url = slapparameter_dict.get('monitor-interface-url', '') -%}
+{% if monitor_interface_url -%}
+monitor-setup-url = {{ monitor_interface_url }}/#page=settings_configurator&url=${publish:monitor-url}
+{%   endif -%}
+
 [buildout]
 extends = 
   {{ template_httpd_cfg }}
+  {{ template_monitor }}
 
 parts = 
   httpd
@@ -221,6 +256,18 @@ parts =
   httpd-promise
   publish
   directory-doc
+
+  monitor-base
+  cron-entry-logrotate
+  certificate-authority
+  monitor-conf
+  start-monitor
+  ca-httpd
+  monitor-httpd-promise
+  monitor-httpd-promise-conf
+  monitor-status2rss-cron-entry
+# End monitor
+
 # Complete parts with sections
   {{ part_list | join('\n  ') }}
  
