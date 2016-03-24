@@ -7,7 +7,7 @@
 parts =
   directory
   publish-connection-parameter
-
+# 
 # Define egg directories to be the one from Software Release
 # (/opt/slapgrid/...)
 # Always the same.
@@ -36,6 +36,7 @@ cert = ${slap_connection:cert_file}
 # All possible parameters should have a default.
 # In our use case, we are expecting from the user to specify one (optional) parameter: "name". We put the default value here if he doesn't specify it, so that it doesn't crash.
 configuration.name = John Doe
+configuration.title = Galaxy
 # If our use case requires that the user can specify a mail address so that his instance can mail to him (for example), we can do:
 # configuration.mail-address =
 # If the user doesn't specify it, it won't break and the recipe can handle it (i.e don't send any mail for example).
@@ -85,7 +86,6 @@ command-line =
 # exits/crashes, it will trigger a "bang" and cause a re-run of the instance.
 wrapper-path = ${directory:service}/helloweb-${:kind}
 
-
 # promise, that checks that helloweb service is alive
 [helloweb-promise]
 recipe = slapos.cookbook:check_port_listening
@@ -128,6 +128,7 @@ parts +=
 [publish-connection-parameter]
 recipe = slapos.cookbook:publish
 name = Hello ${instance-parameter:configuration.name}!
+title = $${instance-parameter:configuration.title}
 {%- for kind in service_list %}
 url.{{ kind }} = ${helloweb-{{ kind }}:url}
 {%- endfor %}
