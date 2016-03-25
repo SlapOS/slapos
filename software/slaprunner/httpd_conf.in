@@ -1,9 +1,69 @@
+PidFile "{{ parameters.path_pid }}"
+ServerName example.com
+ServerAdmin someone@email
+
+<IfDefine !HTTPDPort>
+  Listen [{{ parameters.global_ip }}]:{{ parameters.global_port }}
+  Define HTTPDPort
+</IfDefine>
+
+LoadModule unixd_module modules/mod_unixd.so
+LoadModule access_compat_module modules/mod_access_compat.so
+LoadModule auth_basic_module modules/mod_auth_basic.so
+LoadModule authz_core_module modules/mod_authz_core.so
+LoadModule authz_user_module modules/mod_authz_user.so
+LoadModule authz_host_module modules/mod_authz_host.so
+LoadModule authn_core_module modules/mod_authn_core.so
+LoadModule authn_file_module modules/mod_authn_file.so
+LoadModule mime_module modules/mod_mime.so
+#LoadModule cgid_module modules/mod_cgid.so
+LoadModule ssl_module modules/mod_ssl.so
+LoadModule alias_module modules/mod_alias.so
+LoadModule env_module modules/mod_env.so
+LoadModule rewrite_module modules/mod_rewrite.so
+LoadModule headers_module modules/mod_headers.so
 LoadModule log_config_module modules/mod_log_config.so
+LoadModule dav_module modules/mod_dav.so
+LoadModule dav_fs_module modules/mod_dav_fs.so
 LoadModule cache_module modules/mod_cache.so
 LoadModule file_cache_module modules/mod_file_cache.so
+LoadModule setenvif_module modules/mod_setenvif.so
+LoadModule dir_module modules/mod_dir.so
+LoadModule cgid_module modules/mod_cgid.so
+LoadModule autoindex_module modules/mod_autoindex.so
 
+ErrorLog "{{ parameters.path_error_log }}"
+LogFormat "%h %l %u %t \"%r\" %>s %b" common
+CustomLog "{{ parameters.path_access_log }}" common
 
-Alias /web-public {{ parameters.runner_home }}/public
+# SSL Configuration
+Define SSLConfigured
+SSLCertificateFile {{ parameters.cert_file }}
+SSLCertificateKeyFile {{ parameters.key_file }}
+SSLRandomSeed startup builtin
+SSLRandomSeed connect builtin
+SSLRandomSeed startup /dev/urandom 256
+SSLRandomSeed connect builtin
+SSLProtocol -ALL +SSLv3 +TLSv1
+SSLHonorCipherOrder On
+SSLCipherSuite RC4-SHA:HIGH:!ADH
+SSLEngine   On
+
+Include {{ parameters.httpd_cors_file }}
+Header set Access-Control-Allow-Credentials "true"
+Header set Access-Control-Allow-Methods "PROPFIND, PROPPATCH, COPY, MOVE, DELETE, MKCOL, LOCK, UNLOCK, PUT, GETLIB, VERSION-CONTROL, CHECKIN, CHECKOUT, UNCHECKOUT, REPORT, UPDATE, CANCELUPLOAD, HEAD, OPTIONS, GET, POST"
+Header set Access-Control-Allow-Headers "Overwrite, Destination, Content-Type, Depth, User-Agent, X-File-Size, X-Requested-With, If-Modified-Since, X-File-Name, Cache-Control, Authorization"
+
+DocumentRoot {{ parameters.runner_home }}/public
+
+# Directory protection
+<Directory />
+    Options FollowSymLinks
+    AllowOverride None
+    Require all denied
+</Directory>
+
+Alias /public {{ parameters.runner_home }}/public
 <Directory {{ parameters.runner_home }}/public>
     Order Allow,Deny
     Allow from all
@@ -17,19 +77,19 @@ Alias /web-public {{ parameters.runner_home }}/public
     </Files>
 </Directory>
 
-Alias /shared {{ parameters.runner_home }}
+DavLockDB {{ parameters.dav_lock }}
+Alias /share {{ parameters.runner_home }}
 <Directory {{ parameters.runner_home }}>
     DirectoryIndex disabled
     DAV On
     Options Indexes FollowSymLinks
     AuthType Basic
-    AuthName "webdav"
-    AuthUserFile "{{ parameters.etc_dir }}/monitor-htpasswd"
+    AuthName "Webrunner Dav"
+    AuthUserFile "{{ parameters.htpasswd_file }}"
     <LimitExcept OPTIONS>
         Require valid-user
     </LimitExcept>
 </Directory>
-
 
 SetEnv GIT_HTTP_EXPORT_ALL
 ScriptAlias /git/ {{ parameters.git_http_backend }}/
@@ -45,7 +105,7 @@ RewriteCond %{REQUEST_URI} /git-receive-pack$
 
         AuthType Basic
         AuthName "Git Access"
-        AuthUserFile "{{ parameters.etc_dir }}/monitor-htpasswd"
+        AuthUserFile "{{ parameters.htpasswd_file }}"
         Require valid-user
 </LocationMatch>
 
@@ -56,8 +116,7 @@ RewriteCond %{REQUEST_URI} /git-receive-pack$
 
         AuthType Basic
         AuthName "Git Access"
-        AuthUserFile "{{ parameters.etc_dir }}/monitor-htpasswd"
+        AuthUserFile "{{ parameters.htpasswd_file }}"
         Require valid-user
         Satisfy any
 </LocationMatch>
-
