@@ -163,6 +163,18 @@
       "type": "boolean",
       "default": true
     },
+    "monitor-interface-url": {
+        "title": "Monitor Web Interface URL",
+        "description": "Give Url of HTML web interface that will be used to render this monitor instance.",
+        "type": "string",
+        "format": "uri"
+    },
+    "monitor-cors-domains": {
+        "title": "Monitor CORS domains",
+        "description": "List of cors domains separated with space. Needed for ajax query on this monitor instance from a different domain.",
+        "type": "string",
+        "default": ""
+    },
     "enable-http-server": {
       "title": "Enable local http server",
       "description": "Set if local http server which serve files to the vm should be deployed. If set to true, get file into the vm with URL: http://10.0.2.100/FILE.",
