@@ -183,7 +183,7 @@
           var back_url = \'#page=main&t=\' + (Date.now() / 1000 | 0);\n
           return RSVP.all([\n
             gadget.updateHeader({\n
-              title: options.jio_key,\n
+              title: \'Promise \' + options.jio_key,\n
               //back_url: back_url,\n
               //panel_action: false,\n
               refresh_url: refresh_url\n
@@ -191,6 +191,9 @@
           ]);\n
         })\n
         .push(function () {\n
+          if (!options.jio_key.endsWith(\'.status\')) {\n
+            options.jio_key +=  \'.status\';\n
+          }\n
           if (options.jio_for !== undefined && options.jio_for !== \'\') {\n
             // Load from defined url\n
             var jio_options = {\n
@@ -235,7 +238,7 @@
                   element: element\n
                 });\n
               gadget.property_dict.element.querySelector(".ui-promise-content .ui-promise-title h2")\n
-                .innerHTML += element.title;\n
+                .innerHTML += \'Promise \' + element.title;\n
               gadget.property_dict.element.querySelector("#promise-overview .ui-block-a")\n
                 .innerHTML += content;\n
               if (element.hasOwnProperty(\'_links\') && element._links.hasOwnProperty(\'monitor\') && element._links.monitor.href) {\n
@@ -466,7 +469,8 @@
               type: \'bar\',\n
               config: {\n
                 bezierCurve: false,\n
-                responsive: true\n
+                responsive: true,\n
+                barDatasetSpacing: 20\n
               },\n
               data: data\n
             });\n
@@ -618,7 +622,7 @@
             </item>
             <item>
                 <key> <string>serial</string> </key>
-                <value> <string>949.5265.63409.53947</string> </value>
+                <value> <string>949.56728.21843.28501</string> </value>
             </item>
             <item>
                 <key> <string>state</string> </key>
@@ -636,7 +640,7 @@
                     </tuple>
                     <state>
                       <tuple>
-                        <float>1455209893.65</float>
+                        <float>1458124466.18</float>
                         <string>UTC</string>
                       </tuple>
                     </state>

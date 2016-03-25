@@ -271,7 +271,7 @@
         .push(function (cred) {\n
           var key;\n
           gadget.property_dict.element.querySelector(".ui-panel-overview .overview-title > span")\n
-            .innerHTML += options.title || \'Monitoring Instance Resource Status\';\n
+            .innerHTML += options.title + \' [\' + options.root + \']\';\n
 \n
           for (key in gadget.property_dict.ressource_dict) {\n
             promise_list.push(loadGraphData (options.jio_for + \'data/\', key, cred));\n
@@ -291,7 +291,8 @@
     // declared service\n
     /////////////////////////////////////////////////////////////////\n
     .declareService(function () {\n
-      var gadget = this;\n
+      var gadget = this,\n
+        date_window = [];\n
 \n
       function toggleSerieVisibility(evt) {\n
         var checkbox = evt.target.nextSibling,\n
@@ -306,6 +307,27 @@
           .push(function () {\n
             return evt;\n
           });\n
+      }\n
+\n
+      function formatDateToString(d) {\n
+        return d.toISOString().slice(0,10) + \' \' + d.getHours() + \':\' + d.getMinutes() + \':\' + d.getSeconds();\n
+      }\n
+\n
+      function getDateWindonw(data) {\n
+        var max_date,\n
+          begin_date,\n
+          end_date,\n
+          date_window = [];\n
+        gadget.property_dict.timer = null;\n
+        gadget.property_dict.loading = false;\n
+        if (data.length > 0) {\n
+          max_date = data[data.length - 1].split(\',\')[0];\n
+          begin_date = new Date(max_date);\n
+          end_date = new Date(max_date);\n
+          begin_date.setHours(begin_date.getHours() -2);\n
+          date_window = [Date.parse(begin_date), Date.parse(end_date)];\n
+        }\n
+        return date_window;\n
       }\n
 \n
       function updateGraphData (jio_url, key) {\n
@@ -347,33 +369,40 @@
             return RSVP.all(promise_list);\n
           })\n
           .push(function () {\n
+            date_window = getDateWindonw(gadget.property_dict.mem_data.data);\n
             return gadget.property_dict.graph_mem_used.updateOptions({\n
-              file: gadget.property_dict.mem_data.data.join(\'\\n\')\n
+              file: gadget.property_dict.mem_data.data.join(\'\\n\'),\n
+              dateWindow: date_window\n
             });\n
           })\n
           .push(function () {\n
             return gadget.property_dict.graph_mem_percent.updateOptions({\n
-              file: gadget.property_dict.mem_data.data.join(\'\\n\')\n
+              file: gadget.property_dict.mem_data.data.join(\'\\n\'),\n
+              dateWindow: date_window\n
             });\n
           })\n
           .push(function () {\n
             return gadget.property_dict.graph_io_rw.updateOptions({\n
-              file: gadget.property_dict.io_data.data.join(\'\\n\')\n
+              file: gadget.property_dict.io_data.data.join(\'\\n\'),\n
+              dateWindow: date_window\n
             });\n
           })\n
           .push(function () {\n
             return gadget.property_dict.graph_io_counter.updateOptions({\n
-              file: gadget.property_dict.io_data.data.join(\'\\n\')\n
+              file: gadget.property_dict.io_data.data.join(\'\\n\'),\n
+              dateWindow: date_window\n
             });\n
           })\n
           .push(function () {\n
             return gadget.property_dict.graph_disk_used.updateOptions({\n
-              file: gadget.property_dict.io_data.data.join(\'\\n\')\n
+              file: gadget.property_dict.io_data.data.join(\'\\n\'),\n
+              dateWindow: date_window\n
             });\n
           })\n
           .push(function () {\n
             return gadget.property_dict.graph_cpu.updateOptions({\n
-              file: gadget.property_dict.process_data.data.join(\'\\n\')\n
+              file: gadget.property_dict.process_data.data.join(\'\\n\'),\n
+              dateWindow: date_window\n
             });\n
           });\n
       }\n
@@ -390,18 +419,18 @@
 \n
       return new RSVP.Queue()\n
         .push(function () {\n
-          gadget.property_dict.timer = null;\n
-          gadget.property_dict.loading = false;\n
+          date_window = getDateWindonw(gadget.property_dict.mem_data.data);\n
           return gadget.property_dict.render_deferred.promise;\n
         })\n
         .push(function () {\n
           return gadget.property_dict.graph_mem_used.render(\n
             gadget.property_dict.mem_data.data.join(\'\\n\'),\n
             {\n
-              ylabel: \'<span class="graph-label"><i class="fa fa-bar-chart"></i> Memory used (Mo)</span>\',\n
+              xlabel: \'<span class="graph-label"><i class="fa fa-area-chart"></i> Memory used (Mo)</span>\',\n
               labelsDivStyles: { \'textAlign\': \'right\' },\n
               legend: \'always\',\n
               visibility: [false, true],\n
+              dateWindow: date_window,\n
               fillGraph: true\n
             },\n
             "customInteractionModel"\n
@@ -411,10 +440,11 @@
           return gadget.property_dict.graph_mem_percent.render(\n
             gadget.property_dict.mem_data.data.join(\'\\n\'),\n
             {\n
-              ylabel: \'<span class="graph-label"><i class="fa fa-bar-chart"></i> Memory used %</span>\',\n
+              xlabel: \'<span class="graph-label"><i class="fa fa-area-chart"></i> Memory used %</span>\',\n
               labelsDivStyles: { \'textAlign\': \'right\' },\n
               legend: \'always\',\n
               visibility: [true, false],\n
+              dateWindow: date_window,\n
               fillGraph: true\n
             },\n
             "customInteractionModel"\n
@@ -424,10 +454,11 @@
           return gadget.property_dict.graph_io_rw.render(\n
             gadget.property_dict.io_data.data.join(\'\\n\'),\n
             {\n
-              ylabel: \'<span class="graph-label"><i class="fa fa-bar-chart"></i> IO RW Bytes</span>\',\n
+              xlabel: \'<span class="graph-label"><i class="fa fa-bar-chart"></i> IO RW Bytes</span>\',\n
               labelsDivStyles: { \'textAlign\': \'right\' },\n
               legend: \'always\',\n
               visibility: [true, false, false],\n
+              dateWindow: date_window,\n
               fillGraph: true\n
             },\n
             "customInteractionModel"\n
@@ -437,10 +468,11 @@
           return gadget.property_dict.graph_io_counter.render(\n
             gadget.property_dict.io_data.data.join(\'\\n\'),\n
             {\n
-              ylabel: \'<span class="graph-label"><i class="fa fa-bar-chart"></i> IO RW counter</span>\',\n
+              xlabel: \'<span class="graph-label"><i class="fa fa-bar-chart"></i> IO RW counter</span>\',\n
               labelsDivStyles: { \'textAlign\': \'right\' },\n
               legend: \'always\',\n
               visibility: [false, true, false],\n
+              dateWindow: date_window,\n
               fillGraph: true\n
             },\n
             "customInteractionModel"\n
@@ -450,10 +482,11 @@
           return gadget.property_dict.graph_disk_used.render(\n
             gadget.property_dict.io_data.data.join(\'\\n\'),\n
             {\n
-              ylabel: \'<span class="graph-label"><i class="fa fa-bar-chart"></i> Disk used (Mo)</span>\',\n
+              xlabel: \'<span class="graph-label"><i class="fa fa-pie-chart"></i> Disk Used (Mo)</span>\',\n
               labelsDivStyles: { \'textAlign\': \'right\' },\n
               legend: \'always\',\n
               visibility: [false, false, true],\n
+              dateWindow: date_window,\n
               fillGraph: true\n
             },\n
             "customInteractionModel"\n
@@ -463,8 +496,9 @@
           return gadget.property_dict.graph_cpu.render(\n
             gadget.property_dict.process_data.data.join(\'\\n\'),\n
             {\n
-              ylabel: \'<span class="graph-label"><i class="fa fa-bar-chart"></i> Process resources</span>\',\n
-              labelsDivStyles: { \'textAlign\': \'right\' }\n
+              xlabel: \'<span class="graph-label"><i class="fa fa-line-chart"></i> Process resources usage</span>\',\n
+              labelsDivStyles: { \'textAlign\': \'right\' },\n
+              dateWindow: date_window,\n
             },\n
             "customInteractionModel"\n
           );\n
@@ -494,11 +528,11 @@
                 });\n
                 gadget.property_dict.element.querySelector(".ui-panel-overview ." + element + " .ui-grid-span-1")\n
                   .innerHTML = label_content;\n
-                return RSVP.all([\n
+                /*return RSVP.all([\n
                   $(gadget.property_dict.element.querySelectorAll("[type=checkbox]"))\n
-                  .checkboxradio()]);\n
-                  /*$(gadget.property_dict.element.querySelectorAll("[data-role=controlgroup]"))\n
-                  .controlgroup("refresh")]);*/\n
+                  .checkboxradio()]);*/\n
+                  return $(gadget.property_dict.element.querySelectorAll("[data-role=controlgroup]"))\n
+                    .controlgroup().controlgroup("refresh");\n
               });\n
           }\n
         })\n
@@ -515,7 +549,7 @@
                 toggleSerieVisibility\n
               )\n
             );\n
-            if ($(element_list[i]).attr(\'for\').toLowerCase() !== \'label_cpu_percent\') {\n
+            if ($(element_list[i]).attr(\'for\').toLowerCase() !== \'label_cpu_percent\' && $(element_list[i]).attr(\'for\').toLowerCase() !== \'label_total_process\') {\n
               promise_list.push(gadget.property_dict.graph_cpu.setVisibility(\n
                 parseInt($(element_list[i]).attr(\'rel\'), 10), false)\n
               );\n
@@ -664,7 +698,7 @@
             </item>
             <item>
                 <key> <string>serial</string> </key>
-                <value> <string>949.5267.64321.15581</string> </value>
+                <value> <string>949.64188.296.22835</string> </value>
             </item>
             <item>
                 <key> <string>state</string> </key>
@@ -682,7 +716,7 @@
                     </tuple>
                     <state>
                       <tuple>
-                        <float>1455209635.58</float>
+                        <float>1458571980.17</float>
                         <string>UTC</string>
                       </tuple>
                     </state>

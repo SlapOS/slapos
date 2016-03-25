@@ -155,7 +155,7 @@
       </div>\n
       <ul class="ui-grid-column ui-grid-column-5 graph_cpu">\n
         <li class="ui-grid-span-4 custom-grid-wrap graph-cell">\n
-          <div data-gadget-url="gadget_erp5_graph.html" data-gadget-scope="graph_cpu" class="graph graph-medium"></div>\n
+          <div data-gadget-url="gadget_erp5_graph.html" data-gadget-scope="graph_cpu" class="graph graph-h-medium"></div>\n
         </li>\n
         <li class="ui-grid-span-1 custom-grid-wrap graph-cell">\n
           \n
@@ -163,21 +163,21 @@
       </ul>\n
       <div class="ui-grid-a ui-responsive">\n
         <div class="ui-block-a">\n
-          <div data-gadget-url="gadget_erp5_graph.html" data-gadget-scope="graph_memory_used" class="graph graph-medium"></div>\n
+          <div data-gadget-url="gadget_erp5_graph.html" data-gadget-scope="graph_memory_used" class="graph graph-h-medium"></div>\n
         </div>\n
         <div class="ui-block-b">\n
-          <div data-gadget-url="gadget_erp5_graph.html" data-gadget-scope="graph_memory_percent" class="graph graph-medium"></div>\n
+          <div data-gadget-url="gadget_erp5_graph.html" data-gadget-scope="graph_memory_percent" class="graph graph-h-medium"></div>\n
         </div>\n
       </div>\n
       <div class="ui-grid-b ui-responsive">\n
         <div class="ui-block-a">\n
-          <div data-gadget-url="gadget_erp5_graph.html" data-gadget-scope="graph_disk_used" class="graph graph-medium"></div>\n
+          <div data-gadget-url="gadget_erp5_graph.html" data-gadget-scope="graph_disk_used" class="graph graph-h-medium"></div>\n
         </div>\n
         <div class="ui-block-b">\n
-          <div data-gadget-url="gadget_erp5_graph.html" data-gadget-scope="graph_io_rw" class="graph graph-medium"></div>\n
+          <div data-gadget-url="gadget_erp5_graph.html" data-gadget-scope="graph_io_rw" class="graph graph-h-medium"></div>\n
         </div>\n
         <div class="ui-block-c">\n
-          <div data-gadget-url="gadget_erp5_graph.html" data-gadget-scope="graph_io_counter" class="graph graph-medium"></div>\n
+          <div data-gadget-url="gadget_erp5_graph.html" data-gadget-scope="graph_io_counter" class="graph graph-h-medium"></div>\n
         </div>\n
       </div>\n
       <div class=\'graph-footer\'>\n
@@ -325,7 +325,7 @@
             </item>
             <item>
                 <key> <string>serial</string> </key>
-                <value> <string>948.58979.7424.11673</string> </value>
+                <value> <string>949.6675.61849.23210</string> </value>
             </item>
             <item>
                 <key> <string>state</string> </key>
@@ -343,7 +343,7 @@
                     </tuple>
                     <state>
                       <tuple>
-                        <float>1455181931.75</float>
+                        <float>1458306392.07</float>
                         <string>UTC</string>
                       </tuple>
                     </state>

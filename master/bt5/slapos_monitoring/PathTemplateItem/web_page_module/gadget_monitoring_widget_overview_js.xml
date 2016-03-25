@@ -221,7 +221,7 @@
           search_string  += \' OR (\' + option_dict.search_column_list[k].select +\n
             \':"%\' + option_dict.search + \'%"\' + \')\';\n
         }\n
-        option_dict.query.query = search_string + \' AND \' + option_dict.query.query;\n
+        option_dict.query.query = \'(\' + search_string + \') AND \' + option_dict.query.query;\n
       }\n
 \n
       getPartialData = function(dav_url, key) {\n
@@ -236,65 +236,38 @@
             }\n
           };\n
         gadget.property_dict.jio_gadget.createJio(jio_options);\n
-        return gadget.property_dict.jio_gadget.get(key)\n
+        return gadget.property_dict.jio_gadget.allDocs(option_dict.query)\n
           .push(function (monitor_dict) {\n
-            if (monitor_dict.title && monitor_dict._links.monitor && monitor_dict._links.monitor.href) {\n
-              all_document_list.push(monitor_dict);\n
-              monitor_url_list.push(monitor_dict._links.monitor.href);\n
+            var i;\n
+            if (monitor_dict && monitor_dict.data.total_rows > 0) {\n
+              for (i = 0; i < monitor_dict.data.total_rows; i += 1) {\n
+                all_document_list.push(monitor_dict.data.rows[i].value);\n
+              }\n
+            } else {\n
+              // XXX\n
+              console.log("Failed to get monitor.global at " + dav_url);\n
             }\n
             return;\n
           });\n
       };\n
+      \n
 \n
       // store initial configuration\n
       gadget.property_dict.option_dict = option_dict;\n
 \n
       return new RSVP.Queue()\n
       .push(function () {\n
-        var jio_options;\n
-        if (option_dict.data_url !== undefined && option_dict.data_url !== \'\') {\n
-          jio_options = {\n
-            type: "query",\n
-            sub_storage: {\n
-              type: "drivetojiomapping",\n
-              sub_storage: {\n
-                type: "dav",\n
-                url: option_dict.data_url\n
-              }\n
-            }\n
-          };\n
-          gadget.property_dict.jio_gadget.createJio(jio_options);\n
-          //jio_getdocs = gadget.property_dict.jio_gadget.allDocs;\n
-        } else {\n
-          jio_getdocs = gadget.jio_allDocs;\n
+        return gadget.property_dict.jio_gadget.getMonitorUrlList();\n
+      })\n
+      .push(function (url_list) {\n
+        var i,\n
+          promise_list = [];\n
+        for (i = 0; i < url_list.length; i += 1) {\n
+          if (url_list[i]) {\n
+            promise_list.push(getPartialData(url_list[i], option_dict.data_id));\n
+          }\n
         }\n
-        return gadget.property_dict.jio_gadget.get(option_dict.data_id)\n
-          .push(function (monitor_dict) {\n
-            var promise_list = [],\n
-              j;\n
-\n
-            /* Filter this result here !! */\n
-\n
-            if (monitor_dict.title && monitor_dict._links.monitor && monitor_dict._links.monitor.href) {\n
-              all_document_list.push(monitor_dict);\n
-              monitor_url_list.push(monitor_dict._links.monitor.href);\n
-            }\n
-            if (monitor_dict._links.related_monitor !== undefined &&\n
-                monitor_dict._links.related_monitor !== []) {\n
-              for (j = 0; j < monitor_dict._links.related_monitor.length; j += 1) {\n
-                promise_list.push(\n
-                  getPartialData(\n
-                    monitor_dict._links.related_monitor[j].href,\n
-                    option_dict.data_id\n
-                  )\n
-                );\n
-              }\n
-            }\n
-            return new RSVP.Queue()\n
-              .push(function () {\n
-                return RSVP.all(promise_list);\n
-              });\n
-          });\n
+        return RSVP.all(promise_list);\n
       })\n
       .push(function () {\n
         var promise_list = [],\n
@@ -387,7 +360,7 @@
           index = parseInt($(element).attr(\'rel\'), 10),\n
           private_link;\n
 \n
-        if (index !== isNaN && (gadget.property_dict.document_list.length > index)) {\n
+        if (!isNaN(index) && (gadget.property_dict.document_list.length > index)) {\n
           private_link = gadget.property_dict.document_list[index]._links.monitor.href;\n
         } else {\n
           return;\n
@@ -502,6 +475,8 @@
                   .innerHTML = content;\n
                 gadget.property_dict.element.querySelector(".promise-list")\n
                   .innerHTML = promise_content;\n
+                return $(element.querySelectorAll(\'fieldset[data-role="controlgroup"]\'))\n
+                  .controlgroup().controlgroup(\'refresh\');\n
               });\n
           }\n
           return false;\n
@@ -737,7 +712,7 @@
             </item>
             <item>
                 <key> <string>serial</string> </key>
-                <value> <string>949.6359.56330.33331</string> </value>
+                <value> <string>949.64078.48455.55876</string> </value>
             </item>
             <item>
                 <key> <string>state</string> </key>
@@ -755,7 +730,7 @@
                     </tuple>
                     <state>
                       <tuple>
-                        <float>1455275625.09</float>
+                        <float>1458566498.07</float>
                         <string>UTC</string>
                       </tuple>
                     </state>

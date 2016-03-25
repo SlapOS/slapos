@@ -1,0 +1,708 @@
+<?xml version="1.0"?>
+<ZopeData>
+  <record id="1" aka="AAAAAAAAAAE=">
+    <pickle>
+      <global name="Web Script" module="erp5.portal_type"/>
+    </pickle>
+    <pickle>
+      <dictionary>
+        <item>
+            <key> <string>_Access_contents_information_Permission</string> </key>
+            <value>
+              <tuple>
+                <string>Anonymous</string>
+                <string>Assignee</string>
+                <string>Assignor</string>
+                <string>Associate</string>
+                <string>Auditor</string>
+                <string>Manager</string>
+                <string>Owner</string>
+              </tuple>
+            </value>
+        </item>
+        <item>
+            <key> <string>_Add_portal_content_Permission</string> </key>
+            <value>
+              <tuple>
+                <string>Assignor</string>
+                <string>Manager</string>
+              </tuple>
+            </value>
+        </item>
+        <item>
+            <key> <string>_Change_local_roles_Permission</string> </key>
+            <value>
+              <tuple>
+                <string>Assignor</string>
+                <string>Manager</string>
+              </tuple>
+            </value>
+        </item>
+        <item>
+            <key> <string>_Modify_portal_content_Permission</string> </key>
+            <value>
+              <tuple>
+                <string>Manager</string>
+              </tuple>
+            </value>
+        </item>
+        <item>
+            <key> <string>_View_Permission</string> </key>
+            <value>
+              <tuple>
+                <string>Anonymous</string>
+                <string>Assignee</string>
+                <string>Assignor</string>
+                <string>Associate</string>
+                <string>Auditor</string>
+                <string>Manager</string>
+                <string>Owner</string>
+              </tuple>
+            </value>
+        </item>
+        <item>
+            <key> <string>categories</string> </key>
+            <value>
+              <tuple>
+                <string>classification/collaborative/public</string>
+              </tuple>
+            </value>
+        </item>
+        <item>
+            <key> <string>content_md5</string> </key>
+            <value>
+              <none/>
+            </value>
+        </item>
+        <item>
+            <key> <string>content_type</string> </key>
+            <value> <string>text/html</string> </value>
+        </item>
+        <item>
+            <key> <string>default_reference</string> </key>
+            <value> <string>jio_dev_rssfeed_storage.js</string> </value>
+        </item>
+        <item>
+            <key> <string>description</string> </key>
+            <value>
+              <none/>
+            </value>
+        </item>
+        <item>
+            <key> <string>id</string> </key>
+            <value> <string>jio_dev_rssfeed_storage_js</string> </value>
+        </item>
+        <item>
+            <key> <string>language</string> </key>
+            <value> <string>en</string> </value>
+        </item>
+        <item>
+            <key> <string>portal_type</string> </key>
+            <value> <string>Web Script</string> </value>
+        </item>
+        <item>
+            <key> <string>short_title</string> </key>
+            <value>
+              <none/>
+            </value>
+        </item>
+        <item>
+            <key> <string>text_content</string> </key>
+            <value> <string encoding="cdata"><![CDATA[
+
+/*\n
+ * Copyright 2013, Nexedi SA\n
+ * Released under the LGPL license.\n
+ * http://www.gnu.org/licenses/lgpl.html\n
+ */\n
+\n
+/*jslint nomen: true*/\n
+/*global jIO, RSVP, DOMParser, Blob */\n
+\n
+// JIO Rss feed Description :\n
+// {\n
+//   type: "rss",\n
+//   url: {string},\n
+//   basic_login: {string} // Basic authentication\n
+// }\n
+\n
+// NOTE: to get the authentication type ->\n
+// curl --verbose  -X OPTION http://domain/\n
+// In the headers: "WWW-Authenticate: Basic realm="DAV-upload"\n
+\n
+(function (jIO, RSVP, DOMParser, Blob) {\n
+  "use strict";\n
+\n
+  function ajax(storage, options) {\n
+    if (options === undefined) {\n
+      options = {};\n
+    }\n
+    if (storage._authorization !== undefined) {\n
+      if (options.headers === undefined) {\n
+        options.headers = {};\n
+      }\n
+      options.headers.Authorization = storage._authorization;\n
+    }\n
+\n
+    if (storage._with_credentials !== undefined) {\n
+      if (options.xhrFields === undefined) {\n
+        options.xhrFields = {};\n
+      }\n
+      options.xhrFields.withCredentials = storage._with_credentials;\n
+    }\n
+//       if (start !== undefined) {\n
+//         if (end !== undefined) {\n
+//           headers.Range = "bytes=" + start + "-" + end;\n
+//         } else {\n
+//           headers.Range = "bytes=" + start + "-";\n
+//         }\n
+//       }\n
+    return new RSVP.Queue()\n
+      .push(function () {\n
+        return jIO.util.ajax(options);\n
+      });\n
+  }\n
+\n
+  function restrictDocumentId(id) {\n
+    if (id.indexOf("/") !== 0) {\n
+      throw new jIO.util.jIOError("id " + id + " is forbidden (no begin /)",\n
+                                  400);\n
+    }\n
+    if (id.lastIndexOf("/") !== (id.length - 1)) {\n
+      throw new jIO.util.jIOError("id " + id + " is forbidden (no end /)",\n
+                                  400);\n
+    }\n
+    return id;\n
+  }\n
+\n
+  function restrictAttachmentId(id) {\n
+    if (id.indexOf("/") !== -1) {\n
+      throw new jIO.util.jIOError("attachment " + id + " is forbidden",\n
+                                  400);\n
+    }\n
+  }\n
+\n
+  function getFeedEntry (element, entry) {\n
+    var dummy = {getAttribute: function () { return; }},\n
+      item = {};\n
+\n
+    item.link = (entry.querySelector("item > link") || dummy).textContent;\n
+    item.date = (entry.querySelector("item > pubDate") || dummy).textContent;\n
+    item.subject = (entry.querySelector("item > title") || dummy).textContent;\n
+    item.author = (entry.querySelector("item > author") || dummy).textContent;\n
+    item.category = (entry.querySelector("item > category") || dummy).textContent;\n
+    item.message = (entry.querySelector("item > comments") || dummy).textContent;\n
+    item.source = (entry.querySelector("item > source") || dummy).getAttribute(\'url\');\n
+    item.title = (entry.querySelector("item > source") || dummy).textContent;\n
+    item.description = (entry.querySelector("item > description") || dummy).textContent;\n
+    item.guid = (entry.querySelector("item > guid") || dummy).textContent || (entry.querySelector("item > link") || dummy).textContent;\n
+    return item;\n
+  }\n
+\n
+  function parseRssFeedEntry (element, id) {\n
+    var dummy = {getAttribute: function () { return; }},\n
+      item = {},\n
+      rss_items,\n
+      tmp;\n
+\n
+    rss_items = element.querySelectorAll("rss>channel>item");\n
+\n
+    if (id !== undefined || id !== null) {\n
+      [].forEach.call(rss_items, function(entry) {\n
+        tmp = (entry.querySelector("item > guid") || dummy).textContent || (entry.querySelector("item > link") || dummy).textContent;\n
+        if (tmp === id) {\n
+          item = getFeedEntry(element, entry);\n
+          item.siteTitle = (element.querySelector("rss > channel > title") || dummy).textContent;\n
+          item.reference = (element.querySelector("rss > channel > description") || dummy).textContent;\n
+          item.siteLink = (element.querySelector("rss > channel > link") || dummy).textContent;\n
+          item.lastBuildDate = (element.querySelector("rss > channel > lastBuildDate") || dummy).textContent;\n
+        }\n
+      });\n
+    } else {\n
+      return {};\n
+    }\n
+    return item;\n
+  }\n
+  \n
+  function parseRssFeedEntryList (element) {\n
+    var dummy = {getAttribute: function () { return; }},\n
+      items = [];\n
+\n
+    [].forEach.call(element.querySelectorAll("rss > channel > item"), function (entry) {\n
+      var item = {};\n
+\n
+      item = getFeedEntry(element, entry);\n
+      item.siteTitle = (element.querySelector("rss > channel > title") || dummy).textContent;\n
+      item.siteLink = (element.querySelector("rss > channel > link") || dummy).textContent;\n
+      item.reference = (element.querySelector("rss > channel > description") || dummy).textContent;\n
+      item.lastBuildDate = (element.querySelector("rss > channel > lastBuildDate") || dummy).textContent;\n
+      if (item.guid !== undefined && item.guid !== "") {\n
+        items.push({\n
+          id: item.guid,\n
+          value: item\n
+        });\n
+      }\n
+    });\n
+    //items.reverse();\n
+    return items;\n
+  }\n
+\n
+  function getOpmlFeedEntryAsDict(outline) {\n
+    var entry_dict = {};\n
+    entry_dict.title = outline.getAttribute(\'title\') || \'\';\n
+    entry_dict.htmlurl = outline.getAttribute(\'htmlUrl\') || \'\';\n
+    entry_dict.xmlurl = outline.getAttribute(\'xmlUrl\') || \'\';\n
+    entry_dict.url = outline.getAttribute(\'url\') || \'\';\n
+    entry_dict.text = outline.getAttribute(\'text\') || \'\';\n
+    entry_dict.type = outline.getAttribute(\'type\') || \'\';\n
+    entry_dict.version = outline.getAttribute(\'version\') || \'\';\n
+    return entry_dict;\n
+  }\n
+\n
+  function parseOpmlFeedEntryList (doc, id) {\n
+    var outlines = doc.getElementsByTagName(\'outline\'),\n
+      dummy = {getAttribute: function () { return; }},\n
+      i,\n
+      max,\n
+      tmp = {},\n
+      opml_title,\n
+      create_date,\n
+      modified_date,\n
+      feeds = [];\n
+\n
+    opml_title = (doc.getElementsByTagName(\'title\')[0] || dummy).textContent;\n
+    create_date = (doc.getElementsByTagName(\'dateCreated\')[0] || dummy).textContent;\n
+    modified_date = (doc.getElementsByTagName(\'dateModified\')[0] || dummy).textContent;\n
+    if (id !== undefined) {\n
+      for (i = 0, max = outlines.length; i < max; i += 1) {\n
+        if (outlines[i].getAttribute(\'htmlUrl\') === id || outlines[i].getAttribute(\'xmlUrl\') === id) {\n
+          tmp = getOpmlFeedEntryAsDict(outlines[i]);\n
+          tmp.opml_title = opml_title;\n
+          tmp.create_date = create_date;\n
+          tmp.modified_date = modified_date;\n
+        }\n
+      }\n
+      return tmp;\n
+    }\n
+    for (i = 0, max = outlines.length; i < max; i += 1) {\n
+\n
+      if (!outlines[i].hasChildNodes()) {\n
+        tmp = getOpmlFeedEntryAsDict(outlines[i]);\n
+\n
+        tmp.opml_title = opml_title;\n
+        tmp.create_date = create_date;\n
+        tmp.modified_date = modified_date;\n
+        if (tmp.htmlurl !== \'\' || tmp.xmlurl !== \'\') {\n
+          feeds.push({\n
+            id: tmp.htmlurl || tmp.xmlurl,\n
+            value: tmp\n
+          });\n
+        }\n
+      }\n
+    }\n
+    return feeds;\n
+  }\n
+\n
+  /**\n
+   * The JIO RssFeed Storage extension\n
+   *\n
+   * @class RssFeed\n
+   * @constructor\n
+   */\n
+  function RssFeed(spec) {\n
+    if (typeof spec.url !== \'string\') {\n
+      throw new TypeError("RssFeed \'url\' is not of type string");\n
+    }\n
+    this._url = spec.url;\n
+    if (typeof spec.feed_type !== \'string\') {\n
+      throw new TypeError("RssFeed \'feed_type\' is not of type string. Should be \'rss\', \'atom\' or \'opml\'");\n
+    }\n
+    this._type = spec.feed_type;\n
+    // XXX digest login\n
+    if (typeof spec.basic_login === \'string\') {\n
+      this._authorization = "Basic " + spec.basic_login;\n
+    }\n
+    this._with_credentials = spec.with_credentials;\n
+  }\n
+\n
+  RssFeed.prototype.get = function (id) {\n
+    var context = this;\n
+    //id = restrictDocumentId(id);\n
+\n
+    return new RSVP.Queue()\n
+      .push(function () {\n
+        return ajax(context, {\n
+          type: "GET",\n
+          url: context._url,\n
+          dataType: "text"\n
+        });\n
+      })\n
+      .push(function (response) {\n
+        var element;\n
+        element =  new DOMParser().parseFromString(\n
+          response.target.responseText,\n
+          "text/xml"\n
+        );\n
+        if (context._type == \'rss\') {\n
+          return parseRssFeedEntry(element, id);\n
+        } else if (context._type === \'opml\') {\n
+          return parseOpmlFeedEntryList(element, id);\n
+        } else {\n
+          throw new jIO.util.jIOError("Cannot parse document", 501);\n
+        }\n
+      }, function (error) {\n
+        if ((error.target !== undefined) &&\n
+            (error.target.status === 404)) {\n
+          throw new jIO.util.jIOError("Cannot find document", 404);\n
+        }\n
+        throw error;\n
+      });\n
+  };\n
+\n
+  RssFeed.prototype.hasCapacity = function (capacity) {\n
+    return (capacity === "list");\n
+  };\n
+\n
+  RssFeed.prototype.buildQuery = function () {\n
+    var context = this;\n
+    return new RSVP.Queue()\n
+      .push(function () {\n
+        return ajax(context, {\n
+          type: "GET",\n
+          url: context._url,\n
+          dataType: "text"\n
+        });\n
+      })\n
+      .push(function (response) {\n
+        var element,\n
+          result_dict;\n
+        element =  new DOMParser().parseFromString(\n
+          response.target.responseText,\n
+          "text/xml"\n
+        );\n
+        if (context._type == \'rss\') {\n
+          result_dict = parseRssFeedEntryList(element);\n
+        } else if (context._type === \'opml\') {\n
+          result_dict = parseOpmlFeedEntryList(element);\n
+        } else {\n
+          throw new jIO.util.jIOError("Cannot parse document", 501);\n
+        }\n
+        return result_dict;\n
+      }, function (error) {\n
+        if ((error.target !== undefined) &&\n
+            (error.target.status === 404)) {\n
+          throw new jIO.util.jIOError("Cannot find document", 404);\n
+        }\n
+        throw error;\n
+      });\n
+\n
+  };\n
+\n
+  RssFeed.prototype.allAttachments = function (id) {\n
+\n
+    var context = this;\n
+    id = restrictDocumentId(id);\n
+\n
+    return new RSVP.Queue()\n
+      .push(function () {\n
+        return ajax(context, {\n
+          type: "GET",\n
+          url: context._url + id,\n
+          dataType: "text"\n
+        });\n
+      })\n
+\n
+\n
+      .push(function (response) {\n
+        // Extract all meta informations and return them to JSON\n
+\n
+        var i,\n
+          attachment = {},\n
+          id,\n
+          attachment_list = new DOMParser().parseFromString(\n
+            response.target.responseText,\n
+            "text/xml"\n
+          ).querySelectorAll(\n
+            "D\\\\:response, response"\n
+          );\n
+\n
+        // exclude parent folder and browse\n
+        for (i = 1; i < attachment_list.length; i += 1) {\n
+          // XXX Only get files for now\n
+          id = attachment_list[i].querySelector("D\\\\:href, href").\n
+            textContent.split(\'/\').slice(-1)[0];\n
+          // XXX Ugly\n
+          if ((id !== undefined) && (id !== "")) {\n
+            attachment[id] = {};\n
+          }\n
+        }\n
+        return attachment;\n
+\n
+      }, function (error) {\n
+        if ((error.target !== undefined) &&\n
+            (error.target.status === 404)) {\n
+          throw new jIO.util.jIOError("Cannot find document", 404);\n
+        }\n
+        throw error;\n
+      });\n
+\n
+  };\n
+\n
+  RssFeed.prototype.getAttachment = function (id, name) {\n
+    var context = this;\n
+    id = restrictDocumentId(id);\n
+    restrictAttachmentId(name);\n
+\n
+    return new RSVP.Queue()\n
+      .push(function () {\n
+        return ajax(context, {\n
+          type: "GET",\n
+          url: context._url + id + name,\n
+          dataType: "blob"\n
+        });\n
+      })\n
+      .push(function (response) {\n
+        return new Blob(\n
+          [response.target.response || response.target.responseText],\n
+          {"type": response.target.getResponseHeader(\'Content-Type\') ||\n
+                   "application/octet-stream"}\n
+        );\n
+      }, function (error) {\n
+        if ((error.target !== undefined) &&\n
+            (error.target.status === 404)) {\n
+          throw new jIO.util.jIOError("Cannot find attachment: "\n
+                                      + id + " , " + name,\n
+                                      404);\n
+        }\n
+        throw error;\n
+      });\n
+\n
+  };\n
+\n
+  jIO.addStorage(\'feed\', RssFeed);\n
+\n
+}(jIO, RSVP, DOMParser, Blob));
+
+]]></string> </value>
+        </item>
+        <item>
+            <key> <string>title</string> </key>
+            <value> <string>Jio Rss Feed Storage</string> </value>
+        </item>
+        <item>
+            <key> <string>version</string> </key>
+            <value> <string>001</string> </value>
+        </item>
+        <item>
+            <key> <string>workflow_history</string> </key>
+            <value>
+              <persistent> <string encoding="base64">AAAAAAAAAAI=</string> </persistent>
+            </value>
+        </item>
+      </dictionary>
+    </pickle>
+  </record>
+  <record id="2" aka="AAAAAAAAAAI=">
+    <pickle>
+      <global name="PersistentMapping" module="Persistence.mapping"/>
+    </pickle>
+    <pickle>
+      <dictionary>
+        <item>
+            <key> <string>data</string> </key>
+            <value>
+              <dictionary>
+                <item>
+                    <key> <string>document_publication_workflow</string> </key>
+                    <value>
+                      <persistent> <string encoding="base64">AAAAAAAAAAM=</string> </persistent>
+                    </value>
+                </item>
+                <item>
+                    <key> <string>edit_workflow</string> </key>
+                    <value>
+                      <persistent> <string encoding="base64">AAAAAAAAAAQ=</string> </persistent>
+                    </value>
+                </item>
+                <item>
+                    <key> <string>processing_status_workflow</string> </key>
+                    <value>
+                      <persistent> <string encoding="base64">AAAAAAAAAAU=</string> </persistent>
+                    </value>
+                </item>
+              </dictionary>
+            </value>
+        </item>
+      </dictionary>
+    </pickle>
+  </record>
+  <record id="3" aka="AAAAAAAAAAM=">
+    <pickle>
+      <global name="WorkflowHistoryList" module="Products.ERP5Type.patches.WorkflowTool"/>
+    </pickle>
+    <pickle>
+      <tuple>
+        <none/>
+        <list>
+          <dictionary>
+            <item>
+                <key> <string>action</string> </key>
+                <value> <string>publish</string> </value>
+            </item>
+            <item>
+                <key> <string>actor</string> </key>
+                <value> <string>zope</string> </value>
+            </item>
+            <item>
+                <key> <string>comment</string> </key>
+                <value> <string></string> </value>
+            </item>
+            <item>
+                <key> <string>error_message</string> </key>
+                <value> <string></string> </value>
+            </item>
+            <item>
+                <key> <string>time</string> </key>
+                <value>
+                  <object>
+                    <klass>
+                      <global name="DateTime" module="DateTime.DateTime"/>
+                    </klass>
+                    <tuple>
+                      <none/>
+                    </tuple>
+                    <state>
+                      <tuple>
+                        <float>1456160046.44</float>
+                        <string>UTC</string>
+                      </tuple>
+                    </state>
+                  </object>
+                </value>
+            </item>
+            <item>
+                <key> <string>validation_state</string> </key>
+                <value> <string>published</string> </value>
+            </item>
+          </dictionary>
+        </list>
+      </tuple>
+    </pickle>
+  </record>
+  <record id="4" aka="AAAAAAAAAAQ=">
+    <pickle>
+      <global name="WorkflowHistoryList" module="Products.ERP5Type.patches.WorkflowTool"/>
+    </pickle>
+    <pickle>
+      <tuple>
+        <none/>
+        <list>
+          <dictionary>
+            <item>
+                <key> <string>action</string> </key>
+                <value> <string>edit</string> </value>
+            </item>
+            <item>
+                <key> <string>actor</string> </key>
+                <value> <string>zope</string> </value>
+            </item>
+            <item>
+                <key> <string>comment</string> </key>
+                <value>
+                  <none/>
+                </value>
+            </item>
+            <item>
+                <key> <string>error_message</string> </key>
+                <value> <string></string> </value>
+            </item>
+            <item>
+                <key> <string>serial</string> </key>
+                <value> <string>949.23984.20073.16930</string> </value>
+            </item>
+            <item>
+                <key> <string>state</string> </key>
+                <value> <string>current</string> </value>
+            </item>
+            <item>
+                <key> <string>time</string> </key>
+                <value>
+                  <object>
+                    <klass>
+                      <global name="DateTime" module="DateTime.DateTime"/>
+                    </klass>
+                    <tuple>
+                      <none/>
+                    </tuple>
+                    <state>
+                      <tuple>
+                        <float>1457363302.84</float>
+                        <string>UTC</string>
+                      </tuple>
+                    </state>
+                  </object>
+                </value>
+            </item>
+          </dictionary>
+        </list>
+      </tuple>
+    </pickle>
+  </record>
+  <record id="5" aka="AAAAAAAAAAU=">
+    <pickle>
+      <global name="WorkflowHistoryList" module="Products.ERP5Type.patches.WorkflowTool"/>
+    </pickle>
+    <pickle>
+      <tuple>
+        <none/>
+        <list>
+          <dictionary>
+            <item>
+                <key> <string>action</string> </key>
+                <value> <string>detect_converted_file</string> </value>
+            </item>
+            <item>
+                <key> <string>actor</string> </key>
+                <value> <string>zope</string> </value>
+            </item>
+            <item>
+                <key> <string>comment</string> </key>
+                <value> <string></string> </value>
+            </item>
+            <item>
+                <key> <string>error_message</string> </key>
+                <value> <string></string> </value>
+            </item>
+            <item>
+                <key> <string>external_processing_state</string> </key>
+                <value> <string>converted</string> </value>
+            </item>
+            <item>
+                <key> <string>serial</string> </key>
+                <value> <string>0.0.0.0</string> </value>
+            </item>
+            <item>
+                <key> <string>time</string> </key>
+                <value>
+                  <object>
+                    <klass>
+                      <global name="DateTime" module="DateTime.DateTime"/>
+                    </klass>
+                    <tuple>
+                      <none/>
+                    </tuple>
+                    <state>
+                      <tuple>
+                        <float>1456157682.63</float>
+                        <string>UTC</string>
+                      </tuple>
+                    </state>
+                  </object>
+                </value>
+            </item>
+          </dictionary>
+        </list>
+      </tuple>
+    </pickle>
+  </record>
+</ZopeData>

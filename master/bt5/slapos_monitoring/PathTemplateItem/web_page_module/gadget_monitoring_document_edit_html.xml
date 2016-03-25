@@ -80,15 +80,15 @@
         </item>
         <item>
             <key> <string>default_reference</string> </key>
-            <value> <string>gadget_monitoring_application_panel.html</string> </value>
+            <value> <string>gadget_monitoring_document_edit.html</string> </value>
         </item>
         <item>
             <key> <string>description</string> </key>
-            <value> <string>Monitoring access</string> </value>
+            <value> <string>Document Edit widget</string> </value>
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>gadget_monitoring_application_panel_html</string> </value>
+            <value> <string>gadget_monitoring_document_edit_html</string> </value>
         </item>
         <item>
             <key> <string>language</string> </key>
@@ -113,58 +113,46 @@
   <head>\n
     <meta http-equiv="Content-type" content="text/html; charset=utf-8" />\n
     <meta name="viewport" content="width=device-width, user-scalable=no" />\n
-    <title>Monitoring Panel Gadget</title>\n
+    <title>Monitoring Document Edit Page</title>\n
 \n
     <link rel="stylesheet" href="magnific-popup.css">\n
-    <link rel="stylesheet" href="gadget_monitoring_tooltipster.css">\n
     <link href="gadget_monitoring_custom.css" rel="stylesheet" type="text/css"/>\n
     <!-- renderjs -->\n
     <script src="rsvp.js" type="text/javascript"></script>\n
     <script src="renderjs.js" type="text/javascript"></script>\n
-    <script src="handlebars.js" type="text/javascript"></script>\n
-    <script src="gadget_global.js" type="text/javascript"></script>\n
-    <script src="jquery.js" type="text/javascript"></script>\n
-    <script src="jquerymobile.js" type="text/javascript"></script>\n
+\n
+    <script id="login-toltip-template" type="text/x-handlebars-template">\n
+    </script>\n
+\n
     <!-- magnific-popup -->\n
     <script src="jquery.magnific-popup.min.js" type="text/javascript"></script>\n
-    <script src="gadget_monitoring_tooltipster.min.js" type="text/javascript"></script>\n
-\n
-    <script id="panel-template-header" type="text/x-handlebars-template">\n
-      <div data-role="header" class="ui-bar-inherit">\n
-        <div class="ui-controlgroup ui-controlgroup-horizontal ui-btn-left">\n
-          <div class="ui-controlgroup-controls">\n
-            <form action="#" method="post">\n
-              <input type="submit" data-i18n="[value]Close" data-icon="delete" data-iconpos="notext" value="Close" />\n
-            </form>\n
-          </div>\n
-        </div>\n
-        <img class="ui-title" alt="SlapOS Monitoring" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAB2klEQVRIS62V8TkDURDEZyughKhAVEAqQAXoICoQFaACOkAFkgpEB1EBKhjf7+zL90SORG7/SXLZN7M7s/su1BK2tyUdSupVKTNJk4jgc6WIxSzbAF5JOvoF4UHSZURM/2L5RmD7VNJtHvqQtAWQpAtJj9lReU7aWUTc/UYyJ7A9zMpfJEH0JOkmIka2LWkgqZ9kfAd4NzsZtZE0BLaR414S4AeSIDuNiJ5tQJ9LtbbR/y6Jx5L2JR1HBLL9iELAIUwFjANUVJu7eJB8ciaS8OEtInaWElS6kwgoRATaU+F7dnCeYBTBEBD8BxnPlvoRttHyRBLmIQ0HniKi9geiYZka283vBMYvYoxsi11AUCrvM9+2SWr0/2sEV/kfAiaEVstMA8xIXqc0RbJV8EoOeHsUXAiQpyagbaaJ+ceLdYICkZxFHEGA5ixUw5gSoXFDUHuxCottzrFDc4JiMm1h3GsCdUZQlgxg9KYbNrUbgtzkspEAoyG/8WFziZKgXAcYzcJM04tuCJKk3KTNiHXaQZmOnAAuLXzpzoN6/PJNxiMmij2AaJ1Abpb0a0zbTlbzvA54nTuIiHErQWX+f66KWXlvLyWwTYu8rTaNSRsBF2An0UbAFGHWpjH9BL0Y7d/fY0bVAAAAAElFTkSuQmCC"/>\n
-        <div class="ui-controlgroup ui-controlgroup-horizontal ui-btn-right">\n
-          <div class="ui-controlgroup-controls">\n
-            <a href="#" class="ui-btn ui-btn-icon-notext ui-icon-home" data-i18n="Home">Home</a>\n
-          </div>\n
-        </div>\n
-      </div>\n
-    </script>\n
-\n
-\n
-    <script id="panel-template-body" type="text/x-handlebars-template">\n
-      <div class="ui-content">\n
-        <ul data-role="listview" class="ui-listview">\n
-          <li><a href="#page=status_list"><i class="fa fa-th-list"></i><span data-i18n="Promises Overview">Promises Overview</span></a></li>\n
-          <li><a href="#page=overview"><i class="fa fa-cube"></i><span data-i18n="Instances Overview">Instances Overview</span></a></li>\n
-          <li><a href="#page=hosting_overview"><i class="fa fa-globe"></i><span data-i18n="Applications Overview">Applications Overview</span></a></li>\n
-          <li><a href="#page=settings_configurator"><i class="fa fa-cog"></i><span data-i18n="Monitoring Configuration">Monitoring Configuration</span></a></li>\n
-        </ul>\n
-      </div>\n
-    </script>\n
-\n
     <!-- custom script -->\n
-    <script src="gadget_monitoring_application_panel.js" type="text/javascript"></script>\n
+    <script src="gadget_monitoring_document_edit.js" type="text/javascript"></script>\n
 \n
   </head>\n
   <body>\n
-  <div class="jqm-navmenu-panel"></div>\n
+    <div data-gadget-url="gadget_monitoring_jio.html" data-gadget-scope="jio_gadget" data-gadget-sandbox="public"></div>\n
+    <div data-gadget-url="gadget_monitoring_login_widget.html" data-gadget-scope="login_gadget" data-gadget-sandbox="public"></div>\n
+    <div class="white-popup mfp-hide">\n
+      <div class="ui-promise-title"><h2 style="font-size: 1.1em;"></h2></div>\n
+      <form>\n
+        <div data-role="content">\n
+          <div class="form-controlgroup">\n
+            \n
+          </div>\n
+        </div>\n
+        <div class="padding-5">\n
+          <span class="ui-text-error"></span>\n
+        </div>\n
+        <div>\n
+          <button type="button" class="ui-btn ui-corner-all ui-btn-inline cancel"><i class="fa fa-times"></i> Cancel</button>\n
+          <button type="submit" class="ui-btn ui-corner-all ui-btn-inline save"><i class="fa fa-floppy-o"></i> Save</button>\n
+          <div class="ui-content-hidden spinner">\n
+            <i class="fa fa-spinner fa-spin"></i>\n
+          </div>\n
+        </div>\n
+      </form>\n
+    </div>\n
   </body>\n
 </html>
 
@@ -172,7 +160,7 @@
         </item>
         <item>
             <key> <string>title</string> </key>
-            <value> <string>Monitoring Application Panel Gadget</string> </value>
+            <value> <string>Monitoring Document Edit widget</string> </value>
         </item>
         <item>
             <key> <string>version</string> </key>
@@ -258,7 +246,7 @@
                     </tuple>
                     <state>
                       <tuple>
-                        <float>1452070905.39</float>
+                        <float>1457541237.88</float>
                         <string>UTC</string>
                       </tuple>
                     </state>
@@ -303,7 +291,7 @@
             </item>
             <item>
                 <key> <string>serial</string> </key>
-                <value> <string>949.63903.8246.8413</string> </value>
+                <value> <string>949.48450.25809.9642</string> </value>
             </item>
             <item>
                 <key> <string>state</string> </key>
@@ -321,7 +309,7 @@
                     </tuple>
                     <state>
                       <tuple>
-                        <float>1458554861.74</float>
+                        <float>1457629718.71</float>
                         <string>UTC</string>
                       </tuple>
                     </state>
@@ -378,7 +366,7 @@
                     </tuple>
                     <state>
                       <tuple>
-                        <float>1452070813.26</float>
+                        <float>1457539323.65</float>
                         <string>UTC</string>
                       </tuple>
                     </state>

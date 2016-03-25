@@ -10,8 +10,11 @@
             <key> <string>_Access_contents_information_Permission</string> </key>
             <value>
               <tuple>
+                <string>Anonymous</string>
                 <string>Assignee</string>
                 <string>Assignor</string>
+                <string>Associate</string>
+                <string>Auditor</string>
                 <string>Manager</string>
                 <string>Owner</string>
               </tuple>
@@ -21,10 +24,8 @@
             <key> <string>_Add_portal_content_Permission</string> </key>
             <value>
               <tuple>
-                <string>Assignee</string>
                 <string>Assignor</string>
                 <string>Manager</string>
-                <string>Owner</string>
               </tuple>
             </value>
         </item>
@@ -41,10 +42,7 @@
             <key> <string>_Modify_portal_content_Permission</string> </key>
             <value>
               <tuple>
-                <string>Assignee</string>
-                <string>Assignor</string>
                 <string>Manager</string>
-                <string>Owner</string>
               </tuple>
             </value>
         </item>
@@ -52,8 +50,11 @@
             <key> <string>_View_Permission</string> </key>
             <value>
               <tuple>
+                <string>Anonymous</string>
                 <string>Assignee</string>
                 <string>Assignor</string>
+                <string>Associate</string>
+                <string>Auditor</string>
                 <string>Manager</string>
                 <string>Owner</string>
               </tuple>
@@ -106,7 +107,7 @@
             <value> <string encoding="cdata"><![CDATA[
 
 CACHE MANIFEST\n
-# generated on Fri, 26 Nov 2015 11:45:33 +0000\n
+# generated on Fri, 25 Mars 2016 11:45:33 +0000\n
 # XXX + fonts\n
 # images/ajax-loader.gif\n
 CACHE:\n
@@ -117,6 +118,7 @@ https://netdna.bootstrapcdn.com/font-awesome/4.2.0/fonts/fontawesome-webfont.wof
 https://netdna.bootstrapcdn.com/font-awesome/4.2.0/fonts/fontawesome-webfont.ttf?v=4.2.0\n
 https://netdna.bootstrapcdn.com/font-awesome/4.2.0/fonts/fontawesome-webfont.svg?v=4.2.0#fontawesomeregular\n
 URI.js\n
+Chart.min.js\n
 dygraph.js\n
 gadget_erp5.css\n
 gadget_global.js\n
@@ -128,48 +130,61 @@ handlebars.js\n
 i18next.js\n
 jiodev.js\n
 jquery.js\n
+jquery.magnific-popup.min.js\n
 jquerymobile.css\n
 jquerymobile.js\n
+jio_dev_rssfeed_storage.js\n
+magnific-popup.css\n
 renderjs.js\n
 rsvp.js\n
-gadget_officejs_header.html\n
-gadget_officejs_jio.html\n
-gadget_officejs_jio_web_page_view.html\n
-gadget_officejs_page_add_text_document.html\n
-gadget_officejs_page_jio_configurator.html\n
-gadget_officejs_page_jio_dav_configurator.html\n
-gadget_officejs_page_login.html\n
-gadget_officejs_page_logout.html\n
-gadget_officejs_page_share_webrtc_jio.html\n
-gadget_officejs_page_sync.html\n
-gadget_officejs_page_text_editor_list.html\n
-gadget_monitoring_router.html\n
+# gadget_officejs_page_sync.html\n
 gadget_monitoring_application_panel.html\n
-gadget_translation.html\n
-gadget_officejs_webrtc_jio.html\n
-gadget_officejs_widget_listbox.html\n
-gadget_officejs_header.js\n
-gadget_officejs_jio.js\n
-gadget_officejs_jio_web_page_view.js\n
-gadget_officejs_page_add_text_document.js\n
-gadget_officejs_page_jio_configurator.js\n
-gadget_officejs_page_jio_dav_configurator.js\n
-gadget_officejs_page_login.js\n
-gadget_officejs_page_logout.js\n
-gadget_officejs_page_share_webrtc_jio.js\n
-gadget_officejs_page_sync.js\n
-gadget_officejs_page_text_editor_list.js\n
-gadget_officejs_router.js\n
-gadget_officejs_text_editor_application.js\n
-gadget_officejs_text_editor_application_panel.js\n
+gadget_monitoring_chart.html\n
+gadget_monitoring_document_edit.html\n
+gadget_monitoring_header.html\n
+gadget_monitoring_hosting_overview.html\n
+gadget_monitoring_jio.html\n
+gadget_monitoring_login.html\n
+gadget_monitoring_login_widget.html\n
+gadget_monitoring_main.html\n
+gadget_monitoring_overview.html\n
+gadget_monitoring_process_view.html\n
+gadget_monitoring_promise_interface.html\n
+gadget_monitoring_resource_view.html\n
+gadget_monitoring_router.html\n
+gadget_monitoring_settings_configurator.html\n
+gadget_monitoring_status_grid.html\n
+gadget_monitoring_status_list.html\n
+gadget_monitoring_widget_listbox.html\n
+gadget_monitoring_widget_listview.html\n
+gadget_monitoring_widget_overview.html\n
+gadget_monitoring_custom.css\n
+gadget_monitoring_tooltipster.css\n
+gadget_monitoring_application_panel.js\n
+gadget_monitoring_chart.js\n
+gadget_monitoring_document_edit.js\n
+gadget_monitoring_header.js\n
+gadget_monitoring_hosting_overview.js\n
+gadget_monitoring_jio.js\n
+gadget_monitoring_login.js\n
+gadget_monitoring_login_widget.js\n
+gadget_monitoring_main.js\n
+gadget_monitoring_overview.js\n
+gadget_monitoring_process_view.js\n
+gadget_monitoring_promise_interface.js\n
+gadget_monitoring_resource_view.js\n
+gadget_monitoring_router.js\n
+gadget_monitoring_static.js\n
+gadget_monitoring_status_grid.js\n
+gadget_monitoring_status_list.js\n
+gadget_monitoring_tooltipster.min.js\n
+gadget_monitoring_widget_listbox.js\n
+gadget_monitoring_widget_listview.js\n
+gadget_monitoring_widget_overview.js\n
 gadget_translation.js\n
 gadget_translation_data.js\n
-gadget_officejs_webrtc_jio.js\n
-gadget_officejs_widget_listbox.js\n
 erp5_launcher.js\n
 erp5_launcher.html\n
-rjsunsafe/gadget_ckeditor.js\n
-rjsunsafe/gadget_ckeditor.html\n
 NETWORK:\n
 *
 
@@ -237,9 +252,7 @@ NETWORK:\n
           <dictionary>
             <item>
                 <key> <string>action</string> </key>
-                <value>
-                  <none/>
-                </value>
+                <value> <string>publish</string> </value>
             </item>
             <item>
                 <key> <string>actor</string> </key>
@@ -265,7 +278,7 @@ NETWORK:\n
                     </tuple>
                     <state>
                       <tuple>
-                        <float>1455289075.54</float>
+                        <float>1458647957.13</float>
                         <string>UTC</string>
                       </tuple>
                     </state>
@@ -274,7 +287,7 @@ NETWORK:\n
             </item>
             <item>
                 <key> <string>validation_state</string> </key>
-                <value> <string>draft</string> </value>
+                <value> <string>published</string> </value>
             </item>
           </dictionary>
         </list>
@@ -310,7 +323,7 @@ NETWORK:\n
             </item>
             <item>
                 <key> <string>serial</string> </key>
-                <value> <string>949.6596.54736.51558</string> </value>
+                <value> <string>950.4056.16865.34099</string> </value>
             </item>
             <item>
                 <key> <string>state</string> </key>
@@ -328,7 +341,7 @@ NETWORK:\n
                     </tuple>
                     <state>
                       <tuple>
-                        <float>1455289277.29</float>
+                        <float>1458896288.17</float>
                         <string>UTC</string>
                       </tuple>
                     </state>

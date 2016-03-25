@@ -121,47 +121,167 @@
     <script src="rsvp.js" type="text/javascript"></script>\n
     <script src="renderjs.js" type="text/javascript"></script>\n
 \n
+    <script id="template-opmlurl-list" type="text/x-handlebars-template">\n
+      {{#each opml_list}}\n
+      <tr>\n
+        <td class="column-check ui-text-center padding-10">\n
+          <input type="checkbox" name="opmlurl" value="{{key}}">\n
+        </td>\n
+        <td>\n
+          <a class="ui-link" href="{{href}}">{{link}}</a>\n
+        </td>\n
+        <td>\n
+          <a class="ui-link" href="{{href}}">{{title}}</a>\n
+        </td>\n
+      </tr>\n
+      {{/each}}\n
+    </script>\n
+\n
     <script src="gadget_monitoring_static.js" type="text/javascript"></script>\n
   </head>\n
   <body>\n
-    <article class="ui-content ui-body-c">\n
-      <section class="ui-content-header-plain">\n
-        <h3 class="ui-content-title ui-body-c">\n
-          <span class="ui-icon ui-icon-custom ui-icon-database">&nbsp;</span>\n
-          Monitor connection parameters\n
-        </h3>\n
-      </section>\n
-      <section class="ui-body-c ui-content-section">\n
-        <form class="dav-configuration-form">\n
-\n
-          <div class="ui-form">\n
-            <div class="ui-field-contain">\n
-              <label data-i18n="Connection URL:">Connection URL:</label>\n
-              <input type="url" name="dav_url" required value=""/>\n
+    <div data-gadget-url="gadget_monitoring_jio.html" data-gadget-scope="jio_gadget" data-gadget-sandbox="public"></div>\n
+    <div data-gadget-url="gadget_monitoring_login_widget.html" data-gadget-scope="login_gadget" data-gadget-sandbox="public"></div>\n
+    <div data-role="tabs" class="config-tabs">\n
+      <div data-role="navbar">\n
+        <ul>\n
+          <li><a href="#config-add" data-ajax="false">Add Monitor Instance</a></li>\n
+          <li><a href="#config-manage" data-ajax="false">Manage Instances</a></li>\n
+        </ul>\n
+      </div>\n
+      <div id="config-add" class="ui-body-c ui-content">\n
+        <article class="ui-content ui-body-c">\n
+          <section class="ui-content-header-plain">\n
+            <h3 class="ui-content-title ui-body-c">\n
+              <span class="ui-icon ui-icon-custom ui-icon-database">&nbsp;</span>\n
+              Monitor connection parameters\n
+            </h3>\n
+          </section>\n
+          <section class="ui-body-c ui-content-sections">\n
+            <form class="opml">\n
+              <div class="ui-form">\n
+                <div class="ui-field-contain">\n
+                  <label data-i18n="OPML URL:">OPML URL:</label>\n
+                  <input type="url" name="url" required value=""/>\n
+                </div>\n
+              </div>\n
+              <div class="ui-text-center">\n
+                <span class="ui-text-error"></span>\n
+              </div>\n
+              <div class="select-storage ui-controlgroup ui-controlgroup-horizontal">\n
+                <div class="ui-grid-b ui-responsive">\n
+                  <div class="ui-block-a"></div>\n
+                  <div class="ui-block-b">\n
+                    <button data-i18n="Load URL" class="ui-btn-btn-right show">Load URL</button>\n
+                  </div>\n
+                  <div class="ui-block-c">\n
+                  </div>\n
+                </div>\n
+              </div>\n
+            </form>\n
+          </section>\n
+        </article>\n
+        <article class="ui-content ui-body-c configure-b ui-content-hidden">\n
+          <div data-gadget-url="gadget_monitoring_widget_listbox.html" data-gadget-scope="listbox"></div>\n
+          <form class="configure">\n
+            <label class="configure-auth">\n
+              <input type="checkbox" name="configure-auth">Set Authentication for these URLs\n
+            </label>\n
+            <div class="auth-block padding-lr-20 border-gray" style="display: none">\n
+              <div class="ui-form">\n
+                <div class="ui-field-contain">\n
+                  <label data-i18n="Username:">Username:</label>\n
+                  <input type="text" name="username" required value="-"/>\n
+                </div>\n
+              </div>\n
+              <div class="ui-form">\n
+                <div class="ui-field-contain">\n
+                  <label data-i18n="Password:">Password:</label>\n
+                  <input type="password" name="password" required value="-"/>\n
+                </div>\n
+              </div>\n
+              <label class="configure-auth">\n
+                <input type="checkbox" name="configure-newpwd">Configure new password now\n
+              </label>\n
+              <div class="new-password" style="display: none">\n
+                <div class="ui-form">\n
+                  <div class="ui-field-contain">\n
+                    <label data-i18n="New Password:">New Password:</label>\n
+                    <input type="password" name="new_password" required value="-"/>\n
+                  </div>\n
+                </div>\n
+                <div class="ui-form">\n
+                  <div class="ui-field-contain">\n
+                    <label data-i18n="Confirm New Password:">Confirm New Password:</label>\n
+                    <input type="password" name="new_password_confirm" required value="-"/>\n
+                  </div>\n
+                </div>\n
+              </div>\n
             </div>\n
-            <!--\n
-            <div class="ui-field-contain">\n
-              <label data-i18n="Username:">Username:</label>\n
-              <input type="hidde" name="dav_username" value=""/>\n
+            <div class="padding-5">\n
+              <span class="ui-text-error"></span>\n
             </div>\n
-            <div class="ui-field-contain">\n
-              <label data-i18n="Password:">Password:</label>\n
-              <input type="password" name="dav_password" value=""/>\n
-            </div>\n
-          </div>\n
-          -->\n
-          <div class="select-storage ui-controlgroup ui-controlgroup-horizontal">\n
             <div class="ui-grid-b ui-responsive">\n
               <div class="ui-block-a"></div>\n
-              <div class="ui-block-b"></div>\n
+              <div class="ui-block-b">\n
+                <div class="ui-content-hidden ui-text-right padding-10 spinner">\n
+                  <i class="fa fa-spinner fa-2x fa-spin"></i>\n
+                </div>\n
+              </div>\n
               <div class="ui-block-c">\n
-                <button type="submit" data-i18n="Connect" class="ui-btn-btn-right">Connect</button>\n
+                <button type="submit" data-i18n="Configure" class="ui-btn-btn-right">Configure</button>\n
+              </div>\n
+            </div>\n
+          </form>\n
+        </article>\n
+      </div>\n
+      <div id="config-manage">\n
+        <div class="ui-grid-a ui-responsive custom-listbox">\n
+          <div class="ui-block-a">\n
+            <div class="ui-panel-overview" style="min-height: 450px;">\n
+              <div class="overview-header">\n
+                <div class=\'content-title ui-instance-title\'>\n
+                  <div class="overview-title">\n
+                    <i class="fa fa-link"></i><span>Monitoring OPML URL</span>\n
+                  </div>\n
+                  <div class="commands">\n
+                  </div>\n
+                </div>\n
+              </div>\n
+              <div class="overview-content">\n
+              \n
+                <div class="ui-listview-container">\n
+                  <table class="ui-responsive ui-body-c ui-table-inset opml-tablelinks">\n
+                    <thead class="ui-bar-inherit">\n
+                      <tr>\n
+                        <th class="padding-10"><input type="checkbox" name="opml-all" value="all"></th>\n
+                        <th>OPML URL</th>\n
+                        <th>Title</th>\n
+                      </tr>\n
+                    </thead>\n
+                    <tbody>\n
+                      \n
+                    </tbody>\n
+                    <tfoot class="ui-bar-inherit"></tfoot>\n
+                  </table>\n
+                </div>\n
+                <div class="padding-10 msgtext-box"></div>\n
+                <div class="">\n
+                  <a href="#" class="ui-btn ui-corner-all ui-btn-inline opml-delete"><i class="fa fa-trash"></i> Delete Selection</a>\n
+                  <a href="#" class="ui-btn ui-corner-all ui-btn-inline opml-test"><i class="fa fa-check-square-o"></i> Availability Test</a>\n
+                  <span class="ui-content-hidden padding-10 loadspinner">\n
+                    <i class="fa fa-spinner fa-2x fa-spin"></i>\n
+                  </span>\n
+                </div>\n
               </div>\n
             </div>\n
           </div>\n
-        </form>\n
-      </section>\n
-    </article>\n
+          <div class="ui-block-b">\n
+            \n
+          </div>\n
+        </div>\n
+      </div>\n
+    </div>\n
   </body>\n
 </html>
 
@@ -300,7 +420,7 @@
             </item>
             <item>
                 <key> <string>serial</string> </key>
-                <value> <string>949.6589.26814.39133</string> </value>
+                <value> <string>949.65333.22535.21930</string> </value>
             </item>
             <item>
                 <key> <string>state</string> </key>
@@ -318,7 +438,7 @@
                     </tuple>
                     <state>
                       <tuple>
-                        <float>1455288976.81</float>
+                        <float>1458641047.48</float>
                         <string>UTC</string>
                       </tuple>
                     </state>

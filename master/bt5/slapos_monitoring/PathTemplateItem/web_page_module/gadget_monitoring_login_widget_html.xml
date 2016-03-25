@@ -124,6 +124,7 @@
 \n
   </head>\n
   <body>\n
+    <div data-gadget-url="gadget_jio.html" data-gadget-scope="jio_gadget" data-gadget-sandbox="public"></div>\n
   </body>\n
 </html>
 
@@ -262,7 +263,7 @@
             </item>
             <item>
                 <key> <string>serial</string> </key>
-                <value> <string>949.2228.14510.50124</string> </value>
+                <value> <string>949.39647.52503.63692</string> </value>
             </item>
             <item>
                 <key> <string>state</string> </key>
@@ -280,7 +281,7 @@
                     </tuple>
                     <state>
                       <tuple>
-                        <float>1455027252.82</float>
+                        <float>1457099647.3</float>
                         <string>UTC</string>
                       </tuple>
                     </state>

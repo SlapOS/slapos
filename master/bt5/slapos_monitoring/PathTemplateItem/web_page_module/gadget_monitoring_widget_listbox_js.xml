@@ -130,6 +130,18 @@
   /////////////////////////////////////////////////////////////////\n
   // some methods\n
   /////////////////////////////////////////////////////////////////\n
+  function getJioAllDocument(gadget, scope, jio_options, query) {\n
+    return gadget.declareGadget("gadget_monitoring_jio.html",\n
+        {\n
+          scope: scope,\n
+          sandbox: "public"\n
+        }\n
+      )\n
+      .push(function(new_gadget) {\n
+        new_gadget.createJio(jio_options);\n
+        return new_gadget.allDocs(query);\n
+      });\n
+  }\n
 \n
   gadget_klass\n
 \n
@@ -138,7 +150,8 @@
     /////////////////////////////////////////////////////////////////\n
     .ready(function (gadget) {\n
       gadget.property_dict = {\n
-        render_deferred: RSVP.defer()\n
+        render_deferred: RSVP.defer(),\n
+        data_result: []\n
       };\n
     })\n
 \n
@@ -192,30 +205,28 @@
         search_list = [],\n
         translated_column_list = [],\n
         all_docs_result_list = [],\n
-        use_storage_list = false,\n
-        jio_options = {},\n
         all_docs = function (query, storage_list) {\n
           var promise_list = [],\n
             i;\n
           if (storage_list === undefined) {\n
             return [gadget.jio_allDocs(query)];\n
+          } else if (storage_list === []) {\n
+            return [];\n
           }\n
-          use_storage_list = true;\n
           for (i = 0; i < storage_list.length; i += 1) {\n
-            jio_options = {\n
-              type: "query",\n
-              sub_storage: {\n
-                type: "drivetojiomapping",\n
-                sub_storage: {\n
-                  type: "dav",\n
-                  url: storage_list[i].url\n
-                }\n
-              }\n
-            };\n
-            gadget.property_dict.jio_gadget.createJio(jio_options);\n
+            gadget.property_dict.jio_gadget.createJio(storage_list[i]);\n
+            /*promise_list.push(\n
+              getJioAllDocument(gadget, \'jio_gadget\' + i, storage_list[i], query)\n
+            );*/\n
             promise_list.push(gadget.property_dict.jio_gadget.allDocs(query));\n
           }\n
-          \n
+          if (! option_dict.column_link) {\n
+            option_dict.column_link = {};\n
+          }\n
+          if (!option_dict.column_id) {\n
+            option_dict.column_id = {};\n
+          }\n
+\n
           return new RSVP.Queue()\n
             .push(function () {\n
               return RSVP.all(promise_list);\n
@@ -228,16 +239,24 @@
       // filter query\n
       if (option_dict.filter && option_dict.filter !== \'\') {\n
         for (j = 0; j < option_dict.filter.split(\'+\').length; j += 1) {\n
-          filter_part_list.push(\'(status:"\' + option_dict.filter.split(\'+\')[j].toUpperCase() + \'")\');\n
+          filter_part_list.push(\'(category:"\' + option_dict.filter.split(\'+\')[j].toUpperCase() + \'")\');\n
         }\n
-        option_dict.query.query += \' AND (\' + filter_part_list.join(\' OR \') + \')\';\n
+        if (option_dict.query.query) {\n
+          option_dict.query.query += \' AND (\' + filter_part_list.join(\' OR \') + \')\';\n
+        } else {\n
+          option_dict.query.query = \'(\' + filter_part_list.join(\' OR \') + \')\';\n
+        }\n
       }\n
       // Create the search query\n
       if (option_dict.search) {\n
         for (k = 0, k_len = option_dict.column_list.length; k < k_len; k += 1) {\n
           search_list.push(option_dict.column_list[k].select + \':"%\' + option_dict.search + \'%"\');\n
         }\n
-        option_dict.query.query = \'(\' + search_list.join(\' OR \') + \') AND \' + option_dict.query.query;\n
+        if (option_dict.query.query) {\n
+          option_dict.query.query = \'(\' + search_list.join(\' OR \') + \') AND \' + option_dict.query.query;\n
+        } else {\n
+          option_dict.query.query = \'(\' + search_list.join(\' OR \') + \')\';\n
+        }\n
       }\n
       //return gadget.jio_allDocs(option_dict.query)\n
       return all_docs(option_dict.query, option_dict.storage_list)\n
@@ -247,17 +266,32 @@
             i_len,\n
             i,\n
             j,\n
-            j_len;\n
+            j_len,\n
+            getUrlDict = function (row) {\n
+              var link = option_dict.column_link.select || \'\',\n
+                id = option_dict.column_id.select || \'\',\n
+                result;\n
+              \n
+              result = {\n
+                jio_key: (id !== \'\' && row.value.hasOwnProperty(id)) ? row.value[id] : row.id,\n
+                page: \'view\'\n
+              };\n
+              if (link && row.value.hasOwnProperty(link)) {\n
+                result.jio_for = row.value[link];\n
+              }\n
+              return result;\n
+            };\n
 \n
           for (j = 0, j_len = result_list.length; j < j_len; j += 1) {\n
+            if (! result_list[j]) {\n
+              continue;\n
+            }\n
             all_docs_result_list.push(result_list[j]);\n
             promise_url_list = [];\n
             for (i = 0, i_len = result_list[j].data.total_rows; i < i_len; i += 1) {\n
-              promise_url_list.push(gadget.getUrlFor({\n
-                jio_key: result_list[j].data.rows[i].id,\n
-                jio_for: (!use_storage_list) ? \'\' : option_dict.storage_list[j].url, // XXX To check!!\n
-                page: \'view\'\n
-              }));\n
+              promise_url_list.push(gadget.getUrlFor(\n
+                getUrlDict(result_list[j].data.rows[i])\n
+              ));\n
             }\n
             promise_list.push(RSVP.all(promise_url_list));\n
           }\n
@@ -274,9 +308,11 @@
             j,\n
             k;\n
 \n
+          gadget.property_dict.data_result = [];\n
           // build handlebars object\n
           for (k = 0; k < all_docs_result_list.length; k += 1) {\n
             for (j = 0, j_len = all_docs_result_list[k].data.total_rows; j < j_len; j += 1) {\n
+              gadget.property_dict.data_result.push(all_docs_result_list[k].data.rows[j].value);\n
               cell_list = [];\n
               for (i = 0, i_len = option_dict.column_list.length; i < i_len; i += 1) {\n
                 current_value = all_docs_result_list[k].data.rows[j].value[option_dict.column_list[i].select];\n
@@ -304,6 +340,10 @@
           var enable_search = true;\n
           if (option_dict.enable_search !== undefined) {\n
             enable_search = option_dict.enable_search;\n
+          }\n
+          if (!enable_search) {\n
+            $(gadget.property_dict.element.querySelector(".custom-grid"))\n
+              .removeClass(\'ui-shadow\').css(\'padding\', \'0\');\n
           }\n
           content += listbox_widget_table({\n
             widget_theme : option_dict.widget_theme,\n
@@ -546,7 +586,7 @@
             </item>
             <item>
                 <key> <string>serial</string> </key>
-                <value> <string>948.59182.37059.53913</string> </value>
+                <value> <string>949.59889.7208.51251</string> </value>
             </item>
             <item>
                 <key> <string>state</string> </key>
@@ -564,7 +604,7 @@
                     </tuple>
                     <state>
                       <tuple>
-                        <float>1454512378.26</float>
+                        <float>1458314048.86</float>
                         <string>UTC</string>
                       </tuple>
                     </state>

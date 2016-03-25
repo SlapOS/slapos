@@ -120,6 +120,7 @@
     <script src="renderjs.js" type="text/javascript"></script>\n
 \n
     <script src="jiodev.js" type="text/javascript"></script>\n
+    <script src="jio_dev_rssfeed_storage.js" type="text/javascript"></script>\n
 \n
     <!-- custom script -->\n
     <script src="gadget_monitoring_jio.js" type="text/javascript"></script>\n
@@ -264,7 +265,7 @@
             </item>
             <item>
                 <key> <string>serial</string> </key>
-                <value> <string>948.31896.5130.28535</string> </value>
+                <value> <string>949.6675.61849.23210</string> </value>
             </item>
             <item>
                 <key> <string>state</string> </key>
@@ -282,7 +283,7 @@
                     </tuple>
                     <state>
                       <tuple>
-                        <float>1452875060.05</float>
+                        <float>1456231972.65</float>
                         <string>UTC</string>
                       </tuple>
                     </state>

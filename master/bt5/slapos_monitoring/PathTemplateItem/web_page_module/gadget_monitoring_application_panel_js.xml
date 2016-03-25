@@ -2,7 +2,7 @@
 <ZopeData>
   <record id="1" aka="AAAAAAAAAAE=">
     <pickle>
-      <global name="Web Page" module="erp5.portal_type"/>
+      <global name="Web Script" module="erp5.portal_type"/>
     </pickle>
     <pickle>
       <dictionary>
@@ -75,20 +75,18 @@
             </value>
         </item>
         <item>
-            <key> <string>content_type</string> </key>
-            <value> <string>text/html</string> </value>
-        </item>
-        <item>
             <key> <string>default_reference</string> </key>
-            <value> <string>gadget_monitoring_application_panel.html</string> </value>
+            <value> <string>gadget_monitoring_application_panel.js</string> </value>
         </item>
         <item>
             <key> <string>description</string> </key>
-            <value> <string>Monitoring access</string> </value>
+            <value>
+              <none/>
+            </value>
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>gadget_monitoring_application_panel_html</string> </value>
+            <value> <string>gadget_monitoring_application_panel_js</string> </value>
         </item>
         <item>
             <key> <string>language</string> </key>
@@ -96,7 +94,7 @@
         </item>
         <item>
             <key> <string>portal_type</string> </key>
-            <value> <string>Web Page</string> </value>
+            <value> <string>Web Script</string> </value>
         </item>
         <item>
             <key> <string>short_title</string> </key>
@@ -108,71 +106,113 @@
             <key> <string>text_content</string> </key>
             <value> <string encoding="cdata"><![CDATA[
 
-<!DOCTYPE html>\n
-<html>\n
-  <head>\n
-    <meta http-equiv="Content-type" content="text/html; charset=utf-8" />\n
-    <meta name="viewport" content="width=device-width, user-scalable=no" />\n
-    <title>Monitoring Panel Gadget</title>\n
+/*jslint nomen: true, indent: 2, maxerr: 3 */\n
+/*global window, rJS, Handlebars, jQuery, RSVP, loopEventListener */\n
+(function (window, rJS, Handlebars, $, RSVP, loopEventListener) {\n
+  "use strict";\n
 \n
-    <link rel="stylesheet" href="magnific-popup.css">\n
-    <link rel="stylesheet" href="gadget_monitoring_tooltipster.css">\n
-    <link href="gadget_monitoring_custom.css" rel="stylesheet" type="text/css"/>\n
-    <!-- renderjs -->\n
-    <script src="rsvp.js" type="text/javascript"></script>\n
-    <script src="renderjs.js" type="text/javascript"></script>\n
-    <script src="handlebars.js" type="text/javascript"></script>\n
-    <script src="gadget_global.js" type="text/javascript"></script>\n
-    <script src="jquery.js" type="text/javascript"></script>\n
-    <script src="jquerymobile.js" type="text/javascript"></script>\n
-    <!-- magnific-popup -->\n
-    <script src="jquery.magnific-popup.min.js" type="text/javascript"></script>\n
-    <script src="gadget_monitoring_tooltipster.min.js" type="text/javascript"></script>\n
+  var gadget_klass = rJS(window),\n
+    source_header = gadget_klass.__template_element\n
+                         .getElementById("panel-template-header")\n
+                         .innerHTML,\n
+    panel_template_header = Handlebars.compile(source_header),\n
+    source_body = gadget_klass.__template_element\n
+                         .getElementById("panel-template-body")\n
+                         .innerHTML,\n
+    panel_template_body = Handlebars.compile(source_body);\n
 \n
-    <script id="panel-template-header" type="text/x-handlebars-template">\n
-      <div data-role="header" class="ui-bar-inherit">\n
-        <div class="ui-controlgroup ui-controlgroup-horizontal ui-btn-left">\n
-          <div class="ui-controlgroup-controls">\n
-            <form action="#" method="post">\n
-              <input type="submit" data-i18n="[value]Close" data-icon="delete" data-iconpos="notext" value="Close" />\n
-            </form>\n
-          </div>\n
-        </div>\n
-        <img class="ui-title" alt="SlapOS Monitoring" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAB2klEQVRIS62V8TkDURDEZyughKhAVEAqQAXoICoQFaACOkAFkgpEB1EBKhjf7+zL90SORG7/SXLZN7M7s/su1BK2tyUdSupVKTNJk4jgc6WIxSzbAF5JOvoF4UHSZURM/2L5RmD7VNJtHvqQtAWQpAtJj9lReU7aWUTc/UYyJ7A9zMpfJEH0JOkmIka2LWkgqZ9kfAd4NzsZtZE0BLaR414S4AeSIDuNiJ5tQJ9LtbbR/y6Jx5L2JR1HBLL9iELAIUwFjANUVJu7eJB8ciaS8OEtInaWElS6kwgoRATaU+F7dnCeYBTBEBD8BxnPlvoRttHyRBLmIQ0HniKi9geiYZka283vBMYvYoxsi11AUCrvM9+2SWr0/2sEV/kfAiaEVstMA8xIXqc0RbJV8EoOeHsUXAiQpyagbaaJ+ceLdYICkZxFHEGA5ixUw5gSoXFDUHuxCottzrFDc4JiMm1h3GsCdUZQlgxg9KYbNrUbgtzkspEAoyG/8WFziZKgXAcYzcJM04tuCJKk3KTNiHXaQZmOnAAuLXzpzoN6/PJNxiMmij2AaJ1Abpb0a0zbTlbzvA54nTuIiHErQWX+f66KWXlvLyWwTYu8rTaNSRsBF2An0UbAFGHWpjH9BL0Y7d/fY0bVAAAAAElFTkSuQmCC"/>\n
-        <div class="ui-controlgroup ui-controlgroup-horizontal ui-btn-right">\n
-          <div class="ui-controlgroup-controls">\n
-            <a href="#" class="ui-btn ui-btn-icon-notext ui-icon-home" data-i18n="Home">Home</a>\n
-          </div>\n
-        </div>\n
-      </div>\n
-    </script>\n
+  gadget_klass\n
+\n
+    .declareAcquiredMethod("translateHtml", "translateHtml")\n
+\n
+    // Assign the element to a variable\n
+    // Init local properties\n
+    .ready(function (g) {\n
+      g.props = {};\n
+    })\n
 \n
 \n
-    <script id="panel-template-body" type="text/x-handlebars-template">\n
-      <div class="ui-content">\n
-        <ul data-role="listview" class="ui-listview">\n
-          <li><a href="#page=status_list"><i class="fa fa-th-list"></i><span data-i18n="Promises Overview">Promises Overview</span></a></li>\n
-          <li><a href="#page=overview"><i class="fa fa-cube"></i><span data-i18n="Instances Overview">Instances Overview</span></a></li>\n
-          <li><a href="#page=hosting_overview"><i class="fa fa-globe"></i><span data-i18n="Applications Overview">Applications Overview</span></a></li>\n
-          <li><a href="#page=settings_configurator"><i class="fa fa-cog"></i><span data-i18n="Monitoring Configuration">Monitoring Configuration</span></a></li>\n
-        </ul>\n
-      </div>\n
-    </script>\n
+    .ready(function (g) {\n
+      return g.getElement()\n
+        .push(function (element) {\n
+          g.props.element = element;\n
+          g.props.jelement = $(element.querySelector("div"));\n
+        });\n
+    })\n
 \n
-    <!-- custom script -->\n
-    <script src="gadget_monitoring_application_panel.js" type="text/javascript"></script>\n
+    .ready(function (g) {\n
+      g.props.jelement.panel({\n
+        display: "overlay",\n
+        position: "left",\n
+        theme: "b"\n
+        // animate: false\n
+      });\n
+    })\n
 \n
-  </head>\n
-  <body>\n
-  <div class="jqm-navmenu-panel"></div>\n
-  </body>\n
-</html>
+\n
+    .ready(function (g) {\n
+      return g.translateHtml(panel_template_header() + panel_template_body())\n
+        .push(function (my_translated_or_plain_html) {\n
+          g.props.jelement.html(my_translated_or_plain_html);\n
+          g.props.jelement.trigger("create");\n
+        });\n
+    })\n
+\n
+    .declareMethod(\'toggle\', function () {\n
+      this.props.jelement.panel("toggle");\n
+    })\n
+\n
+    .declareMethod(\'close\', function () {\n
+      this.props.jelement.panel("close");\n
+    })\n
+\n
+    .declareMethod(\'render\', function () {\n
+      return;\n
+    })\n
+\n
+    /////////////////////////////////////////////////////////////////\n
+    // declared services\n
+    /////////////////////////////////////////////////////////////////\n
+    .declareService(function () {\n
+      var panel_gadget,\n
+        form_list,\n
+        event_list,\n
+        i,\n
+        len;\n
+\n
+\n
+      function formSubmit() {\n
+        panel_gadget.toggle();\n
+      }\n
+\n
+      panel_gadget = this;\n
+      form_list = panel_gadget.props.element.querySelectorAll(\'form\');\n
+      event_list = [];\n
+\n
+      // XXX: not robust - Will break when search field is active\n
+      for (i = 0, len = form_list.length; i < len; i += 1) {\n
+        event_list[i] = loopEventListener(\n
+          form_list[i],\n
+          \'submit\',\n
+          false,\n
+          formSubmit\n
+        );\n
+      }\n
+\n
+      return new RSVP.Queue()\n
+        .push(function () {\n
+          return RSVP.all(event_list);\n
+        });\n
+    });\n
+\n
+\n
+}(window, rJS, Handlebars, jQuery, RSVP, loopEventListener));
 
 ]]></string> </value>
         </item>
         <item>
             <key> <string>title</string> </key>
-            <value> <string>Monitoring Application Panel Gadget</string> </value>
+            <value> <string>Monitoring Application Panel Gadget JS</string> </value>
         </item>
         <item>
             <key> <string>version</string> </key>
@@ -258,7 +298,7 @@
                     </tuple>
                     <state>
                       <tuple>
-                        <float>1452070905.39</float>
+                        <float>1457543185.33</float>
                         <string>UTC</string>
                       </tuple>
                     </state>
@@ -303,7 +343,7 @@
             </item>
             <item>
                 <key> <string>serial</string> </key>
-                <value> <string>949.63903.8246.8413</string> </value>
+                <value> <string>949.47045.16188.28006</string> </value>
             </item>
             <item>
                 <key> <string>state</string> </key>
@@ -321,7 +361,7 @@
                     </tuple>
                     <state>
                       <tuple>
-                        <float>1458554861.74</float>
+                        <float>1457543391.78</float>
                         <string>UTC</string>
                       </tuple>
                     </state>
@@ -378,7 +418,7 @@
                     </tuple>
                     <state>
                       <tuple>
-                        <float>1452070813.26</float>
+                        <float>1457543137.74</float>
                         <string>UTC</string>
                       </tuple>
                     </state>

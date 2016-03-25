@@ -150,7 +150,7 @@
         },\n
         listview_options = {\n
           search_page: \'overview\',\n
-          //search: options.search,\n
+          search: options.search,\n
           selection: \'\',\n
           column: {\n
             select: \'title\',\n
@@ -158,32 +158,36 @@
           },\n
           data_id: \'monitor.global\',\n
           data_url: gadget.property_dict.listview_data_url,\n
-          search_column_list: [\'title\', \'status\', \'date\'],\n
-          \'sort_column_list\': [\n
-            {select: \'Status\', title: \'Status\'},\n
+          search_column_list: [\n
+            {select: \'status\', title: \'Status\'},\n
+            {select: \'hosting-title\', title: \'Date\'}\n
+          ],\n
+          sort_column_list: [\n
+            {select: \'status\', title: \'Status\'},\n
             {select: \'title\', title: \'Title\'},\n
-            {select: \'data\', title: \'Date\'}\n
+            {select: \'hosting-title\', title: \'Date\'}\n
           ],\n
           query: {\n
-            select_list: [\'title\', \'status\', \'date\', \'_embedded\', \'_links\', \'state\', \'data\'],\n
-            query: \'_id:"monitor%.global"\',\n
+            select_list: [\'title\', \'status\', \'date\', \'_links\', \'state\', \'hosting-title\'],\n
+            query: \'_id:"monitor.global"\',\n
             sort_on: [["status", "ascending"]]\n
           }\n
         };\n
 \n
       return gadget.updateHeader(header)\n
         .push(function () {\n
-          var filter_part_list = [];\n
+          var filter_part_list = [],\n
+            j;\n
 \n
           /*if (options.sort_on && options.sort_on !== \'status\') {\n
             listview_options.query.sort_on = [[options.sort_on, \'ascending\']];\n
-          }\n
+          }*/\n
           if (options.status && options.status !== \'\') {\n
             for (j = 0; j < options.status.split(\'+\').length; j += 1) {\n
               filter_part_list.push(\'(status:"\' + options.status.split(\'+\')[j].toUpperCase() + \'")\');\n
             }\n
             listview_options.query.query += \' AND (\' + filter_part_list.join(\' OR \') + \')\';\n
-          }*/\n
+          }\n
           return gadget.property_dict.listview.render(listview_options);\n
         });\n
     })\n
@@ -329,7 +333,7 @@
             </item>
             <item>
                 <key> <string>serial</string> </key>
-                <value> <string>949.6325.29916.43946</string> </value>
+                <value> <string>949.23937.2972.5563</string> </value>
             </item>
             <item>
                 <key> <string>state</string> </key>
@@ -347,7 +351,7 @@
                     </tuple>
                     <state>
                       <tuple>
-                        <float>1455274107.83</float>
+                        <float>1458226729.62</float>
                         <string>UTC</string>
                       </tuple>
                     </state>

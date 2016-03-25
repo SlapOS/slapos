@@ -110,10 +110,17 @@
             <key> <string>text_content</string> </key>
             <value> <string encoding="cdata"><![CDATA[
 
-/*global window, rJS, btoa */\n
+/*global window, rJS, btoa, RSVP, $ */\n
 /*jslint nomen: true, indent: 2, maxerr: 3*/\n
-(function (window, rJS) {\n
+(function (window, rJS, RSVP, $, btoa) {\n
   "use strict";\n
+\n
+  function validateHttpUrl(value) {\n
+    if (/\\(?(?:(http|https):\\/\\/)(?:((?:[^\\W\\s]|\\.|-|[:]{1})+)@{1})?((?:www.)?(?:[^\\W\\s]|\\.|-)+[\\.][^\\W\\s]{2,4}|localhost(?=\\/)|\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|\\[[\\dabcedf:]+\\])(?::(\\d*))?([\\/]?[^\\s\\?]*[\\/]{1})*(?:\\/?([^\\s\\n\\?\\[\\]\\{\\}\\#]*(?:(?=\\.)){1}|[^\\s\\n\\?\\[\\]\\{\\}\\.\\#]*)?([\\.]{1}[^\\s\\?\\#]*)?)?(?:\\?{1}([^\\s\\n\\#\\[\\]]*))?([\\#][^\\s\\n]*)?\\)?/i.test(value)) {\n
+      return true;\n
+    }\n
+    return false;\n
+  }\n
 \n
   function setjIODAVConfiguration(gadget, options) {\n
     var url = "",\n
@@ -137,7 +144,7 @@
         configuration.sub_storage.sub_storage.basic_login = btoa(options.login + \':\' + options.password);\n
       }\n
     } else {\n
-      url = gadget.props.element.querySelector("input[name=\'dav_url\']").value;\n
+      url = gadget.props.element.querySelector("input[name=\'url\']").value;\n
       configuration.sub_storage.sub_storage.url = url;\n
       if (login_input !== \'\' && password_input !== \'\') {\n
         configuration.sub_storage.sub_storage.basic_login = btoa(login_input + \':\' + password_input);\n
@@ -162,7 +169,196 @@
       });\n
   }\n
 \n
-  var gadget_klass = rJS(window);\n
+  function hashCode (s) {\n
+    return s.split("").reduce(function(a,b){a=((a<<5)-a)+b.charCodeAt(0);return a&a},0);              \n
+  }\n
+\n
+  function setUrlConfiguration(gadget, url, title) {\n
+    return gadget.getSetting(\'monitor_url_description\')\n
+      .push(function (url_description_dict) {\n
+        var i,\n
+          tmp,\n
+          tmp_dict;\n
+\n
+        if (url_description_dict === undefined) {\n
+          url_description_dict = {};\n
+        }\n
+\n
+        // url will be saved by group (hosting subscription) identified by their id\n
+        tmp = hashCode(url) + \'\';\n
+        /*if (url_description_dict.hasOwnProperty(tmp)) {\n
+          // this entry will be overridden\n
+        }*/\n
+        url_description_dict[tmp] = {href: url, title: title};\n
+        /*\n
+        tmp_dict = {};\n
+        tmp_dict.root_title = group_name;\n
+        if (tmp_dict.urls === undefined) {\n
+          tmp_dict.urls = [];\n
+        }\n
+        for (i = 0; i < description_list.length; i += 1) {\n
+          \n
+          if (description_list[i].htmlurl) {\n
+            tmp_dict.urls.push({\n
+              url: description_list[i].htmlurl,\n
+              title: description_list[i].title,\n
+              root_title: description_list[i].opml_title\n
+            });\n
+          }\n
+        }\n
+        url_description_dict[tmp] = tmp_dict;*/\n
+        return gadget.setSetting(\'monitor_url_description\', url_description_dict);\n
+      });\n
+  }\n
+\n
+  function loadUrlFromOPML(gadget, url) {\n
+    return new RSVP.Queue()\n
+      .push(function () {\n
+        return $("article.configure-b").addClass("ui-content-hidden");\n
+      })\n
+      .push(function () {\n
+          var listbox_configuration = {\n
+            enable_search: false,\n
+            disable_href: true,\n
+            column_list: [{\n
+              title: \'Title\',\n
+              select: \'title\'\n
+            }, {\n
+              title: \'Hosting Subscription\',\n
+              select: \'opml_title\'\n
+            }, {\n
+              select: \'htmlurl\',\n
+              title: \'URL\'\n
+            }, {\n
+              select: \'type\',\n
+              title: \'Type\'\n
+            }],\n
+            query: {\n
+              select_list: [\'title\', \'opml_title\', \'htmlurl\', \'type\', \'url\'],\n
+              sort_on: [["opml_title", "ascending"]]\n
+            }\n
+          },\n
+          jio_options = {\n
+            type: "query",\n
+            sub_storage: {\n
+              type: "feed",\n
+                feed_type: \'opml\',\n
+                url: url\n
+            }\n
+          };\n
+          listbox_configuration.storage_list = [jio_options];\n
+          return gadget.props.listbox.render(listbox_configuration);\n
+        })\n
+        .push(function () {\n
+          if (gadget.props.listbox.property_dict.data_result.length > 0) {\n
+            return $("article.configure-b").removeClass("ui-content-hidden");\n
+          } else {\n
+            $(gadget.props.element.querySelector(\'.opml .ui-text-error\')).fadeIn(400);\n
+              gadget.props.element.querySelector(\'.opml .ui-text-error\')\n
+                .innerHTML = "ERROR: Failed to load URL!";\n
+          }\n
+          //return $(gadget.props.element.querySelector(".configure-b")).show();\n
+        }, function(error) {\n
+          $(gadget.props.element.querySelector(\'.opml .ui-text-error\')).fadeIn(400);\n
+          gadget.props.element.querySelector(\'.opml .ui-text-error\')\n
+            .innerHTML = "ERROR " + (error.target.status || \'\') + "Failed to load URL!";\n
+          console.log(error);\n
+        });\n
+  }\n
+\n
+  function checkCredential(gadget, url, hash) {\n
+    // Verify if login and password are correct for this URL\n
+    return gadget.props.login_gadget.login(url, hash)\n
+      .then(function(result) {\n
+        if (result.status === \'OK\') {\n
+          return {status: \'OK\'};\n
+        } else {\n
+          return {status: \'KO\', msg: error.msg + \' (\' + url + \')\'};\n
+        }\n
+      }, function(error) {\n
+        return {status: \'KO\', msg: error.msg + \'(\' + url + \')\'};\n
+      });\n
+  }\n
+\n
+\n
+  function changeMonitorPassword(gadget, url, password, hash) {\n
+    var jio_gadget,\n
+      jio_options;\n
+\n
+    url += (url.endsWith(\'/\') ? \'\':\'/\') + \'config/\';\n
+    jio_options = {\n
+      type: "query",\n
+      sub_storage: {\n
+        type: "drivetojiomapping",\n
+        sub_storage: {\n
+          type: "dav",\n
+          url: url,\n
+          basic_login: hash\n
+        }\n
+      }\n
+    };\n
+    gadget.props.gindex += 1;\n
+    return gadget.declareGadget("gadget_monitoring_jio.html",\n
+        {\n
+          element: gadget.props.element,\n
+          scope: \'jio_gadget\' + gadget.props.gindex,\n
+          sandbox: "public"\n
+        }\n
+      ).push(function(new_gadget) {\n
+        jio_gadget = new_gadget;\n
+        jio_gadget.createJio(jio_options);\n
+        return jio_gadget.get(\'config\');\n
+      })\n
+      .push(function (doc) {\n
+        var i;\n
+        if (doc) {\n
+          for (i  = 0; i < doc.length; i += 1) {\n
+            if (doc[i].key === \'monitor-password\') {\n
+              doc[i].value = password;\n
+              return jio_gadget.put(\'config.tmp\', doc);\n
+            }\n
+          }\n
+        }\n
+        return new Error("Cannot get document at : " % url);\n
+      })\n
+      .push(function (result) {\n
+        return {status: \'OK\'};\n
+      }, function (error) {\n
+        console.log(error);\n
+        return {status: \'ERROR\', code: error.target.status};\n
+      });\n
+    \n
+  }\n
+\n
+  function testOPmlUrl(gadget, url, title) {\n
+    var jio_options = {\n
+        type: "query",\n
+        sub_storage: {\n
+          type: "feed",\n
+          feed_type: \'opml\',\n
+          url: url\n
+        }\n
+      };\n
+    gadget.props.jio_gadget.createJio(jio_options);\n
+    return gadget.props.jio_gadget.allDocs({})\n
+      .push(function (doc) {\n
+        if (!doc) {\n
+          console.log(doc);\n
+          gadget.props.element.querySelector(\'.msgtext-box\')\n
+            .innerHTML += "<span class=\'ui-text-error\'>" + url + " [ " + title + " ] is not reachable!</span><br/>";\n
+          return false;\n
+        } else {\n
+          return true;\n
+        }\n
+      });\n
+  }\n
+\n
+  var gadget_klass = rJS(window),\n
+    templater = gadget_klass.__template_element,\n
+\n
+    opml_url_template = Handlebars.compile(\n
+      templater.getElementById("template-opmlurl-list").innerHTML\n
+    );\n
 \n
   gadget_klass\n
     .ready(function (g) {\n
@@ -172,7 +368,27 @@
         .push(function (element) {\n
           g.props.element = element;\n
           g.props.deferred = RSVP.defer();\n
+          g.props.urls = [];\n
+          g.props.gindex = 0;\n
           return g.getSetting(\'jio_storage_name\');\n
+        });\n
+    })\n
+    .ready(function (gadget) {\n
+      return gadget.getDeclaredGadget("login_gadget")\n
+        .push(function (login_gadget) {\n
+          gadget.props.login_gadget = login_gadget;\n
+        });\n
+    })\n
+    .ready(function (gadget) {\n
+      return gadget.getDeclaredGadget("listbox")\n
+        .push(function (listbox_gadget) {\n
+          gadget.props.listbox = listbox_gadget;\n
+        });\n
+    })\n
+    .ready(function (gadget) {\n
+      return gadget.getDeclaredGadget("jio_gadget")\n
+        .push(function (jio_gadget) {\n
+          gadget.props.jio_gadget = jio_gadget;\n
         });\n
     })\n
     .declareAcquiredMethod("updateHeader", "updateHeader")\n
@@ -183,29 +399,42 @@
     .declareMethod("render", function (options) {\n
       var gadget = this;\n
       return gadget.updateHeader({\n
-        title: "Connect to Monitor WebDAV",\n
+        title: "Configure monitoring instances URLs"/*,\n
         back_url: "#page=main",\n
-        panel_action: false\n
+        panel_action: false*/\n
       })\n
       .push(function () {\n
         if (options.url !== undefined && options.url !== \'\') {\n
-          return setjIODAVConfiguration(gadget, options);\n
-        } else {\n
-          return gadget.getSetting(\'jio_storage_name\')\n
-          .push(function (jio_storage_name) {\n
-            if (jio_storage_name === "DAV") {\n
-              return gadget.getSetting(\'jio_storage_description\')\n
-                .push(function (jio_storage_description) {\n
-                  if (jio_storage_description !== undefined) {\n
-                    gadget.props.element.querySelector("input[name=\'dav_url\']").value =\n
-                      jio_storage_description.sub_storage.sub_storage.url;\n
-                  }\n
-                });\n
-            }\n
-          });\n
+          gadget.props.element.querySelector("input[name=\'url\']").value = options.url;\n
         }\n
+        return;\n
       })\n
       .push(function () {\n
+        return gadget.getSetting(\'monitor_url_description\');\n
+      })\n
+      .push(function (url_description_dict) {\n
+        var opml_list = [],\n
+          content,\n
+          key;\n
+        if (url_description_dict !== undefined) {\n
+          for (key in url_description_dict) {\n
+            opml_list.push({\n
+              key: key,\n
+              href: "#page=settings_configurator&url=" + url_description_dict[key].href,\n
+              link: url_description_dict[key].href,\n
+              title: url_description_dict[key].title || \'\'\n
+            });\n
+          }\n
+        }\n
+        content = opml_url_template({opml_list: opml_list});\n
+        gadget.props.element.querySelector("#config-manage .opml-tablelinks > tbody")\n
+          .innerHTML = content;\n
+      })\n
+      .push(function () {\n
+        if (!options.tab || options.tab !== \'manage\') {\n
+          options.tab = \'add\';\n
+        }\n
+        gadget.props.selected = options.tab;\n
         return gadget.props.deferred.resolve();\n
       });\n
     })\n
@@ -221,18 +450,336 @@
           return gadget.props.deferred.promise;\n
         })\n
         .push(function () {\n
-          return loopEventListener(\n
-            gadget.props.element.querySelector(\'form\'),\n
+          return $(gadget.props.element.querySelector("a[href=\'#config-" + gadget.props.selected + "\']")).trigger(\'click\');\n
+        })\n
+        .push(function () {\n
+          var promise_list = [];\n
+          promise_list.push(loopEventListener(\n
+            gadget.props.element.querySelector(\'form.opml button.show\'),\n
+            \'click\',\n
+            true,\n
+            function () {\n
+              var url = gadget.props.element.querySelector("input[name=\'url\']").value;\n
+              gadget.props.element.querySelector(\'.opml .ui-text-error\')\n
+                .innerHTML = "";\n
+              $(gadget.props.element.querySelector(\'.opml .ui-text-error\')).fadeOut(400);\n
+              if (url && validateHttpUrl(url)) {\n
+                gadget.props.opml_url = url;\n
+                return loadUrlFromOPML(gadget, url);\n
+              } else {\n
+                $(gadget.props.element.querySelector(\'.opml .ui-text-error\')).fadeIn(400);\n
+                gadget.props.element.querySelector(\'.opml .ui-text-error\')\n
+                  .innerHTML = "\'" + url + "\' is not a valid URL";\n
+              }\n
+              return false;\n
+            }\n
+          ));\n
+\n
+          promise_list.push(loopEventListener(\n
+            gadget.props.element.querySelector("table th input[name=\'opml-all\']"),\n
+            \'change\',\n
+            false,\n
+            function (element) {\n
+              if ($(element.target).prop(\'checked\')) {\n
+                return $(".opml-tablelinks tr td input[type=\'checkbox\']").prop(\'checked\', true);\n
+              } else {\n
+                return $(".opml-tablelinks tr td input[type=\'checkbox\']").prop(\'checked\', false);\n
+              }\n
+            }\n
+          ));\n
+\n
+          /*promise_list.push(loopEventListener(\n
+            gadget.props.element.querySelector("input[name=\'configure-auth\']"),\n
+            \'change\',\n
+            false,\n
+            function (element) {\n
+              if ($(element.target).prop(\'checked\')) {\n
+                gadget.props.element.querySelector(".configure input[name=\'username\']").value = "";\n
+                gadget.props.element.querySelector(".configure input[name=\'password\']").value = "";\n
+                return $(gadget.props.element.querySelector(".configure .auth-block")).slideDown();\n
+              } else {\n
+                return $(gadget.props.element.querySelector(".configure .auth-block")).slideUp();\n
+              }\n
+            }\n
+          ));*/\n
+          promise_list.push(\n
+            $(gadget.props.element.querySelector("input[name=\'configure-auth\']")).bind( "change", function(event, ui) {\n
+              var input_login = gadget.props.element.querySelector(".configure input[name=\'username\']"),\n
+                input_pwd = gadget.props.element.querySelector(".configure input[name=\'password\']");\n
+              if ($(this).prop(\'checked\')) {\n
+                input_login.value = "";\n
+                input_pwd.value = "";\n
+                return $(gadget.props.element.querySelector(".configure .auth-block")).slideDown();\n
+              } else {\n
+                input_login.value = "-";\n
+                input_pwd.value = "-";\n
+                return $(gadget.props.element.querySelector(".configure .auth-block")).slideUp();\n
+              }\n
+            })\n
+          );\n
+\n
+          promise_list.push(\n
+            $(gadget.props.element.querySelector("input[name=\'configure-newpwd\']")).bind( "change", function(event, ui) {\n
+              var confirm_pwd = gadget.props.element.querySelector(".configure input[name=\'new_password_confirm\']"),\n
+                new_pwd = gadget.props.element.querySelector(".configure input[name=\'new_password\']");\n
+              if ($(this).prop(\'checked\')) {\n
+                confirm_pwd.value = "";\n
+                new_pwd.value = "";\n
+                return $(gadget.props.element.querySelector(".configure .new-password")).slideDown();\n
+              } else {\n
+                confirm_pwd.value = "-";\n
+                new_pwd.value = "-";\n
+                return $(gadget.props.element.querySelector(".configure .new-password")).slideUp();\n
+              }\n
+            })\n
+          );\n
+\n
+          promise_list.push(loopEventListener(\n
+            gadget.props.element.querySelector("a.opml-delete"),\n
+            \'click\',\n
+            true,\n
+            function (element) {\n
+              var key_list = [],\n
+                check_list = gadget.props.element.querySelectorAll(".opml-tablelinks tr td input[type=\'checkbox\']"),\n
+                i;\n
+              gadget.props.element.querySelector(\'.msgtext-box\')\n
+                  .innerHTML = "";\n
+              if (!check_list) {\n
+                return false;\n
+              }\n
+              for (i = 0; i < check_list.length; i += 1) {\n
+                if ($(check_list[i]).prop(\'checked\')) {\n
+                  key_list.push($(check_list[i]).prop(\'value\'));\n
+                }\n
+              }\n
+              if (key_list.length > 0) {\n
+                return gadget.getSetting(\'monitor_url_description\')\n
+                  .push(function (url_description_dict) {\n
+                    var i,\n
+                      promise_list = [];\n
+                    if(url_description_dict === undefined) {\n
+                      url_description_dict = {};\n
+                    }\n
+                    for (i = 0; i < key_list.length; i += 1) {\n
+                      if (url_description_dict.hasOwnProperty(key_list[i])) {\n
+                        promise_list.push(\n
+                          gadget.props.login_gadget.clearSettingFromParentUrl(url_description_dict[key_list[i]].href)\n
+                        );\n
+                        delete url_description_dict[key_list[i]];\n
+                      }\n
+                    }\n
+                    return gadget.setSetting(\'monitor_url_description\', url_description_dict)\n
+                      .push(function () {\n
+                        return RSVP.all(promise_list);\n
+                      })\n
+                      .push(function () {\n
+                        return gadget.reload();\n
+                      });\n
+                  });\n
+              }\n
+            }\n
+          ));\n
+\n
+          promise_list.push(loopEventListener(\n
+            gadget.props.element.querySelector("a.opml-test"),\n
+            \'click\',\n
+            true,\n
+            function (element) {\n
+              var key_list = [],\n
+                check_list = gadget.props.element.querySelectorAll(".opml-tablelinks tr td input[type=\'checkbox\']"),\n
+                i;\n
+              if (!check_list) {\n
+                gadget.props.element.querySelector(\'.msgtext-box\')\n
+                  .innerHTML = "<span class=\'ui-text-info\'>No URL selected!</span>";\n
+              }\n
+              for (i = 0; i < check_list.length; i += 1) {\n
+                if ($(check_list[i]).prop(\'checked\')) {\n
+                  key_list.push($(check_list[i]).prop(\'value\'));\n
+                }\n
+              }\n
+              if (key_list.length <= 0) {\n
+                gadget.props.element.querySelector(\'.msgtext-box\')\n
+                  .innerHTML = "<span class=\'ui-text-info\'>No URL selected!</span>";\n
+                return;\n
+              }\n
+              gadget.props.element.querySelector(\'.msgtext-box\')\n
+                  .innerHTML = "";\n
+              return gadget.getSetting(\'monitor_url_description\')\n
+                .push(function (url_description_dict) {\n
+                  var i,\n
+                    promise_list = [];\n
+                  if(url_description_dict === undefined) {\n
+                    url_description_dict = {};\n
+                  }\n
+                  $(gadget.props.element.querySelector(\'.loadspinner\')).removeClass(\'ui-content-hidden\');\n
+                  for (i = 0; i < key_list.length; i += 1) {\n
+                    if (url_description_dict.hasOwnProperty(key_list[i])) {\n
+                      promise_list.push(testOPmlUrl(gadget, url_description_dict[key_list[i]].href, url_description_dict[key_list[i]].title));\n
+                    }\n
+                  }\n
+                  return RSVP.all(promise_list);\n
+                })\n
+                .push(function (result) {\n
+                  var i,\n
+                    state = true;\n
+                  for (i = 0; i < result.length; i += 1) {\n
+                    if (! result[i]) {\n
+                      state = false;\n
+                      break;\n
+                    }\n
+                  }\n
+                  if (state) {\n
+                    gadget.props.element.querySelector(\'.msgtext-box\')\n
+                      .innerHTML = "<span class=\'ui-text-o\'>All OPML URLs was successfully tested.</span>";\n
+                  }\n
+                  $(gadget.props.element.querySelector(\'.loadspinner\')).addClass(\'ui-content-hidden\');\n
+                });\n
+            }\n
+          ));\n
+\n
+          promise_list.push(loopEventListener(\n
+            gadget.props.element.querySelector(\'form.configure\'),\n
             \'submit\',\n
             true,\n
             function () {\n
-              return setjIODAVConfiguration(gadget);\n
+              var root_name = \'\',\n
+                credential_dict = {},\n
+                username = \'\',\n
+                password = \'\',\n
+                old_password,\n
+                new_password = \'\',\n
+                cnew_password = \'\',\n
+                reload = true,\n
+                rows_list = gadget.props.listbox.property_dict.data_result,\n
+                config_promise_list = [];\n
+\n
+              if (rows_list.length > 0) {\n
+                root_name = rows_list[0].opml_title;\n
+              }\n
+              gadget.props.element.querySelector(\'.configure .ui-text-error\')\n
+                .innerHTML = \'\';\n
+              if ($(gadget.props.element.querySelector("input[name=\'configure-newpwd\']")).prop(\'checked\')) {\n
+                new_password = gadget.props.element.querySelector("input[name=\'new_password\']").value;\n
+                cnew_password = gadget.props.element.querySelector("input[name=\'new_password_confirm\']").value;\n
+                if (new_password !== cnew_password) {\n
+                  gadget.props.element.querySelector(\'.configure .ui-text-error\')\n
+                  .innerHTML = \'The new password and it confirmation are differents!\';\n
+                  return false;\n
+                }\n
+              }\n
+              return new RSVP.Queue()\n
+                .push(function () {\n
+                  var promise_list = [],\n
+                    i;\n
+                  if ($(gadget.props.element.querySelector("input[name=\'configure-auth\']")).prop(\'checked\')) {\n
+                    username = gadget.props.element.querySelector("input[name=\'username\']").value;\n
+                    password = gadget.props.element.querySelector("input[name=\'password\']").value;\n
+                    for (i = 0; i < rows_list.length; i += 1) {\n
+                      if (rows_list[i].htmlurl) {\n
+                        promise_list.push(checkCredential(\n
+                          gadget,\n
+                          rows_list[i].url.replace(\'public\', \'private\'),\n
+                          btoa(username + \':\' + password)\n
+                        ));\n
+                      }\n
+                    }\n
+                  }\n
+                  return RSVP.all(promise_list);\n
+                })\n
+                .push(function (status_list) {\n
+                  var i,\n
+                    error_msg = \'\';\n
+                  for (i = 0; i < status_list.length; i += 1) {\n
+                    if (status_list[i].status !== \'OK\') {\n
+                      error_msg += \'Login/password invalid for: \' + rows_list[i].title + \'. \' + status_list[i].msg + \'<br/>\';\n
+                    }\n
+                  }\n
+                  return error_msg;\n
+                })\n
+                .push(function (error_msg) {\n
+                  var tmp,\n
+                    i;\n
+                  if (error_msg !== \'\') {\n
+                    gadget.props.element.querySelector(\'.configure .ui-text-error\')\n
+                      .innerHTML = error_msg;\n
+                    new_password = \'\';\n
+                    reload = false;\n
+                    return error_msg;\n
+                  }\n
+                  if (username !== \'\' && password !== \'\') {\n
+\n
+                    if (new_password !== \'\') {\n
+                      old_password = password;\n
+                      password = new_password;\n
+                    }\n
+                    for (i = 0; i < rows_list.length; i += 1) {\n
+                      if (validateHttpUrl(rows_list[i].url)) {\n
+                        tmp = {\n
+                          hash: btoa(username + \':\' + password),\n
+                          url: rows_list[i].url.replace(\'public\', \'private\'), // XXX - Need to fix this (replace())\n
+                          parent_url: gadget.props.opml_url\n
+                          //parent_title: root_name\n
+                        };\n
+                        credential_dict[ hashCode( tmp.url ) + \'\' ] = tmp;\n
+                      }\n
+                    }\n
+                    if (credential_dict) {\n
+                      config_promise_list.push(\n
+                        gadget.props.login_gadget.setUrlDict(credential_dict)\n
+                      );\n
+                    }\n
+                  }\n
+                  config_promise_list.push(\n
+                    setUrlConfiguration(gadget, gadget.props.opml_url, root_name)\n
+                  );\n
+                  return RSVP.all(config_promise_list);\n
+                })\n
+                .push(function (result) {\n
+                  // change password if needed\n
+                  var key,\n
+                    promise_list = [];\n
+                  if (new_password !== \'\') {\n
+                    for (key in credential_dict) {\n
+                      promise_list.push(\n
+                        changeMonitorPassword(\n
+                          gadget,\n
+                          credential_dict[key].url,\n
+                          new_password,\n
+                          btoa(username + \':\' + old_password))\n
+                      );\n
+                    }\n
+                  }\n
+                  return RSVP.all(promise_list);\n
+                })\n
+                .push(function (result_list) {\n
+                  var i,\n
+                    has_error = false;\n
+                  for (i = 0; i < result_list.length; i += 1) {\n
+                    if (result_list[i].status === \'ERROR\') {\n
+                      gadget.props.element.querySelector(\'.configure .ui-text-error\')\n
+                        .innerHTML += \'ERROR \' + result_list[i].code + \': Failed to save new password!\';\n
+                      has_error = true;\n
+                    }\n
+                  }\n
+                  if (! has_error && reload) {\n
+                    if (gadget.props.selected !== "manage") {\n
+                      return gadget.redirect({\n
+                          page: \'settings_configurator\',\n
+                          tab: \'manage\'\n
+                        });\n
+                    } else {\n
+                      return gadget.reload();\n
+                    }\n
+                  }\n
+                });\n
             }\n
-          );\n
+          ));\n
+\n
+          return RSVP.all(promise_list);\n
         });\n
     });\n
 \n
-}(window, rJS));
+}(window, rJS, RSVP, $, btoa));
 
 ]]></string> </value>
         </item>
@@ -369,7 +916,7 @@
             </item>
             <item>
                 <key> <string>serial</string> </key>
-                <value> <string>949.6590.62764.8652</string> </value>
+                <value> <string>949.65344.30338.29747</string> </value>
             </item>
             <item>
                 <key> <string>state</string> </key>
@@ -387,7 +934,7 @@
                     </tuple>
                     <state>
                       <tuple>
-                        <float>1455288950.05</float>
+                        <float>1458641325.56</float>
                         <string>UTC</string>
                       </tuple>
                     </state>

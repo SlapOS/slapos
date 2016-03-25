@@ -125,9 +125,9 @@
     .declareMethod("render", function (options) {\n
       var gadget = this,\n
         current_display;\n
-      return gadget.getSetting(\'jio_storage_description\')\n
-      .push(function (jio_storage_description) {\n
-        if (!jio_storage_description) {\n
+      return gadget.getSetting(\'monitor_url_description\')\n
+      .push(function (monitor_url_description) {\n
+        if (!monitor_url_description) {\n
           return gadget.redirect({\n
             page: \'settings_configurator\'\n
           });\n
@@ -140,6 +140,7 @@
         if (current_display === undefined || current_display === \'\') {\n
           current_display = \'list\';\n
         }\n
+        current_display = \'list\';\n
         return gadget.setSetting(\'monitoring_display_style\', current_display);\n
       })\n
       .push(function () {\n
@@ -284,7 +285,7 @@
             </item>
             <item>
                 <key> <string>serial</string> </key>
-                <value> <string>948.31863.44261.14694</string> </value>
+                <value> <string>949.56645.25063.6451</string> </value>
             </item>
             <item>
                 <key> <string>state</string> </key>
@@ -302,7 +303,7 @@
                     </tuple>
                     <state>
                       <tuple>
-                        <float>1454930576.46</float>
+                        <float>1458320618.57</float>
                         <string>UTC</string>
                       </tuple>
                     </state>

@@ -216,19 +216,23 @@
                         if (result.status === \'OK\') {\n
                           return gadget.setSetting(\'redirect_after_login\', \'\')\n
                             .push(function () {\n
-                              var credential = {\n
+                              /*var credential = {\n
                                   hash: hash,\n
                                   url: gadget.props.url\n
                                 },\n
                                 hash_url = hashCode(gadget.props.url) + \'\';\n
-                              return gadget.setSetting(hash_url, credential);\n
+                              return login_gadget.setUrlInfo(hash_url, credential);*/\n
+                              return login_gadget.updateUrlValue(\n
+                                gadget.props.url,\n
+                                username,\n
+                                password);\n
                             })\n
                             .push(function () {\n
                               return gadget.redirect(gadget.props.from);\n
                             });\n
                         } else {\n
                           gadget.props.element.querySelector(".msg")\n
-                            .innerHtml = \'<span class="ui-text-\' + error.status +\n
+                            .innerHtml = \'<span class="ui-text-\' + result.status +\n
                               \'">Invalid username or password.</span>\';\n
                         }\n
                       }, function(error) {\n
@@ -379,7 +383,7 @@
             </item>
             <item>
                 <key> <string>serial</string> </key>
-                <value> <string>949.5199.35910.16827</string> </value>
+                <value> <string>949.54056.59252.46080</string> </value>
             </item>
             <item>
                 <key> <string>state</string> </key>
@@ -397,7 +401,7 @@
                     </tuple>
                     <state>
                       <tuple>
-                        <float>1455205594.43</float>
+                        <float>1457966675.88</float>
                         <string>UTC</string>
                       </tuple>
                     </state>

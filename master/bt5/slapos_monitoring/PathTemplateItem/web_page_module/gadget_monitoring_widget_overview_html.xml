@@ -180,7 +180,12 @@
       <div class="overview-header">\n
         <div class=\'content-title ui-instance-title\'>\n
           <div class="overview-title">\n
-            <i class="fa fa-cubes"></i><span>{{title}}</span>\n
+            <i class="fa fa-cubes"></i><span>\n
+              {{title}}\n
+              {{#if root_title}}\n
+              &nbsp; [{{root_title}}]\n
+              {{/if}}\n
+              </span>\n
           </div>\n
           <div class="commands">\n
             \n
@@ -190,25 +195,31 @@
       <div class="content-details">\n
         <div class="ui-text-left" style="padding-bottom: 15px;">\n
           <h2><i class="fa fa-info-circle"></i> <strong>Instance Current State</strong></h2>\n
-          <div class="padding-lr-10">\n
-            <div class="ui-field-contain">\n
-              <fieldset data-role="controlgroup" data-type="horizontal">\n
-                {{#if resource_url }}\n
-                <a href="{{resource_url}}" class="ui-btn ui-corner-all ui-btn-inline ui-mini"><i class="fa fa-pie-chart"></i> Resources</a>\n
-                {{/if}}\n
-                {{#if process_url }}\n
-                <a href="{{process_url}}" class="ui-btn ui-corner-all ui-btn-inline ui-mini"><i class="fa fa-list-alt"></i> Processes</a>\n
-                {{/if}}\n
-                {{#if public_url}}\n
-                <!--<a class="ui-btn ui-corner-all ui-btn-inline ui-mini" target=\'_blank\' href="{{public_url}}" title="Public"><i class="fa fa-folder-open-o"></i> Public</a>-->\n
-                {{/if}}\n
-                {{#if private_url}}\n
-                <a class="ui-btn ui-corner-all ui-btn-inline ui-mini" target=\'_blank\' href="{{private_url}}" title="Private"><i class="fa fa-lock"></i> Private</a>\n
-                {{/if}}\n
-                {{#if rss_url}}\n
-                <a class="ui-btn ui-corner-all ui-btn-inline ui-mini" target=\'_blank\' href="{{rss_url}}" title="RSS"><i class="fa fa-rss-square"></i> RSS</a>\n
-                {{/if}}\n
-              </fieldset>\n
+          <div class="padding-10">\n
+            <div class="ui-grid-a ui-responsive">\n
+              <div class="ui-block-a">\n
+                <fieldset data-role="controlgroup" data-type="horizontal">\n
+                  {{#if resource_url }}\n
+                  <a href="{{resource_url}}" class="ui-btn ui-corner-all ui-btn-inline ui-mini"><i class="fa fa-pie-chart"></i> Resources</a>\n
+                  {{/if}}\n
+                  {{#if process_url }}\n
+                  <a href="{{process_url}}" class="ui-btn ui-corner-all ui-btn-inline ui-mini"><i class="fa fa-list-alt"></i> Processes</a>\n
+                  {{/if}}\n
+                </fieldset>\n
+              </div>\n
+              <div class="ui-block-b">\n
+                <fieldset data-role="controlgroup" data-type="horizontal">\n
+                  {{#if public_url}}\n
+                  <!--<a class="ui-btn ui-corner-all ui-btn-inline ui-mini" target=\'_blank\' href="{{public_url}}" title="Public"><i class="fa fa-folder-open-o"></i> Public</a>-->\n
+                  {{/if}}\n
+                  {{#if private_url}}\n
+                  <a class="ui-btn ui-corner-all ui-btn-inline ui-mini" target=\'_blank\' href="{{private_url}}" title="Private"><i class="fa fa-lock"></i> Private</a>\n
+                  {{/if}}\n
+                  {{#if rss_url}}\n
+                  <a class="ui-btn ui-corner-all ui-btn-inline ui-mini" target=\'_blank\' href="{{rss_url}}" title="RSS"><i class="fa fa-rss-square"></i> RSS</a>\n
+                  {{/if}}\n
+                </fieldset>\n
+              </div>\n
             </div>\n
             <table data-role="table" data-mode="columntoggle" class="ui-responsive table-stroke">\n
               <tr>\n
@@ -241,7 +252,7 @@
       <div style="overflow: auto;" class="padding-lr-10">\n
         <table data-role="table" data-mode="columntoggle" class="table-stroke">\n
           {{#each promise_list}}\n
-          <tr title="{{message}}">\n
+          <tr>\n
             <td><a href="{{href}}">{{title}}</a></td>\n
             <td style="text-align: center;">{{time}}</td>\n
             <td style="text-align: center;"><span class="label label-{{status}}">{{status}}</span></td>\n
@@ -446,7 +457,7 @@
             </item>
             <item>
                 <key> <string>serial</string> </key>
-                <value> <string>949.6292.13164.54971</string> </value>
+                <value> <string>949.64074.33189.21691</string> </value>
             </item>
             <item>
                 <key> <string>state</string> </key>
@@ -464,7 +475,7 @@
                     </tuple>
                     <state>
                       <tuple>
-                        <float>1455272629.34</float>
+                        <float>1458566491.46</float>
                         <string>UTC</string>
                       </tuple>
                     </state>

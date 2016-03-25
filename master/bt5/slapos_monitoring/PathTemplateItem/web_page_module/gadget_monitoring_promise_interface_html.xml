@@ -284,12 +284,12 @@
               <div class="ui-block-b">\n
               </div>\n
               <div class="ui-block-c">\n
-                <h2><i class="fa fa-bar-chart"></i> <strong>Instance Status Ratio</strong></h2>\n
-                <div style="max-width: 250px; heigth: 150px;">\n
+                <h2><i class="fa fa-bar-chart"></i> <strong>Instance Promises Status</strong></h2>\n
+                <div style="max-width: 300px; heigth: 150px;">\n
                   <div data-gadget-url="gadget_monitoring_chart.html" data-gadget-scope="chart0"></div>\n
                 </div>\n
                 <br/><br/>\n
-                <h2><i class="fa fa-line-chart"></i> <strong>Success and Failures Statistics</strong></h2>\n
+                <h2><i class="fa fa-line-chart"></i> <strong>Instance Promises Status History</strong></h2>\n
                 <div data-gadget-url="gadget_monitoring_chart.html" data-gadget-scope="chart1"></div>\n
               </div>\n
             </div>\n
@@ -438,7 +438,7 @@
             </item>
             <item>
                 <key> <string>serial</string> </key>
-                <value> <string>949.5259.56104.14233</string> </value>
+                <value> <string>949.26772.37443.60825</string> </value>
             </item>
             <item>
                 <key> <string>state</string> </key>
@@ -456,7 +456,7 @@
                     </tuple>
                     <state>
                       <tuple>
-                        <float>1455209074.82</float>
+                        <float>1456500574.55</float>
                         <string>UTC</string>
                       </tuple>
                     </state>

@@ -2,7 +2,7 @@
 <ZopeData>
   <record id="1" aka="AAAAAAAAAAE=">
     <pickle>
-      <global name="Web Page" module="erp5.portal_type"/>
+      <global name="Web Script" module="erp5.portal_type"/>
     </pickle>
     <pickle>
       <dictionary>
@@ -64,7 +64,7 @@
             <key> <string>categories</string> </key>
             <value>
               <tuple>
-                <string>classification/collaborative/team</string>
+                <string>classification/collaborative/public</string>
               </tuple>
             </value>
         </item>
@@ -80,15 +80,17 @@
         </item>
         <item>
             <key> <string>default_reference</string> </key>
-            <value> <string>gadget_monitoring_application_panel.html</string> </value>
+            <value> <string>gadget_monitoring_document_edit.js</string> </value>
         </item>
         <item>
             <key> <string>description</string> </key>
-            <value> <string>Monitoring access</string> </value>
+            <value>
+              <none/>
+            </value>
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>gadget_monitoring_application_panel_html</string> </value>
+            <value> <string>gadget_monitoring_document_edit_js</string> </value>
         </item>
         <item>
             <key> <string>language</string> </key>
@@ -96,7 +98,7 @@
         </item>
         <item>
             <key> <string>portal_type</string> </key>
-            <value> <string>Web Page</string> </value>
+            <value> <string>Web Script</string> </value>
         </item>
         <item>
             <key> <string>short_title</string> </key>
@@ -108,71 +110,212 @@
             <key> <string>text_content</string> </key>
             <value> <string encoding="cdata"><![CDATA[
 
-<!DOCTYPE html>\n
-<html>\n
-  <head>\n
-    <meta http-equiv="Content-type" content="text/html; charset=utf-8" />\n
-    <meta name="viewport" content="width=device-width, user-scalable=no" />\n
-    <title>Monitoring Panel Gadget</title>\n
+/*global document, window, rJS, $ */\n
+/*jslint nomen: true, indent: 2, maxerr: 3*/\n
+(function (window, document, rJS, $) {\n
+  "use strict";\n
 \n
-    <link rel="stylesheet" href="magnific-popup.css">\n
-    <link rel="stylesheet" href="gadget_monitoring_tooltipster.css">\n
-    <link href="gadget_monitoring_custom.css" rel="stylesheet" type="text/css"/>\n
-    <!-- renderjs -->\n
-    <script src="rsvp.js" type="text/javascript"></script>\n
-    <script src="renderjs.js" type="text/javascript"></script>\n
-    <script src="handlebars.js" type="text/javascript"></script>\n
-    <script src="gadget_global.js" type="text/javascript"></script>\n
-    <script src="jquery.js" type="text/javascript"></script>\n
-    <script src="jquerymobile.js" type="text/javascript"></script>\n
-    <!-- magnific-popup -->\n
-    <script src="jquery.magnific-popup.min.js" type="text/javascript"></script>\n
-    <script src="gadget_monitoring_tooltipster.min.js" type="text/javascript"></script>\n
+  var gadget_klass = rJS(window),\n
+    templater = gadget_klass.__template_element;\n
 \n
-    <script id="panel-template-header" type="text/x-handlebars-template">\n
-      <div data-role="header" class="ui-bar-inherit">\n
-        <div class="ui-controlgroup ui-controlgroup-horizontal ui-btn-left">\n
-          <div class="ui-controlgroup-controls">\n
-            <form action="#" method="post">\n
-              <input type="submit" data-i18n="[value]Close" data-icon="delete" data-iconpos="notext" value="Close" />\n
-            </form>\n
-          </div>\n
-        </div>\n
-        <img class="ui-title" alt="SlapOS Monitoring" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAB2klEQVRIS62V8TkDURDEZyughKhAVEAqQAXoICoQFaACOkAFkgpEB1EBKhjf7+zL90SORG7/SXLZN7M7s/su1BK2tyUdSupVKTNJk4jgc6WIxSzbAF5JOvoF4UHSZURM/2L5RmD7VNJtHvqQtAWQpAtJj9lReU7aWUTc/UYyJ7A9zMpfJEH0JOkmIka2LWkgqZ9kfAd4NzsZtZE0BLaR414S4AeSIDuNiJ5tQJ9LtbbR/y6Jx5L2JR1HBLL9iELAIUwFjANUVJu7eJB8ciaS8OEtInaWElS6kwgoRATaU+F7dnCeYBTBEBD8BxnPlvoRttHyRBLmIQ0HniKi9geiYZka283vBMYvYoxsi11AUCrvM9+2SWr0/2sEV/kfAiaEVstMA8xIXqc0RbJV8EoOeHsUXAiQpyagbaaJ+ceLdYICkZxFHEGA5ixUw5gSoXFDUHuxCottzrFDc4JiMm1h3GsCdUZQlgxg9KYbNrUbgtzkspEAoyG/8WFziZKgXAcYzcJM04tuCJKk3KTNiHXaQZmOnAAuLXzpzoN6/PJNxiMmij2AaJ1Abpb0a0zbTlbzvA54nTuIiHErQWX+f66KWXlvLyWwTYu8rTaNSRsBF2An0UbAFGHWpjH9BL0Y7d/fY0bVAAAAAElFTkSuQmCC"/>\n
-        <div class="ui-controlgroup ui-controlgroup-horizontal ui-btn-right">\n
-          <div class="ui-controlgroup-controls">\n
-            <a href="#" class="ui-btn ui-btn-icon-notext ui-icon-home" data-i18n="Home">Home</a>\n
-          </div>\n
-        </div>\n
-      </div>\n
-    </script>\n
+  function getHtmlFromJson(parameter_list) {\n
+    var i,\n
+      html_content = \'\';\n
+\n
+    for (i = 0; i < parameter_list.length; i += 1) {\n
+      html_content += \'<span class="label-text">\' + parameter_list[i].title + \':</span>\\n\';\n
+      if (parameter_list[i].key) {\n
+        html_content += \'<input type="text" name="\' + parameter_list[i].key +\n
+          \'" placeholder="\' + parameter_list[i].title + \'" value="\' +\n
+          parameter_list[i].value +\'" data-mini="true">\\n\';\n
+      } else {\n
+        html_content += \'<input type="text" name="\' + parameter_list[i].key +\n
+          \'" placeholder="\' + parameter_list[i].title + \'" value="\'+\n
+          parameter_list[i].value +\'" data-mini="true" disabled="disabled">\\n\';\n
+      }\n
+    }\n
+    return html_content;\n
+  }\n
+\n
+  function getFormDataList(formElement, parameter_list) {\n
+    var i,\n
+      formData_list = [];\n
+    for (i = 0; i < parameter_list.length; i += 1) {\n
+      formData_list.push(parameter_list[i]);\n
+      if (parameter_list[i].key) {\n
+        // Editable fields\n
+        if (formElement.querySelector(\'input[name="\' + parameter_list[i].key + \'"]\').value !== undefined) {\n
+          formData_list[i].value = formElement.querySelector(\'input[name="\' + parameter_list[i].key + \'"]\').value;\n
+        }\n
+      }\n
+    }\n
+    return formData_list;\n
+  }\n
+\n
+  function saveDocument(gadget, jio_document) {\n
+    // Authenticate before save\n
+    // Normally password should already exists otherwise will redirect to login box and edited data will be lost!!!\n
+    return gadget.props.login_gadget.loginRedirect(\n
+        gadget.props.options.url,\n
+        gadget.props.options.page_options,\n
+        gadget.props.options.title,\n
+        gadget.props.options.root_title\n
+      )\n
+      .push(function (cred) {\n
+        var url = gadget.props.options.url;\n
+        if (gadget.props.options.path) {\n
+          url += (url.endsWith(\'/\') ? \'\':\'/\') + gadget.props.options.path;\n
+        }\n
+        gadget.props.jio_gadget.createJio({\n
+          type: "query",\n
+          sub_storage: {\n
+            type: "drivetojiomapping",\n
+            sub_storage: {\n
+              type: "dav",\n
+              url: url,\n
+              basic_login: cred.hash\n
+            }\n
+          }\n
+        });\n
+        return gadget.props.jio_gadget.put(gadget.props.options.key, jio_document);\n
+      })\n
+      .push(function (result) {\n
+        return {status: \'OK\'};\n
+      }, function (error) {\n
+        console.log(error);\n
+        return {status: \'ERROR\', code: error.target.status};\n
+      });\n
+    \n
+  }\n
+\n
+  gadget_klass\n
+    .ready(function (g) {\n
+      g.props = {};\n
+      \n
+      return g.getElement()\n
+        .push(function (element) {\n
+          g.props.element = element;\n
+          g.props.deferred = RSVP.defer();\n
+        });\n
+    })\n
+    .ready(function (gadget) {\n
+      return gadget.getDeclaredGadget("jio_gadget")\n
+        .push(function (jio_gadget) {\n
+          gadget.props.jio_gadget = jio_gadget;\n
+        });\n
+    })\n
+    .ready(function (gadget) {\n
+      return gadget.getDeclaredGadget("login_gadget")\n
+        .push(function (login_gadget) {\n
+          gadget.props.login_gadget = login_gadget;\n
+        });\n
+    })\n
+    .declareMethod("render", function (options) {\n
+      var gadget = this;\n
+      return new RSVP.Queue()\n
+      .push(function () {\n
+          return gadget.props.deferred.resolve();\n
+        });\n
+    })\n
+    .declareMethod("popupEdit", function (options, updateMethod) {\n
+      var gadget = this,\n
+        title = \'Edit \' + (options.title || \'Monitoring Parameters\'),\n
+        html_form = \'\';\n
+\n
+      gadget.props.options = options;\n
+      html_form = getHtmlFromJson(options.parameters || []);\n
+\n
+      gadget.props.element.querySelector(\'.form-controlgroup\')\n
+        .innerHTML = html_form;\n
+      gadget.props.element.querySelector(\'.ui-promise-title h2\')\n
+        .innerHTML = title;\n
+\n
+      return new RSVP.Queue()\n
+        .push(function () {\n
+          return $.magnificPopup.open({\n
+            items: {\n
+                src: \'.white-popup\',\n
+                type: \'inline\'\n
+            },\n
+            closeBtnInside: true,\n
+            callbacks: {\n
+              open: function() {\n
+                return new RSVP.Queue()\n
+                  .push(function () {\n
+                    return $(\'.white-popup form\').trigger("create");\n
+                  })\n
+                  .push(function () {\n
+                    var promise_list = [];\n
+\n
+                    promise_list.push(loopEventListener(\n
+                      document.querySelector(\'.mfp-content form .cancel\'),\n
+                      \'click\',\n
+                      false,\n
+                      function (evt) {\n
+                        return $.magnificPopup.close();\n
+                      }\n
+                    ));\n
+                    promise_list.push(loopEventListener(\n
+                      document.querySelector(\'.mfp-content form .save\'),\n
+                      \'click\',\n
+                      false,\n
+                      function (evt) {\n
+                        var data = getFormDataList(document.querySelector(\'.mfp-content form\'), options.parameters);\n
+                        return new RSVP.Queue()\n
+                          .push(function () {\n
+                            $(document.querySelector(\'.mfp-content spinner\')).toggleClass(\'ui-content-hidden\');\n
+                            return RSVP.all([saveDocument(gadget, data)]);\n
+                          })\n
+                          .push(function (result) {\n
+                            if (result[0].status === \'ERROR\') {\n
+                              document.querySelector(\'.mfp-content .ui-text-error\')\n
+                                .innerHTML = \'ERROR \' + result[0].code + \': Failed to save your document!\';\n
+                            } else {\n
+                              $.magnificPopup.close();\n
+                              return updateMethod(data);}\n
+                          })\n
+                          .push(function () {\n
+                            $(document.querySelector(\'.mfp-content spinner\')).toggleClass(\'ui-content-hidden\');\n
+                          });\n
+                      }\n
+                    ));\n
+                    return RSVP.all(promise_list);\n
+                  });\n
+              },\n
+              close: function() {\n
+                // Will fire when popup is closed\n
+                $(\'.white-popup\').remove();\n
+              }\n
+            }\n
+          });\n
+        })\n
+        .push(function () {\n
+          return gadget.props.deferred.resolve();\n
+        });\n
+    })\n
 \n
 \n
-    <script id="panel-template-body" type="text/x-handlebars-template">\n
-      <div class="ui-content">\n
-        <ul data-role="listview" class="ui-listview">\n
-          <li><a href="#page=status_list"><i class="fa fa-th-list"></i><span data-i18n="Promises Overview">Promises Overview</span></a></li>\n
-          <li><a href="#page=overview"><i class="fa fa-cube"></i><span data-i18n="Instances Overview">Instances Overview</span></a></li>\n
-          <li><a href="#page=hosting_overview"><i class="fa fa-globe"></i><span data-i18n="Applications Overview">Applications Overview</span></a></li>\n
-          <li><a href="#page=settings_configurator"><i class="fa fa-cog"></i><span data-i18n="Monitoring Configuration">Monitoring Configuration</span></a></li>\n
-        </ul>\n
-      </div>\n
-    </script>\n
+    .declareService(function () {\n
+      var gadget = this;\n
 \n
-    <!-- custom script -->\n
-    <script src="gadget_monitoring_application_panel.js" type="text/javascript"></script>\n
+      return new RSVP.Queue()\n
+        .push(function () {\n
+          return gadget.props.deferred.promise;\n
+        })\n
+        .push(function () {\n
 \n
-  </head>\n
-  <body>\n
-  <div class="jqm-navmenu-panel"></div>\n
-  </body>\n
-</html>
+        });\n
+    });\n
+\n
+}(window, document, rJS, $));\n
+\n
+
 
 ]]></string> </value>
         </item>
         <item>
             <key> <string>title</string> </key>
-            <value> <string>Monitoring Application Panel Gadget</string> </value>
+            <value> <string>Monitoring Document Edit Widget JS</string> </value>
         </item>
         <item>
             <key> <string>version</string> </key>
@@ -258,7 +401,7 @@
                     </tuple>
                     <state>
                       <tuple>
-                        <float>1452070905.39</float>
+                        <float>1457541225.98</float>
                         <string>UTC</string>
                       </tuple>
                     </state>
@@ -303,7 +446,7 @@
             </item>
             <item>
                 <key> <string>serial</string> </key>
-                <value> <string>949.63903.8246.8413</string> </value>
+                <value> <string>949.49438.50290.39714</string> </value>
             </item>
             <item>
                 <key> <string>state</string> </key>
@@ -321,7 +464,7 @@
                     </tuple>
                     <state>
                       <tuple>
-                        <float>1458554861.74</float>
+                        <float>1458061223.97</float>
                         <string>UTC</string>
                       </tuple>
                     </state>
@@ -378,7 +521,7 @@
                     </tuple>
                     <state>
                       <tuple>
-                        <float>1452070813.26</float>
+                        <float>1457541085.23</float>
                         <string>UTC</string>
                       </tuple>
                     </state>

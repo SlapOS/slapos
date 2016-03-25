@@ -162,13 +162,12 @@
           }\n
         };\n
 \n
-      //gadget.property_dict.url = options.jio_for;\n
       return gadget.property_dict.login_gadget.loginRedirect(options.jio_for, options, options.title, options.root)\n
         .push(function (cred) {\n
           jio_options.sub_storage.sub_storage.basic_login = cred.hash;\n
           gadget.property_dict.jio_gadget.createJio(jio_options);\n
           return gadget.updateHeader({\n
-            title: (options.title || \'Monitoring Instance\') + \' Processes\'\n
+            title: options.title + \' [\' + options.root + \'] Processes status\'\n
           });\n
         })\n
         .push(function () {\n
@@ -573,7 +572,7 @@
             </item>
             <item>
                 <key> <string>serial</string> </key>
-                <value> <string>949.5282.9066.9386</string> </value>
+                <value> <string>949.59799.36045.13670</string> </value>
             </item>
             <item>
                 <key> <string>state</string> </key>
@@ -591,7 +590,7 @@
                     </tuple>
                     <state>
                       <tuple>
-                        <float>1455210644.51</float>
+                        <float>1458308638.96</float>
                         <string>UTC</string>
                       </tuple>
                     </state>

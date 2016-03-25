@@ -111,6 +111,71 @@
 (function (window, rJS, jIO) {\n
   "use strict";\n
 \n
+  function getOPMLUrlList(url, query) {\n
+    var jio_options = {\n
+        type: "query",\n
+        sub_storage: {\n
+          type: "feed",\n
+          feed_type: \'opml\',\n
+          url: url\n
+        }\n
+      },\n
+      jio_storage = jIO.createJIO(jio_options);\n
+    if (query === undefined) {\n
+      query = {};\n
+    }\n
+    return jio_storage.allDocs(query)\n
+      .push(function (url_list) {\n
+        var i,\n
+        feed_url = [];\n
+        for (i = 0; i < url_list.data.total_rows; i += 1) {\n
+          if (url_list.data.rows[i].value.htmlurl) { // || url_list.data.rows[i].value.xmlUrl\n
+            feed_url.push(url_list.data.rows[i].value.htmlurl); // || url_list.data.rows[i].value.xmlUrl\n
+          }\n
+        }\n
+        return feed_url;\n
+      }, function(error) {\n
+        console.log(error);\n
+      });\n
+  }\n
+\n
+  function getMonitorUrlList(url, query) {\n
+    var jio_options = {\n
+        type: "query",\n
+        sub_storage: {\n
+          type: "feed",\n
+          feed_type: \'opml\',\n
+          url: url\n
+        }\n
+      },\n
+      jio_storage = jIO.createJIO(jio_options);\n
+    if (query === undefined) {\n
+      query = {};\n
+    }\n
+    return jio_storage.allDocs(query)\n
+      .push(function (url_list) {\n
+        var i,\n
+        monitor_url = [];\n
+        for (i = 0; i < url_list.data.total_rows; i += 1) {\n
+          if (url_list.data.rows[i].value.url) {\n
+            monitor_url.push(url_list.data.rows[i].value.url);\n
+          }\n
+        }\n
+        return monitor_url;\n
+      }, function(error) {\n
+        console.log(error);\n
+      });\n
+  }\n
+\n
+  function concatArrayOfArray(arrayList) {\n
+    var all_list = [],\n
+      i;\n
+    for (i = 0; i < arrayList.length; i += 1) {\n
+      all_list = all_list.concat(arrayList[i]);\n
+    }\n
+    return all_list;\n
+  }\n
+\n
   rJS(window)\n
 \n
     .ready(function (gadget) {\n
@@ -120,6 +185,7 @@
 \n
     .declareAcquiredMethod("redirect", "redirect")\n
     .declareAcquiredMethod("getSetting", "getSetting")\n
+    .declareAcquiredMethod("setSetting", "setSetting")\n
 \n
     .declareMethod(\'createJio\', function (jio_options) {\n
       var gadget = this;\n
@@ -141,9 +207,101 @@
           gadget.state_parameter_dict.jio_storage_name = jio_storage_name;\n
         });\n
     })\n
+    .declareMethod(\'createJioFromRssFeed\', function (feed_url, basic_login) {\n
+      var gadget = this,\n
+        jio_options = {\n
+          type: "query",\n
+          sub_storage: {\n
+            type: "feed",\n
+            feed_type: \'rss\',\n
+            url: opml_url\n
+          }\n
+        };\n
+      if (basic_login !== undefined) {\n
+        jio_options.sub_storage.basic_login = basic_login;\n
+      }\n
+      this.state_parameter_dict.jio_storage = jIO.createJIO(jio_options);\n
+      return jio_options;\n
+    })\n
+    .declareMethod(\'getUrlListFromOPML\', function (opml_url, query) {\n
+      return getOPMLUrlList(opml_url, query);\n
+    })\n
+    .declareMethod(\'getUrlDescriptionFromOPML\', function (opml_url, query) {\n
+      var jio_options = {\n
+          type: "query",\n
+          sub_storage: {\n
+            type: "feed",\n
+            feed_type: \'opml\',\n
+            url: opml_url\n
+          }\n
+        },\n
+        jio_storage = jIO.createJIO(jio_options);\n
+      if (query === undefined) {\n
+        query = {};\n
+      }\n
+      return jio_storage.allDocs(query)\n
+        .push(function (url_list) {\n
+          var i,\n
+          feed_url;\n
+          for (i = 0; i < url_list.data.total_rows; i += 1) {\n
+            if (url_list.data.rows[i].value.htmlurl || url_list.data.rows[i].value.xmlUrl) {\n
+              feed_url.push({\n
+                htmlurl: url_list.data.rows[i].value.htmlurl,\n
+                xmlUrl: url_list.data.rows[i].value.xmlUrl,\n
+                title: url_list.data.rows[i].value.title,\n
+                opml_title: url_list.data.rows[i].value.opml_title,\n
+                type: url_list.data.rows[i].value.type,\n
+                create_date: url_list.data.rows[i].value.create_date,\n
+                modified_date: url_list.data.rows[i].value.modified_date,\n
+                version: url_list.data.rows[i].value.version,\n
+                text: url_list.data.rows[i].value.text,\n
+              });\n
+            }\n
+          }\n
+          return feed_url;\n
+        });\n
+    })\n
+    .declareMethod(\'getUrlListFromFullOPML\', function (query) {\n
+      return this.getSetting(\'monitor_url_description\')\n
+        .push(function (url_description_dict) {\n
+          var promise_list = [],\n
+            key;\n
+          for (key in url_description_dict) {\n
+            promise_list.push(getOPMLUrlList(url_description_dict[key].href, query));\n
+          }\n
+          return RSVP.all(promise_list);\n
+        })\n
+        .push(function(url_list) {\n
+          return concatArrayOfArray(url_list);\n
+        });\n
+    })\n
+    .declareMethod(\'getMonitorUrlList\', function (query) {\n
+      return this.getSetting(\'monitor_url_description\')\n
+        .push(function (url_description_dict) {\n
+          var promise_list = [],\n
+            key;\n
+          for (key in url_description_dict) {\n
+            promise_list.push(getMonitorUrlList(url_description_dict[key].href, query));\n
+          }\n
+          return RSVP.all(promise_list);\n
+        })\n
+        .push(function(url_list) {\n
+          return concatArrayOfArray(url_list);\n
+        });\n
+    })\n
+    .declareMethod(\'getMonitorUrlListFromOpml\', function (url, query) {\n
+      return getMonitorUrlList(url, query);\n
+    })\n
     .declareMethod(\'allDocs\', function () {\n
       var storage = this.state_parameter_dict.jio_storage;\n
-      return storage.allDocs.apply(storage, arguments);\n
+      return storage.allDocs.apply(storage, arguments)\n
+        .push(function (doc) {\n
+          return doc;\n
+        }, function (error) {\n
+          console.log(error);\n
+          // XXX - We must do something here (try to get document from local ? or raise)\n
+          return undefined;\n
+        });\n
     })\n
     .declareMethod(\'allAttachments\', function () {\n
       var storage = this.state_parameter_dict.jio_storage;\n
@@ -332,7 +490,7 @@
             </item>
             <item>
                 <key> <string>serial</string> </key>
-                <value> <string>948.31893.52815.47769</string> </value>
+                <value> <string>949.59884.43592.12680</string> </value>
             </item>
             <item>
                 <key> <string>state</string> </key>
@@ -350,7 +508,7 @@
                     </tuple>
                     <state>
                       <tuple>
-                        <float>1452874919.27</float>
+                        <float>1458313807.96</float>
                         <string>UTC</string>
                       </tuple>
                     </state>
