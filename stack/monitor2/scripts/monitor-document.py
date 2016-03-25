@@ -2,6 +2,7 @@
 
 import sys
 import os
+import re
 import json
 import argparse
 import subprocess
@@ -50,6 +51,46 @@ def htpasswdWrite(htpasswd_bin,  parameter_dict, value):
     pfile.write(value)
   return True
 
+def httpdCorsDomainWrite(httpd_cors_file, httpd_gracefull_bin, cors_domain):
+  cors_string = ""
+  cors_domain_list = cors_domain.split()
+  old_httpd_cors_file = os.path.join(
+    os.path.dirname(httpd_cors_file),
+    'prev_%s' % os.path.basename(httpd_cors_file)
+  )
+  if os.path.exists(old_httpd_cors_file) and os.path.isfile(old_httpd_cors_file):
+    try:
+      with open(old_httpd_cors_file, 'r') as cors_file:
+        if cors_file.read() == cors_domain:
+          return True
+    except OSError, e:
+      print "Failed to open file at %s. \n%s" % (old_httpd_cors_file, str(e))
+  for domain in cors_domain_list:
+    if cors_string:
+      cors_string += '|'
+    cors_string += re.escape(domain)
+  try:
+    with open(httpd_cors_file, 'w') as file:
+      file.write('SetEnvIf Origin "^http(s)?://(.+\.)?(%s)$" origin_is=$0\n' % cors_string)
+      file.write('Header always set Access-Control-Allow-Origin %{origin_is}e env=origin_is')
+  except OSError, e:
+    print "ERROR while writing CORS changes to %s.\n %s" % (httpd_cors_file, str(e))
+    return False
+
+  # Save current cors domain list
+  try:
+    with open(old_httpd_cors_file, 'w') as cors_file:
+      cors_file.write(cors_domain)
+  except OSError, e:
+    print "Failed to open file at %s. \n%s" % (old_httpd_cors_file, str(e))
+    return False
+
+  # Restart httpd process
+  try:
+    subprocess.call(httpd_gracefull_bin)
+  except OSError, e:
+    print "Failed to execute command %s.\n %s" % (httpd_gracefull_bin, str(e))
+    return False
 
 def applyEditChage(parser):
   parameter_tmp_file = os.path.join(parser.config_folder, 'config.tmp.json')
@@ -83,6 +124,8 @@ def applyEditChage(parser):
         result_dict[key] = fileWrite(description_entry['file'], new_parameter_list[i]['value'])
       elif description_entry['type'] == 'htpasswd':
         result_dict[key] = htpasswdWrite(parser.htpasswd_bin, description_entry, new_parameter_list[i]['value'])
+      elif description_entry['type'] == 'httpdcors':
+        result_dict[key] = httpdCorsDomainWrite(description_entry['cors_file'], description_entry['gracefull_bin'], new_parameter_list[i]['value'])
 
   if (parser.output_cfg_file):
     try:

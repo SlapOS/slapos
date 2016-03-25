@@ -120,7 +120,7 @@ class Monitoring(object):
     return config
 
   def readInstanceConfiguration(self):
-    type_list = ['raw', 'file', 'htpasswd']
+    type_list = ['raw', 'file', 'htpasswd', 'httpdcors']
     configuration_list = []
 
     if not self.parameter_list:
@@ -152,14 +152,42 @@ class Monitoring(object):
               if config_list[0] == 'htpasswd':
                 if len(config_list) != 5 or not os.path.exists(config_list[4]):
                   print 'htpasswd file is not specified: %s' % str(config_list)
-                  return
+                  continue
                 parameter['description']['user'] = config_list[3]
                 parameter['description']['htpasswd'] = config_list[4]
               configuration_list.append(parameter)
           except OSError, e:
             print 'Cannot read file %s, Error is: %s' % (config_list[2], str(e))
             pass
-
+        elif config_list[0] == 'httpdcors' and os.path.exists(config_list[2]) and \
+            os.path.exists(config_list[3]):
+          old_cors_file = os.path.join(
+            os.path.dirname(config_list[2]),
+            'prev_%s' % os.path.basename(config_list[2])
+          )
+          try:
+            cors_content = ""
+            if os.path.exists(old_cors_file):
+              with open(old_cors_file) as cfile:
+                cors_content = cfile.read()
+            else:
+              # Create empty file
+              with open(old_cors_file, 'w') as cfile:
+                cfile.write("")
+            parameter = dict(
+              key=config_list[1],
+              title=config_list[1],
+              value=cors_content,
+              description={
+                "type": config_list[0],
+                "cors_file": config_list[2],
+                "gracefull_bin": config_list[3]
+              }
+            )
+            configuration_list.append(parameter)
+          except OSError, e:
+            print 'Cannot read file at %s, Error is: %s' % (old_cors_file, str(e))
+            pass
     return configuration_list
 
   def setupPromiseDictFromFolder(self, folder):

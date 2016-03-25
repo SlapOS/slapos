@@ -227,10 +227,10 @@ password = ${monitor-instance-parameter:password}
 [monitor-httpd-conf-parameter]
 listening-ip = ${monitor-instance-parameter:monitor-httpd-ipv6}
 port = ${monitor-instance-parameter:monitor-httpd-port}
-pid-file = ${directory:run}/httpd.pid
+pid-file = ${directory:run}/monitor-httpd.pid
 cgid-pid-file = ${directory:run}/cgid.pid
-access-log = ${monitor-directory:log}/httpd-access.log
-error-log = ${monitor-directory:log}/httpd-error.log
+access-log = ${monitor-directory:log}/monitor-httpd-access.log
+error-log = ${monitor-directory:log}/monitor-httpd-error.log
 cert-file = ${ca-directory:certs}/httpd.crt
 key-file = ${ca-directory:certs}/httpd.key
 htpasswd-file = ${httpd-monitor-htpasswd:htpasswd-path}
@@ -312,28 +312,6 @@ name = monitor-configurator
 frequency = * * * * *
 command = ${monitor-configurator-wrapper:wrapper-path}
 
-[monitor-web-directory]
-recipe = plone.recipe.command
-command = cp -f {{ monitor_web_directory }}/* ${monitor-directory:web-dir}
-update-command = ${:command}
-
-
-[monitor-web-monitor-logout-cgi]
-recipe = slapos.recipe.template:jinja2
-template = {{ monitor_web_monitor_logout_cgi }}
-rendered = ${monitor-directory:cgi-bin}/monitor-logout.cgi
-mode = 0755
-context =
-
-[monitor-web-monitor-promise-runner-cgi]
-recipe = slapos.recipe.template:jinja2
-template = {{ monitor_web_monitor_promise_runner_cgi }}
-rendered = ${monitor-directory:cgi-bin}/monitor-run-promise.cgi
-mode = 0755
-context =
-  raw python_executable {{ python_executable }}
-  key promise_wrapper_folder monitor-directory:promise-wrapper
-
 [monitor-httpd-promise]
 recipe = slapos.cookbook:check_url_available
 path = ${directory:promises}/${:filename}
@@ -381,22 +359,6 @@ template = {{ monitor_service_conf_template }}
 rendered = ${directory:monitor-promise}/${monitor-password-promise:filename}.cfg
 mode = 0644
 context = section parameter_dict monitor-password-promise-conf-parameter
-
-[monitor-password-cgi]
-recipe = slapos.recipe.template:jinja2
-template = {{ monitor_password_cgi_template }}
-rendered = ${monitor-directory:cgi-bin}/monitor-password.cgi
-context =
-  raw python_executable {{ python_executable }}
-  key password_changed_once_path monitor-password-parameter:password-changed-once-path
-  raw htpasswd_executable {{ apache_location }}/bin/htpasswd
-  key htpasswd_path httpd-monitor-htpasswd:htpasswd-path
-
-[monitor-password-promise-interface]
-recipe = slapos.recipe.template:jinja2
-template = {{ monitor_password_promise_interface_template }}
-rendered = ${monitor-directory:monitor-password-interface}/index.html
-context =
 
 [publish]
 <= monitor-base
