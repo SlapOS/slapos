@@ -7,6 +7,7 @@ import json
 import argparse
 import subprocess
 from datetime import datetime
+import time
 
 
 def parseArguments():
@@ -144,21 +145,32 @@ if __name__ == "__main__":
   parser = parseArguments()
   parameter_tmp_file = os.path.join(parser.config_folder, 'config.tmp.json')
   config_file = os.path.join(parser.config_folder, 'config.json')
-  result_dict = applyEditChage(parser)
 
-  if result_dict != {}:
-    status = True
-    for key in result_dict:
-      if not result_dict[key]:
-        status = False
-  
-    if status and os.path.exists(parameter_tmp_file):
-      try:
-        os.unlink(config_file)
-      except OSError, e:
-        print "ERROR cannot remove file: %s" % parameter_tmp_file
-      else:
-        os.rename(parameter_tmp_file, config_file)
+  # Run 4 times with sleep
+  run_counter = 1
+  max_runn = 4
+  sleep_time = 15
+
+  while True:
+    result_dict = applyEditChage(parser)
+    if result_dict != {}:
+      status = True
+      for key in result_dict:
+        if not result_dict[key]:
+          status = False
+    
+      if status and os.path.exists(parameter_tmp_file):
+        try:
+          os.unlink(config_file)
+        except OSError, e:
+          print "ERROR cannot remove file: %s" % parameter_tmp_file
+        else:
+          os.rename(parameter_tmp_file, config_file)
+    if run_counter == max_runn:
+      break
+    else:
+      run_counter += 1
+      time.sleep(sleep_time)
 
 
 
