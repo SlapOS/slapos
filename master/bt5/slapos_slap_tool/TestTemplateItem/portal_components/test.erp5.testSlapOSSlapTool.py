@@ -66,14 +66,6 @@ class TestSlapOSSlapToolMixin(testSlapOSMixin):
 class TestSlapOSSlapToolComputerAccess(TestSlapOSSlapToolMixin):
   def test_getFullComputerInformation(self):
     self._makeComplexComputer(with_slave=True)
-
-    partition_1_root_instance_title = self.computer.partition1.getAggregateRelatedValue(
-      portal_type='Software Instance').getSpecialiseValue().getTitle()
-    partition_2_root_instance_title = self.computer.partition2.getAggregateRelatedValue(
-      portal_type='Software Instance').getSpecialiseValue().getTitle()
-    partition_3_root_instance_title = self.computer.partition3.getAggregateRelatedValue(
-      portal_type='Software Instance').getSpecialiseValue().getTitle()
-
     self.login(self.computer_id)
     response = self.portal_slap.getFullComputerInformation(self.computer_id)
     self.assertEqual(200, response.status)
@@ -147,8 +139,6 @@ class TestSlapOSSlapToolComputerAccess(TestSlapOSSlapToolMixin):
             <dictionary id='i11'>
               <string>full_ip_list</string>
               <list id='i12'/>
-              <string>instance_title</string>
-              <unicode>%(partition_3_instance_title)s</unicode>
               <string>ip_list</string>
               <list id='i13'>
                 <tuple>
@@ -158,8 +148,6 @@ class TestSlapOSSlapToolComputerAccess(TestSlapOSSlapToolMixin):
               </list>
               <unicode>paramé</unicode>
               <unicode>%(partition_3_param)s</unicode>
-              <string>root_instance_title</string>
-              <unicode>%(partition_3_root_instance_title)s</unicode>
               <string>slap_computer_id</string>
               <unicode>%(computer_id)s</unicode>
               <string>slap_computer_partition_id</string>
@@ -219,8 +207,6 @@ class TestSlapOSSlapToolComputerAccess(TestSlapOSSlapToolMixin):
             <dictionary id='i22'>
               <string>full_ip_list</string>
               <list id='i23'/>
-              <string>instance_title</string>
-              <unicode>%(partition_2_instance_title)s</unicode>
               <string>ip_list</string>
               <list id='i24'>
                 <tuple>
@@ -230,8 +216,6 @@ class TestSlapOSSlapToolComputerAccess(TestSlapOSSlapToolMixin):
               </list>
               <unicode>paramé</unicode>
               <unicode>%(partition_2_param)s</unicode>
-              <string>root_instance_title</string>
-              <unicode>%(partition_2_root_instance_title)s</unicode>
               <string>slap_computer_id</string>
               <unicode>%(computer_id)s</unicode>
               <string>slap_computer_partition_id</string>
@@ -291,8 +275,6 @@ class TestSlapOSSlapToolComputerAccess(TestSlapOSSlapToolMixin):
             <dictionary id='i33'>
               <string>full_ip_list</string>
               <list id='i34'/>
-              <string>instance_title</string>
-              <unicode>%(partition_1_instance_title)s</unicode>
               <string>ip_list</string>
               <list id='i35'>
                 <tuple>
@@ -302,8 +284,6 @@ class TestSlapOSSlapToolComputerAccess(TestSlapOSSlapToolMixin):
               </list>
               <unicode>paramé</unicode>
               <unicode>%(partition_1_param)s</unicode>
-              <string>root_instance_title</string>
-              <unicode>%(partition_1_root_instance_title)s</unicode>
               <string>slap_computer_id</string>
               <unicode>%(computer_id)s</unicode>
               <string>slap_computer_partition_id</string>
@@ -396,24 +376,18 @@ class TestSlapOSSlapToolComputerAccess(TestSlapOSSlapToolMixin):
   computer_id=self.computer_id,
   destroy_requested_url=self.destroy_requested_software_installation.getUrlString(),
   partition_1_instance_guid=self.computer.partition1.getAggregateRelatedValue(portal_type='Software Instance').getReference(),
-  partition_1_instance_title=self.computer.partition1.getAggregateRelatedValue(portal_type='Software Instance').getTitle(),
-  partition_1_root_instance_title=partition_1_root_instance_title,
   partition_1_instance_software_type=self.computer.partition1.getAggregateRelatedValue(portal_type='Software Instance').getSourceReference(),
   partition_1_param=self.computer.partition1.getAggregateRelatedValue(portal_type='Software Instance').getInstanceXmlAsDict()['paramé'],
   partition_1_sla=self.computer.partition1.getAggregateRelatedValue(portal_type='Software Instance').getSlaXmlAsDict()['paramé'],
   partition_1_software_release_url=self.computer.partition1.getAggregateRelatedValue(portal_type='Software Instance').getUrlString(),
   partition_1_timestamp=int(self.computer.partition1.getAggregateRelatedValue(portal_type='Software Instance').getModificationDate()),
   partition_2_instance_guid=self.computer.partition2.getAggregateRelatedValue(portal_type='Software Instance').getReference(),
-  partition_2_instance_title=self.computer.partition2.getAggregateRelatedValue(portal_type='Software Instance').getTitle(),
-  partition_2_root_instance_title=partition_2_root_instance_title,
   partition_2_instance_software_type=self.computer.partition2.getAggregateRelatedValue(portal_type='Software Instance').getSourceReference(),
   partition_2_param=self.computer.partition2.getAggregateRelatedValue(portal_type='Software Instance').getInstanceXmlAsDict()['paramé'],
   partition_2_sla=self.computer.partition2.getAggregateRelatedValue(portal_type='Software Instance').getSlaXmlAsDict()['paramé'],
   partition_2_software_release_url=self.computer.partition2.getAggregateRelatedValue(portal_type='Software Instance').getUrlString(),
   partition_2_timestamp=int(self.computer.partition2.getAggregateRelatedValue(portal_type='Software Instance').getModificationDate()),
   partition_3_instance_guid=self.computer.partition3.getAggregateRelatedValue(portal_type='Software Instance').getReference(),
-  partition_3_instance_title=self.computer.partition3.getAggregateRelatedValue(portal_type='Software Instance').getTitle(),
-  partition_3_root_instance_title=partition_3_root_instance_title,
   partition_3_instance_software_type=self.computer.partition3.getAggregateRelatedValue(portal_type='Software Instance').getSourceReference(),
   partition_3_param=self.computer.partition3.getAggregateRelatedValue(portal_type='Software Instance').getInstanceXmlAsDict()['paramé'],
   partition_3_sla=self.computer.partition3.getAggregateRelatedValue(portal_type='Software Instance').getSlaXmlAsDict()['paramé'],
@@ -979,8 +953,6 @@ class TestSlapOSSlapToolInstanceAccess(TestSlapOSSlapToolMixin):
             <dictionary id='i9'>
               <string>full_ip_list</string>
               <list id='i10'/>
-              <string>instance_title</string>
-              <unicode>%(instance_title)s</unicode>
               <string>ip_list</string>
               <list id='i11'>
                 <tuple>
@@ -990,8 +962,6 @@ class TestSlapOSSlapToolInstanceAccess(TestSlapOSSlapToolMixin):
               </list>
               <unicode>paramé</unicode>
               <unicode>%(param)s</unicode>
-              <string>root_instance_title</string>
-              <unicode>%(root_instance_title)s</unicode>
               <string>slap_computer_id</string>
               <unicode>%(computer_id)s</unicode>
               <string>slap_computer_partition_id</string>
@@ -1050,8 +1020,6 @@ class TestSlapOSSlapToolInstanceAccess(TestSlapOSSlapToolMixin):
 """ % dict(
     computer_id=self.computer_id,
     instance_guid=self.start_requested_software_instance.getReference(),
-    instance_title=self.start_requested_software_instance.getTitle(),
-    root_instance_title=self.start_requested_software_instance.getSpecialiseValue().getTitle(),
     software_release_url=self.start_requested_software_instance.getUrlString(),
     software_type=self.start_requested_software_instance.getSourceReference(),
     param=self.start_requested_software_instance.getInstanceXmlAsDict()['paramé'],
@@ -1199,8 +1167,6 @@ class TestSlapOSSlapToolInstanceAccess(TestSlapOSSlapToolMixin):
       <dictionary id='i6'>
         <string>full_ip_list</string>
         <list id='i7'/>
-        <string>instance_title</string>
-        <unicode>%(instance_title)s</unicode>
         <string>ip_list</string>
         <list id='i8'>
           <tuple>
@@ -1210,8 +1176,6 @@ class TestSlapOSSlapToolInstanceAccess(TestSlapOSSlapToolMixin):
         </list>
         <unicode>paramé</unicode>
         <unicode>%(param)s</unicode>
-        <string>root_instance_title</string>
-        <unicode>%(root_instance_title)s</unicode>
         <string>slap_computer_id</string>
         <unicode>%(computer_id)s</unicode>
         <string>slap_computer_partition_id</string>
@@ -1271,8 +1235,6 @@ class TestSlapOSSlapToolInstanceAccess(TestSlapOSSlapToolMixin):
   software_release_url=self.start_requested_software_instance.getUrlString(),
   timestamp=int(self.start_requested_software_instance.getModificationDate()),
   instance_guid=self.start_requested_software_instance.getReference(),
-  instance_title=self.start_requested_software_instance.getTitle(),
-  root_instance_title=self.start_requested_software_instance.getSpecialiseValue().getTitle(),
   software_type=self.start_requested_software_instance.getSourceReference(),
   slave_1_param=self.start_requested_slave_instance.getInstanceXmlAsDict()['paramé'],
   slave_1_software_type=self.start_requested_slave_instance.getSourceReference(),
@@ -1329,8 +1291,6 @@ class TestSlapOSSlapToolInstanceAccess(TestSlapOSSlapToolMixin):
       <dictionary id='i6'>
         <string>full_ip_list</string>
         <list id='i7'/>
-        <string>instance_title</string>
-        <unicode>%(instance_title)s</unicode>
         <string>ip_list</string>
         <list id='i8'>
           <tuple>
@@ -1340,8 +1300,6 @@ class TestSlapOSSlapToolInstanceAccess(TestSlapOSSlapToolMixin):
         </list>
         <unicode>paramé</unicode>
         <unicode>%(param)s</unicode>
-        <string>root_instance_title</string>
-        <unicode>%(root_instance_title)s</unicode>
         <string>slap_computer_id</string>
         <unicode>%(computer_id)s</unicode>
         <string>slap_computer_partition_id</string>
@@ -1388,8 +1346,6 @@ class TestSlapOSSlapToolInstanceAccess(TestSlapOSSlapToolMixin):
   software_release_url=self.start_requested_software_instance.getUrlString(),
   timestamp=int(self.start_requested_software_instance.getModificationDate()),
   instance_guid=self.start_requested_software_instance.getReference(),
-  instance_title=self.start_requested_software_instance.getTitle(),
-  root_instance_title=self.start_requested_software_instance.getSpecialiseValue().getTitle(),
   software_type=self.start_requested_software_instance.getSourceReference()
 )
     self.assertEqual(expected_xml, got_xml,
@@ -2292,8 +2248,6 @@ class TestSlapOSSlapToolPersonAccess(TestSlapOSSlapToolMixin):
       <dictionary id='i6'>
         <string>full_ip_list</string>
         <list id='i7'/>
-        <string>instance_title</string>
-        <unicode>%(instance_title)s</unicode>
         <string>ip_list</string>
         <list id='i8'>
           <tuple>
@@ -2303,8 +2257,6 @@ class TestSlapOSSlapToolPersonAccess(TestSlapOSSlapToolMixin):
         </list>
         <unicode>paramé</unicode>
         <unicode>%(param)s</unicode>
-        <string>root_instance_title</string>
-        <unicode>%(root_instance_title)s</unicode>
         <string>slap_computer_id</string>
         <unicode>%(computer_id)s</unicode>
         <string>slap_computer_partition_id</string>
@@ -2364,8 +2316,6 @@ class TestSlapOSSlapToolPersonAccess(TestSlapOSSlapToolMixin):
   software_release_url=self.start_requested_software_instance.getUrlString(),
   timestamp=int(self.start_requested_software_instance.getModificationDate()),
   instance_guid=self.start_requested_software_instance.getReference(),
-  instance_title=self.start_requested_software_instance.getTitle(),
-  root_instance_title=self.start_requested_software_instance.getSpecialiseValue().getTitle(),
   software_type=self.start_requested_software_instance.getSourceReference(),
   slave_1_param=self.start_requested_slave_instance.getInstanceXmlAsDict()['paramé'],
   slave_1_software_type=self.start_requested_slave_instance.getSourceReference(),
@@ -2422,8 +2372,6 @@ class TestSlapOSSlapToolPersonAccess(TestSlapOSSlapToolMixin):
       <dictionary id='i6'>
         <string>full_ip_list</string>
         <list id='i7'/>
-        <string>instance_title</string>
-        <unicode>%(instance_title)s</unicode>
         <string>ip_list</string>
         <list id='i8'>
           <tuple>
@@ -2433,8 +2381,6 @@ class TestSlapOSSlapToolPersonAccess(TestSlapOSSlapToolMixin):
         </list>
         <unicode>paramé</unicode>
         <unicode>%(param)s</unicode>
-        <string>root_instance_title</string>
-        <unicode>%(root_instance_title)s</unicode>
         <string>slap_computer_id</string>
         <unicode>%(computer_id)s</unicode>
         <string>slap_computer_partition_id</string>
@@ -2481,8 +2427,6 @@ class TestSlapOSSlapToolPersonAccess(TestSlapOSSlapToolMixin):
   software_release_url=self.start_requested_software_instance.getUrlString(),
   timestamp=int(self.start_requested_software_instance.getModificationDate()),
   instance_guid=self.start_requested_software_instance.getReference(),
-  instance_title=self.start_requested_software_instance.getTitle(),
-  root_instance_title=self.start_requested_software_instance.getSpecialiseValue().getTitle(),
   software_type=self.start_requested_software_instance.getSourceReference()
 )
     self.assertEqual(expected_xml, got_xml,
@@ -2681,8 +2625,6 @@ class TestSlapOSSlapToolPersonAccess(TestSlapOSSlapToolMixin):
       <string>%(state)s</string>
       <string>full_ip_list</string>
       <list id='i7'/>
-      <string>instance_title</string>
-      <unicode>%(instance_title)s</unicode>
       <string>ip_list</string>
       <list id='i8'>
         <tuple>
@@ -2690,8 +2632,6 @@ class TestSlapOSSlapToolPersonAccess(TestSlapOSSlapToolMixin):
           <unicode>%(ip)s</unicode>
         </tuple>
       </list>
-      <string>root_instance_title</string>
-      <unicode>%(root_instance_title)s</unicode>
       <string>slap_computer_id</string>
       <unicode>%(computer_id)s</unicode>
       <string>slap_computer_partition_id</string>
@@ -2709,8 +2649,6 @@ class TestSlapOSSlapToolPersonAccess(TestSlapOSSlapToolMixin):
 </marshal>
 """ % dict(
     instance_guid=self.start_requested_software_instance.getReference(),
-    instance_title=self.start_requested_software_instance.getTitle(),
-    root_instance_title=self.start_requested_software_instance.getSpecialiseTitle(),
     state="started",
     url_string=self.start_requested_software_instance.getUrlString(),
     type=self.start_requested_software_instance.getSourceReference(),

@@ -1476,8 +1476,6 @@ class SlapTool(BaseTool):
     if (newtimestamp > timestamp):
       timestamp = newtimestamp
 
-    hosting_subscription = software_instance.getSpecialiseValue()
-
     ip_list = []
     full_ip_list = []
     for internet_protocol_address in computer_partition.contentValues(portal_type='Internet Protocol Address'):
@@ -1521,8 +1519,6 @@ class SlapTool(BaseTool):
             timestamp = newtimestamp
     return {
       'instance_guid': software_instance.getReference().decode("UTF-8"),
-      'instance_title': software_instance.getTitle().decode("UTF-8"),
-      'root_instance_title': hosting_subscription.getTitle().decode("UTF-8"),
       'xml': software_instance.getTextContent(),
       'connection_xml': software_instance.getConnectionXml(),
       'filter_xml': software_instance.getSlaXml(),
