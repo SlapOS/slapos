@@ -98,6 +98,20 @@ a {text-decoration: none}\n
 /**********************/\n
 /*        Top         */\n
 /**********************/\n
+div#language {\n
+  width: 900px;\n
+  margin: 0px auto 0px auto;\n
+}\n
+\n
+div#language a:first-child {\n
+  margin-left: 823px;\n
+}\n
+\n
+div#language img {\n
+  width: 18px;\n
+  height: 12px;\n
+}\n
+\n
 #vifib_logo{position:absolute;top:2px;left:50%;margin-left:-150px;width:300px;\n
   height:150px;background: url(<tal:block tal:replace="images_path"/>vifib_logo.png) no-repeat top left}\n
 \n
