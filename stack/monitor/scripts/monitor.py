@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
 
 import sys
 import os
@@ -220,7 +221,7 @@ class Monitoring(object):
 
   def getMonitorTitleFromUrl(self, monitor_url):
     # This file should be generated
-    if not monitor_url.startswith('https://') or not monitor_url.startswith('http://'):
+    if not monitor_url.startswith('https://') and not monitor_url.startswith('http://'):
       return 'Unknow Instance'
     if not monitor_url.endswith('/'):
       monitor_url = monitor_url + '/'
