@@ -7,8 +7,20 @@
     <pickle>
       <dictionary>
         <item>
+            <key> <string>_recorded_property_dict</string> </key>
+            <value>
+              <persistent> <string encoding="base64">AAAAAAAAAAI=</string> </persistent>
+            </value>
+        </item>
+        <item>
             <key> <string>default_reference</string> </key>
             <value> <string>testSlapOSSlapTool</string> </value>
+        </item>
+        <item>
+            <key> <string>description</string> </key>
+            <value>
+              <none/>
+            </value>
         </item>
         <item>
             <key> <string>id</string> </key>
@@ -35,23 +47,23 @@
             <value>
               <tuple>
                 <string>W: 29, 10: Use of eval (eval-used)</string>
-                <string>W: 38,  2: Arguments number differs from overridden method (arguments-differ)</string>
-                <string>W:467, 13: Use of eval (eval-used)</string>
-                <string>W:518, 13: Use of eval (eval-used)</string>
-                <string>W:743, 13: Use of eval (eval-used)</string>
-                <string>W:1307, 13: Use of eval (eval-used)</string>
-                <string>W:1420, 13: Use of eval (eval-used)</string>
-                <string>W:1474, 13: Use of eval (eval-used)</string>
-                <string>W:1514, 13: Use of eval (eval-used)</string>
-                <string>W:1921,  2: Arguments number differs from overridden method (arguments-differ)</string>
-                <string>W:2017, 13: Use of eval (eval-used)</string>
-                <string>W:2372, 13: Use of eval (eval-used)</string>
-                <string>W:2426, 13: Use of eval (eval-used)</string>
-                <string>W:2453, 13: Use of eval (eval-used)</string>
-                <string>W:2598, 13: Use of eval (eval-used)</string>
-                <string>W:2626, 13: Use of eval (eval-used)</string>
-                <string>W:2675, 13: Use of eval (eval-used)</string>
-                <string>W:2722, 13: Use of eval (eval-used)</string>
+                <string>W: 38,  2: Arguments number differs from overridden \'afterSetUp\' method (arguments-differ)</string>
+                <string>W:517, 13: Use of eval (eval-used)</string>
+                <string>W:568, 13: Use of eval (eval-used)</string>
+                <string>W:793, 13: Use of eval (eval-used)</string>
+                <string>W:1399, 13: Use of eval (eval-used)</string>
+                <string>W:1512, 13: Use of eval (eval-used)</string>
+                <string>W:1566, 13: Use of eval (eval-used)</string>
+                <string>W:1606, 13: Use of eval (eval-used)</string>
+                <string>W:2013,  2: Arguments number differs from overridden \'afterSetUp\' method (arguments-differ)</string>
+                <string>W:2109, 13: Use of eval (eval-used)</string>
+                <string>W:2492, 13: Use of eval (eval-used)</string>
+                <string>W:2546, 13: Use of eval (eval-used)</string>
+                <string>W:2573, 13: Use of eval (eval-used)</string>
+                <string>W:2728, 13: Use of eval (eval-used)</string>
+                <string>W:2756, 13: Use of eval (eval-used)</string>
+                <string>W:2805, 13: Use of eval (eval-used)</string>
+                <string>W:2852, 13: Use of eval (eval-used)</string>
               </tuple>
             </value>
         </item>
@@ -62,7 +74,7 @@
         <item>
             <key> <string>workflow_history</string> </key>
             <value>
-              <persistent> <string encoding="base64">AAAAAAAAAAI=</string> </persistent>
+              <persistent> <string encoding="base64">AAAAAAAAAAM=</string> </persistent>
             </value>
         </item>
       </dictionary>
@@ -77,11 +89,26 @@
         <item>
             <key> <string>data</string> </key>
             <value>
+              <dictionary/>
+            </value>
+        </item>
+      </dictionary>
+    </pickle>
+  </record>
+  <record id="3" aka="AAAAAAAAAAM=">
+    <pickle>
+      <global name="PersistentMapping" module="Persistence.mapping"/>
+    </pickle>
+    <pickle>
+      <dictionary>
+        <item>
+            <key> <string>data</string> </key>
+            <value>
               <dictionary>
                 <item>
                     <key> <string>component_validation_workflow</string> </key>
                     <value>
-                      <persistent> <string encoding="base64">AAAAAAAAAAM=</string> </persistent>
+                      <persistent> <string encoding="base64">AAAAAAAAAAQ=</string> </persistent>
                     </value>
                 </item>
               </dictionary>
@@ -90,7 +117,7 @@
       </dictionary>
     </pickle>
   </record>
-  <record id="3" aka="AAAAAAAAAAM=">
+  <record id="4" aka="AAAAAAAAAAQ=">
     <pickle>
       <global name="WorkflowHistoryList" module="Products.ERP5Type.patches.WorkflowTool"/>
     </pickle>
