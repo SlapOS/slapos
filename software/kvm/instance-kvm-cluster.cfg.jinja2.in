@@ -72,7 +72,7 @@ config-httpd-port = {{ dumps(kvm_parameter_dict.get('httpd-port', 8081)) }}
 config-data-to-vm = {{ dumps(kvm_parameter_dict.get('data-to-vm', '')) }}
 {% endif -%}
 config-enable-monitor = {{ dumps(kvm_parameter_dict.get('enable-monitor', True)) }}
-config-monitor-cors-domains = {{ slapparameter_dict.get('monitor-cors-domains', '') }}
+config-monitor-cors-domains = {{ slapparameter_dict.get('monitor-cors-domains', 'monitor.node.vifib.com') }}
 config-monitor-username = ${monitor-htpasswd:username}
 config-monitor-password = ${monitor-htpasswd:passwd}
 
@@ -240,7 +240,7 @@ recipe = slapos.cookbook:publish
 {% for name, value in publish_dict.items() -%}
 {{   name }} = {{ value }}
 {% endfor %}
-{% set monitor_interface_url = slapparameter_dict.get('monitor-interface-url', '') -%}
+{% set monitor_interface_url = slapparameter_dict.get('monitor-interface-url', 'https://monitor.node.vifib.com') -%}
 {% if monitor_interface_url -%}
 monitor-setup-url = {{ monitor_interface_url }}/#page=settings_configurator&url=${publish:monitor-url}
 {%   endif -%}

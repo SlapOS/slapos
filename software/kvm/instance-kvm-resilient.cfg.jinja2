@@ -8,10 +8,10 @@
 
 {% if slapparameter_dict.get('enable-monitor', 'True').lower() == 'true' -%}
 {% set monitor_return = ['monitor-base-url', 'monitor-url', 'monitor-user', 'monitor-password'] -%}
-{% set monitor_parameter = {'monitor-cors-domains': slapparameter_dict.pop('monitor-cors-domains', "")} -%}
+{% set monitor_parameter = {'monitor-cors-domains': slapparameter_dict.pop('monitor-cors-domains', "monitor.node.vifib.com")} -%}
 {% set monitor_dict = {'parameter': monitor_parameter, 'return': monitor_return} -%}
 {% endif -%}
-{% set monitor_interface_url = slapparameter_dict.pop('monitor-interface-url', '') -%}
+{% set monitor_interface_url = slapparameter_dict.pop('monitor-interface-url', 'https://monitor.node.vifib.com') -%}
 
 [buildout]
 eggs-directory = {{ eggs_directory }}
