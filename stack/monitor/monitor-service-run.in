@@ -34,4 +34,8 @@ def main():
     pidfile.write(str(process.pid))
 
 if __name__ == "__main__":
+  if len(sys.argv) == 1:
+    print "Use: %s Monitor_Config_File"
+    sys.exit(1)
+
   sys.exit(main())

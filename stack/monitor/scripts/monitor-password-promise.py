@@ -1,4 +1,5 @@
-#!{{ python_executable }}
+#!/usr/bin/env python
+
 password_changed_once_path = "{{ password_changed_once_path }}"
 
 import os

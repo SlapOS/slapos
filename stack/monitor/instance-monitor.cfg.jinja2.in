@@ -1,3 +1,16 @@
+# Put here default Name for instance and Hosting Subscription
+[slap-configuration]
+root-instance-title = UNKNOW H-S
+instance-title = UNKNOW Instance
+
+[slap-configuration]
+recipe = slapos.cookbook:slapconfiguration.serialised
+computer = ${slap-connection:computer-id}
+partition = ${slap-connection:partition-id}
+url = ${slap-connection:server-url}
+key = ${slap-connection:key-file}
+cert = ${slap-connection:cert-file}
+
 [cron]
 recipe = slapos.cookbook:cron
 cron-entries = ${logrotate-directory:cron-entries}
@@ -56,8 +69,10 @@ bin = ${directory:bin}
 etc = ${directory:etc}
 run = ${directory:monitor}/run
 #run = ${directory:scripts}
+promises = ${directory:monitor-promise}
 pids = ${directory:run}/monitor
 cgi-bin = ${directory:monitor}/cgi-bin
+webdav = ${directory:monitor}/webdav
 public = ${directory:monitor}/public
 private = ${directory:monitor}/private
 services = ${directory:services}
@@ -65,7 +80,6 @@ services-conf = ${directory:etc}/monitor.conf.d
 www = ${directory:monitor}/web
 web-dir = ${directory:monitor}/web
 log = ${directory:log}/monitor
-promise-wrapper = ${directory:var}/monitor-promise-wrapper
 monitor-var = ${directory:var}/monitor
 monitor-password-var = ${monitor-directory:monitor-var}/password
 monitor-password-interface = ${monitor-directory:monitor-password-var}/password/interface
@@ -110,24 +124,45 @@ ca-crl = ${ca-directory:crl}
 recipe = slapos.cookbook:certificate_authority.request
 key-file = ${monitor-httpd-conf-parameter:key-file}
 cert-file = ${monitor-httpd-conf-parameter:cert-file}
-executable = ${httpd-wrapper:wrapper-path}
+executable = ${monitor-httpd-wrapper:wrapper-path}
 wrapper = ${directory:services}/monitor-httpd
 
 [monitor-conf-parameters]
 title = ${monitor-instance-parameter:monitor-title}
-service-executable-dir = ${monitor-directory:run}
-template-service-run = {{ monitor_service_run }}
+root-title = ${monitor-instance-parameter:root-instance-title}
 public-folder = ${monitor-directory:public}
 private-folder = ${monitor-directory:private}
+webdav-folder = ${monitor-directory:webdav}
 web-folder = ${monitor-directory:web-dir}
-monitor-hal-json = ${monitor-directory:web-dir}/monitor.haljson
+base-url = ${monitor-frontend-promise:url}
+#base-url = ${monitor-httpd-conf-parameter:url}
+monitor-hal-json = ${monitor-directory:public}/monitor.hal.json
 service-pid-folder = ${monitor-directory:pids}
 crond-folder = ${logrotate-directory:cron-entries}
-public-path-list = 
-  ${directory:log}
-private-path-list = 
+logrotate-folder = ${logrotate:logrotate-entries}
+promise-runner = {{ promise_executor_py }}
+promise-folder-list = 
+  ${directory:promises}
+  ${directory:monitor-promise}
 
+public-path-list = 
+private-path-list = 
+    ${directory:log}
+# 
 monitor-url-list = 
+  ${monitor-instance-parameter:opml-url-list}
+
+parameter-file-path = ${monitor-instance-parameter:configuration-file-path}
+
+parameter-list = 
+  raw monitor-user ${monitor-instance-parameter:username}
+  htpasswd monitor-password ${monitor-htpassword-file:password-file} ${monitor-instance-parameter:username} ${httpd-monitor-htpasswd:htpasswd-path}
+  ${monitor-instance-parameter:instance-configuration}
+# htpasswd entry:  htpasswd key password-file username htpasswd-file
+
+collector-db = ${monitor-instance-parameter:collector-db}
+collect-script = {{ monitor_collect }}
+python = {{ python_with_eggs }}
 
 [monitor-conf]
 recipe = slapos.recipe.template:jinja2
@@ -136,25 +171,72 @@ rendered = ${directory:etc}/${:filename}
 filename = monitor.conf
 context = section parameter_dict monitor-conf-parameters
 
+[instance-info-parameters]
+name = ${monitor-instance-parameter:monitor-title}
+root-name = ${monitor-instance-parameter:root-instance-title}
+computer-id = ${slap-connection:computer-id}
+ipv4 = ${slap-configuration:ipv4-random}
+ipv6 = ${slap-configuration:ipv6-random}
+software-release = ${slap-connection:software-release-url}
+software-type = ${slap-configuration:slap-software-type}
+partition-id = ${slap-connection:partition-id}
+
+[monitor-instance-info]
+recipe = slapos.recipe.template:jinja2
+template = {{ monitor_instance_info }}
+rendered = ${directory:etc}/${:filename}
+filename = instance-info.conf
+context = 
+  section instance_dict instance-info-parameters
+
+[python-symlink]
+recipe = plone.recipe.command
+target = ${directory:bin}
+command = ln -sf {{ python_with_eggs }} ${:target}/python
+update-command = ${:command}
+
+[start-monitor]
+recipe = slapos.cookbook:wrapper
+command-line = {{ python_executable }} {{ monitor_bin }} --config_file ${monitor-conf:rendered}
+wrapper-path = ${directory:scripts}/bootstrap-monitor
+environment = 
+  PATH=${python-symlink:target}:/usr/local/bin:/usr/bin:/bin
+
+[monitor-htpasswd]
+recipe = slapos.cookbook:generate.password
+storage-path = ${directory:etc}/.monitor_user
+bytes = 8
+username = admin
+
+[monitor-htpassword-file]
+recipe = plone.recipe.command
+stop-on-error = true
+password-file = ${directory:etc}/.monitor_pwd
+command = 
+  if [ ! -f "${:password-file}" ]; then echo "${monitor-instance-parameter:password}" > ${:password-file}; fi
+update-command = ${:command}
+
 [httpd-monitor-htpasswd]
 recipe = plone.recipe.command
 stop-on-error = true
 htpasswd-path = ${monitor-directory:etc}/monitor-htpasswd
 command = {{ apache_location }}/bin/htpasswd -cb ${:htpasswd-path} ${:user} ${:password}
-user = admin
-password = admin
+user = ${monitor-instance-parameter:username}
+password = ${monitor-instance-parameter:password}
 
 [monitor-httpd-conf-parameter]
 listening-ip = ${monitor-instance-parameter:monitor-httpd-ipv6}
 port = ${monitor-instance-parameter:monitor-httpd-port}
-pid-file = ${directory:run}/httpd.pid
+pid-file = ${directory:run}/monitor-httpd.pid
 cgid-pid-file = ${directory:run}/cgid.pid
-access-log = ${monitor-directory:log}/httpd-access.log
-error-log = ${monitor-directory:log}/httpd-error.log
+access-log = ${monitor-directory:log}/monitor-httpd-access.log
+error-log = ${monitor-directory:log}/monitor-httpd-error.log
 cert-file = ${ca-directory:certs}/httpd.crt
 key-file = ${ca-directory:certs}/httpd.key
 htpasswd-file = ${httpd-monitor-htpasswd:htpasswd-path}
-url = https://[${monitor-instance-parameter:monitor-httpd-ipv6}]:${:port}/
+url = https://[${monitor-instance-parameter:monitor-httpd-ipv6}]:${:port}
+httpd-cors-config-file = ${monitor-httpd-cors:rendered}
+httpd-include-file = 
 
 [monitor-httpd-conf]
 recipe = slapos.recipe.template:jinja2
@@ -165,19 +247,27 @@ context =
   section directory monitor-directory
   section parameter_dict monitor-httpd-conf-parameter
 
-[httpd-wrapper]
+[monitor-httpd-cors]
+recipe = slapos.recipe.template:jinja2
+template = {{ monitor_https_cors }}
+rendered = ${directory:etc}/httpd-cors.cfg
+mode = 0600
+context =
+  key domain monitor-instance-parameter:cors-domains
+
+[monitor-httpd-wrapper]
 recipe = slapos.cookbook:wrapper
 command-line = {{ apache_location }}/bin/httpd -f ${monitor-httpd-conf:rendered} -DFOREGROUND
 wrapper-path = ${directory:bin}/monitor-httpd
 wait-for-files =
   ${ca-directory:certs}/httpd.key
   ${ca-directory:certs}/httpd.crt
-  ${cgi-httpd-graceful-wrapper:rendered}
+  ${monitor-httpd-graceful-wrapper:rendered}
 
-[cgi-httpd-graceful-wrapper]
+[monitor-httpd-graceful-wrapper]
 recipe = slapos.recipe.template:jinja2
 template = {{ template_wrapper }}
-rendered = ${directory:run}/monitor-httpd-graceful
+rendered = ${directory:scripts}/monitor-httpd-graceful
 mode = 0700
 context =
     key content :command
@@ -185,7 +275,9 @@ command = kill -USR1 $(cat ${monitor-httpd-conf-parameter:pid-file})
 
 [monitor-status2rss-wrapper]
 recipe = slapos.cookbook:wrapper
-command-line = {{ python_executable }} {{ status2rss_executable_path }} '${monitor-instance-parameter:monitor-title}' '${monitor-httpd-conf-parameter:url}' ${monitor-directory:public} ${monitor-directory:monitor-status2rss-var}/previous_status ${monitor-directory:web-dir}/feed
+# XXX - hard-coded Urls
+command-line = {{ python_with_eggs }} {{ status2rss_executable_path }} --output '${monitor-directory:public}/feed' --items_folder '${monitor-directory:public}' --public_url '${monitor-conf-parameters:base-url}/share/jio_public/' --private_url '${monitor-conf-parameters:base-url}/share/jio_private/' --instance_name '${monitor-conf-parameters:title}' --hosting_name '${monitor-conf-parameters:root-title}'
+
 wrapper-path = ${directory:bin}/monitor-status2rss.py
 
 [monitor-status2rss-cron-entry]
@@ -195,74 +287,30 @@ name = monitor-status2rss
 frequency = * * * * *
 command = ${monitor-status2rss-wrapper:wrapper-path}
 
-[monitor-web-default-promise-interface]
-recipe = slapos.recipe.template:jinja2
-template = {{ monitor_web_default_promise_interface }}
-rendered = ${monitor-directory:web-dir}/default-promise-interface.html
-context =
+[monitor-globalstate-wrapper]
+recipe = slapos.cookbook:wrapper
+command-line = {{ python_with_eggs }} {{ monitor_globalstate }} '${monitor-conf:rendered}' '${monitor-instance-info:rendered}'
+wrapper-path = ${directory:bin}/monitor-globalstate
 
-[monitor-web-index-html]
-recipe = slapos.recipe.template:jinja2
-template = {{ monitor_web_index_html }}
-rendered = ${monitor-directory:web-dir}/index.html
-context =
+[monitor-configurator-wrapper]
+recipe = slapos.cookbook:wrapper
+# XXX - hard coded path
+command-line = {{ python_with_eggs }} {{ monitor_document_edit }} --config_folder '${monitor-conf-parameters:private-folder}/config/.jio_documents' --output_cfg_file '${monitor-instance-parameter:configuration-file-path}' --htpasswd_bin '{{ apache_location }}/bin/htpasswd'
+wrapper-path = ${directory:bin}/monitor-configurator
 
-[monitor-web-monitor-css]
-recipe = slapos.recipe.template:jinja2
-template = {{ monitor_web_monitor_css }}
-rendered = ${monitor-directory:web-dir}/monitor.css
-context =
+[monitor-globalstate-cron-entry]
+recipe = slapos.cookbook:cron.d
+cron-entries = ${cron:cron-entries}
+name = monitor-globalstate
+frequency = * * * * *
+command = ${monitor-globalstate-wrapper:wrapper-path}
 
-[monitor-web-monitor-js]
-recipe = slapos.recipe.template:jinja2
-template = {{ monitor_web_monitor_js }}
-rendered = ${monitor-directory:web-dir}/monitor.js
-context =
-  key monitor_title monitor-instance-parameter:monitor-title
-
-[monitor-web-monitor-logout-cgi]
-recipe = slapos.recipe.template:jinja2
-template = {{ monitor_web_monitor_logout_cgi }}
-rendered = ${monitor-directory:cgi-bin}/monitor-logout.cgi
-mode = 0755
-context =
-
-[monitor-web-monitor-logout-page]
-recipe = slapos.recipe.template:jinja2
-template = {{ monitor_web_monitor_logout_page }}
-rendered = ${monitor-directory:web-dir}/logout
-context =
-
-[monitor-web-monitor-promise-runner-cgi]
-recipe = slapos.recipe.template:jinja2
-template = {{ monitor_web_monitor_promise_runner_cgi }}
-rendered = ${monitor-directory:cgi-bin}/monitor-run-promise.cgi
-mode = 0755
-context =
-  raw python_executable {{ python_executable }}
-  key promise_wrapper_folder monitor-directory:promise-wrapper
-
-[start-monitor]
-recipe = slapos.recipe.template:jinja2
-template = {{ monitor_bin }}
-rendered = ${directory:scripts}/bootstrap-monitor
-context = 
-  raw python_executable {{ python_executable }}
-  key public_folder monitor-directory:public
-  key private_folder monitor-directory:private
-  key monitor_configuration_path monitor-conf:rendered
-  key promise_runner_path monitor-run-promise:rendered
-  key promise_folder directory:promises
-  key monitor_promise_folder directory:monitor-promise
-  key promise_wrapper_folder monitor-directory:promise-wrapper
-
-[monitor-run-promise]
-recipe = slapos.recipe.template:jinja2
-template = {{ promise_executor_py }}
-rendered = ${directory:bin}/monitor-run-promise
-mode = 700
-context = 
-  raw python_executable {{ python_executable }}
+[monitor-configurator-cron-entry]
+recipe = slapos.cookbook:cron.d
+cron-entries = ${cron:cron-entries}
+name = monitor-configurator
+frequency = * * * * *
+command = ${monitor-configurator-wrapper:wrapper-path}
 
 [monitor-httpd-promise]
 recipe = slapos.cookbook:check_url_available
@@ -282,8 +330,8 @@ context = section parameter_dict monitor-httpd-promise-conf-parameter
 
 [monitor-httpd-promise-conf-parameter]
 title = Monitor httpd listening
-# frequency minute hour day mounth weekday
-frequency = * * * * *
+# frequency 5 minute hour day mounth weekday
+frequency = */5 * * * *
 public-path-list = ${monitor-httpd-conf-parameter:access-log} ${monitor-httpd-conf-parameter:error-log}
 #private-path-list =
 
@@ -312,48 +360,68 @@ rendered = ${directory:monitor-promise}/${monitor-password-promise:filename}.cfg
 mode = 0644
 context = section parameter_dict monitor-password-promise-conf-parameter
 
-[monitor-password-cgi]
-recipe = slapos.recipe.template:jinja2
-template = {{ monitor_password_cgi_template }}
-rendered = ${monitor-directory:cgi-bin}/monitor-password.cgi
-context =
-  raw python_executable {{ python_executable }}
-  key password_changed_once_path monitor-password-parameter:password-changed-once-path
-  raw htpasswd_executable {{ apache_location }}/bin/htpasswd
-  key htpasswd_path httpd-monitor-htpasswd:htpasswd-path
-
-[monitor-password-promise-interface]
-recipe = slapos.recipe.template:jinja2
-template = {{ monitor_password_promise_interface_template }}
-rendered = ${monitor-directory:monitor-password-interface}/index.html
-context =
-
 [publish]
-recipe = slapos.cookbook:publish
-monitor-url = ${monitor-httpd-conf-parameter:url}
+<= monitor-base
+monitor-base-url = ${monitor-conf-parameters:base-url}
+monitor-url = ${:monitor-base-url}/public/feeds
+monitor-user = ${monitor-instance-parameter:username}
+monitor-password = ${monitor-instance-parameter:password}
 
 [monitor-instance-parameter]
-monitor-title = Monitoring interface
+monitor-title = ${slap-configuration:instance-title}
+monitor-httpd-ipv6 = ${slap-configuration:ipv6-random}
+monitor-httpd-port = 8196
+root-instance-title = ${slap-configuration:root-instance-title}
+opml-url-list =
+cors-domains = 
+# XXX Hard coded parameter
+collector-db = /srv/slapgrid/var/data-log/collector.db
+# Credentials
+password = ${monitor-htpasswd:passwd}
+username = ${monitor-htpasswd:username}
+# XXX: type key value
+# ex raw monitor-password resqdsdsd34
+instance-configuration =
 
-[buildout]
-parts =
-  monitor-web-default-promise-interface
-  monitor-web-index-html
-  monitor-web-monitor-css
-  monitor-web-monitor-js
-  monitor-web-monitor-logout-cgi
-  monitor-web-monitor-logout-page
-  monitor-web-monitor-promise-runner-cgi
-  cron-entry-logrotate
-  certificate-authority
-  monitor-conf
-  start-monitor
-  ca-httpd
-  monitor-httpd-promise
-  monitor-httpd-promise-conf
-  monitor-password-promise
-  monitor-password-promise-conf
-  monitor-password-cgi
-  monitor-password-promise-interface
-  monitor-status2rss-cron-entry
-  publish
+configuration-file-path = ${monitor-directory:etc}/monitor_knowledge0.cfg
+
+[monitor-frontend]
+<= slap-connection
+recipe = slapos.cookbook:requestoptional
+name = Monitor Frontend ${monitor-instance-parameter:monitor-title}
+# XXX We have hardcoded SR URL here.
+software-url = http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg
+slave = true
+config-url = ${monitor-httpd-conf-parameter:url}
+config-https-only = true
+#software-type = custom-personal
+return = domain secure_access
+
+[monitor-frontend-promise]
+recipe = slapos.cookbook:check_url_available
+path = ${directory:promises}/monitor-http-frontend
+url = ${monitor-frontend:connection-secure_access}
+dash_path = {{ dash_executable_location }}
+curl_path = {{ curl_executable_location }}
+check-secure = 1
+
+[monitor-base]
+# create dependencies between required monitor parts
+recipe = plone.recipe.command
+command = true
+update-command = 
+depends =
+  ${monitor-globalstate-cron-entry:name}
+  ${monitor-configurator-cron-entry:name}
+  ${cron-entry-logrotate:name}
+  ${certificate-authority:wrapper}
+  ${monitor-conf:rendered}
+  ${start-monitor:wrapper-path}
+  ${ca-httpd:wrapper}
+  ${monitor-httpd-promise:filename}
+  ${monitor-status2rss-cron-entry:name}
+
+#[buildout]
+#parts =
+#  monitor-base
+#  publish
