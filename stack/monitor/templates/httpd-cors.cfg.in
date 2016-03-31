@@ -1,0 +1,5 @@
+{% if domain -%}
+{% set allow_domain = '|'.join(domain.replace('.', '\.').split()) -%}
+SetEnvIf Origin "^http(s)?://(.+\.)?({{ allow_domain }})$" ORIGIN_DOMAIN=$0
+Header always set Access-Control-Allow-Origin "%{ORIGIN_DOMAIN}e" env=ORIGIN_DOMAIN
+{% endif -%}

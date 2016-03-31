@@ -1,6 +1,9 @@
-{% macro replicate(namebase, nbbackup, typeexport, typeimport, heriteLeader='', heriteBackup='', slapparameter_dict={}) %}
+{% macro replicate(namebase, nbbackup, typeexport, typeimport, heriteLeader='', heriteBackup='', slapparameter_dict={}, monitor_parameter_dict={}) %}
 
 {% set sla_parameter_dict = {} -%}
+{% set monitor_dict = monitor_parameter_dict.get('parameter', {}) -%}
+{% set monitor_return = ' '.join(monitor_parameter_dict.get('return', [])) -%}
+{% set monitor_url_list = [] -%}
 # prepare sla-parameters
 {% if slapparameter_dict is defined -%}
 {%   for key in slapparameter_dict.keys() -%}
@@ -30,15 +33,20 @@ software-url = ${slap-connection:software-release-url}
    {{heriteLeader}}
 software-type = {{typeexport}}
 name = {{namebase}}0
-return = ssh-public-key ssh-url notification-id ip
+return = ssh-public-key ssh-url notification-id ip {{ monitor_return }}
+
 config-number = 0
 config-authorized-key = {% for id in range(1,nbbackup|int) %} ${request-pbs-{{namebase}}-{{id}}:connection-ssh-key}{% endfor %}
 config-notify = {% for id in range(1,nbbackup|int) %} ${request-pbs-{{namebase}}-{{id}}:connection-notification-url}{% endfor %}
+config-name = {{namebase}}0
 # Bubble up all the instance parameters to the requested export instance.
 {% if slapparameter_dict is defined %}
 {% for parameter_name, parameter_value in slapparameter_dict.items() %}config-{{parameter_name}} = {{parameter_value}}
 {% endfor %}
 {% endif %}
+{% for key, value in monitor_dict.iteritems() -%}
+config-{{ key }} = {{ value }}
+{% endfor -%}
 {% if sla_parameter_dict == {} -%}
 sla-mode = unique_by_network
 {% else %}
@@ -59,6 +67,10 @@ sla-{{ key }} = {{ value }}
 {%   endfor -%}
 {% endif -%}
 
+{% if 'monitor-base-url' in monitor_return and not monitor_parameter_dict.get('set-monitor-url', False) -%}
+{% do monitor_url_list.append('${request-' ~ namebase ~ ':connection-monitor-base-url}') -%}
+{% endif -%}
+
 {% for id in range(1,nbbackup|int) %}
 
 [request-{{namebase}}-pseudo-replicating-{{id}}]
@@ -70,13 +82,17 @@ name = {{namebase}}{{id}}
 
 software-url = ${slap-connection:software-release-url}
 software-type = {{typeimport}}
-return = ssh-public-key ssh-url notification-url ip takeover-url takeover-password
+return = ssh-public-key ssh-url notification-url ip takeover-url takeover-password  {{ monitor_return }}
 
 pbs-notification-id = ${slap-connection:computer-id}-${slap-connection:partition-id}-{{namebase}}-{{id}}-push
 
 config-number = {{id}}
+config-name = {{namebase}}{{id}}
 config-authorized-key = ${request-pbs-{{namebase}}-{{id}}:connection-ssh-key}
 config-on-notification = ${request-pbs-{{namebase}}-{{id}}:connection-feeds-url}${:pbs-notification-id}
+{% for key, value in monitor_dict.iteritems() -%}
+config-{{ key }} = {{ value }}
+{% endfor -%}
 {% if sla_parameter_dict == {} -%}
 sla-mode = unique_by_network
 {% else %}
@@ -101,6 +117,10 @@ sla-{{ key }} = {{ value }}
 feed-url-{{namebase}}-{{id}}-push = ${request-pbs-{{namebase}}-{{id}}:connection-feeds-url}${request-{{namebase}}-pseudo-replicating-{{id}}:pbs-notification-id}
 takeover-{{namebase}}-{{id}}-url = ${request-{{namebase}}-pseudo-replicating-{{id}}:connection-takeover-url}
 takeover-{{namebase}}-{{id}}-password = ${request-{{namebase}}-pseudo-replicating-{{id}}:connection-takeover-password}
+
+{% if 'monitor-base-url' in monitor_return -%}
+{% do monitor_url_list.append('${request-' ~ namebase ~ '-pseudo-replicating-' ~ id ~ ':connection-monitor-base-url}') -%}
+{% endif -%}
 
 {% endfor -%}
 
@@ -157,7 +177,11 @@ software-type = pull-backup
 <= request-pbs-common
 name = PBS ({{namebase}} / {{id}})
 config-ignore-known-hosts-file = ${slap-parameter:ignore-known-hosts-file}
-return = ssh-key notification-url feeds-url
+config-monitor-title = PBS ${slap-connection:computer-id}-{{namebase}}-{{id}}
+{% for key, value in monitor_dict.iteritems() -%}
+config-{{ key }} = {{ value }}
+{% endfor -%}
+return = ssh-key notification-url feeds-url  {{ monitor_return }}
 slave = false
 {% if sla_parameter_dict == {} -%}
 sla-mode = unique_by_network
@@ -211,6 +235,17 @@ sla-instance_guid = ${request-pbs-{{namebase}}-{{id}}:instance_guid}
 [publish-connection-information]
 feed-url-{{namebase}}-{{id}}-pull = ${request-pbs-{{namebase}}-{{id}}:connection-feeds-url}${request-pull-backup-server-{{namebase}}-{{id}}:config-notification-id}
 
+{% if 'monitor-base-url' in monitor_return -%}
+{% do monitor_url_list.append('${request-pbs-' ~ namebase ~ '-' ~ id ~ ':connection-monitor-base-url}') -%}
+{% endif -%}
+
+{% if monitor_parameter_dict.get('set-monitor-url', False) -%}
+[request-{{namebase}}]
+config-monitor-url-list = {{ monitor_url_list | join(' ') }}
+{% else -%}
+[monitor-conf-parameters]
+monitor-url-list = {{ monitor_url_list | join(' ') }}
+{% endif -%}
 
 [request-pull-backup-server-{{namebase}}-backup-{{id}}]
 <= request-pbs-common
