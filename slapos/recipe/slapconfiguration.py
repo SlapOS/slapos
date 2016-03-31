@@ -150,11 +150,11 @@ class Recipe(object):
               pass
           else:
               options[his_key.replace('_', '-')] = value
-      # Get Instance and root instance title or return UNKNOW if not set
+      # Get Instance and root instance title or return UNKNOWN if not set
       options['instance-title'] = parameter_dict.pop('instance_title',
-                                                      'UNKNOW Instance')
+                                            'UNKNOWN Instance').encode('UTF-8')
       options['root-instance-title'] = parameter_dict.pop('root_instance_title',
-                                                      'UNKNOW')
+                                            'UNKNOWN').encode('UTF-8')
 
       ipv4_set = set()
       v4_add = ipv4_set.add
