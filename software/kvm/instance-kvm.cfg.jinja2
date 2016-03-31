@@ -501,7 +501,7 @@ context =
 recipe = slapos.cookbook:cron.d
 name = logrotate
 # One time per week
-frequency = 0 0 * * * 0
+frequency = 0 0 * * *
 command = ${logrotate:wrapper}
 
 [logrotate-vm-bootstrap]
