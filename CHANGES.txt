@@ -1,6 +1,10 @@
 Changes
 =======
 
+1.0.22 (2016-04-01)
+-------------------
+ * slap configuration: provide instance and root instance title
+
 1.0.16 (2015-10.27)
 -------------------
  * kvm recipe: fix bugs dowload image and disk creation
