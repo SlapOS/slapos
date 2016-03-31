@@ -273,6 +273,9 @@
                     <i class="fa fa-spinner fa-2x fa-spin"></i>\n
                   </span>\n
                 </div>\n
+                <div class="padding-5">\n
+                  <a href="#page=hosting_overview">Access Applications</a>\n
+                </div>\n
               </div>\n
             </div>\n
           </div>\n
@@ -420,7 +423,7 @@
             </item>
             <item>
                 <key> <string>serial</string> </key>
-                <value> <string>949.65333.22535.21930</string> </value>
+                <value> <string>950.14227.11651.3003</string> </value>
             </item>
             <item>
                 <key> <string>state</string> </key>
@@ -438,7 +441,7 @@
                     </tuple>
                     <state>
                       <tuple>
-                        <float>1458641047.48</float>
+                        <float>1459506471.61</float>
                         <string>UTC</string>
                       </tuple>
                     </state>

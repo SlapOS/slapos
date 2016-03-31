@@ -110,9 +110,9 @@
             <key> <string>text_content</string> </key>
             <value> <string encoding="cdata"><![CDATA[
 
-/*global window, rJS, btoa, RSVP, $ */\n
+/*global window, rJS, btoa, RSVP, $, Rusha */\n
 /*jslint nomen: true, indent: 2, maxerr: 3*/\n
-(function (window, rJS, RSVP, $, btoa) {\n
+(function (window, rJS, RSVP, $, btoa, Rusha) {\n
   "use strict";\n
 \n
   function validateHttpUrl(value) {\n
@@ -169,10 +169,6 @@
       });\n
   }\n
 \n
-  function hashCode (s) {\n
-    return s.split("").reduce(function(a,b){a=((a<<5)-a)+b.charCodeAt(0);return a&a},0);              \n
-  }\n
-\n
   function setUrlConfiguration(gadget, url, title) {\n
     return gadget.getSetting(\'monitor_url_description\')\n
       .push(function (url_description_dict) {\n
@@ -184,29 +180,8 @@
           url_description_dict = {};\n
         }\n
 \n
-        // url will be saved by group (hosting subscription) identified by their id\n
-        tmp = hashCode(url) + \'\';\n
-        /*if (url_description_dict.hasOwnProperty(tmp)) {\n
-          // this entry will be overridden\n
-        }*/\n
+        tmp = hashCode(url);\n
         url_description_dict[tmp] = {href: url, title: title};\n
-        /*\n
-        tmp_dict = {};\n
-        tmp_dict.root_title = group_name;\n
-        if (tmp_dict.urls === undefined) {\n
-          tmp_dict.urls = [];\n
-        }\n
-        for (i = 0; i < description_list.length; i += 1) {\n
-          \n
-          if (description_list[i].htmlurl) {\n
-            tmp_dict.urls.push({\n
-              url: description_list[i].htmlurl,\n
-              title: description_list[i].title,\n
-              root_title: description_list[i].opml_title\n
-            });\n
-          }\n
-        }\n
-        url_description_dict[tmp] = tmp_dict;*/\n
         return gadget.setSetting(\'monitor_url_description\', url_description_dict);\n
       });\n
   }\n
@@ -358,7 +333,8 @@
 \n
     opml_url_template = Handlebars.compile(\n
       templater.getElementById("template-opmlurl-list").innerHTML\n
-    );\n
+    ),\n
+    hashCode = new Rusha().digestFromString;\n
 \n
   gadget_klass\n
     .ready(function (g) {\n
@@ -720,7 +696,7 @@
                           parent_url: gadget.props.opml_url\n
                           //parent_title: root_name\n
                         };\n
-                        credential_dict[ hashCode( tmp.url ) + \'\' ] = tmp;\n
+                        credential_dict[ hashCode( tmp.url ) ] = tmp;\n
                       }\n
                     }\n
                     if (credential_dict) {\n
@@ -779,7 +755,9 @@
         });\n
     });\n
 \n
-}(window, rJS, RSVP, $, btoa));
+}(window, rJS, RSVP, $, btoa, Rusha));\n
+\n
+
 
 ]]></string> </value>
         </item>
@@ -916,7 +894,7 @@
             </item>
             <item>
                 <key> <string>serial</string> </key>
-                <value> <string>949.65344.30338.29747</string> </value>
+                <value> <string>950.11430.27817.60057</string> </value>
             </item>
             <item>
                 <key> <string>state</string> </key>
@@ -934,7 +912,7 @@
                     </tuple>
                     <state>
                       <tuple>
-                        <float>1458641325.56</float>
+                        <float>1459439866.36</float>
                         <string>UTC</string>
                       </tuple>
                     </state>

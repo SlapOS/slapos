@@ -208,6 +208,11 @@ html.ui-mobile .ui-grid-container.ui-responsive > ul > li, html.ui-mobile .ui-gr
   color: rgba(128, 128, 128, 0.66);\n
 }\n
 \n
+.text-data {\n
+  height: 120px;\n
+  color: #596167;\n
+}\n
+\n
 .text-overview {\n
   max-width: 200px;\n
   white-space: nowrap;\n
@@ -328,6 +333,18 @@ table tr.line-edit {\n
   -webkit-border-radius: .3125em;\n
   border-radius: .3125em;\n
   border: 1px solid #A2A2A2;\n
+}\n
+\n
+html head + body h2.section-title {\n
+  margin: 0;\n
+  margin-top: 40px;\n
+  color: #557186;\n
+  margin-left: 2px;\n
+}\n
+\n
+html head + body h2.section-title > span {\n
+  font-size: 22px;\n
+  padding-left: 10px;\n
 }\n
 \n
 html head + body .ui-panel-overview > h2 {\n
@@ -592,7 +609,7 @@ html .custom-grid-wrap table thead tr th {\n
   vertical-align: middle;\n
   text-align: left;\n
   position: relative;\n
-  cursor: pointer;\n
+  /*cursor: pointer;*/\n
 }\n
 .infobox:hover {\n
     background: rgba(128, 128, 128, .1);\n
@@ -951,7 +968,7 @@ html table.instance-overview td:first-child > a, html table.instance-overview td
             </item>
             <item>
                 <key> <string>serial</string> </key>
-                <value> <string>949.64125.34749.34235</string> </value>
+                <value> <string>950.11464.24567.15445</string> </value>
             </item>
             <item>
                 <key> <string>state</string> </key>
@@ -969,7 +986,7 @@ html table.instance-overview td:first-child > a, html table.instance-overview td
                     </tuple>
                     <state>
                       <tuple>
-                        <float>1458581200.97</float>
+                        <float>1459341758.63</float>
                         <string>UTC</string>
                       </tuple>
                     </state>

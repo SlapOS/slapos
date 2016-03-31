@@ -80,7 +80,7 @@
         </item>
         <item>
             <key> <string>default_reference</string> </key>
-            <value> <string>gadget_monitoring_login.js</string> </value>
+            <value> <string>gadget_monitoring_import_export.js</string> </value>
         </item>
         <item>
             <key> <string>description</string> </key>
@@ -90,7 +90,7 @@
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>gadget_monitoring_login_js</string> </value>
+            <value> <string>gadget_monitoring_import_export_js</string> </value>
         </item>
         <item>
             <key> <string>language</string> </key>
@@ -110,65 +110,145 @@
             <key> <string>text_content</string> </key>
             <value> <string encoding="cdata"><![CDATA[
 
-/*global document, window, rJS, Rusha, btoa */\n
+/*global window, rJS, RSVP, jsen, Rusha, $ */\n
 /*jslint nomen: true, indent: 2, maxerr: 3*/\n
-(function (window, document, rJS, Rusha, btoa) {\n
+(function (window, rJS, RSVP, jsen, Rusha, $) {\n
   "use strict";\n
 \n
-  var gadget_klass = rJS(window),\n
-    templater = gadget_klass.__template_element,\n
+  function getMonitoringSetting(gadget) {\n
+    return gadget.getSetting(\'monitor_url_description\')\n
+      .push(function (monitor_url_description) {\n
+        return monitor_url_description;\n
+      })\n
+      .push(function (monitor_url_dict) {\n
+        var setting_dict = {};\n
+        if (!monitor_url_dict) {\n
+          return setting_dict;\n
+        }\n
+        return gadget.getDeclaredGadget("jio_gadget")\n
+          .push(function (jio_gadget) {\n
+            return jio_gadget.get(\'urls\');\n
+          })\n
+          .push(function (monitor_base_url_dict) {\n
+            var key;\n
 \n
-    llogin_tooltip_template = Handlebars.compile(\n
-      templater.getElementById("login-toltip-template").innerHTML\n
-    ),\n
+            setting_dict.opml_description = [];\n
+            setting_dict.monitor_url = [];\n
+            for (key in monitor_url_dict) {\n
+              setting_dict.opml_description.push(monitor_url_dict[key]);\n
+            }\n
+            if (monitor_base_url_dict) {\n
+              for (key in monitor_base_url_dict) {\n
+                setting_dict.monitor_url.push(monitor_base_url_dict[key]);\n
+              }\n
+            }\n
+            return setting_dict;\n
+          });\n
+      });\n
+  }\n
+\n
+  function validateJsonConfiguration(json_value) {\n
+    var validate,\n
+      json_schema = {\n
+        "$schema": "http://json-schema.org/draft-04/schema#",\n
+        "type" : "object",\n
+        "properties": {\n
+          "opml_description": {\n
+            "description": "list of monitor opml URL",\n
+            "type": "array",\n
+            "items": {\n
+              "type": "object",\n
+              "properties": {\n
+                "href": {\n
+                  "description": "OPML URL",\n
+                  "type": "string"\n
+                },\n
+                "title": {\n
+                  "description": "OPML title",\n
+                  "type": "string"\n
+                }\n
+              },\n
+              "additionalProperties": false\n
+            }\n
+          },\n
+          "monitor_url": {\n
+            "description": "list of registered monitor instance URL",\n
+            "type": "array",\n
+            "required": [\'hash\', "url", "parent_url"],\n
+            "items": {\n
+              "type": "object",\n
+              "properties": {\n
+                "hash": {\n
+                  "description": "hash string",\n
+                  "type": "string"\n
+                },\n
+                "url": {\n
+                  "description": "url of monitor instance",\n
+                  "type": "string"\n
+                },\n
+                "parent_url": {\n
+                  "description": "URL to parent instance",\n
+                  "type": "string"\n
+                }\n
+              },\n
+              "additionalProperties": false\n
+            }\n
+          }\n
+        },\n
+  \n
+        "additionalProperties": false\n
+      };\n
+\n
+    return new RSVP.Queue()\n
+      .push(function () {\n
+        validate = jsen(json_schema);\n
+        return validate(json_value);\n
+      });\n
+  }\n
+\n
+  var gadget_klass = rJS(window),\n
     hashCode = new Rusha().digestFromString;\n
 \n
   gadget_klass\n
     .ready(function (g) {\n
       g.props = {};\n
-      \n
       return g.getElement()\n
         .push(function (element) {\n
           g.props.element = element;\n
           g.props.deferred = RSVP.defer();\n
-          g.props.from = {page: \'main\'};\n
-          g.props.login = \'login\';\n
         });\n
     })\n
-    .declareAcquiredMethod("redirect", "redirect")\n
-    .declareAcquiredMethod(\'getUrlFor\', \'getUrlFor\')\n
+    .ready(function (g) {\n
+      return g.getDeclaredGadget("login_gadget")\n
+        .push(function (login_gadget) {\n
+          g.props.login_gadget = login_gadget;\n
+        });\n
+    })\n
+    .ready(function (g) {\n
+      return g.getDeclaredGadget("jio_gadget")\n
+        .push(function (jio_gadget) {\n
+          g.props.jio_gadget = jio_gadget;\n
+          return jio_gadget.createJio({\n
+            type: "indexeddb",\n
+            database: "setting"\n
+          });\n
+        });\n
+    })\n
     .declareAcquiredMethod("getSetting", "getSetting")\n
     .declareAcquiredMethod("setSetting", "setSetting")\n
+    .declareAcquiredMethod("redirect", "redirect")\n
     .declareMethod("render", function (options) {\n
       var gadget = this,\n
-        tmp;\n
-\n
-      if (!options.url) {\n
-        tmp = document.URL.split(\'#\');\n
-        if (tmp.length > 1) {\n
-          gadget.props.url = tmp[0];\n
-        } else {\n
-          gadget.props.url = "";\n
-        }\n
-      } else {\n
-        gadget.props.url = options.url;\n
-      }\n
-      gadget.props.title = options.title || \'Please sign in to Monitoring\';\n
-      gadget.props.root = options.root || \'UNKNOW\';\n
-      return gadget.getSetting(\'redirect_after_login\')\n
-        .push(function (redirect_after_login) {\n
-          if (redirect_after_login) {\n
-            gadget.props.from = redirect_after_login;\n
-          }\n
-          gadget.props.element.querySelector(\'h3\')\n
-            .innerHTML = \'<i class="fa fa-cube"></i> \' + gadget.props.title;\n
+        url_description_dict;\n
+      return getMonitoringSetting(gadget)\n
+        .push(function (setting_dict) {\n
+          gadget.props.element.querySelector(\'textarea[name="settings-data"]\')\n
+            .innerHTML = JSON.stringify(setting_dict);\n
           return gadget.props.deferred.resolve();\n
         });\n
     })\n
 \n
-    /////////////////////////////////////////\n
-    // Form submit\n
-    /////////////////////////////////////////\n
+\n
     .declareService(function () {\n
       var gadget = this;\n
 \n
@@ -176,79 +256,88 @@
         .push(function () {\n
           return gadget.props.deferred.promise;\n
         })\n
-        .push(function (redirect_after_login) {\n
-          var text = \'Open Link\',\n
-            content = llogin_tooltip_template({\n
-              title: gadget.props.title,\n
-              root_title: gadget.props.root,\n
-              href: gadget.props.url,\n
-              link_title: text\n
-            });\n
-\n
-          return $(\'.tooltip\').tooltipster({\n
-            animation: \'fade\',\n
-            delay: 200,\n
-            theme: \'tooltipster-shadow\',\n
-            touchDevices: true,\n
-            content: $(content),\n
-            interactive: true,\n
-            trigger: \'hover\'\n
-          });\n
+        .push(function () {\n
+          return $(gadget.props.element.querySelector("a[href=\'#config-export\']")).trigger(\'click\');\n
         })\n
         .push(function () {\n
-          return loopEventListener(\n
-            gadget.props.element.querySelector(\'form\'),\n
-            \'submit\',\n
+          var promise_list = [];\n
+          promise_list.push(loopEventListener(\n
+            gadget.props.element.querySelector(\'.btn-reload\'),\n
+            \'click\',\n
             true,\n
             function () {\n
-              var username = gadget.props.element.querySelector("input[name=\'username\']").value,\n
-                password = gadget.props.element.querySelector("input[name=\'password\']").value;\n
-\n
-              return gadget.getDeclaredGadget(\'login_gadget\')\n
-                .push(function (login_gadget) {\n
-                    var hash = btoa(username + \':\' + password);\n
-                    return login_gadget.login(gadget.props.url, hash)\n
-                      .then(function(result) {\n
-                        if (result.status === \'OK\') {\n
-                          return gadget.setSetting(\'redirect_after_login\', \'\')\n
-                            .push(function () {\n
-                              /*var credential = {\n
-                                  hash: hash,\n
-                                  url: gadget.props.url\n
-                                },\n
-                                hash_url = hashCode(gadget.props.url) + \'\';\n
-                              return login_gadget.setUrlInfo(hash_url, credential);*/\n
-                              return login_gadget.updateUrlValue(\n
-                                gadget.props.url,\n
-                                username,\n
-                                password);\n
-                            })\n
-                            .push(function () {\n
-                              return gadget.redirect(gadget.props.from);\n
-                            });\n
-                        } else {\n
-                          gadget.props.element.querySelector(".msg")\n
-                            .innerHtml = \'<span class="ui-text-\' + result.status +\n
-                              \'">Invalid username or password.</span>\';\n
-                        }\n
-                      }, function(error) {\n
-                        gadget.props.element.querySelector(".msg")\n
-                          .innerHTML =\'<span class="ui-text-\' + error.status +\n
-                              \'">Invalid username or password.</span>\';\n
-                      });\n
+              return new RSVP.Queue()\n
+                .push(function () {\n
+                  return getMonitoringSetting(gadget);\n
+                })\n
+                .push(function (setting_dict) {\n
+                  $(gadget.props.element.querySelector(\'textarea[name="settings-data"]\'))\n
+                    .val(JSON.stringify(setting_dict));\n
                 });\n
             }\n
-          );\n
+          ));\n
+          \n
+          promise_list.push(loopEventListener(\n
+            gadget.props.element.querySelector(\'.btn-save\'),\n
+            \'click\',\n
+            true,\n
+            function () {\n
+              var json_string = $(gadget.props.element.querySelector(\'textarea[name="settings-data-input"]\')).val(),\n
+                configuration_dict,\n
+                monitor_url_dict = {},\n
+                monitor_opml_url_dict = {},\n
+                i;\n
+              gadget.props.element.querySelector(\'.ui-text-error\')\n
+                .innerHTML = "";\n
+\n
+              try {\n
+                configuration_dict = JSON.parse(json_string);\n
+              } catch (e) {\n
+                gadget.props.element.querySelector(\'.ui-text-error\')\n
+                  .innerHTML = \'Error: Invalid json content!\';\n
+                return;\n
+              }\n
+\n
+              return validateJsonConfiguration(configuration_dict)\n
+                .push(function (validate_result) {\n
+                  if (validate_result) {\n
+                    for (i = 0; i < configuration_dict.opml_description.length; i += 1) {\n
+                      monitor_opml_url_dict[\n
+                        hashCode(configuration_dict.opml_description[i].href)\n
+                      ] = configuration_dict.opml_description[i];\n
+                    }\n
+                    for (i = 0; i < configuration_dict.monitor_url.length; i += 1) {\n
+                      monitor_url_dict[\n
+                        hashCode(configuration_dict.monitor_url[i].url)\n
+                      ] = configuration_dict.monitor_url[i];\n
+                    }\n
+                    return gadget.props.login_gadget.setUrlDict(monitor_url_dict)\n
+                      .push(function () {\n
+                        return gadget.setSetting(\'monitor_url_description\', monitor_opml_url_dict);\n
+                      })\n
+                      .push(function () {\n
+                        return gadget.redirect({\n
+                            page: \'settings_configurator\',\n
+                            tab: \'manage\'\n
+                          });\n
+                      });\n
+                  } else {\n
+                    gadget.props.element.querySelector(\'.ui-text-error\')\n
+                      .innerHTML = \'Error: Content is not a valid Monitoring Json configuration!\';\n
+                  }\n
+                });\n
+            }\n
+          ));\n
         });\n
     });\n
 \n
-}(window, document, rJS, Rusha, btoa));
+}(window, rJS, RSVP, jsen, Rusha, $));
 
 ]]></string> </value>
         </item>
         <item>
             <key> <string>title</string> </key>
-            <value> <string>Monitoring Login Page JS</string> </value>
+            <value> <string>Monitoring Import Export Gadget JS</string> </value>
         </item>
         <item>
             <key> <string>version</string> </key>
@@ -334,7 +423,7 @@
                     </tuple>
                     <state>
                       <tuple>
-                        <float>1455109019.01</float>
+                        <float>1459338522.11</float>
                         <string>UTC</string>
                       </tuple>
                     </state>
@@ -379,7 +468,7 @@
             </item>
             <item>
                 <key> <string>serial</string> </key>
-                <value> <string>950.13111.28749.20002</string> </value>
+                <value> <string>950.14162.28880.43042</string> </value>
             </item>
             <item>
                 <key> <string>state</string> </key>
@@ -397,7 +486,7 @@
                     </tuple>
                     <state>
                       <tuple>
-                        <float>1459439547.16</float>
+                        <float>1459502615.34</float>
                         <string>UTC</string>
                       </tuple>
                     </state>
@@ -454,7 +543,7 @@
                     </tuple>
                     <state>
                       <tuple>
-                        <float>1455108978.5</float>
+                        <float>1459338433.74</float>
                         <string>UTC</string>
                       </tuple>
                     </state>

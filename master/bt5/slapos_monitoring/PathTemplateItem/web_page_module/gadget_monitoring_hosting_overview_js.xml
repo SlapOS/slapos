@@ -224,7 +224,6 @@
             promise_list = [];\n
           gadget.props.opml_dict = url_description_dict;\n
           opml_tmp_key_list = [];\n
-          console.log(url_description_dict);\n
           for (key in url_description_dict) {\n
             opml_tmp_key_list.push(key);\n
             promise_list.push(gadget.props.jio_gadget.getMonitorUrlListFromOpml(\n
@@ -741,7 +740,7 @@
             </item>
             <item>
                 <key> <string>serial</string> </key>
-                <value> <string>950.3039.1259.9813</string> </value>
+                <value> <string>950.3039.65061.43776</string> </value>
             </item>
             <item>
                 <key> <string>state</string> </key>
@@ -759,7 +758,7 @@
                     </tuple>
                     <state>
                       <tuple>
-                        <float>1458835199.54</float>
+                        <float>1459761305.99</float>
                         <string>UTC</string>
                       </tuple>
                     </state>

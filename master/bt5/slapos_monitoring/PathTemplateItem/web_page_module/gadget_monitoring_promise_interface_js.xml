@@ -332,8 +332,10 @@
             var i,\n
               history_list = [];\n
 \n
-            for (i = 0; i < result_list.data.rows.length; i += 1) {\n
-              history_list.push(result_list.data.rows[i].value);\n
+            if (result_list) {\n
+              for (i = 0; i < result_list.data.rows.length; i += 1) {\n
+                history_list.push(result_list.data.rows[i].value);\n
+              }\n
             }\n
             history_content = history_widget_template({history_list: history_list});\n
             gadget.property_dict.element.querySelector("#promise-overview .ui-block-a")\n
@@ -640,7 +642,7 @@
                     </tuple>
                     <state>
                       <tuple>
-                        <float>1458124466.18</float>
+                        <float>1458901454.83</float>
                         <string>UTC</string>
                       </tuple>
                     </state>

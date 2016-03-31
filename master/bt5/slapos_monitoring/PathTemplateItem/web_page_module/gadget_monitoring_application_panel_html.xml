@@ -151,10 +151,11 @@
     <script id="panel-template-body" type="text/x-handlebars-template">\n
       <div class="ui-content">\n
         <ul data-role="listview" class="ui-listview">\n
-          <li><a href="#page=status_list"><i class="fa fa-th-list"></i><span data-i18n="Promises Overview">Promises Overview</span></a></li>\n
-          <li><a href="#page=overview"><i class="fa fa-cube"></i><span data-i18n="Instances Overview">Instances Overview</span></a></li>\n
           <li><a href="#page=hosting_overview"><i class="fa fa-globe"></i><span data-i18n="Applications Overview">Applications Overview</span></a></li>\n
+          <li><a href="#page=overview"><i class="fa fa-cube"></i><span data-i18n="Instances Overview">Instances Overview</span></a></li>\n
+          <li><a href="#page=status_list"><i class="fa fa-th-list"></i><span data-i18n="Promises Overview">Promises Overview</span></a></li>\n
           <li><a href="#page=settings_configurator"><i class="fa fa-cog"></i><span data-i18n="Monitoring Configuration">Monitoring Configuration</span></a></li>\n
+          <li><a href="#page=import_export"><i class="fa fa-exchange"></i><span data-i18n="Import / Export">Import / Export</span></a></li>\n
         </ul>\n
       </div>\n
     </script>\n
@@ -303,7 +304,7 @@
             </item>
             <item>
                 <key> <string>serial</string> </key>
-                <value> <string>949.63903.8246.8413</string> </value>
+                <value> <string>950.11404.26472.10461</string> </value>
             </item>
             <item>
                 <key> <string>state</string> </key>
@@ -321,7 +322,7 @@
                     </tuple>
                     <state>
                       <tuple>
-                        <float>1458554861.74</float>
+                        <float>1459508166.41</float>
                         <string>UTC</string>
                       </tuple>
                     </state>

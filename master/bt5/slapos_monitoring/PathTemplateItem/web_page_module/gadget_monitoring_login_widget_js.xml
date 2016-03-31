@@ -108,19 +108,13 @@
         </item>
         <item>
             <key> <string>text_content</string> </key>
-            <value> <string encoding="cdata"><![CDATA[
-
-/*global document, window, rJS */\n
+            <value> <string>/*global document, window, rJS, Rusha, btoa */\n
 /*jslint nomen: true, indent: 2, maxerr: 3*/\n
-(function (window, document, rJS) {\n
+(function (window, document, rJS, Rusha, btoa) {\n
   "use strict";\n
 \n
   var gadget_klass = rJS(window),\n
-    hashCode;\n
-\n
-  hashCode = function (s) {\n
-    return s.split("").reduce(function(a,b){a=((a<<5)-a)+b.charCodeAt(0);return a&a},0);              \n
-  };\n
+    hashCode = new Rusha().digestFromString;\n
 \n
 \n
   function getUrlInfo(gadget, key, default_value) {\n
@@ -337,9 +331,7 @@
       return updateUrlValue(gadget, url, login, password);\n
     });\n
 \n
-}(window, document, rJS));
-
-]]></string> </value>
+}(window, document, rJS, Rusha, btoa));</string> </value>
         </item>
         <item>
             <key> <string>title</string> </key>
@@ -474,7 +466,7 @@
             </item>
             <item>
                 <key> <string>serial</string> </key>
-                <value> <string>949.54052.60822.44663</string> </value>
+                <value> <string>949.54108.24790.65006</string> </value>
             </item>
             <item>
                 <key> <string>state</string> </key>
@@ -492,7 +484,7 @@
                     </tuple>
                     <state>
                       <tuple>
-                        <float>1457967142.65</float>
+                        <float>1459439672.87</float>
                         <string>UTC</string>
                       </tuple>
                     </state>

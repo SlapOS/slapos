@@ -107,7 +107,7 @@
             <value> <string encoding="cdata"><![CDATA[
 
 CACHE MANIFEST\n
-# generated on Fri, 25 Mars 2016 11:45:33 +0000\n
+# generated on Fri, 30 Mars 2016 11:45:33 +0000\n
 # XXX + fonts\n
 # images/ajax-loader.gif\n
 CACHE:\n
@@ -129,11 +129,12 @@ gadget_translate.js\n
 handlebars.js\n
 i18next.js\n
 jiodev.js\n
+jio_dev_rssfeed_storage.js\n
 jquery.js\n
 jquery.magnific-popup.min.js\n
 jquerymobile.css\n
 jquerymobile.js\n
-jio_dev_rssfeed_storage.js\n
+jsen.min.js\n
 magnific-popup.css\n
 renderjs.js\n
 rsvp.js\n
@@ -143,6 +144,7 @@ gadget_monitoring_chart.html\n
 gadget_monitoring_document_edit.html\n
 gadget_monitoring_header.html\n
 gadget_monitoring_hosting_overview.html\n
+gadget_monitoring_import_export.html\n
 gadget_monitoring_jio.html\n
 gadget_monitoring_login.html\n
 gadget_monitoring_login_widget.html\n
@@ -165,6 +167,7 @@ gadget_monitoring_chart.js\n
 gadget_monitoring_document_edit.js\n
 gadget_monitoring_header.js\n
 gadget_monitoring_hosting_overview.js\n
+gadget_monitoring_import_export.js\n
 gadget_monitoring_jio.js\n
 gadget_monitoring_login.js\n
 gadget_monitoring_login_widget.js\n
@@ -323,7 +326,7 @@ NETWORK:\n
             </item>
             <item>
                 <key> <string>serial</string> </key>
-                <value> <string>950.4056.16865.34099</string> </value>
+                <value> <string>950.11734.46994.47240</string> </value>
             </item>
             <item>
                 <key> <string>state</string> </key>
@@ -341,7 +344,7 @@ NETWORK:\n
                     </tuple>
                     <state>
                       <tuple>
-                        <float>1458896288.17</float>
+                        <float>1459356896.12</float>
                         <string>UTC</string>
                       </tuple>
                     </state>

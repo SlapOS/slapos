@@ -2,7 +2,7 @@
 <ZopeData>
   <record id="1" aka="AAAAAAAAAAE=">
     <pickle>
-      <global name="Web Script" module="erp5.portal_type"/>
+      <global name="Web Page" module="erp5.portal_type"/>
     </pickle>
     <pickle>
       <dictionary>
@@ -80,7 +80,7 @@
         </item>
         <item>
             <key> <string>default_reference</string> </key>
-            <value> <string>gadget_monitoring_login.js</string> </value>
+            <value> <string>gadget_monitoring_import_export.html</string> </value>
         </item>
         <item>
             <key> <string>description</string> </key>
@@ -90,7 +90,7 @@
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>gadget_monitoring_login_js</string> </value>
+            <value> <string>gadget_monitoring_import_export_html</string> </value>
         </item>
         <item>
             <key> <string>language</string> </key>
@@ -98,7 +98,7 @@
         </item>
         <item>
             <key> <string>portal_type</string> </key>
-            <value> <string>Web Script</string> </value>
+            <value> <string>Web Page</string> </value>
         </item>
         <item>
             <key> <string>short_title</string> </key>
@@ -110,145 +110,82 @@
             <key> <string>text_content</string> </key>
             <value> <string encoding="cdata"><![CDATA[
 
-/*global document, window, rJS, Rusha, btoa */\n
-/*jslint nomen: true, indent: 2, maxerr: 3*/\n
-(function (window, document, rJS, Rusha, btoa) {\n
-  "use strict";\n
+<!DOCTYPE html>\n
+<html>\n
+  <head>\n
+    <meta http-equiv="Content-type" content="text/html; charset=utf-8" />\n
+    <meta name="viewport" content="width=device-width, user-scalable=no" />\n
+    <title>Monitoring Configurator</title>\n
 \n
-  var gadget_klass = rJS(window),\n
-    templater = gadget_klass.__template_element,\n
+    <!-- renderjs -->\n
+    <script src="rsvp.js" type="text/javascript"></script>\n
+    <script src="renderjs.js" type="text/javascript"></script>\n
+    <script src="jsen.min.js" type="text/javascript"></script>\n
 \n
-    llogin_tooltip_template = Handlebars.compile(\n
-      templater.getElementById("login-toltip-template").innerHTML\n
-    ),\n
-    hashCode = new Rusha().digestFromString;\n
+    <script src="gadget_monitoring_import_export.js" type="text/javascript"></script>\n
+  </head>\n
+  <body>\n
+    <div data-gadget-url="gadget_monitoring_jio.html" data-gadget-scope="jio_gadget" data-gadget-sandbox="public"></div>\n
+    <div data-gadget-url="gadget_monitoring_login_widget.html" data-gadget-scope="login_gadget" data-gadget-sandbox="public"></div>\n
+    \n
+    <div data-role="tabs" class="config-tabs">\n
+      <div data-role="navbar">\n
+        <ul>\n
+          <li><a href="#config-export" data-ajax="false">Export Settings</a></li>\n
+          <li><a href="#config-import" data-ajax="false">Import Settings</a></li>\n
+        </ul>\n
+      </div>\n
+      <div id="config-export" class="ui-body-c ui-content">\n
+        <h2 class="section-title"><i class="fa fa-download fa-2x"></i><span data-i18n="">Save Monitoring Configuration</span></h2>\n
+        <div class="ui-body-c ui-content-sections">\n
+          <div class="ui-field-contain">\n
+            <label data-i18n="Setting Content:">Settings Content (json format):</label>\n
+            <textarea name="settings-data" class="text-data"></textarea>\n
+          </div>\n
+        </div>\n
+        <div class="select-storage ui-controlgroup ui-controlgroup-horizontal">\n
+          <div class="ui-grid-b ui-responsive">\n
+            <div class="ui-block-a"></div>\n
+            <div class="ui-block-b">\n
+            </div>\n
+            <div class="ui-block-c">\n
+              <button data-i18n="Reload Settings" class="ui-btn-btn-right btn-reload">Reload Settings</button>\n
+            </div>\n
+          </div>\n
+        </div>\n
+      </div>\n
+      <div id="config-import" class="ui-body-c ui-content">\n
+        <h2 class="section-title"><i class="fa fa-upload fa-2x"></i><span data-i18n="">Load Your Monitoring Configuration</span></h2>\n
+        <div class="ui-body-c ui-content-sections">\n
+          <div class="ui-field-contain">\n
+            <label data-i18n="Setting Content:">Settings Content (json format):</label>\n
+            <textarea name="settings-data-input" class="text-data"></textarea>\n
+          </div>\n
+        </div>\n
+        <div class="ui-text-right padding-5">\n
+          <span class="ui-text-error"></span>\n
+        </div>\n
+        <div class="select-storage ui-controlgroup ui-controlgroup-horizontal">\n
+          <div class="ui-grid-b ui-responsive">\n
+            <div class="ui-block-a"></div>\n
+            <div class="ui-block-b">\n
+            </div>\n
+            <div class="ui-block-c">\n
+              <button data-i18n="Reload Settings" class="ui-btn-btn-right btn-save">Import Settings</button>\n
+            </div>\n
+          </div>\n
+        </div>\n
+      </div>\n
+    </div>\n
 \n
-  gadget_klass\n
-    .ready(function (g) {\n
-      g.props = {};\n
-      \n
-      return g.getElement()\n
-        .push(function (element) {\n
-          g.props.element = element;\n
-          g.props.deferred = RSVP.defer();\n
-          g.props.from = {page: \'main\'};\n
-          g.props.login = \'login\';\n
-        });\n
-    })\n
-    .declareAcquiredMethod("redirect", "redirect")\n
-    .declareAcquiredMethod(\'getUrlFor\', \'getUrlFor\')\n
-    .declareAcquiredMethod("getSetting", "getSetting")\n
-    .declareAcquiredMethod("setSetting", "setSetting")\n
-    .declareMethod("render", function (options) {\n
-      var gadget = this,\n
-        tmp;\n
-\n
-      if (!options.url) {\n
-        tmp = document.URL.split(\'#\');\n
-        if (tmp.length > 1) {\n
-          gadget.props.url = tmp[0];\n
-        } else {\n
-          gadget.props.url = "";\n
-        }\n
-      } else {\n
-        gadget.props.url = options.url;\n
-      }\n
-      gadget.props.title = options.title || \'Please sign in to Monitoring\';\n
-      gadget.props.root = options.root || \'UNKNOW\';\n
-      return gadget.getSetting(\'redirect_after_login\')\n
-        .push(function (redirect_after_login) {\n
-          if (redirect_after_login) {\n
-            gadget.props.from = redirect_after_login;\n
-          }\n
-          gadget.props.element.querySelector(\'h3\')\n
-            .innerHTML = \'<i class="fa fa-cube"></i> \' + gadget.props.title;\n
-          return gadget.props.deferred.resolve();\n
-        });\n
-    })\n
-\n
-    /////////////////////////////////////////\n
-    // Form submit\n
-    /////////////////////////////////////////\n
-    .declareService(function () {\n
-      var gadget = this;\n
-\n
-      return new RSVP.Queue()\n
-        .push(function () {\n
-          return gadget.props.deferred.promise;\n
-        })\n
-        .push(function (redirect_after_login) {\n
-          var text = \'Open Link\',\n
-            content = llogin_tooltip_template({\n
-              title: gadget.props.title,\n
-              root_title: gadget.props.root,\n
-              href: gadget.props.url,\n
-              link_title: text\n
-            });\n
-\n
-          return $(\'.tooltip\').tooltipster({\n
-            animation: \'fade\',\n
-            delay: 200,\n
-            theme: \'tooltipster-shadow\',\n
-            touchDevices: true,\n
-            content: $(content),\n
-            interactive: true,\n
-            trigger: \'hover\'\n
-          });\n
-        })\n
-        .push(function () {\n
-          return loopEventListener(\n
-            gadget.props.element.querySelector(\'form\'),\n
-            \'submit\',\n
-            true,\n
-            function () {\n
-              var username = gadget.props.element.querySelector("input[name=\'username\']").value,\n
-                password = gadget.props.element.querySelector("input[name=\'password\']").value;\n
-\n
-              return gadget.getDeclaredGadget(\'login_gadget\')\n
-                .push(function (login_gadget) {\n
-                    var hash = btoa(username + \':\' + password);\n
-                    return login_gadget.login(gadget.props.url, hash)\n
-                      .then(function(result) {\n
-                        if (result.status === \'OK\') {\n
-                          return gadget.setSetting(\'redirect_after_login\', \'\')\n
-                            .push(function () {\n
-                              /*var credential = {\n
-                                  hash: hash,\n
-                                  url: gadget.props.url\n
-                                },\n
-                                hash_url = hashCode(gadget.props.url) + \'\';\n
-                              return login_gadget.setUrlInfo(hash_url, credential);*/\n
-                              return login_gadget.updateUrlValue(\n
-                                gadget.props.url,\n
-                                username,\n
-                                password);\n
-                            })\n
-                            .push(function () {\n
-                              return gadget.redirect(gadget.props.from);\n
-                            });\n
-                        } else {\n
-                          gadget.props.element.querySelector(".msg")\n
-                            .innerHtml = \'<span class="ui-text-\' + result.status +\n
-                              \'">Invalid username or password.</span>\';\n
-                        }\n
-                      }, function(error) {\n
-                        gadget.props.element.querySelector(".msg")\n
-                          .innerHTML =\'<span class="ui-text-\' + error.status +\n
-                              \'">Invalid username or password.</span>\';\n
-                      });\n
-                });\n
-            }\n
-          );\n
-        });\n
-    });\n
-\n
-}(window, document, rJS, Rusha, btoa));
+  </body>\n
+</html>
 
 ]]></string> </value>
         </item>
         <item>
             <key> <string>title</string> </key>
-            <value> <string>Monitoring Login Page JS</string> </value>
+            <value> <string>Monitoring Import Export</string> </value>
         </item>
         <item>
             <key> <string>version</string> </key>
@@ -334,7 +271,7 @@
                     </tuple>
                     <state>
                       <tuple>
-                        <float>1455109019.01</float>
+                        <float>1459337186.91</float>
                         <string>UTC</string>
                       </tuple>
                     </state>
@@ -379,7 +316,7 @@
             </item>
             <item>
                 <key> <string>serial</string> </key>
-                <value> <string>950.13111.28749.20002</string> </value>
+                <value> <string>950.11579.61166.10564</string> </value>
             </item>
             <item>
                 <key> <string>state</string> </key>
@@ -397,7 +334,7 @@
                     </tuple>
                     <state>
                       <tuple>
-                        <float>1459439547.16</float>
+                        <float>1459353714.18</float>
                         <string>UTC</string>
                       </tuple>
                     </state>
@@ -454,7 +391,7 @@
                     </tuple>
                     <state>
                       <tuple>
-                        <float>1455108978.5</float>
+                        <float>1459337116.02</float>
                         <string>UTC</string>
                       </tuple>
                     </state>
