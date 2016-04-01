@@ -6,6 +6,10 @@ url = ${slap-connection:server-url}
 key = ${slap-connection:key-file}
 cert = ${slap-connection:cert-file}
 
+# XXX Default values if doesn't exists
+root-instance-title = UNKNOWN H-S
+instance-title = UNKNOWN Instance
+
 [cron]
 recipe = slapos.cookbook:cron
 cron-entries = ${logrotate-directory:cron-entries}
@@ -129,8 +133,7 @@ public-folder = ${monitor-directory:public}
 private-folder = ${monitor-directory:private}
 webdav-folder = ${monitor-directory:webdav}
 web-folder = ${monitor-directory:web-dir}
-base-url = ${monitor-frontend-promise:url}
-#base-url = ${monitor-httpd-conf-parameter:url}
+base-url = ${monitor-instance-parameter:monitor-base-url}
 monitor-hal-json = ${monitor-directory:public}/monitor.hal.json
 service-pid-folder = ${monitor-directory:pids}
 crond-folder = ${logrotate-directory:cron-entries}
@@ -366,6 +369,8 @@ monitor-password = ${monitor-instance-parameter:password}
 monitor-title = ${slap-configuration:instance-title}
 monitor-httpd-ipv6 = ${slap-configuration:ipv6-random}
 monitor-httpd-port = 8196
+# XXX - Set monitor-base-url = ${monitor-httpd-conf-parameter:url} => https://[ipv6]:port
+monitor-base-url = ${monitor-frontend-promise:url}
 root-instance-title = ${slap-configuration:root-instance-title}
 opml-url-list =
 cors-domains = 
