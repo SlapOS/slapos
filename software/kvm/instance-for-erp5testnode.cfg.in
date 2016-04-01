@@ -13,7 +13,7 @@ nbd = ${template-nbd:output}
 frontend = ${template-frontend:output}
 
 kvm-resilient = $${dynamic-template-kvm-resilient:rendered}
-kvm-import = ${template-kvm-import:output}
+kvm-import = $${dynamic-template-kvm-import:rendered}
 kvm-export = $${dynamic-template-kvm-export:rendered}
 
 # Used for the test of resiliency. The system wants a "test" software_type.
@@ -62,6 +62,7 @@ context =
     raw qemu_img_executable_location ${kvm:location}/bin/qemu-img
     raw sixtunnel_executable_location ${6tunnel:location}/bin/6tunnel
     raw template_httpd_cfg ${template-httpd:rendered}
+    raw template_monitor ${monitor2-template:rendered}
     raw template_content ${template-content:location}/${template-content:filename}
     raw websockify_executable_location ${buildout:directory}/bin/websockify
 template-parts-destination = ${template-parts:destination}
@@ -80,10 +81,27 @@ context =
     key eggs_directory buildout:eggs-directory
     key slapparameter_dict slap-configuration:configuration
     raw curl_executable_location ${curl:location}/bin/curl
+    raw template_monitor ${monitor2-template:rendered}
 template-parts-destination = ${template-parts:destination}
 template-replicated-destination = ${template-replicated:destination}
 import-list = file parts :template-parts-destination
               file replicated :template-replicated-destination
+mode = 0644
+
+[dynamic-template-kvm-import]
+recipe = slapos.recipe.template:jinja2
+template = ${template-kvm-import:location}/instance-kvm-import.cfg.jinja2.in
+rendered = $${buildout:directory}/template-kvm-import.cfg
+extensions = jinja2.ext.do
+context =
+    key develop_eggs_directory buildout:develop-eggs-directory
+    key eggs_directory buildout:eggs-directory
+    raw template_kvm_import ${template-kvm-import-script:location}/${template-kvm-import-script:filename}
+    raw pbsready_import_template ${pbsready-import:output}
+    raw template_monitor ${monitor2-template:rendered}
+    key slapparameter_dict slap-configuration:configuration
+    raw zcat_binary ${gzip:location}/bin/zcat
+    raw gzip_binary ${gzip:location}/bin/gzip
 mode = 0644
 
 [dynamic-template-kvm-export]
