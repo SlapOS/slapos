@@ -27,6 +27,7 @@ def main():
   parser.add_argument('--project_title', help='The project title')
   parser.add_argument('--revision', help='The revision to test',
                       default='dummy_revision')
+  parser.add_argument('--node_quantity', help='ignored', type=int)
   parser.add_argument('--master_url',
                       help='The Url of Master controling many suites')
 
