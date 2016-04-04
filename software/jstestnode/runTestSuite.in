@@ -20,20 +20,20 @@ FIREFOX_EXECUTABLE = '$${firefox-instance:executable}'
 BASE_URL = 'http://[$${nginx-configuration:ip}]:$${nginx-configuration:port}/'
 
 def main():
+  parser = argparse.ArgumentParser(description='Run a test suite.')
+  parser.add_argument('--test_suite', help='The test suite name')
+  parser.add_argument('--test_suite_title', help='The test suite title')
+  parser.add_argument('--test_node_title', help='The test node title')
+  parser.add_argument('--project_title', help='The project title')
+  parser.add_argument('--revision', help='The revision to test',
+                      default='dummy_revision')
+  parser.add_argument('--node_quantity', help='ignored', type=int)
+  parser.add_argument('--master_url',
+                      help='The Url of Master controling many suites')
+
+  args = parser.parse_args()
+
   try:
-    parser = argparse.ArgumentParser(description='Run a test suite.')
-    parser.add_argument('--test_suite', help='The test suite name')
-    parser.add_argument('--test_suite_title', help='The test suite title')
-    parser.add_argument('--test_node_title', help='The test node title')
-    parser.add_argument('--project_title', help='The project title')
-    parser.add_argument('--revision', help='The revision to test',
-                        default='dummy_revision')
-    parser.add_argument('--node_quantity', help='ignored', type=int)
-    parser.add_argument('--master_url',
-                        help='The Url of Master controling many suites')
-
-    args = parser.parse_args()
-
     test_suite_title = args.test_suite_title or args.test_suite
     test_suite = args.test_suite
     revision = args.revision
