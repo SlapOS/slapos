@@ -80,7 +80,7 @@ def main():
         'error_count': 0,
         'failure_count': failure,
         'skip_count': 0,
-        'duration': elt.find_element_by_xpath('.//span[@class="runtime"]').text,
+        'duration': int(elt.find_element_by_xpath('.//span[@class="runtime"]').text.split()[0]),
         'date': date,
         'command': elt.find_element_by_xpath('.//a[text()="Rerun"]').get_attribute('href'),
         'stdout': agent,
@@ -109,9 +109,10 @@ def main():
       # report status back to Nexedi ERP5
       test_result_line.stop(**test_line_dict[test_result_line.name])
 
-  except Exception:
+  except:
     # Catch any exception here, to warn user instead of being silent,
     # by generating fake error result
+    print traceback.format_exc()
     result = dict(status_code=-1,
                   command=url,
                   stderr=traceback.format_exc(),
