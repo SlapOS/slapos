@@ -20,39 +20,42 @@ FIREFOX_EXECUTABLE = '$${firefox-instance:executable}'
 BASE_URL = 'http://[$${nginx-configuration:ip}]:$${nginx-configuration:port}/'
 
 def main():
-  parser = argparse.ArgumentParser(description='Run a test suite.')
-  parser.add_argument('--test_suite', help='The test suite name')
-  parser.add_argument('--test_suite_title', help='The test suite title')
-  parser.add_argument('--test_node_title', help='The test node title')
-  parser.add_argument('--project_title', help='The project title')
-  parser.add_argument('--revision', help='The revision to test',
-                      default='dummy_revision')
-  parser.add_argument('--node_quantity', help='ignored', type=int)
-  parser.add_argument('--master_url',
-                      help='The Url of Master controling many suites')
-
-  args = parser.parse_args()
-
-  test_suite_title = args.test_suite_title or args.test_suite
-  revision = args.revision
-
-  test_line_dict = {}
-
-  if ('jio' in test_suite_title):
-    url = BASE_URL + '/jio/test/tests.html'
-  else:
-    url = BASE_URL + '/renderjs/test/'
-
-  date = strftime("%Y/%m/%d %H:%M:%S", gmtime())
-  ##########################
-  # Run all tests
-  ##########################
   try:
+    parser = argparse.ArgumentParser(description='Run a test suite.')
+    parser.add_argument('--test_suite', help='The test suite name')
+    parser.add_argument('--test_suite_title', help='The test suite title')
+    parser.add_argument('--test_node_title', help='The test node title')
+    parser.add_argument('--project_title', help='The project title')
+    parser.add_argument('--revision', help='The revision to test',
+                        default='dummy_revision')
+    parser.add_argument('--node_quantity', help='ignored', type=int)
+    parser.add_argument('--master_url',
+                        help='The Url of Master controling many suites')
+
+    args = parser.parse_args()
+
+    test_suite_title = args.test_suite_title or args.test_suite
+    test_suite = args.test_suite
+    revision = args.revision
+
+    test_line_dict = {}
+
+    if ('jio' in test_suite):
+      url = BASE_URL + 'jio/test/tests.html'
+    else:
+      url = BASE_URL + 'renderjs/test/'
+
+    date = strftime("%Y/%m/%d %H:%M:%S", gmtime())
+
+    ##########################
+    # Run all tests
+    ##########################
     firefox_binary = webdriver.firefox.firefox_binary.FirefoxBinary(firefox_path=FIREFOX_EXECUTABLE)
     browser = webdriver.Firefox(firefox_binary=firefox_binary)
 
     agent = browser.execute_script("return navigator.userAgent")
     print agent
+    print url
 
     browser.get(url)
     WebDriverWait(browser, 60).until(EC.presence_of_element_located((
@@ -87,6 +90,25 @@ def main():
 
     browser.quit()
 
+    tool = taskdistribution.TaskDistributionTool(portal_url=args.master_url)
+    test_result = tool.createTestResult(revision = revision,
+                                        test_name_list = test_line_dict.keys(),
+                                        node_title = args.test_node_title,
+                                        test_title = test_suite_title,
+                                        project_title = args.project_title)
+    if test_result is None:
+      return
+    # report test results
+    while 1:
+      test_result_line = test_result.start()
+      if not test_result_line:
+        print 'No test result anymore.'
+        break
+
+      print 'Submitting: "%s"' % test_result_line.name
+      # report status back to Nexedi ERP5
+      test_result_line.stop(**test_line_dict[test_result_line.name])
+
   except Exception:
     # Catch any exception here, to warn user instead of being silent,
     # by generating fake error result
@@ -96,23 +118,6 @@ def main():
                   stdout='')
     # XXX: inform test node master of error
     raise EnvironmentError(result)
-
-  tool = taskdistribution.TaskDistributionTool(portal_url=args.master_url)
-  test_result = tool.createTestResult(revision = revision,
-                                      test_name_list = test_line_dict.keys(),
-                                      node_title = args.test_node_title,
-                                      test_title = test_suite_title,
-                                      project_title = args.project_title)
-  if test_result is None:
-    return
-  # report test results
-  while 1:
-    test_result_line = test_result.start()
-    if not test_result_line:
-      break
-
-    # report status back to Nexedi ERP5
-    test_result_line.stop(**test_line_dict[test_result_line.name])
 
 if __name__ == "__main__":
     main()
