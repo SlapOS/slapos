@@ -50,12 +50,14 @@
       "title": "SSL Certificate",
       "description": "SSL Certificate",
       "type": "string",
+      "textarea": true,
       "default": ""
     },
     "frontend-ssl_key": {
       "title": "SSL Key",
       "description": "SSL Key",
       "type": "string",
+      "textarea": true,
       "default": ""
     },
 
@@ -63,61 +65,57 @@
       "title": "SSL Certificate Authority's Certificate",
       "description": "SSL Key",
       "type": "string",
+      "textarea": true,
       "default": ""
     },
     "frontend-https-only": {
       "title": "HTTPS Only",
       "description": "If set to true, http request are redirect to https",
-      "type": "string",
-      "default": "false",
-      "enum": ["false", "true"]
+      "type": "boolean",
+      "default": false
     },
 
     "frontend-ssl-proxy-verify": {
       "title": "Verify Backend Certificates",
       "description": "If set to true, Backend Certificates are checked",
-      "type": "string",
-      "default": "false",
-      "enum": ["false", "true"]
+      "type": "boolean",
+      "default": false
     },
 
     "frontend-ssl_proxy_ca_crt": {
       "title": "SSL Backend Authority's Certificate",
       "description": "SSL Certificate Authority of the backen (to be used with ssl-proxy-verify)",
       "type": "string",
+      "textarea": true,
       "default": ""
     },
 
     "frontend-enable_cache": {
       "title": "Enable Cache",
       "description": "If set to true, the cache is used",
-      "type": "string",
-      "default": "false",
-      "enum": ["false", "true"]
+      "type": "boolean",
+      "default": false
     },
 
     "frontend-disable-no-cache-request": {
       "title": "Disable 'no-cache' requests",
       "description": "If set to true, no-cache control headers will be disabled",
-      "type": "string",
-      "default": "false",
-      "enum": ["false", "true"]
+      "type": "boolean",
+      "default": false
     },
 
     "frontend-disable-via-header": {
       "title": "Disable 'Via' headers from cache",
       "description": "If set to true, via headers will be disabled",
-      "type": "string",
-      "default": "false",
-      "enum": ["false", "true"]
+      "type": "boolean",
+      "default": false
     },
 
     "frontend-prefer-gzip-encoding-to-backend": {
       "title": "Prefer gzip Encoding for Backend",
       "description": "If set to true, if a request is made with accept encoding 'gzip', only that one will be transferred to the backend",
-      "type": "string",
-      "default": "false",
-      "enum": ["false", "true"]
+      "type": "boolean",
+      "default": false
     },
 
     "frontend-disabled-cookie-list": {
