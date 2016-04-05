@@ -6,9 +6,17 @@
 		"default": {
 			"title": "Default",
 			"description": "Re6st registry",
-			"request": "instance-cdn-me-input-schema.json",
+			"request": "instance-cdn-me-simplified-input-schema.json",
 			"response": "instance-cdn-me-output-schema.json",
 			"index": 0
+		},
+		"default-advanced": {
+			"title": "Default (Advanced Form)",
+                        "software-type": "default",
+			"description": "Re6st registry",
+			"request": "instance-cdn-me-input-schema.json",
+			"response": "instance-cdn-me-output-schema.json",
+			"index": 1
 		}
 	}
 }
