@@ -157,12 +157,12 @@
       option.selected = "selected";\n
     }\n
     input.appendChild(option);\n
-    for (option_index in json_field.enum) {\n
-      if (json_field.enum.hasOwnProperty(option_index)) {\n
+    for (option_index in json_field[\'enum\']) {\n
+      if (json_field[\'enum\'].hasOwnProperty(option_index)) {\n
         optionz = document.createElement("option");\n
-        optionz.value = json_field.enum[option_index];\n
-        optionz.textContent = json_field.enum[option_index];\n
-        if (json_field.enum[option_index] === default_value) {\n
+        optionz.value = json_field[\'enum\'][option_index];\n
+        optionz.textContent = json_field[\'enum\'][option_index];\n
+        if (json_field[\'enum\'][option_index] === default_value) {\n
           optionz.selected = "selected";\n
         }\n
         input.appendChild(optionz);\n
@@ -170,8 +170,8 @@
     }\n
     return input;\n
   }\n
-  \n
-  function render_textarea(json_field, default_value) {\n
+\n
+  function render_textarea(json_field, default_value, data_format) {\n
     var input = document.createElement("textarea");\n
     if (default_value !== undefined) {\n
       if (default_value instanceof Array) {\n
@@ -180,22 +180,27 @@
         input.value = default_value;\n
       }\n
     }\n
+    input["data-format"] = data_format;\n
     return input;\n
   }\n
 \n
   function render_field(json_field, default_value) {\n
 \n
-    if (json_field.enum !== undefined) {\n
+    if (json_field[\'enum\'] !== undefined) {\n
       return render_selection(json_field, default_value);\n
     }\n
 \n
     if (json_field.type === "boolean") {\n
-      json_field.enum = [true, false];\n
+      json_field[\'enum\'] = [true, false];\n
       return render_selection(json_field, default_value);\n
     }\n
 \n
     if (json_field.type === "array") {\n
-      return render_textarea(json_field, default_value);\n
+      return render_textarea(json_field, default_value, "array");\n
+    }\n
+\n
+    if (json_field.type === "string" && json_field.textarea === true) {\n
+      return render_textarea(json_field, default_value, "string");\n
     }\n
 \n
     var input = document.createElement("input");\n
@@ -204,11 +209,9 @@
       input.value = default_value;\n
     }\n
 \n
-    switch (json_field.type) {\n
-    case "integer":\n
+    if (json_field.type === "integer") {\n
       input.type = "number";\n
-      break;\n
-    default:\n
+    } else {\n
       input.type = "text";\n
     }\n
 \n
@@ -306,9 +309,9 @@
           input.setAttribute("class", "slapos-parameter");\n
           div_input.appendChild(input);\n
         }\n
-        if (json_field.properties[key].default !== undefined) {\n
+        if (json_field.properties[key][\'default\'] !== undefined) {\n
           span_info = document.createElement("span");\n
-          span_info.textContent = \'(default = \' + json_field.properties[key].default + \')\';\n
+          span_info.textContent = \'(default = \' + json_field.properties[key][\'default\'] + \')\';\n
           div_input.appendChild(span_info);\n
         }\n
         span_error = document.createElement("span");\n
@@ -335,7 +338,11 @@
         } else if (input.value === "false") {\n
           json_dict[input.name] = false;\n
         } else if (input.tagName === "TEXTAREA") {\n
-          json_dict[input.name] = input.value.split(\'\\n\');\n
+          if (input["data-format"] === "string") {\n
+            json_dict[input.name] = input.value;\n
+          } else {\n
+            json_dict[input.name] = input.value.split(\'\\n\');\n
+          }\n
         } else {\n
           json_dict[input.name] = input.value;\n
         }\n
@@ -373,14 +380,13 @@
   }\n
 \n
   function collapseParameter(element) {\n
-      $(element).parent().children("div").toggle(300);\n
-      if ($(element).hasClass("slapos-⁠parameter-⁠dict-⁠key-⁠colapse")) {\n
-        $(element).removeClass("slapos-⁠parameter-⁠dict-⁠key-⁠colapse");\n
-      }\n
-      else {\n
-         $(element).addClass("slapos-⁠parameter-⁠dict-⁠key-⁠colapse");\n
-      }\n
-     return element;\n
+    $(element).parent().children("div").toggle(300);\n
+    if ($(element).hasClass("slapos-parameter-dict-key-colapse")) {\n
+      $(element).removeClass("slapos-parameter-dict-key-colapse");\n
+    } else {\n
+      $(element).addClass("slapos-parameter-dict-key-colapse");\n
+    }\n
+    return element;\n
   }\n
 \n
   function addSubForm(element) {\n
@@ -602,19 +608,21 @@
         throw new Error("undefined json_url");\n
       }\n
       var g = this,\n
-        softwaretype;\n
+        softwaretype,\n
+        softwaretypeindex;\n
 \n
       this.options = options;\n
 \n
       function updateParameterForm(evt) {\n
         options.parameter.softwaretype = evt.srcElement.value;\n
+        options.parameter.softwaretypeindex = evt.srcElement.selectedOptions[0]["data-id"];\n
         return g.render(options);\n
       }\n
 \n
       return g.loadSoftwareJSON(g.options.json_url).push(function (json) {\n
         var option_index,\n
           option,\n
-          option_selected = options.parameter.softwaretype,\n
+          option_selected = options.parameter.softwaretypeindex,\n
           input = g.props.element.querySelector(\'select.slapos-software-type\'),\n
           s_input = g.props.element.querySelector(\'input.slapos-serialisation-type\');\n
 \n
@@ -622,7 +630,12 @@
           for (option_index in json[\'software-type\']) {\n
             if (json[\'software-type\'].hasOwnProperty(option_index)) {\n
               option = document.createElement("option");\n
-              option.value = option_index;\n
+              if (json[\'software-type\'][option_index][\'software-type\'] !== undefined) {\n
+                option.value = json[\'software-type\'][option_index][\'software-type\'];\n
+              } else {\n
+                option.value = option_index;\n
+              }\n
+              option[\'data-id\'] = option_index;\n
               option.textContent = json[\'software-type\'][option_index].title;\n
               // option.index = json[\'software-type\'][option_index].index;\n
 \n
@@ -696,12 +709,12 @@
           console.log("Collapse paramaters");\n
 \n
           for (i = 0; i < div_list.length; i = i + 1) {\n
-             $(div_list[i]).hide();\n
-         }\n
+            $(div_list[i]).hide();\n
+          }\n
 \n
           for (i = 0; i < label_list.length; i = i + 1) {\n
-             $(label_list[i]).addClass("slapos-parameter-dict-key-colapse");\n
-         }\n
+            $(label_list[i]).addClass("slapos-parameter-dict-key-colapse");\n
+          }\n
           return g;\n
         })\n
         .push(function () {\n
@@ -738,6 +751,7 @@
         }\n
 \n
         g.options.parameter.softwaretype = e.value;\n
+        g.options.parameter.softwaretypeindex = e.selectedOptions[0]["data-id"];\n
         return g.render(g.options)\n
           .push(function () {\n
             return loadEventList(g);\n
@@ -908,7 +922,7 @@
             </item>
             <item>
                 <key> <string>serial</string> </key>
-                <value> <string>943.22522.16130.42513</string> </value>
+                <value> <string>950.20387.46343.57497</string> </value>
             </item>
             <item>
                 <key> <string>state</string> </key>
@@ -926,7 +940,7 @@
                     </tuple>
                     <state>
                       <tuple>
-                        <float>1432912068.83</float>
+                        <float>1459876241.06</float>
                         <string>UTC</string>
                       </tuple>
                     </state>
