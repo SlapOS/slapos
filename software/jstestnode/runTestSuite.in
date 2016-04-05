@@ -81,7 +81,6 @@ def main():
         'failure_count': failure,
         'skip_count': 0,
         'duration': int(elt.find_element_by_xpath('.//span[@class="runtime"]').text.split()[0]),
-        'date': date,
         'command': elt.find_element_by_xpath('.//a[text()="Rerun"]').get_attribute('href'),
         'stdout': agent,
         'stderr': '',
