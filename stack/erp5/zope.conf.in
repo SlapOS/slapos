@@ -80,6 +80,7 @@ products {{ parameter_dict['instance-products'] }}
   level info
   <logfile>
     dateformat
+    format %(asctime)s %(levelname)s %(name)s %(message)s
     path {{ parameter_dict['event-log'] }}
   </logfile>
 </eventlog>
@@ -88,6 +89,7 @@ products {{ parameter_dict['instance-products'] }}
   level WARN
   <logfile>
     dateformat
+    format %(asctime)s %(levelname)s %(name)s %(message)s
     path {{ parameter_dict['z2-log'] }}
   </logfile>
 </logger>
