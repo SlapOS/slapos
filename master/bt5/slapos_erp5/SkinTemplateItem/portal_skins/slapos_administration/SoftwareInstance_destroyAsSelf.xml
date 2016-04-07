@@ -70,6 +70,10 @@ request_software_instance_url = context.getRelativeUrl()\n
 context.REQUEST.set(\'request_instance\', context)\n
 \n
 context.requestDestroy(**promise_kw)\n
+\n
+title = context.getTitle()\n
+context.setTitle(title + "_renamed_and_destroyed")\n
+\n
 context.REQUEST.set(\'request_instance\', None)\n
 </string> </value>
         </item>
