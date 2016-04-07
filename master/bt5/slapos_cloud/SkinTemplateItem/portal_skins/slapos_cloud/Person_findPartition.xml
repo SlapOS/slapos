@@ -57,6 +57,7 @@ from Products.ZSQLCatalog.SQLCatalog import SimpleQuery, ComplexQuery\n
 person = context\n
 \n
 computer_partition = None\n
+filter_kw_copy = filter_kw.copy()\n
 query_kw = {\n
   \'software_release_url\': software_release_url,\n
   \'portal_type\': \'Computer Partition\',\n
@@ -127,6 +128,12 @@ query_kw["capacity_scope_uid"] = context.getPortalObject().portal_categories.cap
 # if not explicit_location:\n
 #   # Only allocation on public computer\n
 #   query_kw["allocation_scope_uid"] = context.getPortalObject().portal_categories.allocation_scope.open.public.getUid()\n
+\n
+extra_query_kw = context.ComputerPartition_getCustomAllocationParameterDict(\n
+      software_release_url, software_type, software_instance_portal_type,\n
+      filter_kw_copy, computer_network_query, test_mode)\n
+if extra_query_kw:\n
+  query_kw.update(extra_query_kw)\n
 \n
 if filter_kw.keys():\n
   # XXX Drop all unexpected keys\n
