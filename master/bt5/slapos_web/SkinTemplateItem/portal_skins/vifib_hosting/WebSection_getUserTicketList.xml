@@ -64,7 +64,7 @@ if person:\n
     if support_in_progress_url and \\\n
           support_request.getRelativeUrl() == support_in_progress_url:\n
       found = True\n
-    support_request_list.append(support_request)\n
+    support_request_list.append(support_request.getObject())\n
   if support_in_progress_url and not found:\n
     support_in_progress = portal.restrictedTraverse(\n
                               support_in_progress_url, None)\n
