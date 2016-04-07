@@ -52,7 +52,7 @@
                        login_form_id python:current_web_site.getLayoutProperty(\'layout_login_form_id\',\'login_form\');\n
                        language_list current_web_site/Localizer/get_languages_map;\n
                        dummy python: language_list.sort(key=lambda x: x[\'selected\'], reverse=True);\n
-                       available_language_list website/getAvailableLanguageList;">\n
+                       available_language_list current_web_site/getAvailableLanguageList;">\n
 \n
 <div id="acknowledgement_zone"></div>\n
 <div id="language">\n
