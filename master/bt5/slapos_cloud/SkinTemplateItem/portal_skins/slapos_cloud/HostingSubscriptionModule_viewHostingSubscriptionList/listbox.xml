@@ -102,6 +102,10 @@
                           <string>modification_date</string>
                           <string>Modification Date</string>
                         </tuple>
+                        <tuple>
+                          <string>url_string</string>
+                          <string>Software Release</string>
+                        </tuple>
                       </list>
                     </value>
                 </item>
