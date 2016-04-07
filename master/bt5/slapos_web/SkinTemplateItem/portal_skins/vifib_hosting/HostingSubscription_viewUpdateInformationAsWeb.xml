@@ -115,7 +115,7 @@
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>HostingSubscription_editFieldsAsWeb</string> </value>
+            <value> <string>HostingSubscription_viewUpdateInformationAsWeb</string> </value>
         </item>
         <item>
             <key> <string>method</string> </key>
