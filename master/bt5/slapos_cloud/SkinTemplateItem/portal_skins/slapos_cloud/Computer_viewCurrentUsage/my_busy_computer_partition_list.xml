@@ -403,7 +403,11 @@
                         </tuple>
                         <tuple>
                           <string>instance_title</string>
-                          <string>Instance Title</string>
+                          <string>Instance</string>
+                        </tuple>
+                        <tuple>
+                          <string>hosting_subscription_title</string>
+                          <string>Hosting Subscription</string>
                         </tuple>
                         <tuple>
                           <string>image</string>
