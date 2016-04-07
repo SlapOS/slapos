@@ -50,7 +50,10 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string>computer_partition_list = context.getAggregateValueList(portal_type="Computer Partition")\n
+            <value> <string>if REQUEST is not None:\n
+  raise Unauthorized\n
+\n
+computer_partition_list = context.getAggregateValueList(portal_type="Computer Partition")\n
 \n
 current_watt = context.SoftwareRelease_getDeltaCO2List(\n
   computer_partition_list, context.SoftwareInstance_getAverageCPULoad()\n
@@ -61,7 +64,15 @@ return current_watt.keys()[0]\n
         </item>
         <item>
             <key> <string>_params</string> </key>
-            <value> <string></string> </value>
+            <value> <string>REQUEST=None</string> </value>
+        </item>
+        <item>
+            <key> <string>_proxy_roles</string> </key>
+            <value>
+              <tuple>
+                <string>Manager</string>
+              </tuple>
+            </value>
         </item>
         <item>
             <key> <string>id</string> </key>
