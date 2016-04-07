@@ -8,3 +8,5 @@ service_module/slapos_instance_update
 service_module/slapos_instance_subscription
 service_module/slapos_netdrive_consumption
 service_module/slapos_account_validation
+service_module/cpu_load_percent
+service_module/memory_used
