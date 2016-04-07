@@ -1,0 +1,83 @@
+<?xml version="1.0"?>
+<ZopeData>
+  <record id="1" aka="AAAAAAAAAAE=">
+    <pickle>
+      <global name="PythonScript" module="Products.PythonScripts.PythonScript"/>
+    </pickle>
+    <pickle>
+      <dictionary>
+        <item>
+            <key> <string>Script_magic</string> </key>
+            <value> <int>3</int> </value>
+        </item>
+        <item>
+            <key> <string>_bind_names</string> </key>
+            <value>
+              <object>
+                <klass>
+                  <global name="NameAssignments" module="Shared.DC.Scripts.Bindings"/>
+                </klass>
+                <tuple/>
+                <state>
+                  <dictionary>
+                    <item>
+                        <key> <string>_asgns</string> </key>
+                        <value>
+                          <dictionary>
+                            <item>
+                                <key> <string>name_container</string> </key>
+                                <value> <string>container</string> </value>
+                            </item>
+                            <item>
+                                <key> <string>name_context</string> </key>
+                                <value> <string>context</string> </value>
+                            </item>
+                            <item>
+                                <key> <string>name_m_self</string> </key>
+                                <value> <string>script</string> </value>
+                            </item>
+                            <item>
+                                <key> <string>name_subpath</string> </key>
+                                <value> <string>traverse_subpath</string> </value>
+                            </item>
+                          </dictionary>
+                        </value>
+                    </item>
+                  </dictionary>
+                </state>
+              </object>
+            </value>
+        </item>
+        <item>
+            <key> <string>_body</string> </key>
+            <value> <string>instance, delta_co2 = context.HostingSubscription_getMostEcoEfficientSoftwareInstance()\n
+\n
+if instance is None:\n
+  return None \n
+\n
+master_node = instance.SoftwareInstance_getResilientMasterNode()\n
+\n
+if master_node is None:\n
+  return None \n
+\n
+if instance.getRelativeUrl() != master_node.getRelativeUrl():\n
+  master_delta_co2 = master_node.SoftwareInstance_getFutureDeltaCO2()\n
+  saving_ratio = (master_delta_co2-delta_co2)/master_delta_co2\n
+  return "Improve Power efficiency in %s%% by using %s instance as Main Node. We recommend you to a take over." % (int(saving_ratio*100), instance.getTitle())\n
+\n
+\n
+return None\n
+</string> </value>
+        </item>
+        <item>
+            <key> <string>_params</string> </key>
+            <value> <string></string> </value>
+        </item>
+        <item>
+            <key> <string>id</string> </key>
+            <value> <string>HostingSubscript_getEcoReallocationInformation</string> </value>
+        </item>
+      </dictionary>
+    </pickle>
+  </record>
+</ZopeData>
