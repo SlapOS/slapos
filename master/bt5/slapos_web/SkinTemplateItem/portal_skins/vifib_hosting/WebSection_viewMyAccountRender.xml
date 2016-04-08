@@ -87,6 +87,8 @@
                     <key> <string>normal</string> </key>
                     <value>
                       <list>
+                        <string>my_section_title</string>
+                        <string>my_translated_description</string>
                         <string>my_certificate_request_button</string>
                         <string>my_certificate_revoke_button</string>
                         <string>my_update_credential_button</string>
