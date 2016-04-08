@@ -180,7 +180,7 @@ return computer_partition.getRelativeUrl()\n
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>Person_findPartition</string> </value>
+            <value> <string>Person_findPartitionEcoAllocation</string> </value>
         </item>
       </dictionary>
     </pickle>
