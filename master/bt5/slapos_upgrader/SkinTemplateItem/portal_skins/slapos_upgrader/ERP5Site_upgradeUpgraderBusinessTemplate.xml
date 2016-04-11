@@ -49,27 +49,6 @@
             </value>
         </item>
         <item>
-            <key> <string>_body</string> </key>
-            <value> <string>portal = context.getPortalObject()\n
-portal_type = \'Template Tool\'\n
-tag = \'upgrade_upgrader_%s\' % random.randint(0, 2000)\n
-method_kw = {\'bt5_list\':[\'erp5_upgrader\', \'slapos_upgrader\'],\n
-             \'deprecated_after_script_dict\': None,\n
-             \'deprecated_reinstall_set\': None,\n
-             \'dry_run\': False,\n
-             \'delete_orphaned\': False,\n
-             \'keep_bt5_id_set\': [],\n
-             \'update_catalog\': False}\n
-\n
-\n
-portal.portal_catalog.searchAndActivate(\n
-       portal_type=portal_type,\n
-       method_id=\'upgradeSite\',\n
-       method_kw=method_kw,\n
-       activate_kw=dict(tag=tag, priority=2))\n
-</string> </value>
-        </item>
-        <item>
             <key> <string>_params</string> </key>
             <value> <string></string> </value>
         </item>
