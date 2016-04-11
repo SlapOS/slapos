@@ -1,7 +1,7 @@
 portal = context.getPortalObject()
 portal_type = 'Template Tool'
 tag = 'upgrade_upgrader_%s' % random.randint(0, 2000)
-method_kw = {'bt5_list':['erp5_upgrader', 'slapos_upgrader'],
+method_kw = {'bt5_list':['erp5_forge', 'erp5_upgrader', 'slapos_upgrader'],
              'deprecated_after_script_dict': None,
              'deprecated_reinstall_set': None,
              'dry_run': False,
