@@ -1,0 +1,163 @@
+/*global window, rJS, RSVP, URI, location, $,
+    loopEventListener, btoa */
+/*jslint nomen: true, indent: 2, maxerr: 3*/
+(function (window, rJS, $) {
+  "use strict";
+
+  rJS(window)
+    .ready(function (gadget) {
+      gadget.property_dict = {
+        render_deferred: RSVP.defer()
+      };
+    })
+    .ready(function (gadget) {
+      return gadget.getDeclaredGadget("jio_gadget")
+        .push(function (jio_gadget) {
+          gadget.property_dict.jio_gadget = jio_gadget;
+        });
+    })
+    .ready(function (gadget) {
+      return gadget.getDeclaredGadget("listview")
+        .push(function (listbox_gadget) {
+          gadget.property_dict.listbox = listbox_gadget;
+          return gadget.getSetting('monitoring_display_style');
+        })
+        .push(function (display_option) {
+          gadget.property_dict.display_option = display_option || 'grid';
+        });
+    })
+    .declareMethod('render', function (options) {
+      var gadget = this,
+        jio_gadget,
+        listbox,
+        monitor_id = 'monitor.hal',
+        header = {
+          "title": 'Monitoring Promise Status'
+        },
+        listview_configuration = {
+          search_page: 'status_grid',
+          search: options.search,
+          column: {
+            select: 'title',
+            title: 'Title'
+          },
+          collapsed_list: [{
+            select: 'start-date',
+            icon_class: 'fa fa-calendar',
+            css_class: '',
+            inline: false
+          }, {
+            select: 'message',
+            css_class: 'ui-content-customtext',
+            icon_class: 'fa fa-list-alt',
+            inline: false
+          }],
+          'collection_id': 'monitor.hal',
+          'render_header': true,
+          'sort_column_list': [
+            {select: 'Status', title: 'Status'},
+            {select: 'title', title: 'Title'}
+          ],
+          query: {
+            select_list: ['title', 'status', 'start-date', 'message'],
+            query: '_id:(NOT "monitor.hal") AND _id:(NOT "monitor.global")',
+            sort_on: [["status", "ascending"]]
+          }
+        },
+        jio_options = {
+          type: "query",
+          sub_storage: {
+            type: "drivetojiomapping",
+            sub_storage: {
+              type: "dav"
+            }
+          }
+        };
+
+      if (gadget.property_dict.display_option == 'list') {
+        header.display_grid = '#page=main&display=grid';
+      } else {
+        header.display_list = '#page=main&display=list';
+      }
+      return gadget.updateHeader(header)
+        .push(function () {
+          return gadget.jio_get(monitor_id);
+        })
+        .push(function (collection_dict) {
+          var render_promise_list = [],
+            listbox_url_list = [],
+            listbox_options,
+            render_related_monitor,
+            filter_part_list = [],
+            i,
+            j;
+
+          render_related_monitor = function (storage_url) {
+            var jio_config = $.extend(true, {}, jio_options);
+            jio_config.sub_storage.sub_storage.url = storage_url;
+            gadget.property_dict.jio_gadget.createJio(jio_config);
+            return gadget.property_dict.jio_gadget.get(monitor_id)
+              .push(function (collection_dict) {
+                // XX Using public URL here!!
+                var public_storage_url = collection_dict._links.jio_public.href,
+                  listbox_options = $.extend(true, {}, listview_configuration);
+
+                  listbox_options.data_url = public_storage_url;
+                  listbox_options.render_header = false;
+                  listbox_options.header = {
+                    title: collection_dict.title,
+                    public_url: collection_dict._links.public.href || '',
+                    private_url: collection_dict._links.private.href || '',
+                    rss_url: collection_dict._links.rss.href || ''
+                  };
+                  render_promise_list.push(
+                    gadget.property_dict.listbox.render(listbox_options)
+                  );
+                  return render_promise_list;
+              });
+          };
+
+          if (options.sort_on && options.sort_on !== 'status') {
+            listview_configuration.query.sort_on = [['title', 'ascending']];
+          }
+          if (options.status && options.status !== '') {
+            for (j = 0; j < options.status.split('+').length; j += 1) {
+              filter_part_list.push('(status:"' + options.status.split('+')[j].toUpperCase() + '")');
+            }
+            listview_configuration.query.query += ' AND (' + filter_part_list.join(' OR ') + ')';
+          }
+
+          listbox_options = $.extend(true, {}, listview_configuration);
+          listbox_options.data_url = collection_dict._links.jio_public.href;
+          listbox_options.header = {
+            title: collection_dict.title,
+            public_url: collection_dict._links.public.href || '',
+            private_url: collection_dict._links.private.href || '',
+            rss_url: collection_dict._links.rss.href || ''
+          };
+
+          if (collection_dict._links.related_monitor !== undefined &&
+                  collection_dict._links.related_monitor !== []) {
+            for (i = 0; i< collection_dict._links.related_monitor.length; i += 1) {
+              render_promise_list.push(
+                render_related_monitor(collection_dict._links.related_monitor[i].href)
+              );
+            }
+          }
+          return new RSVP.Queue()
+            .push(function () {
+              return RSVP.all([gadget.property_dict.listbox.render(listbox_options)]);
+            })
+            .push(function () {
+              return RSVP.all(render_promise_list);
+            });
+          
+        });
+    })
+    .declareAcquiredMethod("getSetting", "getSetting")
+    .declareAcquiredMethod("updateHeader", "updateHeader")
+    .declareAcquiredMethod("jio_get", "jio_get")
+    .declareAcquiredMethod("jio_allDocs", "jio_allDocs");
+
+
+}(window, rJS, $));

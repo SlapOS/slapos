@@ -109,35 +109,6 @@
             </value>
         </item>
         <item>
-            <key> <string>text_content</string> </key>
-            <value> <string encoding="cdata"><![CDATA[
-
-<!doctype html>\n
-<html>\n
-  <head>\n
-    <meta charset="utf-8">\n
-    <meta name="viewport" content="width=device-width, initial-scale=1">\n
-\n
-    <title>Monitoring Status Interface</title>\n
-\n
-    <link href="gadget_monitoring_custom.css" rel="stylesheet" type="text/css"/>\n
-\n
-    <script src="rsvp.js"></script>\n
-    <script src="renderjs.js"></script>\n
-\n
-    <script src="gadget_monitoring_overview.js"></script>\n
-\n
-  </head>\n
-\n
-  <body>\n
-    <div data-gadget-url="gadget_monitoring_widget_overview.html" data-gadget-scope="listview"></div>\n
-  </body>\n
-</html>\n
-
-
-]]></string> </value>
-        </item>
-        <item>
             <key> <string>title</string> </key>
             <value> <string>Monitoring Overview Interface</string> </value>
         </item>

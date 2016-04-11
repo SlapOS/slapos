@@ -1,0 +1,43 @@
+/*global window, rJS, btoa */
+/*jslint nomen: true, indent: 2, maxerr: 3*/
+(function (window, rJS) {
+  "use strict";
+
+  var gadget_klass = rJS(window);
+
+  gadget_klass
+    .ready(function (g) {
+      return false;
+    })
+    .declareAcquiredMethod("redirect", "redirect")
+    .declareAcquiredMethod("getSetting", "getSetting")
+    .declareAcquiredMethod("setSetting", "setSetting")
+    .declareMethod("render", function (options) {
+      var gadget = this,
+        current_display;
+      return gadget.getSetting('monitor_url_description')
+      .push(function (monitor_url_description) {
+        if (!monitor_url_description) {
+          return gadget.redirect({
+            page: 'settings_configurator'
+          });
+        } else {
+          return gadget.getSetting('monitoring_display_style');
+        }
+      })
+      .push(function (display_option) {
+        current_display = options.display || display_option;
+        if (current_display === undefined || current_display === '') {
+          current_display = 'list';
+        }
+        current_display = 'list';
+        return gadget.setSetting('monitoring_display_style', current_display);
+      })
+      .push(function () {
+        return gadget.redirect({
+          page: 'status_' + current_display
+        });
+      });
+    });
+
+}(window, rJS));

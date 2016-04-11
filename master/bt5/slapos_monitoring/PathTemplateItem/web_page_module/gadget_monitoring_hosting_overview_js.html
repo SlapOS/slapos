@@ -1,0 +1,494 @@
+/*global window, rJS, btoa */
+/*jslint nomen: true, indent: 2, maxerr: 3*/
+(function (window, rJS) {
+  "use strict";
+
+  var gadget_klass = rJS(window),
+    templater = gadget_klass.__template_element,
+
+    hosting_widget_template = Handlebars.compile(
+      templater.getElementById("template-hostings-list").innerHTML
+    ),
+    parameters_widget_template = Handlebars.compile(
+      templater.getElementById("parameters-widget-template").innerHTML
+    ),
+    instance_widget_template = Handlebars.compile(
+      templater.getElementById("instance-details-widget-overview").innerHTML
+    );
+
+  function keysrt(key,desc) {
+    return function(a,b){
+     return desc ? ~~(a[key] < b[key]) : ~~(a[key] > b[key]);
+    };
+  }
+
+  function safeGet(gadget, url) {
+    var document_id = 'monitor.global';
+    gadget.props.jio_gadget.createJio({
+      type: "query",
+      sub_storage: {
+        type: "drivetojiomapping",
+        sub_storage: {
+          type: "dav",
+          url: url
+        }
+      }
+    });
+    return gadget.props.jio_gadget.get(document_id)
+      .push(function (doc) {
+        return doc;
+      }, function (error) {
+        console.log(error);
+        return undefined;
+      });
+  }
+
+  function getHostingData(gadget, url_list) {
+    var promise_list = [],
+      i;
+    for (i = 0; i < url_list.length; i += 1) {
+      gadget.props.jio_gadget.createJio({
+        type: "query",
+        sub_storage: {
+          type: "drivetojiomapping",
+          sub_storage: {
+            type: "dav",
+            url: url_list[i]
+          }
+        }
+      });
+      promise_list.push(safeGet(gadget, url_list[i]));
+    }
+    return RSVP.all(promise_list);
+  }
+
+  gadget_klass
+    .ready(function (gadget) {
+      gadget.props = {};
+      gadget.props.hosting_list = [];
+      gadget.props.opml_key_list = [];
+      return gadget.getDeclaredGadget("login_gadget")
+        .push(function (login_gadget) {
+          gadget.props.login_gadget = login_gadget;
+        });
+    })
+    .ready(function (gadget) {
+      return gadget.getElement()
+        .push(function (element) {
+          gadget.props.element = element;
+          gadget.props.render_deferred = RSVP.defer();
+        });
+    })
+    .ready(function (gadget) {
+      return gadget.getDeclaredGadget("jio_gadget")
+        .push(function (jio_gadget) {
+          gadget.props.jio_gadget = jio_gadget;
+        });
+    })
+    /*.ready(function (gadget) {
+      return gadget.getDeclaredGadget("config_gadget")
+        .push(function (config_gadget) {
+          gadget.props.config_gadget = config_gadget;
+        });
+    })*/
+    .declareAcquiredMethod("redirect", "redirect")
+    .declareAcquiredMethod("getSetting", "getSetting")
+    .declareAcquiredMethod("setSetting", "setSetting")
+    .declareAcquiredMethod("updateHeader", "updateHeader")
+    .declareMethod("render", function (options) {
+      var gadget = this,
+        opml_tmp_key_list,
+        hosting_url_list;
+      //return gadget.props.jio_gadget.getMonitorUrlList()
+      gadget.props.options = options;
+      return gadget.updateHeader({
+          title: 'Monitoring Registered Applications'
+        })
+        .push(function () {
+          return gadget.getSetting('monitor_url_description');
+        })
+        .push(function (url_description_dict) {
+          var key,
+            promise_list = [];
+          gadget.props.opml_dict = url_description_dict;
+          opml_tmp_key_list = [];
+          for (key in url_description_dict) {
+            opml_tmp_key_list.push(key);
+            promise_list.push(gadget.props.jio_gadget.getMonitorUrlListFromOpml(
+              url_description_dict[key].href
+            ));
+          }
+          return RSVP.all(promise_list);
+        })
+        .push(function (url_list) {
+          var i,
+            j,
+            promise_list = [];
+          for (i = 0; i < url_list.length; i += 1) {
+            if (url_list[i]) {
+              promise_list.push(getHostingData(gadget, url_list[i]));
+            } else {
+              //This Feed is not available, remove from key_list
+              opml_tmp_key_list[i] = undefined;
+            }
+          }
+          return RSVP.all(promise_list);
+        })
+        .push(function (document_list) {
+          var i,
+            status,
+            hosting_dict,
+            hosting_title,
+            date,
+            content,
+            j;
+
+          for (i = 0; i < document_list.length; i += 1) {
+            hosting_dict = {};
+            status = 'OK';
+            hosting_dict.instance_list = [];
+            date = '';
+            for (j = 0; j < document_list[i].length; j += 1) {
+              if (document_list[i][j] === undefined) {
+                continue;
+              }
+              hosting_dict.instance_list.push({
+                title: document_list[i][j].title,
+                status: document_list[i][j].status,
+                url: document_list[i][j]._links.monitor.href
+              });
+              if (document_list[i][j].status === 'ERROR') {
+                if (status !== 'ERROR') {
+                  status = 'ERROR';
+                  date = document_list[i][j].date || '';
+                  hosting_title = document_list[i][j]['hosting-title'] || '';
+                }
+              } else if (document_list[i][j].status === 'WARNING') {
+                if (status !== 'ERROR' && status !== 'WARNING') {
+                  status = 'WARNING';
+                  date = document_list[i][j].date || '';
+                  hosting_title = document_list[i][j]['hosting-title'] || '';
+                }
+              } else if (date === '') {
+                date = document_list[i][j].date || '';
+                hosting_title = document_list[i][j]['hosting-title'] || '';
+              }
+            }
+            hosting_dict.status = status;
+            hosting_dict.title = hosting_title;
+            hosting_dict.date = date;
+            hosting_dict.index = i;
+            gadget.props.hosting_list.push(hosting_dict);
+          }
+          for (i = 0; i < opml_tmp_key_list.length; i += 1) {
+            if (opml_tmp_key_list[i] !== undefined)  {
+              gadget.props.opml_key_list.push(opml_tmp_key_list[i]);
+            }
+          }
+          content = hosting_widget_template({
+            hosting_list: gadget.props.hosting_list
+          });
+          gadget.props.element.querySelector('.ui-block-a table tbody')
+            .innerHTML = content;
+
+          return gadget.props.render_deferred.resolve();
+        });
+    })
+
+
+    .declareService(function () {
+      var gadget = this;
+
+      function bindOnClick(element) {
+        var fieldset = $(element.parentNode.querySelector('.ui-collapse-content')),
+            line = $(element);
+        if (line.hasClass('ui-icon-plus')) {
+          line.removeClass('ui-icon-plus');
+          line.addClass('ui-icon-minus');
+        } else {
+          line.removeClass('ui-icon-minus');
+          line.addClass('ui-icon-plus');
+        }
+        if (fieldset !== undefined) {
+          fieldset.toggleClass('ui-content-hidden');
+        }
+        return false;
+      }
+
+      function updateParameterBox(parameter_list, title) {
+        var element = gadget.props.element.querySelector('table[title="' + title + '"]'),
+        tmp,
+          i;
+
+        if (!element) {
+          return;
+        }
+        for (i = 0; i < parameter_list.length; i += 1) {
+          if (!parameter_list[i].key) {
+            continue;
+          }
+          element.querySelector('.v-' + parameter_list[i].key).innerHTML = parameter_list[i].value;
+        }
+      }
+
+      function editMonitorProps (element) {
+        var index = parseInt($(element).attr('rel'), 10),
+          promise_list = [];
+
+        if (isNaN(index) || gadget.props.document_list.length < index) {
+          return;
+        }
+        
+        return new RSVP.Queue()
+          .push(function () {
+            if (gadget.props.config_gadget) {
+              return gadget.dropGadget('config_gadget');
+            }
+            return false;
+          })
+          .push(function () {
+            gadget.props.config_gadget = null;
+            return gadget.declareGadget("gadget_monitoring_document_edit.html",
+              {
+                element: gadget.props.element,
+                scope: 'config_gadget',
+                sandbox: "public"
+              }
+            );
+          })
+          .push(function (config_gadget) {
+            gadget.props.config_gadget = config_gadget;
+            return gadget.props.config_gadget.popupEdit({
+              url: gadget.props.document_list[index]._links.private_url.href,
+              parameters: gadget.props.document_list[index].parameters,
+              title: gadget.props.document_list[index].title,
+              root_title: gadget.props.document_list[index]['hosting-title'],
+              page_options: gadget.props.options,
+              path: 'config',
+              key: 'config.tmp'
+            }, function (data) {
+              var update_promise = [],
+                i,
+                monitor_user = '',
+                monitor_password = '';
+
+              // Try to save monitor credential if they are pres
+              for (i = 0; i < data.length; i += 1) {
+                if (data[i].key === 'monitor-password') {
+                  monitor_password = data[i].value;
+                }
+                if ((data[i].key || data[i].title) === 'monitor-user') {
+                  monitor_user = data[i].value;
+                }
+              }
+              if (monitor_password && monitor_user) {
+                update_promise.push(gadget.props.login_gadget.updateUrlValue(
+                  gadget.props.document_list[index]._links.private_url.href,
+                  monitor_user,
+                  monitor_password
+                ));
+              }
+              gadget.props.document_list[index].parameters = data;
+              updateParameterBox(data, gadget.props.document_list[index].title);
+              return RSVP.push(update_promise);
+            });
+          });
+      }
+
+      function getMonitorCredentials(monitor, hosting_title, index) {
+        return gadget.props.login_gadget.loginRedirect(
+          monitor.url,
+          {
+            page: 'hosting_overview',
+            select: index
+          },
+          monitor.title,
+          hosting_title
+        );
+      }
+
+      function getSecureDocument(url, auth_login) {
+        var jio_options = {
+            type: "query",
+            sub_storage: {
+              type: "drivetojiomapping",
+              sub_storage: {
+                type: "dav",
+                url: url
+              }
+            }
+          },
+          document_id = 'monitor.global';
+
+        jio_options.sub_storage.sub_storage.basic_login = auth_login;
+        gadget.props.jio_gadget.createJio(jio_options);
+        return gadget.props.jio_gadget.get(document_id);
+      }
+
+      function getInstanceDict(monitor_dict) {
+        var instance_dict,
+          tmp_url,
+          tmp_process_url;
+
+        // Resource view URLs
+        tmp_url = "#page=resource_view&title=" + monitor_dict.title +
+          "&root=" + monitor_dict['hosting-title'] +
+          "&jio_for=" + monitor_dict._links.private_url.href;
+
+        tmp_process_url = "#page=process_view&title=" + monitor_dict.title +
+          "&root=" + monitor_dict['hosting-title'] +
+          "&jio_for=" + monitor_dict._links.private_url.href;
+
+        instance_dict = {
+          title: monitor_dict.title,
+          root_title: monitor_dict['hosting-title'],
+          date: monitor_dict.date,
+          status: monitor_dict.status,
+          instance: monitor_dict._embedded.instance || '',
+          public_url: monitor_dict._links.hasOwnProperty('public_url') ? monitor_dict._links.public_url.href : '',
+          private_url: monitor_dict._links.hasOwnProperty('private_url') ? monitor_dict._links.private_url.href : '',
+          rss_url: monitor_dict._links.hasOwnProperty('rss_url') ? monitor_dict._links.rss_url.href : '',
+          resource_url: tmp_url,
+          process_url: tmp_process_url
+        };
+        return instance_dict;
+      }
+
+      function showHostingConfiguration(element) {
+        var index = parseInt($(element).attr('rel'), 10);
+
+        if (isNaN(index) || gadget.props.hosting_list.length < index) {
+          return;
+        }
+        return new RSVP.Queue()
+          .push(function () {
+            return $(gadget.props.element.querySelectorAll('.ui-block-b .ui-listview-container li > a')).unbind( "click" );
+          })
+          .push(function () {
+            return $(gadget.props.element.querySelectorAll('.ui-block-b .line-edit')).unbind( "click" );
+          })
+          .push(function () {
+            var old_element = $(gadget.props.element.querySelector('.ui-listview-container table td > a.selected'));
+
+            if (old_element) {
+              old_element.removeClass('selected');
+            }
+            return $(element.querySelector('td:first-child > a')).addClass('selected');
+          })
+          .push(function () {
+            var i,
+              cred_promise_list = [];
+            for (i = 0; i < gadget.props.hosting_list[index].instance_list.length; i += 1) {
+              cred_promise_list.push(
+                getMonitorCredentials(gadget.props.hosting_list[index].instance_list[i],
+                gadget.props.hosting_list[index].title,
+                index
+              ));
+            }
+            return RSVP.all(cred_promise_list);
+          })
+          .push(function (cred_list) {
+            var i,
+              promise_list = [];
+            for (i = 0; i < gadget.props.hosting_list[index].instance_list.length; i += 1) {
+              promise_list.push(getSecureDocument(
+                gadget.props.hosting_list[index].instance_list[i].url,
+                cred_list[i].hash
+              ));
+            }
+            return RSVP.all(promise_list);
+          })
+          .push(function (document_list) {
+            var parameter_content,
+              instance_list = [],
+              parameter_list = [],
+              status_url = '',
+              i,
+              instance_content,
+              content_panel = $(gadget.props.element.querySelector('.ui-block-b .ui-panel-overview'));
+
+            if (content_panel.hasClass('ui-content-hidden')) {
+              content_panel.removeClass('ui-content-hidden');
+            }
+            gadget.props.document_list = document_list;
+            gadget.props.element.querySelector('.ui-block-b .overview-title span')
+              .innerHTML = gadget.props.hosting_list[index].title; // + '<span class="label label-{{status}}">{{status}}</span>';
+
+            for (i = 0; i < document_list.length; i += 1) {
+              instance_list.push(
+                getInstanceDict(document_list[i])
+              );
+              if (document_list[i].hasOwnProperty('parameters')) {
+                parameter_list.push({
+                  title: document_list[i].title,
+                  parameters: document_list[i].parameters,
+                  base_url: document_list[i]._links.hasOwnProperty('private_url') ? document_list[i]._links.private_url.href : '',
+                  index: i
+                });
+              }
+            }
+            if (gadget.props.opml_dict[gadget.props.opml_key_list[index]] !== undefined) {
+              status_url = "#page=status_list&opml_url=" + gadget.props.opml_dict[gadget.props.opml_key_list[index]].href;
+            }
+            parameter_content = parameters_widget_template({parameter_list: parameter_list});
+            instance_content = instance_widget_template({
+              instance_list: instance_list,
+              status_list_url: status_url
+            });
+
+            gadget.props.element.querySelector('.ui-block-b .instances-parameters')
+              .innerHTML = parameter_content;
+            gadget.props.element.querySelector('.ui-block-b .instances-status')
+              .innerHTML = instance_content;
+            return '';
+          })
+          .push(function () {
+            return $(gadget.props.element.querySelectorAll('.ui-block-b .ui-listview-outer')).listview().listview("refresh");
+          })
+          .push(function () {
+            
+            var promise_list = [],
+              element_list = gadget.props.element.querySelectorAll('.ui-block-b .ui-listview-container li > a'),
+              edit_list = gadget.props.element.querySelectorAll('.ui-block-b .line-edit'),
+              i;
+            for (i = 0; i < element_list.length; i += 1) {
+              promise_list.push(loopEventListener(
+                element_list[i],
+                'click',
+                false,
+                bindOnClick.bind(gadget, element_list[i])
+              ));
+            }
+            for (i = 0; i < edit_list.length; i += 1) {
+              promise_list.push(loopEventListener(
+                edit_list[i],
+                'click',
+                false,
+                editMonitorProps.bind(gadget, edit_list[i])
+              ));
+            }
+            return RSVP.all(promise_list);
+          });
+      }
+
+      return new RSVP.Queue()
+        .push(function () {
+          return gadget.props.render_deferred.promise;
+        })
+        .push(function () {
+          var promise_list = [],
+            element_list = gadget.props.element.querySelectorAll('.ui-listview-container table tr'),
+            i;
+          for (i = 0; i < element_list.length; i += 1) {
+            promise_list.push(loopEventListener(
+              element_list[i],
+              'click',
+              false,
+              showHostingConfiguration.bind(gadget, element_list[i])
+            ));
+          }
+          return RSVP.all(promise_list);
+        });
+    });
+
+}(window, rJS));

@@ -1,0 +1,372 @@
+/*
+ * Copyright 2013, Nexedi SA
+ * Released under the LGPL license.
+ * http://www.gnu.org/licenses/lgpl.html
+ */
+
+/*jslint nomen: true*/
+/*global jIO, RSVP, DOMParser, Blob */
+
+// JIO Rss feed Description :
+// {
+//   type: "rss",
+//   url: {string},
+//   basic_login: {string} // Basic authentication
+// }
+
+// NOTE: to get the authentication type ->
+// curl --verbose  -X OPTION http://domain/
+// In the headers: "WWW-Authenticate: Basic realm="DAV-upload"
+
+(function (jIO, RSVP, DOMParser, Blob) {
+  "use strict";
+
+  function ajax(storage, options) {
+    if (options === undefined) {
+      options = {};
+    }
+    if (storage._authorization !== undefined) {
+      if (options.headers === undefined) {
+        options.headers = {};
+      }
+      options.headers.Authorization = storage._authorization;
+    }
+
+    if (storage._with_credentials !== undefined) {
+      if (options.xhrFields === undefined) {
+        options.xhrFields = {};
+      }
+      options.xhrFields.withCredentials = storage._with_credentials;
+    }
+//       if (start !== undefined) {
+//         if (end !== undefined) {
+//           headers.Range = "bytes=" + start + "-" + end;
+//         } else {
+//           headers.Range = "bytes=" + start + "-";
+//         }
+//       }
+    return new RSVP.Queue()
+      .push(function () {
+        return jIO.util.ajax(options);
+      });
+  }
+
+  function restrictDocumentId(id) {
+    if (id.indexOf("/") !== 0) {
+      throw new jIO.util.jIOError("id " + id + " is forbidden (no begin /)",
+                                  400);
+    }
+    if (id.lastIndexOf("/") !== (id.length - 1)) {
+      throw new jIO.util.jIOError("id " + id + " is forbidden (no end /)",
+                                  400);
+    }
+    return id;
+  }
+
+  function restrictAttachmentId(id) {
+    if (id.indexOf("/") !== -1) {
+      throw new jIO.util.jIOError("attachment " + id + " is forbidden",
+                                  400);
+    }
+  }
+
+  function getFeedEntry (element, entry) {
+    var dummy = {getAttribute: function () { return; }},
+      item = {};
+
+    item.link = (entry.querySelector("item > link") || dummy).textContent;
+    item.date = (entry.querySelector("item > pubDate") || dummy).textContent;
+    item.subject = (entry.querySelector("item > title") || dummy).textContent;
+    item.author = (entry.querySelector("item > author") || dummy).textContent;
+    item.category = (entry.querySelector("item > category") || dummy).textContent;
+    item.message = (entry.querySelector("item > comments") || dummy).textContent;
+    item.source = (entry.querySelector("item > source") || dummy).getAttribute('url');
+    item.title = (entry.querySelector("item > source") || dummy).textContent;
+    item.description = (entry.querySelector("item > description") || dummy).textContent;
+    item.guid = (entry.querySelector("item > guid") || dummy).textContent || (entry.querySelector("item > link") || dummy).textContent;
+    return item;
+  }
+
+  function parseRssFeedEntry (element, id) {
+    var dummy = {getAttribute: function () { return; }},
+      item = {},
+      rss_items,
+      tmp;
+
+    rss_items = element.querySelectorAll("rss>channel>item");
+
+    if (id !== undefined || id !== null) {
+      [].forEach.call(rss_items, function(entry) {
+        tmp = (entry.querySelector("item > guid") || dummy).textContent || (entry.querySelector("item > link") || dummy).textContent;
+        if (tmp === id) {
+          item = getFeedEntry(element, entry);
+          item.siteTitle = (element.querySelector("rss > channel > title") || dummy).textContent;
+          item.reference = (element.querySelector("rss > channel > description") || dummy).textContent;
+          item.siteLink = (element.querySelector("rss > channel > link") || dummy).textContent;
+          item.lastBuildDate = (element.querySelector("rss > channel > lastBuildDate") || dummy).textContent;
+        }
+      });
+    } else {
+      return {};
+    }
+    return item;
+  }
+  
+  function parseRssFeedEntryList (element) {
+    var dummy = {getAttribute: function () { return; }},
+      items = [];
+
+    [].forEach.call(element.querySelectorAll("rss > channel > item"), function (entry) {
+      var item = {};
+
+      item = getFeedEntry(element, entry);
+      item.siteTitle = (element.querySelector("rss > channel > title") || dummy).textContent;
+      item.siteLink = (element.querySelector("rss > channel > link") || dummy).textContent;
+      item.reference = (element.querySelector("rss > channel > description") || dummy).textContent;
+      item.lastBuildDate = (element.querySelector("rss > channel > lastBuildDate") || dummy).textContent;
+      if (item.guid !== undefined && item.guid !== "") {
+        items.push({
+          id: item.guid,
+          value: item
+        });
+      }
+    });
+    //items.reverse();
+    return items;
+  }
+
+  function getOpmlFeedEntryAsDict(outline) {
+    var entry_dict = {};
+    entry_dict.title = outline.getAttribute('title') || '';
+    entry_dict.htmlurl = outline.getAttribute('htmlUrl') || '';
+    entry_dict.xmlurl = outline.getAttribute('xmlUrl') || '';
+    entry_dict.url = outline.getAttribute('url') || '';
+    entry_dict.text = outline.getAttribute('text') || '';
+    entry_dict.type = outline.getAttribute('type') || '';
+    entry_dict.version = outline.getAttribute('version') || '';
+    return entry_dict;
+  }
+
+  function parseOpmlFeedEntryList (doc, id) {
+    var outlines = doc.getElementsByTagName('outline'),
+      dummy = {getAttribute: function () { return; }},
+      i,
+      max,
+      tmp = {},
+      opml_title,
+      create_date,
+      modified_date,
+      feeds = [];
+
+    opml_title = (doc.getElementsByTagName('title')[0] || dummy).textContent;
+    create_date = (doc.getElementsByTagName('dateCreated')[0] || dummy).textContent;
+    modified_date = (doc.getElementsByTagName('dateModified')[0] || dummy).textContent;
+    if (id !== undefined) {
+      for (i = 0, max = outlines.length; i < max; i += 1) {
+        if (outlines[i].getAttribute('htmlUrl') === id || outlines[i].getAttribute('xmlUrl') === id) {
+          tmp = getOpmlFeedEntryAsDict(outlines[i]);
+          tmp.opml_title = opml_title;
+          tmp.create_date = create_date;
+          tmp.modified_date = modified_date;
+        }
+      }
+      return tmp;
+    }
+    for (i = 0, max = outlines.length; i < max; i += 1) {
+
+      if (!outlines[i].hasChildNodes()) {
+        tmp = getOpmlFeedEntryAsDict(outlines[i]);
+
+        tmp.opml_title = opml_title;
+        tmp.create_date = create_date;
+        tmp.modified_date = modified_date;
+        if (tmp.htmlurl !== '' || tmp.xmlurl !== '') {
+          feeds.push({
+            id: tmp.htmlurl || tmp.xmlurl,
+            value: tmp
+          });
+        }
+      }
+    }
+    return feeds;
+  }
+
+  /**
+   * The JIO RssFeed Storage extension
+   *
+   * @class RssFeed
+   * @constructor
+   */
+  function RssFeed(spec) {
+    if (typeof spec.url !== 'string') {
+      throw new TypeError("RssFeed 'url' is not of type string");
+    }
+    this._url = spec.url;
+    if (typeof spec.feed_type !== 'string') {
+      throw new TypeError("RssFeed 'feed_type' is not of type string. Should be 'rss', 'atom' or 'opml'");
+    }
+    this._type = spec.feed_type;
+    // XXX digest login
+    if (typeof spec.basic_login === 'string') {
+      this._authorization = "Basic " + spec.basic_login;
+    }
+    this._with_credentials = spec.with_credentials;
+  }
+
+  RssFeed.prototype.get = function (id) {
+    var context = this;
+    //id = restrictDocumentId(id);
+
+    return new RSVP.Queue()
+      .push(function () {
+        return ajax(context, {
+          type: "GET",
+          url: context._url,
+          dataType: "text"
+        });
+      })
+      .push(function (response) {
+        var element;
+        element =  new DOMParser().parseFromString(
+          response.target.responseText,
+          "text/xml"
+        );
+        if (context._type == 'rss') {
+          return parseRssFeedEntry(element, id);
+        } else if (context._type === 'opml') {
+          return parseOpmlFeedEntryList(element, id);
+        } else {
+          throw new jIO.util.jIOError("Cannot parse document", 501);
+        }
+      }, function (error) {
+        if ((error.target !== undefined) &&
+            (error.target.status === 404)) {
+          throw new jIO.util.jIOError("Cannot find document", 404);
+        }
+        throw error;
+      });
+  };
+
+  RssFeed.prototype.hasCapacity = function (capacity) {
+    return (capacity === "list");
+  };
+
+  RssFeed.prototype.buildQuery = function () {
+    var context = this;
+    return new RSVP.Queue()
+      .push(function () {
+        return ajax(context, {
+          type: "GET",
+          url: context._url,
+          dataType: "text"
+        });
+      })
+      .push(function (response) {
+        var element,
+          result_dict;
+        element =  new DOMParser().parseFromString(
+          response.target.responseText,
+          "text/xml"
+        );
+        if (context._type == 'rss') {
+          result_dict = parseRssFeedEntryList(element);
+        } else if (context._type === 'opml') {
+          result_dict = parseOpmlFeedEntryList(element);
+        } else {
+          throw new jIO.util.jIOError("Cannot parse document", 501);
+        }
+        return result_dict;
+      }, function (error) {
+        if ((error.target !== undefined) &&
+            (error.target.status === 404)) {
+          throw new jIO.util.jIOError("Cannot find document", 404);
+        }
+        throw error;
+      });
+
+  };
+
+  RssFeed.prototype.allAttachments = function (id) {
+
+    var context = this;
+    id = restrictDocumentId(id);
+
+    return new RSVP.Queue()
+      .push(function () {
+        return ajax(context, {
+          type: "GET",
+          url: context._url + id,
+          dataType: "text"
+        });
+      })
+
+
+      .push(function (response) {
+        // Extract all meta informations and return them to JSON
+
+        var i,
+          attachment = {},
+          id,
+          attachment_list = new DOMParser().parseFromString(
+            response.target.responseText,
+            "text/xml"
+          ).querySelectorAll(
+            "D\\:response, response"
+          );
+
+        // exclude parent folder and browse
+        for (i = 1; i < attachment_list.length; i += 1) {
+          // XXX Only get files for now
+          id = attachment_list[i].querySelector("D\\:href, href").
+            textContent.split('/').slice(-1)[0];
+          // XXX Ugly
+          if ((id !== undefined) && (id !== "")) {
+            attachment[id] = {};
+          }
+        }
+        return attachment;
+
+      }, function (error) {
+        if ((error.target !== undefined) &&
+            (error.target.status === 404)) {
+          throw new jIO.util.jIOError("Cannot find document", 404);
+        }
+        throw error;
+      });
+
+  };
+
+  RssFeed.prototype.getAttachment = function (id, name) {
+    var context = this;
+    id = restrictDocumentId(id);
+    restrictAttachmentId(name);
+
+    return new RSVP.Queue()
+      .push(function () {
+        return ajax(context, {
+          type: "GET",
+          url: context._url + id + name,
+          dataType: "blob"
+        });
+      })
+      .push(function (response) {
+        return new Blob(
+          [response.target.response || response.target.responseText],
+          {"type": response.target.getResponseHeader('Content-Type') ||
+                   "application/octet-stream"}
+        );
+      }, function (error) {
+        if ((error.target !== undefined) &&
+            (error.target.status === 404)) {
+          throw new jIO.util.jIOError("Cannot find attachment: "
+                                      + id + " , " + name,
+                                      404);
+        }
+        throw error;
+      });
+
+  };
+
+  jIO.addStorage('feed', RssFeed);
+
+}(jIO, RSVP, DOMParser, Blob));

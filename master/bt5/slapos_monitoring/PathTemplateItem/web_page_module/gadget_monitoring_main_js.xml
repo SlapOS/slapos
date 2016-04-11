@@ -107,52 +107,6 @@
             </value>
         </item>
         <item>
-            <key> <string>text_content</string> </key>
-            <value> <string>/*global window, rJS, btoa */\n
-/*jslint nomen: true, indent: 2, maxerr: 3*/\n
-(function (window, rJS) {\n
-  "use strict";\n
-\n
-  var gadget_klass = rJS(window);\n
-\n
-  gadget_klass\n
-    .ready(function (g) {\n
-      return false;\n
-    })\n
-    .declareAcquiredMethod("redirect", "redirect")\n
-    .declareAcquiredMethod("getSetting", "getSetting")\n
-    .declareAcquiredMethod("setSetting", "setSetting")\n
-    .declareMethod("render", function (options) {\n
-      var gadget = this,\n
-        current_display;\n
-      return gadget.getSetting(\'monitor_url_description\')\n
-      .push(function (monitor_url_description) {\n
-        if (!monitor_url_description) {\n
-          return gadget.redirect({\n
-            page: \'settings_configurator\'\n
-          });\n
-        } else {\n
-          return gadget.getSetting(\'monitoring_display_style\');\n
-        }\n
-      })\n
-      .push(function (display_option) {\n
-        current_display = options.display || display_option;\n
-        if (current_display === undefined || current_display === \'\') {\n
-          current_display = \'list\';\n
-        }\n
-        current_display = \'list\';\n
-        return gadget.setSetting(\'monitoring_display_style\', current_display);\n
-      })\n
-      .push(function () {\n
-        return gadget.redirect({\n
-          page: \'status_\' + current_display\n
-        });\n
-      });\n
-    });\n
-\n
-}(window, rJS));</string> </value>
-        </item>
-        <item>
             <key> <string>title</string> </key>
             <value> <string>Monitoring Main Interface Gadget JS</string> </value>
         </item>

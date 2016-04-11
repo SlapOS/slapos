@@ -1,0 +1,647 @@
+/*global window, rJS, btoa, RSVP, $, Rusha */
+/*jslint nomen: true, indent: 2, maxerr: 3*/
+(function (window, rJS, RSVP, $, btoa, Rusha) {
+  "use strict";
+
+  function validateHttpUrl(value) {
+    if (/\(?(?:(http|https):\/\/)(?:((?:[^\W\s]|\.|-|[:]{1})+)@{1})?((?:www.)?(?:[^\W\s]|\.|-)+[\.][^\W\s]{2,4}|localhost(?=\/)|\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}|\[[\dabcedf:]+\])(?::(\d*))?([\/]?[^\s\?]*[\/]{1})*(?:\/?([^\s\n\?\[\]\{\}\#]*(?:(?=\.)){1}|[^\s\n\?\[\]\{\}\.\#]*)?([\.]{1}[^\s\?\#]*)?)?(?:\?{1}([^\s\n\#\[\]]*))?([\#][^\s\n]*)?\)?/i.test(value)) {
+      return true;
+    }
+    return false;
+  }
+
+  function setjIODAVConfiguration(gadget, options) {
+    var url = "",
+      //login_input = gadget.props.element.querySelector("input[name='dav_username']").value,
+      //password_input = gadget.props.element.querySelector("input[name='dav_password']").value,
+      login_input= '',
+      password_input = '',
+      configuration = {
+        type: "query",
+        sub_storage: {
+          type: "drivetojiomapping",
+          sub_storage: {
+            type: "dav"
+          }
+        }
+      };
+    if (options !== undefined && options.url !== undefined && options.url !== '') {
+      configuration.sub_storage.sub_storage.url = options.url;
+      url = options.url;
+      if (options.login !== undefined && options.password !== undefined) {
+        configuration.sub_storage.sub_storage.basic_login = btoa(options.login + ':' + options.password);
+      }
+    } else {
+      url = gadget.props.element.querySelector("input[name='url']").value;
+      configuration.sub_storage.sub_storage.url = url;
+      if (login_input !== '' && password_input !== '') {
+        configuration.sub_storage.sub_storage.basic_login = btoa(login_input + ':' + password_input);
+      }
+    }
+
+    return gadget.getSetting('jio_storage_description')
+      .push(function (jio_storage_description) {
+        return gadget.setSetting('jio_storage_description', configuration)
+        .push(function () {
+          return gadget.setSetting('jio_storage_name', "DAV");
+        })
+        .push(function () {
+          if (jio_storage_description && url !== jio_storage_description.sub_storage.sub_storage.url) {
+            return gadget.reload();
+          } else {
+            return gadget.redirect({
+              page: 'main'
+            });
+          }
+        });
+      });
+  }
+
+  function setUrlConfiguration(gadget, url, title) {
+    return gadget.getSetting('monitor_url_description')
+      .push(function (url_description_dict) {
+        var i,
+          tmp,
+          tmp_dict;
+
+        if (url_description_dict === undefined) {
+          url_description_dict = {};
+        }
+
+        tmp = hashCode(url);
+        url_description_dict[tmp] = {href: url, title: title};
+        return gadget.setSetting('monitor_url_description', url_description_dict);
+      });
+  }
+
+  function loadUrlFromOPML(gadget, url) {
+    return new RSVP.Queue()
+      .push(function () {
+        return $("article.configure-b").addClass("ui-content-hidden");
+      })
+      .push(function () {
+          var listbox_configuration = {
+            enable_search: false,
+            disable_href: true,
+            column_list: [{
+              title: 'Title',
+              select: 'title'
+            }, {
+              title: 'Hosting Subscription',
+              select: 'opml_title'
+            }, {
+              select: 'htmlurl',
+              title: 'URL'
+            }, {
+              select: 'type',
+              title: 'Type'
+            }],
+            query: {
+              select_list: ['title', 'opml_title', 'htmlurl', 'type', 'url'],
+              sort_on: [["opml_title", "ascending"]]
+            }
+          },
+          jio_options = {
+            type: "query",
+            sub_storage: {
+              type: "feed",
+                feed_type: 'opml',
+                url: url
+            }
+          };
+          listbox_configuration.storage_list = [jio_options];
+          return gadget.props.listbox.render(listbox_configuration);
+        })
+        .push(function () {
+          if (gadget.props.listbox.property_dict.data_result.length > 0) {
+            return $("article.configure-b").removeClass("ui-content-hidden");
+          } else {
+            $(gadget.props.element.querySelector('.opml .ui-text-error')).fadeIn(400);
+              gadget.props.element.querySelector('.opml .ui-text-error')
+                .innerHTML = "ERROR: Failed to load URL!";
+          }
+          //return $(gadget.props.element.querySelector(".configure-b")).show();
+        }, function(error) {
+          $(gadget.props.element.querySelector('.opml .ui-text-error')).fadeIn(400);
+          gadget.props.element.querySelector('.opml .ui-text-error')
+            .innerHTML = "ERROR " + (error.target.status || '') + "Failed to load URL!";
+          console.log(error);
+        });
+  }
+
+  function checkCredential(gadget, url, hash) {
+    // Verify if login and password are correct for this URL
+    return gadget.props.login_gadget.login(url, hash)
+      .then(function(result) {
+        if (result.status === 'OK') {
+          return {status: 'OK'};
+        } else {
+          return {status: 'KO', msg: error.msg + ' (' + url + ')'};
+        }
+      }, function(error) {
+        return {status: 'KO', msg: error.msg + '(' + url + ')'};
+      });
+  }
+
+
+  function changeMonitorPassword(gadget, url, password, hash) {
+    var jio_gadget,
+      jio_options;
+
+    url += (url.endsWith('/') ? '':'/') + 'config/';
+    jio_options = {
+      type: "query",
+      sub_storage: {
+        type: "drivetojiomapping",
+        sub_storage: {
+          type: "dav",
+          url: url,
+          basic_login: hash
+        }
+      }
+    };
+    gadget.props.gindex += 1;
+    return gadget.declareGadget("gadget_monitoring_jio.html",
+        {
+          element: gadget.props.element,
+          scope: 'jio_gadget' + gadget.props.gindex,
+          sandbox: "public"
+        }
+      ).push(function(new_gadget) {
+        jio_gadget = new_gadget;
+        jio_gadget.createJio(jio_options);
+        return jio_gadget.get('config');
+      })
+      .push(function (doc) {
+        var i;
+        if (doc) {
+          for (i  = 0; i < doc.length; i += 1) {
+            if (doc[i].key === 'monitor-password') {
+              doc[i].value = password;
+              return jio_gadget.put('config.tmp', doc);
+            }
+          }
+        }
+        return new Error("Cannot get document at : " % url);
+      })
+      .push(function (result) {
+        return {status: 'OK'};
+      }, function (error) {
+        console.log(error);
+        return {status: 'ERROR', code: error.target.status};
+      });
+    
+  }
+
+  function testOPmlUrl(gadget, url, title) {
+    var jio_options = {
+        type: "query",
+        sub_storage: {
+          type: "feed",
+          feed_type: 'opml',
+          url: url
+        }
+      };
+    gadget.props.jio_gadget.createJio(jio_options);
+    return gadget.props.jio_gadget.allDocs({})
+      .push(function (doc) {
+        if (!doc) {
+          console.log(doc);
+          gadget.props.element.querySelector('.msgtext-box')
+            .innerHTML += "<span class='ui-text-error'>" + url + " [ " + title + " ] is not reachable!</span><br/>";
+          return false;
+        } else {
+          return true;
+        }
+      });
+  }
+
+  var gadget_klass = rJS(window),
+    templater = gadget_klass.__template_element,
+
+    opml_url_template = Handlebars.compile(
+      templater.getElementById("template-opmlurl-list").innerHTML
+    ),
+    hashCode = new Rusha().digestFromString;
+
+  gadget_klass
+    .ready(function (g) {
+      g.props = {};
+      
+      return g.getElement()
+        .push(function (element) {
+          g.props.element = element;
+          g.props.deferred = RSVP.defer();
+          g.props.urls = [];
+          g.props.gindex = 0;
+          return g.getSetting('jio_storage_name');
+        });
+    })
+    .ready(function (gadget) {
+      return gadget.getDeclaredGadget("login_gadget")
+        .push(function (login_gadget) {
+          gadget.props.login_gadget = login_gadget;
+        });
+    })
+    .ready(function (gadget) {
+      return gadget.getDeclaredGadget("listbox")
+        .push(function (listbox_gadget) {
+          gadget.props.listbox = listbox_gadget;
+        });
+    })
+    .ready(function (gadget) {
+      return gadget.getDeclaredGadget("jio_gadget")
+        .push(function (jio_gadget) {
+          gadget.props.jio_gadget = jio_gadget;
+        });
+    })
+    .declareAcquiredMethod("updateHeader", "updateHeader")
+    .declareAcquiredMethod("redirect", "redirect")
+    .declareAcquiredMethod("reload", "reload")
+    .declareAcquiredMethod("getSetting", "getSetting")
+    .declareAcquiredMethod("setSetting", "setSetting")
+    .declareMethod("render", function (options) {
+      var gadget = this;
+      return gadget.updateHeader({
+        title: "Configure monitoring instances URLs"/*,
+        back_url: "#page=main",
+        panel_action: false*/
+      })
+      .push(function () {
+        if (options.url !== undefined && options.url !== '') {
+          gadget.props.element.querySelector("input[name='url']").value = options.url;
+        }
+        return;
+      })
+      .push(function () {
+        return gadget.getSetting('monitor_url_description');
+      })
+      .push(function (url_description_dict) {
+        var opml_list = [],
+          content,
+          key;
+        if (url_description_dict !== undefined) {
+          for (key in url_description_dict) {
+            opml_list.push({
+              key: key,
+              href: "#page=settings_configurator&url=" + url_description_dict[key].href,
+              link: url_description_dict[key].href,
+              title: url_description_dict[key].title || ''
+            });
+          }
+        }
+        content = opml_url_template({opml_list: opml_list});
+        gadget.props.element.querySelector("#config-manage .opml-tablelinks > tbody")
+          .innerHTML = content;
+      })
+      .push(function () {
+        if (!options.tab || options.tab !== 'manage') {
+          options.tab = 'add';
+        }
+        gadget.props.selected = options.tab;
+        return gadget.props.deferred.resolve();
+      });
+    })
+
+    /////////////////////////////////////////
+    // Form submit
+    /////////////////////////////////////////
+    .declareService(function () {
+      var gadget = this;
+
+      return new RSVP.Queue()
+        .push(function () {
+          return gadget.props.deferred.promise;
+        })
+        .push(function () {
+          return $(gadget.props.element.querySelector("a[href='#config-" + gadget.props.selected + "']")).trigger('click');
+        })
+        .push(function () {
+          var promise_list = [];
+          promise_list.push(loopEventListener(
+            gadget.props.element.querySelector('form.opml button.show'),
+            'click',
+            true,
+            function () {
+              var url = gadget.props.element.querySelector("input[name='url']").value;
+              gadget.props.element.querySelector('.opml .ui-text-error')
+                .innerHTML = "";
+              $(gadget.props.element.querySelector('.opml .ui-text-error')).fadeOut(400);
+              if (url && validateHttpUrl(url)) {
+                gadget.props.opml_url = url;
+                return loadUrlFromOPML(gadget, url);
+              } else {
+                $(gadget.props.element.querySelector('.opml .ui-text-error')).fadeIn(400);
+                gadget.props.element.querySelector('.opml .ui-text-error')
+                  .innerHTML = "'" + url + "' is not a valid URL";
+              }
+              return false;
+            }
+          ));
+
+          promise_list.push(loopEventListener(
+            gadget.props.element.querySelector("table th input[name='opml-all']"),
+            'change',
+            false,
+            function (element) {
+              if ($(element.target).prop('checked')) {
+                return $(".opml-tablelinks tr td input[type='checkbox']").prop('checked', true);
+              } else {
+                return $(".opml-tablelinks tr td input[type='checkbox']").prop('checked', false);
+              }
+            }
+          ));
+
+          /*promise_list.push(loopEventListener(
+            gadget.props.element.querySelector("input[name='configure-auth']"),
+            'change',
+            false,
+            function (element) {
+              if ($(element.target).prop('checked')) {
+                gadget.props.element.querySelector(".configure input[name='username']").value = "";
+                gadget.props.element.querySelector(".configure input[name='password']").value = "";
+                return $(gadget.props.element.querySelector(".configure .auth-block")).slideDown();
+              } else {
+                return $(gadget.props.element.querySelector(".configure .auth-block")).slideUp();
+              }
+            }
+          ));*/
+          promise_list.push(
+            $(gadget.props.element.querySelector("input[name='configure-auth']")).bind( "change", function(event, ui) {
+              var input_login = gadget.props.element.querySelector(".configure input[name='username']"),
+                input_pwd = gadget.props.element.querySelector(".configure input[name='password']");
+              if ($(this).prop('checked')) {
+                input_login.value = "";
+                input_pwd.value = "";
+                return $(gadget.props.element.querySelector(".configure .auth-block")).slideDown();
+              } else {
+                input_login.value = "-";
+                input_pwd.value = "-";
+                return $(gadget.props.element.querySelector(".configure .auth-block")).slideUp();
+              }
+            })
+          );
+
+          promise_list.push(
+            $(gadget.props.element.querySelector("input[name='configure-newpwd']")).bind( "change", function(event, ui) {
+              var confirm_pwd = gadget.props.element.querySelector(".configure input[name='new_password_confirm']"),
+                new_pwd = gadget.props.element.querySelector(".configure input[name='new_password']");
+              if ($(this).prop('checked')) {
+                confirm_pwd.value = "";
+                new_pwd.value = "";
+                return $(gadget.props.element.querySelector(".configure .new-password")).slideDown();
+              } else {
+                confirm_pwd.value = "-";
+                new_pwd.value = "-";
+                return $(gadget.props.element.querySelector(".configure .new-password")).slideUp();
+              }
+            })
+          );
+
+          promise_list.push(loopEventListener(
+            gadget.props.element.querySelector("a.opml-delete"),
+            'click',
+            true,
+            function (element) {
+              var key_list = [],
+                check_list = gadget.props.element.querySelectorAll(".opml-tablelinks tr td input[type='checkbox']"),
+                i;
+              gadget.props.element.querySelector('.msgtext-box')
+                  .innerHTML = "";
+              if (!check_list) {
+                return false;
+              }
+              for (i = 0; i < check_list.length; i += 1) {
+                if ($(check_list[i]).prop('checked')) {
+                  key_list.push($(check_list[i]).prop('value'));
+                }
+              }
+              if (key_list.length > 0) {
+                return gadget.getSetting('monitor_url_description')
+                  .push(function (url_description_dict) {
+                    var i,
+                      promise_list = [];
+                    if(url_description_dict === undefined) {
+                      url_description_dict = {};
+                    }
+                    for (i = 0; i < key_list.length; i += 1) {
+                      if (url_description_dict.hasOwnProperty(key_list[i])) {
+                        promise_list.push(
+                          gadget.props.login_gadget.clearSettingFromParentUrl(url_description_dict[key_list[i]].href)
+                        );
+                        delete url_description_dict[key_list[i]];
+                      }
+                    }
+                    return gadget.setSetting('monitor_url_description', url_description_dict)
+                      .push(function () {
+                        return RSVP.all(promise_list);
+                      })
+                      .push(function () {
+                        return gadget.reload();
+                      });
+                  });
+              }
+            }
+          ));
+
+          promise_list.push(loopEventListener(
+            gadget.props.element.querySelector("a.opml-test"),
+            'click',
+            true,
+            function (element) {
+              var key_list = [],
+                check_list = gadget.props.element.querySelectorAll(".opml-tablelinks tr td input[type='checkbox']"),
+                i;
+              if (!check_list) {
+                gadget.props.element.querySelector('.msgtext-box')
+                  .innerHTML = "<span class='ui-text-info'>No URL selected!</span>";
+              }
+              for (i = 0; i < check_list.length; i += 1) {
+                if ($(check_list[i]).prop('checked')) {
+                  key_list.push($(check_list[i]).prop('value'));
+                }
+              }
+              if (key_list.length <= 0) {
+                gadget.props.element.querySelector('.msgtext-box')
+                  .innerHTML = "<span class='ui-text-info'>No URL selected!</span>";
+                return;
+              }
+              gadget.props.element.querySelector('.msgtext-box')
+                  .innerHTML = "";
+              return gadget.getSetting('monitor_url_description')
+                .push(function (url_description_dict) {
+                  var i,
+                    promise_list = [];
+                  if(url_description_dict === undefined) {
+                    url_description_dict = {};
+                  }
+                  $(gadget.props.element.querySelector('.loadspinner')).removeClass('ui-content-hidden');
+                  for (i = 0; i < key_list.length; i += 1) {
+                    if (url_description_dict.hasOwnProperty(key_list[i])) {
+                      promise_list.push(testOPmlUrl(gadget, url_description_dict[key_list[i]].href, url_description_dict[key_list[i]].title));
+                    }
+                  }
+                  return RSVP.all(promise_list);
+                })
+                .push(function (result) {
+                  var i,
+                    state = true;
+                  for (i = 0; i < result.length; i += 1) {
+                    if (! result[i]) {
+                      state = false;
+                      break;
+                    }
+                  }
+                  if (state) {
+                    gadget.props.element.querySelector('.msgtext-box')
+                      .innerHTML = "<span class='ui-text-o'>All OPML URLs was successfully tested.</span>";
+                  }
+                  $(gadget.props.element.querySelector('.loadspinner')).addClass('ui-content-hidden');
+                });
+            }
+          ));
+
+          promise_list.push(loopEventListener(
+            gadget.props.element.querySelector('form.configure'),
+            'submit',
+            true,
+            function () {
+              var root_name = '',
+                credential_dict = {},
+                username = '',
+                password = '',
+                old_password,
+                new_password = '',
+                cnew_password = '',
+                reload = true,
+                rows_list = gadget.props.listbox.property_dict.data_result,
+                config_promise_list = [];
+
+              if (rows_list.length > 0) {
+                root_name = rows_list[0].opml_title;
+              }
+              gadget.props.element.querySelector('.configure .ui-text-error')
+                .innerHTML = '';
+              if ($(gadget.props.element.querySelector("input[name='configure-newpwd']")).prop('checked')) {
+                new_password = gadget.props.element.querySelector("input[name='new_password']").value;
+                cnew_password = gadget.props.element.querySelector("input[name='new_password_confirm']").value;
+                if (new_password !== cnew_password) {
+                  gadget.props.element.querySelector('.configure .ui-text-error')
+                  .innerHTML = 'The new password and it confirmation are differents!';
+                  return false;
+                }
+              }
+              return new RSVP.Queue()
+                .push(function () {
+                  var promise_list = [],
+                    i;
+                  if ($(gadget.props.element.querySelector("input[name='configure-auth']")).prop('checked')) {
+                    username = gadget.props.element.querySelector("input[name='username']").value;
+                    password = gadget.props.element.querySelector("input[name='password']").value;
+                    for (i = 0; i < rows_list.length; i += 1) {
+                      if (rows_list[i].htmlurl) {
+                        promise_list.push(checkCredential(
+                          gadget,
+                          rows_list[i].url.replace('public', 'private'),
+                          btoa(username + ':' + password)
+                        ));
+                      }
+                    }
+                  }
+                  return RSVP.all(promise_list);
+                })
+                .push(function (status_list) {
+                  var i,
+                    error_msg = '';
+                  for (i = 0; i < status_list.length; i += 1) {
+                    if (status_list[i].status !== 'OK') {
+                      error_msg += 'Login/password invalid for: ' + rows_list[i].title + '. ' + status_list[i].msg + '<br/>';
+                    }
+                  }
+                  return error_msg;
+                })
+                .push(function (error_msg) {
+                  var tmp,
+                    i;
+                  if (error_msg !== '') {
+                    gadget.props.element.querySelector('.configure .ui-text-error')
+                      .innerHTML = error_msg;
+                    new_password = '';
+                    reload = false;
+                    return error_msg;
+                  }
+                  if (username !== '' && password !== '') {
+
+                    if (new_password !== '') {
+                      old_password = password;
+                      password = new_password;
+                    }
+                    for (i = 0; i < rows_list.length; i += 1) {
+                      if (validateHttpUrl(rows_list[i].url)) {
+                        tmp = {
+                          hash: btoa(username + ':' + password),
+                          url: rows_list[i].url.replace('public', 'private'), // XXX - Need to fix this (replace())
+                          parent_url: gadget.props.opml_url
+                          //parent_title: root_name
+                        };
+                        credential_dict[ hashCode( tmp.url ) ] = tmp;
+                      }
+                    }
+                    if (credential_dict) {
+                      config_promise_list.push(
+                        gadget.props.login_gadget.setUrlDict(credential_dict)
+                      );
+                    }
+                  }
+                  config_promise_list.push(
+                    setUrlConfiguration(gadget, gadget.props.opml_url, root_name)
+                  );
+                  return RSVP.all(config_promise_list);
+                })
+                .push(function (result) {
+                  // change password if needed
+                  var key,
+                    promise_list = [];
+                  if (new_password !== '') {
+                    for (key in credential_dict) {
+                      promise_list.push(
+                        changeMonitorPassword(
+                          gadget,
+                          credential_dict[key].url,
+                          new_password,
+                          btoa(username + ':' + old_password))
+                      );
+                    }
+                  }
+                  return RSVP.all(promise_list);
+                })
+                .push(function (result_list) {
+                  var i,
+                    has_error = false;
+                  for (i = 0; i < result_list.length; i += 1) {
+                    if (result_list[i].status === 'ERROR') {
+                      gadget.props.element.querySelector('.configure .ui-text-error')
+                        .innerHTML += 'ERROR ' + result_list[i].code + ': Failed to save new password!';
+                      has_error = true;
+                    }
+                  }
+                  if (! has_error && reload) {
+                    if (gadget.props.selected !== "manage") {
+                      return gadget.redirect({
+                          page: 'settings_configurator',
+                          tab: 'manage'
+                        });
+                    } else {
+                      return gadget.reload();
+                    }
+                  }
+                });
+            }
+          ));
+
+          return RSVP.all(promise_list);
+        });
+    });
+
+}(window, rJS, RSVP, $, btoa, Rusha));
+

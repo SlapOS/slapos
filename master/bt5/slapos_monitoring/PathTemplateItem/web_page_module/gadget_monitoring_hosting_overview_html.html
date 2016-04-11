@@ -1,0 +1,195 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>Monitoring Hosting Subscription</title>
+
+    <link href="gadget_monitoring_custom.css" rel="stylesheet" type="text/css"/>
+
+    <script src="rsvp.js"></script>
+    <script src="renderjs.js"></script>
+
+    <script id="template-hostings-list" type="text/x-handlebars-template">
+      {{#each hosting_list}}
+      <tr rel={{index}}>
+        <td>
+          <a class="ui-link" href="#{{status}}"><span class="label label-{{status}}">{{status}}</span></a>
+        </td>
+        <td>
+          <a class="ui-link" href="">{{title}}</a>
+        </td>
+        <td>
+          <a class="ui-link" href="">{{date}}</a>
+        </td>
+      </tr>
+      {{/each}}
+    </script>
+
+    <script id="instance-details-widget-overview" type="text/x-handlebars-template">
+      {{#if status_list_url}}
+      <div data-role="controlgroup">
+        <a class="ui-btn ui-corner-all" href="{{status_list_url}}" title="Public"><i class="fa fa-check-square"></i> View Promises Status</a>
+      </div>
+      {{/if}}
+      <div class="ui-listview-container">
+        <ul data-role="listview" class="ui-listview-outer" data-inset="true">
+          {{#each instance_list}}
+            <li>
+              <a href="#" class="ui-btn ui-btn-icon-right ui-icon-plus">
+              <span class="ui-status-icon ui-status-{{status}}"></span>
+              <span class="ui-status-text">{{title}}</span>
+              </a>
+              <div class="ui-collapse-content ui-content-hidden">
+                <fieldset>
+                  <div class="ui-field-contain">
+                    <fieldset data-role="controlgroup" data-type="horizontal">
+                      {{#if resource_url }}
+                      <a href="{{resource_url}}" class="ui-btn ui-corner-all ui-btn-inline ui-mini"><i class="fa fa-pie-chart"></i> Resources</a>
+                      {{/if}}
+                      {{#if process_url }}
+                      <a href="{{process_url}}" class="ui-btn ui-corner-all ui-btn-inline ui-mini"><i class="fa fa-list-alt"></i> Processes</a>
+                      {{/if}}
+                      {{#if rss_url}}
+                      <a class="ui-btn ui-corner-all ui-btn-inline ui-mini" target='_blank' href="{{rss_url}}" title="RSS"><i class="fa fa-rss-square"></i> RSS</a>
+                      {{/if}}
+                      <!--
+                      {{#if public_url}}
+                      <a class="ui-btn ui-corner-all ui-btn-inline ui-mini" target='_blank' href="{{public_url}}" title="Public"><i class="fa fa-folder-open-o"></i> Public</a>
+                      {{/if}}
+                      {{#if private_url}}
+                      <a class="ui-btn ui-corner-all ui-btn-inline ui-mini" target='_blank' href="{{private_url}}" title="Private"><i class="fa fa-lock"></i> Private</a>
+                      {{/if}}
+                      -->
+                    </fieldset>
+                  </div>
+                  <table data-role="table" data-mode="columntoggle" class="ui-responsive table-stroke">
+                    <tr>
+                      <th><i class="fa fa-tachometer"></i> <strong>Status</strong></th>
+                      <td><span class="label label-{{status}}">{{status}}</span></td>
+                      <td>{{date}}</td>
+                    </tr>
+                    
+                    {{#with instance}}
+                    <tr>
+                      <th><i class="fa fa-desktop"></i> <strong>Computer</strong></th>
+                      <td>{{computer}}</td>
+                      <td>{{partition}}</td>
+                    </tr>
+                    <tr>
+                      <th><i class="fa fa-globe"></i> <strong>IP Address</strong></th>
+                      <td>{{ipv4}}</td>
+                      <td>{{ipv6}}</td>
+                    </tr>
+                    {{/with}}
+                  </table>
+                </fieldset>
+              </div>
+            </li>
+          {{/each}}
+        </ul>
+      </div>
+    </script>
+
+    <script id="parameters-widget-template" type="text/x-handlebars-template">
+      {{#if parameter_list}}
+        {{#each parameter_list}}
+          {{#if parameters}}
+          <h3 class="margin-0 padding-tb-10">{{title}} <i class="fa fa-angle-up"></i></h3>
+          <table data-role="table" data-mode="columntoggle" class="table-stroke" title="{{title}}">
+            {{#each parameters}}
+              <tr {{#if key}} class="line-edit"  rel="{{../../index}}"{{/if}}>
+                <td><strong>{{title}}</strong></td>
+                {{#if key}}
+                  <td class="v-{{key}}">{{value}}</td>
+                {{else}}
+                  <td>{{value}}</td>
+                {{/if}}
+                <td class="ui-text-center">
+                  {{#if key}}
+                  <a rel="{{../../index}}" class="prop-edit" title='Edit this value'><i class="fa fa-pencil"></i></a>
+                  {{else}}
+                  <a><span class="ui-text-desabled" title='Edit this value'><i class="fa fa-pencil"></i></sapn></a>
+                  {{/if}}
+                </td>
+              </tr>
+            {{/each}}
+          </table>
+          {{/if}}
+        {{/each}}
+      {{else}}
+        <h2>No parameters.</h2>
+      {{/if}}
+    </script>
+    
+    <script src="gadget_monitoring_hosting_overview.js"></script>
+
+  </head>
+
+  <body>
+    <div data-gadget-url="gadget_monitoring_jio.html" data-gadget-scope="jio_gadget" data-gadget-sandbox="public"></div>
+    <div data-gadget-url="gadget_monitoring_login_widget.html" data-gadget-scope="login_gadget" data-gadget-sandbox="public"></div>
+    <!--<div data-gadget-url="gadget_monitoring_document_edit.html" data-gadget-scope="config_gadget" data-gadget-sandbox="public"></div>-->
+    <div class="ui-grid-a ui-responsive">
+      <div class="ui-block-a">
+        
+        <div class="ui-panel-overview" style="min-height: 450px;">
+          <div class="overview-header">
+            <div class='content-title ui-instance-title'>
+              <div class="overview-title">
+                <i class="fa fa-globe"></i> <span>Monitoring Applications</span>
+              </div>
+              <div class="commands">
+              </div>
+            </div>
+          </div>
+          <div class="overview-content">
+          
+            <div class="ui-listview-container">
+              <table class="ui-responsive ui-body-c ui-table-inset instance-overview">
+                <thead class="ui-bar-inherit">
+                  <tr>
+                    <th class="padding-10"></th>
+                    <th>Name</th>
+                    <th>Status Date</th>
+                  </tr>
+                </thead>
+                <tbody>
+
+                </tbody>
+                <tfoot class="ui-bar-inherit"></tfoot>
+              </table>
+            </div>
+
+          </div>
+        </div>
+        
+      </div>
+      <div class="ui-block-b">
+        <div class="ui-panel-overview ui-content-hidden">
+          <div class="overview-header">
+            <div class='content-title ui-instance-title'>
+              <div class="overview-title">
+                <i class="fa fa-share-alt"></i> <span></span>
+              </div>
+              <div class="commands">
+              </div>
+            </div>
+          </div>
+          <div class="content-details">
+            <h2><i class="fa fa-wrench"></i> <strong>Instances Parameters</strong></h2>
+            <div style="overflow: auto;" class="padding-lr-10 instances-parameters">
+            </div>
+            <div class="padding-5"></div>
+            <h2><i class="fa fa-cubes"></i> <strong>Instances State List</strong></h2>
+            <div class="instances-status">
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    
+  </body>
+</html>

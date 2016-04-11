@@ -1,0 +1,187 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>Monitoring Promise Status Page</title>
+
+    <link href="gadget_monitoring_custom.css" rel="stylesheet" type="text/css"/>
+
+    <script src="rsvp.js"></script>
+    <script src="renderjs.js"></script>
+
+    <script src="gadget_monitoring_promise_interface.js"></script>
+
+    <script id="promise-widget-template" type="text/x-handlebars-template">
+      {{#with element}}
+        <h2><i class="fa fa-cube"></i><strong> Promise Overview</strong></h2>
+        <table data-role="table" data-mode="columntoggle" class="ui-responsive table-stroke">
+          <tr>
+            <th><i class="fa fa-tachometer"></i> Status</th>
+            <td><span class="label label-{{status}}">{{status}}</span></td>
+          </tr>
+          <tr>
+            <th><i class="fa fa-calendar"></i> Status Date</th>
+            <td>{{status_date}}</td>
+          </tr>
+          <tr>
+            <th><i class="fa fa-clock-o"></i> Report Date</th>
+            <td>{{start-date}}</td>
+          </tr>
+        </table>
+        {{#if message}}
+        <div style="border: 1px solid rgba(0,0,0,0.1); margin-top: 10px;">
+          <div class="ui-body">
+            <p><strong>{{status}}</strong>: {{message}}</p>
+          </div>
+        </div>
+        {{/if}}
+        <br/>
+      {{/with}}
+    </script>
+    
+    <script id="pinstance-widget-template" type="text/x-handlebars-template">
+      <h2><i class="fa fa-cubes"></i><strong> Software Instance Overview</strong></h2>
+      <div class="ui-field-contain">
+        <fieldset data-role="controlgroup" data-type="horizontal">
+          {{#if resource_url }}
+          <a href="{{resource_url}}" class="ui-btn ui-corner-all ui-btn-inline ui-mini"><i class="fa fa-pie-chart"></i> Resources</a>
+          {{/if}}
+          {{#if process_url }}
+          <a href="{{process_url}}" class="ui-btn ui-corner-all ui-btn-inline ui-mini"><i class="fa fa-list-alt"></i> Processes</a>
+          {{/if}}
+        </fieldset>
+      </div>
+      <table data-role="table" data-mode="columntoggle" class="ui-responsive table-stroke">
+        <tr>
+          <th><i class="fa fa-puzzle-piece"></i> App Title</th>
+          <td>{{root_title}}</td>
+        </tr>
+        <tr>
+          <th><i class="fa fa-cube"></i> Instance</th>
+          <td>{{title}}</td>
+        </tr>
+        <tr>
+            <th><i class="fa fa-tachometer"></i> Status</th>
+            <td><span class="label label-{{status}}">{{status}}</span></td>
+          </tr>
+        <tr>
+          <th><i class="fa fa-clock-o"></i> Report Date</th>
+          <td>{{date}}</td>
+        </tr>
+        <tr>
+          <th>Errors Ratio</th>
+          <td>{{errors}} %</td>
+        </tr>
+        <tr>
+          <th>Success Ratio</th>
+          <td>{{success}} %</td>
+        </tr>
+        <tr>
+          <th>Warning Ratio</th>
+          <td>{{warning}} %</td>
+        </tr>
+      </table>
+      {{#with instance}}
+      <br/>
+      <h2><i class="fa fa-cubes"></i><strong> Software Instance Info</strong></h2>
+      <table data-role="table" data-mode="columntoggle" class="ui-responsive table-stroke">
+        <tr>
+          <th>Computer Reference</th>
+          <td>{{computer}}</td>
+        </tr>
+        <tr>
+            <th>Computer Partition</th>
+            <td>{{partition}}</td>
+          </tr>
+        <tr>
+          <th>IPv4</th>
+          <td>{{ipv4}}</td>
+        </tr>
+        <tr>
+          <th>IPv6</th>
+          <td>{{ipv6}}</td>
+        </tr>
+        <tr>
+          <th>Software Type</th>
+          <td>{{software-type}}</td>
+        </tr>
+        <tr>
+          <th>Software Release</th>
+          <td><a href="{{software-release}}" title="{{software-release}}" target='_blank'>Click to open <i class="fa fa-external-link"></i></a></td>
+        </tr>
+      </table>
+      {{/with}}
+    </script>
+
+    <script id="plinks-widget-template" type="text/x-handlebars-template">
+      <h2><i class="fa fa-link"></i> <strong>Links</strong></h2>
+      <div class="ui-field-contain">
+        <fieldset data-role="controlgroup" data-type="horizontal">
+          {{#if public_url}}
+          <a class="ui-btn ui-corner-all ui-btn-inline ui-mini" target='_blank' href="{{public_url}}" title="Public"><i class="fa fa-folder-open-o"></i> Public</a>
+          {{/if}}
+          {{#if private_url}}
+          <a class="ui-btn ui-corner-all ui-btn-inline ui-mini" target='_blank' href="{{private_url}}" title="Private"><i class="fa fa-lock"></i> Private</a>
+          {{/if}}
+          {{#if rss_url}}
+          <a class="ui-btn ui-corner-all ui-btn-inline ui-mini" target='_blank' href="{{rss_url}}" title="RSS"><i class="fa fa-rss-square"></i> RSS</a>
+          {{/if}}
+        </fieldset>
+      </div>
+    </script>
+
+    <script id="phistory-widget-template" type="text/x-handlebars-template">
+      {{#if history_list}}
+      <h2><i class="fa fa-history"></i> <strong>Promise Status History</strong></h2>
+      <div style="max-height: 200px; overflow: auto;">
+        <table data-role="table" data-mode="columntoggle" class="ui-responsive table-stroke">
+          {{#each history_list}}
+          <tr title="{{message}}">
+            <td style="text-align: center;"><i class="fa fa-circle status-text-{{status}}"></i></td>
+            <td style="text-align: center;">{{status}}</td>
+            <td>{{start-date}}</td>
+          </tr>
+          {{/each}}
+        </table>
+      </div>
+      {{/if}}
+    </script>
+
+  </head>
+
+  <body>
+    <div data-gadget-url="gadget_monitoring_jio.html" data-gadget-scope="jio_gadget" data-gadget-sandbox="public"></div>
+    <div data-gadget-url="gadget_monitoring_login_widget.html" data-gadget-scope="login_gadget" data-gadget-sandbox="public"></div>
+    <div class="ui-promise-content">
+      <div class="ui-promise-title">
+        <h2></h2>
+      </div>
+      <div class="ui-promise-body">
+        <div id="promise-overview" class="custom-grid-wrap">
+          <div class="custom-grid ui-corner-all ui-shadow ui-body-inherit">
+            <div class="ui-grid-b ui-responsive" style="padding: 15px;">
+              <div class="ui-block-a">
+                <div class="promise-links">
+                  
+                </div>
+              </div>
+              <div class="ui-block-b">
+              </div>
+              <div class="ui-block-c">
+                <h2><i class="fa fa-bar-chart"></i> <strong>Instance Promises Status</strong></h2>
+                <div style="max-width: 300px; heigth: 150px;">
+                  <div data-gadget-url="gadget_monitoring_chart.html" data-gadget-scope="chart0"></div>
+                </div>
+                <br/><br/>
+                <h2><i class="fa fa-line-chart"></i> <strong>Instance Promises Status History</strong></h2>
+                <div data-gadget-url="gadget_monitoring_chart.html" data-gadget-scope="chart1"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

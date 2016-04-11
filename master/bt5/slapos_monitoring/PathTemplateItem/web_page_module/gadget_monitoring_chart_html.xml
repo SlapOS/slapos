@@ -105,34 +105,6 @@
             </value>
         </item>
         <item>
-            <key> <string>text_content</string> </key>
-            <value> <string encoding="cdata"><![CDATA[
-
-<!DOCTYPE html>\n
-<html>\n
-  <head>\n
-    <meta http-equiv="Content-type" content="text/html; charset=utf-8" />\n
-    <meta name="viewport" content="width=device-width, user-scalable=no" />\n
-    <title>Chart Gadget</title>\n
-\n
-    <!-- renderjs -->\n
-    <script src="rsvp.js" type="text/javascript"></script>\n
-    <script src="renderjs.js" type="text/javascript"></script>\n
-    <script src="Chart.min.js"></script>\n
-\n
-    <!-- custom script -->\n
-    <script src="gadget_monitoring_chart.js" type="text/javascript"></script>\n
-\n
-  </head>\n
-  <body>\n
-    <canvas height="450" width="600"></canvas>\n
-    <div class=\'legend\'></div>\n
-  </body>\n
-</html>
-
-]]></string> </value>
-        </item>
-        <item>
             <key> <string>title</string> </key>
             <value> <string>Monitoring Jio Chart</string> </value>
         </item>

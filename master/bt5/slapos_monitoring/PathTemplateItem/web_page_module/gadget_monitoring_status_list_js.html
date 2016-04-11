@@ -1,0 +1,113 @@
+/*global window, rJS, RSVP, URI, location, $,
+    loopEventListener, btoa */
+/*jslint nomen: true, indent: 2, maxerr: 3*/
+(function (window, rJS, $) {
+  "use strict";
+
+  rJS(window)
+    .ready(function (gadget) {
+      gadget.property_dict = {
+        render_deferred: RSVP.defer()
+      };
+    })
+    .ready(function (gadget) {
+      return gadget.getDeclaredGadget("jio_gadget")
+        .push(function (jio_gadget) {
+          gadget.property_dict.jio_gadget = jio_gadget;
+        });
+    })
+    .ready(function (gadget) {
+      return gadget.getDeclaredGadget("listbox")
+        .push(function (listbox_gadget) {
+          gadget.property_dict.listbox = listbox_gadget;
+          return gadget.getSetting('monitoring_display_style');
+        })
+        .push(function (display_option) {
+          gadget.property_dict.display_option = display_option || 'list';
+        });
+    })
+    .declareMethod('render', function (options) {
+      var gadget = this,
+        header = {
+          "title": 'Monitoring Promise Status'
+        },
+        listbox_configuration = {
+          search_page: 'status_list',
+          search: options.search,
+          filter: options.filter || '',
+          column_link: {select: 'source'},
+          column_id: {select: 'title'},
+          column_list: [{
+            title: 'Title',
+            select: 'title'
+          }, {
+            title: 'Instance',
+            select: 'siteTitle'
+          }, {
+            title: 'Hosting Subscription',
+            select: 'reference'
+          }, {
+            select: 'date',
+            title: 'Date'
+          }, {
+            select: 'message',
+            title: 'Output',
+            css_class: 'text-overview'
+          }, {
+            select: 'category',
+            title: 'Status',
+            template: ' <span> <i class="ui-status-icon ui-status-{{value}}"></i></span>',
+            css_class: 'ui-text-center'
+          }],
+          sort_column_list: [
+            {select: 'category', title: 'Status'},
+            {select: 'title', title: 'Title'}
+          ],
+          query: {
+            select_list: ['title', 'siteTitle', 'reference', 'category',
+              'date', 'message', 'link', 'source'],
+            //query: '_id:(NOT "monitor.hal") AND _id:(NOT "monitor.global")',
+            sort_on: [["category", "ascending"]]
+          }
+        };
+
+      if (gadget.property_dict.display_option == 'list') {
+        header.display_grid = '#page=main&display=grid';
+      } else {
+        header.display_list = '#page=main&display=list';
+      }
+      return gadget.updateHeader(header)
+        .push(function () {
+          if (options.opml_url) {
+            return gadget.property_dict.jio_gadget.getUrlListFromOPML(options.opml_url);
+          }
+          else {
+            return gadget.property_dict.jio_gadget.getUrlListFromFullOPML();
+          }
+        })
+        .push(function (url_list) {
+          var listbox_storage_list = [],
+            i;
+          for (i = 0; i < url_list.length; i++) {
+            if (url_list[i]) {
+              listbox_storage_list.push({
+                type: "query",
+                sub_storage: {
+                  type: "feed",
+                  feed_type: 'rss',
+                  url: url_list[i]
+                }
+              });
+            }
+          }
+          listbox_configuration.storage_list = listbox_storage_list;
+          return gadget.property_dict.listbox.render(listbox_configuration);
+        });
+    })
+    .declareAcquiredMethod("getSetting", "getSetting")
+    .declareAcquiredMethod("updateHeader", "updateHeader")
+    .declareAcquiredMethod("jio_get", "jio_get")
+    .declareAcquiredMethod("jio_allDocs", "jio_allDocs");
+
+
+}(window, rJS, $));

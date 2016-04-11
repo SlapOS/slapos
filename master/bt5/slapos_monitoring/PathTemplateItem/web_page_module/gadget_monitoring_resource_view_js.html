@@ -1,0 +1,452 @@
+/*global window, rJS, RSVP, Handlebars, $ */
+/*jslint nomen: true, indent: 2, maxerr: 3*/
+(function (window, rJS, RSVP, Handlebars, $) {
+  "use strict";
+
+  var gadget_klass = rJS(window),
+    templater = gadget_klass.__template_element,
+    graph_labels_widget = Handlebars.compile(
+      templater.getElementById("graph-label-widget-template").innerHTML
+    );
+
+  gadget_klass
+    .ready(function (gadget) {
+      gadget.property_dict = {};
+      return gadget.getElement()
+        .push(function (element) {
+          gadget.property_dict.element = element;
+          gadget.property_dict.ressource_list = [];
+          gadget.property_dict.render_deferred = RSVP.defer();
+          gadget.property_dict.ressource_dict = {
+            memory_resource: "monitor_resource_memory.data",
+            cpu_resource: "monitor_resource_process.data",
+            io_resource: "monitor_resource_io.data"
+          };
+        });
+    })
+    .ready(function (gadget) {
+      return gadget.getDeclaredGadget("graph_memory_used")
+        .push(function (graph_memory_used) {
+          gadget.property_dict.graph_mem_used = graph_memory_used;
+        });
+    })
+    .ready(function (gadget) {
+      return gadget.getDeclaredGadget("graph_memory_percent")
+        .push(function (graph_memory_percent) {
+          gadget.property_dict.graph_mem_percent = graph_memory_percent;
+        });
+    })
+    .ready(function (gadget) {
+      return gadget.getDeclaredGadget("graph_cpu")
+        .push(function (graph_cpu) {
+          gadget.property_dict.graph_cpu = graph_cpu;
+          gadget.property_dict.graph_cpu_label_list = [];
+        });
+    })
+    .ready(function (gadget) {
+      return gadget.getDeclaredGadget("graph_io_counter")
+        .push(function (graph_io_counter) {
+          gadget.property_dict.graph_io_counter = graph_io_counter;
+        });
+    })
+    .ready(function (gadget) {
+      return gadget.getDeclaredGadget("graph_io_rw")
+        .push(function (graph_io_rw) {
+          gadget.property_dict.graph_io_rw = graph_io_rw;
+        });
+    })
+    .ready(function (gadget) {
+      return gadget.getDeclaredGadget("graph_disk_used")
+        .push(function (graph_disk_used) {
+          gadget.property_dict.graph_disk_used = graph_disk_used;
+        });
+    })
+    .ready(function (gadget) {
+      return gadget.getDeclaredGadget("jio_gadget")
+        .push(function (jio_gadget) {
+          gadget.property_dict.jio_gadget = jio_gadget;
+        });
+    })
+    .ready(function (gadget) {
+      return gadget.getDeclaredGadget("login_gadget")
+        .push(function (login_gadget) {
+          gadget.property_dict.login_gadget = login_gadget;
+        });
+    })
+    .declareMethod("render", function (options) {
+      var gadget = this,
+        graph_promise_list = [],
+        promise_list = [],
+        url_options = $.extend(true, {}, options),
+        i,
+        key;
+
+      function loadGraphData (jio_url, key, credential) {
+        var jio_options = {
+            type: "query",
+            sub_storage: {
+              type: "drivetojiomapping",
+              sub_storage: {
+                type: "dav",
+                url: jio_url,
+                basic_login: credential.hash
+              }
+            }
+          };
+        gadget.property_dict.jio_gadget.createJio(jio_options);
+        return gadget.property_dict.jio_gadget.get(gadget.property_dict.ressource_dict[key])
+          .push(function (jio_element) {
+            if (!jio_element.hasOwnProperty('data')) {
+              return {};
+            }
+            // FIX
+            jio_element.data[0] = jio_element.data[0].replace('%', 'percent');
+            switch (key) {
+              case "memory_resource":
+                gadget.property_dict.mem_data = jio_element;
+                break;
+              case "cpu_resource":
+                gadget.property_dict.process_data = jio_element;
+                gadget.property_dict.graph_cpu_label_list = jio_element.data[0].split(',');
+                break;
+              case "io_resource":
+                gadget.property_dict.io_data = jio_element;
+                break;
+              default:
+                
+            }
+            return jio_element;
+          });
+      }
+
+      /*function renderGraph (jio_element, graph_key) {
+        var promise_list = [];
+        if (!jio_element.hasOwnProperty('data')) {
+          return [];
+        }
+        if (graph_key === 'graph_memory') {
+          
+          .push(function () {
+            );
+        } else if (graph_key === 'grap_cpu') {
+          promise_list.push();
+        } else if (graph_key === 'graph_io') {
+          promise_list.push();
+          promise_list.push();
+          promise_list.push();
+        }
+        return RSVP.all(promise_list);
+      }*/
+
+      url_options.t = Date.now() / 1000 | 0;
+
+      return gadget.getUrlFor(url_options)
+        .push(function (refresh_url) {
+          return RSVP.all([
+            gadget.updateHeader({
+              title: 'Monitoring Resource Consumption'
+              //refresh_url: refresh_url
+            })
+          ]);
+        })
+        .push(function () {
+            return gadget.property_dict.login_gadget.loginRedirect(
+              options.jio_for,
+              options,
+              options.title,
+              options.root);
+        })
+        .push(function (cred) {
+          var key;
+          gadget.property_dict.element.querySelector(".ui-panel-overview .overview-title > span")
+            .innerHTML += options.title + ' [' + options.root + ']';
+
+          for (key in gadget.property_dict.ressource_dict) {
+            promise_list.push(loadGraphData (options.jio_for + 'data/', key, cred));
+            gadget.property_dict.ressource_list.push({url: options.jio_for + 'data/', key: key});
+          }
+          return RSVP.all(promise_list);
+        })
+        .push(function () {
+          return gadget.property_dict.render_deferred.resolve();
+        });
+    })
+    
+    .declareAcquiredMethod("getUrlFor", "getUrlFor")
+    .declareAcquiredMethod("updateHeader", "updateHeader")
+
+    /////////////////////////////////////////////////////////////////
+    // declared service
+    /////////////////////////////////////////////////////////////////
+    .declareService(function () {
+      var gadget = this,
+        date_window = [];
+
+      function toggleSerieVisibility(evt) {
+        var checkbox = evt.target.nextSibling,
+          index = $(evt.target).attr('rel');
+        if ($(checkbox).prop("checked")) {
+          $(checkbox).prop("checked", false).checkboxradio("refresh");
+        }
+        else {
+          $(checkbox).prop("checked", true).checkboxradio("refresh");
+        }
+        return gadget.property_dict.graph_cpu.setVisibility(parseInt(index, 10), $(checkbox).prop("checked"))
+          .push(function () {
+            return evt;
+          });
+      }
+
+      function formatDateToString(d) {
+        return d.toISOString().slice(0,10) + ' ' + d.getHours() + ':' + d.getMinutes() + ':' + d.getSeconds();
+      }
+
+      function getDateWindonw(data) {
+        var max_date,
+          begin_date,
+          end_date,
+          date_window = [];
+        gadget.property_dict.timer = null;
+        gadget.property_dict.loading = false;
+        if (data.length > 0) {
+          max_date = data[data.length - 1].split(',')[0];
+          begin_date = new Date(max_date);
+          end_date = new Date(max_date);
+          begin_date.setHours(begin_date.getHours() -2);
+          date_window = [Date.parse(begin_date), Date.parse(end_date)];
+        }
+        return date_window;
+      }
+
+      function updateGraphData (jio_url, key) {
+        return gadget.property_dict.jio_gadget.get(gadget.property_dict.ressource_dict[key])
+          .push(function (jio_element) {
+            if (!jio_element.hasOwnProperty('data')) {
+              return {};
+            }
+            // FIX
+            jio_element.data[0] = jio_element.data[0].replace('%', 'percent');
+            switch (key) {
+              case "memory_resource":
+                gadget.property_dict.mem_data = jio_element;
+                break;
+              case "cpu_resource":
+                gadget.property_dict.process_data = jio_element;
+                break;
+              case "io_resource":
+                gadget.property_dict.io_data = jio_element;
+                break;
+              default:
+                
+            }
+            return jio_element;
+          });
+      }
+
+      function updateGraph () {
+        return new RSVP.Queue()
+          .push(function () {
+            var i,
+              promise_list = [];
+            for (i = 0; i < gadget.property_dict.ressource_list.length; i += 1) {
+              promise_list.push(updateGraphData(
+                gadget.property_dict.ressource_list[i].url,
+                gadget.property_dict.ressource_list[i].key
+              ));
+            }
+            return RSVP.all(promise_list);
+          })
+          .push(function () {
+            date_window = getDateWindonw(gadget.property_dict.mem_data.data);
+            return gadget.property_dict.graph_mem_used.updateOptions({
+              file: gadget.property_dict.mem_data.data.join('\n'),
+              dateWindow: date_window
+            });
+          })
+          .push(function () {
+            return gadget.property_dict.graph_mem_percent.updateOptions({
+              file: gadget.property_dict.mem_data.data.join('\n'),
+              dateWindow: date_window
+            });
+          })
+          .push(function () {
+            return gadget.property_dict.graph_io_rw.updateOptions({
+              file: gadget.property_dict.io_data.data.join('\n'),
+              dateWindow: date_window
+            });
+          })
+          .push(function () {
+            return gadget.property_dict.graph_io_counter.updateOptions({
+              file: gadget.property_dict.io_data.data.join('\n'),
+              dateWindow: date_window
+            });
+          })
+          .push(function () {
+            return gadget.property_dict.graph_disk_used.updateOptions({
+              file: gadget.property_dict.io_data.data.join('\n'),
+              dateWindow: date_window
+            });
+          })
+          .push(function () {
+            return gadget.property_dict.graph_cpu.updateOptions({
+              file: gadget.property_dict.process_data.data.join('\n'),
+              dateWindow: date_window
+            });
+          });
+      }
+
+      function updateGraphTimer() {
+        if (gadget.property_dict.loading && gadget.property_dict.timer) {
+          clearInterval(gadget.property_dict.timer);
+        }
+        gadget.property_dict.timer = setInterval(function(){
+            updateGraph();
+          },
+          300000);
+      }
+
+      return new RSVP.Queue()
+        .push(function () {
+          date_window = getDateWindonw(gadget.property_dict.mem_data.data);
+          return gadget.property_dict.render_deferred.promise;
+        })
+        .push(function () {
+          return gadget.property_dict.graph_mem_used.render(
+            gadget.property_dict.mem_data.data.join('\n'),
+            {
+              xlabel: '<span class="graph-label"><i class="fa fa-area-chart"></i> Memory used (Mo)</span>',
+              labelsDivStyles: { 'textAlign': 'right' },
+              legend: 'always',
+              visibility: [false, true],
+              dateWindow: date_window,
+              fillGraph: true
+            },
+            "customInteractionModel"
+          );
+        })
+        .push(function () {
+          return gadget.property_dict.graph_mem_percent.render(
+            gadget.property_dict.mem_data.data.join('\n'),
+            {
+              xlabel: '<span class="graph-label"><i class="fa fa-area-chart"></i> Memory used %</span>',
+              labelsDivStyles: { 'textAlign': 'right' },
+              legend: 'always',
+              visibility: [true, false],
+              dateWindow: date_window,
+              fillGraph: true
+            },
+            "customInteractionModel"
+          );
+        })
+        .push(function () {
+          return gadget.property_dict.graph_io_rw.render(
+            gadget.property_dict.io_data.data.join('\n'),
+            {
+              xlabel: '<span class="graph-label"><i class="fa fa-bar-chart"></i> IO RW Bytes</span>',
+              labelsDivStyles: { 'textAlign': 'right' },
+              legend: 'always',
+              visibility: [true, false, false],
+              dateWindow: date_window,
+              fillGraph: true
+            },
+            "customInteractionModel"
+          );
+        })
+        .push(function () {
+          return gadget.property_dict.graph_io_counter.render(
+            gadget.property_dict.io_data.data.join('\n'),
+            {
+              xlabel: '<span class="graph-label"><i class="fa fa-bar-chart"></i> IO RW counter</span>',
+              labelsDivStyles: { 'textAlign': 'right' },
+              legend: 'always',
+              visibility: [false, true, false],
+              dateWindow: date_window,
+              fillGraph: true
+            },
+            "customInteractionModel"
+          );
+        })
+        .push(function () {
+          return gadget.property_dict.graph_disk_used.render(
+            gadget.property_dict.io_data.data.join('\n'),
+            {
+              xlabel: '<span class="graph-label"><i class="fa fa-pie-chart"></i> Disk Used (Mo)</span>',
+              labelsDivStyles: { 'textAlign': 'right' },
+              legend: 'always',
+              visibility: [false, false, true],
+              dateWindow: date_window,
+              fillGraph: true
+            },
+            "customInteractionModel"
+          );
+        })
+        .push(function () {
+          return gadget.property_dict.graph_cpu.render(
+            gadget.property_dict.process_data.data.join('\n'),
+            {
+              xlabel: '<span class="graph-label"><i class="fa fa-line-chart"></i> Process resources usage</span>',
+              labelsDivStyles: { 'textAlign': 'right' },
+              dateWindow: date_window,
+            },
+            "customInteractionModel"
+          );
+        })
+        .push(function () {
+          var label_list = gadget.property_dict.graph_cpu_label_list,
+            element = 'graph_cpu';
+          if (gadget.property_dict.graph_cpu_label_list.length > 0) {
+            label_list = label_list.slice(1); // remove date column
+            return gadget.property_dict.graph_cpu.getColors()
+              .push(function (color_list) {
+                //return promise_list.push(renderGraphLabel(gadget, color_list, label_list, element));
+                var label_content,
+                  name_list = [],
+                  i;
+                for (i = 0; i < label_list.length; i += 1) {
+                  name_list.push({
+                    name: label_list[i],
+                    id: "label_" + label_list[i].trim().replace(/\s/g, '_'),
+                    color: color_list[i],
+                    graph: element,
+                    index: i
+                  });
+                }
+                label_content = graph_labels_widget({
+                  label_list: name_list
+                });
+                gadget.property_dict.element.querySelector(".ui-panel-overview ." + element + " .ui-grid-span-1")
+                  .innerHTML = label_content;
+                /*return RSVP.all([
+                  $(gadget.property_dict.element.querySelectorAll("[type=checkbox]"))
+                  .checkboxradio()]);*/
+                  return $(gadget.property_dict.element.querySelectorAll("[data-role=controlgroup]"))
+                    .controlgroup().controlgroup("refresh");
+              });
+          }
+        })
+        .push(function () {
+          var promise_list = [],
+            element_list = gadget.property_dict.element.querySelectorAll("label.graph_cpu"),
+            i;
+          for (i = 0; i < element_list.length; i += 1) {
+            promise_list.push(
+              loopEventListener(
+                element_list[i],
+                'click',
+                false,
+                toggleSerieVisibility
+              )
+            );
+            if ($(element_list[i]).attr('for').toLowerCase() !== 'label_cpu_percent' && $(element_list[i]).attr('for').toLowerCase() !== 'label_total_process') {
+              promise_list.push(gadget.property_dict.graph_cpu.setVisibility(
+                parseInt($(element_list[i]).attr('rel'), 10), false)
+              );
+              promise_list.push($(element_list[i]).click());
+            }
+          }
+          RSVP.all(promise_list);
+          return updateGraphTimer();
+        });
+    });
+
+}(window, rJS, RSVP, Handlebars, $));

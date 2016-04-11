@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="Content-type" content="text/html; charset=utf-8" />
+    <meta name="viewport" content="width=device-width, user-scalable=no" />
+    <title>Monitoring Configurator</title>
+
+    <!-- renderjs -->
+    <script src="rsvp.js" type="text/javascript"></script>
+    <script src="renderjs.js" type="text/javascript"></script>
+
+    <script id="template-opmlurl-list" type="text/x-handlebars-template">
+      {{#each opml_list}}
+      <tr>
+        <td class="column-check ui-text-center padding-10">
+          <input type="checkbox" name="opmlurl" value="{{key}}">
+        </td>
+        <td>
+          <a class="ui-link" href="{{href}}">{{link}}</a>
+        </td>
+        <td>
+          <a class="ui-link" href="{{href}}">{{title}}</a>
+        </td>
+      </tr>
+      {{/each}}
+    </script>
+
+    <script src="gadget_monitoring_static.js" type="text/javascript"></script>
+  </head>
+  <body>
+    <div data-gadget-url="gadget_monitoring_jio.html" data-gadget-scope="jio_gadget" data-gadget-sandbox="public"></div>
+    <div data-gadget-url="gadget_monitoring_login_widget.html" data-gadget-scope="login_gadget" data-gadget-sandbox="public"></div>
+    <div data-role="tabs" class="config-tabs">
+      <div data-role="navbar">
+        <ul>
+          <li><a href="#config-add" data-ajax="false">Add Monitor Instance</a></li>
+          <li><a href="#config-manage" data-ajax="false">Manage Instances</a></li>
+        </ul>
+      </div>
+      <div id="config-add" class="ui-body-c ui-content">
+        <article class="ui-content ui-body-c">
+          <section class="ui-content-header-plain">
+            <h3 class="ui-content-title ui-body-c">
+              <span class="ui-icon ui-icon-custom ui-icon-database">&nbsp;</span>
+              Monitor connection parameters
+            </h3>
+          </section>
+          <section class="ui-body-c ui-content-sections">
+            <form class="opml">
+              <div class="ui-form">
+                <div class="ui-field-contain">
+                  <label data-i18n="OPML URL:">OPML URL:</label>
+                  <input type="url" name="url" required value=""/>
+                </div>
+              </div>
+              <div class="ui-text-center">
+                <span class="ui-text-error"></span>
+              </div>
+              <div class="select-storage ui-controlgroup ui-controlgroup-horizontal">
+                <div class="ui-grid-b ui-responsive">
+                  <div class="ui-block-a"></div>
+                  <div class="ui-block-b">
+                    <button data-i18n="Load URL" class="ui-btn-btn-right show">Load URL</button>
+                  </div>
+                  <div class="ui-block-c">
+                  </div>
+                </div>
+              </div>
+            </form>
+          </section>
+        </article>
+        <article class="ui-content ui-body-c configure-b ui-content-hidden">
+          <div data-gadget-url="gadget_monitoring_widget_listbox.html" data-gadget-scope="listbox"></div>
+          <form class="configure">
+            <label class="configure-auth">
+              <input type="checkbox" name="configure-auth">Set Authentication for these URLs
+            </label>
+            <div class="auth-block padding-lr-20 border-gray" style="display: none">
+              <div class="ui-form">
+                <div class="ui-field-contain">
+                  <label data-i18n="Username:">Username:</label>
+                  <input type="text" name="username" required value="-"/>
+                </div>
+              </div>
+              <div class="ui-form">
+                <div class="ui-field-contain">
+                  <label data-i18n="Password:">Password:</label>
+                  <input type="password" name="password" required value="-"/>
+                </div>
+              </div>
+              <label class="configure-auth">
+                <input type="checkbox" name="configure-newpwd">Configure new password now
+              </label>
+              <div class="new-password" style="display: none">
+                <div class="ui-form">
+                  <div class="ui-field-contain">
+                    <label data-i18n="New Password:">New Password:</label>
+                    <input type="password" name="new_password" required value="-"/>
+                  </div>
+                </div>
+                <div class="ui-form">
+                  <div class="ui-field-contain">
+                    <label data-i18n="Confirm New Password:">Confirm New Password:</label>
+                    <input type="password" name="new_password_confirm" required value="-"/>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="padding-5">
+              <span class="ui-text-error"></span>
+            </div>
+            <div class="ui-grid-b ui-responsive">
+              <div class="ui-block-a"></div>
+              <div class="ui-block-b">
+                <div class="ui-content-hidden ui-text-right padding-10 spinner">
+                  <i class="fa fa-spinner fa-2x fa-spin"></i>
+                </div>
+              </div>
+              <div class="ui-block-c">
+                <button type="submit" data-i18n="Configure" class="ui-btn-btn-right">Configure</button>
+              </div>
+            </div>
+          </form>
+        </article>
+      </div>
+      <div id="config-manage">
+        <div class="ui-grid-a ui-responsive custom-listbox">
+          <div class="ui-block-a">
+            <div class="ui-panel-overview" style="min-height: 450px;">
+              <div class="overview-header">
+                <div class='content-title ui-instance-title'>
+                  <div class="overview-title">
+                    <i class="fa fa-link"></i><span>Monitoring OPML URL</span>
+                  </div>
+                  <div class="commands">
+                  </div>
+                </div>
+              </div>
+              <div class="overview-content">
+              
+                <div class="ui-listview-container">
+                  <table class="ui-responsive ui-body-c ui-table-inset opml-tablelinks">
+                    <thead class="ui-bar-inherit">
+                      <tr>
+                        <th class="padding-10"><input type="checkbox" name="opml-all" value="all"></th>
+                        <th>OPML URL</th>
+                        <th>Title</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      
+                    </tbody>
+                    <tfoot class="ui-bar-inherit"></tfoot>
+                  </table>
+                </div>
+                <div class="padding-10 msgtext-box"></div>
+                <div class="">
+                  <a href="#" class="ui-btn ui-corner-all ui-btn-inline opml-delete"><i class="fa fa-trash"></i> Delete Selection</a>
+                  <a href="#" class="ui-btn ui-corner-all ui-btn-inline opml-test"><i class="fa fa-check-square-o"></i> Availability Test</a>
+                  <span class="ui-content-hidden padding-10 loadspinner">
+                    <i class="fa fa-spinner fa-2x fa-spin"></i>
+                  </span>
+                </div>
+                <div class="padding-5">
+                  <a href="#page=hosting_overview">Access Applications</a>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="ui-block-b">
+            
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

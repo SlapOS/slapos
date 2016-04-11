@@ -1,0 +1,67 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>Monitoring Process View Page</title>
+
+    <link href="gadget_monitoring_custom.css" rel="stylesheet" type="text/css"/>
+
+    <script src="rsvp.js"></script>
+    <script src="renderjs.js"></script>
+
+    <script id="infobox-widget-template" type="text/x-handlebars-template">
+      {{#each resource_list}}
+      <div class="infobox">
+      	<div class="infobox-icon">
+      		<i class="fa fa-{{icon_name}} fa-2x"></i>
+      	</div>
+      	<div class="infobox-data">
+      		<span class="infobox-data-number">{{value}}</span>
+      		<div class="infobox-content">{{title}}</div>
+      	</div>
+      </div>
+      {{/each}}
+    </script>
+    
+    <script id="monitor-process-widget-template" type="text/x-handlebars-template">
+      <table class="ui-responsive ui-body-c ui-table-inset custom-force-list">
+        <thead class="ui-bar-inherit">
+          <tr>
+            {{#each column_list}}
+              <th>{{title}}</th>
+            {{/each}}
+          </tr>
+        </thead>
+        <tbody>
+        {{#each row_list}}
+          <tr title='{{message}}'>
+          {{#each cell_list}}
+            {{#if href}}
+              <td class='{{class}}'><a class="ui-link" href="{{href}}">{{value}}</a></td>
+            {{else}}
+              <td class='{{class}}'><a class="ui-link">{{value}}</a></td>
+            {{/if}}
+          {{/each}}
+          </tr>
+        {{/each}}
+        </tbody>
+        <tfoot class="ui-bar-inherit"></tfoot>
+      </table>
+    </script>
+
+    <script src="gadget_monitoring_process_view.js"></script>
+
+  </head>
+
+  <body>
+    <div data-gadget-url="gadget_monitoring_jio.html" data-gadget-scope="jio_gadget" data-gadget-sandbox="public"></div>
+    <div data-gadget-url="gadget_monitoring_login_widget.html" data-gadget-scope="login_gadget" data-gadget-sandbox="public"></div>
+    <div class="padding-lr-20 infobox-container">
+    </div>
+    <div class="ui-panel-overview ui-grid-container process-all">
+      
+    </div>
+  </body>
+</html>
