@@ -49,32 +49,6 @@
             </value>
         </item>
         <item>
-            <key> <string>_body</string> </key>
-            <value> <string>if context.getSimulationState() != \'started\':\n
-  # Update Decision is not on started state, Upgrade is not possible!\n
-  return False\n
-\n
-computer = context.UpgradeDecision_getComputer()\n
-software_release = context.UpgradeDecision_getSoftwareRelease()\n
-\n
-if computer is None:\n
-  return False\n
-\n
-if software_release is None:\n
-  return False \n
-\n
-software_release_url = software_release.getUrlString()\n
-\n
-computer.requestSoftwareRelease(\n
-   software_release_url=software_release_url,\n
-   state="available")\n
-\n
-context.stop()\n
-\n
-return True\n
-</string> </value>
-        </item>
-        <item>
             <key> <string>_params</string> </key>
             <value> <string></string> </value>
         </item>

@@ -49,37 +49,6 @@
             </value>
         </item>
         <item>
-            <key> <string>_body</string> </key>
-            <value> <string encoding="cdata"><![CDATA[
-
-portal = context.getPortalObject()\n
-\n
-hosting_subscription = context.UpgradeDecision_getHostingSubscription()\n
-computer = context.UpgradeDecision_getComputer()\n
-software_release = context.UpgradeDecision_getSoftwareRelease()\n
-\n
-if hosting_subscription is not None:\n
-  if hosting_subscription.getUrlString() == software_release.getUrlString():\n
-    return True\n
-\n
-elif computer is not None:\n
-  full_software_release_list = [si for si in \n
-          portal.portal_catalog(\n
-            portal_type=\'Software Installation\',\n
-            url_string=software_release.getUrlString(),\n
-            default_aggregate_uid=computer.getUid(),\n
-            validation_state=\'validated\'\n
-          ) if si.getSlapState() == \'start_requested\']\n
-\n
-  if len(full_software_release_list) > 0:\n
-    return True\n
-\n
-return False\n
-
-
-]]></string> </value>
-        </item>
-        <item>
             <key> <string>_params</string> </key>
             <value> <string></string> </value>
         </item>

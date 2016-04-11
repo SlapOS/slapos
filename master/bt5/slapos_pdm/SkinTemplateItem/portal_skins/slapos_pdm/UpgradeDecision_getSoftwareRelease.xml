@@ -49,27 +49,6 @@
             </value>
         </item>
         <item>
-            <key> <string>_body</string> </key>
-            <value> <string encoding="cdata"><![CDATA[
-
-software_release_list = []\n
-for decision_line in context.contentValues():\n
-  software_release_list.extend(\n
-    decision_line.getAggregateValueList(portal_type="Software Release"))\n
-\n
-if len(software_release_list) > 1: \n
-  raise ValueError("It is only allowed to have more them 1 Software Release")\n
-\n
-if len(software_release_list) == 0:\n
-  return None\n
-\n
-\n
-return software_release_list[0]\n
-
-
-]]></string> </value>
-        </item>
-        <item>
             <key> <string>_params</string> </key>
             <value> <string></string> </value>
         </item>

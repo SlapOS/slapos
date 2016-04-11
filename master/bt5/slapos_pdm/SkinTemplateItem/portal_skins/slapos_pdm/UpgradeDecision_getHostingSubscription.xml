@@ -49,27 +49,6 @@
             </value>
         </item>
         <item>
-            <key> <string>_body</string> </key>
-            <value> <string encoding="cdata"><![CDATA[
-
-hosting_subscription_list = []\n
-for decision_line in context.contentValues():\n
-  hosting_subscription_list.extend(\n
-    decision_line.getAggregateValueList(portal_type="Hosting Subscription"))\n
-\n
-if len(hosting_subscription_list) > 1: \n
-  raise ValueError("It is only allowed to have more them 1 Hosting Subscription")\n
-\n
-if len(hosting_subscription_list) == 0:\n
-  return None\n
-\n
-\n
-return hosting_subscription_list[0]\n
-
-
-]]></string> </value>
-        </item>
-        <item>
             <key> <string>_params</string> </key>
             <value> <string></string> </value>
         </item>

@@ -49,36 +49,6 @@
             </value>
         </item>
         <item>
-            <key> <string>_body</string> </key>
-            <value> <string>portal = context.getPortalObject()\n
-\n
-notification_message = portal.portal_notifications.getDocumentValue(\n
-                 reference=\'slapos-upgrade-computer.notification\')\n
-\n
-title = "New Software available for Installation at %s" % computer.getTitle()\n
-mapping_dict = {\'software_product_title\': software_product_title,\n
-                \'computer_title\': computer.getTitle(),\n
-                \'computer_reference\': computer.getReference(),\n
-                \'software_release_name\': software_release.getTitle(),\n
-                \'software_release_reference\': software_release.getReference(),\n
-                \'upgrade_accept_link\': \n
-                  \'Base_acceptUpgradeDecision?reference=%s\' % reference,\n
-                \'upgrade_reject_link\':\n
-                  \'Base_rejectUpgradeDecision?reference=%s\' % reference,\n
-                \'new_software_release_url\': software_release.getUrlString(),\n
-               }\n
-\n
-\n
-if notification_message is not None:\n
-  message = notification_message.asEntireHTML(\n
-             substitution_method_parameter_dict={\'mapping_dict\': mapping_dict})\n
-else:\n
-  raise ValueError("No Notification Message")\n
-\n
-return title, message\n
-</string> </value>
-        </item>
-        <item>
             <key> <string>_params</string> </key>
             <value> <string>computer</string> </value>
         </item>

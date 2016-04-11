@@ -49,27 +49,6 @@
             </value>
         </item>
         <item>
-            <key> <string>_body</string> </key>
-            <value> <string>portal = context.getPortalObject()\n
-\n
-public_scope_uid = portal.restrictedTraverse(\n
-  "portal_categories/allocation_scope/open/public", None).getUid()\n
-friend_scope_uid =  portal.restrictedTraverse(\n
-  "portal_categories/allocation_scope/open/friend", None).getUid()\n
-\n
-if public_scope_uid and friend_scope_uid:\n
-  portal.portal_catalog.searchAndActivate(\n
-    portal_type=\'Computer\',\n
-    validation_state = \'validated\',\n
-    default_allocation_scope_uid=[public_scope_uid, friend_scope_uid],\n
-    method_id = \'Computer_hostingSubscriptionCreateUpgradeDecision\',\n
-    activate_kw = {\'tag\':tag}\n
-  )\n
-  \n
-  context.activate(after_tag=tag).getId()\n
-</string> </value>
-        </item>
-        <item>
             <key> <string>_params</string> </key>
             <value> <string>tag, fixit, params</string> </value>
         </item>

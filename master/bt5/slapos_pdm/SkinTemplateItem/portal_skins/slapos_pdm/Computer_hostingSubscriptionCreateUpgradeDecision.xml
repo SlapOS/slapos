@@ -49,55 +49,6 @@
             </value>
         </item>
         <item>
-            <key> <string>_body</string> </key>
-            <value> <string>portal = context.getPortalObject()\n
-\n
-partition_list = portal.portal_catalog(portal_type=\'Computer Partition\',\n
-                                        free_for_request=0,\n
-                                        parent_uid=context.getUid())\n
-valid_slap_state = [\'start_requested\', \'stop_requested\']\n
-\n
-hosting_subscription_list = []\n
-upgrade_decision_list = []\n
-for partition in partition_list:\n
-  software_instance = partition.getAggregateRelatedValue(\n
-                            portal_type=\'Software Instance\')\n
-  if not software_instance:\n
-    continue\n
-\n
-  hosting_subscription = software_instance.getSpecialiseValue(\n
-                portal_type=\'Hosting Subscription\')\n
-  if hosting_subscription and hosting_subscription.getSlapState() \\\n
-      in valid_slap_state and not \\\n
-      hosting_subscription in hosting_subscription_list:\n
-    hosting_subscription_list.append(hosting_subscription)\n
-  else:\n
-    continue\n
-  \n
-  newer_release = hosting_subscription.\\\n
-                    HostingSubscription_getUpgradableSoftwareRelease()\n
-  if newer_release is None:\n
-    continue\n
-  \n
-  decision_in_progress = newer_release.\\\n
-      SoftwareRelease_getUpgradeDecisionInProgress(hosting_subscription.getUid())\n
-  \n
-  if decision_in_progress and \\\n
-      not decision_in_progress.UpgradeDecision_tryToCancel(\n
-        newer_release.getUrlString()):\n
-    continue\n
-  \n
-  upgrade_decision = newer_release.SoftwareRelease_createUpgradeDecision(\n
-    source_url=hosting_subscription.getRelativeUrl(),\n
-    title=\'A new upgrade is available for %s\' % hosting_subscription.getTitle()\n
-  )\n
-  upgrade_decision.plan()\n
-  upgrade_decision_list.append(upgrade_decision)\n
-\n
-return upgrade_decision_list\n
-</string> </value>
-        </item>
-        <item>
             <key> <string>_params</string> </key>
             <value> <string></string> </value>
         </item>

@@ -49,28 +49,6 @@
             </value>
         </item>
         <item>
-            <key> <string>_body</string> </key>
-            <value> <string>upgrade_decision = context\n
-cancellable_state_list = [\'confirmed\', \'planned\']\n
-require_state_list = [\'rejected\', \'confirmed\', \'planned\']\n
-simulation_state = upgrade_decision.getSimulationState()\n
-\n
-if simulation_state in require_state_list:\n
-  current_release = upgrade_decision.UpgradeDecision_getSoftwareRelease()\n
-  if not current_release:\n
-    # This upgrade decision is not valid\n
-    return False\n
-  if current_release.getUrlString() == new_url_string:\n
-    # Cannot cancel because the software releases are the same\n
-    return False\n
-  if simulation_state in cancellable_state_list:\n
-    upgrade_decision.cancel()\n
-  return True\n
-else:\n
-  return False\n
-</string> </value>
-        </item>
-        <item>
             <key> <string>_params</string> </key>
             <value> <string>new_url_string</string> </value>
         </item>

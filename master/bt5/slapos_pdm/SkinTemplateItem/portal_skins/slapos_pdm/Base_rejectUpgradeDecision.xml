@@ -49,50 +49,6 @@
             </value>
         </item>
         <item>
-            <key> <string>_body</string> </key>
-            <value> <string encoding="cdata"><![CDATA[
-
-if reference is None:\n
-  raise ValueError("Missing Reference")\n
-\n
-portal = context.getPortalObject()\n
-\n
-upgrade_decision_list = portal.portal_catalog(\n
-  portal_type="Upgrade Decision", \n
-  reference=reference, limit=2)\n
-\n
-if len(upgrade_decision_list) == 0:\n
-  return context.Base_redirect("", \n
-    keep_items={"portal_status_message": \n
-       context.Base_translateString("Unable to find the Upgrade Decision.")})\n
-\n
-if len(upgrade_decision_list) > 1:\n
-  raise ValueError("Duplicated reference for %s. Please contact site administrators." % reference)\n
-\n
-upgrade_decision = upgrade_decision_list[0]\n
-\n
-\n
-if upgrade_decision.getSimulationState() in [\'cancelled\', \'rejected\']:\n
-  message = "Upgrade Decision is already Rejected!"\n
-\n
-elif upgrade_decision.getSimulationState() == \'started\':\n
-  message = "Sorry, This Upgrade Decision is already Started, you cannot reject it anymore."\n
-\n
-elif upgrade_decision.getSimulationState() in [\'stopped\', \'delivered\']:\n
-  message = "Sorry, this Upgrade Decision has been already processed."\n
-\n
-elif upgrade_decision.getSimulationState() in [\'confirmed\', \'draft\', \'planned\']:\n
-  message = "Thanks Upgrade Decision has been rejected Successfully (You cannot use it anymore)."\n
-  upgrade_decision.reject()\n
-\n
-return context.Base_redirect("", \n
-    keep_items={"portal_status_message": \n
-       context.Base_translateString(message)})\n
-
-
-]]></string> </value>
-        </item>
-        <item>
             <key> <string>_params</string> </key>
             <value> <string>reference</string> </value>
         </item>

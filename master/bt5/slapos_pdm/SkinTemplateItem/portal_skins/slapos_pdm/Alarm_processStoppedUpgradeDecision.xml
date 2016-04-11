@@ -49,19 +49,6 @@
             </value>
         </item>
         <item>
-            <key> <string>_body</string> </key>
-            <value> <string>portal = context.getPortalObject()\n
-portal.portal_catalog.searchAndActivate(\n
-  portal_type=\'Upgrade Decision\',\n
-  simulation_state=\'stopped\',\n
-  method_id=\'UpgradeDecision_notifyDelivered\',\n
-  activate_kw={\'tag\': tag }\n
-)\n
-\n
-context.activate(after_tag=tag).getId()\n
-</string> </value>
-        </item>
-        <item>
             <key> <string>_params</string> </key>
             <value> <string>tag, fixit, params</string> </value>
         </item>

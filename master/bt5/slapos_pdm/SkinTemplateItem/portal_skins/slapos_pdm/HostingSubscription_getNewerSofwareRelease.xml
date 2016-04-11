@@ -49,26 +49,6 @@
             </value>
         </item>
         <item>
-            <key> <string>_body</string> </key>
-            <value> <string>hosting_subscription = context\n
-portal = context.getPortalObject()\n
-\n
-software_instance = hosting_subscription.getPredecessorValue()\n
-if not software_instance:\n
-  return None\n
-software_release_list = context.SoftwareProduct_getSortedSoftwareReleaseList(\n
-                          software_release_url=software_instance.getUrlString())\n
-\n
-if not software_release_list:\n
-  return None\n
-latest_software_release = software_release_list[0]\n
-if latest_software_release.getUrlString() == software_instance.getUrlString():\n
-  return None\n
-else:\n
-  return latest_software_release\n
-</string> </value>
-        </item>
-        <item>
             <key> <string>_params</string> </key>
             <value> <string></string> </value>
         </item>

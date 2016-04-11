@@ -49,33 +49,6 @@
             </value>
         </item>
         <item>
-            <key> <string>_body</string> </key>
-            <value> <string encoding="cdata"><![CDATA[
-
-"""\n
-  Get a related Upgrade Decision \n
-"""\n
-if simulation_state not in ["confirmed", "started", "stopped"]:\n
-  raise ValueError(\n
-    "You shouldn\'t request for this state: %s" % simulation_state)\n
-\n
-\n
-decision_line_list = context.getAggregateValueList(\n
-                        portal_type="Upgrade Decision Line", \n
-                        simulation_state=simulation_state)\n
-\n
-if len(decision_line_list) > 1:\n
-  raise ValueError("Your have more them one valid decison line!")\n
- \n
-if len(decision_line_list) == 0:\n
-  return None\n
-\n
-return decision_line_list[0].getParentValue()\n
-
-
-]]></string> </value>
-        </item>
-        <item>
             <key> <string>_params</string> </key>
             <value> <string>simulation_state=\'confirmed\'</string> </value>
         </item>
