@@ -49,33 +49,6 @@
             </value>
         </item>
         <item>
-            <key> <string>_body</string> </key>
-            <value> <string>from DateTime import DateTime\n
-portal = context.getPortalObject()\n
-\n
-state = context.getSimulationState()\n
-transaction_amount = int(round((context.PaymentTransaction_getTotalPayablePrice() * -100), 2))\n
-if (state != \'confirmed\') or (context.getPaymentMode() != \'payzen\') or (transaction_amount == 0):\n
-  return\n
-else:\n
-  # Request manual payment\n
-  context.start(comment=\'Requested manual payment\')\n
-\n
-#   raise NotImplementedError\n
-#   if context.PaymentTransaction_getPreviousPayzenId() is not None:\n
-#     # there is previous payment\n
-#     context.setStartDate(DateTime())\n
-#     context.updateCausalityState()\n
-#     portal.system_event_module.newContent(\n
-#        title=\'Transaction %s Payzen registration\' % context.getTitle(),\n
-#        portal_type=\'Payzen Event\',\n
-#        source_value=service,\n
-#        destination_value=context).registerPayzen()\n
-#     comment=\'Automatically duplicated in payzen.\'\n
-#   else:\n
-</string> </value>
-        </item>
-        <item>
             <key> <string>_params</string> </key>
             <value> <string></string> </value>
         </item>

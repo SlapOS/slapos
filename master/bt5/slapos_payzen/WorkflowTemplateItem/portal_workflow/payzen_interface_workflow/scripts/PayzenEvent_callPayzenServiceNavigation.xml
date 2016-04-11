@@ -49,19 +49,6 @@
             </value>
         </item>
         <item>
-            <key> <string>_body</string> </key>
-            <value> <string>from DateTime import DateTime\n
-payzen_event = state_change[\'object\']\n
-\n
-payment_service = payzen_event.getSourceValue(portal_type="Payzen Service")\n
-return payment_service.navigate(\n
-  page_template=\'payzen_payment\',\n
-  pay=\'Click to pay\',\n
-  payzen_dict=payzen_dict,\n
-)\n
-</string> </value>
-        </item>
-        <item>
             <key> <string>_params</string> </key>
             <value> <string>state_change, payzen_dict</string> </value>
         </item>

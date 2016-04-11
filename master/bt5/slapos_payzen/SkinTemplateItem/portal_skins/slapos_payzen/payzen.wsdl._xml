@@ -1,0 +1,399 @@
+<definitions name='StandardWS' targetNamespace='http://v3.ws.vads.lyra.com/' xmlns='http://schemas.xmlsoap.org/wsdl/' xmlns:soap='http://schemas.xmlsoap.org/wsdl/soap/' xmlns:tns='http://v3.ws.vads.lyra.com/' xmlns:xsd='http://www.w3.org/2001/XMLSchema'>
+ <types>
+  <xs:schema targetNamespace='http://v3.ws.vads.lyra.com/' version='1.0' xmlns:tns='http://v3.ws.vads.lyra.com/' xmlns:xs='http://www.w3.org/2001/XMLSchema'>
+   <xs:complexType name='transactionInfo'>
+    <xs:sequence>
+     <xs:element name='timestamp' type='xs:long'/>
+     <xs:element minOccurs='0' name='signature' type='xs:string'/>
+     <xs:element name='errorCode' type='xs:int'/>
+     <xs:element minOccurs='0' name='extendedErrorCode' type='xs:string'/>
+     <xs:element name='transactionStatus' type='xs:int'/>
+     <xs:element minOccurs='0' name='shopId' type='xs:string'/>
+     <xs:element minOccurs='0' name='paymentMethod' type='xs:string'/>
+     <xs:element minOccurs='0' name='contractNumber' type='xs:string'/>
+     <xs:element minOccurs='0' name='orderId' type='xs:string'/>
+     <xs:element minOccurs='0' name='orderInfo' type='xs:string'/>
+     <xs:element minOccurs='0' name='orderInfo2' type='xs:string'/>
+     <xs:element minOccurs='0' name='orderInfo3' type='xs:string'/>
+     <xs:element minOccurs='0' name='transmissionDate' type='xs:dateTime'/>
+     <xs:element minOccurs='0' name='transactionId' type='xs:string'/>
+     <xs:element name='sequenceNb' type='xs:int'/>
+     <xs:element name='amount' type='xs:long'/>
+     <xs:element name='initialAmount' type='xs:long'/>
+     <xs:element name='devise' type='xs:int'/>
+     <xs:element name='cvAmount' type='xs:long'/>
+     <xs:element name='cvDevise' type='xs:int'/>
+     <xs:element minOccurs='0' name='presentationDate' type='xs:dateTime'/>
+     <xs:element name='type' type='xs:int'/>
+     <xs:element name='multiplePaiement' type='xs:int'/>
+     <xs:element minOccurs='0' name='ctxMode' type='xs:string'/>
+     <xs:element minOccurs='0' name='cardNumber' type='xs:string'/>
+     <xs:element minOccurs='0' name='cardNetwork' type='xs:string'/>
+     <xs:element minOccurs='0' name='cardType' type='xs:string'/>
+     <xs:element minOccurs='0' name='cardCountry' type='xs:long'/>
+     <xs:element minOccurs='0' name='cardExpirationDate' type='xs:dateTime'/>
+     <xs:element minOccurs='0' name='customerId' type='xs:string'/>
+     <xs:element minOccurs='0' name='customerTitle' type='xs:string'/>
+     <xs:element minOccurs='0' name='customerName' type='xs:string'/>
+     <xs:element minOccurs='0' name='customerPhone' type='xs:string'/>
+     <xs:element minOccurs='0' name='customerMail' type='xs:string'/>
+     <xs:element minOccurs='0' name='customerAddress' type='xs:string'/>
+     <xs:element minOccurs='0' name='customerZipCode' type='xs:string'/>
+     <xs:element minOccurs='0' name='customerCity' type='xs:string'/>
+     <xs:element minOccurs='0' name='customerCountry' type='xs:string'/>
+     <xs:element minOccurs='0' name='customerLanguage' type='xs:string'/>
+     <xs:element minOccurs='0' name='customerIP' type='xs:string'/>
+     <xs:element minOccurs='0' name='transactionCondition' type='xs:string'/>
+     <xs:element minOccurs='0' name='vadsEnrolled' type='xs:string'/>
+     <xs:element minOccurs='0' name='vadsStatus' type='xs:string'/>
+     <xs:element minOccurs='0' name='vadsECI' type='xs:string'/>
+     <xs:element minOccurs='0' name='vadsXID' type='xs:string'/>
+     <xs:element minOccurs='0' name='vadsCAVVAlgorithm' type='xs:string'/>
+     <xs:element minOccurs='0' name='vadsCAVV' type='xs:string'/>
+     <xs:element minOccurs='0' name='vadsSignatureValid' type='xs:string'/>
+     <xs:element minOccurs='0' name='directoryServer' type='xs:string'/>
+     <xs:element minOccurs='0' name='authMode' type='xs:string'/>
+     <xs:element name='markAmount' type='xs:long'/>
+     <xs:element name='markDevise' type='xs:int'/>
+     <xs:element minOccurs='0' name='markDate' type='xs:dateTime'/>
+     <xs:element minOccurs='0' name='markNb' type='xs:string'/>
+     <xs:element name='markResult' type='xs:int'/>
+     <xs:element minOccurs='0' name='markCVV2_CVC2' type='xs:string'/>
+     <xs:element name='authAmount' type='xs:long'/>
+     <xs:element name='authDevise' type='xs:int'/>
+     <xs:element minOccurs='0' name='authDate' type='xs:dateTime'/>
+     <xs:element minOccurs='0' name='authNb' type='xs:string'/>
+     <xs:element name='authResult' type='xs:int'/>
+     <xs:element minOccurs='0' name='authCVV2_CVC2' type='xs:string'/>
+     <xs:element minOccurs='0' name='paymentError' type='xs:int'/>
+     <xs:element minOccurs='0' name='warrantlyResult' type='xs:string'/>
+     <xs:element maxOccurs='unbounded' minOccurs='0' name='localControl' nillable='true' type='tns:localControl'/>
+     <xs:element minOccurs='0' name='captureDate' type='xs:dateTime'/>
+     <xs:element name='captureNumber' type='xs:int'/>
+     <xs:element name='rapprochementStatut' type='xs:int'/>
+     <xs:element name='refoundAmount' type='xs:long'/>
+     <xs:element name='refundDevise' type='xs:int'/>
+     <xs:element minOccurs='0' name='litige' type='xs:boolean'/>
+    </xs:sequence>
+   </xs:complexType>
+   <xs:complexType name='localControl'>
+    <xs:sequence>
+     <xs:element minOccurs='0' name='name' type='xs:string'/>
+     <xs:element name='result' type='xs:boolean'/>
+    </xs:sequence>
+   </xs:complexType>
+   <xs:complexType name='createPaiementInfo'>
+    <xs:sequence>
+     <xs:element name='shopId' type='xs:string'/>
+     <xs:element name='transmissionDate' type='xs:dateTime'/>
+     <xs:element name='transactionId' type='xs:string'/>
+     <xs:element name='paymentMethod' type='xs:string'/>
+     <xs:element name='orderId' type='xs:string'/>
+     <xs:element minOccurs='0' name='orderInfo' type='xs:string'/>
+     <xs:element minOccurs='0' name='orderInfo2' type='xs:string'/>
+     <xs:element minOccurs='0' name='orderInfo3' type='xs:string'/>
+     <xs:element name='amount' type='xs:long'/>
+     <xs:element name='devise' type='xs:int'/>
+     <xs:element minOccurs='0' name='presentationDate' type='xs:dateTime'/>
+     <xs:element minOccurs='0' name='validationMode' type='xs:int'/>
+     <xs:element name='cardNumber' type='xs:string'/>
+     <xs:element name='cardNetwork' type='xs:string'/>
+     <xs:element name='cardExpirationDate' type='xs:dateTime'/>
+     <xs:element minOccurs='0' name='cvv' type='xs:string'/>
+     <xs:element minOccurs='0' name='birthDay' type='xs:dateTime'/>
+     <xs:element minOccurs='0' name='contractNumber' type='xs:string'/>
+     <xs:element minOccurs='0' name='optionCode' type='xs:string'/>
+     <xs:element minOccurs='0' name='threeDsResult' type='tns:threeDsResult'/>
+     <xs:element minOccurs='0' name='subPaymentType' type='xs:int'/>
+     <xs:element minOccurs='0' name='subReference' type='xs:string'/>
+     <xs:element minOccurs='0' name='subPaymentNumber' type='xs:int'/>
+     <xs:element minOccurs='0' name='customerId' type='xs:string'/>
+     <xs:element minOccurs='0' name='customerTitle' type='xs:string'/>
+     <xs:element minOccurs='0' name='customerName' type='xs:string'/>
+     <xs:element minOccurs='0' name='customerPhone' type='xs:string'/>
+     <xs:element minOccurs='0' name='customerMail' type='xs:string'/>
+     <xs:element minOccurs='0' name='customerAddress' type='xs:string'/>
+     <xs:element minOccurs='0' name='customerZipCode' type='xs:string'/>
+     <xs:element minOccurs='0' name='customerCity' type='xs:string'/>
+     <xs:element minOccurs='0' name='customerCountry' type='xs:string'/>
+     <xs:element minOccurs='0' name='customerLanguage' type='xs:string'/>
+     <xs:element minOccurs='0' name='customerIP' type='xs:string'/>
+     <xs:element minOccurs='0' name='customerSendEmail' type='xs:boolean'/>
+     <xs:element name='ctxMode' type='xs:string'/>
+     <xs:element minOccurs='0' name='comment' type='xs:string'/>
+    </xs:sequence>
+   </xs:complexType>
+   <xs:complexType name='threeDsResult'>
+    <xs:sequence>
+     <xs:element name='brand' type='xs:string'/>
+     <xs:element name='enrolled' type='xs:string'/>
+     <xs:element name='authStatus' type='xs:string'/>
+     <xs:element minOccurs='0' name='eci' type='xs:string'/>
+     <xs:element name='xid' type='xs:string'/>
+     <xs:element minOccurs='0' name='cavv' type='xs:string'/>
+     <xs:element minOccurs='0' name='cavvAlgorithm' type='xs:string'/>
+    </xs:sequence>
+   </xs:complexType>
+   <xs:complexType name='standardResponse'>
+    <xs:sequence>
+     <xs:element name='timestamp' type='xs:long'/>
+     <xs:element minOccurs='0' name='signature' type='xs:string'/>
+     <xs:element name='errorCode' type='xs:int'/>
+     <xs:element minOccurs='0' name='extendedErrorCode' type='xs:string'/>
+     <xs:element name='transactionStatus' type='xs:int'/>
+    </xs:sequence>
+   </xs:complexType>
+  </xs:schema>
+ </types>
+ <message name='Standard_validateResponse'>
+  <part name='return' type='tns:standardResponse'></part>
+ </message>
+ <message name='Standard_refundResponse'>
+  <part name='return' type='tns:transactionInfo'></part>
+ </message>
+ <message name='Standard_refund'>
+  <part name='shopId' type='xsd:string'></part>
+  <part name='transmissionDate' type='xsd:dateTime'></part>
+  <part name='transactionId' type='xsd:string'></part>
+  <part name='sequenceNb' type='xsd:int'></part>
+  <part name='ctxMode' type='xsd:string'></part>
+  <part name='newTransactionId' type='xsd:string'></part>
+  <part name='amount' type='xsd:long'></part>
+  <part name='devise' type='xsd:int'></part>
+  <part name='presentationDate' type='xsd:dateTime'></part>
+  <part name='validationMode' type='xsd:int'></part>
+  <part name='comment' type='xsd:string'></part>
+  <part name='wsSignature' type='xsd:string'></part>
+ </message>
+ <message name='Standard_cancelResponse'>
+  <part name='return' type='tns:standardResponse'></part>
+ </message>
+ <message name='Standard_duplicate'>
+  <part name='shopId' type='xsd:string'></part>
+  <part name='transmissionDate' type='xsd:dateTime'></part>
+  <part name='transactionId' type='xsd:string'></part>
+  <part name='sequenceNb' type='xsd:int'></part>
+  <part name='ctxMode' type='xsd:string'></part>
+  <part name='orderId' type='xsd:string'></part>
+  <part name='orderInfo' type='xsd:string'></part>
+  <part name='orderInfo2' type='xsd:string'></part>
+  <part name='orderInfo3' type='xsd:string'></part>
+  <part name='amount' type='xsd:long'></part>
+  <part name='devise' type='xsd:int'></part>
+  <part name='newTransactionId' type='xsd:string'></part>
+  <part name='presentationDate' type='xsd:dateTime'></part>
+  <part name='validationMode' type='xsd:int'></part>
+  <part name='comment' type='xsd:string'></part>
+  <part name='wsSignature' type='xsd:string'></part>
+ </message>
+ <message name='Standard_modifyAndValidate'>
+  <part name='shopId' type='xsd:string'></part>
+  <part name='transmissionDate' type='xsd:dateTime'></part>
+  <part name='transactionId' type='xsd:string'></part>
+  <part name='sequenceNb' type='xsd:int'></part>
+  <part name='ctxMode' type='xsd:string'></part>
+  <part name='amount' type='xsd:long'></part>
+  <part name='devise' type='xsd:int'></part>
+  <part name='remiseDate' type='xsd:dateTime'></part>
+  <part name='comment' type='xsd:string'></part>
+  <part name='wsSignature' type='xsd:string'></part>
+ </message>
+ <message name='Standard_cancel'>
+  <part name='shopId' type='xsd:string'></part>
+  <part name='transmissionDate' type='xsd:dateTime'></part>
+  <part name='transactionId' type='xsd:string'></part>
+  <part name='sequenceNb' type='xsd:int'></part>
+  <part name='ctxMode' type='xsd:string'></part>
+  <part name='comment' type='xsd:string'></part>
+  <part name='wsSignature' type='xsd:string'></part>
+ </message>
+ <message name='Standard_getInfoResponse'>
+  <part name='return' type='tns:transactionInfo'></part>
+ </message>
+ <message name='Standard_duplicateResponse'>
+  <part name='return' type='tns:transactionInfo'></part>
+ </message>
+ <message name='Standard_validate'>
+  <part name='shopId' type='xsd:string'></part>
+  <part name='transmissionDate' type='xsd:dateTime'></part>
+  <part name='transactionId' type='xsd:string'></part>
+  <part name='sequenceNb' type='xsd:int'></part>
+  <part name='ctxMode' type='xsd:string'></part>
+  <part name='comment' type='xsd:string'></part>
+  <part name='wsSignature' type='xsd:string'></part>
+ </message>
+ <message name='Standard_forceResponse'>
+  <part name='return' type='tns:standardResponse'></part>
+ </message>
+ <message name='Standard_createResponse'>
+  <part name='return' type='tns:transactionInfo'></part>
+ </message>
+ <message name='Standard_modify'>
+  <part name='shopId' type='xsd:string'></part>
+  <part name='transmissionDate' type='xsd:dateTime'></part>
+  <part name='transactionId' type='xsd:string'></part>
+  <part name='sequenceNb' type='xsd:int'></part>
+  <part name='ctxMode' type='xsd:string'></part>
+  <part name='amount' type='xsd:long'></part>
+  <part name='devise' type='xsd:int'></part>
+  <part name='remiseDate' type='xsd:dateTime'></part>
+  <part name='comment' type='xsd:string'></part>
+  <part name='wsSignature' type='xsd:string'></part>
+ </message>
+ <message name='Standard_modifyAndValidateResponse'>
+  <part name='return' type='tns:standardResponse'></part>
+ </message>
+ <message name='Standard_force'>
+  <part name='shopId' type='xsd:string'></part>
+  <part name='transmissionDate' type='xsd:dateTime'></part>
+  <part name='transactionId' type='xsd:string'></part>
+  <part name='sequenceNb' type='xsd:int'></part>
+  <part name='ctxMode' type='xsd:string'></part>
+  <part name='autorisationNb' type='xsd:string'></part>
+  <part name='autorisationDate' type='xsd:dateTime'></part>
+  <part name='comment' type='xsd:string'></part>
+  <part name='wsSignature' type='xsd:string'></part>
+ </message>
+ <message name='Standard_modifyResponse'>
+  <part name='return' type='tns:standardResponse'></part>
+ </message>
+ <message name='Standard_getInfo'>
+  <part name='shopId' type='xsd:string'></part>
+  <part name='transmissionDate' type='xsd:dateTime'></part>
+  <part name='transactionId' type='xsd:string'></part>
+  <part name='sequenceNb' type='xsd:int'></part>
+  <part name='ctxMode' type='xsd:string'></part>
+  <part name='wsSignature' type='xsd:string'></part>
+ </message>
+ <message name='Standard_create'>
+  <part name='createInfo' type='tns:createPaiementInfo'></part>
+  <part name='wsSignature' type='xsd:string'></part>
+ </message>
+ <portType name='Standard'>
+  <operation name='cancel' parameterOrder='shopId transmissionDate transactionId sequenceNb ctxMode comment wsSignature'>
+   <input message='tns:Standard_cancel'></input>
+   <output message='tns:Standard_cancelResponse'></output>
+  </operation>
+  <operation name='create' parameterOrder='createInfo wsSignature'>
+   <input message='tns:Standard_create'></input>
+   <output message='tns:Standard_createResponse'></output>
+  </operation>
+  <operation name='duplicate' parameterOrder='shopId transmissionDate transactionId sequenceNb ctxMode orderId orderInfo orderInfo2 orderInfo3 amount devise newTransactionId presentationDate validationMode comment wsSignature'>
+   <input message='tns:Standard_duplicate'></input>
+   <output message='tns:Standard_duplicateResponse'></output>
+  </operation>
+  <operation name='force' parameterOrder='shopId transmissionDate transactionId sequenceNb ctxMode autorisationNb autorisationDate comment wsSignature'>
+   <input message='tns:Standard_force'></input>
+   <output message='tns:Standard_forceResponse'></output>
+  </operation>
+  <operation name='getInfo' parameterOrder='shopId transmissionDate transactionId sequenceNb ctxMode wsSignature'>
+   <input message='tns:Standard_getInfo'></input>
+   <output message='tns:Standard_getInfoResponse'></output>
+  </operation>
+  <operation name='modify' parameterOrder='shopId transmissionDate transactionId sequenceNb ctxMode amount devise remiseDate comment wsSignature'>
+   <input message='tns:Standard_modify'></input>
+   <output message='tns:Standard_modifyResponse'></output>
+  </operation>
+  <operation name='modifyAndValidate' parameterOrder='shopId transmissionDate transactionId sequenceNb ctxMode amount devise remiseDate comment wsSignature'>
+   <input message='tns:Standard_modifyAndValidate'></input>
+   <output message='tns:Standard_modifyAndValidateResponse'></output>
+  </operation>
+  <operation name='refund' parameterOrder='shopId transmissionDate transactionId sequenceNb ctxMode newTransactionId amount devise presentationDate validationMode comment wsSignature'>
+   <input message='tns:Standard_refund'></input>
+   <output message='tns:Standard_refundResponse'></output>
+  </operation>
+  <operation name='validate' parameterOrder='shopId transmissionDate transactionId sequenceNb ctxMode comment wsSignature'>
+   <input message='tns:Standard_validate'></input>
+   <output message='tns:Standard_validateResponse'></output>
+  </operation>
+ </portType>
+ <binding name='StandardBinding' type='tns:Standard'>
+  <soap:binding style='rpc' transport='http://schemas.xmlsoap.org/soap/http'/>
+  <operation name='cancel'>
+   <soap:operation soapAction=''/>
+   <input>
+    <soap:body namespace='http://v3.ws.vads.lyra.com/' use='literal'/>
+   </input>
+   <output>
+    <soap:body namespace='http://v3.ws.vads.lyra.com/' use='literal'/>
+   </output>
+  </operation>
+  <operation name='create'>
+   <soap:operation soapAction=''/>
+   <input>
+    <soap:body namespace='http://v3.ws.vads.lyra.com/' use='literal'/>
+   </input>
+   <output>
+    <soap:body namespace='http://v3.ws.vads.lyra.com/' use='literal'/>
+   </output>
+  </operation>
+  <operation name='duplicate'>
+   <soap:operation soapAction=''/>
+   <input>
+    <soap:body namespace='http://v3.ws.vads.lyra.com/' use='literal'/>
+   </input>
+   <output>
+    <soap:body namespace='http://v3.ws.vads.lyra.com/' use='literal'/>
+   </output>
+  </operation>
+  <operation name='force'>
+   <soap:operation soapAction=''/>
+   <input>
+    <soap:body namespace='http://v3.ws.vads.lyra.com/' use='literal'/>
+   </input>
+   <output>
+    <soap:body namespace='http://v3.ws.vads.lyra.com/' use='literal'/>
+   </output>
+  </operation>
+  <operation name='getInfo'>
+   <soap:operation soapAction=''/>
+   <input>
+    <soap:body namespace='http://v3.ws.vads.lyra.com/' use='literal'/>
+   </input>
+   <output>
+    <soap:body namespace='http://v3.ws.vads.lyra.com/' use='literal'/>
+   </output>
+  </operation>
+  <operation name='modify'>
+   <soap:operation soapAction=''/>
+   <input>
+    <soap:body namespace='http://v3.ws.vads.lyra.com/' use='literal'/>
+   </input>
+   <output>
+    <soap:body namespace='http://v3.ws.vads.lyra.com/' use='literal'/>
+   </output>
+  </operation>
+  <operation name='modifyAndValidate'>
+   <soap:operation soapAction=''/>
+   <input>
+    <soap:body namespace='http://v3.ws.vads.lyra.com/' use='literal'/>
+   </input>
+   <output>
+    <soap:body namespace='http://v3.ws.vads.lyra.com/' use='literal'/>
+   </output>
+  </operation>
+  <operation name='refund'>
+   <soap:operation soapAction=''/>
+   <input>
+    <soap:body namespace='http://v3.ws.vads.lyra.com/' use='literal'/>
+   </input>
+   <output>
+    <soap:body namespace='http://v3.ws.vads.lyra.com/' use='literal'/>
+   </output>
+  </operation>
+  <operation name='validate'>
+   <soap:operation soapAction=''/>
+   <input>
+    <soap:body namespace='http://v3.ws.vads.lyra.com/' use='literal'/>
+   </input>
+   <output>
+    <soap:body namespace='http://v3.ws.vads.lyra.com/' use='literal'/>
+   </output>
+  </operation>
+ </binding>
+ <service name='StandardWS'>
+  <port binding='tns:StandardBinding' name='StandardBeanPort'>
+   <soap:address location='https://secure.payzen.eu/vads-ws/v3'/>
+  </port>
+ </service>
+</definitions>

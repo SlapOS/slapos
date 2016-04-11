@@ -49,46 +49,6 @@
             </value>
         </item>
         <item>
-            <key> <string>_body</string> </key>
-            <value> <string>"""Registers current transaction in payment\n
-\n
-In order to not transmit sensitive information the registration is done by looking the newest\n
-payzen related transaction for destination_section and doing its duplicate"""\n
-\n
-from DateTime import DateTime\n
-payzen_event = state_change[\'object\']\n
-transaction = payzen_event.getDestinationValue()\n
-portal = transaction.getPortalObject()\n
-payment_service = payzen_event.getSourceValue(portal_type="Payzen Service")\n
-\n
-previous_id = transaction.PaymentTransaction_getPreviousPayzenId()\n
-if previous_id is None:\n
-  payzen_event.confirm(comment=\'No previous id found\')\n
-  return\n
-\n
-transaction_date, transaction_id = transaction.PaymentTransaction_generatePayzenId()\n
-if transaction_id is None:\n
-  raise ValueError(\'Transaction already mapped in integration tool.\')\n
-\n
-# do causality mapping in integration_site between transaction.getRelativeUrl and today + transaction_id\n
-payzen_dict = {}\n
-payzen_dict.update(\n
-  devise=transaction.getResourceValue().Currency_getIntegrationMapping(),\n
-  amount=str(int(round((transaction.PaymentTransaction_getTotalPayablePrice() * -100), 0))),\n
-  presentationDate=transaction.getStartDate().toZone(\'UTC\').asdatetime(),\n
-  newTransactionId=transaction_id,\n
-  transmissionDate=transaction_date.asdatetime(),\n
-  transactionId=previous_id\n
-)\n
-\n
-data_kw, signature, sent_text, received_text = payment_service.soap_duplicate(**payzen_dict)\n
-\n
-sent = payzen_event.newContent(title=\'Sent SOAP\', portal_type=\'Payzen Event Message\', text_content=sent_text)\n
-received = payzen_event.newContent(title=\'Received SOAP\', text_content=received_text, predecessor_value=sent, portal_type=\'Payzen Event Message\')\n
-context.PayzenEvent_processUpdate(state_change, data_kw, signature)\n
-</string> </value>
-        </item>
-        <item>
             <key> <string>_params</string> </key>
             <value> <string>state_change</string> </value>
         </item>

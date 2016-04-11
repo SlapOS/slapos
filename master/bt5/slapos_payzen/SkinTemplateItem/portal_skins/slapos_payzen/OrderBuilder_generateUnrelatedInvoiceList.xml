@@ -49,68 +49,6 @@
             </value>
         </item>
         <item>
-            <key> <string>_body</string> </key>
-            <value> <string>from Products.ERP5Type.Document import newTempSimulationMovement\n
-\n
-portal = context.getPortalObject()\n
-select_dict = {\'causality_payment_transaction_related_uid\': None}\n
-\n
-select_kw = kwargs.copy()\n
-select_kw.pop(\'portal_type\', None)\n
-select_kw.pop(\'delivery_relative_url_list\', None)\n
-select_kw.update(\n
-  portal_type=\'Sale Invoice Transaction\',\n
-  simulation_state=\'stopped\',\n
-  default_payment_mode_uid=portal.portal_categories.payment_mode.payzen.getUid(),\n
-  limit=10, # do only some in one shot\n
-  select_dict=select_dict,\n
-  left_join_list=select_dict.keys(),\n
-  causality_payment_transaction_related_uid=None,\n
-)\n
-\n
-default_source_uid=portal.restrictedTraverse(\'account_module/receivable\').getUid()\n
-movement_list = []\n
-id = 1\n
-for invoice in portal.portal_catalog(**select_kw):\n
-  invoice.getObject().serialize() # in order to avoid selection in same transaction\n
-  quantity = 0.\n
-  for movement in invoice.searchFolder(portal_type=\'Sale Invoice Transaction Line\',\n
-    default_source_uid=default_source_uid):\n
-    quantity += movement.getQuantity()\n
-  temp_movement_kw = dict(\n
-    causality=invoice.getRelativeUrl(),\n
-    source_section=invoice.getSourceSection(),\n
-    destination_section=invoice.getDestinationSection(),\n
-    resource=invoice.getResource(),\n
-    price_currency=invoice.getResource(),\n
-    start_date=invoice.getStartDate(),\n
-    stop_date=invoice.getStopDate(),\n
-    specialise=invoice.getSpecialise(),\n
-    payment_mode=invoice.getPaymentMode(),\n
-    source_payment=\'organisation_module/slapos/bank_account\', # the other place defnied: business process\n
-  )\n
-  temp_movement_rec = newTempSimulationMovement(\n
-    portal, str(id),\n
-    quantity=-1 * quantity,\n
-    source=\'account_module/receivable\',\n
-    destination=\'account_module/payable\',\n
-    **temp_movement_kw\n
-  )\n
-  id += 1\n
-  temp_movement_bank = newTempSimulationMovement(\n
-    portal, str(id),\n
-    quantity=1 * quantity,\n
-    source=\'account_module/bank\',\n
-    destination=\'account_module/bank\',\n
-    **temp_movement_kw\n
-  )\n
-  id += 1\n
-  movement_list.extend([temp_movement_rec, temp_movement_bank])\n
-\n
-return movement_list\n
-</string> </value>
-        </item>
-        <item>
             <key> <string>_params</string> </key>
             <value> <string>*args, **kwargs</string> </value>
         </item>

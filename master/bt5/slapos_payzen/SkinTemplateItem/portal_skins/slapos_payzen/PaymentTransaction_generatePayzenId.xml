@@ -49,49 +49,6 @@
             </value>
         </item>
         <item>
-            <key> <string>_body</string> </key>
-            <value> <string>from zExceptions import Unauthorized\n
-if REQUEST is not None:\n
-  raise Unauthorized\n
-\n
-portal = context.getPortalObject()\n
-integration_site = portal.restrictedTraverse(portal.portal_preferences.getPreferredPayzenIntegrationSite())\n
-\n
-transaction_date, transaction_id = context.PaymentTransaction_getPayzenId()\n
-if transaction_id is not None:\n
-  # XXX raise?\n
-  return None, None\n
-\n
-now = DateTime().toZone(\'UTC\')\n
-today = now.asdatetime().strftime(\'%Y%m%d\')\n
-\n
-transaction_id = str(portal.portal_ids.generateNewId(\n
-  id_group=\'%s_%s\' % (integration_site.getRelativeUrl(), today),\n
-  id_generator=\'uid\')).zfill(6)\n
-\n
-mapping_id = \'%s_%s\' % (today, transaction_id)\n
-# integration_site.Causality[mapping_id].setDestinationReference(context.getRelativeUrl())\n
-# try:\n
-#   integration_site.getCategoryFromMapping(\'Causality/%s\' % mapping_id, create_mapping_line=True, create_mapping=True)\n
-# except ValueError:\n
-#   mapping = integration_site.Causality[mapping_id]\n
-#   mapping.setDestinationReference(\'%s\' % context.getRelativeUrl())\n
-# else:\n
-#   raise ValueError, "Payzen transaction_id already exists"\n
-\n
-try:\n
-  mapping = integration_site.getCategoryFromMapping(\n
-  \'Causality/%s\' % context.getId().replace(\'-\', \'_\'),\n
-  create_mapping_line=True,\n
-  create_mapping=True)\n
-except ValueError:\n
-  pass\n
-integration_site.Causality[context.getId().replace(\'-\', \'_\')].setDestinationReference(mapping_id)\n
-\n
-return context.PaymentTransaction_getPayzenId()\n
-</string> </value>
-        </item>
-        <item>
             <key> <string>_params</string> </key>
             <value> <string>REQUEST=None</string> </value>
         </item>

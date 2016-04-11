@@ -49,22 +49,6 @@
             </value>
         </item>
         <item>
-            <key> <string>_body</string> </key>
-            <value> <string>from DateTime import DateTime\n
-portal = context.getPortalObject()\n
-\n
-state = context.getSimulationState()\n
-if (state != \'started\') or (context.getPaymentMode() != \'payzen\'):\n
-  return\n
-else:\n
-  transaction_date, transaction_id = context.PaymentTransaction_getPayzenId()\n
-\n
-  if transaction_id is not None:\n
-    # so the payment is registered in payzen\n
-    context.PaymentTransaction_createPayzenEvent().updateStatus()\n
-</string> </value>
-        </item>
-        <item>
             <key> <string>_params</string> </key>
             <value> <string></string> </value>
         </item>

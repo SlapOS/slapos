@@ -49,33 +49,6 @@
             </value>
         </item>
         <item>
-            <key> <string>_body</string> </key>
-            <value> <string>payzen_event = state_change[\'object\']\n
-payment_transaction = payzen_event.getDestinationValue(portal_type="Payment Transaction")\n
-portal = payment_transaction.getPortalObject()\n
-\n
-transaction_date, transaction_id = payment_transaction.PaymentTransaction_getPayzenId()\n
-if transaction_id is None:\n
-  raise ValueError(\'Transaction not registered in payzen integration tool\')\n
-\n
-payment_service = payzen_event.getSourceValue(portal_type="Payzen Service")\n
-data_kw, signature, sent_text, received_text = payment_service.soap_getInfo(\n
-  transaction_date.toZone(\'UTC\').asdatetime(),\n
-  transaction_id)\n
-\n
-sent = payzen_event.newContent(\n
-  title=\'Sent SOAP\', \n
-  portal_type=\'Payzen Event Message\', \n
-  text_content=sent_text)\n
-received = payzen_event.newContent(\n
-  title=\'Received SOAP\', \n
-  portal_type=\'Payzen Event Message\', \n
-  text_content=received_text, \n
-  predecessor_value=sent)\n
-payzen_event.PayzenEvent_processUpdate(data_kw, signature)\n
-</string> </value>
-        </item>
-        <item>
             <key> <string>_params</string> </key>
             <value> <string>state_change</string> </value>
         </item>

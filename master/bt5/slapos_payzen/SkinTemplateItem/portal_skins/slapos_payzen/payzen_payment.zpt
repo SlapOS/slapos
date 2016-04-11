@@ -1,0 +1,17 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <meta http-equiv="Content-Script-Type" content="text/javascript" />
+  <meta http-equiv="Content-Style-Type" content="text/css" />
+  <title tal:content="here/title"></title>
+</head>
+<body onload="document.payment.submit();">
+<form method="POST" tal:attributes="action here/link_url_string" id="payment" name="payment">
+<tal:block tal:repeat="value here/field_list">
+  <input type="hidden" tal:attributes="name python: value[0]; value python: value[1]">
+</tal:block>
+<input type="submit" tal:attributes="value here/pay">
+</form>
+</body>
+</html>

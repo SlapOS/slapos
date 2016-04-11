@@ -49,17 +49,6 @@
             </value>
         </item>
         <item>
-            <key> <string>_body</string> </key>
-            <value> <string>portal = context.getPortalObject()\n
-integration_site = portal.restrictedTraverse(portal.portal_preferences.getPreferredPayzenIntegrationSite())\n
-\n
-relative_url = context.getRelativeUrl()\n
-# Only EUR is supported for now\n
-assert relative_url == \'currency_module/EUR\'\n
-return integration_site.getMappingFromCategory(\'resource/%s\' % relative_url).split(\'/\', 1)[-1]\n
-</string> </value>
-        </item>
-        <item>
             <key> <string>_params</string> </key>
             <value> <string></string> </value>
         </item>
