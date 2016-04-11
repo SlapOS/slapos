@@ -220,26 +220,78 @@ div.subfield {
 }
 
 
+fieldset > .subfield { padding-left: 0}
+
 .subfield {
   padding-left: 20px;
-} 
+}
 
 label.slapos-parameter-dict-key::before {
-  content: "Parameter Entry: ";
+  content: "\25BC  Parameter Entry: ";
+}
+
+label.slapos-parameter-dict-key-colapse::before {
+  content: "\25BA   Parameter Entry: ";
 }
 
 label.slapos-parameter-dict-key {
-  font-color: "red";
+  text-transform: capitalize;
+  /* display: block !important; */
+  width: 99%;
+  padding: 5px;
+  font-size: 110%;
+  line-height: 20px;
+  color: rgb(93, 128, 125) !important;
+  cursor: pointer;
 }
 
 div.slapos-parameter-dict-key {
   margin-top: 10px;
-  margin-left: 6px;
+  background: rgb(239, 252, 249);
+  border: 1px solid rgb(233, 247, 253);
+  padding: 5px;
 }
 
-.subfield {
-  padding-top: 3px;
+div.slapos-parameter-dict-key .subfield:last-child {
+  padding: 5px 5px 10px 20px;
 }
+
+#software-type {padding: 10px 0 0;}
+#software-type  .field[title='serialisation_type'] .input { padding-top: 0; }
+.subfield, #software-type .input{
+  padding-top: 10px;
+}
+
+.subfield label, #software-type label {
+  display: inline-block;
+  margin-bottom: 1px;
+  color: rgb(124, 134, 149)
+}
+fieldset > .subfield > label { 
+  font-size: 113%;
+  color: rgb(112, 125, 136);
+}
+.subfield span {
+  font-weight: normal;
+  font-style: italic;
+  padding-left: 7px;
+  color: rgb(94, 127, 141)
+}
+.subfield select { margin-bottom: 10px;}
+
+.subfield textarea {width: 250px; height: 60px;}
+
+.subfield .error {
+  color: #E82525;
+  font-weight: 700;
+}
+
+.subfield input {
+  font-size: 100%;
+  width: 240px;
+}
+
+.input button {margin-left: 10px;}
 
 .add-sub-form {
   background: #3498db;
@@ -248,14 +300,16 @@ div.slapos-parameter-dict-key {
   background-image: -ms-linear-gradient(top, #3498db, #2980b9);
   background-image: -o-linear-gradient(top, #3498db, #2980b9);
   background-image: linear-gradient(to bottom, #3498db, #2980b9);
-  -webkit-border-radius: 28;
-  -moz-border-radius: 28;
-  border-radius: 28px;
-  font-family: Arial;
+  -webkit-border-radius: 4;
+  -moz-border-radius: 4;
+  border-radius: 4px;
+  border: 1px solid #3498db;
   color: #ffffff;
-  font-size: 12px;
-  padding: 5px 20px 5px 20px;
+  font-size: 15px;
+  font-weight: bold;
+  padding: 6px 20px;
   text-decoration: none;
+  cursor: pointer;
 }
 
 .add-sub-form:hover {
