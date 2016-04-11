@@ -49,26 +49,6 @@
             </value>
         </item>
         <item>
-            <key> <string>_body</string> </key>
-            <value> <string>if REQUEST.other[\'method\'] != "POST":\n
-  response.setStatus(405)\n
-  return ""\n
-\n
-person = context\n
-person.requestSoftwareInstance(\n
-  state=state,\n
-  software_release=software_release,\n
-  software_title=software_title,\n
-  software_type=software_type,\n
-  instance_xml=instance_xml,\n
-  sla_xml=sla_xml,\n
-  shared=int(shared)\n
-)\n
-\n
-return context.REQUEST.get(\'request_hosting_subscription\').Base_redirect()\n
-</string> </value>
-        </item>
-        <item>
             <key> <string>_params</string> </key>
             <value> <string>state, software_release, software_title, software_type, instance_xml, sla_xml, shared, REQUEST=None</string> </value>
         </item>

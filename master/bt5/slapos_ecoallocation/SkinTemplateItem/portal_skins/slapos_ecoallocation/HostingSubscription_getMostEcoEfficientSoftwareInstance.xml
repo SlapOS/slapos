@@ -49,29 +49,6 @@
             </value>
         </item>
         <item>
-            <key> <string>_body</string> </key>
-            <value> <string encoding="cdata"><![CDATA[
-
-partition_co2_dict = {}\n
-min_delta_co2 = 2000\n
-minimal_candidate = None\n
-\n
-for software_instance in context.getSpecialiseRelatedValueList(portal_type="Software Instance"):\n
-  delta_co2 = software_instance.SoftwareInstance_getFutureDeltaCO2()     \n
-  if delta_co2 != "Not Applicable":\n
-    if delta_co2 < min_delta_co2:\n
-      minimal_candidate = software_instance\n
-      min_delta_co2 = delta_co2\n
-    elif (delta_co2 == min_delta_co2) and \\\n
-           (software_instance.getTitle() in ["kvm0", "runner0"]):\n
-      minimal_candidate = software_instance\n
-\n
-return minimal_candidate, min_delta_co2\n
-
-
-]]></string> </value>
-        </item>
-        <item>
             <key> <string>_params</string> </key>
             <value> <string></string> </value>
         </item>

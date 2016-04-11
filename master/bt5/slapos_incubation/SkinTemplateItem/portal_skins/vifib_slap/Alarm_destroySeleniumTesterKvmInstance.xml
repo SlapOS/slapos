@@ -49,32 +49,6 @@
             </value>
         </item>
         <item>
-            <key> <string>_body</string> </key>
-            <value> <string>from Products.ZSQLCatalog.SQLCatalog import NegatedQuery, Query\n
-\n
-portal = context.getPortalObject()\n
-person = portal.restrictedTraverse(\'person_module/20120411-A56ED\', None)\n
-if person is None:\n
-  return\n
-person_reference = person.getReference()\n
-\n
-setup_service = portal.restrictedTraverse(portal.portal_preferences.getPreferredInstanceSetupResource())\n
-\n
-# XXX Owner column should not be used to fetch the list!\n
-# Data model of hosting subscription should be fixed to allow direct query\n
-portal.portal_catalog.searchAndActivate(\n
-  portal_type="Hosting Subscription",\n
-  owner=person_reference,\n
-  validation_state="validated",\n
-  method_id=\'HostingSubcription_requestDestructionSeleniumTester\',\n
-  method_kw={\'tag\': tag},\n
-  activate_kw={\'tag\': tag},\n
-)\n
-\n
-context.activate(after_tag=tag).getId()\n
-</string> </value>
-        </item>
-        <item>
             <key> <string>_params</string> </key>
             <value> <string>tag, fixit, params</string> </value>
         </item>

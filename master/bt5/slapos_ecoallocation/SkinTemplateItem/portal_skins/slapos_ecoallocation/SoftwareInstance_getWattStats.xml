@@ -49,27 +49,6 @@
             </value>
         </item>
         <item>
-            <key> <string>_body</string> </key>
-            <value> <string>computer_partition_list = context.getAggregateValueList(portal_type="Computer Partition")\n
-\n
-master_node = context.SoftwareInstance_getResilientMasterNode()\n
-\n
-current_watt = context.SoftwareRelease_getDeltaCO2List(\n
-  computer_partition_list, context.SoftwareInstance_getAverageCPULoad()\n
-)\n
-current_watt = current_watt.keys()\n
-\n
-master_node = context.SoftwareInstance_getResilientMasterNode()\n
-if master_node is not None:\n
-  future_watt = context.SoftwareRelease_getDeltaCO2List(\n
-    computer_partition_list, master_node.SoftwareInstance_getAverageCPULoad()\n
-  )\n
-  future_watt = future_watt.keys()[0]\n
-\n
-return current_watt, future_watt\n
-</string> </value>
-        </item>
-        <item>
             <key> <string>_params</string> </key>
             <value> <string></string> </value>
         </item>

@@ -49,53 +49,6 @@
             </value>
         </item>
         <item>
-            <key> <string>_body</string> </key>
-            <value> <string>from Products.CMFActivity.ActiveResult import ActiveResult\n
-\n
-# XXX rafael: Hardcoded value is a convention on Vifib.\n
-vifib = context.organisation_module[\'vifib_internet\']\n
-\n
-year = DateTime().year()\n
-start_date = \'%s/01/01\' % year\n
-stop_date = \'%s/12/31\' % (year + 1)\n
-\n
-accounting_period = context.portal_catalog.getResultValue(\n
-   portal_type=\'Accounting Period\',\n
-   parent_uid=vifib.getUid(),\n
-   simulation_state=\'started\',\n
-   **{\'delivery.start_date\': start_date,\n
-      \'delivery.stop_date\': stop_date\n
-      }\n
-    )\n
-\n
-if accounting_period is None and fixit:\n
-  accounting_period = vifib.newContent(portal_type=\'Accounting Period\',\n
-       start_date=start_date, stop_date=stop_date)\n
-  accounting_period.start()\n
-\n
-if accounting_period is None:\n
-  summary = "Unable to find Accounting Plan for the current year."\n
-  if fixit:\n
-    summary += ", fixed."\n
-    severity = 0\n
-  else:\n
-    severity = 1\n
-  detail = "Period %s to %s" % (start_date, stop_date)\n
-else:\n
-  severity = 0\n
-  summary = "Nothing to do."\n
-  detail = ""\n
-\n
-active_result = ActiveResult()\n
-active_result.edit(\n
-  summary=summary, \n
-  severity=severity,\n
-  detail=detail)\n
-\n
-context.newActiveProcess().postResult(active_result)\n
-</string> </value>
-        </item>
-        <item>
             <key> <string>_params</string> </key>
             <value> <string>tag, fixit=False, **kw</string> </value>
         </item>

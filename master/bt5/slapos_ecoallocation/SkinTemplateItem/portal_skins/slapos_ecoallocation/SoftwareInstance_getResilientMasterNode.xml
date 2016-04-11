@@ -49,29 +49,6 @@
             </value>
         </item>
         <item>
-            <key> <string>_body</string> </key>
-            <value> <string>"""\n
-  This script may contains specific prototyping code for \n
-  get master done for resilience.\n
-"""\n
-\n
-title = context.getTitle()\n
-\n
-if not (title.startswith("kvm") or title.startswith("runner")):\n
-  # This instance is not a clone from resilience\n
-  return None \n
-\n
-hosting_subscription = context.getSpecialiseValue()\n
-\n
-for instance in hosting_subscription.getSpecialiseRelatedValueList(\n
-   portal_type="Software Instance"):\n
-  if instance.getTitle() in ["kvm0", "runner0"]:\n
-    return instance\n
-\n
-return None\n
-</string> </value>
-        </item>
-        <item>
             <key> <string>_params</string> </key>
             <value> <string></string> </value>
         </item>

@@ -49,40 +49,6 @@
             </value>
         </item>
         <item>
-            <key> <string>_body</string> </key>
-            <value> <string>"""\n
-  Make a list with delta CO2 values\n
-"""\n
-\n
-if simulated_cpu_load is not None:\n
-  partition_average_cpu_load = simulated_cpu_load\n
-else:\n
-  partition_average_cpu_load = context.getCpuCapacityQuantity()\n
-\n
-partition_delta_co2_dict = {} \n
-\n
-for computer_partition in computer_partition_list:\n
-  computer = computer_partition.getParentValue()\n
-  computer_zero_emission_ratio = computer.Computer_getZeroEmissionRatio()\n
-  computer_cpu_load_percentage = computer.Computer_getLatestCPUPercentLoad()\n
-  computer_watt = computer.Computer_getWattConsumption(computer_cpu_load_percentage)\n
-\n
-  partition_watt = computer.Computer_getWattConsumption(\n
-                computer_cpu_load_percentage + partition_average_cpu_load)\n
-\n
-  delta_watt = (partition_watt-computer_watt)\n
-\n
-  delta_co2 = delta_watt - delta_watt*(computer_zero_emission_ratio/100)\n
-\n
-  if delta_co2 in partition_delta_co2_dict:\n
-    partition_delta_co2_dict[delta_co2].append(computer_partition)\n
-  else:\n
-    partition_delta_co2_dict[delta_co2] = [computer_partition]\n
-\n
-return partition_delta_co2_dict\n
-</string> </value>
-        </item>
-        <item>
             <key> <string>_params</string> </key>
             <value> <string>computer_partition_list, simulated_cpu_load=None</string> </value>
         </item>

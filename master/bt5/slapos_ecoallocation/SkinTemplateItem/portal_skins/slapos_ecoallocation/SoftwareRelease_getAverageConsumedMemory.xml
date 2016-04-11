@@ -49,34 +49,6 @@
             </value>
         </item>
         <item>
-            <key> <string>_body</string> </key>
-            <value> <string>portal = context.getPortalObject()\n
-\n
-software_release_url = context.getUrlString()\n
-\n
-resource_uid = context.service_module.memory_used.getUid()\n
-\n
-# Select all software instances from a certain Software Release\n
-software_instance_list = portal.portal_catalog(\n
-  portal_type="Software Instance",\n
-  limit=100,\n
-  url_string=software_release_url)\n
-\n
-packing_list_line_list = portal.portal_catalog(\n
-  limit=100,\n
-  sort_on=("creation_date", "DESC"),\n
-  portal_type="Sale Packing List Line",\n
-  default_resource_uid = resource_uid,\n
-  default_aggregate_uid=[i.getUid() for i in software_instance_list]\n
-  )\n
-\n
-if len(packing_list_line_list):\n
-  return sum([i.getQuantity() for i in packing_list_line_list])/len(packing_list_line_list)\n
-\n
-return 0.0\n
-</string> </value>
-        </item>
-        <item>
             <key> <string>_params</string> </key>
             <value> <string></string> </value>
         </item>

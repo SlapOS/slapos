@@ -49,37 +49,6 @@
             </value>
         </item>
         <item>
-            <key> <string>_body</string> </key>
-            <value> <string>if REQUEST.other[\'method\'] != "POST":\n
-  response.setStatus(405)\n
-  return ""\n
-\n
-ticket = context\n
-portal = ticket.getPortalObject()\n
-person = ticket.getDestinationDecisionValue()\n
-\n
-web_message_template = portal.restrictedTraverse(\n
-  portal.portal_preferences.getPreferredWebMessageTemplate())\n
-web_message = web_message_template.Base_createCloneDocument(batch_mode=1)\n
-# XXX init script is not called when cloning?\n
-web_message.Event_init()\n
-web_message.edit(\n
-  title="Re: %s" % context.getTitle(),\n
-  content_type="text/plain",\n
-  text_content=description,\n
-  source_value=person,\n
-  resource=ticket.getResource(),\n
-  start_date=DateTime(),\n
-  follow_up_value=ticket,\n
-)\n
-web_message.stop(comment="Submitted from the web site contact form")\n
-if portal.portal_workflow.isTransitionPossible(context, "validate"):\n
-  context.validate(comment="See %s" % web_message.getRelativeUrl())\n
-\n
-return ""\n
-</string> </value>
-        </item>
-        <item>
             <key> <string>_params</string> </key>
             <value> <string>description, REQUEST=None</string> </value>
         </item>

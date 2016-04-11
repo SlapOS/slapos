@@ -1,0 +1,198 @@
+<!-- Tested with chromium 12 and --ignore-certificate-errors --disable-translate --disable-web-security options -->
+<html xmlns:tal="http://xml.zope.org/namespaces/tal"
+    xmlns:metal="http://xml.zope.org/namespaces/metal">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>Test KVM</title>
+</head>
+<body>
+<table cellpadding="1" cellspacing="1" border="1">
+<thead>
+<tr><td rowspan="1" colspan="3">testkvm</td></tr>
+</thead><tbody>
+<tal:block metal:use-macro="container/Zuite_vifib_instanciation_macro_library/macros/init_environment" />
+<tr>
+  <td>phantomRender</td>
+  <td>webrequest1.png</td>
+  <td></td>
+</tr>
+<tr>
+  <td>assertElementPresent</td>
+  <td>link=Order a KVM now</td>
+  <td></td>
+</tr>
+<tr>
+  <td>clickAndWait</td>
+  <td>link=Order a KVM now</td>
+  <td></td>
+</tr>
+<tr>
+  <td>phantomRender</td>
+  <td>webrequest2.png</td>
+  <td></td>
+</tr>
+<tr>
+  <td>assertElementPresent</td>
+  <td>//div[text()="Your instance is under creation. Please wait few minutes for partitions to appear."]</td>
+  <td></td>
+</tr>
+<tr>
+  <td>storeLocation</td>
+  <td>hosting_subscription_url</td>
+  <td></td>
+</tr>
+<tr>
+  <td>echo</td>
+  <td>${hosting_subscription_url}</td>
+  <td></td>
+</tr>
+<!--
+Unfortunately there is currently now way to do good client-server waiting for reindexation
+of Software Instance, so just wait 60s.
+
+It shall be maximum of reindexation.
+
+-->
+<tr>
+  <td>pause</td>
+  <td>60000</td>
+  <td></td>
+</tr>
+
+<tr>
+  <td>open</td>
+  <td>${hosting_subscription_url}</td>
+  <td></td>
+</tr>
+<tr>
+  <td>assertElementPresent</td>
+  <td>link=Vifib KVM*</td>
+  <td></td>
+</tr>
+<tr>
+  <td>clickAndWait</td>
+  <td>link=Vifib KVM*</td>
+  <td></td>
+</tr>
+<tr>
+  <td>storeLocation</td>
+  <td>software_instance_url</td>
+  <td></td>
+</tr>
+<!-- Allows to fetch clean instance status -->
+<tr>
+  <td>storeEval</td>
+  <td>window.location.pathname</td>
+  <td>software_instance_path</td>
+</tr>
+<tr>
+  <td>echo</td>
+  <td>${software_instance_path}</td>
+  <td></td>
+</tr>
+
+<!-- Hackish, but there is no other way to fetch software instance status -->
+<!-- XXX: It is hammering server, needs to make it a bit nicer -->
+<!--tr>
+  <td>waitForCondition</td>
+  <td>new
+Ajax.Request('${software_instance_path}/SoftwareInstance_getStatus',
+{asynchronous: false}).transport.responseText === "Started"; var i;
+for (i = 0; i < 10000000; i++) { };</td>
+  <td>600000</td>
+</tr-->
+<tr>
+  <td>pause</td>
+  <td>5400000</td>
+  <td></td>
+</tr>
+<tr>
+  <td>open</td>
+  <td>${software_instance_url}</td>
+  <td></td>
+</tr>
+<tr>
+  <td>assertElementPresent</td>
+  <td>css=span:contains("Started")</td>
+  <td></td>
+</tr>
+<tr>
+  <td>assertElementPresent</td>
+  <td>css=td:contains("url")</td>
+  <td></td>
+</tr>
+<tr>
+  <td>assertElementPresent</td>
+  <td>css=td:contains("password")</td>
+  <td></td>
+</tr>
+<tr>
+  <td>storeText</td>
+  <td>css=td:contains('url') + td</td>
+  <td>ip</td>
+</tr>
+<tr>
+  <td>storeText</td>
+  <td>css=td:contains('password') + td</td>
+  <td>password</td>
+</tr>
+<!--tr>
+  <td>openAndWait</td>
+  <td>${ip}</td>
+  <td></td>
+</tr>
+<tr>
+  <td>pause</td>
+  <td>2000</td>
+  <td></td>
+</tr>
+<tr>
+  <td>assertElementPresent</td>
+  <td>id=password_input</td>
+  <td></td>
+</tr>
+<tr>
+  <td>type</td>
+  <td>id=password_input</td>
+  <td>${password}</td>
+</tr>
+<tr>
+  <td>keyPress</td>
+  <td>id=password_input</td>
+  <td>13</td>
+</tr>
+<tr>
+  <td>pause</td>
+  <td>1000</td>
+  <td></td>
+</tr>
+<tr>
+  <td>submit</td>
+  <td>//input[@id=&quot;password_input&quot;]/..</td>
+  <td>\13</td>
+</tr>
+<tr>
+  <td>pause</td>
+  <td>10000</td>
+  <td></td>
+</tr>
+<tr>
+  <td>assertTextPresent</td>
+  <td>Connected (encrypted) to</td>
+  <td></td>
+</tr>
+<tr>
+  <td>phantomRender</td>
+  <td>webrequest9.png</td>
+  <td></td>
+</tr>
+<tr>
+  <td>openAndWait</td>
+  <td>${software_instance_url}</td>
+  <td></td>
+</tr-->
+<!--span metal:use-macro="container/Zuite_vifib_instanciation_macro_library/macros/destroy_instance" /-->
+</tbody>
+</table>
+</body>
+</html>

@@ -49,28 +49,6 @@
             </value>
         </item>
         <item>
-            <key> <string>_body</string> </key>
-            <value> <string>if REQUEST.other[\'method\'] != "POST":\n
-  response.setStatus(405)\n
-  return ""\n
-\n
-import json\n
-\n
-computer = context\n
-request = context.REQUEST\n
-response = REQUEST.RESPONSE\n
-\n
-context.Base_prepareCorsResponse(RESPONSE=response)\n
-\n
-computer.generateCertificate()\n
-\n
-return json.dumps({\n
-  \'certificate\': request.get(\'computer_certificate\'),\n
-  \'key\': request.get(\'computer_key\')\n
-}, indent=2)\n
-</string> </value>
-        </item>
-        <item>
             <key> <string>_params</string> </key>
             <value> <string>REQUEST=None</string> </value>
         </item>

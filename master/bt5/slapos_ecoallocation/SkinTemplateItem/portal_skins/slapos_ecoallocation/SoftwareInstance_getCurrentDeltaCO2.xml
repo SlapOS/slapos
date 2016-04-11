@@ -49,20 +49,6 @@
             </value>
         </item>
         <item>
-            <key> <string>_body</string> </key>
-            <value> <string>if REQUEST is not None:\n
-  raise Unauthorized\n
-\n
-computer_partition_list = context.getAggregateValueList(portal_type="Computer Partition")\n
-\n
-current_watt = context.SoftwareRelease_getDeltaCO2List(\n
-  computer_partition_list, context.SoftwareInstance_getAverageCPULoad()\n
-)\n
-\n
-return current_watt.keys()[0]\n
-</string> </value>
-        </item>
-        <item>
             <key> <string>_params</string> </key>
             <value> <string>REQUEST=None</string> </value>
         </item>

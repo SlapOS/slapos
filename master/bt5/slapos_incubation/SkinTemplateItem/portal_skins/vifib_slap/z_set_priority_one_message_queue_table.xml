@@ -25,14 +25,6 @@
             <value> <string>z_set_priority_one_message_queue_table</string> </value>
         </item>
         <item>
-            <key> <string>src</string> </key>
-            <value> <string encoding="cdata"><![CDATA[
-
-update message_queue set priority = 1 where processing_node in (0, -1) and priority > 1
-
-]]></string> </value>
-        </item>
-        <item>
             <key> <string>title</string> </key>
             <value> <string></string> </value>
         </item>

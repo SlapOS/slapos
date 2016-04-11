@@ -49,20 +49,6 @@
             </value>
         </item>
         <item>
-            <key> <string>_body</string> </key>
-            <value> <string># XXX: Convert to preference?\n
-portal = context.getPortalObject()\n
-usage_report_service_reference = \'usage_report\'\n
-catalog_result = portal.portal_catalog(\n
-  portal_type=portal.getPortalServiceTypeList(),\n
-  reference=usage_report_service_reference\n
-)\n
-if len(catalog_result) == 1:\n
-  return catalog_result[0].getObject()\n
-return None\n
-</string> </value>
-        </item>
-        <item>
             <key> <string>_params</string> </key>
             <value> <string></string> </value>
         </item>

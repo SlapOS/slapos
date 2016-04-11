@@ -49,33 +49,6 @@
             </value>
         </item>
         <item>
-            <key> <string>_body</string> </key>
-            <value> <string>if REQUEST.other[\'method\'] != "POST":\n
-  response.setStatus(405)\n
-  return ""\n
-\n
-portal = context.getPortalObject()\n
-\n
-network_portal_type = "Computer Network"\n
-\n
-reference = "NET-%s" % portal.portal_ids.generateNewId(\n
-    id_group=\'slap_network_reference\',\n
-    id_generator=\'uid\')\n
-\n
-module = portal.getDefaultModule(portal_type=network_portal_type)\n
-network = module.newContent(\n
-  portal_type=network_portal_type,\n
-  title=title,\n
-  reference=reference,\n
-  source_administration=context.getRelativeUrl()\n
-)\n
-\n
-\n
-network.Base_redirect()\n
-network.validate()\n
-</string> </value>
-        </item>
-        <item>
             <key> <string>_params</string> </key>
             <value> <string>title, REQUEST=None</string> </value>
         </item>

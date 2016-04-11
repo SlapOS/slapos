@@ -49,18 +49,6 @@
             </value>
         </item>
         <item>
-            <key> <string>_body</string> </key>
-            <value> <string>if REQUEST.other[\'method\'] != "POST":\n
-  response.setStatus(405)\n
-  return ""\n
-\n
-person = context\n
-\n
-person.requestComputer(computer_title=computer_title)\n
-return context.getPortalObject().restrictedTraverse(context.REQUEST.get(\'computer\')).Base_redirect()\n
-</string> </value>
-        </item>
-        <item>
             <key> <string>_params</string> </key>
             <value> <string>computer_title, REQUEST=None</string> </value>
         </item>

@@ -49,29 +49,6 @@
             </value>
         </item>
         <item>
-            <key> <string>_body</string> </key>
-            <value> <string>if REQUEST.other[\'method\'] != "POST":\n
-  response.setStatus(405)\n
-  return ""\n
-\n
-if action not in ("started", "stopped", "destroyed"):\n
-  raise NotImplementedError, "Unknown action %s" % action\n
-\n
-person = context.getDestinationSectionValue()\n
-person.requestSoftwareInstance(\n
-  state=action,\n
-  software_release=context.getUrlString(),\n
-  software_title=context.getTitle(),\n
-  software_type=context.getSourceReference(),\n
-  instance_xml=context.getTextContent(),\n
-  sla_xml=context.getSlaXml(),\n
-  shared=context.isRootSlave()\n
-)\n
-\n
-context.Base_redirect()\n
-</string> </value>
-        </item>
-        <item>
             <key> <string>_params</string> </key>
             <value> <string>action, REQUEST=None</string> </value>
         </item>

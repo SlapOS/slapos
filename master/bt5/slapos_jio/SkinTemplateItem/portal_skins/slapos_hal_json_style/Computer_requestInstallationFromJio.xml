@@ -49,18 +49,6 @@
             </value>
         </item>
         <item>
-            <key> <string>_body</string> </key>
-            <value> <string>if REQUEST.other[\'method\'] != "POST":\n
-  response.setStatus(405)\n
-  return ""\n
-\n
-computer = context\n
-computer.requestSoftwareRelease(software_release_url=software_release, state=\'available\')\n
-\n
-return context.REQUEST.get(\'software_installation_url\').Base_redirect()\n
-</string> </value>
-        </item>
-        <item>
             <key> <string>_params</string> </key>
             <value> <string>software_release, REQUEST=None</string> </value>
         </item>

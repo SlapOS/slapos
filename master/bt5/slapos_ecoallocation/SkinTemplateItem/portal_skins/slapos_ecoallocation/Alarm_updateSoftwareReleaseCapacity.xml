@@ -49,20 +49,6 @@
             </value>
         </item>
         <item>
-            <key> <string>_body</string> </key>
-            <value> <string>"""\n
-  For all software releases, upgrade the Average CPU and Memory Capacity\n
-"""\n
-\n
-portal = context.getPortalObject()\n
-\n
-portal.portal_catalog.searchAndActivate(\n
-  portal_type="Software Release",\n
-  method_id="SotftwareRelease_updateCapacityQuantity",\n
-)\n
-</string> </value>
-        </item>
-        <item>
             <key> <string>_params</string> </key>
             <value> <string></string> </value>
         </item>

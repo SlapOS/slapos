@@ -49,29 +49,6 @@
             </value>
         </item>
         <item>
-            <key> <string>_body</string> </key>
-            <value> <string># try to find, if needed create and publish\n
-portal = context.getPortalObject()\n
-software_release_document = portal.portal_catalog.getResultValue(portal_type=\'Software Release\',\n
-  url_string=software_release_url)\n
-if software_release_document is None:\n
-  digest = context.Base_getSha512Hexdiest(software_release_url)\n
-  tag = \'%s_inProgress\' % digest\n
-  if portal.portal_activities.countMessageWithTag(tag) == 0:\n
-    # can create new one\n
-    software_release_document = portal.software_release_module.newContent(\n
-      portal_type=\'Software Release\',\n
-      reference=digest,\n
-      version=digest,\n
-      url_string=software_release_url,\n
-      language=\'en\',\n
-      activate_kw={\'tag\': tag}\n
-    )\n
-    software_release_document.publish(comment=\'Automatically created.\')\n
-return software_release_document\n
-</string> </value>
-        </item>
-        <item>
             <key> <string>_params</string> </key>
             <value> <string>software_release_url</string> </value>
         </item>

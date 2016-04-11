@@ -49,65 +49,6 @@
             </value>
         </item>
         <item>
-            <key> <string>_body</string> </key>
-            <value> <string encoding="cdata"><![CDATA[
-
-""" \n
-This script generate a usage report test sample for one or two partitions\n
-"""\n
-\n
-# First we check the number of partition to invoice\n
-if number in [1, 2]:\n
-\n
-  # We build movements\n
-  movement = """\n
-    <movement>\n
-      <resource>%s</resource>\n
-      <title>%s</title>\n
-      <reference>%s</reference>       \n
-      <quantity>%s</quantity>\n
-      <price>0.00</price>        \n
-      <VAT>None</VAT>\n
-      <category>None</category>\n
-    </movement>"""\n
-\n
-  # Then, we create two movements for each partition, one for the CPU consumption, and the other for the memory\n
-  movements = ""\n
-  for nb in range(number):\n
-    if nb == 0:\n
-      movements += movement % (\'CPU Consumption\', \'Title Sale Packing List Line 1\', \'slappart0\', \'42.42\')\n
-      movements += movement % (\'Memory Consumption\', \'Title Sale Packing List Line 2\', \'slappart0\', \'42.42\')\n
-    else:\n
-      movements += movement % (\'CPU Consumption\', \'Title Sale Packing List Line 1\', \'slappart1\', \'46.46\')\n
-      movements += movement % (\'Memory Consumption\', \'Title Sale Packing List Line 2\', \'slappart1\', \'46.46\')\n
-\n
-  # Finally, we build the XML usage report\n
-  xml = """<?xml version=\'1.0\' encoding=\'utf-8\'?>\n
-  <journal>\n
-    <transaction type="Sale Packing List">\n
-      <title>Resource consumptions</title>\n
-      <start_date></start_date>\n
-      <stop_date></stop_date>\n
-      <reference></reference>\n
-      <currency></currency>\n
-      <payment_mode></payment_mode>\n
-      <category></category>\n
-      <arrow type="Administration">\n
-        <source></source>\n
-        <destination></destination>\n
-      </arrow>""" + movements + """\n
-    </transaction>\n
-  </journal>"""\n
-\n
-  return xml\n
-\n
-else:\n
-  return \'This script can generate movements for one or two partitions maximum\'\n
-
-
-]]></string> </value>
-        </item>
-        <item>
             <key> <string>_params</string> </key>
             <value> <string>number</string> </value>
         </item>

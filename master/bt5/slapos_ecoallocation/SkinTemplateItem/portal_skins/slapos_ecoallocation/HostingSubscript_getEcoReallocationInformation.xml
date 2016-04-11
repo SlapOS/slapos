@@ -49,27 +49,6 @@
             </value>
         </item>
         <item>
-            <key> <string>_body</string> </key>
-            <value> <string>instance, delta_co2 = context.HostingSubscription_getMostEcoEfficientSoftwareInstance()\n
-\n
-if instance is None:\n
-  return None \n
-\n
-master_node = instance.SoftwareInstance_getResilientMasterNode()\n
-\n
-if master_node is None:\n
-  return None \n
-\n
-if instance.getRelativeUrl() != master_node.getRelativeUrl():\n
-  master_delta_co2 = master_node.SoftwareInstance_getFutureDeltaCO2()\n
-  saving_ratio = (master_delta_co2-delta_co2)/master_delta_co2\n
-  return "Improve Power efficiency in %s%% by using %s instance as Main Node. We recommend you to a take over." % (int(saving_ratio*100), instance.getTitle())\n
-\n
-\n
-return None\n
-</string> </value>
-        </item>
-        <item>
             <key> <string>_params</string> </key>
             <value> <string></string> </value>
         </item>

@@ -49,34 +49,6 @@
             </value>
         </item>
         <item>
-            <key> <string>_body</string> </key>
-            <value> <string encoding="cdata"><![CDATA[
-
-if REQUEST is not None:\n
-  raise Unauthorized("Unauthorized call script from URL")\n
-\n
-portal = context.getPortalObject()\n
-\n
-resource_uid = context.service_module.zero_emission_ratio.getUid()\n
-\n
-packing_list_line_list = portal.portal_catalog(\n
-  limit=1,\n
-  sort_on=("creation_date", "DESC"),\n
-  portal_type="Sale Packing List Line",\n
-  default_resource_uid = resource_uid,\n
-  default_aggregate_uid=context.getUid())\n
-\n
-if len(packing_list_line_list):\n
-  quantity = packing_list_line_list[0].getQuantity()\n
-  if quantity > 0:\n
-    return quantity\n
-\n
-return 0.0\n
-
-
-]]></string> </value>
-        </item>
-        <item>
             <key> <string>_params</string> </key>
             <value> <string>REQUEST=None</string> </value>
         </item>

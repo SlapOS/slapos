@@ -49,24 +49,6 @@
             </value>
         </item>
         <item>
-            <key> <string>_body</string> </key>
-            <value> <string>software_instance = context\n
-if software_instance.getSlapState() == \'locked\':\n
-  return\n
-if software_instance.SoftwareInstance_getStatus() == \'destroyed\':\n
-  return\n
-\n
-try:\n
-  packing_list_line = software_instance.Item_getInstancePackingListLine()\n
-except ValueError:\n
-  return\n
-person = packing_list_line.getDestinationValue()\n
-\n
-if person.getSlapState() == \'locked\':\n
-  software_instance.lock()\n
-</string> </value>
-        </item>
-        <item>
             <key> <string>_params</string> </key>
             <value> <string></string> </value>
         </item>

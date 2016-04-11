@@ -1,0 +1,47 @@
+<tal:block metal:define-macro="init_environment">
+  <!-- Initialize test environment -->
+  <tr>
+    <td>setTimeout</td>
+    <td>120000</td>
+    <td></td>
+  </tr>
+  <tr>
+    <td>store</td>
+    <td tal:content="python:
+        context.REQUEST.get('URL')[0:here.REQUEST.get('URL').find('/portal_tests/')]">erp5</td>
+    <td>base_url</td>
+  </tr>
+  <tr>
+    <td>openAndWait</td>
+    <td>${base_url}/web_site_module/hosting</td>
+    <td></td>
+  </tr>
+</tal:block>
+
+<tal:block metal:define-macro="destroy_instance">
+  <!-- Order the destruction of the instance and check for it -->
+  <tr>
+    <td>assertElementPresent</td>
+    <td>name=SoftwareInstance_requestDestroy:method</td>
+    <td></td>
+  </tr>
+  <tr>
+    <td>clickAndWait</td>
+    <td>name=SoftwareInstance_requestDestroy:method</td>
+    <td></td>
+  </tr>
+  <tr>
+    <td>waitForCondition</td>
+    <!-- XXX-Cedric : should be "Destroyed". -->
+    <td>new
+  Ajax.Request('${software_instance_path}/SoftwareInstance_getStatus',
+  {asynchronous: false}).transport.responseText === "Destruction in progress"; var
+  i; for (i = 0; i < 10000000; i++){};</td>
+    <td>600000</td>
+  </tr>
+  <tr>
+    <td>openAndWait</td>
+    <td>${address}</td>
+    <td></td>
+  </tr>
+</tal:block>

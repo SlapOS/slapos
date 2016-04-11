@@ -1,0 +1,1 @@
+update message_queue set priority = 1 where processing_node in (0, -1) and priority > 1

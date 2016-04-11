@@ -49,25 +49,6 @@
             </value>
         </item>
         <item>
-            <key> <string>_body</string> </key>
-            <value> <string>if REQUEST is not None:\n
-  raise Unauthorized("Unauthorized call script from URL")\n
-\n
-portal = context.getPortalObject()\n
-\n
-packing_list_line = portal.portal_catalog.getResultValue(\n
-  sort_on=("creation_date", "DESC"),\n
-  portal_type="Sale Packing List Line",\n
-  default_resource_uid = context.service_module.cpu_load_percent.getUid(),\n
-  default_aggregate_uid=context.getUid())\n
-\n
-if packing_list_line is not None:\n
-  return packing_list_line.getQuantity()\n
-\n
-return 0.0\n
-</string> </value>
-        </item>
-        <item>
             <key> <string>_params</string> </key>
             <value> <string>REQUEST=None</string> </value>
         </item>

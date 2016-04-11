@@ -49,35 +49,6 @@
             </value>
         </item>
         <item>
-            <key> <string>_body</string> </key>
-            <value> <string encoding="cdata"><![CDATA[
-
-from DateTime import DateTime\n
-portal = context.getPortalObject()\n
-hosting_subscription = context\n
-\n
-now = DateTime()\n
-\n
-if hosting_subscription.getDestinationSectionValue().getReference() == \'seleniumtester\' and \\\n
-  hosting_subscription.getModificationDate() < (now - 1):\n
-\n
-  person = hosting_subscription.getDestinationSectionValue(portal_type="Person")\n
-  person.requestSoftwareInstance(\n
-    software_release=hosting_subscription.getUrlString(),\n
-    instance_xml=hosting_subscription.getTextContent(),\n
-    software_type=hosting_subscription.getSourceReference(),\n
-    sla_xml=hosting_subscription.getSlaXml(),\n
-    shared=hosting_subscription.getRootSlave(),\n
-    state="destroyed",\n
-    software_title=hosting_subscription.getTitle(),\n
-    comment=\'Requested by clenaup alarm\', \n
-    activate_kw={\'tag\': tag}\n
-  )\n
-
-
-]]></string> </value>
-        </item>
-        <item>
             <key> <string>_params</string> </key>
             <value> <string>tag</string> </value>
         </item>

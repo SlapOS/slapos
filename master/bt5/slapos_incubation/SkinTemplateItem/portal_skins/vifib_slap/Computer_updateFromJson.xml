@@ -49,69 +49,6 @@
             </value>
         </item>
         <item>
-            <key> <string>_body</string> </key>
-            <value> <string>if context.getPortalType() != \'Computer\':\n
-  raise TypeError(\'%s is not Computer\' % context.getPath())\n
-\n
-isTransitionPossible = context.getPortalObject().portal_workflow.isTransitionPossible\n
-def updatePartitionList(computer, partition_list):\n
-  existing_partition_dict = {}\n
-  for c in context.contentValues():\n
-    existing_partition_dict[c.getReference()] = c\n
-  for partition_dict in partition_list:\n
-    partition = existing_partition_dict.get(partition_dict[\'title\'])\n
-    if partition is None:\n
-      partition = computer.newContent(portal_type=\'Computer Partition\', reference=partition_dict[\'title\'])\n
-    if isTransitionPossible(partition, \'validate\'):\n
-      partition.validate()\n
-    if isTransitionPossible(partition, \'mark_free\'):\n
-      partition.markFree()\n
-    if partition.getDefaultNetworkAddressIpAddress() != partition_dict[\'public_ip\']:\n
-      partition.setDefaultNetworkAddressIpAddress(partition_dict[\'public_ip\'])\n
-    if partition.getDefaultNetworkAddressNetworkInterface() != partition_dict[\'tap_interface\']:\n
-      partition.setDefaultNetworkAddressNetworkInterface(partition_dict[\'tap_interface\'])\n
-    to_delete_list = []\n
-    private_set = False\n
-    for address in partition.contentValues(portal_type=\'Internet Protocol Address\'):\n
-      if address.getIpAddress() == partition_dict[\'public_ip\']:\n
-        continue\n
-      if not private_set and address.getIpAddress() == partition_dict[\'private_ip\']:\n
-        if address.getNetworkInterface() != partition_dict[\'tap_interface\']:\n
-          address.setNetworkInterface(partition_dict[\'tap_interface\'])\n
-        private_set = True\n
-        continue\n
-      to_delete_list.append(address)\n
-    if not private_set:\n
-      if len(to_delete_list):\n
-        address = to_delete_list.pop()\n
-      else:\n
-        address = partition.newContent(portal_type=\'Internet Protocol Address\')\n
-      address.setIpAddress(partition_dict[\'private_ip\'])\n
-      address.setNetworkInterface(partition_dict[\'tap_interface\'])\n
-    partition.deleteContent([q.getId() for q in to_delete_list])\n
-\n
-def updateSoftwareList(computer, software_list):\n
-  for software_dict in software_list:\n
-    status = software_dict[\'status\']\n
-    try:\n
-      if status == \'installed\':\n
-        computer.stopSoftwareReleaseInstallation(software_release_url=software_dict[\'software_release\'], comment=software_dict[\'log\'])\n
-      elif status == \'uninstalled\':\n
-        computer.cleanupSoftwareReleaseInstallation(software_release_url=software_dict[\'software_release\'], comment=software_dict[\'log\'])\n
-      elif status == \'error\':\n
-        computer.reportSoftwareReleaseInstallationError(software_release_url=software_dict[\'software_release\'], comment=software_dict[\'log\'])\n
-    except ValueError:\n
-      # BBB: Underlying code is state based, does not support multiple information\n
-      pass\n
-\n
-if \'partition\' in computer_json:\n
-  updatePartitionList(context, computer_json[\'partition\'])\n
-\n
-if \'software\' in computer_json:\n
-  updateSoftwareList(context, computer_json[\'software\'])\n
-</string> </value>
-        </item>
-        <item>
             <key> <string>_params</string> </key>
             <value> <string>computer_json</string> </value>
         </item>

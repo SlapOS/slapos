@@ -49,34 +49,6 @@
             </value>
         </item>
         <item>
-            <key> <string>_body</string> </key>
-            <value> <string>from zExceptions import Unauthorized\n
-if REQUEST is not None:\n
-  raise Unauthorized\n
-\n
-portal = context.getPortalObject()\n
-computer = context\n
-\n
-reference = "TIOCONS-%s-%s" % (computer.getReference(), source_reference)\n
-version = "%s" % context.getPortalObject().portal_ids.generateNewId(\n
-  id_group=(\'slap_tioxml_consumption_reference\', reference), default=1)\n
-\n
-document = portal.consumption_document_module.newContent(\n
-  portal_type="Computer Consumption TioXML File",\n
-  source_reference=source_reference,\n
-  title="%s consumption (%s)" % (computer.getReference(), source_reference),\n
-  reference=reference,\n
-  version=version,\n
-  data=consumption_xml,\n
-  classification="personal",\n
-  publication_section="other",\n
-  contributor_value=computer,\n
-)\n
-document.submit()\n
-return document.getRelativeUrl()\n
-</string> </value>
-        </item>
-        <item>
             <key> <string>_params</string> </key>
             <value> <string>source_reference, consumption_xml, REQUEST=None</string> </value>
         </item>

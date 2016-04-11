@@ -49,36 +49,6 @@
             </value>
         </item>
         <item>
-            <key> <string>_body</string> </key>
-            <value> <string>from Products.ERP5Type.Constraint import PropertyTypeValidity\n
-from Products.CMFActivity.ActiveResult import ActiveResult\n
-\n
-if context.getId().startswith(\'template_\'):\n
-  return\n
-\n
-constraint_message_list = []\n
-\n
-if context.providesIConstraint():\n
-  # it is not possible to checkConsistency of Constraint itself, as method\n
-  # of this name implement consistency checking on object\n
-  return constraint_message_list\n
-\n
-traverse = context.getPortalObject().restrictedTraverse\n
-property_type_validity = PropertyTypeValidity(id=\'type_check\', description=\'Type Validity Check\')\n
-\n
-if fixit:\n
-  constraint_message_list.extend(context.fixConsistency())\n
-  constraint_message_list.extend(property_type_validity.fixConsistency(context))\n
-else:\n
-  constraint_message_list.extend(context.checkConsistency(fixit=fixit))\n
-  constraint_message_list.extend(property_type_validity.checkConsistency(context, fixit=fixit))\n
-\n
-if constraint_message_list:\n
-  traverse(active_process).postResult(ActiveResult(severity=100,\n
-                      constraint_message_list=constraint_message_list))\n
-</string> </value>
-        </item>
-        <item>
             <key> <string>_params</string> </key>
             <value> <string>fixit, active_process</string> </value>
         </item>

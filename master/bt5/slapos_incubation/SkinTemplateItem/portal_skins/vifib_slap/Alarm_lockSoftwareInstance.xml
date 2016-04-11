@@ -49,18 +49,6 @@
             </value>
         </item>
         <item>
-            <key> <string>_body</string> </key>
-            <value> <string>portal_catalog = context.getPortalObject().portal_catalog\n
-\n
-portal_catalog.searchAndActivate(\n
-  method_id=\'SoftwareInstance_lockForLockedPerson\',\n
-  portal_type=(\'Software Instance\', \'Slave Instance\'),\n
-  payment_state=\'!= locked\',\n
-  activate_kw={\'tag\': tag}\n
-)\n
-</string> </value>
-        </item>
-        <item>
             <key> <string>_params</string> </key>
             <value> <string>tag, fixit, params</string> </value>
         </item>

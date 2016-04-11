@@ -49,60 +49,6 @@
             </value>
         </item>
         <item>
-            <key> <string>_body</string> </key>
-            <value> <string encoding="cdata"><![CDATA[
-
-if REQUEST is not None:\n
-  raise Unauthorized("Unauthorized call script from URL")\n
-\n
-model_id = context.getWattConsumptionModel("no_model")\n
-\n
-######\n
-# Introduce your Consumption Model here\n
-######\n
-def consumption_model_shuttle_ds61_i7(load):\n
-  """ Expected consumed watts for the computer load\n
-  """\n
-  if load <= 25:\n
-   return 21.5 + 1.06*load\n
-  else:\n
-   return 48 + 0.29*load\n
-\n
-def consumption_model_shuttle_nuc_i7(load):\n
-  """ Expected consumed watts for the computer load\n
-  """\n
-  if load <= 25:\n
-   return 8.5 + 0.46*load\n
-  else:\n
-   return 20 + 0.08*load\n
-\n
-def consumption_model_rikomagic_mk802iv(load):\n
-  """ Expected consumed watts for the computer load\n
-  """\n
-  if load <= 25:\n
-   return 2.2 + 0.04*load\n
-  else:\n
-   return 3.2 + 0.008*load\n
-\n
-def no_model(load):\n
-  return 0\n
-\n
-model_map = {\n
-  "shuttle_ds61_i7" : consumption_model_shuttle_ds61_i7,\n
-  "rikomagic_mk802iv": consumption_model_rikomagic_mk802iv,\n
-  "intel_nuc_i7": consumption_model_shuttle_nuc_i7\n
-}\n
-if cpu_load_percentage is None:\n
-  cpu_load_percentage = context.Computer_getLatestCPUPercentLoad()\n
-\n
-cpu_load_percentage += partition_increment\n
-\n
-return model_map.get(model_id, no_model)(cpu_load_percentage)\n
-
-
-]]></string> </value>
-        </item>
-        <item>
             <key> <string>_params</string> </key>
             <value> <string>cpu_load_percentage=None, partition_increment=0, REQUEST=None</string> </value>
         </item>

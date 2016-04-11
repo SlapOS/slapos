@@ -49,29 +49,6 @@
             </value>
         </item>
         <item>
-            <key> <string>_body</string> </key>
-            <value> <string encoding="cdata"><![CDATA[
-
-"""\n
-"""\n
-edit_kw = {}\n
-average_cpu_load = context.SoftwareRelease_getAverageConsumedCPULoad()\n
-average_memory_usage = context.SoftwareRelease_getAverageConsumedMemory()\n
-\n
-\n
-if average_cpu_load != context.getCpuCapacityQuantity():\n
-  edit_kw["cpu_capacity_quantity"] = average_cpu_load\n
-\n
-if average_memory_usage != context.getMemoryCapacityQuantity(): \n
-  edit_kw["memory_capacity_quantity"] = average_memory_usage\n
-  \n
-if len(edit_kw) > 0:\n
-  context.edit(**edit_kw)\n
-
-
-]]></string> </value>
-        </item>
-        <item>
             <key> <string>_params</string> </key>
             <value> <string></string> </value>
         </item>
