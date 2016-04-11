@@ -49,32 +49,6 @@
             </value>
         </item>
         <item>
-            <key> <string>_body</string> </key>
-            <value> <string encoding="cdata"><![CDATA[
-
-from Products.ERP5Type.DateUtils import addToDate, getClosestDate\n
-hosting_subscription = state_change[\'object\']\n
-\n
-edit_kw = {}\n
-\n
-if hosting_subscription.getPeriodicityHour() is None:\n
-  edit_kw[\'periodicity_hour_list\'] = [0]\n
-if hosting_subscription.getPeriodicityMinute() is None:\n
-  edit_kw[\'periodicity_minute_list\'] = [0]\n
-if hosting_subscription.getPeriodicityMonthDay() is None:\n
-  start_date = hosting_subscription.HostingSubscription_calculateSubscriptionStartDate()\n
-  start_date = getClosestDate(target_date=start_date, precision=\'day\')\n
-  while start_date.day() >= 29:\n
-    start_date = addToDate(start_date, to_add={\'day\': -1})\n
-  edit_kw[\'periodicity_month_day_list\'] = [start_date.day()]\n
-\n
-if edit_kw:\n
-  hosting_subscription.edit(**edit_kw)\n
-
-
-]]></string> </value>
-        </item>
-        <item>
             <key> <string>_params</string> </key>
             <value> <string>state_change</string> </value>
         </item>

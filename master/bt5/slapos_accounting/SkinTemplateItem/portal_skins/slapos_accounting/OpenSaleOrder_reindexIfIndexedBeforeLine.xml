@@ -49,28 +49,6 @@
             </value>
         </item>
         <item>
-            <key> <string>_body</string> </key>
-            <value> <string>from zExceptions import Unauthorized\n
-if REQUEST is not None:\n
-  raise Unauthorized\n
-\n
-order = context\n
-portal = context.getPortalObject()\n
-indexation_timestamp = portal.portal_catalog(\n
-  uid=order.getUid(),\n
-  select_dict={\'indexation_timestamp\': None})[0].indexation_timestamp\n
-\n
-line_list = portal.portal_catalog(\n
-  portal_type="Open Sale Order Line", \n
-  parent_uid=order.getUid(),\n
-  indexation_timestamp={\'query\': indexation_timestamp, \'range\': \'nlt\'},\n
-  limit=1)\n
-\n
-if len(line_list):\n
-  order.activate().immediateReindexObject()\n
-</string> </value>
-        </item>
-        <item>
             <key> <string>_params</string> </key>
             <value> <string>REQUEST=None</string> </value>
         </item>

@@ -49,17 +49,6 @@
             </value>
         </item>
         <item>
-            <key> <string>_body</string> </key>
-            <value> <string>cpu_resource = context.service_module.cpu_load_percent\n
-memory_resource = context.service_module.memory_used\n
-disk_resource = context.service_module.disk_used\n
-\n
-return [(cpu_resource.getTitle(), cpu_resource.getUid()),\n
-        (disk_resource.getTitle(), disk_resource.getUid()),\n
-        (memory_resource.getTitle(), memory_resource.getUid())]\n
-</string> </value>
-        </item>
-        <item>
             <key> <string>_params</string> </key>
             <value> <string></string> </value>
         </item>

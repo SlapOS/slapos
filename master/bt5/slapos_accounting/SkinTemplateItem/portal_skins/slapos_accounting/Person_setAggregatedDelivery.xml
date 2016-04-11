@@ -49,16 +49,6 @@
             </value>
         </item>
         <item>
-            <key> <string>_body</string> </key>
-            <value> <string>integration_site = context.getPortalObject().restrictedTraverse(\n
-    \'portal_integrations/slapos_aggregated_delivery_integration_site\')\n
-\n
-\n
-person_id = context.getId().replace(\'-\', \'_\')\n
-integration_site.Causality[person_id].setDestinationReference(delivery.getRelativeUrl())\n
-</string> </value>
-        </item>
-        <item>
             <key> <string>_params</string> </key>
             <value> <string>delivery</string> </value>
         </item>

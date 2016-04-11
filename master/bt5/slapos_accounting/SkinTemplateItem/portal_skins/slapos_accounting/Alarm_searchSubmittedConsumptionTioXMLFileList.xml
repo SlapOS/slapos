@@ -49,22 +49,6 @@
             </value>
         </item>
         <item>
-            <key> <string>_body</string> </key>
-            <value> <string>portal = context.getPortalObject()\n
-\n
-portal.portal_catalog.searchAndActivate(\n
-  portal_type="Computer Consumption TioXML File",\n
-  validation_state="submitted",\n
-  method_id=\'ComputerConsumptionTioXMLFile_solveInvoicingGeneration\',\n
-  activity_count=1,\n
-  packet_size=1,\n
-  activate_kw={\'tag\': tag, \'priority\': 5}\n
-)\n
-\n
-context.activate(after_tag=tag).getId()\n
-</string> </value>
-        </item>
-        <item>
             <key> <string>_params</string> </key>
             <value> <string>tag, fixit, params</string> </value>
         </item>

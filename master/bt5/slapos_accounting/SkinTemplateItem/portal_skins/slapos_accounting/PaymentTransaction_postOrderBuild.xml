@@ -49,15 +49,6 @@
             </value>
         </item>
         <item>
-            <key> <string>_body</string> </key>
-            <value> <string>from Products.ERP5Type.Message import translateString\n
-payment_transaction = context\n
-payment_transaction.immediateReindexObject() # in order to avoid selection in OrderBuilder_getAccountingTransactionLineListSlapOS\n
-comment = translateString("Initialised by Order Builder.")\n
-payment_transaction.confirm(comment=comment)\n
-</string> </value>
-        </item>
-        <item>
             <key> <string>_params</string> </key>
             <value> <string>related_simulation_movement_path_list=None, **kw</string> </value>
         </item>

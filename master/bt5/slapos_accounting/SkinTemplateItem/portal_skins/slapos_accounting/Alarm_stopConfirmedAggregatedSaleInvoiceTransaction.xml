@@ -49,23 +49,6 @@
             </value>
         </item>
         <item>
-            <key> <string>_body</string> </key>
-            <value> <string>from DateTime import DateTime\n
-from Products.ERP5Type.DateUtils import getClosestDate\n
-\n
-portal = context.getPortalObject()\n
-portal.portal_catalog.searchAndActivate(\n
-  portal_type=\'Sale Invoice Transaction\',\n
-  simulation_state=\'confirmed\',\n
-  causality_state=\'solved\',\n
-  specialise_uid=portal.restrictedTraverse(portal.portal_preferences.getPreferredAggregatedSaleTradeCondition()).getUid(),\n
-  method_id=\'Delivery_stopConfirmedAggregatedSaleInvoiceTransaction\',\n
-  activate_kw={\'tag\': tag}\n
-)\n
-context.activate(after_tag=tag).getId()\n
-</string> </value>
-        </item>
-        <item>
             <key> <string>_params</string> </key>
             <value> <string>tag, fixit, params</string> </value>
         </item>

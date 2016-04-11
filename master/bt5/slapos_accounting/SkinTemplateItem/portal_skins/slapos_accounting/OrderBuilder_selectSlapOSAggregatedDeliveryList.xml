@@ -49,37 +49,6 @@
             </value>
         </item>
         <item>
-            <key> <string>_body</string> </key>
-            <value> <string># beware: the configuration of OrderBuilder_generateSlapOSAggregatedMovementList shall\n
-# provide small amounts of movements\n
-person_delivery_mapping = {}\n
-portal = context.getPortalObject()\n
-\n
-specialise = portal.portal_preferences.getPreferredAggregatedSaleTradeCondition()\n
-for movement in movement_list:\n
-  person = movement.getDestinationValue()\n
-  try:\n
-    delivery = person_delivery_mapping[person]\n
-  except KeyError:\n
-    delivery = person.Person_getAggregatedDelivery()\n
-    if delivery is None or delivery.getSimulationState() != \'confirmed\':\n
-      delivery = portal.sale_packing_list_module.newContent(\n
-        portal_type=\'Sale Packing List\',\n
-        source=movement.getDestination(),\n
-        destination=movement.getDestination(),\n
-        source_section=movement.getSourceSection(),\n
-        destination_section=movement.getDestination(),\n
-        destination_decision=movement.getDestination(),\n
-        specialise=specialise,\n
-        price_currency=movement.getPriceCurrency()\n
-      )\n
-      delivery.confirm(\'New aggregated delivery.\')\n
-      person.Person_setAggregatedDelivery(delivery)\n
-    person_delivery_mapping[person] = delivery\n
-return person_delivery_mapping.values()\n
-</string> </value>
-        </item>
-        <item>
             <key> <string>_params</string> </key>
             <value> <string>movement_list, *args, **kwargs</string> </value>
         </item>

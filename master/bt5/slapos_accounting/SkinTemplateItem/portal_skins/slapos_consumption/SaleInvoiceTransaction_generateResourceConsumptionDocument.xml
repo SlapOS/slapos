@@ -49,34 +49,6 @@
             </value>
         </item>
         <item>
-            <key> <string>_body</string> </key>
-            <value> <string>portal = context.getPortalObject()\n
-invoice = context\n
-document = portal.portal_catalog.getResultValue(\n
-             portal_type="User Consumption HTML File",\n
-             validation_state="shared",\n
-             follow_up_uid=invoice.getUid()\n
-           )\n
-\n
-if document is None:\n
-  document = portal.consumption_document_module.newContent(\n
-        portal_type="User Consumption HTML File",\n
-        title="Invoice Resource Comsuption %s" % invoice.getTitle(),\n
-        reference="INVOICE-RC-%s" % invoice.getReference(),\n
-        classification="personal/private",\n
-        data=invoice.SaleInvoiceTransaction_getPrintoutResourceContent(),\n
-        publication_section="other",\n
-        contributor_value=invoice.getDestination(),\n
-        follow_up=invoice.getRelativeUrl()\n
-      )\n
-\n
-  document.submit()\n
-  document.share()\n
-\n
-return document.getRelativeUrl()\n
-</string> </value>
-        </item>
-        <item>
             <key> <string>_params</string> </key>
             <value> <string></string> </value>
         </item>

@@ -49,30 +49,6 @@
             </value>
         </item>
         <item>
-            <key> <string>_body</string> </key>
-            <value> <string>kw = {}\n
-select_dict= {\'delivery_uid\': None}\n
-kw.update(\n
-  portal_type=\'Simulation Movement\',\n
-  select_dict=select_dict,\n
-  left_join_list=select_dict.keys(),\n
-  delivery_uid=None\n
-)\n
-\n
-context.getPortalObject().portal_catalog.searchAndActivate(\n
-  method_id=\'SimulationMovement_buildSlapOS\',\n
-  packet_size=1, # Separate calls to many transactions\n
-  method_kw={\'tag\': tag},\n
-  activate_kw={\'tag\': tag},\n
-  **kw\n
-)\n
-\n
-# register activity on alarm object waiting for own tag in order to have only one alarm\n
-# running in same time\n
-context.activate(after_tag=tag).getId()\n
-</string> </value>
-        </item>
-        <item>
             <key> <string>_params</string> </key>
             <value> <string>tag, fixit, params</string> </value>
         </item>

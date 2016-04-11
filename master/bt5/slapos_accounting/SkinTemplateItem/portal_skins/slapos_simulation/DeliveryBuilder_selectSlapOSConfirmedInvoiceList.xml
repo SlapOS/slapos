@@ -49,19 +49,6 @@
             </value>
         </item>
         <item>
-            <key> <string>_body</string> </key>
-            <value> <string>portal_type = context.getDeliveryPortalType()\n
-simulation_state = \'confirmed\'\n
-\n
-# use catalog to prefetch, but check later in ZODB\n
-return [x.getObject() for x in context.getPortalObject().portal_catalog(\n
-   portal_type=portal_type,\n
-   # BEWARE: it works only in case of per-tree building\n
-   default_destination_section_uid=movement_list[0].getDestinationSectionUid(),\n
-   simulation_state=simulation_state) if x.getSimulationState() == simulation_state]\n
-</string> </value>
-        </item>
-        <item>
             <key> <string>_params</string> </key>
             <value> <string>movement_list, **kw</string> </value>
         </item>

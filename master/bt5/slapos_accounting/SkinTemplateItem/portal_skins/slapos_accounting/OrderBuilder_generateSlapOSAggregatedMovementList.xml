@@ -49,65 +49,6 @@
             </value>
         </item>
         <item>
-            <key> <string>_body</string> </key>
-            <value> <string>select_kw = kwargs.copy()\n
-select_kw.pop(\'portal_type\', None)\n
-select_kw.pop(\'delivery_relative_url_list\', None)\n
-from Products.ERP5Type.Document import newTempSimulationMovement\n
-from Products.ZSQLCatalog.SQLCatalog import Query, NegatedQuery, ComplexQuery\n
-portal = context.getPortalObject()\n
-\n
-business_process_uid_list = [\n
-  portal.business_process_module.slapos_consumption_business_process.getUid(),\n
-  portal.business_process_module.slapos_subscription_business_process.getUid()]\n
-specialise_reference_list = [q.getReference() for q in portal.portal_catalog(specialise_uid=business_process_uid_list,\n
-  portal_type=\'Sale Trade Condition\')]\n
-select_dict= {\'default_aggregate_portal_type\': None}\n
-\n
-select_kw.update(\n
-  limit=50, # just take a bit\n
-  portal_type=\'Sale Packing List Line\',\n
-  simulation_state=\'delivered\',\n
-  parent_specialise_reference=specialise_reference_list,\n
-  parent_specialise_portal_type=\'Sale Trade Condition\',\n
-  select_dict=select_dict,\n
-  left_join_list=select_dict.keys(),\n
-  default_aggregate_portal_type=ComplexQuery(NegatedQuery(Query(default_aggregate_portal_type=\'Computer\')),\n
-    Query(default_aggregate_portal_type=None), operator="OR"),\n
-  grouping_reference=None,\n
-  sort_on=((\'modification_date\', \'ASC\'),) # the highest chance to find movement which can be delivered\n
-)\n
-movement_list = portal.portal_catalog(**select_kw)\n
-\n
-specialise = portal.portal_preferences.getPreferredAggregatedSaleTradeCondition()\n
-temp_movement_list = []\n
-id = 1\n
-for movement in movement_list:\n
-  if movement.getGroupingReference() is not None:\n
-    continue\n
-  temp_movement = newTempSimulationMovement(\n
-    portal, movement.getRelativeUrl(),\n
-    quantity=movement.getQuantity(),\n
-    resource=movement.getResource(),\n
-    source=movement.getDestination(),\n
-    destination=movement.getDestination(),\n
-    source_section=movement.getSourceSection(),\n
-    destination_section=movement.getDestination(),\n
-    destination_decision=movement.getDestination(),\n
-    specialise=specialise,\n
-    price_currency=movement.getPriceCurrency()\n
-  )\n
-  if movement.getResource() == \'service_module/slapos_instance_subscription\':\n
-    temp_movement.edit(price=0.83612040133800003)\n
-  else:\n
-    temp_movement.edit(price=0.0)\n
-  temp_movement_list.append(temp_movement)\n
-  id += 1\n
-\n
-return temp_movement_list\n
-</string> </value>
-        </item>
-        <item>
             <key> <string>_params</string> </key>
             <value> <string>*args, **kwargs</string> </value>
         </item>

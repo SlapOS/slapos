@@ -39,46 +39,6 @@
             </value>
         </item>
         <item>
-            <key> <string>_text</string> </key>
-            <value> <unicode encoding="cdata"><![CDATA[
-
-<tal:block tal:define="aggregated_reference python: context.getCausalityReference(portal_type=\'Sale Packing List\', checked_permission=\'View\');\n
-                      quantity_renderer nocall:here/portal_skins/erp5_trade/Base_viewTradeFieldLibrary/my_view_mode_quantity/render_pdf;\n
-                      resource_details_list python: context.Base_getUserConsumptionDetailList(aggregated_reference)">\n
-  <aside tal:define="global index python: 0; page_limit python: 36;"\n
-         tal:condition="python: aggregated_reference and resource_details_list" class="ressource">\n
-    <h1><span>Resource Consumption Details</span></h1>\n
-    <table class="resource">\n
-      <thead>\n
-        <tr>\n
-          <th><span>N&#x00b0;</span></th>\n
-          <th><span>Date</span></th>\n
-          <th><span>Hosting Subscription</span></th>\n
-          <th><span>Instance Name</span></th>\n
-          <th><span>CPU Load</span></th>\n
-          <th><span>Memory Used</span></th>\n
-        </tr>\n
-      </thead>\n
-      <tbody>\n
-        <tal:block tal:repeat="item_list python: resource_details_list">\n
-        <tal:block tal:define="global index python: index + 1"></tal:block>\n
-          <tr tal:attributes="class python: \'page-break\' if (index % page_limit) == 0 else \'\'">\n
-            <td tal:content="python: index"></td>\n
-            <td tal:content="python: item_list[0]"></td>\n
-            <td tal:content="python: item_list[1]"></td>\n
-            <td tal:content="python: item_list[2]"></td>\n
-            <td tal:content="python: quantity_renderer(item_list[3]) + \' %\'"></td>\n
-            <td tal:content="python: quantity_renderer(item_list[4]) + \' GB\'"></td>\n
-          </tr>\n
-        </tal:block>\n
-      </tbody>\n
-    </table>\n
-  </aside>\n
-</tal:block>
-
-]]></unicode> </value>
-        </item>
-        <item>
             <key> <string>content_type</string> </key>
             <value> <string>text/html</string> </value>
         </item>

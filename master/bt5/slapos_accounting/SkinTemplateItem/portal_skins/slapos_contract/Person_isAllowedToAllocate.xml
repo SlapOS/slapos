@@ -49,24 +49,6 @@
             </value>
         </item>
         <item>
-            <key> <string>_body</string> </key>
-            <value> <string>portal = context.getPortalObject()\n
-person = context\n
-contract_portal_type = "Cloud Contract"\n
-\n
-contract = portal.portal_catalog.getResultValue(\n
-  portal_type=contract_portal_type,\n
-  default_destination_section_uid=person.getUid(),\n
-  validation_state=\'validated\',\n
-)\n
-\n
-if (contract is not None) and (contract.getValidationState() == "validated"):\n
-  return True\n
-else:\n
-  return False\n
-</string> </value>
-        </item>
-        <item>
             <key> <string>_params</string> </key>
             <value> <string></string> </value>
         </item>

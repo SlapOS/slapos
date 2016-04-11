@@ -49,36 +49,6 @@
             </value>
         </item>
         <item>
-            <key> <string>_body</string> </key>
-            <value> <string>from zExceptions import Unauthorized\n
-if REQUEST is not None:\n
-  raise Unauthorized\n
-\n
-from Products.ERP5Type.DateUtils import addToDate, getClosestDate\n
-\n
-hosting_subscription = context\n
-portal = context.getPortalObject()\n
-\n
-workflow_item_list = portal.portal_workflow.getInfoFor(\n
-  ob=hosting_subscription,\n
-  name=\'history\',\n
-  wf_id=\'instance_slap_interface_workflow\')\n
-start_date = None\n
-for item in workflow_item_list:\n
-  start_date = item.get(\'time\')\n
-  if start_date:\n
-    break\n
-\n
-if start_date is None:\n
-  # Compatibility with old Hosting subscription\n
-  start_date = hosting_subscription.getCreationDate()\n
-\n
-start_date = getClosestDate(target_date=start_date, precision=\'day\')\n
-\n
-return start_date\n
-</string> </value>
-        </item>
-        <item>
             <key> <string>_params</string> </key>
             <value> <string>REQUEST=None</string> </value>
         </item>

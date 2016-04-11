@@ -49,14 +49,6 @@
             </value>
         </item>
         <item>
-            <key> <string>_body</string> </key>
-            <value> <string>context.getPortalObject().portal_orders.slapos_aggregated_delivery_builder.build(\n
-  activate_kw={\'tag\': tag}\n
-)\n
-context.activate(after_tag=tag).getId()\n
-</string> </value>
-        </item>
-        <item>
             <key> <string>_params</string> </key>
             <value> <string>tag, fixit, params</string> </value>
         </item>

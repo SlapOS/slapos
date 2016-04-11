@@ -49,34 +49,6 @@
             </value>
         </item>
         <item>
-            <key> <string>_body</string> </key>
-            <value> <string>movement = context\n
-\n
-movement = context\n
-\n
-if not movement.SimulationMovement_testCommonRule(rule):\n
-  return False\n
-\n
-# XXX hardcoded\n
-receivable_account_type_list = (\'asset/receivable\',)\n
-payable_account_type_list = (\'liability/payable\',)\n
-\n
-if movement.getQuantity() == 0:\n
-  # do not create empty payment movements\n
-  return False\n
-\n
-for account in (movement.getSourceValue(portal_type=\'Account\'),\n
-                movement.getDestinationValue(portal_type=\'Account\')):\n
-  if account is not None:\n
-    account_type = account.getAccountType()\n
-    if account_type in receivable_account_type_list or \\\n
-        account_type in payable_account_type_list:\n
-      return True\n
-\n
-return False\n
-</string> </value>
-        </item>
-        <item>
             <key> <string>_params</string> </key>
             <value> <string>rule</string> </value>
         </item>

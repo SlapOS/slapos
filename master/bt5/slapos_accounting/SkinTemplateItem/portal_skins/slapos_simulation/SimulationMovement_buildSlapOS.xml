@@ -49,22 +49,6 @@
             </value>
         </item>
         <item>
-            <key> <string>_body</string> </key>
-            <value> <string>if context.getDelivery() is not None:\n
-  # movement build but not indexed, so do nothing\n
-  return\n
-\n
-root_applied_rule = context.getRootAppliedRule()\n
-root_applied_rule_path = root_applied_rule.getPath()\n
-\n
-business_link = context.getCausalityValue(portal_type=\'Business Link\')\n
-lock_tag = \'build_in_progress_%s_%s\' % (business_link.getUid(), root_applied_rule.getUid())\n
-if context.getPortalObject().portal_activities.countMessageWithTag(lock_tag) == 0:\n
-  business_link.build(path=\'%s/%%\' % root_applied_rule_path, activate_kw={\'tag\': tag})\n
-  root_applied_rule.activate(activity=\'SQLQueue\', after_tag=tag, tag=lock_tag).getId()\n
-</string> </value>
-        </item>
-        <item>
             <key> <string>_params</string> </key>
             <value> <string>tag</string> </value>
         </item>

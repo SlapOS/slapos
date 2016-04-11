@@ -49,13 +49,6 @@
             </value>
         </item>
         <item>
-            <key> <string>_body</string> </key>
-            <value> <string>resource_uid = context.service_module.disk_used.getUid()\n
-\n
-return context.HostingSubscription_getStatForResource(resource_uid, **kw)\n
-</string> </value>
-        </item>
-        <item>
             <key> <string>_params</string> </key>
             <value> <string>**kw</string> </value>
         </item>

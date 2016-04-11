@@ -49,19 +49,6 @@
             </value>
         </item>
         <item>
-            <key> <string>_body</string> </key>
-            <value> <string>integration_site = context.getPortalObject().restrictedTraverse(\n
-    \'portal_integrations/slapos_aggregated_delivery_integration_site\')\n
-\n
-person_id = context.getId().replace(\'-\', \'_\')\n
-try:\n
-  mapping = integration_site.getCategoryFromMapping(\'Causality/%s\' % person_id, create_mapping_line=True, create_mapping=True)\n
-except ValueError:\n
-  return None\n
-return context.restrictedTraverse(mapping)\n
-</string> </value>
-        </item>
-        <item>
             <key> <string>_params</string> </key>
             <value> <string></string> </value>
         </item>

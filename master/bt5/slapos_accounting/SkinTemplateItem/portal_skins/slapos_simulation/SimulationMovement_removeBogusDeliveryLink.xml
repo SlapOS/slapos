@@ -49,14 +49,6 @@
             </value>
         </item>
         <item>
-            <key> <string>_body</string> </key>
-            <value> <string>if context.getDelivery() is not None and context.getDeliveryValue() is None:\n
-  activate_kw=dict(tag=tag)\n
-  context.edit(delivery=None, activate_kw=activate_kw)\n
-  context.expand(expand_policy=\'immediate\', activate_kw=activate_kw)\n
-</string> </value>
-        </item>
-        <item>
             <key> <string>_params</string> </key>
             <value> <string>tag</string> </value>
         </item>
