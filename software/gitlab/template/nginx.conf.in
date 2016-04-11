@@ -41,6 +41,9 @@ http {
 
   include {{ nginx_mime_types }};
 
+  proxy_cache_path <%= @proxy_cache_path %>;
+  proxy_cache <%= @proxy_cache %>;
+
   include {{ nginx_gitlab_http_conf }};
 
   {# we don't need: ci, pages, mattermost

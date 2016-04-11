@@ -124,7 +124,7 @@ production: &base
   artifacts:
     enabled: <%= @artifacts_enabled %>
     # The location where Build Artifacts are stored (default: shared/artifacts).
-    storage_path: <%= @artifacts_path %>
+    path: <%= @artifacts_path %>
   #}
 
   {# we do not support LFS
@@ -223,6 +223,7 @@ production: &base
     enabled: false
     {# just disabled
     enabled: <%= @ldap_enabled %>
+    sync_time: <%= @ldap_sync_time %>
   <% if @ldap_servers.any? %>
     servers:
     <% @ldap_servers.each do |provider_id, settings| %>
