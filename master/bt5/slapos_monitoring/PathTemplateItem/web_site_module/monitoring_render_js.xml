@@ -363,6 +363,16 @@
                       <value> <string>string</string> </value>
                   </item>
                 </dictionary>
+                <dictionary>
+                  <item>
+                      <key> <string>id</string> </key>
+                      <value> <string>configuration_content_security_policy</string> </value>
+                  </item>
+                  <item>
+                      <key> <string>type</string> </key>
+                      <value> <string>string</string> </value>
+                  </item>
+                </dictionary>
               </tuple>
             </value>
         </item>
@@ -403,6 +413,10 @@
         <item>
             <key> <string>configuration_application_title</string> </key>
             <value> <string>Monitoring</string> </value>
+        </item>
+        <item>
+            <key> <string>configuration_content_security_policy</string> </key>
+            <value> <string>default-src \'none\'; img-src \'self\' data:; media-src \'self\' blob:; connect-src \'self\' mail.tiolive.com data: *.host.vifib.net; script-src \'self\' \'unsafe-eval\'; font-src netdna.bootstrapcdn.com; style-src \'self\' netdna.bootstrapcdn.com \'unsafe-inline\' data:; frame-src \'self\' data:</string> </value>
         </item>
         <item>
             <key> <string>configuration_default_view_action_reference</string> </key>
@@ -492,7 +506,7 @@
         </item>
         <item>
             <key> <string>skin_selection_name</string> </key>
-            <value> <string>RJSMonitor</string> </value>
+            <value> <string>RJS</string> </value>
         </item>
         <item>
             <key> <string>static_language_selection</string> </key>
@@ -741,7 +755,7 @@
             </item>
             <item>
                 <key> <string>serial</string> </key>
-                <value> <string>950.18488.9.44475</string> </value>
+                <value> <string>950.28816.4646.59630</string> </value>
             </item>
             <item>
                 <key> <string>state</string> </key>
@@ -759,7 +773,7 @@
                     </tuple>
                     <state>
                       <tuple>
-                        <float>1459762739.09</float>
+                        <float>1460382495.34</float>
                         <string>UTC</string>
                       </tuple>
                     </state>
