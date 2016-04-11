@@ -49,13 +49,6 @@
             </value>
         </item>
         <item>
-            <key> <string>_body</string> </key>
-            <value> <string>return context.Computer_checkAndUpdateAllocationScope(\n
-  target_allocation_scope = \'close/termination\',\n
-  notification_message_reference=\'slapos-crm-computer_personal_allocation_scope.notification\')\n
-</string> </value>
-        </item>
-        <item>
             <key> <string>_params</string> </key>
             <value> <string>**kw</string> </value>
         </item>

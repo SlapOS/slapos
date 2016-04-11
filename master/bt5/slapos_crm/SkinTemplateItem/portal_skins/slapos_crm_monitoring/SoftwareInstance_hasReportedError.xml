@@ -49,34 +49,6 @@
             </value>
         </item>
         <item>
-            <key> <string>_body</string> </key>
-            <value> <string>from DateTime import DateTime\n
-import json\n
-\n
-memcached_dict = context.getPortalObject().portal_memcached.getMemcachedDict(\n
-  key_prefix=\'slap_tool\',\n
-  plugin_path=\'portal_memcached/default_memcached_plugin\')\n
-\n
-if context.getAggregateValue(portal_type="Computer Partition") is not None:\n
-  try:\n
-    d = memcached_dict[context.getReference()]\n
-  except KeyError:\n
-    return  \n
-\n
-  d = json.loads(d)\n
-  result = d[\'text\']\n
-  last_contact = DateTime(d.get(\'created_at\'))\n
-\n
-  # Optimise by checking memcache information first.\n
-  if result.startswith(\'#error \'):\n
-    return last_contact\n
-\n
-  # XXX time limit of 48 hours for run at least once.\n
-\n
-return None\n
-</string> </value>
-        </item>
-        <item>
             <key> <string>_params</string> </key>
             <value> <string></string> </value>
         </item>

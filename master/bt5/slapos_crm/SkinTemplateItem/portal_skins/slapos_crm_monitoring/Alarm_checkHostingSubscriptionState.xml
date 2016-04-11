@@ -49,20 +49,6 @@
             </value>
         </item>
         <item>
-            <key> <string>_body</string> </key>
-            <value> <string>portal = context.getPortalObject()\n
-\n
-portal.portal_catalog.searchAndActivate(\n
-    portal_type=\'Hosting Subscription\',\n
-    validation_state=\'validated\',\n
-    method_id=\'HostingSubscription_checkSofwareInstanceState\',\n
-    activate_kw = {\'tag\':tag}\n
-  )\n
-\n
-context.activate(after_tag=tag).getId()\n
-</string> </value>
-        </item>
-        <item>
             <key> <string>_params</string> </key>
             <value> <string>tag, fixit, params</string> </value>
         </item>

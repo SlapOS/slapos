@@ -49,41 +49,6 @@
             </value>
         </item>
         <item>
-            <key> <string>_body</string> </key>
-            <value> <string>support_request = context\n
-portal = context.getPortalObject()\n
-\n
-resource = portal.service_module.slapos_crm_information.getRelativeUrl()\n
-# create Web message if needed for this ticket\n
-last_event = context.portal_catalog.getResultValue(\n
-             title=message_title,\n
-             follow_up_uid=support_request.getUid(), \n
-             sort_on=[(\'delivery.start_date\', \'DESC\')],\n
-)\n
-if last_event:\n
-  # User has already been notified for this problem.\n
-  return last_event\n
-\n
-event = portal.event_module.slapos_crm_web_message_template.\\\n
-  Base_createCloneDocument(batch_mode=1)\n
-\n
-event.edit(\n
-  title=message_title,\n
-  text_content=message,\n
-  start_date = DateTime(),\n
-  resource = resource,\n
-  source=source_relative_url,\n
-  follow_up=support_request.getRelativeUrl(),\n
-)\n
-event.stop()\n
-event.deliver()\n
-\n
-event.immediateReindexObject()\n
-\n
-return event\n
-</string> </value>
-        </item>
-        <item>
             <key> <string>_params</string> </key>
             <value> <string>message_title, message, source_relative_url</string> </value>
         </item>

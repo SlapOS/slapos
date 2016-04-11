@@ -49,24 +49,6 @@
             </value>
         </item>
         <item>
-            <key> <string>_body</string> </key>
-            <value> <string>portal = context.getPortalObject()\n
-sub_tag = "RegularisationRequest_deleteHostingSubscriptionList"\n
-portal.portal_catalog.searchAndActivate(\n
-      portal_type="Regularisation Request", \n
-      simulation_state=["suspended"],\n
-      default_resource_uid=portal.service_module.slapos_crm_delete_acknowledgement.getUid(),\n
-      method_id=\'RegularisationRequest_deleteHostingSubscriptionList\',\n
-      method_args=(sub_tag,),\n
-      # Limit activity number, as method_id also calls searchAndActivate\n
-      activity_count=1,\n
-      packet_size=1,\n
-      activate_kw={\'tag\': tag, \'after_tag\': sub_tag}\n
-      )\n
-context.activate(after_tag=tag).getId()\n
-</string> </value>
-        </item>
-        <item>
             <key> <string>_params</string> </key>
             <value> <string>tag, fixit, params</string> </value>
         </item>

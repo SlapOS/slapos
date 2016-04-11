@@ -49,38 +49,6 @@
             </value>
         </item>
         <item>
-            <key> <string>_body</string> </key>
-            <value> <string encoding="cdata"><![CDATA[
-
-from zExceptions import Unauthorized\n
-if REQUEST is not None:\n
-  raise Unauthorized\n
-\n
-portal = context.getPortalObject()\n
-ticket = context\n
-current_service = portal.restrictedTraverse(current_service_relative_url)\n
-assert current_service.getPortalType() == "Service"\n
-\n
-event_portal_type = "Mail Message"\n
-\n
-event = portal.portal_catalog.getResultValue(\n
-  portal_type=event_portal_type,\n
-  default_resource_uid=current_service.getUid(),\n
-  default_follow_up_uid=ticket.getUid(),\n
-  simulation_state="delivered",\n
-)\n
-\n
-if (ticket.getSimulationState() == \'suspended\') and (event is not None) and (ticket.getResource() == current_service_relative_url):\n
-  if (DateTime() - event.getStartDate()) > delay_period_in_days:\n
-    ticket.RegularisationRequest_checkToSendUniqEvent(next_service_relative_url, title, text_content, comment)\n
-    return event.getRelativeUrl()\n
-\n
-return None\n
-
-
-]]></string> </value>
-        </item>
-        <item>
             <key> <string>_params</string> </key>
             <value> <string>delay_period_in_days, current_service_relative_url, next_service_relative_url, title, text_content, comment, REQUEST=None</string> </value>
         </item>

@@ -49,39 +49,6 @@
             </value>
         </item>
         <item>
-            <key> <string>_body</string> </key>
-            <value> <string>from zExceptions import Unauthorized\n
-if REQUEST is not None:\n
-  raise Unauthorized\n
-\n
-notification_message = context.getPortalObject().portal_notifications.getDocumentValue(reference="slapos-crm.delete.reminder.escalation")\n
-if notification_message is None:\n
-  subject = \'Acknowledgment: instances deleted\'\n
-  body = """Dear user,\n
-\n
-Despite our last reminder, you still have an unpaid invoice on %s.\n
-We will now delete all your instances.\n
-\n
-Do not hesitate to visit the web forum (http://community.slapos.org/forum) in case of question.\n
-\n
-Regards,\n
-The slapos team\n
-""" % context.getPortalObject().portal_preferences.getPreferredSlaposWebSiteUrl()\n
-else:\n
-  subject = notification_message.getTitle()\n
-  body = notification_message.convert(format=\'text\')[1]\n
-\n
-return context.RegularisationRequest_checkToTriggerNextEscalationStep(\n
-  2,\n
-  \'service_module/slapos_crm_delete_reminder\',\n
-  \'service_module/slapos_crm_delete_acknowledgement\',\n
-  subject,\n
-  body,\n
-  \'Deleting acknowledgment.\',\n
-)\n
-</string> </value>
-        </item>
-        <item>
             <key> <string>_params</string> </key>
             <value> <string>REQUEST=None</string> </value>
         </item>

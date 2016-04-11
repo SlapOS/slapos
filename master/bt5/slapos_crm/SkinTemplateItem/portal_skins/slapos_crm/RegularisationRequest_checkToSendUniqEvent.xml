@@ -49,64 +49,6 @@
             </value>
         </item>
         <item>
-            <key> <string>_body</string> </key>
-            <value> <string encoding="cdata"><![CDATA[
-
-from zExceptions import Unauthorized\n
-if REQUEST is not None:\n
-  raise Unauthorized\n
-\n
-portal = context.getPortalObject()\n
-ticket = context\n
-service = portal.restrictedTraverse(service_relative_url)\n
-assert service.getPortalType() == "Service"\n
-event_portal_type = "Mail Message"\n
-\n
-# XXX TODO\n
-# # Prevent to create 2 tickets during the same transaction\n
-# transactional_variable = getTransactionalVariable()\n
-# if tag in transactional_variable:\n
-#   raise RuntimeError, \'ticket %s already exist\' % tag\n
-# else:\n
-#   transactional_variable[tag] = None\n
-\n
-event = portal.portal_catalog.getResultValue(\n
-  portal_type=event_portal_type,\n
-  default_resource_uid=service.getUid(),\n
-  default_follow_up_uid=ticket.getUid(),\n
-)\n
-\n
-if (event is None) and (ticket.getSimulationState() == \'suspended\'):\n
-  tag = "%s_addUniqEvent_%s" % (ticket.getUid(), service.getUid())\n
-  if (portal.portal_activities.countMessageWithTag(tag) > 0):\n
-    # The event is already under creation but can not be fetched from catalog\n
-    return None\n
-\n
-  # Prevent concurrent transaction to create 2 events for the same ticket\n
-  ticket.edit(resource=service_relative_url)\n
-\n
-  event = portal.event_module.newContent(\n
-    portal_type=event_portal_type,\n
-    start_date=DateTime(),\n
-    destination=ticket.getDestination(),\n
-    follow_up=ticket.getRelativeUrl(),\n
-    source=context.getSource(),\n
-    title=title,\n
-    resource=service_relative_url,\n
-    text_content=text_content,\n
-  )\n
-\n
-  portal.portal_workflow.doActionFor(event, \'start_action\', send_mail=True, comment=comment)\n
-  event.stop(comment=comment)\n
-  event.deliver(comment=comment)\n
-  event.reindexObject(activate_kw={\'tag\': tag})\n
-\n
-return event\n
-
-
-]]></string> </value>
-        </item>
-        <item>
             <key> <string>_params</string> </key>
             <value> <string>service_relative_url, title, text_content, comment, REQUEST=None</string> </value>
         </item>

@@ -49,23 +49,6 @@
             </value>
         </item>
         <item>
-            <key> <string>_body</string> </key>
-            <value> <string>portal = context.getPortalObject()\n
-from Products.ZSQLCatalog.SQLCatalog import SimpleQuery, NegatedQuery\n
-\n
-# XXX TODO: use getInventory to directly fetch user with a wrong balance\n
-portal.portal_catalog.searchAndActivate(\n
-      portal_type="Person", \n
-      validation_state="validated",\n
-      reference=NegatedQuery(SimpleQuery(reference=None)),\n
-      default_email_text=NegatedQuery(SimpleQuery(default_email_text=None)),\n
-      method_id=\'Person_checkToCreateRegularisationRequest\',\n
-      activate_kw={\'tag\': tag}\n
-      )\n
-context.activate(after_tag=tag).getId()\n
-</string> </value>
-        </item>
-        <item>
             <key> <string>_params</string> </key>
             <value> <string>tag, fixit, params</string> </value>
         </item>

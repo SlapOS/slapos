@@ -49,18 +49,6 @@
             </value>
         </item>
         <item>
-            <key> <string>_body</string> </key>
-            <value> <string>portal = context.getPortalObject()\n
-portal.portal_catalog.searchAndActivate(\n
-      portal_type="Regularisation Request", \n
-      simulation_state=["suspended"],\n
-      method_id=\'RegularisationRequest_invalidateIfPersonBalanceIsOk\',\n
-      activate_kw={\'tag\': tag}\n
-      )\n
-context.activate(after_tag=tag).getId()\n
-</string> </value>
-        </item>
-        <item>
             <key> <string>_params</string> </key>
             <value> <string>tag, fixit, params</string> </value>
         </item>

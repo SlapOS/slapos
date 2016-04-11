@@ -49,25 +49,6 @@
             </value>
         </item>
         <item>
-            <key> <string>_body</string> </key>
-            <value> <string>portal = context.getPortalObject()\n
-\n
-category_public = portal.restrictedTraverse("portal_categories/allocation_scope/open/public", None)\n
-category_friend = portal.restrictedTraverse("portal_categories/allocation_scope/open/friend", None)\n
-\n
-if category_public is not None:\n
-  portal.portal_catalog.searchAndActivate(\n
-    portal_type=\'Computer\',\n
-    default_allocation_scope_uid=[category_public.getUid(), category_friend.getUid()],\n
-    validation_state="validated",\n
-    method_id=\'Computer_checkAndUpdateAllocationScope\',\n
-    activate_kw={\'tag\': tag}\n
-  )\n
-\n
-context.activate(after_tag=tag).getId()\n
-</string> </value>
-        </item>
-        <item>
             <key> <string>_params</string> </key>
             <value> <string>tag, fixit, params</string> </value>
         </item>

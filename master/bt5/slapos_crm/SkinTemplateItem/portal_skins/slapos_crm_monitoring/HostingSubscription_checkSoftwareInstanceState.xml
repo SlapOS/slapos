@@ -49,63 +49,6 @@
             </value>
         </item>
         <item>
-            <key> <string>_body</string> </key>
-            <value> <string encoding="cdata"><![CDATA[
-
-from DateTime import DateTime\n
-from Products.ERP5Type.DateUtils import addToDate\n
-\n
-hosting_subscription = context\n
-portal = context.getPortalObject()\n
-\n
-if portal.ERP5Site_isSupportRequestCreationClosed():\n
-  # Stop ticket creation\n
-  return\n
-\n
-date_check_limit = addToDate(DateTime(), to_add={\'hour\': -1})\n
-\n
-if (date_check_limit - hosting_subscription.getCreationDate()) < 0:\n
-  # Too early to check\n
-  return\n
-\n
-#if not source_instance:\n
-#  return\n
-\n
-software_instance_list = hosting_subscription.getSpecialiseRelatedValueList(\n
-                 portal_type=["Software Instance", "Slave Instance"])\n
-\n
-has_newest_allocated_instance = False\n
-has_unallocated_instance = False\n
-failing_instance = None\n
-\n
-# Check if at least one software Instance is Allocated\n
-for instance in software_instance_list:\n
-  if instance.getSlapState() not in ["start_requested", "stop_requested"]:\n
-    continue\n
-\n
-  if (date_check_limit - instance.getCreationDate()) < 0:\n
-    continue\n
-\n
-  if instance.getAggregateValue() is not None:\n
-    has_newest_allocated_instance = True\n
-    if instance.getPortalType() == "Software Instance" and \\\n
-        instance.SoftwareInstance_hasReportedError():\n
-      return context.HostingSubscription_createSupportRequestEvent(\n
-        instance, \'slapos-crm-hosting-subscription-instance-state.notification\')\n
-  else:\n
-    has_unallocated_instance = True\n
-    failing_instance = instance\n
-\n
-  if has_unallocated_instance and has_newest_allocated_instance:\n
-    return context.HostingSubscription_createSupportRequestEvent(\n
-      failing_instance, \'slapos-crm-hosting-subscription-instance-allocation.notification\')\n
-\n
-return\n
-
-
-]]></string> </value>
-        </item>
-        <item>
             <key> <string>_params</string> </key>
             <value> <string></string> </value>
         </item>

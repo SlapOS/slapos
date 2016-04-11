@@ -49,13 +49,6 @@
             </value>
         </item>
         <item>
-            <key> <string>_body</string> </key>
-            <value> <string>kw[\'simulation_state\'] = [\'validated\',\'submitted\']\n
-kw[\'sort_on\'] = [(\'modification_date\', \'DESC\'),]\n
-return context.searchFolder(**kw)\n
-</string> </value>
-        </item>
-        <item>
             <key> <string>_params</string> </key>
             <value> <string>**kw</string> </value>
         </item>
