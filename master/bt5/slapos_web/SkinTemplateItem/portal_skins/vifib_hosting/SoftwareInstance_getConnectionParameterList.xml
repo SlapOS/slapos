@@ -49,31 +49,6 @@
             </value>
         </item>
         <item>
-            <key> <string>_body</string> </key>
-            <value> <string>from Products.ERP5Type.Document import newTempDocument\n
-\n
-return_list = []\n
-try:\n
-  connection_dict = context.getConnectionXmlAsDict()\n
-except:\n
-  return return_list\n
-\n
-if connection_dict is None:\n
-  return return_list\n
-\n
-portal = context.getPortalObject()\n
-for k in sorted(connection_dict):\n
-  if type == \'info\' and not k.endswith(\'_info\'):\n
-    continue\n
-  elif not type and k.endswith(\'_info\'):\n
-    continue\n
-  d = newTempDocument(portal, \'temp\')\n
-  d.edit(connection_key=k, connection_value=connection_dict[k])\n
-  return_list.append(d)\n
-return return_list\n
-</string> </value>
-        </item>
-        <item>
             <key> <string>_params</string> </key>
             <value> <string>type=None, **kwargs</string> </value>
         </item>

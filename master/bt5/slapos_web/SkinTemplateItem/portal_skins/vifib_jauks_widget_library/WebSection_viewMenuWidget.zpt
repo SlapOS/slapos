@@ -1,0 +1,37 @@
+<tal:comment replace="nothing">\n
+  Generate HTML for menu bar.
+</tal:comment>
+
+
+<tal:block tal:define="web_site_url python:request.get('current_web_site_url',here.getAbsoluteUrl());
+                      current_web_site  python:request.get('current_web_site', here);
+                      current_web_section python:request.get('current_web_section', here);"
+                     i18n:domain="ui">
+    <ul tal:define="main_section python: context.WebSite_getMainSection();
+                    subsection_list python: (main_section or current_web_section ).WebSection_getSiteMapTree(property_mapping=('translated_title','id','layout_required_role'),depth=1)"
+  tal:condition="python:current_web_site != current_web_section and subsection_list" 
+  tal:attributes="class python:'subsection_navigation';" >
+  <!-- Link to main section -->
+  <li tal:define="is_active python: current_web_section == main_section;">     
+         <img tal:attributes="src python: '%s/vifib_hosting_image/%s%s.png' % (web_site_url,main_section.getId(),is_active and '_active' or '');
+                             alt main_section/getId;" />
+          <a tal:attributes="href python: main_section.WebSection_getPermanentURL(document=main_section, view=False);
+                             class python:is_active and 'active' or '';" 
+             tal:content="main_section/getTranslatedTitle">Main Section</a>
+  </li>
+  <!-- Link to sub section -->
+  <li tal:repeat="sub_item subsection_list" >
+    <tal:block tal:define="is_active python: current_web_section.getTranslatedTitle()==sub_item['translated_title']">
+      <tal:block tal:condition="python: current_web_section.WebSection_isSectionAllowed(sub_item['layout_required_role'])">
+     
+        <img tal:attributes="src python: '%s/vifib_hosting_image/%s%s.png' % (web_site_url,sub_item['id'],is_active and '_active' or '');
+                           alt sub_item/id;" />
+        <a i18n:translate="" 
+           tal:attributes="href sub_item/url ;
+                         class python: is_active and 'active' or '';" 
+           tal:content="sub_item/translated_title">Menu subitem 1</a>
+       </tal:block>
+    </tal:block>
+  </li>
+    </ul>
+</tal:block>

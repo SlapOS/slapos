@@ -49,27 +49,6 @@
             </value>
         </item>
         <item>
-            <key> <string>_body</string> </key>
-            <value> <string>"""Add selected product to the cart and continue"""\n
-portal = context.getPortalObject()\n
-\n
-if len(uids) != 1:\n
-  return context.Base_redirect(dialog_id,\n
-                        keep_items={\'portal_status_message\':context.Base_translateString("Please select one service.")})\n
-\n
-session = context.WebSection_getVifibSession()\n
-params = portal.portal_selections.getSelectionParamsFor(\'vifib_session_id\')\n
-params["instance_software_product_uid"] = uids[0]\n
-portal.portal_selections.setSelectionParamsFor(\'vifib_session_id\', params)\n
-\n
-if kw.has_key(\'came_from\'):\n
-  #we override the context to redirect the user to the next web section\n
-  context = portal.restrictedTraverse(kw[\'came_from\'])\n
-  \n
-context.WebSection_viewNextStep()\n
-</string> </value>
-        </item>
-        <item>
             <key> <string>_params</string> </key>
             <value> <string>dialog_id, uids=[], quantity=1, reset_shopping_cart=True, **kw</string> </value>
         </item>

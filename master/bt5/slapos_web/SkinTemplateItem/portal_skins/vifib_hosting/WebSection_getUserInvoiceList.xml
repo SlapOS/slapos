@@ -49,22 +49,6 @@
             </value>
         </item>
         <item>
-            <key> <string>_body</string> </key>
-            <value> <string>person = context.getPortalObject().ERP5Site_getAuthenticatedMemberPersonValue()\n
-if person:\n
-  from Products.ZSQLCatalog.SQLCatalog import Query, NegatedQuery\n
-  return context.getPortalObject().portal_catalog(\n
-    default_destination_section_uid=person.getUid(),\n
-    query=NegatedQuery(Query(title="Reversal Transaction for %")),\n
-    sort_on=(("creation_date", "DESC"),),\n
-    **kw\n
-    )\n
-\n
-else:\n
-  return []\n
-</string> </value>
-        </item>
-        <item>
             <key> <string>_params</string> </key>
             <value> <string>**kw</string> </value>
         </item>

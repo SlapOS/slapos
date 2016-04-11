@@ -1,0 +1,187 @@
+<tal:block define="dummy python: request.RESPONSE.setHeader('Content-Type', 'text/css;; charset=utf-8')"/>
+<tal:block tal:define="portal_path python:here.aq_parent.getWebSiteValue().absolute_url() + '/' + here.Localizer.get_selected_language();
+                       img_folder string:${portal_path}/vifib_hosting_image/;">
+
+.leftbar .box{
+  width: 180px;
+}
+
+div.listbox-page-navigation button span.image {
+    background-repeat: no-repeat;
+    display: block;
+    height: 22px;
+    width: 22px;
+}
+
+div.listbox-page-navigation button {
+  vertical-align: middle;
+}
+
+div.listbox-page-navigation button {
+    background-color: transparent;
+    border: medium none;
+    cursor: pointer;
+}
+
+.leftbar ul {
+list-style-image:none;
+}
+
+#order_breadcrump a  {
+display:block;
+text-align:center;
+text-decoration: none;
+color:#0673B8;
+}
+
+#order_breadcrump li {
+display:inline-block;
+width:90px;
+}
+
+#order_breadcrump .next a{
+color:#9C9C9C;
+}
+
+#order_breadcrump .active a{
+color:#910000;
+}
+
+.my_invoices h1 {
+background:url(<tal:block tal:replace="img_folder"/>my_invoices_active.png) no-repeat scroll left center transparent;
+padding-left:100px;
+}
+
+.my_services h1 {
+background:url(<tal:block tal:replace="img_folder"/>my_services_active.png) no-repeat scroll left center transparent;
+padding-left:100px;
+}
+.my_servers h1 {
+background:url(<tal:block tal:replace="img_folder"/>my_servers_active.png) no-repeat scroll left center transparent;
+padding-left:100px;
+}
+.my_account h1 {
+background:url(<tal:block tal:replace="img_folder"/>my_account_active.png) no-repeat scroll left center transparent;
+padding-left:100px;
+}
+.help h1 {
+background:url(<tal:block tal:replace="img_folder"/>help_active.png) no-repeat scroll left center transparent;
+padding-left:100px;
+}
+.monitoring h1 {
+background:url(<tal:block tal:replace="img_folder"/>monitoring_active.png) no-repeat scroll left center transparent;
+padding-left:100px;
+}
+
+.my_networks h1 {
+background:url(<tal:block tal:replace="img_folder"/>my_networks_active.png) no-repeat scroll left center transparent;
+padding-left:100px;
+}
+
+#shopping_cart_renderer .listbox tr:nth-child(2n) {
+background:none repeat scroll 0 0 #FFFFFF;
+}
+
+#shopping_cart_renderer tbody tr, #shopping_cart_renderer tfoot tr  {
+border-color:-moz-use-text-color -moz-use-text-color #EBEBEB;
+border-style:none none dashed;
+border-width:medium medium 1px;
+}
+
+#shopping_cart_renderer tfoot tr  {
+border:medium none;
+}
+
+#shopping_cart_renderer tfoot tr td.used {
+border-bottom:1px solid #CCCCCC;
+}
+
+
+#shopping_cart_renderer td {
+font-weight: normal;
+}
+#shopping_cart_renderer tbody td, #shopping_cart_renderer tfoot td {
+height:3em;
+border-top: none;
+}
+
+.shopping-cart-renderer-title{
+  font-weight:bold;
+}
+
+/* viewAsShop */
+div.no_image  {
+  border:1px solid #C8C8C8;
+  float:left;
+  height:75px;
+  margin:0 10px 10px;
+  text-align:center;
+  width:75px;
+}
+/*Resource box in listbox*/
+.resource-summary{
+cursor:pointer;
+float:left;
+height:70px;
+padding:10px;
+width:142px;
+border:1px solid grey;
+background-color:#FFFFFF;
+}
+.resource-selected{
+background-color:#D2E7F4;
+}
+
+.service-listbox table {background-color:#FFFFFF}
+.service-listbox .listbox tr td {border-top: None;}
+.service-listbox .listbox-head {display:none;}
+.service-listbox thead {display:none;}
+.service-listbox .listbox-table-select-cell{display:none;}
+.service-listbox tr, .service-listbox td {position:relative; width:175px;float:left;background:none!important}
+
+ul#vifib_monitoring {
+  display: inline;
+  list-style-type: none;
+  margin: 0;
+  padding: 0;
+}
+
+ul#vifib_monitoring li {
+  display: inline-block;
+  margin: 0;
+  padding: 0;
+  outline: black solid 1px;
+  height: 2em;
+  width: 2em;
+}
+
+a.check_monitoring {
+  background-color: grey;
+  display: block;
+  height: 2em;
+  width: 2em;
+}
+
+a.monitoring_ok {
+  background-color: green;
+  display: block;
+  height: 2em;
+  width: 2em;
+}
+
+a.monitoring_error {
+  background-color: red;
+  display: block;
+  height: 2em;
+  width: 2em;
+}
+
+a.monitoring_failed {
+  background-color: orange;
+  display: block;
+  height: 2em;
+  width: 2em;
+}
+
+.document > .actions {display:none;}
+</tal:block>

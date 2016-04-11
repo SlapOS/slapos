@@ -49,22 +49,6 @@
             </value>
         </item>
         <item>
-            <key> <string>_body</string> </key>
-            <value> <string>title = context.getTitle()\n
-result = context.getSlapStateTitle()\n
-found = False\n
-for instance in context.getPredecessorValueList():\n
-  if (instance.getTitle() == title) and (instance.getSlapState() != \'destroy_requested\'):\n
-    found = True\n
-    break\n
-\n
-if found:\n
-  result = instance.SoftwareInstance_getStatus()\n
-\n
-return result\n
-</string> </value>
-        </item>
-        <item>
             <key> <string>_params</string> </key>
             <value> <string></string> </value>
         </item>

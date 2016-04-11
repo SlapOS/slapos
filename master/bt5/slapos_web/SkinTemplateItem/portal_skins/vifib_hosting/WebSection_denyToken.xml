@@ -49,27 +49,6 @@
             </value>
         </item>
         <item>
-            <key> <string>_body</string> </key>
-            <value> <string encoding="cdata"><![CDATA[
-
-from ZTUtils import make_query\n
-\n
-query_dict = dict()\n
-\n
-if state:\n
-  query_dict[\'state\'] = state\n
-\n
-query_dict[\'error\'] = \'access_denied\'\n
-if \'#\' in redirect_uri:\n
-  redirect_uri += \'&\' + make_query(query_dict)\n
-else:\n
-  redirect_uri += \'#\' + make_query(query_dict)\n
-return context.REQUEST.RESPONSE.redirect( redirect_uri )\n
-
-
-]]></string> </value>
-        </item>
-        <item>
             <key> <string>_params</string> </key>
             <value> <string>redirect_uri, client_id, state</string> </value>
         </item>

@@ -1,0 +1,58 @@
+<tal:comment replace="nothing">
+  This widget displays the top bar of Web Site
+</tal:comment>
+
+<tal:block tal:define="current_web_site_url python:request.get('current_web_site_url', '');
+                       current_web_site python:request.get('current_web_site', here);
+                       logout_form_id python:current_web_site.getLayoutProperty('layout_logout_form_id','WebSite_logout');
+                       login_form_id python:current_web_site.getLayoutProperty('layout_login_form_id','login_form');
+                       language_list current_web_site/Localizer/get_languages_map;
+                       dummy python: language_list.sort(key=lambda x: x['selected'], reverse=True);
+                       available_language_list current_web_site/getAvailableLanguageList;">
+
+<div id="acknowledgement_zone"></div>
+<div id="language">
+ <tal:block tal:repeat="language language_list">
+    <a tal:define="language_id language/id;"
+       tal:condition="python:language_id in available_language_list"
+       tal:attributes="href python: current_web_site_url + '/Base_doLanguage?select_language=%s' % language_id"
+       tal:content="language/title">English</a>
+  </tal:block>
+</div>
+<a tal:attributes="href current_web_site_url"><div id="vifib_logo"></div></a>
+
+<div id="login_menu">
+  <ul>
+    <li class="before"></li><li>
+
+<span
+   tal:condition="here/portal_membership/isAnonymousUser"><a href="#" id="link-login"  
+   tal:attributes="href string:${current_web_site_url}/${login_form_id}"
+   i18n:translate="" i18n:domain="ui">Login</a></span>
+
+<span
+   tal:condition="not:here/portal_membership/isAnonymousUser">
+<a id="link-login"  
+   tal:attributes="href string:${current_web_site_url}/myspace"
+   i18n:translate="" i18n:domain="ui">My Space</a> /
+<a id="link-login"  
+   tal:attributes="href string:${current_web_site_url}/${logout_form_id}"
+   i18n:translate="" i18n:domain="ui">Logout</a>
+</span>
+
+      </li>
+    <li class="after"></li>
+  </ul>
+</div>
+
+<div id="menu">
+  <ul>
+    <li><a href="http://community.slapos.org/wiki">Documentation</a></li>
+    <li><a href="http://community.slapos.org/download">Download</a></li>
+    <li><a href="http://community.slapos.org/forum">Forum</a></li>
+    <li><a href="http://community.slapos.org/blog">Blog</a></li>
+    <li>&nbsp;</li>
+  </ul>
+</div>
+
+</tal:block>

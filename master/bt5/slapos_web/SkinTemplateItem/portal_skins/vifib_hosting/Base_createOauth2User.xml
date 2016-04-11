@@ -49,54 +49,6 @@
             </value>
         </item>
         <item>
-            <key> <string>_body</string> </key>
-            <value> <string encoding="cdata"><![CDATA[
-
-from DateTime import DateTime\n
-\n
-if context.REQUEST.get(\'Base_createOauth2User\') is not None:\n
- return\n
-\n
-context.REQUEST.set(\'Base_createOauth2User\', 1)\n
-portal = context.getPortalObject()\n
-\n
-if portal.portal_activities.countMessageWithTag(tag) > 0:\n
-  return\n
-\n
-person = portal.ERP5Site_getAuthenticatedMemberPersonValue(reference)\n
-if person is not None:\n
-  return\n
-\n
-activate_kw={\'tag\': tag}\n
-person = portal.person_module.newContent(portal_type=\'Person\',\n
-  reference=reference,\n
-  first_name=first_name,\n
-  last_name=last_name,\n
-  default_email_coordinate_text=email,\n
-  activate_kw=activate_kw)\n
-\n
-person.validate(activate_kw=activate_kw)\n
-\n
-assignment_duration = portal.portal_preferences.getPreferredCredentialAssignmentDuration()\n
-today = DateTime()\n
-delay = today + assignment_duration\n
-\n
-category_list = portal.portal_preferences.getPreferredSubscriptionAssignmentCategoryList()\n
-\n
-assignment = person.newContent(\n
-        portal_type=\'Assignment\',\n
-        category_list=category_list,\n
-        start_date = today,\n
-        stop_date = delay,\n
-        activate_kw=activate_kw)\n
-assignment.open(activate_kw=activate_kw)\n
-\n
-person.setRoleList(assignment.getRoleList())\n
-
-
-]]></string> </value>
-        </item>
-        <item>
             <key> <string>_params</string> </key>
             <value> <string>tag, first_name, last_name, reference, email</string> </value>
         </item>

@@ -91,62 +91,6 @@
             </value>
         </item>
         <item>
-            <key> <string>text_content</string> </key>
-            <value> <string>/*jslint nomen: true, maxlen: 200, indent: 2*/\n
-/*global window, rJS, console, jQuery, jIO, tv4, JSON */\n
-(function (window, rJS) {\n
-  "use strict";\n
-\n
-  var gk = rJS(window);\n
-\n
-  function getJSON(url) {\n
-    return jIO.util.ajax({\n
-      url: url\n
-    })\n
-      .then(function (evt) {\n
-        return evt.target.responseText;\n
-      });\n
-  }\n
-\n
-  function getMetaJSONSchema() {\n
-    return getJSON("slapos_load_meta_schema.json");\n
-  }\n
-\n
-  function validateJSONSchema(json) {\n
-    return getMetaJSONSchema()\n
-      .then(function (meta_schema) {\n
-        if (!tv4.validate(json, meta_schema)) {\n
-          throw new Error("Non valid JSON schema " + json);\n
-        }\n
-        return JSON.parse(json);\n
-      });\n
-  }\n
-\n
-  gk\n
-    .declareMethod("loadJSONSchema", function (url) {\n
-      return getJSON(url)\n
-        .then(function (json) {\n
-          return validateJSONSchema(json);\n
-        });\n
-    })\n
-\n
-    .declareMethod("loadSoftwareJSON", function (url) {\n
-      return getJSON(url)\n
-        .then(function (json) {\n
-          return JSON.parse(json);\n
-        });\n
-    })\n
-\n
-    .declareMethod("validateJSON", function (schema_url, generated_json) {\n
-      return getJSON(schema_url)\n
-        .then(function (json) {\n
-          return tv4.validateMultiple(generated_json, json);\n
-        });\n
-    });\n
-\n
-}(window, rJS, jQuery));</string> </value>
-        </item>
-        <item>
             <key> <string>title</string> </key>
             <value> <string>slapos_load_schema.js</string> </value>
         </item>

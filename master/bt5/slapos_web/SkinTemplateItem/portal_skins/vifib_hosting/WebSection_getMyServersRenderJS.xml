@@ -49,24 +49,6 @@
             </value>
         </item>
         <item>
-            <key> <string>_body</string> </key>
-            <value> <string encoding="cdata"><![CDATA[
-
-tool = context.getPortalObject().portal_slapos_rest_api\n
-return """\n
-<script>\n
-$(document).ready(function () {\n
-  $(".monitoring_to_check").each(function() {\n
-    $(this).vifibmonitoring("check_status", "%s", $(this).attr("data-relative-url"));\n
-  });\n
-});\n
-</script>\n
-""" % tool.absolute_url()\n
-
-
-]]></string> </value>
-        </item>
-        <item>
             <key> <string>_params</string> </key>
             <value> <string></string> </value>
         </item>

@@ -49,16 +49,6 @@
             </value>
         </item>
         <item>
-            <key> <string>_body</string> </key>
-            <value> <string>request = context.REQUEST\n
-if \'field_your_instance_xml\' in request:\n
-  if context.getTextContent() != request[\'field_your_instance_xml\']:\n
-    context.HostingSubscription_requestPerson(instance_xml=request[\'field_your_instance_xml\'])\n
-    return context.Base_redirect(\'view\', keep_items={\'portal_status_message\':context.Base_translateString(\'Data updated.\')})\n
-return context.Base_redirect(\'view\', keep_items={\'portal_status_message\':context.Base_translateString(\'No changes.\')})\n
-</string> </value>
-        </item>
-        <item>
             <key> <string>_params</string> </key>
             <value> <string>*args, **kwargs</string> </value>
         </item>

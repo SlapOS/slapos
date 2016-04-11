@@ -49,34 +49,6 @@
             </value>
         </item>
         <item>
-            <key> <string>_body</string> </key>
-            <value> <string>portal = context.getPortalObject()\n
-kw[\'portal_type\'] = ["Support Request", "Regularisation Request", "Upgrade Decision"]\n
-support_in_progress_url = context.REQUEST.get(\'new_support_request\', \'\')\n
-\n
-person = portal.ERP5Site_getAuthenticatedMemberPersonValue()\n
-if person:\n
-  kw[\'default_destination_decision_uid\'] = person.getUid()\n
-  kw[\'sort_on\'] = [(\'modification_date\', \'DESC\'),]\n
-  found = False\n
-  support_request_list = []\n
-  for support_request in context.getPortalObject().portal_catalog(**kw):\n
-    if support_in_progress_url and \\\n
-          support_request.getRelativeUrl() == support_in_progress_url:\n
-      found = True\n
-    support_request_list.append(support_request.getObject())\n
-  if support_in_progress_url and not found:\n
-    support_in_progress = portal.restrictedTraverse(\n
-                              support_in_progress_url, None)\n
-    if support_in_progress and support_in_progress.getDestinationDecisionUid() == person.getUid():\n
-      support_request_list.insert(0, support_in_progress)\n
-  return support_request_list\n
-\n
-else:\n
-  return []\n
-</string> </value>
-        </item>
-        <item>
             <key> <string>_params</string> </key>
             <value> <string>**kw</string> </value>
         </item>

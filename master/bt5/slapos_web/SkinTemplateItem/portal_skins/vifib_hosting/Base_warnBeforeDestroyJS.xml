@@ -49,36 +49,6 @@
             </value>
         </item>
         <item>
-            <key> <string>_body</string> </key>
-            <value> <string encoding="cdata"><![CDATA[
-
-return """\n
-<script>\n
-"use strict";\n
-$(document).ready(function(){\n
-\n
-    $("#destroy_hs").click(function(){\n
-        if ($(this).attr("rel") !== "confirm") {\n
-          $(this).val("Confirm destruction");\n
-          $(this).attr("rel", "confirm");\n
-          $("#alert_destroy_hs").fadeIn(200);\n
-          $("#alert_destroy_hs").css("display", "inline-block");\n
-          return false;\n
-        }\n
-    });\n
-    $("#alert_destroy_hs").click(function(){\n
-       $("#destroy_hs").attr("rel", "");\n
-       $("#destroy_hs").val("Destroy");\n
-       $(this).fadeOut(500);\n
-    });\n
-});\n
-</script>\n
-"""\n
-
-
-]]></string> </value>
-        </item>
-        <item>
             <key> <string>_params</string> </key>
             <value> <string></string> </value>
         </item>

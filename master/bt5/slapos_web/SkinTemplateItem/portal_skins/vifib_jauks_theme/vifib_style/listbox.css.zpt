@@ -1,0 +1,101 @@
+<tal:block define="dummy python: request.RESPONSE.setHeader('Content-Type', 'text/css;; charset=utf-8')"/>
+<tal:block tal:define="portal_path python:here.aq_parent.getWebSiteValue().absolute_url();">
+
+/****************************/
+/*   Listbox  VIFIB style   */
+/****************************/
+div.listbox-head{
+  display: none;
+}
+.maximal-width table{
+  width: 100%;
+}
+table.listbox input[type=text]{
+  width: 97%;
+}
+table.listbox {margin:30px auto;border:1px solid #CCCCCC;border-collapse:collapse;}
+table.listbox button.sort-button{color: #BAE2E9}
+table.listbox button.sort-button span{font-size:1.2em;}
+table.listbox th,table.listbox td {padding:5px 10px;color:#555555}
+table.listbox thead th{repeat-x top left;color:#BAE2E9;
+border-style:none;font-size:1.2em;}
+
+table.listbox tr{background: #FFFFFF;}
+table.listbox tr:nth-child(even) {background: #D2E7F4;}
+table.listbox tbody td a{color:#1D6598}
+table.listbox tbody td a:hover{color:#164F75;cursor:pointer;}
+
+table.listbox tr.listbox-search-line{background-color:#DBE9E8;}
+table.listbox tr.listbox-label-line{background:url(<tal:block tal:replace="portal_path"/>/vifib_image/menu_bg.png)}
+
+table.listbox th button {
+  background:url(<tal:block tal:replace="portal_path"/>/vifib_image/switch.png) no-repeat scroll 100% 50% transparent;
+  border-width:0;
+  color:inherit;
+  cursor:pointer;
+  float:left;
+  font-weight:bold;
+  padding:0 6px 0 0;
+  text-align:left;
+  vertical-align:middle;
+}
+
+
+table.listbox th button.sort-button-desc {
+background-image:url(<tal:block tal:replace="portal_path"/>/vifib_image/switch_desc.png);
+}
+table.listbox th button.sort_button-asc {
+background-image:url(<tal:block tal:replace="portal_path"/>/vifib_image/switch_asc.png);
+}
+
+
+table.listbox tbody tr:hover {
+background-color: #EEEEEE
+}
+table.listbox th input  {
+height:17px;
+}
+
+
+
+/********************************/
+/*   ListBox as Unordered List   */
+/********************************/
+/*Last Element Widget */
+.last_element li {
+margin-top : 10px;
+margin-bottom : 10px;
+font-size : 15px;
+list-style: none;
+}
+
+.last_element .main a{
+color: black;
+font-weight : bold;
+text-decoration: none;
+}
+
+.last_element .second a{
+color : #555;
+text-decoration: none;
+}
+
+.last_element .main a:hover{
+text-decoration: underline;
+}
+
+.last_element label {
+float:left;
+text-decoration: none;
+color:#3E95A5;
+font-size:1.5em;
+}
+.last_element img{
+height: 20px; 
+padding-top: 3px;
+} 
+
+.last_element .warning{
+color: #555555;
+}
+</tal:block>

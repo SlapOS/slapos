@@ -49,16 +49,6 @@
             </value>
         </item>
         <item>
-            <key> <string>_body</string> </key>
-            <value> <string># This script returns an iterable of the paths to standard CSS objects.\n
-\n
-return (\'km_css/km_listbox.css\', \n
-        \'vifib_style/listbox.css\',\n
-        \'vifib_style/vifib.css\',\n
-        \'vifib_style/zocial.css\')\n
-</string> </value>
-        </item>
-        <item>
             <key> <string>_params</string> </key>
             <value> <string></string> </value>
         </item>

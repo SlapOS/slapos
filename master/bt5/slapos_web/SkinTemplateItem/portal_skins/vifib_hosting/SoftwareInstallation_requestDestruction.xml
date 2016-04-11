@@ -49,12 +49,6 @@
             </value>
         </item>
         <item>
-            <key> <string>_body</string> </key>
-            <value> <string>context.getAggregateValue(portal_type=\'Computer\').requestSoftwareRelease(software_release_url=context.getUrlString(), state=\'destroyed\')\n
-context.Base_redirect(\'view\', keep_items={\'portal_status_message\': \'Requested Destruction\'})\n
-</string> </value>
-        </item>
-        <item>
             <key> <string>_params</string> </key>
             <value> <string></string> </value>
         </item>

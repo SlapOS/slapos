@@ -49,19 +49,6 @@
             </value>
         </item>
         <item>
-            <key> <string>_body</string> </key>
-            <value> <string>request = context.REQUEST\n
-\n
-if not context.getPortalType() == "Hosting Subscription":\n
-  return context.Base_redirect(\'view\', keep_items={\'portal_status_message\':context.Base_translateString(\'Hosting subscription is needed!\')})\n
-if \'field_your_new_title\' in request:\n
-  context.edit(short_title=request[\'field_your_new_title\'], description=request.get(\'field_your_description\', \'\'))\n
-  return context.Base_redirect(\'view\', keep_items={\'portal_status_message\':context.Base_translateString(\'Hosting subscription edited.\')})\n
-\n
-return context.Base_redirect(\'HostingSubscription_viewUpdateInformationAsWeb\', keep_items={})\n
-</string> </value>
-        </item>
-        <item>
             <key> <string>_params</string> </key>
             <value> <string>*args, **kwargs</string> </value>
         </item>

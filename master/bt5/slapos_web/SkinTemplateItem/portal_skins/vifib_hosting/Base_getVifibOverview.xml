@@ -49,25 +49,6 @@
             </value>
         </item>
         <item>
-            <key> <string>_body</string> </key>
-            <value> <string encoding="cdata"><![CDATA[
-
-tool = context.getPortalObject().portal_slapos_rest_api\n
-return """\n
-<ul id="vifib_monitoring"></ul>\n
-\n
-<script>\n
-$(document).ready(function () {\n
-  $("ul#vifib_monitoring")\n
-    .vifibmonitoring("fill_list", "%s");\n
-});\n
-</script>\n
-""" % tool.absolute_url()\n
-
-
-]]></string> </value>
-        </item>
-        <item>
             <key> <string>_params</string> </key>
             <value> <string></string> </value>
         </item>

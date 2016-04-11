@@ -49,21 +49,6 @@
             </value>
         </item>
         <item>
-            <key> <string>_body</string> </key>
-            <value> <string>promise_dict = {\n
-  \'IExtractionPlugin\': [\n
-    \'Vifib Browser ID Extraction Plugin\',\n
-    \'Vifib Facebook Server Extraction Plugin\',\n
-    \'Vifib Google Server Extraction Plugin\',\n
-#   \'ERP5 Bearer Extraction Plugin\',\n
-    \'ERP5 Facebook Extraction Plugin\',\n
-    \'ERP5 Google Extraction Plugin\',\n
-  ],\n
-}\n
-context.Alarm_checkPromiseSlapOSPASBase(promise_dict, tag, fixit=fixit, **kw)\n
-</string> </value>
-        </item>
-        <item>
             <key> <string>_params</string> </key>
             <value> <string>tag, fixit=False, **kw</string> </value>
         </item>

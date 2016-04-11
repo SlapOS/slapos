@@ -49,27 +49,6 @@
             </value>
         </item>
         <item>
-            <key> <string>_body</string> </key>
-            <value> <string>get = context.REQUEST.get\n
-\n
-def handleError():\n
-  context.Base_redirect(\'login_form\', keep_items={"portal_status_message": "There was problem with Facebook login: %s. Please try again later." % get(\'error_description\')})\n
-\n
-if get(\'error\') is not None:\n
-  return handleError()\n
-elif get(\'code\') is not None:\n
-  access_token_dict = context.Facebook_getAccessTokenFromCode(get(\'code\'), context.absolute_url())\n
-  if access_token_dict is not None:\n
-    access_token = access_token_dict[\'access_token\']\n
-    access_token_dict[\'login\'] = \'fb_\' + context.Facebook_getUserId(access_token)\n
-    hash = context.Base_getHMAC(access_token, access_token)\n
-    context.REQUEST.RESPONSE.setCookie(\'__ac_facebook_hash\', hash, path=\'/\')\n
-    context.Facebook_setServerToken(hash, access_token_dict)\n
-    return context.REQUEST.RESPONSE.redirect(context.getWebSiteValue().absolute_url())\n
-return handleError()\n
-</string> </value>
-        </item>
-        <item>
             <key> <string>_params</string> </key>
             <value> <string>code=None, access_token=None, error_reason=None, error=None, error_description=None</string> </value>
         </item>

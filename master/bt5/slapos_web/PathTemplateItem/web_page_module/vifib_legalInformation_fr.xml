@@ -164,18 +164,6 @@
             </value>
         </item>
         <item>
-            <key> <string>text_content</string> </key>
-            <value> <string encoding="cdata"><![CDATA[
-
-<h1>Propri&eacute;t&eacute; intellectuelle</h1>\r\n
-<p>L\'ensemble des donn&eacute;es de ce site sont prot&eacute;g&eacute;es par le droit d\'auteur et le droit sui generis des bases de donn&eacute;es.</p>\r\n
-<p>ViFiB est une marque d&eacute;pos&eacute;e de ViFiB SARL.</p>\r\n
-<h1>Donn&eacute;es priv&eacute;es</h1>\r\n
-<p>D&eacute;claration CNIL&nbsp;en cours.</p>
-
-]]></string> </value>
-        </item>
-        <item>
             <key> <string>text_format</string> </key>
             <value> <string>text/html</string> </value>
         </item>

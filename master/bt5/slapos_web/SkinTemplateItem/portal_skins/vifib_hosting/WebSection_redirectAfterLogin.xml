@@ -49,19 +49,6 @@
             </value>
         </item>
         <item>
-            <key> <string>_body</string> </key>
-            <value> <string>if not context.portal_membership.isAnonymousUser() and context.REQUEST.get(\'redirect_after_login\') is not None:\n
-  context.REQUEST.RESPONSE.expireCookie(\'redirect_after_login\', path=\'/\')\n
-  return context.REQUEST.RESPONSE.redirect( context.REQUEST.get(\'redirect_after_login\') )\n
-\n
-elif not context.portal_membership.isAnonymousUser():\n
-  return context.Base_redirect("myspace")\n
-\n
-else:\n
-  return context.Base_redirect("login_form")\n
-</string> </value>
-        </item>
-        <item>
             <key> <string>_params</string> </key>
             <value> <string></string> </value>
         </item>

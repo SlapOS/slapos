@@ -49,18 +49,6 @@
             </value>
         </item>
         <item>
-            <key> <string>_body</string> </key>
-            <value> <string>base_url = context.REQUEST.other["URL"].rsplit("/",1)[0]\n
-\n
-if context.REQUEST.form.get(\'callback_url\') is not None:\n
-  context.REQUEST.RESPONSE.setCookie("redirect_after_login", \n
-                                            context.REQUEST.form[\'callback_url\'], \n
-                                            path="/")\n
-\n
-return context.getWebSiteValue().login_with_google.WebSection_googleInitiateLogin()\n
-</string> </value>
-        </item>
-        <item>
             <key> <string>_params</string> </key>
             <value> <string>*args, **kw</string> </value>
         </item>

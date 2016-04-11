@@ -102,67 +102,6 @@
             </value>
         </item>
         <item>
-            <key> <string>text_content</string> </key>
-            <value> <string>{\n
-    "type": "object",\n
-    "$schema": "http://json-schema.org/draft-04/schema",\n
-    "allOf": [\n
-        {\n
-            "$ref": "../../renderjs/sample_schema.json#/"\n
-        },\n
-        {\n
-            "properties": {\n
-                "-sla-0-computer_guid": {\n
-                    "title": "Target computer for main instance",\n
-                    "description": "Target computer GUID for main instance.",\n
-                    "type": "string",\n
-                    "optional": true\n
-                },\n
-                "-sla-1-computer_guid": {\n
-                    "title": "Target computer for first clone",\n
-                    "description": "Target computer for first clone and PBS.",\n
-                    "type": "string",\n
-                    "optional": true\n
-                },\n
-                "-sla-2-computer_guid": {\n
-                    "title": "Target computer for second clone",\n
-                    "description": "Target computer for second clone and PBS.",\n
-                    "type": "string",\n
-                    "optional": true\n
-                },\n
-                "resiliency-backup-periodicity": {\n
-                    "title": "Periodicity of backup",\n
-                    "description": "Periodicity of backup, in cron format.",\n
-                    "type": "string",\n
-                    "optional": true\n
-                },\n
-                "remove-backup-older-than": {\n
-                    "title": "Remove backups older than...",\n
-                    "description": "Remove all the backups in PBS that are older than specified value. It should be rdiff-backup-compatible.",\n
-                    "type": "string",\n
-                    "default": "3B",\n
-                    "optional": true\n
-                },\n
-                "resilient-clone-number": {\n
-                    "title": "Amount of backup(s) to create",\n
-                    "description": "Amount of backup(s) to create. Each backup consists of a Pull Backup Server and a clone.",\n
-                    "type": "integer",\n
-                    "default": 2,\n
-                    "optional": true\n
-                },\n
-                "ignore-known-hosts-file": {\n
-                    "title": "Ignore known_hosts file",\n
-                    "description": "Set either to fill known_hosts file for ssh or not. Useful if main instance and PBS are using the same IP (slapos proxy, webrunner).",\n
-                    "type": "boolean",\n
-                    "default": false,\n
-                    "optional": true\n
-                }\n
-            }\n
-        }\n
-    ]\n
-}</string> </value>
-        </item>
-        <item>
             <key> <string>title</string> </key>
             <value> <string>slapos_schema2.json</string> </value>
         </item>

@@ -49,27 +49,6 @@
             </value>
         </item>
         <item>
-            <key> <string>_body</string> </key>
-            <value> <string>get = context.REQUEST.get\n
-\n
-def handleError():\n
-  context.Base_redirect(\'login_form\', keep_items={"portal_status_message": "There was problem with Google login: %s. Please try again later." % get(\'error\')})\n
-\n
-if get(\'error\') is not None:\n
-  return handleError()\n
-elif get(\'code\') is not None:\n
-  access_token_dict = context.Google_getAccessTokenFromCode(get(\'code\'), context.absolute_url())\n
-  if access_token_dict is not None:\n
-    access_token = access_token_dict[\'access_token\'].encode(\'utf-8\')\n
-    access_token_dict[\'login\'] = \'go_\' + context.Google_getUserId(access_token)\n
-    hash = context.Base_getHMAC(access_token, access_token)\n
-    context.REQUEST.RESPONSE.setCookie(\'__ac_google_hash\', hash, path=\'/\')\n
-    context.Google_setServerToken(hash, access_token_dict)\n
-    return context.REQUEST.RESPONSE.redirect(context.getWebSiteValue().absolute_url())\n
-return handleError()\n
-</string> </value>
-        </item>
-        <item>
             <key> <string>_params</string> </key>
             <value> <string>code=None, error=None</string> </value>
         </item>

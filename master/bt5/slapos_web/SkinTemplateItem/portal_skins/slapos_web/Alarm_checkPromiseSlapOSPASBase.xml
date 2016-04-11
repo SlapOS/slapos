@@ -49,57 +49,6 @@
             </value>
         </item>
         <item>
-            <key> <string>_body</string> </key>
-            <value> <string>from Products.CMFActivity.ActiveResult import ActiveResult\n
-\n
-portal = context.getPortalObject()\n
-def mergePASDictDifference(portal, d, fixit):\n
-  plugins = portal.acl_users.plugins\n
-  error_list = []\n
-  plugin_type_info = plugins.listPluginTypeInfo()\n
-  for plugin, active_list in d.iteritems():\n
-    plugin_info = [q for q in plugin_type_info if q[\'id\'] == plugin][0]\n
-    found_list = plugins.listPlugins(plugin_info[\'interface\'])\n
-    meta_type_list = [q[1].meta_type for q in found_list]\n
-    for expected in active_list:\n
-      if expected not in meta_type_list:\n
-        error = \'Plugin %s missing %s.\' % (plugin, expected)\n
-        if fixit:         \n
-          existing = [q for q in portal.acl_users.objectValues() if q.meta_type == expected]\n
-          if len(existing) == 0:\n
-            error_list.append(\'%s not found\' % expected)\n
-          else:\n
-            plugins.activatePlugin(plugin_info[\'interface\'], existing[0].getId())\n
-            error += \' Fixed.\'\n
-        error_list.append(error)\n
-\n
-  return error_list\n
-\n
-pas_difference = mergePASDictDifference(portal, promise_dict, fixit)\n
-if len(pas_difference) != 0:\n
-  if fixit:\n
-    severity = 0\n
-  else:\n
-    severity = 1\n
-  summary = "PAS not configured as expected"\n
-  if fixit:\n
-    summary += \' (fixed)\'\n
-  detail = "Difference:\\n%s" % (\'\\n\'.join(pas_difference), )\n
-else:\n
-  severity = 0\n
-  summary = "Nothing to do."\n
-  detail = ""\n
-\n
-active_result = ActiveResult()\n
-active_result.edit(\n
-  summary=summary, \n
-  severity=severity,\n
-  detail=detail)\n
-\n
-context.newActiveProcess().postResult(active_result)\n
-</string> </value>
-        </item>
-        <item>
             <key> <string>_params</string> </key>
             <value> <string>promise_dict, tag, fixit=False, **kw</string> </value>
         </item>

@@ -49,26 +49,6 @@
             </value>
         </item>
         <item>
-            <key> <string>_body</string> </key>
-            <value> <string>person = context.getPortalObject().ERP5Site_getAuthenticatedMemberPersonValue()\n
-\n
-if person is None:\n
-  return False\n
-\n
-if required_role_list is None:\n
-  required_role_list = context.getLayoutProperty(\'layout_required_role\', [])\n
-\n
-if not len(required_role_list):\n
-  return True\n
-\n
-for role in required_role_list:\n
-  if person.Person_hasRequiredRole(role):\n
-    return True\n
-\n
-return False\n
-</string> </value>
-        </item>
-        <item>
             <key> <string>_params</string> </key>
             <value> <string>required_role_list=None</string> </value>
         </item>

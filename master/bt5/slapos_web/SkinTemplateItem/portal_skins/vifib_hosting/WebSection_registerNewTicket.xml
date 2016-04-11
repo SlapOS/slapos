@@ -49,57 +49,6 @@
             </value>
         </item>
         <item>
-            <key> <string>_body</string> </key>
-            <value> <string>portal = context.getPortalObject()\n
-web_site = context.getWebSiteValue()\n
-person = portal.ERP5Site_getAuthenticatedMemberPersonValue()\n
-context.REQUEST.set(\'new_support_request\', None)\n
-\n
-support_request_template = portal.restrictedTraverse(\n
-  portal.portal_preferences.getPreferredSupportRequestTemplate())\n
-support_request = support_request_template.Base_createCloneDocument(batch_mode=1)\n
-\n
-kw = {}\n
-if context.getPortalType() in ["Hosting Subscription", "Computer"]:\n
-  kw[\'source_project\'] = context.getRelativeUrl()\n
-\n
-support_request.edit(\n
-  title=title,\n
-  destination_decision_value=person,\n
-  resource=resource,\n
-  start_date=DateTime(),\n
-  **kw\n
-)\n
-support_request.validate(comment="Submitted from the web site contact form")\n
-\n
-web_message_template = portal.restrictedTraverse(\n
-  portal.portal_preferences.getPreferredWebMessageTemplate())\n
-web_message = web_message_template.Base_createCloneDocument(batch_mode=1)\n
-# XXX init script is not called when cloning?\n
-web_message.Event_init()\n
-web_message.edit(\n
-  title=title,\n
-  content_type="text/plain",\n
-  text_content=description,\n
-  source_value=person,\n
-  resource=resource,\n
-  start_date=DateTime(),\n
-  follow_up_value=support_request,\n
-)\n
-web_message.stop(comment="Submitted from the web site contact form")\n
-\n
-keep_item_dict = {\'editable_mode\': 0, \n
-  \'new_support_request\': support_request.getRelativeUrl(), \n
-  \'portal_status_message\':context.Base_translateString(\'Ticket created.\')}\n
-\n
-\n
-if context.getPortalType() in ["Hosting Subscription", "Computer"]:\n
-  return context.Base_redirect(\'\', keep_items=keep_item_dict)\n
-else:\n
-  web_site.myspace.Base_redirect(\'\', keep_items=keep_item_dict)\n
-</string> </value>
-        </item>
-        <item>
             <key> <string>_params</string> </key>
             <value> <string>title, description, resource</string> </value>
         </item>

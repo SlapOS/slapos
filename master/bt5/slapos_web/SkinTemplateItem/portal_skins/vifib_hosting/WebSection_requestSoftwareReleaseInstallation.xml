@@ -49,23 +49,6 @@
             </value>
         </item>
         <item>
-            <key> <string>_body</string> </key>
-            <value> <string>"""Add selected product to the cart and continue"""\n
-portal = context.getPortalObject()\n
-\n
-# XXX context is a computer\n
-if context.getPortalType() != "Computer":\n
-  raise NotImplementedError, "Should be called on a Computer"\n
-\n
-session = context.WebSection_getVifibSession()\n
-portal.portal_selections.setSelectionParamsFor(\'vifib_session_id\', {\'computer_uid\': context.getUid()})\n
-# session[\'computer_uid\'] = context.getUid()\n
-\n
-web_section = context.getWebSectionValue()\n
-return web_section.Base_redirect(\'install-a-software\', keep_items={\'editable_mode\': 0})\n
-</string> </value>
-        </item>
-        <item>
             <key> <string>_params</string> </key>
             <value> <string>dialog_id, uids=[], quantity = 1, reset_shopping_cart=True, **kw</string> </value>
         </item>

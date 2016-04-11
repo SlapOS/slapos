@@ -49,48 +49,6 @@
             </value>
         </item>
         <item>
-            <key> <string>_body</string> </key>
-            <value> <string encoding="cdata"><![CDATA[
-
-from ZTUtils import make_query\n
-\n
-from DateTime import DateTime\n
-\n
-query_dict = dict()\n
-\n
-if state:\n
-  query_dict[\'state\'] = state\n
-person = context.ERP5Site_getAuthenticatedMemberPersonValue()\n
-try:\n
-  token, expires = person.Person_getBearerToken()\n
-except ValueError:\n
-  query_dict[\'error\'] = \'server_error\'\n
-  if \'#\' in redirect_uri:\n
-    redirect_uri += \'&\' + make_query(query_dict)\n
-  else:\n
-    redirect_uri += \'#\' + make_query(query_dict)\n
-  return context.REQUEST.RESPONSE.redirect( redirect_uri )\n
-\n
-query_dict = dict(\n
-  access_token=token,\n
-  token_type=\'bearer\',\n
-  expires_in=str(int((expires - DateTime().timeTime()))),\n
-)\n
-if state:\n
-  query_dict[\'state\'] = state\n
-\n
-query = make_query(query_dict)\n
-\n
-if \'#\' in redirect_uri:\n
-  redirect_uri += \'&\' + query\n
-else:\n
-  redirect_uri += \'#\' + query\n
-return context.REQUEST.RESPONSE.redirect( redirect_uri )\n
-
-
-]]></string> </value>
-        </item>
-        <item>
             <key> <string>_params</string> </key>
             <value> <string>redirect_uri, client_id, state</string> </value>
         </item>

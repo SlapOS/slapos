@@ -1,0 +1,54 @@
+<tal:block
+  xmlns:tal="http://xml.zope.org/namespaces/tal"
+  xmlns:metal="http://xml.zope.org/namespaces/metal"
+  xmlns:i18n="http://xml.zope.org/namespaces/i18n"
+  tal:define="field_id here/getId;
+              form_id python: here.getForm().id;             
+              portal_url_string request/current_web_site_url;
+              real_context here/getContext;
+              context_url real_context/absolute_url;
+              line_list here/query;"
+   i18n:domain="ui">
+
+  <tal:comment replace="nothing">
+  Docstring: Display listbox as ul with RSS link
+  Interest: create box to display last element with rss feature
+  </tal:comment>
+
+  <tal:block tal:define="max_lines  python: int(here.getMaxLineNumber());
+                         total_line python: int(here.total_size);
+                         label_list here/getLabelValueList ;">
+    <tal:comment replace="nothing">
+    Info :  for list in label_list
+    sql        python: list[0];
+    title      python: list[1];
+    sort_order python: list[2]">
+    </tal:comment>
+    <a tal:attributes="href python: 'WebSite_redirectToPermanentRss?object_url=%s/%s/%s' % (context_url, form_id, field_id)">
+      <img src="./vifib_image/rss.png" tal:attributes="src python: '%s/vifib_image/rss.png' % portal_url_string"/>
+    </a>
+
+    <div tal:condition="python: total_line == 0" id="result" class="warning clear" i18n:translate="">No results.</div>
+
+    <ul tal:condition="line_list" class="clear">
+
+      <li tal:repeat="line line_list">
+
+        <tal:block tal:repeat="value line/render">
+        <div tal:define="html               python: value[0];
+                         original_value     python: value[1];
+                         empty              python: original_value in ('', None) and not request.get('editable_mode')"
+          tal:attributes="class python: repeat['value'].index==0 and 'main' or not repeat['value'].index==0 and 'second'">
+        <span tal:condition="not: empty" class='title' i18n:translate="" tal:content="python: label_list[repeat['value'].index][1]" />
+        <span tal:condition="not: empty" tal:replace="structure html">value</span>
+        </div>
+        </tal:block>
+      
+      </li>
+
+    </ul>
+
+  </tal:block>
+
+<!-- ListBox ends here -->
+</tal:block>

@@ -49,28 +49,6 @@
             </value>
         </item>
         <item>
-            <key> <string>_body</string> </key>
-            <value> <string>"""\n
-  Keep a custom script for permit render other times of documents, ie.: Software Installation.\n
-"""\n
-\n
-portal = context.getPortalObject()\n
-kw[\'portal_type\'] = ["Support Request", "Regularisation Request", "Upgrader Decision"]\n
-kw[\'source_project_uid\'] = context.getUid()\n
-\n
-person = portal.ERP5Site_getAuthenticatedMemberPersonValue()\n
-if person:\n
-  kw[\'default_destination_decision_uid\'] = person.getUid()\n
-  \n
-  # Use event modification date instead. \n
-  kw[\'sort_on\'] = [(\'modification_date\', \'DESC\'),]\n
-  return context.getPortalObject().portal_catalog(**kw)\n
-\n
-else:\n
-  return []\n
-</string> </value>
-        </item>
-        <item>
             <key> <string>_params</string> </key>
             <value> <string>**kw</string> </value>
         </item>

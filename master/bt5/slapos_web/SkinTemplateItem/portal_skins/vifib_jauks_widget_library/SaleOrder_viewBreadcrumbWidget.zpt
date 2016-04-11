@@ -1,0 +1,33 @@
+<tal:comment replace="nothing">
+  This widget displays the breadcrumbs of the current context.
+</tal:comment>
+
+<tal:block tal:define="website here/getWebSiteValue;
+                       portal_path website/absolute_url;
+                       current_web_section python:request.get('current_web_section', here);
+                       current_web_section_url current_web_section/getAbsoluteUrl; 
+                       breadcrumb_list python: context.WebSite_getMainSection().WebSection_getSiteMapTree(property_mapping=('translated_title','id',));">
+
+<ul id="order_breadcrump" class="center"
+    tal:define="global time string:past">
+<tal:block tal:repeat="breadcrumb breadcrumb_list">
+<tal:block tal:define="is_active python: current_web_section_url == breadcrumb['url']">
+ <tal:if tal:condition='is_active'>
+   <tal:block tal:define="global time string:next"/>
+ </tal:if>
+ <li   tal:attributes="class python: is_active and 'active' or time">
+
+  <img tal:define="img_name python: (is_active or time=='past')  and breadcrumb['id'] + '_active' or breadcrumb['id'];"
+       tal:attributes="src python: '%s/vifib_hosting_image/%s.png' % (portal_path, img_name);
+                       alt breadcrumb/id" />
+
+  <a tal:attributes="href python: (is_active or time=='past') and breadcrumb['url'] or None"
+     tal:content="breadcrumb/translated_title"/>
+</li>
+<span class="arrow" tal:condition="not:repeat/breadcrumb/end">
+  <img alt="arrow" tal:attributes="src python: '%s/vifib_hosting_image/arrow%s.png' % (portal_path, (time=='past' and '_active' or ''));" />
+</span>
+</tal:block>
+</tal:block>
+</ul>
+</tal:block>

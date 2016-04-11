@@ -49,31 +49,6 @@
             </value>
         </item>
         <item>
-            <key> <string>_body</string> </key>
-            <value> <string>from Products.Formulator.Errors import ValidationError, FormValidationError\n
-form = getattr(context,form_id)\n
-person = context.ERP5Site_getAuthenticatedMemberPersonValue()\n
-\n
-# Call Base_edit\n
-result, result_type = person.Base_edit(form_id, silent_mode=1, field_prefix=\'your_\')\n
-\n
-# Return if not appropriate\n
-if result_type != \'edit\':\n
-  return result\n
-\n
-kw, encapsulated_editor_list = result\n
-\n
-# Update basic attributes\n
-person.edit(REQUEST=context.REQUEST, edit_order=form.edit_order, **kw)\n
-for encapsulated_editor in encapsulated_editor_list:\n
-  encapsulated_editor.edit(person)\n
-\n
-#Redirect the user\n
-message = context.Base_translateString("Your personnal information has been updated")\n
-context.Base_redirect(form_id,keep_items={\'portal_status_message\':message})\n
-</string> </value>
-        </item>
-        <item>
             <key> <string>_params</string> </key>
             <value> <string>form_id</string> </value>
         </item>

@@ -49,25 +49,6 @@
             </value>
         </item>
         <item>
-            <key> <string>_body</string> </key>
-            <value> <string>"""Get the release of the selected product"""\n
-portal = context.getPortalObject()\n
-session = context.WebSection_getVifibSession()\n
-params = portal.portal_selections.getSelectionParamsFor(\'vifib_session_id\')\n
-uid = params[\'instance_software_product_uid\']\n
-\n
-# assert there is only one item\n
-if uid is None:\n
-  raise AttributeError, "There should be only one selected software product"\n
-else:\n
-  return context.portal_catalog(\n
-    portal_type="Software Release",\n
-    default_aggregate_uid=uid,\n
-    validation_state=["shared", "shared_alive", "released", "released_alive", "published", "published_alive"]\n
-    )\n
-</string> </value>
-        </item>
-        <item>
             <key> <string>_params</string> </key>
             <value> <string>**kw</string> </value>
         </item>

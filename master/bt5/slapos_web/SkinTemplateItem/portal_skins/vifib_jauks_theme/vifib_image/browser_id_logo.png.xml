@@ -23,41 +23,6 @@
             <value> <string>image/png</string> </value>
         </item>
         <item>
-            <key> <string>data</string> </key>
-            <value> <string encoding="base64">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</string> </value>
-        </item>
-        <item>
             <key> <string>height</string> </key>
             <value> <int>22</int> </value>
         </item>

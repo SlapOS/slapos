@@ -1,0 +1,279 @@
+<tal:block define="dummy python: request.RESPONSE.setHeader('Content-Type', 'text/css;; charset=utf-8')"/>
+<tal:block tal:define="portal_path python:here.aq_parent.getWebSiteValue().absolute_url();
+                       images_path string:${portal_path}/vifib_image/;
+                       logo_reference python:here.aq_parent.getWebSiteValue().getLayoutProperty('layout_logo_reference', 'vifib_hosting_image/logo.png');
+                       subscribe_button python:here.aq_parent.getWebSiteValue().getLayoutProperty('layout_subscribe_button_reference', 'tiolive-Subscribe.For.Free.Button');">
+
+/**********************/
+/* Global definitions */
+/**********************/
+*{padding:0}
+.top_area * {margin:0;}
+body{ font-family:Arial,Helvetica,sans-serif;
+      text-align:center;
+      background:#59bae2 url(<tal:block tal:replace="images_path"/>body_bg.png) repeat-x top left;
+      font-size:11px;
+      color:#9C9C9C;
+      font-weight:bold}
+h1{color:#2e707c}
+h2{color:#3e95a5}
+input{font-size:18px;color:#8D8D8D}
+textarea{color:#8D8D8D}
+input{height:26px;}
+/* textarea{height:77px;width:247px;} */
+fieldset{border:none;}
+a img{border : 0 none;cursor : pointer;}
+a {text-decoration: none}
+
+/**********************/
+/*    Global Class    */
+/**********************/
+
+.left{width:49%;display:inline;float:left;background:url(<tal:block tal:replace="images_path"/>separation_contenu.png) no-repeat center right}
+.right{width:48%;display:inline;float:right}
+.clear, .bottom{clear:both;}
+.center, .bottom{text-align:center}
+.alignr {text-align:right;}
+.alignl {text-align:left;}
+.nolabel label, .hidden_fieldset{display: none;}
+.width30{width:30%}
+.width60{width:60%}
+.width100{width:100%}
+.widthAuto{width:auto}}
+.margin60{padding:60px 0}
+.margin20{margin:20px}
+.marginTop20{margin-top:20px}
+.error{color:#910000}
+.error input, .error textarea {border:thin solid #910000;}
+.required{color:black}
+.description{font-size:1.1em;padding-bottom:1.3em;padding-left:15px;}
+.sectionTitle {line-height:90px;}
+.inline label {display: inline-block;width: 150px;float:left;}
+.inline div {display:inline;}
+.field {padding-bottom: 7px;}
+
+
+/**********************/
+/*        Top         */
+/**********************/
+div#language {
+  width: 900px;
+  margin: 0px auto 0px auto;
+}
+
+div#language a:first-child {
+  margin-left: 823px;
+}
+
+div#language img {
+  width: 18px;
+  height: 12px;
+}
+
+#vifib_logo{position:absolute;top:2px;left:50%;margin-left:-150px;width:300px;
+  height:150px;background: url(<tal:block tal:replace="images_path"/>vifib_logo.png) no-repeat top left}
+
+#login_menu{width:900px;margin:120px auto 0px auto;padding-right:20px;text-align:right;
+	color:#bae2e9;height:36px;-moz-border-radius:10px}
+#login_menu li{display:inline;padding:23px;line-height:44px;
+	font-size:16px;font-weight:bold;background:url(<tal:block tal:replace="images_path"/>login_bg.png) repeat-x center left}
+#login_menu .before{background:url(<tal:block tal:replace="images_path"/>before_login.png) no-repeat center left}
+#login_menu .after{background:url(<tal:block tal:replace="images_path"/>after_login.png) no-repeat center left}
+
+#menu li a, #login_menu li a {color:#BAE2E9;text-decoration:none;}
+
+#menu{width:900px;margin:0px auto 0px auto;text-align:center;
+	color:#bae2e9;height:44px;background:url(<tal:block tal:replace="images_path"/>menu_bg.png) repeat-x top left;
+	-moz-border-radius:10px}
+#menu ul{list-style:none}
+#menu li{display:inline;padding:20px;margin-left:1px;line-height:44px;font-size:16px;font-weight:bold;
+	background:url(<tal:block tal:replace="images_path"/>separation_menu.png) no-repeat center left}
+
+
+/**********************/
+/*      Content       */
+/**********************/
+
+/* Global container */
+#content{text-align:left;position:relative;
+  left:50%;margin-left:-450px;font-size:1.2em;width:900px;min-height:400px;
+  background-color:#f3fdff;-moz-border-radius:10px}
+#content_padding{padding:20px}
+
+/* Div for 2 column design*/
+#right_content{display:inline;float:right;width:78%}
+#left_menu{display:inline;float:left;width:20%;background:url(<tal:block tal:replace="images_path"/>separation_contenu.png) no-repeat center right}
+.right_decorator {background:url(<tal:block tal:replace="images_path"/>separation_contenu.png) repeat-y scroll right center transparent}
+#left_menu ul{list-style:none}
+#left_menu li{cursor:pointer}
+#left_menu a{vertical-align:super;color:#9C9C9C;text-decoration:none;}
+#left_menu a:hover{color:#1D6598}
+#left_menu a.active{color:#1D6598}
+#left_menu img{height:30px}
+
+/* Portal status message */
+#transition-message{line-height:10px;padding-top:10px;}
+
+/* Breadcrump */
+.breadcrump a {color:#FF9522;cursor:pointer;text-decoration:None;}
+.breadcrump li {display:inline;}
+.breadcrump a:hover {border-bottom:1px solid #CCCCCC;}
+
+.positive, .negative {
+  border:none;font-size:11px;padding:0px 10px 0px 40px;
+  font-weight:bold;height:30px;-moz-border-radius:10px;cursor:pointer;
+}
+
+.positive {
+  border:none;
+  background:url(<tal:block tal:replace="images_path"/>button_validate_bg.png) repeat-x top left;color:#bae2e9;
+}
+.negative {
+  border:none;
+  background:url(<tal:block tal:replace="images_path"/>button_cancel_bg.png) repeat-x top left;color:#eba4a4;
+}
+
+/* Buttons */
+input.validate, a.validate, input.cancel,#dialog_submit_button,#dialog_cancel_button,.login_button input{
+  border:none;font-size:11px;padding:0px 10px 0px 40px;
+  font-weight:bold;height:30px;-moz-border-radius:10px;cursor:pointer;}
+input.validate, a.validate, #dialog_submit_button,.login_button input{
+  background:url(<tal:block tal:replace="images_path"/>button_validate_bg.png) repeat-x top left;color:#bae2e9}
+input.cancel,a.cancel,#dialog_cancel_button{
+  background:url(<tal:block tal:replace="images_path"/>button_cancel_bg.png) repeat-x top left;color:#eba4a4}
+#dialog_submit_button{float:right;}
+a.validate {display:inline-block;line-height:30px;text-decoration:none;}
+
+/*Login form*/
+.login h1 {
+background:url(<tal:block tal:replace="images_path"/>user.png) no-repeat scroll left center transparent;padding-left:40px;
+}
+.login_name {width:49%;display:inline;float:left;background:url(<tal:block tal:replace="images_path"/>separation_contenu.png) no-repeat top right;padding:40px 0}
+.login_password {width:48%;display:inline;float:right;padding:40px 0}
+.login_remember {clear:both;position:relative;top:-35px;}
+.login_remember label{float: left;padding-right:10px;}
+.login_button {text-align:center;}
+.forgotten_password a{color: #1D6598; text-decoration:none;}
+
+/* Avaible menu presentation (cf myspace render)*/
+.available_menu_option{display:inline;width:50%;float:left}
+.available_menu_option_center{margin:30px auto;font-size:14px}
+.available_menu_option img, .available_menu_option_center img{height:64px}
+.available_menu_option a, .available_menu_option_center a{color: #9C9C9C; text-decoration:none;}
+.available_menu_option a:hover, .available_menu_option_center a:hover{color:#1D6598;cursor:pointer}
+
+
+/**********************/
+/*      Footer       */
+/**********************/
+
+.hidden_label > label {
+  display:none;
+}
+
+#footer{position:relative;width:100%;line-height:120px;height:120px;
+	color:#e1fbff;font-size:15px;background:url(<tal:block tal:replace="images_path"/>foot.png) repeat-x center center}
+#footer a{text-decoration:none;color:#e1fbff}
+
+/**********************/
+/*  Web Page view     */
+/**********************/
+div#WebPage_viewAsWeb {
+  text-align:left;
+}
+
+div#WebPage_viewAsWeb .center, div#WebPage_viewAsWeb .bottom {
+  text-align:left;
+  color: #5D5E5E;
+  font-weight: normal;
+}
+
+div#WebPage_viewAsWeb p {
+  text-align: justify;
+}
+
+div#WebPage_viewAsWeb h1, div#WebPage_viewAsWeb h2,  div#WebPage_viewAsWeb h3, div#WebPage_viewAsWeb h4 {
+  text-align:left;
+  color: #3E95A5;
+  margin: 30px 10px 10px 0;
+  font-size: 1.1em;
+}
+div#WebPage_viewAsWeb h1 {
+  font-size: 2em;
+}
+div#WebPage_viewAsWeb h2 {
+  font-size: 1.5em;
+}
+div#WebPage_viewAsWeb h3 {
+  font-size: 1.3em;
+}
+div#WebPage_viewAsWeb ul {
+  list-style: square outside none;
+  padding-left: 35px;
+}
+div#WebPage_viewAsWeb .section {
+  border: 0;
+}
+
+div.subfield {
+  margin-left: 15px;
+}
+
+
+.subfield {
+  padding-left: 20px;
+} 
+
+label.slapos-parameter-dict-key::before {
+  content: "Parameter Entry: ";
+}
+
+label.slapos-parameter-dict-key {
+  font-color: "red";
+}
+
+div.slapos-parameter-dict-key {
+  margin-top: 10px;
+  margin-left: 6px;
+}
+
+.subfield {
+  padding-top: 3px;
+}
+
+.add-sub-form {
+  background: #3498db;
+  background-image: -webkit-linear-gradient(top, #3498db, #2980b9);
+  background-image: -moz-linear-gradient(top, #3498db, #2980b9);
+  background-image: -ms-linear-gradient(top, #3498db, #2980b9);
+  background-image: -o-linear-gradient(top, #3498db, #2980b9);
+  background-image: linear-gradient(to bottom, #3498db, #2980b9);
+  -webkit-border-radius: 28;
+  -moz-border-radius: 28;
+  border-radius: 28px;
+  font-family: Arial;
+  color: #ffffff;
+  font-size: 12px;
+  padding: 5px 20px 5px 20px;
+  text-decoration: none;
+}
+
+.add-sub-form:hover {
+  background: #3cb0fd;
+  background-image: -webkit-linear-gradient(top, #3cb0fd, #3498db);
+  background-image: -moz-linear-gradient(top, #3cb0fd, #3498db);
+  background-image: -ms-linear-gradient(top, #3cb0fd, #3498db);
+  background-image: -o-linear-gradient(top, #3cb0fd, #3498db);
+  background-image: linear-gradient(to bottom, #3cb0fd, #3498db);
+  text-decoration: none;
+}
+
+.hs-short-title{
+  margin-left:6px;
+  padding-bottom: 10px;
+  font-size:12px;
+  font-weight: normal;
+  display: inline-block;
+}
+
+</tal:block>

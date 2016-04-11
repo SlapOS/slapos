@@ -49,38 +49,6 @@
             </value>
         </item>
         <item>
-            <key> <string>_body</string> </key>
-            <value> <string encoding="cdata"><![CDATA[
-
-import json\n
-import base64\n
-\n
-request = context.REQUEST\n
-\n
-option_dict = {\n
-  \'parameter\' : {\n
-    \'json_url\': "%s.json" % context.getUrlString(),\n
-    \'parameter_hash\': base64.b64encode(\'<?xml version="1.0" encoding="utf-8" ?><instance></instance>\')\n
-    },\n
-  }\n
-\n
-if request.get("software_type", None) is not None:\n
-  option_dict[\'parameter\'][\'softwaretype\'] = request.get("software_type", None)\n
-  \n
-if request.get("parameter_hash", None) is not None:\n
-  option_dict[\'parameter\'][\'parameter_hash\'] = request.get("parameter_hash", None)\n
-\n
-if context.getPortalType() == "Hosting Subscription":\n
-  option_dict[\'parameter\'][\'softwaretype\'] = context.getSourceReference()\n
-  if context.getTextContent() is not None:\n
-    option_dict[\'parameter\'][\'parameter_hash\'] = base64.b64encode(context.getTextContent())\n
-\n
-return json.dumps(option_dict)\n
-
-
-]]></string> </value>
-        </item>
-        <item>
             <key> <string>_params</string> </key>
             <value> <string></string> </value>
         </item>

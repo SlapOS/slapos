@@ -49,21 +49,6 @@
             </value>
         </item>
         <item>
-            <key> <string>_body</string> </key>
-            <value> <string>computer = context\n
-request = context.REQUEST\n
-try:\n
-  computer.generateCertificate()\n
-  request.set(\'portal_status_message\', context.Base_translateString(\'Certificate created.\'))\n
-except ValueError:\n
-  request.set(\'portal_status_message\', context.Base_translateString(\'Certificate is still active, please revoke existing one.\'))\n
-request.set(\'your_certificate\', request.get(\'computer_certificate\'))\n
-request.set(\'your_key\', request.get(\'computer_key\'))\n
-\n
-return context.Computer_viewConnectionInformationAsWeb()\n
-</string> </value>
-        </item>
-        <item>
             <key> <string>_params</string> </key>
             <value> <string>form_id, *args, **kwargs</string> </value>
         </item>

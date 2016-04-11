@@ -49,14 +49,6 @@
             </value>
         </item>
         <item>
-            <key> <string>_body</string> </key>
-            <value> <string>v = context.getProperty(\'connection_key\')\n
-\n
-if v is not None and v.startswith(\'http:\') or v.startswith(\'https:\'):\n
-  return v\n
-</string> </value>
-        </item>
-        <item>
             <key> <string>_params</string> </key>
             <value> <string>*args, **kwargs</string> </value>
         </item>

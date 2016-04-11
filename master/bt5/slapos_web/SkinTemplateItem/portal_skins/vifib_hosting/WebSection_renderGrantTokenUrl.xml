@@ -49,19 +49,6 @@
             </value>
         </item>
         <item>
-            <key> <string>_body</string> </key>
-            <value> <string>from ZTUtils import make_query\n
-g = context.REQUEST.get\n
-\n
-\n
-return \'./WebSection_grantToken?\' + make_query(dict(\n
-  redirect_uri=g(\'redirect_uri\', \'\'),\n
-  client_id=g(\'client_id\', \'\'),\n
-  state=g(\'state\', \'\'),\n
-  ))\n
-</string> </value>
-        </item>
-        <item>
             <key> <string>_params</string> </key>
             <value> <string></string> </value>
         </item>

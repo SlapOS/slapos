@@ -1,0 +1,58 @@
+{
+    "type": "object",
+    "$schema": "http://json-schema.org/draft-04/schema",
+    "allOf": [
+        {
+            "$ref": "../../renderjs/sample_schema.json#/"
+        },
+        {
+            "properties": {
+                "-sla-0-computer_guid": {
+                    "title": "Target computer for main instance",
+                    "description": "Target computer GUID for main instance.",
+                    "type": "string",
+                    "optional": true
+                },
+                "-sla-1-computer_guid": {
+                    "title": "Target computer for first clone",
+                    "description": "Target computer for first clone and PBS.",
+                    "type": "string",
+                    "optional": true
+                },
+                "-sla-2-computer_guid": {
+                    "title": "Target computer for second clone",
+                    "description": "Target computer for second clone and PBS.",
+                    "type": "string",
+                    "optional": true
+                },
+                "resiliency-backup-periodicity": {
+                    "title": "Periodicity of backup",
+                    "description": "Periodicity of backup, in cron format.",
+                    "type": "string",
+                    "optional": true
+                },
+                "remove-backup-older-than": {
+                    "title": "Remove backups older than...",
+                    "description": "Remove all the backups in PBS that are older than specified value. It should be rdiff-backup-compatible.",
+                    "type": "string",
+                    "default": "3B",
+                    "optional": true
+                },
+                "resilient-clone-number": {
+                    "title": "Amount of backup(s) to create",
+                    "description": "Amount of backup(s) to create. Each backup consists of a Pull Backup Server and a clone.",
+                    "type": "integer",
+                    "default": 2,
+                    "optional": true
+                },
+                "ignore-known-hosts-file": {
+                    "title": "Ignore known_hosts file",
+                    "description": "Set either to fill known_hosts file for ssh or not. Useful if main instance and PBS are using the same IP (slapos proxy, webrunner).",
+                    "type": "boolean",
+                    "default": false,
+                    "optional": true
+                }
+            }
+        }
+    ]
+}

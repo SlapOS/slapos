@@ -23,43 +23,6 @@
             <value> <string>image/png</string> </value>
         </item>
         <item>
-            <key> <string>data</string> </key>
-            <value> <string encoding="base64">iVBORw0KGgoAAAANSUhEUgAAASwAAADICAMAAABlASxnAAAACXBIWXMAAAsTAAALEwEAmpwYAAAC
-Z1BMVEXiAhLiAxLiBBLiBRLiBhLjBhLjBxLjCBLjCRHjChHjCxHjDBHjDRHjDhHjDxHjEBHjERHj
-EhHjExHjFRDjFRHkDhHkFhDkFxDkGBDkGRDkGhDkGxDkHRDlHRDlHhHlHxHlIBHlIRHlIhDlIxDl
-JBDlJRDlKBDlKxDlLRDmJRDmJhDmJxDmLRDmLg/mLw/mMA/mMQ/mMw/mNA/mNQ/nNQ/nNg/nNw/n
-Og7nOg/nQA7nQQ7nQg7nQw7oPA7oPQ7oPg7oPw7oQw7oRA7oRQ7oRg3oRw3oSQ3oSg3pSw3pTQ3p
-Tg3pUA3pUQ3pUg3pUw3pWg3qUwzqVAzqVQzqVg3qVw3qWQ3qWw3qXQ3qXg3qXw3qYAzqYQzqYgzr
-YwzrZAzrZQzrZgzrZwzraAzsagzsawzsbQvsbgvsbwvscQvscgvscwvsdgvsdwvseAvseQrsegrt
-egrtewrtfArtfgrtgQruggrugwruhQnuhgnujAnujQnujgnujwrviQnvkgnvlAnvlgnvlwnvmAnw
-mQnwmgnwnQnwngnwnwjwoAjwoQjwpQjwpgjwqAjwqQjxoQjxogjxowjxpAjxqQjxqgfxqgjxqwfx
-rAfxrQfxrgfxrwfyrwfysgfyswfytAfytQfytgfyvgbyvwbzuAbzuQbzugbzvAbzvwbzwAbzwQbz
-wgbzwwXzxAXzxQXzxgXzxwb0xwb0yAb0yQb0ygb0ywb0zAb0zQb0zgb01gX1zwX10AX10QX10gX1
-0wX11AX11QX11gX12AX12QX12gX12wX13AT13QT13gT23gT23wT24AT24QT24gT///+fw2j9AAAA
-AWJLR0TMGteT0wAABKVJREFUGBntwelfVGUABeDzMgFCICa4526aC5QrarlUSplri7nlVkZp7lqZ
-YhlpZYYi4lIqaZZZIlqmmWgsio2ef6pxZhxGGO7cO/TrwzvneSAiIiIiItJK7wyIS9nHDcQd3xfV
-EGdP9EXIRh6FOMus/nKKAfAauQsSRxF5enH2uDvkFkgcppxk3U2SyyHxDGxiyAwkpfR0eLCWIRfe
-egxJaOIEeJBVz7DGnUOQdLZ9BA82McrhZ5FczO+/Gbi2kBFXd68YmYbkkk+OgFvP32XIjVcHGCSf
-1eRquFTQQDZUHiR5Aknpe7IK7vSuKl36VCoya8i9SEa9GNALrmQYBE0ntyMZLWTAAnhi9nM9klE5
-Aw7Am/63lyMJZTcxoCkL3qyZjST0IoOK4E3GMCShEgbtgMTlu86gv3xoh/FDkQzGMWws2iH/jwEI
-Mzmw1iaGbUQ7dOGlPrjPTCrrBWudZtgptMdVVvcCMK6Sa2GtQYwYiHY4Rp7r/vRB8loXWGslI1ag
-HUpI1jJgEex1mBGH0A7FDDmbCmt1vssIf2ckbNx3DJkOe81jlDlIjCmsYNjNbNig2+RY9jHK15Nj
-6QZnZspRNjvyKCzge9fPBPiLfXA2tfSUn83KMmCDsRfpWc0YuJA+ZNa6yww7kA4bdCqlR6U5cGs7
-ybKtZdfIPamwgZnbSA8a5xu49g75T38AuZOWPQM7DDtD184MgwczyG2wTIcP6dIHHeBFPhu7wzrT
-aunC9RfgTUeuh4V6VjKuyp7w6udOsJGv2E9H/mIfPCuEpcbU0EHNaEiUnFK26bMcyEPM/EbG1DDf
-QFoa7mcM/uGQ1kYxppGQ1jYzpk2QVswFxlRtIC3lsw0jIC2tZRveh7RgzrINpyEtDGabhiMxLxlY
-ajWjVFUxyntIzMknYakf2WxTWtpmNjuDhORyC+w0kBFXpyJgwlVGDEAi5vHKI7DSKj5Q3hVBXQ/y
-gbeRiE/JCbBSFUPurEhBWMrKOww5iQT4aslPYKM+DDlXgCgFvzCkN7wbRbJhVOG0OYtWrSuETVYw
-qCQLD8kuYdByeNBv/0+/Xr5xixFNiwxs8i0D6mahldl1DDgGL3J3M9r5fFilJwOO90MM/U+QvNcD
-XphZNxjxeUfYZQnJDamIKW0DycXwpsdehjQtMbBMJa9MRpumXGEFPDLfMOi0gWXy7u7Pg4PcA3fz
-4I2vliEFsMwrSw0cpSybB29GMaCB5FZYJhNxZcKbNWRd0eP7yGupkDiO89RQwCyo53MQZ3n3SrNw
-X79DuyDOXl5pEJLyRjrEURZE/jNjIG5N/xji0oC/t0Cc5SAk4wcWQ5wVHXk9G4DZQS6CxFHK+pLC
-lLkkZ0LiyL1Osvo2yYmQeGYybAwkHrOHIX/uHG0gzrrX84Gzq3pCnMxhlPNFkLbl32JY/VdLBhlI
-2/IuMsQ/Pg3iKLWC5OV9JG9A4tjaWL58sDFl5CWIs06TOuC+vg08BXHpTZ6AuJRyrALi1qBdENcG
-QkRERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERE
-RET+X/8CqrCU/dLm8ucAAAAASUVORK5CYII=</string> </value>
-        </item>
-        <item>
             <key> <string>height</string> </key>
             <value> <int>200</int> </value>
         </item>

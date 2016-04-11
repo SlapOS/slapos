@@ -49,47 +49,6 @@
             </value>
         </item>
         <item>
-            <key> <string>_body</string> </key>
-            <value> <string>portal = context.getPortalObject()\n
-computer = context\n
-\n
-if allocation_scope == \'open/public\':\n
-  # Public computer capacity is handle by an alarm\n
-  capacity_scope = \'close\'\n
-elif allocation_scope.startswith(\'open\'):\n
-  # Capacity is not handled for \'private\' computers\n
-  capacity_scope = \'open\'\n
-else:\n
-  capacity_scope = \'close\'\n
-\n
-edit_kw = {\n
-  \'allocation_scope\': allocation_scope,\n
-  \'capacity_scope\': capacity_scope,\n
-}\n
-\n
-self_person = computer.getSourceAdministrationValue(portal_type="Person")\n
-self_email = self_person.getDefaultEmailCoordinateText()\n
-if allocation_scope == \'open/public\':\n
-  # reset friends and update in place\n
-  edit_kw[\'subject_list\'] = [\'\']\n
-  edit_kw[\'destination_section\'] = None\n
-elif allocation_scope == \'open/personal\':\n
-  # reset friends to self and update in place\n
-  edit_kw[\'subject_list\'] = [self_email]\n
-  edit_kw[\'destination_section_value\'] = self_person\n
-else:\n
-  if self_email not in subject_list:\n
-    # add self as friend\n
-    subject_list.append(self_email)\n
-  edit_kw[\'subject_list\'] = subject_list\n
-\n
-computer.edit(**edit_kw)\n
-\n
-message = context.Base_translateString("Allocation scope updated!")\n
-return computer.Base_redirect(keep_items={\'portal_status_message\': message})\n
-</string> </value>
-        </item>
-        <item>
             <key> <string>_params</string> </key>
             <value> <string>allocation_scope, subject_list, **kw</string> </value>
         </item>

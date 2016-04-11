@@ -106,14 +106,6 @@
             </value>
         </item>
         <item>
-            <key> <string>text_content</string> </key>
-            <value> <string encoding="cdata"><![CDATA[
-
-Copyright ViFiB &copy; 2010, icons by <a href="http://www.iconza.com">iconza</a>
-
-]]></string> </value>
-        </item>
-        <item>
             <key> <string>title</string> </key>
             <value> <string>vifib.hosting-footer</string> </value>
         </item>

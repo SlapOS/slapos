@@ -49,36 +49,6 @@
             </value>
         </item>
         <item>
-            <key> <string>_body</string> </key>
-            <value> <string>"""Add selected product to the cart and continue"""\n
-portal = context.getPortalObject()\n
-\n
-session = context.WebSection_getVifibSession()\n
-params = portal.portal_selections.getSelectionParamsFor(\'vifib_session_id\')\n
-\n
-##Get item list\n
-item_list = []\n
-if uids:\n
-  item_list = [item.getObject() for item in portal.portal_catalog(uid=uids, portal_type="Software Release")]\n
-\n
-if len(item_list) != 1:\n
-  return context.Base_redirect(dialog_id,\n
-                        keep_items={\'portal_status_message\':context.Base_translateString("Please select one software release.")})\n
-\n
-item = item_list[0]\n
-# XXX Check that release is associate to product\n
-\n
-computer = portal.portal_catalog.getResultValue(\n
-  uid=params[\'computer_uid\'],\n
-  portal_type="Computer",\n
-)\n
-\n
-computer.requestSoftwareRelease(software_release_url=item.getUrlString(), state=\'available\')\n
-\n
-return context.restrictedTraverse(context.REQUEST.get(\'software_installation_url\')).Base_redirect(form_id=\'view\', keep_items={\'portal_status_message\': \'Requested installation\'})\n
-</string> </value>
-        </item>
-        <item>
             <key> <string>_params</string> </key>
             <value> <string>dialog_id, uids=[], quantity=1, **kw</string> </value>
         </item>

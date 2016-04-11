@@ -134,15 +134,6 @@
             </value>
         </item>
         <item>
-            <key> <string>text_content</string> </key>
-            <value> <string encoding="cdata"><![CDATA[
-
-<p>Your credit card was refused by payment system.</p>\n
-<p>Please consider using another credit card or contact your bank.</p>
-
-]]></string> </value>
-        </item>
-        <item>
             <key> <string>title</string> </key>
             <value> <string>Payment referral</string> </value>
         </item>

@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html manifest="gadget_erp5.appcache">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>ERP5</title>
+    <link rel="shortcut icon" href="favicon.ico">
+    <script src="RSVP.js" type="text/javascript"></script>
+    <script src="../renderjs.js" type="text/javascript"></script>
+    <script src="URI.js" type="text/javascript"></script>
+    <script src="jquery.js" type="text/javascript"></script>
+    <script src="vkbeautify.js" type="text/javascript"></script>
+    <script src="slapos_parameter_form.js" type="text/javascript"></script>
+    
+  </head>   
+    <body>
+      <div>
+          <fieldset id="software-type">
+            <div class="field" title="software_type">
+              <label> Software Type </label>
+              <div class="input">
+                <select size="1" name="software_type" class="slapos-software-type">
+                </select>
+                
+              </div>
+            </div>
+            <div class="field" title="serialisation_type">
+              <div class="input">
+                <input type=hidden name="serialisation_type" class="slapos-serialisation-type"></input>
+              </div>
+            </div>
+          </fieldset>
+          <fieldset id="parameter-main"> </fieldset>
+          <fieldset id="parameter-optional"> </fieldset>
+          <fieldset id="parameter-xml"> 
+            <input type=hidden name="parameter_hash" class="parameter_hash_output"></input>
+          </fieldset>
+          
+      </div>
+      <div class="loadschema"
+          data-gadget-url="gadget_slapos_load_schema.html"
+          data-gadget-scope="loadschema" >
+      </div>
+  </body>
+</html>

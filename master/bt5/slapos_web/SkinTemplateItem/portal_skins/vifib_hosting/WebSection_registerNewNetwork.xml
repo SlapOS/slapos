@@ -49,32 +49,6 @@
             </value>
         </item>
         <item>
-            <key> <string>_body</string> </key>
-            <value> <string>portal = context.getPortalObject()\n
-\n
-network_portal_type = "Computer Network"\n
-\n
-reference = "NET-%s" % portal.portal_ids.generateNewId(\n
-    id_group=\'slap_network_reference\',\n
-    id_generator=\'uid\')\n
-\n
-\n
-module = portal.getDefaultModule(portal_type=network_portal_type)\n
-network = module.newContent(\n
-  portal_type=network_portal_type,\n
-  title=title,\n
-  reference=reference,\n
-  source_administration=context.ERP5Site_getAuthenticatedMemberPersonValue().getRelativeUrl()\n
-)\n
-network.validate()\n
-\n
-message = "Network added"\n
-context.REQUEST.set("portal_status_message", message)\n
-\n
-return network.Base_redirect(form_id=\'Network_viewAsWeb\')\n
-</string> </value>
-        </item>
-        <item>
             <key> <string>_params</string> </key>
             <value> <string>title</string> </value>
         </item>

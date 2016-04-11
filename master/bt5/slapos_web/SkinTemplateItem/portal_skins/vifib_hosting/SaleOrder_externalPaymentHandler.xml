@@ -185,19 +185,6 @@
             </value>
         </item>
         <item>
-            <key> <string>_body</string> </key>
-            <value> <string>"""XXX-Just a payment simulation"""\n
-\n
-# XXX: implement external payment check\n
-\n
-#Payment is ok. Set shopping cart is payed\n
-context.SaleOrder_setShoppingCartBuyer()\n
-\n
-#Finalize order and redirect\n
-return context.SaleOrder_finalizeShopping()\n
-</string> </value>
-        </item>
-        <item>
             <key> <string>_params</string> </key>
             <value> <string></string> </value>
         </item>

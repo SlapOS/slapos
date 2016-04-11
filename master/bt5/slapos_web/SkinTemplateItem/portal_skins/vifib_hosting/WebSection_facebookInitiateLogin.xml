@@ -49,18 +49,6 @@
             </value>
         </item>
         <item>
-            <key> <string>_body</string> </key>
-            <value> <string>from ZTUtils import make_query\n
-query = make_query({\n
-    \'client_id\': context.portal_preferences.getPreferredVifibFacebookApplicationId(),\n
-    \'redirect_uri\': context.facebook_callback.absolute_url(),\n
-    \'scope\': \'email\'\n
-})\n
-\n
-context.REQUEST.RESPONSE.redirect(\'\'\'https://www.facebook.com/dialog/oauth?\'\'\' + query)\n
-</string> </value>
-        </item>
-        <item>
             <key> <string>_params</string> </key>
             <value> <string></string> </value>
         </item>

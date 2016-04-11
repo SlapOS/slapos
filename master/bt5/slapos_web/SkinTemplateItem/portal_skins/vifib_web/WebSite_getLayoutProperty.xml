@@ -49,24 +49,6 @@
             </value>
         </item>
         <item>
-            <key> <string>_body</string> </key>
-            <value> <string>"""Return a property layout from a website.\n
-Useful to use notification message reference from website configuration not in website context."""\n
-portal = context.getPortalObject()\n
-current_web_site = portal.getWebSiteValue()\n
-try:\n
-  website = getattr(portal.web_site_module,website)\n
-except TypeError:\n
-  #website parameter is None\n
-  website = current_website\n
-except AttributeError:\n
-  #website parameter is from a non existant web site\n
-  website = current_web_site\n
-\n
-return website.getLayoutProperty(reference, defaultValue)\n
-</string> </value>
-        </item>
-        <item>
             <key> <string>_params</string> </key>
             <value> <string>reference, defaultValue, website=None</string> </value>
         </item>

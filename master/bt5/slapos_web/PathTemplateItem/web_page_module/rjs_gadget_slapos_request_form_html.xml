@@ -100,39 +100,6 @@
             </value>
         </item>
         <item>
-            <key> <string>text_content</string> </key>
-            <value> <string encoding="cdata"><![CDATA[
-
-<!DOCTYPE html>\n
-<html manifest="gadget_erp5.appcache">\n
-  <head>\n
-    <meta charset="utf-8">\n
-    <meta name="viewport" content="width=device-width, initial-scale=1">\n
-    <title>ERP5</title>\n
-    <link rel="shortcut icon" href="favicon.ico">\n
-    <script src="RSVP.js" type="text/javascript"></script>\n
-    <script src="../renderjs.js" type="text/javascript"></script>\n
-    <script src="jquery.js" type="text/javascript"></script>\n
-    <script src="slapos_request_form.js" type="text/javascript"></script>\n
-\n
-  </head>\n
-    <body>\n
-      <div>\n
-        <div class="parameter">\n
-          <div class="loading-parameter-form">\n
-            <p><img src="ERP5VCS_imgs/wait.gif"></p>\n
-          </div>\n
-        </div>\n
-\n
-        <div class="debug"></div>\n
- \n
-      </div>\n
-  </body>\n
-</html>
-
-]]></string> </value>
-        </item>
-        <item>
             <key> <string>title</string> </key>
             <value> <string>Gadget for show Request form</string> </value>
         </item>

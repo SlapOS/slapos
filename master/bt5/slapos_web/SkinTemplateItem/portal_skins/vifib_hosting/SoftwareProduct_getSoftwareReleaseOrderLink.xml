@@ -49,27 +49,6 @@
             </value>
         </item>
         <item>
-            <key> <string>_body</string> </key>
-            <value> <string encoding="cdata"><![CDATA[
-
-person = context.getPortalObject().ERP5Site_getAuthenticatedMemberPersonValue()\n
-\n
-if person is None or person.Person_isServiceProvider():\n
-  return "<a href=%s/SoftwareProduct_viewSoftwareReleaseOrderDialog> Order Now </a>" % cell.absolute_url()\n
-\n
-software_release_list = cell.SoftwareProduct_getSortedSoftwareReleaseList()\n
-\n
-if not software_release_list:\n
-  return "<a href=%s/SoftwareProduct_viewSoftwareReleaseOrderDialog> Order Now </a>" % cell.absolute_url()\n
-\n
-latest_software_release = software_release_list[0]\n
-\n
-return "<a href=%s/SoftwareRelease_viewRequestDialog> Order Now </a>" % latest_software_release.absolute_url()\n
-
-
-]]></string> </value>
-        </item>
-        <item>
             <key> <string>_params</string> </key>
             <value> <string>cell</string> </value>
         </item>

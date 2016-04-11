@@ -49,19 +49,6 @@
             </value>
         </item>
         <item>
-            <key> <string>_body</string> </key>
-            <value> <string>from ZTUtils import make_query\n
-query = make_query({\n
-    \'response_type\': \'code\',\n
-    \'client_id\': context.portal_preferences.getPreferredVifibGoogleApplicationId(),\n
-    \'redirect_uri\': context.google_callback.absolute_url(),\n
-    \'scope\': \'https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email\'\n
-})\n
-\n
-context.REQUEST.RESPONSE.redirect(\'\'\'https://accounts.google.com/o/oauth2/auth?\'\'\' + query)\n
-</string> </value>
-        </item>
-        <item>
             <key> <string>_params</string> </key>
             <value> <string></string> </value>
         </item>

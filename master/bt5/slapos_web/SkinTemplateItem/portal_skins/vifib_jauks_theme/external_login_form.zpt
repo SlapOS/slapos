@@ -1,0 +1,74 @@
+<tal:block xmlns:tal="http://xml.zope.org/namespaces/tal"
+           xmlns:metal="http://xml.zope.org/namespaces/metal"
+           xmlns:i18n="http://xml.zope.org/namespaces/i18n">
+  <tal:block tal:define="form_action string:logged_in;
+             global form_id string:login_form;
+             login_message_document_list python: here.getWebSiteValue().getDocumentValueList(reference='slapos-login.message');
+             js_list python: ['%s/login_form.js' % (here.portal_url(), ), '%s/erp5.js' % (here.portal_url(), )]">
+    <tal:block metal:use-macro="here/main_template/macros/master">
+      <tal:block metal:fill-slot="main">
+        <div class="content login">
+          <tal:block tal:condition="python: request.get('came_from', None) is None">
+            <h1 i18n:translate="" i18n:domain="ui">Log in</h1>
+          </tal:block>
+          <tal:block tal:condition="python: request.get('came_from', None) is not None">
+            <h1 i18n:translate="" i18n:domain="ui">Please login before continue.</h1>
+          </tal:block>
+          <tal:block tal:condition="python: request.get('came_from', None) is not None">
+            <tal:block tal:define="dummy python: request.RESPONSE.setCookie('redirect_after_login', request.get('came_from'), path='/')"></tal:block>
+          </tal:block>
+          <fieldset>
+            <script src="https://browserid.org/include.js" type="text/javascript"></script>  
+            <div class="field nolabel validate widthAuto forgotten_password center"><br/><br/>
+               If you have Google or Facebook accounts feel free to use any of them to signup<br/><br/>
+               <a class="zocial facebook" href="./login_with_facebook">Signup with Facebook</a> or 
+               <a class="zocial google" href="./login_with_google">Signup with Google</a><br/><br/>
+               You are not connected with social network? So then use BrowserID  <a href="#" id="browserid" title="Sign-in with BrowserID"> <img src="./vifib_image/browser_id_logo.png" alt="Sign-in with BrowserID" title="Sign-in with BrowserID"></a>
+            </div>
+            <tal:block tal:condition="python: login_message_document_list">
+              <div tal:content="structure python: login_message_document_list[0].convert(format='html')[1]" class="field nolabel widthAuto center" style="background: white; color: #FF0066;; margin-top: 2em; text-align: left">
+              </div>
+            </tal:block>
+
+<browserid id="browser_id_login" tal:attributes='value python: here.getWebSiteValue().login_with_browser_id.absolute_url()'/>
+<script type="text/javascript">
+$('#browserid').click(function() {
+    navigator.id.get(gotAssertion);
+    return false;
+  });
+
+function post_to_url(path, params, method) {
+    method = method || "post"; // Set method to post by default, if not specified.
+
+    // The rest of this code assumes you are not using a library.
+    // It can be made less wordy if you use one.
+    var form = document.createElement("form");
+    form.setAttribute("method", method);
+    form.setAttribute("action", path);
+
+    for(var key in params) {
+        if(params.hasOwnProperty(key)) {
+            var hiddenField = document.createElement("input");
+            hiddenField.setAttribute("type", "hidden");
+            hiddenField.setAttribute("name", key);
+            hiddenField.setAttribute("value", params[key]);
+
+            form.appendChild(hiddenField);
+         }
+    }
+
+    document.body.appendChild(form);
+    form.submit();
+}
+
+function gotAssertion(assertion) {  
+  // got an assertion, now send it up to the server for verification  
+  if (assertion !== null) {  
+    post_to_url($('#browser_id_login').attr('value'), {'assertion': assertion})
+  } 
+}  
+</script>
+      </tal:block>
+    </tal:block>
+  </tal:block>
+</tal:block>

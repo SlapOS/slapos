@@ -49,27 +49,6 @@
             </value>
         </item>
         <item>
-            <key> <string>_body</string> </key>
-            <value> <string>if instance_xml is None:\n
-  instance_xml = context.getTextContent()\n
-if state is None:\n
-  state = {\'start_requested\': \'started\', \n
-           \'destroy_requested\': \'destroyed\', \n
-           \'stop_requested\': \'stopped\'}[context.getSlapState()]\n
-\n
-person = context.getDestinationSectionValue()\n
-person.requestSoftwareInstance(\n
-  state=state,\n
-  software_release=context.getUrlString(),\n
-  software_title=context.getTitle(),\n
-  software_type=context.getSourceReference(),\n
-  instance_xml=instance_xml,\n
-  sla_xml=context.getSlaXml(),\n
-  shared=context.isRootSlave()\n
-)\n
-</string> </value>
-        </item>
-        <item>
             <key> <string>_params</string> </key>
             <value> <string>state=None, instance_xml=None</string> </value>
         </item>
