@@ -49,21 +49,6 @@
             </value>
         </item>
         <item>
-            <key> <string>_body</string> </key>
-            <value> <string>"""Fetch computer to find witch software is installed"""\n
-portal = context.getPortalObject()\n
-portal_type = "Software Release"\n
-\n
-url_string_list = context.Computer_getSoftwareReleaseUrlStringList()\n
-if url_string_list:\n
-  return context.portal_catalog(\n
-    portal_type=portal_type,\n
-    url_string=url_string_list)\n
-else:\n
-  return []\n
-</string> </value>
-        </item>
-        <item>
             <key> <string>_params</string> </key>
             <value> <string>**kw</string> </value>
         </item>

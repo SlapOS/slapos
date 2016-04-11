@@ -49,37 +49,6 @@
             </value>
         </item>
         <item>
-            <key> <string>_body</string> </key>
-            <value> <string>network = context\n
-\n
-# XXX - The use of current authenticated person will return always \'Close\' if \n
-#       the person is administrator (such as \'zope\' user) but not the owner of computer\n
-#       \n
-#       person = context.ERP5Site_getAuthenticatedMemberPersonValue()\n
-allocation_state = \'Close\'\n
-software_type = \'\'\n
-filter_kw = {}\n
-\n
-for computer in network.getSubordinationRelatedValueList():\n
-  person = computer.getSourceAdministrationValue()\n
-  filter_kw[\'computer_guid\']=computer.getReference()\n
-  try:\n
-    isAllowed =  person.Person_restrictMethodAsShadowUser(shadow_document=person,\n
-          callable_object=person.Person_findPartition,\n
-          argument_list=[software_release_url, software_type, \'Software Instance\',\n
-                         filter_kw], \n
-          argument_dict={\'test_mode\': True}\n
-    )\n
-    if isAllowed:\n
-      allocation_state = \'Open\'\n
-      break\n
-  except:\n
-    continue\n
-\n
-return allocation_state\n
-</string> </value>
-        </item>
-        <item>
             <key> <string>_params</string> </key>
             <value> <string>software_release_url</string> </value>
         </item>

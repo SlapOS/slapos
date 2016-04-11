@@ -49,39 +49,6 @@
             </value>
         </item>
         <item>
-            <key> <string>_body</string> </key>
-            <value> <string>instance = context\n
-\n
-if (instance.getSlapState() != "destroy_requested"):\n
-  hosting_subscription = instance.getSpecialiseValue(portal_type="Hosting Subscription")\n
-  if (hosting_subscription.getValidationState() == "archived"):\n
-    # Buildout didn\'t propagate the destruction request\n
-    requester = instance.getPredecessorRelatedValue()\n
-    if (instance.getRelativeUrl() in requester.getPredecessorList()) and \\\n
-      (requester.getSlapState() == "destroy_requested"):\n
-      # For security, only destroyed if parent is also destroyed\n
-\n
-      if instance.getPortalType() == \'Software Instance\':\n
-        is_slave = False\n
-      elif instance.getPortalType() == \'Slave Instance\':\n
-        is_slave = True\n
-      else:\n
-        raise NotImplementedError, "Unknown portal type %s of %s" % \\\n
-          (instance.getPortalType(), instance.getRelativeUrl())\n
-\n
-      requester.requestInstance(\n
-        software_release=instance.getUrlString(),\n
-        software_title=instance.getTitle(),\n
-        software_type=instance.getSourceReference(),\n
-        instance_xml=instance.getTextContent(),\n
-        sla_xml=instance.getSlaXml(),\n
-        shared=is_slave,\n
-        state="destroyed",\n
-        comment="Garbage collect %s" % instance.getRelativeUrl()\n
-      )\n
-</string> </value>
-        </item>
-        <item>
             <key> <string>_params</string> </key>
             <value> <string></string> </value>
         </item>

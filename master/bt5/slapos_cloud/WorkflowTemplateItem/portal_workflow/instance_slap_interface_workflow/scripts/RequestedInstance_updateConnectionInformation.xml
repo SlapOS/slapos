@@ -49,29 +49,6 @@
             </value>
         </item>
         <item>
-            <key> <string>_body</string> </key>
-            <value> <string>instance = state_change[\'object\']\n
-portal = instance.getPortalObject()\n
-# Get required arguments\n
-kwargs = state_change.kwargs\n
-\n
-# Required args\n
-# Raise TypeError if all parameters are not provided\n
-try:\n
-  connection_xml = state_change.kwargs[\'connection_xml\']\n
-except KeyError:\n
-  raise TypeError, "RequestedInstance_updateConnectionInformation takes exactly 1 arguments"\n
-\n
-edit_kw = {\n
-  \'connection_xml\': connection_xml,\n
-}\n
-\n
-instance.edit(**edit_kw)\n
-# Prevent storing broken XML in text content (which prevent to update parameters after)\n
-context.Instance_checkConsistency(state_change)\n
-</string> </value>
-        </item>
-        <item>
             <key> <string>_params</string> </key>
             <value> <string>state_change</string> </value>
         </item>

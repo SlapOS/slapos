@@ -49,23 +49,6 @@
             </value>
         </item>
         <item>
-            <key> <string>_body</string> </key>
-            <value> <string>computer = state_change[\'object\']\n
-portal = computer.getPortalObject()\n
-for computer_partition in [x for x in computer.contentValues(portal_type=\'Computer Partition\') if x.getSlapState() == \'busy\']:\n
-  for instance_sql in portal.portal_catalog(\n
-                        default_aggregate_uid=computer_partition.getUid(),\n
-                        portal_type=["Software Instance", "Slave Instance"],\n
-                        ):\n
-    instance = instance_sql.getObject()\n
-    if instance.getSlapState() in ["start_requested", "stop_requested"]:\n
-      instance.activate().SoftwareInstance_bangAsSelf(\n
-        relative_url=instance.getRelativeUrl(),\n
-        reference=instance.getReference(), \n
-        comment=state_change.kwargs.get(\'comment\', \'\'))\n
-</string> </value>
-        </item>
-        <item>
             <key> <string>_params</string> </key>
             <value> <string>state_change</string> </value>
         </item>

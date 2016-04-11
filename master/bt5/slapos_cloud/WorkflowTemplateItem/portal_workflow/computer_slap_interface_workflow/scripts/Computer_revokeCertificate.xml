@@ -49,18 +49,6 @@
             </value>
         </item>
         <item>
-            <key> <string>_body</string> </key>
-            <value> <string>computer = state_change[\'object\']\n
-context.REQUEST.set(\'computer_certificate\', None)\n
-context.REQUEST.set(\'computer_key\', None)\n
-destination_reference = computer.getDestinationReference()\n
-if destination_reference is None:\n
-  raise ValueError(\'No certificate\')\n
-context.getPortalObject().portal_certificate_authority.revokeCertificate(destination_reference)\n
-computer.setDestinationReference(None)\n
-</string> </value>
-        </item>
-        <item>
             <key> <string>_params</string> </key>
             <value> <string>state_change</string> </value>
         </item>

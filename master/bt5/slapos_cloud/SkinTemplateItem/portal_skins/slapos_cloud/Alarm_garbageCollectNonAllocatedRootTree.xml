@@ -49,24 +49,6 @@
             </value>
         </item>
         <item>
-            <key> <string>_body</string> </key>
-            <value> <string>portal = context.getPortalObject()\n
-select_dict= {\'default_aggregate_uid\': None}\n
-portal.portal_catalog.searchAndActivate(\n
-  portal_type=(\'Slave Instance\', \'Software Instance\'),\n
-  validation_state=\'validated\',\n
-  default_aggregate_uid=None,\n
-  select_dict=select_dict,\n
-  left_join_list=select_dict.keys(),\n
-\n
-  method_id=\'Instance_tryToGarbageCollectNonAllocatedRootTree\',\n
-  activate_kw={\'tag\': tag}\n
-)\n
-\n
-context.activate(after_tag=tag).getId()\n
-</string> </value>
-        </item>
-        <item>
             <key> <string>_params</string> </key>
             <value> <string>tag, fixit, params</string> </value>
         </item>

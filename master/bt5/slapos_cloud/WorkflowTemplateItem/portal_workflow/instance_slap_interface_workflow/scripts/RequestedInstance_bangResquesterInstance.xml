@@ -49,19 +49,6 @@
             </value>
         </item>
         <item>
-            <key> <string>_body</string> </key>
-            <value> <string>instance = state_change[\'object\']\n
-portal = instance.getPortalObject()\n
-\n
-for requester_instance in portal.portal_catalog(\n
-    portal_type="Software Instance",\n
-    default_predecessor_uid=instance.getUid()):\n
-  requester_instance.getObject().bang(\n
-    bang_tree=False,\n
-    comment="%s parameters changed" % instance.getRelativeUrl())\n
-</string> </value>
-        </item>
-        <item>
             <key> <string>_params</string> </key>
             <value> <string>state_change</string> </value>
         </item>

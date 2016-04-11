@@ -49,28 +49,6 @@
             </value>
         </item>
         <item>
-            <key> <string>_body</string> </key>
-            <value> <string>instance = state_change[\'object\']\n
-assert instance.getPortalType() in ["Software Instance", "Slave Instance"]\n
-portal = instance.getPortalObject()\n
-# Get required arguments\n
-kwargs = state_change.kwargs\n
-\n
-# Required args\n
-# Raise TypeError if all parameters are not provided\n
-try:\n
-  computer_partition_url = kwargs[\'computer_partition_url\']\n
-except KeyError:\n
-  raise TypeError, "RequestedInstance_allocatePartition takes exactly 1 argument"\n
-\n
-assert instance.getAggregateValue() is None\n
-computer_partition = portal.restrictedTraverse(computer_partition_url)\n
-assert computer_partition.getPortalType() == "Computer Partition"\n
-\n
-instance.edit(aggregate_value=computer_partition, activate_kw={\'tag\': \'allocate_%s\' % computer_partition_url})\n
-</string> </value>
-        </item>
-        <item>
             <key> <string>_params</string> </key>
             <value> <string>state_change</string> </value>
         </item>

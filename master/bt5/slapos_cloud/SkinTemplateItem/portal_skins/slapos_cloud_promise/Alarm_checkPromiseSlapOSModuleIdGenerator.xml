@@ -49,40 +49,6 @@
             </value>
         </item>
         <item>
-            <key> <string>_body</string> </key>
-            <value> <string>from Products.CMFActivity.ActiveResult import ActiveResult\n
-\n
-portal = context.getPortalObject()\n
-wrong_module_list = []\n
-active_process = context.newActiveProcess()\n
-for module_id in portal.objectIds(spec=(\'ERP5 Folder\',)) + ["portal_simulation", "portal_activities"]:\n
-  module = portal.restrictedTraverse(module_id)\n
-  if not module.Module_assertIdGenerator(\'_generatePerDayId\', fixit, active_process):\n
-    wrong_module_list.append(module.getRelativeUrl())\n
-\n
-if len(wrong_module_list) != 0:\n
-  summary = "Some modules have incorrect ID generator"\n
-  if fixit:\n
-    summary += ", fixed."\n
-    severity = 0\n
-  else:\n
-    severity = 1\n
-  detail = "List: %s" % (\', \'.join(wrong_module_list), )\n
-else:\n
-  severity = 0\n
-  summary = "Nothing to do."\n
-  detail = ""\n
-\n
-active_result = ActiveResult()\n
-active_result.edit(\n
-  summary=summary, \n
-  severity=severity,\n
-  detail=detail)\n
-\n
-active_process.postResult(active_result)\n
-</string> </value>
-        </item>
-        <item>
             <key> <string>_params</string> </key>
             <value> <string>tag, fixit=False, **kw</string> </value>
         </item>

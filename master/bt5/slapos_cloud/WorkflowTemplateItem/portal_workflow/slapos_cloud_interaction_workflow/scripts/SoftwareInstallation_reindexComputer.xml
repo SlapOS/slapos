@@ -49,15 +49,6 @@
             </value>
         </item>
         <item>
-            <key> <string>_body</string> </key>
-            <value> <string>installation = state_change[\'object\']\n
-computer = installation.getAggregateValue(portal_type="Computer")\n
-if computer is not None:\n
-  computer.activate(\n
-    after_path_and_method_id=(installation.getPath(), (\'immediateReindexObject\', \'recursiveImmediateReindexObject\'))).reindexObject()\n
-</string> </value>
-        </item>
-        <item>
             <key> <string>_params</string> </key>
             <value> <string>state_change</string> </value>
         </item>

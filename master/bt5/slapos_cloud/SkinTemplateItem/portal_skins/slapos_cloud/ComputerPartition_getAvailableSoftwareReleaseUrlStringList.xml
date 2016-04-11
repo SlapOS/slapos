@@ -49,32 +49,6 @@
             </value>
         </item>
         <item>
-            <key> <string>_body</string> </key>
-            <value> <string>slap_state = context.getSlapState()\n
-portal = context.getPortalObject()\n
-portal_preferences = portal.portal_preferences\n
-\n
-if slap_state == \'free\':\n
-  computer = context.getParentValue()\n
-  return computer.Computer_getSoftwareReleaseUrlStringList()\n
-\n
-elif slap_state == \'busy\':\n
-\n
-  instance = portal.portal_catalog.getResultValue(\n
-    portal_type="Software Instance",\n
-    validation_state="validated",\n
-    default_aggregate_uid=context.getUid(),\n
-  )\n
-  if (instance is None) or (instance.getSlapState() != "start_requested"):\n
-    return []\n
-  else:\n
-    return [instance.getUrlString()]\n
-\n
-else:\n
-  return []\n
-</string> </value>
-        </item>
-        <item>
             <key> <string>_params</string> </key>
             <value> <string></string> </value>
         </item>

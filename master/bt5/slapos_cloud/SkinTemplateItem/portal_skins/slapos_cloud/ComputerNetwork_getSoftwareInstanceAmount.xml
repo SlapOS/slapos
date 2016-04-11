@@ -49,22 +49,6 @@
             </value>
         </item>
         <item>
-            <key> <string>_body</string> </key>
-            <value> <string>network = context\n
-portal = context.getPortalObject()\n
-software_release = context.REQUEST.get(\'here\')\n
-\n
-computer_uid_list = [x.getUid() for x in context.getSubordinationRelatedValueList()]\n
-\n
-return portal.portal_catalog.countResults(\n
-  portal_type=\'Computer Partition\',\n
-  parent_uid=computer_uid_list,\n
-  free_for_request=0,\n
-  software_release_url=software_release.getUrlString()\n
-)[0][0]\n
-</string> </value>
-        </item>
-        <item>
             <key> <string>_params</string> </key>
             <value> <string>*args, **kwargs</string> </value>
         </item>

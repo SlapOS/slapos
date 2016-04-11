@@ -49,22 +49,6 @@
             </value>
         </item>
         <item>
-            <key> <string>_body</string> </key>
-            <value> <string>software_installation = context\n
-portal = context.getPortalObject()\n
-\n
-url_string = ""\n
-software_release = portal.portal_catalog.getResultValue(\n
-      portal_type=\'Software Release\',\n
-      url_string=software_installation.getUrlString()\n
-)\n
-if software_release:\n
-  url_string = "%s?editable_mode:int=1" % software_release.getAbsoluteUrl()\n
-\n
-return url_string\n
-</string> </value>
-        </item>
-        <item>
             <key> <string>_params</string> </key>
             <value> <string>**kw</string> </value>
         </item>

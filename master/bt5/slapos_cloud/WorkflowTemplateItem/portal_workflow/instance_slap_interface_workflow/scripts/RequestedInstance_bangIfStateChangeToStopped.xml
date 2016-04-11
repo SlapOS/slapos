@@ -49,13 +49,6 @@
             </value>
         </item>
         <item>
-            <key> <string>_body</string> </key>
-            <value> <string>instance = state_change[\'object\']\n
-if (instance.getPortalType() in ["Software Instance", "Slave Instance"]) and (instance.getSlapState() != \'stop_requested\'):\n
-  instance.bang(bang_tree=False, comment="State changed from %s to stop_requested" % instance.getSlapState())\n
-</string> </value>
-        </item>
-        <item>
             <key> <string>_params</string> </key>
             <value> <string>state_change</string> </value>
         </item>

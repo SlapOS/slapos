@@ -49,16 +49,6 @@
             </value>
         </item>
         <item>
-            <key> <string>_body</string> </key>
-            <value> <string>partition = context\n
-\n
-software_instance_list = partition.getAggregateRelatedValueList(portal_type=["Software Instance"])\n
-for si in software_instance_list:\n
-  obj = si.getObject()\n
-  return "%s?editable_mode:int=1" % obj.getRelativeUrl()\n
-</string> </value>
-        </item>
-        <item>
             <key> <string>_params</string> </key>
             <value> <string>**kw</string> </value>
         </item>

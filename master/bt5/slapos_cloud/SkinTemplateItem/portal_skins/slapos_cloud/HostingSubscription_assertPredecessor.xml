@@ -49,26 +49,6 @@
             </value>
         </item>
         <item>
-            <key> <string>_body</string> </key>
-            <value> <string>if context.getPortalType() != \'Hosting Subscription\' \\\n
-  or context.getValidationState() != \'validated\' \\\n
-  or context.getSlapState() not in [\'start_requested\', \'stop_requested\'] \\\n
-  or context.getTitle() in context.getPredecessorTitleList():\n
-  # nothing to do\n
-  return\n
-\n
-context.requestInstance(\n
-  software_release=context.getUrlString(),\n
-  software_title=context.getTitle(),\n
-  software_type=context.getSourceReference(),\n
-  instance_xml=context.getTextContent(),\n
-  sla_xml=context.getSlaXml(),\n
-  shared=context.isRootSlave(),\n
-  state={\'start_requested\': \'started\', \'stop_requested\': \'stopped\'}[context.getSlapState()],\n
-)\n
-</string> </value>
-        </item>
-        <item>
             <key> <string>_params</string> </key>
             <value> <string></string> </value>
         </item>

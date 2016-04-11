@@ -49,15 +49,6 @@
             </value>
         </item>
         <item>
-            <key> <string>_body</string> </key>
-            <value> <string>instance = state_change[\'object\']\n
-assert instance.getPortalType() in ["Software Instance", "Slave Instance"]\n
-assert instance.getAggregate("") != ""\n
-\n
-instance.edit(aggregate="", activate_kw={\'tag\': \'allocate_%s\' % instance.getAggregate()})\n
-</string> </value>
-        </item>
-        <item>
             <key> <string>_params</string> </key>
             <value> <string>state_change</string> </value>
         </item>

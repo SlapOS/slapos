@@ -49,21 +49,6 @@
             </value>
         </item>
         <item>
-            <key> <string>_body</string> </key>
-            <value> <string>portal = context.getPortalObject()\n
-\n
-portal.portal_catalog.searchAndActivate(\n
-  portal_type=["Software Instance", "Slave Instance"],\n
-  default_aggregate_relative_url="computer_module/%/%",\n
-  validation_state="invalidated",\n
-  method_id=\'Instance_tryToUnallocatePartition\',\n
-  activate_kw={\'tag\': tag}\n
-)\n
-\n
-context.activate(after_tag=tag).getId()\n
-</string> </value>
-        </item>
-        <item>
             <key> <string>_params</string> </key>
             <value> <string>tag, fixit, params</string> </value>
         </item>

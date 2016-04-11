@@ -49,25 +49,6 @@
             </value>
         </item>
         <item>
-            <key> <string>_body</string> </key>
-            <value> <string>partition = context\n
-portal = context.getPortalObject()\n
-image_url = ""\n
-\n
-software_instance = partition.getAggregateRelatedValue(portal_type="Software Instance")\n
-\n
-release = portal.portal_catalog.getResultValue(\n
-    portal_type="Software Release",\n
-    url_string=software_instance.getUrlString(),\n
-)\n
-if release is not None:\n
-  software_product = release.getAggregateValue()\n
-  image_url = \'%s/index_html\' % software_product.getDefaultImageAbsoluteUrl()\n
-\n
-return image_url\n
-</string> </value>
-        </item>
-        <item>
             <key> <string>_params</string> </key>
             <value> <string></string> </value>
         </item>

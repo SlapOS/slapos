@@ -49,27 +49,6 @@
             </value>
         </item>
         <item>
-            <key> <string>_body</string> </key>
-            <value> <string encoding="cdata"><![CDATA[
-
-software_instance = context.getAggregateRelatedValue(portal_type=\'Software Instance\')\n
-\n
-status = ""\n
-state = \'green\'\n
-if software_instance is not None:\n
-  status = software_instance.SoftwareInstance_getCurrentStatus()\n
-  \n
-  if status.startswith(\'#error \'):\n
-   state = "red"\n
-\n
-  return \'<a href="%s" style="background-color: %s; display: block; height: 2em; width: 2em; float: left; margin: 5px;"></a> \' \\\n
-        \'<p style="float: left; line-height: 10px; margin-left: 10px;">%s</p>\' % (\n
-        software_instance.getUrl(), state, status)\n
-
-
-]]></string> </value>
-        </item>
-        <item>
             <key> <string>_params</string> </key>
             <value> <string></string> </value>
         </item>

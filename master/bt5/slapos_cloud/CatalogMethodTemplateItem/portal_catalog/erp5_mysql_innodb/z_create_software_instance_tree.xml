@@ -57,19 +57,6 @@
             <value> <int>1000</int> </value>
         </item>
         <item>
-            <key> <string>src</string> </key>
-            <value> <string># Host:\n
-# Database: test\n
-# Table: \'software_instance_tree\'\n
-#\n
-CREATE TABLE `software_instance_tree` (\n
-  `uid` BIGINT UNSIGNED NOT NULL,\n
-  `root_uid` BIGINT UNSIGNED NOT NULL,\n
-  PRIMARY KEY (`uid`, `root_uid`)\n
-) ENGINE=InnoDB;\n
-</string> </value>
-        </item>
-        <item>
             <key> <string>title</string> </key>
             <value> <string></string> </value>
         </item>

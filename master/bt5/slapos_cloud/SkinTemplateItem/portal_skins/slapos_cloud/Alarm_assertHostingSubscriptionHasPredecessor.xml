@@ -49,27 +49,6 @@
             </value>
         </item>
         <item>
-            <key> <string>_body</string> </key>
-            <value> <string encoding="cdata"><![CDATA[
-
-portal = context.getPortalObject()\n
-from Products.ZSQLCatalog.SQLCatalog import SimpleQuery, NegatedQuery\n
-\n
-portal.portal_catalog.searchAndActivate(\n
-  portal_type=\'Hosting Subscription\',\n
-  validation_state=\'validated\',\n
-  where_expression="related_predecessor_title_1_catalog.title <> catalog.title",\n
-  predecessor_title=NegatedQuery(SimpleQuery(predecessor_title=None, comparison_operator=\'is\')),\n
-  method_id=\'HostingSubscription_assertPredecessor\',\n
-  activate_kw={\'tag\': tag}\n
-)\n
-\n
-context.activate(after_tag=tag).getId()\n
-
-
-]]></string> </value>
-        </item>
-        <item>
             <key> <string>_params</string> </key>
             <value> <string>tag, fixit, params</string> </value>
         </item>

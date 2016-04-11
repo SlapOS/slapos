@@ -49,54 +49,6 @@
             </value>
         </item>
         <item>
-            <key> <string>_body</string> </key>
-            <value> <string>instance = state_change[\'object\']\n
-portal = instance.getPortalObject()\n
-# Get required arguments\n
-kwargs = state_change.kwargs\n
-\n
-# Required args\n
-# Raise TypeError if all parameters are not provided\n
-try:\n
-  software_release_url_string = state_change.kwargs[\'software_release\']\n
-  software_type = kwargs["software_type"]\n
-  instance_xml = kwargs["instance_xml"]\n
-  sla_xml = kwargs["sla_xml"]\n
-  is_slave = kwargs["shared"]\n
-except KeyError:\n
-  raise TypeError, "RequestedInstance_updateParameterInformation takes exactly 5 arguments"\n
-\n
-edit_kw = {\n
-  \'url_string\': software_release_url_string,\n
-  \'text_content\': instance_xml,\n
-  \'source_reference\': software_type,\n
-  \'sla_xml\': sla_xml,\n
-}\n
-\n
-# Check the slave management\n
-if is_slave not in [True, False]:\n
-  raise ValueError, "shared should be a boolean"\n
-instance_portal_type = instance.getPortalType()\n
-if instance_portal_type == "Hosting Subscription":\n
-  edit_kw[\'root_slave\'] = is_slave\n
-elif instance_portal_type == "Software Instance":\n
-  if is_slave:\n
-    raise NotImplementedError, "Please destroy before doing a slave instance (%s)" % \\\n
-      (instance.getRelativeUrl(), )\n
-elif instance_portal_type == "Slave Instance":\n
-  if not is_slave:\n
-    raise NotImplementedError, "Please destroy before doing a software instance (%s)" % \\\n
-      (instance.getRelativeUrl(), )\n
-else:\n
-  raise NotImplementedError, "Not supported portal type %s (%s)" % \\\n
-    (instance.getPortalType(), instance.getRelativeUrl())\n
-\n
-instance.edit(**edit_kw)\n
-# Prevent storing broken XML in text content (which prevent to update parameters after)\n
-context.Instance_checkConsistency(state_change)\n
-</string> </value>
-        </item>
-        <item>
             <key> <string>_params</string> </key>
             <value> <string>state_change</string> </value>
         </item>

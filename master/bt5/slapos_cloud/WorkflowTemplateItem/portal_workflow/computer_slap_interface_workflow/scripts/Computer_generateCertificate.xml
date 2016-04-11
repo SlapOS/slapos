@@ -49,24 +49,6 @@
             </value>
         </item>
         <item>
-            <key> <string>_body</string> </key>
-            <value> <string>computer = state_change[\'object\']\n
-\n
-if computer.getDestinationReference() is not None:\n
-  context.REQUEST.set("computer_certificate", None)\n
-  context.REQUEST.set("computer_key", None)\n
-  raise ValueError(\'Certificate still active.\')\n
-\n
-ca = context.getPortalObject().portal_certificate_authority\n
-certificate_dict = ca.getNewCertificate(computer.getReference())\n
-\n
-computer.setDestinationReference(certificate_dict["id"])\n
-\n
-context.REQUEST.set("computer_certificate", certificate_dict["certificate"])\n
-context.REQUEST.set("computer_key", certificate_dict["key"])\n
-</string> </value>
-        </item>
-        <item>
             <key> <string>_params</string> </key>
             <value> <string>state_change</string> </value>
         </item>

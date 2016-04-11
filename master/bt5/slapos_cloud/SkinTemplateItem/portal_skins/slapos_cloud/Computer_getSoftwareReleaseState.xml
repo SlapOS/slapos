@@ -49,32 +49,6 @@
             </value>
         </item>
         <item>
-            <key> <string>_body</string> </key>
-            <value> <string>computer = context\n
-portal = context.getPortalObject()\n
-\n
-software_installation_list = portal.portal_catalog(\n
-      portal_type=\'Software Installation\',\n
-      default_aggregate_uid=context.getUid(),\n
-      validation_state=\'validated\',\n
-      limit=1,\n
-      url_string={\'query\': portal.portal_catalog.getResultValue(uid=software_release_uid).getUrlString(), \'key\': \'ExactMatch\'},\n
-      sort_on=((\'creation_date\', \'DESC\'),)\n
-    )\n
-\n
-if len(software_installation_list) == 0:\n
-  return \'Destroyed\'  \n
-\n
-software_installation = software_installation_list[0].getObject()\n
-\n
-s = software_installation.getSlapState()\n
-if s == \'start_requested\':\n
-  return \'Installation requested\'\n
-else:\n
-  return \'Destruction requested\'\n
-</string> </value>
-        </item>
-        <item>
             <key> <string>_params</string> </key>
             <value> <string>software_release_uid</string> </value>
         </item>

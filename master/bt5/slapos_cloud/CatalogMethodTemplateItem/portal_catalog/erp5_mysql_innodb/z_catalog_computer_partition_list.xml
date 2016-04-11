@@ -54,54 +54,6 @@ ComputerPartition_getSoftwareType</string> </value>
             <value> <int>1000</int> </value>
         </item>
         <item>
-            <key> <string>src</string> </key>
-            <value> <string encoding="cdata"><![CDATA[
-
-DELETE FROM\n
-  computer_partition\n
-WHERE\n
-<dtml-in uid>\n
-  uid=<dtml-sqlvar sequence-item type="int"><dtml-if sequence-end><dtml-else> OR </dtml-if>\n
-</dtml-in>\n
-;\n
-\n
-<dtml-var "\'\\0\'">\n
-\n
-<dtml-let row_list="[]">\n
-  <dtml-in prefix="loop" expr="_.range(_.len(uid))">\n
-    <dtml-let free_for_request="ComputerPartition_isFreeForRequest[loop_item]">\n
-    <dtml-let software_type="ComputerPartition_getSoftwareType[loop_item]">\n
-      <dtml-in prefix="url" expr="ComputerPartition_getAvailableSoftwareReleaseUrlStringList[loop_item]" no_push_item>\n
-        <dtml-call expr="row_list.append([\n
-                    uid[loop_item],\n
-                    url_item,\n
-                    free_for_request,\n
-                    software_type])">\n
-      </dtml-in>\n
-    </dtml-let>\n
-    </dtml-let>\n
-  </dtml-in>\n
-\n
-  <dtml-if "row_list">\n
-INSERT INTO\n
-  computer_partition\n
-VALUES\n
-    <dtml-in prefix="row" expr="row_list">\n
-(\n
-  <dtml-sqlvar expr="row_item[0]" type="int">,\n
-  <dtml-sqlvar expr="row_item[1]" type="string">,\n
-  <dtml-sqlvar expr="row_item[2]" type="int">,\n
-  <dtml-sqlvar expr="row_item[3]" type="string">\n
-)\n
-<dtml-if sequence-end><dtml-else>,</dtml-if>\n
-    </dtml-in>\n
-  </dtml-if>\n
-</dtml-let>\n
-
-
-]]></string> </value>
-        </item>
-        <item>
             <key> <string>title</string> </key>
             <value> <string></string> </value>
         </item>

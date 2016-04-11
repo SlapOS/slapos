@@ -49,21 +49,6 @@
             </value>
         </item>
         <item>
-            <key> <string>_body</string> </key>
-            <value> <string>from Products.ZSQLCatalog.SQLCatalog import Query, ComplexQuery\n
-portal = context.getPortalObject()\n
-\n
-computer = context\n
-\n
-return portal.portal_catalog.countResults(\n
-  portal_type=\'Computer Partition\',\n
-  parent_uid=computer.getUid(),\n
-  free_for_request=0,\n
-  software_release_url=portal.portal_catalog.getResultValue(uid=software_release_uid).getUrlString()\n
-)[0][0]\n
-</string> </value>
-        </item>
-        <item>
             <key> <string>_params</string> </key>
             <value> <string>software_release_uid</string> </value>
         </item>

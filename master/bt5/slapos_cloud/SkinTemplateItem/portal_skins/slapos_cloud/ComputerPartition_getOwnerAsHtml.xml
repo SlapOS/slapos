@@ -49,20 +49,6 @@
             </value>
         </item>
         <item>
-            <key> <string>_body</string> </key>
-            <value> <string encoding="cdata"><![CDATA[
-
-partition = context\n
-\n
-si = partition.getAggregateRelatedValue(portal_type=["Software Instance", "Slave Instance"])\n
-if si:\n
-  person = si.getSpecialiseValue().getDestinationSectionValue()\n
-  return \'<a href="%s?editable_mode:int=1">%s</a>\' % (person.getRelativeUrl(), person.getTitle())\n
-
-
-]]></string> </value>
-        </item>
-        <item>
             <key> <string>_params</string> </key>
             <value> <string></string> </value>
         </item>

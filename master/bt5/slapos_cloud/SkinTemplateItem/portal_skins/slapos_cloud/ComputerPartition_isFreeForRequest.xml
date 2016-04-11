@@ -49,13 +49,6 @@
             </value>
         </item>
         <item>
-            <key> <string>_body</string> </key>
-            <value> <string>if context.getPortalObject().portal_workflow.isTransitionPossible(context, \'mark_busy\') and context.getParentValue().isMemberOf(\'allocation_scope/open\'):\n
-  return 1\n
-return 0\n
-</string> </value>
-        </item>
-        <item>
             <key> <string>_params</string> </key>
             <value> <string></string> </value>
         </item>

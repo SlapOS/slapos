@@ -49,46 +49,6 @@
             </value>
         </item>
         <item>
-            <key> <string>_body</string> </key>
-            <value> <string encoding="cdata"><![CDATA[
-
-instance = state_change[\'object\']\n
-portal = instance.getPortalObject()\n
-software_title = state_change.kwargs[\'new_name\']\n
-\n
-assert instance.getPortalType() in ["Slave Instance", "Software Instance"]\n
-\n
-hosting_subscription = instance.getSpecialiseValue(portal_type="Hosting Subscription")\n
-\n
-# Instance can be moved from one requester to another\n
-# Prevent creating two instances with the same title\n
-tag = "%s_%s_inProgress" % (hosting_subscription.getUid(), software_title)\n
-if (portal.portal_activities.countMessageWithTag(tag) > 0):\n
-  # The software instance is already under creation but can not be fetched from catalog\n
-  # As it is not possible to fetch informations, it is better to raise an error\n
-  raise NotImplementedError(tag)\n
-\n
-# Check if it already exists\n
-request_software_instance_list = portal.portal_catalog(\n
-  # Fetch all portal type, as it is not allowed to change it\n
-  portal_type=["Software Instance", "Slave Instance"],\n
-  title={\'query\': software_title, \'key\': \'ExactMatch\'},\n
-  specialise_uid=hosting_subscription.getUid(),\n
-  # Do not fetch destroyed instances\n
-  # XXX slap_state=["start_requested", "stop_requested"],\n
-  validation_state="validated",\n
-  limit=1,\n
-)\n
-if len(request_software_instance_list) == 1:\n
-  raise ValueError, "Too many instances \'%s\' found: %s" % (software_title, [x.path for x in request_software_instance_list])\n
-\n
-# Change the title\n
-instance.edit(title=software_title, activate_kw={\'tag\': tag})\n
-
-
-]]></string> </value>
-        </item>
-        <item>
             <key> <string>_params</string> </key>
             <value> <string>state_change</string> </value>
         </item>

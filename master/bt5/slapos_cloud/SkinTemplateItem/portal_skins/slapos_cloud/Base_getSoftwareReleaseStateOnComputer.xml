@@ -49,14 +49,6 @@
             </value>
         </item>
         <item>
-            <key> <string>_body</string> </key>
-            <value> <string>computer = context.REQUEST.get(\'here\')\n
-software_release = context\n
-\n
-return computer.Computer_getSoftwareReleaseState(software_release.getUid())\n
-</string> </value>
-        </item>
-        <item>
             <key> <string>_params</string> </key>
             <value> <string>*args, **kwargs</string> </value>
         </item>

@@ -49,27 +49,6 @@
             </value>
         </item>
         <item>
-            <key> <string>_body</string> </key>
-            <value> <string>from DateTime import DateTime\n
-instance = state_change[\'object\']\n
-assert instance.getPortalType() in ["Slave Instance", "Software Instance"]\n
-\n
-instance.edit(bang_timestamp=int(DateTime()))\n
-comment = state_change.kwargs[\'comment\'] # comment is required to pass the transition\n
-if state_change.kwargs[\'bang_tree\']:\n
-  from Products.ZSQLCatalog.SQLCatalog import Query, NegatedQuery\n
-  portal = instance.getPortalObject()\n
-  hosting_subscription = instance.getSpecialiseValue(portal_type="Hosting Subscription")\n
-  portal.portal_catalog.searchAndActivate(\n
-    default_specialise_uid=hosting_subscription.getUid(),\n
-    path=NegatedQuery(Query(path=instance.getPath())),\n
-    portal_type=["Slave Instance", "Software Instance"],\n
-    method_id=\'bang\',\n
-    method_kw={\'bang_tree\': False, \'comment\': comment},\n
-  )\n
-</string> </value>
-        </item>
-        <item>
             <key> <string>_params</string> </key>
             <value> <string>state_change</string> </value>
         </item>

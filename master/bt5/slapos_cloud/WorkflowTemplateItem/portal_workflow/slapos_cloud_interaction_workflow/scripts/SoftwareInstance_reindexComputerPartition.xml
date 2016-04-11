@@ -49,15 +49,6 @@
             </value>
         </item>
         <item>
-            <key> <string>_body</string> </key>
-            <value> <string>instance = state_change[\'object\']\n
-partition = instance.getAggregateValue(portal_type="Computer Partition")\n
-if partition is not None:\n
-  partition.activate(\n
-    after_path_and_method_id=(instance.getPath(), (\'immediateReindexObject\', \'recursiveImmediateReindexObject\'))).reindexObject()\n
-</string> </value>
-        </item>
-        <item>
             <key> <string>_params</string> </key>
             <value> <string>state_change</string> </value>
         </item>

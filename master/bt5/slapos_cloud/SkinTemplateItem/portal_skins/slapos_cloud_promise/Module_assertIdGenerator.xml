@@ -49,17 +49,6 @@
             </value>
         </item>
         <item>
-            <key> <string>_body</string> </key>
-            <value> <string>current_id_generator = context.getIdGenerator()\n
-\n
-if current_id_generator != id_generator:\n
-  if fixit:\n
-    context.setIdGenerator(id_generator)\n
-  return False\n
-return True\n
-</string> </value>
-        </item>
-        <item>
             <key> <string>_params</string> </key>
             <value> <string>id_generator, fixit, active_process=None</string> </value>
         </item>

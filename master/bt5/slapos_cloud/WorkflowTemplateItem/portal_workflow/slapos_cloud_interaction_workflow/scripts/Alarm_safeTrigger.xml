@@ -49,12 +49,6 @@
             </value>
         </item>
         <item>
-            <key> <string>_body</string> </key>
-            <value> <string>if alarm.getParentValue().isSubscribed() and not alarm.isActive() and alarm.isEnabled():\n
-  alarm.activeSense()\n
-</string> </value>
-        </item>
-        <item>
             <key> <string>_params</string> </key>
             <value> <string>alarm</string> </value>
         </item>
