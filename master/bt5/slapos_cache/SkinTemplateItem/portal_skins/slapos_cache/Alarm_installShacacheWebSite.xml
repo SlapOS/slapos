@@ -49,46 +49,6 @@
             </value>
         </item>
         <item>
-            <key> <string>_body</string> </key>
-            <value> <string>portal = context.getPortalObject()\n
-shacache = getattr(portal.web_site_module, \'shacache\', None)\n
-shadir = getattr(portal.web_site_module, \'shadir\', None)\n
-\n
-expected_state = context.portal_preferences.getPreferredShacacheWebsiteExpectedState("published")\n
-\n
-if expected_state == "published" and shacache is None:\n
-  shacache = portal.web_site_module.newContent(id=\'shacache\', \n
-                                        title="Shacache")\n
-\n
-if expected_state == "published" and shadir is None:\n
-  shadir = portal.web_site_module.newContent(id=\'shadir\',\n
-                                      title="Shadir")\n
-\n
-if shadir is None and shacache is None:\n
-  # Nothing to do\n
-  return \n
-\n
-if expected_state == "published":\n
-  shacache.setSkinSelectionName("SHACACHE")\n
-  shadir.setSkinSelectionName("SHADIR")\n
-\n
-if expected_state == "published":\n
-  if portal.portal_workflow.isTransitionPossible(shacache, "publish"):\n
-    shacache.publish()\n
-\n
-  if portal.portal_workflow.isTransitionPossible(shadir, "publish"):\n
-    shadir.publish()\n
-  return\n
-\n
-\n
-if portal.portal_workflow.isTransitionPossible(shacache, "embeed"):\n
-  shacache.embeed()\n
-\n
-if portal.portal_workflow.isTransitionPossible(shadir, "embeed"):\n
-  shadir.embeed()\n
-</string> </value>
-        </item>
-        <item>
             <key> <string>_params</string> </key>
             <value> <string>**kw</string> </value>
         </item>

@@ -49,60 +49,6 @@
             </value>
         </item>
         <item>
-            <key> <string>_body</string> </key>
-            <value> <string>from Products.CMFActivity.ActiveResult import ActiveResult\n
-\n
-portal = context.getPortalObject()\n
-web_site_module = getattr(portal, \'web_site_module\', None)\n
-if web_site_module is None:\n
-  # web_site_module is not present yet, so it is impossible\n
-  # to keep the promise\n
-  return False\n
-\n
-shacache = getattr(web_site_module, \'shacache\', None)\n
-shadir = getattr(web_site_module, \'shadir\', None)\n
-\n
-expected_state = context.portal_preferences.getPreferredShacacheWebsiteExpectedState("published")\n
-\n
-active_result = ActiveResult()\n
-if expected_state == "published" and shacache is None:\n
-  severity = 1\n
-  summary = "Shacache WebSite do not exist"\n
-  detail = ""\n
-elif expected_state == "published" and shadir is None:\n
-  severity = 1\n
-  summary = "Shadir WebSite do not exist"\n
-  detail = ""\n
-elif expected_state == "published" and shacache.getSkinSelectionName() != "SHACACHE":\n
-  severity = 1\n
-  summary = "shacache site don\'t have SHACACHE as skin selection name"\n
-  detail = ""\n
-elif expected_state == "published" and shadir.getSkinSelectionName() != "SHADIR":\n
-  severity = 1\n
-  summary = "shadir site don\'t have SHADIR as skin selection name"\n
-  detail = ""\n
-elif shacache is not None and shacache.getValidationState() != expected_state:\n
-  severity = 1\n
-  summary = "shacache site is not what is expected: %s" % expected_state\n
-  detail = ""\n
-elif shadir is not None and shadir.getValidationState() != expected_state:\n
-  severity = 1\n
-  summary = "shadir site is not published %s" % expected_state\n
-  detail = ""\n
-else:\n
-  severity = 0\n
-  summary = "Nothing to do."\n
-  detail = ""\n
-\n
-active_result.edit(\n
-  summary=summary, \n
-  severity=severity,\n
-  detail=detail)\n
-\n
-context.newActiveProcess().postResult(active_result)\n
-</string> </value>
-        </item>
-        <item>
             <key> <string>_params</string> </key>
             <value> <string>tag, fixit=False, **kw</string> </value>
         </item>
