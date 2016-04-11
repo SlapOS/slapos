@@ -49,26 +49,6 @@
             </value>
         </item>
         <item>
-            <key> <string>_body</string> </key>
-            <value> <string>"""\n
-WARNING: this script requires proxy manager\n
-\n
-This script tries to acquire category values from other objects\n
-\n
-base_category_list - list of category values we need to retrieve\n
-object             - object which we want to assign roles to.\n
-"""\n
-\n
-result_list = []\n
-user_name = object.Base_getOwnerId()\n
-\n
-# XXX Hardcoded role\n
-return {\n
-  \'Assignee\': [user_name],\n
-}\n
-</string> </value>
-        </item>
-        <item>
             <key> <string>_params</string> </key>
             <value> <string>base_category_list, user_name, object, portal_type</string> </value>
         </item>

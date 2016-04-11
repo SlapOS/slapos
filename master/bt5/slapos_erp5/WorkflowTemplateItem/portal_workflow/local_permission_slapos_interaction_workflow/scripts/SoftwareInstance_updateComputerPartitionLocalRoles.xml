@@ -49,15 +49,6 @@
             </value>
         </item>
         <item>
-            <key> <string>_body</string> </key>
-            <value> <string>portal_type_list = [\'Computer Partition\']\n
-software_instance = state_change[\'object\']\n
-after_tag = (software_instance.getPath(), (\'immediateReindexObject\', \'recursiveImmediateReindexObject\'))\n
-for object_ in software_instance.getAggregateValueList(portal_type=portal_type_list):\n
-  object_.activate(after_path_and_method_id=after_tag).updateLocalRolesOnSecurityGroups()\n
-</string> </value>
-        </item>
-        <item>
             <key> <string>_params</string> </key>
             <value> <string>state_change</string> </value>
         </item>

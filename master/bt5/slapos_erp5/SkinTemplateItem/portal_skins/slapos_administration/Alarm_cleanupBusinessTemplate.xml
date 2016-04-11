@@ -49,17 +49,6 @@
             </value>
         </item>
         <item>
-            <key> <string>_body</string> </key>
-            <value> <string>active_process = context.newActiveProcess().getRelativeUrl()\n
-\n
-context.portal_templates.TemplateTool_deleteObsoleteTemplateList(\n
-  fixit=fixit, tag=tag, active_process=active_process)\n
-  \n
-context.portal_templates.TemplateTool_unindexDeletedObjectList(\n
-  fixit=fixit, tag=tag, active_process=active_process)\n
-</string> </value>
-        </item>
-        <item>
             <key> <string>_params</string> </key>
             <value> <string>tag,fixit, **kw</string> </value>
         </item>

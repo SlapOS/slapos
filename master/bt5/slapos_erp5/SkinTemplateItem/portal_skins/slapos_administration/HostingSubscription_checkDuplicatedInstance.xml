@@ -49,54 +49,6 @@
             </value>
         </item>
         <item>
-            <key> <string>_body</string> </key>
-            <value> <string encoding="cdata"><![CDATA[
-
-from Products.CMFActivity.ActiveResult import ActiveResult\n
-portal = context.getPortalObject()\n
-\n
-software_instance_list = context.getSpecialiseRelatedValueList(\n
-  portal_type=["Slave Instance", "Software Instance"])\n
-\n
-if len(software_instance_list) == 1:\n
-  return \n
-\n
-title_dict = {}\n
-\n
-active_process = portal.restrictedTraverse(active_process)\n
-\n
-for software_instance in software_instance_list:\n
-  if software_instance.getSlapState() == "destroy_requested":\n
-    continue\n
-\n
-  title = software_instance.getTitle() \n
-  if title in title_dict:\n
-    title_dict[title].append(software_instance.getObject())\n
-  else:\n
-    title_dict[title] = [software_instance.getObject()]\n
-\n
-\n
-for title in title_dict:\n
-  if len(title_dict[title]) > 1:\n
-    if fixit:\n
-      for software_instance in title_dict[title]:\n
-        if len(software_instance.getAggregate([])) == 0:\n
-          active_process.postResult(ActiveResult(\n
-            summary="Fixing %s which duplication and is not allocated (%s)" \\\n
-                % (software_instance.getRelativeUrl(), context.getRelativeUrl()),\n
-            severity=0,\n
-            detail=""))\n
-          software_instance.activate().SoftwareInstance_destroyAsSelf()          \n
-    else:\n
-      active_process.postResult(ActiveResult(\n
-         summary="%s has duplication" % context.getRelativeUrl(),\n
-         severity=100,\n
-         detail="%s has duplication on %s (%s)" % (context.getRelativeUrl(), title, len(title_dict[title]))))\n
-
-
-]]></string> </value>
-        </item>
-        <item>
             <key> <string>_params</string> </key>
             <value> <string>fixit, active_process</string> </value>
         </item>

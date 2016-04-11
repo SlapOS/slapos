@@ -25,19 +25,6 @@
             <value> <string>z_refresh_roles_and_users</string> </value>
         </item>
         <item>
-            <key> <string>src</string> </key>
-            <value> <string encoding="cdata"><![CDATA[
-
-DELETE FROM roles_and_users\n
-<dtml-var sql_delimiter>\n
-INSERT INTO roles_and_users (uid, allowedRolesAndUsers) VALUES\n
-<dtml-in prefix="role" expr="ERP5Site_getSecurityUidListForRecreateTable()">\n
-(<dtml-sqlvar sequence-key type="int">,<dtml-sqlvar expr="role_item" type="string">)<dtml-if sequence-end><dtml-else>,</dtml-if>\n
-</dtml-in>
-
-]]></string> </value>
-        </item>
-        <item>
             <key> <string>title</string> </key>
             <value> <string></string> </value>
         </item>

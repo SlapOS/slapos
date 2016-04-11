@@ -98,26 +98,6 @@
             <value> <string>z_search_unindexed_security_uid</string> </value>
         </item>
         <item>
-            <key> <string>src</string> </key>
-            <value> <string>select \n
-  distinct catalog.security_uid, path, portal_type, uid  \n
-\n
-from \n
-  catalog \n
-\n
-where \n
-  portal_type != "Business Template" \n
-  and path not like "deleted" \n
-  and not exists (\n
-     select  \n
-       roles_and_users.uid \n
-     from \n
-       roles_and_users \n
-    where \n
-       catalog.security_uid = roles_and_users.uid\n
-    )</string> </value>
-        </item>
-        <item>
             <key> <string>title</string> </key>
             <value> <string></string> </value>
         </item>

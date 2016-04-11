@@ -49,32 +49,6 @@
             </value>
         </item>
         <item>
-            <key> <string>_body</string> </key>
-            <value> <string>"""This scripts set ups role of aggregate related Software Instance\n
-\n
-This is simple implementation, instead of generic related category with portal type,\n
-which would not be configurable in Role Definition anyway."""\n
-\n
-category_list = []\n
-\n
-if obj is None:\n
-  return []\n
-\n
-software_instance_list = obj.getPortalObject().portal_catalog(\n
-  portal_type=\'Software Instance\',\n
-  default_aggregate_uid=obj.getUid(),\n
-  limit=2\n
-)\n
-\n
-if len(software_instance_list) == 1:\n
-  hosting_subscription = software_instance_list[0].getSpecialise(portal_type=\'Hosting Subscription\')\n
-  for base_category in base_category_list:\n
-    category_list.append({base_category: hosting_subscription})\n
-\n
-return category_list\n
-</string> </value>
-        </item>
-        <item>
             <key> <string>_params</string> </key>
             <value> <string>base_category_list, user_name, obj, portal_type</string> </value>
         </item>

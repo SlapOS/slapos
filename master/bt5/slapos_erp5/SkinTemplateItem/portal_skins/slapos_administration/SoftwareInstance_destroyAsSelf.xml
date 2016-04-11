@@ -49,35 +49,6 @@
             </value>
         </item>
         <item>
-            <key> <string>_body</string> </key>
-            <value> <string>from zExceptions import Unauthorized\n
-if REQUEST is not None:\n
-  raise Unauthorized\n
-\n
-if context.getAggregate() is not None:\n
-  raise ValueError(\'Do not destroy allocated instances automatically!\')\n
-\n
-# Change desired state\n
-promise_kw = {\n
-    \'instance_xml\': context.getTextContent(),\n
-    \'software_type\': context.getSourceReference(),\n
-    \'sla_xml\': context.getSlaXml(),\n
-    \'software_release\': context.getUrlString(),\n
-    \'shared\': context.getPortalType()=="Slave Instance",\n
-  }\n
-\n
-request_software_instance_url = context.getRelativeUrl()\n
-context.REQUEST.set(\'request_instance\', context)\n
-\n
-context.requestDestroy(**promise_kw)\n
-\n
-title = context.getTitle()\n
-context.setTitle(title + "_renamed_and_destroyed")\n
-\n
-context.REQUEST.set(\'request_instance\', None)\n
-</string> </value>
-        </item>
-        <item>
             <key> <string>_params</string> </key>
             <value> <string>REQUEST=None</string> </value>
         </item>
