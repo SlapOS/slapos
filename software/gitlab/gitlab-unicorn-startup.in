@@ -9,6 +9,15 @@ die() {
     exit 1
 }
 
+# run psql on gitlab db
+psql() {
+    {{ psql_bin }}  \
+        -h {{ pgsql['pgdata-directory'] }}  \
+        -U {{ pgsql.superuser }}            \
+        -d {{ pgsql.dbname }}               \
+        "$@"
+}
+
 # 1. what to do when instance is initially setup
 # see
 #   https://gitlab.com/gitlab-org/omnibus-gitlab/blob/master/files/gitlab-cookbooks/gitlab/recipes/database_migrations.rb
@@ -18,12 +27,7 @@ die() {
 # ( first quering PG several times waiting a bit till postgresql is started and ready )
 tpgwait=5
 while true; do
-    pgtables="$({{ psql_bin }}   \
-        -h {{ pgsql['pgdata-directory'] }}  \
-        -U {{ pgsql.superuser }}            \
-        -d {{ pgsql.dbname }}               \
-        -c '\d')" && break
-
+    pgtables="$(psql -c '\d')" && break
     tpgwait=$(( $tpgwait - 1 ))
     test $tpgwait = 0 && die "pg query problem"
     echo "I: PostgreSQL is not ready (yet ?); will retry $tpgwait times..." 1>&2
