@@ -7,4 +7,4 @@ web_page_module/jsen_json_validator_js
 web_page_module/magnific-popup.css
 web_page_module/rjs_dygraph_js
 web_site_module/monitoring_render_js
-web_site_module/monitoring_render_js/**
+web_site_module/monitoring_render_js/hateoas

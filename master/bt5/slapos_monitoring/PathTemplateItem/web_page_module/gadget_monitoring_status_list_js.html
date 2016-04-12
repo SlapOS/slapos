@@ -71,11 +71,6 @@
           }
         };
 
-      if (gadget.property_dict.display_option == 'list') {
-        header.display_grid = '#page=main&display=grid';
-      } else {
-        header.display_list = '#page=main&display=list';
-      }
       return gadget.updateHeader(header)
         .push(function () {
           if (options.opml_url) {

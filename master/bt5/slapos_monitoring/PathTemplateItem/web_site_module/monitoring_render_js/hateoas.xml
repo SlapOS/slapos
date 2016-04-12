@@ -261,11 +261,11 @@
         </item>
         <item>
             <key> <string>skin_selection_name</string> </key>
-            <value> <string>HalRestricted</string> </value>
+            <value> <string>Hal</string> </value>
         </item>
         <item>
             <key> <string>title</string> </key>
-            <value> <string>Restricted Hateoas</string> </value>
+            <value> <string>Hateoas</string> </value>
         </item>
         <item>
             <key> <string>view_action_category</string> </key>
@@ -434,7 +434,7 @@
             </item>
             <item>
                 <key> <string>serial</string> </key>
-                <value> <string>949.6675.61849.23210</string> </value>
+                <value> <string>950.29945.27881.11383</string> </value>
             </item>
             <item>
                 <key> <string>state</string> </key>
@@ -452,7 +452,7 @@
                     </tuple>
                     <state>
                       <tuple>
-                        <float>1459762739.09</float>
+                        <float>1460450799.56</float>
                         <string>UTC</string>
                       </tuple>
                     </state>

@@ -1,6 +1,6 @@
 web_page_module/gadget_monitoring_*
 web_site_module/monitoring_render_js
-web_site_module/monitoring_render_js/**
+web_site_module/monitoring_render_js/hateoas
 web_page_module/gadget_erp5_graph_*
 web_page_module/jio_dev_rssfeed_storage_js
 web_page_module/chart_min_js

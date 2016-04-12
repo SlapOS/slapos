@@ -135,9 +135,7 @@
           ['edit_url', 'Edit', 'pencil'],
           ['add_url', 'Add', 'plus'],
           ['new_url', 'New', 'plus'],
-          ['refresh_url', 'Refresh', 'refresh'],
-          ['display_grid', 'Change View', 'grid'],
-          ['display_list', 'Change View', 'bullets']
+          ['refresh_url', 'Refresh', 'refresh']
         ],
         possible_right_button_list = [
           ['save_action', 'Save', 'check', 'submit'],

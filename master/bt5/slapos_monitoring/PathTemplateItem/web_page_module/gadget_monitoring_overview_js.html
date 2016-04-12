@@ -14,21 +14,6 @@
       return gadget.getDeclaredGadget("listview")
         .push(function (listbox_gadget) {
           gadget.property_dict.listview = listbox_gadget;
-          return gadget.getSetting('monitoring_display_filter');
-        })
-        .push(function (display_filter) {
-          gadget.property_dict.display_filter = display_filter || '';
-        });
-    })
-    .ready(function (gadget) {
-      return gadget.getSetting('jio_storage_description')
-        .push(function (jio_storage) {
-          if (! jio_storage) {
-            return gadget.redirect({
-              page: 'settings_configurator'
-            });
-          }
-          gadget.property_dict.listview_data_url = jio_storage.sub_storage.sub_storage.url;
         });
     })
     .declareMethod('render', function (options) {
@@ -45,7 +30,6 @@
             title: 'Title'
           },
           data_id: 'monitor.global',
-          data_url: gadget.property_dict.listview_data_url,
           search_column_list: [
             {select: 'status', title: 'Status'},
             {select: 'hosting-title', title: 'Date'}
