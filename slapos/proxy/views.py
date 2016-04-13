@@ -584,6 +584,11 @@ def requestNotSlave(software_release, software_type, partition_reference, partit
       a(partition_id)
     if not software_type:
       software_type = 'RootSoftwareInstance'
+  else:
+    # XXX Check if software_release should be updated
+    if partition['software_release'].encode() != software_release:
+      q += ' ,software_release=?'
+      a(software_release)
 
   #
   # XXX change software_type when requested
