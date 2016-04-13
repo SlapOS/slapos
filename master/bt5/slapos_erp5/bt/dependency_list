@@ -10,6 +10,7 @@ slapos_accounting
 slapos_cache
 slapos_category
 slapos_cloud
+slapos_ecoallocation
 slapos_rest_api
 slapos_slap_tool
 slapos_crm

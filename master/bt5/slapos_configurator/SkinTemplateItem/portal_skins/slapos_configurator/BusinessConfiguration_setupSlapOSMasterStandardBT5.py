@@ -2,8 +2,7 @@ configuration_save = context.restrictedTraverse(configuration_save_url)
 
 bt5_update_catalog_list = ('erp5_ingestion_mysql_innodb_catalog',
                            'slapos_cloud', 'erp5_accounting',
-                           'erp5_movement_table_catalog', 'slapos_jio',
-                           'slapos_monitoring')
+                           'erp5_movement_table_catalog')
 
 bt5_installation_list = bt5_update_catalog_list + ('slapos_erp5',)
  
