@@ -1,0 +1,94 @@
+[buildout]
+parts =
+  nginx-service
+  runTestSuite-instance
+
+eggs-directory = ${buildout:eggs-directory}
+develop-eggs-directory = ${buildout:develop-eggs-directory}
+offline = true
+
+[publish]
+recipe = slapos.cookbook:publish
+nginx = http://[$${nginx-configuration:ip}]:$${nginx-configuration:port}/
+
+[directory]
+recipe = slapos.cookbook:mkdirectory
+etc = $${buildout:directory}/etc
+bin = $${buildout:directory}/bin
+srv = $${buildout:directory}/srv
+var = $${buildout:directory}/var
+run = $${:var}/run
+log = $${:var}/log
+varnginx = $${:var}/nginx
+scripts = $${:etc}/run
+services = $${:etc}/service
+promise = $${:etc}/promise/
+www = $${:srv}/www
+home = $${:etc}/home
+ssl = $${:etc}/ssl
+framebuffer = $${:srv}/framebuffer
+
+#################################
+# Firefox
+#################################
+
+[runTestSuite-instance]
+recipe = slapos.recipe.template
+url = ${template-runTestSuite:output}
+output = $${directory:bin}/runTestSuite
+mode = 0700
+
+[firefox-instance]
+recipe = slapos.cookbook:firefox
+executable = firefox
+runner-path = $${directory:bin}/$${:executable}
+firefox-path = ${firefox:location}/firefox-slapos
+prefsjs-path = $${directory:etc}/prefs.js
+shell-path = ${dash:location}/bin/dash
+tmp-path = $${xvfb-instance:tmp-path}
+
+[xvfb-instance]
+recipe = slapos.cookbook:xvfb
+runner-path = $${directory:services}/xvfb
+xvfb-path = ${xserver:location}/bin/Xvfb
+fbdir-path = $${directory:framebuffer}
+tmp-path = $${directory:run}
+shell-path = ${dash:location}/bin/dash
+
+xwd-path = ${xwd:location}/bin/xwd
+xwd-hook-path = $${directory:bin}/xwd
+
+#################################
+# Nginx service
+#################################
+[nginx-service]
+recipe = slapos.recipe.template
+url = ${template-nginx-service:output}
+output = $${directory:services}/nginx
+mode = 0700
+virtual-depends = 
+  $${nginx-configuration:ip}
+
+[nginx-configuration]
+recipe = slapos.recipe.template
+url = ${template-nginx-configuration:output}
+output = $${directory:etc}/nginx.cfg
+mode = 0600
+access_log = $${directory:log}/nginx-access.log
+error_log = $${directory:log}/nginx-error.log
+ip = $${instance-parameter:ipv6-random}
+port = 9443
+ssl_key = $${directory:ssl}/nginx.key
+ssl_csr = $${directory:ssl}/nginx.csr
+ssl_crt = $${directory:ssl}/nginx.crt
+
+#################################
+# SlapOS service
+#################################
+[instance-parameter]
+recipe = slapos.cookbook:slapconfiguration
+computer = $${slap_connection:computer_id}
+partition = $${slap_connection:partition_id}
+url = $${slap_connection:server_url}
+key = $${slap_connection:key_file}
+cert = $${slap_connection:cert_file}

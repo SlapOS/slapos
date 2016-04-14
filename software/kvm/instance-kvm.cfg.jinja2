@@ -360,7 +360,7 @@ tap-ipv4 = ${slap-network-information:tap-ipv4}
 {%   if use_nat == 'true' -%}
 {%     set kvm_http = 'http://10.0.2.100' -%}
 {%   endif %}
-{%   if slapparameter_dict.get('authorized-key', '') -%}
+{%   if slapparameter_dict.get('authorized-key', '') and slapparameter_dict.get('type', '') == 'cluster' -%}
 7_info = Get the publick key file in your VM with the command: wget {{ kvm_http }}/authorized_keys
 {%   endif %}
 {% endif %}
@@ -501,7 +501,7 @@ context =
 recipe = slapos.cookbook:cron.d
 name = logrotate
 # One time per week
-frequency = 0 0 * * * 0
+frequency = 0 0 * * *
 command = ${logrotate:wrapper}
 
 [logrotate-vm-bootstrap]
@@ -581,7 +581,7 @@ keyboard-layout-language = fr
 {% if use_tap == 'true' and tap_network_dict.has_key('ipv4') and disable_ansible_promise == 'false' %}
 {%   do part_list.extend(['ansible-vm-promise', 'logrotate-vm-bootstrap']) -%}
 {% endif -%}
-{% if slapparameter_dict.get('authorized-key', '') %}
+{% if slapparameter_dict.get('authorized-key', '') and slapparameter_dict.get('type', '') == 'cluster' %}
 {%   do part_list.append('get-authorized-key') -%}
 {%   endif -%}
 

@@ -1,0 +1,134 @@
+#!{{ bin_directory }}/runTestSuite_py
+"""
+  Script to run NEO test suite using Nexedi's test node framework.
+"""
+import argparse, os, re, shutil, subprocess, sys, traceback
+from erp5.util import taskdistribution
+from time import gmtime, strftime
+
+# pattern to get test counts from stdout
+SUMMARY_RE = re.compile(
+  r'^(.*)Summary (.*) (?P<test_count>\d+) (.*) (?P<unexpected_count>\d+|\.)'
+  r' (.*) (?P<expected_count>\d+|\.) (.*) (?P<skip_count>\d+|\.)'
+  r' (.*) (?P<duration>\d+(\.\d*)?|\.\d+)s', re.MULTILINE)
+
+# NEO specific environment
+TEMP_DIRECTORY  = '{{directory.tmp}}/neo_tests'
+NEO_DB_SOCKET = '{{my_cnf_parameters.socket}}'
+RUN_NEO_TESTS_COMMAND = '{{ bin_directory }}/neotestrunner'
+
+def parseTestStdOut(data):
+  """
+  Parse output of NEO testrunner script.
+  """
+  test_count = 0
+  unexpected_count = 0
+  expected_count = 0
+  skip_count = 0
+  duration = 0
+  search = SUMMARY_RE.search(data)
+  if search:
+    groupdict = search.groupdict()
+    test_count = int(groupdict['test_count'])
+    duration = float(groupdict['duration'])
+    try:
+      # it can match '.'!
+      skip_count = int(groupdict['skip_count'])
+    except ValueError:
+      pass
+    try:
+      # it can match '.'!
+      unexpected_count = int(groupdict['unexpected_count'])
+    except ValueError:
+      pass
+    try:
+      # it can match '.'!
+      expected_count = int(groupdict['expected_count'])
+    except ValueError:
+      pass
+
+  return test_count, unexpected_count, expected_count, skip_count, duration
+
+def main():
+  parser = argparse.ArgumentParser(description='Run a test suite.')
+  parser.add_argument('--test_suite', help='The test suite name')
+  parser.add_argument('--test_suite_title', help='The test suite title')
+  parser.add_argument('--test_node_title', help='The test node title')
+  parser.add_argument('--project_title', help='The project title')
+  parser.add_argument('--revision', help='The revision to test',
+                      default='dummy_revision')
+  parser.add_argument('--node_quantity', help='ignored', type=int)
+  parser.add_argument('--master_url',
+                      help='The Url of Master controling many suites')
+
+  args = parser.parse_args()
+
+  test_suite_title = args.test_suite_title or args.test_suite
+  revision = args.revision
+
+  test_name_list = 'SQLite', 'MySQL'
+
+  tool = taskdistribution.TaskDistributionTool(portal_url = args.master_url)
+  test_result = tool.createTestResult(revision = revision,
+                                      test_name_list = test_name_list,
+                                      node_title = args.test_node_title,
+                                      test_title = test_suite_title,
+                                      project_title = args.project_title)
+  if test_result is None:
+    return
+  # run NEO tests
+  while 1:
+    test_result_line = test_result.start()
+    if not test_result_line:
+      break
+
+    if os.path.exists(TEMP_DIRECTORY):
+      shutil.rmtree(TEMP_DIRECTORY)
+    os.mkdir(TEMP_DIRECTORY)
+
+    args = [RUN_NEO_TESTS_COMMAND, '-ufz']
+    command = ' '.join(args)
+    env = {'TEMP': TEMP_DIRECTORY,
+           'NEO_TESTS_ADAPTER': test_result_line.name,
+           'NEO_TEST_ZODB_FUNCTIONAL': '1',
+           'NEO_DB_USER': 'root',
+           'NEO_DB_SOCKET': NEO_DB_SOCKET}
+    try:
+      with open(os.devnull) as stdin:
+        p = subprocess.Popen(args, stdin=stdin, stdout=subprocess.PIPE,
+                             stderr=subprocess.PIPE, env=env)
+    except Exception:
+      # Catch any exception here, to warn user instead of being silent,
+      # by generating fake error result
+      result = dict(status_code=-1,
+                    command=command,
+                    stderr=traceback.format_exc(),
+                    stdout='')
+      # XXX: inform test node master of error
+      raise EnvironmentError(result)
+
+    # parse test stdout / stderr, hint to speed up use files first!
+    stdout, stderr = p.communicate()
+    date = strftime("%Y/%m/%d %H:%M:%S", gmtime())
+    test_count, unexpected_count, expected_count, skip_count, duration = \
+      parseTestStdOut(stdout)
+
+    # print to stdout so we can see in testnode logs
+    sys.stdout.write(stdout)
+    sys.stderr.write(stderr)
+
+    # report status back to Nexedi ERP5
+    test_result_line.stop(
+        test_count = test_count,
+        error_count = unexpected_count, # XXX
+        failure_count = expected_count, # XXX
+        skip_count = skip_count,
+        duration = duration,
+        date = date,
+        command = command,
+        stdout= stdout,
+        stderr= stderr,
+        html_test_result='')
+
+if __name__ == "__main__":
+    main()

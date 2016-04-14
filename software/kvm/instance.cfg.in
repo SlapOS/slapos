@@ -142,7 +142,7 @@ mode = 0644
 
 [dynamic-template-kvm-import]
 recipe = slapos.recipe.template:jinja2
-template = ${template-kvm-import:location}/instance-kvm-import.cfg.in
+template = ${template-kvm-import:location}/instance-kvm-import.cfg.jinja2.in
 rendered = $${buildout:directory}/template-kvm-import.cfg
 extensions = jinja2.ext.do
 context =

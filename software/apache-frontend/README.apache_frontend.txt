@@ -440,9 +440,9 @@ the proxy::
   ServerAdmin example.org
   SSLEngine on
   SSLProxyEngine on
-  SSLProtocol -ALL +SSLv3 +TLSv1
-  SSLHonorCipherOrder On
-  SSLCipherSuite RC4-SHA:HIGH:!ADH
+  SSLProtocol all -SSLv2 -SSLv3
+  SSLCipherSuite ECDH+AESGCM:DH+AESGCM:ECDH+AES256:DH+AES256:ECDH+AES128:DH+AES:ECDH+3DES:DH+3DES:RSA+AESGCM:RSA+AES:RSA+3DES:HIGH:!aNULL:!MD5
+  SSLHonorCipherOrder on
   # Use personal ssl certificates
   SSLCertificateFile %(ssl_crt)s
   SSLCertificateKeyFile %(ssl_key)s
