@@ -25,7 +25,7 @@ http {
         ssl_certificate     {{ param_nginx_frontend['ssl-certificate'] }};
         ssl_certificate_key {{ param_nginx_frontend['ssl-key'] }};
         ssl_protocols       TLSv1 TLSv1.1 TLSv1.2;
-        ssl_ciphers         ECDH+AESGCM:DH+AESGCM:ECDH+AES256:DH+AES256:ECDH+AES128:DH+AES:ECDH+3DES:DH+3DES:RSA+AESGCM:RSA+AES:RSA+3DES:HIGH:!aNULL:!MD5
+        ssl_ciphers         ECDH+AESGCM:DH+AESGCM:ECDH+AES256:DH+AES256:ECDH+AES128:DH+AES:ECDH+3DES:DH+3DES:RSA+AESGCM:RSA+AES:RSA+3DES:HIGH:!aNULL:!MD5;
         ssl_prefer_server_ciphers on;
         keepalive_timeout 90s;
         client_body_temp_path {{ param_tempdir['client_body_temp_path'] }};
