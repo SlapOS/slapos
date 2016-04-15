@@ -269,6 +269,7 @@ rendered = ${directory:scripts}/monitor-httpd-graceful
 mode = 0700
 context =
     key content :command
+    raw dash_binary {{ dash_executable_location }}
 command = kill -USR1 $(cat ${monitor-httpd-conf-parameter:pid-file})
 
 [monitor-status2rss-wrapper]

@@ -1,2 +1,2 @@
-#!${dash-output:dash}
+#!{{ dash_binary }}
 {{ content }}
