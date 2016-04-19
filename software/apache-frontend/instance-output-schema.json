@@ -1,0 +1,43 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "description": "Values returned by Apache Frontend instanciation",
+  "properties": {
+    "accepted-slave-amount": {
+      "description": "Amount of Slaves allocated to the Instance which are deployed",
+      "type": "integer"
+    },
+    "slave-amount": {  
+      "description": "Total amount of Slaves allocated to the Instance (include blocked ones)",
+      "type": "integer"
+    },
+    "reject-slave-amount": {  
+      "description": "Rejected Amount of Slaves allocated to the Instance which are not deployed",
+      "type": "integer"
+    },
+    "rejected-slave-list": {  
+      "description": "List of slave instances references which are rejected",
+      "type": "array"
+    },
+    "domain": {  
+      "description": "Base domain used by the instance",
+      "type": "string"
+    },
+    "monitor-base-url": {               
+      "description": "Base url for monitor",
+      "type": "string"
+    },
+    "monitor-url": {   
+      "description": "Url of Monitor (opml)",
+      "type": "string"
+    },
+    "monitor-password": {   
+      "description": "Password to access the monitor",
+      "type": "string"
+    },
+    "monitor-user": {
+      "description": "User to access the monitor",
+      "type": "string"
+    }
+  },
+  "type": "object"
+}
