@@ -13,18 +13,22 @@
     },
     "serialisation": {
       "description": "How the parameters and results are serialised",
-      "required": true,
+      "require": true,
       "enum": ["xml", "json-in-xml"],
       "type": "string"
     },
     "software-type": {
       "description": "Existing software types",
-      "required": true,
+      "require": true,
       "patternProperties": {
         ".*": {
           "description": "Software type declaration",
           "additionalProperties": false,
           "properties": {
+            "title": {
+              "description": "A human-friendly title of the software type",
+              "type": "string"
+            },
             "description": {
               "description": "A human-friendly description of the software type",
               "type": "string"
@@ -35,18 +39,26 @@
               "type": "string"
             },
             "request": {
-              "required": true,
+              "require": true,
               "description": "URL, relative to Software Release base path, of a json schema for values expected by instance of current software type",
               "type": "string"
             },
             "response": {
-              "required": true,
+              "require": true,
               "description": "URL, relative to Software Release base path, of a json schema for values published by instance of current software type",
               "type": "string"
             },
+            "software-type" : {
+              "description": "Value to be used as software type instead of the software type id (in order to use multiple diferent forms for the same software type).",
+              "type": "string"
+            },
+            "shared" : {
+              "description": "Define if the request will request a Slave or Software Instance.",
+              "type": "boolean"
+            },
             "index": {
               "description": "Value to use instead of software type id to sort them (in order to display most relevant software types earlier in a list, for example)",
-              "type": "any"
+              "type": "number"
             }
           },
           "type": "object"
