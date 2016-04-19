@@ -48,6 +48,14 @@
               "description": "URL, relative to Software Release base path, of a json schema for values published by instance of current software type",
               "type": "string"
             },
+            "software-type" : {
+              "description": "Value to be used as software type instead of the software type id (in order to use multiple diferent forms for the same software type).",
+              "type": "string"
+            },
+            "shared" : {
+              "description": "Define if the request will request a Slave or Software Instance.",
+              "type": "boolean"
+            },
             "index": {
               "description": "Value to use instead of software type id to sort them (in order to display most relevant software types earlier in a list, for example)",
               "type": "number"
