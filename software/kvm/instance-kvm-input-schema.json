@@ -168,13 +168,13 @@
         "description": "Give Url of HTML web interface that will be used to render this monitor instance.",
         "type": "string",
         "format": "uri",
-        "default": "https://monitor.node.vifib.com"
+        "default": "https://monitor.app.officejs.com"
     },
     "monitor-cors-domains": {
         "title": "Monitor CORS domains",
         "description": "List of cors domains separated with space. Needed for ajax query on this monitor instance from a different domain.",
         "type": "string",
-        "default": "monitor.node.vifib.com"
+        "default": "monitor.app.officejs.com"
     },
     "enable-http-server": {
       "title": "Enable local http server",
