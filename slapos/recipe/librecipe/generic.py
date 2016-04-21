@@ -164,7 +164,7 @@ class GenericBaseRecipe(object):
               rm $pidfile
             fi
           fi
-          echo $$ > $pidfile""" % shlex.quote(pidfile)))
+          echo $$ > $pidfile""" % (shlex.quote(pidfile), command)))
 
     lines.append(dedent('''
     # If the wrapped command uses a shebang, execute the referenced
