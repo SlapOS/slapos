@@ -61,6 +61,7 @@ services = ${:etc}/service
 promises = ${:etc}/promise
 monitor = ${:srv}/monitor
 monitor-promise = ${:etc}/monitor-promise
+monitor-report = ${:etc}/monitor-report
 
 [monitor-directory]
 recipe = slapos.cookbook:mkdirectory
@@ -69,6 +70,7 @@ etc = ${directory:etc}
 run = ${directory:monitor}/run
 #run = ${directory:scripts}
 promises = ${directory:monitor-promise}
+report = ${directory:monitor-report}
 pids = ${directory:run}/monitor
 cgi-bin = ${directory:monitor}/cgi-bin
 webdav = ${directory:monitor}/webdav
@@ -374,7 +376,7 @@ monitor-httpd-port = 8196
 monitor-base-url = ${monitor-frontend-promise:url}
 root-instance-title = ${slap-configuration:root-instance-title}
 opml-url-list =
-cors-domains = 
+cors-domains = monitor.app.officejs.com 
 # XXX Hard coded parameter
 collector-db = /srv/slapgrid/var/data-log/collector.db
 # Credentials
