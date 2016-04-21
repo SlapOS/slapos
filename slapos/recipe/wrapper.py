@@ -64,5 +64,6 @@ class Recipe(GenericBaseRecipe):
         return [python_script, self.createWrapper(
              name=wrapper_path,
              command=python_script,
+             parameters=[],
              parameters_extra=parameters_extra) ]
 
