@@ -80,6 +80,10 @@ context =
 [replicate]
 <= slap-connection
 recipe = slapos.cookbook:requestoptional
+config-monitor-cors-domains = {{ slapparameter_dict.get('monitor-cors-domains', 'monitor.app.officejs.com') }}
+config-monitor-username = ${monitor-htpasswd:username}
+config-monitor-password = ${monitor-htpasswd:passwd}
+
 {% set frontend_software_url_key = "-frontend-software-release-url" %}
 {% if slapparameter_dict.has_key(frontend_software_url_key) %}
 software-url = {{ slapparameter_dict.pop(frontend_software_url_key) }}
@@ -87,8 +91,7 @@ software-url = {{ slapparameter_dict.pop(frontend_software_url_key) }}
 software-url = ${slap-connection:software-release-url}
 {% endif %}
 software-type = {{frontend_type}}
-return = private-ipv4 public-ipv4 slave-instance-information-list monitor_url
-connection-monitor_url =
+return = private-ipv4 public-ipv4 slave-instance-information-list monitor-base-url
 
 {% for section, frontend_request in request_dict.iteritems() %}
 [{{section}}]
@@ -117,13 +120,10 @@ slave-amount = {{ slave_instance_list | length }}
 accepted-slave-amount = {{ authorized_slave_list | length }}
 rejected-slave-amount = {{ rejected_slave_list | length }}
 rejected-slave-list = {{ json_module.dumps(rejected_slave_list) }}
-{% for frontend in frontend_section_list %}
-{{ frontend }}-monitor-url = {{ '${' + frontend + ':connection-monitor_url}' }}
-{% endfor -%}
-{% for frontend in frontend_list -%}
-#{{frontend}}-private-ipv4 = ${request-{{frontend}}:private-ipv4}
-{% endfor -%}
-
+monitor-base-url = ${monitor-conf-parameters:base-url}
+monitor-url = ${:monitor-base-url}/public/feeds
+monitor-user = ${monitor-instance-parameter:username}
+monitor-password = ${monitor-instance-parameter:password}
 
 #----------------------------
 #--
@@ -149,8 +149,16 @@ extensions = jinja2.ext.do
 extra-context =
     section slave_information slave-information
 
+[monitor-conf-parameters]
+monitor-url-list +=
+{% for frontend in frontend_section_list %}
+{{ '  ${' + frontend + ':connection-monitor-base-url}' }}
+{% endfor -%}
+
 [buildout]
+extends = {{ template_monitor }}
 parts =
+  monitor-base
   publish-slave-information
   publish-information
 {% for part in part_list -%}
