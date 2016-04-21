@@ -222,13 +222,18 @@ class Monitoring(object):
   def getMonitorTitleFromUrl(self, monitor_url):
     # This file should be generated
     if not monitor_url.startswith('https://') and not monitor_url.startswith('http://'):
-      return 'Unknow Instance'
+      return 'Unknown Instance'
     if not monitor_url.endswith('/'):
       monitor_url = monitor_url + '/'
-    context = ssl._create_unverified_context()
+
     url  = monitor_url + '/.jio_documents/monitor.global.json' # XXX Hard Coded path
     try:
-      response = urllib2.urlopen(url, context=context)
+      # XXX - working here with public url
+      if hasattr(ssl, '_create_unverified_context'):
+        context = ssl._create_unverified_context()
+        response = urllib2.urlopen(url, context=context)
+      else:
+        response = urllib2.urlopen(url)
     except urllib2.HTTPError:
       return 'Unknow Instance'
     else:
