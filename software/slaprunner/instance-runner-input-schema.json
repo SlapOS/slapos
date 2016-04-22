@@ -50,6 +50,17 @@
             "description": "Software type of your instance inside the runner",
             "type": "string"
         },
+        "cpu-usage-ratio": {
+            "title": "CPU Usage Ratio",
+            "description": "Ratio of the CPU use for compilation, if value is set to n, compilation will use number-of-cpu/n of cpus (need instance restart)",
+            "type": "integer",
+            "default" : 4
+        },
+        "instance-name": {
+            "title": "Displayed instance name",
+            "description": "Name of the instance, to show in the window title",
+            "type": "string"
+        },
         "custom-frontend-backend-url": {
             "title": "Custom Frontend Backend URL",
             "description": "return an ipv4 frontend of the given ipv6(+optional port)",
@@ -110,22 +121,6 @@
             "description": "List of cors domains separated with space. Needed for ajax query on this monitor instance from a different domain.",
             "type": "string",
             "default": "monitor.app.officejs.com"
-        },
-        "cpu-usage-ratio": {
-            "title": "CPU Usage Ratio",
-            "description": "Ratio of the CPU use for compilation, if value is set to n, compilation will use number-of-cpu/n of cpus (need instance restart)",
-            "type": "integer",
-            "default" : 4
-        },
-        "resilient-clone-number": {
-            "title": "Number of Resilient Clones",
-            "description": "Number of clones to be deployed when a resilient runner, if missing a single clone is provided. Its value can be 1 or 2",
-            "type": "integer",
-            "enum": [1, 2]
-        },
-        "instance-name": {
-            "description": "Name of the instance, to show in the window title",
-            "type": "string"
         }
     }
 }
