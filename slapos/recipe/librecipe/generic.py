@@ -134,23 +134,25 @@ class GenericBaseRecipe(object):
       pidfile=None
   ):
     """
-    Creates a very simple (one command) shell script for process replacement.
+    Creates a shell script for process replacement.
     Takes care of quoting.
+    Takes care of #! line limitation when the wrapped command is a script.
     if pidfile parameter is specified, then it will make the wrapper a singleton,
     accepting to run only if no other instance is running.
     """
 
     lines = [ '#!/bin/sh' ]
 
-    for comment in comments:
-      lines.append('# %s' % comment)
+    if comments:
+      lines += '# ', '\n# '.join(comments), '\n'
 
-    if environment:
-      for key in environment:
-        lines.append('export %s=%s' % (key, environment[key]))
+    lines.append('COMMAND=' + shlex.quote(command))
+
+    for key in environment or ():
+      lines.append('export %s=%s' % (key, environment[key]))
 
     if pidfile:
-      lines.append(dedent("""\
+      lines.append(dedent("""
           # Check for other instances
           pidfile=%s
           if [ -e $pidfile ]; then
@@ -162,24 +164,31 @@ class GenericBaseRecipe(object):
               rm $pidfile
             fi
           fi
-          echo $$ > $pidfile""" % (pidfile, command)))
+          echo $$ > $pidfile""" % (shlex.quote(pidfile), command)))
 
-    lines.append('exec %s' % shlex.quote(command))
+    lines.append(dedent('''
+    # If the wrapped command uses a shebang, execute the referenced
+    # executable passing the script path as first argument.
+    # This is to workaround the limitation of 127 characters in #!
+    [ ! -f "$COMMAND" ] || {
+      [ "`head -c2`" != "#!" ] || read -r EXE ARG
+    } < "$COMMAND"
 
+    exec $EXE ${ARG:+"$ARG"} "$COMMAND"'''))
+
+    parameters = map(shlex.quote, parameters)
+    if parameters_extra:
+      # pass-through further parameters
+      parameters.append('"$@"')
     for param in parameters:
       if len(lines[-1]) < 40:
-        lines[-1] += ' ' + shlex.quote(param)
+        lines[-1] += ' ' + param
       else:
         lines[-1] += ' \\'
-        lines.append('\t' + shlex.quote(param))
+        lines.append('\t' + param)
 
-    if parameters_extra:
-        # pass-through further parameters
-        lines[-1] += ' \\'
-        lines.append('\t"$@"')
-
-    content = '\n'.join(lines) + '\n'
-    return self.createFile(name, content, 0700)
+    lines.append('')
+    return self.createFile(name, '\n'.join(lines), 0700)
 
   def createDirectory(self, parent, name, mode=0700):
     path = os.path.join(parent, name)

@@ -182,15 +182,12 @@ def keysplit(s):
 class AddAuthorizedKey(GenericBaseRecipe):
 
   def install(self):
-    path_list = []
-
     ssh = self.createDirectory(self.options['home'], '.ssh')
-    path_list.append(ssh)
 
     authorized_keys = AuthorizedKeysFile(os.path.join(ssh, 'authorized_keys'))
     for key in keysplit(self.options['key']):
       # XXX key might actually be the string 'None' or 'null'
       authorized_keys.append(key)
 
-    return path_list
+    return [authorized_keys.filename]
 
