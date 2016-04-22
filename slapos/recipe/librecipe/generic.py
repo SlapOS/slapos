@@ -155,16 +155,11 @@ class GenericBaseRecipe(object):
       lines.append(dedent("""
           # Check for other instances
           pidfile=%s
-          if [ -e $pidfile ]; then
-            pid=$(cat $pidfile)
-            if [ ! -z "$(ps -p $pid | grep $(basename %s))" ]; then
-              echo "Already running with pid $pid."
-              exit 1
-            else
-              rm $pidfile
-            fi
+          if pid=`pgrep -F $pidfile -f "$COMMAND" 2>/dev/null`; then
+            echo "Already running with pid $pid."
+            exit 1
           fi
-          echo $$ > $pidfile""" % (shlex.quote(pidfile), command)))
+          echo $$ > $pidfile""" % shlex.quote(pidfile)))
 
     lines.append(dedent('''
     # If the wrapped command uses a shebang, execute the referenced
