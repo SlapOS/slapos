@@ -46,7 +46,7 @@
         </item>
         <item>
             <key> <string>output_encoding</string> </key>
-            <value> <string>iso-8859-15</string> </value>
+            <value> <string>utf-8</string> </value>
         </item>
         <item>
             <key> <string>title</string> </key>
