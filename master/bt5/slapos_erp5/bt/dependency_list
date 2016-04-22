@@ -6,6 +6,8 @@ erp5_odt_style
 erp5_ods_style
 erp5_forge
 erp5_dhtml_style
+erp5_ace_editor
+erp5_code_mirror
 slapos_accounting
 slapos_cache
 slapos_category
