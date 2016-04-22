@@ -467,7 +467,17 @@
         span_error = document.createElement("span"),
         textarea = document.createElement("textarea"),
         fieldset = document.createElement("fieldset"),
-        fieldset_list = g.props.element.querySelectorAll('fieldset');
+        fieldset_list = g.props.element.querySelectorAll('fieldset'),
+        button0 = g.props.element.querySelector("button.slapos-show-raw-parameter"),
+        button1 = g.props.element.querySelector("button.slapos-show-form");
+
+      if (button0 !== null) {
+        $(button0).addClass("hidden-button");
+      }
+
+      if (button1 !== null) {
+        $(button1).addClass("hidden-button");
+      }
 
       div.setAttribute("class", "field");
       textarea.setAttribute("rows", "10");
@@ -494,21 +504,46 @@
 
       return fieldset;
     })
+    .declareMethod('renderRawParameterTextArea', function (content) {
+      var g = this,
+        div = document.createElement("div"),
+        div_error = document.createElement("div"),
+        textarea = document.createElement("textarea"),
+        fieldset = document.createElement("fieldset"),
+        fieldset_list = g.props.element.querySelectorAll('fieldset');
+
+      div.setAttribute("class", "field");
+      textarea.setAttribute("rows", "10");
+      textarea.setAttribute("cols", "80");
+
+      textarea.setAttribute("name", "field_your_instance_xml");
+      textarea.textContent = content;
+
+      div.appendChild(textarea);
+      div.appendChild(textarea);
+
+      fieldset.appendChild(div);
+      fieldset.appendChild(div_error);
+
+      $(fieldset_list[1]).replaceWith(fieldset);
+      fieldset_list[2].innerHTML = '';
+
+      return fieldset;
+    })
     .declareMethod('render', function (options) {
       if (options.json_url === undefined) {
         throw new Error("undefined json_url");
       }
       var g = this,
-        softwaretype,
-        softwaretypeindex;
+        to_hide = g.props.element.querySelector("button.slapos-show-raw-parameter"),
+        softwaretype;
+
+      if (to_hide !== null) {
+        $(to_hide).addClass("hidden-button");
+      }
+
 
       this.options = options;
-
-      function updateParameterForm(evt) {
-        options.parameter.softwaretype = evt.srcElement.value;
-        options.parameter.softwaretypeindex = evt.srcElement.selectedOptions[0]["data-id"];
-        return g.render(options);
-      }
 
       return g.loadSoftwareJSON(g.options.json_url).push(function (json) {
         var option_index,
@@ -516,6 +551,10 @@
           option_selected = options.parameter.softwaretypeindex,
           input = g.props.element.querySelector('select.slapos-software-type'),
           s_input = g.props.element.querySelector('input.slapos-serialisation-type');
+
+        if (options.parameter.softwaretypeindex === undefined) {
+          option_selected = options.parameter.softwaretype;
+        }
 
         if (input.children.length === 0) {
           for (option_index in json['software-type']) {
@@ -654,6 +693,72 @@
         'change',
         false,
         updateParameterForm.bind(g)
+      );
+    })
+    .declareService(function () {
+      var g = this,
+        element = g.props.element.querySelector("button.slapos-show-raw-parameter");
+
+      if (element === undefined) {
+        return true;
+      }
+
+      function showRawParameter(evt) {
+        var e = g.props.element.querySelector("button.slapos-show-raw-parameter"),
+          to_show = g.props.element.querySelector("button.slapos-show-form"),
+          parameter_xml;
+
+        if (g.options.parameter.parameter_hash !== undefined) {
+          parameter_xml = atob(g.options.parameter.parameter_hash);
+        }
+
+        $(e).addClass("hidden-button");
+        $(to_show).removeClass("hidden-button");
+
+        return g.renderRawParameterTextArea(parameter_xml)
+          .push(function () {
+            return loadEventList(g);
+          });
+      }
+
+      return loopEventListener(
+        element,
+        'click',
+        false,
+        showRawParameter.bind(g)
+      );
+    })
+    .declareService(function () {
+      var g = this,
+        element = g.props.element.querySelector("button.slapos-show-form");
+
+      function showParameterForm(evt) {
+        var e = g.props.element.getElementsByTagName('select')[0],
+          to_hide = g.props.element.querySelector("button.slapos-show-form"),
+          to_show = g.props.element.querySelector("button.slapos-show-raw-parameter");
+
+        if (e === undefined) {
+          throw new Error("Select not found.");
+        }
+
+
+        $(to_hide).addClass("hidden-button");
+        $(to_show).removeClass("hidden-button");
+
+        g.options.parameter.softwaretype = e.value;
+        g.options.parameter.softwaretypeindex = e.selectedOptions[0]["data-id"];
+        return g.render(g.options)
+          .push(function () {
+            return loadEventList(g);
+          });
+      }
+
+
+      return loopEventListener(
+        element,
+        'click',
+        false,
+        showParameterForm.bind(g)
       );
     })
     .declareService(function () {
