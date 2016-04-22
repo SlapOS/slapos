@@ -533,7 +533,7 @@ command-line    = {{ gitlab_workhorse }}
 #   - ruby to be available on path  (gitlab-workhorse -> gitlab-shell -> hooks  on push)
 #   - gitconfig be found from ~/.gitconfig
 environment =
-    PATH={{ git_location }}/bin:{{ ruby_location }}/bin:%(PATH)s
+    PATH={{ git_location }}/bin:{{ ruby_location }}/bin
     HOME=${directory:home}
 
 depend  =
