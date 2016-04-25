@@ -6,7 +6,7 @@ if person is not None:
     portal_type="Hosting Subscription",
     default_destination_section_uid=person.getUid(),
     validation_state='validated',
-    sort_on=(('title', ),)
+    **kw
     )
     
 return []
