@@ -299,7 +299,7 @@
       <dictionary>
         <item>
             <key> <string>_text</string> </key>
-            <value> <string>Ticket Type</string> </value>
+            <value> <string>python: "Ticket Type"</string> </value>
         </item>
       </dictionary>
     </pickle>

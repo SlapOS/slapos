@@ -50,7 +50,7 @@
         </item>
         <item>
             <key> <string>_params</string> </key>
-            <value> <string>title, description, resource</string> </value>
+            <value> <string>title, description, resource, **kw</string> </value>
         </item>
         <item>
             <key> <string>id</string> </key>

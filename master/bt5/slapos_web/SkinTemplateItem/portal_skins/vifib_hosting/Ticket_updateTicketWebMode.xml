@@ -53,6 +53,14 @@
             <value> <string>*args, **kwargs</string> </value>
         </item>
         <item>
+            <key> <string>_proxy_roles</string> </key>
+            <value>
+              <tuple>
+                <string>Manager</string>
+              </tuple>
+            </value>
+        </item>
+        <item>
             <key> <string>id</string> </key>
             <value> <string>Ticket_updateTicketWebMode</string> </value>
         </item>
