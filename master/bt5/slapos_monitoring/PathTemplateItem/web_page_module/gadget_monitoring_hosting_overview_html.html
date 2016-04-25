@@ -99,7 +99,7 @@
           <h3 class="margin-0 padding-tb-10">{{title}} <i class="fa fa-angle-up"></i></h3>
           <table data-role="table" data-mode="columntoggle" class="table-stroke" title="{{title}}">
             {{#each parameters}}
-              <tr {{#if key}} class="line-edit"  rel="{{../../index}}"{{/if}}>
+              <tr {{#if key}} class="line-edit"  rel="{{../index}}"{{/if}}>
                 <td><strong>{{title}}</strong></td>
                 {{#if key}}
                   <td class="v-{{key}}">{{value}}</td>
@@ -108,7 +108,7 @@
                 {{/if}}
                 <td class="ui-text-center">
                   {{#if key}}
-                  <a rel="{{../../index}}" class="prop-edit" title='Edit this value'><i class="fa fa-pencil"></i></a>
+                  <a rel="{{../index}}" class="prop-edit" title='Edit this value'><i class="fa fa-pencil"></i></a>
                   {{else}}
                   <a><span class="ui-text-desabled" title='Edit this value'><i class="fa fa-pencil"></i></sapn></a>
                   {{/if}}
