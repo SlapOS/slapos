@@ -13,7 +13,7 @@
                 <string>css_class</string>
                 <string>default</string>
                 <string>enabled</string>
-                <string>name</string>
+                <string>href</string>
                 <string>title</string>
               </list>
             </value>
@@ -117,7 +117,7 @@
                 </item>
                 <item>
                     <key> <string>field_id</string> </key>
-                    <value> <string>my_input_button_field</string> </value>
+                    <value> <string>my_hyperlink</string> </value>
                 </item>
                 <item>
                     <key> <string>form_id</string> </key>
@@ -125,7 +125,7 @@
                 </item>
                 <item>
                     <key> <string>href</string> </key>
-                    <value> <string>#</string> </value>
+                    <value> <string>./HostingSubscription_requestStart</string> </value>
                 </item>
                 <item>
                     <key> <string>name</string> </key>
