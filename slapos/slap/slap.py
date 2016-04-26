@@ -564,8 +564,27 @@ class ComputerPartition(SlapRequester):
       return self._software_release_document
 
   def setConnectionDict(self, connection_dict, slave_reference=None):
-    if self.getConnectionParameterDict() != connection_dict:
-      self._connection_helper.POST('setComputerPartitionConnectionXml', data={
+    if self.getConnectionParameterDict() == connection_dict:
+      return
+
+    if slave_reference is not None: 
+      # check the connection parameters from the slave
+      
+      # Should we check existence?
+      slave_parameter_list = self.getInstanceParameter("slave_instance_list")
+      slave_connection_dict = {}
+      for slave_parameter_dict in slave_parameter_list: 
+        if slave_parameter_dict["reference"] == slave_reference:
+          for key in slave_parameter_dict.get(
+                       "connection-parameter-key-list", []):
+            slave_connection_dict[key] = slave_parameter_dict[key]
+          break
+
+      # Skip as nothing changed for the slave
+      if slave_connection_dict == connection_dict:
+        return
+       
+    self._connection_helper.POST('setComputerPartitionConnectionXml', data={
           'computer_id': self._computer_id,
           'computer_partition_id': self._partition_id,
           'connection_xml': xml_marshaller.dumps(connection_dict),

@@ -1223,6 +1223,8 @@ class TestSlapOSSlapToolInstanceAccess(TestSlapOSSlapToolMixin):
         <string>slave_instance_list</string>
         <list id='i9'>
           <dictionary id='i10'>
+            <string>connection-parameter-key-list</string>
+            <list id='i11'/>
             <unicode>paramé</unicode>
             <unicode>%(slave_1_param)s</unicode>
             <string>slap_software_type</string>
@@ -1245,16 +1247,16 @@ class TestSlapOSSlapToolInstanceAccess(TestSlapOSSlapToolMixin):
       <string>_requested_state</string>
       <string>started</string>
       <string>_software_release_document</string>
-      <object id='i11' module='slapos.slap.slap' class='SoftwareRelease'>
+      <object id='i12' module='slapos.slap.slap' class='SoftwareRelease'>
         <tuple>
           <unicode>%(software_release_url)s</unicode>
           <unicode>%(computer_id)s</unicode>
         </tuple>
-        <dictionary id='i12'>
+        <dictionary id='i13'>
           <string>_computer_guid</string>
           <unicode>%(computer_id)s</unicode>
           <string>_software_instance_list</string>
-          <list id='i13'/>
+          <list id='i14'/>
           <string>_software_release</string>
           <unicode>%(software_release_url)s</unicode>
         </dictionary>
@@ -2316,6 +2318,8 @@ class TestSlapOSSlapToolPersonAccess(TestSlapOSSlapToolMixin):
         <string>slave_instance_list</string>
         <list id='i9'>
           <dictionary id='i10'>
+            <string>connection-parameter-key-list</string>
+            <list id='i11'/>
             <unicode>paramé</unicode>
             <unicode>%(slave_1_param)s</unicode>
             <string>slap_software_type</string>
@@ -2338,16 +2342,16 @@ class TestSlapOSSlapToolPersonAccess(TestSlapOSSlapToolMixin):
       <string>_requested_state</string>
       <string>started</string>
       <string>_software_release_document</string>
-      <object id='i11' module='slapos.slap.slap' class='SoftwareRelease'>
+      <object id='i12' module='slapos.slap.slap' class='SoftwareRelease'>
         <tuple>
           <unicode>%(software_release_url)s</unicode>
           <unicode>%(computer_id)s</unicode>
         </tuple>
-        <dictionary id='i12'>
+        <dictionary id='i13'>
           <string>_computer_guid</string>
           <unicode>%(computer_id)s</unicode>
           <string>_software_instance_list</string>
-          <list id='i13'/>
+          <list id='i14'/>
           <string>_software_release</string>
           <unicode>%(software_release_url)s</unicode>
         </dictionary>

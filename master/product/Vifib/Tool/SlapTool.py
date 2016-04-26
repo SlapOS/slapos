@@ -826,12 +826,16 @@ class SlapTool(BaseTool):
       slap_partition._instance_guid = parameter_dict.pop('instance_guid')
       for slave_instance_dict in parameter_dict.get("slave_instance_list", []):
         if slave_instance_dict.has_key("connection_xml"):
-          slave_instance_dict.update(self._instanceXmlToDict(
-            slave_instance_dict.pop("connection_xml")))
+          connection_dict = self._instanceXmlToDict(
+            slave_instance_dict.pop("connection_xml"))
+          slave_instance_dict.update(connection_dict)
+          slave_instance_dict['connection-parameter-key-list'] = \
+            connection_dict.keys()
         if slave_instance_dict.has_key("xml"):
           slave_instance_dict.update(self._instanceXmlToDict(
             slave_instance_dict.pop("xml")))
       slap_partition._parameter_dict.update(parameter_dict)
+
     result = xml_marshaller.xml_marshaller.dumps(slap_partition)
 
     # Keep in cache server for 7 days
