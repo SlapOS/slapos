@@ -94,6 +94,7 @@ class Monitoring(object):
     self.collector_db  = config.get("monitor", "collector-db")
     self.collect_script = config.get("monitor", "collect-script")
     self.webdav_folder = config.get("monitor", "webdav-folder")
+    self.report_script_folder = config.get("monitor", "report-folder")
     self.webdav_url = '%s/share' % config.get("monitor", "base-url")
     self.public_url = '%s/public' % config.get("monitor", "base-url")
     self.status_history_folder = os.path.join(self.public_folder, 'history')
@@ -106,6 +107,7 @@ class Monitoring(object):
     self.parameter_cfg_file = config.get("monitor", "parameter-file-path").strip()
 
     self.config_folder = os.path.join(self.private_folder, 'config')
+    self.report_folder = os.path.join(self.private_folder, 'report')
 
     self.promise_dict = {}
     for promise_folder in self.promise_folder_list:
@@ -267,9 +269,11 @@ class Monitoring(object):
         raise
 
     self.data_folder = os.path.join(self.private_folder, 'data', '.jio_documents')
+    self.report_folder = os.path.join(self.report_folder, '.jio_documents')
     config_folder = os.path.join(self.config_folder, '.jio_documents')
     mkdirAll(self.data_folder)
     mkdirAll(config_folder)
+    mkdirAll(self.report_folder)
     try:
       os.symlink(os.path.join(self.private_folder, 'data'),
                   os.path.join(jio_private, 'data'))
@@ -278,6 +282,11 @@ class Monitoring(object):
         raise
     try:
       os.symlink(self.config_folder, os.path.join(jio_private, 'config'))
+    except OSError, e:
+      if e.errno != os.errno.EEXIST:
+        raise
+    try:
+      os.symlink(self.report_folder, os.path.join(jio_private, 'report'))
     except OSError, e:
       if e.errno != os.errno.EEXIST:
         raise
@@ -385,6 +394,53 @@ class Monitoring(object):
     with open(self.monitor_hal_json, "w") as fp:
       json.dump(self.monitor_dict, fp)
 
+  def generateReportCronEntries(self):
+    cron_line_list = []
+    # We should add the possibility to modify this parameter later from monitor interface
+    report_frequency = "*/30 * * * *"
+
+    report_name_list = [name.replace('.report.json', '')
+      for name in os.listdir(self.report_folder) if name.endswith('.report.json')]
+
+    for filename in os.listdir(self.report_script_folder):
+      report_script = os.path.join(self.report_script_folder, filename)
+      if os.path.isfile(report_script) and os.access(report_script, os.X_OK):
+        report_name = os.path.splitext(filename)[0]
+        report_json_path = "%s.report.json" % report_name
+
+        report_cmd_line = [
+          report_frequency,
+          self.promise_runner,
+          '--pid_path "%s"' % os.path.join(self.service_pid_folder,
+            "%s.pid" % filename),
+          '--output "%s"' % os.path.join(self.report_folder,report_json_path),
+          '--promise_script "%s"' % report_script,
+          '--promise_name "%s"' % report_name,
+          '--monitor_url "%s/jio_private/"' % self.webdav_url, # XXX hardcoded,
+          '--history_folder "%s"' % self.report_folder,
+          '--instance_name "%s"' % self.title,
+          '--hosting_name "%s"' % self.root_title,
+          '--promise_type "report"']
+
+        cron_line_list.append(' '.join(report_cmd_line))
+
+      if report_name in report_name_list:
+        report_name_list.pop(report_name_list.index(report_name))
+
+    # cleanup removed report json result
+    if report_name_list != []:
+      for report_name in report_name_list:
+        result_path = os.path.join(self.public_folder, '%s.report.json' % report_name)
+        if os.path.exists(result_path):
+          try:
+            os.unlink(result_path)
+          except OSError, e:
+            print "Error: Failed to delete %s" % result_path, str(e)
+            pass
+
+    with open(self.crond_folder + "/monitor-reports", "w") as freport:
+      freport.write("\n".join(cron_line_list))
+
   def generateServiceCronEntries(self):
     # XXX only if at least one configuration file is modified, then write in the cron
     #cron_line_list = ['PATH=%s\n' % os.environ['PATH']]
@@ -401,13 +457,13 @@ class Monitoring(object):
       promise_cmd_line = [
         softConfigGet(service_config, "service", "frequency") or "* * * * *",
         self.promise_runner,
-        '--pid_path %s' % os.path.join(self.service_pid_folder,
+        '--pid_path "%s"' % os.path.join(self.service_pid_folder,
           "%s.pid" % service_name),
-        '--output %s' % service_status_path,
-        '--promise_script %s' % promise["path"],
+        '--output "%s"' % service_status_path,
+        '--promise_script "%s"' % promise["path"],
         '--promise_name "%s"' % service_name,
         '--monitor_url "%s/jio_private/"' % self.webdav_url, # XXX hardcoded,
-        '--history_folder %s' % self.status_history_folder,
+        '--history_folder "%s"' % self.status_history_folder,
         '--instance_name "%s"' % self.title,
         '--hosting_name "%s"' % self.root_title]
 
@@ -442,6 +498,13 @@ class Monitoring(object):
       cronf.write(entry_line)
 
   def bootstrapMonitor(self):
+
+    # create symlinks from monitor.conf
+    self.createSymlinksFromConfig(self.public_folder, self.public_path_list)
+    self.createSymlinksFromConfig(self.private_folder, self.private_path_list)
+
+    self.configureFolders()
+
     # create symlinks from service configurations
     self.promise_items = self.promise_dict.items()
     for service_name, promise in self.promise_items:
@@ -457,12 +520,6 @@ class Monitoring(object):
                                       private_path_list.split(),
                                       service_name)
 
-    # create symlinks from monitor.conf
-    self.createSymlinksFromConfig(self.public_folder, self.public_path_list)
-    self.createSymlinksFromConfig(self.private_folder, self.private_path_list)
-
-    self.configureFolders()
-
     # generate monitor.json
     self.monitor_dict = {}
     self.generateMonitorHalJson()
@@ -473,6 +530,9 @@ class Monitoring(object):
 
     # put promises to a cron file
     self.generateServiceCronEntries()
+
+    # put report script to cron
+    self.generateReportCronEntries()
 
     # Generate parameters files and scripts
     self.makeConfigurationFiles()
