@@ -35,6 +35,7 @@ parts +=
   httpd-graceful-wrapper
 ## Monitoring part
 ## Monitor for runner
+  monitor-base
   monitor-check-resilient-feed-file
   monitor-check-webrunner-internal-instance
 
@@ -66,7 +67,7 @@ instance-configuration =
 [monitor-check-resilient-feed-file]
 recipe = slapos.recipe.template:jinja2
 template = ${template-monitor-check-resilient-feed:location}/${template-monitor-check-resilient-feed:filename}
-rendered = $${monitor-directory:promises}/check-create-resilient-feed-files
+rendered = $${monitor-directory:reports}/check-create-resilient-feed-files
 mode = 700
 context =
   key input_feed_directory directory:notifier-feeds
