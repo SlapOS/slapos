@@ -95,6 +95,13 @@ class Recipe(GenericBaseRecipe):
 
 class Request(Recipe):
 
+  def setPath(self):
+    self.request_directory = self.options['requests-directory']
+    self.ca_private = self.options['ca-private']
+    self.ca_certs = self.options['ca-certs']
+    self.ca_key_ext = '.key'
+    self.ca_crt_ext = '.crt'
+
   def _options(self, options):
     if 'name' not in options:
       options['name'] = self.name
