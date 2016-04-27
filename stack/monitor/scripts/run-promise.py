@@ -24,15 +24,18 @@ def parseArguments():
                       help='Promise script to execute.')
   parser.add_argument('--promise_name',
                       help='Title to give to this promise.')
+  parser.add_argument('--promise_type',
+                      default='status',
+                      help='Type of promise to execute. [status, report].')
   parser.add_argument('--monitor_url',
                       help='Monitor Instance website URL.')
   parser.add_argument('--history_folder',
                       help='Path where old result file will be placed before generate a new json result file.')
   parser.add_argument('--instance_name',
-                      default='UNKNOW Software Instance',
+                      default='UNKNOWN Software Instance',
                       help='Software Instance name.')
   parser.add_argument('--hosting_name',
-                      default='UNKNOW Hosting Subscription',
+                      default='UNKNOWN Hosting Subscription',
                       help='Hosting Subscription name.')
 
   return parser.parse_args()
@@ -74,14 +77,16 @@ def main():
   updateStatusHistoryFolder(
     parser.promise_name,
     parser.output,
-    parser.history_folder
+    parser.history_folder,
+    parser.promise_type
   )
   with open(parser.output, "w") as outputfile:
     json.dump(status_json, outputfile)
   os.remove(parser.pid_path)
 
-def updateStatusHistoryFolder(name, status_file, history_folder):
+def updateStatusHistoryFolder(name, status_file, history_folder, promise_type):
   old_history_list = []
+  keep_item_amount = 25
   history_path = os.path.join(history_folder, name, '.jio_documents')
   if not os.path.exists(status_file):
     return
@@ -96,18 +101,19 @@ def updateStatusHistoryFolder(name, status_file, history_folder):
       else: raise
   with open(status_file, 'r') as sf:
     status_dict = json.loads(sf.read())
-    filename = '%s.status.json' % (
-      status_dict['start-date'].replace(' ', '_').replace(':', ''))
+    filename = '%s.%s.json' % (
+      status_dict['start-date'].replace(' ', '_').replace(':', ''),
+      promise_type)
 
   copyfile(status_file, os.path.join(history_path, filename))
-  # Don't let history foler grow too much, keep 40 files
+  # Don't let history foler grow too much, keep xx files
   file_list = filter(os.path.isfile,
-      glob.glob("%s/*.status.json" % history_path)
+      glob.glob("%s/*.%s.json" % (history_path, promise_type))
     )
   file_count = len(file_list)
-  if file_count > 40:
+  if file_count > keep_item_amount:
     file_list.sort(key=lambda x: os.path.getmtime(x))
-    while file_count > 40:
+    while file_count > keep_item_amount:
       to_delete = file_list.pop(0)
       try:
         os.unlink(to_delete)
