@@ -420,7 +420,7 @@ class TestRequest(MasterMixin):
     request1_dict = request1.__dict__
     requested_result1 = self.getPartitionInformation(
         request1_dict['_partition_id'])
-    request2 = self.request('http://sr1//', 'Papa', 'MyFirstInstance', 'slappart2',
+    request2 = self.request('http://sr//', 'Papa', 'MyFirstInstance', 'slappart2',
                             partition_parameter_kw={'domain': wanted_domain2})
     request2_dict = request2.__dict__
     requested_result2 = self.getPartitionInformation(
@@ -437,6 +437,46 @@ class TestRequest(MasterMixin):
       elif key in ['_software_release_document']:
         self.assertEqual(requested_result2.__dict__[key].__dict__,
                          requested_result1.__dict__[key].__dict__)
+    #Test parameters where set correctly
+    self.assertEqual(wanted_domain1,
+                     requested_result1._parameter_dict['domain'])
+    self.assertEqual(wanted_domain2,
+                     requested_result2._parameter_dict['domain'])
+
+  def test_two_requests_with_different_parameters_and_sr_url_but_same_reference(self):
+    """
+    Request will return same partition for two different requests but will
+    only update parameters
+    """
+    self.add_free_partition(2)
+    wanted_domain1 = 'fou.org'
+    wanted_domain2 = 'carzy.org'
+
+    request1 = self.request('http://sr//', None, 'MyFirstInstance', 'slappart2',
+                            partition_parameter_kw={'domain': wanted_domain1})
+    request1_dict = request1.__dict__
+    requested_result1 = self.getPartitionInformation(
+        request1_dict['_partition_id'])
+    request2 = self.request('http://sr1//', 'Papa', 'MyFirstInstance', 'slappart2',
+                            partition_parameter_kw={'domain': wanted_domain2})
+    request2_dict = request2.__dict__
+    requested_result2 = self.getPartitionInformation(
+        request2_dict['_partition_id'])
+    # Test we received same partition
+    for key in ['_partition_id', '_computer_id']:
+      self.assertEqual(request1_dict[key], request2_dict[key])
+    # Test that parameters and software_release url changed
+    for key in requested_result2.__dict__:
+      if key not in ['_parameter_dict',
+                     '_software_release_document']:
+        self.assertEqual(requested_result2.__dict__[key],
+                         requested_result1.__dict__[key])
+      elif key in ['_software_release_document']:
+        # software_release will be updated
+        self.assertEqual(requested_result2.__dict__[key].__dict__['_software_release'],
+                         'http://sr1//')
+        self.assertEqual(requested_result1.__dict__[key].__dict__['_software_release'],
+                         'http://sr//')
     #Test parameters where set correctly
     self.assertEqual(wanted_domain1,
                      requested_result1._parameter_dict['domain'])
