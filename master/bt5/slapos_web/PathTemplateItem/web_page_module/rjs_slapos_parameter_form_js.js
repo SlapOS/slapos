@@ -542,13 +542,13 @@
         $(to_hide).addClass("hidden-button");
       }
 
-
       this.options = options;
 
       return g.loadSoftwareJSON(g.options.json_url).push(function (json) {
         var option_index,
           option,
           option_selected = options.parameter.softwaretypeindex,
+          restricted_softwaretype = options.parameter.restricted_softwaretype,
           input = g.props.element.querySelector('select.slapos-software-type'),
           s_input = g.props.element.querySelector('input.slapos-serialisation-type');
 
@@ -580,7 +580,13 @@
               if (option_index === option_selected) {
                 option.selected = "selected";
               }
-              input.appendChild(option);
+              if (restricted_softwaretype === true) {
+                if (option.value === options.parameter.softwaretype) {
+                  input.appendChild(option);
+                }
+              } else {
+                input.appendChild(option);
+              }
             }
           }
         }
