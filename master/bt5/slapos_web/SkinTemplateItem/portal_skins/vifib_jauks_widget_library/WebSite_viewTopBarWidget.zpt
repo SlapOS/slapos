@@ -15,8 +15,10 @@
  <tal:block tal:repeat="language language_list">
     <a tal:define="language_id language/id;"
        tal:condition="python:language_id in available_language_list"
-       tal:attributes="href python: current_web_site_url + '/Base_doLanguage?select_language=%s' % language_id"
-       tal:content="language/title">English</a>
+       tal:attributes="href python: current_web_site_url + '/Base_doLanguage?select_language=%s' % language_id">
+         <img tal:attributes="src python: current_web_site_url + '/vifib_hosting_image/icon_lang_%s.png' % language_id;
+                              alt language/title">
+     </a>
   </tal:block>
 </div>
 <a tal:attributes="href current_web_site_url"><div id="vifib_logo"></div></a>
