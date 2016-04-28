@@ -1,3 +1,5 @@
+from zExceptions import Unauthorized
+
 if REQUEST is not None:
   raise Unauthorized
 
@@ -8,7 +10,7 @@ path = delivery.getPath()
 portal_activities = context.getPortalObject().portal_activities
 
 
-if portal_activities.countMessage(method_id='Delivery_manageBuildingCalculatingDelivery', path=path) == 1 \
+if portal_activities.countMessage(method_id='Delivery_manageBuildingCalculatingDelivery', path=path) <= 1 \
   and portal_activities.countMessageWithTag('%s_solve' % path) == 0:
   delivery.serialize()
   delivery.updateCausalityState(solve_automatically=True)
