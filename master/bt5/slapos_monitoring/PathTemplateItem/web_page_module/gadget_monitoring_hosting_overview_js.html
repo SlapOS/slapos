@@ -1,6 +1,6 @@
-/*global window, rJS, btoa */
+/*global window, rJS, btoa, Handlebars, $ */
 /*jslint nomen: true, indent: 2, maxerr: 3*/
-(function (window, rJS) {
+(function (window, rJS, btoa, Handlebars, $) {
   "use strict";
 
   var gadget_klass = rJS(window),
@@ -491,4 +491,4 @@
         });
     });
 
-}(window, rJS));
+}(window, rJS, btoa, Handlebars, $));

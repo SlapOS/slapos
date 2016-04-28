@@ -26,6 +26,7 @@
     </script>
 
     <script src="gadget_monitoring_static.js" type="text/javascript"></script>
+    <script src="gadget_monitoring_tooltipster.min.js" type="text/javascript"></script>
   </head>
   <body>
     <div data-gadget-url="gadget_monitoring_jio.html" data-gadget-scope="jio_gadget" data-gadget-sandbox="public"></div>
@@ -73,7 +74,7 @@
           <div data-gadget-url="gadget_monitoring_widget_listbox.html" data-gadget-scope="listbox"></div>
           <form class="configure">
             <label class="configure-auth">
-              <input type="checkbox" name="configure-auth">Set Authentication for these URLs
+              <input type="checkbox" name="configure-auth">Set or update credentials
             </label>
             <div class="auth-block padding-lr-20 border-gray" style="display: none">
               <div class="ui-form">
@@ -84,12 +85,12 @@
               </div>
               <div class="ui-form">
                 <div class="ui-field-contain">
-                  <label data-i18n="Password:">Password:</label>
+                  <label data-i18n="Password:">Password <span class='tooltip'>(?)</span>:</label>
                   <input type="password" name="password" required value="-"/>
                 </div>
               </div>
               <label class="configure-auth">
-                <input type="checkbox" name="configure-newpwd">Configure new password now
+                <input type="checkbox" name="configure-newpwd">Change all current password(s)
               </label>
               <div class="new-password" style="display: none">
                 <div class="ui-form">

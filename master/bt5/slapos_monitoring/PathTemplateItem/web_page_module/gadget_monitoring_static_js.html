@@ -3,6 +3,14 @@
 (function (window, rJS, RSVP, $, btoa, Rusha) {
   "use strict";
 
+  var gadget_klass = rJS(window),
+    templater = gadget_klass.__template_element,
+
+    opml_url_template = Handlebars.compile(
+      templater.getElementById("template-opmlurl-list").innerHTML
+    ),
+    hashCode = new Rusha().digestFromString;
+
   function validateHttpUrl(value) {
     if (/\(?(?:(http|https):\/\/)(?:((?:[^\W\s]|\.|-|[:]{1})+)@{1})?((?:www.)?(?:[^\W\s]|\.|-)+[\.][^\W\s]{2,4}|localhost(?=\/)|\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}|\[[\dabcedf:]+\])(?::(\d*))?([\/]?[^\s\?]*[\/]{1})*(?:\/?([^\s\n\?\[\]\{\}\#]*(?:(?=\.)){1}|[^\s\n\?\[\]\{\}\.\#]*)?([\.]{1}[^\s\?\#]*)?)?(?:\?{1}([^\s\n\#\[\]]*))?([\#][^\s\n]*)?\)?/i.test(value)) {
       return true;
@@ -129,6 +137,33 @@
         });
   }
 
+  function loginFromLocalCredential(gadget, url) {
+    /* Try to login from registered credential */
+    return gadget.props.login_gadget.getUrlInfo( hashCode(url) )
+      .push(function (credential_dict) {
+        if (!credential_dict) {
+          return {};
+        }
+        return credential_dict;
+      })
+      .push(function (credential) {
+        if (credential) {
+          return gadget.props.login_gadget.login(credential.url, credential.hash)
+          .then(function(result) {
+            if (result.status === 'OK') {
+              return credential.hash;
+            } else {
+              return undefined;
+            }
+          }, function(error) {
+            return undefined;
+          });
+        } else {
+          return undefined;
+        }
+      });
+  }
+
   function checkCredential(gadget, url, hash) {
     // Verify if login and password are correct for this URL
     return gadget.props.login_gadget.login(url, hash)
@@ -136,18 +171,32 @@
         if (result.status === 'OK') {
           return {status: 'OK'};
         } else {
-          return {status: 'KO', msg: error.msg + ' (' + url + ')'};
+          return loginFromLocalCredential(gadget, url)
+            .push(function (result) {
+              if (result) {
+                return {status: 'OK', hash: result, url: url};
+              }
+              return {status: 'KO', msg: error.msg + ' (' + url + ')'};
+            });
         }
       }, function(error) {
-        return {status: 'KO', msg: error.msg + '(' + url + ')'};
+        return loginFromLocalCredential(gadget, url)
+          .push(function (result) {
+            if (result) {
+              return {status: 'OK', hash: result, url: url};
+            }
+            return {status: 'KO', msg: error.msg + ' (' + url + ')'};
+          });
       });
   }
 
 
-  function changeMonitorPassword(gadget, url, password, hash) {
-    var jio_gadget,
+  function changeMonitorPassword(gadget, credential_dict, login, password) {
+    var url,
+      jio_gadget,
       jio_options;
 
+    url = credential_dict.url;
     url += (url.endsWith('/') ? '':'/') + 'config/';
     jio_options = {
       type: "query",
@@ -156,15 +205,15 @@
         sub_storage: {
           type: "dav",
           url: url,
-          basic_login: hash
+          basic_login: credential_dict.hash
         }
       }
     };
     gadget.props.gindex += 1;
     return gadget.declareGadget("gadget_monitoring_jio.html",
         {
-          element: gadget.props.element,
-          scope: 'jio_gadget' + gadget.props.gindex,
+          //element: gadget.props.element,
+          scope: 'jio_' + gadget.props.gindex + "_gadget",
           sandbox: "public"
         }
       ).push(function(new_gadget) {
@@ -185,7 +234,10 @@
         return new Error("Cannot get document at : " % url);
       })
       .push(function (result) {
-        return {status: 'OK'};
+        return gadget.props.login_gadget.updateUrlValue(credential_dict.url, login, password)
+          .push(function() {
+            return {status: 'OK'};
+          });
       }, function (error) {
         console.log(error);
         return {status: 'ERROR', code: error.target.status};
@@ -206,7 +258,6 @@
     return gadget.props.jio_gadget.allDocs({})
       .push(function (doc) {
         if (!doc) {
-          console.log(doc);
           gadget.props.element.querySelector('.msgtext-box')
             .innerHTML += "<span class='ui-text-error'>" + url + " [ " + title + " ] is not reachable!</span><br/>";
           return false;
@@ -215,14 +266,6 @@
         }
       });
   }
-
-  var gadget_klass = rJS(window),
-    templater = gadget_klass.__template_element,
-
-    opml_url_template = Handlebars.compile(
-      templater.getElementById("template-opmlurl-list").innerHTML
-    ),
-    hashCode = new Rusha().digestFromString;
 
   gadget_klass
     .ready(function (g) {
@@ -315,6 +358,19 @@
         })
         .push(function () {
           return $(gadget.props.element.querySelector("a[href='#config-" + gadget.props.selected + "']")).trigger('click');
+        })
+        .push(function () {
+          var text = "Give user name and password that you have.<br/>If required " + 
+            "credentials will be updated from what you provided.";
+          return $('.tooltip').tooltipster({
+            animation: 'fade',
+            delay: 200,
+            theme: 'tooltipster-shadow',
+            touchDevices: true,
+            content: $("<h2><strong>Configure Private Access</strong></h2><p>" + text + "</p>"),
+            interactive: true,
+            trigger: 'hover'
+          });
         })
         .push(function () {
           var promise_list = [];
@@ -515,6 +571,7 @@
                 cnew_password = '',
                 reload = true,
                 rows_list = gadget.props.listbox.property_dict.data_result,
+                not_changed_dict = {},
                 config_promise_list = [];
 
               if (rows_list.length > 0) {
@@ -556,12 +613,15 @@
                   for (i = 0; i < status_list.length; i += 1) {
                     if (status_list[i].status !== 'OK') {
                       error_msg += 'Login/password invalid for: ' + rows_list[i].title + '. ' + status_list[i].msg + '<br/>';
+                    } else if (status_list[i].hasOwnProperty('url')) {
+                      not_changed_dict[ hashCode( status_list[i].url ) ] =  status_list[i].hash;
                     }
                   }
                   return error_msg;
                 })
                 .push(function (error_msg) {
                   var tmp,
+                    tmp_hash,
                     i;
                   if (error_msg !== '') {
                     gadget.props.element.querySelector('.configure .ui-text-error')
@@ -572,10 +632,6 @@
                   }
                   if (username !== '' && password !== '') {
 
-                    if (new_password !== '') {
-                      old_password = password;
-                      password = new_password;
-                    }
                     for (i = 0; i < rows_list.length; i += 1) {
                       if (validateHttpUrl(rows_list[i].url)) {
                         tmp = {
@@ -584,13 +640,12 @@
                           parent_url: gadget.props.opml_url
                           //parent_title: root_name
                         };
-                        credential_dict[ hashCode( tmp.url ) ] = tmp;
+                        tmp_hash = hashCode( tmp.url );
+                        if (not_changed_dict.hasOwnProperty(tmp_hash)) {
+                          tmp.hash = not_changed_dict[tmp_hash];
+                        }
+                        credential_dict[ tmp_hash ] = tmp;
                       }
-                    }
-                    if (credential_dict) {
-                      config_promise_list.push(
-                        gadget.props.login_gadget.setUrlDict(credential_dict)
-                      );
                     }
                   }
                   config_promise_list.push(
@@ -603,17 +658,24 @@
                   var key,
                     promise_list = [];
                   if (new_password !== '') {
+                    // Change current passwords and save them to local storage
                     for (key in credential_dict) {
                       promise_list.push(
                         changeMonitorPassword(
                           gadget,
-                          credential_dict[key].url,
-                          new_password,
-                          btoa(username + ':' + old_password))
+                          credential_dict[key],
+                          username,
+                          new_password)
                       );
                     }
+                    return RSVP.all(promise_list);
+                  } else {
+                    // Only save provided credentials
+                    return gadget.props.login_gadget.setUrlDict(credential_dict)
+                      .push(function () {
+                        return [];
+                      });
                   }
-                  return RSVP.all(promise_list);
                 })
                 .push(function (result_list) {
                   var i,
@@ -621,7 +683,7 @@
                   for (i = 0; i < result_list.length; i += 1) {
                     if (result_list[i].status === 'ERROR') {
                       gadget.props.element.querySelector('.configure .ui-text-error')
-                        .innerHTML += 'ERROR ' + result_list[i].code + ': Failed to save new password!';
+                        .innerHTML += 'ERROR ' + result_list[i].code + ': Failed to save password! Please try again. <br/>';
                       has_error = true;
                     }
                   }
