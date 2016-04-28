@@ -333,4 +333,8 @@ fieldset > .subfield > label {
   display: inline-block;
 }
 
+button.hidden-button {
+  display: none;
+}
+
 </tal:block>
