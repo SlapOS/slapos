@@ -81,11 +81,12 @@
                     <key> <string>center</string> </key>
                     <value>
                       <list>
+                        <string>my_url_string</string>
+                        <string>my_description</string>
                         <string>my_text_content</string>
                         <string>my_connection_xml</string>
                         <string>my_ssl_key</string>
                         <string>my_ssl_certificate</string>
-                        <string>my_description</string>
                         <string>my_sla_xml</string>
                       </list>
                     </value>
