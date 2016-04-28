@@ -536,11 +536,17 @@
       }
       var g = this,
         to_hide = g.props.element.querySelector("button.slapos-show-form"),
+        to_show = g.props.element.querySelector("button.slapos-show-raw-parameter"),
         softwaretype;
 
       if (to_hide !== null) {
         $(to_hide).addClass("hidden-button");
       }
+
+      if (to_show !== null) {
+        $(to_show).removeClass("hidden-button");
+      }
+
 
       this.options = options;
 
@@ -550,6 +556,7 @@
           option_selected = options.parameter.softwaretypeindex,
           restricted_softwaretype = options.parameter.restricted_softwaretype,
           input = g.props.element.querySelector('select.slapos-software-type'),
+          parameter_shared = g.props.element.querySelector('input.parameter_shared'),
           s_input = g.props.element.querySelector('input.slapos-serialisation-type');
 
         if (options.parameter.softwaretypeindex === undefined) {
@@ -569,20 +576,44 @@
               option.textContent = json['software-type'][option_index].title;
               // option.index = json['software-type'][option_index].index;
 
+              if (options.parameter.shared === undefined) {
+                options.parameter.shared = false;
+              }
+
               if (option_selected === undefined) {
                 option_selected = option_index;
+                if (json['software-type'][option_index].shared === true) {
+                  parameter_shared.value = true;
+                } else {
+                  parameter_shared.value = false;
+                }
               }
 
               if (softwaretype === undefined) {
                 softwaretype = option_selected;
               }
 
-              if (option_index === option_selected) {
-                option.selected = "selected";
+              if (json['software-type'][option_index].shared === undefined) {
+                json['software-type'][option_index].shared = false;
               }
+
+              option['data-shared'] = json['software-type'][option_index].shared;
+
+              if ((option_index === option_selected) && 
+                (options.parameter.shared === json['software-type'][option_index].shared)) {
+                option.selected = "selected";
+                if (json['software-type'][option_index].shared === true) {
+                  parameter_shared.value = true;
+                } else {
+                  parameter_shared.value = false;
+                }
+              }
+
               if (restricted_softwaretype === true) {
                 if (option.value === options.parameter.softwaretype) {
-                  input.appendChild(option);
+                  if (options.parameter.shared === json['software-type'][option_index].shared) {
+                    input.appendChild(option);
+                  }
                 }
               } else {
                 input.appendChild(option);
@@ -590,6 +621,8 @@
             }
           }
         }
+        
+        
 
         if (softwaretype === undefined) {
           softwaretype = option_selected;
@@ -680,7 +713,8 @@
       }
 
       function updateParameterForm(evt) {
-        var e = g.props.element.getElementsByTagName('select')[0];
+        var e = g.props.element.getElementsByTagName('select')[0],
+          parameter_shared = g.props.element.querySelector('input.parameter_shared');
 
         if (e === undefined) {
           throw new Error("Select not found.");
@@ -688,6 +722,7 @@
 
         g.options.parameter.softwaretype = e.value;
         g.options.parameter.softwaretypeindex = e.selectedOptions[0]["data-id"];
+        parameter_shared.value = e.selectedOptions[0]["data-shared"];
         return g.render(g.options)
           .push(function () {
             return loadEventList(g);

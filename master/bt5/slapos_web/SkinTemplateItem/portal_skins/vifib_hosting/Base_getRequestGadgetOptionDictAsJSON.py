@@ -22,5 +22,9 @@ if context.getPortalType() == "Hosting Subscription":
   if context.getTextContent() is not None:
     option_dict['parameter']['parameter_hash'] = base64.b64encode(context.getTextContent())
   option_dict['parameter']['restricted_softwaretype'] = True
+  option_dict['parameter']['shared'] = False
+  predecessor = context.getPredecessorValue(portal_type=["Software Instance", "Slave Instance"])
+  if predecessor is not None and predecessor.getPortalType() == "Slave Instance":
+    option_dict['parameter']['shared'] = True
 
 return json.dumps(option_dict)

@@ -50,7 +50,7 @@
         </item>
         <item>
             <key> <string>_params</string> </key>
-            <value> <string>dialog_id, service_title, instance_xml, parameter_hash=None, software_type=None, computer_guid=\'\', cpu_core=\'\', cpu_frequency=\'\', cpu_type=\'\', local_area_network_type=\'\', memory_size=\'\', memory_type=\'\', storage_capacity=\'\', storage_interface=\'\', storage_redundancy=\'\', group=\'\', region=\'\', **kw</string> </value>
+            <value> <string>dialog_id, service_title, instance_xml, parameter_hash=None, software_type=None, shared=False, computer_guid=\'\', cpu_core=\'\', cpu_frequency=\'\', cpu_type=\'\', local_area_network_type=\'\', memory_size=\'\', memory_type=\'\', storage_capacity=\'\', storage_interface=\'\', storage_redundancy=\'\', group=\'\', region=\'\', **kw</string> </value>
         </item>
         <item>
             <key> <string>id</string> </key>

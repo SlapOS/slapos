@@ -1,5 +1,11 @@
 portal = context.getPortalObject()
 
+if shared == "true":
+  shared = True
+  
+if shared == "false":
+  shared = False
+
 if not service_title:
   raise ValueError("Service Title is mandatory!")
 
@@ -47,7 +53,7 @@ request_kw.update(
   software_type=software_type,
   instance_xml=instance_xml,
   sla_xml="",
-  shared=False,
+  shared=shared,
   state="started",
 )
 
