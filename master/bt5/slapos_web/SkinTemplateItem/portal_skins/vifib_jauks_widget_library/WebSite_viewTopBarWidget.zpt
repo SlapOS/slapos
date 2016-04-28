@@ -48,13 +48,10 @@
 </div>
 
 <div id="menu">
-  <ul>
-    <li><a href="http://community.slapos.org/wiki">Documentation</a></li>
-    <li><a href="http://community.slapos.org/download">Download</a></li>
-    <li><a href="http://community.slapos.org/forum">Forum</a></li>
-    <li><a href="http://community.slapos.org/blog">Blog</a></li>
-    <li>&nbsp;</li>
-  </ul>
+  <tal:block tal:define="message python:here.getDocumentValue('slapos-Top.Bar.Widget.Links').asStrippedHTML()"
+            tal:content="structure message"
+            tal:condition="python:here.getDocumentValue('slapos-Top.Bar.Widget.Links')">
+  </tal:block>
 </div>
 
 </tal:block>
