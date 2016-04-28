@@ -535,7 +535,7 @@
         throw new Error("undefined json_url");
       }
       var g = this,
-        to_hide = g.props.element.querySelector("button.slapos-show-raw-parameter"),
+        to_hide = g.props.element.querySelector("button.slapos-show-form"),
         softwaretype;
 
       if (to_hide !== null) {
