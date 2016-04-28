@@ -134,7 +134,7 @@ div#language img {
 }
 
 /* Buttons */
-input.validate, a.validate, input.cancel,#dialog_submit_button,#dialog_cancel_button,.login_button input{
+input.validate, a.validate, input.cancel, a.cancel , #dialog_submit_button,#dialog_cancel_button,.login_button input{
   border:none;font-size:11px;padding:0px 10px 0px 40px;
   font-weight:bold;height:30px;-moz-border-radius:10px;cursor:pointer;}
 input.validate, a.validate, #dialog_submit_button,.login_button input{
@@ -142,7 +142,10 @@ input.validate, a.validate, #dialog_submit_button,.login_button input{
 input.cancel,a.cancel,#dialog_cancel_button{
   background:url(<tal:block tal:replace="images_path"/>button_cancel_bg.png) repeat-x top left;color:#eba4a4}
 #dialog_submit_button{float:right;}
-a.validate {display:inline-block;line-height:30px;text-decoration:none;}
+
+a.validate{display:inline-block;line-height:30px;text-decoration:none;}
+a.cancel{display:inline-block;line-height:30px;text-decoration:none;}
+
 
 /*Login form*/
 .login h1 {
