@@ -54,7 +54,7 @@
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>ComputerConsumptionTioXMLFile_solveInvoicingGeneration</string> </value>
+            <value> <string>ComputerConsumptionTioXMLFile_solveInvoicingGenerationEco</string> </value>
         </item>
       </dictionary>
     </pickle>
