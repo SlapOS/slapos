@@ -986,7 +986,7 @@ database_uri = %(tempdir)s/lib/external_proxy.db
     import slapos
     self.external_proxy_process = subprocess.Popen(
         [
-            sys.executable, '%s/cli/entry.py' % os.path.dirname(slapos.__file__),
+            sys.executable, '%s/../cli/entry.py' % os.path.dirname(slapos.tests.__file__),
             'proxy', 'start', '--cfg', self.external_slapproxy_configuration_file_location
         ],
         env={"PYTHONPATH": ':'.join(sys.path)}
