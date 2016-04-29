@@ -43,11 +43,6 @@ username = admin
 recipe = slapos.cookbook:mkdirectory
 etc = ${buildout:directory}/etc
 
-# XXX Monitoring Main Instane
-[monitor-instance-parameter]
-monitor-httpd-port = 8160
-cors-domains = {{ monitor_parameter.get('monitor-cors-domains', '') }}
-
 
 # Bubble up the parameters
 [request-runner]

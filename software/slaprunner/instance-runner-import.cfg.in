@@ -29,6 +29,8 @@ parts +=
 # have to repeat the next one, as it's not inherited from pbsready-import
   import-on-notification
 
+  monitor-base
+
 # For the needs of importer, we run the full slaprunner
 # In case both exporter and importer (aka main instance and clone instance)
 # run with the same IP (usually for testing purposes),
