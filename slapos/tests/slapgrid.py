@@ -164,18 +164,18 @@ class BasicMixin(object):
     self.setSlapgrid(develop=develop)
     return self.grid.processSoftwareReleaseList()
 
-  def assertLogContent(self, log_path, expected, tries=50):
+  def assertLogContent(self, log_path, expected, tries=600):
     for i in range(tries):
       if expected in open(log_path).read():
         return
-      time.sleep(0.01)
+      time.sleep(0.1)
     self.fail('%r not found in %s' % (expected, log_path))
 
-  def assertIsCreated(self, path, tries=50):
+  def assertIsCreated(self, path, tries=600):
     for i in range(tries):
       if os.path.exists(path):
         return
-      time.sleep(0.01)
+      time.sleep(0.1)
     self.fail('%s should be created' % path)
 
   def assertIsNotCreated(self, path, tries=50):
@@ -630,7 +630,8 @@ cat <<'HEREDOC'
 #!%(python)s
 import signal
 def handler(signum, frame):
-  print 'Signal handler called with signal', signum
+  for i in range(30):
+    print 'Signal handler called with signal', signum
   raise SystemExit
 signal.signal(signal.SIGTERM, handler)
 
@@ -685,7 +686,8 @@ cat <<'HEREDOC'
 #!%(python)s
 import signal
 def handler(signum, frame):
-  print 'Signal handler called with signal', signum
+  for i in range(30):
+    print 'Signal handler called with signal', signum
   raise SystemExit
 signal.signal(signal.SIGTERM, handler)
 
