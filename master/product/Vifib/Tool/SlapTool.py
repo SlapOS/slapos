@@ -41,6 +41,7 @@ from Products.ERP5Type import Permissions
 from Products.ERP5Type.Cache import DEFAULT_CACHE_SCOPE
 from Products.ERP5Type.Cache import CachingMethod
 from lxml import etree
+import hashlib
 import time
 from Products.ERP5Type.tests.utils import DummyMailHostMixin
 try:
@@ -829,8 +830,8 @@ class SlapTool(BaseTool):
           connection_dict = self._instanceXmlToDict(
             slave_instance_dict.pop("connection_xml"))
           slave_instance_dict.update(connection_dict)
-          slave_instance_dict['connection-parameter-key-list'] = \
-            connection_dict.keys()
+          slave_instance_dict['connection-parameter-hash'] = \
+            hashlib.sha256(str(connection_dict)).hexdigest()
         if slave_instance_dict.has_key("xml"):
           slave_instance_dict.update(self._instanceXmlToDict(
             slave_instance_dict.pop("xml")))

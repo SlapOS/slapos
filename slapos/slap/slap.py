@@ -40,6 +40,7 @@ import json
 import logging
 import re
 import urlparse
+import hashlib
 from util import xml2dict
 
 import netaddr
@@ -567,23 +568,22 @@ class ComputerPartition(SlapRequester):
     if self.getConnectionParameterDict() == connection_dict:
       return
 
-    if slave_reference is not None: 
+    if slave_reference is not None:
       # check the connection parameters from the slave
-      
+
       # Should we check existence?
       slave_parameter_list = self.getInstanceParameter("slave_instance_list")
       slave_connection_dict = {}
-      for slave_parameter_dict in slave_parameter_list: 
-        if slave_parameter_dict["reference"] == slave_reference:
-          for key in slave_parameter_dict.get(
-                       "connection-parameter-key-list", []):
-            slave_connection_dict[key] = slave_parameter_dict[key]
+      for slave_parameter_dict in slave_parameter_list:
+        if slave_parameter_dict.get("slave_reference") == slave_reference:
+          connection_parameter_hash = slave_parameter_dict.get("connection-parameter-hash", None)
           break
 
       # Skip as nothing changed for the slave
-      if slave_connection_dict == connection_dict:
+      if connection_parameter_hash is not None and \
+        connection_parameter_hash == hashlib.sha256(str(connection_dict)).hexdigest():
         return
-       
+
     self._connection_helper.POST('setComputerPartitionConnectionXml', data={
           'computer_id': self._computer_id,
           'computer_partition_id': self._partition_id,
@@ -1037,4 +1037,3 @@ class SlapHateoasNavigator(HateoasNavigator):
     instance_url = self.hateoasGetLinkFromLinks(instance_list, reference)
     instance = self._hateoasGetInformation(instance_url)
     return instance
-
