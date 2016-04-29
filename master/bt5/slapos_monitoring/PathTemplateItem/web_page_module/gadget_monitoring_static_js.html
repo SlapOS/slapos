@@ -83,58 +83,68 @@
   }
 
   function loadUrlFromOPML(gadget, url) {
+    var text_content = gadget.props.element.querySelector('form.opml button.show')
+      .textContent;
     return new RSVP.Queue()
       .push(function () {
         return $("article.configure-b").addClass("ui-content-hidden");
       })
       .push(function () {
-          var listbox_configuration = {
-            enable_search: false,
-            disable_href: true,
-            column_list: [{
-              title: 'Title',
-              select: 'title'
-            }, {
-              title: 'Hosting Subscription',
-              select: 'opml_title'
-            }, {
-              select: 'htmlurl',
-              title: 'URL'
-            }, {
-              select: 'type',
-              title: 'Type'
-            }],
-            query: {
-              select_list: ['title', 'opml_title', 'htmlurl', 'type', 'url'],
-              sort_on: [["opml_title", "ascending"]]
-            }
-          },
-          jio_options = {
-            type: "query",
-            sub_storage: {
-              type: "feed",
-                feed_type: 'opml',
-                url: url
-            }
-          };
-          listbox_configuration.storage_list = [jio_options];
-          return gadget.props.listbox.render(listbox_configuration);
-        })
-        .push(function () {
-          if (gadget.props.listbox.property_dict.data_result.length > 0) {
-            return $("article.configure-b").removeClass("ui-content-hidden");
-          } else {
-            $(gadget.props.element.querySelector('.opml .ui-text-error')).fadeIn(400);
-              gadget.props.element.querySelector('.opml .ui-text-error')
-                .innerHTML = "ERROR: Failed to load URL!";
+        gadget.props.element.querySelector('form.opml button.show')
+          .textContent = "Loading...";
+      })
+      .push(function () {
+        var listbox_configuration = {
+          enable_search: false,
+          disable_href: true,
+          column_list: [{
+            title: 'Title',
+            select: 'title'
+          }, {
+            title: 'Hosting Subscription',
+            select: 'opml_title'
+          }, {
+            select: 'htmlurl',
+            title: 'URL'
+          }, {
+            select: 'type',
+            title: 'Type'
+          }],
+          query: {
+            select_list: ['title', 'opml_title', 'htmlurl', 'type', 'url'],
+            sort_on: [["opml_title", "ascending"]]
           }
-          //return $(gadget.props.element.querySelector(".configure-b")).show();
-        }, function(error) {
+        },
+        jio_options = {
+          type: "query",
+          sub_storage: {
+            type: "feed",
+              feed_type: 'opml',
+              url: url
+          }
+        };
+        listbox_configuration.storage_list = [jio_options];
+        return gadget.props.listbox.render(listbox_configuration);
+      })
+      .push(function () {
+        gadget.props.element.querySelector('form.opml button.show')
+          .textContent = text_content;
+        if (gadget.props.listbox.property_dict.data_result.length > 0) {
+          return $("article.configure-b").removeClass("ui-content-hidden");
+        } else {
           $(gadget.props.element.querySelector('.opml .ui-text-error')).fadeIn(400);
-          gadget.props.element.querySelector('.opml .ui-text-error')
-            .innerHTML = "ERROR " + (error.target.status || '') + "Failed to load URL!";
-          console.log(error);
-        });
+            gadget.props.element.querySelector('.opml .ui-text-error')
+              .innerHTML = "ERROR: Failed to load URL!";
+        }
+        //return $(gadget.props.element.querySelector(".configure-b")).show();
+      }, function(error) {
+        gadget.props.element.querySelector('form.opml button.show')
+          .textContent = text_content;
+        $(gadget.props.element.querySelector('.opml .ui-text-error')).fadeIn(400);
+        gadget.props.element.querySelector('.opml .ui-text-error')
+          .innerHTML = "ERROR " + (error.target.status || '') + "Failed to load URL!";
+        console.log(error);
+      });
   }
 
   function loginFromLocalCredential(gadget, url) {
@@ -151,7 +161,7 @@
           return gadget.props.login_gadget.login(credential.url, credential.hash)
           .then(function(result) {
             if (result.status === 'OK') {
-              return credential.hash;
+              return credential;
             } else {
               return undefined;
             }
@@ -174,7 +184,11 @@
           return loginFromLocalCredential(gadget, url)
             .push(function (result) {
               if (result) {
-                return {status: 'OK', hash: result, url: url};
+                return {
+                  status: 'OK',
+                  hash: result.hash,
+                  login: result.login,
+                  url: url};
               }
               return {status: 'KO', msg: error.msg + ' (' + url + ')'};
             });
@@ -183,7 +197,11 @@
         return loginFromLocalCredential(gadget, url)
           .push(function (result) {
             if (result) {
-              return {status: 'OK', hash: result, url: url};
+              return {
+                status: 'OK',
+                hash: result.hash,
+                login: result.login,
+                url: url};
             }
             return {status: 'KO', msg: error.msg + ' (' + url + ')'};
           });
@@ -191,7 +209,7 @@
   }
 
 
-  function changeMonitorPassword(gadget, credential_dict, login, password) {
+  function changeMonitorPassword(gadget, credential_dict, url_key, password) {
     var url,
       jio_gadget,
       jio_options;
@@ -234,13 +252,10 @@
         return new Error("Cannot get document at : " % url);
       })
       .push(function (result) {
-        return gadget.props.login_gadget.updateUrlValue(credential_dict.url, login, password)
-          .push(function() {
-            return {status: 'OK'};
-          });
+        return {status: 'OK', key: url_key};
       }, function (error) {
         console.log(error);
-        return {status: 'ERROR', code: error.target.status};
+        return {status: 'ERROR', code: error.target.status, key: url_key};
       });
     
   }
@@ -360,14 +375,16 @@
           return $(gadget.props.element.querySelector("a[href='#config-" + gadget.props.selected + "']")).trigger('click');
         })
         .push(function () {
-          var text = "Give user name and password that you have.<br/>If required " + 
-            "credentials will be updated from what you provided.";
+          var text = "Give username and password that you have.<br/>For each Monitor, " + 
+            "credentials will be saved only if Login/password are valid.<br/> <br>" +
+            "For simple use, <strong>configure instances with the " +
+            "same password</strong>.";
           return $('.tooltip').tooltipster({
             animation: 'fade',
             delay: 200,
             theme: 'tooltipster-shadow',
             touchDevices: true,
-            content: $("<h2><strong>Configure Private Access</strong></h2><p>" + text + "</p>"),
+            content: $("<h2><strong>Monitors Private Access</strong></h2><p>" + text + "</p>"),
             interactive: true,
             trigger: 'hover'
           });
@@ -566,25 +583,28 @@
                 credential_dict = {},
                 username = '',
                 password = '',
-                old_password,
                 new_password = '',
                 cnew_password = '',
                 reload = true,
                 rows_list = gadget.props.listbox.property_dict.data_result,
+                instance_name_dict = {},
                 not_changed_dict = {},
                 config_promise_list = [];
 
               if (rows_list.length > 0) {
                 root_name = rows_list[0].opml_title;
               }
-              gadget.props.element.querySelector('.configure .ui-text-error')
-                .innerHTML = '';
+              
+              $(gadget.props.element.querySelector('.configure .alert-error'))
+                .addClass('ui-content-hidden').html('');
+
               if ($(gadget.props.element.querySelector("input[name='configure-newpwd']")).prop('checked')) {
                 new_password = gadget.props.element.querySelector("input[name='new_password']").value;
                 cnew_password = gadget.props.element.querySelector("input[name='new_password_confirm']").value;
                 if (new_password !== cnew_password) {
-                  gadget.props.element.querySelector('.configure .ui-text-error')
-                  .innerHTML = 'The new password and it confirmation are differents!';
+                  $(gadget.props.element.querySelector('.configure .alert-error'))
+                    .removeClass('ui-content-hidden')
+                    .html('The new password and it confirmation are differents!');
                   return false;
                 }
               }
@@ -592,6 +612,7 @@
                 .push(function () {
                   var promise_list = [],
                     i;
+                  $(gadget.props.element.querySelector('.spinner')).removeClass('ui-content-hidden');
                   if ($(gadget.props.element.querySelector("input[name='configure-auth']")).prop('checked')) {
                     username = gadget.props.element.querySelector("input[name='username']").value;
                     password = gadget.props.element.querySelector("input[name='password']").value;
@@ -614,7 +635,10 @@
                     if (status_list[i].status !== 'OK') {
                       error_msg += 'Login/password invalid for: ' + rows_list[i].title + '. ' + status_list[i].msg + '<br/>';
                     } else if (status_list[i].hasOwnProperty('url')) {
-                      not_changed_dict[ hashCode( status_list[i].url ) ] =  status_list[i].hash;
+                      not_changed_dict[ hashCode( status_list[i].url ) ] =  {
+                        hash: status_list[i].hash,
+                        login: (status_list[i].login || username)
+                      };
                     }
                   }
                   return error_msg;
@@ -624,8 +648,9 @@
                     tmp_hash,
                     i;
                   if (error_msg !== '') {
-                    gadget.props.element.querySelector('.configure .ui-text-error')
-                      .innerHTML = error_msg;
+                    $(gadget.props.element.querySelector('.configure .alert-error'))
+                      .removeClass('ui-content-hidden')
+                      .html(error_msg);
                     new_password = '';
                     reload = false;
                     return error_msg;
@@ -636,15 +661,18 @@
                       if (validateHttpUrl(rows_list[i].url)) {
                         tmp = {
                           hash: btoa(username + ':' + password),
+                          login: username,
                           url: rows_list[i].url.replace('public', 'private'), // XXX - Need to fix this (replace())
                           parent_url: gadget.props.opml_url
                           //parent_title: root_name
                         };
                         tmp_hash = hashCode( tmp.url );
                         if (not_changed_dict.hasOwnProperty(tmp_hash)) {
-                          tmp.hash = not_changed_dict[tmp_hash];
+                          tmp.hash = not_changed_dict[tmp_hash].hash;
+                          tmp.login = not_changed_dict[tmp_hash].login;
                         }
                         credential_dict[ tmp_hash ] = tmp;
+                        instance_name_dict[ tmp_hash ] = {title: rows_list[i].title};
                       }
                     }
                   }
@@ -664,29 +692,42 @@
                         changeMonitorPassword(
                           gadget,
                           credential_dict[key],
-                          username,
+                          key,
                           new_password)
                       );
                     }
-                    return RSVP.all(promise_list);
-                  } else {
-                    // Only save provided credentials
-                    return gadget.props.login_gadget.setUrlDict(credential_dict)
-                      .push(function () {
-                        return [];
-                      });
                   }
+                  return RSVP.all(promise_list);
                 })
                 .push(function (result_list) {
                   var i,
                     has_error = false;
                   for (i = 0; i < result_list.length; i += 1) {
                     if (result_list[i].status === 'ERROR') {
-                      gadget.props.element.querySelector('.configure .ui-text-error')
-                        .innerHTML += 'ERROR ' + result_list[i].code + ': Failed to save password! Please try again. <br/>';
+                      $(gadget.props.element.querySelector('.configure .alert-error'))
+                        .removeClass('ui-content-hidden')
+                        .append('ERROR ' + result_list[i].code + '. [' + 
+                        instance_name_dict[result_list[i].key].title + '] Failed to save password, please try again<br/>');
+
                       has_error = true;
+                    } else if (result_list[i].status === 'OK') {
+                      // Update if we could change password
+                      credential_dict[result_list[i].key].hash = btoa(
+                        credential_dict[result_list[i].key].login + ':' +
+                        new_password
+                      );
                     }
                   }
+                  if (credential_dict){
+                    // Only save provided credentials
+                    return gadget.props.login_gadget.setUrlDict(credential_dict)
+                      .push(function () {
+                        has_error;
+                      });
+                  }
+                  return has_error;
+                })  
+                .push(function (has_error) {
                   if (! has_error && reload) {
                     if (gadget.props.selected !== "manage") {
                       return gadget.redirect({
@@ -696,6 +737,8 @@
                     } else {
                       return gadget.reload();
                     }
+                  } else {
+                    $(gadget.props.element.querySelector('.spinner')).addClass('ui-content-hidden');
                   }
                 });
             }

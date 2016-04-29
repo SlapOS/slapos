@@ -60,9 +60,11 @@
         if (doc.hasOwnProperty(key)) {
           doc[key].hash = btoa(login + ':' + password);
           doc[key].url = url;
+          doc[key].login = login;
         } else {
           doc[key] = {
             hash: btoa(login + ':' + password),
+            login: login,
             url: url,
             parent_url: ''};
         }
