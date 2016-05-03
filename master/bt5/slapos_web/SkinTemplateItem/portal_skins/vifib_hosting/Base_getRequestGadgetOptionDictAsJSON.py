@@ -10,10 +10,25 @@ option_dict = {
     'restricted_softwaretype': False
     },
   }
-
+  
 if request.get("software_type", None) is not None:
   option_dict['parameter']['softwaretype'] = request.get("software_type", None)
+
+if request.get("shared", None) is not None:
+  if str(request.get("shared", "")).lower() in ['0', 'false']:
+    option_dict['parameter']['shared'] = False
+  if str(request.get("shared", "")).lower() in ['1', 'true']:
+    option_dict['parameter']['shared'] = True
   
+
+if request.get("restricted_softwaretype", None) is not None:
+  
+  if str(request.get("restricted_softwaretype", "")).lower() in ['0', 'false']:
+    option_dict['parameter']['restricted_softwaretype'] = False
+  if str(request.get("restricted_softwaretype", "")).lower() in ['1', 'true']:
+    option_dict['parameter']['restricted_softwaretype'] = True
+    
+
 if request.get("parameter_hash", None) is not None:
   option_dict['parameter']['parameter_hash'] = request.get("parameter_hash", None)
 
