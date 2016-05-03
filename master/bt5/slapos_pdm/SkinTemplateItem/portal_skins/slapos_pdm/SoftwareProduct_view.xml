@@ -111,6 +111,7 @@
                     <key> <string>right (Publication Information)</string> </key>
                     <value>
                       <list>
+                        <string>my_publication_section_list</string>
                         <string>my_activity_list</string>
                         <string>my_region_list</string>
                         <string>my_subject_list</string>
