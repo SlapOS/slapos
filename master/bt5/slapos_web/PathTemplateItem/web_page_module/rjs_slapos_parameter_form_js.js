@@ -396,6 +396,13 @@
         software_type = getSoftwareTypeFromForm(g.props.element),
         json_dict = getFormValuesAsJSONDict(g.props.element),
         serialisation_type = getSerialisationTypeFromForm(g.props.element);
+      
+      if (software_type === "") {
+        if (g.options.parameter.shared) {
+          throw new Error("The software type is not part of the json (" + software_type + " as slave)");
+        }
+        throw new Error("The software type is not part of the json (" + software_type + ")");
+      }
 
       return g.validateJSONForSoftwareType(json_url, software_type, json_dict)
         .push(function (validation) {
@@ -626,6 +633,12 @@
 
         if (softwaretype === undefined) {
           softwaretype = option_selected;
+        }
+        if (input.children.length === 0) {
+          if (options.parameter.shared) {
+            throw new Error("The software type is not part of the json (" + softwaretype + " as slave)");
+          }
+          throw new Error("The software type is not part of the json (" + softwaretype + ")");
         }
         if (json['software-type'][softwaretype] === undefined) {
           throw new Error("The sotware type is not part of the json (" + softwaretype + ")");
