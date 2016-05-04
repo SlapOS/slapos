@@ -10,12 +10,19 @@
   
   gk.declareMethod('getContent', function () {
     var g = this; 
-    console.log("hey cousous");
     return g.getDeclaredGadget("parameter")
       .push(function(gadget) {
+        var field_your_instance_xml = gadget.__element.querySelector('textarea[name=field_your_instance_xml]');
+        if (field_your_instance_xml !== null) {
+          return "SKIP";
+        }
         return gadget.processValidation(g.options.json_url);
       })
       .push(function (xml_result) {
+        if (xml_result === "SKIP") {
+          /* The raw parameters are already on the request */
+          return {};
+        }
         return {"field_your_instance_xml": xml_result};
       })
       .fail(function (e) {
