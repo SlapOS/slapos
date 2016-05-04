@@ -116,6 +116,7 @@
       label,
       input,
       default_value,
+      default_used_list = [],
       default_div,
       span_error,
       span_info;
@@ -200,6 +201,7 @@
           input.setAttribute("class", "slapos-parameter");
           div_input.appendChild(input);
         }
+        default_used_list.push(key);
         if (json_field.properties[key]['default'] !== undefined) {
           span_info = document.createElement("span");
           span_info.textContent = '(default = ' + json_field.properties[key]['default'] + ')';
@@ -212,7 +214,34 @@
         root.appendChild(div);
       }
     }
-
+    for (key in default_dict) {
+      if (default_dict.hasOwnProperty(key)) {
+        if (default_used_list.indexOf(key) < 0 ) {
+          div = document.createElement("div");
+          div.setAttribute("class", "subfield");
+          div.title = key;
+          label = document.createElement("label");
+          label.textContent = key;
+          div.appendChild(label);
+          div_input = document.createElement("div");
+          div_input.setAttribute("class", "input");
+          input = render_field({"type": "string"}, default_dict[key]);
+          input.name = path + "/" + key;
+          input.setAttribute("class", "slapos-parameter");
+          div_input.appendChild(input);
+        
+          default_used_list.push(key);
+          span_info = document.createElement("span");
+          span_info.textContent = '(Not part of the schema)';
+          div_input.appendChild(span_info);
+          span_error = document.createElement("span");
+          span_error.setAttribute("class", "error");
+          div_input.appendChild(span_error);
+          div.appendChild(div_input);
+          root.appendChild(div);
+        }
+      }
+    }
     return root;
   }
 
@@ -396,7 +425,6 @@
         software_type = getSoftwareTypeFromForm(g.props.element),
         json_dict = getFormValuesAsJSONDict(g.props.element),
         serialisation_type = getSerialisationTypeFromForm(g.props.element);
-      
       if (software_type === "") {
         if (g.options.parameter.shared) {
           throw new Error("The software type is not part of the json (" + software_type + " as slave)");
