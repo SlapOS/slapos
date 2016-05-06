@@ -1,11 +1,233 @@
 <property_sheet_list>
+ <portal_type id="Access Token Module">
+  <item>SlapOSModuleIdGeneratorConstraint</item>
+ </portal_type>
+ <portal_type id="Account Module">
+  <item>SlapOSModuleIdGeneratorConstraint</item>
+ </portal_type>
+ <portal_type id="Accounting Transaction Module">
+  <item>SlapOSModuleIdGeneratorConstraint</item>
+ </portal_type>
+ <portal_type id="Activity Tool">
+  <item>SlapOSModuleIdGeneratorConstraint</item>
+ </portal_type>
+ <portal_type id="Bug Module">
+  <item>SlapOSModuleIdGeneratorConstraint</item>
+ </portal_type>
  <portal_type id="Business Configuration Module">
+  <item>SlapOSModuleIdGeneratorConstraint</item>
+ </portal_type>
+ <portal_type id="Business Process Module">
+  <item>SlapOSModuleIdGeneratorConstraint</item>
+ </portal_type>
+ <portal_type id="Campaign Module">
   <item>SlapOSModuleIdGeneratorConstraint</item>
  </portal_type>
  <portal_type id="Certificate Authority Tool">
   <item>CertificateAuthorityToolConsistencyConstraint</item>
  </portal_type>
+ <portal_type id="Cloud Contract Module">
+  <item>SlapOSModuleIdGeneratorConstraint</item>
+ </portal_type>
+ <portal_type id="Component Module">
+  <item>SlapOSModuleIdGeneratorConstraint</item>
+ </portal_type>
+ <portal_type id="Computer Model Module">
+  <item>SlapOSModuleIdGeneratorConstraint</item>
+ </portal_type>
+ <portal_type id="Computer Module">
+  <item>SlapOSModuleIdGeneratorConstraint</item>
+ </portal_type>
+ <portal_type id="Computer Network Module">
+  <item>SlapOSModuleIdGeneratorConstraint</item>
+ </portal_type>
+ <portal_type id="Consumption Document Module">
+  <item>SlapOSModuleIdGeneratorConstraint</item>
+ </portal_type>
+ <portal_type id="Credential Recovery Module">
+  <item>SlapOSModuleIdGeneratorConstraint</item>
+ </portal_type>
+ <portal_type id="Credential Request Module">
+  <item>SlapOSModuleIdGeneratorConstraint</item>
+ </portal_type>
+ <portal_type id="Credential Update Module">
+  <item>SlapOSModuleIdGeneratorConstraint</item>
+ </portal_type>
+ <portal_type id="Currency Module">
+  <item>SlapOSModuleIdGeneratorConstraint</item>
+ </portal_type>
+ <portal_type id="Data Set Module">
+  <item>SlapOSModuleIdGeneratorConstraint</item>
+ </portal_type>
  <portal_type id="Delivery Node Module">
+  <item>SlapOSModuleIdGeneratorConstraint</item>
+ </portal_type>
+ <portal_type id="Document Ingestion Module">
+  <item>SlapOSModuleIdGeneratorConstraint</item>
+ </portal_type>
+ <portal_type id="Document Module">
+  <item>SlapOSModuleIdGeneratorConstraint</item>
+ </portal_type>
+ <portal_type id="Event Module">
+  <item>SlapOSModuleIdGeneratorConstraint</item>
+ </portal_type>
+ <portal_type id="External Source Module">
+  <item>SlapOSModuleIdGeneratorConstraint</item>
+ </portal_type>
+ <portal_type id="Glossary Module">
+  <item>SlapOSModuleIdGeneratorConstraint</item>
+ </portal_type>
+ <portal_type id="Hosting Subscription Module">
+  <item>SlapOSModuleIdGeneratorConstraint</item>
+ </portal_type>
+ <portal_type id="Image Module">
+  <item>SlapOSModuleIdGeneratorConstraint</item>
+ </portal_type>
+ <portal_type id="Implicit Item Movement Module">
+  <item>SlapOSModuleIdGeneratorConstraint</item>
+ </portal_type>
+ <portal_type id="Internal Order Module">
+  <item>SlapOSModuleIdGeneratorConstraint</item>
+ </portal_type>
+ <portal_type id="Internal Packing List Module">
+  <item>SlapOSModuleIdGeneratorConstraint</item>
+ </portal_type>
+ <portal_type id="Internal Supply Module">
+  <item>SlapOSModuleIdGeneratorConstraint</item>
+ </portal_type>
+ <portal_type id="Internal Trade Condition Module">
+  <item>SlapOSModuleIdGeneratorConstraint</item>
+ </portal_type>
+ <portal_type id="Inventory Module">
+  <item>SlapOSModuleIdGeneratorConstraint</item>
+ </portal_type>
+ <portal_type id="Item Module">
+  <item>SlapOSModuleIdGeneratorConstraint</item>
+ </portal_type>
+ <portal_type id="Knowledge Pad Module">
+  <item>SlapOSModuleIdGeneratorConstraint</item>
+ </portal_type>
+ <portal_type id="Meeting Module">
+  <item>SlapOSModuleIdGeneratorConstraint</item>
+ </portal_type>
+ <portal_type id="Notification Message Module">
+  <item>SlapOSModuleIdGeneratorConstraint</item>
+ </portal_type>
+ <portal_type id="Open Internal Order Module">
+  <item>SlapOSModuleIdGeneratorConstraint</item>
+ </portal_type>
+ <portal_type id="Open Purchase Order Module">
+  <item>SlapOSModuleIdGeneratorConstraint</item>
+ </portal_type>
+ <portal_type id="Open Sale Order Module">
+  <item>SlapOSModuleIdGeneratorConstraint</item>
+ </portal_type>
+ <portal_type id="Organisation Module">
+  <item>SlapOSModuleIdGeneratorConstraint</item>
+ </portal_type>
+ <portal_type id="Person Module">
+  <item>SlapOSModuleIdGeneratorConstraint</item>
+ </portal_type>
+ <portal_type id="Product Module">
+  <item>SlapOSModuleIdGeneratorConstraint</item>
+ </portal_type>
+ <portal_type id="Project Module">
+  <item>SlapOSModuleIdGeneratorConstraint</item>
+ </portal_type>
+ <portal_type id="Purchase Order Module">
+  <item>SlapOSModuleIdGeneratorConstraint</item>
+ </portal_type>
+ <portal_type id="Purchase Packing List Module">
+  <item>SlapOSModuleIdGeneratorConstraint</item>
+ </portal_type>
+ <portal_type id="Purchase Supply Module">
+  <item>SlapOSModuleIdGeneratorConstraint</item>
+ </portal_type>
+ <portal_type id="Purchase Trade Condition Module">
+  <item>SlapOSModuleIdGeneratorConstraint</item>
+ </portal_type>
+ <portal_type id="Quantity Unit Conversion Module">
+  <item>SlapOSModuleIdGeneratorConstraint</item>
+ </portal_type>
+ <portal_type id="Query Module">
+  <item>SlapOSModuleIdGeneratorConstraint</item>
+ </portal_type>
+ <portal_type id="Regularisation Request Module">
+  <item>SlapOSModuleIdGeneratorConstraint</item>
+ </portal_type>
+ <portal_type id="Requirement Module">
+  <item>SlapOSModuleIdGeneratorConstraint</item>
+ </portal_type>
+ <portal_type id="Returned Purchase Packing List Module">
+  <item>SlapOSModuleIdGeneratorConstraint</item>
+ </portal_type>
+ <portal_type id="Returned Sale Packing List Module">
+  <item>SlapOSModuleIdGeneratorConstraint</item>
+ </portal_type>
+ <portal_type id="Sale Opportunity Module">
+  <item>SlapOSModuleIdGeneratorConstraint</item>
+ </portal_type>
+ <portal_type id="Sale Order Module">
+  <item>SlapOSModuleIdGeneratorConstraint</item>
+ </portal_type>
+ <portal_type id="Sale Packing List Module">
+  <item>SlapOSModuleIdGeneratorConstraint</item>
+ </portal_type>
+ <portal_type id="Sale Supply Module">
+  <item>SlapOSModuleIdGeneratorConstraint</item>
+ </portal_type>
+ <portal_type id="Sale Trade Condition Module">
+  <item>SlapOSModuleIdGeneratorConstraint</item>
+ </portal_type>
+ <portal_type id="Service Module">
+  <item>SlapOSModuleIdGeneratorConstraint</item>
+ </portal_type>
+ <portal_type id="Service Report Module">
+  <item>SlapOSModuleIdGeneratorConstraint</item>
+ </portal_type>
+ <portal_type id="Simulation Tool">
+  <item>SlapOSModuleIdGeneratorConstraint</item>
+ </portal_type>
+ <portal_type id="Software Installation Module">
+  <item>SlapOSModuleIdGeneratorConstraint</item>
+ </portal_type>
+ <portal_type id="Software Instance Module">
+  <item>SlapOSModuleIdGeneratorConstraint</item>
+ </portal_type>
+ <portal_type id="Software Licence Module">
+  <item>SlapOSModuleIdGeneratorConstraint</item>
+ </portal_type>
+ <portal_type id="Software Product Module">
+  <item>SlapOSModuleIdGeneratorConstraint</item>
+ </portal_type>
+ <portal_type id="Software Publication Module">
+  <item>SlapOSModuleIdGeneratorConstraint</item>
+ </portal_type>
+ <portal_type id="Software Release Module">
+  <item>SlapOSModuleIdGeneratorConstraint</item>
+ </portal_type>
+ <portal_type id="Support Request Module">
+  <item>SlapOSModuleIdGeneratorConstraint</item>
+ </portal_type>
+ <portal_type id="System Event Module">
+  <item>SlapOSModuleIdGeneratorConstraint</item>
+ </portal_type>
+ <portal_type id="Task Module">
+  <item>SlapOSModuleIdGeneratorConstraint</item>
+ </portal_type>
+ <portal_type id="Task Report Module">
+  <item>SlapOSModuleIdGeneratorConstraint</item>
+ </portal_type>
+ <portal_type id="Transformation Module">
+  <item>SlapOSModuleIdGeneratorConstraint</item>
+ </portal_type>
+ <portal_type id="Upgrade Decision Module">
+  <item>SlapOSModuleIdGeneratorConstraint</item>
+ </portal_type>
+ <portal_type id="Web Page Module">
+  <item>SlapOSModuleIdGeneratorConstraint</item>
+ </portal_type>
+ <portal_type id="Web Site Module">
   <item>SlapOSModuleIdGeneratorConstraint</item>
  </portal_type>
  <portal_type id="Workflow Module">

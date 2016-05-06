@@ -25,5 +25,4 @@ if promise_ca_path is not None:
 
 if len(error_list) > 0 and fixit:
   installCertificateAuthority()
-  return []
 return error_list
