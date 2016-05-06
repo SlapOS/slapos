@@ -1,0 +1,11 @@
+<property_sheet_list>
+ <portal_type id="Business Configuration Module">
+  <item>SlapOSModuleIdGeneratorConstraint</item>
+ </portal_type>
+ <portal_type id="Delivery Node Module">
+  <item>SlapOSModuleIdGeneratorConstraint</item>
+ </portal_type>
+ <portal_type id="Workflow Module">
+  <item>SlapOSModuleIdGeneratorConstraint</item>
+ </portal_type>
+</property_sheet_list>
