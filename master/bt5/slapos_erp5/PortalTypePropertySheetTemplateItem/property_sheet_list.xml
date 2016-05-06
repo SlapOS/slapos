@@ -2,6 +2,9 @@
  <portal_type id="Business Configuration Module">
   <item>SlapOSModuleIdGeneratorConstraint</item>
  </portal_type>
+ <portal_type id="Certificate Authority Tool">
+  <item>CertificateAuthorityToolConsistencyConstraint</item>
+ </portal_type>
  <portal_type id="Delivery Node Module">
   <item>SlapOSModuleIdGeneratorConstraint</item>
  </portal_type>

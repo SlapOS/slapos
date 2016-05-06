@@ -1,3 +1,4 @@
 Business Configuration Module | SlapOSModuleIdGeneratorConstraint
+Certificate Authority Tool | CertificateAuthorityToolConsistencyConstraint
 Delivery Node Module | SlapOSModuleIdGeneratorConstraint
 Workflow Module | SlapOSModuleIdGeneratorConstraint
