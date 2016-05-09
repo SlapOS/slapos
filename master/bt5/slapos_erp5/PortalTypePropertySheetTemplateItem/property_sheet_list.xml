@@ -107,6 +107,9 @@
  <portal_type id="Meeting Module">
   <item>SlapOSModuleIdGeneratorConstraint</item>
  </portal_type>
+ <portal_type id="Memcached Tool">
+  <item>MemcachedToolServerConstraint</item>
+ </portal_type>
  <portal_type id="Notification Message Module">
   <item>SlapOSModuleIdGeneratorConstraint</item>
  </portal_type>

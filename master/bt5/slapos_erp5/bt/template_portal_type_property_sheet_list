@@ -34,6 +34,7 @@ Inventory Module | SlapOSModuleIdGeneratorConstraint
 Item Module | SlapOSModuleIdGeneratorConstraint
 Knowledge Pad Module | SlapOSModuleIdGeneratorConstraint
 Meeting Module | SlapOSModuleIdGeneratorConstraint
+Memcached Tool | MemcachedToolServerConstraint
 Notification Message Module | SlapOSModuleIdGeneratorConstraint
 Open Internal Order Module | SlapOSModuleIdGeneratorConstraint
 Open Purchase Order Module | SlapOSModuleIdGeneratorConstraint
