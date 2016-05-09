@@ -59,9 +59,6 @@
  <portal_type id="Data Set Module">
   <item>SlapOSModuleIdGeneratorConstraint</item>
  </portal_type>
- <portal_type id="Delivery Node Module">
-  <item>SlapOSModuleIdGeneratorConstraint</item>
- </portal_type>
  <portal_type id="Document Ingestion Module">
   <item>SlapOSModuleIdGeneratorConstraint</item>
  </portal_type>

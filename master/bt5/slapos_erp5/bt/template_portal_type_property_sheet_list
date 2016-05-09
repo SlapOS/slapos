@@ -18,7 +18,6 @@ Credential Request Module | SlapOSModuleIdGeneratorConstraint
 Credential Update Module | SlapOSModuleIdGeneratorConstraint
 Currency Module | SlapOSModuleIdGeneratorConstraint
 Data Set Module | SlapOSModuleIdGeneratorConstraint
-Delivery Node Module | SlapOSModuleIdGeneratorConstraint
 Document Ingestion Module | SlapOSModuleIdGeneratorConstraint
 Document Module | SlapOSModuleIdGeneratorConstraint
 Event Module | SlapOSModuleIdGeneratorConstraint
