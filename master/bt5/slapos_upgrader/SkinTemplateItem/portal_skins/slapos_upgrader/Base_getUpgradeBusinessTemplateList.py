@@ -8,9 +8,7 @@
 bt5_update_catalog_list = ('erp5_ingestion_mysql_innodb_catalog',
                            'slapos_cloud', 'erp5_accounting',
                            'erp5_movement_table_catalog',
-                           'erp5_promise', 'slapos_configurator',
-                           'slapos_ecoallocation', 'slapos_jio',
-                           'slapos_monitoring')
+                           'erp5_promise')
 
 bt5_id_list = bt5_update_catalog_list + ('slapos_erp5',)
 
