@@ -115,6 +115,7 @@ class TestSlaposSkinSelection(testSlapOSMixin):
 custom
 erp5_web_hal_json
 slapos_ecoallocation
+slapos_erp5
 slapos_upgrader
 vifib_hosting
 slapos_contract
@@ -230,6 +231,7 @@ custom
 erp5_web_hal_json
 erp5_web_renderjs_ui
 slapos_ecoallocation
+slapos_erp5
 slapos_upgrader
 slapos_contract
 slapos_crm_monitoring
@@ -339,6 +341,7 @@ zpt_generic
 custom
 erp5_web_hal_json
 slapos_ecoallocation
+slapos_erp5
 slapos_upgrader
 slapos_contract
 slapos_crm_monitoring
@@ -449,6 +452,7 @@ zpt_generic
 custom
 erp5_web_hal_json
 slapos_ecoallocation
+slapos_erp5
 slapos_upgrader
 slapos_contract
 slapos_crm_monitoring
@@ -556,6 +560,7 @@ zpt_generic
 custom
 erp5_web_hal_json
 slapos_ecoallocation
+slapos_erp5
 slapos_upgrader
 slapos_contract
 slapos_crm_monitoring
@@ -664,6 +669,7 @@ zpt_generic
 custom
 erp5_web_hal_json
 slapos_ecoallocation
+slapos_erp5
 slapos_upgrader
 slapos_contract
 slapos_crm_monitoring
@@ -771,6 +777,7 @@ zpt_generic
 custom
 erp5_web_hal_json
 slapos_ecoallocation
+slapos_erp5
 slapos_upgrader
 slapos_contract
 slapos_crm_monitoring
@@ -878,6 +885,7 @@ zpt_generic
 custom
 erp5_web_hal_json
 slapos_ecoallocation
+slapos_erp5
 slapos_upgrader
 slapos_rss
 slapos_contract
@@ -986,6 +994,7 @@ zpt_generic
 custom
 erp5_web_hal_json
 slapos_ecoallocation
+slapos_erp5
 slapos_upgrader
 slapos_contract
 slapos_crm_monitoring
@@ -1095,6 +1104,7 @@ zpt_generic
 custom
 erp5_web_hal_json
 slapos_ecoallocation
+slapos_erp5
 slapos_upgrader
 slapos_contract
 slapos_crm_monitoring
@@ -1205,6 +1215,7 @@ custom
 erp5_web_hal_json
 erp5_web_renderjs_ui
 slapos_ecoallocation
+slapos_erp5
 slapos_upgrader
 slapos_contract
 slapos_crm_monitoring
