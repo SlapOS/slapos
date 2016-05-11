@@ -67,6 +67,7 @@
       gadget.props = {};
       gadget.props.hosting_list = [];
       gadget.props.opml_key_list = [];
+      gadget.props.title = 'Monitoring Registered Applications';
       return gadget.getDeclaredGadget("login_gadget")
         .push(function (login_gadget) {
           gadget.props.login_gadget = login_gadget;
@@ -102,7 +103,7 @@
       //return gadget.props.jio_gadget.getMonitorUrlList()
       gadget.props.options = options;
       return gadget.updateHeader({
-          title: 'Monitoring Registered Applications'
+          title: gadget.props.title
         })
         .push(function () {
           return gadget.getSetting('monitor_url_description');
@@ -373,6 +374,7 @@
             if (old_element) {
               old_element.removeClass('selected');
             }
+            $(".ui-block-b .signal").removeClass("ui-content-hidden");
             return $(element.querySelector('td:first-child > a')).addClass('selected');
           })
           .push(function () {
@@ -443,6 +445,7 @@
             return '';
           })
           .push(function () {
+            $(".ui-block-b .signal").addClass("ui-content-hidden");
             return $(gadget.props.element.querySelectorAll('.ui-block-b .ui-listview-outer')).listview().listview("refresh");
           })
           .push(function () {

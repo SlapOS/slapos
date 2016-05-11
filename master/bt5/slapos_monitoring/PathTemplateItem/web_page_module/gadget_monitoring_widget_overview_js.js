@@ -257,6 +257,7 @@
         }
         return new RSVP.Queue()
         .push(function () {
+          $(".ui-block-b .signal").removeClass("ui-content-hidden");
           return gadget.setSetting('instance_overview_selection', private_link);
         })
         .push(function () {
@@ -365,10 +366,12 @@
                   .innerHTML = content;
                 gadget.property_dict.element.querySelector(".promise-list")
                   .innerHTML = promise_content;
+                $(".ui-block-b .signal").addClass("ui-content-hidden");
                 return $(element.querySelectorAll('fieldset[data-role="controlgroup"]'))
                   .controlgroup().controlgroup('refresh');
               });
           }
+          $(".ui-block-b .signal").addClass("ui-content-hidden");
           return false;
           
         });
