@@ -110,6 +110,7 @@ parts = configure-script
 
 [configure-script]
 recipe = hexagonit.recipe.download
+ignore-existing = true
 location = ${buildout:parts-directory}/${:_buildout_section_name_}
 url = url_of_script_name.py
 filename = script_name.py
