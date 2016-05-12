@@ -54,6 +54,7 @@ mimetype_registry =
   image/png image/jpeg imagemagick
   image/png * ooo
   image/* image/* imagemagick
+  text/html application/pdf wkhtmltopdf
   text/* * ooo
   application/zip * ooo
   application/msword * ooo
