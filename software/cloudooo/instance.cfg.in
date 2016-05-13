@@ -54,6 +54,7 @@ libxcb = {{ libxcb_location }}
 mesa = {{ mesa_location }}
 poppler = {{ poppler_location }}
 pixman = {{ pixman_location }}
+wkhtmltopdf = {{ wkhtmltopdf_location }}
 xdamage = {{ xdamage_location }}
 xfixes = {{ xfixes_location }}
 zlib = {{ zlib_location }}
