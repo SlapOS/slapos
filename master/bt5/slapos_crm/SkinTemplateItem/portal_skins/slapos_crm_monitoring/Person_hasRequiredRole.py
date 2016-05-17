@@ -1,3 +1,7 @@
+if REQUEST is not None:
+  from zExceptions import Unauthorized
+  raise Unauthorized
+
 if role_id in context.getRoleList():
   return True
 
