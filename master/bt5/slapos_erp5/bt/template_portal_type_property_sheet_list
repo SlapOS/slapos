@@ -55,12 +55,10 @@ Returned Purchase Packing List Module | SlapOSModuleIdGeneratorConstraint
 Returned Sale Packing List Module | SlapOSModuleIdGeneratorConstraint
 Sale Opportunity Module | SlapOSModuleIdGeneratorConstraint
 Sale Order Module | SlapOSModuleIdGeneratorConstraint
-Sale Packing List Module | SlapOSModuleIdGeneratorConstraint
 Sale Supply Module | SlapOSModuleIdGeneratorConstraint
 Sale Trade Condition Module | SlapOSModuleIdGeneratorConstraint
 Service Module | SlapOSModuleIdGeneratorConstraint
 Service Report Module | SlapOSModuleIdGeneratorConstraint
-Simulation Tool | SlapOSModuleIdGeneratorConstraint
 Software Installation Module | SlapOSModuleIdGeneratorConstraint
 Software Instance Module | SlapOSModuleIdGeneratorConstraint
 Software Licence Module | SlapOSModuleIdGeneratorConstraint

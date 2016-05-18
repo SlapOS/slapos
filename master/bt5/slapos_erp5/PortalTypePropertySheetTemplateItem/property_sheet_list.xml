@@ -170,9 +170,6 @@
  <portal_type id="Sale Order Module">
   <item>SlapOSModuleIdGeneratorConstraint</item>
  </portal_type>
- <portal_type id="Sale Packing List Module">
-  <item>SlapOSModuleIdGeneratorConstraint</item>
- </portal_type>
  <portal_type id="Sale Supply Module">
   <item>SlapOSModuleIdGeneratorConstraint</item>
  </portal_type>
@@ -183,9 +180,6 @@
   <item>SlapOSModuleIdGeneratorConstraint</item>
  </portal_type>
  <portal_type id="Service Report Module">
-  <item>SlapOSModuleIdGeneratorConstraint</item>
- </portal_type>
- <portal_type id="Simulation Tool">
   <item>SlapOSModuleIdGeneratorConstraint</item>
  </portal_type>
  <portal_type id="Software Installation Module">
