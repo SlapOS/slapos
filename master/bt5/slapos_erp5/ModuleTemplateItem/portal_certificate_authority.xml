@@ -1,0 +1,12 @@
+<module>
+ <id>portal_certificate_authority</id>
+ <permission_list>
+  <permission type='tuple'>
+   <name>Access contents information</name>
+   <role>Manager</role>
+   <role>Member</role>
+  </permission>
+ </permission_list>
+ <portal_type>Certificate Authority Tool</portal_type>
+ <title>portal_certificate_authority</title>
+</module>
