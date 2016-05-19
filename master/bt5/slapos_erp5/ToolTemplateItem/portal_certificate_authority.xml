@@ -22,8 +22,8 @@
             <key> <string>_Access_contents_information_Permission</string> </key>
             <value>
               <tuple>
-                <string>Manager</string>
                 <string>Member</string>
+                <string>Manager</string>
               </tuple>
             </value>
         </item>
@@ -313,7 +313,11 @@
         </item>
         <item>
             <key> <string>_Add_portal_content_Permission</string> </key>
-            <value> <reference id="1.1"/> </value>
+            <value>
+              <tuple>
+                <string>Manager</string>
+              </tuple>
+            </value>
         </item>
         <item>
             <key> <string>_Add_portal_events_Permission</string> </key>
@@ -661,7 +665,11 @@
         </item>
         <item>
             <key> <string>_View_Permission</string> </key>
-            <value> <reference id="1.1"/> </value>
+            <value>
+              <tuple>
+                <string>Manager</string>
+              </tuple>
+            </value>
         </item>
         <item>
             <key> <string>_View_management_screens_Permission</string> </key>
@@ -687,43 +695,15 @@
         </item>
         <item>
             <key> <string>certificate_authority_path</string> </key>
-            <value> <string>/srv/slapgrid/slappart9/srv/runner/instance/slappart0/srv/ssl</string> </value>
-        </item>
-        <item>
-            <key> <string>crl</string> </key>
-            <value> <string>/srv/slapgrid/slappart9/srv/runner/instance/slappart0/srv/ssl/crlnumber</string> </value>
-        </item>
-        <item>
-            <key> <string>description</string> </key>
-            <value> <string>A</string> </value>
+            <value> <string></string> </value>
         </item>
         <item>
             <key> <string>id</string> </key>
             <value> <string>portal_certificate_authority</string> </value>
         </item>
         <item>
-            <key> <string>index</string> </key>
-            <value> <string>/srv/slapgrid/slappart9/srv/runner/instance/slappart0/srv/ssl/index.txt</string> </value>
-        </item>
-        <item>
-            <key> <string>lock</string> </key>
-            <value> <string>/srv/slapgrid/slappart9/srv/runner/instance/slappart0/srv/ssl/lock</string> </value>
-        </item>
-        <item>
-            <key> <string>openssl_binary</string> </key>
-            <value> <string>/srv/slapgrid/slappart9/srv/runner/instance/slappart9/bin/openssl</string> </value>
-        </item>
-        <item>
-            <key> <string>openssl_config</string> </key>
-            <value> <string>/srv/slapgrid/slappart9/srv/runner/instance/slappart0/srv/ssl/openssl.cnf</string> </value>
-        </item>
-        <item>
             <key> <string>portal_type</string> </key>
             <value> <string>Certificate Authority Tool</string> </value>
-        </item>
-        <item>
-            <key> <string>serial</string> </key>
-            <value> <string>/srv/slapgrid/slappart9/srv/runner/instance/slappart0/srv/ssl/serial</string> </value>
         </item>
         <item>
             <key> <string>title</string> </key>
