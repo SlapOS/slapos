@@ -51,6 +51,7 @@ innodb_locks_unsafe_for_binlog = 1
 log_bin = {{ log_bin }}
 {% set binlog_expire_days = parameter_dict['binlog-expire-days'] -%}
 {% if binlog_expire_days > 0 %}expire_logs_days = {{ binlog_expire_days }}{% endif %}
+server_id = {{ parameter_dict['server-id'] }}
 {% endif %}
 
 # Some dangerous settings you may want to uncomment temporarily
