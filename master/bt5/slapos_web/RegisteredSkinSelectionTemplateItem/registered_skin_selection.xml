@@ -8,10 +8,6 @@
   <skin_selection>Hosting</skin_selection>
  </skin_folder_selection>
  <skin_folder_selection>
-  <skin_folder>erp5_web_renderjs_ui</skin_folder>
-  <skin_selection>View</skin_selection>
- </skin_folder_selection>
- <skin_folder_selection>
   <skin_folder>erp5_xhtml_style</skin_folder>
   <skin_selection>Hosting</skin_selection>
  </skin_folder_selection>
