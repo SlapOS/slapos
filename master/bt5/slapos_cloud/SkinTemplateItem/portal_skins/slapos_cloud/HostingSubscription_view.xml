@@ -96,6 +96,7 @@
                       <list>
                         <string>listbox_aggregate_parent_title</string>
                         <string>listbox_aggregate_default_ipv6</string>
+                        <string>listbox_is_slave</string>
                       </list>
                     </value>
                 </item>
