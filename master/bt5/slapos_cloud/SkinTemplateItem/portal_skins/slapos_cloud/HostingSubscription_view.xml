@@ -74,7 +74,9 @@
                 <item>
                     <key> <string>bottom</string> </key>
                     <value>
-                      <list/>
+                      <list>
+                        <string>listbox</string>
+                      </list>
                     </value>
                 </item>
                 <item>
@@ -91,7 +93,10 @@
                 <item>
                     <key> <string>hidden</string> </key>
                     <value>
-                      <list/>
+                      <list>
+                        <string>listbox_aggregate_parent_title</string>
+                        <string>listbox_aggregate_default_ipv6</string>
+                      </list>
                     </value>
                 </item>
                 <item>
