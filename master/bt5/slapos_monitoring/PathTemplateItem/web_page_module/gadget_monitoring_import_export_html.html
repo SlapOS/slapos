@@ -15,6 +15,7 @@
   <body>
     <div data-gadget-url="gadget_monitoring_jio.html" data-gadget-scope="jio_gadget" data-gadget-sandbox="public"></div>
     <div data-gadget-url="gadget_monitoring_login_widget.html" data-gadget-scope="login_gadget" data-gadget-sandbox="public"></div>
+    <div data-gadget-url="gadget_monitoring_sync.html" data-gadget-scope="sync_gadget" data-gadget-sandbox="public"></div>
     
     <div data-role="tabs" class="config-tabs">
       <div data-role="navbar">
@@ -50,13 +51,12 @@
             <textarea name="settings-data-input" class="text-data"></textarea>
           </div>
         </div>
-        <div class="ui-text-right padding-5">
-          <span class="ui-text-error"></span>
-        </div>
+        <div class="alert alert-error ui-content-hidden"></div>
         <div class="select-storage ui-controlgroup ui-controlgroup-horizontal">
           <div class="ui-grid-b ui-responsive">
             <div class="ui-block-a"></div>
-            <div class="ui-block-b">
+            <div class="ui-block-b padding-lr-10">
+              <button data-i18n="Continue" class="ui-btn-btn-right btn-continue ui-content-hidden">Continue</button>
             </div>
             <div class="ui-block-c">
               <button data-i18n="Reload Settings" class="ui-btn-btn-right btn-save">Import Settings</button>

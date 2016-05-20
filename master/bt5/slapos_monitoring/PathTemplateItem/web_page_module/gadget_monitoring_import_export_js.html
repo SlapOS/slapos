@@ -117,6 +117,12 @@
           g.props.login_gadget = login_gadget;
         });
     })
+    .ready(function (gadget) {
+      return gadget.getDeclaredGadget("sync_gadget")
+        .push(function (sync_gadget) {
+          gadget.props.sync_gadget = sync_gadget;
+        });
+    })
     .ready(function (g) {
       return g.getDeclaredGadget("jio_gadget")
         .push(function (jio_gadget) {
@@ -124,7 +130,7 @@
           return jio_gadget.createJio({
             type: "indexeddb",
             database: "setting"
-          });
+          }, false);
         });
     })
     .declareAcquiredMethod("getSetting", "getSetting")
@@ -169,7 +175,19 @@
                 });
             }
           ));
-          
+
+          promise_list.push(loopEventListener(
+            gadget.props.element.querySelector('.btn-continue'),
+            'click',
+            true,
+            function () {
+              return gadget.redirect({
+                  page: 'settings_configurator',
+                  tab: 'manage'
+                });
+            }
+          ));
+
           promise_list.push(loopEventListener(
             gadget.props.element.querySelector('.btn-save'),
             'click',
@@ -179,16 +197,15 @@
                 configuration_dict,
                 monitor_url_dict = {},
                 monitor_opml_url_dict = {},
+                error_msg = '',
                 i;
-              gadget.props.element.querySelector('.ui-text-error')
-                .innerHTML = "";
 
               try {
                 configuration_dict = JSON.parse(json_string);
               } catch (e) {
-                gadget.props.element.querySelector('.ui-text-error')
-                  .innerHTML = 'Error: Invalid json content!';
-                return;
+                return $(gadget.props.element.querySelector('.alert-error'))
+                    .removeClass('ui-content-hidden')
+                    .html('Error: Invalid json content!');
               }
 
               return validateJsonConfiguration(configuration_dict)
@@ -204,19 +221,49 @@
                         hashCode(configuration_dict.monitor_url[i].url)
                       ] = configuration_dict.monitor_url[i];
                     }
+                    $(gadget.props.element.querySelector('.btn-continue'))
+                      .addClass('ui-content-hidden');
+                    gadget.props.element.querySelector('.btn-save')
+                      .innerHTML = "Please wait...";
                     return gadget.props.login_gadget.setUrlDict(monitor_url_dict)
                       .push(function () {
                         return gadget.setSetting('monitor_url_description', monitor_opml_url_dict);
                       })
                       .push(function () {
-                        return gadget.redirect({
-                            page: 'settings_configurator',
-                            tab: 'manage'
-                          });
+                        return gadget.props.jio_gadget.syncMonitoringOpmlData();
+                      })
+                      .push(function (result_list) {
+                        var i;
+                          
+                        for (i = 0; i < result_list.length; i += 1) {
+                          if (result_list[i].error) {
+                            error_msg += 'Failed to sync data at "' + result_list[i].url + '" <br/>';
+                          }
+                        }
+                        gadget.props.element.querySelector('.btn-save')
+                            .innerHTML = "Sync Data...";
+                        return gadget.props.sync_gadget.startSync({now: true});
+                      })
+                      .push(function (){
+                        if (error_msg) {
+                          $(gadget.props.element.querySelector('.alert-error'))
+                            .removeClass('ui-content-hidden')
+                            .html(error_msg);
+                          $(gadget.props.element.querySelector('.btn-continue'))
+                            .removeClass('ui-content-hidden');
+                          gadget.props.element.querySelector('.btn-save')
+                            .innerHTML = "Retry Import";
+                        } else {
+                          return gadget.redirect({
+                              page: 'settings_configurator',
+                              tab: 'manage'
+                            });
+                        }
                       });
                   } else {
-                    gadget.props.element.querySelector('.ui-text-error')
-                      .innerHTML = 'Error: Content is not a valid Monitoring Json configuration!';
+                    $(gadget.props.element.querySelector('.alert-error'))
+                      .removeClass('ui-content-hidden')
+                      .html('Error: Content is not a valid Monitoring Json configuration!');
                   }
                 });
             }

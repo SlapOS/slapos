@@ -115,9 +115,8 @@
           opml_tmp_key_list = [];
           for (key in url_description_dict) {
             opml_tmp_key_list.push(key);
-            promise_list.push(gadget.props.jio_gadget.getMonitorUrlListFromOpml(
-              url_description_dict[key].href
-            ));
+            promise_list.push(gadget.props.jio_gadget.getMonitorUrlList(undefined,
+              url_description_dict[key].title));
           }
           return RSVP.all(promise_list);
         })
@@ -291,7 +290,9 @@
               }
               gadget.props.document_list[index].parameters = data;
               updateParameterBox(data, gadget.props.document_list[index].title);
-              return RSVP.push(update_promise);
+              $(gadget.props.element.querySelector('.alert-info'))
+                .removeClass('ui-content-hidden');
+              return RSVP.all(update_promise);
             });
           });
       }
@@ -308,7 +309,7 @@
         );
       }
 
-      function getSecureDocument(url, auth_login) {
+      function getMonitorDocument(url, auth_login) {
         var jio_options = {
             type: "query",
             sub_storage: {
@@ -321,7 +322,9 @@
           },
           document_id = 'monitor.global';
 
-        jio_options.sub_storage.sub_storage.basic_login = auth_login;
+        if (auth_login) {
+          jio_options.sub_storage.sub_storage.basic_login = auth_login;
+        }
         gadget.props.jio_gadget.createJio(jio_options);
         return gadget.props.jio_gadget.get(document_id);
       }
@@ -377,7 +380,7 @@
             $(".ui-block-b .signal").removeClass("ui-content-hidden");
             return $(element.querySelector('td:first-child > a')).addClass('selected');
           })
-          .push(function () {
+          /*.push(function () {
             var i,
               cred_promise_list = [];
             for (i = 0; i < gadget.props.hosting_list[index].instance_list.length; i += 1) {
@@ -388,14 +391,14 @@
               ));
             }
             return RSVP.all(cred_promise_list);
-          })
-          .push(function (cred_list) {
+          })*/
+          .push(function () {
             var i,
               promise_list = [];
             for (i = 0; i < gadget.props.hosting_list[index].instance_list.length; i += 1) {
-              promise_list.push(getSecureDocument(
-                gadget.props.hosting_list[index].instance_list[i].url,
-                cred_list[i].hash
+              promise_list.push(getMonitorDocument(
+                gadget.props.hosting_list[index].instance_list[i].url
+                //cred_list[i].hash
               ));
             }
             return RSVP.all(promise_list);
@@ -430,7 +433,7 @@
               }
             }
             if (gadget.props.opml_dict[gadget.props.opml_key_list[index]] !== undefined) {
-              status_url = "#page=status_list&opml_url=" + gadget.props.opml_dict[gadget.props.opml_key_list[index]].href;
+              status_url = "#page=status_list&search=" + gadget.props.opml_dict[gadget.props.opml_key_list[index]].title;
             }
             parameter_content = parameters_widget_template({parameter_list: parameter_list});
             instance_content = instance_widget_template({

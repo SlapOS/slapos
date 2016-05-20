@@ -109,15 +109,15 @@
             promise_list = [];
 
           return new RSVP.Queue()
-            .push(function () {
+            /*.push(function () {
               return gadget.property_dict.login_gadget.loginRedirect(
                 element._links.monitor.href,
                 options,
                 element.instance,
                 element.hosting_subscription
               );
-            })
-            .push(function (cred) {
+            })*/
+            .push(function () {
               status = (element.status.toLowerCase() === 'error') ? 
                 'red' : (element.status.toLowerCase() === 'warning') ? 'warning' : 'ok';
               element.state = status;
@@ -139,7 +139,7 @@
                     sub_storage: {
                       type: "dav",
                       url: element._links.monitor.href,
-                      basic_login: cred.hash
+                      //basic_login: cred.hash
                     }
                   }
                 };
@@ -200,7 +200,7 @@
           var title = options.jio_key.slice(0, -7),
             jio_options,
             history_content,
-            jio_url = options.jio_for + '/.jio_documents/history/' + title; // XXX hardcoded URL
+            jio_url = options.jio_for;
 
           jio_options = {
             type: "query",
@@ -212,9 +212,10 @@
               }
             }
           };
-          gadget.property_dict.jio_gadget.createJio(jio_options);
+          gadget.property_dict.jio_gadget.createJio(jio_options, false);
           return gadget.property_dict.jio_gadget.allDocs({
               select_list: ['title', 'message', 'start-date', 'status'],
+              query: '_id: "%.history.status"',
               limit: [0, 30],
               sort_on: [["start-date", "descending"]]
             })
@@ -254,7 +255,7 @@
                 }
               }
             };
-            gadget.property_dict.jio_gadget.createJio(jio_options);
+            gadget.property_dict.jio_gadget.createJio(jio_options, false);
             return gadget.property_dict.jio_gadget.get(jio_key);
           })
           .push(function (monitor_state) {

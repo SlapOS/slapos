@@ -93,7 +93,7 @@
               }
             }
           };
-        gadget.property_dict.jio_gadget.createJio(jio_options);
+        gadget.property_dict.jio_gadget.createJio(jio_options, false);
         return gadget.property_dict.jio_gadget.get(gadget.property_dict.ressource_dict[key])
           .push(function (jio_element) {
             if (!jio_element.hasOwnProperty('data')) {

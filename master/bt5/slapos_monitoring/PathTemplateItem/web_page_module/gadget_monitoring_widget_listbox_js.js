@@ -95,7 +95,7 @@
         search_list = [],
         translated_column_list = [],
         all_docs_result_list = [],
-        all_docs = function (query, storage_list) {
+        all_docs = function (query, storage_list, replicate) {
           var promise_list = [],
             i;
           if (storage_list === undefined) {
@@ -103,8 +103,11 @@
           } else if (storage_list === []) {
             return [];
           }
+          if (replicate === undefined) {
+            replicate = true;
+          }
           for (i = 0; i < storage_list.length; i += 1) {
-            gadget.property_dict.jio_gadget.createJio(storage_list[i]);
+            gadget.property_dict.jio_gadget.createJio(storage_list[i], replicate);
             /*promise_list.push(
               getJioAllDocument(gadget, 'jio_gadget' + i, storage_list[i], query)
             );*/
@@ -149,7 +152,7 @@
         }
       }
       //return gadget.jio_allDocs(option_dict.query)
-      return all_docs(option_dict.query, option_dict.storage_list)
+      return all_docs(option_dict.query, option_dict.storage_list, option_dict.replicate)
         .push(function (result_list) {
           var promise_list = [],
             promise_url_list = [],
@@ -202,6 +205,9 @@
           // build handlebars object
           for (k = 0; k < all_docs_result_list.length; k += 1) {
             for (j = 0, j_len = all_docs_result_list[k].data.total_rows; j < j_len; j += 1) {
+              if (Object.keys(all_docs_result_list[k].data.rows[j].value).length === 0) {
+                continue; // Skip empty value
+              }
               gadget.property_dict.data_result.push(all_docs_result_list[k].data.rows[j].value);
               cell_list = [];
               for (i = 0, i_len = option_dict.column_list.length; i < i_len; i += 1) {

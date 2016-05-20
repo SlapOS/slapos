@@ -7,7 +7,7 @@
 
   gadget_klass
     .ready(function (g) {
-      return false;
+      g.props = {};
     })
     .declareAcquiredMethod("redirect", "redirect")
     .declareAcquiredMethod("getSetting", "getSetting")
@@ -38,6 +38,12 @@
           page: 'status_' + current_display
         });
       });
+    })
+    
+    .declareService(function () {
+      var gadget = this;
+
+
     });
 
 }(window, rJS));

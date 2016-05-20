@@ -107,7 +107,7 @@
             <value> <string encoding="cdata"><![CDATA[
 
 CACHE MANIFEST\n
-# generated on Fri, 11 Mai 2016 15:47:33 +0000\n
+# generated on Fri, 20 Mai 2016 15:47:33 +0000\n
 # XXX + fonts\n
 # images/ajax-loader.gif\n
 CACHE:\n
@@ -158,6 +158,7 @@ gadget_monitoring_router.html\n
 gadget_monitoring_settings_configurator.html\n
 gadget_monitoring_status_grid.html\n
 gadget_monitoring_status_list.html\n
+gadget_monitoring_sync.html\n
 gadget_monitoring_widget_listbox.html\n
 gadget_monitoring_widget_listview.html\n
 gadget_monitoring_widget_overview.html\n
@@ -181,6 +182,7 @@ gadget_monitoring_router.js\n
 gadget_monitoring_static.js\n
 gadget_monitoring_status_grid.js\n
 gadget_monitoring_status_list.js\n
+gadget_monitoring_sync.js\n
 gadget_monitoring_tooltipster.min.js\n
 gadget_monitoring_widget_listbox.js\n
 gadget_monitoring_widget_listview.js\n
@@ -327,7 +329,7 @@ NETWORK:\n
             </item>
             <item>
                 <key> <string>serial</string> </key>
-                <value> <string>951.6586.44195.10240</string> </value>
+                <value> <string>951.21023.1861.15223</string> </value>
             </item>
             <item>
                 <key> <string>state</string> </key>
@@ -345,7 +347,7 @@ NETWORK:\n
                     </tuple>
                     <state>
                       <tuple>
-                        <float>1462958448.28</float>
+                        <float>1463759960.49</float>
                         <string>UTC</string>
                       </tuple>
                     </state>

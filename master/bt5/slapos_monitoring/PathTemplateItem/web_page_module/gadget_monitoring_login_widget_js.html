@@ -94,6 +94,24 @@
       });
   }
 
+  function getUrlDict(gadget) {
+    var jio_gadget;
+    return gadget.getDeclaredGadget("jio_gadget")
+      .push(function (result) {
+        jio_gadget = result;
+        return jio_gadget.get("urls");
+      })
+      .push(undefined, function (error) {
+        if (error.status_code === 404) {
+          return {};
+        }
+        throw error;
+      })
+      .push(function (doc) {
+        return doc;
+      });
+  }
+
   function clearSettingFromParentUrl (gadget, parent_url) {
     var jio_gadget;
     return gadget.getDeclaredGadget("jio_gadget")
@@ -205,6 +223,10 @@
     .declareMethod('setUrlDict', function (url_dict) {
       var gadget = this;
       return setUrlDict(gadget, url_dict);
+    })
+    .declareMethod('getUrlDict', function () {
+      var gadget = this;
+      return getUrlDict(gadget);
     })
     .declareMethod('clearSettingFromParentUrl', function (parent_url) {
       var gadget = this;

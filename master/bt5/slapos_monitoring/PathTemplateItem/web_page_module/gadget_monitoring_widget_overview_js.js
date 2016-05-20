@@ -111,7 +111,11 @@
           search_string  += ' OR (' + option_dict.search_column_list[k].select +
             ':"%' + option_dict.search + '%"' + ')';
         }
-        option_dict.query.query = '(' + search_string + ') AND ' + option_dict.query.query;
+        if (option_dict.query.query) {
+          option_dict.query.query = '(' + search_string + ') AND ' + option_dict.query.query;
+        } else {
+          option_dict.query.query = search_string;
+        }
       }
 
       getPartialData = function(dav_url, key) {
@@ -131,6 +135,9 @@
             var i;
             if (monitor_dict && monitor_dict.data.total_rows > 0) {
               for (i = 0; i < monitor_dict.data.total_rows; i += 1) {
+                if (monitor_dict.data.rows[i].id !== option_dict.data_id) {
+                  continue;
+                }
                 all_document_list.push(monitor_dict.data.rows[i].value);
               }
             } else {
@@ -274,7 +281,7 @@
           );
         })
         .push(function (cred) {
-          jio_options.sub_storage.sub_storage.url = cred.url;
+          jio_options.sub_storage.sub_storage.url = private_link;
           jio_options.sub_storage.sub_storage.basic_login = cred.hash;
           gadget.property_dict.jio_gadget.createJio(jio_options);
           return gadget.property_dict.jio_gadget.get(
@@ -295,7 +302,7 @@
             promise_list_template = Handlebars.compile(
               templater.getElementById("promiselist-widget-template").innerHTML
             );
-            gadget.property_dict.jio_gadget.createJio(jio_options);
+            gadget.property_dict.jio_gadget.createJio(jio_options, false);
             return gadget.property_dict.jio_gadget.get(
                 current_document.data.state
               )

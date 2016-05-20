@@ -44,6 +44,13 @@
       };
     })
 
+    .ready(function (g) {
+      return g.getDeclaredGadget("sync_gadget")
+        .push(function (sync_gadget) {
+          g.props.sync_gadget = sync_gadget;
+        });
+    })
+
     // Assign the element to a variable
     .ready(function (g) {
       return g.getElement()
@@ -266,6 +273,10 @@
           gadget.props.title_element.innerHTML = my_translated_html_list[0];
           gadget.props.left_link.innerHTML = my_translated_html_list[1];
           gadget.props.right_link.innerHTML = my_translated_html_list[2];
+        })
+        .push(function () {
+          // set auto sync timer
+          return gadget.props.sync_gadget.startSync();
         });
     })
 

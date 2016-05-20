@@ -113,7 +113,8 @@
           query: {
             select_list: ['title', 'opml_title', 'htmlurl', 'type', 'url'],
             sort_on: [["opml_title", "ascending"]]
-          }
+          },
+          replicate: false
         },
         jio_options = {
           type: "query",
@@ -269,7 +270,7 @@
           url: url
         }
       };
-    gadget.props.jio_gadget.createJio(jio_options);
+    gadget.props.jio_gadget.createJio(jio_options, false);
     return gadget.props.jio_gadget.allDocs({})
       .push(function (doc) {
         if (!doc) {
@@ -311,6 +312,12 @@
       return gadget.getDeclaredGadget("jio_gadget")
         .push(function (jio_gadget) {
           gadget.props.jio_gadget = jio_gadget;
+        });
+    })
+    .ready(function (gadget) {
+      return gadget.getDeclaredGadget("sync_gadget")
+        .push(function (sync_gadget) {
+          gadget.props.sync_gadget = sync_gadget;
         });
     })
     .declareAcquiredMethod("updateHeader", "updateHeader")
@@ -365,7 +372,41 @@
     // Form submit
     /////////////////////////////////////////
     .declareService(function () {
-      var gadget = this;
+      var gadget = this,
+        sync_checkbox_list,
+        i;
+
+      function setSyncTimerInterval(element) {
+        var timer;
+          if ($(element).prop('checked')) {
+            timer = parseInt($(element).val(), 10);
+            console.log(timer);
+            if (timer && !isNaN(timer)) {
+              return new RSVP.Queue()
+                .push(function () {
+                  return gadget.setSetting('sync_data_interval', timer);
+                });
+            }
+          }       
+      }
+
+      function setSelectSyncTime(time_interval) {
+        var element_id = "#sync-data-";
+        if (time_interval === 300000) {
+          element_id += "5m";
+        } else if (time_interval === 600000) {
+          element_id += "10m";
+        } else if (time_interval === 1200000) {
+          element_id += "20m";
+        } else if (time_interval === 1800000) {
+          element_id += "30m";
+        } else if (time_interval === 3600000) {
+          element_id += "1h";
+        }
+        $(element_id).prop('checked', true);
+        return $(gadget.props.element.querySelector(".sync-interval-controlgroup"))
+          .controlgroup().controlgroup("refresh");
+      }
 
       return new RSVP.Queue()
         .push(function () {
@@ -373,6 +414,12 @@
         })
         .push(function () {
           return $(gadget.props.element.querySelector("a[href='#config-" + gadget.props.selected + "']")).trigger('click');
+        })
+        .push(function () {
+          return gadget.getSetting('sync_data_interval');
+        })
+        .push(function (time_interval) {
+          return setSelectSyncTime(time_interval);
         })
         .push(function () {
           var text = "Give username and password that you have.<br/>For each Monitor, " + 
@@ -413,6 +460,29 @@
           ));
 
           promise_list.push(loopEventListener(
+            gadget.props.element.querySelector('.sync-all'),
+            'click',
+            true,
+            function () {
+              var title = gadget.props.element.querySelector('.sync-all').innerHTML;
+              return new RSVP.Queue()
+                .push(function () {
+                  gadget.props.element.querySelector('.sync-all')
+                    .innerHTML = '<i class="fa fa-download"></i> Please wait...';
+                  gadget.props.element.querySelector('.sync-all')
+                    .disabled = true;
+                  return gadget.props.sync_gadget.startSync({now: true});
+                })
+                .push(function () {
+                  gadget.props.element.querySelector('.sync-all')
+                    .innerHTML = title;
+                  gadget.props.element.querySelector('.sync-all')
+                    .disabled = false;
+                });
+            }
+          ));
+
+          promise_list.push(loopEventListener(
             gadget.props.element.querySelector("table th input[name='opml-all']"),
             'change',
             false,
@@ -439,6 +509,7 @@
               }
             }
           ));*/
+
           promise_list.push(
             $(gadget.props.element.querySelector("input[name='configure-auth']")).bind( "change", function(event, ui) {
               var input_login = gadget.props.element.querySelector(".configure input[name='username']"),
@@ -679,6 +750,10 @@
                   config_promise_list.push(
                     setUrlConfiguration(gadget, gadget.props.opml_url, root_name)
                   );
+                  // sync this opml feed
+                  config_promise_list.push(
+                    gadget.props.jio_gadget.syncMonitoringOpmlData(gadget.props.opml_url)
+                  );
                   return RSVP.all(config_promise_list);
                 })
                 .push(function (result) {
@@ -743,6 +818,15 @@
                 });
             }
           ));
+
+          sync_checkbox_list = gadget.props.element.querySelectorAll("input[name='sync-data-timer']");
+          for (i = 0; i < sync_checkbox_list.length; i += 1) {
+            promise_list.push(
+              $(sync_checkbox_list[i])
+              .bind("change",
+                setSyncTimerInterval.bind(gadget, sync_checkbox_list[i]))
+            );
+          }
 
           return RSVP.all(promise_list);
         });

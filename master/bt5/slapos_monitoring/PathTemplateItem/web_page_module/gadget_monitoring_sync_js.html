@@ -1,0 +1,203 @@
+/*global window, rJS */
+/*jslint nomen: true, indent: 2, maxerr: 3*/
+(function (window, rJS) {
+  "use strict";
+
+  var gadget_klass = rJS(window),
+    rusha = new Rusha();
+
+  gadget_klass
+    .ready(function (g) {
+      g.props =  {};
+      return g.getDeclaredGadget('jio_gadget')
+        .push(function (jio_gadget) {
+          g.props.jio_gadget = jio_gadget;
+        });
+    })
+    .ready(function (g) {
+      return g.getDeclaredGadget('login_gadget')
+        .push(function (login_gadget) {
+          g.props.login_gadget = login_gadget;
+        });
+    })
+
+    .declareAcquiredMethod("getSetting", "getSetting")
+    .declareAcquiredMethod("setSetting", "setSetting")
+
+    .declareMethod("startSync", function (options) {
+      var gadget = this,
+        monitor_cred_dict = {},
+        sync_lock = false;
+
+      function syncStorage(gadget, storage_dict, query) {
+        gadget.props.jio_gadget.createJio(storage_dict, true, query);
+        return gadget.props.jio_gadget.repair()
+          .push(undefined, function (error) {
+            console.log(error);
+          });
+      }
+
+      function getMonitoringStorageList (feed_url_list) {
+        var base_url,
+          base_url_hash,
+          key,
+          i,
+          j,
+          feed_config,
+          dav_config,
+          monitor_storage_list = [],
+          storage_type_list = [],
+          dav_storage = {
+            type: "query",
+            sub_storage: {
+              type: "drivetojiomapping",
+              sub_storage: {
+                type: "dav"
+              }
+            }
+          },
+          feed_storage = {
+            type: "query",
+            sub_storage: {
+              type: "feed",
+              feed_type: 'rss'
+            }
+          };
+
+        storage_type_list = [
+          {path: 'jio_public/', query: {}},
+          {path: 'jio_private/', query: {}, private_access: true},
+          /*{path: 'jio_private/data/', query: {
+            //query: '_id: "%.data" AND _id: "%.status"' // Skip history
+          }},
+          /*{path: 'jio_private/report/', query: {
+            query: '_id:"%.report"' // Skip history
+          }}*/
+        ];
+
+        for (i = 0; i < feed_url_list.length; i += 1) {
+          feed_config = JSON.parse(JSON.stringify(feed_storage));
+          feed_config.sub_storage.url = feed_url_list[i].htmlurl;
+          monitor_storage_list.push({
+            storage: feed_config,
+            query: {}
+          });
+          base_url = feed_url_list[i].url.replace('jio_public/', ''); // Hard coded!!
+          base_url_hash = rusha.digestFromString(base_url + 'jio_private/'); // hard coded!!
+          for (j = 0; j < storage_type_list.length; j += 1) {
+            dav_config = JSON.parse(JSON.stringify(dav_storage));
+            dav_config.sub_storage.sub_storage.url = base_url + storage_type_list[j].path;
+            if (storage_type_list[j].private_access) {
+              if (monitor_cred_dict.hasOwnProperty(base_url_hash)) {
+                dav_config.sub_storage.sub_storage.basic_login = monitor_cred_dict[base_url_hash].hash;
+              } else {
+                continue;
+              }
+            }
+            monitor_storage_list.push({
+              storage: dav_config,
+              query: storage_type_list[j].query
+            });
+          }
+        }
+        return monitor_storage_list;
+      }
+
+      function syncAllStorage() {
+        var monitor_storage_list = [];
+        if (sync_lock === true) {
+          return [];
+        }
+        if (options.now) {
+          sync_lock = true;
+        }
+        return gadget.props.login_gadget.getUrlDict()
+          .push(function(url_dict) {
+            monitor_cred_dict = url_dict;
+            
+            return gadget.props.jio_gadget.getUrlFeedDescription(options.query);
+          })
+          .push(function (url_list) {
+            var i,
+              promise_list = [];
+            monitor_storage_list = getMonitoringStorageList(url_list);
+            for (i = 0; i < monitor_storage_list.length; i += 1) {
+              promise_list.push(syncStorage(
+                gadget,
+                monitor_storage_list[i].storage,
+                monitor_storage_list[i].query));
+            }
+            console.log("Sync monitoring data...");
+            return RSVP.all(promise_list);
+          })
+          .push(function () {
+            var sync_time = new Date().getTime();
+            sync_lock = false;
+            return gadget.setSetting('latest_sync_time', sync_time);
+          });
+      }
+      
+      function syncDataTimer() {
+        if (gadget.props.timer) {
+          clearInterval(gadget.props.timer);
+        }
+        gadget.props.timer = setTimeout(function(){
+          return new RSVP.Queue()
+            .push(function () {
+              return syncAllStorage();
+            })
+            .push(function () {
+              return gadget.getSetting('sync_data_interval');
+            })
+            .push(function (timer_interval) {
+              if (timer_interval === undefined) {
+                timer_interval = 300000;
+              }
+              gadget.props.timer_interval = timer_interval;
+              return syncDataTimer();
+            });
+                  
+            }, gadget.props.timer_interval);
+      }
+
+
+      if (options === undefined) {
+        options = {};
+      }
+      if (options.query === undefined) {
+        options.query = {
+          include_docs: true
+        };
+      }
+
+      if (options.now) {
+        return syncAllStorage();
+      }
+      return new RSVP.Queue()
+        .push(function () {
+          return gadget.getSetting('sync_data_interval');
+        })
+        .push(function (timer_interval) {
+          if (timer_interval === undefined) {
+            timer_interval = 300000;
+          }
+          gadget.props.timer_interval = timer_interval;
+          return gadget.getSetting('latest_sync_time');
+        })
+        .push(function (latest_sync_time) {
+          var current_time = new Date().getTime(),
+            time_diff;
+          if (latest_sync_time !== undefined) {
+            time_diff = current_time - latest_sync_time;
+            if ((time_diff - 10000) >= gadget.props.timer_interval) {
+              // sync in after 5 second
+              gadget.props.timer_interval = 5000;
+            } else {
+              gadget.props.timer_interval = gadget.props.timer_interval - time_diff;
+            }
+          }
+          return syncDataTimer();
+        });
+    });
+
+}(window, rJS));

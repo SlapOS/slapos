@@ -53,7 +53,7 @@
       return gadget.property_dict.login_gadget.loginRedirect(options.jio_for, options, options.title, options.root)
         .push(function (cred) {
           jio_options.sub_storage.sub_storage.basic_login = cred.hash;
-          gadget.property_dict.jio_gadget.createJio(jio_options);
+          gadget.property_dict.jio_gadget.createJio(jio_options, false);
           return gadget.updateHeader({
             title: options.title + ' [' + options.root + '] Processes status'
           });

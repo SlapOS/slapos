@@ -66,18 +66,21 @@
           query: {
             select_list: ['title', 'siteTitle', 'reference', 'category',
               'date', 'message', 'link', 'source'],
-            //query: '_id:(NOT "monitor.hal") AND _id:(NOT "monitor.global")',
+            query: '_id: (NOT "_replicate_%")',
             sort_on: [["category", "ascending"]]
           }
         };
 
       return gadget.updateHeader(header)
         .push(function () {
-          if (options.opml_url) {
-            return gadget.property_dict.jio_gadget.getUrlListFromOPML(options.opml_url);
+          if (options.root_title) {
+            return gadget.property_dict.jio_gadget.getFeedUrlList({
+                query: 'opml_title: "' + options.root_title + '"',
+                include_docs: true
+              });
           }
           else {
-            return gadget.property_dict.jio_gadget.getUrlListFromFullOPML();
+            return gadget.property_dict.jio_gadget.getFeedUrlList();
           }
         })
         .push(function (url_list) {
