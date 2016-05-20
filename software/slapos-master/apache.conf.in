@@ -36,10 +36,12 @@ SSLCertificateFile {{ parameter_dict['cert'] }}
 SSLCertificateKeyFile {{ parameter_dict['key'] }}
 SSLRandomSeed startup builtin
 SSLRandomSeed connect builtin
-SSLProtocol All -SSLv2
-#SSLHonorCipherOrder on
+SSLProtocol all -SSLv2 -SSLv3
+SSLHonorCipherOrder on
 {% if parameter_dict['cipher'] -%}
 SSLCipherSuite {{ parameter_dict['cipher'] }}
+{% else %}
+SSLCipherSuite ECDH+AESGCM:DH+AESGCM:ECDH+AES256:DH+AES256:ECDH+AES128:DH+AES:ECDH+3DES:DH+3DES:RSA+AESGCM:RSA+AES:RSA+3DES:HIGH:!aNULL:!MD5
 {%- endif %}
 SSLSessionCache shmcb:{{ parameter_dict['ssl-session-cache'] }}(512000)
 SSLProxyEngine On

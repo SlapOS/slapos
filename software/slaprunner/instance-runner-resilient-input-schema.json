@@ -7,21 +7,41 @@
         },
         {
             "properties": {
-                "-sla-0-computer_guid": {
+                "resilient-clone-number": {
+                    "title": "Amount of backup(s) to create",
+                    "description": "Amount of backup(s) to create. Each backup consists of a Pull Backup Server and a clone.",
+                    "type": "integer",
+                    "default": 1,
+                    "enum": [1, 2],
+                    "optional": true
+                },
+                "-sla-runner0-computer_guid": {
                     "title": "Target computer for main instance",
                     "description": "Target computer GUID for main instance.",
                     "type": "string",
                     "optional": true
                 },
-                "-sla-1-computer_guid": {
+                "-sla-runner1-computer_guid": {
                     "title": "Target computer for first clone",
-                    "description": "Target computer for first clone and PBS.",
+                    "description": "Target computer for first clone instance.",
                     "type": "string",
                     "optional": true
                 },
-                "-sla-2-computer_guid": {
+                "-sla-pbs1-computer_guid": {
+                    "title": "Target computer for first PBS",
+                    "description": "Target computer for first PBS instance.",
+                    "type": "string",
+                    "optional": true
+                },
+                "-sla-runner2-computer_guid": {
                     "title": "Target computer for second clone",
-                    "description": "Target computer for second clone and PBS.",
+                    "description": "Target computer for second clone instance.",
+                    "type": "string",
+                    "optional": true
+                },
+                "-sla-pbs2-computer_guid": {
+                    "title": "Target computer for second PBS",
+                    "description": "Target computer for second PBS instance.",
                     "type": "string",
                     "optional": true
                 },
@@ -35,14 +55,7 @@
                     "title": "Remove backups older than...",
                     "description": "Remove all the backups in PBS that are older than specified value. It should be rdiff-backup-compatible.",
                     "type": "string",
-                    "default": "3B",
-                    "optional": true
-                },
-                "resilient-clone-number": {
-                    "title": "Amount of backup(s) to create",
-                    "description": "Amount of backup(s) to create. Each backup consists of a Pull Backup Server and a clone.",
-                    "type": "integer",
-                    "default": 2,
+                    "default": "2W",
                     "optional": true
                 },
                 "ignore-known-hosts-file": {

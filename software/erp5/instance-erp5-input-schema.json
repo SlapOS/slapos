@@ -4,7 +4,7 @@
   "additionalProperties": false,
   "properties": {
     "sla-dict": {
-      "description": "Where to request instances. Each key is a query string for criterions (e.g. \"computer_guid=foo\"), and each value is a list of partition references.",
+      "description": "Where to request instances. Each key is a query string for criterions (e.g. \"computer_guid=foo\"), and each value is a list of partition references (note: Zope partitions reference must be prefixed with \"zope-\").",
       "additionalProperties": {
         "type": "array",
         "items": { "type": "string" },
@@ -79,7 +79,7 @@
         "software-type": {
           "description": "Request a front-end slave instance of this software type.",
           "default": "RootSoftwareInstance",
-          "type": ""
+          "type": "object"
         }
       },
       "type": "object"

@@ -1,0 +1,158 @@
+PidFile "{{ parameter_dict.get('pid-file') }}"
+
+StartServers 1
+ServerLimit 1
+ThreadLimit 4
+ThreadsPerChild 4
+
+ServerName example.com
+ServerAdmin someone@email
+<IfDefine !MonitorPort>
+Listen [{{ parameter_dict.get('listening-ip') }}]:{{ parameter_dict.get('port') }}
+Define MonitorPort
+</IfDefine>
+DocumentRoot "{{ directory.get('webdav') }}"
+ErrorLog "{{ parameter_dict.get('error-log') }}"
+LoadModule unixd_module modules/mod_unixd.so
+LoadModule access_compat_module modules/mod_access_compat.so
+LoadModule authz_core_module modules/mod_authz_core.so
+LoadModule authn_core_module modules/mod_authn_core.so
+LoadModule authz_host_module modules/mod_authz_host.so
+LoadModule mime_module modules/mod_mime.so
+LoadModule cgid_module modules/mod_cgid.so
+LoadModule dir_module modules/mod_dir.so
+LoadModule ssl_module modules/mod_ssl.so
+LoadModule alias_module modules/mod_alias.so
+LoadModule autoindex_module modules/mod_autoindex.so
+LoadModule auth_basic_module modules/mod_auth_basic.so
+LoadModule authz_user_module modules/mod_authz_user.so
+LoadModule authn_file_module modules/mod_authn_file.so
+LoadModule proxy_module      modules/mod_proxy.so
+LoadModule proxy_http_module modules/mod_proxy_http.so
+LoadModule rewrite_module modules/mod_rewrite.so
+LoadModule headers_module modules/mod_headers.so
+LoadModule dav_module modules/mod_dav.so
+LoadModule dav_fs_module modules/mod_dav_fs.so
+LoadModule env_module modules/mod_env.so
+LoadModule setenvif_module modules/mod_setenvif.so
+
+# SSL Configuration
+<IfDefine !SSLConfigured>
+Define SSLConfigured
+SSLCertificateFile {{ parameter_dict.get('cert-file') }}
+SSLCertificateKeyFile {{ parameter_dict.get('key-file') }}
+SSLRandomSeed startup builtin
+SSLRandomSeed connect builtin
+SSLRandomSeed startup /dev/urandom 256
+SSLRandomSeed connect builtin
+SSLProtocol all -SSLv2 -SSLv3
+SSLCipherSuite ECDH+AESGCM:DH+AESGCM:ECDH+AES256:DH+AES256:ECDH+AES128:DH+AES:ECDH+3DES:DH+3DES:RSA+AESGCM:RSA+AES:RSA+3DES:HIGH:!aNULL:!MD5
+SSLHonorCipherOrder on
+</IfDefine>
+
+AddType application/hal+json .haljson
+SSLEngine   On
+
+Include {{ parameter_dict.get('httpd-cors-config-file') }}
+Header set Access-Control-Allow-Credentials "true"
+Header set Access-Control-Allow-Methods "PROPFIND, PROPPATCH, COPY, MOVE, DELETE, MKCOL, LOCK, UNLOCK, PUT, GETLIB, VERSION-CONTROL, CHECKIN, CHECKOUT, UNCHECKOUT, REPORT, UPDATE, CANCELUPLOAD, HEAD, OPTIONS, GET, POST"
+Header set Access-Control-Allow-Headers "Overwrite, Destination, Content-Type, Depth, User-Agent, X-File-Size, X-Requested-With, If-Modified-Since, X-File-Name, Cache-Control, Authorization"
+
+{% if parameter_dict.has_key('monitor-url-list') -%}
+RewriteEngine on
+SSLProxyEngine on
+ProxyPreserveHost On
+SSLProxyVerify none
+SSLProxyCheckPeerCN off
+SSLProxyCheckPeerName off
+{% set index=1 -%}
+{% set monitor_url_list = parameter_dict.get('monitor-url-list').split('\n') -%}
+{% for url in monitor_url_list -%}
+{%   if url.strip() -%}
+RewriteRule /monitor{{ index }}/(.*)  {{ url }}/$1 [L,P]
+{%     set index = index + 1 -%}
+{%   endif -%}
+{% endfor -%}
+{% endif -%}
+
+DavLockDB {{ directory.get('monitor-var') }}/DavLock
+Alias /share {{ directory.get('webdav') }}
+<Directory {{ directory.get('webdav') }}>
+    DirectoryIndex disabled
+    DAV On
+    Options Indexes FollowSymLinks
+    AuthType Basic
+    AuthName "webdav"
+    AuthUserFile "{{ parameter_dict.get('htpasswd-file') }}"
+    <LimitExcept OPTIONS>
+        Require valid-user
+    </LimitExcept>
+</Directory>
+
+<LocationMatch "/share/(jio_)?public">
+    <Limit GET HEAD OPTIONS REPORT PROPFIND>
+        Allow from all
+        Satisfy any
+    </Limit>
+</LocationMatch>
+
+ScriptSock {{ parameter_dict.get('cgid-pid-file') }}
+<Directory {{ directory.get('www') }}>
+  SSLVerifyDepth    1
+  SSLRequireSSL
+  SSLOptions        +StrictRequire
+  # XXX: security????
+  DirectoryIndex index.html
+  Options FollowSymLinks
+  AllowOverride All
+  Order Deny,Allow
+  AuthType Basic
+  AuthName "Private access"
+  AuthUserFile "{{ parameter_dict.get('htpasswd-file') }}"
+  Require valid-user
+</Directory>
+
+Alias /private {{ directory.get('private') }}/
+<Directory {{ directory.get('private') }}>
+  Order Deny,Allow
+  Deny from env=AUTHREQUIRED
+  <Files ".??*">
+    Order Allow,Deny
+    Deny from all
+  </Files>
+  AuthType Basic
+  AuthName "Private access"
+  AuthUserFile "{{ parameter_dict.get('htpasswd-file') }}"
+  Require valid-user
+  Options Indexes FollowSymLinks
+  Satisfy all
+</Directory>
+
+Alias /public {{ directory.get('public') }}/
+<Directory {{ directory.get('public') }}>
+  Options Indexes FollowSymLinks
+  Order Allow,Deny
+  Allow from all
+</Directory>
+
+Alias /cgi-bin {{ directory.get('cgi-bin') }}
+<Directory {{ directory.get('cgi-bin') }}>
+  # XXX security ???
+  Order Deny,Allow
+  Deny from all
+  <Files "*.cgi">
+    Order Deny,Allow
+    Deny from env=AUTHREQUIRED
+    AuthType Basic
+    AuthName "Private access"
+    AuthUserFile "{{ parameter_dict.get('htpasswd-file') }}"
+    Require valid-user
+  </Files>
+  Options +ExecCGI
+  AddHandler cgi-script .cgi
+  Options Indexes FollowSymLinks
+  Satisfy all
+</Directory>
+{% if parameter_dict.get('httpd-include-file', '') -%}
+Include {{ parameter_dict.get('httpd-include-file') }}
+{% endif -%}

@@ -1,0 +1,12 @@
+diff --git Makefile.system Makefile.system
+index 42ad498..d43aa7a 100644
+--- Makefile.system
++++ Makefile.system
+@@ -171,6 +171,7 @@ endif
+ 
+ ifeq ($(NUM_THREADS), 1)
+ override USE_THREAD = 0
++override USE_OPENMP = 0
+ endif
+ 
+ ifdef USE_THREAD

@@ -10,6 +10,10 @@
 {% if number_of_instances > 2 %}
   {% set number_of_instances = 2 %}
 {% endif %}
+{% set monitor_return = ['monitor-base-url', 'monitor-url', 'monitor-user', 'monitor-password'] -%}
+{% set monitor_parameter = {'monitor-cors-domains': slapparameter_dict.pop('monitor-cors-domains', "monitor.app.officejs.com")} -%}
+{% set monitor_dict = {'parameter': monitor_parameter, 'return': monitor_return, 'set-monitor-url': True} -%}
+{% set monitor_interface_url = slapparameter_dict.pop('monitor-interface-url', 'https://monitor.app.officejs.com') -%}
 
 {% import 'parts' as parts %}
 {% import 'replicated' as replicated %}
@@ -24,11 +28,25 @@ parts +=
   {{ parts.replicate("runner", number_of_instances + 1) }}
   publish-connection-information
 
-{{ replicated.replicate("runner", number_of_instances + 1, "runner-export", "runner-import", slapparameter_dict=slapparameter_dict) }}
+[monitor-htpasswd]
+recipe = slapos.cookbook:generate.password
+storage-path = ${directory:etc}/.monitor_user
+bytes = 8
+username = admin
+
+{%  do monitor_parameter.__setitem__('monitor-username', slapparameter_dict.get('monitor-username', 'admin'))%}
+{%  do monitor_parameter.__setitem__('monitor-password', slapparameter_dict.get('monitor-password', '${monitor-htpasswd:passwd}'))%}
+
+{{ replicated.replicate("runner", number_of_instances + 1, "runner-export", "runner-import", slapparameter_dict=slapparameter_dict, monitor_parameter_dict=monitor_dict) }}
+
+[directory]
+recipe = slapos.cookbook:mkdirectory
+etc = ${buildout:directory}/etc
+
 
 # Bubble up the parameters
 [request-runner]
-return = url ssh-public-key ssh-url notification-id ip backend_url url ssh_command access_url 1_info 2_info monitor_url monitor_backend_url webdav_url public_url git_public_url git_private_url
+return = url ssh-public-key ssh-url notification-id ip backend_url url ssh_command access_url 1_info 2_info webdav_url public_url git_public_url git_private_url {{ monitor_return | join(' ') }}
 
 [publish-connection-information]
 recipe = slapos.cookbook:publish
@@ -38,12 +56,16 @@ backend_url = ${request-runner:connection-backend_url}
 access_url = ${request-runner:connection-access_url}
 url = ${request-runner:connection-url}
 ssh_command = ${request-runner:connection-ssh_command}
-monitor_url = ${request-runner:connection-monitor_url}
-monitor_backend_url = ${request-runner:connection-monitor_backend_url}
 webdav_url = ${request-runner:connection-webdav_url}
 public_url = ${request-runner:connection-public_url}
 git_public_url = ${request-runner:connection-git_public_url}
 git_private_url = ${request-runner:connection-git_private_url}
+{% for key in monitor_return -%}
+{{ key }} = ${request-runner:connection-{{ key }}}
+{% endfor -%}
+{% if monitor_interface_url -%}
+monitor_setup_url = {{ monitor_interface_url }}/#page=settings_configurator&url=${request-runner:connection-monitor-url}
+{% endif -%}
 
 [slap-parameter]
 # Default parameters for distributed deployment

@@ -128,7 +128,7 @@ for board in ${BOARDS} ; do
   cp {{ logo_dir }}/* {{ cros_location }}/{{ branch }}/src/platform/chromiumos-assets/images_100_percent/
   cp {{ logo_dir }}/* {{ cros_location }}/{{ branch }}/src/platform/chromiumos-assets/images_200_percent/
 
-  NAYU_IMAGE_LOCATION=${board}.nayuos.img
+  NAYU_IMAGE_LOCATION=/tmp/${board}.nayuos.img
 
   # rebuild packages with boot pictures
   cros_sdk -- ./build_packages --board=${board} >> "${BUILD_LOG}"
@@ -139,8 +139,8 @@ for board in ${BOARDS} ; do
   cros_sdk -- ./build_image --board=${board} dev >> "${BUILD_LOG}" \
     && cros_sdk -- rm -f $NAYU_IMAGE_LOCATION && cros_sdk -- touch $NAYU_IMAGE_LOCATION \
     && cros_sdk -- cros flash --board=${board} file://$NAYU_IMAGE_LOCATION >> "${BUILD_LOG}" \
-    && cros_sdk -- ./test_nayuos_image ${board} > "${TEST_LOG}" \
     || { echo "An error occured while building ${board} NayuOS image. Exiting." ; exit 1 ;}
+#     && cros_sdk -- ./test_nayuos_image ${board} > "${TEST_LOG}" \
 
   # save ~15Go/device but delete cache (next build will be as long)
   if [ ${KEEP_CACHE,,} == "no" ] ; then
@@ -159,7 +159,7 @@ done
 RELEASE=$(echo ${BRANCH} | cut -d- -f2)
 DIR_IMAGE_LOCATION={{ cros_location }}/images/${RELEASE}/$(date +'%F')
 install ${DIR_IMAGE_LOCATION} -d
-mv {{ cros_location }}/{{ branch }}/src/scripts/*.img ${DIR_IMAGE_LOCATION}
+mv {{ cros_location }}/{{ branch }}/chroot/tmp/*.img ${DIR_IMAGE_LOCATION}
 
 cd ${DIR_IMAGE_LOCATION}
 for hashfunction in md5sum sha1sum sha256sum sha512sum; do

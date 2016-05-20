@@ -49,12 +49,14 @@
       "title": "SSL Certificate",
       "description": "SSL Certificate",
       "type": "string",
+      "textarea": true,
       "default": ""
     },
     "ssl_key": {
       "title": "SSL Key",
       "description": "SSL Key",
       "type": "string",
+      "textarea": true,
       "default": ""
     },
 
@@ -62,6 +64,7 @@
       "title": "SSL Certificate Authority's Certificate",
       "description": "SSL Key",
       "type": "string",
+      "textarea": true,
       "default": ""
     },
     "https-only": {
@@ -130,12 +133,14 @@
       "title": "HTTP configuration",
       "description": "Raw http configuration in python template format. Your site will be rejected if you use it without notification and approval of the frontend adminastrator",
       "default": "",
+      "textarea": true,
       "type": "string"
     },
     "apache_custom_https": {
       "title": "HTTPS configuration",
       "description": "Raw https configuration in python template format. Your site will be rejected if you use it without notification and approval of the frontend adminastrator",
       "default": "",
+      "textarea": true,
       "type": "string"
     }
   }

@@ -1,0 +1,123 @@
+#!${buildout:directory}/bin/${eggs:interpreter}
+# BEWARE: This file is operated by slapgrid
+# BEWARE: It will be overwritten automatically
+"""
+  Script to run jIO/renderJS test suite using Nexedi's test node framework.
+"""
+import argparse, os, re, shutil, subprocess, sys, traceback
+from erp5.util import taskdistribution
+from time import gmtime, strftime
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+
+# Put a 'firefox' executable in the path
+# otherwise, WebDriver refuses to start
+os.environ['PATH'] = '$${directory:bin}' + os.pathsep + os.environ['PATH']
+
+FIREFOX_EXECUTABLE = '$${firefox-instance:executable}'
+BASE_URL = 'http://[$${nginx-configuration:ip}]:$${nginx-configuration:port}/'
+
+def main():
+  parser = argparse.ArgumentParser(description='Run a test suite.')
+  parser.add_argument('--test_suite', help='The test suite name')
+  parser.add_argument('--test_suite_title', help='The test suite title')
+  parser.add_argument('--test_node_title', help='The test node title')
+  parser.add_argument('--project_title', help='The project title')
+  parser.add_argument('--revision', help='The revision to test',
+                      default='dummy_revision')
+  parser.add_argument('--node_quantity', help='ignored', type=int)
+  parser.add_argument('--master_url',
+                      help='The Url of Master controling many suites')
+
+  args = parser.parse_args()
+
+  try:
+    test_suite_title = args.test_suite_title or args.test_suite
+    test_suite = args.test_suite
+    revision = args.revision
+
+    test_line_dict = {}
+
+    if ('jio' in test_suite):
+      url = BASE_URL + 'jio/test/tests.html'
+    else:
+      url = BASE_URL + 'renderjs/test/'
+
+    date = strftime("%Y/%m/%d %H:%M:%S", gmtime())
+
+    ##########################
+    # Run all tests
+    ##########################
+    firefox_binary = webdriver.firefox.firefox_binary.FirefoxBinary(firefox_path=FIREFOX_EXECUTABLE)
+    browser = webdriver.Firefox(firefox_binary=firefox_binary)
+
+    agent = browser.execute_script("return navigator.userAgent")
+    print agent
+    print url
+
+    browser.get(url)
+    WebDriverWait(browser, 60).until(EC.presence_of_element_located((
+      By.XPATH, '//p[@id="qunit-testresult" and contains(text(), "completed")]')
+    ))
+
+    browser.title.encode('UTF-8')
+    print browser.find_element_by_id("qunit-testresult").text
+
+    for elt in browser.find_elements_by_xpath('//ol[@id="qunit-tests"]/li'):
+      test_name = '%s: %s' % (
+        elt.find_element_by_xpath('.//span[@class="module-name"]').text,
+        elt.find_element_by_xpath('.//span[@class="test-name"]').text
+      )
+      print elt.get_attribute('class'), elt.find_element_by_tag_name('strong').text
+      # print elt.find_element_by_tag_name('ol').get_attribute('innerHTML')
+
+      failure = int(elt.find_element_by_xpath('.//b[@class="failed"]').text)
+      success = int(elt.find_element_by_xpath('.//b[@class="passed"]').text)
+      test_line_dict[test_name] = {
+        'test_count': success + failure,
+        'error_count': 0,
+        'failure_count': failure,
+        'skip_count': 0,
+        'duration': int(elt.find_element_by_xpath('.//span[@class="runtime"]').text.split()[0]),
+        'command': elt.find_element_by_xpath('.//a[text()="Rerun"]').get_attribute('href'),
+        'stdout': agent,
+        'stderr': '',
+        'html_test_result': elt.find_element_by_tag_name('ol').get_attribute('innerHTML')
+      }
+
+    browser.quit()
+
+    tool = taskdistribution.TaskDistributionTool(portal_url=args.master_url)
+    test_result = tool.createTestResult(revision = revision,
+                                        test_name_list = test_line_dict.keys(),
+                                        node_title = args.test_node_title,
+                                        test_title = test_suite_title,
+                                        project_title = args.project_title)
+    if test_result is None:
+      return
+    # report test results
+    while 1:
+      test_result_line = test_result.start()
+      if not test_result_line:
+        print 'No test result anymore.'
+        break
+
+      print 'Submitting: "%s"' % test_result_line.name
+      # report status back to Nexedi ERP5
+      test_result_line.stop(**test_line_dict[test_result_line.name])
+
+  except:
+    # Catch any exception here, to warn user instead of being silent,
+    # by generating fake error result
+    print traceback.format_exc()
+    result = dict(status_code=-1,
+                  command=url,
+                  stderr=traceback.format_exc(),
+                  stdout='')
+    # XXX: inform test node master of error
+    raise EnvironmentError(result)
+
+if __name__ == "__main__":
+    main()

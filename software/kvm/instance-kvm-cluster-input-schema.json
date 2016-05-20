@@ -151,6 +151,18 @@
       "description": "Text content which will be written in a file data of cluster http server. All VM will be able to download that file via the static URL of cluster HTTP server: https://10.0.2.101/FOLDER_HASH/data.",
       "type": "string"
     },
+    "monitor-interface-url": {
+        "title": "Monitor Web Interface URL",
+        "description": "Give Url of HTML web interface that will be used to render this monitor instance.",
+        "type": "string",
+        "format": "uri"
+    },
+    "monitor-cors-domains": {
+        "title": "Monitor CORS domains",
+        "description": "List of cors domains separated with space. Needed for ajax query on this monitor instance from a different domain.",
+        "type": "string",
+        "default": ""
+    },
     "kvm-partition-dict": {
       "title": "kvm instances definition",
       "description": "kvm instances definition",

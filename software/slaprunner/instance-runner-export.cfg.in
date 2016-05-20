@@ -15,6 +15,8 @@ parts +=
   publish-connection-information
   slaprunner-promise
   slaprunner-frontend-promise
+  apache-httpd-promise
+  httpd-frontend-promise
   slaprunner-supervisord-wrapper
   dropbear-promise
   runtestsuite
@@ -22,33 +24,18 @@ parts +=
   shellinabox
   slapos-cfg
   slapos-repo
-  cron-entry-backup
   cron-entry-prepare-software
   deploy-instance-parameters
+  instance-software
+  instance-software-type
   minishell-cwd
-  supervisord-wrapper
-## Monitoring part
-###Parts to add for monitoring
-  cron
-  certificate-authority
-  cron-entry-monitor
-  cron-entry-rss
-  deploy-index
-  deploy-settings-cgi
-  deploy-status-cgi
-  deploy-status-history-cgi
-  setup-static-files
-  certificate-authority
-  zero-parameters
-  public-symlink
-  cgi-httpd-wrapper
-  cgi-httpd-graceful-wrapper
-  monitor-promise
-  monitor-instance-log-access
   bash-profile
+  supervisord-wrapper
+  supervisord-promise
+  httpd-graceful-wrapper
+## Monitoring part
 ## Monitor for runner
-  monitor-current-log-access
-  monitor-deploy-cors-domain-cgi
+  monitor-base
   monitor-check-resilient-feed-file
   monitor-check-webrunner-internal-instance
 
@@ -65,8 +52,13 @@ context =
   raw  shell_binary ${dash:location}/bin/dash
   raw  rsync_binary ${rsync:location}/bin/rsync
 
-[monitor-promise]
-url = $${monitor-frontend:config-url}/$${deploy-index-template:filename}
+[monitor-instance-parameter]
+monitor-httpd-port = 8437
+# Pass some parameter to dispay in monitoring interface
+instance-configuration =
+  file recovery-code $${recovery-code:storage-path}
+  httpdcors cors-domain $${slaprunner-httpd-cors:location} $${httpd-graceful-wrapper:output}
+  raw webrunner-url https://$${request-frontend:connection-domain}
 
 # Extends publish section with resilient parameters
 [publish-connection-information]
@@ -75,10 +67,10 @@ url = $${monitor-frontend:config-url}/$${deploy-index-template:filename}
 [monitor-check-resilient-feed-file]
 recipe = slapos.recipe.template:jinja2
 template = ${template-monitor-check-resilient-feed:location}/${template-monitor-check-resilient-feed:filename}
-rendered = $${monitor-directory:monitor-custom-scripts}/check-create-resilient-feed-files.py
+rendered = $${monitor-directory:reports}/check-create-resilient-feed-files
 mode = 700
 context =
   key input_feed_directory directory:notifier-feeds
-  key monitor_feed_directory monitor-directory:public-cgi
+  key monitor_feed_directory monitor-directory:public
   raw base_url http://[$${notifier:host}]:$${notifier:port}/get/
   raw python_executable ${buildout:executable}

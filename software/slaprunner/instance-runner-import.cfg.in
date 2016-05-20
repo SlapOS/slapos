@@ -28,29 +28,8 @@ parts +=
   importer-consistency-promise
 # have to repeat the next one, as it's not inherited from pbsready-import
   import-on-notification
-## Monitoring part
-###Parts to add for monitoring
-  cron
-  certificate-authority
-  cron-entry-monitor
-  cron-entry-rss
-  deploy-index
-  deploy-settings-cgi
-  deploy-status-cgi
-  deploy-status-history-cgi
-  setup-static-files
-  certificate-authority
-  zero-parameters
-  public-symlink
-  cgi-httpd-wrapper
-  cgi-httpd-graceful-wrapper
-  monitor-promise
-  monitor-instance-log-access
-## Monitor for runner
-  monitor-current-log-access
-  monitor-backup-log-access
-## Monitor for import runner
-  monitor-latest-restored-backup
+
+  monitor-base
 
 # For the needs of importer, we run the full slaprunner
 # In case both exporter and importer (aka main instance and clone instance)
@@ -95,19 +74,29 @@ mode = 755
 [slap-parameter]
 auto-deploy-instance = false
 auto-deploy = true
+name = Webrunner import
+monitor-cors-domains = 
+monitor-username = $${monitor-htpasswd:username}
+monitor-password = $${monitor-htpasswd:passwd}
 
 [resilient-publish-connection-parameter]
-monitor-url = $${monitor-parameters:url}
+monitor-base-url = $${publish:monitor-base-url}
+monitor-url = $${publish:monitor-url}
+monitor-user = $${publish:monitor-user}
+monitor-password = $${publish:monitor-password}
 
-[monitor-backup-log-access]
-< = monitor-directory-access
-source = $${directory:logrotate-backup}
 
-[monitor-latest-restored-backup]
-recipe = slapos.recipe.template:jinja2
-command = if [ -f $${directory:etc}/.resilient-timestamp ]; then echo "$(date -d @$(cat $${directory:etc}/.resilient-timestamp) +%c)"; else echo "No backup timestamp found"; fi
-rendered = $${monitor-directory:monitoring-cgi}/latest-restored-backup
-template = ${template-wrapper:output}
-mode = 744
-context =
-  key content :command
+[monitor-instance-parameter]
+monitor-httpd-port = 8360
+#monitor-title = $${slap-parameter:name}
+#cors-domains = $${slap-parameter:monitor-cors-domains}
+#username = $${slap-parameter:monitor-username}
+#password = $${slap-parameter:monitor-password}
+# Pass some parameter to dispay in monitoring interface
+instance-configuration =
+  raw takeover-url http://[$${resilient-web-takeover-httpd-configuration-file:listening-ip}]:$${resilient-web-takeover-httpd-configuration-file:listening-port}/
+  raw takeover-password $${resilient-web-takeover-password:passwd}
+
+[monitor-conf-parameters]
+private-path-list += 
+  $${directory:logrotate-backup}

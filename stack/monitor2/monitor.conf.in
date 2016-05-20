@@ -1,4 +1,0 @@
-[monitor]
-{% for key, value in parameter_dict.items() -%}
-{{ key }} = {{ value.strip().replace("\n", "\n  ") }}
-{% endfor -%}

@@ -1,0 +1,40 @@
+{
+	"name": "Apache Frontend",
+	"description": "Apache Frontend",
+	"serialisation": "xml",
+	"software-type": {
+		"custom-personal-slave": {
+			"title": "Custom Personal (Slave)",
+			"description": "Custom Personal",
+			"request": "instance-slave-apache-input-schema.json",
+			"response": "instance-output-schema.json",
+			"index": 1,
+                        "software-type": "custom-personal",
+                        "shared": true
+		},
+		"custom-personal": {
+			"title": "Custom Personal",
+			"description": "",
+			"request": "instance-apache-input-schema.json",
+			"response": "instance-output-schema.json",
+			"index": 2
+		},
+		"default": {
+			"title": "Default",
+                        "software-type": "default",
+			"description": "Default",
+			"request": "instance-slave-apache-input-schema.json",
+			"response": "instance-output-schema.json",
+			"index": 3
+		},
+		"default-slave": {
+			"title": "Default (slave)",
+			"software-type": "default",
+			"description": "Default",
+			"request": "instance-slave-apache-input-schema.json",
+			"response": "instance-output-schema.json",
+			"index": 3,
+            "shared": true
+		}
+	}
+}
