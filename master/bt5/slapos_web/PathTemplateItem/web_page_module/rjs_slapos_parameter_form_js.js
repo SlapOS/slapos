@@ -83,6 +83,12 @@
 
     if (json_field.type === "boolean") {
       json_field['enum'] = [true, false];
+      if (default_value === "true") {
+        default_value = true;
+      }
+      if (default_value === "false") {
+        default_value = false;
+      }
       return render_selection(json_field, default_value);
     }
 
