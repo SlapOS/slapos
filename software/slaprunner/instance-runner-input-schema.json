@@ -4,6 +4,7 @@
         "user-authorized-key": {
             "title": "User Authorized Key",
             "description": "SSH public key in order to connect to the SSH server of this runner instance.",
+            "textarea": true,
             "type": "string"
         },
         "instance-amount": {
