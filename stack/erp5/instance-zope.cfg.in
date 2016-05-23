@@ -327,7 +327,7 @@ path = ${directory:promises}/{{ name }}
 {% endfor -%}
 [{{ section("promise-" ~ name ~ "-is-running-actual-product") }}]
 recipe = slapos.cookbook:wrapper
-command-line = '{{ parameter_dict['bin-directory'] }}/is-process-older-than-dependency-set' -k '{{ "${" ~ conf_parameter_name ~ ":pid-file}" }}' {{ " ".join(shell_escaped_extra_path_list) }}
+command-line = '{{ parameter_dict['bin-directory'] }}/is-process-older-than-dependency-set' '{{ "${" ~ conf_parameter_name ~ ":pid-file}" }}' {{ " ".join(shell_escaped_extra_path_list) }}
 wrapper-path = ${directory:promises}/{{ name }}-is-running-actual-product
 parameters-extra = true
 

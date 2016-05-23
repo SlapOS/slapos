@@ -27,8 +27,10 @@
 import os
 import hashlib
 import ConfigParser
+import tempfile
 
 from slapos.recipe.librecipe import GenericBaseRecipe
+from certificate_authority import popenCommunicate
 
 class Recipe(GenericBaseRecipe):
 
@@ -93,6 +95,13 @@ class Recipe(GenericBaseRecipe):
 
 class Request(Recipe):
 
+  def setPath(self):
+    self.request_directory = self.options['requests-directory']
+    self.ca_private = self.options['ca-private']
+    self.ca_certs = self.options['ca-certs']
+    self.ca_key_ext = '.key'
+    self.ca_crt_ext = '.crt'
+
   def _options(self, options):
     if 'name' not in options:
       options['name'] = self.name
@@ -114,6 +123,7 @@ class Request(Recipe):
 
     # XXX Ugly hack to quickly provide custom certificate/key to everyone using the recipe
     if key_content and cert_content:
+      self._checkCertificateKeyConsistency(key_content, cert_content)
       open(key, 'w').write(key_content)
       open(certificate, 'w').write(cert_content)
       request_needed = False
@@ -145,3 +155,48 @@ class Request(Recipe):
       path_list.append(wrapper)
 
     return path_list
+
+  def _checkCertificateKeyConsistency(self, key, certificate, ca=""):
+
+    openssl_binary = self.options.get('openssl-binary', 'openssl')
+
+    tmpdir = tempfile.mkdtemp()
+    with open(tmpdir + "/ca", "w") as f:
+      f.write(ca)
+    
+    with open(tmpdir + "/key", "w") as f:
+      f.write(key)
+    
+    with open(tmpdir + "/cert", "w") as f:
+      f.write(certificate)
+
+    try:
+      # Simple test if the user/certificates are readable and don't raise
+      popenCommunicate([openssl_binary, 'x509', '-noout', '-text', '-in', tmpdir + "/cert"])
+      popenCommunicate([openssl_binary, 'rsa', '-noout', '-text', '-in', tmpdir + "/key"])
+      
+      # Get md5 to check if the key and certificate matches 
+      modulus_cert = popenCommunicate([openssl_binary, 'x509', '-noout', '-modulus', '-in', tmpdir + "/cert"])
+      modulus_key = popenCommunicate([openssl_binary, 'rsa', '-noout', '-modulus', '-in', tmpdir + "/key"])
+    
+      md5sum_cert = popenCommunicate([openssl_binary, 'md5'], modulus_cert)
+      md5sum_key = popenCommunicate([openssl_binary, 'md5'], modulus_key)
+    
+      if md5sum_cert != md5sum_key:
+        raise ValueError("The key and certificate provided don't patch each other. Please check your parameters") 
+    
+    except:
+      try:
+        file_list = [tmpdir + "/ca", tmpdir + "/key", tmpdir + "/cert"]
+        for f in file_list:
+          if os.path.exists(f):
+            os.unlink(f)
+
+        if os.path.exists(tmpdir):
+          os.rmdir(tmpdir)
+      except:
+        # do not raise during cleanup
+        pass
+      raise
+    else:
+      pass

@@ -13,6 +13,7 @@ context =
     ${:extra-context}
 
 {% set part_list = [] -%}
+{% set monitor_url_list = [] -%}
 {% set single_type_key = 'single-' %}
 {% if slap_software_type in ("replicate", "RootSoftwareInstance") %}
 {%   set dns_type = slapparameter_dict.pop('-dns-type', 'single-default') -%}
@@ -67,9 +68,27 @@ config-soa = {{ "%s,%s" % (dns_domain, server_admin) }}
 {%   for parameter in sla_parameters -%}
 sla-{{ parameter }} = {{ slapparameter_dict.pop( sla_key + parameter ) }}
 {%   endfor -%}
+
+{%  do monitor_url_list.append('${' ~ request_section_title ~ ':connection-monitor-base-url}') -%}
 {% endfor -%}
 
+[monitor-htpasswd]
+recipe = slapos.cookbook:generate.password
+storage-path = ${directory:etc}/.monitor_user
+bytes = 8
+username = admin
 
+[monitor-instance-parameter]
+monitor-httpd-port = 8099
+cors-domains = {{ slapparameter_dict.get('monitor-cors-domains', 'monitor.app.officejs.com') }}
+username = ${monitor-htpasswd:username}
+password = ${monitor-htpasswd:passwd}
+
+[monitor-conf-parameters]
+monitor-url-list +=
+{% for url in monitor_url_list -%}
+{{ '  ' ~ url }}
+{% endfor %}
 
 {% set ns_record = slapparameter_dict.pop('ns-record', ','.join(dns_domain_list)) %}
 [replicate]
@@ -82,26 +101,36 @@ software-url = {{ slapparameter_dict.pop(dns_software_url_key) }}
 software-url = ${slap-connection:software-release-url}
 {% endif %}
 software-type = {{dns_type}}
-return = private-ipv4 public-ipv4 slave-instance-information-list monitor_url
+return = private-ipv4 public-ipv4 slave-instance-information-list monitor-base-url
 config-server-admin = {{ server_admin }}
 config-ns-record = {{ ns_record }}
 {% for parameter, value in slapparameter_dict.iteritems() -%}
 config-{{parameter}} = {{ value }}
 {% endfor -%}
 config-{{ slave_list_name }} = {{ json_module.dumps(slave_instance_list) }}
-connection-monitor_url =
+config-monitor-cors-domains = {{ slapparameter_dict.get('monitor-cors-domains', 'monitor.node.vifib.com') }}
+config-monitor-username = ${monitor-htpasswd:username}
+config-monitor-password = ${monitor-htpasswd:passwd}
 
 [publish-information]
 recipe = slapos.cookbook:publish
 domain = {{ slapparameter_dict.get('domain') }}
 slave-amount = {{ slave_instance_list | length }}
 ns-record = {{ ns_record }}
-{% for dns in dns_section_list %}
-{{ dns }}-monitor-url = {{ '${' + dns + ':connection-monitor_url}' }}
-{% endfor -%}
+monitor-url = ${publish:monitor-url}
+monitor-user = ${publish:monitor-user}
+monitor-password = ${publish:monitor-password}
+{% set monitor_interface_url = slapparameter_dict.get('monitor-interface-url', 'https://monitor.app.officejs.com') -%}
+{% if monitor_interface_url -%}
+monitor-setup-url = {{ monitor_interface_url }}/#page=settings_configurator&url=${publish:monitor-url}
+{%   endif -%}
 
 [buildout]
+
+extends = 
+  {{ template_monitor }}
 parts =
+  monitor-base
   publish-information
 {% for part in part_list -%}
 {{ '  %s' % part }}

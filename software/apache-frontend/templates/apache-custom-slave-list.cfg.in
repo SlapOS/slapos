@@ -98,7 +98,7 @@ command = {{frontend_configuration.get('apache-directory')}}/bin/htpasswd -cb ${
 #### Set Slave Certificates if needed
 
 # Set ssl certificates for each slave
-{%   for cert_name in ('ssl_key', 'ssl_crt', 'ssl_ca_crt', 'ssl_csr', 'ssl_proxy_ca_crt')-%}
+{%   for cert_name in ('ssl_ca_crt', 'ssl_csr', 'ssl_proxy_ca_crt')-%}
 {%     if cert_name in slave_instance -%}
 {%       set cert_title = '%s-%s' % (slave_reference, cert_name.replace('ssl_', '')) -%}
 {%       set cert_file = '/'.join([custom_ssl_directory, cert_title.replace('-','.')]) -%}
@@ -117,6 +117,41 @@ extra-context =
 value = {{ dumps(slave_instance.get(cert_name)) }}
 {%     endif -%}
 {%   endfor -%}
+
+[cadirectory]
+recipe = slapos.cookbook:mkdirectory
+requests = {{ custom_ssl_directory }}/requests/
+private = {{ custom_ssl_directory }}/private/
+certs = {{ custom_ssl_directory }}/certs/
+newcerts = {{ custom_ssl_directory }}/newcerts/
+crl = {{ custom_ssl_directory }}/crl/
+
+{%   if 'ssl_key' in slave_instance and 'ssl_crt' in slave_instance -%}
+{%     set cert_title = '%s-crt' % (slave_reference) -%}
+{%     set key_title = '%s-key' % (slave_reference) -%}
+{%     set cert_file = '/'.join([custom_ssl_directory, cert_title.replace('-','.')]) -%}
+{%     set key_file = '/'.join([custom_ssl_directory, key_title.replace('-','.')]) -%}
+{%     do part_list.append(cert_title) -%}
+{%     do slave_instance.__setitem__('path_to_ssl_crt', cert_file) -%}
+{%     do slave_instance.__setitem__('path_to_ssl_key', key_file) -%}
+
+[{{cert_title}}]
+recipe = slapos.cookbook:certificate_authority.request
+#openssl-binary = ${openssl:location}/bin/openssl
+
+requests-directory = ${cadirectory:requests}
+ca-private = ${cadirectory:private}
+ca-certs = ${cadirectory:certs}
+ca-newcerts = ${cadirectory:newcerts}
+ca-crl = ${cadirectory:crl}
+
+key-file = {{ key_file }}
+cert-file = {{ cert_file }}
+key-content = {{ dumps(slave_instance.get('ssl_key')) }}
+cert-content = {{ dumps(slave_instance.get('ssl_crt')) }} 
+{%     endif -%}
+
+
 
 ############################
 #### Set Slave Configuration

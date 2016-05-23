@@ -6,7 +6,6 @@ parts =
   kernel-json
   custom-js
 
-extends = {{ monitor_template }}
 
 eggs-directory = {{ eggs_directory }}
 develop-eggs-directory = {{ develop_eggs_directory }}
@@ -80,31 +79,6 @@ mode = 0744
 context =
   raw config_cfg ${buildout:directory}/knowledge0.cfg
 
-[monitor-instance-parameter]
-monitor-base-url = ${monitor-frontend-promise:url}
-# XXX Monitor will request frontend and check frontend promise
-#     If required use ipv6 url bellow
-#monitor-base-url = ${monitor-httpd-conf-parameter:url}
-cors-domains = ${slap-parameter:monitor-cors-domains}
-
-[monitor-conf-parameters]
-private-path-list += 
-  ${instance-parameter:logfile}
-
-# XXX need to convert this for new Monitor
-[monitor-deploy-set-password-cgi]
-<= dynamic-jinja2-template-base
-template = {{ ipython_notebook_set_password_location }}/{{ ipython_notebook_set_password_filename }}
-rendered = ${directory:etc}/${:filename}
-filename = ipython-notebook-password.cgi
-mode = 0744
-context =
-  raw config_cfg ${buildout:directory}/knowledge0.cfg
-  raw python_executable {{ bin_directory }}/ipython
-#  key pwd monitor-directory:knowledge0-cgi
-  key this_file :filename
-#  key httpd_graceful cgi-httpd-graceful-wrapper:rendered
-
 [directory]
 recipe = slapos.cookbook:mkdirectory
 home = ${buildout:directory}
@@ -123,10 +97,6 @@ erp5_kernel_dir = ${:ipython_kernel_dir}/ERP5
 [publish-connection-parameter]
 recipe = slapos.cookbook:publish.serialised
 url = https://[${instance-parameter:host}]:${instance-parameter:port}
-monitor-base-url = ${publish:monitor-base-url}
-monitor-url = ${publish:monitor-url}
-monitor-user = ${publish:monitor-user}
-monitor-password = ${publish:monitor-password}
 
 [erp5-kernel]
 <= dynamic-jinja2-template-base
@@ -154,5 +124,3 @@ template = {{ custom_js_location }}/{{ custom_js_filename }}
 rendered = ${directory:ipython_dir}/profile_default/static/custom/custom.js
 mode = 0744
 
-[slap-parameter]
-monitor-cors-domains = monitor.node.vifib.com

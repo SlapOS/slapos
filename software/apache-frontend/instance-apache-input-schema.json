@@ -1,0 +1,45 @@
+{
+	"type": "object",
+	"$schema": "http://json-schema.org/draft-04/schema",
+
+	"title": "Input Parameters",
+	"properties": {
+		"public-ipv4": {
+			"title": "Backend URL",
+			"description": "Url of the backend",
+			"type": "string"
+		},
+		"-frontend-authorized-slave-string": {
+			"title": "Authorized Slave String",
+			"description": "List of SOFTINST-XXX of Slaves, separated by space which is allowed to use custom configuration.",
+			"type": "string"
+		},
+		"apache-key": {
+			"title": "Apache Key",
+			"description": "Url of the Backend",
+			"type": "string"
+		},
+		"apache-certificate": {
+			"title": "Apache Certificate",
+			"description": "Apache Certificate",
+			"type": "string"
+		},
+		"apache-ca-certificate": {
+			"title": "Apache CA Certificate",
+			"description": "Apache CA Certificate",
+			"type": "string"
+		},
+		"domain": {
+			"title": "Domain",
+			"description": "Base Domain for create subdomains.",
+			"type": "string",
+			"pattern": "^([a-zA-Z0-9]([a-zA-Z0-9\\-]{0,61}[a-zA-Z0-9])?\\.)+[a-zA-Z]{2,6}$"
+		},
+		"-frontend-quantity": {
+			"title": "Frontend Replication Quantity",
+			"description": "Quantity of Frontends Replicate.",
+			"type": "integer",
+			"default": ""
+		}
+	}
+}

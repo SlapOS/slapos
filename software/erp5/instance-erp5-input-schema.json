@@ -79,7 +79,7 @@
         "software-type": {
           "description": "Request a front-end slave instance of this software type.",
           "default": "RootSoftwareInstance",
-          "type": ""
+          "type": "object"
         }
       },
       "type": "object"

@@ -1,0 +1,35 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "description": "Values returned by Apache Frontend instanciation",
+  "properties": {
+    "replication_number": {
+      "description": "Number of nodes the slave is replicated",
+      "type": "integer"
+    },
+    "domain": {  
+      "description": "Base domain used by the instance",
+      "type": "string"
+    },
+    "url": {  
+      "description": "Default URL provided",
+      "type": "string"
+    },
+    "site_url": {      
+      "description": "URL for HTTP access",
+      "type": "string"
+    },
+    "secure_access": {      
+      "description": "URL for HTTP access",
+      "type": "string"
+    },
+    "public-ipv4": {
+      "description": "Public IPv4 to be included on DNS",
+      "type": "string"
+    },
+    "log-access-url": {
+      "description": "List of URLs to access logs",
+      "type": "array"
+    }
+  },
+  "type": "object"
+}
