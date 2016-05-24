@@ -132,6 +132,8 @@ crl = {{ custom_ssl_directory }}/crl/
 {%     set cert_file = '/'.join([custom_ssl_directory, cert_title.replace('-','.')]) -%}
 {%     set key_file = '/'.join([custom_ssl_directory, key_title.replace('-','.')]) -%}
 {%     do part_list.append(cert_title) -%}
+{%     do slave_parameter_dict.__setitem__("ssl_crt", cert_file) -%}
+{%     do slave_parameter_dict.__setitem__("ssl_key", key_file) -%}
 {%     do slave_instance.__setitem__('path_to_ssl_crt', cert_file) -%}
 {%     do slave_instance.__setitem__('path_to_ssl_key', key_file) -%}
 
