@@ -23,20 +23,22 @@
           </tr>
           <tr>
             <th><i class="fa fa-calendar"></i> Status Date</th>
-            <td>{{status_date}}</td>
+            <td title="The date of this status.">{{status_date}}</td>
           </tr>
           <tr>
             <th><i class="fa fa-clock-o"></i> Report Date</th>
-            <td>{{start-date}}</td>
+            <td title="The date when the promise result was collected.">{{start-date}}</td>
           </tr>
         </table>
-        {{#if message}}
         <div style="border: 1px solid rgba(0,0,0,0.1); margin-top: 10px;">
           <div class="ui-body">
+          {{#if message}}
             <p><strong>{{status}}</strong>: {{message}}</p>
+          {{else}}
+            <p><strong>No output message!</strong></p>
+          {{/if}}
           </div>
         </div>
-        {{/if}}
         <br/>
       {{/with}}
     </script>
@@ -54,33 +56,29 @@
         </fieldset>
       </div>
       <table data-role="table" data-mode="columntoggle" class="ui-responsive table-stroke">
-        <tr>
-          <th><i class="fa fa-puzzle-piece"></i> App Title</th>
-          <td>{{root_title}}</td>
+        <tr title="Hosting Subscription">
+          <th><i class="fa fa-puzzle-piece"></i> H. Subscription</th>
+          <td title="Hosting Subscription title">{{root_title}}</td>
         </tr>
         <tr>
           <th><i class="fa fa-cube"></i> Instance</th>
-          <td>{{title}}</td>
+          <td title="Software Instance title">{{title}}</td>
         </tr>
         <tr>
-            <th><i class="fa fa-tachometer"></i> Status</th>
-            <td><span class="label label-{{status}}">{{status}}</span></td>
-          </tr>
+          <th><i class="fa fa-tachometer"></i> Status</th>
+          <td><span class="label label-{{status}}">{{status}}</span></td>
+        </tr>
         <tr>
           <th><i class="fa fa-clock-o"></i> Report Date</th>
-          <td>{{date}}</td>
+          <td title="The date when the instance status was collected.">{{date}}</td>
         </tr>
         <tr>
           <th>Errors Ratio</th>
-          <td>{{errors}} %</td>
+          <td title="Percentage of promises errors in Software Instance">{{errors}} %</td>
         </tr>
         <tr>
           <th>Success Ratio</th>
-          <td>{{success}} %</td>
-        </tr>
-        <tr>
-          <th>Warning Ratio</th>
-          <td>{{warning}} %</td>
+          <td title="Percentage of promises success in Software Instance">{{success}} %</td>
         </tr>
       </table>
       {{#with instance}}
@@ -120,10 +118,10 @@
       <div class="ui-field-contain">
         <fieldset data-role="controlgroup" data-type="horizontal">
           {{#if public_url}}
-          <a class="ui-btn ui-corner-all ui-btn-inline ui-mini" target='_blank' href="{{public_url}}" title="Public"><i class="fa fa-folder-open-o"></i> Public</a>
+          <a class="ui-btn ui-corner-all ui-btn-inline ui-mini" target='_blank' href="{{public_url}}" title="Public Directory"><i class="fa fa-folder-open-o"></i> Public</a>
           {{/if}}
           {{#if private_url}}
-          <a class="ui-btn ui-corner-all ui-btn-inline ui-mini" target='_blank' href="{{private_url}}" title="Private"><i class="fa fa-lock"></i> Private</a>
+          <a class="ui-btn ui-corner-all ui-btn-inline ui-mini" target='_blank' href="{{private_url}}" title="Private Directory"><i class="fa fa-lock"></i> Private</a>
           {{/if}}
           {{#if rss_url}}
           <a class="ui-btn ui-corner-all ui-btn-inline ui-mini" target='_blank' href="{{rss_url}}" title="RSS"><i class="fa fa-rss-square"></i> RSS</a>
@@ -133,9 +131,9 @@
     </script>
 
     <script id="phistory-widget-template" type="text/x-handlebars-template">
-      {{#if history_list}}
       <h2><i class="fa fa-history"></i> <strong>Promise Status History</strong></h2>
       <div style="max-height: 200px; overflow: auto;">
+        {{#if history_list}}
         <table data-role="table" data-mode="columntoggle" class="ui-responsive table-stroke">
           {{#each history_list}}
           <tr title="{{message}}">
@@ -145,8 +143,10 @@
           </tr>
           {{/each}}
         </table>
+        {{else}}
+        History not found!
+        {{/if}}
       </div>
-      {{/if}}
     </script>
 
   </head>
@@ -175,7 +175,7 @@
                   <div data-gadget-url="gadget_monitoring_chart.html" data-gadget-scope="chart0"></div>
                 </div>
                 <br/><br/>
-                <h2><i class="fa fa-line-chart"></i> <strong>Instance Promises Status History</strong></h2>
+                <h2><i class="fa fa-line-chart"></i> <strong>Instance Promises Result History</strong></h2>
                 <div data-gadget-url="gadget_monitoring_chart.html" data-gadget-scope="chart1"></div>
               </div>
             </div>

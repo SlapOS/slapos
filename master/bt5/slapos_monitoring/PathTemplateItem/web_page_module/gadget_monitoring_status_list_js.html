@@ -20,10 +20,6 @@
       return gadget.getDeclaredGadget("listbox")
         .push(function (listbox_gadget) {
           gadget.property_dict.listbox = listbox_gadget;
-          return gadget.getSetting('monitoring_display_style');
-        })
-        .push(function (display_option) {
-          gadget.property_dict.display_option = display_option || 'list';
         });
     })
     .declareMethod('render', function (options) {
@@ -38,7 +34,7 @@
           column_link: {select: 'source'},
           column_id: {select: 'title'},
           column_list: [{
-            title: 'Title',
+            title: 'Promise',
             select: 'title'
           }, {
             title: 'Instance',
@@ -47,11 +43,12 @@
             title: 'Hosting Subscription',
             select: 'reference'
           }, {
-            select: 'date',
-            title: 'Date'
+            select: 'lastBuildDate',
+            title: 'Report Date',
+            convertDate: true
           }, {
             select: 'message',
-            title: 'Output',
+            title: 'Message',
             css_class: 'text-overview'
           }, {
             select: 'category',
@@ -65,13 +62,34 @@
           ],
           query: {
             select_list: ['title', 'siteTitle', 'reference', 'category',
-              'date', 'message', 'link', 'source'],
+              'date', 'message', 'link', 'source', 'lastBuildDate'],
             query: '_id: (NOT "_replicate_%")',
             sort_on: [["category", "ascending"]]
           }
         };
 
       return gadget.updateHeader(header)
+        .push(function () {
+          if (!options.hasOwnProperty('search') || !options.hasOwnProperty('filter')) {
+            return gadget.getSetting('status_list_selection_key')
+              .push(function (selection) {
+                if (selection) {
+                  return gadget.redirect({
+                    page: 'status_list',
+                    filter: options.filter || selection.filter,
+                    search: options.search || selection.search
+                  });
+                }
+              });
+          }
+        })
+        .push(function () {
+          var selection = {
+            filter: options.filter || '',
+            search: options.search || ''
+          };
+          return gadget.setSetting('status_list_selection_key', selection);
+        })
         .push(function () {
           if (options.root_title) {
             return gadget.property_dict.jio_gadget.getFeedUrlList({
@@ -99,13 +117,43 @@
             }
           }
           listbox_configuration.storage_list = listbox_storage_list;
+          gadget.property_dict.options = options;
           return gadget.property_dict.listbox.render(listbox_configuration);
         });
     })
     .declareAcquiredMethod("getSetting", "getSetting")
+    .declareAcquiredMethod("setSetting", "setSetting")
+    .declareAcquiredMethod("redirect", "redirect")
+    .declareAcquiredMethod("renderApplication", "renderApplication")
     .declareAcquiredMethod("updateHeader", "updateHeader")
     .declareAcquiredMethod("jio_get", "jio_get")
-    .declareAcquiredMethod("jio_allDocs", "jio_allDocs");
+    .declareAcquiredMethod("jio_allDocs", "jio_allDocs")
+    .declareService(function () {
+      var gadget = this;
+
+      return gadget.getSetting('status_list_refresh_id')
+        .push(function (timer_id) {
+          var new_timer_id;
+          if (timer_id) {
+            clearTimeout(timer_id);
+          }
+          new_timer_id = setTimeout(function(){
+            var hash = window.location.toString().split('#')[1],
+              scroll_position,
+              doc = document.documentElement;
+            if (hash.indexOf('page=status_list') >= 0) {
+              scroll_position = (window.pageYOffset || doc.scrollTop)  - (doc.clientTop || 0);
+              return gadget.renderApplication({args: gadget.property_dict.options})
+                .push(function () {
+                  $(document).scrollTop(scroll_position);
+                });
+            }
+          }, 120000);
+          return gadget.setSetting('status_list_refresh_id', new_timer_id);
+        });
+        
+      
+    });
 
 
 }(window, rJS, $));

@@ -416,7 +416,7 @@
         </item>
         <item>
             <key> <string>configuration_content_security_policy</string> </key>
-            <value> <string>default-src \'none\'; img-src \'self\' data:; media-src \'self\' blob:; connect-src \'self\' mail.tiolive.com data: *.host.vifib.net; script-src \'self\' \'unsafe-eval\'; font-src netdna.bootstrapcdn.com; style-src \'self\' netdna.bootstrapcdn.com \'unsafe-inline\' data:; frame-src \'self\' data:</string> </value>
+            <value> <string>default-src \'none\'; img-src \'self\' data:; media-src \'self\' blob:; connect-src \'self\' mail.tiolive.com data: *; script-src \'self\' \'unsafe-eval\'; font-src netdna.bootstrapcdn.com; style-src \'self\' netdna.bootstrapcdn.com \'unsafe-inline\' data:; frame-src \'self\' data:</string> </value>
         </item>
         <item>
             <key> <string>configuration_default_view_action_reference</string> </key>
@@ -755,7 +755,7 @@
             </item>
             <item>
                 <key> <string>serial</string> </key>
-                <value> <string>950.28816.4646.59630</string> </value>
+                <value> <string>950.63263.62080.55091</string> </value>
             </item>
             <item>
                 <key> <string>state</string> </key>
@@ -773,7 +773,7 @@
                     </tuple>
                     <state>
                       <tuple>
-                        <float>1460382495.34</float>
+                        <float>1464081494.16</float>
                         <string>UTC</string>
                       </tuple>
                     </state>

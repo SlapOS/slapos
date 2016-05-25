@@ -67,10 +67,10 @@
         <div class='content-title ui-instance-title'>
           <div class="overview-title">
             <i class="fa fa-cubes"></i><span>
-              {{title}}
               {{#if root_title}}
-              &nbsp; [{{root_title}}]
+              {{root_title}} >&nbsp;
               {{/if}}
+              {{title}}
               </span>
           </div>
           <div class="commands">
@@ -80,16 +80,16 @@
       </div>
       <div class="content-details">
         <div class="ui-text-left" style="padding-bottom: 15px;">
-          <h2><i class="fa fa-info-circle"></i> <strong>Instance Current State</strong></h2>
+          <h2><i class="fa fa-info-circle"></i> <strong>Instance State Information</strong></h2>
           <div class="padding-10">
             <div class="ui-grid-a ui-responsive">
               <div class="ui-block-a">
                 <fieldset data-role="controlgroup" data-type="horizontal">
                   {{#if resource_url }}
-                  <a href="{{resource_url}}" class="ui-btn ui-corner-all ui-btn-inline ui-mini"><i class="fa fa-pie-chart"></i> Resources</a>
+                  <a href="{{resource_url}}" class="ui-btn ui-corner-all ui-btn-inline ui-mini" title="Instance Resource comsumption"><i class="fa fa-pie-chart"></i> Resources</a>
                   {{/if}}
                   {{#if process_url }}
-                  <a href="{{process_url}}" class="ui-btn ui-corner-all ui-btn-inline ui-mini"><i class="fa fa-list-alt"></i> Processes</a>
+                  <a href="{{process_url}}" class="ui-btn ui-corner-all ui-btn-inline ui-mini" title="Processes usage"><i class="fa fa-list-alt"></i> Processes</a>
                   {{/if}}
                 </fieldset>
               </div>
@@ -99,7 +99,7 @@
                   <!--<a class="ui-btn ui-corner-all ui-btn-inline ui-mini" target='_blank' href="{{public_url}}" title="Public"><i class="fa fa-folder-open-o"></i> Public</a>-->
                   {{/if}}
                   {{#if private_url}}
-                  <a class="ui-btn ui-corner-all ui-btn-inline ui-mini" target='_blank' href="{{private_url}}" title="Private"><i class="fa fa-lock"></i> Private</a>
+                  <a class="ui-btn ui-corner-all ui-btn-inline ui-mini" target='_blank' href="{{private_url}}" title="Browse Private Directory"><i class="fa fa-lock"></i> Private</a>
                   {{/if}}
                   {{#if rss_url}}
                   <a class="ui-btn ui-corner-all ui-btn-inline ui-mini" target='_blank' href="{{rss_url}}" title="RSS"><i class="fa fa-rss-square"></i> RSS</a>
@@ -111,19 +111,24 @@
               <tr>
                 <th><i class="fa fa-tachometer"></i> <strong>Status</strong></th>
                 <td><span class="label label-{{status}}">{{status}}</span></td>
-                <td>{{date}}</td>
+                <td title="Report Date">{{date}}</td>
               </tr>
               
               {{#with instance}}
               <tr>
                 <th><i class="fa fa-desktop"></i> <strong>Computer</strong></th>
-                <td>{{computer}}</td>
-                <td>{{partition}}</td>
+                <td title="Computer Reference">{{computer}}</td>
+                <td title="Partition Reference">{{partition}}</td>
               </tr>
               <tr>
-                <th><i class="fa fa-globe"></i> <strong>IP Address</strong></th>
-                <td>{{ipv4}}</td>
-                <td>{{ipv6}}</td>
+                <th><i class="fa fa-globe"></i> <strong>IP Addresses</strong></th>
+                <td title="IPv4">{{ipv4}}</td>
+                <td title="IPv6">{{ipv6}}</td>
+              </tr>
+              <tr>
+                <th><i class="fa fa-square-o" aria-hidden="true"></i> <strong>Software Type</strong></th>
+                <td title="Software type">{{software-type}}</td>
+                <td><a style="padding: 0; min-height: initial;" href="{{software-release}}" title="{{software-release}}" target='_blank'>Click to open <i class="fa fa-external-link"></i></a></td>
               </tr>
               {{/with}}
             </table>
@@ -134,11 +139,11 @@
 
     <script id="promiselist-widget-template" type="text/x-handlebars-template">
       {{#if promise_list}}
-      <h2><i class="fa fa-th-list"></i> <strong>Instance Promise List</strong></h2>
+      <h2><i class="fa fa-th-list"></i> <strong>Instance Promises List</strong></h2>
       <div style="overflow: auto;" class="padding-lr-10">
         <table data-role="table" data-mode="columntoggle" class="table-stroke">
           {{#each promise_list}}
-          <tr>
+          <tr title="Promise reported at {{../date}}">
             <td><a href="{{href}}">{{title}}</a></td>
             <td style="text-align: center;">{{time}}</td>
             <td style="text-align: center;"><span class="label label-{{status}}">{{status}}</span></td>
@@ -180,7 +185,7 @@
           <div class="overview-header">
             <div class='content-title ui-instance-title'>
               <div class="overview-title">
-                <i class="fa fa-desktop"></i><span>Instances Status Overview</span>
+                <i class="fa fa-desktop"></i><span>Software Instances List</span>
               </div>
               <div class="commands">
               </div>

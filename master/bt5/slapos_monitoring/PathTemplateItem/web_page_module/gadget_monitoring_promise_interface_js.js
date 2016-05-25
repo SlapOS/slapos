@@ -128,7 +128,7 @@
                   element: element
                 });
               gadget.property_dict.element.querySelector(".ui-promise-content .ui-promise-title h2")
-                .innerHTML += 'Promise ' + element.title;
+                .innerHTML += element.hosting_subscription + ' > ' + element.instance + ' > ' + element.title;
               gadget.property_dict.element.querySelector("#promise-overview .ui-block-a")
                 .innerHTML += content;
               if (element.hasOwnProperty('_links') && element._links.hasOwnProperty('monitor') && element._links.monitor.href) {
@@ -213,20 +213,26 @@
             }
           };
           gadget.property_dict.jio_gadget.createJio(jio_options, false);
-          return gadget.property_dict.jio_gadget.allDocs({
-              select_list: ['title', 'message', 'start-date', 'status'],
-              query: '_id: "%.history.status"',
-              limit: [0, 30],
-              sort_on: [["start-date", "descending"]]
-            })
-          .push(function (result_list) {
+          return gadget.property_dict.jio_gadget.get(title+'.history')
+          .push(undefined, function (error) {
+            console.log(error);
+            return undefined;
+          })
+          .push(function (status_history) {
             var i,
+              start_index = 0,
+              history_size,
               history_list = [];
 
-            if (result_list) {
-              for (i = 0; i < result_list.data.rows.length; i += 1) {
-                history_list.push(result_list.data.rows[i].value);
+            if (status_history && status_history.hasOwnProperty('data')) {
+              if (history_size > 200) {
+                start_index = history_size - 200;
               }
+              history_size = status_history.data.length;
+              for (i = start_index; i < history_size; i += 1) {
+                history_list.push(status_history.data[i]);
+              }
+              history_list.reverse();
             }
             history_content = history_widget_template({history_list: history_list});
             gadget.property_dict.element.querySelector("#promise-overview .ui-block-a")

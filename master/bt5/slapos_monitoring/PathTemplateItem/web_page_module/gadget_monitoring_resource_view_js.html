@@ -197,6 +197,37 @@
           });
       }
 
+      function updateIOData() {
+        var i,
+          element,
+          prev_element,
+          date_diff,
+          io_data = "";
+        
+        function convertElement(element) {
+          var element_list = element.split(',');
+          return [
+              element_list[0],
+              parseFloat(element_list[1].trim()),
+              parseFloat(element_list[2].trim()),
+              element_list[3].trim()
+            ];
+        }
+        if (gadget.property_dict.io_data.data.length > 1) {
+          prev_element = convertElement(gadget.property_dict.io_data.data[1]);
+          io_data = gadget.property_dict.io_data.data[0];
+          for (i = 2; i < gadget.property_dict.io_data.data.length; i += 1) {
+            element = convertElement(gadget.property_dict.io_data.data[i]);
+            date_diff = (new Date(element[0]).getTime() - new Date(prev_element[0]).getTime())/1000;
+            io_data += "\n" + element[0] + "," + 
+              (element[1] - prev_element[1])/(1024*date_diff) +
+              "," + (element[2] - prev_element[2])/1000 + "," + element[3];
+            prev_element = element;
+          }
+        }
+        gadget.property_dict.io_data_csv = io_data;
+      }
+
       function formatDateToString(d) {
         return d.toISOString().slice(0,10) + ' ' + d.getHours() + ':' + d.getMinutes() + ':' + d.getSeconds();
       }
@@ -270,20 +301,21 @@
             });
           })
           .push(function () {
+            updateIOData();
             return gadget.property_dict.graph_io_rw.updateOptions({
-              file: gadget.property_dict.io_data.data.join('\n'),
+              file: gadget.property_dict.io_data_csv,
               dateWindow: date_window
             });
           })
           .push(function () {
             return gadget.property_dict.graph_io_counter.updateOptions({
-              file: gadget.property_dict.io_data.data.join('\n'),
+              file: gadget.property_dict.io_data_csv,
               dateWindow: date_window
             });
           })
           .push(function () {
             return gadget.property_dict.graph_disk_used.updateOptions({
-              file: gadget.property_dict.io_data.data.join('\n'),
+              file: gadget.property_dict.io_data_csv,
               dateWindow: date_window
             });
           })
@@ -339,10 +371,11 @@
           );
         })
         .push(function () {
+          updateIOData();
           return gadget.property_dict.graph_io_rw.render(
-            gadget.property_dict.io_data.data.join('\n'),
+            gadget.property_dict.io_data_csv,
             {
-              xlabel: '<span class="graph-label"><i class="fa fa-bar-chart"></i> IO RW Bytes</span>',
+              xlabel: '<span class="graph-label"><i class="fa fa-bar-chart"></i> IO RW KBytes/s</span>',
               labelsDivStyles: { 'textAlign': 'right' },
               legend: 'always',
               visibility: [true, false, false],
@@ -354,9 +387,9 @@
         })
         .push(function () {
           return gadget.property_dict.graph_io_counter.render(
-            gadget.property_dict.io_data.data.join('\n'),
+            gadget.property_dict.io_data_csv,
             {
-              xlabel: '<span class="graph-label"><i class="fa fa-bar-chart"></i> IO RW counter</span>',
+              xlabel: '<span class="graph-label"><i class="fa fa-bar-chart"></i> IO RW counter/1000</span>',
               labelsDivStyles: { 'textAlign': 'right' },
               legend: 'always',
               visibility: [false, true, false],
@@ -368,7 +401,7 @@
         })
         .push(function () {
           return gadget.property_dict.graph_disk_used.render(
-            gadget.property_dict.io_data.data.join('\n'),
+            gadget.property_dict.io_data_csv,
             {
               xlabel: '<span class="graph-label"><i class="fa fa-pie-chart"></i> Disk Used (Mo)</span>',
               labelsDivStyles: { 'textAlign': 'right' },

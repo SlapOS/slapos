@@ -54,6 +54,13 @@
       };
     })
 
+    .ready(function (g) {
+      return g.getDeclaredGadget("sync_gadget")
+        .push(function (sync_gadget) {
+          g.props.sync_gadget = sync_gadget;
+        });
+    })
+
     .declareMethod("getCommandUrlFor", function (options) {
       var prefix = '',
         result,
@@ -112,14 +119,11 @@
           return gadget.props.start_deferred.promise;
         })
         .push(function () {
+          // set auto sync timer
+          return gadget.props.sync_gadget.startSync();
+        })
+        .push(function () {
           return listenHashChange(gadget);
-        });
-    })
-
-    .allowPublicAcquisition("loginRedirect", function (param_list) {
-      return gadget.getDeclaredGadget('login_gadget')
-        .push(function (login_gadget) {
-          return login_gadget.loginRedirect.apply(login_gadget, param_list);
         });
     });
 

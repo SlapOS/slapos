@@ -29,6 +29,16 @@
         monitor_cred_dict = {},
         sync_lock = false;
 
+      function formatDate(d){
+        function addZero(n){
+          return n < 10 ? '0' + n : '' + n;
+        }
+    
+        return d.getFullYear() + "-" + addZero(d.getMonth()+1)
+          + "-" + addZero(d.getDate()) + " " + addZero(d.getHours())
+          + ":" + addZero(d.getMinutes()) + ":" + addZero(d.getMinutes());
+      }
+
       function syncStorage(gadget, storage_dict, query) {
         gadget.props.jio_gadget.createJio(storage_dict, true, query);
         return gadget.props.jio_gadget.repair()
@@ -104,14 +114,29 @@
       }
 
       function syncAllStorage() {
-        var monitor_storage_list = [];
+        var monitor_storage_list = [],
+          last_sync_time;
         if (sync_lock === true) {
           return [];
         }
         if (options.now) {
           sync_lock = true;
         }
-        return gadget.props.login_gadget.getUrlDict()
+        return new RSVP.Queue()
+          .push(function () {
+            $(".notifyjs-wrapper").remove();
+            return $.notify(
+              "Synchronizing Data...", 
+              {
+                position:"bottom right",
+                autoHide: false,
+                className: "info"
+              }
+            );
+          })
+          .push(function () {
+            return gadget.props.login_gadget.getUrlDict();
+          })
           .push(function(url_dict) {
             monitor_cred_dict = url_dict;
             
@@ -131,15 +156,38 @@
             return RSVP.all(promise_list);
           })
           .push(function () {
-            var sync_time = new Date().getTime();
+            last_sync_time = new Date().getTime();
             sync_lock = false;
-            return gadget.setSetting('latest_sync_time', sync_time);
+            return gadget.setSetting('latest_sync_time', last_sync_time);
+          })
+          .push(function () {
+            $(".notifyjs-wrapper").remove();
+            return $.notify(
+              "Synchronisation finished.", 
+              {
+                position:"bottom right",
+                autoHide: true,
+                className: "info",
+                autoHideDelay: 3000
+              }
+            );
+          })
+          .push(function () {
+            return $.notify(
+              "Last Sync: " + formatDate(new Date(last_sync_time)), 
+              {
+                position:"bottom right",
+                autoHide: true,
+                className: "success",
+                autoHideDelay: 30000
+              }
+            );
           });
       }
       
       function syncDataTimer() {
         if (gadget.props.timer) {
-          clearInterval(gadget.props.timer);
+          clearTimeout(gadget.props.timer);
         }
         gadget.props.timer = setTimeout(function(){
           return new RSVP.Queue()
@@ -190,8 +238,8 @@
           if (latest_sync_time !== undefined) {
             time_diff = current_time - latest_sync_time;
             if ((time_diff - 10000) >= gadget.props.timer_interval) {
-              // sync in after 5 second
-              gadget.props.timer_interval = 5000;
+              // sync in after 10 second
+              gadget.props.timer_interval = 10000;
             } else {
               gadget.props.timer_interval = gadget.props.timer_interval - time_diff;
             }

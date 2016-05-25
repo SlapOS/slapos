@@ -18,6 +18,16 @@
     return false;
   }
 
+  function formatDate(d){
+    function addZero(n){
+      return n < 10 ? '0' + n : '' + n;
+    }
+
+    return d.getFullYear() + "-" + addZero(d.getMonth()+1)
+      + "-" + addZero(d.getDate()) + " " + addZero(d.getHours())
+      + ":" + addZero(d.getMinutes()) + ":" + addZero(d.getMinutes());
+  }
+
   function setjIODAVConfiguration(gadget, options) {
     var url = "",
       //login_input = gadget.props.element.querySelector("input[name='dav_username']").value,
@@ -98,7 +108,7 @@
           enable_search: false,
           disable_href: true,
           column_list: [{
-            title: 'Title',
+            title: 'Instance',
             select: 'title'
           }, {
             title: 'Hosting Subscription',
@@ -237,7 +247,7 @@
         }
       ).push(function(new_gadget) {
         jio_gadget = new_gadget;
-        jio_gadget.createJio(jio_options);
+        jio_gadget.createJio(jio_options, false);
         return jio_gadget.get('config');
       })
       .push(function (doc) {
@@ -328,7 +338,7 @@
     .declareMethod("render", function (options) {
       var gadget = this;
       return gadget.updateHeader({
-        title: "Configure monitoring instances URLs"/*,
+        title: "Configure monitoring Instances"/*,
         back_url: "#page=main",
         panel_action: false*/
       })
@@ -358,6 +368,16 @@
         content = opml_url_template({opml_list: opml_list});
         gadget.props.element.querySelector("#config-manage .opml-tablelinks > tbody")
           .innerHTML = content;
+        return gadget.getSetting('latest_sync_time');
+      })
+      .push(function (latest_sync_time) {
+        if (latest_sync_time !== undefined) {
+          gadget.props.element.querySelector(".last-sync")
+            .innerHTML = formatDate(new Date(latest_sync_time));
+        } else {
+          gadget.props.element.querySelector(".last-sync")
+            .innerHTML = '--';
+        }
       })
       .push(function () {
         if (!options.tab || options.tab !== 'manage') {
@@ -478,6 +498,16 @@
                     .innerHTML = title;
                   gadget.props.element.querySelector('.sync-all')
                     .disabled = false;
+                  return gadget.getSetting('latest_sync_time');
+                })
+                .push(function (latest_sync_time) {
+                  if (latest_sync_time !== undefined) {
+                    gadget.props.element.querySelector(".last-sync")
+                      .innerHTML = formatDate(new Date(latest_sync_time));
+                  } else {
+                    gadget.props.element.querySelector(".last-sync")
+                      .innerHTML = '--';
+                  }
                 });
             }
           ));
