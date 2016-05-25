@@ -115,6 +115,9 @@
                     <value>
                       <list>
                         <string>my_predecessor_title_list</string>
+                        <string>my_destination_section_title</string>
+                        <string>my_slap_state_title</string>
+                        <string>my_translated_validation_state_title</string>
                       </list>
                     </value>
                 </item>
