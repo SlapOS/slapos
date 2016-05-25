@@ -2059,6 +2059,7 @@ class TestSlapOSisSupportRequestCreationClosed(testSlapOSMixin):
     def newSupportRequest():
       sr = self.portal.support_request_module.newContent(\
                         title="Test Support Request POIUY",
+                        resource="service_module/slapos_crm_monitoring",
                         destination_decision=url)
       sr.validate()
       sr.immediateReindexObject()
@@ -2079,7 +2080,7 @@ class TestSlapOSisSupportRequestCreationClosed(testSlapOSMixin):
     self.assertFalse(self.portal.ERP5Site_isSupportRequestCreationClosed(
                      other_person.getRelativeUrl()))
   
-  def test_ERP5Site_isSupportRequestCreationClosed_submitted_state(self):
+  def test_ERP5Site_isSupportRequestCreationClosed_suspended_state(self):
     person = self._makePerson()
     url = person.getRelativeUrl()
     self.assertFalse(self.portal.ERP5Site_isSupportRequestCreationClosed(url))
@@ -2088,6 +2089,7 @@ class TestSlapOSisSupportRequestCreationClosed(testSlapOSMixin):
     def newSupportRequest():
       sr = self.portal.support_request_module.newContent(\
                         title="Test Support Request POIUY",
+                        resource="service_module/slapos_crm_monitoring",
                         destination_decision=url)
       sr.validate()
       sr.suspend()
@@ -2100,7 +2102,33 @@ class TestSlapOSisSupportRequestCreationClosed(testSlapOSMixin):
     newSupportRequest()
     self.assertFalse(self.portal.ERP5Site_isSupportRequestCreationClosed(url))
     self.assertFalse(self.portal.ERP5Site_isSupportRequestCreationClosed())
+
+
+  def test_ERP5Site_isSupportRequestCreationClosed_nonmonitoring(self):
+    person = self._makePerson()
+    url = person.getRelativeUrl()
+    self.assertFalse(self.portal.ERP5Site_isSupportRequestCreationClosed(url))
+    self.assertFalse(self.portal.ERP5Site_isSupportRequestCreationClosed())
     
+    def newSupportRequest():
+      sr = self.portal.support_request_module.newContent(\
+                        title="Test Support Request POIUY",
+                        destination_decision=url)
+      sr.validate()
+      sr.validate()
+      sr.immediateReindexObject()
+
+    # Create five tickets, the limit of ticket creation
+    newSupportRequest()
+    newSupportRequest()
+    newSupportRequest()
+    newSupportRequest()
+    newSupportRequest()
+
+    self.assertTrue(self.portal.ERP5Site_isSupportRequestCreationClosed(url))
+    self.assertTrue(self.portal.ERP5Site_isSupportRequestCreationClosed())
+    
+
 class TestSlapOSGenerateSupportRequestForSlapOS(testSlapOSMixin):
   
   
