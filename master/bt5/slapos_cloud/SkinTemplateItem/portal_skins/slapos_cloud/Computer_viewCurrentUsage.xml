@@ -100,6 +100,7 @@
                         <string>my_busy_computer_partition_list_owner_title</string>
                         <string>my_busy_computer_partition_list_instance_title</string>
                         <string>listbox_installation_status</string>
+                        <string>my_busy_computer_partition_list_hosting_subscription_title</string>
                       </list>
                     </value>
                 </item>
@@ -109,14 +110,15 @@
                       <list>
                         <string>my_reference</string>
                         <string>your_free_partition_count</string>
-                        <string>my_busy_computer_partition_list_hosting_subscription_title</string>
                       </list>
                     </value>
                 </item>
                 <item>
                     <key> <string>right</string> </key>
                     <value>
-                      <list/>
+                      <list>
+                        <string>my_last_contact_date</string>
+                      </list>
                     </value>
                 </item>
               </dictionary>
