@@ -49,6 +49,8 @@ import threading
 import time
 import traceback
 import zipfile
+import platform
+from urllib2 import urlopen
 
 import lxml.etree
 import xml_marshaller.xml_marshaller
@@ -56,7 +58,7 @@ import xml_marshaller.xml_marshaller
 import slapos.util
 from slapos.util import mkdir_p
 import slapos.slap as slap
-
+from slapos import version
 
 def prettify_xml(xml):
   root = lxml.etree.fromstring(xml)
@@ -124,6 +126,23 @@ class AddressGenerationError(Exception):
     )
 
 
+def getPublicIPv4Address():
+  test_list = [
+    { "url": 'https://api.ipify.org/?format=json' , "json_key": "ip"},
+    { "url": 'http://httpbin.org/ip', "json_key": "origin"},
+    { "url": 'http://jsonip.com', "json_key": "ip"}]
+  previous = None
+  ipv4 = None
+  for test in test_list:
+    if ipv4 is not None:
+      previous = ipv4
+    try:
+      ipv4 = json.load(urlopen(test["url"]))[test["json_key"]]
+    except:
+      ipv4 = None
+    if ipv4 is not None and ipv4 == previous:
+      return ipv4
+
 def callAndRead(argument_list, raise_on_error=True):
   popen = subprocess.Popen(argument_list,
                            stdout=subprocess.PIPE,
@@ -154,7 +173,7 @@ def netmaskToPrefixIPv6(netmask):
           netaddr.strategy.ipv6.str_to_int(netmask)]
 
 def getIfaceAddressIPv4(iface):
-  """return dict containing ipv4 address netmask, network and broadcast address 
+  """return dict containing ipv4 address netmask, network and broadcast address
   of interface"""
   if not iface in netifaces.interfaces():
     raise ValueError('Could not find interface called %s to use as gateway ' \
@@ -162,7 +181,7 @@ def getIfaceAddressIPv4(iface):
   try:
     addresses_list = netifaces.ifaddresses(iface)[socket.AF_INET]
     if len (addresses_list) > 0:
-      
+
       addresses = addresses_list[0].copy()
       addresses['network'] = str(netaddr.IPNetwork('%s/%s' % (addresses['addr'],
                                           addresses['netmask'])).cidr.network)
@@ -173,7 +192,7 @@ def getIfaceAddressIPv4(iface):
     raise KeyError('Could not find IPv4 adress on interface %s.' % iface)
 
 def getIPv4SubnetAddressRange(ip_address, mask, size):
-  """Check if a given ipaddress can be used to create 'size' 
+  """Check if a given ipaddress can be used to create 'size'
   host ip address, then return list of ip address in the subnet"""
   ip = netaddr.IPNetwork('%s/%s' % (ip_address, mask))
   # Delete network and default ip_address from the list
@@ -238,6 +257,12 @@ class Computer(object):
     self.software_user = software_user
     self.tap_gateway_interface = tap_gateway_interface
 
+    # The follow properties are updated on update() method
+    self.public_ipv4_address = None
+    self.os_type = None
+    self.python_version = None
+    self.slapos_version = None
+
   def __getinitargs__(self):
     return (self.reference, self.interface)
 
@@ -273,11 +298,19 @@ class Computer(object):
     # Can't find address
     raise NoAddressOnInterface('No valid IPv6 found on %s.' % self.interface.name)
 
+  def update(self):
+    """
+      Collect environmental hardware/network information.
+    """
+    self.public_ipv4_address = getPublicIPv4Address()
+    self.slapos_version = version.version
+    self.python_version = platform.python_version()
+    self.os_type = platform.platform()
+
   def send(self, conf):
     """
     Send a marshalled dictionary of the computer object serialized via_getDict.
     """
-
     slap_instance = slap.slap()
     connection_dict = {}
     if conf.key_file and conf.cert_file:
@@ -1221,7 +1254,7 @@ def do_format(conf):
 
   if conf.output_definition_file:
     write_computer_definition(conf, computer)
-  
+
   computer.construct(alter_user=conf.alter_user,
                      alter_network=conf.alter_network,
                      create_tap=conf.create_tap,
@@ -1230,6 +1263,7 @@ def do_format(conf):
   if getattr(conf, 'certificate_repository_path', None):
     mkdir_p(conf.certificate_repository_path, mode=0o700)
 
+  computer.update()
   # Dumping and sending to the erp5 the current configuration
   if not conf.dry_run:
     computer.dump(path_to_xml=conf.computer_xml,
