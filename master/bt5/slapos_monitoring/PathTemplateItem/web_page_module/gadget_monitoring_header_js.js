@@ -44,13 +44,6 @@
       };
     })
 
-    .ready(function (g) {
-      return g.getDeclaredGadget("sync_gadget")
-        .push(function (sync_gadget) {
-          g.props.sync_gadget = sync_gadget;
-        });
-    })
-
     // Assign the element to a variable
     .ready(function (g) {
       return g.getElement()
@@ -104,7 +97,7 @@
         return this.render(this.stats.options);
       }
     })
-/*
+
     .declareMethod('notifyChange', function () {
       if (!this.stats.modified) {
         this.stats.modified = true;
@@ -125,7 +118,7 @@
         return this.render(this.stats.options);
       }
     })
-*/
+
     .declareMethod('render', function (options) {
       var gadget = this,
         possible_left_link_list = [
@@ -273,10 +266,6 @@
           gadget.props.title_element.innerHTML = my_translated_html_list[0];
           gadget.props.left_link.innerHTML = my_translated_html_list[1];
           gadget.props.right_link.innerHTML = my_translated_html_list[2];
-        })
-        .push(function () {
-          // set auto sync timer
-          return gadget.props.sync_gadget.startSync();
         });
     })
 

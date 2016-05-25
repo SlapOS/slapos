@@ -777,16 +777,17 @@ margin-top: 5px;
   border: 4px solid #024352;
   border-radius: 50px;
   height: 50px;
-  left: 50%;
+  left: 75%;
   margin: -15px 0 0 -15px;
   /*opacity: 0;*/
-  position: absolute;
-  top: 90px;
+  position: fixed;
+  top: 200px;
   width: 50px;
   /*animation: pulsate .5s ease-out;
   animation-iteration-count: infinite;*/
   animation: rotate 0.8s infinite linear;
   border-right-color: transparent;
+  z-index: 100;
 }
 
 @keyframes rotate {

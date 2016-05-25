@@ -107,7 +107,7 @@
             <value> <string encoding="cdata"><![CDATA[
 
 CACHE MANIFEST\n
-# generated on Fri, 20 Mai 2016 15:47:33 +0000\n
+# generated on Fri, 25 Mai 2016 15:47:33 +0000\n
 # XXX + fonts\n
 # images/ajax-loader.gif\n
 CACHE:\n
@@ -137,6 +137,7 @@ jquerymobile.css\n
 jquerymobile.js\n
 jsen.min.js\n
 magnific-popup.css\n
+notify.min.js\n
 renderjs.js\n
 rsvp.js\n
 # gadget_officejs_page_sync.html\n
@@ -329,7 +330,7 @@ NETWORK:\n
             </item>
             <item>
                 <key> <string>serial</string> </key>
-                <value> <string>951.21023.1861.15223</string> </value>
+                <value> <string>951.21023.22440.29593</string> </value>
             </item>
             <item>
                 <key> <string>state</string> </key>
@@ -347,7 +348,7 @@ NETWORK:\n
                     </tuple>
                     <state>
                       <tuple>
-                        <float>1463759960.49</float>
+                        <float>1464194710.25</float>
                         <string>UTC</string>
                       </tuple>
                     </state>

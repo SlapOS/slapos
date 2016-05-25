@@ -201,6 +201,16 @@
             j,
             k;
 
+          function formatDate(d){
+            function addZero(n){
+              return n < 10 ? '0' + n : '' + n;
+            }
+        
+            return d.getFullYear() + "-" + addZero(d.getMonth()+1)
+              + "-" + addZero(d.getDate()) + " " + addZero(d.getHours())
+              + ":" + addZero(d.getMinutes()) + ":" + addZero(d.getMinutes());
+          }
+
           gadget.property_dict.data_result = [];
           // build handlebars object
           for (k = 0; k < all_docs_result_list.length; k += 1) {
@@ -212,6 +222,9 @@
               cell_list = [];
               for (i = 0, i_len = option_dict.column_list.length; i < i_len; i += 1) {
                 current_value = all_docs_result_list[k].data.rows[j].value[option_dict.column_list[i].select];
+                if (option_dict.column_list[i].convertDate) {
+                  current_value = formatDate(new Date(current_value));
+                }
                 cell_list.push({
                   "href": (option_dict.disable_href) ? '' : link_list[k][j],
                   "value": current_value,

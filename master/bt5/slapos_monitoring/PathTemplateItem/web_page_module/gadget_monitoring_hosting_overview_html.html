@@ -29,9 +29,9 @@
 
     <script id="instance-details-widget-overview" type="text/x-handlebars-template">
       {{#if status_list_url}}
-      <div data-role="controlgroup">
-        <a class="ui-btn ui-corner-all" href="{{status_list_url}}" title="Public"><i class="fa fa-check-square"></i> View Promises Status</a>
-      </div>
+      <!--<div data-role="controlgroup">
+        <a class="ui-btn ui-corner-all" href="{{status_list_url}}" title="Public"><i class="fa fa-check-square"></i> Promises</a>
+      </div>-->
       {{/if}}
       <div class="ui-listview-container">
         <ul data-role="listview" class="ui-listview-outer" data-inset="true">
@@ -45,11 +45,14 @@
                 <fieldset>
                   <div class="ui-field-contain">
                     <fieldset data-role="controlgroup" data-type="horizontal">
+                      {{#if ../status_list_url}}
+                      <a class="ui-btn ui-corner-all ui-btn-inline ui-mini" href="{{../status_list_url}}" title="Instance Promises List"><i class="fa fa-check-square"></i> Promises</a>
+                      {{/if}}
                       {{#if resource_url }}
-                      <a href="{{resource_url}}" class="ui-btn ui-corner-all ui-btn-inline ui-mini"><i class="fa fa-pie-chart"></i> Resources</a>
+                      <a href="{{resource_url}}" class="ui-btn ui-corner-all ui-btn-inline ui-mini" title="Instance Resource comsumption"><i class="fa fa-pie-chart"></i> Resources</a>
                       {{/if}}
                       {{#if process_url }}
-                      <a href="{{process_url}}" class="ui-btn ui-corner-all ui-btn-inline ui-mini"><i class="fa fa-list-alt"></i> Processes</a>
+                      <a href="{{process_url}}" class="ui-btn ui-corner-all ui-btn-inline ui-mini" title="Processes usage"><i class="fa fa-list-alt"></i> Processes</a>
                       {{/if}}
                       {{#if rss_url}}
                       <a class="ui-btn ui-corner-all ui-btn-inline ui-mini" target='_blank' href="{{rss_url}}" title="RSS"><i class="fa fa-rss-square"></i> RSS</a>
@@ -59,7 +62,7 @@
                       <a class="ui-btn ui-corner-all ui-btn-inline ui-mini" target='_blank' href="{{public_url}}" title="Public"><i class="fa fa-folder-open-o"></i> Public</a>
                       {{/if}}
                       {{#if private_url}}
-                      <a class="ui-btn ui-corner-all ui-btn-inline ui-mini" target='_blank' href="{{private_url}}" title="Private"><i class="fa fa-lock"></i> Private</a>
+                      <a class="ui-btn ui-corner-all ui-btn-inline ui-mini" target='_blank' href="{{private_url}}" title="Browse Private Directory"><i class="fa fa-lock"></i> Private</a>
                       {{/if}}
                       -->
                     </fieldset>
@@ -74,13 +77,18 @@
                     {{#with instance}}
                     <tr>
                       <th><i class="fa fa-desktop"></i> <strong>Computer</strong></th>
-                      <td>{{computer}}</td>
-                      <td>{{partition}}</td>
+                      <td title="Computer Reference">{{computer}}</td>
+                      <td title="Partition Reference">{{partition}}</td>
                     </tr>
                     <tr>
-                      <th><i class="fa fa-globe"></i> <strong>IP Address</strong></th>
-                      <td>{{ipv4}}</td>
-                      <td>{{ipv6}}</td>
+                      <th><i class="fa fa-globe"></i> <strong>IP Addresses</strong></th>
+                      <td title="IPv4">{{ipv4}}</td>
+                      <td title="IPv6">{{ipv6}}</td>
+                    </tr>
+                    <tr>
+                      <th><i class="fa fa-square-o" aria-hidden="true"></i> <strong>Software Type</strong></th>
+                      <td title="Software type">{{software-type}}</td>
+                      <td><a style="padding: 0; min-height: initial;" href="{{software-release}}" title="{{software-release}}" target='_blank'>Click to open <i class="fa fa-external-link"></i></a></td>
                     </tr>
                     {{/with}}
                   </table>
@@ -139,7 +147,7 @@
           <div class="overview-header">
             <div class='content-title ui-instance-title'>
               <div class="overview-title">
-                <i class="fa fa-globe"></i> <span>Monitoring Applications</span>
+                <i class="fa fa-globe"></i> <span>Hosting Subscriptions</span>
               </div>
               <div class="commands">
               </div>
@@ -151,7 +159,7 @@
               <table class="ui-responsive ui-body-c ui-table-inset instance-overview">
                 <thead class="ui-bar-inherit">
                   <tr>
-                    <th class="padding-10"></th>
+                    <th class="padding-10">Status</th>
                     <th>Name</th>
                     <th>Status Date</th>
                   </tr>
@@ -184,7 +192,7 @@
             <div style="overflow: auto;" class="padding-lr-10 instances-parameters">
             </div>
             <div class="padding-5"></div>
-            <h2><i class="fa fa-cubes"></i> <strong>Instances State List</strong></h2>
+            <h2><i class="fa fa-cubes"></i> <strong>Instances Status</strong></h2>
             <div class="instances-status">
             </div>
           </div>

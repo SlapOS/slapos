@@ -205,7 +205,7 @@
         }*/
         return RSVP.all([
           row_list,
-          [{title: 'Status'}, {title: 'Instance'}, {title: 'Root Instance'}]
+          [{title: 'Status'}, {title: 'Instance'}, {title: 'Hosting Subscription'}]
         ]);
       })
       .push(function (result_list) {
@@ -320,7 +320,7 @@
                 return gadget.property_dict.graph.render(
                   data,
                   {
-                    ylabel: '<span class="graph-label"><i class="fa fa-bar-chart"></i> Promises Result</span>',
+                    xlabel: '<span class="graph-label"><i class="fa fa-bar-chart"></i> Promises Success/Failure Result</span>',
                     legend: 'always',
                     labelsDivStyles: { 'textAlign': 'right' }
                   },
@@ -366,7 +366,8 @@
                     }
                   }
                   promise_content = promise_list_template({
-                    promise_list: promise_list
+                    promise_list: promise_list,
+                    date: current_document.date
                   });
                 $(element.querySelector('td:first-child > a')).addClass('selected');
                 gadget.property_dict.element.querySelector(".overview-details")
