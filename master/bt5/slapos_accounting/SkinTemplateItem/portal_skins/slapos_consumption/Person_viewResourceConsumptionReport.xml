@@ -133,7 +133,7 @@
         </item>
         <item>
             <key> <string>update_action_title</string> </key>
-            <value> <string>Update ListView</string> </value>
+            <value> <string>Update</string> </value>
         </item>
       </dictionary>
     </pickle>
