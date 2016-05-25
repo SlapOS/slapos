@@ -10,7 +10,7 @@ if len(uids) and software_release:
   dialog = "SoftwareRelease_viewUsableComputerList"
   for computer in portal.portal_catalog(uid=uids, portal_type="Computer"):    
     # XXX - We won't destroy Software release if it used on this computer
-    if not computer.Computer_getSoftwareReleaseUsage(software_release.getUid()):      
+    if not computer.Computer_getSoftwareReleaseUsage(software_release.getUrlString()):      
       computer.requestSoftwareRelease(software_release_url=url_string,
                                       state='destroyed')
       item_count += 1

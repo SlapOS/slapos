@@ -6,4 +6,4 @@ else:
   computer = current
   software_release = context
 
-return computer.Computer_getSoftwareReleaseUsage(software_release.getUid())
+return computer.Computer_getSoftwareReleaseUsage(software_release.getUrlString())

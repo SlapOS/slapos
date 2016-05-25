@@ -50,7 +50,7 @@
         </item>
         <item>
             <key> <string>_params</string> </key>
-            <value> <string>software_release_uid</string> </value>
+            <value> <string>software_release_url</string> </value>
         </item>
         <item>
             <key> <string>id</string> </key>
