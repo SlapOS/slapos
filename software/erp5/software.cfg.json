@@ -1,7 +1,7 @@
 {
   "name": "ERP5",
   "description": "ERP5, Open-Source ERP",
-  "serialisation": "xml-in-json",
+  "serialisation": "json-in-xml",
   "software-type": {
     "default": {
       "title": "Default",
