@@ -1,0 +1,21 @@
+{
+  "name": "ERP5",
+  "description": "ERP5, Open-Source ERP",
+  "serialisation": "xml-in-json",
+  "software-type": {
+    "default": {
+      "title": "Default",
+      "description": "Default deployment of ERP5 with auto-create instance.",
+      "request": "instance-erp5-input-schema.json",
+      "response": "instance-erp5-output-schema.json",
+      "index": 0
+    },
+    "create-erp5-site": {
+      "title": "Create ERP5 Site", 
+      "description": "Default deployment of ERP5 with automatic creation of the instance.",
+      "request": "instance-erp5-input-schema.json",
+      "response": "instance-erp5-output-schema.json",
+      "index": 1
+    }
+  }
+}
