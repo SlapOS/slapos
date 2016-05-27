@@ -65,6 +65,7 @@ def main():
   status_json['title'] = parser.promise_name
   status_json['instance'] = parser.instance_name
   status_json['hosting_subscription'] = parser.hosting_name
+  status_json['type'] = parser.promise_type
 
   # Save the lastest status change date (needed for rss)
   status_json['change-time'] = ps_process.create_time()
@@ -85,9 +86,7 @@ def main():
   os.remove(parser.pid_path)
 
 def updateStatusHistoryFolder(name, status_file, history_folder, promise_type):
-  old_history_list = []
-  keep_item_amount = 25
-  history_path = os.path.join(history_folder, name, '.jio_documents')
+  history_path = os.path.join(history_folder)
   if not os.path.exists(status_file):
     return
   if not os.path.exists(history_folder):
@@ -101,25 +100,46 @@ def updateStatusHistoryFolder(name, status_file, history_folder, promise_type):
       else: raise
   with open(status_file, 'r') as sf:
     status_dict = json.loads(sf.read())
-    filename = '%s.%s.json' % (
-      status_dict['start-date'].replace(' ', '_').replace(':', ''),
-      promise_type)
+  
+  if promise_type == 'status':
+    filename = '%s.history.json' % name
+    history_file = os.path.join(history_path, filename)
+    # Remove links from history (not needed)
+    status_dict.pop('_links', None)
+    if not os.path.exists(history_file):
+      with open(history_file, 'w') as f_history:
+        data_dict = {
+          "date": time.time(),
+          "data": [status_dict]
+        }
+        f_history.write(json.dumps(data_dict))
+    else:
+      with open (history_file, mode="r+") as f_history:
+        f_history.seek(0,2)
+        position = f_history.tell() -2
+        f_history.seek(position)
+        #f_history.write(',%s]}' % str(status_dict))
+        f_history.write('%s}' % ',{}]'.format(json.dumps(status_dict)))
+  elif promise_type == 'report':
+    # keep_item_amount = 3
+    filename = '%s.history.json' % (
+      name)
 
-  copyfile(status_file, os.path.join(history_path, filename))
-  # Don't let history foler grow too much, keep xx files
-  file_list = filter(os.path.isfile,
-      glob.glob("%s/*.%s.json" % (history_path, promise_type))
-    )
-  file_count = len(file_list)
-  if file_count > keep_item_amount:
-    file_list.sort(key=lambda x: os.path.getmtime(x))
-    while file_count > keep_item_amount:
-      to_delete = file_list.pop(0)
-      try:
-        os.unlink(to_delete)
-        file_count -= 1
-      except OSError:
-        raise
+    copyfile(status_file, os.path.join(history_path, filename))
+    """# Don't let history foler grow too much, keep xx files
+    file_list = filter(os.path.isfile,
+        glob.glob("%s/*.%s.history.json" % (history_path, promise_type))
+      )
+    file_count = len(file_list)
+    if file_count > keep_item_amount:
+      file_list.sort(key=lambda x: os.path.getmtime(x))
+      while file_count > keep_item_amount:
+        to_delete = file_list.pop(0)
+        try:
+          os.unlink(to_delete)
+          file_count -= 1
+        except OSError:
+          raise"""
 
 def generateStatusJsonFromProcess(process, start_date=None, title=None):
   stdout, stderr = process.communicate()

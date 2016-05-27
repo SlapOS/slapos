@@ -104,6 +104,7 @@ def main(args_list):
         'success': success,
         'warning': warning,
       },
+      type='global',
       date=latest_date,
       _links={"rss_url": {"href": "%s/public/feed" % base_url},
               "public_url": {"href": "%s/share/jio_public/" % base_url},
