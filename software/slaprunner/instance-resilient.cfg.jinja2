@@ -60,6 +60,9 @@ webdav_url = ${request-runner:connection-webdav_url}
 public_url = ${request-runner:connection-public_url}
 git_public_url = ${request-runner:connection-git_public_url}
 git_private_url = ${request-runner:connection-git_private_url}
+{% if slapparameter_dict.get('custom-frontend-backend-url') -%}
+custom-frontend-url = https://${request-custom-frontend:connection-domain}
+{% endif %}
 {% for key in monitor_return -%}
 {{ key }} = ${request-runner:connection-{{ key }}}
 {% endfor -%}
