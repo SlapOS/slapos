@@ -97,7 +97,6 @@ class Monitoring(object):
     self.report_script_folder = config.get("monitor", "report-folder")
     self.webdav_url = '%s/share' % config.get("monitor", "base-url")
     self.public_url = '%s/public' % config.get("monitor", "base-url")
-    self.status_history_folder = os.path.join(self.public_folder, 'history')
     self.python = config.get("monitor", "python") or "python"
     self.public_path_list = config.get("monitor", "public-path-list").split()
     self.private_path_list = config.get("monitor", "private-path-list").split()
@@ -107,7 +106,7 @@ class Monitoring(object):
     self.parameter_cfg_file = config.get("monitor", "parameter-file-path").strip()
 
     self.config_folder = os.path.join(self.private_folder, 'config')
-    self.report_folder = os.path.join(self.private_folder, 'report')
+    self.report_folder = self.private_folder
 
     self.promise_dict = {}
     for promise_folder in self.promise_folder_list:
@@ -237,14 +236,14 @@ class Monitoring(object):
       else:
         response = urllib2.urlopen(url)
     except urllib2.HTTPError:
-      return 'Unknow Instance'
+      return 'Unknown Instance'
     else:
       try:
         monitor_dict = json.loads(response.read())
-        return monitor_dict.get('title', 'Unknow Instance')
+        return monitor_dict.get('title', 'Unknown Instance')
       except ValueError, e:
         print "Bad Json file at %s" % url
-    return 'Unknow Instance'
+    return 'Unknown Instance'
 
   def configureFolders(self):
     # configure public and private folder
@@ -256,7 +255,6 @@ class Monitoring(object):
     jio_private = os.path.join(self.webdav_folder, 'jio_private')
     mkdirAll(jio_public)
     mkdirAll(jio_private)
-    mkdirAll(self.status_history_folder)
     try:
       os.symlink(self.public_folder, os.path.join(jio_public, '.jio_documents'))
     except OSError, e:
@@ -269,11 +267,9 @@ class Monitoring(object):
         raise
 
     self.data_folder = os.path.join(self.private_folder, 'data', '.jio_documents')
-    self.report_folder = os.path.join(self.report_folder, '.jio_documents')
     config_folder = os.path.join(self.config_folder, '.jio_documents')
     mkdirAll(self.data_folder)
     mkdirAll(config_folder)
-    mkdirAll(self.report_folder)
     try:
       os.symlink(os.path.join(self.private_folder, 'data'),
                   os.path.join(jio_private, 'data'))
@@ -282,11 +278,6 @@ class Monitoring(object):
         raise
     try:
       os.symlink(self.config_folder, os.path.join(jio_private, 'config'))
-    except OSError, e:
-      if e.errno != os.errno.EEXIST:
-        raise
-    try:
-      os.symlink(self.report_folder, os.path.join(jio_private, 'report'))
     except OSError, e:
       if e.errno != os.errno.EEXIST:
         raise
@@ -397,7 +388,7 @@ class Monitoring(object):
   def generateReportCronEntries(self):
     cron_line_list = []
     # We should add the possibility to modify this parameter later from monitor interface
-    report_frequency = "*/30 * * * *"
+    report_frequency = "*/20 * * * *"
 
     report_name_list = [name.replace('.report.json', '')
       for name in os.listdir(self.report_folder) if name.endswith('.report.json')]
@@ -451,7 +442,7 @@ class Monitoring(object):
 
     for service_name, promise in self.promise_items:
       service_config = promise["configuration"]
-      service_status_path = "%s/%s.status.json" % (self.public_folder, service_name)  # hardcoded
+      service_status_path = "%s/%s.status.json" % (self.public_folder, service_name)
       mkdirAll(os.path.dirname(service_status_path))
 
       promise_cmd_line = [
@@ -463,7 +454,7 @@ class Monitoring(object):
         '--promise_script "%s"' % promise["path"],
         '--promise_name "%s"' % service_name,
         '--monitor_url "%s/jio_private/"' % self.webdav_url, # XXX hardcoded,
-        '--history_folder "%s"' % self.status_history_folder,
+        '--history_folder "%s"' % self.public_folder,
         '--instance_name "%s"' % self.title,
         '--hosting_name "%s"' % self.root_title]
 
@@ -539,12 +530,20 @@ class Monitoring(object):
 
     # Rotate monitor data files
     option_list = [
-      'daily', 'nocreate', 'noolddir', 'rotate 30',
+      'daily', 'nocreate', 'noolddir', 'rotate 5',
       'nocompress', 'extension .json', 'dateext',
       'dateformat -%Y-%m-%d', 'notifempty'
     ]
     file_list = ["%s/*.data.json" % self.data_folder]
     self.generateLogrotateEntry('monitor.data', file_list, option_list)
+
+    # Rotate public history status file, delete data of previous days
+    option_list = [
+      'daily', 'nocreate', 'rotate 0',
+      'nocompress', 'notifempty'
+    ]
+    file_list = ["%s/*.history.json" % self.public_folder]
+    self.generateLogrotateEntry('monitor.service.status', file_list, option_list)
 
     # Add cron entry for SlapOS Collect
     command = "%s %s --output_folder %s --collector_db %s" % (self.python,

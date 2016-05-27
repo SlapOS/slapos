@@ -124,6 +124,9 @@ monitor-base-url = ${monitor-conf-parameters:base-url}
 monitor-url = ${:monitor-base-url}/public/feeds
 monitor-user = ${monitor-instance-parameter:username}
 monitor-password = ${monitor-instance-parameter:password}
+{% set monitor_interface_url = slapparameter_dict.get('monitor-interface-url', 'https://monitor.app.officejs.com') -%}
+monitor-setup-url = {{ monitor_interface_url }}/#page=settings_configurator&url=${:monitor-url}
+
 
 #----------------------------
 #--

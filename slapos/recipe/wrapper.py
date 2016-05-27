@@ -26,6 +26,7 @@
 ##############################################################################
 
 import shlex
+import os
 
 from slapos.recipe.librecipe import GenericBaseRecipe
 
@@ -57,8 +58,14 @@ class Recipe(GenericBaseRecipe):
 
         # We create a python script and a wrapper around the python
         # script because the python script might have a too long #! line
+        if os.path.exists(os.path.join(self.buildout['buildout']['directory'], "bin")): 
+          base_script_path = os.path.join(
+            self.buildout['buildout']['directory'], "bin/" + wrapper_path.split("/")[-1])
+        else:
+          base_script_path = os.path.join(
+            self.buildout['buildout']['directory'], wrapper_path.split("/")[-1])
         python_script = self.createPythonScript(
-            wrapper_path+'.py',
+            base_script_path +'.py',
             'slapos.recipe.librecipe.execute.generic_exec',
             (command_line, wait_files, environment,), )
         return [python_script, self.createWrapper(

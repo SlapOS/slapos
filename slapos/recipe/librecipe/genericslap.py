@@ -29,6 +29,8 @@ import time
 
 from generic import GenericBaseRecipe
 
+CONNECTION_CACHE = {}
+
 class GenericSlapRecipe(GenericBaseRecipe):
   """Base class for all slap.recipe.* needing SLAP informations like instance
      parameters.
@@ -50,11 +52,18 @@ class GenericSlapRecipe(GenericBaseRecipe):
     self.cert_file = slap_connection.get('cert-file')
 
   def install(self):
+
+    cache_key = "%s_%s" % (self.computer_id, self.computer_partition_id)
+    self.computer_partition = CONNECTION_CACHE.get(cache_key, None)
+
     self.slap.initializeConnection(self.server_url, self.key_file,
         self.cert_file)
-    self.computer_partition = self.slap.registerComputerPartition(
-      self.computer_id,
-      self.computer_partition_id)
+    if self.computer_partition is None:
+      self.computer_partition = self.slap.registerComputerPartition(
+        self.computer_id,
+        self.computer_partition_id)
+      CONNECTION_CACHE[cache_key] = self.computer_partition
+
     self.request = self.computer_partition.request
     self.setConnectionDict = self.computer_partition.setConnectionDict
     self.parameter_dict = self.computer_partition.getInstanceParameterDict()
