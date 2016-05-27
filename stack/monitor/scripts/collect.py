@@ -262,51 +262,73 @@ def appendToJsonFile(file_path, content, stepback=2):
     jfile.seek(position)
     jfile.write('%s}' % ',"{}"]'.format(content))
 
+def initProcessDataFile(file_path):
+  with open(process_file, 'w') as fprocess:
+    data_dict = {
+      "date": time.time(),
+      "data": ["date, total process, CPU percent, CPU time, CPU threads"]
+    }
+    fprocess.write(json.dumps(data_dict))
+
+def initMemoryDataFile(file_path):
+  with open(mem_file, 'w') as fmem:
+    data_dict = {
+      "date": time.time(),
+      "data": ["date, memory used percent, memory used"]
+    }
+    fmem.write(json.dumps(data_dict))
+
+def initIODataFile(file_path):
+  with open(io_file, 'w') as fio:
+    data_dict = {
+      "date": time.time(),
+      "data": ["date, io rw counter, io cycles counter, disk used"]
+    }
+    fio.write(json.dumps(data_dict))
+
 if __name__ == "__main__":
   parser = parseArguments()
   if not os.path.exists(parser.output_folder) and os.path.isdir(parser.output_folder):
     raise Exception("Invalid ouput folder: %s" % parser.output_folder)
+
+  # Consumption global status
+  process_file = os.path.join(parser.output_folder, 'monitor_resource_process.data.json')
+  mem_file = os.path.join(parser.output_folder, 'monitor_resource_memory.data.json')
+  io_file = os.path.join(parser.output_folder, 'monitor_resource_io.data.json')
+  resource_file = os.path.join(parser.output_folder, 'monitor_process_resource.status.json')
+  status_file = os.path.join(parser.output_folder, 'monitor_resource.status.json')
+
+  if not os.path.exists(parser.collector_db):
+    print "Collector database not found..."
+    initProcessDataFile(process_file)
+    initMemoryDataFile(mem_file)
+    initIODataFile(io_file)
+    with open(status_file, "w") as status_file:
+      status_file.write('{"cpu_time": 0, "cpu_percent": 0, "memory_rss": 0, "memory_percent": 0, "io_rw_counter": 0, "date": "", "total_process": 0, "disk_used": 0, "io_cycles_counter": 0, "cpu_num_threads": 0}')
+    with open(resource_file, "w") as resource_file:
+      resource_file.write('[]')
+    exit(1)
+
   collector = RessourceCollect(parser.collector_db)
 
   date_scope = datetime.now().strftime('%Y-%m-%d')
   stat_info = os.stat(parser.output_folder)
   partition_user = pwd.getpwuid(stat_info.st_uid)[0]
 
-  # Consumption global status
-  process_file = os.path.join(parser.output_folder, 'monitor_resource_process.data.json')
-  mem_file = os.path.join(parser.output_folder, 'monitor_resource_memory.data.json')
-  io_file = os.path.join(parser.output_folder, 'monitor_resource_io.data.json')
-
   process_result, memory_result, io_result = collector.getPartitionComsumptionStatus(partition_user)
-  resource_file = os.path.join(parser.output_folder, 'monitor_process_resource.status.json')
 
   label_list = ['date', 'total_process', 'cpu_percent', 'cpu_time', 'cpu_num_threads',
                   'memory_percent', 'memory_rss', 'io_rw_counter', 'io_cycles_counter',
                   'disk_used']
   resource_status_dict = {}
   if not os.path.exists(process_file):
-    with open(process_file, 'w') as fprocess:
-      data_dict = {
-        "date": time.time(),
-        "data": ["date, total process, CPU percent, CPU time, CPU threads"]
-      }
-      fprocess.write(json.dumps(data_dict))
+    initProcessDataFile(process_file)
 
   if not os.path.exists(mem_file):
-    with open(mem_file, 'w') as fmem:
-      data_dict = {
-        "date": time.time(),
-        "data": ["date, memory used percent, memory used"]
-      }
-      fmem.write(json.dumps(data_dict))
+    initMemoryDataFile(mem_file)
 
   if not os.path.exists(io_file):
-    with open(io_file, 'w') as fio:
-      data_dict = {
-        "date": time.time(),
-        "data": ["date, io rw counter, io cycles counter, disk used"]
-      }
-      fio.write(json.dumps(data_dict))
+    initIODataFile(io_file)
 
   if process_result and process_result['total_process'] != 0.0:
     appendToJsonFile(process_file, ", ".join(
@@ -324,7 +346,7 @@ if __name__ == "__main__":
     )
     resource_status_dict.update(io_result)
 
-  with open(os.path.join(parser.output_folder, 'monitor_resource.status.json'), 'w') as fp:
+  with open(status_file, 'w') as fp:
     fp.write(json.dumps(resource_status_dict))
 
   # Consumption Ressource
