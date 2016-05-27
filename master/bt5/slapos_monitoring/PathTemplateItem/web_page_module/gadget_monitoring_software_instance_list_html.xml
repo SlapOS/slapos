@@ -80,7 +80,7 @@
         </item>
         <item>
             <key> <string>default_reference</string> </key>
-            <value> <string>gadget_monitoring_hosting_overview.html</string> </value>
+            <value> <string>gadget_monitoring_software_instance_list.html</string> </value>
         </item>
         <item>
             <key> <string>description</string> </key>
@@ -90,7 +90,7 @@
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>gadget_monitoring_hosting_overview_html</string> </value>
+            <value> <string>gadget_monitoring_software_instance_list_html</string> </value>
         </item>
         <item>
             <key> <string>language</string> </key>
@@ -110,7 +110,7 @@
         </item>
         <item>
             <key> <string>title</string> </key>
-            <value> <string>Monitoring Hosting Subscription Overview</string> </value>
+            <value> <string>Monitoring Software Instance List</string> </value>
         </item>
         <item>
             <key> <string>version</string> </key>
@@ -198,7 +198,7 @@
                     </tuple>
                     <state>
                       <tuple>
-                        <float>1457347252.5</float>
+                        <float>1453456785.61</float>
                         <string>UTC</string>
                       </tuple>
                     </state>
@@ -243,7 +243,7 @@
             </item>
             <item>
                 <key> <string>serial</string> </key>
-                <value> <string>951.27801.5339.60876</string> </value>
+                <value> <string>951.29252.10342.1587</string> </value>
             </item>
             <item>
                 <key> <string>state</string> </key>
@@ -261,7 +261,7 @@
                     </tuple>
                     <state>
                       <tuple>
-                        <float>1464166945.92</float>
+                        <float>1464253720.38</float>
                         <string>UTC</string>
                       </tuple>
                     </state>
@@ -318,7 +318,7 @@
                     </tuple>
                     <state>
                       <tuple>
-                        <float>1457346986.01</float>
+                        <float>1453456749.69</float>
                         <string>UTC</string>
                       </tuple>
                     </state>

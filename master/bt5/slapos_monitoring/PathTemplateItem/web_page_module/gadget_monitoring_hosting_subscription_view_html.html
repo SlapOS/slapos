@@ -4,28 +4,12 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
-    <title>Monitoring Hosting Subscription</title>
+    <title>Monitoring Hosting Subscription View</title>
 
     <link href="gadget_monitoring_custom.css" rel="stylesheet" type="text/css"/>
 
     <script src="rsvp.js"></script>
     <script src="renderjs.js"></script>
-
-    <script id="template-hostings-list" type="text/x-handlebars-template">
-      {{#each hosting_list}}
-      <tr rel={{index}}>
-        <td>
-          <a class="ui-link" href="#{{status}}"><span class="label label-{{status}}">{{status}}</span></a>
-        </td>
-        <td>
-          <a class="ui-link" href="">{{title}}</a>
-        </td>
-        <td>
-          <a class="ui-link" href="">{{date}}</a>
-        </td>
-      </tr>
-      {{/each}}
-    </script>
 
     <script id="instance-details-widget-overview" type="text/x-handlebars-template">
       {{#if status_list_url}}
@@ -132,74 +116,35 @@
       {{/if}}
     </script>
     
-    <script src="gadget_monitoring_hosting_overview.js"></script>
+    <script src="gadget_monitoring_hosting_subscription_view.js"></script>
 
   </head>
 
   <body>
     <div data-gadget-url="gadget_monitoring_jio.html" data-gadget-scope="jio_gadget" data-gadget-sandbox="public"></div>
     <div data-gadget-url="gadget_monitoring_login_widget.html" data-gadget-scope="login_gadget" data-gadget-sandbox="public"></div>
-    <!--<div data-gadget-url="gadget_monitoring_document_edit.html" data-gadget-scope="config_gadget" data-gadget-sandbox="public"></div>-->
-    <div class="ui-grid-a ui-responsive">
-      <div class="ui-block-a">
-        
-        <div class="ui-panel-overview" style="min-height: 450px;">
-          <div class="overview-header">
-            <div class='content-title ui-instance-title'>
-              <div class="overview-title">
-                <i class="fa fa-globe"></i> <span>Hosting Subscriptions</span>
-              </div>
-              <div class="commands">
-              </div>
+    <div class="ui-responsive hosting-block">
+      <div class="signal ui-content-hidden"></div>
+      <div class="ui-panel-overview">
+        <div class="overview-header">
+          <div class='content-title ui-instance-title'>
+            <div class="overview-title">
+              <i class="fa fa-share-alt"></i> <span></span>
             </div>
-          </div>
-          <div class="overview-content">
-          
-            <div class="ui-listview-container">
-              <table class="ui-responsive ui-body-c ui-table-inset instance-overview">
-                <thead class="ui-bar-inherit">
-                  <tr>
-                    <th class="padding-10">Status</th>
-                    <th>Name</th>
-                    <th>Status Date</th>
-                  </tr>
-                </thead>
-                <tbody>
-
-                </tbody>
-                <tfoot class="ui-bar-inherit"></tfoot>
-              </table>
+            <div class="commands">
             </div>
-
           </div>
         </div>
-        
-      </div>
-      <div class="ui-block-b" style="position: relative">
-        <div class="signal ui-content-hidden"></div>
-        <div class="ui-panel-overview ui-content-hidden">
-          <div class="overview-header">
-            <div class='content-title ui-instance-title'>
-              <div class="overview-title">
-                <i class="fa fa-share-alt"></i> <span></span>
-              </div>
-              <div class="commands">
-              </div>
-            </div>
+        <div class="content-details">
+          <h2><i class="fa fa-wrench"></i> <strong>Software Instances Parameters</strong></h2>
+          <div style="overflow: auto;" class="padding-lr-10 instances-parameters">
           </div>
-          <div class="content-details">
-            <h2><i class="fa fa-wrench"></i> <strong>Instances Parameters</strong></h2>
-            <div style="overflow: auto;" class="padding-lr-10 instances-parameters">
-            </div>
-            <div class="padding-5"></div>
-            <h2><i class="fa fa-cubes"></i> <strong>Instances Status</strong></h2>
-            <div class="instances-status">
-            </div>
+          <div class="padding-5"></div>
+          <h2><i class="fa fa-cubes"></i> <strong>Software Instances Status</strong></h2>
+          <div class="instances-status">
           </div>
         </div>
       </div>
     </div>
-    
-    
   </body>
 </html>

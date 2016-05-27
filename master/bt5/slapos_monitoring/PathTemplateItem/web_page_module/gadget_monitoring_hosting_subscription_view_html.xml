@@ -2,7 +2,7 @@
 <ZopeData>
   <record id="1" aka="AAAAAAAAAAE=">
     <pickle>
-      <global name="Web Style" module="erp5.portal_type"/>
+      <global name="Web Page" module="erp5.portal_type"/>
     </pickle>
     <pickle>
       <dictionary>
@@ -24,6 +24,7 @@
             <key> <string>_Add_portal_content_Permission</string> </key>
             <value>
               <tuple>
+                <string>Assignee</string>
                 <string>Assignor</string>
                 <string>Manager</string>
               </tuple>
@@ -42,6 +43,8 @@
             <key> <string>_Modify_portal_content_Permission</string> </key>
             <value>
               <tuple>
+                <string>Assignee</string>
+                <string>Assignor</string>
                 <string>Manager</string>
               </tuple>
             </value>
@@ -64,7 +67,7 @@
             <key> <string>categories</string> </key>
             <value>
               <tuple>
-                <string>classification/collaborative/team</string>
+                <string>classification/collaborative/public</string>
               </tuple>
             </value>
         </item>
@@ -75,8 +78,12 @@
             </value>
         </item>
         <item>
+            <key> <string>content_type</string> </key>
+            <value> <string>text/html</string> </value>
+        </item>
+        <item>
             <key> <string>default_reference</string> </key>
-            <value> <string>gadget_monitoring_custom.css</string> </value>
+            <value> <string>gadget_monitoring_hosting_subscription_view.html</string> </value>
         </item>
         <item>
             <key> <string>description</string> </key>
@@ -86,7 +93,7 @@
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>gadget_monitoring_custom_css</string> </value>
+            <value> <string>gadget_monitoring_hosting_subscription_view_html</string> </value>
         </item>
         <item>
             <key> <string>language</string> </key>
@@ -96,7 +103,7 @@
         </item>
         <item>
             <key> <string>portal_type</string> </key>
-            <value> <string>Web Style</string> </value>
+            <value> <string>Web Page</string> </value>
         </item>
         <item>
             <key> <string>short_title</string> </key>
@@ -106,7 +113,7 @@
         </item>
         <item>
             <key> <string>title</string> </key>
-            <value> <string>Monitoring Custom css</string> </value>
+            <value> <string>Monitoring Hosting Subscription View</string> </value>
         </item>
         <item>
             <key> <string>version</string> </key>
@@ -168,7 +175,7 @@
           <dictionary>
             <item>
                 <key> <string>action</string> </key>
-                <value> <string>publish</string> </value>
+                <value> <string>publish_alive</string> </value>
             </item>
             <item>
                 <key> <string>actor</string> </key>
@@ -194,7 +201,7 @@
                     </tuple>
                     <state>
                       <tuple>
-                        <float>1451915043.24</float>
+                        <float>1464275301.8</float>
                         <string>UTC</string>
                       </tuple>
                     </state>
@@ -203,7 +210,7 @@
             </item>
             <item>
                 <key> <string>validation_state</string> </key>
-                <value> <string>published</string> </value>
+                <value> <string>published_alive</string> </value>
             </item>
           </dictionary>
         </list>
@@ -239,7 +246,7 @@
             </item>
             <item>
                 <key> <string>serial</string> </key>
-                <value> <string>951.30698.54042.4164</string> </value>
+                <value> <string>951.30694.32099.54323</string> </value>
             </item>
             <item>
                 <key> <string>state</string> </key>
@@ -257,7 +264,7 @@
                     </tuple>
                     <state>
                       <tuple>
-                        <float>1464340503.33</float>
+                        <float>1464340229.53</float>
                         <string>UTC</string>
                       </tuple>
                     </state>
@@ -280,9 +287,7 @@
           <dictionary>
             <item>
                 <key> <string>action</string> </key>
-                <value>
-                  <none/>
-                </value>
+                <value> <string>detect_converted_file</string> </value>
             </item>
             <item>
                 <key> <string>actor</string> </key>
@@ -298,7 +303,7 @@
             </item>
             <item>
                 <key> <string>external_processing_state</string> </key>
-                <value> <string>empty</string> </value>
+                <value> <string>converted</string> </value>
             </item>
             <item>
                 <key> <string>serial</string> </key>
@@ -316,7 +321,7 @@
                     </tuple>
                     <state>
                       <tuple>
-                        <float>1451914920.23</float>
+                        <float>1464275180.09</float>
                         <string>UTC</string>
                       </tuple>
                     </state>

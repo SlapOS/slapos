@@ -80,7 +80,7 @@
         </item>
         <item>
             <key> <string>default_reference</string> </key>
-            <value> <string>gadget_monitoring_widget_overview.html</string> </value>
+            <value> <string>gadget_monitoring_widget_instance_list.html</string> </value>
         </item>
         <item>
             <key> <string>description</string> </key>
@@ -110,7 +110,7 @@
         </item>
         <item>
             <key> <string>title</string> </key>
-            <value> <string>Monitoring Widget Overview</string> </value>
+            <value> <string>Monitoring Widget Software Instance List</string> </value>
         </item>
         <item>
             <key> <string>version</string> </key>
@@ -243,7 +243,7 @@
             </item>
             <item>
                 <key> <string>serial</string> </key>
-                <value> <string>951.27817.37423.50688</string> </value>
+                <value> <string>951.29269.36506.17954</string> </value>
             </item>
             <item>
                 <key> <string>state</string> </key>
@@ -261,7 +261,7 @@
                     </tuple>
                     <state>
                       <tuple>
-                        <float>1464168027.07</float>
+                        <float>1464254807.83</float>
                         <string>UTC</string>
                       </tuple>
                     </state>

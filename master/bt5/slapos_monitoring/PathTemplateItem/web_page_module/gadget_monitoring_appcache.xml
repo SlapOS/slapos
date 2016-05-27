@@ -145,49 +145,53 @@ gadget_monitoring_application_panel.html\n
 gadget_monitoring_chart.html\n
 gadget_monitoring_document_edit.html\n
 gadget_monitoring_header.html\n
-gadget_monitoring_hosting_overview.html\n
+gadget_monitoring_hosting_subscription_list.html\n
+gadget_monitoring_hosting_subscription_view.html\n
 gadget_monitoring_import_export.html\n
 gadget_monitoring_jio.html\n
 gadget_monitoring_login.html\n
 gadget_monitoring_login_widget.html\n
 gadget_monitoring_main.html\n
-gadget_monitoring_overview.html\n
 gadget_monitoring_process_view.html\n
 gadget_monitoring_promise_interface.html\n
 gadget_monitoring_resource_view.html\n
 gadget_monitoring_router.html\n
 gadget_monitoring_settings_configurator.html\n
+gadget_monitoring_software_instance_list.html\n
+gadget_monitoring_software_instance_view.html\n
 gadget_monitoring_status_grid.html\n
 gadget_monitoring_status_list.html\n
 gadget_monitoring_sync.html\n
+gadget_monitoring_widget_instance_list.html\n
 gadget_monitoring_widget_listbox.html\n
 gadget_monitoring_widget_listview.html\n
-gadget_monitoring_widget_overview.html\n
 gadget_monitoring_custom.css\n
 gadget_monitoring_tooltipster.css\n
 gadget_monitoring_application_panel.js\n
 gadget_monitoring_chart.js\n
 gadget_monitoring_document_edit.js\n
 gadget_monitoring_header.js\n
-gadget_monitoring_hosting_overview.js\n
+gadget_monitoring_hosting_subscription_list.js\n
+gadget_monitoring_hosting_subscription_view.js\n
 gadget_monitoring_import_export.js\n
 gadget_monitoring_jio.js\n
 gadget_monitoring_login.js\n
 gadget_monitoring_login_widget.js\n
 gadget_monitoring_main.js\n
-gadget_monitoring_overview.js\n
 gadget_monitoring_process_view.js\n
 gadget_monitoring_promise_interface.js\n
 gadget_monitoring_resource_view.js\n
 gadget_monitoring_router.js\n
+gadget_monitoring_software_instance_list.js\n
+gadget_monitoring_software_instance_view.js\n
 gadget_monitoring_static.js\n
 gadget_monitoring_status_grid.js\n
 gadget_monitoring_status_list.js\n
 gadget_monitoring_sync.js\n
 gadget_monitoring_tooltipster.min.js\n
+gadget_monitoring_widget_instance_list.js\n
 gadget_monitoring_widget_listbox.js\n
 gadget_monitoring_widget_listview.js\n
-gadget_monitoring_widget_overview.js\n
 gadget_translation.js\n
 gadget_translation_data.js\n
 erp5_launcher.js\n
@@ -330,7 +334,7 @@ NETWORK:\n
             </item>
             <item>
                 <key> <string>serial</string> </key>
-                <value> <string>951.21023.22440.29593</string> </value>
+                <value> <string>951.30729.47924.44561</string> </value>
             </item>
             <item>
                 <key> <string>state</string> </key>
@@ -348,7 +352,7 @@ NETWORK:\n
                     </tuple>
                     <state>
                       <tuple>
-                        <float>1464194710.25</float>
+                        <float>1464342540.22</float>
                         <string>UTC</string>
                       </tuple>
                     </state>

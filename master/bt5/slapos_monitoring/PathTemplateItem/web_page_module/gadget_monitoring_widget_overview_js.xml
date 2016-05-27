@@ -76,7 +76,7 @@
         </item>
         <item>
             <key> <string>default_reference</string> </key>
-            <value> <string>gadget_monitoring_widget_overview.js</string> </value>
+            <value> <string>gadget_monitoring_widget_instance_list.js</string> </value>
         </item>
         <item>
             <key> <string>description</string> </key>
@@ -106,7 +106,7 @@
         </item>
         <item>
             <key> <string>title</string> </key>
-            <value> <string>Monitoring Widget Overview JS</string> </value>
+            <value> <string>Monitoring Widget Software Instance List JS</string> </value>
         </item>
         <item>
             <key> <string>version</string> </key>
@@ -239,7 +239,7 @@
             </item>
             <item>
                 <key> <string>serial</string> </key>
-                <value> <string>951.26805.9745.42530</string> </value>
+                <value> <string>951.29330.13166.23057</string> </value>
             </item>
             <item>
                 <key> <string>state</string> </key>
@@ -257,7 +257,7 @@
                     </tuple>
                     <state>
                       <tuple>
-                        <float>1464168098.17</float>
+                        <float>1464258374.01</float>
                         <string>UTC</string>
                       </tuple>
                     </state>

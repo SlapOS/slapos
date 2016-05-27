@@ -1,0 +1,186 @@
+/*global window, rJS, Handlebars */
+/*jslint nomen: true, indent: 2, maxerr: 3*/
+(function (window, rJS, Handlebars) {
+  "use strict";
+
+  var gadget_klass = rJS(window),
+    templater = gadget_klass.__template_element,
+
+    hosting_widget_template = Handlebars.compile(
+      templater.getElementById("template-hostings-list").innerHTML
+    );
+
+  function safeGet(gadget, url) {
+    var document_id = 'monitor.global';
+    gadget.props.jio_gadget.createJio({
+      type: "query",
+      sub_storage: {
+        type: "drivetojiomapping",
+        sub_storage: {
+          type: "dav",
+          url: url
+        }
+      }
+    });
+    return gadget.props.jio_gadget.get(document_id)
+      .push(function (doc) {
+        return doc;
+      }, function (error) {
+        console.log(error);
+        return undefined;
+      });
+  }
+
+  function getHostingData(gadget, url_list) {
+    var promise_list = [],
+      i;
+    for (i = 0; i < url_list.length; i += 1) {
+      gadget.props.jio_gadget.createJio({
+        type: "query",
+        sub_storage: {
+          type: "drivetojiomapping",
+          sub_storage: {
+            type: "dav",
+            url: url_list[i]
+          }
+        }
+      });
+      promise_list.push(safeGet(gadget, url_list[i]));
+    }
+    return RSVP.all(promise_list);
+  }
+
+  gadget_klass
+    .ready(function (gadget) {
+      gadget.props = {};
+      gadget.props.hosting_list = [];
+      gadget.props.opml_key_list = [];
+      gadget.props.title = 'Monitoring Hosting Subscriptions';
+      return gadget.getDeclaredGadget("login_gadget")
+        .push(function (login_gadget) {
+          gadget.props.login_gadget = login_gadget;
+        });
+    })
+    .ready(function (gadget) {
+      return gadget.getElement()
+        .push(function (element) {
+          gadget.props.element = element;
+          gadget.props.render_deferred = RSVP.defer();
+        });
+    })
+    .ready(function (gadget) {
+      return gadget.getDeclaredGadget("jio_gadget")
+        .push(function (jio_gadget) {
+          gadget.props.jio_gadget = jio_gadget;
+        });
+    })
+    .declareAcquiredMethod("getSetting", "getSetting")
+    .declareAcquiredMethod("setSetting", "setSetting")
+    .declareAcquiredMethod("updateHeader", "updateHeader")
+    .declareMethod("render", function (options) {
+      var gadget = this,
+        opml_tmp_key_list,
+        hosting_url_list;
+      //return gadget.props.jio_gadget.getMonitorUrlList()
+      gadget.props.options = options;
+      return gadget.updateHeader({
+          title: gadget.props.title
+        })
+        .push(function () {
+          return gadget.getSetting('monitor_url_description');
+        })
+        .push(function (url_description_dict) {
+          var key,
+            promise_list = [];
+          gadget.props.opml_dict = url_description_dict;
+          opml_tmp_key_list = [];
+          for (key in url_description_dict) {
+            opml_tmp_key_list.push(key);
+            promise_list.push(gadget.props.jio_gadget.getMonitorUrlList(undefined,
+              url_description_dict[key].title));
+          }
+          return RSVP.all(promise_list);
+        })
+        .push(function (url_list) {
+          var i,
+            j,
+            promise_list = [];
+          for (i = 0; i < url_list.length; i += 1) {
+            if (url_list[i]) {
+              promise_list.push(getHostingData(gadget, url_list[i]));
+            } else {
+              //This Feed is not available, remove from key_list
+              opml_tmp_key_list[i] = undefined;
+            }
+          }
+          return RSVP.all(promise_list);
+        })
+        .push(function (document_list) {
+          var i,
+            status,
+            hosting_dict,
+            hosting_title,
+            date,
+            content,
+            j;
+
+          for (i = 0; i < opml_tmp_key_list.length; i += 1) {
+            if (opml_tmp_key_list[i] !== undefined)  {
+              gadget.props.opml_key_list.push(opml_tmp_key_list[i]);
+            }
+          }
+          for (i = 0; i < document_list.length; i += 1) {
+            hosting_dict = {};
+            status = 'OK';
+            hosting_dict.instance_list = [];
+            date = '';
+            for (j = 0; j < document_list[i].length; j += 1) {
+              if (document_list[i][j] === undefined) {
+                continue;
+              }
+              hosting_dict.instance_list.push({
+                title: document_list[i][j].title,
+                status: document_list[i][j].status,
+                url: document_list[i][j]._links.monitor.href
+              });
+              if (document_list[i][j].status === 'ERROR') {
+                if (status !== 'ERROR') {
+                  status = 'ERROR';
+                  date = document_list[i][j].date || '';
+                  hosting_title = document_list[i][j]['hosting-title'] || '';
+                }
+              } else if (document_list[i][j].status === 'WARNING') {
+                if (status !== 'ERROR' && status !== 'WARNING') {
+                  status = 'WARNING';
+                  date = document_list[i][j].date || '';
+                  hosting_title = document_list[i][j]['hosting-title'] || '';
+                }
+              } else if (date === '') {
+                date = document_list[i][j].date || '';
+                hosting_title = document_list[i][j]['hosting-title'] || '';
+              }
+            }
+            hosting_dict.status = status;
+            hosting_dict.title = hosting_title;
+            hosting_dict.date = date;
+            hosting_dict.href = "#page=hosting_subscription_view&key=" +
+              gadget.props.opml_key_list[i];
+            gadget.props.hosting_list.push(hosting_dict);
+          }
+          content = hosting_widget_template({
+            hosting_list: gadget.props.hosting_list
+          });
+          gadget.props.element.querySelector('.ui-block-a table tbody')
+            .innerHTML = content;
+
+          return gadget.props.render_deferred.resolve();
+        });
+    })
+
+
+    .declareService(function () {
+      var gadget = this;
+
+    });
+
+}(window, rJS, Handlebars));

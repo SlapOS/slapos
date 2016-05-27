@@ -25,6 +25,7 @@
             <tr rel="{{index}}">
               <td class="ui-text-center"><a class="ui-link" href="{{href}}">
                 <span class="ui-status-icon ui-status-{{status}}"></span></a></td>
+              <td><a class="ui-link" href="{{href}}">{{date}}</a></td>
               <td><a class="ui-link" href="{{href}}">{{value}}</a></td>
               <td><a class="ui-link" href="{{href}}">{{hosting_value}}</a></td>
             </tr>
@@ -62,105 +63,12 @@
       </div>
     </script>
 
-    <script id="details-widget-overview" type="text/x-handlebars-template">
-      <div class="overview-header">
-        <div class='content-title ui-instance-title'>
-          <div class="overview-title">
-            <i class="fa fa-cubes"></i><span>
-              {{#if root_title}}
-              {{root_title}} >&nbsp;
-              {{/if}}
-              {{title}}
-              </span>
-          </div>
-          <div class="commands">
-            
-          </div>
-        </div>
-      </div>
-      <div class="content-details">
-        <div class="ui-text-left" style="padding-bottom: 15px;">
-          <h2><i class="fa fa-info-circle"></i> <strong>Instance State Information</strong></h2>
-          <div class="padding-10">
-            <div class="ui-grid-a ui-responsive">
-              <div class="ui-block-a">
-                <fieldset data-role="controlgroup" data-type="horizontal">
-                  {{#if resource_url }}
-                  <a href="{{resource_url}}" class="ui-btn ui-corner-all ui-btn-inline ui-mini" title="Instance Resource comsumption"><i class="fa fa-pie-chart"></i> Resources</a>
-                  {{/if}}
-                  {{#if process_url }}
-                  <a href="{{process_url}}" class="ui-btn ui-corner-all ui-btn-inline ui-mini" title="Processes usage"><i class="fa fa-list-alt"></i> Processes</a>
-                  {{/if}}
-                </fieldset>
-              </div>
-              <div class="ui-block-b">
-                <fieldset data-role="controlgroup" data-type="horizontal">
-                  {{#if public_url}}
-                  <!--<a class="ui-btn ui-corner-all ui-btn-inline ui-mini" target='_blank' href="{{public_url}}" title="Public"><i class="fa fa-folder-open-o"></i> Public</a>-->
-                  {{/if}}
-                  {{#if private_url}}
-                  <a class="ui-btn ui-corner-all ui-btn-inline ui-mini" target='_blank' href="{{private_url}}" title="Browse Private Directory"><i class="fa fa-lock"></i> Private</a>
-                  {{/if}}
-                  {{#if rss_url}}
-                  <a class="ui-btn ui-corner-all ui-btn-inline ui-mini" target='_blank' href="{{rss_url}}" title="RSS"><i class="fa fa-rss-square"></i> RSS</a>
-                  {{/if}}
-                </fieldset>
-              </div>
-            </div>
-            <table data-role="table" data-mode="columntoggle" class="ui-responsive table-stroke">
-              <tr>
-                <th><i class="fa fa-tachometer"></i> <strong>Status</strong></th>
-                <td><span class="label label-{{status}}">{{status}}</span></td>
-                <td title="Report Date">{{date}}</td>
-              </tr>
-              
-              {{#with instance}}
-              <tr>
-                <th><i class="fa fa-desktop"></i> <strong>Computer</strong></th>
-                <td title="Computer Reference">{{computer}}</td>
-                <td title="Partition Reference">{{partition}}</td>
-              </tr>
-              <tr>
-                <th><i class="fa fa-globe"></i> <strong>IP Addresses</strong></th>
-                <td title="IPv4">{{ipv4}}</td>
-                <td title="IPv6">{{ipv6}}</td>
-              </tr>
-              <tr>
-                <th><i class="fa fa-square-o" aria-hidden="true"></i> <strong>Software Type</strong></th>
-                <td title="Software type">{{software-type}}</td>
-                <td><a style="padding: 0; min-height: initial;" href="{{software-release}}" title="{{software-release}}" target='_blank'>Click to open <i class="fa fa-external-link"></i></a></td>
-              </tr>
-              {{/with}}
-            </table>
-          </div>
-        </div>
-      </div>
-    </script>
-
-    <script id="promiselist-widget-template" type="text/x-handlebars-template">
-      {{#if promise_list}}
-      <h2><i class="fa fa-th-list"></i> <strong>Instance Promises List</strong></h2>
-      <div style="overflow: auto;" class="padding-lr-10">
-        <table data-role="table" data-mode="columntoggle" class="table-stroke">
-          {{#each promise_list}}
-          <tr title="Promise reported at {{../date}}">
-            <td><a href="{{href}}">{{title}}</a></td>
-            <td style="text-align: center;">{{time}}</td>
-            <td style="text-align: center;"><span class="label label-{{status}}">{{status}}</span></td>
-          </tr>
-          {{/each}}
-        </table>
-      </div>
-      {{/if}}
-    </script>
-
     <!-- custom script -->
-    <script src="gadget_monitoring_widget_overview.js" type="text/javascript"></script>
+    <script src="gadget_monitoring_widget_instance_list.js" type="text/javascript"></script>
 
     </head>
   <body>
     <div data-gadget-url="gadget_monitoring_jio.html" data-gadget-scope="jio_gadget" data-gadget-sandbox="public"></div>
-    <div data-gadget-url="gadget_monitoring_login_widget.html" data-gadget-scope="login_gadget" data-gadget-sandbox="public"></div>
     <div class="overview-filter-panel">
       <form class='filter'>
       	<h2>Configure Displayed Result</h2>
@@ -179,32 +87,18 @@
       </form>
     </div>
     
-    <div class="ui-grid-a ui-responsive custom-listbox">
-      <div class="ui-block-a">
-        <div class="ui-panel-overview" style="min-height: 450px;">
-          <div class="overview-header">
-            <div class='content-title ui-instance-title'>
-              <div class="overview-title">
-                <i class="fa fa-desktop"></i><span>Software Instances List</span>
-              </div>
-              <div class="commands">
-              </div>
+    <div class="ui-grid-solo ui-responsive custom-listbox">
+      <div class="ui-panel-overview" style="min-height: 450px;">
+        <div class="overview-header">
+          <div class='content-title ui-instance-title'>
+            <div class="overview-title">
+              <i class="fa fa-desktop"></i><span>Software Instances List</span>
+            </div>
+            <div class="commands">
             </div>
           </div>
-          <div class="overview-content">
-          </div>
         </div>
-      </div>
-      <div class="ui-block-b" style="position: relative">
-        <div class="signal ui-content-hidden"></div>
-        <div class="ui-panel-overview">
-          <div class="overview-details">
-          </div>
-          <div style="margin: 0 20px;">
-            <div data-gadget-url="gadget_erp5_graph.html" data-gadget-scope="graph_gadget" class="graph graph-medium "></div>
-          </div>
-          <div class="promise-list">
-          </div>
+        <div class="overview-content">
         </div>
       </div>
     </div>

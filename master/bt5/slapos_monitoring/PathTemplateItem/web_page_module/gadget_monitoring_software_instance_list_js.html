@@ -22,8 +22,9 @@
           "title": 'Software Instances List'
         },
         listview_options = {
-          search_page: 'overview',
+          search_page: 'software_instance_list',
           search: options.search,
+          filter: options.filter,
           selection: '',
           column: {
             select: 'title',
@@ -40,7 +41,8 @@
             {select: 'hosting-title', title: 'Date'}
           ],
           query: {
-            select_list: ['title', 'status', 'date', '_links', 'state', 'hosting-title'],
+            select_list: ['title', 'status', 'date', '_links', 'state',
+              'hosting-title'],
             //query: '_id:"monitor.global"',
             sort_on: [["status", "ascending"]]
           }
@@ -48,23 +50,9 @@
 
       return gadget.updateHeader(header)
         .push(function () {
-          var filter_part_list = [],
-            j;
-
-          /*if (options.sort_on && options.sort_on !== 'status') {
-            listview_options.query.sort_on = [[options.sort_on, 'ascending']];
-          }*/
-          if (options.status && options.status !== '') {
-            for (j = 0; j < options.status.split('+').length; j += 1) {
-              filter_part_list.push('(status:"' + options.status.split('+')[j].toUpperCase() + '")');
-            }
-            listview_options.query.query += ' AND (' + filter_part_list.join(' OR ') + ')';
-          }
           return gadget.property_dict.listview.render(listview_options);
         });
     })
-    .declareAcquiredMethod("getSetting", "getSetting")
-    .declareAcquiredMethod("redirect", "redirect")
     .declareAcquiredMethod("updateHeader", "updateHeader");
 
 

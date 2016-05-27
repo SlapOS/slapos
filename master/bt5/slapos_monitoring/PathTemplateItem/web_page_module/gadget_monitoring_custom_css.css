@@ -180,7 +180,7 @@ html .ui-panel-overview table {
 }
 
 html .content-details table tr th, html .content-details table tr td {
-  padding: 5px;
+  padding: 7px;
 }
 html .content-details .instances-parameters table tr td {
   padding: 0 0 0 10px;
@@ -468,6 +468,9 @@ html .custom-grid-wrap table thead tr th {
   color: #344558;
   padding: 8px 0;
 }
+.graph-full {
+  margin: 0 20px;
+}
 .graph-medium {
   height: 200px;
   width: 100%;
@@ -482,6 +485,10 @@ html .custom-grid-wrap table thead tr th {
 }
 .ui-grid-column .graph-state-labels label{
   font-weight: normal;
+}
+
+.hosting-block {
+  width: 80%;
 }
 
 /*  INfo Box */
@@ -812,6 +819,9 @@ margin-top: 5px;
 
 /************** Media @ **********************/
 @media all and (max-width: 62em) {
+  .m-hidden {
+    display: none;
+  }
   form.search .ui-block-a {
     width: 60%;
     float: left;
@@ -822,6 +832,21 @@ margin-top: 5px;
   }
   .ui-panel-overview {
     margin: 15px 0 20px 0;
+  }
+  html .ui-content {
+    padding: .1em;
+  }
+  html .jqm-navmenu-panel .ui-content {
+    padding: 1em;
+  }
+  .graph {
+    margin: 10px 0;
+  }
+  .graph-full {
+    margin: 0 10px;
+  }
+  .hosting-block {
+    width: 100%;
   }
   html table:not(.ui-responsive) tbody tr td:first-child a, html table:not(ui-responsive) tbody tr th:first-child a {
     position: relative;
