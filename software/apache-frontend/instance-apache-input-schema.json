@@ -5,8 +5,8 @@
 	"title": "Input Parameters",
 	"properties": {
 		"public-ipv4": {
-			"title": "Backend URL",
-			"description": "Url of the backend",
+			"title": "Public IPv4",
+			"description": "Public IPv4 that will be provided to Slaves to configure DNS.",
 			"type": "string"
 		},
 		"-frontend-authorized-slave-string": {
@@ -16,30 +16,32 @@
 		},
 		"apache-key": {
 			"title": "Apache Key",
-			"description": "Url of the Backend",
+			"description": "Apache Key",
+                        "textarea": true,
 			"type": "string"
 		},
 		"apache-certificate": {
 			"title": "Apache Certificate",
 			"description": "Apache Certificate",
+                        "textarea": true,
 			"type": "string"
 		},
 		"apache-ca-certificate": {
 			"title": "Apache CA Certificate",
 			"description": "Apache CA Certificate",
+                        "textarea": true,
 			"type": "string"
 		},
 		"domain": {
 			"title": "Domain",
-			"description": "Base Domain for create subdomains.",
+			"description": "Base Domain for create subdomains (ie.: example.com).",
 			"type": "string",
 			"pattern": "^([a-zA-Z0-9]([a-zA-Z0-9\\-]{0,61}[a-zA-Z0-9])?\\.)+[a-zA-Z]{2,6}$"
 		},
 		"-frontend-quantity": {
 			"title": "Frontend Replication Quantity",
 			"description": "Quantity of Frontends Replicate.",
-			"type": "integer",
-			"default": ""
+			"type": "integer"
 		}
 	}
 }
