@@ -1,58 +1,82 @@
 Changes
 =======
 
+1.0.31 (2016-05-30)
+-------------------
+
+  * Implement cross recipe cache for registerComputerPartition
+  * Fixup! workarround for long shebang (place script on bin)  
+
+1.0.30 (2016-05-23)
+-------------------
+
+  * Implement a workarround for long shebang
+  * Implement Validation for user inputs ssl certificates 
+
 1.0.25 (2016-04-15)
 -------------------
- * fixup slap configuration: provide instance and root instance title
+
+  * fixup slap configuration: provide instance and root instance title
 
 1.0.22 (2016-04-01)
 -------------------
- * slap configuration: provide instance and root instance title
+
+  * slap configuration: provide instance and root instance title
 
 1.0.16 (2015-10.27)
 -------------------
- * kvm recipe: fix bugs dowload image and disk creation
+
+  * kvm recipe: fix bugs dowload image and disk creation
 
 1.0.14 (2015-10.26)
+
 -------------------
- * kvm recipe: Allow to set keyboard layout language used by qemu and VNC
- * simplehttpserver-recipe: fix encoding error
+  * kvm recipe: Allow to set keyboard layout language used by qemu and VNC
+  * simplehttpserver-recipe: fix encoding error
 
 0.103 (2015-07-24)
 ------------------
+
   * kvm: fix issues with boolean parameters and add 'qed' in external disk format list.
   * simplehttpserver-recipe: Add support for POST method which only get content and save into specified file.
 
 0.102 (2015-05-22)
 ------------------
+
  * kvm-recipe: vm of kvm-cluster can get ipv4/hostname of all other vm in the same cluster
  * simplehttpserver-recipe: simple http server to serve files
 
 0.101 (2015-04-29)
 ------------------
+
  * kvm recipe: new parameters: external-disk-format, numa and cpu-options.
  * kvm recipe: allow guest VM to connect to host http service via a local predefined ipv4 address (guestfwd).
 
 0.100 (2015-04-20)
 ------------------
+
  * re6stnet recipe: re6st-registry log can now be reopened with SIGUSR1
  * re6stnet recipe: re6st certificate generation is improved.
 
 0.99 (2015-04-10)
 -----------------
+
  * re6stnet: new recipe to deploy re6st registry (re6st master) with slapos.
 
 0.98 (2015-04-09)
 -----------------
+
  * shellinabox: do not run in debug mode, it is much slower !
 
 0.97 (2015-03-26)
 -----------------
+
  * switch softwaretype recipe: the recipe is backward compatible with old slapos node packages.
  * kvm recipe: Avoid getting wrong storage path when creating kvm external disk
 
 0.96 (2015-03-20)
 -----------------
+
  * slap configuration: recipe can read from master network information releated to a tap interface
  * slap configuration: recipe will setup data folder in DATA directory of computer partition if disk is mounted
  * switch softwaretype recipe: also generate tap network information when they exist
