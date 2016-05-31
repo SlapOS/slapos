@@ -1,5 +1,40 @@
 #! {{ bash_path }}
 
+function increase_revision_number() {
+  # this increase the revision number an ebuild
+  # (except for revision number 9999 which is a value for "live ebuild", for dev revisions)
+  # see https://devmanual.gentoo.org/general-concepts/ebuild-revisions/
+
+  if [ -z "$1" ] ; then
+    echo "ERROR: No parameter given to function: increase_revision_number."
+    echo "Usage: increase_revision_number /path/to/dir/containing/ebuild"
+    exit 1
+  elif [ -d "$1" ]; then
+    DIR="$1"
+    CURRENT_FILE=""
+    CURRENT_REVISION=0
+    # get the biggest revision number
+    # XXX: may break if there are many version of an ebuild
+    # (eg: bash-4.3_p42-r4.ebuild and bash-3.7-r8.ebuild)
+    for FILENAME in $(find "${DIR}" -maxdepth 1 -regextype sed -regex .*-r[0-9]*\.ebuild); do
+      echo $FILENAME
+      REVISION="$(echo ${FILENAME} | rev | cut -d- -f1 | rev | tr -d [:alpha:] | tr -d [:punct:])"
+      echo "${REVISION}"
+      if [ "$CURRENT_REVISION" -lt "$REVISION" ] ; then
+          CURRENT_REVISION=${REVISION}
+          CURRENT_FILE=${FILENAME}
+      fi
+    done
+    if [ "$CURRENT_REVISION" -ne "9999" ]; then
+      # increase REVISION
+      NEW_REVISION=$((CURRENT_REVISION+1))
+      NEW_FILE="$(echo ${CURRENT_FILE} | sed -r 's/-r'${CURRENT_REVISION}'/-r'${NEW_REVISION}'/')"
+      echo "changing revision number: ${CURRENT_FILE} -> ${NEW_FILE}"
+      mv "${CURRENT_FILE}" "${NEW_FILE}"
+    fi
+  fi
+}
+
 ######################## Download of sources using the "repo" command ########################
 DL_LOG="{{ instance_log_dir }}/cros_sources_dl.log"
 BRANCH="{{ branch }}"
@@ -38,10 +73,10 @@ cros_sdk --download || { echo "Problem while entering chroot or downloading chro
 # it is needed by re6st
 # just need to change -sqlite by sqlite on the right line
 # same for IPv6 support
-PACKAGE_USE_FILE=${CHROMIUM_OVERLAY}/profiles/targets/chromeos/package.use
+PACKAGE_USE_FILE="${CHROMIUM_OVERLAY}/profiles/targets/chromeos/package.use"
 line_number=$(sed -n '/dev-lang\/python/=' ${PACKAGE_USE_FILE})
 if [ $line_number ] ; then
-    echo $line_number
+    echo "$line_number"
     sed -i "${line_number}s/-sqlite/sqlite/" ${PACKAGE_USE_FILE}
     if [[ ! $(sed -n ${line_number}p ${PACKAGE_USE_FILE} | grep ipv6) ]]; then
         sed -i "${line_number}s/$/ ipv6/" ${PACKAGE_USE_FILE}
@@ -51,14 +86,12 @@ fi
 # add some ebuilds, specific to NayuOS
 for category in $( ls {{ ebuilds_dir }} ); do
   echo ${category}
-  cp -R {{ ebuilds_dir }}/${category}/* ${CHROMIUM_OVERLAY}/${category}/
+  cp -R "{{ ebuilds_dir }}/${category}/"* "${CHROMIUM_OVERLAY}/${category}/"
 done
 
 install -m 770 "{{ scripts_dir }}/test_nayuos_image" "{{ cros_location }}/{{ branch }}/src/scripts/test_nayuos_image"
 
 ### packages management ###
-
-BASE_CHROMEOS_DEV_ROOT_EBUILD=${CHROMIUM_OVERLAY}/chromeos-base/chromeos-dev-root/chromeos-dev-root-0.0.1.ebuild
 VIRTUAL_CHROMEOS_OS_DEV_EBUILD=${CHROMIUM_OVERLAY}/virtual/target-chromium-os-dev/target-chromium-os-dev-1.ebuild
 
 # change the virtual ebuild responsible for installing all packages to add the ones
@@ -72,10 +105,15 @@ for package in {{ nayu_dev_packages }} ; do
   fi
 done
 
+increase_revision_number ${CHROMIUM_OVERLAY}/virtual/target-chromium-os-dev
+
 # do not install the Upstart init script that starts ssh daemon at boot time
 rm ${CHROMIUM_OVERLAY}/chromeos-base/chromeos-sshd-init/files/openssh-server.conf
 sed -i -n '/src_install/q;p' ${CHROMIUM_OVERLAY}/chromeos-base/openssh-server-init/openssh-server-init-0.0.1.ebuild
 sed -i -n '/src_install/q;p' ${CHROMIUM_OVERLAY}/chromeos-base/chromeos-sshd-init/chromeos-sshd-init-0.0.1.ebuild
+
+increase_revision_number ${CHROMIUM_OVERLAY}/chromeos-base/openssh-server-init/
+increase_revision_number ${CHROMIUM_OVERLAY}/chromeos-base/chromeos-sshd-init/
 
 # bashrc modifications
 BASH_EBUILD_DIR={{ cros_location }}/{{ branch }}/src/third_party/portage-stable/app-shells/bash
@@ -94,14 +132,8 @@ if [ "\${less_path}" ] ; then
 fi" >> ${BASH_EBUILD_DIR}/files/dot-bashrc
 fi
 
-# increase the revision number
-# XXX: remove hardcoded revision numbers
-cd ${CHROMIUM_OVERLAY}/chromeos-base/openssh-server-init/
-ln -s openssh-server-init-0.0.1-r24.ebuild openssh-server-init-0.0.1-r25.ebuild
-cd ${CHROMIUM_OVERLAY}/chromeos-base/chromeos-sshd-init/
-ln -s chromeos-sshd-init-0.0.1-r5.ebuild chromeos-sshd-init-0.0.1-r6.ebuild
-cd ${BASH_EBUILD_DIR}
-ln -s bash-4.2_p48-r1.ebuild bash-4.2_p48-r2.ebuild
+# XXX: hardcoded revision numbers...
+increase_revision_number ${BASH_EBUILD_DIR}
 
 ######################################## Build ##############################################
 BOARDS="{{ boards_list }}"
@@ -139,8 +171,8 @@ for board in ${BOARDS} ; do
   cros_sdk -- ./build_image --board=${board} dev >> "${BUILD_LOG}" \
     && cros_sdk -- rm -f $NAYU_IMAGE_LOCATION && cros_sdk -- touch $NAYU_IMAGE_LOCATION \
     && cros_sdk -- cros flash --board=${board} file://$NAYU_IMAGE_LOCATION >> "${BUILD_LOG}" \
+    && cros_sdk -- ./test_nayuos_image ${board} > "${TEST_LOG}" \
     || { echo "An error occured while building ${board} NayuOS image. Exiting." ; exit 1 ;}
-#     && cros_sdk -- ./test_nayuos_image ${board} > "${TEST_LOG}" \
 
   # save ~15Go/device but delete cache (next build will be as long)
   if [ ${KEEP_CACHE,,} == "no" ] ; then
