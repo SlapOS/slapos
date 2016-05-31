@@ -1,0 +1,40 @@
+# default fluentd configuration
+# TODO: automatically point to log files of interest in the various slapparts
+<match debug.**>
+  @type stdout
+  @id stdout_output
+</match>
+
+{% set source_log_directory = slapparameter_dict.get('source_log_directory', '')  -%}
+{% set source_log_filename = slapparameter_dict.get('source_log_filename', '')  -%}
+{% set source_log_format = slapparameter_dict.get('source_log_format', '')  -%}
+{% set wendelin_streamtool_uri = slapparameter_dict.get('wendelin_streamtool_uri', '')  -%}
+{% set wendelin_password = slapparameter_dict.get('wendelin_password', '')  -%}
+{% set wendelin_user = slapparameter_dict.get('wendelin_user', '')  -%}
+{% set wendelin_tag = slapparameter_dict.get('wendelin_tag', '')  -%}
+
+# Windelin instance specific
+# XXX: source_log_directory is relative, make it absolute.
+<source>
+  @type          tail
+  format         {{ source_log_format }}
+  path           {{ source_log_directory }}/{{ source_log_filename }}
+  pos_file       {{ source_log_directory }}/{{ source_log_filename }}.pos
+  tag            {{ wendelin_tag }} 
+  read_from_head true
+</source>
+
+{% if wendelin_streamtool_uri and wendelin_password and wendelin_user -%}
+<match {{ wendelin_tag }}>
+  
+  @type          wendelin
+  @id            wendelin_out
+
+  streamtool_uri {{ wendelin_streamtool_uri }} 
+  user           {{ wendelin_user }}
+  password       {{ wendelin_password }}
+
+  buffer_type     memory
+  flush_interval  20s
+</match>
+{% endif -%}
