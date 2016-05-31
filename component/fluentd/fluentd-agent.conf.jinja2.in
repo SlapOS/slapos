@@ -13,7 +13,7 @@
 {% set wendelin_user = slapparameter_dict.get('wendelin_user', '')  -%}
 {% set wendelin_tag = slapparameter_dict.get('wendelin_tag', '')  -%}
 
-# Windelin instance specific
+# Wendelin instance specific
 # XXX: source_log_directory is relative, make it absolute.
 <source>
   @type          tail
