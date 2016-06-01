@@ -126,6 +126,14 @@
                           <string>URL</string>
                         </tuple>
                         <tuple>
+                          <string>aggregate_title</string>
+                          <string>Computer</string>
+                        </tuple>
+                        <tuple>
+                          <string>destination_section_title</string>
+                          <string>Owner</string>
+                        </tuple>
+                        <tuple>
                           <string>translated_validation_state_title</string>
                           <string>State</string>
                         </tuple>
