@@ -990,7 +990,7 @@ class SlapTool(BaseTool):
     Log the software release status
     """
     computer_document = self._getComputerDocument(computer_id)
-    software_installation_reference = self._getCachedSoftwareInstallationReference(url,
+    software_installation_reference = self._getSoftwareInstallationReference(url,
       computer_document)
     user = self.getPortalObject().portal_membership.\
         getAuthenticatedMember().getUserName()
@@ -1003,7 +1003,7 @@ class SlapTool(BaseTool):
     Log the software release status
     """
     computer_document = self._getComputerDocument(computer_id)
-    software_installation_reference = self._getCachedSoftwareInstallationReference(url,
+    software_installation_reference = self._getSoftwareInstallationReference(url,
       computer_document)
     user = self.getPortalObject().portal_membership.\
         getAuthenticatedMember().getUserName()
@@ -1258,6 +1258,8 @@ class SlapTool(BaseTool):
       partition_parameter_kw = dict()
     if filter_xml:
       filter_kw = xml_marshaller.xml_marshaller.loads(filter_xml)
+      if software_type == 'pull-backup' and not 'retention_delay' in filter_kw:
+        filter_kw['retention_delay'] = 7.0
     else:
       filter_kw = dict()
 
@@ -1430,19 +1432,10 @@ class SlapTool(BaseTool):
           in software_installation_list])
       ))
   
-  def _getNonCachedSoftwareInstallationReference(self, url, computer_document):
+  def _getSoftwareInstallationReference(self, url, computer_document):
     return self._getSoftwareInstallationForComputer(url,
               computer_document).getReference()
   
-  def _getCachedSoftwareInstallationReference(self, url, computer_document):
-    """
-    Get the software installation reference (with this url) for the computer.
-    """
-    result = CachingMethod(self._getNonCachedSoftwareInstallationReference,
-        id='_getCachedSoftwareInstallationReference',
-        cache_factory='slap_cache_factory')(url, computer_document)
-    return result
-
   def _getSoftwareInstanceForComputerPartition(self, computer_id,
       computer_partition_id, slave_reference=None):
     computer_partition_document = self._getComputerPartitionDocument(
@@ -1575,7 +1568,7 @@ class SlapTool(BaseTool):
     Log the computer status
     """
     computer_document = self._getComputerDocument(computer_id)
-    software_installation_reference = self._getCachedSoftwareInstallationReference(url,
+    software_installation_reference = self._getSoftwareInstallationReference(url,
       computer_document)
     user = self.getPortalObject().portal_membership.\
         getAuthenticatedMember().getUserName()
