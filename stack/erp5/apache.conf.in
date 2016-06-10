@@ -58,7 +58,7 @@ SSLCARevocationFile {{ parameter_dict['crl'] }}
 
 ErrorLog "{{ parameter_dict['error-log'] }}"
 # Default apache log format with request time in microsecond at the end
-LogFormat "%h %l %u %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\" %D" combined
+LogFormat "%{X-Forwarded-For}i %l %u %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\" %D" combined
 CustomLog "{{ parameter_dict['access-log'] }}" combined
 
 <Directory />

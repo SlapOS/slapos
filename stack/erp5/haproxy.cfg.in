@@ -35,6 +35,8 @@ defaults
   # is configured with maxconn to 1, without this option browsers are unable
   # to render a page
   option forceclose
+  # Add forwardfor header so that application can actually see client's IP
+  option forwardfor
 
 {% for name, (port, backend_list) in sorted(parameter_dict['backend-dict'].iteritems()) -%}
 listen {{ name }}
