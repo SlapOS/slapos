@@ -28,53 +28,6 @@
       + ":" + addZero(d.getMinutes()) + ":" + addZero(d.getMinutes());
   }
 
-  function setjIODAVConfiguration(gadget, options) {
-    var url = "",
-      //login_input = gadget.props.element.querySelector("input[name='dav_username']").value,
-      //password_input = gadget.props.element.querySelector("input[name='dav_password']").value,
-      login_input= '',
-      password_input = '',
-      configuration = {
-        type: "query",
-        sub_storage: {
-          type: "drivetojiomapping",
-          sub_storage: {
-            type: "dav"
-          }
-        }
-      };
-    if (options !== undefined && options.url !== undefined && options.url !== '') {
-      configuration.sub_storage.sub_storage.url = options.url;
-      url = options.url;
-      if (options.login !== undefined && options.password !== undefined) {
-        configuration.sub_storage.sub_storage.basic_login = btoa(options.login + ':' + options.password);
-      }
-    } else {
-      url = gadget.props.element.querySelector("input[name='url']").value;
-      configuration.sub_storage.sub_storage.url = url;
-      if (login_input !== '' && password_input !== '') {
-        configuration.sub_storage.sub_storage.basic_login = btoa(login_input + ':' + password_input);
-      }
-    }
-
-    return gadget.getSetting('jio_storage_description')
-      .push(function (jio_storage_description) {
-        return gadget.setSetting('jio_storage_description', configuration)
-        .push(function () {
-          return gadget.setSetting('jio_storage_name', "DAV");
-        })
-        .push(function () {
-          if (jio_storage_description && url !== jio_storage_description.sub_storage.sub_storage.url) {
-            return gadget.reload();
-          } else {
-            return gadget.redirect({
-              page: 'main'
-            });
-          }
-        });
-      });
-  }
-
   function setUrlConfiguration(gadget, url, title) {
     return gadget.getSetting('monitor_url_description')
       .push(function (url_description_dict) {
@@ -108,7 +61,7 @@
           enable_search: false,
           disable_href: true,
           column_list: [{
-            title: 'Instance',
+            title: 'Software Instance',
             select: 'title'
           }, {
             title: 'Hosting Subscription',
@@ -118,7 +71,7 @@
             title: 'URL'
           }, {
             select: 'type',
-            title: 'Type'
+            title: 'URL Type'
           }],
           query: {
             select_list: ['title', 'opml_title', 'htmlurl', 'type', 'url'],
@@ -303,7 +256,6 @@
           g.props.deferred = RSVP.defer();
           g.props.urls = [];
           g.props.gindex = 0;
-          return g.getSetting('jio_storage_name');
         });
     })
     .ready(function (gadget) {
@@ -346,9 +298,13 @@
         if (options.url !== undefined && options.url !== '') {
           gadget.props.element.querySelector("input[name='url']").value = options.url;
         }
-        return;
-      })
-      .push(function () {
+        if (options.username !== undefined && options.username !== '' &&
+            options.password !== undefined && options.password !== '') {
+          gadget.props.username = options.username;
+          gadget.props.password = options.password;
+          gadget.props.element.querySelector("input[name='username']").value = options.username;
+          gadget.props.element.querySelector("input[name='password']").value = options.password;
+        }
         return gadget.getSetting('monitor_url_description');
       })
       .push(function (url_description_dict) {
@@ -428,9 +384,29 @@
           .controlgroup().controlgroup("refresh");
       }
 
+      function loadOPMLContent () {
+        var url = gadget.props.element.querySelector("input[name='url']").value;
+        gadget.props.element.querySelector('.opml .ui-text-error')
+          .innerHTML = "";
+        $(gadget.props.element.querySelector('.opml .ui-text-error')).fadeOut(400);
+        if (url && validateHttpUrl(url)) {
+          gadget.props.opml_url = url;
+          return loadUrlFromOPML(gadget, url);
+        } else {
+          $(gadget.props.element.querySelector('.opml .ui-text-error')).fadeIn(400);
+          gadget.props.element.querySelector('.opml .ui-text-error')
+            .innerHTML = "'" + url + "' is not a valid URL";
+        }
+      }
+
       return new RSVP.Queue()
         .push(function () {
           return gadget.props.deferred.promise;
+        })
+        .push(function () {
+          if (gadget.props.username && gadget.props.password) {
+            return loadOPMLContent();
+          }
         })
         .push(function () {
           return $(gadget.props.element.querySelector("a[href='#config-" + gadget.props.selected + "']")).trigger('click');
@@ -463,19 +439,7 @@
             'click',
             true,
             function () {
-              var url = gadget.props.element.querySelector("input[name='url']").value;
-              gadget.props.element.querySelector('.opml .ui-text-error')
-                .innerHTML = "";
-              $(gadget.props.element.querySelector('.opml .ui-text-error')).fadeOut(400);
-              if (url && validateHttpUrl(url)) {
-                gadget.props.opml_url = url;
-                return loadUrlFromOPML(gadget, url);
-              } else {
-                $(gadget.props.element.querySelector('.opml .ui-text-error')).fadeIn(400);
-                gadget.props.element.querySelector('.opml .ui-text-error')
-                  .innerHTML = "'" + url + "' is not a valid URL";
-              }
-              return false;
+              return loadOPMLContent();
             }
           ));
 
@@ -540,7 +504,7 @@
             }
           ));*/
 
-          promise_list.push(
+          /*promise_list.push(
             $(gadget.props.element.querySelector("input[name='configure-auth']")).bind( "change", function(event, ui) {
               var input_login = gadget.props.element.querySelector(".configure input[name='username']"),
                 input_pwd = gadget.props.element.querySelector(".configure input[name='password']");
@@ -554,7 +518,7 @@
                 return $(gadget.props.element.querySelector(".configure .auth-block")).slideUp();
               }
             })
-          );
+          );*/
 
           promise_list.push(
             $(gadget.props.element.querySelector("input[name='configure-newpwd']")).bind( "change", function(event, ui) {
@@ -690,7 +654,8 @@
                 rows_list = gadget.props.listbox.property_dict.data_result,
                 instance_name_dict = {},
                 not_changed_dict = {},
-                config_promise_list = [];
+                config_promise_list = [],
+                button_submit = gadget.props.element.querySelector('.configure button[type="submit"]');
 
               if (rows_list.length > 0) {
                 root_name = rows_list[0].opml_title;
@@ -709,22 +674,23 @@
                   return false;
                 }
               }
+              
               return new RSVP.Queue()
                 .push(function () {
                   var promise_list = [],
                     i;
-                  $(gadget.props.element.querySelector('.spinner')).removeClass('ui-content-hidden');
-                  if ($(gadget.props.element.querySelector("input[name='configure-auth']")).prop('checked')) {
-                    username = gadget.props.element.querySelector("input[name='username']").value;
-                    password = gadget.props.element.querySelector("input[name='password']").value;
-                    for (i = 0; i < rows_list.length; i += 1) {
-                      if (rows_list[i].htmlurl) {
-                        promise_list.push(checkCredential(
-                          gadget,
-                          rows_list[i].url.replace('public', 'private'),
-                          btoa(username + ':' + password)
-                        ));
-                      }
+                  $(gadget.props.element.querySelector('.spinner'))
+                    .removeClass('ui-content-hidden');
+                  button_submit.disabled = true;
+                  username = gadget.props.element.querySelector("input[name='username']").value;
+                  password = gadget.props.element.querySelector("input[name='password']").value;
+                  for (i = 0; i < rows_list.length; i += 1) {
+                    if (rows_list[i].htmlurl) {
+                      promise_list.push(checkCredential(
+                        gadget,
+                        rows_list[i].url.replace('public', 'private'),
+                        btoa(username + ':' + password)
+                      ));
                     }
                   }
                   return RSVP.all(promise_list);
@@ -833,6 +799,7 @@
                   return has_error;
                 })  
                 .push(function (has_error) {
+                  button_submit.disabled = false;
                   if (! has_error && reload) {
                     if (gadget.props.selected !== "manage") {
                       return gadget.redirect({

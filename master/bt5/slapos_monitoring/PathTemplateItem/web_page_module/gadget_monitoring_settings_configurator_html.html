@@ -62,7 +62,7 @@
                 <div class="ui-grid-b ui-responsive">
                   <div class="ui-block-a"></div>
                   <div class="ui-block-b">
-                    <button data-i18n="Load URL" class="ui-btn-btn-right show">Load URL</button>
+                    <button data-i18n="Load OPML" class="ui-btn-btn-right show">Load OPML</button>
                   </div>
                   <div class="ui-block-c">
                   </div>
@@ -73,25 +73,25 @@
         </article>
         <article class="ui-content ui-body-c configure-b ui-content-hidden">
           <div data-gadget-url="gadget_monitoring_widget_listbox.html" data-gadget-scope="listbox"></div>
-          <form class="configure">
-            <label class="configure-auth">
+          <form class="configure padding-tb-10">
+            <!--<label class="configure-auth">
               <input type="checkbox" name="configure-auth">Set or update credentials
-            </label>
-            <div class="auth-block padding-lr-20 border-gray" style="display: none">
+            </label>-->
+            <div class="auth-block padding-lr-20 border-gray">
               <div class="ui-form">
                 <div class="ui-field-contain">
                   <label data-i18n="Username:">Username:</label>
-                  <input type="text" name="username" required value="-"/>
+                  <input type="text" name="username" required value=""/>
                 </div>
               </div>
               <div class="ui-form">
                 <div class="ui-field-contain">
                   <label data-i18n="Password:">Password <span class='tooltip'>(?)</span>:</label>
-                  <input type="password" name="password" required value="-"/>
+                  <input type="password" name="password" required value=""/>
                 </div>
               </div>
               <label class="configure-auth">
-                <input type="checkbox" name="configure-newpwd">Change all current password(s)
+                <input type="checkbox" name="configure-newpwd">Change current password(s)
               </label>
               <div class="new-password" style="display: none">
                 <div class="ui-form">
