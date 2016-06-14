@@ -92,6 +92,7 @@ Alias /share {{ parameters.runner_home }}
 </Directory>
 
 SetEnv GIT_HTTP_EXPORT_ALL
+ScriptSock {{ parameters.cgid_sock }}
 ScriptAlias /git/ {{ parameters.git_http_backend }}/
 ScriptAlias /git-public/ {{ parameters.git_http_backend }}/
 
