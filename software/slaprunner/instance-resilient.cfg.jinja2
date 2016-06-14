@@ -5,11 +5,13 @@
 # set to false (else it could be dangerous)
 {% do slapparameter_dict.__setitem__('auto-deploy', slapparameter_dict.get('auto-deploy', 'true')) %}
 {% do slapparameter_dict.__setitem__('auto-deploy-instance', slapparameter_dict.get('auto-deploy-instance', 'false')) %}
+{% do slapparameter_dict.__setitem__('instance-type', 'resilient') %}
 # let decide the number of clones we want. We can't have more than 2 clones
 {% set number_of_instances = slapparameter_dict.get('resilient-clone-number', 1)|int %}
 {% if number_of_instances > 2 %}
   {% set number_of_instances = 2 %}
 {% endif %}
+{% set slaprunner_return = ['url', 'ssh-public-key', 'ssh-url', 'notification-id', 'ip', 'backend_url', 'url', 'ssh_command', 'access_url', '1_info', '2_info', 'webdav_url', 'public_url', 'git_public_url', 'git_private_url'] -%}
 {% set monitor_return = ['monitor-base-url', 'monitor-url', 'monitor-user', 'monitor-password'] -%}
 {% set monitor_parameter = {'monitor-cors-domains': slapparameter_dict.pop('monitor-cors-domains', "monitor.app.officejs.com")} -%}
 {% set monitor_dict = {'parameter': monitor_parameter, 'return': monitor_return, 'set-monitor-url': True} -%}
@@ -46,7 +48,10 @@ etc = ${buildout:directory}/etc
 
 # Bubble up the parameters
 [request-runner]
-return = url ssh-public-key ssh-url notification-id ip backend_url url ssh_command access_url 1_info 2_info webdav_url public_url git_public_url git_private_url {{ monitor_return | join(' ') }}
+{% if slapparameter_dict.get('custom-frontend-backend-url') -%}
+{%   do slaprunner_return.append('custom-frontend-url') -%}
+{% endif -%}
+return =  {{ slaprunner_return | join(' ')}} {{ monitor_return | join(' ') }}
 
 [publish-connection-information]
 recipe = slapos.cookbook:publish
@@ -61,14 +66,10 @@ public_url = ${request-runner:connection-public_url}
 git_public_url = ${request-runner:connection-git_public_url}
 git_private_url = ${request-runner:connection-git_private_url}
 {% if slapparameter_dict.get('custom-frontend-backend-url') -%}
-custom-frontend-url = https://${request-custom-frontend:connection-domain}
+custom-frontend-url = ${request-runner:connection-custom-frontend-url}
 {% endif %}
-{% for key in monitor_return -%}
-{{ key }} = ${request-runner:connection-{{ key }}}
-{% endfor -%}
-{% if monitor_interface_url -%}
-monitor_setup_url = {{ monitor_interface_url }}/#page=settings_configurator&url=${request-runner:connection-monitor-url}
-{% endif -%}
+monitor-base-url = ${request-runner:connection-monitor-base-url}
+monitor_setup_url = {{ monitor_interface_url }}/#page=settings_configurator&url=${request-runner:connection-monitor-url}&username=${request-runner:connection-monitor-user}&password=${request-runner:connection-monitor-password}
 
 [slap-parameter]
 # Default parameters for distributed deployment
