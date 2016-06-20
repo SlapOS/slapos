@@ -1,19 +1,42 @@
 {% set ipv4 = (ipv4_set | list)[0] -%}
+{% set next_port = slapparameter_dict['tcpv4_port'] | int -%}
+{% set use_ipv6 = slapparameter_dict.get('use-ipv6', False) -%}
+{#                                                                           -#}
+{# Apache globals -#}
+{% set ssl_parameter_dict = slapparameter_dict.get('ssl', {}) %}
+{% set apache_port = next_port -%}
+{% set next_port = next_port + 1 -%}
+{% set apache_ip_list = [ipv4] -%}
+{% if ipv6_set -%}
+{%   set ipv6 = (ipv6_set | list)[0] -%}
+{%   do apache_ip_list.append('[' ~ ipv6 ~ ']') -%}
+{% endif -%}
+{#                                                                           -#}
+{# Haproxy globals -#}
+{% set haproxy_ip = ipv4 -%}
+{% set haproxy_port = next_port -%}
+{% set next_port = next_port + 1 -%}
+{#                                                                           -#}
 {% set bin_directory = parameter_dict['buildout-bin-directory'] -%}
-{% set section_list = [] -%}
-{% macro section(name) %}{% do section_list.append(name) %}{{ name }}{% endmacro -%}
+{% set cloudooo_section_list = [] -%}
+{% macro cloudooo_section(name) %}{% do cloudooo_section_list.append(name) %}{{ name }}{% endmacro -%}
 [buildout]
+extends =
+  {{ logrotate_cfg }}
+  {{ parameter_dict['template-monitor'] }}
 parts =
-  publish-cloudooo-connection-information
+  publish
   cloudooo-test-runner
+  haproxy
+  apache
+  apache-promise
+  logrotate-apache
 
 eggs-directory = {{ eggs_directory }}
 develop-eggs-directory = {{ develop_eggs_directory }}
 offline = true
 
-[publish-cloudooo-connection-information]
-recipe = slapos.cookbook:publish.serialised
-url = cloudooo://${haproxy:ip}:${haproxy:port}/
+# Cloudooo configuration
 
 [cloudooo-base]
 recipe = slapos.cookbook:generic.cloudooo
@@ -28,47 +51,27 @@ ooo-binary-path = {{ parameter_dict['libreoffice-bin'] }}/program
 ooo-paster = {{ bin_directory }}/cloudooo_paster
 ooo-uno-path = {{ parameter_dict['libreoffice-bin'] }}/basis-link/program
 
-{% set cloudooo_port = slapparameter_dict.get('tcpv4_port', 23000) | int -%}
 {% set backend_count = slapparameter_dict.get('backend-count', 1) | int -%}
 {% for index in range(backend_count) -%}
 {%   set name = 'cloudooo-' ~ index -%}
-[{{ section(name) }}]
+[{{ cloudooo_section(name) }}]
 < = cloudooo-base
-port = {{ cloudooo_port }}
-openoffice-port = {{ cloudooo_port + 1 }}
+port = {{ next_port }}
+openoffice-port = {{ next_port + 1 }}
 configuration-file = ${directory:etc}/{{ name }}.cfg
 data-directory = ${directory:srv}/{{ name }}
 wrapper = ${directory:services}/{{ name }}
 
-{%   set cloudooo_port = cloudooo_port + 2 -%}
+{%   set next_port = next_port + 2 -%}
 {% endfor -%}
-
-[haproxy]
-recipe = slapos.cookbook:haproxy
-name = cloudooo
-conf-path = ${directory:etc}/haproxy.cfg
-socket-path = ${directory:run}/haproxy.sock
-ip = {{ ipv4 }}
-port = 8001
-maxconn = 1
-wrapper-path = ${directory:services}/haproxy
-binary-path = {{ parameter_dict['haproxy'] }}/sbin/haproxy
-ctl-path = ${directory:bin}/haproxy-ctl
-backend-list =
-{%- for section_name in section_list %}
-  {{ "${" ~ section_name ~ ":ip}:${" ~ section_name ~ ":port}" }}
-{%- endfor %}
 
 [cloudooo-test-runner]
 recipe = slapos.cookbook:cloudooo.test
-
 prepend-path = ${buildout:bin-directory}
 run-unit-test = ${buildout:bin-directory}/runUnitTest
 run-test-suite = ${buildout:bin-directory}/runTestSuite
-
 ooo-paster = ${cloudooo-0:ooo-paster}
 configuration-file = ${cloudooo-0:configuration-file}
-
 run-unit-test-binary = {{ bin_directory }}/runCloudoooUnitTest
 run-test-suite-binary = {{ bin_directory }}/runCloudoooTestSuite
 
@@ -100,6 +103,124 @@ link-binary =
   {{ parameter_dict['poppler'] }}/bin/pdftohtml
   {{ parameter_dict['wkhtmltopdf'] }}/wkhtmltopdf
 
+# Haproxy configuration
+
+[haproxy]
+recipe = slapos.cookbook:haproxy
+name = cloudooo
+conf-path = ${directory:etc}/haproxy.cfg
+socket-path = ${directory:run}/haproxy.sock
+ip = {{ ipv4 }}
+port = {{ haproxy_port }}
+maxconn = 1
+wrapper-path = ${directory:services}/haproxy
+binary-path = {{ parameter_dict['haproxy'] }}/sbin/haproxy
+ctl-path = ${directory:bin}/haproxy-ctl
+backend-list =
+{%- for section_name in cloudooo_section_list %}
+  {{ "${" ~ section_name ~ ":ip}:${" ~ section_name ~ ":port}" }}
+{%- endfor %}
+
+# Apache configuration
+
+[simplefile]
+recipe = slapos.recipe.template:jinja2
+template = inline:{{ '{{ content }}' }}
+
+{% macro simplefile(section_name, file_path, content, mode='') -%}
+{%   set content_section_name = section_name ~ '-content' -%}
+[{{  content_section_name }}]
+content = {{ dumps(content) }}
+
+[{{  section(section_name) }}]
+< = simplefile
+rendered = {{ file_path }}
+context = key content {{content_section_name}}:content
+mode = {{ mode }}
+{%- endmacro %}
+
+{% set apache_dict = {'cloudooo': (apache_port, 'https', 'http://' ~ ipv4 ~ ':' ~ haproxy_port)} -%}
+
+[apache-conf-ssl]
+cert = ${directory:apache-conf}/apache.crt
+key = ${directory:apache-conf}/apache.pem
+ca-cert =  ${directory:apache-conf}/ca.crt
+crl = ${directory:apache-conf}/crl.pem
+
+[apache-conf-parameter-dict]
+backend-list = {{ dumps([(apache_port, "https", "http://" ~ ipv4 ~ ":" ~ haproxy_port)]) }}
+ip-list = {{ dumps(apache_ip_list) }}
+pid-file = ${directory:run}/apache.pid
+error-log = ${directory:log}/apache-error.log
+access-log = ${directory:log}/apache-access.log
+# Apache 2.4's default value (60 seconds) can be a bit too short
+timeout = 300
+# Basic SSL server configuration
+cert = ${apache-ssl:cert}
+key = ${apache-ssl:key}
+cipher =
+ssl-session-cache = ${directory:log}/apache-ssl-session-cache
+# Client x509 auth
+ca-cert = ${apache-ssl-client:cert}
+crl = ${apache-ssl-client:crl}
+
+[apache-conf]
+recipe = slapos.recipe.template:jinja2
+template = {{ parameter_dict['template-apache-conf'] }}
+rendered = ${directory:apache-conf}/apache.conf
+context = section parameter_dict apache-conf-parameter-dict
+
+[apache]
+recipe = slapos.cookbook:wrapper
+wrapper-path = ${directory:services}/apache
+command-line = "{{ parameter_dict['apache'] }}/bin/httpd" -f "${apache-conf:rendered}" -DFOREGROUND
+
+[apache-promise]
+# Check any apache port in ipv4, expect other ports and ipv6 to behave consistently
+recipe = slapos.cookbook:check_port_listening
+path = ${directory:promise}/apache
+hostname = {{ ipv4 }}
+port = {{ apache_dict.values()[0][0] }}
+
+[apache-ssl]
+{% if ssl_parameter_dict.get('key') -%}
+key = ${apache-ssl-key:rendered}
+cert = ${apache-ssl-cert:rendered}
+{{ simplefile('apache-ssl-key', '${apache-conf-ssl:key}', ssl_parameter_dict['key']) }}
+{{ simplefile('apache-ssl-cert', '${apache-conf-ssl:cert}', ssl_parameter_dict['cert']) }}
+{% else %}
+recipe = plone.recipe.command
+command = "{{ parameter_dict['openssl'] }}/bin/openssl" req -newkey rsa -batch -new -x509 -days 3650 -nodes -keyout "${:key}" -out "${:cert}"
+key = ${apache-conf-ssl:key}
+cert = ${apache-conf-ssl:cert}
+{%- endif %}
+
+[apache-ssl-client]
+{% if ssl_parameter_dict.get('ca-cert') -%}
+cert = ${apache-ssl-ca:rendered}
+crl = ${apache-ssl-crl:rendered}
+{{ simplefile('apache-ssl-ca', '${apache-conf-ssl:ca-cert}', ssl_parameter_dict['ca-cert']) }}
+{{ simplefile('apache-ssl-crl', '${apache-conf-ssl:crl}', ssl_parameter_dict['crl']) }}
+{% else %}
+cert =
+crl =
+{%- endif %}
+
+[logrotate-apache]
+recipe = slapos.cookbook:logrotate.d
+logrotate-entries = ${logrotate:logrotate-entries}
+backup = ${logrotate:backup}
+name = apache
+log = ${apache-conf-parameter-dict:error-log} ${apache-conf-parameter-dict:access-log}
+post = {{ parameter_dict['bin-directory'] }}/slapos-kill --pidfile ${apache-conf-parameter-dict:pid-file} -s USR1
+
+[publish]
+recipe = slapos.cookbook:publish.serialised
+{% for family_name, (apache_port, scheme, _) in apache_dict.items() -%}
+{{   family_name ~ '-v6' }} = {% if ipv6_set %}{{ 'cloudooo://[' ~ ipv6 ~ ']:' ~ apache_port }}{% endif %}
+{{   family_name }} = {{ 'cloudooo://' ~ ipv4 ~ ':' ~ apache_port }}
+{% endfor -%}
+
 # rest of parts are candidates for some generic stuff
 [directory]
 recipe = slapos.cookbook:mkdirectory
@@ -110,3 +231,10 @@ run = ${:var}/run
 services = ${:etc}/run
 srv = ${buildout:directory}/srv
 var = ${buildout:directory}/var
+apache-conf = ${:etc}/apache
+ca-dir = ${buildout:directory}/srv/ssl
+requests = ${:ca-dir}/requests
+private = ${:ca-dir}/private
+certs = ${:ca-dir}/certs
+newcerts = ${:ca-dir}/newcerts
+crl = ${:ca-dir}/crl
