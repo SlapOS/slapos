@@ -1,0 +1,79 @@
+[app:main]
+use = egg:cloudooo
+#
+## System config
+#
+debug_mode = True
+# Folder where pid files, lock files and virtual frame buffer mappings
+# are stored. In this folder is necessary create a folder tmp, because this
+# folder is used to create all temporary documents.
+working_path = {{ parameter_dict["data-directory"] }}
+# Folder where UNO library is installed
+uno_path = {{ parameter_dict["ooo-uno-path"] }}
+# Folder where soffice.bin is installed
+office_binary_path = {{ parameter_dict["ooo-binary-path"] }}
+#
+## Monitor Settings
+#
+# Limit to use the Openoffice Instance. if pass of the limit, the instance is
+# stopped and another is started.
+limit_number_request = 100
+# Interval to check the factory
+monitor_interval = 10
+timeout_response = 180
+enable_memory_monitor = True
+# Set the limit in MB
+# e.g 1000 = 1 GB, 100 = 100 MB
+limit_memory_used = 3000
+#
+## OOFactory Settings
+#
+# The pool consist of several OpenOffice.org instances
+application_hostname = {{ parameter_dict["ip"] }}
+# OpenOffice Port
+openoffice_port = {{ parameter_dict["openoffice-port"] }}
+
+# LD_LIBRARY_PATH and other environment variables
+# passed to OpenOffice
+{% for key, value in parameter_dict.items() -%}
+{%   if key.startswith("env-") -%}
+{{ key }} = {{ value }}
+{%   endif -%}
+{% endfor -%}
+
+#
+# Mimetype Registry
+# It is used to select the handler that will be used in conversion.
+# Priority matters, first match take precedence on next lines.
+mimetype_registry =
+  application/vnd.oasis.opendocument* * ooo
+  application/vnd.sun.xml* * ooo
+  application/pdf text/* pdf
+  application/pdf * ooo
+  video/* * ffmpeg
+  audio/* * ffmpeg
+  application/x-shockwave-flash * ffmpeg
+  application/ogg * ffmpeg
+  application/ogv * ffmpeg
+  image/png image/jpeg imagemagick
+  image/png * ooo
+  image/* image/* imagemagick
+  text/html application/pdf wkhtmltopdf
+  text/* * ooo
+  application/zip * ooo
+  application/msword * ooo
+  application/vnd* * ooo
+  application/x-vnd* * ooo
+  application/postscript * ooo
+  application/wmf * ooo
+  application/csv * ooo
+  application/x-openoffice-gdimetafile * ooo
+  application/x-emf * ooo
+  application/emf * ooo
+  application/octet* * ooo
+  * application/vnd.oasis.opendocument* ooo
+
+[server:main]
+use = egg:PasteScript#wsgiutils
+host = {{ parameter_dict["ip"] }}
+port = {{ parameter_dict["port"] }}

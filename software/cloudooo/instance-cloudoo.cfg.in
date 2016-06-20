@@ -2,26 +2,15 @@
 {% set bin_directory = parameter_dict['buildout-bin-directory'] -%}
 {% set section_list = [] -%}
 {% macro section(name) %}{% do section_list.append(name) %}{{ name }}{% endmacro -%}
-[buildout]
-parts =
-  publish-cloudooo-connection-information
-  cloudooo-test-runner
-
-eggs-directory = {{ eggs_directory }}
-develop-eggs-directory = {{ develop_eggs_directory }}
-offline = true
-
 [publish-cloudooo-connection-information]
 recipe = slapos.cookbook:publish.serialised
 url = cloudooo://${haproxy:ip}:${haproxy:port}/
 
-[cloudooo-base]
-recipe = slapos.cookbook:generic.cloudooo
+[cloudooo-conf-base]
 ip = {{ ipv4 }}
-environment =
-  LD_LIBRARY_PATH = {{ parameter_dict['cairo'] }}/lib:{{ parameter_dict['cups'] }}/lib:{{ parameter_dict['cups'] }}/lib64:{{ parameter_dict['dbus'] }}/lib:{{ parameter_dict['dbus-glib'] }}/lib:{{ parameter_dict['file'] }}/lib:{{ parameter_dict['fontconfig'] }}/lib:{{ parameter_dict['freetype'] }}/lib:{{ parameter_dict['glib'] }}/lib:{{ parameter_dict['glu'] }}/lib:{{ parameter_dict['libICE'] }}/lib:{{ parameter_dict['libSM'] }}/lib:{{ parameter_dict['libX11'] }}/lib:{{ parameter_dict['libXau'] }}/lib:{{ parameter_dict['libXdmcp'] }}/lib:{{ parameter_dict['libXext'] }}/lib:{{ parameter_dict['libXrender'] }}/lib:{{ parameter_dict['libexpat'] }}/lib:{{ parameter_dict['libffi'] }}/lib:{{ parameter_dict['libffi'] }}/lib64:{{ parameter_dict['libpng12'] }}/lib:{{ parameter_dict['libxcb'] }}/lib:{{ parameter_dict['mesa'] }}/lib:{{ parameter_dict['pixman'] }}/lib:{{ parameter_dict['xdamage'] }}/lib:{{ parameter_dict['xfixes'] }}/lib:{{ parameter_dict['zlib'] }}/lib
-  FONTCONFIG_FILE = ${fontconfig-instance:conf-path}
-  PATH = ${binary-link:target-directory}
+env-LD_LIBRARY_PATH = {{ parameter_dict['cairo'] }}/lib:{{ parameter_dict['cups'] }}/lib:{{ parameter_dict['cups'] }}/lib64:{{ parameter_dict['dbus'] }}/lib:{{ parameter_dict['dbus-glib'] }}/lib:{{ parameter_dict['file'] }}/lib:{{ parameter_dict['fontconfig'] }}/lib:{{ parameter_dict['freetype'] }}/lib:{{ parameter_dict['glib'] }}/lib:{{ parameter_dict['glu'] }}/lib:{{ parameter_dict['libICE'] }}/lib:{{ parameter_dict['libSM'] }}/lib:{{ parameter_dict['libX11'] }}/lib:{{ parameter_dict['libXau'] }}/lib:{{ parameter_dict['libXdmcp'] }}/lib:{{ parameter_dict['libXext'] }}/lib:{{ parameter_dict['libXrender'] }}/lib:{{ parameter_dict['libexpat'] }}/lib:{{ parameter_dict['libffi'] }}/lib:{{ parameter_dict['libffi'] }}/lib64:{{ parameter_dict['libpng12'] }}/lib:{{ parameter_dict['libxcb'] }}/lib:{{ parameter_dict['mesa'] }}/lib:{{ parameter_dict['pixman'] }}/lib:{{ parameter_dict['xdamage'] }}/lib:{{ parameter_dict['xfixes'] }}/lib:{{ parameter_dict['zlib'] }}/lib
+env-FONTCONFIG_FILE = ${fontconfig-instance:conf-path}
+env-PATH = ${binary-link:target-directory}
 # Binary information
 # cloudooo specific configuration
 ooo-binary-path = {{ parameter_dict['libreoffice-bin'] }}/program
@@ -32,13 +21,23 @@ ooo-uno-path = {{ parameter_dict['libreoffice-bin'] }}/basis-link/program
 {% set backend_count = slapparameter_dict.get('backend-count', 1) | int -%}
 {% for index in range(backend_count) -%}
 {%   set name = 'cloudooo-' ~ index -%}
-[{{ section(name) }}]
-< = cloudooo-base
+[{{ name }}-conf]
+< = cloudooo-conf-base
 port = {{ cloudooo_port }}
 openoffice-port = {{ cloudooo_port + 1 }}
-configuration-file = ${directory:etc}/{{ name }}.cfg
 data-directory = ${directory:srv}/{{ name }}
-wrapper = ${directory:services}/{{ name }}
+
+[{{ section(name) }}]
+recipe = slapos.recipe.template:jinja2
+template = {{ parameter_dict['template-cloudooo-conf'] }}
+rendered = ${directory:etc}/{{ name }}.cfg
+context = section parameter_dict {{ name }}-conf
+
+[{{ name }}-wrapper]
+recipe = slapos.cookbook:wrapper
+# XXX execute with signal translation !! (see generic_cloudooo recipe)
+command-line = ${cloudooo-conf-base:ooo-paster} serve ${directory:etc}/{{ name }}.cfg
+wrapper-path = ${directory:services}/{{ name }}
 
 {%   set cloudooo_port = cloudooo_port + 2 -%}
 {% endfor -%}
@@ -110,3 +109,15 @@ run = ${:var}/run
 services = ${:etc}/run
 srv = ${buildout:directory}/srv
 var = ${buildout:directory}/var
+
+[buildout]
+parts =
+  publish-cloudooo-connection-information
+  cloudooo-test-runner
+{% for name in section_list -%}
+  {{ name }}-wrapper
+{% endfor -%}
+
+eggs-directory = {{ eggs_directory }}
+develop-eggs-directory = {{ develop_eggs_directory }}
+offline = true
