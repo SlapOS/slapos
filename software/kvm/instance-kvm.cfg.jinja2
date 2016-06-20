@@ -15,6 +15,14 @@
 {%   set monitor = False  -%}
 {% endif -%}
 
+{% set bootstrap_url = '' -%}
+{% set bootstrap_url_md5sum = '' -%}
+{% if slapparameter_dict.get('bootstrap-script-url', '') -%}
+{% set url_info_list = slapparameter_dict['bootstrap-script-url'].split('#') -%}
+{% set bootstrap_url = url_info_list[0] -%}
+{% set bootstrap_url_md5sum = url_info_list[1] -%}
+{% endif -%}
+
 {% if instance_type == 'cluster' -%}
 {% set nat_rule_list = slapparameter_dict.get('nat-rules', '') %}
 {% endif -%}
@@ -366,12 +374,9 @@ tap-ipv4 = ${slap-network-information:tap-ipv4}
 {% endif %}
 {% if monitor -%}
 monitor-base-url = ${publish:monitor-base-url}
-monitor-url = ${publish:monitor-url}
-monitor-user = ${publish:monitor-user}
-monitor-password = ${publish:monitor-password}
 {%   set monitor_interface_url = slapparameter_dict.get('monitor-interface-url', 'https://monitor.app.officejs.com') -%}
 {%   if monitor_interface_url -%}
-monitor-setup-url = {{ monitor_interface_url }}/#page=settings_configurator&url=${publish:monitor-url}
+monitor-setup-url = {{ monitor_interface_url }}/#page=settings_configurator&url=${publish:monitor-url}&username=${publish:monitor-user}&password=${publish:monitor-password}
 {%   endif -%}
 {% endif -%}
 
@@ -496,6 +501,13 @@ context =
   raw logs ${directory:public}/ansible
   raw name {{ name }}
 
+[download-bootstrap-script]
+recipe = plone.recipe.command
+file-location = ${directory:public}/vm-bootstrap
+command = {{ python_executable }} {{ file_download_script }} {{ bootstrap_url }} {{ bootstrap_url_md5sum }} ${:file-location}
+update-command =
+stop-on-error = true
+
 [cron-entry-logrotate]
 <= cron
 recipe = slapos.cookbook:cron.d
@@ -583,7 +595,10 @@ keyboard-layout-language = fr
 {% endif -%}
 {% if slapparameter_dict.get('authorized-key', '') and slapparameter_dict.get('type', '') == 'cluster' %}
 {%   do part_list.append('get-authorized-key') -%}
-{%   endif -%}
+{% endif -%}
+{% if slapparameter_dict.get('bootstrap-script-url', '') -%}
+{%   do part_list.append('download-bootstrap-script') -%}
+{% endif -%}
 
 {% endif -%}
 
@@ -605,14 +620,6 @@ parts =
 {% if monitor -%}
 # monitor parts
   monitor-base
-  cron-entry-logrotate
-  certificate-authority
-  monitor-conf
-  start-monitor
-  ca-httpd
-  monitor-httpd-promise
-  monitor-httpd-promise-conf
-  monitor-status2rss-cron-entry
 {% endif -%}
 # Complete parts with sections
   {{ part_list | join('\n  ') }}

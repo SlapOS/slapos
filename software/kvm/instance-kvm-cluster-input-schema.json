@@ -146,6 +146,11 @@
       "description": "Set the list of public keys to add in your virtual machine. The public key file will be available in the VM via url http://10.0.2.100/authorized_keys if you keep the NAT interface enabled",
       "type": "array"
     },
+    "bootstrap-script-url": {
+      "title": "Virtual Machines bootstrap script URL.",
+      "description": "If dedicaced disk image is used, this script will be downloaded and run at first boot of the virtual machine. Set md5sum to URL like: http://example.com/file#MD5SUM. Get file in vm at http://10.0.2.100/vm-bootstrap.",
+      "type": "uri"
+    },
     "cluster-data": {
       "title": "Text content to share with virtual machines.",
       "description": "Text content which will be written in a file data of cluster http server. All VM will be able to download that file via the static URL of cluster HTTP server: https://10.0.2.101/FOLDER_HASH/data.",
@@ -322,13 +327,18 @@
               "title": "Isolate the NAT Interface (No Internet access)",
               "description": "If this option is enabled, the NAT interface will be isolated, i.e. it will not be able to contact the host and no guest IP packets will be routed over the host to the outside. This option does not affect any explicitly set nat rules.",
               "type": "boolean",
-              "default": true
+              "default": false
             },
             "enable-vhost": {
               "title": "Use vhost-net to improve network performance of tap interface",
               "description": "The vhost-net provides much improved network performance for your VM. Only work if the vhost-net kernel module is loaded and available on host machine, please keep this option off if you're not shure.",
               "type": "boolean",
               "default": false
+            },
+            "bootstrap-script-url": {
+              "title": "VM bootstrap script URL.",
+              "description": "If dedicaced disk image is used, this script will be downloaded and run at first boot of the virtual machine. Set md5sum to URL like: http://example.com/file#MD5SUM. Get file in vm at http://10.0.2.100/vm-bootstrap.",
+              "type": "uri"
             },
             "data-to-vm": {
               "title": "Text content to send to this virtual machine.",

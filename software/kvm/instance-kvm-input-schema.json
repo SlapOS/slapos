@@ -195,6 +195,11 @@
       "description": "Set the public keys to add in your virtual machine. The public key file will be available in the VM via url http://10.0.2.100/authorized_keys if you keep the NAT interface enabled",
       "type": "string"
     },
+    "bootstrap-script-url": {
+      "title": "VM bootstrap script URL.",
+      "description": "If dedicaced disk image is used, this script will be downloaded and run at first boot of the virtual machine. Set md5sum to URL like: http://example.com/file#MD5SUM. Get file in vm at http://10.0.2.100/vm-bootstrap.",
+      "type": "uri"
+    },
     "data-to-vm": {
       "title": "Text content to send to this virtual machine.",
       "description": "Text content which will be written in a file 'data' of http server of this virtual machine instance. The file will be available via URL: http://10.0.2.100/data in the VM.",
