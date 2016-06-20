@@ -25,6 +25,7 @@ context =
     ${:extra-context}
 
 [dynamic-template-cloudooo-parameters]
+apache = {{ apache_location }}
 buildout-bin-directory = {{ buildout_bin_directory }}
 cairo = {{ cairo_location }}
 coreutils = {{ coreutils_location }}
@@ -58,6 +59,7 @@ wkhtmltopdf = {{ wkhtmltopdf_location }}
 xdamage = {{ xdamage_location }}
 xfixes = {{ xfixes_location }}
 zlib = {{ zlib_location }}
+template-apache-conf = {{ template_apache_conf }}
 
 [dynamic-template-cloudooo]
 < = jinja2-template-base
