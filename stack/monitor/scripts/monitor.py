@@ -245,6 +245,28 @@ class Monitoring(object):
         print "Bad Json file at %s" % url
     return 'Unknown Instance'
 
+  def getReportInfoFromFilename(self, filename):
+    splited_filename = filename.split('_every_')
+    possible_time_list = ['hour', 'minute']
+    if len(splited_filename) == 1:
+      return (filename, "* * * * *")
+
+    run_time = splited_filename[1].split('_')
+    report_name = splited_filename[0]
+    if len(run_time) != 2 or not run_time[1] in possible_time_list:
+      return (report_name, "* * * * *")
+
+    try:
+      value = int(run_time[0])
+    except ValueError:
+      print "Warning: Bad report filename: %s" % filename
+      return (report_name, "* * * * *")
+
+    if run_time[1] == 'hour':
+      return (report_name, "* */%s * * *" % value)
+    if run_time[1] == 'minute':
+      return (report_name, "*/%s * * * *" % value)
+
   def configureFolders(self):
     # configure public and private folder
     self.createSymlinksFromConfig(self.webdav_folder, [self.public_folder])
@@ -387,8 +409,6 @@ class Monitoring(object):
 
   def generateReportCronEntries(self):
     cron_line_list = []
-    # We should add the possibility to modify this parameter later from monitor interface
-    report_frequency = "*/20 * * * *"
 
     report_name_list = [name.replace('.report.json', '')
       for name in os.listdir(self.report_folder) if name.endswith('.report.json')]
@@ -396,11 +416,12 @@ class Monitoring(object):
     for filename in os.listdir(self.report_script_folder):
       report_script = os.path.join(self.report_script_folder, filename)
       if os.path.isfile(report_script) and os.access(report_script, os.X_OK):
-        report_name = os.path.splitext(filename)[0]
+        report_name, frequency = self.getReportInfoFromFilename(filename)
+        # report_name = os.path.splitext(filename)[0]
         report_json_path = "%s.report.json" % report_name
 
         report_cmd_line = [
-          report_frequency,
+          frequency,
           self.promise_runner,
           '--pid_path "%s"' % os.path.join(self.service_pid_folder,
             "%s.pid" % filename),
