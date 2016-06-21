@@ -7,7 +7,7 @@
 {% set monitor_dict = {} -%}
 
 {% if slapparameter_dict.get('enable-monitor', 'True').lower() == 'true' -%}
-{% set monitor_return = ['monitor-base-url', 'monitor-url', 'monitor-user', 'monitor-password'] -%}
+{% set monitor_return = ['monitor-base-url'] -%}
 {% set monitor_parameter = {'monitor-cors-domains': slapparameter_dict.pop('monitor-cors-domains', "monitor.app.officejs.com")} -%}
 {% set monitor_dict = {'parameter': monitor_parameter, 'return': monitor_return} -%}
 {% endif -%}
@@ -67,12 +67,7 @@ backend-url = ${request-kvm:connection-backend-url}
 url = ${request-kvm:connection-url}
 ipv6 = ${request-kvm:connection-ip}
 monitor-base-url = ${publish:monitor-base-url}
-monitor-url = ${publish:monitor-url}
-monitor-user = ${publish:monitor-user}
-monitor-password = ${publish:monitor-password}
-{% if monitor_interface_url -%}
-monitor-setup-url = {{ monitor_interface_url }}/#page=settings_configurator&url=${publish:monitor-url}
-{% endif -%}
+monitor-setup-url = {{ monitor_interface_url }}/#page=settings_configurator&url=${publish:monitor-url}&username=${publish:monitor-user}&password=${publish:monitor-password}
 
 [kvm-frontend-url-promise]
 # Check that url parameter is complete
