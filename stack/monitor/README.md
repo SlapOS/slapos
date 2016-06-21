@@ -42,7 +42,7 @@ You don't need to define all parameters, you can only set what is required to be
 - monitor-httpd-ipv6: is the ipv6 of the computer partition.
 - monitor-httpd-port: the port to bind monitor httpd server on.
 - monitor-base-url: this url that will be used/showed in monitor interface. This url is present in some monitor generated output files. There can be two value, the default: ${monitor-frontend-promise:url} which access monitor httpd server through the frontend and ${monitor-httpd-conf-parameter:url} which is the url with ipv6 (https://[IPv6]:port/).
-- opml-url-list: list of OPML URL of monitor sub-instances, if this is the root instance with at least one child.
+- monitor-url-list: set list of Monitor Base URL of monitor sub-instances, if this is the root instance with at least one child.
 - cors-domains: the domain used by the monitor web interface. The default is: monitor.app.officejs.com.
 - username: monitor username, this should be the same in all sub-instances. Default is: admin.
 - password: monitor password, this should be the same in all sub-instances. Default is generated (${monitor-htpasswd:username}).

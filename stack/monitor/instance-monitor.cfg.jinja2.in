@@ -151,7 +151,7 @@ private-path-list =
     ${directory:log}
 # 
 monitor-url-list = 
-  ${monitor-instance-parameter:opml-url-list}
+  ${monitor-instance-parameter:monitor-url-list}
 
 parameter-file-path = ${monitor-instance-parameter:configuration-file-path}
 
@@ -377,7 +377,7 @@ monitor-httpd-port = 8196
 # XXX - Set monitor-base-url = ${monitor-httpd-conf-parameter:url} => https://[ipv6]:port
 monitor-base-url = ${monitor-frontend-promise:url}
 root-instance-title = ${slap-configuration:root-instance-title}
-opml-url-list =
+monitor-url-list =
 cors-domains = monitor.app.officejs.com 
 # XXX Hard coded parameter
 collector-db = /srv/slapgrid/var/data-log/collector.db
