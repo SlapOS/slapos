@@ -27,6 +27,51 @@
 import zc.buildout
 from slapos.recipe.librecipe import GenericBaseRecipe
 
+def compareMimetypeEntryPair(a, b):
+  """
+    Like comparing strings, but here the star `*` is stronger than any other
+    character.
+  """
+  i = 0
+  for i in range(min(len(a), len(b))):
+    if a[i] != b[i]:
+      if a[i] == "*": return 1
+      if b[i] == "*": return -1
+      if a[i] < b[i]: return -1
+      if a[i] > b[i]: return 1
+      return 0
+  if a[i:i+1]: return 1
+  if b[i:i+1]: return -1
+  return 0
+
+default_mimetype_entry_list = [
+  "application/vnd.oasis.opendocument* * ooo",
+  "application/vnd.sun.xml* * ooo",
+  "application/pdf text/* pdf",
+  "application/pdf * ooo",
+  "video/* * ffmpeg",
+  "audio/* * ffmpeg",
+  "application/x-shockwave-flash * ffmpeg",
+  "application/ogg * ffmpeg",
+  "application/ogv * ffmpeg",
+  "image/png image/jpeg imagemagick",
+  "image/png * ooo",
+  "image/* image/* imagemagick",
+  "text/* * ooo",
+  "application/zip * ooo",
+  "application/msword * ooo",
+  "application/vnd* * ooo",
+  "application/x-vnd* * ooo",
+  "application/postscript * ooo",
+  "application/wmf * ooo",
+  "application/csv * ooo",
+  "application/x-openoffice-gdimetafile * ooo",
+  "application/x-emf * ooo",
+  "application/emf * ooo",
+  "application/octet* * ooo",
+  "* application/vnd.oasis.opendocument* ooo",
+]
+
 class Recipe(GenericBaseRecipe):
   def install(self):
     path_list = []
@@ -52,6 +97,15 @@ class Recipe(GenericBaseRecipe):
     conversion_server_dict['ENVIRONMENT_VARIABLE_LIST'] = '\n'.join(
       ['env-%s = %s' % (key, value) for key, value in environment_variable_list]
       )
+    mimetype_entry_list = [
+      l.strip()
+      for l in self.options.get('mimetype_entry_addition', '').splitlines()
+      if l and not l.isspace()
+    ]
+    mimetype_entry_list.extend(default_mimetype_entry_list)
+    mimetype_entry_list.sort(compareMimetypeEntryPair)
+    conversion_server_dict['MIMETYPE_ENTRY_LIST'] = \
+      "\n".join(["  " + l for l in mimetype_entry_list])
     config_file = self.createFile(self.options['configuration-file'],
         self.substituteTemplate(self.getTemplateFilename('cloudooo.cfg.in'),
           conversion_server_dict))
