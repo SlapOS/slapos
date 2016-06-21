@@ -364,8 +364,8 @@ mode = 0644
 context = section parameter_dict monitor-password-promise-conf-parameter
 
 [publish]
-<= monitor-base
-monitor-base-url = ${monitor-conf-parameters:base-url}
+# XXX depends on monitor-base section
+monitor-base-url = ${monitor-base:base-url}
 monitor-url = ${:monitor-base-url}/public/feeds
 monitor-user = ${monitor-instance-parameter:username}
 monitor-password = ${monitor-instance-parameter:password}
@@ -415,6 +415,7 @@ check-secure = 1
 recipe = plone.recipe.command
 command = true
 update-command = 
+base-url = ${monitor-conf-parameters:base-url}
 depends =
   ${monitor-globalstate-cron-entry:name}
   ${monitor-configurator-cron-entry:name}
