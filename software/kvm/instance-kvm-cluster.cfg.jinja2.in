@@ -228,7 +228,7 @@ username = admin
 [monitor-instance-parameter]
 monitor-httpd-port = 8060
 monitor-title = KVM Cluster Main Instance
-cors-domains = {{ slapparameter_dict.get('monitor-cors-domains', '') }}
+cors-domains = {{ slapparameter_dict.get('monitor-cors-domains', 'monitor.app.officejs.com') }}
 username = ${monitor-htpasswd:username}
 password = ${monitor-htpasswd:passwd}
 
