@@ -121,7 +121,7 @@
 
     "disabled-cookie-list": {
       "title": "Disabled Cookies",
-      "description": "List of Cookies separated by space that will not be sent to the backend",
+      "description": "List of Cookies separated by space that will not be sent to cache and backend servers. This is especially useful to discard analytics tracking cookies when using Vary: Cookie cache headers",
       "type": "string",
       "default": ""
     },
