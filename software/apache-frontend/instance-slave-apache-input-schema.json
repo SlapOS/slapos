@@ -117,7 +117,7 @@
 
     "prefer-gzip-encoding-to-backend": {
       "title": "Prefer gzip Encoding for Backend",
-      "description": "If set to true, if a request is made with accept encoding 'gzip', only that one will be transferred to the backend",
+      "description": "If set to true, frontend will rewrite Accept-Encoding request header to simply 'gzip' for all variants of Accept-Encoding containing 'gzip', in order to maximize cache hits for resources cached with Vary: Accept-Encoding when enable_cache is used",
       "type": "string",
       "default": "false",
       "enum": ["false", "true"]
