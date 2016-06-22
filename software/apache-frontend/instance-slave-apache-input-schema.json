@@ -89,7 +89,7 @@
 
     "enable_cache": {
       "title": "Enable Cache",
-      "description": "If set to true, the cache will be used",
+      "description": "If set to true, http caching server (Apache Traffic Server) will be used between frontend apache and backend",
       "type": "string",
       "default": "false",
       "enum": ["false", "true"]
