@@ -76,7 +76,7 @@
   RewriteRule ^/?$ {{ slave_parameter.get('default-path') }} [R=301,L]
   {% endif -%}
   # First, we check if we have a zope backend server
-  # If so, let's use Virtual Host Daemon rewrite
+  # If so, let's use Virtual Host Monster rewrite
   # We suppose that Apache listens to 443 (even indirectly thanks to things like iptables)
   RewriteRule ^/(.*)$ {{ slave_parameter.get('url', '') }}/VirtualHostBase/https/{{ slave_parameter.get('custom_domain', '') }}:443/{{ slave_parameter.get('path', '') }}/VirtualHostRoot/$1 [L,P]
 {% elif slave_parameter.get('type', '') ==  'redirect' -%}
