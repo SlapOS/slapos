@@ -47,20 +47,20 @@
 
     "ssl_crt": {
       "title": "SSL Certificate",
-      "description": "SSL Certificate",
+      "description": "Content of the SSL Certificate file",
       "type": "string",
       "default": ""
     },
     "ssl_key": {
       "title": "SSL Key",
-      "description": "SSL Key",
+      "description": "Content of the SSL Key file",
       "type": "string",
       "default": ""
     },
 
     "ssl_ca_crt": {
       "title": "SSL Certificate Authority's Certificate",
-      "description": "SSL Key",
+      "description": "Content of the CA certificate file",
       "type": "string",
       "default": ""
     },
@@ -82,7 +82,7 @@
 
     "ssl_proxy_ca_crt": {
       "title": "SSL Backend Authority's Certificate",
-      "description": "SSL Certificate Authority of the backen (to be used with ssl-proxy-verify)",
+      "description": "Content of the SSL Certificate Authority file of the backen (to be used with ssl-proxy-verify)",
       "type": "string",
       "default": ""
     },
