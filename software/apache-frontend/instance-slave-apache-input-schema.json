@@ -101,7 +101,7 @@
 
     "disable-no-cache-request": {
       "title": "Disable 'no-cache' requests",
-      "description": "If set to true, no-cache control headers will be disabled",
+      "description": "If set to true, Cache-Control and Pragma requests headers will not be sent to cache and backend servers. This prevents clients from bypassing cache when enable_cache is true",
       "type": "string",
       "default": "false",
       "enum": ["false", "true"]
