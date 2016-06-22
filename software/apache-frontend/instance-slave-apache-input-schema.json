@@ -66,7 +66,7 @@
     },
     "https-only": {
       "title": "HTTPS Only",
-      "description": "If set to true, http request are redirect to https",
+      "description": "If set to true, http requests will be redirected to https",
       "type": "string",
       "default": "false",
       "enum": ["false", "true"]
@@ -74,7 +74,7 @@
 
     "ssl-proxy-verify": {
       "title": "Verify Backend Certificates",
-      "description": "If set to true, Backend Certificates are checked",
+      "description": "If set to true, Backend SSL Certificates will be checked and frontend will refuse to proxy if certificate is invalid",
       "type": "string",
       "default": "false",
       "enum": ["false", "true"]
@@ -89,7 +89,7 @@
 
     "enable_cache": {
       "title": "Enable Cache",
-      "description": "If set to true, the cache is used",
+      "description": "If set to true, the cache will be used",
       "type": "string",
       "default": "false",
       "enum": ["false", "true"]
