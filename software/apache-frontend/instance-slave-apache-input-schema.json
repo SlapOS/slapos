@@ -109,7 +109,7 @@
 
     "disable-via-header": {
       "title": "Disable 'Via' headers from cache",
-      "description": "If set to true, via headers will be disabled",
+      "description": "If set to true, Via response headers will not be sent to client",
       "type": "string",
       "default": "false",
       "enum": ["false", "true"]
