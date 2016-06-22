@@ -128,13 +128,13 @@
 
     "apache_custom_http": {
       "title": "HTTP configuration",
-      "description": "Raw http configuration in python template format. Your site will be rejected if you use it without notification and approval of the frontend adminastrator",
+      "description": "Raw http configuration in python template format. Your site will be rejected if you use it without notification and approval of frontend administrators",
       "default": "",
       "type": "string"
     },
     "apache_custom_https": {
       "title": "HTTPS configuration",
-      "description": "Raw https configuration in python template format. Your site will be rejected if you use it without notification and approval of the frontend adminastrator",
+      "description": "Raw https configuration in python template format. Your site will be rejected if you use it without notification and approval of frontend administrators",
       "default": "",
       "type": "string"
     }
