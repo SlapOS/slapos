@@ -41,7 +41,7 @@
 
     "default-path": {
       "title": "Default Path",
-      "description": "Provide default path to redirect user to",
+      "description": "Provide default path to redirect user to when user access / (the site root)",
       "type": "string",
       "default": ""
     },
