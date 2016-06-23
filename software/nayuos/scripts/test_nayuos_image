@@ -17,6 +17,7 @@ BASHRC="etc/skel/.bashrc"
 GIT_CORE="usr/local/libexec/git-core/"
 EXPECTED_ALIAS="alias git='git --exec-path=/usr/local/libexec/git-core/'"
 VIRTUALENV_BIN="usr/local/bin/virtualenv"
+CHROMIUM_POLICY="etc/chromium/policies/recommended/nayuos_policy.json"
 
 HAS_FAILED=0
 
@@ -42,6 +43,8 @@ if [[ $(ls "${MOUNTPOINT}/usr/local") ]] ; then
   gitcore=$(ls "${MOUNTPOINT}/${GIT_CORE}")
   gitalias=$(grep "${EXPECTED_ALIAS}" "${MOUNTPOINT}/${BASHRC}")
   virtualenvbin=$(ls "${MOUNTPOINT}/${VIRTUALENV_BIN}")
+  chromium_policy=$(ls "${MOUNTPOINT}/${CHROMIUM_POLICY}")
+
 else
   is_empty=1
 fi
@@ -95,6 +98,14 @@ else
     print_result ${SUCCESS} "virtualenv binary exists."
   else
     print_result ${FAILURE} "Expected virtualenv binary not in ${MOUNTPOINT}/${VIRTUALENV_BIN}."
+  fi
+
+  echo "* test if Chromium policies are installed"
+
+  if [[ ${chromium_policy} ]] ; then
+    print_result ${SUCCESS} "Chromium policies are installed."
+  else
+    print_result ${FAILURE} "Expected Chromium policies file not in ${MOUNTPOINT}/${CHROMIUM_POLICY}."
   fi
 fi
 
