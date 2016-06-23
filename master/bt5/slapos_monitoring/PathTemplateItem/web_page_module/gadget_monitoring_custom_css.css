@@ -110,6 +110,13 @@ html.ui-mobile .ui-grid-container.ui-responsive > ul > li, html.ui-mobile .ui-gr
   overflow: hidden;
 }
 
+.header-notice {
+  margin-top: 5px;
+  margin-left: 20px;
+  color: #5C676D;
+  font-size: .95em;
+}
+
 .ui-content .ui-table {
   border: 1px solid rgba(0,0,0,.05);
 }
@@ -178,12 +185,15 @@ html .ui-panel-overview table {
   border: 1px solid rgba(0,0,0,.05);
   border-bottom: none;
 }
-
+li
 html .content-details table tr th, html .content-details table tr td {
   padding: 7px;
 }
-html .content-details .instances-parameters table tr td {
+/*html .content-details .instances-parameters table tr td {
   padding: 0 0 0 10px;
+}*/
+html .content-details .instances-parameters table tr td:first-child {
+  width: 25%;
 }
 html .content-details .instances-parameters table tr td:last-child {
   padding: 0;
@@ -196,7 +206,12 @@ html .promise-list table tr {
   padding: 10px;
 }
 
-table tr.line-edit {
+.ui-table-custom tr td, .ui-table-custom tr td {
+  padding: .2em .3em;
+  vertical-align: middle;
+}
+
+table tr .prop-edit {
   cursor: pointer;
 }
 

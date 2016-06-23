@@ -166,6 +166,39 @@
       });
   }
 
+  function clearDeletedMonitorUrl(opml_title) {
+    var jio_options = {
+        type: "query",
+        sub_storage: {
+          type: "uuid",
+          sub_storage: {
+            type: "indexeddb",
+            database: "monitoringdb"
+          }
+        }
+      },
+      jio_storage = jIO.createJIO(jio_options);
+    return jio_storage.allDocs({include_docs: true})
+      .push(function (document_list) {
+        var i,
+          document_id_list = [];
+        for (i = 0; i < document_list.data.total_rows; i += 1) {
+          if (document_list.data.rows[i].doc.opml_title === opml_title) {
+            document_id_list.push(document_list.data.rows[i].id);
+          }
+        }
+        return document_id_list;
+      })
+      .push(function (id_list) {
+        var promise_list = [],
+          i;
+        for (i = 0; i < id_list.length; i += 1) {
+          promise_list.push(jio_storage.remove(id_list[i]));
+        }
+        return RSVP.all(promise_list);
+      });
+  }
+
   function concatArrayOfArray(arrayList) {
     var all_list = [],
       i;
@@ -273,6 +306,9 @@
     })
     .declareMethod('getMonitorUrlList', function (query, opml_title) {
       return getMonitorUrlList(query, opml_title);
+    })
+    .declareMethod('clearDeletedMonitorUrl', function (opml_title) {
+      return clearDeletedMonitorUrl(opml_title);
     })
     .declareMethod('allDocs', function () {
       var storage = this.state_parameter_dict.jio_storage;

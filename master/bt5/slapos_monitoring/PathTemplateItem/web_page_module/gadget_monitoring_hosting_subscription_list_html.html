@@ -20,8 +20,11 @@
         <td>
           <a class="ui-link" href="{{href}}">{{title}}</a>
         </td>
-        <td>
+        <td class="m-hidden">
           <a class="ui-link" href="{{href}}">{{date}}</a>
+        </td>
+        <td class="m-hidden">
+          <a class="ui-link" href="{{href}}">{{amount}}</a>
         </td>
       </tr>
       {{/each}}
@@ -35,42 +38,35 @@
     <div data-gadget-url="gadget_monitoring_jio.html" data-gadget-scope="jio_gadget" data-gadget-sandbox="public"></div>
     <div data-gadget-url="gadget_monitoring_login_widget.html" data-gadget-scope="login_gadget" data-gadget-sandbox="public"></div>
     <!--<div data-gadget-url="gadget_monitoring_document_edit.html" data-gadget-scope="config_gadget" data-gadget-sandbox="public"></div>-->
-    <div class="ui-grid-a ui-responsive">
-      <div class="ui-block-a">
-        
-        <div class="ui-panel-overview" style="min-height: 450px;">
-          <div class="overview-header">
-            <div class='content-title ui-instance-title'>
-              <div class="overview-title">
-                <i class="fa fa-globe"></i> <span>Hosting Subscriptions</span>
-              </div>
-              <div class="commands">
-              </div>
-            </div>
+    <div class="ui-panel-overview hosting-list" style="min-height: 450px;">
+      <div class="overview-header">
+        <div class='content-title ui-instance-title'>
+          <div class="overview-title">
+            <i class="fa fa-globe"></i> <span>Hosting Subscriptions</span>
           </div>
-          <div class="overview-content">
-          
-            <div class="ui-listview-container">
-              <table class="ui-responsive ui-body-c ui-table-inset instance-overview">
-                <thead class="ui-bar-inherit">
-                  <tr>
-                    <th class="padding-10">Status</th>
-                    <th>Name</th>
-                    <th>Status Date</th>
-                  </tr>
-                </thead>
-                <tbody>
-
-                </tbody>
-                <tfoot class="ui-bar-inherit"></tfoot>
-              </table>
-            </div>
-
+          <div class="commands">
           </div>
         </div>
-        
       </div>
-      <div class="ui-block-b" style="position: relative">
+      <div class="overview-content">
+      
+        <div class="ui-listview-container">
+          <table class="ui-responsive ui-body-c ui-table-inset instance-overview">
+            <thead class="ui-bar-inherit">
+              <tr>
+                <th class="padding-10">Status</th>
+                <th>Hosting Subscription Name</th>
+                <th class="m-hidden">Status Date</th>
+                <th class="m-hidden">Software Instance Amount</th>
+              </tr>
+            </thead>
+            <tbody>
+
+            </tbody>
+            <tfoot class="ui-bar-inherit"></tfoot>
+          </table>
+        </div>
+
       </div>
     </div>
 

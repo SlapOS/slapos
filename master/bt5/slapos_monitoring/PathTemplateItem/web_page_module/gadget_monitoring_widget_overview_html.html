@@ -24,10 +24,10 @@
           {{#each row_list}}
             <tr rel="{{index}}">
               <td class="ui-text-center"><a class="ui-link" href="{{href}}">
-                <span class="ui-status-icon ui-status-{{status}}"></span></a></td>
-              <td><a class="ui-link" href="{{href}}">{{date}}</a></td>
+                <span class="label label-{{status}}">{{status}}</span></a></td>
               <td><a class="ui-link" href="{{href}}">{{value}}</a></td>
               <td><a class="ui-link" href="{{href}}">{{hosting_value}}</a></td>
+              <td><a class="ui-link" href="{{href}}">{{date}}</a></td>
             </tr>
           {{/each}}
           </tbody>

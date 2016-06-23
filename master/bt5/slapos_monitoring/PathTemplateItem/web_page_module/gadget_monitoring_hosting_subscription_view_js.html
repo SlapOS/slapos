@@ -90,6 +90,7 @@
       gadget.props = {};
       gadget.props.hosting_list = [];
       gadget.props.opml_key_list = [];
+      gadget.props.error_list = [];
       gadget.props.title = 'Hosting Subscriptions View';
       return gadget.getDeclaredGadget("login_gadget")
         .push(function (login_gadget) {
@@ -319,7 +320,7 @@
         .push(function () {
           var promise_list = [],
             element_list = gadget.props.element.querySelectorAll('.hosting-block .ui-listview-container li > a'),
-            edit_list = gadget.props.element.querySelectorAll('.hosting-block .line-edit'),
+            edit_list = gadget.props.element.querySelectorAll('.hosting-block .prop-edit'),
             i;
           for (i = 0; i < element_list.length; i += 1) {
             promise_list.push(loopEventListener(

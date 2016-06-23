@@ -558,7 +558,8 @@
                 return gadget.getSetting('monitor_url_description')
                   .push(function (url_description_dict) {
                     var i,
-                      promise_list = [];
+                      promise_list = [],
+                      delete_promise_list = [];
                     if(url_description_dict === undefined) {
                       url_description_dict = {};
                     }
@@ -567,12 +568,18 @@
                         promise_list.push(
                           gadget.props.login_gadget.clearSettingFromParentUrl(url_description_dict[key_list[i]].href)
                         );
+                        delete_promise_list.push(
+                          gadget.props.jio_gadget.clearDeletedMonitorUrl(url_description_dict[key_list[i]].title)
+                        );
                         delete url_description_dict[key_list[i]];
                       }
                     }
                     return gadget.setSetting('monitor_url_description', url_description_dict)
                       .push(function () {
                         return RSVP.all(promise_list);
+                      })
+                      .push(function () {
+                        return RSVP.all(delete_promise_list);
                       })
                       .push(function () {
                         return gadget.reload();

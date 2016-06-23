@@ -51,18 +51,18 @@
           gadget.property_dict.login_gadget = login_gadget;
         });
     })
-    .ready(function (gadget) {
+    /*.ready(function (gadget) {
       return gadget.getDeclaredGadget("chart0")
         .push(function (chart0) {
           gadget.property_dict.chart0 = chart0;
         });
-    })
-    .ready(function (gadget) {
+    })*/
+    /*.ready(function (gadget) {
       return gadget.getDeclaredGadget("chart1")
         .push(function (chart1) {
           gadget.property_dict.chart1 = chart1;
         });
-    })
+    })*/
     .declareMethod('render', function (options) {
       var gadget = this,
         global_state,
@@ -237,7 +237,7 @@
             history_content = history_widget_template({history_list: history_list});
             gadget.property_dict.element.querySelector("#promise-overview .ui-block-a")
                   .innerHTML += history_content;
-          })
+          })/*
           .push(function () {
             return gadget.property_dict.login_gadget.loginRedirect(
               global_state._links.private_url.href,
@@ -373,7 +373,7 @@
               },
               data: data
             });
-          });
+          })*/;
         });
     })
     .declareAcquiredMethod("updateHeader", "updateHeader")

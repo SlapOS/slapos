@@ -15,8 +15,7 @@
 
     <script id="promise-widget-template" type="text/x-handlebars-template">
       {{#with element}}
-        <h2><i class="fa fa-cube"></i><strong> Promise Overview</strong></h2>
-        <table data-role="table" data-mode="columntoggle" class="ui-responsive table-stroke">
+        <table data-role="table" data-mode="columntoggle" class="table-stroke">
           <tr>
             <th><i class="fa fa-tachometer"></i> Status</th>
             <td><span class="label label-{{status}}">{{status}}</span></td>
@@ -29,7 +28,12 @@
             <th><i class="fa fa-clock-o"></i> Report Date</th>
             <td title="The date when the promise result was collected.">{{start-date}}</td>
           </tr>
+          <tr>
+            <th><i class="fa fa-calendar"></i> Promise name</th>
+            <td>{{title}}</td>
+          </tr>
         </table>
+        <h2>Output content</h2>
         <div style="border: 1px solid rgba(0,0,0,0.1); margin-top: 10px;">
           <div class="ui-body">
           {{#if message}}
@@ -55,7 +59,8 @@
           {{/if}}
         </fieldset>
       </div>
-      <table data-role="table" data-mode="columntoggle" class="ui-responsive table-stroke">
+      <h2>Software Instance status</h2>
+      <table data-role="table" data-mode="columntoggle" class="table-stroke">
         <tr title="Hosting Subscription">
           <th><i class="fa fa-puzzle-piece"></i> H. Subscription</th>
           <td title="Hosting Subscription title">{{root_title}}</td>
@@ -84,7 +89,7 @@
       {{#with instance}}
       <br/>
       <h2><i class="fa fa-cubes"></i><strong> Software Instance Info</strong></h2>
-      <table data-role="table" data-mode="columntoggle" class="ui-responsive table-stroke">
+      <table data-role="table" data-mode="columntoggle" class="table-stroke">
         <tr>
           <th>Computer Reference</th>
           <td>{{computer}}</td>
@@ -114,7 +119,6 @@
     </script>
 
     <script id="plinks-widget-template" type="text/x-handlebars-template">
-      <h2><i class="fa fa-link"></i> <strong>Links</strong></h2>
       <div class="ui-field-contain">
         <fieldset data-role="controlgroup" data-type="horizontal">
           {{#if public_url}}
@@ -132,14 +136,14 @@
 
     <script id="phistory-widget-template" type="text/x-handlebars-template">
       <h2><i class="fa fa-history"></i> <strong>Promise Status History</strong></h2>
-      <div style="max-height: 200px; overflow: auto;">
+      <div style="max-height: 250px; overflow: auto;">
         {{#if history_list}}
-        <table data-role="table" data-mode="columntoggle" class="ui-responsive table-stroke">
+        <table data-role="table" data-mode="columntoggle" class="table-stroke">
           {{#each history_list}}
           <tr title="{{message}}">
             <td style="text-align: center;"><i class="fa fa-circle status-text-{{status}}"></i></td>
-            <td style="text-align: center;">{{status}}</td>
-            <td>{{start-date}}</td>
+            <td style="text-align: center;">{{start-date}}</td>
+            <td class="text-overview">{{message}}</td>
           </tr>
           {{/each}}
         </table>
@@ -161,14 +165,16 @@
       <div class="ui-promise-body">
         <div id="promise-overview" class="custom-grid-wrap">
           <div class="custom-grid ui-corner-all ui-shadow ui-body-inherit">
-            <div class="ui-grid-b ui-responsive" style="padding: 15px;">
+            <div class="ui-grid-a ui-responsive" style="padding: 15px;">
               <div class="ui-block-a">
+                <h2><i class="fa fa-check" aria-hidden="true"></i> <strong>Promise result view</strong></h2>
                 <div class="promise-links">
                   
                 </div>
               </div>
               <div class="ui-block-b">
               </div>
+              <!--
               <div class="ui-block-c">
                 <h2><i class="fa fa-bar-chart"></i> <strong>Instance Promises Status</strong></h2>
                 <div style="max-width: 300px; heigth: 150px;">
@@ -176,8 +182,9 @@
                 </div>
                 <br/><br/>
                 <h2><i class="fa fa-line-chart"></i> <strong>Instance Promises Result History</strong></h2>
-                <div data-gadget-url="gadget_monitoring_chart.html" data-gadget-scope="chart1"></div>
+                <div data-gadget-url="gadget_monitoring_chart.html" data-gadget-scope="chart1" style="height: 150px; max-width: 700px;"></div>
               </div>
+              -->
             </div>
           </div>
         </div>

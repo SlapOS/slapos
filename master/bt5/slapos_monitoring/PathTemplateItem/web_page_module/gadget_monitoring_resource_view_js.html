@@ -92,22 +92,37 @@
                 basic_login: credential.hash
               }
             }
-          };
+          },
+          resource_key = gadget.property_dict.ressource_dict[key];
         gadget.property_dict.jio_gadget.createJio(jio_options, false);
-        return gadget.property_dict.jio_gadget.get(gadget.property_dict.ressource_dict[key])
+        return gadget.property_dict.jio_gadget.get(resource_key)
+          .push(undefined, function(error) {
+            console.log(error);
+            $.notify(
+              "Error: Failed to get resource file '" + resource_key + "'", 
+              {
+                position:"top right",
+                autoHideDelay: 5000,
+                className: "error"
+              }
+            );
+            return {
+              data: []
+            };
+          })
           .push(function (jio_element) {
             if (!jio_element.hasOwnProperty('data')) {
               return {};
             }
-            // FIX
-            jio_element.data[0] = jio_element.data[0].replace('%', 'percent');
             switch (key) {
               case "memory_resource":
                 gadget.property_dict.mem_data = jio_element;
                 break;
               case "cpu_resource":
                 gadget.property_dict.process_data = jio_element;
-                gadget.property_dict.graph_cpu_label_list = jio_element.data[0].split(',');
+                if (jio_element.data.length > 0) {
+                  gadget.property_dict.graph_cpu_label_list = jio_element.data[0].split(',');
+                }
                 break;
               case "io_resource":
                 gadget.property_dict.io_data = jio_element;
@@ -159,7 +174,7 @@
         .push(function (cred) {
           var key;
           gadget.property_dict.element.querySelector(".ui-panel-overview .overview-title > span")
-            .innerHTML += options.title + ' [' + options.root + ']';
+            .innerHTML += options.root + ' > ' + options.title;
 
           for (key in gadget.property_dict.ressource_dict) {
             promise_list.push(loadGraphData (options.jio_for + 'data/', key, cred));
@@ -332,9 +347,14 @@
           clearInterval(gadget.property_dict.timer);
         }
         gadget.property_dict.timer = setInterval(function(){
+            var hash = window.location.toString().split('#')[1];
+            if (hash.indexOf('page=resource_view') < 0) {
+              clearInterval(gadget.property_dict.timer);
+              return;
+            }
             updateGraph();
           },
-          300000);
+          65000);
       }
 
       return new RSVP.Queue()

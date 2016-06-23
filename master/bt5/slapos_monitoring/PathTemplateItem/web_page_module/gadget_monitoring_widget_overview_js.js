@@ -191,7 +191,7 @@
             "date": all_document_list[j].date,
             "value": all_document_list[j].title,
             "hosting_value": all_document_list[j]['hosting-title'] || '',
-            "status": all_document_list[j].hasOwnProperty('status') ? all_document_list[j].status.toLowerCase() : ''
+            "status": all_document_list[j].hasOwnProperty('status') ? all_document_list[j].status : 'ERROR'
           });
         }
 
@@ -202,9 +202,9 @@
           row_list,
           [
             {title: 'Status'},
-            {title: 'Report Date'},
             {title: 'Software Instance'},
-            {title: 'Hosting Subscription'}
+            {title: 'Hosting Subscription'},
+            {title: 'Report Date'}
           ]
         ]);
       })

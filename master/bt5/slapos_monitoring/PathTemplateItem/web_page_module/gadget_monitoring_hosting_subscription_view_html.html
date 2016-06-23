@@ -27,29 +27,36 @@
               </a>
               <div class="ui-collapse-content ui-content-hidden">
                 <fieldset>
-                  <div class="ui-field-contain">
-                    <fieldset data-role="controlgroup" data-type="horizontal">
-                      {{#if ../status_list_url}}
-                      <a class="ui-btn ui-corner-all ui-btn-inline ui-mini" href="{{../status_list_url}}" title="Instance Promises List"><i class="fa fa-check-square"></i> Promises</a>
-                      {{/if}}
-                      {{#if resource_url }}
-                      <a href="{{resource_url}}" class="ui-btn ui-corner-all ui-btn-inline ui-mini" title="Instance Resource comsumption"><i class="fa fa-pie-chart"></i> Resources</a>
-                      {{/if}}
-                      {{#if process_url }}
-                      <a href="{{process_url}}" class="ui-btn ui-corner-all ui-btn-inline ui-mini" title="Processes usage"><i class="fa fa-list-alt"></i> Processes</a>
-                      {{/if}}
-                      {{#if rss_url}}
-                      <a class="ui-btn ui-corner-all ui-btn-inline ui-mini" target='_blank' href="{{rss_url}}" title="RSS"><i class="fa fa-rss-square"></i> RSS</a>
-                      {{/if}}
-                      <!--
-                      {{#if public_url}}
-                      <a class="ui-btn ui-corner-all ui-btn-inline ui-mini" target='_blank' href="{{public_url}}" title="Public"><i class="fa fa-folder-open-o"></i> Public</a>
-                      {{/if}}
-                      {{#if private_url}}
-                      <a class="ui-btn ui-corner-all ui-btn-inline ui-mini" target='_blank' href="{{private_url}}" title="Browse Private Directory"><i class="fa fa-lock"></i> Private</a>
-                      {{/if}}
-                      -->
-                    </fieldset>
+                  <div>
+                    <div style="float: left; margin-right: 10px;">
+                      <fieldset data-role="controlgroup" data-type="horizontal">
+                        {{#if ../status_list_url}}
+                        <a class="ui-btn ui-corner-all ui-btn-inline ui-mini" href="{{../status_list_url}}" title="Instance Promises List"><i class="fa fa-check-square"></i> Promises</a>
+                        {{/if}}
+                        {{#if rss_url}}
+                        <a class="ui-btn ui-corner-all ui-btn-inline ui-mini" target='_blank' href="{{rss_url}}" title="RSS"><i class="fa fa-rss-square"></i> RSS</a>
+                        {{/if}}
+                        <!--
+                        {{#if public_url}}
+                        <a class="ui-btn ui-corner-all ui-btn-inline ui-mini" target='_blank' href="{{public_url}}" title="Public"><i class="fa fa-folder-open-o"></i> Public</a>
+                        {{/if}}
+                        {{#if private_url}}
+                        <a class="ui-btn ui-corner-all ui-btn-inline ui-mini" target='_blank' href="{{private_url}}" title="Browse Private Directory"><i class="fa fa-lock"></i> Private</a>
+                        {{/if}}
+                        -->
+                      </fieldset>
+                    </div>
+                    <div style="float: left">
+                      <fieldset data-role="controlgroup" data-type="horizontal">
+                        {{#if resource_url }}
+                        <a href="{{resource_url}}" class="ui-btn ui-corner-all ui-btn-inline ui-mini" title="Instance Resource comsumption"><i class="fa fa-pie-chart"></i> Resources</a>
+                        {{/if}}
+                        {{#if process_url }}
+                        <a href="{{process_url}}" class="ui-btn ui-corner-all ui-btn-inline ui-mini" title="Processes usage"><i class="fa fa-list-alt"></i> Processes</a>
+                        {{/if}}
+                      </fieldset>
+                    </div>
+                    <div class="clear"></div>
                   </div>
                   <table data-role="table" data-mode="columntoggle" class="ui-responsive table-stroke">
                     <tr>
@@ -91,7 +98,7 @@
           <h3 class="margin-0 padding-tb-10">{{title}} <i class="fa fa-angle-up"></i></h3>
           <table data-role="table" data-mode="columntoggle" class="table-stroke" title="{{title}}">
             {{#each parameters}}
-              <tr {{#if key}} class="line-edit"  rel="{{../index}}"{{/if}}>
+              <tr>
                 <td><strong>{{title}}</strong></td>
                 {{#if key}}
                   <td class="v-{{key}}">{{value}}</td>

@@ -131,6 +131,9 @@
           }
           for (i = 0; i < document_list.length; i += 1) {
             hosting_dict = {};
+            hosting_dict.amount = 0;
+            hosting_dict.error = 0;
+            hosting_dict.success = 0;
             status = 'OK';
             hosting_dict.instance_list = [];
             date = '';
@@ -138,12 +141,17 @@
               if (document_list[i][j] === undefined) {
                 continue;
               }
+              hosting_dict.amount += 1;
               hosting_dict.instance_list.push({
                 title: document_list[i][j].title,
                 status: document_list[i][j].status,
                 url: document_list[i][j]._links.monitor.href
               });
+              if (document_list[i][j].status == "OK") {
+                hosting_dict.success += 1;
+              }
               if (document_list[i][j].status === 'ERROR') {
+                hosting_dict.error += 1;
                 if (status !== 'ERROR') {
                   status = 'ERROR';
                   date = document_list[i][j].date || '';
@@ -170,7 +178,7 @@
           content = hosting_widget_template({
             hosting_list: gadget.props.hosting_list
           });
-          gadget.props.element.querySelector('.ui-block-a table tbody')
+          gadget.props.element.querySelector('.hosting-list table tbody')
             .innerHTML = content;
 
           return gadget.props.render_deferred.resolve();
