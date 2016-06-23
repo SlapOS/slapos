@@ -180,11 +180,6 @@ hostname = $${novnc-instance:ip}
 port = $${novnc-instance:port}
 
 
-[kvm-monitor]
-recipe = slapos.cookbook:generic.slapmonitor
-db-path = $${directory:srv}/slapmonitor_database
-
-
 [request-slave-frontend]
 recipe = slapos.cookbook:requestoptional
 software-url = $${slap-parameter:frontend-software-url}

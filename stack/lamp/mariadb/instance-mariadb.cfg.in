@@ -11,8 +11,6 @@ parts =
   logrotate-entry-cron
   cron
   cron-entry-logrotate
-  slapmonitor
-  slapmonitor-xml
 
 # Define egg directories to be the one from Software Release
 # (/opt/slapgrid/...)
@@ -221,24 +219,6 @@ mysqld-binary = ${mariadb:location}/bin/mysqld
 recipe = slapos.cookbook:generate.password
 storage-path = $${rootdirectory:etc}/.passwd
 bytes = 4
-
-
-#----------------
-#--
-#-- Deploy slapmonitor.
-
-[slapmonitor]
-recipe = slapos.cookbook:slapmonitor
-pid-file = $${basedirectory:run}/mariadb.pid
-database-path = $${basedirectory:log}/slapmonitor.db
-slapmonitor-path = ${buildout:bin-directory}/slapmonitor
-path = $${basedirectory:services}/slapmonitor
-
-[slapmonitor-xml]
-recipe = slapos.cookbook:slapmonitor-xml
-database-path = $${basedirectory:log}/slapmonitor.db
-slapmonitor-xml-path = ${buildout:bin-directory}/slapmonitor-xml
-path = $${directory:report}/slapmonitor-xml
 
 
 #----------------

@@ -256,24 +256,6 @@ config-custom_domain = $${slap-parameter:domain}
 
 #----------------
 #--
-#-- Deploy slapmonitor.
-
-#[slapmonitor]
-#recipe = slapos.cookbook:slapmonitor
-#pid-file = $${basedirectory:run}/apache.pid
-#database-path = $${basedirectory:log}/slapmonitor.db
-#slapmonitor-path = ${buildout:bin-directory}/slapmonitor
-#path = $${basedirectory:services}/slapmonitor
-#
-#[slapmonitor-xml]
-#recipe = slapos.cookbook:slapmonitor-xml
-#database-path = $${basedirectory:log}/slapmonitor.db
-#slapmonitor-xml-path = ${buildout:bin-directory}/slapmonitor-xml
-#path = $${directory:report}/slapmonitor-xml
-
-
-#----------------
-#--
 #-- Publish instance parameters.
 
 [publish-connection-information]

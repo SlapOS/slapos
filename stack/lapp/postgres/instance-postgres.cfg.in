@@ -11,8 +11,6 @@ parts =
   logrotate-entry-cron
   cron
   cron-entry-logrotate
-  slapmonitor
-  slapmonitor-xml
 
 gzip-binary = ${gzip:location}/bin/gzip
 
@@ -206,24 +204,6 @@ cert-file = $${stunnel:cert-file}
 recipe = slapos.cookbook:generate.password
 storage-path = $${rootdirectory:srv}/postgres_passwd
 bytes = 16
-
-
-#----------------
-#--
-#-- Deploy slapmonitor.
-
-[slapmonitor]
-recipe = slapos.cookbook:slapmonitor
-pid-file = $${postgres-instance:pgdata-directory}/postmaster.pid
-database-path = $${basedirectory:log}/slapmonitor.db
-slapmonitor-path = ${buildout:bin-directory}/slapmonitor
-path = $${basedirectory:services}/slapmonitor
-
-[slapmonitor-xml]
-recipe = slapos.cookbook:slapmonitor-xml
-database-path = $${basedirectory:log}/slapmonitor.db
-slapmonitor-xml-path = ${buildout:bin-directory}/slapmonitor-xml
-path = $${directory:report}/slapmonitor-xml
 
 
 #----------------
