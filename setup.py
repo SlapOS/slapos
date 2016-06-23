@@ -30,10 +30,10 @@ import os
 
 version = '1.0.31'
 name = 'slapos.cookbook'
-long_description = open("README.txt").read() + "\n" + \
-    open("CHANGES.txt").read() + "\n"
+long_description = open("README.rst").read() + "\n" + \
+    open("CHANGES.rst").read() + "\n"
 
-for f in sorted(glob.glob(os.path.join('slapos', 'recipe', 'README.*.txt'))):
+for f in sorted(glob.glob(os.path.join('slapos', 'recipe', 'README.*.rst'))):
   long_description += '\n' + open(f).read() + '\n'
 
 # extras_requires are not used because of

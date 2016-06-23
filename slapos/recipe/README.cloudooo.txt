@@ -1,4 +1,0 @@
-cloudooo
-=========
-
-Instantiates CloudOOo instance.

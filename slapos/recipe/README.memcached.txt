@@ -1,4 +1,0 @@
-memcached
-=========
-
-Instantiates Memcached instance.

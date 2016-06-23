@@ -11,18 +11,22 @@ How to use?
 
 just add this part in your software.cfg to use the lamp.simple module
 
-[instance-recipe]
-egg = slapos.cookbook
-module = lamp.simple
+.. code-block::
+
+  [instance-recipe]
+  egg = slapos.cookbook
+  module = lamp.simple
 
 you also need to extend lamp.cfg
 
-extends =
-  https://lab.nexedi.com/nexedi/slapos/raw/slapos-0.50/stack/lamp.cfg
+.. code-block::
+
+  extends =
+    https://lab.nexedi.com/nexedi/slapos/raw/slapos-0.50/stack/lamp.cfg
 
 
 lamp.runner
-=====
+===========
 
 When you install some software (such as prestashop) you need to remove or rename folder, with slapos you can not 
 access to the www-data directory. to do this, you need to tell to lamp recipe to remove or/and it when software 
@@ -37,31 +41,35 @@ How to use?
 this part of lamp recipe work with slapos.toolbox, Therefore you must add it to your recipe.
 in software.cfg, replace instance-recipe-egg part by
 
-[instance-recipe-egg]
-recipe = zc.recipe.egg
-eggs =
-    ${python-mysqlclient:egg}
-    ${instance-recipe:egg}
-    slapos.toolbox[lampconfigure]
+.. code-block::
+
+  [instance-recipe-egg]
+  recipe = zc.recipe.egg
+  eggs =
+      ${python-mysqlclient:egg}
+      ${instance-recipe:egg}
+      slapos.toolbox[lampconfigure]
 
 and add into your instance.cfg
 
-lampconfigure_directory = ${buildout:bin-directory}/lampconfigure
+.. code-block::
+
+  lampconfigure_directory = ${buildout:bin-directory}/lampconfigure
 
 
 CONDITION
---------
+----------
 
 the action (delete, rename, script, chmod) only starts when the condition is filled.
-in instance.cfg, add 
+in instance.cfg, add:: 
 
-file_token = path_of_file
+  file_token = path_of_file
 
 and the action will begin when path_of_www-data/path_of_file will be created
-you can also use database to check condition. add 
+you can also use database to check condition. add ::
 
-table_name = name_of_table
-constraint = sql_where_condition
+  table_name = name_of_table
+  constraint = sql_where_condition
 
 name_of_table is the full or partial name(in some cases we can not know the prefix used to create tables) of table
 into mariadb databse for example table_name = admin. if you use
@@ -74,11 +82,12 @@ you can't use file_token and table_name at the same time, otherwise file_token w
 
 ACTION
 -------
-The action starts when condition is true
-1- delete file or folder
-into instance.cfg, use 
 
-delete = file_or_folder1, file_or_folder2, file_or_folder3 ...
+The action starts when condition is true
+
+1- delete file or folder into instance.cfg, use:: 
+
+  delete = file_or_folder1, file_or_folder2, file_or_folder3 ...
 
 for example delete = admin 
 
@@ -106,26 +115,30 @@ mode = mode_to_apply (ex= 0644)
 use script = ${configure-script:location}/${configure-script:filename} into instance.cfg, add part configure-script
 into software.cfg
 
-parts = configure-script
+.. code-block::
 
-[configure-script]
-recipe = hexagonit.recipe.download
-ignore-existing = true
-location = ${buildout:parts-directory}/${:_buildout_section_name_}
-url = url_of_script_name.py
-filename = script_name.py
-download-only = True
+  parts = configure-script
 
-The script_name.py should contain a main function, sys.argv is given to the main. you can write script_name.py like this
-....
-def setup(args):
-    mysql_port, mysql_host, mysql_user, mysql_password, mysql_database, base_url, htdocs = args
-    .......
+  [configure-script]
+  recipe = hexagonit.recipe.download
+  location = ${buildout:parts-directory}/${:_buildout_section_name_}
+  url = url_of_script_name.py
+  filename = script_name.py
+  download-only = True
 
-if __name__ == '__main__':
-    setup(sys.argv[1:])
+The script_name.py should contain a main function, sys.argv is given to the main. you can write script_name.py like this::
 
-base_url: is the url of php software
-htdocs: is the path of www-data directory
-mysql_user, mysql_password, mysql_database, mysql_host: is the mariadb parameters
+    ...
+    def setup(args):
+      mysql_port, mysql_host, mysql_user, mysql_password, mysql_database, base_url, htdocs = args
+      .......
+
+    if __name__ == '__main__':
+        setup(sys.argv[1:])
+
+
+- base_url: is the url of php software
+- htdocs: is the path of www-data directory
+- mysql_user, mysql_password, mysql_database, mysql_host: is the mariadb parameters
+
 you can also use "import MySQLdb" if you want to access to database via your python script

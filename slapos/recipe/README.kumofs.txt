@@ -1,4 +1,0 @@
-kumofs
-=========
-
-Instantiates KumoFS instance.
