@@ -168,11 +168,21 @@
                 hosting_title = document_list[i][j]['hosting-title'] || '';
               }
             }
-            hosting_dict.status = status;
-            hosting_dict.title = hosting_title;
-            hosting_dict.date = date;
-            hosting_dict.href = "#page=hosting_subscription_view&key=" +
-              gadget.props.opml_key_list[i];
+            if (hosting_dict.instance_list.length === 0) {
+              // No instance data was found!
+              hosting_dict.status = 'ERROR';
+              hosting_dict.title = gadget.props.opml_dict[
+                gadget.props.opml_key_list[i]].title;
+              hosting_dict.date = 'Not available';
+              // Redirect to configurator to sync data
+              hosting_dict.href = '#page=settings_configurator&tab=manage';
+            } else {
+              hosting_dict.status = status;
+              hosting_dict.title = hosting_title;
+              hosting_dict.date = date;
+              hosting_dict.href = "#page=hosting_subscription_view&key=" +
+                gadget.props.opml_key_list[i];
+            }
             gadget.props.hosting_list.push(hosting_dict);
           }
           content = hosting_widget_template({

@@ -107,7 +107,7 @@
             <value> <string encoding="cdata"><![CDATA[
 
 CACHE MANIFEST\n
-# generated on Fri, 25 Mai 2016 15:47:33 +0000\n
+# generated on Fri, 23 June 2016 15:47:33 +0000\n
 # XXX + fonts\n
 # images/ajax-loader.gif\n
 CACHE:\n
@@ -122,11 +122,14 @@ Chart.min.js\n
 dygraph.js\n
 gadget_erp5.css\n
 gadget_global.js\n
+gadget_erp5_graph.html\n
+gadget_erp5_graph.js\n
 gadget_jio.html\n
 gadget_jio.js\n
 gadget_translate.html\n
 gadget_translate.js\n
 gadget_translation.html\n
+dygraph.js\n
 handlebars.js\n
 i18next.js\n
 jiodev.js\n
@@ -334,7 +337,7 @@ NETWORK:\n
             </item>
             <item>
                 <key> <string>serial</string> </key>
-                <value> <string>951.30729.47924.44561</string> </value>
+                <value> <string>952.4357.25082.29508</string> </value>
             </item>
             <item>
                 <key> <string>state</string> </key>
@@ -352,7 +355,7 @@ NETWORK:\n
                     </tuple>
                     <state>
                       <tuple>
-                        <float>1464342540.22</float>
+                        <float>1466692187.09</float>
                         <string>UTC</string>
                       </tuple>
                     </state>
