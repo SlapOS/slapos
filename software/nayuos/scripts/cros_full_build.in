@@ -93,6 +93,7 @@ install -m 770 "{{ scripts_dir }}/test_nayuos_image" "{{ cros_location }}/{{ bra
 
 ### packages management ###
 VIRTUAL_CHROMEOS_OS_DEV_EBUILD=${CHROMIUM_OVERLAY}/virtual/target-chromium-os-dev/target-chromium-os-dev-1.ebuild
+VIRTUAL_CHROMEOS_DEV_ROOTFS_EBUILD=${CHROMIUM_OVERLAY}/chromeos-base/chromeos-dev-root/chromeos-dev-root-0.0.1.ebuild
 
 # change the virtual ebuild responsible for installing all packages to add the ones
 # needed for NayuOS
@@ -105,7 +106,18 @@ for package in {{ nayu_dev_packages }} ; do
   fi
 done
 
+# XXX: create a function for this
+for package in {{ nayu_dev_rootfs_packages }} ; do
+  echo $package
+  if [[ $( grep "${package}" "${VIRTUAL_CHROMEOS_DEV_ROOTFS_EBUILD}" ) ]] ; then
+    echo "no need to change ${VIRTUAL_CHROMEOS_DEV_ROOTFS_EBUILD} file to add ${package}..." >> "${BUILD_LOG}"
+  else
+    printf "\n\nRDEPEND=\"\${RDEPEND}\n          ${package}\"\n">> ${VIRTUAL_CHROMEOS_DEV_ROOTFS_EBUILD}
+  fi
+done
+
 increase_revision_number ${CHROMIUM_OVERLAY}/virtual/target-chromium-os-dev
+increase_revision_number ${CHROMIUM_OVERLAY}/chromeos-base/chromeos-dev-root
 
 # do not install the Upstart init script that starts ssh daemon at boot time
 rm ${CHROMIUM_OVERLAY}/chromeos-base/chromeos-sshd-init/files/openssh-server.conf
@@ -132,7 +144,6 @@ if [ "\${less_path}" ] ; then
 fi" >> ${BASH_EBUILD_DIR}/files/dot-bashrc
 fi
 
-# XXX: hardcoded revision numbers...
 increase_revision_number ${BASH_EBUILD_DIR}
 
 ######################################## Build ##############################################
@@ -174,9 +185,11 @@ for board in ${BOARDS} ; do
     && cros_sdk -- ./test_nayuos_image ${board} > "${TEST_LOG}" \
     || { echo "An error occured while building ${board} NayuOS image. Exiting." ; exit 1 ;}
 
-  # save ~15Go/device but delete cache (next build will be as long)
+  # save a lot of space on the server but delete cache and build files
+  # (it means that the next build will be as long and use as much resources as this one)
   if [ ${KEEP_CACHE,,} == "no" ] ; then
-    cros_sdk -- sudo rm -R /var/cache/chromeos-chrome/chrome-src/src/out_${board}
+    cros_sdk -- sudo rm -R "/var/cache/chromeos-chrome/chrome-src/src/out_${board}"
+    cros_sdk -- sudo rm -R "/build/${board}"
   fi
 
   if [ ${board} == daisy ]; then
