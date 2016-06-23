@@ -1,0 +1,116 @@
+# DESTINATION
+<match td.*.*>
+  type tdlog
+  apikey YOUR_API_KEY
+
+  auto_create_table
+  buffer_type file
+  buffer_path {{ fluentd_log_directory }}/td-agent/buffer/td
+
+  <secondary>
+    type file
+    path {{ fluentd_log_directory }}/failed_records
+  </secondary>
+</match>
+
+## match tag=debug.** and dump to console
+<match debug.**>
+  type stdout
+</match>
+
+<source>
+  type tail
+  path {{ crawl_log_directory }}/*/*ping.log.20*
+  pos_file {{ crawl_log_directory }}/tail_in_ping.pos
+  tag slapos.monitor.networktest.ping.ipv4
+  format /^(?<time>[^;]*);(?<computer_name>[^;]*);(?<type>[^;]*);(?<name_or_ip>[^;]*);(?<code>[^;]*);(?<average>[^;]*);(?<packet_lost>[^;]*);(?<extra>[^;]*)$/
+  read_from_head true
+</source>
+
+<source>
+  type tail
+  path {{ crawl_log_directory }}/*/*ping6.log.20*
+  pos_file {{ crawl_log_directory }}/tail_in_ping6.pos
+  tag slapos.monitor.networktest.ping.ipv6
+  format /^(?<time>[^;]*);(?<computer_name>[^;]*);(?<type>[^;]*);(?<name_or_ip>[^;]*);(?<code>[^;]*);(?<average>[^;]*);(?<packet_lost>[^;]*);(?<extra>[^;]*)$/
+  read_from_head true
+</source>
+
+<match slapos.monitor.networktest.ping.*>
+  type copy
+{% for slave_instance in slave_instance_list -%}
+{% if  slave_instance.get("ping_ip_list") -%} 
+  <store>
+    type grep
+    regexp1 name_or_ip ^{{ slave_instance.get("ping_ip_list") }}$
+    add_tag_prefix {{ slave_instance.get("slave_reference") }}
+  </store>
+{% endif -%}
+{% if  slave_instance.get("ping6_ip_list") -%}
+  <store>
+    type grep
+    regexp1 name_or_ip ^{{ slave_instance.get("ping6_ip_list") }}$
+    add_tag_prefix {{ slave_instance.get("slave_reference") }}
+  </store>
+{% endif -%}
+{% endfor -%}
+</match>
+
+{% for slave_instance in slave_instance_list -%}
+<match {{ slave_instance.get("slave_reference") }}.slapos.monitor.networktest.ping.ipv6>
+  type file
+  path {{ network_user_logs }}/{{ slave_instance.get("slave_reference") }}/ping6/log
+  append true
+  include_time_key true
+  include_tag_key true
+  format json
+</match>
+<match {{ slave_instance.get("slave_reference") }}.slapos.monitor.networktest.ping.ipv4>
+  type file
+  path {{ network_user_logs }}/{{ slave_instance.get("slave_reference") }}/ping/log
+  append true
+  include_time_key true
+  include_tag_key true
+  format json
+</match>
+{% endfor -%}
+
+<source>
+  type tail
+  path {{ network_user_logs }}/*/ping*/log/*.log
+  pos_file {{ crawl_log_directory }}/tail_in_ping6.pos
+  tag slapos.wendelin.networktest
+  format json 
+  read_from_head true
+</source>
+
+{% set wendelin_streamtool_uri = slapparameter_dict.get('wendelin-streamtool-uri', '')  -%}
+{% set wendelin_password = slapparameter_dict.get('wendelin-password', '')  -%}
+{% set wendelin_user = slapparameter_dict.get('wendelin-user', '')  -%}
+{% if wendelin_streamtool_uri and wendelin_password and wendelin_user -%}
+<match slapos.wendelin.networktest>
+  
+  @type wendelin
+  @id wendelin_out
+
+  streamtool_uri {{ wendelin_streamtool_uri }} 
+  user      {{ wendelin_user }}
+  password  {{ wendelin_password }}
+
+  buffer_type       memory
+  flush_interval    20s
+</match>
+{% endif -%}
+
+## SOURCE
+<source>
+  type forward
+</source>
+
+## live debugging agent
+<source>
+  type debug_agent
+  bind 127.0.0.1
+  port 24230
+</source>
+

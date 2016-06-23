@@ -10,10 +10,10 @@ context =
 [slave-test-configuration]
 <=jinja2-template-base
 template = {{ template_json_distributor_test }}
-filename = srv/monitor-private/test.json
+filename = srv/monitor/private/test.json
 extensions = jinja2.ext.do 
 extra-context = 
-  section slave_information slap-parameter
+  section slave_information slap-configuration
 
 {% set part_list = [] -%}
 # Publish information for each slave
@@ -27,7 +27,7 @@ extra-context =
 recipe = slapos.cookbook:publish
 -slave-reference = {{ slave_instance.get('slave_reference') }}
 log-access-url = ${monitor-frontend:connection-site_url}/{{ slave_instance.get('slave_reference') }}
-log-access-url-v6 = ${monitor-parameters:url}/{{ slave_instance.get('slave_reference') }}
+log-access-url-v6 = ${monitor-httpd-conf-parameter:url}/{{ slave_instance.get('slave_reference') }}
 {% endfor %}
 
 
@@ -49,13 +49,12 @@ command = cd ${monitor-directory:crawl-log}/{{ entry }} && ${crawler-bin:wrapper
 {% endif %}
 
 [monitor-directory]
-fluentd-log = ${:log}/fluentd
 crawl-log = ${:srv}/crawlog
-network-user-logs = ${:private-directory}/network-user-logs/
+network-user-logs = ${:private}/network-user-logs/
 {% for slave_instance in slave_instance_list -%}
-user-log-{{ slave_instance.get('slave_reference') }}-folder = ${:private-directory}/network-user-logs/{{ slave_instance.get('slave_reference') }}
-user-log-{{ slave_instance.get('slave_reference') }}-ping-folder = ${:private-directory}/network-user-logs/{{ slave_instance.get('slave_reference') }}/ping
-user-log-{{ slave_instance.get('slave_reference') }}-ping6-folder = ${:private-directory}/network-user-logs/{{ slave_instance.get('slave_reference') }}/ping6
+user-log-{{ slave_instance.get('slave_reference') }}-folder = ${:private}/network-user-logs/{{ slave_instance.get('slave_reference') }}
+user-log-{{ slave_instance.get('slave_reference') }}-ping-folder = ${:private}/network-user-logs/{{ slave_instance.get('slave_reference') }}/ping
+user-log-{{ slave_instance.get('slave_reference') }}-ping6-folder = ${:private}/network-user-logs/{{ slave_instance.get('slave_reference') }}/ping6
 
 {% endfor -%}
 {% for directory in directory_list %}
@@ -74,35 +73,26 @@ parameters-extra = true
 extends = {{ instance_base_monitor }}
 parts +=
   slave-test-configuration
-  fluentd-wrapper
+  fluentd-distributor-wrapper
 {% for part in part_list %}
 {{ '  %s' % part }}
 {% endfor %}
 
-[fluentd-wrapper]
-recipe = slapos.cookbook:wrapper
-command-line = {{ fluentd_location }}/bin/fluentd -l ${monitor-directory:log}/fluend.log -c ${fluentd-conf-configuration:rendered}
-wrapper-path = ${monitor-directory:service}/fluentd
-environment = 
-  GEM_PATH={{ fluentd_location }}/lib/ruby/gems/1.8/
+[fluentd-distributor-wrapper]
+<=fluentd-wrapper
+command-line = {{ fluentd_location }}/bin/fluentd -l ${monitor-directory:log}/fluend-distributor.log -c ${fluentd-distributor-conf-configuration:rendered}
+wrapper-path = ${monitor-directory:service}/fluentd-distributor
 
-[fluentd-conf-configuration]
+[fluentd-distributor-conf-configuration]
 recipe = slapos.recipe.template:jinja2
-template = {{ fluent_conf_output }}
-rendered = ${monitor-directory:etc}/fluentd.cfg
+template = {{ fluent_distributor_conf_output }}
+rendered = ${monitor-directory:etc}/fluentd-distributor.cfg
 mode = 0744
 context =
   key slapparameter_dict slap-configuration:configuration
-  key slave_instance_list slap-parameters:slave-instance-list
+  key slave_instance_list slap-configuration:slave-instance-list
   key fluentd_log_directory monitor-directory:fluentd-log
   key crawl_log_directory monitor-directory:crawl-log
   key network_user_logs monitor-directory:network-user-logs
-
-[slap-configuration]
-recipe = slapos.cookbook:slapconfiguration.serialised
-computer = ${slap-connection:computer-id}
-partition = ${slap-connection:partition-id}
-url = ${slap-connection:server-url}
-key = ${slap-connection:key-file}
-cert = ${slap-connection:cert-file}
+  key computer_id slap-configuration:computer
 

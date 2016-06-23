@@ -13,104 +13,135 @@
   </secondary>
 </match>
 
-## match tag=debug.** and dump to console
-<match debug.**>
-  type stdout
-</match>
-
-<source>
-  type tail
-  path {{ crawl_log_directory }}/*/*ping.log.20*
-  pos_file {{ crawl_log_directory }}/tail_in_ping.pos
-  tag slapos.monitor.networktest.ping.ipv4
-  format /^(?<time>[^;]*);(?<computer_name>[^;]*);(?<type>[^;]*);(?<name_or_ip>[^;]*);(?<code>[^;]*);(?<average>[^;]*);(?<packet_lost>[^;]*);(?<extra>[^;]*)$/
-  read_from_head true
-</source>
-
-<source>
-  type tail
-  path {{ crawl_log_directory }}/*/*ping6.log.20*
-  pos_file {{ crawl_log_directory }}/tail_in_ping6.pos
-  tag slapos.monitor.networktest.ping.ipv6
-  format /^(?<time>[^;]*);(?<computer_name>[^;]*);(?<type>[^;]*);(?<name_or_ip>[^;]*);(?<code>[^;]*);(?<average>[^;]*);(?<packet_lost>[^;]*);(?<extra>[^;]*)$/
-  read_from_head true
-</source>
-
-<match slapos.monitor.networktest.ping.*>
-  type copy
-{% for slave_instance in slave_instance_list -%}
-{% if  slave_instance.get("ping_ip_list") -%} 
-  <store>
-    type grep
-    regexp1 name_or_ip ^{{ slave_instance.get("ping_ip_list") }}$
-    add_tag_prefix {{ slave_instance.get("slave_reference") }}
-  </store>
-{% endif -%}
-{% if  slave_instance.get("ping6_ip_list") -%}
-  <store>
-    type grep
-    regexp1 name_or_ip ^{{ slave_instance.get("ping6_ip_list") }}$
-    add_tag_prefix {{ slave_instance.get("slave_reference") }}
-  </store>
-{% endif -%}
-{% endfor -%}
-</match>
-
-{% for slave_instance in slave_instance_list -%}
-<match {{ slave_instance.get("slave_reference") }}.slapos.monitor.networktest.ping.ipv6>
-  type file
-  path {{ network_user_logs }}/{{ slave_instance.get("slave_reference") }}/ping6/log
-  append true
-  include_time_key true
-  include_tag_key true
-  format json
-</match>
-<match {{ slave_instance.get("slave_reference") }}.slapos.monitor.networktest.ping.ipv4>
-  type file
-  path {{ network_user_logs }}/{{ slave_instance.get("slave_reference") }}/ping/log
-  append true
-  include_time_key true
-  include_tag_key true
-  format json
-</match>
-{% endfor -%}
-
-<source>
-  type tail
-  path {{ network_user_logs }}/*/ping*/log/*.log
-  pos_file {{ crawl_log_directory }}/tail_in_ping6.pos
-  tag slapos.wendelin.networktest
-  format json 
-  read_from_head true
-</source>
-
 {% set wendelin_streamtool_uri = slapparameter_dict.get('wendelin-streamtool-uri', '')  -%}
 {% set wendelin_password = slapparameter_dict.get('wendelin-password', '')  -%}
 {% set wendelin_user = slapparameter_dict.get('wendelin-user', '')  -%}
+{% set wendelin_uid = slapparameter_dict.get('wendelin-uid', 'UNKNOWN')  -%}
 {% if wendelin_streamtool_uri and wendelin_password and wendelin_user -%}
-<match slapos.wendelin.networktest>
-  
+<source>
+  type syslog
+  port 42185
+  bind 127.0.0.1
+  tag {{ wendelin_uid }}.system
+</source>
+
+<match {{ wendelin_uid }}.system.**>
   @type wendelin
   @id wendelin_out
 
-  streamtool_uri {{ wendelin_streamtool_uri }} 
+  streamtool_uri {{ wendelin_streamtool_uri }}_syslog
   user      {{ wendelin_user }}
   password  {{ wendelin_password }}
 
   buffer_type       memory
   flush_interval    20s
 </match>
+
+<source>
+  type tail
+  path {{ fluentd_log_directory }}/consumption/*/dump_user.csv
+  pos_file {{ fluentd_log_directory }}/consumption/dump_user.pos
+  tag slapos.monitor.usage.user.{{ wendelin_uid }}
+  format /^(?<partition>[^,]*),(?<pid>[^,]*),(?<process>[^,]*),(?<cpu_percent>[^,]*),(?<cpu_time>[^,]*),(?<cpu_num_threads>[^,]*),(?<memory_percent>[^,]*),(?<memory_rss>[^,]*),(?<io_rw_counter>[^,]*),(?<io_cycles_counter>[^,]*),(?<date>[^,]*),(?<time>[^,]*),(?<reported>[^,]*)$/
+  read_from_head true
+</source>
+
+<match slapos.monitor.usage.user.{{ wendelin_uid }}>
+  @type wendelin
+  @id wendelin_out
+
+  streamtool_uri {{ wendelin_streamtool_uri }}_user
+  user      {{ wendelin_user }}
+  password  {{ wendelin_password }}
+
+  buffer_type       memory
+  flush_interval    20s
+</match>
+
+<source>
+  type tail
+  path {{ fluentd_log_directory }}/consumption/*/dump_system.csv
+  pos_file {{ fluentd_log_directory }}/consumption/dump_system.pos
+  tag slapos.monitor.usage.system.{{ wendelin_uid }}
+  format /^(?<loadavg>[^,]*),(?<cpu_percent>[^,]*),(?<memory_used>[^,]*),(?<memory_free>[^,]*),(?<net_in_bytes>[^,]*),(?<net_in_errors>[^,]*),(?<net_in_dropped>[^,]*),(?<net_out_bytes>[^,]*),(?<net_out_errors>[^,]*),(?<net_out_dropped>[^,]*),(?<date>[^,]*),(?<time>[^,]*),(?<reported>[^,]*)$/
+  read_from_head true
+</source>
+
+<match slapos.monitor.usage.system.{{ wendelin_uid }}>
+  @type wendelin
+  @id wendelin_out
+
+  streamtool_uri {{ wendelin_streamtool_uri }}_system
+  user      {{ wendelin_user }}
+  password  {{ wendelin_password }}
+
+  buffer_type       memory
+  flush_interval    20s
+</match>
+
+
+<source>
+  type tail
+  path {{ fluentd_log_directory }}/consumption/*/dump_computer.csv
+  pos_file {{ fluentd_log_directory }}/consumption/dump_computer.pos
+  tag slapos.monitor.usage.computer.{{ wendelin_uid }}
+  format /^(?<cpu_num_core>[^,]*),(?<cpu_frequency>[^,]*),(?<cpu_type>[^,]*),(?<memory_size>[^,]*),(?<memory_type>[^,]*),(?<partition_list>[^,]*),(?<date>[^,]*),(?<time>[^,]*),(?<reported>[^,]*)$/
+  
+  read_from_head true
+</source>
+
+<match slapos.monitor.usage.computer.{{ wendelin_uid }}>
+  @type wendelin
+  @id wendelin_out
+
+  streamtool_uri {{ wendelin_streamtool_uri }}_computer
+  user      {{ wendelin_user }}
+  password  {{ wendelin_password }}
+
+  buffer_type       memory
+  flush_interval    20s
+</match>
+
+<source>
+  type tail
+  path {{ fluentd_log_directory }}/consumption/*/dump_disk.csv
+  pos_file {{ fluentd_log_directory }}/consumption/dump_disk.pos
+  tag slapos.monitor.usage.disk.{{ wendelin_uid }}
+  format /^(?<partition>[^,]*),(?<used>[^,]*),(?<free>[^,]*),(?<mountpoint>[^,]*),(?<date>[^,]*),(?<time>[^,]*),(?<reported>[^,]*)$/
+  read_from_head true
+</source>
+
+<match slapos.monitor.usage.disk.{{ wendelin_uid }}>
+  @type wendelin
+  @id wendelin_out
+
+  streamtool_uri {{ wendelin_streamtool_uri }}_disk
+  user      {{ wendelin_user }}
+  password  {{ wendelin_password }}
+
+  buffer_type       memory
+  flush_interval    20s
+</match>
+
+<source>
+  type tail
+  path {{ fluentd_log_directory }}/consumption/*/dump_temperature.csv
+  pos_file {{ fluentd_log_directory }}/consumption/dump_temperature.pos
+  tag slapos.monitor.usage.temperature.{{ wendelin_uid }}
+  format /^(?<sensor_id>[^,]*),(?<temperature>[^,]*),(?<alarm>[^,]*),(?<date>[^,]*),(?<time>[^,]*),(?<reported>[^,]*)$/
+  read_from_head true
+</source>
+
+<match slapos.monitor.usage.temperature.{{ wendelin_uid }}>
+  @type wendelin
+  @id wendelin_out
+
+  streamtool_uri {{ wendelin_streamtool_uri }}_temperature
+  user      {{ wendelin_user }}
+  password  {{ wendelin_password }}
+
+  buffer_type       memory
+  flush_interval    20s
+</match>
+
 {% endif -%}
-
-## SOURCE
-<source>
-  type forward
-</source>
-
-## live debugging agent
-<source>
-  type debug_agent
-  bind 127.0.0.1
-  port 24230
-</source>
-
