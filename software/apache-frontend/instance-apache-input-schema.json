@@ -13,7 +13,7 @@
 			"title": "IPReadLimit",
 			"description": "Value used to set IPReadLimit Parameter for antiloris.",
 			"type": "integer",
-			"default: 10
+			"default": 10
 		},		
 		"-frontend-authorized-slave-string": {
 			"title": "Authorized Slave String",
