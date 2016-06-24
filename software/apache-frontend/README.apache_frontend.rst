@@ -14,13 +14,12 @@ Software type
 Apache frontend is available in 3 software types:
   * default : The standard way to use the apache frontend configuring everything with a few given parameters
   * custom-personal : This software type allow each slave to edit its apache configuration file
-  * custom-group : This software type use a template given as a parameter on master instance to generate apache configuration for all slaves
-  * replicate : This software type is set to replicate any kind of apache
 
-About replicate frontend
-========================
 
-Slaves of the root instance (type "replicate") are sent as a parameter to requested frontends which will process them. The only difference is that they will then return the « would-be published information » to the root instance instead of publishing it. The root instance will then do a synthesis and publish the information to its slaves. The replicate instance only use 5 type of parameters for itself and will transmit the rest to requested frontends.
+About frontend replication
+===========================
+
+Slaves of the root instance are sent as a parameter to requested frontends which will process them. The only difference is that they will then return the « would-be published information » to the root instance instead of publishing it. The root instance will then do a synthesis and publish the information to its slaves. The replicate instance only use 5 type of parameters for itself and will transmit the rest to requested frontends.
 These parameters are :
   * "-frontend-type" : the type to deploy frontends with. (default to 2)
   * "-frontend-quantity" : The quantity of frontends to request (default to "default")
@@ -108,6 +107,10 @@ Instance Parameters
 Master Instance Parameters
 --------------------------
 
+The parameters for instances are described at `instance-apache-input-schema.json <instance-apache-input-schema.json>`_.
+
+Here some additional informations about the parameters listed, below:
+
 domain
 ~~~~~~
 name of the domain to be used (example: mydomain.com). Subdomains of this
@@ -131,58 +134,13 @@ plain_http_port
 Port used by apache to serve plain http (only used to redirect to https).
 Optional parameter, defaults to 8080.
 
-ip-read-limit
-~~~~~~~~~~~~~
-Use to set IPReadLimit Parameter for antiloris.
-Optional parameter, defaults to 10.
 
-apache_custom_http (custom-group)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Jinja template for apache virtualhost http configuration. It will be used by all slaves
+Slave Instance Parameters
+-------------------------
 
-apache_custom_https (custom-group)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Jinja template for apache virtualhost https configuration. It will be used by all slaves
+The parameters for instances are described at `instance-slave-apache-input-schema.json <instance-slave-apache-input-schema.json>`_.
 
-
-Slave Instance Parameters (default)
------------------------------------
-
-url
-~~~
-url of backend to use.
-"url" is a mandatory parameter.
-Example: http://mybackend.com/myresource
-
-enable_cache
-~~~~~
-Specify if slave instance should use a squid to connect to backend.
-Possible values: "true", "false".
-"enable_cache" is an optional parameter. Defaults to "false".
-Example: true
-
-type
-~~~~
-Specify if slave instance will redirect to a zope backend. If specified, Apache
-RewriteRule will use Zope's Virtual Host Daemon.
-Possible values: "zope", "default".
-"type" is an optional parameter. Defaults to "default".
-Example: zope
-
-domain (former custom_domain)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Domain name to use as frontend. The frontend will be accessible from this domain.
-"domain" is an optional parameter. Defaults to
-[instancereference].[masterdomain].
-Example: www.mycustomdomain.com
-
-https-only
-~~~~~~~~~~
-Specify if website should be accessed using https only. If so, the frontend
-will redirect the user to https if accessed from http.
-Possible values: "true", "false".
-"https-only" is an optional parameter. Defaults to "false".
-Example: true
+Here some additional informations about the parameters listed, below:
 
 path
 ~~~~
@@ -193,9 +151,6 @@ VirtualHostMonster.
 
 "path" is an optional parameter, ignored if not specified.
 Example of value: "/erp5/web_site_module/hosting/"
-
-Slave Instance Parameters (custom-personal)
--------------------------------------------
 
 apache_custom_https
 ~~~~~~~~~~~~~~~~~~~
@@ -224,8 +179,8 @@ enable_cache
 Necesarry to activate cache.
 "enable_cache" is an optional parameter.
 
-ssl_key, ssl_crt, ssl_ca_crt, ssl_crs
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ssl_key, ssl_crt, ssl_ca_crt
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 SSL certificates of the slave.
 They are optional.
 
@@ -235,24 +190,6 @@ In the slave apache configuration you can use parameters that will be replaced d
   * error_log : path of the slave error log in order to log in a deferenciated file.
   * error_log : path of the slave access log in order to log in a deferenciated file.
   * ssl_key, ssl_crt, ssl_ca_crt, ssl_crs : path of the certificates given in slave instance parameters
-
-Slave Instance Parameters (custom-group)
-----------------------------------------
-
-url
-~~~
-Necesarry to activate cache. url of backend to use.
-"url" is an optional parameter.
-Example: http://mybackend.com/myresource
-
-domain
-~~~~~~
-Domain name to use as frontend. The frontend will be accessible from this domain.
-"domain" is an optional parameter necessary to activate cache. Defaults to
-[instancereference].[masterdomain].
-Example: www.mycustomdomain.com
-
-The rest of the parameters are defined by templates given to the master and accessible by the slave_parameter dict in it.
 
 
 Examples
@@ -295,8 +232,8 @@ proxy::
   )
 
 
-Advanced example (default)
---------------------------
+Advanced example 
+-----------------
 
 Request slave frontend instance using a Zope backend, with Varnish activated,
 listening to a custom domain and redirecting to /erp5/ so that
@@ -316,8 +253,8 @@ the proxy::
     }
   )
 
-Simple Example (custom-personal)
---------------------------------
+Simple Example 
+---------------
 
 Request slave frontend instance so that https://[1:2:3:4:5:6:7:8]:1234 will be
   instance = request(
@@ -362,8 +299,8 @@ Request slave frontend instance so that https://[1:2:3:4:5:6:7:8]:1234 will be
     }
   )
 
-Simple Cache Example (custom-personal)
---------------------------------
+Simple Cache Example
+--------------------
 
 Request slave frontend instance so that https://[1:2:3:4:5:6:7:8]:1234 will be
   instance = request(
@@ -414,8 +351,8 @@ Request slave frontend instance so that https://[1:2:3:4:5:6:7:8]:1234 will be
   )
 
 
-Advanced example (custom-personal)
-----------------------------------
+Advanced example 
+-----------------
 
 Request slave frontend instance using custom apache configuration, willing to use cache and ssl certificates.
 listening to a custom domain and redirecting to /erp5/ so that
