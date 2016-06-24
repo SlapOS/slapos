@@ -6,9 +6,15 @@
 	"properties": {
 		"public-ipv4": {
 			"title": "Public IPv4",
-			"description": "Public IPv4 that will be provided to Slaves to configure DNS.",
+			"description": "Public ipv4 of the frontend (the one Apache will be indirectly listening to).",
 			"type": "string"
 		},
+		"ip-read-limit": {
+			"title": "IPReadLimit",
+			"description": "Value used to set IPReadLimit Parameter for antiloris.",
+			"type": "integer",
+			"default: 10
+		},		
 		"-frontend-authorized-slave-string": {
 			"title": "Authorized Slave String",
 			"description": "List of SOFTINST-XXX of Slaves, separated by space which is allowed to use custom configuration.",
