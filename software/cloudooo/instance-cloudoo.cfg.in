@@ -6,6 +6,8 @@
 parts =
   publish-cloudooo-connection-information
   cloudooo-test-runner
+  xvfb-instance
+  wkhtmltopdf-on-xvfb
 
 eggs-directory = {{ eggs_directory }}
 develop-eggs-directory = {{ develop_eggs_directory }}
@@ -95,12 +97,13 @@ link-binary =
   {{ parameter_dict['coreutils'] }}/bin/tr
   {{ parameter_dict['coreutils'] }}/bin/uname
   {{ parameter_dict['coreutils'] }}/bin/dirname
+# wrapper recipe needs the head command
+  {{ parameter_dict['coreutils'] }}/bin/head
   {{ parameter_dict['imagemagick'] }}/bin/convert
   {{ parameter_dict['imagemagick'] }}/bin/identify
   {{ parameter_dict['poppler'] }}/bin/pdfinfo
   {{ parameter_dict['poppler'] }}/bin/pdftotext
   {{ parameter_dict['poppler'] }}/bin/pdftohtml
-  {{ parameter_dict['wkhtmltopdf'] }}/wkhtmltopdf
 
 # rest of parts are candidates for some generic stuff
 [directory]
@@ -112,3 +115,21 @@ run = ${:var}/run
 services = ${:etc}/run
 srv = ${buildout:directory}/srv
 var = ${buildout:directory}/var
+framebuffer = ${:srv}/framebuffer
+
+[xvfb-instance]
+recipe = slapos.cookbook:xvfb
+runner-path = ${directory:services}/xvfb
+xvfb-path = {{ parameter_dict["xserver"] }}/bin/Xvfb
+fbdir-path = ${directory:framebuffer}
+tmp-path = ${directory:run}
+shell-path = {{ parameter_dict["dash"] }}/bin/dash
+
+[wkhtmltopdf-on-xvfb]
+recipe = slapos.cookbook:wrapper
+wrapper-path = ${directory:bin}/wkhtmltopdf
+environment =
+  DISPLAY=:0
+  TMPDIR=${directory:run}
+command-line = {{ parameter_dict['wkhtmltopdf'] }}/wkhtmltopdf --use-xserver
+parameters-extra = true
