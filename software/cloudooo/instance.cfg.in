@@ -29,6 +29,7 @@ buildout-bin-directory = {{ buildout_bin_directory }}
 cairo = {{ cairo_location }}
 coreutils = {{ coreutils_location }}
 cups = {{ cups_location }}
+dash = {{ dash_location }}
 dbus = {{ dbus_location }}
 dbus-glib = {{ dbus_glib_location }}
 file = {{ file_location }}
@@ -57,6 +58,7 @@ pixman = {{ pixman_location }}
 wkhtmltopdf = {{ wkhtmltopdf_location }}
 xdamage = {{ xdamage_location }}
 xfixes = {{ xfixes_location }}
+xserver = {{ xserver_location }}
 zlib = {{ zlib_location }}
 
 [dynamic-template-cloudooo]
