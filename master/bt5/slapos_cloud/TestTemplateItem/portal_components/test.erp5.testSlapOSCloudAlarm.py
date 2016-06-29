@@ -135,6 +135,7 @@ active_process.postResult(active_result)
       'glossary_module',
       'hosting_subscription_module',
       'image_module',
+      'implicit_item_movement_module',
       'internal_order_module',
       'internal_packing_list_module',
       'internal_supply_module',
