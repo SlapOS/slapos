@@ -1223,7 +1223,7 @@ class TestSlapOSSlapToolInstanceAccess(TestSlapOSSlapToolMixin):
         <string>slave_instance_list</string>
         <list id='i9'>
           <dictionary id='i10'>
-            <string>connection-parameter-key-list</string>
+            <string>connection-parameter-hash</string>
             <string>44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a</string>
             <unicode>paramé</unicode>
             <unicode>%(slave_1_param)s</unicode>
@@ -2318,7 +2318,7 @@ class TestSlapOSSlapToolPersonAccess(TestSlapOSSlapToolMixin):
         <string>slave_instance_list</string>
         <list id='i9'>
           <dictionary id='i10'>
-            <string>connection-parameter-key-list</string>
+            <string>connection-parameter-hash</string>
             <string>44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a</string>
             <unicode>paramé</unicode>
             <unicode>%(slave_1_param)s</unicode>
