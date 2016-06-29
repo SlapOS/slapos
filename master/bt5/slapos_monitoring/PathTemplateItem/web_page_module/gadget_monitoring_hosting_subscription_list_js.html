@@ -139,6 +139,7 @@
             date = '';
             for (j = 0; j < document_list[i].length; j += 1) {
               if (document_list[i][j] === undefined) {
+                status = 'ERROR';
                 continue;
               }
               hosting_dict.amount += 1;
@@ -173,7 +174,7 @@
               hosting_dict.status = 'ERROR';
               hosting_dict.title = gadget.props.opml_dict[
                 gadget.props.opml_key_list[i]].title;
-              hosting_dict.date = 'Not available';
+              hosting_dict.date = 'Not Synchronized';
               // Redirect to configurator to sync data
               hosting_dict.href = '#page=settings_configurator&tab=manage';
             } else {

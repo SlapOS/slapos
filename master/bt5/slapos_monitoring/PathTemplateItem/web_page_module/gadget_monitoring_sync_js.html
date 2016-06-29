@@ -43,6 +43,10 @@
         gadget.props.jio_gadget.createJio(storage_dict, true, query);
         return gadget.props.jio_gadget.repair()
           .push(undefined, function (error) {
+            gadget.props.error_list.push({
+              storage_dict: storage_dict,
+              query: query
+            });
             console.log(error);
           });
       }
@@ -143,6 +147,7 @@
             var i,
               promise_list = [];
             monitor_storage_list = getMonitoringStorageList(url_list);
+            gadget.props.error_list = [];
             for (i = 0; i < monitor_storage_list.length; i += 1) {
               promise_list.push(syncStorage(
                 gadget,
@@ -153,19 +158,57 @@
             return RSVP.all(promise_list);
           })
           .push(function () {
+            // Check if there was errors and retry them if possible
+            var error_size = gadget.props.error_list.length,
+              error_list = gadget.props.error_list.slice(0),
+              promise_list = [],
+              i;
+            if (error_size > 0) {
+              // Reset list of errors
+              gadget.props.error_list = [];
+              $(".notifyjs-wrapper").remove();
+              promise_list.push($.notify(
+                "Retry Previous Failure(s)...", 
+                {
+                  position:"bottom right",
+                  autoHide: false,
+                  className: "info"
+                }
+              ));
+              for (i = 0; i < error_size; i += 1) {
+                promise_list.push(syncStorage(
+                  gadget,
+                  error_list[i].storage_dict,
+                  error_list[i].query
+                ));
+              }
+            }
+            return RSVP.all(promise_list);
+          })
+          .push(function () {
             last_sync_time = new Date().getTime();
             sync_lock = false;
             return gadget.setSetting('latest_sync_time', last_sync_time);
           })
           .push(function () {
+            var time = 3000,
+              classname = "info",
+              error_amount = gadget.props.error_list.length,
+              message = "Synchronisation finished.";
+            if ( error_amount > 0) {
+              classname = "warning";
+              time = 5000;
+              message = "Synchronisation finished with " + error_amount + "error(s). \n" +
+              "You can retry with manual sync.";
+            }
             $(".notifyjs-wrapper").remove();
             return $.notify(
-              "Synchronisation finished.", 
+              message,
               {
                 position:"bottom right",
                 autoHide: true,
-                className: "info",
-                autoHideDelay: 3000
+                className: classname,
+                autoHideDelay: time
               }
             );
           })

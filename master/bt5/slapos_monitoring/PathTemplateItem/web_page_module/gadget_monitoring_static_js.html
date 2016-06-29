@@ -569,7 +569,9 @@
                           gadget.props.login_gadget.clearSettingFromParentUrl(url_description_dict[key_list[i]].href)
                         );
                         delete_promise_list.push(
-                          gadget.props.jio_gadget.clearDeletedMonitorUrl(url_description_dict[key_list[i]].title)
+                          gadget.props.jio_gadget.clearDeletedMonitorUrl(
+                            url_description_dict[key_list[i]].href,
+                            url_description_dict[key_list[i]].title)
                         );
                         delete url_description_dict[key_list[i]];
                       }

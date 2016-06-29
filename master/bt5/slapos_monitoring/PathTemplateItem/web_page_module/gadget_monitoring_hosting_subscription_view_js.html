@@ -160,6 +160,9 @@
             .innerHTML = gadget.props.hosting.title; // + '<span class="label label-{{status}}">{{status}}</span>';
 
           for (i = 0; i < document_list.length; i += 1) {
+            if (!document_list[i]) {
+              continue;
+            }
             instance_list.push(
               getInstanceDict(document_list[i])
             );

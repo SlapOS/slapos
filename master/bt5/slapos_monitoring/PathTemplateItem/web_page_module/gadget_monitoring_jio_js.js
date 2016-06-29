@@ -166,7 +166,7 @@
       });
   }
 
-  function clearDeletedMonitorUrl(opml_title) {
+  function clearDeletedMonitorUrl(opml_url, opml_title) {
     var jio_options = {
         type: "query",
         sub_storage: {
@@ -177,7 +177,7 @@
           }
         }
       },
-      jio_storage = jIO.createJIO(jio_options);
+      jio_storage = createOPMLReplicatedJio(opml_url);
     return jio_storage.allDocs({include_docs: true})
       .push(function (document_list) {
         var i,
@@ -307,8 +307,8 @@
     .declareMethod('getMonitorUrlList', function (query, opml_title) {
       return getMonitorUrlList(query, opml_title);
     })
-    .declareMethod('clearDeletedMonitorUrl', function (opml_title) {
-      return clearDeletedMonitorUrl(opml_title);
+    .declareMethod('clearDeletedMonitorUrl', function (opml_url, opml_title) {
+      return clearDeletedMonitorUrl(opml_url, opml_title);
     })
     .declareMethod('allDocs', function () {
       var storage = this.state_parameter_dict.jio_storage;

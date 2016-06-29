@@ -212,7 +212,7 @@
               }
             }
           };
-          gadget.property_dict.jio_gadget.createJio(jio_options, false);
+          gadget.property_dict.jio_gadget.createJio(jio_options);
           return gadget.property_dict.jio_gadget.get(title+'.history')
           .push(undefined, function (error) {
             console.log(error);
