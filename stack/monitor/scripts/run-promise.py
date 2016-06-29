@@ -10,6 +10,7 @@ import time
 from shutil import copyfile
 import glob
 import argparse
+import traceback
 
 def parseArguments():
   """
@@ -71,9 +72,12 @@ def main():
   status_json['change-time'] = ps_process.create_time()
   if os.path.exists(parser.output):
     with open(parser.output) as f:
-      last_result = json.loads(f.read())
-      if status_json['status'] == last_result['status'] and last_result.has_key('change-time'):
-        status_json['change-time'] = last_result['change-time']
+      try:
+        last_result = json.loads(f.read())
+        if status_json['status'] == last_result['status'] and last_result.has_key('change-time'):
+          status_json['change-time'] = last_result['change-time']
+      except ValueError:
+        pass
 
   updateStatusHistoryFolder(
     parser.promise_name,
@@ -99,8 +103,12 @@ def updateStatusHistoryFolder(name, status_file, history_folder, promise_type):
         pass
       else: raise
   with open(status_file, 'r') as sf:
-    status_dict = json.loads(sf.read())
-  
+    try:
+      status_dict = json.loads(sf.read())
+    except ValueError:
+      traceback.print_exc()
+      return
+
   if promise_type == 'status':
     filename = '%s.history.json' % name
     history_file = os.path.join(history_path, filename)
