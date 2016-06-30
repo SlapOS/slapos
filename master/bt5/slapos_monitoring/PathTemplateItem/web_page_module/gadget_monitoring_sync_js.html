@@ -144,6 +144,20 @@
             return gadget.props.jio_gadget.getUrlFeedDescription(options.query);
           })
           .push(function (url_list) {
+            if (url_list.length <= 0) {
+              // For backward compatibility, sync OMPL if there are empty!
+              return new RSVP.Queue()
+                .push(function () {
+                  return gadget.props.jio_gadget.syncMonitoringOpmlData();
+                })
+                .push(function () {
+                  return gadget.props.jio_gadget.getUrlFeedDescription(options.query);
+                });
+            } else {
+              return url_list;
+            }
+          })
+          .push(function (url_list) {
             var i,
               promise_list = [];
             monitor_storage_list = getMonitoringStorageList(url_list);
@@ -267,7 +281,8 @@
         })
         .push(function (timer_interval) {
           if (timer_interval === undefined) {
-            timer_interval = 300000;
+            // quickly sync because this is the first run!
+            timer_interval = 10000;
           }
           gadget.props.timer_interval = timer_interval;
           return gadget.getSetting('latest_sync_time');
