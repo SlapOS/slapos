@@ -10,8 +10,6 @@ parts =
   cron
   cron-entry-logrotate
   promise
-  slapmonitor
-  slapmonitor-xml
 
   frontend-promise
   content-promise
@@ -237,24 +235,6 @@ slave = true
 config-url = http://[$${apache-php:ip}]:$${apache-php:port}/
 return = site_url
 config-custom_domain = $${slap-parameter:domain}
-
-
-#----------------
-#--
-#-- Deploy slapmonitor.
-
-[slapmonitor]
-recipe = slapos.cookbook:slapmonitor
-pid-file = $${basedirectory:run}/apache.pid
-database-path = $${basedirectory:log}/slapmonitor.db
-slapmonitor-path = ${buildout:bin-directory}/slapmonitor
-path = $${basedirectory:services}/slapmonitor
-
-[slapmonitor-xml]
-recipe = slapos.cookbook:slapmonitor-xml
-database-path = $${basedirectory:log}/slapmonitor.db
-slapmonitor-xml-path = ${buildout:bin-directory}/slapmonitor-xml
-path = $${directory:report}/slapmonitor-xml
 
 
 #----------------

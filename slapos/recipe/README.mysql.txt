@@ -1,4 +1,0 @@
-mysql
-=========
-
-Instantiates MySQL instance.

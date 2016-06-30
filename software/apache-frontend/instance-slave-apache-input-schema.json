@@ -41,21 +41,21 @@
 
     "default-path": {
       "title": "Default Path",
-      "description": "Provide default path to redirect user to",
+      "description": "Provide default path to redirect user to when user access / (the site root)",
       "type": "string",
       "default": ""
     },
 
     "ssl_crt": {
       "title": "SSL Certificate",
-      "description": "SSL Certificate",
+      "description": "Content of the SSL Certificate file",
       "type": "string",
       "textarea": true,
       "default": ""
     },
     "ssl_key": {
       "title": "SSL Key",
-      "description": "SSL Key",
+      "description": "Content of the SSL Key file",
       "type": "string",
       "textarea": true,
       "default": ""
@@ -63,14 +63,14 @@
 
     "ssl_ca_crt": {
       "title": "SSL Certificate Authority's Certificate",
-      "description": "SSL Key",
+      "description": "Content of the CA certificate file",
       "type": "string",
       "textarea": true,
       "default": ""
     },
     "https-only": {
       "title": "HTTPS Only",
-      "description": "If set to true, http request are redirect to https",
+      "description": "If set to true, http requests will be redirected to https",
       "type": "string",
       "default": "false",
       "enum": ["false", "true"]
@@ -78,7 +78,7 @@
 
     "ssl-proxy-verify": {
       "title": "Verify Backend Certificates",
-      "description": "If set to true, Backend Certificates are checked",
+      "description": "If set to true, Backend SSL Certificates will be checked and frontend will refuse to proxy if certificate is invalid",
       "type": "string",
       "default": "false",
       "enum": ["false", "true"]
@@ -86,14 +86,14 @@
 
     "ssl_proxy_ca_crt": {
       "title": "SSL Backend Authority's Certificate",
-      "description": "SSL Certificate Authority of the backen (to be used with ssl-proxy-verify)",
+      "description": "Content of the SSL Certificate Authority file of the backend (to be used with ssl-proxy-verify)",
       "type": "string",
       "default": ""
     },
 
     "enable_cache": {
       "title": "Enable Cache",
-      "description": "If set to true, the cache is used",
+      "description": "If set to true, http caching server (Apache Traffic Server) will be used between frontend apache and backend",
       "type": "string",
       "default": "false",
       "enum": ["false", "true"]
@@ -101,7 +101,7 @@
 
     "disable-no-cache-request": {
       "title": "Disable 'no-cache' requests",
-      "description": "If set to true, no-cache control headers will be disabled",
+      "description": "If set to true, Cache-Control and Pragma requests headers will not be sent to cache and backend servers. This prevents clients from bypassing cache when enable_cache is true",
       "type": "string",
       "default": "false",
       "enum": ["false", "true"]
@@ -109,7 +109,7 @@
 
     "disable-via-header": {
       "title": "Disable 'Via' headers from cache",
-      "description": "If set to true, via headers will be disabled",
+      "description": "If set to true, Via response headers will not be sent to client",
       "type": "string",
       "default": "false",
       "enum": ["false", "true"]
@@ -117,7 +117,7 @@
 
     "prefer-gzip-encoding-to-backend": {
       "title": "Prefer gzip Encoding for Backend",
-      "description": "If set to true, if a request is made with accept encoding 'gzip', only that one will be transferred to the backend",
+      "description": "If set to true, frontend will rewrite Accept-Encoding request header to simply 'gzip' for all variants of Accept-Encoding containing 'gzip', in order to maximize cache hits for resources cached with Vary: Accept-Encoding when enable_cache is used",
       "type": "string",
       "default": "false",
       "enum": ["false", "true"]
@@ -125,21 +125,21 @@
 
     "disabled-cookie-list": {
       "title": "Disabled Cookies",
-      "description": "List of Cookies separated by space that will not be sent to the backend",
+      "description": "List of Cookies separated by space that will not be sent to cache and backend servers. This is especially useful to discard analytics tracking cookies when using Vary: Cookie cache headers",
       "type": "string",
       "default": ""
     },
 
     "apache_custom_http": {
       "title": "HTTP configuration",
-      "description": "Raw http configuration in python template format. Your site will be rejected if you use it without notification and approval of the frontend adminastrator",
+      "description": "Raw http configuration in python template format. Your site will be rejected if you use it without notification and approval of frontend administrators",
       "default": "",
       "textarea": true,
       "type": "string"
     },
     "apache_custom_https": {
       "title": "HTTPS configuration",
-      "description": "Raw https configuration in python template format. Your site will be rejected if you use it without notification and approval of the frontend adminastrator",
+      "description": "Raw https configuration in python template format. Your site will be rejected if you use it without notification and approval of frontend administrators",
       "default": "",
       "textarea": true,
       "type": "string"

@@ -42,31 +42,7 @@ openoffice_port = %(openoffice_port)s
 # It is used to select the handler that will be used in conversion.
 # Priority matters, first match take precedence on next lines.
 mimetype_registry =
-  application/vnd.oasis.opendocument* * ooo
-  application/vnd.sun.xml* * ooo
-  application/pdf text/* pdf
-  application/pdf * ooo
-  video/* * ffmpeg
-  audio/* * ffmpeg
-  application/x-shockwave-flash * ffmpeg
-  application/ogg * ffmpeg
-  application/ogv * ffmpeg
-  image/png image/jpeg imagemagick
-  image/png * ooo
-  image/* image/* imagemagick
-  text/* * ooo
-  application/zip * ooo
-  application/msword * ooo
-  application/vnd* * ooo
-  application/x-vnd* * ooo
-  application/postscript * ooo
-  application/wmf * ooo
-  application/csv * ooo
-  application/x-openoffice-gdimetafile * ooo
-  application/x-emf * ooo
-  application/emf * ooo
-  application/octet* * ooo
-  * application/vnd.oasis.opendocument* ooo
+%(MIMETYPE_ENTRY_LIST)s
 
 [server:main]
 use = egg:PasteScript#wsgiutils

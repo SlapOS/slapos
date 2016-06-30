@@ -151,7 +151,7 @@ private-path-list =
     ${directory:log}
 # 
 monitor-url-list = 
-  ${monitor-instance-parameter:opml-url-list}
+  ${monitor-instance-parameter:monitor-url-list}
 
 parameter-file-path = ${monitor-instance-parameter:configuration-file-path}
 
@@ -364,8 +364,8 @@ mode = 0644
 context = section parameter_dict monitor-password-promise-conf-parameter
 
 [publish]
-<= monitor-base
-monitor-base-url = ${monitor-conf-parameters:base-url}
+# XXX depends on monitor-base section
+monitor-base-url = ${monitor-base:base-url}
 monitor-url = ${:monitor-base-url}/public/feeds
 monitor-user = ${monitor-instance-parameter:username}
 monitor-password = ${monitor-instance-parameter:password}
@@ -377,7 +377,7 @@ monitor-httpd-port = 8196
 # XXX - Set monitor-base-url = ${monitor-httpd-conf-parameter:url} => https://[ipv6]:port
 monitor-base-url = ${monitor-frontend-promise:url}
 root-instance-title = ${slap-configuration:root-instance-title}
-opml-url-list =
+monitor-url-list =
 cors-domains = monitor.app.officejs.com 
 # XXX Hard coded parameter
 collector-db = /srv/slapgrid/var/data-log/collector.db
@@ -415,6 +415,7 @@ check-secure = 1
 recipe = plone.recipe.command
 command = true
 update-command = 
+base-url = ${monitor-conf-parameters:base-url}
 depends =
   ${monitor-globalstate-cron-entry:name}
   ${monitor-configurator-cron-entry:name}

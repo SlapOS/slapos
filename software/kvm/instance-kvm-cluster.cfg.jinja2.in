@@ -57,7 +57,7 @@ config-nat-rules = {{ nat_rules_list | join(' ') }}
 config-publish-nat-url = True
 config-use-nat = {{ use_nat }}
 config-use-tap = {{ dumps(kvm_parameter_dict.get('use-tap', True)) }}
-config-nat-restrict-mode = {{ dumps(kvm_parameter_dict.get('nat-restrict-mode', True)) }}
+config-nat-restrict-mode = {{ dumps(kvm_parameter_dict.get('nat-restrict-mode', False)) }}
 config-enable-vhost = {{ dumps(kvm_parameter_dict.get('enable-vhost', False)) }}
 config-virtual-hard-drive-url = {{ dumps(kvm_parameter_dict.get('virtual-hard-drive-url', '')) }}
 config-virtual-hard-drive-md5sum = {{ dumps(kvm_parameter_dict.get('virtual-hard-drive-md5sum', '')) }}
@@ -82,6 +82,11 @@ config-document-port = ${apache-conf:port}
 config-document-path = ${hash-code:passwd}
 config-keyboard-layout-language = {{ dumps(kvm_parameter_dict.get('keyboard-layout-language', 'fr')) }}
 config-type = cluster
+
+{% set bootstrap_script_url = slapparameter_dict.get('bootstrap-script-url', kvm_parameter_dict.get('bootstrap-script-url', '')) -%}
+{% if bootstrap_script_url -%}
+config-bootstrap-script-url = {{ bootstrap_script_url }}
+{% endif -%}
 
 {% set authorized_source_list = slapparameter_dict.get('fw-authorized-sources', []) -%}
 {% set rejected_source_list = slapparameter_dict.get('fw-reject-sources', []) -%}
@@ -223,7 +228,7 @@ username = admin
 [monitor-instance-parameter]
 monitor-httpd-port = 8060
 monitor-title = KVM Cluster Main Instance
-cors-domains = {{ slapparameter_dict.get('monitor-cors-domains', '') }}
+cors-domains = {{ slapparameter_dict.get('monitor-cors-domains', 'monitor.app.officejs.com') }}
 username = ${monitor-htpasswd:username}
 password = ${monitor-htpasswd:passwd}
 
@@ -235,15 +240,13 @@ monitor-url-list +=
 private-path-list += 
   ${directory:webroot}/
 
-[publish]
+[publish-connection-information]
 recipe = slapos.cookbook:publish
 {% for name, value in publish_dict.items() -%}
 {{   name }} = {{ value }}
 {% endfor %}
 {% set monitor_interface_url = slapparameter_dict.get('monitor-interface-url', 'https://monitor.app.officejs.com') -%}
-{% if monitor_interface_url -%}
-monitor-setup-url = {{ monitor_interface_url }}/#page=settings_configurator&url=${publish:monitor-url}
-{%   endif -%}
+monitor-setup-url = {{ monitor_interface_url }}/#page=settings_configurator&url=${publish:monitor-url}&username=${publish:monitor-user}&password=${publish:monitor-password}
 
 [buildout]
 extends = 
@@ -254,18 +257,10 @@ parts =
   httpd
   httpd-graceful
   httpd-promise
-  publish
+  publish-connection-information
   directory-doc
 
   monitor-base
-  cron-entry-logrotate
-  certificate-authority
-  monitor-conf
-  start-monitor
-  ca-httpd
-  monitor-httpd-promise
-  monitor-httpd-promise-conf
-  monitor-status2rss-cron-entry
 # End monitor
 
 # Complete parts with sections

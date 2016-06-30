@@ -1,0 +1,26 @@
+#!/usr/bin/env python
+
+import os
+import urllib
+import hashlib
+import sys
+
+def md5Checksum(file_path):
+  with open(file_path, 'rb') as fh:
+    m = hashlib.md5()
+    while True:
+      data = fh.read(8192)
+      if not data:
+          break
+      m.update(data)
+    return m.hexdigest()
+
+if __name__ == "__main__":
+  url, md5sum, destination_path = sys.argv[1:]
+  urllib.urlretrieve (url, destination_path)
+
+  computed_md5sum = md5Checksum(destination_path)
+  if computed_md5sum != md5sum:
+    os.remove(destination_path)
+    raise Exception('MD5 mismatch. MD5 of downloaded file is %s, Specified MD5 is %s.' % (
+        computed_md5sum, md5sum))
