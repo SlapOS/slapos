@@ -8,14 +8,6 @@
       }, {
         "description": "Start allocating ports at this value, going upward"
       }]
-    },
-    "font-url-list": {
-      "description": "List of URLs from which fonts are to be downloaded",
-      "default": [],
-      "items": {
-        "type": "string"
-      },
-      "type": "array"
     }
   }
 }
