@@ -38,8 +38,6 @@ class Recipe(GenericBaseRecipe):
   font-system-folder -- fonts installed by software release
 
   font-folder -- location where to download fonts
-
-  url-list -- From where to download fonts
   """
 
   def install(self):
@@ -62,24 +60,4 @@ class Recipe(GenericBaseRecipe):
         self.substituteTemplate(template_filename, config))
 
     created_file_list.append(configuration_path)
-    # Instanciate onetimedownloads, one for each url
-    wrapper_template_location = pkg_resources.resource_filename(
-                                        __name__, os.path.join(
-                                        'template', 'onetimedownload_run.in'))
-
-    onetimedownload_config = {}
-    onetimedownload_config.update(self.options)
-    for index, url in enumerate(self.options['url-list'].split()):
-      if not url.strip():
-        continue
-      bin_path = os.path.join(service_folder, 'onetimedownload%s' % index)
-      file_path = os.path.join(font_folder, '%s' % index)
-      onetimedownload_config['url'] = url
-      onetimedownload_config['file_path'] = file_path
-      onetimedownload_runner_path = self.createExecutable(bin_path,
-          self.substituteTemplate(wrapper_template_location,
-                                  onetimedownload_config))
-
-      created_file_list.append(onetimedownload_runner_path)
-
     return created_file_list
