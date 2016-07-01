@@ -10,14 +10,6 @@
         "default": 23000
       }]
     },
-    "font-url-list": {
-      "description": "List of URLs from which fonts are to be downloaded",
-      "default": [],
-      "items": {
-        "type": "string"
-      },
-      "type": "array"
-    },
     "backend-count": {
       "description": "Number of backend cloudooo instances",
       "default": 1,
