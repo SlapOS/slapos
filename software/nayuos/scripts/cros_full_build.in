@@ -130,6 +130,7 @@ increase_revision_number ${CHROMIUM_OVERLAY}/chromeos-base/chromeos-sshd-init/
 
 # bashrc modifications
 BASH_EBUILD_DIR={{ cros_location }}/{{ branch }}/src/third_party/portage-stable/app-shells/bash
+echo "export EDITOR=vim" >> ${BASH_EBUILD_DIR}/files/dot-bashrc
 if [[ $(grep "git --exec-path" "${BASH_EBUILD_DIR}/files/dot-bashrc") ]] ; then
   echo "git alias already set"
 else
