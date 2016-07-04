@@ -141,7 +141,7 @@ fi
 
 # git quickfix for finding 'less' and using it as pager
 less_path=\$(which less 2>/dev/null)
-if [ "\${less_path}" ] ; then
+if [ \${less_path} ] ; then
     git config --global core.pager \${less_path}
 fi" >> ${BASH_EBUILD_DIR}/files/dot-bashrc
 fi
