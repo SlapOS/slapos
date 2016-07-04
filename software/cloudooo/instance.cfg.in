@@ -42,6 +42,7 @@ glib = {{ glib_location }}
 glu = {{ glu_location }}
 haproxy = {{ haproxy_location }}
 imagemagick = {{ imagemagick_location }}
+instance-parameter-dict = {{ dumps(cloudooo_parameter_dict) }}
 libICE = {{ libICE_location }}
 libSM = {{ libSM_location }}
 libX11 = {{ libX11_location }}

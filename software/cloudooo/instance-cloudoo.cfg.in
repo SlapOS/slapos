@@ -1,8 +1,26 @@
 {% set ipv4 = (ipv4_set | list)[0] -%}
 {% if ipv6_set %}{% set ipv6 = (ipv6_set | list)[0] %}{% endif -%}
-{% set next_port = slapparameter_dict.get('tcpv4-port', 8000) | int -%}
-{% set backend_count = slapparameter_dict.get('backend-count', 1) | int -%}
-{% set ssl_parameter_dict = slapparameter_dict.get('ssl', {}) %}
+{% set instance_parameter_dict = parameter_dict['instance-parameter-dict'] -%}
+{% macro assert(x) %}{{ ("",)[not x] }}{% endmacro -%}
+
+{% set publish_url_name = instance_parameter_dict.get('publish-url-name') or 'url' -%}
+
+{% set next_port = instance_parameter_dict['port'] | int -%}
+{% if instance_parameter_dict.get('port-parameter-name') -%}
+{%   set next_port = slapparameter_dict.get(instance_parameter_dict['port-parameter-name'], next_port) | int -%}
+{% endif -%}
+{% do assert(next_port > 0) -%}
+
+{% set backend_count = instance_parameter_dict['backend-count'] | int -%}
+{% if instance_parameter_dict.get('backend-count-parameter-name') -%}
+{%   set backend_count = slapparameter_dict.get(instance_parameter_dict['backend-count-parameter-name'], backend_count) | int -%}
+{% endif -%}
+{% do assert(backend_count > 0) -%}
+
+{% set ssl_parameter_dict = instance_parameter_dict.get('ssl', {}) %}
+{% if instance_parameter_dict.get('ssl-dict-parameter-name') -%}
+{%   set ssl_parameter_dict = slapparameter_dict.get(instance_parameter_dict['ssl-dict-parameter-name'], ssl_parameter_dict) -%}
+{% endif -%}
 
 {% set apache_port = next_port -%}
 {% set haproxy_port = next_port + 1 -%}
@@ -13,7 +31,7 @@
 {%   do apache_ip_list.append('[' ~ ipv6 ~ ']') -%}
 {% endif -%}
 {% set apache_dict = {} -%}
-{% do apache_dict.__setitem__("cloudooo", (apache_port, "https", 'http://' ~ ipv4 ~ ':' ~ haproxy_port)) -%}
+{% do apache_dict.__setitem__(publish_url_name, (apache_port, "https", 'http://' ~ ipv4 ~ ':' ~ haproxy_port)) -%}
 
 {% set bin_directory = parameter_dict['buildout-bin-directory'] -%}
 {% set section_list = [] -%}
