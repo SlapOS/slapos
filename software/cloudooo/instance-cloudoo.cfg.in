@@ -32,7 +32,7 @@ ooo-binary-path = {{ parameter_dict['libreoffice-bin'] }}/program
 ooo-paster = {{ bin_directory }}/cloudooo_paster
 ooo-uno-path = {{ parameter_dict['libreoffice-bin'] }}/basis-link/program
 
-{% set cloudooo_port = slapparameter_dict.get('tcpv4_port', 23000) | int -%}
+{% set cloudooo_port = slapparameter_dict.get('tcpv4-port', 23000) | int -%}
 {% set backend_count = slapparameter_dict.get('backend-count', 1) | int -%}
 {% for index in range(backend_count) -%}
 {%   set name = 'cloudooo-' ~ index -%}
