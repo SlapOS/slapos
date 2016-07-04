@@ -1,11 +1,49 @@
 {% set ipv4 = (ipv4_set | list)[0] -%}
+{% if ipv6_set %}{% set ipv6 = (ipv6_set | list)[0] %}{% endif -%}
+{% set next_port = slapparameter_dict.get('tcpv4-port', 8000) | int -%}
+{% set backend_count = slapparameter_dict.get('backend-count', 1) | int -%}
+{% set ssl_parameter_dict = slapparameter_dict.get('ssl', {}) %}
+
+{% set apache_port = next_port -%}
+{% set haproxy_port = next_port + 1 -%}
+{% set next_port = next_port + 2 -%}
+
+{% set apache_ip_list = [ipv4] -%}
+{% if ipv6_set -%}
+{%   do apache_ip_list.append('[' ~ ipv6 ~ ']') -%}
+{% endif -%}
+{% set apache_dict = {} -%}
+{% do apache_dict.__setitem__("cloudooo", (apache_port, "https", 'http://' ~ ipv4 ~ ':' ~ haproxy_port)) -%}
+
 {% set bin_directory = parameter_dict['buildout-bin-directory'] -%}
 {% set section_list = [] -%}
-{% macro section(name) %}{% do section_list.append(name) %}{{ name }}{% endmacro -%}
+{% set cloudooo_section_list = [] -%}
+{% macro cloudooo(name) %}{% do cloudooo_section_list.append(name) %}{{ name }}{% endmacro -%}
+[simplefile]
+recipe = slapos.recipe.template:jinja2
+template = inline:{{ '{{ content }}' }}
+
+{% macro simplefile(section_name, file_path, content, mode='') -%}
+{%   set content_section_name = section_name ~ '-content' -%}
+[{{  content_section_name }}]
+content = {{ dumps(content) }}
+
+[{{  section_name }}]
+< = simplefile
+rendered = {{ file_path }}
+context = key content {{ content_section_name }}:content
+mode = {{ mode }}
+{%- endmacro %}
+
+
 [buildout]
 parts =
-  publish-cloudooo-connection-information
+  publish
+  apache
+  apache-conf
+  apache-promise
   cloudooo-test-runner
+  haproxy
   xvfb-instance
   wkhtmltopdf-on-xvfb
 
@@ -13,9 +51,79 @@ eggs-directory = {{ eggs_directory }}
 develop-eggs-directory = {{ develop_eggs_directory }}
 offline = true
 
-[publish-cloudooo-connection-information]
+
+[apache]
+recipe = slapos.cookbook:wrapper
+wrapper-path = ${directory:services}/apache
+command-line = "{{ parameter_dict['apache'] }}/bin/httpd" -f "${apache-conf:rendered}" -DFOREGROUND
+
+[apache-conf]
+recipe = slapos.recipe.template:jinja2
+template = {{ parameter_dict['template-apache-conf'] }}
+rendered = ${directory:apache-conf}/apache.conf
+context = section parameter_dict apache-conf-parameter-dict
+
+[apache-conf-parameter-dict]
+backend-list = {{ dumps(apache_dict.values()) }}
+ip-list = {{ dumps(apache_ip_list) }}
+pid-file = ${directory:run}/apache.pid
+error-log = ${directory:log}/apache-error.log
+access-log = ${directory:log}/apache-access.log
+# Apache 2.4's default value (60 seconds) can be a bit too short
+timeout = 300
+# Basic SSL server configuration
+cert = ${apache-ssl:cert}
+key = ${apache-ssl:key}
+cipher =
+ssl-session-cache = ${directory:log}/apache-ssl-session-cache
+# Client x509 auth
+ca-cert = ${apache-ssl-client:cert}
+crl = ${apache-ssl-client:crl}
+
+[apache-promise]
+# Check any apache port in ipv4, expect other ports and ipv6 to behave consistently
+recipe = slapos.cookbook:check_port_listening
+path = ${directory:promise}/apache
+hostname = {{ ipv4 }}
+port = {{ apache_dict.values()[0][0] }}
+
+[apache-conf-ssl]
+cert = ${directory:apache-conf}/apache.crt
+key = ${directory:apache-conf}/apache.pem
+ca-cert =  ${directory:apache-conf}/ca.crt
+crl = ${directory:apache-conf}/crl.pem
+
+[apache-ssl]
+{% if ssl_parameter_dict.get('key') -%}
+key = ${apache-ssl-key:rendered}
+cert = ${apache-ssl-cert:rendered}
+{{ simplefile('apache-ssl-key', '${apache-conf-ssl:key}', ssl_parameter_dict['key']) }}
+{{ simplefile('apache-ssl-cert', '${apache-conf-ssl:cert}', ssl_parameter_dict['cert']) }}
+{% else %}
+recipe = plone.recipe.command
+command = "{{ parameter_dict['openssl'] }}/bin/openssl" req -newkey rsa -batch -new -x509 -days 3650 -nodes -keyout "${:key}" -out "${:cert}"
+key = ${apache-conf-ssl:key}
+cert = ${apache-conf-ssl:cert}
+{%- endif %}
+
+[apache-ssl-client]
+{% if ssl_parameter_dict.get('ca-cert') -%}
+cert = ${apache-ssl-ca:rendered}
+crl = ${apache-ssl-crl:rendered}
+{{ simplefile('apache-ssl-ca', '${apache-conf-ssl:ca-cert}', ssl_parameter_dict['ca-cert']) }}
+{{ simplefile('apache-ssl-crl', '${apache-conf-ssl:crl}', ssl_parameter_dict['crl']) }}
+{% else %}
+cert =
+crl =
+{%- endif %}
+
+[publish]
 recipe = slapos.cookbook:publish.serialised
-url = cloudooo://${haproxy:ip}:${haproxy:port}/
+{% for family_name, (apache_port, scheme, _) in apache_dict.items() -%}
+{{   family_name ~ '-v6' }} = {% if ipv6_set %}{{ scheme ~ '://[' ~ ipv6 ~ ']:' ~ apache_port }}{% endif %}
+{{   family_name }} = {{ scheme ~ '://' ~ ipv4 ~ ':' ~ apache_port }}
+{% endfor -%}
+
 
 [cloudooo-base]
 recipe = slapos.cookbook:generic.cloudooo
@@ -32,19 +140,17 @@ ooo-binary-path = {{ parameter_dict['libreoffice-bin'] }}/program
 ooo-paster = {{ bin_directory }}/cloudooo_paster
 ooo-uno-path = {{ parameter_dict['libreoffice-bin'] }}/basis-link/program
 
-{% set cloudooo_port = slapparameter_dict.get('tcpv4-port', 23000) | int -%}
-{% set backend_count = slapparameter_dict.get('backend-count', 1) | int -%}
 {% for index in range(backend_count) -%}
 {%   set name = 'cloudooo-' ~ index -%}
-[{{ section(name) }}]
+[{{ cloudooo(name) }}]
 < = cloudooo-base
-port = {{ cloudooo_port }}
-openoffice-port = {{ cloudooo_port + 1 }}
+port = {{ next_port }}
+openoffice-port = {{ next_port + 1 }}
 configuration-file = ${directory:etc}/{{ name }}.cfg
 data-directory = ${directory:srv}/{{ name }}
 wrapper = ${directory:services}/{{ name }}
 
-{%   set cloudooo_port = cloudooo_port + 2 -%}
+{%   set next_port = next_port + 2 -%}
 {% endfor -%}
 
 [haproxy]
@@ -53,13 +159,13 @@ name = cloudooo
 conf-path = ${directory:etc}/haproxy.cfg
 socket-path = ${directory:run}/haproxy.sock
 ip = {{ ipv4 }}
-port = 8001
+port = {{ haproxy_port }}
 maxconn = 1
 wrapper-path = ${directory:services}/haproxy
 binary-path = {{ parameter_dict['haproxy'] }}/sbin/haproxy
 ctl-path = ${directory:bin}/haproxy-ctl
 backend-list =
-{%- for section_name in section_list %}
+{%- for section_name in cloudooo_section_list %}
   {{ "${" ~ section_name ~ ":ip}:${" ~ section_name ~ ":port}" }}
 {%- endfor %}
 
@@ -83,6 +189,7 @@ font-system-folder = {{ parameter_dict['fonts'] }}
 font-folder = ${directory:font}
 service-folder = ${directory:services}
 
+
 [binary-link]
 recipe = slapos.cookbook:symbolic.link
 target-directory = ${directory:bin}
@@ -105,9 +212,18 @@ link-binary =
 # rest of parts are candidates for some generic stuff
 [directory]
 recipe = slapos.cookbook:mkdirectory
+apache-conf = ${:etc}/apache
 bin = ${buildout:directory}/bin
+ca-dir = ${buildout:directory}/srv/ssl
+certs = ${:ca-dir}/certs
+crl = ${:ca-dir}/crl
 etc = ${buildout:directory}/etc
 font = ${:srv}/font
+log = ${:var}/log
+newcerts = ${:ca-dir}/newcerts
+private = ${:ca-dir}/private
+promise = ${directory:etc}/promise
+requests = ${:ca-dir}/requests
 run = ${:var}/run
 services = ${:etc}/run
 srv = ${buildout:directory}/srv

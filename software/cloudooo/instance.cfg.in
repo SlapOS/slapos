@@ -19,12 +19,14 @@ recipe = slapos.recipe.template:jinja2
 rendered = ${buildout:parts-directory}/${:_buildout_section_name_}/${:filename}
 extra-context =
 context =
+    key ipv6_set slap-parameters:ipv6
     key eggs_directory buildout:eggs-directory
     key develop_eggs_directory buildout:develop-eggs-directory
     key slapparameter_dict slap-parameters:configuration
     ${:extra-context}
 
 [dynamic-template-cloudooo-parameters]
+apache = {{ apache_location }}
 buildout-bin-directory = {{ buildout_bin_directory }}
 cairo = {{ cairo_location }}
 coreutils = {{ coreutils_location }}
@@ -53,8 +55,10 @@ libpng12 = {{ libpng12_location }}
 libreoffice-bin = {{ libreoffice_bin_location }}
 libxcb = {{ libxcb_location }}
 mesa = {{ mesa_location }}
+openssl = {{ openssl_location }}
 poppler = {{ poppler_location }}
 pixman = {{ pixman_location }}
+template-apache-conf = {{ template_apache_conf }}
 wkhtmltopdf = {{ wkhtmltopdf_location }}
 xdamage = {{ xdamage_location }}
 xfixes = {{ xfixes_location }}
