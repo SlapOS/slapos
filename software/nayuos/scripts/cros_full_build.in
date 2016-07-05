@@ -134,6 +134,9 @@ if ! grep '----- BEGIN NayuOS configuration -----' "${BASH_EBUILD_DIR}/files/dot
 
 # ----- BEGIN NayuOS configuration -----
 
+# use vim as default editor if nano does not exist
+which nano &> /dev/null || export EDITOR=vim
+
 # git quickfix for finding right git executables
 export GIT_EXEC_PATH=/usr/local/libexec/git-core
 
