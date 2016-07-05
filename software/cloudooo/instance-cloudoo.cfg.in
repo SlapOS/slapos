@@ -22,6 +22,11 @@
 {%   set ssl_parameter_dict = slapparameter_dict.get(instance_parameter_dict['ssl-dict-parameter-name'], ssl_parameter_dict) -%}
 {% endif -%}
 
+{% set mimetype_entry_addition = instance_parameter_dict.get('mimetype-entry-addition', '') -%}
+{% if instance_parameter_dict.get('mimetype-entry-addition-parameter-name') -%}
+{%   set mimetype_entry_addition = mimetype_entry_addition ~ "\n" ~ slapparameter_dict.get(instance_parameter_dict['mimetype-entry-addition-parameter-name'], '') -%}
+{% endif -%}
+
 {% set apache_port = next_port -%}
 {% set haproxy_port = next_port + 1 -%}
 {% set next_port = next_port + 2 -%}
@@ -151,7 +156,9 @@ environment =
   FONTCONFIG_FILE = ${fontconfig-instance:conf-path}
   PATH = ${binary-link:target-directory}
 mimetype_entry_addition =
-  text/html application/pdf wkhtmltopdf
+{% for entry in mimetype_entry_addition.splitlines() -%}
+{{ "  " ~ entry.strip() }}
+{% endfor -%}
 # Binary information
 # cloudooo specific configuration
 ooo-binary-path = {{ parameter_dict['libreoffice-bin'] }}/program
