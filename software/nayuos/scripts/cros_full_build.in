@@ -128,23 +128,25 @@ increase_revision_number ${CHROMIUM_OVERLAY}/chromeos-base/openssh-server-init/
 increase_revision_number ${CHROMIUM_OVERLAY}/chromeos-base/chromeos-sshd-init/
 
 # bashrc modifications
-BASH_EBUILD_DIR={{ cros_location }}/{{ branch }}/src/third_party/portage-stable/app-shells/bash
-if [[ $(grep "git --exec-path" "${BASH_EBUILD_DIR}/files/dot-bashrc") ]] ; then
-  echo "git alias already set"
-else
-  echo "# git quickfix for finding right git executables
-if [ -d /usr/local/libexec/git-core/ ] ; then
-    alias git='git --exec-path=/usr/local/libexec/git-core/'
+BASH_EBUILD_DIR='{{ cros_location }}/{{ branch }}/src/third_party/portage-stable/app-shells/bash'
+if ! grep '----- BEGIN NayuOS configuration -----' "${BASH_EBUILD_DIR}/files/dot-bashrc" > /dev/null ; then
+  cat >> "${BASH_EBUILD_DIR}/files/dot-bashrc" <<EOF
+
+# ----- BEGIN NayuOS configuration -----
+
+# git quickfix for finding right git executables
+export GIT_EXEC_PATH=/usr/local/libexec/git-core
+
+# configure .gitconfig once
+if [ ! -e ~/.gitconfig ] ; then
+  which less &> /dev/null && git config --global core.pager less
 fi
 
-# git quickfix for finding 'less' and using it as pager
-less_path=\$(which less 2>/dev/null)
-if [ "\${less_path}" ] ; then
-    git config --global core.pager \${less_path}
-fi" >> ${BASH_EBUILD_DIR}/files/dot-bashrc
+# ----- END NayuOS configuration -----
+EOF
 fi
 
-increase_revision_number ${BASH_EBUILD_DIR}
+increase_revision_number "${BASH_EBUILD_DIR}"
 
 ######################################## Build ##############################################
 BOARDS="{{ boards_list }}"
