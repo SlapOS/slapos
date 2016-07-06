@@ -284,6 +284,7 @@ node-id = {{ dumps(node_id_base ~ '-' ~ index) }}
 {% set log_list = [] -%}
 {% set import_set = set() -%}
 {% for db_name, zodb in zodb_dict.iteritems() -%}
+{%   do zodb.setdefault('pool-size', thread_amount) -%}
 {%   if zodb['type'] == 'neo' -%}
 {%     do import_set.add('neo.client') -%}
 {%     set log = name ~ '-neo-' ~ db_name ~ '.log' -%}
