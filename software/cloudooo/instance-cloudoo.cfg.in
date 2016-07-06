@@ -17,6 +17,12 @@
 {% endif -%}
 {% do assert(backend_count > 0) -%}
 
+{% set timeout = instance_parameter_dict['timeout'] | int -%}
+{% if instance_parameter_dict.get('timeout-parameter-name') -%}
+{%   set timeout = slapparameter_dict.get(instance_parameter_dict['timeout-parameter-name'], timeout) | int -%}
+{% endif -%}
+{% do assert(timeout > 0) -%}
+
 {% set ssl_parameter_dict = instance_parameter_dict.get('ssl', {}) %}
 {% if instance_parameter_dict.get('ssl-dict-parameter-name') -%}
 {%   set ssl_parameter_dict = slapparameter_dict.get(instance_parameter_dict['ssl-dict-parameter-name'], ssl_parameter_dict) -%}
@@ -93,7 +99,7 @@ pid-file = ${directory:run}/apache.pid
 error-log = ${directory:log}/apache-error.log
 access-log = ${directory:log}/apache-access.log
 # Apache 2.4's default value (60 seconds) can be a bit too short
-timeout = 300
+timeout = {{ timeout }}
 # Basic SSL server configuration
 cert = ${apache-ssl:cert}
 key = ${apache-ssl:key}
