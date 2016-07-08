@@ -29,11 +29,11 @@ software-type = custom-personal
 slave = true
 
 {% if slapparameter_dict.get('port', '80') != '443' %}
-config-url = http://[$${request-re6stnet-token-slave:connection-ipv6}1]:{{ slapparameter_dict.get('port', '80') }}/
+config-url = http://[$${request-re6stnet-token-slave:connection-ipv6}1]:{{ slapparameter_dict.get('port', '80') }}
 {% endif -%}
 
 {% if slapparameter_dict.get('port', '80') == '443' %}
-config-url = https://[$${request-re6stnet-token-slave:connection-ipv6}1]:{{ slapparameter_dict.get('port', '443') }}/
+config-url = https://[$${request-re6stnet-token-slave:connection-ipv6}1]:{{ slapparameter_dict.get('port', '443') }}
 {% endif -%}
 
 {% if slapparameter_dict.get('frontend-custom_domain', '') %}
