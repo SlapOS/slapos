@@ -1,3 +1,63 @@
+{# This file configures apache to redirect requests from ports to specific urls.
+ # It provides SSL support for server and optionaly for client.
+ #
+ # All parameters are given through the `parameter_dict` variable, see the
+ # list entries :
+ #
+ #     parameter_dict = {
+ #       #  The path given to "PidFile"
+ #       "pid-file": "<file_path>",
+ #
+ #       #  The number given to "TimeOut"
+ #       "timeout": 300,
+ #
+ #       #  The path given to "SSLCertificateFile"
+ #       "cert": "<file_path>",
+ #
+ #       #  The path given to "SSLCertificateKeyFile"
+ #       "key": "<file_path>",
+ #
+ #       #  The value given to "SSLCipherSuite" (can be empty)
+ #       "cipher": "",
+ #
+ #       #  The path given to "SSLSessionCache shmcb:<folder_path>(512000)"
+ #       "ssl-session-cache": "<folder_path>",
+ #
+ #       #  The path given to "SSLCACertificateFile" (can be empty)
+ #       #  If this value is not empty, it enables client certificate check.
+ #       #  (Enabling "SSLVerifyClient require")
+ #       "ca-cert": "<file_path>",
+ #
+ #       #  The path given to "SSLCARevocationFile" (used if ca-cert is not
+ #       #  empty)
+ #       "crl": "<file_path>",
+ #
+ #       #  The path given to "ErrorLog"
+ #       "error-log": "<file_path>",
+ #
+ #       #  The path given to "AccessLog"
+ #       "access-log": "<file_path>",
+ #
+ #       #  The list of ip which apache will listen to.
+ #       "ip-list": [
+ #         "0.0.0.0",
+ #         "[::1]",
+ #       ],
+ #
+ #       #  The list of backends which apache should redirect to.
+ #       "backend-list": [
+ #         # (port, unused, internal_scheme)
+ #         (8000, _, "http://10.0.0.10:8001"),
+ #         (8002, _, "http://10.0.0.10:8003"),
+ #       ],
+ #     }
+ #
+ # This sample of `parameter_dict` will make apache listening to :
+ # - 0.0.0.0:8000 redirecting internaly to http://10.0.0.10:8001
+ # - [::1]:8000 redirecting internaly to http://10.0.0.10:8001
+ # - 0.0.0.0:8002 redirecting internaly to http://10.0.0.10:8003
+ # - [::1]:8002 redirecting internaly to http://10.0.0.10:8003
+-#}
 LoadModule unixd_module modules/mod_unixd.so
 LoadModule access_compat_module modules/mod_access_compat.so
 LoadModule authz_core_module modules/mod_authz_core.so
