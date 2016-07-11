@@ -78,13 +78,8 @@ public = ${directory:monitor}/public
 private = ${directory:monitor}/private
 services = ${directory:services}
 services-conf = ${directory:etc}/monitor.conf.d
-www = ${directory:monitor}/web
-web-dir = ${directory:monitor}/web
 log = ${directory:log}/monitor
 monitor-var = ${directory:var}/monitor
-monitor-password-var = ${monitor-directory:monitor-var}/password
-monitor-password-interface = ${monitor-directory:monitor-password-var}/password/interface
-monitor-status2rss-var = ${monitor-directory:monitor-var}/status2rss
 
 [logrotate-directory]
 recipe = slapos.cookbook:mkdirectory
@@ -135,7 +130,6 @@ public-folder = ${monitor-directory:public}
 private-folder = ${monitor-directory:private}
 webdav-folder = ${monitor-directory:webdav}
 report-folder = ${monitor-directory:reports}
-web-folder = ${monitor-directory:web-dir}
 base-url = ${monitor-instance-parameter:monitor-base-url}
 monitor-hal-json = ${monitor-directory:public}/monitor.hal.json
 service-pid-folder = ${monitor-directory:pids}
@@ -230,7 +224,6 @@ password = ${monitor-instance-parameter:password}
 listening-ip = ${monitor-instance-parameter:monitor-httpd-ipv6}
 port = ${monitor-instance-parameter:monitor-httpd-port}
 pid-file = ${directory:run}/monitor-httpd.pid
-cgid-pid-file = ${directory:run}/cgid.pid
 access-log = ${monitor-directory:log}/monitor-httpd-access.log
 error-log = ${monitor-directory:log}/monitor-httpd-error.log
 cert-file = ${ca-directory:certs}/httpd.crt
@@ -279,7 +272,7 @@ command = kill -USR1 $(cat ${monitor-httpd-conf-parameter:pid-file})
 [monitor-status2rss-wrapper]
 recipe = slapos.cookbook:wrapper
 # XXX - hard-coded Urls
-command-line = {{ python_with_eggs }} {{ status2rss_executable_path }} --output '${monitor-directory:public}/feed' --items_folder '${monitor-directory:public}' --public_url '${monitor-conf-parameters:base-url}/share/jio_public/' --private_url '${monitor-conf-parameters:base-url}/share/jio_private/' --instance_name '${monitor-conf-parameters:title}' --hosting_name '${monitor-conf-parameters:root-title}'
+command-line = {{ python_with_eggs }} {{ status2rss_executable_path }} --output '${monitor-directory:public}/feed' --items_folder '${monitor-directory:public}'  --feed_url '${monitor-conf-parameters:base-url}/public/feed' --public_url '${monitor-conf-parameters:base-url}/share/jio_public/' --private_url '${monitor-conf-parameters:base-url}/share/jio_private/' --instance_name '${monitor-conf-parameters:title}' --hosting_name '${monitor-conf-parameters:root-title}'
 
 wrapper-path = ${directory:bin}/monitor-status2rss.py
 
@@ -324,45 +317,6 @@ check-secure = 1
 dash_path = {{ dash_executable_location }}
 curl_path = {{ curl_executable_location }}
 
-[monitor-httpd-promise-conf]
-recipe = slapos.recipe.template:jinja2
-rendered = ${directory:monitor-promise}/${monitor-httpd-promise:filename}.cfg
-template = {{ monitor_service_conf_template }}
-mode = 0644
-context = section parameter_dict monitor-httpd-promise-conf-parameter
-
-[monitor-httpd-promise-conf-parameter]
-title = Monitor httpd listening
-# frequency 5 minute hour day mounth weekday
-frequency = */5 * * * *
-public-path-list = ${monitor-httpd-conf-parameter:access-log} ${monitor-httpd-conf-parameter:error-log}
-#private-path-list =
-
-[monitor-password-parameter]
-password-changed-once-path = ${directory:var}/monitor-password-changed-once
-
-[monitor-password-promise]
-recipe = slapos.recipe.template:jinja2
-template = {{ monitor_password_promise_template }}
-rendered = ${directory:monitor-promise}/${:filename}
-filename = monitor-password
-mode = 0755
-context =
-  raw python_executable {{ python_executable }}
-  key password_changed_once_path monitor-password-parameter:password-changed-once-path
-
-[monitor-password-promise-conf-parameter]
-title = Monitor password
-frequency = */5 * * * *
-private-path-list = ${monitor-directory:monitor-password-interface}
-
-[monitor-password-promise-conf]
-recipe = slapos.recipe.template:jinja2
-template = {{ monitor_service_conf_template }}
-rendered = ${directory:monitor-promise}/${monitor-password-promise:filename}.cfg
-mode = 0644
-context = section parameter_dict monitor-password-promise-conf-parameter
-
 [publish]
 # XXX depends on monitor-base section
 monitor-base-url = ${monitor-base:base-url}
@@ -376,6 +330,7 @@ monitor-httpd-ipv6 = ${slap-configuration:ipv6-random}
 monitor-httpd-port = 8196
 # XXX - Set monitor-base-url = ${monitor-httpd-conf-parameter:url} => https://[ipv6]:port
 monitor-base-url = ${monitor-frontend-promise:url}
+# monitor-base-url = ${monitor-httpd-conf-parameter:url}
 root-instance-title = ${slap-configuration:root-instance-title}
 monitor-url-list =
 cors-domains = monitor.app.officejs.com 
@@ -389,6 +344,8 @@ username = ${monitor-htpasswd:username}
 instance-configuration =
 
 configuration-file-path = ${monitor-directory:etc}/monitor_knowledge0.cfg
+
+interface-url = https://monitor.app.officejs.com
 
 [monitor-frontend]
 <= slap-connection
@@ -427,7 +384,6 @@ depends =
   ${monitor-httpd-promise:filename}
   ${monitor-status2rss-cron-entry:name}
 
-#[buildout]
-#parts =
-#  monitor-base
-#  publish
+[monitor-publish]
+monitor-base-url = ${publish:monitor-base-url}
+monitor-setup-url = ${monitor-instance-parameter:interface-url}/#page=settings_configurator&url=${publish:monitor-url}&username=$${publish:monitor-user}&password=${publish:monitor-password}

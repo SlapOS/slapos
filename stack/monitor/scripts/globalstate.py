@@ -53,6 +53,8 @@ def main(args_list):
   statistic_folder = os.path.join(base_folder, 'data', '.jio_documents')
   parameter_file = os.path.join(base_folder, 'config', '.jio_documents', 'config.json')
 
+  report_date = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
   if not os.path.exists(statistic_folder):
     try:
       os.makedirs(statistic_folder)
@@ -66,7 +68,6 @@ def main(args_list):
       glob.glob("%s/*.status.json" % status_folder)
     )
   error = warning = success = 0
-  latest_date = ''
   status = 'OK'
   promise_list = []
   global_state_file = os.path.join(base_folder, 'monitor.global.json')
@@ -84,18 +85,13 @@ def main(args_list):
       success += 1
     elif tmp_json['status'] == 'WARNING':
       warning += 1
-    if tmp_json['start-date'] > latest_date:
-      latest_date = tmp_json['start-date']
     tmp_json['time'] = tmp_json['start-date'].split(' ')[1]
-    del tmp_json['start-date']
     promise_list.append(tmp_json)
 
   if error:
     status = 'ERROR'
   elif warning:
     status = 'WARNING'
-  if not latest_date:
-    latest_date = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
   global_state_dict = dict(
       status=status,
@@ -105,7 +101,7 @@ def main(args_list):
         'warning': warning,
       },
       type='global',
-      date=latest_date,
+      date=report_date,
       _links={"rss_url": {"href": "%s/public/feed" % base_url},
               "public_url": {"href": "%s/share/jio_public/" % base_url},
               "private_url": {"href": "%s/share/jio_private/" % base_url}
@@ -150,7 +146,7 @@ def main(args_list):
   # Public information with the link to private folder
   public_state_dict = dict(
     status=status,
-    date=latest_date,
+    date=report_date,
     _links={'monitor': {'href': '%s/share/jio_private/' % base_url}},
     title=global_state_dict.get('title', '')
   )

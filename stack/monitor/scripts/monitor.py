@@ -8,10 +8,9 @@ import json
 import ConfigParser
 import traceback
 import argparse
-import time
-import glob
 import urllib2
 import ssl
+import glob
 from datetime import datetime
 
 OPML_START = """<?xml version="1.0" encoding="UTF-8"?>
@@ -39,24 +38,6 @@ def parseArguments():
   parser.add_argument('--config_file',
                       default='monitor.cfg',
                       help='Monitor Configuration file')
-  parser.add_argument('--promise-folder',
-                      action='append', dest='promise_folder_list',
-                      default=[],
-                      help='The path to get promise executable files')
-
-  parser.add_argument('--public-folder',
-                      action='append', dest='public_folder',
-                      help='The path of public folder. All files in this folders will have public acess')
-
-  parser.add_argument('--private-folder',
-                      action='append', dest='private_folder',
-                      help='The path of private folder. All files in this folders will be accessible with password')
-
-  parser.add_argument('--promise-runner',
-                      help='The path of promise runner, use to run promise files')
-
-  parser.add_argument('--wrapper-path',
-                      help='Path of monitor generated promise scripts files.')
 
   return parser.parse_args()
 
@@ -74,6 +55,13 @@ def softConfigGet(config, *args, **kwargs):
     return config.get(*args, **kwargs)
   except (ConfigParser.NoOptionError, ConfigParser.NoSectionError):
     return None
+
+def createSymlink(source, destination):
+  try:
+    os.symlink(source, destination)
+  except OSError, e:
+    if e.errno != os.errno.EEXIST:
+      raise
 
 class Monitoring(object):
 
@@ -199,14 +187,6 @@ class Monitoring(object):
         self.promise_dict[filename] = {"path": path,
                                   "configuration": ConfigParser.ConfigParser()}
 
-    # get promises configurations
-    #for filename in os.listdir(monitor_promise_folder):
-    #  path = os.path.join(monitor_promise_folder, filename)
-    #  if os.path.isfile(path) and filename[-4:] == ".cfg":
-    #    promise_name = filename[:-4]
-    #    if promise_name in promise_dict:
-    #      loadConfig([path], promise_dict[promise_name]["configuration"])
-
   def createSymlinksFromConfig(self, destination_folder, source_path_list, name=""):
     if destination_folder:
       if source_path_list:
@@ -277,32 +257,30 @@ class Monitoring(object):
     jio_private = os.path.join(self.webdav_folder, 'jio_private')
     mkdirAll(jio_public)
     mkdirAll(jio_private)
-    try:
-      os.symlink(self.public_folder, os.path.join(jio_public, '.jio_documents'))
-    except OSError, e:
-      if e.errno != os.errno.EEXIST:
-        raise
-    try:
-      os.symlink(self.private_folder, os.path.join(jio_private, '.jio_documents'))
-    except OSError, e:
-      if e.errno != os.errno.EEXIST:
-        raise
+
+    createSymlink(self.public_folder,
+                  os.path.join(jio_public, '.jio_documents'))
+    createSymlink(self.private_folder,
+                  os.path.join(jio_private, '.jio_documents'))
 
     self.data_folder = os.path.join(self.private_folder, 'data', '.jio_documents')
+    self.document_folder = os.path.join(self.private_folder, 'documents')
     config_folder = os.path.join(self.config_folder, '.jio_documents')
+
     mkdirAll(self.data_folder)
     mkdirAll(config_folder)
-    try:
-      os.symlink(os.path.join(self.private_folder, 'data'),
+
+    createSymlink(os.path.join(self.private_folder, 'data'),
                   os.path.join(jio_private, 'data'))
-    except OSError, e:
-      if e.errno != os.errno.EEXIST:
-        raise
-    try:
-      os.symlink(self.config_folder, os.path.join(jio_private, 'config'))
-    except OSError, e:
-      if e.errno != os.errno.EEXIST:
-        raise
+    createSymlink(self.config_folder, os.path.join(jio_private, 'config'))
+    createSymlink(self.data_folder, self.document_folder)
+
+    # Cleanup private folder
+    for file in glob.glob("%s/*.history.json" % self.private_folder):
+      try:
+        os.unlink(file)
+      except OSError:
+        print "failed to remove file %s. Ignoring..." % file
 
   def makeConfigurationFiles(self):
     config_folder = os.path.join(self.config_folder, '.jio_documents')
@@ -352,12 +330,12 @@ class Monitoring(object):
     opml_content += OPML_OUTLINE_FEED % {'title': self.title,
         'html_url': self.public_url + '/feed',
         'xml_url': self.public_url + '/feed',
-        'global_url': "%s/jio_public/" % self.webdav_url}
+        'global_url': "%s/jio_private/" % self.webdav_url}
     for feed_url in feed_url_list:
       opml_content += OPML_OUTLINE_FEED % {'title': self.getMonitorTitleFromUrl(feed_url + "/share/jio_public/"),
         'html_url': feed_url + '/public/feed',
         'xml_url': feed_url + '/public/feed',
-        'global_url': "%s/share/jio_public/" % feed_url}
+        'global_url': "%s/share/jio_private/" % feed_url}
 
     opml_content += OPML_END
 
@@ -375,37 +353,6 @@ class Monitoring(object):
     file_path = os.path.join(self.logrotate_d, name)
     with open(file_path, 'w') as flog:
       flog.write(content)
-
-  def generateMonitorHalJson(self):
-    monitor_link_dict = {"webdav": {"href": self.webdav_url},
-                          "public": {"href": "%s/public" % self.webdav_url},
-                          "private": {"href": "%s/private" % self.webdav_url},
-                          "rss": {"href": "%s/feed" % self.public_url},
-                          "jio_public": {"href": "%s/jio_public/" % self.webdav_url},
-                          "jio_private": {"href": "%s/jio_private/" % self.webdav_url}
-                        }
-    if self.title:
-      self.monitor_dict["title"] = self.title
-    if self.monitor_url_list:
-      monitor_link_dict["related_monitor"] = [{"href": url}
-                                  for url in self.monitor_url_list]
-    self.monitor_dict["_links"] = monitor_link_dict
-    if self.promise_items:
-      service_list = []
-      for service_name, promise in self.promise_items:
-        service_config = promise["configuration"]
-        tmp = softConfigGet(service_config, "service", "title")
-        service_dict = {}
-        service_dict["id"] = service_name
-        service_dict["_links"] = {"status": {"href": "%s/public/%s.status.json" % (self.webdav_url, service_name)}}  # hardcoded
-        if tmp:
-          service_dict["title"] = tmp
-        service_list.append(service_dict)
-
-      self.monitor_dict["_embedded"] = {"service": service_list}
-
-    with open(self.monitor_hal_json, "w") as fp:
-      json.dump(self.monitor_dict, fp)
 
   def generateReportCronEntries(self):
     cron_line_list = []
@@ -429,7 +376,7 @@ class Monitoring(object):
           '--promise_script "%s"' % report_script,
           '--promise_name "%s"' % report_name,
           '--monitor_url "%s/jio_private/"' % self.webdav_url, # XXX hardcoded,
-          '--history_folder "%s"' % self.report_folder,
+          '--history_folder "%s"' % self.data_folder,
           '--instance_name "%s"' % self.title,
           '--hosting_name "%s"' % self.root_title,
           '--promise_type "report"']
@@ -484,11 +431,6 @@ class Monitoring(object):
       if service_name in service_name_list:
         service_name_list.pop(service_name_list.index(service_name))
 
-      """wrapper_path = os.path.join(self.wraper_folder, service_name)
-      with open(wrapper_path, "w") as fp:
-        fp.write("#!/bin/sh\n%s" % command)  # XXX hardcoded, use dash, sh or bash binary!
-      os.chmod(wrapper_path, stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR | stat.S_IRGRP | stat.S_IROTH )"""
-
     if service_name_list != []:
       # XXX Some service was removed, delete his status file so monitor will not consider his status anymore
       for service_name in service_name_list:
@@ -532,10 +474,6 @@ class Monitoring(object):
                                       private_path_list.split(),
                                       service_name)
 
-    # generate monitor.json
-    self.monitor_dict = {}
-    self.generateMonitorHalJson()
-
     # Generate OPML file
     self.generateOpmlFile(self.monitor_url_list,
       os.path.join(self.public_folder, 'feeds'))
@@ -551,11 +489,13 @@ class Monitoring(object):
 
     # Rotate monitor data files
     option_list = [
-      'daily', 'nocreate', 'noolddir', 'rotate 5',
+      'daily', 'nocreate', 'olddir %s' % self.data_folder, 'rotate 5',
       'nocompress', 'extension .json', 'dateext',
       'dateformat -%Y-%m-%d', 'notifempty'
     ]
-    file_list = ["%s/*.data.json" % self.data_folder]
+    file_list = [
+      "%s/*.data.json" % self.private_folder,
+      "%s/*.data.json" % self.data_folder]
     self.generateLogrotateEntry('monitor.data', file_list, option_list)
 
     # Rotate public history status file, delete data of previous days
