@@ -122,6 +122,12 @@ def updateStatusHistoryFolder(name, status_file, history_folder, promise_type):
         }
         f_history.write(json.dumps(data_dict))
     else:
+      # Remove useless informations
+      status_dict.pop('hosting_subscription', '')
+      status_dict.pop('title', '')
+      status_dict.pop('instance', '')
+      status_dict.pop('type', '')
+
       with open (history_file, mode="r+") as f_history:
         f_history.seek(0,2)
         position = f_history.tell() -2
