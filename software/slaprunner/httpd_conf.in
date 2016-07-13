@@ -65,12 +65,14 @@ DocumentRoot {{ parameters.runner_home }}/public
 
 Alias /public {{ parameters.runner_home }}/public
 <Directory {{ parameters.runner_home }}/public>
-    Order Allow,Deny
-    Allow from all
-    AllowOverride All
-    Satisfy Any
-    Options Indexes FollowSymLinks
-    DirectoryIndex index.html
+    <Limit GET HEAD OPTIONS REPORT PROPFIND>
+      Order Allow,Deny
+      Allow from all
+      AllowOverride All
+      Satisfy Any
+      Options Indexes FollowSymLinks
+      DirectoryIndex index.html
+    </Limit>
     <Files .htaccess>
         order allow,deny
         deny from all
