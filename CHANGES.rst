@@ -1,6 +1,11 @@
 Changes
 =======
 
+1.0.32 (unreleased)
+-------------------
+
+  * Remove url-list parameter to download fonts from fontconfig instance
+
 1.0.31 (2016-05-30)
 -------------------
 

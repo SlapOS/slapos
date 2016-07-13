@@ -88,6 +88,7 @@ products {{ parameter_dict['instance-products'] }}
   level WARN
   <logfile>
     dateformat
+    format %(message)s
     path {{ parameter_dict['z2-log'] }}
   </logfile>
 </logger>

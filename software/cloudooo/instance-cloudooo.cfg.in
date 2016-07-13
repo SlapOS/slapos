@@ -1,0 +1,290 @@
+{% set ipv4 = (ipv4_set | list)[0] -%}
+{% if ipv6_set %}{% set ipv6 = (ipv6_set | list)[0] %}{% endif -%}
+{% set instance_parameter_dict = parameter_dict['instance-parameter-dict'] -%}
+{% macro assert(x) %}{{ ("",)[not x] }}{% endmacro -%}
+
+{% set publish_url_name = instance_parameter_dict.get('publish-url-name') or 'url' -%}
+
+{% set next_port = instance_parameter_dict['port'] | int -%}
+{% if instance_parameter_dict.get('port-parameter-name') -%}
+{%   set next_port = slapparameter_dict.get(instance_parameter_dict['port-parameter-name'], next_port) | int -%}
+{% endif -%}
+{% do assert(next_port > 0) -%}
+
+{% set backend_count = instance_parameter_dict['backend-count'] | int -%}
+{% if instance_parameter_dict.get('backend-count-parameter-name') -%}
+{%   set backend_count = slapparameter_dict.get(instance_parameter_dict['backend-count-parameter-name'], backend_count) | int -%}
+{% endif -%}
+{% do assert(backend_count > 0) -%}
+
+{% set timeout = instance_parameter_dict['timeout'] | int -%}
+{% if instance_parameter_dict.get('timeout-parameter-name') -%}
+{%   set timeout = slapparameter_dict.get(instance_parameter_dict['timeout-parameter-name'], timeout) | int -%}
+{% endif -%}
+{% do assert(timeout > 0) -%}
+
+{% set ssl_parameter_dict = instance_parameter_dict.get('ssl', {}) %}
+{% if instance_parameter_dict.get('ssl-dict-parameter-name') -%}
+{%   set ssl_parameter_dict = slapparameter_dict.get(instance_parameter_dict['ssl-dict-parameter-name'], ssl_parameter_dict) -%}
+{% endif -%}
+
+{% set mimetype_entry_addition = instance_parameter_dict.get('mimetype-entry-addition', '') -%}
+{% if instance_parameter_dict.get('mimetype-entry-addition-parameter-name') -%}
+{%   set mimetype_entry_addition = mimetype_entry_addition ~ "\n" ~ slapparameter_dict.get(instance_parameter_dict['mimetype-entry-addition-parameter-name'], '') -%}
+{% endif -%}
+
+{% set apache_port = next_port -%}
+{% set haproxy_port = next_port + 1 -%}
+{% set next_port = next_port + 2 -%}
+
+{% set apache_ip_list = [ipv4] -%}
+{% if ipv6_set -%}
+{%   do apache_ip_list.append('[' ~ ipv6 ~ ']') -%}
+{% endif -%}
+{% set apache_dict = {} -%}
+{% do apache_dict.__setitem__(publish_url_name, (apache_port, "https", 'http://' ~ ipv4 ~ ':' ~ haproxy_port)) -%}
+
+{% set bin_directory = parameter_dict['buildout-bin-directory'] -%}
+{% set section_list = [] -%}
+{% set cloudooo_section_list = [] -%}
+{% macro cloudooo(name) %}{% do cloudooo_section_list.append(name) %}{{ name }}{% endmacro -%}
+[simplefile]
+recipe = slapos.recipe.template:jinja2
+template = inline:{{ '{{ content }}' }}
+
+{% macro simplefile(section_name, file_path, content, mode='') -%}
+{%   set content_section_name = section_name ~ '-content' -%}
+[{{  content_section_name }}]
+content = {{ dumps(content) }}
+
+[{{  section_name }}]
+< = simplefile
+rendered = {{ file_path }}
+context = key content {{ content_section_name }}:content
+mode = {{ mode }}
+{%- endmacro %}
+
+
+[buildout]
+extends =
+  {{ parameter_dict['template-logrotate-base'] }}
+parts =
+  publish
+  apache
+  apache-conf
+  apache-promise
+  apache-logrotate
+  cloudooo-test-runner
+  haproxy
+  xvfb-instance
+  wkhtmltopdf-on-xvfb
+
+eggs-directory = {{ eggs_directory }}
+develop-eggs-directory = {{ develop_eggs_directory }}
+offline = true
+
+
+[apache]
+recipe = slapos.cookbook:wrapper
+wrapper-path = ${directory:services}/apache
+command-line = "{{ parameter_dict['apache'] }}/bin/httpd" -f "${apache-conf:rendered}" -DFOREGROUND
+
+[apache-conf]
+recipe = slapos.recipe.template:jinja2
+template = {{ parameter_dict['template-apache-conf'] }}
+rendered = ${directory:apache-conf}/apache.conf
+context = section parameter_dict apache-conf-parameter-dict
+
+[apache-conf-parameter-dict]
+backend-list = {{ dumps(apache_dict.values()) }}
+ip-list = {{ dumps(apache_ip_list) }}
+pid-file = ${directory:run}/apache.pid
+error-log = ${directory:log}/apache-error.log
+access-log = ${directory:log}/apache-access.log
+# Apache 2.4's default value (60 seconds) can be a bit too short
+timeout = {{ timeout }}
+# Basic SSL server configuration
+cert = ${apache-ssl:cert}
+key = ${apache-ssl:key}
+cipher =
+ssl-session-cache = ${directory:log}/apache-ssl-session-cache
+# Client x509 auth
+ca-cert = ${apache-ssl-client:cert}
+crl = ${apache-ssl-client:crl}
+
+[apache-promise]
+# Check any apache port in ipv4, expect other ports and ipv6 to behave consistently
+recipe = slapos.cookbook:check_port_listening
+path = ${directory:promise}/apache
+hostname = {{ ipv4 }}
+port = {{ apache_dict.values()[0][0] }}
+
+[apache-conf-ssl]
+cert = ${directory:apache-conf}/apache.crt
+key = ${directory:apache-conf}/apache.pem
+ca-cert =  ${directory:apache-conf}/ca.crt
+crl = ${directory:apache-conf}/crl.pem
+
+[apache-ssl]
+{% if ssl_parameter_dict.get('key') -%}
+key = ${apache-ssl-key:rendered}
+cert = ${apache-ssl-cert:rendered}
+{{ simplefile('apache-ssl-key', '${apache-conf-ssl:key}', ssl_parameter_dict['key']) }}
+{{ simplefile('apache-ssl-cert', '${apache-conf-ssl:cert}', ssl_parameter_dict['cert']) }}
+{% else %}
+recipe = plone.recipe.command
+command = "{{ parameter_dict['openssl'] }}/bin/openssl" req -newkey rsa -batch -new -x509 -days 3650 -nodes -keyout "${:key}" -out "${:cert}"
+key = ${apache-conf-ssl:key}
+cert = ${apache-conf-ssl:cert}
+{%- endif %}
+
+[apache-ssl-client]
+{% if ssl_parameter_dict.get('ca-cert') -%}
+cert = ${apache-ssl-ca:rendered}
+crl = ${apache-ssl-crl:rendered}
+{{ simplefile('apache-ssl-ca', '${apache-conf-ssl:ca-cert}', ssl_parameter_dict['ca-cert']) }}
+{{ simplefile('apache-ssl-crl', '${apache-conf-ssl:crl}', ssl_parameter_dict['crl']) }}
+{% else %}
+cert =
+crl =
+{%- endif %}
+
+[apache-logrotate]
+recipe = slapos.cookbook:logrotate.d
+logrotate-entries = ${logrotate:logrotate-entries}
+backup = ${logrotate:backup}
+name = apache
+log = ${apache-conf-parameter-dict:error-log} ${apache-conf-parameter-dict:access-log}
+post = {{ bin_directory }}/slapos-kill --pidfile ${apache-conf-parameter-dict:pid-file} -s USR1
+
+[publish]
+recipe = slapos.cookbook:publish.serialised
+{% for family_name, (apache_port, scheme, _) in apache_dict.items() -%}
+{{   family_name ~ '-v6' }} = {% if ipv6_set %}{{ scheme ~ '://[' ~ ipv6 ~ ']:' ~ apache_port }}{% endif %}
+{{   family_name }} = {{ scheme ~ '://' ~ ipv4 ~ ':' ~ apache_port }}
+{% endfor -%}
+
+
+[cloudooo-base]
+recipe = slapos.cookbook:generic.cloudooo
+ip = {{ ipv4 }}
+environment =
+  LD_LIBRARY_PATH = {{ parameter_dict['cairo'] }}/lib:{{ parameter_dict['cups'] }}/lib:{{ parameter_dict['cups'] }}/lib64:{{ parameter_dict['dbus'] }}/lib:{{ parameter_dict['dbus-glib'] }}/lib:{{ parameter_dict['file'] }}/lib:{{ parameter_dict['fontconfig'] }}/lib:{{ parameter_dict['freetype'] }}/lib:{{ parameter_dict['glib'] }}/lib:{{ parameter_dict['glu'] }}/lib:{{ parameter_dict['libICE'] }}/lib:{{ parameter_dict['libSM'] }}/lib:{{ parameter_dict['libX11'] }}/lib:{{ parameter_dict['libXau'] }}/lib:{{ parameter_dict['libXdmcp'] }}/lib:{{ parameter_dict['libXext'] }}/lib:{{ parameter_dict['libXrender'] }}/lib:{{ parameter_dict['libexpat'] }}/lib:{{ parameter_dict['libffi'] }}/lib:{{ parameter_dict['libffi'] }}/lib64:{{ parameter_dict['libpng12'] }}/lib:{{ parameter_dict['libxcb'] }}/lib:{{ parameter_dict['mesa'] }}/lib:{{ parameter_dict['pixman'] }}/lib:{{ parameter_dict['xdamage'] }}/lib:{{ parameter_dict['xfixes'] }}/lib:{{ parameter_dict['zlib'] }}/lib
+  FONTCONFIG_FILE = ${fontconfig-instance:conf-path}
+  PATH = ${binary-link:target-directory}
+mimetype_entry_addition =
+{% for entry in mimetype_entry_addition.splitlines() -%}
+{{ "  " ~ entry.strip() }}
+{% endfor -%}
+# Binary information
+# cloudooo specific configuration
+ooo-binary-path = {{ parameter_dict['libreoffice-bin'] }}/program
+ooo-paster = {{ bin_directory }}/cloudooo_paster
+ooo-uno-path = {{ parameter_dict['libreoffice-bin'] }}/basis-link/program
+
+{% for index in range(backend_count) -%}
+{%   set name = 'cloudooo-' ~ index -%}
+[{{ cloudooo(name) }}]
+< = cloudooo-base
+port = {{ next_port }}
+openoffice-port = {{ next_port + 1 }}
+configuration-file = ${directory:etc}/{{ name }}.cfg
+data-directory = ${directory:srv}/{{ name }}
+wrapper = ${directory:services}/{{ name }}
+
+{%   set next_port = next_port + 2 -%}
+{% endfor -%}
+
+[haproxy]
+recipe = slapos.cookbook:haproxy
+name = cloudooo
+conf-path = ${directory:etc}/haproxy.cfg
+socket-path = ${directory:run}/haproxy.sock
+ip = {{ ipv4 }}
+port = {{ haproxy_port }}
+maxconn = 1
+wrapper-path = ${directory:services}/haproxy
+binary-path = {{ parameter_dict['haproxy'] }}/sbin/haproxy
+ctl-path = ${directory:bin}/haproxy-ctl
+backend-list =
+{%- for section_name in cloudooo_section_list %}
+  {{ "${" ~ section_name ~ ":ip}:${" ~ section_name ~ ":port}" }}
+{%- endfor %}
+
+[cloudooo-test-runner]
+recipe = slapos.cookbook:cloudooo.test
+
+prepend-path = ${buildout:bin-directory}
+run-unit-test = ${buildout:bin-directory}/runUnitTest
+run-test-suite = ${buildout:bin-directory}/runTestSuite
+
+ooo-paster = ${cloudooo-0:ooo-paster}
+configuration-file = ${cloudooo-0:configuration-file}
+
+run-unit-test-binary = {{ bin_directory }}/runCloudoooUnitTest
+run-test-suite-binary = {{ bin_directory }}/runCloudoooTestSuite
+
+[fontconfig-instance]
+recipe = slapos.cookbook:fontconfig
+conf-path = ${directory:etc}/font.conf
+font-system-folder = {{ parameter_dict['fonts'] }}
+font-folder = ${directory:font}
+service-folder = ${directory:services}
+
+
+[binary-link]
+recipe = slapos.cookbook:symbolic.link
+target-directory = ${directory:bin}
+link-binary =
+  {{ parameter_dict['coreutils'] }}/bin/basename
+  {{ parameter_dict['coreutils'] }}/bin/cat
+  {{ parameter_dict['coreutils'] }}/bin/cp
+  {{ parameter_dict['coreutils'] }}/bin/ls
+  {{ parameter_dict['coreutils'] }}/bin/tr
+  {{ parameter_dict['coreutils'] }}/bin/uname
+  {{ parameter_dict['coreutils'] }}/bin/dirname
+# wrapper recipe needs the head command
+  {{ parameter_dict['coreutils'] }}/bin/head
+  {{ parameter_dict['imagemagick'] }}/bin/convert
+  {{ parameter_dict['imagemagick'] }}/bin/identify
+  {{ parameter_dict['poppler'] }}/bin/pdfinfo
+  {{ parameter_dict['poppler'] }}/bin/pdftotext
+  {{ parameter_dict['poppler'] }}/bin/pdftohtml
+
+# rest of parts are candidates for some generic stuff
+[directory]
+recipe = slapos.cookbook:mkdirectory
+apache-conf = ${:etc}/apache
+bin = ${buildout:directory}/bin
+ca-dir = ${buildout:directory}/srv/ssl
+certs = ${:ca-dir}/certs
+crl = ${:ca-dir}/crl
+etc = ${buildout:directory}/etc
+font = ${:srv}/font
+log = ${:var}/log
+newcerts = ${:ca-dir}/newcerts
+private = ${:ca-dir}/private
+promise = ${directory:etc}/promise
+requests = ${:ca-dir}/requests
+run = ${:var}/run
+services = ${:etc}/run
+srv = ${buildout:directory}/srv
+var = ${buildout:directory}/var
+framebuffer = ${:srv}/framebuffer
+
+[xvfb-instance]
+recipe = slapos.cookbook:xvfb
+runner-path = ${directory:services}/xvfb
+xvfb-path = {{ parameter_dict["xserver"] }}/bin/Xvfb
+fbdir-path = ${directory:framebuffer}
+tmp-path = ${directory:run}
+shell-path = {{ parameter_dict["dash"] }}/bin/dash
+
+[wkhtmltopdf-on-xvfb]
+recipe = slapos.cookbook:wrapper
+wrapper-path = ${directory:bin}/wkhtmltopdf
+environment =
+  DISPLAY=:0
+  TMPDIR=${directory:run}
+command-line = {{ parameter_dict['wkhtmltopdf'] }}/wkhtmltopdf --use-xserver
+parameters-extra = true

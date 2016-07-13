@@ -1,0 +1,48 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "extends": "./schema-definitions.json#",
+  "properties": {
+    "tcpv4-port": {
+      "allOf": [{
+        "$ref": "#/definitions/tcpv4port"
+      }, {
+        "description": "Start allocating ports at this value, going upward",
+        "default": 23000
+      }]
+    },
+    "backend-count": {
+      "description": "Number of backend cloudooo instances",
+      "default": 1,
+      "type": "integer"
+    },
+    "ssl": {
+      "description": "Custom ssl certificate, key and optionaly client ca-cert and crl",
+      "properties": {
+        "cert": {
+          "description": "The content of the certificate file",
+          "type": "string"
+        },
+        "key": {
+          "description": "The content of the ssl key file",
+          "type": "string"
+        },
+        "ca-cert": {
+          "description": "The content of the ca-certificate file",
+          "type": "string"
+        },
+        "crl": {
+          "description": "The content of the revocation file",
+          "type": "string"
+        }
+      }
+    },
+    "timeout": {
+      "description": "Configure apache with this timeout",
+      "type": "integer"
+    },
+    "mimetype-entry-addition": {
+      "description": "The list of entry to add to the cloudooo mimetype registry. Each entry should on one line which format is: \"<source_mimetype> <destination_mimetype> <handler>\"",
+      "type": "string"
+    }
+  }
+}
