@@ -66,11 +66,14 @@ mode = {{ mode }}
 
 
 [buildout]
+extends =
+  {{ parameter_dict['template-logrotate-base'] }}
 parts =
   publish
   apache
   apache-conf
   apache-promise
+  apache-logrotate
   cloudooo-test-runner
   haproxy
   xvfb-instance
@@ -145,6 +148,14 @@ crl = ${apache-ssl-crl:rendered}
 cert =
 crl =
 {%- endif %}
+
+[apache-logrotate]
+recipe = slapos.cookbook:logrotate.d
+logrotate-entries = ${logrotate:logrotate-entries}
+backup = ${logrotate:backup}
+name = apache
+log = ${apache-conf-parameter-dict:error-log} ${apache-conf-parameter-dict:access-log}
+post = {{ bin_directory }}/slapos-kill --pidfile ${apache-conf-parameter-dict:pid-file} -s USR1
 
 [publish]
 recipe = slapos.cookbook:publish.serialised
