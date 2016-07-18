@@ -102,7 +102,7 @@ RewriteCond %{QUERY_STRING} service=git-receive-pack [OR]
 RewriteCond %{REQUEST_URI} /git-receive-pack$
 
 <LocationMatch "^/git/">
-        SetEnv GIT_PROJECT_ROOT:{{ parameters.project_private_folder }}
+        SetEnv GIT_PROJECT_ROOT {{ parameters.project_private_folder }}
         Order Deny,Allow
         Deny from env=AUTHREQUIRED
 
@@ -113,7 +113,7 @@ RewriteCond %{REQUEST_URI} /git-receive-pack$
 </LocationMatch>
 
 <LocationMatch "^/git-public/">
-        SetEnv GIT_PROJECT_ROOT:{{ parameters.project_public_folder }}
+        SetEnv GIT_PROJECT_ROOT {{ parameters.project_public_folder }}
         Order Deny,Allow
         Deny from env=AUTHREQUIRED
 
