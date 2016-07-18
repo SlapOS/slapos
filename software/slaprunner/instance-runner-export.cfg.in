@@ -23,7 +23,6 @@ parts +=
   symlinks
   shellinabox
   slapos-cfg
-  slapos-repo
   cron-entry-prepare-software
   deploy-instance-parameters
   instance-software
@@ -56,7 +55,6 @@ context =
 monitor-httpd-port = 8437
 # Pass some parameter to dispay in monitoring interface
 instance-configuration =
-  file recovery-code $${recovery-code:storage-path}
   httpdcors cors-domain $${slaprunner-httpd-cors:location} $${httpd-graceful-wrapper:output}
   raw webrunner-url https://$${request-frontend:connection-domain}
 

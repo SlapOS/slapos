@@ -37,6 +37,8 @@ minishell_cwd_file = {{ slaprunner['minishell_cwd_file'] }}
 minishell_history_file = {{ slaprunner['minishell_history_file'] }}
 path = {{ slaprunner['path'] }}
 instance_name = {{ slaprunner['instance_name'] }}
+default_repository = {{ slaprunner['default_repository'] }}
+default_repository_branch = {{ slaprunner['default_repository_branch'] }}
 
 [slapproxy]
 host = {{ slaprunner['ipv4'] }}
