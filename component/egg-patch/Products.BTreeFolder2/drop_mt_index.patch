@@ -1,0 +1,137 @@
+diff -ur Products.BTreeFolder2-2.13.5.orig/src/Products/BTreeFolder2/BTreeFolder2.py Products.BTreeFolder2-2.13.5/src/Products/BTreeFolder2/BTreeFolder2.py
+--- Products.BTreeFolder2-2.13.5.orig/src/Products/BTreeFolder2/BTreeFolder2.py	2015-06-19 05:59:00.000000000 +0900
++++ Products.BTreeFolder2-2.13.5/src/Products/BTreeFolder2/BTreeFolder2.py	2016-07-19 16:13:30.274201719 +0900
+@@ -28,8 +28,6 @@
+ from Acquisition import aq_base
+ from App.special_dtml import DTMLFile
+ from BTrees.Length import Length
+-from BTrees.OIBTree import OIBTree
+-from BTrees.OIBTree import union
+ from BTrees.OOBTree import OOBTree
+ from OFS.event import ObjectWillBeAddedEvent
+ from OFS.event import ObjectWillBeRemovedEvent
+@@ -94,7 +92,6 @@
+     _tree = None      # OOBTree: { id -> object }
+     _count = None     # A BTrees.Length
+     _v_nextid = 0     # The integer component of the next generated ID
+-    _mt_index = None  # OOBTree: { meta_type -> OIBTree: { id -> 1 } }
+     title = ''
+ 
+     # superValues() looks for the _objects attribute, but the implementation
+@@ -109,7 +106,6 @@
+     def _initBTrees(self):
+         self._tree = OOBTree()
+         self._count = Length()
+-        self._mt_index = OOBTree()
+ 
+     def _populateFromFolder(self, source):
+         """Fill this folder with the contents of another folder.
+@@ -174,20 +170,6 @@
+                 if key not in self._tree:
+                     raise AssertionError(
+                         "Missing value for key: %s" % repr(key))
+-            check(self._mt_index)
+-            keys = set(self._tree.keys())
+-            for key, value in self._mt_index.items():
+-                if (key not in self._mt_index
+-                    or self._mt_index[key] is not value):
+-                    raise AssertionError(
+-                        "Missing or incorrect meta_type index: %s"
+-                        % repr(key))
+-                check(value)
+-                for k in value.keys():
+-                    if k not in value or k not in keys:
+-                        raise AssertionError(
+-                            "Missing values for meta_type index: %s"
+-                            % repr(key))
+             return 1
+         except AssertionError:
+             LOG.warn('Detected damage to %s. Fixing now.' % path,
+@@ -195,13 +177,6 @@
+             try:
+                 self._tree = OOBTree(self._tree)
+                 keys = set(self._tree.keys())
+-                mt_index = OOBTree()
+-                for key, value in self._mt_index.items():
+-                    for name in tuple(value.keys()):
+-                        if name not in keys:
+-                            del value[name]
+-                    mt_index[key] = OIBTree(value)
+-                self._mt_index = mt_index
+                 new = len(keys)
+                 if self._count() != new:
+                     self._count.set(new)
+@@ -249,33 +224,13 @@
+             raise KeyError('There is already an item named "%s".' % id)
+         tree[id] = object
+         self._count.change(1)
+-        # Update the meta type index.
+-        mti = self._mt_index
+-        meta_type = getattr(object, 'meta_type', None)
+-        if meta_type is not None:
+-            ids = mti.get(meta_type, None)
+-            if ids is None:
+-                ids = OIBTree()
+-                mti[meta_type] = ids
+-            ids[id] = 1
+ 
+     def _delOb(self, id):
+         """Remove the named object from the folder.
+         """
+         tree = self._tree
+-        meta_type = getattr(tree[id], 'meta_type', None)
+         del tree[id]
+         self._count.change(-1)
+-        # Update the meta type index.
+-        if meta_type is not None:
+-            mti = self._mt_index
+-            ids = mti.get(meta_type, None)
+-            if ids is not None and id in ids:
+-                del ids[id]
+-                if not ids:
+-                    # Removed the last object of this meta_type.
+-                    # Prune the index.
+-                    del mti[meta_type]
+ 
+     security.declareProtected(view_management_screens, 'getBatchObjectListing')
+     def getBatchObjectListing(self, REQUEST=None):
+@@ -364,16 +319,14 @@
+         if isinstance(spec, str):
+             spec = [spec]
+ 
+-        set = None
+-        mti = self._mt_index
+-        for meta_type in spec:
+-            ids = mti.get(meta_type, None)
+-            if ids is not None:
+-                set = union(set, ids)
+-        if set is None:
+-            return ()
+-        else:
+-            return set.keys()
++        # meta_type filter by 'spec' is still supported but slow.
++        ids = []
++        for id in self._tree.keys():
++            obj = self._tree[id]
++            meta_type = getattr(obj, 'meta_type', None)
++            if meta_type is not None and meta_type in spec:
++                ids.append(id)
++        return tuple(ids)
+ 
+     def __contains__(self, name):
+         return name in self._tree
+diff -ur Products.BTreeFolder2-2.13.5.orig/src/Products/BTreeFolder2/tests/testBTreeFolder2.py Products.BTreeFolder2-2.13.5/src/Products/BTreeFolder2/tests/testBTreeFolder2.py
+--- Products.BTreeFolder2-2.13.5.orig/src/Products/BTreeFolder2/tests/testBTreeFolder2.py	2015-06-19 05:59:00.000000000 +0900
++++ Products.BTreeFolder2-2.13.5/src/Products/BTreeFolder2/tests/testBTreeFolder2.py	2016-07-19 15:52:43.712322217 +0900
+@@ -255,11 +255,6 @@
+         # Now it's fixed.
+         self.assert_(self.f._cleanup())
+ 
+-        from BTrees.OIBTree import OIBTree
+-        tree = self.f._mt_index['d'] = OIBTree()
+-        tree['e'] = 1
+-        self.assert_(not self.f._cleanup())
+-
+         # Verify the management interface also works,
+         # but don't test return values.
+         self.f.manage_cleanup()
