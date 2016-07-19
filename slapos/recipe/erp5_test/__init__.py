@@ -67,8 +67,7 @@ class Recipe(GenericBaseRecipe):
         test_ca_path=self.options['certificate-authority-path'],
     )
     common_list = [
-      '--conversion_server_hostname=%s' % cloudooo_parsed.hostname,
-      '--conversion_server_port=%s' % cloudooo_parsed.port,
+      '--conversion_server_url=%s' % self.options['cloudooo-url'],
       '--volatile_memcached_server_hostname=%s' % memcached_parsed.hostname,
       '--volatile_memcached_server_port=%s' % memcached_parsed.port,
       '--persistent_memcached_server_hostname=%s' % kumofs_parsed.hostname,
