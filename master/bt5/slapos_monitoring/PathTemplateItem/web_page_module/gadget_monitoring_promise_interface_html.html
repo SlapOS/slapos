@@ -29,11 +29,11 @@
             <td title="The date when the promise result was collected.">{{start-date}}</td>
           </tr>
           <tr>
-            <th><i class="fa fa-calendar"></i> Promise name</th>
+            <th><i class="fa fa-file-o" aria-hidden="true"></i> Promise name</th>
             <td>{{title}}</td>
           </tr>
         </table>
-        <h2>Output content</h2>
+        <h2>Output message</h2>
         <div style="border: 1px solid rgba(0,0,0,0.1); margin-top: 10px;">
           <div class="ui-body">
           {{#if message}}
@@ -78,12 +78,12 @@
           <td title="The date when the instance status was collected.">{{date}}</td>
         </tr>
         <tr>
-          <th>Errors Ratio</th>
-          <td title="Percentage of promises errors in Software Instance">{{errors}} %</td>
+          <th>Promises Errors</th>
+          <td title="Percentage of promises errors in Software Instance">{{errors}}</td>
         </tr>
         <tr>
-          <th>Success Ratio</th>
-          <td title="Percentage of promises success in Software Instance">{{success}} %</td>
+          <th>Promises Success</th>
+          <td title="Percentage of promises success in Software Instance">{{success}}</td>
         </tr>
       </table>
       {{#with instance}}
@@ -136,8 +136,18 @@
 
     <script id="phistory-widget-template" type="text/x-handlebars-template">
       <h2><i class="fa fa-history"></i> <strong>Promise Status History</strong></h2>
-      <div style="max-height: 250px; overflow: auto;">
-        {{#if history_list}}
+      <div class="loadbox">
+        <div class="signal ui-content-hidden"></div>
+        <div class="loadwait">
+          <a>Load History</a>
+        </div>
+      </div>
+    </script>
+
+    <script id="load-history-template" type="text/x-handlebars-template">
+      <div class="signal ui-content-hidden"></div>
+      {{#if history_list}}
+      <div class="load-content" style="max-height: 300px;">
         <table data-role="table" data-mode="columntoggle" class="table-stroke">
           {{#each history_list}}
           <tr title="{{message}}">
@@ -147,10 +157,12 @@
           </tr>
           {{/each}}
         </table>
-        {{else}}
-        History not found!
-        {{/if}}
+      <div>
+      {{else}}
+      <div class="loadwait">
+        <a>No History Found!</a>
       </div>
+      {{/if}}
     </script>
 
   </head>

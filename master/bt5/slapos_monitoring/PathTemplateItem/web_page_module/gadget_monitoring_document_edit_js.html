@@ -4,7 +4,8 @@
   "use strict";
 
   var gadget_klass = rJS(window),
-    templater = gadget_klass.__template_element;
+    templater = gadget_klass.__template_element,
+    hashCode = new Rusha().digestFromString;
 
   function getHtmlFromJson(parameter_list) {
     var i,
@@ -42,17 +43,16 @@
 
   function saveDocument(gadget, jio_document) {
     // Authenticate before save
-    // Normally password should already exists otherwise will redirect to login box and edited data will be lost!!!
-    return gadget.props.login_gadget.loginRedirect(
-        gadget.props.options.url,
-        gadget.props.options.page_options,
-        gadget.props.options.title,
-        gadget.props.options.root_title
+    return gadget.props.login_gadget.getUrlInfo(
+        hashCode(gadget.props.options.url)
       )
       .push(function (cred) {
         var url = gadget.props.options.url;
         if (gadget.props.options.path) {
           url += (url.endsWith('/') ? '':'/') + gadget.props.options.path;
+        }
+        if (cred === undefined) {
+          cred = {};
         }
         gadget.props.jio_gadget.createJio({
           type: "query",
@@ -157,7 +157,8 @@
                           .push(function (result) {
                             if (result[0].status === 'ERROR') {
                               document.querySelector('.mfp-content .ui-text-error')
-                                .innerHTML = 'ERROR ' + result[0].code + ': Failed to save your document!';
+                                .innerHTML = 'ERROR ' + result[0].code + ': Failed to save your document! ' +
+                                  "Parameters cannot be saved in Offline mode.";
                             } else {
                               $.magnificPopup.close();
                               return updateMethod(data);}

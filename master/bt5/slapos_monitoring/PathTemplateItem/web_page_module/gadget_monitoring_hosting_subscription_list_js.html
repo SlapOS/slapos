@@ -10,7 +10,7 @@
       templater.getElementById("template-hostings-list").innerHTML
     );
 
-  function safeGet(gadget, url) {
+  function safeGet(gadget, title, url) {
     var document_id = 'monitor.global';
     gadget.props.jio_gadget.createJio({
       type: "query",
@@ -26,26 +26,27 @@
       .push(function (doc) {
         return doc;
       }, function (error) {
+        var value = {type: 'error', method: 'Hosting Subscription list'};
         console.log(error);
-        return undefined;
+        if (error.status_code) {
+          value.title = title + ": " + error.name + " "+  error.status_code + ", " + error.message;
+        } else {
+          value.title = title + ": Cannot find document: " + document_id;
+        }
+        value.message = "Failed to get <strong>" + document_id + "</strong> from local indexdb storage.\n" +
+          "The document is probably not synchronized yet.\n Source URL: " + url;
+        return gadget.props.log_gadget.log(value)
+          .push(function () {
+            return undefined;
+          });
       });
   }
 
-  function getHostingData(gadget, url_list) {
+  function getHostingData(gadget, title, url_list) {
     var promise_list = [],
       i;
     for (i = 0; i < url_list.length; i += 1) {
-      gadget.props.jio_gadget.createJio({
-        type: "query",
-        sub_storage: {
-          type: "drivetojiomapping",
-          sub_storage: {
-            type: "dav",
-            url: url_list[i]
-          }
-        }
-      });
-      promise_list.push(safeGet(gadget, url_list[i]));
+      promise_list.push(safeGet(gadget, title, url_list[i]));
     }
     return RSVP.all(promise_list);
   }
@@ -72,6 +73,12 @@
       return gadget.getDeclaredGadget("jio_gadget")
         .push(function (jio_gadget) {
           gadget.props.jio_gadget = jio_gadget;
+        });
+    })
+    .ready(function (g) {
+      return g.getDeclaredGadget('log_gadget')
+        .push(function (log_gadget) {
+          g.props.log_gadget = log_gadget;
         });
     })
     .declareAcquiredMethod("getSetting", "getSetting")
@@ -107,7 +114,10 @@
             promise_list = [];
           for (i = 0; i < url_list.length; i += 1) {
             if (url_list[i]) {
-              promise_list.push(getHostingData(gadget, url_list[i]));
+              promise_list.push(getHostingData(
+                gadget,
+                gadget.props.opml_dict[opml_tmp_key_list[i]].title,
+                url_list[i]));
             } else {
               //This Feed is not available, remove from key_list
               opml_tmp_key_list[i] = undefined;
@@ -146,7 +156,7 @@
               hosting_dict.instance_list.push({
                 title: document_list[i][j].title,
                 status: document_list[i][j].status,
-                url: document_list[i][j]._links.monitor.href
+                url: document_list[i][j]._links.private_url.href
               });
               if (document_list[i][j].status == "OK") {
                 hosting_dict.success += 1;

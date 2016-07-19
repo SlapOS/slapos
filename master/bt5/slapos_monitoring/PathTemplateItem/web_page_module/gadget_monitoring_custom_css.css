@@ -139,6 +139,7 @@ html.ui-mobile .ui-grid-container.ui-responsive > ul > li, html.ui-mobile .ui-gr
   color: #535354;
   background-color: transparent;
   padding: 10px 15px 5px 15px;
+  line-height: 16px;
 }
 
 .overview-header > .content-title:after {
@@ -160,8 +161,8 @@ html.ui-mobile .ui-grid-container.ui-responsive > ul > li, html.ui-mobile .ui-gr
   display: block;
   padding: 0;
   margin: 0;
-  margin-top: 3px;
   float: right;
+  font-size: 1.2em;
 }
 
 .content-details {
@@ -312,6 +313,9 @@ html head + body .ui-panel-overview > h2 {
 }
 .label-ok, .label-OK {
   background-color: green;
+}
+.label-info, .label-INFO {
+  background-color: #79c1d9;
 }
 .label {
   display: inline;
@@ -485,6 +489,7 @@ html .custom-grid-wrap table thead tr th {
 }
 .graph-full {
   margin: 0 20px;
+  position: relative;
 }
 .graph-medium {
   height: 200px;
@@ -557,6 +562,30 @@ html .custom-grid-wrap table thead tr th {
 .infobox .infobox-content {
     color: #555;
     max-width: 140px;
+}
+
+/*  Log Box */
+
+.logbox {
+  padding: 15px 20px 20px;
+}
+
+.logbox .description {
+  padding-bottom: 15px;
+  border-bottom: 1px dashed #e6e6e6;
+  display: block;
+  color: #7b7b7b;
+}
+
+.logbox tr {
+  line-height: 23px;
+  border-bottom: 1px solid #e6e6e6;
+}
+
+.logbox tr td {
+  color: #7b7b7b;
+  padding: 10px;
+  cursor: pointer;
 }
 
 .tooltipster-shadow {
@@ -799,11 +828,11 @@ margin-top: 5px;
   border: 4px solid #024352;
   border-radius: 50px;
   height: 50px;
-  left: 75%;
+  left: 50%;
   margin: -15px 0 0 -15px;
   /*opacity: 0;*/
-  position: fixed;
-  top: 200px;
+  position: absolute;
+  top: 40px;
   width: 50px;
   /*animation: pulsate .5s ease-out;
   animation-iteration-count: infinite;*/
@@ -831,6 +860,33 @@ margin-top: 5px;
   }
 }
 
+.loadbox {
+  width: 100%;
+  overflow: auto;
+  position: relative;
+  cursor: pointer;
+  border: 1px solid #efefef;
+  background-color: #f1f1f1;
+}
+
+.load-content {
+  overflow: auto;
+  min-height: 250px;
+  background-color: #fff;
+}
+
+html body div.loadbox .loadwait > a {
+  color: #335d77;
+  text-decoration: none;
+  font-size: 1.5em;
+  text-align: center;
+  display: block;
+  margin: 99px auto;
+  padding: 15px;
+  width: 40%;
+  cursor: pointer;
+  border: 1px solid #dadada;
+}
 
 /************** Media @ **********************/
 @media all and (max-width: 62em) {

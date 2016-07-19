@@ -17,6 +17,9 @@
     ),
     history_widget_template = Handlebars.compile(
       templater.getElementById("phistory-widget-template").innerHTML
+    ),
+    load_history_template = Handlebars.compile(
+      templater.getElementById("load-history-template").innerHTML
     );
 
   function formatDate(d){
@@ -26,7 +29,7 @@
 
     return d.getFullYear() + "-" + addZero(d.getMonth()+1)
       + "-" + addZero(d.getDate()) + " " + addZero(d.getHours())
-      + ":" + addZero(d.getMinutes()) + ":" + addZero(d.getMinutes());
+      + ":" + addZero(d.getMinutes()) + ":" + addZero(d.getSeconds());
   }
 
   gadget_klass
@@ -73,7 +76,7 @@
           var back_url = '#page=main&t=' + (Date.now() / 1000 | 0);
           return RSVP.all([
             gadget.updateHeader({
-              title: 'Promise ' + options.jio_key,
+              title: 'Monitoring Promise Result',
               //back_url: back_url,
               //panel_action: false,
               refresh_url: refresh_url
@@ -81,42 +84,51 @@
           ]);
         })
         .push(function () {
-          if (!options.jio_key.endsWith('.status')) {
-            options.jio_key +=  '.status';
-          }
-          if (options.jio_for !== undefined && options.jio_for !== '') {
-            // Load from defined url
-            var jio_options = {
+          var jio_options = {
               type: "query",
               sub_storage: {
-                type: "drivetojiomapping",
-                sub_storage: {
-                  type: "dav",
-                  url: options.jio_for
-                }
+                type: "feed",
+                feed_type: 'rss',
+                url: options.jio_for.replace('share/jio_public/', 'public/feed'), // XXX keep compatibility!!
               }
             };
-            gadget.property_dict.jio_gadget.createJio(jio_options);
-            return gadget.property_dict.jio_gadget.get(options.jio_key);
-          } else {
-            return gadget.jio_get(options.jio_key);
+          gadget.property_dict.jio_gadget.createJio(jio_options);
+          if (options.jio_name) {
+            return gadget.property_dict.jio_gadget.allDocs({
+              query: 'source: ' + options.jio_name,
+              //include_docs: true              
+            })
+            .push(function (result_list) {
+              if (result_list && result_list.data.total_rows > 0) {
+                options.jio_key = result_list.data.rows[0].id;
+              }
+              return gadget.property_dict.jio_gadget.get(options.jio_key);
+            });
           }
+          return gadget.property_dict.jio_gadget.get(options.jio_key);
         })
-        .push(function (element) {
+        .push(function (feed) {
           var content,
             status,
             jio_options,
+            element,
             promise_list = [];
 
+          element = {
+            status: feed.category,
+            status_date: formatDate(new Date(feed.date)),
+            monitor_href: feed.link,
+            title: feed.source,
+            hosting_subscription: feed.reference,
+            "start-date": formatDate(new Date(feed.lastBuildDate)),
+            instance: feed.siteTitle,
+            public_url: feed.sourceUrl,
+            message: feed.comments,
+            type: 'status'
+          };
+          gadget.property_dict.promise_dict = element;
+
           return new RSVP.Queue()
-            /*.push(function () {
-              return gadget.property_dict.login_gadget.loginRedirect(
-                element._links.monitor.href,
-                options,
-                element.instance,
-                element.hosting_subscription
-              );
-            })*/
             .push(function () {
               status = (element.status.toLowerCase() === 'error') ? 
                 'red' : (element.status.toLowerCase() === 'warning') ? 'warning' : 'ok';
@@ -131,14 +143,14 @@
                 .innerHTML += element.hosting_subscription + ' > ' + element.instance + ' > ' + element.title;
               gadget.property_dict.element.querySelector("#promise-overview .ui-block-a")
                 .innerHTML += content;
-              if (element.hasOwnProperty('_links') && element._links.hasOwnProperty('monitor') && element._links.monitor.href) {
+              if (element.monitor_href) {
                 jio_options = {
                   type: "query",
                   sub_storage: {
                     type: "drivetojiomapping",
                     sub_storage: {
                       type: "dav",
-                      url: element._links.monitor.href,
+                      url: element.monitor_href
                       //basic_login: cred.hash
                     }
                   }
@@ -152,9 +164,10 @@
               var global_content,
                 links_content,
                 amount = 0,
-                warn = result[0].state.warning*100,
-                fail = result[0].state.error*100,
-                success = result[0].state.success*100,
+                warn = result[0].state.warning,
+                fail = result[0].state.error,
+                success = result[0].state.success,
+                history_content,
                 tmp_process_url,
                 tmp_url;
 
@@ -175,9 +188,9 @@
                 root_title: result[0]['hosting-title'],
                 status: result[0].status,
                 date: result[0].date,
-                errors: (fail/amount).toFixed(2),
-                warning: (warn/amount).toFixed(2),
-                success: (success/amount).toFixed(2),
+                errors: fail + "/" + amount,
+                warning: warn + "/" + amount,
+                success: success + "/" + amount,
                 instance: result[0]._embedded.instance,
                 resource_url: tmp_url,
                 process_url: tmp_process_url
@@ -191,53 +204,15 @@
                 .innerHTML += global_content;
               gadget.property_dict.element.querySelector("#promise-overview .ui-block-a .promise-links")
                 .innerHTML += links_content;
+              history_content = history_widget_template({history_list: []});
+              gadget.property_dict.element.querySelector("#promise-overview .ui-block-a")
+                      .innerHTML += history_content;
             })
             .push(function () {
               return gadget.property_dict.render_deferred.resolve();
             });
-        })
-        .push(function () {
-          var title = options.jio_key.slice(0, -7),
-            jio_options,
-            history_content,
-            jio_url = options.jio_for;
-
-          jio_options = {
-            type: "query",
-            sub_storage: {
-              type: "drivetojiomapping",
-              sub_storage: {
-                type: "dav",
-                url: jio_url
-              }
-            }
-          };
-          gadget.property_dict.jio_gadget.createJio(jio_options);
-          return gadget.property_dict.jio_gadget.get(title+'.history')
-          .push(undefined, function (error) {
-            console.log(error);
-            return undefined;
-          })
-          .push(function (status_history) {
-            var i,
-              start_index = 0,
-              history_size,
-              history_list = [];
-
-            if (status_history && status_history.hasOwnProperty('data')) {
-              if (history_size > 200) {
-                start_index = history_size - 200;
-              }
-              history_size = status_history.data.length;
-              for (i = start_index; i < history_size; i += 1) {
-                history_list.push(status_history.data[i]);
-              }
-              history_list.reverse();
-            }
-            history_content = history_widget_template({history_list: history_list});
-            gadget.property_dict.element.querySelector("#promise-overview .ui-block-a")
-                  .innerHTML += history_content;
-          })/*
+        });
+        /*
           .push(function () {
             return gadget.property_dict.login_gadget.loginRedirect(
               global_state._links.private_url.href,
@@ -373,13 +348,77 @@
               },
               data: data
             });
-          })*/;
-        });
+          })*/
     })
     .declareAcquiredMethod("updateHeader", "updateHeader")
     .declareAcquiredMethod('getUrlFor', 'getUrlFor')
     //.declareAcquiredMethod('loginRedirect', 'loginRedirect')
-    .declareAcquiredMethod("jio_get", "jio_get");
+    .declareService(function () {
+      var gadget = this,
+        promise_list = [];
+
+      promise_list.push(loopEventListener(
+        gadget.property_dict.element.querySelector('.loadbox'),
+        'click',
+        false,
+        function (evt) {
+          return new RSVP.Queue()
+            .push(function () {
+              var text = gadget.property_dict.element.querySelector('.loadbox .loadwait a');
+              $(".loadbox .signal").removeClass("ui-content-hidden");
+              if (text) {
+                text.textContent = "Loading...";
+              }
+            })
+            .push(function () {
+              var title = gadget.property_dict.promise_dict.title,
+                jio_options,
+                history_content;
+    
+              jio_options = {
+                type: "query",
+                sub_storage: {
+                  type: "drivetojiomapping",
+                  sub_storage: {
+                    type: "dav",
+                    url: gadget.property_dict.promise_dict.public_url
+                  }
+                }
+              };
+              gadget.property_dict.jio_gadget.createJio(jio_options, false);
+              return gadget.property_dict.jio_gadget.get(title+'.history')
+              .push(undefined, function (error) {
+                console.log(error);
+                return undefined;
+              })
+              .push(function (status_history) {
+                var i,
+                  start_index = 0,
+                  history_size,
+                  history_list = [];
+
+                $(".loadbox .signal").addClass("ui-content-hidden");
+                if (status_history && status_history.hasOwnProperty('data')) {
+                  if (history_size > 200) {
+                    start_index = history_size - 200;
+                  }
+                  history_size = status_history.data.length;
+                  for (i = start_index; i < history_size; i += 1) {
+                    history_list.push(status_history.data[i]);
+                  }
+                  history_list.reverse();
+                }
+                history_content = load_history_template({history_list: history_list});
+                gadget.property_dict.element.querySelector(".loadbox")
+                      .innerHTML = history_content;
+                return $('.loadbox table').table().table("refresh");
+              });
+            });
+        }
+      ));
+
+      return RSVP.all(promise_list);
+    });
 
 
 }(window, rJS, Handlebars, RSVP, $));

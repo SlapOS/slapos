@@ -168,7 +168,7 @@
           promise_list.push(gadget.getUrlFor({
             title: all_document_list[i].title,
             root_title: all_document_list[i]['hosting-title'],
-            url: all_document_list[i]._links.monitor.href,
+            url: all_document_list[i]._links.private_url.href,
             page: 'software_instance_view'
           }));
         }

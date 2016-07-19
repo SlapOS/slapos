@@ -31,11 +31,11 @@
           search_page: 'status_list',
           search: options.search,
           filter: options.filter || '',
-          column_link: {select: 'source'},
-          column_id: {select: 'title'},
+          column_link: {select: 'sourceUrl'},
+          column_id: {select: 'guid'},
           column_list: [{
             title: 'Promise',
-            select: 'title'
+            select: 'source'
           }, {
             title: 'Instance',
             select: 'siteTitle'
@@ -47,7 +47,7 @@
             title: 'Report Date',
             convertDate: true
           }, {
-            select: 'message',
+            select: 'comments',
             title: 'Message',
             css_class: 'text-overview'
           }, {
@@ -61,8 +61,8 @@
             {select: 'title', title: 'Title'}
           ],
           query: {
-            select_list: ['title', 'siteTitle', 'reference', 'category',
-              'date', 'message', 'link', 'source', 'lastBuildDate'],
+            select_list: ['source', 'siteTitle', 'reference', 'category',
+              'date', 'comments', 'link', 'sourceUrl', 'lastBuildDate', 'guid'],
             query: '_id: (NOT "_replicate_%")',
             sort_on: [["category", "ascending"]]
           }

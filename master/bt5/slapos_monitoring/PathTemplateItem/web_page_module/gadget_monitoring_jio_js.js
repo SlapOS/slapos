@@ -156,7 +156,9 @@
           if (url_list.data.rows[i].doc.url) {
             if ((opml_title && url_list.data.rows[i].doc.opml_title === opml_title)
                 || (opml_title === undefined)) {
-              monitor_url_list.push(url_list.data.rows[i].doc.url);
+              monitor_url_list.push(
+                url_list.data.rows[i].doc.url.replace('jio_public', 'jio_private') // XXX Compatibility force use private url
+              );
             }
           }
         }

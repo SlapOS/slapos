@@ -42,7 +42,7 @@
         gadget.props.url = options.url;
       }
       gadget.props.title = options.title || 'Please sign in to Monitoring';
-      gadget.props.root = options.root || 'UNKNOW';
+      gadget.props.root = options.root || 'UNKNOWN';
       return gadget.getSetting('redirect_after_login')
         .push(function (redirect_after_login) {
           if (redirect_after_login) {

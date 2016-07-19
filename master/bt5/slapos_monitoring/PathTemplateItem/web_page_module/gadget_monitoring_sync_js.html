@@ -20,6 +20,12 @@
           g.props.login_gadget = login_gadget;
         });
     })
+    .ready(function (g) {
+      return g.getDeclaredGadget('log_gadget')
+        .push(function (log_gadget) {
+          g.props.log_gadget = log_gadget;
+        });
+    })
 
     .declareAcquiredMethod("getSetting", "getSetting")
     .declareAcquiredMethod("setSetting", "setSetting")
@@ -27,7 +33,7 @@
     .declareMethod("startSync", function (options) {
       var gadget = this,
         monitor_cred_dict = {},
-        sync_lock = false;
+        sync_error;
 
       function formatDate(d){
         function addZero(n){
@@ -36,7 +42,30 @@
     
         return d.getFullYear() + "-" + addZero(d.getMonth()+1)
           + "-" + addZero(d.getDate()) + " " + addZero(d.getHours())
-          + ":" + addZero(d.getMinutes()) + ":" + addZero(d.getMinutes());
+          + ":" + addZero(d.getMinutes()) + ":" + addZero(d.getSeconds());
+      }
+
+      function getErrorLog(error_list) {
+        // Build error msg from failed sync
+        var i,
+          tmp_url,
+          error_message = "";
+
+        for (i = 0; i < error_list.length; i += 1) {
+          if (error_list[i].storage_dict.hasOwnProperty('sub_storage')) {
+            if (error_list[i].storage_dict.sub_storage.hasOwnProperty('sub_storage')) {
+              tmp_url = error_list[i].storage_dict.sub_storage.sub_storage.url;
+            } else {
+              tmp_url = error_list[i].storage_dict.sub_storage.url;
+            }
+          } else {
+            tmp_url = error_list[i].storage_dict.url;
+          }
+          error_message += "> " + error_list[i].storage_dict.hosting + " > " +
+            error_list[i].storage_dict.title + "\n";
+          error_message += "Cannot download file(s) at " + tmp_url + ".\n\n";
+        }
+        return error_message;
       }
 
       function syncStorage(gadget, storage_dict, query) {
@@ -79,22 +108,29 @@
           };
 
         storage_type_list = [
-          {path: 'jio_public/', query: {}},
-          {path: 'jio_private/', query: {}, private_access: true},
-          /*{path: 'jio_private/data/', query: {
-            //query: '_id: "%.data" AND _id: "%.status"' // Skip history
-          }}*/
+          /*{path: 'jio_public/', query: {}},*/
+          {path: '', query: {}, private_access: true},
         ];
 
         for (i = 0; i < feed_url_list.length; i += 1) {
           feed_config = JSON.parse(JSON.stringify(feed_storage));
           feed_config.sub_storage.url = feed_url_list[i].htmlurl;
+
+          // put Monitor instance name, usefull to track error
+          feed_config.title = feed_url_list[i].title;
+          feed_config.hosting = feed_url_list[i].opml_title;
+
           monitor_storage_list.push({
             storage: feed_config,
             query: {}
           });
-          base_url = feed_url_list[i].url.replace('jio_public/', ''); // Hard coded!!
-          base_url_hash = rusha.digestFromString(base_url + 'jio_private/'); // hard coded!!
+          base_url = feed_url_list[i].url;
+          // XXX - compatibility
+          if (base_url.endsWith('jio_public/')) {
+            base_url = base_url.replace('jio_public/', 'jio_private/'); // Hard coded!!
+          }
+          base_url_hash = rusha.digestFromString(base_url);
+
           for (j = 0; j < storage_type_list.length; j += 1) {
             dav_config = JSON.parse(JSON.stringify(dav_storage));
             dav_config.sub_storage.sub_storage.url = base_url + storage_type_list[j].path;
@@ -102,9 +138,14 @@
               if (monitor_cred_dict.hasOwnProperty(base_url_hash)) {
                 dav_config.sub_storage.sub_storage.basic_login = monitor_cred_dict[base_url_hash].hash;
               } else {
+                console.log("skipping " + dav_config.sub_storage.sub_storage.url + " ...");
                 continue;
               }
             }
+            // put Monitor instance name, usefull to track error
+            dav_config.title = feed_url_list[i].title;
+            dav_config.hosting = feed_url_list[i].opml_title;
+
             monitor_storage_list.push({
               storage: dav_config,
               query: storage_type_list[j].query
@@ -117,13 +158,12 @@
       function syncAllStorage() {
         var monitor_storage_list = [],
           last_sync_time;
-        if (sync_lock === true) {
-          return [];
-        }
-        if (options.now) {
-          sync_lock = true;
-        }
         return new RSVP.Queue()
+          .push(function () {
+            if (options.now) {
+              return gadget.setSetting('manual_sync_time', new Date().getTime());
+            }
+          })
           .push(function () {
             $(".notifyjs-wrapper").remove();
             return $.notify(
@@ -138,10 +178,16 @@
           .push(function () {
             return gadget.props.login_gadget.getUrlDict();
           })
+          .push(undefined, function () {
+            return {};
+          })
           .push(function(url_dict) {
             monitor_cred_dict = url_dict;
             
             return gadget.props.jio_gadget.getUrlFeedDescription(options.query);
+          })
+          .push(undefined, function () {
+            return [];
           })
           .push(function (url_list) {
             if (url_list.length <= 0) {
@@ -152,6 +198,9 @@
                 })
                 .push(function () {
                   return gadget.props.jio_gadget.getUrlFeedDescription(options.query);
+                })
+                .push(undefined, function () {
+                  return [];
                 });
             } else {
               return url_list;
@@ -201,30 +250,39 @@
           })
           .push(function () {
             last_sync_time = new Date().getTime();
-            sync_lock = false;
             return gadget.setSetting('latest_sync_time', last_sync_time);
           })
           .push(function () {
             var time = 3000,
               classname = "info",
               error_amount = gadget.props.error_list.length,
-              message = "Synchronisation finished.";
+              message = "Synchronisation finished.",
+              log_message = '',
+              log_title = "OK: " + message;
+
             if ( error_amount > 0) {
               classname = "warning";
               time = 5000;
-              message = "Synchronisation finished with " + error_amount + "error(s). \n" +
-              "You can retry with manual sync.";
+              log_message = getErrorLog(gadget.props.error_list);
+              log_title = "Synchronisation finished with " + error_amount + "error(s).";
+              message = log_title + "\nYou can retry with manual sync.";
             }
             $(".notifyjs-wrapper").remove();
-            return $.notify(
-              message,
-              {
-                position:"bottom right",
-                autoHide: true,
-                className: classname,
-                autoHideDelay: time
-              }
-            );
+            return new RSVP.all([$.notify(
+                message,
+                {
+                  position:"bottom right",
+                  autoHide: true,
+                  className: classname,
+                  autoHideDelay: time
+                }
+              ),
+              gadget.props.log_gadget.log({
+                message: log_message,
+                type: classname,
+                title: log_title,
+                method: 'Monitoring Sync'
+              })]);
           })
           .push(function () {
             return $.notify(
@@ -246,7 +304,20 @@
         gadget.props.timer = setTimeout(function(){
           return new RSVP.Queue()
             .push(function () {
+              return gadget.getSetting('manual_sync_time');
+            })
+            .push(function (manual_timestamp) {
+              var current_time = new Date().getTime();
+              if (manual_timestamp !== undefined &&
+                current_time - gadget.props.timer_interval <= manual_timestamp) {
+                // There was a manual sync don't start a new sync again!
+                return;
+              }
               return syncAllStorage();
+            })
+            .push(undefined, function (error) {
+              console.log(error);
+              return;
             })
             .push(function () {
               return gadget.getSetting('sync_data_interval');
@@ -260,6 +331,7 @@
             });
                   
             }, gadget.props.timer_interval);
+        return gadget.props.timer;
       }
 
 

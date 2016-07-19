@@ -224,10 +224,19 @@
                     $(gadget.props.element.querySelector('.btn-continue'))
                       .addClass('ui-content-hidden');
                     gadget.props.element.querySelector('.btn-save')
-                      .innerHTML = "Please wait...";
+                      .innerHTML = "Sync OPML Files...";
+                    gadget.props.element.querySelector('.btn-save').disabled = true;
                     return gadget.props.login_gadget.setUrlDict(monitor_url_dict)
                       .push(function () {
-                        return gadget.setSetting('monitor_url_description', monitor_opml_url_dict);
+                        return gadget.getSetting('monitor_url_description');
+                      })
+                      .push(function (monitor_opml_dict) {
+                        // merge current opml description with imported list
+                        if (monitor_opml_dict === undefined) {
+                          monitor_opml_dict = {};
+                        }
+                        var opml_dict = $.extend(monitor_opml_dict, monitor_opml_url_dict);
+                        return gadget.setSetting('monitor_url_description', opml_dict);
                       })
                       .push(function () {
                         return gadget.props.jio_gadget.syncMonitoringOpmlData();
@@ -237,14 +246,15 @@
                           
                         for (i = 0; i < result_list.length; i += 1) {
                           if (result_list[i].error) {
-                            error_msg += 'Failed to sync data at "' + result_list[i].url + '" <br/>';
+                            error_msg += 'Failed to sync OPML at "' + result_list[i].url + '" <br/>';
                           }
                         }
+                        /*
                         gadget.props.element.querySelector('.btn-save')
                             .innerHTML = "Sync Data...";
                         return gadget.props.sync_gadget.startSync({now: true});
                       })
-                      .push(function (){
+                      .push(function (){*/
                         if (error_msg) {
                           $(gadget.props.element.querySelector('.alert-error'))
                             .removeClass('ui-content-hidden')
@@ -253,6 +263,7 @@
                             .removeClass('ui-content-hidden');
                           gadget.props.element.querySelector('.btn-save')
                             .innerHTML = "Retry Import";
+                          gadget.props.element.querySelector('.btn-save').disabled = false;
                         } else {
                           return gadget.redirect({
                               page: 'settings_configurator',

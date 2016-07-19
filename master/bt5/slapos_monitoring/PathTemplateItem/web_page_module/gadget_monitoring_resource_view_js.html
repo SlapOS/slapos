@@ -7,7 +7,8 @@
     templater = gadget_klass.__template_element,
     graph_labels_widget = Handlebars.compile(
       templater.getElementById("graph-label-widget-template").innerHTML
-    );
+    ),
+    hashCode = new Rusha().digestFromString;
 
   gadget_klass
     .ready(function (gadget) {
@@ -81,28 +82,16 @@
         i,
         key;
 
-      function loadGraphData (jio_url, key, credential) {
-        var jio_options = {
-            type: "query",
-            sub_storage: {
-              type: "drivetojiomapping",
-              sub_storage: {
-                type: "dav",
-                url: jio_url,
-                basic_login: credential.hash
-              }
-            }
-          },
-          resource_key = gadget.property_dict.ressource_dict[key];
-        gadget.property_dict.jio_gadget.createJio(jio_options, false);
+      function loadGraphData (key) {
+        var resource_key = gadget.property_dict.ressource_dict[key];
         return gadget.property_dict.jio_gadget.get(resource_key)
           .push(undefined, function(error) {
             console.log(error);
             $.notify(
-              "Error: Failed to get resource file '" + resource_key + "'", 
+              "Error: Failed to download resource file '" + resource_key + "'.", 
               {
                 position:"top right",
-                autoHideDelay: 5000,
+                autoHideDelay: 7000,
                 className: "error"
               }
             );
@@ -165,20 +154,36 @@
           ]);
         })
         .push(function () {
-            return gadget.property_dict.login_gadget.loginRedirect(
-              options.jio_for,
-              options,
-              options.title,
-              options.root);
+            return gadget.property_dict.login_gadget.getUrlInfo(
+              hashCode(options.jio_for));
         })
         .push(function (cred) {
-          var key;
+          var key,
+            jio_options;
           gadget.property_dict.element.querySelector(".ui-panel-overview .overview-title > span")
             .innerHTML += options.root + ' > ' + options.title;
 
+          if (cred === undefined) {
+            cred = {};
+          }
+          jio_options = {
+              type: "query",
+              sub_storage: {
+                type: "drivetojiomapping",
+                sub_storage: {
+                  type: "dav",
+                  url: options.jio_for + 'data/',
+                  basic_login: cred.hash
+                }
+              }
+            };
+          gadget.property_dict.jio_gadget.createJio(jio_options, false);
           for (key in gadget.property_dict.ressource_dict) {
-            promise_list.push(loadGraphData (options.jio_for + 'data/', key, cred));
-            gadget.property_dict.ressource_list.push({url: options.jio_for + 'data/', key: key});
+            promise_list.push(loadGraphData (key));
+            gadget.property_dict.ressource_list.push({
+              url: options.jio_for + 'data/',
+              key: key
+            });
           }
           return RSVP.all(promise_list);
         })

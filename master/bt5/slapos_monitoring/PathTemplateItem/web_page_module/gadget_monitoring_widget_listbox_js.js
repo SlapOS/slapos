@@ -208,7 +208,7 @@
         
             return d.getFullYear() + "-" + addZero(d.getMonth()+1)
               + "-" + addZero(d.getDate()) + " " + addZero(d.getHours())
-              + ":" + addZero(d.getMinutes()) + ":" + addZero(d.getMinutes());
+              + ":" + addZero(d.getMinutes()) + ":" + addZero(d.getSeconds());
           }
 
           gadget.property_dict.data_result = [];

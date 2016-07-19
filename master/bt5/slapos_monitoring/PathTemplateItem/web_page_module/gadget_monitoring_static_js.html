@@ -25,7 +25,7 @@
 
     return d.getFullYear() + "-" + addZero(d.getMonth()+1)
       + "-" + addZero(d.getDate()) + " " + addZero(d.getHours())
-      + ":" + addZero(d.getMinutes()) + ":" + addZero(d.getMinutes());
+      + ":" + addZero(d.getMinutes()) + ":" + addZero(d.getSeconds());
   }
 
   function setUrlConfiguration(gadget, url, title) {
@@ -336,8 +336,12 @@
         }
       })
       .push(function () {
-        if (!options.tab || options.tab !== 'manage') {
-          options.tab = 'add';
+        if (!options.tab) {
+          if (!options.url) {
+            options.tab = 'manage';
+          } else {
+            options.tab = 'add';
+          }
         }
         gadget.props.selected = options.tab;
         return gadget.props.deferred.resolve();
@@ -801,8 +805,11 @@
                   if (credential_dict){
                     // Only save provided credentials
                     return gadget.props.login_gadget.setUrlDict(credential_dict)
+                      /*.push(function () {
+                        return gadget.props.sync_gadget.startSync({now: true});
+                      })*/
                       .push(function () {
-                        has_error;
+                        return has_error;
                       });
                   }
                   return has_error;

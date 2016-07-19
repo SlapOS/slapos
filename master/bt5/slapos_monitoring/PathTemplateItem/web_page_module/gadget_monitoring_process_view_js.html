@@ -11,7 +11,8 @@
     ),
     infobox_widget_template = Handlebars.compile(
       templater.getElementById("infobox-widget-template").innerHTML
-    );
+    ),
+    hashCode = new Rusha().digestFromString;
 
   gadget_klass
     .ready(function (gadget) {
@@ -50,8 +51,11 @@
           }
         };
 
-      return gadget.property_dict.login_gadget.loginRedirect(options.jio_for, options, options.title, options.root)
+      return gadget.property_dict.login_gadget.getUrlInfo(hashCode(options.jio_for))
         .push(function (cred) {
+          if (cred === undefined) {
+            cred = {};
+          }
           jio_options.sub_storage.sub_storage.basic_login = cred.hash;
           gadget.property_dict.jio_gadget.createJio(jio_options, false);
           return gadget.updateHeader({
@@ -64,10 +68,10 @@
         .push(undefined, function(error) {
           console.log(error);
           $.notify(
-            "Error: Failed to get running process data!", 
+            "Error: Failed to download processes data file!", 
             {
               position:"top right",
-              autoHideDelay: 5000,
+              autoHideDelay: 7000,
               className: "error"
             }
           );
