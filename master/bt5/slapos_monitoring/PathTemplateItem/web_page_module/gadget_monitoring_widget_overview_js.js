@@ -63,8 +63,6 @@
     /////////////////////////////////////////////////////////////////
     // acquired methods
     /////////////////////////////////////////////////////////////////
-    .declareAcquiredMethod("jio_get", "jio_get")
-    .declareAcquiredMethod("jio_allDocs", "jio_allDocs")
     .declareAcquiredMethod("getUrlFor", "getUrlFor")
     .declareAcquiredMethod("translate", "translate")
     .declareAcquiredMethod("redirect", "redirect")
@@ -163,6 +161,11 @@
         var promise_list = [],
           i_len,
           i;
+        all_document_list.sort(function(a, b){
+              if(a['hosting-title'] < b['hosting-title']) return -1;
+              if(a['hosting-title'] > b['hosting-title']) return 1;
+              return 0;
+          });
         gadget.property_dict.document_list = all_document_list;
         for (i = 0, i_len = all_document_list.length; i < i_len; i += 1) {
           promise_list.push(gadget.getUrlFor({

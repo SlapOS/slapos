@@ -32,8 +32,7 @@
 
     .declareMethod("startSync", function (options) {
       var gadget = this,
-        monitor_cred_dict = {},
-        sync_error;
+        monitor_cred_dict = {};
 
       function formatDate(d){
         function addZero(n){
@@ -324,7 +323,7 @@
             })
             .push(function (timer_interval) {
               if (timer_interval === undefined) {
-                timer_interval = 300000;
+                timer_interval = gadget.props.default_sync_interval;
               }
               gadget.props.timer_interval = timer_interval;
               return syncDataTimer();
@@ -347,6 +346,8 @@
       if (options.now) {
         return syncAllStorage();
       }
+      // Default sync interval to 5 minutes
+      gadget.props.default_sync_interval = 300000;
       return new RSVP.Queue()
         .push(function () {
           return gadget.getSetting('sync_data_interval');
@@ -354,9 +355,11 @@
         .push(function (timer_interval) {
           if (timer_interval === undefined) {
             // quickly sync because this is the first run!
-            timer_interval = 10000;
+            gadget.props.timer_interval = 10000;
+            gadget.props.has_sync_interval = false;
+          } else {
+            gadget.props.timer_interval = timer_interval;
           }
-          gadget.props.timer_interval = timer_interval;
           return gadget.getSetting('latest_sync_time');
         })
         .push(function (latest_sync_time) {
@@ -371,6 +374,12 @@
               gadget.props.timer_interval = gadget.props.timer_interval - time_diff;
             }
           }
+          if (!gadget.props.has_sync_interval) {
+            return gadget.setSetting('sync_data_interval',
+              gadget.props.default_sync_interval);
+          }
+        })
+        .push(function () {
           return syncDataTimer();
         });
     });

@@ -107,7 +107,7 @@
             <value> <string encoding="cdata"><![CDATA[
 
 CACHE MANIFEST\n
-# generated on Fri, 01 July 2016 11:47:33 +0000\n
+# generated on Fri, 22 July 2016 11:47:33 +0000\n
 # XXX + fonts\n
 # images/ajax-loader.gif\n
 CACHE:\n
@@ -143,7 +143,6 @@ magnific-popup.css\n
 notify.min.js\n
 renderjs.js\n
 rsvp.js\n
-# gadget_officejs_page_sync.html\n
 gadget_monitoring_application_panel.html\n
 gadget_monitoring_chart.html\n
 gadget_monitoring_document_edit.html\n
@@ -152,9 +151,11 @@ gadget_monitoring_hosting_subscription_list.html\n
 gadget_monitoring_hosting_subscription_view.html\n
 gadget_monitoring_import_export.html\n
 gadget_monitoring_jio.html\n
+gadget_monitoring_log_widget.html\n
 gadget_monitoring_login.html\n
 gadget_monitoring_login_widget.html\n
 gadget_monitoring_main.html\n
+gadget_monitoring_message_log.html\n
 gadget_monitoring_process_view.html\n
 gadget_monitoring_promise_interface.html\n
 gadget_monitoring_resource_view.html\n
@@ -178,9 +179,11 @@ gadget_monitoring_hosting_subscription_list.js\n
 gadget_monitoring_hosting_subscription_view.js\n
 gadget_monitoring_import_export.js\n
 gadget_monitoring_jio.js\n
+gadget_monitoring_log_widget.js\n
 gadget_monitoring_login.js\n
 gadget_monitoring_login_widget.js\n
 gadget_monitoring_main.js\n
+gadget_monitoring_message_log.js\n
 gadget_monitoring_process_view.js\n
 gadget_monitoring_promise_interface.js\n
 gadget_monitoring_resource_view.js\n
@@ -340,7 +343,7 @@ NETWORK:\n
             </item>
             <item>
                 <key> <string>serial</string> </key>
-                <value> <string>952.17042.64069.1194</string> </value>
+                <value> <string>952.47296.53851.40738</string> </value>
             </item>
             <item>
                 <key> <string>state</string> </key>
@@ -358,7 +361,7 @@ NETWORK:\n
                     </tuple>
                     <state>
                       <tuple>
-                        <float>1467366906.34</float>
+                        <float>1469182145.68</float>
                         <string>UTC</string>
                       </tuple>
                     </state>

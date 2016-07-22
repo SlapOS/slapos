@@ -196,6 +196,11 @@
             }
             gadget.props.hosting_list.push(hosting_dict);
           }
+          gadget.props.hosting_list.sort(function(a, b){
+              if(a.title < b.title) return -1;
+              if(a.title > b.title) return 1;
+              return 0;
+          });
           content = hosting_widget_template({
             hosting_list: gadget.props.hosting_list
           });
