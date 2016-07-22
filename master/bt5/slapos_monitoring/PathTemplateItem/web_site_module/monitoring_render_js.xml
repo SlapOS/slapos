@@ -407,6 +407,7 @@
             <value>
               <tuple>
                 <string>aggregate/web_page_module/rjs_gadget_erp5_html</string>
+                <string>caching_policy/must-revalidate</string>
               </tuple>
             </value>
         </item>
@@ -755,7 +756,7 @@
             </item>
             <item>
                 <key> <string>serial</string> </key>
-                <value> <string>951.26382.15589.41540</string> </value>
+                <value> <string>952.21709.2854.1570</string> </value>
             </item>
             <item>
                 <key> <string>state</string> </key>
@@ -773,7 +774,7 @@
                     </tuple>
                     <state>
                       <tuple>
-                        <float>1467279298.41</float>
+                        <float>1469182386.2</float>
                         <string>UTC</string>
                       </tuple>
                     </state>
