@@ -39,6 +39,7 @@ function increase_revision_number() {
 DL_LOG="{{ instance_log_dir }}/cros_sources_dl.log"
 BRANCH="{{ branch }}"
 CHROMIUM_OVERLAY="{{ cros_location }}/{{ branch }}/src/third_party/chromiumos-overlay"
+PORTAGE_STABLE="{{ cros_location }}/{{ branch }}/src/third_party/portage-stable"
 
 {{ export_path_cmd }}
 echo "getting Chromium OS sources..." >> $DL_LOG
@@ -56,6 +57,8 @@ repo init -u https://chromium.googlesource.com/chromiumos/manifest.git -b {{ bra
 
 # in case changes were already made, stash changes to be able to pull
 cd ${CHROMIUM_OVERLAY}
+git stash
+cd ${PORTAGE_STABLE}
 git stash
 
 repo sync >> $DL_LOG || { echo "Problem while downloading Chromium OS sources (repo sync). Exiting." ; exit 1 ; }
@@ -129,7 +132,7 @@ increase_revision_number ${CHROMIUM_OVERLAY}/chromeos-base/openssh-server-init/
 increase_revision_number ${CHROMIUM_OVERLAY}/chromeos-base/chromeos-sshd-init/
 
 # bashrc modifications
-BASH_EBUILD_DIR='{{ cros_location }}/{{ branch }}/src/third_party/portage-stable/app-shells/bash'
+BASH_EBUILD_DIR="${PORTAGE_STABLE}/app-shells/bash"
 if ! grep '----- BEGIN NayuOS configuration -----' "${BASH_EBUILD_DIR}/files/dot-bashrc" > /dev/null ; then
   cat >> "${BASH_EBUILD_DIR}/files/dot-bashrc" <<EOF
 
