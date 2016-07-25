@@ -30,6 +30,7 @@ parts =
     service-redis
 
     service-cron
+    cron-entry-git-backup
 
     on-reinstantiate
 
@@ -765,9 +766,7 @@ cron-entries    = ${cron-dir:cron.d}
 crontabs        = ${cron-dir:crontabs}
 cronstamps      = ${cron-dir:cronstamps}
 catcher         = ${cron-simplelogger:wrapper}
-
 dcrond-binary   = {{ dcron_bin }}
-
 depends =
     ${logrotate-entry-cron:recipe}
 
@@ -776,7 +775,6 @@ depends =
 recipe  = slapos.cookbook:simplelogger
 wrapper = ${directory:bin}/${:_buildout_section_name_}
 log     = ${cron-dir:log}/cron.log
-
 
 # base entry for clients who registers to cron
 [cron-entry]
@@ -843,7 +841,10 @@ backup  = ...
 time    = daily
 command = ${logrotate:wrapper}
 
-
+[cron-entry-git-backup]
+<= cron-entry
+time = weekly
+command = ${directory:bin}/git-backup --help # XXX(IV): run a simple command for now
 
 # 6. on-reinstantiate actions
 
