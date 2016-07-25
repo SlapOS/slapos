@@ -281,6 +281,7 @@ context-extra =
 [gitlab-bin]
 recipe  = slapos.cookbook:wrapper
 wrapper-path = ${directory:bin}/${:_buildout_section_name_}
+parameters-extra = true
 # NOTE $HOME needed to pick gitconfig
 environment  =
     BUNDLE_GEMFILE = {{ gitlab_repository_location }}/Gemfile
