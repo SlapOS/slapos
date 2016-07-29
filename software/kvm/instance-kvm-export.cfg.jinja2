@@ -23,14 +23,6 @@ parts +=
 {% if monitor -%}
 # monitor parts
   monitor-base
-  cron-entry-logrotate
-  certificate-authority
-  monitor-conf
-  start-monitor
-  ca-httpd
-  monitor-httpd-promise
-  monitor-httpd-promise-conf
-  monitor-status2rss-cron-entry
 {% endif %}
 
 # Create the exporter executable, which is a simple shell script
