@@ -128,7 +128,7 @@ return =
 {% endif -%}
 config-bt5 = {{ dumps(slapparameter_dict.get('bt5', bt5_default_list)) }}
 config-bt5-repository-url = {{ dumps(slapparameter_dict.get('bt5-repository-url', local_bt5_repository)) }}
-config-cloudooo-url = ${request-cloudooo:connection-url}
+config-cloudooo-url = https://cloudooo.erp5.cn/
 config-deadlock-debugger-password = ${publish-early:deadlock-debugger-password}
 config-developer-list = {{ dumps(slapparameter_dict.get('developer-list', [inituser_login])) }}
 config-hosts-dict = {{ dumps(slapparameter_dict.get('hosts-dict', {})) }}
