@@ -2,7 +2,7 @@
 # see:
 # https://gitlab.com/gitlab-org/gitlab-ce/blob/master/lib/support/nginx/gitlab-ssl
 # https://gitlab.com/gitlab-org/omnibus-gitlab/blob/master/files/gitlab-cookbooks/gitlab/templates/default/nginx.conf.erb
-# (last updated for omnibus-gitlab 8.5.1+ce.0-1-ge732b39)
+# (last updated for omnibus-gitlab 8.6.5+ce.0-0-g342f8be)
 
 {% from 'macrolib.cfg.in' import cfg  with context %}
 
@@ -40,6 +40,13 @@ http {
   gzip_types        {{ cfg('nginx_gzip_types') }};
 
   include {{ nginx_mime_types }};
+
+  {# we do not do nginx caching:
+     - gitlab-workhorse serves raw blobs fast
+     - we have caches on frontend nodes
+  proxy_cache_path <%= @proxy_cache_path %>;
+  proxy_cache <%= @proxy_cache %>;
+  #}
 
   include {{ nginx_gitlab_http_conf }};
 
