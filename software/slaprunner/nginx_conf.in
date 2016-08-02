@@ -45,10 +45,10 @@ http {
                 set $test "${test}_backend_access";
             }
             if ( $test = no_htpasswd) {
-                return 301 $scheme://$host/setAccount ;
+                return 307 $scheme://$host/setAccount ;
             }
             if ( $test = no_htpasswd_backend_access) {
-                return 301 /setAccount ;
+                return 307 /setAccount ;
             }
             auth_basic "Restricted";
             auth_basic_user_file {{ param_nginx_frontend['etc_dir'] }}/.htpasswd;
