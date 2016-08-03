@@ -1,0 +1,14 @@
+{
+    "name": "cloudooo",
+    "description": "Clusterised cloudooo",
+    "serialisation": "xml",
+    "software-type": {
+        "default": {
+            "title": "Default",
+            "description": "Cloudooo",
+            "request": "instance-cloudooo-input-schema.json",
+            "response": "instance-cloudooo-output-schema.json",
+            "index": 0
+        }
+    }
+}
