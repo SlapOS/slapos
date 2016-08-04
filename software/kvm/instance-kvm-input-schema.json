@@ -198,7 +198,8 @@
     "bootstrap-script-url": {
       "title": "VM bootstrap script URL.",
       "description": "If dedicaced disk image is used, this script will be downloaded and run at first boot of the virtual machine. Set md5sum to URL like: http://example.com/file#MD5SUM. Get file in vm at http://10.0.2.100/vm-bootstrap.",
-      "type": "uri"
+      "type": "string",
+      "format": "uri"
     },
     "data-to-vm": {
       "title": "Text content to send to this virtual machine.",
