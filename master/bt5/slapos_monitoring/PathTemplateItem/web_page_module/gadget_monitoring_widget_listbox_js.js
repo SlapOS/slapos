@@ -33,6 +33,16 @@
       });
   }
 
+  var formatDate = function(d){
+    function addZero(n){
+      return n < 10 ? '0' + n : '' + n;
+    }
+
+    return d.getFullYear() + "-" + addZero(d.getMonth()+1)
+      + "-" + addZero(d.getDate()) + " " + addZero(d.getHours())
+      + ":" + addZero(d.getMinutes()) + ":" + addZero(d.getSeconds());
+  };
+
   gadget_klass
 
     /////////////////////////////////////////////////////////////////
@@ -201,15 +211,6 @@
             j,
             k;
 
-          function formatDate(d){
-            function addZero(n){
-              return n < 10 ? '0' + n : '' + n;
-            }
-        
-            return d.getFullYear() + "-" + addZero(d.getMonth()+1)
-              + "-" + addZero(d.getDate()) + " " + addZero(d.getHours())
-              + ":" + addZero(d.getMinutes()) + ":" + addZero(d.getSeconds());
-          }
 
           gadget.property_dict.data_result = [];
           // build handlebars object

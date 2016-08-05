@@ -93,6 +93,10 @@ html.ui-mobile .ui-grid-container.ui-responsive > ul > li, html.ui-mobile .ui-gr
 .ui-text-OK, .ui-text-ok {
   color: green;
 }
+.ui-text-WARNING, .ui-text-warning {
+  color: #cea813;
+  text-shadow: 1px 0px 0px rgb(224, 224, 116);
+}
 
 .ui-text-desabled {
   color: rgba(128, 128, 128, 0.66);
@@ -293,7 +297,7 @@ html head + body .ui-panel-overview > h2 {
   background: #DC4343;
 }
 .ui-status-warning:before, .ui-status-WARNING:before {
-  background: #faebcc;
+  background: #f0ad4e;
 }
 .status-text-ok:before, .status-text-OK:before {
   color: green;
@@ -302,7 +306,7 @@ html head + body .ui-panel-overview > h2 {
   color: #DC4343;
 }
 .status-text-warning:before, .status-text-WARNING:before {
-  color: #faebcc;
+  color: #f0ad4e;
 }
 
 .label-warning, .label-WARNING {
@@ -507,7 +511,7 @@ html .custom-grid-wrap table thead tr th {
   font-weight: normal;
 }
 
-.hosting-block {
+.hosting-block, .content-medium {
   width: 80%;
 }
 
@@ -916,7 +920,7 @@ html body div.loadbox .loadwait > a {
   .graph-full {
     margin: 0 10px;
   }
-  .hosting-block {
+  .hosting-block, .content-medium {
     width: 100%;
   }
   html table:not(.ui-responsive) tbody tr td:first-child a, html table:not(ui-responsive) tbody tr th:first-child a {

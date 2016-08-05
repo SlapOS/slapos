@@ -80,7 +80,8 @@
       private_url: monitor_dict._links.hasOwnProperty('private_url') ? monitor_dict._links.private_url.href : '',
       rss_url: monitor_dict._links.hasOwnProperty('rss_url') ? monitor_dict._links.rss_url.href : '',
       resource_url: tmp_url,
-      process_url: tmp_process_url
+      process_url: tmp_process_url,
+      warning: (monitor_dict.status.toUpperCase() === "WARNING") ? true : false
     };
     return instance_dict;
   }

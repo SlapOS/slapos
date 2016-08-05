@@ -55,6 +55,9 @@
             </div>
 
             <div class="ui-grid-a ui-responsive">
+              {{#if warning}}
+              <p class="ui-text-error"><i class="fa fa-info-circle" aria-hidden="true"></i> Status was changed to WARNING as last sync of this instance failed.</p>
+              {{/if}}
               {{#with instance}}
               <div class="ui-block-a">
                 <table data-role="table" data-mode="columntoggle" class="table-stroke">

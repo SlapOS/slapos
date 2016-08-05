@@ -124,7 +124,8 @@
             instance: feed.siteTitle,
             public_url: feed.sourceUrl,
             message: feed.comments,
-            type: 'status'
+            type: 'status',
+            warning: (feed.category === "WARNING") ? true : false
           };
           gadget.property_dict.promise_dict = element;
 

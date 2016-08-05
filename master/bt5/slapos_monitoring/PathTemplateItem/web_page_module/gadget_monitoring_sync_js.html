@@ -79,6 +79,55 @@
           });
       }
 
+      function updateStatus(gadget, storage_dict, status) {
+        var promise_list = [],
+          jio_gadget,
+          i;
+        return gadget.declareGadget("gadget_monitoring_jio.html")
+          .push(function (jio_declared_gadget) {
+            jio_gadget = jio_declared_gadget;
+            jio_gadget.createJio(storage_dict);
+            return jio_gadget.allDocs({include_docs: true});
+          })
+          .push(undefined, function (error) {
+            console.log(error);
+            return {
+              data: {
+                total_rows: 0
+              }
+            };
+          })
+          .push(function (jio_docs) {
+            var tmp;
+            for (i = 0; i < jio_docs.data.total_rows; i += 1) {
+              if (jio_docs.data.rows[i].id.startsWith('_replicate_')) {
+                continue;
+              }
+              tmp = jio_docs.data.rows[i].doc;
+              if (storage_dict.storage_type === "rss") {
+                if (tmp.category === "WARNING") {
+                  continue;
+                }
+                tmp.category = "WARNING";
+              } else if (storage_dict.storage_type === "webdav") {
+                if (tmp.status === "WARNING") {
+                  continue;
+                }
+                tmp.status = "WARNING";
+              }
+              promise_list.push(jio_gadget.put(
+                jio_docs.data.rows[i].id,
+                tmp
+              ));
+            }
+            return RSVP.all(promise_list);
+          })
+          .push(undefined, function (error) {
+            console.log("ERROR: update status to WARNING");
+            console.log(error);
+          });
+      }
+
       function getMonitoringStorageList (feed_url_list) {
         var base_url,
           base_url_hash,
@@ -118,6 +167,7 @@
           // put Monitor instance name, usefull to track error
           feed_config.title = feed_url_list[i].title;
           feed_config.hosting = feed_url_list[i].opml_title;
+          feed_config.storage_type = "rss";
 
           monitor_storage_list.push({
             storage: feed_config,
@@ -137,13 +187,14 @@
               if (monitor_cred_dict.hasOwnProperty(base_url_hash)) {
                 dav_config.sub_storage.sub_storage.basic_login = monitor_cred_dict[base_url_hash].hash;
               } else {
-                console.log("skipping " + dav_config.sub_storage.sub_storage.url + " ...");
+                console.log("NotFound: skipping " + dav_config.sub_storage.sub_storage.url + " ...");
                 continue;
               }
             }
             // put Monitor instance name, usefull to track error
             dav_config.title = feed_url_list[i].title;
             dav_config.hosting = feed_url_list[i].opml_title;
+            dav_config.storage_type = "webdav";
 
             monitor_storage_list.push({
               storage: dav_config,
@@ -267,7 +318,7 @@
               message = log_title + "\nYou can retry with manual sync.";
             }
             $(".notifyjs-wrapper").remove();
-            return new RSVP.all([$.notify(
+            return RSVP.all([$.notify(
                 message,
                 {
                   position:"bottom right",
@@ -284,6 +335,19 @@
               })]);
           })
           .push(function () {
+            var promise_list = [],
+              i;
+            // Update all failures monitoring status to Warning
+            for (i = 0; i < gadget.props.error_list.length; i += 1) {
+              promise_list.push(updateStatus(
+                gadget,
+                gadget.props.error_list[i].storage_dict,
+                'WARNING'
+              ));
+            }
+            return RSVP.all(promise_list);
+          })
+          .push(function () {
             return $.notify(
               "Last Sync: " + formatDate(new Date(last_sync_time)), 
               {
@@ -295,7 +359,7 @@
             );
           });
       }
-      
+
       function syncDataTimer() {
         if (gadget.props.timer) {
           clearTimeout(gadget.props.timer);

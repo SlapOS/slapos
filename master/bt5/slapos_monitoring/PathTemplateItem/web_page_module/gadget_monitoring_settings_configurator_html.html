@@ -124,75 +124,72 @@
         </article>
       </div>
       <div id="config-manage">
-        <div class="ui-grid-a ui-responsive custom-listbox">
-          <div class="ui-block-a">
-            <div class="ui-panel-overview" style="min-height: 450px;">
-              <div class="overview-header">
-                <div class='content-title ui-instance-title'>
-                  <div class="overview-title">
-                    <i class="fa fa-link"></i><span>Monitoring OPML List</span>
-                  </div>
-                  <div class="commands">
-                  </div>
+        <div class="ui-responsive content-medium">
+          <div class="ui-panel-overview" style="min-height: 450px;">
+            <div class="overview-header">
+              <div class='content-title ui-instance-title'>
+                <div class="overview-title">
+                  <i class="fa fa-link"></i><span>Monitoring OPML List</span>
                 </div>
-              </div>
-              <div class="overview-content">
-              
-                <div class="ui-listview-container">
-                  <table class="ui-responsive ui-body-c ui-table-inset opml-tablelinks">
-                    <thead class="ui-bar-inherit">
-                      <tr>
-                        <th class="padding-10"><input type="checkbox" name="opml-all" value="all"></th>
-                        <th>OPML URL</th>
-                        <th>Title</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      
-                    </tbody>
-                    <tfoot class="ui-bar-inherit"></tfoot>
-                  </table>
-                </div>
-                <div class="padding-10 msgtext-box"></div>
-                <div class="">
-                  <a href="#" class="ui-btn ui-corner-all ui-btn-inline opml-delete"><i class="fa fa-trash"></i> Delete Selection</a>
-                  <a href="#" class="ui-btn ui-corner-all ui-btn-inline opml-test"><i class="fa fa-check-square-o"></i> Availability Test</a>
-                  <span class="ui-content-hidden padding-10 loadspinner">
-                    <i class="fa fa-spinner fa-2x fa-spin"></i>
-                  </span>
-                </div>
-                <div class="padding-5">
-                  <fieldset class="sync-interval-controlgroup" data-role="controlgroup" data-type="horizontal">
-                    <legend><strong>Auto Sync Interval:</strong></legend>
-                    <input type="radio" name="sync-data-timer" id="sync-data-5m" value="300000" checked="checked">
-                    <label for="sync-data-5m">5 min</label>
-                    <input type="radio" name="sync-data-timer" id="sync-data-10m" value="600000">
-                    <label for="sync-data-10m">10 min</label>
-                    <input type="radio" name="sync-data-timer" id="sync-data-20m" value="1200000">
-                    <label for="sync-data-20m">20 min</label>
-                    <input type="radio" name="sync-data-timer" id="sync-data-30m" value="1800000">
-                    <label for="sync-data-30m">30 min</label>
-                    <input type="radio" name="sync-data-timer" id="sync-data-1h" value="3600000">
-                    <label for="sync-data-1h">1 h</label>
-                  </fieldset>
-                  <p>Last sync date: <span class="last-sync"></span></p>
-                  <h2><strong>Manual Sync:</strong></h2>
-                  <button class="ui-btn ui-corner-all ui-btn-inline sync-all"><i class="fa fa-download"></i> Sync Data Now</button>
-                  <p style="margin: 0; font-style: italic;" class="ui-text-ERROR">
-                    <i class="fa fa-info" aria-hidden="true"></i>
-                    If you just registered a new monitor, you can sync data now!
-                  </p>
-                </div>
-                <div class="padding-5">
-                  <h2><strong>Access links:</strong></h2>
-                  <a href="#page=hosting_subscription_list">Access Hosting Subscriptions</a>
-                  <a href="#page=import_export">Export Settings</a>
+                <div class="commands">
                 </div>
               </div>
             </div>
-          </div>
-          <div class="ui-block-b">
+            <div class="overview-content">
             
+              <div class="ui-listview-container">
+                <table class="ui-responsive ui-body-c ui-table-inset opml-tablelinks">
+                  <thead class="ui-bar-inherit">
+                    <tr>
+                      <th class="padding-10"><input type="checkbox" name="opml-all" value="all"></th>
+                      <th>OPML URL</th>
+                      <th>Hosting Subscription Name</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    
+                  </tbody>
+                  <tfoot class="ui-bar-inherit"></tfoot>
+                </table>
+              </div>
+              <div class="padding-10 msgtext-box"></div>
+              <div class="">
+                <a href="#" class="ui-btn ui-corner-all ui-btn-inline opml-delete"><i class="fa fa-trash"></i> Delete Selection</a>
+                <a href="#" class="ui-btn ui-corner-all ui-btn-inline opml-test"><i class="fa fa-check-square-o"></i> Availability Test</a>
+                <span class="ui-content-hidden padding-10 loadspinner">
+                  <i class="fa fa-spinner fa-2x fa-spin"></i>
+                </span>
+              </div>
+              <div class="padding-5">
+                <fieldset class="sync-interval-controlgroup" data-role="controlgroup" data-type="horizontal">
+                  <legend><strong>Auto Sync Interval:</strong></legend>
+                  <input type="radio" name="sync-data-timer" id="sync-data-5m" value="300000" checked="checked">
+                  <label for="sync-data-5m">5 min</label>
+                  <input type="radio" name="sync-data-timer" id="sync-data-10m" value="600000">
+                  <label for="sync-data-10m">10 min</label>
+                  <input type="radio" name="sync-data-timer" id="sync-data-20m" value="1200000">
+                  <label for="sync-data-20m">20 min</label>
+                  <input type="radio" name="sync-data-timer" id="sync-data-30m" value="1800000">
+                  <label for="sync-data-30m">30 min</label>
+                  <input type="radio" name="sync-data-timer" id="sync-data-1h" value="3600000">
+                  <label for="sync-data-1h">1 h</label>
+                </fieldset>
+                <p>Last sync date: <span class="last-sync"></span></p>
+                <h2><strong>Manual Sync:</strong></h2>
+                <button class="ui-btn ui-corner-all ui-btn-inline sync-all"><i class="fa fa-download"></i> Sync Data Now</button>
+                <p style="margin: 0; font-style: italic;" class="ui-text-ERROR">
+                  <i class="fa fa-info" aria-hidden="true"></i>
+                  If you just registered a new monitor, you can sync data now!
+                </p>
+              </div>
+              <div class="padding-5">
+                <h2><strong>Access links:</strong></h2>
+                <a href="#page=hosting_subscription_list" class="ui-btn ui-corner-all ui-btn-inline ui-mini" title="Access Hosting Subscriptions">
+                 <i class="fa fa-tachometer" aria-hidden="true"></i> Applications Monitoring</a>
+                <a href="#page=import_export" class="ui-btn ui-corner-all ui-btn-inline ui-mini" title="Export Settings">
+                  <i class="fa fa-location-arrow" aria-hidden="true"></i> Export Settings</a>
+              </div>
+            </div>
           </div>
         </div>
       </div>

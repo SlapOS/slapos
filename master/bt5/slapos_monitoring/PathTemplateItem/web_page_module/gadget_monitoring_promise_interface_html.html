@@ -15,6 +15,9 @@
 
     <script id="promise-widget-template" type="text/x-handlebars-template">
       {{#with element}}
+        {{#if warning}}
+        <p class="ui-text-error"><i class="fa fa-info-circle" aria-hidden="true"></i> Status was changed to WARNING as last sync of this instance failed.</p>
+        {{/if}}
         <table data-role="table" data-mode="columntoggle" class="table-stroke">
           <tr>
             <th><i class="fa fa-tachometer"></i> Status</th>
@@ -48,7 +51,7 @@
     </script>
     
     <script id="pinstance-widget-template" type="text/x-handlebars-template">
-      <h2><i class="fa fa-cubes"></i><strong> Software Instance Overview</strong></h2>
+      <h2><i class="fa fa-area-chart" aria-hidden="true"></i><strong> Resources Usage</strong></h2>
       <div class="ui-field-contain">
         <fieldset data-role="controlgroup" data-type="horizontal">
           {{#if resource_url }}
@@ -59,18 +62,18 @@
           {{/if}}
         </fieldset>
       </div>
-      <h2>Software Instance status</h2>
+      <h2><i class="fa fa-cubes"></i><strong> Software Instance Overview</strong></h2>
       <table data-role="table" data-mode="columntoggle" class="table-stroke">
         <tr title="Hosting Subscription">
           <th><i class="fa fa-puzzle-piece"></i> H. Subscription</th>
           <td title="Hosting Subscription title">{{root_title}}</td>
         </tr>
         <tr>
-          <th><i class="fa fa-cube"></i> Instance</th>
+          <th><i class="fa fa-cube"></i> Instance Name</th>
           <td title="Software Instance title">{{title}}</td>
         </tr>
         <tr>
-          <th><i class="fa fa-tachometer"></i> Status</th>
+          <th><i class="fa fa-tachometer"></i> Instance Status</th>
           <td><span class="label label-{{status}}">{{status}}</span></td>
         </tr>
         <tr>

@@ -135,7 +135,8 @@
                 private_url: current_document._links.hasOwnProperty('private_url') ? current_document._links.private_url.href : '',
                 rss_url: current_document._links.hasOwnProperty('rss_url') ? current_document._links.rss_url.href : '',
                 resource_url: tmp_url,
-                process_url: tmp_process_url
+                process_url: tmp_process_url,
+                warning: (current_document.status.toUpperCase() === "WARNING") ? true : false
               });
 
               if (current_document._embedded.promises !== undefined) {
@@ -144,6 +145,9 @@
                   promise_list[i].href = "#page=view&jio_key=false&jio_name=" + 
                     promise_list[i].title + "&jio_for=" +
                     current_document._links.rss_url.href;
+                  if (current_document.status === "WARNING") {
+                    promise_list[i].status = current_document.status;
+                  }
                 }
               }
               promise_content = promise_list_template({
