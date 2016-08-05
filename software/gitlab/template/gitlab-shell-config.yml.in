@@ -2,7 +2,7 @@
 # see:
 # https://gitlab.com/gitlab-org/gitlab-shell/blob/master/config.yml.example
 # https://gitlab.com/gitlab-org/omnibus-gitlab/blob/master/files/gitlab-cookbooks/gitlab/templates/default/gitlab-shell-config.yml.erb
-# (last updated for omnibus-gitlab 8.6.5+ce.0-0-g342f8be)
+# (last updated for omnibus-gitlab 8.7.9+ce.1-0-gf589ad7)
 
 # GitLab user. git by default
 user: {{ backend_info.user }}

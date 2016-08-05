@@ -2,7 +2,7 @@
 # see:
 # https://gitlab.com/gitlab-org/gitlab-ce/blob/master/config/gitlab.yml.example
 # https://gitlab.com/gitlab-org/omnibus-gitlab/blob/master/files/gitlab-cookbooks/gitlab/templates/default/gitlab.yml.erb
-# (last updated for omnibus-gitlab 8.6.5+ce.0-0-g342f8be)
+# (last updated for omnibus-gitlab 8.7.9+ce.1-0-gf589ad7)
 
 {% from 'macrolib.cfg.in' import cfg, cfg_https, external_url  with context %}
 
@@ -36,9 +36,11 @@ production: &base
     # Customize if you have GitLab behind a reverse proxy which is running on a different machine.
     # Add the IP address for your reverse proxy to the list, otherwise users will appear signed in from that address.
     trusted_proxies:
+    {# TODO support configuring trusted proxies
 <% @trusted_proxies.each do |proxy| %>
       - <%= proxy %>
 <% end %>
+    #}
 
     # Uncomment and customize if you can't use the default user to run GitLab (default: 'git')
     user: {{ backend_info.user }}
@@ -175,7 +177,7 @@ production: &base
     #}
 
 
-  {# XXX cron jobs are disabled for now - we do not support CI and EE features
+  {# XXX cron jobs are disabled for now - we do not support CI and EE features or we are ok with defaults
   ## Auxiliary jobs
   # Periodically executed jobs, to self-heal GitLab, do external synchronizations, etc.
   # Please read here for more information: https://github.com/ondrejbartas/sidekiq-cron#adding-cron-job
