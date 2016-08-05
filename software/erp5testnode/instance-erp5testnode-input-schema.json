@@ -1,0 +1,23 @@
+{
+  "type": "object",
+  "$schema": "http://json-schema.org/draft-04/schema",
+
+  "title": "Input Parameters",
+  "properties": {
+    "test-node-title": {
+      "title": "Test Node Title",
+      "description": "Name for the Test Node which will be used at ERP5.",
+      "type": "string"
+    },
+    "node-quantity": {
+      "title": "Quantity of Parallel runs",
+      "description": "QUantity of Parallel tests will be executed on this Node.",
+      "type": "integer"
+    },
+    "test-suite-master-url": {
+      "title": "Task Distribution URL",
+      "description": "Url for the task distributor master on portal_task_distribution",
+      "type": "string"
+    }
+  }
+}
