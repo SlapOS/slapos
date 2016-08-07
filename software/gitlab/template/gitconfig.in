@@ -22,3 +22,5 @@
         email = {{ cfg('email_from') }}
 [core]
         autocrlf = input
+[gc]
+        auto = 0
