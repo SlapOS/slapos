@@ -2,7 +2,7 @@
 # see:
 # https://gitlab.com/gitlab-org/gitlab-ce/blob/master/config/initializers/smtp_settings.rb.sample
 # https://gitlab.com/gitlab-org/omnibus-gitlab/blob/master/files/gitlab-cookbooks/gitlab/templates/default/smtp_settings.rb.erb
-# (last updated for omnibus-gitlab 8.6.5+ce.0-0-g342f8be)
+# (last updated for omnibus-gitlab 8.7.9+ce.1-0-gf589ad7)
 
 {% from 'macrolib.cfg.in' import cfg, cfg_bool  with context %}
 
@@ -18,6 +18,7 @@ if Rails.env.production?
     domain:                 "{{ cfg('smtp_domain') }}",
     authentication:         :{{ cfg('smtp_authentication') }},
     enable_starttls_auto:   {{ cfg('smtp_enable_starttls_auto') }},
+    # ssl:
     openssl_verify_mode:    '{{ cfg("smtp_openssl_verify_mode") }}'
     # ca_path:
     # ca_file:
