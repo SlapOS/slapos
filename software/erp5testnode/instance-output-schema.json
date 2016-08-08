@@ -1,0 +1,15 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "description": "Values returned by Apache Frontend instanciation",
+  "properties": {
+    "password": {
+      "description": "Password to access shellinabox.",
+      "type": "string"
+    },
+    "url": {  
+      "description": "IPv6 URL to access the shell in a box.",
+      "type": "string"
+    }
+  },
+  "type": "object"
+}

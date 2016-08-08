@@ -3,7 +3,7 @@
 # https://gitlab.com/gitlab-org/gitlab-ce/blob/master/config/unicorn.rb.example
 # https://gitlab.com/gitlab-org/gitlab-ce/blob/master/config/unicorn.rb.example.development
 # https://gitlab.com/gitlab-org/omnibus-gitlab/blob/master/files/gitlab-cookbooks/gitlab/templates/default/unicorn.rb.erb
-# (last updated for omnibus-gitlab 8.5.1+ce.0-1-ge732b39)
+# (last updated for omnibus-gitlab 8.7.9+ce.1-0-gf589ad7)
 
 {% from 'macrolib.cfg.in' import cfg  with context %}
 
@@ -79,3 +79,9 @@ ENV['RAILS_RELATIVE_URL_ROOT'] = "<%= @relative_url %>"
 
 <%- end %>
 #}
+
+# Min memory size (RSS) per worker
+ENV['GITLAB_UNICORN_MEMORY_MIN'] = ({{ cfg('unicorn_worker_memory_limit_min') }}).to_s
+
+# Max memory size (RSS) per worker
+ENV['GITLAB_UNICORN_MEMORY_MAX'] = ({{ cfg('unicorn_worker_memory_limit_max') }}).to_s

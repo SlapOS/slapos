@@ -63,7 +63,10 @@ def httpdCorsDomainWrite(httpd_cors_file, httpd_gracefull_bin, cors_domain):
     try:
       with open(old_httpd_cors_file, 'r') as cors_file:
         if cors_file.read() == cors_domain:
-          return True
+          if os.path.exists(httpd_cors_file) and (os.stat(httpd_cors_file).st_size > 0
+            or (cors_domain == "" and os.stat(httpd_cors_file).st_size == 0)):
+            # Skip if cors file is not empty
+            return True
     except OSError, e:
       print "Failed to open file at %s. \n%s" % (old_httpd_cors_file, str(e))
   for domain in cors_domain_list:

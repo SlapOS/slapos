@@ -197,10 +197,6 @@ rendered= ${gitlab:etc}/${:_buildout_section_name_}
 rendered= ${nginx:etc}/${:_buildout_section_name_}
 
 
-[config.ru]
-<= gitlab-etc-template
-template = {{ config_ru_in }}
-
 [database.yml]
 <= gitlab-etc-template
 template= {{ database_yml_in }}
@@ -366,12 +362,10 @@ update-command =
 <= work-base
 software = {{ gitlab_repository_location }}
 tune-command =
-# secret* config.ru tmp/ log/ shared/ builds/
+# secret* tmp/ log/ shared/ builds/
     rm -f .secret  &&
-    rm -f config.ru  &&
     rm -rf log tmp shared builds  &&
     ln -sf ${secrets:secrets}/gitlab_rails_secret .secret  &&
-    ln -sf ${config.ru:rendered} config.ru  &&
     ln -sf ${gitlab:log} log  &&
     ln -sf ${gitlab:tmp} tmp  &&
     ln -sf ${gitlab:shared} shared  &&
@@ -633,7 +627,7 @@ log     = ${sidekiq-dir:log}
 # NOTE see queue list here:
 # https://gitlab.com/gitlab-org/gitlab-ce/blob/master/Procfile
 # https://gitlab.com/gitlab-org/omnibus-gitlab/blob/master/files/gitlab-cookbooks/gitlab/templates/default/sv-sidekiq-run.erb
-# (last updated for omnibus-gitlab 8.5.1+ce.0-1-ge732b39)
+# (last updated for omnibus-gitlab 8.7.9+ce.1-0-gf589ad7)
 [service-sidekiq]
 recipe  = slapos.cookbook:wrapper
 wrapper-path    = ${directory:service}/sidekiq

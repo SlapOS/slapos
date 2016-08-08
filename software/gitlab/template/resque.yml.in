@@ -2,6 +2,6 @@
 # see:
 # https://gitlab.com/gitlab-org/gitlab-ce/blob/master/config/resque.yml.example
 # https://gitlab.com/gitlab-org/omnibus-gitlab/blob/master/files/gitlab-cookbooks/gitlab/templates/default/resque.yml.erb
-# (last udpdated for omnibus-gitlab 8.5.1+ce.0-1-ge732b39)
+# (last udpdated for omnibus-gitlab 8.7.9+ce.1-0-gf589ad7)
 
 production: unix://{{ redis.unixsocket }}

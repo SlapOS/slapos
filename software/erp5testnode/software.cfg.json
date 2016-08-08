@@ -1,0 +1,13 @@
+{
+	"name": "ERP5 Test Node",
+	"description": "ERP5 Test Node Runner",
+	"serialisation": "xml",
+	"software-type": {
+		"default": {
+			"title": "Default",
+      "description": "Default setup for ERP5TestNode Instance.",
+			"request": "instance-erp5testnode-input-schema.json",
+			"response": "instance-output-schema.json"
+		}
+	}
+}
