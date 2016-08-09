@@ -35,21 +35,6 @@ http {
         scgi_temp_path {{ param_tempdir['scgi_temp_path'] }};
 
         location / {
-            # When no .htpasswd exist, redirect the user to account creation page
-            if ( !-f {{ param_nginx_frontend['etc_dir'] }}/.htpasswd ) {
-                # redirect URL is different wether nginx is accessed directly or behind apache.
-                # nginx does not support nested if or multiple conditions, so we use this well known hack.
-                set $test no_htpasswd;
-            }
-            if ( $host = [{{ param_nginx_frontend['global-ip'] }}] ) {
-                set $test "${test}_backend_access";
-            }
-            if ( $test = no_htpasswd) {
-                return 301 $scheme://$host/setAccount ;
-            }
-            if ( $test = no_htpasswd_backend_access) {
-                return 301 /setAccount ;
-            }
             auth_basic "Restricted";
             auth_basic_user_file {{ param_nginx_frontend['etc_dir'] }}/.htpasswd;
             proxy_redirect off;
