@@ -113,6 +113,7 @@
                     <value>
                       <list>
                         <string>my_portal_type</string>
+                        <string>my_specialise_title</string>
                         <string>my_aggregate_parent_reference</string>
                         <string>my_aggregate_title</string>
                         <string>my_predecessor_title_list</string>
