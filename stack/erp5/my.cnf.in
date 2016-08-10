@@ -19,6 +19,7 @@ skip_networking
 {% endif -%}
 socket = {{ socket }}
 datadir = {{ parameter_dict['data-directory'] }}
+tmpdir = {{ parameter_dict['tmp-directory'] }}
 pid_file = {{ parameter_dict['pid-file'] }}
 log_error = {{ parameter_dict['error-log'] }}
 slow_query_log
