@@ -8,6 +8,7 @@ output = ${directory:etc_run}/mariadb
 binary = ${:mysql-base-directory}/bin/mysqld
 configuration-file = ${my-cnf:rendered}
 data-directory = ${directory:srv_mariadb}
+tmp-directory = ${directory:tmp}
 mysql-install-binary = ${:mysql-base-directory}/scripts/mysql_install_db
 mysql-base-directory = {{ mariadb_location }}
 
