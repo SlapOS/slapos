@@ -8,13 +8,13 @@ output = ${directory:etc_run}/mariadb
 binary = ${:mysql-base-directory}/bin/mysqld
 configuration-file = ${my-cnf:rendered}
 data-directory = ${directory:srv_mariadb}
-tmp-directory = ${directory:tmp}
 mysql-install-binary = ${:mysql-base-directory}/scripts/mysql_install_db
 mysql-base-directory = {{ mariadb_location }}
 
 [my-cnf-parameters]
 socket = ${directory:var_run}/mariadb.sock
 data-directory = ${mysqld:data-directory}
+tmp-directory = ${directory:tmp}
 pid-file = ${directory:var_run}/mariadb.pid
 error-log = ${directory:log}/mariadb_error.log
 slow-query-log = ${directory:log}/mariadb_slowquery.log
