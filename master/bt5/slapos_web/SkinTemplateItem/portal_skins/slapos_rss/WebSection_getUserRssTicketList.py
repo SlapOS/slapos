@@ -1,5 +1,5 @@
 portal = context.getPortalObject()
-kw['portal_type'] = ["Support Request", "Regularisation Request", "Upgrader Decision"]
+kw['portal_type'] = ["Support Request", "Regularisation Request", "Upgrade Decision"]
 
 
 person = portal.ERP5Site_getAuthenticatedMemberPersonValue()

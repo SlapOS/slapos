@@ -3,7 +3,10 @@
 """
 
 portal = context.getPortalObject()
-kw['portal_type'] = ["Support Request", "Regularisation Request", "Upgrader Decision"]
+kw['portal_type'] = ["Support Request", "Upgrade Decision"]
+
+# Source project is only set for Support Request, it don't work for 
+# Upgrade Decisions. 
 kw['source_project_uid'] = context.getUid()
 
 person = portal.ERP5Site_getAuthenticatedMemberPersonValue()
