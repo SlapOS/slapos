@@ -2,7 +2,7 @@
 # see:
 # https://gitlab.com/gitlab-org/gitlab-ce/blob/master/config/initializers/rack_attack.rb.example
 # https://gitlab.com/gitlab-org/omnibus-gitlab/blob/master/files/gitlab-cookbooks/gitlab/templates/default/rack_attack.rb.erb
-# (last updated for omnibus-gitlab 8.7.9+ce.1-0-gf589ad7)
+# (last updated for omnibus-gitlab 8.8.7+ce.1-0-g51164768)
 
 {% from 'macrolib.cfg.in' import cfg  with context %}
 
@@ -27,7 +27,7 @@ paths_regex = Regexp.union(paths_to_be_protected.map { |path| /\A#{Regexp.escape
 rack_attack_enabled = Gitlab.config.rack_attack.git_basic_auth['enabled']
 
 unless Rails.env.test? || !rack_attack_enabled
-  Rack::Attack.throttle('protected paths', limit: <%= @rate_limit_requests_per_period %>, period: <%= @rate_limit_period %>.seconds) do |req|
+  Rack::Attack.throttle('protected paths', limit: {{ cfg('rate_limit_requests_per_period') }}, period: {{ cfg('rate_limit_period') }}.seconds) do |req|
     if req.post? && req.path =~ paths_regex
       req.ip
     end
