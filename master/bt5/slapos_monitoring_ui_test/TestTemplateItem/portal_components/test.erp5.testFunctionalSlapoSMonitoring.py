@@ -27,17 +27,11 @@
 import unittest
 
 from Products.ERP5Type.tests.ERP5TypeFunctionalTestCase import ERP5TypeFunctionalTestCase
+from Products.SlapOS.tests.testSlapOSMixin import testSlapOSMixin
 
-class TestZeleniumCore(ERP5TypeFunctionalTestCase):
+class TestZeleniumCore(ERP5TypeFunctionalTestCase, testSlapOSMixin):
   foreground = 0
   run_only = "slapos_monitoring_ui_zuite"
-
-  def getBusinessTemplateList(self):
-    return (
-      'slapos_monitoring',
-      'erp5_officejs_ui_test',
-      'erp5_ui_test_core',
-      )
 
 def test_suite():
   suite = unittest.TestSuite()
