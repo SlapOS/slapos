@@ -24,7 +24,7 @@
 <!-- Initialize -->
 <tr>
   <td>open</td>
-  <td>${base_url}/web_site_module/monitoring_render_js/</td>
+  <td>${base_url}/web_site_module/monitoring_render_js/#page=settings_configurator&amp;tab;=add</td>
   <td></td>
 </tr>
 <tr>
@@ -35,6 +35,316 @@
 <tr>
   <td>pause</td>
   <td>500</td>
+  <td></td>
+</tr>
+<tr>
+  <td>assertElementPresent</td>
+  <td>//button[@data-i18n='Load OPML']</td>
+  <td></td>
+</tr>
+<tr>
+  <td>store</td>
+  <td>https://softinst65745.host.vifib.net/public/feeds</td>
+  <td>opml_url</td>
+</tr>
+<tr>
+  <td>store</td>
+  <td>admin</td>
+  <td>username</td>
+</tr>
+<tr>
+  <td>store</td>
+  <td>zwkuyjdl</td>
+  <td>password</td>
+</tr>
+<tr>
+  <td>type</td>
+  <td>name=url</td>
+  <td>${opml_url}</td>
+</tr>
+<tr>
+  <td>click</td>
+  <td>//button[@data-i18n='Load OPML']</td>
+  <td></td>
+</tr>
+<tr>
+  <td>pause</td>
+  <td>500</td>
+  <td></td>
+</tr>
+<tr>
+  <td>assertTextPresent</td>
+  <td>Software Instance</td>
+  <td></td>
+</tr>
+<tr>
+  <td>assertTextPresent</td>
+  <td>Hosting Subscription</td>
+  <td></td>
+</tr>
+<tr>
+  <td>assertTextPresent</td>
+  <td>URL Type</td>
+  <td></td>
+</tr>
+<tr>
+  <td>assertElementPresent</td>
+  <td>//button[@data-i18n='Configure']</td>
+  <td></td>
+</tr>
+<tr>
+  <td>type</td>
+  <td>name=username</td>
+  <td>${username}</td>
+</tr>
+<tr>
+  <td>type</td>
+  <td>name=password</td>
+  <td>${password}</td>
+</tr>
+<tr>
+  <td>clickAndWait</td>
+  <td>//button[@data-i18n='Configure']</td>
+  <td></td>
+</tr>
+<tr>
+  <td>pause</td>
+  <td>2000</td>
+  <td></td>
+</tr>
+<tr>
+  <td>waitForTextPresent</td>
+  <td>Monitoring OPML List</td>
+  <td></td>
+</tr>
+<tr>
+  <td>assertElementPresent</td>
+  <td>//button[contains(@class, 'sync-all')]</td>
+  <td></td>
+</tr>
+<tr>
+  <td>assertElementPresent</td>
+  <td>//table[contains(@class, 'opml-tablelinks')]</td>
+  <td></td>
+</tr>
+<tr>
+  <td>assertTextPresent</td>
+  <td>${opml_url}</td>
+  <td></td>
+</tr>
+<tr>
+  <td>storeElementPresent</td>
+  <td>//table[contains(@class, 'opml-tablelinks')]/tbody/tr[1]/td[3]/a</td>
+  <td>has_hosting</td>
+</tr>
+<tr>
+  <td>storeText</td>
+  <td>//table[contains(@class, 'opml-tablelinks')]/tbody/tr[1]/td[3]/a</td>
+  <td>hosting_title</td>
+</tr>
+<tr>
+  <td>click</td>
+  <td>//button[contains(@class, 'sync-all')]</td>
+  <td></td>
+</tr>
+<tr>
+  <td>waitForTextPresent</td>
+  <td>Synchronizing Data...</td>
+  <td></td>
+</tr>
+<tr>
+  <td>waitForTextPresent</td>
+  <td>Synchronisation finished</td>
+  <td></td>
+</tr>
+<tr>
+  <td>click</td>
+  <td>//a[@href='#page=hosting_subscription_list']</td>
+  <td></td>
+</tr>
+<tr>
+  <td>pause</td>
+  <td>2000</td>
+  <td></td>
+</tr>
+<tr>
+  <td>assertTextPresent</td>
+  <td>${hosting_title}</td>
+  <td></td>
+</tr>
+<tr>
+  <td>click</td>
+  <td>//table[contains(@class, 'instance-overview')]/tbody/tr[1]/td[1]/a</td>
+  <td></td>
+</tr>
+<tr>
+  <td>pause</td>
+  <td>2000</td>
+  <td></td>
+</tr>
+<tr>
+  <td>assertTextPresent</td>
+  <td>${hosting_title}</td>
+  <td></td>
+</tr>
+<tr>
+  <td>open</td>
+  <td>${base_url}/web_page_module/Zuite_waitForActivities</td>
+  <td></td>
+</tr>
+<tr>
+  <td>assertTextPresent</td>
+  <td>Done.</td>
+  <td></td>
+</tr>
+<tr>
+  <td>open</td>
+  <td>${base_url}/web_site_module/monitoring_render_js/#page=settings_configurator&amp;tab;=manage</td>
+  <td></td>
+</tr>
+<tr>
+  <td>waitForElementPresent</td>
+  <td>//button[@data-i18n='Menu']</td>
+  <td></td>
+</tr>
+<tr>
+  <td>pause</td>
+  <td>500</td>
+  <td></td>
+</tr>
+<tr>
+  <td>click</td>
+  <td>//table[contains(@class, 'opml-tablelinks')]/tbody/tr[1]/td[3]/a</td>
+  <td></td>
+</tr>
+<tr>
+  <td>pause</td>
+  <td>500</td>
+  <td></td>
+</tr>
+<tr>
+  <td>click</td>
+  <td>//button[@data-i18n='Load OPML']</td>
+  <td></td>
+</tr>
+<tr>
+  <td>pause</td>
+  <td>500</td>
+  <td></td>
+</tr>
+<tr>
+  <td>waitForElementPresent</td>
+  <td>//button[@data-i18n='Configure']</td>
+  <td></td>
+</tr>
+<tr>
+  <td>type</td>
+  <td>name=username</td>
+  <td>${username}</td>
+</tr>
+<tr>
+  <td>type</td>
+  <td>name=password</td>
+  <td>${password}</td>
+</tr>
+<tr>
+  <td>click</td>
+  <td>//label[contains(@class, 'configure-auth')]</td>
+  <td></td>
+</tr>
+<tr>
+  <td>assertElementPresent</td>
+  <td>//label[@data-i18n="New Password:"]</td>
+  <td></td>
+</tr>
+<tr>
+  <td>assertElementPresent</td>
+  <td>//label[@data-i18n="Confirm New Password:"]</td>
+  <td></td>
+</tr>
+<tr>
+  <td>type</td>
+  <td>name=new_password_confirm</td>
+  <td>${password}</td>
+</tr>
+<tr>
+  <td>type</td>
+  <td>name=new_password</td>
+  <td>${password}</td>
+</tr>
+<tr>
+  <td>click</td>
+  <td>//button[@data-i18n='Configure']</td>
+  <td></td>
+</tr>
+<tr>
+  <td>pause</td>
+  <td>2000</td>
+  <td></td>
+</tr>
+<tr>
+  <td>waitForTextPresent</td>
+  <td>Monitoring OPML List</td>
+  <td></td>
+</tr>
+<tr>
+  <td>assertElementPresent</td>
+  <td>//button[contains(@class, 'sync-all')]</td>
+  <td></td>
+</tr>
+<tr>
+  <td>click</td>
+  <td>//button[contains(@class, 'sync-all')]</td>
+  <td></td>
+</tr>
+<tr>
+  <td>waitForTextPresent</td>
+  <td>Synchronizing Data...</td>
+  <td></td>
+</tr>
+<tr>
+  <td>waitForTextPresent</td>
+  <td>Synchronisation finished</td>
+  <td></td>
+</tr>
+<tr>
+  <td>click</td>
+  <td>//input[@name='opml-all']</td>
+  <td></td>
+</tr>
+<tr>
+  <td>clickAndWait</td>
+  <td>//a[contains(@class, 'opml-delete')]</td>
+  <td></td>
+</tr>
+<tr>
+  <td>waitForElementPresent</td>
+  <td>//button[@data-i18n='Menu']</td>
+  <td></td>
+</tr>
+<tr>
+  <td>pause</td>
+  <td>500</td>
+  <td></td>
+</tr>
+<tr>
+  <td>assertTextNotPresent</td>
+  <td>${opml_url}</td>
+  <td></td>
+</tr>
+<tr>
+  <td>click</td>
+  <td>//a[@href='#page=hosting_subscription_list']</td>
+  <td></td>
+</tr>
+<tr>
+  <td>pause</td>
+  <td>2000</td>
+  <td></td>
+</tr>
+<tr>
+  <td>assertTextNotPresent</td>
+  <td>${hosting_title}</td>
   <td></td>
 </tr>
 </tbody></table>
