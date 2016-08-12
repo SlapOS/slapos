@@ -243,7 +243,7 @@
       <dictionary>
         <item>
             <key> <string>method_name</string> </key>
-            <value> <string>HostingSubscription_getUserRssEntryList</string> </value>
+            <value> <string>Base_getOpenRelatedTicketList</string> </value>
         </item>
       </dictionary>
     </pickle>

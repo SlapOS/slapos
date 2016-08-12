@@ -35,11 +35,7 @@ import time
 
 from DateTime import DateTime
 
-class TestSlapOSPerson_checkToCreateRegularisationRequest(testSlapOSMixin,
-                                                          SecurityTestCase):
-  
-  #def beforeTearDown(self):
-  #  transaction.abort()
+class SlapOSWebMixin(testSlapOSMixin, SecurityTestCase):
 
   def createPerson(self):
     person_user = self.portal.person_module.template_member.\
@@ -167,13 +163,9 @@ class TestSlapOSPerson_checkToCreateRegularisationRequest(testSlapOSMixin,
       self.cancelled_regularisation_request.cancel()
 
     self.tic()
-    self.login(self.person.getReference())
-    self.changeSkin("RSS")
-
-  def test_WebSection_getUserRssTicketList(self):
-    """ Test get User RSS """
-
-    ticket_list = self.portal.WebSection_getUserRssTicketList()
+    
+  def _test_WebSection_getUserTicketList(self):
+    ticket_list = self.portal.WebSection_getUserTicketList()
     self.assertEquals(len(ticket_list), 5)
     self.assertSameSet([i.getUid() for i in ticket_list],
                        [self.support_request.getUid(),
@@ -182,7 +174,79 @@ class TestSlapOSPerson_checkToCreateRegularisationRequest(testSlapOSMixin,
                         self.hs_support_request.getUid(),
                         self.hs_upgrade_decision.getUid()])
 
+  def _test_Base_getOpenRelatedTicketList_computer(self):
+    """ Test get Computer RSS """
+    self.login()
+    ticket_list = self.computer.Base_getOpenRelatedTicketList()
+    self.assertSameSet([i.getRelativeUrl() for i in ticket_list],
+                       [self.support_request.getRelativeUrl(),
+                        self.upgrade_decision.getRelativeUrl()])
+    self.assertEquals(len(ticket_list), 2)
 
+
+  def _test_Base_getOpenRelatedTicketList_hosting_subscription(self):
+    """ Test get Hosting Subscription RSS """
+    self.login()
+    ticket_list = self.hosting_subscription.Base_getOpenRelatedTicketList()
+    
+    self.assertSameSet([i.getRelativeUrl() for i in ticket_list],
+                       [self.hs_support_request.getRelativeUrl(),
+                        self.hs_upgrade_decision.getRelativeUrl()])
+    self.assertEquals(len(ticket_list), 2)
+
+class TestSlapOSWebSkin(SlapOSWebMixin):
+  
+  def afterSetUp(self):
+    super(TestSlapOSWebSkin, self).afterSetUp()
+    self.login(self.person.getReference())
+    self.changeSkin("Hosting")
+
+  def test_WebSection_getUserTicketList(self):
+    """ Test get User Tickers at Hosting Skin"""
+    self._test_WebSection_getUserTicketList()
+  
+  def test_WebSection_getUserTicketList_new_support_request(self):
+    """ Test get User Tickers at Hosting Skin with new support request """
+    self._test_WebSection_getUserTicketList()
+    try:
+      sr = self.portal.support_request_module.newContent(\
+                          title="Test Support Request %s" % self.new_id,
+                          resource="service_module/slapos_crm_monitoring",
+                          destination_decision_value=self.person)
+      self.portal.REQUEST.set("new_support_request", sr.getRelativeUrl())
+      ticket_list = self.portal.WebSection_getUserTicketList()
+      self.assertEquals(len(ticket_list), 6)
+      self.assertSameSet([i.getUid() for i in ticket_list],
+                         [self.support_request.getUid(),
+                          self.upgrade_decision.getUid(),
+                          self.regularisation_request.getUid(),
+                          self.hs_support_request.getUid(),
+                          self.hs_upgrade_decision.getUid(),
+                          sr.getUid()])
+      self.assertEquals(ticket_list[0].getUid(), sr.getUid())
+    finally:
+      transaction.abort()
+    
+  def test_Base_getOpenRelatedTicketList_computer(self):
+    """ Test Base_getOpenRelatedTicketList with Hosting Subscriptions on Hosting
+    """
+    self._test_Base_getOpenRelatedTicketList_computer()
+
+  def test_Base_getOpenRelatedTicketList_hosting_subscription(self):
+    """ Test Base_getOpenRelatedTicketList with Computer on Hosting
+    """
+    self._test_Base_getOpenRelatedTicketList_hosting_subscription()
+
+class TestSlapOSRSSSkin(SlapOSWebMixin):
+  
+  def afterSetUp(self):
+    super(TestSlapOSRSSSkin, self).afterSetUp()
+    self.login(self.person.getReference())
+    self.changeSkin("RSS")
+
+  def test_WebSection_getUserTicketList(self):
+    """ Test get User Tickers at RSS Skin"""
+    self._test_WebSection_getUserTicketList()
 
   def _test_WebSection_getRSSContent(self, ticket):
     """ Test for get Date and Content for the RSS Feed
@@ -248,41 +312,26 @@ class TestSlapOSPerson_checkToCreateRegularisationRequest(testSlapOSMixin,
                       ticket.WebSection_getRSSDateContent())
 
   def test_WebSection_getRSSContents_support_request(self):
-    """ Test for get Date and Content for the RSS Feed for
-        Support Request
+    """ Test for get Date and Content for the RSS Feed for Support Request
     """
     self._test_WebSection_getRSSContent(self.support_request)
 
   def test_WebSection_getRSSContents_upgrade_decision(self):
-    """ Test for get Date and Content for the RSS Feed for
-        Upgrade Decision
+    """ Test for get Date and Content for the RSS Feed for Upgrade Decision
     """
     self._test_WebSection_getRSSContent(self.upgrade_decision)
     
   def test_WebSection_getRSSContents_regularisation_request(self):
-    """ Test for get Date and Content for the RSS Feed for
-        Upgrade Decision
+    """ Test for get Date + Content for the RSS Feed for Regularisation Request
     """
     self._test_WebSection_getRSSContent(self.regularisation_request)
 
-  def test_Computer_getUserRssEntryList(self):
-    """ Test get Computerr RSS """
-    self.login()
-    ticket_list = self.computer.Computer_getUserRssEntryList()
-    self.assertSameSet([i.getRelativeUrl() for i in ticket_list],
-                       [self.support_request.getRelativeUrl(),
-                        self.upgrade_decision.getRelativeUrl()])
-    self.assertEquals(len(ticket_list), 2)
+  def test_Base_getOpenRelatedTicketList_computer(self):
+    """ Test Base_getOpenRelatedTicketList with Computer on RSS """
+    self._test_Base_getOpenRelatedTicketList_computer()
 
-
-  def test_HostingSubscription_getUserRssEntryList(self):
-    """ Test get Hosting Subscription RSS """
-    self.login()
-    ticket_list = self.hosting_subscription.HostingSubscription_getUserRssEntryList()
-    
-    self.assertSameSet([i.getRelativeUrl() for i in ticket_list],
-                       [self.hs_support_request.getRelativeUrl(),
-                        self.hs_upgrade_decision.getRelativeUrl()])
-    self.assertEquals(len(ticket_list), 2)
+  def test_Base_getOpenRelatedTicketList_hosting_subscription(self):
+    """ Test Base_getOpenRelatedTicketList with Hosting Subscriptions on RSS """
+    self._test_Base_getOpenRelatedTicketList_hosting_subscription()
 
 
