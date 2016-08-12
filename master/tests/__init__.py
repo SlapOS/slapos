@@ -17,6 +17,7 @@ slapos_bt_list = [
     'slapos_web',
     'slapos_crm',
     'slapos_payzen',
+    'slapos_monitoring_ui_test'
   ]
 
 class SlapOSCloud(SavedTestSuite, ProjectTestSuite):
