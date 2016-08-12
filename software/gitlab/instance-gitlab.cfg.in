@@ -108,6 +108,8 @@ startup = ${:etc}/run
 service = ${:etc}/service
 promise = ${:etc}/promise
 promise.slow = ${:promise}.slow
+# gitlab backup location
+backup  = ${:var}/backup
 
 # gitlab: etc/ log/ ...
 [gitlab-dir]
@@ -842,9 +844,12 @@ time    = daily
 command = ${logrotate:wrapper}
 
 [cron-entry-git-backup]
+# XXX(IV): add time command to have feedbacks on how much time it takes?
 <= cron-entry
-time = weekly
-command = ${directory:bin}/git-backup --help # XXX(IV): run a simple command for now
+time = hourly
+command = cd ${directory:backup};
+          ${directory:bin}/xnice ${directory:bin}/gitlab-backup pull >
+          ${directory:log}/gitlab-backup.log
 
 # 6. on-reinstantiate actions
 
