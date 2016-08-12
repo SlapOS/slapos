@@ -200,6 +200,7 @@ erp5_stock_cache
 erp5_system_event
 erp5_toolbox
 erp5_trade
+erp5_ui_test_core
 erp5_vcs
 erp5_web
 erp5_web_crm
@@ -311,6 +312,7 @@ erp5_stock_cache
 erp5_system_event
 erp5_toolbox
 erp5_trade
+erp5_ui_test_core
 erp5_vcs
 erp5_web
 erp5_web_crm
@@ -422,6 +424,7 @@ erp5_stock_cache
 erp5_system_event
 erp5_toolbox
 erp5_trade
+erp5_ui_test_core
 erp5_vcs
 erp5_web
 erp5_web_crm
@@ -531,6 +534,7 @@ erp5_stock_cache
 erp5_system_event
 erp5_toolbox
 erp5_trade
+erp5_ui_test_core
 erp5_vcs
 erp5_web
 erp5_web_crm
@@ -639,6 +643,7 @@ erp5_stock_cache
 erp5_system_event
 erp5_toolbox
 erp5_trade
+erp5_ui_test_core
 erp5_vcs
 erp5_web
 erp5_web_crm
@@ -748,6 +753,7 @@ erp5_stock_cache
 erp5_system_event
 erp5_toolbox
 erp5_trade
+erp5_ui_test_core
 erp5_vcs
 erp5_web
 erp5_web_crm
@@ -856,6 +862,7 @@ erp5_stock_cache
 erp5_system_event
 erp5_toolbox
 erp5_trade
+erp5_ui_test_core
 erp5_vcs
 erp5_web
 erp5_web_crm
@@ -888,6 +895,7 @@ slapos_ecoallocation
 slapos_erp5
 slapos_upgrader
 slapos_rss
+vifib_hosting
 slapos_contract
 slapos_crm_monitoring
 slapos_accounting
@@ -965,6 +973,7 @@ erp5_stock_cache
 erp5_system_event
 erp5_toolbox
 erp5_trade
+erp5_ui_test_core
 erp5_vcs
 erp5_web
 erp5_web_crm
@@ -1074,6 +1083,7 @@ erp5_stock_cache
 erp5_system_event
 erp5_toolbox
 erp5_trade
+erp5_ui_test_core
 erp5_vcs
 erp5_web
 erp5_web_crm
@@ -1184,6 +1194,7 @@ erp5_stock_cache
 erp5_system_event
 erp5_toolbox
 erp5_trade
+erp5_ui_test_core
 erp5_vcs
 erp5_web
 erp5_web_crm
@@ -1293,6 +1304,7 @@ erp5_stock_cache
 erp5_system_event
 erp5_toolbox
 erp5_trade
+erp5_ui_test_core
 erp5_vcs
 erp5_web
 erp5_web_crm
