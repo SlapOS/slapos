@@ -78,6 +78,7 @@ parts =
   haproxy
   xvfb-instance
   wkhtmltopdf-on-xvfb
+  x2t
 
 eggs-directory = {{ eggs_directory }}
 develop-eggs-directory = {{ develop_eggs_directory }}
@@ -287,4 +288,10 @@ environment =
   DISPLAY=:0
   TMPDIR=${directory:run}
 command-line = {{ parameter_dict['wkhtmltopdf'] }}/wkhtmltopdf --use-xserver
+parameters-extra = true
+
+[x2t]
+recipe = slapos.cookbook:wrapper
+wrapper-path = ${directory:bin}/x2t
+command-line = {{ parameter_dict['onlyoffice-x2t'] }}/x2t
 parameters-extra = true
