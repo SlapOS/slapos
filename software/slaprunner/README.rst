@@ -10,6 +10,18 @@ Slaprunner is an all-in-one IDE used to develop and test profiles and recipes fo
 You can learn how to use it here :
 http://community.slapos.org/wiki/slapos-Wiki.Home/developer-Lecture.Web.Runner.Extended
 
+Development
+-----------
+
+Here is an exemple of parameter XML to develop the slaprunner into another slaprunner :
+
+  <?xml version="1.0" encoding="utf-8"?>
+  <instance>
+    <parameter id="runner-importer-sshd-port">22224</parameter>
+    <parameter id="runner-sshd-port">22223</parameter>
+    <parameter id="no-ipv4-frontend">true</parameter>
+  </instance>
+
 Parameters
 ----------
 
