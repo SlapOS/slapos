@@ -62,6 +62,12 @@
             "description": "Name of the instance, to show in the window title",
             "type": "string"
         },
+        "no-ipv4-frontend": {
+            "title": "No IPv4 frontend",
+            "description": "Prevent the slaprunner to order an IPv4 frontend for itself",
+            "enum": ["true", "false"],
+            "default": "false"
+        },
         "custom-frontend-backend-url": {
             "title": "Custom Frontend Backend URL",
             "description": "return an ipv4 frontend of the given ipv6(+optional port)",
