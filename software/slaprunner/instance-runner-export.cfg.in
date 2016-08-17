@@ -14,9 +14,7 @@ parts +=
   sshkeys-authority
   publish-connection-information
   slaprunner-promise
-  slaprunner-frontend-promise
   apache-httpd-promise
-  httpd-frontend-promise
   slaprunner-supervisord-wrapper
   dropbear-promise
   runtestsuite
@@ -38,7 +36,6 @@ parts +=
   monitor-check-resilient-feed-file
   monitor-check-webrunner-internal-instance
 
-
 [exporter]
 recipe = slapos.recipe.template:jinja2
 template = ${template-runner-export-script:location}/${template-runner-export-script:filename}
@@ -56,7 +53,6 @@ monitor-httpd-port = 8437
 # Pass some parameter to dispay in monitoring interface
 instance-configuration =
   httpdcors cors-domain $${slaprunner-httpd-cors:location} $${httpd-graceful-wrapper:output}
-  raw webrunner-url https://$${request-frontend:connection-domain}
 
 # Extends publish section with resilient parameters
 [publish-connection-information]

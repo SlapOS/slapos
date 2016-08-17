@@ -15,6 +15,7 @@
 {% set slaprunner_return = ['init-user', 'init-password', 'url', 'ssh-public-key', 'ssh-url', 'notification-id', 'ip', 'backend-url', 'url', 'ssh-command', 'webdav-url', 'public-url', 'git-public-url', 'git-private-url'] -%}
 {% set monitor_return = ['monitor-base-url', 'monitor-url', 'monitor-user', 'monitor-password'] -%}
 {% set monitor_parameter = {'monitor-cors-domains': slapparameter_dict.pop('monitor-cors-domains', "monitor.app.officejs.com")} -%}
+{% do monitor_parameter.update({'runner-importer-sshd-port': slapparameter_dict.pop('runner-importer-sshd-port')}) -%}
 {% set monitor_dict = {'parameter': monitor_parameter, 'return': monitor_return, 'set-monitor-url': True} -%}
 {% set monitor_interface_url = slapparameter_dict.pop('monitor-interface-url', 'https://monitor.app.officejs.com') -%}
 

@@ -38,6 +38,10 @@ parts +=
 proxy_port = 50000
 runner_port = 50005
 
+# Idem for some other services
+[dropbear-runner-server]
+port = $${slap-parameter:runner-importer-sshd-port}
+
 [importer]
 recipe = slapos.recipe.template:jinja2
 template = ${template-runner-import-script:location}/${template-runner-import-script:filename}
@@ -83,7 +87,6 @@ monitor-base-url = $${publish:monitor-base-url}
 monitor-url = $${publish:monitor-url}
 monitor-user = $${publish:monitor-user}
 monitor-password = $${publish:monitor-password}
-
 
 [monitor-instance-parameter]
 monitor-httpd-port = 8360
