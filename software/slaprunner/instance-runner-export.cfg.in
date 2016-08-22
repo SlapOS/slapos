@@ -9,14 +9,14 @@ parts +=
   ca-nginx
   gunicorn-launcher
   gunicorn-graceful
-  sshkeys-dropbear-runner
-  dropbear-server-add-authorized-key
   sshkeys-authority
   publish-connection-information
   slaprunner-promise
   apache-httpd-promise
   slaprunner-supervisord-wrapper
-  dropbear-promise
+  runner-sshd-add-authorized-key
+  runner-sshd-graceful
+  runner-sshd-promise
   runtestsuite
   symlinks
   shellinabox
@@ -30,6 +30,7 @@ parts +=
   supervisord-wrapper
   supervisord-promise
   httpd-graceful-wrapper
+  runner-sshd
 ## Monitoring part
 ## Monitor for runner
   monitor-base

@@ -9,12 +9,13 @@ parts +=
   ca-nginx
   gunicorn-launcher
   gunicorn-graceful
-  sshkeys-dropbear-runner
-  dropbear-server-add-authorized-key
   sshkeys-authority
   slaprunner-promise
   slaprunner-supervisord-wrapper
-  dropbear-promise
+  runner-sshd
+  runner-sshd-add-authorized-key
+  runner-sshd-graceful
+  runner-sshd-promise
   runtestsuite
   shellinabox
   symlinks
@@ -39,8 +40,9 @@ proxy_port = 50000
 runner_port = 50005
 
 # Idem for some other services
-[dropbear-runner-server]
-port = $${slap-parameter:runner-importer-sshd-port}
+[runner-sshd-port]
+minimum = 22232
+maximum = 22241
 
 [importer]
 recipe = slapos.recipe.template:jinja2
