@@ -156,8 +156,84 @@ class TestSlapOSFolder_getOpenTicketList(testSlapOSMixin):
 
     ticket = newUpgradeDecision()
     self._test_upgrade_decision(ticket, 2)
+
+
+class TestSlapOSEvent_getRSSTextContent(testSlapOSMixin):
+
+  def beforeTearDown(self):
+    transaction.abort()
+
+  def test_Event_getRSSTextContent(self):
+    self.new_id = self.generateNewId()
+    source = self.portal.person_module.newContent(
+      portal_type='Person',
+      title="Person %s" % self.new_id,
+      reference="TESTPERS-%s" % self.new_id,
+      default_email_text="live_test_%s@example.org" % self.new_id,
+      )
+
+    destination = self.portal.person_module.newContent(
+      portal_type='Person',
+      title="Person Destination %s" % self.new_id,
+      reference="TESTPERSD-%s" % self.new_id,
+      default_email_text="live_test_%s@example.org" % self.new_id,
+      )
+
+    destination_2 = self.portal.person_module.newContent(
+      portal_type='Person',
+      title="Person Destination 2 %s" % self.new_id,
+      reference="TESTPERSD2-%s" % self.new_id,
+      default_email_text="live_test_%s@example.org" % self.new_id,
+      )
+
+    event = self.portal.event_module.newContent(
+        title="Test Event %s" % self.new_id,
+        portal_type="Web Message",
+        text_content="Test Event %s" % self.new_id)
+
+
+    text_content = event.Event_getRSSTextContent()
     
+    self.assertTrue(event.getTextContent() in text_content)
+    self.assertTrue("Sender: " in text_content, "Sender: not in %s" % text_content)
+    self.assertTrue("Recipient: " in text_content, "Recipient: not in %s" % text_content)
+    self.assertTrue("Content:" in text_content, "Content: not in %s" % text_content)
+
+    event.setSourceValue(source)
+    text_content = event.Event_getRSSTextContent()
+    self.assertTrue("Sender: %s" % source.getTitle() in text_content, 
+      "Sender: %s not in %s" % (source.getTitle(), text_content))
     
+    event.setDestinationValue(destination)
+    text_content = event.Event_getRSSTextContent()
+    self.assertTrue("Recipient: %s" % destination.getTitle() in text_content, 
+      "Recipient: %s not in %s" % (destination.getTitle(), text_content))
+
+    event.setDestinationValue(destination_2)
+    text_content = event.Event_getRSSTextContent()
+    self.assertTrue("Recipient: %s" % destination_2.getTitle() in text_content, 
+      "Recipient: %s not in %s" % (destination.getTitle(), text_content))
+    
+    event.setDestinationValueList([destination, destination_2])
+    text_content = event.Event_getRSSTextContent()
+    self.assertTrue(
+      "Recipient: %s,%s" % (destination.getTitle(), 
+                            destination_2.getTitle()) in text_content, 
+      "Recipient: %s,%s not in %s" % (destination.getTitle(), 
+                                      destination_2.getTitle(), 
+                                      text_content)
+      )
+
+  def test_support_request(self):
+    ticket = self.portal.support_request_module.newContent(\
+                        title="Test Support Request %s" % self.new_id,
+                        resource="service_module/slapos_crm_monitoring",
+                        destination_decision_value=self.person)
+      
+    ticket.immediateReindexObject()
+    self._test_event(ticket)
+
+
 class TestSlapOSTicket_getLatestEvent(testSlapOSMixin):
 
   def beforeTearDown(self):

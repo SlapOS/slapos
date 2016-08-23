@@ -271,7 +271,7 @@
       <dictionary>
         <item>
             <key> <string>_text</string> </key>
-            <value> <string>python: cell.SupportRequest_getLatestEvent() and cell.SupportRequest_getLatestEvent().getTextContent() or cell.getDescription()</string> </value>
+            <value> <string>python: cell.Ticket_getLatestEvent() and cell.Ticket_getLatestEvent().Event_getRSSTextContent() or cell.getDescription()</string> </value>
         </item>
       </dictionary>
     </pickle>
