@@ -41,7 +41,7 @@ from slapos.recipe.librecipe import shlex
 
 def promise(args):
   ssh = subprocess.Popen(
-      [args['ssh_client'], '%(user)s@%(host)s/%(port)s' % args],
+      [args['ssh_client'], '%(user)s@%(host)s' % args, '-p', '%(port)s' % args],
       stdin=subprocess.PIPE, stdout=None, stderr=None
   )
 
