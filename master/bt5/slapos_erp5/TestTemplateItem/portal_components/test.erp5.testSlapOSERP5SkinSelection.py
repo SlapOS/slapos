@@ -230,7 +230,6 @@ zpt_generic
 """
 custom
 erp5_web_hal_json
-erp5_web_renderjs_ui
 slapos_ecoallocation
 slapos_erp5
 slapos_upgrader
