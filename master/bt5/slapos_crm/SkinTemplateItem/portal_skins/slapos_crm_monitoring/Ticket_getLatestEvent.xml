@@ -54,7 +54,7 @@
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>SupportRequest_getLatestEvent</string> </value>
+            <value> <string>Ticket_getLatestEvent</string> </value>
         </item>
       </dictionary>
     </pickle>

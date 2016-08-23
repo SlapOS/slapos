@@ -487,7 +487,7 @@
       <dictionary>
         <item>
             <key> <string>_text</string> </key>
-            <value> <string>python: cell.SupportRequest_getLatestEvent() and cell.SupportRequest_getLatestEvent().getModificationDate() or cell.getModificationDate()</string> </value>
+            <value> <string>python: cell.Ticket_getLatestEvent() and cell.Ticket_getLatestEvent().getModificationDate() or cell.getModificationDate()</string> </value>
         </item>
       </dictionary>
     </pickle>
