@@ -8,7 +8,7 @@ portal = context.getPortalObject()
 business_process_uid_list = [
   portal.business_process_module.slapos_consumption_business_process.getUid(),
   portal.business_process_module.slapos_subscription_business_process.getUid()]
-specialise_reference_list = [q.getReference() for q in portal.portal_catalog(specialise_uid=business_process_uid_list,
+specialise_uid_list = [q.getUid() for q in portal.portal_catalog(specialise_uid=business_process_uid_list,
   portal_type='Sale Trade Condition')]
 select_dict= {'default_aggregate_portal_type': None}
 
@@ -16,8 +16,7 @@ select_kw.update(
   limit=50, # just take a bit
   portal_type='Sale Packing List Line',
   simulation_state='delivered',
-  parent_specialise_reference=specialise_reference_list,
-  parent_specialise_portal_type='Sale Trade Condition',
+  parent_specialise_uid=specialise_uid_list,
   select_dict=select_dict,
   left_join_list=select_dict.keys(),
   default_aggregate_portal_type=ComplexQuery(NegatedQuery(Query(default_aggregate_portal_type='Computer')),
