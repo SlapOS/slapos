@@ -2357,7 +2357,6 @@ class TestSlapOSisSupportRequestCreationClosed(testSlapOSMixin):
                         title="Test Support Request POIUY",
                         destination_decision=url)
       sr.validate()
-      sr.validate()
       sr.immediateReindexObject()
 
     # Create five tickets, the limit of ticket creation
@@ -2367,8 +2366,8 @@ class TestSlapOSisSupportRequestCreationClosed(testSlapOSMixin):
     newSupportRequest()
     newSupportRequest()
 
-    self.assertTrue(self.portal.ERP5Site_isSupportRequestCreationClosed(url))
-    self.assertTrue(self.portal.ERP5Site_isSupportRequestCreationClosed())
+    self.assertFalse(self.portal.ERP5Site_isSupportRequestCreationClosed(url))
+    self.assertFalse(self.portal.ERP5Site_isSupportRequestCreationClosed())
     
 
 class TestSlapOSGenerateSupportRequestForSlapOS(testSlapOSMixin):
