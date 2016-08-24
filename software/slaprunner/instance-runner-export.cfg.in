@@ -9,7 +9,6 @@ parts +=
   ca-nginx
   gunicorn-launcher
   gunicorn-graceful
-  sshkeys-authority
   publish-connection-information
   slaprunner-promise
   apache-httpd-promise
