@@ -7,8 +7,7 @@ parts =
   cron
   cron-entry-logrotate
   sshkeys-authority
-  sshkeys-dropbear
-
+  sshkeys-openssh
 
 ## Monitor for pbs
   monitor-base
@@ -57,7 +56,6 @@ pbs-wrappers = $${rootdirectory:bin}/pbs
 dot-ssh = $${basedirectory:ssh-home}/.ssh
 notifier-feeds = $${basedirectory:notifier}/feeds
 notifier-callbacks = $${basedirectory:notifier}/callbacks
-
 
 
 #----------------
@@ -111,7 +109,7 @@ callbacks = $${directory:notifier-callbacks}
 equeue-socket = $${equeue:socket}
 notifier-binary = ${buildout:bin-directory}/pubsubnotifier
 rdiffbackup-binary = ${buildout:bin-directory}/rdiff-backup
-sshclient-binary = $${dropbear-client:wrapper}
+sshclient-binary = $${openssh-client:wrapper-path}
 known-hosts = $${directory:dot-ssh}/known_hosts
 promises-directory = $${basedirectory:promises}
 directory = $${directory:pbs-backup}
@@ -190,29 +188,30 @@ recipe = slapos.cookbook:sshkeys_authority
 request-directory = $${sshkeys-directory:requests}
 keys-directory = $${sshkeys-directory:keys}
 wrapper = $${basedirectory:services}/sshkeys_authority
-keygen-binary = ${dropbear:location}/bin/dropbearkey
+keygen-binary = ${openssh:location}/bin/ssh-keygen
 
-[sshkeys-dropbear]
+[sshkeys-openssh]
 <= sshkeys-authority
 recipe = slapos.cookbook:sshkeys_authority.request
 name = pbs
 type = rsa
-executable = $${dropbear-client:wrapper}
-public-key = $${dropbear-client:identity-file}.pub
-private-key = $${dropbear-client:identity-file}
+executable = $${openssh-client:wrapper-path}
+public-key = $${openssh-client:identity-file}.pub
+private-key = $${openssh-client:identity-file}
 wrapper = $${rootdirectory:bin}/do_backup
 
 
 #----------------
 #--
-#-- Dropbear.
+#-- OpenSSH.
 
-[dropbear-client]
-recipe = slapos.cookbook:dropbear.client
-dbclient-binary = ${dropbear:location}/bin/dbclient
-wrapper = $${rootdirectory:bin}/ssh
+[openssh-client]
+recipe = slapos.cookbook:wrapper
 home = $${basedirectory:ssh-home}
-identity-file = $${basedirectory:ssh-home}/id_rsa
+identity-file = $${:home}/id_rsa
+command-line = ${openssh:location}/bin/ssh -T -i $${:identity-file}
+wrapper-path = $${rootdirectory:bin}/ssh
+parameters-extra = true
 
 
 #----------------
@@ -240,7 +239,7 @@ monitor-username = $${htpasswd:username}
 
 [publish-connection-information]
 recipe = slapos.cookbook:publish
-ssh-key = $${sshkeys-dropbear:public-key-value}
+ssh-key = $${sshkeys-openssh:public-key-value}
 notification-url = http://[$${notifier:host}]:$${notifier:port}/notify
 feeds-url = http://[$${notifier:host}]:$${notifier:port}/get/
 monitor-base-url = $${publish:monitor-base-url}

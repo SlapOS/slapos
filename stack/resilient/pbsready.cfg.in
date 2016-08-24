@@ -8,9 +8,11 @@ parts =
   cron-entry-logrotate
   sshkeys-authority
   dropbear-server
-  sshkeys-dropbear
-  resilient-sshkeys-dropbear-promise
-  dropbear-server-pbs-authorized-key
+  sshd-graceful
+  sshkeys-sshd
+  sshd-promise
+  resilient-sshkeys-sshd-promise
+  sshd-pbs-authorized-key
   notifier
 
 
@@ -30,7 +32,7 @@ recipe = slapos.cookbook:mkdirectory
 log = $${rootdirectory:var}/log
 services = $${rootdirectory:etc}/service
 run = $${rootdirectory:var}/run
-script = $${rootdirectory:etc}/script
+scripts = $${rootdirectory:etc}/run
 backup = $${rootdirectory:srv}/backup
 promises = $${rootdirectory:etc}/promise
 services = $${rootdirectory:etc}/service
@@ -120,14 +122,14 @@ create = true
 <= logrotate
 recipe = slapos.cookbook:logrotate.d
 name = equeue
-log = $${equeue:log} $${dropbear-sshd:log}
+log = $${equeue:log} $${sshd-server:log}
 frequency = daily
 rotate-num = 30
 
 
 #----------------
 #--
-#-- Sets up an rdiff-backup server (with a dropbear server for ssh)
+#-- Sets up an rdiff-backup server (with a openssh server for ssh)
 
 [rdiff-backup-server]
 recipe = slapos.cookbook:pbs
@@ -170,32 +172,56 @@ context =
 
 #----------------
 #--
-#-- Dropbear.
+#-- OpenSSH.
+[resilient-sshd-config]
+# XXX: Add timeout support
+recipe = slapos.recipe.template:jinja2
+rendered = $${directory:etc}/resilient-sshd.conf
+path_pid = $${directory:run}/resilient-sshd.pid
+template = inline:
+ PidFile $${:path_pid}
+ Port $${sshd-port:port}
+ ListenAddress $${slap-network-information:global-ipv6}
+ Protocol 2
+ UsePrivilegeSeparation no
+ HostKey $${directory:ssh}/server_key.rsa
+ AuthorizedKeysFile $${directory:ssh}/.ssh/authorized_keys
+ PasswordAuthentication no
+ PubkeyAuthentication yes
+ ForceCommand $${rdiff-backup-server:wrapper}
 
-[dropbear-server]
-recipe = slapos.cookbook:dropbear
+[sshd-raw-server]
+recipe = slapos.cookbook:wrapper
 host = $${slap-network-information:global-ipv6}
-# Explicitely excludes to define "port" argument. It will be defined in
-# pbs-ready-import.cfg.in and pbs-ready-export.cfg.in
-home = $${directory:ssh}
-wrapper = $${rootdirectory:bin}/raw_sshd
-shell = $${rdiff-backup-server:wrapper}
 rsa-keyfile = $${directory:ssh}/server_key.rsa
-dropbear-binary = ${dropbear:location}/sbin/dropbear
+home = $${directory:ssh}
+command-line = ${openssh:location}/sbin/sshd -D -e -f $${resilient-sshd-config:rendered}
+wrapper-path = $${rootdirectory:bin}/raw_sshd
 
-[dropbear-server-pbs-authorized-key]
-<= dropbear-server
+[sshd-pbs-authorized-key]
+<= sshd-raw-server
 recipe = slapos.cookbook:dropbear.add_authorized_key
 key = $${slap-parameter:authorized-key}
 
-[dropbear-sshd]
+[sshd-server]
 recipe = collective.recipe.template
 log = $${basedirectory:log}/sshd.log
 input = inline:#!/bin/sh
-    exec $${dropbear-server:wrapper} >> $${:log} 2>&1
+    exec $${sshd-raw-server:wrapper-path} >> $${:log} 2>&1
 
 output = $${rootdirectory:bin}/raw_sshd_log
 mode = 700
+
+[sshd-graceful]
+recipe = slapos.cookbook:wrapper
+command-line = $${directory:bin}/killpidfromfile $${runner-sshd-config:path_pid} SIGHUP
+wrapper-path = $${basedirectory:scripts}/sshd-graceful
+
+[sshd-promise]
+recipe = slapos.cookbook:check_port_listening
+path = $${basedirectory:promises}/sshd
+hostname = $${slap-network-information:global-ipv6}
+port = $${sshd-port:port}
 
 #----------------
 #--
@@ -211,29 +237,31 @@ recipe = slapos.cookbook:sshkeys_authority
 request-directory = $${sshkeys-directory:requests}
 keys-directory = $${sshkeys-directory:keys}
 wrapper = $${basedirectory:services}/sshkeys_authority
-keygen-binary = ${dropbear:location}/bin/dropbearkey
+keygen-binary = ${openssh:location}/bin/ssh-keygen
 
-[sshkeys-dropbear]
+[sshkeys-sshd]
 <= sshkeys-authority
 recipe = slapos.cookbook:sshkeys_authority.request
 name = dropbear
 type = rsa
-executable = $${dropbear-sshd:output}
-public-key = $${dropbear-server:rsa-keyfile}.pub
-private-key = $${dropbear-server:rsa-keyfile}
+executable = $${sshd-server:output}
+public-key = $${sshd-raw-server:rsa-keyfile}.pub
+private-key = $${sshd-raw-server:rsa-keyfile}
 wrapper = $${basedirectory:services}/sshd
 
-[resilient-sshkeys-dropbear-promise]
+[resilient-sshkeys-sshd-promise]
 # Check that public key file exists and is not empty
 recipe = collective.recipe.template
 input = inline:#!${bash:location}/bin/bash
-  PUBLIC_KEY_CONTENT="$${sshkeys-dropbear:public-key-value}"
+  PUBLIC_KEY_CONTENT="$${sshkeys-sshd:public-key-value}"
   if [[ ! -n "$PUBLIC_KEY_CONTENT" || "$PUBLIC_KEY_CONTENT" == *None* ]]; then
     exit 1
   fi
 output = $${basedirectory:promises}/public-key-existence
 mode = 700
 
+[environment]
+recipe = collective.recipe.environment
 
 #----------------
 #--
@@ -241,6 +269,6 @@ mode = 700
 # XXX-Cedric: when "aggregation" system is done in libslap, directly publish.
 [resilient-publish-connection-parameter]
 recipe = slapos.cookbook:publish
-ssh-public-key = $${sshkeys-dropbear:public-key-value}
-ssh-url = ssh://nobody@[$${dropbear-server:host}]:$${dropbear-server:port}/$${rdiff-backup-server:path}
+ssh-public-key = $${sshkeys-sshd:public-key-value}
+ssh-url = ssh://$${environment:USER}@[$${sshd-raw-server:host}]:$${sshd-port:port}/$${rdiff-backup-server:path}
 ip = $${slap-network-information:global-ipv6}

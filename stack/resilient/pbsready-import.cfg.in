@@ -11,10 +11,12 @@ parts =
   cron
   cron-entry-logrotate
   sshkeys-authority
-  dropbear-server
-  sshkeys-dropbear
-  resilient-sshkeys-dropbear-promise
-  dropbear-server-pbs-authorized-key
+  sshd-raw-server
+  sshd-graceful
+  sshkeys-sshd
+  sshd-promise
+  resilient-sshkeys-sshd-promise
+  sshd-pbs-authorized-key
   notifier
 
   resiliency-takeover-script
@@ -33,8 +35,11 @@ takeover-password = $${resilient-web-takeover-password:passwd}
 # Define port of ssh server. It has to be different from import so that it
 # supports export/import using same IP (slaprunner, slapos-in-partition,
 # ipv4...)
-[dropbear-server]
-port = 22220
+[sshd-port]
+recipe = slapos.cookbook:free_port
+minimum = 22210
+maximum = 22219
+ip = $${slap-network-information:global-ipv6}
 
 # Define port of notifier (same reason)
 [notifier]
