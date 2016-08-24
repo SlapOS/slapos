@@ -9,7 +9,6 @@ parts +=
   ca-nginx
   gunicorn-launcher
   gunicorn-graceful
-  sshkeys-authority
   slaprunner-promise
   slaprunner-supervisord-wrapper
   runner-sshd
