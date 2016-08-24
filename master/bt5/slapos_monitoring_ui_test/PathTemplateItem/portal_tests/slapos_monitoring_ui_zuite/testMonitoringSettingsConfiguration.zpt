@@ -7,7 +7,7 @@
 <body>
 <table cellpadding="1" cellspacing="1" border="1">
 <thead>
-<tr><td rowspan="1" colspan="3">Test OfficeJS UI</td></tr>
+<tr><td rowspan="1" colspan="3">Test SlapOS Monitoring UI</td></tr>
 </thead><tbody>
 <tal:block metal:use-macro="here/Zuite_CommonTemplate/macros/init" />
 <!-- Clean Up -->
@@ -24,12 +24,17 @@
 <!-- Initialize -->
 <tr>
   <td>open</td>
-  <td>${base_url}/web_site_module/monitoring_render_js/#page=settings_configurator&amp;tab;=add</td>
+  <td>${base_url}/web_site_module/monitoring_render_js/#page=settings_configurator&tab=add</td>
   <td></td>
 </tr>
 <tr>
   <td>waitForElementPresent</td>
   <td>//button[@data-i18n='Menu']</td>
+  <td></td>
+</tr>
+<tr>
+  <td>click</td>
+  <td>//a[@href='#config-add']</td>
   <td></td>
 </tr>
 <tr>
@@ -44,7 +49,7 @@
 </tr>
 <tr>
   <td>store</td>
-  <td>https://softinst65745.host.vifib.net/public/feeds</td>
+  <td>http://localhost:5378/rootInstance/public/feeds</td>
   <td>opml_url</td>
 </tr>
 <tr>
@@ -69,7 +74,12 @@
 </tr>
 <tr>
   <td>pause</td>
-  <td>500</td>
+  <td>1000</td>
+  <td></td>
+</tr>
+<tr>
+  <td>assertTextNotPresent</td>
+  <td>ERROR: Failed to load URL</td>
   <td></td>
 </tr>
 <tr>
@@ -199,7 +209,7 @@
 </tr>
 <tr>
   <td>open</td>
-  <td>${base_url}/web_site_module/monitoring_render_js/#page=settings_configurator&amp;tab;=manage</td>
+  <td>${base_url}/web_site_module/monitoring_render_js/#page=settings_configurator&tab=manage</td>
   <td></td>
 </tr>
 <tr>
