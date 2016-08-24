@@ -331,8 +331,7 @@ monitor-title = ${slap-configuration:instance-title}
 monitor-httpd-ipv6 = ${slap-configuration:ipv6-random}
 monitor-httpd-port = 8196
 # XXX - Set monitor-base-url = ${monitor-httpd-conf-parameter:url} => https://[ipv6]:port
-monitor-base-url = ${monitor-frontend-promise:url}
-#monitor-base-url = ${monitor-httpd-conf-parameter:url}
+monitor-base-url = ${monitor-httpd-conf-parameter:url}
 root-instance-title = ${slap-configuration:root-instance-title}
 monitor-url-list =
 cors-domains = monitor.app.officejs.com 
