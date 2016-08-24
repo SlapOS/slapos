@@ -6,7 +6,10 @@ person = portal.ERP5Site_getAuthenticatedMemberPersonValue()
 if person:
   kw['default_destination_decision_uid'] = person.getUid()
   kw['simulation_state'] = "NOT cancelled"
-  kw['sort_on'] = [('modification_date', 'DESC'),]
+  kw['sort_on'] = (("catalog.simulation_state='suspended'", 'DESC'),
+                   ("catalog.simulation_state='validated'", 'DESC'),
+                   ("catalog.simulation_state='confirmed'", 'DESC'),
+                   ('modification_date', 'DESC'),)
 
   if not support_in_progress_url:
     return portal.portal_catalog(**kw)
