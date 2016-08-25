@@ -36,6 +36,31 @@ parts +=
   monitor-check-resilient-feed-file
   monitor-check-webrunner-internal-instance
 
+[proxy-free-port]
+recipe = slapos.cookbook:free_port
+minimum = 49980
+maximum = 49989
+ip = $${slap-network-information:global-ipv6}
+
+[runner-free-port]
+recipe = slapos.cookbook:free_port
+minimum = 50005
+maximum = 50014
+ip = $${slap-network-information:global-ipv6}
+
+[slaprunner]
+proxy_port = $${proxy-free-port:port}
+runner_port = $${runner-free-port:port}
+
+[supervisord-free-port]
+recipe = slapos.cookbook:free_port
+minimum = 39986
+maximum = 39995
+ip = $${slaprunner:ipv4}
+
+[supervisord]
+port = $${supervisord-free-port:port}
+
 [exporter]
 recipe = slapos.recipe.template:jinja2
 template = ${template-runner-export-script:location}/${template-runner-export-script:filename}
@@ -48,8 +73,14 @@ context =
   raw  shell_binary ${dash:location}/bin/dash
   raw  rsync_binary ${rsync:location}/bin/rsync
 
+[monitor-httpd-free-port]
+recipe = slapos.cookbook:free_port
+minimum = 8437
+maximum = 8446
+ip = $${slap-network-information:global-ipv6}
+
 [monitor-instance-parameter]
-monitor-httpd-port = 8437
+monitor-httpd-port = $${monitor-httpd-free-port:port}
 # Pass some parameter to dispay in monitoring interface
 instance-configuration =
   httpdcors cors-domain $${slaprunner-httpd-cors:location} $${httpd-graceful-wrapper:output}
