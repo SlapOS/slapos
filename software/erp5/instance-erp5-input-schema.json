@@ -38,7 +38,7 @@
     "developer-list": {
       "description": "List of logins which should get the Developper role (required to modify portal_components' content), defaulting to inituser-login's value",
       "items": {
-        "pattern": "/^\\S+$/",
+        "pattern": "^\\S+$",
         "type": "string"
       },
       "uniqueItems": true,
