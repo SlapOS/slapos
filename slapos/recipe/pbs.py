@@ -260,7 +260,7 @@ class Recipe(GenericSlapRecipe, Notify, Callback):
 
     # XXX use -y because the host might not yet be in the
     #     trusted hosts file until the next time slapgrid is run.
-    remote_schema = '{ssh} -y -K 300 -p %s {username}@{hostname}'.format(
+    remote_schema = '{ssh} -y -o "ConnectTimeout 300" -p %s {username}@{hostname}'.format(
               ssh=self.options['sshclient-binary'],
               username=parsed_url.username,
               hostname=parsed_url.hostname
