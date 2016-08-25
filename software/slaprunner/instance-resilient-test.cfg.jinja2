@@ -42,8 +42,8 @@ mode = 755
 # Used to manually run the resilient test if we don't have a running testnode.
 recipe = slapos.cookbook:wrapper
 test-suite-title = slaprunner
-command-line = {{ bin_directory }}/runStandaloneResiliencyTestSuite --test-suite-title=${:test-suite-title} ${deploy-scalability-test:test-parameters}
-wrapper-path = ${directory:bin}/runStandaloneResiliencyTestSuite
+command-line = {{ bin_directory }}/runStandaloneResiliencyTest --test-suite-title=${:test-suite-title} ${deploy-scalability-test:test-parameters}
+wrapper-path = ${directory:bin}/runStandaloneResiliencyTest
 
 [request-resilient-instance]
 <= slap-connection
@@ -57,10 +57,11 @@ config-{{ key }} = {{ dumps(value) }}
 config-resiliency-backup-periodicity = */10 * * * *
 config-resilient-clone-number = 1
 config-ignore-known-hosts-file = true
+config-development-mode = {{ slapparameter_dict.get('development-mode', '') }}
 # XXX hardcoded
 #config-frontend-domain = google.com
 # XXX Hack to deploy Root Instance on the same computer as the type-test Instance
 sla-computer_guid = ${slap-connection:computer-id}
-return = backend_url
+return = backend-url
 
 [slap-parameter]
