@@ -62,6 +62,12 @@
       "uniqueItems": true,
       "type": "array"
     },
+    "neo-masters": {
+      "$ref": "../neoppod/instance-neo-output-schema.json#/properties/masters"
+    },
+    "neo-admins": {
+      "$ref": "../neoppod/instance-neo-output-schema.json#/properties/admins"
+    },
     "jupyter-url": {
       "description": "Jupyter notebook web UI access information",
       "pattern": "^https://",
