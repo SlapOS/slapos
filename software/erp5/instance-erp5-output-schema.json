@@ -1,12 +1,13 @@
 {
   "$schema": "http://json-schema.org/draft-04/schema#",
   "description": "Values returned by ERP5 instantiation",
+  "additionalProperties": false,
   "properties": {
     "hosts-dict": {
       "description": "Hosts mapping, including auto-generated entries",
       "patternProperties": {
         ".*": {
-          "description": "IP or domain names current entry resolves to",
+          "description": "IP current entry resolves to",
           "type": "string"
         }
       },
@@ -24,31 +25,53 @@
       "description": "Initial user password",
       "type": "string"
     },
-    "kumofs-url": {
-      "description": "Persistent memcached access information",
+    "deadlock-debugger-password": {
+      "description": "Deadlock debugger password",
       "type": "string"
     },
-    "memcached-url": {
+    "memcached-persistent-url": {
+      "description": "Persistent memcached access information",
+      "pattern": "^memcached://",
+      "type": "string"
+    },
+    "memcached-volatile-url": {
       "description": "Volatile memcached access information",
+      "pattern": "^memcached://",
       "type": "string"
     },
     "cloudooo-url": {
-      "description": "Conversion service access information",
+      "description": "Conversion service access information - DEPRECATED",
+      "pattern": "^cloudooo://",
       "type": "string"
     },
-    "mariadb-url": {
+    "mariadb-database-list": {
       "description": "Relational database access information",
-      "type": "string"
+      "items": {
+        "pattern": "^mysql://",
+        "type": "string"
+      },
+      "uniqueItems": true,
+      "type": "array"
+    },
+    "mariadb-test-database-list": {
+      "description": "Relational database access information",
+      "items": {
+	"pattern": "^mysql://",
+        "type": "string"
+      },
+      "uniqueItems": true,
+      "type": "array"
     },
     "jupyter-url": {
       "description": "Jupyter notebook web UI access information",
-      "type": "string",
-      "optional": true
+      "pattern": "^https://",
+      "type": "string"
     }
   },
   "patternProperties": {
     "family-.*": {
       "description": "Zope family access information",
+      "pattern": "^https://",
       "type": "string"
     }
   },
