@@ -143,28 +143,28 @@
     "kumofs": {
       "description": "Persistent memcached service",
       "additionalProperties": {
-        "$ref": "./instance-kumofs-schema.json#properties"
+        "$ref": "./instance-kumofs-schema.json#/properties"
       },
       "type": "object"
     },
     "memcached": {
       "description": "Volatile memcached service",
       "additionalProperties": {
-        "$ref": "./instance-kumofs-schema.json#properties"
+        "$ref": "./instance-kumofs-schema.json#/properties"
       },
       "type": "object"
     },
     "cloudooo": {
       "description": "Format conversion service",
       "additionalProperties": {
-        "$ref": "./instance-cloudooo-schema.json#properties"
+        "$ref": "./instance-cloudooo-schema.json#/properties"
       },
       "type": "object"
     },
     "mariadb": {
       "description": "Relational database service",
       "additionalProperties": {
-        "$ref": "./instance-mariadb-schema.json#properties"
+        "$ref": "./instance-mariadb-schema.json#/properties"
       },
       "type": "object"
     },
