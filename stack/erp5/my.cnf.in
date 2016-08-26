@@ -31,6 +31,9 @@ innodb_file_per_table = 0
 
 plugin_load = ha_mroonga.so;handlersocket.so
 
+# TEMPORARILY ADDED FOR DEBUGGING PURPOSE
+mroonga_log_level = DEBUG
+
 # By default only 100 connections are allowed, when using zeo
 # we may have much more connections
 max_connections = 1000
