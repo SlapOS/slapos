@@ -90,10 +90,6 @@ config-number = {{id}}
 config-name = {{namebase}}{{id}}
 config-authorized-key = ${request-pbs-{{namebase}}-{{id}}:connection-ssh-key}
 config-on-notification = ${request-pbs-{{namebase}}-{{id}}:connection-feeds-url}${:pbs-notification-id}
-# set development mode
-{% if slapparameter_dict.has_key('development-mode') -%}
-config-development-mode = {{ slapparameter_dict.get('development-mode') }}
-{% endif -%}
 {% for key, value in monitor_dict.iteritems() -%}
 config-{{ key }} = {{ value }}
 {% endfor -%}
