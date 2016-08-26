@@ -4,7 +4,7 @@ Available ``software-type`` values
 - ``default``
 
   Recommended for production use.
-  
+
 - ``create-erp5-site``
 
   Automated creation of ERP5Site instance, for easy deployment.
@@ -21,6 +21,62 @@ equivalent) needed to relocate Zope's urls via its VirtualHostMonster_. See the
 Included cloudooo partition is **deprecated**. It is not recommended for
 intensive usage. See the ``cloudooo`` Software Release to setup a cloudooo
 cluster, more suitable for intensive usage.
+
+Replication
+===========
+
+Replication allows setting up an ERP5 instance whose data follows another
+instance.
+
+Relations between ERP5 instances in a replication graph depend in what is
+supported by individual data managers (ex: a neo cluster can replicate from a
+neo cluster which itself replicates from a 3rd).
+
+Replication lag constraints (aka sync/async replication) depends on individual
+data managers (ex: neo replication between clusters is always asynchronous).
+
+Ignoring replication lag, replicated data can be strictly identical (ex:
+replicating ZODB or SQL database will contain the same data as upstream), or
+may imply some remaping (ex: replicating Zope logs from an instance with 2 zope
+families with 2 partition of 2 zopes each to an instance with a single zope
+total).
+
+Data whose replication is supported
+-----------------------------------
+
+- neo database
+
+Data whose replication will eventually be supported
+---------------------------------------------------
+
+- mariadb database
+- zope ``zope-*-access.log`` and ``zope-*-Z2.log``
+- ``mariadb-slow.log``
+
+Data whose replication is not planned
+-------------------------------------
+
+- zeo: use neo instead
+
+Setting up replication
+----------------------
+
+In addition to your usual parameter set, you needs to provide the following parameters::
+
+  {
+    "zope-partition-dict": {},      So no zope is instanciated
+    "zodb": [
+      {
+        "storage-dict": {
+          "upstream-masters": ...,  As published by to-become upstream ERP5 instance as "neo-masters"
+        },
+        "type": "neo",              The only ZODB type supporting replication
+        ...
+      }
+      ...
+    ]
+    ...
+  }
 
 Port ranges
 ===========
