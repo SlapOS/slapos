@@ -19,23 +19,12 @@
       .push(function (monitor_url_description) {
         if (!monitor_url_description) {
           return gadget.redirect({
-            page: 'settings_configurator'
+            page: 'settings_configurator',
+            tab: 'add'
           });
-        } else {
-          return gadget.getSetting('monitoring_display_style');
         }
-      })
-      .push(function (display_option) {
-        current_display = options.display || display_option;
-        if (current_display === undefined || current_display === '') {
-          current_display = 'list';
-        }
-        current_display = 'list';
-        return gadget.setSetting('monitoring_display_style', current_display);
-      })
-      .push(function () {
         return gadget.redirect({
-          page: 'status_' + current_display
+          page: 'hosting_subscription_list'
         });
       });
     })

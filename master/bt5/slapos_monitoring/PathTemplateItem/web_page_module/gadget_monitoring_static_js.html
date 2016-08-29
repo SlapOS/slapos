@@ -315,7 +315,8 @@
           for (key in url_description_dict) {
             opml_list.push({
               key: key,
-              href: "#page=settings_configurator&url=" + url_description_dict[key].href,
+              href: "#page=settings_configurator&url=" + url_description_dict[key].href +
+                '&tab=add',
               link: url_description_dict[key].href,
               title: url_description_dict[key].title || ''
             });
