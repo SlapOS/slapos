@@ -66,6 +66,12 @@ class Callback(GenericBaseRecipe):
 
 class Notify(GenericBaseRecipe):
 
+  def __init__(self, buildout, name, options):
+    super(Notify, self).__init__(buildout, name, options)
+    log = os.path.join(options['feeds'], options['name'])
+    options['log-file'] = log
+    self.options = options
+
   def createNotifier(self, notifier_binary, wrapper, executable,
                      log, title, notification_url, feed_url, pidfile=None):
 
@@ -98,13 +104,11 @@ class Notify(GenericBaseRecipe):
                                port=self.options['port'],
                                path='/get/%s' % self.options['name'])
 
-    log = os.path.join(self.options['feeds'], self.options['name'])
-
     options = self.options
     script = self.createNotifier(notifier_binary=options['notifier-binary'],
                                  wrapper=options['wrapper'],
                                  executable=options['executable'],
-                                 log=log,
+                                 log=options['log-file'],
                                  title=options['title'],
                                  pidfile=options['pidfile'],
                                  notification_url=options['notify'],

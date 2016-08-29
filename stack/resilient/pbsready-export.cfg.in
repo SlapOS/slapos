@@ -18,6 +18,7 @@ parts =
   resilient-sshkeys-sshd-promise
   sshd-pbs-authorized-key
   notifier
+  notifier-exporter-promise
 
   cron-entry-backup
 
@@ -36,6 +37,12 @@ minimum = 22200
 maximum = 22209
 ip = $${slap-network-information:global-ipv6}
 
+[notifier-port]
+recipe = slapos.cookbook:free_port
+minimum = 65526
+maximum = 65535
+ip = $${notifier:host}
+
 [resilient-publish-connection-parameter]
 notification-id = http://[$${notifier:host}]:$${notifier:port}/get/$${notifier-exporter:name}
 
@@ -50,6 +57,16 @@ executable = $${exporter:wrapper}
 wrapper = $${rootdirectory:bin}/exporter
 notify = $${slap-parameter:notify}
 pidfile = $${resilient-directory:pid}/$${:name}.pid
+
+[notifier-exporter-promise]
+recipe = slapos.recipe.template:jinja2
+mode = 700
+template = inline:
+  #!${bash:location}/bin/bash
+  EXPORTER_FEED="$${notifier-exporter:log-file}"
+  FAILURE_PATTERN="FAILURE"
+  tail -n 1 $EXPORTER_FEED | grep -vq FAILURE_PATTERN
+rendered = $${basedirectory:promises}/exporter-status
 
 [cron-entry-backup]
 # Schedule the periodic database dump.
