@@ -34,8 +34,9 @@ from datetime import datetime
 
 import SocketServer
 import tempfile
-import os
+import shutil
 import time
+import os
 import json
 
 class CustomHTTPRequestHandler(SimpleHTTPRequestHandler):
@@ -54,6 +55,8 @@ class CustomHTTPRequestHandler(SimpleHTTPRequestHandler):
     self.send_header("Access-Control-Allow-Methods", "HEAD, OPTIONS, GET, POST")
     self.send_header("Access-Control-Allow-Headers", "Overwrite, Destination, Content-Type, Depth, User-Agent, X-File-Size, X-Requested-With, If-Modified-Since, X-File-Name, Cache-Control, Authorization")
 
+  def do_GET(self):
+    SimpleHTTPRequestHandler.do_GET(self)
 
   def do_OPTIONS(self):
     self.send_respond(200)
@@ -67,6 +70,7 @@ class TestZeleniumCore(ERP5TypeFunctionalTestCase):
   base_url = 'http://localhost:5378'
   instance_list = []
   httpd = None
+  httpd_is_alive = False
   root_title = "TEST Hosting Subscription"
 
   def getBusinessTemplateList(self):
@@ -82,8 +86,13 @@ class TestZeleniumCore(ERP5TypeFunctionalTestCase):
 
   def start_httpd_server(self, root_folder):
     self.httpd = SocketServer.TCPServer(('localhost', 5378), CustomHTTPRequestHandler)
+    self.httpd.timeout = 2
     os.chdir(root_folder)
-    self.httpd.serve_forever()
+    #self.httpd.serve_forever()
+    while self.httpd_is_alive:
+      self.httpd.handle_request()
+
+    self.httpd = None
 
   def afterSetUp(self):
     ERP5TypeFunctionalTestCase.afterSetUp(self)
@@ -92,15 +101,20 @@ class TestZeleniumCore(ERP5TypeFunctionalTestCase):
     self.http_root_dir = tempfile.mkdtemp()
 
     self.generateMonitoringInstanceTree()
-    if self.httpd is None:
-      #self.httpd.shutdown()
-      print "Httpd is staring..."
-      thread = Thread(target=self.start_httpd_server, args=(self.http_root_dir,))
-      thread.daemon = True
-      thread.start()
+    self.httpd_is_alive = True
+    thread = Thread(target=self.start_httpd_server, args=(self.http_root_dir,))
+    thread.daemon = True
+    thread.start()
+
+  def beforeTearDown(self):
+    self.httpd_is_alive = False
+    # Wait for httpd server stop
+    time.sleep(3)
+    if os.path.exists(self.http_root_dir):
+      shutil.rmtree(self.http_root_dir)
+    ERP5TypeFunctionalTestCase.beforeTearDown(self)
 
   def generateInstanceDirectory(self, name):
-    print "setup %s" % name
     root_dir = os.path.join(self.http_root_dir, name)
     public_http_dir = os.path.join(root_dir, 'public')
     private_http_dir = os.path.join(root_dir, 'private')

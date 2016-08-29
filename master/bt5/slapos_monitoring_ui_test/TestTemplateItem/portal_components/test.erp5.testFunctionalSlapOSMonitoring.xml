@@ -46,7 +46,7 @@
             <key> <string>text_content_warning_message</string> </key>
             <value>
               <tuple>
-                <string>W:154,  2: Dangerous default value [] as argument (dangerous-default-value)</string>
+                <string>W:168,  2: Dangerous default value [] as argument (dangerous-default-value)</string>
               </tuple>
             </value>
         </item>
