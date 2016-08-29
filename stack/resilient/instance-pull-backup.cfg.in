@@ -8,6 +8,7 @@ parts =
   cron-entry-logrotate
   sshkeys-authority
   sshkeys-openssh
+  backup-transfer-integrity-promise
 
 ## Monitor for pbs
   monitor-base
@@ -236,6 +237,19 @@ monitor-httpd-port = 8070
 monitor-title = PBS Instance
 monitor-password = $${htpasswd:passwd}
 monitor-username = $${htpasswd:username}
+
+#----------------
+#--
+#-- Resiliency promises.
+
+[backup-transfer-integrity-promise]
+recipe = slapos.recipe.template:jinja2
+template = inline:
+ #!${dash:location}/bin/dash
+ cd $${directory:pbs-backup}
+ diff proof.signature $(find . -name backup.signature -maxdepth 2)
+rendered = $${basedirectory:promises}/backup-transfer-integrity-promise
+mode = 700
 
 
 #----------------
