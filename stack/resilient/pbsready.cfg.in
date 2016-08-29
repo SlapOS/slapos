@@ -165,7 +165,7 @@ callbacks = $${directory:notifier-callbacks}
 command = ${buildout:bin-directory}/pubsubserver --callbacks $${directory:notifier-callbacks} --feeds $${directory:notifier-feeds} --equeue-socket $${equeue:socket} --logfile $${basedirectory:log}/notifier.log $${:host} $${:port}
 notifier-binary = ${buildout:bin-directory}/pubsubnotifier
 host = $${slap-network-information:global-ipv6}
-port = 65534
+port = $${notifier-port:port}
 context =
   key content notifier:command
 
