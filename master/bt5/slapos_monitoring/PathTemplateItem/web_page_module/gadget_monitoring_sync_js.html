@@ -9,6 +9,7 @@
   gadget_klass
     .ready(function (g) {
       g.props =  {};
+      g.props.jio_storage_dict = {};
       return g.getDeclaredGadget('jio_gadget')
         .push(function (jio_gadget) {
           g.props.jio_gadget = jio_gadget;
@@ -67,9 +68,36 @@
         return error_message;
       }
 
+      function getJioGadget(gadget, hash) {
+        return new RSVP.Queue()
+          .push(function () {
+            if (gadget.props.jio_storage_dict.hasOwnProperty(hash)) {
+              return gadget.props.jio_storage_dict[hash];
+            } else {
+              return gadget.declareGadget("gadget_monitoring_jio.html",
+                {
+                  scope: hash
+                }
+              )
+              .push(function (jio_declared_gadget) {
+                gadget.props.jio_storage_dict[hash] = jio_declared_gadget;
+                return jio_declared_gadget;
+              });
+            }
+          });
+      }
+
       function syncStorage(gadget, storage_dict, query) {
-        gadget.props.jio_gadget.createJio(storage_dict, true, query);
-        return gadget.props.jio_gadget.repair()
+        var hash;
+        //gadget.props.jio_gadget.createJio(storage_dict, true, query);
+        hash = rusha.digestFromString(storage_dict.title.replace(/\s*/g, "") +
+          '_' + storage_dict.sub_storage.type);
+        
+        return getJioGadget(gadget, hash)
+          .push(function (jio_declared_gadget) {
+            jio_declared_gadget.createJio(storage_dict, true, query);
+            return jio_declared_gadget.repair();
+          })
           .push(undefined, function (error) {
             gadget.props.error_list.push({
               storage_dict: storage_dict,
@@ -82,8 +110,12 @@
       function updateStatus(gadget, storage_dict, status) {
         var promise_list = [],
           jio_gadget,
+          hash,
           i;
-        return gadget.declareGadget("gadget_monitoring_jio.html")
+        hash = rusha.digestFromString(storage_dict.title.replace(/\s*/g, "") +
+          '_' + storage_dict.sub_storage.type);
+        
+        return getJioGadget(gadget, hash)
           .push(function (jio_declared_gadget) {
             jio_gadget = jio_declared_gadget;
             jio_gadget.createJio(storage_dict);
@@ -210,9 +242,7 @@
           last_sync_time;
         return new RSVP.Queue()
           .push(function () {
-            if (options.now) {
-              return gadget.setSetting('manual_sync_time', new Date().getTime());
-            }
+            return gadget.setSetting('sync_start_time', new Date().getTime());
           })
           .push(function () {
             $(".notifyjs-wrapper").remove();
@@ -226,6 +256,7 @@
             );
           })
           .push(function () {
+            // Get all configured credentials
             return gadget.props.login_gadget.getUrlDict();
           })
           .push(undefined, function () {
@@ -270,6 +301,10 @@
             console.log("Sync monitoring data...");
             return RSVP.all(promise_list);
           })
+          .push(undefined, function (error) {
+            console.log(error);
+            return;
+          })
           .push(function () {
             // Check if there was errors and retry them if possible
             var error_size = gadget.props.error_list.length,
@@ -297,6 +332,10 @@
               }
             }
             return RSVP.all(promise_list);
+          })
+          .push(undefined, function (error) {
+            console.log(error);
+            return;
           })
           .push(function () {
             last_sync_time = new Date().getTime();
@@ -367,13 +406,13 @@
         gadget.props.timer = setTimeout(function(){
           return new RSVP.Queue()
             .push(function () {
-              return gadget.getSetting('manual_sync_time');
+              return gadget.getSetting('sync_start_time');
             })
-            .push(function (manual_timestamp) {
+            .push(function (start_timestamp) {
               var current_time = new Date().getTime();
-              if (manual_timestamp !== undefined &&
-                current_time - gadget.props.timer_interval <= manual_timestamp) {
-                // There was a manual sync don't start a new sync again!
+              if (start_timestamp !== undefined &&
+                current_time - gadget.props.timer_interval <= start_timestamp) {
+                // There was a recent sync don't start a new sync before the time_interval!
                 return;
               }
               return syncAllStorage();
