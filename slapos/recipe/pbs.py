@@ -62,6 +62,11 @@ def promise(args):
 
 
 class Recipe(GenericSlapRecipe, Notify, Callback):
+  def _options(self, options):
+    if 'slave-instance-list' in options:
+      for slave in json.loads(options['slave-instance-list']):
+        if slave['type'] == 'pull':
+          options['rdiff-backup-data-folder'] = str(os.path.join(options['directory'], slave['name'], 'rdiff-backup-data'))
 
   def wrapper_push(self, remote_schema, local_dir, remote_dir, rdiff_wrapper_path):
     # Create a simple rdiff-backup wrapper that will push
