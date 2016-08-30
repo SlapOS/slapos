@@ -9,6 +9,7 @@ parts =
   sshkeys-authority
   sshkeys-openssh
   backup-transfer-integrity-promise
+  resilient-genstatrss-wrapper
 
 ## Monitor for pbs
   monitor-base
@@ -251,6 +252,11 @@ template = inline:
 rendered = $${basedirectory:promises}/backup-transfer-integrity-promise
 mode = 700
 
+[resilient-genstatrss-wrapper]
+recipe = slapos.cookbook:wrapper
+# XXX - hard-coded Urls
+command-line = ${buildout:directory}/bin/rdiffbackup.genstatrss --output '$${monitor-directory:public}/resilient-feed' --rdiff_backup_data_folder '$${pbs:rdiff-backup-data-folder}' --feed_url '$${monitor-conf-parameters:base-url}/public/resilient-feed'
+wrapper-path = $${directory:bin}/resilient-genstatrss.py
 
 #----------------
 #--
