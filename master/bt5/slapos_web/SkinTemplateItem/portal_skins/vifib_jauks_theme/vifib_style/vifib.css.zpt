@@ -337,4 +337,11 @@ button.hidden-button {
   display: none;
 }
 
+.listbox-parameters a {
+  word-wrap: break-word;
+  max-width: 400px;
+  display: inline-block;
+  word-break: keep-all;
+}
+
 </tal:block>
