@@ -130,17 +130,17 @@ return %s
     computer2 = self._makeComputer(self.generateNewId())
     computer2.edit(allocation_scope = 'open/personal')
     
-    self._simulateScript('Computer_hostingSubscriptionCreateUpgradeDecision')
+    self._simulateScript('Computer_createHostingSubscriptionUpgradeDecision')
     try:
       self.portal.portal_alarms.slapos_pdm_hosting_subscription_create_upgrade_decision.\
         activeSense()
       self.tic()
     finally:
-      self._dropScript('Computer_hostingSubscriptionCreateUpgradeDecision')
+      self._dropScript('Computer_createHostingSubscriptionUpgradeDecision')
 
-    self.assertEqual('Visited by Computer_hostingSubscriptionCreateUpgradeDecision',
+    self.assertEqual('Visited by Computer_createHostingSubscriptionUpgradeDecision',
       computer.workflow_history['edit_workflow'][-1]['comment'])
     
-    self.assertNotEqual('Visited by Computer_hostingSubscriptionCreateUpgradeDecision',
+    self.assertNotEqual('Visited by Computer_createHostingSubscriptionUpgradeDecision',
       computer2.workflow_history['edit_workflow'][-1]['comment'])
       

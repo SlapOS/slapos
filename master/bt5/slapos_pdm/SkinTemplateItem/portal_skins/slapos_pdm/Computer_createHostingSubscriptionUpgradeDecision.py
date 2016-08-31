@@ -1,3 +1,4 @@
+from DateTime import DateTime
 portal = context.getPortalObject()
 
 partition_list = portal.portal_catalog(portal_type='Computer Partition',
@@ -21,12 +22,11 @@ for partition in partition_list:
     hosting_subscription_list.append(hosting_subscription)
   else:
     continue
-  
   newer_release = hosting_subscription.\
                     HostingSubscription_getUpgradableSoftwareRelease()
   if newer_release is None:
     continue
-  
+
   decision_in_progress = newer_release.\
       SoftwareRelease_getUpgradeDecisionInProgress(hosting_subscription.getUid())
   
@@ -40,6 +40,7 @@ for partition in partition_list:
     title='A new upgrade is available for %s' % hosting_subscription.getTitle()
   )
   upgrade_decision.plan()
+  upgrade_decision.setStartDate(DateTime())
   upgrade_decision_list.append(upgrade_decision)
 
 return upgrade_decision_list

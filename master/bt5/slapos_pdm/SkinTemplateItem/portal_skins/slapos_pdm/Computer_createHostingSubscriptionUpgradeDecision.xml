@@ -54,7 +54,7 @@
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>Computer_hostingSubscriptionCreateUpgradeDecision</string> </value>
+            <value> <string>Computer_createHostingSubscriptionUpgradeDecision</string> </value>
         </item>
       </dictionary>
     </pickle>

@@ -10,7 +10,7 @@ if public_scope_uid and friend_scope_uid:
     portal_type='Computer',
     validation_state = 'validated',
     default_allocation_scope_uid=[public_scope_uid, friend_scope_uid],
-    method_id = 'Computer_hostingSubscriptionCreateUpgradeDecision',
+    method_id = 'Computer_createHostingSubscriptionUpgradeDecision',
     activate_kw = {'tag':tag}
   )
   
