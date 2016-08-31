@@ -76,7 +76,8 @@ context =
   key backend_url slaprunner:access-url
   key proxy_host slaprunner:ipv4
   section directory directory
-  raw  shell_binary ${dash:location}/bin/dash
+  raw  output_log_file $${directory:log}/resilient.log
+  raw  shell_binary ${bash:location}/bin/bash
   raw  rsync_binary ${rsync:location}/bin/rsync
   raw  restore_exit_code_file $${:restore-exit-code-file}
 
