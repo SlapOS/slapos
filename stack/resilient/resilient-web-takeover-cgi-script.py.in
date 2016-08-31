@@ -27,12 +27,18 @@ def getLatestBackupDate():
   # Usually, there is only one callback (so only one key
   # in the db), but if there are several:
   # Take the "oldest" one (oldest value).
-  last_backup = db[db.keys()[0]]
-  for callback in db.keys():
-    timestamp = float(db[callback])
-    if timestamp < last_backup:
-      last_backup = timestamp
-  return datetime.datetime.fromtimestamp(last_backup)
+  if not db.keys():
+    result = False
+  else:
+    last_backup = db[db.keys()[0]]
+    for callback in db.keys():
+      timestamp = float(db[callback])
+      if timestamp < last_backup:
+        last_backup = timestamp
+    result = datetime.datetime.fromtimestamp(last_backup)
+  db.close()
+  shutil.rmtree(temporary_directory)
+  return result
 
 def isBackupInProgress():
   """
@@ -41,6 +47,12 @@ def isBackupInProgress():
   """
   # XXX: check if file is valid
   return os.path.exists(equeue_lockfile)
+
+latest_backup_date = getLatestBackupDate()
+if latest_backup_date == False:
+  latest_backup_message = "No backup downloaded yet, takeover should not happen now."
+else:
+  latest_backup_message = latest_backup_date.strftime('%Y-%m-%d %H:%M:%S')
 
 print "Content-Type: text/html"
 print
@@ -51,16 +63,17 @@ if "password" not in form:
 <body>
   <h1>This is takeover web interface.</h1>
   <p>Calling takeover will stop and freeze the current main instance, and make this clone instance the new main instance, replacing the old one.</p>
-  <p><b>Warning: submit the form only if you understand what you are doing.</b></p>
+  <p><font size=\"+2\"><b>Warning: submit the form only if you understand what you are doing.</b></font></p>
   <p>Note: the password asked here can be found within the parameters of your SlapOS instance page.</p>
-  <p>Last valid backup: %s</p>
-  <p>Importer script(s) of backup in progress: %s</p>
+  <hr />
+  <p><b>Last valid backup:</b> %s</p>
+  <p><b>Importer script(s) of backup in progress:</b> %s</p>
   <form action="/">
     Password: <input type="text" name="password">
     <input type="submit" value="Take over" style="background: red;">
   </form>
 </body>
-</html>""" % (getLatestBackupDate().strftime('%Y-%m-%d %H:%M:%S'), isBackupInProgress())
+</html>""" % (latest_backup_message, isBackupInProgress())
   sys.exit(0)
 
 if form['password'].value != '${:password}':
