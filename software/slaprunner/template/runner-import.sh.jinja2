@@ -3,6 +3,13 @@ set -e
 LC_ALL=C
 export LC_ALL
 umask 077
+
+# Redirect output to log
+exec > >(tee -ai {{ output_log_file }})
+exec 2>&1
+
+echo -e "\n\nrunner-import run at : $(date)"
+
 srv_directory={{ directory['srv'] }}
 restore_element () {
   backup_path=$1
@@ -13,7 +20,9 @@ restore_element () {
   do
     cd $backup_path;
     if [ -f $element ] || [ -d $element ]; then
-       {{ rsync_binary }} -av --delete --exclude *.sock --exclude *.pid --exclude .installed.cfg --exclude .installed-switch-softwaretype.cfg $backup_path/$element $restore_path;
+       command="{{ rsync_binary }} --stats -av --delete --exclude *.sock --exclude *.pid --exclude .installed.cfg --exclude .installed-switch-softwaretype.cfg $backup_path/$element $restore_path"
+       echo "Running: \"$command\""
+       $command
     fi
   done
 }
@@ -62,7 +71,6 @@ $SQLITE3 $DATABASE "update software11 set url='$SOFTWARE_RELEASE' where url='$OL
 # Change slapproxy database to have all instances stopped
 $SQLITE3 $DATABASE "update partition11 set slap_state='stopped';"
 
-set -x
 # Run slapproxy on different port (in case of running inside of erp5testnode
 # with only one IP and port 50000 already taken by slapproxy of main instance)
 HOST="{{ proxy_host }}"
