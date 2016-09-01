@@ -27,7 +27,7 @@
 import unittest
 
 from Products.ERP5Type.tests.ERP5TypeFunctionalTestCase import ERP5TypeFunctionalTestCase
-# from Products.SlapOS.tests.testSlapOSMixin import testSlapOSMixin
+from Products.SlapOS.tests.testSlapOSMixin import testSlapOSMixin
 from SimpleHTTPServer import SimpleHTTPRequestHandler
 from threading import Thread
 from datetime import datetime
@@ -64,7 +64,7 @@ class CustomHTTPRequestHandler(SimpleHTTPRequestHandler):
   def do_HEAD(self):
     self.send_respond()
 
-class TestZeleniumCore(ERP5TypeFunctionalTestCase):
+class TestZeleniumCore(ERP5TypeFunctionalTestCase, testSlapOSMixin):
   foreground = 0
   run_only = "slapos_monitoring_ui_zuite"
   base_url = 'http://localhost:5378'
@@ -72,17 +72,6 @@ class TestZeleniumCore(ERP5TypeFunctionalTestCase):
   httpd = None
   httpd_is_alive = False
   root_title = "TEST Hosting Subscription"
-
-  def getBusinessTemplateList(self):
-    """
-    Install the business templates.
-    """
-    result = [
-      'slapos_monitoring',
-      'slapos_monitoring_ui_test',
-      'erp5_ui_test_core',
-    ]
-    return result
 
   def start_httpd_server(self, root_folder):
     self.httpd = SocketServer.TCPServer(('localhost', 5378), CustomHTTPRequestHandler)
@@ -96,7 +85,7 @@ class TestZeleniumCore(ERP5TypeFunctionalTestCase):
 
   def afterSetUp(self):
     ERP5TypeFunctionalTestCase.afterSetUp(self)
-    #testSlapOSMixin.afterSetUp(self)
+    testSlapOSMixin.afterSetUp(self)
 
     self.http_root_dir = tempfile.mkdtemp()
 
@@ -113,6 +102,7 @@ class TestZeleniumCore(ERP5TypeFunctionalTestCase):
     if os.path.exists(self.http_root_dir):
       shutil.rmtree(self.http_root_dir)
     ERP5TypeFunctionalTestCase.beforeTearDown(self)
+    testSlapOSMixin.beforeTearDown(self)
 
   def generateInstanceDirectory(self, name):
     root_dir = os.path.join(self.http_root_dir, name)
