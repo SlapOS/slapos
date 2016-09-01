@@ -10,6 +10,7 @@ parts =
   sshkeys-openssh
   backup-transfer-integrity-promise
   resilient-genstatrss-wrapper
+  pbs-push-history-log
 
 ## Monitor for pbs
   monitor-base
@@ -257,6 +258,10 @@ recipe = slapos.cookbook:wrapper
 # XXX - hard-coded Urls
 command-line = ${buildout:directory}/bin/rdiffbackup.genstatrss --output '$${monitor-directory:public}/resilient-feed' --rdiff_backup_data_folder '$${pbs:rdiff-backup-data-folder}' --feed_url '$${monitor-conf-parameters:base-url}/public/resilient-feed'
 wrapper-path = $${directory:bin}/resilient-genstatrss.py
+
+[pbs-push-history-log]
+recipe = cns.recipe.symlink
+symlink = $${pbs:rdiff-backup-data-folder}/restore.log = $${basedirectory:log}/pbs-push-history-log
 
 #----------------
 #--
