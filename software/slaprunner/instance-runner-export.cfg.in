@@ -16,6 +16,8 @@ parts +=
   runner-sshd-add-authorized-key
   runner-sshd-graceful
   runner-sshd-promise
+  runner-sshkeys-authority
+  runner-sshkeys-sshd
   runtestsuite
   symlinks
   shellinabox
@@ -29,7 +31,6 @@ parts +=
   supervisord-wrapper
   supervisord-promise
   httpd-graceful-wrapper
-  runner-sshd
 ## Monitoring part
 ## Monitor for runner
   monitor-base
