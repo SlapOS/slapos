@@ -11,10 +11,11 @@ parts +=
   gunicorn-graceful
   slaprunner-promise
   slaprunner-supervisord-wrapper
-  runner-sshd
   runner-sshd-add-authorized-key
   runner-sshd-graceful
   runner-sshd-promise
+  runner-sshkeys-authority
+  runner-sshkeys-sshd
   runtestsuite
   shellinabox
   symlinks
