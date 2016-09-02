@@ -2179,11 +2179,11 @@ class TestSlapOSComputer_notifyWrongAllocationScope(testSlapOSMixin):
   'return context.restrictedTraverse(' \
   'context.REQUEST["test_computerNotAllowedAllocationScope_OpenPublic"])')
   @simulate('SupportRequest_trySendNotificationMessage',
-            'message_title, message, source_relative_url',
+            'message_title, message, destination_relative_url',
   'context.portal_workflow.doActionFor(' \
   'context, action="edit_action", ' \
   'comment="Visited by SupportRequest_trySendNotificationMessage ' \
-  '%s %s %s" % (message_title, message, source_relative_url))\n' \
+  '%s %s %s" % (message_title, message, destination_relative_url))\n' \
   'return 1')
   def test_computerNotAllowedAllocationScope_OpenPublic(self):
     computer = self._makeComputer()
@@ -2215,11 +2215,11 @@ class TestSlapOSComputer_notifyWrongAllocationScope(testSlapOSMixin):
   'return context.restrictedTraverse(' \
   'context.REQUEST["test_computerNotAllowedAllocationScope_OpenFriend"])')
   @simulate('SupportRequest_trySendNotificationMessage',
-            'message_title, message, source_relative_url',
+            'message_title, message, destination_relative_url',
   'context.portal_workflow.doActionFor(' \
   'context, action="edit_action", ' \
   'comment="Visited by SupportRequest_trySendNotificationMessage ' \
-  '%s %s %s" % (message_title, message, source_relative_url))\n' \
+  '%s %s %s" % (message_title, message, destination_relative_url))\n' \
   'return 1')
   def test_computerNotAllowedAllocationScope_OpenFriend(self):
     computer = self._makeComputer()
@@ -2250,11 +2250,11 @@ class TestSlapOSComputer_notifyWrongAllocationScope(testSlapOSMixin):
   'return context.restrictedTraverse(' \
   'context.REQUEST["test_computerToCloseAllocationScope_OpenPersonal"])')
   @simulate('SupportRequest_trySendNotificationMessage',
-            'message_title, message, source_relative_url',
+            'message_title, message, destination_relative_url',
   'context.portal_workflow.doActionFor(' \
   'context, action="edit_action", ' \
   'comment="Visited by SupportRequest_trySendNotificationMessage ' \
-  '%s %s %s" % (message_title, message, source_relative_url))\n' \
+  '%s %s %s" % (message_title, message, destination_relative_url))\n' \
   'return 1')
   def test_computerToCloseAllocationScope_OpenPersonal(self):
     computer = self._makeComputer()
@@ -2826,11 +2826,11 @@ class TestSlapOSComputer_CheckState(testSlapOSMixin):
   'return context.restrictedTraverse(' \
   'context.REQUEST["test_Computer_checkState_notify"])')
   @simulate('SupportRequest_trySendNotificationMessage',
-            'message_title, message, source_relative_url',
+            'message_title, message, destination_relative_url',
   'context.portal_workflow.doActionFor(' \
   'context, action="edit_action", ' \
   'comment="Visited by SupportRequest_trySendNotificationMessage ' \
-  '%s %s %s" % (message_title, message, source_relative_url))')
+  '%s %s %s" % (message_title, message, destination_relative_url))')
   def test_Computer_checkState_notify(self):
     computer = self._makeComputer()
     person = computer.getSourceAdministrationValue()
@@ -2868,11 +2868,11 @@ class TestSlapOSComputer_CheckState(testSlapOSMixin):
   'return context.restrictedTraverse(' \
   'context.REQUEST["test_Computer_checkState_empty_cache_notify"])')
   @simulate('SupportRequest_trySendNotificationMessage',
-            'message_title, message, source_relative_url',
+            'message_title, message, destination_relative_url',
   'context.portal_workflow.doActionFor(' \
   'context, action="edit_action", ' \
   'comment="Visited by SupportRequest_trySendNotificationMessage ' \
-  '%s %s %s" % (message_title, message, source_relative_url))')
+  '%s %s %s" % (message_title, message, destination_relative_url))')
   def test_Computer_checkState_empty_cache_notify(self):
     computer = self._makeComputer()
     person = computer.getSourceAdministrationValue()
@@ -2937,11 +2937,11 @@ class TestSlapOSHostingSubscription_createSupportRequestEvent(testSlapOSMixin):
   'return context.restrictedTraverse(' \
   'context.REQUEST["testHostingSubscription_createSupportRequestEvent"])')
   @simulate('SupportRequest_trySendNotificationMessage',
-            'message_title, message, source_relative_url',
+            'message_title, message, destination_relative_url',
   'context.portal_workflow.doActionFor(' \
   'context, action="edit_action", ' \
   'comment="Visited by SupportRequest_trySendNotificationMessage ' \
-  '%s %s %s" % (message_title, message, source_relative_url))')
+  '%s %s %s" % (message_title, message, destination_relative_url))')
   def testHostingSubscription_createSupportRequestEvent(self):
     hosting_subscription = self._makeHostingSubscription()
     person =  hosting_subscription.getDestinationSectionValue()
@@ -3319,7 +3319,7 @@ class TestSupportRequestTrySendNotificationMessage(testSlapOSMixin):
     
     first_event = support_request.SupportRequest_trySendNotificationMessage(
       message_title=title, message=text_content,
-      source_relative_url=person.getRelativeUrl()
+      destination_relative_url=person.getRelativeUrl()
     )
     self.assertNotEqual(first_event, None)
     
@@ -3337,7 +3337,7 @@ class TestSupportRequestTrySendNotificationMessage(testSlapOSMixin):
 
     event = support_request.SupportRequest_trySendNotificationMessage(
       message_title=title, message=text_content,
-      source_relative_url=person.getRelativeUrl()
+      destination_relative_url=person.getRelativeUrl()
     )
     self.assertEqual(event, first_event)
 
@@ -3351,7 +3351,7 @@ class TestSupportRequestTrySendNotificationMessage(testSlapOSMixin):
     title += "__zz"
     event = support_request.SupportRequest_trySendNotificationMessage(
       message_title=title, message=text_content,
-      source_relative_url=person.getRelativeUrl(),
+      destination_relative_url=person.getRelativeUrl(),
     )
     
     self.assertEqual(event.getTitle(), title)
@@ -3371,7 +3371,7 @@ class TestSupportRequestTrySendNotificationMessage(testSlapOSMixin):
     another_first_event = \
       another_support_request.SupportRequest_trySendNotificationMessage(
         message_title=title, message=text_content,
-        source_relative_url=person.getRelativeUrl())
+        destination_relative_url=person.getRelativeUrl())
         
     self.assertNotEqual(another_first_event, None)
     
