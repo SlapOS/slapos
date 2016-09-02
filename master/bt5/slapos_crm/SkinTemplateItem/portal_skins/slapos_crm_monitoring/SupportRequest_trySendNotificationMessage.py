@@ -20,7 +20,8 @@ event.edit(
   text_content=message,
   start_date = DateTime(),
   resource = resource,
-  source=source_relative_url,
+  source=support_request.getSource(),
+  destination=destination_relative_url,
   follow_up=support_request.getRelativeUrl(),
 )
 event.stop()

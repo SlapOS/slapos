@@ -50,11 +50,11 @@
         </item>
         <item>
             <key> <string>_params</string> </key>
-            <value> <string>target_allocation_scope=\'open/personal\', notification_message_reference=\'slapos-crm-computer_allocation_scope.notification\', check_service_provider=True, force=False</string> </value>
+            <value> <string></string> </value>
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>Computer_checkAndUpdateAllocationScope</string> </value>
+            <value> <string>Computer_hasContactedRecently</string> </value>
         </item>
       </dictionary>
     </pickle>

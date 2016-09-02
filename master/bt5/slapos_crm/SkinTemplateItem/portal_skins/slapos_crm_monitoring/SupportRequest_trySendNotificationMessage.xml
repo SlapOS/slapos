@@ -50,7 +50,7 @@
         </item>
         <item>
             <key> <string>_params</string> </key>
-            <value> <string>message_title, message, source_relative_url</string> </value>
+            <value> <string>message_title, message, destination_relative_url</string> </value>
         </item>
         <item>
             <key> <string>id</string> </key>

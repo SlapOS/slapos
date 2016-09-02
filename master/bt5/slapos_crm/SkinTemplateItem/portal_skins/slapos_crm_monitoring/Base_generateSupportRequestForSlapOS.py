@@ -31,7 +31,10 @@ if support_request_in_progress is not None:
 support_request_in_progress = context.REQUEST.get("support_request_in_progress", None)
 
 if support_request_in_progress is not None:
-  return portal.restrictedTraverse(support_request_in_progress)
+  support_request = portal.restrictedTraverse(support_request_in_progress)
+  if support_request.getTitle() == title and \
+        support_request.getSourceProjectUid() == source_project_value.getUid():
+    return portal.restrictedTraverse(support_request_in_progress)
 
 resource = portal.service_module.\
                   slapos_crm_monitoring.getRelativeUrl()

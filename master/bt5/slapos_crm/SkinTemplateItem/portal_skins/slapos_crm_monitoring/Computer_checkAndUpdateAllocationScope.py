@@ -16,25 +16,29 @@ person = computer.getSourceAdministrationValue(portal_type="Person")
 if not person:
   return
 
-if not person.Person_isServiceProvider():
-  edit_kw = {
-    'allocation_scope': target_allocation_scope,
-  }
+if check_service_provider and person.Person_isServiceProvider():
+  return
 
-  # Create a ticket (or re-open it) for this issue!
-  request_title = 'We have changed allocation scope for %s' % computer_reference
-  request_description = 'Allocation scope has been changed to ' \
-                       '%s for %s' % (target_allocation_scope, computer_reference)
-            
-  support_request = context.Base_generateSupportRequestForSlapOS(
-                 request_title,
-                 request_description,
-                 computer.getRelativeUrl()
-               )
+edit_kw = {
+  'allocation_scope': target_allocation_scope,
+}
 
+# Create a ticket (or re-open it) for this issue!
+request_title = 'Allocation scope of %s changed to %s' % (computer_reference,
+                                               target_allocation_scope)
+request_description = 'Allocation scope has been changed to ' \
+                     '%s for %s' % (target_allocation_scope, computer_reference)
+
+support_request = context.Base_generateSupportRequestForSlapOS(
+               request_title,
+               request_description,
+               computer.getRelativeUrl()
+             )
+
+if support_request is not None:
   if support_request.getSimulationState() != "validated":
     support_request.validate()
-  
+
   # Send notification message
   message = request_description
   notification_message = portal.portal_notifications.getDocumentValue(
@@ -43,8 +47,9 @@ if not person.Person_isServiceProvider():
   if notification_message is not None:
     mapping_dict = {'computer_title':computer.getTitle(),
                     'computer_id':computer_reference,
+                    'computer_url':computer.getRelativeUrl(),
                     'allocation_scope':allocation_scope}
-
+  
     message = notification_message.asText(
               substitution_method_parameter_dict={'mapping_dict': mapping_dict})
 
@@ -52,6 +57,15 @@ if not person.Person_isServiceProvider():
            request_title, message, person.getRelativeUrl())
 
   if event is not None:
-    computer.edit(**edit_kw)
+    # event added, suspend ticket
+    if portal.portal_workflow.isTransitionPossible(support_request, 'suspend'):
+      support_request.suspend()
+  elif not force:
+    return support_request
 
+  computer.edit(**edit_kw)
   return support_request
+
+elif force:
+  # Update computer event if ticket is not created
+  computer.edit(**edit_kw)
