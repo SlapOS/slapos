@@ -73,7 +73,8 @@ class Notify(GenericBaseRecipe):
     self.options = options
 
   def createNotifier(self, notifier_binary, wrapper, executable,
-                     log, title, notification_url, feed_url, pidfile=None):
+                     log, title, notification_url, feed_url, pidfile=None,
+                     instance_root_name=None, log_url=None, status_item_directory=None):
 
     if not os.path.exists(log):
       # Just a touch
@@ -87,6 +88,13 @@ class Notify(GenericBaseRecipe):
             ]
     parameters.extend(notification_url.split(' '))
     parameters.extend(['--executable', executable])
+    # For a more verbose mode, writing feed items for any action
+    if instance_root_name and log_url and status_item_directory:
+      parameters.extend([
+        '--instance-root-name', instance_root_name,
+        '--log-url', log_url,
+        '--status-item-directory', status_item_directory,
+      ])
 
     return self.createWrapper(name=wrapper,
                               command=notifier_binary,
