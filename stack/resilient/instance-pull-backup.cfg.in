@@ -11,6 +11,7 @@ parts =
   backup-transfer-integrity-promise
   resilient-genstatrss-wrapper
   pbs-push-history-log
+  cron-pbs-status-feed
 
 ## Monitor for pbs
   monitor-base
@@ -59,6 +60,7 @@ pbs-wrappers = $${rootdirectory:bin}/pbs
 dot-ssh = $${basedirectory:ssh-home}/.ssh
 notifier-feeds = $${basedirectory:notifier}/feeds
 notifier-callbacks = $${basedirectory:notifier}/callbacks
+notifier-status-items = $${basedirectory:notifier}/status-items
 
 
 #----------------
@@ -128,7 +130,22 @@ run-directory = $${basedirectory:run}
 notifier-url = http://[$${notifier:host}]:$${notifier:port}
 slave-instance-list = $${slap-parameter:slave_instance_list}
 ignore-known-hosts-file = $${slap-parameter:ignore-known-hosts-file}
+# To get a verbose feed about PBS state
+instance-root-name = $${instance-info-parameters:root-name}
+log-url = $${publish:monitor-base-url}/private/notifier/
+status-item-directory = $${directory:notifier-status-items}
 
+[pbs-resilient-status-feed]
+recipe = slapos.cookbook:wrapper
+command-line = ${buildout:directory}/bin/generateFeed --output $${monitor-directory:private}/pbs-status.rss --status-item-path $${pbs:status-item-directory} --title "Status feed for $${instance-info-parameters:root-name}-PBS" --link $${pbs:log-url}
+wrapper-path = $${rootdirectory:bin}/resilient-genstatusrss.py
+
+[cron-pbs-status-feed]
+<= cron
+recipe = slapos.cookbook:cron.d
+name = resilient-pbs-status-feed
+frequency = 5 * * * *
+command = $${pbs-resilient-status-feed:wrapper-path}
 
 #----------------
 #--

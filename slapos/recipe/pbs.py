@@ -295,7 +295,10 @@ class Recipe(GenericSlapRecipe, Notify, Callback):
         title=entry.get('title', slave_id),
         notification_url=entry['notify'],
         feed_url='%s/get/%s' % (self.options['notifier-url'], entry['notification-id']),
-        pidfile=os.path.join(self.options['run-directory'], '%s.pid' % slave_id)
+        pidfile=os.path.join(self.options['run-directory'], '%s.pid' % slave_id),
+        instance_root_name=self.options.get('instance-root-name', None),
+        log_url=self.options.get('log-url', None),
+        status_item_directory=self.options.get('status-item-directory', None)
     )
     path_list.append(notifier_wrapper)
 
