@@ -1,4 +1,2 @@
 portal_tests/slapos_monitoring_ui_zuite
 portal_tests/slapos_monitoring_ui_zuite/**
-web_site_module/monitoring_rjs_unsafe
-web_site_module/monitoring_rjs_unsafe/**
