@@ -969,44 +969,58 @@ portal_workflow.doActionFor(context, action='edit_action', comment='Visited by C
 
   def test_alarm_allowed_allocation_scope_OpenPersonal_old_computer(self):
     self._makeComputer()
+    def getCreationDate(self):
+      return DateTime() - 31
     self.computer.edit(allocation_scope = 'open/personal')
-    def getModificationDate(self):
-      return DateTime() - 50
-    
+
     from Products.ERP5Type.Base import Base
-    
+
     self._simulateComputer_checkAndUpdatePersonalAllocationScope()
-    original_get_modification = Base.getModificationDate
-    Base.getModificationDate = getModificationDate
+    original_get_creation = Base.getCreationDate
+    Base.getCreationDate = getCreationDate
 
     try:
       self.portal.portal_alarms.slapos_crm_check_update_personal_allocation_scope.activeSense()
       self.tic()
     finally:
-      Base.getModificationDate = original_get_modification
+      Base.getCreationDate = original_get_creation
       self._dropComputer_checkAndUpdatePersonalAllocationScope()
 
     self.assertEqual('Visited by Computer_checkAndUpdatePersonalAllocationScope',
       self.computer.workflow_history['edit_workflow'][-1]['comment'])
 
-  def test_alarm_allowed_allocation_scope_OpenPersonalWithSoftwareInstallation(self):
+  def test_alarm_allowed_allocation_scope_OpenPersonal_recent_computer(self):
     self._makeComputer()
+    def getCreationDate(self):
+      return DateTime() - 28
     self.computer.edit(allocation_scope = 'open/personal')
-    self._makeSoftwareInstallation()
-    def getModificationDate(self):
-      return DateTime() - 50
-    
+
     from Products.ERP5Type.Base import Base
-    
+
     self._simulateComputer_checkAndUpdatePersonalAllocationScope()
-    original_get_modification = Base.getModificationDate
-    Base.getModificationDate = getModificationDate
+    original_get_creation = Base.getCreationDate
+    Base.getCreationDate = getCreationDate
 
     try:
       self.portal.portal_alarms.slapos_crm_check_update_personal_allocation_scope.activeSense()
       self.tic()
     finally:
-      Base.getModificationDate = original_get_modification
+      Base.getCreationDate = original_get_creation
+      self._dropComputer_checkAndUpdatePersonalAllocationScope()
+
+    self.assertNotEqual('Visited by Computer_checkAndUpdatePersonalAllocationScope',
+      self.computer.workflow_history['edit_workflow'][-1]['comment'])
+
+  def test_alarm_allowed_allocation_scope_OpenPersonal_already_closed(self):
+    self._makeComputer()
+    self.computer.edit(allocation_scope = 'open/oudated')
+
+    self._simulateComputer_checkAndUpdatePersonalAllocationScope()
+
+    try:
+      self.portal.portal_alarms.slapos_crm_check_update_personal_allocation_scope.activeSense()
+      self.tic()
+    finally:
       self._dropComputer_checkAndUpdatePersonalAllocationScope()
 
     self.assertNotEqual('Visited by Computer_checkAndUpdatePersonalAllocationScope',
@@ -1093,5 +1107,6 @@ portal_workflow.doActionFor(context, action='edit_action', comment='Visited by H
 
     self.assertNotEqual('Visited by HostingSubscription_checkSofwareInstanceState',
       host_sub.workflow_history['edit_workflow'][-1]['comment'])
-      
-      
+
+
+

@@ -1,6 +1,6 @@
+import json
 portal = context.getPortalObject()
 computer = context
-maximum_days = 31
 now_date = DateTime()
 
 if (now_date - computer.getCreationDate()) < maximum_days:

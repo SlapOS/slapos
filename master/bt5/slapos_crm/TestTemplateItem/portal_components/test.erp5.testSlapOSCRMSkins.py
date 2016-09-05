@@ -2199,11 +2199,12 @@ class TestSlapOSComputer_notifyWrongAllocationScope(testSlapOSMixin):
     self.assertEquals(computer.getAllocationScope(), 'open/personal')
     #ticket = self._getGeneratedSupportRequest(computer)
     self.assertNotEquals(None, ticket)
-    self.assertEquals(ticket.getSimulationState(), 'validated')
+    self.assertEquals(ticket.getSimulationState(), 'suspended')
 
     self.assertEqual('Visited by SupportRequest_trySendNotificationMessage ' \
       '%s %s %s' % \
-      ('We have changed allocation scope for %s' % computer.getReference(),
+      ('Allocation scope of %s changed to %s' % (computer.getReference(),
+                                                  'open/personal'),
        'Test NM content\n%s\n' % computer.getReference(), person.getRelativeUrl()),
       ticket.workflow_history['edit_workflow'][-1]['comment'])
     
@@ -2235,18 +2236,19 @@ class TestSlapOSComputer_notifyWrongAllocationScope(testSlapOSMixin):
     ticket = computer.Computer_checkAndUpdateAllocationScope()
     self.tic()
     self.assertEquals(computer.getAllocationScope(), 'open/personal')
-    self.assertEquals(ticket.getSimulationState(), 'validated')
+    self.assertEquals(ticket.getSimulationState(), 'suspended')
     self.assertEqual('Visited by SupportRequest_trySendNotificationMessage ' \
       '%s %s %s' % \
-      ('We have changed allocation scope for %s' % computer.getReference(),
+      ('Allocation scope of %s changed to %s' % (computer.getReference(),
+                                                  'open/personal'),
        'Test NM content\n%s\n' % computer.getReference(), person.getRelativeUrl()),
       ticket.workflow_history['edit_workflow'][-1]['comment'])
 
-
   @simulate('ERP5Site_isSupportRequestCreationClosed', '*args, **kwargs','return 0')
+  @simulate('Computer_hasContactedRecently', '*args, **kwargs','return False')
   @simulate('NotificationTool_getDocumentValue',
             'reference=None',
-  'assert reference == "slapos-crm-computer_personal_allocation_scope.notification"\n' \
+  'assert reference == "slapos-crm-computer-allocation-scope-closed.notification"\n' \
   'return context.restrictedTraverse(' \
   'context.REQUEST["test_computerToCloseAllocationScope_OpenPersonal"])')
   @simulate('SupportRequest_trySendNotificationMessage',
@@ -2259,6 +2261,7 @@ class TestSlapOSComputer_notifyWrongAllocationScope(testSlapOSMixin):
   def test_computerToCloseAllocationScope_OpenPersonal(self):
     computer = self._makeComputer()
     person = computer.getSourceAdministrationValue()
+    target_allocation_scope = 'close/outdated'
     
     self.portal.REQUEST['test_computerToCloseAllocationScope_OpenPersonal'] = \
         self._makeNotificationMessage(computer.getReference())
@@ -2267,11 +2270,12 @@ class TestSlapOSComputer_notifyWrongAllocationScope(testSlapOSMixin):
     support_request = computer.Computer_checkAndUpdatePersonalAllocationScope()
     self.tic()
     
-    self.assertEquals('validated', support_request.getSimulationState())
-    self.assertEquals(computer.getAllocationScope(), 'close/termination')
+    self.assertEquals('suspended', support_request.getSimulationState())
+    self.assertEquals(computer.getAllocationScope(), target_allocation_scope)
     self.assertEqual('Visited by SupportRequest_trySendNotificationMessage ' \
       '%s %s %s' % \
-      ('We have changed allocation scope for %s' % computer.getReference(),
+      ('Allocation scope of %s changed to %s' % (computer.getReference(),
+                                                  target_allocation_scope),
        'Test NM content\n%s\n' % computer.getReference(), person.getRelativeUrl()),
       support_request.workflow_history['edit_workflow'][-1]['comment'])
 
@@ -2309,6 +2313,107 @@ class TestSlapOSComputer_notifyWrongAllocationScope(testSlapOSMixin):
     self.tic()
     self.assertEquals(computer.getAllocationScope(), 'open/friend')
 
+
+class TestComputer_hasContactedRecently(testSlapOSMixin):
+  
+  def beforeTearDown(self):
+    transaction.abort()
+  
+  def afterSetUp(self):
+    super(TestComputer_hasContactedRecently, self).afterSetUp()
+
+  def _makeComputer(self):
+    super(TestComputer_hasContactedRecently, self)._makeComputer()
+    return self.computer
+
+  def createSPL(self, computer):
+    delivery_template = self.portal.restrictedTraverse(
+      self.portal.portal_preferences.getPreferredInstanceDeliveryTemplate())
+    delivery = delivery_template.Base_createCloneDocument(batch_mode=1)
+
+    delivery.edit(
+      title="TEST SPL COMP %s" % computer.getReference(),
+      start_date=computer.getCreationDate(),
+    )
+
+    delivery.newContent(
+      portal_type="Sale Packing List Line",
+      title="SPL Line for %s" % computer.getReference(),
+      quantity=1,
+      aggregate_value_list=computer,
+    )
+    delivery.confirm(comment="Created from %s" % computer.getRelativeUrl())
+    delivery.start()
+    delivery.stop()
+    delivery.deliver()
+    return delivery
+
+  def test_Computer_hasContactedRecently_newly_created(self):
+    computer = self._makeComputer()
+    self.tic()
+    has_contacted = computer.Computer_hasContactedRecently()
+    self.assertTrue(has_contacted)
+
+  @simulate('Computer_getCreationDate', '*args, **kwargs','return DateTime() - 32')
+  def test_Computer_hasContactedRecently_no_data(self):
+    computer = self._makeComputer()
+    self.tic()
+
+    computer.getCreationDate = self.portal.Computer_getCreationDate
+    has_contacted = computer.Computer_hasContactedRecently()
+    self.assertFalse(has_contacted)
+
+  @simulate('Computer_getCreationDate', '*args, **kwargs','return DateTime() - 32')
+  def test_Computer_hasContactedRecently_memcached(self):
+    computer = self._makeComputer()
+    memcached_dict = self.portal.portal_memcached.getMemcachedDict(
+        key_prefix='slap_tool',
+        plugin_path='portal_memcached/default_memcached_plugin')
+
+    memcached_dict[computer.getReference()] = json.dumps({
+      "created_at": DateTime().strftime("%Y/%m/%d %H:%M")
+    })
+    self.tic()
+
+    computer.getCreationDate = self.portal.Computer_getCreationDate
+
+    has_contacted = computer.Computer_hasContactedRecently()
+    self.assertTrue(has_contacted)
+
+  @simulate('Computer_getCreationDate', '*args, **kwargs','return DateTime() - 32')
+  def test_Computer_hasContactedRecently_memcached_oudated_no_spl(self):
+    computer = self._makeComputer()
+    memcached_dict = self.portal.portal_memcached.getMemcachedDict(
+        key_prefix='slap_tool',
+        plugin_path='portal_memcached/default_memcached_plugin')
+
+    memcached_dict[computer.getReference()] = json.dumps({
+      "created_at": (DateTime() - 32).strftime("%Y/%m/%d %H:%M")
+    })
+    self.tic()
+
+    computer.getCreationDate = self.portal.Computer_getCreationDate
+
+    has_contacted = computer.Computer_hasContactedRecently()
+    self.assertFalse(has_contacted)
+
+  @simulate('Computer_getCreationDate', '*args, **kwargs','return DateTime() - 32')
+  def test_Computer_hasContactedRecently_memcached_oudated_with_spl(self):
+    computer = self._makeComputer()
+    memcached_dict = self.portal.portal_memcached.getMemcachedDict(
+        key_prefix='slap_tool',
+        plugin_path='portal_memcached/default_memcached_plugin')
+
+    memcached_dict[computer.getReference()] = json.dumps({
+      "created_at": (DateTime() - 32).strftime("%Y/%m/%d %H:%M")
+    })
+    self.createSPL(computer)
+    self.tic()
+
+    computer.getCreationDate = self.portal.Computer_getCreationDate
+
+    has_contacted = computer.Computer_hasContactedRecently()
+    self.assertFalse(has_contacted)
 
 class TestSlapOSPerson_isServiceProvider(testSlapOSMixin):
   
@@ -2686,10 +2791,14 @@ class TestSlapOSGenerateSupportRequestForSlapOS(testSlapOSMixin):
     self.assertEqual(support_request, same_support_request)
     
   def test_Base_generateSupportRequestForSlapOS_inprogress(self):
-    in_progress = self.portal.support_request_module.getRelativeUrl()
+    self._makeComputer()
+    title = "Test Support Request %s" % self.computer.getRelativeUrl()
+    support_request = self.computer.Base_generateSupportRequestForSlapOS(
+      title, title, self.computer.getRelativeUrl())
+
+    in_progress = support_request.getRelativeUrl()
     self.portal.REQUEST.set("support_request_in_progress", in_progress)
 
-    self._makeComputer()
     title = "Test Support Request %s" % self.computer.getRelativeUrl()
     support_request = self.computer.Base_generateSupportRequestForSlapOS(
       title, title, self.computer.getRelativeUrl())
@@ -3332,7 +3441,7 @@ class TestSupportRequestTrySendNotificationMessage(testSlapOSMixin):
     self.assertNotEquals(None, first_event.getStartDate())
     self.assertEquals("service_module/slapos_crm_information", 
                       first_event.getResource())
-    self.assertEquals(first_event.getSource(), person.getRelativeUrl())
+    self.assertEquals(first_event.getDestination(), person.getRelativeUrl())
     self.assertEquals(first_event.getFollowUp(), support_request.getRelativeUrl())
 
     event = support_request.SupportRequest_trySendNotificationMessage(
@@ -3346,7 +3455,7 @@ class TestSupportRequestTrySendNotificationMessage(testSlapOSMixin):
     self.assertNotEquals(None, event.getStartDate())
     self.assertEquals("service_module/slapos_crm_information", 
                       event.getResource())
-    self.assertEquals(event.getSource(), person.getRelativeUrl())
+    self.assertEquals(event.getDestination(), person.getRelativeUrl())
     
     title += "__zz"
     event = support_request.SupportRequest_trySendNotificationMessage(
@@ -3359,7 +3468,7 @@ class TestSupportRequestTrySendNotificationMessage(testSlapOSMixin):
     self.assertNotEquals(None, event.getStartDate())
     self.assertEquals("service_module/slapos_crm_information", 
                       event.getResource())
-    self.assertEquals(event.getSource(), person.getRelativeUrl())
+    self.assertEquals(event.getDestination(), person.getRelativeUrl())
     
     another_support_request = self.portal.support_request_module.newContent(\
             title=title, description=title,
@@ -3384,7 +3493,7 @@ class TestSupportRequestTrySendNotificationMessage(testSlapOSMixin):
     self.assertNotEquals(None, another_first_event.getStartDate())
     self.assertEquals("service_module/slapos_crm_information", 
                       another_first_event.getResource())
-    self.assertEquals(another_first_event.getSource(), person.getRelativeUrl())
+    self.assertEquals(another_first_event.getDestination(), person.getRelativeUrl())
     self.assertEquals(another_first_event.getFollowUp(),
      another_support_request.getRelativeUrl())
 
