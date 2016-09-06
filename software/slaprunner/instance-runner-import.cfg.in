@@ -26,6 +26,8 @@ parts +=
   bash-profile
   supervisord-wrapper
   importer-consistency-promise
+
+  resilient-software-release-information
 # have to repeat the next one, as it's not inherited from pbsready-import
   import-on-notification
 
@@ -97,6 +99,12 @@ input = inline: #!/bin/sh
   exit $EXIT_CODE
 output = $${directory:promises}/importer-consistency-promise
 mode = 755
+
+[resilient-software-release-information]
+recipe = slapos.recipe.template
+url = ${template-resilient-software-release-information:destination}/${template-resilient-software-release-information:filename}
+output = $${directory:cgi-bin}/resilient_software_release_information.py
+mode = 0600
 
 [slap-parameter]
 auto-deploy-instance = false
