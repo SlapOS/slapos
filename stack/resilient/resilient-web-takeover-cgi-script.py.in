@@ -13,6 +13,12 @@ import shutil
 import subprocess
 import sys
 import tempfile
+
+if os.path.exists('resilient_software_release_information.py'):
+  from resilient_software_release_information import main as resilient_main
+else:
+  resilient_main = lambda: {}
+
 cgitb.enable()
 
 def getLatestBackupDate():
@@ -48,6 +54,19 @@ def isBackupInProgress():
   # XXX: check if file is valid
   return os.path.exists(equeue_lockfile)
 
+def getInformationFromSoftwareRelease():
+  result = resilient_main()
+  if isinstance(result, dict):
+    return result
+  else:
+    return {'Custom Information': 'Error, received information is malformed'}
+
+def getSoftwareReleaseInformationFormatted():
+  result_string = ""
+  for key, value in getInformationFromSoftwareRelease().items():
+    result_string += "<p><b>%s:</b> %s</p>" % (key, value)
+  return result_string
+
 latest_backup_date = getLatestBackupDate()
 if latest_backup_date == False:
   latest_backup_message = "No backup downloaded yet, takeover should not happen now."
@@ -68,12 +87,13 @@ if "password" not in form:
   <hr />
   <p><b>Last valid backup:</b> %s</p>
   <p><b>Importer script(s) of backup in progress:</b> %s</p>
+  %s
   <form action="/">
     Password: <input type="text" name="password">
     <input type="submit" value="Take over" style="background: red;">
   </form>
 </body>
-</html>""" % (latest_backup_message, isBackupInProgress())
+</html>""" % (latest_backup_message, isBackupInProgress(), getSoftwareReleaseInformationFormatted())
   sys.exit(0)
 
 if form['password'].value != '${:password}':
