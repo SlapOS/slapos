@@ -167,4 +167,4 @@ curl_path = ${curl:location}/bin/curl
 ###########
 [backup-signature-link]
 recipe = cns.recipe.symlink
-symlink = $${basedirectory:backup}/proof.signature = $${monitor-directory:private}/backup.signature
+symlink = $${basedirectory:backup}/proof.signature = $${directory:monitor-resilient}/backup.signature
