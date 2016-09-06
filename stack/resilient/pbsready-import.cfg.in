@@ -24,7 +24,9 @@ parts =
   resilient-web-takeover-httpd-wrapper
   resilient-web-takeover-httpd-promise
 
+  check-backup-integrity-on-notification
   import-on-notification
+  backup-transfer-integrity-promise
   resilient-publish-connection-parameter
 
 [resilient-publish-connection-parameter]
@@ -55,6 +57,31 @@ ip = $${notifier:host}
 recipe = slapos.cookbook:notifier.callback
 on-notification-id = $${slap-parameter:on-notification}
 callback = $${importer:wrapper}
+
+[post-notification-run]
+recipe = collective.recipe.template
+diff-file-name = $${basedirectory:backup}/backup.diff
+input = inline:
+  #!/${bash:location}/bin/bash
+  cd $${directory:backup}
+  find -type f ! -name backup.signature ! -wholename "./rdiff-backup-data/*" -print0 | xargs -P4 -0 sha256sum  | LC_ALL=C sort -k 66 > ../proof.signature
+  diff -ruw backup.signature $${basedirectory:backup}/proof.signature > $${:diff-file-name}
+output = $${rootdirectory:bin}/post-notification-run
+mode = 0700
+
+[check-backup-integrity-on-notification]
+<= notifier
+recipe = slapos.cookbook:notifier.callback
+on-notification-id = $${slap-parameter:on-notification}
+callback = $${post-notification-run:output}
+
+[backup-transfer-integrity-promise]
+recipe = slapos.recipe.template:jinja2
+template = inline:
+  #!/${bash:location}/bin/bash
+  if [ "$(wc -l $${post-notification-run:diff-file-name} | cut -d \  -f1)" -eq 0 ]; then exit 0; else exit 1; fi
+rendered = $${basedirectory:promises}/backup-transfer-integrity-promise
+mode = 700
 
 ###########
 # Generate the takeover script
