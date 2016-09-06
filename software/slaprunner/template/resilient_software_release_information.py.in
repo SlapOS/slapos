@@ -1,0 +1,5 @@
+# Provides information related to the Webrunner Software Release to the
+# takeover interface of the Resilient stack
+
+def main():
+  return {}
