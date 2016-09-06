@@ -11,6 +11,7 @@ parts =
   backup-transfer-integrity-promise
   resilient-genstatrss-wrapper
   pbs-push-history-log
+  backup-signature-link
   cron-pbs-status-feed
 
 ## Monitor for pbs
@@ -279,6 +280,10 @@ wrapper-path = $${directory:bin}/resilient-genstatrss.py
 [pbs-push-history-log]
 recipe = cns.recipe.symlink
 symlink = $${pbs:rdiff-backup-data-folder}/restore.log = $${basedirectory:log}/pbs-push-history-log
+
+[backup-signature-link]
+recipe = cns.recipe.symlink
+symlink = $${directory:pbs-backup}/proof.signature = $${monitor-directory:private}/backup.signature
 
 #----------------
 #--
