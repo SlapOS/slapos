@@ -87,6 +87,7 @@ if "password" not in form:
   <hr />
   <p><b>Last valid backup:</b> %s</p>
   <p><b>Importer script(s) of backup in progress:</b> %s</p>
+  <p><b>Backup Signature:</b> <a href='${resilient-web-takeover-cgi-script:proof-signature-url}'>${resilient-web-takeover-cgi-script:proof-signature-url}</a></b></p>
   %s
   <form action="/">
     Password: <input type="text" name="password">
