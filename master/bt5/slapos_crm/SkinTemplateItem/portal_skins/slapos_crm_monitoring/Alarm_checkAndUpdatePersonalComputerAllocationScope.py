@@ -1,6 +1,6 @@
 from DateTime import DateTime
-from Products.ERP5Type.DateUtils import addToDate
-from Products.ZSQLCatalog.SQLCatalog import Query
+# from Products.ERP5Type.DateUtils import addToDate
+# from Products.ZSQLCatalog.SQLCatalog import Query
 
 portal = context.getPortalObject()
 
@@ -10,7 +10,8 @@ if category_personal is not None:
   portal.portal_catalog.searchAndActivate(
     portal_type='Computer',
     validation_state='validated',
-    creation_date=Query(range="max", creation_date=addToDate(DateTime(), {'day': -30})),
+    # XXX - creation_date is not indexed for computer
+    # creation_date=Query(range="max", creation_date=addToDate(DateTime(), {'day': -30})),
     default_allocation_scope_uid=category_personal.getUid(),
     method_id='Computer_checkAndUpdatePersonalAllocationScope',
     activate_kw={'tag': tag})
