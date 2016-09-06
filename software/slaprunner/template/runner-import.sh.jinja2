@@ -27,15 +27,6 @@ restore_element () {
   done
 }
 
-write_backup_proof () {
-  cd {{ directory['backup'] }}
-  find -type f ! -name backup.signature ! -wholename "./rdiff-backup-data/*" -print0 | xargs -P4 -0 sha256sum  | LC_ALL=C sort -k 66 > $srv_directory/proof.signature
-  diff -ruw {{ directory['backup'] }} $srv_directory/proof.signature > $srv_directory/backup.diff || true # diff exits with code 1 when files are different
-}
-
-# For now we just make the diff before
-write_backup_proof
-
 restore_element {{ directory['backup'] }}/runner/ $srv_directory/runner  instance project  proxy.db
 restore_element  {{ directory['backup'] }}/etc/ {{ directory['etc'] }} config.json ssh
 cp -r {{ directory['backup'] }}/etc/.??* {{ directory['etc'] }};
