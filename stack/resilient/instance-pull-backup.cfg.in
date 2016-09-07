@@ -13,6 +13,7 @@ parts =
   pbs-push-history-log
   backup-signature-link
   cron-pbs-status-feed
+  pull-push-stalled-promise
 
 ## Monitor for pbs
   monitor-base
@@ -139,7 +140,8 @@ status-item-directory = $${directory:notifier-status-items}
 
 [pbs-resilient-status-feed]
 recipe = slapos.cookbook:wrapper
-command-line = ${buildout:directory}/bin/generateFeed --output $${directory:monitor-resilient}/pbs-status-rss --status-item-path $${pbs:status-item-directory} --title "Status feed for $${instance-info-parameters:root-name}-PBS" --link $${pbs:log-url}
+command-line = ${buildout:directory}/bin/generateFeed --output $${:feed-path} --status-item-path $${pbs:status-item-directory} --title "Status feed for $${instance-info-parameters:root-name}-PBS" --link $${pbs:log-url}
+feed-path = $${directory:monitor-resilient}/pbs-status-rss
 wrapper-path = $${rootdirectory:bin}/resilient-genstatusrss.py
 
 [cron-pbs-status-feed]
@@ -285,6 +287,12 @@ symlink = $${pbs:rdiff-backup-data-folder}/restore.log = $${basedirectory:log}/p
 [backup-signature-link]
 recipe = cns.recipe.symlink
 symlink = $${directory:pbs-backup}/proof.signature = $${directory:monitor-resilient}/backup.signature
+
+[pull-push-stalled-promise]
+recipe = slapos.cookbook:wrapper
+# time-buffer is 18h : cron for backup is run once a day - 6h of random sleep
+command-line = ${buildout:bin-directory}/check-feed-as-promise --feed-path $${pbs-resilient-status-feed:feed-path} --title --ok-pattern 'OK' --time-buffer 64800
+wrapper-path = $${basedirectory:promises}/stalled-pull-push
 
 #----------------
 #--
