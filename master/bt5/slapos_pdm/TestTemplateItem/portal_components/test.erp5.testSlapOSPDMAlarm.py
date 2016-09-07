@@ -10,7 +10,7 @@ class TestSlapOSUpgradeDecisionProcess(testSlapOSMixin):
     self.new_id = self.generateNewId()
 
   def generateNewId(self):
-     return "%sTEST" % self.portal.portal_ids.generateNewId(
+    return "%sTEST" % self.portal.portal_ids.generateNewId(
          id_group=('slapos_core_test'))
 
   def _makeUpgradeDecision(self, confirm=True):
@@ -109,6 +109,8 @@ return %s
     computer.edit(allocation_scope = 'open/public')
     computer2 = self._makeComputer(self.generateNewId())
     computer2.edit(allocation_scope = 'open/personal')
+    computer3 = self._makeComputer(self.generateNewId())
+    computer3.edit(allocation_scope = 'open/friend')
     
     self._simulateScript('Computer_checkAndCreateUpgradeDecision')
     try:
@@ -121,14 +123,19 @@ return %s
     self.assertEqual('Visited by Computer_checkAndCreateUpgradeDecision',
       computer.workflow_history['edit_workflow'][-1]['comment'])
     
-    self.assertNotEqual('Visited by Computer_checkAndCreateUpgradeDecision',
+    self.assertEqual('Visited by Computer_checkAndCreateUpgradeDecision',
       computer2.workflow_history['edit_workflow'][-1]['comment'])
+
+    self.assertEqual('Visited by Computer_checkAndCreateUpgradeDecision',
+      computer3.workflow_history['edit_workflow'][-1]['comment'])
   
   def test_alarm_hosting_subscription_create_upgrade_decision(self):
     computer = self._makeComputer(self.new_id)
     computer.edit(allocation_scope = 'open/public')
     computer2 = self._makeComputer(self.generateNewId())
     computer2.edit(allocation_scope = 'open/personal')
+    computer3 = self._makeComputer(self.generateNewId())
+    computer3.edit(allocation_scope = 'open/friend')
     
     self._simulateScript('Computer_createHostingSubscriptionUpgradeDecision')
     try:
@@ -141,6 +148,29 @@ return %s
     self.assertEqual('Visited by Computer_createHostingSubscriptionUpgradeDecision',
       computer.workflow_history['edit_workflow'][-1]['comment'])
     
-    self.assertNotEqual('Visited by Computer_createHostingSubscriptionUpgradeDecision',
+    self.assertEqual('Visited by Computer_createHostingSubscriptionUpgradeDecision',
       computer2.workflow_history['edit_workflow'][-1]['comment'])
-      
+
+    self.assertEqual('Visited by Computer_createHostingSubscriptionUpgradeDecision',
+      computer3.workflow_history['edit_workflow'][-1]['comment'])
+
+
+  def test_alarm_create_upgrade_decision_closed_computer(self):
+    computer = self._makeComputer(self.new_id)
+    computer.edit(allocation_scope = 'close/oudtated')
+    computer2 = self._makeComputer(self.generateNewId())
+    computer2.edit(allocation_scope = 'close/maintenance')
+    
+    self._simulateScript('Computer_checkAndCreateUpgradeDecision')
+    try:
+      self.portal.portal_alarms.slapos_pdm_computer_create_upgrade_decision.\
+        activeSense()
+      self.tic()
+    finally:
+      self._dropScript('Computer_checkAndCreateUpgradeDecision')
+
+    self.assertNotEqual('Visited by Computer_checkAndCreateUpgradeDecision',
+      computer.workflow_history['edit_workflow'][-1]['comment'])
+    
+    self.assertNotEqual('Visited by Computer_checkAndCreateUpgradeDecision',
+      computer2.workflow_history['edit_workflow'][-1]['comment'])
