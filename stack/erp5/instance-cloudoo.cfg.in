@@ -14,9 +14,9 @@ parts +=
 [publish]
 recipe = slapos.cookbook:publish.serialised
 {% if use_ipv6 -%}
-url = cloudooo://[${ipv6toipv4:ipv6}]:${ipv6toipv4:ipv6-port}/
+url = http://[${ipv6toipv4:ipv6}]:${ipv6toipv4:ipv6-port}/
 {% else -%}
-url = cloudooo://${cloudooo-instance:ip}:${cloudooo-instance:port}/
+url = http://${cloudooo-instance:ip}:${cloudooo-instance:port}/
 {% endif -%}
 
 [cloudooo-instance]
