@@ -1,0 +1,11 @@
+--- src/ui/dialog/layer-properties.cpp	2014-12-21 21:58:32 +0000
++++ src/ui/dialog/layer-properties.cpp	2016-07-18 17:19:25 +0000
+@@ -146,7 +146,7 @@
+     destroy_();
+     Glib::signal_idle().connect(
+         sigc::bind_return(
+-            sigc::bind(sigc::ptr_fun(&::operator delete), this),
++            sigc::bind(sigc::ptr_fun<void*, void>(&::operator delete), this),
+             false 
+         )
+     );

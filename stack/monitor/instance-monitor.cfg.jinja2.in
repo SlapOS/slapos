@@ -135,7 +135,7 @@ monitor-hal-json = ${monitor-directory:public}/monitor.hal.json
 service-pid-folder = ${monitor-directory:pids}
 crond-folder = ${logrotate-directory:cron-entries}
 logrotate-folder = ${logrotate:logrotate-entries}
-promise-runner = {{ promise_executor_py }}
+promise-runner = {{ monitor_runpromise }}
 promise-folder-list = 
   ${directory:promises}
   ${directory:monitor-promise}
@@ -158,6 +158,8 @@ parameter-list =
 collector-db = ${monitor-instance-parameter:collector-db}
 collect-script = {{ monitor_collect }}
 python = {{ python_with_eggs }}
+
+promise-output-file = ${directory:monitor}/monitor-bootstrap-status
 
 [monitor-conf]
 recipe = slapos.recipe.template:jinja2
@@ -272,7 +274,7 @@ command = kill -USR1 $(cat ${monitor-httpd-conf-parameter:pid-file})
 [monitor-status2rss-wrapper]
 recipe = slapos.cookbook:wrapper
 # XXX - hard-coded Urls
-command-line = {{ python_with_eggs }} {{ status2rss_executable_path }} --output '${monitor-directory:public}/feed' --items_folder '${monitor-directory:public}'  --feed_url '${monitor-conf-parameters:base-url}/public/feed' --public_url '${monitor-conf-parameters:base-url}/share/jio_public/' --private_url '${monitor-conf-parameters:base-url}/share/jio_private/' --instance_name '${monitor-conf-parameters:title}' --hosting_name '${monitor-conf-parameters:root-title}'
+command-line = {{ monitor_genrss }} --output '${monitor-directory:public}/feed' --items_folder '${monitor-directory:public}'  --feed_url '${monitor-conf-parameters:base-url}/public/feed' --public_url '${monitor-conf-parameters:base-url}/share/jio_public/' --private_url '${monitor-conf-parameters:base-url}/share/jio_private/' --instance_name '${monitor-conf-parameters:title}' --hosting_name '${monitor-conf-parameters:root-title}'
 
 wrapper-path = ${directory:bin}/monitor-status2rss.py
 
@@ -285,13 +287,13 @@ command = ${monitor-status2rss-wrapper:wrapper-path}
 
 [monitor-globalstate-wrapper]
 recipe = slapos.cookbook:wrapper
-command-line = {{ python_with_eggs }} {{ monitor_globalstate }} '${monitor-conf:rendered}' '${monitor-instance-info:rendered}'
+command-line = {{ monitor_genstatus }} '${monitor-conf:rendered}' '${monitor-instance-info:rendered}'
 wrapper-path = ${directory:bin}/monitor-globalstate
 
 [monitor-configurator-wrapper]
 recipe = slapos.cookbook:wrapper
 # XXX - hard coded path
-command-line = {{ python_with_eggs }} {{ monitor_document_edit }} --config_folder '${monitor-conf-parameters:private-folder}/config/.jio_documents' --output_cfg_file '${monitor-instance-parameter:configuration-file-path}' --htpasswd_bin '{{ apache_location }}/bin/htpasswd'
+command-line = {{ monitor_configwrite }} --config_folder '${monitor-conf-parameters:private-folder}/config/.jio_documents' --output_cfg_file '${monitor-instance-parameter:configuration-file-path}' --htpasswd_bin '{{ apache_location }}/bin/htpasswd'
 wrapper-path = ${directory:bin}/monitor-configurator
 
 [monitor-globalstate-cron-entry]
@@ -330,7 +332,7 @@ monitor-httpd-ipv6 = ${slap-configuration:ipv6-random}
 monitor-httpd-port = 8196
 # XXX - Set monitor-base-url = ${monitor-httpd-conf-parameter:url} => https://[ipv6]:port
 monitor-base-url = ${monitor-frontend-promise:url}
-# monitor-base-url = ${monitor-httpd-conf-parameter:url}
+#monitor-base-url = ${monitor-httpd-conf-parameter:url}
 root-instance-title = ${slap-configuration:root-instance-title}
 monitor-url-list =
 cors-domains = monitor.app.officejs.com 
@@ -367,6 +369,17 @@ dash_path = {{ dash_executable_location }}
 curl_path = {{ curl_executable_location }}
 check-secure = 1
 
+[monitor-bootstrap-promise]
+recipe = slapos.recipe.template:jinja2
+template = {{ template_wrapper }}
+rendered = ${directory:promises}/monitor-bootstrap-status
+file = ${monitor-conf-parameters:promise-output-file}
+command = if [ ! -f "${:file}" ]; then echo "Monitor bootstrap exited with error." && exit 2; else echo "Bootstrap OK"; fi
+mode = 0700
+context =
+    key content :command
+    raw dash_binary {{ dash_executable_location }}
+
 [monitor-base]
 # create dependencies between required monitor parts
 recipe = plone.recipe.command
@@ -383,6 +396,7 @@ depends =
   ${ca-httpd:wrapper}
   ${monitor-httpd-promise:filename}
   ${monitor-status2rss-cron-entry:name}
+  ${monitor-bootstrap-promise:file}
 
 [monitor-publish]
 monitor-base-url = ${publish:monitor-base-url}

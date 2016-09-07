@@ -14,6 +14,7 @@ mysql-base-directory = {{ mariadb_location }}
 [my-cnf-parameters]
 socket = ${directory:var_run}/mariadb.sock
 data-directory = ${mysqld:data-directory}
+tmp-directory = ${directory:tmp}
 pid-file = ${directory:var_run}/mariadb.pid
 error-log = ${directory:log}/mariadb_error.log
 slow-query-log = ${directory:log}/mariadb_slowquery.log
