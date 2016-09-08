@@ -1,4 +1,5 @@
 Computer Model | view_capacity
+Computer Network | view_computer_list
 Computer Network | view_software_release
 Computer Partition | unfiltered_tracking_list
 Computer | computer_usage
@@ -6,12 +7,15 @@ Computer | view_capacity
 Hosting Subscription Module | view
 Hosting Subscription | view
 Person | jump_to_hosting_subscription
+Slave Instance | jump_to_hosting_subscription
 Slave Instance | jump_to_software_instance
 Slave Instance | unfiltered_tracking_list
 Slave Instance | view
 Software Installation Module | view
 Software Installation | view
 Software Instance Module | view
+Software Instance | jump_to_computer_partition
+Software Instance | jump_to_hosting_subscription
 Software Instance | jump_to_software_instance
 Software Instance | unfiltered_tracking_list
 Software Instance | view
