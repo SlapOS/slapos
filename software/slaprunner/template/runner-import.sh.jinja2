@@ -28,7 +28,7 @@ restore_element () {
 }
 
 restore_element {{ directory['backup'] }}/runner/ $srv_directory/runner  instance project  proxy.db
-restore_element  {{ directory['backup'] }}/etc/ {{ directory['etc'] }} config.json ssh
+restore_element  {{ directory['backup'] }}/etc/ {{ directory['etc'] }} config.json
 cp -r {{ directory['backup'] }}/etc/.??* {{ directory['etc'] }};
 
 

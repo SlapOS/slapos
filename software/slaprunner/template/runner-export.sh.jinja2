@@ -54,7 +54,7 @@ sync_element $srv_directory/runner {{ directory['backup'] }}/runner/ instance pr
 # We sync .* appart
 date +%s -u > {{ directory['etc'] }}/.resilient-timestamp
 cp -r {{ directory['etc'] }}/.??* {{ directory['backup'] }}/etc/
-sync_element {{ directory['etc'] }}  {{ directory['backup'] }}/etc/ config.json ssh
+sync_element {{ directory['etc'] }}  {{ directory['backup'] }}/etc/ config.json
 if [ -d {{ directory['backup'] }}/runner/software ]; then
   rm {{ directory['backup'] }}/runner/software/*
 fi
