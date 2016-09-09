@@ -85,18 +85,24 @@ context =
   raw  restore_exit_code_file $${:restore-exit-code-file}
 
 [importer-consistency-promise]
-# Test that the importer script and "after-import" subscripts:
-# 1/ Have been run in the last 24 hours
-# 2/ Have succeeded
+# Test that the importer script and "after-import" subscripts
+# are not older than 1 day (24h), and have succeeded
 recipe = collective.recipe.template
 input = inline: #!/bin/sh
-  EXIT_CODE_FILE=$(find "$${importer:restore-exit-code-file}" -mtime -1)
+  EXIT_CODE_FILE=$(find "$${importer:restore-exit-code-file}")
+  RECENT_EXIT_CODE_FILE=$(find "$${importer:restore-exit-code-file}" -mtime -1)
   if [ -z "$EXIT_CODE_FILE" ]; then
-     echo "Consistency check is too old."
-     exit 1
-   fi
-  EXIT_CODE=$(cat $EXIT_CODE_FILE)
-  exit $EXIT_CODE
+    exit 0;
+  else
+    if [ -z "$RECENT_EXIT_CODE_FILE" ]; then
+       echo "Consistency check is too old.";
+       exit 1;
+    else
+      EXIT_CODE=$(cat $EXIT_CODE_FILE)
+      exit $EXIT_CODE
+    fi
+  fi
+  exit 1; # Something else went wrong
 output = $${directory:promises}/importer-consistency-promise
 mode = 755
 
