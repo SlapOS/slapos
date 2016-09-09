@@ -94,6 +94,7 @@
                         <string>my_update_credential_button</string>
                         <string>my_computer_token_generate_button</string>
                         <string>my_credential_token_generate_button</string>
+                        <string>my_monitoring_access_parameter_button</string>
                         <string>your_ad</string>
                       </list>
                     </value>
