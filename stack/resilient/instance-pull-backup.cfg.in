@@ -268,9 +268,17 @@ monitor-username = $${htpasswd:username}
 [backup-transfer-integrity-promise]
 recipe = slapos.recipe.template:jinja2
 template = inline:
- #!${dash:location}/bin/dash
- cd $${directory:pbs-backup}
- diff proof.signature $(find . -name backup.signature -maxdepth 2)
+  #!${dash:location}/bin/dash
+  # Raise an error if signatures are different
+  # Error cannot be deduced if files do not exist
+  cd $${directory:pbs-backup}
+  if [ ! -f "proof.signature" ]; then exit 0; fi
+  backup_signature=$(find . -maxdepth 2 -name backup.signature)
+  if [ -z "$backup_signature" ]; then
+    exit 0;
+  else
+    diff "proof.signature" "$backup_signature";
+  fi
 rendered = $${basedirectory:promises}/backup-transfer-integrity-promise
 mode = 700
 

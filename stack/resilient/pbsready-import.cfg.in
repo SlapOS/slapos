@@ -82,7 +82,17 @@ callback = $${post-notification-run:output}
 recipe = slapos.recipe.template:jinja2
 template = inline:
   #!/${bash:location}/bin/bash
-  if [ "$(wc -l $${post-notification-run:diff-file} | cut -d \  -f1)" -eq 0 ]; then exit 0; else exit 1; fi
+  backup_diff_file=$${post-notification-run:diff-file}
+  if [ -f "$backup_diff_file" ]; then
+    if [ $(wc -l "$backup_diff_file" | cut -d \  -f1) -eq 0 ]; then
+      exit 0;
+    else
+      exit 1;
+    fi
+  else
+    # If file doesn't exist, promise should raise false positive
+    exit 0;
+  fi
 rendered = $${basedirectory:promises}/backup-transfer-integrity-promise
 mode = 700
 
