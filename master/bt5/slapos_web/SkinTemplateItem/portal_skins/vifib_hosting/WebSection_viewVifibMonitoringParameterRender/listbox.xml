@@ -11,6 +11,7 @@
             <value>
               <list>
                 <string>columns</string>
+                <string>css_class</string>
                 <string>lines</string>
                 <string>list_method</string>
                 <string>portal_types</string>
@@ -114,6 +115,10 @@
                         </tuple>
                       </list>
                     </value>
+                </item>
+                <item>
+                    <key> <string>css_class</string> </key>
+                    <value> <string>nolabel listbox-parameters</string> </value>
                 </item>
                 <item>
                     <key> <string>field_id</string> </key>
