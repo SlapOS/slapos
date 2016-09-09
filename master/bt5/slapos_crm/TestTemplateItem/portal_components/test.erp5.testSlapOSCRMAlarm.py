@@ -1063,8 +1063,8 @@ class TestSlapOSCrmMonitoringCheckInstanceInError(testSlapOSMixin):
     hosting_subscription.requestStart(**kw)
     hosting_subscription.requestInstance(**kw)
 
-  def _simulateHostingSubscription_checkSofwareInstanceState(self):
-    script_name = 'HostingSubscription_checkSofwareInstanceState'
+  def _simulateHostingSubscription_checkSoftwareInstanceState(self):
+    script_name = 'HostingSubscription_checkSoftwareInstanceState'
     if script_name in self.portal.portal_skins.custom.objectIds():
       raise ValueError('Precondition failed: %s exists in custom' % script_name)
     createZODBPythonScript(self.portal.portal_skins.custom,
@@ -1072,11 +1072,11 @@ class TestSlapOSCrmMonitoringCheckInstanceInError(testSlapOSMixin):
       '*args, **kw',
       '# Script body\n'
 """portal_workflow = context.portal_workflow
-portal_workflow.doActionFor(context, action='edit_action', comment='Visited by HostingSubscription_checkSofwareInstanceState') """ )
+portal_workflow.doActionFor(context, action='edit_action', comment='Visited by HostingSubscription_checkSoftwareInstanceState') """ )
     transaction.commit()
   
-  def _dropHostingSubscription_checkSofwareInstanceState(self):
-    script_name = 'HostingSubscription_checkSofwareInstanceState'
+  def _dropHostingSubscription_checkSoftwareInstanceState(self):
+    script_name = 'HostingSubscription_checkSoftwareInstanceState'
     if script_name in self.portal.portal_skins.custom.objectIds():
       self.portal.portal_skins.custom.manage_delObjects(script_name)
     transaction.commit()
@@ -1084,30 +1084,30 @@ portal_workflow.doActionFor(context, action='edit_action', comment='Visited by H
   def test_alarm_check_instance_in_error_validated_hosting_subscription(self):
     host_sub = self._makeHostingSubscription()
 
-    self._simulateHostingSubscription_checkSofwareInstanceState()
+    self._simulateHostingSubscription_checkSoftwareInstanceState()
 
     try:
       self.portal.portal_alarms.slapos_crm_check_instance_in_error.activeSense()
       self.tic()
     finally:
-      self._dropHostingSubscription_checkSofwareInstanceState()
+      self._dropHostingSubscription_checkSoftwareInstanceState()
 
-    self.assertEqual('Visited by HostingSubscription_checkSofwareInstanceState',
+    self.assertEqual('Visited by HostingSubscription_checkSoftwareInstanceState',
       host_sub.workflow_history['edit_workflow'][-1]['comment'])
 
   def test_alarm_check_instance_in_error_archived_hosting_subscription(self):
     host_sub = self._makeHostingSubscription()
     host_sub.archive()
     
-    self._simulateHostingSubscription_checkSofwareInstanceState()
+    self._simulateHostingSubscription_checkSoftwareInstanceState()
 
     try:
       self.portal.portal_alarms.slapos_crm_check_instance_in_error.activeSense()
       self.tic()
     finally:
-      self._dropHostingSubscription_checkSofwareInstanceState()
+      self._dropHostingSubscription_checkSoftwareInstanceState()
 
-    self.assertNotEqual('Visited by HostingSubscription_checkSofwareInstanceState',
+    self.assertNotEqual('Visited by HostingSubscription_checkSoftwareInstanceState',
       host_sub.workflow_history['edit_workflow'][-1]['comment'])
 
 
