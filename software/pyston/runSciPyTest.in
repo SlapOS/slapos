@@ -1,0 +1,4 @@
+#!${bash:location}/bin/bash
+pwd
+ls
+$${buildout:directory}/parts/pyston/build/pyston $${buildout:directory}/pyston/test/integration/scipy_test.py
