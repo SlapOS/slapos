@@ -53,8 +53,9 @@ sync_element () {
 sync_element $srv_directory/runner {{ directory['backup'] }}/runner/ instance project proxy.db
 # We sync .* appart
 date +%s -u > {{ directory['etc'] }}/.resilient-timestamp
-cp -r {{ directory['etc'] }}/.??* {{ directory['backup'] }}/etc/
 sync_element {{ directory['etc'] }}  {{ directory['backup'] }}/etc/ config.json
+# Hidden files are related to the webrunner's internals
+cp -r {{ directory['etc'] }}/.??* {{ directory['backup'] }}/etc/
 if [ -d {{ directory['backup'] }}/runner/software ]; then
   rm {{ directory['backup'] }}/runner/software/*
 fi
