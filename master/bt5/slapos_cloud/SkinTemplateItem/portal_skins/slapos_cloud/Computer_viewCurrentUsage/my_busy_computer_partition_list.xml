@@ -650,6 +650,10 @@
                           <string>ComputerPartition_getInstanceUrlString</string>
                         </tuple>
                         <tuple>
+                          <string>hosting_subscription_title</string>
+                          <string>ComputerPartition_getHostingSubscriptionUrlString</string>
+                        </tuple>
+                        <tuple>
                           <string>creation_date</string>
                           <string>ComputerPartition_getInstanceUrlString</string>
                         </tuple>
