@@ -31,19 +31,32 @@ def main():
   parser.add_argument('--node_quantity', help='ignored', type=int)
   parser.add_argument('--master_url',
                       help='The Url of Master controling many suites')
+  parser.add_argument('--frontend_url',
+                      help='The url of frontend of the test suite')
   parser.add_argument('--target',
                       help='Target OS to run tests on',
-                      type=str,
-                      default='firefox')
+                      type=str)
   parser.add_argument('--ios_version',
                       help='iOS version to use. Only works is target is "ios"',
-                      type=str,
-                      default='9.2')
-  parser.add_argument('--appium_server_url',
-                      help='URL of the Appium server to use. Compatible with Suace Labs',
+                      type=str,)
+  parser.add_argument('--appium_server_auth',
+                      help='Combination of user and token to access SauceLabs service. (i.e. user:token)',
                       type=str)
 
   args = parser.parse_args()
+  
+  import json
+  parsed_parameters = json.loads('$${instance-parameters:configuration._}')
+  
+  
+  if not getattr(args, 'target', None):
+    args.target = parsed_parameters['target']
+  if not getattr(args, 'test_suite', None):
+    args.test_suite = parsed_parameters['test-suite']
+  if not getattr(args, 'ios_version', None):
+    args.ios_version = parsed_parameters['ios-version']
+  if not getattr(args, 'appium_server_auth', None):
+    args.appium_server_auth = parsed_parameters['appium-server-auth']
 
   try:
     test_suite_title = args.test_suite_title or args.test_suite
@@ -73,11 +86,14 @@ def main():
         'browserName': 'Safari'
 
       }
-      if not args.appium_server_url:
-        raise RuntimeError('appium_server_url is not defined.') 
-      browser = webdriver.Remote(args.appium_server_url, capabilities)
+      if not args.appium_server_auth:
+        raise RuntimeError('--appium_server_auth is required.') 
+      appium_url = "http://%s@ondemand.saucelabs.com/wd/hub" % (args.appium_server_auth)
+      browser = webdriver.Remote(appium_url, capabilities)
     else:
       raise RuntimeError('Unknown target')
+
+    url = "%s%s" % (args.frontend_url, parsed_parameters['test-url'])
 
     agent = browser.execute_script("return navigator.userAgent")
     print agent
@@ -124,7 +140,7 @@ def main():
                                         node_title = args.test_node_title,
                                         test_title = test_suite_title,
                                         project_title = args.project_title)
-    if test_result is None:
+    if test_result is None or not hasattr(args, 'master_url'):
       return
     # report test results
     while 1:
