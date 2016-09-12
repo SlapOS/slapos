@@ -22,7 +22,9 @@ preference_method_list = [
   "getPreferredVifibFacebookApplicationSecret",
   "getPreferredVifibGoogleApplicationId",
   "getPreferredVifibGoogleApplicationSecret",
-  "getPreferredVifibRestApiLoginCheck"
+  "getPreferredVifibRestApiLoginCheck",
+  "getPreferredPayzenPaymentServiceReference",
+  "getPreferredPayzenIntegrationSite"
   ]
 
 
