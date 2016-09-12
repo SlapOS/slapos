@@ -27,6 +27,7 @@
 
 import json
 import os
+import pwd
 
 import slapos.slap
 from slapos.recipe.librecipe import unwrap
@@ -105,6 +106,8 @@ class Recipe(object):
       anyway, and are available through "configuration" output key.
     instance-state
       The instance state.
+    slapuser
+      The username associated to the slappart.
   """
 
   # XXX: used to detect if a configuration key is a valid section key. This
@@ -122,6 +125,8 @@ class Recipe(object):
           options['configuration.' + key] = value
 
   def fetch_parameter_dict(self, options, instance_root):
+      options['slapuser'] = str(pwd.getpwuid(os.getuid()).pw_name)
+
       slap = slapos.slap.slap()
       slap.initializeConnection(
           options['url'],
