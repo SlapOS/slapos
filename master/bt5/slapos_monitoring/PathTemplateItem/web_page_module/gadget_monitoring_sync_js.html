@@ -10,6 +10,7 @@
     .ready(function (g) {
       g.props =  {};
       g.props.jio_storage_dict = {};
+      g.props.storage_signature_dict = {};
       return g.getDeclaredGadget('jio_gadget')
         .push(function (jio_gadget) {
           g.props.jio_gadget = jio_gadget;
@@ -68,18 +69,41 @@
         return error_message;
       }
 
-      function getJioGadget(gadget, hash) {
+      function getJioGadget(gadget, storage_dict, query) {
+        var hash,
+          url;
+        if (storage_dict.sub_storage.hasOwnProperty('sub_storage')) {
+          url = storage_dict.sub_storage.sub_storage.url;
+        } else {
+          url = storage_dict.sub_storage.url;
+        }
+        hash = rusha.digestFromString(url);
+
         return new RSVP.Queue()
           .push(function () {
+            var storage_signature = rusha.digestFromString(
+                JSON.stringify(storage_dict)
+              );
+
             if (gadget.props.jio_storage_dict.hasOwnProperty(hash)) {
+              if (!gadget.props.storage_signature_dict.hasOwnProperty(hash)) {
+                gadget.props.storage_signature_dict[hash] = '';
+              }
+              if (gadget.props.storage_signature_dict[hash] !== storage_signature) {
+                // recreate jio_gadget as storage config changed
+                gadget.props.storage_signature_dict[hash] = storage_signature;
+                jio_declared_gadget.createJio(storage_dict, true, query);
+              }
               return gadget.props.jio_storage_dict[hash];
             } else {
               return gadget.declareGadget("gadget_monitoring_jio.html",
                 {
-                  scope: hash
+                  scope: 'jio_' + hash
                 }
               )
               .push(function (jio_declared_gadget) {
+                gadget.props.storage_signature_dict[hash] = storage_signature;
+                jio_declared_gadget.createJio(storage_dict, true, query);
                 gadget.props.jio_storage_dict[hash] = jio_declared_gadget;
                 return jio_declared_gadget;
               });
@@ -88,37 +112,30 @@
       }
 
       function syncStorage(gadget, storage_dict, query) {
-        var hash;
-        //gadget.props.jio_gadget.createJio(storage_dict, true, query);
-        hash = rusha.digestFromString(storage_dict.title.replace(/\s*/g, "") +
-          '_' + storage_dict.sub_storage.type);
         
-        return getJioGadget(gadget, hash)
+        return getJioGadget(gadget, storage_dict, query)
           .push(function (jio_declared_gadget) {
-            jio_declared_gadget.createJio(storage_dict, true, query);
+            //jio_declared_gadget.createJio(storage_dict, true, query);
             return jio_declared_gadget.repair();
           })
           .push(undefined, function (error) {
+            console.log(error);
             gadget.props.error_list.push({
               storage_dict: storage_dict,
               query: query
             });
-            console.log(error);
           });
       }
 
       function updateStatus(gadget, storage_dict, status) {
         var promise_list = [],
           jio_gadget,
-          hash,
+          url,
           i;
-        hash = rusha.digestFromString(storage_dict.title.replace(/\s*/g, "") +
-          '_' + storage_dict.sub_storage.type);
-        
-        return getJioGadget(gadget, hash)
+
+        return getJioGadget(gadget, storage_dict)
           .push(function (jio_declared_gadget) {
             jio_gadget = jio_declared_gadget;
-            jio_gadget.createJio(storage_dict);
             return jio_gadget.allDocs({include_docs: true});
           })
           .push(undefined, function (error) {

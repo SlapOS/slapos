@@ -107,7 +107,7 @@
             <value> <string encoding="cdata"><![CDATA[
 
 CACHE MANIFEST\n
-# generated on Fri, 22 July 2016 11:47:33 +0000\n
+# generated on Fri, 12 sept 2016 11:47:33 +0000\n
 # XXX + fonts\n
 # images/ajax-loader.gif\n
 CACHE:\n
@@ -343,7 +343,7 @@ NETWORK:\n
             </item>
             <item>
                 <key> <string>serial</string> </key>
-                <value> <string>952.47296.53851.40738</string> </value>
+                <value> <string>952.47297.6275.10444</string> </value>
             </item>
             <item>
                 <key> <string>state</string> </key>
@@ -361,7 +361,7 @@ NETWORK:\n
                     </tuple>
                     <state>
                       <tuple>
-                        <float>1469182145.68</float>
+                        <float>1473673613.98</float>
                         <string>UTC</string>
                       </tuple>
                     </state>

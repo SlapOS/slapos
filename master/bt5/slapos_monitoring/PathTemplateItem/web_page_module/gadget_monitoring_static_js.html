@@ -361,7 +361,6 @@
         var timer;
           if ($(element).prop('checked')) {
             timer = parseInt($(element).val(), 10);
-            console.log(timer);
             if (timer && !isNaN(timer)) {
               return new RSVP.Queue()
                 .push(function () {
