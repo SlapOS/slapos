@@ -261,9 +261,6 @@ input = inline:#!${bash:location}/bin/bash
 output = $${basedirectory:promises}/public-key-existence
 mode = 700
 
-[environment]
-recipe = collective.recipe.environment
-
 #----------------
 #--
 #-- Connection informations to re-use.
@@ -271,5 +268,5 @@ recipe = collective.recipe.environment
 [resilient-publish-connection-parameter]
 recipe = slapos.cookbook:publish
 ssh-public-key = $${sshkeys-sshd:public-key-value}
-ssh-url = ssh://$${environment:USER}@[$${sshd-raw-server:host}]:$${sshd-port:port}/$${rdiff-backup-server:path}
+ssh-url = ssh://$${slap-configuration:slapuser}@[$${sshd-raw-server:host}]:$${sshd-port:port}/$${rdiff-backup-server:path}
 ip = $${slap-network-information:global-ipv6}
