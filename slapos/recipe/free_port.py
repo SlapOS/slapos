@@ -53,8 +53,12 @@ class Recipe(object):
         with open(buildout['buildout']['installed']) as config_file:
           parser.readfp(config_file)
         port = parser.get(name, 'port')
-        self.options['port'] = port
-        return
+        # Port can be 0 in case of upgrade: some old service still runs on port,
+        # so 0 is returned by default. Then, on next run, this recipe is processed
+        # again until a correct value is returned
+        if port != '0':
+          self.options['port'] = port
+          return
     except (IOError, ConfigParser.NoSectionError, ConfigParser.NoOptionError):
       pass
 
