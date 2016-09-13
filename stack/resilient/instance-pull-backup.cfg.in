@@ -222,7 +222,7 @@ keygen-binary = ${openssh:location}/bin/ssh-keygen
 [sshkeys-openssh]
 <= sshkeys-authority
 recipe = slapos.cookbook:sshkeys_authority.request
-name = pbs
+name = pbs-client
 type = rsa
 executable = $${openssh-client:wrapper-path}
 public-key = $${openssh-client:identity-file}.pub

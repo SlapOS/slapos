@@ -243,7 +243,7 @@ keygen-binary = ${openssh:location}/bin/ssh-keygen
 [sshkeys-sshd]
 <= sshkeys-authority
 recipe = slapos.cookbook:sshkeys_authority.request
-name = dropbear
+name = sshd
 type = rsa
 executable = $${sshd-server:output}
 public-key = $${sshd-raw-server:rsa-keyfile}.pub
