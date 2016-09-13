@@ -254,6 +254,10 @@ class Recipe(GenericSlapRecipe, Notify, Callback):
     # Create known_hosts file by default.
     # In some case, we don't want to create it (case where we share IP mong partitions)
     if not self.isTrueValue(self.options.get('ignore-known-hosts-file')):
+      # Migration code: if known_hosts file contains entry with just IP, then it
+      # is updated to use [IP]:port. It allows to share same IP among partitions
+      if parsed_url.hostname in known_hosts_file:
+        del known_hosts_file[parsed_url.hostname]
       known_hostname = "[%s]:%s" % (parsed_url.hostname, parsed_url.port)
       known_hosts_file[known_hostname] = entry['server-key'].strip()
 
