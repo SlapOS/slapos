@@ -7,7 +7,6 @@ parts =
   cron
   cron-entry-logrotate
   sshkeys-authority
-  dropbear-server
   sshd-graceful
   sshkeys-sshd
   sshd-promise
