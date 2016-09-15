@@ -230,7 +230,11 @@ class Recipe(GenericSlapRecipe, Notify, Callback):
 
     url = entry.get('url')
     if not url:
-      raise ValueError('Missing URL parameter for PBS recipe')
+      return path_list
+      # It used to raise an error if url was not defined.
+      # This behavior has been removed to accelerate deployment of the
+      # Software Release. The buildout, instead of failing, can process
+      # other sections, which will return parameters to the main instance faster
     parsed_url = urlparse.urlparse(url)
 
     slave_type = entry['type']
