@@ -61,6 +61,18 @@ language_list = ['ar', 'da', 'de', 'de-ch', 'en-gb', 'en-us', 'es', 'et', 'fi',
     'lv', 'mk', 'nl', 'nl-be', 'no', 'pl', 'pt', 'pt-br', 'ru', 'sl', 'sv',
     'th', 'tr']
 url_check_certificate = '{{ parameter_dict.get("hard-drive-url-check-certificate", "true") }}'.lower()
+auto_ballooning = '{{ parameter_dict.get("auto-ballooning") }}' in ('true', 'True', '1')
+vm_name = '{{ parameter_dict.get("name") }}'
+disk_cache = '{{ parameter_dict.get("disk-cache") }}'.strip()
+disk_cache = disk_cache if disk_cache in ["none", "writeback", "unsafe", 
+              "directsync", "writethrough"] else "writeback"
+disk_aio = '{{ parameter_dict.get("disk-aio") }}'.strip()
+disk_aio = disk_aio if disk_aio in ["threads", "native"] and \
+              disk_cache == "directsync" else "threads"
+machine_options = '{{ parameter_dict.get("machine-options", "") }}'.strip()
+cpu_model = '{{ parameter_dict.get("cpu-model", "") }}'.strip()
+
+logfile = '{{ parameter_dict.get("log-file") }}'
 
 if hasattr(ssl, '_create_unverified_context') and url_check_certificate == 'false':
   opener = urllib.FancyURLopener(context=ssl._create_unverified_context())
@@ -250,13 +262,14 @@ if smp_options:
     if key in ('cores', 'threads', 'sockets', 'maxcpus') and val.isdigit():
       smp += ',%s=%s' % (key, val)
 kvm_argument_list = [qemu_path,
-  '-enable-kvm', '-smp', smp,
+  '-enable-kvm', '-smp', smp, '-name', vm_name,
   '-m', ram_size, '-vga', 'std',
-  '-drive', 'file=%s,if=%s' % (disk_path, disk_type),
+  '-drive', 'file=%s,if=%s,cache=%s,aio=%s' % (disk_path, disk_type, disk_cache, disk_aio),
   '-vnc', '%s:1,ipv4,password' % listen_ip,
   '-boot', 'order=cd,menu=on',
   '-qmp', 'unix:%s,server' % socket_path,
-  '-pidfile', pid_file_path,
+  '-pidfile', pid_file_path, '-msg', 'timestamp=on',
+  '-D', logfile,
 ]
 
 rgx = re.compile('^[\w*\,][\=\d+\-\,\w]*$')
@@ -275,6 +288,31 @@ if language in language_list:
 for disk in additional_disk_list:
   kvm_argument_list.extend([
             '-drive', 'file=%s,if=%s' % (disk, disk_type)])
+
+if auto_ballooning:
+  kvm_argument_list.extend(['-device', 'virtio-balloon-pci,id=balloon0'])
+
+machine_option_list = machine_options.split(',')
+if machine_options and len(machine_option_list) > 0:
+  name = 'type'
+  if '=' in machine_option_list[0]:
+    name, val = machine_option_list[0].split('=')
+  else:
+    val = machine_option_list[0]
+  machine_option_list[0] = 'type=%s' % val
+  if name == 'type':
+    machine = ''
+    for option in machine_option_list:
+      key, val = option.split('=')
+      machine += ',%s=%s' % (key, val)
+
+    kvm_argument_list.extend(['-machine', machine])
+
+if cpu_model:
+  rgx = re.compile('^[\w*\,-_][\=\d+\-\,\w]*$')
+  if rgx.match(cpu_model):
+    kvm_argument_list.extend(['-cpu', cpu_model])
+
 # Try to connect to NBD server (and second nbd if defined).
 # If not available, don't even specify it in qemu command line parameters.
 # Reason: if qemu starts with unavailable NBD drive, it will just crash.

@@ -142,6 +142,15 @@ cluster-doc-port = 0
 netcat-binary = {{ netcat_bin }}
 language = ${slap-parameter:keyboard-layout-language}
 
+name = {{ slapparameter_dict.get('name', 'Single KVM') }}
+disk-cache = ${slap-parameter:disk-cache}
+disk-aio = ${slap-parameter:disk-aio}
+auto-ballooning = ${slap-parameter:auto-ballooning}
+machine-options = ${slap-parameter:machine-options}
+cpu-options = ${slap-parameter:cpu-model}
+
+log-file = ${directory:log}/qemu.log
+
 [kvm-run]
 recipe = slapos.recipe.template:jinja2
 template = {{ template_kvm_run }}
@@ -428,8 +437,10 @@ mode = {{ mode }}
 # write vm-data into file public/data
 {{ writefile('vm-data-content', '${directory:public}/data', slapparameter_dict.get('data-to-vm', ''), '700') }}
 
+{% if slapparameter_dict.get('authorized-key', '') -%}
 # write public key for vms to public/authorized_keys
-{{ writefile('get-authorized-key', '${directory:public}/authorized_keys', slapparameter_dict.get('authorized-key', ''), '700') }}
+{{   writefile('get-authorized-key', '${directory:public}/authorized_keys', slapparameter_dict.get('authorized-key', ''), '700') }}
+{% endif -%}
 
 {% if use_tap == 'true' and nat_restrict == 'true' -%}
 # Ask to set default to tap interface in the vm
@@ -546,6 +557,11 @@ cpu-count = 1
 cpu-options = 
 # list of numa options separate by space: node,nodeid=1,cpus=9-15 node,nodeid=2,cpus=1,3,7
 numa = 
+disk-cache = writeback
+disk-aio = native
+auto-ballooning = True
+machine-options = 
+cpu-model = 
 
 nat-rules = 22 80 443
 use-nat = True
