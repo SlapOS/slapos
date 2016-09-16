@@ -263,9 +263,13 @@ mode = 700
 #----------------
 #--
 #-- Connection informations to re-use.
+
+[user-info]
+recipe = slapos.cookbook:userinfo
+
 # XXX-Cedric: when "aggregation" system is done in libslap, directly publish.
 [resilient-publish-connection-parameter]
 recipe = slapos.cookbook:publish
 ssh-public-key = $${sshkeys-sshd:public-key-value}
-ssh-url = ssh://$${slap-configuration:slapuser}@[$${sshd-raw-server:host}]:$${sshd-port:port}/$${rdiff-backup-server:path}
+ssh-url = ssh://$${user-info:pw-name}@[$${sshd-raw-server:host}]:$${sshd-port:port}/$${rdiff-backup-server:path}
 ip = $${slap-network-information:global-ipv6}
