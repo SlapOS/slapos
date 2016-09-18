@@ -40,10 +40,12 @@ from slapos.recipe.librecipe import shlex
 
 
 def promise(args):
-  ssh = subprocess.Popen(
-      [args['ssh_client'], '%(user)s@%(host)s' % args, '-p', '%(port)s' % args],
-      stdin=subprocess.PIPE, stdout=None, stderr=None
-  )
+  # Redirect output to /dev/null
+  with open("/dev/null") as _dev_null:
+    ssh = subprocess.Popen(
+        [args['ssh_client'], '%(user)s@%(host)s' % args, '-p', '%(port)s' % args],
+        stdin=subprocess.PIPE, stdout=_dev_null, stderr=_dev_null
+    )
 
   # Rdiff Backup protocol quit command
   quitcommand = 'q' + chr(255) + chr(0) * 7
