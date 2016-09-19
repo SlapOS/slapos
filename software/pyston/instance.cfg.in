@@ -1,0 +1,21 @@
+[buildout]
+parts =
+  runTestSuite-instance
+
+eggs-directory = ${buildout:eggs-directory}
+develop-eggs-directory = ${buildout:develop-eggs-directory}
+offline = true
+
+[directory]
+recipe = slapos.cookbook:mkdirectory
+bin = $${buildout:directory}/bin
+etc = $${buildout:directory}/etc
+services = $${:etc}/run
+srv = $${buildout:directory}/srv
+source-code = $${:srv}/eggs-source-code
+
+[runTestSuite-instance]
+recipe = slapos.recipe.template
+url = ${template-runTestSuite:output}
+output = $${directory:bin}/runTestSuite
+mode = 0700

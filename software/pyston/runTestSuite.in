@@ -1,0 +1,191 @@
+#!${buildout:directory}/bin/${eggs:interpreter}
+# BEWARE: This file is operated by slapgrid
+# BEWARE: It will be overwritten automatically
+"""
+  Script to run Pyston test suite using Nexedi's test node framework.
+"""
+import argparse, os, re, shutil, subprocess, sys, traceback
+from subprocess import PIPE
+from erp5.util import taskdistribution
+from time import gmtime, strftime
+
+
+def get_result(file):
+    with open(file, 'r') as f:
+        return f.read()
+
+
+def get_test_range(test_output):
+    output_lines = test_output.split('\n')
+    total_line_no = len(output_lines)
+    num_of_tests = 0
+    test_positions = []
+    for line_no, line in enumerate(output_lines):
+        if line.startswith('python'):
+            test_positions.append(line_no)
+    return test_positions, total_line_no
+
+
+def summarize_tests(test_result_list):
+    passed, expected_fail = 0, 0
+    for line in test_result_list:
+        words = line.split()
+        # maybe we need a robust way to handle it.
+        if len(words) < 2:
+            continue
+        if words[1] == 'Correct':
+            passed += 1
+        elif words[1] == 'Expected':
+            expected_fail += 1
+        elif words[1] == 'Failed':
+            raise Exception("Error occured, stop test suite")
+        else:
+            # some useful information
+            print(words)
+    return passed, expected_fail
+
+
+def get_test_name(command):
+  # Because Pyston gcc build didn't provide the test group name
+  # And Pyston test suite not like tradional test. It compare the
+  # output with CPython's. So name the test group by the purpose of it.
+  
+  # If add new group of test. We need change add new elif statement.
+  if '-a=-O' in command:
+    return 'pyston_llvm_tier_test'
+  elif '-a=-n' in command:
+    return 'pyston_test_without_interpreter'
+  elif 'cpython' in command:
+    return 'pyston_cpython_test'
+  elif 'integration' in command:
+    return 'pyston_integration_test'
+  else:
+    return 'pyston_normal_test'
+  test_names = {'-a=-O -a=-S -k' : 'pyston_llvm_tier_test',
+                '-a=-S -k --exit-code-only' : 'pyston_cpython_test',
+                '-a=-S -k' : 'pyston_normal_test',
+                '-a=-n -a=-S -t50' : 'pyston_test_without_interpreter',
+                '-a=-S --exit-code-only' : 'pyston_integration_test'}
+  
+def main():
+  parser = argparse.ArgumentParser(description='Run a test suite.')
+  parser.add_argument('--test_suite', help='The test suite name')
+  parser.add_argument('--test_suite_title', help='The test suite title')
+  parser.add_argument('--test_node_title', help='The test node title')
+  parser.add_argument('--project_title', help='The project title')
+  parser.add_argument('--revision', help='The revision to test',
+                      default='dummy_revision')
+  parser.add_argument('--node_quantity', help='ignored', type=int)
+  parser.add_argument('--master_url',
+                      help='The Url of Master controling many suites')
+
+  args = parser.parse_args()
+
+  pyston_env = os.environ.copy()
+  
+  xstr = lambda s: s or ""
+  pyston_env["PATH"] = '${ninja:path}:${autoconf:location}/bin:${automake:location}/bin:${libtool:location}/bin:' + pyston_env["PATH"]
+  pyston_env["LD_LIBRARY_PATH"] = '${ncurses:location}/lib:${libffi:location}/lib:${gcc-4.9:location}/lib64' + xstr(os.environ.get('LD_LIBRARY_PATH'))
+  pyston_env["LIBRARY_PATH"] = '${bzip2:location}/lib:${gmp:location}/lib:${libffi:location}/lib:${mpfr:location}/lib:' + xstr(os.environ.get('LIBRARY_PATH'))
+  pyston_env["LIBRARY_PATH"] = '${ncurses:location}/lib:${openssl:location}/lib:${readline:location}/lib:${sqlite3:location}/lib:${zlib:location}/lib:' + pyston_env["LIBRARY_PATH"]
+  pyston_env['CPATH'] = '${gcc-4.9:location}/include:${bzip2:location}/include:${gmp:location}/include:' + xstr(os.environ.get('CPATH'))
+  pyston_env['CPATH'] = '${libffi:location}/include:${mpfr:location}/include:${ncurses:location}/include:' + pyston_env['CPATH']
+  pyston_env['CPATH'] = '${openssl:location}/include:${readline:location}/include:${sqlite3:location}/include:' + pyston_env['CPATH']
+  pyston_env['CPATH'] = '${zlib:location}/include:${gcc-4.9:location}/include:${bzip2:location}/include:' + pyston_env['CPATH']
+
+  try:
+    test_suite_title = args.test_suite_title or args.test_suite
+    test_suite = args.test_suite
+    revision = args.revision
+
+    test_line_dict = {}
+
+    ##########################
+    # Run all tests
+    ##########################
+    test_command = ['make', 'check_release_gcc']
+    
+    pyston_test = subprocess.Popen(test_command, env=pyston_env, cwd='${pyston-build:path}', stdin=PIPE, stdout=PIPE)
+    # test_result is the whole output when run `make check_release_gcc`
+    test_result, err = pyston_test.communicate()
+    # rc = pyston_test.returncode
+
+    test_range, total_line_no = get_test_range(test_result)
+    # the test_range is an integers list: [21, xxx, xxx, xxx]
+    # the integers are the test title line number
+    # it means from line 22 to line xxx are each test result.
+    # Each line is something like this: 
+    # many_attrs.py    Correct output ( 87.2ms)
+    print(test_range)
+    
+    # the number of tests is:
+    # total lines number - test output header - test title
+    num_of_tests = total_line_no - test_range[0] - len(test_range)
+    print("Number of tests")
+    print(num_of_tests)
+    # the last line number of test is total_line_no - 1
+    test_range.append(total_line_no - 1)
+    # get the test output line by line
+    tests_list = test_result.split('\n')
+    
+    total_passed, total_expected = 0, 0
+    i = 0
+    len_of_range = len(test_range) - 1
+
+    while i < len_of_range:
+        passed, expected = summarize_tests(tests_list[test_range[i] + 1 : test_range[i + 1]])
+        total_passed += passed
+        total_expected += expected
+        test_name = get_test_name(tests_list[test_range[i]])
+        print("Test name:" + test_name)
+        print("Passed: " + str(passed))
+        print("Expected fail: " + str(expected))
+        i += 1
+        test_line_dict[test_name] = {
+          'test_count': passed + expected,
+          'error_count': 0,
+          'failure_count': 0,
+          'skip_count': expected,
+          'duration': 0,
+          'command': '',
+          'stdout': '',
+          'stderr': '',
+          'html_test_result': '',
+        }
+    from pprint import pprint
+    print("Test line dict")
+    pprint(test_line_dict)
+    
+    tool = taskdistribution.TaskDistributionTool(portal_url=args.master_url)
+    test_result = tool.createTestResult(revision = revision,
+                                        test_name_list = test_line_dict.keys(),
+                                        node_title = args.test_node_title,
+                                        test_title = test_suite_title,
+                                        project_title = args.project_title)
+    if test_result is None:
+      return
+    # report test results
+    while 1:
+      test_result_line = test_result.start()
+      if not test_result_line:
+        print 'No test result anymore.'
+        break
+
+      print 'Submitting: "%s"' % test_result_line.name
+      # report status back to Nexedi ERP5
+      test_result_line.stop(**test_line_dict[test_result_line.name])
+
+  except:
+    # Catch any exception here, to warn user instead of being silent,
+    # by generating fake error result
+    print traceback.format_exc()
+    result = dict(status_code=-1,
+                  stderr=traceback.format_exc(),
+                  stdout='')
+    # XXX: inform test node master of error
+    raise EnvironmentError(result)
+
+  
+
+if __name__ == "__main__":
+    main()
