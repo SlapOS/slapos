@@ -9,16 +9,15 @@ parts +=
   ca-nginx
   gunicorn-launcher
   gunicorn-graceful
-  sshkeys-dropbear-runner
-  dropbear-server-add-authorized-key
-  sshkeys-authority
   publish-connection-information
   slaprunner-promise
-  slaprunner-frontend-promise
   apache-httpd-promise
-  httpd-frontend-promise
   slaprunner-supervisord-wrapper
-  dropbear-promise
+  runner-sshd-add-authorized-key
+  runner-sshd-graceful
+  runner-sshd-promise
+  runner-sshkeys-authority
+  runner-sshkeys-sshd
   runtestsuite
   symlinks
   shellinabox
@@ -38,6 +37,30 @@ parts +=
   monitor-check-resilient-feed-file
   monitor-check-webrunner-internal-instance
 
+[proxy-free-port]
+recipe = slapos.cookbook:free_port
+minimum = 49980
+maximum = 49989
+ip = $${slap-network-information:global-ipv6}
+
+[runner-free-port]
+recipe = slapos.cookbook:free_port
+minimum = 50005
+maximum = 50014
+ip = $${slap-network-information:global-ipv6}
+
+[slaprunner]
+proxy_port = $${proxy-free-port:port}
+runner_port = $${runner-free-port:port}
+
+[supervisord-free-port]
+recipe = slapos.cookbook:free_port
+minimum = 39986
+maximum = 39995
+ip = $${slaprunner:ipv4}
+
+[supervisord]
+port = $${supervisord-free-port:port}
 
 [exporter]
 recipe = slapos.recipe.template:jinja2
@@ -48,15 +71,21 @@ wrapper = $${:rendered}
 mode = 700
 context =
   section directory directory
-  raw  shell_binary ${dash:location}/bin/dash
+  raw  output_log_file $${directory:log}/resilient.log
+  raw  shell_binary ${bash:location}/bin/bash
   raw  rsync_binary ${rsync:location}/bin/rsync
 
+[monitor-httpd-free-port]
+recipe = slapos.cookbook:free_port
+minimum = 8437
+maximum = 8446
+ip = $${slap-network-information:global-ipv6}
+
 [monitor-instance-parameter]
-monitor-httpd-port = 8437
+monitor-httpd-port = $${monitor-httpd-free-port:port}
 # Pass some parameter to dispay in monitoring interface
 instance-configuration =
   httpdcors cors-domain $${slaprunner-httpd-cors:location} $${httpd-graceful-wrapper:output}
-  raw webrunner-url https://$${request-frontend:connection-domain}
 
 # Extends publish section with resilient parameters
 [publish-connection-information]

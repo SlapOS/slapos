@@ -196,6 +196,12 @@
               "minimum": 128,
               "multipleOf": 128
             },
+            "auto-ballooning": {
+              "title": "Enable qemu auto ballooning.",
+              "description": "Enable virtio balloon device to allows KVM guests to reduce/re-increase their memory size.",
+              "type": "boolean",
+              "default": true
+            },
             "disk-size": {
               "title": "Disk size",
               "description": "Disk size, in GB.",
@@ -219,6 +225,20 @@
                 "virtio"
               ]
             },
+            "disk-cache": {
+              "title": "Cache option to use with Disk.",
+              "description": "Disk cache controls how the host cache is used to access block data.",
+              "type": "string",
+              "default": "writeback",
+              "enum": ["none", "writeback", "unsafe", "directsync", "writethrough"]
+            },
+            "disk-aio": {
+              "title": "Disk aio to use.",
+              "description": "Selects between pthread based disk I/O and native Linux AIO.",
+              "type": "string",
+              "default": "threads",
+              "enum": ["threads", "native"]
+            },
             "cpu-count": {
               "title": "CPU count",
               "description": "Number of CPU cores.",
@@ -233,6 +253,16 @@
             "numa": {
               "title": "Simulate a multi node NUMA system.",
               "description": "Simulate a multi node NUMA system. If mem and cpus are omitted, resources are split equally. Each numa option are separated by space: node,nodeid=4,cpus=40-49,mem=64g node,nodeid=1,cpus=10-19,mem=128g. Set this option if you know what you're doing.",
+              "type": "string"
+            },
+            "machine-options": {
+              "title": "Machine options.",
+              "description": "Select the emulated machine by name. Ex: pc-i440fx-2.4,accel=kvm",
+              "type": "string"
+            },
+            "cpu-model": {
+              "title": "CPU model.",
+              "description": "Select the emulated CPU model. Ex: SandyBridge,+erms,+smep,+smx,+vmx",
               "type": "string"
             },
             "keyboard-layout-language": {

@@ -11,10 +11,12 @@ parts =
   cron
   cron-entry-logrotate
   sshkeys-authority
-  dropbear-server
-  sshkeys-dropbear
-  resilient-sshkeys-dropbear-promise
-  dropbear-server-pbs-authorized-key
+  sshd-raw-server
+  sshd-graceful
+  sshkeys-sshd
+  sshd-promise
+  resilient-sshkeys-sshd-promise
+  sshd-pbs-authorized-key
   notifier
 
   resiliency-takeover-script
@@ -22,8 +24,12 @@ parts =
   resilient-web-takeover-httpd-wrapper
   resilient-web-takeover-httpd-promise
 
+  check-backup-integrity-on-notification
   import-on-notification
+  backup-transfer-integrity-promise
   resilient-publish-connection-parameter
+
+  backup-signature-link
 
 [resilient-publish-connection-parameter]
 notification-url = http://[$${notifier:host}]:$${notifier:port}/notify
@@ -33,12 +39,18 @@ takeover-password = $${resilient-web-takeover-password:passwd}
 # Define port of ssh server. It has to be different from import so that it
 # supports export/import using same IP (slaprunner, slapos-in-partition,
 # ipv4...)
-[dropbear-server]
-port = 22220
+[sshd-port]
+recipe = slapos.cookbook:free_port
+minimum = 22210
+maximum = 22219
+ip = $${slap-network-information:global-ipv6}
 
 # Define port of notifier (same reason)
-[notifier]
-port = 65533
+[notifier-port]
+recipe = slapos.cookbook:free_port
+minimum = 65516
+maximum = 65525
+ip = $${notifier:host}
 
 [import-on-notification]
 # notifier.callback runs a script when a notification (sent by a parent PBS)
@@ -47,6 +59,42 @@ port = 65533
 recipe = slapos.cookbook:notifier.callback
 on-notification-id = $${slap-parameter:on-notification}
 callback = $${importer:wrapper}
+
+[post-notification-run]
+recipe = collective.recipe.template
+diff-file = $${basedirectory:backup}/backup.diff
+proof-signature-file = $${basedirectory:backup}/proof.signature
+input = inline:
+  #!/${bash:location}/bin/bash
+  cd $${directory:backup}
+  find -type f ! -name backup.signature ! -wholename "./rdiff-backup-data/*" -print0 | xargs -P4 -0 sha256sum  | LC_ALL=C sort -k 66 > $${:proof-signature-file}
+  diff -ruw backup.signature $${:proof-signature-file} > $${:diff-file}
+output = $${rootdirectory:bin}/post-notification-run
+mode = 0700
+
+[check-backup-integrity-on-notification]
+<= notifier
+recipe = slapos.cookbook:notifier.callback
+on-notification-id = $${slap-parameter:on-notification}
+callback = $${post-notification-run:output}
+
+[backup-transfer-integrity-promise]
+recipe = slapos.recipe.template:jinja2
+template = inline:
+  #!/${bash:location}/bin/bash
+  backup_diff_file=$${post-notification-run:diff-file}
+  if [ -f "$backup_diff_file" ]; then
+    if [ $(wc -l "$backup_diff_file" | cut -d \  -f1) -eq 0 ]; then
+      exit 0;
+    else
+      exit 1;
+    fi
+  else
+    # If file doesn't exist, promise should raise false positive
+    exit 0;
+  fi
+rendered = $${basedirectory:promises}/backup-transfer-integrity-promise
+mode = 700
 
 ###########
 # Generate the takeover script
@@ -76,6 +124,7 @@ input = ${resilient-web-takeover-cgi-script-download:destination}
 output = $${directory:cgi-bin}/web-takeover.cgi
 password = $${resilient-web-takeover-password:passwd}
 mode = 700
+proof-signature-url = $${publish:monitor-base-url}/private/resilient/backup.signature
 
 # XXX could it be something lighter?
 # XXX Add SSL
@@ -125,3 +174,9 @@ url = http://[$${resilient-web-takeover-httpd-configuration-file:listening-ip}]:
 dash_path = ${dash:location}/bin/dash
 curl_path = ${curl:location}/bin/curl
 
+###########
+# Symlinks
+###########
+[backup-signature-link]
+recipe = cns.recipe.symlink
+symlink = $${post-notification-run:proof-signature-file} = $${directory:monitor-resilient}/backup.signature

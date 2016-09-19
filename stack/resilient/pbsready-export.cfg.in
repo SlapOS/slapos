@@ -11,11 +11,14 @@ parts =
   cron
   cron-entry-logrotate
   sshkeys-authority
-  dropbear-server
-  sshkeys-dropbear
-  resilient-sshkeys-dropbear-promise
-  dropbear-server-pbs-authorized-key
+  sshd-raw-server
+  sshd-graceful
+  sshkeys-sshd
+  sshd-promise
+  resilient-sshkeys-sshd-promise
+  sshd-pbs-authorized-key
   notifier
+  notifier-exporter-promise
 
   cron-entry-backup
 
@@ -28,8 +31,17 @@ pid = $${:var}/pid
 # Define port of ssh server. It has to be different from import so that it
 # supports export/import using same IP (slaprunner, slapos-in-partition,
 # ipv4...)
-[dropbear-server]
-port = 22221
+[sshd-port]
+recipe = slapos.cookbook:free_port
+minimum = 22200
+maximum = 22209
+ip = $${slap-network-information:global-ipv6}
+
+[notifier-port]
+recipe = slapos.cookbook:free_port
+minimum = 65526
+maximum = 65535
+ip = $${notifier:host}
 
 [resilient-publish-connection-parameter]
 notification-id = http://[$${notifier:host}]:$${notifier:port}/get/$${notifier-exporter:name}
@@ -46,6 +58,18 @@ wrapper = $${rootdirectory:bin}/exporter
 notify = $${slap-parameter:notify}
 pidfile = $${resilient-directory:pid}/$${:name}.pid
 
+[notifier-exporter-promise]
+recipe = slapos.recipe.template:jinja2
+mode = 700
+template = inline:
+  #!${bash:location}/bin/bash
+  EXPORTER_FEED="$${notifier-exporter:log-file}"
+  FAILURE_PATTERN="FAILURE"
+  if [ -s "$EXPORTER_FEED" ]; then
+    tail -n 1 $EXPORTER_FEED | grep -vq FAILURE_PATTERN
+  fi
+rendered = $${basedirectory:promises}/exporter-status
+
 [cron-entry-backup]
 # Schedule the periodic database dump.
 # Through notifications, this triggers (one or more) incremental backups on PBS instances.
@@ -53,7 +77,9 @@ pidfile = $${resilient-directory:pid}/$${:name}.pid
 recipe = slapos.cookbook:cron.d
 name = backup
 frequency = $${slap-parameter:resiliency-backup-periodicity}
-command = $${notifier-exporter:wrapper} --transaction-id `date +%s`
+# Sleep from 1 to 6 hours before backing up (disks/network IO optimization)
+sleep-command = ${bash:location}/bin/bash -c "sleep $((RANDOM%(60*60*6)))"
+command = ($${:sleep-command}; $${notifier-exporter:wrapper} --transaction-id `date +%s`)
 
 [slap-parameter]
 # In cron.d format (i.e things like */15 * * * * are accepted).

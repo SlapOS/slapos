@@ -40,10 +40,12 @@ from slapos.recipe.librecipe import shlex
 
 
 def promise(args):
-  ssh = subprocess.Popen(
-      [args['ssh_client'], '%(user)s@%(host)s/%(port)s' % args],
-      stdin=subprocess.PIPE, stdout=None, stderr=None
-  )
+  # Redirect output to /dev/null
+  with open("/dev/null") as _dev_null:
+    ssh = subprocess.Popen(
+        [args['ssh_client'], '%(user)s@%(host)s' % args, '-p', '%(port)s' % args],
+        stdin=subprocess.PIPE, stdout=_dev_null, stderr=_dev_null
+    )
 
   # Rdiff Backup protocol quit command
   quitcommand = 'q' + chr(255) + chr(0) * 7
@@ -62,6 +64,11 @@ def promise(args):
 
 
 class Recipe(GenericSlapRecipe, Notify, Callback):
+  def _options(self, options):
+    if 'slave-instance-list' in options:
+      for slave in json.loads(options['slave-instance-list']):
+        if slave['type'] == 'pull':
+          options['rdiff-backup-data-folder'] = str(os.path.join(options['directory'], slave['name'], 'rdiff-backup-data'))
 
   def wrapper_push(self, remote_schema, local_dir, remote_dir, rdiff_wrapper_path):
     # Create a simple rdiff-backup wrapper that will push
@@ -225,7 +232,11 @@ class Recipe(GenericSlapRecipe, Notify, Callback):
 
     url = entry.get('url')
     if not url:
-      raise ValueError('Missing URL parameter for PBS recipe')
+      return path_list
+      # It used to raise an error if url was not defined.
+      # This behavior has been removed to accelerate deployment of the
+      # Software Release. The buildout, instead of failing, can process
+      # other sections, which will return parameters to the main instance faster
     parsed_url = urlparse.urlparse(url)
 
     slave_type = entry['type']
@@ -249,7 +260,12 @@ class Recipe(GenericSlapRecipe, Notify, Callback):
     # Create known_hosts file by default.
     # In some case, we don't want to create it (case where we share IP mong partitions)
     if not self.isTrueValue(self.options.get('ignore-known-hosts-file')):
-      known_hosts_file[parsed_url.hostname] = entry['server-key']
+      # Migration code: if known_hosts file contains entry with just IP, then it
+      # is updated to use [IP]:port. It allows to share same IP among partitions
+      if parsed_url.hostname in known_hosts_file:
+        del known_hosts_file[parsed_url.hostname]
+      known_hostname = "[%s]:%s" % (parsed_url.hostname, parsed_url.port)
+      known_hosts_file[known_hostname] = entry['server-key'].strip()
 
     notifier_wrapper_path = os.path.join(self.options['wrappers-directory'], slave_id)
     rdiff_wrapper_path = notifier_wrapper_path + '_raw'
@@ -257,9 +273,7 @@ class Recipe(GenericSlapRecipe, Notify, Callback):
     # Create the rdiff-backup wrapper
     # It is useful to separate it from the notifier so that we can run it manually.
 
-    # XXX use -y because the host might not yet be in the
-    #     trusted hosts file until the next time slapgrid is run.
-    remote_schema = '{ssh} -y -K 300 -p %s {username}@{hostname}'.format(
+    remote_schema = '{ssh} -o "ConnectTimeout 300" -p %s {username}@{hostname}'.format(
               ssh=self.options['sshclient-binary'],
               username=parsed_url.username,
               hostname=parsed_url.hostname
@@ -291,7 +305,10 @@ class Recipe(GenericSlapRecipe, Notify, Callback):
         title=entry.get('title', slave_id),
         notification_url=entry['notify'],
         feed_url='%s/get/%s' % (self.options['notifier-url'], entry['notification-id']),
-        pidfile=os.path.join(self.options['run-directory'], '%s.pid' % slave_id)
+        pidfile=os.path.join(self.options['run-directory'], '%s.pid' % slave_id),
+        instance_root_name=self.options.get('instance-root-name', None),
+        log_url=self.options.get('log-url', None),
+        status_item_directory=self.options.get('status-item-directory', None)
     )
     path_list.append(notifier_wrapper)
 

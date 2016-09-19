@@ -33,10 +33,16 @@ import re
 from slapos.recipe.librecipe import GenericBaseRecipe
 from slapos.recipe.librecipe.inotify import subfiles
 
-# This authority only works with dropbear sshkey generator
+# This authority only works with dropbear or openssh sshkey generators
 def sshkeys_authority(args):
   requests_directory = args['requests']
   keygen_binary = args['sshkeygen']
+
+  if 'openssh' in keygen_binary:
+    authority_type = 'openssh'
+  else:
+    # Keep dropbear for compatibility
+    authority_type = 'dropbear'
 
   for request_filename in subfiles(requests_directory):
 
@@ -44,7 +50,7 @@ def sshkeys_authority(args):
       request = json.load(request_file)
 
     key_type = request.get('type', 'rsa')
-    size = str(request.get('size', 2048))
+    size = str(request.get('size', 4096))
     try:
       private_key = request['private_key']
       public_key = request['public_key']
@@ -54,8 +60,12 @@ def sshkeys_authority(args):
     if not os.path.exists(private_key):
       if os.path.exists(public_key):
         os.unlink(public_key)
-      keygen_cmd = [keygen_binary, '-t', key_type, '-f', private_key,
-                    '-s', size]
+      if authority_type == 'openssh':
+        keygen_cmd = [keygen_binary, '-N', "", '-C', "", '-t', key_type,
+                      '-f', private_key, '-b', size]
+      else:
+        keygen_cmd = [keygen_binary, '-t', key_type, '-f', private_key,
+                      '-s', size]
       # If the keygeneration return an non-zero status, it means there's a
       # big problem. Let's exit in this case
       subprocess.check_call(keygen_cmd, env=os.environ.copy())

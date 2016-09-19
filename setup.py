@@ -28,7 +28,7 @@ from setuptools import setup, find_packages
 import glob
 import os
 
-version = '1.0.31'
+version = '1.0.35'
 name = 'slapos.cookbook'
 long_description = open("README.rst").read() + "\n" + \
     open("CHANGES.rst").read() + "\n"
@@ -111,6 +111,7 @@ setup(name=name,
           'erp5testnode = slapos.recipe.erp5testnode:Recipe',
           'firefox = slapos.recipe.firefox:Recipe',
           'fontconfig = slapos.recipe.fontconfig:Recipe',
+          'free_port = slapos.recipe.free_port:Recipe',
           'generate.mac = slapos.recipe.generatemac:Recipe',
           'generate.password = slapos.recipe.generatepassword:Recipe',
           'generic.cloudooo = slapos.recipe.generic_cloudooo:Recipe',

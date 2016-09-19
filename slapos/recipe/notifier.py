@@ -66,8 +66,15 @@ class Callback(GenericBaseRecipe):
 
 class Notify(GenericBaseRecipe):
 
+  def __init__(self, buildout, name, options):
+    super(Notify, self).__init__(buildout, name, options)
+    log = os.path.join(options['feeds'], options['name'])
+    options['log-file'] = log
+    self.options = options
+
   def createNotifier(self, notifier_binary, wrapper, executable,
-                     log, title, notification_url, feed_url, pidfile=None):
+                     log, title, notification_url, feed_url, pidfile=None,
+                     instance_root_name=None, log_url=None, status_item_directory=None):
 
     if not os.path.exists(log):
       # Just a touch
@@ -81,6 +88,13 @@ class Notify(GenericBaseRecipe):
             ]
     parameters.extend(notification_url.split(' '))
     parameters.extend(['--executable', executable])
+    # For a more verbose mode, writing feed items for any action
+    if instance_root_name and log_url and status_item_directory:
+      parameters.extend([
+        '--instance-root-name', instance_root_name,
+        '--log-url', log_url,
+        '--status-item-directory', status_item_directory,
+      ])
 
     return self.createWrapper(name=wrapper,
                               command=notifier_binary,
@@ -98,13 +112,11 @@ class Notify(GenericBaseRecipe):
                                port=self.options['port'],
                                path='/get/%s' % self.options['name'])
 
-    log = os.path.join(self.options['feeds'], self.options['name'])
-
     options = self.options
     script = self.createNotifier(notifier_binary=options['notifier-binary'],
                                  wrapper=options['wrapper'],
                                  executable=options['executable'],
-                                 log=log,
+                                 log=options['log-file'],
                                  title=options['title'],
                                  pidfile=options['pidfile'],
                                  notification_url=options['notify'],

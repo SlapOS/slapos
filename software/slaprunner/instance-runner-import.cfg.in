@@ -9,12 +9,13 @@ parts +=
   ca-nginx
   gunicorn-launcher
   gunicorn-graceful
-  sshkeys-dropbear-runner
-  dropbear-server-add-authorized-key
-  sshkeys-authority
   slaprunner-promise
   slaprunner-supervisord-wrapper
-  dropbear-promise
+  runner-sshd-add-authorized-key
+  runner-sshd-graceful
+  runner-sshd-promise
+  runner-sshkeys-authority
+  runner-sshkeys-sshd
   runtestsuite
   shellinabox
   symlinks
@@ -25,6 +26,8 @@ parts +=
   bash-profile
   supervisord-wrapper
   importer-consistency-promise
+
+  resilient-software-release-information
 # have to repeat the next one, as it's not inherited from pbsready-import
   import-on-notification
 
@@ -34,9 +37,35 @@ parts +=
 # In case both exporter and importer (aka main instance and clone instance)
 # run with the same IP (usually for testing purposes),
 # run slaprunner using different ports.
+[proxy-free-port]
+recipe = slapos.cookbook:free_port
+minimum = 49990
+maximum = 49999
+ip = $${slap-network-information:global-ipv6}
+
+[runner-free-port]
+recipe = slapos.cookbook:free_port
+minimum = 50015
+maximum = 50024
+ip = $${slap-network-information:global-ipv6}
+
 [slaprunner]
-proxy_port = 50000
-runner_port = 50005
+proxy_port = $${proxy-free-port:port}
+runner_port = $${runner-free-port:port}
+
+[supervisord-free-port]
+recipe = slapos.cookbook:free_port
+minimum = 39996
+maximum = 40005
+ip = $${slaprunner:ipv4}
+
+[supervisord]
+port = $${supervisord-free-port:port}
+
+# Idem for some other services
+[runner-sshd-port]
+minimum = 22232
+maximum = 22241
 
 [importer]
 recipe = slapos.recipe.template:jinja2
@@ -50,25 +79,38 @@ context =
   key backend_url slaprunner:access-url
   key proxy_host slaprunner:ipv4
   section directory directory
-  raw  shell_binary ${dash:location}/bin/dash
+  raw  output_log_file $${directory:log}/resilient.log
+  raw  shell_binary ${bash:location}/bin/bash
   raw  rsync_binary ${rsync:location}/bin/rsync
   raw  restore_exit_code_file $${:restore-exit-code-file}
 
 [importer-consistency-promise]
-# Test that the importer script and "after-import" subscripts:
-# 1/ Have been run in the last 24 hours
-# 2/ Have succeeded
+# Test that the importer script and "after-import" subscripts
+# are not older than 1 day (24h), and have succeeded
 recipe = collective.recipe.template
 input = inline: #!/bin/sh
-  EXIT_CODE_FILE=$(find "$${importer:restore-exit-code-file}" -mtime -1)
+  EXIT_CODE_FILE=$(find "$${importer:restore-exit-code-file}")
+  RECENT_EXIT_CODE_FILE=$(find "$${importer:restore-exit-code-file}" -mtime -1)
   if [ -z "$EXIT_CODE_FILE" ]; then
-     echo "Consistency check is too old."
-     exit 1
-   fi
-  EXIT_CODE=$(cat $EXIT_CODE_FILE)
-  exit $EXIT_CODE
+    exit 0;
+  else
+    if [ -z "$RECENT_EXIT_CODE_FILE" ]; then
+       echo "Consistency check is too old.";
+       exit 1;
+    else
+      EXIT_CODE=$(cat $EXIT_CODE_FILE)
+      exit $EXIT_CODE
+    fi
+  fi
+  exit 1; # Something else went wrong
 output = $${directory:promises}/importer-consistency-promise
 mode = 755
+
+[resilient-software-release-information]
+recipe = slapos.recipe.template
+url = ${template-resilient-software-release-information:destination}/${template-resilient-software-release-information:filename}
+output = $${directory:cgi-bin}/resilient_software_release_information.py
+mode = 0600
 
 [slap-parameter]
 auto-deploy-instance = false
@@ -83,7 +125,6 @@ monitor-base-url = $${publish:monitor-base-url}
 monitor-url = $${publish:monitor-url}
 monitor-user = $${publish:monitor-user}
 monitor-password = $${publish:monitor-password}
-
 
 [monitor-instance-parameter]
 monitor-httpd-port = 8360

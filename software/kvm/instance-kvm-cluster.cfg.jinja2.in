@@ -51,6 +51,11 @@ config-disk-type = {{ dumps(kvm_parameter_dict.get('disk-type', 'virtio')) }}
 config-cpu-count = {{ dumps(kvm_parameter_dict.get('cpu-count', 1)) }}
 config-cpu-options = {{ dumps(kvm_parameter_dict.get('cpu-options', '')) }}
 config-numa = {{ dumps(kvm_parameter_dict.get('numa', '')) }}
+config-disk-cache = {{ dumps(kvm_parameter_dict.get('disk-cache', '')) }}
+config-disk-aio = {{ dumps(kvm_parameter_dict.get('disk-aio', '')) }}
+config-auto-ballooning = {{ dumps(kvm_parameter_dict.get('auto-ballooning', True)) }}
+config-machine-options = {{ dumps(kvm_parameter_dict.get('machine-options', '')) }}
+config-cpu-model = {{ dumps(kvm_parameter_dict.get('cpu-model', '')) }}
 
 {% set nat_rules_list = kvm_parameter_dict.get('nat-rules', []) -%}
 config-nat-rules = {{ nat_rules_list | join(' ') }}

@@ -7,8 +7,13 @@ parts =
   cron
   cron-entry-logrotate
   sshkeys-authority
-  sshkeys-dropbear
-
+  sshkeys-openssh
+  backup-transfer-integrity-promise
+  resilient-genstatrss-wrapper
+  pbs-push-history-log
+  backup-signature-link
+  cron-pbs-status-feed
+  pull-push-stalled-promise
 
 ## Monitor for pbs
   monitor-base
@@ -57,7 +62,8 @@ pbs-wrappers = $${rootdirectory:bin}/pbs
 dot-ssh = $${basedirectory:ssh-home}/.ssh
 notifier-feeds = $${basedirectory:notifier}/feeds
 notifier-callbacks = $${basedirectory:notifier}/callbacks
-
+notifier-status-items = $${basedirectory:notifier}/status-items
+monitor-resilient = $${monitor-directory:private}/resilient
 
 
 #----------------
@@ -73,6 +79,12 @@ database = $${rootdirectory:srv}/equeue.db
 wrapper = $${basedirectory:services}/equeue
 equeue-binary = ${buildout:bin-directory}/equeue
 
+[notifier-port]
+recipe = slapos.cookbook:free_port
+minimum = 8088
+maximum = 8097
+ip = $${notifier:host}
+
 # notifier.notify adds the [exporter, notifier] to the execution queue
 # notifier.notify.callback sets up a callback
 [notifier]
@@ -83,10 +95,9 @@ wrapper = $${basedirectory:services}/notifier
 mode = 0700
 command = ${buildout:bin-directory}/pubsubserver --callbacks $${directory:notifier-callbacks} --feeds $${directory:notifier-feeds} --equeue-socket $${equeue:socket} --logfile $${basedirectory:log}/notifier.log $${:host} $${:port}
 host = $${slap-network-information:global-ipv6}
-port = 8088
+port = $${notifier-port:port}
 context =
   key content notifier:command
-
 
 [logrotate-entry-equeue]
 <= logrotate
@@ -111,7 +122,7 @@ callbacks = $${directory:notifier-callbacks}
 equeue-socket = $${equeue:socket}
 notifier-binary = ${buildout:bin-directory}/pubsubnotifier
 rdiffbackup-binary = ${buildout:bin-directory}/rdiff-backup
-sshclient-binary = $${dropbear-client:wrapper}
+sshclient-binary = $${openssh-client:wrapper-path}
 known-hosts = $${directory:dot-ssh}/known_hosts
 promises-directory = $${basedirectory:promises}
 directory = $${directory:pbs-backup}
@@ -122,7 +133,23 @@ run-directory = $${basedirectory:run}
 notifier-url = http://[$${notifier:host}]:$${notifier:port}
 slave-instance-list = $${slap-parameter:slave_instance_list}
 ignore-known-hosts-file = $${slap-parameter:ignore-known-hosts-file}
+# To get a verbose feed about PBS state
+instance-root-name = $${instance-info-parameters:root-name}
+log-url = $${publish:monitor-base-url}/private/notifier/
+status-item-directory = $${directory:notifier-status-items}
 
+[pbs-resilient-status-feed]
+recipe = slapos.cookbook:wrapper
+command-line = ${buildout:directory}/bin/generatefeed --output $${:feed-path} --status-item-path $${pbs:status-item-directory} --title "Status feed for $${instance-info-parameters:root-name}-PBS" --link $${pbs:log-url}
+feed-path = $${directory:monitor-resilient}/pbs-status-rss
+wrapper-path = $${rootdirectory:bin}/resilient-genstatusrss.py
+
+[cron-pbs-status-feed]
+<= cron
+recipe = slapos.cookbook:cron.d
+name = resilient-pbs-status-feed
+frequency = 5 * * * *
+command = $${pbs-resilient-status-feed:wrapper-path}
 
 #----------------
 #--
@@ -190,29 +217,30 @@ recipe = slapos.cookbook:sshkeys_authority
 request-directory = $${sshkeys-directory:requests}
 keys-directory = $${sshkeys-directory:keys}
 wrapper = $${basedirectory:services}/sshkeys_authority
-keygen-binary = ${dropbear:location}/bin/dropbearkey
+keygen-binary = ${openssh:location}/bin/ssh-keygen
 
-[sshkeys-dropbear]
+[sshkeys-openssh]
 <= sshkeys-authority
 recipe = slapos.cookbook:sshkeys_authority.request
-name = pbs
+name = pbs-client
 type = rsa
-executable = $${dropbear-client:wrapper}
-public-key = $${dropbear-client:identity-file}.pub
-private-key = $${dropbear-client:identity-file}
+executable = $${openssh-client:wrapper-path}
+public-key = $${openssh-client:identity-file}.pub
+private-key = $${openssh-client:identity-file}
 wrapper = $${rootdirectory:bin}/do_backup
 
 
 #----------------
 #--
-#-- Dropbear.
+#-- OpenSSH.
 
-[dropbear-client]
-recipe = slapos.cookbook:dropbear.client
-dbclient-binary = ${dropbear:location}/bin/dbclient
-wrapper = $${rootdirectory:bin}/ssh
+[openssh-client]
+recipe = slapos.cookbook:wrapper
 home = $${basedirectory:ssh-home}
-identity-file = $${basedirectory:ssh-home}/id_rsa
+identity-file = $${:home}/id_rsa
+command-line = ${openssh:location}/bin/ssh -T -o "UserKnownHostsFile $${pbs:known-hosts}" -i $${:identity-file}
+wrapper-path = $${rootdirectory:bin}/ssh
+parameters-extra = true
 
 
 #----------------
@@ -233,6 +261,46 @@ monitor-title = PBS Instance
 monitor-password = $${htpasswd:passwd}
 monitor-username = $${htpasswd:username}
 
+#----------------
+#--
+#-- Resiliency promises.
+
+[backup-transfer-integrity-promise]
+recipe = slapos.recipe.template:jinja2
+template = inline:
+  #!${dash:location}/bin/dash
+  # Raise an error if signatures are different
+  # Error cannot be deduced if files do not exist
+  cd $${directory:pbs-backup}
+  if [ ! -f "proof.signature" ]; then exit 0; fi
+  backup_signature=$(find . -maxdepth 2 -name backup.signature)
+  if [ -z "$backup_signature" ]; then
+    exit 0;
+  else
+    diff "proof.signature" "$backup_signature";
+  fi
+rendered = $${basedirectory:promises}/backup-transfer-integrity-promise
+mode = 700
+
+[resilient-genstatrss-wrapper]
+recipe = slapos.cookbook:wrapper
+# XXX - hard-coded Urls
+command-line = ${buildout:directory}/bin/rdiffbackup.genstatrss --output '$${monitor-directory:public}/resilient-feed' --rdiff_backup_data_folder '$${pbs:rdiff-backup-data-folder}' --feed_url '$${monitor-conf-parameters:base-url}/public/resilient-feed'
+wrapper-path = $${directory:bin}/resilient-genstatrss.py
+
+[pbs-push-history-log]
+recipe = cns.recipe.symlink
+symlink = $${pbs:rdiff-backup-data-folder}/restore.log = $${basedirectory:log}/pbs-push-history-log
+
+[backup-signature-link]
+recipe = cns.recipe.symlink
+symlink = $${directory:pbs-backup}/proof.signature = $${directory:monitor-resilient}/backup.signature
+
+[pull-push-stalled-promise]
+recipe = slapos.cookbook:wrapper
+# time-buffer is 18h : cron for backup is run once a day - 6h of random sleep
+command-line = ${buildout:bin-directory}/check-feed-as-promise --feed-path $${pbs-resilient-status-feed:feed-path} --title --ok-pattern 'OK' --time-buffer 64800
+wrapper-path = $${basedirectory:promises}/stalled-pull-push
 
 #----------------
 #--
@@ -240,7 +308,7 @@ monitor-username = $${htpasswd:username}
 
 [publish-connection-information]
 recipe = slapos.cookbook:publish
-ssh-key = $${sshkeys-dropbear:public-key-value}
+ssh-key = $${sshkeys-openssh:public-key-value}
 notification-url = http://[$${notifier:host}]:$${notifier:port}/notify
 feeds-url = http://[$${notifier:host}]:$${notifier:port}/get/
 monitor-base-url = $${publish:monitor-base-url}
