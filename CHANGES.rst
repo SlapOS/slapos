@@ -1,9 +1,11 @@
 Changes
 =======
 
-1.0.32 (unreleased)
+1.0.35 (2016-09-19)
 -------------------
 
+  * pbs: fix/accelerates deployment of resilient instances
+  * recipe: new recipe to get a free network port
   * Remove url-list parameter to download fonts from fontconfig instance
 
 1.0.31 (2016-05-30)
