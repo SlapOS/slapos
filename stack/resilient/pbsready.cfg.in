@@ -6,7 +6,7 @@ parts =
   logrotate-entry-equeue
   cron
   cron-entry-logrotate
-  sshkeys-authority
+  resilient-sshkeys-authority
   sshd-graceful
   sshkeys-sshd
   sshd-promise
@@ -229,18 +229,18 @@ port = $${sshd-port:port}
 
 [sshkeys-directory]
 recipe = slapos.cookbook:mkdirectory
-requests = $${directory:sshkeys}/requests
-keys = $${directory:sshkeys}/keys
+requests = $${directory:sshkeys}/resilient-requests
+keys = $${directory:sshkeys}/resilient-keys
 
-[sshkeys-authority]
+[resilient-sshkeys-authority]
 recipe = slapos.cookbook:sshkeys_authority
 request-directory = $${sshkeys-directory:requests}
 keys-directory = $${sshkeys-directory:keys}
-wrapper = $${basedirectory:services}/sshkeys_authority
+wrapper = $${basedirectory:services}/resilient_sshkeys_authority
 keygen-binary = ${openssh:location}/bin/ssh-keygen
 
 [sshkeys-sshd]
-<= sshkeys-authority
+<= resilient-sshkeys-authority
 recipe = slapos.cookbook:sshkeys_authority.request
 name = sshd
 type = rsa
