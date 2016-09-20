@@ -50,8 +50,6 @@ class Recipe(GenericSlapRecipe):
   def _setConnectionDict(self, publish_dict, slave_reference=None):
     return self.setConnectionDict(publish_dict, slave_reference)
 
-SERIALISED_MAGIC_KEY = '_'
-
 class Serialised(Recipe):
   def _setConnectionDict(self, publish_dict, slave_reference=None):
     return super(Serialised, self)._setConnectionDict(wrap(publish_dict), slave_reference)
