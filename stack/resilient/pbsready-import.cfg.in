@@ -10,7 +10,7 @@ parts =
   logrotate-entry-equeue
   cron
   cron-entry-logrotate
-  sshkeys-authority
+  resilient-sshkeys-authority
   sshd-raw-server
   sshd-graceful
   sshkeys-sshd
