@@ -6,7 +6,7 @@ parts =
   logrotate
   cron
   cron-entry-logrotate
-  sshkeys-authority
+  pbs-sshkeys-authority
   sshkeys-openssh
   backup-transfer-integrity-promise
   resilient-genstatrss-wrapper
@@ -212,15 +212,15 @@ recipe = slapos.cookbook:mkdirectory
 requests = $${directory:sshkeys}/requests
 keys = $${directory:sshkeys}/keys
 
-[sshkeys-authority]
+[pbs-sshkeys-authority]
 recipe = slapos.cookbook:sshkeys_authority
 request-directory = $${sshkeys-directory:requests}
 keys-directory = $${sshkeys-directory:keys}
-wrapper = $${basedirectory:services}/sshkeys_authority
+wrapper = $${basedirectory:services}/pbs_sshkeys_authority
 keygen-binary = ${openssh:location}/bin/ssh-keygen
 
 [sshkeys-openssh]
-<= sshkeys-authority
+<= pbs-sshkeys-authority
 recipe = slapos.cookbook:sshkeys_authority.request
 name = pbs-client
 type = rsa
