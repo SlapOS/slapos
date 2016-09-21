@@ -37,7 +37,9 @@ class KnownHostsFile(dict):
     if os.path.exists(self._filename):
       with open(self._filename, 'r') as keyfile:
         for line in keyfile:
-          host, key = [column.strip() for column in line.split(' ', 1) if line != ""]
+          if line.strip() == "":
+            continue
+          host, key = [column.strip() for column in line.split(' ', 1)]
           self[host] = key
 
   def _dump(self):
