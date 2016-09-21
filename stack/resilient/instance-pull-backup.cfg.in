@@ -32,7 +32,6 @@ offline = true
 [rootdirectory]
 recipe = slapos.cookbook:mkdirectory
 etc = $${buildout:directory}/etc
-home = $${buildout:directory}/home
 srv = $${buildout:directory}/srv
 bin = $${buildout:directory}/bin
 tmp = $${buildout:directory}/tmp
@@ -45,7 +44,7 @@ services = $${rootdirectory:etc}/service
 run = $${rootdirectory:var}/run
 backup = $${rootdirectory:srv}/backup
 promises = $${rootdirectory:etc}/promise
-ssh-home = $${rootdirectory:home}/ssh
+ssh-home = $${rootdirectory:etc}/ssh
 notifier = $${rootdirectory:etc}/notifier
 
 [directory]
@@ -209,8 +208,8 @@ rotate-num = 30
 
 [sshkeys-directory]
 recipe = slapos.cookbook:mkdirectory
-requests = $${directory:sshkeys}/requests
-keys = $${directory:sshkeys}/keys
+requests = $${directory:sshkeys}/openssl-requests
+keys = $${directory:sshkeys}/openssl-keys
 
 [pbs-sshkeys-authority]
 recipe = slapos.cookbook:sshkeys_authority
