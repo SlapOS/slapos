@@ -644,6 +644,7 @@ class User(object):
         user_name: string, the name of the user, who will have is home in
     """
     self.name = str(user_name)
+    self.shell = '/bin/sh'
     self.additional_group_list = additional_group_list
 
   def __getinitargs__(self):
@@ -669,7 +670,7 @@ class User(object):
     except KeyError:
       callAndRead(['groupadd', grpname])
 
-    user_parameter_list = ['-d', self.path, '-g', self.name]
+    user_parameter_list = ['-d', self.path, '-g', self.name, '-s', self.shell]
     if self.additional_group_list is not None:
       user_parameter_list.extend(['-G', ','.join(self.additional_group_list)])
     user_parameter_list.append(self.name)
@@ -680,6 +681,8 @@ class User(object):
       callAndRead(['useradd'] + user_parameter_list)
     else:
       callAndRead(['usermod'] + user_parameter_list)
+    # lock the password of user
+    callAndRead(['passwd', '-l', self.name])
 
     return True
 
@@ -1342,7 +1345,7 @@ class FormatConfig(object):
 
     if not self.dry_run:
       if self.alter_user:
-        self.checkRequiredBinary(['groupadd', 'useradd', 'usermod'])
+        self.checkRequiredBinary(['groupadd', 'useradd', 'usermod', 'passwd'])
       if self.create_tap:
         self.checkRequiredBinary([['tunctl', '-d']])
         if self.tap_gateway_interface:
