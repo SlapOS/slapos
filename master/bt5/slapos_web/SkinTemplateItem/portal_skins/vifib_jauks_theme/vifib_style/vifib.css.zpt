@@ -325,6 +325,21 @@ fieldset > .subfield > label {
   text-decoration: none;
 }
 
+.bt_close, .subfield .slapos-parameter-dict-key span.bt_close{
+  padding: 0 6px;
+  display: block;
+  float: right;
+  text-overflow:clip;
+  white-space:nowrap;
+  overflow: hidden;
+  font-size: 1.5em;
+  border-radius: 2px;
+}
+.bt_close:hover {
+  background: #81afab;
+  color: #fff;
+}
+
 .hs-short-title{
   margin-left:6px;
   padding-bottom: 10px;
