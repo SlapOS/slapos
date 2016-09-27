@@ -1,5 +1,8 @@
 import socket
+import sys
 import unittest
+
+from mock import patch
 
 from slapos.recipe import free_port
 
@@ -14,11 +17,14 @@ class SocketMock():
 
   bind = close = nothing_happen
 
-import sys
-sys.modules['socket'].socket = SocketMock
+def useMock(function):
+  def withMock(function):
+    with patch('slapos.recipe.free_port.socket.socket', new=SocketMock):
+      return function
+  return withMock
 
 class FreePortTest(unittest.TestCase):
-  def afterSetup(self):
+  def setUp(self):
     SocketMock.bind = SocketMock.close = SocketMock.nothing_happen
 
   def new_recipe(self, **kw):
@@ -48,10 +54,12 @@ class FreePortTest(unittest.TestCase):
     options.update(kw)
     return free_port.Recipe(buildout=buildout, name='free_port', options=options)
 
+  @useMock
   def test_ifNoBusyPortThenMinPortIsAlwaysReturned(self):
     recipe = self.new_recipe(minimum=2000)
     self.assertEqual(recipe.options['port'], '2000')
 
+  @useMock
   def test_iterateUntilFreePortIsFound(self):
     def bindFailExceptOnPort2020(socket_instance, binding):
       ip, port = binding
@@ -61,6 +69,7 @@ class FreePortTest(unittest.TestCase):
     recipe = self.new_recipe(minimum=2000)
     self.assertEqual(recipe.options['port'], '2020')
 
+  @useMock
   def test_returnsPort0IfNoPortIsFreeInRange(self):
     def bindAlwaysFail(socket_instance, binding):
       raise socket.error()
