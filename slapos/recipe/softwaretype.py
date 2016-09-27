@@ -38,6 +38,51 @@ import errno
 
 import zc.buildout
 
+class SlapConfigParser(ConfigParser, object):
+  """ 
+      This class overrite ConfigParser.write method to fix parse problem when
+      configuration like: 
+      foo += bar is included in buildout file. softwaretype recipe will generate
+      buildout file with foo + = bar because ConfigParser doesn't reconize += 
+      delimiter and read key as "foo +", value as "bar".
+      Then ConfigParser.write method generate
+      
+      [section]
+      foo + = bar
+      ...
+      
+      This is invalid with buildout version 2.
+  """
+
+  def write(self, fp):
+    """Write an .ini-format representation of the configuration state."""
+    if sys.version_info[0] > 2:
+      return super(SlapConfigParser, self).write(fp)
+
+    if self._defaults:
+      fp.write("[%s]\n" % DEFAULTSECT)
+      for (key, value) in self._defaults.items():
+        if key.endswith(" +") or key.endswith(" -"):
+          line = "%s += %s\n" % (key.replace(' +', '').replace(' -', ''),
+                                  str(value).replace('\n', '\n\t'))
+        else:
+          line = "%s = %s\n" % (key, str(value).replace('\n', '\n\t'))
+        fp.write(line)
+      fp.write("\n")
+    for section in self._sections:
+      fp.write("[%s]\n" % section)
+      for (key, value) in self._sections[section].items():
+        if key == "__name__":
+          continue
+        if (value is not None) or (self._optcre == self.OPTCRE):
+          if key.endswith(" +") or key.endswith(" -"):
+            key = " += ".join((key.replace(' +', '').replace(' -', ''),
+                                str(value).replace('\n', '\n\t')))
+          else:
+            key = " = ".join((key, str(value).replace('\n', '\n\t')))
+        fp.write("%s\n" % key)
+      fp.write("\n")
+
 class Recipe:
 
   def __init__(self, buildout, name, options):
@@ -144,7 +189,7 @@ class Recipe:
       raise zc.buildout.UserError("The specified buildout config file %r does "
                                   "not exist." % instance_file_path)
 
-    buildout = ConfigParser()
+    buildout = SlapConfigParser()
     with open(instance_file_path) as instance_path:
       buildout.readfp(instance_path)
 
