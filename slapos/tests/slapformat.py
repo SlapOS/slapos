@@ -636,8 +636,9 @@ class TestUser(SlapformatMixin):
 
     self.assertEqual([
       'groupadd doesnotexistsyet',
-      'useradd -d /doesnotexistsyet -g doesnotexistsyet '\
-        'doesnotexistsyet -r'
+      'useradd -d /doesnotexistsyet -g doesnotexistsyet -s /bin/sh '\
+        'doesnotexistsyet -r',
+      'passwd -l doesnotexistsyet'
     ],
       self.fakeCallAndRead.external_command_list)
 
@@ -649,8 +650,9 @@ class TestUser(SlapformatMixin):
 
     self.assertEqual([
       'groupadd doesnotexistsyet',
-      'useradd -d /doesnotexistsyet -g doesnotexistsyet -G '\
-        'additionalgroup1,additionalgroup2 doesnotexistsyet -r'
+      'useradd -d /doesnotexistsyet -g doesnotexistsyet -s /bin/sh -G '\
+        'additionalgroup1,additionalgroup2 doesnotexistsyet -r',
+      'passwd -l doesnotexistsyet'
       ],
       self.fakeCallAndRead.external_command_list)
 
@@ -662,7 +664,8 @@ class TestUser(SlapformatMixin):
     user.create()
 
     self.assertEqual([
-      'useradd -d /testuser -g testuser testuser -r'
+      'useradd -d /testuser -g testuser -s /bin/sh testuser -r',
+      'passwd -l testuser'
     ],
       self.fakeCallAndRead.external_command_list)
 
@@ -676,8 +679,9 @@ class TestUser(SlapformatMixin):
 
     self.assertEqual([
       'groupadd testuser',
-      'usermod -d /testuser -g testuser -G '\
-        'additionalgroup1,additionalgroup2 testuser'
+      'usermod -d /testuser -g testuser -s /bin/sh -G '\
+        'additionalgroup1,additionalgroup2 testuser',
+      'passwd -l testuser'
     ],
       self.fakeCallAndRead.external_command_list)
 
@@ -690,7 +694,8 @@ class TestUser(SlapformatMixin):
 
     self.assertEqual([
       'groupadd testuser',
-      'usermod -d /testuser -g testuser testuser'
+      'usermod -d /testuser -g testuser -s /bin/sh testuser',
+      'passwd -l testuser'
     ],
       self.fakeCallAndRead.external_command_list)
 
@@ -704,7 +709,8 @@ class TestUser(SlapformatMixin):
     user.create()
 
     self.assertEqual([
-      'usermod -d /testuser -g testuser testuser'
+      'usermod -d /testuser -g testuser -s /bin/sh testuser',
+      'passwd -l testuser'
     ],
       self.fakeCallAndRead.external_command_list)
 
