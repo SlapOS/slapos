@@ -710,7 +710,7 @@ class TestUser(SlapformatMixin):
 
     self.assertEqual([
       'usermod -d /testuser -g testuser testuser -s /bin/sh testuser',
-      'passwd -l testuser']
+      'passwd -l testuser'
     ],
       self.fakeCallAndRead.external_command_list)
 
