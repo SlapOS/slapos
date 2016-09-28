@@ -8,7 +8,7 @@ portal = context.getPortalObject()
 query = ComplexQuery(
   ComplexQuery(
     SimpleQuery(portal_type="Support Request"),
-    SimpleQuery(default_source_project_uid=context.getUid()),
+    SimpleQuery(default_aggregate_uid=context.getUid()),
     logical_operator='and'),
   ComplexQuery(
     SimpleQuery(portal_type="Upgrade Decision Line"),

@@ -258,7 +258,7 @@
       <dictionary>
         <item>
             <key> <string>_text</string> </key>
-            <value> <string>python: [(\'source_project_uid\', here.getUid())]</string> </value>
+            <value> <string>python: [(\'aggregate_uid\', here.getUid())]</string> </value>
         </item>
       </dictionary>
     </pickle>

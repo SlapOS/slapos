@@ -9,7 +9,7 @@ support_request = support_request_template.Base_createCloneDocument(batch_mode=1
 
 kw = {}
 if context.getPortalType() in ["Hosting Subscription", "Computer"]:
-  kw['source_project'] = context.getRelativeUrl()
+  kw['aggregate'] = context.getRelativeUrl()
 
 support_request.edit(
   title=title,

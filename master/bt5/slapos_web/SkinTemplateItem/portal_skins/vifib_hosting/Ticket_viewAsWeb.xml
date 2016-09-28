@@ -96,6 +96,7 @@
                     <value>
                       <list>
                         <string>my_title</string>
+                        <string>my_aggregate_title</string>
                       </list>
                     </value>
                 </item>
