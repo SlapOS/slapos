@@ -636,7 +636,7 @@ class TestUser(SlapformatMixin):
 
     self.assertEqual([
       'groupadd doesnotexistsyet',
-      'useradd -d /doesnotexistsyet -g -s /bin/sh doesnotexistsyet '\
+      'useradd -d /doesnotexistsyet -g doesnotexistsyet -s /bin/sh '\
         'doesnotexistsyet -r',
       'passwd -l doesnotexistsyet'
     ],
@@ -709,7 +709,7 @@ class TestUser(SlapformatMixin):
     user.create()
 
     self.assertEqual([
-      'usermod -d /testuser -g testuser testuser -s /bin/sh testuser',
+      'usermod -d /testuser -g testuser -s /bin/sh testuser',
       'passwd -l testuser'
     ],
       self.fakeCallAndRead.external_command_list)
