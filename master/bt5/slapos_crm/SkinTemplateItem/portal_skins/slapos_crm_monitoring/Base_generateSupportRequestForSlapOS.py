@@ -1,16 +1,16 @@
 from DateTime import DateTime
 
 portal = context.getPortalObject()
-source_project_value = portal.restrictedTraverse(source_relative_url)
+aggregate_value = portal.restrictedTraverse(source_relative_url)
 
-if source_project_value.getPortalType() == "Computer":
-  destination_decision = source_project_value.getSourceAdministration()
-elif source_project_value.getPortalType() == "Software Instance":
-  destination_decision = source_project_value.getSpecialiseValue().getDestinationSection()
-elif source_project_value.getPortalType() == "Hosting Subscription":
-  destination_decision = source_project_value.getDestinationSection()
-elif source_project_value.getPortalType() == "Software Installation":
-  destination_decision = source_project_value.getDestinationSection()
+if aggregate_value.getPortalType() == "Computer":
+  destination_decision = aggregate_value.getSourceAdministration()
+elif aggregate_value.getPortalType() == "Software Instance":
+  destination_decision = aggregate_value.getSpecialiseValue().getDestinationSection()
+elif aggregate_value.getPortalType() == "Hosting Subscription":
+  destination_decision = aggregate_value.getDestinationSection()
+elif aggregate_value.getPortalType() == "Software Installation":
+  destination_decision = aggregate_value.getDestinationSection()
 else:
   destination_decision = None
 
@@ -22,7 +22,7 @@ support_request_in_progress = portal.portal_catalog.getResultValue(
   portal_type = 'Support Request',
   title = title,
   simulation_state = ["validated", "submitted", "suspended"],
-  source_project_uid = source_project_value.getUid(),
+  aggregate_uid = aggregate_value.getUid(),
 )
 
 if support_request_in_progress is not None:
@@ -33,7 +33,7 @@ support_request_in_progress = context.REQUEST.get("support_request_in_progress",
 if support_request_in_progress is not None:
   support_request = portal.restrictedTraverse(support_request_in_progress, None)
   if support_request and support_request.getTitle() == title and \
-        support_request.getSourceProjectUid() == source_project_value.getUid():
+        support_request.getAggregatetUid() == aggregate_value.getUid():
     return portal.restrictedTraverse(support_request_in_progress)
 
 resource = portal.service_module.\
@@ -48,7 +48,7 @@ support_request.edit(
     description = description,
     start_date = DateTime(),
     destination_decision=destination_decision,
-    source_project_value = source_project_value,
+    aggregate_value = aggregate_value,
     resource=resource
   )
 support_request.validate()

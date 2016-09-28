@@ -2168,7 +2168,7 @@ class TestSlapOSComputer_notifyWrongAllocationScope(testSlapOSMixin):
           portal_type = 'Support Request',
           title = request_title,
           simulation_state = 'suspended',
-          source_project_uid = computer.getUid()
+          aggregate_uid = computer.getUid()
     )
     return support_request
   
@@ -2659,7 +2659,7 @@ class TestSlapOSGenerateSupportRequestForSlapOS(testSlapOSMixin):
                       self.computer.getSourceAdministration())
     self.assertEquals(support_request.getTitle(), title)
     self.assertEquals(support_request.getDescription(), title)
-    self.assertEquals(support_request.getSourceProjectValue(),
+    self.assertEquals(support_request.getAggregateValue(),
                       self.computer)
 
   def test_software_instance_Base_generateSupportRequestForSlapOS(self):
@@ -2685,7 +2685,7 @@ class TestSlapOSGenerateSupportRequestForSlapOS(testSlapOSMixin):
                       hosting_subscription.getDestinationSection())
     self.assertEquals(support_request.getTitle(), title)
     self.assertEquals(support_request.getDescription(), title)
-    self.assertEquals(support_request.getSourceProjectValue(),
+    self.assertEquals(support_request.getAggregateValue(),
                       instance)
 
   def test_hosting_subscription_Base_generateSupportRequestForSlapOS(self):
@@ -2709,7 +2709,7 @@ class TestSlapOSGenerateSupportRequestForSlapOS(testSlapOSMixin):
 
     self.assertEquals(support_request.getTitle(), title)
     self.assertEquals(support_request.getDescription(), title)
-    self.assertEquals(support_request.getSourceProjectValue(),
+    self.assertEquals(support_request.getAggregateValue(),
                       hosting_subscription)
 
   def test_software_installation_Base_generateSupportRequestForSlapOS(self):
@@ -2733,7 +2733,7 @@ class TestSlapOSGenerateSupportRequestForSlapOS(testSlapOSMixin):
 
     self.assertEquals(support_request.getTitle(), title)
     self.assertEquals(support_request.getDescription(), title)
-    self.assertEquals(support_request.getSourceProjectValue(),
+    self.assertEquals(support_request.getAggregateValue(),
                       software_installation)
 
 
@@ -2858,7 +2858,7 @@ class TestSlapOSComputer_CheckState(testSlapOSMixin):
           portal_type = 'Support Request',
           title = request_title,
           simulation_state = 'validated',
-          source_project_uid = computer_uid
+          aggregate_uid = computer_uid
     )
     return support_request
   
@@ -3046,7 +3046,7 @@ class TestSlapOSHostingSubscription_createSupportRequestEvent(testSlapOSMixin):
     support_request = self.portal.portal_catalog.getResultValue(
           portal_type = 'Support Request',
           simulation_state = "validated",
-          source_project_uid = hosting_suscription_uid
+          aggregate_uid = hosting_suscription_uid
     )
     return support_request
 
@@ -3433,7 +3433,7 @@ class TestSupportRequestTrySendNotificationMessage(testSlapOSMixin):
     support_request = self.portal.support_request_module.newContent(\
             title=title, description=title,
             destination_decision=self.computer.getSourceAdministration(),
-            source_project_value=self.computer.getRelativeUrl())
+            aggregate_value=self.computer.getRelativeUrl())
     support_request.validate()
     self.tic()
     
@@ -3484,7 +3484,7 @@ class TestSupportRequestTrySendNotificationMessage(testSlapOSMixin):
     another_support_request = self.portal.support_request_module.newContent(\
             title=title, description=title,
             destination_decision=self.computer.getSourceAdministration(),
-            source_project_value=self.computer.getRelativeUrl())
+            aggregate_value=self.computer.getRelativeUrl())
     another_support_request.validate()
     self.tic()
     
