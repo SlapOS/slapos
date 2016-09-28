@@ -42,7 +42,7 @@ mode = 755
 # Used to manually run the resilient test if we don't have a running testnode.
 recipe = slapos.cookbook:wrapper
 test-suite-title = slaprunner
-command-line = {{ bin_directory }}/runStandaloneResiliencyTestSuite --test-suite-title=${:test-suite-title} ${deploy-scalability-test:test-parameters}
+command-line = {{ bin_directory }}/runStandaloneResiliencyTest --test-suite-title=${:test-suite-title} ${deploy-scalability-test:test-parameters}
 wrapper-path = ${directory:bin}/runStandaloneResiliencyTestSuite
 
 [request-resilient-instance]
