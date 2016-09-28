@@ -1,4 +1,6 @@
 from zExceptions import Unauthorized
+from DateTime import DateTime
+from Products.ERP5Type.DateUtils import addToDate
 if REQUEST is not None:
   raise Unauthorized
 
@@ -10,6 +12,11 @@ if instance.getSlapState() == "destroy_requested":
 hosting_subscription = instance.getSpecialiseValue()
 if hosting_subscription is None or \
     hosting_subscription.getSlapState() == "destroy_requested":
+  return
+
+# If instance modificationDate is too recent, skip
+# Delay destroy of unlinked instances
+if instance.getModificationDate() - addToDate(DateTime(), {'minute': -50}) > 0:
   return
 
 if instance.getPredecessorRelatedValue() is None:
