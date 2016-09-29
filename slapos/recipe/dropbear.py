@@ -168,15 +168,20 @@ def keysplit(s):
   """
   Split a string like "ssh-rsa AKLFKJSL..... ssh-rsa AAAASAF...."
   and return the individual key_type + key strings.
+
+  TODO: handle comments in ssh keys, which are generated
+        by default at key creation.
   """
+  s = s.replace('\n', ' ')
   si = iter(s.split(' '))
   while True:
     key_type = next(si)
+    if key_type == '':
+      continue
     try:
       key_value = next(si)
     except StopIteration:
-      # odd number of elements, should not happen, yield the last one by itself
-      yield key_type
+      # odd number of elements, should not happen
       break
     yield '%s %s' % (key_type, key_value)
 
