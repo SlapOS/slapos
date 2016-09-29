@@ -115,7 +115,7 @@ ca-certs = ${ca-directory:certs}
 ca-newcerts = ${ca-directory:newcerts}
 ca-crl = ${ca-directory:crl}
 
-[ca-httpd]
+[ca-monitor-httpd]
 <= certificate-authority
 recipe = slapos.cookbook:certificate_authority.request
 key-file = ${monitor-httpd-conf-parameter:key-file}
@@ -136,9 +136,8 @@ service-pid-folder = ${monitor-directory:pids}
 crond-folder = ${logrotate-directory:cron-entries}
 logrotate-folder = ${logrotate:logrotate-entries}
 promise-runner = {{ monitor_runpromise }}
-promise-folder-list = 
-  ${directory:promises}
-  ${directory:monitor-promise}
+promise-folder = ${directory:promises}
+pid-file = ${monitor-directory:pids}/monitor-bootstrap.pid
 
 public-path-list = 
 private-path-list = 
@@ -370,15 +369,23 @@ curl_path = {{ curl_executable_location }}
 check-secure = 1
 
 [monitor-bootstrap-promise]
-recipe = slapos.recipe.template:jinja2
-template = {{ template_wrapper }}
-rendered = ${directory:promises}/monitor-bootstrap-status
+recipe = collective.recipe.template
 file = ${monitor-conf-parameters:promise-output-file}
-command = if [ ! -f "${:file}" ]; then echo "Monitor bootstrap exited with error." && exit 2; else echo "Bootstrap OK"; fi
-mode = 0700
-context =
-    key content :command
-    raw dash_binary {{ dash_executable_location }}
+input = inline:#!{{ dash_executable_location }}
+  PID=`cat ${monitor-conf-parameters:pid-file}`
+  for i in {1..20}; do
+    # wait for monitor bootstrap script to finish (max 10 seconds)
+    kill -0 "$PID" > /dev/null 2>&1
+    RETURN_CODE=$?
+    if [ $RETURN_CODE -eq 0 ] ; then
+      break
+    else
+      sleep 0.5
+    fi
+  done
+  if [ ! -f "${:file}" ]; then echo "Monitor bootstrap exited with error." && exit 2; else echo "Bootstrap OK"; fi
+output = ${directory:promises}/monitor-bootstrap-status
+mode = 700
 
 [monitor-base]
 # create dependencies between required monitor parts
@@ -393,7 +400,7 @@ depends =
   ${certificate-authority:wrapper}
   ${monitor-conf:rendered}
   ${start-monitor:wrapper-path}
-  ${ca-httpd:wrapper}
+  ${ca-monitor-httpd:wrapper}
   ${monitor-httpd-promise:filename}
   ${monitor-status2rss-cron-entry:name}
   ${monitor-bootstrap-promise:file}
