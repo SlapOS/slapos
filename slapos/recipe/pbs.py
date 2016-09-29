@@ -303,7 +303,7 @@ class Recipe(GenericSlapRecipe, Notify, Callback):
         executable=rdiff_wrapper,
         log=os.path.join(self.options['feeds'], entry['notification-id']),
         title=entry.get('title', slave_id),
-        notification_url=entry['notify'],
+        notification_url=entry['notify'] or '',
         feed_url='%s/get/%s' % (self.options['notifier-url'], entry['notification-id']),
         pidfile=os.path.join(self.options['run-directory'], '%s.pid' % slave_id),
         instance_root_name=self.options.get('instance-root-name', None),
