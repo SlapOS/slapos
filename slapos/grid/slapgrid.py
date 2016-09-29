@@ -676,9 +676,15 @@ stderr_logfile_backups=1
 
     if os.path.exists(transaction_file_path):
       with open(transaction_file_path, 'r') as tf:
-        computer_partition.setComputerPartitionRelatedInstanceList(
-          [reference for reference in tf.read().split('\n') if reference]
-        )
+        try:
+          computer_partition.setComputerPartitionRelatedInstanceList(
+            [reference for reference in tf.read().split('\n') if reference]
+          )
+        except NotFoundError, e:
+          # Master doesn't implement this feature ?
+          self.logger.warning("NotFoundError: %s. \nCannot send requested instance "\
+                            "list to master. Please check if this feature is"\
+                            "implemented on SlapOS Master." % str(e))
 
   def _addFirewallRule(self, rule_command):
     """
