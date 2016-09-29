@@ -41,7 +41,7 @@ parts +=
 recipe = slapos.cookbook:free_port
 minimum = 49980
 maximum = 49989
-ip = $${slap-network-information:global-ipv6}
+ip = $${slap-network-information:local-ipv4}
 
 [runner-free-port]
 recipe = slapos.cookbook:free_port
