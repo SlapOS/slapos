@@ -41,7 +41,7 @@
     },
     "cloudooo-url": {
       "description": "Conversion service access information - DEPRECATED",
-      "pattern": "^cloudooo://",
+      "pattern": "^(http|https)://",
       "type": "string"
     },
     "mariadb-database-list": {

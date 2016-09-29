@@ -117,6 +117,10 @@ name = neo-${gen-neo-cluster-base:passwd}
 [gen-smtpd-sasl-password]
 < = gen-password
 
+{% set zope_partition_dict = slapparameter_dict.get('zope-partition-dict', {'1': {}}) -%}
+{% set zope_address_list_id_dict = {} -%}
+{% if zope_partition_dict -%}
+
 [request-zope-base]
 <= request-common
 return =
@@ -158,7 +162,7 @@ software-type = zope
 
 {% set zope_family_dict = {} -%}
 {% set jupyter_zope_family_default = [] -%}
-{% for custom_name, zope_parameter_dict in slapparameter_dict.get('zope-partition-dict', {'1': {}}).items() -%}
+{% for custom_name, zope_parameter_dict in zope_partition_dict.items() -%}
 {%   set partition_name = 'zope-' ~ custom_name -%}
 {%   set section_name = 'request-' ~ partition_name -%}
 {%   set zope_family = zope_parameter_dict.get('family', 'default') -%}
@@ -189,7 +193,6 @@ config-webdav = {{ dumps(zope_parameter_dict.get('webdav', False)) }}
 {% endif -%}
 
 {# We need to concatenate lists that we cannot read as lists, so this gets hairy. -#}
-{% set zope_address_list_id_dict = {} -%}
 {% set zope_family_parameter_dict = {} -%}
 {% for family_name, zope_section_id_list in zope_family_dict.items() -%}
 {%   for zope_section_id in zope_section_id_list -%}
@@ -264,6 +267,8 @@ config-{{ name }} = {{ value }}
 return = site_url
 {% endif -%}
 
+{% endif -%}{# if zope_partition_dict -#}
+
 [publish]
 recipe = slapos.cookbook:publish.serialised
 -extends = publish-early
@@ -271,11 +276,13 @@ recipe = slapos.cookbook:publish.serialised
 neo-masters = ${neo-0-final:connection-masters}
 neo-admins = ${neo-0-final:connection-admins}
 {% endif  -%}
+{% if zope_address_list_id_dict -%}
 {#
 Pick any published hosts-dict, they are expected to be identical - and there is
 no way to check here.
 -#}
 hosts-dict = {{ '${' ~ zope_address_list_id_dict.keys()[0] ~ ':connection-hosts-dict}' }}
+{% endif -%}
 {% for name, value in publish_dict.items() -%}
 {{   name }} = {{ value }}
 {% endfor -%}

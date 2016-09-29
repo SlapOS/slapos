@@ -31,26 +31,27 @@ from slapos.recipe.librecipe import GenericSlapRecipe
 CONNECTION_PARAMETER_STRING = 'connection-'
 
 class Recipe(GenericSlapRecipe):
-  def _install(self):
-    publish_dict = {}
-    done = set()
+  def __init__(self, buildout, name, options):
+    super(Recipe, self).__init__(buildout, name, options)
+    # Tell buildout about the sections we will access during install.
+    self._extend_set = done = set()
     extends = [self.name]
     while extends:
-        name = extends.pop()
-        done.add(name)
-        for k, v in self.buildout[name].iteritems():
-          if k[:1] == '-':
-            if k == '-extends':
-              extends += set(v.split()) - done
-          elif k != 'recipe':
-            publish_dict[k] = v
+      name = extends.pop()
+      done.add(name)
+      extends += set(self.buildout[name].get('-extends', '').split()) - done
+
+  def _install(self):
+    publish_dict = {}
+    for name in self._extend_set:
+      for k, v in self.buildout[name].iteritems():
+        if k != 'recipe' and not k.startswith('-'):
+          publish_dict[k] = v
     self._setConnectionDict(publish_dict, self.options.get('-slave-reference'))
     return []
 
   def _setConnectionDict(self, publish_dict, slave_reference=None):
     return self.setConnectionDict(publish_dict, slave_reference)
-
-SERIALISED_MAGIC_KEY = '_'
 
 class Serialised(Recipe):
   def _setConnectionDict(self, publish_dict, slave_reference=None):
