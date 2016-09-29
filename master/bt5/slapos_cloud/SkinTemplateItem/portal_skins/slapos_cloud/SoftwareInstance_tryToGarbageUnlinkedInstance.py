@@ -16,7 +16,13 @@ if hosting_subscription is None or \
 
 # If instance modificationDate is too recent, skip
 # Delay destroy of unlinked instances
-if instance.getModificationDate() - addToDate(DateTime(), {'minute': -50}) > 0:
+if not delay_time:
+  delay_time = 50
+if instance.getModificationDate() - addToDate(DateTime(), {'minute': -1*delay_time}) > 0:
+  return
+
+if hosting_subscription.getTitle() == instance.getTitle():
+  # Refuse to destroy root instance
   return
 
 if instance.getPredecessorRelatedValue() is None:

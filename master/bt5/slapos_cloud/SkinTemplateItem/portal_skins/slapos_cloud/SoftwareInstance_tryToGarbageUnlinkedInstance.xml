@@ -50,7 +50,7 @@
         </item>
         <item>
             <key> <string>_params</string> </key>
-            <value> <string>REQUEST=None</string> </value>
+            <value> <string>REQUEST=None, delay_time=50</string> </value>
         </item>
         <item>
             <key> <string>id</string> </key>

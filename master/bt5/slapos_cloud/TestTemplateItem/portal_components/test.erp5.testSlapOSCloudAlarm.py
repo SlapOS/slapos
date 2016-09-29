@@ -5,6 +5,7 @@ from Products.SlapOS.tests.testSlapOSMixin import \
 from Products.ERP5Type.tests.utils import createZODBPythonScript
 from unittest import skip
 import json
+import time
 from zExceptions import Unauthorized
 from DateTime import DateTime
 from Products.ERP5Type.DateUtils import addToDate
@@ -2104,7 +2105,7 @@ portal_workflow.doActionFor(context, action='edit_action', comment='Visited by S
     instance.edit(predecessor_list=[])
     self.tic()
     self.assertEqual(instance0.getPredecessorRelatedTitle(), None)
-    instance0.SoftwareInstance_tryToGarbageUnlinkedInstance()
+    instance0.SoftwareInstance_tryToGarbageUnlinkedInstance(delay_time=-1)
     self.tic()
     self.assertEqual(instance0.getSlapState(), 'destroy_requested')
 
@@ -2141,12 +2142,58 @@ portal_workflow.doActionFor(context, action='edit_action', comment='Visited by S
     self.tic()
     self.assertEqual(instance0.getPredecessorRelatedTitle(), None)
 
-    instance0.SoftwareInstance_tryToGarbageUnlinkedInstance()
+    instance0.SoftwareInstance_tryToGarbageUnlinkedInstance(delay_time=-1)
     self.tic()
     self.assertEqual(instance0.getSlapState(), 'destroy_requested')
     self.assertEqual(instance_instance0.getSlapState(), 'start_requested')
     # Link of child removed
     self.assertEqual(instance_instance0.getPredecessorRelatedTitle(), None)
+
+  def test_SoftwareInstance_tryToGarbageUnlinkedInstance_will_delay(self):
+    instance = self.createInstance()
+    partition = self.createComputerPartition()
+    instance.edit(aggregate_value=partition)
+    self.tic()
+    instance0 = self.doRequestInstance(instance, 'instance0')
+    instance_instance0 = self.doRequestInstance(instance0, 'Subinstance0')
+    self.assertEqual(instance_instance0.getPredecessorRelatedTitle(),
+                     'instance0')
+    instance.edit(predecessor_list=[])
+    self.tic()
+    self.assertEqual(instance0.getPredecessorRelatedTitle(), None)
+
+    instance0.SoftwareInstance_tryToGarbageUnlinkedInstance()
+    self.tic()
+    self.assertEqual(instance0.getSlapState(), 'start_requested')
+    self.assertEqual(instance_instance0.getSlapState(), 'start_requested')
+
+    # delay a bit
+    time.sleep(2)
+    # run with delay of 3 seconds
+    instance0.SoftwareInstance_tryToGarbageUnlinkedInstance(delay_time=3/60.0)
+    self.tic()
+
+    self.assertEqual(instance0.getSlapState(), 'destroy_requested')
+    self.assertEqual(instance_instance0.getSlapState(), 'start_requested')
+    # Link of child removed
+    self.assertEqual(instance_instance0.getPredecessorRelatedTitle(), None)
+
+  def test_SoftwareInstance_tryToGarbageUnlinkedInstance_unlinked_root(self):
+    instance = self.createInstance()
+    partition = self.createComputerPartition()
+    instance.edit(aggregate_value=partition)
+    self.tic()
+    
+    self.assertEqual(self.hosting_subscription.getTitle(), instance.getTitle())
+
+    # Remove predecessor link
+    self.hosting_subscription.edit(predecessor_list=[])
+    self.tic()
+    self.assertEqual(instance.getPredecessorRelatedTitle(), None)
+    # will not destroy
+    instance.SoftwareInstance_tryToGarbageUnlinkedInstance(delay_time=-10)
+    self.tic()
+    self.assertEqual(instance.getSlapState(), 'start_requested')
 
   def test_alarm_search_inlinked_instance(self):
     instance = self.createInstance()
