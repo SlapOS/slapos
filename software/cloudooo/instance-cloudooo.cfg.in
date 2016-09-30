@@ -78,7 +78,6 @@ parts =
   haproxy
   xvfb-instance
   wkhtmltopdf-on-xvfb
-  x2t
 
 eggs-directory = {{ eggs_directory }}
 develop-eggs-directory = {{ develop_eggs_directory }}
@@ -251,6 +250,7 @@ link-binary =
   {{ parameter_dict['poppler'] }}/bin/pdfinfo
   {{ parameter_dict['poppler'] }}/bin/pdftotext
   {{ parameter_dict['poppler'] }}/bin/pdftohtml
+  {{ parameter_dict['onlyoffice-x2t'] }}/x2t
 
 # rest of parts are candidates for some generic stuff
 [directory]
@@ -288,10 +288,4 @@ environment =
   DISPLAY=:0
   TMPDIR=${directory:run}
 command-line = {{ parameter_dict['wkhtmltopdf'] }}/wkhtmltopdf --use-xserver
-parameters-extra = true
-
-[x2t]
-recipe = slapos.cookbook:wrapper
-wrapper-path = ${directory:bin}/x2t
-command-line = {{ parameter_dict['onlyoffice-x2t'] }}/x2t
 parameters-extra = true
