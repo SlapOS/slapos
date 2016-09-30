@@ -26,6 +26,7 @@ parts +=
   bash-profile
   supervisord-wrapper
   importer-consistency-promise
+  software-release-deployment-promise
 
   resilient-software-release-information
 # have to repeat the next one, as it's not inherited from pbsready-import
@@ -104,6 +105,24 @@ input = inline: #!/bin/sh
   fi
   exit 1; # Something else went wrong
 output = $${directory:promises}/importer-consistency-promise
+mode = 755
+
+[software-release-deployment-promise]
+recipe = collective.recipe.template
+input = inline: #!/bin/sh
+  PROJECT_FILE=$(find "$${directory:etc}" -maxdepth 1 -name .project)
+  if [ -z "$PROJECT_FILE" ]; then
+    exit 0;
+  else
+    INSTALLATION_FILE=$(find "$${runnerdirectory:software-root}" -mindepth 2 -maxdepth 2 -name .completed)
+    if [ -n "$INSTALLATION_FILE" ]; then
+      exit 0;
+    else
+      exit 1;
+    fi
+  fi
+  exit 1
+output = $${directory:promises}/software-release-deployment-promise
 mode = 755
 
 [resilient-software-release-information]
