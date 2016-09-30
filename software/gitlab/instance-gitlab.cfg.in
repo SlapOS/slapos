@@ -537,7 +537,7 @@ depend  =
 
 [promise-gitlab-workhorse]
 <= promise-byurl
-url     = --unix-socket ${gitlab-workhorse:socket}  http:/static.css
+url     = --unix-socket ${gitlab-workhorse:socket}  http://localhost/static.css
 
 
 # gitlab-workhorse logs to stdout/stderr - logs are handled by slapos not us
@@ -579,7 +579,7 @@ depend  =
 
 [promise-unicorn]
 <= promise-byurl
-url     = --unix-socket ${unicorn:socket}  http:/
+url     = --unix-socket ${unicorn:socket}  http://localhost/
 
 [promise-rakebase]
 recipe  = slapos.cookbook:wrapper
