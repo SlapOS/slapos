@@ -35,6 +35,7 @@ import slapos.slap
 import netaddr
 import logging
 import errno
+import re
 
 import zc.buildout
 
@@ -59,14 +60,16 @@ class SlapConfigParser(ConfigParser, object):
     if sys.version_info[0] > 2:
       return super(SlapConfigParser, self).write(fp)
 
+    regex = re.compile(r'^(.*)\s+([+-]{1})$')
     if self._defaults:
       fp.write("[%s]\n" % DEFAULTSECT)
       for (key, value) in self._defaults.items():
-        if key.endswith(" +") or key.endswith(" -"):
-          line = "%s += %s\n" % (key.replace(' +', '').replace(' -', ''),
-                                  str(value).replace('\n', '\n\t'))
-        else:
-          line = "%s = %s\n" % (key, str(value).replace('\n', '\n\t'))
+        op = ""
+        result = regex.match(key)
+        if result is not None:
+          key, op = result.groups()
+
+        line = "%s %s= %s\n" % (key, op, str(value).replace('\n', '\n\t'))
         fp.write(line)
       fp.write("\n")
     for section in self._sections:
@@ -75,11 +78,12 @@ class SlapConfigParser(ConfigParser, object):
         if key == "__name__":
           continue
         if (value is not None) or (self._optcre == self.OPTCRE):
-          if key.endswith(" +") or key.endswith(" -"):
-            key = " += ".join((key.replace(' +', '').replace(' -', ''),
-                                str(value).replace('\n', '\n\t')))
-          else:
-            key = " = ".join((key, str(value).replace('\n', '\n\t')))
+          op = ""
+          result = regex.match(key)
+          if result is not None:
+            key, op = result.groups()
+          key = "%s %s= %s" % (key, op, str(value).replace('\n', '\n\t'))
+
         fp.write("%s\n" % key)
       fp.write("\n")
 
