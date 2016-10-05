@@ -37,7 +37,7 @@ sync_element () {
       done
     fi
   done
-  echo "$exclude_content" > $srv_directory/exporter.exclude
+  echo -e "$exclude_content" > $srv_directory/exporter.exclude
 
   for element in $element_list
   do

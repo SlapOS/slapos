@@ -1,0 +1,45 @@
+[buildout]
+parts = switch-softwaretype
+eggs-directory = {{ eggs_directory }}
+develop-eggs-directory = {{ develop_eggs_directory }}
+
+[slap-configuration]
+recipe = slapos.cookbook:slapconfiguration.serialised
+computer = ${slap-connection:computer-id}
+partition = ${slap-connection:partition-id}
+url = ${slap-connection:server-url}
+key = ${slap-connection:key-file}
+cert = ${slap-connection:cert-file}
+
+[jinja2-template-base]
+recipe = slapos.recipe.template:jinja2
+filename = ${:_buildout_section_name_}.cfg
+rendered = ${buildout:parts-directory}/${:_buildout_section_name_}/${:filename}
+extensions = jinja2.ext.do
+extra-context =
+context =
+    key slapparameter_dict slap-configuration:configuration
+    raw rina_tools_location {{ rina_tools_location }}
+    ${:extra-context}
+
+[root]
+<= jinja2-template-base
+template = {{ instance_root }}
+extra-context =
+    key ipv6 slap-configuration:ipv6-random
+    raw python_location {{ python_location }}
+    raw rina_proxy {{ rina_proxy }}
+
+[server]
+<= jinja2-template-base
+template = {{ instance_server }}
+extra-context =
+    key instance_guid slap-configuration:instance-guid
+
+[switch-softwaretype]
+recipe = slapos.cookbook:switch-softwaretype
+override = {{ dumps(override_switch_softwaretype |default) }}
+default = root:rendered
+# BBB
+RootSoftwareInstance = ${:default}
+server = server:rendered

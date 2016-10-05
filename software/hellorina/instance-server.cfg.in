@@ -1,0 +1,14 @@
+[directory]
+recipe = slapos.cookbook:mkdirectory
+service = ${buildout:directory}/etc/service
+
+[server]
+recipe = slapos.cookbook:wrapper
+command-line = {{rina_tools_location}}/bin/rina-echo-time -l --server-api {{instance_guid}}
+wrapper-path = ${directory:service}/server
+
+[publish]
+recipe = slapos.cookbook:publish.serialised
+
+[buildout]
+parts = publish server

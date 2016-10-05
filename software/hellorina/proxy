@@ -1,0 +1,70 @@
+#!/usr/bin/python
+import httplib, socket, subprocess, sys, threading, urlparse
+import BaseHTTPServer, SocketServer
+
+class Popen(subprocess.Popen):
+
+    def stop(self):
+        if self.pid and self.returncode is None:
+            self.terminate()
+            t = threading.Timer(5, self.kill)
+            t.start()
+            # PY3: use waitid(WNOWAIT) and call self.poll() after t.cancel()
+            r = self.wait()
+            t.cancel()
+            return r
+
+class Handler(BaseHTTPServer.BaseHTTPRequestHandler):
+
+    def do_GET(self):
+        try:
+            path, query = self.path.split('?', 1)
+        except ValueError:
+            path = self.path
+            query = {}
+        else:
+            query = dict(urlparse.parse_qsl(query,
+                  keep_blank_values=1, strict_parsing=1))
+        _, path = path.split('/')
+        if not _:
+            try:
+                return getattr(self, '_GET_' + path, None)(**query)
+            except (AttributeError, TypeError):
+                pass
+        self.send_error(httplib.BAD_REQUEST)
+
+    def _GET_(self):
+        self.send_response(httplib.FOUND)
+        self.send_header('Location', 'ping?count=4')
+        self.end_headers()
+
+    def _GET_ping(self, count=4):
+        count = int(count)
+        args = "rina-echo-time", "--server-api", server_api, "-c", str(count)
+        try:
+            p = Popen(args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        except Exception, e:
+            self.send_error(httplib.INTERNAL_SERVER_ERROR)
+            raise
+        try:
+            self.send_response(httplib.OK)
+            self.send_header('Content-type', 'text/plain; charset=utf-8')
+            self.end_headers()
+            self.wfile.write('# count=%s\n' % count)
+            while 1:
+                line = p.stdout.readline()
+                if not line:
+                    break
+                self.wfile.write(line)
+        finally:
+            p.stop()
+
+class Server(SocketServer.ThreadingTCPServer):
+
+    allow_reuse_address = True
+    daemon_threads = True
+    address_family = socket.AF_INET6
+
+if __name__ == "__main__":
+    server_api = sys.argv[1]
+    Server((sys.argv[2], int(sys.argv[3])), Handler).serve_forever()

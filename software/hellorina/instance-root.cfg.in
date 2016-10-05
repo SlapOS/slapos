@@ -1,0 +1,59 @@
+{% set sla_dict = {} -%}
+{% for sla, ref_list in slapparameter_dict.get('sla-dict', {}).iteritems() -%}
+{%   do sla_dict.update(dict.fromkeys(ref_list, sla)) -%}
+{% endfor -%}
+
+{% macro sla(name, required=False) -%}
+{% if required or name in sla_dict -%}
+{%  for k, (v,) in urlparse.parse_qs(sla_dict.pop(name), strict_parsing=1).iteritems() -%}
+sla-{{ k }} = {{ v }}
+{%  endfor -%}
+{% else -%}
+sla-computer_guid = ${slap-connection:computer-id}
+{% endif -%}
+{% endmacro -%}
+
+[directory]
+recipe = slapos.cookbook:mkdirectory
+home = ${buildout:directory}
+etc = ${:home}/etc
+var = ${:home}/var
+# Executables put here will be started but not monitored (for startup scripts)
+script = ${:etc}/run
+# Executables put here will be started and monitored (for daemons)
+service = ${:etc}/service
+
+[server]
+<= request-common-base
+software-type = server
+name = server
+{{ sla('server') }}
+return =
+
+[proxy]
+recipe = slapos.cookbook:wrapper
+command-line = {{ python_location }}/bin/python2.7 {{ rina_proxy }} ${server:instance-guid} ${:ipv6} ${:port}
+wrapper-path = ${directory:service}/proxy
+environment =
+  PATH={{ rina_tools_location }}/bin:%(PATH)s
+ipv6 = {{ipv6}}
+port = 8080
+
+[publish]
+recipe = slapos.cookbook:publish.serialised
+url.proxy = http://[${proxy:ipv6}]:${proxy:port}
+
+[request-common-base]
+recipe = slapos.cookbook:request.serialised
+software-url = ${slap-connection:software-release-url}
+server-url = ${slap-connection:server-url}
+key-file = ${slap-connection:key-file}
+cert-file = ${slap-connection:cert-file}
+computer-id = ${slap-connection:computer-id}
+partition-id = ${slap-connection:partition-id}
+
+[buildout]
+parts =
+  publish
+
+{{- assert(not sla_dict, sla_dict) }}
