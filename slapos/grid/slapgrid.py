@@ -41,6 +41,7 @@ import traceback
 import warnings
 import logging
 import json
+import shutil
 
 if sys.version_info < (2, 6):
   warnings.warn('Used python version (%s) is old and has problems with'
@@ -1154,6 +1155,14 @@ stderr_logfile_backups=1
           software_url = None
         if computer_partition_state == COMPUTER_PARTITION_DESTROYED_STATE and \
            not software_url:
+          # Exclude files which may come from concurrent processing 
+          #  ie.: slapos ndoe report and slapos node instance commands 
+          # can create a .timestamp file.
+          file_list = os.listdir(computer_partition_path)
+          for garbage_file in [".slapgrid", ".timestamp"]:
+            if garbage_file in file_list:
+              shutil.rmtree("/".join([computer_partition_path, garbage_file]))
+
           if os.listdir(computer_partition_path) != []:
             self.logger.warning("Free partition %s contains file(s) in %s." % (
                 computer_partition.getId(), computer_partition_path))
