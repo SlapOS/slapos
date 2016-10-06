@@ -159,7 +159,7 @@ def launchSupervisord(instance_root, logger,
 
   logger.info("Launching supervisord with clean environment.")
   # Extract python binary to prevent shebang size limit
-  invocation_list = ["supervisord", '-c']
+  invocation_list = [sys.executable, '-c']
   invocation_list.append(
       "import sys ; sys.path=" + str(sys.path) + " ; " +
       "import supervisor.supervisord ; " +
@@ -167,7 +167,6 @@ def launchSupervisord(instance_root, logger,
       "supervisor.supervisord.main()")
   supervisord_popen = SlapPopen(invocation_list,
                                 env={},
-                                executable=sys.executable,
                                 stdout=subprocess.PIPE,
                                 stderr=subprocess.STDOUT,
                                 logger=logger)
