@@ -1,3 +1,4 @@
+notification_message_module/slapos-crm-*
 portal_alarms/slapos_check_duplicated_software_instance
 portal_alarms/slapos_check_security_uid
 portal_alarms/slapos_erp5_cleanup_active_process
