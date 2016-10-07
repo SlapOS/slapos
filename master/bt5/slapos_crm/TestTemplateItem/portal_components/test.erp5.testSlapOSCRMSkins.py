@@ -2858,7 +2858,7 @@ class TestSlapOSComputer_CheckState(testSlapOSMixin):
           portal_type = 'Support Request',
           title = request_title,
           simulation_state = 'validated',
-          aggregate_uid = computer_uid
+          default_aggregate_uid = computer_uid
     )
     return support_request
   
@@ -3046,7 +3046,7 @@ class TestSlapOSHostingSubscription_createSupportRequestEvent(testSlapOSMixin):
     support_request = self.portal.portal_catalog.getResultValue(
           portal_type = 'Support Request',
           simulation_state = "validated",
-          aggregate_uid = hosting_suscription_uid
+          default_aggregate_uid = hosting_suscription_uid
     )
     return support_request
 

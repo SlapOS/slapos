@@ -22,7 +22,7 @@ support_request_in_progress = portal.portal_catalog.getResultValue(
   portal_type = 'Support Request',
   title = title,
   simulation_state = ["validated", "submitted", "suspended"],
-  aggregate_uid = aggregate_value.getUid(),
+  default_aggregate_uid = aggregate_value.getUid(),
 )
 
 if support_request_in_progress is not None:
