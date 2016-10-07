@@ -2191,9 +2191,28 @@ portal_workflow.doActionFor(context, action='edit_action', comment='Visited by S
     self.tic()
     self.assertEqual(instance.getPredecessorRelatedTitle(), None)
     # will not destroy
-    instance.SoftwareInstance_tryToGarbageUnlinkedInstance(delay_time=-10)
+    self.assertRaises(
+      ValueError,
+      instance.SoftwareInstance_tryToGarbageUnlinkedInstance,
+      delay_time=-10)
     self.tic()
     self.assertEqual(instance.getSlapState(), 'start_requested')
+
+  def test_SoftwareInstance_tryToGarbageUnlinkedInstance_not_unlinked(self):
+    instance = self.createInstance()
+    partition = self.createComputerPartition()
+    instance.edit(aggregate_value=partition)
+    self.tic()
+    instance0 = self.doRequestInstance(instance, 'instance0')
+    instance_instance0 = self.doRequestInstance(instance0, 'Subinstance0')
+    self.assertEqual(instance_instance0.getPredecessorRelatedTitle(),
+                     'instance0')
+    self.assertEqual(instance_instance0.getSlapState(), 'start_requested')
+
+    # Try to remove without delete predecessor link
+    instance_instance0.SoftwareInstance_tryToGarbageUnlinkedInstance(delay_time=-1)
+    self.tic()
+    self.assertEqual(instance_instance0.getSlapState(), 'start_requested')
 
   def test_alarm_search_inlinked_instance(self):
     instance = self.createInstance()
