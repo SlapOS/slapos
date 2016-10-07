@@ -33,7 +33,7 @@ support_request_in_progress = context.REQUEST.get("support_request_in_progress",
 if support_request_in_progress is not None:
   support_request = portal.restrictedTraverse(support_request_in_progress, None)
   if support_request and support_request.getTitle() == title and \
-        support_request.getAggregatetUid() == aggregate_value.getUid():
+      support_request.getAggregateUid() == aggregate_value.getUid():
     return portal.restrictedTraverse(support_request_in_progress)
 
 resource = portal.service_module.\

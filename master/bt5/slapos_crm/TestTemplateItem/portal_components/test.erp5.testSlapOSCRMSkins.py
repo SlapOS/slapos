@@ -2168,7 +2168,7 @@ class TestSlapOSComputer_notifyWrongAllocationScope(testSlapOSMixin):
           portal_type = 'Support Request',
           title = request_title,
           simulation_state = 'suspended',
-          aggregate_uid = computer.getUid()
+          default_aggregate_uid = computer.getUid()
     )
     return support_request
   
