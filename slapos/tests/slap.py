@@ -29,6 +29,7 @@ import logging
 import os
 import unittest
 import urlparse
+import tempfile
 
 import httmock
 
@@ -53,6 +54,8 @@ class SlapMixin(unittest.TestCase):
     print 'Testing against SLAP server %r' % self.server_url
     self.slap = slapos.slap.slap()
     self.partition_id = 'PARTITION_01'
+    if os.environ.has_key('SLAPGRID_INSTANCE_ROOT'):
+      del os.environ['SLAPGRID_INSTANCE_ROOT']
 
   def tearDown(self):
     pass
@@ -785,6 +788,84 @@ class TestComputerPartition(SlapMixin):
       # as request method does not raise, accessing data in case when
       # request was done works correctly
       self.assertEqual(requested_partition_id, requested_partition.getId())
+
+  def test_request_with_slapgrid_request_transaction(self):
+    from slapos.slap.slap import COMPUTER_PARTITION_REQUEST_LIST_TEMPLATE_FILENAME
+    partition_id = 'PARTITION_01'
+    instance_root = tempfile.mkdtemp()
+    partition_root = os.path.join(instance_root, partition_id)
+    os.mkdir(partition_root)
+    os.environ['SLAPGRID_INSTANCE_ROOT'] = instance_root
+    transaction_file_name = COMPUTER_PARTITION_REQUEST_LIST_TEMPLATE_FILENAME % partition_id
+    transaction_file_path = os.path.join(partition_root, transaction_file_name)
+
+    def handler(url, req):
+      qs = urlparse.parse_qs(url.query)
+      if (url.path == '/registerComputerPartition'
+              and 'computer_reference' in qs
+              and 'computer_partition_reference' in qs):
+        slap_partition = slapos.slap.ComputerPartition(
+            qs['computer_reference'][0],
+            qs['computer_partition_reference'][0])
+        return {
+                'status_code': 200,
+                'content': xml_marshaller.xml_marshaller.dumps(slap_partition)
+                }
+      elif (url.path == '/getComputerInformation'
+              and 'computer_id' in qs):
+        slap_computer = slapos.slap.Computer(qs['computer_id'][0])
+        slap_computer._software_release_list = []
+        slap_partition = slapos.slap.ComputerPartition(
+            qs['computer_id'][0],
+            partition_id)
+        slap_computer._computer_partition_list = [slap_partition]
+        return {
+                'status_code': 200,
+                'content': xml_marshaller.xml_marshaller.dumps(slap_computer)
+                }
+      elif url.path == '/requestComputerPartition':
+        raise RequestWasCalled
+      else:
+        return {
+                'status_code': 404
+                }
+
+    with httmock.HTTMock(handler):
+      self.computer_guid = self._getTestComputerId()
+      self.slap = slapos.slap.slap()
+      self.slap.initializeConnection(self.server_url)
+      computer_partition = self.slap.registerComputerPartition(
+          self.computer_guid, partition_id)
+
+      self.assertTrue(os.path.exists(transaction_file_path))
+      with open(transaction_file_path, 'r') as f:
+        content = f.read()
+        self.assertEqual(content, '')
+      self.assertRaises(RequestWasCalled,
+                        computer_partition.request,
+                        'http://server/new/' + self._getTestComputerId(),
+                        'software_type', 'myref')
+      self.assertTrue(os.path.exists(transaction_file_path))
+      with open(transaction_file_path, 'r') as f:
+        content_list = f.read().strip().split('\n')
+        self.assertEqual(content_list, ['myref'])
+
+      # Not override
+      computer_partition = self.slap.registerComputerPartition(
+          self.computer_guid, partition_id)
+      self.assertTrue(os.path.exists(transaction_file_path))
+      with open(transaction_file_path, 'r') as f:
+        content_list = f.read().strip().split('\n')
+        self.assertEqual(content_list, ['myref'])
+
+      # Request a second instance
+      self.assertRaises(RequestWasCalled,
+                        computer_partition.request,
+                        'http://server/new/' + self._getTestComputerId(),
+                        'software_type', 'mysecondref')
+      with open(transaction_file_path, 'r') as f:
+        content_list = f.read().strip().split('\n')
+        self.assertEquals(list(set(content_list)), ['myref', 'mysecondref'])
 
   def _test_new_computer_partition_state(self, state):
     """

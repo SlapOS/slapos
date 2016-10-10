@@ -36,6 +36,7 @@ __all__ = ["slap", "ComputerPartition", "Computer", "SoftwareRelease",
            "Supply", "OpenOrder", "NotFoundError",
            "ResourceNotReady", "ServerError", "ConnectionError"]
 
+import os
 import json
 import logging
 import re
@@ -67,6 +68,7 @@ fallback_logger.addHandler(fallback_handler)
 
 
 DEFAULT_SOFTWARE_TYPE = 'RootSoftwareInstance'
+COMPUTER_PARTITION_REQUEST_LIST_TEMPLATE_FILENAME = '.slapos-request-transaction-%s'
 
 class SlapDocument:
   def __init__(self, connection_helper=None, hateoas_navigator=None):
@@ -81,6 +83,7 @@ class SlapRequester(SlapDocument):
   """
   Abstract class that allow to factor method for subclasses that use "request()"
   """
+
   def _requestComputerPartition(self, request_dict):
     try:
       xml = self._connection_helper.POST('requestComputerPartition', data=request_dict)
@@ -406,8 +409,37 @@ class ComputerPartition(SlapRequester):
     self._partition_id = partition_id
     self._request_dict = request_dict
 
+    # Just create an empty file (for nothing requested yet)
+    self._updateTransactionFile(partition_reference=None)
+
   def __getinitargs__(self):
     return (self._computer_id, self._partition_id, )
+
+  def _updateTransactionFile(self, partition_reference=None):
+    """
+    Store reference to all Instances requested by this Computer Parition
+    """
+    # Environ variable set by Slapgrid while processing this partition
+    instance_root = os.environ.get('SLAPGRID_INSTANCE_ROOT', '')
+    if not instance_root or not self._partition_id:
+      return
+
+    transaction_file_name = COMPUTER_PARTITION_REQUEST_LIST_TEMPLATE_FILENAME % self._partition_id
+    transaction_file_path = os.path.join(instance_root, self._partition_id,
+                                        transaction_file_name)
+
+    try:
+      if partition_reference is None:
+        if os.access(os.path.join(instance_root, self._partition_id), os.W_OK):
+          if os.path.exists(transaction_file_path):
+            return
+          transac_file = open(transaction_file_path, 'w')
+          transac_file.close()
+      else:
+        with open(transaction_file_path, 'a') as transac_file:
+          transac_file.write('%s\n' % partition_reference)
+    except OSError:
+      return
 
   def request(self, software_release, software_type, partition_reference,
               shared=False, partition_parameter_kw=None, filter_kw=None,
@@ -440,6 +472,7 @@ class ComputerPartition(SlapRequester):
         'filter_xml': xml_marshaller.dumps(filter_kw),
         'state': xml_marshaller.dumps(state),
     }
+    self._updateTransactionFile(partition_reference)
     return self._requestComputerPartition(request_dict)
 
   def building(self):
@@ -634,6 +667,15 @@ class ComputerPartition(SlapRequester):
                 }
             )
     return xml_marshaller.loads(xml)
+
+  def setComputerPartitionRelatedInstanceList(self, instance_reference_list):
+    self._connection_helper.POST('updateComputerPartitionRelatedInstanceList',
+        data={
+          'computer_id': self._computer_id,
+          'computer_partition_id': self._partition_id,
+          'instance_reference_xml': xml_marshaller.dumps(instance_reference_list)
+          }
+        )
 
 def _addIpv6Brackets(url):
   # if master_url contains an ipv6 without bracket, add it
