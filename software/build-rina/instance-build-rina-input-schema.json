@@ -1,0 +1,28 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "description": "Parameters to build/publish RINA packages and test hellorina SR.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "publish": {
+      "description": "Upload built packages automatically to a Debian repository when successful.",
+      "type": "object",
+      "required": ["suite", "host", "key"],
+      "properties": {
+        "suite": {
+          "type": "string"
+        },
+        "host": {
+          "type": "string"
+        },
+        "port": {
+          "type": "integer",
+          "default": 22
+        },
+        "key": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}
