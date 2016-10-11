@@ -1110,5 +1110,64 @@ portal_workflow.doActionFor(context, action='edit_action', comment='Visited by H
     self.assertNotEqual('Visited by HostingSubscription_checkSoftwareInstanceState',
       host_sub.workflow_history['edit_workflow'][-1]['comment'])
 
+class TestSlaposCrmUpdateSupportRequestState(testSlapOSMixin):
+
+  def beforeTearDown(self):
+    transaction.abort()
+  
+  def _makeSupportRequest(self):
+    person = self.portal.person_module.template_member\
+         .Base_createCloneDocument(batch_mode=1)
+    support_request = self.portal.support_request_module.\
+      slapos_crm_support_request_template_for_monitoring\
+         .Base_createCloneDocument(batch_mode=1)
+    support_request.validate()
+    new_id = self.generateNewId()
+    support_request.edit(
+        title= "Support Request éçà %s" % new_id,
+        reference="TESTSRQ-%s" % new_id,
+        destination_decision_value=person
+    )
+
+    return support_request
+
+
+  def _simulateSupportRequest_updateMonitoringState(self):
+    script_name = 'SupportRequest_updateMonitoringState'
+    if script_name in self.portal.portal_skins.custom.objectIds():
+      raise ValueError('Precondition failed: %s exists in custom' % script_name)
+    createZODBPythonScript(self.portal.portal_skins.custom,
+      script_name,
+      '*args, **kw',
+      '# Script body\n'
+"""portal_workflow = context.portal_workflow
+portal_workflow.doActionFor(context, action='edit_action', comment='Visited by SupportRequest_updateMonitoringState') """ )
+    transaction.commit()
+  
+  def _dropSupportRequest_updateMonitoringState(self):
+    script_name = 'SupportRequest_updateMonitoringState'
+    if script_name in self.portal.portal_skins.custom.objectIds():
+      self.portal.portal_skins.custom.manage_delObjects(script_name)
+    transaction.commit()
+  
+  def test_alarm_update_support_request_state(self):
+    support_request = self._makeSupportRequest()
+
+    self._simulateSupportRequest_updateMonitoringState()
+
+    try:
+      self.portal.portal_alarms.slapos_crm_update_support_request_state.activeSense()
+      self.tic()
+    finally:
+      self._dropSupportRequest_updateMonitoringState()
+
+    self.assertEqual('Visited by SupportRequest_updateMonitoringState',
+      support_request.workflow_history['edit_workflow'][-1]['comment'])
+
+
+
+
+
+
 
 
