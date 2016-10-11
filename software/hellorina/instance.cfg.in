@@ -26,6 +26,7 @@ context =
 <= jinja2-template-base
 template = {{ instance_root }}
 extra-context =
+    import urlparse urlparse
     key ipv6 slap-configuration:ipv6-random
     raw python_location {{ python_location }}
     raw rina_proxy {{ rina_proxy }}
