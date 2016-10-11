@@ -337,6 +337,14 @@ class IComputerPartition(IBuildoutController, IRequester):
     computer partition.
     """
 
+  def setComputerPartitionRelatedInstanceList(instance_reference_list):
+    """
+    Set relation between this Instance and all his children.
+
+    instance_reference_list -- list of instances requested by this Computer
+                               Partition.   
+    """
+
 class IComputer(Interface):
   """
   Computer interface specification

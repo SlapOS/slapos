@@ -5,6 +5,7 @@ from Products.SlapOS.tests.testSlapOSMixin import \
 from Products.ERP5Type.tests.utils import createZODBPythonScript
 from unittest import skip
 import json
+import time
 from zExceptions import Unauthorized
 from DateTime import DateTime
 from Products.ERP5Type.DateUtils import addToDate
@@ -1389,6 +1390,62 @@ class TestSlapOSGarbageCollectDestroyedRootTreeAlarm(testSlapOSMixin):
     self.assertEqual('validated',
         self.requested_software_instance.getValidationState())
 
+  def test_Instance_tryToGarbageCollect_unlinked_predecessor(self):
+    self.requested_software_instance.edit(predecessor_list=[])
+    self.hosting_subscription.archive()
+    self.portal.portal_workflow._jumpToStateFor(self.hosting_subscription,
+        'destroy_requested')
+    self.portal.portal_workflow._jumpToStateFor(self.software_instance,
+        'destroy_requested')
+    self.tic()
+
+    self.requested_software_instance.Instance_tryToGarbageCollect()
+    self.tic()
+
+    self.assertEqual('destroy_requested',
+        self.requested_software_instance.getSlapState())
+    self.assertEqual('validated',
+        self.requested_software_instance.getValidationState())
+
+  def test_Instance_tryToGarbageCollect_destroy_unlinked_with_child(self):
+    instance_kw = dict(software_release=self.generateNewSoftwareReleaseUrl(),
+      software_type=self.generateNewSoftwareType(),
+      instance_xml=self.generateSafeXml(),
+      sla_xml=self.generateSafeXml(),
+      shared=False,
+      software_title='Sub Instance',
+      state='started'
+    )
+    self.requested_software_instance.requestInstance(**instance_kw)
+    sub_instance = self.requested_software_instance.getPredecessorValue()
+    self.assertNotEqual(sub_instance, None)
+
+    self.requested_software_instance.edit(predecessor_list=[])
+    self.hosting_subscription.archive()
+    self.portal.portal_workflow._jumpToStateFor(self.hosting_subscription,
+        'destroy_requested')
+    self.portal.portal_workflow._jumpToStateFor(self.software_instance,
+        'destroy_requested')
+    self.tic()
+
+    self.requested_software_instance.Instance_tryToGarbageCollect()
+    self.tic()
+
+    self.assertEqual('destroy_requested',
+        self.requested_software_instance.getSlapState())
+    self.assertEqual('validated',
+        self.requested_software_instance.getValidationState())
+
+    self.assertEqual(self.requested_software_instance.getPredecessorValue(),
+                      None)
+    self.assertEqual(sub_instance.getSlapState(), 'start_requested')
+
+    sub_instance.Instance_tryToGarbageCollect()
+    self.tic()
+
+    self.assertEqual(sub_instance.getSlapState(), 'destroy_requested')
+    self.assertEqual(sub_instance.getValidationState(), 'validated')
+
   def _simulateInstance_tryToGarbageCollect(self):
     script_name = 'Instance_tryToGarbageCollect'
     if script_name in self.portal.portal_skins.custom.objectIds():
@@ -1960,6 +2017,252 @@ portal_workflow.doActionFor(context, action='edit_action', comment='Visited by I
     self.assertNotEqual(
         'Visited by Instance_tryToGarbageCollectNonAllocatedRootTree',
         instance.workflow_history['edit_workflow'][-1]['comment'])
+
+class TestSlapOSGarbageCollectUnlinkedInstanceAlarm(testSlapOSMixin):
+
+  def createInstance(self):
+    hosting_subscription = self.portal.hosting_subscription_module\
+        .template_hosting_subscription.Base_createCloneDocument(batch_mode=1)
+    hosting_subscription.validate()
+    hosting_subscription.edit(
+        title=self.generateNewSoftwareTitle(),
+        reference="TESTHS-%s" % self.generateNewId(),
+    )
+    request_kw = dict(
+      software_release=\
+          self.generateNewSoftwareReleaseUrl(),
+      software_type=self.generateNewSoftwareType(),
+      instance_xml=self.generateSafeXml(),
+      sla_xml=self.generateSafeXml(),
+      shared=False,
+      software_title=hosting_subscription.getTitle(),
+      state='started'
+    )
+    hosting_subscription.requestStart(**request_kw)
+    hosting_subscription.requestInstance(**request_kw)
+    self.hosting_subscription = hosting_subscription
+
+    instance = hosting_subscription.getPredecessorValue()
+    return instance
+
+  def createComputerPartition(self):
+    computer = self.portal.computer_module\
+        .template_computer.Base_createCloneDocument(batch_mode=1)
+    computer.validate()
+    computer.edit(
+        title=self.generateNewSoftwareTitle(),
+        reference="TESTCOMP-%s" % self.generateNewId(),
+    )
+    partition = computer.newContent(portal_type="Computer Partition")
+    return partition
+
+  def doRequestInstance(self, instance, title, slave=False):
+    instance_kw = dict(software_release=self.generateNewSoftwareReleaseUrl(),
+      software_type=self.generateNewSoftwareType(),
+      instance_xml=self.generateSafeXml(),
+      sla_xml=self.generateSafeXml(),
+      shared=slave,
+      software_title=title,
+      state='started'
+    )
+    instance.requestInstance(**instance_kw)
+    self.tic()
+    sub_instance = instance.getPredecessorValue()
+    partition = self.createComputerPartition()
+    sub_instance.edit(aggregate_value=partition)
+    self.tic()
+    self.assertEqual(self.hosting_subscription.getRelativeUrl(),
+                    sub_instance.getSpecialise())  
+    return sub_instance
+
+  def _simulateSoftwareInstance_tryToGarbageUnlinkedInstance(self):
+    script_name = 'SoftwareInstance_tryToGarbageUnlinkedInstance'
+    if script_name in self.portal.portal_skins.custom.objectIds():
+      raise ValueError('Precondition failed: %s exists in custom' % script_name)
+    createZODBPythonScript(self.portal.portal_skins.custom,
+                        script_name,
+                        '*args, **kwargs',
+                        '# Script body\n'
+"""portal_workflow = context.portal_workflow
+portal_workflow.doActionFor(context, action='edit_action', comment='Visited by SoftwareInstance_tryToGarbageUnlinkedInstance') """ )
+    transaction.commit()
+
+  def _dropSoftwareInstance_tryToGarbageUnlinkedInstance(self):
+    script_name = 'SoftwareInstance_tryToGarbageUnlinkedInstance'
+    if script_name in self.portal.portal_skins.custom.objectIds():
+      self.portal.portal_skins.custom.manage_delObjects(script_name)
+    transaction.commit()  
+
+  def test_SoftwareInstance_tryToGarbageUnlinkedInstance(self):
+    instance = self.createInstance()
+    partition = self.createComputerPartition()
+    instance.edit(aggregate_value=partition)
+    self.tic()
+    instance0 = self.doRequestInstance(instance, 'instance0')
+    self.assertEqual(instance0.getPredecessorRelatedTitle(), instance.getTitle())
+
+    # Remove predecessor link
+    instance.edit(predecessor_list=[])
+    self.tic()
+    self.assertEqual(instance0.getPredecessorRelatedTitle(), None)
+    instance0.SoftwareInstance_tryToGarbageUnlinkedInstance(delay_time=-1)
+    self.tic()
+    self.assertEqual(instance0.getSlapState(), 'destroy_requested')
+
+  def test_SoftwareInstance_tryToGarbageUnlinkedInstance_hosting_destroyed(self):
+    instance = self.createInstance()
+    partition = self.createComputerPartition()
+    instance.edit(aggregate_value=partition)
+    self.tic()
+    instance0 = self.doRequestInstance(instance, 'instance0')
+    instance.edit(predecessor_list=[])
+    self.tic()
+
+    self.hosting_subscription.archive()
+    self.portal.portal_workflow._jumpToStateFor(self.hosting_subscription,
+        'destroy_requested')
+    self.portal.portal_workflow._jumpToStateFor(instance, 'destroy_requested')
+    self.tic()
+
+    instance0.SoftwareInstance_tryToGarbageUnlinkedInstance()
+    self.tic()
+    # Will not be destroyed by this script
+    self.assertEqual(instance0.getSlapState(), 'start_requested')
+
+  def test_SoftwareInstance_tryToGarbageUnlinkedInstance_will_unlink_children(self):
+    instance = self.createInstance()
+    partition = self.createComputerPartition()
+    instance.edit(aggregate_value=partition)
+    self.tic()
+    instance0 = self.doRequestInstance(instance, 'instance0')
+    instance_instance0 = self.doRequestInstance(instance0, 'Subinstance0')
+    self.assertEqual(instance_instance0.getPredecessorRelatedTitle(),
+                     'instance0')
+    instance.edit(predecessor_list=[])
+    self.tic()
+    self.assertEqual(instance0.getPredecessorRelatedTitle(), None)
+
+    instance0.SoftwareInstance_tryToGarbageUnlinkedInstance(delay_time=-1)
+    self.tic()
+    self.assertEqual(instance0.getSlapState(), 'destroy_requested')
+    self.assertEqual(instance_instance0.getSlapState(), 'start_requested')
+    # Link of child removed
+    self.assertEqual(instance_instance0.getPredecessorRelatedTitle(), None)
+
+  def test_SoftwareInstance_tryToGarbageUnlinkedInstance_will_delay(self):
+    instance = self.createInstance()
+    partition = self.createComputerPartition()
+    instance.edit(aggregate_value=partition)
+    self.tic()
+    instance0 = self.doRequestInstance(instance, 'instance0')
+    instance_instance0 = self.doRequestInstance(instance0, 'Subinstance0')
+    self.assertEqual(instance_instance0.getPredecessorRelatedTitle(),
+                     'instance0')
+    instance.edit(predecessor_list=[])
+    self.tic()
+    self.assertEqual(instance0.getPredecessorRelatedTitle(), None)
+
+    instance0.SoftwareInstance_tryToGarbageUnlinkedInstance()
+    self.tic()
+    self.assertEqual(instance0.getSlapState(), 'start_requested')
+    self.assertEqual(instance_instance0.getSlapState(), 'start_requested')
+
+    # delay a bit
+    time.sleep(2)
+    # run with delay of 3 seconds
+    instance0.SoftwareInstance_tryToGarbageUnlinkedInstance(delay_time=3/60.0)
+    self.tic()
+
+    self.assertEqual(instance0.getSlapState(), 'destroy_requested')
+    self.assertEqual(instance_instance0.getSlapState(), 'start_requested')
+    # Link of child removed
+    self.assertEqual(instance_instance0.getPredecessorRelatedTitle(), None)
+
+  def test_SoftwareInstance_tryToGarbageUnlinkedInstance_unlinked_root(self):
+    instance = self.createInstance()
+    partition = self.createComputerPartition()
+    instance.edit(aggregate_value=partition)
+    self.tic()
+    
+    self.assertEqual(self.hosting_subscription.getTitle(), instance.getTitle())
+
+    # Remove predecessor link
+    self.hosting_subscription.edit(predecessor_list=[])
+    self.tic()
+    self.assertEqual(instance.getPredecessorRelatedTitle(), None)
+    # will not destroy
+    self.assertRaises(
+      ValueError,
+      instance.SoftwareInstance_tryToGarbageUnlinkedInstance,
+      delay_time=-10)
+    self.tic()
+    self.assertEqual(instance.getSlapState(), 'start_requested')
+
+  def test_SoftwareInstance_tryToGarbageUnlinkedInstance_not_unlinked(self):
+    instance = self.createInstance()
+    partition = self.createComputerPartition()
+    instance.edit(aggregate_value=partition)
+    self.tic()
+    instance0 = self.doRequestInstance(instance, 'instance0')
+    instance_instance0 = self.doRequestInstance(instance0, 'Subinstance0')
+    self.assertEqual(instance_instance0.getPredecessorRelatedTitle(),
+                     'instance0')
+    self.assertEqual(instance_instance0.getSlapState(), 'start_requested')
+
+    # Try to remove without delete predecessor link
+    instance_instance0.SoftwareInstance_tryToGarbageUnlinkedInstance(delay_time=-1)
+    self.tic()
+    self.assertEqual(instance_instance0.getSlapState(), 'start_requested')
+
+  def test_alarm_search_inlinked_instance(self):
+    instance = self.createInstance()
+    partition = self.createComputerPartition()
+    instance.edit(aggregate_value=partition)
+    self.tic()
+    instance0 = self.doRequestInstance(instance, 'instance0')
+    self.assertEqual(instance.getPredecessorReference(),
+                      instance0.getReference())
+    self._simulateSoftwareInstance_tryToGarbageUnlinkedInstance()
+    try:
+      self.portal.portal_alarms.slapos_garbage_collect_destroy_unlinked_instance.activeSense()
+      self.tic()
+    finally:
+      self._dropSoftwareInstance_tryToGarbageUnlinkedInstance()
+    self.assertNotEqual(
+        'Visited by SoftwareInstance_tryToGarbageUnlinkedInstance',
+        instance0.workflow_history['edit_workflow'][-1]['comment'])
+
+    # Remove predecessor link
+    instance.edit(predecessor_list=[])
+    self._simulateSoftwareInstance_tryToGarbageUnlinkedInstance()
+    self.tic()
+    try:
+      self.portal.portal_alarms.slapos_garbage_collect_destroy_unlinked_instance.activeSense()
+      self.tic()
+    finally:
+      self._dropSoftwareInstance_tryToGarbageUnlinkedInstance()
+    self.assertEqual(
+        'Visited by SoftwareInstance_tryToGarbageUnlinkedInstance',
+        instance0.workflow_history['edit_workflow'][-1]['comment'])
+
+  def test_alarm_search_inlinked_instance_slave(self):
+    instance = self.createInstance()
+    partition = self.createComputerPartition()
+    instance.edit(aggregate_value=partition)
+    self.tic()
+    slave_instance0 = self.doRequestInstance(instance, 'slaveInstance0', True)
+    self.assertEqual(instance.getPredecessorTitle(), 'slaveInstance0')
+    self._simulateSoftwareInstance_tryToGarbageUnlinkedInstance()
+    instance.edit(predecessor_list=[])
+    self.tic()
+    try:
+      self.portal.portal_alarms.slapos_garbage_collect_destroy_unlinked_instance.activeSense()
+      self.tic()
+    finally:
+      self._dropSoftwareInstance_tryToGarbageUnlinkedInstance()
+    self.assertEqual(
+        'Visited by SoftwareInstance_tryToGarbageUnlinkedInstance',
+        slave_instance0.workflow_history['edit_workflow'][-1]['comment'])
 
 class TestSlapOSInvalidateDestroyedInstance(testSlapOSMixin):
 

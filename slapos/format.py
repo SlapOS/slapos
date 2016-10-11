@@ -1379,7 +1379,7 @@ class FormatConfig(object):
 
     if not self.dry_run:
       if self.alter_user:
-        self.checkRequiredBinary(['groupadd', 'useradd', 'usermod', 'passwd'])
+        self.checkRequiredBinary(['groupadd', 'useradd', 'usermod', ['passwd', '-h']])
       if self.create_tap:
         self.checkRequiredBinary([['tunctl', '-d']])
         if self.tap_gateway_interface:

@@ -44,8 +44,13 @@ if computer_network_query:
   else:
     query_kw["default_subordination_reference"] = computer_network_query
 
-if "retention_delay" in filter_kw:
-  filter_kw.pop("retention_delay")
+extra_item_list = ["retention_delay",
+                    "fw_restricted_access",
+                    "fw_rejected_sources",
+                    "fw_authorized_sources"]
+for item in extra_item_list:
+  if item in filter_kw:
+    filter_kw.pop(item)
 
 computer_base_category_list = [
   'group',

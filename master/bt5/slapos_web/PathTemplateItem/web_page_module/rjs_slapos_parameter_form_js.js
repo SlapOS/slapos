@@ -120,6 +120,7 @@
       key,
       div,
       label,
+      close_span,
       input,
       default_value,
       default_used_list = [],
@@ -170,6 +171,11 @@
             label = document.createElement("label");
             label.textContent = default_value;
             label.setAttribute("class", "slapos-parameter-dict-key");
+            close_span = document.createElement("span");
+            close_span.textContent = "×";
+            close_span.setAttribute("class", "bt_close");
+            close_span.setAttribute("title", "Remove this parameter section.");
+            label.appendChild(close_span);
             default_div.appendChild(label);
             default_div = render_subform(
               json_field.patternProperties['.*'],
@@ -315,6 +321,11 @@
     return element;
   }
 
+  function removeSubParameter(element) {
+    $(element).parent().parent().remove();
+    return false;
+  }
+
   function addSubForm(element) {
     var subform_json = JSON.parse(atob(element.value)),
       input_text = element.parentNode.querySelector("input[type='text']"),
@@ -344,6 +355,7 @@
       field_list = g.props.element.querySelectorAll(".slapos-parameter"),
       button_list = g.props.element.querySelectorAll('button.add-sub-form'),
       label_list = g.props.element.querySelectorAll('label.slapos-parameter-dict-key'),
+      close_list = g.props.element.querySelectorAll(".bt_close"),
       i,
       promise_list = [];
 
@@ -371,6 +383,15 @@
         'click',
         false,
         collapseParameter.bind(g, label_list[i])
+      ));
+    }
+
+    for (i = 0; i < close_list.length; i = i + 1) {
+      promise_list.push(loopEventListener(
+        close_list[i],
+        'click',
+        false,
+        removeSubParameter.bind(g, close_list [i])
       ));
     }
 

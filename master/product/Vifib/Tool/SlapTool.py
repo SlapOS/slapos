@@ -519,6 +519,18 @@ class SlapTool(BaseTool):
                                                    slave_reference)
 
   security.declareProtected(Permissions.AccessContentsInformation,
+    'updateComputerPartitionRelatedInstanceList')
+  def updateComputerPartitionRelatedInstanceList(self, computer_id,
+                                                   computer_partition_id,
+                                                   instance_reference_xml):
+    """
+    Update Software Instance predecessor list
+    """
+    return self._updateComputerPartitionRelatedInstanceList(computer_id,
+                                                   computer_partition_id,
+                                                   instance_reference_xml)
+
+  security.declareProtected(Permissions.AccessContentsInformation,
     'supplySupply')
   def supplySupply(self, url, computer_id, state='available'):
     """
@@ -1364,6 +1376,44 @@ class SlapTool(BaseTool):
         software_instance._requested_state = state
         software_instance._instance_guid = instance_guid
         return xml_marshaller.xml_marshaller.dumps(software_instance)
+
+  @UnrestrictedMethod
+  def _updateComputerPartitionRelatedInstanceList(self, computer_id,
+                              computer_partition_id, instance_reference_xml):
+    """
+    Update Software Instance predecessor list to match the given list. If one
+    instance was not requested by this computer partition, it should be removed
+    in the predecessor_list of this instance.
+    Once the link is removed, this instance will be trashed by Garbage Collect!
+
+    instance_reference_xml contain list of title of sub-instances requested by
+    this instance.
+    """
+    software_instance_document = self.\
+                          _getSoftwareInstanceForComputerPartition(computer_id,
+                          computer_partition_id)
+
+    cache_reference = '%s-PREDLIST' % software_instance_document.getReference()
+    if self._getLastData(cache_reference) != instance_reference_xml:
+      instance_reference_list = xml_marshaller.xml_marshaller.loads(
+                                                        instance_reference_xml)
+
+      current_predecessor_list = software_instance_document.getPredecessorValueList(
+                            portal_type=['Software Instance', 'Slave Instance'])
+      current_predecessor_title_list = [i.getTitle() for i in
+                                        current_predecessor_list]
+
+      # If there are items to remove
+      if list(set(current_predecessor_title_list).difference(instance_reference_list)) != []:
+        predecessor_list = [instance.getRelativeUrl() for instance in
+                            current_predecessor_list if instance.getTitle()
+                            in instance_reference_list]
+
+        LOG('SlapTool', INFO, '%s, %s: Updating predecessor list to %s' % (
+          computer_id, computer_partition_id, predecessor_list), error=False)
+        software_instance_document.edit(predecessor_list=predecessor_list,
+            comment='predecessor_list edited to unlink non commited instances')
+      self._storeLastData(cache_reference, instance_reference_xml)
 
   ####################################################
   # Internals methods
