@@ -160,9 +160,10 @@ class Recipe(object):
       # Note: SlapOS Master does not support it for slave instances
       if not slave:
         try:
-          options['instance-guid'] = self.instance.getInstanceGuid()
+          options['instance-guid'] = self.instance.getInstanceGuid() \
+              .encode('UTF-8')
           # XXX: deprecated, to be removed
-          options['instance_guid'] = self.instance.getInstanceGuid()
+          options['instance_guid'] = options['instance-guid']
           options['instance-state'] = self.instance.getState()
           options['instance-status'] = self.instance.getStatus()
         except (slapmodule.ResourceNotReady, AttributeError):
