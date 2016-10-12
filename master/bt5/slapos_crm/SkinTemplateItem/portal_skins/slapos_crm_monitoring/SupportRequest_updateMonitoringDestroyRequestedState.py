@@ -4,9 +4,10 @@
 if context.getSimulationState() == "invalidated":
   return
 
-document = context.getSourceProjectValue()
+document = context.getAggregateValue()
 
 if document is not None and document.getSlapState() == "destroy_requested":
+  
   person = context.getDestinationDecision(portal_type="Person")
   if not person:
     return 

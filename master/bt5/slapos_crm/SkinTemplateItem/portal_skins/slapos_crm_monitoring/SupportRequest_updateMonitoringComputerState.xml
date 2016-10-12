@@ -54,7 +54,7 @@
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>SupportRequest_updateMontoringComputerState</string> </value>
+            <value> <string>SupportRequest_updateMonitoringComputerState</string> </value>
         </item>
       </dictionary>
     </pickle>

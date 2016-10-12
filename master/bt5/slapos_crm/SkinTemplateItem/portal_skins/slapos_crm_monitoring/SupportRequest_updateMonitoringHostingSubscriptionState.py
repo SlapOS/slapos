@@ -7,7 +7,7 @@ portal = context.getPortalObject()
 document = context.getSourceProjectValue()
 
 if document is None:
-  return True
+  return
 
 has_error = False
 

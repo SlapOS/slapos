@@ -8,6 +8,7 @@ from functools import wraps
 from Products.ERP5Type.tests.utils import createZODBPythonScript
 import difflib
 import json
+from unittest import skip
 
 def simulate(script_id, params_string, code_string):
   def upperWrap(f):
@@ -26,6 +27,10 @@ def simulate(script_id, params_string, code_string):
       return result
     return decorated
   return upperWrap
+
+
+def getFakeSlapState():
+  return "destroy_requested"
 
 class TestSlapOSFolder_getOpenTicketList(testSlapOSMixin):
 
@@ -3509,5 +3514,175 @@ class TestSupportRequestTrySendNotificationMessage(testSlapOSMixin):
      another_support_request.getRelativeUrl())
 
 
+class TestSupportRequestUpdateMonitoringState(testSlapOSMixin):
 
+  def _makeComputer(self):
+    super(TestSupportRequestUpdateMonitoringState, self)._makeComputer()
     
+    # Clone computer document
+    self.computer.edit(
+      source_administration_value=self._makePerson()
+    )
+    return self.computer
+
+  def _makePerson(self):
+    # Clone computer document
+    person = self.portal.person_module.template_member\
+         .Base_createCloneDocument(batch_mode=1)
+    person.edit(reference='TESTPERSON-%s' % (self.generateNewId(), ))
+    person.immediateReindexObject()
+    return person
+
+  def _makeHostingSubscription(self):
+    person = self.portal.person_module.template_member\
+         .Base_createCloneDocument(batch_mode=1)
+    hosting_subscription = self.portal\
+      .hosting_subscription_module.template_hosting_subscription\
+      .Base_createCloneDocument(batch_mode=1)
+    hosting_subscription.validate()
+    new_id = self.generateNewId()
+    hosting_subscription.edit(
+        title= "Test hosting sub ticket %s" % new_id,
+        reference="TESTHST-%s" % new_id,
+        destination_section_value=person
+    )
+
+    return hosting_subscription
+
+  def _makeSupportRequest(self):
+    support_request = self.portal.\
+      support_request_module.\
+      slapos_crm_support_request_template_for_monitoring.\
+       Base_createCloneDocument(batch_mode=1)
+    return support_request
+
+
+  @simulate('ERP5Site_isSupportRequestCreationClosed', '','return 0')
+  @simulate('SupportRequest_updateMonitoringComputerState',
+            "",
+    'return "Visited by SupportRequest_updateMonitoringComputerState ' \
+    '%s" % (context.getRelativeUrl(),)')
+  @simulate('SupportRequest_updateMonitoringHostingSubscriptionState',
+            "",
+    'return "Visited by SupportRequest_updateMonitoringHostingSubscriptionState '\
+    '%s" % (context.getRelativeUrl(),)')
+  @simulate('SupportRequest_updateMonitoringDestroyRequestedState',
+            "",
+    'return "Visited by SupportRequest_updateMonitoringDestroyRequestedState '\
+    '%s" % (context.getRelativeUrl(),)')
+  def testSupportRequest_updateMonitoringState(self):
+    support_request = self._makeSupportRequest()
+    self.assertEquals(None, 
+      support_request.SupportRequest_updateMonitoringState())
+    support_request.validate()
+    self.assertEquals(None, 
+      support_request.SupportRequest_updateMonitoringState())
+    # Now try to go to set a computer...
+    support_request.setAggregateValue(self._makeComputer())
+    self.assertEquals(
+      "Visited by SupportRequest_updateMonitoringComputerState %s" % \
+        support_request.getRelativeUrl(), 
+      support_request.SupportRequest_updateMonitoringState())
+    
+    hs = self._makeHostingSubscription()
+    support_request.setAggregateValue(hs)
+    self.assertEquals(
+      "Visited by SupportRequest_updateMonitoringHostingSubscriptionState %s" %\
+        support_request.getRelativeUrl(), 
+      support_request.SupportRequest_updateMonitoringState())
+      
+    hs.getSlapState = getFakeSlapState
+    self.assertEquals(
+      "Visited by SupportRequest_updateMonitoringDestroyRequestedState %s" %\
+        support_request.getRelativeUrl(), 
+      support_request.SupportRequest_updateMonitoringState())
+    
+    support_request.invalidate()
+    self.assertEquals(None, 
+      support_request.SupportRequest_updateMonitoringState())
+
+  @simulate('SupportRequest_trySendNotificationMessage',
+            "message_title, message, source_relative_url",
+     'return "Visited by SupportRequest_trySendNotificationMessage '\
+  '%s %s %s" % (message_title, message, source_relative_url)')
+  def testSupportRequest_updateMonitoringComputerState(self):
+    support_request = self._makeSupportRequest()
+    self.assertEquals(None, 
+      support_request.SupportRequest_updateMonitoringComputerState())
+    support_request.validate()
+    self.assertEquals(None, 
+      support_request.SupportRequest_updateMonitoringComputerState())
+    support_request.setAggregateValue(self._makeHostingSubscription())
+    self.assertEquals(None, 
+      support_request.SupportRequest_updateMonitoringComputerState())
+    
+    support_request.setAggregateValue(self._makeComputer())
+    memcached_dict = self.portal.portal_memcached.getMemcachedDict(
+        key_prefix='slap_tool',
+        plugin_path='portal_memcached/default_memcached_plugin')
+
+    memcached_dict[support_request.getAggregateValue().getReference()] = json.dumps({
+      "created_at": DateTime().strftime("%Y/%m/%d %H:%M")
+    })
+    # W/o destination decision the ticket is not notified.
+    self.assertEquals(None, 
+      support_request.SupportRequest_updateMonitoringComputerState())
+    
+    support_request.setDestinationDecisionValue(self._makePerson())
+    expected_text = """Visited by SupportRequest_trySendNotificationMessage Computer is contacting again  Suspending this ticket as the computer contacted again.  %s""" % support_request.getDestinationDecision()
+    self.assertEquals(expected_text, 
+      support_request.SupportRequest_updateMonitoringComputerState())
+    self.assertEquals(support_request.getSimulationState(), "suspended")
+
+  @skip("Missing to finish")
+  @simulate('SupportRequest_trySendNotificationMessage',
+            "message_title, message, source_relative_url",
+     'return "Visited by SupportRequest_trySendNotificationMessage '\
+  '%s %s %s" % (message_title, message, source_relative_url)')
+  def testSupportRequest_updateMonitoringHostingSubscriptionState(self):
+    support_request = self._makeSupportRequest()
+    self.assertEquals(None, 
+      support_request.SupportRequest_updateMonitoringHostingSubscriptionState())
+    support_request.validate()
+    self.assertEquals(None, 
+      support_request.SupportRequest_updateMonitoringHostingSubscriptionState())
+    
+    support_request.setAggregateValue(self._makeComputer())
+    self.assertEquals(None, 
+      support_request.SupportRequest_updateMonitoringHostingSubscriptionState())
+    
+    support_request.setAggregateValue(self._makeHostingSubscription())
+    support_request.setDestinationDecisionValue(self._makePerson())
+    raise NotImplementedError("Not implemented yet")
+
+  @simulate('SupportRequest_trySendNotificationMessage',
+            "message_title, message, source_relative_url",
+     'return "Visited by SupportRequest_trySendNotificationMessage '\
+  '%s %s %s" % (message_title, message, source_relative_url)')
+  def testSupportRequest_updateMonitoringDestroyRequestedState(self):
+    support_request = self._makeSupportRequest()
+    self.assertEquals(None, 
+      support_request.SupportRequest_updateMonitoringDestroyRequestedState())
+    support_request.validate()
+    self.assertEquals(None, 
+      support_request.SupportRequest_updateMonitoringDestroyRequestedState())
+    
+    support_request.setAggregateValue(self._makeComputer())
+    self.assertEquals(None, 
+      support_request.SupportRequest_updateMonitoringDestroyRequestedState())
+    
+    hs = self._makeHostingSubscription()
+    support_request.setAggregateValue(hs)
+
+    hs.getSlapState = getFakeSlapState
+    self.commit()
+
+    support_request.setDestinationDecisionValue(self._makePerson())
+    expected_text = """Visited by SupportRequest_trySendNotificationMessage Hosting Subscription was destroyed was destroyed by the user  Closing this ticket as the Hosting Subscription was destroyed by the user. 
+   %s""" % support_request.getDestinationDecision()
+    self.assertEquals(expected_text, 
+      support_request.SupportRequest_updateMonitoringDestroyRequestedState())
+    
+    self.assertEquals("invalidated", 
+      support_request.getSimulationState())
+
