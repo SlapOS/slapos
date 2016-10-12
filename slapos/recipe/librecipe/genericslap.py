@@ -24,9 +24,6 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #
 ##############################################################################
-from slapos import slap
-import time
-
 from generic import GenericBaseRecipe
 
 CONNECTION_CACHE = {}
@@ -40,6 +37,7 @@ class GenericSlapRecipe(GenericBaseRecipe):
   def __init__(self, buildout, name, options):
     """Default initialisation"""
     GenericBaseRecipe.__init__(self, buildout, name, options)
+    from slapos import slap
     self.slap = slap.slap()
 
     # SLAP related information

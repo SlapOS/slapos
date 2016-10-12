@@ -25,7 +25,6 @@
 #
 ##############################################################################
 import logging
-from slapos import slap
 import os
 import zc.buildout
 import zc.recipe.egg
@@ -66,6 +65,7 @@ class BaseSlapRecipe:
     options['eggs'] = 'slapos.cookbook'
     self.options = options
     self.logger = logging.getLogger(self.name)
+    from slapos import slap
     self.slap = slap.slap()
     self.work_directory = os.path.abspath(buildout['buildout'][
       'directory'])

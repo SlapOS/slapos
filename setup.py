@@ -36,7 +36,7 @@ long_description = open("README.rst").read() + "\n" + \
 for f in sorted(glob.glob(os.path.join('slapos', 'recipe', 'README.*.rst'))):
   long_description += '\n' + open(f).read() + '\n'
 
-# extras_requires are not used because of
+# extras are not used in entry_points because of
 #   https://bugs.launchpad.net/zc.buildout/+bug/85604
 setup(name=name,
       version=version,
@@ -61,11 +61,13 @@ setup(name=name,
         'setuptools', # namespaces
         'inotifyx', # to watch filesystem changes (used in lockfile)
         'lock_file', #another lockfile implementation for multiprocess
-        'slapos.core', # uses internally
         'zc.buildout', # plays with buildout
         'zc.recipe.egg', # for scripts generation
         'pytz', # for timezone database
         ],
+      extras_require={
+        'slap': ['slapos.core'], # for most instance recipes
+        },
       zip_safe=True,
       entry_points={
         'zc.buildout': [
