@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) 2002-2013 Nexedi SA and Contributors. All Rights Reserved.
-import transaction
 from Products.SlapOS.tests.testSlapOSMixin import \
   testSlapOSMixin
 import json
 import httplib
 import urlparse
 import base64
+from unittest import skip
 
 def hateoasGetLinkFromLinks(links, title):
   if type(links) == dict:
@@ -44,6 +44,7 @@ class TestSlapOSHypermediaPersonScenario(testSlapOSMixin):
     self.tic()
     return person_user
 
+  @skip("Hypermedia is not supported anymore.")
   def test(self):
     erp5_person = self._makeUser()
     self.tic()

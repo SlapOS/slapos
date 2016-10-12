@@ -7,8 +7,20 @@
     <pickle>
       <dictionary>
         <item>
+            <key> <string>_recorded_property_dict</string> </key>
+            <value>
+              <persistent> <string encoding="base64">AAAAAAAAAAI=</string> </persistent>
+            </value>
+        </item>
+        <item>
             <key> <string>default_reference</string> </key>
             <value> <string>testSlapOSHypermediaScenario</string> </value>
+        </item>
+        <item>
+            <key> <string>description</string> </key>
+            <value>
+              <none/>
+            </value>
         </item>
         <item>
             <key> <string>id</string> </key>
@@ -34,13 +46,15 @@
             <key> <string>text_content_warning_message</string> </key>
             <value>
               <tuple>
-                <string>W: 36, 28: Unused variable \'api_path\' (unused-variable)</string>
-                <string>W: 36, 38: Unused variable \'api_query\' (unused-variable)</string>
-                <string>W: 36,  4: Unused variable \'api_scheme\' (unused-variable)</string>
-                <string>W:232,  4: Unused variable \'news_hal\' (unused-variable)</string>
-                <string>W:341,  4: Unused variable \'software_hal\' (unused-variable)</string>
-                <string>W: 37,  8: Unused variable \'api_fragment\' (unused-variable)</string>
-                <string>W:  3,  0: Unused import transaction (unused-import)</string>
+                <string>W: 12,  5: Using type() instead of isinstance() for a typecheck. (unidiomatic-typecheck)</string>
+                <string>W: 59, 28: Unused variable \'api_path\' (unused-variable)</string>
+                <string>W:290,  4: Unused variable \'news_hal\' (unused-variable)</string>
+                <string>W: 60,  8: Unused variable \'api_fragment\' (unused-variable)</string>
+                <string>W: 59, 38: Unused variable \'api_query\' (unused-variable)</string>
+                <string>W:395,  4: Unused variable \'software_hal\' (unused-variable)</string>
+                <string>W:422, 28: Unused variable \'api_path\' (unused-variable)</string>
+                <string>W:422, 38: Unused variable \'api_query\' (unused-variable)</string>
+                <string>W:423,  8: Unused variable \'api_fragment\' (unused-variable)</string>
               </tuple>
             </value>
         </item>
@@ -51,7 +65,7 @@
         <item>
             <key> <string>workflow_history</string> </key>
             <value>
-              <persistent> <string encoding="base64">AAAAAAAAAAI=</string> </persistent>
+              <persistent> <string encoding="base64">AAAAAAAAAAM=</string> </persistent>
             </value>
         </item>
       </dictionary>
@@ -66,11 +80,26 @@
         <item>
             <key> <string>data</string> </key>
             <value>
+              <dictionary/>
+            </value>
+        </item>
+      </dictionary>
+    </pickle>
+  </record>
+  <record id="3" aka="AAAAAAAAAAM=">
+    <pickle>
+      <global name="PersistentMapping" module="Persistence.mapping"/>
+    </pickle>
+    <pickle>
+      <dictionary>
+        <item>
+            <key> <string>data</string> </key>
+            <value>
               <dictionary>
                 <item>
                     <key> <string>component_validation_workflow</string> </key>
                     <value>
-                      <persistent> <string encoding="base64">AAAAAAAAAAM=</string> </persistent>
+                      <persistent> <string encoding="base64">AAAAAAAAAAQ=</string> </persistent>
                     </value>
                 </item>
               </dictionary>
@@ -79,7 +108,7 @@
       </dictionary>
     </pickle>
   </record>
-  <record id="3" aka="AAAAAAAAAAM=">
+  <record id="4" aka="AAAAAAAAAAQ=">
     <pickle>
       <global name="WorkflowHistoryList" module="Products.ERP5Type.patches.WorkflowTool"/>
     </pickle>
