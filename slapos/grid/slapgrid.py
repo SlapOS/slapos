@@ -691,13 +691,21 @@ stderr_logfile_backups=1
     """
     query_cmd = rule_command.replace('--add-rule', '--query-rule')
     process = FPopen(query_cmd)
-    result = process.communicate()[0]
+    result, stderr = process.communicate()
     if result.strip() == 'no':
+      # rule doesn't exist add to firewall
       self.logger.debug(rule_command)
       process = FPopen(rule_command)
-      process.communicate()[0]
-    if process.returncode == 1 and result.strip() != 'no':
-      raise Exception("Failed to add firewalld rule %s." % rule_command)
+      rule_result, stderr = process.communicate()
+      if process.returncode == 0:
+        if rule_result.strip() != 'success':
+          raise Exception(rule_result)
+      else:
+        raise Exception("Failed to add firewalld rule %s\n%s.\n%s" % (
+                        rule_command, rule_result, stderr))
+    elif result.strip() != 'no' and process.returncode != 0:
+      raise Exception("Failed to run firewalld rule %s\n%s.\n%s" % (
+                      query_cmd, result, stderr))
 
     return result.strip() == 'no'
 
@@ -706,14 +714,22 @@ stderr_logfile_backups=1
     """
     query_cmd = rule_command.replace('--add-rule', '--query-rule')
     process = FPopen(query_cmd)
-    result = process.communicate()[0]
+    result, stderr = process.communicate()
     if result.strip() == 'yes':
+      # The rule really exist, remove it
       remove_command = rule_command.replace('--add-rule', '--remove-rule')
       self.logger.debug(remove_command)
       process = FPopen(remove_command)
-      process.communicate()[0]
-    if process.returncode == 1 and result.strip() != 'no':
-      raise Exception("Failed to remove firewalld rule %s." % remove_command)
+      rule_result, stderr = process.communicate()
+      if process.returncode == 0:
+        if rule_result.strip() != 'success':
+          raise Exception(rule_result)
+      else:
+        raise Exception("Failed to add firewalld rule %s\n%s.\n%s" % (
+                        rule_command, rule_result, stderr))
+    elif result.strip() != 'no' and process.returncode != 0:
+      raise Exception("Failed to run firewalld rule %s\n%s.\n%s" % (
+                      query_cmd, result, stderr))
 
     return result.strip() == 'yes'
 
@@ -757,9 +773,10 @@ stderr_logfile_backups=1
       self.logger.info("Reloading firewall configuration...")
       reload_cmd = self.firewall_conf['reload_config_cmd']
       reload_process = FPopen(reload_cmd)
-      result = reload_process.communicate()[0]
-      if reload_process.returncode == 1:
-        raise Exception("Failed to load firewalld rules with command %s" % reload_cmd)
+      stdout, stderr = reload_process.communicate()
+      if reload_process.returncode != 0:
+        raise Exception("Failed to load firewalld rules with command %s.\n%" % (
+                        stderr, reload_cmd))
 
       with open(firewall_rules_path, 'w') as frules:
         frules.write(json.dumps(json_list))
