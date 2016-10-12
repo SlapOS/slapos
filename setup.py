@@ -58,6 +58,7 @@ setup(name=name,
         'jsonschema',
         'hexagonit.recipe.download',
         'netaddr', # to manipulate on IP addresses
+        'setuptools', # namespaces
         'inotifyx', # to watch filesystem changes (used in lockfile)
         'lock_file', #another lockfile implementation for multiprocess
         'slapos.core', # uses internally
