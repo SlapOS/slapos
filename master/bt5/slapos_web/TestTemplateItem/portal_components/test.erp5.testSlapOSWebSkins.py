@@ -84,7 +84,7 @@ class SlapOSWebMixin(testSlapOSMixin, SecurityTestCase):
       sr.validate()
 
     if computer:
-      sr.setSourceProjectValue(computer)
+      sr.setAggregateValue(computer)
 
     sr.immediateReindexObject()
     sr.updateLocalRolesOnSecurityGroups()
