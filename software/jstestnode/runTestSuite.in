@@ -87,8 +87,6 @@ def main():
         'html_test_result': elt.find_element_by_tag_name('ol').get_attribute('innerHTML')
       }
 
-    browser.quit()
-
     tool = taskdistribution.TaskDistributionTool(portal_url=args.master_url)
     test_result = tool.createTestResult(revision = revision,
                                         test_name_list = test_line_dict.keys(),
@@ -118,6 +116,9 @@ def main():
                   stdout='')
     # XXX: inform test node master of error
     raise EnvironmentError(result)
+
+  finally:
+    browser.quit()
 
 if __name__ == "__main__":
     main()
