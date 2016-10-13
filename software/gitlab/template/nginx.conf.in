@@ -55,4 +55,8 @@ http {
   include <%= @gitlab_pages_http_config %>;
   include <%= @gitlab_mattermost_http_config %>
   #}
+  <% if @gitlab_registry_http_config %>
+  include <%= @gitlab_registry_http_config %>;
+  <% end %>
+
 }

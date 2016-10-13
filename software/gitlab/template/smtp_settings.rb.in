@@ -16,7 +16,9 @@ if Rails.env.production?
     user_name:              "{{ cfg('smtp_user_name') }}",
     password:               "{{ cfg('smtp_password') }}",
     domain:                 "{{ cfg('smtp_domain') }}",
+    <% unless @smtp_authentication.nil? %>
     authentication:         :{{ cfg('smtp_authentication') }},
+    <% end %>
     enable_starttls_auto:   {{ cfg('smtp_enable_starttls_auto') }},
     # ssl:
     openssl_verify_mode:    '{{ cfg("smtp_openssl_verify_mode") }}'
