@@ -26,7 +26,7 @@ parts =
 
   check-backup-integrity-on-notification
   import-on-notification
-  backup-transfer-integrity-promise
+  backup-checksum-integrity-promise
   resilient-publish-connection-parameter
 
   backup-signature-link
@@ -78,7 +78,7 @@ recipe = slapos.cookbook:notifier.callback
 on-notification-id = $${slap-parameter:on-notification}
 callback = $${post-notification-run:output}
 
-[backup-transfer-integrity-promise]
+[backup-checksum-integrity-promise]
 recipe = slapos.recipe.template:jinja2
 template = inline:
   #!/${bash:location}/bin/bash
@@ -90,10 +90,10 @@ template = inline:
       exit 1;
     fi
   else
-    # If file doesn't exist, promise should raise false positive
+    # If file doesn't exist, promise shouldnt raise false positive
     exit 0;
   fi
-rendered = $${basedirectory:promises}/backup-transfer-integrity-promise
+rendered = $${basedirectory:promises}/backup-checksum-integrity
 mode = 700
 
 ###########
