@@ -8,7 +8,6 @@ from functools import wraps
 from Products.ERP5Type.tests.utils import createZODBPythonScript
 import difflib
 import json
-from unittest import skip
 
 def simulate(script_id, params_string, code_string):
   def upperWrap(f):
@@ -3634,7 +3633,6 @@ class TestSupportRequestUpdateMonitoringState(testSlapOSMixin):
       support_request.SupportRequest_updateMonitoringComputerState())
     self.assertEquals(support_request.getSimulationState(), "suspended")
 
-  @skip("Missing to finish")
   @simulate('SupportRequest_trySendNotificationMessage',
             "message_title, message, source_relative_url",
      'return "Visited by SupportRequest_trySendNotificationMessage '\
@@ -3652,8 +3650,18 @@ class TestSupportRequestUpdateMonitoringState(testSlapOSMixin):
       support_request.SupportRequest_updateMonitoringHostingSubscriptionState())
     
     support_request.setAggregateValue(self._makeHostingSubscription())
+    self.assertEquals(None, 
+      support_request.SupportRequest_updateMonitoringHostingSubscriptionState())
+      
     support_request.setDestinationDecisionValue(self._makePerson())
-    raise NotImplementedError("Not implemented yet")
+    
+    self.assertEquals("Visited by SupportRequest_trySendNotificationMessage Suspending this ticket as the problem is not present anymore  Suspending this ticket as the problem is not present anymore.  %s" % \
+    support_request.getDestinationDecision(), 
+      support_request.SupportRequest_updateMonitoringHostingSubscriptionState())
+    
+    self.assertEquals("suspended", 
+      support_request.getSimulationState())
+    
 
   @simulate('SupportRequest_trySendNotificationMessage',
             "message_title, message, source_relative_url",
@@ -3685,4 +3693,5 @@ class TestSupportRequestUpdateMonitoringState(testSlapOSMixin):
     
     self.assertEquals("invalidated", 
       support_request.getSimulationState())
+
 

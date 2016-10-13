@@ -4,7 +4,7 @@ import json
 from Products.ERP5Type.DateUtils import addToDate
 
 portal = context.getPortalObject()
-document = context.getSourceProjectValue()
+document = context.getAggregateValue()
 
 if document is None:
   return
@@ -13,7 +13,7 @@ has_error = False
 
 # Check if at least one software Instance is Allocated
 for instance in document.getSpecialiseRelatedValueList(
-                 portal_type=["Software Instance", "Slave Instance"]):
+          portal_type=["Software Instance", "Slave Instance"]):
   if instance.getSlapState() not in ["start_requested", "stop_requested"]:
     continue
 
@@ -25,7 +25,7 @@ for instance in document.getSpecialiseRelatedValueList(
   else:
     has_error = True
     break
-    
+
 if not has_error:
   person = context.getDestinationDecision(portal_type="Person")
   if not person:
@@ -37,8 +37,7 @@ if not has_error:
     return 
 
   # Send Notification message
-  message = """ Suspending this ticket as the problem is not present anymore. 
-  """
+  message = """ Suspending this ticket as the problem is not present anymore. """
 
   notification_reference = "slapos-crm-support-request-suspend-hs-notification"
   notification_message = portal.portal_notifications.getDocumentValue(
