@@ -51,6 +51,12 @@
                     "type": "string",
                     "optional": true
                 },
+                "resiliency-backup-sleep-time-buffer": {
+                    "title": "Time to sleep before backup",
+                    "description": "Time to sleep once the cron job is triggered before the backup start for real.",
+                    "type": "string",
+                    "optional": true
+                },
                 "remove-backup-older-than": {
                     "title": "Remove backups older than...",
                     "description": "Remove all the backups in PBS that are older than specified value. It should be rdiff-backup-compatible.",

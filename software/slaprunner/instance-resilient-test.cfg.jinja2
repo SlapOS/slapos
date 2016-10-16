@@ -55,6 +55,7 @@ name = Resilient Instance (Root Instance)
 config-{{ key }} = {{ dumps(value) }}
 {% endfor -%}
 config-resiliency-backup-periodicity = */10 * * * *
+config-resiliency-backup-sleep-time-buffer = 0
 config-resilient-clone-number = 1
 config-ignore-known-hosts-file = false
 # XXX hardcoded
