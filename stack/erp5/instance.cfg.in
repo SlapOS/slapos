@@ -1,3 +1,4 @@
+{% set cloudooo_enabled = str(cloudooo_enable_default).lower() in ('true', 'yes', '1') -%}
 [buildout]
 extends = {{ instance_common_cfg }}
 
@@ -5,6 +6,7 @@ extends = {{ instance_common_cfg }}
 context +=
     raw slapos_core_version {{ slapos_core_version }}
 
+{% if cloudooo_enabled -%}
 [dynamic-template-cloudooo-parameters]
 cairo = {{ cairo_location }}
 cups = {{ cups_location }}
@@ -44,6 +46,7 @@ template = {{ template_cloudooo }}
 filename = instance-cloudoo.cfg
 extra-context =
     section parameter_dict dynamic-template-cloudooo-parameters
+{% endif -%}
 
 [dynamic-template-postfix-parameters]
 bin-directory = {{ bin_directory }}
@@ -64,6 +67,8 @@ extra-context =
     import urllib urllib
 
 [dynamic-template-erp5-parameters]
+cloudooo-enable-default = {{ dumps(cloudooo_enable_default) }}
+default-cloudooo-url =  {{ dumps(default_cloudooo_url) }}
 jupyter-enable-default = {{ jupyter_enable_default }}
 local-bt5-repository = {{ local_bt5_repository }}
 
@@ -72,6 +77,8 @@ local-bt5-repository = {{ local_bt5_repository }}
 template = {{ template_erp5 }}
 filename = instance-erp5.cfg
 extra-context =
+    key cloudooo_enable_default dynamic-template-erp5-parameters:cloudooo-enable-default
+    key default_cloudooo_url dynamic-template-erp5-parameters:default-cloudooo-url
     key jupyter_enable_default dynamic-template-erp5-parameters:jupyter-enable-default
     key local_bt5_repository dynamic-template-erp5-parameters:local-bt5-repository
     key openssl_location :openssl-location
@@ -199,7 +206,9 @@ create-erp5-site = dynamic-template-create-erp5-site:rendered
 RootSoftwareInstance = ${:default}
 # Internal software types
 kumofs = dynamic-template-kumofs:rendered
+{% if cloudooo_enabled -%}
 cloudooo = dynamic-template-cloudooo:rendered
+{% endif -%}
 mariadb = dynamic-template-mariadb:rendered
 balancer = dynamic-template-balancer:rendered
 postfix = dynamic-template-postfix:rendered
