@@ -7,6 +7,8 @@
 {% set has_posftix = slapparameter_dict.get('smtp', {}).get('postmaster') -%}
 {% set jupyter_dict = slapparameter_dict.get('jupyter', {}) -%}
 {% set has_jupyter = jupyter_dict.get('enable', jupyter_enable_default).lower() in ('true', 'yes') -%}
+{% set cloudooo_dict = slapparameter_dict.get("cloudooo", {}) -%}
+{% set has_cloudooo = cloudooo_dict.get("enable", False) -%}
 {% set jupyter_zope_family = jupyter_dict.get('zope-family', '') -%}
 [request-common]
 <= request-common-base
@@ -36,7 +38,9 @@ config-{{ k }} = {{ '${' ~ v ~ '}' }}
 
 {{ request('memcached-persistent', 'kumofs', 'kumofs', {'tcpv4-port': 2000}) }}
 {{ request('memcached-volatile', 'kumofs', 'memcached', {'tcpv4-port': 2010, 'ram-storage-size': 64}) }}
-{{ request('cloudooo', 'cloudooo', 'cloudooo', {'tcpv4-port': 2020}) }}
+{% if has_cloudooo -%}
+{{   request('cloudooo', 'cloudooo', 'cloudooo', {'tcpv4-port': 2020}) }}
+{% endif -%}
 {{ request('mariadb', 'mariadb', 'mariadb', {'tcpv4-port': 2099}, {'database-list': True, 'test-database-list': True}) }}
 {% if has_posftix -%}
 {{   request('smtp', 'postfix', 'smtp', {'tcpv4-port': 2025, 'smtpd-sasl-user': 'erp5@nowhere'}, key_config={'smtpd-sasl-password': 'publish-early:smtpd-sasl-password'}) }}
@@ -132,7 +136,11 @@ return =
 {% endif -%}
 config-bt5 = {{ dumps(slapparameter_dict.get('bt5', bt5_default_list)) }}
 config-bt5-repository-url = {{ dumps(slapparameter_dict.get('bt5-repository-url', local_bt5_repository)) }}
+{% if has_cloudooo -%}
 config-cloudooo-url = ${request-cloudooo:connection-url}
+{% else -%}
+config-cloudooo-url = {{ dumps(default_cloudooo_url) }}
+{% endif -%}
 config-deadlock-debugger-password = ${publish-early:deadlock-debugger-password}
 config-developer-list = {{ dumps(slapparameter_dict.get('developer-list', [inituser_login])) }}
 config-hosts-dict = {{ dumps(slapparameter_dict.get('hosts-dict', {})) }}

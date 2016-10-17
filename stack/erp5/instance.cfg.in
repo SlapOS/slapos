@@ -64,6 +64,7 @@ extra-context =
     import urllib urllib
 
 [dynamic-template-erp5-parameters]
+default-cloudooo-url =  {{ dumps(default_cloudooo_url) }}
 jupyter-enable-default = {{ jupyter_enable_default }}
 local-bt5-repository = {{ local_bt5_repository }}
 
@@ -72,6 +73,7 @@ local-bt5-repository = {{ local_bt5_repository }}
 template = {{ template_erp5 }}
 filename = instance-erp5.cfg
 extra-context =
+    key default_cloudooo_url dynamic-template-erp5-parameters:default-cloudooo-url
     key jupyter_enable_default dynamic-template-erp5-parameters:jupyter-enable-default
     key local_bt5_repository dynamic-template-erp5-parameters:local-bt5-repository
     key openssl_location :openssl-location
