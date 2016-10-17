@@ -63,10 +63,14 @@ ip = $${slaprunner:ipv4}
 [supervisord]
 port = $${supervisord-free-port:port}
 
-# Idem for some other services
 [runner-sshd-port]
 minimum = 22232
 maximum = 22241
+
+# Deactivate the call to prepareSoftware, and let the importer script
+# handle the build&run of the instance.
+[cron-entry-prepare-software]
+recipe =
 
 [importer]
 recipe = slapos.recipe.template:jinja2
@@ -79,6 +83,7 @@ restore-exit-code-file=$${directory:srv}/importer-exit-code-file
 context =
   key backend_url slaprunner:access-url
   key proxy_host slaprunner:ipv4
+  key proxy_port slaprunner:proxy_port
   section directory directory
   raw  output_log_file $${directory:log}/resilient.log
   raw  shell_binary ${bash:location}/bin/bash
