@@ -1,8 +1,5 @@
-{% set monitor = True  -%}
 
-{% if slapparameter_dict.get('enable-monitor', 'True').lower() == 'false' -%}
-{%   set monitor = False  -%}
-{% endif -%}
+{%   set monitor = str(slapparameter_dict.get('enable-monitor', False)).lower() == 'true' -%}
 
 [buildout]
 extends =

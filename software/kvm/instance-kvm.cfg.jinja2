@@ -3,17 +3,13 @@
 {% set use_nat = slapparameter_dict.get('use-nat', 'True').lower() -%}
 {% set nat_restrict = slapparameter_dict.get('nat-restrict-mode', 'False').lower() -%}
 {% set name = slapparameter_dict.get('name', 'localhost') -%}
-{% set disable_ansible_promise = slapparameter_dict.get('disable-ansible-promise', 'False').lower() -%}
+{% set disable_ansible_promise = slapparameter_dict.get('disable-ansible-promise', 'True').lower() -%}
 {% set instance_type = slapparameter_dict.get('type', 'standalone') -%}
 {% set nat_rule_list = slapparameter_dict.get('nat-rules', '22 80 443') -%}
 {% set frontend_software_type = 'default' -%}
 {% set extends_list = [] -%}
 {% set part_list = [] -%}
-{% set monitor = True  -%}
-
-{% if slapparameter_dict.get('enable-monitor', 'True').lower() == 'false' -%}
-{%   set monitor = False  -%}
-{% endif -%}
+{% set monitor = str(slapparameter_dict.get('enable-monitor', True)).lower() == 'true' -%}
 
 {% set bootstrap_url = '' -%}
 {% set bootstrap_url_md5sum = '' -%}
@@ -34,7 +30,6 @@
 {% do extends_list.append(template_monitor) -%}
 {% endif -%}
 {% do extends_list.append(logrotate_cfg) -%}
-
 [directory]
 recipe = slapos.cookbook:mkdirectory
 etc = ${buildout:directory}/etc
@@ -606,7 +601,7 @@ keyboard-layout-language = fr
 {% if slapparameter_dict.get('data-to-vm', '') %}
 {%   do part_list.append('vm-data-content') -%}
 {% endif -%}
-{% if use_tap == 'true' and tap_network_dict.has_key('ipv4') and disable_ansible_promise == 'false' %}
+{% if disable_ansible_promise == 'false' %}
 {%   do part_list.extend(['ansible-vm-promise', 'logrotate-vm-bootstrap']) -%}
 {% endif -%}
 {% if slapparameter_dict.get('authorized-key', '') and slapparameter_dict.get('type', '') == 'cluster' %}

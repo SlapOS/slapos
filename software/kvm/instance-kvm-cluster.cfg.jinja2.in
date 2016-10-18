@@ -9,6 +9,7 @@
 {% set kvm_instance_dict = {} -%}
 {% set kvm_hostname_list = [] -%}
 {% set monitor_url_list = [] -%}
+{% set enable_monitoring = slapparameter_dict.get('enable-monitor', True) -%}
 
 [request-common]
 recipe = slapos.cookbook:request
@@ -76,7 +77,8 @@ config-httpd-port = {{ dumps(kvm_parameter_dict.get('httpd-port', 8081)) }}
 {% if kvm_parameter_dict.get('data-to-vm', '') -%}
 config-data-to-vm = {{ dumps(kvm_parameter_dict.get('data-to-vm', '')) }}
 {% endif -%}
-config-enable-monitor = {{ dumps(kvm_parameter_dict.get('enable-monitor', True)) }}
+config-disable-ansible-promise = {{ dumps(kvm_parameter_dict.get('disable-ansible-promise', False)) }}
+config-enable-monitor = {{ enable_monitoring }}
 config-monitor-cors-domains = {{ slapparameter_dict.get('monitor-cors-domains', 'monitor.app.officejs.com') }}
 config-monitor-username = ${monitor-htpasswd:username}
 config-monitor-password = ${monitor-htpasswd:passwd}
@@ -102,20 +104,20 @@ sla-fw_restricted_access = {{ dumps(slapparameter_dict.get('fw-restricted-access
 return = 
   url
   backend-url
-  monitor-base-url
 {% if str(use_nat).lower() == 'true' -%}
 {%   for port in nat_rules_list -%}
 {{ '  ' }}nat-rule-url-{{ port }}
 {%   endfor -%}
+{% endif -%}
+{% if enable_monitoring -%}
+{{ '  ' }}monitor-base-url
+{%    do monitor_url_list.append('${' ~ section ~ ':connection-monitor-base-url}') -%}
 {% endif -%}
 {% if str(kvm_parameter_dict.get('use-tap', 'True')).lower() == 'true' -%}
 {{ '  ' }}tap-ipv4
 
 {% do publish_dict.__setitem__('lan-' ~ instance_name, '${' ~ section ~ ':connection-tap-ipv4}') -%}
 {% do kvm_hostname_list.append(instance_name ~ ' ' ~ '${' ~ section ~ ':connection-tap-ipv4}') -%}
-{% endif -%}
-{% if str(kvm_parameter_dict.get('enable-monitor', 'True')).lower() == 'true' -%}
-{%  do monitor_url_list.append('${' ~ section ~ ':connection-monitor-base-url}') -%}
 {% endif -%}
 {% do publish_dict.__setitem__(instance_name ~ '-backend-url', '${' ~ section ~ ':connection-backend-url}') -%}
 {% do publish_dict.__setitem__(instance_name ~ '-url', '${' ~ section ~ ':connection-url}') -%}
@@ -232,7 +234,6 @@ username = admin
 
 [monitor-instance-parameter]
 monitor-httpd-port = 8060
-monitor-title = KVM Cluster Main Instance
 cors-domains = {{ slapparameter_dict.get('monitor-cors-domains', 'monitor.app.officejs.com') }}
 username = ${monitor-htpasswd:username}
 password = ${monitor-htpasswd:passwd}
@@ -250,13 +251,18 @@ recipe = slapos.cookbook:publish
 {% for name, value in publish_dict.items() -%}
 {{   name }} = {{ value }}
 {% endfor %}
-{% set monitor_interface_url = slapparameter_dict.get('monitor-interface-url', 'https://monitor.app.officejs.com') -%}
+{% if enable_monitoring -%}
+{%   set monitor_interface_url = slapparameter_dict.get('monitor-interface-url', 'https://monitor.app.officejs.com') -%}
+{% do part_list.append('monitor-base') -%}
 monitor-setup-url = {{ monitor_interface_url }}/#page=settings_configurator&url=${publish:monitor-url}&username=${publish:monitor-user}&password=${publish:monitor-password}
+{% endif -%}
 
 [buildout]
 extends = 
   {{ template_httpd_cfg }}
-  {{ template_monitor }}
+{% if enable_monitoring -%}
+{{ '  ' ~ template_monitor }}
+{% endif -%}
 
 parts = 
   httpd
@@ -264,9 +270,6 @@ parts =
   httpd-promise
   publish-connection-information
   directory-doc
-
-  monitor-base
-# End monitor
 
 # Complete parts with sections
   {{ part_list | join('\n  ') }}

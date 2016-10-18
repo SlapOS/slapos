@@ -36,6 +36,8 @@ def check_result():
   success_file = os.path.join(ansible_log_dir, result_OK)
   error_file = os.path.join(ansible_log_dir, result_failed)
 
+  if not os.path.exists(ansible_log_dir):
+    return (0, "File %s doesn't exist.\nThis mean that ansible report log is not uploaded yet!!!" % ansible_log_dir)
   if not len(os.listdir(ansible_log_dir)):
     return (0, 'No Ansible promise uploaded!')
   if os.path.exists(error_file):

@@ -5,8 +5,9 @@
 
 {% set backup_amount = slapparameter_dict.pop('resilient-clone-number', "1")|int + 1 -%}
 {% set monitor_dict = {} -%}
+{% set monitor_return = [] -%}
 
-{% if slapparameter_dict.get('enable-monitor', 'True').lower() == 'true' -%}
+{% if slapparameter_dict.get('enable-monitor', True) == True -%}
 {% set monitor_return = ['monitor-base-url'] -%}
 {% set monitor_parameter = {'monitor-cors-domains': slapparameter_dict.pop('monitor-cors-domains', "monitor.app.officejs.com")} -%}
 {% set monitor_dict = {'parameter': monitor_parameter, 'return': monitor_return} -%}
@@ -25,7 +26,7 @@ parts +=
   kvm-frontend-url-promise
   kvm-backend-url-promise
 
-{% if slapparameter_dict.get('enable-monitor', 'True').lower() == 'true' -%}
+{% if monitor_dict -%}
 extends = {{ template_monitor }}
 
 
@@ -34,6 +35,11 @@ recipe = slapos.cookbook:generate.password
 storage-path = ${directory:etc}/.monitor_user
 bytes = 8
 username = admin
+
+# XXX Monitoring Main Instane
+[monitor-instance-parameter]
+monitor-httpd-port = 8160
+cors-domains = {{ monitor_parameter.get('monitor-cors-domains', '') }}
 
 {%  do monitor_parameter.__setitem__('monitor-username', slapparameter_dict.get('monitor-username', 'admin'))%}
 {%  do monitor_parameter.__setitem__('monitor-password', slapparameter_dict.get('monitor-password', '${monitor-htpasswd:passwd}'))%}
@@ -56,18 +62,15 @@ return =
 # XXX: return ALL parameters (like nat rules), through jinja
   backend-url url ip
 
-# XXX Monitoring Main Instane
-[monitor-instance-parameter]
-monitor-httpd-port = 8160
-cors-domains = {{ monitor_parameter.get('monitor-cors-domains', '') }}
-
 [publish-connection-information]
 recipe = slapos.cookbook:publish
 backend-url = ${request-kvm:connection-backend-url}
 url = ${request-kvm:connection-url}
 ipv6 = ${request-kvm:connection-ip}
+{% if monitor_dict -%}
 monitor-base-url = ${publish:monitor-base-url}
 monitor-setup-url = {{ monitor_interface_url }}/#page=settings_configurator&url=${publish:monitor-url}&username=${publish:monitor-user}&password=${publish:monitor-password}
+{% endif -%}
 
 [kvm-frontend-url-promise]
 # Check that url parameter is complete
