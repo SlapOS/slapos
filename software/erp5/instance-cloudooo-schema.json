@@ -8,6 +8,11 @@
       }, {
         "description": "Start allocating ports at this value, going upward"
       }]
+    },
+    "enable": {
+      "description": "Creates a cloudooo instance if enabled",
+      "default": false,
+      "type": "boolean"
     }
   }
 }

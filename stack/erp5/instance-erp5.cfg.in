@@ -7,7 +7,8 @@
 {% set has_posftix = slapparameter_dict.get('smtp', {}).get('postmaster') -%}
 {% set jupyter_dict = slapparameter_dict.get('jupyter', {}) -%}
 {% set has_jupyter = jupyter_dict.get('enable', jupyter_enable_default).lower() in ('true', 'yes') -%}
-{% set has_cloudooo = str(cloudooo_enable_default).lower() in ('true', 'yes', '1') -%}
+{% set cloudooo_dict = slapparameter_dict.get("cloudooo", {}) -%}
+{% set has_cloudooo = cloudooo_dict.get("enable", str(cloudooo_enable_default).lower() in ('true', 'yes', '1')) -%}
 {% set jupyter_zope_family = jupyter_dict.get('zope-family', '') -%}
 [request-common]
 <= request-common-base
