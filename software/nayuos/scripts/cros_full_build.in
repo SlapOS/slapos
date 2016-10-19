@@ -132,7 +132,7 @@ increase_revision_number ${CHROMIUM_OVERLAY}/chromeos-base/chromeos-sshd-init/
 
 # bashrc modifications
 BASH_EBUILD_DIR="${PORTAGE_STABLE}/app-shells/bash"
-if ! grep '----- BEGIN NayuOS configuration -----' "${BASH_EBUILD_DIR}/files/dot-bashrc" > /dev/null ; then
+if ! grep "BEGIN NayuOS configuration" "${BASH_EBUILD_DIR}/files/dot-bashrc" > /dev/null ; then
   cat >> "${BASH_EBUILD_DIR}/files/dot-bashrc" <<EOF
 
 # ----- BEGIN NayuOS configuration -----
