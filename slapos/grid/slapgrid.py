@@ -77,6 +77,7 @@ PROMISE_TIMEOUT = 3
 
 COMPUTER_PARTITION_TIMESTAMP_FILENAME = '.timestamp'
 COMPUTER_PARTITION_LATEST_BANG_TIMESTAMP_FILENAME = '.slapos_latest_bang_timestamp'
+COMPUTER_PARTITION_INSTALL_ERROR_FILENAME = '.slapgrid-%s-error.log'
 
 # XXX hardcoded watchdog_path
 WATCHDOG_PATH = '/opt/slapos/bin/slapos-watchdog'
@@ -228,8 +229,8 @@ def create_slapgrid_object(options, logger):
     ]
 
   op = options
-  software_min_free_space = human2bytes(op.get('software_min_free_space', '200M'))
-  instance_min_free_space = human2bytes(op.get('instance_min_free_space', '100M'))
+  software_min_free_space = human2bytes(op.get('software_min_free_space', '1000M'))
+  instance_min_free_space = human2bytes(op.get('instance_min_free_space', '1000M'))
 
   return Slapgrid(software_root=op['software_root'],
                   instance_root=op['instance_root'],
@@ -961,6 +962,11 @@ stderr_logfile_backups=1
     else:
       timestamp = None
 
+    error_output_file = os.path.join(
+        instance_path,
+        COMPUTER_PARTITION_INSTALL_ERROR_FILENAME % computer_partition_id
+    )
+
     try:
       software_url = computer_partition.getSoftwareRelease().getURI()
     except NotFoundError:
@@ -1110,8 +1116,15 @@ stderr_logfile_backups=1
           (computer_partition_id, computer_partition_state)
         computer_partition.error(error_string, logger=self.logger)
         raise NotImplementedError(error_string)
+    except Exception, e:
+      with open(error_output_file, 'w') as error_file:
+        # Write error message in a log file assible to computer partition user
+        error_file.write(str(e))
+      raise
     finally:
-       self.logger.removeHandler(partition_file_handler)
+      self.logger.removeHandler(partition_file_handler)
+      if os.path.exists(error_output_file):
+        os.unlink(error_output_file)  
 
     # If partition has been successfully processed, write timestamp
     if timestamp:
