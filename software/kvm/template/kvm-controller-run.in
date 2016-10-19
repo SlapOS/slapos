@@ -5,11 +5,16 @@
 # Echo client program
 import socket
 import time
+import os
 
 # XXX: to be factored with slapos.toolbox qemu qmp wrapper.
 
 socket_path = '{{ parameter_dict.get("socket-path") }}'
 vnc_password = '{{ parameter_dict.get("vnc-passwd") }}'
+status_path = '{{ parameter_dict.get("kvm-status-path") }}'
+
+if os.path.exists(status_path):
+  os.unlink(status_path)
 
 # Connect to KVM qmp socket
 so = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
@@ -35,3 +40,6 @@ data = so.recv(1024)
 
 # Finish
 so.close()
+
+with open(status_path, 'w') as status_file:
+  status_file.write("OK")

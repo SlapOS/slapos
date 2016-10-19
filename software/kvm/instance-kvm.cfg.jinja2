@@ -65,6 +65,7 @@ bytes = 8
 python-path = {{ python_executable }}
 vnc-passwd = ${gen-passwd:passwd}
 socket-path = ${directory:var}/qmp_socket
+kvm-status-path = ${directory:var}/qemu-vm-is-ready
 
 [kvm-parameter-dict]
 python-path = {{ python_executable }}
@@ -212,6 +213,15 @@ input = inline:#!/bin/sh
 output = ${directory:promises}/kvm-disk-image-corruption
 mode = 700
 
+[kvm-started-promise]
+recipe = slapos.recipe.template:jinja2
+template = {{ qemu_start_promise_tpl }}
+rendered = ${directory:promises}/qemu-virtual-machine-is-ready
+mode = 700
+context = 
+  raw dash {{ dash_executable_location }}
+  raw qemu_ready_path ${kvm-controller-parameter-dict:kvm-status-path}
+  raw qemu_service_log_file ${buildout:directory}/.${slap-connection:partition-id}_kvm.log
 
 [novnc-instance]
 recipe = slapos.cookbook:novnc
@@ -624,7 +634,7 @@ parts =
   kvm-disk-image-corruption-promise
   websockify-sighandler
   novnc-promise
-#  kvm-monitor
+  kvm-started-promise
   cron
   cron-entry-logrotate
   frontend-promise
