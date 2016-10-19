@@ -621,6 +621,41 @@ class TestSlapgridCPWithMaster(MasterMixin, unittest.TestCase):
                         '/startedComputerPartition'])
       self.assertEqual(partition.state, 'started')
 
+  def test_one_partition_started_fail(self):
+    computer = ComputerForTest(self.software_root, self.instance_root)
+    with httmock.HTTMock(computer.request_handler):
+      partition = computer.instance_list[0]
+      partition.requested_state = 'started'
+      partition.software.setBuildout(WRAPPER_CONTENT)
+      self.assertEqual(self.grid.processComputerPartitionList(), slapgrid.SLAPGRID_SUCCESS)
+      self.assertInstanceDirectoryListEqual(['0'])
+      self.assertItemsEqual(os.listdir(partition.partition_path),
+                            ['.slapgrid', '.0_wrapper.log', 'buildout.cfg',
+                             'etc', 'software_release', 'worked', '.slapos-retention-lock-delay'])
+      wrapper_log = os.path.join(partition.partition_path, '.0_wrapper.log')
+      self.assertLogContent(wrapper_log, 'Working')
+      self.assertItemsEqual(os.listdir(self.software_root), [partition.software.software_hash])
+      self.assertEqual(computer.sequence,
+                       ['/getFullComputerInformation', '/availableComputerPartition',
+                        '/startedComputerPartition'])
+      self.assertEqual(partition.state, 'started')
+
+      instance = computer.instance_list[0]
+      instance.software.setBuildout("""#!/bin/sh
+exit 1
+""")
+      self.assertEqual(self.launchSlapgrid(), slapgrid.SLAPGRID_FAIL)
+      self.assertInstanceDirectoryListEqual(['0'])
+      self.assertItemsEqual(os.listdir(instance.partition_path),
+                            ['.slapgrid', '.0_wrapper.log', 'buildout.cfg',
+                             'etc', 'software_release', 'worked',
+                             '.slapos-retention-lock-delay', '.slapgrid-0-error.log'])
+      self.assertEqual(computer.sequence,
+                       ['/getFullComputerInformation', '/availableComputerPartition',
+                        '/startedComputerPartition', '/getHateoasUrl',
+                        '/getFullComputerInformation', '/softwareInstanceError'])
+      self.assertEqual(instance.state, 'started')
+
   def test_one_partition_started_stopped(self):
     computer = ComputerForTest(self.software_root, self.instance_root)
     with httmock.HTTMock(computer.request_handler):
@@ -725,7 +760,8 @@ exit 1
       self.assertInstanceDirectoryListEqual(['0'])
       self.assertItemsEqual(os.listdir(instance.partition_path),
                             ['.slapgrid', '.0_wrapper.log', 'buildout.cfg',
-                             'etc', 'software_release', 'worked', '.slapos-retention-lock-delay'])
+                             'etc', 'software_release', 'worked',
+                             '.slapos-retention-lock-delay', '.slapgrid-0-error.log'])
       self.assertLogContent(wrapper_log, 'Signal handler called with signal 15')
       self.assertEqual(computer.sequence,
                        ['/getHateoasUrl', '/getFullComputerInformation',
@@ -1988,9 +2024,49 @@ class TestSlapgridDestructionLock(MasterMixin, unittest.TestCase):
 class TestSlapgridCPWithFirewall(MasterMixin, unittest.TestCase):
   
   def setFirewallConfig(self, source_ip=""):
+
+    self.firewall_cmd_add = os.path.join(self._tempdir, 'firewall_cmd_add')
+    with open(self.firewall_cmd_add, 'w') as f:
+      f.write("""#!/bin/sh
+var="$*"
+R=$(echo $var | grep "query-rule") > /dev/null
+if [ $? -eq 0 ]; then
+  echo "no"
+  exit 0
+fi
+R=$(echo $var | grep "add-rule")
+if [ $? -eq 0  ]; then
+  echo "success"
+  exit 0
+fi
+echo "ERROR: $var"
+exit 1
+""")
+
+    self.firewall_cmd_remove = os.path.join(self._tempdir, 'firewall_cmd_remove')
+    with open(self.firewall_cmd_remove, 'w') as f:
+      f.write("""#!/bin/sh
+var="$*"
+R=$(echo $var | grep "query-rule")
+if [ $? -eq 0 ]; then
+  echo "yes"
+  exit 0
+fi
+R=$(echo $var | grep "remove-rule")
+if [ $? -eq 0 ]; then
+  echo "success"
+  exit 0
+fi
+echo "ERROR: $var"
+exit 1
+""")
+
+    os.chmod(self.firewall_cmd_add, 0755)
+    os.chmod(self.firewall_cmd_remove, 0755)
+
     firewall_conf= dict(
       authorized_sources=source_ip,
-      firewall_cmd='/bin/echo "no" #',
+      firewall_cmd=self.firewall_cmd_add,
       firewall_executable='/bin/echo "service firewall started"',
       reload_config_cmd='/bin/echo "Config reloaded."',
       log_file='fw-log.log',
@@ -2090,7 +2166,7 @@ class TestSlapgridCPWithFirewall(MasterMixin, unittest.TestCase):
     computer = ComputerForTest(self.software_root, self.instance_root)
     self.setFirewallConfig()
     # For simulate query rule success
-    self.grid.firewall_conf['firewall_cmd'] = '/bin/echo "no" #'
+    self.grid.firewall_conf['firewall_cmd'] = self.firewall_cmd_add
     self.ip_address_list = computer.ip_address_list
     instance = computer.instance_list[0]
     ip = instance.full_ip_list[0][1]
@@ -2111,14 +2187,14 @@ class TestSlapgridCPWithFirewall(MasterMixin, unittest.TestCase):
       self.checkRuleFromIpSource(ip, [], rules_list)
 
     # Remove all rules
-    self.grid.firewall_conf['firewall_cmd'] = '/bin/echo "yes" #'
+    self.grid.firewall_conf['firewall_cmd'] = self.firewall_cmd_remove
     self.grid._checkAddFirewallRules(name, cmd_list, add=False)
     with open(rules_path, 'r') as frules:
       rules_list = json.loads(frules.read())
       self.assertEqual(rules_list, [])
 
     # Add one more ip in the authorized list
-    self.grid.firewall_conf['firewall_cmd'] = '/bin/echo "no" #'
+    self.grid.firewall_conf['firewall_cmd'] = self.firewall_cmd_add
     self.ip_address_list.append(('interface1', '10.0.8.7'))
     cmd_list = self.grid._getFirewallAcceptRules(ip,
                                 [elt[1] for elt in self.ip_address_list],
@@ -2209,7 +2285,7 @@ class TestSlapgridCPWithFirewall(MasterMixin, unittest.TestCase):
       self.checkRuleFromIpSourceReject(ip, ['10.0.8.11'], rules_list)
 
       # For remove rules
-      self.grid.firewall_conf['firewall_cmd'] = '/bin/echo "yes" #'
+      self.grid.firewall_conf['firewall_cmd'] = self.firewall_cmd_remove
       instance.setFilterParameter({'fw_restricted_access': 'on',
                               'fw_authorized_sources': ''})
       self.assertEqual(self.grid.processComputerPartitionList(), slapgrid.SLAPGRID_SUCCESS)
@@ -2313,7 +2389,7 @@ class TestSlapgridCPWithFirewall(MasterMixin, unittest.TestCase):
       #                        'fw_authorized_sources': source_ip[0]}
 
       # For simulate query rule exist
-      self.grid.firewall_conf['firewall_cmd'] = '/bin/echo "yes" #'
+      self.grid.firewall_conf['firewall_cmd'] = self.firewall_cmd_remove
       self.grid.firewall_conf['authorized_sources'] = []
       computer.ip_address_list.append(('route_interface1', '10.10.8.4'))
       self.assertEqual(self.grid.processComputerPartitionList(), slapgrid.SLAPGRID_SUCCESS)
