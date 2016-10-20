@@ -1,4 +1,8 @@
+import os
+import sys
 import unittest
+from textwrap import dedent
+from slapos.recipe import dcron
 from slapos.recipe.dcron import systemd_to_cron
 
 class TestDcron(unittest.TestCase):
@@ -36,3 +40,72 @@ class TestDcron(unittest.TestCase):
     _("1-0"); _("1-32"); _("1-14/18")
     _("24:0"); _("8/16:0")
     _("0:60"); _("0:15/45")
+
+  def setUp(self):
+    self.installed_file = './.installed.cfg'
+
+  def tearDown(self):
+    if os.path.exists(self.installed_file):
+      os.unlink(self.installed_file)
+
+  def new_recipe(self, extra_options=None, **kw):
+    buildout = {
+      'buildout': {
+        'bin-directory': '',
+        'find-links': '',
+        'allow-hosts': '',
+        'develop-eggs-directory': '',
+        'eggs-directory': '',
+        'python': 'testpython',
+        'installed': '.installed.cfg',
+        },
+       'testpython': {
+         'executable': sys.executable,
+       },
+       'slap-connection': {
+         'computer-id': '',
+         'partition-id': '',
+         'server-url': '',
+         'software-release-url': '',
+       }
+    }
+    options = {
+      'cron-entries': '.cron',
+      'name': 'test',
+      'command': 'true',
+    }
+    if isinstance(extra_options, dict):
+      options.update(extra_options)
+    options.update(kw)
+    return dcron.Part(buildout=buildout, name='cron-entry-test', options=options)
+
+  def test_onceADayIsOverwrittenIfGivenFrequency(self):
+    parameter_dict = {'once-a-day': True}
+    recipe = self.new_recipe(parameter_dict)
+    random_periodicity = recipe.options['periodicity']
+
+    parameter_dict['frequency'] = '0 1 * * *'
+    recipe = self.new_recipe(parameter_dict)
+    new_periodicity = recipe.options['periodicity']
+    self.assertEqual(new_periodicity, '0 1 * * *')
+    self.assertNotEqual(random_periodicity, new_periodicity)
+
+  def test_periodicityNeverChangeIfOnceADay(self):
+    parameter_dict = {'once-a-day': True}
+    periodicity = None
+    
+    for _ in range(5):
+      recipe = self.new_recipe(parameter_dict)
+      recipe_periodicity = recipe.options['periodicity']
+      if periodicity is not None:
+        self.assertEqual(periodicity, recipe_periodicity)
+      else:
+        periodicity = recipe_periodicity
+        with open(recipe.buildout['buildout']['installed'], 'w') as file:
+          file.write(dedent("""
+          [cron-entry-test]
+          periodicity = %s
+          """ % periodicity))
+
+if __name__ == '__main__':
+  unittest.main()
