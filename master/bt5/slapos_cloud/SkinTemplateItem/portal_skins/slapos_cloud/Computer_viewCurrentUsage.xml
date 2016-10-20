@@ -91,7 +91,6 @@
                     <value>
                       <list>
                         <string>my_busy_computer_partition_list_image</string>
-                        <string>listbox_image</string>
                         <string>listbox_software_release</string>
                         <string>listbox_installation_state</string>
                         <string>listbox_usage</string>
