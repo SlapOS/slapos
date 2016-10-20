@@ -26,6 +26,8 @@
 ##############################################################################
 import os
 
+from random import randint
+
 from slapos.recipe.librecipe import GenericBaseRecipe
 from zc.buildout import UserError
 
@@ -54,21 +56,36 @@ class Recipe(GenericBaseRecipe):
 
 class Part(GenericBaseRecipe):
 
-  def install(self):
-    try:
-      periodicity = self.options['frequency']
-    except KeyError:
-      periodicity = self.options['time']
+  def _options(self, options):
+    periodicity = None
+    if options.get('frequency', '') != '':
+      periodicity = options['frequency']
+    elif 'time' in options:
+      periodicity = options['time']
       try:
         periodicity = systemd_to_cron(periodicity)
       except Exception:
         raise UserError("Invalid systemd calendar spec %r" % periodicity)
+    if periodicity is None and self.isTrueValue(options.get('once-a-day', False)):
+      # Migration code, to force a random value for already instanciated softwares
+      previous_periodicity = self.getValueFromPreviousRun(self.name, 'periodicity')
+      if previous_periodicity  in ("0 0 * * *", '', None):
+        periodicity = "%d %d * * *" % (randint(0, 59), randint(0, 23))
+      else:
+        periodicity = previous_periodicity
+
+    if periodicity is None:
+      raise UserError("Missing one of 'frequency', 'once-a-day' or 'time' parameter")
+
+    options['periodicity'] = periodicity
+
+  def install(self):
     cron_d = self.options['cron-entries']
     name = self.options['name']
     filename = os.path.join(cron_d, name)
 
     with open(filename, 'w') as part:
-      part.write('%s %s\n' % (periodicity, self.options['command']))
+      part.write('%s %s\n' % (self.options['periodicity'], self.options['command']))
 
     return [filename]
 
@@ -138,4 +155,3 @@ def systemd_to_cron(spec):
               continue
         raise ValueError
   return ' '.join(spec)
-
