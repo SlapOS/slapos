@@ -125,7 +125,7 @@
       <dictionary>
         <item>
             <key> <string>_text</string> </key>
-            <value> <string>python: cell.getAggregateRelatedTitle(portal_type=["Software Instance", "Slave Instance"])</string> </value>
+            <value> <string>python: cell.getAggregateRelatedTitle(portal_type=["Software Instance"])</string> </value>
         </item>
       </dictionary>
     </pickle>
