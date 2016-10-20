@@ -627,7 +627,7 @@ log     = ${sidekiq-dir:log}
 # NOTE see queue list here:
 # https://gitlab.com/gitlab-org/gitlab-ce/blob/master/Procfile
 # https://gitlab.com/gitlab-org/omnibus-gitlab/blob/master/files/gitlab-cookbooks/gitlab/templates/default/sv-sidekiq-run.erb
-# (last updated for omnibus-gitlab 8.7.9+ce.1-0-gf589ad7)
+# (last updated for omnibus-gitlab 8.8.9+ce.0-g25376053)
 [service-sidekiq]
 recipe  = slapos.cookbook:wrapper
 wrapper-path    = ${directory:service}/sidekiq
