@@ -78,11 +78,10 @@ recipe = slapos.cookbook:cron.d
 name = backup
 frequency = $${slap-parameter:resiliency-backup-periodicity}
 # Sleep from 1 to 6 hours before backing up (disks/network IO optimization)
-sleep-command = ${bash:location}/bin/bash -c "sleep $(($${slap-parameter:resiliency-backup-sleep-time-buffer}))"
+sleep-command = ${bash:location}/bin/bash -c "sleep $((RANDOM%(60*60*6)))"
 command = ($${:sleep-command}; $${notifier-exporter:wrapper} --transaction-id `date +%s`)
 
 [slap-parameter]
 # In cron.d format (i.e things like */15 * * * * are accepted).
 resiliency-backup-periodicity = 0 0 * * *
-resiliency-backup-sleep-time-buffer = RANDOM%(60*60*6)
 
