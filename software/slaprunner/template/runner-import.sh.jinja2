@@ -20,7 +20,7 @@ restore_element () {
   do
     cd $backup_path;
     if [ -f $element ] || [ -d $element ]; then
-       command="{{ rsync_binary }} --stats -av --delete --exclude *.sock --exclude *.pid --exclude .installed.cfg --exclude .installed-switch-softwaretype.cfg $backup_path/$element $restore_path"
+       command="{{ rsync_binary }} --stats -av --delete --exclude *.sock --exclude *.socket --exclude *.pid --exclude .installed.cfg --exclude .installed-switch-softwaretype.cfg $backup_path/$element $restore_path"
        echo "Running: \"$command\""
        $command
     fi
