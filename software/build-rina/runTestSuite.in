@@ -1,6 +1,6 @@
 #!{{parameter_dict['runTestSuite_py']}}
 from __future__ import print_function
-import argparse, errno, os, shutil, subprocess, sys, traceback
+import argparse, os, subprocess, sys, traceback
 from time import gmtime, strftime, time
 # These are the 2 modules to reuse when using ERP5 for managing test bots.
 # What we do here is currently too new to reuse more from testsuite.
@@ -11,9 +11,6 @@ from erp5.util.testsuite import format_command
 
 dist_list = {{vm['dists'].split()}}
 publish = {{slapparameter_dict.get('publish')}}
-
-BUILDDIR = 'build'
-BUILDOUT = os.path.realpath(os.path.join('software_release', 'bin', 'buildout'))
 
 STAT_MAP = dict(
   TOTAL = 'test_count',
@@ -82,14 +79,9 @@ def main():
   else:
     test_result = DummyTestResult(dist_list)
 
-  if os.path.exists(BUILDDIR):
-    shutil.rmtree(BUILDDIR)
-  os.mkdir(BUILDDIR)
-  oldpwd = os.getcwd()
-  os.chdir(BUILDDIR)
-
-  with open('buildout.cfg', 'w') as f:
-    f.write("""\
+  fd = os.open('buildout.cfg', os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0666)
+  try:
+    os.write(fd, """\
 [buildout]
 extends = {{parameter_dict['profile_base_location']}}/build.cfg
 offline = true
@@ -106,6 +98,8 @@ location = {{parameter_dict['rina_tools']}}
 [slapos.package-repository]
 location = {{parameter_dict['slapos_package']}}
 """)
+  finally:
+    os.close(fd)
   librina_log = os.path.join('parts', 'debuild-librina', 'build.log')
   stderr_write = sys.stderr.write
 
@@ -115,7 +109,7 @@ location = {{parameter_dict['slapos_package']}}
       break
     dist = test_result_line.name
 
-    cmd = [BUILDOUT,
+    cmd = [{{repr(parameter_dict['buildout'])}},
       'vm-run-base:dist=' + dist,
       'debuild-rina-base:suite=' + (publish['suite'] if publish else ''),
     ]
@@ -187,10 +181,6 @@ location = {{parameter_dict['slapos_package']}}
       **status_dict)
 
     # TODO: upload packages if 'publish' parameter is given
-
-  if args.master_url:
-    os.chdir(oldpwd)
-    shutil.rmtree(BUILDDIR)
 
 
 if __name__ == "__main__":
