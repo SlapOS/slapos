@@ -132,16 +132,18 @@ location = {{parameter_dict['slapos_package']}}
 
     start = time()
     try:
-      p = subprocess.Popen(cmd, stderr=subprocess.PIPE)
-      stderr = []
-      while 1:
-        line = p.stderr.readline()
-        if not line:
-          break
-        stderr_write(line)
-        stderr.append(line)
-      returncode = p.wait()
-      end = time()
+      try:
+        p = subprocess.Popen(cmd, stderr=subprocess.PIPE)
+        stderr = []
+        while 1:
+          line = p.stderr.readline()
+          if not line:
+            break
+          stderr_write(line)
+          stderr.append(line)
+        returncode = p.wait()
+      finally:
+        end = time()
       del p
 
       if returncode:
