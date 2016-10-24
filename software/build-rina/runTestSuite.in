@@ -92,7 +92,7 @@ eggs-directory = {{buildout['eggs-directory']}}
 environment =
 vm = {{vm['location']}}
 
-[rina-tools-repository]
+[irati-stack]
 location = {{parameter_dict['rina_tools']}}
 
 [slapos.package-repository]
