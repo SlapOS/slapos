@@ -12,16 +12,16 @@ from erp5.util.testsuite import format_command
 dist_list = {{vm['dists'].split()}}
 publish = {{slapparameter_dict.get('publish')}}
 
+# ERP5 must be changed to only distinguish SKIP/EXPECTED/UNEXPECTED,
+# instead of SKIP/FAIL/ERROR. Unlike NEO, we categorize XFAIL as SKIP
+# so that the overall status is PASS if there's no FAIL/XPASS/ERROR.
 STAT_MAP = dict(
   TOTAL = 'test_count',
   PASS  = None,
   SKIP  = 'skip_count',
-  # Same as for NEO. ERP5 must be changed to only distinguish
-  # - expected (-> 'failure' for now) and
-  # - unexpected (-> 'error') failures.
-  XFAIL = 'failure_count',
-  FAIL  = 'error_count',
-  XPASS = 'error_count',
+  XFAIL = 'skip_count',
+  FAIL  = 'failure_count',
+  XPASS = 'failure_count',
   ERROR = 'error_count',
 )
 
