@@ -1121,7 +1121,7 @@ stderr_logfile_backups=1
         # Write error message in a log file assible to computer partition user
         error_file.write(str(e))
       raise
-    finally:
+    else:
       self.logger.removeHandler(partition_file_handler)
       if os.path.exists(error_output_file):
         os.unlink(error_output_file)  
