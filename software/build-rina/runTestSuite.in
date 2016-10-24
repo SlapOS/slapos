@@ -93,7 +93,7 @@ environment =
 vm = {{vm['location']}}
 
 [irati-stack]
-location = {{parameter_dict['rina_tools']}}
+location = {{parameter_dict['irati_stack']}}
 
 [slapos.package-repository]
 location = {{parameter_dict['slapos_package']}}
