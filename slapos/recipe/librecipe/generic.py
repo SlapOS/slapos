@@ -156,9 +156,11 @@ class GenericBaseRecipe(object):
       lines.append(dedent("""
           # Check for other instances
           pidfile=%s
-          if pid=`pgrep -F $pidfile -f "$COMMAND" 2>/dev/null`; then
-            echo "Already running with pid $pid."
-            exit 1
+          if [ -s $pidfile ]; then
+            if pid=`pgrep -F $pidfile -f "$COMMAND" 2>/dev/null`; then
+              echo "Already running with pid $pid."
+              exit 1
+            fi
           fi
           echo $$ > $pidfile""" % shlex.quote(pidfile)))
 
