@@ -10,6 +10,12 @@
       "type": "string",
       "pattern": "^(http|https|ftp)://"
     },
+    "https-url": {
+      "title": "HTTPS Backend URL",
+      "description": "Url of the backend if it is diferent from url parameter",
+      "type": "string",
+      "pattern": "^(http|https|ftp)://"
+    },
     "custom_domain": {
       "title": "Custom Domain",
       "description": "Custom Domain to use for the website",
@@ -23,7 +29,6 @@
       "type": "string",
       "default": ""
     },
-
     "type": {
       "title": "Backend Type",
       "description": "Type of slave. If redirect, the slave will redirect to the given url. If zope, the rewrite rules will be compatible with Virtual Host Monster",
