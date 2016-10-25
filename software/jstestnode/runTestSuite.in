@@ -93,7 +93,9 @@ def main():
     else:
       raise RuntimeError('Unknown target')
 
-    url = "%s%s" % (args.frontend_url, parsed_parameters['test-url'])
+    full_path = '$${runTestSuite-instance:buildout-directory}/software_release/parts/%s' % parsed_parameters['test-url']
+    full_path = full_path.split('srv')[2]
+    url = "%s%s" % (args.frontend_url, full_path)
 
     agent = browser.execute_script("return navigator.userAgent")
     print agent
