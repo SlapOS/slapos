@@ -1,0 +1,187 @@
+#!{{parameter_dict['runTestSuite_py']}}
+from __future__ import print_function
+import argparse, os, subprocess, sys, traceback
+from time import gmtime, strftime, time
+# These are the 2 modules to reuse when using ERP5 for managing test bots.
+# What we do here is currently too new to reuse more from testsuite.
+from erp5.util import taskdistribution
+from erp5.util.testsuite import format_command
+
+{% set vm = parameter_dict['vm'] -%}
+
+dist_list = {{vm['dists'].split()}}
+publish = {{slapparameter_dict.get('publish')}}
+
+# ERP5 must be changed to only distinguish SKIP/EXPECTED/UNEXPECTED,
+# instead of SKIP/FAIL/ERROR. Unlike NEO, we categorize XFAIL as SKIP
+# so that the overall status is PASS if there's no FAIL/XPASS/ERROR.
+STAT_MAP = dict(
+  TOTAL = 'test_count',
+  PASS  = None,
+  SKIP  = 'skip_count',
+  XFAIL = 'skip_count',
+  FAIL  = 'failure_count',
+  XPASS = 'failure_count',
+  ERROR = 'error_count',
+)
+
+class DummyTestResult:
+
+  class DummyTestResultLine:
+
+    def stop(self, duration, stdout='', **kw):
+      print('\n' + stdout)
+      print('Ran in %.3fs' % duration)
+
+  done = 0
+
+  def __init__(self, test_name_list):
+    self.test_name_list = test_name_list
+
+  def start(self):
+    test_result_line = self.DummyTestResultLine()
+    try:
+      test_result_line.name = self.test_name_list[self.done]
+    except IndexError:
+      return
+    self.done += 1
+    return test_result_line
+
+
+def main():
+  os.environ.update({k: v.strip() % os.environ
+    for k, v in {{parameter_dict['environment'].items()}}})
+
+  parser = argparse.ArgumentParser(description='Run a test suite.')
+  parser.add_argument('--test_suite', help='The test suite name')
+  parser.add_argument('--test_suite_title', help='The test suite title')
+  parser.add_argument('--test_node_title', help='The test node title')
+  parser.add_argument('--project_title', help='The project title')
+  parser.add_argument('--revision', help='The revision to test',
+                      default='dummy_revision')
+  parser.add_argument('--node_quantity', type=int,
+                      help='Number of CPUs to use for the VM')
+  parser.add_argument('--master_url',
+                      help='The Url of Master controling many suites')
+
+  args = parser.parse_args()
+
+  test_title = args.test_suite_title or args.test_suite
+  if args.master_url:
+    tool = taskdistribution.TaskDistributionTool(args.master_url)
+    test_result = tool.createTestResult(args.revision,
+                                        dist_list,
+                                        args.test_node_title,
+                                        test_title=test_title,
+                                        project_title=args.project_title)
+    if test_result is None:
+      return
+  else:
+    test_result = DummyTestResult(dist_list)
+
+  fd = os.open('buildout.cfg', os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0666)
+  try:
+    os.write(fd, """\
+[buildout]
+extends = {{parameter_dict['profile_base_location']}}/build.cfg
+offline = true
+develop-eggs-directory = {{buildout['develop-eggs-directory']}}
+eggs-directory = {{buildout['eggs-directory']}}
+
+[vm-run-base]
+environment =
+vm = {{vm['location']}}
+
+[irati-stack]
+location = {{parameter_dict['irati_stack']}}
+
+[slapos.package-repository]
+location = {{parameter_dict['slapos_package']}}
+""")
+  finally:
+    os.close(fd)
+  librina_log = os.path.join('parts', 'debuild-librina', 'build.log')
+  stderr_write = sys.stderr.write
+
+  while 1:
+    test_result_line = test_result.start()
+    if not test_result_line:
+      break
+    dist = test_result_line.name
+
+    cmd = [{{repr(parameter_dict['buildout'])}},
+      'vm-run-base:dist=' + dist,
+      'debuild-rina-base:suite=' + (publish['suite'] if publish else ''),
+    ]
+    if args.node_quantity:
+      cmd.append('vm-run-base:smp=%s' % args.node_quantity)
+    status_dict = {'command': format_command(*cmd)}
+    print('$', status_dict['command'])
+
+    # Wanted on test result lines:
+    #  status: UNKNOWN in case of buildout failure
+    #          (even if the test suite could be run)
+    #  output: test suite summary if any
+    #  error: buildout traceback or test suite log
+
+    start = time()
+    try:
+      try:
+        p = subprocess.Popen(cmd, stderr=subprocess.PIPE)
+        stderr = []
+        while 1:
+          line = p.stderr.readline()
+          if not line:
+            break
+          stderr_write(line)
+          stderr.append(line)
+        returncode = p.wait()
+      finally:
+        end = time()
+      del p
+
+      if returncode:
+        iter_err = enumerate(reversed(stderr), 1)
+        for i, line in iter_err:
+          if line == "Traceback (most recent call last):\n":
+            for i, line in iter_err:
+              if line == '\n':
+                break
+            for i, line in iter_err:
+              if line[0] != ' ':
+                break
+            break
+        if line == "While:\n":
+          del stderr[:-i]
+        status_dict['stderr'] = ''.join(stderr)
+
+      with open(librina_log) as f:
+        log = f.readlines()
+      del log[:log.index('make  check-TESTS\n')]
+      for i, line in enumerate(log):
+        if line.startswith('Testsuite summary'):
+          del log[log.index(log[i+1], i+2):]
+          status_dict['stdout'] = ''.join(log[i:])
+          stat = {}
+          for line in log[i+2:]:
+            k, v = line[2:].split(':')
+            k = STAT_MAP[k]
+            if k:
+              stat[k] = stat.get(k, 0) + int(v.strip())
+          if not returncode:
+            status_dict.update(stat)
+          status_dict.setdefault('stderr', ''.join(log[:i-1]))
+          break
+    except Exception:
+      status_dict.setdefault('stderr', traceback.format_exc())
+
+    test_result_line.stop(
+      date = strftime("%Y/%m/%d %H:%M:%S", gmtime(end)),
+      duration = end - start,
+      **status_dict)
+
+    # TODO: upload packages if 'publish' parameter is given
+
+
+if __name__ == "__main__":
+    main()

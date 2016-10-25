@@ -57,14 +57,11 @@ setup(name=name,
       install_requires=[
         'jsonschema',
         'hexagonit.recipe.download',
-        'lxml', # for full blown python interpreter
         'netaddr', # to manipulate on IP addresses
         'setuptools', # namespaces
         'inotifyx', # to watch filesystem changes (used in lockfile)
         'lock_file', #another lockfile implementation for multiprocess
         'slapos.core', # uses internally
-#        'slapos.toolbox', # needed for libcloud, cloudmgr, disabled for now
-        'xml_marshaller', # need to communication with slapgrid
         'zc.buildout', # plays with buildout
         'zc.recipe.egg', # for scripts generation
         'pytz', # for timezone database

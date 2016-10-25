@@ -8,6 +8,8 @@ DocumentRoot {{ document_root }}
 ServerRoot {{ instance_home }}
 
 {{ "Listen %s:%s" % (ipv4_addr, cached_port)  }}
+{{ "Listen %s:%s" % (ipv4_addr, ssl_cached_port)  }}
+
 
 ServerAdmin {{ server_admin }}
 DefaultType text/plain

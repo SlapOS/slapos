@@ -137,6 +137,7 @@ crond-folder = ${logrotate-directory:cron-entries}
 logrotate-folder = ${logrotate:logrotate-entries}
 promise-runner = {{ monitor_runpromise }}
 promise-folder = ${directory:promises}
+monitor-promise-folder = ${monitor-directory:promises}
 pid-file = ${monitor-directory:pids}/monitor-bootstrap.pid
 
 public-path-list = 

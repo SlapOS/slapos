@@ -247,7 +247,7 @@ class Recipe(GenericSlapRecipe, Notify, Callback):
 
     print 'Processing PBS slave %s with type %s' % (slave_id, slave_type)
 
-    promise_path = os.path.join(self.options['promises-directory'], slave_id)
+    promise_path = os.path.join(self.options['promises-directory'], "ssh-to-%s" % slave_id)
     promise_dict = dict(ssh_client=self.options['sshclient-binary'],
                         user=parsed_url.username,
                         host=parsed_url.hostname,

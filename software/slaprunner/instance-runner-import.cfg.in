@@ -42,7 +42,7 @@ parts +=
 recipe = slapos.cookbook:free_port
 minimum = 49990
 maximum = 49999
-ip = $${slap-network-information:global-ipv6}
+ip = $${slap-network-information:local-ipv4}
 
 [runner-free-port]
 recipe = slapos.cookbook:free_port
@@ -63,10 +63,14 @@ ip = $${slaprunner:ipv4}
 [supervisord]
 port = $${supervisord-free-port:port}
 
-# Idem for some other services
 [runner-sshd-port]
 minimum = 22232
 maximum = 22241
+
+# Deactivate the call to prepareSoftware, and let the importer script
+# handle the build&run of the instance.
+[cron-entry-prepare-software]
+recipe =
 
 [importer]
 recipe = slapos.recipe.template:jinja2
@@ -78,7 +82,9 @@ mode = 700
 restore-exit-code-file=$${directory:srv}/importer-exit-code-file
 context =
   key backend_url slaprunner:access-url
-  key proxy_host slaprunner:ipv4
+  key ipv4 slaprunner:ipv4
+  key ipv6 slaprunner:ipv6
+  key proxy_port slaprunner:proxy_port
   section directory directory
   raw  output_log_file $${directory:log}/resilient.log
   raw  shell_binary ${bash:location}/bin/bash

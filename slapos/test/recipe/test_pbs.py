@@ -123,7 +123,7 @@ class PBSTest(unittest.TestCase):
         recipe._install()
 
         self.assertItemsEqual(os.listdir(promises_directory),
-                              ['pulltest', 'pushtest'])
+                              ['ssh-to-pulltest', 'ssh-to-pushtest'])
 
         self.assertItemsEqual(os.listdir(wrappers_directory),
                               ['pulltest_raw', 'pulltest', 'pushtest_raw', 'pushtest'])

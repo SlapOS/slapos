@@ -20,7 +20,7 @@ restore_element () {
   do
     cd $backup_path;
     if [ -f $element ] || [ -d $element ]; then
-       command="{{ rsync_binary }} --stats -av --delete --exclude *.sock --exclude *.pid --exclude .installed.cfg --exclude .installed-switch-softwaretype.cfg $backup_path/$element $restore_path"
+       command="{{ rsync_binary }} --stats -av --delete --exclude *.sock --exclude *.socket --exclude *.pid --exclude .installed.cfg --exclude .installed-switch-softwaretype.cfg $backup_path/$element $restore_path"
        echo "Running: \"$command\""
        $command
     fi
@@ -60,31 +60,29 @@ SOFTWARE_RELEASE=$(echo $OLD_SOFTWARE_RELEASE | sed -e 's/\(.*\)\(slappart\|test
 $SQLITE3 $DATABASE "update partition11 set software_release='$SOFTWARE_RELEASE' where software_release NOT NULL;"
 $SQLITE3 $DATABASE "update software11 set url='$SOFTWARE_RELEASE' where url='$OLD_SOFTWARE_RELEASE';" || $SQLITE3 $DATABASE "delete from software11 where url='$OLD_SOFTWARE_RELEASE';"
 # Change slapproxy database to have all instances stopped
-$SQLITE3 $DATABASE "update partition11 set slap_state='stopped';"
+$SQLITE3 $DATABASE "update partition11 set requested_state='stopped';"
+# Change slapproxy database to get correct IPs
+IPV4={{ ipv4 }}
+IPV6={{ ipv6 }}
+$SQLITE3 $DATABASE "update partition_network11 set address='$IPV4' where netmask='255.255.255.255';"
+$SQLITE3 $DATABASE "update partition_network11 set address='$IPV6' where netmask='ffff:ffff:ffff::';"
 
-# Run slapproxy on different port (in case of running inside of erp5testnode
-# with only one IP and port 50000 already taken by slapproxy of main instance)
-HOST="{{ proxy_host }}"
-PORT="50001"
-URL="http://$HOST:$PORT"
-$SLAPOS proxy start --cfg $HOME/etc/slapos.cfg --port $PORT >/dev/null 2>&1 &
-SLAPPROXY_PID=$!
-trap "kill $SLAPPROXY_PID" EXIT TERM INT
-sleep 5
+MASTERURL="http://{{ ipv4 }}:{{ proxy_port }}"
 
 echo "Building newest software..."
-$SLAPOS node software --cfg $HOME/etc/slapos.cfg --all --master-url=$URL --logfile $HOME/srv/runner/software.log --pidfile $HOME/var/run/slapos-node-software.pid >/dev/null 2>&1 ||
-$SLAPOS node software --cfg $HOME/etc/slapos.cfg --all --master-url=$URL --logfile $HOME/srv/runner/software.log --pidfile $HOME/var/run/slapos-node-software.pid >/dev/null 2>&1 ||
-$SLAPOS node software --cfg $HOME/etc/slapos.cfg --all --master-url=$URL --logfile $HOME/srv/runner/software.log --pidfile $HOME/var/run/slapos-node-software.pid >/dev/null 2>&1
+$SLAPOS node software --cfg $HOME/etc/slapos.cfg --all --master-url=$MASTERURL --logfile $HOME/srv/runner/software.log --pidfile $HOME/var/run/slapos-node-software.pid >/dev/null 2>&1 ||
+$SLAPOS node software --cfg $HOME/etc/slapos.cfg --all --master-url=$MASTERURL --logfile $HOME/srv/runner/software.log --pidfile $HOME/var/run/slapos-node-software.pid >/dev/null 2>&1 ||
+$SLAPOS node software --cfg $HOME/etc/slapos.cfg --all --master-url=$MASTERURL --logfile $HOME/srv/runner/software.log --pidfile $HOME/var/run/slapos-node-software.pid >/dev/null 2>&1
 # Remove defined scripts to force buildout to recreate them to have updated paths
 rm $srv_directory/runner/instance/slappart*/srv/runner-import-restore || true
 echo "Running slapos node instance..."
 # XXX hardcoded
-$SLAPOS node instance --cfg $HOME/etc/slapos.cfg --master-url=$URL --logfile $HOME/srv/runner/instance.log --pidfile $HOME/var/run/slapos-node-instance.pid >/dev/null 2>&1 || true
-$SLAPOS node instance --cfg $HOME/etc/slapos.cfg --master-url=$URL --logfile $HOME/srv/runner/instance.log --pidfile $HOME/var/run/slapos-node-instance.pid >/dev/null 2>&1 || true
-$SLAPOS node instance --cfg $HOME/etc/slapos.cfg --master-url=$URL --logfile $HOME/srv/runner/instance.log --pidfile $HOME/var/run/slapos-node-instance.pid >/dev/null 2>&1 || true
+$SLAPOS node instance --cfg $HOME/etc/slapos.cfg --master-url=$MASTERURL --logfile $HOME/srv/runner/instance.log --pidfile $HOME/var/run/slapos-node-instance.pid >/dev/null 2>&1 ||
+$SLAPOS node instance --cfg $HOME/etc/slapos.cfg --master-url=$MASTERURL --logfile $HOME/srv/runner/instance.log --pidfile $HOME/var/run/slapos-node-instance.pid >/dev/null 2>&1 ||
+$SLAPOS node instance --cfg $HOME/etc/slapos.cfg --master-url=$MASTERURL --logfile $HOME/srv/runner/instance.log --pidfile $HOME/var/run/slapos-node-instance.pid >/dev/null 2>&1
 
 # Invoke defined scripts for each partition inside of slaprunner
+echo "Invoke custom import scripts defined by each instances..."
 for partition in $srv_directory/runner/instance/slappart*/
 do
   script=$partition/srv/runner-import-restore
@@ -95,9 +93,11 @@ do
 done
 
 # Change back slapproxy database to have all instances started
-$SQLITE3 $DATABASE "update partition11 set slap_state='started';"
+echo "Start instances..."
+$SQLITE3 $DATABASE "update partition11 set requested_state='started';"
 
 # Write exit code to an arbitrary file that will be checked by promise/monitor
+echo "Write status file... End"
 RESTORE_EXIT_CODE_FILE="{{ restore_exit_code_file }}"
 echo $RESTORE_EXIT_CODE > $RESTORE_EXIT_CODE_FILE
 exit $RESTORE_EXIT_CODE

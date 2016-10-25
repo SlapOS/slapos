@@ -8,7 +8,7 @@ parts =
   cron-entry-logrotate
   pbs-sshkeys-authority
   sshkeys-openssh
-  backup-transfer-integrity-promise
+  backup-checksum-integrity-promise
   resilient-genstatrss-wrapper
   pbs-push-history-log
   backup-signature-link
@@ -264,7 +264,7 @@ monitor-username = $${htpasswd:username}
 #--
 #-- Resiliency promises.
 
-[backup-transfer-integrity-promise]
+[backup-checksum-integrity-promise]
 recipe = slapos.recipe.template:jinja2
 template = inline:
   #!${dash:location}/bin/dash
@@ -276,9 +276,15 @@ template = inline:
   if [ -z "$backup_signature" ]; then
     exit 0;
   else
-    diff "proof.signature" "$backup_signature";
+    diff -q "proof.signature" "$backup_signature";
+    if [ "$?" -eq 0 ]; then
+      exit 0;
+    else
+      echo "Signature file is not the same before and after transfer"
+      exit 1
+    fi
   fi
-rendered = $${basedirectory:promises}/backup-transfer-integrity-promise
+rendered = $${basedirectory:promises}/backup-checksum-integrity
 mode = 700
 
 [resilient-genstatrss-wrapper]

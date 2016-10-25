@@ -1,0 +1,14 @@
+#!{{ dash }}
+
+if [ -f "{{ qemu_ready_path }}" ]; then
+  echo "VM correctly started."
+else
+  log_file="{{ qemu_service_log_file }}"
+  >&2 echo "Qemu process is not correctly started."
+  if [ -f "$log_file" ]; then
+    >&2 echo "** Latest ouput logs **"
+    >&2 echo
+    >&2 echo "$(tail $log_file)"
+    exit 1
+  fi
+fi

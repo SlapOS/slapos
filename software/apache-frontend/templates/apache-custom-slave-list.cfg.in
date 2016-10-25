@@ -3,6 +3,7 @@
 {% set cached_server_dict = {} -%}
 {% set part_list = [] -%}
 {% set cache_access = "http://%s:%s" % (local_ipv4, cache_port) -%}
+{% set ssl_cache_access = "http://%s:%s/HTTPS" % (local_ipv4, cache_port) -%}
 {% set TRUE_VALUES = ['y', 'yes', '1', 'true'] -%}
 {% set generic_instance_parameter_dict = {'cache_access': cache_access,} -%}
 {% set slave_log_dict = {} -%}
@@ -178,6 +179,7 @@ extra-context =
 {%     if 'enable_cache' in slave_instance and 'url' in slave_instance and 'domain' in slave_instance -%}
 {%       do slave_instance.__setitem__('custom_domain', slave_instance.get('domain')) -%}
 {%       do slave_instance.__setitem__('backend_url', slave_instance.get('url')) -%}
+{%       do slave_instance.__setitem__('https_backend_url', slave_instance.get('https-url', slave_instance.get('url'))) -%}
 {%       do cached_server_dict.__setitem__(slave_reference, slave_configuration_section_name) -%}
 {%     endif -%}
 
@@ -208,7 +210,9 @@ apache_custom_https = {{ dumps(apache_custom_https) }}
 {%     set enable_cache = (('' ~ slave_instance.get('enable_cache', '')).lower() in TRUE_VALUES and slave_instance.get('type', '') != 'redirect') -%}
 {%     if enable_cache -%}
 {%       do slave_instance.__setitem__('backend_url', slave_instance.get('url')) -%}
+{%       do slave_instance.__setitem__('https_backend_url', slave_instance.get('https-url', slave_instance.get('url'))) -%}
 {%       do slave_instance.__setitem__('url', cache_access) -%}
+{%       do slave_instance.__setitem__('https-url', ssl_cache_access) -%}
 {%       do cached_server_dict.__setitem__(slave_reference, slave_configuration_section_name) -%}
 {%     endif -%}
 {%     do part_list.append(slave_section_title) -%}
@@ -251,6 +255,7 @@ extensions = jinja2.ext.do
 extra-context =
     section slave_parameter {{ slave_configuration_section_name }}
     raw cached_port {{ cached_port }}
+    raw ssl_cached_port {{ ssl_cached_port }}
 {{ '\n' }}
 {% endfor %}
 

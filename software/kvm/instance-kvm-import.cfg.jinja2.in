@@ -8,7 +8,7 @@ offline = true
 # even extend the kvm instance profile.
 extends = 
   {{ pbsready_import_template }}
-{% if slapparameter_dict.get('enable-monitor', 'True').lower() == 'true' -%}
+{% if str(slapparameter_dict.get('enable-monitor', True)).lower() == 'true' -%}
 {{ '  ' ~ template_monitor }}
 
 [resilient-publish-connection-parameter]

@@ -96,6 +96,7 @@ context =
     raw python_executable ${buildout:executable}
     raw qemu_executable_location ${kvm:location}/bin/qemu-system-x86_64
     raw qemu_img_executable_location ${kvm:location}/bin/qemu-img
+    raw qemu_start_promise_tpl ${template-qemu-ready:location}/${template-qemu-ready:filename}
     raw sixtunnel_executable_location ${6tunnel:location}/bin/6tunnel
     raw template_httpd_cfg ${template-httpd:rendered}
     raw template_content ${template-content:location}/${template-content:filename}
