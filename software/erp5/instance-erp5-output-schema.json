@@ -39,11 +39,6 @@
       "pattern": "^memcached://",
       "type": "string"
     },
-    "cloudooo-url": {
-      "description": "Conversion service access information - DEPRECATED",
-      "pattern": "^(http|https)://",
-      "type": "string"
-    },
     "mariadb-database-list": {
       "description": "Relational database access information",
       "items": {

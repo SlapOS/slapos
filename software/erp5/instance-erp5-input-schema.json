@@ -160,13 +160,6 @@
       },
       "type": "object"
     },
-    "cloudooo": {
-      "description": "Format conversion service",
-      "additionalProperties": {
-        "$ref": "./instance-cloudooo-schema.json#/properties"
-      },
-      "type": "object"
-    },
     "smtp": {
       "description": "Mail queuing and relay service",
       "additionalProperties": {
