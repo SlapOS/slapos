@@ -1,6 +1,17 @@
 Changes
 =======
 
+1.3.17 (2016-10-25)
+-------------------
+
+ * slapos.grid: Always remove .timestamp and .slapgrid if partition is destroyed.
+ * slapos.proxy: Propagate parent partition state to children
+ * slapos.grid: Increase min space (1G)
+ * slapos.grid: Save slapgrid state into the partition
+ * slapos.format: Remove passwd call while format.
+ * svcbackend: explicitely call the executable instead of using Popen 'executable' keyword.
+ * slapos.grid: Introduce new garbage collector for instances ignored by buildout 
+
 1.3.16 (2016-09-29)
 -------------------
  * slapos.format: Include disk usage report. Do not divide cpu_load by number of cpu cores.
