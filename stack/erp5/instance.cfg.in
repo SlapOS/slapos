@@ -5,46 +5,6 @@ extends = {{ instance_common_cfg }}
 context +=
     raw slapos_core_version {{ slapos_core_version }}
 
-[dynamic-template-cloudooo-parameters]
-cairo = {{ cairo_location }}
-cups = {{ cups_location }}
-dbus = {{ dbus_location }}
-dbus-glib = {{ dbus_glib_location }}
-file = {{ file_location }}
-fontconfig = {{ fontconfig_location }}
-freetype = {{ freetype_location }}
-glib = {{ glib_location }}
-glu = {{ glu_location }}
-libICE = {{ libICE_location }}
-libSM = {{ libSM_location }}
-libX11 = {{ libX11_location }}
-libXau = {{ libXau_location }}
-libXdmcp = {{ libXdmcp_location }}
-libXext = {{ libXext_location }}
-libXrender = {{ libXrender_location }}
-libexpat = {{ libexpat_location }}
-libffi = {{ libffi_location }}
-libpng12 = {{ libpng12_location }}
-libxcb = {{ libxcb_location }}
-mesa = {{ mesa_location }}
-pixman = {{ pixman_location }}
-xdamage = {{ xdamage_location }}
-xfixes = {{ xfixes_location }}
-zlib = {{ zlib_location }}
-libreoffice-bin = {{ libreoffice_bin_location }}
-fonts = {{ fonts_location }}
-buildout-bin-directory = {{ buildout_bin_directory }}
-6tunnel = {{ sixtunnel_location }}
-dash = {{ dash_location }}
-template-monitor = {{ dumps(template_monitor) }}
-
-[dynamic-template-cloudooo]
-<= jinja2-template-base
-template = {{ template_cloudooo }}
-filename = instance-cloudoo.cfg
-extra-context =
-    section parameter_dict dynamic-template-cloudooo-parameters
-
 [dynamic-template-postfix-parameters]
 bin-directory = {{ bin_directory }}
 cyrus-sasl-location = {{ cyrus_sasl_location }}
@@ -199,7 +159,6 @@ create-erp5-site = dynamic-template-create-erp5-site:rendered
 RootSoftwareInstance = ${:default}
 # Internal software types
 kumofs = dynamic-template-kumofs:rendered
-cloudooo = dynamic-template-cloudooo:rendered
 mariadb = dynamic-template-mariadb:rendered
 balancer = dynamic-template-balancer:rendered
 postfix = dynamic-template-postfix:rendered
