@@ -547,6 +547,19 @@ def getAllocatedSlaveInstance(slave_reference, requested_computer_id):
   # XXX: check there is only one result
   return execute_db(table, q, args, one=True)
 
+def getRootPartition(reference):
+  p = 'SELECT * FROM %s WHERE reference=?'
+  parent_partition = execute_db('partition', p, [reference], one=True)
+
+  while parent_partition is not None:
+    parent_reference = parent_partition['requested_by']
+    if not parent_reference or parent_reference == reference:
+      break
+    reference = parent_reference
+    parent_partition = execute_db('partition', p, [reference], one=True)
+
+  return parent_partition
+
 def requestNotSlave(software_release, software_type, partition_reference, partition_id, partition_parameter_kw, filter_kw, requested_state):
   instance_xml = dict2xml(partition_parameter_kw)
   requested_computer_id = filter_kw['computer_guid']
@@ -562,10 +575,6 @@ def requestNotSlave(software_release, software_type, partition_reference, partit
   args = []
   a = args.append
   q = 'UPDATE %s SET slap_state="busy"'
-
-  if requested_state:
-    q += ', requested_state=?'
-    a(requested_state)
 
   if partition is None:
     partition = execute_db('partition',
@@ -589,6 +598,16 @@ def requestNotSlave(software_release, software_type, partition_reference, partit
     if partition['software_release'].encode() != software_release:
       q += ' ,software_release=?'
       a(software_release)
+    if partition['requested_by']:
+      root_partition = getRootPartition(partition['requested_by'])
+      if root_partition and root_partition['requested_state'] != "started":
+        # propagate parent state to child
+        # child can be stopped or destroyed while parent is started
+        requested_state = root_partition['requested_state']
+
+  if requested_state:
+    q += ', requested_state=?'
+    a(requested_state)
 
   #
   # XXX change software_type when requested

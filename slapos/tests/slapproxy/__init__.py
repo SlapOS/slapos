@@ -285,7 +285,7 @@ class MasterMixin(BasicMixin, unittest.TestCase):
   Define advanced tool for test proxy simulating behavior slap library tools
   """
   def _requestComputerPartition(self, software_release, software_type, partition_reference,
-              partition_id,
+              partition_id=None,
               shared=False, partition_parameter_kw=None, filter_kw=None,
               state=None):
     """
@@ -405,6 +405,48 @@ class TestRequest(MasterMixin):
     self.assertEqual(
         self.request('http://sr//', None, 'MyFirstInstance', 'slappart2').__dict__,
         self.request('http://sr//', None, 'MyFirstInstance', 'slappart2').__dict__)
+
+  def test_request_propagate_partition_state(self):
+    """
+    Request will return same partition for two equal requests
+    """
+    self.add_free_partition(2)
+    partition_parent = self.request('http://sr//', None, 'MyFirstInstance')
+    parent_dict = partition_parent.__dict__
+    partition_child = self.request('http://sr//', None, 'MySubInstance', parent_dict['_partition_id'])
+    
+    self.assertEqual(partition_parent.getState(), 'started')
+    self.assertEqual(partition_child.getState(), 'started')
+
+    partition_parent = self.request('http://sr//', None, 'MyFirstInstance', state='stopped')
+    partition_child = self.request('http://sr//', None, 'MySubInstance', parent_dict['_partition_id'])
+    
+    self.assertEqual(partition_parent.getState(), 'stopped')
+    self.assertEqual(partition_child.getState(), 'stopped')
+
+    partition_parent = self.request('http://sr//', None, 'MyFirstInstance', state='started')
+    partition_child = self.request('http://sr//', None, 'MySubInstance', parent_dict['_partition_id'])
+    
+    self.assertEqual(partition_parent.getState(), 'started')
+    self.assertEqual(partition_child.getState(), 'started')
+
+  def test_request_parent_started_children_stopped(self):
+    """
+    Request will return same partition for two equal requests
+    """
+    self.add_free_partition(2)
+    partition_parent = self.request('http://sr//', None, 'MyFirstInstance')
+    parent_dict = partition_parent.__dict__
+    partition_child = self.request('http://sr//', None, 'MySubInstance', parent_dict['_partition_id'])
+    
+    self.assertEqual(partition_parent.getState(), 'started')
+    self.assertEqual(partition_child.getState(), 'started')
+
+    partition_parent = self.request('http://sr//', None, 'MyFirstInstance')
+    partition_child = self.request('http://sr//', None, 'MySubInstance', parent_dict['_partition_id'], state='stopped')
+    
+    self.assertEqual(partition_parent.getState(), 'started')
+    self.assertEqual(partition_child.getState(), 'stopped')
 
   def test_two_requests_with_different_parameters_but_same_reference(self):
     """
