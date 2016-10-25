@@ -156,47 +156,15 @@ class Request(Recipe):
 
     return path_list
 
-  def _checkCertificateKeyConsistency(self, key, certificate, ca=""):
-
+  def _checkCertificateKeyConsistency(self, key, certificate):
     openssl_binary = self.options.get('openssl-binary', 'openssl')
 
-    tmpdir = tempfile.mkdtemp()
-    with open(tmpdir + "/ca", "w") as f:
-      f.write(ca)
-    
-    with open(tmpdir + "/key", "w") as f:
-      f.write(key)
-    
-    with open(tmpdir + "/cert", "w") as f:
-      f.write(certificate)
+    # Simple test if the user/certificates are readable and don't raise
+    popenCommunicate((openssl_binary, 'x509', '-noout', '-text'), certificate)
+    popenCommunicate((openssl_binary, 'rsa', '-noout', '-text'), key)
 
-    try:
-      # Simple test if the user/certificates are readable and don't raise
-      popenCommunicate([openssl_binary, 'x509', '-noout', '-text', '-in', tmpdir + "/cert"])
-      popenCommunicate([openssl_binary, 'rsa', '-noout', '-text', '-in', tmpdir + "/key"])
-      
-      # Get md5 to check if the key and certificate matches 
-      modulus_cert = popenCommunicate([openssl_binary, 'x509', '-noout', '-modulus', '-in', tmpdir + "/cert"])
-      modulus_key = popenCommunicate([openssl_binary, 'rsa', '-noout', '-modulus', '-in', tmpdir + "/key"])
-    
-      md5sum_cert = popenCommunicate([openssl_binary, 'md5'], modulus_cert)
-      md5sum_key = popenCommunicate([openssl_binary, 'md5'], modulus_key)
-    
-      if md5sum_cert != md5sum_key:
-        raise ValueError("The key and certificate provided don't patch each other. Please check your parameters") 
-    
-    except:
-      try:
-        file_list = [tmpdir + "/ca", tmpdir + "/key", tmpdir + "/cert"]
-        for f in file_list:
-          if os.path.exists(f):
-            os.unlink(f)
-
-        if os.path.exists(tmpdir):
-          os.rmdir(tmpdir)
-      except:
-        # do not raise during cleanup
-        pass
-      raise
-    else:
-      pass
+    # Check if the key and certificate match
+    modulus_cert = popenCommunicate((openssl_binary, 'x509', '-noout', '-modulus'), certificate)
+    modulus_key = popenCommunicate((openssl_binary, 'rsa', '-noout', '-modulus'), key)
+    if modulus_cert != modulus_key:
+      raise ValueError("The key and certificate provided don't patch each other. Please check your parameters")
