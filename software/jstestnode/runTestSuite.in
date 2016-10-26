@@ -31,8 +31,42 @@ def main():
   parser.add_argument('--node_quantity', help='ignored', type=int)
   parser.add_argument('--master_url',
                       help='The Url of Master controling many suites')
+  parser.add_argument('--frontend_url',
+                      help='The url of frontend of the test suite')
+  parser.add_argument('--target',
+                      help='Target OS to run tests on',
+                      type=str)
+  parser.add_argument('--target_version',
+                      help='Target OS version to use',
+                      type=str,)
+  parser.add_argument('--target_browser',
+                      help='The desired browser of the target OS to be used. Example: Firefox if target is Android.',
+                      type=str,)
+  parser.add_argument('--target_device',
+                      help='The desired device running the target OS. Example: iPad Simulator, if target is iOS.',
+                      type=str,)
+  parser.add_argument('--appium_server_auth',
+                      help='Combination of user and token to access SauceLabs service. (i.e. user:token)',
+                      type=str)
 
   args = parser.parse_args()
+
+  import json
+  parsed_parameters = json.loads('$${instance-parameters:configuration._}')
+
+
+  if not getattr(args, 'target', None):
+    args.target = parsed_parameters.get('target', 'firefox')
+  if not getattr(args, 'test_suite', None):
+    args.test_suite = parsed_parameters.get('test-suite')
+  if not getattr(args, 'target_version', None):
+    args.target_version = parsed_parameters.get('target-version')
+  if not getattr(args, 'appium_server_auth', None):
+    args.appium_server_auth = parsed_parameters.get('appium-server-auth')
+  if not getattr(args, 'target_browser', None):
+    args.target_browser = parsed_parameters.get('target-browser')
+  if not getattr(args, 'target_device', None):
+    args.target_device = parsed_parameters.get('target-device')
 
   try:
     test_suite_title = args.test_suite_title or args.test_suite
@@ -51,8 +85,25 @@ def main():
     ##########################
     # Run all tests
     ##########################
-    firefox_binary = webdriver.firefox.firefox_binary.FirefoxBinary(firefox_path=FIREFOX_EXECUTABLE)
-    browser = webdriver.Firefox(firefox_binary=firefox_binary)
+    if args.target == 'firefox':
+      firefox_binary = webdriver.firefox.firefox_binary.FirefoxBinary(firefox_path=FIREFOX_EXECUTABLE)
+      browser = webdriver.Firefox(firefox_binary=firefox_binary)
+    else:
+      capabilities = {
+        'platformName': args.target,
+        'platformVersion': args.target_version,
+        'deviceName': args.target_device,
+        'browserName': args.target_browser
+
+      }
+      if not args.appium_server_auth:
+        raise RuntimeError('--appium_server_auth is required.')
+      appium_url = "http://%s@ondemand.saucelabs.com/wd/hub" % (args.appium_server_auth)
+      browser = webdriver.Remote(appium_url, capabilities)
+
+    full_path = '$${runTestSuite-instance:buildout-directory}/software_release/parts/%s' % parsed_parameters['test-url']
+    full_path = full_path.split('srv')[-1]
+    url = "%s%s" % (args.frontend_url, full_path)
 
     agent = browser.execute_script("return navigator.userAgent")
     print agent
@@ -65,9 +116,9 @@ def main():
 
     html_parser = etree.HTMLParser(recover=True)
     body = etree.fromstring(browser.page_source.encode('UTF-8'), html_parser)
+    browser.quit()
 
     browser.title.encode('UTF-8')
-    browser.quit()
 
     print ' '.join(body.xpath('//*[@id="qunit-testresult"]//text()'))
 
@@ -99,7 +150,7 @@ def main():
                                         node_title = args.test_node_title,
                                         test_title = test_suite_title,
                                         project_title = args.project_title)
-    if test_result is None:
+    if test_result is None or not hasattr(args, 'master_url'):
       return
     # report test results
     while 1:
@@ -122,9 +173,6 @@ def main():
                   stdout='')
     # XXX: inform test node master of error
     raise EnvironmentError(result)
-
-  finally:
-    browser.quit()
 
 if __name__ == "__main__":
     main()
