@@ -4,6 +4,7 @@ parts =
   publish-connection-information
   pbs
   logrotate
+  logrotate-entry-notifier
   cron
   cron-entry-logrotate
   pbs-sshkeys-authority
@@ -201,6 +202,18 @@ log = $${cron-simplelogger:log}
 frequency = daily
 rotate-num = 30
 
+[logrotate-entry-notifier]
+recipe = collective.recipe.template
+mode = 600
+input = inline:
+  $${directory:notifier-feeds}/* {
+    rotate 5
+    weekly
+    nocompress
+    missingok
+    olddir $${directory:logrotate-backup}
+  }
+output = $${logrotate:logrotate-entries}/notifier
 
 #----------------
 #--

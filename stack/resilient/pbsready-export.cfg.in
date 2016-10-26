@@ -59,6 +59,9 @@ notify = $${slap-parameter:notify}
 pidfile = $${resilient-directory:pid}/$${:name}.pid
 max-run = 3
 
+[logrotate-entry-notifier]
+output = $${rootdirectory:etc}/logrotate_notifier.conf
+
 [notifier-exporter-promise]
 recipe = slapos.recipe.template:jinja2
 mode = 700
@@ -79,7 +82,7 @@ recipe = slapos.cookbook:cron.d
 name = backup
 frequency = $${slap-parameter:resiliency-backup-periodicity}
 once-a-day = true
-command = $${notifier-exporter:wrapper} --transaction-id `date +%s`
+command = ${logrotate:location}/sbin/logrotate -s $${basedirectory:run}/logrotate.status $${logrotate-entry-notifier:output}; $${notifier-exporter:wrapper} --transaction-id `date +%s`
 
 [slap-parameter]
 # In cron.d format (i.e things like */15 * * * * are accepted).

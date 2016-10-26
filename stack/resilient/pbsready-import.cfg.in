@@ -8,6 +8,7 @@ parts =
   logrotate
   logrotate-entry-cron
   logrotate-entry-equeue
+  logrotate-entry-notifier
   cron
   cron-entry-logrotate
   resilient-sshkeys-authority
