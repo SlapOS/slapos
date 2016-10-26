@@ -57,6 +57,7 @@ executable = $${exporter:wrapper}
 wrapper = $${rootdirectory:bin}/exporter
 notify = $${slap-parameter:notify}
 pidfile = $${resilient-directory:pid}/$${:name}.pid
+max-run = 3
 
 [notifier-exporter-promise]
 recipe = slapos.recipe.template:jinja2
