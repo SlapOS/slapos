@@ -7,6 +7,7 @@
 import argparse, os, re, shutil, subprocess, sys, traceback
 from erp5.util import taskdistribution
 from time import gmtime, strftime
+from lxml import etree
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
@@ -62,29 +63,34 @@ def main():
       By.XPATH, '//p[@id="qunit-testresult" and contains(text(), "completed")]')
     ))
 
-    browser.title.encode('UTF-8')
-    print browser.find_element_by_id("qunit-testresult").text
+    html_parser = etree.HTMLParser(recover=True)
+    body = etree.fromstring(browser.page_source.encode('UTF-8'), html_parser)
 
-    for elt in browser.find_elements_by_xpath('//ol[@id="qunit-tests"]/li'):
+    browser.title.encode('UTF-8')
+    browser.quit()
+
+    print ' '.join(body.xpath('//*[@id="qunit-testresult"]//text()'))
+
+    for elt in body.xpath('.//ol[@id="qunit-tests"]/li'):
       test_name = '%s: %s' % (
-        elt.find_element_by_xpath('.//span[@class="module-name"]').text,
-        elt.find_element_by_xpath('.//span[@class="test-name"]').text
+        elt.xpath('.//span[@class="module-name"]')[0].text,
+        elt.xpath('.//span[@class="test-name"]')[0].text
       )
-      print elt.get_attribute('class'), elt.find_element_by_tag_name('strong').text
+      print elt.get('class'), ''.join(elt.xpath('.//strong')[0].itertext())
       # print elt.find_element_by_tag_name('ol').get_attribute('innerHTML')
 
-      failure = int(elt.find_element_by_xpath('.//b[@class="failed"]').text)
-      success = int(elt.find_element_by_xpath('.//b[@class="passed"]').text)
+      failure = int(elt.xpath('.//b[@class="failed"]')[0].text)
+      success = int(elt.xpath('.//b[@class="passed"]')[0].text)
       test_line_dict[test_name] = {
         'test_count': success + failure,
         'error_count': 0,
         'failure_count': failure,
         'skip_count': 0,
-        'duration': int(elt.find_element_by_xpath('.//span[@class="runtime"]').text.split()[0]),
-        'command': elt.find_element_by_xpath('.//a[text()="Rerun"]').get_attribute('href'),
+        'duration': int(elt.xpath('.//span[@class="runtime"]')[0].text.split()[0]),
+        'command': elt.xpath('.//a[text()="Rerun"]')[0].get('href'),
         'stdout': agent,
         'stderr': '',
-        'html_test_result': elt.find_element_by_tag_name('ol').get_attribute('innerHTML')
+        'html_test_result': etree.tostring(elt.xpath('.//ol')[0])
       }
 
     tool = taskdistribution.TaskDistributionTool(portal_url=args.master_url)
