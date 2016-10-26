@@ -5,6 +5,7 @@ parts =
   logrotate-entry-cron
   logrotate-entry-equeue
   logrotate-entry-notifier
+  logrotate-entry-resilient
   cron
   cron-entry-logrotate
   resilient-sshkeys-authority
@@ -139,6 +140,14 @@ input = inline:
     olddir $${directory:logrotate-backup}
   }
 output = $${logrotate:logrotate-entries}/notifier
+
+[logrotate-entry-resilient]
+<= logrotate
+recipe = slapos.cookbook:logrotate.d
+name = resilient_log
+log = $${basedirectory:log}/resilient.log
+frequency = weekly
+rotate-num = 7
 
 #----------------
 #--
