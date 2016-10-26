@@ -78,14 +78,14 @@
   # First, we check if we have a zope backend server
   # If so, let's use Virtual Host Monster rewrite
   # We suppose that Apache listens to 443 (even indirectly thanks to things like iptables)
-  RewriteRule ^/(.*)$ {{ slave_parameter.get('https-url', '') }}/VirtualHostBase/https//%{SERVER_NAME}:443/{{ slave_parameter.get('path', '') }}/VirtualHostRoot/$1 [L,P]
+  RewriteRule ^/(.*)$ {{ slave_parameter.get('https-url', slave_parameter.get('url', '')) }}/VirtualHostBase/https//%{SERVER_NAME}:443/{{ slave_parameter.get('path', '') }}/VirtualHostRoot/$1 [L,P]
 {% elif slave_parameter.get('type', '') ==  'redirect' -%}
-  RewriteRule     (.*)  {{ slave_parameter.get('https-url', '')}}$1 [R,L]
+  RewriteRule     (.*)  {{ slave_parameter.get('https-url', slave_parameter.get('url', ''))}}$1 [R,L]
 {% else -%}
   {% if 'default-path' in slave_parameter %}
   RewriteRule ^/?$ {{ slave_parameter.get('default-path') }} [R=301,L]
   {% endif -%}
-  RewriteRule ^/(.*)$ {{ slave_parameter.get('https-url', '') }}/$1 [L,P]
+  RewriteRule ^/(.*)$ {{ slave_parameter.get('https-url', slave_parameter.get('url', '')) }}/$1 [L,P]
 {% endif -%}
 </VirtualHost>
 
