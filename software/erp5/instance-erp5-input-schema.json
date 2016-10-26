@@ -237,10 +237,10 @@
       "type": "array"
     },
     "jupyter": {
-      "description": "Jupyter slave instance parameters",
+      "description": "Jupyter subinstance parameters",
       "properties": {
         "enable": {
-          "description": "Whether to enable creation of associated slave Jupyter instance",
+          "description": "Whether to enable creation of associated Jupyter subinstance",
           "default": false,
           "type": "boolean"
         },
