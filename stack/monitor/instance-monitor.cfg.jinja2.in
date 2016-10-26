@@ -373,16 +373,14 @@ check-secure = 1
 recipe = collective.recipe.template
 file = ${monitor-conf-parameters:promise-output-file}
 input = inline:#!{{ dash_executable_location }}
-  if [ -f "${monitor-conf-parameters:pid-file}" ]; then
-    PID=`cat ${monitor-conf-parameters:pid-file}`
+  pidfile=${monitor-conf-parameters:pid-file}
+  COMMAND=monitor.bootstrap
+  if [ -s $pidfile ]; then
     for i in {1..20}; do
-      # wait for monitor bootstrap script to finish (max 10 seconds)
-      kill -0 "$PID" > /dev/null 2>&1
-      RETURN_CODE=$?
-      if [ $RETURN_CODE -eq 0 ] ; then
-        break
-      else
+      if pid=`pgrep -F $pidfile -f "$COMMAND" 2>/dev/null`; then
         sleep 0.5
+      else
+        break
       fi
     done
   fi

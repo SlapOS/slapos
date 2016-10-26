@@ -6,7 +6,7 @@
 {% set publish_dict = {'site-id': site_id, 'inituser-login': inituser_login} -%}
 {% set has_posftix = slapparameter_dict.get('smtp', {}).get('postmaster') -%}
 {% set jupyter_dict = slapparameter_dict.get('jupyter', {}) -%}
-{% set has_jupyter = jupyter_dict.get('enable', jupyter_enable_default).lower() in ('true', 'yes') -%}
+{% set has_jupyter = jupyter_dict.get('enable', jupyter_enable_default.lower() in ('true', 'yes')) -%}
 {% set jupyter_zope_family = jupyter_dict.get('zope-family', '') -%}
 [request-common]
 <= request-common-base

@@ -1,6 +1,13 @@
 Changes
 =======
 
+1.0.41 (2016-10-26)
+-------------------
+
+  * dcron: new parameter to get a random time, with a frequency of once a day
+  * softwaretype: fix parse error on '+ =' when using buildout 2
+  * pbs: General Improvement and fixes.
+
 1.0.35 (2016-09-19)
 -------------------
 

@@ -73,7 +73,7 @@ class Notify(GenericBaseRecipe):
     self.options = options
 
   def createNotifier(self, notifier_binary, wrapper, executable,
-                     log, title, notification_url, feed_url, pidfile=None,
+                     log, title, notification_url, feed_url, max_run='1', pidfile=None,
                      instance_root_name=None, log_url=None, status_item_directory=None):
 
     if not os.path.exists(log):
@@ -84,6 +84,7 @@ class Notify(GenericBaseRecipe):
             '-l', log,
             '--title', title,
             '--feed', feed_url,
+            '--max-run', str(max_run),
             '--notification-url',
             ]
     parameters.extend(notification_url.split(' '))
@@ -120,5 +121,6 @@ class Notify(GenericBaseRecipe):
                                  title=options['title'],
                                  pidfile=options['pidfile'],
                                  notification_url=options['notify'],
-                                 feed_url=feed_url)
+                                 feed_url=feed_url,
+                                 max_run=options.get('max-run', "1"))
     return [script]
