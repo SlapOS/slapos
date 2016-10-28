@@ -82,13 +82,20 @@ def main():
 
     date = strftime("%Y/%m/%d %H:%M:%S", gmtime())
 
+  
     ##########################
     # Run all tests
     ##########################
+    
+    is_appium = False
+    
     if args.target == 'firefox':
       firefox_binary = webdriver.firefox.firefox_binary.FirefoxBinary(firefox_path=FIREFOX_EXECUTABLE)
       browser = webdriver.Firefox(firefox_binary=firefox_binary)
-    else:
+    elif args.target in ['iOS', 'Android']:
+      # parameters for mobile emulators have different names then parameters for
+      # desktop OSes
+      is_appium = True
       capabilities = {
         'platformName': args.target,
         'platformVersion': args.target_version,
@@ -96,6 +103,16 @@ def main():
         'browserName': args.target_browser
 
       }
+    elif 'Windows' in args.target or 'OS X' in args.target:
+      # parameters for mobile emulators have different names then parameters for
+      # desktop OSes
+      is_appium = True
+      capabilities = {
+        'browserName': args.target_browser,
+        'platform': args.target,
+        'version': args.target_version
+      }
+    if is_appium:
       if not args.appium_server_auth:
         raise RuntimeError('--appium_server_auth is required.')
       appium_url = "http://%s@ondemand.saucelabs.com/wd/hub" % (args.appium_server_auth)
@@ -117,8 +134,6 @@ def main():
     html_parser = etree.HTMLParser(recover=True)
     body = etree.fromstring(browser.page_source.encode('UTF-8'), html_parser)
     browser.quit()
-
-    browser.title.encode('UTF-8')
 
     print ' '.join(body.xpath('//*[@id="qunit-testresult"]//text()'))
 
