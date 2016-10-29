@@ -6,6 +6,7 @@ from time import gmtime, strftime, time
 # What we do here is currently too new to reuse more from testsuite.
 from erp5.util import taskdistribution
 from erp5.util.testsuite import format_command
+from zc.buildout.buildout import Buildout
 
 {% set vm = parameter_dict['vm'] -%}
 
@@ -79,12 +80,18 @@ def main():
   else:
     test_result = DummyTestResult(dist_list)
 
+  Buildout._setup_logging = lambda self: None
+
   fd = os.open('buildout.cfg', os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0666)
   try:
     os.write(fd, """\
 [buildout]
-extends = {{parameter_dict['profile_base_location']}}/build.cfg
 offline = true
+relative-paths = true
+""")
+    Buildout('buildout.cfg', {}).bootstrap(None)
+    os.write(fd, """\
+extends = {{parameter_dict['profile_base_location']}}/build.cfg
 develop-eggs-directory = {{buildout['develop-eggs-directory']}}
 eggs-directory = {{buildout['eggs-directory']}}
 
@@ -109,7 +116,7 @@ location = {{parameter_dict['slapos_package']}}
       break
     dist = test_result_line.name
 
-    cmd = [{{repr(parameter_dict['buildout'])}},
+    cmd = [os.path.join('bin', 'buildout'),
       'vm-run-base:dist=' + dist,
       'debuild-rina-base:suite=' + (publish['suite'] if publish else ''),
     ]
