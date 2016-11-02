@@ -119,6 +119,7 @@ SSLProxyCheckPeerCN off
 SSLProxyCheckPeerExpire off
 
 NameVirtualHost *:{{ cached_port }}
+NameVirtualHost *:{{ ssl_cached_port }}
 
 include {{ slave_with_cache_configuration_directory }}/*.conf
 
