@@ -133,7 +133,6 @@ def main():
 
     html_parser = etree.HTMLParser(recover=True)
     body = etree.fromstring(browser.page_source.encode('UTF-8'), html_parser)
-    browser.quit()
 
     print ' '.join(body.xpath('//*[@id="qunit-testresult"]//text()'))
 
@@ -188,6 +187,9 @@ def main():
                   stdout='')
     # XXX: inform test node master of error
     raise EnvironmentError(result)
+  
+  finally:
+    browser.quit()
 
 if __name__ == "__main__":
     main()
