@@ -52,7 +52,7 @@ def main():
   args = parser.parse_args()
 
   import json
-  parsed_parameters = json.loads('$${instance-parameters:configuration._}')
+  parsed_parameters = json.loads('$${instance-parameter:configuration._}')
 
 
   if not getattr(args, 'target', None):
