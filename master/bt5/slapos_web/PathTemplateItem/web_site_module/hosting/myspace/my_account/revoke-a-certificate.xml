@@ -128,7 +128,7 @@
         </item>
         <item>
             <key> <string>container_layout</string> </key>
-            <value> <string>vifib_hosting_order_layout</string> </value>
+            <value> <string>vifib_jauks_layout</string> </value>
         </item>
         <item>
             <key> <string>custom_render_method_id</string> </key>
