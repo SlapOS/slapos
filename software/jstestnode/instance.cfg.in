@@ -76,7 +76,7 @@ output = $${directory:etc}/nginx.cfg
 mode = 0600
 access_log = $${directory:log}/nginx-access.log
 error_log = $${directory:log}/nginx-error.log
-ip = $${instance-parameters:ipv6-random}
+ip = $${instance-parameter:ipv6-random}
 port = 9443
 ssl_key = $${directory:ssl}/nginx.key
 ssl_csr = $${directory:ssl}/nginx.csr
@@ -85,7 +85,7 @@ ssl_crt = $${directory:ssl}/nginx.crt
 #################################
 # SlapOS service
 #################################
-[instance-parameters]
+[instance-parameter]
 recipe = slapos.cookbook:slapconfiguration
 computer = $${slap_connection:computer_id}
 partition = $${slap_connection:partition_id}
