@@ -94,6 +94,7 @@ relative-paths = true
 extends = {{parameter_dict['profile_base_location']}}/build.cfg
 develop-eggs-directory = {{buildout['develop-eggs-directory']}}
 eggs-directory = {{buildout['eggs-directory']}}
+download-cache = {{parameter_dict['download-cache']}}
 
 [vm-run-base]
 environment =
