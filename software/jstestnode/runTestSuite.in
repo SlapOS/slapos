@@ -118,6 +118,7 @@ def main():
       appium_url = "http://%s@ondemand.saucelabs.com/wd/hub" % (args.appium_server_auth)
       browser = webdriver.Remote(appium_url, capabilities)
 
+    is_browser_running = True
     full_path = '$${runTestSuite-instance:buildout-directory}/software_release/parts/%s' % parsed_parameters['test-url']
     full_path = full_path.split('srv')[-1]
     url = "%s%s" % (args.frontend_url, full_path)
@@ -158,6 +159,13 @@ def main():
         'html_test_result': etree.tostring(elt.xpath('.//ol')[0])
       }
 
+    # do quit browser asap as we have results. this is required in case of timeout of
+    # remote appium service which will close test session of no command received within
+    # usually 90s and thus fail this script. And it costs processing time as well
+    # to keep test session needlessly opened.
+    browser.quit()
+    is_browser_running = False
+
     tool = taskdistribution.TaskDistributionTool(portal_url=args.master_url)
     test_result = tool.createTestResult(revision = revision,
                                         test_name_list = test_line_dict.keys(),
@@ -189,7 +197,8 @@ def main():
     raise EnvironmentError(result)
   
   finally:
-    browser.quit()
+    if is_browser_running:
+      browser.quit()
 
 if __name__ == "__main__":
     main()
