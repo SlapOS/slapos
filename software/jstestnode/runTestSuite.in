@@ -68,6 +68,7 @@ def main():
   if not getattr(args, 'target_device', None):
     args.target_device = parsed_parameters.get('target-device')
 
+  is_browser_running = False
   try:
     test_suite_title = args.test_suite_title or args.test_suite
     test_suite = args.test_suite
@@ -198,6 +199,8 @@ def main():
   
   finally:
     if is_browser_running:
+      # if by any chance browser is still running due to
+      # traceback raised make sure we cleanup
       browser.quit()
 
 if __name__ == "__main__":
