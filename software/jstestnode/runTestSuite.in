@@ -119,11 +119,12 @@ def main():
       appium_url = "http://%s@ondemand.saucelabs.com/wd/hub" % (args.appium_server_auth)
       browser = webdriver.Remote(appium_url, capabilities)
 
-    is_browser_running = True
-    full_path = '$${runTestSuite-instance:buildout-directory}/software_release/parts/%s' % parsed_parameters['test-url']
-    full_path = full_path.split('srv')[-1]
-    url = "%s%s" % (args.frontend_url, full_path)
+      # adjust make path to testnode's frontend
+      full_path = '$${runTestSuite-instance:buildout-directory}/software_release/parts/%s' % parsed_parameters['test-url']
+      full_path = full_path.split('srv')[-1]
+      url = "%s%s" % (args.frontend_url, full_path)
 
+    is_browser_running = True
     agent = browser.execute_script("return navigator.userAgent")
     print agent
     print url
