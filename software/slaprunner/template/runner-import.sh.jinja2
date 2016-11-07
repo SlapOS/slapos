@@ -8,7 +8,13 @@ umask 077
 exec > >(tee -ai {{ output_log_file }})
 exec 2>&1
 
-echo -e "\n\nrunner-import run at : $(date)"
+RESTORE_EXIT_CODE_FILE="{{ restore_exit_code_file }}"
+
+fail_with_exit_code () {
+  echo 1 > $RESTORE_EXIT_CODE_FILE
+}
+
+trap fail_with_exit_code ERR
 
 srv_directory={{ directory['srv'] }}
 restore_element () {
@@ -26,6 +32,8 @@ restore_element () {
     fi
   done
 }
+
+echo -e "\n\nrunner-import run at : $(date)"
 
 restore_element {{ directory['backup'] }}/runner/ $srv_directory/runner  instance project  proxy.db
 restore_element  {{ directory['backup'] }}/etc/ {{ directory['etc'] }} config.json
@@ -70,16 +78,18 @@ $SQLITE3 $DATABASE "update partition_network11 set address='$IPV6' where netmask
 MASTERURL="http://{{ ipv4 }}:{{ proxy_port }}"
 
 echo "Building newest software..."
-$SLAPOS node software --cfg $HOME/etc/slapos.cfg --all --master-url=$MASTERURL --logfile $HOME/srv/runner/software.log --pidfile $HOME/var/run/slapos-node-software.pid >/dev/null 2>&1 ||
-$SLAPOS node software --cfg $HOME/etc/slapos.cfg --all --master-url=$MASTERURL --logfile $HOME/srv/runner/software.log --pidfile $HOME/var/run/slapos-node-software.pid >/dev/null 2>&1 ||
-$SLAPOS node software --cfg $HOME/etc/slapos.cfg --all --master-url=$MASTERURL --logfile $HOME/srv/runner/software.log --pidfile $HOME/var/run/slapos-node-software.pid >/dev/null 2>&1
+$SLAPOS node software --cfg {{ supervisord['slapos-cfg'] }} --all --master-url=$MASTERURL --logfile {{ supervisord['slapgrid-sr-log'] }} --pidfile {{ supervisord['slapgrid-sr-pid'] }} >/dev/null 2>&1 ||
+$SLAPOS node software --cfg {{ supervisord['slapos-cfg'] }} --all --master-url=$MASTERURL --logfile {{ supervisord['slapgrid-sr-log'] }} --pidfile {{ supervisord['slapgrid-sr-pid'] }} >/dev/null 2>&1 ||
+$SLAPOS node software --cfg {{ supervisord['slapos-cfg'] }} --all --master-url=$MASTERURL --logfile {{ supervisord['slapgrid-sr-log'] }} --pidfile {{ supervisord['slapgrid-sr-pid'] }} >/dev/null 2>&1 ||
+(tail -n 200 {{ supervisord['slapgrid-sr-log'] }} && false)
 # Remove defined scripts to force buildout to recreate them to have updated paths
 rm $srv_directory/runner/instance/slappart*/srv/runner-import-restore || true
 echo "Running slapos node instance..."
 # XXX hardcoded
-$SLAPOS node instance --cfg $HOME/etc/slapos.cfg --master-url=$MASTERURL --logfile $HOME/srv/runner/instance.log --pidfile $HOME/var/run/slapos-node-instance.pid >/dev/null 2>&1 ||
-$SLAPOS node instance --cfg $HOME/etc/slapos.cfg --master-url=$MASTERURL --logfile $HOME/srv/runner/instance.log --pidfile $HOME/var/run/slapos-node-instance.pid >/dev/null 2>&1 ||
-$SLAPOS node instance --cfg $HOME/etc/slapos.cfg --master-url=$MASTERURL --logfile $HOME/srv/runner/instance.log --pidfile $HOME/var/run/slapos-node-instance.pid >/dev/null 2>&1
+$SLAPOS node instance --cfg {{ supervisord['slapos-cfg'] }} --master-url=$MASTERURL --logfile {{ supervisord['slapgrid-cp-log'] }} --pidfile {{ supervisord['slapgrid-cp-pid'] }} >/dev/null 2>&1 ||
+$SLAPOS node instance --cfg {{ supervisord['slapos-cfg'] }} --master-url=$MASTERURL --logfile {{ supervisord['slapgrid-cp-log'] }} --pidfile {{ supervisord['slapgrid-cp-pid'] }} >/dev/null 2>&1 ||
+$SLAPOS node instance --cfg {{ supervisord['slapos-cfg'] }} --master-url=$MASTERURL --logfile {{ supervisord['slapgrid-cp-log'] }} --pidfile {{ supervisord['slapgrid-cp-pid'] }} >/dev/null 2>&1 ||
+(tail -n 200 {{ supervisord['slapgrid-cp-log'] }} && false)
 
 # Invoke defined scripts for each partition inside of slaprunner
 echo "Invoke custom import scripts defined by each instances..."
@@ -98,6 +108,5 @@ $SQLITE3 $DATABASE "update partition11 set requested_state='started';"
 
 # Write exit code to an arbitrary file that will be checked by promise/monitor
 echo "Write status file... End"
-RESTORE_EXIT_CODE_FILE="{{ restore_exit_code_file }}"
 echo $RESTORE_EXIT_CODE > $RESTORE_EXIT_CODE_FILE
 exit $RESTORE_EXIT_CODE
