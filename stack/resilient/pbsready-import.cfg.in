@@ -12,6 +12,8 @@ parts =
   logrotate-entry-resilient
   cron
   cron-entry-logrotate
+  cron-entry-notifier-status-feed
+  notifier-stalled-promise
   resilient-sshkeys-authority
   sshd-raw-server
   sshd-graceful

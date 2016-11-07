@@ -8,6 +8,8 @@ parts =
   logrotate-entry-resilient
   cron
   cron-entry-logrotate
+  cron-entry-notifier-status-feed
+  notifier-stalled-promise
   resilient-sshkeys-authority
   sshd-graceful
   sshkeys-sshd
@@ -47,6 +49,7 @@ ssh = $${rootdirectory:etc}/ssh/
 sshkeys = $${rootdirectory:srv}/sshkeys
 notifier-feeds = $${basedirectory:notifier}/feeds
 notifier-callbacks = $${basedirectory:notifier}/callbacks
+notifier-status-items = $${basedirectory:notifier}/status-items
 cron-entries = $${rootdirectory:etc}/cron.d
 crontabs = $${rootdirectory:etc}/crontabs
 cronstamps = $${rootdirectory:etc}/cronstamps
@@ -188,9 +191,30 @@ command = ${buildout:bin-directory}/pubsubserver --callbacks $${directory:notifi
 notifier-binary = ${buildout:bin-directory}/pubsubnotifier
 host = $${slap-network-information:global-ipv6}
 port = $${notifier-port:port}
+instance-root-name = $${instance-info-parameters:root-name}
+log-url = $${publish:monitor-base-url}/resilient/notifier-status-rss
+status-item-directory = $${directory:notifier-status-items}
 context =
   key content notifier:command
 
+[notifier-resilient-status-feed]
+recipe = slapos.cookbook:wrapper
+command-line = ${buildout:directory}/bin/generatefeed --output $${:feed-path} --status-item-path $${notifier:status-item-directory} --title "Status feed for $${notifier:instance-root-name}" --link $${notifier:log-url}
+feed-path = $${directory:monitor-resilient}/notifier-status-rss
+wrapper-path = $${rootdirectory:bin}/resilient-genstatusrss.py
+
+[cron-entry-notifier-status-feed]
+<= cron
+recipe = slapos.cookbook:cron.d
+name = resilient-notifier-status-feed
+frequency = */5 * * * *
+command = $${notifier-resilient-status-feed:wrapper-path}
+
+[notifier-stalled-promise]
+recipe = slapos.cookbook:wrapper
+# time-buffer is 24h (+1h of latitude)
+command-line = ${buildout:bin-directory}/check-feed-as-promise --feed-path $${notifier-resilient-status-feed:feed-path} --title --ok-pattern 'OK' --time-buffer 90000
+wrapper-path = $${basedirectory:promises}/stalled-notifier-callbacks
 
 #----------------
 #--
