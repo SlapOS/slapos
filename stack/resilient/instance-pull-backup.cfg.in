@@ -316,8 +316,8 @@ symlink = $${directory:pbs-backup}/proof.signature = $${directory:monitor-resili
 
 [pull-push-stalled-promise]
 recipe = slapos.cookbook:wrapper
-# time-buffer is 18h : cron for backup is run once a day - 6h of random sleep
-command-line = ${buildout:bin-directory}/check-feed-as-promise --feed-path $${pbs-resilient-status-feed:feed-path} --title --ok-pattern 'OK' --time-buffer 64800
+# # time-buffer is 24h (+1h of latitude)
+command-line = ${buildout:bin-directory}/check-feed-as-promise --feed-path $${pbs-resilient-status-feed:feed-path} --title --ok-pattern 'OK' --time-buffer 90000
 wrapper-path = $${basedirectory:promises}/stalled-pull-push
 
 #----------------
