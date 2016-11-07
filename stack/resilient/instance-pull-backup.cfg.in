@@ -148,7 +148,7 @@ wrapper-path = $${rootdirectory:bin}/resilient-genstatusrss.py
 <= cron
 recipe = slapos.cookbook:cron.d
 name = resilient-pbs-status-feed
-frequency = 5 * * * *
+frequency = */5 * * * *
 command = $${pbs-resilient-status-feed:wrapper-path}
 
 #----------------
