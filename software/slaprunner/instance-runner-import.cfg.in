@@ -139,6 +139,7 @@ mode = 755
 recipe = slapos.recipe.template
 url = ${template-resilient-software-release-information:destination}/${template-resilient-software-release-information:filename}
 output = $${directory:cgi-bin}/resilient_software_release_information.py
+resilient-log-url = $${publish:monitor-base-url}/log/$${importer:resilient-log-basename}
 mode = 0600
 
 [slap-parameter]
