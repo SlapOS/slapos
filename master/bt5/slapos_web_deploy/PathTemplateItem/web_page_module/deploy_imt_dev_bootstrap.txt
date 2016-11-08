@@ -1,0 +1,18 @@
+#!/bin/bash
+
+set -e
+
+#
+# Paste content of function-common
+# https://lab.nexedi.com/nexedi/slapos.package/blob/master/playbook/roles/install-script/files/function-common
+#
+${function_common_content}
+
+${base_setup_content}
+
+${slapos_unstable_content}
+
+clear
+
+echo "Starting Ansible playbook:"
+ansible-playbook imt-vm-bootstrap.yml -i hosts --connection=local

@@ -1,0 +1,20 @@
+#!/bin/bash
+
+set -e
+
+#
+#  Paste content of function-common
+#    https://lab.nexedi.com/nexedi/slapos.package/blob/master/playbook/roles/install-script/files/function-common
+#
+${function_common_content}
+
+${base_setup_content}
+
+
+#### Setup Ansible and load few libraries #####
+
+PLAYBOOK_REPOSITORY_URL=https://lab.nexedi.com/nexedi/slapos.package.git
+
+is_package_installed git || install_package git
+
+git clone $PLAYBOOK_REPOSITORY_URL

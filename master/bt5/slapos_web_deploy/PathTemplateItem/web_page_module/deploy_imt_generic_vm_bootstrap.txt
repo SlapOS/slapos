@@ -1,0 +1,46 @@
+#!/bin/bash
+
+# Configure network interface
+
+rm -rf /tmp/dropcmd
+wget -O /etc/opt/netconfigure http://10.0.2.100/netconfig.sh
+wget -O /tmp/dropcmd -q http://10.0.2.100/delDefaultIface
+if [[ -s "/tmp/dropcmd" ]]
+then
+  echo "nameserver 8.8.8.8" > /etc/resolv.conf
+  /sbin/ip route del default
+fi
+bash /etc/opt/netconfigure
+
+ set -e
+
+### Include Bootstrap VM script
+###  Contain function-common
+##      https://lab.nexedi.com/nexedi/slapos.package/blob/master/playbook/roles/install-script/files/function-common
+${function_common_content}
+
+${base_setup_content}
+download_playbook
+clear
+
+echo "Starting Ansible playbook:"
+ansible-playbook imt-vm-bootstrap.yml -i hosts --connection=local
+
+
+# Check if playbook has been correctly extracted
+ANSIBLE_CRON_FILE="/etc/cron.d/ansible-vm-bootstrap"
+COUNT=$(ls /opt/slapos.playbook | wc -l)
+if [[ ! $COUNT -gt 1 ]]
+then
+  rm -f $ANSIBLE_CRON_FILE
+  rm -f /opt/slapos.playbook/playbook.tar.gz
+  exit 1
+fi
+
+# check if Ansible cron task was added
+if [[ ! -s "$ANSIBLE_CRON_FILE" ]]
+then
+  exit 1
+fi
+
+exit 0
