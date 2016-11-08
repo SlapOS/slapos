@@ -9,12 +9,22 @@ exec > >(tee -ai {{ output_log_file }})
 exec 2>&1
 
 RESTORE_EXIT_CODE_FILE="{{ restore_exit_code_file }}"
+RESTORE_ERROR_MESSAGE_FILE="{{ restore_error_message_file }}"
+ERROR_MESSAGE=""
 
 fail_with_exit_code () {
   echo 1 > $RESTORE_EXIT_CODE_FILE
+  echo -e "Failure during step : $ERROR_MESSAGE" > $RESTORE_ERROR_MESSAGE_FILE
 }
 
 trap fail_with_exit_code ERR
+
+log_message () {
+    ERROR_MESSAGE=$1
+    echo -e $1
+}
+# Delete the error message file, to not keep it even after a successful build
+rm $RESTORE_ERROR_MESSAGE_FILE || true
 
 srv_directory={{ directory['srv'] }}
 restore_element () {
@@ -35,7 +45,10 @@ restore_element () {
 
 echo -e "\n\nrunner-import run at : $(date)"
 
+log_message "Restoring WebRunner content..."
 restore_element {{ directory['backup'] }}/runner/ $srv_directory/runner  instance project  proxy.db
+
+log_message "Restoring WebRunner config (etc directory)..."
 restore_element  {{ directory['backup'] }}/etc/ {{ directory['etc'] }} config.json
 cp -r {{ directory['backup'] }}/etc/.??* {{ directory['etc'] }};
 
@@ -48,10 +61,10 @@ if [ ! -e "$runner_import_restore" ]; then
   touch $runner_import_restore
   chmod +x $runner_import_restore
 fi
-echo "Running $runner_import_restore script..."
+log_message "Running $runner_import..."
 $srv_directory/runner-import-restore || RESTORE_EXIT_CODE=$?
 
-echo "Updating slapproxy database, software release and instances..."
+log_message "Updating slapproxy database..."
 HOME="{{ directory['home'] }}"
 # XXX Hardcoded
 export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
@@ -77,14 +90,14 @@ $SQLITE3 $DATABASE "update partition_network11 set address='$IPV6' where netmask
 
 MASTERURL="http://{{ ipv4 }}:{{ proxy_port }}"
 
-echo "Building newest software..."
+log_message "Building newest Software Release..."
 $SLAPOS node software --cfg {{ supervisord['slapos-cfg'] }} --all --master-url=$MASTERURL --logfile {{ supervisord['slapgrid-sr-log'] }} --pidfile {{ supervisord['slapgrid-sr-pid'] }} >/dev/null 2>&1 ||
 $SLAPOS node software --cfg {{ supervisord['slapos-cfg'] }} --all --master-url=$MASTERURL --logfile {{ supervisord['slapgrid-sr-log'] }} --pidfile {{ supervisord['slapgrid-sr-pid'] }} >/dev/null 2>&1 ||
 $SLAPOS node software --cfg {{ supervisord['slapos-cfg'] }} --all --master-url=$MASTERURL --logfile {{ supervisord['slapgrid-sr-log'] }} --pidfile {{ supervisord['slapgrid-sr-pid'] }} >/dev/null 2>&1 ||
 (tail -n 200 {{ supervisord['slapgrid-sr-log'] }} && false)
 # Remove defined scripts to force buildout to recreate them to have updated paths
 rm $srv_directory/runner/instance/slappart*/srv/runner-import-restore || true
-echo "Running slapos node instance..."
+log_message "Fixing Instances as needed after import..."
 # XXX hardcoded
 $SLAPOS node instance --cfg {{ supervisord['slapos-cfg'] }} --master-url=$MASTERURL --logfile {{ supervisord['slapgrid-cp-log'] }} --pidfile {{ supervisord['slapgrid-cp-pid'] }} >/dev/null 2>&1 ||
 $SLAPOS node instance --cfg {{ supervisord['slapos-cfg'] }} --master-url=$MASTERURL --logfile {{ supervisord['slapgrid-cp-log'] }} --pidfile {{ supervisord['slapgrid-cp-pid'] }} >/dev/null 2>&1 ||
@@ -92,21 +105,21 @@ $SLAPOS node instance --cfg {{ supervisord['slapos-cfg'] }} --master-url=$MASTER
 (tail -n 200 {{ supervisord['slapgrid-cp-log'] }} && false)
 
 # Invoke defined scripts for each partition inside of slaprunner
-echo "Invoke custom import scripts defined by each instances..."
+log_message "Invoke custom import scripts defined by each instances..."
 for partition in $srv_directory/runner/instance/slappart*/
 do
   script=$partition/srv/runner-import-restore
   if [ -e "$script" ]; then
-    echo "Running $script script..."
+    log_message "Running $script..."
     $script || RESTORE_EXIT_CODE=$?
   fi
 done
 
 # Change back slapproxy database to have all instances started
-echo "Start instances..."
+log_message "Set instances as to start after takeover..."
 $SQLITE3 $DATABASE "update partition11 set requested_state='started';"
 
 # Write exit code to an arbitrary file that will be checked by promise/monitor
-echo "Write status file... End"
+log_message "Writing status file... End"
 echo $RESTORE_EXIT_CODE > $RESTORE_EXIT_CODE_FILE
 exit $RESTORE_EXIT_CODE
