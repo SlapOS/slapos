@@ -68,19 +68,21 @@ SSLProxyEngine On
     <Directory />
         Options Indexes FollowSymLinks
         IndexOptions FancyIndexing
-        order allow,deny
-        Allow from All
+        Require all granted
     </Directory>
 </VirtualHost>
 
+# IMPORTANT NOTE: It is very important to deny access by default, otherwise this
+# open access to private repositories. If someone would like to open access to
+# some code, it would be needed to explicitely add a .htaccess file.
 Listen [%(ip)s]:%(software_access_port)s
 <VirtualHost *:%(software_access_port)s>
     SSLEngine on
     DocumentRoot "%(testnode_srv_directory)s"
     <Directory />
+        AllowOverride FileInfo AuthConfig
         Options FollowSymLinks
         IndexOptions FancyIndexing
-        order allow,deny
-        Allow from All
+        Require all denied
    </Directory>
 </VirtualHost>
