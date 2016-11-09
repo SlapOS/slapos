@@ -48,6 +48,7 @@ ip = $${notifier:host}
 
 [resilient-publish-connection-parameter]
 notification-id = http://[$${notifier:host}]:$${notifier:port}/get/$${notifier-exporter:name}
+-extends = publish-early
 
 [notifier-exporter]
 # notifier.notify launches an (exporter) executable, and when finished,
@@ -83,9 +84,21 @@ rendered = $${basedirectory:promises}/exporter-status
 <= cron
 recipe = slapos.cookbook:cron.d
 name = backup
-frequency = $${slap-parameter:resiliency-backup-periodicity}
-once-a-day = true
+{% set resiliency_backup_periodicity = slapparameter_dict.get('resiliency-backup-periodicity') %}
+{% if  resiliency_backup_periodicity %}
+frequency = {{ resiliency_backup_periodicity }}
+{% else %}
+time = $${publish-early:resiliency-backup-periodicity}
+{% endif %}
 command = ${logrotate:location}/sbin/logrotate -s $${basedirectory:run}/logrotate.status $${logrotate-entry-notifier:output}; $${notifier-exporter:wrapper} --transaction-id `date +%s`
+
+[gen-resiliency-backup-periodicity]
+recipe = slapos.cookbook:cron.random.time
+
+[publish-early]
+recipe = slapos.cookbook:publish-early
+-init =
+  resiliency-backup-periodicity gen-resiliency-backup-periodicity:time
 
 [slap-parameter]
 # In cron.d format (i.e things like */15 * * * * are accepted).
