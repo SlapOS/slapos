@@ -152,7 +152,7 @@ def get_certificate_key_pair(logger, master_url_web, node_name, token=None, logi
                             headers={'X-Access-Token': token},
                             verify=False)
     else:
-        register_server_url = '/'.join([master_url_web, ("add-a-server/WebSection_registerNewComputer?dialog_id=WebSection_viewServerInformationDialog&dialog_method=WebSection_registerNewComputer&title={}&object_path=/erp5/web_site_module/hosting/add-a-server&update_method=&cancel_url=https%3A//www.vifib.net/add-a-server/WebSection_viewServerInformationDialog&Base_callDialogMethod=&field_your_title=Essai1&dialog_category=None&form_id=view".format(node_name))])
+        register_server_url = '/'.join([master_url_web, ("add-a-server/WebSection_registerNewComputer?title={}".format(node_name))])
         req = requests.get(register_server_url, auth=(login, password), verify=False)
 
     if not req.ok and 'Certificate still active.' in req.text:
