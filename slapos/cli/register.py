@@ -42,7 +42,15 @@ from slapos.util import parse_certificate_key_pair
 
 class RegisterCommand(Command):
     """
-    register a node in the SlapOS cloud
+    Register a new computer on SlapOS Master.
+
+    This command will generate everything you need for run your slapos node,
+    The files at /etc/opt/slapos (by default):
+
+      - /etc/opt/slapos/slapos.cfg: The configuration of your SlapOS Node
+      - /etc/opt/slapos/ssl/certificate : Your server SSL Cetificate
+      - /etc/opt/slapos/ssl/key: Your server SSL Private Key
+
     """
     command_group = 'node'
 
