@@ -1,0 +1,10 @@
+[template-pbsready-export]
+recipe = slapos.recipe.template:jinja2
+template = ${pbsready-export:target}
+rendered = $${buildout:directory}/pbsready-exporter.cfg
+mode = 640
+context =
+  key slapparameter_dict slap-configuration:configuration
+  raw pbsready_template_path ${pbsready:output}
+  raw bash_executable_location ${bash:location}/bin/bash
+  raw logrotate_executable_location ${logrotate:location}/sbin/logrotate

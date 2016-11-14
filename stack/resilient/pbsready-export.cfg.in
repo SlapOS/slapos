@@ -1,6 +1,6 @@
 [buildout]
 
-extends = ${pbsready:output}
+extends = {{ pbsready_template_path }}
 
 # Explicitely define extended parts from pbsready
 # then add local parts
@@ -27,9 +27,9 @@ parts =
 
 [resilient-directory]
 recipe = slapos.cookbook:mkdirectory
-home = $${buildout:directory}
-var = $${:home}/var
-pid = $${:var}/pid
+home = ${buildout:directory}
+var = ${:home}/var
+pid = ${:var}/pid
 
 # Define port of ssh server. It has to be different from import so that it
 # supports export/import using same IP (slaprunner, slapos-in-partition,
@@ -38,16 +38,16 @@ pid = $${:var}/pid
 recipe = slapos.cookbook:free_port
 minimum = 22200
 maximum = 22209
-ip = $${slap-network-information:global-ipv6}
+ip = ${slap-network-information:global-ipv6}
 
 [notifier-port]
 recipe = slapos.cookbook:free_port
 minimum = 65526
 maximum = 65535
-ip = $${notifier:host}
+ip = ${notifier:host}
 
 [resilient-publish-connection-parameter]
-notification-id = http://[$${notifier:host}]:$${notifier:port}/get/$${notifier-exporter:name}
+notification-id = http://[${notifier:host}]:${notifier:port}/get/${notifier-exporter:name}
 -extends = publish-early
 
 [notifier-exporter]
@@ -56,27 +56,27 @@ notification-id = http://[$${notifier:host}]:$${notifier:port}/get/$${notifier-e
 <= notifier
 recipe = slapos.cookbook:notifier.notify
 name = exporter
-title = Dumping $${slap-parameter:namebase}
-executable = $${exporter:wrapper}
-wrapper = $${rootdirectory:bin}/exporter
-notify = $${slap-parameter:notify}
-pidfile = $${resilient-directory:pid}/$${:name}.pid
+title = Dumping ${slap-parameter:namebase}
+executable = ${exporter:wrapper}
+wrapper = ${rootdirectory:bin}/exporter
+notify = ${slap-parameter:notify}
+pidfile = ${resilient-directory:pid}/${:name}.pid
 max-run = 3
 
 [logrotate-entry-notifier]
-output = $${rootdirectory:etc}/logrotate_notifier.conf
+output = ${rootdirectory:etc}/logrotate_notifier.conf
 
 [notifier-exporter-promise]
 recipe = slapos.recipe.template:jinja2
 mode = 700
 template = inline:
-  #!${bash:location}/bin/bash
-  EXPORTER_FEED="$${notifier-exporter:log-file}"
+  #!{{ bash_executable_location }}
+  EXPORTER_FEED="${notifier-exporter:log-file}"
   FAILURE_PATTERN="FAILURE"
   if [ -s "$EXPORTER_FEED" ]; then
     tail -n 1 $EXPORTER_FEED | grep -vq FAILURE_PATTERN
   fi
-rendered = $${basedirectory:promises}/exporter-status
+rendered = ${basedirectory:promises}/exporter-status
 
 [cron-entry-backup]
 # Schedule the periodic database dump.
@@ -88,12 +88,12 @@ name = backup
 {% if  resiliency_backup_periodicity %}
 frequency = {{ resiliency_backup_periodicity }}
 {% else %}
-time = $${publish-early:resiliency-backup-periodicity}
+time = ${publish-early:resiliency-backup-periodicity}
 {% endif %}
-command = ${logrotate:location}/sbin/logrotate -s $${basedirectory:run}/logrotate.status $${logrotate-entry-notifier:output}; $${notifier-exporter:wrapper} --transaction-id `date +%s`
+command = {{ logrotate_executable_location }} -s ${basedirectory:run}/logrotate.status ${logrotate-entry-notifier:output}; ${notifier-exporter:wrapper} --transaction-id `date +%s`
 
 [gen-resiliency-backup-periodicity]
-recipe = slapos.cookbook:cron.random.time
+recipe = slapos.cookbook:random.time
 
 [publish-early]
 recipe = slapos.cookbook:publish-early
