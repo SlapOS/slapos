@@ -26,7 +26,6 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #
 ##############################################################################
-import ConfigParser
 import io
 import logging
 import os
@@ -283,18 +282,3 @@ class GenericBaseRecipe(object):
     except:
       shutil.rmtree(destination)
       raise
-
-  def getValueFromPreviousRun(self, section, parameter):
-    """
-    Returns the value of a parameter from a previous run, if it exists.
-    Otherwise, returns None
-    """
-    if os.path.exists(self.buildout['buildout']['installed']):
-      with open(self.buildout['buildout']['installed']) as config_file:
-        try:
-          parser = ConfigParser.RawConfigParser()
-          parser.readfp(config_file)
-          return parser.get(section, parameter)
-        except:
-          pass
-    return None
