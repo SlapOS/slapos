@@ -79,34 +79,43 @@ rendered = $${directory:bin}/$${slap-parameter:namebase}-importer
 # backward compatibility for resilient stack
 wrapper = $${:rendered}
 mode = 700
-restore-exit-code-file=$${directory:srv}/importer-exit-code-file
+restore-exit-code-file = $${directory:srv}/$${:restore-exit-code-file-basename}
+restore-exit-code-file-basename = importer-exit-code-file
+restore-error-message-file = $${directory:srv}/$${:restore-error-message-file-basename}
+restore-error-message-file-basename = importer-error-message-file
+resilient-log-basename = resilient.log
 context =
   key backend_url slaprunner:access-url
   key ipv4 slaprunner:ipv4
   key ipv6 slaprunner:ipv6
   key proxy_port slaprunner:proxy_port
+  key instance_folder slaprunner:instance_root
   section directory directory
-  raw  output_log_file $${directory:log}/resilient.log
+  section supervisord supervisord
+  raw  output_log_file $${directory:log}/$${:resilient-log-basename}
   raw  shell_binary ${bash:location}/bin/bash
   raw  rsync_binary ${rsync:location}/bin/rsync
   raw  restore_exit_code_file $${:restore-exit-code-file}
+  raw  restore_error_message_file $${:restore-error-message-file}
 
 [importer-consistency-promise]
 # Test that the importer script and "after-import" subscripts
-# are not older than 1 day (24h), and have succeeded
+# are not older than 2 days (1 day + some slack), and have succeeded
 recipe = collective.recipe.template
 input = inline: #!/bin/sh
-  EXIT_CODE_FILE=$(find "$${importer:restore-exit-code-file}")
-  RECENT_EXIT_CODE_FILE=$(find "$${importer:restore-exit-code-file}" -mtime -1)
-  if [ -z "$EXIT_CODE_FILE" ]; then
+  EXIT_CODE_FILE="$${importer:restore-exit-code-file}"
+  RECENT_EXIT_CODE_FILE=$(find $${directory:srv} -maxdepth 1 -name "$${importer:restore-exit-code-file-basename}" -mtime -2)
+  RESILIENT_LOG_URL=$${publish:monitor-base-url}/log/$${importer:resilient-log-basename}
+  if [ ! -f "$EXIT_CODE_FILE" ]; then
     exit 0;
   else
     if [ -z "$RECENT_EXIT_CODE_FILE" ]; then
        echo "Consistency check is too old.";
        exit 1;
     else
-      EXIT_CODE=$(cat $EXIT_CODE_FILE)
-      exit $EXIT_CODE
+      cat $${importer:restore-error-message-file}
+      echo "More information can be found here : $RESILIENT_LOG_URL";
+      exit $(cat $EXIT_CODE_FILE);
     fi
   fi
   exit 1; # Something else went wrong
@@ -135,6 +144,7 @@ mode = 755
 recipe = slapos.recipe.template
 url = ${template-resilient-software-release-information:destination}/${template-resilient-software-release-information:filename}
 output = $${directory:cgi-bin}/resilient_software_release_information.py
+resilient-log-url = $${publish:monitor-base-url}/log/$${importer:resilient-log-basename}
 mode = 0600
 
 [slap-parameter]
