@@ -89,6 +89,7 @@ context =
   key ipv4 slaprunner:ipv4
   key ipv6 slaprunner:ipv6
   key proxy_port slaprunner:proxy_port
+  key instance_folder slaprunner:instance_root
   section directory directory
   section supervisord supervisord
   raw  output_log_file $${directory:log}/$${:resilient-log-basename}

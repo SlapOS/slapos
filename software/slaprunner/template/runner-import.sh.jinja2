@@ -90,6 +90,10 @@ $SQLITE3 $DATABASE "update partition_network11 set address='$IPV6' where netmask
 
 MASTERURL="http://{{ ipv4 }}:{{ proxy_port }}"
 
+log_message "Removing old supervisord service description files..."
+# XXX: Path hardcoded in slapos.core
+rm {{ instance_folder }}/etc/supervisord.conf.d/* || true
+
 log_message "Building newest Software Release..."
 $SLAPOS node software --cfg {{ supervisord['slapos-cfg'] }} --all --master-url=$MASTERURL --logfile {{ supervisord['slapgrid-sr-log'] }} --pidfile {{ supervisord['slapgrid-sr-pid'] }} >/dev/null 2>&1 ||
 $SLAPOS node software --cfg {{ supervisord['slapos-cfg'] }} --all --master-url=$MASTERURL --logfile {{ supervisord['slapgrid-sr-log'] }} --pidfile {{ supervisord['slapgrid-sr-pid'] }} >/dev/null 2>&1 ||
