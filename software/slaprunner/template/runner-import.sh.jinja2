@@ -61,7 +61,7 @@ if [ ! -e "$runner_import_restore" ]; then
   touch $runner_import_restore
   chmod +x $runner_import_restore
 fi
-log_message "Running $runner_import..."
+log_message "Running $runner_import_restore..."
 $srv_directory/runner-import-restore || RESTORE_EXIT_CODE=$?
 
 log_message "Updating slapproxy database..."
