@@ -2,9 +2,7 @@
 
 from ipykernel.kernelbase import Kernel
 from ipykernel.kernelapp import IPKernelApp
-
 from IPython.core.display import HTML
-
 import requests
 import json
 
@@ -46,8 +44,7 @@ MAGICS = {
   'erp5_url': MagicInfo('erp5_url', 'url', True, False, True),
   'notebook_set_reference': MagicInfo('notebook_set_reference', 'reference', True, False, True),
   'notebook_set_title': MagicInfo('notebook_set_title', 'title', False, False, True),
-  'my_notebooks': MagicInfo('my_notebooks', '', True, True, False)
-}
+  'my_notebooks': MagicInfo('my_notebooks', '', True, True, False)}
 
 class ERP5Kernel(Kernel):
   """
@@ -105,7 +102,6 @@ class ERP5Kernel(Kernel):
     """
     # Set attributes only for magic who do have any varible to set value to
     if magic_info.variable_name:
-
       try:
         # Get the magic value recived via code from frontend
         magic_value = code.split()[1]
@@ -181,8 +177,7 @@ class ERP5Kernel(Kernel):
           'reference': self.reference,
           'title': self.title,
           'request_reference': request_reference,
-          },
-      )
+          })
 
       # Set value for status_code for self object which would later be used to
       # dispaly response after statement check
@@ -311,8 +306,7 @@ class ERP5Kernel(Kernel):
 
         data = {
           'data': {mime_type: code_result},
-          'metadata': {}
-        }
+          'metadata': {}}
         self.send_response(self.iopub_socket, 'display_data', data)
 
     reply_content = {
@@ -320,8 +314,8 @@ class ERP5Kernel(Kernel):
       # The base class increments the execution count
       'execution_count': self.execution_count,
       'payload': [],
-      'user_expressions': {},
-    }
+      'user_expressions': {}}
+
     return reply_content
 
 if __name__ == '__main__':
