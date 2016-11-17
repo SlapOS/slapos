@@ -177,15 +177,14 @@ key-content = {{ dumps(slave_instance.get('ssl_key')) }}
 cert-content = {{ dumps(slave_instance.get('ssl_crt')) }} 
 {%     endif -%}
 
-{# Set apache configuration value for slave #}
+{# ########################################## #}
+{# Set Slave Configuration                    #}
 [{{ slave_configuration_section_name }}]
 {%     set apache_custom_http = ((slave_instance.pop('apache_custom_http', '')) % slave_parameter_dict) -%}
 {%     set apache_custom_https = ((slave_instance.pop('apache_custom_https', '')) % slave_parameter_dict) -%}
 apache_custom_http = {{ dumps(apache_custom_http) }}
 apache_custom_https = {{ dumps(apache_custom_https) }}
 
-{# ############################ #}
-{# #### Set Slave Configuration #}
 [{{ slave_section_title }}]
 < = jinja2-template-base
 {%   if slave_instance.has_key('apache_custom_http') %}
@@ -199,8 +198,6 @@ extensions = jinja2.ext.do
 extra-context =
     raw https_port {{ https_port }}
     raw http_port {{ http_port }}
-    key apache_custom_https {{ 'slave-instance-%s-configuration:apache_custom_https' % slave_reference }}
-    key apache_custom_http {{ 'slave-instance-%s-configuration:apache_custom_http' % slave_reference }}
     section slave_parameter {{ slave_configuration_section_name }}
 {{ '\n' }}
  
@@ -210,6 +207,21 @@ extra-context =
 {%     endfor %}
 
 ############################
+#### Publish Slave Information
+{%   if not extra_slave_instance_list -%}
+{%     set publish_section_title = 'publish-%s-connection-information' % slave_instance.get('slave_reference') -%}
+{%     do part_list.append(publish_section_title) -%}
+[{{ publish_section_title }}]
+recipe = slapos.cookbook:publish
+{%     for key, value in slave_publish_dict.iteritems() %}
+{{ key }} = {{ value }}
+{%     endfor %}
+{%   else -%}
+{%     do slave_instance_information_list.append(slave_publish_dict) -%}
+{%   endif -%}
+{% endfor -%}
+
+###############################################
 ### Prepare virtualhost for slaves using cache
 
 {% for slave_reference, slave_configuration_section_name in cached_server_dict.iteritems() %}
@@ -227,24 +239,6 @@ extra-context =
     raw ssl_cached_port {{ ssl_cached_port }}
 {{ '\n' }}
 {% endfor %}
-
-
-############################
-#### Publish Slave Information
-
-# Publish slave information
-{%   if not extra_slave_instance_list -%}
-{%     set publish_section_title = 'publish-%s-connection-information' % slave_instance.get('slave_reference') -%}
-{%     do part_list.append(publish_section_title) -%}
-[{{ publish_section_title }}]
-recipe = slapos.cookbook:publish
-{%     for key, value in slave_publish_dict.iteritems() %}
-{{ key }} = {{ value }}
-{%     endfor %}
-{%   else -%}
-{%     do slave_instance_information_list.append(slave_publish_dict) -%}
-{%   endif -%}
-{% endfor -%}
 
 [slave-log-directories]
 recipe = slapos.cookbook:mkdirectory
