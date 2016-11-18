@@ -2,4 +2,7 @@
 {% set allow_domain = '|'.join(domain.replace('.', '\.').split()) -%}
 SetEnvIf Origin "^http(s)?://(.+\.)?({{ allow_domain }})$" ORIGIN_DOMAIN=$0
 Header always set Access-Control-Allow-Origin "%{ORIGIN_DOMAIN}e" env=ORIGIN_DOMAIN
+Header always set Access-Control-Allow-Credentials "true" env=ORIGIN_DOMAIN
+Header always set Access-Control-Allow-Methods "PROPFIND, PROPPATCH, COPY, MOVE, DELETE, MKCOL, LOCK, UNLOCK, PUT, GETLIB, VERSION-CONTROL, CHECKIN, CHECKOUT, UNCHECKOUT, REPORT, UPDATE, CANCELUPLOAD, HEAD, OPTIONS, GET, POST" env=ORIGIN_DOMAIN
+Header always set Access-Control-Allow-Headers "Overwrite, Destination, Content-Type, Depth, User-Agent, X-File-Size, X-Requested-With, If-Modified-Since, X-File-Name, Cache-Control, Authorization" env=ORIGIN_DOMAIN
 {% endif -%}
