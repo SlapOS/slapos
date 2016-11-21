@@ -1,0 +1,153 @@
+[buildout]
+
+extends =
+  {{ template_logrotate_base }}
+
+parts = 
+  authenticated-httpd-server
+
+[authenticated-server-parameters]
+ca-url = 
+common-name = instance@${slap-configuration:instance-title}
+server-port = 8286
+custom-httpd-file = 
+web-directory = ${directory:document-root}
+
+[directory]
+recipe = slapos.cookbook:mkdirectory
+etc = ${buildout:directory}/etc
+bin = ${buildout:directory}/bin
+srv = ${buildout:directory}/srv
+var = ${buildout:directory}/var
+ssl = ${:etc}/ssl
+run = ${:var}/run
+log = ${:var}/log
+scripts = ${:etc}/run
+services = ${:etc}/service
+promises = ${:etc}/promise
+document-root = ${:srv}/private
+
+[certificate-request-base]
+recipe = slapos.cookbook:wrapper
+wrapper-path = ${directory:bin}/request-instance-certificate
+cert-file = ${directory:ssl}/instance.cert.pem
+key-file = ${directory:ssl}/instance.key.pem
+ca-cert = ${directory:ssl}/cacert.pem
+parameters-extra = true
+command-line = {{ certificate_request_bin }}
+  --crt-file ${:cert-file}
+  --key-file ${:key-file}
+  --ca-url ${authenticated-server-parameters:ca-url}
+  --ca-crt-file ${:ca-cert}
+  --no-check-certificate
+# XXX - using --no-check-certificate which is insecure with https.
+
+[server-certificate-request]
+recipe = slapos.cookbook:wrapper
+wrapper-path = ${directory:scripts}/request-instance-certificate
+command-line =
+  ${certificate-request-base:wrapper-path}
+  --cn ${authenticated-server-parameters:common-name}
+  --request
+
+[authenticated-httpd-conf-parameter]
+ip = ${slap-configuration:ipv6-random}
+port = ${authenticated-server-parameters:server-port}
+pid-file = ${directory:run}/httpd-auth.pid
+dav-lock = ${directory:var}/DavLockdb
+access-log = ${directory:log}/httpd-auth-access.log
+error-log = ${directory:log}/httpd-auth-error.log
+cert-file = ${certificate-request-base:cert-file}
+key-file = ${certificate-request-base:key-file}
+ca-cert = ${certificate-request-base:ca-cert}
+url = https://[${:ip}]:${:port}
+private = ${authenticated-server-parameters:web-directory}
+httpd-include-file = ${authenticated-server-parameters:custom-httpd-file}
+crl = 
+
+[authenticated-httpd-conf]
+recipe = slapos.recipe.template:jinja2
+template = {{ template_httpd_auth_conf }}
+rendered = ${directory:etc}/httpd-auth.conf
+mode = 0744
+context =
+  section parameter_dict authenticated-httpd-conf-parameter
+
+[authenticated-httpd-graceful]
+recipe = collective.recipe.template
+input = inline:
+  #!{{ dash_executable_location }}
+  kill -USR1 $(cat ${authenticated-httpd-conf-parameter:pid-file})
+
+output = ${directory:scripts}/authenticated-httpd-graceful
+mode = 700
+
+[authenticated-httpd-server]
+recipe = slapos.cookbook:wrapper
+command-line = {{ apache_location }}/bin/httpd -f ${authenticated-httpd-conf:rendered} -DFOREGROUND
+wrapper-path = ${directory:services}/authenticated-httpd-server
+wait-for-files =
+  ${certificate-request-base:cert-file}
+  ${certificate-request-base:key-file}
+  ${certificate-request-base:ca-cert}
+
+url = ${authenticated-httpd-conf-parameter:url}
+
+depends = 
+  ${authenticated-httpd-promise:filename}
+  ${authenticated-httpd-graceful:output}
+  ${server-certificate-request:wrapper-path}
+  ${logrotate-authenticated-httpd:name}
+  ${certificate-renew-cron-entry:name}
+
+[certificate-renew]
+recipe = collective.recipe.template
+input = inline:
+  #!{{ dash_executable_location }}
+
+  d=$({{ openssl_executable_location }} x509 -enddate -noout -in ${certificate-request-base:cert-file} | cut -d'=' -f 2)
+  cert_time=$(date -d "$d" +"%s")
+  now=$(date +"%s")
+  thresold=2592000  # 30*24*60*60  equivalent to one month in seconds
+  remind=$(($cert_time - $now))
+
+  if [ $remind -lt $thresold ]; then
+    exec ${certificate-request-base:wrapper-path} --renew
+    exec ${authenticated-httpd-graceful:output}
+  fi
+
+output = ${directory:bin}/certificate-renew
+mode = 700
+
+[certificate-renew-cron-entry]
+recipe = slapos.cookbook:cron.d
+cron-entries = ${cron:cron-entries}
+name = certificate-auto-renew
+frequency = 5 6 * * 6
+command = ${certificate-renew:output}
+
+[logrotate-authenticated-httpd]
+< = logrotate-entry-base
+name = authenticated-httpd-server
+log = ${authenticated-httpd-conf-parameter:access-log} ${authenticated-httpd-conf-parameter:access-log}
+post = {{ slapos_kill_bin }} --pidfile ${authenticated-httpd-conf-parameter:pid-file} -s USR1
+
+[authenticated-httpd-promise]
+recipe = slapos.cookbook:check_url_available
+path = ${directory:promises}/${:filename}
+filename = authenticated-httpd-is-available
+url = ${authenticated-httpd-conf-parameter:url}
+check-secure = 1
+dash_path = {{ dash_executable_location }}
+curl_path = {{ curl_executable_location }}
+cert-file = ${certificate-request-base:cert-file}
+key-file = ${certificate-request-base:key-file}
+ca-cert-file = ${certificate-request-base:ca-cert}
+
+[slap-configuration]
+recipe = slapos.cookbook:slapconfiguration.serialised
+computer = ${slap-connection:computer-id}
+partition = ${slap-connection:partition-id}
+url = ${slap-connection:server-url}
+key = ${slap-connection:key-file}
+cert = ${slap-connection:cert-file}
