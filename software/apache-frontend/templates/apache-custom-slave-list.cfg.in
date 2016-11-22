@@ -13,6 +13,7 @@
 {% endif -%}
 [jinja2-template-base]
 recipe = slapos.recipe.template:jinja2
+extensions = jinja2.ext.do
 extra-context =
 context =
     key eggs_directory buildout:eggs-directory
@@ -184,6 +185,10 @@ cert-content = {{ dumps(slave_instance.get('ssl_crt')) }}
 {%     set apache_custom_https = ((slave_instance.pop('apache_custom_https', '')) % slave_parameter_dict) -%}
 apache_custom_http = {{ dumps(apache_custom_http) }}
 apache_custom_https = {{ dumps(apache_custom_https) }}
+{{ '\n' }}
+{%     for key, value in slave_instance.iteritems() -%}
+{{ key }} = {{ dumps(value) }}
+{%     endfor %}
 
 [{{ slave_section_title }}]
 < = jinja2-template-base
@@ -192,22 +197,16 @@ template = {{ template_custom_slave_configuration }}
 {%   else %}
 template = {{ template_default_slave_configuration }}
 {%   endif %}
+
 filename = {{ '%s.conf' % slave_reference }}
-rendered = {{ apache_configuration_directory }}/${:filename}
-extensions = jinja2.ext.do
 extra-context =
     raw https_port {{ https_port }}
     raw http_port {{ http_port }}
     section slave_parameter {{ slave_configuration_section_name }}
 {{ '\n' }}
  
-[{{ slave_configuration_section_name }}]
-{%     for key, value in slave_instance.iteritems() -%}
-{{ key }} = {{ dumps(value) }}
-{%     endfor %}
-
-############################
-#### Publish Slave Information
+{# ###############################  #}
+{# Publish Slave Information        #}
 {%   if not extra_slave_instance_list -%}
 {%     set publish_section_title = 'publish-%s-connection-information' % slave_instance.get('slave_reference') -%}
 {%     do part_list.append(publish_section_title) -%}
