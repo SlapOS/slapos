@@ -121,7 +121,7 @@ class Recipe(GenericSlapRecipe, Notify, Callback):
           exit 1
         }
 
-        trap sigint SIGINT  # we can CTRL-C for ease of debugging
+        trap sigint INT  # we can CTRL-C for ease of debugging
 
         LC_ALL=C
         export LC_ALL
