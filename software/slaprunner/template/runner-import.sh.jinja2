@@ -64,6 +64,13 @@ fi
 log_message "Running $runner_import_restore..."
 $srv_directory/runner-import-restore || RESTORE_EXIT_CODE=$?
 
+# If no "etc/.project" neither "srv/runner/proxy.db", we can safely assume
+# that there is no instnace deployed on runner0
+if [ ! -f "directory['etc']/.project" ] && [ ! -f "$srv_directory/runner/proxy.db" ]; then
+  echo 0 > $RESTORE_EXIT_CODE_FILE
+  exit 0
+fi
+
 log_message "Updating slapproxy database..."
 HOME="{{ directory['home'] }}"
 # XXX Hardcoded
