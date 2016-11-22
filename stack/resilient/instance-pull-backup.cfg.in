@@ -130,6 +130,7 @@ directory = $${directory:pbs-backup}
 cron-entries = $${cron:cron-entries}
 wrappers-directory = $${directory:pbs-wrappers}
 run-directory = $${basedirectory:run}
+pull-push-maximum-run = 5
 # XXX: this should be named "notifier-host"
 notifier-url = http://[$${notifier:host}]:$${notifier:port}
 slave-instance-list = $${slap-parameter:slave_instance_list}
