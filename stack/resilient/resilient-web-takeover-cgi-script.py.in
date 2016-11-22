@@ -4,6 +4,7 @@ equeue_database = '${equeue:database}'
 equeue_lockfile = '${equeue:lockfile}'
 takeover_script = '${resiliency-takeover-script:wrapper-takeover}'
 
+import atexit
 import cgi
 import cgitb
 import datetime
@@ -21,12 +22,17 @@ else:
 
 cgitb.enable()
 
+def deleteTemporaryDirectory(path):
+  if os.path.exists(path):
+    shutil.rmtree(path)
+
 def getLatestBackupDate():
   """
   Get the date of the latest successful backup.
   """
   # Create a copy of the db (locked by equeue process)
   temporary_directory = tempfile.mkdtemp()
+  atexit.register(deleteTemporaryDirectory, temporary_directory)
   equeue_database_copy = os.path.join(temporary_directory, 'equeue.db')
   shutil.copyfile(equeue_database, equeue_database_copy)
   db = gdbm.open(equeue_database_copy)
