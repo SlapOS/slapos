@@ -1,0 +1,37 @@
+#!{{ python_executable }}
+import csv
+import os
+import sys
+import urllib2
+
+csv.field_size_limit(sys.maxsize)
+
+notifier_feed_directory = '{{ notifier_feed_directory }}'
+base_url = "{{ base_url }}"
+
+feed_file_list = os.listdir(notifier_feed_directory)
+
+for feed_file_name in feed_file_list:
+  url = base_url + feed_file_name
+  # Try feed consistency
+  try:
+    feed = urllib2.urlopen(url)
+    body = feed.read()
+  except urllib2.HTTPError as e:
+    sys.exit("%s is unavailable: %s" % (feed_file_name, e))
+  with open(os.path.join(notifier_feed_directory, feed_file_name)) as feed_file:
+    reader = csv.reader(feed_file)
+    # Get last row because we only care about last run
+    for row in reader:
+      pass
+    try:
+      timestamp, title, content, guid = row
+      if content.startswith('OK'):
+        continue
+      else:
+        sys.exit("Last run of %s failed" % feed_file_name)
+    except ValueError:
+      sys.exit("Notifier feed %s is malformed" % notifier_feed)
+    except NameError:
+      # row can be not defined if feed is empty
+      pass

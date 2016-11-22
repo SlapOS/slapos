@@ -13,6 +13,7 @@ parts =
   cron
   cron-entry-logrotate
   cron-entry-notifier-status-feed
+  notifier-feed-status-promise
   notifier-stalled-promise
   resilient-sshkeys-authority
   sshd-raw-server

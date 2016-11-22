@@ -9,6 +9,7 @@ parts =
   cron
   cron-entry-logrotate
   cron-entry-notifier-status-feed
+  notifier-feed-status-promise
   notifier-stalled-promise
   resilient-sshkeys-authority
   sshd-graceful
@@ -305,6 +306,20 @@ input = inline:#!${bash:location}/bin/bash
   fi
 output = $${basedirectory:promises}/public-key-existence
 mode = 700
+
+#----------------
+#--
+#-- Promises
+
+[notifier-feed-status-promise]
+recipe = slapos.recipe.template:jinja2
+template = ${notifier-feed-promise-template:target}
+rendered = $${basedirectory:promises}/notifier-feed-check-malformed-or-failure.py
+mode = 700
+context =
+  key notifier_feed_directory directory:notifier-feeds
+  raw base_url http://[$${notifier:host}]:$${notifier:port}/get/
+  raw python_executable ${buildout:executable}
 
 #----------------
 #--
