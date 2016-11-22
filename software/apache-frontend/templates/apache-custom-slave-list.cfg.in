@@ -5,6 +5,7 @@
 {% set cache_access = "http://%s:%s" % (local_ipv4, cache_port) -%}
 {% set ssl_cache_access = "http://%s:%s/HTTPS" % (local_ipv4, cache_port) -%}
 {% set TRUE_VALUES = ['y', 'yes', '1', 'true'] -%}
+{% set NGINX_TYPE_LIST = ['eventsource', 'notebook'] -%}
 {% set generic_instance_parameter_dict = {'cache_access': cache_access,} -%}
 {% set slave_log_dict = {} -%}
 {% if extra_slave_instance_list -%}
@@ -38,6 +39,7 @@ crl = {{ custom_ssl_directory }}/crl/
 {% for slave_instance in slave_instance_list -%}
 {#   # Do all set and do upper, so it makes easy to read the file later #} 
 {%   set slave_reference = slave_instance.get('slave_reference') -%}
+{%   set slave_type = slave_instance.get('type', '') -%}
 {%   set slave_section_title = 'dynamic-template-slave-instance-%s' % slave_reference -%}
 {%   set slave_parameter_dict = generic_instance_parameter_dict.copy() -%}
 {%   set slave_publish_dict = {} -%}
@@ -72,7 +74,7 @@ crl = {{ custom_ssl_directory }}/crl/
 {%     do slave_instance.__setitem__('custom_domain', "%s.%s" % (slave_instance.get('slave_reference').replace("-", "").lower(), slapparameter_dict.get('domain'))) -%}
 {%   endif -%}
 
-{%   set enable_cache = (('' ~ slave_instance.get('enable_cache', '')).lower() in TRUE_VALUES and slave_instance.get('type', '') != 'redirect') -%}
+{%   set enable_cache = (('' ~ slave_instance.get('enable_cache', '')).lower() in TRUE_VALUES and slave_type != 'redirect') -%}
 {%   if enable_cache and 'url' in slave_instance -%}
 {%     if 'domain' in slave_instance -%}
 {%       do slave_instance.__setitem__('custom_domain', slave_instance.get('domain')) -%}
@@ -192,8 +194,19 @@ apache_custom_https = {{ dumps(apache_custom_https) }}
 
 [{{ slave_section_title }}]
 < = jinja2-template-base
-{%   if slave_instance.has_key('apache_custom_http') %}
+{%   if slave_type in NGINX_TYPE_LIST %}
+rendered = {{ nginx_configuration_directory }}/${:filename}
+{%   else %}
+rendered = {{ apache_configuration_directory }}/${:filename}
+{%   endif %}
+
+
+{%   if apache_custom_http %}
 template = {{ template_custom_slave_configuration }}
+{%   elif slave_type == 'eventsource' %}
+template = {{ template_eventsource_slave_configuration }}
+{%   elif slave_type == 'notebook' %}
+template = {{ template_notebook_slave_configuration }}
 {%   else %}
 template = {{ template_default_slave_configuration }}
 {%   endif %}
@@ -202,6 +215,10 @@ filename = {{ '%s.conf' % slave_reference }}
 extra-context =
     raw https_port {{ https_port }}
     raw http_port {{ http_port }}
+    raw global_ipv6 {{ global_ipv6 }}
+    raw local_ipv4 {{ local_ipv4 }}
+    raw nginx_http_port {{ nginx_http_port }} 
+    raw nginx_https_port {{ nginx_https_port }}
     section slave_parameter {{ slave_configuration_section_name }}
 {{ '\n' }}
  

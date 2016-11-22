@@ -34,7 +34,7 @@
       "description": "Type of slave. If redirect, the slave will redirect to the given url. If zope, the rewrite rules will be compatible with Virtual Host Monster",
       "type": "string",
       "default": "",
-      "enum": ["", "zope", "redirect"]
+      "enum": ["", "zope", "redirect", "notebook", "eventsource"]
     },
 
     "path": {
