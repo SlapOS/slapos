@@ -113,6 +113,7 @@ class TestSlaposSkinSelection(testSlapOSMixin):
     selection_string_list = \
 """
 custom
+erp5_font
 erp5_web_hal_json
 slapos_ecoallocation
 slapos_erp5
@@ -196,7 +197,6 @@ erp5_rss_core
 erp5_secure_payment
 erp5_simplified_invoicing
 erp5_software_pdm
-erp5_stock_cache
 erp5_system_event
 erp5_toolbox
 erp5_trade
@@ -213,9 +213,6 @@ erp5_xhtml_style
 external_method
 Images
 activity
-zpt_content
-zpt_control
-zpt_generic
 """
     self.assertSameSkinSelection(skin_name, selection_string_list)
 
@@ -229,6 +226,7 @@ zpt_generic
     selection_string_list = \
 """
 custom
+erp5_font
 erp5_web_hal_json
 slapos_ecoallocation
 slapos_erp5
@@ -307,7 +305,6 @@ erp5_rss_core
 erp5_secure_payment
 erp5_simplified_invoicing
 erp5_software_pdm
-erp5_stock_cache
 erp5_system_event
 erp5_toolbox
 erp5_trade
@@ -324,9 +321,6 @@ erp5_xhtml_style
 external_method
 Images
 activity
-zpt_content
-zpt_control
-zpt_generic
 """
     self.assertSameSkinSelection(skin_name, selection_string_list)
 
@@ -340,6 +334,7 @@ zpt_generic
     selection_string_list = \
 """
 custom
+erp5_font
 erp5_web_hal_json
 slapos_ecoallocation
 slapos_erp5
@@ -419,7 +414,6 @@ erp5_rss_core
 erp5_secure_payment
 erp5_simplified_invoicing
 erp5_software_pdm
-erp5_stock_cache
 erp5_system_event
 erp5_toolbox
 erp5_trade
@@ -436,9 +430,6 @@ erp5_xhtml_style
 external_method
 Images
 activity
-zpt_content
-zpt_control
-zpt_generic
 """
     self.assertSameSkinSelection(skin_name, selection_string_list)
 
@@ -452,6 +443,7 @@ zpt_generic
     selection_string_list = \
 """
 custom
+erp5_font
 erp5_web_hal_json
 slapos_ecoallocation
 slapos_erp5
@@ -529,7 +521,6 @@ erp5_rss_core
 erp5_secure_payment
 erp5_simplified_invoicing
 erp5_software_pdm
-erp5_stock_cache
 erp5_system_event
 erp5_toolbox
 erp5_trade
@@ -545,9 +536,6 @@ erp5_workflow
 external_method
 Images
 activity
-zpt_content
-zpt_control
-zpt_generic
 """
     self.assertSameSkinSelection(skin_name, selection_string_list)
 
@@ -561,6 +549,7 @@ zpt_generic
     selection_string_list = \
 """
 custom
+erp5_font
 erp5_web_hal_json
 slapos_ecoallocation
 slapos_erp5
@@ -638,7 +627,6 @@ erp5_rss_core
 erp5_secure_payment
 erp5_simplified_invoicing
 erp5_software_pdm
-erp5_stock_cache
 erp5_system_event
 erp5_toolbox
 erp5_trade
@@ -655,9 +643,6 @@ erp5_xhtml_style
 external_method
 Images
 activity
-zpt_content
-zpt_control
-zpt_generic
 """
     self.assertSameSkinSelection(skin_name, selection_string_list)
 
@@ -671,6 +656,7 @@ zpt_generic
     selection_string_list = \
 """
 custom
+erp5_font
 erp5_web_hal_json
 slapos_ecoallocation
 slapos_erp5
@@ -748,7 +734,6 @@ erp5_rss_core
 erp5_secure_payment
 erp5_simplified_invoicing
 erp5_software_pdm
-erp5_stock_cache
 erp5_system_event
 erp5_toolbox
 erp5_trade
@@ -764,9 +749,6 @@ erp5_workflow
 external_method
 Images
 activity
-zpt_content
-zpt_control
-zpt_generic
 """
     self.assertSameSkinSelection(skin_name, selection_string_list)
 
@@ -780,6 +762,7 @@ zpt_generic
     selection_string_list = \
 """
 custom
+erp5_font
 erp5_web_hal_json
 slapos_ecoallocation
 slapos_erp5
@@ -857,7 +840,6 @@ erp5_rss_core
 erp5_secure_payment
 erp5_simplified_invoicing
 erp5_software_pdm
-erp5_stock_cache
 erp5_system_event
 erp5_toolbox
 erp5_trade
@@ -873,9 +855,6 @@ erp5_workflow
 external_method
 Images
 activity
-zpt_content
-zpt_control
-zpt_generic
 """
     self.assertSameSkinSelection(skin_name, selection_string_list)
 
@@ -889,6 +868,7 @@ zpt_generic
     selection_string_list = \
 """
 custom
+erp5_font
 erp5_web_hal_json
 slapos_ecoallocation
 slapos_erp5
@@ -968,7 +948,6 @@ erp5_rss_core
 erp5_secure_payment
 erp5_simplified_invoicing
 erp5_software_pdm
-erp5_stock_cache
 erp5_system_event
 erp5_toolbox
 erp5_trade
@@ -984,9 +963,6 @@ erp5_workflow
 external_method
 Images
 activity
-zpt_content
-zpt_control
-zpt_generic
 """
     self.assertSameSkinSelection(skin_name, selection_string_list)
 
@@ -1000,6 +976,7 @@ zpt_generic
     selection_string_list = \
 """
 custom
+erp5_font
 erp5_web_hal_json
 slapos_ecoallocation
 slapos_erp5
@@ -1078,7 +1055,6 @@ erp5_rss_core
 erp5_secure_payment
 erp5_simplified_invoicing
 erp5_software_pdm
-erp5_stock_cache
 erp5_system_event
 erp5_toolbox
 erp5_trade
@@ -1095,9 +1071,6 @@ erp5_xhtml_style
 external_method
 Images
 activity
-zpt_content
-zpt_control
-zpt_generic
 """
     self.assertSameSkinSelection(skin_name, selection_string_list)
 
@@ -1111,6 +1084,7 @@ zpt_generic
     selection_string_list = \
 """
 custom
+erp5_font
 erp5_web_hal_json
 slapos_ecoallocation
 slapos_erp5
@@ -1189,7 +1163,6 @@ erp5_rss_core
 erp5_secure_payment
 erp5_simplified_invoicing
 erp5_software_pdm
-erp5_stock_cache
 erp5_system_event
 erp5_toolbox
 erp5_trade
@@ -1206,9 +1179,6 @@ erp5_xhtml_style
 external_method
 Images
 activity
-zpt_content
-zpt_control
-zpt_generic
 """
     self.assertSameSkinSelection(skin_name, selection_string_list)
 
@@ -1222,6 +1192,7 @@ zpt_generic
     selection_string_list = \
 """
 custom
+erp5_font
 erp5_web_hal_json
 erp5_web_renderjs_ui
 slapos_ecoallocation
@@ -1299,7 +1270,6 @@ erp5_rss_core
 erp5_secure_payment
 erp5_simplified_invoicing
 erp5_software_pdm
-erp5_stock_cache
 erp5_system_event
 erp5_toolbox
 erp5_trade
@@ -1315,9 +1285,6 @@ erp5_workflow
 external_method
 Images
 activity
-zpt_content
-zpt_control
-zpt_generic
 """
     self.assertSameSkinSelection(skin_name, selection_string_list)
 
