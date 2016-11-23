@@ -134,7 +134,7 @@
                 </item>
                 <item>
                     <key> <string>selection_name</string> </key>
-                    <value> <string>vifib_software_release_selection</string> </value>
+                    <value> <string>software_product_software_release_order_selection</string> </value>
                 </item>
                 <item>
                     <key> <string>target</string> </key>
