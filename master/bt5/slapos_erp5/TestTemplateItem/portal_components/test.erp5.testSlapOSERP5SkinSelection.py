@@ -874,7 +874,6 @@ slapos_ecoallocation
 slapos_erp5
 slapos_upgrader
 slapos_rss
-vifib_hosting
 slapos_contract
 slapos_crm_monitoring
 slapos_accounting
