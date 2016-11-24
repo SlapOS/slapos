@@ -1,6 +1,14 @@
 Changes
 =======
 
+1.0.43 (2016-11-24)
+-------------------
+
+  * pbs: fixes trap command for dash intepreter
+  * pbs: remove infinite loops from pbs scripts.
+  * random.py: new file containing recipes generating random values.
+  * testnode: disallow frontend access to all folders, avoiding publishing private repositories
+
 1.0.41 (2016-10-26)
 -------------------
 
