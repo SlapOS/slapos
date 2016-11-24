@@ -82,7 +82,7 @@ class Recipe(GenericSlapRecipe, Notify, Callback):
         LC_ALL=C
         export LC_ALL
         RDIFF_BACKUP=%(rdiffbackup_binary)s
-        until $RDIFF_BACKUP \\
+        $RDIFF_BACKUP \\
                 --remote-schema %(remote_schema)s \\
                 --restore-as-of now \\
                 --force \\
@@ -90,7 +90,6 @@ class Recipe(GenericSlapRecipe, Notify, Callback):
                 %(remote_dir)s; do
           echo "repeating rdiff-backup..."
           sleep 10
-        done
         """)
 
     template_dict = {
@@ -122,7 +121,7 @@ class Recipe(GenericSlapRecipe, Notify, Callback):
           exit 1
         }
 
-        trap sigint SIGINT  # we can CTRL-C for ease of debugging
+        trap sigint INT  # we can CTRL-C for ease of debugging
 
         LC_ALL=C
         export LC_ALL
@@ -137,76 +136,75 @@ class Recipe(GenericSlapRecipe, Notify, Callback):
         CANTFIND_FILE=$TMPDIR/$$.rdiff_cantfind
 
         SUCCEEDED=false
-        while ! $SUCCEEDED; do
 
-            # not using --fix-corrupted can lead to an infinite loop
-            # in case of manual changes to the backup repository.
+        # not using --fix-corrupted can lead to an infinite loop
+        # in case of manual changes to the backup repository.
 
-            CORRUPTED_ARGS=""
-            if [ "$1" = "--fix-corrupted" ]; then
-                VERIFY=$($RDIFF_BACKUP --verify $BACKUP_DIR 2>&1 >/dev/null)
-                echo "$VERIFY" | egrep "$CORRUPTED_MSG" | sed "s/$CORRUPTED_MSG//g" > $CORRUPTED_FILE
+        CORRUPTED_ARGS=""
+        if [ "$1" = "--fix-corrupted" ]; then
+            VERIFY=$($RDIFF_BACKUP --verify $BACKUP_DIR 2>&1 >/dev/null)
+            echo "$VERIFY" | egrep "$CORRUPTED_MSG" | sed "s/$CORRUPTED_MSG//g" > $CORRUPTED_FILE
 
-                # Sometimes --verify reports this spurious warning:
-                echo "$VERIFY" | egrep "$CANTFIND_MSG" | sed "s/$CANTFIND_MSG\(.*\),/--always-snapshot\ '\\1'/g" > $CANTFIND_FILE
+            # Sometimes --verify reports this spurious warning:
+            echo "$VERIFY" | egrep "$CANTFIND_MSG" | sed "s/$CANTFIND_MSG\(.*\),/--always-snapshot\ '\\1'/g" > $CANTFIND_FILE
 
-                # There can be too many files, better not to provide them through separate command line parameters
-                CORRUPTED_ARGS="--always-snapshot-fromfile $CORRUPTED_FILE --always-snapshot-fromfile $CANTFIND_FILE"
+            # There can be too many files, better not to provide them through separate command line parameters
+            CORRUPTED_ARGS="--always-snapshot-fromfile $CORRUPTED_FILE --always-snapshot-fromfile $CANTFIND_FILE"
 
-                if [ -s "$CORRUPTED_FILE" -o -s "$CANTFIND_FILE" ]; then
-                    echo Retransmitting $(cat "$CORRUPTED_FILE" "$CANTFIND_FILE" | wc -l) corrupted/missing files
-                else
-                    echo "No corrupted or missing files to retransmit"
-                fi
-            fi
-
-            $RDIFF_BACKUP \\
-                    $CORRUPTED_ARGS \\
-                    --remote-schema %(remote_schema)s \\
-                    %(remote_dir)s \\
-                    $BACKUP_DIR
-
-            RDIFF_BACKUP_STATUS=$?
-
-            [ "$CORRUPTED_ARGS" ] && rm -f "$CORRUPTED_FILE" "$CANTFIND_FILE"
-
-            if [ ! $RDIFF_BACKUP_STATUS -eq 0 ]; then
-                # Check the backup, go to the last consistent backup, so that next
-                # run will be okay.
-                echo "Checking backup directory..."
-                $RDIFF_BACKUP --check-destination-dir $BACKUP_DIR
-                if [ ! $? -eq 0 ]; then
-                    # Here, two possiblities:
-                    if [ is_first_backup ]; then
-                        continue
-                        # The first backup failed, and check-destination as well.
-                        # we may want to remove the backup.
-                    else
-                        continue
-                        # The backup command has failed, while transferring an increment, and check-destination as well.
-                        # XXX We may need to publish the failure and ask the the equeue, re-run this script again,
-                        # instead do a push to the clone.
-                    fi
-                fi
+            if [ -s "$CORRUPTED_FILE" -o -s "$CANTFIND_FILE" ]; then
+                echo Retransmitting $(cat "$CORRUPTED_FILE" "$CANTFIND_FILE" | wc -l) corrupted/missing files
             else
-                # Everything's okay, cleaning up...
-                $RDIFF_BACKUP --remove-older-than %(remove_backup_older_than)s --force $BACKUP_DIR
+                echo "No corrupted or missing files to retransmit"
             fi
+        fi
 
-            SUCCEEDED=true
+        $RDIFF_BACKUP \\
+                $CORRUPTED_ARGS \\
+                --remote-schema %(remote_schema)s \\
+                %(remote_dir)s \\
+                $BACKUP_DIR
 
-            if [ -e %(backup_signature)s ]; then
-              cd $BACKUP_DIR
-              find -type f ! -name backup.signature ! -wholename "./rdiff-backup-data/*" -print0 | xargs -P4 -0 sha256sum  | LC_ALL=C sort -k 66 > ../proof.signature
-              cmp backup.signature ../proof.signature || SUCCEEDED=false
-              diff -ruw backup.signature ../proof.signature > ../backup.diff
-              # XXX If there is a difference on the backup, we should publish the
-              # failure and ask the equeue, re-run this script again,
-              # instead do a push it to the clone.
+        RDIFF_BACKUP_STATUS=$?
+
+        [ "$CORRUPTED_ARGS" ] && rm -f "$CORRUPTED_FILE" "$CANTFIND_FILE"
+
+        if [ ! $RDIFF_BACKUP_STATUS -eq 0 ]; then
+            # Check the backup, go to the last consistent backup, so that next
+            # run will be okay.
+            echo "Checking backup directory..."
+            $RDIFF_BACKUP --check-destination-dir $BACKUP_DIR
+            if [ ! $? -eq 0 ]; then
+                # Here, two possiblities:
+                if [ is_first_backup ]; then
+                    continue
+                    # The first backup failed, and check-destination as well.
+                    # we may want to remove the backup.
+                else
+                    continue
+                    # The backup command has failed, while transferring an increment, and check-destination as well.
+                    # XXX We may need to publish the failure and ask the the equeue, re-run this script again,
+                    # instead do a push to the clone.
+                fi
             fi
+        else
+            # Everything's okay, cleaning up...
+            $RDIFF_BACKUP --remove-older-than %(remove_backup_older_than)s --force $BACKUP_DIR
+        fi
 
-            $SUCCEEDED || find $BACKUP_DIR -name rdiff-backup.tmp.* -exec rm -rf {} \;
-        done
+        SUCCEEDED=true
+
+        if [ -e %(backup_signature)s ]; then
+          cd $BACKUP_DIR
+          find -type f ! -name backup.signature ! -wholename "./rdiff-backup-data/*" -print0 | xargs -P4 -0 sha256sum  | LC_ALL=C sort -k 66 > ../proof.signature
+          cmp backup.signature ../proof.signature || SUCCEEDED=false
+          diff -ruw backup.signature ../proof.signature > ../backup.diff
+          # XXX If there is a difference on the backup, we should publish the
+          # failure and ask the equeue, re-run this script again,
+          # instead do a push it to the clone.
+        fi
+
+        $SUCCEEDED || find $BACKUP_DIR -name rdiff-backup.tmp.* -exec rm -rf {} \;
+
         """)
 
     template_dict = {
@@ -305,6 +303,7 @@ class Recipe(GenericSlapRecipe, Notify, Callback):
         title=entry.get('title', slave_id),
         notification_url=entry['notify'] or '',
         feed_url='%s/get/%s' % (self.options['notifier-url'], entry['notification-id']),
+        max_run=self.options.get('pull-push-maximum-run', 1),
         pidfile=os.path.join(self.options['run-directory'], '%s.pid' % slave_id),
         instance_root_name=self.options.get('instance-root-name', None),
         log_url=self.options.get('log-url', None),

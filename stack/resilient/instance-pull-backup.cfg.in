@@ -4,6 +4,7 @@ parts =
   publish-connection-information
   pbs
   logrotate
+  logrotate-entry-notifier
   cron
   cron-entry-logrotate
   pbs-sshkeys-authority
@@ -14,6 +15,7 @@ parts =
   backup-signature-link
   cron-pbs-status-feed
   pull-push-stalled-promise
+  notifier-feed-status-promise
 
 ## Monitor for pbs
   monitor-base
@@ -128,6 +130,7 @@ directory = $${directory:pbs-backup}
 cron-entries = $${cron:cron-entries}
 wrappers-directory = $${directory:pbs-wrappers}
 run-directory = $${basedirectory:run}
+pull-push-maximum-run = 5
 # XXX: this should be named "notifier-host"
 notifier-url = http://[$${notifier:host}]:$${notifier:port}
 slave-instance-list = $${slap-parameter:slave_instance_list}
@@ -147,7 +150,7 @@ wrapper-path = $${rootdirectory:bin}/resilient-genstatusrss.py
 <= cron
 recipe = slapos.cookbook:cron.d
 name = resilient-pbs-status-feed
-frequency = 5 * * * *
+frequency = */5 * * * *
 command = $${pbs-resilient-status-feed:wrapper-path}
 
 #----------------
@@ -201,6 +204,18 @@ log = $${cron-simplelogger:log}
 frequency = daily
 rotate-num = 30
 
+[logrotate-entry-notifier]
+recipe = collective.recipe.template
+mode = 600
+input = inline:
+  $${directory:notifier-feeds}/* {
+    rotate 5
+    weekly
+    nocompress
+    missingok
+    olddir $${directory:logrotate-backup}
+  }
+output = $${logrotate:logrotate-entries}/notifier
 
 #----------------
 #--
@@ -303,9 +318,19 @@ symlink = $${directory:pbs-backup}/proof.signature = $${directory:monitor-resili
 
 [pull-push-stalled-promise]
 recipe = slapos.cookbook:wrapper
-# time-buffer is 18h : cron for backup is run once a day - 6h of random sleep
-command-line = ${buildout:bin-directory}/check-feed-as-promise --feed-path $${pbs-resilient-status-feed:feed-path} --title --ok-pattern 'OK' --time-buffer 64800
+# # time-buffer is 24h (+1h of latitude)
+command-line = ${buildout:bin-directory}/check-feed-as-promise --feed-path $${pbs-resilient-status-feed:feed-path} --title --ok-pattern 'OK' --time-buffer 90000
 wrapper-path = $${basedirectory:promises}/stalled-pull-push
+
+[notifier-feed-status-promise]
+recipe = slapos.recipe.template:jinja2
+template = ${notifier-feed-promise-template:target}
+rendered = $${basedirectory:promises}/notifier-feed-check-malformed-or-failure.py
+mode = 700
+context =
+  key notifier_feed_directory directory:notifier-feeds
+  raw base_url http://[$${notifier:host}]:$${notifier:port}/get/
+  raw python_executable ${buildout:executable}
 
 #----------------
 #--

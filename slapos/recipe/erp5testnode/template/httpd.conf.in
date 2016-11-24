@@ -22,7 +22,6 @@ Header set Access-Control-Allow-Origin "*"
 
 # List of modules
 LoadModule unixd_module modules/mod_unixd.so
-LoadModule access_compat_module modules/mod_access_compat.so
 LoadModule authz_core_module modules/mod_authz_core.so
 LoadModule authz_host_module modules/mod_authz_host.so
 LoadModule log_config_module modules/mod_log_config.so
@@ -68,20 +67,21 @@ SSLProxyEngine On
     <Directory />
         Options Indexes FollowSymLinks
         IndexOptions FancyIndexing
-        order allow,deny
-        Allow from All
+        Require all granted
     </Directory>
 </VirtualHost>
 
+# IMPORTANT NOTE: It is very important to deny access by default, otherwise this
+# open access to private repositories. If someone would like to open access to
+# some code, it would be needed to explicitely add a .htaccess file.
 Listen [%(ip)s]:%(software_access_port)s
 <VirtualHost *:%(software_access_port)s>
     SSLEngine on
-    RewriteRule (.*) http://[%(ip)s]:%(software_access_port)s/VirtualHostBase/https/[%(ip)s]:%(software_access_port)s/VirtualHostRoot/$1 [L,P]
-    DocumentRoot "%(testnode_software_directory)s"
+    DocumentRoot "%(testnode_srv_directory)s"
     <Directory />
+        AllowOverride FileInfo AuthConfig
         Options FollowSymLinks
         IndexOptions FancyIndexing
-        order allow,deny
-        Allow from All
+        Require all denied
    </Directory>
 </VirtualHost>

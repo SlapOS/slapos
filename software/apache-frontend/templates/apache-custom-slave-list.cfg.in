@@ -5,6 +5,7 @@
 {% set cache_access = "http://%s:%s" % (local_ipv4, cache_port) -%}
 {% set ssl_cache_access = "http://%s:%s/HTTPS" % (local_ipv4, cache_port) -%}
 {% set TRUE_VALUES = ['y', 'yes', '1', 'true'] -%}
+{% set NGINX_TYPE_LIST = ['eventsource', 'notebook'] -%}
 {% set generic_instance_parameter_dict = {'cache_access': cache_access,} -%}
 {% set slave_log_dict = {} -%}
 {% if extra_slave_instance_list -%}
@@ -13,6 +14,7 @@
 {% endif -%}
 [jinja2-template-base]
 recipe = slapos.recipe.template:jinja2
+extensions = jinja2.ext.do
 extra-context =
 context =
     key eggs_directory buildout:eggs-directory
@@ -25,39 +27,82 @@ context =
 {{ key }} = {{ value }}
 {% endfor %}
 
-# Loop trhought slave list to set up slaves
+[cadirectory]
+recipe = slapos.cookbook:mkdirectory
+requests = {{ custom_ssl_directory }}/requests/
+private = {{ custom_ssl_directory }}/private/
+certs = {{ custom_ssl_directory }}/certs/
+newcerts = {{ custom_ssl_directory }}/newcerts/
+crl = {{ custom_ssl_directory }}/crl/
+
+{# Loop throught slave list to set up slaves #}
 {% for slave_instance in slave_instance_list -%}
+{#   # Do all set and do upper, so it makes easy to read the file later #} 
 {%   set slave_reference = slave_instance.get('slave_reference') -%}
+{%   set slave_type = slave_instance.get('type', '') -%}
 {%   set slave_section_title = 'dynamic-template-slave-instance-%s' % slave_reference -%}
 {%   set slave_parameter_dict = generic_instance_parameter_dict.copy() -%}
 {%   set slave_publish_dict = {} -%}
 {%   set slave_configuration_section_name = 'slave-instance-%s-configuration' % slave_reference %}
-{%   do part_list.append(slave_section_title) -%}
+{%   set slave_logrotate_section = slave_reference + "-logs" -%}
+{%   set slave_password_section = slave_reference + "-password" -%}
+{%   set slave_ln_section = slave_reference + "-ln" -%}
+{%   set slave_htaccess_section = slave_reference + '-htaccess' %}
 
-############################
-#### Set Slave Log Directory and access
+{#   extend parts #}
+{%   do part_list.extend([slave_htaccess_section, slave_ln_section]) -%}
+{%   do part_list.extend([slave_logrotate_section, slave_section_title]) -%}
 
-{%   set slave_directory_section = slave_reference + "-directory" -%}
 {%   set slave_log_folder = logrotate_dict.get('backup') + '/' + slave_reference + "-logs" -%}
-[{{slave_directory_section}}]
-recipe = slapos.cookbook:mkdirectory
-log-folder = {{slave_log_folder}}
 
-# Set Up log files
+{#   Set Up log files #}
 {%   do slave_parameter_dict.__setitem__('access_log', '/'.join([apache_log_directory, '%s_access_log' % slave_reference])) -%}
 {%   do slave_parameter_dict.__setitem__('error_log', '/'.join([apache_log_directory, '%s_error_log' % slave_reference])) -%}
-{%       do slave_instance.__setitem__('access_log', slave_parameter_dict.get('access_log')) -%}
-{%       do slave_instance.__setitem__('error_log', slave_parameter_dict.get('error_log')) -%}
+{%   do slave_instance.__setitem__('access_log', slave_parameter_dict.get('access_log')) -%}
+{%   do slave_instance.__setitem__('error_log', slave_parameter_dict.get('error_log')) -%}
 
-# Set slave logrotate entry
-{%   set slave_logrotate_section = slave_reference + "-logs" -%}
-{%   do part_list.append(slave_logrotate_section) -%}
+{#   Add slave log directory to the slave log access dict #}
+{%   do slave_log_dict.__setitem__(slave_reference, slave_log_folder) %}
+
+{%   set slave_log_access_url = 'https://' + slave_reference + ':${'+ slave_password_section +':passwd}@[' + frontend_configuration.get('apache-ipv6') + ']:' + frontend_configuration.get('apache-https-port') + '/' + slave_reference.lower() + '/' %}
+{%   do slave_publish_dict.__setitem__('log-access', slave_log_access_url) %}
+{%   do slave_publish_dict.__setitem__('slave-reference', slave_reference) %}
+{%   do slave_publish_dict.__setitem__('public-ipv4', public_ipv4) %}
+
+{# Set slave domain if none was defined #}
+{%   if slave_instance.get('custom_domain', None) == None -%}
+{%     do slave_instance.__setitem__('custom_domain', "%s.%s" % (slave_instance.get('slave_reference').replace("-", "").lower(), slapparameter_dict.get('domain'))) -%}
+{%   endif -%}
+
+{%   set enable_cache = (('' ~ slave_instance.get('enable_cache', '')).lower() in TRUE_VALUES and slave_type != 'redirect') -%}
+{%   if enable_cache and 'url' in slave_instance -%}
+{%     if 'domain' in slave_instance -%}
+{%       do slave_instance.__setitem__('custom_domain', slave_instance.get('domain')) -%}
+{%     endif -%}
+{%     do slave_instance.__setitem__('backend_url', slave_instance.get('url')) -%}
+{%     do slave_instance.__setitem__('https_backend_url', slave_instance.get('https-url', slave_instance.get('url'))) -%}
+{%     do slave_instance.__setitem__('url', cache_access) -%}
+{%     do slave_instance.__setitem__('https-url', ssl_cache_access) -%}
+{%     do cached_server_dict.__setitem__(slave_reference, slave_configuration_section_name) -%}
+{%   endif -%}
+
+{%   if not slave_instance.has_key('apache_custom_http') %}
+{%     do slave_publish_dict.__setitem__('domain', slave_instance.get('custom_domain')) -%}
+{%     do slave_publish_dict.__setitem__('url', "http://%s" % slave_instance.get('custom_domain')) -%}
+{%     do slave_publish_dict.__setitem__('site_url', "http://%s" % slave_instance.get('custom_domain')) -%}
+{%     do slave_publish_dict.__setitem__('secure_access', 'https://%s' % slave_instance.get('custom_domain')) -%}
+{%   endif -%}
+
+[slave-log-directory]
+{{slave_reference}}-log-folder = {{ slave_log_folder }}
+
+{# Set slave logrotate entry #}
 [{{slave_logrotate_section}}]
 <= logrotate
 recipe = slapos.cookbook:logrotate.d
 name = ${:_buildout_section_name_}
 log = {{slave_parameter_dict.get('access_log')}} {{slave_parameter_dict.get('error_log')}}
-backup = {{ '${' + slave_directory_section + ':log-folder}' }}
+backup = {{ slave_log_folder }} 
 frequency = daily
 rotatep-num = 30
 post = {{ apache_configuration.get('frontend-graceful-command') }}
@@ -65,40 +110,29 @@ sharedscripts = true
 notifempty = true
 create = true
 
-# integrate current logs inside
-{%   set slave_ln_section = slave_reference + "-ln" -%}
-{%   do part_list.append(slave_ln_section) -%}
+{# integrate current logs inside #}
 [{{slave_ln_section}}]
 recipe = plone.recipe.command
 stop-on-error = false
-command = ln -s {{slave_parameter_dict.get('error_log')}} {{ '${' + slave_directory_section + ':log-folder}' }}/apache-error.log && ln -s {{slave_parameter_dict.get('access_log')}} {{ '${' + slave_directory_section + ':log-folder}' }}/apache-access.log
+command = ln -s {{slave_parameter_dict.get('error_log')}} {{ slave_log_folder }}/apache-error.log && ln -s {{slave_parameter_dict.get('access_log')}} {{ slave_log_folder }}/apache-access.log
 
-# Set password for slave
-{%   set slave_password_section = slave_reference + "-password" -%}
+{# Set password for slave #}
 [{{slave_password_section}}]
 recipe = slapos.cookbook:generate.password
 storage-path = {{apache_configuration_directory}}/.{{slave_reference}}.passwd
 bytes = 8
 
-# Set up htaccess file for slave
-{%   set slave_htaccess_section = slave_reference + '-htaccess' %}
-{%   do part_list.append(slave_htaccess_section) -%}
+{# Set up htaccess file for slave #}
 [{{slave_htaccess_section}}]
 recipe = plone.recipe.command
 stop-on-error = true
 htaccess-path = {{apache_configuration_directory}}/.{{slave_reference}}.htaccess
 command = {{frontend_configuration.get('apache-directory')}}/bin/htpasswd -cb ${:htaccess-path} {{ slave_reference }} {{ '${' + slave_password_section + ':passwd}' }}
 
-# Add slave log directory to the slave log access dict
-{%   do slave_log_dict.__setitem__(slave_reference, slave_log_folder) %}
+{# ################################################## #}
+{# Set Slave Certificates if needed                   #}
 
-{%   set slave_log_access_url = 'https://' + slave_reference + ':${'+ slave_password_section +':passwd}@[' + frontend_configuration.get('apache-ipv6') + ']:' + frontend_configuration.get('apache-https-port') + '/' + slave_reference.lower() + '/' %}
-{%   do slave_publish_dict.__setitem__('log-access', slave_log_access_url) %}
-
-############################
-#### Set Slave Certificates if needed
-
-# Set ssl certificates for each slave
+{# Set ssl certificates for each slave #}
 {%   for cert_name in ('ssl_ca_crt', 'ssl_csr', 'ssl_proxy_ca_crt')-%}
 {%     if cert_name in slave_instance -%}
 {%       set cert_title = '%s-%s' % (slave_reference, cert_name.replace('ssl_', '')) -%}
@@ -106,7 +140,7 @@ command = {{frontend_configuration.get('apache-directory')}}/bin/htpasswd -cb ${
 {%       do part_list.append(cert_title) -%}
 {%       do slave_parameter_dict.__setitem__(cert_name, cert_file) -%}
 {%       do slave_instance.__setitem__('path_to_' + cert_name, cert_file) -%}
-# Store certificates on fs
+{# Store certificates on fs #}
 [{{ cert_title }}]
 < = jinja2-template-base
 template = {{ empty_template }}
@@ -118,14 +152,6 @@ extra-context =
 value = {{ dumps(slave_instance.get(cert_name)) }}
 {%     endif -%}
 {%   endfor -%}
-
-[cadirectory]
-recipe = slapos.cookbook:mkdirectory
-requests = {{ custom_ssl_directory }}/requests/
-private = {{ custom_ssl_directory }}/private/
-certs = {{ custom_ssl_directory }}/certs/
-newcerts = {{ custom_ssl_directory }}/newcerts/
-crl = {{ custom_ssl_directory }}/crl/
 
 {%   if 'ssl_key' in slave_instance and 'ssl_crt' in slave_instance -%}
 {%     set cert_title = '%s-crt' % (slave_reference) -%}
@@ -154,93 +180,64 @@ key-content = {{ dumps(slave_instance.get('ssl_key')) }}
 cert-content = {{ dumps(slave_instance.get('ssl_crt')) }} 
 {%     endif -%}
 
-
-
-############################
-#### Set Slave Configuration
-
-{%   if slave_instance.has_key('apache_custom_http') %}
-#### Set Configuration for custom slaves
-
-# Set up apache configuration file for slave
-[{{ slave_section_title }}]
-< = jinja2-template-base
-template = {{ template_custom_slave_configuration }}
-filename = {{ '%s.conf' % slave_reference }}
-rendered = {{ apache_configuration_directory }}/${:filename}
-extra-context =
-    key apache_custom_https {{ 'slave-instance-%s-configuration:apache_custom_https' % slave_reference }}
-    key apache_custom_http {{ 'slave-instance-%s-configuration:apache_custom_http' % slave_reference }}
-    raw https_port {{ https_port }}
-    raw http_port {{ http_port }}
-{{ '\n' }}
-
-# The slave use cache
-{%     if 'enable_cache' in slave_instance and 'url' in slave_instance and 'domain' in slave_instance -%}
-{%       do slave_instance.__setitem__('custom_domain', slave_instance.get('domain')) -%}
-{%       do slave_instance.__setitem__('backend_url', slave_instance.get('url')) -%}
-{%       do slave_instance.__setitem__('https_backend_url', slave_instance.get('https-url', slave_instance.get('url'))) -%}
-{%       do cached_server_dict.__setitem__(slave_reference, slave_configuration_section_name) -%}
-{%     endif -%}
-
-# Set apache configuration value for slave
+{# ########################################## #}
+{# Set Slave Configuration                    #}
 [{{ slave_configuration_section_name }}]
-{%   set apache_custom_http = ((slave_instance.pop('apache_custom_http', '')) % slave_parameter_dict) -%}
-{%   set apache_custom_https = ((slave_instance.pop('apache_custom_https', '')) % slave_parameter_dict) -%}
+{%     set apache_custom_http = ((slave_instance.pop('apache_custom_http', '')) % slave_parameter_dict) -%}
+{%     set apache_custom_https = ((slave_instance.pop('apache_custom_https', '')) % slave_parameter_dict) -%}
 apache_custom_http = {{ dumps(apache_custom_http) }}
 apache_custom_https = {{ dumps(apache_custom_https) }}
-{%     for key, value in slave_instance.iteritems() -%}
-{{ key }} = {{ dumps(value) }}
-{%     endfor %}
 {{ '\n' }}
-
-# Publish information
-{%     do slave_publish_dict.update(**{'slave-reference':slave_instance.get('slave_reference'), 'public-ipv4':public_ipv4, 'log-access': slave_log_access_url}) %}
-
-{%   else %}
-#### Set Configuration for default slaves
-
-# Set slave domain if none was defined
-{%     if slave_instance.get('custom_domain', None) == None -%}
-{%       do slave_instance.__setitem__('custom_domain', "%s.%s" % (slave_instance.get('slave_reference').replace("-", "").lower(), slapparameter_dict.get('domain'))) -%}
-{%     endif -%}
-
-# The slave use cache
-# Next line is forbidden and people who copy it will be hanged short
-{%     set enable_cache = (('' ~ slave_instance.get('enable_cache', '')).lower() in TRUE_VALUES and slave_instance.get('type', '') != 'redirect') -%}
-{%     if enable_cache -%}
-{%       do slave_instance.__setitem__('backend_url', slave_instance.get('url')) -%}
-{%       do slave_instance.__setitem__('https_backend_url', slave_instance.get('https-url', slave_instance.get('url'))) -%}
-{%       do slave_instance.__setitem__('url', cache_access) -%}
-{%       do slave_instance.__setitem__('https-url', ssl_cache_access) -%}
-{%       do cached_server_dict.__setitem__(slave_reference, slave_configuration_section_name) -%}
-{%     endif -%}
-{%     do part_list.append(slave_section_title) -%}
-
-
-[{{ slave_configuration_section_name }}]
 {%     for key, value in slave_instance.iteritems() -%}
 {{ key }} = {{ dumps(value) }}
 {%     endfor %}
 
-# Set up slave configuration file
 [{{ slave_section_title }}]
 < = jinja2-template-base
-template = {{ template_default_slave_configuration }}
-filename = {{ '%s.conf' % slave_reference }}
+{%   if slave_type in NGINX_TYPE_LIST %}
+rendered = {{ nginx_configuration_directory }}/${:filename}
+{%   else %}
 rendered = {{ apache_configuration_directory }}/${:filename}
-extensions = jinja2.ext.do
+{%   endif %}
+
+
+{%   if apache_custom_http %}
+template = {{ template_custom_slave_configuration }}
+{%   elif slave_type == 'eventsource' %}
+template = {{ template_eventsource_slave_configuration }}
+{%   elif slave_type == 'notebook' %}
+template = {{ template_notebook_slave_configuration }}
+{%   else %}
+template = {{ template_default_slave_configuration }}
+{%   endif %}
+
+filename = {{ '%s.conf' % slave_reference }}
 extra-context =
-    section slave_parameter {{ slave_configuration_section_name }}
     raw https_port {{ https_port }}
     raw http_port {{ http_port }}
+    raw global_ipv6 {{ global_ipv6 }}
+    raw local_ipv4 {{ local_ipv4 }}
+    raw nginx_http_port {{ nginx_http_port }} 
+    raw nginx_https_port {{ nginx_https_port }}
+    section slave_parameter {{ slave_configuration_section_name }}
 {{ '\n' }}
-
-{%     do slave_publish_dict.update(**{'slave-reference':slave_instance.get('slave_reference'), 'public-ipv4':public_ipv4, 'domain':slave_instance.get('custom_domain'), 'url':"http://%s" % slave_instance.get('custom_domain'), 'site_url':"http://%s" % slave_instance.get('custom_domain'), 'secure_access': 'https://%s' % slave_instance.get('custom_domain')}) %}
-
+ 
+{# ###############################  #}
+{# Publish Slave Information        #}
+{%   if not extra_slave_instance_list -%}
+{%     set publish_section_title = 'publish-%s-connection-information' % slave_instance.get('slave_reference') -%}
+{%     do part_list.append(publish_section_title) -%}
+[{{ publish_section_title }}]
+recipe = slapos.cookbook:publish
+{%     for key, value in slave_publish_dict.iteritems() %}
+{{ key }} = {{ value }}
+{%     endfor %}
+{%   else -%}
+{%     do slave_instance_information_list.append(slave_publish_dict) -%}
 {%   endif -%}
+{% endfor -%}
 
-############################
+###############################################
 ### Prepare virtualhost for slaves using cache
 
 {% for slave_reference, slave_configuration_section_name in cached_server_dict.iteritems() %}
@@ -259,33 +256,14 @@ extra-context =
 {{ '\n' }}
 {% endfor %}
 
-
-############################
-#### Publish Slave Information
-
-# Publish slave information
-{%   if not extra_slave_instance_list -%}
-{%     set publish_section_title = 'publish-%s-connection-information' % slave_instance.get('slave_reference') -%}
-{%     do part_list.append(publish_section_title) -%}
-[{{ publish_section_title }}]
-recipe = slapos.cookbook:publish
-{%     for key, value in slave_publish_dict.iteritems() %}
-{{ key }} = {{ value }}
-{%     endfor %}
-{%   else -%}
-{%     do slave_instance_information_list.append(slave_publish_dict) -%}
-{%   endif -%}
-{% endfor -%}
-
 [slave-log-directories]
+recipe = slapos.cookbook:mkdirectory
 {% for key, value in slave_log_dict.iteritems() -%}
 {{ key }} = {{ value }}
 {% endfor %}
 
-# Define log access
-{% set log_access_section = "apache-log-access" %}
-{% do part_list.append(log_access_section) -%}
-[{{log_access_section}}]
+{# Define log access #}
+[apache-log-access]
 < = jinja2-template-base
 template = {{frontend_configuration.get('template-log-access')}}
 rendered = {{frontend_configuration.get('log-access-configuration')}}
@@ -294,7 +272,7 @@ extra-context =
     raw apache_log_directory {{apache_log_directory}}
     raw apache_configuration_directory {{apache_configuration_directory}}
 
-# Publish information for the instance
+{# Publish information for the instance #}
 {% set publish_section_title = 'publish-apache-information' -%}
 {% do part_list.append(publish_section_title) -%}
 [{{ publish_section_title }}]
@@ -308,9 +286,11 @@ monitor-base-url = {{ monitor_base_url }}
 
 [buildout]
 parts +=
+    slave-log-directories
 {% for part in part_list -%}
 {{ '    %s' % part }}
-{% endfor -%}
+{% endfor %}
+    apache-log-access
 
 eggs-directory = {{ eggs_directory }}
 develop-eggs-directory = {{ develop_eggs_directory }}

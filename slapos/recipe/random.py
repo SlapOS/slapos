@@ -1,7 +1,6 @@
-# vim: set et sts=2:
 ##############################################################################
 #
-# Copyright (c) 2012 Vifib SARL and Contributors. All Rights Reserved.
+# Copyright (c) 2016 Vifib SARL and Contributors. All Rights Reserved.
 #
 # WARNING: This program as such is intended to be used by professional
 # programmers who take the whole responsibility of assessing all potential
@@ -26,16 +25,61 @@
 #
 ##############################################################################
 
+"""
+Collects various random generators to be used in
+buildout Software Releases and Instances developments.
+"""
+
+from __future__ import absolute_import
+
 import errno
 import os
 import random
 import string
 
+from slapos.recipe.librecipe import GenericBaseRecipe
+
+class Time(object):
+  """Generate a random time from a 24h time clock"""
+
+  def __init__(self, buildout, name, options):
+    self.name = name
+    self.buildout = buildout
+    self.options = options
+    self.options['time'] = "%d:%d" % (random.randint(0, 23), random.randint(0, 59))
+
+  def install(self):
+    pass
+
+  update = install
+
+
+class Mac(GenericBaseRecipe):
+
+  def __init__(self, buildout, name, options):
+    if os.path.exists(options['storage-path']):
+      open_file = open(options['storage-path'], 'r')
+      options['mac-address'] = open_file.read()
+      open_file.close()
+
+    if options.get('mac-address', '') == '':
+      # First octet has to represent a locally administered address
+      octet_list = [254] + [random.randint(0x00, 0xff) for x in range(5)]
+      options['mac-address'] = ':'.join(['%02x' % x for x in octet_list])
+    return GenericBaseRecipe.__init__(self, buildout, name, options)
+
+  def install(self):
+    open_file = open(self.options['storage-path'], 'w')
+    open_file.write(self.options['mac-address'])
+    open_file.close()
+    return [self.options['storage-path']]
+
+
 def generatePassword(length):
   return ''.join(random.SystemRandom().sample(string.ascii_lowercase, length))
 
 
-class Recipe(object):
+class Password(object):
   """Generate a password that is only composed of lowercase letters
 
     This recipe only makes sure that ${:passwd} does not end up in `.installed`

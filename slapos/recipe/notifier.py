@@ -90,6 +90,9 @@ class Notify(GenericBaseRecipe):
     parameters.extend(notification_url.split(' '))
     parameters.extend(['--executable', executable])
     # For a more verbose mode, writing feed items for any action
+    instance_root_name = instance_root_name or self.options.get('instance-root-name', None)
+    log_url = log_url or self.options.get('log-url', None)
+    status_item_directory = status_item_directory or self.options.get('status-item-directory', None)
     if instance_root_name and log_url and status_item_directory:
       parameters.extend([
         '--instance-root-name', instance_root_name,

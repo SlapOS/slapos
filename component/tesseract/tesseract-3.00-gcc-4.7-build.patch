@@ -1,0 +1,10 @@
+--- tesseract-3.00/viewer/svutil.cpp.old	2012-04-11 09:34:26.168608940 +0200
++++ tesseract-3.00/viewer/svutil.cpp	2012-04-11 09:34:46.108565692 +0200
+@@ -21,6 +21,7 @@
+ // thread/process creation & synchronization and network connection.
+ 
+ #include <stdio.h>
++#include <unistd.h>
+ #ifdef WIN32
+ #include <windows.h>
+ #include <winsock.h>

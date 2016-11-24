@@ -2,4 +2,6 @@
 # takeover interface of the Resilient stack
 
 def main():
-  return {}
+  return {
+    'Read the log from the importer': '<a href="${:resilient-log-url}">${:resilient-log-url}</a>',
+  }

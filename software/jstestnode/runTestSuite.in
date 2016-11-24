@@ -7,6 +7,7 @@
 import argparse, os, re, shutil, subprocess, sys, traceback
 from erp5.util import taskdistribution
 from time import gmtime, strftime
+from lxml import etree
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
@@ -30,9 +31,44 @@ def main():
   parser.add_argument('--node_quantity', help='ignored', type=int)
   parser.add_argument('--master_url',
                       help='The Url of Master controling many suites')
+  parser.add_argument('--frontend_url',
+                      help='The url of frontend of the test suite')
+  parser.add_argument('--target',
+                      help='Target OS to run tests on',
+                      type=str)
+  parser.add_argument('--target_version',
+                      help='Target OS version to use',
+                      type=str,)
+  parser.add_argument('--target_browser',
+                      help='The desired browser of the target OS to be used. Example: Firefox if target is Android.',
+                      type=str,)
+  parser.add_argument('--target_device',
+                      help='The desired device running the target OS. Example: iPad Simulator, if target is iOS.',
+                      type=str,)
+  parser.add_argument('--appium_server_auth',
+                      help='Combination of user and token to access SauceLabs service. (i.e. user:token)',
+                      type=str)
 
   args = parser.parse_args()
 
+  import json
+  parsed_parameters = json.loads('$${instance-parameter:configuration._}')
+
+
+  if not getattr(args, 'target', None):
+    args.target = parsed_parameters.get('target', 'firefox')
+  if not getattr(args, 'test_suite', None):
+    args.test_suite = parsed_parameters.get('test-suite')
+  if not getattr(args, 'target_version', None):
+    args.target_version = parsed_parameters.get('target-version')
+  if not getattr(args, 'appium_server_auth', None):
+    args.appium_server_auth = parsed_parameters.get('appium-server-auth')
+  if not getattr(args, 'target_browser', None):
+    args.target_browser = parsed_parameters.get('target-browser')
+  if not getattr(args, 'target_device', None):
+    args.target_device = parsed_parameters.get('target-device')
+
+  is_browser_running = False
   try:
     test_suite_title = args.test_suite_title or args.test_suite
     test_suite = args.test_suite
@@ -47,12 +83,48 @@ def main():
 
     date = strftime("%Y/%m/%d %H:%M:%S", gmtime())
 
+  
     ##########################
     # Run all tests
     ##########################
-    firefox_binary = webdriver.firefox.firefox_binary.FirefoxBinary(firefox_path=FIREFOX_EXECUTABLE)
-    browser = webdriver.Firefox(firefox_binary=firefox_binary)
+    
+    is_appium = False
+    
+    if args.target == 'firefox':
+      firefox_binary = webdriver.firefox.firefox_binary.FirefoxBinary(firefox_path=FIREFOX_EXECUTABLE)
+      browser = webdriver.Firefox(firefox_binary=firefox_binary)
+    elif args.target in ['iOS', 'Android']:
+      # parameters for mobile emulators have different names then parameters for
+      # desktop OSes
+      is_appium = True
+      capabilities = {
+        'platformName': args.target,
+        'platformVersion': args.target_version,
+        'deviceName': args.target_device,
+        'browserName': args.target_browser
 
+      }
+    elif 'Windows' in args.target or 'OS X' in args.target:
+      # parameters for mobile emulators have different names then parameters for
+      # desktop OSes
+      is_appium = True
+      capabilities = {
+        'browserName': args.target_browser,
+        'platform': args.target,
+        'version': args.target_version
+      }
+    if is_appium:
+      if not args.appium_server_auth:
+        raise RuntimeError('--appium_server_auth is required.')
+      appium_url = "http://%s@ondemand.saucelabs.com/wd/hub" % (args.appium_server_auth)
+      browser = webdriver.Remote(appium_url, capabilities)
+
+      # adjust make path to testnode's frontend
+      full_path = '$${runTestSuite-instance:buildout-directory}/software_release/parts/%s' % parsed_parameters['test-url']
+      full_path = full_path.split('srv')[-1]
+      url = "%s%s" % (args.frontend_url, full_path)
+
+    is_browser_running = True
     agent = browser.execute_script("return navigator.userAgent")
     print agent
     print url
@@ -62,30 +134,39 @@ def main():
       By.XPATH, '//p[@id="qunit-testresult" and contains(text(), "completed")]')
     ))
 
-    browser.title.encode('UTF-8')
-    print browser.find_element_by_id("qunit-testresult").text
+    html_parser = etree.HTMLParser(recover=True)
+    body = etree.fromstring(browser.page_source.encode('UTF-8'), html_parser)
 
-    for elt in browser.find_elements_by_xpath('//ol[@id="qunit-tests"]/li'):
+    print ' '.join(body.xpath('//*[@id="qunit-testresult"]//text()'))
+
+    for elt in body.xpath('.//ol[@id="qunit-tests"]/li'):
       test_name = '%s: %s' % (
-        elt.find_element_by_xpath('.//span[@class="module-name"]').text,
-        elt.find_element_by_xpath('.//span[@class="test-name"]').text
+        elt.xpath('.//span[@class="module-name"]')[0].text,
+        elt.xpath('.//span[@class="test-name"]')[0].text
       )
-      print elt.get_attribute('class'), elt.find_element_by_tag_name('strong').text
+      print elt.get('class'), ''.join(elt.xpath('.//strong')[0].itertext())
       # print elt.find_element_by_tag_name('ol').get_attribute('innerHTML')
 
-      failure = int(elt.find_element_by_xpath('.//b[@class="failed"]').text)
-      success = int(elt.find_element_by_xpath('.//b[@class="passed"]').text)
+      failure = int(elt.xpath('.//b[@class="failed"]')[0].text)
+      success = int(elt.xpath('.//b[@class="passed"]')[0].text)
       test_line_dict[test_name] = {
         'test_count': success + failure,
         'error_count': 0,
         'failure_count': failure,
         'skip_count': 0,
-        'duration': int(elt.find_element_by_xpath('.//span[@class="runtime"]').text.split()[0]),
-        'command': elt.find_element_by_xpath('.//a[text()="Rerun"]').get_attribute('href'),
+        'duration': int(elt.xpath('.//span[@class="runtime"]')[0].text.split()[0]),
+        'command': elt.xpath('.//a[text()="Rerun"]')[0].get('href'),
         'stdout': agent,
         'stderr': '',
-        'html_test_result': elt.find_element_by_tag_name('ol').get_attribute('innerHTML')
+        'html_test_result': etree.tostring(elt.xpath('.//ol')[0])
       }
+
+    # do quit browser asap as we have results. this is required in case of timeout of
+    # remote appium service which will close test session of no command received within
+    # usually 90s and thus fail this script. And it costs processing time as well
+    # to keep test session needlessly opened.
+    browser.quit()
+    is_browser_running = False
 
     tool = taskdistribution.TaskDistributionTool(portal_url=args.master_url)
     test_result = tool.createTestResult(revision = revision,
@@ -93,7 +174,7 @@ def main():
                                         node_title = args.test_node_title,
                                         test_title = test_suite_title,
                                         project_title = args.project_title)
-    if test_result is None:
+    if test_result is None or not hasattr(args, 'master_url'):
       return
     # report test results
     while 1:
@@ -116,9 +197,12 @@ def main():
                   stdout='')
     # XXX: inform test node master of error
     raise EnvironmentError(result)
-
+  
   finally:
-    browser.quit()
+    if is_browser_running:
+      # if by any chance browser is still running due to
+      # traceback raised make sure we cleanup
+      browser.quit()
 
 if __name__ == "__main__":
     main()

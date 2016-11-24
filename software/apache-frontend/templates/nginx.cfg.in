@@ -1,0 +1,103 @@
+daemon off; # run in the foreground so supervisord can look after it
+
+worker_processes $${nginx-configuration:worker_processes};
+pid $${nginx-configuration:pid-file};
+
+events {
+  worker_connections $${nginx-configuration:worker_connections};
+  # multi_accept on;
+}
+
+error_log $${nginx-configuration:error_log};
+
+http {
+
+  ##
+  # Basic Settings
+  ##
+
+  sendfile on;
+  tcp_nopush on;
+  tcp_nodelay on;
+  keepalive_timeout 65;
+  types_hash_max_size 2048;
+  server_tokens off;
+
+  error_log $${nginx-configuration:error_log};
+  log_format custom '$remote_addr - $remote_user $time_local $status $body_bytes_sent "$http_referer" "$http_user_agent" $request_time';
+  access_log $${nginx-configuration:access_log} custom;
+
+  # server_names_hash_bucket_size 64;
+  # server_name_in_redirect off;
+
+  default_type application/octet-stream;
+
+  ssl_certificate $${ca-frontend:cert-file};
+  ssl_certificate_key $${ca-frontend:key-file};
+
+  ##
+  # Gzip Settings
+  ##
+  gzip on;
+  gzip_disable "msie6";
+
+  gzip_vary on;
+  gzip_proxied any;
+  gzip_comp_level 6;
+  gzip_buffers 16 8k;
+  gzip_http_version 1.1;
+  gzip_types text/plain text/css application/json application/x-javascript text/xml application/xml application/xml+rss text/javascript;
+  
+  ##
+  # Push stream Settings
+  ##
+  push_stream_shared_memory_size                32m;
+
+  fastcgi_temp_path  $${directory:varnginx} 1 2;
+  uwsgi_temp_path  $${directory:varnginx} 1 2;
+  scgi_temp_path  $${directory:varnginx} 1 2;
+
+  client_body_temp_path $${directory:varnginx} 1 2;
+  proxy_temp_path $${directory:varnginx} 1 2;
+
+  include $${nginx-configuration:slave-configuration-directory}/*.conf;
+
+  server {
+    listen [$${nginx-configuration:ip}]:$${nginx-configuration:plain_port};
+    listen $${nginx-configuration:local_ip}:$${nginx-configuration:plain_port};
+
+
+    ## Serve an error 204 (No Content) for favicon.ico
+    location = /favicon.ico {
+      return 204;
+    }
+
+    location / {
+      root $${apache-directory:document-root};
+      index notfound.html;
+    }
+  }
+
+  server {
+    listen [$${nginx-configuration:ip}]:$${nginx-configuration:port} ssl;
+    listen $${nginx-configuration:local_ip}:$${nginx-configuration:port} ssl;
+
+    ssl on;
+  
+    ssl_session_timeout 5m;
+    ssl_protocols TLSv1 TLSv1.1 TLSv1.2;
+    ssl_ciphers 'ECDH+AESGCM:DH+AESGCM:ECDH+AES256:DH+AES256:ECDH+AES128:DH+AES:ECDH+3DES:DH+3DES:RSA+AESGCM:RSA+AES:RSA+3DES:HIGH:!aNULL:!MD5';
+    ssl_prefer_server_ciphers on;
+    ssl_session_cache shared:SSL:10m;
+
+    ## Serve an error 204 (No Content) for favicon.ico
+    location = /favicon.ico {
+      return 204;
+    }
+
+    location / {
+      root $${apache-directory:document-root};
+      index notfound.html;
+    }
+  }
+}

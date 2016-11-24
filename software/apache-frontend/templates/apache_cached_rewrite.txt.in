@@ -1,3 +1,0 @@
-{% for server_tuple in server_dict.items() -%}
-{{ "%s %s" % server_tuple }}
-{% endfor -%}

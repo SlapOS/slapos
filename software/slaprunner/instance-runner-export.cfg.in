@@ -1,6 +1,6 @@
 [buildout]
-extends = template-runner.cfg
-          ${pbsready-export:output}
+extends = {{ template_runner_path }}
+          {{ pbsready_export_template_path }}
 
 parts +=
   nginx_conf
@@ -41,51 +41,51 @@ parts +=
 recipe = slapos.cookbook:free_port
 minimum = 49980
 maximum = 49989
-ip = $${slap-network-information:local-ipv4}
+ip = ${slap-network-information:local-ipv4}
 
 [runner-free-port]
 recipe = slapos.cookbook:free_port
 minimum = 50005
 maximum = 50014
-ip = $${slap-network-information:global-ipv6}
+ip = ${slap-network-information:global-ipv6}
 
 [slaprunner]
-proxy_port = $${proxy-free-port:port}
-runner_port = $${runner-free-port:port}
+proxy_port = ${proxy-free-port:port}
+runner_port = ${runner-free-port:port}
 
 [supervisord-free-port]
 recipe = slapos.cookbook:free_port
 minimum = 39986
 maximum = 39995
-ip = $${slaprunner:ipv4}
+ip = ${slaprunner:ipv4}
 
 [supervisord]
-port = $${supervisord-free-port:port}
+port = ${supervisord-free-port:port}
 
 [exporter]
 recipe = slapos.recipe.template:jinja2
-template = ${template-runner-export-script:location}/${template-runner-export-script:filename}
-rendered = $${directory:bin}/$${slap-parameter:namebase}-exporter
+template = {{ exporter_script_path }}
+rendered = ${directory:bin}/${slap-parameter:namebase}-exporter
 # backward compatibility for resilient stack
-wrapper = $${:rendered}
+wrapper = ${:rendered}
 mode = 700
 context =
   section directory directory
-  raw  output_log_file $${directory:log}/resilient.log
-  raw  shell_binary ${bash:location}/bin/bash
-  raw  rsync_binary ${rsync:location}/bin/rsync
+  raw  output_log_file ${directory:log}/resilient.log
+  raw  shell_binary {{ bash_executable_location }}
+  raw  rsync_binary {{ rsync_executable_location }}
 
 [monitor-httpd-free-port]
 recipe = slapos.cookbook:free_port
 minimum = 8437
 maximum = 8446
-ip = $${slap-network-information:global-ipv6}
+ip = ${slap-network-information:global-ipv6}
 
 [monitor-instance-parameter]
-monitor-httpd-port = $${monitor-httpd-free-port:port}
+monitor-httpd-port = ${monitor-httpd-free-port:port}
 # Pass some parameter to dispay in monitoring interface
 instance-configuration =
-  httpdcors cors-domain $${slaprunner-httpd-cors:location} $${httpd-graceful-wrapper:output}
+  httpdcors cors-domain ${slaprunner-httpd-cors:location} ${httpd-graceful-wrapper:output}
 
 # Extends publish section with resilient parameters
 [publish-connection-information]
@@ -93,11 +93,11 @@ instance-configuration =
 
 [monitor-check-resilient-feed-file]
 recipe = slapos.recipe.template:jinja2
-template = ${template-monitor-check-resilient-feed:location}/${template-monitor-check-resilient-feed:filename}
-rendered = $${monitor-directory:reports}/check-create-resilient-feed-files
+template = {{ monitor_check_resilient_feed_template_path }}
+rendered = ${monitor-directory:reports}/check-create-resilient-feed-files
 mode = 700
 context =
   key input_feed_directory directory:notifier-feeds
   key monitor_feed_directory monitor-directory:public
-  raw base_url http://[$${notifier:host}]:$${notifier:port}/get/
+  raw base_url http://[${notifier:host}]:${notifier:port}/get/
   raw python_executable ${buildout:executable}

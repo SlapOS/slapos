@@ -8,8 +8,13 @@ parts =
   logrotate
   logrotate-entry-cron
   logrotate-entry-equeue
+  logrotate-entry-notifier
+  logrotate-entry-resilient
   cron
   cron-entry-logrotate
+  cron-entry-notifier-status-feed
+  notifier-feed-status-promise
+  notifier-stalled-promise
   resilient-sshkeys-authority
   sshd-raw-server
   sshd-graceful

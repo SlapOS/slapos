@@ -7,6 +7,8 @@ ServerName {{ domain }}
 DocumentRoot {{ document_root }}
 ServerRoot {{ instance_home }}
 
+{{ "Listen %s:%s" % (ipv4_addr, cached_port)  }}
+{{ "Listen %s:%s" % (ipv4_addr, ssl_cached_port)  }}
 {% for ip in (ipv4_addr, "[%s]" % ipv6_addr) -%}
 {%   for port in (http_port, https_port) -%}
 {{ "Listen %s:%s" % (ip, port)  }}
@@ -137,6 +139,10 @@ include {{frontend_configuration.get('log-access-configuration')}}
 NameVirtualHost *:{{ http_port }}
 NameVirtualHost *:{{ https_port }}
 include {{ slave_configuration_directory }}/*.conf
+
+NameVirtualHost *:{{ cached_port }}
+NameVirtualHost *:{{ ssl_cached_port }}
+include {{ slave_with_cache_configuration_directory }}/*.conf
 
 ErrorDocument 404 /notfound.html
 RewriteRule (.*) /notfound.html [R=404,L]
