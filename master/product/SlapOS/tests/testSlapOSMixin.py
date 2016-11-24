@@ -150,7 +150,7 @@ class testSlapOSMixin(ERP5TypeTestCase):
     self.portal.portal_caches.updateCache()
     if getattr(self.portal, 'is_site_bootstrapped', 0):
       for alarm in self.portal.portal_alarms.contentValues():
-        if alarm_id.startswith("promise_slapos"):
+        if alarm.getId().startswith("promise_slapos"):
            alarm.solve()
       return
     else:
@@ -158,6 +158,8 @@ class testSlapOSMixin(ERP5TypeTestCase):
       self.bootstrapSite()
       self.portal._p_changed = 1
       transaction.commit()
+    
+    
 
   def deSetUpPersistentDummyMailHost(self):
     if 'MailHost' in self.portal.objectIds():
