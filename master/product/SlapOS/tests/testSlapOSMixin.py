@@ -149,6 +149,9 @@ class testSlapOSMixin(ERP5TypeTestCase):
     transaction.commit()
     self.portal.portal_caches.updateCache()
     if getattr(self.portal, 'is_site_bootstrapped', 0):
+      for alarm in self.portal.portal_alarms.contentValues():
+        if alarm_id.startswith("promise_slapos"):
+           alarm.solve()
       return
     else:
       self.portal.is_site_bootstrapped = 1
