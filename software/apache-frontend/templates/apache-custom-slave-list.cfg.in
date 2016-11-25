@@ -71,7 +71,12 @@ crl = {{ custom_ssl_directory }}/crl/
 
 {# Set slave domain if none was defined #}
 {%   if slave_instance.get('custom_domain', None) == None -%}
-{%     do slave_instance.__setitem__('custom_domain', "%s.%s" % (slave_instance.get('slave_reference').replace("-", "").lower(), slapparameter_dict.get('domain'))) -%}
+{%     set domain_prefix = slave_instance.get('slave_reference').replace("-", "").lower() -%}
+{%     if slave_type in NGINX_TYPE_LIST -%}
+{%       do slave_instance.__setitem__('custom_domain', "%s.%s" % (domain_prefix, slapparameter_dict.get('nginx-domain', slapparameter_dict.get('domain')))) -%}
+{%     else -%}
+{%       do slave_instance.__setitem__('custom_domain', "%s.%s" % (domain_prefix, slapparameter_dict.get('domain'))) -%}
+{%     endif -%}
 {%   endif -%}
 
 {%   set enable_cache = (('' ~ slave_instance.get('enable_cache', '')).lower() in TRUE_VALUES and slave_type != 'redirect') -%}
