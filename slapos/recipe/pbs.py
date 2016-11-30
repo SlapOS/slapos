@@ -87,9 +87,7 @@ class Recipe(GenericSlapRecipe, Notify, Callback):
                 --restore-as-of now \\
                 --force \\
                 %(local_dir)s \\
-                %(remote_dir)s; do
-          echo "repeating rdiff-backup..."
-          sleep 10
+                %(remote_dir)s
         """)
 
     template_dict = {
