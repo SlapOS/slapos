@@ -99,6 +99,8 @@ def partitiondict2partition(partition):
   slap_partition._need_modification = 0
   slap_partition._instance_guid = '%s-%s' % (partition['computer_reference'], partition['reference'])
 
+  root_partition = getRootPartition(partition['reference'])
+
   if partition['software_release']:
     slap_partition._need_modification = 1
     slap_partition._requested_state = partition['requested_state']
@@ -113,6 +115,10 @@ def partitiondict2partition(partition):
     slap_partition._parameter_dict['full_address_list'] = full_address_list
     slap_partition._parameter_dict['slap_software_type'] = \
         partition['software_type']
+    slap_partition._parameter_dict['instance_title'] = \
+        partition['partition_reference']
+    slap_partition._parameter_dict['root_instance_title'] = \
+        root_partition['partition_reference']
     if partition['slave_instance_list'] is not None:
       slap_partition._parameter_dict['slave_instance_list'] = \
           xml_marshaller.xml_marshaller.loads(partition['slave_instance_list'])
