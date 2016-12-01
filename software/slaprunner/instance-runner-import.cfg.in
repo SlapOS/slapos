@@ -172,6 +172,19 @@ instance-configuration =
   raw takeover-url http://[$${resilient-web-takeover-httpd-configuration-file:listening-ip}]:$${resilient-web-takeover-httpd-configuration-file:listening-port}/
   raw takeover-password $${resilient-web-takeover-password:passwd}
 
+[post-takeover-hook]
+recipe = collective.recipe.template
+supervisor-command = $${directory:bin}/supervisorctl -c $${slaprunner:supervisord_config}
+input = inline:
+  #!/bin/sh
+  $${:supervisor-command} restart slapproxy
+  $${:supervisor-command} start slapgrid-cp
+output = $${directory:bin}/runner-post-takeover
+mode = 0700
+
+[resiliency-takeover-script]
+post-takeover-hook = $${post-takeover-hook:output}
+
 [monitor-conf-parameters]
 private-path-list += 
   $${directory:logrotate-backup}
