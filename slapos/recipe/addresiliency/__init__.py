@@ -54,6 +54,7 @@ class Recipe(GenericSlapRecipe):
                 'software': slap_connection['software-release-url'],
                 'namebase': self.parameter_dict['namebase'],
                 'takeover_triggered_file_path': self.options['takeover-triggered-file-path'],
+                'post_takeover_hook': self.options.get('post-takeover-hook', ''),
             })
 
         path_list.append(takeover_wrapper)
