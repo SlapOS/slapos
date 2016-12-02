@@ -293,7 +293,7 @@ wrapper-path = ${directory:bin}/monitor-globalstate
 [monitor-configurator-wrapper]
 recipe = slapos.cookbook:wrapper
 # XXX - hard coded path
-command-line = {{ monitor_configwrite }} --config_folder '${monitor-conf-parameters:private-folder}/config/.jio_documents' --output_cfg_file '${monitor-instance-parameter:configuration-file-path}' --htpasswd_bin '{{ apache_location }}/bin/htpasswd'
+command-line = {{ monitor_configwrite }} --config_folder '${monitor-conf-parameters:private-folder}/config/.jio_documents' --output_cfg_file '${monitor-instance-parameter:configuration-file-path}' --htpasswd_bin '{{ apache_location }}/bin/htpasswd' --monitor_https_cors {{ monitor_https_cors }}
 wrapper-path = ${directory:bin}/monitor-configurator
 
 [monitor-globalstate-cron-entry]
