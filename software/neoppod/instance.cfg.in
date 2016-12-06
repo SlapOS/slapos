@@ -1,5 +1,7 @@
 [buildout]
 extends = {{ instance_common_cfg }}
+parts = 
+  neoctl-shortcut
 
 [jinja2-template-base]
 rendered = ${buildout:parts-directory}/${:_buildout_section_name_}.cfg
@@ -23,3 +25,34 @@ default = neo-cluster:rendered
 # BBB
 RootSoftwareInstance = ${:default}
 neo = neo-storage-mysql:rendered
+
+[instance-parameter]
+# Fetch arbitrary parameters defined by the user in SlapOS Master for his instance.
+# We use the slapconfiguration recipe with a few parameters (partition id,
+# computer id, certificate, etc).
+# It will then authenticate to SlapOS Master and fetch the instance parameters.
+# The parameters are accessible from ${instance-parameter:configuration.name-of-parameter}
+# Always the same. Just copy/paste.
+# See docstring of slapos.cookbook:slapconfiguration for more information.
+recipe = slapos.cookbook:slapconfiguration
+computer = ${slap_connection:computer_id}
+partition = ${slap_connection:partition_id}
+url = ${slap_connection:server_url}
+key = ${slap_connection:key_file}
+cert = ${slap_connection:cert_file}
+
+
+[neoctl-shortcut]
+recipe = slapos.cookbook:wrapper
+key = ${buildout:directory}/etc/neo.key
+cert = ${buildout:directory}/etc/neo.crt
+ca = ${buildout:directory}/etc/ca.crt
+bin = ${buildout:directory}/bin
+#target-script-dir = ${buildout:eggs-directory}/../bin
+target-script-dir = {{ script_directory }}/bin
+
+command-line =
+#  echo ${:key}
+   python ${:target-script-dir}/neoctl -a ${instance-parameter:ipv6}:2050 
+         --ca ${:ca} --cert ${:cert} --key ${:key} "$@"
+wrapper-path = ${:bin}/neoctl
