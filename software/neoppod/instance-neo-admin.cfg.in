@@ -2,6 +2,7 @@
 parts +=
   neo-admin-promise
   logrotate-admin
+  neoctl
 
 [neo-admin]
 recipe = slapos.cookbook:neoppod.admin
@@ -27,3 +28,15 @@ backup = ${logrotate:backup}
 name = neo-admin
 log = ${neo-admin:logfile}
 post = {{ bin_directory }}/slapos-kill -n neoadmin -s RTMIN+1 ${:log}
+
+[neoctl]
+recipe = slapos.cookbook:wrapper
+command-line =
+  {{bin_directory}}/neoctl -a ${neo-admin:ip}:${neo-admin:port} 
+{%- if slapparameter_dict['ssl'] %}
+    --ca ${directory:etc}/ca.crt
+    --cert ${directory:etc}/neo.crt
+    --key ${directory:etc}/neo.key
+{%- endif %}
+parameters-extra = True
+wrapper-path = ${directory:bin}/neoctl
