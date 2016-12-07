@@ -39,6 +39,9 @@ class Recipe(GenericBaseRecipe):
       'curl_path': self.options['curl_path'],
       'check_secure': self.options.get('check-secure', 0),
       'http_code': self.options.get('http_code', '200'),
+      'ca-cert-file': self.options.get('ca-cert-file', ''),
+      'cert-file': self.options.get('cert-file', ''),
+      'key-file': self.options.get('key-file', ''),
     }
 
     # XXX-Cedric in this script, curl won't check certificate

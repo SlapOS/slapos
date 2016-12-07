@@ -3,13 +3,20 @@
 # BEWARE: It will be overwritten automatically
 
 URL="%(url)s"
+CA_CERT="%(ca-cert-file)s"
+CERT="%(cert-file)s"
+KEY="%(key-file)s"
 
 if [ -z "$URL" ]; then
   echo "No URL specified." >&2
   exit 3
 fi
 
-CODE=$(%(curl_path)s -g -k -sL $URL -w %%{http_code} --max-time 10 -o /dev/null)
+if [ -z "$CA_CERT" ] || [ -z "$CERT" ] || [ -z "$KEY" ]; then
+  CODE=$(%(curl_path)s -g -k -sL $URL -w %%{http_code} --max-time 10 -o /dev/null)
+else
+  CODE=$(%(curl_path)s -g -k -sL $URL -w %%{http_code} --max-time 10 -o /dev/null --cacert $CA_CERT --cert $CERT --key $KEY)
+fi
 
 if [ $? -eq 3 ]; then
   echo "URL malformed: $URL." >&2
