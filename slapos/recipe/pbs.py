@@ -65,6 +65,7 @@ def promise(args):
 
 class Recipe(GenericSlapRecipe, Notify, Callback):
   def _options(self, options):
+    options['rdiff-backup-data-folder'] = ""
     if 'slave-instance-list' in options:
       for slave in json.loads(options['slave-instance-list']):
         if slave['type'] == 'pull':
