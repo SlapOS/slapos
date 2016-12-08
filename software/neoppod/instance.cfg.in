@@ -48,7 +48,6 @@ ca = ${buildout:directory}/etc/ca.crt
 target-script-dir = {{ script_directory }}/bin
 
 command-line =
-#  echo ${:key}
    python ${:target-script-dir}/neoctl -a [${instance-parameter:ipv6-random}]:2050 
          --ca ${:ca} --cert ${:cert} --key ${:key}
 parameters-extra = True
