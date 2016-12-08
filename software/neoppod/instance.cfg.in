@@ -40,8 +40,6 @@ recipe = slapos.cookbook:mkdirectory
 bin = ${buildout:directory}/bin
 etc = ${buildout:directory}/etc
 
-
-
 [neoctl-shortcut]
 recipe = slapos.cookbook:wrapper
 key = ${buildout:directory}/etc/neo.key
@@ -51,6 +49,7 @@ target-script-dir = {{ script_directory }}/bin
 
 command-line =
 #  echo ${:key}
-   python ${:target-script-dir}/neoctl -a ${instance-parameter:ipv6-random}:2050 
-         --ca ${:ca} --cert ${:cert} --key ${:key} "$@"
+   python ${:target-script-dir}/neoctl -a [${instance-parameter:ipv6-random}]:2050 
+         --ca ${:ca} --cert ${:cert} --key ${:key}
+parameters-extra = True
 wrapper-path = ${directory:bin}/neoctl
