@@ -1,0 +1,10 @@
+<base_category_list>
+ <portal_type id="Trial Request">
+  <item>aggregate</item>
+  <item>causality</item>
+  <item>specialise</item>
+ </portal_type>
+ <portal_type id="Trial Request Module">
+  <item>business_application</item>
+ </portal_type>
+</base_category_list>

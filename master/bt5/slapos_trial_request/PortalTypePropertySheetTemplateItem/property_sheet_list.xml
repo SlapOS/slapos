@@ -1,0 +1,9 @@
+<property_sheet_list>
+ <portal_type id="Trial Request">
+  <item>Organisation</item>
+  <item>Reference</item>
+  <item>Task</item>
+  <item>TextDocument</item>
+  <item>Url</item>
+ </portal_type>
+</property_sheet_list>

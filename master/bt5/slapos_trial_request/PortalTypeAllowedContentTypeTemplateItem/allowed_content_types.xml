@@ -1,0 +1,8 @@
+<allowed_content_type_list>
+ <portal_type id="Trial Request">
+  <item>Email</item>
+ </portal_type>
+ <portal_type id="Trial Request Module">
+  <item>Trial Request</item>
+ </portal_type>
+</allowed_content_type_list>

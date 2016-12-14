@@ -1,0 +1,6 @@
+<workflow_chain>
+ <chain>
+  <type>Trial Request</type>
+  <workflow>edit_workflow, trial_request_workflow</workflow>
+ </chain>
+</workflow_chain>
