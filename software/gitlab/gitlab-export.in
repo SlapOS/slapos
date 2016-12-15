@@ -1,0 +1,24 @@
+#!{{ bash.location }}/bin/bash -e
+# export gitlab site via `gitlab-backup pull` to a "for-export" git-backup repository
+# gitlab-export <exportto-repo>
+#
+# NOTE gitlab-backup, gitlab-rails, ... all have to be on $PATH.
+#      which site to export is determined by which gitlab-rails is on $PATH.
+
+if [ "$#" -ne 1 ]; then
+    echo "Usage: gitlab-export <exportto-repo>" 1>&2
+    exit 1
+fi
+exportto_repo="$1"
+
+# create / setup export repository if it does not exist yet
+mkdir -p "$exportto_repo"
+
+cd "$exportto_repo"
+
+# verify we are in a git repository
+if ! git rev-parse --is-inside-git-dir ; then
+  git init --bare
+fi
+
+exec gitlab-backup pull
