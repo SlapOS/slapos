@@ -85,6 +85,12 @@ Alias /share {{ parameters.runner_home }}
     AuthType Basic
     AuthName "Webrunner Dav"
     AuthUserFile "{{ parameters.htpasswd_file }}"
+
+    # Prevent using the web browser cache if requesting  the same document
+    # from different domains or with different users
+    Header set Cache-Control "private, max-age=0, must-revalidate"
+    Header set Vary "Origin,Cookie,Authorization"
+
     <LimitExcept OPTIONS>
         Require valid-user
     </LimitExcept>
