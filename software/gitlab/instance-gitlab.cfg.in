@@ -30,6 +30,7 @@ parts =
     service-redis
 
     service-cron
+    cron-entry-gitlab-backup
 
     on-reinstantiate
 
@@ -64,6 +65,8 @@ configuration.nginx_worker_processes    = {{ multiprocessing.cpu_count() }}
 
 # gitlab non-native parameters
 configuration.icp_license  =
+# cron frequency for gitlab backup (default: every 4h)
+configuration.backup_frequency  = 0 */4 * * *
 
 
 
@@ -838,6 +841,11 @@ time    = daily
 command = ${logrotate:wrapper}
 
 
+[cron-entry-gitlab-backup]
+<= cron-entry
+# run backup script on a regular basis (given as instance parameter)
+frequency = ${instance-parameter:configuration.backup_frequency}
+command = {{ gitlab_backup_pull }}
 
 # 6. on-reinstantiate actions
 

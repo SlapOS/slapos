@@ -50,6 +50,8 @@ context =
     raw ruby_location               ${bundler-4gitlab:ruby-location}
     raw watcher_sigkill             ${watcher-sigkill:rendered}
 
+    raw gitlab_backup_pull          $${gitlab-backup-pull:wrapper-path}
+
 # config files
     raw database_yml_in             ${database.yml.in:target}
     raw gitconfig_in                ${gitconfig.in:target}
@@ -64,3 +66,33 @@ context =
     raw resque_yml_in               ${resque.yml.in:target}
     raw smtp_settings_rb_in         ${smtp_settings.rb.in:target}
     raw unicorn_rb_in               ${unicorn.rb.in:target}
+
+
+[gitlab-backup-directory]
+recipe            = slapos.cookbook:mkdirectory
+srv               = $${buildout:directory}/srv
+backup            = $${:srv}/backup
+backup-gitlab.git = $${:backup}/backup-gitlab.git
+var               = $${buildout:directory}/var
+pid               = $${:var}/pid
+
+
+[gitlab-backup-pull-unwrapped]
+recipe      = slapos.recipe.template:jinja2
+mode        = 0770
+template    = ${gitlab-backup-pull.in:target}
+rendered    = $${buildout:directory}/bin/unwrapped-gitlab-backup-pull
+context     =
+# XXX remove /usr/bin below? this is currently useful for command `which`
+    raw env_path      /usr/bin:${coreutils:location}/bin:${grep:location}/bin:${tar:location}/bin:${gzip:location}/bin:$${buildout:directory}/bin:${gopath:bin-directory}:${git:location}/bin:${xnice-repository:location}/bin
+    raw backup_repo   $${gitlab-backup-directory:backup-gitlab.git}
+    raw bash_bin      ${bash:location}/bin/bash
+
+[gitlab-backup-pull]
+recipe        = slapos.cookbook:wrapper
+pidfile       = $${gitlab-backup-directory:pid}/gitlab-backup-pull.pid
+wrapper-path  = $${buildout:directory}/bin/gitlab-backup-pull
+# NOTE we perform db setup / migrations as part of unicorn startup.
+# Those operations require PG and Redis to be up and running already, that's
+# why we do it here. See gitlab-unicorn-startup for details.
+command-line  = $${gitlab-backup-pull-unwrapped:rendered}

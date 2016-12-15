@@ -1,0 +1,19 @@
+#!{{ bash_bin }}
+
+export PATH="{{ env_path }}"
+
+# avoid concurrent calls (by using a pid file as lock), thanks to the
+# generic recipe:
+# https://lab.nexedi.com/nexedi/slapos/blob/fb8912e8/slapos/recipe/librecipe/generic.py#L154
+# XXX: this is not a 100% reliable protection against race conditions
+
+# create the backup repo if needed (in case it was deleted, for example)
+mkdir -p "{{ backup_repo }}"
+cd "{{ backup_repo }}"
+
+# verify we are in a git repository
+if ! git rev-parse --is-inside-git-dir ; then
+  git init --bare
+fi
+
+xnice gitlab-backup pull
