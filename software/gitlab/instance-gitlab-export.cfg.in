@@ -1,0 +1,37 @@
+# GitLab instance + site export support
+[buildout]
+extends = {{ instance_gitlab_cfg }}
+# TODO + ${pbsready-export:output}
+
+parts +=
+    cron-entry-gitlab-backup
+
+# -export specific instance parameters
+[instance-parameter]
+# cron frequency for gitlab backup (default: every 4h)
+configuration.backup_frequency  = 0 */4 * * *
+
+[gitlab-backup-directory]
+recipe            = slapos.cookbook:mkdirectory
+srv               = ${buildout:directory}/srv
+backup            = ${:srv}/backup
+backup-gitlab.git = ${:backup}/backup-gitlab.git
+var               = ${buildout:directory}/var
+pid               = ${:var}/pid
+
+# instance exporter script
+[exporter]
+recipe        = slapos.cookbook:wrapper
+wrapper-path  = ${buildout:directory}/bin/gitlab-exporter
+command-line  = {{ xnice_repository_location }}/bin/xnice {{ gitlab_export }} ${gitlab-backup-directory:backup-gitlab.git}
+pidfile       = ${gitlab-backup-directory:pid}/gitlab-exporter.pid
+environment   =
+# XXX: `/usr/bin` has to be in the PATH environment variable to be able to use
+# `which` command in gitlab-backup, `chrt` in xnice, ...
+  PATH=/usr/bin:${buildout:directory}/bin:{{ coreutils_location }}/bin:{{ grep_location }}/bin:{{ tar_location }}/bin:{{ gzip_location }}/bin:{{ gopath_bin }}:{{ git_location }}/bin
+
+[cron-entry-gitlab-backup]
+<= cron-entry
+# run backup script on a regular basis (given as instance parameter)
+frequency = ${instance-parameter:configuration.backup_frequency}
+command	= ${exporter:wrapper-path}
