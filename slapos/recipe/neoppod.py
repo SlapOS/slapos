@@ -43,7 +43,6 @@ class NeoBaseRecipe(GenericBaseRecipe):
       # useful, as per NEO deploying constraints.
       raise UserError('"masters" parameter is mandatory')
     option_list = [
-      options['binary'],
       '-l', options['logfile'],
       '-m', options['masters'],
       '-b', self._getBindingAddress(),
@@ -59,9 +58,9 @@ class NeoBaseRecipe(GenericBaseRecipe):
         '--key', etc + 'neo.key',
         )
     option_list.extend(self._getOptionList())
-    return [self.createPythonScript(
+    return [self.createWrapper(
       options['wrapper'],
-      'slapos.recipe.librecipe.execute.execute',
+      options['binary'],
       option_list
     )]
 
