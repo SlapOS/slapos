@@ -2,7 +2,7 @@
 # see:
 # https://gitlab.com/gitlab-org/gitlab-ce/blob/master/config/initializers/smtp_settings.rb.sample
 # https://gitlab.com/gitlab-org/omnibus-gitlab/blob/master/files/gitlab-cookbooks/gitlab/templates/default/smtp_settings.rb.erb
-# (last updated for omnibus-gitlab 8.7.9+ce.1-0-gf589ad7)
+# (last updated for omnibus-gitlab 8.8.9+ce.0-g25376053)
 
 {% from 'macrolib.cfg.in' import cfg, cfg_bool  with context %}
 
