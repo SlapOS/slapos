@@ -1,6 +1,13 @@
 Changes
 =======
 
+1.0.44 (2016-12-30)
+-------------------
+
+ * pbs: handles the fact that some parameters are not present when slaves are down
+ * recipe: allow usage of pidfile in wrapper recipe
+ * sshd: fix generation of authorized_keys
+
 1.0.43 (2016-11-24)
 -------------------
 
