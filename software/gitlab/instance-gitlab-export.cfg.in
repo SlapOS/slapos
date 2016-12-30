@@ -28,7 +28,8 @@ pidfile       = ${gitlab-backup-directory:pid}/gitlab-exporter.pid
 environment   =
 # XXX: `/usr/bin` has to be in the PATH environment variable to be able to use
 # `which` command in gitlab-backup, `chrt` in xnice, ...
-  PATH=/usr/bin:${buildout:directory}/bin:{{ coreutils_location }}/bin:{{ grep_location }}/bin:{{ tar_location }}/bin:{{ gzip_location }}/bin:{{ gopath_bin }}:{{ git_location }}/bin
+# and `/bin` for `sed` command in gitlab-backup restore
+  PATH=/bin:/usr/bin:${buildout:directory}/bin:{{ coreutils_location }}/bin:{{ grep_location }}/bin:{{ tar_location }}/bin:{{ gzip_location }}/bin:{{ gopath_bin }}:{{ git_location }}/bin
 
 [cron-entry-gitlab-backup]
 <= cron-entry
