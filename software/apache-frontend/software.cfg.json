@@ -23,7 +23,7 @@
 			"title": "Default",
                         "software-type": "default",
 			"description": "Default",
-			"request": "instance-slave-apache-input-schema.json",
+			"request": "instance-apache-input-schema.json",
 			"response": "instance-output-schema.json",
 			"index": 3
 		},
@@ -33,8 +33,8 @@
 			"description": "Default",
 			"request": "instance-slave-apache-input-schema.json",
 			"response": "instance-output-schema.json",
-			"index": 3,
-            "shared": true
+			"index": 4,
+                        "shared": true
 		}
 	}
 }

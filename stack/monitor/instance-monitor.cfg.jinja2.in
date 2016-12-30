@@ -293,7 +293,7 @@ wrapper-path = ${directory:bin}/monitor-globalstate
 [monitor-configurator-wrapper]
 recipe = slapos.cookbook:wrapper
 # XXX - hard coded path
-command-line = {{ monitor_configwrite }} --config_folder '${monitor-conf-parameters:private-folder}/config/.jio_documents' --output_cfg_file '${monitor-instance-parameter:configuration-file-path}' --htpasswd_bin '{{ apache_location }}/bin/htpasswd'
+command-line = {{ monitor_configwrite }} --config_folder '${monitor-conf-parameters:private-folder}/config/.jio_documents' --output_cfg_file '${monitor-instance-parameter:configuration-file-path}' --htpasswd_bin '{{ apache_location }}/bin/htpasswd' --monitor_https_cors {{ monitor_https_cors }}
 wrapper-path = ${directory:bin}/monitor-configurator
 
 [monitor-globalstate-cron-entry]
@@ -374,10 +374,12 @@ recipe = collective.recipe.template
 file = ${monitor-conf-parameters:promise-output-file}
 input = inline:#!{{ dash_executable_location }}
   pidfile=${monitor-conf-parameters:pid-file}
-  COMMAND=monitor.bootstrap
   if [ -s $pidfile ]; then
-    for i in {1..20}; do
-      if pid=`pgrep -F $pidfile -f "$COMMAND" 2>/dev/null`; then
+    COUNTER=0
+    # Wait until max 20 seconds, the limit promise timeout
+    while [ $COUNTER -lt 20 ]; do
+      if [ -n "$(ps -p $(cat $pidfile) -o pid=)" ]; then
+        ((COUNTER=COUNTER+1))
         sleep 0.5
       else
         break

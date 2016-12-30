@@ -2,7 +2,7 @@
 # see:
 # https://gitlab.com/gitlab-org/gitlab-ce/blob/master/config/gitlab.yml.example
 # https://gitlab.com/gitlab-org/omnibus-gitlab/blob/master/files/gitlab-cookbooks/gitlab/templates/default/gitlab.yml.erb
-# (last updated for omnibus-gitlab 8.7.9+ce.1-0-gf589ad7)
+# (last updated for omnibus-gitlab 8.8.9+ce.0-g25376053)
 
 {% from 'macrolib.cfg.in' import cfg, cfg_https, external_url  with context %}
 
@@ -86,6 +86,7 @@ production: &base
       wiki:             {{ cfg('default_projects_features.wiki') }}
       snippets:         {{ cfg('default_projects_features.snippets') }}
       builds: false {# builds not supported yet <%= @gitlab_default_projects_features_builds %> #}
+      {# container_registry: <%= @gitlab_default_projects_features_container_registry %> #}
 
     ## Webhook settings
     # Number of seconds to wait for HTTP response after sending webhook HTTP POST request (default: 10)
@@ -143,6 +144,18 @@ production: &base
     enabled: <%= @lfs_enabled %>
     # The location where LFS objects are stored (default: shared/lfs-objects).
     storage_path: <%= @lfs_storage_path %>
+  #}
+
+  {# we do not support container registry
+  ## Container Registry
+  registry:
+    enabled: <%= @registry_enabled %>
+    host: <%= @registry_host %>
+    port: <%= @registry_port %>
+    api_url: <%= @registry_api_url %> # internal address to the registry, will be used by GitLab to directly communicate with API
+    path: <%= @registry_path %>
+    key: <%= @registry_key_path %>
+    issuer: <%= @registry_issuer %>
   #}
 
   {# we do not support Pages

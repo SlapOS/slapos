@@ -10,15 +10,17 @@ offline = true
 
 [switch-softwaretype]
 recipe = slapos.cookbook:softwaretype
-default = $${instance-gitlab.cfg:rendered}
-# TODO -export, -import, -pull-backup
+gitlab  = $${instance-gitlab.cfg:rendered}
+gitlab-export   = $${instance-gitlab-export.cfg:rendered}
+default = $${:gitlab}
+# TODO -import, -pull-backup
 
 
-[instance-gitlab.cfg]
+# macro: render instance-*.cfg from instance-*.cfg.in
+[instance-cfg]
 recipe  = slapos.recipe.template:jinja2
 mode    = 0644
-template= ${instance-gitlab.cfg.in:target}
-rendered= $${buildout:directory}/instance-gitlab.cfg
+rendered= $${buildout:directory}/$${:_buildout_section_name_}
 context =
     import os os
     import pwd pwd
@@ -33,12 +35,16 @@ context =
     raw bash_bin                    ${bash:location}/bin/bash
     raw bzip2_location              ${bzip2:location}
     raw bundler_4gitlab             ${bundler-4gitlab:bundle}
+    raw coreutils_location          ${coreutils:location}
     raw curl_bin                    ${curl:location}/bin/curl
     raw dcron_bin                   ${dcron-output:crond}
     raw git                         ${git:location}/bin/git
     raw git_location                ${git:location}
+    raw gitlab_export               ${gitlab-export:rendered}
     raw gitlab_workhorse            ${gitlab-workhorse:location}/gitlab-workhorse
+    raw gopath_bin                  ${gopath:bin}
     raw gunzip_bin                  ${gzip:location}/bin/gunzip
+    raw grep_location               ${grep:location}
     raw gzip_bin                    ${gzip:location}/bin/gzip
     raw gzip_location               ${gzip:location}
     raw logrotate_bin               ${logrotate:location}/usr/sbin/logrotate
@@ -48,7 +54,9 @@ context =
     raw postgresql_location         ${postgresql92:location}
     raw redis_binprefix             ${redis28:location}/bin
     raw ruby_location               ${bundler-4gitlab:ruby-location}
+    raw tar_location                ${tar:location}
     raw watcher_sigkill             ${watcher-sigkill:rendered}
+    raw xnice_repository_location   ${xnice-repository:location}
 
 # config files
     raw database_yml_in             ${database.yml.in:target}
@@ -64,3 +72,16 @@ context =
     raw resque_yml_in               ${resque.yml.in:target}
     raw smtp_settings_rb_in         ${smtp_settings.rb.in:target}
     raw unicorn_rb_in               ${unicorn.rb.in:target}
+
+    $${:context-extra}
+context-extra =
+
+[instance-gitlab.cfg]
+<= instance-cfg
+template= ${instance-gitlab.cfg.in:target}
+
+[instance-gitlab-export.cfg]
+<= instance-cfg
+template= ${instance-gitlab-export.cfg.in:target}
+context-extra =
+    raw instance_gitlab_cfg         $${instance-gitlab.cfg:rendered}

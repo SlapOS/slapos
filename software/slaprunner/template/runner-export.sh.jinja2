@@ -61,3 +61,36 @@ if [ -d {{ directory['backup'] }}/runner/software ]; then
 fi
 
 cd {{ directory['backup'] }} && find -type f ! -name backup.signature -print0 | xargs -P4 -0 sha256sum | LC_ALL=C sort -k 66 > backup.signature
+
+# Check that export didn't happen during backup of instances
+tmp_backup_sum=$(mktemp -p {{ directory['tmp'] }})
+tmp_filtered_signature=$(mktemp -p {{ directory['tmp'] }})
+
+remove_tmp_files () {
+  rm $tmp_backup_sum
+  rm $tmp_filtered_signature
+}
+trap remove_tmp_files EXIT
+
+cd $srv_directory
+
+backup_directory_path=$(find . -path "./runner/instance/slappart*/srv/backup/*" -type f)
+
+# If no backup found, it's over
+if [ -z "$backup_directory_path" ]; then
+  exit 0
+fi
+
+sleep 5
+sha256sum $backup_directory_path | LC_ALL=C sort -k 66 > $tmp_backup_sum
+cat {{ directory['backup'] }}/backup.signature | egrep "instance/slappart.*/srv/backup/" > $tmp_filtered_signature
+
+# If the diff fails, then the notifier will restart this script
+diff_status=0
+diff $tmp_backup_sum $tmp_filtered_signature || diff_status=1
+if [ $diff_status -ne 0 ]; then
+  echo "ERROR: Some backups are not consistents, exporter should be re-run."
+  echo "Let's sleep 10 minutes, to let the backup end..."
+  sleep 10m
+  exit 1
+fi

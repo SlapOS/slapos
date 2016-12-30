@@ -49,6 +49,12 @@
 			"type": "string",
 			"pattern": "^([a-zA-Z0-9]([a-zA-Z0-9\\-]{0,61}[a-zA-Z0-9])?\\.)+[a-zA-Z]{2,6}$"
 		},
+                "nginx-domain": {
+                        "title": "Nginx Domain",
+                        "description": "Base Domain for create subdomains (ie.: example2.com) for websocket, notebook and eventsource.",
+                        "type": "string",
+                        "pattern": "^([a-zA-Z0-9]([a-zA-Z0-9\\-]{0,61}[a-zA-Z0-9])?\\.)+[a-zA-Z]{2,6}$"
+                },
 		"-frontend-quantity": {
 			"title": "Frontend Replication Quantity",
 			"description": "Quantity of Frontends Replicate.",

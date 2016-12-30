@@ -5,6 +5,8 @@ parts =
 eggs-directory = ${buildout:eggs-directory}
 develop-eggs-directory = ${buildout:develop-eggs-directory}
 
+extends = ${template-resilient-templates:output}
+
 [switch-softwaretype]
 recipe = slapos.cookbook:softwaretype
 default = $${:test}
@@ -120,7 +122,7 @@ context =
     key eggs_directory buildout:eggs-directory
     raw kvm_template $${dynamic-template-kvm:rendered}
     raw template_kvm_export ${template-kvm-export-script:location}/${template-kvm-export-script:filename}
-    raw pbsready_export_template ${pbsready-export:output}
+    key pbsready_export_template template-pbsready-export:rendered
     raw gzip_binary ${gzip:location}/bin/gzip
     key slapparameter_dict slap-configuration:configuration
 mode = 0644

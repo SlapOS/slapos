@@ -15,6 +15,7 @@ ERROR_MESSAGE=""
 fail_with_exit_code () {
   echo 1 > $RESTORE_EXIT_CODE_FILE
   echo -e "Failure during step : $ERROR_MESSAGE" > $RESTORE_ERROR_MESSAGE_FILE
+  exit 1
 }
 
 trap fail_with_exit_code ERR
@@ -55,18 +56,18 @@ cp -r {{ directory['backup'] }}/etc/.??* {{ directory['etc'] }};
 
 # Invoke arbitrary script to perform specific restoration
 # procedure.
-RESTORE_EXIT_CODE=0
 runner_import_restore=$srv_directory/runner-import-restore
 if [ ! -e "$runner_import_restore" ]; then
   touch $runner_import_restore
   chmod +x $runner_import_restore
 fi
 log_message "Running $runner_import_restore..."
-$srv_directory/runner-import-restore || RESTORE_EXIT_CODE=$?
+$srv_directory/runner-import-restore
 
 # If no "etc/.project" neither "srv/runner/proxy.db", we can safely assume
 # that there is no instnace deployed on runner0
 if [ ! -f "directory['etc']/.project" ] && [ ! -f "$srv_directory/runner/proxy.db" ]; then
+  log_message "No Software Requested... Writing status file... End"
   echo 0 > $RESTORE_EXIT_CODE_FILE
   exit 0
 fi
@@ -121,8 +122,8 @@ for partition in $srv_directory/runner/instance/slappart*/
 do
   script=$partition/srv/runner-import-restore
   if [ -e "$script" ]; then
-    log_message "Running $script..."
-    $script || RESTORE_EXIT_CODE=$?
+    log_message "Running custom instance script : $script..."
+    $script
   fi
 done
 
@@ -132,5 +133,5 @@ $SQLITE3 $DATABASE "update partition11 set requested_state='started';"
 
 # Write exit code to an arbitrary file that will be checked by promise/monitor
 log_message "Writing status file... End"
-echo $RESTORE_EXIT_CODE > $RESTORE_EXIT_CODE_FILE
-exit $RESTORE_EXIT_CODE
+echo 0 > $RESTORE_EXIT_CODE_FILE
+exit 0

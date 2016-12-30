@@ -33,7 +33,7 @@ innodb_locks_unsafe_for_binlog = 1
 {{x}}sync_frm = 0
 
 # Extra parameters.
-{%- do extra_dict.setdefault('innodb_file_per_table',  '0') %}
+{%- do extra_dict.setdefault('innodb_file_per_table',  '1') %}
 {%- for k, v in extra_dict.iteritems() %}
 {%- do assert('-' not in k) %}
 {{ k }} = {{ v }}
