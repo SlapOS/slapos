@@ -10,7 +10,6 @@ parts =
   monitor-collect-csv-wrapper
   fluentd-wrapper
   monitor-base
-  promise-check-slapgrid
   publish-connection-information
 
 
@@ -105,17 +104,6 @@ parameters-extra = true
 recipe = slapos.cookbook:publish
 monitor-setup-url = https://monitor.app.officejs.com/#page=settings_configurator&url=${publish:monitor-url}&username=${publish:monitor-user}&password=${publish:monitor-password}
 server_log_url = ${publish:monitor-base-url}/${slap-configuration:private-hash}/ 
-
-[promise-check-slapgrid]
-recipe = collective.recipe.template
-error-log-file = ${buildout:directory}/.slapgrid-${slap-connection:partition-id}-error.log
-input = inline:#!/bin/sh
-  if [ -f "${:error-log-file}" ]; then
-    >&2 cat ${:error-log-file}
-    exit 1
-  fi
-output = ${monitor-directory:promises}/slapgrid-${slap-connection:partition-id}-status
-mode = 700
 
 [slap-configuration]
 recipe = slapos.cookbook:slapconfiguration.serialised

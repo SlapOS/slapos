@@ -390,6 +390,17 @@ input = inline:#!{{ dash_executable_location }}
 output = ${directory:promises}/monitor-bootstrap-status
 mode = 700
 
+[promise-check-slapgrid]
+recipe = collective.recipe.template
+error-log-file = ${buildout:directory}/.slapgrid-${slap-connection:partition-id}-error.log
+input = inline:#!/bin/sh
+  if [ -f "${:error-log-file}" ]; then
+    >&2 cat ${:error-log-file}
+    exit 1
+  fi
+output = ${monitor-directory:promises}/buildout-${slap-connection:partition-id}-status
+mode = 700
+
 [monitor-base]
 # create dependencies between required monitor parts
 recipe = plone.recipe.command
@@ -407,6 +418,7 @@ depends =
   ${monitor-httpd-promise:filename}
   ${monitor-status2rss-cron-entry:name}
   ${monitor-bootstrap-promise:file}
+  ${promise-check-slapgrid:output}
 
 [monitor-publish]
 monitor-base-url = ${publish:monitor-base-url}
