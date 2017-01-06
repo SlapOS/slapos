@@ -26,6 +26,7 @@
 ##############################################################################
 from slapos.recipe.librecipe import GenericBaseRecipe
 import sys
+import os
 
 class Recipe(GenericBaseRecipe):
   """
@@ -33,12 +34,14 @@ class Recipe(GenericBaseRecipe):
   """
 
   def install(self):
+    timeout_file = os.path.join(os.getcwd(), 'etc/check_url_PROMISE_TIMEOUT')
     config = {
       'url': self.options['url'],
       'shell_path': self.options['dash_path'],
       'curl_path': self.options['curl_path'],
       'check_secure': self.options.get('check-secure', 0),
       'http_code': self.options.get('http_code', '200'),
+      'time_out': self.options.get('timeout-file-path', timeout_file),
     }
 
     # XXX-Cedric in this script, curl won't check certificate
