@@ -13,8 +13,8 @@ fi
 
 if [ -s "$F_TIMEOUT" ]; then
   TIMEOUT=$(cat $F_TIMEOUT)
-  re="^[0-9]+$"
-  if ! [[ $TIMEOUT =~ $re ]]; then
+  result=$(echo $TIMEOUT | grep -E ^[0-9]+$)
+  if [ -z $result ]; then
     # Not an integer
     TIMEOUT=20
   fi
