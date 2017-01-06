@@ -152,6 +152,7 @@ parameter-file-path = ${monitor-instance-parameter:configuration-file-path}
 parameter-list = 
   raw monitor-user ${monitor-instance-parameter:username}
   htpasswd monitor-password ${monitor-htpassword-file:password-file} ${monitor-instance-parameter:username} ${httpd-monitor-htpasswd:htpasswd-path}
+  file promise-url-timeout ${monitor-init-check-url-timeout:file}
   ${monitor-instance-parameter:instance-configuration}
 # htpasswd entry:  htpasswd key password-file username htpasswd-file
 
@@ -160,6 +161,14 @@ collect-script = {{ monitor_collect }}
 python = {{ python_with_eggs }}
 
 promise-output-file = ${directory:monitor}/monitor-bootstrap-status
+
+[monitor-init-check-url-timeout]
+recipe = plone.recipe.command
+file = ${directory:etc}/check_url_PROMISE_TIMEOUT
+command = 
+  if [ ! -s "${:file}" ]; then
+    echo "20" > ${:file}
+  fi
 
 [monitor-conf]
 recipe = slapos.recipe.template:jinja2
@@ -335,7 +344,7 @@ monitor-base-url = ${monitor-frontend-promise:url}
 #monitor-base-url = ${monitor-httpd-conf-parameter:url}
 root-instance-title = ${slap-configuration:root-instance-title}
 monitor-url-list =
-cors-domains = monitor.app.officejs.com 
+cors-domains = monitor.app.officejs.com
 # XXX Hard coded parameter
 collector-db = /srv/slapgrid/var/data-log/collector.db
 # Credentials
