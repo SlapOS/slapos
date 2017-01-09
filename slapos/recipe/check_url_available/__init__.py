@@ -34,7 +34,7 @@ class Recipe(GenericBaseRecipe):
   """
 
   def install(self):
-    timeout_file = os.path.join(os.getcwd(), 'etc/check_url_PROMISE_TIMEOUT')
+    timeout_file = os.path.join(os.getcwd(), 'etc/promise_timeout')
     config = {
       'url': self.options['url'],
       'shell_path': self.options['dash_path'],
