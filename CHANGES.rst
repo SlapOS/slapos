@@ -1,6 +1,11 @@
 Changes
 =======
 
+1.0.45 (2017-01-09)
+-------------------
+
+ * recipe: set default timeout of check url promise to 20 seconds
+
 1.0.44 (2016-12-30)
 -------------------
 
