@@ -3,13 +3,24 @@
 # BEWARE: It will be overwritten automatically
 
 URL="%(url)s"
+F_TIMEOUT="%(time_out)s"
+TIMEOUT=20
 
 if [ -z "$URL" ]; then
   echo "No URL specified." >&2
   exit 3
 fi
 
-CODE=$(%(curl_path)s -g -k -sL $URL -w %%{http_code} --max-time 10 -o /dev/null)
+if [ -s "$F_TIMEOUT" ]; then
+  TIMEOUT=$(cat $F_TIMEOUT)
+  result=$(echo $TIMEOUT | grep -E ^[0-9]+$)
+  if [ -z $result ]; then
+    # Not an integer
+    TIMEOUT=20
+  fi
+fi
+
+CODE=$(%(curl_path)s -g -k -sL $URL -w %%{http_code} --max-time $TIMEOUT -o /dev/null)
 
 if [ $? -eq 3 ]; then
   echo "URL malformed: $URL." >&2

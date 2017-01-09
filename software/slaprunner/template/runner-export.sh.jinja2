@@ -72,8 +72,9 @@ remove_tmp_files () {
 }
 trap remove_tmp_files EXIT
 
-cd $srv_directory
-
+# Getting files from runner backup directory, as instance backup files may be
+# explicitely excluded from the backup, using the srv/exporter.exclude
+cd {{ directory['backup'] }}
 backup_directory_path=$(find . -path "./runner/instance/slappart*/srv/backup/*" -type f)
 
 # If no backup found, it's over
