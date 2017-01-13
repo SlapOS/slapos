@@ -1,0 +1,79 @@
+#!{{ bash.location }}/bin/bash
+# run program under watchdog
+# watcher <restart-codes> <prog> [<progargs> ...]
+#
+# <restart-codes> = code1,code2,...
+#
+# if the program terminates with status in <restart-codes> - it is restarted after grace period.
+# if the program terminates otherwise - whole process terminates.
+#
+# code can be numeric or symbolic - refering to a signal name. example:
+#
+# watcher 0,SIGKILL <prog> ...
+
+die() {
+    echo "$@" 1>&2
+    exit 1
+}
+
+if [ "$#" -lt 2 ]; then
+    die "Usage: watcher <restart-codes> <prog> [<progargs> ...]"
+fi
+restart_codes="$1"; shift
+prog="$@"
+
+# signumber <signame> -> #sig
+signumber() {
+    signame=$1
+    # "11) SIGSEGV "
+    sigentry=`kill -l |grep -o "[0-9]\+) $signame\(\s\|$\)"` ||
+        die "E: $signame is not a signal"
+    echo "$sigentry" | grep -o "[0-9]\+"
+}
+
+# restart codes as set
+declare -A restarts
+for code in `echo "$restart_codes" |sed 's/,/ /g'`; do
+    case $code in
+        *[!0-9]*)
+            # non-number - treat it as signal name
+            signo=`signumber $code` || exit 1
+            code=$((128 + $signo))  # exit code of process terminated by signal #signo
+            ;;
+
+        *)
+            # already number
+            ;;
+    esac
+    restarts[$code]=y
+done
+
+progpid=""
+
+# make sure to terminate children, when we exit.
+# needed for e.g. when `slapos node stop ...` kills us.
+trap 'atexit' EXIT
+atexit() {
+    jobs="$(jobs -p)"
+    test -n "$jobs" && kill $jobs
+}
+
+# run prog under monitoring
+while true; do
+    echo "run $prog"
+    $prog &
+    progpid=$!
+    echo "wait $progpid"
+    wait $progpid
+    status=$?
+    echo "-> $status"
+
+    # if program terminated not with expected status - exit
+    if [ "${restarts[$status]}" != y ] ; then
+        echo "exit $status"
+        exit "$status"
+    fi
+
+    # otherwise sleep a bit and restart
+    sleep 1
+done
