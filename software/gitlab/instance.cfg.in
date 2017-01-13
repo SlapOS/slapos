@@ -55,7 +55,7 @@ context =
     raw redis_binprefix             ${redis28:location}/bin
     raw ruby_location               ${bundler-4gitlab:ruby-location}
     raw tar_location                ${tar:location}
-    raw watcher_sigkill             ${watcher-sigkill:rendered}
+    raw watcher                     ${watcher:rendered}
     raw xnice_repository_location   ${xnice-repository:location}
 
 # config files

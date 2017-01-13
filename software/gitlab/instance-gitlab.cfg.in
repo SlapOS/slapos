@@ -632,11 +632,11 @@ log     = ${sidekiq-dir:log}
 recipe  = slapos.cookbook:wrapper
 wrapper-path    = ${directory:service}/sidekiq
 command-line    =
-# NOTE Sidekiq memory killer just makes sidekiq processes to be SIGKILL
-# terminated and relies on managing service to restart it. In slapos we don't
-# have mechanism to set autorestart=true, nor bang/watchdog currently work with
-# slapproxy, so we do the monitoring ourselves.
-    {{ watcher_sigkill }}
+# NOTE Sidekiq memory killer makes sidekiq processes to exit, or if exit request
+# not handled in time, to be SIGKILL terminated, and relies on managing service
+# to restart it. In slapos we don't have mechanism to set autorestart=true, nor
+# bang/watchdog currently work with slapproxy, so we do the monitoring ourselves.
+    {{ watcher }} 0,SIGKILL
 
     ${gitlab-sidekiq:wrapper-path}
 # XXX -q runner ?  (present in gitlab-ce/Procfile  but not in omnibus)
