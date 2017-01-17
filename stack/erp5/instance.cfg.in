@@ -122,7 +122,7 @@ dash = {{ dash_location }}
 jsl = {{ jsl_location }}
 link-binary = {{ dumps(zope_link_binary) }}
 userhosts = {{ userhosts_location }}
-runzope-userhosts-preloaded-template = {{ template_runzope_userhosts_preloaded }}
+site-zcml = {{ site_zcml }}
 template-monitor = {{ dumps(template_monitor) }}
 extra-path-list = {{ dumps(extra_path_list) }}
 
@@ -134,6 +134,7 @@ extra-context =
     key buildout_directory buildout:directory
     section parameter_dict dynamic-template-zope-parameters
     import urlparse urlparse
+    import hashlib hashlib
 
 [dynamic-template-kumofs-parameters]
 dash-location = {{ dash_location }}
