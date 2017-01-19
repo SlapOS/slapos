@@ -194,6 +194,7 @@ environment =
   PATH=${directory:bin}:{{ parameter_dict['coreutils'] }}/bin
   TZ={{ slapparameter_dict['timezone'] }}
   INSTANCE_HOME=${directory:instance}
+  MATPLOTLIBRC={{ parameter_dict['matplotlibrc'] }}
 parameters-extra = true
 command-line = '{{ parameter_dict['userhosts'] }}' '{{ bin_directory }}/runzope' -C '${:configuration-file}'
 

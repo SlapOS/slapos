@@ -125,6 +125,7 @@ userhosts = {{ userhosts_location }}
 site-zcml = {{ site_zcml }}
 template-monitor = {{ dumps(template_monitor) }}
 extra-path-list = {{ dumps(extra_path_list) }}
+matplotlibrc = {{ matplotlibrc_location }}
 
 [dynamic-template-zope]
 <= jinja2-template-base
