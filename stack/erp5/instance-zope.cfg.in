@@ -199,9 +199,9 @@ parameters-extra = true
 command-line = '{{ parameter_dict['userhosts'] }}' '{{ bin_directory }}/runzope' -C '${:configuration-file}'
 
 [{{ section('zcml') }}]
-recipe = slapos.cookbook:symbolic.link
+recipe = slapos.cookbook:copyfilelist
 target-directory = ${directory:instance-etc}
-link-binary = {{ parameter_dict['site-zcml'] }}
+file-list = {{ parameter_dict['site-zcml'] }}
 
 [{{ section('zope-inituser') }}]
 recipe = slapos.recipe.template:jinja2
