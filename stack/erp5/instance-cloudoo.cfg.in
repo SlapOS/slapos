@@ -45,6 +45,15 @@ ooo-binary-path = {{ parameter_dict['libreoffice-bin'] }}/program
 ooo-paster = {{ bin_directory }}/cloudooo_paster
 ooo-uno-path = {{ parameter_dict['libreoffice-bin'] }}/basis-link/program
 
+# Registry configuration
+mimetype_entry_addition =
+  application/vnd.openxmlformats-officedocument.wordprocessingml.document application/x-asc-text x2t
+  application/vnd.openxmlformats-officedocument.spreadsheetml.sheet application/x-asc-spreadsheet x2t
+  application/vnd.openxmlformats-officedocument.presentationml.presentation application/x-asc-presentation x2t
+  application/x-asc-text application/vnd.openxmlformats-officedocument.wordprocessingml.document x2t
+  application/x-asc-spreadsheet application/vnd.openxmlformats-officedocument.spreadsheetml.sheet x2t
+  application/x-asc-presentation application/vnd.openxmlformats-officedocument.presentationml.presentation x2t
+
 [fontconfig-instance]
 recipe = slapos.cookbook:fontconfig
 conf-path = ${directory:etc}/font.conf
