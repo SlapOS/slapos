@@ -27,6 +27,7 @@ libffi = {{ libffi_location }}
 libpng12 = {{ libpng12_location }}
 libxcb = {{ libxcb_location }}
 mesa = {{ mesa_location }}
+onlyoffice-x2t = {{ dumps(onlyoffice_x2t_location) }}
 pixman = {{ pixman_location }}
 xdamage = {{ xdamage_location }}
 xfixes = {{ xfixes_location }}
