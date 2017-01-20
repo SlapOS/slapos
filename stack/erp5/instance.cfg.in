@@ -98,6 +98,7 @@ template = {{ template_balancer }}
 filename = instance-balancer.cfg
 extra-context =
     section parameter_dict dynamic-template-balancer-parameters
+    import itertools itertools
 
 [dynamic-template-zeo-parameters]
 buildout-bin-directory = {{ buildout_bin_directory }}
@@ -111,6 +112,7 @@ extra-context =
     key buildout_directory buildout:directory
     section parameter_dict dynamic-template-zeo-parameters
     import json_module json
+    import itertools itertools
 
 [dynamic-template-zope-parameters]
 bin-directory = {{ bin_directory }}
@@ -136,6 +138,7 @@ extra-context =
     section parameter_dict dynamic-template-zope-parameters
     import urlparse urlparse
     import hashlib hashlib
+    import itertools itertools
 
 [dynamic-template-kumofs-parameters]
 dash-location = {{ dash_location }}

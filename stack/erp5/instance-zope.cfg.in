@@ -1,5 +1,5 @@
 {% set use_ipv6 = slapparameter_dict.get('use-ipv6', False) -%}
-{% set next_port = slapparameter_dict['port-base'] -%}
+{% set next_port = itertools.count(slapparameter_dict['port-base']).next -%}
 {% set site_id = slapparameter_dict['site-id'] -%}
 {% set zodb_dict = slapparameter_dict['zodb-dict'] -%}
 {% set node_id_base = slapparameter_dict['name'] -%}
@@ -358,11 +358,10 @@ post = {{ bin_directory }}/slapos-kill --pidfile {{ '${' ~ conf_parameter_name ~
 {% for i in range(slapparameter_dict['instance-count']) -%}
 {{   zope(
        i,
-       next_port,
+       next_port(),
        slapparameter_dict['longrequest-logger-timeout'],
        slapparameter_dict['longrequest-logger-interval'],
      ) }}
-{%   set next_port = next_port + 1 -%}
 {% endfor -%}
 
 [publish]
@@ -389,7 +388,7 @@ bt5-repository-url = {{ dumps(slapparameter_dict['bt5-repository-url']) }}
 
 [monitor-instance-parameter]
 monitor-httpd-ipv6 = {{ (ipv6_set | list)[0] }}
-monitor-httpd-port = {{ next_port }}
+monitor-httpd-port = {{ next_port() }}
 monitor-title = Zope monitor
 
 [buildout]
