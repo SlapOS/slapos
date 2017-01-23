@@ -58,3 +58,19 @@ class TestGenericCloudooo(unittest.TestCase):
 
     # Check if mimetype_registry is well ordered
     self.assertIn("\n  text/install mimetype/entry addition\n  text/* * ooo\n", data)
+
+    # Check OnlyOffice entries
+    self.assertIn("\n".join([
+      "",
+      "  application/vnd.openxmlformats-officedocument.presentationml.presentation application/x-asc-presentation x2t",
+      "  application/vnd.openxmlformats-officedocument.spreadsheetml.sheet application/x-asc-spreadsheet x2t",
+      "  application/vnd.openxmlformats-officedocument.wordprocessingml.document application/x-asc-text x2t",
+      "",
+    ]), data)
+    self.assertIn("\n".join([
+      "",
+      "  application/x-asc-presentation application/vnd.openxmlformats-officedocument.presentationml.presentation x2t",
+      "  application/x-asc-spreadsheet application/vnd.openxmlformats-officedocument.spreadsheetml.sheet x2t",
+      "  application/x-asc-text application/vnd.openxmlformats-officedocument.wordprocessingml.document x2t",
+      "",
+    ]), data)
