@@ -222,6 +222,7 @@ recipe = slapos.cookbook:publish
 
 [buildout]
 extends =
+  {{ monitor2_template_rendered }}
   {{ logrotate_cfg }}
 
 parts = 
@@ -239,6 +240,7 @@ parts =
   
   re6st-registry-promise
   apache-registry-promise
+  monitor-base
 # Complete parts with sections
   {{ part_list | join('\n  ') }}
 
