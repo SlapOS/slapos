@@ -1,4 +1,4 @@
-{% set next_port = slapparameter_dict['tcpv4-port'] -%}
+{% set next_port = itertools.count(slapparameter_dict['tcpv4-port']).next -%}
 {% set ipv4 = (ipv4_set | list)[0] -%}
 {% set backup_periodicity = slapparameter_dict.get('backup-periodicity', 'daily') -%}
 {% set part_list = [] -%}
@@ -27,12 +27,13 @@ ip = {{ ipv4 }}
 {% for name, zodb in slapparameter_dict['zodb-dict'].iteritems() -%}
 {%   do zodb_dict.setdefault(zodb.get('family', 'default').lower(), []).append((name, zodb)) -%}
 {% endfor -%}
-{% set tidstorage_port = next_port + len(zodb_dict) -%}
+{% set tidstorage_port = slapparameter_dict['tcpv4-port'] + len(zodb_dict) -%}
 {% for family, zodb in zodb_dict.iteritems() -%}
 {%   set storage_list = [] -%}
-{%   set known_tid_storage_identifier_host = (ipv4, next_port), -%}
+{%   set current_port = next_port() -%}
+{%   set known_tid_storage_identifier_host = (ipv4, current_port), -%}
 {%   for name, zodb in zodb -%}
-{%     do storage_dict.__setitem__(name, {'server': ipv4 ~ ':' ~ next_port, 'storage': name}) %}
+{%     do storage_dict.__setitem__(name, {'server': ipv4 ~ ':' ~ current_port, 'storage': name}) %}
 {%     set path = zodb.get('path', '%(zodb)s/%(name)s.fs') % {'zodb': default_zodb_path, 'name': name} -%}
 {%     do storage_list.append((name, path)) -%}
 {%     set backup_directory = zodb.get('backup', '%(backup)s/%(name)s') % {'backup': default_backup_path, 'name': name} -%}
@@ -48,7 +49,7 @@ ip = {{ ipv4 }}
 [{{ zeo_section_name }}]
 < = zeo-base
 base-name = zeo-{{ family }}
-port = {{ next_port }}
+port = {{ current_port }}
 storage = {{ dumps(storage_list) }}
 
 [{{ section("logrotate-" ~ zeo_section_name) }}]
@@ -63,7 +64,6 @@ hostname = {{ "${" ~ zeo_section_name ~ ":ip}" }}
 port = {{ "${" ~ zeo_section_name ~ ":port}" }}
 path = ${directory:promises}/zeo-{{ family }}
 
-{%   set next_port = next_port + 1 -%}
 {% endfor -%}
 
 {% if backup_periodicity == 'never' -%}
@@ -185,10 +185,9 @@ backup-zodb = {{ default_backup_path }}
 zodb = {{ default_zodb_path }}
 tidstorage = {{ tidstorage_repozo_path }}
 
-{% set next_port = next_port + 1 -%}
 [monitor-instance-parameter]
 monitor-httpd-ipv6 = {{ (ipv6_set | list)[0] }}
-monitor-httpd-port = {{ next_port }}
+monitor-httpd-port = {{ next_port() }}
 monitor-title = ZODB monitor
 
 [buildout]

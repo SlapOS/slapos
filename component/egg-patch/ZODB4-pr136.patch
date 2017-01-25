@@ -1,0 +1,63 @@
+From 6e2dd54b4988a40766db557906b1d544916a6859 Mon Sep 17 00:00:00 2001
+From: Julien Muchembled <jm@nexedi.com>
+Date: Fri, 13 Jan 2017 23:45:54 +0100
+Subject: [PATCH] Fix deadlock with storages that "sync" on a new transaction
+
+This backports a change from commit 227953b977a9e195c4ce9bbb9acd9c5ee60c333a.
+
+NEO, as well as ZEO+server_sync (ERP5 backports this feature with a
+monkey-patch), pings the server (primary master node in the case of NEO) on
+new transactions. However, this round-trip is actually performed by the thread
+that also does tasks requiring to lock the DB, like processing of invalidations.
+
+Since transaction 1.6.1 (more precisely commit e581a120a6), IStorage.sync()
+is called indirectly by DB.open() when a transaction has already begun,
+and the DB must not be locked when this happens.
+---
+ src/ZODB/DB.py           | 9 +++------
+ src/ZODB/tests/testDB.py | 2 +-
+ 2 files changed, 4 insertions(+), 7 deletions(-)
+
+diff --git a/src/ZODB/DB.py b/src/ZODB/DB.py
+index 95f1ab4..ffd10e9 100644
+--- a/src/ZODB/DB.py
++++ b/src/ZODB/DB.py
+@@ -753,19 +753,16 @@ def open(self, transaction_manager=None, at=None, before=None):
+                     result = self.pool.pop()
+             assert result is not None
+ 
+-            # open the connection.
+-            result.open(transaction_manager)
+-
+             # A good time to do some cache cleanup.
+             # (note we already have the lock)
+             self.pool.availableGC()
+             self.historical_pool.availableGC()
+-
+-            return result
+-
+         finally:
+             self._r()
+ 
++        result.open(transaction_manager)
++        return result
++
+     def connectionDebugInfo(self):
+         result = []
+         t = time.time()
+diff --git a/src/ZODB/tests/testDB.py b/src/ZODB/tests/testDB.py
+index 59b6ccf..e6286a4 100644
+--- a/src/ZODB/tests/testDB.py
++++ b/src/ZODB/tests/testDB.py
+@@ -151,7 +151,7 @@ def connectionDebugInfo():
+     >>> before
+     [None, '\x03zY\xd8\xc0m9\xdd', None]
+     >>> opened
+-    ['2008-12-04T20:40:44Z (1.40s)', '2008-12-04T20:40:45Z (0.30s)', None]
++    ['2008-12-04T20:40:44Z (1.30s)', '2008-12-04T20:40:46Z (0.10s)', None]
+     >>> infos
+     ['test info (2)', ' (0)', ' (0)']
+ 
+-- 
+2.10.2.2.g19ca937.dirty
+

@@ -7,6 +7,7 @@ context +=
 
 [dynamic-template-cloudooo-parameters]
 cairo = {{ cairo_location }}
+coreutils = {{ dumps(coreutils_location) }}
 cups = {{ cups_location }}
 dbus = {{ dbus_location }}
 dbus-glib = {{ dbus_glib_location }}
@@ -15,6 +16,7 @@ fontconfig = {{ fontconfig_location }}
 freetype = {{ freetype_location }}
 glib = {{ glib_location }}
 glu = {{ glu_location }}
+imagemagick = {{ dumps(imagemagick_location) }}
 libICE = {{ libICE_location }}
 libSM = {{ libSM_location }}
 libX11 = {{ libX11_location }}
@@ -27,9 +29,13 @@ libffi = {{ libffi_location }}
 libpng12 = {{ libpng12_location }}
 libxcb = {{ libxcb_location }}
 mesa = {{ mesa_location }}
+onlyoffice-x2t = {{ dumps(onlyoffice_x2t_location) }}
 pixman = {{ pixman_location }}
+poppler = {{ dumps(poppler_location) }}
+wkhtmltopdf = {{ dumps(wkhtmltopdf_location) }}
 xdamage = {{ xdamage_location }}
 xfixes = {{ xfixes_location }}
+xserver = {{ dumps(xserver_location) }}
 zlib = {{ zlib_location }}
 libreoffice-bin = {{ libreoffice_bin_location }}
 fonts = {{ fonts_location }}
@@ -98,6 +104,7 @@ template = {{ template_balancer }}
 filename = instance-balancer.cfg
 extra-context =
     section parameter_dict dynamic-template-balancer-parameters
+    import itertools itertools
 
 [dynamic-template-zeo-parameters]
 buildout-bin-directory = {{ buildout_bin_directory }}
@@ -111,6 +118,7 @@ extra-context =
     key buildout_directory buildout:directory
     section parameter_dict dynamic-template-zeo-parameters
     import json_module json
+    import itertools itertools
 
 [dynamic-template-zope-parameters]
 bin-directory = {{ bin_directory }}
@@ -122,9 +130,10 @@ dash = {{ dash_location }}
 jsl = {{ jsl_location }}
 link-binary = {{ dumps(zope_link_binary) }}
 userhosts = {{ userhosts_location }}
-runzope-userhosts-preloaded-template = {{ template_runzope_userhosts_preloaded }}
+site-zcml = {{ site_zcml }}
 template-monitor = {{ dumps(template_monitor) }}
 extra-path-list = {{ dumps(extra_path_list) }}
+matplotlibrc = {{ matplotlibrc_location }}
 
 [dynamic-template-zope]
 <= jinja2-template-base
@@ -134,6 +143,8 @@ extra-context =
     key buildout_directory buildout:directory
     section parameter_dict dynamic-template-zope-parameters
     import urlparse urlparse
+    import hashlib hashlib
+    import itertools itertools
 
 [dynamic-template-kumofs-parameters]
 dash-location = {{ dash_location }}

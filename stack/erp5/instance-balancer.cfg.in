@@ -43,7 +43,7 @@ ipv4 = {{ ipv4 }}
 {% endif -%}
 {% set haproxy_dict = {} -%}
 {% set apache_dict = {} -%}
-{% set next_port = slapparameter_dict['tcpv4-port'] -%}
+{% set next_port = itertools.count(slapparameter_dict['tcpv4-port']).next -%}
 {% for family_name, parameter_id_list in sorted(
   slapparameter_dict['zope-family-dict'].iteritems()) -%}
 {%   set zope_family_address_list = [] -%}
@@ -55,14 +55,14 @@ ipv4 = {{ ipv4 }}
 {%         do has_webdav.append(None) %}
 {%       endif -%}
 {%       if use_ipv6 -%}
-[{{ section('zope-tunnel-' ~ next_port) }}]
+{%         set current_port = next_port() -%}
+[{{ section('zope-tunnel-' ~ current_port) }}]
 < = zope-tunnel-base
-base-name = {{ 'zeo-tunnel-' ~ next_port }}
-ipv4-port = {{ next_port }}
+base-name = {{ 'zeo-tunnel-' ~ current_port }}
+ipv4-port = {{ current_port }}
 ipv6-port = {{ zope_address.split(']:')[1] }}
 ipv6 = {{ zope_address.split(']:')[0][1:] }}
-{%         set zope_effective_address = ipv4 ~ ":" ~ next_port -%}
-{%         set next_port = next_port + 1 -%}
+{%         set zope_effective_address = ipv4 ~ ":" ~ current_port -%}
 {%       else -%}
 {%         set zope_effective_address = zope_address -%}
 {%       endif -%}
@@ -76,8 +76,7 @@ ipv6 = {{ zope_address.split(']:')[0][1:] }}
  # do a no-op getitem.
 -#}
 {%   do zope_family_address_list[0][0] -%}
-{%   set haproxy_port = next_port -%}
-{%   set next_port = next_port + 1 -%}
+{%   set haproxy_port = next_port() -%}
 {%   do haproxy_dict.__setitem__(family_name, (haproxy_port, zope_family_address_list)) -%}
 {%   if has_webdav -%}
 {%     set internal_scheme = 'http' -%}{# mod_rewrite does not recognise webdav scheme -#}
@@ -86,8 +85,7 @@ ipv6 = {{ zope_address.split(']:')[0][1:] }}
 {%     set internal_scheme = 'http' -%}
 {%     set external_scheme = 'https' -%}
 {%   endif -%}
-{%   do apache_dict.__setitem__(family_name, (next_port, external_scheme, internal_scheme ~ '://' ~ ipv4 ~ ':' ~ haproxy_port ~ slapparameter_dict['backend-path'])) -%}
-{%   set next_port = next_port + 1 -%}
+{%   do apache_dict.__setitem__(family_name, (next_port(), external_scheme, internal_scheme ~ '://' ~ ipv4 ~ ':' ~ haproxy_port ~ slapparameter_dict['backend-path'])) -%}
 {% endfor -%}
 
 [haproxy-cfg-parameter-dict]
@@ -209,7 +207,7 @@ crl = ${:ca-dir}/crl
 
 [monitor-instance-parameter]
 monitor-httpd-ipv6 = {{ (ipv6_set | list)[0] }}
-monitor-httpd-port = {{ next_port }}
+monitor-httpd-port = {{ next_port() }}
 monitor-title = Balancer monitor
 
 [buildout]

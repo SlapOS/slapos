@@ -1,5 +1,5 @@
 {% set use_ipv6 = slapparameter_dict.get('use-ipv6', False) -%}
-{% set next_port = slapparameter_dict['port-base'] -%}
+{% set next_port = itertools.count(slapparameter_dict['port-base']).next -%}
 {% set site_id = slapparameter_dict['site-id'] -%}
 {% set zodb_dict = slapparameter_dict['zodb-dict'] -%}
 {% set node_id_base = slapparameter_dict['name'] -%}
@@ -162,20 +162,6 @@ template = inline: {{ '
 rendered = ${directory:etc}/hosts
 context = key host_dict hosts-parameter:host-dict
 
-[preload-userhosts-runzope-parameter]
-runzope-binary = {{ bin_directory }}/runzope
-userhosts = {{ parameter_dict['userhosts'] }}
-shell-path = {{ parameter_dict['dash'] }}/bin/dash
-hosts = ${hosts:rendered}
-hostaliases = ${hostaliases:rendered}
-
-[preload-userhosts-runzope]
-recipe = slapos.recipe.template:jinja2
-rendered = ${directory:bin}/runzope_userhosts_preloaded
-context = section parameter_dict preload-userhosts-runzope-parameter
-template = {{ parameter_dict['runzope-userhosts-preloaded-template'] }}
-mode = 755
-
 {# Hack to deploy SSL certs via instance parameters -#}
 {% for zodb in zodb_dict.itervalues() -%}
 {%   set storage_dict = zodb.setdefault('storage-dict', {}) -%}
@@ -197,19 +183,32 @@ pem = {{dumps(storage_dict.pop(k))}}
 {% endfor -%}
 {# endhack -#}
 
-[zope-base]
-recipe = slapos.cookbook:generic.zope.zeo.client
-inituser = ${directory:instance}/inituser
-user = {{ dumps(slapparameter_dict['inituser-login']) }}
-password = {{ dumps(slapparameter_dict['inituser-password']) }}
-timezone = {{ dumps(slapparameter_dict['timezone']) }}
-tmp-path = ${directory:tmp}
-instancehome-path = ${directory:instance}
-home-path = ${buildout:directory}
-bin-path = ${directory:bin}:{{ parameter_dict['coreutils'] }}/bin
-site-zcml = ${directory:instance-etc}/site.zcml
-runzope-binary = ${preload-userhosts-runzope:rendered}
-bt5-repository =
+[runzope-base]
+recipe = slapos.cookbook:wrapper
+environment =
+  HOSTALIASES=${hostaliases:rendered}
+  HOSTS=${hosts:rendered}
+  TMP=${directory:tmp}
+  TMPDIR=${directory:tmp}
+  HOME=${buildout:directory}
+  PATH=${directory:bin}:{{ parameter_dict['coreutils'] }}/bin
+  TZ={{ slapparameter_dict['timezone'] }}
+  INSTANCE_HOME=${directory:instance}
+  MATPLOTLIBRC={{ parameter_dict['matplotlibrc'] }}
+parameters-extra = true
+command-line = '{{ parameter_dict['userhosts'] }}' '{{ bin_directory }}/runzope' -C '${:configuration-file}'
+
+[{{ section('zcml') }}]
+recipe = slapos.cookbook:copyfilelist
+target-directory = ${directory:instance-etc}
+file-list = {{ parameter_dict['site-zcml'] }}
+
+[{{ section('zope-inituser') }}]
+recipe = slapos.recipe.template:jinja2
+rendered = ${directory:instance}/inituser
+template = inline:{{ slapparameter_dict['inituser-login'] }}:{SHA}{{ hashlib.sha1(slapparameter_dict['inituser-password']).digest().encode('base64').rstrip() }}
+mode = 600
+once = ${:rendered}_done
 
 [zope-conf-parameter-base]
 ip = {{ ipv4 }}
@@ -309,8 +308,8 @@ context =
   section parameter_dict {{ conf_parameter_name }}
 
 [{{ section(name) }}]
-< = zope-base
-wrapper = ${directory:service-on-watch}/{{ name }}
+< = runzope-base
+wrapper-path = ${directory:service-on-watch}/{{ name }}
 configuration-file = {{ '${' ~ conf_name ~ ':rendered}' }}
 
 [{{ section("promise-" ~ name) }}]
@@ -359,11 +358,10 @@ post = {{ bin_directory }}/slapos-kill --pidfile {{ '${' ~ conf_parameter_name ~
 {% for i in range(slapparameter_dict['instance-count']) -%}
 {{   zope(
        i,
-       next_port,
+       next_port(),
        slapparameter_dict['longrequest-logger-timeout'],
        slapparameter_dict['longrequest-logger-interval'],
      ) }}
-{%   set next_port = next_port + 1 -%}
 {% endfor -%}
 
 [publish]
@@ -390,7 +388,7 @@ bt5-repository-url = {{ dumps(slapparameter_dict['bt5-repository-url']) }}
 
 [monitor-instance-parameter]
 monitor-httpd-ipv6 = {{ (ipv6_set | list)[0] }}
-monitor-httpd-port = {{ next_port }}
+monitor-httpd-port = {{ next_port() }}
 monitor-title = Zope monitor
 
 [buildout]

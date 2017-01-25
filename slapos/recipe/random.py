@@ -92,6 +92,9 @@ class Password(object):
     - storage-path: plain-text persistent storage for password,
                     that can only be accessed by the user
       (default: ${buildout:parts-directory}/${:_buildout_section_name_})
+    - create-once: boolean value which set if storage-path won't be modified
+                   as soon the file is created with the password (not empty).
+      (default: True)
 
     If storage-path is empty, the recipe does not save the password, which is
     fine it is saved by other means, e.g. using the publish-early recipe.
@@ -99,6 +102,8 @@ class Password(object):
 
   def __init__(self, buildout, name, options):
     options_get = options.get
+    self.create_once = options.get('create-once', 'True').lower() \
+          in GenericBaseRecipe.TRUE_VALUES
     try:
       self.storage_path = options['storage-path']
     except KeyError:
@@ -112,9 +117,9 @@ class Password(object):
       except IOError as e:
         if e.errno != errno.ENOENT:
           raise
-        self.update = self.install
     if not passwd:
       passwd = self.generatePassword(int(options_get('bytes', '8')))
+      self.update = self.install
     self.passwd = passwd
     # Password must not go into .installed file, for 2 reasons:
     # security of course but also to prevent buildout to always reinstall.
@@ -126,17 +131,23 @@ class Password(object):
   def install(self):
     if self.storage_path:
       try:
+        # The following 2 lines are just an optimization to avoid recreating
+        # the file with the same content.
+        if self.create_once and os.stat(self.storage_path).st_size:
+          return
         os.unlink(self.storage_path)
       except OSError as e:
         if e.errno != errno.ENOENT:
           raise
+
       fd = os.open(self.storage_path,
         os.O_CREAT | os.O_EXCL | os.O_WRONLY | os.O_TRUNC, 0600)
       try:
         os.write(fd, self.passwd)
       finally:
         os.close(fd)
-      return self.storage_path
+      if not self.create_once:
+        return self.storage_path
 
   def update(self):
     return ()
