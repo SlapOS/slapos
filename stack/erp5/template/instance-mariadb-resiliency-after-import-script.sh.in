@@ -32,11 +32,16 @@ fi
 echo "Deleting existing database..."
 rm -r $mariadb_data_directory/* >/dev/null 2>&1 || true
 
-echo "Adapting binlog database to new paths..."
-new_binlog_directory="$(dirname $binlog_path)"
-binlog_index_file="$new_binlog_directory/binlog.index"
-old_binlog_directory="$(dirname $(head -n 1 $binlog_index_file))"
-sed -e "s|$old_binlog_directory|$new_binlog_directory|g" $binlog_index_file > $binlog_index_file
+# $binlog_path can be empty if incremental_backup_retention_days <= -1
+if [ -n "$binlog_path" ]; then
+  new_binlog_directory="$(dirname $binlog_path)"
+  binlog_index_file="$new_binlog_directory/binlog.index"
+  if [ -e "$binlog_index_file" ]; then
+    echo "Adapting binlog database to new paths..."
+    old_binlog_directory="$(dirname $(head -n 1 $binlog_index_file))"
+    sed -e "s|$old_binlog_directory|$new_binlog_directory|g" $binlog_index_file > $binlog_index_file
+  fi
+fi
 
 echo "Starting mariadb..."
 # XXX hardcoded

@@ -214,6 +214,8 @@ class ERP5Kernel(Kernel):
       # Remove spaces and newlines from both ends of code
       code = code.strip()
 
+      extra_data_list = []
+
       if code.startswith('%'):
           # No need to try-catch here as its already been taken that the code
           # starts-with '%', so we'll get magic_name, no matter what be after '%'
@@ -279,6 +281,8 @@ class ERP5Kernel(Kernel):
               # Required in case the mime_type is anything other than 'text/plain'
               mime_type = content['mime_type']
 
+              extra_data_list = content.get('extra_data_list', [])
+
             # Display to frontend the error message for content status as 'error'
               if content['status']=='error':
                 reply_content = {
@@ -308,6 +312,9 @@ class ERP5Kernel(Kernel):
           'data': {mime_type: code_result},
           'metadata': {}}
         self.send_response(self.iopub_socket, 'display_data', data)
+
+        for extra_data in extra_data_list:
+          self.send_response(self.iopub_socket, 'display_data', extra_data)
 
     reply_content = {
       'status': status,

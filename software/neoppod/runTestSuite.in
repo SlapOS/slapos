@@ -13,7 +13,7 @@ SUMMARY_RE = re.compile(
   r' (.*) (?P<duration>\d+(\.\d*)?|\.\d+)s', re.MULTILINE)
 
 # NEO specific environment
-TEMP_DIRECTORY  = '{{directory.tmp}}/neo_tests'
+TEMP_DIRECTORY  = '{{directory.tmp}}'
 NEO_DB_SOCKET = '{{my_cnf_parameters.socket}}'
 RUN_NEO_TESTS_COMMAND = '{{ bin_directory }}/neotestrunner'
 
@@ -82,13 +82,14 @@ def main():
     if not test_result_line:
       break
 
-    if os.path.exists(TEMP_DIRECTORY):
-      shutil.rmtree(TEMP_DIRECTORY)
-    os.mkdir(TEMP_DIRECTORY)
+    temp = os.path.join(TEMP_DIRECTORY, 'tests-' + test_result_line.name)
+    if os.path.exists(temp):
+      shutil.rmtree(temp)
+    os.mkdir(temp)
 
     args = [RUN_NEO_TESTS_COMMAND, '-ufz']
     command = ' '.join(args)
-    env = {'TEMP': TEMP_DIRECTORY,
+    env = {'TEMP': temp,
            'NEO_TESTS_ADAPTER': test_result_line.name,
            'NEO_TEST_ZODB_FUNCTIONAL': '1',
            'NEO_DB_USER': 'root',

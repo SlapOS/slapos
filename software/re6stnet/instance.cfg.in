@@ -44,6 +44,7 @@ filename = instance-re6stnet.cfg
 extensions = jinja2.ext.do
 extra-context =
     section parameter_dict dynamic-template-re6stnet-parameters
+    raw monitor2_template_rendered {{ monitor2_template_rendered }}
 
 [switch-softwaretype]
 recipe = slapos.cookbook:softwaretype
