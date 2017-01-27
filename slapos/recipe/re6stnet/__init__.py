@@ -218,24 +218,6 @@ class Recipe(GenericBaseRecipe):
       )
     path_list.append(request_add)
 
-    request_drop = self.createPythonScript(
-        self.options['drop-service-wrapper'].strip(),
-        '%s.re6stnet.requestRemoveToken' % __name__, service_dict
-      )
-    path_list.append(request_drop)
-
-    request_check = self.createPythonScript(
-        self.options['check-service-wrapper'].strip(),
-        '%s.re6stnet.checkService' % __name__, service_dict
-      )
-    path_list.append(request_check)
-
-    revoke_check = self.createPythonScript(
-        self.options['revoke-service-wrapper'].strip(),
-        '%s.re6stnet.requestRevoqueCertificate' % __name__, service_dict
-      )
-    path_list.append(revoke_check)
-
     # Send connection parameters of slave instances
     if token_dict:
       self.slap.initializeConnection(self.server_url, self.key_file,
