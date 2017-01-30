@@ -76,7 +76,7 @@ context =
 
 [fluentd-wrapper]
 recipe = slapos.cookbook:wrapper
-command-line = {{ fluentd_location }}/bin/fluentd -l ${monitor-directory:log}/fluend.log -c ${fluentd-conf-configuration:rendered}
+command-line = {{ fluentd_location }}/bin/fluentd -qq -l ${monitor-directory:log}/fluend.log -c ${fluentd-conf-configuration:rendered}
 wrapper-path = ${monitor-directory:service}/fluentd
 environment = 
   GEM_PATH={{ fluentd_location }}/lib/ruby/gems/1.8/
@@ -91,7 +91,6 @@ context =
   key slave_instance_list slap-configuration:slave-instance-list
   key fluentd_log_directory monitor-directory:fluentd-log
   key computer_id slap-connection:computer-id
-
 
 [monitor-collect-csv-wrapper]
 recipe = slapos.cookbook:wrapper
