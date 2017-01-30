@@ -29,7 +29,6 @@ libffi = {{ libffi_location }}
 libpng12 = {{ libpng12_location }}
 libxcb = {{ libxcb_location }}
 mesa = {{ mesa_location }}
-onlyoffice-x2t = {{ dumps(onlyoffice_x2t_location) }}
 pixman = {{ pixman_location }}
 poppler = {{ dumps(poppler_location) }}
 wkhtmltopdf = {{ dumps(wkhtmltopdf_location) }}
