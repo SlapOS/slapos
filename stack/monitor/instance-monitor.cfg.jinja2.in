@@ -10,44 +10,6 @@ cert = ${slap-connection:cert-file}
 root-instance-title = UNKNOWN H-S
 instance-title = UNKNOWN Instance
 
-[cron]
-recipe = slapos.cookbook:cron
-cron-entries = ${logrotate-directory:cron-entries}
-dcrond-binary = {{ dcron_executable_location }}
-crontabs = ${logrotate-directory:crontabs}
-cronstamps = ${logrotate-directory:cronstamps}
-catcher = ${cron-simplelogger:wrapper}
-binary = ${logrotate-directory:services}/crond
-
-[cron-simplelogger]
-recipe = slapos.cookbook:simplelogger
-wrapper = ${logrotate-directory:bin}/cron_simplelogger
-log = ${logrotate-directory:log}/cron.log
-
-[logrotate]
-recipe = slapos.cookbook:logrotate
-logrotate-entries = ${logrotate-directory:logrotate-entries}
-backup = ${logrotate-directory:logrotate-backup}
-logrotate-binary = {{ logrotate_executable_location }}
-gzip-binary = {{ gzip_location }}/bin/gzip
-gunzip-binary = {{ gzip_location }}/bin/gunzip
-wrapper = ${logrotate-directory:bin}/logrotate
-conf = ${logrotate-directory:etc}/logrotate.conf
-state-file = ${logrotate-directory:srv}/logrotate.status
-
-[cron-entry-logrotate]
-recipe = slapos.cookbook:cron.d
-cron-entries = ${cron:cron-entries}
-name = logrotate
-frequency = 0 0 * * *
-command = ${logrotate:wrapper}
-
-# Add log to cron
-[cron-simplelogger]
-recipe = slapos.cookbook:simplelogger
-wrapper = ${monitor-directory:bin}/cron_simplelogger
-log = ${monitor-directory:log}/cron.log
-
 [directory]
 recipe = slapos.cookbook:mkdirectory
 etc = ${buildout:directory}/etc
@@ -80,20 +42,6 @@ services = ${directory:services}
 services-conf = ${directory:etc}/monitor.conf.d
 log = ${directory:log}/monitor
 monitor-var = ${directory:var}/monitor
-
-[logrotate-directory]
-recipe = slapos.cookbook:mkdirectory
-cron-entries = ${:etc}/cron.d
-cronstamps = ${:etc}/cronstamps
-crontabs = ${:etc}/crontabs
-logrotate-backup = ${:backup}/logrotate
-logrotate-entries = ${:etc}/logrotate.d
-bin = ${buildout:directory}/bin
-srv = ${buildout:directory}/srv
-backup = ${:srv}/backup
-etc = ${buildout:directory}/etc
-services = ${:etc}/service
-log = ${buildout:directory}/var/log
 
 [ca-directory]
 recipe = slapos.cookbook:mkdirectory
@@ -281,20 +229,6 @@ context =
     raw dash_binary {{ dash_executable_location }}
 command = kill -USR1 $(cat ${monitor-httpd-conf-parameter:pid-file})
 
-[monitor-status2rss-wrapper]
-recipe = slapos.cookbook:wrapper
-# XXX - hard-coded Urls
-command-line = {{ monitor_genrss }} --output '${monitor-directory:public}/feed' --items_folder '${monitor-directory:public}'  --feed_url '${monitor-conf-parameters:base-url}/public/feed' --public_url '${monitor-conf-parameters:base-url}/share/jio_public/' --private_url '${monitor-conf-parameters:base-url}/share/jio_private/' --instance_name '${monitor-conf-parameters:title}' --hosting_name '${monitor-conf-parameters:root-title}'
-
-wrapper-path = ${directory:bin}/monitor-status2rss.py
-
-[monitor-status2rss-cron-entry]
-recipe = slapos.cookbook:cron.d
-cron-entries = ${cron:cron-entries}
-name = monitor-status2rss
-frequency = * * * * *
-command = ${monitor-status2rss-wrapper:wrapper-path}
-
 [monitor-globalstate-wrapper]
 recipe = slapos.cookbook:wrapper
 command-line = {{ monitor_genstatus }} '${monitor-conf:rendered}' '${monitor-instance-info:rendered}'
@@ -387,7 +321,7 @@ input = inline:#!{{ dash_executable_location }}
   if [ -s $pidfile ]; then
     COUNTER=0
     # Wait until max 20 seconds, the limit promise timeout
-    while [ $COUNTER -lt 20 ]; do
+    while [ $COUNTER -lt 40 ]; do
       if [ -n "$(ps -p $(cat $pidfile) -o pid=)" ]; then
         ((COUNTER=COUNTER+1))
         sleep 0.5
@@ -421,15 +355,21 @@ depends =
   ${monitor-globalstate-cron-entry:name}
   ${monitor-configurator-cron-entry:name}
   ${cron-entry-logrotate:name}
+  ${logrotate-entry-cron:name}
   ${certificate-authority:wrapper}
   ${monitor-conf:rendered}
   ${start-monitor:wrapper-path}
   ${ca-monitor-httpd:wrapper}
   ${monitor-httpd-promise:filename}
-  ${monitor-status2rss-cron-entry:name}
   ${monitor-bootstrap-promise:file}
   ${promise-check-slapgrid:output}
 
 [monitor-publish]
 monitor-base-url = ${publish:monitor-base-url}
 monitor-setup-url = ${monitor-instance-parameter:interface-url}/#page=settings_configurator&url=${publish:monitor-url}&username=$${publish:monitor-user}&password=${publish:monitor-password}
+
+
+[buildout]
+
+extends = 
+  {{ template_logrotate_base }}
