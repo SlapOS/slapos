@@ -129,7 +129,6 @@ link-binary =
   {{ parameter_dict['poppler'] }}/bin/pdfinfo
   {{ parameter_dict['poppler'] }}/bin/pdftotext
   {{ parameter_dict['poppler'] }}/bin/pdftohtml
-  {{ parameter_dict['onlyoffice-x2t'] }}/x2t
 
 [xvfb-instance]
 recipe = slapos.cookbook:xvfb
