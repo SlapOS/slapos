@@ -36,11 +36,9 @@ production: &base
     # Customize if you have GitLab behind a reverse proxy which is running on a different machine.
     # Add the IP address for your reverse proxy to the list, otherwise users will appear signed in from that address.
     trusted_proxies:
-    {# TODO support configuring trusted proxies
-<% @trusted_proxies.each do |proxy| %>
-      - <%= proxy %>
-<% end %>
-    #}
+    {% for proxy in cfg("nginx_real_ip_trusted_addresses").split() %}
+      - {{ proxy }}
+    {% endfor %}
 
     # Uncomment and customize if you can't use the default user to run GitLab (default: 'git')
     user: {{ backend_info.user }}

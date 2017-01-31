@@ -1,0 +1,2 @@
+{% set conf_text = slapparameter_dict.get('conf_text', '')  -%}
+{{ conf_text }}

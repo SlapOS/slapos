@@ -1,6 +1,7 @@
 [buildout]
 parts =
   cron-entry-logrotate
+  logrotate-entry-cron
 
 [cron]
 recipe = slapos.cookbook:cron
@@ -33,6 +34,16 @@ cron-entries = ${cron:cron-entries}
 name = logrotate
 frequency = 0 0 * * *
 command = ${logrotate:wrapper}
+
+[logrotate-entry-base]
+recipe = slapos.cookbook:logrotate.d
+logrotate-entries = ${logrotate:logrotate-entries}
+backup = ${logrotate-directory:backup}
+
+[logrotate-entry-cron]
+<= logrotate-entry-base
+name = crond
+log = ${cron-simplelogger:log}
 
 [logrotate-directory]
 recipe = slapos.cookbook:mkdirectory
