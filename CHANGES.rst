@@ -1,6 +1,11 @@
 Changes
 =======
 
+1.0.48 (2017-01-31)
+-------------------
+
+ * random-recipe: add option create-once to prevent storage file deletion by buildout
+
 1.0.45 (2017-01-09)
 -------------------
 
