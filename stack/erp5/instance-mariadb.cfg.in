@@ -155,14 +155,22 @@ mysql = ${binary-wrap-mysql:wrapper-path}
 init-script = ${init-script:rendered}
 mysql_tzinfo_to_sql = ${binary-wrap-mysql_tzinfo_to_sql:wrapper-path}
 
-[mysqld]
-recipe = slapos.cookbook:generic.mysql.wrap_mysqld
-output = ${directory:services}/mariadb
-binary = {{ parameter_dict['mariadb-location'] }}/bin/mysqld
-configuration-file = ${my-cnf:rendered}
-data-directory = ${my-cnf-parameters:data-directory}
-mysql-install-binary = {{ parameter_dict['mariadb-location'] }}/scripts/mysql_install_db
-mysql-base-directory = {{ parameter_dict['mariadb-location'] }}
+[{{ section('mysqld') }}]
+< = jinja2-template-executable
+# Note: all rendering is done when this file is rendered, not when the mysqld
+# section is installed - so I only use jinja2 as a fancy way to write an
+# executable file with partition-dependent but instance-parameters independent
+# content.
+template = inline:#!{{ parameter_dict['dash-location'] }}/bin/dash
+  '{{ parameter_dict['mariadb-location'] }}/scripts/mysql_install_db' \
+    --defaults-file='${my-cnf:rendered}' \
+    --skip-name-resolve \
+    --datadir='${my-cnf-parameters:data-directory}' \
+    --basedir='{{ parameter_dict['mariadb-location'] }}' \
+  && exec '{{ parameter_dict['mariadb-location'] }}/bin/mysqld' \
+    --defaults-file='${my-cnf:rendered}' \
+    "$@"
+rendered = ${directory:services}/mariadb
 
 [logrotate-entry-mariadb]
 recipe = slapos.cookbook:logrotate.d
@@ -257,7 +265,6 @@ parts +=
   logrotate-entry-mariadb
   binary-link
   update-mysql
-  mysqld
   resiliency-exclude-file
   resiliency-after-import-script
   promise
