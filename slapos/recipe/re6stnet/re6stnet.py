@@ -41,7 +41,6 @@ def updateFile(file_path, value):
   if readFile(file_path) != value:
     writeFile(file_path, value)
     return True
-
   return False
 
 def bang(args):
@@ -127,10 +126,12 @@ def requestRemoveToken(args):
       else:
         # certificate is invalidated, it will be revoked
         writeFile(os.path.join(base_token_path, '%s.revoke' % reference), '')
-      if result in ['True', True):
+
+      if result in (True, 'True'):
         # update information
         log.info("Token deleted for slave instance %s. Clean up file status..." %
                             reference)
+
       if result in ['True', 'False']:
         os.unlink(request_file)
         status_file = os.path.join(base_token_path, '%s.status' % reference)
@@ -144,7 +145,6 @@ def requestRemoveToken(args):
       log.debug('Bad token. Request add token fail for %s...' % request_file)
 
 def requestRevoqueCertificate(args):
-
   base_token_path = args['token_base_path']
   path_list = [x for x in os.listdir(base_token_path) if x.endswith('.revoke')]
 
@@ -162,7 +162,6 @@ def requestRevoqueCertificate(args):
 
     log.info("Failed to revoke email for %s" % reference)
 
-
 def checkService(args, can_bang=True):
   base_token_path = args['token_base_path']
   token_dict = loadJsonFile(args['token_json'])
@@ -171,7 +170,6 @@ def checkService(args, can_bang=True):
     return
 
   call_bang = False
-
   client = registry.RegistryClient(args['registry_url'])
 
   # Check token status
@@ -183,7 +181,7 @@ def checkService(args, can_bang=True):
       log.info("Token %s dont exist yet." % status_file)
       continue
 
-    if not client.isValidToken(token):
+    if not client.isValidToken(str(token)):
       # Token is used to register client
       call_bang = True
       updateFile(status_file, 'TOKEN_USED')
@@ -191,6 +189,7 @@ def checkService(args, can_bang=True):
 
     msg = readFile(status_file)
     log.info("Token %s has %s State." % (status_file, msg))
+
     if msg == 'TOKEN_USED':
       try:
         log.info("Dumping ipv6...")
@@ -204,7 +203,7 @@ def checkService(args, can_bang=True):
                                           traceback.format_exc()))
           continue
 
-        log.info("%s, IPV6 = %s, IPV6_PREFIX = %s" % (slave_reference, ipv6, ipv6_prefix))
+        log.info("%s, IPV6 = %s" % (slave_reference, ipv6))
         log.info("Dumping ipv4...")
         try:
           ipv4 = "0.0.0.0"
@@ -221,12 +220,14 @@ def checkService(args, can_bang=True):
                                           traceback.format_exc()))
           continue
 
-       except IOError:
-         log.debug('Error when writing in file %s. Could not update status of %s...' %
+        log.info("%s, IPV4 = %s, IPV6_PREFIX = %s" % (slave_reference, ipv4, ipv6_prefix))
+
+      except IOError:
+        log.debug('Error when writing in file %s. Could not update status of %s...' %
           (status_file, slave_reference))
 
-       if ipv4_changed or ipv6_changed:
-          call_bang = True
+      if ipv4_changed or ipv6_changed:
+        call_bang = True
 
   if call_bang and can_bang:
     bang(args)
