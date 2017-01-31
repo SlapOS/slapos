@@ -13,7 +13,6 @@
 set -e
 
 mysql_executable="${binary-wrap-mysql:wrapper-path}"
-mysqldump_executable="${binary-wrap-mysqldump:wrapper-path}"
 mariadb_data_directory="${directory:mariadb-data}"
 mariadb_backup_directory="${directory:mariadb-backup-full}"
 instance_directory="${buildout:directory}"
