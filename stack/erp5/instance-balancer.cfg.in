@@ -16,8 +16,12 @@ per partition. No more (undefined result), no less (IndexError).
 {%   do apache_ip_list.append('[' ~ ipv6 ~ ']') -%}
 {% endif -%}
 
-[simplefile]
+[jinja2-template-base]
 recipe = slapos.recipe.template:jinja2
+mode = 644
+
+[simplefile]
+< = jinja2-template-base
 template = inline:{{ '{{ content }}' }}
 
 {% macro simplefile(section_name, file_path, content, mode='') -%}
@@ -95,7 +99,7 @@ backend-dict = {{ dumps(haproxy_dict) }}
 ip = {{ ipv4 }}
 
 [haproxy-cfg]
-recipe = slapos.recipe.template:jinja2
+< = jinja2-template-base
 template = {{ parameter_dict['template-haproxy-cfg'] }}
 rendered = ${directory:etc}/haproxy.cfg
 context = section parameter_dict haproxy-cfg-parameter-dict
@@ -132,7 +136,7 @@ ca-cert = ${apache-ssl-client:cert}
 crl = ${apache-ssl-client:crl}
 
 [apache-conf]
-recipe = slapos.recipe.template:jinja2
+< = jinja2-template-base
 template = {{ parameter_dict['template-apache-conf'] }}
 rendered = ${directory:apache-conf}/apache.conf
 context = section parameter_dict apache-conf-parameter-dict

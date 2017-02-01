@@ -33,8 +33,16 @@ recipe = slapos.cookbook:publish.serialised
 database-list = {{ render_database_list(database_list) }}
 test-database-list = {{ render_database_list(test_database_list) }}
 
-[simplefile]
+[jinja2-template-base]
 recipe = slapos.recipe.template:jinja2
+mode = 644
+
+[jinja2-template-executable]
+< = jinja2-template-base
+mode = 755
+
+[simplefile]
+< = jinja2-template-base
 template = inline:{{ '{{ content }}' }}
 
 {% macro simplefile(section_name, file_path, content, mode='') -%}
@@ -124,7 +132,7 @@ ssl-{{ key }} = {{ value }}
 {% endfor %}
 
 [my-cnf]
-recipe = slapos.recipe.template:jinja2
+< = jinja2-template-base
 rendered = ${directory:etc}/mariadb.cnf
 template = {{ parameter_dict['template-my-cnf'] }}
 context = section parameter_dict my-cnf-parameters
@@ -133,7 +141,7 @@ context = section parameter_dict my-cnf-parameters
 database-list = {{ dumps(database_list + test_database_list) }}
 
 [init-script]
-recipe = slapos.recipe.template:jinja2
+< = jinja2-template-executable
 # XXX: is there a better location ?
 rendered = ${directory:etc}/mariadb_initial_setup.sql
 template = {{ parameter_dict['template-mariadb-initial-setup'] }}

@@ -14,6 +14,10 @@ partition. No more (undefined result), no less (IndexError).
 -#}
 {% set ipv4 = (ipv4_set | list)[0] -%}
 
+[jinja2-template-base]
+recipe = slapos.recipe.template:jinja2
+mode = 644
+
 {% if slapparameter_dict['mysql-test-url-list'] -%}
 [{{ section('test-runner') }}]
 recipe = slapos.cookbook:erp5.test
@@ -143,7 +147,7 @@ hostalias-dict = {{ dumps(slapparameter_dict['hostalias-dict']) }}
 # ...so it's not possible to merge these templates (not a big deal anyway).
 
 [hostaliases]
-recipe = slapos.recipe.template:jinja2
+< = jinja2-template-base
 template = inline: {{ '
   {% for alias, aliased in host_dict.items() -%}
   {{ alias }} {{ aliased }}
@@ -153,7 +157,7 @@ rendered = ${directory:etc}/hostaliases
 context = key host_dict hosts-parameter:hostalias-dict
 
 [hosts]
-recipe = slapos.recipe.template:jinja2
+< = jinja2-template-base
 template = inline: {{ '
   {% for alias, aliased in host_dict.items() -%}
   {{ aliased }} {{ alias }}
@@ -171,7 +175,7 @@ context = key host_dict hosts-parameter:host-dict
                     ('_key', 'neo.key')) -%}
 {%       if k in storage_dict -%}
 [{{ section('neo-ssl-' + k[1:]) }}]
-recipe = slapos.recipe.template:jinja2
+< = jinja2-template-base
 rendered = ${directory:etc}/{{v}}
 template = inline:{{'{{'}}pem}}
 context = key pem :pem
@@ -204,7 +208,7 @@ target-directory = ${directory:instance-etc}
 file-list = {{ parameter_dict['site-zcml'] }}
 
 [{{ section('zope-inituser') }}]
-recipe = slapos.recipe.template:jinja2
+< = jinja2-template-base
 rendered = ${directory:instance}/inituser
 template = inline:{{ slapparameter_dict['inituser-login'] }}:{SHA}{{ hashlib.sha1(slapparameter_dict['inituser-password']).digest().encode('base64').rstrip() }}
 mode = 600
@@ -253,7 +257,7 @@ webdav = {{ dumps(webdav) }}
 timerserver-interval = {{ dumps(timerserver_interval) }}
 
 [zope-conf-base]
-recipe = slapos.recipe.template:jinja2
+< = jinja2-template-base
 template = {{ parameter_dict['zope-conf-template'] }}
 
 [logrotate-entry-base]

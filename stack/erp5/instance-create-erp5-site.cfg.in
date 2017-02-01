@@ -14,6 +14,7 @@ recipe = slapos.recipe.template:jinja2
 template = {{ parameter_dict['template-create-erp5-site-real'] }}
 rendered = ${buildout:directory}/instance-create-erp5-site-real.cfg
 extensions = jinja2.ext.do
+mode = 644
 context =
   import urlparse urlparse
   section publish publish

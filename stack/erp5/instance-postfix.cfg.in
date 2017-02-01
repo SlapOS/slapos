@@ -13,6 +13,10 @@
 {% set smtpd_sasl_user = slapparameter_dict['smtpd-sasl-user'] -%}
 {% set smtpd_sasl_password = slapparameter_dict['smtpd-sasl-password'] -%}
 
+[jinja2-template-base]
+recipe = slapos.recipe.template:jinja2
+mode = 644
+
 [smtpd-password]
 recipe = slapos.cookbook:generate.password
 storage-path =
@@ -64,7 +68,7 @@ cyrus-sasldb = ${directory:etc-cyrus}/postfix.gdbm
 recipe = slapos.cookbook:userinfo
 
 [smtp-sasl-passwd]
-recipe = slapos.recipe.template:jinja2
+< = jinja2-template-base
 rendered = ${directory:etc-postfix}/sasl_passwd
 {% if relay -%}
 template = inline:{{ "{{ host }} {{ sasl_credential }}" }}
@@ -77,7 +81,7 @@ context =
 mode = 600
 
 [{{ section('cyrus-smtpd-conf') }}]
-recipe = slapos.recipe.template:jinja2
+< = jinja2-template-base
 rendered = ${directory:etc-cyrus}/smtpd.conf
 template = inline:
     pwcheck_method: auxprop
@@ -95,7 +99,7 @@ command =
 update-command = ${:command}
 
 [divert]
-recipe = slapos.recipe.template:jinja2
+< = jinja2-template-base
 rendered = ${directory:etc-postfix}/divert
 {% if divert -%}
 template = inline:{{ "/.*/ {{ ', '.join(divert) }}" }}
@@ -121,7 +125,7 @@ update =
   ${:openssl} req -newkey rsa -batch -new -x509 -days 3650 -nodes -keyout '${:key}' -out '${:cert}'
 
 [{{ section('postfix-main-cf') }}]
-recipe = slapos.recipe.template:jinja2
+< = jinja2-template-base
 rendered = ${directory:etc-postfix}/main.cf
 template = {{ parameter_dict['template-postfix-main-cf'] }}
 context =
@@ -144,13 +148,13 @@ context =
     key dh_2048 smtpd-ssl:dh-2048
 
 [{{ section('postfix-master-cf') }}]
-recipe = slapos.recipe.template:jinja2
+< = jinja2-template-base
 rendered = ${directory:etc-postfix}/master.cf
 template = {{ parameter_dict['template-postfix-master-cf'] }}
 context = key smtp configuration:smtp
 
 [aliases]
-recipe = slapos.recipe.template:jinja2
+< = jinja2-template-base
 template = {{ parameter_dict['template-postfix-aliases'] }}
 rendered = ${directory:etc-postfix}/aliases
 context =
