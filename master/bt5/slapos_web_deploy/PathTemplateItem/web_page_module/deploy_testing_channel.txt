@@ -1,0 +1,13 @@
+# Include Additional Functions
+if [ ! -f /etc/opt/slapcache.cfg ]; then
+  slapcache-conf
+fi
+sed -i "s/key = slapos-global-key/key = slapos-global-official-vifib-testing-key/g" /etc/opt/slapcache.cfg 
+
+DFILE="/tmp/tmpplaybook_unstable$(basename $0).$$/"
+TFILE="archive.tar.gz"
+mkdir -p $DFILE
+cd $DFILE
+slapcache-download --destination=$TFILE
+tar -xzvf $TFILE
+rm $TFILE

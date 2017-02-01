@@ -1,0 +1,243 @@
+if [[ $EUID -gt 0 ]]; then
+    echo "####################################################"
+    echo "#                                                  #"
+    echo "#  ERROR: You must be root to run this script!!!!  #"
+    echo "#                                                  #"
+    echo "####################################################"
+    exit 1
+fi
+
+export PATH=$PATH:/usr/local/bin:/usr/local/sbin
+
+# XXX a bit brutal but otherwise it cannot work, without tty enabled.  
+if [ -f /etc/sudoers ]; then
+  sed -i "/requiretty/d" /etc/sudoers
+fi
+
+# Include Additional Functions
+function download_playbook {
+    if [ ! -f /etc/opt/slapcache.cfg ]; then
+      slapcache-conf
+    fi
+    DFILE="/tmp/tmpplaybook$(basename $0).$$/"
+    TFILE="archive.tar.gz"
+    mkdir -p $DFILE
+    cd $DFILE
+    slapcache-download --destination=$TFILE
+    tar -xzvf $TFILE
+    rm $TFILE
+}
+
+# Determine what system we are running on.  This provides ``os_VENDOR``,
+# ``os_RELEASE``, ``os_UPDATE``, ``os_PACKAGE``, ``os_CODENAME``
+# and ``DISTRO``
+GetDistro
+
+if [[ ${DISTRO} =~ (-.) ]] && [[ -f /etc/debian_version ]]; then
+  apt_get install lsb-release
+  GetDistro
+fi
+
+# Warn users who aren't on an explicitly supported distro, but allow them to
+# override check and attempt installation with ``export FORCE=yes``
+if [[ ! ${DISTRO} =~ (wheezy|jessie|trusty|vivid|xenial|rhel7|rhel6|LinuxMint-17.2) ]]; then
+    echo "WARNING: this script has not been tested on $DISTRO"
+    if [[ "$FORCE" != "yes" ]]; then
+        die $LINENO "If you wish to run this script anyway run with FORCE=yes"
+    fi
+fi
+
+# Make sure wheezy backports are available.
+if [[ $DISTRO == "wheezy" ]]; then
+    echo "deb http://ftp.debian.org/debian wheezy-backports main contrib " > /etc/apt/sources.list.d/wheezy-backports.list
+fi
+
+if is_fedora && [[ $DISTRO == "rhel7" ]]; then
+    # RHEL requires EPEL for many Ansible dependencies
+
+    # NOTE: We always remove and install latest -- some environments
+    # use snapshot images, and if EPEL version updates they break
+    # unless we update them to latest version.
+    if sudo yum repolist enabled epel | grep -q 'epel'; then
+        uninstall_package epel-release || true
+    fi
+
+    # This trick installs the latest epel-release from a bootstrap
+    # repo, then removes itself (as epel-release installed the
+    # "real" repo).
+    #
+    # You would think that rather than this, you could use
+    # $releasever directly in .repo file we create below.  However
+    # RHEL gives a $releasever of "6Server" which breaks the path;
+    # see https://bugzilla.redhat.com/show_bug.cgi?id=1150759
+    cat <<EOF | sudo tee /etc/yum.repos.d/epel-bootstrap.repo
+[epel-bootstrap]
+name=Bootstrap EPEL
+mirrorlist=http://mirrors.fedoraproject.org/mirrorlist?repo=epel-7&arch=\$basearch
+failovermethod=priority
+enabled=0
+gpgcheck=0
+EOF
+    yum update -y
+    yum_install yum-utils
+    # Enable a bootstrap repo.  It is removed after finishing
+    # the epel-release installation.
+    yum-config-manager --enable epel-bootstrap
+    yum_install epel-release || \
+        die $LINENO "Error installing EPEL repo, cannot continue"
+    # EPEL rpm has installed it's version
+    rm -f /etc/yum.repos.d/epel-bootstrap.repo
+
+    # ... and also optional to be enabled
+    is_package_installed yum-utils || install_package yum-utils
+    yum-config-manager --enable rhel-7-server-optional-rpms
+
+fi
+
+if is_fedora && [[ $DISTRO == "rhel6" ]]; then
+    sed -i "/requiretty/d" /etc/sudoers
+    if sudo yum repolist enabled epel | grep -q 'epel'; then
+        uninstall_package epel-release || true
+    fi
+
+    cat <<EOF | sudo tee /etc/yum.repos.d/epel-bootstrap.repo
+[epel-bootstrap]
+name=Bootstrap EPEL
+mirrorlist=http://mirrors.fedoraproject.org/mirrorlist?repo=epel-6&arch=\$basearch
+failovermethod=priority
+enabled=0
+gpgcheck=0
+EOF
+    yum update -y
+    yum_install yum-utils
+    yum-config-manager --enable epel-bootstrap
+    yum_install epel-release || \
+        die $LINENO "Error installing EPEL repo, cannot continue"
+    # EPEL rpm has installed it's version
+    rm -f /etc/yum.repos.d/epel-bootstrap.repo
+
+    is_package_installed yum-utils || install_package yum-utils
+    yum-config-manager --enable rhel-6-server-optional-rpms
+
+    is_package_installed libselinux-python || install_package libselinux-python
+fi
+
+is_package_installed openssl || install_package openssl
+# stick to a specific ansible package version
+if is_ubuntu; then
+  # is_ubuntu also handle debian distro
+  is_package_installed ansible || install_package ansible=1.*
+elif is_fedora; then
+  # is_fedora also handle CentOS distro
+  is_package_installed ansible || install_package ansible1.9.noarch
+else
+  is_package_installed ansible || install_package ansible
+fi
+is_package_installed python-setuptools || install_package python-setuptools
+
+if is_ubuntu && [[ $DISTRO == "trusty" ]]; then
+  is_package_installed python-apt || install_package python-apt
+  is_package_installed python-pycurl || install_package python-pycurl
+fi
+
+if is_ubuntu && [[ $DISTRO == "vivid" ]]; then
+  is_package_installed python-apt || install_package python-apt
+  is_package_installed python-pycurl || install_package python-pycurl
+fi
+
+if [[ $DISTRO == "LinuxMint-17.2" ]]; then
+  is_package_installed python-apt || install_package python-apt
+  is_package_installed python-pycurl || install_package python-pycurl
+fi
+
+ANSIBLE_PLUGIN_LOCATION="/usr/share/ansible_plugins/callback_plugins/"
+mkdir -p $ANSIBLE_PLUGIN_LOCATION
+/bin/cat << EOF > $ANSIBLE_PLUGIN_LOCATION/log_parse.py
+import os
+import time
+import json
+import ansible
+
+baseModule = object
+ANSIBLE_VERSION = 1
+
+if hasattr(ansible, 'plugins') and  hasattr(ansible.plugins, 'callback'):
+  baseModule = ansible.plugins.callback.CallbackBase
+  ANSIBLE_VERSION = 2
+
+class CallbackModule(baseModule):
+    """
+    logs playbook results, per host, in /var/log/ansible/hosts
+    """
+    log_path = '/var/log/ansible/hosts'
+    fd_list = {}
+
+    def __init__(self):
+
+      if ANSIBLE_VERSION > 1:
+        super(CallbackModule, self).__init__()
+
+      if not os.path.exists(self.log_path):
+        os.makedirs(self.log_path)
+      else:
+        for filename in os.listdir(self.log_path):
+          filepath = os.path.join(self.log_path, filename)
+          if os.path.exists(filepath) and os.path.isfile(filepath):
+            os.unlink(filepath)
+
+    def writeLog(self, host, category, content):
+      if not self.fd_list.has_key(category):
+        self.fd_list[category] = open(
+          os.path.join(self.log_path, '%s_%s' % (host, category)), "a"
+        )
+
+      self.fd_list[category].write(content + '\n')
+
+    def log(self, host, category, data, ignore_errors=False):
+      if host == "localhost":
+        host = "127.0.0.1" # keep compatibility
+
+      if type(data) == dict:
+        if '_ansible_verbose_override' in data:
+          # avoid logging extraneous data
+          return
+
+        data = data.copy()
+        content = json.dumps(data)
+
+        if ignore_errors:
+          category = '%s_IGNORED' % category
+        self.writeLog(host, category, content)
+
+    def _stats(self, stats):
+      for key in self.fd_list:
+        self.fd_list[key].close()
+
+    def runner_on_failed(self, host, res, ignore_errors=False):
+      self.log(host, 'FAILED', res, ignore_errors)
+
+    def runner_on_ok(self, host, res):
+      self.log(host, 'OK', res)
+
+    def runner_on_skipped(self, host, item=None):
+      pass
+
+    def runner_on_unreachable(self, host, res):
+      self.log(host, 'UNREACHABLE', res)
+
+    def runner_on_async_failed(self, host, res, jid):
+      self.log(host, 'ASYNC_FAILED', res)
+
+    def playbook_on_import_for_host(self, host, imported_file):
+      self.log(host, 'IMPORTED', imported_file)
+
+    def playbook_on_not_import_for_host(self, host, missing_file):
+      self.log(host, 'NOTIMPORTED', missing_file)
+
+    def playbook_on_stats(self, stats):
+      self._stats(stats)
+
+EOF
+
+ansible localhost -m easy_install -a name=slapcache --connection=local
+ansible localhost -m easy_install -a name=requests --connection=local

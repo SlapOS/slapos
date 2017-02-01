@@ -197,7 +197,7 @@
             <key> <string>categories</string> </key>
             <value>
               <tuple>
-                <string>aggregate/web_page_module/20161107-107788</string>
+                <string>aggregate/web_page_module/deploy_index_page</string>
                 <string>caching_policy/one-hour-max-modification-date</string>
               </tuple>
             </value>
@@ -443,7 +443,7 @@
             </item>
             <item>
                 <key> <string>serial</string> </key>
-                <value> <string>955.9037.12933.20684</string> </value>
+                <value> <string>955.9374.63570.32119</string> </value>
             </item>
             <item>
                 <key> <string>state</string> </key>
@@ -461,7 +461,7 @@
                     </tuple>
                     <state>
                       <tuple>
-                        <float>1478616898.15</float>
+                        <float>1478775640.64</float>
                         <string>UTC</string>
                       </tuple>
                     </state>
