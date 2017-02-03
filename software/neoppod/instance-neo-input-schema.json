@@ -27,7 +27,7 @@
       "type": "string"
     },
     "sla-dict": {
-      "description": "[NEO SR only] Where to request instances. Each key is a query string for criterions (e.g. \"computer_guid=foo\"), and each value is a list of partition references ('node-0', 'node-1', ...).",
+      "description": "[NEO SR only] Where to request instances. Each key is a query string for criterions (e.g. \"computer_guid=foo\"), and each value is a list of partition references ('node-0', 'node-1', ...). The prefix 'node-' is mandatory and the number must start from 0. The total number of nodes here must be equal to the length of node-list.",
       "additionalProperties": {
         "type": "array",
         "items": { "type": "string" },
