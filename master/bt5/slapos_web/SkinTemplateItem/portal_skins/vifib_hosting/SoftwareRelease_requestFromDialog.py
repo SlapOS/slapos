@@ -3,8 +3,9 @@ portal = context.getPortalObject()
 if shared == "true":
   shared = True
   
-if shared == "false":
+if shared in ["false", "", None]:
   shared = False
+
 
 if not service_title:
   raise ValueError("Service Title is mandatory!")
