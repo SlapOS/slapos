@@ -1,6 +1,6 @@
 /*jslint nomen: true, maxlen: 200, indent: 2*/
-/*global window, rJS , $ , console,  loopEventListener*/
-(function (window, rJS, $, loopEventListener) {
+/*global window, rJS , $ , console */
+(function (window, rJS, $) {
   "use strict";
 
   var gk = rJS(window),
@@ -65,4 +65,4 @@
       });
   });
 
-}(window, rJS, $, loopEventListener));
+}(window, rJS, $));
