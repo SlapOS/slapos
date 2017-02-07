@@ -56,10 +56,20 @@
             <value>
               <dictionary>
                 <item>
-                    <key> <string>default</string> </key>
+                    <key> <string>css_class</string> </key>
                     <value>
                       <persistent> <string encoding="base64">AAAAAAAAAAI=</string> </persistent>
                     </value>
+                </item>
+                <item>
+                    <key> <string>default</string> </key>
+                    <value>
+                      <persistent> <string encoding="base64">AAAAAAAAAAM=</string> </persistent>
+                    </value>
+                </item>
+                <item>
+                    <key> <string>editable</string> </key>
+                    <value> <string></string> </value>
                 </item>
                 <item>
                     <key> <string>field_id</string> </key>
@@ -73,6 +83,12 @@
                     <key> <string>target</string> </key>
                     <value> <string></string> </value>
                 </item>
+                <item>
+                    <key> <string>title</string> </key>
+                    <value>
+                      <persistent> <string encoding="base64">AAAAAAAAAAQ=</string> </persistent>
+                    </value>
+                </item>
               </dictionary>
             </value>
         </item>
@@ -82,7 +98,7 @@
               <dictionary>
                 <item>
                     <key> <string>css_class</string> </key>
-                    <value> <string>nolabel</string> </value>
+                    <value> <string>nolabel sectionTitle</string> </value>
                 </item>
                 <item>
                     <key> <string>default</string> </key>
@@ -106,7 +122,7 @@
                 </item>
                 <item>
                     <key> <string>title</string> </key>
-                    <value> <string>Subsection Title</string> </value>
+                    <value> <string>Section Title</string> </value>
                 </item>
               </dictionary>
             </value>
@@ -122,11 +138,37 @@
       <dictionary>
         <item>
             <key> <string>_text</string> </key>
+            <value> <string>python:"nolabel sectionTitle %s" % here.getWebSectionValue().getId()</string> </value>
+        </item>
+      </dictionary>
+    </pickle>
+  </record>
+  <record id="3" aka="AAAAAAAAAAM=">
+    <pickle>
+      <global name="TALESMethod" module="Products.Formulator.TALESField"/>
+    </pickle>
+    <pickle>
+      <dictionary>
+        <item>
+            <key> <string>_text</string> </key>
             <value> <string encoding="cdata"><![CDATA[
 
-python: "<h2>%s</h2>" % context.Base_translateString(field.get_value("title"))
+python:"<h1>%s</h1>" % (context.getTranslatedTitle())
 
 ]]></string> </value>
+        </item>
+      </dictionary>
+    </pickle>
+  </record>
+  <record id="4" aka="AAAAAAAAAAQ=">
+    <pickle>
+      <global name="TALESMethod" module="Products.Formulator.TALESField"/>
+    </pickle>
+    <pickle>
+      <dictionary>
+        <item>
+            <key> <string>_text</string> </key>
+            <value> <string>here/title</string> </value>
         </item>
       </dictionary>
     </pickle>
