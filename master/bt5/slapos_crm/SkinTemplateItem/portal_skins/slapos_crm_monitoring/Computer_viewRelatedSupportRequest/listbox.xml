@@ -13,19 +13,44 @@
                 <string>columns</string>
                 <string>count_method</string>
                 <string>default_params</string>
-                <string>editable_columns</string>
                 <string>hide_rows_on_no_search_criterion</string>
                 <string>lines</string>
                 <string>list_method</string>
                 <string>selection_name</string>
                 <string>sort</string>
-                <string>title</string>
               </list>
             </value>
         </item>
         <item>
             <key> <string>id</string> </key>
             <value> <string>listbox</string> </value>
+        </item>
+        <item>
+            <key> <string>isIndexable</string> </key>
+            <value>
+              <object>
+                <klass>
+                  <global name="PropertyGetter" module="Products.ERP5Type.Accessor.Constant"/>
+                </klass>
+                <tuple/>
+                <state>
+                  <dictionary>
+                    <item>
+                        <key> <string>__name__</string> </key>
+                        <value> <string>isIndexable</string> </value>
+                    </item>
+                    <item>
+                        <key> <string>_id</string> </key>
+                        <value> <string>isIndexable</string> </value>
+                    </item>
+                    <item>
+                        <key> <string>value</string> </key>
+                        <value> <int>0</int> </value>
+                    </item>
+                  </dictionary>
+                </state>
+              </object>
+            </value>
         </item>
         <item>
             <key> <string>message_values</string> </key>
@@ -74,10 +99,6 @@
                     <value> <string></string> </value>
                 </item>
                 <item>
-                    <key> <string>editable_columns</string> </key>
-                    <value> <string></string> </value>
-                </item>
-                <item>
                     <key> <string>field_id</string> </key>
                     <value> <string></string> </value>
                 </item>
@@ -113,10 +134,6 @@
                     <key> <string>target</string> </key>
                     <value> <string></string> </value>
                 </item>
-                <item>
-                    <key> <string>title</string> </key>
-                    <value> <string></string> </value>
-                </item>
               </dictionary>
             </value>
         </item>
@@ -144,6 +161,10 @@
                           <string>translated_simulation_state_title</string>
                           <string>State</string>
                         </tuple>
+                        <tuple>
+                          <string>SupportRequest_recheckMonitoring</string>
+                          <string>Recheck</string>
+                        </tuple>
                       </list>
                     </value>
                 </item>
@@ -155,25 +176,6 @@
                     <key> <string>default_params</string> </key>
                     <value>
                       <list/>
-                    </value>
-                </item>
-                <item>
-                    <key> <string>editable_columns</string> </key>
-                    <value>
-                      <list>
-                        <tuple>
-                          <string>title</string>
-                          <string>Title</string>
-                        </tuple>
-                        <tuple>
-                          <string>modification_date</string>
-                          <string>modification_date</string>
-                        </tuple>
-                        <tuple>
-                          <string>description</string>
-                          <string>description</string>
-                        </tuple>
-                      </list>
                     </value>
                 </item>
                 <item>
@@ -212,10 +214,6 @@
                     <key> <string>target</string> </key>
                     <value> <string>Click to edit the target</string> </value>
                 </item>
-                <item>
-                    <key> <string>title</string> </key>
-                    <value> <string>Related Support Request</string> </value>
-                </item>
               </dictionary>
             </value>
         </item>
@@ -243,7 +241,7 @@
       <dictionary>
         <item>
             <key> <string>_text</string> </key>
-            <value> <string>python:\'%s_computer_support_request_selection\'  % here.getId()</string> </value>
+            <value> <string>python:\'%scomputer_support_request_selection\'  % here.getId()</string> </value>
         </item>
       </dictionary>
     </pickle>
