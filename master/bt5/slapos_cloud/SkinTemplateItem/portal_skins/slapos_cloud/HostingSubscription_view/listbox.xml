@@ -135,6 +135,10 @@
                           <string>Computer</string>
                         </tuple>
                         <tuple>
+                          <string>aggregate_parent_reference</string>
+                          <string>Computer Ref.</string>
+                        </tuple>
+                        <tuple>
                           <string>getAggregateTitle</string>
                           <string>Computer Partition</string>
                         </tuple>
