@@ -1,5 +1,8 @@
 person = context.getPortalObject().ERP5Site_getAuthenticatedMemberPersonValue()
 
+if cell is None and context.getPortalType() == "Software Product":
+  cell = context
+
 if person is None or person.Person_isServiceProvider():
   return "<a href=%s/SoftwareProduct_viewSoftwareReleaseOrderDialog> Order Now </a>" % cell.absolute_url()
 
