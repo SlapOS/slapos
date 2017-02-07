@@ -32,9 +32,11 @@ for instance in software_instance_list:
   if (date_check_limit - instance.getCreationDate()) < 0:
     continue
 
-  if instance.getAggregateValue() is not None:
+  computer_partition = instance.getAggregateValue()
+  if computer_partition is not None:
     has_newest_allocated_instance = True
     if instance.getPortalType() == "Software Instance" and \
+        computer_partition.getParentValue().getAllocationScope() in ["open/friend", "open/public"] and \
         instance.SoftwareInstance_hasReportedError():
       return context.HostingSubscription_createSupportRequestEvent(
         instance, 'slapos-crm-hosting-subscription-instance-state.notification')
