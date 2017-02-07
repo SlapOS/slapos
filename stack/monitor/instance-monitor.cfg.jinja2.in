@@ -102,6 +102,7 @@ parameter-list =
   raw monitor-user ${monitor-instance-parameter:username}
   htpasswd monitor-password ${monitor-htpassword-file:password-file} ${monitor-instance-parameter:username} ${httpd-monitor-htpasswd:htpasswd-path}
   file promise-timeout ${monitor-promise-timeout-file:file}
+  file free-disk-space-MB ${promise-check-free-disk-space:config-file}
   ${monitor-instance-parameter:instance-configuration}
 # htpasswd entry:  htpasswd key password-file username htpasswd-file
 
@@ -344,6 +345,18 @@ input = inline:#!/bin/sh
   fi
 output = ${monitor-directory:promises}/buildout-${slap-connection:partition-id}-status
 mode = 700
+
+[promise-check-free-disk-space]
+recipe = slapos.recipe.template:jinja2
+template = {{ template_check_disk_space }}
+rendered = ${monitor-directory:promises}/check-free-disk-space
+mode = 0700
+context =
+    key config_file :config-file
+    raw home_path ${buildout:directory}
+    raw python_bin {{ python_with_eggs }}
+config-file = ${directory:etc}/min-free-disk-size
+
 
 [monitor-base]
 # create dependencies between required monitor parts
