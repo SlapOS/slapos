@@ -15,6 +15,7 @@
                 <string>editable_columns</string>
                 <string>hide_rows_on_no_search_criterion</string>
                 <string>list_method</string>
+                <string>portal_types</string>
                 <string>search_columns</string>
                 <string>selection_name</string>
                 <string>title</string>
@@ -64,6 +65,10 @@
                     <value> <string></string> </value>
                 </item>
                 <item>
+                    <key> <string>count_method</string> </key>
+                    <value> <string></string> </value>
+                </item>
+                <item>
                     <key> <string>editable_columns</string> </key>
                     <value> <string></string> </value>
                 </item>
@@ -81,6 +86,10 @@
                 </item>
                 <item>
                     <key> <string>list_method</string> </key>
+                    <value> <string></string> </value>
+                </item>
+                <item>
+                    <key> <string>portal_types</string> </key>
                     <value> <string></string> </value>
                 </item>
                 <item>
@@ -124,6 +133,10 @@
                           <string>translated_simulation_state_title</string>
                           <string>State</string>
                         </tuple>
+                        <tuple>
+                          <string>SupportRequest_recheckMonitoring</string>
+                          <string>Rechecking Monitoring</string>
+                        </tuple>
                       </list>
                     </value>
                 </item>
@@ -153,6 +166,21 @@
                     <key> <string>list_method</string> </key>
                     <value>
                       <persistent> <string encoding="base64">AAAAAAAAAAM=</string> </persistent>
+                    </value>
+                </item>
+                <item>
+                    <key> <string>portal_types</string> </key>
+                    <value>
+                      <list>
+                        <tuple>
+                          <string>Support Request</string>
+                          <string>Support Request</string>
+                        </tuple>
+                        <tuple>
+                          <string>Upgrade Decision</string>
+                          <string>Upgrade Decision</string>
+                        </tuple>
+                      </list>
                     </value>
                 </item>
                 <item>
@@ -200,7 +228,7 @@
       <dictionary>
         <item>
             <key> <string>_text</string> </key>
-            <value> <string>python: \'hosting_subscription_%s_winstance_list\' % here.getUid()</string> </value>
+            <value> <string>python: \'hosting_subscription_%s_ticket_list\' % here.getUid()</string> </value>
         </item>
       </dictionary>
     </pickle>
