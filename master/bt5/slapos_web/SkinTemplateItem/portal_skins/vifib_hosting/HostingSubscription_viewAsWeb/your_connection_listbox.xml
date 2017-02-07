@@ -414,7 +414,7 @@
                 </item>
                 <item>
                     <key> <string>css_class</string> </key>
-                    <value> <string></string> </value>
+                    <value> <string>listbox-parameters</string> </value>
                 </item>
                 <item>
                     <key> <string>default_display_style</string> </key>
