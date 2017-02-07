@@ -91,15 +91,16 @@
                     <value>
                       <list>
                         <string>my_busy_computer_partition_list_image</string>
-                        <string>listbox_software_release</string>
                         <string>listbox_installation_state</string>
                         <string>listbox_usage</string>
                         <string>my_busy_computer_partition_list_creation_date</string>
                         <string>my_busy_computer_partition_list_status</string>
                         <string>my_busy_computer_partition_list_owner_title</string>
-                        <string>my_busy_computer_partition_list_instance_title</string>
                         <string>listbox_installation_status</string>
                         <string>my_busy_computer_partition_list_hosting_subscription_title</string>
+                        <string>my_busy_computer_partition_list_instance_title</string>
+                        <string>listbox_image</string>
+                        <string>listbox_software_release</string>
                       </list>
                     </value>
                 </item>

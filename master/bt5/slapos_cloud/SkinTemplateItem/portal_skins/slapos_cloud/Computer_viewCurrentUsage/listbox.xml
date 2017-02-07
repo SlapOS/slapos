@@ -28,6 +28,33 @@
             <value> <string>listbox</string> </value>
         </item>
         <item>
+            <key> <string>isIndexable</string> </key>
+            <value>
+              <object>
+                <klass>
+                  <global name="PropertyGetter" module="Products.ERP5Type.Accessor.Constant"/>
+                </klass>
+                <tuple/>
+                <state>
+                  <dictionary>
+                    <item>
+                        <key> <string>__name__</string> </key>
+                        <value> <string>isIndexable</string> </value>
+                    </item>
+                    <item>
+                        <key> <string>_id</string> </key>
+                        <value> <string>isIndexable</string> </value>
+                    </item>
+                    <item>
+                        <key> <string>value</string> </key>
+                        <value> <int>0</int> </value>
+                    </item>
+                  </dictionary>
+                </state>
+              </object>
+            </value>
+        </item>
+        <item>
             <key> <string>message_values</string> </key>
             <value>
               <dictionary>
@@ -101,7 +128,9 @@
                 </item>
                 <item>
                     <key> <string>selection_name</string> </key>
-                    <value> <string></string> </value>
+                    <value>
+                      <persistent> <string encoding="base64">AAAAAAAAAAM=</string> </persistent>
+                    </value>
                 </item>
                 <item>
                     <key> <string>target</string> </key>
@@ -128,7 +157,7 @@
                       <list>
                         <tuple>
                           <string>software_release</string>
-                          <string>Software Release</string>
+                          <string>Title</string>
                         </tuple>
                         <tuple>
                           <string>url_string</string>
@@ -152,7 +181,7 @@
                 <item>
                     <key> <string>count_method</string> </key>
                     <value>
-                      <persistent> <string encoding="base64">AAAAAAAAAAM=</string> </persistent>
+                      <persistent> <string encoding="base64">AAAAAAAAAAQ=</string> </persistent>
                     </value>
                 </item>
                 <item>
@@ -176,7 +205,7 @@
                 <item>
                     <key> <string>list_method</string> </key>
                     <value>
-                      <persistent> <string encoding="base64">AAAAAAAAAAQ=</string> </persistent>
+                      <persistent> <string encoding="base64">AAAAAAAAAAU=</string> </persistent>
                     </value>
                 </item>
                 <item>
@@ -246,6 +275,19 @@
   </record>
   <record id="3" aka="AAAAAAAAAAM=">
     <pickle>
+      <global name="TALESMethod" module="Products.Formulator.TALESField"/>
+    </pickle>
+    <pickle>
+      <dictionary>
+        <item>
+            <key> <string>_text</string> </key>
+            <value> <string>python: \'computer_software_release_selection_%s\' % here.getUid()</string> </value>
+        </item>
+      </dictionary>
+    </pickle>
+  </record>
+  <record id="4" aka="AAAAAAAAAAQ=">
+    <pickle>
       <global name="Method" module="Products.Formulator.MethodField"/>
     </pickle>
     <pickle>
@@ -257,7 +299,7 @@
       </dictionary>
     </pickle>
   </record>
-  <record id="4" aka="AAAAAAAAAAQ=">
+  <record id="5" aka="AAAAAAAAAAU=">
     <pickle>
       <global name="Method" module="Products.Formulator.MethodField"/>
     </pickle>
