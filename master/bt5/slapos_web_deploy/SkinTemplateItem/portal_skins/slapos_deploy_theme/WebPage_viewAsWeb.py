@@ -13,7 +13,7 @@ if REQUEST.getHeader('If-Modified-Since', '') == web_page.getModificationDate().
 portal_type = web_page.getPortalType()
 web_content = web_page.getTextContent()
 
-web_content = web_page.TextDocument_substituteTextContent(web_page, web_content, mapping_dict={})
+web_content = web_page.TextDocument_substituteTextContent(web_content, mapping_dict={})
 
 response.setHeader('Content-Type', 'text/plain')
 
