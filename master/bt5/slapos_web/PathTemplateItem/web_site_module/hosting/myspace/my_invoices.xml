@@ -111,7 +111,22 @@
         <item>
             <key> <string>__translation_dict</string> </key>
             <value>
-              <dictionary/>
+              <dictionary>
+                <item>
+                    <key>
+                      <tuple>
+                        <string>title</string>
+                        <string>zh</string>
+                      </tuple>
+                    </key>
+                    <value>
+                      <tuple>
+                        <string>My Invoices</string>
+                        <string>我的发票</string>
+                      </tuple>
+                    </value>
+                </item>
+              </dictionary>
             </value>
         </item>
         <item>

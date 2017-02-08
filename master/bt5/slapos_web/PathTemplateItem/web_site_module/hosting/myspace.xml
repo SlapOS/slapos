@@ -111,7 +111,36 @@
         <item>
             <key> <string>__translation_dict</string> </key>
             <value>
-              <dictionary/>
+              <dictionary>
+                <item>
+                    <key>
+                      <tuple>
+                        <string>title</string>
+                        <string>fr</string>
+                      </tuple>
+                    </key>
+                    <value>
+                      <tuple>
+                        <string>My Space</string>
+                        <string>Mon Espace</string>
+                      </tuple>
+                    </value>
+                </item>
+                <item>
+                    <key>
+                      <tuple>
+                        <string>title</string>
+                        <string>zh</string>
+                      </tuple>
+                    </key>
+                    <value>
+                      <tuple>
+                        <string>My Space</string>
+                        <string>我的空间</string>
+                      </tuple>
+                    </value>
+                </item>
+              </dictionary>
             </value>
         </item>
         <item>
