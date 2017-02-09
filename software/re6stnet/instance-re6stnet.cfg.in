@@ -104,11 +104,6 @@ name = apache
 log = ${apache-conf:error-log} ${apache-conf:access-log}
 post = {{ parameter_dict['bin-directory'] }}/slapos-kill --pidfile ${apache-conf:pid-file} -s USR1
 
-[logrotate-entry-base]
-recipe = slapos.cookbook:logrotate.d
-logrotate-entries = ${logrotate:logrotate-entries}
-backup = ${logrotate:backup}
-
 [re6st-registry-conf-dict]
 port = 9201
 ipv4 = {{ ipv4 }}
