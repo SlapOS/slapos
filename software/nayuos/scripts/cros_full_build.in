@@ -148,6 +148,117 @@ if [ ! -e ~/.gitconfig ] ; then
   which less &> /dev/null && git config --global core.pager less
 fi
 
+# go to ~/Download
+[ "\$(pwd)" = / ] && cd ~/Downloads
+
+alias ls='ls -CF --color=auto'
+alias l='ls -lF'
+alias lh='ls -hAl'
+alias la='ls -la'
+alias ll='ls -l'
+
+tree() {
+  python -Sc 'import sys, os
+aa = sys.argv[1:] or ["."]
+for a in aa:
+  o = len(a.split(os.sep))
+  for r, dd, ff in os.walk(a):
+    dp = len(r.split(os.sep)) - o + 1
+    print "%s- %s" % ((dp - 1) * "  ", os.path.basename(r))
+    for f in ff:
+      print "%s- %s" % (dp * "  ", f)' "\$@"
+}
+
+showzip() {
+  [ \$# = 1 ] || { echo "Usage: showzip ZIPFILE" >&2 ; return 1 ; }
+  python -Sc 'import sys, zipfile
+zfile = zipfile.ZipFile(sys.argv[1])
+zfile.printdir()
+zfile.close()' "\$@"
+}
+
+zip() {
+  [ \$# -gt 1 ] || { echo "Usage: zip ZIPFILE FILE..." >&2 ; return 1 ; }
+  python -Sc 'import sys, zipfile, os
+if os.path.lexists(sys.argv[1]):
+  sys.stderr.write("zip: file %r already exists\n" % sys.argv[1])
+  sys.exit(1)
+zfile = zipfile.ZipFile(sys.argv[1], "w", zipfile.ZIP_DEFLATED)
+def arc(arg):
+  if os.path.islink(arg):
+    sys.stderr.write("zip: symlink %r ignored\n" % arg)
+  elif os.path.isdir(arg):
+    for r, _, ff in os.walk(arg):
+      zfile.write(r)
+      for f in ff: arc(os.path.join(r, f))
+  else:
+    zfile.write(arg)
+for arg in sys.argv[2:]: arc(arg)
+zfile.close()' "\$@"
+}
+
+unzip() {
+  [ \$# != 0 ] || { echo "Usage: unzip ZIPFILE [TARGET]" >&2 ; return 1 ; }
+  python -Sc 'import sys, zipfile
+zfile = zipfile.ZipFile(sys.argv[1])
+zfile.extractall(sys.argv[2] if len(sys.argv) > 2 else ".")
+zfile.close()' "\$@"
+}
+
+encmount() {
+  if [ -z \$1 ] ; then
+      echo "Please, give a device as parameter, ex: /dev/sda"
+      return 1
+  fi
+  if  [ ! -d /media/removable/key ] ; then
+      echo "New dir at /media/removable/key"
+      sudo mkdir /media/removable/key
+  fi
+  echo "Mounting \$1 on /media/removable/key"
+  sudo cryptsetup luksOpen \$1 key
+  sudo mount -o noexec /dev/mapper/key /media/removable/key
+}
+
+__safewrite() {
+  local cmd=safewrite
+  local usage="Usage: \$cmd DST < stdin
+
+Where DST is the destination file
+
+Copy stdin to DST. Data is flushed regularly to avoid some eventual crash during cache sync.
+
+Example:
+  gunzip myimage.img.gz -c | sudosafewrite /dev/sda"
+
+  local KiB=1024
+  local MiB=\$((1024 * \$KiB))
+  local bs=4096
+  local count=\$((50 * \$MiB / \$bs))
+
+  local infostep=50
+  local infounit=MiB
+
+  local safewrite_seek=0
+  local safewrite_out=
+  local safewrite_length=\$infostep
+
+  [ \$# = 2 ] || { echo "\$usage" >&2 ; return 2 ; }
+  [ \$1 != - ] || { echo "DST should not be '-'" >&2 ; return 2 ; }
+
+  while [ \$? = 0 ] ; do
+    echo "+ copying until \$safewrite_length \$infounit"
+    safewrite_out=\$(\$1 bs=\$bs count=\$count seek=\$safewrite_seek of="\$2" 2>&1) || { echo "\$safewrite_out" ; return 1 ; }
+    safewrite_length=\$((\$safewrite_length + \$infostep))
+    safewrite_seek=\$((\$safewrite_seek + \$count))
+    echo "\$safewrite_out"
+    ! echo "\$safewrite_out" | grep '(0 B) copied' > /dev/null
+  done
+  return 0
+}
+safewrite() { __safewrite dd "\$@" ; }
+sudodd() { sudo dd "\$@" ; }
+sudosafewrite() { __safewrite sudodd "\$@" ; }
+
 # ----- END NayuOS configuration -----
 EOF
 fi
