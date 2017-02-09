@@ -30,9 +30,7 @@ port = ${neo-master:port}
 path = ${directory:promises}/neo-master-promise
 
 [logrotate-master]
-recipe = slapos.cookbook:logrotate.d
-logrotate-entries = ${logrotate:logrotate-entries}
-backup = ${logrotate:backup}
+< = logrotate-entry-base
 name = neo-master
 log = ${neo-master:logfile}
 post = {{ bin_directory }}/slapos-kill -n neomaster -s RTMIN+1 ${:log}

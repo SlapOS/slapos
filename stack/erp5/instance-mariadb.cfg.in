@@ -174,9 +174,7 @@ template = inline:#!{{ parameter_dict['dash-location'] }}/bin/dash
 rendered = ${directory:services}/mariadb
 
 [logrotate-entry-mariadb]
-recipe = slapos.cookbook:logrotate.d
-logrotate-entries = ${logrotate:logrotate-entries}
-backup = ${logrotate:backup}
+< = logrotate-entry-base
 name = mariadb
 log = ${my-cnf-parameters:error-log} ${my-cnf-parameters:slow-query-log}
 post = "${binary-wrap-mysql:wrapper-path}" -B -u root -e "FLUSH LOGS"

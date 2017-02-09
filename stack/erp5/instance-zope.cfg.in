@@ -260,11 +260,6 @@ timerserver-interval = {{ dumps(timerserver_interval) }}
 < = jinja2-template-base
 template = {{ parameter_dict['zope-conf-template'] }}
 
-[logrotate-entry-base]
-recipe = slapos.cookbook:logrotate.d
-logrotate-entries = ${logrotate:logrotate-entries}
-backup = ${logrotate:backup}
-
 {% macro zope(
   index,
   port,
@@ -356,7 +351,7 @@ path = ${directory:promises}/{{ zope_tunnel_base_name }}
 < = logrotate-entry-base
 name = {{ name }}
 log = {{ '${' ~ conf_parameter_name ~ ':event-log}' }} {{ '${' ~ conf_parameter_name ~ ':z2-log}' }} {{ '${' ~ conf_parameter_name ~ ':longrequest-logger-file}' }} {{ ' '.join(log_list) }}
-post = {{ bin_directory }}/slapos-kill --pidfile {{ '${' ~ conf_parameter_name ~ ':pid-file}' }} -s USR2
+post = test ! -s {{ '${' ~ conf_parameter_name ~ ':pid-file}' }} || {{ bin_directory }}/slapos-kill --pidfile {{ '${' ~ conf_parameter_name ~ ':pid-file}' }} -s USR2
 {% endmacro -%}
 
 {% for i in range(slapparameter_dict['instance-count']) -%}

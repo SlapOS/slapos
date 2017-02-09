@@ -22,9 +22,7 @@ port = ${neo-admin:port}
 path = ${directory:promises}/neo-admin-promise
 
 [logrotate-admin]
-recipe = slapos.cookbook:logrotate.d
-logrotate-entries = ${logrotate:logrotate-entries}
-backup = ${logrotate:backup}
+< = logrotate-entry-base
 name = neo-admin
 log = ${neo-admin:logfile}
 post = {{ bin_directory }}/slapos-kill -n neoadmin -s RTMIN+1 ${:log}

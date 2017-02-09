@@ -88,11 +88,6 @@ database-adapter = MySQL
 wait-database = 60
 engine = {{ slapparameter_dict.get('engine', '') }}
 
-[logrotate-storage]
-recipe = slapos.cookbook:logrotate.d
-logrotate-entries = ${logrotate:logrotate-entries}
-backup = ${logrotate:backup}
-
 {% for i in range(slapparameter_dict.get('storage-count', 1)) -%}
 {%   set storage_id = 'neo-storage-' ~ i -%}
 [{{ section(storage_id) }}]
@@ -103,7 +98,7 @@ logfile = ${directory:log}/{{ 'neostorage-' ~ i }}.log
 database-parameters = root@neo{{ i }}${my-cnf-parameters:socket}
 
 [{{ section('logrotate-storage-' ~ i) }}]
-< = logrotate-storage
+< = logrotate-entry-base
 name = {{ storage_id }}
 log = {{ '${' +  storage_id + ':logfile}' }}
 post = {{ bin_directory }}/slapos-kill -n neostorage -s RTMIN+1 ${:log}
@@ -129,9 +124,7 @@ log = ${buildout:directory}/var/log
 tmp = ${buildout:directory}/tmp
 
 [logrotate-mysql]
-recipe = slapos.cookbook:logrotate.d
-logrotate-entries = ${logrotate:logrotate-entries}
-backup = ${logrotate:backup}
+< = logrotate-entry-base
 name = mariadb
 log = ${my-cnf-parameters:error-log} ${my-cnf-parameters:slow-query-log}
 post = ${mysqld:mysql-base-directory}/bin/mysql --defaults-file="${my-cnf:rendered}" -e "FLUSH LOGS"
