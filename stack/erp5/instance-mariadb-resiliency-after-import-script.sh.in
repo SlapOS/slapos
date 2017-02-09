@@ -12,16 +12,16 @@
 
 set -e
 
-mysql_executable="${binary-wrap-mysql:wrapper-path}"
-mariadb_data_directory="${directory:mariadb-data}"
-mariadb_backup_directory="${directory:mariadb-backup-full}"
-instance_directory="${buildout:directory}"
-pid_file="${my-cnf-parameters:pid-file}"
-binlog_path="${my-cnf-parameters:binlog-path}"
+mysql_executable='${binary-wrap-mysql:wrapper-path}'
+mariadb_data_directory='${directory:mariadb-data}'
+mariadb_backup_directory='${directory:mariadb-backup-full}'
+instance_directory='${buildout:directory}'
+pid_file='${my-cnf-parameters:pid-file}'
+binlog_path='${my-cnf-parameters:binlog-path}'
 
 # Make sure mariadb is not already running
 if [ -e "$pid_file" ]; then
-  pid=$(cat $pid_file) > /dev/null 2>&1
+  pid=$(cat "$pid_file") > /dev/null 2>&1
   if kill -0 "$pid"; then
     echo "Mariadb is already running with pid $pid. Aborting."
     exit 1
@@ -29,11 +29,11 @@ if [ -e "$pid_file" ]; then
 fi
 
 echo "Deleting existing database..."
-rm -r $mariadb_data_directory/* >/dev/null 2>&1 || true
+rm -r "$mariadb_data_directory"/* >/dev/null 2>&1 || true
 
 # $binlog_path can be empty if incremental_backup_retention_days <= -1
 if [ -n "$binlog_path" ]; then
-  new_binlog_directory="$(dirname $binlog_path)"
+  new_binlog_directory="$(dirname "$binlog_path")"
   binlog_index_file="$new_binlog_directory/binlog.index"
   if [ -e "$binlog_index_file" ]; then
     echo "Adapting binlog database to new paths..."
@@ -65,7 +65,7 @@ fi
 
 echo "Importing data..."
 # Use latest dump XXX can contain funny characters
-dump=$(ls -r $mariadb_backup_directory | head -1)
+dump=$(ls -r "$mariadb_backup_directory" | head -1)
 zcat "$mariadb_backup_directory/$dump" | $mysql_executable -u root --socket="$instance_directory/var/run/mariadb.sock"
 RESTORE_EXIT_CODE=$?
 
