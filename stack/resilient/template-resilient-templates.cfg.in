@@ -7,4 +7,4 @@ context =
   key slapparameter_dict slap-configuration:configuration
   raw pbsready_template_path ${pbsready:output}
   raw bash_executable_location ${bash:location}/bin/bash
-  raw logrotate_executable_location ${logrotate:location}/sbin/logrotate
+  raw logrotate_executable_location ${logrotate:location}/usr/sbin/logrotate
