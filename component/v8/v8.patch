@@ -1,0 +1,235 @@
+diff --git a/build/standalone.gypi b/build/standalone.gypi
+index f804715..48eea0f 100644
+--- a/build/standalone.gypi
++++ b/build/standalone.gypi
+@@ -132,7 +132,7 @@
+         # Do not use 32-bit gold on 32-bit hosts as it runs out address space
+         # for component=static_library builds.
+         ['(OS=="linux" or OS=="android") and (target_arch=="x64" or target_arch=="arm" or (target_arch=="ia32" and host_arch=="x64"))', {
+-          'linux_use_bundled_gold%': 1,
++          'linux_use_bundled_gold%': 0,
+         }, {
+           'linux_use_bundled_gold%': 0,
+         }],
+diff --git a/build/toolchain.gypi b/build/toolchain.gypi
+index c2974c5..a14a704 100644
+--- a/build/toolchain.gypi
++++ b/build/toolchain.gypi
+@@ -109,7 +109,7 @@
+       # Do not use 32-bit gold on 32-bit hosts as it runs out address space
+       # for component=static_library builds.
+       ['OS=="linux" and (target_arch=="x64" or target_arch=="arm")', {
+-        'linux_use_bundled_gold%': 1,
++        'linux_use_bundled_gold%': 0,
+       }, {
+         'linux_use_bundled_gold%': 0,
+       }],
+@@ -126,7 +126,7 @@
+       # linux_use_gold_flags: whether to use build flags that rely on gold.
+       # On by default for x64 Linux.
+       ['OS=="linux" and target_arch=="x64"', {
+-        'linux_use_gold_flags%': 1,
++        'linux_use_gold_flags%': 0,
+       }, {
+         'linux_use_gold_flags%': 0,
+       }],
+diff --git a/src/compiler/arm64/code-generator-arm64.cc b/src/compiler/arm64/code-generator-arm64.cc
+index b3841d0..a351755 100644
+--- a/src/compiler/arm64/code-generator-arm64.cc
++++ b/src/compiler/arm64/code-generator-arm64.cc
+@@ -12,6 +12,17 @@
+ #include "src/compiler/node-matchers.h"
+ #include "src/compiler/osr.h"
+ 
++# ifndef __INT64_C
++#  if __WORDSIZE == 64
++#   define __INT64_C(c)  c ## L
++#  else
++#   define __INT64_C(c)  c ## LL
++#  endif
++# endif
++# ifndef INT64_MIN
++#  define INT64_MIN (-__INT64_C(9223372036854775807)-1)
++# endif
++
+ namespace v8 {
+ namespace internal {
+ namespace compiler {
+diff --git a/src/compiler/instruction-selector.cc b/src/compiler/instruction-selector.cc
+index 053c646..94211ec 100644
+--- a/src/compiler/instruction-selector.cc
++++ b/src/compiler/instruction-selector.cc
+@@ -14,6 +14,12 @@
+ #include "src/compiler/state-values-utils.h"
+ #include "src/deoptimizer.h"
+ 
++# if __WORDSIZE == 64
++#  define SIZE_MAX (18446744073709551615UL)
++# else
++#  define SIZE_MAX (4294967295U)
++# endif
++
+ namespace v8 {
+ namespace internal {
+ namespace compiler {
+@@ -387,6 +393,7 @@ size_t AddOperandToStateValueDescriptor(StateValueDescriptor* descriptor,
+       return 1;
+     }
+   }
++  return 1;
+ }
+ 
+ 
+diff --git a/src/compiler/x64/code-generator-x64.cc b/src/compiler/x64/code-generator-x64.cc
+index 8a64744..86d3ba1 100644
+--- a/src/compiler/x64/code-generator-x64.cc
++++ b/src/compiler/x64/code-generator-x64.cc
+@@ -12,6 +12,17 @@
+ #include "src/x64/assembler-x64.h"
+ #include "src/x64/macro-assembler-x64.h"
+ 
++# ifndef __INT64_C
++#  if __WORDSIZE == 64
++#   define __INT64_C(c)  c ## L
++#  else
++#   define __INT64_C(c)  c ## LL
++#  endif
++# endif
++# ifndef INT64_MIN
++#  define INT64_MIN (-__INT64_C(9223372036854775807)-1)
++# endif
++
+ namespace v8 {
+ namespace internal {
+ namespace compiler {
+diff --git a/test/cctest/compiler/test-run-machops.cc b/test/cctest/compiler/test-run-machops.cc
+index cea90a2..44d0a0f 100644
+--- a/test/cctest/compiler/test-run-machops.cc
++++ b/test/cctest/compiler/test-run-machops.cc
+@@ -14,6 +14,30 @@
+ #include "test/cctest/compiler/graph-builder-tester.h"
+ #include "test/cctest/compiler/value-helper.h"
+ 
++# ifndef __INT64_C
++#  if __WORDSIZE == 64
++#   define __INT64_C(c)  c ## L
++#  else
++#   define __INT64_C(c)  c ## LL
++#  endif
++# endif
++# ifndef INT64_MIN
++#  define INT64_MIN (-__INT64_C(9223372036854775807)-1)
++# endif
++# ifndef INT64_MAX
++#  define INT64_MAX (__INT64_C(9223372036854775807))
++# endif
++# ifndef __UINT64_C
++#  if __WORDSIZE == 64
++#   define __UINT64_C(c) c ## UL
++#  else
++#   define __UINT64_C(c) c ## ULL
++#  endif
++# endif
++# ifndef UINT64_MAX
++#  define UINT64_MAX (__UINT64_C(18446744073709551615))
++# endif
++
+ using namespace v8::base;
+ 
+ namespace v8 {
+diff --git a/test/cctest/test-macro-assembler-mips64.cc b/test/cctest/test-macro-assembler-mips64.cc
+index e74703b..4c91684 100644
+--- a/test/cctest/test-macro-assembler-mips64.cc
++++ b/test/cctest/test-macro-assembler-mips64.cc
+@@ -36,6 +36,17 @@
+ #include "src/mips64/macro-assembler-mips64.h"
+ #include "src/mips64/simulator-mips64.h"
+ 
++# ifndef __INT64_C
++#  if __WORDSIZE == 64
++#   define __INT64_C(c)  c ## L
++#  else
++#   define __INT64_C(c)  c ## LL
++#  endif
++# endif
++# ifndef INT64_MAX
++#  define INT64_MAX (__INT64_C(9223372036854775807))
++# endif
++
+ 
+ using namespace v8::internal;
+ 
+@@ -456,7 +467,7 @@ static uint64_t run_dlsa(uint64_t rt, uint64_t rs, int8_t sa) {
+   Handle<Code> code = isolate->factory()->NewCode(
+       desc, Code::ComputeFlags(Code::STUB), Handle<Code>());
+ 
+-  ::F f = FUNCTION_CAST<::F>(code->entry());
++  ::F f = FUNCTION_CAST< ::F>(code->entry());
+ 
+   uint64_t res = reinterpret_cast<uint64_t>(
+       CALL_GENERATED_CODE(isolate, f, rt, rs, 0, 0, 0));
+diff --git a/test/cctest/test-unboxed-doubles.cc b/test/cctest/test-unboxed-doubles.cc
+index f195a31..45499ce 100644
+--- a/test/cctest/test-unboxed-doubles.cc
++++ b/test/cctest/test-unboxed-doubles.cc
+@@ -18,6 +18,12 @@
+ #include "test/cctest/cctest.h"
+ #include "test/cctest/heap/utils-inl.h"
+ 
++#if __WORDSIZE == 64
++#  define UINT64_C(c) c ## UL
++#else
++#  define UINT64_C(c) c ## ULL
++#endif
++
+ using namespace v8::base;
+ using namespace v8::internal;
+ 
+diff --git a/test/cctest/wasm/test-run-wasm.cc b/test/cctest/wasm/test-run-wasm.cc
+index a3730ca..7a7b21f 100644
+--- a/test/cctest/wasm/test-run-wasm.cc
++++ b/test/cctest/wasm/test-run-wasm.cc
+@@ -13,6 +13,30 @@
+ #include "test/cctest/wasm/test-signatures.h"
+ #include "test/cctest/wasm/wasm-run-utils.h"
+ 
++# ifndef __INT64_C
++#  if __WORDSIZE == 64
++#   define __INT64_C(c)  c ## L
++#  else
++#   define __INT64_C(c)  c ## LL
++#  endif
++# endif
++# ifndef INT64_MIN
++#  define INT64_MIN (-__INT64_C(9223372036854775807)-1)
++# endif
++# ifndef INT64_MAX
++#  define INT64_MAX (__INT64_C(9223372036854775807))
++# endif
++# ifndef __UINT64_C
++#  if __WORDSIZE == 64
++#   define __UINT64_C(c) c ## UL
++#  else
++#   define __UINT64_C(c) c ## ULL
++#  endif
++# endif
++# ifndef UINT64_MAX
++#  define UINT64_MAX (__UINT64_C(18446744073709551615))
++# endif
++
+ using namespace v8::base;
+ using namespace v8::internal;
+ using namespace v8::internal::compiler;
+diff --git a/test/unittests/compiler/register-allocator-unittest.cc b/test/unittests/compiler/register-allocator-unittest.cc
+index c5ff90f..decf1ff 100644
+--- a/test/unittests/compiler/register-allocator-unittest.cc
++++ b/test/unittests/compiler/register-allocator-unittest.cc
+@@ -722,7 +722,7 @@ class SlotConstraintTest : public RegisterAllocatorTest,
+   int variant() const { return ::testing::get<1>(B::GetParam()); }
+ 
+  private:
+-  typedef ::testing::WithParamInterface<::testing::tuple<ParameterType, int>> B;
++  typedef ::testing::WithParamInterface< ::testing::tuple<ParameterType, int>> B;
+ };
+ 
+ }  // namespace
