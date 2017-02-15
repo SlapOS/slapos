@@ -71,6 +71,7 @@ context =
     raw rack_attack_rb_in           ${rack_attack.rb.in:target}
     raw resque_yml_in               ${resque.yml.in:target}
     raw smtp_settings_rb_in         ${smtp_settings.rb.in:target}
+    raw gitlab_restore_sh_in        ${template-gitlab-resiliency-restore.sh.in:target}
     raw unicorn_rb_in               ${unicorn.rb.in:target}
 
     $${:context-extra}

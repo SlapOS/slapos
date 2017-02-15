@@ -5,6 +5,8 @@ extends = {{ instance_gitlab_cfg }}
 
 parts +=
     cron-entry-gitlab-backup
+    resiliency-exclude-file
+    gitlab-resiliency-restore-script
 
 # -export specific instance parameters
 [instance-parameter]
@@ -29,10 +31,49 @@ environment   =
 # XXX: `/usr/bin` has to be in the PATH environment variable to be able to use
 # `which` command in gitlab-backup, `chrt` in xnice, ...
 # and `/bin` for `sed` command in gitlab-backup restore
-  PATH=/bin:/usr/bin:${buildout:directory}/bin:{{ coreutils_location }}/bin:{{ grep_location }}/bin:{{ tar_location }}/bin:{{ gzip_location }}/bin:{{ gopath_bin }}:{{ git_location }}/bin
+  PATH=${buildout:directory}/bin:{{ coreutils_location }}/bin:{{ grep_location }}/bin:{{ tar_location }}/bin:{{ gzip_location }}/bin:{{ gopath_bin }}:{{ git_location }}/bin:/bin:/usr/bin
 
 [cron-entry-gitlab-backup]
 <= cron-entry
 # run backup script on a regular basis (given as instance parameter)
 frequency = ${instance-parameter:configuration.backup_frequency}
 command	= ${exporter:wrapper-path}
+
+[resiliency-exclude-file]
+# Generate rdiff exclude file in case of resiliency
+recipe = collective.recipe.template
+input = inline: gitlab-shell-work*
+  gitlab-work*
+  var/backup/**
+  var/repositories*
+  var/repositories/**
+  srv/postgresql/**
+  srv/postgresql
+  etc/service/postgres-start
+  srv/redis/**
+  srv/unicorn/unicorn.socket
+output = ${directory:srv}/exporter.exclude
+
+[gitlab-resiliency-restore-script]
+# script run by resilient stack to restore gitlab instance
+# this section should be added only on runner import instance
+recipe  = slapos.recipe.template:jinja2
+mode    = 0700
+template= {{ gitlab_restore_sh_in }}
+rendered= ${directory:srv}/runner-import-restore
+context =
+  raw     bash_bin                {{ bash_bin }}
+  raw     go_work_bin             {{ gopath_bin }}
+  raw     git_location            {{ git_location }}
+  raw     bin_directory           ${directory:bin}
+  raw     etc_directory           ${directory:etc}
+  raw     run_directory           ${directory:run}
+  raw     postgress_script        ${service-postgresql:services}/postgres-start
+  raw     redis_script            ${service-redis:wrapper}
+  raw     unicorn_script          ${service-unicorn:wrapper-path}
+  raw     sidekiq_script          ${service-sidekiq:wrapper-path}
+  raw     gitlab_backup_dir       ${gitlab-backup-directory:backup-gitlab.git}
+  raw     redis_pid_file          ${service-redis:pid_file}
+  raw     postgres_pid_file       ${service-postgresql:pgdata-directory}/postmaster.pid
+  raw     gitlab_work_location    ${gitlab-work:location}
+  raw     promise_lab_location    ${directory:promise.slow}
