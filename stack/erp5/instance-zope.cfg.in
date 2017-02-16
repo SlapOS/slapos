@@ -2,7 +2,9 @@
 {% set next_port = itertools.count(slapparameter_dict['port-base']).next -%}
 {% set site_id = slapparameter_dict['site-id'] -%}
 {% set zodb_dict = slapparameter_dict['zodb-dict'] -%}
+{% set instance_index_list = range(slapparameter_dict['instance-count']) -%}
 {% set node_id_base = slapparameter_dict['name'] -%}
+{% set node_id_index_format = '-%%0%ii' % (len(str(instance_index_list[-1])), ) -%}
 {% set part_list = [] -%}
 {% set publish_list = [] -%}
 {% set longrequest_logger_base_path = buildout_directory ~ '/var/log/longrequest_logger_' -%}
@@ -278,7 +280,7 @@ lock-file = ${directory:run}/{{ name }}.lock
 port = {{ port }}
 event-log = ${directory:log}/{{ name }}-event.log
 z2-log = ${directory:log}/{{ name }}-Z2.log
-node-id = {{ dumps(node_id_base ~ '-' ~ index) }}
+node-id = {{ dumps(node_id_base ~ (node_id_index_format % index)) }}
 {% set log_list = [] -%}
 {% set import_set = set() -%}
 {% for db_name, zodb in zodb_dict.iteritems() -%}
@@ -354,7 +356,7 @@ log = {{ '${' ~ conf_parameter_name ~ ':event-log}' }} {{ '${' ~ conf_parameter_
 post = test ! -s {{ '${' ~ conf_parameter_name ~ ':pid-file}' }} || {{ bin_directory }}/slapos-kill --pidfile {{ '${' ~ conf_parameter_name ~ ':pid-file}' }} -s USR2
 {% endmacro -%}
 
-{% for i in range(slapparameter_dict['instance-count']) -%}
+{% for i in instance_index_list -%}
 {{   zope(
        i,
        next_port(),
