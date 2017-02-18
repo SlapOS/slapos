@@ -92,7 +92,8 @@ def main():
     
     if args.target == 'firefox':
       firefox_binary = webdriver.firefox.firefox_binary.FirefoxBinary(firefox_path=FIREFOX_EXECUTABLE)
-      browser = webdriver.Firefox(firefox_binary=firefox_binary)
+      browser = webdriver.Firefox(firefox_binary=firefox_binary,
+                                  executable_path='${firefox:location}/geckodriver')
     elif args.target in ['iOS', 'Android']:
       # parameters for mobile emulators have different names then parameters for
       # desktop OSes
