@@ -215,6 +215,8 @@ class ERP5Kernel(Kernel):
       code = code.strip()
 
       extra_data_list = []
+      print_result = {}
+      displayhook_result = {}
 
       if code.startswith('%'):
           # No need to try-catch here as its already been taken that the code
@@ -270,12 +272,17 @@ class ERP5Kernel(Kernel):
               #            "evalue": null,
               #            "traceback": null,
               #            "code_result": "",
-              #            "mime_type": "text/plain"
+              #            "print_result": {},
+              #            "displayhook_result": {},
+              #            "mime_type": "text/plain",
+              #            "extra_data_list": []
               #            }
               # So, we can easily use any of the key to update values as such.
 
               # Getting code_result for succesfull execution of code
               code_result = content['code_result']
+              print_result = content['print_result']
+              displayhook_result = content['displayhook_result']
 
               # Update mime_type with the mime_type from the http response result
               # Required in case the mime_type is anything other than 'text/plain'
@@ -297,21 +304,26 @@ class ERP5Kernel(Kernel):
             except ValueError:
               content = self.response
               code_result = content
+              print_result = {'data':{'text/plain':content}, 'metadata':{}}
           # Display basic error message to frontend in case of error on server side
           else:
             self.make_erp5_request(code=code)
             code_result = "Error at Server Side"
+            print_result = {'data':{'text/plain':'Error at Server Side'}, 'metadata':{}}
             mime_type = 'text/plain'
 
         # For all status_code except allowed_HTTP_response_code_list show unauthorized message
         else:
           code_result = 'Unauthorized access'
+          print_result = {'data':{'text/plain':'Unauthorized access'}, 'metadata':{}}
           mime_type = 'text/plain'
 
-        data = {
-          'data': {mime_type: code_result},
-          'metadata': {}}
-        self.send_response(self.iopub_socket, 'display_data', data)
+        if print_result.get('data'):
+          self.send_response(self.iopub_socket, 'display_data', print_result)
+
+        if displayhook_result.get('data'):
+          displayhook_result['execution_count'] = self.execution_count
+          self.send_response(self.iopub_socket, 'execute_result', displayhook_result)
 
         for extra_data in extra_data_list:
           self.send_response(self.iopub_socket, 'display_data', extra_data)
