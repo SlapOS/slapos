@@ -17,6 +17,8 @@ manpage_directory =
 sample_directory =
 readme_directory =
 inet_interfaces = {{ inet_interfaces }}
+smtp_bind_address = 0.0.0.0
+smtp_bind_address6 = ::
 virtual_alias_maps = {{ divert }}
 
 # Compared to default:
