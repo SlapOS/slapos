@@ -1,0 +1,11 @@
+--- librsync-2.0.0/src/search.c	2017-02-20 13:39:48.012922600 +0100
++++ librsync-2.0.0/src/search.c	2017-02-20 13:41:43.661880014 +0100
+@@ -218,7 +218,7 @@
+ 	    r = m;
+     }
+ 
+-    if (l == r) {
++    if ((l == r) && (l <= bucket->r)) {
+ 	int i = sig->targets[l].i;
+ 	rs_block_sig_t *b = &(sig->block_sigs[i]);
+ 	if (weak_sum != b->weak_sum)
