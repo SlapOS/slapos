@@ -48,6 +48,10 @@ smtpd_recipient_restrictions =
   reject_unknown_recipient_domain
   permit_sasl_authenticated
   reject
+# Do not allow mynetworks to send mails, only authenticated clients.
+smtpd_relay_restrictions =
+  permit_sasl_authenticated
+  defer_unauth_destination
 
 # Disable local delivery
 local_transport = error
