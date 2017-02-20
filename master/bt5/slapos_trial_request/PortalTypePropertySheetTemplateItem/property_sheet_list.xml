@@ -1,5 +1,6 @@
 <property_sheet_list>
  <portal_type id="Trial Request">
+  <item>HostingSubscription</item>
   <item>Organisation</item>
   <item>Reference</item>
   <item>Task</item>
