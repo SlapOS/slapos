@@ -7,20 +7,10 @@ if REQUEST is not None:
 request = context.REQUEST
 portal = context.getPortalObject()
 
-##### Starting Hardcoded Information ######
-instance_xml = """<?xml version="1.0" encoding="utf-8"?>
-<instance>
-</instance>
-"""
 
-software_type = "RootSoftwareInstance"
-#url = 'http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/heads/request.product:/software/cdn-me/software.cfg'
-url = "https://lab.node.vifib.com/nexedi/slapos/raw/1.0.21/software/cdn-me/software.cfg"
-shared = True
+trial_configuration = context.TrialRequest_getTrialConfiguration(software_release)
 
-######
-
-software_title = "'CDN ME free trial' for '%s'" % (email)
+software_title = trial_configuration["base_software_title"] % (email)
 
 
 trial_request = portal.portal_catalog.getResultValue(
@@ -39,19 +29,20 @@ trial_request_list = portal.portal_catalog(
               limit=31
 )
 
-if len(trial_request_list) >= 30:
+if len(trial_request_list) >= 10:
   return context.Base_redirect("slapos-Free.Trial.ExceedLimit.Message")
 
 
 now = DateTime()
 
 trial = context.trial_request_module.newContent(
-  source_reference="RootSoftwareInstance",
+  source_reference=trial_configuration["software_type"],
   title=software_title,
-  url_string=url,
-  text_content=instance_xml,
+  url_string=trial_configuration["url"],
+  text_content=trial_configuration["instance_xml"],
   start_date=now, 
-  stop_date=now + 21
+  stop_date=now + 30,
+  root_slave=trial_configuration["shared"]
   )
 
 trial.setDefaultEmailText(email)

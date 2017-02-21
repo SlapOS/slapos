@@ -7,22 +7,21 @@ if person is None:
   return 
 
 if context.getSpecialise() is not None:
-  return
+  return 
 
 if context.getValidationState() == "validated":
   return 
 
 state = "started"
-shared = False
 
 request_kw = {}
 request_kw.update(
     software_release=context.getUrlString(),
     software_title=context.getTitle() + " %s" % str(context.getUid()),
-    software_type="RootSoftwareInstance",
+    software_type=context.getSourceReference(),
     instance_xml=context.getTextContent(),
     sla_xml="",
-    shared=shared,
+    shared=context.getRootSlave(),
     state=state,
   )
 
