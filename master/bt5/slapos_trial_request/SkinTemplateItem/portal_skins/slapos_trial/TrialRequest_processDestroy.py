@@ -4,9 +4,8 @@ person = portal.portal_catalog.getResultValue(
   portal_type="Person", 
   reference="free_trial_user")
 
-
 if context.getStopDate() >= DateTime():
-  return
+  return 
 
 if person is None: 
   return 
@@ -18,21 +17,34 @@ if context.getValidationState() != "validated":
   return 
 
 state = "destroyed"
-shared = False
+
+hosting_subscription = context.getSpecialiseValue()
 
 request_kw = {}
 request_kw.update(
-    software_release=context.getUrlString(),
-    software_title=context.getTitle(),
-    software_type="RootSoftwareInstance",
-    instance_xml=context.getTextContent(),
+    software_release=hosting_subscription.getUrlString(),
+    software_title=hosting_subscription.getTitle(),
+    software_type=hosting_subscription.getSourceReference(),
+    instance_xml=hosting_subscription.getTextContent(),
     sla_xml="",
-    shared=shared,
+    shared=hosting_subscription.getRootSlave(),
     state=state,
   )
 
 person.requestSoftwareInstance(**request_kw)
 
-context.invalidate()
 
-return
+connection_dict = hosting_subscription.getPredecessorValue().getConnectionXmlAsDict()
+
+connection_key_list = context.getSubjectList()
+connection_string = '\n'.join(['%s: %s' % (x,y) for x,y in connection_dict.items() if x in connection_key_list])
+
+mapping_dict = {"token": connection_string }
+
+
+context.TrialRequest_sendMailMessage(person,
+    context.getDefaultEmailText(),
+   'slapos-free.trial.destroy', 
+   mapping_dict)
+
+context.invalidate()
