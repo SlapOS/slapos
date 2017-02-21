@@ -18,6 +18,8 @@ mariadb_backup_directory='${directory:mariadb-backup-full}'
 instance_directory='${buildout:directory}'
 pid_file='${my-cnf-parameters:pid-file}'
 binlog_path='${my-cnf-parameters:binlog-path}'
+server_executable='${mysqld:rendered}'
+update_executable='${update-mysql:output}'
 
 # Make sure mariadb is not already running
 if [ -e "$pid_file" ]; then
@@ -44,7 +46,7 @@ fi
 
 echo "Starting mariadb..."
 # XXX hardcoded
-$instance_directory/etc/run/mariadb &
+"$server_executable" --innodb-flush-method=nosync --skip-innodb-doublewrite &
 mysqld_pid=$!
 trap "kill $mysqld_pid" EXIT TERM INT
 sleep 30
@@ -53,7 +55,7 @@ if ! [ -d /proc/$mysql_pid ]; then
   echo "mysqld exited, aborting."
   exit 1
 fi
-$instance_directory/etc/run/mariadb_update &
+"$update_executable" &
 mariadb_update_pid=$!
 sleep 60
 # If mariadb_update is still running, abort
