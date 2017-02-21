@@ -38,15 +38,6 @@ output = $${directory:bin}/runTestSuite
 buildout-directory = $${buildout:directory}
 mode = 0700
 
-[firefox-instance]
-recipe = slapos.cookbook:firefox
-executable = firefox
-runner-path = $${directory:bin}/$${:executable}
-firefox-path = ${firefox:location}/firefox-slapos
-prefsjs-path = $${directory:etc}/prefs.js
-shell-path = ${dash:location}/bin/dash
-tmp-path = $${xvfb-instance:tmp-path}
-
 [xvfb-instance]
 recipe = slapos.cookbook:xvfb
 runner-path = $${directory:services}/xvfb
