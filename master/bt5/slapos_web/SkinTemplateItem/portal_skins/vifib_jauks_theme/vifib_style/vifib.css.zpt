@@ -1,8 +1,7 @@
 <tal:block define="dummy python: request.RESPONSE.setHeader('Content-Type', 'text/css;; charset=utf-8')"/>
 <tal:block tal:define="portal_path python:here.aq_parent.getWebSiteValue().absolute_url();
                        images_path string:${portal_path}/vifib_image/;
-                       logo_reference python:here.aq_parent.getWebSiteValue().getLayoutProperty('layout_logo_reference', 'vifib_hosting_image/logo.png');
-                       subscribe_button python:here.aq_parent.getWebSiteValue().getLayoutProperty('layout_subscribe_button_reference', 'tiolive-Subscribe.For.Free.Button');">
+                       logo_reference python:here.aq_parent.getWebSiteValue().getLayoutProperty('layout_logo_reference', 'vifib_hosting_image/logo.png');">
 
 /**********************/
 /* Global definitions */
@@ -71,7 +70,7 @@ div#language img {
 }
 
 #vifib_logo{position:absolute;top:2px;left:50%;margin-left:-150px;width:300px;
-  height:150px;background: url(<tal:block tal:replace="images_path"/>vifib_logo.png) no-repeat top left}
+  height:150px;background: url(<tal:block tal:replace="logo_reference"/>) no-repeat top left}
 
 #login_menu{width:900px;margin:120px auto 0px auto;padding-right:20px;text-align:right;
 	color:#bae2e9;height:36px;-moz-border-radius:10px}
