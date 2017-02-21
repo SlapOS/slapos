@@ -1,0 +1,26 @@
+From d60a73882f288e7c953d3ad786ee3f041d5c04ea Mon Sep 17 00:00:00 2001
+From: kaktus42 <vowinkel.alexander@gmail.com>
+Date: Wed, 23 Nov 2016 16:15:07 +0100
+Subject: fix: rcpt gets cut off
+
+for me, with postfix: `data[0]` is `'Rpost@example.com\x00'` and gets cut to `ost@example.co` with `rcpt = data[2:-2]`
+---
+ libmilter.py | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/libmilter.py b/libmilter.py
+index 5fc9405..c80e6cf 100755
+--- a/libmilter.py
++++ b/libmilter.py
+@@ -815,7 +815,7 @@ class MilterProtocol(object):
+         data = data[0]
+         rcpt = ''
+         if data:
+-            rcpt = data[2:-2]
++            rcpt = data[1:-1]
+         elif md.has_key('rcpt_addr'):
+             rcpt = md['rcpt_addr']
+         if md.has_key('i'):
+-- 
+2.11.0
+

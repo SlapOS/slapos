@@ -19,7 +19,6 @@ readme_directory =
 inet_interfaces = {{ inet_interfaces }}
 smtp_bind_address = 0.0.0.0
 smtp_bind_address6 = ::
-virtual_alias_maps = {{ divert }}
 
 # Compared to default:
 # - remove X-related variables, irrelevant for slapos, to be concise
@@ -55,6 +54,8 @@ smtpd_relay_restrictions =
 
 # Disable local delivery
 local_transport = error
+
+smtpd_milters ={{ '\n  '.join(milter_list) }}
 
 {% if relayhost -%}
 relayhost = {{ relayhost }}
