@@ -1,0 +1,545 @@
+--- Common/3dParty/boost/fetch.sh.orig	2017-02-03 15:34:43.000000000 +0000
++++ Common/3dParty/boost/fetch.sh	2017-02-06 10:34:23.113177706 +0000
+@@ -1,4 +1,6 @@
+ #!/bin/bash
++# XXX actualy, this file should be named fetch.bash
++set -e
+ 
+ SCRIPT=$(readlink -f "$0")
+ SCRIPTPATH=$(dirname "$SCRIPT")
+@@ -12,32 +14,14 @@
+   *)        exit ;;
+ esac
+ 
+-if [[ "$platform" == *"mac"* ]]
+-then
+-if [[ -f "$SCRIPTPATH/7zX_1.7.1.dmg" ]]
+-then
+-echo "7z already downloaded"
++if [ -f "$SCRIPTPATH/boost_1_58_0.tar.gz" ]; then
++  echo "boost already downloaded"
+ else
+-wget http://static.updatestar.net/dl/7zX/7zX_1.7.1.dmg
+-fi
+-fi
+-
+-if [[ -f "$SCRIPTPATH/boost_1_58_0.7z" ]]
+-then
+-echo "boost already downloaded"
+-else
+-wget http://freefr.dl.sourceforge.net/project/boost/boost/1.58.0/boost_1_58_0.7z
++  wget http://freefr.dl.sourceforge.net/project/boost/boost/1.58.0/boost_1_58_0.tar.gz
+ fi
+ 
+ if [ -d "$SCRIPTPATH/boost_1_58_0" ]; then
+-echo "boost already extracted"
+-else
+-if [[ "$platform" == *"linux"* ]]
+-then
+-7z x -y "$SCRIPTPATH/boost_1_58_0.7z" -o"$SCRIPTPATH/"
++  echo "boost already extracted"
+ else
+-hdiutil mount "$SCRIPTPATH/7zX_1.7.1.dmg"
+-/Volumes/7zX/7zX.app/Contents/Resources/7za x "$SCRIPTPATH/boost_1_58_0.7z" -o"$SCRIPTPATH/"
+-hdiutil unmount /Volumes/7zX
+-fi
++  ( cd "$SCRIPTPATH" && tar xf boost_1_58_0.tar.gz )
+ fi
+--- Common/3dParty/cef/fetch.sh.orig	2017-02-06 12:11:47.539258686 +0000
++++ Common/3dParty/cef/fetch.sh	2017-02-09 08:15:24.016250430 +0000
+@@ -1,4 +1,6 @@
+ #!/bin/bash
++# XXX actualy, this file should be named fetch.bash
++set -e
+ 
+ SCRIPT=$(readlink -f "$0")
+ SCRIPTPATH=$(dirname "$SCRIPT")
+@@ -20,37 +22,27 @@
+   *)        arch="_32" ;;
+ esac
+ 
+-if [[ -d "$SCRIPTPATH/$platform$arch" ]]
+-then
+-echo
+-else
+-mkdir "$SCRIPTPATH/$platform$arch"
++if [ ! -d "$SCRIPTPATH/$platform$arch" ]; then
++  mkdir "$SCRIPTPATH/$platform$arch"
+ fi
+ 
+ cd "$SCRIPTPATH/$platform$arch"
+ 
+-if [ -d "build" ]
+-then
+-echo ""
+-else
+-mkdir "build"
++if [ ! -d build ]; then
++  mkdir "build"
+ fi
+ 
+-if [[ "$platform" == *"linux"* ]]
+-then
+-if [[ -f "cef_binary.7z" ]]
+-then 
+-echo "cef_binary already downloaded"
+-else
+-wget http://d2ettrnqo7v976.cloudfront.net/cef/2454/$platform$arch/cef_binary.7z
+-fi
+-if [ -d cef_binary ]
+-then
+-echo "cef_binary already extracted"
+-else
+-
+-7z x -y cef_binary.7z
+-fi
+-cp -r -t build/ ./cef_binary/Release/*  ./cef_binary/Resources/*
+-chmod a+xr build/locales
++if [[ "$platform" == *linux* ]]; then
++  if [ -f cef_binary.7z ]; then
++    echo "cef_binary already downloaded"
++  else
++    wget http://d2ettrnqo7v976.cloudfront.net/cef/2454/$platform$arch/cef_binary.7z
++  fi
++  if [ -d cef_binary ]; then
++    echo "cef_binary already extracted"
++  else
++    7z x -y cef_binary.7z
++  fi
++  cp -r -t build/ ./cef_binary/Release/*  ./cef_binary/Resources/*
++  chmod a+xr build/locales
+ fi
+--- Common/3dParty/cryptopp/build.sh.orig	2017-01-30 15:04:58.221156379 +0100
++++ Common/3dParty/cryptopp/build.sh	2017-01-30 15:04:48.103156175 +0100
+@@ -1,4 +1,7 @@
+ #!/bin/bash
++# XXX actualy, this file should be named build.bash
++set -e
++CRYPTOPP_QMAKE_SPEC=SED_IT
+ 
+ BUILD_DIR=project/cryptopp.build
+ mkdir -p $BUILD_DIR
+@@ -3,5 +6,5 @@
+ BUILD_DIR=project/cryptopp.build
+ mkdir -p $BUILD_DIR
+ cd $BUILD_DIR
+-qmake ../cryptopp.pro
++qmake -spec "$CRYPTOPP_QMAKE_SPEC" ../cryptopp.pro
+ make && echo "build: OK!"
+--- Common/3dParty/icu/fetch.sh.orig	2017-01-30 14:22:41.881105314 +0100
++++ Common/3dParty/icu/fetch.sh	2017-01-30 14:54:19.715143524 +0100
+@@ -1,4 +1,6 @@
+ #!/bin/bash
++# XXX actualy, this file should be named fetch.bash
++set -e
+ 
+ SCRIPT=$(readlink -f "$0")
+ SCRIPTPATH=$(dirname "$SCRIPT")
+@@ -20,57 +22,44 @@
+   *)        arch="_32" ;;
+ esac
+ 
+-if [[ -d "$SCRIPTPATH/$platform$arch" ]]
+-then
+-echo
+-else
+-mkdir "$SCRIPTPATH/$platform$arch"
++if [ ! -d "$SCRIPTPATH/$platform$arch" ] ; then
++  mkdir "$SCRIPTPATH/$platform$arch"
+ fi
+ 
+ cd "$SCRIPTPATH/$platform$arch"
+ 
+-if [ -d "build" ]
+-then
+-echo ""
+-else
+-mkdir "build"
++if [ ! -d "build" ] ; then
++  mkdir "build"
+ fi
+ 
+-if [[ "$platform" == *"linux"* ]]
+-then
+-if [[ -f "./icu.zip" ]]
+-then 
+-echo "icu already downloaded"
+-else
+-if [[ "$arch" == *"_64"* ]]
+-then
+-wget -O icu.zip http://download.icu-project.org/files/icu4c/55.1/icu4c-55_1-RHEL6-x64.tgz
+-else
+-wget -O icu.zip http://download.icu-project.org/files/icu4c/55.1/icu4c-55_1-RHEL6-i386.tgz
+-fi
+-fi
+-if [ -d "./icu" ]
+-then
+-echo "icu already extracted"
+-else
+-7z x -so "./icu.zip" | tar xf -
+-fi
+-cp "./usr/local/lib/libicudata.so.55.1" "build/libicudata.so.55"
+-cp "./usr/local/lib/libicuuc.so.55.1" "build/libicuuc.so.55"
+-fi
+-
+-if [[ "$platform" == *"mac"* ]]
+-then
+-if [ -d "./icu" ]
+-then
+-echo "icu already extracted"
+-else
+-svn export http://source.icu-project.org/repos/icu/icu/tags/release-55-1 ./icu
+-fi
+-cd ./icu/source/
+-./runConfigureICU MacOSX
+-make
+-cd ../../
+-cp "./icu/source/lib/libicudata.55.1.dylib" "build/llibicudata.55.1.dylib"
+-cp "./icu/source/lib/libicuuc.55.1.dylib" "build/libicuuc.55.1.dylib"
++if [[ "$platform" == *linux* ]] ; then
++  if [[ -f icu.tar.gz ]] ; then
++    echo "icu already downloaded"
++  else
++    if [[ "$arch" == *_64* ]] ; then
++      wget -O icu.tar.gz http://download.icu-project.org/files/icu4c/55.1/icu4c-55_1-RHEL6-x64.tgz
++    else
++      wget -O icu.tar.gz http://download.icu-project.org/files/icu4c/55.1/icu4c-55_1-RHEL6-i386.tgz
++    fi
++  fi
++  if [ -d icu ] ; then
++    echo "icu already extracted"
++  else
++    tar xf icu.tar.gz
++  fi
++  cp "./usr/local/lib/libicudata.so.55.1" "build/libicudata.so.55"
++  cp "./usr/local/lib/libicuuc.so.55.1" "build/libicuuc.so.55"
++
++elif [[ "$platform" == *mac* ]] ; then
++  if [ -d icu ] ; then
++    echo "icu already extracted"
++  else
++    svn export http://source.icu-project.org/repos/icu/icu/tags/release-55-1 ./icu
++  fi
++  cd ./icu/source/
++  ./runConfigureICU MacOSX
++  make
++  cd ../../
++  cp "./icu/source/lib/libicudata.55.1.dylib" "build/llibicudata.55.1.dylib"
++  cp "./icu/source/lib/libicuuc.55.1.dylib" "build/libicuuc.55.1.dylib"
+ fi
+--- Common/3dParty/make.sh.orig	2017-01-30 14:51:30.167140110 +0100
++++ Common/3dParty/make.sh	2017-01-30 14:54:00.851143144 +0100
+@@ -1,4 +1,6 @@
+ #!/bin/bash
++# XXX actualy, this file should be name make.bash
++set -e
+ 
+ SCRIPT=$(readlink -f "$0")
+ SCRIPTPATH=$(dirname "$SCRIPT")
+@@ -7,17 +9,15 @@
+ 
+ for d in */ ; do
+ 
+-echo "$d"
+-cd "$SCRIPTPATH/$d"
++  echo "$d"
++  cd "$SCRIPTPATH/$d"
+ 
+-if [ -f "fetch.sh" ]
+-then 
+-bash "fetch.sh"
+-fi
+-if [ -f "build.sh" ]
+-then 
+-bash "build.sh"
+-fi
++  if [ -f fetch.sh ] ; then
++    bash fetch.sh
++  fi
++  if [ -f build.sh ] ; then
++    bash build.sh
++  fi
+ 
+-cd "$SCRIPTPATH"
++  cd "$SCRIPTPATH"
+ done
+--- Common/3dParty/v8/build.sh.orig	2017-01-30 15:01:50.592152601 +0100
++++ Common/3dParty/v8/build.sh	2017-01-30 15:01:33.800152263 +0100
+@@ -1,4 +1,6 @@
+ #!/bin/bash
++# XXX actualy, this file should be named build.bash
++set -e
+ 
+ export PATH=`pwd`/depot_tools:"$PATH"
+ 
+--- Common/3dParty/v8/fetch.sh.orig	2017-01-30 15:01:43.810152465 +0100
++++ Common/3dParty/v8/fetch.sh	2017-02-01 15:24:37.740189528 +0100
+@@ -1,20 +1,24 @@
+ #!/bin/bash
++# XXX actualy, this file should be named fetch.bash
++set -e
++# XXX move /usr/bin to last PATH place
++_tmp_PATH=$(echo "$PATH" | sed 's,\(^\|:\)/usr/bin\(:\|$\),\1\2,g') && export PATH="$(echo "$_tmp_PATH:/usr/bin" | sed 's,:\+,:,g')" || :
+ 
+ SCRIPT=$(readlink -f "$0")
+ SCRIPTPATH=$(dirname "$SCRIPT")
+ 
+ cd "$SCRIPTPATH"
+ 
+-if [ ! -d "depot_tools" ]
+-then
+-git clone https://chromium.googlesource.com/chromium/tools/depot_tools.git
++if [ ! -d depot_tools ] ; then
++  git clone https://chromium.googlesource.com/chromium/tools/depot_tools.git
+ fi
+ 
+ export PATH=`pwd`/depot_tools:"$PATH"
+ 
+-if [ ! -d "./v8" ]
+-then
+-fetch v8
++if [ ! -d v8 ] ; then
++  fetch v8
+ fi
+ 
+ gclient sync -r 4.10.253
++cd v8
++git apply ../slapos-v8.patch
+--- /dev/null	2017-01-30 09:00:09.914078893 +0100
++++ Common/3dParty/v8/slapos-v8.patch	2017-02-01 16:39:12.093279611 +0100
+@@ -0,0 +1,235 @@
++diff --git a/build/standalone.gypi b/build/standalone.gypi
++index f804715..48eea0f 100644
++--- a/build/standalone.gypi
+++++ b/build/standalone.gypi
++@@ -132,7 +132,7 @@
++         # Do not use 32-bit gold on 32-bit hosts as it runs out address space
++         # for component=static_library builds.
++         ['(OS=="linux" or OS=="android") and (target_arch=="x64" or target_arch=="arm" or (target_arch=="ia32" and host_arch=="x64"))', {
++-          'linux_use_bundled_gold%': 1,
+++          'linux_use_bundled_gold%': 0,
++         }, {
++           'linux_use_bundled_gold%': 0,
++         }],
++diff --git a/build/toolchain.gypi b/build/toolchain.gypi
++index c2974c5..a14a704 100644
++--- a/build/toolchain.gypi
+++++ b/build/toolchain.gypi
++@@ -109,7 +109,7 @@
++       # Do not use 32-bit gold on 32-bit hosts as it runs out address space
++       # for component=static_library builds.
++       ['OS=="linux" and (target_arch=="x64" or target_arch=="arm")', {
++-        'linux_use_bundled_gold%': 1,
+++        'linux_use_bundled_gold%': 0,
++       }, {
++         'linux_use_bundled_gold%': 0,
++       }],
++@@ -126,7 +126,7 @@
++       # linux_use_gold_flags: whether to use build flags that rely on gold.
++       # On by default for x64 Linux.
++       ['OS=="linux" and target_arch=="x64"', {
++-        'linux_use_gold_flags%': 1,
+++        'linux_use_gold_flags%': 0,
++       }, {
++         'linux_use_gold_flags%': 0,
++       }],
++diff --git a/src/compiler/arm64/code-generator-arm64.cc b/src/compiler/arm64/code-generator-arm64.cc
++index b3841d0..a351755 100644
++--- a/src/compiler/arm64/code-generator-arm64.cc
+++++ b/src/compiler/arm64/code-generator-arm64.cc
++@@ -12,6 +12,17 @@
++ #include "src/compiler/node-matchers.h"
++ #include "src/compiler/osr.h"
++ 
+++# ifndef __INT64_C
+++#  if __WORDSIZE == 64
+++#   define __INT64_C(c)  c ## L
+++#  else
+++#   define __INT64_C(c)  c ## LL
+++#  endif
+++# endif
+++# ifndef INT64_MIN
+++#  define INT64_MIN (-__INT64_C(9223372036854775807)-1)
+++# endif
+++
++ namespace v8 {
++ namespace internal {
++ namespace compiler {
++diff --git a/src/compiler/instruction-selector.cc b/src/compiler/instruction-selector.cc
++index 053c646..94211ec 100644
++--- a/src/compiler/instruction-selector.cc
+++++ b/src/compiler/instruction-selector.cc
++@@ -14,6 +14,12 @@
++ #include "src/compiler/state-values-utils.h"
++ #include "src/deoptimizer.h"
++ 
+++# if __WORDSIZE == 64
+++#  define SIZE_MAX (18446744073709551615UL)
+++# else
+++#  define SIZE_MAX (4294967295U)
+++# endif
+++
++ namespace v8 {
++ namespace internal {
++ namespace compiler {
++@@ -387,6 +393,7 @@ size_t AddOperandToStateValueDescriptor(StateValueDescriptor* descriptor,
++       return 1;
++     }
++   }
+++  return 1;
++ }
++ 
++ 
++diff --git a/src/compiler/x64/code-generator-x64.cc b/src/compiler/x64/code-generator-x64.cc
++index 8a64744..86d3ba1 100644
++--- a/src/compiler/x64/code-generator-x64.cc
+++++ b/src/compiler/x64/code-generator-x64.cc
++@@ -12,6 +12,17 @@
++ #include "src/x64/assembler-x64.h"
++ #include "src/x64/macro-assembler-x64.h"
++ 
+++# ifndef __INT64_C
+++#  if __WORDSIZE == 64
+++#   define __INT64_C(c)  c ## L
+++#  else
+++#   define __INT64_C(c)  c ## LL
+++#  endif
+++# endif
+++# ifndef INT64_MIN
+++#  define INT64_MIN (-__INT64_C(9223372036854775807)-1)
+++# endif
+++
++ namespace v8 {
++ namespace internal {
++ namespace compiler {
++diff --git a/test/cctest/compiler/test-run-machops.cc b/test/cctest/compiler/test-run-machops.cc
++index cea90a2..44d0a0f 100644
++--- a/test/cctest/compiler/test-run-machops.cc
+++++ b/test/cctest/compiler/test-run-machops.cc
++@@ -14,6 +14,30 @@
++ #include "test/cctest/compiler/graph-builder-tester.h"
++ #include "test/cctest/compiler/value-helper.h"
++ 
+++# ifndef __INT64_C
+++#  if __WORDSIZE == 64
+++#   define __INT64_C(c)  c ## L
+++#  else
+++#   define __INT64_C(c)  c ## LL
+++#  endif
+++# endif
+++# ifndef INT64_MIN
+++#  define INT64_MIN (-__INT64_C(9223372036854775807)-1)
+++# endif
+++# ifndef INT64_MAX
+++#  define INT64_MAX (__INT64_C(9223372036854775807))
+++# endif
+++# ifndef __UINT64_C
+++#  if __WORDSIZE == 64
+++#   define __UINT64_C(c) c ## UL
+++#  else
+++#   define __UINT64_C(c) c ## ULL
+++#  endif
+++# endif
+++# ifndef UINT64_MAX
+++#  define UINT64_MAX (__UINT64_C(18446744073709551615))
+++# endif
+++
++ using namespace v8::base;
++ 
++ namespace v8 {
++diff --git a/test/cctest/test-macro-assembler-mips64.cc b/test/cctest/test-macro-assembler-mips64.cc
++index e74703b..4c91684 100644
++--- a/test/cctest/test-macro-assembler-mips64.cc
+++++ b/test/cctest/test-macro-assembler-mips64.cc
++@@ -36,6 +36,17 @@
++ #include "src/mips64/macro-assembler-mips64.h"
++ #include "src/mips64/simulator-mips64.h"
++ 
+++# ifndef __INT64_C
+++#  if __WORDSIZE == 64
+++#   define __INT64_C(c)  c ## L
+++#  else
+++#   define __INT64_C(c)  c ## LL
+++#  endif
+++# endif
+++# ifndef INT64_MAX
+++#  define INT64_MAX (__INT64_C(9223372036854775807))
+++# endif
+++
++ 
++ using namespace v8::internal;
++ 
++@@ -456,7 +467,7 @@ static uint64_t run_dlsa(uint64_t rt, uint64_t rs, int8_t sa) {
++   Handle<Code> code = isolate->factory()->NewCode(
++       desc, Code::ComputeFlags(Code::STUB), Handle<Code>());
++ 
++-  ::F f = FUNCTION_CAST<::F>(code->entry());
+++  ::F f = FUNCTION_CAST< ::F>(code->entry());
++ 
++   uint64_t res = reinterpret_cast<uint64_t>(
++       CALL_GENERATED_CODE(isolate, f, rt, rs, 0, 0, 0));
++diff --git a/test/cctest/test-unboxed-doubles.cc b/test/cctest/test-unboxed-doubles.cc
++index f195a31..45499ce 100644
++--- a/test/cctest/test-unboxed-doubles.cc
+++++ b/test/cctest/test-unboxed-doubles.cc
++@@ -18,6 +18,12 @@
++ #include "test/cctest/cctest.h"
++ #include "test/cctest/heap/utils-inl.h"
++ 
+++#if __WORDSIZE == 64
+++#  define UINT64_C(c) c ## UL
+++#else
+++#  define UINT64_C(c) c ## ULL
+++#endif
+++
++ using namespace v8::base;
++ using namespace v8::internal;
++ 
++diff --git a/test/cctest/wasm/test-run-wasm.cc b/test/cctest/wasm/test-run-wasm.cc
++index a3730ca..7a7b21f 100644
++--- a/test/cctest/wasm/test-run-wasm.cc
+++++ b/test/cctest/wasm/test-run-wasm.cc
++@@ -13,6 +13,30 @@
++ #include "test/cctest/wasm/test-signatures.h"
++ #include "test/cctest/wasm/wasm-run-utils.h"
++ 
+++# ifndef __INT64_C
+++#  if __WORDSIZE == 64
+++#   define __INT64_C(c)  c ## L
+++#  else
+++#   define __INT64_C(c)  c ## LL
+++#  endif
+++# endif
+++# ifndef INT64_MIN
+++#  define INT64_MIN (-__INT64_C(9223372036854775807)-1)
+++# endif
+++# ifndef INT64_MAX
+++#  define INT64_MAX (__INT64_C(9223372036854775807))
+++# endif
+++# ifndef __UINT64_C
+++#  if __WORDSIZE == 64
+++#   define __UINT64_C(c) c ## UL
+++#  else
+++#   define __UINT64_C(c) c ## ULL
+++#  endif
+++# endif
+++# ifndef UINT64_MAX
+++#  define UINT64_MAX (__UINT64_C(18446744073709551615))
+++# endif
+++
++ using namespace v8::base;
++ using namespace v8::internal;
++ using namespace v8::internal::compiler;
++diff --git a/test/unittests/compiler/register-allocator-unittest.cc b/test/unittests/compiler/register-allocator-unittest.cc
++index c5ff90f..decf1ff 100644
++--- a/test/unittests/compiler/register-allocator-unittest.cc
+++++ b/test/unittests/compiler/register-allocator-unittest.cc
++@@ -722,7 +722,7 @@ class SlotConstraintTest : public RegisterAllocatorTest,
++   int variant() const { return ::testing::get<1>(B::GetParam()); }
++ 
++  private:
++-  typedef ::testing::WithParamInterface<::testing::tuple<ParameterType, int>> B;
+++  typedef ::testing::WithParamInterface< ::testing::tuple<ParameterType, int>> B;
++ };
++ 
++ }  // namespace
