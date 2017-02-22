@@ -3,6 +3,7 @@
   <item>HostingSubscription</item>
   <item>Organisation</item>
   <item>Reference</item>
+  <item>SoftwareInstance</item>
   <item>Task</item>
   <item>TextDocument</item>
   <item>Url</item>
