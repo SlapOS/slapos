@@ -98,7 +98,7 @@
                     <key>
                       <tuple>
                         <int>99</int>
-                        <string>ERP5 Web Section/free-trial</string>
+                        <string>ERP5 Web Section/domainplus</string>
                       </tuple>
                     </key>
                     <value>
@@ -115,9 +115,34 @@
             </value>
         </item>
         <item>
+            <key> <string>_local_properties</string> </key>
+            <value>
+              <tuple>
+                <dictionary>
+                  <item>
+                      <key> <string>id</string> </key>
+                      <value> <string>layout_software_product_reference</string> </value>
+                  </item>
+                  <item>
+                      <key> <string>type</string> </key>
+                      <value> <string>string</string> </value>
+                  </item>
+                </dictionary>
+              </tuple>
+            </value>
+        </item>
+        <item>
             <key> <string>_range_criterion</string> </key>
             <value>
               <persistent> <string encoding="base64">AAAAAAAAAAQ=</string> </persistent>
+            </value>
+        </item>
+        <item>
+            <key> <string>categories</string> </key>
+            <value>
+              <tuple>
+                <string>aggregate/web_page_module/slapos-trial-domainplus</string>
+              </tuple>
             </value>
         </item>
         <item>
@@ -125,14 +150,8 @@
             <value> <string>WebSite_viewFreeTrialForm</string> </value>
         </item>
         <item>
-            <key> <string>default_page_displayed</string> </key>
-            <value> <int>0</int> </value>
-        </item>
-        <item>
             <key> <string>description</string> </key>
-            <value>
-              <none/>
-            </value>
+            <value> <string>Request a Free Trial of Domain+</string> </value>
         </item>
         <item>
             <key> <string>empty_criterion_valid</string> </key>
@@ -140,7 +159,11 @@
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>free-trial</string> </value>
+            <value> <string>domainplus</string> </value>
+        </item>
+        <item>
+            <key> <string>layout_software_product_reference</string> </key>
+            <value> <string>frontend</string> </value>
         </item>
         <item>
             <key> <string>portal_type</string> </key>
@@ -154,7 +177,7 @@
         </item>
         <item>
             <key> <string>title</string> </key>
-            <value> <string>Free Trial</string> </value>
+            <value> <string>Domain+</string> </value>
         </item>
         <item>
             <key> <string>visible</string> </key>
