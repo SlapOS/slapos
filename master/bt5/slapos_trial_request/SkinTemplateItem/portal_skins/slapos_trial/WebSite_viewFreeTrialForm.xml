@@ -83,6 +83,7 @@
                         <string>contract</string>
                         <string>your_term_confirmation</string>
                         <string>your_captcha</string>
+                        <string>your_software_release</string>
                       </list>
                     </value>
                 </item>
