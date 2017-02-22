@@ -42,7 +42,8 @@ trial = context.trial_request_module.newContent(
   text_content=trial_configuration["instance_xml"],
   start_date=now, 
   stop_date=now + 30,
-  root_slave=trial_configuration["shared"]
+  root_slave=trial_configuration["shared"],
+  subject_list=trial_configuration["subject_list"]
   )
 
 trial.setDefaultEmailText(email)
