@@ -102,13 +102,14 @@ parameter-list =
   raw monitor-user ${monitor-instance-parameter:username}
   htpasswd monitor-password ${monitor-htpassword-file:password-file} ${monitor-instance-parameter:username} ${httpd-monitor-htpasswd:htpasswd-path}
   file promise-timeout ${monitor-promise-timeout-file:file}
-  file free-disk-space-MB ${promise-check-free-disk-space:config-file}
+  file min-free-disk-MB ${promise-check-free-disk-space:config-file}
   ${monitor-instance-parameter:instance-configuration}
 # htpasswd entry:  htpasswd key password-file username htpasswd-file
 
 collector-db = ${monitor-instance-parameter:collector-db}
 collect-script = {{ monitor_collect }}
 python = {{ python_with_eggs }}
+nice-cmd = ${xnice-bin:output}
 
 promise-output-file = ${directory:monitor}/monitor-bootstrap-status
 
@@ -230,9 +231,17 @@ context =
     raw dash_binary {{ dash_executable_location }}
 command = kill -USR1 $(cat ${monitor-httpd-conf-parameter:pid-file})
 
+[xnice-bin]
+recipe = collective.recipe.template
+input = inline:#!/bin/sh
+  # run something at lowest possible priority
+  exec nice -19 chrt --idle 0 ionice -c3 "$@"
+output = ${directory:bin}/xnice
+mode = 700
+
 [monitor-globalstate-wrapper]
 recipe = slapos.cookbook:wrapper
-command-line = {{ monitor_genstatus }} '${monitor-conf:rendered}' '${monitor-instance-info:rendered}'
+command-line = ${xnice-bin:output} {{ monitor_genstatus }} '${monitor-conf:rendered}' '${monitor-instance-info:rendered}'
 wrapper-path = ${directory:bin}/monitor-globalstate
 
 [monitor-configurator-wrapper]

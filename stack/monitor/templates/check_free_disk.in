@@ -34,10 +34,10 @@ if __name__ == '__main__':
         value = int(min_size_str)
         if value >= 200:
           # Minimum value is 200Mb, it's already low
-          min_free_size = int(min_size_str)*1024
+          min_free_size = int(min_size_str)*1024*1024
   else:
     with open(config_file, 'w') as f:
-      f.write(str(min_free_size/1024))
+      f.write(str(min_free_size/(1024*1024)))
   real_free_space = user_free_space(home_path)
   if real_free_space > min_free_size:
     print "Free disk space: OK"
@@ -45,7 +45,7 @@ if __name__ == '__main__':
 
   real_space_g = round(real_free_space/(1024.0*1024*1024), 2)
   min_space_g = round(min_free_size/(1024.0*1024*1024), 2)
-  print 'Free disk space slow: remaning %s G, min is %s G' % (
+  print 'Free disk space low: remaning %s G (threshold: %s G)' % (
     real_space_g, min_space_g)
   print 'You can modify minimum value on your monitor interface.'
   exit(1)
