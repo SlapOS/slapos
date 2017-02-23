@@ -524,23 +524,10 @@ command = {{ python_executable }} {{ file_download_script }} {{ bootstrap_url }}
 update-command =
 stop-on-error = true
 
-[cron-entry-logrotate]
-<= cron
-recipe = slapos.cookbook:cron.d
-name = logrotate
-# One time per week
-frequency = 0 0 * * *
-command = ${logrotate:wrapper}
-
 [logrotate-vm-bootstrap]
 < = logrotate-entry-base
 name = vm-bootstrap
 log = ${directory:public}/ansible/vm-bootstrap.log
-
-[logrotate-entry-base]
-recipe = slapos.cookbook:logrotate.d
-logrotate-entries = ${logrotate:logrotate-entries}
-backup = ${logrotate:backup}
 
 [slap-parameter]
 # Default values if not specified
