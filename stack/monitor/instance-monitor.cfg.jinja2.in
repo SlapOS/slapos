@@ -170,14 +170,14 @@ recipe = plone.recipe.command
 stop-on-error = true
 password-file = ${directory:etc}/.monitor_pwd
 command = 
-  if [ ! -f "${:password-file}" ]; then echo "${monitor-instance-parameter:password}" > ${:password-file}; fi
+  if [ ! -s "${:password-file}" ]; then echo "${monitor-instance-parameter:password}" > ${:password-file}; fi
 update-command = ${:command}
 
 [httpd-monitor-htpasswd]
 recipe = plone.recipe.command
 stop-on-error = true
 htpasswd-path = ${monitor-directory:etc}/monitor-htpasswd
-command = if [ ! -f "${:htpasswd-path}" ]; then {{ apache_location }}/bin/htpasswd -cb ${:htpasswd-path} ${:user} ${:password}; fi
+command = if [ ! -s "${:htpasswd-path}" ]; then {{ apache_location }}/bin/htpasswd -cb ${:htpasswd-path} ${:user} ${:password}; fi
 update-command = ${:command}
 user = ${monitor-instance-parameter:username}
 password = ${monitor-instance-parameter:password}
