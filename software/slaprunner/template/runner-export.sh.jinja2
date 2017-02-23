@@ -70,8 +70,7 @@ tmp_backup_sum=$(mktemp -p "$tmp_directory")
 tmp_filtered_signature=$(mktemp -p "$tmp_directory")
 
 remove_tmp_files () {
-  rm $tmp_backup_sum
-  rm $tmp_filtered_signature
+  rm "$tmp_backup_sum" "$tmp_filtered_signature"
 }
 trap remove_tmp_files EXIT
 
