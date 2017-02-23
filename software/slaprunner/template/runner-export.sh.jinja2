@@ -87,11 +87,10 @@ sha256sum $backup_directory_path | LC_ALL=C sort -k 66 > $tmp_backup_sum
 cat {{ directory['backup'] }}/backup.signature | egrep "instance/slappart.*/srv/backup/" > $tmp_filtered_signature
 
 # If the diff fails, then the notifier will restart this script
-diff_status=0
-diff $tmp_backup_sum $tmp_filtered_signature || diff_status=1
-if [ $diff_status -ne 0 ]; then
-  echo "ERROR: Some backups are not consistents, exporter should be re-run."
-  echo "Let's sleep 10 minutes, to let the backup end..."
-  sleep 10m
-  exit 1
+if diff "$tmp_backup_sum" "$tmp_filtered_signature"; then
+  exit 0
 fi
+echo "ERROR: Some backups are not consistent, exporter should be re-run."
+echo "Let's sleep 10 minutes, to let the backup end..."
+sleep 10m
+exit 1
