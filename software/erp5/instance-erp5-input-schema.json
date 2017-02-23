@@ -45,7 +45,7 @@
       "type": "array"
     },
     "hostalias-dict": {
-      "description": "Hostname-to-hostname mapping",
+      "description": "Hostname-to-domain-name mapping",
       "default": {},
       "additionalProperties": {
         "description": "A hostname to which current entry will resolve",

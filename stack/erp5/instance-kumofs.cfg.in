@@ -63,9 +63,7 @@ kumo-server-binary = {{ parameter_dict['kumo-location'] }}/bin/kumo-server
 shell-path = {{ parameter_dict['dash-location'] }}/bin/dash
 
 [logrotate-entry-kumofs]
-recipe = slapos.cookbook:logrotate.d
-logrotate-entries = ${logrotate:logrotate-entries}
-backup = ${logrotate:backup}
+< = logrotate-entry-base
 name = kumofs
 log = ${kumofs-instance:kumo-gateway-log} ${kumofs-instance:kumo-manager-log} ${kumofs-instance:kumo-server-log}
 

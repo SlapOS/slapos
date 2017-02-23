@@ -1,0 +1,18 @@
+{{ log }} {
+  daily
+  dateext
+  rotate 3650
+  compress
+  delaycompress
+  notifempty
+  sharedscripts
+  create
+  olddir {{ backup }}
+  missingok
+  {% if pre %}prerotate {
+    {{ pre }}
+  }{% endif %}
+  {% if post %}postrotate {
+    {{ post }}
+  }{% endif %}
+}

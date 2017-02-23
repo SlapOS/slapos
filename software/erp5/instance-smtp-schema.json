@@ -33,7 +33,7 @@
       },
       "properties": {
         "host": {
-          "description": "Host name or address of relay, with optional port (ex: '[example.com]:submissionu'). Enclosing hostname with [] prevents MX lookup.",
+          "description": "Host name or address of relay, with optional port (ex: '[example.com]:submission'). Enclosing hostname with [] prevents MX lookup.",
           "type": "string"
         },
         "sasl-credential": {

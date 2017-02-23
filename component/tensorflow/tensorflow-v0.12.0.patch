@@ -1,0 +1,40 @@
+diff -N -u -r tensorflow.orig/tensorflow/tools/pip_package/build_pip_package.sh tensorflow/tensorflow/tools/pip_package/build_pip_package.sh
+--- tensorflow.orig/tensorflow/tools/pip_package/build_pip_package.sh   2017-01-04 12:16:06.540748399 +0900
++++ tensorflow/tensorflow/tools/pip_package/build_pip_package.sh        2017-01-04 12:16:19.852748187 +0900
+@@ -136,7 +136,7 @@
+   pushd ${TMPDIR}
+   rm -f MANIFEST
+   echo $(date) : "=== Building wheel"
+-  "${PYTHON_BIN_PATH:-python}" setup.py bdist_wheel ${GPU_FLAG} >/dev/null
++  "${PYTHON_BIN_PATH:-python}" setup.py bdist_egg ${GPU_FLAG} >/dev/null
+   mkdir -p ${DEST}
+   cp dist/* ${DEST}
+   popd
+diff -N -u -r tensorflow.orig/tensorflow/tools/pip_package/setup.py tensorflow/tensorflow/tools/pip_package/setup.py
+--- tensorflow.orig/tensorflow/tools/pip_package/setup.py       2017-01-04 12:16:06.540748399 +0900
++++ tensorflow/tensorflow/tools/pip_package/setup.py    2017-01-04 12:17:29.836747073 +0900
+@@ -34,7 +34,7 @@
+ REQUIRED_PACKAGES = [
+     'numpy >= 1.11.0',
+     'six >= 1.10.0',
+-    'protobuf == 3.1.0',
++    'protobuf == 3.1.0.post1',
+ ]
+ 
+ project_name = 'tensorflow'
+diff -N -u -r tensorflow.orig/tensorflow/workspace.bzl tensorflow/tensorflow/workspace.bzl
+--- tensorflow.orig/tensorflow/workspace.bzl    2017-01-04 12:16:06.568748399 +0900
++++ tensorflow/tensorflow/workspace.bzl 2017-01-04 12:16:19.852748187 +0900
+@@ -228,9 +228,9 @@
+ 
+   native.new_http_archive(
+     name = "zlib_archive",
+-    url = "http://zlib.net/zlib-1.2.8.tar.gz",
+-    sha256 = "36658cb768a54c1d4dec43c3116c27ed893e88b02ecfcb44f2166f9c0b7f2a0d",
+-    strip_prefix = "zlib-1.2.8",
++    url = "https://github.com/madler/zlib/archive/v1.2.9.zip",
++    sha256 = "819936ec260b679726f21dd9c1ef9c553ce0281988842c24a9c42652cbca698a",
++    strip_prefix = "zlib-1.2.9",
+     build_file = str(Label("//:zlib.BUILD")),
+   )
+ 

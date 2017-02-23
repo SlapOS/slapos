@@ -37,6 +37,8 @@ max_connections = 1000
 
 {% set innodb_buffer_pool_size = parameter_dict['innodb-buffer-pool-size'] -%}
 {% if innodb_buffer_pool_size %}innodb_buffer_pool_size = {{ innodb_buffer_pool_size }}{% endif %}
+{% set innodb_buffer_pool_instances = parameter_dict['innodb-buffer-pool-instances'] -%}
+{% if innodb_buffer_pool_instances %}innodb_buffer_pool_instances = {{ innodb_buffer_pool_instances }}{% endif %}
 {% set innodb_log_file_size = parameter_dict['innodb-log-file-size'] -%}
 {% if innodb_log_file_size %} innodb_log_file_size = {{ innodb_log_file_size }}{% endif %}
 {% set innodb_log_buffer_size = parameter_dict['innodb-log-buffer-size'] -%}

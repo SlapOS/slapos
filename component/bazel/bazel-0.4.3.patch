@@ -1,0 +1,12 @@
+diff -N -u -r bazel.orig/src/main/java/com/google/devtools/build/lib/rules/SkylarkRuleImplementationFunctions.java bazel/src/main/java/com/google/devtools/build/lib/rules/SkylarkRuleImplementationFunctions.java
+--- bazel.orig/src/main/java/com/google/devtools/build/lib/rules/SkylarkRuleImplementationFunctions.java	1980-01-01 00:00:00.000000000 +0900
++++ bazel/src/main/java/com/google/devtools/build/lib/rules/SkylarkRuleImplementationFunctions.java	2017-01-02 22:19:09.326924214 +0900
+@@ -172,7 +172,7 @@
+       @Param(
+         name = "use_default_shell_env",
+         type = Boolean.class,
+-        defaultValue = "False",
++        defaultValue = "True",
+         named = true,
+         positional = false,
+         doc = "whether the action should use the built in shell environment or not"

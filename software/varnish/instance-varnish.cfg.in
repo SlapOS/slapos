@@ -1,6 +1,9 @@
 {% set tcpv4_port = slapparameter_dict.get('tcpv4_port', 6001) -%}
 {% set ip = (ipv4_set | list)[0] %}
 [buildout]
+eggs-directory = {{ eggs_directory }}
+develop-eggs-directory = {{ develop_eggs_directory }}
+offline = true
 parts =
   publish-varnish-connection-information
   varnish-instance
@@ -45,10 +48,6 @@ sharedscripts = true
 notifempty = true
 create = true
 {%- endif %}
-
-eggs-directory = {{ eggs_directory }}
-develop-eggs-directory = {{ develop_eggs_directory }}
-offline = true
 
 [publish-varnish-connection-information]
 recipe = slapos.cookbook:publish.serialised

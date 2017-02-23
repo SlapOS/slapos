@@ -8,11 +8,6 @@
 {% set default_backup_path = buildout_directory ~ '/srv/backup/zodb' -%}
 {% set bin_directory = parameter_dict['buildout-bin-directory'] -%}
 
-[logrotate-base]
-recipe = slapos.cookbook:logrotate.d
-logrotate-entries = ${logrotate:logrotate-entries}
-backup = ${logrotate:backup}
-
 [zeo-base]
 recipe = slapos.cookbook:zeo
 log-path = ${directory:log}/${:base-name}.log
@@ -53,10 +48,10 @@ port = {{ current_port }}
 storage = {{ dumps(storage_list) }}
 
 [{{ section("logrotate-" ~ zeo_section_name) }}]
-< = logrotate-base
+< = logrotate-entry-base
 name = {{ "${" ~ zeo_section_name ~ ":base-name}" }}
 log = {{ "${" ~ zeo_section_name ~ ":log-path}" }}
-post = {{ bin_directory }}/slapos-kill --pidfile {{ "${" ~ zeo_section_name ~ ":pid-path}" }} -s USR2
+post = test ! -s {{ "${" ~ zeo_section_name ~":pid-path}" }} || {{ bin_directory }}/slapos-kill --pidfile {{ "${" ~ zeo_section_name ~ ":pid-path}" }} -s USR2
 
 [{{ section(zeo_section_name ~ "-promise") }}]
 recipe = slapos.cookbook:check_port_listening

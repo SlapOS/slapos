@@ -2,7 +2,9 @@
 {% set next_port = itertools.count(slapparameter_dict['port-base']).next -%}
 {% set site_id = slapparameter_dict['site-id'] -%}
 {% set zodb_dict = slapparameter_dict['zodb-dict'] -%}
+{% set instance_index_list = range(slapparameter_dict['instance-count']) -%}
 {% set node_id_base = slapparameter_dict['name'] -%}
+{% set node_id_index_format = '-%%0%ii' % (len(str(instance_index_list[-1])), ) -%}
 {% set part_list = [] -%}
 {% set publish_list = [] -%}
 {% set longrequest_logger_base_path = buildout_directory ~ '/var/log/longrequest_logger_' -%}
@@ -13,6 +15,10 @@ XXX: This template only supports exactly one IPv4 and one IPv6 per
 partition. No more (undefined result), no less (IndexError).
 -#}
 {% set ipv4 = (ipv4_set | list)[0] -%}
+
+[jinja2-template-base]
+recipe = slapos.recipe.template:jinja2
+mode = 644
 
 {% if slapparameter_dict['mysql-test-url-list'] -%}
 [{{ section('test-runner') }}]
@@ -143,7 +149,7 @@ hostalias-dict = {{ dumps(slapparameter_dict['hostalias-dict']) }}
 # ...so it's not possible to merge these templates (not a big deal anyway).
 
 [hostaliases]
-recipe = slapos.recipe.template:jinja2
+< = jinja2-template-base
 template = inline: {{ '
   {% for alias, aliased in host_dict.items() -%}
   {{ alias }} {{ aliased }}
@@ -153,7 +159,7 @@ rendered = ${directory:etc}/hostaliases
 context = key host_dict hosts-parameter:hostalias-dict
 
 [hosts]
-recipe = slapos.recipe.template:jinja2
+< = jinja2-template-base
 template = inline: {{ '
   {% for alias, aliased in host_dict.items() -%}
   {{ aliased }} {{ alias }}
@@ -171,7 +177,7 @@ context = key host_dict hosts-parameter:host-dict
                     ('_key', 'neo.key')) -%}
 {%       if k in storage_dict -%}
 [{{ section('neo-ssl-' + k[1:]) }}]
-recipe = slapos.recipe.template:jinja2
+< = jinja2-template-base
 rendered = ${directory:etc}/{{v}}
 template = inline:{{'{{'}}pem}}
 context = key pem :pem
@@ -204,7 +210,7 @@ target-directory = ${directory:instance-etc}
 file-list = {{ parameter_dict['site-zcml'] }}
 
 [{{ section('zope-inituser') }}]
-recipe = slapos.recipe.template:jinja2
+< = jinja2-template-base
 rendered = ${directory:instance}/inituser
 template = inline:{{ slapparameter_dict['inituser-login'] }}:{SHA}{{ hashlib.sha1(slapparameter_dict['inituser-password']).digest().encode('base64').rstrip() }}
 mode = 600
@@ -253,13 +259,8 @@ webdav = {{ dumps(webdav) }}
 timerserver-interval = {{ dumps(timerserver_interval) }}
 
 [zope-conf-base]
-recipe = slapos.recipe.template:jinja2
+< = jinja2-template-base
 template = {{ parameter_dict['zope-conf-template'] }}
-
-[logrotate-entry-base]
-recipe = slapos.cookbook:logrotate.d
-logrotate-entries = ${logrotate:logrotate-entries}
-backup = ${logrotate:backup}
 
 {% macro zope(
   index,
@@ -279,7 +280,7 @@ lock-file = ${directory:run}/{{ name }}.lock
 port = {{ port }}
 event-log = ${directory:log}/{{ name }}-event.log
 z2-log = ${directory:log}/{{ name }}-Z2.log
-node-id = {{ dumps(node_id_base ~ '-' ~ index) }}
+node-id = {{ dumps(node_id_base ~ (node_id_index_format % index)) }}
 {% set log_list = [] -%}
 {% set import_set = set() -%}
 {% for db_name, zodb in zodb_dict.iteritems() -%}
@@ -352,10 +353,10 @@ path = ${directory:promises}/{{ zope_tunnel_base_name }}
 < = logrotate-entry-base
 name = {{ name }}
 log = {{ '${' ~ conf_parameter_name ~ ':event-log}' }} {{ '${' ~ conf_parameter_name ~ ':z2-log}' }} {{ '${' ~ conf_parameter_name ~ ':longrequest-logger-file}' }} {{ ' '.join(log_list) }}
-post = {{ bin_directory }}/slapos-kill --pidfile {{ '${' ~ conf_parameter_name ~ ':pid-file}' }} -s USR2
+post = test ! -s {{ '${' ~ conf_parameter_name ~ ':pid-file}' }} || {{ bin_directory }}/slapos-kill --pidfile {{ '${' ~ conf_parameter_name ~ ':pid-file}' }} -s USR2
 {% endmacro -%}
 
-{% for i in range(slapparameter_dict['instance-count']) -%}
+{% for i in instance_index_list -%}
 {{   zope(
        i,
        next_port(),

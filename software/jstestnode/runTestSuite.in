@@ -13,11 +13,9 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
-# Put a 'firefox' executable in the path
-# otherwise, WebDriver refuses to start
-os.environ['PATH'] = '$${directory:bin}' + os.pathsep + os.environ['PATH']
+os.environ['TMPDIR'] = '$${xvfb-instance:tmp-path}'
+os.environ['DISPLAY'] = ':0'
 
-FIREFOX_EXECUTABLE = '$${firefox-instance:executable}'
 BASE_URL = 'http://[$${nginx-configuration:ip}]:$${nginx-configuration:port}/'
 
 def main():
@@ -91,8 +89,11 @@ def main():
     is_appium = False
     
     if args.target == 'firefox':
-      firefox_binary = webdriver.firefox.firefox_binary.FirefoxBinary(firefox_path=FIREFOX_EXECUTABLE)
-      browser = webdriver.Firefox(firefox_binary=firefox_binary)
+      firefox_capabilities = webdriver.common.desired_capabilities.DesiredCapabilities.FIREFOX
+      firefox_capabilities['marionette'] = True
+      firefox_capabilities['binary'] = '${firefox:location}/firefox-slapos'
+      browser = webdriver.Firefox(capabilities=firefox_capabilities,
+                                  executable_path='${firefox:location}/geckodriver')
     elif args.target in ['iOS', 'Android']:
       # parameters for mobile emulators have different names then parameters for
       # desktop OSes

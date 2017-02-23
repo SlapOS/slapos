@@ -82,7 +82,7 @@ base-url = ${monitor-instance-parameter:monitor-base-url}
 monitor-hal-json = ${monitor-directory:public}/monitor.hal.json
 service-pid-folder = ${monitor-directory:pids}
 crond-folder = ${logrotate-directory:cron-entries}
-logrotate-folder = ${logrotate:logrotate-entries}
+logrotate-folder = ${logrotate-directory:logrotate-entries}
 promise-runner = {{ monitor_runpromise }}
 promise-folder = ${directory:promises}
 monitor-promise-folder = ${monitor-directory:promises}
@@ -102,12 +102,14 @@ parameter-list =
   raw monitor-user ${monitor-instance-parameter:username}
   htpasswd monitor-password ${monitor-htpassword-file:password-file} ${monitor-instance-parameter:username} ${httpd-monitor-htpasswd:htpasswd-path}
   file promise-timeout ${monitor-promise-timeout-file:file}
+  file min-free-disk-MB ${promise-check-free-disk-space:config-file}
   ${monitor-instance-parameter:instance-configuration}
 # htpasswd entry:  htpasswd key password-file username htpasswd-file
 
 collector-db = ${monitor-instance-parameter:collector-db}
 collect-script = {{ monitor_collect }}
 python = {{ python_with_eggs }}
+nice-cmd = ${xnice-bin:output}
 
 promise-output-file = ${directory:monitor}/monitor-bootstrap-status
 
@@ -168,14 +170,14 @@ recipe = plone.recipe.command
 stop-on-error = true
 password-file = ${directory:etc}/.monitor_pwd
 command = 
-  if [ ! -f "${:password-file}" ]; then echo "${monitor-instance-parameter:password}" > ${:password-file}; fi
+  if [ ! -s "${:password-file}" ]; then echo "${monitor-instance-parameter:password}" > ${:password-file}; fi
 update-command = ${:command}
 
 [httpd-monitor-htpasswd]
 recipe = plone.recipe.command
 stop-on-error = true
 htpasswd-path = ${monitor-directory:etc}/monitor-htpasswd
-command = if [ ! -f "${:htpasswd-path}" ]; then {{ apache_location }}/bin/htpasswd -cb ${:htpasswd-path} ${:user} ${:password}; fi
+command = if [ ! -s "${:htpasswd-path}" ]; then {{ apache_location }}/bin/htpasswd -cb ${:htpasswd-path} ${:user} ${:password}; fi
 update-command = ${:command}
 user = ${monitor-instance-parameter:username}
 password = ${monitor-instance-parameter:password}
@@ -229,9 +231,17 @@ context =
     raw dash_binary {{ dash_executable_location }}
 command = kill -USR1 $(cat ${monitor-httpd-conf-parameter:pid-file})
 
+[xnice-bin]
+recipe = collective.recipe.template
+input = inline:#!/bin/sh
+  # run something at lowest possible priority
+  exec nice -19 chrt --idle 0 ionice -c3 "$@"
+output = ${directory:bin}/xnice
+mode = 700
+
 [monitor-globalstate-wrapper]
 recipe = slapos.cookbook:wrapper
-command-line = {{ monitor_genstatus }} '${monitor-conf:rendered}' '${monitor-instance-info:rendered}'
+command-line = ${xnice-bin:output} {{ monitor_genstatus }} '${monitor-conf:rendered}' '${monitor-instance-info:rendered}'
 wrapper-path = ${directory:bin}/monitor-globalstate
 
 [monitor-configurator-wrapper]
@@ -344,6 +354,18 @@ input = inline:#!/bin/sh
   fi
 output = ${monitor-directory:promises}/buildout-${slap-connection:partition-id}-status
 mode = 700
+
+[promise-check-free-disk-space]
+recipe = slapos.recipe.template:jinja2
+template = {{ template_check_disk_space }}
+rendered = ${monitor-directory:promises}/check-free-disk-space
+mode = 0700
+context =
+    key config_file :config-file
+    raw home_path ${buildout:directory}
+    raw python_bin {{ python_with_eggs }}
+config-file = ${directory:etc}/min-free-disk-size
+
 
 [monitor-base]
 # create dependencies between required monitor parts

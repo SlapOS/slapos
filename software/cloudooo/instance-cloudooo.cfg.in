@@ -150,12 +150,10 @@ crl =
 {%- endif %}
 
 [apache-logrotate]
-recipe = slapos.cookbook:logrotate.d
-logrotate-entries = ${logrotate:logrotate-entries}
-backup = ${logrotate:backup}
+< = logrotate-entry-base
 name = apache
 log = ${apache-conf-parameter-dict:error-log} ${apache-conf-parameter-dict:access-log}
-post = {{ bin_directory }}/slapos-kill --pidfile ${apache-conf-parameter-dict:pid-file} -s USR1
+post = test ! -s ${apache-conf-parameter-dict:pid-file} || {{ bin_directory }}/slapos-kill --pidfile ${apache-conf-parameter-dict:pid-file} -s USR1
 
 [publish]
 recipe = slapos.cookbook:publish.serialised

@@ -33,8 +33,16 @@ recipe = slapos.cookbook:publish.serialised
 database-list = {{ render_database_list(database_list) }}
 test-database-list = {{ render_database_list(test_database_list) }}
 
-[simplefile]
+[jinja2-template-base]
 recipe = slapos.recipe.template:jinja2
+mode = 644
+
+[jinja2-template-executable]
+< = jinja2-template-base
+mode = 755
+
+[simplefile]
+< = jinja2-template-base
 template = inline:{{ '{{ content }}' }}
 
 {% macro simplefile(section_name, file_path, content, mode='') -%}
@@ -108,6 +116,7 @@ error-log = ${directory:log}/mariadb_error.log
 slow-query-log = ${directory:log}/mariadb_slowquery.log
 long-query-time = {{ dumps(slapparameter_dict.get('long-query-time', 1)) }}
 innodb-buffer-pool-size = {{ dumps(slapparameter_dict.get('innodb-buffer-pool-size', 0)) }}
+innodb-buffer-pool-instances = {{ dumps(slapparameter_dict.get('innodb-buffer-pool-instances', 0)) }}
 innodb-log-file-size = {{ dumps(slapparameter_dict.get('innodb-log-file-size', 0)) }}
 innodb-log-buffer-size = {{ dumps(slapparameter_dict.get('innodb-log-buffer-size', 0)) }}
 relaxed-writes = {{ dumps(slapparameter_dict.get('relaxed-writes', False)) }}
@@ -124,7 +133,7 @@ ssl-{{ key }} = {{ value }}
 {% endfor %}
 
 [my-cnf]
-recipe = slapos.recipe.template:jinja2
+< = jinja2-template-base
 rendered = ${directory:etc}/mariadb.cnf
 template = {{ parameter_dict['template-my-cnf'] }}
 context = section parameter_dict my-cnf-parameters
@@ -133,7 +142,7 @@ context = section parameter_dict my-cnf-parameters
 database-list = {{ dumps(database_list + test_database_list) }}
 
 [init-script]
-recipe = slapos.recipe.template:jinja2
+< = jinja2-template-executable
 # XXX: is there a better location ?
 rendered = ${directory:etc}/mariadb_initial_setup.sql
 template = {{ parameter_dict['template-mariadb-initial-setup'] }}
@@ -147,19 +156,25 @@ mysql = ${binary-wrap-mysql:wrapper-path}
 init-script = ${init-script:rendered}
 mysql_tzinfo_to_sql = ${binary-wrap-mysql_tzinfo_to_sql:wrapper-path}
 
-[mysqld]
-recipe = slapos.cookbook:generic.mysql.wrap_mysqld
-output = ${directory:services}/mariadb
-binary = {{ parameter_dict['mariadb-location'] }}/bin/mysqld
-configuration-file = ${my-cnf:rendered}
-data-directory = ${my-cnf-parameters:data-directory}
-mysql-install-binary = {{ parameter_dict['mariadb-location'] }}/scripts/mysql_install_db
-mysql-base-directory = {{ parameter_dict['mariadb-location'] }}
+[{{ section('mysqld') }}]
+< = jinja2-template-executable
+# Note: all rendering is done when this file is rendered, not when the mysqld
+# section is installed - so I only use jinja2 as a fancy way to write an
+# executable file with partition-dependent but instance-parameters independent
+# content.
+template = inline:#!{{ parameter_dict['dash-location'] }}/bin/dash
+  '{{ parameter_dict['mariadb-location'] }}/scripts/mysql_install_db' \
+    --defaults-file='${my-cnf:rendered}' \
+    --skip-name-resolve \
+    --datadir='${my-cnf-parameters:data-directory}' \
+    --basedir='{{ parameter_dict['mariadb-location'] }}' \
+  && exec '{{ parameter_dict['mariadb-location'] }}/bin/mysqld' \
+    --defaults-file='${my-cnf:rendered}' \
+    "$@"
+rendered = ${directory:services}/mariadb
 
 [logrotate-entry-mariadb]
-recipe = slapos.cookbook:logrotate.d
-logrotate-entries = ${logrotate:logrotate-entries}
-backup = ${logrotate:backup}
+< = logrotate-entry-base
 name = mariadb
 log = ${my-cnf-parameters:error-log} ${my-cnf-parameters:slow-query-log}
 post = "${binary-wrap-mysql:wrapper-path}" -B -u root -e "FLUSH LOGS"
@@ -249,7 +264,6 @@ parts +=
   logrotate-entry-mariadb
   binary-link
   update-mysql
-  mysqld
   resiliency-exclude-file
   resiliency-after-import-script
   promise

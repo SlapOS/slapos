@@ -1,0 +1,73 @@
+#!{{ python_bin }}
+
+import os
+import sys
+
+def free_space(path, fn):
+  while True:
+    try:
+      disk = os.statvfs(path)
+      return fn(disk)
+    except OSError:
+      pass
+    if os.sep not in path:
+      break
+    path = os.path.split(path)[0]
+
+
+def user_free_space(path):
+  return free_space(path, lambda d: d.f_bsize * d.f_bavail)
+
+def check_inode_usage(path):
+  max_inode_usage = 97.99 # < 98% usage
+  st = os.statvfs(path)
+  usage_output = ""
+  total_inode = st.f_files
+  free_inode = st.f_ffree
+  usage = round((float(total_inode - free_inode) / total_inode), 4) * 100
+  if usage > max_inode_usage:
+    return "Disk Inodes are widely used: %s%%" % usage
+  elif os.path.exists('/tmp'):
+    # check if /tmp is mounted on another disk than path
+    tmp_st = os.statvfs('/tmp')
+    if tmp_st.f_blocks != st.f_blocks:
+      tmp_usage = round((float(tmp_st.f_files - tmp_st.f_ffree) / tmp_st.f_files), 4) * 100
+      if tmp_usage > max_inode_usage:
+        return "Disk Inodes are widely used: %s%%" % tmp_usage
+  return ""
+
+
+if __name__ == '__main__':
+  home_path = '{{ home_path }}'
+  config_file = '{{ config_file }}'
+  min_free_size = 1024*1024*1024*2 # 2G by default
+  if os.path.exists(config_file):
+    with open(config_file) as f:
+      min_size_str = f.read().strip()
+      if min_size_str == '0':
+        # disable check
+        print "Free disk space check is disabled\n set a number up to 0 to enable!"
+        exit(0)
+      if min_size_str.isdigit():
+        value = int(min_size_str)
+        if value >= 200:
+          # Minimum value is 200Mb, it's already low
+          min_free_size = int(min_size_str)*1024*1024
+  else:
+    with open(config_file, 'w') as f:
+      f.write(str(min_free_size/(1024*1024)))
+  real_free_space = user_free_space(home_path)
+  if real_free_space > min_free_size:
+    inode_usage = check_inode_usage(home_path)
+    if inode_usage:
+      print inode_usage
+      exit(2)
+    print "Disk usage: OK"
+    exit(0)
+
+  real_space_g = round(real_free_space/(1024.0*1024*1024), 2)
+  min_space_g = round(min_free_size/(1024.0*1024*1024), 2)
+  print 'Free disk space low: remaning %s G (threshold: %s G)' % (
+    real_space_g, min_space_g)
+  print 'You can modify minimum value on your monitor interface.'
+  exit(1)

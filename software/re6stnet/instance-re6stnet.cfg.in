@@ -102,12 +102,7 @@ context =
 < = logrotate-entry-base
 name = apache
 log = ${apache-conf:error-log} ${apache-conf:access-log}
-post = {{ parameter_dict['bin-directory'] }}/slapos-kill --pidfile ${apache-conf:pid-file} -s USR1
-
-[logrotate-entry-base]
-recipe = slapos.cookbook:logrotate.d
-logrotate-entries = ${logrotate:logrotate-entries}
-backup = ${logrotate:backup}
+post = test ! -s ${apache-conf:pid-file} || {{ parameter_dict['bin-directory'] }}/slapos-kill --pidfile ${apache-conf:pid-file} -s USR1
 
 [re6st-registry-conf-dict]
 port = 9201
@@ -197,7 +192,7 @@ command = {{ python_bin }} ${re6st-registry:drop-service-wrapper}
 < = logrotate-entry-base
 name = re6stnet
 log = ${re6st-registry-conf-dict:logfile}
-post = {{ parameter_dict['bin-directory'] }}/slapos-kill --pidfile ${re6st-registry:pid-file} -s USR1
+post = test ! -s ${re6st-registry:pid-file} || {{ parameter_dict['bin-directory'] }}/slapos-kill --pidfile ${re6st-registry:pid-file} -s USR1
 
 [re6st-registry-promise]
 recipe = slapos.cookbook:check_port_listening
