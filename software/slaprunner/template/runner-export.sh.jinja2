@@ -7,12 +7,15 @@ umask 077
 set -e
 
 # Redirect output to log
-exec > >(tee -ai {{ output_log_file }})
+exec > >(tee -ai '{{ output_log_file }}')
 exec 2>&1
 
 echo -e "\n\n$0 run at : $(date)"
 
-srv_directory={{ directory['srv'] }}
+srv_directory='{{ directory["srv"] }}'
+backup_directory='{{ directory["backup"] }}'
+etc_directory='{{ directory["etc"] }}'
+tmp_directory='{{ directory["tmp"] }}'
 
 sync_element () {
   path=$1
@@ -63,8 +66,8 @@ fi
 cd {{ directory['backup'] }} && find -type f ! -name backup.signature -print0 | xargs -0 sha256sum | LC_ALL=C sort -k 66 > backup.signature
 
 # Check that export didn't happen during backup of instances
-tmp_backup_sum=$(mktemp -p {{ directory['tmp'] }})
-tmp_filtered_signature=$(mktemp -p {{ directory['tmp'] }})
+tmp_backup_sum=$(mktemp -p "$tmp_directory")
+tmp_filtered_signature=$(mktemp -p "$tmp_directory")
 
 remove_tmp_files () {
   rm $tmp_backup_sum
