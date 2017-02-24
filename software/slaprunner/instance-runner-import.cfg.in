@@ -72,6 +72,10 @@ maximum = 22241
 [cron-entry-prepare-software]
 recipe =
 
+[importer-configuration]
+coreutils-location = ${coreutils:location}
+gawk-location = ${gawk:location}
+
 [importer]
 recipe = slapos.recipe.template:jinja2
 template = ${template-runner-import-script:location}/${template-runner-import-script:filename}
@@ -90,6 +94,7 @@ context =
   key ipv6 slaprunner:ipv6
   key proxy_port slaprunner:proxy_port
   key instance_folder slaprunner:instance_root
+  section parameter_dict importer-configuration
   section directory directory
   section supervisord supervisord
   raw  output_log_file $${directory:log}/$${:resilient-log-basename}

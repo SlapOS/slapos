@@ -1,15 +1,24 @@
 #!{{ shell_binary }}
-set -e
 LC_ALL=C
 export LC_ALL
 umask 077
 
+# Exit on any error, to prevent inconsistent backup
+# Error on unset variable expansion
+set -eu
+
 # Redirect output to log
-exec > >(tee -ai {{ output_log_file }})
+exec > >(tee -ai '{{ output_log_file }}')
 exec 2>&1
 
-RESTORE_EXIT_CODE_FILE="{{ restore_exit_code_file }}"
-RESTORE_ERROR_MESSAGE_FILE="{{ restore_error_message_file }}"
+echo -e "\n\n$0 run at : $(date)"
+
+srv_directory='{{ directory["srv"] }}'
+backup_directory='{{ directory["backup"] }}'
+etc_directory='{{ directory["etc"] }}'
+
+RESTORE_EXIT_CODE_FILE='{{ restore_exit_code_file }}'
+RESTORE_ERROR_MESSAGE_FILE='{{ restore_error_message_file }}'
 ERROR_MESSAGE=""
 
 fail_with_exit_code () {
@@ -17,7 +26,6 @@ fail_with_exit_code () {
   echo -e "Failure during step : $ERROR_MESSAGE" > $RESTORE_ERROR_MESSAGE_FILE
   exit 1
 }
-
 trap fail_with_exit_code ERR
 
 log_message () {
@@ -25,111 +33,151 @@ log_message () {
     echo -e $1
 }
 # Delete the error message file, to not keep it even after a successful build
-rm $RESTORE_ERROR_MESSAGE_FILE || true
+rm "$RESTORE_ERROR_MESSAGE_FILE" || true
 
-srv_directory={{ directory['srv'] }}
-restore_element () {
-  backup_path=$1
-  restore_path=$2
-  shift 2
-  element_list=$*
-  for element in $element_list
-  do
-    cd $backup_path;
-    if [ -f $element ] || [ -d $element ]; then
-       command="{{ rsync_binary }} --stats -av --delete --exclude *.sock --exclude *.socket --exclude *.pid --exclude .installed.cfg --exclude .installed-switch-softwaretype.cfg $backup_path/$element $restore_path"
-       echo "Running: \"$command\""
-       $command
+rsync () {
+  set -x
+  '{{ rsync_binary }}' -rlptgov --stats --safe-links --delete "$@"
+  set +x
+}
+
+relativise () {
+  while IFS= read -r line; do
+    if [ ! -z "$line" ]; then
+      '{{ parameter_dict["coreutils-location"] }}/bin/realpath' --quiet --canonicalize-missing --no-symlinks --relative-to="$1" "$line"
     fi
   done
 }
 
-echo -e "\n\nrunner-import run at : $(date)"
-
 log_message "Restoring WebRunner content..."
-restore_element {{ directory['backup'] }}/runner/ $srv_directory/runner  instance project  proxy.db
+(
+  path=$srv_directory/runner
+  backup_path=$backup_directory/runner/
+  cd "$backup_path"
+
+  if [ -d instance ]; then
+    # Concatenate the exclude file of each partition of webrunner
+    # to create a global exclude file.
+    # Also, ignore all buildout-managed files.
+    (
+      echo "*.sock"
+      echo "*.socket"
+      echo "*.pid"
+      echo ".installed*.cfg"
+      for partition in "$path"/instance/slappart*; do
+        # So "relativise" can handle relative paths (which are expected to be relative to partition).
+        cd "$partition"
+        exclude_file=srv/exporter.exclude
+        if [ -r "$exclude_file" ]; then
+          relativise "$path" < "$exclude_file"
+        fi
+        for installed in .installed*.cfg; do
+          if [ -r "$installed" ]; then
+            # Print every line from each __buildout_installed__ found.
+            '{{ parameter_dict["gawk-location"] }}/bin/gawk' '
+              BEGIN { do_print = 0 }
+              match($0, /^__buildout_installed__\s*=\s*(\S.*)/, ary) { do_print = 1; print ary[1]; next }
+              /^\S/ { do_print = 0; next }
+              match($0, /^\s+(\S.*)/, ary) { if (do_print) print ary[1] }
+            ' "$installed" | relativise "$path"
+          fi
+        done
+      done
+    ) | rsync --exclude-from=- instance "$path"
+  fi
+
+  test -d project  && rsync project "$path"
+  test -f proxy.db && rsync proxy.db "$path"
+)
 
 log_message "Restoring WebRunner config (etc directory)..."
-restore_element  {{ directory['backup'] }}/etc/ {{ directory['etc'] }} config.json
-cp -r {{ directory['backup'] }}/etc/.??* {{ directory['etc'] }};
-
+(
+  cd "$backup_directory"/etc/
+  rsync config.json "$etc_directory"
+  # Hidden files are related to the webrunner's internals
+  cp -r .??* "$etc_directory"
+)
 
 # Invoke arbitrary script to perform specific restoration
 # procedure.
 runner_import_restore=$srv_directory/runner-import-restore
-if [ ! -e "$runner_import_restore" ]; then
-  touch $runner_import_restore
-  chmod +x $runner_import_restore
+if [ -x "$runner_import_restore" ]; then
+  log_message "Running $runner_import_restore..."
+  "$srv_directory/runner-import-restore"
 fi
-log_message "Running $runner_import_restore..."
-$srv_directory/runner-import-restore
 
 # If no "etc/.project" neither "srv/runner/proxy.db", we can safely assume
-# that there is no instnace deployed on runner0
-if [ ! -f "directory['etc']/.project" ] && [ ! -f "$srv_directory/runner/proxy.db" ]; then
+# that there is no instance deployed on runner0
+if [ ! -f "$etc_directory/.project" -a ! -f "$srv_directory/runner/proxy.db" ]; then
   log_message "No Software Requested... Writing status file... End"
   echo 0 > $RESTORE_EXIT_CODE_FILE
   exit 0
 fi
 
 log_message "Updating slapproxy database..."
-HOME="{{ directory['home'] }}"
+HOME='{{ directory["home"] }}'
 # XXX Hardcoded
 export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 export MAKEFLAGS=-j4
-SLAPOS="{{ directory['bin'] }}/slapos"
+SLAPOS='{{ directory["bin"] }}'/slapos
 # XXX hardcoded
 SQLITE3="$HOME/software_release/parts/sqlite3/bin/sqlite3"
 DATABASE="$HOME/srv/runner/proxy.db"
 # Change slapproxy database to point instances to new software release
 # XXX hardcoded
 PARTITION=$(basename $HOME)
-OLD_SOFTWARE_RELEASE=$($SQLITE3 $DATABASE "select software_release from partition11 where reference='slappart0';")
+OLD_SOFTWARE_RELEASE=$("$SQLITE3" "$DATABASE" "select software_release from partition11 where reference='slappart0';")
 SOFTWARE_RELEASE=$(echo $OLD_SOFTWARE_RELEASE | sed -e 's/\(.*\)\(slappart\|test0-\)[0-9][0-9]\?/\1'"$PARTITION"'/')
-$SQLITE3 $DATABASE "update partition11 set software_release='$SOFTWARE_RELEASE' where software_release NOT NULL;"
-$SQLITE3 $DATABASE "update software11 set url='$SOFTWARE_RELEASE' where url='$OLD_SOFTWARE_RELEASE';" || $SQLITE3 $DATABASE "delete from software11 where url='$OLD_SOFTWARE_RELEASE';"
+"$SQLITE3" "$DATABASE" "update partition11 set software_release='$SOFTWARE_RELEASE' where software_release NOT NULL;"
+"$SQLITE3" "$DATABASE" "update software11 set url='$SOFTWARE_RELEASE' where url='$OLD_SOFTWARE_RELEASE';" || "$SQLITE3" "$DATABASE" "delete from software11 where url='$OLD_SOFTWARE_RELEASE';"
 # Change slapproxy database to have all instances stopped
-$SQLITE3 $DATABASE "update partition11 set requested_state='stopped';"
+"$SQLITE3" "$DATABASE" "update partition11 set requested_state='stopped';"
 # Change slapproxy database to get correct IPs
-IPV4={{ ipv4 }}
-IPV6={{ ipv6 }}
-$SQLITE3 $DATABASE "update partition_network11 set address='$IPV4' where netmask='255.255.255.255';"
-$SQLITE3 $DATABASE "update partition_network11 set address='$IPV6' where netmask='ffff:ffff:ffff::';"
+IPV4='{{ ipv4 }}'
+IPV6='{{ ipv6 }}'
+"$SQLITE3" "$DATABASE" "update partition_network11 set address='$IPV4' where netmask='255.255.255.255';"
+"$SQLITE3" "$DATABASE" "update partition_network11 set address='$IPV6' where netmask='ffff:ffff:ffff::';"
 
-MASTERURL="http://{{ ipv4 }}:{{ proxy_port }}"
+MASTERURL='http://{{ ipv4 }}:{{ proxy_port }}'
 
 log_message "Removing old supervisord service description files..."
 # XXX: Path hardcoded in slapos.core
-rm {{ instance_folder }}/etc/supervisord.conf.d/* || true
+rm '{{ instance_folder }}'/etc/supervisord.conf.d/* || true
+
+SLAPOSCFG='{{ supervisord["slapos-cfg"] }}'
+SLAPGRIDSRLOG='{{ supervisord["slapgrid-sr-log"] }}'
+SLAPGRIDSRPID='{{ supervisord["slapgrid-sr-pid"] }}'
+SLAPGRIDCPLOG='{{ supervisord["slapgrid-cp-log"] }}'
+SLAPGRIDCPPID='{{ supervisord["slapgrid-cp-pid"] }}'
 
 log_message "Building newest Software Release..."
-$SLAPOS node software --cfg {{ supervisord['slapos-cfg'] }} --all --master-url=$MASTERURL --logfile {{ supervisord['slapgrid-sr-log'] }} --pidfile {{ supervisord['slapgrid-sr-pid'] }} >/dev/null 2>&1 ||
-$SLAPOS node software --cfg {{ supervisord['slapos-cfg'] }} --all --master-url=$MASTERURL --logfile {{ supervisord['slapgrid-sr-log'] }} --pidfile {{ supervisord['slapgrid-sr-pid'] }} >/dev/null 2>&1 ||
-$SLAPOS node software --cfg {{ supervisord['slapos-cfg'] }} --all --master-url=$MASTERURL --logfile {{ supervisord['slapgrid-sr-log'] }} --pidfile {{ supervisord['slapgrid-sr-pid'] }} >/dev/null 2>&1 ||
-(tail -n 200 {{ supervisord['slapgrid-sr-log'] }} && false)
+"$SLAPOS" node software --cfg "$SLAPOSCFG" --all --master-url="$MASTERURL" --logfile "$SLAPGRIDSRLOG" --pidfile "$SLAPGRIDSRPID" >/dev/null 2>&1 ||
+"$SLAPOS" node software --cfg "$SLAPOSCFG" --all --master-url="$MASTERURL" --logfile "$SLAPGRIDSRLOG" --pidfile "$SLAPGRIDSRPID" >/dev/null 2>&1 ||
+"$SLAPOS" node software --cfg "$SLAPOSCFG" --all --master-url="$MASTERURL" --logfile "$SLAPGRIDSRLOG" --pidfile "$SLAPGRIDSRPID" >/dev/null 2>&1 ||
+(tail -n 200 "$SLAPGRIDSRLOG" && false)
 # Remove defined scripts to force buildout to recreate them to have updated paths
-rm $srv_directory/runner/instance/slappart*/srv/runner-import-restore || true
+rm "$srv_directory"/runner/instance/slappart*/srv/runner-import-restore || true
 log_message "Fixing Instances as needed after import..."
 # XXX hardcoded
-$SLAPOS node instance --cfg {{ supervisord['slapos-cfg'] }} --master-url=$MASTERURL --logfile {{ supervisord['slapgrid-cp-log'] }} --pidfile {{ supervisord['slapgrid-cp-pid'] }} >/dev/null 2>&1 ||
-$SLAPOS node instance --cfg {{ supervisord['slapos-cfg'] }} --master-url=$MASTERURL --logfile {{ supervisord['slapgrid-cp-log'] }} --pidfile {{ supervisord['slapgrid-cp-pid'] }} >/dev/null 2>&1 ||
-$SLAPOS node instance --cfg {{ supervisord['slapos-cfg'] }} --master-url=$MASTERURL --logfile {{ supervisord['slapgrid-cp-log'] }} --pidfile {{ supervisord['slapgrid-cp-pid'] }} >/dev/null 2>&1 ||
-(tail -n 200 {{ supervisord['slapgrid-cp-log'] }} && false)
+"$SLAPOS" node instance --cfg "$SLAPOSCFG" --master-url=$MASTERURL --logfile "$SLAPGRIDCPLOG" --pidfile "$SLAPGRIDCPPID" >/dev/null 2>&1 ||
+"$SLAPOS" node instance --cfg "$SLAPOSCFG" --master-url=$MASTERURL --logfile "$SLAPGRIDCPLOG" --pidfile "$SLAPGRIDCPPID" >/dev/null 2>&1 ||
+"$SLAPOS" node instance --cfg "$SLAPOSCFG" --master-url=$MASTERURL --logfile "$SLAPGRIDCPLOG" --pidfile "$SLAPGRIDCPPID" >/dev/null 2>&1 ||
+(tail -n 200 "$SLAPGRIDCPLOG" && false)
 
 # Invoke defined scripts for each partition inside of slaprunner
 log_message "Invoke custom import scripts defined by each instances..."
-for partition in $srv_directory/runner/instance/slappart*/
+for partition in "$srv_directory"/runner/instance/slappart*/
 do
   script=$partition/srv/runner-import-restore
-  if [ -e "$script" ]; then
+  if [ -x "$script" ]; then
     log_message "Running custom instance script : $script..."
-    $script
+    "$script"
   fi
 done
 
 # Change back slapproxy database to have all instances started
 log_message "Set instances as to start after takeover..."
-$SQLITE3 $DATABASE "update partition11 set requested_state='started';"
+"$SQLITE3" "$DATABASE" "update partition11 set requested_state='started';"
 
 # Write exit code to an arbitrary file that will be checked by promise/monitor
 log_message "Writing status file... End"
