@@ -45,7 +45,6 @@ if [ -n "$binlog_path" ]; then
 fi
 
 echo "Starting mariadb..."
-# XXX hardcoded
 "$server_executable" --innodb-flush-method=nosync --skip-innodb-doublewrite --innodb-flush-log-at-trx-commit=0 --sync-frm=0 --slow-query-log=0 --skip-log-bin &
 mysqld_pid=$!
 trap "kill $mysqld_pid" EXIT TERM INT
