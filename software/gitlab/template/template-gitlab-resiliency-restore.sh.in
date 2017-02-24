@@ -57,6 +57,10 @@ check_process $postgres_pid_file "Postgres"
 check_process $redis_pid_file "Redis"
 check_process $run_location/unicorn.pid "Unicorn"
 
+if [ -f "$postgres_pid_file" ]; then
+  rm $postgres_pid_file
+fi
+
 echo "Starting Postgres..."
 $postgres_executable &
 postgres_pid=$!
