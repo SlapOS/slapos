@@ -36,7 +36,6 @@ import stat
 import subprocess
 import tarfile
 import tempfile
-import textwrap
 import time
 import xmlrpclib
 
@@ -273,14 +272,7 @@ class Software(object):
 
   def _create_buildout_profile(self, buildout_cfg, url):
     with open(buildout_cfg, 'wb') as fout:
-      fout.write(textwrap.dedent("""\
-          # Created by slapgrid. extends {url}
-          # but you can change it for development purposes.
-
-          [buildout]
-          extends =
-            {url}
-          """.format(url=url)))
+      fout.write('[buildout]\nextends = ' + url + '\n')
     self._set_ownership(buildout_cfg)
 
   def uploadSoftwareRelease(self, tarpath):
