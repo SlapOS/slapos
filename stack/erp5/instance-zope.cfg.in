@@ -400,7 +400,3 @@ parts +=
   erp5-promise
   {{ part_list | join('\n  ') }}
   publish
-versions = versions
-
-[versions]
-slapos.core = {{ slapos_core_version }}
