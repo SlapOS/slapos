@@ -4,7 +4,8 @@ export LC_ALL
 umask 077
 
 # Exit on any error, to prevent inconsistent backup
-set -e
+# Error on unset variable expansion
+set -eu
 
 # Redirect output to log
 exec > >(tee -ai '{{ output_log_file }}')
