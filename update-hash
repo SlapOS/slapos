@@ -90,6 +90,7 @@ def main():
                             hash_file_path = hash_name = None
                         if line is None:
                             break
+                        hash_file_path, _ = line[1:].split(']', 1)
                         current_section = []
                     elif '=' in line:
                         assert current_section is not None, line
