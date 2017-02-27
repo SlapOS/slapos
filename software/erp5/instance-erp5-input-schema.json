@@ -161,6 +161,13 @@
       },
       "type": "object"
     },
+    "smtp": {
+      "description": "Mail queuing and relay service",
+      "additionalProperties": {
+        "$ref": "./instance-smtp-schema.json#/properties"
+      },
+      "type": "object"
+    },
     "mariadb": {
       "description": "Relational database service",
       "additionalProperties": {
