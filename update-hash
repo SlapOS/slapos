@@ -72,7 +72,7 @@ def main():
                     if line is None or line.startswith('['):
                         if hash_file_path is not None:
                             current_section.insert(
-                                2,
+                                len([x for x in current_section if x.strip()]),
                                 '%s = %s%s' % (
                                     hash_name,
                                     HASH_MAP[hash_name](
