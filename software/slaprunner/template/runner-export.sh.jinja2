@@ -65,7 +65,7 @@ fi
 
 (
   cd "$backup_directory"
-  find -type f ! -name backup.signature -print0 | xargs -0 sha256sum | LC_ALL=C sort -k 66 > backup.signature
+  find -type f ! -name backup.signature -print0 | xargs -0 sha256sum | sort -k 66 > backup.signature
 )
 
 # Check that export didn't happen during backup of instances
@@ -88,7 +88,7 @@ if [ -z "$backup_directory_path" ]; then
 fi
 
 sleep 5
-sha256sum $backup_directory_path | LC_ALL=C sort -k 66 > $tmp_backup_sum
+sha256sum "$backup_directory_path" | sort -k 66 > "$tmp_backup_sum"
 cat {{ directory['backup'] }}/backup.signature | egrep "instance/slappart.*/srv/backup/" > $tmp_filtered_signature
 
 # If the diff fails, then the notifier will restart this script
