@@ -461,6 +461,6 @@ Solution 2 (IPv6 only)
 
 It is also possible to directly allow the service to listen on 80 and 443 ports using the following command:
 
-  setcap 'cap_net_bind_service=+ep' /opt/slapgrid/$APACHE_FRONTEND_SOFTWARE_RELEASE_MD5/parts/apache-2.2/bin/httpd
+  setcap 'cap_net_bind_service=+ep' /opt/slapgrid/$APACHE_FRONTEND_SOFTWARE_RELEASE_MD5/parts/apache/bin/httpd
 
 Then specify in the instance parameters "port" and "plain_http_port" to be 443 and 80, respectively.
