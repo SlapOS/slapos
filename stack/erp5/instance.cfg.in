@@ -2,8 +2,6 @@
 extends = {{ instance_common_cfg }}
 
 [jinja2-template-base]
-context +=
-    raw slapos_core_version {{ slapos_core_version }}
 mode = 644
 
 [dynamic-template-cloudooo-parameters]
