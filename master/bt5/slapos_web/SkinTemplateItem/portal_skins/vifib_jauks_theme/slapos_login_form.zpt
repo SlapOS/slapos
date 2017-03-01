@@ -1,0 +1,60 @@
+<tal:block xmlns:tal="http://xml.zope.org/namespaces/tal"
+           xmlns:metal="http://xml.zope.org/namespaces/metal"
+           xmlns:i18n="http://xml.zope.org/namespaces/i18n">
+  <tal:block tal:define="form_action string:logged_in;
+             global form_id string:login_form;
+             is_annonymous python: here.portal_membership.isAnonymousUser();
+             web_site python: here.getWebSiteValue();
+             login_message_reference python: web_site.getLayoutProperty('layout_login_message_reference', 'slapos-login.message'); 
+             login_message_document_list python: web_site.getDocumentValueList(reference='slapos-login.message');
+             preparing_google python: here.REQUEST.get('__ac_google_hash') is not None and not here.Google_checkUserExistence();
+             preparing_facebook python: here.REQUEST.get('__ac_facebook_hash') is not None and not here.Facebook_checkUserExistence();
+             js_list python: ['%s/login_form.js' % (here.portal_url(), ), '%s/erp5.js' % (here.portal_url(), )]">
+    <tal:block metal:use-macro="here/main_template/macros/master">
+      <tal:block metal:fill-slot="main">
+        <tal:block tal:condition="python: preparing_google or preparing_facebook">
+          <div class="preparing">
+            <script type="text/JavaScript">
+            <!--
+            function timedRefresh(timeoutPeriod) {
+            setTimeout("location.reload(true);",timeoutPeriod);
+            }
+            timedRefresh(3000);
+            //   -->
+            </script>
+            <p><img src="ERP5VCS_imgs/wait.gif"></p>
+            We are preparing your user.
+          </div>
+        </tal:block>
+        <div class="content login">
+          <tal:block tal:condition="python: request.get('came_from', None) is None">
+            <h1 i18n:translate="" i18n:domain="ui">Log in</h1>
+          </tal:block>
+          <tal:block tal:condition="python: request.get('came_from', None) is not None">
+            <h1 i18n:translate="" i18n:domain="ui">Please login before continue.</h1>
+          </tal:block>
+          <tal:block tal:condition="python: request.get('came_from', None) is not None">
+            <tal:block tal:define="dummy python: request.RESPONSE.setCookie('redirect_after_login', request.get('came_from'), path='/')"></tal:block>
+          </tal:block>
+          <fieldset>
+            <tal:block tal:condition="python: is_annonymous">  
+              <div class="field nolabel validate widthAuto forgotten_password center"><br/><br/>
+                 If you have Google or Facebook accounts feel free to use any of them to signup<br/><br/>
+                 <a class="zocial facebook" href="./login_with_facebook">Signup with Facebook</a> or 
+                 <a class="zocial google" href="./login_with_google">Signup with Google</a><br/><br/>
+                 You are not connected with social network? So then use BrowserID  <a href="login_with_browser_id" id="browserid" title="Sign-in with BrowserID"> <img src="./vifib_image/browser_id_logo.png" alt="Sign-in with BrowserID" title="Sign-in with BrowserID"></a>
+              </div>
+              <tal:block tal:condition="python: login_message_document_list">
+                <div tal:content="structure python: login_message_document_list[0].convert(format='html')[1]" class="field nolabel widthAuto center" style="background: white; color: #FF0066;; margin-top: 2em; text-align: left">
+                </div>
+              </tal:block>
+            </tal:block>
+            <tal:block tal:condition="python: not is_annonymous">  
+              <div class="field nolabel validate widthAuto forgotten_password center"><br/><br/>
+                You are logged in, continue <a href="../WebSection_redirectAfterLogin">accessing our site... </a>. 
+              </div>
+            </tal:block>
+      </tal:block>
+    </tal:block>
+  </tal:block>
+</tal:block>
