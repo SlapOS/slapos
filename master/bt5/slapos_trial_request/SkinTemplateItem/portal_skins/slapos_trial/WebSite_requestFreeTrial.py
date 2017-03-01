@@ -14,4 +14,11 @@ else:
   if default_email_text is None:
     return context.Base_redirect("WebSite_viewFreeTrialForm", keep_items={"portal_status_message", "Please Provide some email!"})
 
-  return context.WebSite_requestFreeTrialProxy(software_release, default_email_text, batch_mode=0)
+  user_input_dict = {
+    "input0": default_input0,
+    "input1": default_input1}
+     
+
+  return context.WebSite_requestFreeTrialProxy(
+    software_release, default_email_text, 
+    user_input_dict=user_input_dict, batch_mode=0)

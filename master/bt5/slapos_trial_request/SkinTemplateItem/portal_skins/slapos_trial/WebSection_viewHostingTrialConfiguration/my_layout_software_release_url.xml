@@ -16,7 +16,7 @@
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>my_layout_hosting_request_notification_reference</string> </value>
+            <value> <string>my_layout_software_release_url</string> </value>
         </item>
         <item>
             <key> <string>message_values</string> </key>
@@ -85,7 +85,7 @@
                 </item>
                 <item>
                     <key> <string>title</string> </key>
-                    <value> <string>Hosting Subscription Start Notification Reference</string> </value>
+                    <value> <string>Software Release URL</string> </value>
                 </item>
               </dictionary>
             </value>

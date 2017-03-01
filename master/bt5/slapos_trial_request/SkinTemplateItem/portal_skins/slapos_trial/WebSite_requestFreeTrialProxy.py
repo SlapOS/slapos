@@ -7,11 +7,22 @@ if REQUEST is not None:
 request = context.REQUEST
 portal = context.getPortalObject()
 
+web_section = context.getWebSectionValue()
 
-trial_configuration = context.TrialRequest_getTrialConfiguration(software_release)
+def _get(layout_property):
+  return web_section.getLayoutProperty("layout_" + layout_property) 
+
+trial_configuration = {
+    "instance_xml": _get("instance_xml"),
+    "base_software_title": _get("base_software_title"),
+    "software_type": _get("software_type"),
+    "url":_get("software_release_url"),
+    "shared": _get("is_slave"),
+    "subject_list": _get("subject_list"),
+    "sla_xml": _get("sla_xml")
+}
 
 software_title = trial_configuration["base_software_title"] % (email)
-
 
 trial_request = portal.portal_catalog.getResultValue(
               portal_type='Trial Request',
@@ -39,7 +50,7 @@ trial = context.trial_request_module.newContent(
   source_reference=trial_configuration["software_type"],
   title=software_title,
   url_string=trial_configuration["url"],
-  text_content=trial_configuration["instance_xml"],
+  text_content=trial_configuration["instance_xml"] % user_input_dict,
   start_date=now, 
   stop_date=now + 30,
   root_slave=trial_configuration["shared"],

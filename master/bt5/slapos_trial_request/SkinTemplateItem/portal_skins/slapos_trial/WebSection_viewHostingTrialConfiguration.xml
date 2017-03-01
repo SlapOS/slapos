@@ -80,9 +80,7 @@
                 <item>
                     <key> <string>center</string> </key>
                     <value>
-                      <list>
-                        <string>my_layout_hosting_request_notification_reference</string>
-                      </list>
+                      <list/>
                     </value>
                 </item>
                 <item>
@@ -95,11 +93,16 @@
                     <key> <string>left</string> </key>
                     <value>
                       <list>
-                        <string>my_layout_logo_reference</string>
-                        <string>my_layout_footer_reference</string>
-                        <string>my_layout_subscription_contract_reference</string>
                         <string>my_layout_terms_of_service_reference</string>
                         <string>my_layout_software_product_reference</string>
+                        <string>my_layout_subject_list</string>
+                        <string>my_layout_software_release_url</string>
+                        <string>my_layout_is_slave</string>
+                        <string>my_layout_software_type</string>
+                        <string>my_layout_instance_xml</string>
+                        <string>my_layout_sla_xml</string>
+                        <string>my_layout_user_input_list</string>
+                        <string>my_layout_base_software_title</string>
                       </list>
                     </value>
                 </item>
