@@ -1,0 +1,36 @@
+<tal:block xmlns:tal="http://xml.zope.org/namespaces/tal"
+           xmlns:metal="http://xml.zope.org/namespaces/metal"
+           xmlns:i18n="http://xml.zope.org/namespaces/i18n">
+  <tal:block tal:define="form_action string:logged_in;
+             global form_id string:login_form;
+             web_site_url python: here.getWebSiteValue().absolute_url();
+             is_annonymous python: here.portal_membership.isAnonymousUser();">
+    <tal:block metal:use-macro="here/main_template/macros/master">
+      <tal:block metal:fill-slot="main">
+<h2> Login with Browser ID is over </h2>
+
+<p> The service hosted by Persona for Browser ID was <a href="https://wiki.mozilla.org/Identity/Persona_Shutdown_Guidelines_for_Reliers">Shutdown </a> </p>
+
+<p>You can still login to your account using your email login and including bid_ before: </p>
+
+ <p>bid_+ your_email@example.com </p>
+
+<p>Examples of username for Browser ID account: </p>
+
+<ul style="margin-left: 50px">
+  <li>bid_your_mail@example.com </li>
+  <li>bid_raf@gmail.com </li>
+</ul>
+
+<p>If it is your first login after the shutdown of the service, please click here to reset your password on this link: <a tal:attributes="href python: web_site_url+'/ERP5Site_viewCredentialRecoveryLoginDialog'"> Reset Password</a></p>
+
+
+<p>If you already had reset your password or if you want to create a traditional user/password account, please click on the button below: </p>
+
+<p><a tal:attributes="href python: web_site_url+'/traditional_login_form'" class="validate"> Login or Create new Account</a></p>
+        
+
+      </tal:block>
+    </tal:block>
+  </tal:block>
+</tal:block>
