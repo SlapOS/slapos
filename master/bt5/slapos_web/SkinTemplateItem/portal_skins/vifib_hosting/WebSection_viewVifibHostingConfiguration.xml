@@ -85,6 +85,7 @@
                         <string>my_layout_sale_order_notification_reference</string>
                         <string>my_layout_login_password_notification_reference</string>
                         <string>my_layout_opentrade_deliver_notification_reference</string>
+                        <string>my_layout_top_bar_widget_reference</string>
                       </list>
                     </value>
                 </item>

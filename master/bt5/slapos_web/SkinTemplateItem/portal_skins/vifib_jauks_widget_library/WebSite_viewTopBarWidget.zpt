@@ -6,6 +6,7 @@
                        current_web_site python:request.get('current_web_site', here);
                        logout_form_id python:current_web_site.getLayoutProperty('layout_logout_form_id','WebSite_logout');
                        login_form_id python:current_web_site.getLayoutProperty('layout_login_form_id','login_form');
+                       top_bar_widget_reference python:current_web_site.getLayoutProperty('layout_top_bar_widget_reference','slapos-Top.Bar.Widget.Links');
                        language_list current_web_site/Localizer/get_languages_map;
                        dummy python: language_list.sort(key=lambda x: x['selected'], reverse=True);
                        available_language_list current_web_site/getAvailableLanguageList;">
@@ -48,9 +49,9 @@
 </div>
 
 <div id="menu">
-  <tal:block tal:define="message python:here.getDocumentValue('slapos-Top.Bar.Widget.Links').asStrippedHTML()"
+  <tal:block tal:define="message python:here.getDocumentValue(top_bar_widget_reference).asStrippedHTML()"
             tal:content="structure message"
-            tal:condition="python:here.getDocumentValue('slapos-Top.Bar.Widget.Links')">
+            tal:condition="python:here.getDocumentValue(top_bar_widget_reference)">
   </tal:block>
 </div>
 
