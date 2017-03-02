@@ -12,6 +12,7 @@
               <list>
                 <string>columns</string>
                 <string>css_class</string>
+                <string>editable_columns</string>
                 <string>lines</string>
                 <string>list_method</string>
                 <string>portal_types</string>
@@ -110,8 +111,8 @@
                           <string>Password</string>
                         </tuple>
                         <tuple>
-                          <string>url_string</string>
-                          <string>Monitor Setup Url</string>
+                          <string>link</string>
+                          <string>Setup Url</string>
                         </tuple>
                       </list>
                     </value>
@@ -119,6 +120,17 @@
                 <item>
                     <key> <string>css_class</string> </key>
                     <value> <string>nolabel listbox-parameters</string> </value>
+                </item>
+                <item>
+                    <key> <string>editable_columns</string> </key>
+                    <value>
+                      <list>
+                        <tuple>
+                          <string>link</string>
+                          <string>Setup Url</string>
+                        </tuple>
+                      </list>
+                    </value>
                 </item>
                 <item>
                     <key> <string>field_id</string> </key>
@@ -188,7 +200,7 @@
                           <string></string>
                         </tuple>
                         <tuple>
-                          <string>url_string</string>
+                          <string>link</string>
                           <string>Base_getMonitoringParameterPrintUrl</string>
                         </tuple>
                       </list>

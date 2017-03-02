@@ -44,9 +44,7 @@
         <item>
             <key> <string>edit_order</string> </key>
             <value>
-              <list>
-                <string>[]</string>
-              </list>
+              <list/>
             </value>
         </item>
         <item>
@@ -88,7 +86,9 @@
                 <item>
                     <key> <string>hidden</string> </key>
                     <value>
-                      <list/>
+                      <list>
+                        <string>listbox_link</string>
+                      </list>
                     </value>
                 </item>
                 <item>
@@ -97,7 +97,7 @@
                       <list>
                         <string>my_section_title</string>
                         <string>my_translated_description</string>
-                        <string>your_ad</string>
+                        <string>listbox</string>
                       </list>
                     </value>
                 </item>
@@ -120,7 +120,7 @@
         </item>
         <item>
             <key> <string>name</string> </key>
-            <value> <string>SoftwareRelease_viewRequestDialog</string> </value>
+            <value> <string>WebSection_viewMyServersRender</string> </value>
         </item>
         <item>
             <key> <string>pt</string> </key>
@@ -136,7 +136,7 @@
         </item>
         <item>
             <key> <string>title</string> </key>
-            <value> <string>Monitoring</string> </value>
+            <value> <string></string> </value>
         </item>
         <item>
             <key> <string>unicode_mode</string> </key>

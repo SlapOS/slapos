@@ -119,7 +119,7 @@
                 </item>
                 <item>
                     <key> <string>href</string> </key>
-                    <value> <string>./monitor-parameter-list</string> </value>
+                    <value> <string>../monitoring</string> </value>
                 </item>
                 <item>
                     <key> <string>target</string> </key>
