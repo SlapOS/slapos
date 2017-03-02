@@ -1,6 +1,8 @@
 [buildout]
 parts =
   instance
+  create-knowledge0
+  read-knowledge0
   publish-connection-parameter
   erp5-kernel
   kernel-json
@@ -79,6 +81,14 @@ mode = 0744
 context =
   raw config_cfg ${buildout:directory}/knowledge0.cfg
 
+# [ipython-notebook-set-password]
+# <= dynamic-jinja-template-base
+# template = {{ ipython_notebook_config_location }}/{{ ipython_notebook_set_password_filename }}
+# rendered = ${directory:etc}/ipython_notebook_set_password.py
+# mode = 0744
+# context =
+#   raw config_cfg ${buildout:directory}/knowledge0.cfg
+
 [directory]
 recipe = slapos.cookbook:mkdirectory
 home = ${buildout:directory}
@@ -93,6 +103,23 @@ notebook_dir = ${:var}/notebooks
 ipython_dir = ${:home}/ipython
 ipython_kernel_dir = ${:ipython_dir}/kernels
 erp5_kernel_dir = ${:ipython_kernel_dir}/ERP5
+
+[create-knowledge0]
+recipe = slapos.cookbook:zero-knowledge.write
+filename = knowledge0.cfg
+
+[read-knowledge0]
+recipe = slapos.cookbook:zero-knowledge.read
+filename = knowledge0.cfg
+
+[monitor-instance-parameter]
+instance-configuration =
+  raw init-user ${publish-connection-information:init-user}
+  htpasswd monitor-password ${monitor-htpassword-file:password-file} ${monitor-instance-parameter:username} ${httpd-monitor-htpasswd:htpasswd-path}
+  file promise-timeout ${monitor-promise-timeout-file:file}
+  raw jupyter-password ${read-knowledge0:password}
+
+
 
 [publish-connection-parameter]
 recipe = slapos.cookbook:publish.serialised
@@ -123,4 +150,3 @@ context =
 template = {{ custom_js_location }}/{{ custom_js_filename }}
 rendered = ${directory:ipython_dir}/profile_default/static/custom/custom.js
 mode = 0744
-
