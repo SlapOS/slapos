@@ -60,11 +60,6 @@ name = logrotate
 frequency = 0 0 * * *
 command = ${logrotate:wrapper-path}
 
-[logrotate-entry-base]
-recipe = slapos.cookbook:logrotate.d
-logrotate-entries = ${logrotate-directory:logrotate-entries}
-backup = ${logrotate-directory:backup}
-
 [logrotate-entry-cron]
 <= logrotate-entry-base
 name = crond
