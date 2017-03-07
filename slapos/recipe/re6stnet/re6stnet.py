@@ -9,7 +9,6 @@ import traceback
 import logging
 from re6st import  registry
 
-
 log = logging.getLogger('SLAPOS-RE6STNET')
 logging.basicConfig(level=logging.INFO)
 
@@ -40,24 +39,21 @@ def updateFile(file_path, value):
     return True
   return False
 
-def bang(args):
-  computer_guid = args['computer_id']
-  partition_id = args['partition_id']
+def getComputerPartition(server_url, key_file, cert_file, computer_guid, partition_id):
   slap = slapos.slap.slap()
 
   # Redeploy instance to update published information
-  slap.initializeConnection(args['server_url'], args['key_file'],
-                                                          args['cert_file'])
-  partition = slap.registerComputerPartition(computer_guid=computer_guid,
-                                                   partition_id=partition_id)
-  partition.bang(message='Published parameters changed!')
-  log.info("Bang with message 'parameters changed'...")
+  slap.initializeConnection(server_url,
+                            key_file,
+                            cert_file)
+
+  return slap.registerComputerPartition(computer_guid=computer_guid,
+                                             partition_id=partition_id)
 
 def requestAddToken(client, base_token_path):
   time.sleep(3)
   path_list = [x for x in os.listdir(base_token_path) if x.endswith('.add')]
 
-  updated = False
   log.info("Searching tokens to add at %s and found %s." % (base_token_path, path_list))
 
   if not path_list:
@@ -79,18 +75,15 @@ def requestAddToken(client, base_token_path):
                     traceback.format_exc()))
         continue
 
-      if result and result == token:
+      if result in (token, None):
         # update information
         log.info("New token added for slave instance %s. Updating file status..." %
                             reference)
         status_file = os.path.join(base_token_path, '%s.status' % reference)
         updateFile(status_file, 'TOKEN_ADDED')
         os.unlink(request_file)
-        updated = True
     else:
       log.debug('Bad token. Request add token fail for %s...' % request_file)
-
-  return updated
 
 def requestRemoveToken(client, base_token_path):
   path_list = [x for x in os.listdir(base_token_path) if x.endswith('.remove')]
@@ -150,7 +143,7 @@ def requestRevoqueCertificate(args):
 
     log.info("Failed to revoke email for %s" % reference)
 
-def checkService(client, base_token_path, token_json):
+def checkService(client, base_token_path, token_json, computer_partition):
   token_dict = loadJsonFile(token_json)
   updated = False
   if not token_dict:
@@ -167,64 +160,77 @@ def checkService(client, base_token_path, token_json):
 
     if not client.isToken(str(token)):
       # Token is used to register client
-      updated = True
       updateFile(status_file, 'TOKEN_USED')
       log.info("Token status of %s updated to 'used'." % slave_reference)
 
-    msg = readFile(status_file)
-    log.info("Token %s has %s State." % (status_file, msg))
+    status = readFile(status_file)
+    log.info("Token %s has %s State." % (status_file, status))
 
-    if msg == 'TOKEN_USED':
+    ipv6 = "::"
+    ipv4 = "0.0.0.0"
+    msg = status
+    if status == 'TOKEN_ADDED':
+      msg = 'Token is ready for use'
+    elif status == 'TOKEN_USED':
+      msg = 'Token not available, it has been used to generate re6stnet certificate.'
+
+    email = '%s@slapos' % slave_reference.lower()
+    if status == 'TOKEN_USED':
       try:
-        log.info("Dumping ipv6...")
-        email = '%s@slapos' % slave_reference.lower()
-        try:
-          ipv6 = client.getIPv6Address(str(email))
-          ipv6_file = os.path.join(base_token_path, '%s.ipv6' % slave_reference)
-          ipv6_changed = updateFile(ipv6_file, ipv6)
-        except Exception:
-          log.info('Error for dump ipv6 for %s... \n %s' % (slave_reference,
-                                          traceback.format_exc()))
-          continue
+        ipv6 = client.getIPv6Address(str(email))
+      except Exception:
+        log.info('Error for dump ipv6 for %s... \n %s' % (slave_reference,
+                                        traceback.format_exc()))
 
-        log.info("%s, IPV6 = %s" % (slave_reference, ipv6))
-        log.info("Dumping ipv4...")
-        try:
-          ipv4 = client.getIPv4Information(str(email)) or "0.0.0.0"
-          ipv4_file = os.path.join(base_token_path, '%s.ipv4' % slave_reference)
-          ipv4_changed = updateFile(ipv4_file, ipv4)
-        except Exception:
-          log.info('Error for dump ipv4 for %s... \n %s' % (slave_reference,
-                                          traceback.format_exc()))
-          continue
+      log.info("%s, IPV6 = %s" % (slave_reference, ipv6))
+      try:
+        ipv4 = client.getIPv4Information(str(email)) or "0.0.0.0"
+      except Exception:
+        log.info('Error for dump ipv4 for %s... \n %s' % (slave_reference,
+                                        traceback.format_exc()))
 
-        log.info("%s, IPV4 = %s" % (slave_reference, ipv4))
+      log.info("%s, IPV4 = %s" % (slave_reference, ipv4))
 
-      except IOError:
-        log.debug('Error when writing in file %s. Could not update status of %s...' %
-          (status_file, slave_reference))
+    try:
+      log.info("Update parameters for %s" % slave_reference)
 
-      if not updated or ipv4_changed or ipv6_changed:
-        updated = True
+      # Normalise the values as simple strings to be on the same format that
+      # the values which come from master.
+      computer_partition.setConnectionDict({'token': str(token),
+                                            '1_info': str(msg),
+                                            'ipv6': str(ipv6),
+                                            'ipv4': str(ipv4)},
+          slave_reference)
+    except Exception:
+      log.fatal("Error while sending slave %s informations: %s",
+         slave_reference, traceback.format_exc())
 
-  return updated
 
 def manage(args, can_bang=True):
 
-  client = registry.RegistryClient(args['registry_url']) 
+  computer_guid = args['computer_id']
+  partition_id = args['partition_id']
+  server_url = args['server_url']
+  key_file = args['key_file']
+  cert_file = args['cert_file']
+
+  client = registry.RegistryClient(args['registry_url'])
   base_token_path = args['token_base_path']
   token_json = args['token_json']
 
+  log.info("ADD TOKEN")
   # Request Add new tokens
-  has_new_token = requestAddToken(client, base_token_path)
+  requestAddToken(client, base_token_path)
 
+  log.info("Remove TOKEN")
   # Request delete removed token
   requestRemoveToken(client, base_token_path)
 
+  computer_partition = getComputerPartition(server_url, key_file,
+                              cert_file, computer_guid, partition_id)
+
+  log.info("Update Services")
   # check status of all token
-  changed = checkService(client, base_token_path, token_json)
-
-  if (has_new_token or changed) and can_bang:
-    bang(args)
-
+  checkService(client, base_token_path,
+            token_json, computer_partition)
 
