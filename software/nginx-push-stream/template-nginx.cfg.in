@@ -65,12 +65,15 @@ server {
   client_body_temp_path $${directory:varnginx} 1 2;
   proxy_temp_path $${directory:varnginx} 1 2;
 
+  auth_basic           "Nginx Access";
+  auth_basic_user_file $${htpasswd-runner:htpasswd-path};
+
   ## Serve an error 204 (No Content) for favicon.ico
   location = /favicon.ico {
     return 204;
   }
 
-  location /pub {
+  location $${nginx-configuration:publisher_location_prefix} {
             push_stream_publisher;
 
             push_stream_channels_path               $arg_id;
@@ -85,7 +88,7 @@ server {
 
    }
 
-   location ~ /sub/(.*) {
+   location ~ $${nginx-configuration:subscriber_location_prefix}/(.*) {
             # activate subscriber mode for this location
             add_header "Access-Control-Allow-Origin" $${nginx-configuration:subscriber_allow_origin};
             add_header 'Access-Control-Allow-Credentials' $${nginx-configuration:subscriber_allow_credential};
