@@ -168,18 +168,6 @@ class Recipe(GenericBaseRecipe):
 
     self.generateCertificate()
 
-    wrapper = self.createFile(self.options['wrapper'], self.substituteTemplate(
-      self.getTemplateFilename('registry-run.in'), dict(
-          parameter='@%s' % self.options['config-file'],
-          pid_file=self.options['pid-file'],
-          command=self.options['command']
-        )
-      )
-    )
-    os.chmod(self.options['wrapper'], stat.S_IRWXU)
-
-    path_list.append(wrapper)
-
     registry_url = 'http://%s:%s/' % (self.options['ipv4'], self.options['port'])
     token_dict, add_token_dict, rm_token_dict = self.generateSlaveTokenList(
                                               self.slave_list, token_save_path)
@@ -206,7 +194,7 @@ class Recipe(GenericBaseRecipe):
                         token_json=token_save_path,
                         partition_id=self.computer_partition_id,
                         computer_id=self.computer_id,
-                        registry_url=registry_url
+                        registry_url=registry_url,
                         server_url=self.server_url,
                         cert_file=self.cert_file,
                         key_file=self.key_file)

@@ -36,6 +36,7 @@ template-apache-conf = {{ template_apache_conf }}
 template-wrapper = {{ template_wrapper }}
 apache-location = {{ apache_location }}
 template-re6st-registry-conf = {{ template_re6st_registry_conf }}
+template-registry-run = {{ template_registry_run }}
 
 [dynamic-template-re6stnet]
 < = jinja2-template-base
