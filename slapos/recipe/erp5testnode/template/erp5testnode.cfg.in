@@ -29,6 +29,9 @@ xvfb_binary = %(xvfb_binary)s
 
 [environment]
 PATH = %(PATH)s
+TMPDIR = %(tmp_directory)s
+TEMP = %(tmp_directory)s
+TMP = %(tmp_directory)s
 
 %(software_path_list)s
 
