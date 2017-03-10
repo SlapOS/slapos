@@ -18,32 +18,45 @@ database_uri = /opt/slapos/slapproxy.db
 # Below is the list of software maintained by slapos.org and contributors
 # It is used to simulate a proper configuration of a real slapos master.
 software_product_list =
-  erp5 http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.195:/software/erp5/software.cfg
-  erp5_branch http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/heads/erp5:/software/erp5/software.cfg
-  kumofs http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.141:/software/kumofs/software.cfg
-  kvm http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.193:/software/kvm/software.cfg
-  maarch http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.159:/software/maarch/software.cfg
-  mariadb http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.152:/software/mariadb/software.cfg
-  memcached http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.82:/software/memcached/software.cfg
-  slaposwebrunner http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.160:/software/slaprunner/software.cfg
-  wordpress http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.163:/software/wordpress/software.cfg
-  zabbixagent http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.162:/software/zabbix-agent/software.cfg
+  erp5 https://lab.node.vifib.com/nexedi/slapos/raw/1.0.48/software/erp5/software.cfg
+  kvm https://lab.node.vifib.com/nexedi/slapos/raw/1.0.48/software/kvm/software.cfg
+  slaprunner https://lab.node.vifib.com/nexedi/slapos/raw/1.0.48/software/slaprunner/software.cfg
+  frontend https://lab.node.vifib.com/nexedi/slapos/raw/1.0.48/software/apache-frontend/software.cfg
+  monitor https://lab.node.vifib.com/nexedi/slapos/raw/1.0.48/software/monitor/software.cfg
+  cloudooo https://lab.node.vifib.com/nexedi/slapos/raw/1.0.48/software/cloudooo/software.cfg
+  wendelin https://lab.node.vifib.com/nexedi/slapos/raw/1.0.48/software/wendelin/software.cfg
+
+# Here goes the list of slapos masters that slapos.proxy is authorized to
+#     contact to forward an instance request.
+#
+# Each section beginning by "multimaster/" is a different SlapOS Master,
+#     represented by its URL.
+#
+# For each section, you need to specify the URL of the SlapOS Master in the
+#     section name itself.
+#
+# For each section, you can specify if needed the location of key/certificate
+#     used to authenticate to this slapOS Master.
+#
+# For each section, you can specify if needed a list of Software Releases,
+#     separated by carrier return. Any instance request matching one of those
+#     Software Releases will be automatically forwarded to this SlapOS Master
+#     and will not be allocated locally.
+#
+# When doing an instance request, you can specify in filter (a.k.a SLA) a
+#     "master_url" that will be used by the slapproxy to forward the request.
 
 
-# Here goes the list of slapos masters that slapos.proxy is authorized to contact to forward an instance request.
-# Each section beginning by "multimaster/" is a different SlapOS Master, represented by its URL.
-# For each section, you need to specify the URL of the SlapOS Master in the section name itself.
-# For each section, you can specify if needed the location of key/certificate used to authenticate to this slapOS Master.
-# For each section, you can specify if needed a list of Software Releases, separated by carrier return. Any instance request matching one of those Software Releases will be automatically forwarded to this SlapOS Master and will not be allocated locally.
-# When doing an instance request, you can specify in filter (a.k.a SLA) a "master_url" that will be used by the slapproxy to forward the request.
-[multimaster/https://slap.vifib.com]
-key = key file path coming from your slapos master account
-cert = certificate file path coming from your slapos master account
-software_release_list =
-  http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg
+# Uncomment the sections bellow to enable multi-master sections, adter set
+# your cert/key.
+#[multimaster/https://slap.vifib.com]
+#key = key file path coming from your slapos master account
+#cert = certificate file path coming from your slapos master account
+#software_release_list =
+#  http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg
 
-[multimaster/http://imaginary-slapos-master.com]
+#[multimaster/http://imaginary-slapos-master.com]
 # No certificate here: it is http.
-software_release_list =
-  http://mywebsite.me/my_software_release.cfg
-  /some/arbitrary/local/unix/path
+#software_release_list =
+#  http://mywebsite.me/my_software_release.cfg
+#  /some/arbitrary/local/unix/path
