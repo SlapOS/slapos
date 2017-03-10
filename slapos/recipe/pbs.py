@@ -194,7 +194,7 @@ class Recipe(GenericSlapRecipe, Notify, Callback):
 
         if [ -e %(backup_signature)s ]; then
           cd $BACKUP_DIR
-          find -type f ! -name backup.signature ! -wholename "./rdiff-backup-data/*" -print0 | xargs -P4 -0 sha256sum  | LC_ALL=C sort -k 66 > ../proof.signature
+          find -type f ! -name backup.signature ! -wholename "./rdiff-backup-data/*" -print0 | xargs -0 sha256sum  | LC_ALL=C sort -k 66 > ../proof.signature
           cmp backup.signature ../proof.signature || SUCCEEDED=false
           diff -ruw backup.signature ../proof.signature > ../backup.diff
           # XXX If there is a difference on the backup, we should publish the

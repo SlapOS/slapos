@@ -72,7 +72,7 @@ proof-signature-file = $${basedirectory:backup}/proof.signature
 input = inline:
   #!/${bash:location}/bin/bash
   cd $${directory:backup}
-  find -type f ! -name backup.signature ! -wholename "./rdiff-backup-data/*" -print0 | xargs -P4 -0 sha256sum  | LC_ALL=C sort -k 66 > $${:proof-signature-file}
+  find -type f ! -name backup.signature ! -wholename "./rdiff-backup-data/*" -print0 | xargs -0 sha256sum  | LC_ALL=C sort -k 66 > $${:proof-signature-file}
   diff -ruw backup.signature $${:proof-signature-file} > $${:diff-file}
 output = $${rootdirectory:bin}/post-notification-run
 mode = 0700
