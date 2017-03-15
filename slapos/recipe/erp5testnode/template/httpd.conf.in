@@ -77,6 +77,7 @@ SSLProxyEngine On
 Listen [%(ip)s]:%(software_access_port)s
 <VirtualHost *:%(software_access_port)s>
     SSLEngine on
+    RewriteRule (.*) http://[%(ip)s]:%(software_access_port)s/VirtualHostBase/https/[%(ip)s]:%(software_access_port)s/VirtualHostRoot/$1 [L,P]
     DocumentRoot "%(testnode_srv_directory)s"
     <Directory />
         AllowOverride FileInfo AuthConfig
