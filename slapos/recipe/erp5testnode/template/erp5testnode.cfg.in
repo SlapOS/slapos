@@ -18,7 +18,6 @@ httpd_port = %(httpd_port)s
 httpd_software_access_port = %(httpd_software_access_port)s
 computer_id = %(computer_id)s
 server_url = %(server_url)s
-frontend_url = %(frontend_url)s
 
 # Binaries
 git_binary = %(git_binary)s
