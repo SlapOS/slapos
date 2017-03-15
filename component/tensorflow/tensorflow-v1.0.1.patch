@@ -1,0 +1,13 @@
+diff --git a/tensorflow/tools/pip_package/build_pip_package.sh b/tensorflow/tools/pip_package/build_pip_package.sh
+index e2bee21..1df90c1 100755
+--- a/tensorflow/tools/pip_package/build_pip_package.sh
++++ b/tensorflow/tools/pip_package/build_pip_package.sh
+@@ -136,7 +136,7 @@ function main() {
+   pushd ${TMPDIR}
+   rm -f MANIFEST
+   echo $(date) : "=== Building wheel"
+-  "${PYTHON_BIN_PATH:-python}" setup.py bdist_wheel ${GPU_FLAG} >/dev/null
++  "${PYTHON_BIN_PATH:-python}" setup.py bdist_egg ${GPU_FLAG} >/dev/null
+   mkdir -p ${DEST}
+   cp dist/* ${DEST}
+   popd
