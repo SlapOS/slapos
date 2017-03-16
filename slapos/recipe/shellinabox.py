@@ -33,19 +33,24 @@ import shlex
 from slapos.recipe.librecipe import GenericBaseRecipe
 
 def login_shell(args):
-  password = args['password']
-  
-  if (password != ''):
-    entered_password = getpass()
-  else:
-    entered_password = ''
+  shellinabox_password_file = args['shellinabox-password-file']
+  if shellinabox_password_file:
+    with open(shellinabox_password_file, 'r') as password_file:
+      password = password_file.read()
 
-  if entered_password != password:
-    return 1
+    if (password != ''):
+      entered_password = getpass()
+    else:
+      entered_password = ''
+
+    if entered_password != password:
+      return 1
+    else:
+      commandline = shlex.split(args['shell'])
+      path = commandline[0]
+      os.execv(path, commandline)
   else:
-    commandline = shlex.split(args['shell'])
-    path = commandline[0]
-    os.execv(path, commandline)
+    return 1
 
 def shellinabox(args):
   certificate_dir = args['certificate_dir']
@@ -95,11 +100,14 @@ class Recipe(GenericBaseRecipe):
       self.options['login-shell'],
       '%s.login_shell' % __name__,
       {
-        'password': self.options['password'],
+        'shellinabox-password-file': self.options['shellinabox-password-file'],
         'shell': self.options['shell']
       }
     )
     path_list.append(login_shell)
+
+    with open(self.options['shellinabox-password-file'], 'w') as password_file:
+      password_file.write(self.options['password'])
 
     wrapper = self.createPythonScript(
       self.options['wrapper'],
