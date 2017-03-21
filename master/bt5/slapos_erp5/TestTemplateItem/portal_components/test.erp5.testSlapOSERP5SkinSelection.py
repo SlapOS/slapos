@@ -232,6 +232,7 @@ erp5_web_hal_json
 slapos_ecoallocation
 slapos_erp5
 slapos_upgrader
+vifib_hosting
 slapos_contract
 slapos_trial
 slapos_crm_monitoring
