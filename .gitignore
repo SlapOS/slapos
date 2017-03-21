@@ -11,3 +11,6 @@ slapos.cookbook.egg-info
 .*.swp
 *~
 \#*\#
+.eggs/
+*.egg/
+TEST_KNOWN_HOSTS
