@@ -120,6 +120,7 @@ slapos_erp5
 slapos_upgrader
 vifib_hosting
 slapos_contract
+slapos_trial
 slapos_crm_monitoring
 slapos_accounting
 slapos_administration
@@ -232,6 +233,7 @@ slapos_ecoallocation
 slapos_erp5
 slapos_upgrader
 slapos_contract
+slapos_trial
 slapos_crm_monitoring
 slapos_accounting
 slapos_administration
@@ -340,6 +342,7 @@ slapos_ecoallocation
 slapos_erp5
 slapos_upgrader
 slapos_contract
+slapos_trial
 slapos_crm_monitoring
 slapos_accounting
 slapos_administration
@@ -449,6 +452,7 @@ slapos_ecoallocation
 slapos_erp5
 slapos_upgrader
 slapos_contract
+slapos_trial
 slapos_crm_monitoring
 slapos_accounting
 slapos_administration
@@ -555,6 +559,7 @@ slapos_ecoallocation
 slapos_erp5
 slapos_upgrader
 slapos_contract
+slapos_trial
 slapos_crm_monitoring
 slapos_accounting
 slapos_administration
@@ -662,6 +667,7 @@ slapos_ecoallocation
 slapos_erp5
 slapos_upgrader
 slapos_contract
+slapos_trial
 slapos_crm_monitoring
 slapos_accounting
 slapos_administration
@@ -768,6 +774,7 @@ slapos_ecoallocation
 slapos_erp5
 slapos_upgrader
 slapos_contract
+slapos_trial
 slapos_crm_monitoring
 slapos_accounting
 slapos_administration
@@ -875,6 +882,7 @@ slapos_erp5
 slapos_upgrader
 slapos_rss
 slapos_contract
+slapos_trial
 slapos_crm_monitoring
 slapos_accounting
 slapos_administration
@@ -981,6 +989,7 @@ slapos_ecoallocation
 slapos_erp5
 slapos_upgrader
 slapos_contract
+slapos_trial
 slapos_crm_monitoring
 slapos_accounting
 slapos_administration
@@ -1089,6 +1098,7 @@ slapos_ecoallocation
 slapos_erp5
 slapos_upgrader
 slapos_contract
+slapos_trial
 slapos_crm_monitoring
 slapos_accounting
 slapos_administration
@@ -1198,6 +1208,7 @@ slapos_ecoallocation
 slapos_erp5
 slapos_upgrader
 slapos_contract
+slapos_trial
 slapos_crm_monitoring
 slapos_accounting
 slapos_administration
