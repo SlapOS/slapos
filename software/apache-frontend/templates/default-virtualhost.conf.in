@@ -92,7 +92,7 @@
 
 {%-  for server_alias in server_alias_list %}
   ServerAlias {{ server_alias }}
-{% endfor -%}
+{% endfor %}
 
   SSLProxyEngine on
 {% if ssl_proxy_verify -%}
@@ -106,6 +106,7 @@
   # Rewrite part
   ProxyPreserveHost On
   ProxyTimeout 600
+
 {% if disable_via_header %}
   Header unset Via
 {% endif -%}
