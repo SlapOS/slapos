@@ -80,6 +80,7 @@ LoadModule auth_basic_module  {{ httpd_home }}/modules/mod_auth_basic.so
 LoadModule authz_user_module  {{ httpd_home }}/modules/mod_authz_user.so
 LoadModule authn_file_module  {{ httpd_home }}/modules/mod_authn_file.so
 LoadModule filter_module       {{ httpd_home }}/modules/mod_filter.so
+LoadModule http2_module       {{ httpd_home }}/modules/mod_http2.so
 
 # The following directives modify normal HTTP response behavior to
 # handle known problems with browser implementations.
