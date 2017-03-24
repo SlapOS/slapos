@@ -116,9 +116,14 @@ filename = knowledge0.cfg
 
 [monitor-instance-parameter]
 monitor-base-url = ${monitor-httpd-conf-parameter:url}
+cors-domains = *your domain here*
+interface-url = *your interface url here*
 instance-configuration =
-  raw jupyter-password ${read-knowledge0:password}
+#  raw jupyter-password ${read-knowledge0:password}
   raw kek kek
+
+[publish-connection-information]
+<= monitor-publish
 
 
 [publish-connection-parameter]
