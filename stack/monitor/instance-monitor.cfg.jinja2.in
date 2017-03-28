@@ -89,16 +89,16 @@ monitor-promise-folder = ${monitor-directory:promises}
 promises-timeout-file = ${monitor-promise-timeout-file:file}
 pid-file = ${monitor-directory:pids}/monitor-bootstrap.pid
 
-public-path-list = 
-private-path-list = 
+public-path-list =
+private-path-list =
     ${directory:log}
-# 
-monitor-url-list = 
+#
+monitor-url-list =
   ${monitor-instance-parameter:monitor-url-list}
 
 parameter-file-path = ${monitor-instance-parameter:configuration-file-path}
 
-parameter-list = 
+parameter-list =
   raw monitor-user ${monitor-instance-parameter:username}
   htpasswd monitor-password ${monitor-htpassword-file:password-file} ${monitor-instance-parameter:username} ${httpd-monitor-htpasswd:htpasswd-path}
   file promise-timeout ${monitor-promise-timeout-file:file}
@@ -115,7 +115,7 @@ promise-output-file = ${directory:monitor}/monitor-bootstrap-status
 [monitor-promise-timeout-file]
 recipe = plone.recipe.command
 file = ${directory:etc}/promise_timeout
-command = 
+command =
   if [ ! -s "${:file}" ]; then
     echo "20" > ${:file}
   fi
@@ -142,7 +142,7 @@ recipe = slapos.recipe.template:jinja2
 template = {{ monitor_instance_info }}
 rendered = ${directory:etc}/${:filename}
 filename = instance-info.conf
-context = 
+context =
   section instance_dict instance-info-parameters
 
 [python-symlink]
@@ -155,7 +155,7 @@ update-command = ${:command}
 recipe = slapos.cookbook:wrapper
 command-line = {{ python_executable }} {{ monitor_bin }} --config_file ${monitor-conf:rendered}
 wrapper-path = ${directory:scripts}/bootstrap-monitor
-environment = 
+environment =
   PATH=${python-symlink:target}:/usr/local/bin:/usr/bin:/bin
 
 [monitor-htpasswd]
@@ -168,7 +168,7 @@ username = admin
 recipe = plone.recipe.command
 stop-on-error = true
 password-file = ${directory:etc}/.monitor_pwd
-command = 
+command =
   if [ ! -f "${:password-file}" ]; then echo "${monitor-instance-parameter:password}" > ${:password-file}; fi
 update-command = ${:command}
 
@@ -192,7 +192,7 @@ key-file = ${ca-directory:certs}/httpd.key
 htpasswd-file = ${httpd-monitor-htpasswd:htpasswd-path}
 url = https://[${monitor-instance-parameter:monitor-httpd-ipv6}]:${:port}
 httpd-cors-config-file = ${monitor-httpd-cors:rendered}
-httpd-include-file = 
+httpd-include-file =
 
 [monitor-httpd-conf]
 recipe = slapos.recipe.template:jinja2
@@ -362,7 +362,7 @@ config-file = ${directory:etc}/min-free-disk-size
 # create dependencies between required monitor parts
 recipe = plone.recipe.command
 command = true
-update-command = 
+update-command =
 base-url = ${monitor-conf-parameters:base-url}
 depends =
   ${monitor-globalstate-cron-entry:name}
@@ -379,10 +379,10 @@ depends =
 
 [monitor-publish]
 monitor-base-url = ${publish:monitor-base-url}
-monitor-setup-url = ${monitor-instance-parameter:interface-url}/#page=settings_configurator&url=${publish:monitor-url}&username=$${publish:monitor-user}&password=${publish:monitor-password}
+monitor-setup-url = ${monitor-instance-parameter:interface-url}/#page=settings_configurator&url=${publish:monitor-url}&username=${publish:monitor-user}&password=${publish:monitor-password}
 
 
 [buildout]
 
-extends = 
+extends =
   {{ template_logrotate_base }}
