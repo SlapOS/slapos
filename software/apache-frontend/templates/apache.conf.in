@@ -56,7 +56,6 @@ LoadModule unixd_module        {{ httpd_home }}/modules/mod_unixd.so
 LoadModule access_compat_module {{ httpd_home }}/modules/mod_access_compat.so
 LoadModule authz_core_module  {{ httpd_home }}/modules/mod_authz_core.so
 LoadModule authz_host_module  {{ httpd_home }}/modules/mod_authz_host.so
-LoadModule authn_core_module  {{ httpd_home }}/modules/mod_authn_core.so
 LoadModule log_config_module  {{ httpd_home }}/modules/mod_log_config.so
 LoadModule deflate_module     {{ httpd_home }}/modules/mod_deflate.so
 LoadModule setenvif_module    {{ httpd_home }}/modules/mod_setenvif.so
