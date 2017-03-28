@@ -116,18 +116,15 @@ filename = knowledge0.cfg
 
 [monitor-instance-parameter]
 monitor-base-url = ${monitor-httpd-conf-parameter:url}
-cors-domains = *your domain here*
-interface-url = *your interface url here*
+# In case you're using a developer instance you should specify these:
+# cors-domains = softinstXXXXX.host.vifib.net (or equivalent)
+# interface-url = https://softinstXXXXX.host.vifib.net/erp5/web_site_module/monitoring_rjs_unsafe
 instance-configuration =
-#  raw jupyter-password ${read-knowledge0:password}
-  raw kek kek
-
-[publish-connection-information]
-<= monitor-publish
-
+  raw jupyter-password ${read-knowledge0:password}
 
 [publish-connection-parameter]
 recipe = slapos.cookbook:publish.serialised
+<= monitor-publish
 url = https://[${instance-parameter:host}]:${instance-parameter:port}
 
 [erp5-kernel]
