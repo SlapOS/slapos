@@ -98,7 +98,7 @@ crl = {{ custom_ssl_directory }}/crl/
 {%     do slave_publish_dict.__setitem__('secure_access', 'https://%s' % slave_instance.get('custom_domain')) -%}
 {%   endif -%}
 
-[slave-log-directory]
+[slave-log-directories]
 {{slave_reference}}-log-folder = {{ slave_log_folder }}
 
 {# Set slave logrotate entry #}
@@ -304,9 +304,6 @@ extra-context =
 
 [slave-log-directories]
 recipe = slapos.cookbook:mkdirectory
-{% for key, value in slave_log_dict.iteritems() -%}
-{{ key }} = {{ value }}
-{% endfor %}
 
 {# Define log access #}
 [apache-log-access]
