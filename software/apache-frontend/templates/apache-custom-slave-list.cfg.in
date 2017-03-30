@@ -27,6 +27,13 @@ context =
 {{ key }} = {{ value }}
 {% endfor %}
 
+post = {{ apache_configuration.get('frontend-graceful-command') }}
+frequency = daily
+rotatep-num = 30
+sharedscripts = true
+notifempty = true
+create = true
+
 [cadirectory]
 recipe = slapos.cookbook:mkdirectory
 requests = {{ custom_ssl_directory }}/requests/
@@ -108,12 +115,6 @@ recipe = slapos.cookbook:logrotate.d
 name = ${:_buildout_section_name_}
 log = {{slave_parameter_dict.get('access_log')}} {{slave_parameter_dict.get('error_log')}}
 backup = {{ slave_log_folder }} 
-frequency = daily
-rotatep-num = 30
-post = {{ apache_configuration.get('frontend-graceful-command') }}
-sharedscripts = true
-notifempty = true
-create = true
 
 {# integrate current logs inside #}
 [{{slave_ln_section}}]
@@ -316,9 +317,7 @@ extra-context =
     raw apache_configuration_directory {{apache_configuration_directory}}
 
 {# Publish information for the instance #}
-{% set publish_section_title = 'publish-apache-information' -%}
-{% do part_list.append(publish_section_title) -%}
-[{{ publish_section_title }}]
+[publish-apache-information]
 recipe = slapos.cookbook:publish
 public-ipv4 = {{ public_ipv4 }}
 private-ipv4 = {{ local_ipv4 }}
@@ -333,6 +332,7 @@ parts +=
 {% for part in part_list -%}
 {{ '    %s' % part }}
 {% endfor %}
+    publish-apache-information
     apache-log-access
 
 eggs-directory = {{ eggs_directory }}
