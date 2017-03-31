@@ -1,11 +1,15 @@
 [buildout]
 parts =
   instance
+  create-knowledge0
+  read-knowledge0
   publish-connection-parameter
   erp5-kernel
   kernel-json
   custom-js
-
+  monitor-base
+extends =
+  {{ monitor_template_rendered }}/template-monitor.cfg
 
 eggs-directory = {{ eggs_directory }}
 develop-eggs-directory = {{ develop_eggs_directory }}
@@ -94,8 +98,25 @@ ipython_dir = ${:home}/ipython
 ipython_kernel_dir = ${:ipython_dir}/kernels
 erp5_kernel_dir = ${:ipython_kernel_dir}/ERP5
 
+[create-knowledge0]
+recipe = slapos.cookbook:zero-knowledge.write
+filename = knowledge0.cfg
+
+[read-knowledge0]
+recipe = slapos.cookbook:zero-knowledge.read
+filename = knowledge0.cfg
+
+[monitor-instance-parameter]
+monitor-base-url = ${monitor-httpd-conf-parameter:url}
+# In case you're using a developer instance you should specify these:
+# cors-domains = softinstXXXXX.host.vifib.net (or equivalent)
+# interface-url = https://softinstXXXXX.host.vifib.net/erp5/web_site_module/monitoring_rjs_unsafe
+instance-configuration =
+  raw jupyter-password ${read-knowledge0:password}
+
 [publish-connection-parameter]
 recipe = slapos.cookbook:publish.serialised
+<= monitor-publish
 url = https://[${instance-parameter:host}]:${instance-parameter:port}
 
 [erp5-kernel]
@@ -123,4 +144,3 @@ context =
 template = {{ custom_js_location }}/{{ custom_js_filename }}
 rendered = ${directory:ipython_dir}/profile_default/static/custom/custom.js
 mode = 0744
-

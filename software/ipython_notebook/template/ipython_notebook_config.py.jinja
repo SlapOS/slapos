@@ -1,13 +1,29 @@
-
+```
+  This script initializes Jupyter's configuration such as passwords and other
+  things. It is run by IPython hence why it can use functions like get_config().
+```
 import ConfigParser
+import os
 
 knowledge_0 = '{{ config_cfg }}'
+
+if not os.path.exists(knowledge_0):
+  print "Your software does <b>not</b> embed 0-knowledge. \
+  This interface is useless in this case</body></html>"
+  exit(0)
 
 c = get_config()
 
 parser = ConfigParser.ConfigParser()
 parser.read(knowledge_0)
 
-if parser.has_option("ipython_notebook", "password"):
-  c.NotebookApp.password = parser.get("ipython_notebook", "password")
+if not parser.has_section("ipython_notebook"):
+  parser.add_section("ipython_notebook")
 
+if not parser.has_option("ipython_notebook", "password"):
+  parser.set("ipython_notebook", "password", "abcdefgh")
+
+c.NotebookApp.password = parser.get("ipython_notebook", "password")
+
+with open(knowledge_0, 'w') as file:
+  parser.write(file)
