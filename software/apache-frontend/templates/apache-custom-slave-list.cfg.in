@@ -267,6 +267,19 @@ filename = {{ monitor_ipv4_section_title }}
 wrapper-path = {{ promise_directory }}/${:filename}
 {%   endif %}
 
+{%   set re6st_optimal_test = slave_instance.get('re6st-optimal-test', '') %}
+{%   if re6st_optimal_test %}
+{%     set re6st_ipv6, re6st_ipv4 = re6st_optimal_test.split(",") %}
+{%     set re6st_optimal_test_section_title = 'check-%s-re6st-optimal-test' % slave_instance.get('slave_reference') %}
+{%     do part_list.append(re6st_optimal_test_section_title) -%}
+[{{ re6st_optimal_test_section_title }}]
+recipe = slapos.cookbook:wrapper
+command-line = {{ bin_directory }}/check-re6st-optimal-status -4 {{re6st_ipv4}} -6 {{re6st_ipv6}}
+filename = {{ re6st_optimal_test_section_title }}
+wrapper-path = {{ promise_directory }}/${:filename}
+{%   endif %}
+
+
 {# ###############################  #}
 {# Publish Slave Information        #}
 {%   if not extra_slave_instance_list -%}
