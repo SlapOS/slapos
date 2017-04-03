@@ -5,9 +5,12 @@
 #############################
 [buildout]
 parts =
-  directory
   publish-connection-parameter
+  xvfb-instance
   browser
+  cron-entry-logrotate
+  cron-entry-browser
+
 
 [instance]
 # Fetch arbitrary parameters defined by the user in SlapOS Master for his instance.
@@ -27,6 +30,7 @@ cert = ${slap_connection:cert_file}
 # All configuration parameters should have a default.
 configuration.browser-url = https://www.signal5g.com/portal_tests/lte_request_ui_zuite/core/TestRunner.html?test=..%2Ftest_suite_html&auto=true&resultsUrl=..%2FpostResults
 configuration.browser-timeout = 300
+configuration.browser-period = 2
 
 # Create all needed directories, depending on your needs
 [directory]
@@ -46,6 +50,14 @@ promise = ${:etc}/promise
 # Software-specific folders
 # Xserver
 framebuffer = ${directory:srv}/framebuffer
+# Dcron
+cron-entries = ${:etc}/cron.d
+crontabs = ${:etc}/crontabs
+cronstamps = ${:var}/cronstamps
+# Logrotate
+logrotate = ${:var}/logrotate
+logrotate-entries = ${:logrotate}/entries
+logrotate-backup = ${:logrotate}/backup
 
 [browser]
 recipe = slapos.recipe.template:jinja2
@@ -58,6 +70,34 @@ context =
   key browser firefox-instance:runner-path
   key url instance:configuration.browser-url
   key timeout instance:configuration.browser-timeout
+
+[cron-entry-browser]]
+<= cron
+recipe = slapos.cookbook:cron.d
+name = browser
+frequency = 0 */${instance:configuration.browser-period} * * *
+command = ${browser:rendered}
+
+[cron]
+recipe = slapos.cookbook:cron
+dcrond-binary = {{ dcron['location'] }}/sbin/crond
+cron-entries = ${directory:cron-entries}
+crontabs = ${directory:crontabs}
+cronstamps = ${directory:cronstamps}
+catcher = ${cron-simplelogger:wrapper}
+binary = ${directory:service}/crond
+
+[cron-simplelogger]
+recipe = slapos.cookbook:simplelogger
+wrapper = ${directory:bin}/cron_simplelogger
+log = ${directory:log}/crond.log
+
+[cron-entry-logrotate]
+<= cron
+recipe = slapos.cookbook:cron.d
+name = logrotate
+frequency = 0 0 * * *
+command = ${logrotate:wrapper}
 
 [firefox-instance]
 recipe = slapos.cookbook:firefox
@@ -76,3 +116,16 @@ tmp-path = ${directory:run}
 shell-path = ${dash:location}/bin/dash
 xwd-path = {{ xwd['location'] }}/bin/xwd
 xwd-hook-path = ${directory:bin}/xwd
+
+[logrotate]
+recipe = slapos.cookbook:logrotate
+# Binaries
+logrotate-binary = {{ logrotate['location'] }}/usr/sbin/logrotate
+gzip-binary = {{ gzip['location'] }}/bin/gzip
+gunzip-binary = {{ gzip['location'] }}/bin/gunzip
+# Directories
+wrapper = ${directory:bin}/logrotate
+conf = ${directory:etc}/logrotate.conf
+logrotate-entries = ${directory:logrotate-entries}
+backup = ${directory:logrotate-backup}
+state-file = ${directory:srv}/logrotate.status
