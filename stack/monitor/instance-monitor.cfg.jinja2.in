@@ -239,6 +239,12 @@ input = inline:#!/bin/sh
 output = ${directory:bin}/xnice
 mode = 700
 
+[promise-monitor-httpd-is-process-older-than-dependency-set]
+recipe = slapos.cookbook:wrapper
+command-line = {{ bin_directory }}/is-process-older-than-dependency-set ${monitor-httpd-conf-parameter:pid-file} 
+wrapper-path = ${directory:promises}/promise-monitor-httpd-is-process-older-than-dependency-set
+parameters-extra = true
+
 [monitor-globalstate-wrapper]
 recipe = slapos.cookbook:wrapper
 command-line = ${xnice-bin:output} {{ monitor_genstatus }} '${monitor-conf:rendered}' '${monitor-instance-info:rendered}'
@@ -385,6 +391,7 @@ depends =
   ${monitor-httpd-promise:filename}
   ${monitor-bootstrap-promise:file}
   ${promise-check-slapgrid:output}
+  ${promise-monitor-httpd-is-process-older-than-dependency-set:wrapper-path}
 
 [monitor-publish]
 monitor-base-url = ${publish:monitor-base-url}
