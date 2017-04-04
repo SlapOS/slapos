@@ -50,7 +50,10 @@ def main():
   args = parser.parse_args()
 
   import json
-  parsed_parameters = json.loads('$${instance-parameter:configuration._}')
+  no_py_prefix = '''$${instance-parameter:configuration}'''[4:] # The input_str has "!py!" prefix.
+  json_style_para = no_py_prefix.replace('\'', '\"')
+  parameters = json.loads(json_style_para)
+  parsed_parameters = json.loads(parameters.get('_', '{}'))
 
 
   if not getattr(args, 'target', None):
