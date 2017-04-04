@@ -50,8 +50,11 @@ def main():
   args = parser.parse_args()
 
   import json
-  parsed_parameters = json.loads('$${instance-parameter:configuration._}')
-
+  no_py_prefix = '''$${instance-parameter:configuration}'''[4:] # The input_str has "!py!" prefix.
+  json_style_para = no_py_prefix.replace('\'', '\"')
+  parameters = json.loads(json_style_para)
+  parsed_parameters = json.loads(parameters.get('_', '{}'))
+  print(parsed_parameters)
 
   if not getattr(args, 'target', None):
     args.target = parsed_parameters.get('target', 'firefox')
@@ -87,7 +90,8 @@ def main():
     ##########################
     
     is_appium = False
-    
+ 
+
     if args.target == 'firefox':
       firefox_capabilities = webdriver.common.desired_capabilities.DesiredCapabilities.FIREFOX
       firefox_capabilities['marionette'] = True
