@@ -1,5 +1,5 @@
 #!{{ dash }}
-{{ browser }} --no-remote '{{ dumps(url) }}'
+{{ browser }} '{{ url }}' &
 pid=$$
 sleep {{ timeout }}
-kill -SIGKILL $pid
+kill -15 $pid
