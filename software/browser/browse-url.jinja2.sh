@@ -1,5 +1,5 @@
 #!{{ dash }}
 {{ browser }} '{{ url }}' &
-pid=$$
+pid=$!
 sleep {{ timeout }}
 kill -15 $pid
