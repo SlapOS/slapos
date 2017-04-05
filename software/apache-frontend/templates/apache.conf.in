@@ -81,6 +81,8 @@ LoadModule authz_user_module  {{ httpd_home }}/modules/mod_authz_user.so
 LoadModule authn_file_module  {{ httpd_home }}/modules/mod_authn_file.so
 LoadModule filter_module       {{ httpd_home }}/modules/mod_filter.so
 LoadModule http2_module       {{ httpd_home }}/modules/mod_http2.so
+LoadModule info_module        {{ httpd_home }}/modules/mod_info.so
+LoadModule status_module      {{ httpd_home }}/modules/mod_status.so
 
 # The following directives modify normal HTTP response behavior to
 # handle known problems with browser implementations.
@@ -108,6 +110,22 @@ BrowserMatch "^Dreamweaver-WebDAV-SCM1" redirect-carefully
    # IPReadLimit - Maximum simultaneous connections in READ state per IP address 
    IPReadLimit {{ slapparameter_dict.get('ip-read-limit', '10') }}
 </IfModule>
+
+ExtendedStatus On
+<Location /server-status>
+    SetHandler server-status
+    Order Deny,Allow
+    Deny from all
+    Allow from All
+
+    AuthType basic
+    AuthName "Apache Server Status"
+    AuthBasicProvider file
+    AuthUserFile {{ instance_home }}/etc/monitor-htpasswd
+    Require valid-user
+</Location>
+
+
 
 # Deflate
 AddOutputFilterByType DEFLATE text/html text/plain text/xml text/css text/javascript application/x-javascript application/javascript
