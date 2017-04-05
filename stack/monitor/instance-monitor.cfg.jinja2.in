@@ -161,7 +161,7 @@ environment =
 
 [monitor-htpasswd]
 recipe = slapos.cookbook:generate.password
-storage-path = ${directory:etc}/.monitor_user
+storage-path = ${directory:etc}/.monitor_pwd
 bytes = 8
 username = admin
 
