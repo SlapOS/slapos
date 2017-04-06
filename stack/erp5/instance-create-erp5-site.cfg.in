@@ -37,6 +37,7 @@ run = ${instance-create-erp5-site-real:rendered}
 slapos_promise =
 
 [buildout]
-extends = {{ parameter_dict['instance-erp5'] }}
+extends =
+  {{ parameter_dict['instance-erp5'] }}
 parts +=
   instance-create-erp5-site-real-run
