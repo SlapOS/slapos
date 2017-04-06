@@ -108,6 +108,7 @@ parameter-list =
 
 collector-db = ${monitor-instance-parameter:collector-db}
 collect-script = {{ monitor_collect }}
+statistic-script = {{ monitor_statistic }}
 python = {{ python_with_eggs }}
 nice-cmd = ${xnice-bin:output}
 
