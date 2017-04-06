@@ -72,6 +72,7 @@ extra-context =
 [dynamic-template-erp5-parameters]
 jupyter-enable-default = {{ jupyter_enable_default }}
 local-bt5-repository = {{ local_bt5_repository }}
+template-monitor = {{ dumps(template_monitor) }}
 
 [dynamic-template-erp5]
 <= jinja2-template-base
@@ -80,6 +81,7 @@ filename = instance-erp5.cfg
 extra-context =
     key jupyter_enable_default dynamic-template-erp5-parameters:jupyter-enable-default
     key local_bt5_repository dynamic-template-erp5-parameters:local-bt5-repository
+    key monitor_template dynamic-template-erp5-parameters:template-monitor
     key openssl_location :openssl-location
     import urlparse urlparse
 import-list =

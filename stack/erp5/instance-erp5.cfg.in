@@ -288,4 +288,18 @@ hosts-dict = {{ '${' ~ zope_address_list_id_dict.keys()[0] ~ ':connection-hosts-
 {{   name }} = {{ value }}
 {% endfor -%}
 
+[buildout]
+extends = {{ monitor_template }}
+parts +=
+  monitor-base
+
+[monitor-parameters]
+port = 9686
+
+[monitor-instance-parameter]
+monitor-httpd-port = 8386
+
+[publish-connection-information]
+<= monitor-publish
+
 {{ root_common.common_section() }}
