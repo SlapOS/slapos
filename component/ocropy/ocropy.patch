@@ -1,0 +1,112 @@
+diff --git ocrolib/__init__.py ocrolib/__init__.py
+index 1e0d627..81e85fb 100644
+--- ocrolib/__init__.py
++++ ocrolib/__init__.py
+@@ -1,7 +1,7 @@
+ __all__ = [
+     "binnednn","cairoextras","common","components","dbtables",
+     "fgen","gmmtree","gtkyield","hocr","lang","native",
+-    "mlp","multiclass","default","lineest"
++    "mlp","multiclass","default","lineest", "psegutils"
+ ]
+ 
+ ################################################################
+@@ -9,5 +9,6 @@ __all__ = [
+ ################################################################
+ 
+ import default
++from psegutils import *
+ from common import *
+ from default import traceback as trace
+diff --git ocrolib/common.py ocrolib/common.py
+index 27c0f26..14f088f 100644
+--- ocrolib/common.py
++++ ocrolib/common.py
+@@ -14,6 +14,7 @@ import unicodedata
+ import inspect
+ import glob
+ import cPickle
++import gzip
+ from ocrolib.exceptions import (BadClassLabel, BadInput, FileNotFound,
+                                 OcropusException)
+ 
+@@ -428,6 +429,7 @@ def unpickle_find_global(mname,cname):
+         exec "import "+mname
+     return getattr(sys.modules[mname],cname)
+ 
++
+ def load_object(fname,zip=0,nofind=0,verbose=0):
+     """Loads an object from disk. By default, this handles zipped files
+     and searches in the usual places for OCRopus. It also handles some
+@@ -439,8 +441,7 @@ def load_object(fname,zip=0,nofind=0,verbose=0):
+     if zip==0 and fname.endswith(".gz"):
+         zip = 1
+     if zip>0:
+-        # with gzip.GzipFile(fname,"rb") as stream:
+-        with os.popen("gunzip < '%s'"%fname,"rb") as stream:
++        with gzip.GzipFile(fname,"rb") as stream:
+             unpickler = cPickle.Unpickler(stream)
+             unpickler.find_global = unpickle_find_global
+             return unpickler.load()
+@@ -618,7 +619,7 @@ def ocropus_find_file(fname, gz=True):
+ 
+     possible_prefixes.append(os.path.normpath(os.path.join(
+         os.path.dirname(inspect.getfile(inspect.currentframe())),
+-        os.pardir, os.pardir, os.pardir, os.pardir, "share", "ocropus")))
++        os.pardir, "share", "ocropus")))
+ 
+     possible_prefixes.append("/usr/local/share/ocropus")
+ 
+diff --git ocrolib/native.py ocrolib/native.py
+index b7a207f..240450b 100644
+--- ocrolib/native.py
++++ ocrolib/native.py
+@@ -44,6 +44,7 @@ class CompileError(Exception):
+ 
+ def compile_and_find(c_string,prefix=".pynative",opt="-g -O4",libs="-lm",
+                      options="-shared -fopenmp -std=c99 -fPIC",verbose=0):
++    prefix = os.path.join(os.path.dirname(__file__), prefix)
+     if not os.path.exists(prefix):
+         os.mkdir(prefix)
+     m = hashlib.md5()
+diff --git setup.py setup.py
+index 2ec5832..6697b12 100644
+--- setup.py
++++ setup.py
+@@ -10,7 +10,9 @@ assert sys.version_info[0]==2 and sys.version_info[1]>=7,\
+ from distutils.core import setup #, Extension, Command
+ #from distutils.command.install_data import install_data
+ 
+-if not os.path.exists("models/en-default.pyrnn.gz"):
++models = os.environ.get('OCROPY_MODEL_PATH', '').split(':') or \
++    [c for c in glob.glob("models/*pyrnn.gz")]
++if not models:
+     print()
+     print("You should download the default model 'en-default.pyrnn.gz'")
+     print("and put it into ./models.")
+@@ -18,16 +20,23 @@ if not os.path.exists("models/en-default.pyrnn.gz"):
+     print("Check https://github.com/tmbdev/ocropy for the location")
+     print("of model files.")
+     print()
++    sys.exit(1)
+ 
+-models = [c for c in glob.glob("models/*pyrnn.gz")]
+ scripts = [c for c in glob.glob("ocropus-*") if "." not in c and "~" not in c]
+ 
++# compile pynative files now and include them in the build
++sys.path.insert(0, os.curdir)
++import ocrolib.nutils
++pynative_files = [os.path.join(*c.split(os.path.sep)[1:]) \
++    for c in glob.glob('ocrolib/.pynative/*')]
++
+ setup(
+     name = 'ocropy',
+     version = 'v1.0',
+     author = "Thomas Breuel",
+     description = "The OCRopy RNN-based Text Line Recognizer",
+     packages = ["ocrolib"],
+-    data_files= [('share/ocropus', models)],
++    package_data = {'ocrolib': pynative_files},
++    data_files= [('share/ocropus', models), ("", ["LICENSE"])],
+     scripts = scripts,
+     )
