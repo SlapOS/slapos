@@ -34,6 +34,7 @@ recipe = slapos.cookbook:publish.serialised
 {% endmacro -%}
 database-list = {{ render_database_list(database_list) }}
 test-database-list = {{ render_database_list(test_database_list) }}
+monitor-base-url = ${monitor-publish-parameters:monitor-base-url}
 
 [publish-early]
 recipe = slapos.cookbook:publish-early
@@ -277,10 +278,12 @@ command-line = "{{ parameter_dict['bin-directory'] }}/is-local-tcp-port-opened" 
 wrapper-path = ${directory:promise}/mariadb
 parameters-extra = true
 
+{% set monitor_passwd = slapparameter_dict['monitor-passwd'] -%}
 [monitor-instance-parameter]
 monitor-httpd-ipv6 = {{ (ipv6_set | list)[0] }}
 monitor-httpd-port = {{ port + 1 }}
 monitor-title = Mariadb monitor
+password = {{monitor_passwd}}
 
 [buildout]
 extends =
