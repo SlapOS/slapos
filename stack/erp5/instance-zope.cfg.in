@@ -201,7 +201,9 @@ environment =
   TZ={{ slapparameter_dict['timezone'] }}
   INSTANCE_HOME=${directory:instance}
   MATPLOTLIBRC={{ parameter_dict['matplotlibrc'] }}
-  WENDELIN_CORE_ZBLK_FMT={{ slapparameter_dict.get('wendelin-core-zblk-fmt', 'ZBlk1') }}
+{% if slapparameter_dict.get('wendelin-core-zblk-fmt') %}
+  WENDELIN_CORE_ZBLK_FMT={{ slapparameter_dict['wendelin-core-zblk-fmt'] }}
+{% endif %}
 parameters-extra = true
 command-line = '{{ parameter_dict['userhosts'] }}' '{{ bin_directory }}/runzope' -C '${:configuration-file}'
 
