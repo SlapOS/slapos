@@ -20,6 +20,7 @@ url = memcached://[${kumofs-instance:ip}]:${kumofs-instance:gateway-port}/
 {% else -%}
 url = memcached://${kumofs-instance:ip}:${kumofs-instance:gateway-port}/
 {% endif -%}
+monitor-base-url = ${monitor-publish-parameters:monitor-base-url}
 
 [kumofs-instance]
 recipe = slapos.cookbook:generic.kumofs
@@ -112,3 +113,4 @@ port = ${kumofs-instance:manager-port}
 monitor-httpd-ipv6 = {{ (ipv6_set | list)[0] }}
 monitor-httpd-port = {{ tcpv4_port + 4 }}
 monitor-title = Kumofs monitor
+password = {{ slapparameter_dict['monitor-passwd'] }}

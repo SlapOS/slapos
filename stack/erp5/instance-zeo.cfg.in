@@ -113,6 +113,7 @@ tidstorage-port = ${tidstorage:port}
 tidstorage-ip =
 tidstorage-port =
 {% endif -%}
+monitor-base-url = ${monitor-publish-parameters:monitor-base-url}
 
 # Used for ERP5 resiliency or (more probably)
 # webrunner resiliency with erp5 inside.
@@ -185,6 +186,7 @@ tidstorage = {{ tidstorage_repozo_path }}
 monitor-httpd-ipv6 = {{ (ipv6_set | list)[0] }}
 monitor-httpd-port = {{ next_port() }}
 monitor-title = ZODB monitor
+password = {{ slapparameter_dict['monitor-passwd'] }}
 
 [buildout]
 extends =
