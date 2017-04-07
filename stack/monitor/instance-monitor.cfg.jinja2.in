@@ -396,7 +396,7 @@ depends =
 
 [monitor-publish]
 monitor-base-url = ${publish:monitor-base-url}
-monitor-setup-url = ${monitor-instance-parameter:interface-url}/#page=settings_configurator&url=${publish:monitor-url}&username=$${publish:monitor-user}&password=${publish:monitor-password}
+monitor-setup-url = ${monitor-instance-parameter:interface-url}/#page=settings_configurator&url=${publish:monitor-url}&username=${publish:monitor-user}&password=${publish:monitor-password}
 
 
 [buildout]
