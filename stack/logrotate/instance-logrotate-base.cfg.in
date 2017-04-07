@@ -50,7 +50,7 @@ pre =
 [logrotate]
 recipe = slapos.cookbook:wrapper
 parameters-extra = true
-command-line = {{ logrotate_location }}/usr/sbin/logrotate -s "${logrotate-directory:srv}/logrotate.status" "${logrotate-conf:rendered}"
+command-line = {{ logrotate_location }}/sbin/logrotate -s "${logrotate-directory:srv}/logrotate.status" "${logrotate-conf:rendered}"
 wrapper-path = ${logrotate-directory:bin}/logrotate
 
 [cron-entry-logrotate]
