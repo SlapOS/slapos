@@ -102,18 +102,6 @@ logrotate-entries = $${directory:logrotate-entries}
 backup = $${directory:logrotate-backup}
 state-file = $${rootdirectory:srv}/logrotate.status
 
-[logrotate-entry-mariadb]
-<= logrotate
-recipe = slapos.cookbook:logrotate.d
-name = mariadb
-log = $${mariadb:error-log}
-frequency = daily
-rotate-num = 30
-post = $${mariadb:logrotate-post}
-sharedscripts = true
-notifempty = true
-create = true
-
 [logrotate-entry-cron]
 <= logrotate
 recipe =slapos.cookbook:logrotate.d
