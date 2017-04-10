@@ -1,0 +1,6 @@
+#!/bin/sh
+# run slapos command inside slaprunner with appropriate config
+
+SLAPOS_CONFIGURATION=$HOME/etc/slapos.cfg   \
+SLAPOS_CLIENT_CONFIGURATION=$SLAPOS_CONFIGURATION   \
+exec slapos "$@"
