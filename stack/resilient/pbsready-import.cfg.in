@@ -125,7 +125,7 @@ bytes = 8
 
 [resilient-web-takeover-cgi-script]
 recipe = collective.recipe.template
-input = ${resilient-web-takeover-cgi-script-download:destination}
+input = ${resilient-web-takeover-cgi-script-download:target}
 output = $${directory:cgi-bin}/web-takeover.cgi
 password = $${resilient-web-takeover-password:passwd}
 mode = 700

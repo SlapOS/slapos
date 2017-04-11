@@ -106,8 +106,8 @@ context =
     raw template_kvm_run ${template-kvm-run:location}/${template-kvm-run:filename}
     raw template_monitor ${monitor2-template:rendered}
     raw websockify_executable_location ${buildout:directory}/bin/websockify
-template-parts-destination = ${template-parts:destination}
-template-replicated-destination = ${template-replicated:destination}
+template-parts-destination = ${template-parts:target}
+template-replicated-destination = ${template-replicated:target}
 import-list = file parts :template-parts-destination
               file replicated :template-replicated-destination
 mode = 0644
