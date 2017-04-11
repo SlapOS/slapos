@@ -38,6 +38,8 @@ class Recipe(GenericBaseRecipe):
         environment = self.options.get('environment')
         parameters_extra = self.options.get('parameters-extra')
         pidfile = self.options.get('pidfile')
+        remove_pidfile = self.options.get('remove_pidfile', false)
+        cleanup_command = self.options.get('cleanup_command')
 
         if not wait_files and not environment:
           # Create a simple wrapper as shell script
@@ -47,6 +49,8 @@ class Recipe(GenericBaseRecipe):
              parameters=command_line[1:],
              parameters_extra=parameters_extra,
              pidfile=pidfile,
+             remove_pidfile=remove_pidfile,
+             cleanup_command=cleanup_command
           )]
 
         # More complex needs: create a Python script as wrapper
@@ -76,5 +80,7 @@ class Recipe(GenericBaseRecipe):
              parameters=[],
              parameters_extra=parameters_extra,
              pidfile=pidfile,
+             remove_pidfile=remove_pidfile,
+             cleanup_command=cleanup_command
         )]
 

@@ -130,8 +130,8 @@ class GenericBaseRecipe(object):
     return script
 
   def createWrapper(self, name, command, parameters, comments=[],
-      parameters_extra=False, environment=None,
-      pidfile=None
+      parameters_extra=False, environment=None, cleanup_command=None,
+      pidfile=None, remove_pidfile=False
   ):
     """
     Creates a shell script for process replacement.
@@ -139,6 +139,9 @@ class GenericBaseRecipe(object):
     Takes care of #! line limitation when the wrapped command is a script.
     if pidfile parameter is specified, then it will make the wrapper a singleton,
     accepting to run only if no other instance is running.
+
+    :param remove_pidfile: remove pidfile when the script ends
+    :param cleanup_command: arbitrary cleanup command being run when the script ends
     """
 
     lines = [ '#!/bin/sh' ]
@@ -163,6 +166,22 @@ class GenericBaseRecipe(object):
           fi
           echo $$ > $pidfile""" % shlex.quote(pidfile)))
 
+    endlines = []
+
+    if cleanup_command:
+      endlines.append(shlex.quote(cleanup_command))
+
+    if pidfile and remove_pidfile:
+      endlines.append("rm -f $pidfile")
+
+    if endlines:
+      endlines.insert(0, "function cleanUp {")
+      endlines.extend(("exit 0",
+                       "}",
+                       "trap cleanUp INT TERM KILL",
+                       ""))
+    lines.extend(endlines)
+
     lines.append(dedent('''
     # If the wrapped command uses a shebang, execute the referenced
     # executable passing the script path as first argument.
@@ -185,6 +204,7 @@ class GenericBaseRecipe(object):
         lines.append('\t' + param)
 
     lines.append('')
+
     return self.createFile(name, '\n'.join(lines), 0700)
 
   def createDirectory(self, parent, name, mode=0700):
