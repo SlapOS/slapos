@@ -123,8 +123,8 @@ context =
     key slapparameter_dict slap-configuration:configuration
     raw curl_executable_location ${curl:location}/bin/curl
     raw template_monitor ${monitor2-template:rendered}
-template-parts-destination = ${template-parts:destination}
-template-replicated-destination = ${template-replicated:destination}
+template-parts-destination = ${template-parts:target}
+template-replicated-destination = ${template-replicated:target}
 import-list = file parts :template-parts-destination
               file replicated :template-replicated-destination
 mode = 0644
