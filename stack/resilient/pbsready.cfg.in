@@ -1,17 +1,16 @@
 [buildout]
 
-parts =
-  logrotate
+parts +=
   logrotate-entry-cron
   logrotate-entry-equeue
   logrotate-entry-notifier
   logrotate-entry-resilient
   cron
-  cron-entry-logrotate
   cron-entry-notifier-status-feed
   notifier-feed-status-promise
   notifier-stalled-promise
   resilient-sshkeys-authority
+  sshd-raw-server
   sshd-graceful
   sshkeys-sshd
   sshd-promise
@@ -19,6 +18,9 @@ parts =
   sshd-pbs-authorized-key
   notifier
 
+
+extends =
+  ${monitor2-template:rendered}
 
 #----------------
 #--
@@ -62,80 +64,29 @@ monitor-resilient = $${monitor-directory:private}/resilient
 #----------------
 #--
 #-- Deploy cron.
-
-[cron]
-recipe = slapos.cookbook:cron
-dcrond-binary = ${dcron:location}/sbin/crond
-cron-entries = $${directory:cron-entries}
-crontabs = $${directory:crontabs}
-cronstamps = $${directory:cronstamps}
-catcher = $${cron-simplelogger:wrapper}
-binary = $${basedirectory:services}/crond
-
-[cron-simplelogger]
-recipe = slapos.cookbook:simplelogger
-wrapper = $${rootdirectory:bin}/cron_simplelogger
-log = $${basedirectory:log}/crond.log
-
+# cron and cron-simplelogger are deployed by logrotate.
 
 #----------------
 #--
 #-- Deploy logrotate.
 
-[cron-entry-logrotate]
-<= cron
-recipe = slapos.cookbook:cron.d
-name = logrotate
-frequency = 0 0 * * *
-command = $${logrotate:wrapper}
-
-[logrotate]
-recipe = slapos.cookbook:logrotate
-# Binaries
-logrotate-binary = ${logrotate:location}/usr/sbin/logrotate
-gzip-binary = ${gzip:location}/bin/gzip
-gunzip-binary = ${gzip:location}/bin/gunzip
-# Directories
-wrapper = $${rootdirectory:bin}/logrotate
-conf = $${rootdirectory:etc}/logrotate.conf
-logrotate-entries = $${directory:logrotate-entries}
-backup = $${directory:logrotate-backup}
-state-file = $${rootdirectory:srv}/logrotate.status
-
-[logrotate-entry-cron]
-<= logrotate
-recipe =slapos.cookbook:logrotate.d
-name = crond
-log = $${cron-simplelogger:log}
-frequency = daily
-rotate-num = 30
-notifempty = true
-create = true
-
 [logrotate-entry-equeue]
-<= logrotate
-recipe = slapos.cookbook:logrotate.d
+<= logrotate-entry-base
 name = equeue
 log = $${equeue:log} $${sshd-server:log}
 frequency = daily
 rotate-num = 30
 
 [logrotate-entry-notifier]
-recipe = collective.recipe.template
-mode = 600
-input = inline:
-  $${notifier:feeds}/* {
-    rotate 5
-    weekly
-    nocompress
-    missingok
-    olddir $${directory:logrotate-backup}
-  }
-output = $${logrotate:logrotate-entries}/notifier
+<= logrotate-entry-base
+name = notifier
+log = $${notifier:feeds}/*
+rotate-num = 5
+frequency = weekly
+nocompress = 1
 
 [logrotate-entry-resilient]
-<= logrotate
-recipe = slapos.cookbook:logrotate.d
+<= logrotate-entry-base
 name = resilient_log
 log = $${basedirectory:log}/resilient.log
 frequency = weekly
