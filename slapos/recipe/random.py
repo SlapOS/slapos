@@ -120,7 +120,7 @@ class Password(object):
     if not passwd:
       passwd = self.generatePassword(int(options_get('bytes', '8')))
       self.update = self.install
-    self.passwd = passwd
+    self.passwd = passwd.strip('\n')
     # Password must not go into .installed file, for 2 reasons:
     # security of course but also to prevent buildout to always reinstall.
     options.get = lambda option, *args, **kw: passwd \
