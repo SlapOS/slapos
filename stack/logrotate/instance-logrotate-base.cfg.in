@@ -44,8 +44,14 @@ context =
   key log :log
   key post :post
   key pre :pre
+  key frequency :frequency
+  key rotate_num :rotate-num
+  key nocompress :nocompress
 post =
 pre =
+frequency = daily
+rotate-num = 3650
+nocompress = 
 
 [logrotate]
 recipe = slapos.cookbook:wrapper

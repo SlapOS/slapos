@@ -1,9 +1,10 @@
 {{ log }} {
-  daily
+  {{ frequency }}
   dateext
-  rotate 3650
-  compress
-  delaycompress
+  rotate {{ rotate_num }}
+  {% if nocompress %}nocompress
+  {% else %}compress
+  delaycompress{% endif %}
   notifempty
   sharedscripts
   create
