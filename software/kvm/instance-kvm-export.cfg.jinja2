@@ -1,6 +1,3 @@
-
-{%   set monitor = str(slapparameter_dict.get('enable-monitor', False)).lower() == 'true' -%}
-
 [buildout]
 extends =
   {{ kvm_template }}
@@ -17,10 +14,8 @@ parts +=
   novnc-promise
   cron
   frontend-promise
-{% if monitor -%}
 # monitor parts
   monitor-base
-{% endif %}
 
 # Create the exporter executable, which is a simple shell script
 [exporter]

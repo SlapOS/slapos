@@ -8,8 +8,6 @@ offline = true
 # even extend the kvm instance profile.
 extends = 
   {{ pbsready_import_template }}
-{% if str(slapparameter_dict.get('enable-monitor', True)).lower() == 'true' -%}
-{{ '  ' ~ template_monitor }}
 
 [resilient-publish-connection-parameter]
 monitor-base-url = ${publish:monitor-base-url}
@@ -30,7 +28,6 @@ password = {{ slapparameter_dict['monitor-password'] }}
 instance-configuration =
   raw takeover-url ${resilient-publish-connection-parameter:takeover-url}
   raw takeover-password ${resilient-publish-connection-parameter:takeover-password}
-{% endif -%}
 
 [directory]
 recipe = slapos.cookbook:mkdirectory
