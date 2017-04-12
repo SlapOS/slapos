@@ -1,0 +1,72 @@
+diff -ur autoconf-2.69/bin/Makefile.in autoconf-2.69/bin/Makefile.in
+--- autoconf-2.69/bin/Makefile.in	2012-04-25 04:40:26.000000000 +0200
++++ autoconf-2.69/bin/Makefile.in	2017-04-12 16:47:38.029273723 +0200
+@@ -214,7 +214,7 @@
+ # apply to us.
+ MY_AUTOM4TE = \
+ 	autom4te_perllibdir='$(top_srcdir)'/lib					\
+-	AUTOM4TE_CFG='$(AUTOM4TE_CFG)'         $(top_builddir)/bin/autom4te	\
++	AUTOM4TE_CFG='$(AUTOM4TE_CFG)'    perl $(top_builddir)/bin/autom4te	\
+ 		-B '$(top_builddir)'/lib -B '$(top_srcdir)'/lib        # keep ` '
+ 
+ 
+diff -ur autoconf-2.69/lib/autoconf/Makefile.in autoconf-2.69/lib/autoconf/Makefile.in
+--- autoconf-2.69/lib/autoconf/Makefile.in	2012-04-25 04:40:26.000000000 +0200
++++ autoconf-2.69/lib/autoconf/Makefile.in	2017-04-12 16:47:38.033273747 +0200
+@@ -230,7 +230,7 @@
+ # apply to us.
+ MY_AUTOM4TE = \
+ 	autom4te_perllibdir='$(top_srcdir)'/lib					\
+-	AUTOM4TE_CFG='$(AUTOM4TE_CFG)'         $(top_builddir)/bin/autom4te	\
++	AUTOM4TE_CFG='$(AUTOM4TE_CFG)'    perl $(top_builddir)/bin/autom4te	\
+ 		-B '$(top_builddir)'/lib -B '$(top_srcdir)'/lib        # keep ` '
+ 
+ 
+diff -ur autoconf-2.69/lib/autoscan/Makefile.in autoconf-2.69/lib/autoscan/Makefile.in
+--- autoconf-2.69/lib/autoscan/Makefile.in	2012-04-25 04:40:26.000000000 +0200
++++ autoconf-2.69/lib/autoscan/Makefile.in	2017-04-12 16:47:38.029273723 +0200
+@@ -216,7 +216,7 @@
+ # apply to us.
+ MY_AUTOM4TE = \
+ 	autom4te_perllibdir='$(top_srcdir)'/lib					\
+-	AUTOM4TE_CFG='$(AUTOM4TE_CFG)'         $(top_builddir)/bin/autom4te	\
++	AUTOM4TE_CFG='$(AUTOM4TE_CFG)'    perl $(top_builddir)/bin/autom4te	\
+ 		-B '$(top_builddir)'/lib -B '$(top_srcdir)'/lib        # keep ` '
+ 
+ 
+diff -ur autoconf-2.69/lib/autotest/Makefile.in autoconf-2.69/lib/autotest/Makefile.in
+--- autoconf-2.69/lib/autotest/Makefile.in	2012-04-25 04:40:26.000000000 +0200
++++ autoconf-2.69/lib/autotest/Makefile.in	2017-04-12 16:47:38.029273723 +0200
+@@ -223,7 +223,7 @@
+ # apply to us.
+ MY_AUTOM4TE = \
+ 	autom4te_perllibdir='$(top_srcdir)'/lib					\
+-	AUTOM4TE_CFG='$(AUTOM4TE_CFG)'         $(top_builddir)/bin/autom4te	\
++	AUTOM4TE_CFG='$(AUTOM4TE_CFG)'    perl $(top_builddir)/bin/autom4te	\
+ 		-B '$(top_builddir)'/lib -B '$(top_srcdir)'/lib        # keep ` '
+ 
+ 
+diff -ur autoconf-2.69/lib/m4sugar/Makefile.in autoconf-2.69/lib/m4sugar/Makefile.in
+--- autoconf-2.69/lib/m4sugar/Makefile.in	2012-04-25 04:40:26.000000000 +0200
++++ autoconf-2.69/lib/m4sugar/Makefile.in	2017-04-12 16:47:38.033273747 +0200
+@@ -228,7 +228,7 @@
+ # apply to us.
+ MY_AUTOM4TE = \
+ 	autom4te_perllibdir='$(top_srcdir)'/lib					\
+-	AUTOM4TE_CFG='$(AUTOM4TE_CFG)'         $(top_builddir)/bin/autom4te	\
++	AUTOM4TE_CFG='$(AUTOM4TE_CFG)'    perl $(top_builddir)/bin/autom4te	\
+ 		-B '$(top_builddir)'/lib -B '$(top_srcdir)'/lib        # keep ` '
+ 
+ 
+diff -ur autoconf-2.69/tests/Makefile.in autoconf-2.69/tests/Makefile.in
+--- autoconf-2.69/tests/Makefile.in	2012-04-25 04:40:26.000000000 +0200
++++ autoconf-2.69/tests/Makefile.in	2017-04-12 16:47:38.025273698 +0200
+@@ -201,7 +201,7 @@
+ # apply to us.
+ MY_AUTOM4TE = \
+ 	autom4te_perllibdir='$(top_srcdir)'/lib					\
+-	AUTOM4TE_CFG='$(AUTOM4TE_CFG)'         $(top_builddir)/bin/autom4te	\
++	AUTOM4TE_CFG='$(AUTOM4TE_CFG)'    perl $(top_builddir)/bin/autom4te	\
+ 		-B '$(top_builddir)'/lib -B '$(top_srcdir)'/lib        # keep ` '
+ 
+ 
