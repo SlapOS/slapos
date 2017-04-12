@@ -178,7 +178,11 @@ update-command = ${:command}
 recipe = plone.recipe.command
 stop-on-error = true
 htpasswd-path = ${monitor-directory:etc}/monitor-htpasswd
-command = if [ ! -s "${:htpasswd-path}" ]; then {{ apache_location }}/bin/htpasswd -cb ${:htpasswd-path} ${:user} ${:password}; fi
+# Keep multiple lines as password can end with newline char.
+command = 
+  if [ ! -s "${:htpasswd-path}" ]; then 
+    {{ apache_location }}/bin/htpasswd -cb ${:htpasswd-path} ${:user} ${:password}
+  fi
 update-command = ${:command}
 user = ${monitor-instance-parameter:username}
 password = ${monitor-instance-parameter:password}
