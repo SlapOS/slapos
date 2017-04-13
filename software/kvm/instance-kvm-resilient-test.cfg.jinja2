@@ -50,6 +50,7 @@ config-{{ key }} = {{ dumps(value) }}
 {% endfor -%}
 config-virtual-hard-drive-url = ${slap-parameter:virtual-hard-drive-url}
 config-virtual-hard-drive-md5sum = ${slap-parameter:virtual-hard-drive-md5sum}
+config-virtual-hard-drive-gzipped = ${slap-parameter:virtual-hard-drive-gzipped}
 config-resiliency-backup-periodicity = */5 * * * *
 config-resilient-clone-number = 1
 config-ignore-known-hosts-file = false
@@ -58,5 +59,6 @@ return = ipv6
 sla-computer_guid = ${slap-connection:computer-id}
 
 [slap-parameter]
-virtual-hard-drive-url = http://www.nexedi.org/static/slapos/kvm_resiliency_test/virtual.qcow2
-virtual-hard-drive-md5sum = 465e1024447997e7b86ee2e5151e031b
+virtual-hard-drive-url = http://www.nexedi.org/static/slapos/kvm_resiliency_test/virtual.qcow2.gz
+virtual-hard-drive-md5sum = dd82c771f6f7738fb4b0fc1330ed8236
+virtual-hard-drive-gzipped = true
