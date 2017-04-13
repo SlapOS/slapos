@@ -1,13 +1,13 @@
 [buildout]
 parts =
-  switch-softwaretype
+  switch_softwaretype
 
 eggs-directory = ${buildout:eggs-directory}
 develop-eggs-directory = ${buildout:develop-eggs-directory}
 
 extends = ${template-resilient-templates:output}
 
-[switch-softwaretype]
+[switch_softwaretype]
 recipe = slapos.cookbook:softwaretype
 default = $${:kvm}
 kvm-cluster = $${dynamic-template-kvm-cluster:rendered}
