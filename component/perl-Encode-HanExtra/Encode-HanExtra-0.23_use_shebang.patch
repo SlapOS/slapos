@@ -1,0 +1,11 @@
+--- Encode-HanExtra-0.23/Makefile.PL.orig	2017-04-14 13:22:30.511213646 +0200
++++ Encode-HanExtra-0.23/Makefile.PL	2017-04-14 13:22:41.935282773 +0200
+@@ -179,7 +179,7 @@
+         my $plib = $self->{PERL_CORE} ? '"-I$(PERL_LIB)"' : '';
+         my $ucopts = '-"Q"';
+         $str .=
+-          qq{\n\t\$(PERL) $plib $enc2xs $ucopts -o \$\@ -f $table.fnm\n\n};
++          qq{\n\t$enc2xs $ucopts -o \$\@ -f $table.fnm\n\n};
+         open(FILELIST, ">$table.fnm")
+           || die "Could not open $table.fnm: $!";
+         foreach my $file (@{ $tables{$table} }) {
