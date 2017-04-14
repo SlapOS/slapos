@@ -58,6 +58,6 @@ return = ipv6
 sla-computer_guid = ${slap-connection:computer-id}
 
 [slap-parameter]
-virtual-hard-drive-url = http://www.nexedi.org/static/slapos/kvm_resiliency_test/virtual.qcow2.gz
-virtual-hard-drive-md5sum = dd82c771f6f7738fb4b0fc1330ed8236
+virtual-hard-drive-url = {{ default_test_image_url }} 
+virtual-hard-drive-md5sum = {{ default_test_image_md5sum }}
 virtual-hard-drive-gzipped = true
