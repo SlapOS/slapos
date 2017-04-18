@@ -44,8 +44,7 @@ CustomLog "{{ access_log }}" combined
 </Directory>
 
 <Directory {{ document_root }}>
-  Order Allow,Deny
-  Allow from All
+  Require all granted
   Options -Indexes
   ErrorDocument 404 /notfound.html
   RewriteEngine on
@@ -53,10 +52,11 @@ CustomLog "{{ access_log }}" combined
 </Directory>
 
 # List of modules
-#LoadModule unixd_module modules/mod_unixd.so
-#LoadModule access_compat_module modules/mod_access_compat.so
-#LoadModule authz_core_module modules/mod_authz_core.so
+LoadModule unixd_module        {{ httpd_home }}/modules/mod_unixd.so
+LoadModule access_compat_module {{ httpd_home }}/modules/mod_access_compat.so
+LoadModule authz_core_module  {{ httpd_home }}/modules/mod_authz_core.so
 LoadModule authz_host_module  {{ httpd_home }}/modules/mod_authz_host.so
+LoadModule authn_core_module  {{ httpd_home }}/modules/mod_authn_core.so
 LoadModule log_config_module  {{ httpd_home }}/modules/mod_log_config.so
 LoadModule deflate_module     {{ httpd_home }}/modules/mod_deflate.so
 LoadModule setenvif_module    {{ httpd_home }}/modules/mod_setenvif.so
@@ -71,13 +71,18 @@ LoadModule negotiation_module {{ httpd_home }}/modules/mod_negotiation.so
 LoadModule rewrite_module     {{ httpd_home }}/modules/mod_rewrite.so
 LoadModule headers_module     {{ httpd_home }}/modules/mod_headers.so
 LoadModule cache_module       {{ httpd_home }}/modules/mod_cache.so
-LoadModule mem_cache_module   {{ httpd_home }}/modules/mod_mem_cache.so
+LoadModule cache_socache_module   {{ httpd_home }}/modules/mod_cache_socache.so
+LoadModule socache_shmcb_module   {{ httpd_home }}/modules/mod_socache_shmcb.so
 LoadModule antiloris_module   {{ httpd_home }}/modules/mod_antiloris.so
 LoadModule alias_module       {{ httpd_home }}/modules/mod_alias.so
 LoadModule autoindex_module   {{ httpd_home }}/modules/mod_autoindex.so
 LoadModule auth_basic_module  {{ httpd_home }}/modules/mod_auth_basic.so
 LoadModule authz_user_module  {{ httpd_home }}/modules/mod_authz_user.so
 LoadModule authn_file_module  {{ httpd_home }}/modules/mod_authn_file.so
+LoadModule filter_module       {{ httpd_home }}/modules/mod_filter.so
+LoadModule http2_module       {{ httpd_home }}/modules/mod_http2.so
+LoadModule info_module        {{ httpd_home }}/modules/mod_info.so
+LoadModule status_module      {{ httpd_home }}/modules/mod_status.so
 
 # The following directives modify normal HTTP response behavior to
 # handle known problems with browser implementations.
@@ -105,6 +110,22 @@ BrowserMatch "^Dreamweaver-WebDAV-SCM1" redirect-carefully
    # IPReadLimit - Maximum simultaneous connections in READ state per IP address 
    IPReadLimit {{ slapparameter_dict.get('ip-read-limit', '10') }}
 </IfModule>
+
+ExtendedStatus On
+<Location /server-status>
+    SetHandler server-status
+    Order Deny,Allow
+    Deny from all
+    Allow from All
+
+    AuthType basic
+    AuthName "Apache Server Status"
+    AuthBasicProvider file
+    AuthUserFile {{ instance_home }}/etc/monitor-htpasswd
+    Require valid-user
+</Location>
+
+
 
 # Deflate
 AddOutputFilterByType DEFLATE text/html text/plain text/xml text/css text/javascript application/x-javascript application/javascript

@@ -161,6 +161,13 @@
       },
       "type": "object"
     },
+    "smtp": {
+      "description": "Mail queuing and relay service",
+      "additionalProperties": {
+        "$ref": "./instance-smtp-schema.json#/properties"
+      },
+      "type": "object"
+    },
     "mariadb": {
       "description": "Relational database service",
       "additionalProperties": {
@@ -251,6 +258,11 @@
         }
       },
       "type": "object"
+    },
+    "wendelin-core-zblk-fmt": {
+      "description": "In wendelin.core there are 2 formats for storing data, so called ZBlk0 and ZBlk1. See https://lab.nexedi.com/nexedi/wendelin.core/blob/2e5e1d3d/bigfile/file_zodb.py#L19 for more details.",
+      "default": "",
+      "type": "string"
     }
   }
 }

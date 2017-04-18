@@ -25,6 +25,7 @@
 #
 ##############################################################################
 from getpass import getpass
+import hmac
 import pwd
 import grp
 import os
@@ -33,19 +34,24 @@ import shlex
 from slapos.recipe.librecipe import GenericBaseRecipe
 
 def login_shell(args):
-  password = args['password']
-  
-  if (password != ''):
-    entered_password = getpass()
-  else:
-    entered_password = ''
+  password_file = args['password-file']
+  if password_file:
+    with open(password_file, 'r') as password_file:
+      password = password_file.read()
 
-  if entered_password != password:
-    return 1
+    if (password != ''):
+      entered_password = getpass()
+    else:
+      entered_password = ''
+
+    if not hmac.compare_digest(entered_password, password):
+      return 1
+    else:
+      commandline = shlex.split(args['shell'])
+      path = commandline[0]
+      os.execv(path, commandline)
   else:
-    commandline = shlex.split(args['shell'])
-    path = commandline[0]
-    os.execv(path, commandline)
+    return 1
 
 def shellinabox(args):
   certificate_dir = args['certificate_dir']
@@ -95,7 +101,7 @@ class Recipe(GenericBaseRecipe):
       self.options['login-shell'],
       '%s.login_shell' % __name__,
       {
-        'password': self.options['password'],
+        'password-file': self.options['password-file'],
         'shell': self.options['shell']
       }
     )

@@ -168,18 +168,6 @@ class Recipe(GenericBaseRecipe):
 
     self.generateCertificate()
 
-    wrapper = self.createFile(self.options['wrapper'], self.substituteTemplate(
-      self.getTemplateFilename('registry-run.in'), dict(
-          parameter='@%s' % self.options['config-file'],
-          pid_file=self.options['pid-file'],
-          command=self.options['command']
-        )
-      )
-    )
-    os.chmod(self.options['wrapper'], stat.S_IRWXU)
-
-    path_list.append(wrapper)
-
     registry_url = 'http://%s:%s/' % (self.options['ipv4'], self.options['port'])
     token_dict, add_token_dict, rm_token_dict = self.generateSlaveTokenList(
                                               self.slave_list, token_save_path)
@@ -204,13 +192,12 @@ class Recipe(GenericBaseRecipe):
 
     service_dict = dict(token_base_path=token_list_path,
                         token_json=token_save_path,
-                        db=self.options['db-path'],
                         partition_id=self.computer_partition_id,
                         computer_id=self.computer_id,
-                        registry_url=registry_url)
-    service_dict['server_url'] = self.server_url
-    service_dict['cert_file'] = self.cert_file
-    service_dict['key_file'] = self.key_file
+                        registry_url=registry_url,
+                        server_url=self.server_url,
+                        cert_file=self.cert_file,
+                        key_file=self.key_file)
 
     request_add = self.createPythonScript(
         self.options['manager-wrapper'].strip(),
@@ -218,55 +205,5 @@ class Recipe(GenericBaseRecipe):
       )
     path_list.append(request_add)
 
-    request_drop = self.createPythonScript(
-        self.options['drop-service-wrapper'].strip(),
-        '%s.re6stnet.requestRemoveToken' % __name__, service_dict
-      )
-    path_list.append(request_drop)
-
-    request_check = self.createPythonScript(
-        self.options['check-service-wrapper'].strip(),
-        '%s.re6stnet.checkService' % __name__, service_dict
-      )
-    path_list.append(request_check)
-
-    revoke_check = self.createPythonScript(
-        self.options['revoke-service-wrapper'].strip(),
-        '%s.re6stnet.requestRevoqueCertificate' % __name__, service_dict
-      )
-    path_list.append(revoke_check)
-
-    # Send connection parameters of slave instances
-    if token_dict:
-      self.slap.initializeConnection(self.server_url, self.key_file,
-        self.cert_file)
-      computer_partition = self.slap.registerComputerPartition(
-        self.computer_id,
-        self.computer_partition_id)
-
-      for slave_reference, token in token_dict.iteritems():
-        try:
-          status_file = os.path.join(token_list_path, '%s.status' % slave_reference)
-          status = self.readFile(status_file) or 'New token requested'
-          msg = status
-          if status == 'TOKEN_ADDED':
-            msg = 'Token is ready for use'
-          elif status == 'TOKEN_USED':
-            msg = 'Token not available, it has been used to generate re6stnet certificate.'
-
-          ipv6_file = os.path.join(token_list_path, '%s.ipv6' % slave_reference)
-          ipv6 = self.readFile(ipv6_file) or '::'
-
-          ipv4_file = os.path.join(token_list_path, '%s.ipv4' % slave_reference)
-          node_ipv4 = self.readFile(ipv4_file) or '0.0.0.0'
-
-          computer_partition.setConnectionDict(
-              {'token':token, '1_info':msg, 'ipv6': ipv6, 'ipv4': node_ipv4},
-              slave_reference)
-        except Exception:
-          self.logger.fatal("Error while sending slave %s informations: %s",
-             slave_reference, traceback.format_exc())
-
     return path_list
-
 

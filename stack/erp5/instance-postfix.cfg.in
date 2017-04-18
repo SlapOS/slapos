@@ -12,6 +12,7 @@
 {% do alias_dict.setdefault('postmaster', [slapparameter_dict['postmaster']]) -%}
 {% set smtpd_sasl_user = slapparameter_dict['smtpd-sasl-user'] -%}
 {% set smtpd_sasl_password = slapparameter_dict['smtpd-sasl-password'] -%}
+{% set milter_list = [] %}
 
 [jinja2-template-base]
 recipe = slapos.recipe.template:jinja2
@@ -55,14 +56,34 @@ var-spool-postfix-public = ${:var-spool-postfix}/public
 var-spool-postfix-saved = ${:var-spool-postfix}/saved
 var-spool-postfix-trace = ${:var-spool-postfix}/trace
 
+{% if divert -%}
+{%   set milter_port = tcpv4_port + 1 -%}
+{%   set socket = 'inet:' ~ ip ~ ':' ~ milter_port -%}
+[{{ section('divert-milter') }}]
+recipe = slapos.cookbook:wrapper
+parameters-extra = true
+command-line =
+  '{{ parameter_dict['buildout-bin-directory'] }}/munnel'
+  --listen '{{ socket }}'
+  -- {{ ' '.join(divert) }}
+wrapper-path = ${directory:run}/munnel
+{%   do milter_list.append(socket) -%}
+
+[{{ section('munnel-promise') }}]
+recipe = slapos.cookbook:check_port_listening
+path = ${directory:promise}/munnel
+hostname = {{ ip }}
+port = {{ milter_port }}
+{% endif -%}
+
 [configuration]
 smtp = {{ dumps(tcpv4_port) }}
 inet-interfaces = {{ dumps(ip) }}
 alias-dict = {{ dumps(alias_dict) }}
 relayhost = {{ dumps(relay.get('host')) }}
 relay-sasl-credential = {{ dumps(relay.get('sasl-credential')) }}
-divert = {{ dumps(divert) }}
 cyrus-sasldb = ${directory:etc-cyrus}/postfix.gdbm
+milter-list = {{ dumps(milter_list) }}
 
 [userinfo]
 recipe = slapos.cookbook:userinfo
@@ -98,17 +119,6 @@ command =
   echo '{{ smtpd_sasl_password }}' | '${wrapper-postfix-saslpasswd2:wrapper-path}' -pc '{{ smtpd_sasl_user }}'
 update-command = ${:command}
 
-[divert]
-< = jinja2-template-base
-rendered = ${directory:etc-postfix}/divert
-{% if divert -%}
-template = inline:{{ "/.*/ {{ ', '.join(divert) }}" }}
-{%- else -%}
-template = inline:
-{%- endif %}
-context =
-    key divert configuration:divert
-
 [smtpd-ssl]
 recipe = plone.recipe.command
 stop-on-error = true
@@ -140,7 +150,7 @@ context =
     key relayhost configuration:relayhost
     key sasl_passwd typed-paths:smtp-sasl-passwd
     key aliases typed-paths:aliases
-    key divert typed-paths:divert
+    key milter_list configuration:milter-list
     key cyrus_directory directory:etc-cyrus
     key cert smtpd-ssl:cert
     key key smtpd-ssl:key
@@ -164,7 +174,6 @@ context =
 # Postfix-friendly rendering of file paths, prefixed with database type.
 aliases = hash:${aliases:rendered}
 smtp-sasl-passwd = hash:${smtp-sasl-passwd:rendered}
-divert = pcre:${divert:rendered}
 
 [{{ section('postalias-db') }}]
 recipe = plone.recipe.command

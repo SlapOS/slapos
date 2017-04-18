@@ -1,5 +1,0 @@
-[buildout]
-extends = ${template:output}
-
-[switch_softwaretype]
-default = $${:test}

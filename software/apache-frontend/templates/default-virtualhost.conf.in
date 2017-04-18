@@ -33,6 +33,8 @@
   SSLProtocol all -SSLv2 -SSLv3
   SSLCipherSuite ECDH+AESGCM:DH+AESGCM:ECDH+AES256:DH+AES256:ECDH+AES128:DH+AES:ECDH+3DES:DH+3DES:RSA+AESGCM:RSA+AES:RSA+3DES:HIGH:!aNULL:!MD5
   SSLHonorCipherOrder on
+  Protocols h2 http/1.1
+
 
 {% for key, value in ssl_configuration_list -%}
 {%   if value in slave_parameter -%}
@@ -92,7 +94,7 @@
 
 {%-  for server_alias in server_alias_list %}
   ServerAlias {{ server_alias }}
-{% endfor -%}
+{% endfor %}
 
   SSLProxyEngine on
 {% if ssl_proxy_verify -%}
@@ -106,6 +108,7 @@
   # Rewrite part
   ProxyPreserveHost On
   ProxyTimeout 600
+
 {% if disable_via_header %}
   Header unset Via
 {% endif -%}
@@ -119,6 +122,8 @@
 
   # Remove "Secure" from cookies, as backend may be https
   Header edit Set-Cookie "(?i)^(.+);secure$" "$1"
+
+  Protocols h2 http/1.1
 
 {% if disable_no_cache_header %}
   RequestHeader unset Cache-Control

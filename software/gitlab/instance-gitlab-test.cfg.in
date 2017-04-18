@@ -1,0 +1,50 @@
+[buildout]
+extends = 
+  {{ instance_gitlab_cfg }}
+  {{ instance_gitlab_export_cfg }}
+
+parts +=
+  install-demo-backup
+
+
+[root-password]
+passwd = root1234
+
+[service-unicorn]
+environment = 
+  GITLAB_ROOT_PASSWORD=${root-password:passwd}
+
+[backend-info]
+# host    = ${instance-parameter:ipv4-random}
+
+[publish-instance-info]
+password = ${root-password:passwd}
+# token for default.user user in gitlab demo backup
+# Edit this token if needed
+private-token = SLurtnxPscPsU-SDm4oN
+# raw URL for latest commit on setup.py in gitlab demo backup.
+latest-file-uri = ${:backend_url}/open/slapos/raw/94c96d42c22e16836dadddac7c8061f4a8c6ca7a/setup.py
+
+[instance-parameter]
+# backup more often, 10 minutes seems the minimal
+configuration.backup_frequency  = */10 * * * *
+
+[install-demo-backup]
+recipe = plone.recipe.command
+stop-on-error = false
+backup-done = ${directory:var}/backup.ready
+command = 
+  if [ -f "${:backup-done}" ]; then
+    echo "Demo backup installed."
+  else
+    rm -rf ${secrets:secrets} ${directory:var}/backup/* &&
+    mkdir -p ${secrets:secrets} ${directory:var}/tmp &&
+    cp -r {{ gitlab_demo_backup_path }}/secrets/* ${secrets:secrets} &&
+    cp -rf {{ gitlab_demo_backup_path }}/backup-gitlab.git/ ${directory:var}/tmp &&
+    cd ${directory:var}/tmp/backup-gitlab.git/
+    PATH=${directory:bin}:{{ gopath_bin }}:{{ git_location }}/bin:$PATH
+    gitlab-backup restore -vupok -go HEAD &&
+    touch ${:backup-done}
+  fi
+update-command = ${:command}
+

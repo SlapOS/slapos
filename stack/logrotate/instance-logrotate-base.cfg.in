@@ -44,13 +44,19 @@ context =
   key log :log
   key post :post
   key pre :pre
+  key frequency :frequency
+  key rotate_num :rotate-num
+  key nocompress :nocompress
 post =
 pre =
+frequency = daily
+rotate-num = 3650
+nocompress = 
 
 [logrotate]
 recipe = slapos.cookbook:wrapper
 parameters-extra = true
-command-line = {{ logrotate_location }}/usr/sbin/logrotate -s "${logrotate-directory:srv}/logrotate.status" "${logrotate-conf:rendered}"
+command-line = {{ logrotate_location }}/sbin/logrotate -s "${logrotate-directory:srv}/logrotate.status" "${logrotate-conf:rendered}"
 wrapper-path = ${logrotate-directory:bin}/logrotate
 
 [cron-entry-logrotate]
@@ -59,11 +65,6 @@ cron-entries = ${cron:cron-entries}
 name = logrotate
 frequency = 0 0 * * *
 command = ${logrotate:wrapper-path}
-
-[logrotate-entry-base]
-recipe = slapos.cookbook:logrotate.d
-logrotate-entries = ${logrotate-directory:logrotate-entries}
-backup = ${logrotate-directory:backup}
 
 [logrotate-entry-cron]
 <= logrotate-entry-base

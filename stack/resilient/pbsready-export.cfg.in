@@ -1,29 +1,8 @@
 [buildout]
-
 extends = {{ pbsready_template_path }}
 
-# Explicitely define extended parts from pbsready
-# then add local parts
-parts =
-  logrotate
-  logrotate-entry-cron
-  logrotate-entry-equeue
-  logrotate-entry-resilient
-  cron
-  cron-entry-logrotate
-  cron-entry-notifier-status-feed
-  notifier-feed-status-promise
-  notifier-stalled-promise
-  resilient-sshkeys-authority
-  sshd-raw-server
-  sshd-graceful
-  sshkeys-sshd
-  sshd-promise
-  resilient-sshkeys-sshd-promise
-  sshd-pbs-authorized-key
-  notifier
+parts +=
   notifier-exporter-promise
-
   cron-entry-backup
 
 [resilient-directory]

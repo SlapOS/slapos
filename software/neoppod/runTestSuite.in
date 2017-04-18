@@ -4,7 +4,7 @@
 """
 import argparse, os, re, shutil, subprocess, sys, traceback
 from erp5.util import taskdistribution
-from time import gmtime, strftime
+from time import gmtime, sleep, strftime, time
 
 # pattern to get test counts from stdout
 SUMMARY_RE = re.compile(
@@ -82,7 +82,8 @@ def main():
     if not test_result_line:
       break
 
-    temp = os.path.join(TEMP_DIRECTORY, 'tests-' + test_result_line.name)
+    adapter = test_result_line.name
+    temp = os.path.join(TEMP_DIRECTORY, 'tests-' + adapter)
     if os.path.exists(temp):
       shutil.rmtree(temp)
     os.mkdir(temp)
@@ -90,46 +91,48 @@ def main():
     args = [RUN_NEO_TESTS_COMMAND, '-ufz']
     command = ' '.join(args)
     env = {'TEMP': temp,
-           'NEO_TESTS_ADAPTER': test_result_line.name,
+           'NEO_TESTS_ADAPTER': adapter,
            'NEO_TEST_ZODB_FUNCTIONAL': '1',
-           'NEO_DB_USER': 'root',
-           'NEO_DB_SOCKET': NEO_DB_SOCKET}
+           'NEO_DB_USER': 'root'}
     try:
+      if adapter == 'MySQL':
+        env['NEO_DB_SOCKET'] = NEO_DB_SOCKET
+        timeout = time() + 60
+        while not os.path.exists(NEO_DB_SOCKET):
+          if timeout < time():
+            raise RuntimeError("MySQL server not started")
+          sleep(1)
       with open(os.devnull) as stdin:
         p = subprocess.Popen(args, stdin=stdin, stdout=subprocess.PIPE,
                              stderr=subprocess.PIPE, env=env)
     except Exception:
-      # Catch any exception here, to warn user instead of being silent,
-      # by generating fake error result
-      result = dict(status_code=-1,
-                    command=command,
-                    stderr=traceback.format_exc(),
-                    stdout='')
-      # XXX: inform test node master of error
-      raise EnvironmentError(result)
+      end = time()
+      stderr = traceback.format_exc()
+      status_dict = {}
+    else:
+      stdout, stderr = p.communicate()
+      end = time()
+      test_count, unexpected_count, expected_count, skip_count, duration = \
+        parseTestStdOut(stdout)
 
-    # parse test stdout / stderr, hint to speed up use files first!
-    stdout, stderr = p.communicate()
-    date = strftime("%Y/%m/%d %H:%M:%S", gmtime())
-    test_count, unexpected_count, expected_count, skip_count, duration = \
-      parseTestStdOut(stdout)
-
-    # print to stdout so we can see in testnode logs
-    sys.stdout.write(stdout)
-    sys.stderr.write(stderr)
-
-    # report status back to Nexedi ERP5
-    test_result_line.stop(
+      status_dict = dict(
         test_count = test_count,
         error_count = unexpected_count, # XXX
         failure_count = expected_count, # XXX
         skip_count = skip_count,
         duration = duration,
-        date = date,
-        command = command,
-        stdout= stdout,
-        stderr= stderr,
-        html_test_result='')
+        stdout= stdout)
+
+      # print to stdout so we can see in testnode logs
+      sys.stdout.write(stdout)
+    sys.stderr.write(stderr)
+
+    # report status back to Nexedi ERP5
+    test_result_line.stop(
+      command = command,
+      date = strftime("%Y/%m/%d %H:%M:%S", gmtime(end)),
+      stderr=stderr,
+      **status_dict)
 
 if __name__ == "__main__":
     main()

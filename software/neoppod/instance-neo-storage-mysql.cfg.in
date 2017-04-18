@@ -85,7 +85,7 @@ ssl = {{ dumps(bool(slapparameter_dict['ssl'])) }}
 cluster = {{ dumps(slapparameter_dict['cluster']) }}
 masters = ${publish:masters}
 database-adapter = MySQL
-wait-database = 60
+wait-database = -1
 engine = {{ slapparameter_dict.get('engine', '') }}
 
 {% for i in range(slapparameter_dict.get('storage-count', 1)) -%}

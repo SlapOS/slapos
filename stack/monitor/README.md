@@ -12,13 +12,21 @@ Implementation :
 
     [buildout]
     extends =
-      ../../stack/monitor/buildout.cfg
       ...
+      ../../stack/monitor/buildout.cfg
+
+2/ In your instance.cfg file or instance template (instance-xxx.cfg.jinja2, ...),
+
+Extend monitor template and a monitor-base to parts:
+
+    [buildout]
+    extends = 
+      ${monitor-template:rendered}
     parts = 
       ...
       monitor-base
 
-2/ In your instance.cfg file or instance template, override monitor configuration section to define your custom parameters.
+Override monitor configuration section to define your custom parameters.
 
     [monitor-instance-parameter]
     monitor-title = ${slap-configuration:instance-title}
@@ -57,6 +65,9 @@ You don't need to define all parameters, you can only set what is required to be
 - configuration-file-path: path of knowledge0 cfg file where instance configuration will be written.
 - interface-url: The URL of monitor web interface. This URL will be present in generated JSON files.
 
+NB: You should use double $ (ex: $${monitor-template:rendered}) instead of one $ in your instance template file if it's not a jinja template. See:
+- Jinja template file exemple, use one $: https://lab.nexedi.com/nexedi/slapos/blob/master/software/slaprunner/instance-resilient-test.cfg.jinja2
+- Non Jinja template file, use $$: https://lab.nexedi.com/nexedi/slapos/blob/master/software/slaprunner/instance.cfg
 
 Add a promise
 -------------

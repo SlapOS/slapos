@@ -1,0 +1,115 @@
+#!{{ bash_bin }}
+
+# DO NOT RUN THIS SCRIPT ON PRODUCTION INSTANCE
+# DaTA WILL BE ERASED
+
+set -e
+
+echo "###################################################################################"
+echo "#                                                                                 #"
+echo "#  Warning: DO NOT RUN THIS SCRIPT ON PRODUCTION INSTANCE DaTA WILL BE ERASED !!! #"
+echo "#                                                                                 #"
+echo "###################################################################################"
+echo -e "\nWill start in 10 seconds, cancel execution if you didn't want to run this script."
+
+sleep 10
+
+postgres_executable="{{ postgress_script }}"
+redis_executable="{{ redis_script }}"
+git_backup_directory="{{ gitlab_backup_dir }}"
+redis_pid_file="{{ redis_pid_file }}"
+postgres_pid_file="{{ postgres_pid_file }}"
+
+bin_location="{{ bin_directory }}"
+run_location="{{ run_directory }}"
+git_location="{{ git_location }}"
+go_work_bin="{{ go_work_bin }}"
+etc_location="{{ etc_directory }}"
+gitlab_work="{{ gitlab_work_location }}"
+promise_check="{{ promise_lab_location }}"
+unicorn_script="{{ unicorn_script }}"
+sidekiq_script="{{ sidekiq_script }}"
+
+# export GIT_EXEC_PATH=$git_location/libexec/git-core/
+
+check_process () {
+  pid_file=$1
+  pname=$2
+  if [ -e "$pid_file" ]; then
+    pid=$(head -n 1 $pid_file) > /dev/null 2>&1
+    if kill -0 "$pid"; then
+      echo "$pname is already running with pid $pid. Aborting."
+      exit 1
+    fi
+  fi
+}
+
+kill_process () {
+  pid=$1
+  R=0
+  kill -0 "$pid" > /dev/null 2>&1 || R=$?
+  if [ $R -eq 0 ]; then
+    kill -TERM $pid
+  fi
+}
+
+check_process $postgres_pid_file "Postgres"
+check_process $redis_pid_file "Redis"
+check_process $run_location/unicorn.pid "Unicorn"
+
+if [ -f "$postgres_pid_file" ]; then
+  rm $postgres_pid_file
+fi
+
+echo "Starting Postgres..."
+$postgres_executable &
+postgres_pid=$!
+trap "echo 'kill $postgres_pid" EXIT TERM INT
+
+echo "Starting Redis server..."
+$redis_executable &
+redis_pid=$!
+trap "kill $redis_pid" EXIT TERM INT
+echo "[OK]"
+echo "Restoring gitlab data..."
+
+# XXX - workaround until this problem is fixed on runner1
+sed -ie "s/connection.execute('TRUNCATE schema_migrations')\s*$/connection.execute('TRUNCATE schema_migrations') if connection.table_exists? 'schema_migrations'/g" $gitlab_work/lib/tasks/gitlab/db.rake
+
+cd $git_backup_directory
+PATH=$bin_location:$go_work_bin:$git_location/bin:$PATH gitlab-backup restore -vupok -go HEAD
+
+echo "Checking gitlab promises..."
+echo "[info] Not all promises are checked!"
+$promise_check/gitlab-app
+
+echo "Starting Unicorn to check gitlab-shell promise..."
+$unicorn_script &
+unicorn_pid=$!
+trap "kill $unicorn_pid" EXIT TERM INT
+sleep 60
+if [ -s "$run_location/unicorn.pid" ]; then
+  unicorn_ppid=$(head -n 1 $run_location/unicorn.pid) > /dev/null 2>&1
+  trap "kill $unicorn_ppid" EXIT TERM INT
+fi
+$promise_check/gitlab-shell
+
+#echo "starting Sidekiq to check sidekiq promise..."
+#$sidekiq_script &
+#sidekiq_pid=$!
+#trap "kill $sidekiq_pid" EXIT TERM INT
+#$promise_check/sidekiq
+
+kill_process $postgres_pid
+kill_process $redis_pid
+kill_process $unicorn_pid
+
+RESTORE_EXIT_CODE=$?
+
+if [ $RESTORE_EXIT_CODE -eq 0 ]; then
+  echo 'Backup restoration successfully completed.'
+else
+  echo 'Backup restoration failed.'
+fi
+
+exit $RESTORE_EXIT_CODE

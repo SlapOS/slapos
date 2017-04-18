@@ -96,6 +96,27 @@
       "default": ""
     },
 
+    "monitor-ipv6-test": {
+      "title": "IPv6 Address to Monitor Packet Lost",
+      "description": "IPv6 Address for the frontend keep monitoring with ping6 (without brackets)",
+      "type": "string",
+      "default": ""
+    },
+
+    "monitor-ipv4-test": {
+      "title": "IPv4 Address to Monitor Packet Lost",
+      "description": "IPv4 Address for the frontend keep monitoring with ping",
+      "type": "string",
+      "default": ""
+    },
+
+    "re6st-optimal-test": {
+      "title": "IPv6 and IPv4 Address to test Re6st",
+      "description": "IPv6 and IPv6 Address for the frontend test if re6st is on the optimal status (use ipv6,ipv4)",
+      "type": "string",
+      "default": ""
+    },
+
     "enable_cache": {
       "title": "Enable Cache",
       "description": "If set to true, http caching server (Apache Traffic Server) will be used between frontend apache and backend",

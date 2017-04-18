@@ -1,0 +1,4 @@
+#!/bin/bash
+
+echo $$ > {{ pid_file }}
+exec {{ re6st_command }} @{{ re6st_conf }}

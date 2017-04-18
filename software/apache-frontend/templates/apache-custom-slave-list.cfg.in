@@ -27,6 +27,13 @@ context =
 {{ key }} = {{ value }}
 {% endfor %}
 
+post = {{ apache_configuration.get('frontend-graceful-command') }}
+frequency = daily
+rotatep-num = 30
+sharedscripts = true
+notifempty = true
+create = true
+
 [cadirectory]
 recipe = slapos.cookbook:mkdirectory
 requests = {{ custom_ssl_directory }}/requests/
@@ -98,7 +105,7 @@ crl = {{ custom_ssl_directory }}/crl/
 {%     do slave_publish_dict.__setitem__('secure_access', 'https://%s' % slave_instance.get('custom_domain')) -%}
 {%   endif -%}
 
-[slave-log-directory]
+[slave-log-directories]
 {{slave_reference}}-log-folder = {{ slave_log_folder }}
 
 {# Set slave logrotate entry #}
@@ -108,12 +115,6 @@ recipe = slapos.cookbook:logrotate.d
 name = ${:_buildout_section_name_}
 log = {{slave_parameter_dict.get('access_log')}} {{slave_parameter_dict.get('error_log')}}
 backup = {{ slave_log_folder }} 
-frequency = daily
-rotatep-num = 30
-post = {{ apache_configuration.get('frontend-graceful-command') }}
-sharedscripts = true
-notifempty = true
-create = true
 
 {# integrate current logs inside #}
 [{{slave_ln_section}}]
@@ -226,7 +227,59 @@ extra-context =
     raw nginx_https_port {{ nginx_https_port }}
     section slave_parameter {{ slave_configuration_section_name }}
 {{ '\n' }}
- 
+
+
+{%   set check_error_log_section_title = 'check-%s-error-log-last-hour' % slave_instance.get('slave_reference') -%}
+{%   do part_list.append(check_error_log_section_title) -%}
+[{{ check_error_log_section_title }}]
+recipe = slapos.cookbook:wrapper
+command-line = {{ bin_directory }}/check-error-on-apache-log -l {{ slave_instance.get('error_log') }} -d 3600 
+filename = {{ check_error_log_section_title }}
+wrapper-path = {{ promise_directory }}/${:filename}
+
+{%   set check_error_log_section_title = 'check-%s-error-log-last-day' % slave_instance.get('slave_reference') -%}
+{%   do part_list.append(check_error_log_section_title) -%}
+[{{ check_error_log_section_title }}]
+recipe = slapos.cookbook:wrapper
+command-line = {{ bin_directory }}/check-error-on-apache-log -l {{ slave_instance.get('error_log') }} -d 86400
+filename = {{ check_error_log_section_title }}
+wrapper-path = {{ promise_directory }}/${:filename}
+
+{%   set monitor_ipv6_test = slave_instance.get('monitor-ipv6-test', '') %}
+{%   if monitor_ipv6_test %}
+{%     set monitor_ipv6_section_title = 'check-%s-ipv6-packet-list-test' % slave_instance.get('slave_reference') %}
+{%     do part_list.append(monitor_ipv6_section_title) -%}
+[{{ monitor_ipv6_section_title }}]
+recipe = slapos.cookbook:wrapper
+command-line = {{ bin_directory }}/is-icmp-packet-lost -a {{monitor_ipv6_test}} 
+filename = {{ monitor_ipv6_section_title }}
+wrapper-path = {{ promise_directory }}/${:filename}
+{%   endif %}
+
+{%   set monitor_ipv4_test = slave_instance.get('monitor-ipv4-test', '') %}
+{%   if monitor_ipv4_test %}
+{%     set monitor_ipv4_section_title = 'check-%s-ipv4-packet-list-test' % slave_instance.get('slave_reference') %}
+{%     do part_list.append(monitor_ipv4_section_title) -%}
+[{{ monitor_ipv4_section_title }}]
+recipe = slapos.cookbook:wrapper
+command-line = {{ bin_directory }}/is-icmp-packet-lost -4 -a {{monitor_ipv4_test}}
+filename = {{ monitor_ipv4_section_title }}
+wrapper-path = {{ promise_directory }}/${:filename}
+{%   endif %}
+
+{%   set re6st_optimal_test = slave_instance.get('re6st-optimal-test', '') %}
+{%   if re6st_optimal_test %}
+{%     set re6st_ipv6, re6st_ipv4 = re6st_optimal_test.split(",") %}
+{%     set re6st_optimal_test_section_title = 'check-%s-re6st-optimal-test' % slave_instance.get('slave_reference') %}
+{%     do part_list.append(re6st_optimal_test_section_title) -%}
+[{{ re6st_optimal_test_section_title }}]
+recipe = slapos.cookbook:wrapper
+command-line = {{ bin_directory }}/check-re6st-optimal-status -4 {{re6st_ipv4}} -6 {{re6st_ipv6}}
+filename = {{ re6st_optimal_test_section_title }}
+wrapper-path = {{ promise_directory }}/${:filename}
+{%   endif %}
+
+
 {# ###############################  #}
 {# Publish Slave Information        #}
 {%   if not extra_slave_instance_list -%}
@@ -240,6 +293,8 @@ recipe = slapos.cookbook:publish
 {%   else -%}
 {%     do slave_instance_information_list.append(slave_publish_dict) -%}
 {%   endif -%}
+
+{# End of the main for loop#}
 {% endfor -%}
 
 ###############################################
@@ -263,9 +318,6 @@ extra-context =
 
 [slave-log-directories]
 recipe = slapos.cookbook:mkdirectory
-{% for key, value in slave_log_dict.iteritems() -%}
-{{ key }} = {{ value }}
-{% endfor %}
 
 {# Define log access #}
 [apache-log-access]
@@ -278,9 +330,7 @@ extra-context =
     raw apache_configuration_directory {{apache_configuration_directory}}
 
 {# Publish information for the instance #}
-{% set publish_section_title = 'publish-apache-information' -%}
-{% do part_list.append(publish_section_title) -%}
-[{{ publish_section_title }}]
+[publish-apache-information]
 recipe = slapos.cookbook:publish
 public-ipv4 = {{ public_ipv4 }}
 private-ipv4 = {{ local_ipv4 }}
@@ -295,6 +345,7 @@ parts +=
 {% for part in part_list -%}
 {{ '    %s' % part }}
 {% endfor %}
+    publish-apache-information
     apache-log-access
 
 eggs-directory = {{ eggs_directory }}

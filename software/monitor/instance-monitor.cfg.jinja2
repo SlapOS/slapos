@@ -10,6 +10,8 @@ parts =
   monitor-collect-csv-wrapper
   fluentd-wrapper
   monitor-base
+  monitor-check-memory-usage
+  monitor-check-cpu-usage
   publish-connection-information
 
 
@@ -99,10 +101,37 @@ command-line =
 wrapper-path = ${monitor-directory:reports}/monitor-collect-csv-dump  
 parameters-extra = true
 
+[monitor-check-cpu-usage]
+recipe = slapos.cookbook:wrapper
+command-line = ${monitor-directory:bin}/python {{ monitor_check_system_health }} cpu ${init-monitor-parameters:cpu-load-file}
+wrapper-path = ${monitor-directory:promises}/system-CPU-load-check
+
+[monitor-check-memory-usage]
+recipe = slapos.cookbook:wrapper
+command-line = ${monitor-directory:bin}/python {{ monitor_check_system_health }} mem ${init-monitor-parameters:mem-free-file} ${directory:monitor}
+wrapper-path = ${monitor-directory:promises}/system-MEMORY-usage-check
+
 [publish-connection-information]
 recipe = slapos.cookbook:publish
 monitor-setup-url = https://monitor.app.officejs.com/#page=settings_configurator&url=${publish:monitor-url}&username=${publish:monitor-user}&password=${publish:monitor-password}
 server_log_url = ${publish:monitor-base-url}/${slap-configuration:private-hash}/ 
+
+[monitor-instance-parameter]
+instance-configuration =
+  file max-cpu-load-per-core ${init-monitor-parameters:cpu-load-file}
+  file min-free-mem-percent ${init-monitor-parameters:mem-free-file}
+
+[init-monitor-parameters]
+recipe = plone.recipe.command
+cpu-load-file = ${directory:monitor}/cpu-load-tolerance
+mem-free-file = ${directory:monitor}/mem-free-limit
+command = 
+  if [ ! -s "${:cpu-load-file}" ]; then
+    echo "1.5" > ${:cpu-load-file}
+  fi
+  if [ ! -s "${:mem-free-file}" ]; then
+    echo "7.0" > ${:mem-free-file}
+  fi
 
 [slap-configuration]
 recipe = slapos.cookbook:slapconfiguration.serialised

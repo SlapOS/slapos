@@ -12,6 +12,7 @@ offline = true
 recipe = slapos.cookbook:softwaretype
 gitlab  = $${instance-gitlab.cfg:rendered}
 gitlab-export   = $${instance-gitlab-export.cfg:rendered}
+gitlab-test = $${instance-gitlab-test.cfg:rendered}
 default = $${:gitlab}
 # TODO -import, -pull-backup
 
@@ -71,6 +72,7 @@ context =
     raw rack_attack_rb_in           ${rack_attack.rb.in:target}
     raw resque_yml_in               ${resque.yml.in:target}
     raw smtp_settings_rb_in         ${smtp_settings.rb.in:target}
+    raw gitlab_restore_sh_in        ${template-gitlab-resiliency-restore.sh.in:target}
     raw unicorn_rb_in               ${unicorn.rb.in:target}
 
     $${:context-extra}
@@ -85,3 +87,11 @@ template= ${instance-gitlab.cfg.in:target}
 template= ${instance-gitlab-export.cfg.in:target}
 context-extra =
     raw instance_gitlab_cfg         $${instance-gitlab.cfg:rendered}
+
+[instance-gitlab-test.cfg]
+<= instance-cfg
+template= ${instance-gitlab-test.cfg.in:target}
+context-extra =
+    raw instance_gitlab_cfg        $${instance-gitlab.cfg:rendered}
+    raw instance_gitlab_export_cfg $${instance-gitlab-export.cfg:rendered}
+    raw gitlab_demo_backup_path    ${gitlab-demo-backup.git:location}

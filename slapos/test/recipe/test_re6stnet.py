@@ -33,7 +33,6 @@ class Re6stnetTest(unittest.TestCase):
                 'ipv4': '127.0.0.1',
                 'port': '9201',
                 'pid-file': '/path/to/pid/file',
-                'db-path': '/path/to/db',
                 'command': '/path/to/command',
                 'manager-wrapper': os.path.join(self.base_dir, 'manager_wrapper'),
                 'drop-service-wrapper': os.path.join(self.base_dir, 'drop_wrapper'),
@@ -86,22 +85,10 @@ class Re6stnetTest(unittest.TestCase):
     self.assertIn("'key_file': '/path/to/key'", content)
     self.assertIn("'cert_file': '/path/to/cert'", content)
     self.assertIn("'server_url': 'http://server.com'", content)
-    self.assertIn("'db': '%s'" % self.options['db-path'], content)
     self.assertIn("'token_base_path': '%s'" % self.token_dir, content)
     self.assertIn("'registry_url': 'http://%s:%s/'" % (self.options['ipv4'],
                                                 self.options['port']), content)
   
-  def checkRegistryWrapper(self):
-    path = os.path.join(self.base_dir, 'wrapper')
-    self.assertTrue(os.path.exists(path))
-    content = ""
-    config_file = os.path.join(self.base_dir, 'config')
-    with open(path, 'r') as f:
-        content = f.read()
-    self.assertIn("@%s" % config_file, content)
-    self.assertIn("/path/to/pid/file", content)
-    self.assertIn("/path/to/command", content)
-
   def fake_generateCertificates(self):
     return
 
@@ -182,10 +169,6 @@ class Re6stnetTest(unittest.TestCase):
     self.assertEqual(token_dict['SOFTINST-58778'], second_add)
     
     self.checkWrapper(os.path.join(self.base_dir, 'manager_wrapper'))
-    self.checkWrapper(os.path.join(self.base_dir, 'drop_wrapper'))
-    self.checkWrapper(os.path.join(self.base_dir, 'check_wrapper'))
-    self.checkWrapper(os.path.join(self.base_dir, 'revoke_wrapper'))
-    self.checkRegistryWrapper()
     
     # Remove one element
     self.options.update({
@@ -226,8 +209,4 @@ class Re6stnetTest(unittest.TestCase):
     self.assertItemsEqual(os.listdir(self.options['token-dir']), [])
 
     self.checkWrapper(os.path.join(self.base_dir, 'manager_wrapper'))
-    self.checkWrapper(os.path.join(self.base_dir, 'drop_wrapper'))
-    self.checkWrapper(os.path.join(self.base_dir, 'check_wrapper'))
-    self.checkWrapper(os.path.join(self.base_dir, 'revoke_wrapper'))
-    self.checkRegistryWrapper()
 

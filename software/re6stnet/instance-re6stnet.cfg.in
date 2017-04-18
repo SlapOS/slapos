@@ -132,15 +132,19 @@ template = {{ parameter_dict['template-re6st-registry-conf'] }}
 rendered = ${directory:etc}/re6st-registry.conf
 context = section parameter_dict re6st-registry-conf-dict
 
+[re6st-registry-wrapper]
+recipe = slapos.recipe.template:jinja2
+template = {{ parameter_dict['template-registry-run'] }}
+rendered = ${directory:services}/re6st-registry
+pid-file = ${directory:run}/registry.pid
+context =
+  key pid_file :pid-file
+  raw re6st_command {{ re6st_registry }}
+  key re6st_conf re6st-registry-conf:rendered
+
 [re6st-registry]
 recipe = slapos.cookbook:re6stnet.registry
-command = {{ re6st_registry }}
-wrapper = ${directory:services}/re6st-registry
-pid-file = ${directory:run}/registry.pid
 manager-wrapper = ${directory:bin}/re6stManageToken
-check-service-wrapper = ${directory:bin}/re6stCheckService
-drop-service-wrapper = ${directory:bin}/re6stManageDeleteToken
-revoke-service-wrapper = ${directory:bin}/re6stRevokeCertificate
 openssl-bin = {{ openssl_bin }}/openssl
 python-bin = {{ python_bin }}
 ipv6-prefix = {{ slapparameter_dict.get('ipv6-prefix', '2001:db8:24::/48') }}
@@ -167,32 +171,18 @@ recipe = slapos.cookbook:wrapper
 wrapper-path = ${directory:script}/re6st-token-manager
 command-line = "{{ python_bin }}" ${re6st-registry:manager-wrapper}
 
-[cron-entry-re6st-check]
+[cron-entry-re6st-manage]
 recipe = slapos.cookbook:cron.d
 cron-entries = ${cron:cron-entries}
 name = re6stnet-check-token
 frequency = */5 * * * *
-command = {{ python_bin }} ${re6st-registry:check-service-wrapper}
-
-[cron-entry-re6st-revoke]
-recipe = slapos.cookbook:cron.d
-cron-entries = ${cron:cron-entries}
-name = re6stnet-revoke-cert
-frequency = */5 * * * *
-command = {{ python_bin }} ${re6st-registry:revoke-service-wrapper}
-
-[cron-entry-re6st-drop]
-recipe = slapos.cookbook:cron.d
-cron-entries = ${cron:cron-entries}
-name = re6stnet-drop-token
-frequency = */5 * * * *
-command = {{ python_bin }} ${re6st-registry:drop-service-wrapper}
+command = {{ python_bin }} ${re6st-registry:manager-wrapper}
 
 [logrotate-entry-re6stnet]
 < = logrotate-entry-base
 name = re6stnet
 log = ${re6st-registry-conf-dict:logfile}
-post = test ! -s ${re6st-registry:pid-file} || {{ parameter_dict['bin-directory'] }}/slapos-kill --pidfile ${re6st-registry:pid-file} -s USR1
+post = test ! -s ${re6st-registry-wrapper:pid-file} || {{ parameter_dict['bin-directory'] }}/slapos-kill --pidfile ${re6st-registry-wrapper:pid-file} -s USR1
 
 [re6st-registry-promise]
 recipe = slapos.cookbook:check_port_listening
@@ -227,9 +217,7 @@ parts =
   logrotate-entry-re6stnet
   re6stnet-manage
   cron-entry-logrotate
-  cron-entry-re6st-check
-  cron-entry-re6st-drop
-  cron-entry-re6st-revoke
+  cron-entry-re6st-manage
   apache-httpd
   apache-httpd-graceful
   publish

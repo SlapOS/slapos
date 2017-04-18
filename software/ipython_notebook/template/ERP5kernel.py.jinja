@@ -177,6 +177,7 @@ class ERP5Kernel(Kernel):
           'reference': self.reference,
           'title': self.title,
           'request_reference': request_reference,
+	  'store_history': kwargs.get('store_history')
           })
 
       # Set value for status_code for self object which would later be used to
@@ -256,7 +257,7 @@ class ERP5Kernel(Kernel):
         # Check for status_code before making request to erp5 and make request in
         # only if the status_code is in the allowed_HTTP_request_code_list
         if self.status_code in self.allowed_HTTP_request_code_list:
-          self.make_erp5_request(code=code)
+          self.make_erp5_request(code=code, store_history=store_history)
 
           # For 200 status_code, Kernel will receive predefined format for data
           # from erp5 which is either json of result or simple result string

@@ -7,6 +7,6 @@
       "description": "Fluentd configuration. You can write it entirely by yourself. See fluentd-agent.conf.jinja2.in",
       "default": "",
       "type": "string"
-    },
+    }
   }
 }

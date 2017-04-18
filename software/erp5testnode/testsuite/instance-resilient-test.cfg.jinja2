@@ -8,7 +8,6 @@ parts =
   request-resilient-instance
   deploy-unit-test
   deploy-scalability-test
-  deploy-standalone-resiliency-test
 
 [directory]
 recipe = slapos.cookbook:mkdirectory
@@ -38,13 +37,6 @@ input = inline:
 output = ${directory:bin}/runTestSuite
 mode = 755
 
-[deploy-standalone-resiliency-test]
-# Used to manually run the resilient test if we don't have a running testnode.
-recipe = slapos.cookbook:wrapper
-test-suite-title = slaprunner
-command-line = {{ bin_directory }}/runStandaloneResiliencyTest --test-suite-title=${:test-suite-title} ${deploy-scalability-test:test-parameters}
-wrapper-path = ${directory:bin}/runStandaloneResiliencyTestSuite
-
 [request-resilient-instance]
 <= slap-connection
 recipe = slapos.cookbook:request
@@ -57,6 +49,7 @@ config-{{ key }} = {{ dumps(value) }}
 config-resiliency-backup-periodicity = */10 * * * *
 config-resilient-clone-number = 1
 config-ignore-known-hosts-file = false
+config-cpu-usage-ratio = 1
 # XXX hardcoded
 #config-frontend-domain = google.com
 # XXX Hack to deploy Root Instance on the same computer as the type-test Instance

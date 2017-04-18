@@ -146,6 +146,7 @@ config-mysql-url-list = ${request-mariadb:connection-database-list}
 config-site-id = {{ dumps(site_id) }}
 config-smtp-url = ${request-smtp:connection-url}
 config-timezone = {{ dumps(slapparameter_dict.get('timezone', 'UTC')) }}
+config-wendelin-core-zblk-fmt = {{ dumps(slapparameter_dict.get('wendelin-core-zblk-fmt', '')) }}
 config-zodb-dict = {{ dumps(zodb_dict) }}
 {% for server_type, server_dict in storage_dict.iteritems() -%}
 {%   if server_type == 'neo' -%}

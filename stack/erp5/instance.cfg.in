@@ -2,8 +2,6 @@
 extends = {{ instance_common_cfg }}
 
 [jinja2-template-base]
-context +=
-    raw slapos_core_version {{ slapos_core_version }}
 mode = 644
 
 [dynamic-template-cloudooo-parameters]
@@ -54,6 +52,7 @@ extra-context =
 
 [dynamic-template-postfix-parameters]
 bin-directory = {{ bin_directory }}
+buildout-bin-directory = {{ buildout_bin_directory }}
 cyrus-sasl-location = {{ cyrus_sasl_location }}
 openssl = {{ openssl_location }}
 postfix-location = {{ postfix_location }}

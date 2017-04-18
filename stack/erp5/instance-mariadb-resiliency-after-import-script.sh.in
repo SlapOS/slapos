@@ -23,7 +23,11 @@ update_executable='${update-mysql:output}'
 
 # Make sure mariadb is not already running
 if [ -e "$pid_file" ]; then
-  pid=$(cat "$pid_file") > /dev/null 2>&1
+  pid=$(cat "$pid_file")
+  if [ $? -ne 0 ]; then
+    echo "Cannot read Mariadb pidfile, assuming running. Aborting."
+    exit 1
+  fi
   if kill -0 "$pid"; then
     echo "Mariadb is already running with pid $pid. Aborting."
     exit 1
@@ -45,8 +49,7 @@ if [ -n "$binlog_path" ]; then
 fi
 
 echo "Starting mariadb..."
-# XXX hardcoded
-"$server_executable" --innodb-flush-method=nosync --skip-innodb-doublewrite &
+"$server_executable" --innodb-flush-method=nosync --skip-innodb-doublewrite --innodb-flush-log-at-trx-commit=0 --sync-frm=0 --slow-query-log=0 --skip-log-bin &
 mysqld_pid=$!
 trap "kill $mysqld_pid" EXIT TERM INT
 sleep 30
