@@ -120,6 +120,7 @@ def main():
         error_count = unexpected_count, # XXX
         failure_count = expected_count, # XXX
         skip_count = skip_count,
+        duration = duration,
         stdout= stdout)
 
       # print to stdout so we can see in testnode logs
