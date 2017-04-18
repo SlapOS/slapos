@@ -1,6 +1,13 @@
 Changes
 =======
 
+1.0.50 (2017-04-18)
+-------------------
+
+  * pbs: Do not parallelize calculus when the heaviest task is IO
+  * re6st-registry: Refactor integration with re6st registry
+  * erp5testnode: make shellinabox reusing password file of pwgen
+
 1.0.48 (2017-01-31)
 -------------------
 
