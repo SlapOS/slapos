@@ -89,16 +89,16 @@ recipe = slapos.cookbook:publish-early
 {%- if neo %}
   neo-cluster gen-neo-cluster:name
 {%-  if neo[0] %}
-neo-cluster = {{ neo[0] }}
+neo-cluster = {{ dumps(neo[0]) }}
 {%-  endif %}
 {%- endif %}
 {%- set inituser_password = slapparameter_dict.get('inituser-password') %}
 {%- if inituser_password %}
-inituser-password = {{ inituser_password }}
+inituser-password = {{ dumps(inituser_password) }}
 {%- endif %}
 {%- set deadlock_debugger_password = slapparameter_dict.get('deadlock-debugger-password') -%}
 {%- if deadlock_debugger_password %}
-deadlock-debugger-password = {{ deadlock_debugger_password }}
+deadlock-debugger-password = {{ dumps(deadlock_debugger_password) }}
 {%- endif %}
 
 [gen-password]
