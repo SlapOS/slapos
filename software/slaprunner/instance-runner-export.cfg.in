@@ -62,6 +62,9 @@ ip = ${slaprunner:ipv4}
 [supervisord]
 port = ${supervisord-free-port:port}
 
+[exporter-configuration]
+coreutils-location = {{ dumps(parameter_dict['coreutils-location']) }}
+
 [exporter]
 recipe = slapos.recipe.template:jinja2
 template = {{ exporter_script_path }}
@@ -71,6 +74,7 @@ wrapper = ${:rendered}
 mode = 700
 context =
   section directory directory
+  section parameter_dict exporter-configuration
   raw  output_log_file ${directory:log}/resilient.log
   raw  shell_binary {{ bash_executable_location }}
   raw  rsync_binary {{ rsync_executable_location }}

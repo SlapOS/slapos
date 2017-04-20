@@ -18,50 +18,57 @@ backup_directory='{{ directory["backup"] }}'
 etc_directory='{{ directory["etc"] }}'
 tmp_directory='{{ directory["tmp"] }}'
 
-sync_element () {
-  path=$1
-  backup_path=$2
-  shift 2
-  element_list=$*
+rsync () {
+  set -x
+  '{{ rsync_binary }}' -rlptgov --stats --safe-links --delete --delete-excluded "$@"
+  set +x
+}
 
-  # Concatenate the exclude file of each partition of webrunner
-  # to create a global exclude file.
-  exclude_content="instance/supervisord.socket"
-  for partition in $srv_directory/runner/instance/slappart*
-  do
-    exclude_file="$partition/srv/exporter.exclude"
-    if [ -e "$exclude_file" ]; then
-      partition_exclude_content_relative=$(cat "$exclude_file")
-      # For every line of the local exclude file, add the absolute path
-      for line in "$partition_exclude_content_relative"
-      do
-        if [ ! -z "$line" ]; then
-          exclude_content="$exclude_content\ninstance/$(basename $partition)/$line"
-       fi
-      done
-    fi
-  done
-  echo -e "$exclude_content" > $srv_directory/exporter.exclude
-
-  for element in $element_list
-  do
-    echo "Changing current directory to $path."
-    cd $path;
-    if [ -f $element ] || [ -d $element ]; then
-       command="{{ rsync_binary }} -rlptgov --stats --safe-links --exclude-from=$srv_directory/exporter.exclude --delete --delete-excluded $element  $backup_path"
-       echo "Running : $command"
-       $command
+relativise () {
+  while IFS= read -r line; do
+    if [ ! -z "$line" ]; then
+      '{{ parameter_dict["coreutils-location"] }}/bin/realpath' --quiet --canonicalize-missing --no-symlinks --relative-to="$1" "$line"
     fi
   done
 }
-sync_element $srv_directory/runner {{ directory['backup'] }}/runner/ instance project proxy.db
+
+(
+  path=$srv_directory/runner
+  backup_path=$backup_directory/runner/
+  cd "$path"
+
+  if [ -d instance ]; then
+    # Concatenate the exclude file of each partition of webrunner
+    # to create a global exclude file.
+    (
+      echo "*.sock"
+      echo "*.socket"
+      echo "*.pid"
+      echo ".installed*.cfg"
+      for partition in "$path"/instance/slappart*; do
+        # So "relativise" can handle relative paths (which are expected to be relative to partition).
+        cd "$partition"
+        exclude_file=srv/exporter.exclude
+        if [ -r "$exclude_file" ]; then
+          relativise "$path" < "$exclude_file"
+        fi
+      done
+    ) | rsync --exclude-from=- instance "$backup_path"
+  fi
+
+  test -d project  && rsync project "$backup_path"
+  test -f proxy.db && rsync proxy.db "$backup_path"
+)
 # We sync .* appart
-date +%s -u > {{ directory['etc'] }}/.resilient-timestamp
-sync_element {{ directory['etc'] }}  {{ directory['backup'] }}/etc/ config.json
-# Hidden files are related to the webrunner's internals
-cp -r {{ directory['etc'] }}/.??* {{ directory['backup'] }}/etc/
-if [ -d {{ directory['backup'] }}/runner/software ]; then
-  rm {{ directory['backup'] }}/runner/software/*
+(
+  cd "$etc_directory"
+  date +%s -u > .resilient-timestamp
+  rsync config.json "$backup_directory"/etc/
+  # Hidden files are related to the webrunner's internals
+  cp -r .??* "$backup_directory/etc/"
+)
+if [ -d "$backup_directory"/runner/software ]; then
+  rm "$backup_directory"/runner/software/*
 fi
 
 (
