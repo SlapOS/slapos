@@ -40,6 +40,7 @@ relativise () {
   if [ -d instance ]; then
     # Concatenate the exclude file of each partition of webrunner
     # to create a global exclude file.
+    # Also, ignore all buildout-managed files.
     (
       echo "*.sock"
       echo "*.socket"
@@ -52,6 +53,17 @@ relativise () {
         if [ -r "$exclude_file" ]; then
           relativise "$path" < "$exclude_file"
         fi
+        for installed in .installed*.cfg; do
+          if [ -r "$installed" ]; then
+            # Print every line from each __buildout_installed__ found.
+            '{{ parameter_dict["gawk-location"] }}/bin/gawk' '
+              BEGIN { do_print = 0 }
+              match($0, /^__buildout_installed__\s*=\s*(\S.*)/, ary) { do_print = 1; print ary[1]; next }
+              /^\S/ { do_print = 0; next }
+              match($0, /^\s+(\S.*)/, ary) { if (do_print) print ary[1] }
+            ' "$installed" | relativise "$path"
+          fi
+        done
       done
     ) | rsync --exclude-from=- instance "$backup_path"
   fi
