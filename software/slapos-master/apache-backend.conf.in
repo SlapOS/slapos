@@ -1,3 +1,63 @@
+{# This file configures apache to redirect requests from ports to specific urls.
+ # It provides SSL support for server and optionaly for client.
+ #
+ # All parameters are given through the `parameter_dict` variable, see the
+ # list entries :
+ #
+ #     parameter_dict = {
+ #       #  The path given to "PidFile"
+ #       "pid-file": "<file_path>",
+ #
+ #       #  The number given to "TimeOut"
+ #       "timeout": 300,
+ #
+ #       #  The path given to "SSLCertificateFile"
+ #       "cert": "<file_path>",
+ #
+ #       #  The path given to "SSLCertificateKeyFile"
+ #       "key": "<file_path>",
+ #
+ #       #  The value given to "SSLCipherSuite" (can be empty)
+ #       "cipher": "",
+ #
+ #       #  The path given to "SSLSessionCache shmcb:<folder_path>(512000)"
+ #       "ssl-session-cache": "<folder_path>",
+ #
+ #       #  The path given to "SSLCACertificateFile" (can be empty)
+ #       #  If this value is not empty, it enables client certificate check.
+ #       #  (Enabling "SSLVerifyClient require")
+ #       "ca-cert": "<file_path>",
+ #
+ #       #  The path given to "SSLCARevocationFile" (used if ca-cert is not
+ #       #  empty)
+ #       "crl": "<file_path>",
+ #
+ #       #  The path given to "ErrorLog"
+ #       "error-log": "<file_path>",
+ #
+ #       #  The path given to "AccessLog"
+ #       "access-log": "<file_path>",
+ #
+ #       #  The list of ip which apache will listen to.
+ #       "ip-list": [
+ #         "0.0.0.0",
+ #         "[::1]",
+ #       ],
+ #
+ #       #  The list of backends which apache should redirect to.
+ #       "backend-list": [
+ #         # (port, unused, internal_scheme)
+ #         (8000, _, "http://10.0.0.10:8001"),
+ #         (8002, _, "http://10.0.0.10:8003"),
+ #       ],
+ #     }
+ #
+ # This sample of `parameter_dict` will make apache listening to :
+ # - 0.0.0.0:8000 redirecting internaly to http://10.0.0.10:8001
+ # - [::1]:8000 redirecting internaly to http://10.0.0.10:8001
+ # - 0.0.0.0:8002 redirecting internaly to http://10.0.0.10:8003
+ # - [::1]:8002 redirecting internaly to http://10.0.0.10:8003
+-#}
 LoadModule unixd_module modules/mod_unixd.so
 LoadModule access_compat_module modules/mod_access_compat.so
 LoadModule authz_core_module modules/mod_authz_core.so
@@ -18,7 +78,7 @@ LoadModule headers_module modules/mod_headers.so
 LoadModule deflate_module modules/mod_deflate.so
 LoadModule filter_module modules/mod_filter.so
 
-AddOutputFilterByType DEFLATE text/cache-manifest text/html text/plain text/css application/hal+json application/json application/x-javascript text/xml application/xml application/rss+xml text/javascript image/svg+xml
+AddOutputFilterByType DEFLATE text/cache-manifest text/html text/plain text/css application/hal+json application/json application/x-javascript text/xml application/xml application/rss+xml text/javascript image/svg+xml application/x-font-ttf application/font-woff application/font-woff2 application/x-font-opentype
 
 PidFile "{{ parameter_dict['pid-file'] }}"
 ServerAdmin admin@
@@ -68,7 +128,7 @@ CustomLog "{{ parameter_dict['access-log'] }}" combined
 </Directory>
 
 RewriteEngine On
-{% for family_name, (port, _, backend, enable_authentication) in parameter_dict['backend-list'].items() -%}
+{% for port, _, backend, enable_authentication in parameter_dict['backend-list'] -%}
 {%   for ip in parameter_dict['ip-list'] -%}
 Listen {{ ip }}:{{ port }}
 {%   endfor -%}
@@ -82,8 +142,8 @@ Listen {{ ip }}:{{ port }}
   LogFormat "%h %l %{REMOTE_USER}i %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\" %D" combined
   
   # We would like to separate the the authentificated logs.
-  ErrorLog "{{ parameter_dict['log-dir'] }}/apache-{{ family_name }}-error.log"
-  CustomLog "{{ parameter_dict['log-dir'] }}/apache-{{ family_name }}-access.log" combined
+  ErrorLog "{{ parameter_dict['log-dir'] }}/apache-service-error.log"
+  CustomLog "{{ parameter_dict['log-dir'] }}/apache-service-access.log" combined
 {% endif -%}
   SSLEngine on
   RewriteRule ^/(.*) {{ backend }}/$1 [L,P]
