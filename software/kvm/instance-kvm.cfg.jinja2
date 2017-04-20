@@ -158,7 +158,7 @@ context =
 [kvm-controller]
 recipe = slapos.recipe.template:jinja2
 template = {{ template_kvm_controller_run }}
-rendered = ${directory:scripts}/kvm_controller
+rendered = ${directory:bin}/kvm_controller_raw
 mode = 700
 context = 
   section parameter_dict kvm-controller-parameter-dict
@@ -187,7 +187,13 @@ recipe = slapos.cookbook:wrapper
 socket-path = ${kvm-controller-parameter-dict:socket-path}
 wrapper-path = ${directory:services}/kvm
 command-line = ${kvm-run:rendered}
-kvm-controller = ${kvm-controller:rendered}
+kvm-controller = ${kvm-controller-wrapper:wrapper-path}
+
+
+[kvm-controller-wrapper]
+recipe = slapos.cookbook:wrapper
+wrapper-path = ${directory:scripts}/kvm_controller
+command-line = ${kvm-controller:rendered}
 
 
 [kvm-vnc-promise]
@@ -616,7 +622,7 @@ parts =
   certificate-authority
   publish-connection-information
   kvm-instance
-  kvm-controller
+  kvm-controller-wrapper
   kvm-vnc-promise
   kvm-disk-image-corruption-promise
   websockify-sighandler
