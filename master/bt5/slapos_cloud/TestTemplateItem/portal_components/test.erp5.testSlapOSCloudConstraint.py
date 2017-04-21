@@ -150,7 +150,7 @@ class TestSlapOSSoftwareInstanceConstraint(TestSlapOSConstraintMixin):
     current_message_list = self.getMessageList(self.software_instance)
 
     consistency_message = "Connection XML is invalid: Start tag expected, '<' not "\
-        "found, line 1, column 1"
+        "found, line 1, column 1 (line 1)"
 
     # test the test: no expected message found
     self.assertFalse(consistency_message in current_message_list)
@@ -167,7 +167,9 @@ class TestSlapOSSoftwareInstanceConstraint(TestSlapOSConstraintMixin):
 
     # if available shall be correct XML
     self.software_instance.edit(connection_xml='this is bad xml')
-    self.assertTrue(consistency_message in self.getMessageList(self.software_instance))
+    self.assertTrue(consistency_message in self.getMessageList(self.software_instance),
+                                     "'%s' is not in '%s'" % (consistency_message,
+                                           self.getMessageList(self.software_instance)))
 
     self.software_instance.edit(connection_xml=self.generateEmptyXml())
     self.assertFalse(consistency_message in self.getMessageList(self.software_instance))
@@ -270,7 +272,7 @@ class TestSlapOSSoftwareInstanceConstraint(TestSlapOSConstraintMixin):
     current_message_list = self.getMessageList(self.software_instance)
 
     consistency_message = "Sla XML is invalid: Start tag expected, '<' not "\
-        "found, line 1, column 1"
+        "found, line 1, column 1 (line 1)"
 
     # test the test: no expected message found
     self.assertFalse(consistency_message in current_message_list)
@@ -287,7 +289,9 @@ class TestSlapOSSoftwareInstanceConstraint(TestSlapOSConstraintMixin):
 
     # if available shall be correct XML
     self.software_instance.edit(sla_xml='this is bad xml')
-    self.assertTrue(consistency_message in self.getMessageList(self.software_instance))
+    self.assertTrue(consistency_message in self.getMessageList(self.software_instance),
+                    "'%s' is not in '%s'" % (consistency_message,
+                                            self.getMessageList(self.software_instance)))
 
     self.software_instance.edit(sla_xml=self.generateEmptyXml())
     self.assertFalse(consistency_message in self.getMessageList(self.software_instance))
@@ -298,7 +302,7 @@ class TestSlapOSSoftwareInstanceConstraint(TestSlapOSConstraintMixin):
     current_message_list = self.getMessageList(self.software_instance)
 
     consistency_message = "Instance XML is invalid: Start tag expected, '<' not "\
-        "found, line 1, column 1"
+        "found, line 1, column 1 (line 1)"
 
     # test the test: no expected message found
     self.assertFalse(consistency_message in current_message_list)
@@ -315,7 +319,9 @@ class TestSlapOSSoftwareInstanceConstraint(TestSlapOSConstraintMixin):
 
     # if available shall be correct XML
     self.software_instance.edit(text_content='this is bad xml')
-    self.assertTrue(consistency_message in self.getMessageList(self.software_instance))
+    self.assertTrue(consistency_message in self.getMessageList(self.software_instance),
+                  "'%s' is not in '%s'" % (consistency_message,
+                                           self.getMessageList(self.software_instance)))
 
     self.software_instance.edit(text_content=self.generateEmptyXml())
     self.assertFalse(consistency_message in self.getMessageList(self.software_instance))
