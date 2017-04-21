@@ -130,6 +130,7 @@ active_process.postResult(active_result)
       'currency_module',
       'cloud_contract_module',
       'data_set_module',
+      'delivery_node_module',
       'document_ingestion_module',
       'document_module',
       'event_module',
