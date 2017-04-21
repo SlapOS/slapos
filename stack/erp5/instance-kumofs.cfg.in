@@ -107,7 +107,9 @@ port = ${kumofs-instance:gateway-port}
 path = ${directory:promise}/kumofs-manager
 port = ${kumofs-instance:manager-port}
 
+{% set monitor_passwd = slapparameter_dict['monitor-passwd'] -%}
 [monitor-instance-parameter]
 monitor-httpd-ipv6 = {{ (ipv6_set | list)[0] }}
 monitor-httpd-port = {{ tcpv4_port + 4 }}
 monitor-title = Kumofs monitor
+password = {{monitor_passwd}} 

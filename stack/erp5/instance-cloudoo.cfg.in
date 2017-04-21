@@ -106,10 +106,12 @@ cloudooo-data = ${:srv}/cloudooo
 font = ${:srv}/font
 framebuffer = ${:srv}/framebuffer
 
+{% set monitor_passwd = slapparameter_dict['monitor-passwd'] -%}
 [monitor-instance-parameter]
 monitor-httpd-ipv6 = {{ (ipv6_set | list)[0] }}
 monitor-httpd-port = {{ tcpv4_port + 2 }}
 monitor-title = Cloudooo monitor
+password = {{monitor_passwd}}
 
 [binary-link]
 recipe = slapos.cookbook:symbolic.link

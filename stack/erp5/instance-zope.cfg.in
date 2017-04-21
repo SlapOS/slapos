@@ -390,10 +390,12 @@ smtp-url = {{ dumps(slapparameter_dict['smtp-url']) }}
 bt5 = {{ dumps(slapparameter_dict['bt5']) }}
 bt5-repository-url = {{ dumps(slapparameter_dict['bt5-repository-url']) }}
 
+{% set monitor_passwd = slapparameter_dict['monitor-passwd'] -%}
 [monitor-instance-parameter]
 monitor-httpd-ipv6 = {{ (ipv6_set | list)[0] }}
 monitor-httpd-port = {{ next_port() }}
 monitor-title = Zope monitor
+password = {{monitor-passwd}}
 
 [buildout]
 extends =

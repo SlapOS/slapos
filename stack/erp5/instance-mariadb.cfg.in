@@ -250,10 +250,12 @@ command-line = "{{ parameter_dict['bin-directory'] }}/is-local-tcp-port-opened" 
 wrapper-path = ${directory:promise}/mariadb
 parameters-extra = true
 
+{% set monitor_passwd = slapparameter_dict['monitor-passwd'] -%}
 [monitor-instance-parameter]
 monitor-httpd-ipv6 = {{ (ipv6_set | list)[0] }}
 monitor-httpd-port = {{ port + 1 }}
 monitor-title = Mariadb monitor
+password = {{monitor_passwd}}
 
 [buildout]
 extends =

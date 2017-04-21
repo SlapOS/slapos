@@ -180,10 +180,12 @@ backup-zodb = {{ default_backup_path }}
 zodb = {{ default_zodb_path }}
 tidstorage = {{ tidstorage_repozo_path }}
 
+{% set monitor_passwd = slapparameter_dict['monitor-passwd'] -%}
 [monitor-instance-parameter]
 monitor-httpd-ipv6 = {{ (ipv6_set | list)[0] }}
 monitor-httpd-port = {{ next_port() }}
 monitor-title = ZODB monitor
+password = {{monitor_passwd}}
 
 [buildout]
 extends =
