@@ -394,6 +394,7 @@ bt5-repository-url = {{ dumps(slapparameter_dict['bt5-repository-url']) }}
 monitor-httpd-ipv6 = {{ (ipv6_set | list)[0] }}
 monitor-httpd-port = {{ next_port() }}
 monitor-title = Zope monitor
+password = {{ slapparameter_dict['monitor-passwd'] }}
 
 [buildout]
 extends =

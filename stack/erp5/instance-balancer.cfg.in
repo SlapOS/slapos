@@ -211,6 +211,7 @@ crl = ${:ca-dir}/crl
 monitor-httpd-ipv6 = {{ (ipv6_set | list)[0] }}
 monitor-httpd-port = {{ next_port() }}
 monitor-title = Balancer monitor
+password = {{ slapparameter_dict['monitor-passwd'] }}
 
 [buildout]
 extends =
@@ -219,4 +220,8 @@ extends =
 parts +=
   publish
   logrotate-apache
+  monitor-base
   {{ part_list | join('\n  ') }}
+
+[publish-connection-information]
+<= monitor-publish
