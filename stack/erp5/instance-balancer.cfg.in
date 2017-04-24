@@ -220,8 +220,4 @@ extends =
 parts +=
   publish
   logrotate-apache
-  monitor-base
   {{ part_list | join('\n  ') }}
-
-[publish-connection-information]
-<= monitor-publish

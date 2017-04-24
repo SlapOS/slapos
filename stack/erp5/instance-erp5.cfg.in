@@ -8,6 +8,7 @@
 {% set jupyter_dict = slapparameter_dict.get('jupyter', {}) -%}
 {% set has_jupyter = jupyter_dict.get('enable', jupyter_enable_default.lower() in ('true', 'yes')) -%}
 {% set jupyter_zope_family = jupyter_dict.get('zope-family', '') -%}
+{% set monitor_base_url_list = [] -%}
 [request-common]
 <= request-common-base
 config-use-ipv6 = {{ dumps(slapparameter_dict.get('use-ipv6', False)) }}
@@ -22,7 +23,10 @@ software-type = {{ software_type }}
 return = {{ ' '.join(ret) }}
 {% for ret, publish in ret.iteritems() -%}
 {%   if publish -%}
-{%     do publish_dict.__setitem__(name ~ '-' ~ ret, '${' ~ section ~ ':connection-' ~ ret ~ '}')%}
+{%     do publish_dict.__setitem__(name ~ '-' ~ ret, '${' ~ section ~ ':connection-' ~ ret ~ '}') %}
+{%   endif -%}
+{%   if ret == "monitor-base-url" -%}
+{%     do monitor_base_url_list.append('${' ~ section ~ ':connection-' ~ ret ~ '}') -%}
 {%   endif -%}
 {% endfor -%}
 {{ root_common.sla(name) }}
@@ -34,10 +38,10 @@ config-{{ k }} = {{ '${' ~ v ~ '}' }}
 {% endfor -%}
 {% endmacro -%}
 
-{{ request('memcached-persistent', 'kumofs', 'kumofs', {'tcpv4-port': 2000, 'monitor-passwd': ${monitor-passwd:passwd}}) }}
-{{ request('memcached-volatile', 'kumofs', 'memcached', {'tcpv4-port': 2010, 'ram-storage-size': 64, 'monitor-passwd': ${monitor-passwd:passwd}}) }}
-{{ request('cloudooo', 'cloudooo', 'cloudooo', {'tcpv4-port': 2020, 'monitor-passwd': ${monitor-passwd:passwd}}) }}
-{{ request('mariadb', 'mariadb', 'mariadb', {'tcpv4-port': 2099}, {'database-list': True, 'test-database-list': True, 'monitor-passwd': ${monitor-passwd:passwd}}) }}
+{{ request('memcached-persistent', 'kumofs', 'kumofs', {'tcpv4-port': 2000}, {'url': True, 'monitor-base-url': False}, key_config={'monitor-passwd': 'monitor-passwd:passwd'}) }}
+{{ request('memcached-volatile', 'kumofs', 'memcached', {'tcpv4-port': 2010, 'ram-storage-size': 64}, {'url': True, 'monitor-base-url': False}, key_config={'monitor-passwd': 'monitor-passwd:passwd'}) }}
+{{ request('cloudooo', 'cloudooo', 'cloudooo', {'tcpv4-port': 2020}, {'url': True, 'monitor-base-url': False}, key_config={'monitor-passwd': 'monitor-passwd:passwd'}) }}
+{{ request('mariadb', 'mariadb', 'mariadb', {'tcpv4-port': 2099}, {'database-list': True, 'test-database-list': True, 'monitor-base-url': False}, key_config={'monitor-passwd': 'monitor-passwd:passwd'}) }}
 {% if has_posftix -%}
 {{   request('smtp', 'postfix', 'smtp', {'tcpv4-port': 2025, 'smtpd-sasl-user': 'erp5@nowhere'}, key_config={'smtpd-sasl-password': 'publish-early:smtpd-sasl-password'}) }}
 {%- else %}
@@ -74,7 +78,7 @@ connection-url = smtp://127.0.0.2:0/
 {%   else -%}
 {{     assert(server_type == 'zeo', server_type) -}}
 {# BBB: for compatibility, keep 'zodb' as partition_reference for ZEO -#}
-{{     request('zodb', 'zodb-' ~ server_type, 'zodb-' ~ server_type, {'tcpv4-port': 2100, 'zodb-dict': server_dict, 'monitor-passwd': ${monitor-passwd:passwd}}, dict.fromkeys(('storage-dict', 'tidstorage-ip', 'tidstorage-port'))) }}
+{{     request('zodb', 'zodb-' ~ server_type, 'zodb-' ~ server_type, {'tcpv4-port': 2100, 'zodb-dict': server_dict}, dict.fromkeys(('storage-dict', 'tidstorage-ip', 'tidstorage-port', 'monitor-base-url')), key_config={'monitor-passwd': 'monitor-passwd:passwd'}) }}
 {%   endif -%}
 {% endfor -%}
 
@@ -126,6 +130,7 @@ name = neo-${gen-neo-cluster-base:passwd}
 return =
   zope-address-list
   hosts-dict
+  monitor-base-url
 {% set bt5_default_list = 'erp5_full_text_myisam_catalog erp5_configurator_standard erp5_configurator_maxma_demo erp5_configurator_ung erp5_configurator_run_my_doc' -%}
 {% if has_jupyter -%}
 {%   set bt5_default_list = bt5_default_list + ' erp5_data_notebook' -%}
@@ -177,6 +182,7 @@ software-type = zope
 [{{ section_name }}]
 <= request-zope-base
 name = {{ partition_name }}
+{% do monitor_base_url_list.append('${' ~ section_name ~ ':connection-monitor-base-url}') -%}
 {{ root_common.sla(partition_name) }}
 config-name = {{ dumps(custom_name) }}
 config-instance-count = {{ dumps(zope_parameter_dict.get('instance-count', 1)) }}
@@ -236,10 +242,13 @@ name = balancer
 software-type = balancer
 {{ root_common.sla('balancer') }}
 return =
+  monitor-base-url
 {%- for family in zope_family_dict %}
   {{ family }}
   {{ family }}-v6
 {% endfor -%}
+{% do monitor_base_url_list.append('${' ~ 'request-balancer' ~ ':connection-monitor-base-url}') -%}
+
 config-zope-family-dict = {{ dumps(zope_family_parameter_dict) }}
 config-tcpv4-port = {{ dumps(balancer_dict.get('tcpv4-port', 2150)) }}
 {% for zope_section_id, name in zope_address_list_id_dict.items() -%}
@@ -250,6 +259,7 @@ config-haproxy-server-check-path = {{ dumps(balancer_dict.get('haproxy-server-ch
 config-backend-path = {{ dumps(balancer_dict.get('apache-backend-path', '/') % {'site-id': site_id}) }}
 config-ssl = {{ dumps(balancer_dict.get('ssl', {})) }}
 config-monitor-passwd = ${monitor-passwd:passwd}
+
 
 [request-frontend-base]
 {% if has_frontend -%}
@@ -303,3 +313,22 @@ recipe = slapos.cookbook:generate.password
 bytes = 8
 
 {{ root_common.common_section() }}
+
+[buildout]
+extends =
+  {{ template_monitor }}
+
+parts +=
+  monitor-base
+
+[publish-connection-information]
+<= monitor-publish
+
+[monitor-instance-parameter]
+monitor-title = ERP5 monitor
+password = $monitor-passwd:passwd
+monitor-url-list += 
+{% for url in monitor_base_url_list -%}
+{{ '  ' ~ url }}
+{% endfor %}
+
