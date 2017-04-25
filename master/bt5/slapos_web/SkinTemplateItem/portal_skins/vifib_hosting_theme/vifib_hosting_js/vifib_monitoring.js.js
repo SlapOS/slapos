@@ -16,7 +16,6 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 "use strict";
-
 (function (window, $) {
 
   var methods,
@@ -60,7 +59,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
         }
 
         return output;
-    },
+    }
   };
 
 
@@ -113,8 +112,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
             update_status(context);
           }, 60000);
         }
-        
-      },
+      }
     });
   };
 
@@ -138,8 +136,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
           status_id = encodeURIComponent(Base61.encode(status_url)),
           status_context = $(this).find('#' + status_id);
           if (!status_context[0]) {
-            status_context = $(this).append('<li><a class="check_monitoring" id="'
-+ status_id + '" data-url="' + encodeURIComponent(status_url) + '"></a></li>')
+            status_context = $(this).append('<li><a class="check_monitoring" id="' + status_id + '" data-url="' + encodeURIComponent(status_url) + '"></a></li>')
                                     .find('#' + status_id);
             (function(new_context) {
               setTimeout(function () {
@@ -154,7 +151,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
         setTimeout(function () {
           search_document_list(context, context.attr('data-list-url'));
         }, 60000);
-      },
+      }
     });
   };
 
@@ -177,7 +174,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
         update_status(context);
       });
       return context;
-    },
+    }
   };
 
   $.fn.vifibmonitoring = function (method) {
