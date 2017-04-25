@@ -33,6 +33,7 @@ recipe = slapos.cookbook:publish.serialised
 {% endmacro -%}
 database-list = {{ render_database_list(database_list) }}
 test-database-list = {{ render_database_list(test_database_list) }}
+monitor-base-url = ${monitor-publish-parameters:monitor-base-url}
 
 [publish-early]
 recipe = slapos.cookbook:publish-early

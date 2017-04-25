@@ -159,6 +159,7 @@ recipe = slapos.cookbook:publish.serialised
 {{   family_name ~ '-v6' }} = {% if ipv6_set %}{{ scheme ~ '://[' ~ ipv6 ~ ']:' ~ apache_port }}{% endif %}
 {{   family_name }} = {{ scheme ~ '://' ~ ipv4 ~ ':' ~ apache_port }}
 {% endfor -%}
+monitor-base-url = ${monitor-publish-parameters:monitor-base-url}
 
 [apache-ssl]
 {% if ssl_parameter_dict.get('key') -%}

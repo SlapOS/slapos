@@ -113,6 +113,7 @@ tidstorage-port = ${tidstorage:port}
 tidstorage-ip =
 tidstorage-port =
 {% endif -%}
+monitor-base-url = ${monitor-publish-parameters:monitor-base-url}
 
 # Used for ERP5 resiliency or (more probably)
 # webrunner resiliency with erp5 inside.

@@ -324,10 +324,10 @@ parts +=
 [publish-connection-information]
 <= monitor-publish
 
-[monitor-instance-parameter]
+[monitor-conf-parameters]
 monitor-title = ERP5 monitor
-password = $monitor-passwd:passwd
-monitor-url-list += 
+password = ${monitor-passwd:passwd}
+monitor-url-list =
 {% for url in monitor_base_url_list -%}
 {{ '  ' ~ url }}
 {% endfor %}

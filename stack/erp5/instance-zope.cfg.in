@@ -379,6 +379,7 @@ dict toward erp5 partition, violating the DRY principle and making the intent
 hard to guess.
 -#}
 hosts-dict = {{ dumps(hosts_dict) }}
+monitor-base-url = ${monitor-publish-parameters:monitor-base-url}
 
 [erp5-promise]
 recipe = slapos.cookbook:erp5.promise

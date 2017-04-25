@@ -20,6 +20,7 @@ url = memcached://[${kumofs-instance:ip}]:${kumofs-instance:gateway-port}/
 {% else -%}
 url = memcached://${kumofs-instance:ip}:${kumofs-instance:gateway-port}/
 {% endif -%}
+monitor-base-url = ${monitor-publish-parameters:monitor-base-url}
 
 [kumofs-instance]
 recipe = slapos.cookbook:generic.kumofs

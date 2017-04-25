@@ -20,6 +20,7 @@ url = http://[${ipv6toipv4:ipv6}]:${ipv6toipv4:ipv6-port}/
 {% else -%}
 url = http://${cloudooo-instance:ip}:${cloudooo-instance:port}/
 {% endif -%}
+monitor-base-url = ${monitor-publish-parameters:monitor-base-url}
 
 [cloudooo-instance]
 recipe = slapos.cookbook:generic.cloudooo
