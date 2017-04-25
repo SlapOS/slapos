@@ -10,10 +10,10 @@
   create
   olddir {{ backup }}
   missingok
-  {% if pre %}prerotate {
+  {% if pre %}prerotate
     {{ pre }}
-  }{% endif %}
-  {% if post %}postrotate {
+  endscript{% endif %}
+  {% if post %}postrotate
     {{ post }}
-  }{% endif %}
+  endscript{% endif %}
 }

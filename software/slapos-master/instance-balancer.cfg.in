@@ -17,8 +17,12 @@ per partition. No more (undefined result), no less (IndexError).
 {%   do apache_ip_list.append('[' ~ ipv6 ~ ']') -%}
 {% endif -%}
 
-[simplefile]
+[jinja2-template-base]
 recipe = slapos.recipe.template:jinja2
+mode = 644
+
+[simplefile]
+< = jinja2-template-base
 template = inline:{{ '{{ content }}' }}
 
 {% macro simplefile(section_name, file_path, content, mode='') -%}
@@ -44,7 +48,7 @@ ipv4 = {{ ipv4 }}
 {% endif -%}
 {% set haproxy_dict = {} -%}
 {% set apache_dict = {} -%}
-{% set next_port = slapparameter_dict['tcpv4-port'] -%}
+{% set next_port = itertools.count(slapparameter_dict['tcpv4-port']).next -%}
 {% for family_name, parameter_id_list in sorted(
   slapparameter_dict['zope-family-dict'].iteritems()) -%}
 {%   set zope_family_address_list = [] -%}
@@ -56,14 +60,14 @@ ipv4 = {{ ipv4 }}
 {%         do has_webdav.append(None) %}
 {%       endif -%}
 {%       if use_ipv6 -%}
-[{{ section('zope-tunnel-' ~ next_port) }}]
+{%         set current_port = next_port() -%}
+[{{ section('zope-tunnel-' ~ current_port) }}]
 < = zope-tunnel-base
-base-name = {{ 'zeo-tunnel-' ~ next_port }}
-ipv4-port = {{ next_port }}
+base-name = {{ 'zeo-tunnel-' ~ current_port }}
+ipv4-port = {{ current_port }}
 ipv6-port = {{ zope_address.split(']:')[1] }}
 ipv6 = {{ zope_address.split(']:')[0][1:] }}
-{%         set zope_effective_address = ipv4 ~ ":" ~ next_port -%}
-{%         set next_port = next_port + 1 -%}
+{%         set zope_effective_address = ipv4 ~ ":" ~ current_port -%}
 {%       else -%}
 {%         set zope_effective_address = zope_address -%}
 {%       endif -%}
@@ -77,8 +81,7 @@ ipv6 = {{ zope_address.split(']:')[0][1:] }}
  # do a no-op getitem.
 -#}
 {%   do zope_family_address_list[0][0] -%}
-{%   set haproxy_port = next_port -%}
-{%   set next_port = next_port + 1 -%}
+{%   set haproxy_port = next_port() -%}
 {%   do haproxy_dict.__setitem__(family_name, (haproxy_port, zope_family_address_list)) -%}
 {%   if has_webdav -%}
 {%     set internal_scheme = 'http' -%}{# mod_rewrite does not recognise webdav scheme -#}
@@ -89,8 +92,7 @@ ipv6 = {{ zope_address.split(']:')[0][1:] }}
 {%   endif -%}
 {%   set backend_path = slapparameter_dict['backend-path-dict'][family_name] -%}
 {%   set ssl_authentication = slapparameter_dict['ssl-authentication-dict'][family_name] -%}
-{%   do apache_dict.__setitem__(family_name, (next_port, external_scheme, internal_scheme ~ '://' ~ ipv4 ~ ':' ~ haproxy_port ~ backend_path, ssl_authentication)) -%}
-{%   set next_port = next_port + 1 -%}
+{%   do apache_dict.__setitem__(family_name, (next_port(), external_scheme, internal_scheme ~ '://' ~ ipv4 ~ ':' ~ haproxy_port ~ backend_path, ssl_authentication)) -%}
 {% endfor -%}
 
 [haproxy-cfg-parameter-dict]
@@ -100,7 +102,7 @@ backend-dict = {{ dumps(haproxy_dict) }}
 ip = {{ ipv4 }}
 
 [haproxy-cfg]
-recipe = slapos.recipe.template:jinja2
+< = jinja2-template-base
 template = {{ parameter_dict['template-haproxy-cfg'] }}
 rendered = ${directory:etc}/haproxy.cfg
 context = section parameter_dict haproxy-cfg-parameter-dict
@@ -120,7 +122,7 @@ ca-cert =  ${directory:apache-conf}/ca.crt
 crl = ${directory:apache-conf}/crl.pem
 
 [apache-conf-parameter-dict]
-backend-list = {{ dumps(apache_dict) }}
+backend-list = {{ dumps(apache_dict.values()) }}
 ip-list = {{ dumps(apache_ip_list) }}
 pid-file = ${directory:run}/apache.pid
 error-log = ${directory:log}/apache-error.log
@@ -145,7 +147,7 @@ shared-crl = {{ shared_ca_path }}/crl
 
 
 [apache-conf]
-recipe = slapos.recipe.template:jinja2
+< = jinja2-template-base
 template = {{ parameter_dict['template-apache-conf'] }}
 rendered = ${directory:apache-conf}/apache.conf
 context = section parameter_dict apache-conf-parameter-dict
@@ -201,22 +203,18 @@ crl =
 {%     do part_list.append('logrotate-' ~ base_name) -%}
 {%     do apache_service_log_list.__setitem__(family_name, base_name) -%}
 [logrotate-{{ base_name }}]
-recipe = slapos.cookbook:logrotate.d
-logrotate-entries = ${logrotate:logrotate-entries}
-backup = ${logrotate:backup}
+ < = logrotate-entry-base
 name = {{ base_name }}
 log = ${apache-conf-parameter-dict:log-dir}/{{ base_name }}-error.log ${apache-conf-parameter-dict:log-dir}/{{ base_name }}-access.log
-post = {{ parameter_dict['bin-directory'] }}/slapos-kill --pidfile ${apache-conf-parameter-dict:pid-file} -s USR1
+post = test ! -s ${apache-conf-parameter-dict:pid-file} || {{ parameter_dict['bin-directory'] }}/slapos-kill --pidfile ${apache-conf-parameter-dict:pid-file} -s USR1
 {%   endif -%}
 {% endfor -%}
 
 [logrotate-apache]
-recipe = slapos.cookbook:logrotate.d
-logrotate-entries = ${logrotate:logrotate-entries}
-backup = ${logrotate:backup}
+< = logrotate-entry-base
 name = apache
 log = ${apache-conf-parameter-dict:error-log} ${apache-conf-parameter-dict:access-log}
-post = {{ parameter_dict['bin-directory'] }}/slapos-kill --pidfile ${apache-conf-parameter-dict:pid-file} -s USR1
+post = test ! -s ${apache-conf-parameter-dict:pid-file} || {{ parameter_dict['bin-directory'] }}/slapos-kill --pidfile ${apache-conf-parameter-dict:pid-file} -s USR1
 
 [directory]
 recipe = slapos.cookbook:mkdirectory
@@ -237,7 +235,7 @@ crl = ${:ca-dir}/crl
 
 [monitor-instance-parameter]
 monitor-httpd-ipv6 = {{ (ipv6_set | list)[0] }}
-monitor-httpd-port = {{ next_port }}
+monitor-httpd-port = {{ next_port() }}
 monitor-title = Balancer monitor
 
 [buildout]

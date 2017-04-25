@@ -117,6 +117,10 @@ name = neo-${gen-neo-cluster-base:passwd}
 [gen-smtpd-sasl-password]
 < = gen-password
 
+{% set zope_partition_dict = slapparameter_dict.get('zope-partition-dict', {'1': {}}) -%}
+{% set zope_address_list_id_dict = {} -%}
+{% if zope_partition_dict -%}
+
 [request-zope-base]
 <= request-common
 return =
@@ -142,6 +146,7 @@ config-mysql-url-list = ${request-mariadb:connection-database-list}
 config-site-id = {{ dumps(site_id) }}
 config-smtp-url = ${request-smtp:connection-url}
 config-timezone = {{ dumps(slapparameter_dict.get('timezone', 'UTC')) }}
+config-wendelin-core-zblk-fmt = {{ dumps(slapparameter_dict.get('wendelin-core-zblk-fmt', '')) }} 
 config-ca-path = ${directory:ca-dir}
 config-zodb-dict = {{ dumps(zodb_dict) }}
 {% for server_type, server_dict in storage_dict.iteritems() -%}
@@ -161,7 +166,8 @@ software-type = zope
 {% set jupyter_zope_family_default = [] -%}
 {% set zope_backend_path_dict = {} -%}
 {% set ssl_authentication_dict = {} -%}
-{% for custom_name, zope_parameter_dict in slapparameter_dict.get('zope-partition-dict', {'1': {}}).items() -%}
+
+{% for custom_name, zope_parameter_dict in  zope_partition_dict.items() -%}
 {%   set partition_name = 'zope-' ~ custom_name -%}
 {%   set section_name = 'request-' ~ partition_name -%}
 {%   set backend_path = zope_parameter_dict.get('backend-path', '/') % {'site-id': site_id} %}
@@ -314,6 +320,8 @@ config-{{ name }} = {{ value }}
 return = site_url
 {% endif -%}
 
+{% endif -%}{# if zope_partition_dict -#}
+
 [publish]
 recipe = slapos.cookbook:publish.serialised
 -extends = publish-early
@@ -321,11 +329,13 @@ recipe = slapos.cookbook:publish.serialised
 neo-masters = ${neo-0-final:connection-masters}
 neo-admins = ${neo-0-final:connection-admins}
 {% endif  -%}
+{% if zope_address_list_id_dict -%}
 {#
 Pick any published hosts-dict, they are expected to be identical - and there is
 no way to check here.
 -#}
 hosts-dict = {{ '${' ~ zope_address_list_id_dict.keys()[0] ~ ':connection-hosts-dict}' }}
+{% endif -%}
 {% for name, value in publish_dict.items() -%}
 {{   name }} = {{ value }}
 {% endfor -%}
