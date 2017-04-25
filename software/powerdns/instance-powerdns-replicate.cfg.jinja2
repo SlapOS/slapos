@@ -117,12 +117,12 @@ recipe = slapos.cookbook:publish
 domain = {{ slapparameter_dict.get('domain') }}
 slave-amount = {{ slave_instance_list | length }}
 ns-record = {{ ns_record }}
-monitor-url = ${publish:monitor-url}
-monitor-user = ${publish:monitor-user}
-monitor-password = ${publish:monitor-password}
+monitor-url = ${monitor-publish-parameters:monitor-url}
+monitor-user = ${monitor-publish-parameters:monitor-user}
+monitor-password = ${monitor-publish-parameters:monitor-password}
 {% set monitor_interface_url = slapparameter_dict.get('monitor-interface-url', 'https://monitor.app.officejs.com') -%}
 {% if monitor_interface_url -%}
-monitor-setup-url = {{ monitor_interface_url }}/#page=settings_configurator&url=${publish:monitor-url}
+monitor-setup-url = {{ monitor_interface_url }}/#page=settings_configurator&url=${monitor-publish-parameters:monitor-url}
 {%   endif -%}
 
 [buildout]

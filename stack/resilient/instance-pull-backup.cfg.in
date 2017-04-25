@@ -137,7 +137,7 @@ slave-instance-list = $${slap-parameter:slave_instance_list}
 ignore-known-hosts-file = $${slap-parameter:ignore-known-hosts-file}
 # To get a verbose feed about PBS state
 instance-root-name = $${instance-info-parameters:root-name}
-log-url = $${publish:monitor-base-url}/private/notifier/
+log-url = $${monitor-publish-parameters:monitor-base-url}/private/notifier/
 status-item-directory = $${directory:notifier-status-items}
 
 [pbs-resilient-status-feed]
@@ -341,10 +341,10 @@ recipe = slapos.cookbook:publish
 ssh-key = $${sshkeys-openssh:public-key-value}
 notification-url = http://[$${notifier:host}]:$${notifier:port}/notify
 feeds-url = http://[$${notifier:host}]:$${notifier:port}/get/
-monitor-base-url = $${publish:monitor-base-url}
-monitor-url = $${publish:monitor-url}
-monitor-user = $${publish:monitor-user}
-monitor-password = $${publish:monitor-password}
+monitor-base-url = $${monitor-publish-parameters:monitor-base-url}
+monitor-url = $${monitor-publish-parameters:monitor-url}
+monitor-user = $${monitor-publish-parameters:monitor-user}
+monitor-password = $${monitor-publish-parameters:monitor-password}
 
 #----------------
 #--
