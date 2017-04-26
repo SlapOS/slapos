@@ -1,0 +1,92 @@
+#!/bin/bash
+
+# Script for controlling deploy script
+#
+# Assumption: deployment script returning with code 0
+#             run correctly and everything is done
+#
+# This script is run inside of KVM, by passing its
+# URL with bootstrap-script-url
+# The script configuration happens by passing
+# it in text form with data-to-vm
+#
+# Format of data-to-vm is shell script:
+#  URL=<url>\nWAITTIME=<seconds>\nTRIES=<amount>
+#
+# Expected values in configuration:
+#  * URL - the url of the script to download and test
+#  * WAITTIME - waiting time, before next try
+#  * TRIES - amount of tries
+
+# Possible TODOs:
+#  * post results on each try
+#  * use function + trap to assure posting on exit
+
+LOG_FILE=/var/log/test-script-deployment.log
+
+wget -O /tmp/test-script.cfg.$$ -q http://10.0.2.100/data
+
+source /tmp/test-script.cfg.$$
+
+if [ -z "$LOG_FILE" ] ; then
+  echo "Output log file is missing"
+  exit 1
+fi
+
+if [ -z "$URL" ] ; then
+  echo "URL is missing" >> $LOG_FILE 2>&1
+  exit 1
+fi
+
+if [ -z "$WAITTIME" ] ; then
+  echo "WAITTIME missing" >> $LOG_FILE 2>&1
+  exit 1
+fi
+
+if [ -z "$TRIES" ] ; then
+  echo "TRIES missing" >> $LOG_FILE 2>&1
+  exit 1
+fi
+
+DEPLOYMENT_SCRIPT=/tmp/test-script-deployment.bash.$$
+wget -O $DEPLOYMENT_SCRIPT -q $URL
+
+if [[ ! -s "$DEPLOYMENT_SCRIPT" ]] ; then
+  echo "exit 1" > $DEPLOYMENT_SCRIPT
+fi
+
+function upload ()
+{
+  try=$1
+  LOG_FILE=$2
+  t=`date '+%Y%m%d%H%S'`
+  mv $LOG_FILE ${LOG_FILE}.$t
+  # just to be sure flush all disk operations before uploading
+  flush
+  curl -q -X POST --data-urlencode "path=test-script-result/log-file.log.$t" --data-urlencode "content@${LOG_FILE}.$t" http://10.0.2.100/
+}
+
+try=1
+while true; do
+  echo "$0: Try $try. Running '/bin/bash $DEPLOYMENT_SCRIPT'" >> $LOG_FILE 2>&1
+  export TEST_YML_PATH
+  /bin/bash $DEPLOYMENT_SCRIPT >> $LOG_FILE 2>&1
+  result=$?
+  if [ $result == 0 ] ; then
+    echo "$0: Try $try. Script executed successfully." >> $LOG_FILE 2>&1
+    upload $try $LOG_FILE
+    break
+  fi
+  if (( try > TRIES )) ; then
+    echo "$0: Try $try. Amount of tries $TRIES exceeded, giving up." >> $LOG_FILE 2>&1
+    upload $try $LOG_FILE
+    break
+  fi
+  # wait WAITTIME before checking the state
+  echo "$0: Try $try. Sleeping $WAITTIME before retry." >> $LOG_FILE 2>&1
+  upload $try $LOG_FILE
+  sleep $WAITTIME
+  ((try++))
+done
+
+exit $result

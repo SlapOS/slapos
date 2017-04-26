@@ -1,0 +1,71 @@
+{# Get test type, default to script-from-url, as defined in instance-input-schema.json -#}
+{% set test_type = slapparameter_dict.get('test-type', 'script-from-url') -%}
+{# Choose parameters according to test type -#}
+{% if test_type == 'script-from-url' -%}
+{% set script_url = slapparameter_dict.get('script-to-test-url') -%}
+{% set test_yml_path = '/not/required' -%}
+{% elif test_type == 'cloned-playbook' -%}
+{% set script_url = 'http://10.0.2.100/standalone-local-playbook' -%}
+{% set test_yml_path = slapparameter_dict.get('yml-path-to-test') -%}
+{% else -%}
+The test_type = "{{ test_type }}" is unsupported.
+{% endif -%}
+[buildout]
+
+eggs-directory = {{ eggs_directory }}
+develop-eggs-directory = {{ develop_eggs_directory }}
+offline = true
+
+parts =
+  request-kvm
+
+[request-kvm]
+<= slap-connection
+
+recipe = slapos.cookbook:request
+software-url = ${slap-connection:software-release-url}
+software-type = kvm
+name = test-kvm
+sla-computer_guid = ${slap-connection:computer-id}
+
+# Tested image
+# Passed by request
+config-virtual-hard-drive-url = {{ slapparameter_dict.get('image-to-test-url') }}
+config-virtual-hard-drive-md5sum = {{ slapparameter_dict.get('image-to-test-md5sum') }}
+
+# The test script
+config-bootstrap-script-url = {{ in_vm_test_script }}#{{ in_vm_test_script_md5 }}
+
+# Script configuration
+config-data-to-vm =
+  URL={{ script_url }}
+  WAITTIME={{ waittime }}
+  TRIES={{ tries }}
+  TEST_YML_PATH={{ test_yml_path }}
+
+# require HTTP server
+config-enable-http-server = true
+
+# VM options
+config-ram-size = 2048
+config-cpu-count = 2
+
+# await for system to be ready
+return =
+  url
+  backend-url
+  ipv6
+  nat-rule-port-443
+  nat-rule-port-80
+
+[directory]
+recipe = slapos.cookbook:mkdirectory
+home = ${buildout:directory}
+etc = ${:home}/etc/
+var = ${:home}/var/
+srv = ${:home}/srv/
+bin = ${:home}/bin/
+tmp = ${:home}/tmp/
+log = ${:var}/log/
+services = ${:etc}/service/
+scripts = ${:etc}/run/
