@@ -1,0 +1,40 @@
+{
+  "type": "object",
+  "$schema": "http://json-schema.org/draft-04/schema",
+
+  "title": "Input Parameters",
+  "properties": {
+    "image-to-test-url": {
+      "title": "Image To Test (URL)",
+      "description": "Absolute URL to QCOW2 vm-bootstrap compatible image.",
+      "type": "string"
+    },
+    "image-to-test-md5sum": {
+      "title": "MD5 checksum of Image To Test.",
+      "description": "MD5 checksum of QCOW2 vm-bootstrap compatible image.",
+      "type": "string"
+    },
+    "test-relative-directory": {
+      "title": "Relative directory where tests are found.",
+      "description": "The base of this directory is [slapos-package].",
+      "type": "string"
+    },
+    "test-type": {
+      "title": "Type of the test.",
+      "type": "string",
+      "default": "script-from-url",
+      "enum" : ["script-from-url", "cloned-playbook"]
+    },
+    "script-to-test-url": {
+      "title": "Optional URL of script to test, used for test-type=script-from-url.",
+      "description": "Optional URL of script to test, which will be injected into the VM.\nThis parameter will NOT use local git clone of [slapos-package] part, it will test fully provided script.",
+      "type": "string"
+    },
+    "yml-path-to-test": {
+      "title": "Optional YML path to test from the playbook, used for test-type=cloned-playbook.",
+      "description": "Optional YML path to test from the playbook, provided as relative path to playbook root.\nThis parameter will use local git clone of [slapos-package] part, from which playbook will be constructed.",
+      "type": "string"
+    }
+  },
+  "required": ["image-to-test-url", "image-to-test-md5sum", "test-type"]
+}
