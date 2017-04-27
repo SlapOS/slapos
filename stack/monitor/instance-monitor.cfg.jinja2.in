@@ -122,12 +122,16 @@ command =
     echo "20" > ${:file}
   fi
 
+[monitor-base-url-dict]
+# place holder to be used to collect erp5 monitor urls
+
 [monitor-conf]
 recipe = slapos.recipe.template:jinja2
 template = {{ monitor_conf_template }}
 rendered = ${directory:etc}/${:filename}
 filename = monitor.conf
 context = section parameter_dict monitor-conf-parameters
+          section monitor_base_urls monitor-base-url-dict
 
 [instance-info-parameters]
 name = ${monitor-instance-parameter:monitor-title}
