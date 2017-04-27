@@ -8,7 +8,7 @@
 {% set jupyter_dict = slapparameter_dict.get('jupyter', {}) -%}
 {% set has_jupyter = jupyter_dict.get('enable', jupyter_enable_default.lower() in ('true', 'yes')) -%}
 {% set jupyter_zope_family = jupyter_dict.get('zope-family', '') -%}
-{% set monitor_base_url_list = [] -%}
+{% set monitor_base_url_dict = {} -%}
 [request-common]
 <= request-common-base
 config-use-ipv6 = {{ dumps(slapparameter_dict.get('use-ipv6', False)) }}
@@ -26,7 +26,7 @@ return = {{ ' '.join(ret) }}
 {%     do publish_dict.__setitem__(name ~ '-' ~ ret, '${' ~ section ~ ':connection-' ~ ret ~ '}') %}
 {%   endif -%}
 {%   if ret == "monitor-base-url" -%}
-{%     do monitor_base_url_list.append('${' ~ section ~ ':connection-' ~ ret ~ '}') -%}
+{%     do monitor_base_url_dict.__setitem__(section, '${' ~ section ~ ':connection-' ~ ret ~ '}') -%}
 {%   endif -%}
 {% endfor -%}
 {{ root_common.sla(name) }}
@@ -182,7 +182,7 @@ software-type = zope
 [{{ section_name }}]
 <= request-zope-base
 name = {{ partition_name }}
-{% do monitor_base_url_list.append('${' ~ section_name ~ ':connection-monitor-base-url}') -%}
+{% do monitor_base_url_dict.__setitem__(section_name, '${' ~ section_name ~ ':connection-monitor-base-url}') -%}
 {{ root_common.sla(partition_name) }}
 config-name = {{ dumps(custom_name) }}
 config-instance-count = {{ dumps(zope_parameter_dict.get('instance-count', 1)) }}
@@ -247,7 +247,7 @@ return =
   {{ family }}
   {{ family }}-v6
 {% endfor -%}
-{% do monitor_base_url_list.append('${' ~ 'request-balancer' ~ ':connection-monitor-base-url}') -%}
+{% do monitor_base_url_dict.__setitem__('request-balancer', '${' ~ 'request-balancer' ~ ':connection-monitor-base-url}') -%}
 
 config-zope-family-dict = {{ dumps(zope_family_parameter_dict) }}
 config-tcpv4-port = {{ dumps(balancer_dict.get('tcpv4-port', 2150)) }}
@@ -283,6 +283,7 @@ return = site_url
 {% endif -%}{# if zope_partition_dict -#}
 
 [publish]
+<= monitor-publish
 recipe = slapos.cookbook:publish.serialised
 -extends = publish-early
 {% if 'neo' in storage_dict -%}
@@ -300,25 +301,16 @@ hosts-dict = {{ '${' ~ zope_address_list_id_dict.keys()[0] ~ ':connection-hosts-
 {{   name }} = {{ value }}
 {% endfor -%}
 
-[buildout]
-extends = {{ monitor_template }}
-parts +=
-  monitor-base
-
 [monitor-instance-parameter]
 monitor-httpd-port = 8386
 
 {{ root_common.common_section() }}
 
 [buildout]
-extends =
-  {{ template_monitor }}
+extends = {{ template_monitor }}
 
 parts +=
   monitor-base
-
-[publish-connection-information]
-<= monitor-publish
 
 [monitor-conf-parameters]
 monitor-title = ERP5 monitor
@@ -329,3 +321,7 @@ password = ${monitor-htpasswd:passwd}
 {{ key }} = {{ value }}
 {% endfor %}
 
+[monitor-base-url-dict]
+{% for key, value in monitor_base_url_dict.items() -%}
+{{ key }} = {{ value }}
+{% endfor %}

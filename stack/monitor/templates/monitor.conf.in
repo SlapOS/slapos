@@ -1,4 +1,11 @@
 [monitor]
 {% for key, value in parameter_dict.items() -%}
+{% if key == "monitor-url-list" and monitor_base_urls is defined -%}
+{{ key }} =
+{% for key, value in monitor_base_urls.items() -%}
+{{ '  ' ~ value }}
+{% endfor -%}
+{% else -%}
 {{ key }} = {{ value.strip().replace("\n", "\n  ") }}
+{% endif -%}
 {% endfor -%}
