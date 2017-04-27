@@ -8,7 +8,9 @@ portal.portal_catalog.searchAndActivate(
   left_join_list=select_dict.keys(),
 
   method_id='SoftwareInstance_tryToInvalidateIfDestroyed',
-  activate_kw={'tag': tag}
+  activate_kw={'tag': tag},
+  **{"slapos_item.slap_state": "destroy_requested"}
+
 )
 
 context.activate(after_tag=tag).getId()
