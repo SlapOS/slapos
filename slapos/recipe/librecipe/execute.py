@@ -22,8 +22,8 @@ def _wait_files_creation(file_list):
     watchdescriptors = dict()
     for dirname in directories.keys():
       wd = inotifyx.add_watch(fd,
-                              dirname,
-                              inotifyx.IN_CREATE | inotifyx.IN_DELETE)
+                      dirname,
+                      inotifyx.IN_CREATE | inotifyx.IN_DELETE | inotifyx.IN_MOVE)
       watchdescriptors[wd] = dirname
 
     # Set to True the file wich exists
