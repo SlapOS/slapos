@@ -74,7 +74,7 @@ def Facebook_getServerToken(self, key):
   return getServerToken(self, key, 'facebook_server_auth_token_cache_factory')
 
 def Facebook_getAccessTokenFromCode(self, code, redirect_uri):
-  return facebook.get_access_token_from_code(code=code,
+  return facebook.GraphAPI(version="2.7").get_access_token_from_code(code=code,
     redirect_uri=redirect_uri,
     app_id=self.portal_preferences.getPreferredVifibFacebookApplicationId(),
     app_secret=self.portal_preferences.getPreferredVifibFacebookApplicationSecret())
