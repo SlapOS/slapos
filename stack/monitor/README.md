@@ -26,7 +26,7 @@ Extend monitor template and a monitor-base to parts:
       ...
       monitor-base
 
-Override monitor configuration section to define your custom parameters.
+Override monitor configuration by adding monitor-instance-parameter section to define your custom parameters.
 
     [monitor-instance-parameter]
     monitor-title = ${slap-configuration:instance-title}
@@ -53,7 +53,7 @@ You don't need to define all parameters, you can only set what is required to be
 - root-instance-title: is the title of the hosting subscription.
 - monitor-httpd-ipv6: is the ipv6 of the computer partition.
 - monitor-httpd-port: the port to bind monitor httpd server on.
-- monitor-base-url: this url that will be used/showed in monitor interface. This url is present in some monitor generated output files. There can be two value, the default: ${monitor-frontend-promise:url} which access monitor httpd server through the frontend and ${monitor-httpd-conf-parameter:url} which is the url with ipv6 (https://[IPv6]:port/).
+- monitor-base-url: this url will be used/showed in monitor interface. This url is present in some monitor generated output files. There can be two value, the default: ${monitor-frontend-promise:url} which access monitor httpd server through the frontend and ${monitor-httpd-conf-parameter:url} which is the url with ipv6 (https://[IPv6]:port/).
 - monitor-url-list: set list of Monitor Base URL of monitor sub-instances, if this is the root instance with at least one child.
 - cors-domains: the domain used by the monitor web interface. The default is: monitor.app.officejs.com.
 - username: monitor username, this should be the same in all sub-instances. Default is: admin.
@@ -64,6 +64,18 @@ You don't need to define all parameters, you can only set what is required to be
   httpdcors CONFIG_KEY PATH_TO_HTTP_CORS_CFG_FILE PATH_HTTPD_GRACEFUL_WRAPPER => show/edit cors domain in monitor
 - configuration-file-path: path of knowledge0 cfg file where instance configuration will be written.
 - interface-url: The URL of monitor web interface. This URL will be present in generated JSON files.
+
+**Multiple Monitors**
+
+If you have sub-instances, you should collect the base monitor url from all instances with monitor and send it to monitor-url-list or you can override "monitor-base-url-dict" section and add all the urls as key/value pairs in the root instance.
+
+    [monitor-base-url-list]
+    monitor1-url = https://[xxxx:xxx:xxxx:e:11::1fb1]:4200 
+    monitor2-url = https://[xxxx:xxx:xxxx:e:22::2fb2]:4200 
+    ..
+    ..
+
+Also, All monitors of the sub instances need to have same password as the password of the root instance monitor.
 
 NB: You should use double $ (ex: $${monitor-template:rendered}) instead of one $ in your instance template file if it's not a jinja template. See:
 - Jinja template file exemple, use one $: https://lab.nexedi.com/nexedi/slapos/blob/master/software/slaprunner/instance-resilient-test.cfg.jinja2
@@ -187,13 +199,13 @@ MONITOR_BASE_URL/share is the webdav URL. public/ and private/ are linked to pub
 Access to Monitor
 -----------------
 
-In monitor instance.cfg file, the section [publish] contain information about monitor access.
+In monitor instance.cfg file, the section [monitor-publish-parameters] contain information about monitor access.
 Usefull information are monitor-base-url, monitor-url, monitor-user and monitor-password.
 
-- ${publish:monitor-base-url} is the url of monitor httpd server.
-- ${publish:monitor-base-url}/public/feed is the RSS url of this monitor instance.
-- ${publish:monitor-base-url}/public/feeds is the OPML URL of this monitor instance. To setup monitor instance in your monitoring interface, use OPML URL of the root instance. It should contain URL to others monitor instances.
-- ${publish:monitor-base-url}/private is the monitor private directory. Username and password are reqired to connect.
+- ${monitor-publish-parameters:monitor-base-url} is the url of monitor httpd server.
+- ${monitor-publish-parameters:monitor-base-url}/public/feed is the RSS url of this monitor instance.
+- ${monitor-publish-parameters:monitor-base-url}/public/feeds is the OPML URL of this monitor instance. To setup monitor instance in your monitoring interface, use OPML URL of the root instance. It should contain URL to others monitor instances.
+- ${monitor-publish-parameters:monitor-base-url}/private is the monitor private directory. Username and password are reqired to connect.
 
 The section [monitor-publish] contain parameters to publish with your instance connection information. It will publish "monitor-base-url" and
 "monitor-setup-url" which is used to configure your instance to monitor interface in one click.
