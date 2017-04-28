@@ -132,7 +132,7 @@ notifier-binary = ${buildout:bin-directory}/pubsubnotifier
 host = $${slap-network-information:global-ipv6}
 port = $${notifier-port:port}
 instance-root-name = $${instance-info-parameters:root-name}
-log-url = $${publish:monitor-base-url}/resilient/notifier-status-rss
+log-url = $${monitor-publish-parameters:monitor-base-url}/resilient/notifier-status-rss
 status-item-directory = $${directory:notifier-status-items}
 context =
   key content notifier:command

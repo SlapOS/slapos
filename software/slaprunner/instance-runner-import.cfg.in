@@ -110,7 +110,7 @@ recipe = collective.recipe.template
 input = inline: #!/bin/sh
   EXIT_CODE_FILE="$${importer:restore-exit-code-file}"
   RECENT_EXIT_CODE_FILE=$(find $${directory:srv} -maxdepth 1 -name "$${importer:restore-exit-code-file-basename}" -mtime -2)
-  RESILIENT_LOG_URL=$${publish:monitor-base-url}/log/$${importer:resilient-log-basename}
+  RESILIENT_LOG_URL=$${monitor-publish-parameters:monitor-base-url}/log/$${importer:resilient-log-basename}
   if [ ! -f "$EXIT_CODE_FILE" ]; then
     exit 0;
   else
@@ -149,7 +149,7 @@ mode = 755
 recipe = slapos.recipe.template
 url = ${template-resilient-software-release-information:destination}/${template-resilient-software-release-information:filename}
 output = $${directory:cgi-bin}/resilient_software_release_information.py
-resilient-log-url = $${publish:monitor-base-url}/log/$${importer:resilient-log-basename}
+resilient-log-url = $${monitor-publish-parameters:monitor-base-url}/log/$${importer:resilient-log-basename}
 mode = 0600
 
 [slap-parameter]
@@ -161,10 +161,10 @@ monitor-username = $${monitor-htpasswd:username}
 monitor-password = $${monitor-htpasswd:passwd}
 
 [resilient-publish-connection-parameter]
-monitor-base-url = $${publish:monitor-base-url}
-monitor-url = $${publish:monitor-url}
-monitor-user = $${publish:monitor-user}
-monitor-password = $${publish:monitor-password}
+monitor-base-url = $${monitor-publish-parameters:monitor-base-url}
+monitor-url = $${monitor-publish-parameters:monitor-url}
+monitor-user = $${monitor-publish-parameters:monitor-user}
+monitor-password = $${monitor-publish-parameters:monitor-password}
 
 [monitor-instance-parameter]
 monitor-httpd-port = 8360

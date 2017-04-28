@@ -13,10 +13,10 @@ extends =
   {{ pbsready_import_template }}
 
 [resilient-publish-connection-parameter]
-monitor-base-url = ${publish:monitor-base-url}
-monitor-url = ${publish:monitor-url}
-monitor-user = ${publish:monitor-user}
-monitor-password = ${publish:monitor-password}
+monitor-base-url = ${monitor-publish-parameters:monitor-base-url}
+monitor-url = ${monitor-publish-parameters:monitor-url}
+monitor-user = ${monitor-publish-parameters:monitor-user}
+monitor-password = ${monitor-publish-parameters:monitor-password}
 
 [monitor-instance-parameter]
 monitor-httpd-port = 8276
