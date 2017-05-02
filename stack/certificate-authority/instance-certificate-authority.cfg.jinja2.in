@@ -8,8 +8,8 @@ parts =
   certificate-authority-server
 
 [certificate-authority-parameters]
-server-port = 8009
-server-https-port = 8010
+server-port = ${slap-configuration:configuration.ca-server-port}
+server-https-port = ${slap-configuration:configuration.ca-server-https-port}
 # Overrite this to set frontend or DNS URL (URL is used as CRL distribution point)
 # Please set http not HTTPS scheme
 crl-external-url = http://[${slap-configuration:ipv6-random}]:${:server-port}
@@ -80,11 +80,11 @@ command-line =
 recipe = plone.recipe.command
 command = 
   if [ -s "${:key}" ] && [ -s "${:cert}" ]; then
-    cat << EOF > ${:output}
-    [ca-nginx-ssl]
-    key=${:key}
-    cert=${:cert}
-    EOF
+  cat << EOF > ${:output}
+  [ca-nginx-ssl]
+  key=${:key}
+  cert=${:cert}
+  EOF
   fi
 key = ${directory:ssl}/ca-cert.key
 cert = ${directory:ssl}/ca-cert.crt
@@ -133,17 +133,17 @@ input = inline:
   # enable debug
   # debug
   # log-file ${directory:log}/ca-server.log
-  subject /C=XX/ST=State/L=City/OU=OUnit/O=Company/CN=SlapOS Certificate Authority/emailAddress=xx@example.com
-  max-request-amount 10
+  subject ${slap-configuration:configuration.ca-subject}
+  max-request-amount ${slap-configuration:configuration.max-request-amount}
   external-url ${certificate-authority-parameters:crl-external-url}
   # one year (in seconds)
-  crt-life-time 31536000
+  crt-life-time ${slap-configuration:configuration.crt-life-time}
   # crl-life-period correspond to about one week
-  crl-life-period 0.02
+  crl-life-period ${slap-configuration:configuration.crl-life-period}
   # ca-life-time = ca-life-period * crt-life-time
-  ca-life-period 10
+  ca-life-period ${slap-configuration:configuration.ca-life-period}
   # time before clean certificate on CA: 60*24*60*60
-  crt-keep-time 5184000
+  crt-keep-time ${slap-configuration:configuration.crt-keep-time}
 
 output = ${directory:etc}/ca.conf
 mode = 700
@@ -239,3 +239,17 @@ partition = ${slap-connection:partition-id}
 url = ${slap-connection:server-url}
 key = ${slap-connection:key-file}
 cert = ${slap-connection:cert-file}
+
+configuration.ca-server-port = 8009
+configuration.ca-server-https-port = 8010
+# /CN=XXX is required
+configuration.ca-subject = /C=Country/ST=State/L=City/OU=O-Unit/O=Company/CN=SlapOS Certificate Authority/emailAddress=xx@example.com
+configuration.max-request-amount = 10
+# one year (in seconds)
+configuration.crt-life-time = 31536000
+# crl-life-period correspond to about one week
+configuration.crl-life-period = 0.02
+# ca-life-period = ca-life-period * crt-life-time
+configuration.ca-life-period = 10
+# time before clean certificate on CA: 60*24*60*60
+configuration.crt-keep-time = 5184000
