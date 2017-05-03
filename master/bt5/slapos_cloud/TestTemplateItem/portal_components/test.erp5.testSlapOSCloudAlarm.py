@@ -741,12 +741,24 @@ portal_workflow.doActionFor(context, action='edit_action', comment='Visited by S
     self.portal.portal_workflow._jumpToStateFor(software_instance2, 'start_requested')
     software_instance2.validate()
     self.tic()
-    
+
+    self.assertEqual(None,
+      self.software_instance.getAggregateValue(portal_type='Computer Partition'))
+
+    self.assertEqual(self.software_instance.getSlapState(), 'start_requested')
+    self.assertEqual(self.software_instance.getValidationState(), 'validated')
 
     self.software_instance.setSlaXml(sla_xml)
     self.software_instance.SoftwareInstance_tryToAllocatePartition()
-    
+
     self.tic()
+    portal_workflow = self.software_instance.portal_workflow
+    last_workflow_item = portal_workflow.getInfoFor(ob=self.software_instance,
+                                          name='comment', wf_id='edit_workflow')
+    self.assertEqual(None,last_workflow_item)
+    self.assertNotEqual(None,
+      self.software_instance.getAggregateValue(portal_type='Computer Partition'))
+
     self.assertEqual(
         computer_network.getReference(),
         self.software_instance.getAggregateValue(portal_type='Computer Partition')\
@@ -947,9 +959,23 @@ portal_workflow.doActionFor(context, action='edit_action', comment='Visited by S
     software_instance2.validate()
     self.tic()
 
+    self.assertEqual(None,
+      self.software_instance.getAggregateValue(portal_type='Computer Partition'))
+
+    self.assertEqual(self.software_instance.getSlapState(), 'start_requested')
+    self.assertEqual(self.software_instance.getValidationState(), 'validated')
+
     self.software_instance.setSlaXml(sla_xml)
     self.software_instance.SoftwareInstance_tryToAllocatePartition()
     software_instance2.SoftwareInstance_tryToAllocatePartition()
+
+    portal_workflow = self.software_instance.portal_workflow
+    last_workflow_item = portal_workflow.getInfoFor(ob=self.software_instance,
+                                          name='comment', wf_id='edit_workflow')
+    self.assertEqual(None,last_workflow_item)
+    self.assertNotEqual(None,
+      self.software_instance.getAggregateValue(portal_type='Computer Partition'))
+
     # First is deployed
     self.assertEqual(
         computer_network.getReference(),
