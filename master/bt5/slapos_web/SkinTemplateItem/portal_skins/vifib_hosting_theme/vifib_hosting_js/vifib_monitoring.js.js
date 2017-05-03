@@ -104,7 +104,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
         // $(this).attr("class", "monitoring_failed");
         var context = $(this);
         if (jqXHR.status === 404) {
-          context.remove()
+          context.remove();
         } else {
           $(this).attr("class", "monitoring_failed")
                  .attr("title", "Unable to fetch content");
