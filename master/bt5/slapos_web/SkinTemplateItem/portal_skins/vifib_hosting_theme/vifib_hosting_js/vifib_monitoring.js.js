@@ -78,15 +78,15 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
           now = new Date(),
           context = $(this);
         // 5 minute for computer. 1 day for instance.
-        if (/#access/.test(data.text) & /computer_module/.test(data['@document']) & (now - created_at < 300000)) {
+        if (/#access/.test(data.text) & (/computer_module/.test(data['@document'])) & (now - created_at < 300000)) {
           $(this).attr("class", "monitoring_ok")
                  .attr("title", data.text + " (" + created_at + ")" )
                  .attr("href", data['@document']);
-        } else if (/#access/.test(data.text) & /software_instance_module/.test(data['@document']) & (now - created_at < 86400000)) {
+        } else if (/#access/.test(data.text) & (/software_instance_module/.test(data['@document'])) & (now - created_at < 86400000)) {
           $(this).attr("class", "monitoring_ok")
                  .attr("title", data.text + " (" + created_at + ")" )
                  .attr("href", data['@document']);
-        } else if (/#access/.test(data.text) & /software_installation_module/.test(data['@document']) & (now - created_at < 86400000)) {
+        } else if (/#access/.test(data.text) & (/software_installation_module/.test(data['@document'])) & (now - created_at < 86400000)) {
           $(this).attr("class", "monitoring_ok")
                  .attr("title", data.text + " (" + created_at + ")" )
                  .attr("href", data['@document']);
@@ -133,7 +133,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
           var status_url = result_list[i],
             status_id,
             status_context;
-          status_id = encodeURIComponent(Base61.encode(status_url)),
+          status_id = encodeURIComponent(Base61.encode(status_url));
           status_context = $(this).find('#' + status_id);
           if (!status_context[0]) {
             status_context = $(this).append('<li><a class="check_monitoring" id="' + status_id + '" data-url="' + encodeURIComponent(status_url) + '"></a></li>')

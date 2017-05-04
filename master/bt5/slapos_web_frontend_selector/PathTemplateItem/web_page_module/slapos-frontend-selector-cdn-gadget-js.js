@@ -45,7 +45,7 @@
         if (e.target.status >= 400) {
           return reject(e);
         }
-        resolve(e);
+        return resolve(e);
       });
       xhr.addEventListener("error", reject);
       xhr.addEventListener("progress", notify);
