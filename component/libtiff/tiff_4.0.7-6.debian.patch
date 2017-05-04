@@ -1156,3 +1156,765 @@ index bdf754c..8bbcd52 100644
  	if (shortv != config && bitspersample != 8 && samplesperpixel > 1) {
  		fprintf(stderr,
  		    "%s: Cannot handle different planar configuration w/ bits/sample != 8\n",
+From 47f2fb61a3a64667bce1a8398a8fcb1b348ff122 Mon Sep 17 00:00:00 2001
+From: erouault <erouault>
+Date: Wed, 11 Jan 2017 12:15:01 +0000
+Subject: [PATCH] * libtiff/tif_jpeg.c: avoid integer division by zero in
+ JPEGSetupEncode() when horizontal or vertical sampling is set to 0. Fixes
+ http://bugzilla.maptools.org/show_bug.cgi?id=2653
+
+---
+ ChangeLog          | 6 ++++++
+ libtiff/tif_jpeg.c | 7 +++++++
+ 2 files changed, 13 insertions(+)
+
+diff --git a/ChangeLog b/ChangeLog
+index c82bc76..a7208f5 100644
+--- a/ChangeLog
++++ b/ChangeLog
+@@ -1,5 +1,11 @@
+ 2017-01-11 Even Rouault <even.rouault at spatialys.com>
+ 
++	* libtiff/tif_jpeg.c: avoid integer division by zero in
++	JPEGSetupEncode() when horizontal or vertical sampling is set to 0.
++	Fixes http://bugzilla.maptools.org/show_bug.cgi?id=2653
++
++2017-01-11 Even Rouault <even.rouault at spatialys.com>
++
+ 	* tools/tiffcp.c: error out cleanly in cpContig2SeparateByRow and
+ 	cpSeparate2ContigByRow if BitsPerSample != 8 to avoid heap based overflow.
+ 	Fixes http://bugzilla.maptools.org/show_bug.cgi?id=2656 and
+diff --git a/libtiff/tif_jpeg.c b/libtiff/tif_jpeg.c
+index 38595f9..6c17c38 100644
+--- a/libtiff/tif_jpeg.c
++++ b/libtiff/tif_jpeg.c
+@@ -1626,6 +1626,13 @@ JPEGSetupEncode(TIFF* tif)
+ 	case PHOTOMETRIC_YCBCR:
+ 		sp->h_sampling = td->td_ycbcrsubsampling[0];
+ 		sp->v_sampling = td->td_ycbcrsubsampling[1];
++                if( sp->h_sampling == 0 || sp->v_sampling == 0 )
++                {
++                    TIFFErrorExt(tif->tif_clientdata, module,
++                            "Invalig horizontal/vertical sampling value");
++                    return (0);
++                }
++
+ 		/*
+ 		 * A ReferenceBlackWhite field *must* be present since the
+ 		 * default value is inappropriate for YCbCr.  Fill in the
+From 3cfd62d77c2a7e147a05bd678524c345fa9c2bb8 Mon Sep 17 00:00:00 2001
+From: erouault <erouault>
+Date: Wed, 11 Jan 2017 13:28:01 +0000
+Subject: [PATCH] * libtiff/tif_dirread.c: avoid division by floating point 0
+ in TIFFReadDirEntryCheckedRational() and TIFFReadDirEntryCheckedSrational(),
+ and return 0 in that case (instead of infinity as before presumably)
+ Apparently some sanitizers do not like those divisions by zero. Fixes
+ http://bugzilla.maptools.org/show_bug.cgi?id=2644
+
+---
+ ChangeLog             |  8 ++++++++
+ libtiff/tif_dirread.c | 10 ++++++++--
+ 2 files changed, 16 insertions(+), 2 deletions(-)
+
+diff --git a/ChangeLog b/ChangeLog
+index 6a752cd..722a405 100644
+--- a/ChangeLog
++++ b/ChangeLog
+@@ -1,5 +1,13 @@
+ 2017-01-11 Even Rouault <even.rouault at spatialys.com>
+ 
++	* libtiff/tif_dirread.c: avoid division by floating point 0 in
++	TIFFReadDirEntryCheckedRational() and TIFFReadDirEntryCheckedSrational(),
++	and return 0 in that case (instead of infinity as before presumably)
++	Apparently some sanitizers do not like those divisions by zero.
++	Fixes http://bugzilla.maptools.org/show_bug.cgi?id=2644
++
++2017-01-11 Even Rouault <even.rouault at spatialys.com>
++
+ 	* libtiff/tif_jpeg.c: avoid integer division by zero in
+ 	JPEGSetupEncode() when horizontal or vertical sampling is set to 0.
+ 	Fixes http://bugzilla.maptools.org/show_bug.cgi?id=2653
+diff --git a/libtiff/tif_dirread.c b/libtiff/tif_dirread.c
+index 570d0c3..8a1e42a 100644
+--- a/libtiff/tif_dirread.c
++++ b/libtiff/tif_dirread.c
+@@ -2872,7 +2872,10 @@ static enum TIFFReadDirEntryErr TIFFReadDirEntryCheckedRational(TIFF* tif, TIFFD
+ 		m.l = direntry->tdir_offset.toff_long8;
+ 	if (tif->tif_flags&TIFF_SWAB)
+ 		TIFFSwabArrayOfLong(m.i,2);
+-	if (m.i[0]==0)
++        /* Not completely sure what we should do when m.i[1]==0, but some */
++        /* sanitizers do not like division by 0.0: */
++        /* http://bugzilla.maptools.org/show_bug.cgi?id=2644 */
++	if (m.i[0]==0 || m.i[1]==0)
+ 		*value=0.0;
+ 	else
+ 		*value=(double)m.i[0]/(double)m.i[1];
+@@ -2900,7 +2903,10 @@ static enum TIFFReadDirEntryErr TIFFReadDirEntryCheckedSrational(TIFF* tif, TIFF
+ 		m.l=direntry->tdir_offset.toff_long8;
+ 	if (tif->tif_flags&TIFF_SWAB)
+ 		TIFFSwabArrayOfLong(m.i,2);
+-	if ((int32)m.i[0]==0)
++        /* Not completely sure what we should do when m.i[1]==0, but some */
++        /* sanitizers do not like division by 0.0: */
++        /* http://bugzilla.maptools.org/show_bug.cgi?id=2644 */
++	if ((int32)m.i[0]==0 || m.i[1]==0)
+ 		*value=0.0;
+ 	else
+ 		*value=(double)((int32)m.i[0])/(double)m.i[1];
+From 3144e57770c1e4d26520d8abee750f8ac8b75490 Mon Sep 17 00:00:00 2001
+From: erouault <erouault>
+Date: Wed, 11 Jan 2017 16:09:02 +0000
+Subject: [PATCH] * libtiff/tif_dir.c, tif_dirread.c, tif_dirwrite.c: implement
+ various clampings of double to other data types to avoid undefined behaviour
+ if the output range isn't big enough to hold the input value. Fixes
+ http://bugzilla.maptools.org/show_bug.cgi?id=2643
+ http://bugzilla.maptools.org/show_bug.cgi?id=2642
+ http://bugzilla.maptools.org/show_bug.cgi?id=2646
+ http://bugzilla.maptools.org/show_bug.cgi?id=2647
+
+---
+ ChangeLog              | 10 ++++++
+ libtiff/tif_dir.c      | 18 +++++++---
+ libtiff/tif_dirread.c  | 10 +++++-
+ libtiff/tif_dirwrite.c | 90 ++++++++++++++++++++++++++++++++++++++++++++------
+ 4 files changed, 113 insertions(+), 15 deletions(-)
+
+diff --git a/ChangeLog b/ChangeLog
+index 722a405..6517640 100644
+--- a/ChangeLog
++++ b/ChangeLog
+@@ -1,5 +1,15 @@
+ 2017-01-11 Even Rouault <even.rouault at spatialys.com>
+ 
++	* libtiff/tif_dir.c, tif_dirread.c, tif_dirwrite.c: implement various clampings
++	of double to other data types to avoid undefined behaviour if the output range
++	isn't big enough to hold the input value.
++	Fixes http://bugzilla.maptools.org/show_bug.cgi?id=2643
++	http://bugzilla.maptools.org/show_bug.cgi?id=2642
++	http://bugzilla.maptools.org/show_bug.cgi?id=2646
++	http://bugzilla.maptools.org/show_bug.cgi?id=2647
++
++2017-01-11 Even Rouault <even.rouault at spatialys.com>
++
+ 	* libtiff/tif_dirread.c: avoid division by floating point 0 in
+ 	TIFFReadDirEntryCheckedRational() and TIFFReadDirEntryCheckedSrational(),
+ 	and return 0 in that case (instead of infinity as before presumably)
+diff --git a/libtiff/tif_dir.c b/libtiff/tif_dir.c
+index 68a55af..a04d28f 100644
+--- a/libtiff/tif_dir.c
++++ b/libtiff/tif_dir.c
+@@ -31,6 +31,7 @@
+  * (and also some miscellaneous stuff)
+  */
+ #include "tiffiop.h"
++#include <float.h>
+ 
+ /*
+  * These are used in the backwards compatibility code...
+@@ -154,6 +155,15 @@ checkInkNamesString(TIFF* tif, uint32 slen, const char* s)
+ 	return (0);
+ }
+ 
++static float TIFFClampDoubleToFloat( double val )
++{
++    if( val > FLT_MAX )
++        return FLT_MAX;
++    if( val < -FLT_MAX )
++        return -FLT_MAX;
++    return (float)val;
++}
++
+ static int
+ _TIFFVSetField(TIFF* tif, uint32 tag, va_list ap)
+ {
+@@ -312,13 +322,13 @@ _TIFFVSetField(TIFF* tif, uint32 tag, va_list ap)
+         dblval = va_arg(ap, double);
+         if( dblval < 0 )
+             goto badvaluedouble;
+-		td->td_xresolution = (float) dblval;
++		td->td_xresolution = TIFFClampDoubleToFloat( dblval );
+ 		break;
+ 	case TIFFTAG_YRESOLUTION:
+         dblval = va_arg(ap, double);
+         if( dblval < 0 )
+             goto badvaluedouble;
+-		td->td_yresolution = (float) dblval;
++		td->td_yresolution = TIFFClampDoubleToFloat( dblval );
+ 		break;
+ 	case TIFFTAG_PLANARCONFIG:
+ 		v = (uint16) va_arg(ap, uint16_vap);
+@@ -327,10 +337,10 @@ _TIFFVSetField(TIFF* tif, uint32 tag, va_list ap)
+ 		td->td_planarconfig = (uint16) v;
+ 		break;
+ 	case TIFFTAG_XPOSITION:
+-		td->td_xposition = (float) va_arg(ap, double);
++		td->td_xposition = TIFFClampDoubleToFloat( va_arg(ap, double) );
+ 		break;
+ 	case TIFFTAG_YPOSITION:
+-		td->td_yposition = (float) va_arg(ap, double);
++		td->td_yposition = TIFFClampDoubleToFloat( va_arg(ap, double) );
+ 		break;
+ 	case TIFFTAG_RESOLUTIONUNIT:
+ 		v = (uint16) va_arg(ap, uint16_vap);
+diff --git a/libtiff/tif_dirread.c b/libtiff/tif_dirread.c
+index 8a1e42a..77b0f37 100644
+--- a/libtiff/tif_dirread.c
++++ b/libtiff/tif_dirread.c
+@@ -40,6 +40,7 @@
+  */
+ 
+ #include "tiffiop.h"
++#include <float.h>
+ 
+ #define IGNORE 0          /* tag placeholder used below */
+ #define FAILED_FII    ((uint32) -1)
+@@ -2406,7 +2407,14 @@ static enum TIFFReadDirEntryErr TIFFReadDirEntryFloatArray(TIFF* tif, TIFFDirEnt
+ 				ma=(double*)origdata;
+ 				mb=data;
+ 				for (n=0; n<count; n++)
+-					*mb++=(float)(*ma++);
++                                {
++                                    double val = *ma++;
++                                    if( val > FLT_MAX )
++                                        val = FLT_MAX;
++                                    else if( val < -FLT_MAX )
++                                        val = -FLT_MAX;
++                                    *mb++=(float)val;
++                                }
+ 			}
+ 			break;
+ 	}
+diff --git a/libtiff/tif_dirwrite.c b/libtiff/tif_dirwrite.c
+index c9e871b..2967da5 100644
+--- a/libtiff/tif_dirwrite.c
++++ b/libtiff/tif_dirwrite.c
+@@ -30,6 +30,7 @@
+  * Directory Write Support Routines.
+  */
+ #include "tiffiop.h"
++#include <float.h>
+ 
+ #ifdef HAVE_IEEEFP
+ #define TIFFCvtNativeToIEEEFloat(tif, n, fp)
+@@ -939,6 +940,69 @@ TIFFWriteDirectorySec(TIFF* tif, int isimage, int imagedone, uint64* pdiroff)
+ 	return(0);
+ }
+ 
++static float TIFFClampDoubleToFloat( double val )
++{
++    if( val > FLT_MAX )
++        return FLT_MAX;
++    if( val < -FLT_MAX )
++        return -FLT_MAX;
++    return (float)val;
++}
++
++static int8 TIFFClampDoubleToInt8( double val )
++{
++    if( val > 127 )
++        return 127;
++    if( val < -128 || val != val )
++        return -128;
++    return (int8)val;
++}
++
++static int16 TIFFClampDoubleToInt16( double val )
++{
++    if( val > 32767 )
++        return 32767;
++    if( val < -32768 || val != val )
++        return -32768;
++    return (int16)val;
++}
++
++static int32 TIFFClampDoubleToInt32( double val )
++{
++    if( val > 0x7FFFFFFF )
++        return 0x7FFFFFFF;
++    if( val < -0x7FFFFFFF-1 || val != val )
++        return -0x7FFFFFFF-1;
++    return (int32)val;
++}
++
++static uint8 TIFFClampDoubleToUInt8( double val )
++{
++    if( val < 0 )
++        return 0;
++    if( val > 255 || val != val )
++        return 255;
++    return (uint8)val;
++}
++
++static uint16 TIFFClampDoubleToUInt16( double val )
++{
++    if( val < 0 )
++        return 0;
++    if( val > 65535 || val != val )
++        return 65535;
++    return (uint16)val;
++}
++
++static uint32 TIFFClampDoubleToUInt32( double val )
++{
++    if( val < 0 )
++        return 0;
++    if( val > 0xFFFFFFFFU || val != val )
++        return 0xFFFFFFFFU;
++    return (uint32)val;
++}
++
+ static int
+ TIFFWriteDirectoryTagSampleformatArray(TIFF* tif, uint32* ndir, TIFFDirEntry* dir, uint16 tag, uint32 count, double* value)
+ {
+@@ -959,7 +1023,7 @@ TIFFWriteDirectoryTagSampleformatArray(TIFF* tif, uint32* ndir, TIFFDirEntry* di
+ 			if (tif->tif_dir.td_bitspersample<=32)
+ 			{
+ 				for (i = 0; i < count; ++i)
+-					((float*)conv)[i] = (float)value[i];
++					((float*)conv)[i] = TIFFClampDoubleToFloat(value[i]);
+ 				ok = TIFFWriteDirectoryTagFloatArray(tif,ndir,dir,tag,count,(float*)conv);
+ 			}
+ 			else
+@@ -971,19 +1035,19 @@ TIFFWriteDirectoryTagSampleformatArray(TIFF* tif, uint32* ndir, TIFFDirEntry* di
+ 			if (tif->tif_dir.td_bitspersample<=8)
+ 			{
+ 				for (i = 0; i < count; ++i)
+-					((int8*)conv)[i] = (int8)value[i];
++					((int8*)conv)[i] = TIFFClampDoubleToInt8(value[i]);
+ 				ok = TIFFWriteDirectoryTagSbyteArray(tif,ndir,dir,tag,count,(int8*)conv);
+ 			}
+ 			else if (tif->tif_dir.td_bitspersample<=16)
+ 			{
+ 				for (i = 0; i < count; ++i)
+-					((int16*)conv)[i] = (int16)value[i];
++					((int16*)conv)[i] = TIFFClampDoubleToInt16(value[i]);
+ 				ok = TIFFWriteDirectoryTagSshortArray(tif,ndir,dir,tag,count,(int16*)conv);
+ 			}
+ 			else
+ 			{
+ 				for (i = 0; i < count; ++i)
+-					((int32*)conv)[i] = (int32)value[i];
++					((int32*)conv)[i] = TIFFClampDoubleToInt32(value[i]);
+ 				ok = TIFFWriteDirectoryTagSlongArray(tif,ndir,dir,tag,count,(int32*)conv);
+ 			}
+ 			break;
+@@ -991,19 +1055,19 @@ TIFFWriteDirectoryTagSampleformatArray(TIFF* tif, uint32* ndir, TIFFDirEntry* di
+ 			if (tif->tif_dir.td_bitspersample<=8)
+ 			{
+ 				for (i = 0; i < count; ++i)
+-					((uint8*)conv)[i] = (uint8)value[i];
++					((uint8*)conv)[i] = TIFFClampDoubleToUInt8(value[i]);
+ 				ok = TIFFWriteDirectoryTagByteArray(tif,ndir,dir,tag,count,(uint8*)conv);
+ 			}
+ 			else if (tif->tif_dir.td_bitspersample<=16)
+ 			{
+ 				for (i = 0; i < count; ++i)
+-					((uint16*)conv)[i] = (uint16)value[i];
++					((uint16*)conv)[i] = TIFFClampDoubleToUInt16(value[i]);
+ 				ok = TIFFWriteDirectoryTagShortArray(tif,ndir,dir,tag,count,(uint16*)conv);
+ 			}
+ 			else
+ 			{
+ 				for (i = 0; i < count; ++i)
+-					((uint32*)conv)[i] = (uint32)value[i];
++					((uint32*)conv)[i] = TIFFClampDoubleToUInt32(value[i]);
+ 				ok = TIFFWriteDirectoryTagLongArray(tif,ndir,dir,tag,count,(uint32*)conv);
+ 			}
+ 			break;
+@@ -2094,6 +2094,7 @@ TIFFWriteDirectoryTagCheckedSlong8Array(
+ static int
+ TIFFWriteDirectoryTagCheckedRational(TIFF* tif, uint32* ndir, TIFFDirEntry* dir, uint16 tag, double value)
+ {
++	static const char module[] = "TIFFWriteDirectoryTagCheckedRational";
+ 	uint32 m[2];
+ 	assert(value>=0.0);
+ 	assert(sizeof(uint32)==4);
+@@ -2102,7 +2102,12 @@ TIFFWriteDirectoryTagCheckedRational(TIF
+ 		m[0]=0;
+ 		m[1]=1;
+ 	}
+-	else if (value==(double)(uint32)value)
++	else if( value != value )
++	{
++		TIFFErrorExt(tif->tif_clientdata,module,"Not-a-number value is illegal");
++		return 0;
++	}
++	else if (value <= 0xFFFFFFFFU && value==(double)(uint32)value)
+ 	{
+ 		m[0]=(uint32)value;
+ 		m[1]=1;
+@@ -2143,12 +2212,13 @@ TIFFWriteDirectoryTagCheckedRationalArray(TIFF* tif, uint32* ndir, TIFFDirEntry*
+ 	}
+ 	for (na=value, nb=m, nc=0; nc<count; na++, nb+=2, nc++)
+ 	{
+-		if (*na<=0.0)
++		if (*na<=0.0 || *na != *na)
+ 		{
+ 			nb[0]=0;
+ 			nb[1]=1;
+ 		}
+-		else if (*na==(float)(uint32)(*na))
++		else if (*na >= 0 && *na <= (float)0xFFFFFFFFU &&
++                         *na==(float)(uint32)(*na))
+ 		{
+ 			nb[0]=(uint32)(*na);
+ 			nb[1]=1;
+From 0a76a8c765c7b8327c59646284fa78c3c27e5490 Mon Sep 17 00:00:00 2001
+From: erouault <erouault>
+Date: Wed, 11 Jan 2017 16:13:50 +0000
+Subject: [PATCH] * libtiff/tif_jpeg.c: validate BitsPerSample in
+ JPEGSetupEncode() to avoid undefined behaviour caused by invalid shift
+ exponent. Fixes http://bugzilla.maptools.org/show_bug.cgi?id=2648
+
+---
+ ChangeLog          | 6 ++++++
+ libtiff/tif_jpeg.c | 7 +++++++
+ 2 files changed, 13 insertions(+)
+
+diff --git a/ChangeLog b/ChangeLog
+index 6517640..8e202a2 100644
+--- a/ChangeLog
++++ b/ChangeLog
+@@ -1,5 +1,11 @@
+ 2017-01-11 Even Rouault <even.rouault at spatialys.com>
+ 
++	* libtiff/tif_jpeg.c: validate BitsPerSample in JPEGSetupEncode() to avoid
++	undefined behaviour caused by invalid shift exponent.
++	Fixes http://bugzilla.maptools.org/show_bug.cgi?id=2648
++
++2017-01-11 Even Rouault <even.rouault at spatialys.com>
++
+ 	* libtiff/tif_dir.c, tif_dirread.c, tif_dirwrite.c: implement various clampings
+ 	of double to other data types to avoid undefined behaviour if the output range
+ 	isn't big enough to hold the input value.
+diff --git a/libtiff/tif_jpeg.c b/libtiff/tif_jpeg.c
+index 6c17c38..192989a 100644
+--- a/libtiff/tif_jpeg.c
++++ b/libtiff/tif_jpeg.c
+@@ -1632,6 +1632,13 @@ JPEGSetupEncode(TIFF* tif)
+                             "Invalig horizontal/vertical sampling value");
+                     return (0);
+                 }
++                if( td->td_bitspersample > 16 )
++                {
++                    TIFFErrorExt(tif->tif_clientdata, module,
++                                 "BitsPerSample %d not allowed for JPEG",
++                                 td->td_bitspersample);
++                    return (0);
++                }
+ 
+ 		/*
+ 		 * A ReferenceBlackWhite field *must* be present since the
+From 66e7bd59520996740e4df5495a830b42fae48bc4 Mon Sep 17 00:00:00 2001
+From: erouault <erouault>
+Date: Wed, 11 Jan 2017 16:33:34 +0000
+Subject: [PATCH] * libtiff/tif_read.c: avoid potential undefined behaviour on
+ signed integer addition in TIFFReadRawStrip1() in isMapped() case. Fixes
+ http://bugzilla.maptools.org/show_bug.cgi?id=2650
+
+---
+ ChangeLog          |  6 ++++++
+ libtiff/tif_read.c | 27 ++++++++++++++++++---------
+ 2 files changed, 24 insertions(+), 9 deletions(-)
+
+diff --git a/ChangeLog b/ChangeLog
+index 8e202a2..3e31464 100644
+--- a/ChangeLog
++++ b/ChangeLog
+@@ -1,5 +1,11 @@
+ 2017-01-11 Even Rouault <even.rouault at spatialys.com>
+ 
++	* libtiff/tif_read.c: avoid potential undefined behaviour on signed integer
++	addition in TIFFReadRawStrip1() in isMapped() case.
++	Fixes http://bugzilla.maptools.org/show_bug.cgi?id=2650
++
++2017-01-11 Even Rouault <even.rouault at spatialys.com>
++
+ 	* libtiff/tif_jpeg.c: validate BitsPerSample in JPEGSetupEncode() to avoid
+ 	undefined behaviour caused by invalid shift exponent.
+ 	Fixes http://bugzilla.maptools.org/show_bug.cgi?id=2648
+diff --git a/libtiff/tif_read.c b/libtiff/tif_read.c
+index 52bbf50..b7aacbd 100644
+--- a/libtiff/tif_read.c
++++ b/libtiff/tif_read.c
+@@ -420,16 +420,25 @@ TIFFReadRawStrip1(TIFF* tif, uint32 strip, void* buf, tmsize_t size,
+ 			return ((tmsize_t)(-1));
+ 		}
+ 	} else {
+-		tmsize_t ma,mb;
++		tmsize_t ma;
+ 		tmsize_t n;
+-		ma=(tmsize_t)td->td_stripoffset[strip];
+-		mb=ma+size;
+-		if ((td->td_stripoffset[strip] > (uint64)TIFF_TMSIZE_T_MAX)||(ma>tif->tif_size))
+-			n=0;
+-		else if ((mb<ma)||(mb<size)||(mb>tif->tif_size))
+-			n=tif->tif_size-ma;
+-		else
+-			n=size;
++		if ((td->td_stripoffset[strip] > (uint64)TIFF_TMSIZE_T_MAX)||
++                    ((ma=(tmsize_t)td->td_stripoffset[strip])>tif->tif_size))
++                {
++                    n=0;
++                }
++                else if( ma > TIFF_TMSIZE_T_MAX - size )
++                {
++                    n=0;
++                }
++                else
++                {
++                    tmsize_t mb=ma+size;
++                    if (mb>tif->tif_size)
++                            n=tif->tif_size-ma;
++                    else
++                            n=size;
++                }
+ 		if (n!=size) {
+ #if defined(__WIN32__) && (defined(_MSC_VER) || defined(__MINGW32__))
+ 			TIFFErrorExt(tif->tif_clientdata, module,
+From 48780b4fcc425cddc4ef8ffdf536f96a0d1b313b Mon Sep 17 00:00:00 2001
+From: erouault <erouault>
+Date: Wed, 11 Jan 2017 16:38:26 +0000
+Subject: [PATCH] =?UTF-8?q?*=20libtiff/tif=5Fgetimage.c:=20add=20explicit?=
+ =?UTF-8?q?=20uint32=20cast=20in=20putagreytile=20to=20avoid=20UndefinedBe?=
+ =?UTF-8?q?haviorSanitizer=20warning.=20Patch=20by=20Nicol=C3=A1s=20Pe?=
+ =?UTF-8?q?=C3=B1a.=20Fixes=20http://bugzilla.maptools.org/show=5Fbug.cgi?=
+ =?UTF-8?q?=3Fid=3D2658?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+---
+ ChangeLog              | 7 +++++++
+ libtiff/tif_getimage.c | 2 +-
+ 2 files changed, 8 insertions(+), 1 deletion(-)
+
+diff --git a/ChangeLog b/ChangeLog
+index 3e31464..6a342e5 100644
+--- a/ChangeLog
++++ b/ChangeLog
+@@ -1,5 +1,12 @@
+ 2017-01-11 Even Rouault <even.rouault at spatialys.com>
+ 
++	* libtiff/tif_getimage.c: add explicit uint32 cast in putagreytile to
++	avoid UndefinedBehaviorSanitizer warning.
++	Patch by Nicolás Peña.
++	Fixes http://bugzilla.maptools.org/show_bug.cgi?id=2658
++
++2017-01-11 Even Rouault <even.rouault at spatialys.com>
++
+ 	* libtiff/tif_read.c: avoid potential undefined behaviour on signed integer
+ 	addition in TIFFReadRawStrip1() in isMapped() case.
+ 	Fixes http://bugzilla.maptools.org/show_bug.cgi?id=2650
+diff --git a/libtiff/tif_getimage.c b/libtiff/tif_getimage.c
+index fed31f1..2fa1775 100644
+--- a/libtiff/tif_getimage.c
++++ b/libtiff/tif_getimage.c
+@@ -1305,7 +1305,7 @@ DECLAREContigPutFunc(putagreytile)
+     while (h-- > 0) {
+ 	for (x = w; x-- > 0;)
+         {
+-            *cp++ = BWmap[*pp][0] & (*(pp+1) << 24 | ~A1);
++            *cp++ = BWmap[*pp][0] & ((uint32)*(pp+1) << 24 | ~A1);
+             pp += samplesperpixel;
+         }
+ 	cp += toskew;
+From d60332057b9575ada4f264489582b13e30137be1 Mon Sep 17 00:00:00 2001
+From: erouault <erouault>
+Date: Wed, 11 Jan 2017 19:02:49 +0000
+Subject: [PATCH] * libtiff/tiffiop.h, tif_unix.c, tif_win32.c, tif_vms.c: add
+ _TIFFcalloc()
+
+* libtiff/tif_read.c: TIFFReadBufferSetup(): use _TIFFcalloc() to zero
+initialize tif_rawdata.
+Fixes http://bugzilla.maptools.org/show_bug.cgi?id=2651
+---
+ ChangeLog           | 8 ++++++++
+ libtiff/tif_read.c  | 4 +++-
+ libtiff/tif_unix.c  | 8 ++++++++
+ libtiff/tif_vms.c   | 8 ++++++++
+ libtiff/tif_win32.c | 8 ++++++++
+ libtiff/tiffio.h    | 1 +
+ 6 files changed, 36 insertions(+), 1 deletion(-)
+
+diff --git a/ChangeLog b/ChangeLog
+index 6a342e5..abd75d7 100644
+--- a/ChangeLog
++++ b/ChangeLog
+@@ -1,5 +1,13 @@
+ 2017-01-11 Even Rouault <even.rouault at spatialys.com>
+ 
++	* libtiff/tiffiop.h, tif_unix.c, tif_win32.c, tif_vms.c: add _TIFFcalloc()
++
++	* libtiff/tif_read.c: TIFFReadBufferSetup(): use _TIFFcalloc() to zero
++	initialize tif_rawdata.
++	Fixes http://bugzilla.maptools.org/show_bug.cgi?id=2651
++
++2017-01-11 Even Rouault <even.rouault at spatialys.com>
++
+ 	* libtiff/tif_getimage.c: add explicit uint32 cast in putagreytile to
+ 	avoid UndefinedBehaviorSanitizer warning.
+ 	Patch by Nicolás Peña.
+diff --git a/libtiff/tif_read.c b/libtiff/tif_read.c
+index 277fdd6..4535ccb 100644
+--- a/libtiff/tif_read.c
++++ b/libtiff/tif_read.c
+@@ -985,7 +985,9 @@ TIFFReadBufferSetup(TIFF* tif, void* bp, tmsize_t size)
+ 				 "Invalid buffer size");
+ 		    return (0);
+ 		}
+-		tif->tif_rawdata = (uint8*) _TIFFmalloc(tif->tif_rawdatasize);
++		/* Initialize to zero to avoid uninitialized buffers in case of */
++                /* short reads (http://bugzilla.maptools.org/show_bug.cgi?id=2651) */
++		tif->tif_rawdata = (uint8*) _TIFFcalloc(1, tif->tif_rawdatasize);
+ 		tif->tif_flags |= TIFF_MYBUFFER;
+ 	}
+ 	if (tif->tif_rawdata == NULL) {
+diff --git a/libtiff/tif_unix.c b/libtiff/tif_unix.c
+index 7c7bc96..89dd32e 100644
+--- a/libtiff/tif_unix.c
++++ b/libtiff/tif_unix.c
+@@ -316,6 +316,14 @@ _TIFFmalloc(tmsize_t s)
+ 	return (malloc((size_t) s));
+ }
+ 
++void* _TIFFcalloc(tmsize_t nmemb, tmsize_t siz)
++{
++    if( nmemb == 0 || siz == 0 )
++        return ((void *) NULL);
++
++    return calloc((size_t) nmemb, (size_t)siz);
++}
++
+ void
+ _TIFFfree(void* p)
+ {
+diff --git a/libtiff/tif_win32.c b/libtiff/tif_win32.c
+index d730b3a..3e9001b 100644
+--- a/libtiff/tif_win32.c
++++ b/libtiff/tif_win32.c
+@@ -360,6 +360,14 @@ _TIFFmalloc(tmsize_t s)
+ 	return (malloc((size_t) s));
+ }
+ 
++void* _TIFFcalloc(tmsize_t nmemb, tmsize_t siz)
++{
++    if( nmemb == 0 || siz == 0 )
++        return ((void *) NULL);
++
++    return calloc((size_t) nmemb, (size_t)siz);
++}
++
+ void
+ _TIFFfree(void* p)
+ {
+diff --git a/libtiff/tiffio.h b/libtiff/tiffio.h
+index 732da17..fbd9171 100644
+--- a/libtiff/tiffio.h
++++ b/libtiff/tiffio.h
+@@ -293,6 +293,7 @@ extern TIFFCodec* TIFFGetConfiguredCODECs(void);
+  */
+ 
+ extern void* _TIFFmalloc(tmsize_t s);
++extern void* _TIFFcalloc(tmsize_t nmemb, tmsize_t siz);
+ extern void* _TIFFrealloc(void* p, tmsize_t s);
+ extern void _TIFFmemset(void* p, int v, tmsize_t c);
+ extern void _TIFFmemcpy(void* d, const void* s, tmsize_t c);
+From 8283e4d1b7e53340684d12932880cbcbaf23a8c1 Mon Sep 17 00:00:00 2001
+From: erouault <erouault>
+Date: Thu, 12 Jan 2017 17:43:25 +0000
+Subject: [PATCH] =?UTF-8?q?*=20libtiff/tif=5Fojpeg.c:=20fix=20leak=20in=20?=
+ =?UTF-8?q?OJPEGReadHeaderInfoSecTablesAcTable=20when=20read=20fails.=20Pa?=
+ =?UTF-8?q?tch=20by=20Nicol=C3=A1s=20Pe=C3=B1a.=20Fixes=20http://bugzilla.?=
+ =?UTF-8?q?maptools.org/show=5Fbug.cgi=3Fid=3D2659?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+---
+ ChangeLog           | 7 +++++++
+ libtiff/tif_ojpeg.c | 3 +++
+ 2 files changed, 10 insertions(+)
+
+diff --git a/ChangeLog b/ChangeLog
+index 6e6f3b0..12e0370 100644
+--- a/ChangeLog
++++ b/ChangeLog
+@@ -1,3 +1,10 @@
++2017-01-12 Even Rouault <even.rouault at spatialys.com>
++
++	* libtiff/tif_ojpeg.c: fix leak in OJPEGReadHeaderInfoSecTablesAcTable
++	when read fails.
++	Patch by Nicolás Peña.
++	Fixes http://bugzilla.maptools.org/show_bug.cgi?id=2659
++
+ 2017-01-11 Even Rouault <even.rouault at spatialys.com>
+ 
+ 	* libtiff/tiffiop.h, tif_unix.c, tif_win32.c, tif_vms.c: add _TIFFcalloc()
+diff --git a/libtiff/tif_ojpeg.c b/libtiff/tif_ojpeg.c
+index f19e8fd..b92f0eb 100644
+--- a/libtiff/tif_ojpeg.c
++++ b/libtiff/tif_ojpeg.c
+@@ -1918,7 +1918,10 @@ OJPEGReadHeaderInfoSecTablesAcTable(TIFF* tif)
+ 				rb[sizeof(uint32)+5+n]=o[n];
+ 			p=(uint32)TIFFReadFile(tif,&(rb[sizeof(uint32)+21]),q);
+ 			if (p!=q)
++                        {
++                                _TIFFfree(rb);
+ 				return(0);
++                        }
+ 			sp->actable[m]=rb;
+ 			sp->sos_tda[m]=(sp->sos_tda[m]|m);
+ 		}
+From 2ea32f7372b65c24b2816f11c04bf59b5090d05b Mon Sep 17 00:00:00 2001
+From: erouault <erouault>
+Date: Thu, 12 Jan 2017 19:23:20 +0000
+Subject: [PATCH] * libtiff/tif_ojpeg.c: fix leak in
+ OJPEGReadHeaderInfoSecTablesQTable, OJPEGReadHeaderInfoSecTablesDcTable and
+ OJPEGReadHeaderInfoSecTablesAcTable
+
+---
+ ChangeLog           | 3 ++-
+ libtiff/tif_ojpeg.c | 6 ++++++
+ 2 files changed, 8 insertions(+), 1 deletion(-)
+
+diff --git a/ChangeLog b/ChangeLog
+index 12e0370..cd2fa17 100644
+--- a/ChangeLog
++++ b/ChangeLog
+@@ -1,6 +1,7 @@
+ 2017-01-12 Even Rouault <even.rouault at spatialys.com>
+ 
+-	* libtiff/tif_ojpeg.c: fix leak in OJPEGReadHeaderInfoSecTablesAcTable
++	* libtiff/tif_ojpeg.c: fix leak in OJPEGReadHeaderInfoSecTablesQTable,
++	OJPEGReadHeaderInfoSecTablesDcTable and OJPEGReadHeaderInfoSecTablesAcTable
+ 	when read fails.
+ 	Patch by Nicolás Peña.
+ 	Fixes http://bugzilla.maptools.org/show_bug.cgi?id=2659
+diff --git a/libtiff/tif_ojpeg.c b/libtiff/tif_ojpeg.c
+index b92f0eb..5f6c684 100644
+--- a/libtiff/tif_ojpeg.c
++++ b/libtiff/tif_ojpeg.c
+@@ -1790,7 +1790,10 @@ OJPEGReadHeaderInfoSecTablesQTable(TIFF* tif)
+ 			TIFFSeekFile(tif,sp->qtable_offset[m],SEEK_SET); 
+ 			p=(uint32)TIFFReadFile(tif,&ob[sizeof(uint32)+5],64);
+ 			if (p!=64)
++                        {
++                                _TIFFfree(ob);
+ 				return(0);
++                        }
+ 			sp->qtable[m]=ob;
+ 			sp->sof_tq[m]=m;
+ 		}
+@@ -1854,7 +1857,10 @@ OJPEGReadHeaderInfoSecTablesDcTable(TIFF* tif)
+ 				rb[sizeof(uint32)+5+n]=o[n];
+ 			p=(uint32)TIFFReadFile(tif,&(rb[sizeof(uint32)+21]),q);
+ 			if (p!=q)
++                        {
++                                _TIFFfree(rb);
+ 				return(0);
++                        }
+ 			sp->dctable[m]=rb;
+ 			sp->sos_tda[m]=(m<<4);
+ 		}
