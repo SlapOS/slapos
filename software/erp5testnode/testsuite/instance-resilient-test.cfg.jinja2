@@ -50,6 +50,10 @@ config-resiliency-backup-periodicity = */10 * * * *
 config-resilient-clone-number = 1
 config-ignore-known-hosts-file = false
 config-cpu-usage-ratio = 1
+# Use one external folder (same of erp5testnode for build the software
+# This is a way to preserve the latest software release build speeding up
+# the tests.)
+config-software-root = ${buildout:directory}/../../soft
 # XXX hardcoded
 #config-frontend-domain = google.com
 # XXX Hack to deploy Root Instance on the same computer as the type-test Instance
