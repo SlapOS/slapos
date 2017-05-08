@@ -170,6 +170,20 @@ class Recipe(object):
           # Backward compatibility. Old SlapOS master and core don't know this.
           self.logger.warning("Impossible to fetch instance GUID nor state.")
     except (slapmodule.NotFoundError, slapmodule.ServerError, slapmodule.ResourceNotReady) as exc:
+      self.logger.warning(
+        'Request for %(request_name)r with software release '
+        '%(software_release)r and software type %(software_type)r failed '
+        'with partition_parameter_kw=%(partition_parameter_kw)r, '
+        'filter_kw=%(filter_kw)r, shared=%(shared)r, state=%(state)r.' % dict(
+          software_release=software_url,
+          software_type=software_type,
+          request_name=name,
+          partition_parameter_kw=partition_parameter_kw,
+          filter_kw=filter_kw,
+          shared=slave,
+          state=requested_state
+        )
+      )
       self._raise_request_exception = exc
       self._raise_request_exception_formatted = traceback.format_exc()
       return_parameter_dict = {}
