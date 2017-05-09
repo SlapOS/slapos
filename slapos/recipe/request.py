@@ -105,7 +105,11 @@ class Recipe(object):
     if not return_parameters:
       self.logger.debug("No parameter to return to main instance."
         "Be careful about that...")
-    software_type = options.get('software-type', DEFAULT_SOFTWARE_TYPE)
+
+    # due the fact that zc.buildout __getitem__ removes magic !py! and get
+    # method do not, use __getitem__ always
+    software_type = options['software-type'] \
+        if 'software-type' in options else DEFAULT_SOFTWARE_TYPE
     if 'config' in options or 'sla' in options:
       raise UserError("'config' & 'sla' options are obsolete."
                       " Clean up your software release.")
