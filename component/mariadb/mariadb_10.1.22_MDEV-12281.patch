@@ -1,6 +1,23 @@
---- storage/innobase/dict/dict0stats.cc
-+++ storage/innobase/dict/dict0stats.cc
-@@ -1162,10 +1162,10 @@
+diff -ur storage/innobase/dict/dict0stats.cc storage/innobase/dict/dict0stats.cc
+--- storage/innobase/dict/dict0stats.cc	2017-05-02 07:13:44.000000000 +0200
++++ storage/innobase/dict/dict0stats.cc	2017-05-09 09:53:43.498678672 +0200
+@@ -1168,10 +1168,10 @@
+ 		leaf-level delete marks because delete marks on
+ 		non-leaf level do not make sense. */
+ 
+-		if (level == 0 && srv_stats_include_delete_marked? 0:
++		if (level == 0 && (srv_stats_include_delete_marked? 0:
+ 		    rec_get_deleted_flag(
+ 			    rec,
+-			    page_is_comp(btr_pcur_get_page(&pcur)))) {
++			    page_is_comp(btr_pcur_get_page(&pcur))))) {
+ 
+ 			if (rec_is_last_on_page
+ 			    && !prev_rec_is_copied
+diff -ur storage/xtradb/dict/dict0stats.cc storage/xtradb/dict/dict0stats.cc
+--- storage/xtradb/dict/dict0stats.cc	2017-05-02 07:13:52.000000000 +0200
++++ storage/xtradb/dict/dict0stats.cc	2017-05-09 09:53:50.174738190 +0200
+@@ -1168,10 +1168,10 @@
  		leaf-level delete marks because delete marks on
  		non-leaf level do not make sense. */
  
