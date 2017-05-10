@@ -25,12 +25,12 @@ path = ${directory:promises}/neo-admin-promise
 < = logrotate-entry-base
 name = neo-admin
 log = ${neo-admin:logfile}
-post = {{ bin_directory }}/slapos-kill -n neoadmin -s RTMIN+1 ${:log}
+post = {{ bin_directory }}/slapos-kill -s RTMIN+1 ${neo-admin:binary} -l ${:log}
 
 [neoctl]
 recipe = slapos.cookbook:wrapper
 command-line =
-  {{bin_directory}}/neoctl -a ${neo-admin:ip}:${neo-admin:port} 
+  {{bin_directory}}/neoctl -a ${neo-admin:ip}:${neo-admin:port}
 {%- if slapparameter_dict['ssl'] %}
     --ca ${directory:etc}/ca.crt
     --cert ${directory:etc}/neo.crt
