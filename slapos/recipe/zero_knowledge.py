@@ -43,10 +43,10 @@ class WriteRecipe(GenericBaseRecipe):
     if options.get('filename'):
       self.filename = options['filename'].strip()
       self.path = os.path.join(buildout['buildout']['directory'], self.filename)
-      del _options['filename']
+      del self._options['filename']
     else:
       self.path = options['file-path'].strip()
-      del options['file-path']
+      del self._options['file-path']
     del self._options['recipe']
     self.name = name
 
