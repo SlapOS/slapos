@@ -98,7 +98,10 @@ class FormatCommand(ConfigCommand):
         if string_to_boolean(getattr(conf, 'root_check', 'True').lower()):
           check_root_user(self)
 
-        if not self.app.options.log_file and conf.log_file:
+        if len(self.app.log.handlers) == 0 and not self.app.options.log_file and conf.log_file:
+            # This block is called again if "slapos node boot" failed.
+            # Don't add a handler again, otherwise the output becomes double.
+            #
             # no log file is provided by argparser,
             # we set up the one from config
             file_handler = logging.FileHandler(conf.log_file)

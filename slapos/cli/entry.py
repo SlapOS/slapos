@@ -239,6 +239,13 @@ class SlapOSApp(App):
             root_logger.addHandler(file_handler)
 
         # Always send higher-level messages to the console via stderr
+
+        # This function is called again if "slapos node boot" failed.
+        # Don't add a handler again, otherwise the output becomes double.
+        if [handler for handler in root_logger.handlers
+            if isinstance(handler, logging.StreamHandler)]:
+          return
+
         if self.options.log_color:
             import coloredlogs
             console = coloredlogs.ColoredStreamHandler(show_name=True,     # logger name (slapos) and PID

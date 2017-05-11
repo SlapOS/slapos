@@ -1422,8 +1422,15 @@ class FormatConfig(object):
       self.output_definition_file = os.path.abspath(self.output_definition_file)
 
 
+tracing_monkeypatch_mark = []
 def tracing_monkeypatch(conf):
   """Substitute os module and callAndRead function with tracing wrappers."""
+
+  # This function is called again if "slapos node boot" failed.
+  # Don't wrap the logging method again, otherwise the output becomes double.
+  if tracing_monkeypatch_mark:
+    return
+
   global os
   global callAndRead
 
@@ -1452,3 +1459,5 @@ def tracing_monkeypatch(conf):
     return dry_callAndRead(argument_list, raise_on_error)
   callAndRead = logging_callAndRead
 
+  # Put a mark. This function was called once.
+  tracing_monkeypatch_mark.append(None)
