@@ -91,6 +91,10 @@ return = ssh-public-key ssh-url notification-url ip takeover-url takeover-passwo
 
 pbs-notification-id = ${slap-connection:computer-id}-${slap-connection:partition-id}-{{namebase}}-{{id}}-push
 
+{% if slapparameter_dict.get("software-root") %}
+config-software-root = {{ slapparameter_dict.get("software-root") }}
+{% endif %}
+
 config-number = {{id}}
 config-name = {{namebase}}{{id}}
 config-authorized-key = ${request-pbs-{{namebase}}-{{id}}:connection-ssh-key}

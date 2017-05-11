@@ -39,6 +39,28 @@ import string
 
 from slapos.recipe.librecipe import GenericBaseRecipe
 
+class Integer(object):
+  """
+  Generate a random integer (see standard random.randint documentation).
+
+  Input options:
+  minimum (required)
+    integer(-ish) minmum bound, included.
+  maximum (required)
+    integer(-ish) maximum bound, included.
+
+  Output options:
+  value
+    Resulting integer.
+  """
+  def __init__(self, buildout, name, options):
+    options['value'] = random.randint(int(options['minimum']), int(options['maximum']))
+
+  def install(self):
+    pass
+
+  update = install
+
 class Time(object):
   """Generate a random time from a 24h time clock"""
 
