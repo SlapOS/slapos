@@ -44,7 +44,7 @@
 
   # One Slave two logs
   ErrorLog "{{ slave_parameter.get('error_log') }}"
-  LogLevel info
+  LogLevel notice
   LogFormat "%h %l %{REMOTE_USER}i %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\" %D" combined
   CustomLog "{{ slave_parameter.get('access_log') }}" combined
 
@@ -116,7 +116,7 @@
 
   # One Slave two logs
   ErrorLog "{{ slave_parameter.get('error_log') }}"
-  LogLevel info
+  LogLevel notice
   LogFormat "%h %l %{REMOTE_USER}i %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\" %D" combined
   CustomLog "{{ slave_parameter.get('access_log') }}" combined
 
