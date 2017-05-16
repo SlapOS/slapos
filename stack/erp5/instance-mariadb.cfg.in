@@ -247,9 +247,10 @@ run = ${:var}/run
 
 [resiliency-exclude-file]
 # Generate rdiff exclude file in case of resiliency
-recipe = collective.recipe.template
-input = inline: srv/mariadb/**
-output = ${directory:srv}/exporter.exclude
+recipe = slapos.recipe.template:jinja2
+mode = 644
+template = {{ 'inline:{{ "${directory:mariadb-data}/**\\n" }}' }}
+rendered = ${directory:srv}/exporter.exclude
 
 [resiliency-after-import-script]
 # Generate after import script used by importer instance of webrunner

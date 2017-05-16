@@ -118,9 +118,10 @@ tidstorage-port =
 # webrunner resiliency with erp5 inside.
 [{{ section("resiliency-exclude-file") }}]
 # Generate rdiff exclude file
-recipe = collective.recipe.template
-input = inline: srv/zodb/**
-output = ${directory:srv}/exporter.exclude
+recipe = slapos.recipe.template:jinja2
+mode = 644
+template = {{ 'inline:{{ "${directory:zodb}/**\\n" }}' }}
+rendered = ${directory:srv}/exporter.exclude
 
 [{{ section("resiliency-after-import-script") }}]
 # Generate after import script used by importer instance of webrunner
