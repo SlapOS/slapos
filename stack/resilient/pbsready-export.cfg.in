@@ -44,7 +44,7 @@ pidfile = ${resilient-directory:pid}/${:name}.pid
 max-run = 3
 
 [logrotate-entry-notifier]
-output = ${rootdirectory:etc}/logrotate_notifier.conf
+rendered = ${rootdirectory:etc}/logrotate_notifier.conf
 
 [notifier-exporter-promise]
 recipe = slapos.recipe.template:jinja2
@@ -70,7 +70,7 @@ frequency = {{ resiliency_backup_periodicity }}
 {% else %}
 time = ${publish-early:resiliency-backup-periodicity}
 {% endif %}
-command = {{ logrotate_executable_location }} -s ${basedirectory:run}/logrotate.status ${logrotate-entry-notifier:output}; ${notifier-exporter:wrapper} --transaction-id `date +%s`
+command = {{ logrotate_executable_location }} -s ${basedirectory:run}/logrotate.status ${logrotate-entry-notifier:rendered}; ${notifier-exporter:wrapper} --transaction-id `date +%s`
 
 [gen-resiliency-backup-periodicity]
 recipe = slapos.cookbook:random.time
