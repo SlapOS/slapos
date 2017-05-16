@@ -108,7 +108,7 @@ if [ -z "$backup_directory_path" ]; then
 fi
 
 sleep 5
-sha256sum "$backup_directory_path" | sort -k 66 > "$tmp_backup_sum"
+sha256sum $backup_directory_path | sort -k 66 > "$tmp_backup_sum"
 egrep "instance/slappart.*/srv/backup/" "$backup_directory/backup.signature" > "$tmp_filtered_signature"
 
 # If the diff fails, then the notifier will restart this script
