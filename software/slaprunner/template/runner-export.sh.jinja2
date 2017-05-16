@@ -116,6 +116,6 @@ if diff "$tmp_backup_sum" "$tmp_filtered_signature"; then
   exit 0
 fi
 echo "ERROR: Some backups are not consistent, exporter should be re-run."
-echo "Let's sleep 10 minutes, to let the backup end..."
-sleep 10m
+echo "Let's sleep {{ parameter_dict['backup_wait_time'] }} minutes, to let the backup end..."
+sleep {{ parameter_dict["backup_wait_time"] }}m
 exit 1
