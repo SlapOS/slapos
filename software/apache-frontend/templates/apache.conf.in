@@ -16,7 +16,6 @@ ServerRoot {{ instance_home }}
 {% endfor -%}
 
 ServerAdmin {{ server_admin }}
-DefaultType text/plain
 TypesConfig {{ httpd_home }}/conf/mime.types
 AddType application/x-compress .Z
 AddType application/x-gzip .gz .tgz
@@ -105,6 +104,11 @@ BrowserMatch "^gnome-vfs" redirect-carefully
 BrowserMatch "^XML Spy" redirect-carefully
 BrowserMatch "^Dreamweaver-WebDAV-SCM1" redirect-carefully
 
+
+{% if slapparameter_dict.get('enable-http2-by-default', 'true') == 'true' %}
+Protocols h2 http/1.1
+{% endif %}
+
 # Increase IPReadLimit to 10
 <IfModule antiloris_module>
    # IPReadLimit - Maximum simultaneous connections in READ state per IP address 
@@ -125,7 +129,12 @@ ExtendedStatus On
     Require valid-user
 </Location>
 
-
+ServerLimit {{ slapparameter_dict.get('mpm-server-limit', '16') }}
+MaxClients {{ slapparameter_dict.get('mpm-max-clients', '400') }}
+StartServers {{ slapparameter_dict.get('mpm-start-servers', '3') }}
+ThreadsPerChild {{ slapparameter_dict.get('mpm-thread-per-child', '25') }}
+#MaxRequestsPerChild 0 // Default value is 0
+GracefulShutdownTimeout {{ slapparameter_dict.get('mpm-graceful-shutdown-timeout', '5') }}
 
 # Deflate
 AddOutputFilterByType DEFLATE text/html text/plain text/xml text/css text/javascript application/x-javascript application/javascript
@@ -156,13 +165,7 @@ SSLProxyCheckPeerCN off
 SSLProxyCheckPeerExpire off
 
 include {{frontend_configuration.get('log-access-configuration')}}
-
-NameVirtualHost *:{{ http_port }}
-NameVirtualHost *:{{ https_port }}
 include {{ slave_configuration_directory }}/*.conf
-
-NameVirtualHost *:{{ cached_port }}
-NameVirtualHost *:{{ ssl_cached_port }}
 include {{ slave_with_cache_configuration_directory }}/*.conf
 
 ErrorDocument 404 /notfound.html

@@ -140,7 +140,13 @@
       "default": "false",
       "enum": ["false", "true"]
     },
-
+    "enable-http2": {
+      "title": "Enable HTTP2 Protocol",
+      "description": "Use HTTP2 Protocol for the site",
+      "type": "string",
+      "default": "true",
+      "enum": ["true", "false"]
+    },
     "prefer-gzip-encoding-to-backend": {
       "title": "Prefer gzip Encoding for Backend",
       "description": "If set to true, frontend will rewrite Accept-Encoding request header to simply 'gzip' for all variants of Accept-Encoding containing 'gzip', in order to maximize cache hits for resources cached with Vary: Accept-Encoding when enable_cache is used",

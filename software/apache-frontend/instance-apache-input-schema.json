@@ -14,7 +14,44 @@
 			"description": "Value used to set IPReadLimit Parameter for antiloris.",
 			"type": "integer",
 			"default": 10
-		},		
+		},
+                "mpm-server-limit": {
+                        "title": "ServerLimit",
+                        "description": "Value used to set ServerLimit on apache configuration.",
+                        "type": "integer",
+                        "default": 16
+                },
+                "mpm-max-clients": {
+                        "title": "MaxClients",
+                        "description": "Value used to set MaxClients on apache configuration.",
+                        "type": "integer",
+                        "default": 400
+                },
+                "mpm-start-servers": {
+                        "title": "StartServers",
+                        "description": "Value used to set StartServers on apache configuration.",
+                        "type": "integer",
+                        "default": 3
+                },
+                "mpm-thread-per-child": {
+                        "title": "ThreadsPerChild",
+                        "description": "Value used to set ThreadsPerChild on apache configuration.",
+                        "type": "integer",
+                        "default": 25
+                },
+                "mpm-graceful-shutdown-timeout": {
+                        "title": "ThreadsPerChild",
+                        "description": "Value used to set ThreadsPerChild on apache configuration.",
+                        "type": "integer",
+                        "default": 5
+                },
+                "enable-http2-by-default": {
+                        "title": "Enable HTTP2 by Default",
+                        "description": "Use HTTP2 as default Protocol",
+                        "type": "string",
+                        "default": "true",
+                        "enum": ["true", "false"]
+                },
                 "re6st-verification-url": {
 			"title": "Test Verification URL",
 			"description": "Url to verify if the internet and/or re6stnet is working.",
