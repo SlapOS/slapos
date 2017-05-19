@@ -118,7 +118,9 @@ input = inline: #!/bin/sh
        echo "Consistency check is too old.";
        exit 1;
     else
-      cat $${importer:restore-error-message-file}
+      if [ -f "$${importer:restore-error-message-file}" ]; then
+        cat $${importer:restore-error-message-file}
+      fi
       echo "More information can be found here : $RESILIENT_LOG_URL";
       exit $(cat $EXIT_CODE_FILE);
     fi
