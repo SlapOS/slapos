@@ -307,7 +307,7 @@ monitor-httpd-port = 8386
 [monitor-passwd]
 recipe = slapos.cookbook:generate.password
 bytes = 8
-storage_path = ${monitor-directory:etc}/monitor-htpasswd
+storage-path = ${directory:etc}/.monitor_pwd
 
 {{ root_common.common_section() }}
 
