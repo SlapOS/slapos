@@ -248,8 +248,7 @@ run = ${:var}/run
 
 [resiliency-exclude-file]
 # Generate rdiff exclude file in case of resiliency
-recipe = slapos.recipe.template:jinja2
-mode = 644
+< = jinja2-template-base
 template = {{ 'inline:{{ "${directory:mariadb-data}/**\\n" }}' }}
 rendered = ${directory:srv}/exporter.exclude
 
