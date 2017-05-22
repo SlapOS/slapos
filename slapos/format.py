@@ -863,7 +863,7 @@ class Interface(object):
 
     # Attach to TAP  network interface, only if the  interface interface does not
     # report carrier
-    _, result = callAndRead(['ip', 'addr', 'list', self.name])
+    _, result = callAndRead(['ip', 'addr', 'list', self.name], raise_on_error=False)
     self.attach_to_tap = 'DOWN' in result.split('\n', 1)[0]
 
   # XXX no __getinitargs__, as instances of this class are never deserialized.
@@ -912,6 +912,10 @@ class Interface(object):
     # local addresses or anything which does not exists in RFC!
     return address_list
 
+  def isBridge(self):
+    _, result = callAndRead(['brctl', 'show'])
+    return any(line.startswith(self.name) for line in result.split("\n"))
+
   def getInterfaceList(self):
     """Returns list of interfaces already present on bridge"""
     interface_list = []
@@ -939,7 +943,12 @@ class Interface(object):
       tap: Tap, the tap interface.
     """
     if tap.name not in self.getInterfaceList():
-      callAndRead(['brctl', 'addif', self.name, tap.name])
+      if self.isBridge():
+        callAndRead(['brctl', 'addif', self.name, tap.name])
+      else:
+        self.logger.warning("Interface slapos.cfg:interface_name={} is not a bridge."
+                            "TUN/TAP interface {} might not have internet connection."
+                            "".format(self.name, tap.name))
 
   def _addSystemAddress(self, address, netmask, ipv6=True):
     """Adds system address to interface
