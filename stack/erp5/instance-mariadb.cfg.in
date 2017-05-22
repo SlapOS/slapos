@@ -16,6 +16,7 @@
 {% else -%}
 {%   set ip = (ipv4_set | list)[0] -%}
 {% endif -%}
+{% set dash = parameter_dict['dash-location'] ~ '/bin/dash' %}
 
 [publish]
 recipe = slapos.cookbook:publish.serialised
@@ -177,7 +178,7 @@ mysql_tzinfo_to_sql = ${binary-wrap-mysql_tzinfo_to_sql:wrapper-path}
 # section is installed - so I only use jinja2 as a fancy way to write an
 # executable file with partition-dependent but instance-parameters independent
 # content.
-template = inline:#!{{ parameter_dict['dash-location'] }}/bin/dash
+template = inline:#!{{ dash }}
   '{{ parameter_dict['mariadb-location'] }}/scripts/mysql_install_db' \
     --defaults-file='${my-cnf:rendered}' \
     --skip-name-resolve \
@@ -252,13 +253,15 @@ mode = 644
 template = {{ 'inline:{{ "${directory:mariadb-data}/**\\n" }}' }}
 rendered = ${directory:srv}/exporter.exclude
 
+[dash]
+dash = {{ dumps(dash) }}
+
 [resiliency-after-import-script]
 # Generate after import script used by importer instance of webrunner
 recipe = collective.recipe.template
 input = {{ parameter_dict['mariadb-resiliency-after-import-script'] }}
 output = ${directory:srv}/runner-import-restore
 mode = 755
-dash = {{ parameter_dict['dash-location'] }}/bin/dash
 
 [promise]
 recipe = slapos.cookbook:wrapper
