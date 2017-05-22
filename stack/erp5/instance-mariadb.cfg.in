@@ -18,7 +18,7 @@
 {% endif -%}
 {% set dash = parameter_dict['dash-location'] ~ '/bin/dash' %}
 
-[publish]
+[{{ section('publish') }}]
 recipe = slapos.cookbook:publish.serialised
 -extends = publish-early
 {% macro render_database_list(database_list) -%}
@@ -164,7 +164,7 @@ rendered = ${directory:etc}/mariadb_initial_setup.sql
 template = {{ parameter_dict['template-mariadb-initial-setup'] }}
 context = section parameter_dict init-script-parameters
 
-[update-mysql]
+[{{ section('update-mysql') }}]
 recipe = slapos.cookbook:generic.mysql.wrap_update_mysql
 output = ${directory:services}/mariadb_update
 binary = ${binary-wrap-mysql_upgrade:wrapper-path}
@@ -189,13 +189,13 @@ template = inline:#!{{ dash }}
     "$@"
 rendered = ${directory:services}/mariadb
 
-[logrotate-entry-mariadb]
+[{{ section('logrotate-entry-mariadb') }}]
 < = logrotate-entry-base
 name = mariadb
 log = ${my-cnf-parameters:error-log} ${my-cnf-parameters:slow-query-log}
 post = "${binary-wrap-mysql:wrapper-path}" -B -u root -e "FLUSH LOGS"
 
-[binary-link]
+[{{ section('binary-link') }}]
 recipe = slapos.cookbook:symbolic.link
 target-directory = ${directory:bin}
 link-binary = {{ dumps(parameter_dict['link-binary']) }}
@@ -246,7 +246,7 @@ var = ${buildout:directory}/var
 log = ${:var}/log
 run = ${:var}/run
 
-[resiliency-exclude-file]
+[{{ section('resiliency-exclude-file') }}]
 # Generate rdiff exclude file in case of resiliency
 < = jinja2-template-base
 template = {{ 'inline:{{ "${directory:mariadb-data}/**\\n" }}' }}
@@ -271,7 +271,7 @@ context =
   key server_executable mysqld:rendered
   key update_executable update-mysql:output
 
-[promise]
+[{{ section('promise') }}]
 recipe = slapos.cookbook:wrapper
 command-line = "{{ parameter_dict['bin-directory'] }}/is-local-tcp-port-opened" "${my-cnf-parameters:ip}" "${my-cnf-parameters:port}"
 wrapper-path = ${directory:promise}/mariadb
@@ -287,11 +287,4 @@ extends =
   {{ logrotate_cfg }}
   {{ parameter_dict['template-monitor'] }}
 parts +=
-  publish
-  logrotate-entry-mariadb
-  binary-link
-  update-mysql
-  resiliency-exclude-file
-  resiliency-after-import-script
-  promise
   {{ part_list | join('\n  ') }}
