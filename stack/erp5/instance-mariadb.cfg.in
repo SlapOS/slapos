@@ -230,6 +230,12 @@ command = mysql_upgrade
 command-line = "{{ parameter_dict['mariadb-location'] }}/bin/${:command}"
 command = mysql_tzinfo_to_sql
 
+[binary-wrap-pt-digest]
+<= binary-wrap-base
+command-line = "{{ parameter_dict['percona-tools-location'] }}/bin/${:command}"
+command = pt-query-digest
+ 
+
 [directory]
 recipe = slapos.cookbook:mkdirectory
 bin = ${buildout:directory}/bin
@@ -271,6 +277,19 @@ context =
   key binlog_path my-cnf-parameters:binlog-path
   key server_executable mysqld:rendered
   key update_executable update-mysql:output
+
+[{{ section('monitor-generate-mariadb-slow-query-report') }}]
+recipe = slapos.recipe.template:jinja2
+template = {{ parameter_dict['mariadb-slow-query-report-script'] }}
+rendered = ${monitor-directory:reports}/${:filename}
+output-folder = ${directory:srv}/monitor/
+filename = mariadb_slow_query_every_23_hour
+mode = 755
+context = 
+  raw slow_query_path ${directory:srv}/backup/logrotate/mariadb_slowquery.log
+  raw pt_query_exec ${binary-wrap-pt-digest:wrapper-path}
+  raw dash {{ parameter_dict['dash-location'] }}/bin/dash
+  key output_folder :output-folder 
 
 [{{ section('promise') }}]
 recipe = slapos.cookbook:wrapper
