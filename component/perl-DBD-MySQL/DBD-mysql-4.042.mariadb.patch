@@ -1,0 +1,36 @@
+diff -u DBD-mysql-4.042/dbdimp.c DBD-mysql-4.042/dbdimp.c
+--- DBD-mysql-4.042/dbdimp.c	2017-02-28 14:36:40.000000000 +0100
++++ DBD-mysql-4.042/dbdimp.c	2017-06-08 12:43:39.704228470 +0200
+@@ -2139,6 +2139,7 @@
+ 
+     if (result)
+     {
++      my_bool reconnect= 0;
+ #if MYSQL_VERSION_ID >=SERVER_PREPARE_VERSION
+       /* connection succeeded. */
+       /* imp_dbh == NULL when mysql_dr_connect() is called from mysql.xs
+@@ -2155,7 +2156,7 @@
+         we turn off Mysql's auto reconnect and handle re-connecting ourselves
+         so that we can keep track of when this happens.
+       */
+-      result->reconnect=0;
++      mysql_options(result, MYSQL_OPT_RECONNECT, &reconnect);
+     }
+     else {
+       /* 
+diff -u DBD-mysql-4.042/dbdimp.h DBD-mysql-4.042/dbdimp.h
+--- DBD-mysql-4.042/dbdimp.h	2017-02-28 14:36:40.000000000 +0100
++++ DBD-mysql-4.042/dbdimp.h	2017-06-08 12:44:21.233948264 +0200
+@@ -67,6 +67,12 @@
+ #define SSL_LAST_VERIFY_VERSION 50799
+ #define MYSQL_VERSION_5_0 50001
+ /* This is to avoid the ugly #ifdef mess in dbdimp.c */
++
++/* MariaDB Connector/C has MARIADB_VERSION_ID instead of MYSQL_VERSION_ID */
++#if !defined(MYSQL_VERSION_ID) && defined(MARIADB_VERSION_ID)
++#define MYSQL_VERSION_ID MARIADB_VERSION_ID
++#endif
++
+ #if MYSQL_VERSION_ID < SQL_STATE_VERSION
+ #define mysql_sqlstate(svsock) (NULL)
+ #endif
