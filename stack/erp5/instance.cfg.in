@@ -174,6 +174,8 @@ template-mariadb-initial-setup = {{ template_mariadb_initial_setup }}
 link-binary = {{ dumps(mariadb_link_binary) }}
 bin-directory = {{ bin_directory }}
 mariadb-resiliency-after-import-script = {{ mariadb_resiliency_after_import_script }}
+monitor-generate-mariadb-slow-query-report-script = {{monitor_generate_mariadb_slow_query_report_script}}
+percona-tools-location = {{ parts_directory }}/percona-toolkit
 template-monitor = {{ template_monitor }}
 
 [dynamic-template-mariadb]

@@ -229,6 +229,12 @@ command = mysql_upgrade
 command-line = "{{ parameter_dict['mariadb-location'] }}/bin/${:command}"
 command = mysql_tzinfo_to_sql
 
+[binary-wrap-pt-digest]
+<= binary-wrap-base
+command-line = "{{ parameter_dict['percona-tools-location'] }}/bin/${:command}"
+command = pt-query-digest
+ 
+
 [directory]
 recipe = slapos.cookbook:mkdirectory
 bin = ${buildout:directory}/bin
@@ -261,6 +267,19 @@ output = ${directory:srv}/runner-import-restore
 mode = 755
 dash = {{ parameter_dict['dash-location'] }}/bin/dash
 
+[monitor-generate-mariadb-slow-query-report]
+recipe = slapos.recipe.template:jinja2
+template = {{ parameter_dict['monitor-generate-mariadb-slow-query-report-script'] }}
+rendered = ${monitor-directory:reports}/${:filename}
+output-folder = ${directory:srv}/monitor/
+filename = mariadb_slow_query_every_1_minute
+mode = 755
+context = 
+  raw slow_query_path ${directory:srv}/backup/logrotate/mariadb_slowquery.log-%(date)s
+  raw python_executable ${buildout:executable}
+  raw pt_query_executable ${binary-wrap-pt-digest:wrapper-path}
+  key output_folder :output-folder 
+
 [promise]
 recipe = slapos.cookbook:wrapper
 command-line = "{{ parameter_dict['bin-directory'] }}/is-local-tcp-port-opened" "${my-cnf-parameters:ip}" "${my-cnf-parameters:port}"
@@ -282,6 +301,7 @@ parts +=
   publish
   logrotate-entry-mariadb
   binary-link
+  monitor-generate-mariadb-slow-query-report
   update-mysql
   resiliency-exclude-file
   resiliency-after-import-script
