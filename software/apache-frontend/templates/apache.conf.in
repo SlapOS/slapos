@@ -82,6 +82,7 @@ LoadModule filter_module       {{ httpd_home }}/modules/mod_filter.so
 LoadModule http2_module       {{ httpd_home }}/modules/mod_http2.so
 LoadModule info_module        {{ httpd_home }}/modules/mod_info.so
 LoadModule status_module      {{ httpd_home }}/modules/mod_status.so
+LoadModule reqtimeout_module  {{ httpd_home }}/modules/mod_reqtimeout.so
 
 # The following directives modify normal HTTP response behavior to
 # handle known problems with browser implementations.
