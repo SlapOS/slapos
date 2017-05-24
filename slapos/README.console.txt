@@ -47,11 +47,11 @@ documentation.
 
    This allows to request instances in a few words, i.e::
 
-      request("mykvm", "http://www.url.com/path/to/current/best/known/kvm/software.cfg")
+      request("http://www.url.com/path/to/current/best/known/kvm/software.cfg", "mykvm")
 
    can be simplified into ::
 
-     request("mykvm", product.kvm)
+     request(product.kvm, "mykvm")
 
  * "slap" is an instance of the SLAP library. It is only used for advanced usages.
 "slap" instance is obtained by doing ::
