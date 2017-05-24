@@ -1,0 +1,21 @@
+#!/bin/sh
+
+RUN_DIR={{ directory_run }}
+ETC_DIR={{ directory_etc }}
+
+APACHE_SIGNATURE_FILE=$RUN_DIR/apache_configuration.signature
+NAPACHE_SIGNATURE_FILE=$RUN_DIR/napache_configuration.signature
+
+touch $APACHE_SIGNATURE_FILE
+sha256sum $ETC_DIR/apache*.conf $ETC_DIR/apache-*.d/*.conf | sort -k 66 > $NAPACHE_SIGNATURE_FILE 
+
+# If no diff, no restart for now
+if diff "$APACHE_SIGNATURE_FILE" "$NAPACHE_SIGNATURE_FILE"; then
+  echo "Nothing Changed, so nothing to reload"
+  exit 0
+fi
+echo "Reloading apache.."
+
+{{ apache_graceful_reload_command }}
+
+mv "$NAPACHE_SIGNATURE_FILE" "$APACHE_SIGNATURE_FILE" 

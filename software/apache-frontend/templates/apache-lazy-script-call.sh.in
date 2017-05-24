@@ -1,16 +1,18 @@
 #!/bin/bash
 
 PID=$$
-PIDFILE=~/my.pid
+PIDFILE={{ pid_file }}
 
 if [ ! -f $PIDFILE ]; then
-  echo $PID >> $PIDFILE
+  echo $PID > $PIDFILE
+  sleep {{ wait_time }}
+  {{ lazy_command }}
 else
   ps --pid `cat $PIDFILE` &>/dev/null
   if [ $? -eq 0 ]; then
     echo "Skipped"
   else
-    echo $PID >> $PIDFILE
+    echo $PID > $PIDFILE
     sleep {{ wait_time }}
     {{ lazy_command }}
   fi
