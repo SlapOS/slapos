@@ -2,6 +2,9 @@
 
 {% set cached_server_dict = {} -%}
 {% set part_list = [] -%}
+{% set cache_port = apache_configuration.get('cache-port') %}
+{% set cached_port = apache_configuration.get('cache-through-port') %}
+{% set ssl_cached_port = apache_configuration.get('ssl-cache-through-port') %}
 {% set cache_access = "http://%s:%s" % (local_ipv4, cache_port) -%}
 {% set ssl_cache_access = "http://%s:%s/HTTPS" % (local_ipv4, cache_port) -%}
 {% set TRUE_VALUES = ['y', 'yes', '1', 'true'] -%}
@@ -27,7 +30,7 @@ context =
 {{ key }} = {{ value }}
 {% endfor %}
 
-post = {{ apache_configuration.get('frontend-graceful-command') }}
+post = {{ frontend_lazy_graceful_reload }} &
 frequency = daily
 rotatep-num = 30
 sharedscripts = true
