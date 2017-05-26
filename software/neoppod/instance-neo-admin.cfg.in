@@ -25,7 +25,7 @@ path = ${directory:promises}/neo-admin-promise
 < = logrotate-entry-base
 name = neo-admin
 log = ${neo-admin:logfile}
-post = {{ bin_directory }}/slapos-kill -s RTMIN+1 ${neo-admin:binary} -l ${:log}
+post = {{ bin_directory }}/slapos-kill -s RTMIN+1 -- ${neo-admin:binary} -l ${:log}
 
 [neoctl]
 recipe = slapos.cookbook:wrapper

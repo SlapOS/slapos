@@ -33,4 +33,4 @@ path = ${directory:promises}/neo-master-promise
 < = logrotate-entry-base
 name = neo-master
 log = ${neo-master:logfile}
-post = {{ bin_directory }}/slapos-kill -s RTMIN+1 ${neo-master:binary} -l ${:log}
+post = {{ bin_directory }}/slapos-kill -s RTMIN+1 -- ${neo-master:binary} -l ${:log}
