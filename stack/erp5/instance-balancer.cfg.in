@@ -211,31 +211,32 @@ crl = ${:ca-dir}/crl
 [binary-wrap-apachedex]
 recipe = slapos.cookbook:wrapper
 wrapper-path = ${directory:bin}/${:command}
-command-line = "{{ parameter_dict['apachedex-location'] }}/bin/${:command}"
+command-line = "{{ parameter_dict['apachedex-location'] }}"
 command = apachedex
 parameters-extra = true
 
+[binary-wrap-apachedex-runner-script]
+recipe = slapos.cookbook:wrapper
+wrapper-path = ${directory:bin}/${:command}
+command-line = "{{ parameter_dict['run-apachedex-location'] }}"
+command = run_apachedex
+parameters-extra = true
+
 [monitor-generate-apachedex-report]
-< = jinja2-template-base
-template = {{ parameter_dict['apachedex-report-script'] }}
-rendered = ${monitor-directory:reports}/${:filename}
-output-folder = ${directory:srv}/monitor/
-filename = apachedex_every_1_minute
-context =
-  raw python_executable ${buildout:executable}
-  raw apachedex_executable ${binary-wrap-apachedex:wrapper-path}
-  key output_folder :output-folder
-  key script-name apachedex
-  section parameter-dict apachedex-parameters
+recipe = slapos.cookbook:wrapper
+wrapper-path = ${monitor-directory:reports}/${:command}
+command-line = "${binary-wrap-apachedex-runner-script:wrapper-path}" "${binary-wrap-apachedex:wrapper-path}" "${directory:srv}/monitor/" "apachedex" -default "${apachedex-parameters:default}" -apache_log_list "${apachedex-parameters:apache-log-list}" -base_list "${apachedex-parameters:base-list}" -skip_base_list "${apachedex-parameters:skip-base-list}" -erp5_base_list "${apachedex-parameters:erp5-base-list}"
+command = apachedex_every_1_minute
 
 [apachedex-parameters]
 default_parameter = 
 # XXX - Sample log file with curent date: apache_access.log-%(date)s.gz
 # which will be equivalent to apache_access.log-20150112.gz if the date is 2015-01-12
-apache-log-list = 
-base-list = 
-skip-base-list = 
-erp5-base-list = 
+apache-log-list = ${apache-conf-parameter-dict:access-log}
+default = ${monitor-directory:etc}/apdex_default
+base-list = ${monitor-directory:etc}/apdex_base_list
+skip-base-list = ${monitor-directory:etc}/apdex_skip_base_list
+erp5-base-list = ${monitor-directory:etc}/apdex_erp5_base_list
 
 [monitor-instance-parameter]
 monitor-httpd-ipv6 = {{ (ipv6_set | list)[0] }}
@@ -243,10 +244,10 @@ monitor-httpd-port = {{ next_port() }}
 monitor-title = Balancer monitor
 password = {{ slapparameter_dict['monitor-passwd'] }}
 instance-configuration = 
-  raw apache-log-list ${apachedex-parameters:apache-log-list}
-  raw base-list ${apachedex-parameters:base-list}
-  raw skip-base-list ${apachedex-parameters:skip-base-list} 
-  raw erp5-base-list ${apachedex-parameters:erp5-base-list}
+  file apachedex-default ${apachedex-parameteres:default}
+  file apachedex-base-list ${apachedex-parameters:base-list}
+  file apachedex-skip-base-list ${apachedex-parameters:skip-base-list}
+  file apachedex-erp5-base-list ${apachedex-parameters:erp5-base-list}
 
 [buildout]
 extends =
@@ -255,4 +256,5 @@ extends =
 parts +=
   publish
   logrotate-apache
+  monitor-generate-apachedex-report
   {{ part_list | join('\n  ') }}
