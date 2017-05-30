@@ -161,6 +161,19 @@
       "type": "string",
       "default": ""
     },
+    "allowed-host-list": {
+      "title": "Restrict access",
+      "description": "Limiting access to certain client addresses",
+      "type": "string",
+      "default": ""
+    },
+    "enable-auth": {
+      "title": "Enable Authentification",
+      "description": "Limiting the access by password",
+      "type": "string",
+      "default": "true",
+      "enum": ["false", "true"]
+    },
 
     "apache_custom_http": {
       "title": "HTTP configuration",
