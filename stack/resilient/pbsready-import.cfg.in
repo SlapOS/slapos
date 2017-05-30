@@ -14,6 +14,10 @@ parts +=
 
   backup-signature-link
 
+
+[slap-parameter]
+on-notification =
+
 [resilient-publish-connection-parameter]
 notification-url = http://[$${notifier:host}]:$${notifier:port}/notify
 takeover-url = http://[$${resilient-web-takeover-httpd-configuration-file:listening-ip}]:$${resilient-web-takeover-httpd-configuration-file:listening-port}/

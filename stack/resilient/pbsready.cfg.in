@@ -61,6 +61,10 @@ logrotate-backup = $${basedirectory:backup}/logrotate
 cgi-bin = $${rootdirectory:srv}/cgi-bin
 monitor-resilient = $${monitor-directory:private}/resilient
 
+
+[slap-parameter]
+authorized-key =
+
 #----------------
 #--
 #-- Deploy cron.

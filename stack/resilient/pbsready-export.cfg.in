@@ -83,3 +83,4 @@ recipe = slapos.cookbook:publish-early
 [slap-parameter]
 # In cron.d format (i.e things like */15 * * * * are accepted).
 resiliency-backup-periodicity =
+notify =
