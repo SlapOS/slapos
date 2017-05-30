@@ -9,7 +9,9 @@
 {%   set https_proxy_pass = '%s//https_%s' % (protocol, slave_parameter.get('slave_reference')) -%}
 {%- set ssl_configuration_list = [('ssl_certificate', 'path_to_ssl_crt'),
                                  ('ssl_certificate_key', 'path_to_ssl_key')] -%}
-
+{% set allowed_host_list = filter(None, slave_parameter.get('allowed-host-list', "").split(",")) -%}
+{% set enable_auth = slave_parameter.get('enable-auth', 'true').strip().lower() == 'true' -%}
+{% set restrict_access = allowed_host_list != [] and 'all' not in allowed_host_list -%}
 
 upstream {{ slave_parameter.get('slave_reference') }} {
   server {{ upstream }};
@@ -41,6 +43,20 @@ server {
     client_max_body_size 16k;
     client_body_buffer_size 16k;
 
+    {% if enable_auth and restrict_access -%}
+    # Access must satisfy http_access(allow|deny) and auth_basic
+    satisfy all;
+    {% endif -%}
+    {% if enable_auth -%}
+    auth_basic "Restricted Access";
+    auth_basic_user_file {{ slave_parameter.get('htaccess_path') }};
+    {% endif -%}
+    {% if restrict_access -%}
+    {% for host in allowed_host_list -%}
+    allow {{ host }};
+    {% endfor -%}
+    deny all;
+    {% endif -%}
    }
 
    location ~ /sub/(.*) {
@@ -56,6 +72,10 @@ server {
 
      # content-type
      default_type "text/event-stream; charset=utf-8";
+     {% if enable_auth -%}
+     auth_basic "Restricted Access";
+     auth_basic_user_file {{ slave_parameter.get('htaccess_path') }};
+     {% endif -%}
   }
 
 }
@@ -95,6 +115,20 @@ server {
     client_max_body_size 16k;
     client_body_buffer_size 16k;
 
+    {% if enable_auth and restrict_access -%}
+    # Access must satisfy http_access(allow|deny) and auth_basic
+    satisfy all;
+    {% endif -%}
+    {% if enable_auth -%}
+    auth_basic "Restricted Access";
+    auth_basic_user_file {{ slave_parameter.get('htaccess_path') }};
+    {% endif -%}
+    {% if restrict_access -%}
+    {% for host in allowed_host_list -%}
+    allow {{ host }};
+    {% endfor -%}
+    deny all;
+    {% endif -%}
    }
 
    location ~ /sub/(.*) {
@@ -110,6 +144,10 @@ server {
 
      # content-type
      default_type "text/event-stream; charset=utf-8";
+     {% if enable_auth -%}
+     auth_basic "Restricted Access";
+     auth_basic_user_file {{ slave_parameter.get('htaccess_path') }};
+     {% endif -%}
   }
 }
 {% endif -%}

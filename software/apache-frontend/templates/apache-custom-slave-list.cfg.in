@@ -100,9 +100,16 @@ crl = {{ custom_ssl_directory }}/crl/
 
 {%   if not slave_instance.has_key('apache_custom_http') %}
 {%     do slave_publish_dict.__setitem__('domain', slave_instance.get('custom_domain')) -%}
-{%     do slave_publish_dict.__setitem__('url', "http://%s" % slave_instance.get('custom_domain')) -%}
-{%     do slave_publish_dict.__setitem__('site_url', "http://%s" % slave_instance.get('custom_domain')) -%}
-{%     do slave_publish_dict.__setitem__('secure_access', 'https://%s' % slave_instance.get('custom_domain')) -%}
+{%     if slave_instance.get("enable-http", "true").strip().lower() == "true" -%}
+{%       do slave_publish_dict.__setitem__('url', 'http://' + slave_reference + ':${'+ slave_password_section +':passwd}@' + slave_instance.get('custom_domain')) -%}
+{%     else -%}
+{%       do slave_publish_dict.__setitem__('url', "http://%s" % slave_instance.get('custom_domain')) -%}
+{%     endif -%}
+{%     if slave_instance.get("enable-http", "true").strip().lower() == "true" -%}
+{%       do slave_publish_dict.__setitem__('secure_access', 'https://' + slave_reference + ':${'+ slave_password_section +':passwd}@' + slave_instance.get('custom_domain')) -%}
+{%     else -%}
+{%       do slave_publish_dict.__setitem__('secure_access', 'https://%s' % slave_instance.get('custom_domain')) -%}
+{%     endif -%}
 {%   endif -%}
 
 [slave-log-directories]
@@ -193,6 +200,7 @@ cert-content = {{ dumps(slave_instance.get('ssl_crt')) }}
 {%     set apache_custom_https = ((slave_instance.pop('apache_custom_https', '')) % slave_parameter_dict) -%}
 apache_custom_http = {{ dumps(apache_custom_http) }}
 apache_custom_https = {{ dumps(apache_custom_https) }}
+htaccess_path = {{ '${' + slave_htaccess_section + ':htaccess-path}' }}
 {{ '\n' }}
 {%     for key, value in slave_instance.iteritems() -%}
 {{ key }} = {{ dumps(value) }}
