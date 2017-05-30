@@ -57,11 +57,6 @@
             "type": "integer",
             "default" : 4
         },
-        "instance-name": {
-            "title": "Displayed instance name",
-            "description": "Name of the instance, to show in the window title",
-            "type": "string"
-        },
         "no-ipv4-frontend": {
             "title": "No IPv4 frontend",
             "description": "Prevent the slaprunner to order an IPv4 frontend for itself",
@@ -128,12 +123,6 @@
             "description": "List of cors domains separated with space. Needed for ajax query on this monitor instance from a different domain.",
             "type": "string",
             "default": "monitor.app.officejs.com"
-        },
-        "resilient-clone-number": {
-            "title": "Number of Resilient Clones",
-            "description": "Number of clones to be deployed when a resilient runner, if missing a single clone is provided. Its value can be 1 or 2",
-            "type": "integer",
-            "enum": [1, 2]
         },
         "instance-name": {
             "title": "Instance Name",
