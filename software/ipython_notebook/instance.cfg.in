@@ -109,6 +109,7 @@ filename = knowledge0.cfg
 [read-knowledge0]
 recipe = slapos.cookbook:zero-knowledge.read
 filename = knowledge0.cfg
+password =
 
 [monitor-instance-parameter]
 monitor-base-url = ${monitor-frontend-promise:url}
