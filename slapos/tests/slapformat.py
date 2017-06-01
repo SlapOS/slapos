@@ -239,6 +239,9 @@ class SlapformatMixin(unittest.TestCase):
     self.test_result = TestLoggerHandler()
     logger.addHandler(self.test_result)
     config.logger = logger
+    if hasattr(self, "logger"):
+      raise ValueError("{} already has logger attached".format(self.__class__.__name__))
+    self.logger = logger
     self.partition = slapos.format.Partition('partition', '/part_path',
       slapos.format.User('testuser'), [], None)
     global USER_LIST
@@ -281,7 +284,7 @@ class TestComputer(SlapformatMixin):
   @unittest.skip("Not implemented")
   def test_construct_empty_prepared(self):
     computer = slapos.format.Computer('computer',
-      interface=slapos.format.Interface(logger=self.test_result,
+      interface=slapos.format.Interface(logger=self.logger,
                                         name='bridge',
                                         ipv4_local_network='127.0.0.1/16'))
     computer.instance_root = '/instance_root'
@@ -302,7 +305,7 @@ class TestComputer(SlapformatMixin):
 
   def test_construct_empty_prepared_no_alter_user(self):
     computer = slapos.format.Computer('computer',
-      interface=slapos.format.Interface(logger=self.test_result,
+      interface=slapos.format.Interface(logger=self.logger,
                                         name='bridge',
                                         ipv4_local_network='127.0.0.1/16'))
     computer.instance_root = '/instance_root'
@@ -319,7 +322,7 @@ class TestComputer(SlapformatMixin):
   @unittest.skip("Not implemented")
   def test_construct_empty_prepared_no_alter_network(self):
     computer = slapos.format.Computer('computer',
-      interface=slapos.format.Interface(logger=self.test_result,
+      interface=slapos.format.Interface(logger=self.logger,
                                         name='bridge',
                                         ipv4_local_network='127.0.0.1/16'))
     computer.instance_root = '/instance_root'
@@ -340,7 +343,7 @@ class TestComputer(SlapformatMixin):
 
   def test_construct_empty_prepared_no_alter_network_user(self):
     computer = slapos.format.Computer('computer',
-      interface=slapos.format.Interface(logger=self.test_result,
+      interface=slapos.format.Interface(logger=self.logger,
                                         name='bridge',
                                         ipv4_local_network='127.0.0.1/16'))
     computer.instance_root = '/instance_root'
@@ -359,7 +362,7 @@ class TestComputer(SlapformatMixin):
   @unittest.skip("Not implemented")
   def test_construct_prepared(self):
     computer = slapos.format.Computer('computer',
-      interface=slapos.format.Interface(logger=self.test_result,
+      interface=slapos.format.Interface(logger=self.logger,
                                         name='bridge',
                                         ipv4_local_network='127.0.0.1/16'))
     computer.instance_root = '/instance_root'
@@ -405,7 +408,7 @@ class TestComputer(SlapformatMixin):
 
   def test_construct_prepared_no_alter_user(self):
     computer = slapos.format.Computer('computer',
-      interface=slapos.format.Interface(logger=self.test_result,
+      interface=slapos.format.Interface(logger=self.logger,
                                         name='bridge',
                                         ipv4_local_network='127.0.0.1/16'))
     computer.instance_root = '/instance_root'
@@ -498,7 +501,7 @@ class TestComputer(SlapformatMixin):
   @unittest.skip("Not implemented")
   def test_construct_prepared_no_alter_network(self):
     computer = slapos.format.Computer('computer',
-      interface=slapos.format.Interface(logger=self.test_result,
+      interface=slapos.format.Interface(logger=self.logger,
                                         name='bridge',
                                         ipv4_local_network='127.0.0.1/16'))
     computer.instance_root = '/instance_root'
@@ -540,7 +543,7 @@ class TestComputer(SlapformatMixin):
 
   def test_construct_prepared_no_alter_network_user(self):
     computer = slapos.format.Computer('computer',
-      interface=slapos.format.Interface(logger=self.test_result,
+      interface=slapos.format.Interface(logger=self.logger,
                                         name='bridge',
                                         ipv4_local_network='127.0.0.1/16'))
     computer.instance_root = '/instance_root'
@@ -581,7 +584,7 @@ class TestComputer(SlapformatMixin):
     global USER_LIST
     USER_LIST = ['root']
     computer = slapos.format.Computer('computer',
-      interface=slapos.format.Interface(logger=self.test_result,
+      interface=slapos.format.Interface(logger=self.logger,
                                         name='myinterface',
                                         ipv4_local_network='127.0.0.1/16'))
     computer.instance_root = '/instance_root'
