@@ -38,10 +38,10 @@ config-{{ k }} = {{ '${' ~ v ~ '}' }}
 {% endfor -%}
 {% endmacro -%}
 
-{{ request('memcached-persistent', 'kumofs', 'kumofs', {'tcpv4-port': 2000}, {'url': True, 'monitor-base-url': False}, key_config={'monitor-passwd': 'monitor-passwd:passwd'}) }}
-{{ request('memcached-volatile', 'kumofs', 'memcached', {'tcpv4-port': 2010, 'ram-storage-size': 64}, {'url': True, 'monitor-base-url': False}, key_config={'monitor-passwd': 'monitor-passwd:passwd'}) }}
-{{ request('cloudooo', 'cloudooo', 'cloudooo', {'tcpv4-port': 2020}, {'url': True, 'monitor-base-url': False}, key_config={'monitor-passwd': 'monitor-passwd:passwd'}) }}
-{{ request('mariadb', 'mariadb', 'mariadb', {'tcpv4-port': 2099}, {'database-list': True, 'test-database-list': True, 'monitor-base-url': False}, key_config={'monitor-passwd': 'monitor-passwd:passwd'}) }}
+{{ request('memcached-persistent', 'kumofs', 'kumofs', {'tcpv4-port': 2000}, {'url': True, 'monitor-base-url': False}, key_config={'monitor-passwd': 'monitor-htpasswd:passwd'}) }}
+{{ request('memcached-volatile', 'kumofs', 'memcached', {'tcpv4-port': 2010, 'ram-storage-size': 64}, {'url': True, 'monitor-base-url': False}, key_config={'monitor-passwd': 'monitor-htpasswd:passwd'}) }}
+{{ request('cloudooo', 'cloudooo', 'cloudooo', {'tcpv4-port': 2020}, {'url': True, 'monitor-base-url': False}, key_config={'monitor-passwd': 'monitor-htpasswd:passwd'}) }}
+{{ request('mariadb', 'mariadb', 'mariadb', {'tcpv4-port': 2099}, {'database-list': True, 'test-database-list': True, 'monitor-base-url': False}, key_config={'monitor-passwd': 'monitor-htpasswd:passwd'}) }}
 {% if has_posftix -%}
 {{   request('smtp', 'postfix', 'smtp', {'tcpv4-port': 2025, 'smtpd-sasl-user': 'erp5@nowhere'}, key_config={'smtpd-sasl-password': 'publish-early:smtpd-sasl-password'}) }}
 {%- else %}
@@ -78,7 +78,7 @@ connection-url = smtp://127.0.0.2:0/
 {%   else -%}
 {{     assert(server_type == 'zeo', server_type) -}}
 {# BBB: for compatibility, keep 'zodb' as partition_reference for ZEO -#}
-{{     request('zodb', 'zodb-' ~ server_type, 'zodb-' ~ server_type, {'tcpv4-port': 2100, 'zodb-dict': server_dict}, dict.fromkeys(('storage-dict', 'tidstorage-ip', 'tidstorage-port', 'monitor-base-url')), key_config={'monitor-passwd': 'monitor-passwd:passwd'}) }}
+{{     request('zodb', 'zodb-' ~ server_type, 'zodb-' ~ server_type, {'tcpv4-port': 2100, 'zodb-dict': server_dict}, dict.fromkeys(('storage-dict', 'tidstorage-ip', 'tidstorage-port', 'monitor-base-url')), key_config={'monitor-passwd': 'monitor-htpasswd:passwd'}) }}
 {%   endif -%}
 {% endfor -%}
 
@@ -146,7 +146,7 @@ config-inituser-login = {{ dumps(inituser_login) }}
 config-inituser-password = ${publish-early:inituser-password}
 config-kumofs-url = ${request-memcached-persistent:connection-url}
 config-memcached-url = ${request-memcached-volatile:connection-url}
-config-monitor-passwd = ${monitor-passwd:passwd}
+config-monitor-passwd = ${monitor-htpasswd:passwd}
 config-mysql-test-url-list = ${request-mariadb:connection-test-database-list}
 config-mysql-url-list = ${request-mariadb:connection-database-list}
 config-site-id = {{ dumps(site_id) }}
@@ -258,7 +258,7 @@ config-{{ name }} = {{ ' ${' ~ zope_section_id ~ ':connection-zope-address-list}
 config-haproxy-server-check-path = {{ dumps(balancer_dict.get('haproxy-server-check-path', '/') % {'site-id': site_id}) }}
 config-backend-path = {{ dumps(balancer_dict.get('apache-backend-path', '/') % {'site-id': site_id}) }}
 config-ssl = {{ dumps(balancer_dict.get('ssl', {})) }}
-config-monitor-passwd = ${monitor-passwd:passwd}
+config-monitor-passwd = ${monitor-htpasswd:passwd}
 
 
 [request-frontend-base]
@@ -304,11 +304,6 @@ hosts-dict = {{ '${' ~ zope_address_list_id_dict.keys()[0] ~ ':connection-hosts-
 [monitor-instance-parameter]
 monitor-httpd-port = 8386
 
-[monitor-passwd]
-recipe = slapos.cookbook:generate.password
-bytes = 8
-storage-path = ${directory:etc}/.monitor_pwd
-
 {{ root_common.common_section() }}
 
 [buildout]
@@ -319,7 +314,7 @@ parts +=
 
 [monitor-conf-parameters]
 monitor-title = ERP5 monitor
-password = ${monitor-passwd:passwd}
+password = ${monitor-htpasswd:passwd}
 
 [monitor-base-url-dict]
 {% for key, value in monitor_base_url_dict.items() -%}
