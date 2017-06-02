@@ -149,6 +149,7 @@ extensions = jinja2.ext.do
 context =
     key develop_eggs_directory buildout:develop-eggs-directory
     key eggs_directory buildout:eggs-directory
+    raw qemu_location ${kvm:location}
     raw template_kvm_import ${template-kvm-import-script:location}/${template-kvm-import-script:filename}
     raw pbsready_import_template ${pbsready-import:output}
     key slapparameter_dict slap-configuration:configuration

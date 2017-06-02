@@ -100,7 +100,7 @@ parameter-file-path = ${monitor-instance-parameter:configuration-file-path}
 
 parameter-list = 
   raw monitor-user ${monitor-instance-parameter:username}
-  htpasswd monitor-password ${monitor-htpassword-file:password-file} ${monitor-instance-parameter:username} ${httpd-monitor-htpasswd:htpasswd-path}
+  htpasswd monitor-password ${httpd-monitor-htpasswd:password-file} ${monitor-instance-parameter:username} ${httpd-monitor-htpasswd:htpasswd-path}
   file promise-timeout ${monitor-promise-timeout-file:file}
   file min-free-disk-MB ${promise-check-free-disk-space:config-file}
   ${monitor-instance-parameter:instance-configuration}
@@ -164,25 +164,18 @@ environment =
 recipe = slapos.cookbook:generate.password
 storage-path = ${directory:etc}/.monitor_pwd
 bytes = 8
-username = admin
-
-[monitor-htpassword-file]
-recipe = plone.recipe.command
-stop-on-error = true
-password-file = ${directory:etc}/.monitor_pwd
-command = 
-  if [ ! -s "${:password-file}" ]; then echo "${monitor-instance-parameter:password}" > ${:password-file}; fi
-update-command = ${:command}
 
 [httpd-monitor-htpasswd]
 recipe = plone.recipe.command
 stop-on-error = true
+password-file = ${directory:etc}/.monitor_pwd
 htpasswd-path = ${monitor-directory:etc}/monitor-htpasswd
 # Keep multiple lines as password can end with newline char.
 command = 
   if [ ! -s "${:htpasswd-path}" ]; then 
     {{ apache_location }}/bin/htpasswd -cb ${:htpasswd-path} ${:user} ${:password}
   fi
+  if [ ! -s "${:password-file}" ]; then echo "${monitor-instance-parameter:password}" > ${:password-file}; fi
 update-command = ${:command}
 user = ${monitor-instance-parameter:username}
 password = ${monitor-instance-parameter:password}
@@ -305,7 +298,7 @@ cors-domains = monitor.app.officejs.com
 collector-db = /srv/slapgrid/var/data-log/collector.db
 # Credentials
 password = ${monitor-htpasswd:passwd}
-username = ${monitor-htpasswd:username}
+username = admin
 # XXX: type key value
 # ex raw monitor-password resqdsdsd34
 instance-configuration =

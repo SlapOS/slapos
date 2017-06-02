@@ -19,6 +19,7 @@
 
 [publish]
 recipe = slapos.cookbook:publish.serialised
+-extends = publish-early
 {% macro render_database_list(database_list) -%}
 {% set publish_database_list = [] -%}
 {% for database in database_list -%}
@@ -32,6 +33,20 @@ recipe = slapos.cookbook:publish.serialised
 {% endmacro -%}
 database-list = {{ render_database_list(database_list) }}
 test-database-list = {{ render_database_list(test_database_list) }}
+
+[publish-early]
+recipe = slapos.cookbook:publish-early
+-init =
+  server-id gen-server-id:value
+{%- set server_id = slapparameter_dict.get('server-id') %}
+{%- if server_id %}
+server-id = {{ dumps(server_id) }}
+{%- endif %}
+
+[gen-server-id]
+recipe = slapos.cookbook:random.integer
+minimum = {{ dumps(1) }}
+maximum = {{ dumps(2**32 - 1) }}
 
 [jinja2-template-base]
 recipe = slapos.recipe.template:jinja2
@@ -124,7 +139,7 @@ relaxed-writes = {{ dumps(slapparameter_dict.get('relaxed-writes', False)) }}
 binlog-path = ${directory:mariadb-backup-incremental}/binlog
 # XXX: binlog rotation happens along with other log's rotation
 binlog-expire-days = {{ dumps(incremental_backup_retention_days) }}
-server-id = {{ dumps(slapparameter_dict.get('server-id', 1)) }}
+server-id = ${publish-early:server-id}
 {% else %}
 binlog-path =
 {%- endif %}
@@ -232,9 +247,10 @@ run = ${:var}/run
 
 [resiliency-exclude-file]
 # Generate rdiff exclude file in case of resiliency
-recipe = collective.recipe.template
-input = inline: srv/mariadb/**
-output = ${directory:srv}/exporter.exclude
+recipe = slapos.recipe.template:jinja2
+mode = 644
+template = {{ 'inline:{{ "${directory:mariadb-data}/**\\n" }}' }}
+rendered = ${directory:srv}/exporter.exclude
 
 [resiliency-after-import-script]
 # Generate after import script used by importer instance of webrunner
