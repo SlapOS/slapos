@@ -65,6 +65,7 @@ port = ${supervisord-free-port:port}
 [exporter-configuration]
 coreutils-location = {{ dumps(parameter_dict['coreutils-location']) }}
 gawk-location = {{ dumps(parameter_dict['gawk-location']) }}
+backup_wait_time = {{ dumps(parameter_dict['backup_wait_time']) }}
 
 [exporter]
 recipe = slapos.recipe.template:jinja2

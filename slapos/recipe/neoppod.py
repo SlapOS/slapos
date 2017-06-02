@@ -43,6 +43,7 @@ class NeoBaseRecipe(GenericBaseRecipe):
       # useful, as per NEO deploying constraints.
       raise UserError('"masters" parameter is mandatory')
     option_list = [
+      # Keep the -l option first, as expected by logrotate snippets.
       '-l', options['logfile'],
       '-m', options['masters'],
       '-b', self._getBindingAddress(),

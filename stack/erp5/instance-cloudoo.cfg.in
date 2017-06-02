@@ -57,9 +57,10 @@ service-folder = ${directory:service}
 
 [resiliency-exclude-file]
 # Generate rdiff exclude file in case of resiliency
-recipe = collective.recipe.template
-input = inline: **
-output = ${directory:srv}/exporter.exclude
+recipe = slapos.recipe.template:jinja2
+mode = 644
+template = {{ 'inline:{{ "**\\n" }}' }}
+rendered = ${directory:srv}/exporter.exclude
 
 [promise]
 recipe = slapos.cookbook:check_port_listening

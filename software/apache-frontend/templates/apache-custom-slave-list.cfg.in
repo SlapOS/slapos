@@ -106,7 +106,7 @@ crl = {{ custom_ssl_directory }}/crl/
 {%   endif -%}
 
 [slave-log-directories]
-{{slave_reference}}-log-folder = {{ slave_log_folder }}
+{{slave_reference}} = {{ slave_log_folder }}
 
 {# Set slave logrotate entry #}
 [{{slave_logrotate_section}}]

@@ -3,6 +3,7 @@
 {%- set disable_via_header = ('' ~ slave_parameter.get('disable-via-header', '')).lower() in TRUE_VALUES -%}
 {%- set prefer_gzip = ('' ~ slave_parameter.get('prefer-gzip-encoding-to-backend', '')).lower() in TRUE_VALUES -%}
 {%- set server_alias_list =  slave_parameter.get('server-alias', '').split() -%}
+{%- set enable_h2 = ('' ~ slave_parameter.get('enable-http2', 'true')).lower() in TRUE_VALUES -%}
 {%- set ssl_proxy_verify = ('' ~ slave_parameter.get('ssl-proxy-verify', '')).lower() in TRUE_VALUES -%}
 {%- set disabled_cookie_list =  slave_parameter.get('disabled-cookie-list', '').split() -%}
 {%- set https_only = ('' ~ slave_parameter.get('https-only', '')).lower() in TRUE_VALUES -%}
@@ -33,8 +34,10 @@
   SSLProtocol all -SSLv2 -SSLv3
   SSLCipherSuite ECDH+AESGCM:DH+AESGCM:ECDH+AES256:DH+AES256:ECDH+AES128:DH+AES:ECDH+3DES:DH+3DES:RSA+AESGCM:RSA+AES:RSA+3DES:HIGH:!aNULL:!MD5
   SSLHonorCipherOrder on
-  Protocols h2 http/1.1
 
+{% if enable_h2 %}
+  Protocols h2 http/1.1
+{% endif -%}
 
 {% for key, value in ssl_configuration_list -%}
 {%   if value in slave_parameter -%}
@@ -44,7 +47,7 @@
 
   # One Slave two logs
   ErrorLog "{{ slave_parameter.get('error_log') }}"
-  LogLevel info
+  LogLevel notice
   LogFormat "%h %l %{REMOTE_USER}i %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\" %D" combined
   CustomLog "{{ slave_parameter.get('access_log') }}" combined
 
@@ -116,14 +119,16 @@
 
   # One Slave two logs
   ErrorLog "{{ slave_parameter.get('error_log') }}"
-  LogLevel info
+  LogLevel notice
   LogFormat "%h %l %{REMOTE_USER}i %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\" %D" combined
   CustomLog "{{ slave_parameter.get('access_log') }}" combined
 
   # Remove "Secure" from cookies, as backend may be https
   Header edit Set-Cookie "(?i)^(.+);secure$" "$1"
 
+{% if enable_h2 %}
   Protocols h2 http/1.1
+{% endif -%}
 
 {% if disable_no_cache_header %}
   RequestHeader unset Cache-Control

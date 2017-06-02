@@ -4,8 +4,7 @@ General:
 - ipv6 support (besides frontend-backend apache connection)
   requires important changes at ERP5 level
 - resilience
-- make mariadb user accounts accept connections only from relevant IPs
-  or make x509 mandatory (needs ZMySQLD*A support)
+- mariadb: make x509 mandatory (needs ZMySQLD*A support)
 - make postfix log inside partition
 - document postfix parameters (only once it actually works)
 
