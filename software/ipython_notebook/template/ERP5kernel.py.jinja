@@ -107,7 +107,10 @@ class ERP5Kernel(Kernel):
         magic_value = code.split()[1]
         # Set magic_value to the required attribute
         setattr(self, magic_info.variable_name , magic_value)
-        self.response = 'Your %s is %s. '%(magic_info.magic_name, magic_value)
+        if magic_info.magic_name != "erp5_password":
+          self.response = 'Your %s is %s.\n'%(magic_info.magic_name, magic_value)
+        else:
+          self.response = None
 
       # Catch exception while setting attribute and set message in response
       except AttributeError:
