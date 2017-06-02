@@ -24,15 +24,8 @@ rsync () {
   set +x
 }
 
-relativise () {
-  while IFS= read -r line; do
-    if [ ! -z "$line" ]; then
-      '{{ parameter_dict["coreutils-location"] }}/bin/realpath' --quiet --canonicalize-missing --no-symlinks --relative-to="$1" "$line"
-    fi
-  done
-}
-
 (
+  # XXX: code duplication with runner-import.sh.jinja2
   path=$srv_directory/runner
   backup_path=$backup_directory/runner/
   cd "$path"
@@ -41,31 +34,46 @@ relativise () {
     # Concatenate the exclude file of each partition of webrunner
     # to create a global exclude file.
     # Also, ignore all buildout-managed files.
-    (
-      echo "*.sock"
-      echo "*.socket"
-      echo "*.pid"
-      echo ".installed*.cfg"
-      for partition in "$path"/instance/slappart*; do
-        # So "relativise" can handle relative paths (which are expected to be relative to partition).
-        cd "$partition"
-        exclude_file=srv/exporter.exclude
-        if [ -r "$exclude_file" ]; then
-          relativise "$path" < "$exclude_file"
-        fi
-        for installed in .installed*.cfg; do
-          if [ -r "$installed" ]; then
-            # Print every line from each __buildout_installed__ found.
-            '{{ parameter_dict["gawk-location"] }}/bin/gawk' '
-              BEGIN { do_print = 0 }
-              match($0, /^__buildout_installed__\s*=\s*(\S.*)/, ary) { do_print = 1; print ary[1]; next }
-              /^\S/ { do_print = 0; next }
-              match($0, /^\s+(\S.*)/, ary) { if (do_print) print ary[1] }
-            ' "$installed" | relativise "$path"
-          fi
-        done
-      done
-    ) | rsync --exclude-from=- instance "$backup_path"
+    exclude=$({{ sys.executable }} - "$path" <<EOF
+if 1:
+        import glob, errno, os, sys
+        sys.path[:0] = {{ repr(easy_install.buildout_and_setuptools_path) }}
+        from zc.buildout.configparser import parse
+        path = sys.argv[1]
+
+        def print_relative(path_list):
+            for p in path_list:
+                p = p.strip()
+                if p:
+                    print(os.path.relpath(p, path))
+        print("*.sock")
+        print("*.socket")
+        print("*.pid")
+        print(".installed*.cfg")
+        for partition in glob.glob(path + "/instance/slappart*"):
+            os.chdir(partition)
+            try:
+                with open("srv/exporter.exclude") as f:
+                    exclude = f.readlines()
+            except IOError as e:
+                if e.errno != errno.ENOENT:
+                    raise
+            else:
+                print_relative(exclude)
+            for installed in glob.glob(".installed*.cfg"):
+                try:
+                    with open(installed) as f:
+                        installed = parse(f, installed)
+                except IOError as e:
+                    if e.errno != errno.ENOENT:
+                        raise
+                else:
+                    for section in installed.itervalues():
+                        print_relative(section.get(
+                            '__buildout_installed__', '').splitlines())
+EOF
+)
+    echo "$exclude" |rsync --exclude-from=- instance "$backup_path"
   fi
 
   test -d project  && rsync project "$backup_path"
@@ -116,6 +124,6 @@ if diff "$tmp_backup_sum" "$tmp_filtered_signature"; then
   exit 0
 fi
 echo "ERROR: Some backups are not consistent, exporter should be re-run."
-echo "Let's sleep {{ parameter_dict['backup_wait_time'] }} minutes, to let the backup end..."
-sleep {{ parameter_dict["backup_wait_time"] }}m
+echo "Let's sleep {{ backup_wait_time }} minutes, to let the backup end..."
+sleep {{ backup_wait_time }}m
 exit 1

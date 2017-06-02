@@ -72,10 +72,6 @@ maximum = 22241
 [cron-entry-prepare-software]
 recipe =
 
-[importer-configuration]
-coreutils-location = ${coreutils:location}
-gawk-location = ${gawk:location}
-
 [importer]
 recipe = slapos.recipe.template:jinja2
 template = ${template-runner-import-script:location}/${template-runner-import-script:filename}
@@ -89,12 +85,13 @@ restore-error-message-file = $${directory:srv}/$${:restore-error-message-file-ba
 restore-error-message-file-basename = importer-error-message-file
 resilient-log-basename = resilient.log
 context =
+  import sys sys
+  import easy_install zc.buildout.easy_install
   key backend_url slaprunner:access-url
   key ipv4 slaprunner:ipv4
   key ipv6 slaprunner:ipv6
   key proxy_port slaprunner:proxy_port
   key instance_folder slaprunner:instance_root
-  section parameter_dict importer-configuration
   section directory directory
   section supervisord supervisord
   raw  output_log_file $${directory:log}/$${:resilient-log-basename}

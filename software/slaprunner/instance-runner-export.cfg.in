@@ -62,11 +62,6 @@ ip = ${slaprunner:ipv4}
 [supervisord]
 port = ${supervisord-free-port:port}
 
-[exporter-configuration]
-coreutils-location = {{ dumps(parameter_dict['coreutils-location']) }}
-gawk-location = {{ dumps(parameter_dict['gawk-location']) }}
-backup_wait_time = {{ dumps(parameter_dict['backup_wait_time']) }}
-
 [exporter]
 recipe = slapos.recipe.template:jinja2
 template = {{ exporter_script_path }}
@@ -75,8 +70,10 @@ rendered = ${directory:bin}/${slap-parameter:namebase}-exporter
 wrapper = ${:rendered}
 mode = 700
 context =
+  import sys sys
+  import easy_install zc.buildout.easy_install
   section directory directory
-  section parameter_dict exporter-configuration
+  raw  backup_wait_time {{ backup_wait_time }}
   raw  output_log_file ${directory:log}/resilient.log
   raw  shell_binary {{ bash_executable_location }}
   raw  rsync_binary {{ rsync_executable_location }}
