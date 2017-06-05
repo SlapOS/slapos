@@ -36,6 +36,7 @@ parts +=
   monitor-base
   monitor-check-resilient-feed-file
   monitor-check-webrunner-internal-instance
+  template-slapuser-script
 
 [proxy-free-port]
 recipe = slapos.cookbook:free_port
@@ -104,3 +105,13 @@ context =
   key monitor_feed_directory monitor-directory:public
   raw base_url http://[${notifier:host}]:${notifier:port}/get/
   raw python_executable ${buildout:executable}
+  
+## Slapuser slapos command script
+[template-slapuser-script]
+recipe = slapos.recipe.template:jinja2
+template = ${buildout:parts-directory}/template-slapuser-script/slapos-slapuser-script.in
+rendered = $${buildout:bin-directory}/slapos
+mode = 0744
+context =
+  raw config_location $${slapos-cfg:rendered}
+  raw slapos_python_file_location ${buildout:bin-directory}/slapos
