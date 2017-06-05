@@ -156,7 +156,7 @@ auto-deploy-instance = false
 auto-deploy = true
 name = Webrunner import
 monitor-cors-domains = 
-monitor-username = $${monitor-htpasswd:username}
+monitor-username = $${monitor-instance-parameter:username}
 monitor-password = $${monitor-htpasswd:passwd}
 
 [resilient-publish-connection-parameter]

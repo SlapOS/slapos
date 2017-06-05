@@ -81,7 +81,7 @@ context =
 <= slap-connection
 recipe = slapos.cookbook:requestoptional
 config-monitor-cors-domains = {{ slapparameter_dict.get('monitor-cors-domains', 'monitor.app.officejs.com') }}
-config-monitor-username = ${monitor-htpasswd:username}
+config-monitor-username = ${monitor-instance-parameter:username}
 config-monitor-password = ${monitor-htpasswd:passwd}
 
 {% set frontend_software_url_key = "-frontend-software-release-url" %}
