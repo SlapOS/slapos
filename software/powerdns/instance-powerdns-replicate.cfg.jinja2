@@ -81,7 +81,7 @@ username = admin
 [monitor-instance-parameter]
 monitor-httpd-port = 8099
 cors-domains = {{ slapparameter_dict.get('monitor-cors-domains', 'monitor.app.officejs.com') }}
-username = ${monitor-htpasswd:username}
+username = ${monitor-instance-parameter:username}
 password = ${monitor-htpasswd:passwd}
 
 [monitor-conf-parameters]
@@ -109,7 +109,7 @@ config-{{parameter}} = {{ value }}
 {% endfor -%}
 config-{{ slave_list_name }} = {{ json_module.dumps(slave_instance_list) }}
 config-monitor-cors-domains = {{ slapparameter_dict.get('monitor-cors-domains', 'monitor.node.vifib.com') }}
-config-monitor-username = ${monitor-htpasswd:username}
+config-monitor-username = ${monitor-instance-parameter:username}
 config-monitor-password = ${monitor-htpasswd:passwd}
 
 [publish-information]

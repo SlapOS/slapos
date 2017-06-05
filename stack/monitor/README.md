@@ -38,7 +38,7 @@ Override monitor configuration section to define your custom parameters.
     cors-domains = monitor.app.officejs.com
     collector-db = ...
     password = ${monitor-htpasswd:passwd}
-    username = ${monitor-htpasswd:username}
+    username = admin
     instance-configuration = ...
     configuration-file-path = ...
     interface-url = ...
@@ -57,7 +57,7 @@ You don't need to define all parameters, you can only set what is required to be
 - monitor-url-list: set list of Monitor Base URL of monitor sub-instances, if this is the root instance with at least one child.
 - cors-domains: the domain used by the monitor web interface. The default is: monitor.app.officejs.com.
 - username: monitor username, this should be the same in all sub-instances. Default is: admin.
-- password: monitor password, this should be the same in all sub-instances. Default is generated (${monitor-htpasswd:username}).
+- password: monitor password, this should be the same in all sub-instances. Default is generated (${monitor-instance-parameter:username}).
 - instance-configuration: instance custom information or configuration to show in monitor web interface. There is many possibility:
   raw CONFIG_KEY VALUE => non editable configuration, ie: raw monitor-password resqdsdsd34
   file CONFIG_KEY PATH_TO_RESULT_FILE => editable configuration.
@@ -218,7 +218,7 @@ Parameters can be editable (except raw parameter) directly from  monitor interfa
     [monitor-instance-parameter]
     instance-configuration = 
       raw init-user ${publish-connection-information:init-user}
-      htpasswd monitor-password ${monitor-htpassword-file:password-file} ${monitor-instance-parameter:username} ${httpd-monitor-htpasswd:htpasswd-path}
+      htpasswd monitor-password ${httpd-monitor-htpasswd:password-file} ${monitor-instance-parameter:username} ${httpd-monitor-htpasswd:htpasswd-path}
       file promise-timeout ${monitor-promise-timeout-file:file}
 
 The user will see parameters:
