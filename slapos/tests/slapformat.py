@@ -26,7 +26,6 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #
 ##############################################################################
-from __future__ import print_function
 
 import logging
 import slapos.format
@@ -69,7 +68,7 @@ class FakeCallAndRead:
     retval = 0, 'UP'
     global INTERFACE_DICT
     if 'useradd' in argument_list:
-      print(argument_list)
+      print argument_list
       global USER_LIST
       username = argument_list[-1]
       if username == '-r':
@@ -231,33 +230,6 @@ class SlapformatMixin(unittest.TestCase):
       setattr(slapos.util, name, original_value)
     del self.saved_slapos_util
 
-  def assertEqualCommands(self, seq1, seq2):
-    """Assert that all items in seq1 are present in right order in seq2.
-
-    This is useful for ``logger.bucket_list`` where we save executed commands
-    which mix together with logging messages.
-    """
-    if len(seq1) == 0:
-      return
-    assert len(seq1) <= len(seq2), "First argument should contain mandatory items\n"
-    if len(seq1) != len(seq2):
-      logging.getLogger('test.slap.format').warning("Comparing uneven sequences!\n")
-      print("\n".join(map(str, seq1)))
-      print("\n".join(map(str, seq2)))
-    # we cannot do simple filter s2 in s1 because commands might repeat
-    iter1, iter2 = iter(seq1), iter(seq2)
-    item1, item2 = next(iter1), next(iter2)
-    try:
-      while item1 != item2:
-        item2 = next(iter2)
-      item1 = next(iter1)
-    except StopIteration as e:
-      raise AssertionError(
-        "Following sequences differs at line \"{!s}\"\n{}\n!=\n{}\n".format(
-          item1,
-          "\n".join(map(str, seq1)),
-          "\n".join(map(str, seq2))))
-
   def setUp(self):
     config = FakeConfig()
     config.dry_run = True
@@ -318,14 +290,14 @@ class TestComputer(SlapformatMixin):
     computer.instance_root = '/instance_root'
     computer.software_root = '/software_root'
     computer.construct()
-    self.assertEqualCommands([
+    self.assertEqual([
       "makedirs('/instance_root', 493)",
       "makedirs('/software_root', 493)",
       "chown('/software_root', 0, 0)",
       "chmod('/software_root', 493)"],
       self.test_result.bucket)
     self.assertEqual([
-      # 'ip addr list bridge',   # don't track non-functional commands
+      'ip addr list bridge',
       'groupadd slapsoft',
       'useradd -d /software_root -g slapsoft slapsoft -r'
       ],
@@ -339,7 +311,7 @@ class TestComputer(SlapformatMixin):
     computer.instance_root = '/instance_root'
     computer.software_root = '/software_root'
     computer.construct(alter_user=False)
-    self.assertEqualCommands([
+    self.assertEqual([
       "makedirs('/instance_root', 493)",
       "makedirs('/software_root', 493)",
       "chmod('/software_root', 493)"],
@@ -356,13 +328,13 @@ class TestComputer(SlapformatMixin):
     computer.instance_root = '/instance_root'
     computer.software_root = '/software_root'
     computer.construct(alter_network=False)
-    self.assertEqualCommands([
+    self.assertEqual([
       "makedirs('/instance_root', 493)",
       "makedirs('/software_root', 493)",
       "chown('/software_root', 0, 0)",
       "chmod('/software_root', 493)"],
       self.test_result.bucket)
-    self.assertEqualCommands([
+    self.assertEqual([
       'ip addr list bridge',
       'groupadd slapsoft',
       'useradd -d /software_root -g slapsoft slapsoft -r'
@@ -377,12 +349,15 @@ class TestComputer(SlapformatMixin):
     computer.instance_root = '/instance_root'
     computer.software_root = '/software_root'
     computer.construct(alter_network=False, alter_user=False)
-    self.assertEqualCommands([
+    self.assertEqual([
       "makedirs('/instance_root', 493)",
       "makedirs('/software_root', 493)",
       "chmod('/software_root', 493)"],
       self.test_result.bucket)
-    self.assertEqualCommands([], self.fakeCallAndRead.external_command_list)
+    self.assertEqual([
+      'ip addr list bridge',
+      ],
+      self.fakeCallAndRead.external_command_list)
 
   @unittest.skip("Not implemented")
   def test_construct_prepared(self):
@@ -404,7 +379,7 @@ class TestComputer(SlapformatMixin):
     }
 
     computer.construct()
-    self.assertEqualCommands([
+    self.assertEqual([
       "makedirs('/instance_root', 493)",
       "makedirs('/software_root', 493)",
       "chown('/software_root', 0, 0)",
@@ -414,7 +389,7 @@ class TestComputer(SlapformatMixin):
       "chmod('/instance_root/partition', 488)"
     ],
       self.test_result.bucket)
-    self.assertEqualCommands([
+    self.assertEqual([
       'ip addr list bridge',
       'groupadd slapsoft',
       'useradd -d /software_root -g slapsoft slapsoft -r',
@@ -422,12 +397,12 @@ class TestComputer(SlapformatMixin):
       'useradd -d /instance_root/partition -g testuser -G slapsoft testuser -r',
       'tunctl -t tap -u testuser',
       'ip link set tap up',
-      # 'brctl show',  # don't track non-functional commands
+      'brctl show',
       'brctl addif bridge tap',
       'ip addr add ip/255.255.255.255 dev bridge',
-      # 'ip addr list bridge',  # don't track non-functional commands
+      'ip addr list bridge',
       'ip addr add ip/ffff:ffff:ffff:ffff:: dev bridge',
-      # 'ip addr list bridge',  # don't track non-functional commands
+      'ip addr list bridge',
     ],
       self.fakeCallAndRead.external_command_list)
 
@@ -452,7 +427,7 @@ class TestComputer(SlapformatMixin):
     }
 
     computer.construct(alter_user=False)
-    self.assertEqualCommands([
+    self.assertEqual([
       "makedirs('/instance_root', 493)",
       "makedirs('/software_root', 493)",
       "chmod('/software_root', 493)",
@@ -460,16 +435,16 @@ class TestComputer(SlapformatMixin):
       "chmod('/instance_root/partition', 488)"
     ],
       self.test_result.bucket)
-    self.assertEqualCommands([
+    self.assertEqual([
       'ip addr list bridge',
       'tunctl -t tap -u testuser',
       'ip link set tap up',
-      # 'brctl show',  # don't track non-functional commands
+      'brctl show',
       'brctl addif bridge tap',
       'ip addr add ip/255.255.255.255 dev bridge',
-      # 'ip addr list bridge',  # don't track non-functional commands
+      # 'ip addr list bridge',
       'ip addr add ip/ffff:ffff:ffff:ffff:: dev bridge',
-      # 'ip -6 addr list bridge',  # don't track non-functional commands
+      'ip -6 addr list bridge',
     ],
       self.fakeCallAndRead.external_command_list)
 
@@ -499,7 +474,7 @@ class TestComputer(SlapformatMixin):
     }
 
     computer.construct(alter_user=False)
-    self.assertEqualCommands([
+    self.assertEqual([
       "makedirs('/instance_root', 493)",
       "makedirs('/software_root', 493)",
       "chmod('/software_root', 493)",
@@ -507,7 +482,7 @@ class TestComputer(SlapformatMixin):
       "chmod('/instance_root/partition', 488)"
     ],
       self.test_result.bucket)
-    self.assertEqualCommands([
+    self.assertEqual([
         'ip addr list iface',
         'tunctl -t tap -u testuser',
         'ip link set tap up',
@@ -515,7 +490,7 @@ class TestComputer(SlapformatMixin):
         'route add -host 10.8.0.2 dev tap',
         'ip addr add ip/255.255.255.255 dev iface',
         'ip addr add ip/ffff:ffff:ffff:ffff:: dev iface',
-        # 'ip -6 addr list iface'  # don't track non-functional commands
+        'ip -6 addr list iface'
       ],
       self.fakeCallAndRead.external_command_list)
     self.assertEqual(partition.tap.ipv4_addr, '10.8.0.2')
@@ -543,7 +518,7 @@ class TestComputer(SlapformatMixin):
     }
 
     computer.construct(alter_network=False)
-    self.assertEqualCommands([
+    self.assertEqual([
       "makedirs('/instance_root', 493)",
       "makedirs('/software_root', 493)",
       "chown('/software_root', 0, 0)",
@@ -553,8 +528,8 @@ class TestComputer(SlapformatMixin):
       "chmod('/instance_root/partition', 488)"
     ],
       self.test_result.bucket)
-    self.assertEqualCommands([
-      # 'ip addr list bridge',  # don't track non-functional commands
+    self.assertEqual([
+      # 'ip addr list bridge',
       'groupadd slapsoft',
       'useradd -d /software_root -g slapsoft slapsoft -r',
       'groupadd testuser',
@@ -585,7 +560,7 @@ class TestComputer(SlapformatMixin):
     }
 
     computer.construct(alter_network=False, alter_user=False)
-    self.assertEqualCommands([
+    self.assertEqual([
       "makedirs('/instance_root', 493)",
       "makedirs('/software_root', 493)",
       "chmod('/software_root', 493)",
@@ -593,12 +568,12 @@ class TestComputer(SlapformatMixin):
       "chmod('/instance_root/partition', 488)"
     ],
       self.test_result.bucket)
-    self.assertEqualCommands([
-      # 'ip addr list bridge',  # don't track non-functional commands
+    self.assertEqual([
+      'ip addr list bridge',
       'ip addr add ip/255.255.255.255 dev bridge',
-      # 'ip addr list bridge',  # don't track non-functional commands
+      # 'ip addr list bridge',
       'ip addr add ip/ffff:ffff:ffff:ffff:: dev bridge',
-      # 'ip -6 addr list bridge',  # don't track non-functional commands
+      'ip -6 addr list bridge',
     ],
       self.fakeCallAndRead.external_command_list)
 
@@ -626,7 +601,7 @@ class TestComputer(SlapformatMixin):
     }
 
     computer.construct(use_unique_local_address_block=True, alter_user=False, create_tap=False)
-    self.assertEqualCommands([
+    self.assertEqual([
       "makedirs('/instance_root', 493)",
       "makedirs('/software_root', 493)",
       "chmod('/software_root', 493)",
@@ -634,12 +609,12 @@ class TestComputer(SlapformatMixin):
       "chmod('/instance_root/partition', 488)"
     ],
       self.test_result.bucket)
-    self.assertEqualCommands([
-      # 'ip addr list myinterface',  # don't track non-functional commands
+    self.assertEqual([
+      'ip addr list myinterface',
       'ip address add dev myinterface fd00::1/64',
       'ip addr add ip/255.255.255.255 dev myinterface',
       'ip addr add ip/ffff:ffff:ffff:ffff:: dev myinterface',
-      # 'ip -6 addr list myinterface'  # don't track non-functional commands
+      'ip -6 addr list myinterface'
     ],
       self.fakeCallAndRead.external_command_list)
 
@@ -647,7 +622,7 @@ class TestPartition(SlapformatMixin):
 
   def test_createPath_no_alter_user(self):
     self.partition.createPath(False)
-    self.assertEqualCommands(
+    self.assertEqual(
       [
         "mkdir('/part_path', 488)",
         "chmod('/part_path', 488)"
