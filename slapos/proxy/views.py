@@ -554,17 +554,21 @@ def getAllocatedSlaveInstance(slave_reference, requested_computer_id):
   return execute_db(table, q, args, one=True)
 
 def getRootPartition(reference):
+  """Climb the partitions tree up by 'requested_by' link to get the root partition."""
   p = 'SELECT * FROM %s WHERE reference=?'
-  parent_partition = execute_db('partition', p, [reference], one=True)
+  partition = execute_db('partition', p, [reference], one=True)
+  assert partition is not None, "Nonexisting partition \"{}\". Known\n{!s}".format(
+    reference, execute_db("partition", "select reference, requested_by from %s"))
 
-  while parent_partition is not None:
-    parent_reference = parent_partition['requested_by']
-    if not parent_reference or parent_reference == reference:
-      break
-    reference = parent_reference
+  parent_partition = execute_db('partition', p, [partition['requested_by']], one=True)
+  while (parent_partition is not None and
+         parent_partition['requested_by'] and
+         parent_partition['requested_by'] != reference):
+    partition = parent_partition
+    reference = parent_partition['requested_by']
     parent_partition = execute_db('partition', p, [reference], one=True)
 
-  return parent_partition
+  return partition
 
 def requestNotSlave(software_release, software_type, partition_reference, partition_id, partition_parameter_kw, filter_kw, requested_state):
   instance_xml = dict2xml(partition_parameter_kw)
