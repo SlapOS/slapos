@@ -60,6 +60,10 @@ from slapos.util import mkdir_p
 import slapos.slap as slap
 from slapos import version
 
+
+logger = logging.getLogger("slapos.format")
+
+
 def prettify_xml(xml):
   root = lxml.etree.fromstring(xml)
   return lxml.etree.tostring(root, pretty_print=True)
@@ -946,9 +950,9 @@ class Interface(object):
       if self.isBridge():
         callAndRead(['brctl', 'addif', self.name, tap.name])
       else:
-        self.logger.warning("Interface slapos.cfg:interface_name={} is not a bridge."
-                            "TUN/TAP interface {} might not have internet connection."
-                            "".format(self.name, tap.name))
+        logger.warning("Interface slapos.cfg:interface_name={} is not a bridge."
+                       "TUN/TAP interface {} might not have internet connection."
+                       "".format(self.name, tap.name))
 
   def _addSystemAddress(self, address, netmask, ipv6=True):
     """Adds system address to interface
