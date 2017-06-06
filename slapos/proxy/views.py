@@ -557,8 +557,8 @@ def getRootPartition(reference):
   """Climb the partitions tree up by 'requested_by' link to get the root partition."""
   p = 'SELECT * FROM %s WHERE reference=?'
   partition = execute_db('partition', p, [reference], one=True)
-  assert partition is not None, "Nonexisting partition \"{}\". Known\n{!s}".format(
-    reference, execute_db("partition", "select reference, requested_by from %s"))
+  if partition is None:
+    return 
 
   parent_partition = execute_db('partition', p, [partition['requested_by']], one=True)
   while (parent_partition is not None and
