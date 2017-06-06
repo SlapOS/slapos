@@ -98,6 +98,11 @@ class FakeCallAndRead:
       retval = 0, 'OK'
     elif argument_list[:3] == ['route', 'add', '-host']:
       retval = 0, 'OK'
+    elif argument_list[:2] == ['brctl', 'show']:
+      retval = 0, "\n".join(("bridge name bridge id   STP enabled interfaces",
+                             "bridge bridge bridge b001   000:000 1 fakeinterface",
+                             "                                      fakeinterface2"
+                             ""))
     self.external_command_list.append(' '.join(argument_list))
     return retval
 
@@ -355,7 +360,7 @@ class TestComputer(SlapformatMixin):
       "chmod('/software_root', 493)"],
       self.test_result.bucket)
     self.assertEqual([
-      'ip addr list bridge',
+      'ip addr list bridge'
       ],
       self.fakeCallAndRead.external_command_list)
 
@@ -439,6 +444,7 @@ class TestComputer(SlapformatMixin):
       'ip addr list bridge',
       'tunctl -t tap -u testuser',
       'ip link set tap up',
+      'brctl show',  # we check bridges at Interface initialization
       'brctl show',
       'brctl addif bridge tap',
       'ip addr add ip/255.255.255.255 dev bridge',
