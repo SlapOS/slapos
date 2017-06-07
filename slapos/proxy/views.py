@@ -558,7 +558,7 @@ def getRootPartition(reference):
   p = 'SELECT * FROM %s WHERE reference=?'
   partition = execute_db('partition', p, [reference], one=True)
   if partition is None:
-    app.logger.error("Nonexisting partition \"{}\". Known are\n{!s}".format(
+    app.logger.warning("Nonexisting partition \"{}\". Known are\n{!s}".format(
       reference, execute_db("partition", "select reference, requested_by from %s")))
     return None
 
