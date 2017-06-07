@@ -145,8 +145,16 @@ class Password(object):
     self.passwd = passwd.strip('\n')
     # Password must not go into .installed file, for 2 reasons:
     # security of course but also to prevent buildout to always reinstall.
-    options.get = lambda option, *args, **kw: passwd \
-      if option == 'passwd' else options_get(option, *args, **kw)
+    def get(option, *args, **kw):
+      return passwd if option == 'passwd' else options_get(option, *args, **kw)
+
+    try:
+      options_get = options._get
+    except AttributeError:
+      options_get = options.get
+      options.get = get
+    else:
+      options._get = get
 
   generatePassword = staticmethod(generatePassword)
 
