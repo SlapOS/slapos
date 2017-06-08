@@ -321,7 +321,3 @@ password = ${monitor-htpasswd:passwd}
 {{ key }} = {{ value }}
 {% endfor %}
 
-[monitor-base-url-dict]
-{% for key, value in monitor_base_url_dict.items() -%}
-{{ key }} = {{ value }}
-{% endfor %}
