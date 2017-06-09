@@ -1518,7 +1518,7 @@ def parse_computer_xml(conf, xml_path):
     computer = Computer(
       reference=conf.computer_id,
       software_root=conf.software_root,
-      instance_root=conf.software_root,
+      instance_root=conf.instance_root,
       interface=interface,
       addr=None,
       netmask=None,
