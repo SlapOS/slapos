@@ -378,6 +378,9 @@ class Computer(object):
     with open(path_to_xml, 'wb') as fout:
       fout.write(new_pretty_xml)
 
+    for partition in self.partition_list:
+      partition.dump()
+
   def backup_xml(self, path_to_archive, path_to_xml):
     """
     Stores a copy of the current xml file to an historical archive.
@@ -413,7 +416,7 @@ class Computer(object):
         tap_gateway_interface=tap_gateway_interface,
     )
 
-    for partition_dict in dumped_dict['partition_list']:
+    for partition_index, partition_dict in enumerate(dumped_dict['partition_list']):
 
       if partition_dict['user']:
         user = User(partition_dict['user']['name'])
@@ -629,16 +632,20 @@ class Computer(object):
 
 
 class Partition(object):
-  "Represent a computer partition"
+  """Represent a computer partition."""
 
-  def __init__(self, reference, path, user, address_list, tap, external_storage_list=[]):
+  resource_file = ".slapos-resource"
+
+  def __init__(self, reference, path, user, address_list, 
+               tap, external_storage_list=[], tun=None):
     """
     Attributes:
       reference: String, the name of the partition.
       path: String, the path to the partition folder.
       user: User, the user linked to this partition.
       address_list: List of associated IP addresses.
-      tap: Tap, the tap interface linked to this partition.
+      tap: Tap, the tap interface linked to this partition e.g. used as a bridge for kvm
+      tun: Tun interface used for special apps simulating ethernet connections
       external_storage_list: Base path list of folder to format for data storage
     """
 
@@ -683,6 +690,19 @@ class Partition(object):
         owner_pw = pwd.getpwnam(owner.name)
         os.chown(storage_path, owner_pw.pw_uid, owner_pw.pw_gid)
       os.chmod(storage_path, 0o750)
+
+  def dump(self):
+    """Dump available resources into ~partition_home/.slapos-resource."""
+    file_path = os.path.join(self.path, self.resource_file)
+    logger.info("Partition resources saved to {}".format(
+      self.reference, file_path))
+    data = _getDict(self)
+    with open(file_path, "wb") as fo:
+      json.dump(data, fo, sort_keys=True, indent=4)
+    owner_pw = pwd.getpwnam(self.user.name)
+    os.chmod(file_path, 0o640)
+    os.chown(file_path, owner_pw.pw_uid, owner_pw.pw_gid)
+
 
 class User(object):
   """User: represent and manipulate a user on the system."""
