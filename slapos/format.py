@@ -271,7 +271,6 @@ class CGroupManager(Manager):
     :param computer: slapos.format.Computer, extract necessary attributes
     """
     self.instance_root = computer.instance_root
-    self.software_gid = computer.software_gid
     logger.info("Allowing " + self.__class__.__name__)
 
   def __str__(self):
@@ -315,8 +314,6 @@ class CGroupManager(Manager):
         fx.write("1")  # manages it exclusively
       with open(cpu_path + "/cpuset.mems", "wt") as fx:
         fx.write("0")  # it doesn't work without that
-      os.chown(cpu_path + "/tasks", -1, self.software_gid)
-      os.chmod(cpu_path + "/tasks", 0o664)
 
   def ensure_exlusive_cpu(self):
     """Move processes among exclusive CPUSets based on software release demands.
@@ -416,7 +413,6 @@ class CGroupManager(Manager):
     """If-Create folder and set group write permission."""
     if not os.path.exists(folder):
       os.mkdir(folder)
-      os.chown(folder, -1, self.software_gid)
       # make your life and testing easier and create mandatory files if they don't exist
       mandatory_file_list = ("tasks", "cpuset.cpus")
       for mandatory_file in mandatory_file_list:
