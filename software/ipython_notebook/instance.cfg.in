@@ -8,9 +8,10 @@ parts =
   kernel-json
   custom-js
   monitor-base
+  renderjs-symlink-nbextension
+  renderjs-symlink-nbconfig
 extends =
   {{ monitor_template_rendered }}/template-monitor.cfg
-
 
 eggs-directory = {{ eggs_directory }}
 develop-eggs-directory = {{ develop_eggs_directory }}
@@ -74,7 +75,10 @@ command-line =
 wrapper-path = ${directory:service}/ipython_notebook
 parameters-extra = true
 # Explicitly define IPython Directory to be used while starting ipython notebook
-environment = IPYTHONDIR=${directory:ipython_dir}
+environment =
+  IPYTHONDIR=${directory:ipython_dir}
+  JUPYTER_CONFIG_DIR=${directory:jupyter_config_dir}
+  JUPYTER_DATA_DIR=${directory:jupyter_data_dir}
 
 [ipython-notebook-config]
 <= dynamic-jinja2-template-base
@@ -98,6 +102,12 @@ notebook_dir = ${:var}/notebooks
 ipython_dir = ${:home}/ipython
 ipython_kernel_dir = ${:ipython_dir}/kernels
 erp5_kernel_dir = ${:ipython_kernel_dir}/ERP5
+ipython_extension_dir = ${:ipython_dir}/extensions
+# Add folders to explicitly define jupyter [config/data] directories
+jupyter_data_dir = ${:home}/jupyter_data
+jupyter_nbext_dir = ${:home}/jupyter_data/nbextensions
+jupyter_config_dir = ${:home}/jupyter_config
+jupyter_nbconfig_dir = ${:home}/jupyter_config/nbconfig
 
 [ipython_notebook]
 # This part is called like this because knowledge0.write uses the part name for
@@ -150,3 +160,12 @@ template = {{ custom_js_location }}/{{ custom_js_filename }}
 rendered = ${directory:ipython_dir}/profile_default/static/custom/custom.js
 mode = 0744
 
+[renderjs-symlink-nbextension]
+recipe = cns.recipe.symlink
+symlink =  {{ renderjs_extension_location }}/renderjs_nbextension = ${directory:jupyter_nbext_dir}/renderjs_nbextension
+autocreate = true
+
+[renderjs-symlink-nbconfig]
+recipe = cns.recipe.symlink
+symlink =  {{ renderjs_extension_location }}/renderjs_nbextension/notebook.json = ${directory:jupyter_nbconfig_dir}/notebook.json
+autocreate = true
