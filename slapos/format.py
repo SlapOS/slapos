@@ -929,8 +929,7 @@ class Partition(object):
     with open(file_path, "wb") as fo:
       json.dump(data, fo, sort_keys=True, indent=4)
     owner_pw = pwd.getpwnam(self.user.name)
-    os.chmod(file_path, 0o640)
-    os.chown(file_path, owner_pw.pw_uid, owner_pw.pw_gid)
+    os.chmod(file_path, 0o644)
 
 
 class User(object):
