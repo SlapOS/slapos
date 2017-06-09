@@ -35,6 +35,34 @@
       "description": "Password of the initial/rescue user",
       "type": "string"
     },
+    "monitor-port": {
+      "title": "Monitor Port",
+      "description": "Allow to manually change the port on wich the apache server running monitoring interface is listening. The default value for the webrunner is different from the default value of the standalone stack-monitor server (default 9684)",
+      "type": "integer",
+       "minimum": 9683,
+       "exclusiveMinimum": true
+    },
+    "monitor-interface-url": {
+      "title": "Monitor Web Interface URL",
+      "description": "Give Url of HTML web interface that will be used to render this monitor instance.",
+      "type": "string",
+      "format": "uri",
+      "default": "https://monitor.app.officejs.com"
+    },
+    "monitor-cors-domains": {
+      "title": "Monitor CORS domains",
+      "description": "List of cors domains separated with space. Needed for ajax query on this monitor instance from a different domain.",
+      "type": "string",
+      "default": "monitor.app.officejs.com"
+    },
+    "monitor-password": {
+      "description": "Password to access the monitor",
+      "type": "string"
+    },
+    "monitor-user": {
+      "description": "User to access the monitor",
+      "type": "string"
+    },
     "developer-list": {
       "description": "List of logins which should get the Developper role (required to modify portal_components' content), defaulting to inituser-login's value",
       "items": {
@@ -133,6 +161,14 @@
                 "description": "Start allocating ports at this value. Useful if one needs to make several partitions share the same port range (ie, several partitions bound to a single address)",
                 "default": 2200
               }]
+            },
+            "monitor-password": {
+              "description": "Password to access the monitor",
+              "type": "string"
+            },
+            "monitor-user": {
+              "description": "User to access the monitor",
+              "type": "string"
             }
           },
           "type": "object"
@@ -236,6 +272,14 @@
             },
             "additionalProperties": {"type": "string"},
             "type": "object"
+          },
+          "monitor-password": {
+            "description": "Password to access the monitor",
+            "type": "string"
+          },
+          "monitor-user": {
+            "description": "User to access the monitor",
+            "type": "string"
           }
         },
         "additionalProperties": {"type": "string"},
