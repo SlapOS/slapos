@@ -263,7 +263,7 @@ class CGroupManager(Manager):
   short_name = 'cgroup'
   cpu_exclusive_file = ".slapos-cpu-exclusive"
   cpuset_path = "/sys/fs/cgroup/cpuset/"
-  task_write_mode = "at"
+  task_write_mode = "wt"
 
   def __init__(self, computer):
     """Extract necessary information from the ``computer``.
@@ -403,10 +403,27 @@ class CGroupManager(Manager):
       return self._move_task(pid, exclusive_cpu)[1]
     return -1
 
-  def _move_task(self, pid, cpu_id):
-    """Move ``pid`` to ``cpu_id``."""
+  def _move_task(self, pid, cpu_id, cpu_mode="performance"):
+    """Move ``pid`` to ``cpu_id``.
+
+    cpu_mode can be "performance" or "powersave"
+    """
+    known_cpu_mode_list = ("performance", "powersave")
     with open(os.path.join(self.cpuset_path, "cpu" + str(cpu_id), "tasks"), self.task_write_mode) as fo:
       fo.write(str(pid) + "\n")
+    # set the core to `cpu_mode`
+    scaling_governor_file = "/sys/devices/system/cpu/cpu{:d}/cpufreq/scaling_governor".format(cpu_id)
+    if os.path.exists(scaling_governor_file):
+      if cpu_mode not in known_cpu_mode_list:
+        logger.warning("Cannot set CPU to mode \"{}\"! Known modes {!s}".format(
+          cpu_mode, known_cpu_mode_list))
+      else:
+        try:
+          with open(scaling_governor_file, self.task_write_mode) as fo:
+            fo.write(cpu_mode + "\n")  # default is "powersave"
+        except IOError as e:
+          # handle permission error
+          logger.error("Failed to write \"{}\" to {}".format(cpu_mode, scaling_governor_file))
     return pid, cpu_id
 
   def _prepare_folder(self, folder):
