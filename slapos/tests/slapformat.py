@@ -26,15 +26,15 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #
 ##############################################################################
-
+import glob
 import logging
 import slapos.format
 import slapos.util
 import unittest
 
 import netaddr
+import shutil
 import socket
-
 # for mocking
 import grp
 import netifaces
@@ -45,6 +45,20 @@ import time
 USER_LIST = []
 GROUP_LIST = []
 INTERFACE_DICT = {}
+
+
+def file_content(file_path):
+  """Read file(s) content."""
+  if isinstance(file_path, (list, tuple)):
+    return [file_content(fx) for fx in file_path]
+  with open(file_path, "rt") as fi:
+    return fi.read().strip()
+
+
+def file_write(stuff, file_path):
+  """Write stuff into file_path."""
+  with open(file_path, "wt") as fo:
+    fo.write(stuff)
 
 
 class FakeConfig:
@@ -138,11 +152,16 @@ class PwdMock:
   def getpwnam(self, name):
     global USER_LIST
     if name in USER_LIST:
-      class result:
+      class PwdResult:
         pw_uid = 0
         pw_gid = 0
-      return result
-    raise KeyError
+        def __getitem__(self, index):
+          if index == 2:
+            return self.pw_uid
+          if index == 3:
+            return self.pw_gid
+      return PwdResult()
+    raise KeyError("User \"{}\" not in global USER_LIST {!s}".format(name, USER_LIST))
 
 
 class NetifacesMock:
@@ -151,7 +170,8 @@ class NetifacesMock:
     global INTERFACE_DICT
     if name in INTERFACE_DICT:
       return INTERFACE_DICT[name]
-    raise ValueError
+    raise ValueError("Interface \"{}\" not in INTERFACE_DICT {!s}".format(
+      name, INTERFACE_DICT))
 
   @classmethod
   def interfaces(self):
@@ -162,6 +182,21 @@ class SlaposUtilMock:
   @classmethod
   def chownDirectory(*args, **kw):
     pass
+
+
+class CGroupManagerMock(slapos.format.CGroupManager):
+
+  short_name = 'cgroup_mock'
+  cpuset_path = "/tmp/cpuset/"
+  task_write_mode = "at"  # append insted of write tasks PIDs for the tests
+
+  def is_allowed(self):
+    """Always allowed."""
+    return True
+
+# update available managers with our partially-mocked version
+slapos.format.available_manager_list[CGroupManagerMock.short_name] = CGroupManagerMock
+
 
 class SlapformatMixin(unittest.TestCase):
   # keep big diffs
@@ -220,6 +255,8 @@ class SlapformatMixin(unittest.TestCase):
       setattr(os, fake, f)
 
   def restoreOs(self):
+    if not hasattr(self, 'saved_os'):
+      return  # os was never patched or already restored
     for name, original_value in self.saved_os.items():
       setattr(os, name, original_value)
     del self.saved_os
@@ -278,23 +315,23 @@ class SlapformatMixin(unittest.TestCase):
 
 class TestComputer(SlapformatMixin):
   def test_getAddress_empty_computer(self):
-    computer = slapos.format.Computer('computer')
+    computer = slapos.format.Computer('computer', instance_root='/instance_root', software_root='software_root')
     self.assertEqual(computer.getAddress(), {'netmask': None, 'addr': None})
 
   @unittest.skip("Not implemented")
   def test_construct_empty(self):
-    computer = slapos.format.Computer('computer')
-    computer.construct()
+    computer = slapos.format.Computer('computer', instance_root='/instance_root', software_root='software_root')
+    computer.format()
 
   @unittest.skip("Not implemented")
   def test_construct_empty_prepared(self):
     computer = slapos.format.Computer('computer',
-      interface=slapos.format.Interface(logger=self.logger,
-                                        name='bridge',
-                                        ipv4_local_network='127.0.0.1/16'))
-    computer.instance_root = '/instance_root'
-    computer.software_root = '/software_root'
-    computer.construct()
+      instance_root='/instance_root',
+      software_root='/software_root',
+      interface=slapos.format.Interface(
+        logger=self.logger, name='bridge', ipv4_local_network='127.0.0.1/16'),
+      partition_list=[])
+    computer.format()
     self.assertEqual([
       "makedirs('/instance_root', 493)",
       "makedirs('/software_root', 493)",
@@ -310,29 +347,31 @@ class TestComputer(SlapformatMixin):
 
   def test_construct_empty_prepared_no_alter_user(self):
     computer = slapos.format.Computer('computer',
-      interface=slapos.format.Interface(logger=self.logger,
-                                        name='bridge',
-                                        ipv4_local_network='127.0.0.1/16'))
-    computer.instance_root = '/instance_root'
-    computer.software_root = '/software_root'
-    computer.construct(alter_user=False)
+      instance_root='/instance_root',
+      software_root='/software_root',
+      interface=slapos.format.Interface(
+        logger=self.logger, name='bridge', ipv4_local_network='127.0.0.1/16'),
+      partition_list=[])
+    computer.format(alter_user=False)
     self.assertEqual([
       "makedirs('/instance_root', 493)",
       "makedirs('/software_root', 493)",
       "chmod('/software_root', 493)"],
       self.test_result.bucket)
-    self.assertEqual(['ip addr list bridge'],
-                     self.fakeCallAndRead.external_command_list)
+    self.assertEqual([
+        'ip addr list bridge',
+        'brctl show',
+      ],
+      self.fakeCallAndRead.external_command_list)
 
   @unittest.skip("Not implemented")
   def test_construct_empty_prepared_no_alter_network(self):
     computer = slapos.format.Computer('computer',
-      interface=slapos.format.Interface(logger=self.logger,
-                                        name='bridge',
-                                        ipv4_local_network='127.0.0.1/16'))
-    computer.instance_root = '/instance_root'
-    computer.software_root = '/software_root'
-    computer.construct(alter_network=False)
+      instance_root='/instance_root',
+      software_root='/software_root',
+      interface=slapos.format.Interface(
+        logger=self.logger, name='bridge', ipv4_local_network='127.0.0.1/16'),
+      partition_list=[])
     self.assertEqual([
       "makedirs('/instance_root', 493)",
       "makedirs('/software_root', 493)",
@@ -348,34 +387,34 @@ class TestComputer(SlapformatMixin):
 
   def test_construct_empty_prepared_no_alter_network_user(self):
     computer = slapos.format.Computer('computer',
-      interface=slapos.format.Interface(logger=self.logger,
-                                        name='bridge',
-                                        ipv4_local_network='127.0.0.1/16'))
-    computer.instance_root = '/instance_root'
-    computer.software_root = '/software_root'
-    computer.construct(alter_network=False, alter_user=False)
+      instance_root='/instance_root',
+      software_root='/software_root',
+      interface=slapos.format.Interface(
+        logger=self.logger, name='bridge', ipv4_local_network='127.0.0.1/16'),
+      partition_list=[])
+    computer.format(alter_network=False, alter_user=False)
     self.assertEqual([
       "makedirs('/instance_root', 493)",
       "makedirs('/software_root', 493)",
       "chmod('/software_root', 493)"],
       self.test_result.bucket)
     self.assertEqual([
-      'ip addr list bridge'
+        'ip addr list bridge',
+        'brctl show',
       ],
       self.fakeCallAndRead.external_command_list)
 
   @unittest.skip("Not implemented")
   def test_construct_prepared(self):
     computer = slapos.format.Computer('computer',
-      interface=slapos.format.Interface(logger=self.logger,
-                                        name='bridge',
-                                        ipv4_local_network='127.0.0.1/16'))
-    computer.instance_root = '/instance_root'
-    computer.software_root = '/software_root'
-    partition = slapos.format.Partition('partition', '/part_path',
-      slapos.format.User('testuser'), [], None)
-    partition.tap = slapos.format.Tap('tap')
-    computer.partition_list = [partition]
+      instance_root='/instance_root',
+      software_root='/software_root',
+      interface=slapos.format.Interface(
+        logger=self.logger, name='bridge', ipv4_local_network='127.0.0.1/16'),
+      partition_list=[
+          slapos.format.Partition(
+            'partition', '/part_path', slapos.format.User('testuser'), [], tap=slapos.format.Tap('tap')),
+        ])
     global INTERFACE_DICT
     INTERFACE_DICT['bridge'] = {
       socket.AF_INET: [{'addr': '192.168.242.77', 'broadcast': '127.0.0.1',
@@ -383,7 +422,7 @@ class TestComputer(SlapformatMixin):
       socket.AF_INET6: [{'addr': '2a01:e35:2e27::e59c', 'netmask': 'ffff:ffff:ffff:ffff::'}]
     }
 
-    computer.construct()
+    computer.format()
     self.assertEqual([
       "makedirs('/instance_root', 493)",
       "makedirs('/software_root', 493)",
@@ -400,7 +439,8 @@ class TestComputer(SlapformatMixin):
       'useradd -d /software_root -g slapsoft slapsoft -r',
       'groupadd testuser',
       'useradd -d /instance_root/partition -g testuser -G slapsoft testuser -r',
-      'tunctl -t tap -u testuser',
+      'brctl show',
+      'ip tuntap add dev tap mode tap user testuser',
       'ip link set tap up',
       'brctl show',
       'brctl addif bridge tap',
@@ -413,17 +453,16 @@ class TestComputer(SlapformatMixin):
 
   def test_construct_prepared_no_alter_user(self):
     computer = slapos.format.Computer('computer',
-      interface=slapos.format.Interface(logger=self.logger,
-                                        name='bridge',
-                                        ipv4_local_network='127.0.0.1/16'))
-    computer.instance_root = '/instance_root'
-    computer.software_root = '/software_root'
-    partition = slapos.format.Partition('partition', '/part_path',
-      slapos.format.User('testuser'), [], None)
+      instance_root='/instance_root',
+      software_root='/software_root',
+      interface=slapos.format.Interface(
+        logger=self.logger, name='bridge', ipv4_local_network='127.0.0.1/16'),
+      partition_list=[
+          slapos.format.Partition(
+            'partition', '/part_path', slapos.format.User('testuser'), [], tap=slapos.format.Tap('tap')),
+        ])
     global USER_LIST
     USER_LIST = ['testuser']
-    partition.tap = slapos.format.Tap('tap')
-    computer.partition_list = [partition]
     global INTERFACE_DICT
     INTERFACE_DICT['bridge'] = {
       socket.AF_INET: [{'addr': '192.168.242.77', 'broadcast': '127.0.0.1',
@@ -431,7 +470,7 @@ class TestComputer(SlapformatMixin):
       socket.AF_INET6: [{'addr': '2a01:e35:2e27::e59c', 'netmask': 'ffff:ffff:ffff:ffff::'}]
     }
 
-    computer.construct(alter_user=False)
+    computer.format(alter_user=False)
     self.assertEqual([
       "makedirs('/instance_root', 493)",
       "makedirs('/software_root', 493)",
@@ -441,33 +480,34 @@ class TestComputer(SlapformatMixin):
     ],
       self.test_result.bucket)
     self.assertEqual([
-      'ip addr list bridge',
-      'tunctl -t tap -u testuser',
-      'ip link set tap up',
-      'brctl show',  # we check bridges at Interface initialization
-      'brctl show',
-      'brctl addif bridge tap',
-      'ip addr add ip/255.255.255.255 dev bridge',
-      # 'ip addr list bridge',
-      'ip addr add ip/ffff:ffff:ffff:ffff:: dev bridge',
-      'ip -6 addr list bridge',
-    ],
+        'ip addr list bridge',
+        'brctl show',
+        'ip tuntap add dev tap mode tap user testuser',
+        'ip link set tap up',
+        'brctl show',
+        'brctl show',
+        'brctl addif bridge tap',
+        'ip addr add ip/255.255.255.255 dev bridge',
+        # 'ip addr list bridge',
+        'ip addr add ip/ffff:ffff:ffff:ffff:: dev bridge',
+        'ip -6 addr list bridge',
+      ],
       self.fakeCallAndRead.external_command_list)
 
   def test_construct_prepared_tap_no_alter_user(self):
     computer = slapos.format.Computer('computer',
-      interface=slapos.format.Interface(logger=self.test_result,
-                                        name='iface',
-                                        ipv4_local_network='127.0.0.1/16'),
-                                        tap_gateway_interface='eth1')
-    computer.instance_root = '/instance_root'
-    computer.software_root = '/software_root'
-    partition = slapos.format.Partition('partition', '/part_path',
-      slapos.format.User('testuser'), [], None)
+      instance_root='/instance_root',
+      software_root='/software_root',
+      tap_gateway_interface='eth1',
+      interface=slapos.format.Interface(
+        logger=self.logger, name='iface', ipv4_local_network='127.0.0.1/16'),
+      partition_list=[
+          slapos.format.Partition(
+            'partition', '/part_path', slapos.format.User('testuser'), [], 
+            tap=slapos.format.Tap('tap')),
+        ])
     global USER_LIST
     USER_LIST = ['testuser']
-    partition.tap = slapos.format.Tap('tap')
-    computer.partition_list = [partition]
     global INTERFACE_DICT
     INTERFACE_DICT['iface'] = {
       socket.AF_INET: [{'addr': '192.168.242.77', 'broadcast': '127.0.0.1',
@@ -479,7 +519,7 @@ class TestComputer(SlapformatMixin):
         'netmask': '255.255.255.0'}]
     }
 
-    computer.construct(alter_user=False)
+    computer.format(alter_user=False)
     self.assertEqual([
       "makedirs('/instance_root', 493)",
       "makedirs('/software_root', 493)",
@@ -490,15 +530,17 @@ class TestComputer(SlapformatMixin):
       self.test_result.bucket)
     self.assertEqual([
         'ip addr list iface',
-        'tunctl -t tap -u testuser',
+        'brctl show',
+        'ip tuntap add dev tap mode tap user testuser',
         'ip link set tap up',
         'ip route show 10.8.0.2',
-        'route add -host 10.8.0.2 dev tap',
+        'ip route add 10.8.0.2 dev tap',
         'ip addr add ip/255.255.255.255 dev iface',
         'ip addr add ip/ffff:ffff:ffff:ffff:: dev iface',
         'ip -6 addr list iface'
       ],
       self.fakeCallAndRead.external_command_list)
+    partition = computer.partition_list[0]
     self.assertEqual(partition.tap.ipv4_addr, '10.8.0.2')
     self.assertEqual(partition.tap.ipv4_netmask, '255.255.255.0')
     self.assertEqual(partition.tap.ipv4_gateway, '10.8.0.1')
@@ -507,23 +549,22 @@ class TestComputer(SlapformatMixin):
   @unittest.skip("Not implemented")
   def test_construct_prepared_no_alter_network(self):
     computer = slapos.format.Computer('computer',
-      interface=slapos.format.Interface(logger=self.logger,
-                                        name='bridge',
-                                        ipv4_local_network='127.0.0.1/16'))
-    computer.instance_root = '/instance_root'
-    computer.software_root = '/software_root'
-    partition = slapos.format.Partition('partition', '/part_path',
-      slapos.format.User('testuser'), [], None)
-    partition.tap = slapos.format.Tap('tap')
-    computer.partition_list = [partition]
+      instance_root='/instance_root',
+      software_root='/software_root',
+      interface=slapos.format.Interface(
+        logger=self.logger, name='bridge', ipv4_local_network='127.0.0.1/16'),
+      partition_list=[
+          slapos.format.Partition(
+            'partition', '/part_path', slapos.format.User('testuser'), [],
+            tap=slapos.format.Tap('tap')),
+        ])
     global INTERFACE_DICT
     INTERFACE_DICT['bridge'] = {
       socket.AF_INET: [{'addr': '192.168.242.77', 'broadcast': '127.0.0.1',
         'netmask': '255.255.255.0'}],
       socket.AF_INET6: [{'addr': '2a01:e35:2e27::e59c', 'netmask': 'ffff:ffff:ffff:ffff::'}]
     }
-
-    computer.construct(alter_network=False)
+    computer.format(alter_network=False)
     self.assertEqual([
       "makedirs('/instance_root', 493)",
       "makedirs('/software_root', 493)",
@@ -549,15 +590,15 @@ class TestComputer(SlapformatMixin):
 
   def test_construct_prepared_no_alter_network_user(self):
     computer = slapos.format.Computer('computer',
-      interface=slapos.format.Interface(logger=self.logger,
-                                        name='bridge',
-                                        ipv4_local_network='127.0.0.1/16'))
-    computer.instance_root = '/instance_root'
-    computer.software_root = '/software_root'
-    partition = slapos.format.Partition('partition', '/part_path',
-      slapos.format.User('testuser'), [], None)
-    partition.tap = slapos.format.Tap('tap')
-    computer.partition_list = [partition]
+      instance_root='/instance_root',
+      software_root='/software_root',
+      interface=slapos.format.Interface(
+        logger=self.logger, name='bridge', ipv4_local_network='127.0.0.1/16'),
+      partition_list=[
+          slapos.format.Partition(
+            'partition', '/part_path', slapos.format.User('testuser'), [],
+            tap=slapos.format.Tap('tap')),
+        ])
     global INTERFACE_DICT
     INTERFACE_DICT['bridge'] = {
       socket.AF_INET: [{'addr': '192.168.242.77', 'broadcast': '127.0.0.1',
@@ -565,22 +606,23 @@ class TestComputer(SlapformatMixin):
       socket.AF_INET6: [{'addr': '2a01:e35:2e27::e59c', 'netmask': 'ffff:ffff:ffff:ffff::'}]
     }
 
-    computer.construct(alter_network=False, alter_user=False)
+    computer.format(alter_network=False, alter_user=False)
     self.assertEqual([
-      "makedirs('/instance_root', 493)",
-      "makedirs('/software_root', 493)",
-      "chmod('/software_root', 493)",
-      "mkdir('/instance_root/partition', 488)",
-      "chmod('/instance_root/partition', 488)"
-    ],
+        "makedirs('/instance_root', 493)",
+        "makedirs('/software_root', 493)",
+        "chmod('/software_root', 493)",
+        "mkdir('/instance_root/partition', 488)",
+        "chmod('/instance_root/partition', 488)"
+      ],
       self.test_result.bucket)
     self.assertEqual([
-      'ip addr list bridge',
-      'ip addr add ip/255.255.255.255 dev bridge',
-      # 'ip addr list bridge',
-      'ip addr add ip/ffff:ffff:ffff:ffff:: dev bridge',
-      'ip -6 addr list bridge',
-    ],
+        'ip addr list bridge',
+        'brctl show',
+        'ip addr add ip/255.255.255.255 dev bridge',
+        # 'ip addr list bridge',
+        'ip addr add ip/ffff:ffff:ffff:ffff:: dev bridge',
+        'ip -6 addr list bridge',
+      ],
       self.fakeCallAndRead.external_command_list)
 
   def test_construct_use_unique_local_address_block(self):
@@ -590,15 +632,15 @@ class TestComputer(SlapformatMixin):
     global USER_LIST
     USER_LIST = ['root']
     computer = slapos.format.Computer('computer',
-      interface=slapos.format.Interface(logger=self.logger,
-                                        name='myinterface',
-                                        ipv4_local_network='127.0.0.1/16'))
-    computer.instance_root = '/instance_root'
-    computer.software_root = '/software_root'
-    partition = slapos.format.Partition('partition', '/part_path',
-      slapos.format.User('testuser'), [], None)
-    partition.tap = slapos.format.Tap('tap')
-    computer.partition_list = [partition]
+      instance_root='/instance_root',
+      software_root='/software_root',
+      interface=slapos.format.Interface(
+        logger=self.logger, name='myinterface', ipv4_local_network='127.0.0.1/16'),
+      partition_list=[
+          slapos.format.Partition(
+            'partition', '/part_path', slapos.format.User('testuser'), [],
+            tap=slapos.format.Tap('tap')),
+        ])
     global INTERFACE_DICT
     INTERFACE_DICT['myinterface'] = {
       socket.AF_INET: [{'addr': '192.168.242.77', 'broadcast': '127.0.0.1',
@@ -606,23 +648,107 @@ class TestComputer(SlapformatMixin):
       socket.AF_INET6: [{'addr': '2a01:e35:2e27::e59c', 'netmask': 'ffff:ffff:ffff:ffff::'}]
     }
 
-    computer.construct(use_unique_local_address_block=True, alter_user=False, create_tap=False)
+    computer.format(use_unique_local_address_block=True, alter_user=False, create_tap=False)
     self.assertEqual([
-      "makedirs('/instance_root', 493)",
-      "makedirs('/software_root', 493)",
-      "chmod('/software_root', 493)",
-      "mkdir('/instance_root/partition', 488)",
-      "chmod('/instance_root/partition', 488)"
-    ],
+        "makedirs('/instance_root', 493)",
+        "makedirs('/software_root', 493)",
+        "chmod('/software_root', 493)",
+        "mkdir('/instance_root/partition', 488)",
+        "chmod('/instance_root/partition', 488)"
+      ],
       self.test_result.bucket)
     self.assertEqual([
-      'ip addr list myinterface',
-      'ip address add dev myinterface fd00::1/64',
-      'ip addr add ip/255.255.255.255 dev myinterface',
-      'ip addr add ip/ffff:ffff:ffff:ffff:: dev myinterface',
-      'ip -6 addr list myinterface'
-    ],
+        'ip addr list myinterface',
+        'brctl show',
+        'ip address add dev myinterface fd00::1/64',
+        'ip addr add ip/255.255.255.255 dev myinterface',
+        'ip addr add ip/ffff:ffff:ffff:ffff:: dev myinterface',
+        'ip -6 addr list myinterface'
+      ],
       self.fakeCallAndRead.external_command_list)
+
+
+class TestComputerWithCGroup(SlapformatMixin):
+
+  def setUp(self):
+    super(TestComputerWithCGroup, self).setUp()
+    self.restoreOs()
+
+    if os.path.isdir("/tmp/slapgrid/"):
+      shutil.rmtree("/tmp/slapgrid/")
+    os.mkdir("/tmp/slapgrid/")
+
+    if os.path.isdir(CGroupManagerMock.cpuset_path):
+      shutil.rmtree(CGroupManagerMock.cpuset_path)
+    os.mkdir(CGroupManagerMock.cpuset_path)
+    file_write("0,1-3",
+               os.path.join(CGroupManagerMock.cpuset_path, "cpuset.cpus"))
+    file_write("\n".join(("1000", "1001", "1002", "")),
+               os.path.join(CGroupManagerMock.cpuset_path, "tasks"))
+    self.cpu_list = [0, 1, 2, 3]
+
+    global USER_LIST, INTERFACE_DICT
+    USER_LIST = ['testuser']
+    INTERFACE_DICT['bridge'] = {
+      socket.AF_INET: [
+        {'addr': '127.0.0.1', 'broadcast': '127.0.255.255', 'netmask': '255.255.0.0'}],
+      socket.AF_INET6: [
+        {'addr': '2a01:e35:2e27::e59c', 'netmask': 'ffff:ffff:ffff:ffff::'}]
+    }
+    self.computer = slapos.format.Computer('computer',
+      software_user='testuser',
+      instance_root='/tmp/slapgrid/instance_root',
+      software_root='/tmp/slapgrid/software_root',
+      interface=slapos.format.Interface(
+        logger=self.logger, name='bridge', ipv4_local_network='127.0.0.1/16'),
+      partition_list=[
+          slapos.format.Partition(
+            'partition', '/tmp/slapgrid/instance_root/part1', slapos.format.User('testuser'), [], tap=None),
+        ],
+      manager_list=(CGroupManagerMock.short_name, )
+    )
+    # self.patchOs(self.logger)
+
+  def tearDown(self):
+    """Cleanup temporary test folders."""
+    super(TestComputerWithCGroup, self).tearDown()
+    shutil.rmtree("/tmp/slapgrid/")
+    if CGroupManagerMock.cpuset_path.startswith("/tmp"):
+      shutil.rmtree(CGroupManagerMock.cpuset_path)
+
+  def test_positive_cgroups(self):
+    """Positive test of cgroups."""
+    # Test parsing "cpuset.cpus" file
+    self.assertEqual(self.computer._manager_list[0]._cpu_list(), self.cpu_list)
+    # This should created per-cpu groups and move all tasks in CPU pool into cpu0
+    self.computer.format(alter_network=False, alter_user=False)
+    # Test files creation for exclusive CPUs
+    for cpu_id in self.cpu_list:
+      cpu_n_path = os.path.join(CGroupManagerMock.cpuset_path, "cpu" + str(cpu_id))
+      self.assertEqual(str(cpu_id), file_content(os.path.join(cpu_n_path, "cpuset.cpus")))
+      self.assertEqual("1", file_content(os.path.join(cpu_n_path, "cpuset.cpu_exclusive")))
+      if cpu_id > 0:
+        self.assertEqual("", file_content(os.path.join(cpu_n_path, "tasks")))
+    # Test that format moved all PIDs from CPU pool into CPU0
+    tasks_at_cpu0 = file_content(os.path.join(CGroupManagerMock.cpuset_path, "cpu0", "tasks")).split()
+    self.assertIn("1000", tasks_at_cpu0)
+    self.assertIn("1001", tasks_at_cpu0)
+    self.assertIn("1002", tasks_at_cpu0)
+    # Simulate cgroup behaviour - empty tasks in the pool
+    file_write("", os.path.join(CGroupManagerMock.cpuset_path, "tasks"))
+    # test moving tasks from generic core to private core
+    # request PID 1001 to be moved to its private CPU
+    request_file_path = os.path.join(self.computer.partition_list[0].path,
+                                     CGroupManagerMock.cpu_exclusive_file)
+    file_write("1001\n", request_file_path)
+    # let format do the moving
+    self.computer.update()
+    # test if the moving suceeded into any provate CPUS (id>0)
+    self.assertTrue(any("1001" in file_content(exclusive_task)
+                        for exclusive_task in glob.glob(os.path.join(CGroupManagerMock.cpuset_path, "cpu[1-9]", "tasks"))))
+    # slapformat should remove successfully moved PIDs from the .slapos-cpu-exclusive file
+    self.assertEqual("", file_content(request_file_path).strip())
+
 
 class TestPartition(SlapformatMixin):
 
