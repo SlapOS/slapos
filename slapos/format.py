@@ -611,8 +611,8 @@ class Computer(object):
     Return:
       A Computer object.
     """
-
-    dumped_dict = xml_marshaller.xml_marshaller.loads(open(path_to_xml).read())
+    with open(path_to_xml, "rb") as fi:
+      dumped_dict = xml_marshaller.xml_marshaller.load(fi)
 
     # Reconstructing the computer object from the xml
     computer = Computer(
@@ -980,7 +980,8 @@ class User(object):
       user_parameter_list.append('-r')
       callAndRead(['useradd'] + user_parameter_list)
     else:
-      callAndRead(['usermod'] + user_parameter_list)
+      # if the user is already created and used we should not fail
+      callAndRead(['usermod'] + user_parameter_list, raise_on_error=False)
     # lock the password of user
     callAndRead(['passwd', '-l', self.name])
 
