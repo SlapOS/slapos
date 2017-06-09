@@ -8,6 +8,7 @@ It "formats" the machine by:
  - creating users and groups
  - creating bridge interface
  - creating needed tap interfaces
+ - creating TUN interfaces
  - creating needed directories with proper ownership and permissions
 
 In the end special report is generated and information are posted to
@@ -25,5 +26,4 @@ Binaries:
  * brctl
  * groupadd
  * ip
- * tunctl
  * useradd

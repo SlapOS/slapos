@@ -34,6 +34,7 @@ import fcntl
 import grp
 import json
 import logging
+import math
 import netaddr
 import netifaces
 import os
@@ -429,6 +430,12 @@ class Computer(object):
       else:
         tap = Tap(partition_dict['reference'])
 
+      if partition_dict.get('tun') is not None and partition_dict['tun'].get('ipv4_addr') is not None:
+        tun = Tun(partition_dict['tun']['name'], partition_index, len(dumped_dict['partition_list']))
+        tun.ipv4_addr = partition_dict['tun']['ipv4_addr']
+      else:
+        tun = Tun("slaptun" + str(partition_index), partition_index, len(dumped_dict['partition_list']))
+
       address_list = partition_dict['address_list']
       external_storage_list = partition_dict.get('external_storage_list', [])
 
@@ -438,6 +445,7 @@ class Computer(object):
           user=user,
           address_list=address_list,
           tap=tap,
+          tun=tun,
           external_storage_list=external_storage_list,
       )
 
@@ -570,6 +578,11 @@ class Computer(object):
               partition.tap.ipv4_network = gateway_addr_dict['network']
             partition.tap.createRoutes()
 
+        if alter_network and partition.tun is not None:
+          # create TUN interface per partition as well
+          partition.tun.createWithOwner(owner)
+          partition.tun.createRoutes()
+
         # Reconstructing partition's directory
         partition.createPath(alter_user)
         partition.createExternalPath(alter_user)
@@ -634,10 +647,11 @@ class Partition(object):
     self.user = user
     self.address_list = address_list or []
     self.tap = tap
+    self.tun = tun
     self.external_storage_list = []
 
   def __getinitargs__(self):
-    return (self.reference, self.path, self.user, self.address_list, self.tap)
+    return (self.reference, self.path, self.user, self.address_list, self.tap, self.tun)
 
   def createPath(self, alter_user=True):
     """
@@ -744,6 +758,7 @@ class Tap(object):
   IFF_TAP = 0x0002
   TUNSETIFF = 0x400454ca
   KEEP_TAP_ATTACHED_EVENT = threading.Event()
+  MODE = "tap"
 
   def __init__(self, tap_name):
     """
@@ -797,9 +812,9 @@ class Tap(object):
     except IOError as error:
       # If  EBUSY, it  means another  program is  already attached,  thus just
       # ignore it...
+      logger.warning("Cannot create interface " + self.name + ". Does it exist already?")
       if error.errno != errno.EBUSY:
         os.close(tap_fd)
-        raise
     else:
       # Block until the  caller send an event stating that  the program can be
       # now detached safely,  thus bringing down the TAP  device (from 2.6.36)
@@ -817,21 +832,27 @@ class Tap(object):
 
   def createWithOwner(self, owner, attach_to_tap=False):
     """
-    Create a tap interface on the system.
+    Create a tap interface on the system if it doesn't exist yet.
     """
-
-    # some systems does not have -p switch for tunctl
-    #callAndRead(['tunctl', '-p', '-t', self.name, '-u', owner.name])
     check_file = '/sys/devices/virtual/net/%s/owner' % self.name
     owner_id = None
     if os.path.exists(check_file):
-      owner_id = open(check_file).read().strip()
+      with open(check_file) as fx:
+        owner_id = fx.read().strip()
       try:
         owner_id = int(owner_id)
       except ValueError:
-        pass
-    if owner_id != pwd.getpwnam(owner.name).pw_uid:
-      callAndRead(['tunctl', '-t', self.name, '-u', owner.name])
+        owner_id = pwd.getpwnam(owner_id).pw_uid
+      #
+      if owner_id != pwd.getpwnam(owner.name).pw_uid:
+        logger.warning("Wrong owner of TUN/TAP interface {}! Not touching it."
+                       "Expected {:d} got {:d}".format(
+          self.name, pwd.getpwnam(owner.name).pw_uid, owner_id))
+      # if the interface already exists - don't do anything
+      return
+
+    callAndRead(['ip', 'tuntap', 'add', 'dev', self.name, 'mode',
+                 self.MODE, 'user', owner.name])
     callAndRead(['ip', 'link', 'set', self.name, 'up'])
 
     if attach_to_tap:
@@ -843,13 +864,66 @@ class Tap(object):
     """
     if self.ipv4_addr:
       # Check if this route exits
-      code, result = callAndRead(['ip', 'route', 'show', self.ipv4_addr])
+      code, result = callAndRead(['ip', 'route', 'show', self.ipv4_addr],
+                                 raise_on_error=False)
       if code == 0 and self.ipv4_addr in result and self.name in result:
         return
-      callAndRead(['route', 'add', '-host', self.ipv4_addr, 'dev', self.name])
+      callAndRead(['ip', 'route', 'add', self.ipv4_addr, 'dev', self.name])
     else:
       raise ValueError("%s should not be empty. No ipv4 address assigned to %s" %
                          (self.ipv4_addr, self.name))
+
+
+class Tun(Tap):
+  """Represent TUN interface which might be many per user."""
+ 
+  MODE = "tun"
+  BASE_MASK = 12
+  BASE_NETWORK = "172.16.0.0"
+
+  def __init__(self, name, sequence=None, partitions=None):
+    """Create TUN interface with subnet according to the optional ``sequence`` number.
+
+    :param name: name which will appear in ``ip list`` afterwards
+    :param sequence: {int} position of this TUN among all ``partitions``
+    """
+    super(Tun, self).__init__(name)
+    if sequence is not None:
+      assert 0 <= sequence < partitions, "0 <= {} < {}".format(sequence, partitions)
+      # create base IPNetwork
+      ip_network = netaddr.IPNetwork(Tun.BASE_NETWORK + "/" + str(Tun.BASE_MASK))
+      # compute shift in BITS to separate ``partitions`` networks into subset
+      # example: for 30 partitions we need log2(30) = 8 BITS
+      mask_shift = int(math.ceil(math.log(int(partitions), 2.0)))
+      # IPNetwork.subnet returns iterator over all possible subnets of given mask
+      ip_subnets = list(ip_network.subnet(Tun.BASE_MASK + mask_shift))
+      subnet = ip_subnets[sequence]
+      # For serialization purposes, convert directly to ``str``
+      self.ipv4_network = str(subnet)
+      self.ipv4_addr = str(subnet.ip)
+      self.ipv4_netmask = str(subnet.netmask)
+
+  def createRoutes(self):
+    """Extend for physical addition of network address because TAP let this on external class."""
+    if self.ipv4_network:
+      # add an address
+      code, _ = callAndRead(['ip', 'addr', 'add', self.ipv4_network, 'dev', self.name],
+                            raise_on_error=False)
+      if code == 0:
+        # address added to the interface - wait
+        time.sleep(1)
+    else:
+      raise RuntimeError("Cannot setup address on interface {}. "
+                         "Address is missing.".format(self.name))
+    # create routes
+    super(Tun, self).createRoutes()
+    # add iptables rule to accept connections from this interface
+    chain_rule = ['INPUT', '-i', self.name, '-j', 'ACCEPT']
+    code, _ = callAndRead(['iptables', '-C'] + chain_rule, raise_on_error=False)
+    if code == 0:
+      # 0 means the rule does not exits so we are free to insert it
+      callAndRead(['iptables', '-I'] + chain_rule)
+
 
 class Interface(object):
   """Represent a network interface on the system"""
@@ -868,7 +942,7 @@ class Interface(object):
     # Attach to TAP  network interface, only if the  interface interface does not
     # report carrier
     _, result = callAndRead(['ip', 'addr', 'list', self.name], raise_on_error=False)
-    self.attach_to_tap = 'DOWN' in result.split('\n', 1)[0]
+    self.attach_to_tap = self.isBridge() and ('DOWN' in result.split('\n', 1)[0])
 
   # XXX no __getinitargs__, as instances of this class are never deserialized.
 
@@ -917,8 +991,13 @@ class Interface(object):
     return address_list
 
   def isBridge(self):
-    _, result = callAndRead(['brctl', 'show'])
-    return any(line.startswith(self.name) for line in result.split("\n"))
+    try:
+      _, result = callAndRead(['brctl', 'show'])
+      return any(line.startswith(self.name) for line in result.split("\n"))
+    except Exception as e:
+      # the binary "brctl" itself does not exist - bridge is imposible to exist
+      logger.warning(str(e))
+      return False
 
   def getInterfaceList(self):
     """Returns list of interfaces already present on bridge"""
@@ -950,7 +1029,7 @@ class Interface(object):
       if self.isBridge():
         callAndRead(['brctl', 'addif', self.name, tap.name])
       else:
-        logger.warning("Interface slapos.cfg:interface_name={} is not a bridge."
+        logger.warning("Interface slapos.cfg:interface_name={} is not a bridge. "
                        "TUN/TAP interface {} might not have internet connection."
                        "".format(self.name, tap.name))
 
@@ -1152,12 +1231,15 @@ def parse_computer_definition(conf, definition_path):
       address, netmask = a.split('/')
       address_list.append(dict(addr=address, netmask=netmask))
     tap = Tap(computer_definition.get(section, 'network_interface'))
+    tun = Tun("slaptun" + str(partition_number),
+              partition_number,
+              int(conf.partition_amount)) if conf.create_tap else None
     partition = Partition(reference=computer_definition.get(section, 'pathname'),
                           path=os.path.join(conf.instance_root,
                                             computer_definition.get(section, 'pathname')),
                           user=user,
                           address_list=address_list,
-                          tap=tap)
+                          tap=tap, tun=tun)
     partition_list.append(partition)
   computer.partition_list = partition_list
   return computer
@@ -1210,7 +1292,8 @@ def parse_computer_xml(conf, xml_path):
           conf.partition_base_name, i)),
         user=User('%s%s' % (conf.user_base_name, i)),
         address_list=None,
-        tap=Tap('%s%s' % (conf.tap_base_name, i))
+        tap=Tap('%s%s' % (conf.tap_base_name, i)),
+        tun=Tun('slaptun' + str(i), i, partition_amount)
     )
     computer.partition_list.append(partition)
 
@@ -1393,11 +1476,7 @@ class FormatConfig(object):
     if not self.dry_run:
       if self.alter_user:
         self.checkRequiredBinary(['groupadd', 'useradd', 'usermod', ['passwd', '-h']])
-      if self.create_tap:
-        self.checkRequiredBinary([['tunctl', '-d']])
-        if self.tap_gateway_interface:
-          self.checkRequiredBinary(['route'])
-      if self.alter_network:
+      if self.create_tap or self.alter_network:
         self.checkRequiredBinary(['ip'])
 
     # Required, even for dry run
