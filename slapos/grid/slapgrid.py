@@ -49,6 +49,7 @@ if sys.version_info < (2, 6):
 
 from lxml import etree
 
+from slapos import manager as slapmanager
 from slapos.slap.slap import NotFoundError
 from slapos.slap.slap import ServerError
 from slapos.slap.slap import COMPUTER_PARTITION_REQUEST_LIST_TEMPLATE_FILENAME
@@ -274,7 +275,8 @@ def create_slapgrid_object(options, logger):
                   instance_min_free_space=instance_min_free_space,
                   instance_storage_home=op.get('instance_storage_home'),
                   ipv4_global_network=op.get('ipv4_global_network'),
-                  firewall_conf=op.get('firewall'))
+                  firewall_conf=op.get('firewall'),
+                  config=options)
 
 
 def check_required_only_partitions(existing, required):
@@ -333,6 +335,7 @@ class Slapgrid(object):
                instance_storage_home=None,
                ipv4_global_network=None,
                firewall_conf={},
+               config=None,
                ):
     """Makes easy initialisation of class parameters"""
     # Parses arguments
@@ -395,7 +398,8 @@ class Slapgrid(object):
     else:
       self.ipv4_global_network= ""
     self.firewall_conf = firewall_conf
-
+    self.config = config
+    self._manager_list = slapmanager.from_config(config)
 
   def _getWatchdogLine(self):
     invocation_list = [WATCHDOG_PATH]
@@ -553,6 +557,11 @@ stderr_logfile_backups=1
             shadir_cert_file=self.shadir_cert_file,
             shadir_key_file=self.shadir_key_file,
             software_min_free_space=self.software_min_free_space)
+
+        # call manager for every software release
+        for manager in self._manager_list:
+          manager.software(software)
+
         if state == 'available':
           completed_tag = os.path.join(software_path, '.completed')
           if (self.develop or (not os.path.exists(completed_tag) and
@@ -1074,6 +1083,10 @@ stderr_logfile_backups=1
       if self.firewall_conf:
         partition_ip_list = parameter_dict['ip_list'] + parameter_dict.get(
                                                             'full_ip_list', [])
+
+      # call manager for every software release
+      for manager in self._manager_list:
+        manager.instance(partition)
 
       if computer_partition_state == COMPUTER_PARTITION_STARTED_STATE:
         local_partition.install()

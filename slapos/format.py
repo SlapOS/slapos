@@ -60,13 +60,10 @@ import slapos.util
 from slapos.util import mkdir_p
 import slapos.slap as slap
 from slapos import version
+from slapos import manager as slapmanager
 
 
 logger = logging.getLogger("slapos.format")
-
-# dict[str: ManagerClass] used in configuration and XML dump of computer
-# this dictionary is intended to be filled after each definition of a Manager
-available_manager_list = {}
 
 
 def prettify_xml(xml):
@@ -244,205 +241,6 @@ def _getDict(obj):
   }
 
 
-class Manager(object):
-  short_name = None
-
-  def format(self):
-    raise NotImplementedError("Implement function to format underlaying OS")
-
-  def update(self):
-    raise NotImplementedError("Implement function to format underlaying OS")
-
-
-class CGroupManager(Manager):
-  """Manage cgroups in terms on initializing and runtime operations.
-
-  This class takes advantage of slapformat being run periodically thus
-  it can act as a "daemon" performing runtime tasks.
-  """
-  short_name = 'cgroup'
-  cpu_exclusive_file = ".slapos-cpu-exclusive"
-  cpuset_path = "/sys/fs/cgroup/cpuset/"
-  task_write_mode = "wt"
-
-  def __init__(self, computer):
-    """Extract necessary information from the ``computer``.
-
-    :param computer: slapos.format.Computer, extract necessary attributes
-    """
-    self.instance_root = computer.instance_root
-    logger.info("Allowing " + self.__class__.__name__)
-
-  def __str__(self):
-    """Manager representation when dumped to string."""
-    return self.short_name
-
-  def is_allowed(self):
-    return os.path.exists("/sys/fs/cgroup/cpuset/cpuset.cpus")
-
-  def format(self):
-    """Build CGROUP tree to fit SlapOS needs.
-
-    - Create hierarchy of CPU sets so that every partition can have exclusive
-      hold of one of the CPUs.
-    """
-    self.prepare_cpuset()
-    self.prepare_cpu_space()
-
-  def update(self):
-    """Control runtime state of the computer."""
-    cpu0_path = os.path.join(self.cpuset_path, "cpu0")
-    if os.path.exists(cpu0_path):
-      # proceed only whe CPUSETs were formatted by this manager
-      self.prepare_cpu_space()
-      self.ensure_exlusive_cpu()
-    else:
-      logger.warning("Computer was not formatted by {} because {} doesn't exist!".format(
-        self.__class__.__name__, cpu0_path))
-
-  def prepare_cpuset(self):
-    """Create cgroup folder per-CPU with exclusive access to the CPU.
-
-    Those folders are "/sys/fs/cgroup/cpuset/cpu<N>".
-    """
-    for cpu in self._cpu_list():
-      cpu_path = self._prepare_folder(
-        os.path.join(self.cpuset_path, "cpu" + str(cpu)))
-      with open(cpu_path + "/cpuset.cpus", "wt") as fx:
-        fx.write(str(cpu))  # this cgroup manages only this cpu
-      with open(cpu_path + "/cpuset.cpu_exclusive", "wt") as fx:
-        fx.write("1")  # manages it exclusively
-      with open(cpu_path + "/cpuset.mems", "wt") as fx:
-        fx.write("0")  # it doesn't work without that
-
-  def ensure_exlusive_cpu(self):
-    """Move processes among exclusive CPUSets based on software release demands.
-
-    We expect PIDs which require own CPU to be found in ~instance/.slapos-cpu-exclusive
-    """
-    cpu_list = self._cpu_list()
-    generic_cpu = cpu_list[0]
-    exclusive_cpu_list = cpu_list[1:]
-
-    # gather all running PIDs for filtering out stale PIDs
-    running_pid_set = set()
-    with open(os.path.join(self.cpuset_path, "tasks"), "rt") as fi:
-      running_pid_set.update(map(int, fi.read().split()))
-    with open(os.path.join(self.cpuset_path, "cpu" + str(generic_cpu), "tasks"), "rt") as fi:
-      running_pid_set.update(map(int, fi.read().split()))
-
-    # gather already exclusively running PIDs
-    exclusive_pid_set = set()
-    for exclusive_cpu in exclusive_cpu_list:
-      with open(os.path.join(self.cpuset_path, "cpu" + str(exclusive_cpu), "tasks"), "rt") as fi:
-        exclusive_pid_set.update(map(int, fi.read().split()))
-
-    for request_file in glob.iglob(os.path.join(self.instance_root, '*', CGroupManager.cpu_exclusive_file)):
-      with open(request_file, "rt") as fi:
-        # take such PIDs which are either really running or are not already exclusive
-        request_pid_list = [int(pid) for pid in fi.read().split()
-                            if int(pid) in running_pid_set or int(pid) not in exclusive_pid_set]
-      with open(request_file, "wt") as fo:
-        fo.write("")  # empty file (we will write back only PIDs which weren't moved)
-      for request_pid in request_pid_list:
-        assigned_cpu = self._move_to_exclusive_cpu(request_pid)
-        if assigned_cpu < 0:
-          # if no exclusive CPU was assigned - write the PID back and try other time
-          with open(request_file, "at") as fo:
-            fo.write(str(request_pid) + "\n")
-
-  def prepare_cpu_space(self):
-    """Move all PIDs from the pool of all CPUs into the first exclusive CPU."""
-    with open(os.path.join(self.cpuset_path, "tasks"), "rt") as fi:
-      running_list = sorted(list(map(int, fi.read().split())), reverse=True)
-    first_cpu = self._cpu_list()[0]
-    success_set = set()
-    refused_set = set()
-    for pid in running_list:
-      try:
-        self._move_task(pid, first_cpu)
-        success_set.add(pid)
-        time.sleep(0.01)
-      except IOError as e:
-        refused_set.add(pid)
-    logger.debug("Refused to move {:d} PIDs: {!s}\n"
-                 "Suceeded in moving {:d} PIDs {!s}\n".format(
-      len(refused_set), refused_set, len(success_set), success_set)
-    )
-
-  def _cpu_list(self):
-    """Extract IDs of available CPUs and return them as a list.
-
-    The first one will be always used for all non-exclusive processes.
-    :return: list[int]
-    """
-    cpu_list = []  # types: list[int]
-    with open(self.cpuset_path + "cpuset.cpus", "rt") as cpu_def:
-      for cpu_def_split in cpu_def.read().strip().split(","):
-        # IDs can be in form "0-4" or "0,1,2,3,4"
-        if "-" in cpu_def_split:
-          a, b = map(int, cpu_def_split.split("-"))
-          cpu_list.extend(range(a, b + 1)) # because cgroup's range is inclusive
-          continue
-        cpu_list.append(int(cpu_def_split))
-    return cpu_list
-
-  def _move_to_exclusive_cpu(self, pid):
-    """Try all exclusive CPUs and place the ``pid`` to the first available one.
-
-    :return: int, cpu_id of used CPU, -1 if placement was not possible
-    """
-    exclusive_cpu_list = self._cpu_list()[1:]
-    for exclusive_cpu in exclusive_cpu_list:
-      # gather tasks assigned to current exclusive CPU
-      task_path = os.path.join(self.cpuset_path, "cpu" + str(exclusive_cpu), "tasks")
-      with open(task_path, "rt") as fi:
-        task_list = fi.read().split()
-      if len(task_list) > 0:
-        continue  # skip occupied CPUs
-      return self._move_task(pid, exclusive_cpu)[1]
-    return -1
-
-  def _move_task(self, pid, cpu_id, cpu_mode="performance"):
-    """Move ``pid`` to ``cpu_id``.
-
-    cpu_mode can be "performance" or "powersave"
-    """
-    known_cpu_mode_list = ("performance", "powersave")
-    with open(os.path.join(self.cpuset_path, "cpu" + str(cpu_id), "tasks"), self.task_write_mode) as fo:
-      fo.write(str(pid) + "\n")
-    # set the core to `cpu_mode`
-    scaling_governor_file = "/sys/devices/system/cpu/cpu{:d}/cpufreq/scaling_governor".format(cpu_id)
-    if os.path.exists(scaling_governor_file):
-      if cpu_mode not in known_cpu_mode_list:
-        logger.warning("Cannot set CPU to mode \"{}\"! Known modes {!s}".format(
-          cpu_mode, known_cpu_mode_list))
-      else:
-        try:
-          with open(scaling_governor_file, self.task_write_mode) as fo:
-            fo.write(cpu_mode + "\n")  # default is "powersave"
-        except IOError as e:
-          # handle permission error
-          logger.error("Failed to write \"{}\" to {}".format(cpu_mode, scaling_governor_file))
-    return pid, cpu_id
-
-  def _prepare_folder(self, folder):
-    """If-Create folder and set group write permission."""
-    if not os.path.exists(folder):
-      os.mkdir(folder)
-      # make your life and testing easier and create mandatory files if they don't exist
-      mandatory_file_list = ("tasks", "cpuset.cpus")
-      for mandatory_file in mandatory_file_list:
-        file_path = os.path.join(folder, mandatory_file)
-        if not os.path.exists(file_path):
-          with open(file_path, "wb"):
-            pass  # touche
-    return folder
-
-# mark manager available
-available_manager_list[CGroupManager.short_name] = CGroupManager
-
-
 class Computer(object):
   """Object representing the computer"""
 
@@ -450,11 +248,13 @@ class Computer(object):
                ipv6_interface=None, software_user='slapsoft',
                tap_gateway_interface=None,
                instance_root=None, software_root=None, instance_storage_home=None,
-               partition_list=None, manager_list=None):
+               partition_list=None, config=None):
     """
     Attributes:
       reference: str, the reference of the computer.
       interface: str, the name of the computer's used interface.
+
+      :param config: dict-like, holds raw data from configuration file
     """
     self.reference = str(reference)
     self.interface = interface
@@ -478,12 +278,10 @@ class Computer(object):
     self.python_version = None
     self.slapos_version = None
 
-    # HASA relation to managers (could turn into plugins with `format` and `update` methods)
-    self.manager_list = manager_list  # for serialization
-    # hide list[Manager] from serializer by prepending "_"
-    self._manager_list = tuple(filter(lambda manager: manager.is_allowed(),
-                                    (available_manager_list[manager_str](self) for manager_str in manager_list))) \
-                        if manager_list else tuple()
+    # attributes starting with '_' are saved from serialization
+    # monkey-patch use of class instead of dictionary
+    self._config = config if isinstance(config, dict) else config.__dict__
+    self._manager_list = slapmanager.from_config(self._config)
 
   def __getinitargs__(self):
     return (self.reference, self.interface)
@@ -521,12 +319,7 @@ class Computer(object):
     raise NoAddressOnInterface('No valid IPv6 found on %s.' % self.interface.name)
 
   def update(self):
-    """Update computer runtime info and state."""
-    for manager in self._manager_list:
-      logger.info("Updating computer with " + manager.__class__.__name__)
-      manager.update()
-
-    # Collect environmental hardware/network information.
+    """Collect environmental hardware/network information."""
     self.public_ipv4_address = getPublicIPv4Address()
     self.slapos_version = version.version
     self.python_version = platform.python_version()
@@ -613,7 +406,7 @@ class Computer(object):
 
   @classmethod
   def load(cls, path_to_xml, reference, ipv6_interface, tap_gateway_interface,
-           instance_root=None, software_root=None, manager_list=None):
+           instance_root=None, software_root=None, config=None):
     """
     Create a computer object from a valid xml file.
 
@@ -637,7 +430,7 @@ class Computer(object):
         tap_gateway_interface=tap_gateway_interface,
         software_root=dumped_dict.get('software_root', software_root),
         instance_root=dumped_dict.get('instance_root', instance_root),
-        manager_list=dumped_dict.get('manager_list', manager_list),
+        config=config,
     )
 
     for partition_index, partition_dict in enumerate(dumped_dict['partition_list']):
@@ -760,8 +553,7 @@ class Computer(object):
 
     # Iterate over all managers and let them `format` the computer too
     for manager in self._manager_list:
-      logger.info("Formatting computer with " + manager.__class__.__name__)
-      manager.format()
+      manager.format(self)
 
     # get list of instance external storage if exist
     instance_external_list = []
@@ -1521,7 +1313,7 @@ def parse_computer_xml(conf, xml_path):
                              tap_gateway_interface=conf.tap_gateway_interface,
                              software_root=conf.software_root,
                              instance_root=conf.instance_root,
-                             manager_list=conf.manager_list)
+                             config=conf)
     # Connect to the interface defined by the configuration
     computer.interface = interface
   else:
@@ -1537,7 +1329,7 @@ def parse_computer_xml(conf, xml_path):
       ipv6_interface=conf.ipv6_interface,
       software_user=conf.software_user,
       tap_gateway_interface=conf.tap_gateway_interface,
-      manager_list=conf.manager_list,
+      config=conf,
     )
 
   partition_amount = int(conf.partition_amount)
@@ -1652,7 +1444,6 @@ class FormatConfig(object):
   tap_gateway_interface = None
   use_unique_local_address_block = None
   instance_storage_home = None
-  manager_list = None
 
   def __init__(self, logger):
     self.logger = logger
@@ -1739,16 +1530,6 @@ class FormatConfig(object):
               '%r' % (option, getattr(self, option))
           self.logger.error(message)
           raise UsageError(message)
-
-    # Split str into list[str] and check availability of every manager
-    # Config value is expected to be strings separated by spaces or commas
-    manager_list = []
-    for manager in self.manager_list.replace(",", " ").split():
-      if manager not in available_manager_list:
-        raise ValueError("Unknown manager \"{}\"! Known are: {!s}".format(
-          manager, list(available_manager_list.keys())))
-      manager_list.append(manager)
-    self.manager_list = manager_list  # replace original str with list[str] of known managers
 
     if not self.dry_run:
       if self.alter_user:
