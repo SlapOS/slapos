@@ -174,7 +174,7 @@ class Recipe(object):
         'Request for %(request_name)r with software release '
         '%(software_release)r and software type %(software_type)r failed '
         'with partition_parameter_kw=%(partition_parameter_kw)r, '
-        'filter_kw=%(filter_kw)r, shared=%(shared)r, state=%(state)r.' % dict(
+        'filter_kw=%(filter_kw)r, shared=%(shared)r, state=%(state)r.', dict(
           software_release=software_url,
           software_type=software_type,
           request_name=name,
