@@ -26,6 +26,7 @@
 ##############################################################################
 
 import json
+import logging
 import os
 
 import slapos.slap
@@ -33,15 +34,21 @@ from slapos.recipe.librecipe import unwrap
 from ConfigParser import RawConfigParser
 from netaddr import valid_ipv4, valid_ipv6
 from slapos.util import mkdir_p
+from slapos import format as slapformat
+
+
+logger = logging.getLogger("slapos")
+
 
 class Recipe(object):
   """
-  Retrieves slap partition parameters, and makes them available to other
-  buildout section in various ways, and in various encodings.
-  Populates the buildout section it is used in with all slap partition
-  parameters.
-  Also provides access to partition properties: all IPv4, IPv6 and tap
-  interfaces it is allowed to use.
+  Retrieve slap partition parameters and make them available in buildout section.
+
+  There are two sources of parameters. First is configuration file slapos.cfg and
+  derived information.
+  Second is partition's resource_file which is made available in form of keys joined
+  with "-" and with all "_" replaced by "-".
+  For example {"tun": {"ipv4": <addr>}} would be available in buildout as ${instance:tun-ipv4}.
 
   Input:
     url
@@ -67,7 +74,7 @@ class Recipe(object):
       Example:
         ${storage-configuration:storage-home}
 
-  Output:
+  Output (keys derived from SlapOS configuration):
     root-instance-title
       Hosting subscription or root instance title
     instance-title
@@ -122,6 +129,12 @@ class Recipe(object):
           options['configuration.' + key] = value
 
   def fetch_parameter_dict(self, options, instance_root):
+      """Gather parameters about current computer and partition.
+
+      Use two sources of truth
+      1. SlapOS Master - for external computer/partition information
+      2. format.Partition.resource_file - for partition specific details
+      """
       slap = slapos.slap.slap()
       slap.initializeConnection(
           options['url'],
@@ -233,6 +246,26 @@ class Recipe(object):
       options['storage-dict'] = storage_dict
 
       options['tap'] = tap_set
+
+      # The external information transfered from Slap Master has been processed
+      # so we extend with information gathered from partition resource file
+      resource_home = instance_root
+      while not os.path.exists(os.path.join(resource_home, slapformat.Partition.resource_file)):
+        resource_home = os.path.normpath(os.path.join(resource_home, '..'))
+        if resource_home == "/":
+          break
+      else:
+        # no break happened - let's add partition resources into options
+        logger.debug("Using partition resource file {}".format(
+          os.path.join(resource_home, slapformat.Partition.resource_file)))
+        with open(os.path.join(resource_home, slapformat.Partition.resource_file)) as fi:
+          partition_params = json.load(fi)
+        # be very careful with overriding master's information
+        for key, value in flatten_dict(partition_params).items():
+          if key not in options:
+            options[key] = value
+      # print out augmented options to see what we are passing
+      logger.debug(str(options))
       return self._expandParameterDict(options, parameter_dict)
 
   def _expandParameterDict(self, options, parameter_dict):
@@ -261,3 +294,14 @@ class JsonDump(Recipe):
 
     update = install
 
+
+def flatten_dict(data, key_prefix=''):
+  """Transform folded dict into one-level key-subkey-subsubkey dictionary."""
+  output = {}
+  for key, value in data.items():
+    prefixed_key = key_prefix + key.replace("_", "-")  # to be consistent with `fetch_parameter_dict`
+    if isinstance(value, dict):
+      output.update(flatten_dict(value, key_prefix=prefixed_key + "-"))
+      continue
+    output[prefixed_key] = value
+  return output
