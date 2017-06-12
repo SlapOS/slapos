@@ -156,7 +156,8 @@ update-command = ${:command}
 [start-monitor]
 recipe = slapos.cookbook:wrapper
 command-line = {{ python_executable }} {{ monitor_bin }} --config_file ${monitor-conf:rendered}
-wrapper-path = ${directory:scripts}/bootstrap-monitor
+name = bootstrap-monitor
+wrapper-path = ${directory:scripts}/${:name}
 environment = 
   PATH=${python-symlink:target}:/usr/local/bin:/usr/bin:/bin
 
@@ -330,6 +331,7 @@ check-secure = 1
 [monitor-bootstrap-promise]
 recipe = collective.recipe.template
 file = ${monitor-conf-parameters:promise-output-file}
+error-log-file = ${buildout:directory}/.${slap-connection:partition-id}_${start-monitor:name}.log
 input = inline:#!{{ dash_executable_location }}
   pidfile=${monitor-conf-parameters:pid-file}
   if [ -s $pidfile ]; then
@@ -344,7 +346,18 @@ input = inline:#!{{ dash_executable_location }}
       fi
     done
   fi
-  if [ ! -f "${:file}" ]; then echo "Monitor bootstrap exited with error." && exit 2; else echo "Bootstrap OK"; fi
+  if [ ! -f "${:file}" ]; then
+    echo "Monitor bootstrap exited with error."
+    log_file="${:error-log-file}"
+    if [ -s "$log_file" ]; then
+      echo " ---- Latest monitor-boostrap.log ----"
+      echo ""
+      tail -n 3 $log_file
+    fi
+    exit 2
+  else
+    echo "Bootstrap OK";
+  fi
 output = ${directory:promises}/monitor-bootstrap-status
 mode = 700
 
