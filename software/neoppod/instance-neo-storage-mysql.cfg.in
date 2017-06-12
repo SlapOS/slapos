@@ -87,6 +87,7 @@ masters = ${publish:masters}
 database-adapter = MySQL
 wait-database = -1
 engine = {{ slapparameter_dict.get('engine', '') }}
+disable-drop-partitions = {{ dumps(bool(slapparameter_dict.get('disable-drop-partitions'))) }}
 
 {% for i in range(slapparameter_dict.get('storage-count', 1)) -%}
 {%   set storage_id = 'neo-storage-' ~ i -%}

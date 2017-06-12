@@ -92,6 +92,8 @@ class Storage(NeoBaseRecipe):
     engine = self.options.get('engine')
     if engine: # old versions of NEO don't support -e
       r  += '-e', engine
+    if self.options.get('disable-drop-partitions'):
+      r.append('--disable-drop-partitions')
     return r
 
 class Admin(NeoBaseRecipe):
