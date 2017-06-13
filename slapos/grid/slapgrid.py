@@ -1086,7 +1086,7 @@ stderr_logfile_backups=1
 
       # call manager for every software release
       for manager in self._manager_list:
-        manager.instance(partition)
+        manager.instance(local_partition)
 
       if computer_partition_state == COMPUTER_PARTITION_STARTED_STATE:
         local_partition.install()

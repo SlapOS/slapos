@@ -2,6 +2,8 @@
 import logging
 import os
 import os.path
+import pwd
+import time
 
 from zope import interface as zope_interface
 from slapos.manager import interface
@@ -82,13 +84,14 @@ class Manager(object):
                            for cpu_folder in self._cpu_folder_list()]
 
     # Gather exclusive CPU usage map {username: set[cpu_id]}
-    cpu_usage = defaultdict(set)
-    for cpu_id in self._cpu_id_list()[1:]:  # skip the first public CPU
-      pids = [int(pid)
-              for pid in read_file(cpu_tasks_file_list[cpu_id]).splitlines()]
-      for pid in pids:
-        process = psutil.Process(pid)
-        cpu_usage[process.username()].add(cpu_id)
+    # We do not need to gather that since we have no limits yet
+    #cpu_usage = defaultdict(set)
+    #for cpu_id in self._cpu_id_list()[1:]:  # skip the first public CPU
+    #  pids = [int(pid)
+    #          for pid in read_file(cpu_tasks_file_list[cpu_id]).splitlines()]
+    #  for pid in pids:
+    #    process = psutil.Process(pid)
+    #    cpu_usage[process.username()].add(cpu_id)
 
     # Move all PIDs from the pool of all CPUs onto the first exclusive CPU.
     running_list = sorted(list(map(int, read_file(tasks_file).split())), reverse=True)
@@ -105,7 +108,7 @@ class Manager(object):
                  "Suceeded in moving {:d} PIDs {!s}\n".format(
                      len(refused_set), refused_set, len(success_set), success_set))
 
-    cpu_list = self._cpu_folder_list()
+    cpu_folder_list = self._cpu_folder_list()
     generic_cpu_path = cpu_folder_list[0]
     exclusive_cpu_path_list = cpu_folder_list[1:]
 
@@ -116,7 +119,7 @@ class Manager(object):
     # gather already exclusively running PIDs
     exclusive_pid_set = set()
     for cpu_tasks_file in cpu_tasks_file_list[1:]:
-      exclusive_pid_set.update(map(int, read_content(cpu_tasks_file).split()))
+      exclusive_pid_set.update(map(int, read_file(cpu_tasks_file).split()))
 
     # Move processes to their demanded exclusive CPUs
     with open(request_file, "rt") as fi:
@@ -135,7 +138,7 @@ class Manager(object):
   def _cpu_folder_list(self):
     """Return list of folders for exclusive cpu cores."""
     return [os.path.join(self.cpuset_path, "cpu" + str(cpu_id))
-            for cpu_id in self._cpu_id_list]
+            for cpu_id in self._cpu_id_list()]
 
   def _cpu_id_list(self):
     """Extract IDs of available CPUs and return them as a list.

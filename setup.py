@@ -55,6 +55,7 @@ setup(name=name,
           'zc.buildout',
           'cliff',
           'requests>=2.4.3',
+          'six',
           'uritemplate', # used by hateoas navigator
         ] + additional_install_requires,
       extras_require={

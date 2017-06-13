@@ -155,14 +155,18 @@ class PwdMock:
     global USER_LIST
     if name in USER_LIST:
       class PwdResult:
-        pw_uid = 0
-        pw_gid = 0
+        def __init__(self, name):
+          self.pw_name = name
+          self.pw_uid = self.pw_gid = USER_LIST.index(name)
+
         def __getitem__(self, index):
+          if index == 0:
+            return self.pw_name
           if index == 2:
             return self.pw_uid
           if index == 3:
             return self.pw_gid
-      return PwdResult()
+      return PwdResult(name)
     raise KeyError("User \"{}\" not in global USER_LIST {!s}".format(name, USER_LIST))
 
 
@@ -656,9 +660,13 @@ class TestComputer(SlapformatMixin):
 
 
 class SlapGridPartitionMock:
+
   def __init__(self, partition):
     self.partition = partition
     self.instance_path = partition.path
+
+  def getUserGroupId(self):
+    return (0, 0)
 
 
 class TestComputerWithCPUSet(SlapformatMixin):
@@ -667,6 +675,9 @@ class TestComputerWithCPUSet(SlapformatMixin):
   task_write_mode = "at"  # append insted of write tasks PIDs for the tests
 
   def setUp(self):
+    logging.getLogger("slapos.manager.cpuset").addHandler(
+      logging.StreamHandler())
+
     super(TestComputerWithCPUSet, self).setUp()
     self.restoreOs()
 
@@ -710,14 +721,13 @@ class TestComputerWithCPUSet(SlapformatMixin):
         ],
       config={
         "manager_list": "cpuset",
-        "power_user_list": "testuser"
+        "power_user_list": "testuser root"
       }
     )
     # self.patchOs(self.logger)
 
   def tearDown(self):
     """Cleanup temporary test folders."""
-
     from slapos.manager.cpuset import Manager
     Manager.cpuset_path = self.orig_cpuset_path
     Manager.task_write_mode = self.orig_task_write_mode
@@ -726,6 +736,7 @@ class TestComputerWithCPUSet(SlapformatMixin):
     shutil.rmtree("/tmp/slapgrid/")
     if self.cpuset_path.startswith("/tmp"):
       shutil.rmtree(self.cpuset_path)
+    logging.getLogger("slapos.manager.cpuset")
 
   def test_positive_cgroups(self):
     """Positive test of cgroups."""
@@ -741,25 +752,23 @@ class TestComputerWithCPUSet(SlapformatMixin):
       if cpu_id > 0:
         self.assertEqual("", file_content(os.path.join(cpu_n_path, "tasks")))
 
-    # Simulate slapos instance call
-    self.computer._manager_list[0].instance(SlapGridPartitionMock(self.computer.partition_list[0]))
+    # Test moving tasks from generic core to private core
+    # request PID 1001 to be moved to its private CPU
+    request_file_path = os.path.join(self.computer.partition_list[0].path,
+                                     slapos.manager.cpuset.Manager.cpu_exclusive_file)
+    file_write("1001\n", request_file_path)
+    # Simulate slapos instance call to perform the actual movement
+    self.computer._manager_list[0].instance(
+      SlapGridPartitionMock(self.computer.partition_list[0]))
+    # Simulate cgroup behaviour - empty tasks in the pool
+    file_write("", os.path.join(self.cpuset_path, "tasks"))
     # Test that format moved all PIDs from CPU pool into CPU0
     tasks_at_cpu0 = file_content(os.path.join(self.cpuset_path, "cpu0", "tasks")).split()
     self.assertIn("1000", tasks_at_cpu0)
-    self.assertIn("1001", tasks_at_cpu0)
-    self.assertIn("1002", tasks_at_cpu0)
-    # Simulate cgroup behaviour - empty tasks in the pool
-    file_write("", os.path.join(self.cpuset_path, "tasks"))
-    # test moving tasks from generic core to private core
-    # request PID 1001 to be moved to its private CPU
-    request_file_path = os.path.join(self.computer.partition_list[0].path,
-                                     self.cpu_exclusive_file)
-    file_write("1001\n", request_file_path)
-    # let format do the moving
-    self.computer.update()
     # test if the moving suceeded into any provate CPUS (id>0)
     self.assertTrue(any("1001" in file_content(exclusive_task)
                         for exclusive_task in glob.glob(os.path.join(self.cpuset_path, "cpu[1-9]", "tasks"))))
+    self.assertIn("1002", tasks_at_cpu0)
     # slapformat should remove successfully moved PIDs from the .slapos-cpu-exclusive file
     self.assertEqual("", file_content(request_file_path).strip())
 

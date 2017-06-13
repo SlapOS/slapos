@@ -280,7 +280,10 @@ class Computer(object):
 
     # attributes starting with '_' are saved from serialization
     # monkey-patch use of class instead of dictionary
-    self._config = config if isinstance(config, dict) else config.__dict__
+    if config is None:
+      logger.warning("Computer needs config in constructor to allow managers.")
+
+    self._config = config if config is None or isinstance(config, dict) else config.__dict__
     self._manager_list = slapmanager.from_config(self._config)
 
   def __getinitargs__(self):
