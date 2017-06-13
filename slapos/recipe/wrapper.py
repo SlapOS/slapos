@@ -31,9 +31,28 @@ import os
 from slapos.recipe.librecipe import GenericBaseRecipe
 
 class Recipe(GenericBaseRecipe):
+    """Recipe to create a script from given command and options.
+
+    :param str init: shell command to execute before actuall command
+    :param str command: shell command which launches the intended process
+    :param str cleanup: shell command executed at the end or in case of SIGTERM/INT/KILL
+    :param bool safe: controls whether the parameters will be escaped (default false implies escaping)
+
+    :param lines wait-for-files: list of files to wait for
+    :param str pidfile: path to pidfile ensure exclusivity for the process
+    :param bool remove-pidfile: if pidfile is removed upon exit
+    :param bool parameters-extra: whether wrapper parameters are passed onto command
+    """
     def install(self):
-        command_line = shlex.split(self.options['command-line'])
-        wrapper_path = self.options['wrapper-path']
+        command_line = shlex.split(self.options.get('command-line') or self.options.get('command'))
+        assert command_line, "Specify either 'command-line' or 'command'"
+        # be more consistent with the naming across recipies - use "destination" too
+        wrapper_path = self.options.get('wrapper-path') or self.options.get('destination')
+        assert wrapper_path, "Specify either 'wrapper-path' or 'destination'"
+        # optionals bellow
+        init = self.options.get('init')
+        reserve_cpu = self.options.get('reserve-cpu', False)
+
         wait_files = self.options.get('wait-for-files')
         environment = self.options.get('environment')
         parameters_extra = self.options.get('parameters-extra')
@@ -47,6 +66,8 @@ class Recipe(GenericBaseRecipe):
              parameters=command_line[1:],
              parameters_extra=parameters_extra,
              pidfile=pidfile,
+             init_command=init,
+             reserve_cpu=reserve_cpu
           )]
 
         # More complex needs: create a Python script as wrapper
@@ -76,5 +97,7 @@ class Recipe(GenericBaseRecipe):
              parameters=[],
              parameters_extra=parameters_extra,
              pidfile=pidfile,
+             init_command=init,
+             reserve_cpu=reserve_cpu
         )]
 

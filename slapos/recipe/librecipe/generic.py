@@ -131,7 +131,7 @@ class GenericBaseRecipe(object):
 
   def createWrapper(self, name, command, parameters, comments=[],
       parameters_extra=False, environment=None,
-      pidfile=None
+      pidfile=None, init_command=None, reserve_cpu=False
   ):
     """
     Creates a shell script for process replacement.
@@ -139,6 +139,9 @@ class GenericBaseRecipe(object):
     Takes care of #! line limitation when the wrapped command is a script.
     if pidfile parameter is specified, then it will make the wrapper a singleton,
     accepting to run only if no other instance is running.
+
+    :param init_command: str, arbitrary command being run before the actual `command`
+    :param reserve_cpu: bool, try to reserve one core for the `command`
     """
 
     lines = [ '#!/bin/sh' ]
@@ -162,6 +165,18 @@ class GenericBaseRecipe(object):
             fi
           fi
           echo $$ > $pidfile""" % shlex.quote(pidfile)))
+
+    if reserve_cpu:
+      # if the CGROUPS cpuset is available (and prepared by slap format)
+      # request an exclusive CPU core for this process
+      lines.append(dedent("""
+        # put own PID into waiting list for exclusive CPU-core access
+        echo $$ >> ~/.slapos-cpu-exclusive
+        """))
+
+    if init_command is not None:
+      lines.append("")
+      lines.append(init_command)
 
     lines.append(dedent('''
     # If the wrapped command uses a shebang, execute the referenced
