@@ -249,21 +249,22 @@ class Recipe(object):
 
       # The external information transfered from Slap Master has been processed
       # so we extend with information gathered from partition resource file
-      resource_home = instance_root
-      while not os.path.exists(os.path.join(resource_home, slapformat.Partition.resource_file)):
-        resource_home = os.path.normpath(os.path.join(resource_home, '..'))
-        if resource_home == "/":
-          break
-      else:
-        # no break happened - let's add partition resources into options
-        logger.debug("Using partition resource file {}".format(
-          os.path.join(resource_home, slapformat.Partition.resource_file)))
-        with open(os.path.join(resource_home, slapformat.Partition.resource_file)) as fi:
-          partition_params = json.load(fi)
-        # be very careful with overriding master's information
-        for key, value in flatten_dict(partition_params).items():
-          if key not in options:
-            options[key] = value
+      if hasattr(slapformat.Partition, "resource_file"):
+        resource_home = instance_root
+        while not os.path.exists(os.path.join(resource_home, slapformat.Partition.resource_file)):
+          resource_home = os.path.normpath(os.path.join(resource_home, '..'))
+          if resource_home == "/":
+            break
+        else:
+          # no break happened - let's add partition resources into options
+          logger.debug("Using partition resource file {}".format(
+            os.path.join(resource_home, slapformat.Partition.resource_file)))
+          with open(os.path.join(resource_home, slapformat.Partition.resource_file)) as fi:
+            partition_params = json.load(fi)
+          # be very careful with overriding master's information
+          for key, value in flatten_dict(partition_params).items():
+            if key not in options:
+              options[key] = value
       # print out augmented options to see what we are passing
       logger.debug(str(options))
       return self._expandParameterDict(options, parameter_dict)
