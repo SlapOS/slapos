@@ -77,6 +77,7 @@ EOF
   fi
 
   test -d project  && rsync project "$backup_path"
+  test -d public  && rsync public "$backup_path"
   test -f proxy.db && rsync proxy.db "$backup_path"
 )
 # We sync .* appart

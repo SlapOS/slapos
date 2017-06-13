@@ -95,6 +95,7 @@ EOF
   fi
 
   test -d project  && rsync project "$path"
+  test -d public  && rsync public "$path"
   test -f proxy.db && rsync proxy.db "$path"
 )
 
