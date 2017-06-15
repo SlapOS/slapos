@@ -302,7 +302,7 @@ parameters-extra = true
 monitor-httpd-ipv6 = {{ (ipv6_set | list)[0] }}
 monitor-httpd-port = {{ port + 1 }}
 monitor-title = Mariadb monitor
-password = {{monitor_passwd}}
+password = {{ slapparameter_dict['monitor-passwd'] }}
 
 [buildout]
 extends =
