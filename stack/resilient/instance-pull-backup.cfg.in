@@ -260,11 +260,6 @@ parameters-extra = true
 #----------------
 #--
 #-- Slave instance list (empty default).
-[htpasswd]
-recipe = slapos.cookbook:generate.password
-storage-path = $${directory:etc}/.monitor_user
-bytes = 8
-username = admin
 
 [slap-parameter]
 slave_instance_list = []
@@ -272,8 +267,8 @@ ignore-known-hosts-file = false
 monitor-cors-domains = 
 monitor-httpd-port = 8070
 monitor-title = PBS Instance
-monitor-password = $${htpasswd:passwd}
-monitor-username = $${htpasswd:username}
+monitor-password = $${monitor-htpasswd:passwd}
+monitor-username = admin
 
 #----------------
 #--

@@ -1,6 +1,6 @@
 [buildout]
-extends = template-runner.cfg
-          ${pbsready-import:output}
+extends = {{ template_runner_path }}
+          {{ pbsready_import_template_path }}
 
 parts +=
   nginx_conf
@@ -42,26 +42,26 @@ parts +=
 recipe = slapos.cookbook:free_port
 minimum = 49990
 maximum = 49999
-ip = $${slap-network-information:local-ipv4}
+ip = ${slap-network-information:local-ipv4}
 
 [runner-free-port]
 recipe = slapos.cookbook:free_port
 minimum = 50015
 maximum = 50024
-ip = $${slap-network-information:global-ipv6}
+ip = ${slap-network-information:global-ipv6}
 
 [slaprunner]
-proxy_port = $${proxy-free-port:port}
-runner_port = $${runner-free-port:port}
+proxy_port = ${proxy-free-port:port}
+runner_port = ${runner-free-port:port}
 
 [supervisord-free-port]
 recipe = slapos.cookbook:free_port
 minimum = 39996
 maximum = 40005
-ip = $${slaprunner:ipv4}
+ip = ${slaprunner:ipv4}
 
 [supervisord]
-port = $${supervisord-free-port:port}
+port = ${supervisord-free-port:port}
 
 [runner-sshd-port]
 minimum = 22232
@@ -74,14 +74,14 @@ recipe =
 
 [importer]
 recipe = slapos.recipe.template:jinja2
-template = ${template-runner-import-script:location}/${template-runner-import-script:filename}
-rendered = $${directory:bin}/$${slap-parameter:namebase}-importer
+template = {{ importer_script_path }}
+rendered = ${directory:bin}/${slap-parameter:namebase}-importer
 # backward compatibility for resilient stack
-wrapper = $${:rendered}
+wrapper = ${:rendered}
 mode = 700
-restore-exit-code-file = $${directory:srv}/$${:restore-exit-code-file-basename}
+restore-exit-code-file = ${directory:srv}/${:restore-exit-code-file-basename}
 restore-exit-code-file-basename = importer-exit-code-file
-restore-error-message-file = $${directory:srv}/$${:restore-error-message-file-basename}
+restore-error-message-file = ${directory:srv}/${:restore-error-message-file-basename}
 restore-error-message-file-basename = importer-error-message-file
 resilient-log-basename = resilient.log
 context =
@@ -94,20 +94,20 @@ context =
   key instance_folder slaprunner:instance_root
   section directory directory
   section supervisord supervisord
-  raw  output_log_file $${directory:log}/$${:resilient-log-basename}
-  raw  shell_binary ${bash:location}/bin/bash
-  raw  rsync_binary ${rsync:location}/bin/rsync
-  raw  restore_exit_code_file $${:restore-exit-code-file}
-  raw  restore_error_message_file $${:restore-error-message-file}
+  raw  output_log_file ${directory:log}/${:resilient-log-basename}
+  raw  shell_binary {{ bash_executable_location }}
+  raw  rsync_binary {{ rsync_executable_location }}
+  raw  restore_exit_code_file ${:restore-exit-code-file}
+  raw  restore_error_message_file ${:restore-error-message-file}
 
 [importer-consistency-promise]
 # Test that the importer script and "after-import" subscripts
 # are not older than 2 days (1 day + some slack), and have succeeded
 recipe = collective.recipe.template
 input = inline: #!/bin/sh
-  EXIT_CODE_FILE="$${importer:restore-exit-code-file}"
-  RECENT_EXIT_CODE_FILE=$(find $${directory:srv} -maxdepth 1 -name "$${importer:restore-exit-code-file-basename}" -mtime -2)
-  RESILIENT_LOG_URL=$${monitor-publish-parameters:monitor-base-url}/log/$${importer:resilient-log-basename}
+  EXIT_CODE_FILE="${importer:restore-exit-code-file}"
+  RECENT_EXIT_CODE_FILE=$(find ${directory:srv} -maxdepth 1 -name "${importer:restore-exit-code-file-basename}" -mtime -2)
+  RESILIENT_LOG_URL=${monitor-publish-parameters:monitor-base-url}/log/${importer:resilient-log-basename}
   if [ ! -f "$EXIT_CODE_FILE" ]; then
     exit 0;
   else
@@ -115,25 +115,25 @@ input = inline: #!/bin/sh
        echo "Consistency check is too old.";
        exit 1;
     else
-      if [ -f "$${importer:restore-error-message-file}" ]; then
-        cat $${importer:restore-error-message-file}
+      if [ -f "${importer:restore-error-message-file}" ]; then
+        cat ${importer:restore-error-message-file}
       fi
       echo "More information can be found here : $RESILIENT_LOG_URL";
       exit $(cat $EXIT_CODE_FILE);
     fi
   fi
   exit 1; # Something else went wrong
-output = $${directory:promises}/importer-consistency-promise
+output = ${directory:promises}/importer-consistency-promise
 mode = 755
 
 [software-release-deployment-promise]
 recipe = collective.recipe.template
 input = inline: #!/bin/sh
-  PROJECT_FILE=$(find "$${directory:etc}" -maxdepth 1 -name .project)
+  PROJECT_FILE=$(find "${directory:etc}" -maxdepth 1 -name .project)
   if [ -z "$PROJECT_FILE" ]; then
     exit 0;
   else
-    INSTALLATION_FILE=$(find "$${runnerdirectory:software-root}" -mindepth 2 -maxdepth 2 -name .completed)
+    INSTALLATION_FILE=$(find "${runnerdirectory:software-root}" -mindepth 2 -maxdepth 2 -name .completed)
     if [ -n "$INSTALLATION_FILE" ]; then
       exit 0;
     else
@@ -141,41 +141,41 @@ input = inline: #!/bin/sh
     fi
   fi
   exit 1
-output = $${directory:promises}/software-release-deployment-promise
+output = ${directory:promises}/software-release-deployment-promise
 mode = 755
 
 [resilient-software-release-information]
 recipe = slapos.recipe.template
-url = ${template-resilient-software-release-information:destination}/${template-resilient-software-release-information:filename}
-output = $${directory:cgi-bin}/resilient_software_release_information.py
-resilient-log-url = $${monitor-publish-parameters:monitor-base-url}/log/$${importer:resilient-log-basename}
+url = {{ software_release_information_template }}
+output = ${directory:cgi-bin}/resilient_software_release_information.py
+resilient-log-url = ${monitor-publish-parameters:monitor-base-url}/log/${importer:resilient-log-basename}
 mode = 0600
 
 [slap-parameter]
 auto-deploy-instance = false
 auto-deploy = true
-name = Webrunner import
-monitor-cors-domains = 
-monitor-username = $${monitor-instance-parameter:username}
-monitor-password = $${monitor-htpasswd:passwd}
 
 [resilient-publish-connection-parameter]
-monitor-base-url = $${monitor-publish-parameters:monitor-base-url}
-monitor-url = $${monitor-publish-parameters:monitor-url}
-monitor-user = $${monitor-publish-parameters:monitor-user}
-monitor-password = $${monitor-publish-parameters:monitor-password}
+monitor-base-url = ${monitor-publish-parameters:monitor-base-url}
+monitor-url = ${monitor-publish-parameters:monitor-url}
+monitor-user = ${monitor-publish-parameters:monitor-user}
+monitor-password = ${monitor-publish-parameters:monitor-password}
 
 [monitor-instance-parameter]
 monitor-httpd-port = 8360
-#monitor-title = $${slap-parameter:name}
-#cors-domains = $${slap-parameter:monitor-cors-domains}
-#username = $${slap-parameter:monitor-username}
-#password = $${slap-parameter:monitor-password}
-# Pass some parameter to dispay in monitoring interface
+monitor-title = {{ slapparameter_dict.get('name', 'Webrunner import') }}
+cors-domains = {{ slapparameter_dict.get('monitor-cors-domains', 'monitor.app.officejs.com') }}
+{% if slapparameter_dict.get('monitor-username', '') -%}
+username = {{ slapparameter_dict['monitor-username'] }}
+{% endif -%}
+{% if slapparameter_dict.get('monitor-password', '') -%}
+password = {{ slapparameter_dict['monitor-password'] }}
+{% endif -%}
 instance-configuration =
-  raw takeover-url http://[$${resilient-web-takeover-httpd-configuration-file:listening-ip}]:$${resilient-web-takeover-httpd-configuration-file:listening-port}/
-  raw takeover-password $${resilient-web-takeover-password:passwd}
+  raw takeover-url http://[${resilient-web-takeover-httpd-configuration-file:listening-ip}]:${resilient-web-takeover-httpd-configuration-file:listening-port}/
+  raw takeover-password ${resilient-web-takeover-password:passwd}
+configuration-file-path = ${buildout:directory}/knowledge0.cfg
 
 [monitor-conf-parameters]
 private-path-list += 
-  $${directory:logrotate-backup}
+  ${directory:logrotate-backup}
