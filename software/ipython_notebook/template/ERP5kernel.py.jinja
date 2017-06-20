@@ -184,12 +184,8 @@ notebooks. \n' % magic_value
     if check_attributes:
       self.response = 'You have entered all required magics. You may now use your notebook.'
     else:
-      self.response = '''You have these required magics remaining: %s. \nYour current \
-backend url is %s (you can change it with %serp5_url)''' % (
-      ', '.join(map(str, missing_attributes)), 
-      str(self.url),
-      '%'
-      )
+      self.response = '''You have these required magics remaining: %s. \n''' % (
+      ', '.join(map(str, missing_attributes)))
 
     # Display response to frontend before moving forward
     self.display_response(response=(self.response + '\n'))

@@ -85,12 +85,11 @@ $([IPython.events]).on('notebook_loaded.Notebook', function(){
   var kernelname = IPython.notebook.kernel_selector.current_selection;
   var display_text="<div class='output_subarea output_text output_result'>\
   <pre>Follow these steps to customize your notebook with ERP5 kernel :-</br>\
-  1. Add <b>%erp5_url &lt;your_erp5_url&gt;/erp5/Base_executeJupyter</b>.</br>\
-  Make sure you have 'erp5_data_notebook' business template installed in your ERP5</br>\
-  2. <b>%notebook_set_reference &lt;your_notebook_refernce&gt;</b></br>\
+  1. Make sure you have 'erp5_data_notebook' business template installed in your ERP5</br>\
+  2. <b>%erp5_user &lt;your_erp5_username&gt;</b></br>\
+  3. <b>%erp5_password &lt;your_erp5_password&gt;</b></br>\
+  4. <b>%notebook_set_reference &lt;your_notebook_reference&gt;</b></br>\
   It would be better to set the reference to match with erp5 reference pattern.</br>\
-  3. <b>%erp5_user &lt;your_erp5_username&gt;</b></br>\
-  4. <b>%erp5_password &lt;your_erp5_password&gt;</b></br>\
   5. As soon as you see 'Please Proceed' message you can now access your erp5 using notebook.</br>\
   <p><u>OTHER USEFUL MAGICS</u> -</br>\
   <b>%my_notebooks</b> -This is used to display all the notebooks created by the specific user.</br>\
