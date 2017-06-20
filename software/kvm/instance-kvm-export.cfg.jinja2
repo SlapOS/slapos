@@ -35,3 +35,16 @@ context =
 [publish-connection-information]
 <= resilient-publish-connection-parameter
 
+{% if str(slapparameter_dict.get('enable-monitor', True)).lower() == 'true' -%}
+[monitor-instance-parameter]
+monitor-httpd-port = 8026
+monitor-title = {{ slapparameter_dict.get('name', 'KVM Standalone') }}
+cors-domains = {{ slapparameter_dict.get('monitor-cors-domains', 'monitor.app.officejs.com') }}
+{%   if slapparameter_dict.get('monitor-username', '') -%}
+username = {{ slapparameter_dict['monitor-username'] }}
+{%   endif -%}
+{%   if slapparameter_dict.get('monitor-password', '') -%}
+password = {{ slapparameter_dict['monitor-password'] }}
+{%   endif -%}
+
+{% endif -%}

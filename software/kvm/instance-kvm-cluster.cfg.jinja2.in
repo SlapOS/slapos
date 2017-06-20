@@ -226,16 +226,10 @@ mode = {{ mode }}
 {{ writefile('cluster-data-content', '${directory:webroot}/${hash-code:passwd}/data', slapparameter_dict.get('cluster-data', ''), '700') }}
 {% endif -%}
 
-[monitor-htpasswd]
-recipe = slapos.cookbook:generate.password
-storage-path = ${directory:etc}/.monitor_user
-bytes = 8
-username = admin
-
 [monitor-instance-parameter]
 monitor-httpd-port = 8060
 cors-domains = {{ slapparameter_dict.get('monitor-cors-domains', 'monitor.app.officejs.com') }}
-username = ${monitor-instance-parameter:username}
+username = admin
 password = ${monitor-htpasswd:passwd}
 
 [monitor-conf-parameters]
