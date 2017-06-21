@@ -72,22 +72,6 @@
       "description": "Jupyter notebook web UI access information",
       "pattern": "^https://",
       "type": "string"
-    },
-    "monitor-setup-url": {
-      "description": "Url to access the monitoring interface of your instance. Use this url to get the recovery code needed to set up your runner",
-      "type": "string"
-    },
-    "monitor-base-url": {
-      "description": "Base url for monitor",
-      "type": "string"
-    },
-    "monitor-password": {   
-      "description": "Password to access the monitor",
-      "type": "string"
-    },
-    "monitor-user": {
-      "description": "User to access the monitor",
-      "type": "string"
     }
   },
   "patternProperties": {
