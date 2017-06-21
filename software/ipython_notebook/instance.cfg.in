@@ -74,7 +74,9 @@ command-line =
 wrapper-path = ${directory:service}/ipython_notebook
 parameters-extra = true
 # Explicitly define IPython Directory to be used while starting ipython notebook
-environment = IPYTHONDIR=${directory:ipython_dir}
+environment =
+  IPYTHONDIR=${directory:ipython_dir}
+  JUPYTER_CONFIG_DIR=${directory:ipython_dir}
 
 [ipython-notebook-config]
 <= dynamic-jinja2-template-base
