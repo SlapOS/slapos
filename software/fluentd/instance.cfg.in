@@ -1,8 +1,6 @@
 [buildout]
 parts =
-  directory
   service-fluentd
-  fluentd-agent-conf
 
 eggs-directory = {{ buildout['eggs-directory'] }}
 develop-eggs-directory = {{ buildout['develop-eggs-directory'] }}
@@ -32,14 +30,16 @@ recipe  = slapos.cookbook:wrapper
 wrapper-path    = ${directory:service}/fluentd-service
 command-line    = {{ fluentd_location }}/bin/fluentd
     -v
-    -c ${directory:etc}/fluentd-agent.conf
-environment = 
+    -c ${fluentd-agent-conf:rendered}
+environment =
   GEM_PATH={{ fluentd_location }}/lib/ruby/gems/1.8/
 
 [fluentd-agent-conf]
 recipe  = slapos.recipe.template:jinja2
-template = {{ fluentd_conf }}/fluentd-agent.conf.jinja2.in
-rendered = ${buildout:directory}/etc/fluentd-agent.conf
+template = inline:{% raw -%}
+  {{ slapparameter_dict.get('conf_text', '') }}
+  {%- endraw %}
+rendered = ${directory:etc}/fluentd-agent.conf
 mode = 0644
-context = 
+context =
   key slapparameter_dict instance-parameter:configuration
