@@ -17,6 +17,7 @@
 {%   set ip = (ipv4_set | list)[0] -%}
 {% endif -%}
 {% set dash = parameter_dict['dash-location'] ~ '/bin/dash' %}
+{% set monitor_dict = slapparameter_dict.get('monitor', {})  %}
 
 [{{ section('publish') }}]
 recipe = slapos.cookbook:publish.serialised
@@ -302,6 +303,9 @@ parameters-extra = true
 monitor-httpd-ipv6 = {{ (ipv6_set | list)[0] }}
 monitor-httpd-port = {{ port + 1 }}
 monitor-title = Mariadb monitor
+{% if slapparameter_dict.get('monitor-disable-apache') -%}
+monitor-base-url =
+{% endif -%}
 password = {{ slapparameter_dict['monitor-passwd'] }}
 
 [buildout]
