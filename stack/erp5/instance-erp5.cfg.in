@@ -8,6 +8,7 @@
 {% set jupyter_dict = slapparameter_dict.get('jupyter', {}) -%}
 {% set has_jupyter = jupyter_dict.get('enable', jupyter_enable_default.lower() in ('true', 'yes')) -%}
 {% set jupyter_zope_family = jupyter_dict.get('zope-family', '') -%}
+{% set monitor_dict = slapparameter_dict.get('monitor', {})  %}
 {% set monitor_base_url_dict = {} -%}
 {% set caucase_url = slapparameter_dict.get('caucase', {}).pop('url', '') -%}
 {% set crl_update_period = slapparameter_dict.get('caucase', {}).pop('crl-update-periodicity', 'daily') -%}

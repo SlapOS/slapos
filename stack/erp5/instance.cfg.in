@@ -43,7 +43,7 @@ fonts = {{ fonts_location }}
 buildout-bin-directory = {{ buildout_bin_directory }}
 6tunnel = {{ sixtunnel_location }}
 dash = {{ dash_location }}
-template-monitor = {{ dumps(template_monitor) }}
+template-monitor = ${instance-monitor:rendered}
 
 [dynamic-template-cloudooo]
 <= jinja2-template-base
@@ -74,7 +74,7 @@ extra-context =
 [dynamic-template-erp5-parameters]
 jupyter-enable-default = {{ jupyter_enable_default }}
 local-bt5-repository = {{ local_bt5_repository }}
-template-monitor = {{ dumps(template_monitor) }}
+template-monitor = ${instance-monitor:rendered}
 
 [dynamic-template-erp5]
 <= jinja2-template-base
@@ -103,7 +103,7 @@ curl-location = {{ curl_location }}
 dash = {{ dash_location }}
 template-haproxy-cfg = {{ template_haproxy_cfg }}
 template-apache-conf = {{ template_apache_conf }}
-template-monitor = {{ dumps(template_monitor) }}
+template-monitor = ${instance-monitor:rendered}
 
 [dynamic-template-balancer]
 <= jinja2-template-base
@@ -115,7 +115,7 @@ extra-context =
 
 [dynamic-template-zeo-parameters]
 buildout-bin-directory = {{ buildout_bin_directory }}
-template-monitor = {{ dumps(template_monitor) }}
+template-monitor = ${instance-monitor:rendered}
 
 [dynamic-template-zeo]
 <= jinja2-template-base
@@ -138,7 +138,7 @@ jsl = {{ jsl_location }}
 link-binary = {{ dumps(zope_link_binary) }}
 userhosts = {{ userhosts_location }}
 site-zcml = {{ site_zcml }}
-template-monitor = {{ dumps(template_monitor) }}
+template-monitor = ${instance-monitor:rendered}
 extra-path-list = {{ dumps(extra_path_list) }}
 matplotlibrc = {{ matplotlibrc_location }}
 
@@ -159,7 +159,7 @@ dcron-location = {{ dcron_location }}
 gzip-location = {{ gzip_location }}
 kumo-location = {{ kumo_location }}
 logrotate-location = {{ logrotate_location }}
-template-monitor = {{ dumps(template_monitor) }}
+template-monitor = ${instance-monitor:rendered}
 
 [dynamic-template-kumofs]
 <= jinja2-template-base
@@ -181,7 +181,7 @@ bin-directory = {{ bin_directory }}
 mariadb-resiliency-after-import-script = {{ mariadb_resiliency_after_import_script }}
 mariadb-slow-query-report-script = {{ mariadb_slow_query_report_script }}
 percona-tools-location = {{ percona_toolkit_location }}
-template-monitor = {{ template_monitor }}
+template-monitor = ${instance-monitor:rendered}
 
 [dynamic-template-mariadb]
 <= jinja2-template-base
@@ -207,6 +207,14 @@ extra-context =
 # for slapos.cookbook:switch-softwaretype to work
 [dynamic-template-jupyter]
 rendered = {{ template_jupyter_cfg }}
+
+[instance-monitor]
+recipe = slapos.recipe.template:jinja2
+template = {{ dumps(template_monitor) }}
+rendered = ${buildout:directory}/template-monitor.cfg
+extensions = jinja2.ext.do
+context = key buildout buildout:bin-directory
+mode = 0644
 
 [switch-softwaretype]
 recipe = slapos.cookbook:switch-softwaretype
