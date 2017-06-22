@@ -7,6 +7,7 @@
 {% set default_zodb_path = buildout_directory ~ '/srv/zodb' -%}
 {% set default_backup_path = buildout_directory ~ '/srv/backup/zodb' -%}
 {% set bin_directory = parameter_dict['buildout-bin-directory'] -%}
+{% set monitor_dict = slapparameter_dict.get('monitor', {})  %}
 
 [zeo-base]
 recipe = slapos.cookbook:zeo

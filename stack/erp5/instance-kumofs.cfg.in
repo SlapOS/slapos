@@ -1,4 +1,5 @@
 {% set use_ipv6 = slapparameter_dict.get('use-ipv6', False) -%}
+{% set monitor_dict = slapparameter_dict.get('monitor', {})  %}
 [buildout]
 extends =
   {{ logrotate_cfg }}

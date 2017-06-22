@@ -1,5 +1,6 @@
 {% set bin_directory = parameter_dict['buildout-bin-directory'] -%}
 {% set use_ipv6 = slapparameter_dict.get('use-ipv6', False) -%}
+{% set monitor_dict = slapparameter_dict.get('monitor', {})  %}
 [buildout]
 extends =
   {{ parameter_dict['template-monitor'] }}
