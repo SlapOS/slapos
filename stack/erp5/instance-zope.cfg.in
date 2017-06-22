@@ -10,6 +10,7 @@
 {% set longrequest_logger_base_path = buildout_directory ~ '/var/log/longrequest_logger_' -%}
 {% macro section(name) %}{% do part_list.append(name) %}{{ name }}{% endmacro -%}
 {% set bin_directory = parameter_dict['buildout-bin-directory'] -%}
+{% set monitor_dict = slapparameter_dict.get('monitor', {})  %}
 {#
 XXX: This template only supports exactly one IPv4 and one IPv6 per
 partition. No more (undefined result), no less (IndexError).
@@ -395,6 +396,9 @@ bt5-repository-url = {{ dumps(slapparameter_dict['bt5-repository-url']) }}
 monitor-httpd-ipv6 = {{ (ipv6_set | list)[0] }}
 monitor-httpd-port = {{ next_port() }}
 monitor-title = Zope monitor
+{% if monitor_dict.get('disable-apache') == True -%}
+monitor-base-url =
+{% endif -%}
 password = {{ slapparameter_dict['monitor-passwd'] }}
 
 [buildout]
