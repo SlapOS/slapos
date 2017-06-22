@@ -291,6 +291,7 @@ name = balancer
 software-type = balancer
 {{ root_common.sla('balancer') }}
 return =
+  monitor-base-url
 {%- for family in zope_family_dict %}
   {{ family }}
   {{ family }}-v6
@@ -352,7 +353,7 @@ hosts-dict = {{ '${' ~ zope_address_list_id_dict.keys()[0] ~ ':connection-hosts-
 {% endfor -%}
 
 [monitor-instance-parameter]
- monitor-httpd-port = 8386
+monitor-httpd-port = 8386
 
 {{ root_common.common_section() }}
 
@@ -365,11 +366,11 @@ parts +=
   monitor-base
 
 [monitor-conf-parameters]
-  monitor-title = ERP5 monitor
-  password = ${monitor-htpasswd:passwd}
+monitor-title = ERP5 monitor
+password = ${monitor-htpasswd:passwd}
 
 [monitor-base-url-dict]
-  {% for key, value in monitor_base_url_dict.items() -%}
-  {{ key }} = {{ value }}
-  {% endfor %}
+{% for key, value in monitor_base_url_dict.items() -%}
+{{ key }} = {{ value }}
+{% endfor %}
 
