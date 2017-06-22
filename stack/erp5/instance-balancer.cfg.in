@@ -230,6 +230,9 @@ monitor-httpd-ipv6 = {{ (ipv6_set | list)[0] }}
 monitor-httpd-port = {{ next_port() }}
 monitor-title = Balancer monitor
 password = {{ slapparameter_dict['monitor-passwd'] }}
+{% if slapparameter_dict.get('monitor-disable-apache') -%}
+monitor-base-url =
+{% endif -%}
 instance-configuration = 
   file apachedex-default ${apachedex-parameters:default}
   file apachedex-base-list ${apachedex-parameters:base-list}

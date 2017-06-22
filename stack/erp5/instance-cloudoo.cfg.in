@@ -1,5 +1,6 @@
 {% set bin_directory = parameter_dict['buildout-bin-directory'] -%}
 {% set use_ipv6 = slapparameter_dict.get('use-ipv6', False) -%}
+{% set monitor_dict = slapparameter_dict.get('monitor', {})  %}
 [buildout]
 extends =
   {{ parameter_dict['template-monitor'] }}
@@ -112,6 +113,9 @@ framebuffer = ${:srv}/framebuffer
 monitor-httpd-ipv6 = {{ (ipv6_set | list)[0] }}
 monitor-httpd-port = {{ tcpv4_port + 2 }}
 monitor-title = Cloudooo monitor
+{% if slapparameter_dict.get('monitor-disable-apache') -%}
+monitor-base-url =
+{% endif -%}
 password = {{ slapparameter_dict['monitor-passwd'] }}
 
 [binary-link]

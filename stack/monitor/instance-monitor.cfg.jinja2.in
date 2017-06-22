@@ -289,13 +289,25 @@ monitor-url = ${:monitor-base-url}/public/feeds
 monitor-user = ${monitor-instance-parameter:username}
 monitor-password = ${monitor-instance-parameter:password}
 
+[install-monitor-apache]
+recipe = plone.recipe.command
+command = true
+update-command =
+monitor-base-url = ${monitor-frontend-promise:url}
+monitor-base-url-ipv6 = ${monitor-httpd-conf-parameter:url}
+depends =
+  ${certificate-authority:wrapper}
+  ${ca-monitor-httpd:wrapper}
+  ${monitor-httpd-promise:filename}
+  ${promise-monitor-httpd-is-process-older-than-dependency-set:wrapper-path}
+
 [monitor-instance-parameter]
 monitor-title = ${slap-configuration:instance-title}
 monitor-httpd-ipv6 = ${slap-configuration:ipv6-random}
 monitor-httpd-port = 8196
-# XXX - Set monitor-base-url = ${monitor-httpd-conf-parameter:url} => https://[ipv6]:port
-monitor-base-url = ${monitor-frontend-promise:url}
-#monitor-base-url = ${monitor-httpd-conf-parameter:url}
+# XXX - Set monitor-base-url = ${install-monitor-apache:monitor-base-url} => https://[ipv6]:port
+monitor-base-url = ${install-monitor-apache:monitor-base-url}
+#monitor-base-url = ${install-monitor-apache:monitor-base-url-ipv6}
 root-instance-title = ${slap-configuration:root-instance-title}
 monitor-url-list =
 cors-domains = monitor.app.officejs.com
@@ -387,7 +399,6 @@ context =
     raw python_bin {{ python_with_eggs }}
 config-file = ${directory:etc}/min-free-disk-size
 
-
 [monitor-base]
 # create dependencies between required monitor parts
 recipe = plone.recipe.command
@@ -399,14 +410,10 @@ depends =
   ${monitor-configurator-cron-entry:name}
   ${cron-entry-logrotate:name}
   ${logrotate-entry-cron:name}
-  ${certificate-authority:wrapper}
   ${monitor-conf:rendered}
   ${start-monitor:wrapper-path}
-  ${ca-monitor-httpd:wrapper}
-  ${monitor-httpd-promise:filename}
   ${monitor-bootstrap-promise:file}
   ${promise-check-slapgrid:output}
-  ${promise-monitor-httpd-is-process-older-than-dependency-set:wrapper-path}
 
 [monitor-publish]
 monitor-base-url = ${monitor-publish-parameters:monitor-base-url}
