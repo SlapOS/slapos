@@ -8,4 +8,5 @@ Regularisation Request | document_list
 Regularisation Request | new_event
 Regularisation Request | view
 Support Request Module | rss_view
+Support Request Module | slapos_support_request_activity_report
 Support Request | view_monitoring
