@@ -1,7 +1,7 @@
 [buildout]
 parts =
   instance
-  ipython_notebook
+  jupyter
   read-knowledge0
   publish-connection-parameter
   erp5-kernel
@@ -33,7 +33,7 @@ port = 8888
 host = ${slapconfiguration:ipv6-random}
 cert_file = ${generate-certificate:cert_file}
 key_file = ${generate-certificate:key_file}
-logfile = ${directory:log}/ipython_notebook.log
+logfile = ${directory:log}/jupyter.log
 notebook_dir = ${directory:notebook_dir}
 
 [dynamic-jinja2-template-base]
@@ -52,13 +52,13 @@ command =
       -out ${instance-parameter:cert_file}
   fi
 update-command = ${:command}
-cert_file = ${directory:etc}/ipython_notebook_cert.crt
-key_file = ${directory:etc}/ipython_notebook_cert.key
+cert_file = ${directory:etc}/juptyer_cert.crt
+key_file = ${directory:etc}/jupyter_cert.key
 
 [instance]
 recipe = slapos.cookbook:wrapper
 command-line =
-  {{ bin_directory }}/ipython notebook
+  {{ bin_directory }}/jupyter
   --no-browser
   --ip=${instance-parameter:host}
   --port=${instance-parameter:port}
@@ -67,21 +67,20 @@ command-line =
   --keyfile=${instance-parameter:key_file}
   --notebook-dir=${instance-parameter:notebook_dir}
   --logfile=${instance-parameter:logfile}
-  --config=${ipython-notebook-config:rendered}
+  --config=${jupyter-config:rendered}
 # Add 'log-level' alias to 'DEBUG' so as to log requests being done while running
-# of service ipython_notebook.
+# of service jupyter.
   --log-level="DEBUG"
-wrapper-path = ${directory:service}/ipython_notebook
+wrapper-path = ${directory:service}/jupter
 parameters-extra = true
-# Explicitly define IPython Directory to be used while starting ipython notebook
+# Explicitly define Jupyter Directory to be used while starting jupyter
 environment =
-  IPYTHONDIR=${directory:ipython_dir}
-  JUPYTER_CONFIG_DIR=${directory:ipython_dir}
+  JUPYTER_CONFIG_DIR=${directory:jupyter}
 
-[ipython-notebook-config]
+[jupyter-config]
 <= dynamic-jinja2-template-base
-template = {{ ipython_notebook_config_location }}/{{ ipython_notebook_config_filename }}
-rendered = ${directory:etc}/ipython_notebook_config.py
+template = {{ jupyter_config_location }}/{{ jupyter_config_filename }}
+rendered = ${directory:etc}/jupyter_config.py
 mode = 0744
 context =
   raw config_cfg ${buildout:directory}/knowledge0.cfg
@@ -96,12 +95,12 @@ service = ${:etc}/service
 promise = ${:etc}/promise/
 log = ${:var}/log
 notebook_dir = ${:var}/notebooks
-# Add folders to explicitly define ipython directory
-ipython_dir = ${:home}/ipython
-ipython_kernel_dir = ${:ipython_dir}/kernels
-erp5_kernel_dir = ${:ipython_kernel_dir}/ERP5
+# Add folders to explicitly define jupyter directory
+jupyter_dir = ${:home}/jupyter
+jupyter_kernel_dir = ${:jupyter_dir}/kernels
+erp5_kernel_dir = ${:jupyter_kernel_dir}/ERP5
 
-[ipython_notebook]
+[jupyter]
 # This part is called like this because knowledge0.write uses the part name for
 # the section name in the config file.
 recipe = slapos.cookbook:zero-knowledge.write
@@ -149,6 +148,6 @@ context =
 [custom-js]
 <= dynamic-jinja2-template-base
 template = {{ custom_js_location }}/{{ custom_js_filename }}
-rendered = ${directory:ipython_dir}/profile_default/static/custom/custom.js
+rendered = ${directory:jupyter_dir}/profile_default/static/custom/custom.js
 mode = 0744
 
