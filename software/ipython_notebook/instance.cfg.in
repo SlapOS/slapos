@@ -74,9 +74,13 @@ command-line =
 wrapper-path = ${directory:service}/ipython_notebook
 parameters-extra = true
 # Explicitly define IPython Directory to be used while starting ipython notebook
+# Also explicitly force IPython to use en_US.utf8 encoding
 environment =
   IPYTHONDIR=${directory:ipython_dir}
   JUPYTER_CONFIG_DIR=${directory:ipython_dir}
+  LC_ALL=en_US.UTF-8
+  LANG=en_US.UTF-8
+  LANGUAGE=en_US.UTF-8
 
 [ipython-notebook-config]
 <= dynamic-jinja2-template-base
