@@ -1,0 +1,3 @@
+portal_ingestion_policies/scalability_test_*
+portal_skins/custom/DataStreamModule_getTotalSize
+portal_skins/custom/ERP5Site_handleRawDataFluentdIngestion
