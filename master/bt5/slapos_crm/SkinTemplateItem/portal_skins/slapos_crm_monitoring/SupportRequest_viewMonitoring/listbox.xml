@@ -197,7 +197,7 @@
                 </item>
                 <item>
                     <key> <string>selection_name</string> </key>
-                    <value> <string>support_request_view_selection</string> </value>
+                    <value> <string>support_request_view_monitor_selection</string> </value>
                 </item>
                 <item>
                     <key> <string>sort</string> </key>
