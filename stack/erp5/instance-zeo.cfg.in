@@ -187,9 +187,6 @@ tidstorage = {{ tidstorage_repozo_path }}
 monitor-httpd-ipv6 = {{ (ipv6_set | list)[0] }}
 monitor-httpd-port = {{ next_port() }}
 monitor-title = ZODB monitor
-{% if monitor_dict.get('disable-apache') == True -%}
-monitor-base-url =
-{% endif -%}
 password = {{ slapparameter_dict['monitor-passwd'] }}
 
 [buildout]

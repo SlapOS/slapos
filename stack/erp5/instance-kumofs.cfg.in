@@ -114,7 +114,4 @@ port = ${kumofs-instance:manager-port}
 monitor-httpd-ipv6 = {{ (ipv6_set | list)[0] }}
 monitor-httpd-port = {{ tcpv4_port + 4 }}
 monitor-title = Kumofs monitor
-{% if slapparameter_dict.get('monitor-disable-apache') -%}
-monitor-base-url =
-{% endif -%}
 password = {{ slapparameter_dict['monitor-passwd'] }}
