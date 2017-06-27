@@ -27,7 +27,6 @@
 ##############################################################################
 
 import random
-import transaction
 import unittest
 from Products.ERP5Type.tests.ERP5TypeTestCase import ERP5TypeTestCase
 import functools
@@ -45,7 +44,7 @@ def withAbort(func):
     try:
       func(self, *args, **kwargs)
     finally:
-      transaction.abort()
+      self.abort()
   return wrapped
 
 class testSlapOSMixin(ERP5TypeTestCase):
@@ -66,7 +65,7 @@ class testSlapOSMixin(ERP5TypeTestCase):
         self.login()
         try:
           alarm.activeSense(params=kwargs)
-          transaction.commit()
+          self.commit()
         finally:
           setSecurityManager(sm)
       return callAlarm
@@ -135,7 +134,7 @@ class testSlapOSMixin(ERP5TypeTestCase):
     # Reload promise and include yet another bt5 path.
     self.loadPromise(searchable_business_template_list=["erp5_core", "erp5_base", "slapos_configurator"])
     self.portal.portal_alarms.promise_template_tool_configuration.solve()
-    transaction.commit()
+    self.commit()
     self.launchConfigurator()
 
   def afterSetUp(self):
@@ -146,7 +145,7 @@ class testSlapOSMixin(ERP5TypeTestCase):
       return
     self.portal.portal_caches.erp5_site_global_id = '%s' % random.random()
     self.portal.portal_caches._p_changed = 1
-    transaction.commit()
+    self.commit()
     self.portal.portal_caches.updateCache()
     if getattr(self.portal, 'is_site_bootstrapped', 0):
       for alarm in self.portal.portal_alarms.contentValues():
@@ -157,7 +156,7 @@ class testSlapOSMixin(ERP5TypeTestCase):
       self.portal.is_site_bootstrapped = 1
       self.bootstrapSite()
       self.portal._p_changed = 1
-      transaction.commit()
+      self.commit()
     
     
 
@@ -165,7 +164,7 @@ class testSlapOSMixin(ERP5TypeTestCase):
     if 'MailHost' in self.portal.objectIds():
       self.portal.manage_delObjects(['MailHost'])
     self.portal.manage_addProduct['MailHost'].manage_addMailHost('MailHost')
-    transaction.commit()
+    self.commit()
 
   def setUpPersistentDummyMailHost(self):
     if 'MailHost' in self.portal.objectIds():
@@ -189,7 +188,6 @@ class testSlapOSMixin(ERP5TypeTestCase):
       response_dict = self.portal.portal_configurator._next(
                             business_configuration, {})
 
-    transaction.commit()
     self.tic() 
     self.portal.portal_configurator.startInstallation(
                  business_configuration,REQUEST=self.portal.REQUEST)
@@ -199,7 +197,6 @@ class testSlapOSMixin(ERP5TypeTestCase):
     self.createCertificateAuthorityFile()
 
     self.clearCache()
-    transaction.commit()
     self.tic()
 
   def getBusinessTemplateList(self):
@@ -244,7 +241,7 @@ class testSlapOSMixin(ERP5TypeTestCase):
     self.person_user.validate()
     for assignment in self.person_user.contentValues(portal_type="Assignment"):
       assignment.open()
-    transaction.commit()
+    self.commit()
     # prepare part of tree
     self.hosting_subscription = self.portal.hosting_subscription_module\
         .template_hosting_subscription.Base_createCloneDocument(batch_mode=1)
