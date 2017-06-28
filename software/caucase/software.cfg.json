@@ -1,0 +1,14 @@
+{
+    "name": "Caucase",
+    "description": "Caucase certificate authority",
+    "serialisation": "json-in-xml",
+    "software-type": {
+        "default": {
+            "title": "Default",
+            "description": "Single caucase instance",
+            "request": "instance-caucase-input-schema.json",
+            "response": "instance-caucase-output-schema.json",
+            "index": 0
+        }
+    }
+}

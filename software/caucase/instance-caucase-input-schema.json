@@ -1,0 +1,66 @@
+{
+  "type": "object",
+  "$schema": "http://json-schema.org/draft-04/schema",
+  "title": "Input Parameters",
+  "properties": {
+    "server-port": {
+      "title": "http port to use",
+      "description": "Caucase http port to use.",
+      "type": "integer",
+      "default": 8009,
+      "minimum": 1,
+      "maximum": 65535
+    },
+    "server-https-port": {
+      "title": "https port to use",
+      "description": "Caucase port to use for https connexion.",
+      "type": "integer",
+      "default": 8010,
+      "minimum": 1,
+      "maximum": 65535
+    },
+    "external-url": {
+      "title": "External http url",
+      "description": "External http url which point to caucase on http. This url will be added in signed certificate as CRL distribution point URI",
+      "type": "string",
+      "format": "uri"
+    },
+    "ca-subject": {
+      "title": "Subject of CA Certificate",
+      "description": "CA certificate subject as string. The format is: /C=XX/ST=State/L=City/OU=OUnit/O=Company/CN=CA Auth/emailAddress=xx@example.com. Only /CN is mandatory.",
+      "type": "string",
+      "default": "/C=FR/O=Company/CN=SlapOS Certificate Authority/emailAddress=xx@example.com"
+    },
+    "max-request-amount": {
+      "title": "Number of pending csr to accept",
+      "description": "Number of pending csr to accept. If this limit is reached, no more csr will be accepted by the CA.",
+      "type": "integer",
+      "default": 10
+    },
+    "crt-life-time": {
+      "title": "Signed Certificate life time",
+      "description": "The time in seconds before a generated certificate will expire. Default: 365*24*60*60 seconds (1 year)",
+      "type": "integer",
+      "default": 31536000,
+      "minimum": 86400
+    },
+    "crl-life-period": {
+      "title": "CRL life time period",
+      "description": "Number of individual certificate validity periods during which the CRL is valid. Default: 1/50.0",
+      "type": "float",
+      "default": 0.2
+    },
+    "ca-life-period": {
+      "title": "CA Certificate life period",
+      "description": "Number of individual certificate validity periods during which the CA certificate is valid. Default: 10",
+      "type": "float",
+      "default": 10
+    },
+    "crt-keep-time": {
+      "title": "Time before cleanup certificate content on CA",
+      "description": "The time in seconds before a generated certificate will be deleted on CA server. Set 0 to never delete. Default: 30*24*60*60 seconds (30 days)",
+      "default": 5184000,
+      "type": "integer"
+    }
+  }
+}
