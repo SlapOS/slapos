@@ -111,6 +111,12 @@
               "default": 5,
               "type": "integer"
             },
+            "ssl-authentication": {
+              "title": "Enable SSL Client authentication on this zope instance.",
+              "description": "If set to true, will set SSL Client verification to required on apache VirtualHost which allow to access this zope instance.",
+              "type": "boolean",
+              "default": false
+            },
             "webdav": {
               "description": "Serve webdav queries, implies timerserver-interval=0 (disabled). Mixing webdav and non-webdav nodes in a single family will give unspecified results.",
               "default": false,
@@ -263,6 +269,28 @@
       "description": "In wendelin.core there are 2 formats for storing data, so called ZBlk0 and ZBlk1. See https://lab.nexedi.com/nexedi/wendelin.core/blob/2e5e1d3d/bigfile/file_zodb.py#L19 for more details.",
       "default": "",
       "type": "string"
+    },
+    "caucase": {
+      "description": "Caucase certificate authority parameters",
+      "properties": {
+        "url": {
+          "title": "Caucase URL",
+          "description": "URL of existing caucase instance to use. If empty, a new caucase instance will be deployed. If not empty, other properties in this section will be ignored.",
+          "default": "",
+          "type": "string",
+          "format": "uri"
+        },
+        "crl-update-periodicity": {
+            "title": "Periodicity of CRL update",
+            "description": "Periodicity of CRL update, in cron format. The CRL will be downloaded from caucase URL and the new content will be saved if there was a change. Everytime a new CRL is writen, Apache reload will be called.",
+            "type": "string",
+            "default": "0 0 * * *"
+        }
+      },
+      "additionalProperties": {
+        "$ref": "../caucase/instance-caucase-input-schema.json#/properties"
+      },
+      "type": "object"
     }
   }
 }
