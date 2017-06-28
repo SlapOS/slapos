@@ -160,6 +160,11 @@
       },
       "type": "object"
     },
+    "cloudooo-url": {
+      "description": "Format conversion service URL",
+      "pattern": "^https?://",
+      "type": "string"
+    },
     "smtp": {
       "description": "Mail queuing and relay service",
       "additionalProperties": {
