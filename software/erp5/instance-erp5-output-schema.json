@@ -72,6 +72,11 @@
       "description": "Jupyter notebook web UI access information",
       "pattern": "^https://",
       "type": "string"
+    },
+    "caucase-http-url": {
+      "description": "Caucase url on HTTP. For HTTPS URL, uses https scheme, if port is explicitely specified in http URL, take that port and add 1 and use it as https port. If it is not specified.",
+      "pattern": "^http://",
+      "type": "string"
     }
   },
   "patternProperties": {

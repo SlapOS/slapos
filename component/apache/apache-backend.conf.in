@@ -108,12 +108,16 @@ SSLProxyEngine On
 
 # As backend is trusting REMOTE_USER header unset it always
 RequestHeader unset REMOTE_USER
+RequestHeader unset SSL_CLIENT_SERIAL
 {% if parameter_dict['ca-cert'] -%}
-SSLVerifyClient require
+SSLVerifyClient optional
 RequestHeader set REMOTE_USER %{SSL_CLIENT_S_DN_CN}s
+RequestHeader set SSL_CLIENT_SERIAL "%{SSL_CLIENT_M_SERIAL}s"
 SSLCACertificateFile {{ parameter_dict['ca-cert'] }}
+{%   if parameter_dict['crl'] -%}
 SSLCARevocationCheck chain
 SSLCARevocationFile {{ parameter_dict['crl'] }}
+{%-   endif %}
 {%- endif %}
 
 ErrorLog "{{ parameter_dict['error-log'] }}"
@@ -128,12 +132,24 @@ CustomLog "{{ parameter_dict['access-log'] }}" combined
 </Directory>
 
 RewriteEngine On
-{% for port, _, backend in parameter_dict['backend-list'] -%}
+{% for port, _, backend, enable_authentication in parameter_dict['backend-list'] -%}
 {%   for ip in parameter_dict['ip-list'] -%}
 Listen {{ ip }}:{{ port }}
 {%   endfor -%}
 <VirtualHost *:{{ port }}>
   SSLEngine on
+{% if enable_authentication and parameter_dict['ca-cert'] and parameter_dict['crl'] -%}
+  SSLVerifyClient require
+  SSLCACertificateFile {{ parameter_dict['ca-cert'] }}
+  SSLCARevocationCheck chain
+  SSLCARevocationFile {{ parameter_dict['crl'] }}
+
+  LogFormat "%h %l %{REMOTE_USER}i %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\" %D" combined
+
+  # We would like to separate the the authentificated logs.
+  ErrorLog "{{ parameter_dict['log-dir'] }}/apache-service-error.log"
+  CustomLog "{{ parameter_dict['log-dir'] }}/apache-service-access.log" combined
+{% endif -%}
   RewriteRule ^/(.*) {{ backend }}/$1 [L,P]
 </VirtualHost>
 {% endfor -%}
