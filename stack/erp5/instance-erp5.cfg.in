@@ -9,6 +9,8 @@
 {% set has_jupyter = jupyter_dict.get('enable', jupyter_enable_default.lower() in ('true', 'yes')) -%}
 {% set jupyter_zope_family = jupyter_dict.get('zope-family', '') -%}
 {% set monitor_base_url_dict = {} -%}
+{% set caucase_url = slapparameter_dict.get('caucase', {}).pop('url', '') -%}
+{% set crl_update_period = slapparameter_dict.get('caucase', {}).pop('crl-update-periodicity', 'daily') -%}
 [request-common]
 <= request-common-base
 config-use-ipv6 = {{ dumps(slapparameter_dict.get('use-ipv6', False)) }}
@@ -49,6 +51,14 @@ config-{{ k }} = {{ '${' ~ v ~ '}' }}
 # Placeholder smtp service URL
 connection-url = smtp://127.0.0.2:0/
 {%- endif %}
+
+{% if caucase_url -%}
+{%   do publish_dict.__setitem__('caucase-http-url', caucase_url) -%}
+[request-caucase]
+connection-http-url = {{ caucase_url }}
+{%- else %}
+{{ request('caucase', 'caucase', 'caucase', {'server-port': 8890, 'server-https-port': 8891}, {'http-url': True, 'https-url': False}) }}
+{% endif -%}
 
 {# ZODB -#}
 {% set zodb_dict = {} -%}
@@ -137,6 +147,7 @@ return =
 {% endif -%}
 config-bt5 = {{ dumps(slapparameter_dict.get('bt5', bt5_default_list)) }}
 config-bt5-repository-url = {{ dumps(slapparameter_dict.get('bt5-repository-url', local_bt5_repository)) }}
+config-caucase-url = ${request-caucase:connection-http-url}
 config-cloudooo-url = ${request-cloudooo:connection-url}
 config-deadlock-debugger-password = ${publish-early:deadlock-debugger-password}
 config-developer-list = {{ dumps(slapparameter_dict.get('developer-list', [inituser_login])) }}
@@ -168,17 +179,22 @@ config-tidstorage-port = ${request-zodb:connection-tidstorage-port}
 software-type = zope
 
 {% set zope_family_dict = {} -%}
+{% set zope_backend_path_dict = {} -%}
+{% set ssl_authentication_dict = {} -%}
 {% set jupyter_zope_family_default = [] -%}
 {% for custom_name, zope_parameter_dict in zope_partition_dict.items() -%}
 {%   set partition_name = 'zope-' ~ custom_name -%}
 {%   set section_name = 'request-' ~ partition_name -%}
 {%   set zope_family = zope_parameter_dict.get('family', 'default') -%}
+{%   set backend_path = zope_parameter_dict.get('backend-path', '/') % {'site-id': site_id} %}
 {#   # default jupyter zope family is first zope family. -#}
 {#   # use list.append() to update it, because in jinja2 set changes only local scope. -#}
 {%   if not jupyter_zope_family_default -%}
 {%     do jupyter_zope_family_default.append(zope_family) -%}
 {%   endif -%}
 {%   do zope_family_dict.setdefault(zope_family, []).append(section_name) -%}
+{%   do zope_backend_path_dict.__setitem__(zope_family, backend_path) -%}
+{%   do ssl_authentication_dict.__setitem__(zope_family, zope_parameter_dict.get('ssl-authentication', False)) -%}
 [{{ section_name }}]
 <= request-zope-base
 name = {{ partition_name }}
@@ -256,10 +272,12 @@ config-{{ name }} = {{ ' ${' ~ zope_section_id ~ ':connection-zope-address-list}
 {% endfor -%}
 # XXX: should those really be same for all families ?
 config-haproxy-server-check-path = {{ dumps(balancer_dict.get('haproxy-server-check-path', '/') % {'site-id': site_id}) }}
-config-backend-path = {{ dumps(balancer_dict.get('apache-backend-path', '/') % {'site-id': site_id}) }}
 config-ssl = {{ dumps(balancer_dict.get('ssl', {})) }}
 config-monitor-passwd = ${monitor-htpasswd:passwd}
-
+config-caucase-url = ${request-caucase:connection-http-url}
+config-crl-update-periodicity = {{ crl_update_period }}
+config-backend-path-dict = {{ dumps(zope_backend_path_dict) }}
+config-ssl-authentication-dict = {{ dumps(ssl_authentication_dict) }}
 
 [request-frontend-base]
 {% if has_frontend -%}

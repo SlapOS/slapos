@@ -1,5 +1,7 @@
 [buildout]
-extends = {{ instance_common_cfg }}
+extends =
+  {{ instance_common_cfg }}
+  {{ caucase_template }}
 
 [jinja2-template-base]
 mode = 644
@@ -97,6 +99,7 @@ bin-directory = {{ bin_directory }}
 apachedex-location = {{ bin_directory }}/apachedex
 run-apachedex-location = {{ bin_directory }}/runApacheDex
 6tunnel = {{ sixtunnel_location }}
+curl-location = {{ curl_location }}
 dash = {{ dash_location }}
 template-haproxy-cfg = {{ template_haproxy_cfg }}
 template-apache-conf = {{ template_apache_conf }}
@@ -216,6 +219,7 @@ create-erp5-site = dynamic-template-create-erp5-site:rendered
 RootSoftwareInstance = ${:default}
 # Internal software types
 kumofs = dynamic-template-kumofs:rendered
+caucase = dynamic-template-caucase:rendered
 cloudooo = dynamic-template-cloudooo:rendered
 mariadb = dynamic-template-mariadb:rendered
 balancer = dynamic-template-balancer:rendered
