@@ -31,6 +31,11 @@ if not has_error:
   if not person:
     return 
 
+  message = instance.instance.SoftwareInstance_hasReportedError(include_message=True)
+  if message in ["Not possible to find the last message", "#access instance available"]:
+    # Do not change state in case of transitory states.
+    return 
+
   if context.getSimulationState() == "validated":
     context.suspend()
   else:
