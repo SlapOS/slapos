@@ -9,6 +9,8 @@ if context.getAggregateValue(portal_type="Computer Partition") is not None:
   try:
     d = memcached_dict[context.getReference()]
   except KeyError:
+    if include_message:
+      return "Not possible to connect"
     return  
 
   d = json.loads(d)
@@ -17,8 +19,11 @@ if context.getAggregateValue(portal_type="Computer Partition") is not None:
 
   # Optimise by checking memcache information first.
   if result.startswith('#error '):
-    return last_contact
+    return result
 
   # XXX time limit of 48 hours for run at least once.
+
+if include_message:
+  return result
 
 return None
