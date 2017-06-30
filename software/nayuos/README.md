@@ -20,6 +20,16 @@ in /etc/sudoers (replace slapuser9 by your user, and release-R48-7647.B by the r
 
 It's useful to have the right to kill cros_sdk processes, when needed. ;)
 
+## Technical notes
+
+Branch nayuos-stable keeps back version of `zc.buildout<2.0` because the WebRunner containing this SR is old and provides only buildout of version 1. Therefor the commits were cherry-picked from nayuos to nayuos-stable branch in order to preserve stable build here and experiment with new features in nayuos branch.
+
+Commit 'Add Chromium Policies' was partially reverted because it produces un-bootable image (or maybe I screwed up something but removing this commit helped).
+
+### Upgrading
+
+Please read **Requirements** section carefully. After selecting your desired `release` from the list https://chromium.googlesource.com/chromiumos/manifest/+refs it is **necessary** to add `sudo` rules for that release as shown there.
+
 ## Input
 In the vifib parameters (softinst\<nb\>.host.vifib.net \> Services \> Parameters):
 
