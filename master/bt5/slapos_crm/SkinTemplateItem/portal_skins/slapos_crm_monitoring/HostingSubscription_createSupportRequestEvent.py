@@ -17,7 +17,7 @@ person = context.getDestinationSectionValue(portal_type="Person")
 if not person:
   return
   
-if support_request.getSimulationState() != "validated":
+if support_request.getSimulationState() not in ["validated", "suspended"]:
   support_request.validate()
 
 # Send Notification message
