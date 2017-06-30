@@ -38,8 +38,8 @@ for creation_date in creation_date_list:
   line = newTempDocument(context, '%s' % creation_date.replace("/", "_"), **{
        "uid": "%s_%s" % (context.getUid(), len(stats_list)),
        "title": creation_date,
-       "event_user_amount": countSupportRequest(creation_date, resource_uid='NOT %s' % monitor_resource_uid),
-       "user_amount": countEvent(creation_date, resource_uid='NOT %s' % monitor_resource_uid),
+       "event_user_amount": countEvent(creation_date, resource_uid='NOT %s' % monitor_resource_uid),
+       "user_amount": countSupportRequest(creation_date, resource_uid='NOT %s' % monitor_resource_uid),
        "monitor_amount": countSupportRequest(creation_date, resource_uid=monitor_resource_uid),
        "event_monitor_amount": countEvent(creation_date, resource_uid=monitor_resource_uid)})
   
