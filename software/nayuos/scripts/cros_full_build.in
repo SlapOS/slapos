@@ -109,6 +109,10 @@ for package in {{ nayu_dev_packages }} ; do
   fi
 done
 
+if [ ! -z "{{ nayu_dev_packages }}" ]; then
+  increase_revision_number ${CHROMIUM_OVERLAY}/virtual/target-chromium-os-dev
+fi
+
 # XXX: create a function for this
 for package in {{ nayu_dev_rootfs_packages }} ; do
   echo $package
@@ -119,8 +123,9 @@ for package in {{ nayu_dev_rootfs_packages }} ; do
   fi
 done
 
-increase_revision_number ${CHROMIUM_OVERLAY}/virtual/target-chromium-os-dev
-increase_revision_number ${CHROMIUM_OVERLAY}/chromeos-base/chromeos-dev-root
+if [ ! -z "{{ nayu_dev_rootfs_packages }}" ]; then
+  increase_revision_number ${CHROMIUM_OVERLAY}/chromeos-base/chromeos-dev-root
+fi
 
 # do not install the Upstart init script that starts ssh daemon at boot time
 rm ${CHROMIUM_OVERLAY}/chromeos-base/chromeos-sshd-init/files/openssh-server.conf
