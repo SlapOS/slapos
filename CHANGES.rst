@@ -1,6 +1,18 @@
 Changes
 =======
 
+1.0.52 (2017-07-04)
+-------------------
+
+  * wrapper: Add option to reserve CPU core
+  * slapconfiguration: Recipe reads partitions resource file
+  * neoppod: add support for new --disable-drop-partitions storage option
+  * random: Fix the monkeypatch in random.py to incorporate the recent changes in buildout 'get' function
+  * random: Add Integer recipe.
+  * librecipe.execute: Notify on file moved 
+  * zero_knowledge: allow to set destination folder of configuration file
+
+
 1.0.50 (2017-04-18)
 -------------------
 
@@ -11,19 +23,19 @@ Changes
 1.0.48 (2017-01-31)
 -------------------
 
- * random-recipe: add option create-once to prevent storage file deletion by buildout
+  * random-recipe: add option create-once to prevent storage file deletion by buildout
 
 1.0.45 (2017-01-09)
 -------------------
 
- * recipe: set default timeout of check url promise to 20 seconds
+  * recipe: set default timeout of check url promise to 20 seconds
 
 1.0.44 (2016-12-30)
 -------------------
 
- * pbs: handles the fact that some parameters are not present when slaves are down
- * recipe: allow usage of pidfile in wrapper recipe
- * sshd: fix generation of authorized_keys
+  * pbs: handles the fact that some parameters are not present when slaves are down
+  * recipe: allow usage of pidfile in wrapper recipe
+  * sshd: fix generation of authorized_keys
 
 1.0.43 (2016-11-24)
 -------------------

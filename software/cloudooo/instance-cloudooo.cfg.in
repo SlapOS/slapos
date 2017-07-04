@@ -157,7 +157,7 @@ post = test ! -s ${apache-conf-parameter-dict:pid-file} || {{ bin_directory }}/s
 
 [publish]
 recipe = slapos.cookbook:publish.serialised
-{% for family_name, (apache_port, scheme, _) in apache_dict.items() -%}
+{% for family_name, (apache_port, scheme, _, _) in apache_dict.items() -%}
 {{   family_name ~ '-v6' }} = {% if ipv6_set %}{{ scheme ~ '://[' ~ ipv6 ~ ']:' ~ apache_port }}{% endif %}
 {{   family_name }} = {{ scheme ~ '://' ~ ipv4 ~ ':' ~ apache_port }}
 {% endfor -%}
