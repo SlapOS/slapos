@@ -13,7 +13,7 @@ elif slap_state == 'busy':
     validation_state="validated",
     default_aggregate_uid=context.getUid(),
   )
-  if (instance is None) or (instance.getSlapState() != "start_requested"):
+  if (instance is None) or (instance.getSlapState() not in ["start_requested", "stop_requested"]):
     return []
   else:
     return [instance.getUrlString()]
