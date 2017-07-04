@@ -136,7 +136,7 @@ DATABASE="$HOME/srv/runner/proxy.db"
 # XXX hardcoded
 PARTITION=$(basename $HOME)
 OLD_SOFTWARE_RELEASE=$("$SQLITE3" "$DATABASE" "select software_release from partition11 where reference='slappart0';")
-SOFTWARE_RELEASE=$(echo $OLD_SOFTWARE_RELEASE | sed -e 's/\(.*\)\(slappart\|test0-\)[0-9][0-9]\?/\1'"$PARTITION"'/')
+SOFTWARE_RELEASE=$(echo $OLD_SOFTWARE_RELEASE | sed -e 's/\(.*\)\(slappart\|test0-\)[0-9][0-9][0-9]\?/\1'"$PARTITION"'/')
 "$SQLITE3" "$DATABASE" "update partition11 set software_release='$SOFTWARE_RELEASE' where software_release NOT NULL;"
 "$SQLITE3" "$DATABASE" "update software11 set url='$SOFTWARE_RELEASE' where url='$OLD_SOFTWARE_RELEASE';" || "$SQLITE3" "$DATABASE" "delete from software11 where url='$OLD_SOFTWARE_RELEASE';"
 # Change slapproxy database to have all instances stopped
