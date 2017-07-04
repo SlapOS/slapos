@@ -1000,6 +1000,31 @@ stderr_logfile_backups=1
           os.remove(periodicity_path)
           self.logger.exception('')
 
+    local_partition = Partition(
+      software_path=software_path,
+      instance_path=instance_path,
+      supervisord_partition_configuration_path=os.path.join(
+        _getSupervisordConfigurationDirectory(self.instance_root), '%s.conf' %
+        computer_partition_id),
+      supervisord_socket=self.supervisord_socket,
+      computer_partition=computer_partition,
+      computer_id=self.computer_id,
+      partition_id=computer_partition_id,
+      server_url=self.master_url,
+      software_release_url=software_url,
+      certificate_repository_path=self.certificate_repository_path,
+      buildout=self.buildout,
+      logger=self.logger,
+      retention_delay=getattr(computer_partition, '_filter_dict', {}).get('retention_delay', '0'),
+      instance_min_free_space=self.instance_min_free_space,
+      instance_storage_home=self.instance_storage_home,
+      ipv4_global_network=self.ipv4_global_network,
+    )
+
+    # let managers modify current partition
+    for manager in self._manager_list:
+      manager.instance(local_partition)
+
     # Check if timestamp from server is more recent than local one.
     # If not: it's not worth processing this partition (nothing has
     # changed).
@@ -1047,32 +1072,6 @@ stderr_logfile_backups=1
       self.logger.info('  Software path: %s' % software_path)
       self.logger.info('  Instance path: %s' % instance_path)
 
-      filter_dict = getattr(computer_partition, '_filter_dict', None)
-      if filter_dict:
-        retention_delay = filter_dict.get('retention_delay', '0')
-      else:
-        retention_delay = '0'
-
-      local_partition = Partition(
-        software_path=software_path,
-        instance_path=instance_path,
-        supervisord_partition_configuration_path=os.path.join(
-          _getSupervisordConfigurationDirectory(self.instance_root), '%s.conf' %
-          computer_partition_id),
-        supervisord_socket=self.supervisord_socket,
-        computer_partition=computer_partition,
-        computer_id=self.computer_id,
-        partition_id=computer_partition_id,
-        server_url=self.master_url,
-        software_release_url=software_url,
-        certificate_repository_path=self.certificate_repository_path,
-        buildout=self.buildout,
-        logger=self.logger,
-        retention_delay=retention_delay,
-        instance_min_free_space=self.instance_min_free_space,
-        instance_storage_home=self.instance_storage_home,
-        ipv4_global_network=self.ipv4_global_network,
-      )
       computer_partition_state = computer_partition.getState()
 
       # XXX this line breaks 37 tests
@@ -1083,10 +1082,6 @@ stderr_logfile_backups=1
       if self.firewall_conf:
         partition_ip_list = parameter_dict['ip_list'] + parameter_dict.get(
                                                             'full_ip_list', [])
-
-      # call manager for every software release
-      for manager in self._manager_list:
-        manager.instance(local_partition)
 
       if computer_partition_state == COMPUTER_PARTITION_STARTED_STATE:
         local_partition.install()
