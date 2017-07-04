@@ -20,6 +20,7 @@ url = http://[${ipv6toipv4:ipv6}]:${ipv6toipv4:ipv6-port}/
 {% else -%}
 url = http://${cloudooo-instance:ip}:${cloudooo-instance:port}/
 {% endif -%}
+monitor-base-url = ${monitor-publish-parameters:monitor-base-url}
 
 [cloudooo-instance]
 recipe = slapos.cookbook:generic.cloudooo
@@ -57,9 +58,10 @@ service-folder = ${directory:service}
 
 [resiliency-exclude-file]
 # Generate rdiff exclude file in case of resiliency
-recipe = collective.recipe.template
-input = inline: **
-output = ${directory:srv}/exporter.exclude
+recipe = slapos.recipe.template:jinja2
+mode = 644
+template = {{ 'inline:{{ "**\\n" }}' }}
+rendered = ${directory:srv}/exporter.exclude
 
 [promise]
 recipe = slapos.cookbook:check_port_listening
@@ -110,6 +112,7 @@ framebuffer = ${:srv}/framebuffer
 monitor-httpd-ipv6 = {{ (ipv6_set | list)[0] }}
 monitor-httpd-port = {{ tcpv4_port + 2 }}
 monitor-title = Cloudooo monitor
+password = {{ slapparameter_dict['monitor-passwd'] }}
 
 [binary-link]
 recipe = slapos.cookbook:symbolic.link

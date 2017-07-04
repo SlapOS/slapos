@@ -4,71 +4,105 @@ export LC_ALL
 umask 077
 
 # Exit on any error, to prevent inconsistent backup
-set -e
+# Error on unset variable expansion
+set -eu
 
 # Redirect output to log
-exec > >(tee -ai {{ output_log_file }})
+exec > >(tee -ai '{{ output_log_file }}')
 exec 2>&1
 
 echo -e "\n\n$0 run at : $(date)"
 
-srv_directory={{ directory['srv'] }}
+srv_directory='{{ directory["srv"] }}'
+backup_directory='{{ directory["backup"] }}'
+etc_directory='{{ directory["etc"] }}'
+tmp_directory='{{ directory["tmp"] }}'
 
-sync_element () {
-  path=$1
-  backup_path=$2
-  shift 2
-  element_list=$*
-
-  # Concatenate the exclude file of each partition of webrunner
-  # to create a global exclude file.
-  exclude_content="instance/supervisord.socket"
-  for partition in $srv_directory/runner/instance/slappart*
-  do
-    exclude_file="$partition/srv/exporter.exclude"
-    if [ -e "$exclude_file" ]; then
-      partition_exclude_content_relative=$(cat "$exclude_file")
-      # For every line of the local exclude file, add the absolute path
-      for line in "$partition_exclude_content_relative"
-      do
-        if [ ! -z "$line" ]; then
-          exclude_content="$exclude_content\ninstance/$(basename $partition)/$line"
-       fi
-      done
-    fi
-  done
-  echo -e "$exclude_content" > $srv_directory/exporter.exclude
-
-  for element in $element_list
-  do
-    echo "Changing current directory to $path."
-    cd $path;
-    if [ -f $element ] || [ -d $element ]; then
-       command="{{ rsync_binary }} -rlptgov --stats --safe-links --exclude-from=$srv_directory/exporter.exclude --delete --delete-excluded $element  $backup_path"
-       echo "Running : $command"
-       $command
-    fi
-  done
+rsync () {
+  set -x
+  '{{ rsync_binary }}' -rlptgov --stats --safe-links --delete --delete-excluded "$@"
+  set +x
 }
-sync_element $srv_directory/runner {{ directory['backup'] }}/runner/ instance project proxy.db
+
+(
+  # XXX: code duplication with runner-import.sh.jinja2
+  path=$srv_directory/runner
+  backup_path=$backup_directory/runner/
+  cd "$path"
+
+  if [ -d instance ]; then
+    # Concatenate the exclude file of each partition of webrunner
+    # to create a global exclude file.
+    # Also, ignore all buildout-managed files.
+    exclude=$({{ sys.executable }} - "$path" <<EOF
+if 1:
+        import glob, errno, os, sys
+        sys.path[:0] = {{ repr(easy_install.buildout_and_setuptools_path) }}
+        from zc.buildout.configparser import parse
+        path = sys.argv[1]
+
+        def print_relative(path_list):
+            for p in path_list:
+                p = p.strip()
+                if p:
+                    print(os.path.relpath(p, path))
+        print("*.sock")
+        print("*.socket")
+        print("*.pid")
+        print(".installed*.cfg")
+        for partition in glob.glob(path + "/instance/slappart*"):
+            os.chdir(partition)
+            try:
+                with open("srv/exporter.exclude") as f:
+                    exclude = f.readlines()
+            except IOError as e:
+                if e.errno != errno.ENOENT:
+                    raise
+            else:
+                print_relative(exclude)
+            for installed in glob.glob(".installed*.cfg"):
+                try:
+                    with open(installed) as f:
+                        installed = parse(f, installed)
+                except IOError as e:
+                    if e.errno != errno.ENOENT:
+                        raise
+                else:
+                    for section in installed.itervalues():
+                        print_relative(section.get(
+                            '__buildout_installed__', '').splitlines())
+EOF
+)
+    echo "$exclude" |rsync --exclude-from=- instance "$backup_path"
+  fi
+
+  test -d project  && rsync project "$backup_path"
+  test -d public  && rsync public "$backup_path"
+  test -f proxy.db && rsync proxy.db "$backup_path"
+)
 # We sync .* appart
-date +%s -u > {{ directory['etc'] }}/.resilient-timestamp
-sync_element {{ directory['etc'] }}  {{ directory['backup'] }}/etc/ config.json
-# Hidden files are related to the webrunner's internals
-cp -r {{ directory['etc'] }}/.??* {{ directory['backup'] }}/etc/
-if [ -d {{ directory['backup'] }}/runner/software ]; then
-  rm {{ directory['backup'] }}/runner/software/*
+(
+  cd "$etc_directory"
+  date +%s -u > .resilient-timestamp
+  rsync config.json "$backup_directory"/etc/
+  # Hidden files are related to the webrunner's internals
+  cp -r .??* "$backup_directory/etc/"
+)
+if [ -d "$backup_directory"/runner/software ]; then
+  rm "$backup_directory"/runner/software/*
 fi
 
-cd {{ directory['backup'] }} && find -type f ! -name backup.signature -print0 | xargs -0 sha256sum | LC_ALL=C sort -k 66 > backup.signature
+(
+  cd "$backup_directory"
+  find -type f ! -name backup.signature -print0 | xargs -0 sha256sum | sort -k 66 > backup.signature
+)
 
 # Check that export didn't happen during backup of instances
-tmp_backup_sum=$(mktemp -p {{ directory['tmp'] }})
-tmp_filtered_signature=$(mktemp -p {{ directory['tmp'] }})
+tmp_backup_sum=$(mktemp -p "$tmp_directory")
+tmp_filtered_signature=$(mktemp -p "$tmp_directory")
 
 remove_tmp_files () {
-  rm $tmp_backup_sum
-  rm $tmp_filtered_signature
+  rm "$tmp_backup_sum" "$tmp_filtered_signature"
 }
 trap remove_tmp_files EXIT
 
@@ -83,15 +117,14 @@ if [ -z "$backup_directory_path" ]; then
 fi
 
 sleep 5
-sha256sum $backup_directory_path | LC_ALL=C sort -k 66 > $tmp_backup_sum
-cat {{ directory['backup'] }}/backup.signature | egrep "instance/slappart.*/srv/backup/" > $tmp_filtered_signature
+sha256sum $backup_directory_path | sort -k 66 > "$tmp_backup_sum"
+egrep "instance/slappart.*/srv/backup/" "$backup_directory/backup.signature" > "$tmp_filtered_signature"
 
 # If the diff fails, then the notifier will restart this script
-diff_status=0
-diff $tmp_backup_sum $tmp_filtered_signature || diff_status=1
-if [ $diff_status -ne 0 ]; then
-  echo "ERROR: Some backups are not consistents, exporter should be re-run."
-  echo "Let's sleep 10 minutes, to let the backup end..."
-  sleep 10m
-  exit 1
+if diff "$tmp_backup_sum" "$tmp_filtered_signature"; then
+  exit 0
 fi
+echo "ERROR: Some backups are not consistent, exporter should be re-run."
+echo "Let's sleep {{ backup_wait_time }} minutes, to let the backup end..."
+sleep {{ backup_wait_time }}m
+exit 1

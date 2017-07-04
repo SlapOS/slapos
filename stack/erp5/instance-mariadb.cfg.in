@@ -16,9 +16,11 @@
 {% else -%}
 {%   set ip = (ipv4_set | list)[0] -%}
 {% endif -%}
+{% set dash = parameter_dict['dash-location'] ~ '/bin/dash' %}
 
-[publish]
+[{{ section('publish') }}]
 recipe = slapos.cookbook:publish.serialised
+-extends = publish-early
 {% macro render_database_list(database_list) -%}
 {% set publish_database_list = [] -%}
 {% for database in database_list -%}
@@ -32,6 +34,21 @@ recipe = slapos.cookbook:publish.serialised
 {% endmacro -%}
 database-list = {{ render_database_list(database_list) }}
 test-database-list = {{ render_database_list(test_database_list) }}
+monitor-base-url = ${monitor-publish-parameters:monitor-base-url}
+
+[publish-early]
+recipe = slapos.cookbook:publish-early
+-init =
+  server-id gen-server-id:value
+{%- set server_id = slapparameter_dict.get('server-id') %}
+{%- if server_id %}
+server-id = {{ dumps(server_id) }}
+{%- endif %}
+
+[gen-server-id]
+recipe = slapos.cookbook:random.integer
+minimum = {{ dumps(1) }}
+maximum = {{ dumps(2**32 - 1) }}
 
 [jinja2-template-base]
 recipe = slapos.recipe.template:jinja2
@@ -124,7 +141,7 @@ relaxed-writes = {{ dumps(slapparameter_dict.get('relaxed-writes', False)) }}
 binlog-path = ${directory:mariadb-backup-incremental}/binlog
 # XXX: binlog rotation happens along with other log's rotation
 binlog-expire-days = {{ dumps(incremental_backup_retention_days) }}
-server-id = {{ dumps(slapparameter_dict.get('server-id', 1)) }}
+server-id = ${publish-early:server-id}
 {% else %}
 binlog-path =
 {%- endif %}
@@ -148,7 +165,7 @@ rendered = ${directory:etc}/mariadb_initial_setup.sql
 template = {{ parameter_dict['template-mariadb-initial-setup'] }}
 context = section parameter_dict init-script-parameters
 
-[update-mysql]
+[{{ section('update-mysql') }}]
 recipe = slapos.cookbook:generic.mysql.wrap_update_mysql
 output = ${directory:services}/mariadb_update
 binary = ${binary-wrap-mysql_upgrade:wrapper-path}
@@ -162,7 +179,7 @@ mysql_tzinfo_to_sql = ${binary-wrap-mysql_tzinfo_to_sql:wrapper-path}
 # section is installed - so I only use jinja2 as a fancy way to write an
 # executable file with partition-dependent but instance-parameters independent
 # content.
-template = inline:#!{{ parameter_dict['dash-location'] }}/bin/dash
+template = inline:#!{{ dash }}
   '{{ parameter_dict['mariadb-location'] }}/scripts/mysql_install_db' \
     --defaults-file='${my-cnf:rendered}' \
     --skip-name-resolve \
@@ -173,13 +190,13 @@ template = inline:#!{{ parameter_dict['dash-location'] }}/bin/dash
     "$@"
 rendered = ${directory:services}/mariadb
 
-[logrotate-entry-mariadb]
+[{{ section('logrotate-entry-mariadb') }}]
 < = logrotate-entry-base
 name = mariadb
 log = ${my-cnf-parameters:error-log} ${my-cnf-parameters:slow-query-log}
 post = "${binary-wrap-mysql:wrapper-path}" -B -u root -e "FLUSH LOGS"
 
-[binary-link]
+[{{ section('binary-link') }}]
 recipe = slapos.cookbook:symbolic.link
 target-directory = ${directory:bin}
 link-binary = {{ dumps(parameter_dict['link-binary']) }}
@@ -213,6 +230,12 @@ command = mysql_upgrade
 command-line = "{{ parameter_dict['mariadb-location'] }}/bin/${:command}"
 command = mysql_tzinfo_to_sql
 
+[binary-wrap-pt-digest]
+<= binary-wrap-base
+command-line = "{{ parameter_dict['percona-tools-location'] }}/bin/${:command}"
+command = pt-query-digest
+ 
+
 [directory]
 recipe = slapos.cookbook:mkdirectory
 bin = ${buildout:directory}/bin
@@ -230,41 +253,60 @@ var = ${buildout:directory}/var
 log = ${:var}/log
 run = ${:var}/run
 
-[resiliency-exclude-file]
+[{{ section('resiliency-exclude-file') }}]
 # Generate rdiff exclude file in case of resiliency
-recipe = collective.recipe.template
-input = inline: srv/mariadb/**
-output = ${directory:srv}/exporter.exclude
+< = jinja2-template-base
+template = {{ 'inline:{{ "${directory:mariadb-data}/**\\n" }}' }}
+rendered = ${directory:srv}/exporter.exclude
+
+[dash]
+dash = {{ dumps(dash) }}
 
 [resiliency-after-import-script]
 # Generate after import script used by importer instance of webrunner
-recipe = collective.recipe.template
-input = {{ parameter_dict['mariadb-resiliency-after-import-script'] }}
-output = ${directory:srv}/runner-import-restore
-mode = 755
-dash = {{ parameter_dict['dash-location'] }}/bin/dash
+< = jinja2-template-executable
+template = {{ parameter_dict['mariadb-resiliency-after-import-script'] }}
+rendered = ${directory:srv}/runner-import-restore
+context =
+  key dash dash:dash
+  key mysql_executable binary-wrap-mysql:wrapper-path
+  key mariadb_data_directory directory:mariadb-data
+  key mariadb_backup_directory directory:mariadb-backup-full
+  key instance_directory buildout:directory
+  key pid_file my-cnf-parameters:pid-file
+  key binlog_path my-cnf-parameters:binlog-path
+  key server_executable mysqld:rendered
+  key update_executable update-mysql:output
 
-[promise]
+[{{ section('monitor-generate-mariadb-slow-query-report') }}]
+recipe = slapos.recipe.template:jinja2
+template = {{ parameter_dict['mariadb-slow-query-report-script'] }}
+rendered = ${monitor-directory:reports}/${:filename}
+output-folder = ${directory:srv}/monitor/
+filename = mariadb_slow_query_every_23_hour
+mode = 755
+context = 
+  raw slow_query_path ${directory:srv}/backup/logrotate/mariadb_slowquery.log
+  raw pt_query_exec ${binary-wrap-pt-digest:wrapper-path}
+  raw dash {{ parameter_dict['dash-location'] }}/bin/dash
+  key output_folder :output-folder 
+
+[{{ section('promise') }}]
 recipe = slapos.cookbook:wrapper
 command-line = "{{ parameter_dict['bin-directory'] }}/is-local-tcp-port-opened" "${my-cnf-parameters:ip}" "${my-cnf-parameters:port}"
 wrapper-path = ${directory:promise}/mariadb
 parameters-extra = true
 
+{% set monitor_passwd = slapparameter_dict['monitor-passwd'] -%}
 [monitor-instance-parameter]
 monitor-httpd-ipv6 = {{ (ipv6_set | list)[0] }}
 monitor-httpd-port = {{ port + 1 }}
 monitor-title = Mariadb monitor
+password = {{ slapparameter_dict['monitor-passwd'] }}
 
 [buildout]
 extends =
   {{ logrotate_cfg }}
   {{ parameter_dict['template-monitor'] }}
 parts +=
-  publish
-  logrotate-entry-mariadb
-  binary-link
-  update-mysql
-  resiliency-exclude-file
-  resiliency-after-import-script
-  promise
   {{ part_list | join('\n  ') }}

@@ -36,31 +36,35 @@ class WriteRecipe(GenericBaseRecipe):
   """
   """
   def __init__(self, buildout, name, options):
-    if not "filename" in options:
-      raise zc.buildout.UserError("You have to provide the parameter \"filename\"")
+    if not "filename" in options and not "file-path" in options:
+      raise zc.buildout.UserError("You have to provide the parameter either \"filename\" or \"file-path\"")
 
-    self.filename = options['filename'].strip()
-    self.path = os.path.join(buildout['buildout']['directory'], self.filename)
+    self._options = options.copy()
+    if options.get('filename'):
+      self.filename = options['filename'].strip()
+      self.path = os.path.join(buildout['buildout']['directory'], self.filename)
+      del self._options['filename']
+    else:
+      self.path = options['file-path'].strip()
+      del self._options['file-path']
+    del self._options['recipe']
     self.name = name
-    self.options = options.copy()
-    del self.options['filename']
-    del self.options['recipe']
+
+  def install(self):
 
     # Set up the parser, and write config file if needed
     self.parser = ConfigParser.ConfigParser()
     try:
       self.parser.read(self.path)
       #clean_options(options)
-      for key in self.options:
+      for key in self._options:
         if key not in self.parser.options(self.name):
-          self.parser.set(self.name, key, self.options[key])
+          self.parser.set(self.name, key, self._options[key])
       with open(self.path, 'w') as file:
         self.parser.write(file)
     # If the file or section do not exist
     except (ConfigParser.NoSectionError, IOError) as e:
       self.full_install()
-
-  install = update = lambda self: []
 
   def full_install(self):
     """XXX-Nicolas : when some parameter's value is changed in
@@ -69,21 +73,25 @@ class WriteRecipe(GenericBaseRecipe):
     if self.parser.has_section(self.name):
       self.parser.remove_section(self.name)
     self.parser.add_section(self.name)
-    for key in self.options:
-      self.parser.set(self.name, key, self.options[key])
+    for key in self._options:
+      self.parser.set(self.name, key, self._options[key])
     with open(self.path, 'w') as file:
       self.parser.write(file)
 
+  update = install
 
 class ReadRecipe(GenericBaseRecipe):
   """
   """
   def __init__(self, buildout, name, options):
-    if not "filename" in options:
-      raise zc.buildout.UserError("You have to provide the parameter \"filename\"")
+    if not "filename" in options and not "file-path" in options:
+      raise zc.buildout.UserError("You have to provide the parameter either \"filename\" or file-path")
 
-    self.filename = options['filename'].strip()
-    self.path = os.path.join(buildout['buildout']['directory'], self.filename)
+    if options.get('filename'):
+      self.filename = options['filename'].strip()
+      self.path = os.path.join(buildout['buildout']['directory'], self.filename)
+    else:
+      self.path = options['file-path'].strip()
 
     # Set up the parser, and write config file if needed
     self.parser = ConfigParser.ConfigParser()

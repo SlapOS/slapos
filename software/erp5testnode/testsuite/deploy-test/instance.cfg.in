@@ -1,0 +1,55 @@
+[buildout]
+extends = ${template:output}
+parts +=
+  runTestSuite
+  copy-test-data
+
+[copy-test-data]
+# Note: This is a hack, as such while requesting KVM it is not possible
+#       to fill correctly http directory
+# Note: This will only work inside of non-user related environment
+#       dest shell variable will evaluate to requested partition's
+#       srv/public directory
+#       The "if" statement makes this script be run only in partition
+#       *without* srv/public - so according to current knowledge, the
+#       one which requests KVM backend for testing
+recipe = plone.recipe.command
+stop-on-error = true
+update-command = $${:command}
+command =
+  if [ ! -d srv/public ] ; then
+    dest=`echo ../*/srv/public`
+    cp ${playbook:output} $dest/playbook.tar.gz &&
+    cp ${standalone-local-playbook:location} $dest/standalone-local-playbook
+  fi
+
+[runTestSuite]
+recipe = slapos.recipe.template:jinja2
+rendered = $${buildout:directory}/bin/$${:_buildout_section_name_}
+template = inline:
+  #!/bin/sh
+  export PATH=${python-with-eggs:location}:$PATH
+  exec ${buildout:bin-directory}/${runTestSuite_py:interpreter} ${:_profile_base_location_}/runTestSuite.py --partition_ipv4 {{ list(partition_ipv4)[0] }} --partition_path $${buildout:directory} --test_reference "{{ slapparameter_dict.get('image-to-test-url') }} {{ slapparameter_dict.get('script-to-test-url')}}" --test_location "${test-location:base}/{{ slapparameter_dict.get('test-relative-directory')}}" "$@"
+mode = 0755
+context =
+    key slapparameter_dict slap-configuration:configuration
+    key partition_ipv4 slap-configuration:ipv4
+
+[switch_softwaretype]
+default = $${:deploy-test}
+deploy-test = $${dynamic-template-deploy-test:rendered}
+
+[dynamic-template-deploy-test]
+recipe = slapos.recipe.template:jinja2
+template = ${:_profile_base_location_}/instance-deploy-test.cfg.jinja2
+rendered = $${buildout:directory}/template-deploy-test.cfg
+context =
+    key develop_eggs_directory buildout:develop-eggs-directory
+    key eggs_directory buildout:eggs-directory
+    key slapparameter_dict slap-configuration:configuration
+    raw bin_directory ${buildout:bin-directory}
+    raw in_vm_test_script ${deploy-script-controller-script:location}
+    raw in_vm_test_script_md5 ${deploy-script-controller-script:md5sum}
+    raw waittime ${deploy-script-controller-script:waittime}
+    raw tries ${deploy-script-controller-script:tries}
+mode = 0644

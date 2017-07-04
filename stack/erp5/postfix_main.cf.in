@@ -52,6 +52,10 @@ smtpd_relay_restrictions =
   permit_sasl_authenticated
   defer_unauth_destination
 
+# We do not pass mail address in command lines, so accept those starting with
+# a dash.
+allow_min_user = yes
+
 # Disable local delivery
 local_transport = error
 

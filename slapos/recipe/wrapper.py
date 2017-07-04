@@ -31,6 +31,16 @@ import os
 from slapos.recipe.librecipe import GenericBaseRecipe
 
 class Recipe(GenericBaseRecipe):
+    """Recipe to create a script from given command and options.
+
+    :param str command-line: shell command which launches the intended process
+    :param str wrapper-path: absolute path to file's destination
+
+    :param lines wait-for-files: list of files to wait for
+    :param str pidfile: path to pidfile ensure exclusivity for the process
+    :param bool parameters-extra: whether wrapper parameters are passed onto command
+    :param bool reserve-cpu: command will ask for an exclusive CPU core
+    """
     def install(self):
         command_line = shlex.split(self.options['command-line'])
         wrapper_path = self.options['wrapper-path']
@@ -38,6 +48,7 @@ class Recipe(GenericBaseRecipe):
         environment = self.options.get('environment')
         parameters_extra = self.options.get('parameters-extra')
         pidfile = self.options.get('pidfile')
+        reserve_cpu = self.options.get('reserve-cpu', False)
 
         if not wait_files and not environment:
           # Create a simple wrapper as shell script
@@ -47,6 +58,7 @@ class Recipe(GenericBaseRecipe):
              parameters=command_line[1:],
              parameters_extra=parameters_extra,
              pidfile=pidfile,
+             reserve_cpu=reserve_cpu
           )]
 
         # More complex needs: create a Python script as wrapper
@@ -76,5 +88,6 @@ class Recipe(GenericBaseRecipe):
              parameters=[],
              parameters_extra=parameters_extra,
              pidfile=pidfile,
+             reserve_cpu=reserve_cpu
         )]
 

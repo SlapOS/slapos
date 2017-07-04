@@ -39,6 +39,28 @@ import string
 
 from slapos.recipe.librecipe import GenericBaseRecipe
 
+class Integer(object):
+  """
+  Generate a random integer (see standard random.randint documentation).
+
+  Input options:
+  minimum (required)
+    integer(-ish) minmum bound, included.
+  maximum (required)
+    integer(-ish) maximum bound, included.
+
+  Output options:
+  value
+    Resulting integer.
+  """
+  def __init__(self, buildout, name, options):
+    options['value'] = random.randint(int(options['minimum']), int(options['maximum']))
+
+  def install(self):
+    pass
+
+  update = install
+
 class Time(object):
   """Generate a random time from a 24h time clock"""
 
@@ -101,7 +123,6 @@ class Password(object):
   """
 
   def __init__(self, buildout, name, options):
-    options_get = options.get
     self.create_once = options.get('create-once', 'True').lower() \
           in GenericBaseRecipe.TRUE_VALUES
     try:
@@ -118,13 +139,21 @@ class Password(object):
         if e.errno != errno.ENOENT:
           raise
     if not passwd:
-      passwd = self.generatePassword(int(options_get('bytes', '8')))
+      passwd = self.generatePassword(int(options.get('bytes', '8')))
       self.update = self.install
     self.passwd = passwd.strip('\n')
     # Password must not go into .installed file, for 2 reasons:
     # security of course but also to prevent buildout to always reinstall.
-    options.get = lambda option, *args, **kw: passwd \
-      if option == 'passwd' else options_get(option, *args, **kw)
+    def get(option, *args, **kw):
+      return passwd if option == 'passwd' else options_get(option, *args, **kw)
+
+    try:
+      options_get = options._get
+    except AttributeError:
+      options_get = options.get
+      options.get = get
+    else:
+      options._get = get
 
   generatePassword = staticmethod(generatePassword)
 

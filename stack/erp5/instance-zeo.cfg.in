@@ -113,14 +113,16 @@ tidstorage-port = ${tidstorage:port}
 tidstorage-ip =
 tidstorage-port =
 {% endif -%}
+monitor-base-url = ${monitor-publish-parameters:monitor-base-url}
 
 # Used for ERP5 resiliency or (more probably)
 # webrunner resiliency with erp5 inside.
 [{{ section("resiliency-exclude-file") }}]
 # Generate rdiff exclude file
-recipe = collective.recipe.template
-input = inline: srv/zodb/**
-output = ${directory:srv}/exporter.exclude
+recipe = slapos.recipe.template:jinja2
+mode = 644
+template = {{ 'inline:{{ "${directory:zodb}/**\\n" }}' }}
+rendered = ${directory:srv}/exporter.exclude
 
 [{{ section("resiliency-after-import-script") }}]
 # Generate after import script used by importer instance of webrunner
@@ -184,6 +186,7 @@ tidstorage = {{ tidstorage_repozo_path }}
 monitor-httpd-ipv6 = {{ (ipv6_set | list)[0] }}
 monitor-httpd-port = {{ next_port() }}
 monitor-title = ZODB monitor
+password = {{ slapparameter_dict['monitor-passwd'] }}
 
 [buildout]
 extends =

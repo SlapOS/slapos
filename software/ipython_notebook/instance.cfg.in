@@ -74,7 +74,13 @@ command-line =
 wrapper-path = ${directory:service}/ipython_notebook
 parameters-extra = true
 # Explicitly define IPython Directory to be used while starting ipython notebook
-environment = IPYTHONDIR=${directory:ipython_dir}
+# Also explicitly force IPython to use en_US.utf8 encoding
+environment =
+  IPYTHONDIR=${directory:ipython_dir}
+  JUPYTER_CONFIG_DIR=${directory:ipython_dir}
+  LC_ALL=C.UTF-8
+  LANG=C.UTF-8
+  LANGUAGE=C.UTF-8
 
 [ipython-notebook-config]
 <= dynamic-jinja2-template-base
@@ -109,6 +115,7 @@ filename = knowledge0.cfg
 [read-knowledge0]
 recipe = slapos.cookbook:zero-knowledge.read
 filename = knowledge0.cfg
+password =
 
 [monitor-instance-parameter]
 monitor-base-url = ${monitor-frontend-promise:url}

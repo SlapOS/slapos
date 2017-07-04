@@ -1,4 +1,4 @@
-#!${:dash}
+#!{{ dash }}
 
 # DO NOT RUN THIS SCRIPT ON PRODUCTION INSTANCE
 # OR MYSQL DATA WILL BE ERASED.
@@ -12,14 +12,14 @@
 
 set -e
 
-mysql_executable='${binary-wrap-mysql:wrapper-path}'
-mariadb_data_directory='${directory:mariadb-data}'
-mariadb_backup_directory='${directory:mariadb-backup-full}'
-instance_directory='${buildout:directory}'
-pid_file='${my-cnf-parameters:pid-file}'
-binlog_path='${my-cnf-parameters:binlog-path}'
-server_executable='${mysqld:rendered}'
-update_executable='${update-mysql:output}'
+mysql_executable='{{ mysql_executable }}'
+mariadb_data_directory='{{ mariadb_data_directory }}'
+mariadb_backup_directory='{{ mariadb_backup_directory }}'
+instance_directory='{{ instance_directory }}'
+pid_file='{{ pid_file }}'
+binlog_path='{{ binlog_path }}'
+server_executable='{{ server_executable }}'
+update_executable='{{ update_executable }}'
 
 # Make sure mariadb is not already running
 if [ -e "$pid_file" ]; then

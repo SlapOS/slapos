@@ -379,6 +379,7 @@ dict toward erp5 partition, violating the DRY principle and making the intent
 hard to guess.
 -#}
 hosts-dict = {{ dumps(hosts_dict) }}
+monitor-base-url = ${monitor-publish-parameters:monitor-base-url}
 
 [erp5-promise]
 recipe = slapos.cookbook:erp5.promise
@@ -394,6 +395,7 @@ bt5-repository-url = {{ dumps(slapparameter_dict['bt5-repository-url']) }}
 monitor-httpd-ipv6 = {{ (ipv6_set | list)[0] }}
 monitor-httpd-port = {{ next_port() }}
 monitor-title = Zope monitor
+password = {{ slapparameter_dict['monitor-passwd'] }}
 
 [buildout]
 extends =

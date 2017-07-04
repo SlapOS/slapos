@@ -43,6 +43,7 @@ class NeoBaseRecipe(GenericBaseRecipe):
       # useful, as per NEO deploying constraints.
       raise UserError('"masters" parameter is mandatory')
     option_list = [
+      # Keep the -l option first, as expected by logrotate snippets.
       '-l', options['logfile'],
       '-m', options['masters'],
       '-b', self._getBindingAddress(),
@@ -91,6 +92,8 @@ class Storage(NeoBaseRecipe):
     engine = self.options.get('engine')
     if engine: # old versions of NEO don't support -e
       r  += '-e', engine
+    if self.options.get('disable-drop-partitions'):
+      r.append('--disable-drop-partitions')
     return r
 
 class Admin(NeoBaseRecipe):

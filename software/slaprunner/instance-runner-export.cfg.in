@@ -70,7 +70,10 @@ rendered = ${directory:bin}/${slap-parameter:namebase}-exporter
 wrapper = ${:rendered}
 mode = 700
 context =
+  import sys sys
+  import easy_install zc.buildout.easy_install
   section directory directory
+  raw  backup_wait_time {{ backup_wait_time }}
   raw  output_log_file ${directory:log}/resilient.log
   raw  shell_binary {{ bash_executable_location }}
   raw  rsync_binary {{ rsync_executable_location }}
@@ -81,11 +84,25 @@ minimum = 8437
 maximum = 8446
 ip = ${slap-network-information:global-ipv6}
 
+# XXX Redefine Monitor parameters for runner-export
 [monitor-instance-parameter]
 monitor-httpd-port = ${monitor-httpd-free-port:port}
-# Pass some parameter to dispay in monitoring interface
+{% if slapparameter_dict.get('name', '') -%}
+monitor-title = {{ slapparameter_dict['name'] }}
+{% endif -%}
+cors-domains = {{ slapparameter_dict.get('monitor-cors-domains', 'monitor.app.officejs.com') }}
+{% if slapparameter_dict.get('monitor-username', '') -%}
+username = {{ slapparameter_dict['monitor-username'] }}
+{% endif -%}
+{% if slapparameter_dict.get('monitor-password', '') -%}
+password = {{ slapparameter_dict['monitor-password'] }}
+{% endif -%}
+{% if slapparameter_dict.get('monitor-url-list', '') -%}
+monitor-url-list = {{ slapparameter_dict['monitor-url-list'] }}
+{% endif -%}
 instance-configuration =
   httpdcors cors-domain ${slaprunner-httpd-cors:location} ${httpd-graceful-wrapper:output}
+configuration-file-path = ${buildout:directory}/knowledge0.cfg
 
 # Extends publish section with resilient parameters
 [publish-connection-information]

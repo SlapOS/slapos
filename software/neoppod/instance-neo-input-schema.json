@@ -70,6 +70,11 @@
             "default": 1,
             "type": "integer"
           },
+          "disable-drop-partitions": {
+              "description": "Set the --disable-drop-partitions option for storage nodes.",
+              "default": false,
+              "type": "boolean"
+          },
           "mysql": {
             "description": "Dictionary containing parameters for MySQL.",
             "default": {},

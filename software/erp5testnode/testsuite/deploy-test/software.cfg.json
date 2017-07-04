@@ -1,0 +1,13 @@
+{
+    "name": "Deploy Test",
+    "description": "Deploy Testing software release",
+    "serialisation": "xml",
+    "software-type": {
+        "default": {
+            "title": "Default",
+            "description": "Standard ERP5TestNode hooked",
+            "request": "instance-input-schema.json",
+            "index": 0
+        }
+    }
+}

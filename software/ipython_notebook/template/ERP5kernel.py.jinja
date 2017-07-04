@@ -106,8 +106,32 @@ class ERP5Kernel(Kernel):
         # Get the magic value recived via code from frontend
         magic_value = code.split()[1]
         # Set magic_value to the required attribute
-        setattr(self, magic_info.variable_name , magic_value)
-        self.response = 'Your %s is %s. '%(magic_info.magic_name, magic_value)
+        
+        if magic_info.magic_name == 'notebook_set_reference':
+          required_attributes = ['url', 'password', 'user']
+          missing_attributes = []
+          for attribute in required_attributes:
+            if not getattr(self, attribute):
+              missing_attributes.append(attribute)
+          
+          if missing_attributes != []:
+            self.response = "You still haven't entered all required magics. \
+Please do so before inputting your reference."
+          else:
+            if self.check_existing_reference(reference=magic_value):
+              self.response = 'WARNING: You already have a notebook with \
+reference %s. It might be a good idea to use different references for new \
+notebooks. \n' % magic_value
+            else:
+              self.response = ''
+            setattr(self, magic_info.variable_name , magic_value)
+            self.response = self.response + 'Your %s is %s. '%(magic_info.magic_name, magic_value)
+        elif magic_info.magic_name != 'erp5_password':
+          setattr(self, magic_info.variable_name , magic_value)
+          self.response = 'Your %s is %s. '%(magic_info.magic_name, magic_value)
+        else:
+          setattr(self, magic_info.variable_name , magic_value)
+          self.response = ""
 
       # Catch exception while setting attribute and set message in response
       except AttributeError:
@@ -126,7 +150,8 @@ class ERP5Kernel(Kernel):
 
       # Display the message/response from this fucntion before moving forward so
       # as to keep track of the status
-      self.display_response(response=self.response)
+      if self.response != "":
+        self.display_response(response=(self.response + '\n'))
 
   def check_required_attributes(self):
     """
@@ -138,25 +163,32 @@ class ERP5Kernel(Kernel):
       made to ask user to enter value.
     """
     result_list = []
-    required_attributes  = ['url', 'password', 'user', 'reference']
+    required_attributes  = ['url', 'user', 'password', 'reference']
+    missing_attributes = []
 
     # Set response to empty so as to flush the response set by some earlier fucntion call
     self.response = ''
 
-    # Loop to check if the attributes are set
+    # Loop to check if the required attributes are set
     for attribute in required_attributes:
       if getattr(self, attribute):
         result_list.append(True)
       else:
         # Set response/message for attributes which aren't set
-        self.response = '\nPlease enter %s in next cell. '%attribute
+        missing_attributes.append(attribute)
         result_list.append(False)
-
+    
     # Compare result_list to get True for all True results and False for any False result 
     check_attributes = all(result_list)
+    
+    if check_attributes:
+      self.response = 'You have entered all required magics. You may now use your notebook.'
+    else:
+      self.response = '''You have these required magics remaining: %s. \n''' % (
+      ', '.join(map(str, missing_attributes)))
 
     # Display response to frontend before moving forward
-    self.display_response(response=self.response)
+    self.display_response(response=(self.response + '\n'))
 
     return check_attributes
 
@@ -238,7 +270,7 @@ class ERP5Kernel(Kernel):
             checked_attribute = self.check_required_attributes()
             if checked_attribute and magic_info.send_request:
               # Call the function to send request to erp5 with the arguments given
-              self.make_erp5_request(message='\nPlease proceed',
+              self.make_erp5_request(message='Please proceed\n',
               request_reference=magic_info.request_reference,
               display_message=magic_info.display_message)
 
@@ -246,7 +278,8 @@ class ERP5Kernel(Kernel):
               # Since this response would be either success message or failure
               # error message, both of which are string type, so, we can simply
               # display the stream response.
-              self.display_response(response=self.response)
+              if self.response != 'Please proceed\n':
+                self.display_response(response=self.response)
 
           else:
             # Set response if there is no magic or the magic name is not in MAGICS
@@ -337,6 +370,31 @@ class ERP5Kernel(Kernel):
       'user_expressions': {}}
 
     return reply_content
+  
+  # Checks the ERP5 site if there are existing notebooks with the same reference.
+  # Returns True if there are.
+  def check_existing_reference(self, reference):
+    if reference == None:
+      return False
+    
+    modified_url = self.url[:self.url.rfind('/')] + '/Base_checkExistingReference'
+    result = True
+    
+    try:
+      erp5_request = requests.post(
+        modified_url,
+        verify=False,
+        auth=(self.user, self.password),
+        data={
+          'reference': reference,
+          })
+      result = erp5_request.content
+      
+    except requests.exceptions.RequestException as e:
+      self.response = str(e)
+      
+    return result
+
 
 if __name__ == '__main__':
   IPKernelApp.launch_instance(kernel_class=ERP5Kernel)

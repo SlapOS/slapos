@@ -1,0 +1,22 @@
+#!{{dash}}
+# BEWARE: This file is operated by slapgrid
+
+SLOW_QUERY_PATH='{{slow_query_path}}'
+OUTPUT_FOLDER='{{output_folder}}'
+PT_QUERY_EXEC='{{pt_query_exec}}'
+
+if [ ! -d "$OUTPUT_FOLDER" ]; then
+  echo "ERROR: output_folder don't exists"
+  exit 0
+fi
+
+TODAY=`date +%Y%m%d`
+
+SLOW_LOG=$SLOW_QUERY_PATH-$TODAY
+
+if [ ! -f "$SLOW_LOG" ]; then
+  echo "ERROR: cannot read mysql slow query log file $SLOW_LOG. Exiting."
+  exit 1
+fi
+
+eval $PT_QUERY_EXEC $SLOW_LOG

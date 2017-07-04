@@ -14,6 +14,10 @@ parts +=
 
   backup-signature-link
 
+
+[slap-parameter]
+on-notification =
+
 [resilient-publish-connection-parameter]
 notification-url = http://[$${notifier:host}]:$${notifier:port}/notify
 takeover-url = http://[$${resilient-web-takeover-httpd-configuration-file:listening-ip}]:$${resilient-web-takeover-httpd-configuration-file:listening-port}/
@@ -107,7 +111,7 @@ input = ${resilient-web-takeover-cgi-script-download:target}
 output = $${directory:cgi-bin}/web-takeover.cgi
 password = $${resilient-web-takeover-password:passwd}
 mode = 700
-proof-signature-url = $${publish:monitor-base-url}/private/resilient/backup.signature
+proof-signature-url = $${monitor-publish-parameters:monitor-base-url}/private/resilient/backup.signature
 
 # XXX could it be something lighter?
 # XXX Add SSL

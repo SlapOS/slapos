@@ -1,0 +1,224 @@
+{% set part_list = [] -%}
+{% set ipv6 = (ipv6 | list)[0] -%}
+{% set default_subject = '/C=FR/O=Company/CN=SlapOS Certificate Authority/emailAddress=xx@example.com' -%}
+{% if slapparameter_dict is not defined -%}
+{% set slapparameter_dict = {} -%}
+{% endif -%}
+
+[ca-parameters]
+server-port = {{ slapparameter_dict.get('server-port', 8009) }}
+server-https-port = {{ slapparameter_dict.get('server-https-port', 8010) }}
+ipv6 = {{ ipv6 }}
+# Overrite this to set frontend or DNS URL (URL is used as CRL distribution point)
+# Please set http not HTTPS scheme
+crl-external-url = {{ slapparameter_dict.get('external-url', 'http://[${:ipv6}]:${:server-port}') }}
+# /CN=XXX is required and should be unique
+ca-subject = {{ slapparameter_dict.get('ca-subject', default_subject) }}
+# Number of pending csr to accept
+max-request-amount = {{ slapparameter_dict.get('max-request-amount', 10) }}
+# one year (in seconds)
+crt-life-time = {{ slapparameter_dict.get('crt-life-time', 31536000) }}
+# crl-life-period correspond to about one week
+crl-life-period = {{ slapparameter_dict.get('crl-life-period', 0.02) }}
+# ca-life-period = ca-life-period * crt-life-time
+ca-life-period = {{ slapparameter_dict.get('ca-life-period', 10) }}
+# time before clean certificate on CA: 60*24*60*60
+crt-keep-time = {{ slapparameter_dict.get('crt-keep-time', 5184000) }}
+
+[directory]
+recipe = slapos.cookbook:mkdirectory
+etc = ${buildout:directory}/etc
+bin = ${buildout:directory}/bin
+srv = ${buildout:directory}/srv
+var = ${buildout:directory}/var
+run = ${:var}/run
+log = ${:var}/log
+scripts = ${:etc}/run
+services = ${:etc}/service
+promises = ${:etc}/promise
+ssl=${:etc}/ssl
+ca-dir = ${directory:srv}/ca
+ca-temp = ${:ca-dir}/tmp
+client-body-temp-path = ${:ca-temp}/client_body_temp_path
+proxy-temp-path = ${:ca-temp}/proxy_temp_path
+fastcgi-temp-path = ${:ca-temp}/fastcgi_temp_path
+uwsgi-temp-path = ${:ca-temp}/uwsgi_temp_path
+scgi-temp-path = ${:ca-temp}/scgi_temp_path
+
+[nginx-certificate-request-base]
+recipe = slapos.cookbook:wrapper
+wrapper-path = ${directory:bin}/request-base-certificate
+cert-file = ${ca-nginx-ssl-config:cert}
+key-file = ${ca-nginx-ssl-config:key}
+ca-cert = ${directory:ssl}/cacert.pem
+parameters-extra = true
+command-line = {{ certificate_request_bin }}
+  --crt-file ${:cert-file}
+  --key-file ${:key-file}
+  --ca-url http://[${ca-parameters:ipv6}]:${ca-parameters:server-port}
+  --ca-crt-file ${:ca-cert}
+
+[nginx-certificate-request]
+recipe = slapos.cookbook:wrapper
+wrapper-path = ${directory:scripts}/request-server-certificate
+command-line =
+  ${nginx-certificate-request-base:wrapper-path}
+  --cn nginx@certificate.authority
+  --request
+
+[ca-nginx-ssl-config]
+# if ssl certificate is signed write to file so that zero-knowledge can read
+recipe = plone.recipe.command
+command = 
+  if [ -s "${:key}" ] && [ -s "${:cert}" ]; then
+  cat << EOF > ${:output}
+  [ca-nginx-ssl]
+  key=${:key}
+  cert=${:cert}
+  EOF
+  fi
+key = ${directory:ssl}/ca-cert.key
+cert = ${directory:ssl}/ca-cert.crt
+update-command = ${:command}
+output = ${directory:etc}/ca-nginx-ssl.cfg
+stop-on-error = true
+
+[ca-nginx-ssl]
+recipe = slapos.cookbook:zero-knowledge.read
+file-path = ${ca-nginx-ssl-config:output}
+# initials values are empty, the section https (ssl) in nginx config will be skipped
+cert = 
+key = 
+
+[ca-nginx-conf-parameter]
+ip = ${ca-parameters:ipv6}
+port = ${ca-parameters:server-port}
+https-port = ${ca-parameters:server-https-port}
+pid-file = ${directory:run}/nginx-ca.pid
+access-log = ${directory:log}/nginx-ca-access.log
+error-log = ${directory:log}/nginx-ca-error.log
+cert-file = ${ca-nginx-ssl:cert}
+key-file = ${ca-nginx-ssl:key}
+ca-conf = ${caucase-conf:output}
+workers-processes = 1
+client-body-temp-path = ${directory:client-body-temp-path}
+proxy-temp-path = ${directory:proxy-temp-path}
+fastcgi-temp-path = ${directory:fastcgi-temp-path}
+uwsgi-temp-path = ${directory:uwsgi-temp-path}
+scgi-temp-path = ${directory:scgi-temp-path}
+socket = ${caucase-gunicorn:socket}
+
+[ca-nginx-conf]
+recipe = slapos.recipe.template:jinja2
+template = {{ template_nginx_ca_conf }}
+rendered = ${directory:etc}/nginx-ca.conf
+mode = 0700
+context =
+  section parameter_dict ca-nginx-conf-parameter
+
+[caucase-conf]
+recipe = collective.recipe.template
+# Values here are intended to be changed in your instance. override this section
+input = inline:
+  ca-dir ${directory:ca-dir}
+  # enable debug
+  # debug
+  # log-file ${directory:log}/ca-server.log
+  subject ${ca-parameters:ca-subject}
+  max-request-amount ${ca-parameters:max-request-amount}
+  external-url ${ca-parameters:crl-external-url}
+  # one year (in seconds)
+  crt-life-time ${ca-parameters:crt-life-time}
+  # crl-life-period correspond to about one week
+  crl-life-period ${ca-parameters:crl-life-period}
+  # ca-life-time = ca-life-period * crt-life-time
+  ca-life-period ${ca-parameters:ca-life-period}
+  # time before clean certificate on CA: 60*24*60*60
+  crt-keep-time ${ca-parameters:crt-keep-time}
+
+output = ${directory:etc}/ca.conf
+mode = 700
+
+[ca-nginx-graceful]
+recipe = collective.recipe.template
+input = inline:#!{{ dash_executable_location }}
+  kill -HUP "$(cat '${ca-nginx-conf-parameter:pid-file}')"
+
+output = ${directory:scripts}/ca-server-graceful
+mode = 700
+
+[caucase-gunicorn]
+recipe = slapos.cookbook:wrapper
+socket = ${directory:ca-dir}/ca.flaskserver.sock
+command-line =  {{ gunicorn_bin }} caucase.wsgi:app -b unix:${:socket} -e CA_CONFIGURATION_FILE=${caucase-conf:output} --error-logfile ${:log-file} --pid ${:pid-file} --capture-output --timeout 60 --threads 2 --log-level error --preload
+log-file = ${directory:log}/ca-gunicorn-error.log
+pid-file = ${directory:run}/ca-gunicorn.pid
+wrapper-path = ${directory:services}/ca-gunicorn
+
+[caucase-server]
+recipe = slapos.cookbook:wrapper
+command-line = {{ nginx_location }}/sbin/nginx -p ${directory:ca-dir} -c ${ca-nginx-conf:rendered}
+wrapper-path = ${directory:services}/caucase-server
+url = https://[${ca-parameters:ipv6}]:${ca-parameters:server-https-port}
+http-url = ${ca-parameters:crl-external-url}
+depends = 
+  ${nginx-certificate-request:wrapper-path}
+  ${caucase-server-promise:filename}
+  ${caucase-https-server-promise:filename}
+  ${ca-nginx-graceful:output}
+  ${ca-certificate-renew-cron-entry:name}
+  ${logrotate-ca-nginx:name}
+
+[ca-certificate-renew-cron-entry]
+recipe = slapos.cookbook:cron.d
+cron-entries = ${cron:cron-entries}
+name = ca-server-certificate-auto-renew
+# check renew every-week
+time = weekly
+# 2592000 = 30*24*60*60  equivalent to one month in seconds
+command = ${nginx-certificate-request-base:wrapper-path} --renew --threshold 2592000 --on-renew="${ca-nginx-graceful:output}"
+
+[logrotate-ca-nginx]
+< = logrotate-entry-base
+name = caucase-nginx-server
+log = ${ca-nginx-conf-parameter:access-log} ${ca-nginx-conf-parameter:access-log}
+post = {{ slapos_kill_bin }} --pidfile ${ca-nginx-conf-parameter:pid-file} -s USR1
+
+[caucase-server-promise]
+recipe = slapos.cookbook:check_url_available
+path = ${directory:promises}/${:filename}
+filename = caucase-server-listening-on-tcp
+url = http://[${ca-parameters:ipv6}]:${ca-parameters:server-port}
+dash_path = {{ dash_executable_location }}
+curl_path = {{ curl_executable_location }}
+
+[caucase-https-server-promise]
+recipe = slapos.cookbook:check_url_available
+path = ${directory:promises}/${:filename}
+filename = caucase-server-https-on-${ca-parameters:server-https-port}
+url = https://[${ca-parameters:ipv6}]:${ca-parameters:server-https-port}
+check-secure = 1
+dash_path = {{ dash_executable_location }}
+curl_path = {{ curl_executable_location }}
+
+{% if publish_parameter is defined and publish_parameter == 'yes' -%}
+[publish-connection-parameter]
+recipe = slapos.cookbook:publish.serialised
+http-url = ${caucase-server:http-url}
+https-url = ${caucase-server:url}
+{% do part_list.append('publish-connection-parameter') -%}
+{% endif -%}
+
+[buildout]
+
+extends =
+  {{ template_logrotate_base }}
+
+parts = 
+  caucase-server
+# Complete parts with sections
+  {{ part_list | join('\n  ') }}
+
+eggs-directory = {{ eggs_directory }}
+develop-eggs-directory = {{ develop_eggs_directory }}
+offline = true

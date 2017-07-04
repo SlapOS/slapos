@@ -1,6 +1,6 @@
---- configure.orig	2013-07-05 15:37:28.000000000 +0200
-+++ configure	2013-07-05 15:47:48.000000000 +0200
-@@ -4680,52 +4680,6 @@
+--- configure.orig	2016-10-01 09:28:38.000000000 +0200
++++ configure	2017-06-22 11:22:13.865295091 +0200
+@@ -6779,58 +6779,6 @@
  if test "x$ABI" != xstandard ; then
    { $as_echo "$as_me:${as_lineno-$LINENO}: Compiler uses $ABI-bit ABI. To change, set CC." >&5
  $as_echo "$as_me: Compiler uses $ABI-bit ABI. To change, set CC." >&6;}
@@ -43,6 +43,12 @@
 -      *:freebsd*:64)
 -	libdir='${exec_prefix}/lib'
 -	;;
+-      *:irix*:32)
+-	libdir='${exec_prefix}/lib32'
+-	;;
+-      *:irix*:64)
+-	libdir='${exec_prefix}/lib64'
+-	;;
 -      *)
 -        { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Don't know where to install $ABI-bit libraries on this system." >&5
 -$as_echo "$as_me: WARNING: Don't know where to install $ABI-bit libraries on this system." >&2;};
@@ -52,4 +58,4 @@
 -  fi
  fi
  
- # Select assembler code
+ OPT_NETTLE_SOURCES=""

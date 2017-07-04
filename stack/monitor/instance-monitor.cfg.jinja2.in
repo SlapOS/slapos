@@ -100,7 +100,7 @@ parameter-file-path = ${monitor-instance-parameter:configuration-file-path}
 
 parameter-list = 
   raw monitor-user ${monitor-instance-parameter:username}
-  htpasswd monitor-password ${monitor-htpassword-file:password-file} ${monitor-instance-parameter:username} ${httpd-monitor-htpasswd:htpasswd-path}
+  htpasswd monitor-password ${httpd-monitor-htpasswd:password-file} ${monitor-instance-parameter:username} ${httpd-monitor-htpasswd:htpasswd-path}
   file promise-timeout ${monitor-promise-timeout-file:file}
   file min-free-disk-MB ${promise-check-free-disk-space:config-file}
   ${monitor-instance-parameter:instance-configuration}
@@ -122,12 +122,16 @@ command =
     echo "20" > ${:file}
   fi
 
+[monitor-base-url-dict]
+# place holder to be used to collect erp5 monitor urls
+
 [monitor-conf]
 recipe = slapos.recipe.template:jinja2
 template = {{ monitor_conf_template }}
 rendered = ${directory:etc}/${:filename}
 filename = monitor.conf
 context = section parameter_dict monitor-conf-parameters
+          section monitor_base_urls monitor-base-url-dict
 
 [instance-info-parameters]
 name = ${monitor-instance-parameter:monitor-title}
@@ -156,7 +160,8 @@ update-command = ${:command}
 [start-monitor]
 recipe = slapos.cookbook:wrapper
 command-line = {{ python_executable }} {{ monitor_bin }} --config_file ${monitor-conf:rendered}
-wrapper-path = ${directory:scripts}/bootstrap-monitor
+name = bootstrap-monitor
+wrapper-path = ${directory:scripts}/${:name}
 environment = 
   PATH=${python-symlink:target}:/usr/local/bin:/usr/bin:/bin
 
@@ -164,25 +169,18 @@ environment =
 recipe = slapos.cookbook:generate.password
 storage-path = ${directory:etc}/.monitor_pwd
 bytes = 8
-username = admin
-
-[monitor-htpassword-file]
-recipe = plone.recipe.command
-stop-on-error = true
-password-file = ${directory:etc}/.monitor_pwd
-command = 
-  if [ ! -s "${:password-file}" ]; then echo "${monitor-instance-parameter:password}" > ${:password-file}; fi
-update-command = ${:command}
 
 [httpd-monitor-htpasswd]
 recipe = plone.recipe.command
 stop-on-error = true
+password-file = ${directory:etc}/.monitor_pwd
 htpasswd-path = ${monitor-directory:etc}/monitor-htpasswd
 # Keep multiple lines as password can end with newline char.
 command = 
   if [ ! -s "${:htpasswd-path}" ]; then 
     {{ apache_location }}/bin/htpasswd -cb ${:htpasswd-path} ${:user} ${:password}
   fi
+  if [ ! -s "${:password-file}" ]; then echo "${monitor-instance-parameter:password}" > ${:password-file}; fi
 update-command = ${:command}
 user = ${monitor-instance-parameter:username}
 password = ${monitor-instance-parameter:password}
@@ -284,7 +282,7 @@ check-secure = 1
 dash_path = {{ dash_executable_location }}
 curl_path = {{ curl_executable_location }}
 
-[publish]
+[monitor-publish-parameters]
 # XXX depends on monitor-base section
 monitor-base-url = ${monitor-base:base-url}
 monitor-url = ${:monitor-base-url}/public/feeds
@@ -305,7 +303,7 @@ cors-domains = monitor.app.officejs.com
 collector-db = /srv/slapgrid/var/data-log/collector.db
 # Credentials
 password = ${monitor-htpasswd:passwd}
-username = ${monitor-htpasswd:username}
+username = admin
 # XXX: type key value
 # ex raw monitor-password resqdsdsd34
 instance-configuration =
@@ -337,6 +335,7 @@ check-secure = 1
 [monitor-bootstrap-promise]
 recipe = collective.recipe.template
 file = ${monitor-conf-parameters:promise-output-file}
+error-log-file = ${buildout:directory}/.${slap-connection:partition-id}_${start-monitor:name}.log
 input = inline:#!{{ dash_executable_location }}
   pidfile=${monitor-conf-parameters:pid-file}
   if [ -s $pidfile ]; then
@@ -351,7 +350,18 @@ input = inline:#!{{ dash_executable_location }}
       fi
     done
   fi
-  if [ ! -f "${:file}" ]; then echo "Monitor bootstrap exited with error." && exit 2; else echo "Bootstrap OK"; fi
+  if [ ! -f "${:file}" ]; then
+    echo "Monitor bootstrap exited with error."
+    log_file="${:error-log-file}"
+    if [ -s "$log_file" ]; then
+      echo " ---- Latest monitor-boostrap.log ----"
+      echo ""
+      tail -n 3 $log_file
+    fi
+    exit 2
+  else
+    echo "Bootstrap OK";
+  fi
 output = ${directory:promises}/monitor-bootstrap-status
 mode = 700
 
@@ -399,8 +409,8 @@ depends =
   ${promise-monitor-httpd-is-process-older-than-dependency-set:wrapper-path}
 
 [monitor-publish]
-monitor-base-url = ${publish:monitor-base-url}
-monitor-setup-url = ${monitor-instance-parameter:interface-url}/#page=settings_configurator&url=${publish:monitor-url}&username=${publish:monitor-user}&password=${publish:monitor-password}
+monitor-base-url = ${monitor-publish-parameters:monitor-base-url}
+monitor-setup-url = ${monitor-instance-parameter:interface-url}/#page=settings_configurator&url=${monitor-publish-parameters:monitor-url}&username=${monitor-publish-parameters:monitor-user}&password=${monitor-publish-parameters:monitor-password}
 
 
 [buildout]
