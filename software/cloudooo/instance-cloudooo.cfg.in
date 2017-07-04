@@ -42,7 +42,7 @@
 {%   do apache_ip_list.append('[' ~ ipv6 ~ ']') -%}
 {% endif -%}
 {% set apache_dict = {} -%}
-{% do apache_dict.__setitem__(publish_url_name, (apache_port, "https", 'http://' ~ ipv4 ~ ':' ~ haproxy_port)) -%}
+{% do apache_dict.__setitem__(publish_url_name, (apache_port, "https", 'http://' ~ ipv4 ~ ':' ~ haproxy_port, False)) -%}
 
 {% set bin_directory = parameter_dict['buildout-bin-directory'] -%}
 {% set section_list = [] -%}
