@@ -14,8 +14,10 @@ ORIGINAL_GRANDENET_SCRIPT=~/trunk/src/third_party/chromiumos-overlay/net-misc/re
 GRANDENET_SCRIPT="usr/local/bin/grandenet"
 INIT_SSH_SERVER="etc/init/openssh-server.conf"
 BASHRC="etc/skel/.bashrc"
-EXPECTED_ALIAS="alias git='git --exec-path=/usr/local/libexec/git-core/'"
+GIT_CORE="usr/local/libexec/git-core/"
+GIT_EXPECTED_EXPORT="export GIT_EXEC_PATH=/usr/local/libexec/git-core"
 VIRTUALENV_BIN="usr/local/bin/virtualenv"
+CHROMIUM_POLICY="etc/chromium/policies/recommended/nayuos_policy.json"
 
 HAS_FAILED=0
 
@@ -32,14 +34,17 @@ function print_result() {
 
 # MOUNT IMAGE AND GET INFO
 
-install -d ${MOUNTPOINT}
+install -d "${MOUNTPOINT}"
 ./mount_gpt_image.sh --safe -f $( ./get_latest_image.sh --board=${BOARD} ) -r ${MOUNTPOINT}
 echo $(ls "${MOUNTPOINT}/usr/local")
 if [[ $(ls "${MOUNTPOINT}/usr/local") ]] ; then
-  my_diff=$(diff ${ORIGINAL_GRANDENET_SCRIPT} "${MOUNTPOINT}/${GRANDENET_SCRIPT}")
+  my_diff=$(diff "${ORIGINAL_GRANDENET_SCRIPT}" "${MOUNTPOINT}/${GRANDENET_SCRIPT}")
   opensshd_config=$(ls "${MOUNTPOINT}/${INIT_SSH_SERVER}")
-  gitalias=$(grep "${EXPECTED_ALIAS}" "${MOUNTPOINT}/${BASHRC}")
+  gitcore=$(ls "${MOUNTPOINT}/${GIT_CORE}")
+  gitexport=$(grep "${GIT_EXPECTED_EXPORT}" "${MOUNTPOINT}/${BASHRC}")
   virtualenvbin=$(ls "${MOUNTPOINT}/${VIRTUALENV_BIN}")
+  chromium_policy=$(ls "${MOUNTPOINT}/${CHROMIUM_POLICY}")
+
 else
   is_empty=1
 fi
@@ -50,7 +55,7 @@ rmdir ${MOUNTPOINT}
 # PRINT RESULTS
 
 echo "* test if /usr/local exists"
-if [[ ${is_empty} == 1 ]] ; then
+if [[ "${is_empty}" == "1" ]] ; then
   print_result ${FAILURE} "/usr/local is empty."
 else
   print_result ${SUCCESS} "/usr/local is not empty."
@@ -71,10 +76,18 @@ else
     print_result ${SUCCESS} "opensshd config removed."
   fi
 
-  echo "* test git quick fix for option --exec-path"
+  echo "* test if git core directory is not empty"
 
-  if [[ ${gitalias} == ""  ]] ; then
-    print_result ${FAILURE} "Expected alias for git command not in ${MOUNTPOINT}/${BASHRC}. Should be: ${EXPECTED_ALIAS}"
+  if [[ "${gitcore}" == "" ]] ; then
+    print_result ${FAILURE} "No git file in ${MOUNTPOINT}/${GIT_CORE}."
+  else
+    print_result ${SUCCESS} "git core directory exists and is not empty."
+  fi
+
+  echo "* test bashrc changes for git paths quick fix"
+
+  if [[ "${gitexport}" == ""  ]] ; then
+    print_result ${FAILURE} "Expected alias for git command not in ${MOUNTPOINT}/${BASHRC}. There should be: ${GIT_EXPECTED_EXPORT}"
   else
     print_result ${SUCCESS} "git alias is correct."
   fi
@@ -85,6 +98,14 @@ else
     print_result ${SUCCESS} "virtualenv binary exists."
   else
     print_result ${FAILURE} "Expected virtualenv binary not in ${MOUNTPOINT}/${VIRTUALENV_BIN}."
+  fi
+
+  echo "* test if Chromium policies are installed"
+
+  if [[ ${chromium_policy} ]] ; then
+    print_result ${SUCCESS} "Chromium policies are installed."
+  else
+    print_result ${FAILURE} "Expected Chromium policies file not in ${MOUNTPOINT}/${CHROMIUM_POLICY}."
   fi
 fi
 
