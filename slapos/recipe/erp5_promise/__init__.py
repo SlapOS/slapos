@@ -45,6 +45,7 @@ class Recipe(GenericBaseRecipe):
             ('memcached_url', 'memcached-url'),
             ('kumofs_url', 'kumofs-url'),
             ('smtp_url', 'smtp-url'),
+            ('caucase_url', 'caucase-url'),
           )),
         ):
       promise_parser.add_section(section_name)

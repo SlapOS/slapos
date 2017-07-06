@@ -390,6 +390,7 @@ cloudooo-url = {{ dumps(slapparameter_dict['cloudooo-url']) }}
 smtp-url = {{ dumps(slapparameter_dict['smtp-url']) }}
 bt5 = {{ dumps(slapparameter_dict['bt5']) }}
 bt5-repository-url = {{ dumps(slapparameter_dict['bt5-repository-url']) }}
+caucase-url = {{ dumps(slapparameter_dict['caucase-url']) }}
 
 [monitor-instance-parameter]
 monitor-httpd-ipv6 = {{ (ipv6_set | list)[0] }}
