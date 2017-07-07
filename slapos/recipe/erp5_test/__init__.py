@@ -57,7 +57,8 @@ class Recipe(GenericBaseRecipe):
           mysql_parsed.password,
         ))
       mysql_connection_string = mysql_connection_string_list.pop()
-    cloudooo_parsed = urlparse.urlparse(self.options['cloudooo-url'])
+    cloudooo_url = self.options['cloudooo-url']
+    cloudooo_parsed = urlparse.urlparse(cloudooo_url)
     memcached_parsed = urlparse.urlparse(self.options['memcached-url'])
     kumofs_parsed = urlparse.urlparse(self.options['kumofs-url'])
     common_dict = dict(
@@ -67,6 +68,8 @@ class Recipe(GenericBaseRecipe):
         test_ca_path=self.options['certificate-authority-path'],
     )
     common_list = [
+      '--conversion_server_url=' + cloudooo_url,
+      # BBB: We still have test suites that only accept the following 2 options.
       '--conversion_server_hostname=%s' % cloudooo_parsed.hostname,
       '--conversion_server_port=%s' % cloudooo_parsed.port,
       '--volatile_memcached_server_hostname=%s' % memcached_parsed.hostname,
