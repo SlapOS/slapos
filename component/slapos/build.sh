@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh -e
 #
 # This simple script to buildout slapos from source using 1.0 branch on 
 # /opt/slapos folder, adapt this script as you please.  
@@ -12,18 +12,19 @@ cd /opt/slapos/
 # Create buildout.cfg SlapOS bootstrap file
 echo "[buildout]
 extends = https://lab.nexedi.com/nexedi/slapos/raw/1.0/component/slapos/buildout.cfg
-" &gt; buildout.cfg
+" > buildout.cfg
 
 # Required in some distros such as Mandriva
-unset</span> PYTHONPATH
-unset</span> PYTHONDONTWRITEBYTECODE
-unset</span> CONFIG_SITE
+unset PYTHONPATH
+unset PYTHONDONTWRITEBYTECODE
+unset CONFIG_SITE
 
 #
 # Bootstrap SlapOS, using forked version of buildout.
 #
 wget https://bootstrap.pypa.io/bootstrap-buildout.py
-python -S --builout-version python -S bootstrap-buildout.py --buildout-version 2.5.2+slapos009 -f http://www.nexedi.org/static/packages/source/slapos.buildout/
+python -S bootstrap-buildout.py --buildout-version 2.5.2+slapos009 \
+  -f http://www.nexedi.org/static/packages/source/slapos.buildout/
 
 #
 # Warning:Depending on your distribution you might need to
