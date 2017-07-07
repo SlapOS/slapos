@@ -35,6 +35,32 @@ function increase_revision_number() {
   fi
 }
 
+function insert_packages_into_ebuild() {
+  # Insert packages (in form of "category/package") into RDEPEND part of ebuild.
+  # Optionally increasing version of given ebuild.
+  EBUILD=$1
+  changed=0
+  shift
+  while [ ! -z "$1" ]
+  do
+    package=$1
+    if [[ $( grep "${package}" "${EBUILD}" ) ]] ; then
+      echo "no need to change ${EBUILD} file to add ${package}..." >> "${BUILD_LOG}"
+    else
+      printf "\n\nRDEPEND=\"\${RDEPEND}\n          ${package}\"\n">> ${EBUILD}
+      changed=1
+    fi
+    shift
+  done;
+
+  if [ $changed -eq 1 ]
+  then
+    # if we inserted at least one package then increase the version to be sure
+    # it gets selected in case of more overlays with the same package
+    increase_revision_number $(dirname $EBUILD)
+  fi
+}
+
 ######################## Download of sources using the "repo" command ########################
 DL_LOG="{{ instance_log_dir }}/cros_sources_dl.log"
 BRANCH="{{ branch }}"
@@ -95,38 +121,24 @@ done
 install -m 770 "{{ scripts_dir }}/test_nayuos_image" "{{ cros_location }}/{{ branch }}/src/scripts/test_nayuos_image"
 
 ### packages management ###
-VIRTUAL_CHROMEOS_OS_DEV_EBUILD=${CHROMIUM_OVERLAY}/virtual/target-chromium-os-dev/target-chromium-os-dev-1.ebuild
-VIRTUAL_CHROMEOS_DEV_ROOTFS_EBUILD=${CHROMIUM_OVERLAY}/chromeos-base/chromeos-dev-root/chromeos-dev-root-0.0.1.ebuild
 
-# change the virtual ebuild responsible for installing all packages to add the ones
-# needed for NayuOS
-for package in {{ nayu_dev_packages }} ; do
-  echo $package
-  if [[ $( grep "${package}" "${VIRTUAL_CHROMEOS_OS_DEV_EBUILD}" ) ]] ; then
-    echo "no need to change ${VIRTUAL_CHROMEOS_OS_DEV_EBUILD} file to add ${package}..." >> "${BUILD_LOG}"
-  else
-    printf "\n\nRDEPEND=\"\${RDEPEND}\n          ${package}\"\n">> ${VIRTUAL_CHROMEOS_OS_DEV_EBUILD}
-  fi
-done
+# make virtual ebuild responsible for installing all packages dependent on NayuOS own packages
+insert_packages_into_ebuild \
+  ${CHROMIUM_OVERLAY}/virtual/target-chromium-os-dev/target-chromium-os-dev-1.ebuild \
+  {{ nayu_dev_packages }}
 
-# XXX: create a function for this
-for package in {{ nayu_dev_rootfs_packages }} ; do
-  echo $package
-  if [[ $( grep "${package}" "${VIRTUAL_CHROMEOS_DEV_ROOTFS_EBUILD}" ) ]] ; then
-    echo "no need to change ${VIRTUAL_CHROMEOS_DEV_ROOTFS_EBUILD} file to add ${package}..." >> "${BUILD_LOG}"
-  else
-    printf "\n\nRDEPEND=\"\${RDEPEND}\n          ${package}\"\n">> ${VIRTUAL_CHROMEOS_DEV_ROOTFS_EBUILD}
-  fi
-done
+# insert policies into /etc/chromium/policies/recommended with NayuOS customizations
+insert_packages_into_ebuild \
+  ${CHROMIUM_OVERLAY}/chromeos-base/chromeos-dev-root/chromeos-dev-root-0.0.1.ebuild \
+  {{ nayu_dev_rootfs_packages }}
 
-increase_revision_number ${CHROMIUM_OVERLAY}/virtual/target-chromium-os-dev
-increase_revision_number ${CHROMIUM_OVERLAY}/chromeos-base/chromeos-dev-root
 
 # do not install the Upstart init script that starts ssh daemon at boot time
 rm ${CHROMIUM_OVERLAY}/chromeos-base/chromeos-sshd-init/files/openssh-server.conf
+# strip away the src_install part because it only sets up booting scripts
 sed -i -n '/src_install/q;p' ${CHROMIUM_OVERLAY}/chromeos-base/openssh-server-init/openssh-server-init-0.0.1.ebuild
 sed -i -n '/src_install/q;p' ${CHROMIUM_OVERLAY}/chromeos-base/chromeos-sshd-init/chromeos-sshd-init-0.0.1.ebuild
-
+# increase version in case of other overlays with the same packages
 increase_revision_number ${CHROMIUM_OVERLAY}/chromeos-base/openssh-server-init/
 increase_revision_number ${CHROMIUM_OVERLAY}/chromeos-base/chromeos-sshd-init/
 
