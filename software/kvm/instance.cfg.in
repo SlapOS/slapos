@@ -68,7 +68,7 @@ extra-context =
   raw logrotate_cfg ${template-logrotate-base:rendered}
   raw template_content ${template-content:location}/${template-content:filename}
   raw template_httpd_cfg ${template-httpd:rendered}
-  raw template_monitor ${monitor2-template:rendered}
+  raw template_monitor ${instance-monitor:rendered}
 
 [dynamic-template-kvm]
 recipe = slapos.recipe.template:jinja2
@@ -101,7 +101,7 @@ context =
     raw template_content ${template-content:location}/${template-content:filename}
     raw template_kvm_controller_run ${template-kvm-controller:location}/${template-kvm-controller:filename}
     raw template_kvm_run ${template-kvm-run:location}/${template-kvm-run:filename}
-    raw template_monitor ${monitor2-template:rendered}
+    raw template_monitor ${instance-monitor:rendered}
     raw websockify_executable_location ${buildout:directory}/bin/websockify
 template-parts-destination = ${template-parts:target}
 template-replicated-destination = ${template-replicated:target}
@@ -119,7 +119,7 @@ context =
     key eggs_directory buildout:eggs-directory
     key slapparameter_dict slap-configuration:configuration
     raw curl_executable_location ${curl:location}/bin/curl
-    raw template_monitor ${monitor2-template:rendered}
+    raw template_monitor ${instance-monitor:rendered}
 template-parts-destination = ${template-parts:target}
 template-replicated-destination = ${template-replicated:target}
 import-list = file parts :template-parts-destination
@@ -157,3 +157,9 @@ context =
     raw gzip_binary ${gzip:location}/bin/gzip
 mode = 0644
 
+[instance-monitor]
+recipe = slapos.recipe.template:jinja2
+template = ${monitor2-template:output}
+rendered = ${buildout:directory}/template-monitor.cfg
+extensions = jinja2.ext.do
+mode = 0644
