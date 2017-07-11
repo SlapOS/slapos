@@ -163,11 +163,13 @@ url = https://[${ca-parameters:ipv6}]:${ca-parameters:server-https-port}
 http-url = ${ca-parameters:crl-external-url}
 depends = 
   ${nginx-certificate-request:wrapper-path}
-  ${caucase-server-promise:filename}
   ${caucase-https-server-promise:filename}
   ${ca-nginx-graceful:output}
   ${ca-certificate-renew-cron-entry:name}
   ${logrotate-ca-nginx:name}
+
+# Disabled to be re-implemented.
+#  ${caucase-server-promise:filename}
 
 [ca-certificate-renew-cron-entry]
 recipe = slapos.cookbook:cron.d
@@ -184,14 +186,17 @@ name = caucase-nginx-server
 log = ${ca-nginx-conf-parameter:access-log} ${ca-nginx-conf-parameter:access-log}
 post = {{ slapos_kill_bin }} --pidfile ${ca-nginx-conf-parameter:pid-file} -s USR1
 
-[caucase-server-promise]
-recipe = slapos.cookbook:check_url_available
-path = ${directory:promises}/${:filename}
-filename = caucase-server-listening-on-tcp
-url = http://[${ca-parameters:ipv6}]:${ca-parameters:server-port}
-dash_path = {{ dash_executable_location }}
-curl_path = {{ curl_executable_location }}
-
+# This promise is disabled as it requires user to take action so the buildout
+# will fail for way too long, and overload master. Please reimplement on a 
+# better way
+#[caucase-server-promise]
+#recipe = slapos.cookbook:check_url_available
+#path = ${directory:promises}/${:filename}
+#filename = caucase-server-listening-on-tcp
+#url = http://[${ca-parameters:ipv6}]:${ca-parameters:server-port}
+#dash_path = {{ dash_executable_location }}
+#curl_path = {{ curl_executable_location }}
+#
 [caucase-https-server-promise]
 recipe = slapos.cookbook:check_url_available
 path = ${directory:promises}/${:filename}
