@@ -45,45 +45,43 @@ class TestSlapOSFolder_getOpenTicketList(testSlapOSMixin):
       reference="TESTPERS-%s" % self.new_id,
       default_email_text="live_test_%s@example.org" % self.new_id,
       )
-  
+
   def _test_ticket(self, ticket, expected_amount):
     module = ticket.getParentValue()
     open_ticket_list = module.Folder_getOpenTicketList(title=ticket.getTitle())
-    
+
     self.assertEquals(len(open_ticket_list), expected_amount-1)
-    
+
     ticket.submit()
     ticket.immediateReindexObject()
     open_ticket_list = module.Folder_getOpenTicketList(title=ticket.getTitle())
     self.assertEquals(len(open_ticket_list), expected_amount)
     self.assertEquals(open_ticket_list[0].getUid(), ticket.getUid())
-    
-    
+
     ticket.validate()
     ticket.immediateReindexObject()
     open_ticket_list = module.Folder_getOpenTicketList(title=ticket.getTitle())
     self.assertEquals(len(open_ticket_list), expected_amount)
     self.assertEquals(open_ticket_list[0].getUid(), ticket.getUid())
-    
+
     ticket.suspend()
     ticket.immediateReindexObject()
     open_ticket_list = module.Folder_getOpenTicketList(title=ticket.getTitle())
     self.assertEquals(len(open_ticket_list), expected_amount)
     self.assertEquals(open_ticket_list[0].getUid(), ticket.getUid())
-    
+
     ticket.invalidate()
     ticket.immediateReindexObject()
     open_ticket_list = module.Folder_getOpenTicketList(title=ticket.getTitle())
     self.assertEquals(len(open_ticket_list), expected_amount)
     self.assertEquals(open_ticket_list[0].getUid(), ticket.getUid())
-  
-  
+
   def _test_upgrade_decision(self, ticket, expected_amount):
     module = ticket.getParentValue()
     open_ticket_list = module.Folder_getOpenTicketList(title=ticket.getTitle())
-    
+
     self.assertEquals(len(open_ticket_list), expected_amount-1)
-    
+
     ticket.plan()
     ticket.immediateReindexObject()
     open_ticket_list = module.Folder_getOpenTicketList(title=ticket.getTitle())
@@ -94,7 +92,7 @@ class TestSlapOSFolder_getOpenTicketList(testSlapOSMixin):
     open_ticket_list = module.Folder_getOpenTicketList(title=ticket.getTitle())
     self.assertEquals(len(open_ticket_list), expected_amount)
     self.assertEquals(open_ticket_list[0].getUid(), ticket.getUid())
-    
+
     ticket.start()
     ticket.immediateReindexObject()
     open_ticket_list = module.Folder_getOpenTicketList(title=ticket.getTitle())
@@ -105,22 +103,21 @@ class TestSlapOSFolder_getOpenTicketList(testSlapOSMixin):
     ticket.immediateReindexObject()
     open_ticket_list = module.Folder_getOpenTicketList(title=ticket.getTitle())
     self.assertEquals(len(open_ticket_list), expected_amount-1)
-    
+
     ticket.deliver()
     ticket.immediateReindexObject()
     open_ticket_list = module.Folder_getOpenTicketList(title=ticket.getTitle())
     self.assertEquals(len(open_ticket_list), expected_amount)
     self.assertEquals(open_ticket_list[0].getUid(), ticket.getUid())
-  
-  
+
   def test_support_request(self):
     def newSupportRequest():
       sr = self.portal.support_request_module.newContent(\
                         title="Test Support Request %s" % self.new_id)
-      
+
       sr.immediateReindexObject()
       return sr
-    
+
     ticket = newSupportRequest()
     self._test_ticket(ticket, 1)
 
@@ -134,10 +131,10 @@ class TestSlapOSFolder_getOpenTicketList(testSlapOSMixin):
         title="Test Reg. Req.%s" % self.new_id,
         reference="TESTREGREQ-%s" % self.new_id
         )
-      
+
       ticket.immediateReindexObject()
       return ticket
-    
+
     ticket = newRegularisationRequest()
     self._test_ticket(ticket, 1)
 
@@ -149,12 +146,10 @@ class TestSlapOSFolder_getOpenTicketList(testSlapOSMixin):
       ticket = self.portal.upgrade_decision_module.newContent(
         portal_type='Upgrade Decision',
         title="Upgrade Decision Test %s" % self.new_id,
-        reference="TESTUD-%s" % self.new_id
-        )
-      
+        reference="TESTUD-%s" % self.new_id)
+
       ticket.immediateReindexObject()
       return ticket
-    
     ticket = newUpgradeDecision()
     self._test_upgrade_decision(ticket, 1)
 
@@ -168,27 +163,27 @@ class TestSlapOSTicketEvent(testSlapOSMixin):
 
   def afterSetUp(self):
     super(TestSlapOSTicketEvent, self).afterSetUp()
-      
+
   def _test_event(self, ticket):
-    
+
     def newEvent(ticket):
       event = self.portal.event_module.newContent(
         title="Test Event %s" % self.new_id,
         portal_type="Web Message",
         follow_up_value=ticket)
-      
+
       event.immediateReindexObject()
       return event
-      
+
     last_event = ticket.Ticket_getLatestEvent()
-    
+
     self.assertEquals(last_event, None)
-    
+
     event = newEvent(ticket)
     last_event = ticket.Ticket_getLatestEvent()
-    
+
     self.assertEquals(last_event, None)
-    
+
     event.plan()
     event.immediateReindexObject()
     self.assertEquals(last_event, None)
@@ -212,24 +207,23 @@ class TestSlapOSTicketEvent(testSlapOSMixin):
     event.immediateReindexObject()
     last_event = ticket.Ticket_getLatestEvent()
     self.assertEquals(last_event, event)
-  
 
     # Now we test unwanted cases (deleted and cancelled)
     another_event = newEvent(ticket)
     last_event = ticket.Ticket_getLatestEvent()
-    
+
     self.assertEquals(last_event, event)
-    
+
     another_event.cancel()
     event.immediateReindexObject()
     last_event = ticket.Ticket_getLatestEvent()
-    self.assertEquals(last_event, event) 
+    self.assertEquals(last_event, event)
 
     another_event = newEvent(ticket)
     last_event = ticket.Ticket_getLatestEvent()
-    
+
     self.assertEquals(last_event, event)
-    
+
     another_event.delete()
     event.immediateReindexObject()
     last_event = ticket.Ticket_getLatestEvent()
@@ -274,7 +268,7 @@ class TestSlapOSEvent_getRSSTextContent(TestSlapOSTicketEvent):
 
 
     text_content = event.Event_getRSSTextContent()
-    
+
     self.assertTrue(event.getTextContent() in text_content)
     self.assertTrue("Sender: " in text_content, "Sender: not in %s" % text_content)
     self.assertTrue("Recipient: " in text_content, "Recipient: not in %s" % text_content)
@@ -282,26 +276,26 @@ class TestSlapOSEvent_getRSSTextContent(TestSlapOSTicketEvent):
 
     event.setSourceValue(source)
     text_content = event.Event_getRSSTextContent()
-    self.assertTrue("Sender: %s" % source.getTitle() in text_content, 
+    self.assertTrue("Sender: %s" % source.getTitle() in text_content,
       "Sender: %s not in %s" % (source.getTitle(), text_content))
-    
+
     event.setDestinationValue(destination)
     text_content = event.Event_getRSSTextContent()
-    self.assertTrue("Recipient: %s" % destination.getTitle() in text_content, 
+    self.assertTrue("Recipient: %s" % destination.getTitle() in text_content,
       "Recipient: %s not in %s" % (destination.getTitle(), text_content))
 
     event.setDestinationValue(destination_2)
     text_content = event.Event_getRSSTextContent()
-    self.assertTrue("Recipient: %s" % destination_2.getTitle() in text_content, 
+    self.assertTrue("Recipient: %s" % destination_2.getTitle() in text_content,
       "Recipient: %s not in %s" % (destination.getTitle(), text_content))
-    
+
     event.setDestinationValueList([destination, destination_2])
     text_content = event.Event_getRSSTextContent()
     self.assertTrue(
-      "Recipient: %s,%s" % (destination.getTitle(), 
-                            destination_2.getTitle()) in text_content, 
-      "Recipient: %s,%s not in %s" % (destination.getTitle(), 
-                                      destination_2.getTitle(), 
+      "Recipient: %s,%s" % (destination.getTitle(),
+                            destination_2.getTitle()) in text_content,
+      "Recipient: %s,%s not in %s" % (destination.getTitle(),
+                                      destination_2.getTitle(),
                                       text_content)
       )
 
@@ -310,7 +304,7 @@ class TestSlapOSEvent_getRSSTextContent(TestSlapOSTicketEvent):
                         title="Test Support Request %s" % self.new_id,
                         resource="service_module/slapos_crm_monitoring",
                         destination_decision_value=self.person)
-      
+
     ticket.immediateReindexObject()
     self._test_event(ticket)
 
@@ -329,13 +323,13 @@ class TestSlapOSTicket_getLatestEvent(TestSlapOSTicketEvent):
       reference="TESTPERS-%s" % self.new_id,
       default_email_text="live_test_%s@example.org" % self.new_id,
       )
-      
+
   def test_support_request(self):
     ticket = self.portal.support_request_module.newContent(\
                         title="Test Support Request %s" % self.new_id,
                         resource="service_module/slapos_crm_monitoring",
                         destination_decision_value=self.person)
-      
+
     ticket.immediateReindexObject()
     self._test_event(ticket)
 
@@ -346,7 +340,7 @@ class TestSlapOSTicket_getLatestEvent(TestSlapOSTicketEvent):
         title="Test Reg. Req.%s" % self.new_id,
         reference="TESTREGREQ-%s" % self.new_id
         )
-      
+
     ticket.immediateReindexObject()
     self._test_event(ticket)
 
@@ -356,7 +350,7 @@ class TestSlapOSTicket_getLatestEvent(TestSlapOSTicketEvent):
         title="Upgrade Decision Test %s" % self.new_id,
         reference="TESTUD-%s" % self.new_id
         )
-      
+
     ticket.immediateReindexObject()
     self._test_event(ticket)
 
@@ -1809,7 +1803,7 @@ class TestSlapOSHostingSubscription_stopFromRegularisationRequest(
     self.assertEquals(hosting_subscription.getSlaXml(), sla_xml)
     self.assertEquals(hosting_subscription.isRootSlave(), shared)
     self.assertEquals(hosting_subscription.getSlapState(), "stop_requested")
-    
+
   def test_stopFromRegularisationRequest_stopped_subscription(self):
     person = self.createPerson()
     hosting_subscription = self.createHostingSubscription()
@@ -1927,7 +1921,7 @@ class TestSlapOSHostingSubscription_deleteFromRegularisationRequest(
     self.assertEquals(hosting_subscription.getSlaXml(), sla_xml)
     self.assertEquals(hosting_subscription.isRootSlave(), shared)
     self.assertEquals(hosting_subscription.getSlapState(), "destroy_requested")
-    
+
   def test_deleteFromRegularisationRequest_destroyed_subscription(self):
     person = self.createPerson()
     hosting_subscription = self.createHostingSubscription()
@@ -2118,19 +2112,17 @@ class TestSlapOSRegularisationRequest_deleteHostingSubscriptionList(
     self.assertFalse(result)
 
     self.tic()
-  
-  
-  
+
 class TestSlapOSComputer_notifyWrongAllocationScope(testSlapOSMixin):
 
   def beforeTearDown(self):
     transaction.abort()
-  
+
   def afterSetUp(self):
     super(TestSlapOSComputer_notifyWrongAllocationScope, self).afterSetUp()
     self.new_id = self.generateNewId()
     self._cancelTestSupportRequestList()
-  
+
   def _cancelTestSupportRequestList(self):
     for support_request in self.portal.portal_catalog(
                         portal_type="Support Request",
@@ -2138,16 +2130,16 @@ class TestSlapOSComputer_notifyWrongAllocationScope(testSlapOSMixin):
                         simulation_state=["validated", "suspended"]):
       support_request.invalidate()
     self.tic()
-  
+
   def _makeComputer(self):
     super(TestSlapOSComputer_notifyWrongAllocationScope, self)._makeComputer()
-    
+
     # Clone computer document
     self.computer.edit(
       source_administration_value=self._makePerson()
     )
     return self.computer
-  
+
   def _makePerson(self):
     # Clone computer document
     person = self.portal.person_module.template_member\
@@ -2155,7 +2147,7 @@ class TestSlapOSComputer_notifyWrongAllocationScope(testSlapOSMixin):
     person.edit(reference='TESTPERSON-%s' % (self.generateNewId(), ))
     person.immediateReindexObject()
     return person
-  
+
   def _updatePersonAssignment(self, person, role='role/member'):
     for assignment in person.contentValues(portal_type="Assignment"):
       assignment.cancel()
@@ -2164,7 +2156,7 @@ class TestSlapOSComputer_notifyWrongAllocationScope(testSlapOSMixin):
     assignment.setStartDate(DateTime())
     assignment.open()
     return assignment
-    
+
   def _getGeneratedSupportRequest(self, computer):
     request_title = '%%We have changed allocation scope for %s' % \
                         computer.getReference()
@@ -2175,7 +2167,7 @@ class TestSlapOSComputer_notifyWrongAllocationScope(testSlapOSMixin):
           default_aggregate_uid = computer.getUid()
     )
     return support_request
-  
+
   def _makeNotificationMessage(self, reference):
     notification_message = self.portal.notification_message_module.newContent(
       portal_type="Notification Message",
@@ -2183,9 +2175,9 @@ class TestSlapOSComputer_notifyWrongAllocationScope(testSlapOSMixin):
       text_content='Test NM content<br/>%s<br/>' % reference,
       content_type='text/html',
       )
-    
+
     return notification_message.getRelativeUrl()
-  
+
 
   @simulate('ERP5Site_isSupportRequestCreationClosed', '*args, **kwargs','return 0')
   @simulate('NotificationTool_getDocumentValue',
@@ -2204,10 +2196,10 @@ class TestSlapOSComputer_notifyWrongAllocationScope(testSlapOSMixin):
     computer = self._makeComputer()
     person = computer.getSourceAdministrationValue()
     self._updatePersonAssignment(person, 'role/member')
-    
+
     self.portal.REQUEST['test_computerNotAllowedAllocationScope_OpenPublic'] = \
         self._makeNotificationMessage(computer.getReference())
-    
+
     computer.edit(allocation_scope='open/public')
     ticket = computer.Computer_checkAndUpdateAllocationScope()
     self.tic()
@@ -2222,7 +2214,7 @@ class TestSlapOSComputer_notifyWrongAllocationScope(testSlapOSMixin):
                                                   'open/personal'),
        'Test NM content\n%s\n' % computer.getReference(), person.getRelativeUrl()),
       ticket.workflow_history['edit_workflow'][-1]['comment'])
-    
+
 
   @simulate('ERP5Site_isSupportRequestCreationClosed', '*args, **kwargs','return 0')
   @simulate('NotificationTool_getDocumentValue',
@@ -2241,10 +2233,10 @@ class TestSlapOSComputer_notifyWrongAllocationScope(testSlapOSMixin):
     computer = self._makeComputer()
     person = computer.getSourceAdministrationValue()
     self._updatePersonAssignment(person, 'role/member')
-    
+
     self.portal.REQUEST['test_computerNotAllowedAllocationScope_OpenFriend'] = \
         self._makeNotificationMessage(computer.getReference())
-    
+
     friend_person = self._makePerson()
     computer.edit(allocation_scope='open/friend',
         destination_section=friend_person.getRelativeUrl())
@@ -2277,14 +2269,14 @@ class TestSlapOSComputer_notifyWrongAllocationScope(testSlapOSMixin):
     computer = self._makeComputer()
     person = computer.getSourceAdministrationValue()
     target_allocation_scope = 'close/outdated'
-    
+
     self.portal.REQUEST['test_computerToCloseAllocationScope_OpenPersonal'] = \
         self._makeNotificationMessage(computer.getReference())
-    
+
     computer.edit(allocation_scope='open/personal')
     support_request = computer.Computer_checkAndUpdatePersonalAllocationScope()
     self.tic()
-    
+
     self.assertEquals('suspended', support_request.getSimulationState())
     self.assertEquals(computer.getAllocationScope(), target_allocation_scope)
     self.assertEqual('Visited by SupportRequest_trySendNotificationMessage ' \
@@ -2298,29 +2290,27 @@ class TestSlapOSComputer_notifyWrongAllocationScope(testSlapOSMixin):
     computer = self._makeComputer()
     person = computer.getSourceAdministrationValue()
     self._updatePersonAssignment(person, 'role/member')
-    
+
     computer.edit(allocation_scope='open/personal')
     computer.Computer_checkAndUpdateAllocationScope()
     self.tic()
     self.assertEquals(computer.getAllocationScope(), 'open/personal')
-  
 
   def test_computerAllowedAllocationScope_OpenPublic(self):
     computer = self._makeComputer()
     person = computer.getSourceAdministrationValue()
     self._updatePersonAssignment(person, 'role/service_provider')
-    
+
     computer.edit(allocation_scope='open/public')
     computer.Computer_checkAndUpdateAllocationScope()
     self.tic()
     self.assertEquals(computer.getAllocationScope(), 'open/public')
-    
-  
+
   def test_computerAllowedAllocationScope_OpenFriend(self):
     computer = self._makeComputer()
     person = computer.getSourceAdministrationValue()
     self._updatePersonAssignment(person, 'role/service_provider')
-    
+
     friend_person = self._makePerson()
     computer.edit(allocation_scope='open/friend',
         destination_section=friend_person.getRelativeUrl())
@@ -2330,10 +2320,10 @@ class TestSlapOSComputer_notifyWrongAllocationScope(testSlapOSMixin):
 
 
 class TestComputer_hasContactedRecently(testSlapOSMixin):
-  
+
   def beforeTearDown(self):
     transaction.abort()
-  
+
   def afterSetUp(self):
     super(TestComputer_hasContactedRecently, self).afterSetUp()
 
@@ -2431,19 +2421,18 @@ class TestComputer_hasContactedRecently(testSlapOSMixin):
     self.assertFalse(has_contacted)
 
 class TestSlapOSPerson_isServiceProvider(testSlapOSMixin):
-  
+
   def beforeTearDown(self):
     transaction.abort()
-  
+
   def afterSetUp(self):
     super(TestSlapOSPerson_isServiceProvider, self).afterSetUp()
-    
-    
+
   def test_Person_isServiceProvider(self):
     person = self.portal.person_module.template_member\
          .Base_createCloneDocument(batch_mode=1)
     person.edit(reference='TESTPERSON-%s' % (self.generateNewId(), ))
-    
+
     self.assertFalse(person.Person_isServiceProvider())
     person.setRole("service_provider")
     self.assertTrue(person.Person_isServiceProvider())
@@ -2452,32 +2441,32 @@ class TestSlapOSPerson_isServiceProvider(testSlapOSMixin):
     person = self.portal.person_module.template_member\
          .Base_createCloneDocument(batch_mode=1)
     person.edit(reference='TESTPERSON-%s' % (self.generateNewId(), ))
-    
+
     self.assertFalse(person.Person_isServiceProvider())
     assignment = person.newContent(portal_type="Assignment",
                                    role="service_provider")
     self.assertFalse(person.Person_isServiceProvider())
     assignment.open()
     self.assertTrue(person.Person_isServiceProvider())
-  
+
 
 class TestSlapOSisSupportRequestCreationClosed(testSlapOSMixin):
 
   def beforeTearDown(self):
     transaction.abort()
-  
+
   def afterSetUp(self):
     super(TestSlapOSisSupportRequestCreationClosed, self).afterSetUp()
     self.new_id = self.generateNewId()
     self._cancelTestSupportRequestList()
-  
+
   def _cancelTestSupportRequestList(self):
     for support_request in self.portal.portal_catalog(
                         portal_type="Support Request",
                         simulation_state=["validated", "suspended"]):
       support_request.invalidate()
     self.tic()
-  
+
   def _makePerson(self):
     # Clone computer document
     person = self.portal.person_module.template_member\
@@ -2487,7 +2476,7 @@ class TestSlapOSisSupportRequestCreationClosed(testSlapOSMixin):
     return person
 
   def test_ERP5Site_isSupportRequestCreationClosed(self):
-    
+
     person = self._makePerson()
     other_person = self._makePerson()
     url = person.getRelativeUrl()
@@ -2512,18 +2501,18 @@ class TestSlapOSisSupportRequestCreationClosed(testSlapOSMixin):
     self.assertFalse(self.portal.ERP5Site_isSupportRequestCreationClosed(url))
     newSupportRequest()
     self.assertTrue(self.portal.ERP5Site_isSupportRequestCreationClosed(url))
-    
+
     self.assertTrue(self.portal.ERP5Site_isSupportRequestCreationClosed())
-    
+
     self.assertFalse(self.portal.ERP5Site_isSupportRequestCreationClosed(
                      other_person.getRelativeUrl()))
-  
+
   def test_ERP5Site_isSupportRequestCreationClosed_suspended_state(self):
     person = self._makePerson()
     url = person.getRelativeUrl()
     self.assertFalse(self.portal.ERP5Site_isSupportRequestCreationClosed(url))
     self.assertFalse(self.portal.ERP5Site_isSupportRequestCreationClosed())
-    
+
     def newSupportRequest():
       sr = self.portal.support_request_module.newContent(\
                         title="Test Support Request POIUY",
@@ -2547,7 +2536,7 @@ class TestSlapOSisSupportRequestCreationClosed(testSlapOSMixin):
     url = person.getRelativeUrl()
     self.assertFalse(self.portal.ERP5Site_isSupportRequestCreationClosed(url))
     self.assertFalse(self.portal.ERP5Site_isSupportRequestCreationClosed())
-    
+
     def newSupportRequest():
       sr = self.portal.support_request_module.newContent(\
                         title="Test Support Request POIUY",
@@ -2564,16 +2553,15 @@ class TestSlapOSisSupportRequestCreationClosed(testSlapOSMixin):
 
     self.assertFalse(self.portal.ERP5Site_isSupportRequestCreationClosed(url))
     self.assertFalse(self.portal.ERP5Site_isSupportRequestCreationClosed())
-    
+
 
 class TestSlapOSGenerateSupportRequestForSlapOS(testSlapOSMixin):
-  
-  
+
   def afterSetUp(self):
     super(TestSlapOSGenerateSupportRequestForSlapOS, self).afterSetUp()
     self.tic()
     self._cancelTestSupportRequestList()
-  
+
   def _cancelTestSupportRequestList(self):
     for support_request in self.portal.portal_catalog(
                         portal_type="Support Request",
@@ -2610,16 +2598,16 @@ class TestSlapOSGenerateSupportRequestForSlapOS(testSlapOSMixin):
     )
     hosting_subscription.requestStart(**kw)
     hosting_subscription.requestInstance(**kw)
-    
+
   def _makeComputer(self):
     super(TestSlapOSGenerateSupportRequestForSlapOS, self)._makeComputer()
-    
+
     # Clone computer document
     self.computer.edit(
       source_administration_value=self._makePerson()
     )
     return self.computer
-  
+
   def _makePerson(self):
     # Clone computer document
     person = self.portal.person_module.template_member\
@@ -2627,7 +2615,7 @@ class TestSlapOSGenerateSupportRequestForSlapOS(testSlapOSMixin):
     person.edit(reference='TESTPERSON-%s' % (self.generateNewId(), ))
     person.immediateReindexObject()
     return person
-    
+
   def _makeSoftwareInstallation(self):
     self._makeComputer()
     software_installation = self.portal\
@@ -2643,7 +2631,7 @@ class TestSlapOSGenerateSupportRequestForSlapOS(testSlapOSMixin):
     software_installation.requestStart()
 
     return software_installation
-  
+
   def test_computer_Base_generateSupportRequestForSlapOS(self):
     self._makeComputer()
     title = "Test Support Request %s" % self.computer.getReference()
@@ -2655,7 +2643,7 @@ class TestSlapOSGenerateSupportRequestForSlapOS(testSlapOSMixin):
     self.assertNotEqual(support_request, None)
 
     self.assertEqual(support_request.getSimulationState(), "validated")
-    self.assertEqual(support_request.getRelativeUrl(), 
+    self.assertEqual(support_request.getRelativeUrl(),
       self.portal.REQUEST.get("support_request_in_progress", None))
 
     # The support request is added to computer owner.
@@ -2668,9 +2656,9 @@ class TestSlapOSGenerateSupportRequestForSlapOS(testSlapOSMixin):
 
   def test_software_instance_Base_generateSupportRequestForSlapOS(self):
     hosting_subscription = self._makeHostingSubscription()
-    self._makeSoftwareInstance(hosting_subscription, 
+    self._makeSoftwareInstance(hosting_subscription,
                                self.generateNewSoftwareReleaseUrl())
-                               
+
     instance = hosting_subscription.getPredecessorValue()
     title = "Test Support Request %s" % instance.getReference()
     support_request = instance.Base_generateSupportRequestForSlapOS(
@@ -2679,9 +2667,9 @@ class TestSlapOSGenerateSupportRequestForSlapOS(testSlapOSMixin):
     self.tic()
 
     self.assertNotEqual(support_request, None)
-    
+
     self.assertEqual(support_request.getSimulationState(), "validated")
-    self.assertEqual(support_request.getRelativeUrl(), 
+    self.assertEqual(support_request.getRelativeUrl(),
       self.portal.REQUEST.get("support_request_in_progress", None))
 
     # The support request is added to computer owner.
@@ -2704,7 +2692,7 @@ class TestSlapOSGenerateSupportRequestForSlapOS(testSlapOSMixin):
     self.assertNotEqual(support_request, None)
 
     self.assertEqual(support_request.getSimulationState(), "validated")
-    self.assertEqual(support_request.getRelativeUrl(), 
+    self.assertEqual(support_request.getRelativeUrl(),
       self.portal.REQUEST.get("support_request_in_progress", None))
 
     # The support request is added to computer owner.
@@ -2728,7 +2716,7 @@ class TestSlapOSGenerateSupportRequestForSlapOS(testSlapOSMixin):
     self.assertNotEqual(support_request, None)
 
     self.assertEqual(support_request.getSimulationState(), "validated")
-    self.assertEqual(support_request.getRelativeUrl(), 
+    self.assertEqual(support_request.getRelativeUrl(),
       self.portal.REQUEST.get("support_request_in_progress", None))
 
     # The support request is added to computer owner.
@@ -2753,7 +2741,7 @@ class TestSlapOSGenerateSupportRequestForSlapOS(testSlapOSMixin):
     same_support_request = self.computer.Base_generateSupportRequestForSlapOS(
       title, title, self.computer.getRelativeUrl()
     )
-    
+
     self.assertEqual(support_request, same_support_request)
 
 
@@ -2763,7 +2751,7 @@ class TestSlapOSGenerateSupportRequestForSlapOS(testSlapOSMixin):
     support_request = self.computer.Base_generateSupportRequestForSlapOS(
       title, title, self.computer.getRelativeUrl()
     )
-    
+
     support_request.suspend()
     self.tic()
     self.portal.REQUEST.set("support_request_in_progress", None)
@@ -2771,7 +2759,7 @@ class TestSlapOSGenerateSupportRequestForSlapOS(testSlapOSMixin):
     same_support_request = self.computer.Base_generateSupportRequestForSlapOS(
       title, title, self.computer.getRelativeUrl()
     )
-    
+
     self.assertEqual(support_request, same_support_request)
 
   def test_Base_generateSupportRequestForSlapOS_recreate_if_closed(self):
@@ -2783,7 +2771,7 @@ class TestSlapOSGenerateSupportRequestForSlapOS(testSlapOSMixin):
 
     support_request.invalidate()
     self.tic()
-    
+
     self.portal.REQUEST.set("support_request_in_progress", None)
 
     support_request = self.computer.Base_generateSupportRequestForSlapOS(
@@ -2802,9 +2790,9 @@ class TestSlapOSGenerateSupportRequestForSlapOS(testSlapOSMixin):
     same_support_request = self.computer.Base_generateSupportRequestForSlapOS(
       title, title, self.computer.getRelativeUrl()
     )
-    
+
     self.assertEqual(support_request, same_support_request)
-    
+
   def test_Base_generateSupportRequestForSlapOS_inprogress(self):
     self._makeComputer()
     title = "Test Support Request %s" % self.computer.getRelativeUrl()
@@ -2819,19 +2807,18 @@ class TestSlapOSGenerateSupportRequestForSlapOS(testSlapOSMixin):
       title, title, self.computer.getRelativeUrl())
 
     self.assertEqual(support_request.getRelativeUrl(), in_progress)
-    
 
 class TestSlapOSComputer_CheckState(testSlapOSMixin):
 
   def beforeTearDown(self):
     self._cancelTestSupportRequestList()
     transaction.abort()
-  
+
   def afterSetUp(self):
     super(TestSlapOSComputer_CheckState, self).afterSetUp()
     self.new_id = self.generateNewId()
     self._cancelTestSupportRequestList()
-    
+
   def _makeSupportRequest(self):
     support_request = self.portal.\
       support_request_module.\
@@ -2846,7 +2833,7 @@ class TestSlapOSComputer_CheckState(testSlapOSMixin):
                         simulation_state=["validated", "suspended"]):
       support_request.invalidate()
     self.tic()
-  
+
   def _makeNotificationMessage(self, reference):
     notification_message = self.portal.notification_message_module.newContent(
       portal_type="Notification Message",
@@ -2854,9 +2841,9 @@ class TestSlapOSComputer_CheckState(testSlapOSMixin):
       text_content='Test NM content<br/>%s<br/>' % reference,
       content_type='text/html',
       )
-    
+
     return notification_message.getRelativeUrl()
-  
+
   def _getGeneratedSupportRequest(self, computer_uid, request_title):
     support_request = self.portal.portal_catalog.getResultValue(
           portal_type = 'Support Request',
@@ -2865,16 +2852,16 @@ class TestSlapOSComputer_CheckState(testSlapOSMixin):
           default_aggregate_uid = computer_uid
     )
     return support_request
-  
+
   def _makeComputer(self):
     super(TestSlapOSComputer_CheckState, self)._makeComputer()
-    
+
     # Clone computer document
     self.computer.edit(
       source_administration_value=self._makePerson()
     )
     return self.computer
-  
+
   def _makePerson(self):
     # Clone computer document
     person = self.portal.person_module.template_member\
@@ -2914,7 +2901,7 @@ class TestSlapOSComputer_CheckState(testSlapOSMixin):
 
     self._simulateBase_generateSupportRequestForSlapOS()
     support_request = self._makeSupportRequest()
-    self.portal.REQUEST.set('_simulateBase_generateSupportRequestForSlapOS', 
+    self.portal.REQUEST.set('_simulateBase_generateSupportRequestForSlapOS',
                                support_request)
 
     try:
@@ -2932,17 +2919,17 @@ class TestSlapOSComputer_CheckState(testSlapOSMixin):
 
     self._simulateBase_generateSupportRequestForSlapOS()
     support_request = self._makeSupportRequest()
-    self.portal.REQUEST.set('_simulateBase_generateSupportRequestForSlapOS', 
+    self.portal.REQUEST.set('_simulateBase_generateSupportRequestForSlapOS',
                                support_request)
 
     try:
       computer_support_request = computer.Computer_checkState()
     finally:
       self._dropBase_generateSupportRequestForSlapOS()
-    
+
     self.assertEqual(support_request,
       computer_support_request)
-  
+
   @simulate('ERP5Site_isSupportRequestCreationClosed', '*args, **kwargs','return 0')
   @simulate('NotificationTool_getDocumentValue',
             'reference=None',
@@ -2967,13 +2954,13 @@ class TestSlapOSComputer_CheckState(testSlapOSMixin):
     memcached_dict[computer.getReference()] = json.dumps(
         {"created_at":"%s" % (DateTime() - 0.1)}
     )
-    
+
     self.portal.REQUEST['test_Computer_checkState_notify'] = \
         self._makeNotificationMessage(computer.getReference())
-    
+
     computer.Computer_checkState()
     self.tic()
-    
+
     ticket_title = "[MONITORING] Lost contact with computer %s" % computer.getReference()
     ticket = self._getGeneratedSupportRequest(computer.getUid(), ticket_title)
     self.assertNotEqual(ticket, None)
@@ -2983,8 +2970,8 @@ class TestSlapOSComputer_CheckState(testSlapOSMixin):
       'Test NM content\n%s\n' % computer.getReference(),
       person.getRelativeUrl()),
       ticket.workflow_history['edit_workflow'][-1]['comment'])
-  
-  
+
+
   @simulate('ERP5Site_isSupportRequestCreationClosed', '*args, **kwargs','return 0')
   @simulate('NotificationTool_getDocumentValue',
             'reference=None',
@@ -3000,13 +2987,13 @@ class TestSlapOSComputer_CheckState(testSlapOSMixin):
   def test_Computer_checkState_empty_cache_notify(self):
     computer = self._makeComputer()
     person = computer.getSourceAdministrationValue()
-    
+
     self.portal.REQUEST['test_Computer_checkState_empty_cache_notify'] = \
         self._makeNotificationMessage(computer.getReference())
-    
+
     computer.Computer_checkState()
     self.tic()
-    
+
     ticket_title = "[MONITORING] No information about %s" % computer.getReference()
     ticket = self._getGeneratedSupportRequest(computer.getUid(), ticket_title)
     self.assertNotEqual(ticket, None)
@@ -3027,9 +3014,9 @@ class TestSlapOSHostingSubscription_createSupportRequestEvent(testSlapOSMixin):
       text_content='Test NM content<br/>%s<br/>' % reference,
       content_type='text/html',
       )
-    
+
     return notification_message.getRelativeUrl()
-  
+
   def _makeHostingSubscription(self):
     person = self.portal.person_module.template_member\
          .Base_createCloneDocument(batch_mode=1)
@@ -3045,7 +3032,7 @@ class TestSlapOSHostingSubscription_createSupportRequestEvent(testSlapOSMixin):
     )
 
     return hosting_subscription
-    
+
   def _getGeneratedSupportRequest(self, hosting_suscription_uid):
     support_request = self.portal.portal_catalog.getResultValue(
           portal_type = 'Support Request',
@@ -3074,7 +3061,7 @@ class TestSlapOSHostingSubscription_createSupportRequestEvent(testSlapOSMixin):
 
     hosting_subscription.HostingSubscription_createSupportRequestEvent(
       hosting_subscription, "test-slapos-crm-check.notification")
-    
+
     self.tic()
     ticket_title = "Hosting Subscription %s is failing." % hosting_subscription.getTitle()
     ticket = self._getGeneratedSupportRequest(
@@ -3092,27 +3079,20 @@ class TestSlapOSHostingSubscription_createSupportRequestEvent(testSlapOSMixin):
     self.tic()
     self.assertEquals(None, self._getGeneratedSupportRequest(
       hosting_subscription.getUid()))
-    
+
     hosting_subscription.HostingSubscription_createSupportRequestEvent(
       hosting_subscription, "test-slapos-crm-check.notification")
     self.tic()
-    
-    previous_ticket = ticket
+
     ticket = self._getGeneratedSupportRequest(
       hosting_subscription.getUid())
-    self.assertEqual(ticket, previous_ticket)
-    self.assertEqual(ticket.getSimulationState(), "validated")
-    self.assertEqual('Visited by SupportRequest_trySendNotificationMessage ' \
-      '%s %s %s' % ( \
-      ticket_title.replace('', ''),
-      'Test NM content\n%s\n' % hosting_subscription.getReference(),
-      person.getRelativeUrl()),
-      ticket.workflow_history['edit_workflow'][-1]['comment'])
-      
+    # Do not reopen the ticket if it is suspended
+    self.assertEqual(None, ticket)
+
   @simulate('ERP5Site_isSupportRequestCreationClosed', '*args, **kwargs','return 1')
   def testHostingSubscription_createSupportRequestEvent_closed(self):
     hosting_subscription = self._makeHostingSubscription()
-    self.assertEquals(None, 
+    self.assertEquals(None,
       hosting_subscription.HostingSubscription_createSupportRequestEvent(
          hosting_subscription, "test-slapos-crm-check.notification"))
 
@@ -3125,11 +3105,11 @@ class TestSlapOSHostingSubscription_createSupportRequestEvent(testSlapOSMixin):
          hosting_subscription, "test-slapos-crm-check.notification"))
 
 class TestSlapOSHasError(testSlapOSMixin):
-  
+
   def _makeSoftwareRelease(self, software_release_url=None):
     software_release = self.portal.software_release_module\
       .template_software_release.Base_createCloneDocument(batch_mode=1)
-      
+
     new_id = self.generateNewId()
     software_release.edit(
       url_string=software_release_url or self.generateNewSoftwareReleaseUrl(),
@@ -3139,7 +3119,7 @@ class TestSlapOSHasError(testSlapOSMixin):
     software_release.release()
 
     return software_release
-    
+
   def _makeSoftwareInstallation(self, software_release_url):
     software_installation = self.portal\
        .software_installation_module.template_software_installation\
@@ -3207,7 +3187,7 @@ class TestSlapOSHasError(testSlapOSMixin):
 
     self._makeComputer()
     self._makeComputerPartitionList()
-    
+
     memcached_dict = self.portal.portal_memcached.getMemcachedDict(
       key_prefix='slap_tool',
       plugin_path='portal_memcached/default_memcached_plugin')
@@ -3216,17 +3196,17 @@ class TestSlapOSHasError(testSlapOSMixin):
     memcached_dict[instance.getReference()] = json.dumps(
         {"created_at":"%s" % error_date, "text": "#error "}
     )
-    
+
     self.assertEquals(instance.SoftwareInstance_hasReportedError(), None)
 
     instance.setAggregateValue(self.computer.partition1)
-    
-    self.assertEquals(instance.SoftwareInstance_hasReportedError(), error_date)
+
+    self.assertEquals(str(instance.SoftwareInstance_hasReportedError()), '#error ')
 
     memcached_dict[instance.getReference()] = json.dumps(
         {"created_at":"%s" % error_date, "text": "#access "}
     )
-    
+
     self.assertEquals(instance.SoftwareInstance_hasReportedError(), None)
 
   def test_SoftwareInstallation_hasReportedError(self):
@@ -3248,11 +3228,11 @@ class TestSlapOSHasError(testSlapOSMixin):
     )
 
     self.assertEquals(installation.SoftwareInstallation_hasReportedError(), error_date)
-    
+
     memcached_dict[installation.getReference()] = json.dumps(
         {"created_at":"%s" % error_date, "text": "#building "}
      )
-    
+
     self.assertEquals(installation.SoftwareInstallation_hasReportedError(), None)
 
   @simulate('ERP5Site_isSupportRequestCreationClosed', '','return 0')
@@ -3271,10 +3251,10 @@ class TestSlapOSHasError(testSlapOSMixin):
     Base.getCreationDate = getCreationDate
     try:
       hosting_subscription = self._makeHostingSubscription()
-      
+
       self.assertEquals(hosting_subscription.getCreationDate(), date - 2)
 
-      self._makeSoftwareInstance(hosting_subscription, 
+      self._makeSoftwareInstance(hosting_subscription,
           self.generateNewSoftwareReleaseUrl())
       instance = hosting_subscription.getPredecessorValue()
 
@@ -3295,17 +3275,17 @@ class TestSlapOSHasError(testSlapOSMixin):
 
       self.assertEquals(
         'Visited by HostingSubscription_createSupportRequestEvent %s %s' % \
-        (instance.getUid(), 
+        (instance.getUid(),
          "slapos-crm-hosting-subscription-instance-state.notification"),
         hosting_subscription.HostingSubscription_checkSoftwareInstanceState())
-     
+
       memcached_dict[instance.getReference()] = json.dumps(
           {"created_at":"%s" % error_date, "text": "#access "}
       )
 
       self.assertEquals(None,
         hosting_subscription.HostingSubscription_checkSoftwareInstanceState())
-     
+
 
     finally:
       Base.getCreationDate = original_get_creation
@@ -3330,10 +3310,10 @@ class TestSlapOSHasError(testSlapOSMixin):
     Base.getCreationDate = getCreationDate
     try:
       hosting_subscription = self._makeHostingSubscription()
-      
+
       self.assertEquals(hosting_subscription.getCreationDate(), date - 2)
 
-      self._makeSoftwareInstance(hosting_subscription, 
+      self._makeSoftwareInstance(hosting_subscription,
           self.generateNewSoftwareReleaseUrl())
       instance = hosting_subscription.getPredecessorValue()
 
@@ -3342,7 +3322,7 @@ class TestSlapOSHasError(testSlapOSMixin):
       self._makeComputer()
       self._makeComputerPartitionList()
       instance.setAggregateValue(self.computer.partition1)
-      
+
       kw = dict(
         software_release=hosting_subscription.getUrlString(),
         software_type=self.generateNewSoftwareType(),
@@ -3354,7 +3334,7 @@ class TestSlapOSHasError(testSlapOSMixin):
       )
       instance.requestInstance(**kw)
       self.tic()
-      
+
       memcached_dict = self.portal.portal_memcached.getMemcachedDict(
         key_prefix='slap_tool',
         plugin_path='portal_memcached/default_memcached_plugin')
@@ -3365,7 +3345,7 @@ class TestSlapOSHasError(testSlapOSMixin):
 
       self.assertEquals(
         'Visited by HostingSubscription_createSupportRequestEvent %s %s' % \
-        (instance.getPredecessor(portal_type="Software Instance"), 
+        (instance.getPredecessor(portal_type="Software Instance"),
          "slapos-crm-hosting-subscription-instance-allocation.notification"),
         hosting_subscription.HostingSubscription_checkSoftwareInstanceState())
 
@@ -3386,12 +3366,12 @@ class TestSlapOSHasError(testSlapOSMixin):
   @simulate('ERP5Site_isSupportRequestCreationClosed', '','return 0')
   def testHostingSubscription_checkSoftwareInstanceState_too_early(self):
     hosting_subscription = self._makeHostingSubscription()
-      
-    self._makeSoftwareInstance(hosting_subscription, 
+
+    self._makeSoftwareInstance(hosting_subscription,
         self.generateNewSoftwareReleaseUrl())
     instance = hosting_subscription.getPredecessorValue()
 
-    
+
     self._makeComputer()
     self._makeComputerPartitionList()
     instance.setAggregateValue(self.computer.partition1)
@@ -3413,13 +3393,13 @@ class TestSupportRequestTrySendNotificationMessage(testSlapOSMixin):
 
   def _makeComputer(self):
     super(TestSupportRequestTrySendNotificationMessage, self)._makeComputer()
-    
+
     # Clone computer document
     self.computer.edit(
       source_administration_value=self._makePerson()
     )
     return self.computer
-  
+
   def _makePerson(self):
     # Clone computer document
     person = self.portal.person_module.template_member\
@@ -3433,28 +3413,28 @@ class TestSupportRequestTrySendNotificationMessage(testSlapOSMixin):
     person = self.computer.getSourceAdministrationValue()
     title = "Test Support Request %s" % self.computer.getReference()
     text_content='Test NM content<br/>%s<br/>' % self.computer.getReference()
-    
+
     support_request = self.portal.support_request_module.newContent(\
             title=title, description=title,
             destination_decision=self.computer.getSourceAdministration(),
             aggregate_value=self.computer.getRelativeUrl())
     support_request.validate()
     self.tic()
-    
+
     first_event = support_request.SupportRequest_trySendNotificationMessage(
       message_title=title, message=text_content,
       destination_relative_url=person.getRelativeUrl()
     )
     self.assertNotEqual(first_event, None)
-    
+
     self.assertEquals(
-      support_request.getFollowUpRelatedList(), 
+      support_request.getFollowUpRelatedList(),
       [first_event.getRelativeUrl()])
-    
+
     self.assertEquals(title, first_event.getTitle())
     self.assertEquals(text_content, first_event.getTextContent())
     self.assertNotEquals(None, first_event.getStartDate())
-    self.assertEquals("service_module/slapos_crm_information", 
+    self.assertEquals("service_module/slapos_crm_information",
                       first_event.getResource())
     self.assertEquals(first_event.getDestination(), person.getRelativeUrl())
     self.assertEquals(first_event.getFollowUp(), support_request.getRelativeUrl())
@@ -3468,45 +3448,45 @@ class TestSupportRequestTrySendNotificationMessage(testSlapOSMixin):
     self.assertEquals(title, event.getTitle())
     self.assertEquals(text_content, event.getTextContent())
     self.assertNotEquals(None, event.getStartDate())
-    self.assertEquals("service_module/slapos_crm_information", 
+    self.assertEquals("service_module/slapos_crm_information",
                       event.getResource())
     self.assertEquals(event.getDestination(), person.getRelativeUrl())
-    
+
     title += "__zz"
     event = support_request.SupportRequest_trySendNotificationMessage(
       message_title=title, message=text_content,
       destination_relative_url=person.getRelativeUrl(),
     )
-    
+
     self.assertEqual(event.getTitle(), title)
     self.assertEquals(text_content, event.getTextContent())
     self.assertNotEquals(None, event.getStartDate())
-    self.assertEquals("service_module/slapos_crm_information", 
+    self.assertEquals("service_module/slapos_crm_information",
                       event.getResource())
     self.assertEquals(event.getDestination(), person.getRelativeUrl())
-    
+
     another_support_request = self.portal.support_request_module.newContent(\
             title=title, description=title,
             destination_decision=self.computer.getSourceAdministration(),
             aggregate_value=self.computer.getRelativeUrl())
     another_support_request.validate()
     self.tic()
-    
+
     another_first_event = \
       another_support_request.SupportRequest_trySendNotificationMessage(
         message_title=title, message=text_content,
         destination_relative_url=person.getRelativeUrl())
-        
+
     self.assertNotEqual(another_first_event, None)
-    
+
     self.assertEquals(
-      another_support_request.getFollowUpRelatedList(), 
+      another_support_request.getFollowUpRelatedList(),
       [another_first_event.getRelativeUrl()])
-    
+
     self.assertEquals(title, another_first_event.getTitle())
     self.assertEquals(text_content, another_first_event.getTextContent())
     self.assertNotEquals(None, another_first_event.getStartDate())
-    self.assertEquals("service_module/slapos_crm_information", 
+    self.assertEquals("service_module/slapos_crm_information",
                       another_first_event.getResource())
     self.assertEquals(another_first_event.getDestination(), person.getRelativeUrl())
     self.assertEquals(another_first_event.getFollowUp(),
@@ -3517,7 +3497,7 @@ class TestSupportRequestUpdateMonitoringState(testSlapOSMixin):
 
   def _makeComputer(self):
     super(TestSupportRequestUpdateMonitoringState, self)._makeComputer()
-    
+
     # Clone computer document
     self.computer.edit(
       source_administration_value=self._makePerson()
@@ -3571,33 +3551,33 @@ class TestSupportRequestUpdateMonitoringState(testSlapOSMixin):
     '%s" % (context.getRelativeUrl(),)')
   def testSupportRequest_updateMonitoringState(self):
     support_request = self._makeSupportRequest()
-    self.assertEquals(None, 
+    self.assertEquals(None,
       support_request.SupportRequest_updateMonitoringState())
     support_request.validate()
-    self.assertEquals(None, 
+    self.assertEquals(None,
       support_request.SupportRequest_updateMonitoringState())
     # Now try to go to set a computer...
     support_request.setAggregateValue(self._makeComputer())
     self.assertEquals(
       "Visited by SupportRequest_updateMonitoringComputerState %s" % \
-        support_request.getRelativeUrl(), 
+        support_request.getRelativeUrl(),
       support_request.SupportRequest_updateMonitoringState())
-    
+
     hs = self._makeHostingSubscription()
     support_request.setAggregateValue(hs)
     self.assertEquals(
       "Visited by SupportRequest_updateMonitoringHostingSubscriptionState %s" %\
-        support_request.getRelativeUrl(), 
+        support_request.getRelativeUrl(),
       support_request.SupportRequest_updateMonitoringState())
-      
+
     hs.getSlapState = getFakeSlapState
     self.assertEquals(
       "Visited by SupportRequest_updateMonitoringDestroyRequestedState %s" %\
-        support_request.getRelativeUrl(), 
+        support_request.getRelativeUrl(),
       support_request.SupportRequest_updateMonitoringState())
-    
+
     support_request.invalidate()
-    self.assertEquals(None, 
+    self.assertEquals(None,
       support_request.SupportRequest_updateMonitoringState())
 
   @simulate('SupportRequest_trySendNotificationMessage',
@@ -3606,15 +3586,15 @@ class TestSupportRequestUpdateMonitoringState(testSlapOSMixin):
   '%s %s %s" % (message_title, message, source_relative_url)')
   def testSupportRequest_updateMonitoringComputerState(self):
     support_request = self._makeSupportRequest()
-    self.assertEquals(None, 
+    self.assertEquals(None,
       support_request.SupportRequest_updateMonitoringComputerState())
     support_request.validate()
-    self.assertEquals(None, 
+    self.assertEquals(None,
       support_request.SupportRequest_updateMonitoringComputerState())
     support_request.setAggregateValue(self._makeHostingSubscription())
-    self.assertEquals(None, 
+    self.assertEquals(None,
       support_request.SupportRequest_updateMonitoringComputerState())
-    
+
     support_request.setAggregateValue(self._makeComputer())
     memcached_dict = self.portal.portal_memcached.getMemcachedDict(
         key_prefix='slap_tool',
@@ -3624,12 +3604,12 @@ class TestSupportRequestUpdateMonitoringState(testSlapOSMixin):
       "created_at": DateTime().strftime("%Y/%m/%d %H:%M")
     })
     # W/o destination decision the ticket is not notified.
-    self.assertEquals(None, 
+    self.assertEquals(None,
       support_request.SupportRequest_updateMonitoringComputerState())
-    
+
     support_request.setDestinationDecisionValue(self._makePerson())
     expected_text = """Visited by SupportRequest_trySendNotificationMessage Computer is contacting again  Suspending this ticket as the computer contacted again.  %s""" % support_request.getDestinationDecision()
-    self.assertEquals(expected_text, 
+    self.assertEquals(expected_text,
       support_request.SupportRequest_updateMonitoringComputerState())
     self.assertEquals(support_request.getSimulationState(), "suspended")
 
@@ -3639,29 +3619,29 @@ class TestSupportRequestUpdateMonitoringState(testSlapOSMixin):
   '%s %s %s" % (message_title, message, source_relative_url)')
   def testSupportRequest_updateMonitoringHostingSubscriptionState(self):
     support_request = self._makeSupportRequest()
-    self.assertEquals(None, 
+    self.assertEquals(None,
       support_request.SupportRequest_updateMonitoringHostingSubscriptionState())
     support_request.validate()
-    self.assertEquals(None, 
+    self.assertEquals(None,
       support_request.SupportRequest_updateMonitoringHostingSubscriptionState())
-    
+
     support_request.setAggregateValue(self._makeComputer())
-    self.assertEquals(None, 
+    self.assertEquals(None,
       support_request.SupportRequest_updateMonitoringHostingSubscriptionState())
-    
+
     support_request.setAggregateValue(self._makeHostingSubscription())
-    self.assertEquals(None, 
+    self.assertEquals(None,
       support_request.SupportRequest_updateMonitoringHostingSubscriptionState())
-      
+
     support_request.setDestinationDecisionValue(self._makePerson())
-    
+
     self.assertEquals("Visited by SupportRequest_trySendNotificationMessage Suspending this ticket as the problem is not present anymore  Suspending this ticket as the problem is not present anymore.  %s" % \
-    support_request.getDestinationDecision(), 
+    support_request.getDestinationDecision(),
       support_request.SupportRequest_updateMonitoringHostingSubscriptionState())
-    
-    self.assertEquals("suspended", 
+
+    self.assertEquals("suspended",
       support_request.getSimulationState())
-    
+
 
   @simulate('SupportRequest_trySendNotificationMessage',
             "message_title, message, source_relative_url",
@@ -3669,16 +3649,16 @@ class TestSupportRequestUpdateMonitoringState(testSlapOSMixin):
   '%s %s %s" % (message_title, message, source_relative_url)')
   def testSupportRequest_updateMonitoringDestroyRequestedState(self):
     support_request = self._makeSupportRequest()
-    self.assertEquals(None, 
+    self.assertEquals(None,
       support_request.SupportRequest_updateMonitoringDestroyRequestedState())
     support_request.validate()
-    self.assertEquals(None, 
+    self.assertEquals(None,
       support_request.SupportRequest_updateMonitoringDestroyRequestedState())
-    
+
     support_request.setAggregateValue(self._makeComputer())
-    self.assertEquals(None, 
+    self.assertEquals(None,
       support_request.SupportRequest_updateMonitoringDestroyRequestedState())
-    
+
     hs = self._makeHostingSubscription()
     support_request.setAggregateValue(hs)
 
@@ -3688,10 +3668,10 @@ class TestSupportRequestUpdateMonitoringState(testSlapOSMixin):
     support_request.setDestinationDecisionValue(self._makePerson())
     expected_text = """Visited by SupportRequest_trySendNotificationMessage Hosting Subscription was destroyed was destroyed by the user  Closing this ticket as the Hosting Subscription was destroyed by the user. 
    %s""" % support_request.getDestinationDecision()
-    self.assertEquals(expected_text, 
+    self.assertEquals(expected_text,
       support_request.SupportRequest_updateMonitoringDestroyRequestedState())
-    
-    self.assertEquals("invalidated", 
+
+    self.assertEquals("invalidated",
       support_request.getSimulationState())
 
 

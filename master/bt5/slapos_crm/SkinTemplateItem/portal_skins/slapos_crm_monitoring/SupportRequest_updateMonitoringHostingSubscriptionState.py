@@ -1,7 +1,4 @@
 from DateTime import DateTime
-import json
-
-from Products.ERP5Type.DateUtils import addToDate
 
 portal = context.getPortalObject()
 document = context.getAggregateValue()
@@ -10,6 +7,7 @@ if document is None:
   return
 
 has_error = False
+software_instance = None
 
 # Check if at least one software Instance is Allocated
 for instance in document.getSpecialiseRelatedValueList(
@@ -20,6 +18,7 @@ for instance in document.getSpecialiseRelatedValueList(
   if instance.getAggregateValue() is not None:
     if instance.getPortalType() == "Software Instance" and \
         instance.SoftwareInstance_hasReportedError():
+      software_instance = instance
       has_error = True
       break
   else:
@@ -29,17 +28,18 @@ for instance in document.getSpecialiseRelatedValueList(
 if not has_error:
   person = context.getDestinationDecision(portal_type="Person")
   if not person:
-    return 
+    return
 
-  message = instance.SoftwareInstance_hasReportedError(include_message=True)
-  if message in ["Not possible to find the last message", "#access instance available"]:
-    # Do not change state in case of transitory states.
-    return message
+  if software_instance is not None:
+    message = software_instance.SoftwareInstance_hasReportedError(include_message=True)
+    if message in ["Not possible to find the last message", "#access instance available"]:
+      # Do not change state in case of transitory states.
+      return
 
   if context.getSimulationState() == "validated":
     context.suspend()
   else:
-    return 
+    return
 
   # Send Notification message
   message = """ Suspending this ticket as the problem is not present anymore. """
@@ -53,6 +53,6 @@ if not has_error:
 
     message = notification_message.asText(
               substitution_method_parameter_dict={'mapping_dict':mapping_dict})
-  
+
   return context.SupportRequest_trySendNotificationMessage(
               "Suspending this ticket as the problem is not present anymore", message, person)
