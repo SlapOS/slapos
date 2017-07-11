@@ -2,5 +2,4 @@ test.erp5.testSlapOSCloudAlarm
 test.erp5.testSlapOSCloudWorkflow
 test.erp5.testSlapOSCloudSecurityGroup
 test.erp5.testSlapOSCloudConstraint
-test.erp5.testSlapOSCloudDocument
 test.erp5.testSlapOSCloudShadow
