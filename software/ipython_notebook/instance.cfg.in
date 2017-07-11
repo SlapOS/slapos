@@ -78,9 +78,7 @@ parameters-extra = true
 environment =
   IPYTHONDIR=${directory:ipython_dir}
   JUPYTER_CONFIG_DIR=${directory:ipython_dir}
-  LC_ALL=C.UTF-8
   LANG=C.UTF-8
-  LANGUAGE=C.UTF-8
 
 [ipython-notebook-config]
 <= dynamic-jinja2-template-base
