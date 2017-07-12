@@ -18,10 +18,6 @@ parts +=
   sshd-pbs-authorized-key
   notifier
 
-
-extends =
-  $${instance-monitor:rendered}
-
 #----------------
 #--
 #-- Creation of all needed directories.
@@ -278,10 +274,3 @@ recipe = slapos.cookbook:publish
 ssh-public-key = $${sshkeys-sshd:public-key-value}
 ssh-url = ssh://$${user-info:pw-name}@[$${sshd-raw-server:host}]:$${sshd-port:port}/$${rdiff-backup-server:path}
 ip = $${slap-network-information:global-ipv6}
-
-[instance-monitor]
-recipe = slapos.recipe.template:jinja2
-template = ${monitor2-template:output}
-rendered = $${buildout:directory}/template-monitor.cfg
-extensions = jinja2.ext.do
-mode = 0644

@@ -21,7 +21,7 @@ parts =
   monitor-base
   monitor-check-resilient-feed-file
 
-extends = $${instance-monitor:rendered}
+extends = {{ template_monitor }}
 eggs-directory = ${buildout:eggs-directory}
 develop-eggs-directory = ${buildout:develop-eggs-directory}
 offline = true
