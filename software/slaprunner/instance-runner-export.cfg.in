@@ -1,5 +1,6 @@
 [buildout]
 extends = {{ template_runner_path }}
+          {{ template_monitor }}
           {{ pbsready_export_template_path }}
 
 parts +=
