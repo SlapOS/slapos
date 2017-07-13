@@ -38,6 +38,7 @@ config-{{ k }} = {{ dumps(v) }}
 {% for k, v in key_config.iteritems() -%}
 config-{{ k }} = {{ '${' ~ v ~ '}' }}
 {% endfor -%}
+config-name = {{ name }}
 {% endmacro -%}
 
 {{ request('memcached-persistent', 'kumofs', 'kumofs', {'tcpv4-port': 2000}, {'url': True, 'monitor-base-url': False}, key_config={'monitor-passwd': 'monitor-htpasswd:passwd'}) }}
@@ -208,6 +209,7 @@ config-longrequest-logger-interval = {{ dumps(zope_parameter_dict.get('longreque
 config-longrequest-logger-timeout = {{ dumps(zope_parameter_dict.get('longrequest-logger-timeout', 1)) }}
 config-port-base = {{ dumps(zope_parameter_dict.get('port-base', 2200)) }}
 config-webdav = {{ dumps(zope_parameter_dict.get('webdav', False)) }}
+config-name = {{ partition_name }}
 {% endfor -%}
 
 {# if not explicitly configured, connect jupyter to first zope family, which  -#}
@@ -274,6 +276,7 @@ config-{{ name }} = {{ ' ${' ~ zope_section_id ~ ':connection-zope-address-list}
 config-haproxy-server-check-path = {{ dumps(balancer_dict.get('haproxy-server-check-path', '/') % {'site-id': site_id}) }}
 config-ssl = {{ dumps(balancer_dict.get('ssl', {})) }}
 config-monitor-passwd = ${monitor-htpasswd:passwd}
+config-name = ${:name}
 config-caucase-url = ${request-caucase:connection-http-url}
 config-crl-update-periodicity = {{ crl_update_period }}
 config-backend-path-dict = {{ dumps(zope_backend_path_dict) }}
@@ -331,7 +334,7 @@ parts +=
   monitor-base
 
 [monitor-conf-parameters]
-monitor-title = ERP5 monitor
+monitor-title = ERP5
 password = ${monitor-htpasswd:passwd}
 
 [monitor-base-url-dict]
