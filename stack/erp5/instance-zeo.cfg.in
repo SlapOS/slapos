@@ -185,7 +185,7 @@ tidstorage = {{ tidstorage_repozo_path }}
 [monitor-instance-parameter]
 monitor-httpd-ipv6 = {{ (ipv6_set | list)[0] }}
 monitor-httpd-port = {{ next_port() }}
-monitor-title = ZODB monitor
+monitor-title = ZODB
 password = {{ slapparameter_dict['monitor-passwd'] }}
 
 [buildout]

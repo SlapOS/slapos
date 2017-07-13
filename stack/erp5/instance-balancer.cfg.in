@@ -228,7 +228,7 @@ erp5-base-list = ${monitor-directory:etc}/apdex_erp5_base_list
 [monitor-instance-parameter]
 monitor-httpd-ipv6 = {{ (ipv6_set | list)[0] }}
 monitor-httpd-port = {{ next_port() }}
-monitor-title = Balancer monitor
+monitor-title = Balancer
 password = {{ slapparameter_dict['monitor-passwd'] }}
 instance-configuration = 
   file apachedex-default ${apachedex-parameters:default}

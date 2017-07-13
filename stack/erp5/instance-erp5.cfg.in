@@ -38,8 +38,8 @@ config-{{ k }} = {{ '${' ~ v ~ '}' }}
 {% endfor -%}
 {% endmacro -%}
 
-{{ request('memcached-persistent', 'kumofs', 'kumofs', {'tcpv4-port': 2000}, {'url': True, 'monitor-base-url': False}, key_config={'monitor-passwd': 'monitor-htpasswd:passwd'}) }}
-{{ request('memcached-volatile', 'kumofs', 'memcached', {'tcpv4-port': 2010, 'ram-storage-size': 64}, {'url': True, 'monitor-base-url': False}, key_config={'monitor-passwd': 'monitor-htpasswd:passwd'}) }}
+{{ request('memcached-persistent', 'kumofs', 'kumofs', {'tcpv4-port': 2000, 'monitor-title': 'Kumofs Persistent'}, {'url': True, 'monitor-base-url': False}, key_config={'monitor-passwd': 'monitor-htpasswd:passwd'}) }}
+{{ request('memcached-volatile', 'kumofs', 'memcached', {'tcpv4-port': 2010, 'ram-storage-size': 64, 'monitor-title': 'Kumofs Volatile'}, {'url': True, 'monitor-base-url': False}, key_config={'monitor-passwd': 'monitor-htpasswd:passwd'}) }}
 {{ request('cloudooo', 'cloudooo', 'cloudooo', {'tcpv4-port': 2020}, {'url': True, 'monitor-base-url': False}, key_config={'monitor-passwd': 'monitor-htpasswd:passwd'}) }}
 {{ request('mariadb', 'mariadb', 'mariadb', {'tcpv4-port': 2099}, {'database-list': True, 'test-database-list': True, 'monitor-base-url': False}, key_config={'monitor-passwd': 'monitor-htpasswd:passwd'}) }}
 {% if has_posftix -%}
@@ -192,6 +192,7 @@ config-longrequest-logger-interval = {{ dumps(zope_parameter_dict.get('longreque
 config-longrequest-logger-timeout = {{ dumps(zope_parameter_dict.get('longrequest-logger-timeout', 1)) }}
 config-port-base = {{ dumps(zope_parameter_dict.get('port-base', 2200)) }}
 config-webdav = {{ dumps(zope_parameter_dict.get('webdav', False)) }}
+config-monitor-title = {{ partition_name }}
 {% endfor -%}
 
 {# if not explicitly configured, connect jupyter to first zope family, which  -#}
@@ -313,7 +314,7 @@ parts +=
   monitor-base
 
 [monitor-conf-parameters]
-monitor-title = ERP5 monitor
+monitor-title = ERP5
 password = ${monitor-htpasswd:passwd}
 
 [monitor-base-url-dict]
