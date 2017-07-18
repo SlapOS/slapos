@@ -18,10 +18,6 @@ parts +=
   sshd-pbs-authorized-key
   notifier
 
-#----------------
-#--
-#-- Creation of all needed directories.
-
 [rootdirectory]
 recipe = slapos.cookbook:mkdirectory
 etc = $${buildout:directory}/etc
