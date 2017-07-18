@@ -25,14 +25,14 @@ c = get_config()
 parser = ConfigParser.ConfigParser()
 parser.read(knowledge_0)
 
-if not parser.has_section("ipython_notebook"):
-  parser.add_section("ipython_notebook")
+if not parser.has_section("jupyter_notebook"):
+  parser.add_section("jupyter_notebook")
 
-if not parser.has_option("ipython_notebook", "password") or \
-  parser.get("ipython_notebook", "password") == "":
-  parser.set("ipython_notebook", "password", random_password())
+if not parser.has_option("jupyter_notebook", "password") or \
+  parser.get("jupyter_notebook", "password") == "":
+  parser.set("jupyter_notebook", "password", random_password())
 
-c.NotebookApp.password = passwd(parser.get("ipython_notebook", "password"))
+c.NotebookApp.password = passwd(parser.get("jupyter_notebook", "password"))
 
 with open(knowledge_0, 'w') as file:
   parser.write(file)
