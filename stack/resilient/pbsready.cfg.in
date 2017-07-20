@@ -18,6 +18,10 @@ parts +=
   sshd-pbs-authorized-key
   notifier
 
+#----------------
+#--
+#-- Creation of all needed directories.
+
 [rootdirectory]
 recipe = slapos.cookbook:mkdirectory
 etc = $${buildout:directory}/etc
@@ -36,6 +40,7 @@ promises = $${rootdirectory:etc}/promise
 services = $${rootdirectory:etc}/service
 cache = $${rootdirectory:var}/cache
 notifier = $${rootdirectory:etc}/notifier
+monitor = $${rootdirectory:srv}/monitor
 
 
 [directory]
@@ -52,8 +57,8 @@ cronstamps = $${rootdirectory:etc}/cronstamps
 logrotate-entries = $${rootdirectory:etc}/logrotate.d
 logrotate-backup = $${basedirectory:backup}/logrotate
 cgi-bin = $${rootdirectory:srv}/cgi-bin
-monitor-resilient = $${monitor-directory:private}/resilient
-
+private = $${basedirectory:monitor}/private
+monitor-resilient = $${:private}/resilient
 
 [slap-parameter]
 authorized-key =
@@ -129,7 +134,6 @@ notifier-binary = ${buildout:bin-directory}/pubsubnotifier
 host = $${slap-network-information:global-ipv6}
 port = $${notifier-port:port}
 instance-root-name = $${instance-info-parameters:root-name}
-log-url = $${monitor-publish-parameters:monitor-base-url}/resilient/notifier-status-rss
 status-item-directory = $${directory:notifier-status-items}
 context =
   key content notifier:command

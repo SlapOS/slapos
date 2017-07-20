@@ -72,6 +72,9 @@ maximum = 22241
 [cron-entry-prepare-software]
 recipe =
 
+[notifier]
+log-url = ${monitor-publish-parameters:monitor-base-url}/resilient/notifier-status-rss
+
 [importer]
 recipe = slapos.recipe.template:jinja2
 template = {{ importer_script_path }}
