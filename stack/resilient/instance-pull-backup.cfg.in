@@ -22,8 +22,8 @@ parts =
   monitor-check-resilient-feed-file
 
 extends = {{ template_monitor }}
-eggs-directory = ${buildout:eggs-directory}
-develop-eggs-directory = ${buildout:develop-eggs-directory}
+eggs-directory = {{ eggs_directory }}
+develop-eggs-directory = {{ develop_eggs_directory }}
 offline = true
 
 
@@ -33,38 +33,38 @@ offline = true
 
 [rootdirectory]
 recipe = slapos.cookbook:mkdirectory
-etc = $${buildout:directory}/etc
-srv = $${buildout:directory}/srv
-bin = $${buildout:directory}/bin
-tmp = $${buildout:directory}/tmp
-var = $${buildout:directory}/var
+etc = ${buildout:directory}/etc
+srv = ${buildout:directory}/srv
+bin = ${buildout:directory}/bin
+tmp = ${buildout:directory}/tmp
+var = ${buildout:directory}/var
 
 [basedirectory]
 recipe = slapos.cookbook:mkdirectory
-log = $${rootdirectory:var}/log
-services = $${rootdirectory:etc}/service
-run = $${rootdirectory:var}/run
-backup = $${rootdirectory:srv}/backup
-promises = $${rootdirectory:etc}/promise
-ssh-home = $${rootdirectory:etc}/ssh
-notifier = $${rootdirectory:etc}/notifier
+log = ${rootdirectory:var}/log
+services = ${rootdirectory:etc}/service
+run = ${rootdirectory:var}/run
+backup = ${rootdirectory:srv}/backup
+promises = ${rootdirectory:etc}/promise
+ssh-home = ${rootdirectory:etc}/ssh
+notifier = ${rootdirectory:etc}/notifier
 
 [directory]
 recipe = slapos.cookbook:mkdirectory
-logrotate-entries = $${rootdirectory:etc}/logrotate.d
-logrotate-backup = $${basedirectory:backup}/logrotate
-cronstamps = $${rootdirectory:etc}/cronstamps
-cron-entries = $${rootdirectory:etc}/cron.d
-crontabs = $${rootdirectory:etc}/crontabs
-cronoutput = $${basedirectory:log}/cron-ouput
-pbs-backup = $${basedirectory:backup}/pbs
-sshkeys = $${rootdirectory:srv}/sshkeys
-pbs-wrappers = $${rootdirectory:bin}/pbs
-dot-ssh = $${basedirectory:ssh-home}/.ssh
-notifier-feeds = $${basedirectory:notifier}/feeds
-notifier-callbacks = $${basedirectory:notifier}/callbacks
-notifier-status-items = $${basedirectory:notifier}/status-items
-monitor-resilient = $${monitor-directory:private}/resilient
+logrotate-entries = ${rootdirectory:etc}/logrotate.d
+logrotate-backup = ${basedirectory:backup}/logrotate
+cronstamps = ${rootdirectory:etc}/cronstamps
+cron-entries = ${rootdirectory:etc}/cron.d
+crontabs = ${rootdirectory:etc}/crontabs
+cronoutput = ${basedirectory:log}/cron-ouput
+pbs-backup = ${basedirectory:backup}/pbs
+sshkeys = ${rootdirectory:srv}/sshkeys
+pbs-wrappers = ${rootdirectory:bin}/pbs
+dot-ssh = ${basedirectory:ssh-home}/.ssh
+notifier-feeds = ${basedirectory:notifier}/feeds
+notifier-callbacks = ${basedirectory:notifier}/callbacks
+notifier-status-items = ${basedirectory:notifier}/status-items
+monitor-resilient = ${monitor-directory:private}/resilient
 
 
 #----------------
@@ -73,30 +73,30 @@ monitor-resilient = $${monitor-directory:private}/resilient
 
 [equeue]
 recipe = slapos.cookbook:equeue
-socket = $${basedirectory:run}/equeue.sock
-lockfile = $${basedirectory:run}/equeue.lock
-log = $${basedirectory:log}/equeue.log
-database = $${rootdirectory:srv}/equeue.db
-wrapper = $${basedirectory:services}/equeue
-equeue-binary = ${buildout:bin-directory}/equeue
+socket = ${basedirectory:run}/equeue.sock
+lockfile = ${basedirectory:run}/equeue.lock
+log = ${basedirectory:log}/equeue.log
+database = ${rootdirectory:srv}/equeue.db
+wrapper = ${basedirectory:services}/equeue
+equeue-binary = {{ bin_directory }}/equeue
 
 [notifier-port]
 recipe = slapos.cookbook:free_port
 minimum = 8088
 maximum = 8097
-ip = $${notifier:host}
+ip = ${notifier:host}
 
 # notifier.notify adds the [exporter, notifier] to the execution queue
 # notifier.notify.callback sets up a callback
 [notifier]
 recipe = slapos.recipe.template:jinja2
-template = ${template-wrapper:output}
-rendered = $${:wrapper}
-wrapper = $${basedirectory:services}/notifier
+template = {{ template_wrapper }}
+rendered = ${:wrapper}
+wrapper = ${basedirectory:services}/notifier
 mode = 0700
-command = ${buildout:bin-directory}/pubsubserver --callbacks $${directory:notifier-callbacks} --feeds $${directory:notifier-feeds} --equeue-socket $${equeue:socket} --logfile $${basedirectory:log}/notifier.log $${:host} $${:port}
-host = $${slap-network-information:global-ipv6}
-port = $${notifier-port:port}
+command = {{ bin_directory }}/pubsubserver --callbacks ${directory:notifier-callbacks} --feeds ${directory:notifier-feeds} --equeue-socket ${equeue:socket} --logfile ${basedirectory:log}/notifier.log ${:host} ${:port}
+host = ${slap-network-information:global-ipv6}
+port = ${notifier-port:port}
 context =
   key content notifier:command
 
@@ -104,7 +104,7 @@ context =
 <= logrotate
 recipe = slapos.cookbook:logrotate.d
 name = equeue
-log = $${equeue:log}
+log = ${equeue:log}
 frequency = daily
 rotate-num = 30
 
@@ -118,40 +118,40 @@ rotate-num = 30
 <= notifier
 recipe = slapos.cookbook:pbs
 client = true
-feeds = $${directory:notifier-feeds}
-callbacks = $${directory:notifier-callbacks}
-equeue-socket = $${equeue:socket}
-notifier-binary = ${buildout:bin-directory}/pubsubnotifier
-rdiffbackup-binary = ${buildout:bin-directory}/rdiff-backup
-sshclient-binary = $${openssh-client:wrapper-path}
-known-hosts = $${directory:dot-ssh}/known_hosts
-promises-directory = $${basedirectory:promises}
-directory = $${directory:pbs-backup}
-cron-entries = $${cron:cron-entries}
-wrappers-directory = $${directory:pbs-wrappers}
-run-directory = $${basedirectory:run}
+feeds = ${directory:notifier-feeds}
+callbacks = ${directory:notifier-callbacks}
+equeue-socket = ${equeue:socket}
+notifier-binary = {{ bin_directory }}/pubsubnotifier
+rdiffbackup-binary = {{ bin_directory }}/rdiff-backup
+sshclient-binary = ${openssh-client:wrapper-path}
+known-hosts = ${directory:dot-ssh}/known_hosts
+promises-directory = ${basedirectory:promises}
+directory = ${directory:pbs-backup}
+cron-entries = ${cron:cron-entries}
+wrappers-directory = ${directory:pbs-wrappers}
+run-directory = ${basedirectory:run}
 pull-push-maximum-run = 5
 # XXX: this should be named "notifier-host"
-notifier-url = http://[$${notifier:host}]:$${notifier:port}
-slave-instance-list = $${slap-parameter:slave_instance_list}
-ignore-known-hosts-file = $${slap-parameter:ignore-known-hosts-file}
+notifier-url = http://[${notifier:host}]:${notifier:port}
+slave-instance-list = ${slap-parameter:slave_instance_list}
+ignore-known-hosts-file = ${slap-parameter:ignore-known-hosts-file}
 # To get a verbose feed about PBS state
-instance-root-name = $${instance-info-parameters:root-name}
-log-url = $${monitor-publish-parameters:monitor-base-url}/private/notifier/
-status-item-directory = $${directory:notifier-status-items}
+instance-root-name = ${instance-info-parameters:root-name}
+log-url = ${monitor-publish-parameters:monitor-base-url}/private/notifier/
+status-item-directory = ${directory:notifier-status-items}
 
 [pbs-resilient-status-feed]
 recipe = slapos.cookbook:wrapper
-command-line = ${buildout:directory}/bin/generatefeed --output $${:feed-path} --status-item-path $${pbs:status-item-directory} --title "Status feed for $${instance-info-parameters:root-name}-PBS" --link $${pbs:log-url}
-feed-path = $${directory:monitor-resilient}/pbs-status-rss
-wrapper-path = $${rootdirectory:bin}/resilient-genstatusrss.py
+command-line = {{ buildout_directory }}/bin/generatefeed --output ${:feed-path} --status-item-path ${pbs:status-item-directory} --title "Status feed for ${instance-info-parameters:root-name}-PBS" --link ${pbs:log-url}
+feed-path = ${directory:monitor-resilient}/pbs-status-rss
+wrapper-path = ${rootdirectory:bin}/resilient-genstatusrss.py
 
 [cron-pbs-status-feed]
 <= cron
 recipe = slapos.cookbook:cron.d
 name = resilient-pbs-status-feed
 frequency = */5 * * * *
-command = $${pbs-resilient-status-feed:wrapper-path}
+command = ${pbs-resilient-status-feed:wrapper-path}
 
 #----------------
 #--
@@ -159,17 +159,17 @@ command = $${pbs-resilient-status-feed:wrapper-path}
 
 [cron]
 recipe = slapos.cookbook:cron
-dcrond-binary = ${dcron:location}/sbin/crond
-cron-entries = $${directory:cron-entries}
-crontabs = $${directory:crontabs}
-cronstamps = $${directory:cronstamps}
-catcher = $${cron-simplelogger:wrapper}
-binary = $${basedirectory:services}/crond
+dcrond-binary = {{ dcron_location }}/sbin/crond
+cron-entries = ${directory:cron-entries}
+crontabs = ${directory:crontabs}
+cronstamps = ${directory:cronstamps}
+catcher = ${cron-simplelogger:wrapper}
+binary = ${basedirectory:services}/crond
 
 [cron-simplelogger]
 recipe = slapos.cookbook:simplelogger
-wrapper = $${rootdirectory:bin}/cron_simplelogger
-log = $${basedirectory:log}/crond.log
+wrapper = ${rootdirectory:bin}/cron_simplelogger
+log = ${basedirectory:log}/crond.log
 
 
 #----------------
@@ -181,26 +181,26 @@ log = $${basedirectory:log}/crond.log
 recipe = slapos.cookbook:cron.d
 name = logrotate
 frequency = 0 0 * * *
-command = $${logrotate:wrapper}
+command = ${logrotate:wrapper}
 
 [logrotate]
 recipe = slapos.cookbook:logrotate
 # Binaries
-logrotate-binary = ${logrotate:location}/usr/sbin/logrotate
-gzip-binary = ${gzip:location}/bin/gzip
-gunzip-binary = ${gzip:location}/bin/gunzip
+logrotate-binary = {{ logrotate_location }}/usr/sbin/logrotate
+gzip-binary = {{ gzip_location }}/bin/gzip
+gunzip-binary = {{ gzip_location }}/bin/gunzip
 # Directories
-wrapper = $${rootdirectory:bin}/logrotate
-conf = $${rootdirectory:etc}/logrotate.conf
-logrotate-entries = $${directory:logrotate-entries}
-backup = $${directory:logrotate-backup}
-state-file = $${rootdirectory:srv}/logrotate.status
+wrapper = ${rootdirectory:bin}/logrotate
+conf = ${rootdirectory:etc}/logrotate.conf
+logrotate-entries = ${directory:logrotate-entries}
+backup = ${directory:logrotate-backup}
+state-file = ${rootdirectory:srv}/logrotate.status
 
 [logrotate-entry-cron]
 <= logrotate
 recipe = slapos.cookbook:logrotate.d
 name = cron
-log = $${cron-simplelogger:log}
+log = ${cron-simplelogger:log}
 frequency = daily
 rotate-num = 30
 
@@ -208,14 +208,14 @@ rotate-num = 30
 recipe = collective.recipe.template
 mode = 600
 input = inline:
-  $${directory:notifier-feeds}/* {
+  ${directory:notifier-feeds}/* {
     rotate 5
     weekly
     nocompress
     missingok
-    olddir $${directory:logrotate-backup}
+    olddir ${directory:logrotate-backup}
   }
-output = $${logrotate:logrotate-entries}/notifier
+output = ${logrotate:logrotate-entries}/notifier
 
 #----------------
 #--
@@ -223,25 +223,25 @@ output = $${logrotate:logrotate-entries}/notifier
 
 [sshkeys-directory]
 recipe = slapos.cookbook:mkdirectory
-requests = $${directory:sshkeys}/openssl-requests
-keys = $${directory:sshkeys}/openssl-keys
+requests = ${directory:sshkeys}/openssl-requests
+keys = ${directory:sshkeys}/openssl-keys
 
 [pbs-sshkeys-authority]
 recipe = slapos.cookbook:sshkeys_authority
-request-directory = $${sshkeys-directory:requests}
-keys-directory = $${sshkeys-directory:keys}
-wrapper = $${basedirectory:services}/pbs_sshkeys_authority
-keygen-binary = ${openssh:location}/bin/ssh-keygen
+request-directory = ${sshkeys-directory:requests}
+keys-directory = ${sshkeys-directory:keys}
+wrapper = ${basedirectory:services}/pbs_sshkeys_authority
+keygen-binary = {{ openssh_location }}/bin/ssh-keygen
 
 [sshkeys-openssh]
 <= pbs-sshkeys-authority
 recipe = slapos.cookbook:sshkeys_authority.request
 name = pbs-client
 type = rsa
-executable = $${openssh-client:wrapper-path}
-public-key = $${openssh-client:identity-file}.pub
-private-key = $${openssh-client:identity-file}
-wrapper = $${rootdirectory:bin}/do_backup
+executable = ${openssh-client:wrapper-path}
+public-key = ${openssh-client:identity-file}.pub
+private-key = ${openssh-client:identity-file}
+wrapper = ${rootdirectory:bin}/do_backup
 
 
 #----------------
@@ -250,10 +250,10 @@ wrapper = $${rootdirectory:bin}/do_backup
 
 [openssh-client]
 recipe = slapos.cookbook:wrapper
-home = $${basedirectory:ssh-home}
-identity-file = $${:home}/id_rsa
-command-line = ${openssh:location}/bin/ssh -T -o "UserKnownHostsFile $${pbs:known-hosts}" -i $${:identity-file}
-wrapper-path = $${rootdirectory:bin}/ssh
+home = ${basedirectory:ssh-home}
+identity-file = ${:home}/id_rsa
+command-line = {{ openssh_location }}/bin/ssh -T -o "UserKnownHostsFile ${pbs:known-hosts}" -i ${:identity-file}
+wrapper-path = ${rootdirectory:bin}/ssh
 parameters-extra = true
 
 
@@ -267,7 +267,7 @@ ignore-known-hosts-file = false
 monitor-cors-domains = 
 monitor-httpd-port = 8070
 monitor-title = PBS Instance
-monitor-password = $${monitor-htpasswd:passwd}
+monitor-password = ${monitor-htpasswd:passwd}
 monitor-username = admin
 
 #----------------
@@ -277,10 +277,10 @@ monitor-username = admin
 [backup-checksum-integrity-promise]
 recipe = slapos.recipe.template:jinja2
 template = inline:
-  #!${dash:location}/bin/dash
+  #!{{ dash_location }}
   # Raise an error if signatures are different
   # Error cannot be deduced if files do not exist
-  cd $${directory:pbs-backup}
+  cd ${directory:pbs-backup}
   if [ ! -f "proof.signature" ]; then exit 0; fi
   backup_signature=$(find . -maxdepth 2 -name backup.signature)
   if [ -z "$backup_signature" ]; then
@@ -294,38 +294,38 @@ template = inline:
       exit 1
     fi
   fi
-rendered = $${basedirectory:promises}/backup-checksum-integrity
+rendered = ${basedirectory:promises}/backup-checksum-integrity
 mode = 700
 
 [resilient-genstatrss-wrapper]
 recipe = slapos.cookbook:wrapper
 # XXX - hard-coded Urls
-command-line = ${buildout:directory}/bin/rdiffbackup.genstatrss --output '$${monitor-directory:public}/resilient-feed' --rdiff_backup_data_folder '$${pbs:rdiff-backup-data-folder}' --feed_url '$${monitor-conf-parameters:base-url}/public/resilient-feed'
-wrapper-path = $${directory:bin}/resilient-genstatrss.py
+command-line = {{ buildout_directory }}/bin/rdiffbackup.genstatrss --output '${monitor-directory:public}/resilient-feed' --rdiff_backup_data_folder '${pbs:rdiff-backup-data-folder}' --feed_url '${monitor-conf-parameters:base-url}/public/resilient-feed'
+wrapper-path = ${directory:bin}/resilient-genstatrss.py
 
 [pbs-push-history-log]
 recipe = cns.recipe.symlink
-symlink = $${pbs:rdiff-backup-data-folder}/restore.log = $${basedirectory:log}/pbs-push-history-log
+symlink = ${pbs:rdiff-backup-data-folder}/restore.log = ${basedirectory:log}/pbs-push-history-log
 
 [backup-signature-link]
 recipe = cns.recipe.symlink
-symlink = $${directory:pbs-backup}/proof.signature = $${directory:monitor-resilient}/backup.signature
+symlink = ${directory:pbs-backup}/proof.signature = ${directory:monitor-resilient}/backup.signature
 
 [pull-push-stalled-promise]
 recipe = slapos.cookbook:wrapper
 # # time-buffer is 24h (+1h of latitude)
-command-line = ${buildout:bin-directory}/check-feed-as-promise --feed-path $${pbs-resilient-status-feed:feed-path} --title --ok-pattern 'OK' --time-buffer 90000
-wrapper-path = $${basedirectory:promises}/stalled-pull-push
+command-line = {{ bin_directory }}/check-feed-as-promise --feed-path ${pbs-resilient-status-feed:feed-path} --title --ok-pattern 'OK' --time-buffer 90000
+wrapper-path = ${basedirectory:promises}/stalled-pull-push
 
 [notifier-feed-status-promise]
 recipe = slapos.recipe.template:jinja2
-template = ${notifier-feed-promise-template:target}
-rendered = $${basedirectory:promises}/notifier-feed-check-malformed-or-failure.py
+template = {{ notifier_feed_promise_template }}
+rendered = ${basedirectory:promises}/notifier-feed-check-malformed-or-failure.py
 mode = 700
 context =
   key notifier_feed_directory directory:notifier-feeds
-  raw base_url http://[$${notifier:host}]:$${notifier:port}/get/
-  raw python_executable ${buildout:executable}
+  raw base_url http://[${notifier:host}]:${notifier:port}/get/
+  raw python_executable {{ buildout_executable }}
 
 #----------------
 #--
@@ -333,44 +333,38 @@ context =
 
 [publish-connection-information]
 recipe = slapos.cookbook:publish
-ssh-key = $${sshkeys-openssh:public-key-value}
-notification-url = http://[$${notifier:host}]:$${notifier:port}/notify
-feeds-url = http://[$${notifier:host}]:$${notifier:port}/get/
-monitor-base-url = $${monitor-publish-parameters:monitor-base-url}
-monitor-url = $${monitor-publish-parameters:monitor-url}
-monitor-user = $${monitor-publish-parameters:monitor-user}
-monitor-password = $${monitor-publish-parameters:monitor-password}
+ssh-key = ${sshkeys-openssh:public-key-value}
+notification-url = http://[${notifier:host}]:${notifier:port}/notify
+feeds-url = http://[${notifier:host}]:${notifier:port}/get/
+monitor-base-url = ${monitor-publish-parameters:monitor-base-url}
+monitor-url = ${monitor-publish-parameters:monitor-url}
+monitor-user = ${monitor-publish-parameters:monitor-user}
+monitor-password = ${monitor-publish-parameters:monitor-password}
 
 #----------------
 #--
 #-- Monitor
 
 [monitor-instance-parameter]
-monitor-httpd-port = $${slap-parameter:monitor-httpd-port}
-monitor-title = $${slap-parameter:monitor-title}
-cors-domains = $${slap-parameter:monitor-cors-domains}
-username = $${slap-parameter:monitor-username}
-password = $${slap-parameter:monitor-password}
+monitor-httpd-port = ${slap-parameter:monitor-httpd-port}
+monitor-title = ${slap-parameter:monitor-title}
+cors-domains = ${slap-parameter:monitor-cors-domains}
+username = ${slap-parameter:monitor-username}
+password = ${slap-parameter:monitor-password}
 
 [monitor-conf-parameters]
 private-path-list += 
-  $${directory:logrotate-backup}
-  $${basedirectory:log}
+  ${directory:logrotate-backup}
+  ${basedirectory:log}
 
 [monitor-check-resilient-feed-file]
 recipe = slapos.recipe.template:jinja2
-template = ${template-monitor-check-resilient-feed:location}/${template-monitor-check-resilient-feed:filename}
-rendered = $${monitor-directory:reports}/check-create-resilient-feed-files
+template = {{ monitor_resilient_feed_path }}
+rendered = ${monitor-directory:reports}/check-create-resilient-feed-files
 mode = 700
 context =
   key input_feed_directory directory:notifier-feeds
   key monitor_feed_directory monitor-directory:public
   key base_url publish-connection-information:feeds-url
-  raw python_executable ${buildout:executable}
+  raw python_executable {{ buildout_executable }}
 
-[instance-monitor]
-recipe = slapos.recipe.template:jinja2
-template = ${monitor2-template:output}
-rendered = $${buildout:directory}/template-monitor.cfg
-extensions = jinja2.ext.do
-mode = 0644
