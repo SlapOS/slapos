@@ -1,6 +1,7 @@
 [buildout]
 extends = {{ template_runner_path }}
           {{ pbsready_import_template_path }}
+          {{ template_monitor }}
 
 parts +=
   nginx_conf
