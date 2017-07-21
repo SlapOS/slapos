@@ -24,6 +24,12 @@ crl-life-period = {{ slapparameter_dict.get('crl-life-period', 0.02) }}
 ca-life-period = {{ slapparameter_dict.get('ca-life-period', 10) }}
 # time before clean certificate on CA: 60*24*60*60
 crt-keep-time = {{ slapparameter_dict.get('crt-keep-time', 5184000) }}
+# number of csr to sign automaticaly, minimum value is 1
+{% if int(slapparameter_dict.get('auto-sign-csr-amount', 1)) < 1 -%}
+auto-sign-csr-amount = 1
+{% else -%}
+auto-sign-csr-amount = {{ slapparameter_dict.get('auto-sign-csr-amount', 1) }}
+{% endif -%}
 
 [directory]
 recipe = slapos.cookbook:mkdirectory
@@ -135,6 +141,8 @@ input = inline:
   ca-life-period ${ca-parameters:ca-life-period}
   # time before clean certificate on CA: 60*24*60*60
   crt-keep-time ${ca-parameters:crt-keep-time}
+  # number of csr to sign automaticaly
+  auto-sign-csr-amount ${ca-parameters:auto-sign-csr-amount}
 
 output = ${directory:etc}/ca.conf
 mode = 700
@@ -211,6 +219,7 @@ curl_path = {{ curl_executable_location }}
 recipe = slapos.cookbook:publish.serialised
 http-url = ${caucase-server:http-url}
 https-url = ${caucase-server:url}
+init-user = admin
 {% do part_list.append('publish-connection-parameter') -%}
 {% endif -%}
 

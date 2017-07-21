@@ -1,23 +1,26 @@
 {
   "type": "object",
   "$schema": "http://json-schema.org/draft-04/schema",
+  "extends": "./schema-definitions.json#",
   "title": "Input Parameters",
   "properties": {
     "server-port": {
-      "title": "http port to use",
-      "description": "Caucase http port to use.",
-      "type": "integer",
-      "default": 8009,
-      "minimum": 1,
-      "maximum": 65535
+      "allOf": [{
+        "$ref": "#/definitions/tcpv4port"
+      }, {
+        "title": "http port to use",
+        "description": "Caucase http port to use.",
+        "default": 8009
+      }]
     },
     "server-https-port": {
-      "title": "https port to use",
-      "description": "Caucase port to use for https connexion.",
-      "type": "integer",
-      "default": 8010,
-      "minimum": 1,
-      "maximum": 65535
+      "allOf": [{
+        "$ref": "#/definitions/tcpv4port"
+      }, {
+        "title": "https port to use",
+        "description": "Caucase port to use for https connexion.",
+        "default": 8010
+      }]
     },
     "external-url": {
       "title": "External http url",
@@ -60,6 +63,13 @@
       "title": "Time before cleanup certificate content on CA",
       "description": "The time in seconds before a generated certificate will be deleted on CA server. Set 0 to never delete. Default: 30*24*60*60 seconds (30 days)",
       "default": 5184000,
+      "type": "integer"
+    },
+    "auto-sign-csr-amount": {
+      "title": "Number of CSR to sign automatically",
+      "description": "The number of CSR to sign automatically at startup. Has no effect if there is more than the specified value of csr submitted to caucase. This value should be as lowest as possible",
+      "default": 1,
+      "minimum": 1,
       "type": "integer"
     }
   }
