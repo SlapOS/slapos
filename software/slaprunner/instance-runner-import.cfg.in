@@ -73,11 +73,9 @@ maximum = 22241
 [cron-entry-prepare-software]
 recipe =
 
-[notifier]
-log-url = ${monitor-publish-parameters:monitor-base-url}/resilient/notifier-status-rss
 
 [resilient-web-takeover-cgi-script]
-proof-signature-url = $${monitor-publish-parameters:monitor-base-url}/private/resilient/backup.signature
+proof-signature-url = ${monitor-publish-parameters:monitor-base-url}/private/resilient/backup.signature
 
 [importer]
 recipe = slapos.recipe.template:jinja2
