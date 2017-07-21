@@ -58,7 +58,7 @@ connection-url = smtp://127.0.0.2:0/
 [request-caucase]
 connection-http-url = {{ caucase_url }}
 {%- else %}
-{{ request('caucase', 'caucase', 'caucase', {'server-port': 8890, 'server-https-port': 8891}, {'http-url': True, 'https-url': False}) }}
+{{ request('caucase', 'caucase', 'caucase', {'server-port': 8890, 'server-https-port': 8891, 'auto-sign-csr-amount': 2}, {'http-url': True, 'https-url': False}) }}
 {% endif -%}
 
 {# ZODB -#}
