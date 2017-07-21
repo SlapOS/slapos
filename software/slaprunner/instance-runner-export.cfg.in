@@ -63,6 +63,9 @@ ip = ${slaprunner:ipv4}
 [supervisord]
 port = ${supervisord-free-port:port}
 
+[notifier]
+log-url = ${monitor-publish-parameters:monitor-base-url}/resilient/notifier-status-rss
+
 [exporter]
 recipe = slapos.recipe.template:jinja2
 template = {{ exporter_script_path }}

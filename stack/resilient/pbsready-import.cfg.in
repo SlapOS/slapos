@@ -111,7 +111,6 @@ input = ${resilient-web-takeover-cgi-script-download:target}
 output = $${directory:cgi-bin}/web-takeover.cgi
 password = $${resilient-web-takeover-password:passwd}
 mode = 700
-proof-signature-url = $${monitor-publish-parameters:monitor-base-url}/private/resilient/backup.signature
 
 # XXX could it be something lighter?
 # XXX Add SSL
