@@ -739,7 +739,7 @@ portal_workflow.doActionFor(context, action='edit_action', comment='Visited by S
       specialise=self.hosting_subscription.getRelativeUrl(),
     )
     self.portal.portal_workflow._jumpToStateFor(software_instance2, 'start_requested')
-    software_instance2.validate()
+    self.portal.portal_workflow._jumpToStateFor(software_instance2, 'validated')
     self.tic()
 
     self.assertEqual(None,
@@ -956,8 +956,9 @@ portal_workflow.doActionFor(context, action='edit_action', comment='Visited by S
       specialise=self.hosting_subscription.getRelativeUrl(),
     )
     self.portal.portal_workflow._jumpToStateFor(software_instance2, 'start_requested')
-    software_instance2.validate()
+    self.portal.portal_workflow._jumpToStateFor(software_instance2, 'validated')
     self.tic()
+
 
     self.assertEqual(None,
       self.software_instance.getAggregateValue(portal_type='Computer Partition'))
