@@ -34,11 +34,10 @@ ip = $${slap-network-information:global-ipv6}
 
 # Define port of notifier (same reason)
 [notifier-port]
-port = 65517
-#recipe = slapos.cookbook:free_port
-#minimum = 65516
-#maximum = 65525
-#ip = $${notifier:host}
+recipe = slapos.cookbook:free_port
+minimum = 65516
+maximum = 65525
+ip = $${notifier:host}
 
 [import-on-notification]
 # notifier.callback runs a script when a notification (sent by a parent PBS)

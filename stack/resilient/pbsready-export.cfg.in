@@ -21,11 +21,10 @@ maximum = 22209
 ip = ${slap-network-information:global-ipv6}
 
 [notifier-port]
-port = 65529
-#recipe = slapos.cookbook:free_port
-#minimum = 65526
-#maximum = 65535
-#ip = ${notifier:host}
+recipe = slapos.cookbook:free_port
+minimum = 65526
+maximum = 65535
+ip = ${notifier:host}
 
 [resilient-publish-connection-parameter]
 notification-id = http://[${notifier:host}]:${notifier:port}/get/${notifier-exporter:name}
