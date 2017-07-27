@@ -1,0 +1,81 @@
+#!{{ bash }}
+set -e
+
+digest_file='{{ slow_query_digest }}/slowquery_digest.txt'
+slow_query_status_file='{{ slow_query_status }}'
+desired_max_query_threshold={{ default_threshold }}
+desired_slow_query_threshold=0
+
+max_queries_threshold='{{ max_queries_threshold  }}'
+if [ ! -z "$max_queries_threshold" ]
+then
+  desired_max_query_threshold=$max_queries_threshold
+fi
+
+slowest_queries_threshold='{{ slowest_queries_threshold  }}'
+if [ ! -z "$slowest_queries_threshold" ]
+then
+  desired_slow_query_threshold=$slowest_queries_threshold
+fi
+
+# Check if the file is there
+if [ ! -s "$digest_file" ]; then 
+  # If file doesn't exists create one
+  # If it is empty check for modification time
+  if [ ! -f "$digest_file" ]; then
+    touch $digest_file
+  else
+    modified_date=`stat -c '%Z' $digest_file`
+    current_date=`date +%s`
+    if [[ `echo "$current_date - $modified_date" | bc` -gt 108000 ]]
+    then 
+      echo "File modification date is greater than 30 hours"
+      json_content=`cat $slow_query_status_file`
+      message=`echo $json_content | python -c 'import json,sys;obj=json.load(sys.stdin);print obj["message"]'`
+      echo $message 
+      exit 2
+    else
+      echo "File is empty for now"
+    fi
+  fi
+else
+  # Check if the result exists
+  {
+    # get the total number of queries run and the max time
+    # TODO: improve regex
+    # TODO: improve the parameters (currently we are using threshold on queries and max execute time)
+    # # Overall: (.*) total,(?:.*\n){4}# Exec time(?: *\d*m?s){2} *(.*?)m?s
+    regex="# Overall: (.*) total,.*# Exec time *[[:digit:]]*m?s *[[:digit:]]*m?s *([[:digit:]]*)m?s"
+    file_content=`cat $digest_file`
+    if [[ $file_content =~ $regex ]]
+    then
+      max_query_threshold=${BASH_REMATCH[1]}
+      slowest_query_threshold=${BASH_REMATCH[2]}
+      hasK="${max_query_threshold: -1}"
+      if [[ "$hasK" == "k" ]] 
+      then
+        pre="${max_query_threshold::-1}"
+        max_query_threshold=$(echo "scale=4; ${pre:-0}*1000" | bc)
+      else
+        max_query_threshold=${max_query_threshold:-0}
+      fi
+      # TODO: support ms
+      slowest_query_threshold="${slowest_query_threshold:-0}"
+      if [[ `echo "$max_query_threshold < $desired_max_query_threshold" | bc` -eq 1 && `echo "$slowest_query_threshold > $desired_slow_query_threshold" | bc` -eq 1 ]]
+      then
+        echo "Total number of slow queries are: $max_query_threshold"
+        echo "Time taken by slowest query is: $slowest_query_threshold"
+        echo "Thanks for keeping it all clean"
+      else
+        echo "Ops! One of the two expected parameters did not meet"
+        echo "Time taken by slowest query is: $slowest_query_threshold s and required maximum is $desired_slow_query_threshold s"
+        echo "Total slow queries are $max_query_threshold and expected maximum value is $desired_max_query_threshold"
+        exit 2
+      fi
+    else
+      echo "No threshold found in the result"
+    fi
+  } || {
+    echo "Cannot parse the result"
+  }
+fi

@@ -287,7 +287,7 @@ apachedex = ${monitor-directory:private}/apachedex
 [{{ section('monitor-generate-apachedex-report') }}]
 recipe = slapos.cookbook:wrapper
 wrapper-path = ${monitor-directory:reports}/${:command}
-command-line = "{{ parameter_dict['run-apachedex-location'] }}" "{{ parameter_dict['apachedex-location'] }}" "${directory:apachedex}" --default "${apachedex-parameters:default}" --apache-log-list "${apachedex-parameters:apache-log-list}" --base-list "${apachedex-parameters:base-list}" --skip-base-list "${apachedex-parameters:skip-base-list}" --erp5-base-list "${apachedex-parameters:erp5-base-list}"
+command-line = "{{ parameter_dict['run-apachedex-location'] }}" "{{ parameter_dict['apachedex-location'] }}" "${directory:apachedex}" ${monitor-publish-parameters:monitor-base-url}/private/apachedex --default "${apachedex-parameters:default}" --apache-log-list "${apachedex-parameters:apache-log-list}" --base-list "${apachedex-parameters:base-list}" --skip-base-list "${apachedex-parameters:skip-base-list}" --erp5-base-list "${apachedex-parameters:erp5-base-list}"
 command = apachedex_every_3_hour
 
 [apachedex-parameters]
@@ -299,6 +299,19 @@ default = ${monitor-directory:etc}/apdex_default
 base-list = ${monitor-directory:etc}/apdex_base_list
 skip-base-list = ${monitor-directory:etc}/apdex_skip_base_list
 erp5-base-list = ${monitor-directory:etc}/apdex_erp5_base_list
+apdex-promise-threshold = ${monitor-directory:etc}/apdex-promise-threshold
+
+[{{ section('monitor-promise-apachedex-result') }}]
+recipe = slapos.recipe.template:jinja2
+template = {{ parameter_dict['apdex-result-check-script'] }}
+rendered = ${monitor-directory:promises}/check-apachedex-result
+status-file = ${monitor-directory:private}/apachedex.report.json 
+context = 
+  raw default_threshold 0.7
+  raw bash {{ parameter_dict['bash'] }}/bin/bash
+  key apdex_file directory:apachedex
+  key apdex_status_file :status-file
+  key user_threshold apachedex-parameters:apdex-promise-threshold
 
 [monitor-instance-parameter]
 monitor-httpd-ipv6 = {{ (ipv6_set | list)[0] }}
@@ -310,6 +323,7 @@ instance-configuration =
   file apachedex-base-list ${apachedex-parameters:base-list}
   file apachedex-skip-base-list ${apachedex-parameters:skip-base-list}
   file apachedex-erp5-base-list ${apachedex-parameters:erp5-base-list}
+  file apachedex-erp5-promise-threshold ${apachedex-parameters:apdex-promise-threshold}
 
 [buildout]
 extends =
