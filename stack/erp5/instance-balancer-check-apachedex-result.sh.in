@@ -1,0 +1,57 @@
+#!{{ bash }}
+
+set -e
+
+apachedex_file='{{ apdex_file }}/ApacheDex-'$(date +%Y-%m-%d)'.html'
+apachedex_status_file={{ apdex_status_file }} 
+desired_threshold={{ default_threshold }}
+user_threshold=$(<{{ user_threshold }})
+
+if [ ! -z "$user_threshold" ]
+then
+  desired_threshold=$user_threshold
+fi
+
+# Check if the file is there
+if [ ! -s "$apachedex_file" ]; then 
+  # If file doesn't exists create one
+  # If it is empty check for modification time
+  if [ ! -f "$apachedex_file" ]; then
+    touch $apachedex_file
+  else
+    modified_date=`stat -c '%Z' $apachedex_file`
+    current_date=`date +%s`
+    if [[ `echo "$current_date - $modified_date" | bc` -gt 108000 ]]
+    then 
+      echo "File modification date is greater than 30 hours"
+      json_content=`cat $apachedex_status_file`
+      message=`echo $json_content | python -c 'import json,sys;obj=json.load(sys.stdin);print obj["message"]'`
+      echo $message 
+      exit 2
+    else
+      echo "File is empty for now"
+    fi
+  fi
+else
+  # Check if the result exists
+  {
+    regex="apdex threshold<\/th><td>(.*)s<\/td>"
+    file_content=`cat $apachedex_file`
+    if [[ $file_content =~ $regex ]]
+    then
+      threshold=${BASH_REMATCH[1]}
+      threshold=${threshold:-0}
+      if [[ `echo "$threshold > $desired_threshold" | bc` -eq 1 ]]
+      then
+        echo "Your score is $threshold, Thanks for keeping it all clean"
+      else
+        echo "Threshold is lower than exptected: Expected was $desired_threshold and we current is $threshold"
+        exit 2
+      fi
+    else
+      echo "No threshold found in the result"
+    fi
+  } || {
+    echo "Cannot parse the apdex result"
+  }
+fi
