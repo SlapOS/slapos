@@ -40,7 +40,7 @@ from Products.PluggableAuthService.interfaces import plugins
 from Products.PluggableAuthService.utils import classImplements
 from Products.PluggableAuthService.plugins.BasePlugin import BasePlugin
 from Products.ERP5Type.Cache import transactional_cached
-from Products.ERP5Security.ERP5UserManager import SUPER_USER
+from Products.ERP5Security import SUPER_USER
 from ZODB.POSException import ConflictError
 from Products.PluggableAuthService.PluggableAuthService import DumbHTTPExtractor
 from Products.ERP5Security.ERP5GroupManager import ConsistencyError, NO_CACHE_MODE
