@@ -40,10 +40,11 @@ from Products.PluggableAuthService.interfaces import plugins
 from Products.PluggableAuthService.utils import classImplements
 from Products.PluggableAuthService.plugins.BasePlugin import BasePlugin
 from Products.ERP5Type.Cache import transactional_cached
-from Products.ERP5Security import SUPER_USER
+from Products import ERP5Security
 from ZODB.POSException import ConflictError
 from Products.PluggableAuthService.PluggableAuthService import DumbHTTPExtractor
 from Products.ERP5Security.ERP5GroupManager import ConsistencyError, NO_CACHE_MODE
+from Products.ERP5Type.UnrestrictedMethod import UnrestrictedMethod
 from Products.ERP5Type.ERP5Type \
   import ERP5TYPE_SECURITY_GROUP_ID_GENERATION_SCRIPT
 from Products.ERP5Type.Cache import CachingMethod
@@ -146,7 +147,7 @@ class SlapOSMachineAuthenticationPlugin(BasePlugin):
     """Authentificate with credentials"""
     login = credentials.get('machine_login', None)
     # Forbidden the usage of the super user.
-    if login == SUPER_USER:
+    if login == ERP5Security.SUPER_USER:
       return None
 
     #Search the user by his login
@@ -191,11 +192,12 @@ class SlapOSMachineAuthenticationPlugin(BasePlugin):
   #   Products.ERP5Security.ERP5GroupManager.ERP5GroupManager.getGroupsForPrincipal
   # which allows to treat Computer and Software Instance as loggable user
   loggable_portal_type_list = ['Computer', 'Person', 'Software Instance']
+  @UnrestrictedMethod
   def getGroupsForPrincipal(self, principal, request=None):
     """ See IGroupsPlugin.
     """
     # If this is the super user, skip the check.
-    if principal.getId() == SUPER_USER:
+    if principal.getId() == ERP5Security.SUPER_USER:
       return ()
 
     def _getGroupsForPrincipal(user_name, path):
@@ -204,11 +206,6 @@ class SlapOSMachineAuthenticationPlugin(BasePlugin):
       security_group_list = []
       security_definition_list = ()
 
-      # because we aren't logged in, we have to create our own
-      # SecurityManager to be able to access the Catalog
-      sm = getSecurityManager()
-      if sm.getUser().getId() != SUPER_USER:
-        newSecurityManager(self, self.getUser(SUPER_USER))
       try:
         # To get the complete list of groups, we try to call the
         # ERP5Type_getSecurityCategoryMapping which should return a list
@@ -293,7 +290,7 @@ class SlapOSMachineAuthenticationPlugin(BasePlugin):
                   generator_name,
                   error = sys.exc_info())
       finally:
-        setSecurityManager(sm)
+        pass
       return tuple(security_group_list)
 
     if not NO_CACHE_MODE:
@@ -326,8 +323,8 @@ class SlapOSMachineAuthenticationPlugin(BasePlugin):
     id_list = []
     for user_id in id:
       if SUPER_USER == user_id:
-        info = { 'id' : SUPER_USER
-                , 'login' : SUPER_USER
+        info = { 'id' : ERP5Security.SUPER_USER
+                , 'login' : ERP5Security.SUPER_USER
                 , 'pluginid' : plugin_id
                 }
         user_info.append(info)
