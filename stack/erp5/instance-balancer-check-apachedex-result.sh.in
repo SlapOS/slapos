@@ -1,0 +1,64 @@
+#!
+#{{ dash }}
+
+# DO NOT RUN THIS SCRIPT ON PRODUCTION INSTANCE
+# OR MYSQL DATA WILL BE ERASED.
+
+# This script will import the dump of the mysql database to the real
+# database. It is launched by the clone (importer) instance of webrunner
+# in the end of the import script.
+
+# Depending on the output, it will create a file containing
+# the status of the restoration (success or failure)
+
+set -e
+
+apachedex_file='{{ apdex_file }}'
+#'/srv/slapgrid/slappart10/srv/runner/instance/slappart8/srv/monitor/private/apachedex/ApacheDex-2017-07-27.html' 
+apachedex_status_file='/srv/slapgrid/slappart10/srv/runner/instance/slappart8/srv/monitor/private/apachedex.report.json'
+#{{ apdex_status_file }} 
+default=0.7
+
+# Check if the file is there
+if [ ! -s "$apachedex_file" ]; then 
+  # If file doesn't exists create one
+  # If it is empty check for modification time
+  if [ ! -f "$apachedex_file" ]; then
+    touch $apachedex_file
+  else
+    modified_date=`stat -c '%Z' $apachedex_file`
+    current_date=`date +%s`
+    if [[ `echo "$current_date - $modified_date" | bc` -gt 108000 ]]
+    then 
+      echo "File modification date is greater than 30 hours"
+      json_content=`cat $apachedex_status_file`
+      message=`echo $json_content | python -c 'import json,sys;obj=json.load(sys.stdin);print obj["message"]'`
+      echo $message 
+      exit 2
+    else
+      echo "File is empty for now"
+    fi
+  fi
+else
+  # Check if the result exists
+  {
+    regex="apdex threshold<\/th><td>(.*)s<\/td>"
+    file_content=`cat $apachedex_file`
+    if [[ $file_content =~ $regex ]]
+    then
+      threshold=${BASH_REMATCH[1]}
+      threshold=${threshold:-0}
+      if [[ `echo "$threshold > $default" | bc` -eq 1 ]]
+      then
+        echo "Thanks for keeping it all clean"
+      else
+        echo "Threshold is lower than exptected: Expected was $default and we current is $threshold"
+        exit 2
+      fi
+    else
+      echo "No threshold found in the result"
+    fi
+  } || {
+    echo "Cannot parse the apdex result"
+  }
+fi

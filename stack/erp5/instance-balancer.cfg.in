@@ -299,6 +299,17 @@ default = ${monitor-directory:etc}/apdex_default
 base-list = ${monitor-directory:etc}/apdex_base_list
 skip-base-list = ${monitor-directory:etc}/apdex_skip_base_list
 erp5-base-list = ${monitor-directory:etc}/apdex_erp5_base_list
+apdex-promise-threshold = ${monitor-directory:etc}/apdex-promise-threshold
+
+[monitor-promise-apachedex-result]
+recipe = slapos.cookbook:jinja2
+template = {{ parameter_dict['apdex-result-check-script'] }}
+rendered = ${monitor-directory:promises}/apachedex-result
+context = 
+  key apdex_file ${directory:apachedex}
+  key apdex_status_file ${monitor-directory:private}/apachedex.report.json
+  key default_threshold 0.7
+  key user_threshold ${apachedex-paramters:apdex-promise-threshold}
 
 [monitor-instance-parameter]
 monitor-httpd-ipv6 = {{ (ipv6_set | list)[0] }}
@@ -310,6 +321,7 @@ instance-configuration =
   file apachedex-base-list ${apachedex-parameters:base-list}
   file apachedex-skip-base-list ${apachedex-parameters:skip-base-list}
   file apachedex-erp5-base-list ${apachedex-parameters:erp5-base-list}
+  file apachedex-erp5-promise-threshold ${apachedex-parameters:apdex-promise-threshold}
 
 [buildout]
 extends =

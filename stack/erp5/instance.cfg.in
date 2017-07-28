@@ -93,6 +93,7 @@ openssl-location = {{ openssl_location }}
 
 [dynamic-template-balancer-parameters]
 apache = {{ apache_location }}
+apdex-result-check-script = {{ apdex_result_check_script }}
 openssl = {{ openssl_location }}
 haproxy = {{ haproxy_location }}
 bin-directory = {{ bin_directory }}
