@@ -533,7 +533,7 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
       default_aggregate_uid=ComplexQuery(
          Query(default_aggregate_uid=sequence['computer_partition_uid']),
          Query(default_aggregate_uid=sequence['software_instance_uid']),
-         operator="AND"),
+        logical_operator="AND"),
       portal_type=self.sale_packing_list_line_portal_type,
       simulation_state=state,
       resource_relative_url=resource)[0][0])
@@ -2834,7 +2834,7 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
     query = ComplexQuery(
         Query(aggregate_uid=sequence['computer_partition_uid']),
         Query(aggregate_portal_type=self.software_instance_portal_type),
-        operator="AND")
+       logical_operator="AND")
     software_instance = self.portal.portal_catalog.getResultValue(
         portal_type="Sale Packing List Line",
         sort_on=(('movement.start_date', 'DESC'),),
@@ -2845,7 +2845,7 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
     query = ComplexQuery(
         Query(aggregate_uid=sequence['computer_partition_uid']),
         Query(aggregate_portal_type=self.slave_instance_portal_type),
-        operator="AND")
+       logical_operator="AND")
     slave_instance = self.portal.portal_catalog.getResultValue(
         portal_type="Sale Packing List Line",
         query=query).getAggregateValue(portal_type=self.slave_instance_portal_type)

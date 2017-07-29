@@ -90,7 +90,7 @@ def getUserByLogin(portal, login):
   person_query = Query(portal_type=["Person"],
       reference=dict(query=login, key='ExactMatch'))
   result = portal.portal_catalog.unrestrictedSearchResults(
-    query=ComplexQuery(machine_query, person_query, operator="OR"),
+    query=ComplexQuery(machine_query, person_query,logical_operator="OR"),
     select_expression='reference')
   result = [x for x in result if \
     (x.getPortalType() == 'Person' and x.getValidationState() != 'deleted') or \
