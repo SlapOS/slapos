@@ -31,8 +31,7 @@ from Products.ERP5Type.Globals import InitializeClass
 from AccessControl import ClassSecurityInfo
 import sys
 
-from AccessControl.SecurityManagement import newSecurityManager,\
-    getSecurityManager, setSecurityManager
+from Products.ERP5Type.UnrestrictedMethod import UnrestrictedMethod
 from Products.PageTemplates.PageTemplateFile import PageTemplateFile
 from Products.PluggableAuthService.PluggableAuthService import \
     _SWALLOWABLE_PLUGIN_EXCEPTIONS
@@ -40,7 +39,7 @@ from Products.PluggableAuthService.interfaces import plugins
 from Products.PluggableAuthService.utils import classImplements
 from Products.PluggableAuthService.plugins.BasePlugin import BasePlugin
 from Products.ERP5Type.Cache import transactional_cached
-from Products.ERP5Security import SUPER_USER
+from Products import ERP5Security
 from ZODB.POSException import ConflictError
 from Products.ERP5Security.ERP5GroupManager import ConsistencyError, NO_CACHE_MODE
 from Products.ERP5Type.Cache import CachingMethod
@@ -134,7 +133,7 @@ class SlapOSShadowAuthenticationPlugin(BasePlugin):
     """Authentificate with credentials"""
     login = credentials.get('machine_login', None)
     # Forbidden the usage of the super user.
-    if login == SUPER_USER:
+    if login == ERP5Security.SUPER_USER:
       return None
 
     #Search the user by his login
@@ -183,37 +182,31 @@ class SlapOSShadowAuthenticationPlugin(BasePlugin):
     """ See IGroupsPlugin.
     """
     # If this is the super user, skip the check.
-    if principal.getId() == SUPER_USER:
+    if principal.getId() == ERP5Security.SUPER_USER:
       return ()
 
+    @UnrestrictedMethod
     def _getGroupsForPrincipal(user_name, path):
       if user_name.startswith(LOGIN_PREFIX):
         user_name = user_name[LOGIN_PREFIX_LENGTH:]
       else:
         return ( )
-      # because we aren't logged in, we have to create our own
-      # SecurityManager to be able to access the Catalog
-      sm = getSecurityManager()
-      if sm.getUser().getId() != SUPER_USER:
-        newSecurityManager(self, self.getUser(SUPER_USER))
-      try:
-        # get the loggable document from its reference - no security check needed
-        catalog_result = self.portal_catalog.unrestrictedSearchResults(
-            portal_type=self.loggable_portal_type_list,
-            reference=dict(query=user_name, key='ExactMatch'))
-        if len(catalog_result) != 1: # we won't proceed with groups
-          if len(catalog_result) > 1: # configuration is screwed
-            raise ConsistencyError, 'There is more than one of %s whose \
-                login is %s : %s' % (','.join(self.loggable_portal_type_list),
-                user_name,
-                repr([r.getObject() for r in catalog_result]))
-          else:
-            return ()
-        else:
-          portal_type = catalog_result[0].getPortalType()
 
-      finally:
-        setSecurityManager(sm)
+      # get the loggable document from its reference - no security check needed
+      catalog_result = self.portal_catalog.unrestrictedSearchResults(
+          portal_type=self.loggable_portal_type_list,
+          reference=dict(query=user_name, key='ExactMatch'))
+      if len(catalog_result) != 1: # we won't proceed with groups
+        if len(catalog_result) > 1: # configuration is screwed
+          raise ConsistencyError, 'There is more than one of %s whose \
+              login is %s : %s' % (','.join(self.loggable_portal_type_list),
+              user_name,
+              repr([r.getObject() for r in catalog_result]))
+        else:
+          return ()
+      else:
+        portal_type = catalog_result[0].getPortalType()
+
       return (
         'R-SHADOW-%s' % portal_type.replace(' ', '').upper(), # generic group
         'SHADOW-%s' % user_name # user specific shadow
@@ -248,9 +241,9 @@ class SlapOSShadowAuthenticationPlugin(BasePlugin):
 
     id_list = []
     for user_id in id:
-      if SUPER_USER == user_id:
-        info = { 'id' : SUPER_USER
-                , 'login' : SUPER_USER
+      if ERP5Security.SUPER_USER == user_id:
+        info = { 'id' : ERP5Security.SUPER_USER
+                , 'login' : ERP5Security.SUPER_USER
                 , 'pluginid' : plugin_id
                 }
         user_info.append(info)

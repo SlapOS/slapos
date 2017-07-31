@@ -31,8 +31,6 @@ from Products.ERP5Type.Globals import InitializeClass
 from AccessControl import ClassSecurityInfo
 import sys
 
-from AccessControl.SecurityManagement import newSecurityManager,\
-    getSecurityManager, setSecurityManager
 from Products.PageTemplates.PageTemplateFile import PageTemplateFile
 from Products.PluggableAuthService.PluggableAuthService import \
     _SWALLOWABLE_PLUGIN_EXCEPTIONS
@@ -168,8 +166,8 @@ class SlapOSMachineAuthenticationPlugin(BasePlugin):
       return []
     if isinstance(login, list):
       login = tuple(login)
-    elif not isinstance(login, tuple):
-      login = str(login)
+    elif not isinstance(login, (tuple, str)):
+      login = login.getUserName()
     try:
       return getUserByLogin(self.getPortalObject(), login)
     except ConflictError:
@@ -322,7 +320,7 @@ class SlapOSMachineAuthenticationPlugin(BasePlugin):
 
     id_list = []
     for user_id in id:
-      if SUPER_USER == user_id:
+      if ERP5Security.SUPER_USER == user_id:
         info = { 'id' : ERP5Security.SUPER_USER
                 , 'login' : ERP5Security.SUPER_USER
                 , 'pluginid' : plugin_id
