@@ -59,7 +59,7 @@ key_file = ${directory:etc}/jupyter_cert.key
 [instance]
 recipe = slapos.cookbook:wrapper
 command-line =
-  {{ bin_directory }}/jupyter-notebook
+  {{ bin_directory }}/jupyter-lab
   --no-browser
   --ip=${instance-parameter:host}
   --port=${instance-parameter:port}
@@ -68,7 +68,7 @@ command-line =
   --keyfile=${instance-parameter:key_file}
   --notebook-dir=${instance-parameter:notebook_dir}
   --log-level="DEBUG"
-wrapper-path = ${directory:service}/jupyter-notebook
+wrapper-path = ${directory:service}/jupyter-lab
 parameters-extra = true
 environment =
   JUPYTER_PATH=${directory:jupyter_dir}
@@ -126,7 +126,8 @@ instance-configuration =
 
 [publish-connection-parameter]
 recipe = slapos.cookbook:publish.serialised
-url = https://[${instance-parameter:host}]:${instance-parameter:port}
+jupyter-classic-url = https://[${instance-parameter:host}]:${instance-parameter:port}/tree
+jupyterlab-url = https://[${instance-parameter:host}]:${instance-parameter:port}/lab
 
 [erp5-kernel]
 recipe = slapos.cookbook:symbolic.link
