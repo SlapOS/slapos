@@ -28,7 +28,6 @@
 
 import unittest
 import random
-import transaction
 from AccessControl import getSecurityManager
 from Products.SlapOS.tests.testSlapOSMixin import testSlapOSMixin
 
@@ -161,23 +160,27 @@ class TestSlapOSPersonSecurity(TestSlapOSSecurityMixin):
       reference=reference, password=password)
     person.newContent(portal_type='Assignment').open()
 
-    transaction.commit()
+    self.commit()
     person.recursiveImmediateReindexObject()
 
     self._assertUserExists(reference, password)
 
-    self.login(reference)
+    self.login(person.getUserId())
     user = getSecurityManager().getUser()
     self.assertTrue('Authenticated' in user.getRoles())
     self.assertSameSet([], user.getGroups())
 
+
     # add to group category
     self.login()
     person.newContent(portal_type='Assignment', group='company').open()
+    self.commit()
     person.recursiveImmediateReindexObject()
 
+
+    self.tic()
     self.portal.portal_caches.clearAllCache()
-    self.login(reference)
+    self.login(person.getUserId())
     user = getSecurityManager().getUser()
     self.assertTrue('Authenticated' in user.getRoles())
     self.assertSameSet(['G-COMPANY'], user.getGroups())
@@ -188,7 +191,7 @@ class TestSlapOSPersonSecurity(TestSlapOSSecurityMixin):
     person.recursiveImmediateReindexObject()
 
     self.portal.portal_caches.clearAllCache()
-    self.login(reference)
+    self.login(person.getUserId())
     user = getSecurityManager().getUser()
     self.assertTrue('Authenticated' in user.getRoles())
     self.assertSameSet(['R-MEMBER', 'G-COMPANY'], user.getGroups())
@@ -199,7 +202,7 @@ class TestSlapOSPersonSecurity(TestSlapOSSecurityMixin):
     person = self.portal.person_module.newContent(portal_type='Person',
       reference=reference, password=password)
 
-    transaction.commit()
+    self.commit()
     person.recursiveImmediateReindexObject()
 
     self._assertUserDoesNotExists(reference, password)
