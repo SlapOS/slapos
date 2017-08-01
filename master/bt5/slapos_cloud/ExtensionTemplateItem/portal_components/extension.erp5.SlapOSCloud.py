@@ -27,7 +27,7 @@
 
 from AccessControl.SecurityManagement import getSecurityManager, \
              setSecurityManager, newSecurityManager
-from Products.ERP5Security.ERP5UserManager import SUPER_USER
+from Products import ERP5Security
 
 def SoftwareInstance_bangAsSelf(self, relative_url=None, reference=None,
   comment=None):
@@ -43,7 +43,8 @@ def SoftwareInstance_bangAsSelf(self, relative_url=None, reference=None,
   if (software_instance.getPortalType() == "Slave Instance") and \
     (software_instance.getReference() == reference):
     # XXX There is no account for Slave Instance
-    reference = SUPER_USER
+    reference = ERP5Security.SUPER_USER
+
   newSecurityManager(None, self.getPortalObject().acl_users.getUserById(
     reference))
   try:
