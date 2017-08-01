@@ -1,6 +1,7 @@
 [buildout]
 parts =
   instance
+  instance-lab
   jupyter_notebook
   read-knowledge0
   publish-connection-parameter
@@ -58,11 +59,13 @@ key_file = ${directory:etc}/jupyter_cert.key
 
 [instance]
 recipe = slapos.cookbook:wrapper
+jupyter-executable = {{ bin_directory }}/jupyter-notebook
+port = ${instance-parameter:port}
 command-line =
-  {{ bin_directory }}/jupyter-notebook
+  ${:jupyter-executable}
   --no-browser
   --ip=${instance-parameter:host}
-  --port=${instance-parameter:port}
+  --port=${:port}
   --port-retries=0
   --certfile=${instance-parameter:cert_file}
   --keyfile=${instance-parameter:key_file}
@@ -75,6 +78,12 @@ environment =
   JUPYTER_CONFIG_DIR=${directory:jupyter_config_dir}
   JUPYTER_RUNTIME_DIR=${directory:jupyter_runtime_dir}
   LANG=C.UTF-8
+
+[instance-lab]
+<= instance
+jupyter-executable = {{ bin_directory }}/jupyter-lab
+wrapper-path = ${directory:service}/jupyter-lab
+port = 8889
 
 [jupyter-notebook-config]
 <= dynamic-jinja2-template-base
@@ -107,7 +116,7 @@ erp5_kernel_dir = ${:jupyter_kernel_dir}/ERP5
 # This part is called like this because knowledge0.write uses the part name for
 # the section name in the config file.
 recipe = slapos.cookbook:zero-knowledge.write
-password = 
+password =
 filename = knowledge0.cfg
 
 [read-knowledge0]
@@ -153,4 +162,3 @@ context =
 template = {{ custom_js_location }}/{{ custom_js_filename }}
 rendered = ${directory:jupyter_custom_dir}/custom.js
 mode = 0744
-
