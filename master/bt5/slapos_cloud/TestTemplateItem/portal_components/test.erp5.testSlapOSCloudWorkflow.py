@@ -163,7 +163,7 @@ class TestSlapOSCoreComputerSlapInterfaceWorkflow(testSlapOSMixin):
 
   def test_approveComputerRegistration(self):
     self._makePerson()
-    self.login(self.person_user.getReference())
+    self.login(self.person_user.getUserId())
     new_id = self.generateNewId()
     computer = self.portal.computer_module.newContent(portal_type='Computer',
       title="Computer %s for %s" % (new_id, self.person_user.getReference()),
@@ -233,7 +233,7 @@ class TestSlapOSCoreComputerSlapInterfaceWorkflow(testSlapOSMixin):
     self._makePerson()
     self.computer.edit(source_administration=self.person_user.getRelativeUrl())
     self.tic()
-    self.login(self.person_user.getReference())
+    self.login(self.person_user.getUserId())
     self.assertRaises(TypeError, self.computer.requestSoftwareRelease,
         state='available')
     transaction.abort()
@@ -242,7 +242,7 @@ class TestSlapOSCoreComputerSlapInterfaceWorkflow(testSlapOSMixin):
     self._makePerson()
     self.computer.edit(source_administration=self.person_user.getRelativeUrl())
     self.tic()
-    self.login(self.person_user.getReference())
+    self.login(self.person_user.getUserId())
     url = self.generateNewSoftwareReleaseUrl()
     self.assertRaises(TypeError, self.computer.requestSoftwareRelease,
         software_release_url=url)
@@ -252,7 +252,7 @@ class TestSlapOSCoreComputerSlapInterfaceWorkflow(testSlapOSMixin):
     self._makePerson()
     self.computer.edit(source_administration=self.person_user.getRelativeUrl())
     self.tic()
-    self.login(self.person_user.getReference())
+    self.login(self.person_user.getUserId())
     url = self.generateNewSoftwareReleaseUrl()
     self.computer.requestSoftwareRelease(software_release_url=url,
         state='available')
@@ -268,7 +268,7 @@ class TestSlapOSCoreComputerSlapInterfaceWorkflow(testSlapOSMixin):
     self._makePerson()
     self.computer.edit(source_administration=self.person_user.getRelativeUrl())
     self.tic()
-    self.login(self.person_user.getReference())
+    self.login(self.person_user.getUserId())
     url = self.generateNewSoftwareReleaseUrl()
     self.computer.requestSoftwareRelease(software_release_url=url,
         state='destroyed')
@@ -282,7 +282,7 @@ class TestSlapOSCoreComputerSlapInterfaceWorkflow(testSlapOSMixin):
     self._makePerson()
     self.computer.edit(source_administration=self.person_user.getRelativeUrl())
     self.tic()
-    self.login(self.person_user.getReference())
+    self.login(self.person_user.getUserId())
     url = self.generateNewSoftwareReleaseUrl()
     self.computer.requestSoftwareRelease(software_release_url=url,
         state='available')
@@ -310,7 +310,7 @@ class TestSlapOSCoreComputerSlapInterfaceWorkflow(testSlapOSMixin):
     self._makePerson()
     self.computer.edit(source_administration=self.person_user.getRelativeUrl())
     self.tic()
-    self.login(self.person_user.getReference())
+    self.login(self.person_user.getUserId())
     url = self.generateNewSoftwareReleaseUrl()
     self.computer.requestSoftwareRelease(software_release_url=url,
         state='available')
@@ -325,7 +325,7 @@ class TestSlapOSCoreComputerSlapInterfaceWorkflow(testSlapOSMixin):
     self._makePerson()
     self.computer.edit(source_administration=self.person_user.getRelativeUrl())
     self.tic()
-    self.login(self.person_user.getReference())
+    self.login(self.person_user.getUserId())
     url = self.generateNewSoftwareReleaseUrl()
     self.computer.requestSoftwareRelease(software_release_url=url,
         state='available')
@@ -416,7 +416,7 @@ class TestSlapOSCorePersonComputerSupply(testSlapOSMixin):
     self.tic()
 
     # Login as new user
-    self.login(person_user.getReference())
+    self.login(person_user.getUserId())
     new_person = self.getPortalObject().ERP5Site_getAuthenticatedMemberPersonValue()
     self.assertEquals(person_user.getRelativeUrl(), new_person.getRelativeUrl())
 
@@ -988,7 +988,7 @@ class TestSlapOSCoreInstanceSlapInterfaceWorkflow(testSlapOSMixin):
       sla_xml=sla_xml,
     )
     transaction.abort()
-    
+
     # no sla_xml
     self.assertRaises(TypeError, self.instance.requestStop,
       software_release=software_release,
@@ -1056,7 +1056,7 @@ class TestSlapOSCoreInstanceSlapInterfaceWorkflow(testSlapOSMixin):
       sla_xml=sla_xml,
     )
     transaction.abort()
-    
+
     # no sla_xml
     self.assertRaises(TypeError, self.instance.requestStart,
       software_release=software_release,
@@ -1958,7 +1958,7 @@ class TestSlapOSCorePersonRequest(testSlapOSMixin):
     self.tic()
 
     # Login as new user
-    self.login(person_user.getReference())
+    self.login(person_user.getUserId())
     new_person = self.getPortalObject().ERP5Site_getAuthenticatedMemberPersonValue()
     self.assertEquals(person_user.getRelativeUrl(), new_person.getRelativeUrl())
 
@@ -2145,7 +2145,7 @@ class TestSlapOSCorePersonRequest(testSlapOSMixin):
       state=state,
     )
     hosting_subscription = person.REQUEST.get('request_hosting_subscription')
-    self.assertEquals("Hosting Subscription", 
+    self.assertEquals("Hosting Subscription",
                       hosting_subscription.getPortalType())
 
   def test_Person_requestSoftwareInstance_createHostingSubscription(self):
@@ -2163,7 +2163,7 @@ class TestSlapOSCorePersonRequest(testSlapOSMixin):
     state = "started"
 
     previous_id = self.getPortalObject().portal_ids\
-        .generateNewId(id_group='slap_hosting_subscription_reference', 
+        .generateNewId(id_group='slap_hosting_subscription_reference',
                        id_generator='uid')
 
     person.requestSoftwareInstance(
@@ -2520,7 +2520,7 @@ class TestSlapOSCorePersonRequestComputer(testSlapOSMixin):
     self.tic()
 
     # Login as new user
-    self.login(person_user.getReference())
+    self.login(person_user.getUserId())
     new_person = self.getPortalObject().ERP5Site_getAuthenticatedMemberPersonValue()
     self.assertEquals(person_user.getRelativeUrl(), new_person.getRelativeUrl())
 
@@ -2726,7 +2726,7 @@ class TestSlapOSCoreSlapOSCloudInteractionWorkflow(testSlapOSMixin):
 
   def test_Computer_setSubjectList(self):
     self._makePerson()
-    self.login(self.person_user.getReference())
+    self.login(self.person_user.getUserId())
 
     new_id = self.generateNewId()
     computer = self.portal.computer_module.newContent(
@@ -2743,7 +2743,7 @@ class TestSlapOSCoreSlapOSCloudInteractionWorkflow(testSlapOSMixin):
 
   def check_Instance_validate(self, portal_type):
     self._makePerson()
-    self.login(self.person_user.getReference())
+    self.login(self.person_user.getUserId())
 
     new_id = self.generateNewId()
     instance = self.portal.software_instance_module.newContent(
@@ -2759,7 +2759,9 @@ class TestSlapOSCoreSlapOSCloudInteractionWorkflow(testSlapOSMixin):
         return self.activeSense_call()
 
     # Replace activeSense by a dummy method
-    from Products.ERP5Type.Document.Alarm import Alarm
+    class Alarm:
+      pass
+    #from Products.ERP5Type.Document.Alarm import Alarm
     Alarm.activeSense_call = Alarm.activeSense
     Alarm.activeSense = verify_activeSense_call
     try:
@@ -2780,7 +2782,7 @@ class TestSlapOSCoreSlapOSCloudInteractionWorkflow(testSlapOSMixin):
 
   def test_SlaveInstance_requestDestroy(self):
     self._makePerson()
-    self.login(self.person_user.getReference())
+    self.login(self.person_user.getUserId())
     new_id = self.generateNewId()
     instance = self.portal.software_instance_module.newContent(
       portal_type='Slave Instance',
@@ -2804,7 +2806,7 @@ class TestSlapOSCoreSlapOSCloudInteractionWorkflow(testSlapOSMixin):
 
   def check_SoftwareInstallation_changeState(self, method_id):
     self._makePerson()
-    self.login(self.person_user.getReference())
+    self.login(self.person_user.getUserId())
     new_id = self.generateNewId()
     computer = self.portal.computer_module.newContent(
       portal_type='Computer',
@@ -2845,7 +2847,7 @@ class TestSlapOSCoreSlapOSCloudInteractionWorkflow(testSlapOSMixin):
 
   def check_SoftwareInstance_changeState(self, method_id):
     self._makePerson()
-    self.login(self.person_user.getReference())
+    self.login(self.person_user.getUserId())
 
     new_id = self.generateNewId()
     computer = self.portal.computer_module.newContent(
@@ -2880,7 +2882,7 @@ class TestSlapOSCoreSlapOSCloudInteractionWorkflow(testSlapOSMixin):
 
     def verify_reindexObject_call(self, *args, **kw):
       if self.getRelativeUrl() == partition.getRelativeUrl():
-        partition.portal_workflow.doActionFor(partition, action='edit_action', 
+        partition.portal_workflow.doActionFor(partition, action='edit_action',
           comment='reindexObject triggered on %s' % method_id)
       else:
         return self.reindexObject_call(*args, **kw)
@@ -2909,7 +2911,7 @@ class TestSlapOSCoreSlapOSCloudInteractionWorkflow(testSlapOSMixin):
 
   def check_change_instance_parameter(self, portal_type, method_id):
     self._makePerson()
-    self.login(self.person_user.getReference())
+    self.login(self.person_user.getUserId())
 
     new_id = self.generateNewId()
     instance = self.portal.software_instance_module.newContent(
@@ -2966,7 +2968,7 @@ class TestSlapOSCoreSlapOSCloudInteractionWorkflow(testSlapOSMixin):
     portal_type = "Software Instance"
 
     self._makePerson()
-    self.login(self.person_user.getReference())
+    self.login(self.person_user.getUserId())
 
     new_id = self.generateNewId()
     instance3 = self.portal.software_instance_module.newContent(
@@ -3005,7 +3007,7 @@ class TestSlapOSCoreSlapOSCloudInteractionWorkflow(testSlapOSMixin):
     def verify_reindexObject_call(self, *args, **kw):
       if self.getRelativeUrl() in (instance2.getRelativeUrl(),
                                    instance3.getRelativeUrl()):
-        self.portal_workflow.doActionFor(instance1, action='edit_action', 
+        self.portal_workflow.doActionFor(instance1, action='edit_action',
           comment='reindexObject triggered')
       else:
         return self.reindexObject_call(*args, **kw)
