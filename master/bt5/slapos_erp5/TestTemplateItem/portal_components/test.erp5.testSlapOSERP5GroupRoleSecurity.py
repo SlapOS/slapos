@@ -76,8 +76,8 @@ class TestComputer(TestSlapOSGroupRoleSecurityMixin):
         source_administration=person.getRelativeUrl())
     computer.updateLocalRolesOnSecurityGroups()
     self.assertSecurityGroup(computer,
-        [self.user_id, 'G-COMPANY', reference], False)
-    self.assertRoles(computer, reference, ['Assignee'])
+        [self.user_id, 'G-COMPANY', person.getUserId()], False)
+    self.assertRoles(computer, person.getUserId(), ['Assignee'])
     self.assertRoles(computer, self.user_id, ['Owner'])
 
   def test_AllocationScope(self):
@@ -101,7 +101,7 @@ class TestComputer(TestSlapOSGroupRoleSecurityMixin):
     computer.updateLocalRolesOnSecurityGroups()
     shadow_reference = 'SHADOW-%s' % reference
     self.assertSecurityGroup(computer,
-        [self.user_id, 'G-COMPANY', shadow_reference, reference], False)
+        [self.user_id, 'G-COMPANY', shadow_reference, person.getUserId()], False)
     self.assertRoles(computer, shadow_reference, ['Auditor'])
     self.assertRoles(computer, self.user_id, ['Owner'])
 
@@ -115,7 +115,7 @@ class TestComputer(TestSlapOSGroupRoleSecurityMixin):
     computer.updateLocalRolesOnSecurityGroups()
     shadow_friend_reference = 'SHADOW-%s' % friend_reference
     self.assertSecurityGroup(computer,
-        [self.user_id, 'G-COMPANY', shadow_friend_reference, reference], False)
+        [self.user_id, 'G-COMPANY', shadow_friend_reference, person.getUserId()], False)
     self.assertRoles(computer, shadow_friend_reference, ['Auditor'])
     self.assertRoles(computer, self.user_id, ['Owner'])
 
@@ -148,8 +148,8 @@ class TestComputerModel(TestSlapOSGroupRoleSecurityMixin):
         source_administration=person.getRelativeUrl())
     model.updateLocalRolesOnSecurityGroups()
     self.assertSecurityGroup(model,
-        ['G-COMPANY', self.user_id, reference], False)
-    self.assertRoles(model, reference, ['Assignee'])
+        ['G-COMPANY', self.user_id, person.getUserId()], False)
+    self.assertRoles(model, person.getUserId(), ['Assignee'])
     self.assertRoles(model, self.user_id, ['Owner'])
 
 class TestComputerModelModule(TestSlapOSGroupRoleSecurityMixin):
@@ -195,8 +195,8 @@ class TestComputerNetwork(TestSlapOSGroupRoleSecurityMixin):
         source_administration=person.getRelativeUrl())
     network.updateLocalRolesOnSecurityGroups()
     self.assertSecurityGroup(network,
-        ['G-COMPANY', 'R-SHADOW-PERSON', self.user_id, reference], False)
-    self.assertRoles(network, reference, ['Assignee'])
+        ['G-COMPANY', 'R-SHADOW-PERSON', self.user_id, person.getUserId()], False)
+    self.assertRoles(network, person.getUserId(), ['Assignee'])
     self.assertRoles(network, self.user_id, ['Owner'])
 
 class TestComputerNetworkModule(TestSlapOSGroupRoleSecurityMixin):
@@ -249,10 +249,10 @@ class TestComputerPartition(TestSlapOSGroupRoleSecurityMixin):
 
     partition.updateLocalRolesOnSecurityGroups()
     self.assertSecurityGroup(partition,
-        [self.user_id, instance_customer_reference, slave_customer_reference,
+        [self.user_id, instance_customer.getUserId(), slave_customer.getUserId(),
           instance_subscription_reference], True)
-    self.assertRoles(partition, instance_customer_reference, ['Auditor'])
-    self.assertRoles(partition, slave_customer_reference, ['Auditor'])
+    self.assertRoles(partition, instance_customer.getUserId(), ['Auditor'])
+    self.assertRoles(partition, slave_customer.getUserId(), ['Auditor'])
     self.assertRoles(partition, instance_subscription_reference, ['Auditor'])
     self.assertRoles(partition, self.user_id, ['Owner'])
 
@@ -360,9 +360,9 @@ class TestHostingSubscription(TestSlapOSGroupRoleSecurityMixin):
     subscription.updateLocalRolesOnSecurityGroups()
 
     self.assertSecurityGroup(subscription, [self.user_id, reference,
-        customer_reference, 'G-COMPANY'], False)
+        customer.getUserId(), 'G-COMPANY'], False)
     self.assertRoles(subscription, reference, ['Assignor'])
-    self.assertRoles(subscription, customer_reference, ['Assignee'])
+    self.assertRoles(subscription, customer.getUserId(), ['Assignee'])
     self.assertRoles(subscription, self.user_id, ['Owner'])
     self.assertRoles(subscription, 'G-COMPANY', ['Assignor'])
 
@@ -463,9 +463,9 @@ class TestPerson(TestSlapOSGroupRoleSecurityMixin):
 
     shadow_reference = 'SHADOW-%s' % reference
     self.assertSecurityGroup(person,
-        ['G-COMPANY', self.user_id, reference, shadow_reference], False)
+        ['G-COMPANY', self.user_id, person.getUserId(), shadow_reference], False)
     self.assertRoles(person, 'G-COMPANY', ['Assignor'])
-    self.assertRoles(person, reference, ['Associate'])
+    self.assertRoles(person, person.getUserId(), ['Associate'])
     self.assertRoles(person, shadow_reference, ['Auditor'])
     self.assertRoles(person, self.user_id, ['Owner'])
 
@@ -523,10 +523,10 @@ class TestSlaveInstance(TestSlapOSGroupRoleSecurityMixin):
         portal_type='Slave Instance', specialise=subscription.getRelativeUrl())
     instance.updateLocalRolesOnSecurityGroups()
 
-    self.assertSecurityGroup(instance, ['G-COMPANY', customer_reference,
+    self.assertSecurityGroup(instance, ['G-COMPANY', customer.getUserId(),
         subscription_reference, self.user_id], False)
     self.assertRoles(instance, 'G-COMPANY', ['Assignor'])
-    self.assertRoles(instance, customer_reference, ['Assignee'])
+    self.assertRoles(instance, customer.getUserId(), ['Assignee'])
     self.assertRoles(instance, subscription_reference, ['Assignor'])
     self.assertRoles(instance, self.user_id, ['Owner', 'Assignee'])
 
@@ -605,7 +605,7 @@ class TestSoftwareInstallation(TestSlapOSGroupRoleSecurityMixin):
     installation.updateLocalRolesOnSecurityGroups()
 
     self.assertSecurityGroup(installation, [self.user_id,
-        'G-COMPANY', provider_reference], False)
+        'G-COMPANY', provider.getUserId()], False)
     self.assertRoles(installation, 'G-COMPANY', ['Assignor'])
     self.assertRoles(installation, provider_reference, ['Assignee'])
     self.assertRoles(installation, self.user_id, ['Owner', 'Assignee'])
@@ -647,10 +647,10 @@ class TestSoftwareInstance(TestSlapOSGroupRoleSecurityMixin):
         portal_type='Software Instance', specialise=subscription.getRelativeUrl())
     instance.updateLocalRolesOnSecurityGroups()
 
-    self.assertSecurityGroup(instance, ['G-COMPANY', customer_reference,
+    self.assertSecurityGroup(instance, ['G-COMPANY', customer.getUserId(),
         subscription_reference, self.user_id], False)
     self.assertRoles(instance, 'G-COMPANY', ['Assignor'])
-    self.assertRoles(instance, customer_reference, ['Assignee'])
+    self.assertRoles(instance, customer.getUserId(), ['Assignee'])
     self.assertRoles(instance, subscription_reference, ['Assignor'])
     self.assertRoles(instance, self.user_id, ['Owner', 'Assignee'])
 
@@ -842,10 +842,10 @@ class TestSalePackingList(TestSlapOSGroupRoleSecurityMixin):
         )
     product.updateLocalRolesOnSecurityGroups()
     self.assertSecurityGroup(product,
-        ['G-COMPANY', self.user_id, reference], False)
+        ['G-COMPANY', self.user_id, person.getUserId()], False)
     self.assertRoles(product, 'G-COMPANY', ['Assignor'])
     self.assertRoles(product, self.user_id, ['Owner'])
-    self.assertRoles(product, reference, ['Auditor'])
+    self.assertRoles(product, person.getUserId(), ['Auditor'])
 
   def test_GroupCustomerAggregation(self):
     reference = 'TESTPERSON-%s' % self.generateNewId()
@@ -859,10 +859,10 @@ class TestSalePackingList(TestSlapOSGroupRoleSecurityMixin):
         )
     product.updateLocalRolesOnSecurityGroups()
     self.assertSecurityGroup(product,
-        ['G-COMPANY', self.user_id, reference], False)
+        ['G-COMPANY', self.user_id, person.getUserId()], False)
     self.assertRoles(product, 'G-COMPANY', ['Assignor'])
     self.assertRoles(product, self.user_id, ['Owner'])
-    self.assertRoles(product, reference, ['Auditor'])
+    self.assertRoles(product, person.getUserId(), ['Auditor'])
 
 class TestAccountingTransactionModule(TestSlapOSGroupRoleSecurityMixin):
   def test(self):
@@ -916,10 +916,10 @@ class TestPaymentTransaction(TestSlapOSGroupRoleSecurityMixin):
     product.updateLocalRolesOnSecurityGroups()
     shadow_reference = 'SHADOW-%s' % reference
     self.assertSecurityGroup(product,
-        ['G-COMPANY', self.user_id, reference, shadow_reference], False)
+        ['G-COMPANY', self.user_id, person.getUserId(), shadow_reference], False)
     self.assertRoles(product, 'G-COMPANY', ['Assignor'])
     self.assertRoles(product, shadow_reference, ['Auditor'])
-    self.assertRoles(product, reference, ['Auditor'])
+    self.assertRoles(product, person.getUserId(), ['Auditor'])
     self.assertRoles(product, self.user_id, ['Owner'])
 
   def test_User(self):
@@ -934,10 +934,10 @@ class TestPaymentTransaction(TestSlapOSGroupRoleSecurityMixin):
     product.updateLocalRolesOnSecurityGroups()
     shadow_reference = 'SHADOW-%s' % reference
     self.assertSecurityGroup(product,
-        ['G-COMPANY', self.user_id, reference, shadow_reference], False)
+        ['G-COMPANY', self.user_id, person.getUserId(), shadow_reference], False)
     self.assertRoles(product, 'G-COMPANY', ['Assignor'])
     self.assertRoles(product, shadow_reference, ['Auditor'])
-    self.assertRoles(product, reference, ['Auditor'])
+    self.assertRoles(product, person.getUserId(), ['Auditor'])
     self.assertRoles(product, self.user_id, ['Owner'])
 
 class TestPurchaseInvoiceTransaction(TestSlapOSGroupRoleSecurityMixin):
@@ -971,9 +971,9 @@ class TestSaleInvoiceTransaction(TestSlapOSGroupRoleSecurityMixin):
         )
     product.updateLocalRolesOnSecurityGroups()
     self.assertSecurityGroup(product,
-        ['G-COMPANY', self.user_id, reference], False)
+        ['G-COMPANY', self.user_id, person.getUserId()], False)
     self.assertRoles(product, 'G-COMPANY', ['Assignor'])
-    self.assertRoles(product, reference, ['Auditor'])
+    self.assertRoles(product, person.getUserId(), ['Auditor'])
     self.assertRoles(product, self.user_id, ['Owner'])
 
 class TestServiceModule(TestSlapOSGroupRoleSecurityMixin):
@@ -1091,9 +1091,9 @@ class TestAcknowledgement(TestSlapOSGroupRoleSecurityMixin):
         )
     product.updateLocalRolesOnSecurityGroups()
     self.assertSecurityGroup(product,
-        ['G-COMPANY', reference, self.user_id], False)
+        ['G-COMPANY', person.getUserId(), self.user_id], False)
     self.assertRoles(product, 'G-COMPANY', ['Assignor'])
-    self.assertRoles(product, reference, ['Auditor'])
+    self.assertRoles(product, person.getUserId(), ['Auditor'])
     self.assertRoles(product, self.user_id, ['Owner'])
 
   def test_DestinationCustomer(self):
@@ -1106,9 +1106,9 @@ class TestAcknowledgement(TestSlapOSGroupRoleSecurityMixin):
         )
     product.updateLocalRolesOnSecurityGroups()
     self.assertSecurityGroup(product,
-        ['G-COMPANY', reference, self.user_id], False)
+        ['G-COMPANY', person.getUserId(), self.user_id], False)
     self.assertRoles(product, 'G-COMPANY', ['Assignor'])
-    self.assertRoles(product, reference, ['Auditor'])
+    self.assertRoles(product, person.getUserId(), ['Auditor'])
     self.assertRoles(product, self.user_id, ['Owner'])
 
 class TestBankAccount(TestSlapOSGroupRoleSecurityMixin):
@@ -1217,9 +1217,9 @@ class TestFaxMessage(TestSlapOSGroupRoleSecurityMixin):
         )
     product.updateLocalRolesOnSecurityGroups()
     self.assertSecurityGroup(product,
-        ['G-COMPANY', reference, self.user_id], False)
+        ['G-COMPANY', person.getUserId(), self.user_id], False)
     self.assertRoles(product, 'G-COMPANY', ['Assignor'])
-    self.assertRoles(product, reference, ['Auditor'])
+    self.assertRoles(product, person.getUserId(), ['Auditor'])
     self.assertRoles(product, self.user_id, ['Owner'])
 
   def test_DestinationCustomer(self):
@@ -1232,9 +1232,9 @@ class TestFaxMessage(TestSlapOSGroupRoleSecurityMixin):
         )
     product.updateLocalRolesOnSecurityGroups()
     self.assertSecurityGroup(product,
-        ['G-COMPANY', reference, self.user_id], False)
+        ['G-COMPANY', person.getUserId(), self.user_id], False)
     self.assertRoles(product, 'G-COMPANY', ['Assignor'])
-    self.assertRoles(product, reference, ['Auditor'])
+    self.assertRoles(product, person.getUserId(), ['Auditor'])
     self.assertRoles(product, self.user_id, ['Owner'])
 
 class TestGadget(TestSlapOSGroupRoleSecurityMixin):
@@ -1322,9 +1322,9 @@ class TestLetter(TestSlapOSGroupRoleSecurityMixin):
         )
     product.updateLocalRolesOnSecurityGroups()
     self.assertSecurityGroup(product,
-        ['G-COMPANY', reference, self.user_id], False)
+        ['G-COMPANY', person.getUserId(), self.user_id], False)
     self.assertRoles(product, 'G-COMPANY', ['Assignor'])
-    self.assertRoles(product, reference, ['Auditor'])
+    self.assertRoles(product, person.getUserId(), ['Auditor'])
     self.assertRoles(product, self.user_id, ['Owner'])
 
   def test_DestinationCustomer(self):
@@ -1337,9 +1337,9 @@ class TestLetter(TestSlapOSGroupRoleSecurityMixin):
         )
     product.updateLocalRolesOnSecurityGroups()
     self.assertSecurityGroup(product,
-        ['G-COMPANY', reference, self.user_id], False)
+        ['G-COMPANY', person.getUserId(), self.user_id], False)
     self.assertRoles(product, 'G-COMPANY', ['Assignor'])
-    self.assertRoles(product, reference, ['Auditor'])
+    self.assertRoles(product, person.getUserId(), ['Auditor'])
     self.assertRoles(product, self.user_id, ['Owner'])
 
 class TestMailMessage(TestSlapOSGroupRoleSecurityMixin):
@@ -1362,9 +1362,9 @@ class TestMailMessage(TestSlapOSGroupRoleSecurityMixin):
         )
     product.updateLocalRolesOnSecurityGroups()
     self.assertSecurityGroup(product,
-        ['G-COMPANY', reference, self.user_id], False)
+        ['G-COMPANY', person.getUserId(), self.user_id], False)
     self.assertRoles(product, 'G-COMPANY', ['Assignor'])
-    self.assertRoles(product, reference, ['Auditor'])
+    self.assertRoles(product, person.getUserId(), ['Auditor'])
     self.assertRoles(product, self.user_id, ['Owner'])
 
   def test_DestinationCustomer(self):
@@ -1377,9 +1377,9 @@ class TestMailMessage(TestSlapOSGroupRoleSecurityMixin):
         )
     product.updateLocalRolesOnSecurityGroups()
     self.assertSecurityGroup(product,
-        ['G-COMPANY', reference, self.user_id], False)
+        ['G-COMPANY', person.getUserId(), self.user_id], False)
     self.assertRoles(product, 'G-COMPANY', ['Assignor'])
-    self.assertRoles(product, reference, ['Auditor'])
+    self.assertRoles(product, person.getUserId(), ['Auditor'])
     self.assertRoles(product, self.user_id, ['Owner'])
 
 class TestMeeting(TestSlapOSGroupRoleSecurityMixin):
@@ -1420,9 +1420,9 @@ class TestNote(TestSlapOSGroupRoleSecurityMixin):
         )
     product.updateLocalRolesOnSecurityGroups()
     self.assertSecurityGroup(product,
-        ['G-COMPANY', reference, self.user_id], False)
+        ['G-COMPANY', person.getUserId(), self.user_id], False)
     self.assertRoles(product, 'G-COMPANY', ['Assignor'])
-    self.assertRoles(product, reference, ['Auditor'])
+    self.assertRoles(product, person.getUserId(), ['Auditor'])
     self.assertRoles(product, self.user_id, ['Owner'])
 
   def test_DestinationCustomer(self):
@@ -1435,9 +1435,9 @@ class TestNote(TestSlapOSGroupRoleSecurityMixin):
         )
     product.updateLocalRolesOnSecurityGroups()
     self.assertSecurityGroup(product,
-        ['G-COMPANY', reference, self.user_id], False)
+        ['G-COMPANY', person.getUserId(), self.user_id], False)
     self.assertRoles(product, 'G-COMPANY', ['Assignor'])
-    self.assertRoles(product, reference, ['Auditor'])
+    self.assertRoles(product, person.getUserId(), ['Auditor'])
     self.assertRoles(product, self.user_id, ['Owner'])
 
 class TestPhoneCall(TestSlapOSGroupRoleSecurityMixin):
@@ -1460,9 +1460,9 @@ class TestPhoneCall(TestSlapOSGroupRoleSecurityMixin):
         )
     product.updateLocalRolesOnSecurityGroups()
     self.assertSecurityGroup(product,
-        ['G-COMPANY', reference, self.user_id], False)
+        ['G-COMPANY', person.getUserId(), self.user_id], False)
     self.assertRoles(product, 'G-COMPANY', ['Assignor'])
-    self.assertRoles(product, reference, ['Auditor'])
+    self.assertRoles(product, person.getUserId(), ['Auditor'])
     self.assertRoles(product, self.user_id, ['Owner'])
 
   def test_DestinationCustomer(self):
@@ -1475,9 +1475,9 @@ class TestPhoneCall(TestSlapOSGroupRoleSecurityMixin):
         )
     product.updateLocalRolesOnSecurityGroups()
     self.assertSecurityGroup(product,
-        ['G-COMPANY', reference, self.user_id], False)
+        ['G-COMPANY', person.getUserId(), self.user_id], False)
     self.assertRoles(product, 'G-COMPANY', ['Assignor'])
-    self.assertRoles(product, reference, ['Auditor'])
+    self.assertRoles(product, person.getUserId(), ['Auditor'])
     self.assertRoles(product, self.user_id, ['Owner'])
 
 class TestVisit(TestSlapOSGroupRoleSecurityMixin):
@@ -1500,9 +1500,9 @@ class TestVisit(TestSlapOSGroupRoleSecurityMixin):
         )
     product.updateLocalRolesOnSecurityGroups()
     self.assertSecurityGroup(product,
-        ['G-COMPANY', reference, self.user_id], False)
+        ['G-COMPANY', person.getUserId(), self.user_id], False)
     self.assertRoles(product, 'G-COMPANY', ['Assignor'])
-    self.assertRoles(product, reference, ['Auditor'])
+    self.assertRoles(product, person.getUserId(), ['Auditor'])
     self.assertRoles(product, self.user_id, ['Owner'])
 
   def test_DestinationCustomer(self):
@@ -1515,9 +1515,9 @@ class TestVisit(TestSlapOSGroupRoleSecurityMixin):
         )
     product.updateLocalRolesOnSecurityGroups()
     self.assertSecurityGroup(product,
-        ['G-COMPANY', reference, self.user_id], False)
+        ['G-COMPANY', person.getUserId(), self.user_id], False)
     self.assertRoles(product, 'G-COMPANY', ['Assignor'])
-    self.assertRoles(product, reference, ['Auditor'])
+    self.assertRoles(product, person.getUserId(), ['Auditor'])
     self.assertRoles(product, self.user_id, ['Owner'])
 
 class TestNotificationMessageModule(TestSlapOSGroupRoleSecurityMixin):
@@ -1648,9 +1648,9 @@ class TestShortMessage(TestSlapOSGroupRoleSecurityMixin):
         )
     product.updateLocalRolesOnSecurityGroups()
     self.assertSecurityGroup(product,
-        ['G-COMPANY', reference, self.user_id], False)
+        ['G-COMPANY', person.getUserId(), self.user_id], False)
     self.assertRoles(product, 'G-COMPANY', ['Assignor'])
-    self.assertRoles(product, reference, ['Auditor'])
+    self.assertRoles(product, person.getUserId(), ['Auditor'])
     self.assertRoles(product, self.user_id, ['Owner'])
 
   def test_DestinationCustomer(self):
@@ -1663,9 +1663,9 @@ class TestShortMessage(TestSlapOSGroupRoleSecurityMixin):
         )
     product.updateLocalRolesOnSecurityGroups()
     self.assertSecurityGroup(product,
-        ['G-COMPANY', reference, self.user_id], False)
+        ['G-COMPANY', person.getUserId(), self.user_id], False)
     self.assertRoles(product, 'G-COMPANY', ['Assignor'])
-    self.assertRoles(product, reference, ['Auditor'])
+    self.assertRoles(product, person.getUserId(), ['Auditor'])
     self.assertRoles(product, self.user_id, ['Owner'])
 
 class TestSiteMessage(TestSlapOSGroupRoleSecurityMixin):
@@ -1688,9 +1688,9 @@ class TestSiteMessage(TestSlapOSGroupRoleSecurityMixin):
         )
     product.updateLocalRolesOnSecurityGroups()
     self.assertSecurityGroup(product,
-        ['G-COMPANY', reference, self.user_id], False)
+        ['G-COMPANY', person.getUserId(), self.user_id], False)
     self.assertRoles(product, 'G-COMPANY', ['Assignor'])
-    self.assertRoles(product, reference, ['Auditor'])
+    self.assertRoles(product, person.getUserId(), ['Auditor'])
     self.assertRoles(product, self.user_id, ['Owner'])
 
   def test_DestinationCustomer(self):
@@ -1703,9 +1703,9 @@ class TestSiteMessage(TestSlapOSGroupRoleSecurityMixin):
         )
     product.updateLocalRolesOnSecurityGroups()
     self.assertSecurityGroup(product,
-        ['G-COMPANY', reference, self.user_id], False)
+        ['G-COMPANY', person.getUserId(), self.user_id], False)
     self.assertRoles(product, 'G-COMPANY', ['Assignor'])
-    self.assertRoles(product, reference, ['Auditor'])
+    self.assertRoles(product, person.getUserId(), ['Auditor'])
     self.assertRoles(product, self.user_id, ['Owner'])
 
 class TestWebMessage(TestSlapOSGroupRoleSecurityMixin):
@@ -1728,9 +1728,9 @@ class TestWebMessage(TestSlapOSGroupRoleSecurityMixin):
         )
     product.updateLocalRolesOnSecurityGroups()
     self.assertSecurityGroup(product,
-        ['G-COMPANY', reference, self.user_id], False)
+        ['G-COMPANY', person.getUserId(), self.user_id], False)
     self.assertRoles(product, 'G-COMPANY', ['Assignor'])
-    self.assertRoles(product, reference, ['Auditor'])
+    self.assertRoles(product, person.getUserId(), ['Auditor'])
     self.assertRoles(product, self.user_id, ['Owner'])
 
   def test_DestinationCustomer(self):
@@ -1743,9 +1743,9 @@ class TestWebMessage(TestSlapOSGroupRoleSecurityMixin):
         )
     product.updateLocalRolesOnSecurityGroups()
     self.assertSecurityGroup(product,
-        ['G-COMPANY', reference, self.user_id], False)
+        ['G-COMPANY', person.getUserId(), self.user_id], False)
     self.assertRoles(product, 'G-COMPANY', ['Assignor'])
-    self.assertRoles(product, reference, ['Auditor'])
+    self.assertRoles(product, person.getUserId(), ['Auditor'])
     self.assertRoles(product, self.user_id, ['Owner'])
 
   def test_Template(self):
@@ -1790,9 +1790,9 @@ class TestSupportRequest(TestSlapOSGroupRoleSecurityMixin):
         )
     product.updateLocalRolesOnSecurityGroups()
     self.assertSecurityGroup(product,
-        ['G-COMPANY', reference, self.user_id], False)
+        ['G-COMPANY', person.getUserId(), self.user_id], False)
     self.assertRoles(product, 'G-COMPANY', ['Assignor'])
-    self.assertRoles(product, reference, ['Auditor'])
+    self.assertRoles(product, person.getUserId(), ['Auditor'])
     self.assertRoles(product, self.user_id, ['Owner'])
 
   def test_Template(self):
@@ -1965,9 +1965,9 @@ class TestRegularisationRequest(TestSlapOSGroupRoleSecurityMixin):
         )
     product.updateLocalRolesOnSecurityGroups()
     self.assertSecurityGroup(product,
-        ['G-COMPANY', reference, self.user_id], False)
+        ['G-COMPANY', person.getUserId(), self.user_id], False)
     self.assertRoles(product, 'G-COMPANY', ['Assignor'])
-    self.assertRoles(product, reference, ['Auditor'])
+    self.assertRoles(product, person.getUserId(), ['Auditor'])
     self.assertRoles(product, self.user_id, ['Owner'])
 
   def test_Template(self):
@@ -2055,9 +2055,9 @@ class TestUserConsumptionHTMLFile(TestSlapOSGroupRoleSecurityMixin):
     html_document.updateLocalRolesOnSecurityGroups()
 
     self.assertSecurityGroup(html_document,
-        ['G-COMPANY', customer_reference, self.user_id], False)
+        ['G-COMPANY', customer.getUserId(), self.user_id], False)
     self.assertRoles(html_document, 'G-COMPANY', ['Assignor'])
-    self.assertRoles(html_document, customer_reference, ['Assignee'])
+    self.assertRoles(html_document, customer.getUserId(), ['Assignee'])
     self.assertRoles(html_document, self.user_id, ['Owner'])
 
 class TestCloudContractModule(TestSlapOSGroupRoleSecurityMixin):
@@ -2108,7 +2108,7 @@ class TestUpgradeDecision(TestSlapOSGroupRoleSecurityMixin):
         )
     product.updateLocalRolesOnSecurityGroups()
     self.assertSecurityGroup(product,
-        ['G-COMPANY', reference, self.user_id], False)
+        ['G-COMPANY', person.getUserId(), self.user_id], False)
     self.assertRoles(product, 'G-COMPANY', ['Assignor'])
-    self.assertRoles(product, reference, ['Assignee'])
+    self.assertRoles(product, person.getUserId(), ['Assignee'])
     self.assertRoles(product, self.user_id, ['Owner'])
