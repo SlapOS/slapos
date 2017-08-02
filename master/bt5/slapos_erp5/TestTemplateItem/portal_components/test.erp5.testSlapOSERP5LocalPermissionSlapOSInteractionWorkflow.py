@@ -13,6 +13,7 @@ class TestSlapOSLocalPermissionSlapOSInteractionWorkflow(
       reference="live_test_%s" % new_id,
     )
     self.person_reference = self.person_user.getReference()
+    self.person_user_id = self.person_user.getUserId()
 
   def test_ComputerModel_edit(self):
     self._makePerson()
@@ -24,7 +25,7 @@ class TestSlapOSLocalPermissionSlapOSInteractionWorkflow(
     transaction.commit()
 
     self.assertSecurityGroup(model,
-        ['G-COMPANY', self.user_id, self.person_reference], False)
+        ['G-COMPANY', self.user_id, self.person_user_id], False)
 
   def test_ComputerNetwork_edit(self):
     self._makePerson()
@@ -37,7 +38,7 @@ class TestSlapOSLocalPermissionSlapOSInteractionWorkflow(
     transaction.commit()
 
     self.assertSecurityGroup(network,
-        ['G-COMPANY', self.user_id, self.person_reference, 'R-SHADOW-PERSON'],
+        ['G-COMPANY', self.user_id, self.person_user_id, 'R-SHADOW-PERSON'],
         False)
 
   def test_Computer_setReference(self):
@@ -60,7 +61,7 @@ class TestSlapOSLocalPermissionSlapOSInteractionWorkflow(
     transaction.commit()
 
     self.assertSecurityGroup(computer, ['G-COMPANY', self.user_id,
-        self.person_reference], False)
+        self.person_user_id], False)
 
   def test_Computer_setAllocationScope(self):
     computer = self.portal.computer_module.newContent(portal_type='Computer')
@@ -82,7 +83,7 @@ class TestSlapOSLocalPermissionSlapOSInteractionWorkflow(
     transaction.commit()
 
     self.assertSecurityGroup(computer, ['G-COMPANY', self.user_id,
-        self.person_reference], False)
+        self.person_user_id], False)
 
   def test_Computer_reindexObject(self):
     computer = self.portal.computer_module.template_computer\
@@ -135,7 +136,7 @@ class TestSlapOSLocalPermissionSlapOSInteractionWorkflow(
     transaction.commit()
 
     self.assertSecurityGroup(hosting_subscription, [self.user_id,
-        hosting_subscription.getId(), self.person_user.getReference(),
+        hosting_subscription.getId(), self.person_user.getUserId(),
         'G-COMPANY'],
         False)
 
@@ -147,7 +148,7 @@ class TestSlapOSLocalPermissionSlapOSInteractionWorkflow(
     transaction.commit()
 
     self.assertSecurityGroup(person, [self.user_id, 'G-COMPANY',
-        person.getReference(), 'SHADOW-%s' % person.getReference()], False)
+        person.getUserId(), 'SHADOW-%s' % person.getReference()], False)
 
   def test_SoftwareInstallation_setAggregate(self):
     installation = self.portal.software_installation_module.newContent(
@@ -175,7 +176,7 @@ class TestSlapOSLocalPermissionSlapOSInteractionWorkflow(
     transaction.commit()
 
     self.assertSecurityGroup(installation, [self.user_id, 'G-COMPANY',
-        self.person_user.getReference()], False)
+        self.person_user.getUserId()], False)
 
   def test_SoftwareInstance_setSpecialise(self):
     software_instance = self.portal.software_instance_module.newContent(
@@ -277,7 +278,7 @@ class TestSlapOSLocalPermissionSlapOSInteractionWorkflow(
 
     self.assertSecurityGroup(payment_transaction, [self.user_id,
         'G-COMPANY', 'SHADOW-%s' % self.person_user.getReference(),
-        self.person_user.getReference()],
+        self.person_user.getUserId()],
         False)
 
   def test_PayzenEvent_setDestinationSection(self):
@@ -334,7 +335,7 @@ class TestSlapOSLocalPermissionSlapOSInteractionWorkflow(
     transaction.commit()
 
     self.assertSecurityGroup(sale_invoice_transaction, [self.user_id,
-        'G-COMPANY', self.person_user.getReference()],
+        'G-COMPANY', self.person_user.getUserId()],
         False)
 
   def test_SupportRequest_setDestinationDecision(self):
@@ -347,7 +348,7 @@ class TestSlapOSLocalPermissionSlapOSInteractionWorkflow(
     transaction.commit()
 
     self.assertSecurityGroup(support_request, ['G-COMPANY', self.user_id,
-        self.person_reference], False)
+        self.person_user_id], False)
 
   def test_RegularisationRequest_setDestinationDecision(self):
     self._makePerson()
@@ -359,7 +360,7 @@ class TestSlapOSLocalPermissionSlapOSInteractionWorkflow(
     transaction.commit()
 
     self.assertSecurityGroup(regularisation_request, ['G-COMPANY', self.user_id,
-        self.person_reference], False)
+        self.person_user_id], False)
 
   def test_Acknowledgement_setDestination(self):
     self._makePerson()
@@ -371,7 +372,7 @@ class TestSlapOSLocalPermissionSlapOSInteractionWorkflow(
     transaction.commit()
 
     self.assertSecurityGroup(event, ['G-COMPANY', self.user_id,
-        self.person_reference], False)
+        self.person_user_id], False)
 
   def test_Acknowledgement_setSource(self):
     self._makePerson()
@@ -383,7 +384,7 @@ class TestSlapOSLocalPermissionSlapOSInteractionWorkflow(
     transaction.commit()
 
     self.assertSecurityGroup(event, ['G-COMPANY', self.user_id,
-        self.person_reference], False)
+        self.person_user_id], False)
 
   def test_FaxMessage_setDestination(self):
     self._makePerson()
@@ -395,7 +396,7 @@ class TestSlapOSLocalPermissionSlapOSInteractionWorkflow(
     transaction.commit()
 
     self.assertSecurityGroup(event, ['G-COMPANY', self.user_id,
-        self.person_reference], False)
+        self.person_user_id], False)
 
   def test_FaxMessage_setSource(self):
     self._makePerson()
@@ -407,7 +408,7 @@ class TestSlapOSLocalPermissionSlapOSInteractionWorkflow(
     transaction.commit()
 
     self.assertSecurityGroup(event, ['G-COMPANY', self.user_id,
-        self.person_reference], False)
+        self.person_user_id], False)
 
   def test_Letter_setDestination(self):
     self._makePerson()
@@ -419,7 +420,7 @@ class TestSlapOSLocalPermissionSlapOSInteractionWorkflow(
     transaction.commit()
 
     self.assertSecurityGroup(event, ['G-COMPANY', self.user_id,
-        self.person_reference], False)
+        self.person_user_id], False)
 
   def test_Letter_setSource(self):
     self._makePerson()
@@ -431,7 +432,7 @@ class TestSlapOSLocalPermissionSlapOSInteractionWorkflow(
     transaction.commit()
 
     self.assertSecurityGroup(event, ['G-COMPANY', self.user_id,
-        self.person_reference], False)
+        self.person_user_id], False)
 
   def test_MailMessage_setDestination(self):
     self._makePerson()
@@ -443,7 +444,7 @@ class TestSlapOSLocalPermissionSlapOSInteractionWorkflow(
     transaction.commit()
 
     self.assertSecurityGroup(event, ['G-COMPANY', self.user_id,
-        self.person_reference], False)
+        self.person_user_id], False)
 
   def test_MailMessage_setSource(self):
     self._makePerson()
@@ -455,7 +456,7 @@ class TestSlapOSLocalPermissionSlapOSInteractionWorkflow(
     transaction.commit()
 
     self.assertSecurityGroup(event, ['G-COMPANY', self.user_id,
-        self.person_reference], False)
+        self.person_user_id], False)
 
   def test_Note_setDestination(self):
     self._makePerson()
@@ -467,7 +468,7 @@ class TestSlapOSLocalPermissionSlapOSInteractionWorkflow(
     transaction.commit()
 
     self.assertSecurityGroup(event, ['G-COMPANY', self.user_id,
-        self.person_reference], False)
+        self.person_user_id], False)
 
   def test_Note_setSource(self):
     self._makePerson()
@@ -479,7 +480,7 @@ class TestSlapOSLocalPermissionSlapOSInteractionWorkflow(
     transaction.commit()
 
     self.assertSecurityGroup(event, ['G-COMPANY', self.user_id,
-        self.person_reference], False)
+        self.person_user_id], False)
 
   def test_PhoneCall_setDestination(self):
     self._makePerson()
@@ -491,7 +492,7 @@ class TestSlapOSLocalPermissionSlapOSInteractionWorkflow(
     transaction.commit()
 
     self.assertSecurityGroup(event, ['G-COMPANY', self.user_id,
-        self.person_reference], False)
+        self.person_user_id], False)
 
   def test_PhoneCall_setSource(self):
     self._makePerson()
@@ -503,7 +504,7 @@ class TestSlapOSLocalPermissionSlapOSInteractionWorkflow(
     transaction.commit()
 
     self.assertSecurityGroup(event, ['G-COMPANY', self.user_id,
-        self.person_reference], False)
+        self.person_user_id], False)
 
   def test_ShortMessage_setDestination(self):
     self._makePerson()
@@ -515,7 +516,7 @@ class TestSlapOSLocalPermissionSlapOSInteractionWorkflow(
     transaction.commit()
 
     self.assertSecurityGroup(event, ['G-COMPANY', self.user_id,
-        self.person_reference], False)
+        self.person_user_id], False)
 
   def test_ShortMessage_setSource(self):
     self._makePerson()
@@ -527,7 +528,7 @@ class TestSlapOSLocalPermissionSlapOSInteractionWorkflow(
     transaction.commit()
 
     self.assertSecurityGroup(event, ['G-COMPANY', self.user_id,
-        self.person_reference], False)
+        self.person_user_id], False)
 
   def test_SiteMessage_setDestination(self):
     self._makePerson()
@@ -539,7 +540,7 @@ class TestSlapOSLocalPermissionSlapOSInteractionWorkflow(
     transaction.commit()
 
     self.assertSecurityGroup(event, ['G-COMPANY', self.user_id,
-        self.person_reference], False)
+        self.person_user_id], False)
 
   def test_SiteMessage_setSource(self):
     self._makePerson()
@@ -551,7 +552,7 @@ class TestSlapOSLocalPermissionSlapOSInteractionWorkflow(
     transaction.commit()
 
     self.assertSecurityGroup(event, ['G-COMPANY', self.user_id,
-        self.person_reference], False)
+        self.person_user_id], False)
 
   def test_Visit_setDestination(self):
     self._makePerson()
@@ -563,7 +564,7 @@ class TestSlapOSLocalPermissionSlapOSInteractionWorkflow(
     transaction.commit()
 
     self.assertSecurityGroup(event, ['G-COMPANY', self.user_id,
-        self.person_reference], False)
+        self.person_user_id], False)
 
   def test_Visit_setSource(self):
     self._makePerson()
@@ -575,7 +576,7 @@ class TestSlapOSLocalPermissionSlapOSInteractionWorkflow(
     transaction.commit()
 
     self.assertSecurityGroup(event, ['G-COMPANY', self.user_id,
-        self.person_reference], False)
+        self.person_user_id], False)
 
   def test_WebMessage_setDestination(self):
     self._makePerson()
@@ -587,7 +588,7 @@ class TestSlapOSLocalPermissionSlapOSInteractionWorkflow(
     transaction.commit()
 
     self.assertSecurityGroup(event, ['G-COMPANY', self.user_id,
-        self.person_reference], False)
+        self.person_user_id], False)
 
   def test_WebMessage_setSource(self):
     self._makePerson()
@@ -599,7 +600,7 @@ class TestSlapOSLocalPermissionSlapOSInteractionWorkflow(
     transaction.commit()
 
     self.assertSecurityGroup(event, ['G-COMPANY', self.user_id,
-        self.person_reference], False)
+        self.person_user_id], False)
 
   def test_SalePackingList_setSpecialise(self):
     self._makePerson()
@@ -613,7 +614,7 @@ class TestSlapOSLocalPermissionSlapOSInteractionWorkflow(
     transaction.commit()
 
     self.assertSecurityGroup(sale_packing_list, ['G-COMPANY', self.user_id,
-        self.person_reference], False)
+        self.person_user_id], False)
 
   def test_SalePackingList_setDestinationDecision(self):
     self._makePerson()
@@ -627,4 +628,4 @@ class TestSlapOSLocalPermissionSlapOSInteractionWorkflow(
     transaction.commit()
 
     self.assertSecurityGroup(sale_packing_list, ['G-COMPANY', self.user_id,
-        self.person_reference], False)
+        self.person_user_id], False)
