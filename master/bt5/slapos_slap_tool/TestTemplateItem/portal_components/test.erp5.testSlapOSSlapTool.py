@@ -2141,10 +2141,11 @@ class TestSlapOSSlapToolPersonAccess(TestSlapOSSlapToolMixin):
     person.recursiveImmediateReindexObject()
     self.person = person
     self.person_reference = person.getReference()
+    self.person_user_id = person.getUserId()
     TestSlapOSSlapToolMixin.afterSetUp(self, person=person)
 
   def test_not_accessed_getComputerStatus(self):
-    self.login(self.person_reference)
+    self.login(self.person_user_id)
     created_at = rfc1123_date(DateTime())
     response = self.portal_slap.getComputerStatus(self.computer_id)
     self.assertEqual(200, response.status)
@@ -2185,7 +2186,7 @@ class TestSlapOSSlapToolPersonAccess(TestSlapOSSlapToolMixin):
   def test_accessed_getComputerStatus(self):
     self.login(self.computer_id)
     self.portal_slap.getFullComputerInformation(self.computer_id)
-    self.login(self.person_reference)
+    self.login(self.person_user_id)
     created_at = rfc1123_date(DateTime())
     response = self.portal_slap.getComputerStatus(self.computer_id)
     self.assertEqual(200, response.status)
@@ -2233,7 +2234,7 @@ class TestSlapOSSlapToolPersonAccess(TestSlapOSSlapToolMixin):
       'recmethod': 'reportComputerBang'}])
 
   def test_computerBang(self):
-    self.login(self.person_reference)
+    self.login(self.person_user_id)
     self.computer_bang_simulator = tempfile.mkstemp()[1]
     try:
       self.computer.reportComputerBang = Simulator(
@@ -2276,7 +2277,7 @@ class TestSlapOSSlapToolPersonAccess(TestSlapOSSlapToolMixin):
 
   def test_getComputerPartitionStatus(self):
     self._makeComplexComputer()
-    self.login(self.person_reference)
+    self.login(self.person_user_id)
     partition_id = self.start_requested_software_instance.getAggregateValue(
         portal_type='Computer Partition').getReference()
     created_at = rfc1123_date(DateTime())
@@ -2319,13 +2320,13 @@ class TestSlapOSSlapToolPersonAccess(TestSlapOSSlapToolMixin):
 
   def test_getComputerPartitionStatus_visited(self):
     self._makeComplexComputer(person=self.person)
-    self.login(self.person_reference)
+    self.login(self.person_user_id)
     partition_id = self.start_requested_software_instance.getAggregateValue(
         portal_type='Computer Partition').getReference()
     created_at = rfc1123_date(DateTime())
     self.login(self.start_requested_software_instance.getReference())
     self.portal_slap.registerComputerPartition(self.computer_id, partition_id)
-    self.login(self.person_reference)
+    self.login(self.person_user_id)
     response = self.portal_slap.getComputerPartitionStatus(self.computer_id,
       partition_id)
     self.assertEqual(200, response.status)
@@ -2368,7 +2369,7 @@ class TestSlapOSSlapToolPersonAccess(TestSlapOSSlapToolMixin):
     self._makeComplexComputer(person=self.person, with_slave=True)
     partition_id = self.start_requested_software_instance.getAggregateValue(
         portal_type='Computer Partition').getReference()
-    self.login(self.person_reference)
+    self.login(self.person_user_id)
     response = self.portal_slap.registerComputerPartition(self.computer_id, partition_id)
     self.assertEqual(200, response.status)
     self.assertEqual( 'public, max-age=1, stale-if-error=604800',
@@ -2500,7 +2501,7 @@ class TestSlapOSSlapToolPersonAccess(TestSlapOSSlapToolMixin):
     self._makeComplexComputer(person=self.person)
     partition_id = self.start_requested_software_instance.getAggregateValue(
         portal_type='Computer Partition').getReference()
-    self.login(self.person_reference)
+    self.login(self.person_user_id)
     response = self.portal_slap.registerComputerPartition(self.computer_id, partition_id)
     self.assertEqual(200, response.status)
     self.assertEqual( 'public, max-age=1, stale-if-error=604800',
@@ -2623,7 +2624,7 @@ class TestSlapOSSlapToolPersonAccess(TestSlapOSSlapToolMixin):
     try:
       partition_id = self.start_requested_software_instance.getAggregateValue(
           portal_type='Computer Partition').getReference()
-      self.login(self.person_reference)
+      self.login(self.person_user_id)
       self.start_requested_software_instance.bang = Simulator(
         self.instance_bang_simulator, 'bang')
       error_log = 'Please bang me'
@@ -2662,7 +2663,7 @@ class TestSlapOSSlapToolPersonAccess(TestSlapOSSlapToolMixin):
     finally:
       if os.path.exists(self.instance_bang_simulator):
         os.unlink(self.instance_bang_simulator)
-      
+
   def assertInstanceRenameSimulator(self, args, kwargs):
     stored = eval(open(self.instance_rename_simulator).read())
     # do the same translation magic as in workflow
@@ -2676,7 +2677,7 @@ class TestSlapOSSlapToolPersonAccess(TestSlapOSSlapToolMixin):
     try:
       partition_id = self.start_requested_software_instance.getAggregateValue(
           portal_type='Computer Partition').getReference()
-      self.login(self.person_reference)
+      self.login(self.person_user_id)
       self.start_requested_software_instance.rename = Simulator(
         self.instance_rename_simulator, 'rename')
       new_name = 'new me'
@@ -2700,7 +2701,7 @@ class TestSlapOSSlapToolPersonAccess(TestSlapOSSlapToolMixin):
   def test_request_withSlave(self):
     self.instance_request_simulator = tempfile.mkstemp()[1]
     try:
-      self.login(self.person_reference)
+      self.login(self.person_user_id)
       self.person.requestSoftwareInstance = Simulator(
         self.instance_request_simulator, 'requestSoftwareInstance')
       response = self.portal_slap.requestComputerPartition(
@@ -2730,7 +2731,7 @@ class TestSlapOSSlapToolPersonAccess(TestSlapOSSlapToolMixin):
   def test_request(self):
     self.instance_request_simulator = tempfile.mkstemp()[1]
     try:
-      self.login(self.person_reference)
+      self.login(self.person_user_id)
       self.person.requestSoftwareInstance = Simulator(
         self.instance_request_simulator, 'requestSoftwareInstance')
       response = self.portal_slap.requestComputerPartition(
@@ -2766,7 +2767,7 @@ class TestSlapOSSlapToolPersonAccess(TestSlapOSSlapToolMixin):
     self._makeComplexComputer(person=self.person)
     self.start_requested_software_instance.updateLocalRolesOnSecurityGroups()
     self.tic()
-    self.login(self.person_reference)
+    self.login(self.person_user_id)
     response = self.portal_slap.requestComputerPartition(
       software_release=self.start_requested_software_instance.getUrlString(),
       software_type=self.start_requested_software_instance.getSourceReference(),
@@ -2857,7 +2858,7 @@ class TestSlapOSSlapToolPersonAccess(TestSlapOSSlapToolMixin):
   def test_computerSupply(self):
     self.computer_supply_simulator = tempfile.mkstemp()[1]
     try:
-      self.login(self.person_reference)
+      self.login(self.person_user_id)
       self.computer.requestSoftwareRelease = Simulator(
         self.computer_supply_simulator, 'requestSoftwareRelease')
       software_url = 'live_test_url_%s' % self.generateNewId()
@@ -2884,7 +2885,7 @@ class TestSlapOSSlapToolPersonAccess(TestSlapOSSlapToolMixin):
   def test_requestComputer(self):
     self.computer_request_computer_simulator = tempfile.mkstemp()[1]
     try:
-      self.login(self.person_reference)
+      self.login(self.person_user_id)
       self.person.requestComputer = Simulator(
         self.computer_request_computer_simulator, 'requestComputer')
 
@@ -2932,7 +2933,7 @@ class TestSlapOSSlapToolPersonAccess(TestSlapOSSlapToolMixin):
   def test_generateComputerCertificate(self):
     self.generate_computer_certificate_simulator = tempfile.mkstemp()[1]
     try:
-      self.login(self.person_reference)
+      self.login(self.person_user_id)
       self.computer.generateCertificate = Simulator(
         self.generate_computer_certificate_simulator, 
         'generateComputerCertificate')
@@ -2979,9 +2980,9 @@ class TestSlapOSSlapToolPersonAccess(TestSlapOSSlapToolMixin):
   def test_revokeComputerCertificate(self):
     self.revoke_computer_certificate_simulator = tempfile.mkstemp()[1]
     try:
-      self.login(self.person_reference)
+      self.login(self.person_user_id)
       self.computer.revokeCertificate = Simulator(
-        self.revoke_computer_certificate_simulator, 
+        self.revoke_computer_certificate_simulator,
         'revokeComputerCertificate')
 
       response = self.portal_slap.revokeComputerCertificate(self.computer_id)
@@ -2998,7 +2999,7 @@ class TestSlapOSSlapToolPersonAccess(TestSlapOSSlapToolMixin):
       if preference.getPreferenceState() == 'global':
         preference.setPreferredHateoasUrl('')
     self.tic()
-    self.login(self.person_reference)
+    self.login(self.person_user_id)
     self.assertRaises(NotFound, self.portal_slap.getHateoasUrl)
 
   def test_getHateoasUrl(self):
@@ -3008,7 +3009,7 @@ class TestSlapOSSlapToolPersonAccess(TestSlapOSSlapToolMixin):
       if preference.getPreferenceState() == 'global':
         preference.setPreferredHateoasUrl('foo')
     self.tic()
-    self.login(self.person_reference)
+    self.login(self.person_user_id)
     response = self.portal_slap.getHateoasUrl()
     self.assertEqual(200, response.status)
     self.assertEqual('foo', response.body)
