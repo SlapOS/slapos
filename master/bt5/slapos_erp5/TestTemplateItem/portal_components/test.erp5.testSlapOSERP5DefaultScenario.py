@@ -1065,8 +1065,8 @@ class TestSlapOSDefaultCRMEscalation(TestSlapOSSecurityMixin):
 
   def trickCrmEvent(self, service_id, day, person_reference):
     self.login()
-    person = self.portal.portal_catalog.getResultValue(portal_type='Person',
-        reference=person_reference)
+    person = self.portal.portal_catalog.getResultValue(portal_type='ERP5 Login',
+        reference=person_reference).getParentValue()
     ticket = self.portal.portal_catalog.getResultValue(
         portal_type='Regularisation Request',
         simulation_state='suspended',
