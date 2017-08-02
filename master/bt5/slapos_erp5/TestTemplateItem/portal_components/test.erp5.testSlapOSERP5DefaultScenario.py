@@ -270,10 +270,10 @@ class TestSlapOSDefaultScenario(TestSlapOSSecurityMixin):
     self.tic()
     return software_instance
 
-  def checkSlaveInstanceAllocation(self, person_reference, instance_title,
-      software_release, software_type, server):
+  def checkSlaveInstanceAllocation(self, person_user_id, person_reference,
+      instance_title, software_release, software_type, server):
 
-    self.login(person_reference)
+    self.login(person_user_id)
     self.personRequestInstanceNotReady(
       software_release=software_release,
       software_type=software_type,
@@ -353,9 +353,8 @@ class TestSlapOSDefaultScenario(TestSlapOSSecurityMixin):
         if q.getTitle() == instance_title]
     self.assertEqual(0, len(hosting_subscription_list))
 
-  
-  def checkCloudContract(self, person_reference, instance_title,
-      software_release, software_type, server):
+  def checkCloudContract(self, person_user_id, person_reference,
+      instance_title, software_release, software_type, server):
 
     self.stepCallSlaposContractRequestValidationPaymentAlarm()
     self.tic()
@@ -404,13 +403,12 @@ class TestSlapOSDefaultScenario(TestSlapOSSecurityMixin):
 
     self.usePayzenManually(self.web_site, person_reference)
     self.tic()
-    
+
     payment = self.portal.portal_catalog.getResultValue(
       portal_type="Payment Transaction",
       simulation_state="started")
 
     self.logout()
-		
     self.login()
 
     data_kw = {
@@ -421,25 +419,25 @@ class TestSlapOSDefaultScenario(TestSlapOSSecurityMixin):
       }
     payment.PaymentTransaction_createPayzenEvent().PayzenEvent_processUpdate(data_kw, True)
 
-    self.login(person_reference)
+    self.login(person_user_id)
 
     self.stepCallSlaposContractRequestValidationPaymentAlarm()
     self.tic()
 
 
-  def checkInstanceAllocation(self, person_reference, instance_title,
-      software_release, software_type, server):
+  def checkInstanceAllocation(self, person_user_id, person_reference,
+      instance_title, software_release, software_type, server):
 
-    self.login(person_reference)
+    self.login(person_user_id)
 
     self.personRequestInstanceNotReady(
       software_release=software_release,
       software_type=software_type,
       partition_reference=instance_title,
     )
-    
-    self.checkCloudContract(person_reference, instance_title,
-      software_release, software_type, server)
+
+    self.checkCloudContract(person_user_id, person_reference,
+      instance_title, software_release, software_type, server)
 
     self.stepCallSlaposAllocateInstanceAlarm()
     self.tic()
@@ -617,8 +615,13 @@ class TestSlapOSDefaultScenario(TestSlapOSSecurityMixin):
     owner_reference = 'owner-%s' % self.generateNewId()
     self.joinSlapOS(self.web_site, owner_reference)
 
+    self.login()
+    owner_person = self.portal.portal_catalog.getResultValue(
+      portal_type="ERP5 Login",
+      reference=owner_reference).getParentValue()
+
     # hooray, now it is time to create computers
-    self.login(owner_reference)
+    self.login(owner_person.getUserId())
 
     public_server_title = 'Public Server for %s' % owner_reference
     public_server_id = self.requestComputer(public_server_title)
@@ -662,10 +665,17 @@ class TestSlapOSDefaultScenario(TestSlapOSSecurityMixin):
     public_reference = 'public-%s' % self.generateNewId()
     self.joinSlapOS(self.web_site, public_reference)
 
+    self.login()
+    public_person = self.portal.portal_catalog.getResultValue(
+      portal_type="ERP5 Login",
+      reference=public_reference).getParentValue()
+
     public_instance_title = 'Public title %s' % self.generateNewId()
     public_instance_type = 'public type'
-    self.checkInstanceAllocation(public_reference, public_instance_title,
-        public_server_software, public_instance_type, public_server)
+    self.checkInstanceAllocation(public_person.getUserId(),
+        public_reference, public_instance_title,
+        public_server_software, public_instance_type,
+        public_server)
 
     # join as owner friend and request a software instance on computer
     # configured by owner
@@ -674,24 +684,26 @@ class TestSlapOSDefaultScenario(TestSlapOSSecurityMixin):
     friend_reference = 'friend-%s' % self.generateNewId()
     self.joinSlapOS(self.web_site, friend_reference)
     self.login()
-    friend_email = self.portal.portal_catalog.getResultValue(
-        portal_type='Person', reference=friend_reference).getDefaultEmailText()
+    friend_person = self.portal.portal_catalog.getResultValue(
+        portal_type='ERP5 Login', reference=friend_reference).getParentValue()
+    friend_email = friend_person.getDefaultEmailText()
 
     # allow friend to alloce on friendly computer
-    self.login(owner_reference)
+    self.login(owner_person.getUserId())
     self.setServerOpenFriend(friend_server, [friend_email])
 
     friend_instance_title = 'Friend title %s' % self.generateNewId()
     friend_instance_type = 'friend_type'
-    self.checkInstanceAllocation(friend_reference, friend_instance_title,
-        friend_server_software, friend_instance_type, friend_server)
+    self.checkInstanceAllocation(friend_person.getUserId(), friend_reference,
+        friend_instance_title, friend_server_software, friend_instance_type,
+        friend_server)
 
     # check that friend is able to request slave instance matching the
     # public's computer software instance
     friend_slave_instance_title = 'Friend slave title %s' % self.\
         generateNewId()
-    self.checkSlaveInstanceAllocation(friend_reference,
-        friend_slave_instance_title, public_server_software,
+    self.checkSlaveInstanceAllocation(friend_person.getUserId(),
+        friend_reference, friend_slave_instance_title, public_server_software,
         public_instance_type, public_server)
 
     # turn public guy to a friend and check that he can allocate slave
@@ -699,14 +711,15 @@ class TestSlapOSDefaultScenario(TestSlapOSSecurityMixin):
 
     self.login()
     public_email = self.portal.portal_catalog.getResultValue(
-        portal_type='Person', reference=public_reference).getDefaultEmailText()
-    self.login(owner_reference)
+      portal_type='ERP5 Login', reference=public_reference).getParentValue()
+    public_person.getDefaultEmailText()
+    self.login(owner_person.getUserId())
     self.setServerOpenFriend(friend_server, [friend_email, public_email])
 
     public_slave_instance_title = 'Public slave title %s' % self\
         .generateNewId()
-    self.checkSlaveInstanceAllocation(public_reference,
-        public_slave_instance_title, friend_server_software,
+    self.checkSlaveInstanceAllocation(public_person.getUserId(),
+        public_reference, public_slave_instance_title, friend_server_software,
         friend_instance_type, friend_server)
 
     # now deallocate the slaves
@@ -727,7 +740,7 @@ class TestSlapOSDefaultScenario(TestSlapOSSecurityMixin):
 
     # and uninstall some software on them
     self.logout()
-    self.login(owner_reference)
+    self.login(owner_person.getUserId())
     self.supplySoftware(public_server, public_server_software,
                         state='destroyed')
     self.supplySoftware(personal_server, personal_server_software,
@@ -839,14 +852,14 @@ class TestSlapOSDefaultScenario(TestSlapOSSecurityMixin):
     # check final document state
     for person_reference in (owner_reference, friend_reference,
         public_reference):
-      person = self.portal.portal_catalog.getResultValue(portal_type='Person',
-          reference=person_reference)
+      person = self.portal.portal_catalog.getResultValue(
+        portal_type='ERP5 Login', reference=person_reference).getParentValue()
       self.assertPersonDocumentCoverage(person)
 
-    self.login(public_reference)
+    self.login(public_person.getUserId())
     self.usePayzenManually(self.web_site, public_reference)
 
-    self.login(friend_reference)
+    self.login(friend_person.getUserId())
     self.usePayzenManually(self.web_site, friend_reference)
 
 class TestSlapOSDefaultCRMEscalation(TestSlapOSSecurityMixin):
@@ -1004,8 +1017,9 @@ class TestSlapOSDefaultCRMEscalation(TestSlapOSSecurityMixin):
 
   def assertOpenSaleOrderCoverage(self, person_reference):
     self.login()
-    person = self.portal.portal_catalog.getResultValue(portal_type='Person',
-        reference=person_reference)
+    person = self.portal.portal_catalog.getResultValue(
+       portal_type='ERP5 Login',
+       reference=person_reference).getParentValue()
     hosting_subscription_list = self.portal.portal_catalog(
         portal_type='Hosting Subscription',
         default_destination_section_uid=person.getUid()
@@ -1068,14 +1082,14 @@ class TestSlapOSDefaultCRMEscalation(TestSlapOSSecurityMixin):
     data = event.getData()
     data = re.sub(
       "\nDate: .*\n",
-      "\nDate: %s\n" % (event.getStartDate()-day).rfc822(), 
+      "\nDate: %s\n" % (event.getStartDate()-day).rfc822(),
       data)
     event.edit(data=data)
 
-  def requestInstance(self, person_reference, instance_title,
+  def requestInstance(self, person_user_id, instance_title,
       software_release, software_type):
 
-    self.login(person_reference)
+    self.login(person_user_id)
     self.personRequestInstanceNotReady(
       software_release=software_release,
       software_type=software_type,
@@ -1093,10 +1107,15 @@ class TestSlapOSDefaultCRMEscalation(TestSlapOSSecurityMixin):
     public_reference = 'public-%s' % self.generateNewId()
     self.joinSlapOS(self.web_site, public_reference)
 
+    self.login()
+    self.tic()
+    person = self.portal.portal_catalog.getResultValue(
+      portal_type="ERP5 Login", reference=public_reference).getParentValue()
+
     public_instance_title = 'Public title %s' % self.generateNewId()
     public_instance_type = 'public type'
     public_server_software = self.generateNewSoftwareReleaseUrl()
-    self.requestInstance(public_reference, public_instance_title,
+    self.requestInstance(person.getUserId(), public_instance_title,
         public_server_software, public_instance_type)
 
     # check the Open Sale Order coverage
@@ -1190,9 +1209,6 @@ class TestSlapOSDefaultCRMEscalation(TestSlapOSSecurityMixin):
     # create the regularisation request
     self.stepCallSlaposCrmCreateRegularisationRequestAlarm()
     self.tic()
-
-    person = self.portal.portal_catalog.getResultValue(portal_type='Person',
-        reference=public_reference)
 
     # escalate 1
     self.trickCrmEvent('slapos_crm_acknowledgement', 38, public_reference)

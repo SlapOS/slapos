@@ -47,7 +47,7 @@
             <value>
               <tuple>
                 <string>W: 38,  4: Unused variable \'credential_request_form\' (unused-variable)</string>
-                <string>W:859,  4: Unused variable \'credential_request_form\' (unused-variable)</string>
+                <string>W:872,  4: Unused variable \'credential_request_form\' (unused-variable)</string>
               </tuple>
             </value>
         </item>
