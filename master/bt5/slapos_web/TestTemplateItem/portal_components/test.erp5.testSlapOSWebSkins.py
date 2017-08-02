@@ -49,7 +49,7 @@ class SlapOSWebMixin(testSlapOSMixin, SecurityTestCase):
     person_user.validate()
     for assignment in person_user.contentValues(portal_type="Assignment"):
       assignment.open()
-    
+
     person_user.immediateReindexObject()
     transaction.commit()
     return person_user
@@ -89,11 +89,11 @@ class SlapOSWebMixin(testSlapOSMixin, SecurityTestCase):
     sr.immediateReindexObject()
     sr.updateLocalRolesOnSecurityGroups()
     if validate:
-      self.assertUserCanAccessDocument(person.getReference(), sr)
-      self.assertUserCanViewDocument(person.getReference(), sr)
+      self.assertUserCanAccessDocument(person.getUserId(), sr)
+      self.assertUserCanViewDocument(person.getUserId(), sr)
 
     return sr
-    
+
   def createUpgradeDecision(self, person, computer=None, validate=1):
     ud = self.portal.upgrade_decision_module.newContent(\
                         title="Upgrade Decision %s" % self.new_id,
@@ -101,8 +101,8 @@ class SlapOSWebMixin(testSlapOSMixin, SecurityTestCase):
     ud.immediateReindexObject()
     ud.updateLocalRolesOnSecurityGroups()
     # This seems odd, user can see draft SR even he is auditor
-    self.assertUserCanAccessDocument(person.getReference(), ud)
-    self.assertUserCanViewDocument(person.getReference(), ud)
+    self.assertUserCanAccessDocument(person.getUserId(), ud)
+    self.assertUserCanViewDocument(person.getUserId(), ud)
 
     if computer is not None:
       line = ud.newContent(
@@ -110,7 +110,7 @@ class SlapOSWebMixin(testSlapOSMixin, SecurityTestCase):
          aggregate_value=computer)
       line.immediateReindexObject()
     return ud
-    
+
   def createRegularisationRequest(self, person, validate=1):
     rr = self.portal.regularisation_request_module.newContent(
       portal_type='Regularisation Request',
@@ -122,11 +122,11 @@ class SlapOSWebMixin(testSlapOSMixin, SecurityTestCase):
     rr.immediateReindexObject()
     rr.updateLocalRolesOnSecurityGroups()
     if validate:
-      self.assertUserCanAccessDocument(person.getReference(), rr)
-      self.assertUserCanViewDocument(person.getReference(), rr)
+      self.assertUserCanAccessDocument(person.getUserId(), rr)
+      self.assertUserCanViewDocument(person.getUserId(), rr)
 
     return rr
-    
+
   def afterSetUp(self):
     """ bootstrap test """
     self.login()
@@ -138,32 +138,32 @@ class SlapOSWebMixin(testSlapOSMixin, SecurityTestCase):
       self.computer = self.createComputer(person=self.person)
       self.hosting_subscription = self.createHostingSubscription(
                                                            person=self.person)
-      self.support_request = self.createSupportRequest(self.person, 
+      self.support_request = self.createSupportRequest(self.person,
                                                        computer=self.computer)
       self.upgrade_decision = self.createUpgradeDecision(self.person,
                                                        computer=self.computer)
-      self.hs_support_request = self.createSupportRequest(self.person, 
+      self.hs_support_request = self.createSupportRequest(self.person,
                                             computer=self.hosting_subscription)
       self.hs_upgrade_decision = self.createUpgradeDecision(self.person,
                                             computer=self.hosting_subscription)
-      
+
       self.regularisation_request = self.createRegularisationRequest(
                                                 self.person)
-      self.cancelled_support_request = self.createSupportRequest(self.person, 
-                                                        computer=self.computer, 
+      self.cancelled_support_request = self.createSupportRequest(self.person,
+                                                        computer=self.computer,
                                                         validate=0)
       self.cancelled_upgrade_decision = self.createUpgradeDecision(self.person,
-                                                        computer=self.computer, 
+                                                        computer=self.computer,
                                                         validate=0)
       self.cancelled_regularisation_request = self.createRegularisationRequest(
                           self.person, validate=0)
-      
+
       self.cancelled_support_request.cancel()
       self.cancelled_upgrade_decision.cancel()
       self.cancelled_regularisation_request.cancel()
 
     self.tic()
-    
+
   def _test_WebSection_getUserTicketList(self):
     ticket_list = self.portal.WebSection_getUserTicketList()
     self.assertEquals(len(ticket_list), 5)
@@ -188,23 +188,23 @@ class SlapOSWebMixin(testSlapOSMixin, SecurityTestCase):
     """ Test get Hosting Subscription RSS """
     self.login()
     ticket_list = self.hosting_subscription.Base_getOpenRelatedTicketList()
-    
+
     self.assertSameSet([i.getRelativeUrl() for i in ticket_list],
                        [self.hs_support_request.getRelativeUrl(),
                         self.hs_upgrade_decision.getRelativeUrl()])
     self.assertEquals(len(ticket_list), 2)
 
 class TestSlapOSWebSkin(SlapOSWebMixin):
-  
+
   def afterSetUp(self):
     super(TestSlapOSWebSkin, self).afterSetUp()
-    self.login(self.person.getReference())
+    self.login(self.person.getUserId())
     self.changeSkin("Hosting")
 
   def test_WebSection_getUserTicketList(self):
     """ Test get User Tickers at Hosting Skin"""
     self._test_WebSection_getUserTicketList()
-  
+
   def test_WebSection_getUserTicketList_new_support_request(self):
     """ Test get User Tickers at Hosting Skin with new support request """
     self._test_WebSection_getUserTicketList()
@@ -226,7 +226,7 @@ class TestSlapOSWebSkin(SlapOSWebMixin):
       self.assertEquals(ticket_list[0].getUid(), sr.getUid())
     finally:
       transaction.abort()
-    
+
   def test_Base_getOpenRelatedTicketList_computer(self):
     """ Test Base_getOpenRelatedTicketList with Hosting Subscriptions on Hosting
     """
@@ -238,10 +238,10 @@ class TestSlapOSWebSkin(SlapOSWebMixin):
     self._test_Base_getOpenRelatedTicketList_hosting_subscription()
 
 class TestSlapOSRSSSkin(SlapOSWebMixin):
-  
+
   def afterSetUp(self):
     super(TestSlapOSRSSSkin, self).afterSetUp()
-    self.login(self.person.getReference())
+    self.login(self.person.getUserId())
     self.changeSkin("RSS")
 
   def test_WebSection_getUserTicketList(self):
@@ -253,10 +253,10 @@ class TestSlapOSRSSSkin(SlapOSWebMixin):
     """
     date_content = ticket.WebSection_getRSSDateContent()
     description = ticket.WebSection_getRSSDescriptionContent()
-    
+
     self.assertEquals(ticket.getModificationDate(), date_content)
     self.assertEquals(ticket.getDescription(), description)
-    
+
     event = self.portal.event_module.newContent(
       portal_type="Web Message",
       follow_up_value=ticket,
@@ -266,11 +266,11 @@ class TestSlapOSRSSSkin(SlapOSWebMixin):
       )
     event.immediateReindexObject()
     transaction.commit()
-    
+
     # Now the event dates and content should be showed instead of the ticket
     self.assertEquals(event.getModificationDate(),
                       ticket.WebSection_getRSSDateContent())
-    self.assertEquals(event.getTextContent(), 
+    self.assertEquals(event.getTextContent(),
                       ticket.WebSection_getRSSDescriptionContent())
 
     # Create another event and check if it continues the same
@@ -287,7 +287,7 @@ class TestSlapOSRSSSkin(SlapOSWebMixin):
     # Now the new event dates and content should be showed instead
     self.assertEquals(new_event.getModificationDate(),
                       ticket.WebSection_getRSSDateContent())
-    self.assertEquals(new_event.getTextContent(), 
+    self.assertEquals(new_event.getTextContent(),
                       ticket.WebSection_getRSSDescriptionContent())
 
     # Catalog table dont index microseconds, so it can cause problems when search
@@ -305,7 +305,7 @@ class TestSlapOSRSSSkin(SlapOSWebMixin):
       "%s is not larger them %s" % (event.getModificationDate(), new_event.getModificationDate()))
 
     # Now the first event dates and content should be showed instead
-    self.assertEquals(event.getTextContent(), 
+    self.assertEquals(event.getTextContent(),
                       ticket.WebSection_getRSSDescriptionContent())
 
     self.assertEquals(event.getModificationDate(),
@@ -320,7 +320,7 @@ class TestSlapOSRSSSkin(SlapOSWebMixin):
     """ Test for get Date and Content for the RSS Feed for Upgrade Decision
     """
     self._test_WebSection_getRSSContent(self.upgrade_decision)
-    
+
   def test_WebSection_getRSSContents_regularisation_request(self):
     """ Test for get Date + Content for the RSS Feed for Regularisation Request
     """
@@ -333,5 +333,3 @@ class TestSlapOSRSSSkin(SlapOSWebMixin):
   def test_Base_getOpenRelatedTicketList_hosting_subscription(self):
     """ Test Base_getOpenRelatedTicketList with Hosting Subscriptions on RSS """
     self._test_Base_getOpenRelatedTicketList_hosting_subscription()
-
-
