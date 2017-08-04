@@ -149,7 +149,7 @@ context =
   raw language_name python
 
 [custom-js]
-<= dynamic-jinja2-template-base
+recipe = slapos.recipe.template
 template = {{ custom_js_location }}/{{ custom_js_filename }}
 rendered = ${directory:jupyter_custom_dir}/custom.js
 mode = 0744
