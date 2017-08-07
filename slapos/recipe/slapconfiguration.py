@@ -43,6 +43,11 @@ logger = logging.getLogger("slapos")
 class Recipe(object):
   """
   Retrieve slap partition parameters and make them available in buildout section.
+  Slap partition parameters can be provided as normal keys-value pairs and if sub keys are 
+  required, keys can be joined using ".".
+  
+  For example: 
+  "zodb-zeo.tcpv4-port": 8888 will be available as slapparameter["zodb-zeo"]["tcpv4-port"] 
 
   There are two sources of parameters. First is configuration file slapos.cfg and
   derived information.
@@ -267,7 +272,7 @@ class Recipe(object):
               options[key] = value
       # print out augmented options to see what we are passing
       logger.debug(str(options))
-      return self._expandParameterDict(options, parameter_dict)
+      return self._expandParameterDict(options, unflatten_dict(parameter_dict))
 
   def _expandParameterDict(self, options, parameter_dict):
       options['configuration'] = parameter_dict
@@ -295,6 +300,18 @@ class JsonDump(Recipe):
 
     update = install
 
+def unflatten_dict(parameter_dict):
+  """Transform a flattened dict joined using "." into a multi dimentional dictionary"""
+  output = dict()
+  for key, value in parameter_dict.iteritems():
+    keys = key.split(".")
+    d = output
+    for subkey in keys[:-1]:
+      if subkey not in d:
+        d[subkey] = dict()
+      d = d[subkey]
+    d[keys[-1]] = value
+  return output
 
 def flatten_dict(data, key_prefix=''):
   """Transform folded dict into one-level key-subkey-subsubkey dictionary."""
