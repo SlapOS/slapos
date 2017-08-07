@@ -2,31 +2,25 @@
 
 set -e
 
-apachedex_file='{{ apdex_file }}/ApacheDex-'$(date +%Y-%m-%d)'.html'
-apachedex_status_file={{ apdex_status_file }} 
-desired_threshold={{ default_threshold }}
-user_threshold=$(<{{ user_threshold }})
-
-if [ ! -z "$user_threshold" ]
-then
-  desired_threshold=$user_threshold
-fi
+APACHEDEX_FILE='{{ apdex_file }}/ApacheDex-'$(date +%Y-%m-%d)'.html'
+APACHEDEX_REPORT_JSON_FILE={{ apdex_status_file }} 
+DESIRED_THRESHOLD={{ user_threshold }}
 
 # Check if the file is there
-if [ ! -s "$apachedex_file" ]; then 
+if [ ! -s "$APACHEDEX_FILE" ]; then 
   # If file doesn't exists create one
   # If it is empty check for modification time
-  if [ ! -f "$apachedex_file" ]; then
-    touch $apachedex_file
+  if [ ! -f "$APACHEDEX_FILE" ]; then
+    touch $APACHEDEX_FILE
   else
-    modified_date=`stat -c '%Z' $apachedex_file`
-    current_date=`date +%s`
-    if [[ `echo "$current_date - $modified_date" | bc` -gt 108000 ]]
+    MODIFIED_DATE=`stat -c '%Z' $APACHEDEX_FILE`
+    CURRENT_DATE=`date +%s`
+    if [[ `echo "$CURRENT_DATE - $MODIFIED_DATE" | bc` -gt 108000 ]]
     then 
       echo "File modification date is greater than 30 hours"
-      json_content=`cat $apachedex_status_file`
-      message=`echo $json_content | python -c 'import json,sys;obj=json.load(sys.stdin);print obj["message"]'`
-      echo $message 
+      JSON_CONTENT=`cat $APACHEDEX_REPORT_STATUS_FILE`
+      MESSAGE=`echo $JSON_CONTENT | python -c 'import json,sys;obj=json.load(sys.stdin);print obj["message"]'`
+      echo $MESSAGE
       exit 2
     else
       echo "File is empty for now"
@@ -35,17 +29,17 @@ if [ ! -s "$apachedex_file" ]; then
 else
   # Check if the result exists
   {
-    regex="apdex threshold<\/th><td>(.*)s<\/td>"
-    file_content=`cat $apachedex_file`
-    if [[ $file_content =~ $regex ]]
+    REGEX="<th>apdex.*?<tr><td [^<]*>(.*?)%<\/td>"
+    FILE_CONTENT=`cat $APACHDEX_FILE`
+    if [[ $FILE_CONTENT =~ $REGEX ]]
     then
-      threshold=${BASH_REMATCH[1]}
-      threshold=${threshold:-0}
-      if [[ `echo "$threshold > $desired_threshold" | bc` -eq 1 ]]
+      RESULT=${BASH_REMATCH[1]}
+      RESULT=${THRESHOLD:-0}
+      if [[ `echo "$RESULT > $DESIRED_THRESHOLD" | bc` -eq 1 ]]
       then
-        echo "Your score is $threshold, Thanks for keeping it all clean"
+        echo "Your score is $RESULT %, Thanks for keeping it all clean"
       else
-        echo "Threshold is lower than exptected: Expected was $desired_threshold and we current is $threshold"
+        echo "Threshold is lower than exptected: Expected was $DESIRED_THRESHOLD % and we current is $RESULT %"
         exit 2
       fi
     else
