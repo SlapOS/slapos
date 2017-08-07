@@ -291,15 +291,14 @@ command-line = "{{ parameter_dict['run-apachedex-location'] }}" "{{ parameter_di
 command = apachedex_every_3_hour
 
 [apachedex-parameters]
-default_parameter = 
 # XXX - Sample log file with curent date: apache_access.log-%(date)s.gz
 # which will be equivalent to apache_access.log-20150112.gz if the date is 2015-01-12
 apache-log-list = ${apache-conf-parameter-dict:access-log}
-default = ${monitor-directory:etc}/apdex_default
-base-list = ${monitor-directory:etc}/apdex_base_list
-skip-base-list = ${monitor-directory:etc}/apdex_skip_base_list
-erp5-base-list = ${monitor-directory:etc}/apdex_erp5_base_list
-apdex-promise-threshold = ${monitor-directory:etc}/apdex-promise-threshold
+default = {{ slapparameter_dict['apachedex-default'] }}
+base-list = {{ slapparameter_dict['apachedex-base-list'] }}
+skip-base-list = {{ slapparameter_dict['apachedex-skip-base-list'] }}
+erp5-base-list = {{ slapparameter_dict['apachedex-erp5-base-list'] }}
+promise-threshold = {{ slapparameter_dict['apachedex-promise-threshold'] }}
 
 [{{ section('monitor-promise-apachedex-result') }}]
 recipe = slapos.recipe.template:jinja2
@@ -307,23 +306,16 @@ template = {{ parameter_dict['apdex-result-check-script'] }}
 rendered = ${monitor-directory:promises}/check-apachedex-result
 status-file = ${monitor-directory:private}/apachedex.report.json 
 context = 
-  raw default_threshold 0.7
   raw bash {{ parameter_dict['bash'] }}/bin/bash
+  raw user_threshold ${apachedex-parameters:promise-threshold}
   key apdex_file directory:apachedex
   key apdex_status_file :status-file
-  key user_threshold apachedex-parameters:apdex-promise-threshold
 
 [monitor-instance-parameter]
 monitor-httpd-ipv6 = {{ (ipv6_set | list)[0] }}
 monitor-httpd-port = {{ next_port() }}
 monitor-title = {{ slapparameter_dict['name'] }}
 password = {{ slapparameter_dict['monitor-passwd'] }}
-instance-configuration = 
-  file apachedex-default ${apachedex-parameters:default}
-  file apachedex-base-list ${apachedex-parameters:base-list}
-  file apachedex-skip-base-list ${apachedex-parameters:skip-base-list}
-  file apachedex-erp5-base-list ${apachedex-parameters:erp5-base-list}
-  file apachedex-erp5-promise-threshold ${apachedex-parameters:apdex-promise-threshold}
 
 [buildout]
 extends =

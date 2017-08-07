@@ -290,9 +290,9 @@ context =
   raw dash {{ parameter_dict['dash-location'] }}/bin/dash
   key output_folder monitor-directory:private
 
-[slowquery-parameters]
-max-queries-threshold = ${monitor-directory:etc}/max-slowqueries-threshold
-slowest-queries-threshold = ${monitor-directory:etc}/slowest-queries-threshold
+[slow-query-digest-parameters]
+max_queries_threshold = {{ slapparameter_dict['max-slowqueries-threshold'] }}
+slowest_queries_threshold = {{ slapparameter_dict['slowest-query-threshold'] }}
 
 [{{ section('monitor-promise-slowquery-result') }}]
 recipe = slapos.recipe.template:jinja2
@@ -304,8 +304,8 @@ context =
   raw bash {{ parameter_dict['bash'] }}/bin/bash
   key slow_query_digest monitor-directory:private
   key slow_query_status :status-file
-  key max_queries_threshold slowquery-parameters:max-queries-threshold
-  key slowest_queries_threshold slowquery-parameters:slowest-queries-threshold
+  key max_queries_threshold slow-query-digest-parameters:max_queries_threshold
+  key slowest_queries_threshold slow-query-digest-parameters:slowest_queries_threshold
 
 [{{ section('promise') }}]
 recipe = slapos.cookbook:wrapper
@@ -318,9 +318,6 @@ monitor-httpd-ipv6 = {{ (ipv6_set | list)[0] }}
 monitor-httpd-port = {{ port + 1 }}
 monitor-title = {{ slapparameter_dict['name'] }}
 password = {{ slapparameter_dict['monitor-passwd'] }}
-instance-configuration =
-  file max-queries-threshold ${slowquery-parameters:max-queries-threshold} 
-  file slowest-queries-threshold ${slowquery-parameters:slowest-queries-threshold}
 
 [buildout]
 extends =

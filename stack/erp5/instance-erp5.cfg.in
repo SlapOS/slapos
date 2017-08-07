@@ -10,6 +10,7 @@
 {% set jupyter_zope_family = jupyter_dict.get('zope-family', '') -%}
 {% set monitor_base_url_dict = {} -%}
 {% set caucase_url = slapparameter_dict.get('caucase', {}).pop('url', '') -%}
+{% set monitor_dict = slapparameter_dict.get('monitor', {}) %}
 {% set crl_update_period = slapparameter_dict.get('caucase', {}).pop('crl-update-periodicity', 'daily') -%}
 [request-common]
 <= request-common-base
@@ -44,7 +45,7 @@ config-name = {{ name }}
 {{ request('memcached-persistent', 'kumofs', 'kumofs', {'tcpv4-port': 2000}, {'url': True, 'monitor-base-url': False}, key_config={'monitor-passwd': 'monitor-htpasswd:passwd'}) }}
 {{ request('memcached-volatile', 'kumofs', 'memcached', {'tcpv4-port': 2010, 'ram-storage-size': 64}, {'url': True, 'monitor-base-url': False}, key_config={'monitor-passwd': 'monitor-htpasswd:passwd'}) }}
 {{ request('cloudooo', 'cloudooo', 'cloudooo', {'tcpv4-port': 2020}, {'url': True, 'monitor-base-url': False}, key_config={'monitor-passwd': 'monitor-htpasswd:passwd'}) }}
-{{ request('mariadb', 'mariadb', 'mariadb', {'tcpv4-port': 2099}, {'database-list': True, 'test-database-list': True, 'monitor-base-url': False}, key_config={'monitor-passwd': 'monitor-htpasswd:passwd'}) }}
+{{ request('mariadb', 'mariadb', 'mariadb', {'tcpv4-port': 2099, 'max-slowqueries-threshold': monitor_dict.get('max-slowqueries-threshold', 1000), 'slowest-query-threshold': monitor_dict.get('slowest-query-threshold', '') }, {'database-list': True, 'test-database-list': True, 'monitor-base-url': False}, key_config={'monitor-passwd': 'monitor-htpasswd:passwd'}) }}
 {% if has_posftix -%}
 {{   request('smtp', 'postfix', 'smtp', {'tcpv4-port': 2025, 'smtpd-sasl-user': 'erp5@nowhere'}, key_config={'smtpd-sasl-password': 'publish-early:smtpd-sasl-password'}) }}
 {%- else %}
@@ -281,6 +282,11 @@ config-caucase-url = ${request-caucase:connection-http-url}
 config-crl-update-periodicity = {{ crl_update_period }}
 config-backend-path-dict = {{ dumps(zope_backend_path_dict) }}
 config-ssl-authentication-dict = {{ dumps(ssl_authentication_dict) }}
+config-apachedex-default = {{ dumps(monitor_dict.get('apachedex-default', '')) }} 
+config-apachedex-base-list = {{ dumps(monitor_dict.get('apachedex-base-list', '')) }}
+config-apachedex-erp5-base-list = {{ dumps(monitor_dict.get('apachedex-erp5-base-list', '')) }}
+config-apachedex-skip-base-list = {{ dumps(monitor_dict.get('apachedex-skip-base-list', '')) }}
+config-apachedex-promise-threshold = {{ dumps(monitor_dict.get('apachedex-promise-threshold', 0.5)) }}
 
 [request-frontend-base]
 {% if has_frontend -%}
