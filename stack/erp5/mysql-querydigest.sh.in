@@ -21,4 +21,5 @@ if [ ! -f "$SLOW_LOG" ]; then
   exit 1
 fi
 
-eval $PT_QUERY_EXEC $SLOW_LOG | tee $OUTPUT_FILE
+$PT_QUERY_EXEC $SLOW_LOG >  $OUTPUT_FILE
+echo "ok"
