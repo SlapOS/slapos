@@ -4,72 +4,34 @@
   "extends": "./schema-definitions.json#",
   "title": "Input Parameters",
   "properties": {
-    "server-port": {
-      "allOf": [{
-        "$ref": "#/definitions/tcpv4port"
-      }, {
-        "title": "http port to use",
-        "description": "Caucase http port to use.",
-        "default": 8009
-      }]
-    },
-    "server-https-port": {
-      "allOf": [{
-        "$ref": "#/definitions/tcpv4port"
-      }, {
-        "title": "https port to use",
-        "description": "Caucase port to use for https connexion.",
-        "default": 8010
-      }]
+    "base-port": {
+      "title": "Base TCP port",
+      "description": "If 80, caucase will also listen on 443. Otherwise, caucase will listen on port and port + 1.",
+      "type": "integer",
+      "default": 8009
     },
     "external-url": {
-      "title": "External http url",
-      "description": "External http url which point to caucase on http. This url will be added in signed certificate as CRL distribution point URI",
+      "title": "External URL of base port",
+      "description": "When provided, this URL will be added to issued certificate as the CRL distribution point.",
       "type": "string",
       "format": "uri"
     },
-    "ca-subject": {
-      "title": "Subject of CA Certificate",
-      "description": "CA certificate subject as string. The format is: /C=XX/ST=State/L=City/OU=OUnit/O=Company/CN=CA Auth/emailAddress=xx@example.com. Only /CN is mandatory.",
-      "type": "string",
-      "default": "/C=FR/O=Company/CN=SlapOS Certificate Authority/emailAddress=xx@example.com"
-    },
-    "max-request-amount": {
-      "title": "Number of pending csr to accept",
-      "description": "Number of pending csr to accept. If this limit is reached, no more csr will be accepted by the CA.",
+    "service-auto-approve-amount": {
+      "title": "Number of service certificate requests to automatically approve",
+      "description": "Once that number has been reached, a user must validate further requests. Renewals do not count toward this number. Cannot be changed once set.",
       "type": "integer",
-      "default": 10
+      "default": 0
     },
-    "crt-life-time": {
-      "title": "Signed Certificate life time",
-      "description": "The time in seconds before a generated certificate will expire. Default: 365*24*60*60 seconds (1 year)",
+    "user-auto-approve-amount": {
+      "title": "Number of user certificate requests to automatically approve",
+      "description": "Once that number has been reached, a user must validate further requests. Renewals do not count toward this number. Cannot be changed once set.",
       "type": "integer",
-      "default": 31536000,
-      "minimum": 86400
+      "default": 1
     },
-    "crl-life-period": {
-      "title": "CRL life time period",
-      "description": "Number of individual certificate validity periods during which the CRL is valid. Default: 1/50.0",
-      "type": "number",
-      "default": 0.2
-    },
-    "ca-life-period": {
-      "title": "CA Certificate life period",
-      "description": "Number of individual certificate validity periods during which the CA certificate is valid. Default: 10",
-      "type": "number",
-      "default": 10
-    },
-    "crt-keep-time": {
-      "title": "Time before cleanup certificate content on CA",
-      "description": "The time in seconds before a generated certificate will be deleted on CA server. Set 0 to never delete. Default: 30*24*60*60 seconds (30 days)",
-      "default": 5184000,
-      "type": "integer"
-    },
-    "auto-sign-csr-amount": {
-      "title": "Number of CSR to sign automatically",
-      "description": "The number of CSR to sign automatically at startup. Has no effect if there is more than the specified value of csr submitted to caucase. This value should be as lowest as possible",
-      "default": 1,
-      "minimum": 1,
+    "key-length" : {
+      "title": "Key length",
+      "description": "Size, in bits, of the SSL key generated to authenticate users.",
+      "default": 2048,
       "type": "integer"
     }
   }

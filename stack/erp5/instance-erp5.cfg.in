@@ -1,4 +1,5 @@
 {% import "root_common" as root_common with context -%}
+{% import "caucase" as caucase -%}
 {% set frontend_dict = slapparameter_dict.get('frontend', {}) -%}
 {% set has_frontend = frontend_dict.get('software-url', '') != '' -%}
 {% set site_id = slapparameter_dict.get('site-id', 'erp5') -%}
@@ -9,12 +10,11 @@
 {% set has_jupyter = jupyter_dict.get('enable', jupyter_enable_default.lower() in ('true', 'yes')) -%}
 {% set jupyter_zope_family = jupyter_dict.get('zope-family', '') -%}
 {% set monitor_base_url_dict = {} -%}
-{% set caucase_url = slapparameter_dict.get('caucase', {}).pop('url', '') -%}
 {% set monitor_dict = slapparameter_dict.get('monitor', {}) %}
-{% set crl_update_period = slapparameter_dict.get('caucase', {}).pop('crl-update-periodicity', 'daily') -%}
+{% set use_ipv6 = slapparameter_dict.get('use-ipv6', False) -%}
 [request-common]
 <= request-common-base
-config-use-ipv6 = {{ dumps(slapparameter_dict.get('use-ipv6', False)) }}
+config-use-ipv6 = {{ dumps(use_ipv6) }}
 
 {% macro request(name, software_type, config_key, config, ret={'url': True}, key_config={}) -%}
 {% do config.update(slapparameter_dict.get(config_key, {})) -%}
@@ -42,6 +42,44 @@ config-{{ k }} = {{ '${' ~ v ~ '}' }}
 config-name = {{ name }}
 {% endmacro -%}
 
+[directory]
+recipe = slapos.cookbook:mkdirectory
+etc = ${buildout:directory}/etc
+promise = ${:etc}/promise
+service-on-watch = ${:etc}/service
+srv = ${buildout:directory}/srv
+backup-caucased = ${:srv}/backup/caucased
+
+{% set caucase_dict = slapparameter_dict.get('caucase', {}) -%}
+{% set caucase_url = caucase_dict.get('url') -%}
+{% if not caucase_url -%}
+{%   if use_ipv6 -%}
+{%     set caucase_host = '[' ~ (ipv6_set | list)[0] ~ ']' %}
+{%-  else -%}
+{%     set caucase_host = (ipv4_set | list)[0] %}
+{%-  endif %}
+{%   set caucase_port = caucase_dict.get('base-port', 8890) -%}
+{%   set caucase_netloc = caucase_host ~ ':' ~ caucase_port -%}
+{%   set caucase_url = 'http://' ~ caucase_netloc -%}
+{{   caucase.caucased(
+       prefix='caucased',
+       buildout_bin_directory=bin_directory,
+       caucased_path='${directory:service-on-watch}/caucased',
+       backup_dir='${directory:backup-caucased}',
+       data_dir='${directory:srv}/caucased',
+       netloc=caucase_netloc,
+       service_auto_approve_count=caucase_dict.get('service-auto-approve-amount', 0),
+       user_auto_approve_count=caucase_dict.get('user-auto-approve-amount', 1),
+       key_len=caucase_dict.get('key-length', 2048),
+       promise='${directory:promise}/caucased',
+)}}
+{% do root_common.section('caucased') -%}
+{% do root_common.section('caucased-promise') -%}
+{% endif -%}
+{% do publish_dict.__setitem__('caucase-http-url', caucase_url) -%}
+{% set balancer_dict = slapparameter_dict.get('balancer', {}) -%}
+{% do balancer_dict.setdefault('ssl', {}).setdefault('caucase-url', caucase_url) -%}
+
 {{ request('memcached-persistent', 'kumofs', 'kumofs', {'tcpv4-port': 2000}, {'url': True, 'monitor-base-url': False}, key_config={'monitor-passwd': 'monitor-htpasswd:passwd'}) }}
 {{ request('memcached-volatile', 'kumofs', 'memcached', {'tcpv4-port': 2010, 'ram-storage-size': 64}, {'url': True, 'monitor-base-url': False}, key_config={'monitor-passwd': 'monitor-htpasswd:passwd'}) }}
 {{ request('cloudooo', 'cloudooo', 'cloudooo', {'tcpv4-port': 2020}, {'url': True, 'monitor-base-url': False}, key_config={'monitor-passwd': 'monitor-htpasswd:passwd'}) }}
@@ -53,14 +91,6 @@ config-name = {{ name }}
 # Placeholder smtp service URL
 connection-url = smtp://127.0.0.2:0/
 {%- endif %}
-
-{% if caucase_url -%}
-{%   do publish_dict.__setitem__('caucase-http-url', caucase_url) -%}
-[request-caucase]
-connection-http-url = {{ caucase_url }}
-{%- else %}
-{{ request('caucase', 'caucase', 'caucase', {'server-port': 8890, 'server-https-port': 8891, 'auto-sign-csr-amount': 2}, {'http-url': True, 'https-url': False}) }}
-{% endif -%}
 
 {# ZODB -#}
 {% set zodb_dict = {} -%}
@@ -149,7 +179,6 @@ return =
 {% endif -%}
 config-bt5 = {{ dumps(slapparameter_dict.get('bt5', bt5_default_list)) }}
 config-bt5-repository-url = {{ dumps(slapparameter_dict.get('bt5-repository-url', local_bt5_repository)) }}
-config-caucase-url = ${request-caucase:connection-http-url}
 config-cloudooo-url = ${request-cloudooo:connection-url}
 config-deadlock-debugger-password = ${publish-early:deadlock-debugger-password}
 config-developer-list = {{ dumps(slapparameter_dict.get('developer-list', [inituser_login])) }}
@@ -253,7 +282,6 @@ config-url = ${request-jupyter:connection-url}
 {%   endif -%}
 {%- endif %}
 
-{% set balancer_dict = slapparameter_dict.get('balancer', {}) -%}
 [request-balancer]
 <= request-common
 name = balancer
@@ -266,7 +294,6 @@ return =
   {{ family }}-v6
 {% endfor -%}
 {% do monitor_base_url_dict.__setitem__('request-balancer', '${' ~ 'request-balancer' ~ ':connection-monitor-base-url}') -%}
-
 config-zope-family-dict = {{ dumps(zope_family_parameter_dict) }}
 config-tcpv4-port = {{ dumps(balancer_dict.get('tcpv4-port', 2150)) }}
 {% for zope_section_id, name in zope_address_list_id_dict.items() -%}
@@ -274,11 +301,9 @@ config-{{ name }} = {{ ' ${' ~ zope_section_id ~ ':connection-zope-address-list}
 {% endfor -%}
 # XXX: should those really be same for all families ?
 config-haproxy-server-check-path = {{ dumps(balancer_dict.get('haproxy-server-check-path', '/') % {'site-id': site_id}) }}
-config-ssl = {{ dumps(balancer_dict.get('ssl', {})) }}
 config-monitor-passwd = ${monitor-htpasswd:passwd}
+config-ssl = {{ dumps(balancer_dict['ssl']) }}
 config-name = ${:name}
-config-caucase-url = ${request-caucase:connection-http-url}
-config-crl-update-periodicity = {{ crl_update_period }}
 config-backend-path-dict = {{ dumps(zope_backend_path_dict) }}
 config-ssl-authentication-dict = {{ dumps(ssl_authentication_dict) }}
 config-apachedex-promise-threshold = {{ dumps(monitor_dict.get('apachedex-promise-threshold', 70)) }}

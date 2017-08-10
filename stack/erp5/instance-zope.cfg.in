@@ -132,37 +132,11 @@ tmp = ${buildout:directory}/tmp
 var = ${buildout:directory}/var
 promises = ${:etc}/promise
 unit-test-path = ${:srv}/test-instance/unit_test
-test-ca-dir = ${:srv}/test-ca
-test-ca-requests = ${:test-ca-dir}/requests
-test-ca-private = ${:test-ca-dir}/private
-test-ca-certs = ${:test-ca-dir}/certs
-test-ca-newcerts = ${:test-ca-dir}/newcerts
-test-ca-crl = ${:test-ca-dir}/crl
-ca-dir = ${:srv}/ca
-ca-requests = ${:ca-dir}/requests
-ca-private = ${:ca-dir}/private
-ca-certs = ${:ca-dir}/certs
-ca-newcerts = ${:ca-dir}/newcerts
-ca-crl = ${:ca-dir}/crl
 
 [binary-link]
 recipe = slapos.cookbook:symbolic.link
 target-directory = ${directory:bin}
 link-binary = {{ dumps(parameter_dict['link-binary']) }}
-
-[certificate-authority-common]
-requests-directory = ${directory:ca-requests}
-ca-dir = ${directory:ca-dir}
-ca-private = ${directory:ca-private}
-ca-certs = ${directory:ca-certs}
-ca-newcerts = ${directory:ca-newcerts}
-ca-crl = ${directory:ca-crl}
-
-[{{ section('certificate-authority') }}]
-< = certificate-authority-common
-recipe = slapos.cookbook:certificate_authority
-openssl-binary = ${binary-link:target-directory}/openssl
-wrapper = ${directory:services}/ca
 
 {% if use_ipv6 -%}
 {%   set ipv6 = (ipv6_set | list)[0] -%}

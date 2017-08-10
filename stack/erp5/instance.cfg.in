@@ -1,10 +1,13 @@
 [buildout]
 extends =
   {{ instance_common_cfg }}
-  {{ caucase_template }}
 
 [jinja2-template-base]
 mode = 644
+
+[context]
+root-common = {{ dumps(root_common) }}
+caucase-jinja2-library = {{ dumps(caucase_jinja2_library) }}
 
 [dynamic-template-cloudooo-parameters]
 cairo = {{ cairo_location }}
@@ -87,7 +90,8 @@ extra-context =
     key openssl_location :openssl-location
     import urlparse urlparse
 import-list =
-    rawfile root_common {{ root_common }}
+    file root_common context:root-common
+    file caucase context:caucase-jinja2-library
 
 openssl-location = {{ openssl_location }}
 
@@ -114,6 +118,8 @@ filename = instance-balancer.cfg
 extra-context =
     section parameter_dict dynamic-template-balancer-parameters
     import itertools itertools
+import-list =
+    file caucase context:caucase-jinja2-library
 
 [dynamic-template-zeo-parameters]
 buildout-bin-directory = {{ buildout_bin_directory }}
@@ -210,7 +216,6 @@ default = dynamic-template-erp5:rendered
 RootSoftwareInstance = ${:default}
 # Internal software types
 kumofs = dynamic-template-kumofs:rendered
-caucase = dynamic-template-caucase:rendered
 cloudooo = dynamic-template-cloudooo:rendered
 mariadb = dynamic-template-mariadb:rendered
 balancer = dynamic-template-balancer:rendered

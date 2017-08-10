@@ -1,0 +1,34 @@
+[buildout]
+parts = switch-softwaretype
+eggs-directory = {{ eggs_directory }}
+develop-eggs-directory = {{ develop_eggs_directory }}
+
+[slap-configuration]
+recipe = slapos.cookbook:slapconfiguration.serialised
+computer = ${slap-connection:computer-id}
+partition = ${slap-connection:partition-id}
+url = ${slap-connection:server-url}
+key = ${slap-connection:key-file}
+cert = ${slap-connection:cert-file}
+
+[context]
+bin-directory = {{ dumps(bin_directory) }}
+caucase-jinja2-library = {{ dumps(caucase_jinja2_library) }}
+instance-caucased = {{ dumps(instance_caucased) }}
+
+[caucased]
+recipe = slapos.recipe.template:jinja2
+template = ${context:instance-caucased}
+rendered = ${buildout:parts-directory}/instance-caucased.cfg
+context =
+  key ipv6_set slap-configuration:ipv6
+  key slapparameter_dict slap-configuration:configuration
+  key bin_directory context:bin-directory
+import-list =
+  file caucase context:caucase-jinja2-library
+
+[switch-softwaretype]
+recipe = slapos.cookbook:switch-softwaretype
+default = caucased:rendered
+# XXX: When will this name finally go away ?
+RootSoftwareInstance = ${:default}

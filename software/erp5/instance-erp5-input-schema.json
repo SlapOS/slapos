@@ -283,16 +283,38 @@
           "default": "",
           "type": "string",
           "format": "uri"
-        },
-        "crl-update-periodicity": {
-            "title": "Periodicity of CRL update",
-            "description": "Periodicity of CRL update, in cron format. The CRL will be downloaded from caucase URL and the new content will be saved if there was a change. Everytime a new CRL is writen, Apache reload will be called.",
-            "type": "string",
-            "default": "0 0 * * *"
         }
       },
       "additionalProperties": {
         "$ref": "../caucase/instance-caucase-input-schema.json#/properties"
+      },
+      "type": "object"
+    },
+    "balancer": {
+      "description": "HTTP(S) load balancer proxy parameters",
+      "properties": {
+        "ssl": {
+          "description": "HTTPS certificate generation parameters",
+          "properties": {
+            "caucase-url":{
+              "title": "Caucase URL",
+              "description": "URL of caucase service to use. If not set, global setting will be used.",
+              "tyoe": "string"
+            },
+            "csr": {
+              "title": "csr",
+              "description": "PEM-encoded certificate signature request to request server certificate with. If not provided, HTTPS will be disabled.",
+              "type": "string"
+            },
+            "max-crl-update-delay": {
+              "title": "Periodicity of CRL update (days)",
+              "description": "CRL will be updated from caucase at least this often.",
+              "type": "number",
+              "default": 1.0
+            }
+          },
+          "type": "object"
+        }
       },
       "type": "object"
     }

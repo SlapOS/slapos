@@ -1,8 +1,7 @@
+{% import "caucase" as caucase -%}
 {% set part_list = [] -%}
-{% set ssl_parameter_dict = slapparameter_dict.get('ssl', {}) %}
-{% set caucase_url = slapparameter_dict.get('caucase-url', '') -%}
 {% macro section(name) %}{% do part_list.append(name) %}{{ name }}{% endmacro -%}
-{% set use_ipv6 = slapparameter_dict.get('use-ipv6', False) -%}
+{% set ssl_parameter_dict = slapparameter_dict['ssl'] -%}
 {#
 XXX: This template only supports exactly one IPv4 and (if ipv6 is used) one IPv6
 per partition. No more (undefined result), no less (IndexError).
@@ -21,81 +20,23 @@ per partition. No more (undefined result), no less (IndexError).
 recipe = slapos.recipe.template:jinja2
 mode = 644
 
-[simplefile]
-< = jinja2-template-base
-template = inline:{{ '{{ content }}' }}
+{{ caucase.updater(
+     prefix='caucase-updater',
+     buildout_bin_directory=bin_directory,
+     updater_path='${directory:services-on-watch}/caucase-updater',
+     url=ssl_parameter_dict['caucase-url'],
+     data_dir='${directory:srv}/caucase-updater',
+     crt_path='${apache-conf-ssl:cert}',
+     ca_path='${apache-conf-ssl:ca-cert}',
+     crl_path='${apache-conf-ssl:crl}',
+     key_path='${apache-conf-ssl:key}',
+     on_renew='${apache-graceful:output}',
+     max_sleep=ssl_parameter_dict.get('max-crl-update-delay', 1.0),
+     template_csr_pem=ssl_parameter_dict.get('csr'),
+     openssl=parameter_dict['openssl'] ~ '/bin/openssl',
+)}}
+{% do section('caucase-updater') -%}
 
-{% macro simplefile(section_name, file_path, content, mode='') -%}
-{%   set content_section_name = section_name ~ '-content' -%}
-[{{  content_section_name }}]
-content = {{ dumps(content) }}
-
-[{{  section(section_name) }}]
-< = simplefile
-rendered = {{ file_path }}
-context = key content {{content_section_name}}:content
-mode = {{ mode }}
-{%- endmacro %}
-
-[certificate-request-base]
-recipe = slapos.cookbook:wrapper
-wrapper-path = ${directory:bin}/request-instance-certificate
-parameters-extra = true
-command-line = {{ parameter_dict['bin-directory'] }}/caucase-cliweb
-  --crt-file ${apache-conf-ssl:cert}
-  --key-file ${apache-conf-ssl:key}
-  --crl-file ${apache-conf-ssl:crl}
-  --ca-url {{ caucase_url }}
-  --ca-crt-file ${apache-conf-ssl:ca-cert}
-
-{% macro request_cert(name, common_name) -%}
-{% set get_crl_periodicity = slapparameter_dict.get('crl-update-periodicity', 'daily') -%}
-
-[{{ section(name ~ '-certificate-request') }}]
-recipe = slapos.cookbook:wrapper
-wrapper-path = ${directory:services}/request-{{ name }}-certificate
-command-line =
-  ${certificate-request-base:wrapper-path}
-  --cn {{ common_name }}
-  --request
-
-[{{ section(name ~ '-renew-cron-entry') }}]
-recipe = slapos.cookbook:cron.d
-cron-entries = ${cron:cron-entries}
-name = {{ name }}-certificate-auto-renew
-time = weekly
-# 2592000 = 30*24*60*60  equivalent to one month in seconds
-command = ${certificate-request-base:wrapper-path} --renew --threshold 2592000 --on-renew="${apache-graceful:output}"
-
-[{{ section(name ~ '-download-crl') }}]
-# download the crl for the first time
-recipe = plone.recipe.command
-command = 
-  if [ ! -s "${apache-conf-ssl:crl}" ]; then
-    ${certificate-request-base:wrapper-path} --update-crl
-  fi
-update-command = ${:command}
-stop-on-error = true
-
-[{{ section(name ~ '-update-crl-cron-entry') }}]
-recipe = slapos.cookbook:cron.d
-cron-entries = ${cron:cron-entries}
-name = {{ name }}-update-crl
-time = {{ get_crl_periodicity }}
-# XXX - Update crl call apache graceful restart, it's not recommended to check crl too often, Apache
-# has an issue with reload and can be frozen and stop responding. Default periodicity time = daily
-command = ${certificate-request-base:wrapper-path} --update-crl --on-crl-update="${apache-graceful:output}"
-{%- endmacro %}
-
-{% if use_ipv6 -%}
-[zope-tunnel-base]
-recipe = slapos.cookbook:ipv4toipv6
-runner-path = ${directory:services}/${:base-name}
-6tunnel-path = {{ parameter_dict['6tunnel'] }}/bin/6tunnel
-shell-path = {{ parameter_dict['dash'] }}/bin/dash
-ipv4 = {{ ipv4 }}
-
-{% endif -%}
 {% set haproxy_dict = {} -%}
 {% set apache_dict = {} -%}
 {% set next_port = itertools.count(slapparameter_dict['tcpv4-port']).next -%}
@@ -109,18 +50,7 @@ ipv4 = {{ ipv4 }}
 {%       if webdav -%}
 {%         do has_webdav.append(None) %}
 {%       endif -%}
-{%       if use_ipv6 -%}
-{%         set current_port = next_port() -%}
-[{{ section('zope-tunnel-' ~ current_port) }}]
-< = zope-tunnel-base
-base-name = {{ 'zeo-tunnel-' ~ current_port }}
-ipv4-port = {{ current_port }}
-ipv6-port = {{ zope_address.split(']:')[1] }}
-ipv6 = {{ zope_address.split(']:')[0][1:] }}
-{%         set zope_effective_address = ipv4 ~ ":" ~ current_port -%}
-{%       else -%}
-{%         set zope_effective_address = zope_address -%}
-{%       endif -%}
+{%       set zope_effective_address = zope_address -%}
 {%       do zope_family_address_list.append((zope_effective_address, maxconn, webdav)) -%}
 {%     endfor -%}
 {%   endfor -%}
@@ -141,8 +71,7 @@ ipv6 = {{ zope_address.split(']:')[0][1:] }}
 {%     set internal_scheme = 'http' -%}
 {%     set external_scheme = 'https' -%}
 {%   endif -%}
-{%   set ssl_authentication = slapparameter_dict['ssl-authentication-dict'].get(family_name, False) -%}
-{%   do apache_dict.__setitem__(family_name, (next_port(), external_scheme, internal_scheme ~ '://' ~ ipv4 ~ ':' ~ haproxy_port ~ backend_path, ssl_authentication)) -%}
+{%   do apache_dict.__setitem__(family_name, (next_port(), external_scheme, internal_scheme ~ '://' ~ ipv4 ~ ':' ~ haproxy_port ~ backend_path, slapparameter_dict['ssl-authentication-dict'].get(family_name, False))) -%}
 {% endfor -%}
 
 [haproxy-cfg-parameter-dict]
@@ -163,8 +92,6 @@ recipe = slapos.cookbook:wrapper
 wrapper-path = ${directory:services}/haproxy
 command-line = "{{ parameter_dict['haproxy'] }}/sbin/haproxy" -f "${haproxy-cfg:rendered}"
 
-{# TODO: build socat and wrap it as "${directory:bin}/haproxy-ctl" to connect to "${haproxy-cfg-parameter-dict:socket-path}" #}
-
 [apache-conf-ssl]
 cert = ${directory:apache-conf}/apache.crt
 key = ${directory:apache-conf}/apache.pem
@@ -181,13 +108,13 @@ access-log = ${directory:log}/apache-access.log
 # Apache 2.4's default value (60 seconds) can be a bit too short
 timeout = 300
 # Basic SSL server configuration
-cert = ${apache-ssl:cert}
-key = ${apache-ssl:key}
+cert = ${apache-conf-ssl:cert}
+key = ${apache-conf-ssl:key}
 cipher =
 ssl-session-cache = ${directory:log}/apache-ssl-session-cache
 # Client x509 auth
-ca-cert = ${apache-ssl-client:cert}
-crl = ${apache-ssl-client:crl}
+ca-cert = ${apache-conf-ssl:ca-cert}
+crl = ${apache-conf-ssl:crl}
 
 [apache-conf]
 < = jinja2-template-base
@@ -205,12 +132,11 @@ wait-for-files =
 
 [apache-graceful]
 recipe = collective.recipe.template
+output = ${directory:bin}/apache-httpd-graceful
+mode = 700
 input = inline:
   #!/bin/sh
   kill -USR1 "$(cat '${apache-conf-parameter-dict:pid-file}')"
-
-output = ${directory:bin}/apache-httpd-graceful
-mode = 700
 
 [{{ section('apache-promise') }}]
 # Check any apache port in ipv4, expect other ports and ipv6 to behave consistently
@@ -227,39 +153,6 @@ recipe = slapos.cookbook:publish.serialised
 {% endfor -%}
 monitor-base-url = ${monitor-publish-parameters:monitor-base-url}
 
-[apache-ssl]
-{% if ssl_parameter_dict.get('key') -%}
-key = ${apache-ssl-key:rendered}
-cert = ${apache-ssl-cert:rendered}
-{{ simplefile('apache-ssl-key', '${apache-conf-ssl:key}', ssl_parameter_dict['key']) }}
-{{ simplefile('apache-ssl-cert', '${apache-conf-ssl:cert}', ssl_parameter_dict['cert']) }}
-{% elif caucase_url -%}
-key = ${apache-conf-ssl:key}
-cert = ${apache-conf-ssl:cert}
-
-{{ request_cert('erp5', 'instance.apache@erp5') }}
-{% else %}
-recipe = plone.recipe.command
-command = "{{ parameter_dict['openssl'] }}/bin/openssl" req -newkey rsa -batch -new -x509 -days 3650 -nodes -keyout "${:key}" -out "${:cert}"
-key = ${apache-conf-ssl:key}
-cert = ${apache-conf-ssl:cert}
-{%- endif %}
-
-[apache-ssl-client]
-{% if ssl_parameter_dict.get('ca-cert') -%}
-cert = ${apache-ssl-ca:rendered}
-crl = ${apache-ssl-crl:rendered}
-{{ simplefile('apache-ssl-ca', '${apache-conf-ssl:ca-cert}', ssl_parameter_dict['ca-cert']) }}
-{{ simplefile('apache-ssl-crl', '${apache-conf-ssl:crl}', ssl_parameter_dict['crl']) }}
-{% elif caucase_url -%}
-cert = ${apache-conf-ssl:ca-cert}
-crl = ${apache-conf-ssl:crl}
-
-{% else %}
-cert =
-crl =
-{%- endif %}
-
 [{{ section('logrotate-apache') }}]
 < = logrotate-entry-base
 name = apache
@@ -273,15 +166,11 @@ bin = ${buildout:directory}/bin
 etc = ${buildout:directory}/etc
 promise = ${:etc}/promise
 services = ${:etc}/run
+services-on-watch = ${:etc}/service
 var = ${buildout:directory}/var
 run = ${:var}/run
 log = ${:var}/log
-ca-dir = ${buildout:directory}/srv/ssl
-requests = ${:ca-dir}/requests
-private = ${:ca-dir}/private
-certs = ${:ca-dir}/certs
-newcerts = ${:ca-dir}/newcerts
-crl = ${:ca-dir}/crl
+srv = ${buildout:directory}/srv
 apachedex = ${monitor-directory:private}/apachedex
 
 [{{ section('monitor-generate-apachedex-report') }}]
