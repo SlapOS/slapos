@@ -1,0 +1,32 @@
+{% import "caucase" as caucase -%}
+{% set ipv6 = (ipv6_set | list)[0] -%}
+{% set netloc = '[' ~ ipv6 ~ ']:' ~ slapparameter_dict.get('base-port', 8009) -%}
+
+[directory]
+recipe = slapos.cookbook:mkdirectory
+etc = ${buildout:directory}/etc
+promise = ${:etc}/promise
+service-on-watch = ${:etc}/service
+srv = ${buildout:directory}/srv
+
+{{ caucase.caucased(
+  prefix='caucased',
+  buildout_bin_directory=bin_directory,
+  caucased_path='${directory:service-on-watch}/caucased',
+  data_dir='${directory:srv}/caucased',
+  netloc=netloc,
+  service_auto_approve_count=slapparameter_dict.get('service-auto-approve-amount', 0),
+  user_auto_approve_count=slapparameter_dict.get('user-auto-approve-amount', 1),
+  key_len=slapparameter_dict.get('key-length', 2048),
+  promise='${directory:promise}/caucased',
+) }}
+
+[publish]
+recipe = slapos.cookbook:publish.serialised
+url = {{ dumps('http://' ~ netloc) }}
+
+[buildout]
+parts =
+  publish
+  caucased
+  caucased-promise

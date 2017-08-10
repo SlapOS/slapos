@@ -1,7 +1,6 @@
 [buildout]
 extends =
   {{ instance_common_cfg }}
-  {{ caucase_template }}
 
 [jinja2-template-base]
 mode = 644
@@ -43,7 +42,8 @@ extra-context =
     key openssl_location :openssl-location
     import urlparse urlparse
 import-list =
-    rawfile root_common {{ root_common }}
+    file root_common context:root-common
+    file caucase context:caucase-jinja2-library
 
 openssl-location = {{ openssl_location }}
 
@@ -66,6 +66,8 @@ filename = instance-balancer.cfg
 extra-context =
     section parameter_dict dynamic-template-balancer-parameters
     import itertools itertools
+import-list =
+    file caucase context:caucase-jinja2-library
 
 [dynamic-template-zeo-parameters]
 buildout-bin-directory = {{ buildout_bin_directory }}
@@ -106,6 +108,7 @@ extra-context =
     import urlparse urlparse
     import hashlib hashlib
     import itertools itertools
+    raw openssl_bin {{ openssl_location}}/bin
 
 [dynamic-template-kumofs-parameters]
 dash-location = {{ dash_location }}
