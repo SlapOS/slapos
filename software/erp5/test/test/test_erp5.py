@@ -50,6 +50,11 @@ class ERP5TestCase(SlapOSInstanceTestCase):
     return json.loads(
         self.computer_partition.getConnectionParameterDict()['_'])
 
+  def setUp(self):
+    super(ERP5TestCase, self).setUp()
+    param_dict = self.getRootPartitionConnectionParameterDict()
+    self.caucase_cas_ca = requests.get(urlparse.urljoin(param_dict['caucase-http-url'], '/cas/crt/ca.crt.pem'))
+
 
 class TestPublishedURLIsReachableMixin(object):
   """Mixin that checks that default page of ERP5 is reachable.
@@ -62,7 +67,7 @@ class TestPublishedURLIsReachableMixin(object):
     # If we can move the "create site" in slapos node instance, then this retry loop
     # would not be necessary.
     for i in range(1, 20):
-      r = requests.get(url, verify=False) # XXX can we get CA from caucase already ?
+      r = requests.get(url, verify=self.caucase_cas_ca)
       if r.status_code == requests.codes.service_unavailable:
         delay = i * 2
         self.logger.warn("ERP5 was not available, sleeping for %ds and retrying", delay)
