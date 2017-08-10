@@ -1,0 +1,104 @@
+{% macro caucased(
+  prefix,
+  buildout_bin_directory,
+  caucased_path,
+  data_dir,
+  netloc,
+  service_auto_approve_count=0,
+  user_auto_approve_count=1,
+  key_len=None,
+  backup_dir=None,
+  promise=None
+) -%}
+[{{ prefix }}-directory]
+recipe = slapos.cookbook:mkdirectory
+data-dir = {{ data_dir }}
+mode = 0750
+
+[{{ prefix }}]
+recipe = slapos.cookbook:wrapper
+wrapper-path = {{ caucased_path }}
+parameters-extra = true
+command-line = '{{ buildout_bin_directory }}/caucased'
+  --db          '${ {{- prefix }}-directory:data-dir}/caucase.sqlite'
+  --server-key  '${ {{- prefix }}-directory:data-dir}/server.key.pem'
+  --netloc      '{{ netloc }}'
+  {% if key_len %}--key-len '{{ key_len }}' {%- endif %}
+  {% if backup_dir %}--backup-directory {{ backup_dir }} {%- endif %}
+  --service-auto-approve-count '{{ service_auto_approve_count }}'
+  --user-auto-approve-count    '{{ user_auto_approve_count }}'
+  --lock-auto-approve-count
+
+{% if promise -%}
+[{{ prefix }}-promise]
+recipe = slapos.cookbook:wrapper
+wrapper-path = {{ promise }}
+command-line = '{{ buildout_bin_directory }}/caucase-probe' 'http://{{ netloc }}'
+{%- endif %}
+{%- endmacro %}
+
+{% macro updater(
+  prefix,
+  buildout_bin_directory,
+  updater_path,
+  url,
+  data_dir,
+  crt_path,
+  ca_path,
+  crl_path,
+  key_path=None,
+  on_renew=None,
+  max_sleep=None,
+  mode='service',
+  template_csr_pem=None,
+  openssl=None
+) -%}
+[{{ prefix }}-directory]
+recipe = slapos.cookbook:mkdirectory
+data-dir = {{ data_dir }}
+
+{% if template_csr_pem -%}
+[{{ prefix }}-provided-csr-content]
+content = {{ dumps(template_csr_pem) }}
+
+[{{ prefix }}-provided-csr]
+recipe = slapos.recipe.template:jinja2
+mode = 644
+template = inline:{{ '{{ content }}' }}
+rendered = ${ {{- prefix }}-directory:data-dir}/provided.csr.pem
+context = key content {{ prefix }}-provided-csr-content:content
+
+{{   rerequest(
+       prefix=prefix ~ '-csr',
+       template='${provided-csr:rendered}',
+       csr='${:csr}',
+       key='${apache-conf-ssl:key}',
+)}}
+{%- else -%}
+[{{ prefix }}-csr]
+recipe = plone.recipe.command
+command = '{{ openssl }}' req -newkey rsa:2048 -batch -new -nodes -subj /CN=example.com -keyout '{{ key_path or crt_path }}' -out '${:csr}'
+{%- endif %}
+csr = ${ {{- prefix }}-directory:data-dir}/good.csr.pem
+
+[{{ prefix }}]
+recipe = slapos.cookbook:wrapper
+wrapper-path = {{ updater_path }}
+command-line = '{{ buildout_bin_directory }}/caucase-updater'
+  --ca-url '{{ url }}'
+  --cas-ca '${ {{- prefix }}-directory:data-dir}/cas.crt.pem'
+  --mode '{{ mode }}'
+  --csr '${ {{- prefix }}-csr:csr}'
+  --crt '{{ crt_path }}'
+  --ca '{{ ca_path }}'
+  --crl '{{ crl_path }}'
+  {% if key_path %}--key '{{ key_path }}' {%- endif %}
+  --on-renew '{{ on_renew }}'
+  {% if max_sleep %}--max-sleep '{{ max_sleep }}' {%- endif %}
+{%- endmacro %}
+
+{% macro rerequest(prefix, buildout_bin_directory, template, csr, key) -%}
+[{{ prefix }}]
+recipe = plone.recipe.command
+command = '{{ buildout_bin_directory }}/caucase-rerequest' --templat '{{ template }}' --csr '{{ csr }}' --key '{{ key }}'
+{%- endmacro %}
