@@ -1,7 +1,6 @@
 [buildout]
 extends =
   {{ instance_common_cfg }}
-  {{ caucase_template }}
 
 [jinja2-template-base]
 mode = 644
@@ -35,6 +34,10 @@ jupyter-enable-default = {{ jupyter_enable_default }}
 local-bt5-repository = {{ ' '.join(local_bt5_repository.split()) }}
 template-monitor = {{ dumps(template_monitor) }}
 
+[context]
+root-common = {{ root_common }}
+caucase-jinja2-library = {{ caucase_jinja2_library }}
+
 [dynamic-template-erp5]
 <= jinja2-template-base
 template = {{ template_erp5 }}
@@ -47,7 +50,8 @@ extra-context =
     key openssl_location :openssl-location
     import urlparse urlparse
 import-list =
-    rawfile root_common {{ root_common }}
+    file root_common context:root-common
+    file caucase context:caucase-jinja2-library
 
 openssl-location = {{ openssl_location }}
 
@@ -70,6 +74,8 @@ filename = instance-balancer.cfg
 extra-context =
     section parameter_dict dynamic-template-balancer-parameters
     import itertools itertools
+import-list =
+    file caucase context:caucase-jinja2-library
 
 [dynamic-template-zeo-parameters]
 <= default-dynamic-template-parameters
@@ -112,6 +118,7 @@ extra-context =
     import urlparse urlparse
     import hashlib hashlib
     import itertools itertools
+    raw openssl_bin {{ openssl_location}}/bin
 
 [dynamic-template-kumofs-parameters]
 <= default-dynamic-template-parameters
