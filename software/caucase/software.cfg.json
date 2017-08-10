@@ -5,7 +5,7 @@
     "software-type": {
         "default": {
             "title": "Default",
-            "description": "Single caucase instance",
+            "description": "caucased service",
             "request": "instance-caucase-input-schema.json",
             "response": "instance-caucase-output-schema.json",
             "index": 0
