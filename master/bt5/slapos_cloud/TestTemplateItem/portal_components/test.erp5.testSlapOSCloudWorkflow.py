@@ -2759,14 +2759,12 @@ class TestSlapOSCoreSlapOSCloudInteractionWorkflow(testSlapOSMixin):
         return self.activeSense_call()
 
     # Replace activeSense by a dummy method
-    class Alarm:
-      pass
-    #from Products.ERP5Type.Document.Alarm import Alarm
+    from Products.ERP5Type.Document.Alarm import Alarm
     Alarm.activeSense_call = Alarm.activeSense
     Alarm.activeSense = verify_activeSense_call
     try:
       instance.validate()
-      # instance.portal_alarms.slapos_allocate_instance.activeSense()
+      instance.portal_alarms.slapos_allocate_instance.activeSense()
       self.tic()
     finally:
       Alarm.activeSense = Alarm.activeSense_call
