@@ -146,8 +146,7 @@ context =
   raw language_name python
 
 [custom-js]
-<= dynamic-jinja2-template-base
-template = {{ custom_js_location }}/{{ custom_js_filename }}
-rendered = ${directory:jupyter_custom_dir}/custom.js
-mode = 0744
+recipe = slapos.cookbook:symbolic.link
+target-directory = ${directory:jupyter_custom_dir}
+link-binary = {{ custom_js_location }}/custom.js
 
