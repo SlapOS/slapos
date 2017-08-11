@@ -263,7 +263,7 @@ rendered = ${directory:srv}/exporter.exclude
 [dash]
 dash = {{ dumps(dash) }}
 
-[resiliency-after-import-script]
+[{{ section('resiliency-after-import-script') }}]
 # Generate after import script used by importer instance of webrunner
 < = jinja2-template-executable
 template = {{ parameter_dict['mariadb-resiliency-after-import-script'] }}
