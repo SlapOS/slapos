@@ -29,12 +29,12 @@ if [ ! -s "$APACHEDEX_FILE" ]; then
 else
   # Check if the result exists
   {
-    REGEX="<th>apdex.*?<tr><td [^<]*>(.*?)%<\/td>"
-    FILE_CONTENT=`cat $APACHDEX_FILE`
+    REGEX="Overall<\/h2><table .*><tr>[[:space:]]<th>apdex<\/th><th>.*?<tr>[[:space:]]<td [^<]*>(.*?)%<\/td>"
+    FILE_CONTENT=`cat $APACHEDEX_FILE`
     if [[ $FILE_CONTENT =~ $REGEX ]]
     then
       RESULT=${BASH_REMATCH[1]}
-      RESULT=${THRESHOLD:-0}
+      RESULT=${RESULT:-0}
       if [[ `echo "$RESULT > $DESIRED_THRESHOLD" | bc` -eq 1 ]]
       then
         echo "Your score is $RESULT %, Thanks for keeping it all clean"

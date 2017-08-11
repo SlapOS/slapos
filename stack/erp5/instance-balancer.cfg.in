@@ -287,17 +287,14 @@ apachedex = ${monitor-directory:private}/apachedex
 [{{ section('monitor-generate-apachedex-report') }}]
 recipe = slapos.cookbook:wrapper
 wrapper-path = ${monitor-directory:reports}/${:command}
-command-line = "{{ parameter_dict['run-apachedex-location'] }}" "{{ parameter_dict['apachedex-location'] }}" "${directory:apachedex}" ${monitor-publish-parameters:monitor-base-url}/private/apachedex --default "${apachedex-parameters:default}" --apache-log-list "${apachedex-parameters:apache-log-list}" --base-list "${apachedex-parameters:base-list}" --skip-base-list "${apachedex-parameters:skip-base-list}" --erp5-base-list "${apachedex-parameters:erp5-base-list}"
+command-line = "{{ parameter_dict['run-apachedex-location'] }}" "{{ parameter_dict['apachedex-location'] }}" "${directory:apachedex}" ${monitor-publish-parameters:monitor-base-url}/private/apachedex --apache-log-list "${apachedex-parameters:apache-log-list}" --config "${apachedex-parameters:configuration}"
 command = apachedex_every_3_hour
 
 [apachedex-parameters]
 # XXX - Sample log file with curent date: apache_access.log-%(date)s.gz
 # which will be equivalent to apache_access.log-20150112.gz if the date is 2015-01-12
 apache-log-list = ${apache-conf-parameter-dict:access-log}
-default = {{ slapparameter_dict['apachedex-default'] }}
-base-list = {{ slapparameter_dict['apachedex-base-list'] }}
-skip-base-list = {{ slapparameter_dict['apachedex-skip-base-list'] }}
-erp5-base-list = {{ slapparameter_dict['apachedex-erp5-base-list'] }}
+configuration = {{ slapparameter_dict['apachedex-configuration'] }}
 promise-threshold = {{ slapparameter_dict['apachedex-promise-threshold'] }}
 
 [{{ section('monitor-promise-apachedex-result') }}]

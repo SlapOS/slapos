@@ -282,11 +282,9 @@ config-caucase-url = ${request-caucase:connection-http-url}
 config-crl-update-periodicity = {{ crl_update_period }}
 config-backend-path-dict = {{ dumps(zope_backend_path_dict) }}
 config-ssl-authentication-dict = {{ dumps(ssl_authentication_dict) }}
-config-apachedex-default = {{ dumps(monitor_dict.get('apachedex-default', '')) }} 
-config-apachedex-base-list = {{ dumps(monitor_dict.get('apachedex-base-list', '')) }}
-config-apachedex-erp5-base-list = {{ dumps(monitor_dict.get('apachedex-erp5-base-list', '')) }}
-config-apachedex-skip-base-list = {{ dumps(monitor_dict.get('apachedex-skip-base-list', '')) }}
-config-apachedex-promise-threshold = {{ dumps(monitor_dict.get('apachedex-promise-threshold', 0.5)) }}
+config-apachedex-promise-threshold = {{ dumps(monitor_dict.get('apachedex-promise-threshold', 70)) }}
+config-apachedex-configuration = {{ dumps(monitor_dict.get('apachedex-configuration',
+'--erp5-base "/erp5(/|$|/\?)" --skip-user-agent Zabbix  --error-detail --js-embed --quiet')) }}
 
 [request-frontend-base]
 {% if has_frontend -%}
