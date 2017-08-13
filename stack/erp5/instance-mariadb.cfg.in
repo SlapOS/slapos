@@ -1,3 +1,4 @@
+{% import "caucase" as caucase -%}
 {% set part_list = [] -%}
 {% macro section(name) %}{% do part_list.append(name) %}{{ name }}{% endmacro -%}
 {% set use_ipv6 = slapparameter_dict.get('use-ipv6', False) -%}
@@ -58,42 +59,21 @@ mode = 644
 < = jinja2-template-base
 mode = 755
 
-[simplefile]
-< = jinja2-template-base
-template = inline:{{ '{{ content }}' }}
-
-{% macro simplefile(section_name, file_path, content, mode='') -%}
-{%   set content_section_name = section_name ~ '-content' -%}
-[{{  content_section_name }}]
-content = {{ dumps(content) }}
-
-[{{  section(section_name) }}]
-< = simplefile
-rendered = {{ file_path }}
-context = key content {{content_section_name}}:content
-mode = {{ mode }}
-{%- endmacro %}
-{% set ssl_dict = {} -%}
-{% macro sslfile(key, content, mode='644') -%}
-{%   set path = '${directory:mariadb-ssl}/' ~ key ~ '.pem' -%}
-{%   do ssl_dict.__setitem__(key, path) -%}
-{{   simplefile('ssl-file-' ~ key, path, content, mode) }}
-{%- endmacro %}
-{% set ssl_parameter_dict = slapparameter_dict.get('ssl') -%}
-{% if ssl_parameter_dict -%}
-{%   set base_directory = '${directory:mariadb-ssl}/' -%}
-{# Note: The key content will be stored in .installed.cfg, and this template's
-rendering, so the only point of mode is to avoid risking mariadb complaining
-about laxist file mode. -#}
-{{   sslfile('key', ssl_parameter_dict['key'], mode='600') }}
-{{   sslfile('crt', ssl_parameter_dict['crt']) }}
-{%   if 'ca-crt' in ssl_parameter_dict -%}
-{{     sslfile('ca-crt', ssl_parameter_dict['ca-crt']) }}
-{%   endif -%}
-{%   if 'crl' in ssl_parameter_dict -%}
-{{     sslfile('crl', ssl_parameter_dict['crl']) }}
-{%   endif -%}
-{%- endif %}
+{% set ssl_parameter_dict = slapparameter_dict['ssl'] -%}
+{{ caucase.updater(
+     prefix='caucase-updater',
+     buildout_bin_directory=parameter_dict['bin-directory'],
+     updater_path='${directory:services-on-watch}/caucase-updater',
+     url=ssl_parameter_dict['caucase-url'],
+     data_dir='${directory:srv}/caucase-updater',
+     crt_path='$my-cnf-parameters:ssl-crt}',
+     ca_path='${my-cnf-parameters:ssl-ca-crt}',
+     crl_path='${my-cnf-parameters:ssl-crl}',
+     key_path='${my-cnf-parameters:ssl-key}',
+     max_sleep=ssl_parameter_dict.get('max-crl-update-delay', 1.0),
+     openssl=parameter_dict['openssl'] ~ '/bin/openssl',
+)}}
+{% do section('caucase-updater') -%}
 
 {% if full_backup_retention_days > -1 -%}
 [{{ section('cron-entry-mariadb-backup') }}]
@@ -145,9 +125,10 @@ server-id = ${publish-early:server-id}
 {% else %}
 binlog-path =
 {%- endif %}
-{%- for key, value in ssl_dict.items() -%}
-ssl-{{ key }} = {{ value }}
-{% endfor %}
+ssl-key = ${directory:mariadb-ssl}/key.pem
+ssl-crt = ${directory:mariadb-ssl}/crt.pem
+ssl-ca-crt = ${directory:mariadb-ssl}/ca-crt.pem
+ssl-crl = ${directory:mariadb-ssl}/crl.pem
 
 [my-cnf]
 < = jinja2-template-base
@@ -241,6 +222,7 @@ recipe = slapos.cookbook:mkdirectory
 bin = ${buildout:directory}/bin
 etc = ${buildout:directory}/etc
 services = ${:etc}/run
+services-on-watch = ${:etc}/service
 promise = ${:etc}/promise
 srv = ${buildout:directory}/srv
 tmp = ${buildout:directory}/tmp

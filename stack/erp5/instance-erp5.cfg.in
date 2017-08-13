@@ -79,6 +79,7 @@ backup-caucased = ${:srv}/backup/caucased
 {% do publish_dict.__setitem__('caucase-http-url', caucase_url) -%}
 {% set balancer_dict = slapparameter_dict.get('balancer', {}) -%}
 {% do balancer_dict.setdefault('ssl', {}).setdefault('caucase-url', caucase_url) -%}
+{% do slapparameter_dict.setdefault('mariadb', {}).setdefault('ssl', {}).setdefault('caucase-url', caucase_url) -%}
 
 {{ request('memcached-persistent', 'kumofs', 'kumofs', {'tcpv4-port': 2000}, {'url': True, 'monitor-base-url': False}, key_config={'monitor-passwd': 'monitor-htpasswd:passwd'}) }}
 {{ request('memcached-volatile', 'kumofs', 'memcached', {'tcpv4-port': 2010, 'ram-storage-size': 64}, {'url': True, 'monitor-base-url': False}, key_config={'monitor-passwd': 'monitor-htpasswd:passwd'}) }}

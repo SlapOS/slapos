@@ -183,6 +183,7 @@ dash-location = {{ dash_location }}
 findutils-location = {{ findutils_location }}
 gzip-location = {{ gzip_location }}
 mariadb-location = {{ mariadb_location }}
+openssl = {{ openssl_location }}
 template-my-cnf = {{ template_my_cnf }}
 template-mariadb-initial-setup = {{ template_mariadb_initial_setup }}
 link-binary = {{ dumps(mariadb_link_binary) }}
@@ -200,6 +201,8 @@ template = {{ template_mariadb }}
 filename = instance-mariadb.cfg
 extra-context =
     section parameter_dict dynamic-template-mariadb-parameters
+import-list =
+    file caucase context:caucase-jinja2-library
 
 # we need this value to be present in a section,
 # for slapos.cookbook:switch-softwaretype to work
