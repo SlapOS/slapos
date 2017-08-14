@@ -130,7 +130,6 @@ slapos_cloud_promise
 slapos_consumption
 slapos_core
 slapos_crm
-slapos_hypermedia
 slapos_payzen
 slapos_pdm
 slapos_rest_api
@@ -244,7 +243,6 @@ slapos_cloud_promise
 slapos_consumption
 slapos_core
 slapos_crm
-slapos_hypermedia
 slapos_payzen
 slapos_pdm
 slapos_rest_api
@@ -353,7 +351,6 @@ slapos_cloud_promise
 slapos_consumption
 slapos_core
 slapos_crm
-slapos_hypermedia
 slapos_payzen
 slapos_pdm
 slapos_rest_api
@@ -463,7 +460,6 @@ slapos_cloud_promise
 slapos_consumption
 slapos_core
 slapos_crm
-slapos_hypermedia
 slapos_payzen
 slapos_pdm
 slapos_rest_api
@@ -570,7 +566,6 @@ slapos_cloud_promise
 slapos_consumption
 slapos_core
 slapos_crm
-slapos_hypermedia
 slapos_payzen
 slapos_pdm
 slapos_rest_api
@@ -678,7 +673,6 @@ slapos_cloud_promise
 slapos_consumption
 slapos_core
 slapos_crm
-slapos_hypermedia
 slapos_payzen
 slapos_pdm
 slapos_rest_api
@@ -785,7 +779,6 @@ slapos_cloud_promise
 slapos_consumption
 slapos_core
 slapos_crm
-slapos_hypermedia
 slapos_payzen
 slapos_pdm
 slapos_rest_api
@@ -893,7 +886,6 @@ slapos_cloud_promise
 slapos_consumption
 slapos_core
 slapos_crm
-slapos_hypermedia
 slapos_payzen
 slapos_pdm
 slapos_rest_api
@@ -1000,7 +992,6 @@ slapos_cloud_promise
 slapos_consumption
 slapos_core
 slapos_crm
-slapos_hypermedia
 slapos_payzen
 slapos_pdm
 slapos_rest_api
@@ -1109,7 +1100,6 @@ slapos_cloud_promise
 slapos_consumption
 slapos_core
 slapos_crm
-slapos_hypermedia
 slapos_payzen
 slapos_pdm
 slapos_rest_api
@@ -1219,7 +1209,6 @@ slapos_cloud_promise
 slapos_consumption
 slapos_core
 slapos_crm
-slapos_hypermedia
 slapos_payzen
 slapos_pdm
 slapos_rest_api

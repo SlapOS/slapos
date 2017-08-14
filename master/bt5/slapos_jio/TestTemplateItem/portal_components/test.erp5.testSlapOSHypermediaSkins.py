@@ -11,9 +11,6 @@ from functools import wraps
 from ZPublisher.HTTPRequest import HTTPRequest
 from ZPublisher.HTTPResponse import HTTPResponse
 
-import os
-import sys
-
 import json
 import StringIO
 
@@ -348,7 +345,7 @@ class TestSlapOSBase_getHateoasMaster(TestSlapOSHypermediaMixin):
   @changeSkin('Hal')
   def test_getHateoasMaster_person_result(self):
     person_user = self._makePerson()
-    self.login(person_user.getReference())
+    self.login(person_user.getUserId())
     self.changeSkin('Hal')
     fake_request = do_fake_request("GET")
     result = self.portal.Base_getHateoasMaster(REQUEST=fake_request)
@@ -528,7 +525,7 @@ class TestSlapOSPerson_getHateoasHostingSubscriptionList(TestSlapOSHypermediaMix
     hosting_subscription.edit(destination_section_value=person_user)
     self.tic()
 
-    self.login(person_user.getReference())
+    self.login(person_user.getUserId())
     self.changeSkin('Hal')
     fake_request = do_fake_request("GET")
     result = person_user.Person_getHateoasHostingSubscriptionList(
