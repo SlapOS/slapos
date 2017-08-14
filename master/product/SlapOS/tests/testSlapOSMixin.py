@@ -211,8 +211,6 @@ class testSlapOSMixin(ERP5TypeTestCase):
       'erp5_workflow',
       'erp5_configurator',
       'slapos_configurator',
-      'erp5_ui_test',
-      'slapos_monitoring_ui_test',
     ]
     return result
 
