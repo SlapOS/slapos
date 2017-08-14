@@ -219,7 +219,7 @@ path = ${directory:promise}/apache
 hostname = {{ ipv4 }}
 port = {{ apache_dict.values()[0][0] }}
 
-[publish]
+[{{ section('publish') }}]
 recipe = slapos.cookbook:publish.serialised
 {% for family_name, (apache_port, scheme, _, _) in apache_dict.items() -%}
 {{   family_name ~ '-v6' }} = {% if ipv6_set %}{{ scheme ~ '://[' ~ ipv6 ~ ']:' ~ apache_port }}{% endif %}
@@ -260,7 +260,7 @@ cert =
 crl =
 {%- endif %}
 
-[logrotate-apache]
+[{{ section('logrotate-apache') }}]
 < = logrotate-entry-base
 name = apache
 log = ${apache-conf-parameter-dict:error-log} ${apache-conf-parameter-dict:access-log}
@@ -271,7 +271,7 @@ recipe = slapos.cookbook:mkdirectory
 apache-conf = ${:etc}/apache
 bin = ${buildout:directory}/bin
 etc = ${buildout:directory}/etc
-promise = ${directory:etc}/promise
+promise = ${:etc}/promise
 services = ${:etc}/run
 var = ${buildout:directory}/var
 run = ${:var}/run
@@ -284,7 +284,7 @@ newcerts = ${:ca-dir}/newcerts
 crl = ${:ca-dir}/crl
 apachedex = ${monitor-directory:private}/apachedex
 
-[monitor-generate-apachedex-report]
+[{{ section('monitor-generate-apachedex-report') }}]
 recipe = slapos.cookbook:wrapper
 wrapper-path = ${monitor-directory:reports}/${:command}
 command-line = "{{ parameter_dict['run-apachedex-location'] }}" "{{ parameter_dict['apachedex-location'] }}" "${directory:apachedex}" --default "${apachedex-parameters:default}" --apache-log-list "${apachedex-parameters:apache-log-list}" --base-list "${apachedex-parameters:base-list}" --skip-base-list "${apachedex-parameters:skip-base-list}" --erp5-base-list "${apachedex-parameters:erp5-base-list}"
@@ -316,7 +316,4 @@ extends =
   {{ logrotate_cfg }}
   {{ parameter_dict['template-monitor'] }}
 parts +=
-  publish
-  logrotate-apache
-  monitor-generate-apachedex-report
   {{ part_list | join('\n  ') }}

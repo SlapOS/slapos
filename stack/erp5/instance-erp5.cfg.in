@@ -1,4 +1,4 @@
-{% import "root_common" as root_common with context %}
+{% import "root_common" as root_common with context -%}
 {% set frontend_dict = slapparameter_dict.get('frontend', {}) -%}
 {% set has_frontend = frontend_dict.get('software-url', '') != '' -%}
 {% set site_id = slapparameter_dict.get('site-id', 'erp5') -%}

@@ -138,13 +138,9 @@ recipe = slapos.cookbook:publish.serialised
 url = https://[${instance-parameter:host}]:${instance-parameter:port}
 
 [erp5-kernel]
-<= dynamic-jinja2-template-base
-template = {{ erp5_kernel_location }}/{{ erp5_kernel_filename }}
-rendered = ${directory:erp5_kernel_dir}/ERP5kernel.py
-# Use ipython as executable python as we'll be needing requests library in kernel
-context =
-  raw python_executable {{ bin_directory }}/ipython
-  key erp5_url slapconfiguration:configuration.erp5-url
+recipe = slapos.cookbook:symbolic.link
+link-binary = {{ erp5_kernel_location }}/{{ erp5_kernel_filename }}
+target-directory = ${directory:erp5_kernel_dir}
 
 [kernel-json]
 <= dynamic-jinja2-template-base
@@ -153,12 +149,13 @@ rendered = ${directory:erp5_kernel_dir}/kernel.json
 # Use python2.7 executable bin file for kernel config
 context =
   raw python_executable {{ python_executable }}
-  key kernel_dir erp5-kernel:rendered
+  raw kernel_dir ${erp5-kernel:target-directory}/{{ erp5_kernel_filename }}
+  key erp5_url slapconfiguration:configuration.erp5-url 
   raw display_name ERP5
   raw language_name python
 
 [custom-js]
-<= dynamic-jinja2-template-base
-template = {{ custom_js_location }}/{{ custom_js_filename }}
-rendered = ${directory:jupyter_custom_dir}/custom.js
-mode = 0744
+recipe = slapos.cookbook:symbolic.link
+target-directory = ${directory:jupyter_custom_dir}
+link-binary = {{ custom_js_location }}/custom.js
+
