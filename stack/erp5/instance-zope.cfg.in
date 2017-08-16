@@ -222,6 +222,23 @@ once = ${:rendered}_done
 [zope-conf-parameter-base]
 ip = {{ ipv4 }}
 site-id = {{ site_id }}
+{% if site_id -%}
+mysql-url = {{ slapparameter_dict['mysql-url-list'][0] }}
+inituser = {{ slapparameter_dict['inituser-login'] }}
+{%  set mysql = urlparse.urlsplit(slapparameter_dict['mysql-url-list'][0]) -%}
+sql-connection-string = {{ '%s@erp5-catalog-0:%s %s %s' % (
+    mysql.path.split('/')[1], mysql.port, mysql.username, mysql.password) }}
+bt5 = {{ slapparameter_dict['bt5'] }}
+bt5-repository-url = {{ slapparameter_dict['bt5-repository-url'] }}
+home = ${buildout:directory}
+# We only want to change the hostname to 'erp5-cloudooo' if we use the internal
+# cloudooo. We plan to remove the ability to have an internal one, so this
+# heuristic is enough.
+{%  set cloudooo = urlparse.urlsplit(slapparameter_dict['cloudooo-url']) -%}
+cloudooo-url = {{ (cloudooo if cloudooo.port == None else
+  cloudooo._replace(netloc='erp5-cloudooo:%s' % cloudooo.port)).geturl() }}
+
+{% endif -%}
 {% set zeo_dict = slapparameter_dict.get('zodb-zeo', {}) -%}
 {% for name, zodb in zodb_dict.iteritems() -%}
 {%   set storage_dict = zodb.setdefault('storage-dict', {}) -%}
@@ -249,7 +266,6 @@ deadlock-debugger-password = {{ dumps(slapparameter_dict['deadlock-debugger-pass
 tidstorage-ip = {{ dumps(slapparameter_dict['tidstorage-ip']) }}
 tidstorage-port = {{ dumps(slapparameter_dict['tidstorage-port']) }}
 {% endif -%}
-promise-path = ${erp5-promise:promise-path}
 {% set thread_amount = slapparameter_dict['thread-amount'] -%}
 thread-amount = {{ thread_amount }}
 {% set webdav = slapparameter_dict['webdav'] -%}
@@ -308,8 +324,10 @@ longrequest-logger-file =
 [{{ conf_name }}]
 < = zope-conf-base
 rendered = ${directory:etc}/{{ name }}.conf
+extensions = jinja2.ext.do
 context =
   section parameter_dict {{ conf_parameter_name }}
+  import os os
 
 [{{ section(name) }}]
 < = runzope-base
@@ -381,16 +399,6 @@ hard to guess.
 hosts-dict = {{ dumps(hosts_dict) }}
 monitor-base-url = ${monitor-publish-parameters:monitor-base-url}
 
-[erp5-promise]
-recipe = slapos.cookbook:erp5.promise
-promise-path = ${directory:etc}/erp5promise.cfg
-kumofs-url = {{ dumps(slapparameter_dict['kumofs-url']) }}
-memcached-url = {{ dumps(slapparameter_dict['memcached-url']) }}
-cloudooo-url = {{ dumps(slapparameter_dict['cloudooo-url']) }}
-smtp-url = {{ dumps(slapparameter_dict['smtp-url']) }}
-bt5 = {{ dumps(slapparameter_dict['bt5']) }}
-bt5-repository-url = {{ dumps(slapparameter_dict['bt5-repository-url']) }}
-
 [monitor-instance-parameter]
 monitor-httpd-ipv6 = {{ (ipv6_set | list)[0] }}
 monitor-httpd-port = {{ next_port() }}
@@ -402,6 +410,5 @@ extends =
   {{ logrotate_cfg }}
   {{ parameter_dict['template-monitor'] }}
 parts +=
-  erp5-promise
   {{ part_list | join('\n  ') }}
   publish
