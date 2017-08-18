@@ -9,6 +9,7 @@
 {% set has_jupyter = jupyter_dict.get('enable', jupyter_enable_default.lower() in ('true', 'yes')) -%}
 {% set jupyter_zope_family = jupyter_dict.get('zope-family', '') -%}
 {% set monitor_base_url_dict = {} -%}
+{% set monitor_dict = slapparameter_dict.get('monitor', {}) %}
 [request-common]
 <= request-common-base
 config-use-ipv6 = {{ dumps(slapparameter_dict.get('use-ipv6', False)) }}
@@ -42,7 +43,7 @@ config-name = {{ name }}
 {{ request('memcached-persistent', 'kumofs', 'kumofs', {'tcpv4-port': 2000}, {'url': True, 'monitor-base-url': False}, key_config={'monitor-passwd': 'monitor-htpasswd:passwd'}) }}
 {{ request('memcached-volatile', 'kumofs', 'memcached', {'tcpv4-port': 2010, 'ram-storage-size': 64}, {'url': True, 'monitor-base-url': False}, key_config={'monitor-passwd': 'monitor-htpasswd:passwd'}) }}
 {{ request('cloudooo', 'cloudooo', 'cloudooo', {'tcpv4-port': 2020}, {'url': True, 'monitor-base-url': False}, key_config={'monitor-passwd': 'monitor-htpasswd:passwd'}) }}
-{{ request('mariadb', 'mariadb', 'mariadb', {'tcpv4-port': 2099}, {'database-list': True, 'test-database-list': True, 'monitor-base-url': False}, key_config={'monitor-passwd': 'monitor-htpasswd:passwd'}) }}
+{{ request('mariadb', 'mariadb', 'mariadb', {'tcpv4-port': 2099, 'max-slowqueries-threshold': monitor_dict.get('max-slowqueries-threshold', 1000), 'slowest-query-threshold': monitor_dict.get('slowest-query-threshold', '') }, {'database-list': True, 'test-database-list': True, 'monitor-base-url': False}, key_config={'monitor-passwd': 'monitor-htpasswd:passwd'}) }}
 {% if has_posftix -%}
 {{   request('smtp', 'postfix', 'smtp', {'tcpv4-port': 2025, 'smtpd-sasl-user': 'erp5@nowhere'}, key_config={'smtpd-sasl-password': 'publish-early:smtpd-sasl-password'}) }}
 {%- else %}
@@ -313,7 +314,9 @@ config-ssl-authentication-dict = {{ dumps(ssl_authentication_dict) }}
 config-shared-certificate-authority-path = ${directory:ca-dir} 
 config-monitor-passwd = ${monitor-htpasswd:passwd}
 config-name = ${:name}
-
+config-apachedex-promise-threshold = {{ dumps(monitor_dict.get('apachedex-promise-threshold', 70)) }}
+config-apachedex-configuration = {{ dumps(monitor_dict.get('apachedex-configuration',
+ '--erp5-base "/erp5(/|$|/\?)" --skip-user-agent Zabbix  --error-detail --js-embed --quiet')) }}
 
 [request-frontend-base]
 {% if has_frontend -%}
