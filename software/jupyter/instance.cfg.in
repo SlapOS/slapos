@@ -8,7 +8,7 @@ parts =
   jupyter-notebook-config
   erp5-kernel
   kernel-json
-  custom-js
+  custom-js-link
   monitor-base
 extends =
   {{ monitor_template_rendered }}/template-monitor.cfg
@@ -154,7 +154,7 @@ context =
   raw display_name ERP5
   raw language_name python
 
-[custom-js]
+[custom-js-link]
 recipe = slapos.cookbook:symbolic.link
 target-directory = ${directory:jupyter_custom_dir}
 link-binary = {{ custom_js_location }}/custom.js
