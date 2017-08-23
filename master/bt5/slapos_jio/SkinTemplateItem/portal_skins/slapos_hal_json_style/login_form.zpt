@@ -53,6 +53,14 @@
               <div><input type="submit" value='Login' i18n:attributes="value" i18n:domain="ui"  tal:attributes="name python: '%s:method' % (form_action, )"/></div>
             </div>
 
+           <div class="ui-field-contain">
+              <label></label>
+              <div><a tal:attributes="href string:join_form"
+                       i18n:translate="" i18n:domain="ui"> Subscribe </a>
+                  </div>
+            </div>
+
+            <hr />
             <tal:block tal:define="available_oauth_login_list python: context.getPortalObject().ERP5Site_getAvailableOAuthLoginList();">
 
               <tal:block tal:condition="python: 'google' in available_oauth_login_list">
@@ -60,16 +68,17 @@
                   <label>&nbsp;</label>
                   <div class="input">
                     <a tal:attributes="href string:${here/portal_url}/ERP5Site_redirectToGoogleLoginPage"
-                       i18n:translate="" i18n:domain="ui" class="zocial google">Login with Google</a>
+                       i18n:translate="" i18n:domain="ui" class="zocial google">Sign in or Login with Google</a>
                   </div>
                 </div>
               </tal:block>
+
               <tal:block tal:condition="python: 'facebook' in available_oauth_login_list">
                 <div class="field">
                   <label>&nbsp;</label>
                   <div class="input">
                     <a tal:attributes="href string:${here/portal_url}/ERP5Site_redirectToFacebookLoginPage"
-                       i18n:translate="" i18n:domain="ui" class="zocial facebook">Login with Facebook</a>
+                       i18n:translate="" i18n:domain="ui" class="zocial facebook">Sign in or Login with Facebook</a>
                   </div>
                 </div>
               </tal:block>

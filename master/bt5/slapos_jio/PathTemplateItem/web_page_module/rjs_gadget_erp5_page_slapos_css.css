@@ -1,0 +1,14 @@
+.box-gadget-left {
+  width: 49%;
+  float: left;
+}
+.box-gadget-right {
+  width: 49%;
+  float: right;
+}
+
+.box-gadget-bottom {
+  float: left;
+  width: 100%;
+
+}

@@ -1,0 +1,38 @@
+/* --------------------- CUSTOM MAP ----------------------- */
+.custom-map-wrap {
+  position: relative;
+  width: 99%;
+  height: 99%;
+  margin: 0 0.5%;
+}
+.custom-map-wrap:before {
+   content: "";
+   display: block;
+   padding-top: 100%;
+}
+.custom-map {
+ position: absolute;
+ top: 0;
+ left: 0;
+ bottom: 0;
+ right: 0;
+ border: 1px solid;
+}
+
+.map {
+  height: 100%;
+}
+
+/* Force style */
+
+.leaflet-popup, .leaflet-control-container, .leaflet-control-container div {
+  width: auto !important;
+}
+
+.leaflet-popup-tip {
+  width: 17px !important;
+}
+
+.ui-btn-map {
+  color: black !important;
+}

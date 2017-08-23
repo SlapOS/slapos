@@ -1,0 +1,90 @@
+.ui-block-a,
+.ui-block-b,
+.ui-block-c,
+.ui-block-d,
+.ui-block-e {
+    margin: 0;
+    padding: 0;
+    border: 0;
+    float: left;
+    min-height: 1px;
+    -webkit-box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    box-sizing: border-box; } /* force new row */
+
+.ui-block-a {
+    clear: left;
+}
+
+.ui-bar {
+	position: relative;
+	padding: .4em 1em;
+	overflow: hidden;
+	display: block;
+	clear: both;
+}
+
+.ui-corner-all {
+	-webkit-border-radius: 				.3125em /*{global-radii-blocks}*/;
+	border-radius: 						.3125em /*{global-radii-blocks}*/;
+}
+
+.ui-btn-ok,
+.ui-btn-ok:active,
+.ui-btn-ok:hover ,
+.ui-btn-ok a,
+.ui-btn-ok:active a,
+.ui-btn-ok:hover a {
+  color: white !important;
+  background: #00884b !important;
+  cursor: default;
+  text-align: center;
+}
+
+.ui-btn-warning,
+.ui-btn-warning:active,
+.ui-btn-warning:hover,
+.ui-btn-warning a,
+.ui-btn-warning:active a,
+.ui-btn-warning:hover a {
+  color: white !important;
+  background: #FFCC00 !important;
+  cursor: default;
+  text-align: center;
+}
+
+.ui-btn-error,
+.ui-btn-error:active,
+.ui-btn-error:hover,
+.ui-btn-error a,
+.ui-btn-error:active a,
+.ui-btn-error:hover a {
+  color: white !important;
+  background: #bb0a00 !important;
+  cursor: default;
+  text-align: center;
+}
+
+.ui-btn-no-data,
+.ui-btn-no-data:active,
+.ui-btn-no-data:hover,
+.ui-btn-no-data a,
+.ui-btn-no-data:active a,
+.ui-btn-no-data:hover a {
+  color: grey !important;
+  background: grey !important;
+  cursor: default;
+  text-align: center;
+}
+
+
+.ui-btn-white,
+.ui-btn-white:active,
+.ui-btn-white:hover,
+.ui-btn-white a,
+.ui-btn-white:active a,
+.ui-btn-white:hover a {
+  background: white !important;
+  cursor: default;
+  text-align: center;
+}
