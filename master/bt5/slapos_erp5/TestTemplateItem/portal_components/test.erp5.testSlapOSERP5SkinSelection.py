@@ -130,7 +130,6 @@ slapos_core
 slapos_crm
 slapos_payzen
 slapos_pdm
-slapos_rest_api
 slapos_simulation
 slapos_slap_tool
 slapos_web
@@ -242,7 +241,6 @@ slapos_core
 slapos_crm
 slapos_payzen
 slapos_pdm
-slapos_rest_api
 slapos_simulation
 slapos_slap_tool
 slapos_web
@@ -349,7 +347,6 @@ slapos_core
 slapos_crm
 slapos_payzen
 slapos_pdm
-slapos_rest_api
 slapos_simulation
 slapos_slap_tool
 slapos_web
@@ -457,7 +454,6 @@ slapos_core
 slapos_crm
 slapos_payzen
 slapos_pdm
-slapos_rest_api
 slapos_simulation
 slapos_slap_tool
 slapos_web
@@ -562,7 +558,6 @@ slapos_core
 slapos_crm
 slapos_payzen
 slapos_pdm
-slapos_rest_api
 slapos_simulation
 slapos_slap_tool
 slapos_web
@@ -668,7 +663,6 @@ slapos_core
 slapos_crm
 slapos_payzen
 slapos_pdm
-slapos_rest_api
 slapos_simulation
 slapos_slap_tool
 slapos_web
@@ -773,7 +767,6 @@ slapos_core
 slapos_crm
 slapos_payzen
 slapos_pdm
-slapos_rest_api
 slapos_simulation
 slapos_slap_tool
 slapos_web
@@ -879,7 +872,6 @@ slapos_core
 slapos_crm
 slapos_payzen
 slapos_pdm
-slapos_rest_api
 slapos_simulation
 slapos_slap_tool
 slapos_web
@@ -984,7 +976,6 @@ slapos_core
 slapos_crm
 slapos_payzen
 slapos_pdm
-slapos_rest_api
 slapos_simulation
 slapos_slap_tool
 slapos_web
@@ -1091,7 +1082,6 @@ slapos_core
 slapos_crm
 slapos_payzen
 slapos_pdm
-slapos_rest_api
 slapos_simulation
 slapos_slap_tool
 slapos_web
@@ -1199,7 +1189,6 @@ slapos_core
 slapos_crm
 slapos_payzen
 slapos_pdm
-slapos_rest_api
 slapos_simulation
 slapos_slap_tool
 slapos_web

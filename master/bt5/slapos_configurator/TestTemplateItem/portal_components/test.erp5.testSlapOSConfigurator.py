@@ -295,8 +295,6 @@ class TestSlapOSConfigurator(testSlapOSMixin):
       'slapos_cloud',
       'slapos_slap_tool',
       'slapos_category',
-      'slapos_rest_api_tool_portal_type',
-      'slapos_rest_api',
       'slapos_pdm',
       'slapos_crm',
       'slapos_accounting',

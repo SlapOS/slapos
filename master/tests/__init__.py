@@ -11,9 +11,6 @@ slapos_bt_list = [
     'slapos_cloud',
     'slapos_erp5',
     'slapos_pdm',
-    # XXX those tests won't be fixed as the new implementation
-    # in on the way.
-    #'slapos_rest_api',
     'slapos_slap_tool',
     'slapos_web',
     'slapos_crm',
