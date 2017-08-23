@@ -20,7 +20,7 @@ tmp_directory='{{ directory["tmp"] }}'
 
 rsync () {
   set -x
-  '{{ rsync_binary }}' -rlptgov --stats --safe-links --delete --delete-excluded "$@"
+  '{{ rsync_binary }}' -rlptgov --stats --safe-links --ignore-missing-args --delete --delete-excluded "$@"
   set +x
 }
 
