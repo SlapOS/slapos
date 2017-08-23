@@ -210,7 +210,6 @@ config-longrequest-logger-interval = {{ dumps(zope_parameter_dict.get('longreque
 config-longrequest-logger-timeout = {{ dumps(zope_parameter_dict.get('longrequest-logger-timeout', 1)) }}
 config-port-base = {{ dumps(zope_parameter_dict.get('port-base', 2200)) }}
 config-webdav = {{ dumps(zope_parameter_dict.get('webdav', False)) }}
-config-name = {{ partition_name }}
 {% endfor -%}
 
 {# if not explicitly configured, connect jupyter to first zope family, which  -#}
