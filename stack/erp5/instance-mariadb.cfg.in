@@ -285,7 +285,7 @@ rendered = ${monitor-directory:reports}/${:filename}
 filename = mariadb_slow_query_every_23_hour
 mode = 755
 context = 
-  raw slow_query_path ${directory:srv}/backup/logrotate/mariadb_slowquery.log
+  raw slow_query_path ${directory:log}/mariadb_slowquery.log
   raw pt_query_exec ${binary-wrap-pt-digest:wrapper-path}
   raw dash {{ parameter_dict['dash-location'] }}/bin/dash
   key output_folder monitor-directory:private
