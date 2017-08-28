@@ -298,15 +298,9 @@ configuration = {{ slapparameter_dict['apachedex-configuration'] }}
 promise-threshold = {{ slapparameter_dict['apachedex-promise-threshold'] }}
 
 [{{ section('monitor-promise-apachedex-result') }}]
-recipe = slapos.recipe.template:jinja2
-template = {{ parameter_dict['apdex-result-check-script'] }}
-rendered = ${monitor-directory:promises}/check-apachedex-result
-status-file = ${monitor-directory:private}/apachedex.report.json 
-context = 
-  raw bash {{ parameter_dict['bash'] }}/bin/bash
-  raw user_threshold ${apachedex-parameters:promise-threshold}
-  key apdex_file directory:apachedex
-  key apdex_status_file :status-file
+recipe = slapos.cookbook:wrapper
+wrapper-path = ${monitor-directory:promises}/check-apachedex-result
+command-line = "{{ parameter_dict['promise-check-apachedex-result'] }}" --apachedex_file "${directory:apachedex}" --status_file ${monitor-directory:private}/apachedex.report.json --threshold "${apachedex-parameters:promise-threshold}"
 
 [monitor-instance-parameter]
 monitor-httpd-ipv6 = {{ (ipv6_set | list)[0] }}
