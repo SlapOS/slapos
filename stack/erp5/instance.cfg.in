@@ -73,7 +73,7 @@ extra-context =
 
 [dynamic-template-erp5-parameters]
 jupyter-enable-default = {{ jupyter_enable_default }}
-local-bt5-repository = {{ local_bt5_repository }}
+local-bt5-repository = {{ ' '.join(local_bt5_repository.split()) }}
 template-monitor = {{ dumps(template_monitor) }}
 
 [dynamic-template-erp5]
