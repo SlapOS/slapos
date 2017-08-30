@@ -295,17 +295,10 @@ max_queries_threshold = {{ slapparameter_dict['max-slowqueries-threshold'] }}
 slowest_queries_threshold = {{ slapparameter_dict['slowest-query-threshold'] }}
 
 [{{ section('monitor-promise-slowquery-result') }}]
-recipe = slapos.recipe.template:jinja2
-template = {{ parameter_dict['mariadb-slowquery-check-script'] }}
-rendered = ${monitor-directory:promises}/mariadb-slow-queries-result
-status-file = ${monitor-directory:private}/mariadb_slow_query.report.json
-context =
-  raw default_threshold 4000
-  raw bash {{ parameter_dict['bash'] }}/bin/bash
-  key slow_query_digest monitor-directory:private
-  key slow_query_status :status-file
-  key max_queries_threshold slow-query-digest-parameters:max_queries_threshold
-  key slowest_queries_threshold slow-query-digest-parameters:slowest_queries_threshold
+recipe = slapos.cookbook:wrapper
+wrapper-path = ${directory:promise}/check-slow-query-pt-digest-result
+command-line = "{{ parameter_dict['promise-check-slow-queries-digest-result'] }}" --ptdigest_file "${monitor-directory:private}/slowquery_digest.txt" --status_file ${monitor-directory:private}/mariadb_slow_query.report.json --max_queries_threshold "${slow-query-digest-parameters:max_queries_threshold}" --slowest_query_threshold "${slow-query-digest-parameters:slowest_queries_threshold}"
+
 
 [{{ section('promise') }}]
 recipe = slapos.cookbook:wrapper
