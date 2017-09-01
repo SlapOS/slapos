@@ -52,6 +52,7 @@ class Recipe(GenericBaseRecipe):
   def install(self):
     promise = self.createExecutable(self.options['path'], template % {
       'python': _safe_arg(sys.executable),
+      'dash_S': '', # BBB buildout 1.x
       'hostname': self.options['hostname'],
       'port': self.options['port'],
       })
