@@ -1,5 +1,6 @@
 #! {{ bash_path }}
 
+
 function increase_revision_number() {
   # this increase the revision number an ebuild
   # (except for revision number 9999 which is a value for "live ebuild", for dev revisions)
@@ -35,6 +36,7 @@ function increase_revision_number() {
   fi
 }
 
+
 function insert_packages_into_ebuild() {
   # Insert packages (in form of "category/package") into RDEPEND part of ebuild.
   # Optionally increasing version of given ebuild.
@@ -60,6 +62,14 @@ function insert_packages_into_ebuild() {
     increase_revision_number $(dirname $EBUILD)
   fi
 }
+
+
+function latest_ebuild() {
+  # find the latest ebuild file (previously we hardcoded the versions)
+  # @argument ebuild directory to find the file in
+  find $1 -type f -name '*ebuild' | sort -r | head -1
+}
+
 
 ######################## Download of sources using the "repo" command ########################
 DL_LOG="{{ instance_log_dir }}/cros_sources_dl.log"
@@ -124,23 +134,25 @@ install -m 770 "{{ scripts_dir }}/test_nayuos_image" "{{ cros_location }}/{{ bra
 
 # make virtual ebuild responsible for installing all packages dependent on NayuOS own packages
 insert_packages_into_ebuild \
-  ${CHROMIUM_OVERLAY}/virtual/target-chromium-os-dev/target-chromium-os-dev-1.ebuild \
-  {{ nayu_dev_packages }}
+  $(latest_ebuild ${CHROMIUM_OVERLAY}/virtual/target-chromium-os-dev) \
+  net-misc/re6stnet dev-vcs/git dev-python/flask dev-python/virtualenv sys-fs/cryptsetup
 
 # insert policies into /etc/chromium/policies/recommended with NayuOS customizations
+CHROMEOS_DEV_ROOT_EBIULD=
 insert_packages_into_ebuild \
-  ${CHROMIUM_OVERLAY}/chromeos-base/chromeos-dev-root/chromeos-dev-root-0.0.1.ebuild \
-  {{ nayu_dev_rootfs_packages }}
-
+  $(latest_ebuild ${CHROMIUM_OVERLAY}/chromeos-base/chromeos-dev-root) \
+  app-misc/nayuos-chromium-policy
 
 # do not install the Upstart init script that starts ssh daemon at boot time
-rm ${CHROMIUM_OVERLAY}/chromeos-base/chromeos-sshd-init/files/openssh-server.conf
+find ${CHROMIUM_OVERLAY}/chromeos-base/chromeos-sshd-init* -name openssh-server.conf -delete
+
 # strip away the src_install part because it only sets up booting scripts
-sed -i -n '/src_install/q;p' ${CHROMIUM_OVERLAY}/chromeos-base/openssh-server-init/openssh-server-init-0.0.1.ebuild
-sed -i -n '/src_install/q;p' ${CHROMIUM_OVERLAY}/chromeos-base/chromeos-sshd-init/chromeos-sshd-init-0.0.1.ebuild
-# increase version in case of other overlays with the same packages
+# and increase version in case of other overlays with the same packages
+sed -i -n '/src_install/q;p' $(latest_ebuild ${CHROMIUM_OVERLAY}/chromeos-base/openssh-server-init)
 increase_revision_number ${CHROMIUM_OVERLAY}/chromeos-base/openssh-server-init/
+sed -i -n '/src_install/q;p' $(latest_ebuild ${CHROMIUM_OVERLAY}/chromeos-base/chromeos-sshd-init)
 increase_revision_number ${CHROMIUM_OVERLAY}/chromeos-base/chromeos-sshd-init/
+
 
 # bashrc modifications
 BASH_EBUILD_DIR="${PORTAGE_STABLE}/app-shells/bash"
@@ -292,7 +304,7 @@ for board in ${BOARDS} ; do
   # preparing packages (for chroot and image)
   date >> "${BUILD_LOG}"
   echo "building packages for a ${board}-flavoured Chromium OS..." >> "${BUILD_LOG}"
-  cros_sdk -- ./build_packages --board=${board} >> "${BUILD_LOG}"
+  cros_sdk --nouse-image -- ./build_packages --board=${board} >> "${BUILD_LOG}"
 
   # change boot pictures
   cros_sdk -- cros_workon --board=${board} start chromiumos-assets
@@ -305,12 +317,12 @@ for board in ${BOARDS} ; do
   NAYU_IMAGE_LOCATION=/tmp/${board}.nayuos.img
 
   # rebuild packages with boot pictures
-  cros_sdk -- ./build_packages --board=${board} >> "${BUILD_LOG}"
+  cros_sdk --nouse-image-- ./build_packages --board=${board} >> "${BUILD_LOG}"
 
   # NayuOS images
   date >> "${BUILD_LOG}"
   echo "building image" >> "${BUILD_LOG}"
-  cros_sdk -- ./build_image --board=${board} dev >> "${BUILD_LOG}" \
+  cros_sdk --nouse-image -- ./build_image --board=${board} dev >> "${BUILD_LOG}" \
     && cros_sdk -- rm -f $NAYU_IMAGE_LOCATION && cros_sdk -- touch $NAYU_IMAGE_LOCATION \
     && cros_sdk -- cros flash --board=${board} file://$NAYU_IMAGE_LOCATION >> "${BUILD_LOG}" \
     && cros_sdk -- ./test_nayuos_image ${board} > "${TEST_LOG}" \
