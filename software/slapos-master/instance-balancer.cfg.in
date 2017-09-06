@@ -204,7 +204,7 @@ crl =
 {%     do part_list.append('logrotate-' ~ base_name) -%}
 {%     do apache_service_log_list.__setitem__(family_name, base_name) -%}
 [logrotate-{{ base_name }}]
- < = logrotate-entry-base
+< = logrotate-entry-base
 name = {{ base_name }}
 log = ${apache-conf-parameter-dict:log-dir}/{{ base_name }}-error.log ${apache-conf-parameter-dict:log-dir}/{{ base_name }}-access.log
 post = test ! -s ${apache-conf-parameter-dict:pid-file} || {{ parameter_dict['bin-directory'] }}/slapos-kill --pidfile ${apache-conf-parameter-dict:pid-file} -s USR1
