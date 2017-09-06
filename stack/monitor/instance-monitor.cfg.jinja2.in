@@ -387,6 +387,10 @@ context =
     raw python_bin {{ python_with_eggs }}
 config-file = ${directory:etc}/min-free-disk-size
 
+[promise-check-free-memory]
+recipe = slapos.cookbook:wrapper
+command-line = {{ bin_directory }}/check-computer-memory --collectordb ${monitor-conf-parameters:collector-db} 
+wrapper-path = ${directory:promises}/check-computer-memory
 
 [monitor-base]
 # create dependencies between required monitor parts
@@ -406,6 +410,7 @@ depends =
   ${monitor-httpd-promise:filename}
   ${monitor-bootstrap-promise:file}
   ${promise-check-slapgrid:output}
+  ${promise-check-free-memory:wrapper-path}
   ${promise-monitor-httpd-is-process-older-than-dependency-set:wrapper-path}
 
 [monitor-publish]
