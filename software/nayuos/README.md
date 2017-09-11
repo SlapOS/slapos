@@ -37,10 +37,11 @@ it is **necessary** to add `sudo` rules for that release as shown there.
 
 In the vifib parameters (softinst\<nb\>.host.vifib.net \> Services \> Parameters):
 
-*   **board** / ex: peppy, swanky, ... (choosing daisy will accept all licenses for the daisy board build only, in order to use Mali drivers, see [chromium mailing list](https://groups.google.com/a/chromium.org/forum/#!topic/chromium-os-dev/Pf9ZG2itxWM))
+*   **board** / ex: peppy, swanky, ... Complete list of devices and board names on [chromiumOS developer guide](http://www.chromium.org/chromium-os/developer-information-for-chrome-os-devices)
 *   **branch** / ex: release-R46-7390.B (you can find the release in the [Chromium OS source tree](https://chromium.googlesource.com/chromiumos/manifest/+refs))
 *   **keep_cache** / yes|no (choosing "no" saves about 15Go of disk space per board, choosing "yes" will makes next build faster and less expensive in term of needed ressources because of not rebuilding everything)
 
+//Choosing board daisy will accept all licenses for the daisy board build only, in order to use Mali drivers, see [chromium mailing list](https://groups.google.com/a/chromium.org/forum/#!topic/chromium-os-dev/Pf9ZG2itxWM)
 
 ## Output
 
@@ -57,6 +58,7 @@ Build produces
 
 *   [ `repo` command reference ](https://source.android.com/source/using-repo.html)
 *   [ NayuOS official website ](https://nayuos.nexedi.com)
+*   [ Board names list ](http://www.chromium.org/chromium-os/developer-information-for-chrome-os-devices)
 *   [ crouton for chroot ](https://github.com/dnschneid/crouton) ([warning about verified boot](https://github.com/dnschneid/crouton/blob/2a1fc9da380650f47e2bcf37d00962bfb68c4830/installer/main.sh#L517-L536))
 
 ## Notes for possible improvements
