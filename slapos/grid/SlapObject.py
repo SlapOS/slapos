@@ -453,6 +453,17 @@ class Partition(object):
               'USER': pwd.getpwuid(uid).pw_name,
           }
 
+  def addServiceToCustomGroup(self, group_id, runner_list, path):
+    """Add new services to supervisord that belong to specific group"""
+    group_partition_template = pkg_resources.resource_stream(__name__,
+      'templates/group_partition_supervisord.conf.in').read()
+    self.supervisor_configuration_groups += group_partition_template % {
+        'instance_id': group_id,
+        'program_list': ','.join(['_'.join([group_id, runner])
+                                  for runner in runner_list])
+    }
+    return self.addServiceToGroup(group_id, runner_list, path)
+
   def updateSymlink(self, sr_symlink, software_path):
     if os.path.lexists(sr_symlink):
       if not os.path.islink(sr_symlink):
@@ -589,7 +600,7 @@ class Partition(object):
     self.generateSupervisorConfigurationFile()
     self.createRetentionLockDelay()
 
-  def generateSupervisorConfigurationFile(self):
+  def generateSupervisorConfiguration(self):
     """
     Generates supervisord configuration file from template.
 
@@ -600,6 +611,8 @@ class Partition(object):
     """
     runner_list = []
     service_list = []
+    self.partition_supervisor_configuration = ""
+    self.supervisor_configuration_groups = ""
     if os.path.exists(self.run_path):
       if os.path.isdir(self.run_path):
         runner_list = os.listdir(self.run_path)
@@ -615,7 +628,7 @@ class Partition(object):
       partition_id = self.computer_partition.getId()
       group_partition_template = pkg_resources.resource_stream(__name__,
           'templates/group_partition_supervisord.conf.in').read()
-      self.partition_supervisor_configuration = group_partition_template % {
+      self.supervisor_configuration_groups = group_partition_template % {
           'instance_id': partition_id,
           'program_list': ','.join(['_'.join([partition_id, runner])
                                     for runner in runner_list + service_list])
@@ -624,9 +637,24 @@ class Partition(object):
       self.addServiceToGroup(partition_id, runner_list, self.run_path)
       self.addServiceToGroup(partition_id, service_list, self.service_path,
                              extension=WATCHDOG_MARK)
+
+  def writeSupervisorConfigurationFile(self):
+    """
+      Write supervisord configuration file and update supervisord
+    """
+    if self.supervisor_configuration_groups and \
+        self.partition_supervisor_configuration:
       updateFile(self.supervisord_partition_configuration_path,
+                 self.supervisor_configuration_groups +
                  self.partition_supervisor_configuration)
     self.updateSupervisor()
+
+  def generateSupervisorConfigurationFile(self):
+    """
+      update supervisord with new processes
+    """
+    self.generateSupervisorConfiguration()
+    self.writeSupervisorConfigurationFile()
 
   def start(self):
     """Asks supervisord to start the instance. If this instance is not
@@ -719,6 +747,19 @@ class Partition(object):
       raise IOError("I/O error while freeing partition (%s): %s" % (self.instance_path, exc))
 
     return True
+
+  def checkProcessesFromStateList(self, process_list, state_list):
+    """Asks supervisord to check if one of the processes are in the state_list."""
+    supervisor = self.getSupervisorRPC()
+    for process in process_list:
+      try:
+        info = supervisor.getProcessInfo(process)
+        if info['statename'] in state_list:
+          return True
+      except xmlrpclib.Fault as exc:
+        self.logger.debug("BAD process name: %r" % process)
+        continue
+    return False
 
   def cleanupFolder(self, folder_path):
     """Delete all files and folders in a specified directory

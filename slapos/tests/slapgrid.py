@@ -2414,3 +2414,70 @@ class TestSlapgridCPWithTransaction(MasterMixin, unittest.TestCase):
       self.assertInstanceDirectoryListEqual(['0'])
 
       self.assertFalse(os.path.exists(request_list_file))
+
+class TestSlapgridCPWithPreDeleteScript(MasterMixin, unittest.TestCase):
+
+  def test_one_partition_pre_destroy_service(self):
+    from slapos import manager as slapmanager
+    from slapos.manager.predestroy import WIPE_WRAPPER_BASE_PATH
+    computer = ComputerForTest(self.software_root, self.instance_root)
+    with httmock.HTTMock(computer.request_handler):
+      partition = computer.instance_list[0]
+      pre_delete_dir = os.path.join(partition.partition_path, WIPE_WRAPPER_BASE_PATH)
+      pre_delete_script = os.path.join(pre_delete_dir, 'slapos_pre_delete')
+      partition.requested_state = 'started'
+      partition.software.setBuildout(WRAPPER_CONTENT)
+      self.assertEqual(self.grid.processComputerPartitionList(), slapgrid.SLAPGRID_SUCCESS)
+      os.makedirs(pre_delete_dir, 0o700)
+      with open(pre_delete_script, 'w') as f:
+        f.write("""#!/bin/sh
+
+echo "Running script to wipe this partition..."
+
+for i in {1..3}
+do
+  echo "sleeping for 1s..."
+  sleep 1
+done
+
+echo "finished wipe disk."
+
+exit 0
+""")
+      os.chmod(pre_delete_script, 0754)
+      self.assertInstanceDirectoryListEqual(['0'])
+      self.assertItemsEqual(os.listdir(partition.partition_path),
+                            ['.slapgrid', '.0_wrapper.log', 'buildout.cfg', 'var',
+                             'etc', 'software_release', 'worked', '.slapos-retention-lock-delay'])
+      wrapper_log = os.path.join(partition.partition_path, '.0_wrapper.log')
+      self.assertLogContent(wrapper_log, 'Working')
+      self.assertItemsEqual(os.listdir(self.software_root), [partition.software.software_hash])
+      self.assertEqual(computer.sequence,
+                       ['/getFullComputerInformation', '/availableComputerPartition',
+                        '/startedComputerPartition'])
+      self.assertEqual(partition.state, 'started')
+      partition.requested_state = 'stopped'
+      self.assertEqual(self.launchSlapgrid(), slapgrid.SLAPGRID_SUCCESS)
+      self.assertEqual(partition.state, 'stopped')
+      manager_list = slapmanager.from_config({'manager_list': 'predestroy'})
+      self.grid._manager_list = manager_list
+
+      partition.requested_state = 'destroyed'
+      self.assertEqual(self.grid.agregateAndSendUsage(), slapgrid.SLAPGRID_SUCCESS)
+      # Assert partition directory is not destroyed (pre-destroy is running)
+      self.assertInstanceDirectoryListEqual(['0'])
+      self.assertItemsEqual(os.listdir(partition.partition_path),
+                            ['.slapgrid', '.0_wrapper.log', 'buildout.cfg', 'var',
+                             'etc', 'software_release', 'worked', '.slapos-retention-lock-delay',
+                             '.0-destroy_slapos_pre_delete.log', '.slapos-wait-services',
+                             '.slapos-request-transaction-0'])
+      self.assertItemsEqual(os.listdir(self.software_root),
+                            [partition.software.software_hash])
+
+      # wait until the pre-destroy script is finished
+      time.sleep(5)
+
+      self.assertEqual(self.grid.agregateAndSendUsage(), slapgrid.SLAPGRID_SUCCESS)
+      # Assert partition directory is empty
+      self.assertInstanceDirectoryListEqual(['0'])
+      self.assertItemsEqual(os.listdir(partition.partition_path), [])

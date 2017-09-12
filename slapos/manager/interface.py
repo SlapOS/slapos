@@ -29,3 +29,8 @@ class IManager(Interface):
     :param partition: slapos.grid.SlapObject.Partition, currently processed partition
     """
 
+  def report(partition):
+    """Method called at `slapos node report` phase.
+
+    :param partition: slapos.grid.SlapObject.Partition, currently processed partition
+    """
